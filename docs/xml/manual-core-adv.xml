@@ -55,10 +55,10 @@ use the macros in this file.  Also, you are not required to link your
 program with any extra supporting libraries.</para>
 
 <para>The code added to your binary has negligible performance impact:
-on x86, amd64, ppc32 and ppc64, the overhead is 6 simple integer instructions
-and is probably undetectable except in tight loops.
-However, if you really wish to compile out the client requests, you can
-compile with <option>-DNVALGRIND</option> (analogous to
+on x86, amd64, ppc32, ppc64 and ARM, the overhead is 6 simple integer
+instructions and is probably undetectable except in tight loops.
+However, if you really wish to compile out the client requests, you
+can compile with <option>-DNVALGRIND</option> (analogous to
 <option>-DNDEBUG</option>'s effect on
 <function>assert</function>).
 </para>
@@ -106,7 +106,7 @@ tool-specific macros).</para>
     <para>
     Alternatively, for transparent self-modifying-code support,
     use<option>--smc-check=all</option>, or run
-    on ppc32/Linux or ppc64/Linux.
+    on ppc32/Linux, ppc64/Linux or ARM/Linux.
     </para>
    </listitem>
   </varlistentry>
@@ -567,7 +567,7 @@ functions and merely replaced functions
 <function>malloc</function> etc safely from within wrappers.
 </para>
 
-<para>The above comments are true for {x86,amd64,ppc32}-linux.  On
+<para>The above comments are true for {x86,amd64,ppc32,arm}-linux.  On
 ppc64-linux function wrapping is more fragile due to the (arguably
 poorly designed) ppc64-linux ABI.  This mandates the use of a shadow
 stack which tracks entries/exits of both wrapper and replacement
@@ -578,7 +578,7 @@ finite size, recursion between wrapper/replacement functions is only
 possible to a limited depth, beyond which Valgrind has to abort the
 run.  This depth is currently 16 calls.</para>
 
-<para>For all platforms ({x86,amd64,ppc32,ppc64}-linux) all the above
+<para>For all platforms ({x86,amd64,ppc32,ppc64,arm}-linux) all the above
 comments apply on a per-thread basis.  In other words, wrapping is
 thread-safe: each thread must individually observe the above
 restrictions, but there is no need for any kind of inter-thread

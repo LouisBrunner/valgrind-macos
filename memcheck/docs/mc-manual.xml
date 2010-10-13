@@ -763,7 +763,7 @@ criteria:</para>
 
   <varlistentry id="opt.freelist-vol" xreflabel="--freelist-vol">
     <term>
-      <option><![CDATA[--freelist-vol=<number> [default: 10000000] ]]></option>
+      <option><![CDATA[--freelist-vol=<number> [default: 20000000] ]]></option>
     </term>
     <listitem>
       <para>When the client program releases memory using
@@ -779,7 +779,7 @@ criteria:</para>
       have been freed.</para>
 
       <para>This option specifies the maximum total size, in bytes, of the
-      blocks in the queue.  The default value is ten million bytes.
+      blocks in the queue.  The default value is twenty million bytes.
       Increasing this increases the total amount of memory used by
       Memcheck but may detect invalid uses of freed
       blocks which would otherwise go undetected.</para>
@@ -1153,8 +1153,8 @@ follows:</para>
     <para>Each byte in memory has 8 associated V (valid-value) bits,
     saying whether or not the byte has a defined value, and a single A
     (valid-address) bit, saying whether or not the program currently has
-    the right to read/write that address.  (But, as mentioned above, heavy
-    use of compression means the overhead is typically less than 25%.)</para>
+    the right to read/write that address.  As mentioned above, heavy
+    use of compression means the overhead is typically around 25%.</para>
   </listitem>
 
   <listitem>

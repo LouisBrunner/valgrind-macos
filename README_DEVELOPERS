@@ -101,6 +101,21 @@ without too much problem by following these steps:
 Steps (1)--(3) can be put in a .gdbinit file, but any directory names must
 be fully expanded (ie. not an environment variable).
 
+A different and possibly easier way is as follows:
+
+(1) Run Valgrind as normal, but add the flag --wait-for-gdb=yes.  This
+    puts the tool executable into a wait loop soon after it gains
+    control.  This delays startup for a few seconds.
+
+(2) In a different shell, do "gdb /proc/<pid>/exe <pid>", where
+    <pid> you read from the output printed by (1).  This attaches
+    GDB to the tool executable, which should be in the abovementioned
+    wait loop.
+
+(3) Do "cont" to continue.  After the loop finishes spinning, startup
+    will continue as normal.  Note that comment (3) above re passing
+    signals applies here too.
+
 
 Self-hosting
 ~~~~~~~~~~~~

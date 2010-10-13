@@ -1,7 +1,8 @@
 
-Julian Seward was the original founder, designer and author of Valgrind,
-created the dynamic translation frameworks, wrote Memcheck and 3.3.X
-Helgrind, and did lots of other things.
+Julian Seward was the original founder, designer and author of
+Valgrind, created the dynamic translation frameworks, wrote Memcheck,
+the 3.X versions of Helgrind, Ptrcheck, DHAT, and did lots of other
+things.
 
 Nicholas Nethercote did the core/tool generalisation, wrote
 Cachegrind and Massif, and tons of other stuff.
@@ -33,8 +34,12 @@ other tweakage.
 
 Bart Van Assche wrote and maintains DRD.
 
-Cerion Armour-Brown worked on PowerPC instruction set support in
-the Vex dynamic-translation framework.
+Cerion Armour-Brown worked on PowerPC instruction set support in the
+Vex dynamic-translation framework.  Maynard Johnson improved the
+Power6 support.
+
+Kirill Batuzov and Dmitry Zhurikhin did the NEON instruction set
+support for ARM.  Donna Robinson did the v6 media instruction support.
 
 Donna Robinson created and maintains the very excellent
 http://www.valgrind.org.

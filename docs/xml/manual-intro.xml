@@ -54,6 +54,12 @@ and without disturbing the existing structure.</para>
   </listitem>
 
   <listitem>
+    <para><command>DHAT</command> is a different kind of heap
+    profiler.  It helps you understand issues of block lifetimes,
+    block utilisation, and layout inefficiencies.</para>
+  </listitem>
+
+  <listitem>
     <para><command>Ptrcheck</command> is an experimental heap, stack and
     global array overrun detector.  Its functionality overlaps somewhat
     with Memcheck's, but it can find some problems that Memcheck would

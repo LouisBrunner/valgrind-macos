@@ -130,11 +130,11 @@ unaffected by optimisation level, and for profiling tools like Cachegrind it
 is better to compile your program at its normal optimisation level.</para>
 
 <para>Valgrind understands both the older "stabs" debugging format, used
-by GCC versions prior to 3.1, and the newer DWARF2 and DWARF3 formats
+by GCC versions prior to 3.1, and the newer DWARF2/3/4 formats
 used by GCC
 3.1 and later.  We continue to develop our debug-info readers,
 although the majority of effort will naturally enough go into the newer
-DWARF2/3 reader.</para>
+DWARF readers.</para>
 
 <para>When you're ready to roll, run Valgrind as described above.
 Note that you should run the real
@@ -1235,7 +1235,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <para>Be careful when
       using <option>--dsymutil=yes</option>, since it will
       cause pre-existing <computeroutput>.dSYM</computeroutput>
-      directories to be silently deleted and re-created.  Also note the
+      directories to be silently deleted and re-created.  Also note that
       <computeroutput>dsymutil</computeroutput> is quite slow, sometimes
       excessively so.</para>
     </listitem>
@@ -1390,13 +1390,13 @@ need to use these.</para>
       will likely lead to incorrect behaviour and/or crashes.</para>
       
       <para>Valgrind has three levels of self-modifying code detection:
-      no detection, detect self-modifying code on the stack (which used by
+      no detection, detect self-modifying code on the stack (which is used by
       GCC to implement nested functions), or detect self-modifying code
       everywhere.  Note that the default option will catch the vast majority
       of cases.  The main case it will not catch is programs such as JIT
       compilers that dynamically generate code <emphasis>and</emphasis>
       subsequently overwrite part or all of it.  Running with
-      <varname>all</varname> will slow Valgrind down greatly.  Running with
+      <varname>all</varname> will slow Valgrind down noticeably.  Running with
       <varname>none</varname> will rarely speed things up, since very little
       code gets put on the stack for most programs.  The
       <function>VALGRIND_DISCARD_TRANSLATIONS</function> client request is
@@ -1408,11 +1408,11 @@ need to use these.</para>
       -->
       </para>
 
-      <para>Some architectures (including ppc32 and ppc64) require
+      <para>Some architectures (including ppc32, ppc64 and ARM) require
       programs which create code at runtime to flush the instruction
       cache in between code generation and first use.  Valgrind
-      observes and honours such instructions.  Hence, on ppc32/Linux
-      and ppc64/Linux, Valgrind always provides complete, transparent
+      observes and honours such instructions.  Hence, on ppc32/Linux,
+      ppc64/Linux and ARM/Linux, Valgrind always provides complete, transparent
       support for self-modifying code.  It is only on platforms such as
       x86/Linux, AMD64/Linux and x86/Darwin that you need to use this
       option.</para>
@@ -1711,8 +1711,7 @@ tools Helgrind and/or DRD to track them down.</para>
 <computeroutput>futex</computeroutput> and so on.
 <computeroutput>clone</computeroutput> is supported where either
 everything is shared (a thread) or nothing is shared (fork-like); partial
-sharing will fail.  Again, any use of atomic instruction sequences in shared
-memory between processes will not work reliably.
+sharing will fail.
 </para>
 
 
@@ -1756,16 +1755,15 @@ will create a core dump in the usual way.</para>
 <para>We use the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
-install</computeroutput> mechanism, and we have attempted to
-ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X to 2.10.X.  Once you have completed 
+install</computeroutput> mechanism.  Once you have completed 
 <computeroutput>make install</computeroutput> you may then want 
 to run the regression tests
 with <computeroutput>make regtest</computeroutput>.
 </para>
 
-<para>There are five options (in addition to the usual
-<option>--prefix</option> which affect how Valgrind is built:
+<para>In addition to the usual
+<option>--prefix=/path/to/install/tree</option>, there are three
+ options which affect how Valgrind is built:
 <itemizedlist>
 
   <listitem>
@@ -1778,24 +1776,16 @@ with <computeroutput>make regtest</computeroutput>.
   </listitem>
 
   <listitem>
-    <para><option>--enable-tls</option></para>
-    <para>TLS (Thread Local Storage) is a relatively new mechanism which
-    requires compiler, linker and kernel support.  Valgrind tries to
-    automatically test if TLS is supported and if so enables this option.
-    Sometimes it cannot test for TLS, so this option allows you to
-    override the automatic test.</para>
-  </listitem>
-
-  <listitem>
     <para><option>--enable-only64bit</option></para>
     <para><option>--enable-only32bit</option></para>
-    <para>On 64-bit
-     platforms (amd64-linux, ppc64-linux), Valgrind is by default built
-     in such a way that both 32-bit and 64-bit executables can be run.
-     Sometimes this cleverness is a problem for a variety of reasons.
-     These two options allow for single-target builds in this situation.
-     If you issue both, the configure script will complain.  Note they
-     are ignored on 32-bit-only platforms (x86-linux, ppc32-linux).
+    <para>On 64-bit platforms (amd64-linux, ppc64-linux,
+     amd64-darwin), Valgrind is by default built in such a way that
+     both 32-bit and 64-bit executables can be run.  Sometimes this
+     cleverness is a problem for a variety of reasons.  These two
+     options allow for single-target builds in this situation.  If you
+     issue both, the configure script will complain.  Note they are
+     ignored on 32-bit-only platforms (x86-linux, ppc32-linux,
+     arm-linux, x86-darwin).
    </para>
   </listitem>
 
@@ -1859,29 +1849,45 @@ subject to the following constraints:</para>
 
  <itemizedlist>
   <listitem>
-   <para>On x86 and amd64, there is no support for 3DNow! instructions.
-   If the translator encounters these, Valgrind will generate a SIGILL
-   when the instruction is executed.  Apart from that, on x86 and amd64,
-   essentially all instructions are supported, up to and including SSSE3.
+   <para>On x86 and amd64, there is no support for 3DNow!
+   instructions.  If the translator encounters these, Valgrind will
+   generate a SIGILL when the instruction is executed.  Apart from
+   that, on x86 and amd64, essentially all instructions are supported,
+   up to and including SSE4.2 in 64-bit mode and SSSE3 in 32-bit mode.
+   Some exceptions: SSE4.2 AES instructions are not supported in
+   64-bit mode, and 32-bit mode does in fact support the bare minimum
+   SSE4 instructions to needed to run programs on MacOSX 10.6 on
+   32-bit targets.
    </para>
   </listitem>
 
   <listitem>
-   <para>On ppc32 and ppc64, almost all integer, floating point and Altivec
-   instructions are supported.  Specifically: integer and FP insns that are
-   mandatory for PowerPC, the "General-purpose optional" group (fsqrt, fsqrts,
-   stfiwx), the "Graphics optional" group (fre, fres, frsqrte, frsqrtes), and
-   the Altivec (also known as VMX) SIMD instruction set, are supported.</para>
+   <para>On ppc32 and ppc64, almost all integer, floating point and
+   Altivec instructions are supported.  Specifically: integer and FP
+   insns that are mandatory for PowerPC, the "General-purpose
+   optional" group (fsqrt, fsqrts, stfiwx), the "Graphics optional"
+   group (fre, fres, frsqrte, frsqrtes), and the Altivec (also known
+   as VMX) SIMD instruction set, are supported.  Also, instructions
+   from the Power ISA 2.05 specification, as present in POWER6 CPUs,
+   are supported.</para>
+  </listitem>
+
+  <listitem>
+   <para>On ARM, essentially the entire ARMv7-A instruction set
+    is supported, in both ARM and Thumb mode.  ThumbEE and Jazelle are
+    not supported.  NEON and VFPv3 support is fairly complete.  ARMv6
+    media instruction support is mostly done but not yet complete.
+   </para>
   </listitem>
 
   <listitem>
    <para>If your program does its own memory management, rather than
    using malloc/new/free/delete, it should still work, but Memcheck's
-   error checking won't be so effective.  If you describe your program's
-   memory management scheme using "client requests" 
-   (see <xref linkend="manual-core-adv.clientreq"/>), Memcheck can do
-   better.  Nevertheless, using malloc/new and free/delete is still the
-   best approach.</para>
+   error checking won't be so effective.  If you describe your
+   program's memory management scheme using "client requests" (see
+   <xref linkend="manual-core-adv.clientreq"/>), Memcheck can do
+   better.  Nevertheless, using malloc/new and free/delete is still
+   the best approach.</para>
   </listitem>
 
   <listitem>
@@ -1902,25 +1908,32 @@ subject to the following constraints:</para>
   </listitem>
 
   <listitem>
-   <para>Memory consumption of your program is majorly increased whilst
-   running under Valgrind.  This is due to the large amount of
-   administrative information maintained behind the scenes.  Another
-   cause is that Valgrind dynamically translates the original
-   executable.  Translated, instrumented code is 12-18 times larger than
-   the original so you can easily end up with 50+ MB of translations
-   when running (eg) a web browser.</para>
+   <para>Memory consumption of your program is majorly increased
+   whilst running under Valgrind's Memcheck tool.  This is due to the
+   large amount of administrative information maintained behind the
+   scenes.  Another cause is that Valgrind dynamically translates the
+   original executable.  Translated, instrumented code is 12-18 times
+   larger than the original so you can easily end up with 100+ MB of
+   translations when running (eg) a web browser.</para>
   </listitem>
 
   <listitem>
    <para>Valgrind can handle dynamically-generated code just fine.  If
-   you regenerate code over the top of old code (ie. at the same memory
-   addresses), if the code is on the stack Valgrind will realise the
-   code has changed, and work correctly.  This is necessary to handle
-   the trampolines GCC uses to implemented nested functions.  If you
-   regenerate code somewhere other than the stack, you will need to use
-   the <option>--smc-check=all</option> option, and Valgrind will run more
-   slowly than normal.  Or you can add client requests that tell Valgrind
-   when your program has overwritten code.</para>
+   you regenerate code over the top of old code (ie. at the same
+   memory addresses), if the code is on the stack Valgrind will
+   realise the code has changed, and work correctly.  This is
+   necessary to handle the trampolines GCC uses to implemented nested
+   functions.  If you regenerate code somewhere other than the stack,
+   and you are running on an 32- or 64-bit x86 CPU, you will need to
+   use the <option>--smc-check=all</option> option, and Valgrind will
+   run more slowly than normal.  Or you can add client requests that
+   tell Valgrind when your program has overwritten code.
+   </para>
+   <para> On other platforms (ARM, PowerPC) Valgrind observes and
+   honours the cache invalidation hints that programs are obliged to
+   emit to notify new code, and so self-modifying-code support should
+   work automatically, without the need
+   for <option>--smc-check=all</option>.</para>
   </listitem>
 
   <listitem>
@@ -1994,6 +2007,19 @@ subject to the following constraints:</para>
    denormals to zero (FTZ).  Both of these cause SSE2 arithmetic to be
    less accurate than IEEE requires.  Valgrind detects, ignores, and can
    warn about, attempts to enable either mode.</para>
+  </listitem>
+
+  <listitem>
+   <para>Valgrind has the following limitations in
+   its implementation of ARM VFPv3 arithmetic, relative to 
+   IEEE754.</para>
+
+   <para>Essentially the same: no exceptions, and limited observance
+   of rounding mode.  Also, switching the VFP unit into vector mode
+   will cause Valgrind to abort the program -- it has no way to
+   emulate vector uses of VFP at a reasonable performance level.  This
+   is no big deal given that non-scalar uses of VFP instructions are
+   in any case deprecated.</para>
   </listitem>
 
   <listitem>

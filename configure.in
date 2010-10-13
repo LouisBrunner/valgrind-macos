@@ -1449,7 +1449,9 @@ AC_TRY_COMPILE([], [
 
 AM_CONDITIONAL([BUILD_LZCNT_TESTS], [test x$ac_have_as_lzcnt = xyes])
 
-
+# XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
+# when building the tool executables.  I think we should get rid of it.
+#
 # Check for TLS support in the compiler and linker
 if test "x${cross_compiling}" = "xno"; then
 # Native compilation: check whether running a program using TLS succeeds.

@@ -237,7 +237,7 @@ static void usage_NORETURN ( Bool debug_help )
 "\n"
 "  %s is %s\n"
 "  Valgrind is Copyright (C) 2000-2010, and GNU GPL'd, by Julian Seward et al.\n"
-"  LibVEX is Copyright (C) 2004-2010, and GNU GPL'd, by OpenWorks LLP.\n"
+"  LibVEX is Copyright (C) 2004-2010, and GNU GPL'd, by OpenWorks LLP et al.\n"
 "\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";

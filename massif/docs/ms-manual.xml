@@ -688,6 +688,17 @@ in a particular column, which makes following the allocation chains easier.
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.pages-as-heap" xreflabel="--pages-as-heap">
+    <term>
+      <option><![CDATA[--pages-as-heap=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Tells Massif to profile memory at the page level rather
+        than at the malloc'd block level.  See above for details.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.depth" xreflabel="--depth">
     <term>
       <option><![CDATA[--depth=<number> [default: 30] ]]></option>

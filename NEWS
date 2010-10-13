@@ -13,6 +13,8 @@ Scalability improvements (code cache)
 Matching Valkyrie support (for Mc, Hg, Pc)
 Hg annotation improvements
 More reliable stack unwinding on amd64-linux
+Callgrind branch prediction and global bus
+Segfaults .w.r.t boost 
 
 Punted but under consideration for 3.7:
 Support for code compiled by LLVM-2.8

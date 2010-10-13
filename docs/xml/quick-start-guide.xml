@@ -48,7 +48,8 @@ numbers.  Using <option>-O0</option> is also a good
 idea, if you can tolerate the slowdown.  With
 <option>-O1</option> line numbers in error messages can
 be inaccurate, although generally speaking running Memcheck on code compiled
-at <option>-O1</option> works fairly well.
+at <option>-O1</option> works fairly well, and the speed improvement
+compared to running <option>-O0</option> is quite significant.
 Use of
 <option>-O2</option> and above is not recommended as
 Memcheck occasionally reports uninitialised-value errors which don't

@@ -114,7 +114,9 @@ static Block* find_Block_containing ( Addr a )
       return NULL;
    tl_assert(foundval == 0); // we don't store vals in the interval tree
    tl_assert(foundkey != 1);
-   return (Block*)foundkey;
+   Block* res = (Block*)foundkey;
+   tl_assert(res != &fake);
+   return res;
 }
 
 // delete a block; asserts if not found.  (viz, 'a' must be
@@ -959,7 +961,7 @@ static void dh_print_usage(void)
 "    --sort-by=string\n"
 "            sort the allocation points by the metric\n"
 "            defined by <string>, thusly:\n"
-"                max-bytes-live    maximum live bytes\n"
+"                max-bytes-live    maximum live bytes [default]\n"
 "                tot-bytes-allocd  total allocation (turnover)\n"
 "                max-blocks-live   maximum live blocks\n"
    );
@@ -997,9 +999,9 @@ static void show_APInfo ( APInfo* api )
       bufA[0] = 'N'; bufA[1] = 'a'; bufA[2] = 'N';
    }
 
-   VG_(umsg)("max_live:    %'llu in %'llu blocks\n",
+   VG_(umsg)("max-live:    %'llu in %'llu blocks\n",
              api->max_bytes_live, api->max_blocks_live);
-   VG_(umsg)("tot_alloc:   %'llu in %'llu blocks (avg size %s)\n",
+   VG_(umsg)("tot-alloc:   %'llu in %'llu blocks (avg size %s)\n",
              api->tot_bytes, api->tot_blocks, bufA);
 
    tl_assert(api->tot_blocks >= api->max_blocks_live);
@@ -1033,7 +1035,7 @@ static void show_APInfo ( APInfo* api )
    VG_(pp_ExeContext)(api->ap);
 
    if (api->histo && api->xsize_tag == Exactly) {
-      VG_(umsg)("\nAggregated access counts by offset\n");
+      VG_(umsg)("\nAggregated access counts by offset:\n");
       VG_(umsg)("\n");
       UWord i;
       if (api->xsize > 0)

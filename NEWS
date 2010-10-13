@@ -1,6 +1,23 @@
 
 Release 3.6.0 (???)
 ~~~~~~~~~~~~~~~~~~~
+
+Ubuntu 10.10 and Fedora 14 support
+gcc-4.5 and glibc-2.12
+DHAT
+SSE4
+Power6
+Scalability improvements (code cache)
+--fullpath-after
+--require-text-symbol
+Matching Valkyrie support (for Mc, Hg, Pc)
+Hg annotation improvements
+More reliable stack unwinding on amd64-linux
+
+Punted but under consideration for 3.7:
+Support for code compiled by LLVM-2.8
+Support for adding symbols for JIT generated code
+
 Improvements:
 - XXX: ARM support
 - XXX: Mac OS 10.6 support (32 and 64 bit)

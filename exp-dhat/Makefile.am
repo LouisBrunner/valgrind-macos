@@ -2,9 +2,7 @@ include $(top_srcdir)/Makefile.tool.am
 
 #SUBDIRS += perf
 
-#EXTRA_DIST = \
-#	docs/dh-manual.xml \
-#	docs/dh_print-manpage.xml
+EXTRA_DIST = docs/dh-manual.xml
 
 #----------------------------------------------------------------------------
 # Headers, etc

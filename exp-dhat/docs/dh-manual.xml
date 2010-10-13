@@ -1,0 +1,400 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<chapter id="dh-manual" 
+         xreflabel="DHAT: a dynamic heap analysis tool">
+  <title>DHAT: a dynamic heap analysis tool</title>
+
+<para>To use this tool, you must specify
+<option>--tool=exp-dhat</option> on the Valgrind
+command line.</para>
+
+
+
+<sect1 id="dh-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>DHAT is a tool for examining how programs use their heap
+allocations.</para>
+
+<para>It tracks the allocated blocks, and inspects every memory access
+to find which block, if any, it is to.  The following data is
+collected and presented per allocation point (allocation
+stack):</para>
+
+<itemizedlist>
+  <listitem><para>Total allocation (number of bytes and
+  blocks)</para></listitem>
+
+  <listitem><para>maximum live volume (number of bytes and
+  blocks)</para></listitem>
+
+  <listitem><para>average block lifetime (number of instructions
+   between allocation and freeing)</para></listitem>
+
+  <listitem><para>average number of reads and writes to each byte in
+   the block ("access ratios")</para></listitem>
+
+  <listitem><para>for allocation points which always allocate blocks
+   only of one size, and that size is 4096 bytes or less: counts
+   showing how often each byte offset inside the block is
+   accessed.</para></listitem>
+</itemizedlist>
+
+<para>Using these statistics it is possible to identify allocation
+points with the following characteristics:</para>
+
+<itemizedlist>
+
+  <listitem><para>potential process-lifetime leaks: blocks allocated
+   by the point just accumulate, and are freed only at the end of the
+   run.</para></listitem>
+
+ <listitem><para>excessive turnover: points which chew through a lot
+  of heap, even if it is not held onto for very long</para></listitem>
+
+ <listitem><para>excessively transient: points which allocate very
+ short lived blocks</para></listitem>
+
+ <listitem><para>useless or underused allocations: blocks which are
+  allocated but not completely filled in, or are filled in but not
+  subsequently read.</para></listitem>
+
+ <listitem><para>blocks with inefficient layout -- areas never
+  accessed, or with hot fields scattered throughout the
+  block.</para></listitem>
+</itemizedlist>
+
+<para>As with the Massif heap profiler, DHAT measures program progress
+by counting instructions, and so presents all age/time related figures
+as instruction counts.  This sounds a little odd at first, but it
+makes runs repeatable in a way which is not possible if CPU time is
+used.</para>
+
+</sect1>
+
+
+
+
+<sect1 id="dh-manual.understanding" xreflabel="Understanding DHAT's output">
+<title>Understanding DHAT's output</title>
+
+
+<para>DHAT provides a lot of useful information on dynamic heap usage.
+Most of the art of using it is in interpretation of the resulting
+numbers.  That is best illustrated via a set of examples.</para>
+
+
+<sect2>
+<title>Interpreting the max-live, tot-alloc and deaths fields</title>
+
+<sect3><title>A simple example</title></sect3>
+
+<screen><![CDATA[
+   ======== SUMMARY STATISTICS ========
+
+   guest_insns:  1,045,339,534
+   [...]
+   max-live:    63,490 in 984 blocks
+   tot-alloc:   1,904,700 in 29,520 blocks (avg size 64.52)
+   deaths:      29,520, at avg age 22,227,424
+   acc-ratios:  6.37 rd, 1.14 wr  (12,141,526 b-read, 2,174,460 b-written)
+      at 0x4C275B8: malloc (vg_replace_malloc.c:236)
+      by 0x40350E: tcc_malloc (tinycc.c:6712)
+      by 0x404580: tok_alloc_new (tinycc.c:7151)
+      by 0x40870A: next_nomacro1 (tinycc.c:9305)
+]]></screen>
+
+<para>Over the entire run of the program, this stack (allocation
+point) allocated 29,520 blocks in total, containing 1,904,700 bytes in
+total.  By looking at the max-live data, we see that not many blocks
+were simultaneously live, though: at the peak, there were 63,490
+allocated bytes in 984 blocks.  This tells us that the program is
+steadily freeing such blocks as it runs, rather than hanging on to all
+of them until the end and freeing them all.</para>
+
+<para>The deaths entry tells us that 29,520 blocks allocated by this stack
+died (were freed) during the run of the program.  Since 29,520 is
+also the number of blocks allocated in total, that tells us that
+all allocated blocks were freed by the end of the program.</para>
+
+<para>It also tells us that the average age at death was 22,227,424
+instructions.  From the summary statistics we see that the program ran
+for 1,045,339,534 instructions, and so the average age at death is
+about 2% of the program's total run time.</para>
+
+<sect3><title>Example of a potential process-lifetime leak</title></sect3>
+
+<para>This next example (from a different program than the above)
+shows a potential process lifetime leak.  A process lifetime leak
+occurs when a program keeps allocating data, but only frees the
+data just before it exits.  Hence the program's heap grows constantly
+in size, yet Memcheck reports no leak, because the program has
+freed up everything at exit.  This is particularly a hazard for
+long running programs.</para>
+
+<screen><![CDATA[
+   ======== SUMMARY STATISTICS ========
+   
+   guest_insns:  418,901,537
+   [...]
+   max-live:    32,512 in 254 blocks
+   tot-alloc:   32,512 in 254 blocks (avg size 128.00)
+   deaths:      254, at avg age 300,467,389
+   acc-ratios:  0.26 rd, 0.20 wr  (8,756 b-read, 6,604 b-written)
+      at 0x4C275B8: malloc (vg_replace_malloc.c:236)
+      by 0x4C27632: realloc (vg_replace_malloc.c:525)
+      by 0x56FF41D: QtFontStyle::pixelSize(unsigned short, bool) (qfontdatabase.cpp:269)
+      by 0x5700D69: loadFontConfig() (qfontdatabase_x11.cpp:1146)
+]]></screen>
+
+<para>There are two tell-tale signs that this might be a
+process-lifetime leak.  Firstly, the max-live and tot-alloc numbers
+are identical.  The only way that can happen is if these blocks are
+all allocated and then all deallocated.</para>
+
+<para>Secondly, the average age at death (300 million insns) is 71% of
+the total program lifetime (419 million insns), hence this is not a
+transient allocation-free spike -- rather, it is spread out over a
+large part of the entire run.  One interpretation is, roughly, that
+all 254 blocks were allocated in the first half of the run, held onto
+for the second half, and then freed just before exit.</para>
+
+</sect2>
+
+
+<sect2>
+<title>Interpreting the acc-ratios fields</title>
+
+
+<sect3><title>A fairly harmless allocation point record</title></sect3>
+
+<screen><![CDATA[
+   max-live:    49,398 in 808 blocks
+   tot-alloc:   1,481,940 in 24,240 blocks (avg size 61.13)
+   deaths:      24,240, at avg age 34,611,026
+   acc-ratios:  2.13 rd, 0.91 wr  (3,166,650 b-read, 1,358,820 b-written)
+      at 0x4C275B8: malloc (vg_replace_malloc.c:236)
+      by 0x40350E: tcc_malloc (tinycc.c:6712)
+      by 0x404580: tok_alloc_new (tinycc.c:7151)
+      by 0x4046C4: tok_alloc (tinycc.c:7190)
+]]></screen>
+
+<para>The acc-ratios field tells us that each byte in the blocks
+allocated here is read an average of 2.13 times before the block is
+deallocated.  Given that the blocks have an average age at death of
+34,611,026, that's one read per block per approximately every 15
+million instructions.  So from that standpoint the blocks aren't
+"working" very hard.</para>
+
+<para>More interesting is the write ratio: each byte is written an
+average of 0.91 times.  This tells us that some parts of the allocated
+blocks are never written, at least 9% on average.  To completely
+initialise the block would require writing each byte at least once,
+and that would give a write ratio of 1.0.  The fact that some block
+areas are evidently unused might point to data alignment holes or
+other layout inefficiencies.</para>
+
+<para>Well, at least all the blocks are freed (24,240 allocations,
+24,240 deaths).</para>
+
+<para>If all the blocks had been the same size, DHAT would also show
+the access counts by block offset, so we could see where exactly these
+unused areas are.  However, that isn't the case: the blocks have
+varying sizes, so DHAT can't perform such an analysis.  We can see
+that they must have varying sizes since the average block size, 61.13,
+isn't a whole number.</para>
+
+
+<sect3><title>A more suspicious looking example</title></sect3>
+
+<screen><![CDATA[
+   max-live:    180,224 in 22 blocks
+   tot-alloc:   180,224 in 22 blocks (avg size 8192.00)
+   deaths:      none (none of these blocks were freed)
+   acc-ratios:  0.00 rd, 0.00 wr  (0 b-read, 0 b-written)
+      at 0x4C275B8: malloc (vg_replace_malloc.c:236)
+      by 0x40350E: tcc_malloc (tinycc.c:6712)
+      by 0x40369C: __sym_malloc (tinycc.c:6787)
+      by 0x403711: sym_malloc (tinycc.c:6805)
+]]></screen>
+
+<para>Here, both the read and write access ratios are zero.  Hence
+this point is allocating blocks which are never used, neither read nor
+written.  Indeed, they are also not freed ("deaths: none") and are
+simply leaked.  So, here is 180k of completely useless allocation that
+could be removed.</para>
+
+<para>Re-running with Memcheck does indeed report the same leak.  What
+DHAT can tell us, that Memcheck can't, is that not only are the blocks
+leaked, they are also never used.</para>
+
+<sect3><title>Another suspicious example</title></sect3>
+
+<para>Here's one where blocks are allocated, written to,
+but never read from.  We see this immediately from the zero read
+access ratio.  They do get freed, though:</para>
+
+<screen><![CDATA[
+   max-live:    54 in 3 blocks
+   tot-alloc:   1,620 in 90 blocks (avg size 18.00)
+   deaths:      90, at avg age 34,558,236
+   acc-ratios:  0.00 rd, 1.11 wr  (0 b-read, 1,800 b-written)
+      at 0x4C275B8: malloc (vg_replace_malloc.c:236)
+      by 0x40350E: tcc_malloc (tinycc.c:6712)
+      by 0x4035BD: tcc_strdup (tinycc.c:6750)
+      by 0x41FEBB: tcc_add_sysinclude_path (tinycc.c:20931)
+]]></screen>
+
+<para>In the previous two examples, it is easy to see blocks that are
+never written to, or never read from, or some combination of both.
+Unfortunately, in C++ code, the situation is less clear.  That's
+because an object's constructor will write to the underlying block,
+and its destructor will read from it.  So the block's read and write
+ratios will be non-zero even if the object, once constructed, is never
+used, but only eventually destructed.</para>
+
+<para>Really, what we want is to measure only memory accesses in
+between the end of an object's construction and the start of its
+destruction.  Unfortunately I do not know of a reliable way to
+determine when those transitions are made.</para>
+
+
+</sect2>
+
+<sect2>
+<title>Interpreting "Aggregated access counts by offset" data</title>
+
+<para>For allocation points that always allocate blocks of the same
+size, and which are 4096 bytes or smaller, DHAT counts accesses
+per offset, for example:</para>
+
+<screen><![CDATA[
+   max-live:    317,408 in 5,668 blocks
+   tot-alloc:   317,408 in 5,668 blocks (avg size 56.00)
+   deaths:      5,668, at avg age 622,890,597
+   acc-ratios:  1.03 rd, 1.28 wr  (327,642 b-read, 408,172 b-written)
+      at 0x4C275B8: malloc (vg_replace_malloc.c:236)
+      by 0x5440C16: QDesignerPropertySheetPrivate::ensureInfo (qhash.h:515)
+      by 0x544350B: QDesignerPropertySheet::setVisible (qdesigner_propertysh...)
+      by 0x5446232: QDesignerPropertySheet::QDesignerPropertySheet (qdesigne...)
+   
+   Aggregated access counts by offset:
+   
+   [   0]  28782 28782 28782 28782 28782 28782 28782 28782
+   [   8]  20638 20638 20638 20638 0 0 0 0 
+   [  16]  22738 22738 22738 22738 22738 22738 22738 22738
+   [  24]  6013 6013 6013 6013 6013 6013 6013 6013 
+   [  32]  18883 18883 18883 37422 0 0 0 0
+   [  36]  5668 11915 5668 5668 11336 11336 11336 11336 
+   [  48]  6166 6166 6166 6166 0 0 0 0 
+]]></screen>
+
+<para>This is fairly typical, for C++ code running on a 64-bit
+platform.  Here, we have aggregated access statistics for 5668 blocks,
+all of size 56 bytes.  Each byte has been accessed at least 5668
+times, except for offsets 12--15, 36--39 and 52--55.  These are likely
+to be alignment holes.</para>
+
+<para>Careful interpretation of the numbers reveals useful information.
+Groups of N consecutive identical numbers that begin at an N-aligned
+offset, for N being 2, 4 or 8, are likely to indicate an N-byte object
+in the structure at that point.  For example, the first 32 bytes of
+this object are likely to have the layout</para>
+
+<screen><![CDATA[
+   [0 ]  64-bit type
+   [8 ]  32-bit type
+   [12]  32-bit alignment hole
+   [16]  64-bit type
+   [24]  64-bit type
+]]></screen>
+
+<para>As a counterexample, it's also clear that, whatever is at offset 32,
+it is not a 32-bit value.  That's because the last number of the group
+(37422) is not the same as the first three (18883 18883 18883).</para>
+
+<para>This example leads one to enquire (by reading the source code)
+whether the zeroes at 12--15 and 52--55 are alignment holes, and
+whether 48--51 is indeed a 32-bit type.  If so, it might be possible
+to place what's at 48--51 at 12--15 instead, which would reduce
+the object size from 56 to 48 bytes.</para>
+
+<para>Bear in mind that the above inferences are all only "maybes".  That's
+because they are based on dynamic data, not static analysis of the
+object layout.  For example, the zeroes might not be alignment
+holes, but rather just parts of the structure which were not used
+at all for this particular run.  Experience shows that's unlikely
+to be the case, but it could happen.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+
+
+
+
+<sect1 id="dh-manual.options" xreflabel="DHAT Command-line Options">
+<title>DHAT Command-line Options</title>
+
+<para>DHAT-specific command-line options are:</para>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="dh.opts.list">
+
+  <varlistentry id="opt.show-top-n" xreflabel="--show-top-n">
+    <term>
+      <option><![CDATA[--show-top-n=<number>
+      [default: 10] ]]></option>
+    </term>
+    <listitem>
+      <para>At the end of the run, DHAT sorts the accumulated
+       allocation points according to some metric, and shows the
+       highest scoring entries.  <varname>--show-top-n</varname>
+       controls how many entries are shown.  The default of 10 is
+       quite small.  For realistic applications you will probably need
+       to set it much higher, at least several hundred.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.sort-by" xreflabel="--sort-by=string">
+    <term>
+      <option><![CDATA[--sort-by=<string> [default: max-bytes-live] ]]></option>
+    </term>
+    <listitem>
+      <para>At the end of the run, DHAT sorts the accumulated
+       allocation points according to some metric, and shows the
+       highest scoring entries.  <varname>--sort-by</varname>
+       selects the metric used for sorting:</para>
+      <para><varname>max-bytes-live   </varname>    maximum live bytes [default]</para>
+      <para><varname>tot-bytes-allocd </varname>  total allocation (turnover)</para>
+      <para><varname>max-blocks-live  </varname>   maximum live blocks</para>
+      <para>This controls the order in which allocation points are
+       displayed.  You can choose to look at allocation points with
+       the highest maximum liveness, or the highest total turnover, or
+       by the highest number of live blocks.  These give usefully
+       different pictures of program behaviour.  For example, sorting
+       by maximum live blocks tends to show up allocation points
+       creating large numbers of small objects.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
+<para>One important point to note is that each allocation stack counts
+as a seperate allocation point.  Because stacks by default have 12
+frames, this tends to spread data out over multiple allocation points.
+You may want to use the flag --num-callers=4 or some such small
+number, to reduce the spreading.</para>
+
+<!-- end of xi:include in the manpage -->
+
+</sect1>
+
+</chapter>

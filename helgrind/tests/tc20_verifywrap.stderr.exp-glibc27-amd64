@@ -71,12 +71,14 @@ Thread #x's call to pthread_mutex_unlock failed
 ---------------- pthread_cond_wait et al ----------------
 
 Thread #x: pthread_cond_{timed}wait called with un-held mutex
-   at 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:147)
 
 Thread #x's call to pthread_cond_wait failed
    with error code 1 (EPERM: Operation not permitted)
-   at 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:147)
 
 
@@ -86,12 +88,14 @@ FIXME: can't figure out how to verify wrap of pthread_cond_signal
 FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 
 Thread #x: pthread_cond_{timed}wait called with un-held mutex
-   at 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
+   at 0x........: pthread_cond_timedwait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:165)
 
 Thread #x's call to pthread_cond_timedwait failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
+   at 0x........: pthread_cond_timedwait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:165)
 
 

@@ -1,81 +1,311 @@
 
-Release 3.6.0 (???)
-~~~~~~~~~~~~~~~~~~~
+Release 3.6.0 (18 October 2010)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.6.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.
 
-Ubuntu 10.10 and Fedora 14 support
-gcc-4.5 and glibc-2.12
-DHAT
-SSE4
-Power6
-Scalability improvements (code cache)
---fullpath-after
---require-text-symbol
-Matching Valkyrie support (for Mc, Hg, Pc)
-Hg annotation improvements
-More reliable stack unwinding on amd64-linux
-Callgrind branch prediction and global bus
-Segfaults .w.r.t boost 
+This release supports X86/Linux, AMD64/Linux, ARM/Linux, PPC32/Linux,
+PPC64/Linux, X86/Darwin and AMD64/Darwin.  Support for recent distros
+and toolchain components (glibc 2.12, gcc 4.5, OSX 10.6) has been added.
 
-Punted but under consideration for 3.7:
-Support for code compiled by LLVM-2.8
-Support for adding symbols for JIT generated code
+                    -------------------------
 
-Improvements:
-- XXX: ARM support
-- XXX: Mac OS 10.6 support (32 and 64 bit)
-- XXX: Much faster startup on Mac OS 10.5 for 64-bit programs.
+Here are some highlights.  Details are shown further down:
 
-- Valgrind runs much faster when the --smc-check=all option is given.
+* Support for ARM/Linux.
 
-- Cachegrind has a new processing script, cg_diff, which finds the
-  difference between two profiles.  It's very useful for evaluating the
-  performance effects of a change in a program.
+* Support for recent Linux distros: Ubuntu 10.10 and Fedora 14.
+
+* Support for Mac OS X 10.6, both 32- and 64-bit executables.
+
+* Support for the SSE4.2 instruction set.
+
+* Enhancements to the Callgrind profiler, including the ability to
+  handle CPUs with three levels of cache.
+
+* A new experimental heap profiler, DHAT.
+
+* A huge number of bug fixes.
+
+                    -------------------------
+
+Here are details of the above changes, together with descriptions of
+many other changes, and a list of fixed bugs.
+
+* ================== PLATFORM CHANGES =================
+
+* Support for ARM/Linux.  Valgrind now runs on ARMv7 capable CPUs
+  running Linux.  It is known to work on Ubuntu 10.04, Ubuntu 10.10,
+  and Maemo 5, so you can run Valgrind on your Nokia N900 if you want.
+
+  This requires a CPU capable of running the ARMv7-A instruction set
+  (Cortex A5, A8 and A9).  Valgrind provides fairly complete coverage
+  of the user space instruction set, including ARM and Thumb integer
+  code, VFPv3, NEON and V6 media instructions.  The Memcheck,
+  Cachegrind and Massif tools work properly; other tools work to
+  varying degrees.
+
+* Support for recent Linux distros (Ubuntu 10.10 and Fedora 14), along
+  with support for recent releases of the underlying toolchain
+  components, notably gcc-4.5 and glibc-2.12.
+
+* Support for Mac OS X 10.6, both 32- and 64-bit executables.  64-bit
+  support also works much better on OS X 10.5, and is as solid as
+  32-bit support now.
+
+* Support for the SSE4.2 instruction set.  SSE4.2 is supported in
+  64-bit mode.  In 32-bit mode, support is only available up to and
+  including SSSE3.  Some exceptions: SSE4.2 AES instructions are not
+  supported in 64-bit mode, and 32-bit mode does in fact support the
+  bare minimum SSE4 instructions to needed to run programs on MacOSX
+  10.6 on 32-bit targets.
+
+* Support for IBM POWER6 cpus has been improved.  The Power ISA up to
+  and including version 2.05 is supported.
+
+* ==================== TOOL CHANGES ====================
+
+* Cachegrind has a new processing script, cg_diff, which finds the
+  difference between two profiles.  It's very useful for evaluating
+  the performance effects of a change in a program.
   
   Related to this change, the meaning of cg_annotate's (rarely-used)
-  --threshold option has changed; this is unlikely to affect many people, if
-  you do use it please see the user manual for details.
+  --threshold option has changed; this is unlikely to affect many
+  people, if you do use it please see the user manual for details.
 
-- Callgrind now can do branch prediction simulation, similar to Cachegrind.
-  In addition, it optionally can count the number of executed global bus events.
-  Both can be used for a better approximation of a "Cycle Estimation" as
-  derived event (you need to update the event formula in KCachegrind yourself).
+* Callgrind now can do branch prediction simulation, similar to
+  Cachegrind.  In addition, it optionally can count the number of
+  executed global bus events.  Both can be used for a better
+  approximation of a "Cycle Estimation" as derived event (you need to
+  update the event formula in KCachegrind yourself).
 
-- Cachegrind and Callgrind now refer to the LL (last-level) cache rather
-  than the L2 cache.  This is to accommodate machines with three levels of
-  caches -- if Cachegrind/Callgrind auto-detects the cache configuration of
-  such a machine it will run the simulation as if the L2 cache isn't
-  present.  This means the results are less likely to match the true result
-  for the machine, but Cachegrind/Callgrind's results are already only
-  approximate, and should not be considered authoritative.  The results are
-  still useful for giving a general idea about a program's locality.
+* Cachegrind and Callgrind now refer to the LL (last-level) cache
+  rather than the L2 cache.  This is to accommodate machines with
+  three levels of caches -- if Cachegrind/Callgrind auto-detects the
+  cache configuration of such a machine it will run the simulation as
+  if the L2 cache isn't present.  This means the results are less
+  likely to match the true result for the machine, but
+  Cachegrind/Callgrind's results are already only approximate, and
+  should not be considered authoritative.  The results are still
+  useful for giving a general idea about a program's locality.
 
-- Massif has a new option, --pages-as-heap, which is disabled by default.
-  When enabled, instead of tracking allocations at the level of heap blocks
-  (as allocated with malloc/new/new[]), it instead tracks memory allocations
-  at the level of memory pages (as mapped by mmap, brk, etc).  Each mapped
-  page is treated as its own block.  Interpreting the page-level output is
-  harder than the heap-level output, but this option is useful if you want
-  to account for every byte of memory used by a program.
+- Massif has a new option, --pages-as-heap, which is disabled by
+  default.  When enabled, instead of tracking allocations at the level
+  of heap blocks (as allocated with malloc/new/new[]), it instead
+  tracks memory allocations at the level of memory pages (as mapped by
+  mmap, brk, etc).  Each mapped page is treated as its own block.
+  Interpreting the page-level output is harder than the heap-level
+  output, but this option is useful if you want to account for every
+  byte of memory used by a program.
 
-- Added new memcheck command-line option --show-possibly-lost.
-
-- Support for analyzing programs running under Wine with has been improved.
-  The header files <valgrind/valgrind.h>, <valgrind/memcheck.h> and
-  <valgrind/drd.h> can now be used in Windows-programs compiled with MinGW
-  or one of the Microsoft Visual Studio compilers.
-  
-- DRD does now have two new command-line options: --free-is-write and
-  --trace-alloc. The former allows to detect reading from already freed
-  memory, and the latter allows to trace all memory allocations and
+* DRD has two new command-line options: --free-is-write and
+  --trace-alloc.  The former allows to detect reading from already freed
+  memory, and the latter allows tracing of all memory allocations and
   deallocations.
 
-- Several new annotations have been added in DRD: custom barrier
-  implementations can now be annotated and benign races on static variables
-  too.
+* DRD has several new annotations.  Custom barrier implementations can
+  now be annotated, as well as benign races on static variables.
 
-- The happens before / happens after annotations in DRD have been made more
-  powerful such that these can now also be used to annotate e.g. a smart
+* DRD's happens before / happens after annotations have been made more
+  powerful, so that they can now also be used to annotate e.g. a smart
   pointer implementation.
+
+* Helgrind's annotation set has also been drastically improved, so as
+  to provide to users, a general set of annotations to describe locks,
+  semaphores, barriers and condition variables.  Annotations to
+  describe thread-safe reference counted heap objects have also been
+  added.
+
+* Memcheck has a new command-line option, --show-possibly-lost, which
+  is enabled by default.  When disabled, the leak detector will not
+  show possibly-lost blocks.
+
+* A new experimental heap profiler, DHAT (Dynamic Heap Analysis Tool),
+  has been added.  DHAT keeps track of allocated heap blocks, and also
+  inspects every memory reference to see which block (if any) is being
+  accessed.  This gives a lot of insight into block lifetimes,
+  utilisation, turnover, liveness, and the location of hot and cold
+  fields.  You can use DHAT to do hot-field profiling.
+
+* ==================== OTHER CHANGES ====================
+
+* Improved support for unfriendly self-modifying code: the extra
+  overhead incurred by --smc-check=all has been reduced by
+  approximately a factor of 5 as compared with 3.5.0.
+
+* Ability to show directory names for source files in error messages.
+  This is combined with a flexible mechanism
+  for specifying which parts of the paths should be shown.  
+  This is enabled by the new flag --fullpath-after.
+
+* A new flag, --require-text-symbol, which will stop the run if a
+  specified symbol is not found it a given shared object when it is
+  loaded into the process.  This makes some advanced working with
+  function intercepting and wrapping safer and more reliable.
+
+* Improved support for the Valkyrie GUI, version 1.6.0.  GUI output
+  and control of Valgrind is now available for the tools Memcheck,
+  Helgrind and Ptrcheck.
+
+* More reliable stack unwinding on amd64-linux, particularly in the
+  presence of function wrappers, and with gcc-4.5 compiled code.
+
+* Modest scalability (performance improvements) for massive
+  long-running applications, particularly for those with huge amounts
+  of code.
+
+* Support for analyzing programs running under Wine with has been
+  improved.  The header files <valgrind/valgrind.h>,
+  <valgrind/memcheck.h> and <valgrind/drd.h> can now be used in
+  Windows-programs compiled with MinGW or one of the Microsoft Visual
+  Studio compilers.
+
+* A rare but serious error in the 64-bit x86 CPU simulation was fixed.
+  The 32-bit simulator was not affected.  This did not occur often,
+  but when it did would usually crash the program under test.
+  Bug 245925.
+
+* A large number of bugs were fixed.  These are shown below.
+
+* A number of bugs were investigated, and were candidates for fixing,
+  but are not fixed in 3.6.0, due to lack of developer time.  They may
+  get fixed in later releases.  They are:
+
+  194402  vex amd64->IR: 0x48 0xF 0xAE 0x4 0x24 0x49  (FXSAVE64)
+  212419  false positive "lock order violated" (A+B vs A) 
+  213685  Undefined value propagates past dependency breaking instruction
+  216837  Incorrect instrumentation of NSOperationQueue on Darwin 
+  237920  valgrind segfault on fork failure 
+  242137  support for code compiled by LLVM-2.8
+  242423  Another unknown Intel cache config value 
+  243232  Inconsistent Lock Orderings report with trylock 
+  243483  ppc: callgrind triggers VEX assertion failure 
+  243935  Helgrind: implementation of ANNOTATE_HAPPENS_BEFORE() is wrong
+  244677  Helgrind crash hg_main.c:616 (map_threads_lookup): Assertion
+          'thr' failed. 
+  246152  callgrind internal error after pthread_cancel on 32 Bit Linux 
+  249435  Analyzing wine programs with callgrind triggers a crash 
+  250038  ppc64: Altivec lvsr and lvsl instructions fail their regtest
+  250065  Handling large allocations 
+  250101  huge "free" memory usage due to m_mallocfree.c
+          "superblocks fragmentation"
+  251569  vex amd64->IR: 0xF 0x1 0xF9 0x8B 0x4C 0x24 (RDTSCP)
+  252600  [PATCH] Allow lhs to be a pointer for shl/shr 
+  n-i-bz  support for adding symbols for JIT generated code
+
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+135264  dcbzl instruction missing
+142688  == 250799
+153699  Valgrind should report unaligned reads with movdqa
+180217  == 212335
+190429  Valgrind reports lost of errors in ld.so
+        with x86_64 2.9.90 glibc 
+197266  valgrind appears to choke on the xmms instruction
+        "roundsd" on x86_64 
+197988  Crash when demangling very large symbol names
+202315  unhandled syscall: 332 (inotify_init1)
+203256  Add page-level profiling to Massif
+205093  dsymutil=yes needs quotes, locking (partial fix)
+205241  Snow Leopard 10.6 support (partial fix)
+206600  Leak checker fails to upgrade indirect blocks when their
+        parent becomes reachable 
+210935  port valgrind.h (not valgrind) to win32 so apps run under
+        wine can make client requests
+211410  vex amd64->IR: 0x15 0xFF 0xFF 0x0 0x0 0x89
+        within Linux ip-stack checksum functions 
+212335  unhandled instruction bytes: 0xF3 0xF 0xBD 0xC0
+        (lzcnt %eax,%eax) 
+213685  Undefined value propagates past dependency breaking instruction
+        (partial fix)
+215914  Valgrind inserts bogus empty environment variable 
+217863  == 197988
+219538  adjtimex syscall wrapper wrong in readonly adjtime mode 
+222545  shmat fails under valgind on some arm targets 
+222560  ARM NEON support 
+230407  == 202315
+231076  == 202315
+232509  Docs build fails with formatting inside <title></title> elements 
+232793  == 202315
+235642  [PATCH] syswrap-linux.c: support evdev EVIOCG* ioctls 
+236546  vex x86->IR: 0x66 0xF 0x3A 0xA
+237202  vex amd64->IR: 0xF3 0xF 0xB8 0xC0 0x49 0x3B 
+237371  better support for VALGRIND_MALLOCLIKE_BLOCK 
+237485  symlink (syscall 57) is not supported on Mac OS 
+237723  sysno == 101 exp-ptrcheck: the 'impossible' happened:
+        unhandled syscall 
+238208  is_just_below_ESP doesn't take into account red-zone 
+238345  valgrind passes wrong $0 when executing a shell script 
+238679  mq_timedreceive syscall doesn't flag the reception buffer
+        as "defined"
+238696  fcntl command F_DUPFD_CLOEXEC not supported 
+238713  unhandled instruction bytes: 0x66 0xF 0x29 0xC6 
+238713  unhandled instruction bytes: 0x66 0xF 0x29 0xC6 
+238745  3.5.0 Make fails on PPC Altivec opcodes, though configure
+        says "Altivec off"
+239992  vex amd64->IR: 0x48 0xF 0xC4 0xC1 0x0 0x48 
+240488  == 197988
+240639  == 212335
+241377  == 236546
+241903  == 202315
+241920  == 212335
+242606  unhandled syscall: setegid (in Ptrcheck)
+242814  Helgrind "Impossible has happened" during
+        QApplication::initInstance(); 
+243064  Valgrind attempting to read debug information from iso 
+243270  Make stack unwinding in Valgrind wrappers more reliable
+243884  exp-ptrcheck: the 'impossible happened: unhandled syscall 
+        sysno = 277 (mq_open)
+244009  exp-ptrcheck unknown syscalls in analyzing lighttpd
+244493  ARM VFP d16-d31 registers support 
+244670  add support for audit_session_self syscall on Mac OS 10.6
+244921  The xml report of helgrind tool is not well format
+244923  In the xml report file, the <preamble> not escape the 
+        xml char, eg '<','&','>'
+245535  print full path names in plain text reports 
+245925  x86-64 red zone handling problem 
+246258  Valgrind not catching integer underruns + new [] s
+246311  reg/reg cmpxchg doesn't work on amd64
+246549  unhandled syscall unix:277 while testing 32-bit Darwin app 
+246888  Improve Makefile.vex.am 
+247510  [OS X 10.6] Memcheck reports unaddressable bytes passed 
+        to [f]chmod_extended
+247526  IBM POWER6 (ISA 2.05) support is incomplete
+247561  Some leak testcases fails due to reachable addresses in
+        caller save regs
+247875  sizeofIRType to handle Ity_I128 
+247894  [PATCH] unhandled syscall sys_readahead 
+247980  Doesn't honor CFLAGS passed to configure 
+248373  darwin10.supp is empty in the trunk 
+248822  Linux FIBMAP ioctl has int parameter instead of long
+248893  [PATCH] make readdwarf.c big endianess safe to enable
+        unwinding on big endian systems
+249224  Syscall 336 not supported (SYS_proc_info) 
+249359  == 245535
+249775  Incorrect scheme for detecting NEON capabilities of host CPU
+249943  jni JVM init fails when using valgrind
+249991  Valgrind incorrectly declares AESKEYGENASSIST support
+        since VEX r2011
+249996  linux/arm: unhandled syscall: 181 (__NR_pwrite64)
+250799  frexp$fenv_access_off function generates SIGILL 
+250998  vex x86->IR: unhandled instruction bytes: 0x66 0x66 0x66 0x2E 
+251251  support pclmulqdq insn 
+251362  valgrind: ARM: attach to debugger either fails or provokes
+        kernel oops 
+251674  Unhandled syscall 294
+
+(3.6.0: 18 October 2010, vex rXXXX, valgrind rXXXXX).
+
 
 
 Release 3.5.0 (19 August 2009)

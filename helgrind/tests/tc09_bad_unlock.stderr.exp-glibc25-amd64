@@ -51,6 +51,10 @@ Thread #x: Attempt to re-lock a non-recursive lock I already hold
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:32)
    by 0x........: main (tc09_bad_unlock.c:50)
+ Lock was previously acquired
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:32)
+   by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread #x: Bug in libpthread: recursive write lock granted on mutex/wrlock which does not support recursion
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)

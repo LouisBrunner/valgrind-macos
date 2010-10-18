@@ -2149,6 +2149,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_encoding && ctsSzB > 0) {
             switch (cts) {
                case DW_ATE_unsigned: case DW_ATE_unsigned_char:
+               case DW_ATE_UTF: /* since DWARF4, e.g. char16_t from C++ */
                case DW_ATE_boolean:/* FIXME - is this correct? */
                   typeE.Te.TyBase.enc = 'U'; break;
                case DW_ATE_signed: case DW_ATE_signed_char:

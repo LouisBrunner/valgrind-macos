@@ -867,6 +867,7 @@ Char *find_buildid(Addr image, UWord n_image)
    Char* buildid = NULL;
    ElfXX_Ehdr* ehdr = (ElfXX_Ehdr*)image;
 
+#ifdef NT_GNU_BUILD_ID
    if (n_image >= sizeof(ElfXX_Ehdr) &&
        ML_(is_elf_object_file)(ehdr, n_image)) {
       Word i;
@@ -899,6 +900,7 @@ Char *find_buildid(Addr image, UWord n_image)
          }
       }    
    }
+#endif
 
    return buildid;
 }

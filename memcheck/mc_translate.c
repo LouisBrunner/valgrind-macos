@@ -2920,6 +2920,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return assignNew('V', mce, Ity_I16, binop(Iop_8HLto16, vHi8, vLo8));
       }
 
+      case Iop_Sad8Ux4: /* maybe we could do better?  ftm, do mkLazy2. */
       case Iop_DivS32:
       case Iop_DivU32:
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);

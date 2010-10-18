@@ -252,10 +252,11 @@ typedef
    The metadata is not copied in cases 0, 2 or 3 so it should be
    impossible to segfault your system by using this call.
 */
-#define VALGRIND_GET_VBITS(zza,zzvbits,zznbytes)                     \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                               \
-                                    VG_USERREQ__GET_VBITS,           \
-                                    (char*)(zza), (char*)(zzvbits),  \
+#define VALGRIND_GET_VBITS(zza,zzvbits,zznbytes)                \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                          \
+                                    VG_USERREQ__GET_VBITS,      \
+                                    (const char*)(zza),         \
+                                    (char*)(zzvbits),           \
                                     (zznbytes), 0, 0)
 
 /* Set the validity data for addresses [zza..zza+zznbytes-1], copying it
@@ -267,10 +268,11 @@ typedef
    The metadata is not copied in cases 0, 2 or 3 so it should be
    impossible to segfault your system by using this call.
 */
-#define VALGRIND_SET_VBITS(zza,zzvbits,zznbytes)                     \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                               \
-                                    VG_USERREQ__SET_VBITS,           \
-                                    (char*)(zza), (char*)(zzvbits),  \
+#define VALGRIND_SET_VBITS(zza,zzvbits,zznbytes)                \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                          \
+                                    VG_USERREQ__SET_VBITS,      \
+                                    (const char*)(zza),         \
+                                    (const char*)(zzvbits),     \
                                     (zznbytes), 0, 0 )
 
 #endif

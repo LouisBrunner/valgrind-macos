@@ -1669,7 +1669,7 @@ AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 #----------------------------------------------------------------------------
 # Other library checks
 #----------------------------------------------------------------------------
-# There now follow some tests for QtCore, Boost, and OpenMP.  These
+# There now follow some tests for Boost, and OpenMP.  These
 # tests are present because Drd has some regression tests that use
 # these packages.  All regression test programs all compiled only
 # for the primary target.  And so it is important that the configure
@@ -1683,119 +1683,6 @@ AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 #
 # Hence: ALWAYS USE $mflag_primary FOR CONFIGURE TESTS FOR FACILITIES
 # NEEDED BY THE REGRESSION TEST PROGRAMS.
-
-
-# The test below verifies whether the QtCore package been installed.
-# This test works as follows:
-# - If pkg-config was not installed at the time autogen.sh was run,
-#   the definition of the PKG_CHECK_EXISTS() macro will not be found by
-#   autogen.sh. Augogen.sh will generate a configure script that prints
-#   a warning about pkg-config and proceeds as if Qt4 has not been installed.
-# - If pkg-config was installed at the time autogen.sh was run,
-#   the generated configure script will try to detect the presence of the
-#   Qt4 QtCore library by looking up compile and linker flags in the file
-#   called QtCore.pc.
-# - pkg-config settings can be overridden via the configure variables
-#   QTCORE_CFLAGS and QTCORE_LIBS (added by the pkg-config m4 macro's to the
-#   configure script -- see also ./configure --help).
-# - The QTCORE_CFLAGS and QTCORE_LIBS configure variables can be used even if
-#   the pkg-config executable is not present on the system on which the
-#   configure script is run.
-
-ifdef(
-  [PKG_CHECK_EXISTS],
-  [PKG_CHECK_EXISTS(
-    [QtCore],
-    [
-      PKG_CHECK_MODULES([QTCORE], [QtCore])
-      # Paranoia: don't trust the result reported by pkg-config, but when
-      # pkg-config reports that QtCore has been found, verify whether linking
-      # programs with QtCore succeeds.
-      AC_LANG(C++)
-      safe_CXXFLAGS="${CXXFLAGS}"
-      CXXFLAGS="${QTCORE_CFLAGS} ${QTCORE_LIBS} $mflag_primary"
-      AC_TRY_LINK(
-        [#include <QMutex>],
-        [QMutex Mutex;],
-        [ac_have_qtcore=yes],
-        [
-          AC_MSG_WARN([Although pkg-config detected Qt4, linking Qt4 programs fails. Skipping Qt4.])
-          ac_have_qtcore=no
-        ]
-        )
-      CXXFLAGS="${safe_CXXFLAGS}"
-    ],
-    [
-      ac_have_qtcore=no
-    ]
-    )
-  ],
-  AC_MSG_WARN([pkg-config has not been installed or is too old.])
-  AC_MSG_WARN([Detection of Qt4 will be skipped.])
-  [ac_have_qtcore=no]
-)
-
-AM_CONDITIONAL([HAVE_QTCORE], [test x$ac_have_qtcore = xyes])
-
-
-# Test for QMutex::tryLock(int), which has been introduced in Qt 4.3.
-# See also http://doc.trolltech.com/4.3/qmutex.html.
-if test x$ac_have_qtcore = xyes; then
-  AC_MSG_CHECKING([for Qt4 QMutex::tryLock(int)])
-  AC_LANG(C++)
-  safe_CXXFLAGS="${CXXFLAGS}"
-  CXXFLAGS="${QTCORE_CFLAGS} $mflag_primary"
-  AC_TRY_COMPILE([
-    #include <QtCore/QMutex>
-  ],
-  [
-    QMutex M;
-    M.tryLock(1);
-    M.unlock();
-    return 0;
-  ],
-  [
-    AC_MSG_RESULT([yes])
-    AC_DEFINE([HAVE_QTCORE_QMUTEX_TRYLOCK_INT], [1], [Define to 1 if the installed version of Qt4 provides QMutex::tryLock(int).])
-  ],
-  [
-    AC_MSG_RESULT([no])
-  ])
-  CXXFLAGS="${safe_CXXFLAGS}"
-  AC_LANG(C)
-fi
-
-
-# Test for QAtomicInt, which has been introduced in Qt 4.4.
-# See also http://doc.trolltech.com/4.4/qatomicint.html.
-if test x$ac_have_qtcore = xyes; then
-  AC_MSG_CHECKING([for Qt4 QAtomicInt])
-  AC_LANG(C++)
-  safe_CXXFLAGS="${CXXFLAGS}"
-  CXXFLAGS="${QTCORE_CFLAGS} $mflag_primary"
-  AC_TRY_COMPILE([
-    #include <QtCore/QAtomicInt>
-  ],
-  [
-    QAtomicInt I;
-    I.testAndSetOrdered(0, 1);
-    return 0;
-  ],
-  [
-    ac_have_qtcore_qatomicint=yes
-    AC_MSG_RESULT([yes])
-    AC_DEFINE([HAVE_QTCORE_QATOMICINT], [1], [Define to 1 if the installed version of Qt4 provides QAtomicInt.])
-  ],
-  [
-    ac_have_qtcore_qatomicint=no
-    AC_MSG_RESULT([no])
-  ])
-  CXXFLAGS="${safe_CXXFLAGS}"
-  AC_LANG(C)
-fi
-
-AM_CONDITIONAL([HAVE_QTCORE_QATOMICINT], [test x$ac_have_qtcore_qatomicint = xyes])
-
 
 
 # Check whether the boost library 1.35 or later has been installed.

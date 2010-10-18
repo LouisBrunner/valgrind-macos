@@ -331,14 +331,6 @@ if HAVE_PTHREAD_SPINLOCK
 check_PROGRAMS += pth_spinlock
 endif
 
-if HAVE_QTCORE
-check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
-endif
-
-if HAVE_QTCORE_QATOMICINT
-check_PROGRAMS += qt4_atomic
-endif
-
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
@@ -391,24 +383,4 @@ endif
 
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
-endif
-
-if HAVE_QTCORE
-qt4_mutex_SOURCES           = qt4_mutex.cpp
-qt4_mutex_CXXFLAGS          = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_mutex_LDADD             = $(LDADD) $(QTCORE_LIBS)
-
-qt4_rwlock_SOURCES          = qt4_rwlock.cpp
-qt4_rwlock_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_rwlock_LDADD            = $(LDADD) $(QTCORE_LIBS)
-
-qt4_semaphore_SOURCES       = qt4_semaphore.cpp
-qt4_semaphore_CXXFLAGS      = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_semaphore_LDADD         = $(LDADD) $(QTCORE_LIBS)
-endif
-
-if HAVE_QTCORE_QATOMICINT
-qt4_atomic_SOURCES          = qt4_atomic.cpp
-qt4_atomic_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_atomic_LDADD            = $(LDADD) $(QTCORE_LIBS)
 endif

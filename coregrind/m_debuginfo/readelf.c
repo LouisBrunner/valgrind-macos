@@ -1063,6 +1063,7 @@ Addr find_debug_file( struct _DebugInfo* di,
 
       if ((addr = open_debug_file(debugpath, buildid, 0, size)) == 0) {
          ML_(dinfo_free)(debugpath);
+         debugpath = NULL;
       }
    }
 

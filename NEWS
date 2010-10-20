@@ -1,5 +1,5 @@
 
-Release 3.6.0 (18 October 2010)
+Release 3.6.0 (21 October 2010)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.6.0 is a feature release with many significant improvements and the
 usual collection of bug fixes.
@@ -25,7 +25,7 @@ Here are some highlights.  Details are shown further down:
 
 * A new experimental heap profiler, DHAT.
 
-* A huge number of bug fixes.
+* A huge number of bug fixes and small enhancements.
 
                     -------------------------
 
@@ -57,7 +57,7 @@ many other changes, and a list of fixed bugs.
   64-bit mode.  In 32-bit mode, support is only available up to and
   including SSSE3.  Some exceptions: SSE4.2 AES instructions are not
   supported in 64-bit mode, and 32-bit mode does in fact support the
-  bare minimum SSE4 instructions to needed to run programs on MacOSX
+  bare minimum SSE4 instructions to needed to run programs on Mac OS X
   10.6 on 32-bit targets.
 
 * Support for IBM POWER6 cpus has been improved.  The Power ISA up to
@@ -89,7 +89,7 @@ many other changes, and a list of fixed bugs.
   should not be considered authoritative.  The results are still
   useful for giving a general idea about a program's locality.
 
-- Massif has a new option, --pages-as-heap, which is disabled by
+* Massif has a new option, --pages-as-heap, which is disabled by
   default.  When enabled, instead of tracking allocations at the level
   of heap blocks (as allocated with malloc/new/new[]), it instead
   tracks memory allocations at the level of memory pages (as mapped by
@@ -111,7 +111,7 @@ many other changes, and a list of fixed bugs.
   pointer implementation.
 
 * Helgrind's annotation set has also been drastically improved, so as
-  to provide to users, a general set of annotations to describe locks,
+  to provide to users a general set of annotations to describe locks,
   semaphores, barriers and condition variables.  Annotations to
   describe thread-safe reference counted heap objects have also been
   added.
@@ -134,18 +134,19 @@ many other changes, and a list of fixed bugs.
   approximately a factor of 5 as compared with 3.5.0.
 
 * Ability to show directory names for source files in error messages.
-  This is combined with a flexible mechanism
-  for specifying which parts of the paths should be shown.  
-  This is enabled by the new flag --fullpath-after.
+  This is combined with a flexible mechanism for specifying which
+  parts of the paths should be shown.  This is enabled by the new flag
+  --fullpath-after.
 
 * A new flag, --require-text-symbol, which will stop the run if a
   specified symbol is not found it a given shared object when it is
-  loaded into the process.  This makes some advanced working with
-  function intercepting and wrapping safer and more reliable.
+  loaded into the process.  This makes advanced working with function
+  intercepting and wrapping safer and more reliable.
 
-* Improved support for the Valkyrie GUI, version 1.6.0.  GUI output
-  and control of Valgrind is now available for the tools Memcheck,
-  Helgrind and Ptrcheck.
+* Improved support for the Valkyrie GUI, version 2.0.0.  GUI output
+  and control of Valgrind is now available for the tools Memcheck and
+  Helgrind.  XML output from Valgrind is available for Memcheck,
+  Helgrind and exp-Ptrcheck.
 
 * More reliable stack unwinding on amd64-linux, particularly in the
   presence of function wrappers, and with gcc-4.5 compiled code.
@@ -190,7 +191,9 @@ many other changes, and a list of fixed bugs.
   250101  huge "free" memory usage due to m_mallocfree.c
           "superblocks fragmentation"
   251569  vex amd64->IR: 0xF 0x1 0xF9 0x8B 0x4C 0x24 (RDTSCP)
-  252600  [PATCH] Allow lhs to be a pointer for shl/shr 
+  252091  Callgrind on ARM does not detect function returns correctly
+  252600  [PATCH] Allow lhs to be a pointer for shl/shr
+  254420  memory pool tracking broken
   n-i-bz  support for adding symbols for JIT generated code
 
 
@@ -303,8 +306,15 @@ where XXXXXX is the bug number as listed below.
 251362  valgrind: ARM: attach to debugger either fails or provokes
         kernel oops 
 251674  Unhandled syscall 294
+251818  == 254550
 
-(3.6.0: 18 October 2010, vex rXXXX, valgrind rXXXXX).
+254257  Add support for debugfiles found by build-id
+254550  [PATCH] Implement DW_ATE_UTF (DWARF4)
+254646  Wrapped functions cause stack misalignment on OS X
+        (and possibly Linux)
+254556  ARM: valgrinding anything fails with SIGSEGV for 0xFFFF0FA0
+
+(3.6.0: 21 October 2010, vex rXXXX, valgrind rXXXXX).
 
 
 

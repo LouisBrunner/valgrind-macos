@@ -1,6 +1,8 @@
 
 /* How to compile:
-   gcc -marm -O -g -Wall -mcpu=cortex-a8 -o test_arm_v6int v6int.c
+   gcc -g -Wall -mcpu=cortex-a8 -o v6mediaA -marm none/tests/arm/v6media.c
+   or
+   gcc -g -Wall -mcpu=cortex-a8 -o v6mediaT -mthumb none/tests/arm/v6media.c
 */
 
 #include <stdio.h>
@@ -1836,6 +1838,8 @@ TESTINST3("smuadx r0, r1, r2", 0xf808434e, 0xefeab836, r0, r1, r2, 0);
 
   printf("----------------- SMLAD ----------------- \n");
   TESTINST4("smlad  r0, r1, r2, r3", 
+                  0x80008000, 0x80008000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smlad  r0, r1, r2, r3", 
                   0x7fff7fff, 0x00000000, 0x00000000, r0, r1, r2, r3, 0);
   TESTINST4("smlad  r0, r1, r2, r3", 
                   0x7fff7fff, 0x00010001, 0x00000001, r0, r1, r2, r3, 0);
@@ -1949,6 +1953,28 @@ TESTINST4("smlad  r0, r1, r2, r3",
           0xde99ac2f, 0x0be36f70, 0xeda5110c, r0, r1, r2, r3, 0);
 TESTINST4("smlad  r0, r1, r2, r3", 
           0xc57243b7, 0xcf1e4487, 0xf20fb90f, r0, r1, r2, r3, 0);
+
+  printf("----------------- SMLADX ----------------- \n");
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0x80008000, 0x80008000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00000000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00010001, 0x00000001, r0, r1, r2, r3, 0);
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0x80008000, 0xffffffff, 0x0000001f, r0, r1, r2, r3, 0);
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0x00640064, 0x00030003, 0x00000020, r0, r1, r2, r3, 0);
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0xffffffff, 0xfffc0001, 0x000000ff, r0, r1, r2, r3, 0);
+  TESTINST4("smladx  r0, r1, r2, r3", 
+                  0xfff70fff, 0x00030003, 0x00000100, r0, r1, r2, r3, 0);
+TESTINST4("smladx  r0, r1, r2, r3", 
+          0xb8035b5b, 0xce0ce1ed, 0x5f986e68, r0, r1, r2, r3, 0);
+TESTINST4("smladx  r0, r1, r2, r3", 
+          0x35232047, 0x146275d8, 0xaae3433f, r0, r1, r2, r3, 0);
+TESTINST4("smladx  r0, r1, r2, r3", 
+          0xe7aa57b4, 0x1584bd74, 0x2c07a5b4, r0, r1, r2, r3, 0);
 
   printf("------------ SMLABB, SMLATT, SMLATB, SMLABT ------------\n");
   /* smlabb rD, rN, rM, rA */
@@ -3610,6 +3636,445 @@ TESTINST4("smlawt  r0, r1, r2, r3",
           0xde99ac2f, 0x0be36f70, 0xeda5110c, r0, r1, r2, r3, 0);
 TESTINST4("smlawt  r0, r1, r2, r3", 
           0xc57243b7, 0xcf1e4487, 0xf20fb90f, r0, r1, r2, r3, 0);
+
+
+  printf("----------------- SMLSD ----------------- \n");
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0x80008000, 0x80008000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00000000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00010001, 0x00000001, r0, r1, r2, r3, 0);
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0x80008000, 0xffffffff, 0x0000001f, r0, r1, r2, r3, 0);
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0x00640064, 0x00030003, 0x00000020, r0, r1, r2, r3, 0);
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0xffffffff, 0xfffc0001, 0x000000ff, r0, r1, r2, r3, 0);
+  TESTINST4("smlsd  r0, r1, r2, r3", 
+                  0xfff70fff, 0x00030003, 0x00000100, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xb8035b5b, 0xce0ce1ed, 0x5f986e68, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x35232047, 0x146275d8, 0xaae3433f, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xe7aa57b4, 0x1584bd74, 0x2c07a5b4, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x32fa0095, 0x36f26261, 0x89d2ef86, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x8ed8287c, 0x02c90120, 0xd4b64d54, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xc53aaba9, 0x29300837, 0x0b02c58a, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x216158cb, 0x57a50a01, 0xb0d20777, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x3e2e1bd7, 0x3cd6cd94, 0x7e376198, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xd5fe2dc4, 0xdd914bf7, 0xd5dc5407, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xf87b961e, 0x1d66879f, 0xf2b64835, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xd65db979, 0xc61b323b, 0xae930a1a, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x5ef1f1a8, 0xbf73f0a5, 0x2fb714c9, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x1ffe53d9, 0x815bb75b, 0xa3268abe, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xed2cbf78, 0xc6ffabb6, 0xef9e9fd9, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xeaa652c7, 0x137741f4, 0x3dba1164, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x3ada0280, 0x71fbde8b, 0xdba5bd25, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xda4ba05b, 0x90f9833d, 0x884c0ad8, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xc00b821a, 0x7fa1d5a6, 0x9a4ff1b8, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xe1bb8606, 0x58293969, 0x81616d13, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x51f31d95, 0xa3cfd624, 0x6077fb1f, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x0849a0c2, 0x0872f25a, 0x40b094e2, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x17913309, 0xf1e03d7e, 0x91edc21d, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x5388b5cd, 0x86582032, 0x6034078d, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x181c436b, 0x5de41558, 0xccfa1c7e, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x23ba1b46, 0x4437983c, 0x48d06549, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xa9085781, 0xc6b4ac58, 0xb2aead21, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xc2bdf597, 0xdde1e6a4, 0x852e3a72, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x157b0dea, 0xf0d5ff94, 0xe7b87e39, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x3edad6b6, 0x82aceb7a, 0x0557c6fc, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x6cc9bfa8, 0x7f808c15, 0x81874a02, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x6b1422c7, 0x33921b00, 0x3ccad3f7, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xd7ce1909, 0x3e435701, 0x85fbf196, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xb4e16b6e, 0x6e13680a, 0x89436f88, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x44858efc, 0x9002bc30, 0x390d2c2f, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xbea121ab, 0x953ff6ec, 0x80657c40, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x6ffed89f, 0x3e8c49b7, 0x11bd07d1, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x7795635d, 0x5e6e32dd, 0xe4999bf2, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xec0c2f30, 0x5736ed46, 0x231348c0, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x4f9ddd1b, 0x95bca5d8, 0x5765b203, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xc1553709, 0x0112b30a, 0x69ec0212, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x74bd0223, 0x03fa9bb5, 0x899d9192, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xf52e9fbf, 0xb4c510a7, 0x7fcbe5a9, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x64a365ef, 0x2dd01366, 0xf7b0b13e, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x5e4b1cbf, 0x44de5ca9, 0x464a21cc, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x299da970, 0xe8108f1b, 0xf5818cfb, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xcd90d604, 0xaa5e9444, 0x8217b7df, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xe60743c3, 0x7acb4de3, 0x73c29060, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x868e7c7d, 0x5f77532e, 0x1d133d3d, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0x4e5e0760, 0x8f6d3264, 0x21ba2fb3, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xde99ac2f, 0x0be36f70, 0xeda5110c, r0, r1, r2, r3, 0);
+TESTINST4("smlsd  r0, r1, r2, r3", 
+          0xc57243b7, 0xcf1e4487, 0xf20fb90f, r0, r1, r2, r3, 0);
+
+  printf("----------------- SMLSDX ----------------- \n");
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0x80008000, 0x80008000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00000000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00010001, 0x00000001, r0, r1, r2, r3, 0);
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0x80008000, 0xffffffff, 0x0000001f, r0, r1, r2, r3, 0);
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0x00640064, 0x00030003, 0x00000020, r0, r1, r2, r3, 0);
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0xffffffff, 0xfffc0001, 0x000000ff, r0, r1, r2, r3, 0);
+  TESTINST4("smlsdx  r0, r1, r2, r3", 
+                  0xfff70fff, 0x00030003, 0x00000100, r0, r1, r2, r3, 0);
+TESTINST4("smlsdx  r0, r1, r2, r3", 
+          0xb8035b5b, 0xce0ce1ed, 0x5f986e68, r0, r1, r2, r3, 0);
+TESTINST4("smlsdx  r0, r1, r2, r3", 
+          0x35232047, 0x146275d8, 0xaae3433f, r0, r1, r2, r3, 0);
+TESTINST4("smlsdx  r0, r1, r2, r3", 
+          0xe7aa57b4, 0x1584bd74, 0x2c07a5b4, r0, r1, r2, r3, 0);
+
+
+  printf("----------------- SMUSD ----------------- \n");
+  TESTINST3("smusd r0, r1, r2", 0x80008000, 0x80008000, r0, r1, r2, 0);
+  TESTINST3("smusd r0, r1, r2", 0x7fff7fff, 0x00000000, r0, r1, r2, 0);
+  TESTINST3("smusd r0, r1, r2", 0x7fff7fff, 0x00010001, r0, r1, r2, 0);
+  TESTINST3("smusd r0, r1, r2", 0x80008000, 0xffffffff, r0, r1, r2, 0);
+  TESTINST3("smusd r0, r1, r2", 0x00640064, 0x00030003, r0, r1, r2, 0);
+  TESTINST3("smusd r0, r1, r2", 0xffffffff, 0xfffc0001, r0, r1, r2, 0);
+  TESTINST3("smusd r0, r1, r2", 0xfff70fff, 0x00030003, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xd83b849b, 0xca5e5605, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x0cdafabe, 0x50865114, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x2738f0ff, 0x6a228b19, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xfaceab39, 0x2973c051, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xa3e6f759, 0x557c7ba2, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x72f33509, 0x9b41bfb1, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xa5ec1aa8, 0x2b62ba5a, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x6ebd04d9, 0x55ea3e4e, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x2eaea305, 0xe79fd570, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x22b65db1, 0xcdb7ed11, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x776c41c7, 0x2eb68500, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xe50dd77c, 0xd6f9a698, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x0be36f70, 0xeda5110c, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xebbff82b, 0xd759eb72, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x50c28082, 0xd9c4b1f4, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x17962e8f, 0xa29eb320, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xc57243b7, 0xcf1e4487, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x7eb226ac, 0xf20fb90f, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xbce0f026, 0xbb151055, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xa5757252, 0x957440d2, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xf4a477c1, 0x728b7771, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x76723a21, 0xf13c20f3, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x74d01105, 0x86398371, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xc1273e2c, 0x03d0fb78, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xdd9b7653, 0xd0d49b7c, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xdde62fd1, 0x76354a58, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xc3fb4a96, 0x9fa45fb7, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xa1a10f56, 0x7572bdec, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x4b7d4fd9, 0xfea59eb6, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x9d0ddffc, 0xf2669090, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x4f82d17c, 0xbc1ff573, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x08215ca2, 0x345f67e6, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xf23595d0, 0x3f39d77e, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xf244c158, 0xfb2db55b, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x256bfdd6, 0x13aebedf, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xc02a0c05, 0x5b013000, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xee2fa46e, 0xed95b542, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x97a7da20, 0x60bb5ee8, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xa231d5e6, 0xd9000a64, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x10e1968a, 0x624f9467, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x0e089270, 0xa8c64d94, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x9e8e0185, 0x6b4f637a, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x3096f12e, 0x11f5f4b9, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xffc134df, 0x0b02eb0c, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xe444dc25, 0xd5eef620, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x06ea9b2a, 0xa2108661, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x448f3a5f, 0x17aecf57, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0x4b0c2337, 0xffa63d6c, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xf91d5f56, 0x088bc0f9, r0, r1, r2, 0);
+TESTINST3("smusd r0, r1, r2", 0xf808434e, 0xefeab836, r0, r1, r2, 0);
+  printf("----------------- SMUSDX ---------------- \n");
+  TESTINST3("smusdx r0, r1, r2", 0x80008000, 0x80008000, r0, r1, r2, 0);
+  TESTINST3("smusdx r0, r1, r2", 0x7fff7fff, 0x00000000, r0, r1, r2, 0);
+  TESTINST3("smusdx r0, r1, r2", 0x7fff7fff, 0x00010001, r0, r1, r2, 0);
+  TESTINST3("smusdx r0, r1, r2", 0x80008000, 0xffffffff, r0, r1, r2, 0);
+  TESTINST3("smusdx r0, r1, r2", 0x00640064, 0x00030003, r0, r1, r2, 0);
+  TESTINST3("smusdx r0, r1, r2", 0xffffffff, 0xfffc0001, r0, r1, r2, 0);
+  TESTINST3("smusdx r0, r1, r2", 0xfff70fff, 0x00030003, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xd83b849b, 0xca5e5605, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x0cdafabe, 0x50865114, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x2738f0ff, 0x6a228b19, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xfaceab39, 0x2973c051, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xa3e6f759, 0x557c7ba2, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x72f33509, 0x9b41bfb1, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xa5ec1aa8, 0x2b62ba5a, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x6ebd04d9, 0x55ea3e4e, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x2eaea305, 0xe79fd570, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x22b65db1, 0xcdb7ed11, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x776c41c7, 0x2eb68500, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xe50dd77c, 0xd6f9a698, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x0be36f70, 0xeda5110c, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xebbff82b, 0xd759eb72, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x50c28082, 0xd9c4b1f4, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x17962e8f, 0xa29eb320, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xc57243b7, 0xcf1e4487, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x7eb226ac, 0xf20fb90f, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xbce0f026, 0xbb151055, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xa5757252, 0x957440d2, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xf4a477c1, 0x728b7771, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x76723a21, 0xf13c20f3, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x74d01105, 0x86398371, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xc1273e2c, 0x03d0fb78, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xdd9b7653, 0xd0d49b7c, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xdde62fd1, 0x76354a58, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xc3fb4a96, 0x9fa45fb7, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xa1a10f56, 0x7572bdec, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x4b7d4fd9, 0xfea59eb6, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x9d0ddffc, 0xf2669090, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x4f82d17c, 0xbc1ff573, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x08215ca2, 0x345f67e6, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xf23595d0, 0x3f39d77e, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xf244c158, 0xfb2db55b, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x256bfdd6, 0x13aebedf, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xc02a0c05, 0x5b013000, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xee2fa46e, 0xed95b542, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x97a7da20, 0x60bb5ee8, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xa231d5e6, 0xd9000a64, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x10e1968a, 0x624f9467, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x0e089270, 0xa8c64d94, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x9e8e0185, 0x6b4f637a, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x3096f12e, 0x11f5f4b9, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xffc134df, 0x0b02eb0c, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xe444dc25, 0xd5eef620, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x06ea9b2a, 0xa2108661, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x448f3a5f, 0x17aecf57, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0x4b0c2337, 0xffa63d6c, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xf91d5f56, 0x088bc0f9, r0, r1, r2, 0);
+TESTINST3("smusdx r0, r1, r2", 0xf808434e, 0xefeab836, r0, r1, r2, 0);
+
+  printf("----------------- USAD8 ---------------- \n");
+  TESTINST3("usad8 r0, r1, r2", 0x80008000, 0x80008000, r0, r1, r2, 0);
+  TESTINST3("usad8 r0, r1, r2", 0x7fff7fff, 0x00000000, r0, r1, r2, 0);
+  TESTINST3("usad8 r0, r1, r2", 0x7fff7fff, 0x00010001, r0, r1, r2, 0);
+  TESTINST3("usad8 r0, r1, r2", 0x80008000, 0xffffffff, r0, r1, r2, 0);
+  TESTINST3("usad8 r0, r1, r2", 0x00640064, 0x00030003, r0, r1, r2, 0);
+  TESTINST3("usad8 r0, r1, r2", 0xffffffff, 0xfffc0001, r0, r1, r2, 0);
+  TESTINST3("usad8 r0, r1, r2", 0xfff70fff, 0x00030003, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xd83b849b, 0xca5e5605, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x0cdafabe, 0x50865114, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x2738f0ff, 0x6a228b19, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xfaceab39, 0x2973c051, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xa3e6f759, 0x557c7ba2, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x72f33509, 0x9b41bfb1, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xa5ec1aa8, 0x2b62ba5a, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x6ebd04d9, 0x55ea3e4e, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x2eaea305, 0xe79fd570, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x22b65db1, 0xcdb7ed11, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x776c41c7, 0x2eb68500, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xe50dd77c, 0xd6f9a698, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x0be36f70, 0xeda5110c, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xebbff82b, 0xd759eb72, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x50c28082, 0xd9c4b1f4, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x17962e8f, 0xa29eb320, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xc57243b7, 0xcf1e4487, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x7eb226ac, 0xf20fb90f, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xbce0f026, 0xbb151055, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xa5757252, 0x957440d2, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xf4a477c1, 0x728b7771, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x76723a21, 0xf13c20f3, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x74d01105, 0x86398371, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xc1273e2c, 0x03d0fb78, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xdd9b7653, 0xd0d49b7c, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xdde62fd1, 0x76354a58, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xc3fb4a96, 0x9fa45fb7, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xa1a10f56, 0x7572bdec, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x4b7d4fd9, 0xfea59eb6, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x9d0ddffc, 0xf2669090, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x4f82d17c, 0xbc1ff573, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x08215ca2, 0x345f67e6, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xf23595d0, 0x3f39d77e, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xf244c158, 0xfb2db55b, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x256bfdd6, 0x13aebedf, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xc02a0c05, 0x5b013000, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xee2fa46e, 0xed95b542, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x97a7da20, 0x60bb5ee8, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xa231d5e6, 0xd9000a64, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x10e1968a, 0x624f9467, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x0e089270, 0xa8c64d94, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x9e8e0185, 0x6b4f637a, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x3096f12e, 0x11f5f4b9, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xffc134df, 0x0b02eb0c, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xe444dc25, 0xd5eef620, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x06ea9b2a, 0xa2108661, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x448f3a5f, 0x17aecf57, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0x4b0c2337, 0xffa63d6c, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xf91d5f56, 0x088bc0f9, r0, r1, r2, 0);
+TESTINST3("usad8 r0, r1, r2", 0xf808434e, 0xefeab836, r0, r1, r2, 0);
+
+  printf("----------------- USADA8 ----------------- \n");
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0x80008000, 0x80008000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00000000, 0x00000000, r0, r1, r2, r3, 0);
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0x7fff7fff, 0x00010001, 0x00000001, r0, r1, r2, r3, 0);
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0x80008000, 0xffffffff, 0x0000001f, r0, r1, r2, r3, 0);
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0x00640064, 0x00030003, 0x00000020, r0, r1, r2, r3, 0);
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0xffffffff, 0xfffc0001, 0x000000ff, r0, r1, r2, r3, 0);
+  TESTINST4("usada8  r0, r1, r2, r3", 
+                  0xfff70fff, 0x00030003, 0x00000100, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xb8035b5b, 0xce0ce1ed, 0x5f986e68, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x35232047, 0x146275d8, 0xaae3433f, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xe7aa57b4, 0x1584bd74, 0x2c07a5b4, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x32fa0095, 0x36f26261, 0x89d2ef86, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x8ed8287c, 0x02c90120, 0xd4b64d54, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xc53aaba9, 0x29300837, 0x0b02c58a, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x216158cb, 0x57a50a01, 0xb0d20777, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x3e2e1bd7, 0x3cd6cd94, 0x7e376198, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xd5fe2dc4, 0xdd914bf7, 0xd5dc5407, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xf87b961e, 0x1d66879f, 0xf2b64835, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xd65db979, 0xc61b323b, 0xae930a1a, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x5ef1f1a8, 0xbf73f0a5, 0x2fb714c9, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x1ffe53d9, 0x815bb75b, 0xa3268abe, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xed2cbf78, 0xc6ffabb6, 0xef9e9fd9, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xeaa652c7, 0x137741f4, 0x3dba1164, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x3ada0280, 0x71fbde8b, 0xdba5bd25, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xda4ba05b, 0x90f9833d, 0x884c0ad8, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xc00b821a, 0x7fa1d5a6, 0x9a4ff1b8, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xe1bb8606, 0x58293969, 0x81616d13, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x51f31d95, 0xa3cfd624, 0x6077fb1f, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x0849a0c2, 0x0872f25a, 0x40b094e2, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x17913309, 0xf1e03d7e, 0x91edc21d, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x5388b5cd, 0x86582032, 0x6034078d, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x181c436b, 0x5de41558, 0xccfa1c7e, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x23ba1b46, 0x4437983c, 0x48d06549, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xa9085781, 0xc6b4ac58, 0xb2aead21, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xc2bdf597, 0xdde1e6a4, 0x852e3a72, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x157b0dea, 0xf0d5ff94, 0xe7b87e39, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x3edad6b6, 0x82aceb7a, 0x0557c6fc, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x6cc9bfa8, 0x7f808c15, 0x81874a02, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x6b1422c7, 0x33921b00, 0x3ccad3f7, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xd7ce1909, 0x3e435701, 0x85fbf196, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xb4e16b6e, 0x6e13680a, 0x89436f88, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x44858efc, 0x9002bc30, 0x390d2c2f, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xbea121ab, 0x953ff6ec, 0x80657c40, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x6ffed89f, 0x3e8c49b7, 0x11bd07d1, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x7795635d, 0x5e6e32dd, 0xe4999bf2, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xec0c2f30, 0x5736ed46, 0x231348c0, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x4f9ddd1b, 0x95bca5d8, 0x5765b203, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xc1553709, 0x0112b30a, 0x69ec0212, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x74bd0223, 0x03fa9bb5, 0x899d9192, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xf52e9fbf, 0xb4c510a7, 0x7fcbe5a9, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x64a365ef, 0x2dd01366, 0xf7b0b13e, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x5e4b1cbf, 0x44de5ca9, 0x464a21cc, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x299da970, 0xe8108f1b, 0xf5818cfb, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xcd90d604, 0xaa5e9444, 0x8217b7df, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xe60743c3, 0x7acb4de3, 0x73c29060, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x868e7c7d, 0x5f77532e, 0x1d133d3d, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0x4e5e0760, 0x8f6d3264, 0x21ba2fb3, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xde99ac2f, 0x0be36f70, 0xeda5110c, r0, r1, r2, r3, 0);
+TESTINST4("usada8  r0, r1, r2, r3", 
+          0xc57243b7, 0xcf1e4487, 0xf20fb90f, r0, r1, r2, r3, 0);
+
+
+
 
 /*
 TESTINST3("theinsn", 0xf7b0b13e, 0x5e4b1cbf, r0, r1, r2, 0);

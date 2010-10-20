@@ -341,10 +341,17 @@ static void parse_procselfmaps (
 /* ----- Hacks to do with the "commpage" on arm-linux ----- */
 /* Not that I have anything against the commpage per se.  It's just
    that it's not listed in /proc/self/maps, which is a royal PITA --
-   we have to fake it up, in parse_procselfmaps. */
+   we have to fake it up, in parse_procselfmaps.
+
+   But note also bug 254556 comment #2: this is now fixed in newer
+   kernels -- it is listed as a "[vectors]" entry.  Presumably the
+   fake entry made here duplicates the [vectors] entry, and so, if at
+   some point in the future, we can stop supporting buggy kernels,
+   then this kludge can be removed entirely, since the procmap parser
+   below will read that entry in the normal way. */
 #if defined(VGP_arm_linux)
 #  define ARM_LINUX_FAKE_COMMPAGE_START 0xFFFF0000
-#  define ARM_LINUX_FAKE_COMMPAGE_END1  0xFFFFF000
+#  define ARM_LINUX_FAKE_COMMPAGE_END1  0xFFFF1000
 #endif
 
 

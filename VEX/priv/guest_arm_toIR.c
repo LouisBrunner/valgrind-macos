@@ -1667,6 +1667,24 @@ static void armSignedSatQ( IRTemp regT,    /* value to clamp - Ity_I32 */
 }
 
 
+/* Compute a value 0 :: I32 or 1 :: I32, indicating whether signed
+   overflow occurred for 32-bit addition.  Needs both args and the
+   result.  HD p27. */
+static
+IRExpr* signed_overflow_after_Add32 ( IRExpr* resE,
+                                      IRTemp argL, IRTemp argR )
+{
+   IRTemp res = newTemp(Ity_I32);
+   assign(res, resE);
+   return
+      binop( Iop_Shr32, 
+             binop( Iop_And32,
+                    binop( Iop_Xor32, mkexpr(res), mkexpr(argL) ),
+                    binop( Iop_Xor32, mkexpr(res), mkexpr(argR) )), 
+             mkU8(31) );
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Larger helpers                                       ---*/
 /*------------------------------------------------------------*/
@@ -9651,27 +9669,31 @@ static Bool decode_V6MEDIA_instruction (
    }
 
    /* --------------- smuad, smuadx<c><Rd>,<Rn>,<Rm> --------------- */
+   /* --------------- smsad, smsadx<c><Rd>,<Rn>,<Rm> --------------- */
    {
      UInt regD = 99, regN = 99, regM = 99, bitM = 99;
-     Bool gate = False;
+     Bool gate = False, isAD = False;
 
      if (isT) {
-        if (INSNT0(15,4) == 0xFB2 && (INSNT1(15,0) & 0xF0E0) == 0xF000) {
+        if ((INSNT0(15,4) == 0xFB2 || INSNT0(15,4) == 0xFB4)
+            && (INSNT1(15,0) & 0xF0E0) == 0xF000) {
            regN = INSNT0(3,0);
            regD = INSNT1(11,8);
            regM = INSNT1(3,0);
            bitM = INSNT1(4,4);
+           isAD = INSNT0(15,4) == 0xFB2;
            if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM))
               gate = True;
         }
      } else {
         if (INSNA(27,20) == BITS8(0,1,1,1,0,0,0,0) &&
             INSNA(15,12) == BITS4(1,1,1,1)         &&
-            (INSNA(7,4) & BITS4(1,1,0,1)) == BITS4(0,0,0,1) ) {
+            (INSNA(7,4) & BITS4(1,0,0,1)) == BITS4(0,0,0,1) ) {
            regD = INSNA(19,16);
            regN = INSNA(3,0);
            regM = INSNA(11,8);
            bitM = INSNA(5,5);
+           isAD = INSNA(6,6) == 0;
            if (regD != 15 && regN != 15 && regM != 15)
               gate = True;
         }
@@ -9701,22 +9723,24 @@ static Bool decode_V6MEDIA_instruction (
                                    binop(Iop_Sar32, mkexpr(irt_regN), mkU8(16)), 
                                    binop(Iop_Sar32, mkexpr(irt_regM), mkU8(16))) );
         IRExpr* ire_result 
-           = binop( Iop_Add32, mkexpr(irt_prod_lo), mkexpr(irt_prod_hi) );
+           = binop( isAD ? Iop_Add32 : Iop_Sub32,
+                    mkexpr(irt_prod_lo), mkexpr(irt_prod_hi) );
 
         if (isT)
            putIRegT( regD, ire_result, condT );
         else
            putIRegA( regD, ire_result, condT, Ijk_Boring );
 
-        or_into_QFLAG32( binop( Iop_Shr32, 
-                                binop( Iop_And32,
-                                       binop( Iop_Xor32, ire_result, 
-                                              mkexpr(irt_prod_hi) ),
-                                       binop( Iop_Xor32, ire_result, 
-                                              mkexpr(irt_prod_lo) ) ), 
-                                mkU8(31)), condT );
+        if (isAD) {
+           or_into_QFLAG32(
+              signed_overflow_after_Add32( ire_result,
+                                           irt_prod_lo, irt_prod_hi ),
+              condT
+           );
+        }
 
-        DIP("smuad%s%s r%u, r%u, r%u\n",
+        DIP("smu%cd%s%s r%u, r%u, r%u\n",
+            isAD ? 'a' : 's',
             bitM ? "x" : "", nCC(conq), regD, regN, regM);
         return True;
      }
@@ -9724,29 +9748,33 @@ static Bool decode_V6MEDIA_instruction (
    }
 
    /* --------------- smlad{X}<c> <Rd>,<Rn>,<Rm>,<Ra> -------------- */
+   /* --------------- smlsd{X}<c> <Rd>,<Rn>,<Rm>,<Ra> -------------- */
    {
      UInt regD = 99, regN = 99, regM = 99, regA = 99, bitM = 99;
-     Bool gate = False;
+     Bool gate = False, isAD = False;
 
      if (isT) {
-        if (INSNT0(15,4) == 0xFB2 && INSNT1(7,5) == BITS3(0,0,0)) {
+       if ((INSNT0(15,4) == 0xFB2 || INSNT0(15,4) == 0xFB4)
+           && INSNT1(7,5) == BITS3(0,0,0)) {
            regN = INSNT0(3,0);
            regD = INSNT1(11,8);
            regM = INSNT1(3,0);
            regA = INSNT1(15,12);
            bitM = INSNT1(4,4);
+           isAD = INSNT0(15,4) == 0xFB2;
            if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM)
                && !isBadRegT(regA))
               gate = True;
         }
      } else {
         if (INSNA(27,20) == BITS8(0,1,1,1,0,0,0,0) &&
-            (INSNA(7,4) & BITS4(1,1,0,1)) == BITS4(0,0,0,1)) {
+            (INSNA(7,4) & BITS4(1,0,0,1)) == BITS4(0,0,0,1)) {
            regD = INSNA(19,16);
            regA = INSNA(15,12);
            regN = INSNA(3,0);
            regM = INSNA(11,8);
            bitM = INSNA(5,5);
+           isAD = INSNA(6,6) == 0;
            if (regD != 15 && regN != 15 && regM != 15 && regA != 15)
               gate = True;
         }
@@ -9779,7 +9807,7 @@ static Bool decode_V6MEDIA_instruction (
                 binop( Iop_Mul32, 
                        binop( Iop_Sar32, mkexpr(irt_regN), mkU8(16) ), 
                        binop( Iop_Sar32, mkexpr(irt_regM), mkU8(16) ) ) );
-        assign( irt_sum, binop( Iop_Add32, 
+        assign( irt_sum, binop( isAD ? Iop_Add32 : Iop_Sub32, 
                                 mkexpr(irt_prod_lo), mkexpr(irt_prod_hi) ) );
 
         IRExpr* ire_result = binop(Iop_Add32, mkexpr(irt_sum), mkexpr(irt_regA));
@@ -9789,22 +9817,21 @@ static Bool decode_V6MEDIA_instruction (
         else
            putIRegA( regD, ire_result, condT, Ijk_Boring );
 
-        or_into_QFLAG32( binop( Iop_Shr32, 
-                                binop( Iop_And32,
-                                       binop( Iop_Xor32, mkexpr(irt_sum), 
-                                              mkexpr(irt_prod_lo) ),
-                                       binop( Iop_Xor32, mkexpr(irt_sum), 
-                                              mkexpr(irt_prod_hi) ) ), 
-                                mkU8(31)), condT );
-        or_into_QFLAG32( binop( Iop_Shr32, 
-                                binop( Iop_And32,
-                                       binop( Iop_Xor32, ire_result, 
-                                              mkexpr(irt_sum) ),
-                                       binop( Iop_Xor32, ire_result, 
-                                              mkexpr(irt_regA) ) ), 
-                                mkU8(31)), condT );
+        if (isAD) {
+           or_into_QFLAG32(
+              signed_overflow_after_Add32( mkexpr(irt_sum),
+                                           irt_prod_lo, irt_prod_hi ),
+              condT
+           );
+        }
 
-        DIP("smlad%s%s r%u, r%u, r%u, r%u\n",
+        or_into_QFLAG32(
+           signed_overflow_after_Add32( ire_result, irt_sum, irt_regA ),
+           condT
+        );
+
+        DIP("sml%cd%s%s r%u, r%u, r%u, r%u\n",
+            isAD ? 'a' : 's',
             bitM ? "x" : "", nCC(conq), regD, regN, regM, regA);
         return True;
      }
@@ -9868,14 +9895,10 @@ static Bool decode_V6MEDIA_instruction (
         else
            putIRegA( regD, ire_result, condT, Ijk_Boring );
 
-        or_into_QFLAG32( binop( Iop_Shr32, 
-                                binop( Iop_And32,
-                                       binop(Iop_Xor32, 
-                                             ire_result, mkexpr(irt_prod)),
-                                       binop(Iop_Xor32, 
-                                             ire_result, mkexpr(irt_regA)) ), 
-                                mkU8(31)), 
-                         condT );
+        or_into_QFLAG32(
+           signed_overflow_after_Add32( ire_result, irt_prod, irt_regA ),
+           condT
+        );
 
         DIP( "smla%c%c%s r%u, r%u, r%u, r%u\n", 
              bitN ? 't' : 'b', bitM ? 't' : 'b', 
@@ -9943,14 +9966,10 @@ static Bool decode_V6MEDIA_instruction (
         else
            putIRegA( regD, ire_result, condT, Ijk_Boring );
 
-        or_into_QFLAG32( binop( Iop_Shr32, 
-                                binop( Iop_And32,
-                                       binop(Iop_Xor32, 
-                                             ire_result, mkexpr(prod32)),
-                                       binop(Iop_Xor32, 
-                                             ire_result, mkexpr(irt_regA)) ), 
-                                mkU8(31)), 
-                         condT );
+        or_into_QFLAG32(
+           signed_overflow_after_Add32( ire_result, prod32, irt_regA ),
+           condT
+        );
 
         DIP( "smlaw%c%s r%u, r%u, r%u, r%u\n", 
              bitM ? 't' : 'b', 
@@ -10106,6 +10125,59 @@ static Bool decode_V6MEDIA_instruction (
 
         DIP( "uxtab16%s r%u, r%u, r%u, ROR #%u\n", 
              nCC(conq), regD, regN, regM, 8 * rotate );
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* --------------- usad8  Rd,Rn,Rm    ---------------- */
+   /* --------------- usada8 Rd,Rn,Rm,Ra ---------------- */
+   {
+     UInt rD = 99, rN = 99, rM = 99, rA = 99;
+     Bool gate = False;
+
+     if (isT) {
+       if (INSNT0(15,4) == 0xFB7 && INSNT1(7,4) == BITS4(0,0,0,0)) {
+           rN = INSNT0(3,0);
+           rA = INSNT1(15,12);
+           rD = INSNT1(11,8);
+           rM = INSNT1(3,0);
+           if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM) && rA != 13)
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,1,1,0,0,0) &&
+            INSNA(7,4)   == BITS4(0,0,0,1) ) {
+           rD = INSNA(19,16);
+           rA = INSNA(15,12);
+           rM = INSNA(11,8);
+           rN = INSNA(3,0);
+           if (rD != 15 && rN != 15 && rM != 15 /* but rA can be 15 */)
+              gate = True;
+        }
+     }
+     /* We allow rA == 15, to denote the usad8 (no accumulator) case. */
+
+     if (gate) {
+        IRExpr* rNe = isT ? getIRegT(rN) : getIRegA(rN);
+        IRExpr* rMe = isT ? getIRegT(rM) : getIRegA(rM);
+        IRExpr* rAe = rA == 15 ? mkU32(0)
+                               : (isT ? getIRegT(rA) : getIRegA(rA)); 
+        IRExpr* res = binop(Iop_Add32,
+                            binop(Iop_Sad8Ux4, rNe, rMe),
+                            rAe);
+        if (isT)
+           putIRegT( rD, res, condT );
+        else
+           putIRegA( rD, res, condT, Ijk_Boring );
+
+        if (rA == 15) {
+           DIP( "usad8%s r%u, r%u, r%u\n", 
+                nCC(conq), rD, rN, rM );
+        } else {
+           DIP( "usada8%s r%u, r%u, r%u, r%u\n", 
+                nCC(conq), rD, rN, rM, rA );
+        }
         return True;
      }
      /* fall through */

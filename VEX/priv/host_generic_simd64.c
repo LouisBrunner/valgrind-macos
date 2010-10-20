@@ -439,6 +439,12 @@ static inline Char hsub8S ( Char xx, Char yy )
    return (Char)r;
 }
 
+static inline UInt absdiff8U ( UChar xx, UChar yy )
+{
+   UInt xxu = (UChar)xx;
+   UInt yyu = (UChar)yy;
+   return xxu >= yyu  ? xxu - yyu  : yyu - xxu;
+}
 
 /* ----------------------------------------------------- */
 /* Start of the externally visible functions.  These simply
@@ -1316,6 +1322,15 @@ UInt h_generic_calc_CmpNEZ8x4 ( UInt xx )
              cmpnez8( sel8x4_0(xx) )
           );
 }
+
+UInt h_generic_calc_Sad8Ux4 ( UInt xx, UInt yy )
+{
+   return absdiff8U( sel8x4_3(xx), sel8x4_3(yy) )
+          + absdiff8U( sel8x4_2(xx), sel8x4_2(yy) )
+          + absdiff8U( sel8x4_1(xx), sel8x4_1(yy) )
+          + absdiff8U( sel8x4_0(xx), sel8x4_0(yy) );
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                               host_generic_simd64.c ---*/

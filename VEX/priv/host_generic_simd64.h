@@ -149,6 +149,8 @@ extern UInt h_generic_calc_QAdd8Sx4 ( UInt, UInt );
 extern UInt h_generic_calc_QSub8Ux4 ( UInt, UInt );
 extern UInt h_generic_calc_QSub8Sx4 ( UInt, UInt );
 
+extern UInt h_generic_calc_Sad8Ux4  ( UInt, UInt );
+
 extern UInt h_generic_calc_CmpNEZ16x2 ( UInt );
 extern UInt h_generic_calc_CmpNEZ8x4  ( UInt );
 

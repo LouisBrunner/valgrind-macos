@@ -699,6 +699,9 @@ typedef
       Iop_HAdd8Ux4, Iop_HAdd8Sx4,
       Iop_HSub8Ux4, Iop_HSub8Sx4,
 
+      /* 8x4 sum of absolute unsigned differences. */
+      Iop_Sad8Ux4,
+
       /* MISC (vector integer cmp != 0) */
       Iop_CmpNEZ16x2, Iop_CmpNEZ8x4,
 

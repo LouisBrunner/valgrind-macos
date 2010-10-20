@@ -305,6 +305,7 @@ void ppIROp ( IROp op )
       case Iop_HAdd8Sx4: vex_printf("HAdd8Sx4"); return;
       case Iop_HSub8Ux4: vex_printf("HSub8Ux4"); return;
       case Iop_HSub8Sx4: vex_printf("HSub8Sx4"); return;
+      case Iop_Sad8Ux4:  vex_printf("Sad8Ux4"); return;
 
       case Iop_CmpNEZ16x2: vex_printf("CmpNEZ16x2"); return;
       case Iop_CmpNEZ8x4:  vex_printf("CmpNEZ8x4"); return;
@@ -1944,6 +1945,7 @@ void typeOfPrimop ( IROp op,
       case Iop_QSub8Sx4: case Iop_QSub8Ux4:
       case Iop_HAdd8Ux4: case Iop_HAdd8Sx4:
       case Iop_HSub8Ux4: case Iop_HSub8Sx4:
+      case Iop_Sad8Ux4:
          BINARY(Ity_I32,Ity_I32, Ity_I32);
 
       case Iop_Add64: case Iop_Sub64: case Iop_Mul64:

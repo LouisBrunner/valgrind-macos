@@ -169,7 +169,7 @@ typedef
 #define VALGRIND_CHECK_MEM_IS_DEFINED(_qzz_addr,_qzz_len)        \
     VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                           \
                             VG_USERREQ__CHECK_MEM_IS_DEFINED,    \
-                            (_qzz_addr), (_qzz_len), 0, 0, 0);
+                            (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /* Use this macro to force the definedness and addressibility of an
    lvalue to be checked.  If suitable addressibility and definedness

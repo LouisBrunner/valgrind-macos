@@ -314,7 +314,7 @@ where XXXXXX is the bug number as listed below.
         (and possibly Linux)
 254556  ARM: valgrinding anything fails with SIGSEGV for 0xFFFF0FA0
 
-(3.6.0: 21 October 2010, vex rXXXX, valgrind rXXXXX).
+(3.6.0: 21 October 2010, vex r2068, valgrind r11471).
 
 
 

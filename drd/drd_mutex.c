@@ -49,7 +49,7 @@ static void mutex_delete_thread(struct mutex_info* p, const DrdThreadId tid);
 static Bool s_trace_mutex;
 static ULong s_mutex_lock_count;
 static ULong s_mutex_segment_creation_count;
-static UInt s_mutex_lock_threshold_ms = 1000 * 1000;
+static UInt s_mutex_lock_threshold_ms;
 
 
 /* Function definitions. */

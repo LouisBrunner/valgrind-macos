@@ -35,12 +35,9 @@
 #include "pub_tool_redir.h"
 #include "pub_tool_tooliface.h"
 #include "valgrind.h"
-#include "config.h"
 
 #include "mc_include.h"
 #include "memcheck.h"
-
-#include <ctype.h>
 
 /* ---------------------------------------------------------------------
    We have our own versions of these functions for two reasons:
@@ -412,6 +409,7 @@ STRNCMP(VG_Z_DYLD,        strncmp)
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
           ( const char* s1, const char* s2 ) \
    { \
+      extern int tolower(int); \
       register unsigned char c1; \
       register unsigned char c2; \
       while (True) { \
@@ -438,6 +436,7 @@ STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax ) \
    { \
+      extern int tolower(int); \
       SizeT n = 0; \
       while (True) { \
          if (n >= nmax) return 0; \
@@ -460,15 +459,13 @@ STRNCASECMP(VG_Z_DYLD,        strncasecmp)
 #endif
 
 
-#ifdef HAVE_TOLOWER_L
-
-
 #define STRCASECMP_L(soname, fnname) \
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-          ( const char* s1, const char* s2, locale_t locale ); \
+          ( const char* s1, const char* s2, void* locale ); \
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-          ( const char* s1, const char* s2, locale_t locale ) \
+          ( const char* s1, const char* s2, void* locale ) \
    { \
+      extern int tolower_l(int, void*) __attribute__((weak));    \
       register unsigned char c1; \
       register unsigned char c2; \
       while (True) { \
@@ -491,10 +488,11 @@ STRCASECMP_L(VG_Z_LIBC_SONAME, __GI_strcasecmp_l)
 
 #define STRNCASECMP_L(soname, fnname) \
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-          ( const char* s1, const char* s2, SizeT nmax, locale_t locale ); \
+          ( const char* s1, const char* s2, SizeT nmax, void* locale ); \
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-          ( const char* s1, const char* s2, SizeT nmax, locale_t locale ) \
+          ( const char* s1, const char* s2, SizeT nmax, void* locale ) \
    { \
+      extern int tolower_l(int, void*) __attribute__((weak));    \
       SizeT n = 0; \
       while (True) { \
          if (n >= nmax) return 0; \
@@ -514,9 +512,6 @@ STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
 STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI_strncasecmp_l)
 #elif defined(VGO_darwin)
 STRNCASECMP_L(VG_Z_DYLD,        strncasecmp_l)
-#endif
-
-
 #endif
 
 

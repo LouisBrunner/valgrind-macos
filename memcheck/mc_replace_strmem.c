@@ -35,9 +35,12 @@
 #include "pub_tool_redir.h"
 #include "pub_tool_tooliface.h"
 #include "valgrind.h"
+#include "config.h"
 
 #include "mc_include.h"
 #include "memcheck.h"
+
+#include <ctype.h>
 
 /* ---------------------------------------------------------------------
    We have our own versions of these functions for two reasons:
@@ -400,6 +403,120 @@ STRNCMP(VG_Z_LIBC_SONAME, strncmp)
 STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
 #elif defined(VGO_darwin)
 STRNCMP(VG_Z_DYLD,        strncmp)
+#endif
+
+
+#define STRCASECMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2 ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2 ) \
+   { \
+      register unsigned char c1; \
+      register unsigned char c2; \
+      while (True) { \
+         c1 = tolower(*(unsigned char *)s1); \
+         c2 = tolower(*(unsigned char *)s2); \
+         if (c1 != c2) break; \
+         if (c1 == 0) break; \
+         s1++; s2++; \
+      } \
+      if ((unsigned char)c1 < (unsigned char)c2) return -1; \
+      if ((unsigned char)c1 > (unsigned char)c2) return 1; \
+      return 0; \
+   }
+
+STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
+#if defined(VGO_linux)
+STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
+#endif
+
+
+#define STRNCASECMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax ) \
+   { \
+      SizeT n = 0; \
+      while (True) { \
+         if (n >= nmax) return 0; \
+         if (*s1 == 0 && *s2 == 0) return 0; \
+         if (*s1 == 0) return -1; \
+         if (*s2 == 0) return 1; \
+         \
+         if (tolower(*(unsigned char*)s1) < tolower(*(unsigned char*)s2)) return -1; \
+         if (tolower(*(unsigned char*)s1) > tolower(*(unsigned char*)s2)) return 1; \
+         \
+         s1++; s2++; n++; \
+      } \
+   }
+
+STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
+#if defined(VGO_linux)
+STRNCASECMP(VG_Z_LIBC_SONAME, __GI_strncasecmp)
+#elif defined(VGO_darwin)
+STRNCASECMP(VG_Z_DYLD,        strncasecmp)
+#endif
+
+
+#ifdef HAVE_TOLOWER_L
+
+
+#define STRCASECMP_L(soname, fnname) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, locale_t locale ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, locale_t locale ) \
+   { \
+      register unsigned char c1; \
+      register unsigned char c2; \
+      while (True) { \
+         c1 = tolower_l(*(unsigned char *)s1, locale); \
+         c2 = tolower_l(*(unsigned char *)s2, locale); \
+         if (c1 != c2) break; \
+         if (c1 == 0) break; \
+         s1++; s2++; \
+      } \
+      if ((unsigned char)c1 < (unsigned char)c2) return -1; \
+      if ((unsigned char)c1 > (unsigned char)c2) return 1; \
+      return 0; \
+   }
+
+STRCASECMP_L(VG_Z_LIBC_SONAME, strcasecmp_l)
+#if defined(VGO_linux)
+STRCASECMP_L(VG_Z_LIBC_SONAME, __GI_strcasecmp_l)
+#endif
+
+
+#define STRNCASECMP_L(soname, fnname) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax, locale_t locale ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax, locale_t locale ) \
+   { \
+      SizeT n = 0; \
+      while (True) { \
+         if (n >= nmax) return 0; \
+         if (*s1 == 0 && *s2 == 0) return 0; \
+         if (*s1 == 0) return -1; \
+         if (*s2 == 0) return 1; \
+         \
+         if (tolower_l(*(unsigned char*)s1, locale) < tolower_l(*(unsigned char*)s2, locale)) return -1; \
+         if (tolower_l(*(unsigned char*)s1, locale) > tolower_l(*(unsigned char*)s2, locale)) return 1; \
+         \
+         s1++; s2++; n++; \
+      } \
+   }
+
+STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
+#if defined(VGO_linux)
+STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI_strncasecmp_l)
+#elif defined(VGO_darwin)
+STRNCASECMP_L(VG_Z_DYLD,        strncasecmp_l)
+#endif
+
+
 #endif
 
 

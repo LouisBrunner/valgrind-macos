@@ -914,8 +914,8 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    if (VG_(clo_verbosity) > 0) {
       VG_(message)(Vg_UserMsg, "\n");
       VG_(message)(Vg_UserMsg,
-         "LOAD_PDB_DEBUGINFO(fd=%d, avma=%#lx, total_size=%lu, "
-         "uu_reloc=%#lx)\n", 
+         "LOAD_PDB_DEBUGINFO: clreq:   fd=%d, avma=%#lx, total_size=%lu, "
+         "uu_reloc=%#lx\n", 
          fd_obj, avma_obj, total_size, unknown_purpose__reloc
       );
    }
@@ -1056,12 +1056,35 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       goto out;
    }
 
-   /* Looks promising; go on to try and read stuff from it. */
+   /* Looks promising; go on to try and read stuff from it.  But don't
+      mmap the file.  Instead mmap free space and read the file into
+      it.  This is because files on CIFS filesystems that are mounted
+      '-o directio' can't be mmap'd, and that mount option is needed
+      to make CIFS work reliably.  (See
+      http://www.nabble.com/Corrupted-data-on-write-to-
+                            Windows-2003-Server-t2782623.html)
+      This is slower, but at least it works reliably. */
    fd_pdbimage = sr_Res(sres);
    n_pdbimage  = stat_buf.size;
-   sres = VG_(am_mmap_file_float_valgrind)( n_pdbimage, VKI_PROT_READ,
-                                            fd_pdbimage, 0 );
+   if (n_pdbimage == 0 || n_pdbimage > 0x7FFFFFFF) {
+      // 0x7FFFFFFF: why?  Because the VG_(read) just below only
+      // can deal with a signed int as the size of data to read,
+      // so we can't reliably check for read failure for files
+      // greater than that size.  Hence just skip them; we're
+      // unlikely to encounter a PDB that large anyway.
+      VG_(close)(fd_pdbimage);
+      goto out;
+   }
+   sres = VG_(am_mmap_anon_float_valgrind)( n_pdbimage );
    if (sr_isError(sres)) {
+      VG_(close)(fd_pdbimage);
+      goto out;
+   }
+
+   void* pdbimage = (void*)sr_Res(sres);
+   r = VG_(read)( fd_pdbimage, pdbimage, (Int)n_pdbimage );
+   if (r < 0 || r != (Int)n_pdbimage) {
+      VG_(am_munmap_valgrind)( (Addr)pdbimage, n_pdbimage );
       VG_(close)(fd_pdbimage);
       goto out;
    }
@@ -1075,8 +1098,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    /* dump old info for this range, if any */
    discard_syms_in_range( avma_obj, total_size );
 
-   { void* pdbimage = (void*)sr_Res(sres);
-     DebugInfo* di = find_or_create_DebugInfo_for(exename, NULL/*membername*/ );
+   { DebugInfo* di = find_or_create_DebugInfo_for(exename, NULL/*membername*/ );
 
      /* this di must be new, since we just nuked any old stuff in the range */
      vg_assert(di && !di->have_rx_map && !di->have_rw_map);
@@ -1091,6 +1113,12 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
      vg_assert(di->have_dinfo); // fails if PDB read failed
      VG_(am_munmap_valgrind)( (Addr)pdbimage, n_pdbimage );
      VG_(close)(fd_pdbimage);
+
+     if (VG_(clo_verbosity) > 0) {
+        VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: done:    "
+                                 "%lu syms, %lu src locs, %lu fpo recs\n",
+                     di->symtab_used, di->loctab_used, di->fpo_size);
+     }
    }
 
   out:

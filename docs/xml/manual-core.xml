@@ -663,7 +663,7 @@ in most cases.  We group the available options by rough categories.</para>
 
   <varlistentry id="opt.trace-children-skip" xreflabel="--trace-children-skip">
     <term>
-      <option><![CDATA[--trace-children-skip=patt1,patt2 ]]></option>
+      <option><![CDATA[--trace-children-skip=patt1,patt2,... ]]></option>
     </term>
     <listitem>
       <para>This option only has an effect when 
@@ -684,6 +684,20 @@ in most cases.  We group the available options by rough categories.</para>
         at the specified executables -- it skips tracing of entire
         process subtrees rooted at any of the specified
         executables.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.trace-children-skip-by-arg"
+                xreflabel="--trace-children-skip-by-arg">
+    <term>
+      <option><![CDATA[--trace-children-skip-by-arg=patt1,patt2,... ]]></option>
+    </term>
+    <listitem>
+      <para>This is the same as  
+        <option>--trace-children-skip</option>, with one difference:
+        the decision as to whether to trace into a child process is
+        made by examining the arguments to the child process, rather
+        than the name of its executable.</para>
     </listitem>
   </varlistentry>
 

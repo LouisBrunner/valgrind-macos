@@ -124,6 +124,9 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]\n"
 "    --trace-children-skip=patt1,patt2,...    specifies a list of executables\n"
 "                              that --trace-children=yes should not trace into\n"
+"    --trace-children-skip-by-arg=patt1,patt2,...   same as --trace-children-skip=\n"
+"                              but check the argv[] entries for children, rather\n"
+"                              than the exe name, to make a follow/no-follow decision\n"
 "    --child-silent-after-fork=no|yes omit child output between fork & exec? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
@@ -503,7 +506,10 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_BOOL_CLO(arg, "--dsymutil",        VG_(clo_dsymutil)) {}
 
-      else if VG_STR_CLO (arg, "--trace-children-skip",   VG_(clo_trace_children_skip)) {}
+      else if VG_STR_CLO (arg, "--trace-children-skip",
+                               VG_(clo_trace_children_skip)) {}
+      else if VG_STR_CLO (arg, "--trace-children-skip-by-arg",
+                               VG_(clo_trace_children_skip_by_arg)) {}
 
       else if VG_BINT_CLO(arg, "--vex-iropt-verbosity",
                        VG_(clo_vex_control).iropt_verbosity, 0, 10) {}

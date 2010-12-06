@@ -12,6 +12,9 @@ usage: valgrind [options] prog-and-args
     --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]
     --trace-children-skip=patt1,patt2,...    specifies a list of executables
                               that --trace-children=yes should not trace into
+    --trace-children-skip-by-arg=patt1,patt2,...   same as --trace-children-skip=
+                              but check the argv[] entries for children, rather
+                              than the exe name, to make a follow/no-follow decision
     --child-silent-after-fork=no|yes omit child output between fork & exec? [no]
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]

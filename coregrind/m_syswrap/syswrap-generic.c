@@ -2550,8 +2550,29 @@ PRE(sys_execve)
       return;
    }
 
+   // debug-only printing
+   if (0) {
+      VG_(printf)("ARG1 = %p(%s)\n", (void*)ARG1, (HChar*)ARG1);
+      if (ARG2) {
+         VG_(printf)("ARG2 = ");
+         Int q;
+         HChar** vec = (HChar**)ARG2;
+         for (q = 0; vec[q]; q++)
+            VG_(printf)("%p(%s) ", vec[q], vec[q]);
+         VG_(printf)("\n");
+      } else {
+         VG_(printf)("ARG2 = null\n");
+      }
+   }
+
    // Decide whether or not we want to follow along
-   trace_this_child = VG_(should_we_trace_this_child)( (HChar*)ARG1 );
+   { // Make 'child_argv' be a pointer to the child's arg vector
+     // (skipping the exe name)
+     HChar** child_argv = (HChar**)ARG2;
+     if (child_argv && child_argv[0] == NULL)
+        child_argv = NULL;
+     trace_this_child = VG_(should_we_trace_this_child)( (HChar*)ARG1, child_argv );
+   }
 
    // Do the important checks:  it is a file, is executable, permissions are
    // ok, etc.  We allow setuid executables to run only in the case when

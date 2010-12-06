@@ -57,6 +57,7 @@ HChar* VG_(clo_xml_user_comment) = NULL;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
 HChar* VG_(clo_trace_children_skip) = NULL;
+HChar* VG_(clo_trace_children_skip_by_arg) = NULL;
 Bool   VG_(clo_child_silent_after_fork) = False;
 Char*  VG_(clo_log_fname_expanded) = NULL;
 Char*  VG_(clo_xml_fname_expanded) = NULL;
@@ -255,9 +256,13 @@ static HChar const* consume_field ( HChar const* c ) {
 }
 
 /* Should we trace into this child executable (across execve etc) ?
-   This involves considering --trace-children=, --trace-children-skip=
-   and the name of the executable. */
-Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name )
+   This involves considering --trace-children=,
+   --trace-children-skip=, --trace-children-skip-by-arg=, and the name
+   of the executable.  'child_argv' must not include the name of the
+   executable itself; iow child_argv[0] must be the first arg, if any,
+   for the child. */
+Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
+                                       HChar** child_argv )
 {
    // child_exe_name is pulled out of the guest's space.  We
    // should be at least marginally cautious with it, lest it
@@ -265,13 +270,13 @@ Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name )
    if (child_exe_name == NULL || VG_(strlen)(child_exe_name) == 0)
       return VG_(clo_trace_children);  // we know narfink
 
-   // the main logic
    // If --trace-children=no, the answer is simply NO.
    if (! VG_(clo_trace_children))
       return False;
 
-   // otherwise, return True, unless the exe name matches any of the
-   // patterns specified by --trace-children-skip=.
+   // Otherwise, look for other reasons to say NO.  First,
+   // see if the exe name matches any of the patterns specified
+   // by --trace-children-skip=.
    if (VG_(clo_trace_children_skip)) {
       HChar const* last = VG_(clo_trace_children_skip);
       HChar const* name = (HChar const*)child_exe_name;
@@ -294,7 +299,36 @@ Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name )
             return False;
       }
    }
- 
+
+   // Check if any of the args match any of the patterns specified
+   // by --trace-children-skip-by-arg=. 
+   if (VG_(clo_trace_children_skip_by_arg) && child_argv != NULL) {
+      HChar const* last = VG_(clo_trace_children_skip_by_arg);
+      while (*last) {
+         Int    i;
+         Bool   matches;
+         HChar* patt;
+         HChar const* first = consume_commas(last);
+         last = consume_field(first);
+         if (first == last)
+            break;
+         vg_assert(last > first);
+         /* copy the candidate string into a temporary malloc'd block
+            so we can use VG_(string_match) on it. */
+         patt = VG_(calloc)("m_options.swttc.1", last - first + 1, 1);
+         VG_(memcpy)(patt, first, last - first);
+         vg_assert(patt[last-first] == 0);
+         for (i = 0; child_argv[i]; i++) {
+            matches = VG_(string_match)(patt, child_argv[i]);
+            if (matches) {
+               VG_(free)(patt);
+               return False;
+            }
+         }
+         VG_(free)(patt);
+      }
+   }
+
    // --trace-children=yes, and this particular executable isn't
    // excluded
    return True;

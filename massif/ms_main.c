@@ -455,7 +455,7 @@ static Bool ms_process_cmd_line_option(Char* arg)
    else if VG_XACT_CLO(arg, "--time-unit=ms",   clo_time_unit, TimeMS) {}
    else if VG_XACT_CLO(arg, "--time-unit=B",    clo_time_unit, TimeB)  {}
 
-   else if VG_BINT_CLO(arg, "--detailed-freq",  clo_detailed_freq, 1, 10000) {}
+   else if VG_BINT_CLO(arg, "--detailed-freq",  clo_detailed_freq, 1, 1000000) {}
 
    else if VG_BINT_CLO(arg, "--max-snapshots",  clo_max_snapshots, 10, 1000) {}
 

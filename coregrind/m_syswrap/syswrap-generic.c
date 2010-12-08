@@ -1772,7 +1772,7 @@ ML_(generic_POST_sys_shmat) ( ThreadId tid,
                               UWord res,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
-   UInt segmentSize = get_shm_size ( arg0 );
+   UInt segmentSize = VG_PGROUNDUP(get_shm_size(arg0));
    if ( segmentSize > 0 ) {
       UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
       Bool d;
@@ -1789,7 +1789,7 @@ ML_(generic_POST_sys_shmat) ( ThreadId tid,
          cope with the discrepancy, aspacem's sync checker omits the
          dev/ino correspondence check in cases where V does not know
          the dev/ino. */
-      d = VG_(am_notify_client_shmat)( res, VG_PGROUNDUP(segmentSize), prot );
+      d = VG_(am_notify_client_shmat)( res, segmentSize, prot );
 
       /* we don't distinguish whether it's read-only or
        * read-write -- it doesn't matter really. */

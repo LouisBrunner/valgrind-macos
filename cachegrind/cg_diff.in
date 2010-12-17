@@ -50,6 +50,7 @@ usage: cg_diff [options] <cachegrind-out-file1> <cachegrind-out-file2>
     -v --version          show version
     --mod-filename=<expr> a Perl search-and-replace expression that is applied
                           to filenames, eg. --mod-filename='s/prog[0-9]/projN/'
+    --mod-funcname=<expr> like --mod-filename, but applied to function names
 
   cg_diff is Copyright (C) 2010-2010 Nicholas Nethercote.
   and licensed under the GNU General Public License, version 2.
@@ -60,6 +61,9 @@ END
 
 # --mod-filename expression
 my $mod_filename = undef;
+
+# --mod-funcname expression
+my $mod_funcname = undef;
 
 #-----------------------------------------------------------------------------
 # Argument and option handling
@@ -77,6 +81,9 @@ sub process_cmd_line()
 
             } elsif ($arg =~ /^--mod-filename=(.*)/) {
                 $mod_filename = $1;
+
+            } elsif ($arg =~ /^--mod-funcname=(.*)/) {
+                $mod_funcname = $1;
 
             } else {            # -h and --help fall under this case
                 die($usage);
@@ -201,7 +208,11 @@ sub read_input_file($)
 
         } elsif (s/^fn=(.*)$//) {
             defined($currFileName) || die;
-            $currFileFuncName = "$currFileName#$1";
+            my $tmpFuncName = $1;
+            if (defined $mod_funcname) {
+                eval "\$tmpFuncName =~ $mod_funcname";
+            }
+            $currFileFuncName = "$currFileName#$tmpFuncName";
             $currCC = $CCs{$currFileFuncName};
             if (not defined $currCC) {
                 $currCC = [];

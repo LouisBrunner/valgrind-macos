@@ -401,7 +401,11 @@ three ways we know of that an interior-pointer can occur:</para>
 <itemizedlist>
   <listitem>
     <para>The pointer might have originally been a start-pointer and have been
-    moved along deliberately (or not deliberately) by the program.</para>
+    moved along deliberately (or not deliberately) by the program.  In
+    particular, this can happen if your program uses tagged pointers, i.e.
+    if it uses the bottom one, two or three bits of a pointer, which are
+    normally always zero due to alignment, in order to store extra
+    information.</para>
   </listitem>
     
   <listitem>

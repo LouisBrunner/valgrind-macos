@@ -528,8 +528,9 @@ int main(void)
       </listitem>
       <listitem>
         <para>"possibly lost" means your program is leaking
-        memory, unless you're doing funny things with pointers.
-        This is sometimes reasonable.  Use
+        memory, unless you're doing unusual things with pointers that could
+        cause them to point into the middle of an allocated block;  see the
+        user manual for some possible causes.  Use
         <option>--show-possibly-lost=no</option> if you don't want to see
         these reports.</para>
       </listitem>

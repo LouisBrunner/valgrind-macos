@@ -112,7 +112,7 @@ called function, and a "cfl=" specification if the function is in another
 source file. The 2nd line looks like a regular cost line with the difference
 that inclusive cost spent inside of the function call has to be specified.</para> 
 
-<para>Other associations which or for example (conditional) jumps. See the
+<para>Other associations are for example (conditional) jumps. See the
 reference below for details.</para>
 
 </sect2>

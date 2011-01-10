@@ -154,11 +154,17 @@ void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
 void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
                               UInt vD_off, UInt sh, UInt shift_right )
 {
-  static
-  UChar ref[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+  UChar ref[32];
+  ULong i;
+  /* ref[] used to be a static const array, but this doesn't work on
+     ppc64 because VEX doesn't load the TOC pointer for the call here,
+     and so we wind up picking up some totally random other data.
+     (It's a wonder we don't segfault.)  So, just to be clear, this
+     "fix" (vex r2073) is really a kludgearound for the fact that
+     VEX's 64-bit ppc code generation doesn't provide a valid TOC
+     pointer for helper function calls.  Ick.  (Bug 250038) */
+  for (i = 0; i < 32; i++) ref[i] = i;
+
   U128* pU128_src;
   U128* pU128_dst;
 

@@ -41,7 +41,7 @@
 #include "pub_tool_tooliface.h"
 #include "pub_tool_wordfm.h"
 
-#define HISTOGRAM_SIZE_LIMIT 4096 //1024
+#define HISTOGRAM_SIZE_LIMIT 1024
 
 
 //------------------------------------------------------------//

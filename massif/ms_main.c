@@ -2491,6 +2491,8 @@ static void ms_pre_clo_init(void)
       "Copyright (C) 2003-2010, and GNU GPL'd, by Nicholas Nethercote");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
+   VG_(details_avg_translation_sizeB) ( 330 );
+
    // Basic functions.
    VG_(basic_tool_funcs)          (ms_post_clo_init,
                                    ms_instrument,

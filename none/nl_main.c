@@ -58,6 +58,8 @@ static void nl_pre_clo_init(void)
       "Copyright (C) 2002-2010, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
+   VG_(details_avg_translation_sizeB) ( 275 );
+
    VG_(basic_tool_funcs)        (nl_post_clo_init,
                                  nl_instrument,
                                  nl_fini);

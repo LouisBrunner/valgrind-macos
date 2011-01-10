@@ -1556,7 +1556,7 @@ void VG_(init_tt_tc) ( void )
 
    /* Ensure the calculated value is not way crazy. */
    vg_assert(tc_sector_szQ >= 2 * N_TTES_PER_SECTOR_USABLE);
-   vg_assert(tc_sector_szQ <= 80 * N_TTES_PER_SECTOR_USABLE);
+   vg_assert(tc_sector_szQ <= 100 * N_TTES_PER_SECTOR_USABLE);
 
    /* Initialise the sectors */
    youngest_sector = 0;

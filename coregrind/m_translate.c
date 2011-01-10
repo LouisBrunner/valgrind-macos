@@ -752,10 +752,6 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    if (!translations_allowable_from_seg(seg))
       goto dontchase;
 
-   /* Destination requires a self-check? */
-   if (self_check_required(seg, closure->tid))
-      goto dontchase;
-
    /* Destination is redirected? */
    if (addr != VG_(redir_do_lookup)(addr, NULL))
       goto dontchase;

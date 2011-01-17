@@ -715,6 +715,7 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       even if they would probably work.  Life is too short to have
       unvalidated cases in the code base. */
    switch (imm8) {
+      case 0x00:
       case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
       case 0x1A: case 0x3A: case 0x44: case 0x4A:
          break;

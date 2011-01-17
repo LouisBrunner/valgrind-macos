@@ -94,6 +94,16 @@ static inline ULong cmpGT64S ( Long xx, Long yy )
              ? 0xFFFFFFFFFFFFFFFFULL : 0ULL;
 }
 
+static inline ULong sar64 ( ULong v, UInt n )
+{
+   return ((Long)v) >> n;
+}
+
+static inline UChar sar8 ( UChar v, UInt n )
+{
+   return toUChar(((Char)v) >> n);
+}
+
 void h_generic_calc_Mul32x4 ( /*OUT*/V128* res,
                               V128* argL, V128* argR )
 {
@@ -214,6 +224,44 @@ void h_generic_calc_CmpGT64Sx2 ( /*OUT*/V128* res,
    res->w64[1] = cmpGT64S(argL->w64[1], argR->w64[1]);
 }
 
+/* ------------ Shifting ------------ */
+/* Note that because these primops are undefined if the shift amount
+   equals or exceeds the lane width, the shift amount is masked so
+   that the scalar shifts are always in range.  In fact, given the
+   semantics of these primops (Sar64x2, etc) it is an error if in
+   fact we are ever given an out-of-range shift amount. 
+*/
+void h_generic_calc_SarN64x2 ( /*OUT*/V128* res,
+                               V128* argL, UInt nn)
+{
+   /* vassert(nn < 64); */
+   nn &= 63;
+   res->w64[0] = sar64(argL->w64[0], nn);
+   res->w64[1] = sar64(argL->w64[1], nn);
+}
+
+void h_generic_calc_SarN8x16 ( /*OUT*/V128* res,
+                              V128* argL, UInt nn)
+{
+   /* vassert(nn < 8); */
+   nn &= 7;
+   res->w8[ 0] = sar8(argL->w8[ 0], nn);
+   res->w8[ 1] = sar8(argL->w8[ 1], nn);
+   res->w8[ 2] = sar8(argL->w8[ 2], nn);
+   res->w8[ 3] = sar8(argL->w8[ 3], nn);
+   res->w8[ 4] = sar8(argL->w8[ 4], nn);
+   res->w8[ 5] = sar8(argL->w8[ 5], nn);
+   res->w8[ 6] = sar8(argL->w8[ 6], nn);
+   res->w8[ 7] = sar8(argL->w8[ 7], nn);
+   res->w8[ 8] = sar8(argL->w8[ 8], nn);
+   res->w8[ 9] = sar8(argL->w8[ 9], nn);
+   res->w8[10] = sar8(argL->w8[10], nn);
+   res->w8[11] = sar8(argL->w8[11], nn);
+   res->w8[12] = sar8(argL->w8[12], nn);
+   res->w8[13] = sar8(argL->w8[13], nn);
+   res->w8[14] = sar8(argL->w8[14], nn);
+   res->w8[15] = sar8(argL->w8[15], nn);
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                              host_generic_simd128.c ---*/

@@ -14643,6 +14643,55 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+
+   /* 66 0F 3A 17 /r ib = EXTRACTPS reg/mem32, xmm2, imm8 Extract
+      float from xmm reg and store in gen.reg or mem.  This is
+      identical to PEXTRD, except that REX.W appears to be ignored.
+   */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2  /* REX.W == 0; perhaps too strict? */
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x17 ) {
+
+      Int imm8_10;
+      IRTemp xmm_vec   = newTemp(Ity_V128);
+      IRTemp src_dword = newTemp(Ity_I32);
+
+      modrm = insn[3];
+      assign( xmm_vec, getXMMReg( gregOfRexRM(pfx,modrm) ) );
+      breakup128to32s( xmm_vec, &t3, &t2, &t1, &t0 );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_10 = (Int)(insn[3+1] & 3);
+      } else { 
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8_10 = (Int)(insn[3+alen] & 3);
+      }
+
+      switch ( imm8_10 ) {
+         case 0:  assign( src_dword, mkexpr(t0) ); break;
+         case 1:  assign( src_dword, mkexpr(t1) ); break;
+         case 2:  assign( src_dword, mkexpr(t2) ); break;
+         case 3:  assign( src_dword, mkexpr(t3) ); break;
+         default: vassert(0);
+      }
+
+      if ( epartIsReg( modrm ) ) {
+         putIReg32( eregOfRexRM(pfx,modrm), mkexpr(src_dword) );
+         delta += 3+1+1;
+         DIP( "extractps $%d, %s,%s\n", imm8_10,
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              nameIReg32( eregOfRexRM(pfx, modrm) ) );
+      } else {
+         storeLE( mkexpr(addr), mkexpr(src_dword) );
+         delta += 3+alen+1;
+         DIP( "extractps $%d, %s,%s\n", 
+              imm8_10, nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf );
+      }
+
+      goto decode_success;
+   }
+
+
    /* 66 0F 38 37 = PCMPGTQ
       64x2 comparison (signed, presumably; the Intel docs don't say :-)
    */
@@ -15731,6 +15780,74 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 38 15 /r = BLENDVPD xmm1, xmm2/m128  (double gran)
+      66 0F 38 14 /r = BLENDVPS xmm1, xmm2/m128  (float gran)
+      66 0F 38 10 /r = PBLENDVB xmm1, xmm2/m128  (byte gran)
+      Blend at various granularities, with XMM0 (implicit operand)
+      providing the controlling mask.
+   */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x15 || insn[2] == 0x14 || insn[2] == 0x10)) {
+      modrm = insn[3];
+
+      HChar* nm    = NULL;
+      UInt   gran  = 0;
+      IROp   opSAR = Iop_INVALID;
+      switch (insn[2]) {
+         case 0x15:
+            nm = "blendvpd"; gran = 8; opSAR = Iop_SarN64x2;
+            break;
+         case 0x14:
+            nm = "blendvps"; gran = 4; opSAR = Iop_SarN32x4;
+            break;
+         case 0x10:
+            nm = "pblendvb"; gran = 1; opSAR = Iop_SarN8x16;
+            break;
+      }
+      vassert(nm);
+
+      IRTemp vecE = newTemp(Ity_V128);
+      IRTemp vecG = newTemp(Ity_V128);
+      IRTemp vec0 = newTemp(Ity_V128);
+
+      if ( epartIsReg(modrm) ) {
+         assign(vecE, getXMMReg(eregOfRexRM(pfx, modrm)));
+         delta += 3+1;
+         DIP( "%s %s,%s\n", nm,
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
+         assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
+         delta += 3+alen;
+         DIP( "%s %s,%s\n", nm,
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      assign(vecG, getXMMReg(gregOfRexRM(pfx, modrm)));
+      assign(vec0, getXMMReg(0));
+
+      /* Now the tricky bit is to convert vec0 into a suitable mask,
+         by copying the most significant bit of each lane into all
+         positions in the lane. */
+      IRTemp sh = newTemp(Ity_I8);
+      assign(sh, mkU8(8 * gran - 1));
+
+      IRTemp mask = newTemp(Ity_V128);
+      assign(mask, binop(opSAR, mkexpr(vec0), mkexpr(sh)));
+
+      IRTemp notmask = newTemp(Ity_V128);
+      assign(notmask, unop(Iop_NotV128, mkexpr(mask)));
+
+      IRExpr* res = binop(Iop_OrV128,
+                          binop(Iop_AndV128, mkexpr(vecE), mkexpr(mask)),
+                          binop(Iop_AndV128, mkexpr(vecG), mkexpr(notmask)));
+      putXMMReg(gregOfRexRM(pfx, modrm), res);
+
+      goto decode_success;
+   }
 
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */

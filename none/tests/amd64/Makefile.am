@@ -20,8 +20,6 @@ endif
 # to avoid packaging screwups if 'make dist' is run on a machine
 # which failed the BUILD_SSE3_TESTS test in configure.in.
 
-## FIXME: move lzcnt64 to SSE4 conditionalisation, when that happens.
-
 EXTRA_DIST = \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
@@ -55,7 +53,7 @@ EXTRA_DIST = \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest \
-	ssse3_misaligned.c \
+	sse4-64.stderr.exp sse4-64.stdout.exp sse4-64.vgtest \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	xadd.stderr.exp xadd.stdout.exp xadd.vgtest
@@ -77,6 +75,9 @@ if BUILD_SSSE3_TESTS
 endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt64
+endif
+if BUILD_SSE42_TESTS
+ check_PROGRAMS += sse4-64
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

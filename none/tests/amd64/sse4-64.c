@@ -1726,6 +1726,17 @@ void test_PINSRQ ( void )
 }
 
 
+void test_EXTRACTPS ( void )
+{
+   V128 src;
+   randV128(&src);
+   DO_imm_r_to_mandrscalar("extractps", 0, src, "d");
+   DO_imm_r_to_mandrscalar("extractps", 1, src, "d");
+   DO_imm_r_to_mandrscalar("extractps", 2, src, "d");
+   DO_imm_r_to_mandrscalar("extractps", 3, src, "d");
+}
+
+
 void test_PHMINPOSUW ( void )
 {
    V128 src, dst;
@@ -3533,23 +3544,226 @@ void test_PTEST ( void )
    }
 }
 
+/* ------------ PBLENDVB ------------ */
+
+void do_PBLENDVB ( Bool mem, V128* xmm0, V128* src, /*MOD*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd   (%2), %%xmm0"         "\n\t"
+         "movupd   (%1), %%xmm11"        "\n\t"
+         "pblendvb (%0), %%xmm11"        "\n\t"
+         "movupd   %%xmm11, (%1)"        "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst), "r"(xmm0)
+         : /*TRASH*/ "xmm11","xmm0"
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd   (%2), %%xmm0"         "\n\t"
+         "movupd   (%1), %%xmm11"        "\n\t"
+         "movupd   (%0), %%xmm2"         "\n\t"
+         "pblendvb %%xmm2, %%xmm11"      "\n\t"
+         "movupd   %%xmm11, (%1)"        "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst), "r"(xmm0)
+         : /*TRASH*/ "xmm11","xmm2","xmm0"
+      );
+   }
+}
+
+void test_PBLENDVB ( void )
+{
+   V128 xmm0, src, dst, t_xmm0, t_src, t_dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&t_xmm0);
+      randV128(&t_src);
+      randV128(&t_dst);
+
+      memcpy(&xmm0, &t_xmm0, 16);
+      memcpy(&src, &t_src, 16);
+      memcpy(&dst, &t_dst, 16);
+      do_PBLENDVB(False/*reg*/, &xmm0, &src, &dst);
+      printf("r pblendvb  ");
+      showV128(&t_xmm0);
+      printf(" ");
+      showV128(&t_src);
+      printf(" ");
+      showV128(&t_dst);
+      printf(" -> ");
+      showV128(&dst);
+      printf("\n");
+
+      memcpy(&xmm0, &t_xmm0, 16);
+      memcpy(&src, &t_src, 16);
+      memcpy(&dst, &t_dst, 16);
+      do_PBLENDVB(True/*mem*/, &xmm0, &src, &dst);
+      printf("m pblendvb  ");
+      showV128(&t_xmm0);
+      printf(" ");
+      showV128(&t_src);
+      printf(" ");
+      showV128(&t_dst);
+      printf(" -> ");
+      showV128(&dst);
+      printf("\n");
+   }
+}
+
+/* ------------ BLENDVPD ------------ */
+
+void do_BLENDVPD ( Bool mem, V128* xmm0, V128* src, /*MOD*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd   (%2), %%xmm0"         "\n\t"
+         "movupd   (%1), %%xmm11"        "\n\t"
+         "blendvpd (%0), %%xmm11"        "\n\t"
+         "movupd   %%xmm11, (%1)"        "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst), "r"(xmm0)
+         : /*TRASH*/ "xmm11","xmm0"
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd   (%2), %%xmm0"         "\n\t"
+         "movupd   (%1), %%xmm11"        "\n\t"
+         "movupd   (%0), %%xmm2"         "\n\t"
+         "blendvpd %%xmm2, %%xmm11"      "\n\t"
+         "movupd   %%xmm11, (%1)"        "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst), "r"(xmm0)
+         : /*TRASH*/ "xmm11","xmm2","xmm0"
+      );
+   }
+}
+
+void test_BLENDVPD ( void )
+{
+   V128 xmm0, src, dst, t_xmm0, t_src, t_dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&t_xmm0);
+      randV128(&t_src);
+      randV128(&t_dst);
+
+      memcpy(&xmm0, &t_xmm0, 16);
+      memcpy(&src, &t_src, 16);
+      memcpy(&dst, &t_dst, 16);
+      do_BLENDVPD(False/*reg*/, &xmm0, &src, &dst);
+      printf("r blendvpd  ");
+      showV128(&t_xmm0);
+      printf(" ");
+      showV128(&t_src);
+      printf(" ");
+      showV128(&t_dst);
+      printf(" -> ");
+      showV128(&dst);
+      printf("\n");
+
+      memcpy(&xmm0, &t_xmm0, 16);
+      memcpy(&src, &t_src, 16);
+      memcpy(&dst, &t_dst, 16);
+      do_BLENDVPD(True/*mem*/, &xmm0, &src, &dst);
+      printf("m blendvpd  ");
+      showV128(&t_xmm0);
+      printf(" ");
+      showV128(&t_src);
+      printf(" ");
+      showV128(&t_dst);
+      printf(" -> ");
+      showV128(&dst);
+      printf("\n");
+   }
+}
+
+/* ------------ BLENDVPS ------------ */
+
+void do_BLENDVPS ( Bool mem, V128* xmm0, V128* src, /*MOD*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd   (%2), %%xmm0"         "\n\t"
+         "movupd   (%1), %%xmm11"        "\n\t"
+         "blendvps (%0), %%xmm11"        "\n\t"
+         "movupd   %%xmm11, (%1)"        "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst), "r"(xmm0)
+         : /*TRASH*/ "xmm11","xmm0"
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd   (%2), %%xmm0"         "\n\t"
+         "movupd   (%1), %%xmm11"        "\n\t"
+         "movupd   (%0), %%xmm2"         "\n\t"
+         "blendvps %%xmm2, %%xmm11"      "\n\t"
+         "movupd   %%xmm11, (%1)"        "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst), "r"(xmm0)
+         : /*TRASH*/ "xmm11","xmm2","xmm0"
+      );
+   }
+}
+
+void test_BLENDVPS ( void )
+{
+   V128 xmm0, src, dst, t_xmm0, t_src, t_dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&t_xmm0);
+      randV128(&t_src);
+      randV128(&t_dst);
+
+      memcpy(&xmm0, &t_xmm0, 16);
+      memcpy(&src, &t_src, 16);
+      memcpy(&dst, &t_dst, 16);
+      do_BLENDVPS(False/*reg*/, &xmm0, &src, &dst);
+      printf("r blendvps  ");
+      showV128(&t_xmm0);
+      printf(" ");
+      showV128(&t_src);
+      printf(" ");
+      showV128(&t_dst);
+      printf(" -> ");
+      showV128(&dst);
+      printf("\n");
+
+      memcpy(&xmm0, &t_xmm0, 16);
+      memcpy(&src, &t_src, 16);
+      memcpy(&dst, &t_dst, 16);
+      do_BLENDVPS(True/*mem*/, &xmm0, &src, &dst);
+      printf("m blendvps  ");
+      showV128(&t_xmm0);
+      printf(" ");
+      showV128(&t_src);
+      printf(" ");
+      showV128(&t_dst);
+      printf(" -> ");
+      showV128(&dst);
+      printf("\n");
+   }
+}
+
+/* ------------ main ------------ */
+
 int main ( int argc, char** argv )
 {
 #if 1
    // ------ SSE 4.1 ------
    test_BLENDPD();        // done Apr.01.2010
    test_BLENDPS();        // done Apr.02.2010
-   //test_PBLENDW();
-   // BLENDVPD
-   // BLENDVPS
+   test_PBLENDW();
+   test_PBLENDVB();
+   test_BLENDVPD();
+   test_BLENDVPS();
    test_DPPD();           // done Apr.08.2010
    test_DPPS();           // done Apr.09.2010
-   // EXTRACTPS
+   test_EXTRACTPS();
    test_INSERTPS();       // done Apr.01.2010
-   // MOVNTDQA
+   // MOVNTDQA  ***
    //test_MPSADBW();
    //test_PACKUSDW();
-   // PBLENDVB
    //test_PCMPEQQ();
    test_PEXTRB();         // done Apr.15.2010
    test_PEXTRD();         // done Apr.14.2010
@@ -3557,7 +3771,7 @@ int main ( int argc, char** argv )
    test_PEXTRW();         // done Apr.14.2010
    test_PINSRQ();         // done Apr.16.2010
    test_PINSRD();         // todo
-   //test_PINSRW();         // todo
+   test_PINSRW(); /* Umm, this is SSE2, not SSE4.  Right? */
    test_PINSRB();         // todo
    //test_PHMINPOSUW();
    test_PMAXSB();
@@ -3596,8 +3810,16 @@ int main ( int argc, char** argv )
    test_ROUNDPS_w_mxcsr_rounding();
    // ------ SSE 4.2 ------
    test_PCMPGTQ();
+   // CRC32B,Q
+
 #else
-   test_PTEST();
+#if 0
+   test_MPSADBW();
+   test_PACKUSDW();
+   test_PCMPEQQ();
+   test_PHMINPOSUW();
+   test_PMULDQ();
+#endif
 #endif
 
    return 0;

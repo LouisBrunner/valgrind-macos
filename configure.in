@@ -1410,10 +1410,9 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_SSSE3_TESTS, test x$ac_have_as_ssse3 = xyes)
 
 
-# Note: we're really checking the assembler-level support, not gcc's ;
-# C-level code might require the flag -mpclmul be passed to gcc (e.g. to
-# compile code which uses wmmintrin.h). Doesn't matter since tests also
-# use inline assembly directly
+# does the x86/amd64 assembler understand the PCLMULQDQ instruction?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_PCLMULQDQ_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler supports 'pclmulqdq'])
 AC_TRY_COMPILE(, [
   do {
@@ -1432,6 +1431,9 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_PCLMULQDQ_TESTS, test x$ac_have_as_pclmulqdq = xyes)
 
 
+# does the x86/amd64 assembler understand the LZCNT instruction?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_LZCNT_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
 AC_TRY_COMPILE([], [
@@ -1448,6 +1450,29 @@ AC_TRY_COMPILE([], [
 ])
 
 AM_CONDITIONAL([BUILD_LZCNT_TESTS], [test x$ac_have_as_lzcnt = xyes])
+
+
+# does the x86/amd64 assembler understand SSE 4.2 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_SSE42_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks SSE4.2])
+
+AC_TRY_COMPILE(, [
+  do { long long int x; 
+   __asm__ __volatile__(
+      "crc32q %%r15,%%r15" : : : "r15" ); }
+  while (0)
+],
+[
+ac_have_as_sse42=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_sse42=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_SSE42_TESTS, test x$ac_have_as_sse42 = xyes)
+
 
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
 # when building the tool executables.  I think we should get rid of it.

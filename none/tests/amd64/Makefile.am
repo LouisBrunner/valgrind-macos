@@ -45,6 +45,10 @@ EXTRA_DIST = \
 	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
+	pcmpstr64.stderr.exp pcmpstr64.stdout.exp \
+	pcmpstr64.vgtest \
+	pcmpxstrx64.stderr.exp pcmpxstrx64.stdout.exp \
+	pcmpxstrx64.vgtest \
 	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
 	redundantRexW.stderr.exp \
@@ -77,7 +81,7 @@ if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt64
 endif
 if BUILD_SSE42_TESTS
- check_PROGRAMS += sse4-64
+ check_PROGRAMS += pcmpstr64 pcmpxstrx64 sse4-64 
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

@@ -14649,7 +14649,7 @@ DisResult disInstr_AMD64_WRK (
       identical to PEXTRD, except that REX.W appears to be ignored.
    */
    if ( have66noF2noF3( pfx ) 
-        && sz == 2  /* REX.W == 0; perhaps too strict? */
+        && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
         && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x17 ) {
 
       Int imm8_10;

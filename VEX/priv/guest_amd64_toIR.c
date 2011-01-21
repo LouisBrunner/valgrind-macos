@@ -16401,18 +16401,33 @@ DisResult disInstr_AMD64_WRK (
    case 0xE1: /* LOOPE  disp8: decrement count, jump if count != 0 && ZF==1 */
    case 0xE2: /* LOOP   disp8: decrement count, jump if count != 0 */
     { /* The docs say this uses rCX as a count depending on the
-         address size override, not the operand one.  Since we don't
-         handle address size overrides, I guess that means RCX. */
+         address size override, not the operand one. */
       IRExpr* zbit  = NULL;
       IRExpr* count = NULL;
       IRExpr* cond  = NULL;
       HChar*  xtra  = NULL;
 
-      if (have66orF2orF3(pfx) || haveASO(pfx)) goto decode_failure;
+      if (have66orF2orF3(pfx) || 1==getRexW(pfx)) goto decode_failure;
+      /* So at this point we've rejected any variants which appear to
+         be governed by the usual operand-size modifiers.  Hence only
+         the address size prefix can have an effect.  It changes the
+         size from 64 (default) to 32. */
       d64 = guest_RIP_bbstart+delta+1 + getSDisp8(delta);
       delta++;
-      putIReg64(R_RCX, binop(Iop_Sub64, getIReg64(R_RCX), mkU64(1)));
+      if (haveASO(pfx)) {
+         /* 64to32 of 64-bit get is merely a get-put improvement
+            trick. */
+         putIReg32(R_RCX, binop(Iop_Sub32,
+                                unop(Iop_64to32, getIReg64(R_RCX)), 
+                                mkU32(1)));
+      } else {
+         putIReg64(R_RCX, binop(Iop_Sub64, getIReg64(R_RCX), mkU64(1)));
+      }
 
+      /* This is correct, both for 32- and 64-bit versions.  If we're
+         doing a 32-bit dec and the result is zero then the default
+         zero extension rule will cause the upper 32 bits to be zero
+         too.  Hence a 64-bit check against zero is OK. */
       count = getIReg64(R_RCX);
       cond = binop(Iop_CmpNE64, count, mkU64(0));
       switch (opc) {
@@ -16422,19 +16437,19 @@ DisResult disInstr_AMD64_WRK (
          case 0xE1: 
             xtra = "e"; 
             zbit = mk_amd64g_calculate_condition( AMD64CondZ );
-      cond = mkAnd1(cond, zbit);
+            cond = mkAnd1(cond, zbit);
             break;
          case 0xE0: 
             xtra = "ne";
             zbit = mk_amd64g_calculate_condition( AMD64CondNZ );
-      cond = mkAnd1(cond, zbit);
+            cond = mkAnd1(cond, zbit);
             break;
          default:
 	    vassert(0);
       }
       stmt( IRStmt_Exit(cond, Ijk_Boring, IRConst_U64(d64)) );
 
-      DIP("loop%s 0x%llx\n", xtra, d64);
+      DIP("loop%s%s 0x%llx\n", xtra, haveASO(pfx) ? "l" : "", d64);
       break;
     }
 

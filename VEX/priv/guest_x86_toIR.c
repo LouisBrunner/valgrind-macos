@@ -8095,6 +8095,7 @@ DisResult disInstr_X86_WRK (
 
       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
       delta += 2+alen;
+      gen_SEGV_if_not_16_aligned(addr);
 
       DIP("fxsave %s\n", dis_buf);
 
@@ -8165,11 +8166,15 @@ DisResult disInstr_X86_WRK (
 
       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
       delta += 2+alen;
+      gen_SEGV_if_not_16_aligned(addr);
 
       DIP("fxrstor %s\n", dis_buf);
 
       /* Uses dirty helper: 
-            void x86g_do_FXRSTOR ( VexGuestX86State*, UInt ) */
+            VexEmWarn x86g_do_FXRSTOR ( VexGuestX86State*, UInt )
+         NOTE:
+            the VexEmWarn value is simply ignored (unlike for FRSTOR)
+      */
       d = unsafeIRDirty_0_N ( 
              0/*regparms*/, 
              "x86g_dirtyhelper_FXRSTOR", 

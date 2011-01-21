@@ -31,6 +31,7 @@ EXTRA_DIST = \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
+	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
 	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
@@ -81,7 +82,7 @@ if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt64
 endif
 if BUILD_SSE42_TESTS
- check_PROGRAMS += pcmpstr64 pcmpxstrx64 sse4-64 
+ check_PROGRAMS += pcmpstr64 pcmpxstrx64 sse4-64 crc32
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

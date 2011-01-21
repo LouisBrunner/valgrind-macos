@@ -43,6 +43,7 @@ EXTRA_DIST = \
 	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
+	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
 	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
@@ -94,6 +95,7 @@ if ! VGCONF_OS_IS_DARWIN
 	fcmovnu \
 	fxtract \
 	looper \
+	loopnel \
 	jrcxz \
 	shrld \
 	slahf-amd64

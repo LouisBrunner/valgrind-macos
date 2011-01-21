@@ -2563,6 +2563,43 @@ ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
    return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calc_crc32b ( ULong crcIn, ULong b )
+{
+   UInt  i;
+   ULong crc = (b & 0xFFULL) ^ crcIn;
+   for (i = 0; i < 8; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calc_crc32w ( ULong crcIn, ULong w )
+{
+   UInt  i;
+   ULong crc = (w & 0xFFFFULL) ^ crcIn;
+   for (i = 0; i < 16; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calc_crc32l ( ULong crcIn, ULong l )
+{
+   UInt i;
+   ULong crc = (l & 0xFFFFFFFFULL) ^ crcIn;
+   for (i = 0; i < 32; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calc_crc32q ( ULong crcIn, ULong q )
+{
+   ULong crc = amd64g_calc_crc32l(crcIn, q);
+   return amd64g_calc_crc32l(crc, q >> 32);
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Helpers for SSE4.2 PCMP{E,I}STR{I,M}                    ---*/

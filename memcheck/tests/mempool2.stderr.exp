@@ -1,0 +1,81 @@
+
+------ out of range reads in malloc-backed pool ------
+
+Invalid read of size 1
+   at 0x........: test (mempool2.c:135)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is 1 bytes before a block of size 10 client-defined
+   at 0x........: allocate (mempool2.c:108)
+   by 0x........: test (mempool2.c:130)
+   by 0x........: main (mempool2.c:174)
+
+Invalid read of size 1
+   at 0x........: test (mempool2.c:136)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is 0 bytes after a block of size 10 client-defined
+   at 0x........: allocate (mempool2.c:108)
+   by 0x........: test (mempool2.c:130)
+   by 0x........: main (mempool2.c:174)
+
+
+------ out of range reads in mmap-backed pool ------
+
+Invalid read of size 1
+   at 0x........: test (mempool2.c:140)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is 1 bytes before a block of size 20 client-defined
+   at 0x........: allocate (mempool2.c:108)
+   by 0x........: test (mempool2.c:131)
+   by 0x........: main (mempool2.c:174)
+
+Invalid read of size 1
+   at 0x........: test (mempool2.c:141)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is 0 bytes after a block of size 20 client-defined
+   at 0x........: allocate (mempool2.c:108)
+   by 0x........: test (mempool2.c:131)
+   by 0x........: main (mempool2.c:174)
+
+
+------ read free in malloc-backed pool ------
+
+Illegal memory pool address
+   at 0x........: test (mempool2.c:145)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: make_pool (mempool2.c:46)
+   by 0x........: test (mempool2.c:122)
+   by 0x........: main (mempool2.c:174)
+
+
+------ read free in mmap-backed pool ------
+
+Illegal memory pool address
+   at 0x........: test (mempool2.c:150)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+
+------ double free in malloc-backed pool ------
+
+Illegal memory pool address
+   at 0x........: test (mempool2.c:155)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: make_pool (mempool2.c:46)
+   by 0x........: test (mempool2.c:122)
+   by 0x........: main (mempool2.c:174)
+
+
+------ double free in mmap-backed pool ------
+
+Illegal memory pool address
+   at 0x........: test (mempool2.c:159)
+   by 0x........: main (mempool2.c:174)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+
+------ done ------
+

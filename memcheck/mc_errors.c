@@ -1042,21 +1042,23 @@ Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
    }
 }
 
-/* Function used when searching MC_Chunk lists */
-static Bool addr_is_in_MC_Chunk(MC_Chunk* mc, Addr a)
+/* Functions used when searching MC_Chunk lists */
+static
+Bool addr_is_in_MC_Chunk_default_REDZONE_SZB(MC_Chunk* mc, Addr a)
 {
-   // Nb: this is not quite right!  It assumes that the heap block has
-   // a redzone of size MC_MALLOC_REDZONE_SZB.  That's true for malloc'd
-   // blocks, but not necessarily true for custom-alloc'd blocks.  So
-   // in some cases this could result in an incorrect description (eg.
-   // saying "12 bytes after block A" when really it's within block B.
-   // Fixing would require adding redzone size to MC_Chunks, though.
    return VG_(addr_is_in_block)( a, mc->data, mc->szB,
                                  MC_MALLOC_REDZONE_SZB );
 }
+static
+Bool addr_is_in_MC_Chunk_with_REDZONE_SZB(MC_Chunk* mc, Addr a, SizeT rzB)
+{
+   return VG_(addr_is_in_block)( a, mc->data, mc->szB,
+                                 rzB );
+}
 
-// Forward declaration
+// Forward declarations
 static Bool client_block_maybe_describe( Addr a, AddrInfo* ai );
+static Bool mempool_block_maybe_describe( Addr a, AddrInfo* ai );
 
 
 /* Describe an address as best you can, for error messages,
@@ -1070,14 +1072,18 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
 
    tl_assert(Addr_Undescribed == ai->tag);
 
-   /* -- Perhaps it's a user-def'd block? -- */
+   /* -- Perhaps it's a user-named block? -- */
    if (client_block_maybe_describe( a, ai )) {
+      return;
+   }
+   /* -- Perhaps it's in mempool block? -- */
+   if (mempool_block_maybe_describe( a, ai )) {
       return;
    }
    /* -- Search for a recently freed block which might bracket it. -- */
    mc = MC_(get_freed_list_head)();
    while (mc) {
-      if (addr_is_in_MC_Chunk(mc, a)) {
+      if (addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
          ai->tag = Addr_Block;
          ai->Addr.Block.block_kind = Block_Freed;
          ai->Addr.Block.block_desc = "block";
@@ -1091,7 +1097,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    /* -- Search for a currently malloc'd block which might bracket it. -- */
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
-      if (addr_is_in_MC_Chunk(mc, a)) {
+      if (addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
          ai->tag = Addr_Block;
          ai->Addr.Block.block_kind = Block_Mallocd;
          ai->Addr.Block.block_desc = "block";
@@ -1267,8 +1273,7 @@ UInt MC_(update_Error_extra)( Error* err )
    }
 }
 
-// FIXME: does this perhaps want to live somewhere else
-// in this file?
+
 static Bool client_block_maybe_describe( Addr a,
                                          /*OUT*/AddrInfo* ai )
 {
@@ -1286,33 +1291,6 @@ static Bool client_block_maybe_describe( Addr a,
          continue;
       // Use zero as the redzone for client blocks.
       if (VG_(addr_is_in_block)(a, cgbs[i].start, cgbs[i].size, 0)) {
-         /* OK - maybe it's a mempool, too? */
-         MC_Mempool* mp = VG_(HT_lookup)(MC_(mempool_list),
-                                          (UWord)cgbs[i].start);
-         if (mp != NULL) {
-            if (mp->chunks != NULL) {
-               MC_Chunk* mc;
-               VG_(HT_ResetIter)(mp->chunks);
-               while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
-                  if (addr_is_in_MC_Chunk(mc, a)) {
-                     ai->tag = Addr_Block;
-                     ai->Addr.Block.block_kind = Block_MempoolChunk;
-                     ai->Addr.Block.block_desc = "block";
-                     ai->Addr.Block.block_szB  = mc->szB;
-                     ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
-                     ai->Addr.Block.lastchange = mc->where;
-                     return True;
-                  }
-               }
-            }
-            ai->tag = Addr_Block;
-            ai->Addr.Block.block_kind = Block_Mempool;
-            ai->Addr.Block.block_desc = "mempool";
-            ai->Addr.Block.block_szB  = cgbs[i].size;
-            ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(cgbs[i].start);
-            ai->Addr.Block.lastchange = cgbs[i].where;
-            return True;
-         }
          ai->tag = Addr_Block;
          ai->Addr.Block.block_kind = Block_UserG;
          ai->Addr.Block.block_desc = cgbs[i].desc;
@@ -1320,6 +1298,34 @@ static Bool client_block_maybe_describe( Addr a,
          ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(cgbs[i].start);
          ai->Addr.Block.lastchange = cgbs[i].where;
          return True;
+      }
+   }
+   return False;
+}
+
+
+static Bool mempool_block_maybe_describe( Addr a,
+                                          /*OUT*/AddrInfo* ai )
+{
+   MC_Mempool* mp;
+   tl_assert( MC_(mempool_list) );
+
+   VG_(HT_ResetIter)( MC_(mempool_list) );
+   while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
+      if (mp->chunks != NULL) {
+         MC_Chunk* mc;
+         VG_(HT_ResetIter)(mp->chunks);
+         while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
+            if (addr_is_in_MC_Chunk_with_REDZONE_SZB(mc, a, mp->rzB)) {
+               ai->tag = Addr_Block;
+               ai->Addr.Block.block_kind = Block_MempoolChunk;
+               ai->Addr.Block.block_desc = "block";
+               ai->Addr.Block.block_szB  = mc->szB;
+               ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
+               ai->Addr.Block.lastchange = mc->where;
+               return True;
+            }
+         }
       }
    }
    return False;

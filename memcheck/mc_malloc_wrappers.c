@@ -65,7 +65,8 @@ static ULong cmalloc_bs_mallocd = 0;
 /* Record malloc'd blocks. */
 VgHashTable MC_(malloc_list) = NULL;
 
-/* Memory pools. */
+/* Memory pools: a hash table of MC_Mempools.  Search key is
+   MC_Mempool::pool. */
 VgHashTable MC_(mempool_list) = NULL;
    
 /* Records blocks after freeing. */
@@ -486,7 +487,9 @@ SizeT MC_(malloc_usable_size) ( ThreadId tid, void* p )
 }
 
 
-/* Memory pool stuff. */
+/*------------------------------------------------------------*/
+/*--- Memory pool stuff.                                   ---*/
+/*------------------------------------------------------------*/
 
 void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
 {

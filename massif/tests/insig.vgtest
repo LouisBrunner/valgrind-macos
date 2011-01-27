@@ -1,5 +1,6 @@
+# At one point, thresholds less than 1.0% were misprinted as 00.00%, so test that here.
 prog: insig
-vgopts: --stacks=no --time-unit=B --heap-admin=128 --massif-out-file=massif.out
+vgopts: --stacks=no --time-unit=B --heap-admin=128 --massif-out-file=massif.out --threshold=0.99
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

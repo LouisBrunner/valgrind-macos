@@ -491,6 +491,13 @@ SizeT MC_(malloc_usable_size) ( ThreadId tid, void* p )
 /*--- Memory pool stuff.                                   ---*/
 /*------------------------------------------------------------*/
 
+/* Set to 1 for intensive sanity checking.  Is very expensive though
+   and should not be used in production scenarios.  See #255966. */
+#define MP_DETAILED_SANITY_CHECKS 0
+
+static void check_mempool_sane(MC_Mempool* mp); /*forward*/
+
+
 void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
 {
    MC_Mempool* mp;
@@ -512,6 +519,7 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    mp->rzB        = rzB;
    mp->is_zeroed  = is_zeroed;
    mp->chunks     = VG_(HT_construct)( "MC_(create_mempool)" );
+   check_mempool_sane(mp);
 
    /* Paranoia ... ensure this area is off-limits to the client, so
       the mp->data field isn't visible to the leak checker.  If memory
@@ -543,6 +551,7 @@ void MC_(destroy_mempool)(Addr pool)
       MC_(record_illegal_mempool_error) ( tid, pool );
       return;
    }
+   check_mempool_sane(mp);
 
    // Clean up the chunks, one by one
    VG_(HT_ResetIter)(mp->chunks);
@@ -657,10 +666,10 @@ void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT szB)
    if (mp == NULL) {
       MC_(record_illegal_mempool_error) ( tid, pool );
    } else {
-      check_mempool_sane(mp);
+      if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
       MC_(new_block)(tid, addr, szB, /*ignored*/0, mp->is_zeroed,
                      MC_AllocCustom, mp->chunks);
-      check_mempool_sane(mp);
+      if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
    }
 }
 
@@ -681,7 +690,7 @@ void MC_(mempool_free)(Addr pool, Addr addr)
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
-   check_mempool_sane(mp);
+   if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
    mc = VG_(HT_remove)(mp->chunks, (UWord)addr);
    if (mc == NULL) {
       MC_(record_free_error)(tid, (Addr)addr);
@@ -695,7 +704,7 @@ void MC_(mempool_free)(Addr pool, Addr addr)
    }
 
    die_and_free_mem ( tid, mc, mp->rzB );
-   check_mempool_sane(mp);
+   if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
 }
 
 
@@ -754,7 +763,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT szB)
          if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
             MC_(record_free_error)(tid, (Addr)mc->data);
             VG_(free)(chunks);
-            check_mempool_sane(mp);
+            if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
             return;
          }
          die_and_free_mem ( tid, mc, mp->rzB );  
@@ -769,7 +778,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT szB)
          if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
             MC_(record_free_error)(tid, (Addr)mc->data);
             VG_(free)(chunks);
-            check_mempool_sane(mp);
+            if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
             return;
          }
 

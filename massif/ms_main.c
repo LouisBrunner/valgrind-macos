@@ -2106,14 +2106,11 @@ Char FP_buf[BUF_LEN];
 })
 
 // Nb: uses a static buffer, each call trashes the last string returned.
-static Char* make_perc(ULong x, ULong y)
+static Char* make_perc(double x)
 {
    static Char mbuf[32];
 
-//   tl_assert(x <= y);    XXX; put back in later...
-
-   // XXX: I'm not confident that VG_(percentify) works as it should...
-   VG_(percentify)(x, y, 2, 6, mbuf);
+   VG_(percentify)((ULong)(x * 100), 10000, 2, 6, mbuf);
    // XXX: this is bogus if the denominator was zero -- resulting string is
    // something like "0 --%")
    if (' ' == mbuf[0]) mbuf[0] = '0';
@@ -2239,7 +2236,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
       Char* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
       FP("%sn0: %lu in %d place%s below massif's threshold (%s)\n",
          depth_str, sxpt->szB, sxpt->Insig.n_xpts, s,
-         make_perc((ULong)clo_threshold, 100));
+         make_perc(clo_threshold));
       break;
     }
 

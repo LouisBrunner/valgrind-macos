@@ -35,3 +35,12 @@
    fun:_ZN13TFontFeaturesC2EP6CGFont
    fun:_ZNK9TBaseFont12CopyFeaturesEv
 }
+
+# See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
+# unavoidable due to BSD setenv() semantics.
+{
+   macos-__setenv-leak-see-our-bug-188572
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:__setenv
+}

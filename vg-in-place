@@ -4,6 +4,9 @@
 # $0 (the name of the file) and $PWD.
 
 dollarzero=$0
+if [ -h "${dollarzero}" ]; then
+   dollarzero=`readlink "${dollarzero}"`
+fi
 
 if [ "${dollarzero#/}" = "${dollarzero}" ];
 then

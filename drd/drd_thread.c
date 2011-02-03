@@ -504,6 +504,21 @@ void DRD_(thread_finished)(const DrdThreadId tid)
    }
 }
 
+/** Called just after fork() in the child process. */
+void DRD_(drd_thread_atfork_child)(const DrdThreadId tid)
+{
+   unsigned i;
+
+   for (i = 1; i < DRD_N_THREADS; i++)
+   {
+      if (i == tid)
+	 continue;
+      if (DRD_(IsValidDrdThreadId(i)))
+	 DRD_(thread_delete)(i);
+      tl_assert(!DRD_(IsValidDrdThreadId(i)));
+   }   
+}
+
 /** Called just before pthread_cancel(). */
 void DRD_(thread_pre_cancel)(const DrdThreadId tid)
 {

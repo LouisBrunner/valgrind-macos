@@ -779,7 +779,7 @@ call_entry* CLG_(get_call_entry)(Int n);
 
 void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip);
 void CLG_(pop_call_stack)(void);
-void CLG_(unwind_call_stack)(Addr sp, Int);
+Int CLG_(unwind_call_stack)(Addr sp, Int);
 
 /* from context.c */
 void CLG_(init_fn_stack)(fn_stack*);

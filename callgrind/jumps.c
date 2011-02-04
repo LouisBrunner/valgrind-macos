@@ -160,6 +160,8 @@ static jCC* new_jcc(BBCC* from, UInt jmp, BBCC* to)
     * This list is only used at dumping time */
 
    if (from) {
+       /* Prohibit corruption by array overrun */
+       CLG_ASSERT((0 <= jmp) && (jmp <= from->bb->cjmp_count));
        jcc->next_from = from->jmp[jmp].jcc_list;
        from->jmp[jmp].jcc_list = jcc;
    }

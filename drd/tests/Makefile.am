@@ -170,8 +170,6 @@ EXTRA_DIST =                                        \
 	qt4_rwlock.vgtest                           \
 	qt4_semaphore.stderr.exp                    \
 	qt4_semaphore.vgtest                        \
-	read_after_free.stderr.exp		    \
-	read_after_free.vgtest			    \
 	recursive_mutex.stderr.exp-linux            \
 	recursive_mutex.stderr.exp-darwin           \
 	recursive_mutex.vgtest                      \
@@ -311,7 +309,6 @@ check_PROGRAMS +=        \
   annotate_smart_pointer \
   atomic_var             \
   circular_buffer        \
-  read_after_free        \
   tsan_unittest
 endif
 

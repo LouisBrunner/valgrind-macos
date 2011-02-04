@@ -5,6 +5,13 @@ Release 3.7.0 (???)
 
 
 
+Release 3.6.0 (... 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+DRD: removed command-line option --free-is-write again since it is impossible
+to implement this functionality reliably.
+
+
 Release 3.6.0 (21 October 2010)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.6.0 is a feature release with many significant improvements and the

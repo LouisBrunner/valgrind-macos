@@ -252,6 +252,8 @@ EXTRA_DIST =                                        \
 	tc24_nonzero_sem.vgtest                     \
 	thread_name.stderr.exp			    \
 	thread_name.vgtest			    \
+	threaded-fork.stderr.exp		    \
+	threaded-fork.vgtest			    \
 	trylock.stderr.exp                          \
 	trylock.vgtest				    \
 	unit_bitmap.stderr.exp                      \
@@ -294,6 +296,7 @@ check_PROGRAMS =      \
   sem_open            \
   sigalrm             \
   thread_name         \
+  threaded-fork       \
   trylock             \
   unit_bitmap         \
   unit_vc

@@ -51,6 +51,7 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 #include "pub_tool_tooliface.h"
+#include "pub_tool_aspacemgr.h"   // VG_(am_is_valid_for_client)
 
 
 /* Local variables. */
@@ -256,6 +257,13 @@ static void drd_pre_mem_read_asciiz(const CorePart part,
 {
    const char* p = (void*)a;
    SizeT size = 0;
+
+   // Don't segfault if the string starts in an obviously stupid
+   // place.  Actually we should check the whole string, not just
+   // the start address, but that's too much trouble.  At least
+   // checking the first byte is better than nothing.  See #255009.
+   if (!VG_(am_is_valid_for_client) (a, 1, VKI_PROT_READ))
+      return;
 
    /* Note: the expression '*p' reads client memory and may crash if the */
    /* client provided an invalid pointer !                               */

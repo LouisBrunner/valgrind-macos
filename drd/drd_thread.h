@@ -134,7 +134,7 @@ DrdThreadId DRD_(thread_pre_create)(const DrdThreadId creator,
                                     const ThreadId vg_created);
 DrdThreadId DRD_(thread_post_create)(const ThreadId vg_created);
 void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee);
-void DRD_(thread_delete)(const DrdThreadId tid);
+void DRD_(thread_delete)(const DrdThreadId tid, Bool detached);
 void DRD_(thread_finished)(const DrdThreadId tid);
 void DRD_(drd_thread_atfork_child)(const DrdThreadId tid);
 void DRD_(thread_pre_cancel)(const DrdThreadId tid);

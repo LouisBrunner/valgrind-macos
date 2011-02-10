@@ -8,8 +8,9 @@ Release 3.7.0 (???)
 Release 3.6.0 (... 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-DRD: removed command-line option --free-is-write again since it is impossible
-to implement this functionality reliably.
+DRD: removed command-line option --free-is-write again since it is not possible
+to implement this functionality for custom allocators without changing the client-tool
+interface in a backwards-incompatible way.
 
 
 Release 3.6.0 (21 October 2010)

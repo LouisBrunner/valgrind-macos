@@ -891,7 +891,11 @@ static const HChar* complain_about_stripped_glibc_ldso[]
     "for your Linux distribution to please in future ship a non-",
     "stripped ld.so (or whatever the dynamic linker .so is called)",
     "that exports the above-named function using the standard",
-    "calling conventions for this platform.",
+    "calling conventions for this platform.  The package you need",
+    "to install for fix (1) is called",
+    "",
+    "  On Debian, Ubuntu:                 libc6-dbg",
+    "  On SuSE, openSuSE, Fedora, RHEL:   glibc-debuginfo",
     NULL
   };
 
@@ -923,7 +927,16 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld-linux.so.2", "index",
          (Addr)&VG_(x86_linux_REDIR_FOR_index),
+#        if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
+            || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
+            || defined(GLIBC_2_8) || defined(GLIBC_2_9) \
+            || defined(GLIBC_2_10) || defined(GLIBC_2_11)
          NULL
+#        else
+         /* for glibc-2.12 and later, this is mandatory - can't sanely
+            continue without it */
+         complain_about_stripped_glibc_ldso
+#        endif
       );
    }
 

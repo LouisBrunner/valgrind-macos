@@ -1,38 +1,38 @@
 
 Thread 3:
 Inconsistent association of condition variable and mutex: condition variable 0x........, mutexes 0x........ and 0x........
-   at 0x........: pthread_cond_timedwait_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_timedwait (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (pth_inconsistent_cond_wait.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
-   at 0x........: pthread_cond_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 
 Thread 1:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 cond 0x........ was first observed at:
-   at 0x........: pthread_cond_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 cond 0x........ was first observed at:
-   at 0x........: pthread_cond_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 
 

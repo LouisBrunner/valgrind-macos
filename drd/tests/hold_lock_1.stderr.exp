@@ -1,24 +1,24 @@
 
 Locking mutex ...
 Acquired at:
-   at 0x........: pthread_mutex_lock_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
 Lock on mutex 0x........ was held during ... ms (threshold: 500 ms).
-   at 0x........: pthread_mutex_unlock_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
 mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
 
 Locking rwlock exclusively ...
 Acquired at:
-   at 0x........: pthread_rwlock_wrlock_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_rwlock_wrlock (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
 Lock on rwlock 0x........ was held during ... ms (threshold: 500 ms).
-   at 0x........: pthread_rwlock_unlock_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_rwlock_unlock (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
 rwlock 0x........ was first observed at:
-   at 0x........: pthread_rwlock_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_rwlock_init (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
 
 Locking rwlock shared ...

@@ -1,9 +1,9 @@
 
 Mutex reinitialization: mutex 0x........, recursion count 0, owner 1.
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_mutex_reinit.c:?)
 mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_init_intercept (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_mutex_reinit.c:?)
 
 Done.

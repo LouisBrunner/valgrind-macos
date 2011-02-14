@@ -3659,6 +3659,54 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_SarN64x2: fn = (HWord)h_generic_calc_SarN64x2;
+                         goto do_SseAssistedVectorAndScalar;
+      case Iop_SarN8x16: fn = (HWord)h_generic_calc_SarN8x16;
+                         goto do_SseAssistedVectorAndScalar;
+      do_SseAssistedVectorAndScalar: {
+         /* RRRufff!  RRRufff code is what we're generating here.  Oh
+            well. */
+         vassert(fn != 0);
+         HReg dst = newVRegV(env);
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         HReg argp = newVRegI(env);
+         /* subq $112, %rsp         -- make a space*/
+         sub_from_rsp(env, 112);
+         /* leaq 48(%rsp), %r_argp  -- point into it */
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(48, hregAMD64_RSP()),
+                                        argp));
+         /* andq $-16, %r_argp      -- 16-align the pointer */
+         addInstr(env, AMD64Instr_Alu64R(Aalu_AND,
+                                         AMD64RMI_Imm( ~(UInt)15 ), 
+                                         argp));
+         /* Prepare 2 vector arg regs:
+            leaq 0(%r_argp), %rdi
+            leaq 16(%r_argp), %rsi
+         */
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(0, argp),
+                                        hregAMD64_RDI()));
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(16, argp),
+                                        hregAMD64_RSI()));
+         /* Store the vector arg, at (%rsi):
+            movupd  %argL, 0(%rsi)
+         */
+         addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 16, argL,
+                                          AMD64AMode_IR(0, hregAMD64_RSI())));
+         /* And get the scalar value into rdx */
+         addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RDX()));
+
+         /* call the helper */
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3 ));
+         /* fetch the result from memory, using %r_argp, which the
+            register allocator will keep alive across the call. */
+         addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dst,
+                                          AMD64AMode_IR(0, argp)));
+         /* and finally, clear the space */
+         add_to_rsp(env, 112);
+         return dst;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Binop.op) */

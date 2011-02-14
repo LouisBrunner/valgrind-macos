@@ -1288,31 +1288,13 @@ arguments.</para>
     <varname>VALGRIND_MAKE_MEM_DEFINED</varname>.
     These mark address ranges as completely inaccessible,
     accessible but containing undefined data, and accessible and
-    containing defined data, respectively.  Subsequent errors may
-    have their faulting addresses described in terms of these
-    blocks.  Returns a "block handle".  Returns zero when not run
-    on Valgrind.</para>
+    containing defined data, respectively.</para>
   </listitem>
 
   <listitem>
     <para><varname>VALGRIND_MAKE_MEM_DEFINED_IF_ADDRESSABLE</varname>.
     This is just like <varname>VALGRIND_MAKE_MEM_DEFINED</varname> but only
     affects those bytes that are already addressable.</para>
-  </listitem>
-
-  <listitem>
-    <para><varname>VALGRIND_DISCARD</varname>: At some point you may
-    want Valgrind to stop reporting errors in terms of the blocks
-    defined by the previous three macros.  To do this, the above macros
-    return a small-integer "block handle".  You can pass this block
-    handle to <varname>VALGRIND_DISCARD</varname>.  After doing so,
-    Valgrind will no longer be able to relate addressing errors to the
-    user-defined block associated with the handle.  The permissions
-    settings associated with the handle remain in place; this just
-    affects how errors are reported, not whether they are reported.
-    Returns 1 for an invalid handle and 0 for a valid handle (although
-    passing invalid handles is harmless).  Always returns 0 when not run
-    on Valgrind.</para>
   </listitem>
 
   <listitem>
@@ -1370,6 +1352,30 @@ arguments.</para>
     set V bits that you have got with
     <varname>VALGRIND_GET_VBITS</varname>.  Only for those who really
     know what they are doing.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_CREATE_BLOCK</varname> and 
+    <varname>VALGRIND_DISCARD</varname>.  <varname>VALGRIND_CREATE_BLOCK</varname>
+    takes an address, a number of bytes and a character string.  The
+    specified address range is then associated with that string.  When
+    Memcheck reports an invalid access to an address in the range, it
+    will describe it in terms of this block rather than in terms of
+    any other block it knows about.  Note that the use of this macro
+    does not actually change the state of memory in any way -- it
+    merely gives a name for the range.
+    </para>
+
+    <para>At some point you may want Memcheck to stop reporting errors
+    in terms of the block named
+    by <varname>VALGRIND_CREATE_BLOCK</varname>.  To make this
+    possible, <varname>VALGRIND_CREATE_BLOCK</varname> returns a
+    "block handle", which is a C <varname>int</varname> value.  You
+    can pass this block handle to <varname>VALGRIND_DISCARD</varname>.
+    After doing so, Valgrind will no longer relate addressing errors
+    in the specified range to the block.  Passing invalid handles to
+    <varname>VALGRIND_DISCARD</varname> is harmless.
+   </para>
   </listitem>
 
 </itemizedlist>

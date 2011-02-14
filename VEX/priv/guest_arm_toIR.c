@@ -10985,7 +10985,7 @@ static Bool decode_CP10_CP11_instruction (
       UInt rT   = INSN(15,12);
       UInt Q    = INSN(21,21);
       UInt size = (INSN(22,22) << 1) | INSN(5,5);
-      if (rT == 15 || (isT && rT == 13) || size == 3i || (Q && (rD & 1))) {
+      if (rT == 15 || (isT && rT == 13) || size == 3 || (Q && (rD & 1))) {
          /* fall through */
       } else {
          IRExpr* e = isT ? getIRegT(rT) : getIRegA(rT);

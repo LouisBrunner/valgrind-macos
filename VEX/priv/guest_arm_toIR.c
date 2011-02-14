@@ -17746,6 +17746,24 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* -------------- read CP15 TPIDRURO register ------------- */
+   /* mrc     p15, 0,  r0, c13, c0, 3  up to
+      mrc     p15, 0, r14, c13, c0, 3
+   */
+   /* I don't know whether this is really v7-only.  But anyway, we
+      have to support it since arm-linux uses TPIDRURO as a thread
+      state register. */
+   
+   if ((INSN0(15,0) == 0xEE1D) && (INSN1(11,0) == 0x0F70)) {
+      UInt rD = INSN1(15,12);
+      if (!isBadRegT(rD)) {
+         putIRegT(rD, IRExpr_Get(OFFB_TPIDRURO, Ity_I32), IRTemp_INVALID);
+         DIP("mrc p15,0, r%u, c13, c0, 3\n", rD);
+         goto decode_success;
+      }
+      /* fall through */
+   }
+
    /* ------------------- NOP ------------------ */
    if (INSN0(15,0) == 0xF3AF && INSN1(15,0) == 0x8000) {
       DIP("nop\n");

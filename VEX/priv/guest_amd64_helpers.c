@@ -1454,6 +1454,68 @@ ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl )
 }
 
 
+/* This is used to implement both 'frstor' and 'fldenv'.  The latter
+   appears to differ from the former only in that the 8 FP registers
+   themselves are not transferred into the guest state. */
+static
+VexEmWarn do_put_x87 ( Bool moveRegs,
+                       /*IN*/UChar* x87_state,
+                       /*OUT*/VexGuestAMD64State* vex_state )
+{
+   Int        stno, preg;
+   UInt       tag;
+   ULong*     vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
+   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State* x87     = (Fpu_State*)x87_state;
+   UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
+   UInt       tagw    = x87->env[FP_ENV_TAG];
+   UInt       fpucw   = x87->env[FP_ENV_CTRL];
+   UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
+   VexEmWarn  ew;
+   UInt       fpround;
+   ULong      pair;
+
+   /* Copy registers and tags */
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      tag = (tagw >> (2*preg)) & 3;
+      if (tag == 3) {
+         /* register is empty */
+         /* hmm, if it's empty, does it still get written?  Probably
+            safer to say it does.  If we don't, memcheck could get out
+            of sync, in that it thinks all FP registers are defined by
+            this helper, but in reality some have not been updated. */
+         if (moveRegs)
+            vexRegs[preg] = 0; /* IEEE754 64-bit zero */
+         vexTags[preg] = 0;
+      } else {
+         /* register is non-empty */
+         if (moveRegs)
+            convert_f80le_to_f64le( &x87->reg[10*stno], 
+                                    (UChar*)&vexRegs[preg] );
+         vexTags[preg] = 1;
+      }
+   }
+
+   /* stack pointer */
+   vex_state->guest_FTOP = ftop;
+
+   /* status word */
+   vex_state->guest_FC3210 = c3210;
+
+   /* handle the control word, setting FPROUND and detecting any
+      emulation warnings. */
+   pair    = amd64g_check_fldcw ( (ULong)fpucw );
+   fpround = (UInt)pair;
+   ew      = (VexEmWarn)(pair >> 32);
+   
+   vex_state->guest_FPROUND = fpround & 3;
+
+   /* emulation warnings --> caller */
+   return ew;
+}
+
+
 /* Create an x87 FPU state from the guest state, as close as
    we can approximate it. */
 static
@@ -1607,6 +1669,94 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
    COPY_U128( xmm[15], gst->guest_XMM15 );
 
 #  undef COPY_U128
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
+{
+   Fpu_State tmp;
+   VexEmWarn warnX87 = EmWarn_NONE;
+   VexEmWarn warnXMM = EmWarn_NONE;
+   UShort*   addrS   = (UShort*)addr;
+   UChar*    addrC   = (UChar*)addr;
+   U128*     xmm     = (U128*)(addr + 160);
+   UShort    fp_tags;
+   Int       r, stno, i;
+
+   /* Restore %xmm0 .. %xmm15.  If the host is big-endian, these need
+      to be byte-swapped. */
+   vassert(host_is_little_endian());
+
+#  define COPY_U128(_dst,_src)                       \
+      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+      while (0)
+
+   COPY_U128( gst->guest_XMM0, xmm[0] );
+   COPY_U128( gst->guest_XMM1, xmm[1] );
+   COPY_U128( gst->guest_XMM2, xmm[2] );
+   COPY_U128( gst->guest_XMM3, xmm[3] );
+   COPY_U128( gst->guest_XMM4, xmm[4] );
+   COPY_U128( gst->guest_XMM5, xmm[5] );
+   COPY_U128( gst->guest_XMM6, xmm[6] );
+   COPY_U128( gst->guest_XMM7, xmm[7] );
+   COPY_U128( gst->guest_XMM8, xmm[8] );
+   COPY_U128( gst->guest_XMM9, xmm[9] );
+   COPY_U128( gst->guest_XMM10, xmm[10] );
+   COPY_U128( gst->guest_XMM11, xmm[11] );
+   COPY_U128( gst->guest_XMM12, xmm[12] );
+   COPY_U128( gst->guest_XMM13, xmm[13] );
+   COPY_U128( gst->guest_XMM14, xmm[14] );
+   COPY_U128( gst->guest_XMM15, xmm[15] );
+
+#  undef COPY_U128
+
+   /* Copy the x87 registers out of the image, into a temporary
+      Fpu_State struct. */
+   for (i = 0; i < 14; i++) tmp.env[i] = 0;
+   for (i = 0; i < 80; i++) tmp.reg[i] = 0;
+   /* fill in tmp.reg[0..7] */
+   for (stno = 0; stno < 8; stno++) {
+      UShort* dstS = (UShort*)(&tmp.reg[10*stno]);
+      UShort* srcS = (UShort*)(&addrS[16 + 8*stno]);
+      dstS[0] = srcS[0];
+      dstS[1] = srcS[1];
+      dstS[2] = srcS[2];
+      dstS[3] = srcS[3];
+      dstS[4] = srcS[4];
+   }
+   /* fill in tmp.env[0..13] */
+   tmp.env[FP_ENV_CTRL] = addrS[0]; /* FCW: fpu control word */
+   tmp.env[FP_ENV_STAT] = addrS[1]; /* FCW: fpu status word */
+
+   fp_tags = 0;
+   for (r = 0; r < 8; r++) {
+      if (addrC[4] & (1<<r))
+         fp_tags |= (0 << (2*r)); /* EMPTY */
+      else 
+         fp_tags |= (3 << (2*r)); /* VALID -- not really precise enough. */
+   }
+   tmp.env[FP_ENV_TAG] = fp_tags;
+
+   /* Now write 'tmp' into the guest state. */
+   warnX87 = do_put_x87( True/*moveRegs*/, (UChar*)&tmp, gst );
+
+   { UInt w32 = (((UInt)addrS[12]) & 0xFFFF)
+                | ((((UInt)addrS[13]) & 0xFFFF) << 16);
+     ULong w64 = amd64g_check_ldmxcsr( (ULong)w32 );
+
+     warnXMM = (VexEmWarn)(w64 >> 32);
+
+     gst->guest_SSEROUND = w64 & 0xFFFFFFFFULL;
+   }
+
+   /* Prefer an X87 emwarn over an XMM one, if both exist. */
+   if (warnX87 != EmWarn_NONE)
+      return warnX87;
+   else
+      return warnXMM;
 }
 
 

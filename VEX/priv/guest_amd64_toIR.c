@@ -13967,6 +13967,59 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 0F 3A 0E /r ib = PBLENDW xmm1, xmm2/m128, imm8
+      Blend Packed Words (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x0E ) {
+
+      Int imm8;
+      IRTemp dst_vec = newTemp(Ity_V128);
+      IRTemp src_vec = newTemp(Ity_V128);
+
+      modrm = insn[3];
+
+      assign( dst_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)insn[3+1];
+         assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1+1;
+         DIP( "pblendw $%d, %s,%s\n", imm8,
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
+                          1/* imm8 is 1 byte after the amode */ );
+         gen_SEGV_if_not_16_aligned( addr );
+         assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)insn[3+alen];
+         delta += 3+alen+1;
+         DIP( "pblendw $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      /* Make w be a 16-bit version of imm8, formed by duplicating each
+         bit in imm8. */
+      Int i;
+      UShort imm16 = 0;
+      for (i = 0; i < 8; i++) {
+         if (imm8 & (1 << i))
+             imm16 |= (3 << (2*i));
+      }
+      IRTemp imm16_mask = newTemp(Ity_V128);
+      assign( imm16_mask, mkV128( imm16 ));
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_OrV128, 
+                        binop( Iop_AndV128, mkexpr(src_vec), mkexpr(imm16_mask) ),
+                        binop( Iop_AndV128, mkexpr(dst_vec),
+                               unop( Iop_NotV128, mkexpr(imm16_mask) ) ) ) );
+
+      goto decode_success;
+   }
+
+
    /* 66 0F 3A 44 /r ib = PCLMULQDQ xmm1, xmm2/m128, imm8
     * Carry-less multiplication of selected XMM quadwords into XMM
     * registers (a.k.a multiplication of polynomials over GF(2))

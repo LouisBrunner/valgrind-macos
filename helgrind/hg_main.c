@@ -52,6 +52,7 @@
 #include "pub_tool_debuginfo.h" // VG_(find_seginfo), VG_(seginfo_soname)
 #include "pub_tool_redir.h"     // sonames for the dynamic linkers
 #include "pub_tool_vki.h"       // VKI_PAGE_SIZE
+#include "pub_tool_libcproc.h"  // VG_(atfork)
 
 #include "hg_basics.h"
 #include "hg_wordset.h"
@@ -1679,6 +1680,8 @@ void evh__pre_thread_ll_exit ( ThreadId quit_tid )
       - tell libhb the thread is gone
       - clear the map_threads entry, in order that the Valgrind core
         can re-use it. */
+   /* Cleanup actions (next 5 lines) copied in evh__atfork_child; keep
+      in sync. */
    tl_assert(thr_q->hbthr);
    libhb_async_exit(thr_q->hbthr);
    tl_assert(thr_q->coretid == quit_tid);
@@ -1687,6 +1690,35 @@ void evh__pre_thread_ll_exit ( ThreadId quit_tid )
 
    if (HG_(clo_sanity_flags) & SCE_THREADS)
       all__sanity_check("evh__pre_thread_ll_exit-post");
+}
+
+/* This is called immediately after fork, for the child only.  'tid'
+   is the only surviving thread (as per POSIX rules on fork() in
+   threaded programs), so we have to clean up map_threads to remove
+   entries for any other threads. */
+static
+void evh__atfork_child ( ThreadId tid )
+{
+   UInt    i;
+   Thread* thr;
+   /* Slot 0 should never be used. */
+   thr = map_threads_maybe_lookup( 0/*INVALID*/ );
+   tl_assert(!thr);
+   /* Clean up all other slots except 'tid'. */
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (i == tid)
+         continue;
+      thr = map_threads_maybe_lookup(i);
+      if (!thr)
+         continue;
+      /* Cleanup actions (next 5 lines) copied from end of
+         evh__pre_thread_ll_exit; keep in sync. */
+      tl_assert(thr->hbthr);
+      libhb_async_exit(thr->hbthr);
+      tl_assert(thr->coretid == i);
+      thr->coretid = VG_INVALID_THREADID;
+      map_threads_delete(i);
+   }
 }
 
 
@@ -4916,6 +4948,8 @@ static void hg_pre_clo_init ( void )
    hg_mallocmeta_table
       = VG_(HT_construct)( "hg_malloc_metadata_table" );
 
+   // add a callback to clean up on (threaded) fork.
+   VG_(atfork)(NULL/*pre*/, NULL/*parent*/, evh__atfork_child/*child*/);
 }
 
 VG_DETERMINE_INTERFACE_VERSION(hg_pre_clo_init)

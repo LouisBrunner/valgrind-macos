@@ -750,6 +750,13 @@ static Bool haveF3noF2 ( Prefix pfx )
      toBool((pfx & (PFX_F2|PFX_F3)) == PFX_F3);
 }
 
+/* Return True iff pfx has F2 set and F3 clear */
+static Bool haveF2noF3 ( Prefix pfx )
+{
+  return 
+     toBool((pfx & (PFX_F2|PFX_F3)) == PFX_F2);
+}
+
 /* Return True iff pfx has 66, F2 and F3 clear */
 static Bool haveNo66noF2noF3 ( Prefix pfx )
 {
@@ -15847,6 +15854,68 @@ DisResult disInstr_AMD64_WRK (
                           binop(Iop_AndV128, mkexpr(vecG), mkexpr(notmask)));
       putXMMReg(gregOfRexRM(pfx, modrm), res);
 
+      goto decode_success;
+   }
+
+   /* F2 0F 38 F0 /r = CRC32 r/m8, r32 (REX.W ok, 66 not ok)
+      F2 0F 38 F1 /r = CRC32 r/m{16,32,64}, r32
+      The decoding on this is a bit unusual.
+   */
+   if (haveF2noF3(pfx)
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0xF1
+           || (insn[2] == 0xF0 && !have66(pfx)))) {
+      modrm = insn[3];
+
+      if (insn[2] == 0xF0) 
+         sz = 1;
+      else
+         vassert(sz == 2 || sz == 4 || sz == 8);
+
+      IRType tyE = szToITy(sz);
+      IRTemp valE = newTemp(tyE);
+
+      if (epartIsReg(modrm)) {
+         assign(valE, getIRegE(sz, pfx, modrm));
+         delta += 3+1;
+         DIP("crc32b %s,%s\n", nameIRegE(sz, pfx, modrm),
+             nameIRegG(1==getRexW(pfx) ? 8 : 4 ,pfx, modrm));
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign(valE, loadLE(tyE, mkexpr(addr)));
+         delta += 3+alen;
+         DIP("crc32b %s,%s\n", dis_buf,
+             nameIRegG(1==getRexW(pfx) ? 8 : 4 ,pfx, modrm));
+      }
+
+      /* Somewhat funny getting/putting of the crc32 value, in order
+         to ensure that it turns into 64-bit gets and puts.  However,
+         mask off the upper 32 bits so as to not get memcheck false
+         +ves around the helper call. */
+      IRTemp valG0 = newTemp(Ity_I64);
+      assign(valG0, binop(Iop_And64, getIRegG(8, pfx, modrm),
+                          mkU64(0xFFFFFFFF)));
+
+      HChar* nm = NULL;
+      void* fn = NULL;
+      switch (sz) {
+         case 1: nm = "amd64g_calc_crc32b";
+                 fn = &amd64g_calc_crc32b; break;
+         case 2: nm = "amd64g_calc_crc32w";
+                 fn = &amd64g_calc_crc32w; break;
+         case 4: nm = "amd64g_calc_crc32l";
+                 fn = &amd64g_calc_crc32l; break;
+         case 8: nm = "amd64g_calc_crc32q";
+                 fn = &amd64g_calc_crc32q; break;
+      }
+      vassert(nm && fn);
+      IRTemp valG1 = newTemp(Ity_I64);
+      assign(valG1,
+             mkIRExprCCall(Ity_I64, 0/*regparm*/, nm, fn, 
+                           mkIRExprVec_2(mkexpr(valG0),
+                                         widenUto64(mkexpr(valE)))));
+
+      putIRegG(4, pfx, modrm, unop(Iop_64to32, mkexpr(valG1)));
       goto decode_success;
    }
 

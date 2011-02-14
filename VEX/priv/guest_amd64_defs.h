@@ -137,6 +137,10 @@ extern ULong amd64g_calculate_mmx_psadbw   ( ULong, ULong );
 extern ULong amd64g_calculate_mmx_pmovmskb ( ULong );
 extern ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
+extern ULong amd64g_calc_crc32b ( ULong crcIn, ULong b );
+extern ULong amd64g_calc_crc32w ( ULong crcIn, ULong w );
+extern ULong amd64g_calc_crc32l ( ULong crcIn, ULong l );
+extern ULong amd64g_calc_crc32q ( ULong crcIn, ULong q );
 
 /* --- DIRTY HELPERS --- */
 

@@ -1943,7 +1943,10 @@ static void parse_var_DIE (
 
 typedef
    struct {
-      /* What source language?  'C'=C/C++, 'F'=Fortran, '?'=other
+      /* What source language?  'A'=Ada83/95,
+                                'C'=C/C++, 
+                                'F'=Fortran,
+                                '?'=other
          Established once per compilation unit. */
       UChar language;
       /* A stack of types which are currently under construction */
@@ -2031,6 +2034,22 @@ static void typestack_push ( CUConst* cc,
       typestack_show( parser, "after push" );
 }
 
+/* True if the subrange type being parsed gives the bounds of an array. */
+static Bool subrange_type_denotes_array_bounds ( D3TypeParser* parser,
+                                                 DW_TAG dtag ) {
+   vg_assert(dtag == DW_TAG_subrange_type);
+   /* For most languages, a subrange_type dtag always gives the 
+      bounds of an array.
+      For Ada, there are additional conditions as a subrange_type
+      is also used for other purposes. */
+   if (parser->language != 'A')
+      /* not Ada, so it definitely denotes an array bound. */
+      return True;
+   else
+      /* Extra constraints for Ada: it only denotes an array bound if .. */
+      return (! typestack_is_empty(parser)
+              && parser->qparentE[parser->sp].tag == Te_TyArray);
+}
 
 /* Parse a type-related DIE.  'parser' holds the current parser state.
    'admin' is where the completed types are dumped.  'dtag' is the tag
@@ -2114,10 +2133,12 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_Fortran77: case DW_LANG_Fortran90:
             case DW_LANG_Fortran95:
                parser->language = 'F'; break;
-            case DW_LANG_Ada83: case DW_LANG_Cobol74:
+            case DW_LANG_Ada83: case DW_LANG_Ada95: 
+               parser->language = 'A'; break;
+            case DW_LANG_Cobol74:
             case DW_LANG_Cobol85: case DW_LANG_Pascal83:
             case DW_LANG_Modula2: case DW_LANG_Java:
-            case DW_LANG_Ada95: case DW_LANG_PLI:
+            case DW_LANG_PLI:
             case DW_LANG_D: case DW_LANG_Python:
             case DW_LANG_Mips_Assembler:
                parser->language = '?'; break;
@@ -2269,7 +2290,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                                  "<anon_enum_type>" );
 
       /* Do we have something that looks sane? */
-      if (typeE.Te.TyEnum.szB == 0 /* we must know the size */)
+      if (typeE.Te.TyEnum.szB == 0 
+          /* we must know the size */
+          /* but not for Ada, which uses such dummy
+             enumerations as helper for gdb ada mode. */
+          && parser->language != 'A')
          goto bad_DIE;
       /* On't stack! */
       typestack_push( cc, parser, td3, &typeE, level );
@@ -2528,7 +2553,9 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       goto acquire_Type;
    }
 
-   if (dtag == DW_TAG_subrange_type) {
+   /* this is a subrange type defining the bounds of an array. */
+   if (dtag == DW_TAG_subrange_type 
+       && subrange_type_denotes_array_bounds(parser, dtag)) {
       Bool have_lower = False;
       Bool have_upper = False;
       Bool have_count = False;
@@ -2539,6 +2566,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          case 'C': have_lower = True;  lower = 0; break;
          case 'F': have_lower = True;  lower = 1; break;
          case '?': have_lower = False; break;
+         case 'A': have_lower = False; break;
          default:  vg_assert(0); /* assured us by handling of
                                     DW_TAG_compile_unit in this fn */
       }
@@ -2614,8 +2642,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       goto acquire_Bound;
    }
 
-   if (dtag == DW_TAG_typedef) {
-      /* We can pick up a new typedef any time. */
+   /* typedef or subrange_type other than array bounds. */
+   if (dtag == DW_TAG_typedef 
+       || (dtag == DW_TAG_subrange_type 
+           && !subrange_type_denotes_array_bounds(parser, dtag))) {
+      /* subrange_type other than array bound is only for Ada. */
+      vg_assert (dtag == DW_TAG_typedef || parser->language == 'A');
+      /* We can pick up a new typedef/subrange_type any time. */
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = D3_INVALID_CUOFF;
       typeE.tag   = Te_TyTyDef;
@@ -2639,6 +2672,12 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       /* Do we have something that looks sane? */
       if (/* must have a name */
           typeE.Te.TyTyDef.name == NULL
+          /* However gcc gnat Ada generates minimal typedef
+             such as the below => accept no name for Ada.
+             <6><91cc>: DW_TAG_typedef
+                DW_AT_abstract_ori: <9066>
+          */
+          && parser->language != 'A'
           /* but the referred-to type can be absent */)
          goto bad_DIE;
       else

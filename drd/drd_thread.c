@@ -367,7 +367,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                                DRD_(thread_get_stack_max)(drd_joinee));
    }
    DRD_(clientobj_delete_thread)(drd_joinee);
-   DRD_(thread_delete)(drd_joinee);
+   DRD_(thread_delete)(drd_joinee, False);
 }
 
 /**
@@ -450,7 +450,7 @@ Int DRD_(thread_get_threads_on_alt_stack)(void)
  * Clean up thread-specific data structures. Call this just after
  * pthread_join().
  */
-void DRD_(thread_delete)(const DrdThreadId tid)
+void DRD_(thread_delete)(const DrdThreadId tid, const Bool detached)
 {
    Segment* sg;
    Segment* sg_prev;
@@ -467,7 +467,10 @@ void DRD_(thread_delete)(const DrdThreadId tid)
    }
    DRD_(g_threadinfo)[tid].vg_thread_exists = False;
    DRD_(g_threadinfo)[tid].posix_thread_exists = False;
-   tl_assert(DRD_(g_threadinfo)[tid].detached_posix_thread == False);
+   if (detached)
+      DRD_(g_threadinfo)[tid].detached_posix_thread = False;
+   else
+      tl_assert(!DRD_(g_threadinfo)[tid].detached_posix_thread);
    DRD_(g_threadinfo)[tid].first = 0;
    DRD_(g_threadinfo)[tid].last = 0;
 
@@ -502,6 +505,21 @@ void DRD_(thread_finished)(const DrdThreadId tid)
        */
       DRD_(g_threadinfo)[tid].posix_thread_exists = False;
    }
+}
+
+/** Called just after fork() in the child process. */
+void DRD_(drd_thread_atfork_child)(const DrdThreadId tid)
+{
+   unsigned i;
+
+   for (i = 1; i < DRD_N_THREADS; i++)
+   {
+      if (i == tid)
+	 continue;
+      if (DRD_(IsValidDrdThreadId(i)))
+	 DRD_(thread_delete)(i, True);
+      tl_assert(!DRD_(IsValidDrdThreadId(i)));
+   }   
 }
 
 /** Called just before pthread_cancel(). */

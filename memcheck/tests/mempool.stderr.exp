@@ -1,19 +1,17 @@
 Invalid write of size 1
    at 0x........: test (mempool.c:130)
    by 0x........: main (mempool.c:154)
- Address 0x........ is 7 bytes inside a block of size 100,000 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: make_pool (mempool.c:44)
-   by 0x........: test (mempool.c:117)
+ Address 0x........ is 1 bytes before a block of size 10 client-defined
+   at 0x........: allocate (mempool.c:105)
+   by 0x........: test (mempool.c:121)
    by 0x........: main (mempool.c:154)
 
 Invalid write of size 1
    at 0x........: test (mempool.c:131)
    by 0x........: main (mempool.c:154)
- Address 0x........ is 18 bytes inside a block of size 100,000 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: make_pool (mempool.c:44)
-   by 0x........: test (mempool.c:117)
+ Address 0x........ is 0 bytes after a block of size 10 client-defined
+   at 0x........: allocate (mempool.c:105)
+   by 0x........: test (mempool.c:121)
    by 0x........: main (mempool.c:154)
 
 Invalid write of size 1

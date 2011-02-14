@@ -376,10 +376,14 @@ static void gen_suppression(Error* err)
       VG_(xaprintf)(text, "   %s\n", xtra);
 
    // Print stack trace elements
+   UInt n_ips = VG_(get_ExeContext_n_ips)(ec);
+   tl_assert(n_ips > 0);
+   if (n_ips > VG_MAX_SUPP_CALLERS)
+      n_ips = VG_MAX_SUPP_CALLERS;
    VG_(apply_StackTrace)(printSuppForIp_nonXML,
                          text,
                          VG_(get_ExeContext_StackTrace)(ec),
-                         VG_(get_ExeContext_n_ips)(ec));
+                         n_ips);
 
    VG_(xaprintf)(text, "}\n");
    // zero terminate

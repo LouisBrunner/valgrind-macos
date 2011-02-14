@@ -15230,7 +15230,8 @@ DisResult disInstr_AMD64_WRK (
          imm = insn[3+alen];
          if (imm & ~3) goto decode_failure;
          delta += 3+alen+1;
-         DIP( "roundsd $%d,%s,%s\n",
+         DIP( "rounds%c $%d,%s,%s\n",
+              isD ? 'd' : 's',
               imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
@@ -15248,6 +15249,133 @@ DisResult disInstr_AMD64_WRK (
 
       goto decode_success;
    }
+
+
+   /* 66 0F 3A 09 /r ib = ROUNDPD imm8, xmm2/m128, xmm1
+      (Partial implementation only -- only deal with cases where
+      the rounding mode is specified directly by the immediate byte.)
+   */
+   if (have66noF2noF3(pfx) 
+       && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x09) {
+
+      IRTemp src0 = newTemp(Ity_F64);
+      IRTemp src1 = newTemp(Ity_F64);
+      IRTemp res0 = newTemp(Ity_F64);
+      IRTemp res1 = newTemp(Ity_F64);
+      Int    imm  = 0;
+
+      modrm = insn[3];
+
+      if (epartIsReg(modrm)) {
+         assign( src0, 
+                 getXMMRegLane64F( eregOfRexRM(pfx, modrm), 0 ) );
+         assign( src1, 
+                 getXMMRegLane64F( eregOfRexRM(pfx, modrm), 1 ) );
+         imm = insn[3+1];
+         if (imm & ~3) goto decode_failure;
+         delta += 3+1+1;
+         DIP( "roundpd $%d,%s,%s\n",
+              imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
+                   nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned(addr);
+         assign( src0, loadLE(Ity_F64,
+                              binop(Iop_Add64, mkexpr(addr), mkU64(0) )));
+         assign( src1, loadLE(Ity_F64,
+                              binop(Iop_Add64, mkexpr(addr), mkU64(8) )));
+         imm = insn[3+alen];
+         if (imm & ~3) goto decode_failure;
+         delta += 3+alen+1;
+         DIP( "roundpd $%d,%s,%s\n",
+              imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+         that encoding is the same as the encoding for IRRoundingMode,
+         we can use that value directly in the IR as a rounding
+         mode. */
+      assign(res0, binop(Iop_RoundF64toInt, mkU32(imm & 3), mkexpr(src0)) );
+      assign(res1, binop(Iop_RoundF64toInt, mkU32(imm & 3), mkexpr(src1)) );
+
+      putXMMRegLane64F( gregOfRexRM(pfx, modrm), 0, mkexpr(res0) );
+      putXMMRegLane64F( gregOfRexRM(pfx, modrm), 1, mkexpr(res1) );
+
+      goto decode_success;
+   }
+
+
+   /* 66 0F 3A 08 /r ib = ROUNDPS imm8, xmm2/m128, xmm1
+      (Partial implementation only -- only deal with cases where
+      the rounding mode is specified directly by the immediate byte.)
+   */
+   if (have66noF2noF3(pfx) 
+       && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x08) {
+
+      IRTemp src0 = newTemp(Ity_F32);
+      IRTemp src1 = newTemp(Ity_F32);
+      IRTemp src2 = newTemp(Ity_F32);
+      IRTemp src3 = newTemp(Ity_F32);
+      IRTemp res0 = newTemp(Ity_F32);
+      IRTemp res1 = newTemp(Ity_F32);
+      IRTemp res2 = newTemp(Ity_F32);
+      IRTemp res3 = newTemp(Ity_F32);
+      Int    imm  = 0;
+
+      modrm = insn[3];
+
+      if (epartIsReg(modrm)) {
+         assign( src0, 
+                 getXMMRegLane32F( eregOfRexRM(pfx, modrm), 0 ) );
+         assign( src1, 
+                 getXMMRegLane32F( eregOfRexRM(pfx, modrm), 1 ) );
+         assign( src2, 
+                 getXMMRegLane32F( eregOfRexRM(pfx, modrm), 2 ) );
+         assign( src3, 
+                 getXMMRegLane32F( eregOfRexRM(pfx, modrm), 3 ) );
+         imm = insn[3+1];
+         if (imm & ~3) goto decode_failure;
+         delta += 3+1+1;
+         DIP( "roundps $%d,%s,%s\n",
+              imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
+                   nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned(addr);
+         assign( src0, loadLE(Ity_F32,
+                              binop(Iop_Add64, mkexpr(addr), mkU64(0) )));
+         assign( src1, loadLE(Ity_F32,
+                              binop(Iop_Add64, mkexpr(addr), mkU64(4) )));
+         assign( src2, loadLE(Ity_F32,
+                              binop(Iop_Add64, mkexpr(addr), mkU64(8) )));
+         assign( src3, loadLE(Ity_F32,
+                              binop(Iop_Add64, mkexpr(addr), mkU64(12) )));
+         imm = insn[3+alen];
+         if (imm & ~3) goto decode_failure;
+         delta += 3+alen+1;
+         DIP( "roundps $%d,%s,%s\n",
+              imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+         that encoding is the same as the encoding for IRRoundingMode,
+         we can use that value directly in the IR as a rounding
+         mode. */
+      assign(res0, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src0)) );
+      assign(res1, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src1)) );
+      assign(res2, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src2)) );
+      assign(res3, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src3)) );
+
+      putXMMRegLane32F( gregOfRexRM(pfx, modrm), 0, mkexpr(res0) );
+      putXMMRegLane32F( gregOfRexRM(pfx, modrm), 1, mkexpr(res1) );
+      putXMMRegLane32F( gregOfRexRM(pfx, modrm), 2, mkexpr(res2) );
+      putXMMRegLane32F( gregOfRexRM(pfx, modrm), 3, mkexpr(res3) );
+
+      goto decode_success;
+   }
+
 
    /* F3 0F BD -- LZCNT (count leading zeroes.  An AMD extension,
       which we can only decode if we're sure this is an AMD cpu that

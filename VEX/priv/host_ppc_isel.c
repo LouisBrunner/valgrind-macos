@@ -994,6 +994,16 @@ static HReg generate_zeroes_V128 ( ISelEnv* env )
    return dst;
 }
 
+/* Generate all-ones into a new vector register.
+*/
+static HReg generate_ones_V128 ( ISelEnv* env )
+{
+   HReg dst = newVRegV(env);
+   PPCVI5s * src = PPCVI5s_Imm(-1);
+   addInstr(env, PPCInstr_AvSplat(8, dst, src));
+   return dst;
+}
+
 
 /*
   Generates code for AvSplat
@@ -3710,6 +3720,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       vassert(e->Iex.Const.con->tag == Ico_V128);
       if (e->Iex.Const.con->Ico.V128 == 0x0000) {
          return generate_zeroes_V128(env);
+      } 
+      else if (e->Iex.Const.con->Ico.V128 == 0xffff) {
+         return generate_ones_V128(env);
       }
    }
 

@@ -101,8 +101,33 @@ static Word interval_tree_Cmp ( UWord k1, UWord k2 )
    return 0;
 }
 
+// 2-entry cache for find_Block_containing
+static Block* fbc_cache0 = NULL;
+static Block* fbc_cache1 = NULL;
+
+static UWord stats__n_fBc_cached = 0;
+static UWord stats__n_fBc_uncached = 0;
+static UWord stats__n_fBc_notfound = 0;
+
 static Block* find_Block_containing ( Addr a )
 {
+   if (LIKELY(fbc_cache0
+              && fbc_cache0->payload <= a 
+              && a < fbc_cache0->payload + fbc_cache0->req_szB)) {
+      // found at 0
+      stats__n_fBc_cached++;
+      return fbc_cache0;
+   }
+   if (LIKELY(fbc_cache1
+              && fbc_cache1->payload <= a 
+              && a < fbc_cache1->payload + fbc_cache1->req_szB)) {
+      // found at 1; swap 0 and 1
+      Block* tmp = fbc_cache0;
+      fbc_cache0 = fbc_cache1;
+      fbc_cache1 = tmp;
+      stats__n_fBc_cached++;
+      return fbc_cache0;
+   }
    Block fake;
    fake.payload = a;
    fake.req_szB = 1;
@@ -110,12 +135,18 @@ static Block* find_Block_containing ( Addr a )
    UWord foundval = 1;
    Bool found = VG_(lookupFM)( interval_tree,
                                &foundkey, &foundval, (UWord)&fake );
-   if (!found)
+   if (!found) {
+      stats__n_fBc_notfound++;
       return NULL;
+   }
    tl_assert(foundval == 0); // we don't store vals in the interval tree
    tl_assert(foundkey != 1);
    Block* res = (Block*)foundkey;
    tl_assert(res != &fake);
+   // put at the top position
+   fbc_cache1 = fbc_cache0;
+   fbc_cache0 = res;
+   stats__n_fBc_uncached++;
    return res;
 }
 
@@ -129,6 +160,7 @@ static void delete_Block_starting_at ( Addr a )
    Bool found = VG_(delFromFM)( interval_tree,
                                 NULL, NULL, (Addr)&fake );
    tl_assert(found);
+   fbc_cache0 = fbc_cache1 = NULL;
 }
 
 
@@ -250,8 +282,13 @@ static void intro_Block ( Block* bk )
 
 /* 'bk' is retiring (being freed).  Find the relevant APInfo entry for
    it, which must already exist.  Then, fold info from 'bk' into that
-   entry. */
-static void retire_Block ( Block* bk )
+   entry.  'because_freed' is True if the block is retiring because
+   the client has freed it.  If it is False then the block is retiring
+   because the program has finished, in which case we want to skip the
+   updates of the total blocks live etc for this AP, but still fold in
+   the access counts and histo data that have so far accumulated for
+   the block. */
+static void retire_Block ( Block* bk, Bool because_freed )
 {
    tl_assert(bk);
    tl_assert(bk->ap);
@@ -271,44 +308,49 @@ static void retire_Block ( Block* bk )
    VG_(printf)("ec %p  api->c_by_l %llu  bk->rszB %llu\n",
                bk->ap, api->cur_bytes_live, (ULong)bk->req_szB);
 
-   tl_assert(api->cur_blocks_live >= 1);
-   tl_assert(api->cur_bytes_live >= bk->req_szB);
-   api->cur_blocks_live--;
-   api->cur_bytes_live -= bk->req_szB;
+   // update total blocks live etc for this AP
+   if (because_freed) {
+      tl_assert(api->cur_blocks_live >= 1);
+      tl_assert(api->cur_bytes_live >= bk->req_szB);
+      api->cur_blocks_live--;
+      api->cur_bytes_live -= bk->req_szB;
 
-   api->deaths++;
+      api->deaths++;
 
-   tl_assert(bk->allocd_at <= g_guest_instrs_executed);
-   api->death_ages_sum += (g_guest_instrs_executed - bk->allocd_at);
+      tl_assert(bk->allocd_at <= g_guest_instrs_executed);
+      api->death_ages_sum += (g_guest_instrs_executed - bk->allocd_at);
 
+      // update global summary stats
+      tl_assert(g_cur_blocks_live > 0);
+      g_cur_blocks_live--;
+      tl_assert(g_cur_bytes_live >= bk->req_szB);
+      g_cur_bytes_live -= bk->req_szB;
+   }
+
+   // access counts
    api->n_reads  += bk->n_reads;
    api->n_writes += bk->n_writes;
-
-   // update global summary stats
-   tl_assert(g_cur_blocks_live > 0);
-   g_cur_blocks_live--;
-   tl_assert(g_cur_bytes_live >= bk->req_szB);
-   g_cur_bytes_live -= bk->req_szB;
 
    // histo stuff.  First, do state transitions for xsize/xsize_tag.
    switch (api->xsize_tag) {
 
       case Unknown:
          tl_assert(api->xsize == 0);
-         tl_assert(api->deaths == 1);
+         tl_assert(api->deaths == 1 || api->deaths == 0);
          tl_assert(!api->histo);
          api->xsize_tag = Exactly;
          api->xsize = bk->req_szB;
          if (0) VG_(printf)("api %p   -->  Exactly(%lu)\n", api, api->xsize);
          // and allocate the histo
          if (bk->histoW) {
-            api->histo = VG_(malloc)("dh.main.retire_Block.1", api->xsize * sizeof(UInt));
+            api->histo = VG_(malloc)("dh.main.retire_Block.1",
+                                     api->xsize * sizeof(UInt));
             VG_(memset)(api->histo, 0, api->xsize * sizeof(UInt));
          }
          break;
 
       case Exactly:
-         tl_assert(api->deaths > 1);
+         //tl_assert(api->deaths > 1);
          if (bk->req_szB != api->xsize) {
             if (0) VG_(printf)("api %p   -->  Mixed(%lu -> %lu)\n",
                                api, api->xsize, bk->req_szB);
@@ -323,7 +365,7 @@ static void retire_Block ( Block* bk )
          break;
 
       case Mixed:
-         tl_assert(api->deaths > 1);
+         //tl_assert(api->deaths > 1);
          break;
 
       default:
@@ -392,6 +434,8 @@ static void apinfo_change_cur_bytes_live( ExeContext* ec, Long delta )
       g_max_bytes_live = g_cur_bytes_live;
       g_max_blocks_live = g_cur_blocks_live;
    }
+   if (delta > 0)
+      g_tot_bytes += delta;
 
    // adjust total allocation size
    if (delta > 0)
@@ -446,6 +490,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 
    Bool present = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
    tl_assert(!present);
+   fbc_cache0 = fbc_cache1 = NULL;
 
    intro_Block(bk);
 
@@ -477,7 +522,7 @@ void die_block ( void* p, Bool custom_free )
    if (0) VG_(printf)(" FREE %p %llu\n",
                       p, g_guest_instrs_executed - bk->allocd_at);
 
-   retire_Block(bk);
+   retire_Block(bk, True/*because_freed*/);
 
    VG_(cli_free)( (void*)bk->payload );
    delete_Block_starting_at( bk->payload );
@@ -559,6 +604,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       Bool present
          = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/); 
       tl_assert(!present);
+      fbc_cache0 = fbc_cache1 = NULL;
 
       return p_new;
    }
@@ -717,6 +763,12 @@ void dh_handle_noninsn_write ( CorePart part, ThreadId tid,
 //--- Instrumentation                                      ---//
 //------------------------------------------------------------//
 
+#define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
+#define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
+#define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
+#define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
+#define assign(_t, _e)           IRStmt_WrTmp((_t), (_e))
+
 static
 void add_counter_update(IRSB* sbOut, Int n)
 {
@@ -735,12 +787,9 @@ void add_counter_update(IRSB* sbOut, Int n)
    IRTemp t2 = newIRTemp(sbOut->tyenv, Ity_I64);
    IRExpr* counter_addr = mkIRExpr_HWord( (HWord)&g_guest_instrs_executed );
 
-   IRStmt* st1 = IRStmt_WrTmp(t1, IRExpr_Load(END, Ity_I64, counter_addr));
-   IRStmt* st2 =
-      IRStmt_WrTmp(t2,
-                   IRExpr_Binop(Iop_Add64, IRExpr_RdTmp(t1),
-                                           IRExpr_Const(IRConst_U64(n))));
-   IRStmt* st3 = IRStmt_Store(END, counter_addr, IRExpr_RdTmp(t2));
+   IRStmt* st1 = assign(t1, IRExpr_Load(END, Ity_I64, counter_addr));
+   IRStmt* st2 = assign(t2, binop(Iop_Add64, mkexpr(t1), mkU64(n)));
+   IRStmt* st3 = IRStmt_Store(END, counter_addr, mkexpr(t2));
 
    addStmtToIRSB( sbOut, st1 );
    addStmtToIRSB( sbOut, st2 );
@@ -748,13 +797,17 @@ void add_counter_update(IRSB* sbOut, Int n)
 }
 
 static
-void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr )
+void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr,
+                 Int goff_sp)
 {
    IRType   tyAddr   = Ity_INVALID;
    HChar*   hName    = NULL;
    void*    hAddr    = NULL;
    IRExpr** argv     = NULL;
    IRDirty* di       = NULL;
+
+   const Int THRESH = 4096 * 4; // somewhat arbitrary
+   const Int rz_szB = VG_STACK_REDZONE_SZB;
 
    tyAddr = typeOfIRExpr( sbOut->tyenv, addr );
    tl_assert(tyAddr == Ity_I32 || tyAddr == Ity_I64);
@@ -777,6 +830,42 @@ void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr )
                            hName, VG_(fnptr_to_fnentry)( hAddr ),
                            argv );
 
+   /* Generate the guard condition: "(addr - (SP - RZ)) >u N", for
+      some arbitrary N.  If that fails then addr is in the range (SP -
+      RZ .. SP + N - RZ).  If N is smallish (a page?) then we can say
+      addr is within a page of SP and so can't possibly be a heap
+      access, and so can be skipped. */
+   IRTemp sp = newIRTemp(sbOut->tyenv, tyAddr);
+   addStmtToIRSB( sbOut, assign(sp, IRExpr_Get(goff_sp, tyAddr)));
+
+   IRTemp sp_minus_rz = newIRTemp(sbOut->tyenv, tyAddr);
+   addStmtToIRSB(
+      sbOut,
+      assign(sp_minus_rz,
+             tyAddr == Ity_I32
+                ? binop(Iop_Sub32, mkexpr(sp), mkU32(rz_szB))
+                : binop(Iop_Sub64, mkexpr(sp), mkU64(rz_szB)))
+   );
+
+   IRTemp diff = newIRTemp(sbOut->tyenv, tyAddr);
+   addStmtToIRSB(
+      sbOut,
+      assign(diff,
+             tyAddr == Ity_I32 
+                ? binop(Iop_Sub32, addr, mkexpr(sp_minus_rz))
+                : binop(Iop_Sub64, addr, mkexpr(sp_minus_rz)))
+   );
+
+   IRTemp guard = newIRTemp(sbOut->tyenv, Ity_I1);
+   addStmtToIRSB(
+      sbOut,
+      assign(guard,
+             tyAddr == Ity_I32 
+                ? binop(Iop_CmpLT32U, mkU32(THRESH), mkexpr(diff))
+                : binop(Iop_CmpLT64U, mkU64(THRESH), mkexpr(diff)))
+   );
+   di->guard = mkexpr(guard);
+
    addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 }
 
@@ -790,6 +879,8 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
    Int   i, n = 0;
    IRSB* sbOut;
    IRTypeEnv* tyenv = sbIn->tyenv;
+
+   const Int goff_sp = layout->offset_SP;
 
    // We increment the instruction count in two places:
    // - just before any Ist_Exit statements;
@@ -833,7 +924,8 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
                // Note also, endianness info is ignored.  I guess
                // that's not interesting.
                addMemEvent( sbOut, False/*!isWrite*/,
-                            sizeofIRType(data->Iex.Load.ty), aexpr );
+                            sizeofIRType(data->Iex.Load.ty),
+                            aexpr, goff_sp );
             }
             break;
          }
@@ -842,7 +934,8 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
             IRExpr* data  = st->Ist.Store.data;
             IRExpr* aexpr = st->Ist.Store.addr;
             addMemEvent( sbOut, True/*isWrite*/, 
-                         sizeofIRType(typeOfIRExpr(tyenv, data)), aexpr );
+                         sizeofIRType(typeOfIRExpr(tyenv, data)),
+                         aexpr, goff_sp );
             break;
          }
 
@@ -860,10 +953,10 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
                // than two cache lines in the simulation.
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
                   addMemEvent( sbOut, False/*!isWrite*/,
-                               dataSize, d->mAddr );
+                               dataSize, d->mAddr, goff_sp );
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
                   addMemEvent( sbOut, True/*isWrite*/,
-                               dataSize, d->mAddr );
+                               dataSize, d->mAddr, goff_sp );
             } else {
                tl_assert(d->mAddr == NULL);
                tl_assert(d->mSize == 0);
@@ -884,8 +977,10 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
             dataSize = sizeofIRType(typeOfIRExpr(tyenv, cas->dataLo));
             if (cas->dataHi != NULL)
                dataSize *= 2; /* since it's a doubleword-CAS */
-            addMemEvent( sbOut, False/*!isWrite*/, dataSize, cas->addr );
-            addMemEvent( sbOut, True/*isWrite*/,   dataSize, cas->addr );
+            addMemEvent( sbOut, False/*!isWrite*/,
+                         dataSize, cas->addr, goff_sp );
+            addMemEvent( sbOut, True/*isWrite*/,
+                         dataSize, cas->addr, goff_sp );
             break;
          }
 
@@ -895,12 +990,14 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
                /* LL */
                dataTy = typeOfIRTemp(tyenv, st->Ist.LLSC.result);
                addMemEvent( sbOut, False/*!isWrite*/,
-                            sizeofIRType(dataTy), st->Ist.LLSC.addr );
+                            sizeofIRType(dataTy),
+                            st->Ist.LLSC.addr, goff_sp );
             } else {
                /* SC */
                dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
                addMemEvent( sbOut, True/*isWrite*/,
-                            sizeofIRType(dataTy), st->Ist.LLSC.addr );
+                            sizeofIRType(dataTy),
+                            st->Ist.LLSC.addr, goff_sp );
             }
             break;
          }
@@ -918,6 +1015,12 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
    }
    return sbOut;
 }
+
+#undef binop
+#undef mkexpr
+#undef mkU32
+#undef mkU64
+#undef assign
 
 
 //------------------------------------------------------------//
@@ -1008,10 +1111,20 @@ static void show_APInfo ( APInfo* api )
    tl_assert(api->tot_bytes >= api->max_bytes_live);
 
    if (api->deaths > 0) {
-      VG_(umsg)("deaths:      %'llu, at avg age %'llu\n",
-                api->deaths,
-                api->deaths == 0
-                   ? 0 : (api->death_ages_sum / api->deaths));
+      // Average Age at Death
+      ULong aad = api->deaths == 0
+                  ? 0 : (api->death_ages_sum / api->deaths);
+      // AAD as a fraction of the total program lifetime (so far)
+      // measured in ten-thousand-ths (aad_frac_10k == 10000 means the
+      // complete lifetime of the program.
+      ULong aad_frac_10k
+         = g_guest_instrs_executed == 0
+           ? 0 : (10000ULL * aad) / g_guest_instrs_executed;
+      HChar buf[16];
+      show_N_div_100(buf, aad_frac_10k);
+      VG_(umsg)("deaths:      %'llu, at avg age %'llu "
+                "(%s%% of prog lifetime)\n",
+                api->deaths, aad, buf );
    } else {
       VG_(umsg)("deaths:      none (none of these blocks were freed)\n");
    }
@@ -1154,6 +1267,22 @@ static void show_top_n_apinfos ( void )
 
 static void dh_fini(Int exit_status)
 {
+   // Before printing statistics, we must harvest access counts for
+   // all the blocks that are still alive.  Not doing so gives
+   // access ratios which are too low (zero, in the worst case)
+   // for such blocks, since the accesses that do get made will
+   // (if we skip this step) not get folded into the AP summaries.
+   UWord keyW, valW;
+   VG_(initIterFM)( interval_tree );
+   while (VG_(nextIterFM)( interval_tree, &keyW, &valW )) {
+      Block* bk = (Block*)keyW;
+      tl_assert(valW == 0);
+      tl_assert(bk);
+      retire_Block(bk, False/*!because_freed*/);
+   }
+   VG_(doneIterFM)( interval_tree );
+
+   // show results
    VG_(umsg)("======== SUMMARY STATISTICS ========\n");
    VG_(umsg)("\n");
    VG_(umsg)("guest_insns:  %'llu\n", g_guest_instrs_executed);
@@ -1192,6 +1321,16 @@ static void dh_fini(Int exit_status)
    VG_(umsg)("  over far too many alloc points.  I strongly suggest using\n");
    VG_(umsg)("  --num-callers=4 or some such, to reduce the spreading.\n");
    VG_(umsg)("\n");
+
+   if (VG_(clo_stats)) {
+      VG_(dmsg)(" dhat: find_Block_containing:\n");
+      VG_(dmsg)("             found: %'lu (%'lu cached + %'lu uncached)\n",
+                stats__n_fBc_cached + stats__n_fBc_uncached,
+                stats__n_fBc_cached,
+                stats__n_fBc_uncached);
+      VG_(dmsg)("          notfound: %'lu\n", stats__n_fBc_notfound);
+      VG_(dmsg)("\n");
+   }
 }
 
 
@@ -1242,6 +1381,8 @@ static void dh_pre_clo_init(void)
    VG_(track_post_mem_write)      ( dh_handle_noninsn_write );
 
    tl_assert(!interval_tree);
+   tl_assert(!fbc_cache0);
+   tl_assert(!fbc_cache1);
 
    interval_tree = VG_(newFM)( VG_(malloc),
                                "dh.main.interval_tree.1",

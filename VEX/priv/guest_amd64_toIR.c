@@ -15196,10 +15196,7 @@ DisResult disInstr_AMD64_WRK (
 
 
    /* 66 0F 3A 0B /r ib = ROUNDSD imm8, xmm2/m64, xmm1
-      (Partial implementation only -- only deal with cases where
-      the rounding mode is specified directly by the immediate byte.)
       66 0F 3A 0A /r ib = ROUNDSS imm8, xmm2/m32, xmm1
-      (Limitations ditto)
    */
    if (have66noF2noF3(pfx) 
        && sz == 2 
@@ -15218,7 +15215,7 @@ DisResult disInstr_AMD64_WRK (
                  isD ? getXMMRegLane64F( eregOfRexRM(pfx, modrm), 0 )
                      : getXMMRegLane32F( eregOfRexRM(pfx, modrm), 0 ) );
          imm = insn[3+1];
-         if (imm & ~3) goto decode_failure;
+         if (imm & ~7) goto decode_failure;
          delta += 3+1+1;
          DIP( "rounds%c $%d,%s,%s\n",
               isD ? 'd' : 's',
@@ -15228,7 +15225,7 @@ DisResult disInstr_AMD64_WRK (
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
          assign( src, loadLE( isD ? Ity_F64 : Ity_F32, mkexpr(addr) ));
          imm = insn[3+alen];
-         if (imm & ~3) goto decode_failure;
+         if (imm & ~7) goto decode_failure;
          delta += 3+alen+1;
          DIP( "rounds%c $%d,%s,%s\n",
               isD ? 'd' : 's',
@@ -15240,7 +15237,9 @@ DisResult disInstr_AMD64_WRK (
          we can use that value directly in the IR as a rounding
          mode. */
       assign(res, binop(isD ? Iop_RoundF64toInt : Iop_RoundF32toInt,
-                  mkU32(imm & 3), mkexpr(src)) );
+                        (imm & 4) ? get_sse_roundingmode() 
+                                  : mkU32(imm & 3),
+                        mkexpr(src)) );
 
       if (isD)
          putXMMRegLane64F( gregOfRexRM(pfx, modrm), 0, mkexpr(res) );
@@ -15251,10 +15250,7 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
-   /* 66 0F 3A 09 /r ib = ROUNDPD imm8, xmm2/m128, xmm1
-      (Partial implementation only -- only deal with cases where
-      the rounding mode is specified directly by the immediate byte.)
-   */
+   /* 66 0F 3A 09 /r ib = ROUNDPD imm8, xmm2/m128, xmm1 */
    if (have66noF2noF3(pfx) 
        && sz == 2 
        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x09) {
@@ -15263,6 +15259,7 @@ DisResult disInstr_AMD64_WRK (
       IRTemp src1 = newTemp(Ity_F64);
       IRTemp res0 = newTemp(Ity_F64);
       IRTemp res1 = newTemp(Ity_F64);
+      IRTemp rm   = newTemp(Ity_I32);
       Int    imm  = 0;
 
       modrm = insn[3];
@@ -15273,7 +15270,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src1, 
                  getXMMRegLane64F( eregOfRexRM(pfx, modrm), 1 ) );
          imm = insn[3+1];
-         if (imm & ~3) goto decode_failure;
+         if (imm & ~7) goto decode_failure;
          delta += 3+1+1;
          DIP( "roundpd $%d,%s,%s\n",
               imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
@@ -15286,7 +15283,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src1, loadLE(Ity_F64,
                               binop(Iop_Add64, mkexpr(addr), mkU64(8) )));
          imm = insn[3+alen];
-         if (imm & ~3) goto decode_failure;
+         if (imm & ~7) goto decode_failure;
          delta += 3+alen+1;
          DIP( "roundpd $%d,%s,%s\n",
               imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
@@ -15296,8 +15293,10 @@ DisResult disInstr_AMD64_WRK (
          that encoding is the same as the encoding for IRRoundingMode,
          we can use that value directly in the IR as a rounding
          mode. */
-      assign(res0, binop(Iop_RoundF64toInt, mkU32(imm & 3), mkexpr(src0)) );
-      assign(res1, binop(Iop_RoundF64toInt, mkU32(imm & 3), mkexpr(src1)) );
+      assign(rm, (imm & 4) ? get_sse_roundingmode() : mkU32(imm & 3));
+
+      assign(res0, binop(Iop_RoundF64toInt, mkexpr(rm), mkexpr(src0)) );
+      assign(res1, binop(Iop_RoundF64toInt, mkexpr(rm), mkexpr(src1)) );
 
       putXMMRegLane64F( gregOfRexRM(pfx, modrm), 0, mkexpr(res0) );
       putXMMRegLane64F( gregOfRexRM(pfx, modrm), 1, mkexpr(res1) );
@@ -15306,10 +15305,7 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
-   /* 66 0F 3A 08 /r ib = ROUNDPS imm8, xmm2/m128, xmm1
-      (Partial implementation only -- only deal with cases where
-      the rounding mode is specified directly by the immediate byte.)
-   */
+   /* 66 0F 3A 08 /r ib = ROUNDPS imm8, xmm2/m128, xmm1 */
    if (have66noF2noF3(pfx) 
        && sz == 2 
        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x08) {
@@ -15322,6 +15318,7 @@ DisResult disInstr_AMD64_WRK (
       IRTemp res1 = newTemp(Ity_F32);
       IRTemp res2 = newTemp(Ity_F32);
       IRTemp res3 = newTemp(Ity_F32);
+      IRTemp rm   = newTemp(Ity_I32);
       Int    imm  = 0;
 
       modrm = insn[3];
@@ -15336,7 +15333,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src3, 
                  getXMMRegLane32F( eregOfRexRM(pfx, modrm), 3 ) );
          imm = insn[3+1];
-         if (imm & ~3) goto decode_failure;
+         if (imm & ~7) goto decode_failure;
          delta += 3+1+1;
          DIP( "roundps $%d,%s,%s\n",
               imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
@@ -15353,7 +15350,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src3, loadLE(Ity_F32,
                               binop(Iop_Add64, mkexpr(addr), mkU64(12) )));
          imm = insn[3+alen];
-         if (imm & ~3) goto decode_failure;
+         if (imm & ~7) goto decode_failure;
          delta += 3+alen+1;
          DIP( "roundps $%d,%s,%s\n",
               imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
@@ -15363,10 +15360,12 @@ DisResult disInstr_AMD64_WRK (
          that encoding is the same as the encoding for IRRoundingMode,
          we can use that value directly in the IR as a rounding
          mode. */
-      assign(res0, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src0)) );
-      assign(res1, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src1)) );
-      assign(res2, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src2)) );
-      assign(res3, binop(Iop_RoundF32toInt, mkU32(imm & 3), mkexpr(src3)) );
+      assign(rm, (imm & 4) ? get_sse_roundingmode() : mkU32(imm & 3));
+
+      assign(res0, binop(Iop_RoundF32toInt, mkexpr(rm), mkexpr(src0)) );
+      assign(res1, binop(Iop_RoundF32toInt, mkexpr(rm), mkexpr(src1)) );
+      assign(res2, binop(Iop_RoundF32toInt, mkexpr(rm), mkexpr(src2)) );
+      assign(res3, binop(Iop_RoundF32toInt, mkexpr(rm), mkexpr(src3)) );
 
       putXMMRegLane32F( gregOfRexRM(pfx, modrm), 0, mkexpr(res0) );
       putXMMRegLane32F( gregOfRexRM(pfx, modrm), 1, mkexpr(res1) );

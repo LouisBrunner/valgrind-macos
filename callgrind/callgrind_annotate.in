@@ -541,14 +541,12 @@ sub read_input_file()
 	    if ($curr_call_counter>0) {
 #	      print "Read ($curr_name => $curr_cname) $curr_call_counter\n";
 
-	      if (defined $call_CCs{$curr_name,$curr_cname}) {
-		add_array_a_to_b($CC, $call_CCs{$curr_name,$curr_cname});
-		$call_counter{$curr_name,$curr_cname} += $curr_call_counter;
+	      if (!defined $call_CCs{$curr_name,$curr_cname}) {
+		$call_CCs{$curr_name,$curr_cname} = [];
+		$call_counter{$curr_name,$curr_cname} = 0;
 	      }
-	      else {
-		$call_CCs{$curr_name,$curr_cname} = $CC;
-		$call_counter{$curr_name,$curr_cname} = $curr_call_counter;
-	      }
+	      add_array_a_to_b($CC, $call_CCs{$curr_name,$curr_cname});
+	      $call_counter{$curr_name,$curr_cname} += $curr_call_counter;
 
 	      my $tmp = $called_from_line->{$curr_file,$curr_line_num};
 	      if (!defined $tmp) {
@@ -557,14 +555,12 @@ sub read_input_file()
 	      $tmp = {} unless defined $tmp;
 	      $$tmp{$curr_cname} = 1;
 	      $called_from_line->{$curr_file,$curr_line_num} = $tmp;
-	      if(defined $call_CCs{$curr_name,$curr_cname,$curr_line_num}) {
-	        add_array_a_to_b($CC, $call_CCs{$curr_name,$curr_cname,$curr_line_num});
-	        $call_counter{$curr_name,$curr_cname,$curr_line_num} += $curr_call_counter;
-              }
-              else {
-	        $call_CCs{$curr_name,$curr_cname,$curr_line_num} = $CC;
-	        $call_counter{$curr_name,$curr_cname,$curr_line_num} = $curr_call_counter;
-              }
+	      if (!defined $call_CCs{$curr_name,$curr_cname,$curr_line_num}) {
+		$call_CCs{$curr_name,$curr_cname,$curr_line_num} = [];
+		$call_counter{$curr_name,$curr_cname,$curr_line_num} = 0;
+	      }
+	      add_array_a_to_b($CC, $call_CCs{$curr_name,$curr_cname,$curr_line_num});
+	      $call_counter{$curr_name,$curr_cname,$curr_line_num} += $curr_call_counter;
 
 	      $curr_call_counter = 0;
 

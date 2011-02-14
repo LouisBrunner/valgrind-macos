@@ -741,7 +741,11 @@ void CLG_(setup_bbcc)(BB* bb)
     }
   }
   else {
-    CLG_(unwind_call_stack)(sp, 0);
+    Int unwind_count = CLG_(unwind_call_stack)(sp, 0);
+    if (unwind_count > 0) {
+      /* if unwinding was done, this actually is a return */
+      jmpkind = Ijk_Ret;
+    }
     
     if (jmpkind == Ijk_Call) {
       delayed_push = True;

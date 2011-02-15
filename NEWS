@@ -1,5 +1,5 @@
 
-Release 3.6.1 (XX February 2011)
+Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.6.1 is a bug fix release.  It adds support for some SSE4
 instructions that were omitted in 3.6.0 due to lack of time.  Initial
@@ -53,7 +53,7 @@ n-i-bz  Massif: don't assert on shmat() with --pages-as-heap=yes
 n-i-bz  Bug fixes and major speedups for the exp-DHAT space profiler
 n-i-bz  DRD: disable --free-is-write due to implementation difficulties
 
-(3.6.1: xx February 2011, vex rxxxx, valgrind ryyyyy).
+(3.6.1: 16 February 2011, vex r2103, valgrind r11561).
 
 
 

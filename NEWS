@@ -2,15 +2,66 @@
 Release 3.7.0 (???)
 ~~~~~~~~~~~~~~~~~~~
 - Added the --mod-funcname option to cg_diff.
+- Further reduction in overheads caused by --smc-check=all, especially
+  on 64-bit targets.
 
 
+Release 3.6.1 (16 February 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.6.1 is a bug fix release.  It adds support for some SSE4
+instructions that were omitted in 3.6.0 due to lack of time.  Initial
+support for glibc-2.13 has been added.  A number of bugs causing
+crashing or assertion failures have been fixed.
 
-Release 3.6.0 (... 2011)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
 
-DRD: removed command-line option --free-is-write again since it is not possible
-to implement this functionality for custom allocators without changing the client-tool
-interface in a backwards-incompatible way.
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+188572  Valgrind on Mac should suppress setenv() mem leak
+194402  vex amd64->IR: 0x48 0xF 0xAE 0x4 (proper FX{SAVE,RSTOR} support)
+210481  vex amd64->IR: Assertion `sz == 2 || sz == 4' failed (REX.W POPQ)
+246152  callgrind internal error after pthread_cancel on 32 Bit Linux
+250038  ppc64: Altivec LVSR and LVSL instructions fail their regtest
+254420  memory pool tracking broken 
+254957  Test code failing to compile due to changes in memcheck.h
+255009  helgrind/drd: crash on chmod with invalid parameter
+255130  readdwarf3.c parse_type_DIE confused by GNAT Ada types
+255355  helgrind/drd: crash on threaded programs doing fork
+255358  == 255355
+255418  (SSE4.x) rint call compiled with ICC
+255822  --gen-suppressions can create invalid files: "too many callers [...]"
+255888  closing valgrindoutput tag outputted to log-stream on error
+255963  (SSE4.x) vex amd64->IR: 0x66 0xF 0x3A 0x9 0xDB 0x0 (ROUNDPD)
+255966  Slowness when using mempool annotations
+256387  vex x86->IR: 0xD4 0xA 0x2 0x7 (AAD and AAM)
+256600  super-optimized strcasecmp() false positive
+256669  vex amd64->IR: Unhandled LOOPNEL insn on amd64
+256968  (SSE4.x) vex amd64->IR: 0x66 0xF 0x38 0x10 0xD3 0x66 (BLENDVPx)
+257011  (SSE4.x) vex amd64->IR: 0x66 0xF 0x3A 0xE 0xFD 0xA0 (PBLENDW)
+257063  (SSE4.x) vex amd64->IR: 0x66 0xF 0x3A 0x8 0xC0 0x0 (ROUNDPS)
+257276  Missing case in memcheck --track-origins=yes
+258870  (SSE4.x) Add support for EXTRACTPS SSE 4.1 instruction
+261966  (SSE4.x) support for CRC32B and CRC32Q is lacking (also CRC32{W,L})
+262985  VEX regression in valgrind 3.6.0 in handling PowerPC VMX
+262995  (SSE4.x) crash when trying to valgrind gcc-snapshot (PCMPxSTRx $0)
+263099  callgrind_annotate counts Ir improperly [...]
+263877  undefined coprocessor instruction on ARMv7
+265964  configure FAIL with glibc-2.13
+n-i-bz  Fix compile error w/ icc-12.x in guest_arm_toIR.c
+n-i-bz  Docs: fix bogus descriptions for VALGRIND_CREATE_BLOCK et al
+n-i-bz  Massif: don't assert on shmat() with --pages-as-heap=yes
+n-i-bz  Bug fixes and major speedups for the exp-DHAT space profiler
+n-i-bz  DRD: disable --free-is-write due to implementation difficulties
+
+(3.6.1: 16 February 2011, vex r2103, valgrind r11561).
+
 
 
 Release 3.6.0 (21 October 2010)

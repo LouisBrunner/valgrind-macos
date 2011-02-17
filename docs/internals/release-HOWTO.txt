@@ -130,7 +130,7 @@ For the official release:
   external for VALGRIND_X_Y_Z to VEX_X_Y_Z.
 
   If it's a X.Y.0 release, make "VALGRIND_X_Y_BRANCH" and "VEX_X_Y_BRANCH"
-  branches too.  Useful examples:
+  branches too.  Useful examples (X.Y.0 major release):
 
     cd valgrind
     svn copy trunk tags/VALGRIND_3_3_0
@@ -147,6 +147,20 @@ For the official release:
     cd branches/VALGRIND_3_3_BRANCH
     svn propset svn:externals \
        "VEX svn://svn.valgrind.org/vex/branches/VEX_3_3_BRANCH" .
+
+  (X.Y.Z minor release):
+
+    cd vex
+    svn copy branches/VEX_3_6_BRANCH tags/VEX_3_6_1
+
+    cd valgrind
+    svn copy branches/VALGRIND_3_6_BRANCH tags/VALGRIND_3_6_1
+
+    cd tags/VALGRIND_3_6_1
+    svn propset svn:externals \
+       "VEX svn://svn.valgrind.org/vex/tags/VEX_3_6_1" .
+
+
 
 - Update website: 
   - Put the tarball up.

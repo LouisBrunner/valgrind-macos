@@ -54,6 +54,17 @@ extern XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT),
                             void(*free_fn)(void*),
                             Word elemSzB );
 
+/* Same as VG_(newXA), except allows specification of an initial
+   number of elements for the array, so as to avoid a potentially
+   large wasted cost of repeatedly resizing the array when the caller
+   knows something about what the expected final size is going to
+   be. */
+extern XArray* VG_(newSizedXA) ( void*(*alloc_fn)(HChar*,SizeT), 
+                                 HChar* cc,
+                                 void(*free_fn)(void*),
+                                 Word elemSzB,
+                                 Word nInitialElems );
+
 /* Free all memory associated with an XArray. */
 extern void VG_(deleteXA) ( XArray* );
 

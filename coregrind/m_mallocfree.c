@@ -186,9 +186,14 @@ typedef
       SizeT        sblocks_used;
       Superblock*  sblocks_initial[SBLOCKS_SIZE_INITIAL];
       // Stats only.
-      SizeT        bytes_on_loan;
-      SizeT        bytes_mmaped;
-      SizeT        bytes_on_loan_max;
+      SizeT        stats__bytes_on_loan;
+      SizeT        stats__bytes_mmaped;
+      SizeT        stats__bytes_on_loan_max;
+      ULong        stats__tot_blocks; /* total # blocks alloc'd */
+      ULong        stats__tot_bytes; /* total # bytes alloc'd */
+      ULong        stats__nsearches; /* total # freelist checks */
+      // If profiling, when should the next profile happen at
+      // (in terms of stats__bytes_on_loan_max) ?
       SizeT        next_profile_at;
    }
    Arena;
@@ -477,13 +482,16 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
    a->min_sblock_szB = min_sblock_szB;
    for (i = 0; i < N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
 
-   a->sblocks           = & a->sblocks_initial[0];
-   a->sblocks_size      = SBLOCKS_SIZE_INITIAL;
-   a->sblocks_used      = 0;
-   a->bytes_on_loan     = 0;
-   a->bytes_mmaped      = 0;
-   a->bytes_on_loan_max = 0;
-   a->next_profile_at   = 25 * 1000 * 1000;
+   a->sblocks                  = & a->sblocks_initial[0];
+   a->sblocks_size             = SBLOCKS_SIZE_INITIAL;
+   a->sblocks_used             = 0;
+   a->stats__bytes_on_loan     = 0;
+   a->stats__bytes_mmaped      = 0;
+   a->stats__bytes_on_loan_max = 0;
+   a->stats__tot_blocks        = 0;
+   a->stats__tot_bytes         = 0;
+   a->stats__nsearches         = 0;
+   a->next_profile_at          = 25 * 1000 * 1000;
    vg_assert(sizeof(a->sblocks_initial) 
              == SBLOCKS_SIZE_INITIAL * sizeof(Superblock*));
 }
@@ -495,8 +503,14 @@ void VG_(print_all_arena_stats) ( void )
    for (i = 0; i < VG_N_ARENAS; i++) {
       Arena* a = arenaId_to_ArenaP(i);
       VG_(message)(Vg_DebugMsg,
-         "%8s: %8ld mmap'd, %8ld/%8ld max/curr\n",
-         a->name, a->bytes_mmaped, a->bytes_on_loan_max, a->bytes_on_loan 
+         "%8s: %8ld mmap'd,  %8ld/%8ld max/curr,  "
+                   "%10llu/%10llu totalloc-blocks/bytes,"
+                   "  %10llu searches\n",
+                   a->name, a->stats__bytes_mmaped,
+                   a->stats__bytes_on_loan_max,
+                   a->stats__bytes_on_loan,
+                   a->stats__tot_blocks, a->stats__tot_bytes,
+                   a->stats__nsearches
       );
    }
 }
@@ -695,7 +709,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    //zzVALGRIND_MAKE_MEM_UNDEFINED(sb, cszB);
    vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
    sb->n_payload_bytes = cszB - sizeof(Superblock);
-   a->bytes_mmaped += cszB;
+   a->stats__bytes_mmaped += cszB;
    VG_(debugLog)(1, "mallocfree",
                     "newSuperblock at %p (pszB %7ld) owner %s/%s\n", 
                     sb, sb->n_payload_bytes, 
@@ -993,7 +1007,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
       }
    }
 
-   if (arena_bytes_on_loan != a->bytes_on_loan) {
+   if (arena_bytes_on_loan != a->stats__bytes_on_loan) {
 #     ifdef VERBOSE_MALLOC
       VG_(printf)( "sanity_check_malloc_arena: a->bytes_on_loan %ld, "
                    "arena_bytes_on_loan %ld: "
@@ -1051,7 +1065,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
                    a->name,
                    superblockctr,
                    blockctr_sb, blockctr_sb_free, blockctr_li, 
-                   a->bytes_mmaped, a->bytes_on_loan);   
+                   a->stats__bytes_mmaped, a->stats__bytes_on_loan);   
 #  undef BOMB
 }
 
@@ -1092,7 +1106,8 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
 
    VG_(printf)(
       "-------- Arena \"%s\": %ld mmap'd, %ld/%ld max/curr --------\n",
-      a->name, a->bytes_mmaped, a->bytes_on_loan_max, a->bytes_on_loan 
+      a->name, a->stats__bytes_mmaped,
+      a->stats__bytes_on_loan_max, a->stats__bytes_on_loan 
    );
 
    for (j = 0; j < a->sblocks_used; ++j) {
@@ -1269,6 +1284,7 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
    Block*      b = NULL;
    Arena*      a;
    void*       v;
+   UWord       stats__nsearches = 0;
 
    ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
@@ -1301,9 +1317,25 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
    // behaviour.
    //
    for (lno = pszB_to_listNo(req_pszB); lno < N_MALLOC_LISTS; lno++) {
+      UWord nsearches_this_level = 0;
       b = a->freelist[lno];
       if (NULL == b) continue;   // If this list is empty, try the next one.
       while (True) {
+         stats__nsearches++;
+         nsearches_this_level++;
+         if (UNLIKELY(nsearches_this_level >= 100) 
+             && lno < N_MALLOC_LISTS-1) {
+            /* Avoid excessive scanning on this freelist, and instead
+               try the next one up.  But first, move this freelist's
+               start pointer one element along, so as to ensure that
+               subsequent searches of this list don't endlessly
+               revisit only these 100 elements, but in fact slowly
+               progress through the entire list. */
+            b = a->freelist[lno];
+            vg_assert(b); // this list must be nonempty!
+            a->freelist[lno] = get_next_b(b); // step one along
+            break;
+         }
          b_bszB = get_bszB(b);
          if (b_bszB >= req_bszB) goto obtained_block;    // success!
          b = get_next_b(b);
@@ -1396,18 +1428,22 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
    }
 
    // Update stats
-   a->bytes_on_loan += bszB_to_pszB(a, b_bszB);
-   if (a->bytes_on_loan > a->bytes_on_loan_max) {
-      a->bytes_on_loan_max = a->bytes_on_loan;
-      if (a->bytes_on_loan_max >= a->next_profile_at) {
+   SizeT loaned = bszB_to_pszB(a, b_bszB);
+   a->stats__bytes_on_loan += loaned;
+   if (a->stats__bytes_on_loan > a->stats__bytes_on_loan_max) {
+      a->stats__bytes_on_loan_max = a->stats__bytes_on_loan;
+      if (a->stats__bytes_on_loan_max >= a->next_profile_at) {
          /* next profile after 10% more growth */
          a->next_profile_at 
             = (SizeT)( 
-                 (((ULong)a->bytes_on_loan_max) * 110ULL) / 100ULL );
+                 (((ULong)a->stats__bytes_on_loan_max) * 110ULL) / 100ULL );
          if (VG_(clo_profile_heap))
             cc_analyse_alloc_arena(aid);
       }
    }
+   a->stats__tot_blocks += (ULong)1;
+   a->stats__tot_bytes  += (ULong)loaned;
+   a->stats__nsearches  += (ULong)stats__nsearches;
 
 #  ifdef DEBUG_MALLOC
    sanity_check_malloc_arena(aid);
@@ -1462,7 +1498,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    sb_start = &sb->payload_bytes[0];
    sb_end   = &sb->payload_bytes[sb->n_payload_bytes - 1];
 
-   a->bytes_on_loan -= b_pszB;
+   a->stats__bytes_on_loan -= b_pszB;
 
    /* If this is one of V's areas, fill it up with junk to enhance the
       chances of catching any later reads of it.  Note, 0xDD is
@@ -1610,9 +1646,9 @@ void* VG_(arena_memalign) ( ArenaId aid, HChar* cc,
 
    /* Payload ptr for the block we are going to split.  Note this
       changes a->bytes_on_loan; we save and restore it ourselves. */
-   saved_bytes_on_loan = a->bytes_on_loan;
+   saved_bytes_on_loan = a->stats__bytes_on_loan;
    base_p = VG_(arena_malloc) ( aid, cc, base_pszB_req );
-   a->bytes_on_loan = saved_bytes_on_loan;
+   a->stats__bytes_on_loan = saved_bytes_on_loan;
 
    /* Give up if we couldn't allocate enough space */
    if (base_p == 0)
@@ -1655,9 +1691,13 @@ void* VG_(arena_memalign) ( ArenaId aid, HChar* cc,
 
    vg_assert(req_pszB <= get_pszB(a, get_payload_block(a, align_p)));
 
-   a->bytes_on_loan += get_pszB(a, get_payload_block(a, align_p));
-   if (a->bytes_on_loan > a->bytes_on_loan_max)
-      a->bytes_on_loan_max = a->bytes_on_loan;
+   a->stats__bytes_on_loan += get_pszB(a, get_payload_block(a, align_p));
+   if (a->stats__bytes_on_loan > a->stats__bytes_on_loan_max) {
+      a->stats__bytes_on_loan_max = a->stats__bytes_on_loan;
+   }
+   /* a->stats__tot_blocks, a->stats__tot_bytes, a->stats__nsearches
+      are updated by the call to VG_(arena_malloc) just a few lines
+      above.  So we don't need to update them here. */
 
 #  ifdef DEBUG_MALLOC
    sanity_check_malloc_arena(aid);
@@ -1727,14 +1767,14 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
 
    // We don't have fastbins so smblks & fsmblks are always 0. Also we don't
    // have a separate mmap allocator so set hblks & hblkhd to 0.
-   mi->arena    = a->bytes_mmaped;
+   mi->arena    = a->stats__bytes_mmaped;
    mi->ordblks  = free_blocks + VG_(free_queue_length);
    mi->smblks   = 0;
    mi->hblks    = 0;
    mi->hblkhd   = 0;
    mi->usmblks  = 0;
    mi->fsmblks  = 0;
-   mi->uordblks = a->bytes_on_loan - VG_(free_queue_volume);
+   mi->uordblks = a->stats__bytes_on_loan - VG_(free_queue_volume);
    mi->fordblks = free_blocks_size + VG_(free_queue_volume);
    mi->keepcost = 0; // may want some value in here
 }

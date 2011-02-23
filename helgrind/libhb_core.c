@@ -1544,8 +1544,12 @@ typedef
    VTS;
 
 
-/* Create a new, empty VTS. */
-static VTS* VTS__new ( void );
+/* Create a new, empty VTS.  The argument is a hint for the expected
+   number of elements that will eventually be added to the array;
+   doesn't matter (from a correctness perspective) if it's wrong.
+   (Important from a performance perspective though.)  Pass zero to
+   mean "no hint".  */
+static VTS* VTS__new ( Word nElemsHint );
 
 /* Delete this VTS in its entirety. */
 static void VTS__delete ( VTS* vts );
@@ -1622,14 +1626,35 @@ static Bool is_sane_VTS ( VTS* vts )
 
 /* Create a new, empty VTS.
 */
-VTS* VTS__new ( void )
+VTS* VTS__new ( Word nElemsHint )
 {
    VTS* vts;
+   tl_assert(nElemsHint >= 0);
+
+   /* (optional) try to avoid m_mallocfree's tendency to do lengthy
+      searches of freelists which don't contain quite big enough free
+      blocks (due to containing lots of freed VTSs of size
+      nElemsHint-1) by rounding the size up to the next even number,
+      thereby halving the number of different sized blocks in
+      circulation.  NOTE: maps 0 to 0, as required to maintain the "no
+      hint" indication.*/
+   if (nElemsHint & 1) nElemsHint++;
+
    vts = HG_(zalloc)( "libhb.VTS__new.1", sizeof(VTS) );
    tl_assert(vts);
    vts->id = VtsID_INVALID;
-   vts->ts = VG_(newXA)( HG_(zalloc), "libhb.VTS__new.2",
-                         HG_(free), sizeof(ScalarTS) );
+   if (nElemsHint == 0) {
+      vts->ts = VG_(newXA)( 
+                   HG_(zalloc), "libhb.VTS__new.2",
+                   HG_(free), sizeof(ScalarTS)
+                );
+   } else {
+      vts->ts = VG_(newSizedXA)( 
+                   HG_(zalloc), "libhb.VTS__new.3",
+                   HG_(free), sizeof(ScalarTS),
+                   nElemsHint
+                );
+   }
    tl_assert(vts->ts);
    return vts;
 }
@@ -1653,7 +1678,7 @@ VTS* VTS__singleton ( Thr* thr, ULong tym ) {
    VTS*     vts;
    tl_assert(thr);
    tl_assert(tym >= 1);
-   vts = VTS__new();
+   vts = VTS__new(1);
    st.thr = thr;
    st.tym = tym;
    VG_(addToXA)( vts->ts, &st );
@@ -1669,7 +1694,7 @@ VTS* VTS__tick ( Thr* me, VTS* vts )
    ScalarTS* here = NULL;
    ScalarTS  tmp;
    VTS*      res;
-   Word      i, n; 
+   Word      i, n, hintsize; 
 
    stats__vts__tick++;
 
@@ -1677,8 +1702,9 @@ VTS* VTS__tick ( Thr* me, VTS* vts )
    tl_assert(is_sane_VTS(vts));
    //if (0) VG_(printf)("tick vts thrno %ld szin %d\n",
    //                   (Word)me->errmsg_index, (Int)VG_(sizeXA)(vts) );
-   res = VTS__new();
    n = VG_(sizeXA)( vts->ts );
+   hintsize = n;
+   res = VTS__new(hintsize);
 
    /* main loop doesn't handle zero-entry case correctly, so
       special-case it. */
@@ -1738,7 +1764,7 @@ VTS* VTS__tick ( Thr* me, VTS* vts )
 */
 VTS* VTS__join ( VTS* a, VTS* b )
 {
-   Word     ia, ib, useda, usedb;
+   Word     ia, ib, useda, usedb, hintsize;
    ULong    tyma, tymb, tymMax;
    Thr*     thr;
    VTS*     res;
@@ -1750,7 +1776,8 @@ VTS* VTS__join ( VTS* a, VTS* b )
    useda = VG_(sizeXA)( a->ts );
    usedb = VG_(sizeXA)( b->ts );
 
-   res = VTS__new();
+   hintsize = useda > usedb ? useda : usedb;
+   res = VTS__new(hintsize);
    ia = ib = 0;
 
    while (1) {

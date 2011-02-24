@@ -54,8 +54,13 @@ typedef  WordSet  WordSetID;
 /* Synchronisation Objects, exported abstractly by libhb. */
 typedef  struct _SO  SO;
 
-/* Thr, libhb's private thread record, exported abstractly */
+/* Thr, libhb's private thread record, exported abstractly.  Thr's are
+   allocated and never deallocated (simply leaked).  Also ThrID, which
+   is a small integer which uniquely identifies a Thr and which is
+   used in ScalarTS because it is smaller than a Thr*.  There is a 1-1
+   mapping between Thr's and ThrIDs. */
 typedef  struct _Thr  Thr;
+typedef  UInt         ThrID;
 
 
 /* Stores information about a thread.  Addresses of these also serve

@@ -1524,11 +1524,82 @@ static void zsm_init ( void(*p_rcinc)(SVal), void(*p_rcdec)(SVal) )
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-#ifndef __HB_VTS_H
-#define __HB_VTS_H
 
-/* VtsIDs can't exceed 30 bits, since they have to be packed into the
-   lowest 30 bits of an SVal. */
+/* There's a 1-1 mapping between Thr and ThrIDs -- the latter merely
+   being compact stand-ins for Thr*'s.  Use these functions to map
+   between them. */
+static ThrID Thr__to_ThrID   ( Thr*  thr   ); /* fwds */
+static Thr*  Thr__from_ThrID ( ThrID thrid ); /* fwds */
+
+
+/* Scalar Timestamp.  We have to store a lot of these, so there is
+   some effort to make them as small as possible.  Logically they are
+   a pair, (Thr*, ULong), but that takes 16 bytes on a 64-bit target.
+   We pack it into 64 bits by representing the Thr* using a ThrID, a
+   small integer (20 bits), and a 44 bit integer for the timestamp
+   number.  The 44/20 split is arbitary, but has the effect that
+   Helgrind can only handle programs that create 2^20 or fewer threads
+   over their entire lifetime, and have no more than 2^44 timestamp
+   ticks (synchronisation operations on the same thread).
+
+   This doesn't seem like much of a limitation.  2^44 ticks is
+   1.76e+13, and if each tick (optimistically) takes the machine 1000
+   cycles to process, then the minimum time to process that many ticks
+   at a clock rate of 5 GHz is 40.72 days.  And that's doing nothing
+   but VTS ticks, which isn't realistic.
+
+   NB1: SCALARTS_N_THRBITS must be 32 or lower, so they fit in a ThrID
+   (== a UInt).
+
+   NB2: thrid values are issued upwards from 1024, and values less
+   than that aren't valid.  This isn't per se necessary (any order
+   will do, so long as they are unique), but it does help ensure they
+   are less likely to get confused with the various other kinds of
+   small-integer thread ids drifting around (eg, TId).
+
+   NB3: this probably also relies on the fact that Thr's are never
+   deallocated -- they exist forever.  Hence the 1-1 mapping from
+   Thr's to thrid values (set up in Thr__new) persists forever.
+*/
+#define SCALARTS_N_THRBITS 20  /* valid range: 13 to 32 inclusive */
+#define SCALARTS_N_TYMBITS (64 - SCALARTS_N_THRBITS)
+typedef
+   struct {
+      ThrID thrid : SCALARTS_N_THRBITS;
+      ULong tym   : SCALARTS_N_TYMBITS;
+   }
+   ScalarTS;
+
+__attribute__((noreturn))
+static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
+{
+   if (due_to_nThrs) {
+      HChar* s =
+         "\n"
+         "Helgrind: cannot continue, run aborted: too many threads.\n"
+         "Sorry.  Helgrind can only handle programs that create\n"
+         "%'llu or fewer threads over their entire lifetime.\n"
+         "\n";
+      VG_(umsg)(s, (1ULL << SCALARTS_N_THRBITS) - 1024);
+   } else {
+      HChar* s =
+         "\n"
+         "Helgrind: cannot continue, run aborted: too many\n"
+         "synchronisation events.  Sorry. Helgrind can only handle\n"
+         "programs which perform %'llu or fewer\n"
+         "inter-thread synchronisation events (locks, unlocks, etc).\n"
+         "\n";
+      VG_(umsg)(s, (1ULL << SCALARTS_N_TYMBITS) - 1);
+   }
+   VG_(exit)(1);
+   /*NOTREACHED*/
+   tl_assert(0); /*wtf?!*/
+}
+
+
+/* VtsIDs: Unique small-integer IDs for VTSs.  VtsIDs can't exceed 30
+   bits, since they have to be packed into the lowest 30 bits of an
+   SVal. */
 typedef  UInt  VtsID;
 #define VtsID_INVALID 0xFFFFFFFF
 
@@ -1570,13 +1641,14 @@ static VTS* VTS__join ( VTS* a, VTS* b );
    LT, GT, UN), in fact we only need LEQ, and so we may as well
    hardwire that fact.
 
-   Returns NULL iff LEQ(A,B), or non-NULL if not.  In the latter case,
-   the returned Thr* indicates the discovered point for which they are
-   not.  There may be more than one such point, but we only care about
-   seeing one of them, not all of them.  This rather strange
-   convention is used because sometimes we want to know the actual
-   index at which they first differ. */
-static Thr* VTS__cmpLEQ ( VTS* a, VTS* b );
+   Returns zero iff LEQ(A,B), or a valid ThrID if not (zero is an
+   invald ThrID).  In the latter case, the returned ThrID indicates
+   the discovered point for which they are not.  There may be more
+   than one such point, but we only care about seeing one of them, not
+   all of them.  This rather strange convention is used because
+   sometimes we want to know the actual index at which they first
+   differ. */
+static UInt VTS__cmpLEQ ( VTS* a, VTS* b );
 
 /* Compute an arbitrary structural (total) ordering on the two args,
    based on their VCs, so they can be looked up in a table, tree, etc.
@@ -1589,19 +1661,8 @@ static void VTS__show ( HChar* buf, Int nBuf, VTS* vts );
 /* Debugging only.  Return vts[index], so to speak. */
 static ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx );
 
-#endif /* ! __HB_VTS_H */
-
 
 /*--------------- to do with Vector Timestamps ---------------*/
-
-/* Scalar Timestamp */
-typedef
-   struct {
-      Thr*    thr;
-      ULong   tym;
-   }
-   ScalarTS;
-
 
 static Bool is_sane_VTS ( VTS* vts )
 {
@@ -1614,7 +1675,7 @@ static Bool is_sane_VTS ( VTS* vts )
       for (i = 0; i < n-1; i++) {
          st1 = VG_(indexXA)( vts->ts, i );
          st2 = VG_(indexXA)( vts->ts, i+1 );
-         if (st1->thr >= st2->thr)
+         if (st1->thrid >= st2->thrid)
             return False;
          if (st1->tym == 0 || st2->tym == 0)
             return False;
@@ -1624,7 +1685,11 @@ static Bool is_sane_VTS ( VTS* vts )
 }
 
 
-/* Create a new, empty VTS.
+/* Create a new, empty VTS.  The argument is a hint for the expected
+   number of elements that will eventually be added to the array;
+   doesn't matter (from a correctness perspective) if it's wrong.
+   (Important from a performance perspective though.)  Pass zero to
+   mean "no hint".
 */
 VTS* VTS__new ( Word nElemsHint )
 {
@@ -1679,8 +1744,8 @@ VTS* VTS__singleton ( Thr* thr, ULong tym ) {
    tl_assert(thr);
    tl_assert(tym >= 1);
    vts = VTS__new(1);
-   st.thr = thr;
-   st.tym = tym;
+   st.thrid = Thr__to_ThrID(thr);
+   st.tym   = tym;
    VG_(addToXA)( vts->ts, &st );
    return vts;
 }
@@ -1695,10 +1760,12 @@ VTS* VTS__tick ( Thr* me, VTS* vts )
    ScalarTS  tmp;
    VTS*      res;
    Word      i, n, hintsize; 
+   ThrID     me_thrid;
 
    stats__vts__tick++;
 
    tl_assert(me);
+   me_thrid = Thr__to_ThrID(me);
    tl_assert(is_sane_VTS(vts));
    //if (0) VG_(printf)("tick vts thrno %ld szin %d\n",
    //                   (Word)me->errmsg_index, (Int)VG_(sizeXA)(vts) );
@@ -1709,8 +1776,8 @@ VTS* VTS__tick ( Thr* me, VTS* vts )
    /* main loop doesn't handle zero-entry case correctly, so
       special-case it. */
    if (n == 0) {
-      tmp.thr = me;
-      tmp.tym = 1;
+      tmp.thrid = me_thrid;
+      tmp.tym   = 1;
       VG_(addToXA)( res->ts, &tmp );
       tl_assert(is_sane_VTS(res));
       return res;
@@ -1718,32 +1785,36 @@ VTS* VTS__tick ( Thr* me, VTS* vts )
 
    for (i = 0; i < n; i++) {
       here = VG_(indexXA)( vts->ts, i );
-      if (me < here->thr) {
+      if (me_thrid < here->thrid) {
          /* We just went past 'me', without seeing it. */
-         tmp.thr = me;
-         tmp.tym = 1;
+         tmp.thrid = me_thrid;
+         tmp.tym   = 1;
          VG_(addToXA)( res->ts, &tmp );
          tmp = *here;
          VG_(addToXA)( res->ts, &tmp );
          i++;
          break;
       } 
-      else if (me == here->thr) {
+      else if (me_thrid == here->thrid) {
          tmp = *here;
+         if (UNLIKELY(tmp.tym >= (1ULL << SCALARTS_N_TYMBITS) - 2ULL)) {
+            /* We're hosed.  We have to stop. */
+            scalarts_limitations_fail_NORETURN( False/*!due_to_nThrs*/ );
+         }
          tmp.tym++;
          VG_(addToXA)( res->ts, &tmp );
          i++;
          break;
       }
-      else /* me > here->thr */ {
+      else /* me_thrid > here->thrid */ {
          tmp = *here;
          VG_(addToXA)( res->ts, &tmp );
       }
    }
    tl_assert(i >= 0 && i <= n);
-   if (i == n && here && here->thr < me) {
-      tmp.thr = me;
-      tmp.tym = 1;
+   if (i == n && here && here->thrid < me_thrid) {
+      tmp.thrid = me_thrid;
+      tmp.tym   = 1;
       VG_(addToXA)( res->ts, &tmp );
    } else {
       for (/*keepgoing*/; i < n; i++) {
@@ -1766,7 +1837,7 @@ VTS* VTS__join ( VTS* a, VTS* b )
 {
    Word     ia, ib, useda, usedb, hintsize;
    ULong    tyma, tymb, tymMax;
-   Thr*     thr;
+   ThrID    thrid;
    VTS*     res;
 
    stats__vts__join++;
@@ -1782,8 +1853,8 @@ VTS* VTS__join ( VTS* a, VTS* b )
 
    while (1) {
 
-      /* This logic is to enumerate triples (thr, tyma, tymb) drawn
-         from a and b in order, where thr is the next Thr*
+      /* This logic is to enumerate triples (thrid, tyma, tymb) drawn
+         from a and b in order, where thrid is the next ThrID
          occurring in either a or b, and tyma/b are the relevant
          scalar timestamps, taking into account implicit zeroes. */
       tl_assert(ia >= 0 && ia <= useda);
@@ -1796,41 +1867,41 @@ VTS* VTS__join ( VTS* a, VTS* b )
       } else if (ia == useda && ib != usedb) {
          /* a empty, use up b */
          ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
-         thr  = tmpb->thr;
-         tyma = 0;
-         tymb = tmpb->tym;
+         thrid = tmpb->thrid;
+         tyma  = 0;
+         tymb  = tmpb->tym;
          ib++;
 
       } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
          ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
-         thr  = tmpa->thr;
-         tyma = tmpa->tym;
-         tymb = 0;
+         thrid = tmpa->thrid;
+         tyma  = tmpa->tym;
+         tymb  = 0;
          ia++;
 
       } else {
-         /* both not empty; extract lowest-Thr*'d triple */
+         /* both not empty; extract lowest-ThrID'd triple */
          ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
          ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
-         if (tmpa->thr < tmpb->thr) {
-            /* a has the lowest unconsidered Thr* */
-            thr  = tmpa->thr;
-            tyma = tmpa->tym;
-            tymb = 0;
+         if (tmpa->thrid < tmpb->thrid) {
+            /* a has the lowest unconsidered ThrID */
+            thrid = tmpa->thrid;
+            tyma  = tmpa->tym;
+            tymb  = 0;
             ia++;
-         } else if (tmpa->thr > tmpb->thr) {
-            /* b has the lowest unconsidered Thr* */
-            thr  = tmpb->thr;
-            tyma = 0;
-            tymb = tmpb->tym;
+         } else if (tmpa->thrid > tmpb->thrid) {
+            /* b has the lowest unconsidered ThrID */
+            thrid = tmpb->thrid;
+            tyma  = 0;
+            tymb  = tmpb->tym;
             ib++;
          } else {
-            /* they both next mention the same Thr* */
-            tl_assert(tmpa->thr == tmpb->thr);
-            thr  = tmpa->thr; /* == tmpb->thr */
-            tyma = tmpa->tym;
-            tymb = tmpb->tym;
+            /* they both next mention the same ThrID */
+            tl_assert(tmpa->thrid == tmpb->thrid);
+            thrid = tmpa->thrid; /* == tmpb->thrid */
+            tyma  = tmpa->tym;
+            tymb  = tmpb->tym;
             ia++;
             ib++;
          }
@@ -1841,8 +1912,8 @@ VTS* VTS__join ( VTS* a, VTS* b )
       tymMax = tyma > tymb ? tyma : tymb;
       if (tymMax > 0) {
          ScalarTS st;
-         st.thr = thr;
-         st.tym = tymMax;
+         st.thrid = thrid;
+         st.tym   = tymMax;
          VG_(addToXA)( res->ts, &st );
       }
 
@@ -1854,11 +1925,12 @@ VTS* VTS__join ( VTS* a, VTS* b )
 }
 
 
-/* Determine if 'a' <= 'b', in the partial ordering.  Returns NULL if
-   they are, or the first Thr* for which they are not.  This rather
-   strange convention is used because sometimes we want to know the
-   actual index at which they first differ. */
-static Thr* VTS__cmpLEQ ( VTS* a, VTS* b )
+/* Determine if 'a' <= 'b', in the partial ordering.  Returns zero if
+   they are, or the first ThrID for which they are not (no valid ThrID
+   has the value zero).  This rather strange convention is used
+   because sometimes we want to know the actual index at which they
+   first differ. */
+static UInt/*ThrID*/ VTS__cmpLEQ ( VTS* a, VTS* b )
 {
    Word  ia, ib, useda, usedb;
    ULong tyma, tymb;
@@ -1877,7 +1949,7 @@ static Thr* VTS__cmpLEQ ( VTS* a, VTS* b )
       /* This logic is to enumerate doubles (tyma, tymb) drawn
          from a and b in order, and tyma/b are the relevant
          scalar timestamps, taking into account implicit zeroes. */
-      Thr* thr;
+      ThrID thrid;
 
       tl_assert(ia >= 0 && ia <= useda);
       tl_assert(ib >= 0 && ib <= usedb);
@@ -1889,43 +1961,43 @@ static Thr* VTS__cmpLEQ ( VTS* a, VTS* b )
       } else if (ia == useda && ib != usedb) {
          /* a empty, use up b */
          ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
-         tyma = 0;
-         tymb = tmpb->tym;
-         thr  = tmpb->thr;
+         tyma  = 0;
+         tymb  = tmpb->tym;
+         thrid = tmpb->thrid;
          ib++;
 
       } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
          ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
-         tyma = tmpa->tym;
-         thr  = tmpa->thr;
-         tymb = 0;
+         tyma  = tmpa->tym;
+         thrid = tmpa->thrid;
+         tymb  = 0;
          ia++;
 
       } else {
-         /* both not empty; extract lowest-Thr*'d triple */
+         /* both not empty; extract lowest-ThrID'd triple */
          ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
          ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
-         if (tmpa->thr < tmpb->thr) {
-            /* a has the lowest unconsidered Thr* */
-            tyma = tmpa->tym;
-            thr  = tmpa->thr;
-            tymb = 0;
+         if (tmpa->thrid < tmpb->thrid) {
+            /* a has the lowest unconsidered ThrID */
+            tyma  = tmpa->tym;
+            thrid = tmpa->thrid;
+            tymb  = 0;
             ia++;
          }
          else
-         if (tmpa->thr > tmpb->thr) {
-            /* b has the lowest unconsidered Thr* */
-            tyma = 0;
-            tymb = tmpb->tym;
-            thr  = tmpb->thr;
+         if (tmpa->thrid > tmpb->thrid) {
+            /* b has the lowest unconsidered ThrID */
+            tyma  = 0;
+            tymb  = tmpb->tym;
+            thrid = tmpb->thrid;
             ib++;
          } else {
-            /* they both next mention the same Thr* */
-            tl_assert(tmpa->thr == tmpb->thr);
-            tyma = tmpa->tym;
-            thr  = tmpa->thr;
-            tymb = tmpb->tym;
+            /* they both next mention the same ThrID */
+            tl_assert(tmpa->thrid == tmpb->thrid);
+            tyma  = tmpa->tym;
+            thrid = tmpa->thrid;
+            tymb  = tmpb->tym;
             ia++;
             ib++;
          }
@@ -1936,12 +2008,12 @@ static Thr* VTS__cmpLEQ ( VTS* a, VTS* b )
       if (tyma > tymb) {
          /* not LEQ at this index.  Quit, since the answer is
             determined already. */
-         tl_assert(thr);
-         return thr;
+         tl_assert(thrid >= 1024);
+         return thrid;
       }
    }
 
-   return NULL; /* all points are LEQ */
+   return 0; /* all points are LEQ => return an invalid ThrID */
 }
 
 
@@ -1976,7 +2048,8 @@ Word VTS__cmp_structural ( VTS* a, VTS* b )
       for (i = 0; i < useda; i++) {
          tmpa = &ctsa[i];
          tmpb = &ctsb[i];
-         if (LIKELY(tmpa->tym == tmpb->tym && tmpa->thr == tmpb->thr))
+         if (LIKELY(tmpa->tym == tmpb->tym
+                    && tmpa->thrid == tmpb->thrid))
             continue;
          else
             break;
@@ -1988,8 +2061,8 @@ Word VTS__cmp_structural ( VTS* a, VTS* b )
          tl_assert(i >= 0 && i < useda);
          if (tmpa->tym < tmpb->tym) return -1;
          if (tmpa->tym > tmpb->tym) return 1;
-         if (tmpa->thr < tmpb->thr) return -1;
-         if (tmpa->thr > tmpb->thr) return 1;
+         if (tmpa->thrid < tmpb->thrid) return -1;
+         if (tmpa->thrid > tmpb->thrid) return 1;
          /* we just established them as non-identical, hence: */
       }
       /*NOTREACHED*/
@@ -2019,8 +2092,8 @@ void VTS__show ( HChar* buf, Int nBuf, VTS* vts ) {
       tl_assert(avail >= 40);
       st = VG_(indexXA)( vts->ts, i );
       VG_(memset)(unit, 0, sizeof(unit));
-      VG_(sprintf)(unit, i < n-1 ? "%p:%lld " : "%p:%lld",
-                         st->thr, st->tym);
+      VG_(sprintf)(unit, i < n-1 ? "%u:%llu " : "%u:%llu",
+                         st->thrid, (ULong)st->tym);
       if (avail < VG_(strlen)(unit) + 40/*let's say*/) {
          VG_(strcat)(buf, " ...]");
          buf[nBuf-1] = 0;
@@ -2038,12 +2111,13 @@ void VTS__show ( HChar* buf, Int nBuf, VTS* vts ) {
 */
 ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx ) {
    UWord i, n;
+   ThrID idx_thrid = Thr__to_ThrID(idx);
    stats__vts__indexat_slow++;
    tl_assert(vts && vts->ts);
    n = VG_(sizeXA)( vts->ts );
    for (i = 0; i < n; i++) {
       ScalarTS* st = VG_(indexXA)( vts->ts, i );
-      if (st->thr == idx)
+      if (st->thrid == idx_thrid)
          return st->tym;
    }
    return 0;
@@ -2457,7 +2531,7 @@ static Bool VtsID__cmpLEQ_WRK ( VtsID vi1, VtsID vi2 ) {
    ////--
    v1  = VtsID__to_VTS(vi1);
    v2  = VtsID__to_VTS(vi2);
-   leq = VTS__cmpLEQ( v1, v2 ) == NULL;
+   leq = VTS__cmpLEQ( v1, v2 ) == 0;
    ////++
    cmpLEQ_cache[hash].vi1 = vi1;
    cmpLEQ_cache[hash].vi2 = vi2;
@@ -2527,12 +2601,14 @@ static ULong VtsID__indexAt ( VtsID vi, Thr* idx ) {
 static Thr* VtsID__findFirst_notLEQ ( VtsID vi1, VtsID vi2 )
 {
    VTS  *vts1, *vts2;
-   Thr* diffthr;
+   Thr*  diffthr;
+   ThrID diffthrid;
    tl_assert(vi1 != vi2);
    vts1 = VtsID__to_VTS(vi1);
    vts2 = VtsID__to_VTS(vi2);
    tl_assert(vts1 != vts2);
-   diffthr = VTS__cmpLEQ(vts1, vts2);
+   diffthrid = VTS__cmpLEQ(vts1, vts2);
+   diffthr = Thr__from_ThrID(diffthrid);
    tl_assert(diffthr); /* else they are LEQ ! */
    return diffthr;
 }
@@ -2934,6 +3010,10 @@ struct _Thr {
       has done a low-level exit. */
    Bool still_alive;
 
+   /* A small integer giving a unique identity to this Thr.  See
+      comments on the definition of ScalarTS for details. */
+   ThrID thrid : SCALARTS_N_THRBITS;
+
    /* A filter that removes references for which we believe that
       msmcread/msmcwrite will not change the state, nor report a
       race. */
@@ -2949,7 +3029,27 @@ struct _Thr {
    XArray* /* ULong_n_EC */ local_Kws_n_stacks;
 };
 
-static Thr* Thr__new ( void ) {
+
+/* Maps ThrID values to their Thr*s (which contain ThrID values that
+   should point back to the relevant slot in the array.  Lowest
+   numbered slot (0) is for thrid = 1024, (1) is for 1025, etc. */
+static XArray* /* of Thr* */ thrid_to_thr_map = NULL;
+
+/* And a counter to dole out ThrID values.  For rationale/background,
+   see comments on definition of ScalarTS (far) above. */
+static ThrID thrid_counter = 1024; /* runs up to 2^SCALARTS_N_THRBITS-1 */
+
+static ThrID Thr__to_ThrID ( Thr* thr ) {
+   return thr->thrid;
+}
+static Thr* Thr__from_ThrID ( UInt thrid ) {
+   Thr* thr = *(Thr**)VG_(indexXA)( thrid_to_thr_map, thrid - 1024 );
+   tl_assert(thr->thrid == thrid);
+   return thr;
+}
+
+static Thr* Thr__new ( void )
+{
    Thr* thr = HG_(zalloc)( "libhb.Thr__new.1", sizeof(Thr) );
    thr->viR = VtsID_INVALID;
    thr->viW = VtsID_INVALID;
@@ -2963,6 +3063,24 @@ static Thr* Thr__new ( void ) {
       = VG_(newXA)( HG_(zalloc),
                     "libhb.Thr__new.3 (local_Kws_and_stacks)",
                     HG_(free), sizeof(ULong_n_EC) );
+
+   /* Add this Thr* <-> ThrID binding to the mapping, and
+      cross-check */
+   if (!thrid_to_thr_map) {
+      thrid_to_thr_map = VG_(newXA)( HG_(zalloc), "libhb.Thr__new.4",
+                                     HG_(free), sizeof(Thr*) );
+      tl_assert(thrid_to_thr_map);
+   }
+
+   if (thrid_counter >= (((ThrID)1) << SCALARTS_N_THRBITS) - 2) {
+      /* We're hosed.  We have to stop. */
+      scalarts_limitations_fail_NORETURN( True/*due_to_nThrs*/ );
+   }
+
+   thr->thrid = thrid_counter++;
+   Word ix = VG_(addToXA)( thrid_to_thr_map, &thr );
+   tl_assert(ix + 1024 == thr->thrid);
+
    return thr;
 }
 
@@ -5407,6 +5525,11 @@ Thr* libhb_init (
 {
    Thr*  thr;
    VtsID vi;
+
+   // We will have to have to store a large number of these,
+   // so make sure they're the size we expect them to be.
+   tl_assert(sizeof(ScalarTS) == 8);
+
    tl_assert(get_stacktrace);
    tl_assert(get_EC);
    main_get_stacktrace   = get_stacktrace;

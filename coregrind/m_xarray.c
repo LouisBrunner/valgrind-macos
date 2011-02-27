@@ -44,7 +44,6 @@ struct _XArray {
    Int   (*cmpFn) ( void*, void* ); /* cmp fn (may be NULL) */
    Word  elemSzB;   /* element size in bytes */
    void* arr;       /* pointer to elements */
-   Word  initsizeE; /* HINT only: initial size, 0 if no hint */
    Word  usedsizeE; /* # used elements in arr */
    Word  totsizeE;  /* max size of arr, in elements */
    Bool  sorted;    /* is it sorted? */
@@ -73,24 +72,10 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT),
    xa->free      = free_fn;
    xa->cmpFn     = NULL;
    xa->elemSzB   = elemSzB;
-   xa->initsizeE = 0;
    xa->usedsizeE = 0;
    xa->totsizeE  = 0;
    xa->sorted    = False;
    xa->arr       = NULL;
-   return xa;
-}
-
-XArray* VG_(newSizedXA) ( void*(*alloc_fn)(HChar*,SizeT), 
-                          HChar* cc,
-                          void(*free_fn)(void*),
-                          Word elemSzB,
-                          Word nInitialElems )
-{
-   XArray* xa;
-   tl_assert(nInitialElems >= 0);
-   xa = VG_(newXA)( alloc_fn, cc, free_fn, elemSzB );
-   xa->initsizeE = nInitialElems;
    return xa;
 }
 
@@ -160,7 +145,7 @@ inline void* VG_(indexXA) ( XArray* xao, Word n )
 
 static inline void ensureSpaceXA ( struct _XArray* xa )
 {
-   if (UNLIKELY(xa->usedsizeE == xa->totsizeE)) {
+   if (xa->usedsizeE == xa->totsizeE) {
       void* tmp;
       Word  newsz;
       if (xa->totsizeE == 0)
@@ -173,11 +158,7 @@ static inline void ensureSpaceXA ( struct _XArray* xa )
             Hence increase the initial array size for tiny elements in
             an attempt to avoid reallocations of size 2, 4, 8 if the
             array does start to fill up. */
-         /* Also, if there's a hinted initial size, use that instead of
-            the logic in the preceding comment. */
-         tl_assert(xa->initsizeE >= 0);
-         if (xa->initsizeE > 0) newsz = xa->initsizeE;
-         else if (xa->elemSzB == 1) newsz = 8;
+         if (xa->elemSzB == 1) newsz = 8;
          else if (xa->elemSzB == 2) newsz = 4;
          else newsz = 2;
       } else {

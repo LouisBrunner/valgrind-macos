@@ -1696,6 +1696,7 @@ static Bool is_sane_VTS ( VTS* vts )
    ScalarTS  *st1, *st2;
    if (!vts) return False;
    if (!vts->ts) return False;
+   if (vts->usedTS > vts->sizeTS) return False;
    n = vts->usedTS;
    if (n == 1) {
       st1 = &vts->ts[0];
@@ -1779,7 +1780,6 @@ static void VTS__singleton ( /*OUT*/VTS* out, Thr* thr, ULong tym )
 */
 static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts )
 {
-   ScalarTS* here = NULL;
    UInt      i, n;
    ThrID     me_thrid;
    Bool      found = False;
@@ -1797,30 +1797,34 @@ static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts )
    tl_assert(is_sane_VTS(vts));
    n = vts->usedTS;
 
-   /* main loop doesn't handle zero-entry case correctly, so
-      special-case it. */
-   if (n == 0) {
+   /* Copy all entries which precede 'me'. */
+   for (i = 0; i < n; i++) {
+      ScalarTS* here = &vts->ts[i];
+      if (UNLIKELY(here->thrid >= me_thrid))
+         break;
+      UInt hi = out->usedTS++;
+      out->ts[hi] = *here;
+   }
+
+   /* 'i' now indicates the next entry to copy, if any.
+       There are 3 possibilities:
+       (a) there is no next entry (we used them all up already):
+           add (me_thrid,1) to the output, and quit
+       (b) there is a next entry, and its thrid > me_thrid:
+           add (me_thrid,1) to the output, then copy the remaining entries
+       (c) there is a next entry, and its thrid == me_thrid:
+           copy it to the output but increment its timestamp value.
+           Then copy the remaining entries.  (c) is the common case.
+   */
+   tl_assert(i >= 0 && i <= n);
+   if (i == n) { /* case (a) */
       UInt hi = out->usedTS++;
       out->ts[hi].thrid = me_thrid;
       out->ts[hi].tym   = 1;
-      tl_assert(out->usedTS <= out->sizeTS);
-      return;
-   }
-
-   for (i = 0; i < n; i++) {
-      here = &vts->ts[i];
-      if (me_thrid < here->thrid) {
-         /* We just went past 'me', without seeing it. */
-         UInt hi = out->usedTS++;
-         out->ts[hi].thrid = me_thrid;
-         out->ts[hi].tym   = 1;
-         hi = out->usedTS++;
-         out->ts[hi] = *here;
-         i++;
-         break;
-      } 
-      else if (me_thrid == here->thrid) {
-         found = True;
+   } else {
+      /* cases (b) and (c) */
+      ScalarTS* here = &vts->ts[i];
+      if (me_thrid == here->thrid) { /* case (c) */
          if (UNLIKELY(here->tym >= (1ULL << SCALARTS_N_TYMBITS) - 2ULL)) {
             /* We're hosed.  We have to stop. */
             scalarts_limitations_fail_NORETURN( False/*!due_to_nThrs*/ );
@@ -1829,26 +1833,20 @@ static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts )
          out->ts[hi].thrid = here->thrid;
          out->ts[hi].tym   = here->tym + 1;
          i++;
-         break;
-      }
-      else /* me_thrid > here->thrid */ {
+         found = True;
+      } else { /* case (b) */
          UInt hi = out->usedTS++;
-         out->ts[hi] = *here;
+         out->ts[hi].thrid = me_thrid;
+         out->ts[hi].tym   = 1;
       }
-   }
-   tl_assert(i >= 0 && i <= n);
-   tl_assert(here);
-   if (i == n && here->thrid < me_thrid) {
-      UInt hi = out->usedTS++;
-      out->ts[hi].thrid = me_thrid;
-      out->ts[hi].tym   = 1;
-   } else {
+      /* And copy any remaining entries. */
       for (/*keepgoing*/; i < n; i++) {
-         here = &vts->ts[i];
+         ScalarTS* here2 = &vts->ts[i];
          UInt hi = out->usedTS++;
-         out->ts[hi] = *here;
+         out->ts[hi] = *here2;
       }
    }
+
    tl_assert(is_sane_VTS(out));
    tl_assert(out->usedTS == vts->usedTS + (found ? 0 : 1));
    tl_assert(out->usedTS <= out->sizeTS);

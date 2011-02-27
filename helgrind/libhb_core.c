@@ -345,11 +345,19 @@ static UWord stats__vts__tick            = 0; // # calls to VTS__tick
 static UWord stats__vts__join            = 0; // # calls to VTS__join
 static UWord stats__vts__cmpLEQ          = 0; // # calls to VTS__cmpLEQ
 static UWord stats__vts__cmp_structural  = 0; // # calls to VTS__cmp_structural
-static UWord stats__vts__cmp_structural_slow = 0; // # calls to VTS__cmp_structural w/ slow case
-static UWord stats__vts__indexat_slow    = 0; // # calls to VTS__indexAt_SLOW
-static UWord stats__vts_set__fadoa       = 0; // # calls to vts_set__find_and_dealloc__or_add
-static UWord stats__vts_set__fadoa_d     = 0; // # calls to vts_set__find_and_dealloc__or_add
-                                              // that lead to a deallocation
+
+// # calls to VTS__cmp_structural w/ slow case
+static UWord stats__vts__cmp_structural_slow = 0;
+
+// # calls to VTS__indexAt_SLOW
+static UWord stats__vts__indexat_slow = 0;
+
+// # calls to vts_set__find__or__clone_and_add
+static UWord stats__vts_set__focaa    = 0;
+
+// # calls to vts_set__find__or__clone_and_add that lead to an
+// allocation
+static UWord stats__vts_set__focaa_a  = 0;
 
 
 static inline Addr shmem__round_to_SecMap_base ( Addr a ) {
@@ -1536,16 +1544,16 @@ static Thr*  Thr__from_ThrID ( ThrID thrid ); /* fwds */
    some effort to make them as small as possible.  Logically they are
    a pair, (Thr*, ULong), but that takes 16 bytes on a 64-bit target.
    We pack it into 64 bits by representing the Thr* using a ThrID, a
-   small integer (20 bits), and a 44 bit integer for the timestamp
-   number.  The 44/20 split is arbitary, but has the effect that
-   Helgrind can only handle programs that create 2^20 or fewer threads
-   over their entire lifetime, and have no more than 2^44 timestamp
+   small integer (18 bits), and a 46 bit integer for the timestamp
+   number.  The 46/18 split is arbitary, but has the effect that
+   Helgrind can only handle programs that create 2^18 or fewer threads
+   over their entire lifetime, and have no more than 2^46 timestamp
    ticks (synchronisation operations on the same thread).
 
-   This doesn't seem like much of a limitation.  2^44 ticks is
-   1.76e+13, and if each tick (optimistically) takes the machine 1000
+   This doesn't seem like much of a limitation.  2^46 ticks is
+   7.06e+13, and if each tick (optimistically) takes the machine 1000
    cycles to process, then the minimum time to process that many ticks
-   at a clock rate of 5 GHz is 40.72 days.  And that's doing nothing
+   at a clock rate of 5 GHz is 162.9 days.  And that's doing nothing
    but VTS ticks, which isn't realistic.
 
    NB1: SCALARTS_N_THRBITS must be 32 or lower, so they fit in a ThrID
@@ -1560,8 +1568,18 @@ static Thr*  Thr__from_ThrID ( ThrID thrid ); /* fwds */
    NB3: this probably also relies on the fact that Thr's are never
    deallocated -- they exist forever.  Hence the 1-1 mapping from
    Thr's to thrid values (set up in Thr__new) persists forever.
+
+   NB4: temp_max_sized_VTS is allocated at startup and never freed.
+   It is a maximum sized VTS, so has (1 << SCALARTS_N_TYMBITS)
+   ScalarTSs.  So we can't make SCALARTS_N_THRBITS too large without
+   making the memory use for this go sky-high.  With
+   SCALARTS_N_THRBITS at 18, it occupies 2MB of memory, which seems
+   like an OK tradeoff.  If more than 256k threads need to be
+   supported, we could change SCALARTS_N_THRBITS to 20, which would
+   facilitate supporting 1 million threads at the cost of 8MB storage
+   for temp_max_sized_VTS.
 */
-#define SCALARTS_N_THRBITS 20  /* valid range: 13 to 32 inclusive */
+#define SCALARTS_N_THRBITS 18  /* valid range: 11 to 32 inclusive */
 #define SCALARTS_N_TYMBITS (64 - SCALARTS_N_THRBITS)
 typedef
    struct {
@@ -1569,6 +1587,9 @@ typedef
       ULong tym   : SCALARTS_N_TYMBITS;
    }
    ScalarTS;
+
+#define ThrID_MAX_VALID ((1 << SCALARTS_N_THRBITS) - 1)
+
 
 __attribute__((noreturn))
 static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
@@ -1580,7 +1601,7 @@ static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
          "Sorry.  Helgrind can only handle programs that create\n"
          "%'llu or fewer threads over their entire lifetime.\n"
          "\n";
-      VG_(umsg)(s, (1ULL << SCALARTS_N_THRBITS) - 1024);
+      VG_(umsg)(s, ThrID_MAX_VALID - 1024);
    } else {
       HChar* s =
          "\n"
@@ -1609,32 +1630,37 @@ typedef  UInt  VtsID;
    VtsID_INVALID. */
 typedef
    struct {
-      VtsID   id;
-      XArray* ts; /* XArray* ScalarTS(abstract) */
+      VtsID    id;
+      UInt     usedTS;
+      UInt     sizeTS;
+      ScalarTS ts[0];
    }
    VTS;
 
+/* Allocate a VTS capable of storing 'sizeTS' entries. */
+static VTS* VTS__new ( HChar* who, UInt sizeTS );
 
-/* Create a new, empty VTS.  The argument is a hint for the expected
-   number of elements that will eventually be added to the array;
-   doesn't matter (from a correctness perspective) if it's wrong.
-   (Important from a performance perspective though.)  Pass zero to
-   mean "no hint".  */
-static VTS* VTS__new ( Word nElemsHint );
+/* Make a clone of 'vts', resizing the array to exactly match the
+   number of ScalarTSs present. */
+static VTS* VTS__clone ( HChar* who, VTS* vts );
 
 /* Delete this VTS in its entirety. */
 static void VTS__delete ( VTS* vts );
 
-/* Create a new singleton VTS. */
-static VTS* VTS__singleton ( Thr* thr, ULong tym );
+/* Create a new singleton VTS in 'out'.  Caller must have
+   pre-allocated 'out' sufficiently big to hold the result in all
+   possible cases. */
+static void VTS__singleton ( /*OUT*/VTS* out, Thr* thr, ULong tym );
 
-/* Return a new VTS in which vts[me]++, so to speak.  'vts' itself is
-   not modified. */
-static VTS* VTS__tick ( Thr* me, VTS* vts );
+/* Create in 'out' a VTS which is the same as 'vts' except with
+   vts[me]++, so to speak.  Caller must have pre-allocated 'out'
+   sufficiently big to hold the result in all possible cases. */
+static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts );
 
-/* Return a new VTS constructed as the join (max) of the 2 args.
-   Neither arg is modified. */
-static VTS* VTS__join ( VTS* a, VTS* b );
+/* Create in 'out' a VTS which is the join (max) of 'a' and
+   'b'. Caller must have pre-allocated 'out' sufficiently big to hold
+   the result in all possible cases. */
+static void VTS__join ( /*OUT*/VTS* out, VTS* a, VTS* b );
 
 /* Compute the partial ordering relation of the two args.  Although we
    could be completely general and return an enumeration value (EQ,
@@ -1670,11 +1696,17 @@ static Bool is_sane_VTS ( VTS* vts )
    ScalarTS  *st1, *st2;
    if (!vts) return False;
    if (!vts->ts) return False;
-   n = VG_(sizeXA)( vts->ts );
+   n = vts->usedTS;
+   if (n == 1) {
+      st1 = &vts->ts[0];
+      if (st1->tym == 0)
+         return False;
+   }
+   else
    if (n >= 2) {
       for (i = 0; i < n-1; i++) {
-         st1 = VG_(indexXA)( vts->ts, i );
-         st2 = VG_(indexXA)( vts->ts, i+1 );
+         st1 = &vts->ts[i];
+         st2 = &vts->ts[i+1];
          if (st1->thrid >= st2->thrid)
             return False;
          if (st1->tym == 0 || st2->tym == 0)
@@ -1685,170 +1717,169 @@ static Bool is_sane_VTS ( VTS* vts )
 }
 
 
-/* Create a new, empty VTS.  The argument is a hint for the expected
-   number of elements that will eventually be added to the array;
-   doesn't matter (from a correctness perspective) if it's wrong.
-   (Important from a performance perspective though.)  Pass zero to
-   mean "no hint".
+/* Create a new, empty VTS.
 */
-VTS* VTS__new ( Word nElemsHint )
+static VTS* VTS__new ( HChar* who, UInt sizeTS )
 {
-   VTS* vts;
-   tl_assert(nElemsHint >= 0);
-
-   /* (optional) try to avoid m_mallocfree's tendency to do lengthy
-      searches of freelists which don't contain quite big enough free
-      blocks (due to containing lots of freed VTSs of size
-      nElemsHint-1) by rounding the size up to the next even number,
-      thereby halving the number of different sized blocks in
-      circulation.  NOTE: maps 0 to 0, as required to maintain the "no
-      hint" indication.*/
-   if (nElemsHint & 1) nElemsHint++;
-
-   vts = HG_(zalloc)( "libhb.VTS__new.1", sizeof(VTS) );
-   tl_assert(vts);
-   vts->id = VtsID_INVALID;
-   if (nElemsHint == 0) {
-      vts->ts = VG_(newXA)( 
-                   HG_(zalloc), "libhb.VTS__new.2",
-                   HG_(free), sizeof(ScalarTS)
-                );
-   } else {
-      vts->ts = VG_(newSizedXA)( 
-                   HG_(zalloc), "libhb.VTS__new.3",
-                   HG_(free), sizeof(ScalarTS),
-                   nElemsHint
-                );
-   }
-   tl_assert(vts->ts);
+   VTS* vts = HG_(zalloc)(who, sizeof(VTS) + (sizeTS+1) * sizeof(ScalarTS));
+   tl_assert(vts->usedTS == 0);
+   vts->sizeTS = sizeTS;
+   *(ULong*)(&vts->ts[sizeTS]) = 0x0ddC0ffeeBadF00dULL;
    return vts;
+}
+
+/* Clone this VTS.
+*/
+static VTS* VTS__clone ( HChar* who, VTS* vts )
+{
+   tl_assert(vts);
+   tl_assert( *(ULong*)(&vts->ts[vts->sizeTS]) == 0x0ddC0ffeeBadF00dULL);
+   UInt nTS = vts->usedTS;
+   VTS* clone = VTS__new(who, nTS);
+   clone->id = vts->id;
+   clone->sizeTS = nTS;
+   clone->usedTS = nTS;
+   UInt i;
+   for (i = 0; i < nTS; i++) {
+      clone->ts[i] = vts->ts[i];
+   }
+   tl_assert( *(ULong*)(&clone->ts[clone->sizeTS]) == 0x0ddC0ffeeBadF00dULL);
+   return clone;
 }
 
 
 /* Delete this VTS in its entirety.
 */
-void VTS__delete ( VTS* vts )
+static void VTS__delete ( VTS* vts )
 {
    tl_assert(vts);
-   tl_assert(vts->ts);
-   VG_(deleteXA)( vts->ts );
+   tl_assert(vts->usedTS <= vts->sizeTS);
+   tl_assert( *(ULong*)(&vts->ts[vts->sizeTS]) == 0x0ddC0ffeeBadF00dULL);
    HG_(free)(vts);
 }
 
 
 /* Create a new singleton VTS. 
 */
-VTS* VTS__singleton ( Thr* thr, ULong tym ) {
-   ScalarTS st;
-   VTS*     vts;
+static void VTS__singleton ( /*OUT*/VTS* out, Thr* thr, ULong tym )
+{
    tl_assert(thr);
    tl_assert(tym >= 1);
-   vts = VTS__new(1);
-   st.thrid = Thr__to_ThrID(thr);
-   st.tym   = tym;
-   VG_(addToXA)( vts->ts, &st );
-   return vts;
+   tl_assert(out);
+   tl_assert(out->usedTS == 0);
+   tl_assert(out->sizeTS >= 1);
+   UInt hi = out->usedTS++;
+   out->ts[hi].thrid = Thr__to_ThrID(thr);
+   out->ts[hi].tym   = tym;
 }
 
 
 /* Return a new VTS in which vts[me]++, so to speak.  'vts' itself is
    not modified.
 */
-VTS* VTS__tick ( Thr* me, VTS* vts )
+static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts )
 {
    ScalarTS* here = NULL;
-   ScalarTS  tmp;
-   VTS*      res;
-   Word      i, n, hintsize; 
+   UInt      i, n;
    ThrID     me_thrid;
+   Bool      found = False;
 
    stats__vts__tick++;
+
+   tl_assert(out);
+   tl_assert(out->usedTS == 0);
+   if (vts->usedTS >= ThrID_MAX_VALID)
+      scalarts_limitations_fail_NORETURN( True/*due_to_nThrs*/ );
+   tl_assert(out->sizeTS >= 1 + vts->usedTS);
 
    tl_assert(me);
    me_thrid = Thr__to_ThrID(me);
    tl_assert(is_sane_VTS(vts));
-   //if (0) VG_(printf)("tick vts thrno %ld szin %d\n",
-   //                   (Word)me->errmsg_index, (Int)VG_(sizeXA)(vts) );
-   n = VG_(sizeXA)( vts->ts );
-   hintsize = n;
-   res = VTS__new(hintsize);
+   n = vts->usedTS;
 
    /* main loop doesn't handle zero-entry case correctly, so
       special-case it. */
    if (n == 0) {
-      tmp.thrid = me_thrid;
-      tmp.tym   = 1;
-      VG_(addToXA)( res->ts, &tmp );
-      tl_assert(is_sane_VTS(res));
-      return res;
+      UInt hi = out->usedTS++;
+      out->ts[hi].thrid = me_thrid;
+      out->ts[hi].tym   = 1;
+      tl_assert(out->usedTS <= out->sizeTS);
+      return;
    }
 
    for (i = 0; i < n; i++) {
-      here = VG_(indexXA)( vts->ts, i );
+      here = &vts->ts[i];
       if (me_thrid < here->thrid) {
          /* We just went past 'me', without seeing it. */
-         tmp.thrid = me_thrid;
-         tmp.tym   = 1;
-         VG_(addToXA)( res->ts, &tmp );
-         tmp = *here;
-         VG_(addToXA)( res->ts, &tmp );
+         UInt hi = out->usedTS++;
+         out->ts[hi].thrid = me_thrid;
+         out->ts[hi].tym   = 1;
+         hi = out->usedTS++;
+         out->ts[hi] = *here;
          i++;
          break;
       } 
       else if (me_thrid == here->thrid) {
-         tmp = *here;
-         if (UNLIKELY(tmp.tym >= (1ULL << SCALARTS_N_TYMBITS) - 2ULL)) {
+         found = True;
+         if (UNLIKELY(here->tym >= (1ULL << SCALARTS_N_TYMBITS) - 2ULL)) {
             /* We're hosed.  We have to stop. */
             scalarts_limitations_fail_NORETURN( False/*!due_to_nThrs*/ );
          }
-         tmp.tym++;
-         VG_(addToXA)( res->ts, &tmp );
+         UInt hi = out->usedTS++;
+         out->ts[hi].thrid = here->thrid;
+         out->ts[hi].tym   = here->tym + 1;
          i++;
          break;
       }
       else /* me_thrid > here->thrid */ {
-         tmp = *here;
-         VG_(addToXA)( res->ts, &tmp );
+         UInt hi = out->usedTS++;
+         out->ts[hi] = *here;
       }
    }
    tl_assert(i >= 0 && i <= n);
-   if (i == n && here && here->thrid < me_thrid) {
-      tmp.thrid = me_thrid;
-      tmp.tym   = 1;
-      VG_(addToXA)( res->ts, &tmp );
+   tl_assert(here);
+   if (i == n && here->thrid < me_thrid) {
+      UInt hi = out->usedTS++;
+      out->ts[hi].thrid = me_thrid;
+      out->ts[hi].tym   = 1;
    } else {
       for (/*keepgoing*/; i < n; i++) {
-         here = VG_(indexXA)( vts->ts, i );
-         tmp = *here;
-         VG_(addToXA)( res->ts, &tmp );
+         here = &vts->ts[i];
+         UInt hi = out->usedTS++;
+         out->ts[hi] = *here;
       }
    }
-   tl_assert(is_sane_VTS(res));
-   //if (0) VG_(printf)("tick vts thrno %ld szou %d\n",
-   //                   (Word)me->errmsg_index, (Int)VG_(sizeXA)(res) );
-   return res;
+   tl_assert(is_sane_VTS(out));
+   tl_assert(out->usedTS == vts->usedTS + (found ? 0 : 1));
+   tl_assert(out->usedTS <= out->sizeTS);
 }
 
 
 /* Return a new VTS constructed as the join (max) of the 2 args.
    Neither arg is modified.
 */
-VTS* VTS__join ( VTS* a, VTS* b )
+static void VTS__join ( /*OUT*/VTS* out, VTS* a, VTS* b )
 {
-   Word     ia, ib, useda, usedb, hintsize;
+   UInt     ia, ib, useda, usedb;
    ULong    tyma, tymb, tymMax;
    ThrID    thrid;
-   VTS*     res;
+   UInt     ncommon = 0;
 
    stats__vts__join++;
 
-   tl_assert(a && a->ts);
-   tl_assert(b && b->ts);
-   useda = VG_(sizeXA)( a->ts );
-   usedb = VG_(sizeXA)( b->ts );
+   tl_assert(a);
+   tl_assert(b);
+   useda = a->usedTS;
+   usedb = b->usedTS;
 
-   hintsize = useda > usedb ? useda : usedb;
-   res = VTS__new(hintsize);
+   tl_assert(out);
+   tl_assert(out->usedTS == 0);
+   /* overly conservative test, but doing better involves comparing
+      the two VTSs, which we don't want to do at this point. */
+   if (useda + usedb >= ThrID_MAX_VALID)
+      scalarts_limitations_fail_NORETURN( True/*due_to_nThrs*/ );
+   tl_assert(out->sizeTS >= useda + usedb);
+
    ia = ib = 0;
 
    while (1) {
@@ -1866,7 +1897,7 @@ VTS* VTS__join ( VTS* a, VTS* b )
 
       } else if (ia == useda && ib != usedb) {
          /* a empty, use up b */
-         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpb = &b->ts[ib];
          thrid = tmpb->thrid;
          tyma  = 0;
          tymb  = tmpb->tym;
@@ -1874,7 +1905,7 @@ VTS* VTS__join ( VTS* a, VTS* b )
 
       } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
-         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
+         ScalarTS* tmpa = &a->ts[ia];
          thrid = tmpa->thrid;
          tyma  = tmpa->tym;
          tymb  = 0;
@@ -1882,8 +1913,8 @@ VTS* VTS__join ( VTS* a, VTS* b )
 
       } else {
          /* both not empty; extract lowest-ThrID'd triple */
-         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
-         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpa = &a->ts[ia];
+         ScalarTS* tmpb = &b->ts[ib];
          if (tmpa->thrid < tmpb->thrid) {
             /* a has the lowest unconsidered ThrID */
             thrid = tmpa->thrid;
@@ -1904,6 +1935,7 @@ VTS* VTS__join ( VTS* a, VTS* b )
             tymb  = tmpb->tym;
             ia++;
             ib++;
+            ncommon++;
          }
       }
 
@@ -1911,17 +1943,16 @@ VTS* VTS__join ( VTS* a, VTS* b )
          useful with it. */
       tymMax = tyma > tymb ? tyma : tymb;
       if (tymMax > 0) {
-         ScalarTS st;
-         st.thrid = thrid;
-         st.tym   = tymMax;
-         VG_(addToXA)( res->ts, &st );
+         UInt hi = out->usedTS++;
+         out->ts[hi].thrid = thrid;
+         out->ts[hi].tym   = tymMax;
       }
 
    }
 
-   tl_assert(is_sane_VTS( res ));
-
-   return res;
+   tl_assert(is_sane_VTS(out));
+   tl_assert(out->usedTS <= out->sizeTS);
+   tl_assert(out->usedTS == useda + usedb - ncommon);
 }
 
 
@@ -1937,10 +1968,10 @@ static UInt/*ThrID*/ VTS__cmpLEQ ( VTS* a, VTS* b )
 
    stats__vts__cmpLEQ++;
 
-   tl_assert(a && a->ts);
-   tl_assert(b && b->ts);
-   useda = VG_(sizeXA)( a->ts );
-   usedb = VG_(sizeXA)( b->ts );
+   tl_assert(a);
+   tl_assert(b);
+   useda = a->usedTS;
+   usedb = b->usedTS;
 
    ia = ib = 0;
 
@@ -1960,7 +1991,7 @@ static UInt/*ThrID*/ VTS__cmpLEQ ( VTS* a, VTS* b )
 
       } else if (ia == useda && ib != usedb) {
          /* a empty, use up b */
-         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpb = &b->ts[ib];
          tyma  = 0;
          tymb  = tmpb->tym;
          thrid = tmpb->thrid;
@@ -1968,7 +1999,7 @@ static UInt/*ThrID*/ VTS__cmpLEQ ( VTS* a, VTS* b )
 
       } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
-         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
+         ScalarTS* tmpa = &a->ts[ia];
          tyma  = tmpa->tym;
          thrid = tmpa->thrid;
          tymb  = 0;
@@ -1976,8 +2007,8 @@ static UInt/*ThrID*/ VTS__cmpLEQ ( VTS* a, VTS* b )
 
       } else {
          /* both not empty; extract lowest-ThrID'd triple */
-         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
-         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpa = &a->ts[ia];
+         ScalarTS* tmpb = &b->ts[ib];
          if (tmpa->thrid < tmpb->thrid) {
             /* a has the lowest unconsidered ThrID */
             tyma  = tmpa->tym;
@@ -2037,8 +2068,8 @@ Word VTS__cmp_structural ( VTS* a, VTS* b )
    tl_assert(a);
    tl_assert(b);
 
-   VG_(getContentsXA_UNSAFE)( a->ts, (void**)&ctsa, &useda );
-   VG_(getContentsXA_UNSAFE)( b->ts, (void**)&ctsb, &usedb );
+   ctsa = &a->ts[0]; useda = a->usedTS;
+   ctsb = &b->ts[0]; usedb = b->usedTS;
 
    if (LIKELY(useda == usedb)) {
       ScalarTS *tmpa = NULL, *tmpb = NULL;
@@ -2078,7 +2109,8 @@ Word VTS__cmp_structural ( VTS* a, VTS* b )
 
 /* Debugging only.  Display the given VTS in the buffer.
 */
-void VTS__show ( HChar* buf, Int nBuf, VTS* vts ) {
+void VTS__show ( HChar* buf, Int nBuf, VTS* vts )
+{
    ScalarTS* st;
    HChar     unit[64];
    Word      i, n;
@@ -2087,10 +2119,10 @@ void VTS__show ( HChar* buf, Int nBuf, VTS* vts ) {
    tl_assert(nBuf > 16);
    buf[0] = '[';
    buf[1] = 0;
-   n = VG_(sizeXA)( vts->ts );
+   n =  vts->usedTS;
    for (i = 0; i < n; i++) {
       tl_assert(avail >= 40);
-      st = VG_(indexXA)( vts->ts, i );
+      st = &vts->ts[i];
       VG_(memset)(unit, 0, sizeof(unit));
       VG_(sprintf)(unit, i < n-1 ? "%u:%llu " : "%u:%llu",
                          st->thrid, (ULong)st->tym);
@@ -2109,14 +2141,15 @@ void VTS__show ( HChar* buf, Int nBuf, VTS* vts ) {
 
 /* Debugging only.  Return vts[index], so to speak.
 */
-ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx ) {
+ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx )
+{
    UWord i, n;
    ThrID idx_thrid = Thr__to_ThrID(idx);
    stats__vts__indexat_slow++;
    tl_assert(vts && vts->ts);
-   n = VG_(sizeXA)( vts->ts );
+   n = vts->usedTS;
    for (i = 0; i < n; i++) {
-      ScalarTS* st = VG_(indexXA)( vts->ts, i );
+      ScalarTS* st = &vts->ts[i];
       if (st->thrid == idx_thrid)
          return st->tym;
    }
@@ -2160,30 +2193,31 @@ static void vts_set_init ( void )
    tl_assert(vts_set);
 }
 
-/* Given a newly made VTS, look in vts_set to see if we already have
-   an identical one.  If yes, free up this one and return instead a
-   pointer to the existing one.  If no, add this one to the set and
-   return the same pointer.  Caller differentiates the two cases by
-   comparing returned pointer with the supplied one (although that
-   does require that the supplied VTS is not already in the set).
-*/
-static VTS* vts_set__find_and_dealloc__or_add ( VTS* cand )
+/* Given a VTS, look in vts_set to see if we already have a
+   structurally identical one.  If yes, return the pair (True, pointer
+   to the existing one).  If no, clone this one, add the clone to the
+   set, and return (False, pointer to the clone). */
+static Bool vts_set__find__or__clone_and_add ( /*OUT*/VTS** res, VTS* cand )
 {
    UWord keyW, valW;
-   stats__vts_set__fadoa++;
+   stats__vts_set__focaa++;
+   tl_assert(cand->id == VtsID_INVALID);
    /* lookup cand (by value) */
    if (VG_(lookupFM)( vts_set, &keyW, &valW, (UWord)cand )) {
       /* found it */
       tl_assert(valW == 0);
       /* if this fails, cand (by ref) was already present (!) */
       tl_assert(keyW != (UWord)cand);
-      stats__vts_set__fadoa_d++;
-      VTS__delete(cand);
-      return (VTS*)keyW;
+      *res = (VTS*)keyW;
+      return True;
    } else {
-      /* not present.  Add and return pointer to same. */
-      VG_(addToFM)( vts_set, (UWord)cand, 0/*val is unused*/ );
-      return cand;
+      /* not present.  Clone, add and return address of clone. */
+      stats__vts_set__focaa_a++;
+      VTS* clone = VTS__clone( "libhb.vts_set_focaa.1", cand );
+      tl_assert(clone != cand);
+      VG_(addToFM)( vts_set, (UWord)clone, 0/*val is unused*/ );
+      *res = clone;
+      return False;
    }
 }
 
@@ -2307,29 +2341,30 @@ static void VtsID__rcdec ( VtsID ii )
 }
 
 
-/* Look up 'cand' in our collection of VTSs.  If present, deallocate
-   it and return the VtsID for the pre-existing version.  If not
-   present, add it to both vts_tab and vts_set, allocate a fresh VtsID
-   for it, and return that. */
-static VtsID vts_tab__find_and_dealloc__or_add ( VTS* cand )
+/* Look up 'cand' in our collection of VTSs.  If present, return the
+   VtsID for the pre-existing version.  If not present, clone it, add
+   the clone to both vts_tab and vts_set, allocate a fresh VtsID for
+   it, and return that. */
+static VtsID vts_tab__find__or__clone_and_add ( VTS* cand )
 {
-   VTS* auld;
+   VTS* in_tab = NULL;
    tl_assert(cand->id == VtsID_INVALID);
-   auld = vts_set__find_and_dealloc__or_add(cand);
-   if (auld != cand) {
-      /* We already have an Aulde one.  Use that. */
+   Bool already_have = vts_set__find__or__clone_and_add( &in_tab, cand );
+   tl_assert(in_tab);
+   if (already_have) {
+      /* We already have a copy of 'cand'.  Use that. */
       VtsTE* ie;
-      tl_assert(auld->id != VtsID_INVALID);
-      ie = VG_(indexXA)( vts_tab, auld->id );
-      tl_assert(ie->vts == auld);
-      return auld->id;
+      tl_assert(in_tab->id != VtsID_INVALID);
+      ie = VG_(indexXA)( vts_tab, in_tab->id );
+      tl_assert(ie->vts == in_tab);
+      return in_tab->id;
    } else {
       VtsID  ii = get_new_VtsID();
       VtsTE* ie = VG_(indexXA)( vts_tab, ii );
-      ie->vts = cand;
+      ie->vts = in_tab;
       ie->rc = 0;
       ie->freelink = VtsID_INVALID;
-      cand->id = ii;
+      in_tab->id = ii;
       return ii;
    }
 }
@@ -2449,6 +2484,11 @@ static void vts_tab__do_GC ( Bool show_stats )
 /////////////////////////////////////////////////////////
 
 //////////////////////////
+/* A temporary, max-sized VTS which is used as a temporary (the first
+   argument) in VTS__singleton, VTS__tick and VTS__join operations. */
+static VTS* temp_max_sized_VTS = NULL;
+
+//////////////////////////
 static ULong stats__cmpLEQ_queries = 0;
 static ULong stats__cmpLEQ_misses  = 0;
 static ULong stats__join2_queries  = 0;
@@ -2548,7 +2588,7 @@ __attribute__((noinline))
 static VtsID VtsID__join2_WRK ( VtsID vi1, VtsID vi2 ) {
    UInt  hash;
    VtsID res;
-   VTS   *vts1, *vts2, *nyu;
+   VTS   *vts1, *vts2;
    //if (vi1 == vi2) return vi1;
    tl_assert(vi1 != vi2);
    ////++
@@ -2561,8 +2601,9 @@ static VtsID VtsID__join2_WRK ( VtsID vi1, VtsID vi2 ) {
    ////--
    vts1 = VtsID__to_VTS(vi1);
    vts2 = VtsID__to_VTS(vi2);
-   nyu  = VTS__join(vts1,vts2);
-   res  = vts_tab__find_and_dealloc__or_add(nyu);
+   temp_max_sized_VTS->usedTS = 0;
+   VTS__join(temp_max_sized_VTS, vts1,vts2);
+   res = vts_tab__find__or__clone_and_add(temp_max_sized_VTS);
    ////++
    join2_cache[hash].vi1 = vi1;
    join2_cache[hash].vi2 = vi2;
@@ -2576,15 +2617,17 @@ static inline VtsID VtsID__join2 ( VtsID vi1, VtsID vi2 ) {
 
 /* create a singleton VTS, namely [thr:1] */
 static VtsID VtsID__mk_Singleton ( Thr* thr, ULong tym ) {
-   VTS* nyu = VTS__singleton(thr,tym);
-   return vts_tab__find_and_dealloc__or_add(nyu);
+   temp_max_sized_VTS->usedTS = 0;
+   VTS__singleton(temp_max_sized_VTS, thr,tym);
+   return vts_tab__find__or__clone_and_add(temp_max_sized_VTS);
 }
 
 /* tick operation, creates value 1 if specified index is absent */
 static VtsID VtsID__tick ( VtsID vi, Thr* idx ) {
    VTS* vts = VtsID__to_VTS(vi);
-   VTS* nyu = VTS__tick(idx,vts);
-   return vts_tab__find_and_dealloc__or_add(nyu);
+   temp_max_sized_VTS->usedTS = 0;
+   VTS__tick(temp_max_sized_VTS, idx,vts);
+   return vts_tab__find__or__clone_and_add(temp_max_sized_VTS);
 }
 
 /* index into a VTS (only for assertions) */
@@ -3037,7 +3080,7 @@ static XArray* /* of Thr* */ thrid_to_thr_map = NULL;
 
 /* And a counter to dole out ThrID values.  For rationale/background,
    see comments on definition of ScalarTS (far) above. */
-static ThrID thrid_counter = 1024; /* runs up to 2^SCALARTS_N_THRBITS-1 */
+static ThrID thrid_counter = 1024; /* runs up to ThrID_MAX_VALID */
 
 static ThrID Thr__to_ThrID ( Thr* thr ) {
    return thr->thrid;
@@ -3072,7 +3115,7 @@ static Thr* Thr__new ( void )
       tl_assert(thrid_to_thr_map);
    }
 
-   if (thrid_counter >= (((ThrID)1) << SCALARTS_N_THRBITS) - 2) {
+   if (thrid_counter >= ThrID_MAX_VALID) {
       /* We're hosed.  We have to stop. */
       scalarts_limitations_fail_NORETURN( True/*due_to_nThrs*/ );
    }
@@ -5529,6 +5572,8 @@ Thr* libhb_init (
    // We will have to have to store a large number of these,
    // so make sure they're the size we expect them to be.
    tl_assert(sizeof(ScalarTS) == 8);
+   tl_assert(SCALARTS_N_THRBITS >= 11); /* because first 1024 unusable */
+   tl_assert(SCALARTS_N_THRBITS <= 32); /* so as to fit in a UInt */
 
    tl_assert(get_stacktrace);
    tl_assert(get_EC);
@@ -5538,6 +5583,10 @@ Thr* libhb_init (
    // No need to initialise hg_wordfm.
    // No need to initialise hg_wordset.
 
+   /* Allocated once and never deallocated.  Used as a temporary in
+      VTS singleton, tick and join operations. */
+   temp_max_sized_VTS = VTS__new( "libhb.libhb_init.1", ThrID_MAX_VALID );
+   temp_max_sized_VTS->id = VtsID_INVALID;
    vts_set_init();
    vts_tab_init();
    event_map_init();
@@ -5675,8 +5724,8 @@ void libhb_shutdown ( Bool show_stats )
                    stats__vts__tick, stats__vts__join,  stats__vts__cmpLEQ );
       VG_(printf)( "   libhb: VTSops: cmp_structural %'lu (%'lu slow)\n",
                    stats__vts__cmp_structural, stats__vts__cmp_structural_slow );
-      VG_(printf)( "   libhb: VTSset: find_and_dealloc__or_add %'lu (%'lu deallocd)\n",
-                   stats__vts_set__fadoa, stats__vts_set__fadoa_d );
+      VG_(printf)( "   libhb: VTSset: find__or__clone_and_add %'lu (%'lu allocd)\n",
+                   stats__vts_set__focaa, stats__vts_set__focaa_a );
       VG_(printf)( "   libhb: VTSops: indexAt_SLOW %'lu\n",
                    stats__vts__indexat_slow );
 

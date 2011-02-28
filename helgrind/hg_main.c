@@ -566,9 +566,11 @@ static void initialise_data_structures ( Thr* hbthr_root )
    tl_assert(univ_lsets != NULL);
 
    tl_assert(univ_laog == NULL);
-   univ_laog = HG_(newWordSetU)( HG_(zalloc), "hg.ids.5 (univ_laog)",
-                                 HG_(free), 24/*cacheSize*/ );
-   tl_assert(univ_laog != NULL);
+   if (HG_(clo_track_lockorders)) {
+      univ_laog = HG_(newWordSetU)( HG_(zalloc), "hg.ids.5 (univ_laog)",
+                                    HG_(free), 24/*cacheSize*/ );
+      tl_assert(univ_laog != NULL);
+   }
 
    /* Set up entries for the root thread */
    // FIXME: this assumes that the first real ThreadId is 1
@@ -901,7 +903,8 @@ static void all_except_Locks__sanity_check ( Char* who ) {
    stats__sanity_checks++;
    if (0) VG_(printf)("all_except_Locks__sanity_check(%s)\n", who);
    threads__sanity_check(who);
-   laog__sanity_check(who);
+   if (HG_(clo_track_lockorders))
+      laog__sanity_check(who);
 }
 static void all__sanity_check ( Char* who ) {
    all_except_Locks__sanity_check(who);
@@ -1207,9 +1210,11 @@ void evhH__post_thread_w_acquires_lock ( Thread* thr,
    goto noerror;
 
   noerror:
-   /* check lock order acquisition graph, and update.  This has to
-      happen before the lock is added to the thread's locksetA/W. */
-   laog__pre_thread_acquires_lock( thr, lk );
+   if (HG_(clo_track_lockorders)) {
+      /* check lock order acquisition graph, and update.  This has to
+         happen before the lock is added to the thread's locksetA/W. */
+      laog__pre_thread_acquires_lock( thr, lk );
+   }
    /* update the thread's held-locks set */
    thr->locksetA = HG_(addToWS)( univ_lsets, thr->locksetA, (Word)lk );
    thr->locksetW = HG_(addToWS)( univ_lsets, thr->locksetW, (Word)lk );
@@ -1280,9 +1285,11 @@ void evhH__post_thread_r_acquires_lock ( Thread* thr,
    goto noerror;
 
   noerror:
-   /* check lock order acquisition graph, and update.  This has to
-      happen before the lock is added to the thread's locksetA/W. */
-   laog__pre_thread_acquires_lock( thr, lk );
+   if (HG_(clo_track_lockorders)) {
+      /* check lock order acquisition graph, and update.  This has to
+         happen before the lock is added to the thread's locksetA/W. */
+      laog__pre_thread_acquires_lock( thr, lk );
+   }
    /* update the thread's held-locks set */
    thr->locksetA = HG_(addToWS)( univ_lsets, thr->locksetA, (Word)lk );
    /* but don't update thr->locksetW, since lk is only rd-held */
@@ -1976,8 +1983,9 @@ void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex )
       }
       tl_assert( !lk->heldBy );
       tl_assert( HG_(is_sane_LockN)(lk) );
-
-      laog__handle_one_lock_deletion(lk);
+      
+      if (HG_(clo_track_lockorders))
+         laog__handle_one_lock_deletion(lk);
       map_locks_delete( lk->guestaddr );
       del_LockN( lk );
    }
@@ -2451,8 +2459,9 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
       }
       tl_assert( !lk->heldBy );
       tl_assert( HG_(is_sane_LockN)(lk) );
-
-      laog__handle_one_lock_deletion(lk);
+      
+      if (HG_(clo_track_lockorders))
+         laog__handle_one_lock_deletion(lk);
       map_locks_delete( lk->guestaddr );
       del_LockN( lk );
    }
@@ -3291,6 +3300,7 @@ static void laog__init ( void )
 {
    tl_assert(!laog);
    tl_assert(!laog_exposition);
+   tl_assert(HG_(clo_track_lockorders));
 
    laog = VG_(newFM)( HG_(zalloc), "hg.laog__init.1", 
                       HG_(free), NULL/*unboxedcmp*/ );
@@ -3467,8 +3477,6 @@ static void laog__sanity_check ( Char* who ) {
    UWord* ws_words;
    Lock* me;
    LAOGLinks* links;
-   if (UNLIKELY(!laog || !laog_exposition))
-      laog__init();
    VG_(initIterFM)( laog );
    me = NULL;
    links = NULL;
@@ -3580,9 +3588,6 @@ static void laog__pre_thread_acquires_lock (
    if (HG_(elemWS)( univ_lsets, thr->locksetA, (Word)lk ))
       return;
 
-   if (UNLIKELY(!laog || !laog_exposition))
-      laog__init();
-
    /* First, the check.  Complain if there is any path in laog from lk
       to any of the locks already held by thr, since if any such path
       existed, it would mean that previously lk was acquired before
@@ -3654,9 +3659,6 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
    Word preds_size, succs_size, i, j;
    UWord *preds_words, *succs_words;
 
-   if (UNLIKELY(!laog || !laog_exposition))
-      laog__init();
-
    preds = laog__preds( lk );
    succs = laog__succs( lk );
 
@@ -3688,8 +3690,6 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
 //   Word   i, ws_size;
 //   UWord* ws_words;
 //
-//   if (UNLIKELY(!laog || !laog_exposition))
-//      laog__init();
 //
 //   HG_(getPayloadWS)( &ws_words, &ws_size, univ_lsets, locksToDelete );
 //   for (i = 0; i < ws_size; i++)
@@ -4732,10 +4732,6 @@ static void hg_print_debug_usage ( void )
    VG_(printf)("       000001   at thread create/join events\n");
 }
 
-static void hg_post_clo_init ( void )
-{
-}
-
 static void hg_fini ( Int exitcode )
 {
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
@@ -4764,8 +4760,10 @@ static void hg_fini ( Int exitcode )
          HG_(ppWSUstats)( univ_tsets, "univ_tsets" );
          VG_(printf)("\n");
          HG_(ppWSUstats)( univ_lsets, "univ_lsets" );
-         VG_(printf)("\n");
-         HG_(ppWSUstats)( univ_laog,  "univ_laog" );
+         if (HG_(clo_track_lockorders)) {
+            VG_(printf)("\n");
+            HG_(ppWSUstats)( univ_laog,  "univ_laog" );
+         }
       }
 
       //zz       VG_(printf)("\n");
@@ -4785,8 +4783,10 @@ static void hg_fini ( Int exitcode )
                   (Int)HG_(cardinalityWSU)( univ_lsets ));
       VG_(printf)("      threadsets: %'8d unique thread sets\n",
                   (Int)HG_(cardinalityWSU)( univ_tsets ));
-      VG_(printf)("       univ_laog: %'8d unique lock sets\n",
-                  (Int)HG_(cardinalityWSU)( univ_laog ));
+      if (HG_(clo_track_lockorders)) {
+         VG_(printf)("       univ_laog: %'8d unique lock sets\n",
+                     (Int)HG_(cardinalityWSU)( univ_laog ));
+      }
 
       //VG_(printf)("L(ast)L(ock) map: %'8lu inserts (%d map size)\n",
       //            stats__ga_LL_adds,
@@ -4799,10 +4799,13 @@ static void hg_fini ( Int exitcode )
       VG_(printf)("string table map: %'8llu queries (%llu map size)\n",
                   HG_(stats__string_table_queries),
                   HG_(stats__string_table_get_map_size)() );
-      VG_(printf)("            LAOG: %'8d map size\n",
-                  (Int)(laog ? VG_(sizeFM)( laog ) : 0));
-      VG_(printf)(" LAOG exposition: %'8d map size\n",
-                  (Int)(laog_exposition ? VG_(sizeFM)( laog_exposition ) : 0));
+      if (HG_(clo_track_lockorders)) {
+         VG_(printf)("            LAOG: %'8d map size\n",
+                     (Int)(laog ? VG_(sizeFM)( laog ) : 0));
+         VG_(printf)(" LAOG exposition: %'8d map size\n",
+                     (Int)(laog_exposition ? VG_(sizeFM)( laog_exposition ) : 0));
+      }
+         
       VG_(printf)("           locks: %'8lu acquires, "
                   "%'lu releases\n",
                   stats__lockN_acquires,
@@ -4850,10 +4853,24 @@ ExeContext* for_libhb__get_EC ( Thr* hbt )
 }
 
 
-static void hg_pre_clo_init ( void )
+static void hg_post_clo_init ( void )
 {
    Thr* hbthr_root;
 
+   /////////////////////////////////////////////
+   hbthr_root = libhb_init( for_libhb__get_stacktrace, 
+                            for_libhb__get_EC );
+   /////////////////////////////////////////////
+
+
+   if (HG_(clo_track_lockorders))
+      laog__init();
+
+   initialise_data_structures(hbthr_root);
+}
+
+static void hg_pre_clo_init ( void )
+{
    VG_(details_name)            ("Helgrind");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
@@ -4938,13 +4955,6 @@ static void hg_pre_clo_init ( void )
 
    VG_(track_start_client_code)( evh__start_client_code );
    VG_(track_stop_client_code)( evh__stop_client_code );
-
-   /////////////////////////////////////////////
-   hbthr_root = libhb_init( for_libhb__get_stacktrace, 
-                            for_libhb__get_EC );
-   /////////////////////////////////////////////
-
-   initialise_data_structures(hbthr_root);
 
    /* Ensure that requirements for "dodgy C-as-C++ style inheritance"
       as described in comments at the top of pub_tool_hashtable.h, are

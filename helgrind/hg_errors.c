@@ -473,8 +473,7 @@ void HG_(record_error_LockOrder)(
 {
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
-   if (!HG_(clo_track_lockorders))
-      return;
+   tl_assert(HG_(clo_track_lockorders));
    init_XError(&xe);
    xe.tag = XE_LockOrder;
    xe.XE.LockOrder.thr       = thr;

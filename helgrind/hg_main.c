@@ -132,7 +132,9 @@ static void all__sanity_check ( Char* who ); /* fwds */
 /* Admin linked list of Threads */
 static Thread* admin_threads = NULL;
 
-/* Admin linked list of Locks */
+/* Admin double linked list of Locks */
+/* We need a double linked list to properly and efficiently
+   handle del_LockN. */
 static Lock* admin_locks = NULL;
 
 /* Mapping table for core ThreadIds to Thread* */
@@ -182,10 +184,15 @@ static Thread* mk_Thread ( Thr* hbthr ) {
 }
 
 // Make a new lock which is unlocked (hence ownerless)
+// and insert the new lock in admin_locks double linked list.
 static Lock* mk_LockN ( LockKind kind, Addr guestaddr ) {
    static ULong unique = 0;
    Lock* lock             = HG_(zalloc)( "hg.mk_Lock.1", sizeof(Lock) );
-   lock->admin            = admin_locks;
+   lock->admin_next       = admin_locks;
+   lock->admin_prev       = NULL;
+   if (admin_locks)
+      admin_locks->admin_prev = lock;
+   admin_locks            = lock;
    lock->unique           = unique++;
    lock->magic            = LockN_MAGIC;
    lock->appeared_at      = NULL;
@@ -196,12 +203,11 @@ static Lock* mk_LockN ( LockKind kind, Addr guestaddr ) {
    lock->heldW            = False;
    lock->heldBy           = NULL;
    tl_assert(HG_(is_sane_LockN)(lock));
-   admin_locks            = lock;
    return lock;
 }
 
 /* Release storage for a Lock.  Also release storage in .heldBy, if
-   any. */
+   any. Removes from admin_locks double linked list. */
 static void del_LockN ( Lock* lk ) 
 {
    tl_assert(HG_(is_sane_LockN)(lk));
@@ -209,6 +215,16 @@ static void del_LockN ( Lock* lk )
    libhb_so_dealloc(lk->hbso);
    if (lk->heldBy)
       VG_(deleteBag)( lk->heldBy );
+   if (admin_locks == lk) {
+      admin_locks = lk->admin_next;
+      if (admin_locks)
+         admin_locks->admin_prev = NULL;
+   }
+   else {
+      lk->admin_prev->admin_next = lk->admin_next;
+      lk->admin_next->admin_prev = lk->admin_prev;
+   }
+      
    VG_(memset)(lk, 0xAA, sizeof(*lk));
    HG_(free)(lk);
 }
@@ -446,8 +462,9 @@ static void pp_Lock ( Int d, Lock* lk )
 {
    space(d+0); VG_(printf)("Lock %p (ga %#lx) {\n", lk, lk->guestaddr);
    if (sHOW_ADMIN) {
-      space(d+3); VG_(printf)("admin  %p\n",   lk->admin);
-      space(d+3); VG_(printf)("magic  0x%x\n", (UInt)lk->magic);
+      space(d+3); VG_(printf)("admin_n  %p\n",   lk->admin_next);
+      space(d+3); VG_(printf)("admin_p  %p\n",   lk->admin_prev);
+      space(d+3); VG_(printf)("magic    0x%x\n", (UInt)lk->magic);
    }
    space(d+3); VG_(printf)("unique %llu\n", lk->unique);
    space(d+3); VG_(printf)("kind   %s\n", show_LockKind(lk->kind));
@@ -471,11 +488,11 @@ static void pp_admin_locks ( Int d )
 {
    Int   i, n;
    Lock* lk;
-   for (n = 0, lk = admin_locks;  lk;  n++, lk = lk->admin) {
+   for (n = 0, lk = admin_locks;  lk;  n++, lk = lk->admin_next) {
       /* nothing */
    }
    space(d); VG_(printf)("admin_locks (%d records) {\n", n);
-   for (i = 0, lk = admin_locks;  lk;  i++, lk = lk->admin) {
+   for (i = 0, lk = admin_locks;  lk;  i++, lk = lk->admin_next) {
       if (0) {
          space(n); 
          VG_(printf)("admin_locks record %d of %d:\n", i, n);
@@ -843,7 +860,7 @@ static void locks__sanity_check ( Char* who )
    Lock*     lk;
    Int       i;
    // # entries in admin_locks == # entries in map_locks
-   for (i = 0, lk = admin_locks;  lk;  i++, lk = lk->admin)
+   for (i = 0, lk = admin_locks;  lk;  i++, lk = lk->admin_next)
       ;
    if (i != VG_(sizeFM)(map_locks)) BAD("1");
    // for each entry (gla, lk) in map_locks
@@ -855,7 +872,7 @@ static void locks__sanity_check ( Char* who )
    }
    VG_(doneIterFM)( map_locks );
    // scan through admin_locks ...
-   for (lk = admin_locks; lk; lk = lk->admin) {
+   for (lk = admin_locks; lk; lk = lk->admin_next) {
       // lock is sane.  Quite comprehensive, also checks that
       // referenced (holder) threads are sane.
       if (!HG_(is_sane_LockN)(lk)) BAD("3");

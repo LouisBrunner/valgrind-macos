@@ -119,7 +119,8 @@ typedef
 typedef
    struct _Lock {
       /* ADMIN */
-      struct _Lock* admin;
+      struct _Lock* admin_next; /* fields for a double linked */
+      struct _Lock* admin_prev; /* list of these locks */
       ULong         unique; /* used for persistence-hashing */
       UInt          magic;  /* LockN_MAGIC or LockP_MAGIC */
       /* EXPOSITION */

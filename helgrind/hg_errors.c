@@ -123,7 +123,8 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn )
    if (!VG_(lookupFM)( map_LockN_to_P, NULL, (Word*)&lkp, (Word)lkn)) {
       lkp = HG_(zalloc)( "hg.mLPfLN.2", sizeof(Lock) );
       *lkp = *lkn;
-      lkp->admin = NULL;
+      lkp->admin_next = NULL;
+      lkp->admin_prev = NULL;
       lkp->magic = LockP_MAGIC;
       /* Forget about the bag of lock holders - don't copy that.
          Also, acquired_at should be NULL whenever heldBy is, and vice

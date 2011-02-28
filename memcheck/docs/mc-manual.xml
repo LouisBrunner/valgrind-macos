@@ -1089,7 +1089,7 @@ location.  We now consider the latter question.</para>
 associated valid-value (V) bit.  In addition, all bytes in memory, but
 not in the CPU, have an associated valid-address (A) bit.  This
 indicates whether or not the program can legitimately read or write that
-location.  It does not give any indication of the validity or the data
+location.  It does not give any indication of the validity of the data
 at that location -- that's the job of the V bits -- only whether or not
 the location may be accessed.</para>
 

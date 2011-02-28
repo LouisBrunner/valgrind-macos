@@ -229,7 +229,7 @@ Thread #1: lock order "0x7FEFFFAB0 before 0x7FEFFFA80" violated
 <para>When there are more than two locks in the cycle, the error is
 equally serious.  However, at present Helgrind does not show the locks
 involved, so as to avoid flooding you with information.  That could be
-fixed in future.  For example, here is a an example involving a cycle
+fixed in future.  For example, here is an example involving a cycle
 of five locks from a naive implementation the famous Dining
 Philosophers problem
 (see <computeroutput>helgrind/tests/tc14_laog_dinphils.c</computeroutput>).
@@ -262,7 +262,7 @@ are race-free is one of the central difficulties of threaded
 programming.</para>
 
 <para>Reliably detecting races is a difficult problem, and most
-of Helgrind's internals are devoted to do dealing with it.  
+of Helgrind's internals are devoted to dealing with it.  
 We begin with a simple example.</para>
 
 

@@ -101,12 +101,6 @@
 
 /* ------------ Debug/trace options ------------ */
 
-// this is:
-// shadow_mem_make_NoAccess: 29156 SMs, 1728 scanned
-// happens_before_wrk: 1000
-// ev__post_thread_join: 3360 SMs, 29 scanned, 252 re-Excls
-#define SHOW_EXPENSIVE_STUFF 0
-
 // 0 for silent, 1 for some stuff, 2 for lots of stuff
 #define SHOW_EVENTS 0
 

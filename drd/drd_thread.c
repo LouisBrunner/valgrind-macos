@@ -529,7 +529,9 @@ void DRD_(thread_pre_cancel)(const DrdThreadId tid)
              && tid != DRD_INVALID_THREADID);
    tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
 
-   DRD_(g_threadinfo)[tid].synchr_nesting = 0;
+   if (DRD_(thread_get_trace_fork_join)())
+      VG_(message)(Vg_UserMsg, "[%d] drd_thread_pre_cancel %d\n",
+		   DRD_(g_drd_running_tid), tid);
 }
 
 /**

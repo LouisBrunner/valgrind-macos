@@ -693,6 +693,7 @@ void CLG_(setup_bbcc)(BB* bb)
 		/* change source for delayed push */
 		CLG_(current_state).bbcc = top_ce->jcc->from;
 		sp = top_ce->sp;
+		passed = top_ce->jcc->jmp;
 		CLG_(pop_call_stack)();
 	    }
 	    else {

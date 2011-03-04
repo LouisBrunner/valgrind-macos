@@ -4415,14 +4415,7 @@ vg_VALGRIND_DO_CLIENT_REQUEST_EXPR(uintptr_t _zzq_default,
    is the number of characters printed, excluding the "**<pid>** " part at the
    start and the backtrace (if present). */
 
-#if defined(NVALGRIND)
-
-#  define VALGRIND_PRINTF(...)
-#  define VALGRIND_PRINTF_BACKTRACE(...)
-
-#else /* NVALGRIND */
-
-#if !defined(_MSC_VER)
+#if defined(__GNUC__) || defined(__INTEL_COMPILER)
 /* Modern GCC will optimize the static routine out if unused,
    and unused attribute will shut down warnings about it.  */
 static int VALGRIND_PRINTF(const char *format, ...)
@@ -4434,6 +4427,9 @@ __inline
 #endif
 VALGRIND_PRINTF(const char *format, ...)
 {
+#if defined(NVALGRIND)
+   return 0;
+#else /* NVALGRIND */
    unsigned long _qzz_res;
    va_list vargs;
    va_start(vargs, format);
@@ -4452,9 +4448,10 @@ VALGRIND_PRINTF(const char *format, ...)
 #endif
    va_end(vargs);
    return (int)_qzz_res;
+#endif /* NVALGRIND */
 }
 
-#if !defined(_MSC_VER)
+#if defined(__GNUC__) || defined(__INTEL_COMPILER)
 static int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    __attribute__((format(__printf__, 1, 2), __unused__));
 #endif
@@ -4464,6 +4461,9 @@ __inline
 #endif
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
+#if defined(NVALGRIND)
+   return 0;
+#else /* NVALGRIND */
    unsigned long _qzz_res;
    va_list vargs;
    va_start(vargs, format);
@@ -4482,9 +4482,8 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #endif
    va_end(vargs);
    return (int)_qzz_res;
-}
-
 #endif /* NVALGRIND */
+}
 
 
 /* These requests allow control to move from the simulated CPU to the

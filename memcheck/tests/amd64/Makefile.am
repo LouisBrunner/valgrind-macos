@@ -21,10 +21,13 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	bt_everything \
 	bug132146 \
-	fxsave-amd64 \
 	more_x87_fp \
 	sse_memory \
 	xor-undef-amd64
+
+if !VGCONF_OS_IS_DARWIN
+check_PROGRAMS += fxsave-amd64
+endif
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

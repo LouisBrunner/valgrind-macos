@@ -87,10 +87,25 @@
  * @param[in] arg_decl Argument declaration list enclosed in parentheses.
  * @param[in] argl Argument list enclosed in parentheses.
  */
+#ifdef VGO_darwin
+static int never_true;
+#define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl      \
+   {									\
+      ret_ty pth_func_result = implf argl;				\
+      /* Apparently inserting a function call in wrapper functions */   \
+      /* is sufficient to avoid misaligned stack errors.           */	\
+      if (never_true)							\
+	 fflush(stdout);						\
+      return pth_func_result;						\
+   }
+#else
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl      \
    { return implf argl; }
+#endif
 
 /**
  * Macro for generating three Valgrind interception functions: one with the

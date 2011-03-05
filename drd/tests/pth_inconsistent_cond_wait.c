@@ -45,7 +45,13 @@ static int             s_quiet;
 static sem_t* create_semaphore(const char* const name)
 {
 #ifdef VGO_darwin
-  sem_t* p = sem_open(name, O_CREAT, 0600, 0);
+  char name_and_pid[32];
+  snprintf(name_and_pid, sizeof(name_and_pid), "%s-%d", name, getpid());
+  sem_t* p = sem_open(name_and_pid, O_CREAT | O_EXCL, 0600, 0);
+  if (p == SEM_FAILED) {
+    perror("sem_open");
+    return NULL;
+  }
   return p;
 #else
   sem_t* p = malloc(sizeof(*p));

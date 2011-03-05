@@ -19,7 +19,11 @@
 
 // rmme when reintegrated
 // Allocates a 16-aligned block.  Asserts if the allocation fails.
+#ifdef VGO_darwin
+#include <stdlib.h>
+#else
 #include <malloc.h>
+#endif
 __attribute__((unused))
 static void* memalign16(size_t szB)
 {
@@ -2006,7 +2010,11 @@ void test_POPCNTQ ( void )
          "movq %0,       %%rax"  "\n\t"
          "movq 0(%%rax), %%rdi"  "\n\t"
          "movq 8(%%rax), %%r11"  "\n\t"
+#ifndef VGP_amd64_darwin
          "popcntq %%rdi, %%r11"  "\n\t"
+#else
+         "popcnt  %%rdi, %%r11"  "\n\t"
+#endif
          "movq %%r11, 16(%%rax)"  "\n\t"
          "pushfq"                 "\n\t"
          "popq %%r12"             "\n\t"
@@ -2025,7 +2033,11 @@ void test_POPCNTQ ( void )
       __asm__ __volatile__(
          "movq %0,       %%rax"  "\n\t"
          "movq 8(%%rax), %%r11"  "\n\t"
+#ifndef VGP_amd64_darwin
          "popcntq 0(%%rax), %%r11"  "\n\t"
+#else
+         "popcnt  0(%%rax), %%r11"  "\n\t"
+#endif
          "movq %%r11, 16(%%rax)"  "\n\t"
          "pushfq"                 "\n\t"
          "popq %%r12"             "\n\t"
@@ -2054,7 +2066,11 @@ void test_POPCNTL ( void )
          "movq %0,       %%rax"  "\n\t"
          "movq 0(%%rax), %%rdi"  "\n\t"
          "movq 8(%%rax), %%r11"  "\n\t"
+#ifndef VGP_amd64_darwin
          "popcntl %%edi, %%r11d"  "\n\t"
+#else
+         "popcnt  %%edi, %%r11d"  "\n\t"
+#endif
          "movq %%r11, 16(%%rax)"  "\n\t"
          "pushfq"                 "\n\t"
          "popq %%r12"             "\n\t"
@@ -2073,7 +2089,11 @@ void test_POPCNTL ( void )
       __asm__ __volatile__(
          "movq %0,       %%rax"  "\n\t"
          "movq 8(%%rax), %%r11"  "\n\t"
+#ifndef VGP_amd64_darwin
          "popcntl 0(%%rax), %%r11d"  "\n\t"
+#else
+         "popcnt  0(%%rax), %%r11d"  "\n\t"
+#endif
          "movq %%r11, 16(%%rax)"  "\n\t"
          "pushfq"                 "\n\t"
          "popq %%r12"             "\n\t"
@@ -2102,7 +2122,11 @@ void test_POPCNTW ( void )
          "movq %0,       %%rax"  "\n\t"
          "movq 0(%%rax), %%rdi"  "\n\t"
          "movq 8(%%rax), %%r11"  "\n\t"
+#ifndef VGP_amd64_darwin
          "popcntw %%di,  %%r11w"  "\n\t"
+#else
+         "popcnt  %%di,  %%r11w"  "\n\t"
+#endif
          "movq %%r11, 16(%%rax)"  "\n\t"
          "pushfq"                 "\n\t"
          "popq %%r12"             "\n\t"
@@ -2121,7 +2145,11 @@ void test_POPCNTW ( void )
       __asm__ __volatile__(
          "movq %0,       %%rax"  "\n\t"
          "movq 8(%%rax), %%r11"  "\n\t"
+#ifndef VGP_amd64_darwin
          "popcntw 0(%%rax), %%r11w"  "\n\t"
+#else
+         "popcnt  0(%%rax), %%r11w"  "\n\t"
+#endif
          "movq %%r11, 16(%%rax)"  "\n\t"
          "pushfq"                 "\n\t"
          "popq %%r12"             "\n\t"

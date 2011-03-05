@@ -45,6 +45,7 @@ void do_zeroise ( void )
     "fldz\n\t"
     "fldz\n\t"
     "finit\n");
+#ifndef VGP_amd64_darwin
    asm __volatile__("movups " VG_SYM(vecZ) ", %xmm0");
    asm __volatile__("movups " VG_SYM(vecZ) ", %xmm1");
    asm __volatile__("movups " VG_SYM(vecZ) ", %xmm2");
@@ -61,6 +62,24 @@ void do_zeroise ( void )
    asm __volatile__("movups " VG_SYM(vecZ) ", %xmm13");
    asm __volatile__("movups " VG_SYM(vecZ) ", %xmm14");
    asm __volatile__("movups " VG_SYM(vecZ) ", %xmm15");
+#else
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm0");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm1");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm2");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm3");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm4");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm5");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm6");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm7");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm8");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm9");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm10");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm11");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm12");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm13");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm14");
+   asm __volatile__("movups " VG_SYM(vecZ) "(%rip), %xmm15");
+#endif
    asm __volatile__(
       "pushq $0\n\t"
       "ldmxcsr 0(%rsp)\n\t"

@@ -68,10 +68,12 @@ check_PROGRAMS = \
 	amd64locked \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
+	cmpxchg \
 	$(INSN_TESTS) \
 	rcl-amd64 \
 	redundantRexW \
 	smc1 \
+	sbbmisc \
 	nibz_bennee_mmap \
 	xadd
 if BUILD_SSSE3_TESTS
@@ -80,11 +82,8 @@ endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt64
 endif
-if ! VGCONF_OS_IS_DARWIN
- check_sse42_extra = sse4-64
-endif
 if BUILD_SSE42_TESTS
- check_PROGRAMS += pcmpstr64 pcmpxstrx64 crc32 $(check_sse42_extra)
+ check_PROGRAMS += pcmpstr64 pcmpxstrx64 sse4-64 crc32
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.
@@ -92,14 +91,12 @@ if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += \
 	bug137714-amd64 \
 	bug156404-amd64 \
-	cmpxchg \
 	faultstatus \
 	fcmovnu \
 	fxtract \
 	looper \
 	loopnel \
 	jrcxz \
-	sbbmisc \
 	shrld \
 	slahf-amd64
 endif

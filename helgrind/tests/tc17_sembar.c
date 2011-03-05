@@ -25,18 +25,18 @@
    but it is used to create enough extra inter-thread dependencies
    that the barrier-like behaviour of gomp_barrier_t is evident to
    Thrcheck.  There is no other purpose for the .xxx field. */
-static int my_sem_init(sem_t*, char*, int, unsigned);
+static sem_t* my_sem_init(char*, int, unsigned);
 static int my_sem_destroy(sem_t*);
 static int my_sem_wait(sem_t*); static int my_sem_post(sem_t*);
 typedef struct
 {
   pthread_mutex_t mutex1;
   pthread_mutex_t mutex2;
-  sem_t sem1;
-  sem_t sem2;
+  sem_t* sem1;
+  sem_t* sem2;
   unsigned total;
   unsigned arrived;
-  sem_t xxx;
+  sem_t* xxx;
 } gomp_barrier_t;
 
 typedef long bool;
@@ -46,9 +46,9 @@ gomp_barrier_init (gomp_barrier_t *bar, unsigned count)
 {
   pthread_mutex_init (&bar->mutex1, NULL);
   pthread_mutex_init (&bar->mutex2, NULL);
-  my_sem_init (&bar->sem1, "sem1", 0, 0);
-  my_sem_init (&bar->sem2, "sem2", 0, 0);
-  my_sem_init (&bar->xxx,  "xxx",  0, 0);
+  bar->sem1 = my_sem_init ("sem1", 0, 0);
+  bar->sem2 = my_sem_init ("sem2", 0, 0);
+  bar->xxx  = my_sem_init ("xxx",  0, 0);
   bar->total = count;
   bar->arrived = 0;
 }
@@ -62,9 +62,9 @@ gomp_barrier_destroy (gomp_barrier_t *bar)
 
   pthread_mutex_destroy (&bar->mutex1);
   pthread_mutex_destroy (&bar->mutex2);
-  my_sem_destroy (&bar->sem1);
-  my_sem_destroy (&bar->sem2);
-  my_sem_destroy(&bar->xxx);
+  my_sem_destroy(bar->sem1);
+  my_sem_destroy(bar->sem2);
+  my_sem_destroy(bar->xxx);
 }
 
 void
@@ -91,17 +91,17 @@ gomp_barrier_wait (gomp_barrier_t *bar)
         {
           { unsigned int i;
             for (i = 0; i < n; i++)
-              my_sem_wait(&bar->xxx); // acquire an obvious dependency from
+              my_sem_wait(bar->xxx); // acquire an obvious dependency from
               // all other threads arriving at the barrier
           }
           // 1 up n times, 2 down once
           // now let all the other threads past the barrier, giving them
           // an obvious dependency with this thread.
           do
-            my_sem_post (&bar->sem1); // 1 up
+            my_sem_post (bar->sem1); // 1 up
           while (--n != 0);
           // and wait till the last thread has left
-          my_sem_wait (&bar->sem2); // 2 down
+          my_sem_wait (bar->sem2); // 2 down
         }
       pthread_mutex_unlock (&bar->mutex1);
       /* «Resultats professionnels!»  First we made this thread have an
@@ -115,16 +115,16 @@ gomp_barrier_wait (gomp_barrier_t *bar)
   else
     {
       pthread_mutex_unlock (&bar->mutex1);
-      my_sem_post(&bar->xxx);
+      my_sem_post(bar->xxx);
       // first N-1 threads wind up waiting here
-      my_sem_wait (&bar->sem1); // 1 down 
+      my_sem_wait (bar->sem1); // 1 down 
 
       pthread_mutex_lock (&bar->mutex2);
       n = --bar->arrived; /* XXX see below */
       pthread_mutex_unlock (&bar->mutex2);
 
       if (n == 0)
-        my_sem_post (&bar->sem2); // 2 up
+        my_sem_post (bar->sem2); // 2 up
     }
 }
 
@@ -218,58 +218,47 @@ int main (int argc, char *argv[])
 
 
 
-static int my_sem_init (sem_t* s, char* identity, int pshared, unsigned count)
+static sem_t* my_sem_init (char* identity, int pshared, unsigned count)
 {
+   sem_t* s;
+
 #if defined(VGO_linux)
-   return sem_init(s, pshared, count);
+   s = malloc(sizeof(*s));
+   if (s) {
+      if (sem_init(s, pshared, count) < 0) {
+	 perror("sem_init");
+	 free(s);
+	 s = NULL;
+      }
+   }
 #elif defined(VGO_darwin)
    char name[100];
-   sem_t** fakeptr = (sem_t**)s;
-   assert(sizeof(sem_t) >= sizeof(sem_t*));
-   { int i; for (i = 0; i < sizeof(name); i++) name[i] = 0; }
    sprintf(name, "anonsem_%s_pid%d", identity, (int)getpid());
    name[ sizeof(name)-1 ] = 0;
    if (0) printf("name = %s\n", name);
-   *fakeptr = sem_open(name, O_CREAT, 0600, count);
-   if (*fakeptr == (sem_t*)SEM_FAILED)
-      return -1;
-   else
-      return 0;
+   s = sem_open(name, O_CREAT | O_EXCL, 0600, count);
+   if (s == SEM_FAILED) {
+      perror("sem_open");
+      s = NULL;
+   }
 #else
 #  error "Unsupported OS"
 #endif
+
+   return s;
 }
 
 static int my_sem_destroy ( sem_t* s )
 {
-#if defined(VGO_linux)
    return sem_destroy(s);
-#elif defined(VGO_darwin)
-   sem_t** fakeptr = (sem_t**)s;
-   return sem_close(*fakeptr);
-#else
-#  error "Unsupported OS"
-#endif
 }
 
 static int my_sem_wait(sem_t* s)
 {
-#if defined(VGO_linux)
   return sem_wait(s);
-#elif defined(VGO_darwin)
-  return sem_wait( *(sem_t**)s );
-#else
-#  error "Unsupported OS"
-#endif
 }
 
 static int my_sem_post(sem_t* s)
 {
-#if defined(VGO_linux)
   return sem_post(s);
-#elif defined(VGO_darwin)
-  return sem_post( *(sem_t**)s );
-#else
-#  error "Unsupported OS"
-#endif
 }

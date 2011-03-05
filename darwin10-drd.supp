@@ -1,2 +1,117 @@
-
 # DRD suppressions for Darwin 10.x / Mac OS X 10.6 Snow Leopard
+
+#
+# dyld
+#
+{
+   <insert_a_suppression_name_here>
+   drd:MutexErr
+   fun:pthread_mutex_unlock_intercept
+   fun:_dyld_register_func_for_remove_image
+}
+{
+   <insert_a_suppression_name_here>
+   drd:MutexErr
+   fun:pthread_mutex_init_intercept
+   fun:_Z24dyldGlobalLockInitializev
+   fun:_dyld_initializer
+}
+{
+   dyld_uninitialized_mutex
+   drd:MutexErr
+   fun:pthread_mutex_unlock
+   fun:_dyld_register_func_for_remove_image
+}
+{
+   dyld_stub_binder
+   drd:ConflictingAccess
+   ...
+   fun:_ZN26ImageLoaderMachOCompressed20doBindFastLazySymbolEjRKN11ImageLoader11LinkContextE
+   fun:_ZN4dyld18fastBindLazySymbolEPP11ImageLoaderm
+   fun:dyld_stub_binder
+}
+{
+   dyld_mutex_reinitialization
+   drd:MutexErr
+   fun:pthread_mutex_init
+   fun:_Z24dyldGlobalLockInitializev
+   fun:_dyld_initializer
+}
+
+#
+# C library
+#
+{
+   __umodti3
+   drd:ConflictingAccess
+   fun:__umodti3
+}
+{
+   fork()
+   drd:ConflictingAccess
+   ...
+   fun:_cthread_fork_child
+   fun:fork
+}
+{
+   flockfile
+   drd:ConflictingAccess
+   fun:flockfile
+}
+{
+   vfprintf_l
+   drd:ConflictingAccess
+   fun:vfprintf_l
+}
+{
+   cerror
+   drd:ConflictingAccess
+   ...
+   fun:cerror
+}
+
+#
+# pthread library
+#
+{
+   thread_start
+   drd:ConflictingAccess
+   obj:*
+   fun:thread_start
+}
+{
+   pthread_create()
+   drd:ConflictingAccess
+   ...
+   fun:pthread_create
+}
+{
+   pthread_join()
+   drd:ConflictingAccess
+   ...
+   fun:pthread_join
+   fun:pthread_join
+}
+{
+   _pthread_exit()
+   drd:ConflictingAccess
+   ...
+   fun:_pthread_exit
+}
+{
+   pthread_detach()
+   drd:ConflictingAccess
+   obj:*
+   fun:pthread_detach
+   fun:pthread_detach
+}
+{
+   spin_unlock()
+   drd:ConflictingAccess
+   fun:spin_unlock
+}
+{
+   _pthread_testcancel()
+   drd:ConflictingAccess
+   fun:_pthread_testcancel
+}

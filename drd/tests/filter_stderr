@@ -31,6 +31,7 @@ sed \
 -e "s/ (\([a-zA-Z_]*\.c\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.h\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.cpp\):[0-9]*)/ (\1:?)/" \
+-e "s/\( name [^ ]*\)-[0-9]*\( oflag \)/\1\2/" \
 -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" |
 
 # Remove the message that more than hundred errors have been detected

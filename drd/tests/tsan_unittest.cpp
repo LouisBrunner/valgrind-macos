@@ -93,7 +93,7 @@ static inline void IGNORE_RETURN_VALUE(T v)
 #include <stdlib.h>
 #include <dirent.h>
 
-#ifndef __APPLE__
+#ifndef VGO_darwin
 #include <malloc.h>
 #endif
 
@@ -4786,7 +4786,7 @@ void Run() {
   // but the files are actually the same (symlinked).
   sprintf(out_name, "/tmp/racecheck_unittest_out.%d", getpid());
   fd_out = creat(out_name, O_WRONLY | S_IRWXU);
-#ifdef __APPLE__
+#ifdef VGO_darwin
   // symlink() is not supported on Darwin. Copy the output file name.
   strcpy(in_name, out_name);
 #else

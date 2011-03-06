@@ -7,7 +7,7 @@
    dyld_mutex_not_locked
    drd:MutexErr
    fun:pthread_mutex_unlock
-   fun:_dyld_register_func_for_remove_image
+   fun:_dyld_register_func_for_*_image
 }
 {
    dyld_mutex_reinitialization

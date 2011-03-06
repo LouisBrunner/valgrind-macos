@@ -4,31 +4,10 @@
 # dyld
 #
 {
-   <insert_a_suppression_name_here>
-   drd:MutexErr
-   fun:pthread_mutex_unlock_intercept
-   fun:_dyld_register_func_for_remove_image
-}
-{
-   <insert_a_suppression_name_here>
-   drd:MutexErr
-   fun:pthread_mutex_init_intercept
-   fun:_Z24dyldGlobalLockInitializev
-   fun:_dyld_initializer
-}
-{
-   dyld_uninitialized_mutex
+   dyld_mutex_not_locked
    drd:MutexErr
    fun:pthread_mutex_unlock
    fun:_dyld_register_func_for_remove_image
-}
-{
-   dyld_stub_binder
-   drd:ConflictingAccess
-   ...
-   fun:_ZN26ImageLoaderMachOCompressed20doBindFastLazySymbolEjRKN11ImageLoader11LinkContextE
-   fun:_ZN4dyld18fastBindLazySymbolEPP11ImageLoaderm
-   fun:dyld_stub_binder
 }
 {
    dyld_mutex_reinitialization
@@ -36,6 +15,13 @@
    fun:pthread_mutex_init
    fun:_Z24dyldGlobalLockInitializev
    fun:_dyld_initializer
+}
+{
+   dyld_stub_binder
+   drd:ConflictingAccess
+   ...
+   fun:_ZN4dyld18fastBindLazySymbolEPP11ImageLoaderm
+   fun:dyld_stub_binder
 }
 
 #

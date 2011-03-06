@@ -23,9 +23,9 @@ void* VG_WRAP_FUNCTION_ZZ(dyld, ZuZZN4dyld18fastBindLazySymbolEPP11ImageLoaderm)
   
   VALGRIND_GET_ORIG_FN(fn);
 
-  DRD_IGNORE_VAR(*imageLoaderCache);
-
+  ANNOTATE_IGNORE_READS_AND_WRITES_BEGIN();
   CALL_FN_W_WW(res, fn, imageLoaderCache, lazyBindingInfoOffset);
+  ANNOTATE_IGNORE_READS_AND_WRITES_END();
 
   return res;
 }

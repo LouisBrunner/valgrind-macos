@@ -23,6 +23,23 @@
    fun:_ZN4dyld18fastBindLazySymbolEPP11ImageLoaderm
    fun:dyld_stub_binder
 }
+{
+   dyld ImageLoaderMachOCompressed::findExportedSymbol(char const*, ImageLoader const**) const
+   drd:ConflictingAccess
+   fun:_ZNK26ImageLoaderMachOCompressed18findExportedSymbolEPKcPPK11ImageLoader
+}
+{
+   dyld dyld::fastBindLazySymbol(ImageLoader**, unsigned long)
+   drd:ConflictingAccess
+   ...
+   fun:_ZN4dyld18fastBindLazySymbolEPP11ImageLoaderm
+}
+{
+   dyld ImageLoaderMachOCompressed::doBindFastLazySymbol(unsigned int, ImageLoader::LinkContext const&)
+   drd:ConflictingAccess
+   ...
+   fun:_ZN26ImageLoaderMachOCompressed20doBindFastLazySymbolEjRKN11ImageLoader11LinkContextE
+}
 
 #
 # C library
@@ -45,15 +62,45 @@
    fun:flockfile
 }
 {
+   funlockfile
+   drd:ConflictingAccess
+   fun:funlockfile
+}
+{
    vfprintf_l
    drd:ConflictingAccess
    fun:vfprintf_l
+}
+{
+   localeconv_l
+   drd:ConflictingAccess
+   fun:localeconv_l
+}
+{
+   __vfprintf
+   drd:ConflictingAccess
+   fun:__vfprintf
+}
+{
+   fflush
+   drd:ConflictingAccess
+   fun:fflush
 }
 {
    cerror
    drd:ConflictingAccess
    ...
    fun:cerror
+}
+{
+   do_rand
+   drd:ConflictingAccess
+   fun:do_rand
+}
+{
+   mig_dealloc_reply_port
+   drd:ConflictingAccess
+   fun:mig_dealloc_reply_port
 }
 
 #
@@ -87,9 +134,15 @@
 {
    pthread_detach()
    drd:ConflictingAccess
-   obj:*
+   ...
    fun:pthread_detach
    fun:pthread_detach
+}
+{
+   pthread_kill()
+   drd:ConflictingAccess
+   ...
+   fun:pthread_kill
 }
 {
    spin_unlock()

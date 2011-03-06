@@ -44,3 +44,13 @@
    fun:malloc_zone_malloc
    fun:__setenv
 }
+
+{
+   libSystem-keymgr-leak-at-exit
+   Memcheck:Leak
+   fun:malloc
+   fun:get_or_create_key_element
+   fun:_keymgr_get_and_lock_processwide_ptr_2
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}

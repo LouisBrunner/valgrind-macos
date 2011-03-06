@@ -1,0 +1,69 @@
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:69)
+
+Mutex not locked: mutex 0x........, recursion count 0, owner 0.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:72)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:51)
+
+Thread 3:
+Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:20)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:56)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:51)
+
+Thread 1:
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:75)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:57)
+
+Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 2.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:78)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:53)
+
+Thread 3:
+Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:24)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:56)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:53)
+
+The impossible happened: mutex 0x........ is locked simultaneously by two threads (recursion count 1, owners 2 and 1) !
+Thread 2:
+Mutex not locked by calling thread: mutex 0x........, recursion count 2, owner 1.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: grab_the_lock (tc23_bogus_condwait.c:42)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:53)
+
+Assertion failed: (!r), function main, file tc23_bogus_condwait.c, line 86.
+
+Process terminating with default action of signal 6 (SIGABRT)
+   at 0x........: __kill (in /...libc...)
+   by 0x........: __assert_rtn (in /...libc...)
+   by 0x........: main (tc23_bogus_condwait.c:86)
+
+ERROR SUMMARY: 9 errors from 7 contexts (suppressed: 0 from 0)

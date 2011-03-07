@@ -205,8 +205,17 @@ static Word cmp_WordVecs_for_FM ( UWord wv1W, UWord wv2W )
    UWord    i;
    WordVec* wv1    = (WordVec*)wv1W;
    WordVec* wv2    = (WordVec*)wv2W;
-   UWord    common = wv1->size < wv2->size ? wv1->size : wv2->size;
-   for (i = 0; i < common; i++) {
+
+   // WordVecs with smaller size are smaller.
+   if (wv1->size < wv2->size) {
+      return -1;
+   }
+   if (wv1->size > wv2->size) {
+      return 1;
+   }
+
+   // Sizes are equal => order based on content.
+   for (i = 0; i < wv1->size; i++) {
       if (wv1->words[i] == wv2->words[i])
          continue;
       if (wv1->words[i] < wv2->words[i])
@@ -215,19 +224,6 @@ static Word cmp_WordVecs_for_FM ( UWord wv1W, UWord wv2W )
          return 1;
       tl_assert(0);
    }
-   /* Ok, the common sections are identical.  So now consider the
-      tails.  Both sets are considered to finish in an implied
-      sequence of -infinity. */
-   if (wv1->size < wv2->size) {
-      tl_assert(common == wv1->size);
-      return -1; /* impliedly, wv1 contains some -infinitys in places
-                    where wv2 doesn't. */
-   }
-   if (wv1->size > wv2->size) {
-      tl_assert(common == wv2->size);
-      return 1;
-   }
-   tl_assert(common == wv1->size);
    return 0; /* identical */
 }
 

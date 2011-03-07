@@ -40,6 +40,7 @@
 #include "libvex_guest_arm.h"
 #include "libvex_guest_ppc32.h"
 #include "libvex_guest_ppc64.h"
+#include "libvex_guest_s390x.h"
 
 #include "main_globals.h"
 #include "main_util.h"
@@ -50,12 +51,14 @@
 #include "host_amd64_defs.h"
 #include "host_ppc_defs.h"
 #include "host_arm_defs.h"
+#include "host_s390_defs.h"
 
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
 #include "guest_amd64_defs.h"
 #include "guest_arm_defs.h"
 #include "guest_ppc_defs.h"
+#include "guest_s390_defs.h"
 
 #include "host_generic_simd128.h"
 
@@ -195,7 +198,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    HInstrArray*    rcode;
    Int             i, j, k, out_used, guest_sizeB;
    Int             offB_TISTART, offB_TILEN;
-   UChar           insn_bytes[32];
+   UChar           insn_bytes[48];
    IRType          guest_word_type;
    IRType          host_word_type;
    Bool            mode64;
@@ -316,6 +319,25 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(vta->dispatch == NULL); /* return-to-dispatcher scheme */
          break;
 
+      case VexArchS390X:
+         mode64      = True;
+         getAllocableRegs_S390 ( &n_available_real_regs,
+                                 &available_real_regs, mode64 );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_S390Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_S390Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_S390Instr;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_S390;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_S390;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppS390Instr;
+         ppReg       = (void(*)(HReg)) ppHRegS390;
+         iselSB      = iselSB_S390;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_S390Instr;
+         host_is_bigendian = True;
+         host_word_type    = Ity_I64;
+         vassert(are_valid_hwcaps(VexArchS390X, vta->archinfo_host.hwcaps));
+         vassert(vta->dispatch == NULL); /* return-to-dispatcher scheme */
+         break;
+
       case VexArchARM:
          mode64      = False;
          getAllocableRegs_ARM ( &n_available_real_regs,
@@ -405,6 +427,22 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TILEN      ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR     ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR_GPR2) == 8);
+         break;
+
+      case VexArchS390X:
+         preciseMemExnsFn = guest_s390x_state_requires_precise_mem_exns;
+         disInstrFn       = disInstr_S390;
+         specHelper       = guest_s390x_spechelper;
+         guest_sizeB      = sizeof(VexGuestS390XState);
+         guest_word_type  = Ity_I64;
+         guest_layout     = &s390xGuest_layout;
+         offB_TISTART     = offsetof(VexGuestS390XState,guest_TISTART);
+         offB_TILEN       = offsetof(VexGuestS390XState,guest_TILEN);
+         vassert(are_valid_hwcaps(VexArchS390X, vta->archinfo_guest.hwcaps));
+         vassert(0 == sizeof(VexGuestS390XState) % 16);
+         vassert(sizeof( ((VexGuestS390XState*)0)->guest_TISTART    ) == 8);
+         vassert(sizeof( ((VexGuestS390XState*)0)->guest_TILEN      ) == 8);
+         vassert(sizeof( ((VexGuestS390XState*)0)->guest_NRADDR     ) == 8);
          break;
 
       case VexArchARM:
@@ -644,7 +682,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppInstr(rcode->arr[i], mode64);
          vex_printf("\n");
       }
-      j = (*emit)( insn_bytes, 32, rcode->arr[i], mode64, vta->dispatch );
+      j = (*emit)( insn_bytes, sizeof insn_bytes, rcode->arr[i], mode64,
+                   vta->dispatch );
       if (vex_traceflags & VEX_TRACE_ASM) {
          for (k = 0; k < j; k++)
             if (insn_bytes[k] < 16)
@@ -716,6 +755,7 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchARM:      return "ARM";
       case VexArchPPC32:    return "PPC32";
       case VexArchPPC64:    return "PPC64";
+      case VexArchS390X:    return "S390X";
       default:              return "VexArch???";
    }
 }
@@ -887,6 +927,25 @@ static HChar* show_hwcaps_arm ( UInt hwcaps )
    return NULL;
 }
 
+static HChar* show_hwcaps_s390x ( UInt hwcaps )
+{
+   const UInt LD = VEX_HWCAPS_S390X_LDISP;
+   const UInt EI = VEX_HWCAPS_S390X_EIMM;
+   const UInt GE = VEX_HWCAPS_S390X_GIE;
+   const UInt DF = VEX_HWCAPS_S390X_DFP;
+
+   if (hwcaps == (LD))          return "s390x-ldisp";
+   if (hwcaps == (LD|EI))       return "s390x-ldisp-eimm";
+   if (hwcaps == (LD|GE))       return "s390x-ldisp-gie";
+   if (hwcaps == (LD|DF))       return "s390x-ldisp-dfp";
+   if (hwcaps == (LD|EI|GE))    return "s390x-ldisp-eimm-gie";
+   if (hwcaps == (LD|EI|DF))    return "s390x-ldisp-eimm-dfp";
+   if (hwcaps == (LD|GE|DF))    return "s390x-ldisp-gie-dfp";
+   if (hwcaps == (LD|EI|GE|DF)) return "s390x-ldisp-eimm-gie-dfp";
+
+   return NULL;
+}
+
 /* ---- */
 static HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
 {
@@ -896,6 +955,7 @@ static HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
       case VexArchPPC32: return show_hwcaps_ppc32(hwcaps);
       case VexArchPPC64: return show_hwcaps_ppc64(hwcaps);
       case VexArchARM:   return show_hwcaps_arm(hwcaps);
+      case VexArchS390X: return show_hwcaps_s390x(hwcaps);
       default: return NULL;
    }
 }

@@ -151,6 +151,9 @@ typedef  unsigned long HWord;
 #elif defined(_AIX) && defined(__64BIT__)
 #   define VEX_HOST_WORDSIZE 8
 
+#elif defined(__s390x__)
+#   define VEX_HOST_WORDSIZE 8
+
 #else
 #   error "Vex: Fatal: Can't establish the host architecture"
 #endif

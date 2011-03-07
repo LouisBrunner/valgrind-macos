@@ -56,7 +56,8 @@ typedef
       VexArchAMD64, 
       VexArchARM,
       VexArchPPC32,
-      VexArchPPC64
+      VexArchPPC64,
+      VexArchS390X
    }
    VexArch;
 
@@ -92,6 +93,18 @@ typedef
 #define VEX_HWCAPS_PPC64_FX    (1<<13) /* FP extns (fsqrt, fsqrts) */
 #define VEX_HWCAPS_PPC64_GX    (1<<14) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
+
+/* s390x: baseline capability is z/Architecture with long displacement */
+#define VEX_HWCAPS_S390X_LDISP (1<<13)  /* Long-displacement facility */
+#define VEX_HWCAPS_S390X_EIMM  (1<<14)  /* Extended-immediate facility */
+#define VEX_HWCAPS_S390X_GIE   (1<<15)  /* General-instruction-extension
+                                           facility */
+#define VEX_HWCAPS_S390X_DFP   (1<<16)  /* Decimal floating point facility */
+/* Special value representing all available s390x hwcaps */
+#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
+                                VEX_HWCAPS_S390X_EIMM  | \
+                                VEX_HWCAPS_S390X_GIE   | \
+                                VEX_HWCAPS_S390X_DFP)
 
 /* arm: baseline capability is ARMv4 */
 /* Bits 5:0 - architecture level (e.g. 5 for v5, 6 for v6 etc) */

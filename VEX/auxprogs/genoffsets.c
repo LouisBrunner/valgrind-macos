@@ -51,6 +51,7 @@
 #include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex_guest_ppc64.h"
 #include "../pub/libvex_guest_arm.h"
+#include "../pub/libvex_guest_s390x.h"
 
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
@@ -155,6 +156,19 @@ void foo ( void )
    GENOFFSET(ARM,arm,R13);
    GENOFFSET(ARM,arm,R14);
    GENOFFSET(ARM,arm,R15T);
+
+   // s390x
+   GENOFFSET(S390X,s390x,r2);
+   GENOFFSET(S390X,s390x,r3);
+   GENOFFSET(S390X,s390x,r4);
+   GENOFFSET(S390X,s390x,r5);
+   GENOFFSET(S390X,s390x,r6);
+   GENOFFSET(S390X,s390x,r7);
+   GENOFFSET(S390X,s390x,r15);
+   GENOFFSET(S390X,s390x,IA);
+   GENOFFSET(S390X,s390x,SYSNO);
+   GENOFFSET(S390X,s390x,IP_AT_SYSCALL);
+   GENOFFSET(S390X,s390x,fpc);
 }
 
 /*--------------------------------------------------------------------*/

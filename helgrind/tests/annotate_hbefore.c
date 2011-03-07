@@ -167,6 +167,25 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return success;
 }
 
+#elif defined(VGA_s390x)
+
+// s390x
+/* return 1 if success, 0 if failure */
+UWord do_acasW(UWord* addr, UWord expected, UWord nyu )
+{
+   int cc;
+
+   __asm__ __volatile__ (
+     "csg %2,%3,%1\n\t"
+     "ipm %0\n\t"
+     "srl %0,28\n\t"
+     : /* out */  "=r" (cc)
+     : /* in */ "Q" (*addr), "d" (expected), "d" (nyu)
+     : "memory", "cc"
+   );
+   return cc == 0;
+}
+
 #endif
 
 void atomic_incW ( UWord* w )

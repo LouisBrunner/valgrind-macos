@@ -140,6 +140,22 @@ typedef
               CFIR_CFAREL    -> cfa + r14/r13/r12/r11/r7/ra_off
               CFIR_MEMCFAREL -> *( cfa + r14/r13/r12/r11/r7/ra_off )
               CFIR_EXPR      -> expr whose index is in r14/r13/r12/r11/r7/ra_off
+
+   On s390x we have a similar logic as x86 or amd64. We need the stack pointer
+   (r15), the frame pointer r11 (like BP) and together with the instruction
+   address in the PSW we can calculate the previous values:
+     cfa = case cfa_how of
+              CFIC_IA_SPREL -> r15 + cfa_off
+              CFIC_IA_BPREL -> r11 + cfa_off
+              CFIR_IA_EXPR  -> expr whose index is in cfa_off
+
+     old_sp/fp/ra
+         = case sp/fp/ra_how of
+              CFIR_UNKNOWN   -> we don't know, sorry
+              CFIR_SAME      -> same as it was before (sp/fp only)
+              CFIR_CFAREL    -> cfa + sp/fp/ra_off
+              CFIR_MEMCFAREL -> *( cfa + sp/fp/ra_off )
+              CFIR_EXPR      -> expr whose index is in sp/fp/ra_off
 */
 
 #define CFIC_IA_SPREL     ((UChar)1)
@@ -208,6 +224,21 @@ typedef
       Int   ra_off;
    }
    DiCfSI;
+#elif defined(VGA_s390x)
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UChar cfa_how; /* a CFIC_ value */
+      UChar sp_how;  /* a CFIR_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar fp_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   sp_off;
+      Int   ra_off;
+      Int   fp_off;
+   }
+   DiCfSI;
 #else
 #  error "Unknown arch"
 #endif
@@ -230,7 +261,8 @@ typedef
       Creg_ARM_R13,
       Creg_ARM_R12,
       Creg_ARM_R15,
-      Creg_ARM_R14
+      Creg_ARM_R14,
+      Creg_S390_R14
    }
    CfiReg;
 

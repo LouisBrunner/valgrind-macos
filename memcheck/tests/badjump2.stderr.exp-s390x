@@ -1,0 +1,6 @@
+Jump to the invalid address stated on the next line
+   at 0x........: ???
+   by 0x........: main (badjump2.c:46)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Signal caught, as expected

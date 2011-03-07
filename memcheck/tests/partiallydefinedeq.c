@@ -64,9 +64,16 @@ int main ( void )
 // and so never appears as a literal, and so the instrumenter
 // never spots it and so doesn't use the expensive scheme (for foo).
 // Hence also on ARM we get 3 errors, not 2.
+//
+// s390x is even more complicated: Depending on the architecture
+// level we have the 0x80808080 either in the literal pool (3 errors)
+// or with the extended immediate facility in an instruction (2 errors).
 static __attribute__((noinline)) void bar ( void )
 {
 #if defined(__powerpc__) || defined(__powerpc64__) || defined(__arm__)
   fprintf(stderr, "Currently running on ppc32/64/arm: this test should give 3 errors, not 2.\n");
+#endif
+#if defined(__s390__)
+  fprintf(stderr, "On s390 we might see 2 or 3 errors.\n");
 #endif
 }

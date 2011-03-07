@@ -178,6 +178,11 @@ AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
 			    -mmacosx-version-min=10.5 -fno-stack-protector
 AM_CCASFLAGS_AMD64_DARWIN  = $(AM_CPPFLAGS_AMD64_DARWIN) -arch x86_64 -g
 
+AM_FLAG_M3264_S390X_LINUX = @FLAG_M64@
+AM_CFLAGS_S390X_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_S390X_LINUX  = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
+                            @FLAG_M64@ -g
+
 # Flags for the primary target.  These must be used to build the
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
@@ -209,4 +214,5 @@ PRELOAD_LDFLAGS_PPC32_AIX5   = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
 PRELOAD_LDFLAGS_PPC64_AIX5   = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
 PRELOAD_LDFLAGS_X86_DARWIN   = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
+PRELOAD_LDFLAGS_S390X_LINUX  = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 

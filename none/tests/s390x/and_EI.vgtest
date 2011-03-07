@@ -1,0 +1,2 @@
+prog: and_EI
+prereq: test -x and_EI

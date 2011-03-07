@@ -677,6 +677,10 @@ static void do_pre_run_checks ( ThreadState* tst )
    vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow1.guest_D1));
    vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow2.guest_D1));
 #  endif
+
+#  if defined(VGA_s390x)
+   /* no special requirements */
+#  endif
 }
 
 
@@ -1311,6 +1315,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_arm)
 #  define VG_CLREQ_ARGS       guest_R4
 #  define VG_CLREQ_RET        guest_R3
+#elif defined (VGA_s390x)
+#  define VG_CLREQ_ARGS       guest_r2
+#  define VG_CLREQ_RET        guest_r3
 #else
 #  error Unknown arch
 #endif

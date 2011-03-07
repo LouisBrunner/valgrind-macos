@@ -75,6 +75,11 @@
 #  undef  VG_ELF_MACHINE
 #  undef  VG_ELF_CLASS
 #  undef  VG_PLAT_USES_PPCTOC
+#elif defined(VGP_s390x_linux)
+#  define VG_ELF_DATA2XXX     ELFDATA2MSB
+#  define VG_ELF_MACHINE      EM_S390
+#  define VG_ELF_CLASS        ELFCLASS64
+#  undef  VG_PLAT_USES_PPCTOC
 #else
 #  error Unknown platform
 #endif
@@ -99,6 +104,10 @@
 #  define VG_INSTR_PTR        guest_R15T
 #  define VG_STACK_PTR        guest_R13
 #  define VG_FRAME_PTR        guest_R11
+#elif defined(VGA_s390x)
+#  define VG_INSTR_PTR        guest_IA
+#  define VG_STACK_PTR        guest_SP
+#  define VG_FRAME_PTR        guest_FP
 #else
 #  error Unknown arch
 #endif

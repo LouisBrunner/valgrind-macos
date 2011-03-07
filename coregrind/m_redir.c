@@ -1078,6 +1078,9 @@ void VG_(redir_initialise) ( void )
                          (Addr)&VG_(amd64_darwin_REDIR_FOR_arc4random), NULL);
    }
 
+#  elif defined(VGP_s390x_linux)
+   /* nothing so far */
+
 #  else
 #    error Unknown platform
 #  endif

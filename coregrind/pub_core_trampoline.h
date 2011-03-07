@@ -140,6 +140,11 @@ extern SizeT VG_(amd64_darwin_REDIR_FOR_strlcat)( char *s1, const char *s2,
 extern UInt VG_(amd64_darwin_REDIR_FOR_arc4random)( void );
 #endif
 
+#if defined(VGP_s390x_linux)
+extern Addr VG_(s390x_linux_SUBST_FOR_sigreturn);
+extern Addr VG_(s390x_linux_SUBST_FOR_rt_sigreturn);
+#endif
+
 #endif   // __PUB_CORE_TRAMPOLINE_H
 
 /*--------------------------------------------------------------------*/

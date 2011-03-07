@@ -564,7 +564,7 @@ static void pp_curr_ExeContext(void)
 #  define SHMEM_SECMAP_SHIFT        2
 #  define SHMEM_IS_WORD_ALIGNED(_a) VG_IS_4_ALIGNED(_a)
 #  define SEC_MAP_WORDS             (0x10000UL / 4UL) /* 16k */
-#elif defined(VGA_amd64) || defined(VGA_ppc64)
+#elif defined(VGA_amd64) || defined(VGA_ppc64) || defined(VGA_s390x)
 #  define SHMEM_SECMAP_MASK         0xFFF8
 #  define SHMEM_SECMAP_SHIFT        3
 #  define SHMEM_IS_WORD_ALIGNED(_a) VG_IS_8_ALIGNED(_a)
@@ -1296,6 +1296,11 @@ typedef
 # define PC_SIZEOF_GUEST_STATE sizeof(VexGuestARMState)
 #endif
 
+#if defined(VGA_s390x)
+# include "libvex_guest_s390x.h"
+# define PC_SIZEOF_GUEST_STATE sizeof(VexGuestS390XState)
+#endif
+
 
 /* See description on definition of type IntRegInfo. */
 static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
@@ -1833,6 +1838,14 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    tl_assert(0);
 
 
+   /* -------------------- s390x -------------------- */
+
+#  elif defined(VGA_s390x)
+
+   Int  o    = offset;
+
+   VG_(tool_panic)("not implemented for s390x");
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -1912,6 +1925,11 @@ static Bool is_integer_guest_reg_array ( IRRegArray* arr )
    VG_(printf)("is_integer_guest_reg_array(ppc64): unhandled: ");
    ppIRRegArray(arr);
    VG_(printf)("\n");
+   tl_assert(0);
+
+   /* -------------------- s390x -------------------- */
+#  elif defined(VGA_s390x)
+
    tl_assert(0);
 
    /* -------------------- arm -------------------- */
@@ -2472,7 +2490,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_symlink);
       ADD(0, __NR_sysinfo);
       ADD(0, __NR_tgkill);
+#if   defined(__NR_time)
       ADD(0, __NR_time);
+#     endif
       ADD(0, __NR_times);
       ADD(0, __NR_truncate);
 #     if defined(__NR_truncate64)
@@ -2754,6 +2774,8 @@ static inline Bool looks_like_a_pointer(Addr a)
    tl_assert(sizeof(UWord) == 4);
    return (a >= 0x00008000UL && a < 0xFF000000UL);
 
+#  elif defined(VGA_s390x)
+   tl_assert(0);
 #  else
 #    error "Unsupported architecture"
 #  endif

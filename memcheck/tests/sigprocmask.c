@@ -13,6 +13,7 @@ int main(void)
 {
 #if defined(__NR_sigprocmask)        \
     && !defined(__powerpc64__)       \
+    && !defined(__s390x__)           \
     && !defined(_AIX)                \
     && !defined(__arm__)
 

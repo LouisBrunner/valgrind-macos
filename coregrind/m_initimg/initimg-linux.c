@@ -1040,6 +1040,21 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    // FIXME jrs: what's this for?
    arch->vex.guest_R1 =  iifii.initial_client_SP;
 
+#  elif defined(VGP_s390x_linux)
+   vg_assert(0 == sizeof(VexGuestS390XState) % 16);
+
+   /* Zero out the initial state. This also sets the guest_fpc to 0, which
+      is also done by the kernel for the fpc during execve. */
+   LibVEX_GuestS390X_initialise(&arch->vex);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestS390XState));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestS390XState));
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_SP = iifii.initial_client_SP;
+   arch->vex.guest_IA = iifii.initial_client_IP;
+
 #  else
 #    error Unknown platform
 #  endif

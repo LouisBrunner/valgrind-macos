@@ -1,0 +1,2 @@
+prog: mul_GE
+prereq: test -x mul_GE

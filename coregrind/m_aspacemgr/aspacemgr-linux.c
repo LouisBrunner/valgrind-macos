@@ -900,10 +900,10 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       These kernels report which mappings are really executable in
       the /proc/self/maps output rather than mirroring what was asked
       for when each mapping was created. In order to cope with this we
-      have a sloppyXcheck mode which we enable on x86 - in this mode we
-      allow the kernel to report execute permission when we weren't
+      have a sloppyXcheck mode which we enable on x86 and s390 - in this
+      mode we allow the kernel to report execute permission when we weren't
       expecting it but not vice versa. */
-#  if defined(VGA_x86)
+#  if defined(VGA_x86) || defined (VGA_s390x)
    sloppyXcheck = True;
 #  else
    sloppyXcheck = False;

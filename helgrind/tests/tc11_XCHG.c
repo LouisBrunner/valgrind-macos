@@ -18,6 +18,7 @@
 #undef PLAT_ppc32_linux
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
+#undef PLAT_s390x_linux
 
 #if defined(_AIX) && defined(__64BIT__)
 #  define PLAT_ppc64_aix5 1
@@ -37,6 +38,8 @@
 #  define PLAT_ppc64_linux 1
 #elif defined(__linux__) && defined(__arm__)
 #  define PLAT_arm_linux 1
+#elif defined(__linux__) && defined(__s390x__)
+#  define PLAT_s390x_linux 1
 #endif
 
 
@@ -59,7 +62,7 @@
 
 #elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
       || defined(PLAT_ppc32_aix5) || defined(PLAT_ppc64_aix5) \
-      || defined(PLAT_arm_linux)
+      || defined(PLAT_arm_linux) || defined(PLAT_s390x_linux)
 #  if defined(HAVE_BUILTIN_ATOMIC)
 #    define XCHG_M_R(_addr,_lval)                                           \
         do {                                                                \

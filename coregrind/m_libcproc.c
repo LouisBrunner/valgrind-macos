@@ -545,7 +545,7 @@ Int VG_(getgroups)( Int size, UInt* list )
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)  \
         || defined(VGP_arm_linux)                             \
         || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5) \
-        || defined(VGO_darwin)
+        || defined(VGO_darwin) || defined(VGP_s390x_linux)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))

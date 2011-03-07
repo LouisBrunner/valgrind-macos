@@ -121,6 +121,7 @@ static IRType  shadowTypeV ( IRType ty );
 static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e );
 static IRTemp  findShadowTmpB ( struct _MCEnv* mce, IRTemp orig );
 
+static IRExpr *i128_const_zero(void);
 
 /*------------------------------------------------------------*/
 /*--- Memcheck running state, and tmp management.          ---*/
@@ -343,7 +344,7 @@ static Bool sameKindedAtoms ( IRAtom* a1, IRAtom* a2 )
 /* Shadow state is always accessed using integer types.  This returns
    an integer type with the same size (as per sizeofIRType) as the
    given type.  The only valid shadow types are Bit, I8, I16, I32,
-   I64, V128. */
+   I64, I128, V128. */
 
 static IRType shadowTypeV ( IRType ty )
 {
@@ -356,6 +357,7 @@ static IRType shadowTypeV ( IRType ty )
       case Ity_I128: return ty;
       case Ity_F32:  return Ity_I32;
       case Ity_F64:  return Ity_I64;
+      case Ity_F128: return Ity_I128;
       case Ity_V128: return Ity_V128;
       default: ppIRType(ty); 
                VG_(tool_panic)("memcheck:shadowTypeV");
@@ -371,6 +373,7 @@ static IRExpr* definedOfType ( IRType ty ) {
       case Ity_I16:  return IRExpr_Const(IRConst_U16(0));
       case Ity_I32:  return IRExpr_Const(IRConst_U32(0));
       case Ity_I64:  return IRExpr_Const(IRConst_U64(0));
+      case Ity_I128: return i128_const_zero();
       case Ity_V128: return IRExpr_Const(IRConst_V128(0x0000));
       default:       VG_(tool_panic)("memcheck:definedOfType");
    }
@@ -438,6 +441,18 @@ static IRAtom* assignNew ( HChar cat, MCEnv* mce, IRType ty, IRExpr* e )
 
 
 /*------------------------------------------------------------*/
+/*--- Helper functions for 128-bit ops                     ---*/
+/*------------------------------------------------------------*/
+static IRExpr *i128_const_zero(void)
+{
+  return binop(Iop_64HLto128, IRExpr_Const(IRConst_U64(0)),
+               IRExpr_Const(IRConst_U64(0)));
+}
+
+/* There are no 128-bit loads and/or stores. So we do not need to worry
+   about that in expr2vbits_Load */
+
+/*------------------------------------------------------------*/
 /*--- Constructing definedness primitive ops               ---*/
 /*------------------------------------------------------------*/
 
@@ -499,6 +514,20 @@ static IRAtom* mkUifU64 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    return assignNew('V', mce, Ity_I64, binop(Iop_Or64, a1, a2));
 }
 
+static IRAtom* mkUifU128 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   IRAtom *tmp1, *tmp2, *tmp3, *tmp4, *tmp5, *tmp6;
+   tl_assert(isShadowAtom(mce,a1));
+   tl_assert(isShadowAtom(mce,a2));
+   tmp1 = assignNew('V', mce, Ity_I64, unop(Iop_128to64, a1));
+   tmp2 = assignNew('V', mce, Ity_I64, unop(Iop_128HIto64, a1));
+   tmp3 = assignNew('V', mce, Ity_I64, unop(Iop_128to64, a2));
+   tmp4 = assignNew('V', mce, Ity_I64, unop(Iop_128HIto64, a2));
+   tmp5 = assignNew('V', mce, Ity_I64, binop(Iop_Or64, tmp1, tmp3));
+   tmp6 = assignNew('V', mce, Ity_I64, binop(Iop_Or64, tmp2, tmp4));
+
+   return assignNew('V', mce, Ity_I128, binop(Iop_64HLto128, tmp6, tmp5));
+}
+
 static IRAtom* mkUifUV128 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    tl_assert(isShadowAtom(mce,a1));
    tl_assert(isShadowAtom(mce,a2));
@@ -511,6 +540,7 @@ static IRAtom* mkUifU ( MCEnv* mce, IRType vty, IRAtom* a1, IRAtom* a2 ) {
       case Ity_I16:  return mkUifU16(mce, a1, a2);
       case Ity_I32:  return mkUifU32(mce, a1, a2);
       case Ity_I64:  return mkUifU64(mce, a1, a2);
+      case Ity_I128: return mkUifU128(mce, a1, a2);
       case Ity_V128: return mkUifUV128(mce, a1, a2);
       default:
          VG_(printf)("\n"); ppIRType(vty); VG_(printf)("\n");
@@ -649,6 +679,10 @@ static IRAtom* mkImproveORV128 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
 }
 
 /* --------- Pessimising casts. --------- */
+
+/* The function returns an expression of type DST_TY. If any of the VBITS
+   is undefined (value == 1) the resulting expression has all bits set to
+   1. Otherwise, all bits are 0. */
 
 static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits ) 
 {
@@ -1202,6 +1236,7 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
 
    ty = typeOfIRExpr(mce->sb->tyenv, vatom);
    tl_assert(ty != Ity_I1);
+   tl_assert(ty != Ity_I128);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
       /* later: no ... */
       /* emit code to emit a complaint if any of the vbits are 1. */
@@ -1263,6 +1298,7 @@ IRExpr* shadow_GET ( MCEnv* mce, Int offset, IRType ty )
 {
    IRType tyS = shadowTypeV(ty);
    tl_assert(ty != Ity_I1);
+   tl_assert(ty != Ity_I128);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
       /* Always defined, return all zeroes of the relevant type */
       return definedOfType(tyS);
@@ -1414,6 +1450,22 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
       return at;
    }
 
+   /* I32 x I128 x I128 -> I128 */
+   /* Standard FP idiom: rm x FParg1 x FParg2 -> FPresult */
+   if (t1 == Ity_I32 && t2 == Ity_I128 && t3 == Ity_I128
+       && finalVty == Ity_I128) {
+      if (0) VG_(printf)("mkLazy3: I32 x I128 x I128 -> I128\n");
+      /* Widen 1st arg to I128.  Since 1st arg is typically a rounding
+         mode indication which is fully defined, this should get
+         folded out later. */
+      at = mkPCastTo(mce, Ity_I128, va1);
+      /* Now fold in 2nd and 3rd args. */
+      at = mkUifU(mce, Ity_I128, at, va2);
+      at = mkUifU(mce, Ity_I128, at, va3);
+      /* and PCast once again. */
+      at = mkPCastTo(mce, Ity_I128, at);
+      return at;
+   }
    if (1) {
       VG_(printf)("mkLazy3: ");
       ppIRType(t1);
@@ -1472,6 +1524,19 @@ IRAtom* mkLazy4 ( MCEnv* mce, IRType finalVty,
       at = mkUifU(mce, Ity_I64, at, va4);
       /* and PCast once again. */
       at = mkPCastTo(mce, Ity_I64, at);
+      return at;
+   }
+   /* I32 x I32 x I32 x I32 -> I32 */
+   /* Standard FP idiom: rm x FParg1 x FParg2 x FParg3 -> FPresult */
+   if (t1 == Ity_I32 && t2 == Ity_I32 && t3 == Ity_I32 && t4 == Ity_I32
+       && finalVty == Ity_I32) {
+      if (0) VG_(printf)("mkLazy4: I32 x I32 x I32 x I32 -> I32\n");
+      at = va1;
+      /* Now fold in 2nd, 3rd, 4th args. */
+      at = mkUifU(mce, Ity_I32, at, va2);
+      at = mkUifU(mce, Ity_I32, at, va3);
+      at = mkUifU(mce, Ity_I32, at, va4);
+      at = mkPCastTo(mce, Ity_I32, at);
       return at;
    }
 
@@ -2136,6 +2201,12 @@ IRAtom* expr2vbits_Qop ( MCEnv* mce,
       case Iop_MSubF64r32:
          /* I32(rm) x F64 x F64 x F64 -> F64 */
          return mkLazy4(mce, Ity_I64, vatom1, vatom2, vatom3, vatom4);
+
+      case Iop_MAddF32:
+      case Iop_MSubF32:
+         /* I32(rm) x F32 x F32 x F32 -> F32 */
+         return mkLazy4(mce, Ity_I32, vatom1, vatom2, vatom3, vatom4);
+
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Qop");
@@ -2162,6 +2233,12 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom2,vatom2));
    tl_assert(sameKindedAtoms(atom3,vatom3));
    switch (op) {
+      case Iop_AddF128:
+      case Iop_SubF128:
+      case Iop_MulF128:
+      case Iop_DivF128:
+         /* I32(rm) x F128 x F128 -> F128 */
+         return mkLazy3(mce, Ity_I128, vatom1, vatom2, vatom3);
       case Iop_AddF64:
       case Iop_AddF64r32:
       case Iop_SubF64:
@@ -2847,6 +2924,14 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       /* Scalar floating point */
 
+      case Iop_F32toI64S:
+         /* I32(rm) x F32 -> I64 */
+         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+
+      case Iop_I64StoF32:
+         /* I32(rm) x I64 -> F32 */
+         return mkLazy2(mce, Ity_I32, vatom1, vatom2);
+
       case Iop_RoundF64toInt:
       case Iop_RoundF64toF32:
       case Iop_F64toI64S:
@@ -2864,6 +2949,26 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(rm) x I32/F32 -> I32/F32 */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
+      case Iop_SqrtF128:
+         /* I32(rm) x F128 -> F128 */
+         return mkLazy2(mce, Ity_I128, vatom1, vatom2);
+
+      case Iop_I32StoF32:
+      case Iop_F32toI32S:
+         /* First arg is I32 (rounding mode), second is F32/I32 (data). */
+         return mkLazy2(mce, Ity_I32, vatom1, vatom2);
+
+      case Iop_F128toI32S: /* IRRoundingMode(I32) x F128 -> signed I32  */
+      case Iop_F128toF32:  /* IRRoundingMode(I32) x F128 -> F32         */
+         return mkLazy2(mce, Ity_I32, vatom1, vatom2);
+
+      case Iop_F128toI64S: /* IRRoundingMode(I32) x F128 -> signed I64  */
+      case Iop_F128toF64:  /* IRRoundingMode(I32) x F128 -> F64         */
+         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+
+      case Iop_F64HLtoF128:
+         return assignNew('V', mce, Ity_I128, binop(Iop_64HLto128, vatom1, vatom2));
+
       case Iop_F64toI32U:
       case Iop_F64toI32S:
       case Iop_F64toF32:
@@ -2874,7 +2979,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I16, vatom1, vatom2);
 
+      case Iop_CmpF32:
       case Iop_CmpF64:
+      case Iop_CmpF128:
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       /* non-FP after here */
@@ -2892,6 +2999,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_32HLto64:
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, vatom2));
 
+      case Iop_DivModS64to64:
       case Iop_MullS64:
       case Iop_MullU64: {
          IRAtom* vLo64 = mkLeft64(mce, mkUifU64(mce, vatom1,vatom2));
@@ -3142,6 +3250,21 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Reverse64_32x4:
          return assignNew('V', mce, Ity_V128, unop(op, vatom));
 
+      case Iop_F128HItoF64:  /* F128 -> high half of F128 */
+         return assignNew('V', mce, Ity_I64, unop(Iop_128HIto64, vatom));
+      case Iop_F128LOtoF64:  /* F128 -> low  half of F128 */
+         return assignNew('V', mce, Ity_I64, unop(Iop_128to64, vatom));
+
+      case Iop_NegF128:
+      case Iop_AbsF128:
+         return mkPCastTo(mce, Ity_I128, vatom);
+
+      case Iop_I32StoF128: /* signed I32 -> F128 */
+      case Iop_I64StoF128: /* signed I64 -> F128 */
+      case Iop_F32toF128:  /* F32 -> F128 */
+      case Iop_F64toF128:  /* F64 -> F128 */
+         return mkPCastTo(mce, Ity_I128, vatom);
+
       case Iop_F32toF64: 
       case Iop_I32StoF64:
       case Iop_I32UtoF64:
@@ -3185,6 +3308,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Reverse64_32x2:
          return assignNew('V', mce, Ity_I64, unop(op, vatom));
 
+      case Iop_I16StoF32:
       case Iop_64to32:
       case Iop_64HIto32:
       case Iop_1Uto32:
@@ -4536,6 +4660,7 @@ static Bool isBogusAtom ( IRAtom* at )
       case Ico_U32:  n = (ULong)con->Ico.U32; break;
       case Ico_U64:  n = (ULong)con->Ico.U64; break;
       case Ico_F64:  return False;
+      case Ico_F32i: return False;
       case Ico_F64i: return False;
       case Ico_V128: return False;
       default: ppIRExpr(at); tl_assert(0);

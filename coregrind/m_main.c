@@ -1626,6 +1626,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                     "AMD Athlon or above)\n");
         VG_(printf)("   * AMD Athlon64/Opteron\n");
         VG_(printf)("   * PowerPC (most; ppc405 and above)\n");
+        VG_(printf)("   * System z (64bit only - s390x; z900 and above)\n");
         VG_(printf)("\n");
         VG_(exit)(1);
      }
@@ -1937,6 +1938,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       iters = 5;
 #     elif defined(VGP_arm_linux)
       iters = 1;
+#     elif defined(VGP_s390x_linux)
+      iters = 10;
 #     elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
       iters = 4;
 #     elif defined(VGO_darwin)
@@ -2776,6 +2779,47 @@ asm("\n"
     "\tbl ._start_in_C_linux\n"
     "\tnop\n"
     "\ttrap\n"
+);
+#elif defined(VGP_s390x_linux)
+/*
+    This is the canonical entry point, usually the first thing in the text
+    segment. Most registers' values are unspecified, except for:
+
+    %r14         Contains a function pointer to be registered with `atexit'.
+                 This is how the dynamic linker arranges to have DT_FINI
+                 functions called for shared libraries that have been loaded
+                 before this code runs.
+
+    %r15         The stack contains the arguments and environment:
+                 0(%r15)              argc
+                 8(%r15)              argv[0]
+                 ...
+                 (8*argc)(%r15)       NULL
+                 (8*(argc+1))(%r15)   envp[0]
+                 ...
+                                      NULL
+*/
+asm("\n\t"
+    ".text\n\t"
+    ".globl _start\n\t"
+    ".type  _start,@function\n\t"
+    "_start:\n\t"
+    /* set up the new stack in %r1 */
+    "larl   %r1,  vgPlain_interim_stack\n\t"
+    "larl   %r5,  1f\n\t"
+    "ag     %r1,  0(%r5)\n\t"
+    "ag     %r1,  2f-1f(%r5)\n\t"
+    "nill   %r1,  0xFFF0\n\t"
+    /* install it, and collect the original one */
+    "lgr    %r2,  %r15\n\t"
+    "lgr    %r15, %r1\n\t"
+    /* call _start_in_C_linux, passing it the startup %r15 */
+    "brasl  %r14, _start_in_C_linux\n\t"
+    /* trigger execution of an invalid opcode -> halt machine */
+    "j      .+2\n\t"
+    "1:   .quad "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n\t"
+    "2:   .quad "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n\t"
+    ".previous\n"
 );
 #elif defined(VGP_arm_linux)
 asm("\n"

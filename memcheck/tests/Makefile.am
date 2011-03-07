@@ -296,8 +296,9 @@ origin4_many_CFLAGS	= $(AM_CFLAGS) -O
 origin5_bz2_CFLAGS	= $(AM_CFLAGS) -O -Wno-inline
 origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 
-# Don't allow GCC to inline memcpy(), because then we can't intercept it
-overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
+# Don't allow GCC to inline memcpy() and strcpy(),
+# because then we can't intercept it
+overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 

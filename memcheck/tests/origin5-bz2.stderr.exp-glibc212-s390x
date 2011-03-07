@@ -1,0 +1,133 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin5-bz2.c:6481)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: handle_compress (origin5-bz2.c:4686)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: handle_compress (origin5-bz2.c:4686)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: handle_compress (origin5-bz2.c:4686)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2820)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2823)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2854)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2858)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2859)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2963)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: mainSort (origin5-bz2.c:2964)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3105)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: fallbackSort (origin5-bz2.c:2269)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3116)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Use of uninitialised value of size 8
+   at 0x........: fallbackSort (origin5-bz2.c:2275)
+   by 0x........: BZ2_blockSort (origin5-bz2.c:3116)
+   by 0x........: BZ2_compressBlock (origin5-bz2.c:4034)
+   by 0x........: handle_compress (origin5-bz2.c:4753)
+   by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
+   by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
+   by 0x........: main (origin5-bz2.c:6484)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin5-bz2.c:6512)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin5-bz2.c:6479)
+

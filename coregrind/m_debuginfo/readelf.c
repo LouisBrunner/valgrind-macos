@@ -1739,7 +1739,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* PLT is different on different platforms, it seems. */
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
-         || defined(VGP_arm_linux)
+         || defined(VGP_arm_linux) || defined (VGP_s390x_linux)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && size > 0 && !di->plt_present) {
@@ -2187,8 +2187,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It
          appears reading stabs stuff on amd64-linux doesn't work, so
-         we ignore it. */
-#     if !defined(VGP_amd64_linux)
+         we ignore it. On s390x stabs also doesnt work and we always
+         have the dwarf info in the eh_frame. */
+#     if !defined(VGP_amd64_linux)  && !defined(VGP_s390x_linux)
       if (stab_img && stabstr_img) {
          ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );

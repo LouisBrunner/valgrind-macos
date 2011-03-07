@@ -140,6 +140,10 @@ static void pc_post_clo_init ( void )
          "(like --enable-sg-checks=no).\n");
    }
    sg_clo_enable_sg_checks = False;
+#  elif defined(VGA_s390x)
+   /* fixs390: to be done. */
+      VG_(message)(Vg_UserMsg,
+         "ERROR: exp-ptrcheck on s390x platform is not supported yet.\n");
 #  else
 #    error "Unsupported architecture"
 #  endif

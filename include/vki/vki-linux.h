@@ -89,6 +89,8 @@
 #  include "vki-posixtypes-ppc64-linux.h"
 #elif defined(VGA_arm)
 #  include "vki-posixtypes-arm-linux.h"
+#elif defined(VGA_s390x)
+#  include "vki-posixtypes-s390x-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -201,6 +203,8 @@ typedef unsigned int	        vki_uint;
 #  include "vki-ppc64-linux.h"
 #elif defined(VGA_arm)
 #  include "vki-arm-linux.h"
+#elif defined(VGA_s390x)
+#  include "vki-s390x-linux.h"
 #else
 #  error Unknown platform
 #endif

@@ -65,6 +65,11 @@
 # define MC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC64State)
 #endif
 
+#if defined(VGA_s390x)
+# include "libvex_guest_s390x.h"
+# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestS390XState)
+#endif
+
 #if defined(VGA_arm)
 # include "libvex_guest_arm.h"
 # define MC_SIZEOF_GUEST_STATE sizeof(VexGuestARMState)
@@ -682,6 +687,54 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* -------------------- s390x -------------------- */
+
+#  elif defined(VGA_s390x)
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestS390XState,guest_##_fieldname))
+   Int  o      = offset;
+   Int  sz     = szB;
+   tl_assert(sz > 0);
+   tl_assert(host_is_big_endian());
+
+   /* no matter what byte(s) we change, we have changed the full 8 byte value
+      and need to track this change for the whole register */
+   if (o >= GOF(r0) && sz <= 8 && o <= (GOF(r15) + 8 - sz))
+      return GOF(r0) + ((o-GOF(r0)) & -8) ;
+
+
+   /* fprs are accessed 4 or 8 byte at once. Again, we track that change for
+      the full register */
+   if ((sz == 8 || sz == 4) && o >= GOF(f0) && o <= GOF(f15)+8-sz)
+      return GOF(f0) + ((o-GOF(f0)) & -8) ;
+
+   /* access registers are accessed 4 bytes at once */
+   if (sz == 4 && o >= GOF(a0) && o <= GOF(a15))
+         return o;
+
+   /* we access the guest counter either fully or one of the 4byte words */
+   if (o == GOF(counter) && (sz == 8 || sz ==4))
+      return o;
+   if (o == GOF(counter) + 4 && sz == 4)
+      return o;
+
+   if (o == GOF(CC_OP)) return -1;
+   if (o == GOF(CC_DEP1)) return o;
+   if (o == GOF(CC_DEP2)) return o;
+   if (o == GOF(CC_NDEP)) return -1;
+   if (o == GOF(TISTART)) return -1;
+   if (o == GOF(TILEN)) return -1;
+   if (o == GOF(NRADDR)) return -1;
+   if (o == GOF(IP_AT_SYSCALL)) return -1;
+   if (o == GOF(fpc)) return -1;
+   if (o == GOF(IA)) return -1;
+   if (o == GOF(SYSNO)) return -1;
+   VG_(printf)("MC_(get_otrack_shadow_offset)(s390x)(off=%d,sz=%d)\n",
+               offset,szB);
+   tl_assert(0);
+#  undef GOF
+
+
    /* --------------------- arm --------------------- */
 
 #  elif defined(VGA_arm)
@@ -889,6 +942,11 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
    VG_(printf)("\n");
    tl_assert(0);
 
+   /* --------------------- s390x --------------------- */
+#  elif defined(VGA_s390x)
+   /* Should never het here because s390x does not use Ist_PutI
+      and Iex_GetI. */
+   tl_assert(0);
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif

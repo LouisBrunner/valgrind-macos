@@ -61,6 +61,8 @@
 #define __NR_timerfd_create  322
 #elif defined(__powerpc__)
 #define __NR_timerfd_create  306
+#elif defined(__s390x__)
+#define __NR_timerfd_create  319
 #else
 #error Cannot detect your architecture!
 #endif
@@ -76,6 +78,9 @@
 #elif defined(__powerpc__)
 #define __NR_timerfd_settime 311
 #define __NR_timerfd_gettime 312
+#elif defined(__s390x__)
+#define __NR_timerfd_settime 320
+#define __NR_timerfd_gettime 321
 #else
 #error Cannot detect your architecture!
 #endif

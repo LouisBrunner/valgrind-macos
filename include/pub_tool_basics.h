@@ -292,7 +292,7 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 
 #if defined(VGA_x86) || defined(VGA_amd64) || defined (VGA_arm)
 #  define VG_LITTLEENDIAN 1
-#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x)
 #  define VG_BIGENDIAN 1
 #else
 #  error Unknown arch
@@ -302,7 +302,7 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #if defined(VGA_x86)
 #  define VG_REGPARM(n)            __attribute__((regparm(n)))
 #elif defined(VGA_amd64) || defined(VGA_ppc32) \
-      || defined(VGA_ppc64) || defined(VGA_arm)
+      || defined(VGA_ppc64) || defined(VGA_arm) || defined(VGA_s390x)
 #  define VG_REGPARM(n)            /* */
 #else
 #  error Unknown arch

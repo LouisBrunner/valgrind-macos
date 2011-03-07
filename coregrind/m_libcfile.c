@@ -795,7 +795,7 @@ static Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 Int VG_(socket) ( Int domain, Int type, Int protocol )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux)
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[3];
    args[0] = domain;
@@ -836,7 +836,7 @@ static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux)
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sockfd;
@@ -876,7 +876,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
       SIGPIPE */
 
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux)
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[4];
    args[0] = sd;
@@ -908,7 +908,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux)
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sd;
@@ -940,7 +940,7 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux)
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sd;
@@ -973,7 +973,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int *optlen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux)
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[5];
    args[0] = sd;

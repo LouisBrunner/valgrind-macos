@@ -100,6 +100,17 @@ SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    return res;
 }
 
+SysRes VG_(mk_SysRes_s390x_linux) ( Long val ) {
+   SysRes res;
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = -val;
+   } else {
+      res._val = val;
+   }
+   return res;
+}
+
 SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
    SysRes res;
    res._isError = val >= -4095 && val <= -1;
@@ -719,6 +730,38 @@ asm(".private_extern _do_syscall_mach_WRK\n"
     "        retq                     \n"
     );
 
+#elif defined(VGP_s390x_linux)
+
+static UWord do_syscall_WRK (
+   UWord syscall_no,
+   UWord arg1, UWord arg2, UWord arg3,
+   UWord arg4, UWord arg5, UWord arg6
+   )
+{
+   register UWord __arg1 asm("2") = arg1;
+   register UWord __arg2 asm("3") = arg2;
+   register UWord __arg3 asm("4") = arg3;
+   register UWord __arg4 asm("5") = arg4;
+   register UWord __arg5 asm("6") = arg5;
+   register UWord __arg6 asm("7") = arg6;
+   register ULong __svcres asm("2");
+
+   __asm__ __volatile__ (
+                 "lgr %%r1,%1\n\t"
+                 "svc 0\n\t"
+		: "=d" (__svcres)
+		: "a" (syscall_no),
+		  "0" (__arg1),
+		  "d" (__arg2),
+		  "d" (__arg3),
+		  "d" (__arg4),
+		  "d" (__arg5),
+		  "d" (__arg6)
+		: "1", "cc", "memory");
+
+   return (UWord) (__svcres);
+}
+
 #else
 #  error Unknown platform
 #endif
@@ -846,6 +889,24 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    }
    return VG_(mk_SysRes_amd64_darwin)( scclass, err ? True : False, wHI, wLO );
   
+#elif defined(VGP_s390x_linux)
+   UWord val;
+
+   if (sysno == __NR_mmap) {
+     ULong argbuf[6];
+
+     argbuf[0] = a1;
+     argbuf[1] = a2;
+     argbuf[2] = a3;
+     argbuf[3] = a4;
+     argbuf[4] = a5;
+     argbuf[5] = a6;
+     val = do_syscall_WRK(sysno,(UWord)&argbuf[0],0,0,0,0,0);
+   } else {
+     val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
+   }
+
+   return VG_(mk_SysRes_s390x_linux)( val );
 #else
 #  error Unknown platform
 #endif

@@ -233,9 +233,14 @@ static void fill_prstatus(const ThreadState *tst,
    prs->pr_pgrp = VG_(getpgrp)();
    prs->pr_sid = VG_(getpgrp)();
    
+#ifdef VGP_s390x_linux
+   /* prs->pr_reg has struct type. Need to take address. */
+   regs = (struct vki_user_regs_struct *)&(prs->pr_reg);
+#else
    regs = (struct vki_user_regs_struct *)prs->pr_reg;
 
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
+#endif
 
 #if defined(VGP_x86_linux)
    regs->eflags = LibVEX_GuestX86_get_eflags( &arch->vex );
@@ -343,6 +348,16 @@ static void fill_prstatus(const ThreadState *tst,
    regs->ARM_pc   = arch->vex.guest_R15T;
    regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &((ThreadArchState*)arch)->vex );
 
+#elif defined(VGP_s390x_linux)
+#  define DO(n)  regs->gprs[n] = arch->vex.guest_r##n
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+#  undef DO
+#  define DO(n)  regs->acrs[n] = arch->vex.guest_a##n
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+#  undef DO
+   regs->orig_gpr2 = arch->vex.guest_r2;
 #else
 #  error Unknown ELF platform
 #endif
@@ -415,6 +430,11 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #elif defined(VGP_arm_linux)
    // umm ...
 
+#elif defined(VGP_s390x_linux)
+#  define DO(n)  fpu->fprs[n].ui = arch->vex.guest_f##n
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+# undef DO
 #else
 #  error Unknown ELF platform
 #endif

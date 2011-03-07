@@ -1,0 +1,27 @@
+lpr
+new: 0 cc: 0
+new: 1 cc: 2
+new: 1 cc: 2
+new: 2147483647 cc: 2
+new: -2147483648 cc: 3
+new: 1 cc: 2
+lpgr
+new: 0 cc: 0
+new: 1 cc: 2
+new: 1 cc: 2
+new: 2147483647 cc: 2
+new: 2147483648 cc: 2
+new: 4294967295 cc: 2
+new: 9223372036854775807 cc: 2
+new: -9223372036854775808 cc: 3
+new: 1 cc: 2
+lpgfr
+new: 0 cc: 0
+new: 1 cc: 2
+new: 1 cc: 2
+new: 2147483647 cc: 2
+new: 2147483648 cc: 2
+new: 1 cc: 2
+new: 1 cc: 2
+new: 0 cc: 0
+new: 1 cc: 2

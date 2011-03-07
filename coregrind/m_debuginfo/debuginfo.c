@@ -703,6 +703,15 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
       2009 Aug 16: apply similar kludge to ppc32-linux.
       See http://bugs.kde.org/show_bug.cgi?id=190820
+
+      There are two modes on s390x: with and without the noexec kernel
+      parameter. Together with some older kernels, this leads to several
+      variants:
+      executable: r and x
+      data:       r and w and x
+      or
+      executable: r and x
+      data:       r and w
    */
    is_rx_map = False;
    is_rw_map = False;
@@ -712,6 +721,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 #  elif defined(VGA_amd64) || defined(VGA_ppc64) || defined(VGA_arm)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
+#  elif defined(VGP_s390x_linux)
+   is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
+   is_rw_map = seg->hasR && seg->hasW;
 #  else
 #    error "Unknown platform"
 #  endif
@@ -2000,6 +2012,11 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Creg_ARM_R14: return eec->uregs->r14;
             case Creg_ARM_R13: return eec->uregs->r13;
             case Creg_ARM_R12: return eec->uregs->r12;
+#           elif defined(VGA_s390x)
+            case Creg_IA_IP: return eec->uregs->ia;
+            case Creg_IA_SP: return eec->uregs->sp;
+            case Creg_IA_BP: return eec->uregs->fp;
+            case Creg_S390_R14: return eec->uregs->lr;
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #           else
 #             error "Unsupported arch"
@@ -2210,6 +2227,24 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
       case CFIC_ARM_R7REL: 
          cfa = cfsi->cfa_off + uregs->r7;
          break;
+#     elif defined(VGA_s390x)
+      case CFIC_IA_SPREL:
+         cfa = cfsi->cfa_off + uregs->sp;
+         break;
+      case CFIR_MEMCFAREL:
+      {
+         Addr a = uregs->sp + cfsi->cfa_off;
+         if (a < min_accessible || a > max_accessible-sizeof(Addr))
+            break;
+         cfa = *(Addr*)a;
+         break;
+      }
+      case CFIR_SAME:
+         cfa = uregs->fp;
+         break;
+      case CFIC_IA_BPREL:
+         cfa = cfsi->cfa_off + uregs->fp;
+         break;
 #     elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #     else
 #       error "Unsupported arch"
@@ -2262,6 +2297,15 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      return compute_cfa(&uregs,
                         min_accessible,  max_accessible, di, cfsi);
    }
+#elif defined(VGA_s390x)
+   { D3UnwindRegs uregs;
+     uregs.ia = ip;
+     uregs.sp = sp;
+     uregs.fp = fp;
+     return compute_cfa(&uregs,
+                        min_accessible,  max_accessible, di, cfsi);
+   }
+
 #  else
    return 0; /* indicates failure */
 #  endif
@@ -2294,6 +2338,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->xip;
 #  elif defined(VGA_arm)
    ipHere = uregsHere->r15;
+#  elif defined(VGA_s390x)
+   ipHere = uregsHere->ia;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
 #    error "Unknown arch"
@@ -2366,6 +2412,10 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.r12, uregsHere->r12, cfsi->r12_how, cfsi->r12_off);
    COMPUTE(uregsPrev.r11, uregsHere->r11, cfsi->r11_how, cfsi->r11_off);
    COMPUTE(uregsPrev.r7,  uregsHere->r7,  cfsi->r7_how,  cfsi->r7_off);
+#  elif defined(VGA_s390x)
+   COMPUTE(uregsPrev.ia, uregsHere->ia, cfsi->ra_how, cfsi->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
 #    error "Unknown arch"

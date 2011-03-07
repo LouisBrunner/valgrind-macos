@@ -89,7 +89,7 @@ typedef
       Int o_sysno;
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-         || defined(VGP_arm_linux)
+         || defined(VGP_arm_linux) || defined(VGP_s390x_linux)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;

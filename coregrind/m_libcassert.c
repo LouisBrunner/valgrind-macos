@@ -135,6 +135,22 @@
         (srP)->misc.ARM.r11 = block[4];                   \
         (srP)->misc.ARM.r7  = block[5];                   \
       }
+#elif defined(VGP_s390x_linux)
+#  define GET_STARTREGS(srP)                              \
+      { ULong ia, sp, fp, lr;                             \
+        __asm__ __volatile__(                             \
+           "bras %0,0f;"                                  \
+           "0: lgr %1,15;"                                \
+           "lgr %2,11;"                                   \
+           "lgr %3,14;"                                   \
+           : "=r" (ia), "=r" (sp),"=r" (fp),"=r" (lr)     \
+           /* no read & clobber */                        \
+        );                                                \
+        (srP)->r_pc = ia;                                 \
+        (srP)->r_sp = sp;                                 \
+        (srP)->misc.S390X.r_fp = fp;                      \
+        (srP)->misc.S390X.r_lr = lr;                      \
+      }
 #else
 #  error Unknown platform
 #endif

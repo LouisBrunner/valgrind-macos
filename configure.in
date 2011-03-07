@@ -158,6 +158,11 @@ case "${host_cpu}" in
         esac
         ;;
 
+     s390x)
+        AC_MSG_RESULT([ok (${host_cpu})])
+        ARCH_MAX="s390x"
+        ;;
+
      armv7*)
 	AC_MSG_RESULT([ok (${host_cpu})])
 	ARCH_MAX="arm"
@@ -519,6 +524,18 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
 	AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
+     s390x-linux)
+        VGCONF_ARCH_PRI="s390x"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="S390X_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        # we want to have the generated code close to the dispatcher
+        valt_load_address_pri_norml="0x401000000"
+        valt_load_address_pri_inner="0x410000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
     *)
         VGCONF_ARCH_PRI="unknown"
         VGCONF_ARCH_SEC="unknown"
@@ -555,6 +572,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC64,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_S390X,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -570,6 +589,9 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_ARM_LINUX, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_S390X_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xS390X_LINUX)
 
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
@@ -592,7 +614,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX )
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX)
 AM_CONDITIONAL(VGCONF_OS_IS_AIX5,
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
@@ -1374,6 +1397,36 @@ if test x$ac_have_as_ppc_mftocrf = xyes ; then
 fi
 
 
+# what facilities does the s390 assembler support?
+AC_MSG_CHECKING([if s390 as supports extended immediate])
+CFLAGS=-march=z9-109
+AC_TRY_COMPILE(, [
+__asm__ __volatile__("flogr 1,2");
+],
+[
+ac_have_as_s390_ei=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_s390_ei=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(S390_BUILDS_EI, test x$ac_have_as_s390_ei = xyes)
+
+AC_MSG_CHECKING([if s390 as supports general instruction extension])
+CFLAGS=-march=z10
+AC_TRY_COMPILE(, [
+__asm__ __volatile__("chsi 1,0");
+],
+[
+ac_have_as_s390_ge=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_s390_ge=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(S390_BUILDS_GE, test x$ac_have_as_s390_ge = xyes)
+CFLAGS=$safe_CFLAGS
+
 # does the x86/amd64 assembler understand SSE3 instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_SSE3_TESTS), used in test Makefile.am's
@@ -1617,7 +1670,8 @@ if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
-       -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX ; then
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
   mflag_primary=$FLAG_M64
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 ; then
   mflag_primary=-q32
@@ -1864,6 +1918,7 @@ AC_CONFIG_FILES([
    none/tests/ppc64/Makefile
    none/tests/x86/Makefile
    none/tests/arm/Makefile
+   none/tests/s390x/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/x86-linux/Makefile

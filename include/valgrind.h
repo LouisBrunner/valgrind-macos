@@ -118,6 +118,8 @@
 #undef PLAT_ppc32_linux
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
+#undef PLAT_s390x_linux
+
 
 #if defined(_AIX) && defined(__64BIT__)
 #  define PLAT_ppc64_aix5 1
@@ -139,6 +141,8 @@
 #  define PLAT_ppc64_linux 1
 #elif defined(__linux__) && defined(__arm__)
 #  define PLAT_arm_linux 1
+#elif defined(__linux__) && defined(__s390__) && defined(__s390x__)
+#  define PLAT_s390x_linux 1
 #else
 /* If we're not compiling for our target platform, don't generate
    any inline asms.  */
@@ -694,6 +698,75 @@ typedef
                      "or 3,3,3\n\t"
 
 #endif /* PLAT_ppc64_aix5 */
+
+/* ------------------------ s390x-linux ------------------------ */
+
+#if defined(PLAT_s390x_linux)
+
+typedef
+  struct {
+     unsigned long long int nraddr; /* where's the code? */
+  }
+  OrigFn;
+
+/* __SPECIAL_INSTRUCTION_PREAMBLE will be used to identify Valgrind specific
+ * code. This detection is implemented in platform specific toIR.c
+ * (e.g. VEX/priv/guest_s390_decoder.c).
+ */
+#define __SPECIAL_INSTRUCTION_PREAMBLE                           \
+                     "lr 15,15\n\t"                              \
+                     "lr 1,1\n\t"                                \
+                     "lr 2,2\n\t"                                \
+                     "lr 3,3\n\t"
+
+#define __CLIENT_REQUEST_CODE "lr 2,2\n\t"
+#define __GET_NR_CONTEXT_CODE "lr 3,3\n\t"
+#define __CALL_NO_REDIR_CODE  "lr 4,4\n\t"
+
+#define VALGRIND_DO_CLIENT_REQUEST(                              \
+       _zzq_rlval, _zzq_default, _zzq_request,                   \
+       _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
+ { volatile unsigned long long int _zzq_args[6];                 \
+   volatile unsigned long long int _zzq_result;                  \
+   _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
+   _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
+   _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
+   _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
+   _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
+   _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
+   __asm__ volatile(/* r2 = args */                              \
+                    "lgr 2,%1\n\t"                               \
+                    /* r3 = default */                           \
+                    "lgr 3,%2\n\t"                               \
+                    __SPECIAL_INSTRUCTION_PREAMBLE               \
+                    __CLIENT_REQUEST_CODE                        \
+                    /* results = r3 */                           \
+                    "lgr %0, 3\n\t"                              \
+                    : "=d" (_zzq_result)                         \
+                    : "a" (&_zzq_args[0]), "0" (_zzq_default)    \
+                    : "cc", "2", "3", "memory"                   \
+                   );                                            \
+   _zzq_rlval = _zzq_result;                                     \
+ }
+
+#define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                      \
+ { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
+   volatile unsigned long long int __addr;                       \
+   __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
+                    __GET_NR_CONTEXT_CODE                        \
+                    "lgr %0, 3\n\t"                              \
+                    : "=a" (__addr)                              \
+                    :                                            \
+                    : "cc", "3", "memory"                        \
+                   );                                            \
+   _zzq_orig->nraddr = __addr;                                   \
+ }
+
+#define VALGRIND_CALL_NOREDIR_R1                                 \
+                    __SPECIAL_INSTRUCTION_PREAMBLE               \
+                    __CALL_NO_REDIR_CODE
+
+#endif /* PLAT_s390x_linux */
 
 /* Insert assembly code for other platforms here... */
 
@@ -4248,6 +4321,484 @@ typedef
 
 #endif /* PLAT_ppc64_aix5 */
 
+/* ------------------------- s390x-linux ------------------------- */
+
+#if defined(PLAT_s390x_linux)
+
+/* Similar workaround as amd64 (see above), but we use r11 as frame
+   pointer and save the old r11 in r7. r11 might be used for
+   argvec, therefore we copy argvec in r1 since r1 is clobbered
+   after the call anyway.  */
+#if defined(__GNUC__) && defined(__GCC_HAVE_DWARF2_CFI_ASM)
+#  define __FRAME_POINTER                                         \
+      ,"d"(__builtin_dwarf_cfa())
+#  define VALGRIND_CFI_PROLOGUE                                   \
+      ".cfi_remember_state\n\t"                                   \
+      "lgr 1,%1\n\t" /* copy the argvec pointer in r1 */          \
+      "lgr 7,11\n\t"                                              \
+      "lgr 11,%2\n\t"                                             \
+      ".cfi_def_cfa r11, 0\n\t"
+#  define VALGRIND_CFI_EPILOGUE                                   \
+      "lgr 11, 7\n\t"                                             \
+      ".cfi_restore_state\n\t"
+#else
+#  define __FRAME_POINTER
+#  define VALGRIND_CFI_PROLOGUE                                   \
+      "lgr 1,%1\n\t"
+#  define VALGRIND_CFI_EPILOGUE
+#endif
+
+
+
+
+/* These regs are trashed by the hidden call. Note that we overwrite
+   r14 in s390_irgen_noredir (VEX/priv/guest_s390_irgen.c) to give the
+   function a proper return address. All others are ABI defined call
+   clobbers. */
+#define __CALLER_SAVED_REGS "0","1","2","3","4","5","14", \
+                           "f0","f1","f2","f3","f4","f5","f6","f7"
+
+
+#define CALL_FN_W_v(lval, orig)                                  \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long  _argvec[1];                        \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-160\n\t"                                      \
+         "lg 1, 0(1)\n\t"  /* target->r1 */                      \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,160\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "d" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"7"     \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+/* The call abi has the arguments in r2-r6 and stack */
+#define CALL_FN_W_W(lval, orig, arg1)                            \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[2];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-160\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,160\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"7"     \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_WW(lval, orig, arg1, arg2)                     \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[3];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-160\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,160\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"7"     \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_WWW(lval, orig, arg1, arg2, arg3)              \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[4];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-160\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,160\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"7"     \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_WWWW(lval, orig, arg1, arg2, arg3, arg4)       \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[5];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-160\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,160\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"7"     \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_5W(lval, orig, arg1, arg2, arg3, arg4, arg5)   \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[6];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-160\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,160\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_6W(lval, orig, arg1, arg2, arg3, arg4, arg5,   \
+                     arg6)                                       \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[7];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-168\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,168\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_7W(lval, orig, arg1, arg2, arg3, arg4, arg5,   \
+                     arg6, arg7)                                 \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[8];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      _argvec[7] = (unsigned long)arg7;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-176\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "mvc 168(8,15), 56(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,176\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_8W(lval, orig, arg1, arg2, arg3, arg4, arg5,   \
+                     arg6, arg7 ,arg8)                           \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[9];                         \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      _argvec[7] = (unsigned long)arg7;                          \
+      _argvec[8] = (unsigned long)arg8;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-184\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "mvc 168(8,15), 56(1)\n\t"                              \
+         "mvc 176(8,15), 64(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,184\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_9W(lval, orig, arg1, arg2, arg3, arg4, arg5,   \
+                     arg6, arg7 ,arg8, arg9)                     \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[10];                        \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      _argvec[7] = (unsigned long)arg7;                          \
+      _argvec[8] = (unsigned long)arg8;                          \
+      _argvec[9] = (unsigned long)arg9;                          \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-192\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "mvc 168(8,15), 56(1)\n\t"                              \
+         "mvc 176(8,15), 64(1)\n\t"                              \
+         "mvc 184(8,15), 72(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,192\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_10W(lval, orig, arg1, arg2, arg3, arg4, arg5,  \
+                     arg6, arg7 ,arg8, arg9, arg10)              \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[11];                        \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      _argvec[7] = (unsigned long)arg7;                          \
+      _argvec[8] = (unsigned long)arg8;                          \
+      _argvec[9] = (unsigned long)arg9;                          \
+      _argvec[10] = (unsigned long)arg10;                        \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-200\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "mvc 168(8,15), 56(1)\n\t"                              \
+         "mvc 176(8,15), 64(1)\n\t"                              \
+         "mvc 184(8,15), 72(1)\n\t"                              \
+         "mvc 192(8,15), 80(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,200\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_11W(lval, orig, arg1, arg2, arg3, arg4, arg5,  \
+                     arg6, arg7 ,arg8, arg9, arg10, arg11)       \
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[12];                        \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      _argvec[7] = (unsigned long)arg7;                          \
+      _argvec[8] = (unsigned long)arg8;                          \
+      _argvec[9] = (unsigned long)arg9;                          \
+      _argvec[10] = (unsigned long)arg10;                        \
+      _argvec[11] = (unsigned long)arg11;                        \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-208\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "mvc 168(8,15), 56(1)\n\t"                              \
+         "mvc 176(8,15), 64(1)\n\t"                              \
+         "mvc 184(8,15), 72(1)\n\t"                              \
+         "mvc 192(8,15), 80(1)\n\t"                              \
+         "mvc 200(8,15), 88(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,208\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+#define CALL_FN_W_12W(lval, orig, arg1, arg2, arg3, arg4, arg5,  \
+                     arg6, arg7 ,arg8, arg9, arg10, arg11, arg12)\
+   do {                                                          \
+      volatile OrigFn        _orig = (orig);                     \
+      volatile unsigned long _argvec[13];                        \
+      volatile unsigned long _res;                               \
+      _argvec[0] = (unsigned long)_orig.nraddr;                  \
+      _argvec[1] = (unsigned long)arg1;                          \
+      _argvec[2] = (unsigned long)arg2;                          \
+      _argvec[3] = (unsigned long)arg3;                          \
+      _argvec[4] = (unsigned long)arg4;                          \
+      _argvec[5] = (unsigned long)arg5;                          \
+      _argvec[6] = (unsigned long)arg6;                          \
+      _argvec[7] = (unsigned long)arg7;                          \
+      _argvec[8] = (unsigned long)arg8;                          \
+      _argvec[9] = (unsigned long)arg9;                          \
+      _argvec[10] = (unsigned long)arg10;                        \
+      _argvec[11] = (unsigned long)arg11;                        \
+      _argvec[12] = (unsigned long)arg12;                        \
+      __asm__ volatile(                                          \
+         VALGRIND_CFI_PROLOGUE                                   \
+         "aghi 15,-216\n\t"                                      \
+         "lg 2, 8(1)\n\t"                                        \
+         "lg 3,16(1)\n\t"                                        \
+         "lg 4,24(1)\n\t"                                        \
+         "lg 5,32(1)\n\t"                                        \
+         "lg 6,40(1)\n\t"                                        \
+         "mvc 160(8,15), 48(1)\n\t"                              \
+         "mvc 168(8,15), 56(1)\n\t"                              \
+         "mvc 176(8,15), 64(1)\n\t"                              \
+         "mvc 184(8,15), 72(1)\n\t"                              \
+         "mvc 192(8,15), 80(1)\n\t"                              \
+         "mvc 200(8,15), 88(1)\n\t"                              \
+         "mvc 208(8,15), 96(1)\n\t"                              \
+         "lg 1, 0(1)\n\t"                                        \
+         VALGRIND_CALL_NOREDIR_R1                                \
+         "lgr %0, 2\n\t"                                         \
+         "aghi 15,216\n\t"                                       \
+         VALGRIND_CFI_EPILOGUE                                   \
+         : /*out*/   "=d" (_res)                                 \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER           \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS,"6","7" \
+      );                                                         \
+      lval = (__typeof__(lval)) _res;                            \
+   } while (0)
+
+
+#endif /* PLAT_s390x_linux */
+
 
 /* ------------------------------------------------------------------ */
 /* ARCHITECTURE INDEPENDENT MACROS for CLIENT REQUESTS.               */
@@ -4785,6 +5336,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #undef PLAT_ppc32_linux
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
+#undef PLAT_s390x_linux
 #undef PLAT_ppc32_aix5
 #undef PLAT_ppc64_aix5
 

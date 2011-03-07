@@ -94,6 +94,13 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_R11;
    regs->misc.ARM.r7
       = VG_(threads)[tid].arch.vex.guest_R7;
+#  elif defined(VGA_s390x)
+   regs->r_pc = (ULong)VG_(threads)[tid].arch.vex.guest_IA;
+   regs->r_sp = (ULong)VG_(threads)[tid].arch.vex.guest_SP;
+   regs->misc.S390X.r_fp
+      = VG_(threads)[tid].arch.vex.guest_r11;
+   regs->misc.S390X.r_lr
+      = VG_(threads)[tid].arch.vex.guest_r14;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -125,6 +132,9 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
    VG_(threads)[tid].arch.vex_shadow2.guest_GPR4 = s2err;
 #  elif defined(VGO_darwin)
    // GrP fixme darwin syscalls may return more values (2 registers plus error)
+#  elif defined(VGP_s390x_linux)
+   VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
+   VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
 #  else
 #    error "Unknown plat"
 #  endif
@@ -257,6 +267,23 @@ static void apply_to_GPs_of_tid(VexGuestArchState* vex, void (*f)(Addr))
    (*f)(vex->guest_R12);
    (*f)(vex->guest_R13);
    (*f)(vex->guest_R14);
+#elif defined(VGA_s390x)
+   (*f)(vex->guest_r0);
+   (*f)(vex->guest_r1);
+   (*f)(vex->guest_r2);
+   (*f)(vex->guest_r3);
+   (*f)(vex->guest_r4);
+   (*f)(vex->guest_r5);
+   (*f)(vex->guest_r6);
+   (*f)(vex->guest_r7);
+   (*f)(vex->guest_r8);
+   (*f)(vex->guest_r9);
+   (*f)(vex->guest_r10);
+   (*f)(vex->guest_r11);
+   (*f)(vex->guest_r12);
+   (*f)(vex->guest_r13);
+   (*f)(vex->guest_r14);
+   (*f)(vex->guest_r15);
 #else
 #  error Unknown arch
 #endif
@@ -357,6 +384,11 @@ SizeT VG_(thread_get_altstack_size)(ThreadId tid)
           then safe to use VG_(machine_get_VexArchInfo) 
                        and VG_(machine_ppc64_has_VMX)
 
+   -------------
+   s390x: initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo)
+
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be
    called before m_main sets up the client's signal state.
@@ -383,10 +415,11 @@ ULong VG_(machine_ppc64_has_VMX) = 0;
 Int VG_(machine_arm_archlevel) = 4;
 #endif
 
+/* fixs390: anything for s390x here ? */
 
 /* For hwcaps detection on ppc32/64 and arm we'll need to do SIGILL
    testing, so we need a jmp_buf. */
-#if defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm)
+#if defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm) || defined(VGA_s390x)
 #include <setjmp.h> // For jmp_buf
 static jmp_buf env_unsup_insn;
 static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); }
@@ -835,6 +868,96 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
+#elif defined(VGA_s390x)
+   {
+     /* Instruction set detection code borrowed from ppc above. */
+     vki_sigset_t          saved_set, tmp_set;
+     vki_sigaction_fromK_t saved_sigill_act;
+     vki_sigaction_toK_t     tmp_sigill_act;
+
+     volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP;
+     Int r;
+
+     /* Unblock SIGILL and stash away the old action for that signal */
+     VG_(sigemptyset)(&tmp_set);
+     VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+
+     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     vg_assert(r == 0);
+
+     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+     vg_assert(r == 0);
+     tmp_sigill_act = saved_sigill_act;
+
+     /* NODEFER: signal handler does not return (from the kernel's point of
+        view), hence if it is to successfully catch a signal more than once,
+        we need the NODEFER flag. */
+     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.ksa_handler = handler_unsup_insn;
+     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+
+     /* Determine hwcaps. Note, we cannot use the stfle insn because it
+        is not supported on z900. */
+
+     have_LDISP = True;
+     if (__builtin_setjmp(env_unsup_insn)) {
+        have_LDISP = False;
+     } else {
+       /* BASR loads the address of the next insn into r1. Needed to avoid
+          a segfault in XY. */
+        __asm__ __volatile__("basr %%r1,%%r0\n\t"
+                             ".long  0xe3001000\n\t"  /* XY  0,0(%r1) */
+                             ".short 0x0057" : : : "r0", "r1", "cc", "memory");
+     }
+
+     have_EIMM = True;
+     if (__builtin_setjmp(env_unsup_insn)) {
+        have_EIMM = False;
+     } else {
+        __asm__ __volatile__(".long  0xc0090000\n\t"  /* iilf r0,0 */
+                             ".short 0x0000" : : : "r0", "memory");
+     }
+
+     have_GIE = True;
+     if (__builtin_setjmp(env_unsup_insn)) {
+        have_GIE = False;
+     } else {
+        __asm__ __volatile__(".long  0xc2010000\n\t"  /* msfi r0,0 */
+                             ".short 0x0000" : : : "r0", "memory");
+     }
+
+     have_DFP = True;
+     if (__builtin_setjmp(env_unsup_insn)) {
+        have_DFP = False;
+     } else {
+        __asm__ __volatile__(".long 0xb3d20000"
+                               : : : "r0", "cc", "memory");  /* adtr r0,r0,r0 */
+     }
+
+     /* Restore signals */
+     r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
+     vg_assert(r == 0);
+     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     vg_assert(r == 0);
+     VG_(debugLog)(1, "machine", "LDISP %d EIMM %d GIE %d DFP %d\n",
+                   have_LDISP, have_EIMM, have_GIE, have_DFP);
+
+     /* Check for long displacement facility which is required */
+     if (! have_LDISP) return False;
+
+     va = VexArchS390X;
+
+     vai.hwcaps = 0;
+     if (have_LDISP) vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
+     if (have_EIMM)  vai.hwcaps |= VEX_HWCAPS_S390X_EIMM;
+     if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
+     if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
+
+     return True;
+   }
+
 #elif defined(VGA_arm)
    {
      /* Same instruction set detection algorithm as for ppc32. */
@@ -1017,7 +1140,8 @@ void* VG_(fnptr_to_fnentry)( void* f )
 {
 #if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
     || defined(VGP_arm_linux)                           \
-    || defined(VGP_ppc32_linux) || defined(VGO_darwin)
+    || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
+    || defined(VGP_s390x_linux)
    return f;
 #elif defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
                                || defined(VGP_ppc64_aix5)

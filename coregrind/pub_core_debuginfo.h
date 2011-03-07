@@ -123,6 +123,10 @@ typedef
 typedef
    UChar  /* should be void, but gcc complains at use points */
    D3UnwindRegs;
+#elif defined(VGA_s390x)
+typedef
+   struct { Addr ia; Addr sp; Addr fp; Addr lr;}
+   D3UnwindRegs;
 #else
 #  error "Unsupported arch"
 #endif

@@ -523,6 +523,23 @@ typedef struct SigQueue {
       I_die_here;
    }
 
+#elif defined(VGP_s390x_linux)
+
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.regs.psw.addr)
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.regs.gprs[15])
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.regs.gprs[11])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                        \
+      VG_(mk_SysRes_s390x_linux)((uc)->uc_mcontext.regs.gprs[2])
+#  define VG_UCONTEXT_LINK_REG(uc) ((uc)->uc_mcontext.regs.gprs[14])
+
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)        \
+      { (srP)->r_pc = (ULong)((uc)->uc_mcontext.regs.psw.addr);    \
+        (srP)->r_sp = (ULong)((uc)->uc_mcontext.regs.gprs[15]);    \
+        (srP)->misc.S390X.r_fp = (uc)->uc_mcontext.regs.gprs[11];  \
+        (srP)->misc.S390X.r_lr = (uc)->uc_mcontext.regs.gprs[14];  \
+      }
+
+
 #else 
 #  error Unknown platform
 #endif
@@ -851,6 +868,13 @@ extern void my_sigreturn(void);
    ".text\n" \
    "my_sigreturn:\n" \
    "ud2\n"
+
+#elif defined(VGP_s390x_linux)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   "my_sigreturn:\n" \
+   " svc " #name "\n" \
+   ".previous\n"
 
 #else
 #  error Unknown platform
@@ -1862,6 +1886,7 @@ void VG_(synth_sigtrap)(ThreadId tid)
    uc.uc_mcontext->__es.__err = 0;
 #  endif
 
+   /* fixs390: do we need to do anything here for s390 ? */
    resume_scheduler(tid);
    deliver_signal(tid, &info, &uc);
 }
@@ -2210,6 +2235,19 @@ void sync_signalhandler_from_user ( ThreadId tid,
    }
 }
 
+/* Returns the reported fault address for an exact address */
+static Addr fault_mask(Addr in)
+{
+   /*  We have to use VG_PGROUNDDN because faults on s390x only deliver
+       the page address but not the address within a page.
+    */
+#  if defined(VGA_s390x)
+   return VG_PGROUNDDN(in);
+#  else
+   return in;
+#endif
+}
+
 /* Returns True if the sync signal was due to the stack requiring extension
    and the extension was successful.
 */
@@ -2247,7 +2285,7 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
        && seg_next
        && seg_next->kind == SkAnonC
        && seg->end+1 == seg_next->start
-       && fault >= (esp - VG_STACK_REDZONE_SZB)) {
+       && fault >= fault_mask(esp - VG_STACK_REDZONE_SZB)) {
       /* If the fault address is above esp but below the current known
          stack segment base, and it was a fault because there was
          nothing mapped there (as opposed to a permissions fault),

@@ -516,6 +516,48 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(VGP_s390x_linux)
+static UInt local_sys_write_stderr ( HChar* buf, Int n )
+{
+   register Int    r2     asm("2") = 2;      /* file descriptor STDERR */
+   register HChar* r3     asm("3") = buf;
+   register ULong  r4     asm("4") = n;
+   register ULong  r2_res asm("2");
+   ULong __res;
+
+   __asm__ __volatile__ (
+      "svc %b1\n"
+      : "=d" (r2_res)
+      : "i" (__NR_write),
+        "0" (r2),
+        "d" (r3),
+        "d" (r4)
+      : "cc", "memory");
+   __res = r2_res;
+
+   if (__res >= (ULong)(-125))
+      __res = -1;
+   return (UInt)(__res);
+}
+
+static UInt local_sys_getpid ( void )
+{
+   register ULong r2 asm("2");
+   ULong __res;
+
+   __asm__ __volatile__ (
+      "svc %b1\n"
+      : "=d" (r2)
+      : "i" (__NR_getpid)
+      : "cc", "memory");
+   __res = r2;
+
+   if (__res >= (ULong)(-125))
+      __res = -1;
+   return (UInt)(__res);
+}
+
+
 #else
 # error Unknown platform
 #endif

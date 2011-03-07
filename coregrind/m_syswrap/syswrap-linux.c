@@ -206,6 +206,14 @@ static void run_a_thread_NORETURN ( Word tidW )
          "svc  0x00000000\n"  /* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+#elif defined(VGP_s390x_linux)
+      asm volatile (
+         "st   %1, %0\n"        /* set tst->status = VgTs_Empty */
+         "lg   2, %3\n"         /* set r2 = tst->os_state.exitcode */
+         "svc %2\n"             /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "d" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "2");
 #else
 # error Unknown platform
 #endif
@@ -288,6 +296,11 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    sp -= 112;
    sp &= ~((Addr)0xF);
    *(UWord *)sp = 0;
+#elif defined(VGP_s390x_linux)
+   /* make a stack frame */
+   sp -= 160;
+   sp &= ~((Addr)0xF);
+   *(UWord *)sp = 0;
 #endif
 
    /* If we can't even allocate the first thread's stack, we're hosed.
@@ -342,6 +355,10 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)child_tidptr, (UWord)NULL );
+#elif defined(VGP_s390x_linux)
+   /* Note that s390 has the stack first and then the flags */
+   res = VG_(do_syscall4)( __NR_clone, (UWord) NULL, flags,
+                          (UWord)parent_tidptr, (UWord)child_tidptr);
 #else
 # error Unknown platform
 #endif
@@ -3566,7 +3583,7 @@ POST(sys_lookup_dcookie)
 }
 #endif
 
-#if defined(VGP_amd64_linux)
+#if defined(VGP_amd64_linux) || defined(VGP_s390x_linux)
 PRE(sys_lookup_dcookie)
 {
    *flags |= SfMayBlock;

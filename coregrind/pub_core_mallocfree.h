@@ -77,6 +77,7 @@ typedef Int ArenaId;
 // for any AltiVec- or SSE-related type.  This matches the Darwin libc.
 #elif defined(VGP_amd64_linux) || \
       defined(VGP_ppc64_linux) || \
+      defined(VGP_s390x_linux) || \
       defined(VGP_ppc64_aix5)  || \
       defined(VGP_ppc32_aix5)  || \
       defined(VGP_x86_darwin)  || \

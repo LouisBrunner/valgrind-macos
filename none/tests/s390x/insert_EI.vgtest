@@ -1,0 +1,2 @@
+prog: insert_EI
+prereq: test -x insert_EI

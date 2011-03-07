@@ -1,0 +1,15 @@
+
+Running as root
+capget result:
+effective   0x........
+permitted   0x........
+inheritable 0
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

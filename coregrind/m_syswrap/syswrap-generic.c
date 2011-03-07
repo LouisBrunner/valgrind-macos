@@ -1958,6 +1958,11 @@ ML_(generic_POST_sys_shmctl) ( ThreadId tid,
  *   call, mmap (aka sys_mmap)  which takes the arguments in the
  *   normal way and the offset in bytes.
  *
+ * - On s390x-linux there is mmap (aka old_mmap) which takes the
+ *   arguments in a memory block and the offset in bytes. mmap2
+ *   is also available (but not exported via unistd.h) with
+ *   arguments in a memory block and the offset in pages.
+ *
  * To cope with all this we provide a generic handler function here
  * and then each platform implements one or more system call handlers
  * which call this generic routine after extracting and normalising

@@ -81,6 +81,12 @@
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB    288 // is this right?
 
+#elif defined(VGP_s390x_linux)
+#  define VG_MIN_INSTR_SZB          2
+#  define VG_MAX_INSTR_SZB          6
+#  define VG_CLREQ_SZB             10
+#  define VG_STACK_REDZONE_SZB      0  // s390 has no redzone
+
 #elif defined(VGP_x86_darwin)
 #  define VG_MIN_INSTR_SZB          1  // min length of native instruction
 #  define VG_MAX_INSTR_SZB         16  // max length of native instruction

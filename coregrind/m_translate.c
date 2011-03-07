@@ -692,7 +692,7 @@ void log_bytes ( HChar* bytes, Int nbytes )
 
 static Bool translations_allowable_from_seg ( NSegment const* seg )
 {
-#  if defined(VGA_x86)
+#  if defined(VGA_x86) || defined(VGA_s390x)
    Bool allowR = True;
 #  else
    Bool allowR = False;
@@ -1503,7 +1503,8 @@ Bool VG_(translate) ( ThreadId tid,
           ? (void*) &VG_(run_innerloop__dispatch_profiled)
           : (void*) &VG_(run_innerloop__dispatch_unprofiled);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
-        || defined(VGA_arm)
+        || defined(VGA_arm) || defined(VGA_s390x)
+   /* See comment libvex.h; machine has link register --> dipatch = NULL */
    vta.dispatch = NULL;
 #  else
 #    error "Unknown arch"

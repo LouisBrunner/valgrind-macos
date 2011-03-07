@@ -1,0 +1,36 @@
+Requirements
+------------
+- You need GCC 3.4 or later to compile the s390 port.
+- A working combination of autotools is required.
+- To run valgrind a z900 machine or any later model is needed.
+- The long displacement facility must be installed on the host machine.
+
+
+Limitations
+-----------
+- 31-bit client programs are not supported.
+- Hexadecimal floating point is not supported.
+- Decimal floating point is not supported yet.
+- Currently, only memcheck, massif, lackey, and none are supported
+- helgrind and drd seem to work on SLES10,11 and RHEL5,6 on z9,z10 and z196
+  but might fail on other hardware/software combinations.
+- Some gcc versions use mvc to copy 4/8 byte values. This will affect some
+  debug messages. Valgrind will complain about 4 or 8 one-byte reads/writes
+  instead of just 1 read/write.
+- exp-ptrcheck and callgrind are not supported.
+
+
+Recommendations
+---------------
+Applications should be compiled with -fno-builtin to avoid
+false positives due to builtin string operations when running memcheck.
+
+
+Reading Material
+----------------
+(1) Linux for zSeries ELF ABI Supplement
+    http://refspecs.linuxfoundation.org/ELF/zSeries/index.html
+(2) z/Architecture Principles of Operation
+    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zr008.pdf
+(3) z/Architecture Reference Summary
+    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zs006.pdf

@@ -25,6 +25,7 @@ pkginclude_HEADERS = \
 	pub/libvex_guest_ppc64.h \
 	pub/libvex_guest_arm.h \
 	pub/libvex_guest_s390x.h \
+	pub/libvex_s390x_common.h \
 	pub/libvex_ir.h \
 	pub/libvex_trc_values.h
 

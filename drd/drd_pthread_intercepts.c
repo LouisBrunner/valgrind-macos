@@ -415,16 +415,9 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
 
    if (ret == 0)
    {
-      /*
-       * Wait until the thread wrapper started.
-       * @todo Find out why some regression tests fail if thread arguments are
-       *   passed via dynamically allocated memory and if the loop below is
-       *   removed.
-       */
+      /* Wait until the thread wrapper started. */
       while (! thread_args_p->wrapper_started)
-      {
          sched_yield();
-      }
    }
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_START_NEW_SEGMENT,

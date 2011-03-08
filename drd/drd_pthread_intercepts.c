@@ -7,7 +7,7 @@
 /*
   This file is part of DRD, a thread error detector.
 
-  Copyright (C) 2006-2010 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2011 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -61,23 +61,18 @@
 #include "pub_tool_redir.h" /* VG_WRAP_FUNCTION_ZZ() */
 
 
-/* Defines. */
-
 /*
- * Do not undefine the two macro's below, or the following two subtle race
- * conditions will be introduced in the data race detection algorithm:
- * - sg_init() runs on the context of the created thread and copies the
- *   vector clock of the creator thread. This only works reliably if
- *   the creator thread waits until this copy has been performed.
- * - Since DRD_(thread_compute_minimum_vc)() does not take the vector
- *   clocks into account that are involved in thread creation but
- *   for which the corresponding thread has not yet been created, by
- *   undefining the macro below it becomes possible that segments get
- *   discarded that should not yet be discarded. Or: some data races
- *   are not detected.
+ * Notes regarding thread creation:
+ * - sg_init() runs on the context of the created thread and copies the vector
+ *   clock of the creator thread. This only works reliably if the creator
+ *   thread waits until this copy has been performed.
+ * - DRD_(thread_compute_minimum_vc)() does not take the vector clocks into
+ *   account that are involved in thread creation and for which the
+ *   corresponding thread has not yet been created. So not waiting until the
+ *   created thread has been started would make it possible that segments get
+ *   discarded that should not yet be discarded. Or: some data races are not
+ *   detected.
  */
-#define WAIT_UNTIL_CREATED_THREAD_STARTED
-#define ALLOCATE_THREAD_ARGS_ON_THE_STACK
 
 /**
  * Macro for generating a Valgrind interception function.
@@ -139,9 +134,7 @@ typedef struct
    void* (*start)(void*);
    void* arg;
    int   detachstate;
-#if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
    int   wrapper_started;
-#endif
 } DrdPosixThreadArgs;
 
 
@@ -276,16 +269,7 @@ static void* DRD_(thread_wrapper)(void* arg)
 
    arg_ptr = (DrdPosixThreadArgs*)arg;
    arg_copy = *arg_ptr;
-#if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
    arg_ptr->wrapper_started = 1;
-#else
-#if defined(ALLOCATE_THREAD_ARGS_ON_THE_STACK)
-#error Defining ALLOCATE_THREAD_ARGS_ON_THE_STACK but not \
-       WAIT_UNTIL_CREATED_THREAD_STARTED is not supported.
-#else
-   free(arg_ptr);
-#endif
-#endif
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,
                               pthread_self(), 0, 0, 0, 0);
@@ -406,10 +390,8 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
 
    thread_args_p->start           = start;
    thread_args_p->arg             = arg;
-#if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
    DRD_IGNORE_VAR(thread_args_p->wrapper_started);
    thread_args_p->wrapper_started = 0;
-#endif
    /*
     * Find out whether the thread will be started as a joinable thread
     * or as a detached thread. If no thread attributes have been specified,
@@ -431,7 +413,6 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
    CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), thread_args_p);
    DRD_(left_pthread_create)();
 
-#if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
    if (ret == 0)
    {
       /*
@@ -445,12 +426,6 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
          sched_yield();
       }
    }
-
-#if defined(ALLOCATE_THREAD_ARGS_DYNAMICALLY)
-   free(thread_args_p);
-#endif
-
-#endif
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_START_NEW_SEGMENT,
                               pthread_self(), 0, 0, 0, 0);

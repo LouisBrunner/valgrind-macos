@@ -269,13 +269,19 @@ static void* DRD_(thread_wrapper)(void* arg)
 
    arg_ptr = (DrdPosixThreadArgs*)arg;
    arg_copy = *arg_ptr;
-   arg_ptr->wrapper_started = 1;
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,
                               pthread_self(), 0, 0, 0, 0);
 
    DRD_(set_joinable)(pthread_self(),
                       arg_copy.detachstate == PTHREAD_CREATE_JOINABLE);
+
+   /*
+    * Only set 'wrapper_started' after VG_USERREQ__SET_PTHREADID and
+    * DRD_(set_joinable)() have been invoked to avoid a race with
+    * a pthread_detach() invocation for this thread from another thread.
+    */
+   arg_ptr->wrapper_started = 1;
 
    return (arg_copy.start)(arg_copy.arg);
 }

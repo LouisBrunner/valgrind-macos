@@ -463,14 +463,11 @@ int pthread_detach_intercept(pthread_t pt_thread)
 {
    int ret;
    OrigFn fn;
+
    VALGRIND_GET_ORIG_FN(fn);
-   {
-      CALL_FN_W_W(ret, fn, pt_thread);
-      if (ret == 0)
-      {
-         DRD_(set_joinable)(pt_thread, 0);
-      }
-   }
+   CALL_FN_W_W(ret, fn, pt_thread);
+   DRD_(set_joinable)(pt_thread, 0);
+
    return ret;
 }
 

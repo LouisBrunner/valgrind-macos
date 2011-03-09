@@ -210,9 +210,20 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__SET_JOINABLE:
-      DRD_(thread_set_joinable)(DRD_(PtThreadIdToDrdThreadId)(arg[1]),
-                                (Bool)arg[2]);
+   {
+      const DrdThreadId drd_joinable = DRD_(PtThreadIdToDrdThreadId)(arg[1]);
+      if (drd_joinable != DRD_INVALID_THREADID)
+         DRD_(thread_set_joinable)(drd_joinable, (Bool)arg[2]);
+      else {
+         InvalidThreadIdInfo ITI = { DRD_(thread_get_running_tid)(), arg[1] };
+         VG_(maybe_record_error)(vg_tid,
+                                 InvalidThreadId,
+                                 VG_(get_IP)(vg_tid),
+                                 "pthread_detach(): invalid thread ID",
+                                 &ITI);
+      }
       break;
+   }
 
    case VG_USERREQ__ENTERING_PTHREAD_CREATE:
       DRD_(thread_entering_pthread_create)(drd_tid);

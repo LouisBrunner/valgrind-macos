@@ -146,7 +146,8 @@ EXTRA_DIST =                                        \
 	pth_detached2.stderr.exp                    \
 	pth_detached2.stdout.exp                    \
 	pth_detached2.vgtest                        \
-	pth_detached3.stderr.exp                    \
+	pth_detached3.stderr.exp1                   \
+	pth_detached3.stderr.exp2                   \
 	pth_detached3.vgtest                        \
 	pth_detached_sem.stderr.exp                 \
 	pth_detached_sem.stdout.exp                 \

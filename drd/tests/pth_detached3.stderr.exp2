@@ -1,0 +1,14 @@
+
+pthread_detach(): invalid thread ID 0x........
+   at 0x........: vgDrd_set_joinable (drd_pthread_intercepts.c:?)
+   by 0x........: pthread_detach (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_detached3.c:21)
+
+pthread_detach(): invalid thread ID 0x........
+   at 0x........: vgDrd_set_joinable (drd_pthread_intercepts.c:?)
+   by 0x........: pthread_detach (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_detached3.c:24)
+
+Finished.
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

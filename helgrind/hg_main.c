@@ -132,8 +132,7 @@ static Thread** map_threads = NULL; /* Array[VG_N_THREADS] of Thread* */
 /* Mapping table for lock guest addresses to Lock* */
 static WordFM* map_locks = NULL; /* WordFM LockAddr Lock* */
 
-/* The word-set universes for thread sets and lock sets. */
-static WordSetU* univ_tsets = NULL; /* sets of Thread* */
+/* The word-set universes for lock sets. */
 static WordSetU* univ_lsets = NULL; /* sets of Lock* */
 static WordSetU* univ_laog  = NULL; /* sets of Lock*, for LAOG */
 
@@ -171,11 +170,13 @@ static Thread* mk_Thread ( Thr* hbthr ) {
 static Lock* mk_LockN ( LockKind kind, Addr guestaddr ) {
    static ULong unique = 0;
    Lock* lock             = HG_(zalloc)( "hg.mk_Lock.1", sizeof(Lock) );
-   lock->admin_next       = admin_locks;
-   lock->admin_prev       = NULL;
+   /* begin: add to double linked list */
    if (admin_locks)
       admin_locks->admin_prev = lock;
+   lock->admin_next       = admin_locks;
+   lock->admin_prev       = NULL;
    admin_locks            = lock;
+   /* end: add */
    lock->unique           = unique++;
    lock->magic            = LockN_MAGIC;
    lock->appeared_at      = NULL;
@@ -198,16 +199,20 @@ static void del_LockN ( Lock* lk )
    libhb_so_dealloc(lk->hbso);
    if (lk->heldBy)
       VG_(deleteBag)( lk->heldBy );
-   if (admin_locks == lk) {
+   /* begin: del lock from double linked list */
+   if (lk == admin_locks) {
+      tl_assert(lk->admin_prev == NULL);
+      if (lk->admin_next)
+         lk->admin_next->admin_prev = NULL;
       admin_locks = lk->admin_next;
-      if (admin_locks)
-         admin_locks->admin_prev = NULL;
    }
    else {
+      tl_assert(lk->admin_prev != NULL);
       lk->admin_prev->admin_next = lk->admin_next;
-      lk->admin_next->admin_prev = lk->admin_prev;
+      if (lk->admin_next)
+         lk->admin_next->admin_prev = lk->admin_prev;
    }
-      
+   /* end: del */
    VG_(memset)(lk, 0xAA, sizeof(*lk));
    HG_(free)(lk);
 }
@@ -548,11 +553,6 @@ static void initialise_data_structures ( Thr* hbthr_root )
    map_locks = VG_(newFM)( HG_(zalloc), "hg.ids.2", HG_(free), 
                            NULL/*unboxed Word cmp*/);
    tl_assert(map_locks != NULL);
-
-   tl_assert(univ_tsets == NULL);
-   univ_tsets = HG_(newWordSetU)( HG_(zalloc), "hg.ids.3", HG_(free),
-                                  8/*cacheSize*/ );
-   tl_assert(univ_tsets != NULL);
 
    tl_assert(univ_lsets == NULL);
    univ_lsets = HG_(newWordSetU)( HG_(zalloc), "hg.ids.4", HG_(free),
@@ -4617,8 +4617,6 @@ static void hg_fini ( Int exitcode )
 
       if (1) {
          VG_(printf)("\n");
-         HG_(ppWSUstats)( univ_tsets, "univ_tsets" );
-         VG_(printf)("\n");
          HG_(ppWSUstats)( univ_lsets, "univ_lsets" );
          if (HG_(clo_track_lockorders)) {
             VG_(printf)("\n");
@@ -4641,8 +4639,6 @@ static void hg_fini ( Int exitcode )
       VG_(printf)("\n");
       VG_(printf)("        locksets: %'8d unique lock sets\n",
                   (Int)HG_(cardinalityWSU)( univ_lsets ));
-      VG_(printf)("      threadsets: %'8d unique thread sets\n",
-                  (Int)HG_(cardinalityWSU)( univ_tsets ));
       if (HG_(clo_track_lockorders)) {
          VG_(printf)("       univ_laog: %'8d unique lock sets\n",
                      (Int)HG_(cardinalityWSU)( univ_laog ));

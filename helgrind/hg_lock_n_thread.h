@@ -83,8 +83,8 @@ typedef
       /* ADMIN */
       struct _Thread* admin;
       UInt            magic;
-      Thr*            hbthr;
-      ThreadId        coretid;
+      Thr*            hbthr; /* which in turn points back here .. */
+      ThreadId        coretid;  /* .. via its hgthread field */
       /* USEFUL */
       WordSetID locksetA; /* WordSet of Lock* currently held by thread */
       WordSetID locksetW; /* subset of locksetA held in w-mode */

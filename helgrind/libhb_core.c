@@ -3060,8 +3060,11 @@ struct _Thr {
       race. */
    Filter* filter;
 
-   /* opaque (to us) data we hold on behalf of the library's user. */
-   void* opaque;
+   /* A pointer back to the top level Thread structure.  There is a
+      1-1 mapping between Thread and Thr structures -- each Thr points
+      at its corresponding Thread, and vice versa.  Really, Thr and
+      Thread should be merged into a single structure. */
+   Thread* hgthread;
 
    /* The ULongs (scalar Kws) in this accumulate in strictly
       increasing order, without duplicates.  This is important because
@@ -4359,7 +4362,8 @@ static void record_race_info ( Thr* acc_thr,
    Thread*     hist1_conf_thr  = NULL;
 
    tl_assert(acc_thr);
-   tl_assert(acc_thr->opaque);
+   tl_assert(acc_thr->hgthread);
+   tl_assert(acc_thr->hgthread->hbthr == acc_thr);
    tl_assert(HG_(clo_history_level) >= 0 && HG_(clo_history_level) <= 2);
 
    if (HG_(clo_history_level) == 1) {
@@ -4443,11 +4447,11 @@ static void record_race_info ( Thr* acc_thr,
          // seg_start could be NULL iff this is the first stack in the thread
          //if (seg_start) VG_(pp_ExeContext)(seg_start);
          //if (seg_end)   VG_(pp_ExeContext)(seg_end);
-         hist1_conf_thr = confThr->opaque;
+         hist1_conf_thr = confThr->hgthread;
       }
    }
 
-   HG_(record_error_Race)( acc_thr->opaque, acc_addr,
+   HG_(record_error_Race)( acc_thr->hgthread, acc_addr,
                            szB, isWrite,
                            hist1_conf_thr, hist1_seg_start, hist1_seg_end );
 }
@@ -5976,14 +5980,14 @@ void libhb_srange_untrack ( Thr* thr, Addr a, SizeT szB )
    if (0 && TRACEME(a,szB)) trace(thr,a,szB,"untrack-after ");
 }
 
-void* libhb_get_Thr_opaque ( Thr* thr ) {
+void* libhb_get_Thr_hgthread ( Thr* thr ) {
    tl_assert(thr);
-   return thr->opaque;
+   return thr->hgthread;
 }
 
-void libhb_set_Thr_opaque ( Thr* thr, void* v ) {
+void libhb_set_Thr_hgthread ( Thr* thr, void* v ) {
    tl_assert(thr);
-   thr->opaque = v;
+   thr->hgthread = v;
 }
 
 void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len )

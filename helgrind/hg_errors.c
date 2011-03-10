@@ -341,7 +341,7 @@ UInt HG_(update_extra) ( Error* err )
             Thread* threadp;
             tl_assert(wherep);
             tl_assert(thrp);
-            threadp = libhb_get_Thr_opaque( thrp );
+            threadp = libhb_get_Thr_hgthread( thrp );
             tl_assert(threadp);
             xe->XE.Race.h2_ct_accEC  = wherep;
             xe->XE.Race.h2_ct        = threadp;

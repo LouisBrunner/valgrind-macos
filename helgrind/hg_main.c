@@ -590,8 +590,8 @@ static void initialise_data_structures ( Thr* hbthr_root )
    thr = mk_Thread(hbthr_root);
    thr->coretid = 1; /* FIXME: hardwires an assumption about the
                         identity of the root thread. */
-   tl_assert( libhb_get_Thr_opaque(hbthr_root) == NULL );
-   libhb_set_Thr_opaque(hbthr_root, thr);
+   tl_assert( libhb_get_Thr_hgthread(hbthr_root) == NULL );
+   libhb_set_Thr_hgthread(hbthr_root, thr);
 
    /* and bind it in the thread-map table. */
    tl_assert(HG_(is_sane_ThreadId)(thr->coretid));
@@ -1620,15 +1620,15 @@ void evh__pre_thread_ll_create ( ThreadId parent, ThreadId child )
 
       hbthr_p = thr_p->hbthr;
       tl_assert(hbthr_p != NULL);
-      tl_assert( libhb_get_Thr_opaque(hbthr_p) == thr_p );
+      tl_assert( libhb_get_Thr_hgthread(hbthr_p) == thr_p );
 
       hbthr_c = libhb_create ( hbthr_p );
 
       /* Create a new thread record for the child. */
       /* a Thread for the new thread ... */
       thr_c = mk_Thread( hbthr_c );
-      tl_assert( libhb_get_Thr_opaque(hbthr_c) == NULL );
-      libhb_set_Thr_opaque(hbthr_c, thr_c);
+      tl_assert( libhb_get_Thr_hgthread(hbthr_c) == NULL );
+      libhb_set_Thr_hgthread(hbthr_c, thr_c);
 
       /* and bind it in the thread-map table */
       map_threads[child] = thr_c;
@@ -1765,8 +1765,8 @@ void evh__HG_PTHREAD_JOIN_POST ( ThreadId stay_tid, Thread* quit_thr )
    hbthr_s = thr_s->hbthr;
    hbthr_q = thr_q->hbthr;
    tl_assert(hbthr_s != hbthr_q);
-   tl_assert( libhb_get_Thr_opaque(hbthr_s) == thr_s );
-   tl_assert( libhb_get_Thr_opaque(hbthr_q) == thr_q );
+   tl_assert( libhb_get_Thr_hgthread(hbthr_s) == thr_s );
+   tl_assert( libhb_get_Thr_hgthread(hbthr_q) == thr_q );
 
    /* Allocate a temporary synchronisation object and use it to send
       an imaginary message from the quitter to the stayer, the purpose
@@ -4838,7 +4838,7 @@ void for_libhb__get_stacktrace ( Thr* hbt, Addr* frames, UWord nRequest )
    ThreadId    tid;
    UWord       nActual;
    tl_assert(hbt);
-   thr = libhb_get_Thr_opaque( hbt );
+   thr = libhb_get_Thr_hgthread( hbt );
    tl_assert(thr);
    tid = map_threads_maybe_reverse_lookup_SLOW(thr);
    nActual = (UWord)VG_(get_StackTrace)( tid, frames, (UInt)nRequest,
@@ -4855,7 +4855,7 @@ ExeContext* for_libhb__get_EC ( Thr* hbt )
    ThreadId    tid;
    ExeContext* ec;
    tl_assert(hbt);
-   thr = libhb_get_Thr_opaque( hbt );
+   thr = libhb_get_Thr_hgthread( hbt );
    tl_assert(thr);
    tid = map_threads_maybe_reverse_lookup_SLOW(thr);
    /* this will assert if tid is invalid */

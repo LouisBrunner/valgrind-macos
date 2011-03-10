@@ -142,12 +142,6 @@ static WordSetU* univ_tsets = NULL; /* sets of Thread* */
 static WordSetU* univ_lsets = NULL; /* sets of Lock* */
 static WordSetU* univ_laog  = NULL; /* sets of Lock*, for LAOG */
 
-/* never changed; we only care about its address.  Is treated as if it
-   was a standard userspace lock.  Also we have a Lock* describing it
-   so it can participate in lock sets in the usual way. */
-static Int   __bus_lock = 0;
-static Lock* __bus_lock_Lock = NULL;
-
 
 /*----------------------------------------------------------------*/
 /*--- Simple helpers for the data structures                   ---*/
@@ -562,10 +556,6 @@ static void initialise_data_structures ( Thr* hbthr_root )
                            NULL/*unboxed Word cmp*/);
    tl_assert(map_locks != NULL);
 
-   __bus_lock_Lock = mk_LockN( LK_nonRec, (Addr)&__bus_lock );
-   tl_assert(HG_(is_sane_LockN)(__bus_lock_Lock));
-   VG_(addToFM)( map_locks, (Word)&__bus_lock, (Word)__bus_lock_Lock );
-
    tl_assert(univ_tsets == NULL);
    univ_tsets = HG_(newWordSetU)( HG_(zalloc), "hg.ids.3", HG_(free),
                                   8/*cacheSize*/ );
@@ -600,10 +590,6 @@ static void initialise_data_structures ( Thr* hbthr_root )
    map_threads[thr->coretid] = thr;
 
    tl_assert(VG_INVALID_THREADID == 0);
-
-   /* Mark the new bus lock correctly (to stop the sanity checks
-      complaining) */
-   tl_assert( sizeof(__bus_lock) == 4 );
 
    all__sanity_check("initialise_data_structures");
 }
@@ -926,14 +912,6 @@ static void all__sanity_check ( Char* who ) {
 /*----------------------------------------------------------------*/
 /*--- the core memory state machine (msm__* functions)         ---*/
 /*----------------------------------------------------------------*/
-
-//static WordSetID add_BHL ( WordSetID lockset ) {
-//   return HG_(addToWS)( univ_lsets, lockset, (Word)__bus_lock_Lock );
-//}
-//static WordSetID del_BHL ( WordSetID lockset ) {
-//   return HG_(delFromWS)( univ_lsets, lockset, (Word)__bus_lock_Lock );
-//}
-
 
 ///* Last-lock-lossage records.  This mechanism exists to help explain
 //   to programmers why we are complaining about a race.  The idea is to

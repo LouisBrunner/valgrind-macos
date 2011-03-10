@@ -81,11 +81,6 @@
    worthwhile performance benefits over -O.
 */
 
-// FIXME catch sync signals (SEGV, basically) and unlock BHL,
-// if held.  Otherwise a LOCK-prefixed insn which segfaults 
-// gets Helgrind into a total muddle as the BHL will not be
-// released after the insn.
-
 // FIXME what is supposed to happen to locks in memory which
 // is relocated as a result of client realloc?
 
@@ -365,8 +360,6 @@ static void remove_Lock_from_locksets_of_all_owning_Threads( Lock* lk )
 /*----------------------------------------------------------------*/
 /*--- Print out the primary data structures                    ---*/
 /*----------------------------------------------------------------*/
-
-//static WordSetID del_BHL ( WordSetID lockset ); /* fwds */
 
 #define PP_THREADS      (1<<1)
 #define PP_LOCKS        (1<<2)
@@ -907,128 +900,6 @@ static void all__sanity_check ( Char* who ) {
    all_except_Locks__sanity_check(who);
    locks__sanity_check(who);
 }
-
-
-/*----------------------------------------------------------------*/
-/*--- the core memory state machine (msm__* functions)         ---*/
-/*----------------------------------------------------------------*/
-
-///* Last-lock-lossage records.  This mechanism exists to help explain
-//   to programmers why we are complaining about a race.  The idea is to
-//   monitor all lockset transitions.  When a previously nonempty
-//   lockset becomes empty, the lock(s) that just disappeared (the
-//   "lossage") are the locks that have consistently protected the
-//   location (ga_of_access) in question for the longest time.  Most of
-//   the time the lossage-set is a single lock.  Because the
-//   lossage-lock is the one that has survived longest, there is there
-//   is a good chance that it is indeed the lock that the programmer
-//   intended to use to protect the location.
-//
-//   Note that we cannot in general just look at the lossage set when we
-//   see a transition to ShM(...,empty-set), because a transition to an
-//   empty lockset can happen arbitrarily far before the point where we
-//   want to report an error.  This is in the case where there are many
-//   transitions ShR -> ShR, all with an empty lockset, and only later
-//   is there a transition to ShM.  So what we want to do is note the
-//   lossage lock at the point where a ShR -> ShR transition empties out
-//   the lockset, so we can present it later if there should be a
-//   transition to ShM.
-//
-//   So this function finds such transitions.  For each, it associates
-//   in ga_to_lastlock, the guest address and the lossage lock.  In fact
-//   we do not record the Lock* directly as that may disappear later,
-//   but instead the ExeContext inside the Lock which says where it was
-//   initialised or first locked.  ExeContexts are permanent so keeping
-//   them indefinitely is safe.
-//
-//   A boring detail: the hardware bus lock is not interesting in this
-//   respect, so we first remove that from the pre/post locksets.
-//*/
-//
-//static UWord stats__ga_LL_adds = 0;
-//
-//static WordFM* ga_to_lastlock = NULL; /* GuestAddr -> ExeContext* */
-//
-//static 
-//void record_last_lock_lossage ( Addr ga_of_access,
-//                                WordSetID lset_old, WordSetID lset_new )
-//{
-//   Lock* lk;
-//   Int   card_old, card_new;
-//
-//   tl_assert(lset_old != lset_new);
-//
-//   if (0) VG_(printf)("XX1: %d (card %ld) -> %d (card %ld) %#lx\n",
-//                      (Int)lset_old, 
-//                      HG_(cardinalityWS)(univ_lsets,lset_old),
-//                      (Int)lset_new, 
-//                      HG_(cardinalityWS)(univ_lsets,lset_new),
-//                      ga_of_access );
-//
-//   /* This is slow, but at least it's simple.  The bus hardware lock
-//      just confuses the logic, so remove it from the locksets we're
-//      considering before doing anything else. */
-//   lset_new = del_BHL( lset_new );
-//
-//   if (!HG_(isEmptyWS)( univ_lsets, lset_new )) {
-//      /* The post-transition lock set is not empty.  So we are not
-//         interested.  We're only interested in spotting transitions
-//         that make locksets become empty. */
-//      return;
-//   }
-//
-//   /* lset_new is now empty */
-//   card_new = HG_(cardinalityWS)( univ_lsets, lset_new );
-//   tl_assert(card_new == 0);
-//
-//   lset_old = del_BHL( lset_old );
-//   card_old = HG_(cardinalityWS)( univ_lsets, lset_old );
-//
-//   if (0) VG_(printf)(" X2: %d (card %d) -> %d (card %d)\n",
-//                      (Int)lset_old, card_old, (Int)lset_new, card_new );
-//
-//   if (card_old == 0) {
-//      /* The old lockset was also empty.  Not interesting. */
-//      return;
-//   }
-//
-//   tl_assert(card_old > 0);
-//   tl_assert(!HG_(isEmptyWS)( univ_lsets, lset_old ));
-//
-//   /* Now we know we've got a transition from a nonempty lockset to an
-//      empty one.  So lset_old must be the set of locks lost.  Record
-//      some details.  If there is more than one element in the lossage
-//      set, just choose one arbitrarily -- not the best, but at least
-//      it's simple. */
-//
-//   lk = (Lock*)HG_(anyElementOfWS)( univ_lsets, lset_old );
-//   if (0) VG_(printf)("lossage %ld %p\n",
-//                      HG_(cardinalityWS)( univ_lsets, lset_old), lk );
-//   if (lk->appeared_at) {
-//      if (ga_to_lastlock == NULL)
-//         ga_to_lastlock = VG_(newFM)( HG_(zalloc), "hg.rlll.1", HG_(free), NULL );
-//      VG_(addToFM)( ga_to_lastlock, ga_of_access, (Word)lk->appeared_at );
-//      stats__ga_LL_adds++;
-//   }
-//}
-//
-///* This queries the table (ga_to_lastlock) made by
-//   record_last_lock_lossage, when constructing error messages.  It
-//   attempts to find the ExeContext of the allocation or initialisation
-//   point for the lossage lock associated with 'ga'. */
-//
-//static ExeContext* maybe_get_lastlock_initpoint ( Addr ga ) 
-//{
-//   ExeContext* ec_hint = NULL;
-//   if (ga_to_lastlock != NULL 
-//       && VG_(lookupFM)(ga_to_lastlock, 
-//                        NULL, (Word*)&ec_hint, ga)) {
-//      tl_assert(ec_hint != NULL);
-//      return ec_hint;
-//   } else {
-//      return NULL;
-//   }
-//}
 
 
 /*----------------------------------------------------------------*/

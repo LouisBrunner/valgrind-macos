@@ -56,6 +56,8 @@ EXTRA_DIST = \
 	badfree3.stderr.exp badfree3.vgtest \
 	badjump.stderr.exp badjump.vgtest \
 	badjump2.stderr.exp badjump2.vgtest \
+	badjump.stderr.exp-s390x \
+	badjump2.stderr.exp-s390x \
 	badloop.stderr.exp badloop.vgtest \
 	badpoll.stderr.exp badpoll.vgtest \
 	badrw.stderr.exp badrw.vgtest \
@@ -135,11 +137,14 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc25-x86 \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
 	origin5-bz2.stderr.exp-glibc27-ppc64 \
+	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
 	origin6-fp.stderr.exp-glibc25-amd64 \
 	origin6-fp.stderr.exp-glibc27-ppc64 \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
+	partiallydefinedeq.stderr.exp4 \
+	partiallydefinedeq.stderr.exp3 \
 	partiallydefinedeq.stderr.exp2 \
 	partiallydefinedeq.stdout.exp \
 	partial_load_ok.vgtest partial_load_ok.stderr.exp partial_load_ok.stderr.exp64 \
@@ -165,6 +170,7 @@ EXTRA_DIST = \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp-dir.vgtest supp-dir.stderr.exp \
 	supp_unknown.stderr.exp supp_unknown.vgtest supp_unknown.supp \
+	supp_unknown.stderr.exp-s390x \
 	supp1.stderr.exp supp1.vgtest \
 	supp2.stderr.exp supp2.vgtest \
 	supp.supp \

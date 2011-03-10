@@ -92,6 +92,7 @@ EXTRA_DIST = \
 	README_DEVELOPERS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \
+	README.s390 \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec

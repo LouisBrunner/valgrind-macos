@@ -19,10 +19,19 @@ check_PROGRAMS = $(INSN_TESTS) \
 		 ex_clone
 
 EXTRA_DIST = \
-	$(addsuffix .stderr.exp,$(check_PROGRAMS)) \
-	$(addsuffix .stdout.exp,$(check_PROGRAMS)) \
-	$(addsuffix .vgtest,$(check_PROGRAMS)) \
-	test.h mul.h
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	$(addsuffix .stderr.exp,$(INSN_EI)) \
+	$(addsuffix .stdout.exp,$(INSN_EI)) \
+	$(addsuffix .vgtest,$(INSN_EI)) \
+	$(addsuffix .stderr.exp,$(INSN_GE)) \
+	$(addsuffix .stdout.exp,$(INSN_GE)) \
+	$(addsuffix .vgtest,$(INSN_GE)) \
+	ex_sig.stdout.exp ex_sig.stderr.exp ex_sig.vgtest \
+	ex_clone.stdout.exp ex_clone.stderr.exp ex_clone.vgtest \
+	test.h add.h  and.h  div.h  insert.h \
+	mul.h  or.h  sub.h  test.h  xor.h
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

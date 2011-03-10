@@ -131,8 +131,8 @@ void libhb_srange_untrack  ( Thr*, Addr, SizeT );
 
 /* Get and set the hgthread (pointer to corresponding Thread
    structure). */
-void* libhb_get_Thr_hgthread ( Thr* );
-void  libhb_set_Thr_hgthread ( Thr*, void* );
+Thread* libhb_get_Thr_hgthread ( Thr* );
+void    libhb_set_Thr_hgthread ( Thr*, Thread* );
 
 /* Low level copy of shadow state from [src,src+len) to [dst,dst+len).
    Overlapping moves are checked for and asserted against. */

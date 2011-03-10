@@ -5980,14 +5980,14 @@ void libhb_srange_untrack ( Thr* thr, Addr a, SizeT szB )
    if (0 && TRACEME(a,szB)) trace(thr,a,szB,"untrack-after ");
 }
 
-void* libhb_get_Thr_hgthread ( Thr* thr ) {
+Thread* libhb_get_Thr_hgthread ( Thr* thr ) {
    tl_assert(thr);
    return thr->hgthread;
 }
 
-void libhb_set_Thr_hgthread ( Thr* thr, void* v ) {
+void libhb_set_Thr_hgthread ( Thr* thr, Thread* hgthread ) {
    tl_assert(thr);
-   thr->hgthread = v;
+   thr->hgthread = hgthread;
 }
 
 void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len )

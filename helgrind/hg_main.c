@@ -3021,17 +3021,16 @@ static SO* map_usertag_to_SO_lookup_or_alloc ( UWord usertag ) {
    }
 }
 
-// If it's ever needed (XXX check before use)
-//static void map_usertag_to_SO_delete ( UWord usertag ) {
-//   UWord keyW, valW;
-//   map_usertag_to_SO_INIT();
-//   if (VG_(delFromFM)( map_usertag_to_SO, &keyW, &valW, usertag )) {
-//      SO* so = (SO*)valW;
-//      tl_assert(keyW == usertag);
-//      tl_assert(so);
-//      libhb_so_dealloc(so);
-//   }
-//}
+static void map_usertag_to_SO_delete ( UWord usertag ) {
+   UWord keyW, valW;
+   map_usertag_to_SO_INIT();
+   if (VG_(delFromFM)( map_usertag_to_SO, &keyW, &valW, usertag )) {
+      SO* so = (SO*)valW;
+      tl_assert(keyW == usertag);
+      tl_assert(so);
+      libhb_so_dealloc(so);
+   }
+}
 
 
 static
@@ -3088,6 +3087,21 @@ void evh__HG_USERSO_RECV_POST ( ThreadId tid, UWord usertag )
       sent on, then libhb_so_recv will do nothing.  So we're safe
       regardless of SO's history. */
    libhb_so_recv( thr->hbthr, so, True/*strong_recv*/ );
+}
+
+static
+void evh__HG_USERSO_FORGET_ALL ( ThreadId tid, UWord usertag )
+{
+   /* TID declares that any happens-before edges notionally stored in
+      USERTAG can be deleted.  If (as would normally be the case) a
+      SO is associated with USERTAG, then the assocation is removed
+      and all resources associated with SO are freed.  Importantly,
+      that frees up any VTSs stored in SO. */
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_USERSO_FORGET_ALL(ctid=%d, usertag=%#lx)\n", 
+                  (Int)tid, usertag );
+
+   map_usertag_to_SO_delete( usertag );
 }
 
 
@@ -4503,6 +4517,11 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
       case _VG_USERREQ__HG_USERSO_RECV_POST:
          /* UWord arbitrary-SO-tag */
          evh__HG_USERSO_RECV_POST( tid, args[1] );
+         break;
+
+      case _VG_USERREQ__HG_USERSO_FORGET_ALL:
+         /* UWord arbitrary-SO-tag */
+         evh__HG_USERSO_FORGET_ALL( tid, args[1] );
          break;
 
       default:

@@ -108,7 +108,7 @@ typedef
       _VG_USERREQ__HG_CLIENTREQ_UNIMP,            /* char* */
       _VG_USERREQ__HG_USERSO_SEND_PRE,        /* arbitrary UWord SO-tag */
       _VG_USERREQ__HG_USERSO_RECV_POST,       /* arbitrary UWord SO-tag */
-      _VG_USERREQ__HG_RESERVED1,              /* Do not use */
+      _VG_USERREQ__HG_USERSO_FORGET_ALL,      /* arbitrary UWord SO-tag */
       _VG_USERREQ__HG_RESERVED2,              /* Do not use */
       _VG_USERREQ__HG_RESERVED3,              /* Do not use */
       _VG_USERREQ__HG_RESERVED4,              /* Do not use */
@@ -458,6 +458,20 @@ typedef
 
    See also, extensive discussion on semantics of this in 
    https://bugs.kde.org/show_bug.cgi?id=243935
+
+   ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(obj) is interim until such time
+   as bug 243935 is fully resolved.  It instructs Helgrind to forget
+   about any ANNOTATE_HAPPENS_BEFORE calls on the specified object, in
+   effect putting it back in its original state.  Once in that state,
+   a use of ANNOTATE_HAPPENS_AFTER on it has no effect on the calling
+   thread.
+
+   An implementation may optionally release resources it has
+   associated with 'obj' when ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(obj)
+   happens.  Users are recommended to use
+   ANNOTATE_HAPPENS_BEFORE_FORGET_ALL to indicate when a
+   synchronisation object is no longer needed, so as to avoid
+   potential indefinite resource leaks.
    ----------------------------------------------------------------
 */
 #define ANNOTATE_HAPPENS_BEFORE(obj) \
@@ -466,6 +480,8 @@ typedef
 #define ANNOTATE_HAPPENS_AFTER(obj) \
    DO_CREQ_v_W(_VG_USERREQ__HG_USERSO_RECV_POST, void*,(obj))
 
+#define ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(obj) \
+   DO_CREQ_v_W(_VG_USERREQ__HG_USERSO_FORGET_ALL, void*,(obj))
 
 /* ----------------------------------------------------------------
    Memory publishing.  The TSan sources say:

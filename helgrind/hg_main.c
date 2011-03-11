@@ -1705,9 +1705,20 @@ void evh__new_mem_heap ( Addr a, SizeT len, Bool is_inited ) {
 
 static
 void evh__die_mem_heap ( Addr a, SizeT len ) {
+   Thread* thr;
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__die_mem_heap(%p, %lu)\n", (void*)a, len );
-   shadow_mem_make_NoAccess( get_current_Thread(), a, len );
+   thr = get_current_Thread();
+   tl_assert(thr);
+   if (HG_(clo_free_is_write)) {
+      /* Treat frees as if the memory was written immediately prior to
+         the free.  This shakes out more races, specifically, cases
+         where memory is referenced by one thread, and freed by
+         another, and there's no observable synchronisation event to
+         guarantee that the reference happens before the free. */
+      shadow_mem_cwrite_range(thr, a, len);
+   }
+   shadow_mem_make_NoAccess( thr, a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read-post");
 }
@@ -4580,6 +4591,8 @@ static Bool hg_process_cmd_line_option ( Char* arg )
       if (0) VG_(printf)("XXX sanity flags: 0x%lx\n", HG_(clo_sanity_flags));
    }
 
+   else if VG_BOOL_CLO(arg, "--free-is-write",
+                            HG_(clo_free_is_write)) {}
    else 
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -4589,6 +4602,7 @@ static Bool hg_process_cmd_line_option ( Char* arg )
 static void hg_print_usage ( void )
 {
    VG_(printf)(
+"    --free-is-write=no|yes    treat heap frees as writes [no]\n"
 "    --track-lockorders=no|yes show lock ordering errors? [yes]\n"
 "    --history-level=none|approx|full [full]\n"
 "       full:   show both stack traces for a data race (can be very slow)\n"

@@ -12,6 +12,8 @@ EXTRA_DIST = \
 		annotate_smart_pointer.stderr.exp \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
+	free_is_write.vgtest free_is_write.stdout.exp \
+		free_is_write.stderr.exp \
 	hg01_all_ok.vgtest hg01_all_ok.stdout.exp hg01_all_ok.stderr.exp \
 	hg02_deadlock.vgtest hg02_deadlock.stdout.exp hg02_deadlock.stderr.exp \
 	hg03_inherit.vgtest hg03_inherit.stdout.exp hg03_inherit.stderr.exp \
@@ -79,6 +81,7 @@ EXTRA_DIST = \
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
+	free_is_write \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \

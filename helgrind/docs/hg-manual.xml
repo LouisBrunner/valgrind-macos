@@ -955,6 +955,28 @@ unlock(mx)                             unlock(mx)
 <!-- start of xi:include in the manpage -->
 <variablelist id="hg.opts.list">
 
+  <varlistentry id="opt.free-is-write"
+                xreflabel="--free-is-write">
+    <term>
+      <option><![CDATA[--free-is-write=no|yes
+      [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled (not the default), Helgrind treats freeing of
+        heap memory as if the memory was written immediately before
+        the free.  This exposes races where memory is referenced by
+        one thread, and freed by another, but there is no observable
+        synchronisation event to ensure that the reference happens
+        before the free.
+      </para>
+      <para>This functionality is new in Valgrind 3.7.0, and is
+        regarded as experimental.  It is not enabled by default
+        because its interaction with custom memory allocators is not
+        well understood at present.  User feedback is welcomed.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.track-lockorders"
                 xreflabel="--track-lockorders">
     <term>

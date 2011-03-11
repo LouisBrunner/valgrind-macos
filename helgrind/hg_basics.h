@@ -103,6 +103,12 @@ extern UWord HG_(clo_conflict_cache_size);
    SCE_{THREADS,LOCKS,BIGRANGE,ACCESS,LAOG}. */
 extern Word HG_(clo_sanity_flags);
 
+/* Treat heap frees as if the memory was written immediately prior to
+   the free.  This shakes out races in which memory is referenced by
+   one thread, and freed by another, and there's no observable
+   synchronisation event to guarantee that the reference happens
+   before the free. */
+extern Bool HG_(clo_free_is_write);
 
 #endif /* ! __HG_BASICS_H */
 

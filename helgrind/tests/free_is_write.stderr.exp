@@ -1,0 +1,20 @@
+
+Start.
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (free_is_write.c:32)
+
+Thread #x is the program's root thread
+
+Possible data race during write of size 1 at 0x........ by thread #x
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: thread_func (free_is_write.c:15)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous read of size 1 by thread #x
+   at 0x........: main (free_is_write.c:36)
+
+Done.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -80,6 +80,8 @@ UWord HG_(clo_conflict_cache_size) = 1000000;
 
 Word  HG_(clo_sanity_flags) = 0;
 
+Bool  HG_(clo_free_is_write) = False;
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              hg_basics.c ---*/

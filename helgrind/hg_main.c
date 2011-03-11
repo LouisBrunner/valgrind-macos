@@ -3040,9 +3040,12 @@ void evh__HG_USERSO_SEND_PRE ( ThreadId tid, UWord usertag )
    /* TID is just about to notionally sent a message on a notional
       abstract synchronisation object whose identity is given by
       USERTAG.  Bind USERTAG to a real SO if it is not already so
-      bound, and do a 'strong send' on the SO.  This is later used by
+      bound, and do a 'weak send' on the SO.  This joins the vector
+      clocks from this thread into any vector clocks already present
+      in the SO.  The resulting SO vector clocks are later used by
       other thread(s) which successfully 'receive' from the SO,
-      thereby acquiring a dependency on this signalling event. */
+      thereby acquiring a dependency on all the events that have
+      previously signalled on this SO. */
    Thread* thr;
    SO*     so;
 
@@ -3056,7 +3059,7 @@ void evh__HG_USERSO_SEND_PRE ( ThreadId tid, UWord usertag )
    so = map_usertag_to_SO_lookup_or_alloc( usertag );
    tl_assert(so);
 
-   libhb_so_send( thr->hbthr, so, True/*strong_send*/ );
+   libhb_so_send( thr->hbthr, so, False/*!strong_send*/ );
 }
 
 static

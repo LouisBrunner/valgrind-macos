@@ -433,13 +433,15 @@ typedef
 
 /* ----------------------------------------------------------------
    Create completely arbitrary happens-before edges between threads.
-   If thread T1 does ANNOTATE_HAPPENS_BEFORE(obj) and later (w.r.t.
-   some notional global clock for the computation) thread T2 does
-   ANNOTATE_HAPPENS_AFTER(obj), then Helgrind will regard all memory
-   accesses done by T1 before the ..BEFORE.. call as happening-before
-   all memory accesses done by T2 after the ..AFTER.. call.  Hence
-   Helgrind won't complain about races if T2's accesses afterwards are
-   to the same locations as T1's accesses before.
+
+   If threads T1 .. Tn all do ANNOTATE_HAPPENS_BEFORE(obj) and later
+   (w.r.t. some notional global clock for the computation) thread Tm
+   does ANNOTATE_HAPPENS_AFTER(obj), then Helgrind will regard all
+   memory accesses done by T1 .. Tn before the ..BEFORE.. call as
+   happening-before all memory accesses done by Tm after the
+   ..AFTER.. call.  Hence Helgrind won't complain about races if Tm's
+   accesses afterwards are to the same locations as accesses before by
+   any of T1 .. Tn.
 
    OBJ is a machine word (unsigned long, or void*), is completely
    arbitrary, and denotes the identity of some synchronisation object
@@ -453,6 +455,9 @@ typedef
    take the time to understand these two.  They form the very essence
    of describing arbitrary inter-thread synchronisation events to
    Helgrind.  You can get a long way just with them alone.
+
+   See also, extensive discussion on semantics of this in 
+   https://bugs.kde.org/show_bug.cgi?id=243935
    ----------------------------------------------------------------
 */
 #define ANNOTATE_HAPPENS_BEFORE(obj) \

@@ -8,6 +8,8 @@ EXTRA_DIST = \
 		annotate_hbefore.stderr.exp \
 	annotate_rwlock.vgtest annotate_rwlock.stdout.exp \
 		annotate_rwlock.stderr.exp \
+	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
+		annotate_smart_pointer.stderr.exp \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	hg01_all_ok.vgtest hg01_all_ok.stdout.exp hg01_all_ok.stderr.exp \

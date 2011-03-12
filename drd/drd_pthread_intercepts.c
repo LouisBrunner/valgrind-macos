@@ -380,49 +380,36 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
    int    res;
    int    ret;
    OrigFn fn;
-#if defined(ALLOCATE_THREAD_ARGS_ON_THE_STACK)
    DrdPosixThreadArgs thread_args;
-#endif
-   DrdPosixThreadArgs* thread_args_p;
 
    VALGRIND_GET_ORIG_FN(fn);
 
-#if defined(ALLOCATE_THREAD_ARGS_ON_THE_STACK)
-   thread_args_p = &thread_args;
-#else
-   thread_args_p = malloc(sizeof(*thread_args_p));
-#endif
-   assert(thread_args_p);
-
-   thread_args_p->start           = start;
-   thread_args_p->arg             = arg;
-   DRD_IGNORE_VAR(thread_args_p->wrapper_started);
-   thread_args_p->wrapper_started = 0;
+   thread_args.start           = start;
+   thread_args.arg             = arg;
+   DRD_IGNORE_VAR(thread_args.wrapper_started);
+   thread_args.wrapper_started = 0;
    /*
     * Find out whether the thread will be started as a joinable thread
     * or as a detached thread. If no thread attributes have been specified,
     * this means that the new thread will be started as a joinable thread.
     */
-   thread_args_p->detachstate = PTHREAD_CREATE_JOINABLE;
+   thread_args.detachstate = PTHREAD_CREATE_JOINABLE;
    if (attr)
    {
-      if (pthread_attr_getdetachstate(attr, &thread_args_p->detachstate) != 0)
-      {
+      if (pthread_attr_getdetachstate(attr, &thread_args.detachstate) != 0)
          assert(0);
-      }
    }
-   assert(thread_args_p->detachstate == PTHREAD_CREATE_JOINABLE
-          || thread_args_p->detachstate == PTHREAD_CREATE_DETACHED);
-
+   assert(thread_args.detachstate == PTHREAD_CREATE_JOINABLE
+          || thread_args.detachstate == PTHREAD_CREATE_DETACHED);
 
    DRD_(entering_pthread_create)();
-   CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), thread_args_p);
+   CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), &thread_args);
    DRD_(left_pthread_create)();
 
    if (ret == 0)
    {
       /* Wait until the thread wrapper started. */
-      while (! thread_args_p->wrapper_started)
+      while (!thread_args.wrapper_started)
          sched_yield();
    }
 

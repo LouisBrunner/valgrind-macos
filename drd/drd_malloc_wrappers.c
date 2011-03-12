@@ -128,7 +128,7 @@ Bool DRD_(freelike_block)(const ThreadId tid, const Addr p, const Bool dealloc)
 
    s_cmalloc_n_frees++;
 
-   mc = VG_(HT_remove)(s_malloc_list, (UWord)p);
+   mc = VG_(HT_lookup)(s_malloc_list, (UWord)p);
    if (mc)
    {
       tl_assert(p == mc->data);
@@ -136,6 +136,7 @@ Bool DRD_(freelike_block)(const ThreadId tid, const Addr p, const Bool dealloc)
 	 VG_(cli_free)((void*)p);
       if (mc->size > 0)
          s_stop_using_mem_callback(mc->data, mc->size);
+      VG_(HT_remove)(s_malloc_list, (UWord)p);
       VG_(free)(mc);
       return True;
    }

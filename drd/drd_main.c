@@ -57,6 +57,7 @@
 
 /* Local variables. */
 
+static Bool s_free_is_write    = False;
 static Bool s_print_stats      = False;
 static Bool s_var_info         = False;
 static Bool s_show_stack_usage = False;
@@ -94,6 +95,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_BOOL_CLO(arg, "--drd-stats",           s_print_stats) {}
    else if VG_BOOL_CLO(arg, "--first-race-only",     first_race_only) {}
+   else if VG_BOOL_CLO(arg, "--free-is-write",       s_free_is_write) {}
    else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked)
    {}
    else if VG_BOOL_CLO(arg, "--segment-merging",     segment_merging) {}
@@ -192,6 +194,8 @@ static void DRD_(print_usage)(void)
 "                              time (in milliseconds) [off].\n"
 "    --first-race-only=yes|no  Only report the first data race that occurs on\n"
 "                              a memory location instead of all races [no].\n"
+"    --free-is-write=yes|no    Whether to report races between freeing memory\n"
+"                              and subsequent accesses of that memory[no].\n"
 "    --report-signal-unlocked=yes|no Whether to report calls to\n"
 "                              pthread_cond_signal() where the mutex associated\n"
 "                              with the signal via pthread_cond_wait() is not\n"
@@ -299,12 +303,17 @@ static __inline__
 void drd_start_using_mem(const Addr a1, const SizeT len,
                          const Bool is_stack_mem)
 {
-   tl_assert(a1 <= a1 + len);
+   const Addr a2 = a1 + len;
+
+   tl_assert(a1 <= a2);
 
    if (!is_stack_mem && s_trace_alloc)
       VG_(message)(Vg_UserMsg, "Started using memory range 0x%lx + %ld%s\n",
                    a1, len, DRD_(running_thread_inside_pthread_create)()
                    ? " (inside pthread_create())" : "");
+
+   if (!is_stack_mem && s_free_is_write)
+      DRD_(thread_stop_using_mem)(a1, a2);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {
@@ -313,7 +322,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
 
    if (UNLIKELY(DRD_(running_thread_inside_pthread_create)()))
    {
-      DRD_(start_suppression)(a1, a1 + len, "pthread_create()");
+      DRD_(start_suppression)(a1, a2, "pthread_create()");
    }
 }
 
@@ -348,7 +357,10 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
    {
-      DRD_(thread_stop_using_mem)(a1, a2);
+      if (is_stack_mem || !s_free_is_write)
+	 DRD_(thread_stop_using_mem)(a1, a2);
+      else if (s_free_is_write)
+	 DRD_(trace_store)(a1, len);
       DRD_(clientobj_stop_using_mem)(a1, a2);
       DRD_(suppression_stop_using_mem)(a1, a2);
    }

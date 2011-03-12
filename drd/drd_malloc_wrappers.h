@@ -38,7 +38,7 @@ typedef void (*StopUsingMem)(const Addr a1, const SizeT len);
 void DRD_(register_malloc_wrappers)(const StartUsingMem start_callback,
                                     const StopUsingMem stop_callback);
 void DRD_(malloclike_block)(const ThreadId tid, const Addr p, const SizeT size);
-Bool DRD_(freelike_block)(const ThreadId tid, const Addr p);
+Bool DRD_(freelike_block)(const ThreadId tid, const Addr p, const Bool dealloc);
 Bool DRD_(heap_addrinfo)(Addr const a,
                          Addr* const data,
                          SizeT* const size,

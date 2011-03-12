@@ -81,7 +81,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__FREELIKE_BLOCK:
-      if (arg[1] && ! DRD_(freelike_block)(vg_tid, arg[1]/*addr*/))
+      if (arg[1] && ! DRD_(freelike_block)(vg_tid, arg[1]/*addr*/, False))
       {
          GenericErrInfo GEI = {
 	    .tid = DRD_(thread_get_running_tid)(),

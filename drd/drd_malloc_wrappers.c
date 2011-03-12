@@ -109,19 +109,18 @@ void DRD_(malloclike_block)(const ThreadId tid, const Addr p, const SizeT size)
 
 static void handle_free(ThreadId tid, void* p)
 {
-   tl_assert(p);
+   Bool success;
 
-   if (DRD_(freelike_block)(tid, (Addr)p))
-      VG_(cli_free)(p);
-   else
-      tl_assert(False);
+   tl_assert(p);
+   success = DRD_(freelike_block)(tid, (Addr)p, True);
+   tl_assert(success);
 }
 
 /**
  * Remove the information that was stored by DRD_(malloclike_block)() about
  * a memory block.
  */
-Bool DRD_(freelike_block)(const ThreadId tid, const Addr p)
+Bool DRD_(freelike_block)(const ThreadId tid, const Addr p, const Bool dealloc)
 {
    DRD_Chunk* mc;
 
@@ -133,6 +132,8 @@ Bool DRD_(freelike_block)(const ThreadId tid, const Addr p)
    if (mc)
    {
       tl_assert(p == mc->data);
+      if (dealloc)
+	 VG_(cli_free)((void*)p);
       if (mc->size > 0)
          s_stop_using_mem_callback(mc->data, mc->size);
       VG_(free)(mc);

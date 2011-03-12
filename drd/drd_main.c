@@ -28,6 +28,7 @@
 #include "drd_clientreq.h"
 #include "drd_cond.h"
 #include "drd_error.h"
+#include "drd_hb.h"
 #include "drd_load_store.h"
 #include "drd_malloc_wrappers.h"
 #include "drd_mutex.h"
@@ -80,6 +81,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    int trace_cond             = -1;
    int trace_csw              = -1;
    int trace_fork_join        = -1;
+   int trace_hb               = -1;
    int trace_conflict_set     = -1;
    int trace_conflict_set_bm  = -1;
    int trace_mutex            = -1;
@@ -107,6 +109,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    else if VG_BOOL_CLO(arg, "--trace-conflict-set-bm", trace_conflict_set_bm){}
    else if VG_BOOL_CLO(arg, "--trace-csw",           trace_csw) {}
    else if VG_BOOL_CLO(arg, "--trace-fork-join",     trace_fork_join) {}
+   else if VG_BOOL_CLO(arg, "--trace-hb",            trace_hb) {}
    else if VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex) {}
    else if VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock) {}
    else if VG_BOOL_CLO(arg, "--trace-segment",       trace_segment) {}
@@ -159,6 +162,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
       DRD_(thread_trace_context_switches)(trace_csw);
    if (trace_fork_join != -1)
       DRD_(thread_set_trace_fork_join)(trace_fork_join);
+   if (trace_hb != -1)
+      DRD_(hb_set_trace)(trace_hb);
    if (trace_conflict_set != -1)
       DRD_(thread_trace_conflict_set)(trace_conflict_set);
    if (trace_conflict_set_bm != -1)

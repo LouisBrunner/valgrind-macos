@@ -204,7 +204,7 @@ void DRD_(hb_happens_after)(const DrdThreadId tid, const Addr hb)
 
    if (DRD_(s_trace_hb))
    {
-      VG_(message)(Vg_UserMsg, "[%d] happens_after 0x%lx\n",
+      VG_(message)(Vg_UserMsg, "[%d] happens_after  0x%lx\n",
                    DRD_(thread_get_running_tid)(), hb);
    }
 

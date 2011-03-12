@@ -72,6 +72,8 @@ EXTRA_DIST =                                        \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
 	fp_race2.vgtest                             \
+	free_is_write.vgtest			    \
+	free_is_write.stderr.exp		    \
 	hg01_all_ok.stderr.exp                      \
 	hg01_all_ok.vgtest                          \
 	hg02_deadlock.stderr.exp                    \
@@ -276,6 +278,7 @@ check_PROGRAMS =      \
   bug-235681          \
   custom_alloc        \
   fp_race             \
+  free_is_write	      \
   hold_lock           \
   linuxthreads_det    \
   memory_allocation   \

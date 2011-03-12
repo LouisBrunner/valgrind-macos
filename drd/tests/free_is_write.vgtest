@@ -1,0 +1,4 @@
+prereq: test -e free_is_write && ./supported_libpthread
+vgopts: --read-var-info=yes --free-is-write=yes --show-confl-seg=no
+prog: free_is_write
+args: -q

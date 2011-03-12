@@ -1150,8 +1150,7 @@ void DRD_(thread_new_segment_and_combine_vc)(DrdThreadId tid, const Segment* sg)
  * [ a1, a2 [, e.g. because of a call to free() or a stack pointer
  * increase.
  */
-void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2,
-                                 const Bool dont_clear_access)
+void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2)
 {
    DrdThreadId other_user;
    unsigned i;
@@ -1161,22 +1160,12 @@ void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2,
    for (i = 0; i < DRD_N_THREADS; i++)
    {
       Segment* p;
-      for (p = DRD_(g_threadinfo)[i].first; p; p = p->next)
-      {
+      for (p = DRD_(g_threadinfo)[i].first; p; p = p->next) {
          if (other_user == DRD_INVALID_THREADID
-             && i != DRD_(g_drd_running_tid))
-         {
-            if (UNLIKELY((!dont_clear_access
-                          && DRD_(bm_test_and_clear)(DRD_(sg_bm)(p), a1, a2))
-                         || (dont_clear_access
-                             && DRD_(bm_has_any_access)(DRD_(sg_bm)(p), a1, a2))
-                         ))
-            {
+             && i != DRD_(g_drd_running_tid)) {
+            if (UNLIKELY(DRD_(bm_test_and_clear)(DRD_(sg_bm)(p), a1, a2)))
                other_user = i;
-            }
-            continue;
-         }
-         if (!dont_clear_access)
+         } else
             DRD_(bm_clear)(DRD_(sg_bm)(p), a1, a2);
       }
    }

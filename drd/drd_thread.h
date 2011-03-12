@@ -171,8 +171,7 @@ void DRD_(thread_new_segment_and_combine_vc)(DrdThreadId tid,
 void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
                                       const VectorClock* const old_vc);
 
-void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2,
-                                 const Bool dont_clear_access);
+void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2);
 void DRD_(thread_set_record_loads)(const DrdThreadId tid, const Bool enabled);
 void DRD_(thread_set_record_stores)(const DrdThreadId tid, const Bool enabled);
 void DRD_(thread_print_all)(void);

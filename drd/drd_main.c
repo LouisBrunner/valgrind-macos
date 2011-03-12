@@ -343,7 +343,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
    {
-      DRD_(thread_stop_using_mem)(a1, a2, False);
+      DRD_(thread_stop_using_mem)(a1, a2);
       DRD_(clientobj_stop_using_mem)(a1, a2);
       DRD_(suppression_stop_using_mem)(a1, a2);
    }

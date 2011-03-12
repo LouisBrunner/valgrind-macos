@@ -154,24 +154,22 @@ void  DRD_(bm2_free_node)(void* const bm2)
 {
    struct block_allocator_chunk* p;
 
-   tl_assert(s_bm2_node_size > 0);
    tl_assert(bm2);
 
-   for (p = s_first; p; p = p->next)
-   {
-      if (p->data <= bm2 && bm2 < p->data_end)
-      {
-	 /* Free the memory that was allocated for a non-root AVL tree node. */
-         tl_assert(((char*)bm2 - (char*)(p->data)) % s_bm2_node_size == 0);
-         *(void**)bm2 = p->first_free;
-         p->first_free = bm2;
-         tl_assert(p->nallocated >= 1);
-         if (--(p->nallocated) == 0)
-            free_chunk(p);
-         return;
+   if (s_bm2_node_size > 0) {
+      for (p = s_first; p; p = p->next) {
+	 if (p->data <= bm2 && bm2 < p->data_end) {
+	    /* Free a non-root AVL tree node. */
+	    tl_assert(((char*)bm2 - (char*)(p->data)) % s_bm2_node_size == 0);
+	    *(void**)bm2 = p->first_free;
+	    p->first_free = bm2;
+	    tl_assert(p->nallocated >= 1);
+	    if (--(p->nallocated) == 0)
+	       free_chunk(p);
+	    return;
+	 }
       }
    }
-
    /* Free the memory that was allocated for an AVL tree root node. */
    VG_(free)(bm2);
 }

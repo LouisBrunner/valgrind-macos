@@ -72,8 +72,10 @@ EXTRA_DIST =                                        \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
 	fp_race2.vgtest                             \
-	free_is_write.vgtest			    \
 	free_is_write.stderr.exp		    \
+	free_is_write.vgtest			    \
+	free_is_write2.stderr.exp		    \
+	free_is_write2.vgtest			    \
 	hg01_all_ok.stderr.exp                      \
 	hg01_all_ok.vgtest                          \
 	hg02_deadlock.stderr.exp                    \
@@ -175,6 +177,8 @@ EXTRA_DIST =                                        \
 	qt4_rwlock.vgtest                           \
 	qt4_semaphore.stderr.exp                    \
 	qt4_semaphore.vgtest                        \
+	read_and_free_race.stderr.exp		    \
+	read_and_free_race.vgtest		    \
 	recursive_mutex.stderr.exp-linux            \
 	recursive_mutex.stderr.exp-darwin           \
 	recursive_mutex.vgtest                      \

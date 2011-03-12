@@ -1780,8 +1780,7 @@ AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="-lboost_thread-mt $mflag_primary"
 
-AC_LINK_IFELSE(
-[
+AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <boost/thread.hpp>
 static void thread_func(void)
 { }
@@ -1790,7 +1789,7 @@ int main(int argc, char** argv)
   boost::thread t(thread_func);
   return 0;
 }
-],
+])],
 [
 ac_have_boost_1_35=yes
 AC_SUBST([BOOST_CFLAGS], [])
@@ -1815,15 +1814,14 @@ AC_MSG_CHECKING([for OpenMP])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-fopenmp $mflag_primary"
 
-AC_LINK_IFELSE(
-[
+AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <omp.h> 
 int main(int argc, char** argv)
 {
   omp_set_dynamic(0);
   return 0;
 }
-],
+])],
 [
 ac_have_openmp=yes
 AC_MSG_RESULT([yes])

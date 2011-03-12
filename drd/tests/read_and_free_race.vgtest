@@ -1,2 +1,2 @@
 prog: ../../helgrind/tests/free_is_write
-vgopts: --free-is-write=yes --show-confl-seg=no
+vgopts: --free-is-write=yes --num-callers=3 --show-confl-seg=no

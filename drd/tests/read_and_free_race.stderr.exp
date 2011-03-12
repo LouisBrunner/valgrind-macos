@@ -5,7 +5,6 @@ Conflicting store by thread 2 at 0x........ size 10
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: thread_func (free_is_write.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
 Address 0x........ is at offset 0 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (free_is_write.c:?)

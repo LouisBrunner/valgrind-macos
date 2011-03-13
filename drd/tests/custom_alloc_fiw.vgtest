@@ -1,0 +1,2 @@
+vgopts: --free-is-write=yes
+prog: custom_alloc

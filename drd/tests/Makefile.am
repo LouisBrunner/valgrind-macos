@@ -68,6 +68,8 @@ EXTRA_DIST =                                        \
 	circular_buffer.vgtest			    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
+	custom_alloc_fiw.stderr.exp		    \
+	custom_alloc_fiw.vgtest			    \
 	fp_race.stderr.exp                          \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \

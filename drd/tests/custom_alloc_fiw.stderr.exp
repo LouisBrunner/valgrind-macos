@@ -1,0 +1,12 @@
+
+--free-is-write=yes is incompatible with custom memory allocator client requests
+   at 0x........: custom_alloc (custom_alloc.c:?)
+   by 0x........: main (custom_alloc.c:?)
+
+--free-is-write=yes is incompatible with custom memory allocator client requests
+   at 0x........: custom_alloc (custom_alloc.c:?)
+   by 0x........: make_leak (custom_alloc.c:?)
+   by 0x........: main (custom_alloc.c:?)
+
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

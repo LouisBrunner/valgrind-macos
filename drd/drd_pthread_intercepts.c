@@ -1,4 +1,4 @@
-/* -*- mode: C; c-basic-offset: 3; -*- */
+/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Client-space code for DRD.          drd_pthread_intercepts.c ---*/

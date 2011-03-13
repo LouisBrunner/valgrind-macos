@@ -1,4 +1,4 @@
-/* -*- mode: C; c-basic-offset: 3; -*- */
+/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Replacements for strlen() and strnlen(), which run on the    ---*/

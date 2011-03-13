@@ -45,6 +45,11 @@
 #include "pub_tool_tooliface.h"   // VG_(needs_...)()
 
 
+/* Global variables. */
+
+Bool DRD_(g_free_is_write);
+
+
 /* Local function declarations. */
 
 static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret);
@@ -76,6 +81,18 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    switch (arg[0])
    {
    case VG_USERREQ__MALLOCLIKE_BLOCK:
+      if (DRD_(g_free_is_write)) {
+         GenericErrInfo GEI = {
+            .tid = DRD_(thread_get_running_tid)(),
+            .addr = 0,
+         };
+         VG_(maybe_record_error)(vg_tid,
+                                 GenericErr,
+                                 VG_(get_IP)(vg_tid),
+                                 "--free-is-write=yes is incompatible with"
+                                 " custom memory allocator client requests",
+                                 &GEI);
+      }
       if (arg[1])
          DRD_(malloclike_block)(vg_tid, arg[1]/*addr*/, arg[2]/*size*/);
       break;

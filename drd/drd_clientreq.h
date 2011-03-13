@@ -258,6 +258,8 @@ typedef enum {
 } BarrierT;
 
 
+extern Bool DRD_(g_free_is_write);
+
 void DRD_(clientreq_init)(void);
 
 

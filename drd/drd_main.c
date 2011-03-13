@@ -57,11 +57,10 @@
 
 /* Local variables. */
 
-static Bool s_free_is_write    = False;
-static Bool s_print_stats      = False;
-static Bool s_var_info         = False;
-static Bool s_show_stack_usage = False;
-static Bool s_trace_alloc      = False;
+static Bool s_print_stats;
+static Bool s_var_info;
+static Bool s_show_stack_usage;
+static Bool s_trace_alloc;
 
 
 /**
@@ -95,7 +94,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_BOOL_CLO(arg, "--drd-stats",           s_print_stats) {}
    else if VG_BOOL_CLO(arg, "--first-race-only",     first_race_only) {}
-   else if VG_BOOL_CLO(arg, "--free-is-write",       s_free_is_write) {}
+   else if VG_BOOL_CLO(arg, "--free-is-write",       DRD_(g_free_is_write)) {}
    else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked)
    {}
    else if VG_BOOL_CLO(arg, "--segment-merging",     segment_merging) {}
@@ -312,7 +311,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
                    a1, len, DRD_(running_thread_inside_pthread_create)()
                    ? " (inside pthread_create())" : "");
 
-   if (!is_stack_mem && s_free_is_write)
+   if (!is_stack_mem && DRD_(g_free_is_write))
       DRD_(thread_stop_using_mem)(a1, a2);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
@@ -357,9 +356,9 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
    {
-      if (is_stack_mem || !s_free_is_write)
+      if (is_stack_mem || !DRD_(g_free_is_write))
 	 DRD_(thread_stop_using_mem)(a1, a2);
-      else if (s_free_is_write)
+      else if (DRD_(g_free_is_write))
 	 DRD_(trace_store)(a1, len);
       DRD_(clientobj_stop_using_mem)(a1, a2);
       DRD_(suppression_stop_using_mem)(a1, a2);

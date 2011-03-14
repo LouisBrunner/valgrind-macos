@@ -9,12 +9,16 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_arm.h			\
 		pub/libvex_guest_ppc32.h		\
 		pub/libvex_guest_ppc64.h		\
+		pub/libvex_guest_s390x.h		\
+		pub/libvex_s390x_common.h		\
 		pub/libvex_guest_offsets.h
 
 PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/host_amd64_defs.h			\
 		priv/host_arm_defs.h			\
 		priv/host_ppc_defs.h			\
+		priv/host_s390_defs.h			\
+		priv/host_s390_disasm.h		        \
 		priv/host_generic_regs.h	        \
 		priv/host_generic_simd64.h	        \
 		priv/host_generic_simd128.h	        \
@@ -39,10 +43,13 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_amd64_defs.o			\
 		priv/host_arm_defs.o			\
 		priv/host_ppc_defs.o			\
+		priv/host_s390_defs.o			\
 		priv/host_x86_isel.o			\
 		priv/host_amd64_isel.o			\
 		priv/host_arm_isel.o			\
 		priv/host_ppc_isel.o			\
+		priv/host_s390_isel.o			\
+                priv/host_s390_disasm.o			\
 		priv/host_generic_regs.o	        \
 		priv/host_generic_simd64.o	        \
 		priv/host_generic_simd128.o	        \
@@ -53,10 +60,12 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_amd64_helpers.o		\
 		priv/guest_arm_helpers.o		\
 		priv/guest_ppc_helpers.o		\
+		priv/guest_s390_helpers.o		\
 		priv/guest_x86_toIR.o			\
 		priv/guest_amd64_toIR.o			\
 		priv/guest_arm_toIR.o			\
-		priv/guest_ppc_toIR.o
+		priv/guest_ppc_toIR.o                   \
+		priv/guest_s390_toIR.o
 
 PUB_INCLUDES = -Ipub
 
@@ -188,7 +197,9 @@ pub/libvex_guest_offsets.h:
 	$(CC) $(CCFLAGS) -O -S -o auxprogs/genoffsets.s \
 				auxprogs/genoffsets.c
 	grep xyzzy auxprogs/genoffsets.s | grep define \
-	   | sed "s/xyzzy\\$$//g" | sed "s/xyzzy//g" \
+	   | sed "s/xyzzy\\$$//g" \
+	   | sed "s/xyzzy#//g" \
+	   | sed "s/xyzzy//g" \
 	   > pub/libvex_guest_offsets.h
 	rm -f auxprogs/genoffsets.s
 
@@ -240,6 +251,10 @@ priv/host_ppc_defs.o: $(ALL_HEADERS) priv/host_ppc_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_ppc_defs.o \
 					 -c priv/host_ppc_defs.c
 
+priv/host_s390_defs.o: $(ALL_HEADERS) priv/host_s390_defs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_defs.o \
+					 -c priv/host_s390_defs.c
+
 priv/host_x86_isel.o: $(ALL_HEADERS) priv/host_x86_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_x86_isel.o \
 					 -c priv/host_x86_isel.c
@@ -255,6 +270,10 @@ priv/host_arm_isel.o: $(ALL_HEADERS) priv/host_arm_isel.c
 priv/host_ppc_isel.o: $(ALL_HEADERS) priv/host_ppc_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_ppc_isel.o \
 					 -c priv/host_ppc_isel.c
+
+priv/host_s390_isel.o: $(ALL_HEADERS) priv/host_s390_isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_isel.o \
+					 -c priv/host_s390_isel.c
 
 priv/host_generic_regs.o: $(ALL_HEADERS) priv/host_generic_regs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_regs.o \
@@ -308,6 +327,18 @@ priv/guest_ppc_helpers.o: $(ALL_HEADERS) priv/guest_ppc_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_ppc_helpers.o \
 					 -c priv/guest_ppc_helpers.c
 
+priv/guest_s390_helpers.o: $(ALL_HEADERS) priv/guest_s390_helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_s390_helpers.o \
+					 -c priv/guest_s390_helpers.c
+
 priv/guest_ppc_toIR.o: $(ALL_HEADERS) priv/guest_ppc_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_ppc_toIR.o \
 					 -c priv/guest_ppc_toIR.c
+
+priv/guest_s390_toIR.o: $(ALL_HEADERS) priv/guest_s390_toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_s390_toIR.o \
+					 -c priv/guest_s390_toIR.c
+
+priv/host_s390_disasm.o: $(ALL_HEADERS) priv/host_s390_disasm.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_disasm.o \
+					 -c priv/host_s390_disasm.c

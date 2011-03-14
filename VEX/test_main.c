@@ -1732,20 +1732,20 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       /* Scalar floating point */
 
          //      case Iop_RoundF64:
-      case Iop_F64toI64:
-      case Iop_I64toF64:
+      case Iop_F64toI64S:
+      case Iop_I64StoF64:
          /* First arg is I32 (rounding mode), second is F64 or I64
             (data). */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_PRemC3210F64: case Iop_PRem1C3210F64:
          /* Takes two F64 args. */
-      case Iop_F64toI32:
+      case Iop_F64toI32S:
       case Iop_F64toF32:
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
-      case Iop_F64toI16:
+      case Iop_F64toI16S:
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I16, vatom1, vatom2);
 
@@ -1931,7 +1931,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return assignNew(mce, Ity_V128, unop(op, vatom));
 
       case Iop_F32toF64: 
-      case Iop_I32toF64:
+      case Iop_I32StoF64:
       case Iop_NegF64:
       case Iop_SinF64:
       case Iop_CosF64:

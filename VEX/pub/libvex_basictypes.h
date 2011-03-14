@@ -130,29 +130,40 @@ typedef  unsigned long HWord;
    and ULong_to_Ptr in a way that doesn't cause compilers to complain.
    These functions allow us to cast pointers to and from 64-bit
    integers without complaints from compilers, regardless of the host
-   word size. */
+   word size.
+
+   Also set up VEX_REGPARM.
+*/
 
 #undef VEX_HOST_WORDSIZE
+#undef VEX_REGPARM
 
 /* The following 4 work OK for Linux. */
 #if defined(__x86_64__)
 #   define VEX_HOST_WORDSIZE 8
+#   define VEX_REGPARM(_n) /* */
 #elif defined(__i386__)
 #   define VEX_HOST_WORDSIZE 4
+#   define VEX_REGPARM(_n) __attribute__((regparm(_n)))
 #elif defined(__powerpc__) && defined(__powerpc64__)
 #   define VEX_HOST_WORDSIZE 8
+#   define VEX_REGPARM(_n) /* */
 #elif defined(__powerpc__) && !defined(__powerpc64__)
 #   define VEX_HOST_WORDSIZE 4
 #elif defined(__arm__)
 #   define VEX_HOST_WORDSIZE 4
+#   define VEX_REGPARM(_n) /* */
 
 #elif defined(_AIX) && !defined(__64BIT__)
 #   define VEX_HOST_WORDSIZE 4
+#   define VEX_REGPARM(_n) /* */
 #elif defined(_AIX) && defined(__64BIT__)
 #   define VEX_HOST_WORDSIZE 8
+#   define VEX_REGPARM(_n) /* */
 
 #elif defined(__s390x__)
 #   define VEX_HOST_WORDSIZE 8
+#   define VEX_REGPARM(_n) /* */
 
 #else
 #   error "Vex: Fatal: Can't establish the host architecture"

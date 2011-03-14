@@ -322,9 +322,10 @@ extern Bool eqIRConst ( IRConst*, IRConst* );
 /* Describes a helper function to call.  The name part is purely for
    pretty printing and not actually used.  regparms=n tells the back
    end that the callee has been declared
-   "__attribute__((regparm(n)))".  On some targets (x86) the back end
-   will need to construct a non-standard sequence to call a function
-   declared like this. 
+   "__attribute__((regparm(n)))", although indirectly using the
+   VEX_REGPARM(n) macro.  On some targets (x86) the back end will need
+   to construct a non-standard sequence to call a function declared
+   like this.
 
    mcx_mask is a sop to Memcheck.  It indicates which args should be
    considered 'always defined' when lazily computing definedness of

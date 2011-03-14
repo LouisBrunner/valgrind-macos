@@ -588,7 +588,7 @@ UInt x86g_calculate_eflags_all ( UInt cc_op,
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate just the carry flag from the supplied thunk parameters. */
-__attribute((regparm(3)))
+VEX_REGPARM(3)
 UInt x86g_calculate_eflags_c ( UInt cc_op, 
                                UInt cc_dep1, 
                                UInt cc_dep2,

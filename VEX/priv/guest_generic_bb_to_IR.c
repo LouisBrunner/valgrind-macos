@@ -42,58 +42,58 @@
 
 
 /* Forwards .. */
-__attribute__((regparm(2)))
+VEX_REGPARM(2)
 static UInt genericg_compute_checksum_4al ( HWord first_w32, HWord n_w32s );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_1 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_2 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_3 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_4 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_5 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_6 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_7 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_8 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_9 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_10 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_11 ( HWord first_w32 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_12 ( HWord first_w32 );
 
-__attribute__((regparm(2)))
+VEX_REGPARM(2)
 static ULong genericg_compute_checksum_8al ( HWord first_w64, HWord n_w64s );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_1 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_2 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_3 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_4 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_5 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_6 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_7 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_8 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_9 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_10 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_11 ( HWord first_w64 );
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_12 ( HWord first_w64 );
 
 /* Small helpers */
@@ -425,8 +425,8 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       UInt     len2check;
       HWord    expectedhW;
       IRTemp   tistart_tmp, tilen_tmp;
-      HWord    __attribute__((regparm(2))) (*fn_generic)(HWord, HWord);
-      HWord    __attribute__((regparm(1))) (*fn_spec)(HWord);
+      HWord    VEX_REGPARM(2) (*fn_generic)(HWord, HWord);
+      HWord    VEX_REGPARM(1) (*fn_spec)(HWord);
       HChar*   nm_generic;
       HChar*   nm_spec;
       HWord    fn_generic_entry = 0;
@@ -466,11 +466,11 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
          /* vex_printf("%lx %lx  %ld\n", first_w32, last_w32, w32s_to_check); */
 
          if (host_word_szB == 8) {
-            fn_generic =  (__attribute__((regparm(2))) HWord(*)(HWord, HWord))
+            fn_generic =  (VEX_REGPARM(2) HWord(*)(HWord, HWord))
                           genericg_compute_checksum_8al;
             nm_generic = "genericg_compute_checksum_8al";
          } else {
-            fn_generic =  (__attribute__((regparm(2))) HWord(*)(HWord, HWord))
+            fn_generic =  (VEX_REGPARM(2) HWord(*)(HWord, HWord))
                           genericg_compute_checksum_4al;
             nm_generic = "genericg_compute_checksum_4al";
          }
@@ -480,7 +480,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
          if (host_word_szB == 8) {
             HChar* nm = NULL;
-            ULong  __attribute__((regparm(1))) (*fn)(HWord)  = NULL;
+            ULong  VEX_REGPARM(1) (*fn)(HWord)  = NULL;
             switch (hWs_to_check) {
                case 1:  fn =  genericg_compute_checksum_8al_1;
                         nm = "genericg_compute_checksum_8al_1"; break;
@@ -508,11 +508,11 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                         nm = "genericg_compute_checksum_8al_12"; break;
                default: break;
             }
-            fn_spec = (__attribute__((regparm(1))) HWord(*)(HWord)) fn;
+            fn_spec = (VEX_REGPARM(1) HWord(*)(HWord)) fn;
             nm_spec = nm;
          } else {
             HChar* nm = NULL;
-            UInt   __attribute__((regparm(1))) (*fn)(HWord) = NULL;
+            UInt   VEX_REGPARM(1) (*fn)(HWord) = NULL;
             switch (hWs_to_check) {
                case 1:  fn =  genericg_compute_checksum_4al_1;
                         nm = "genericg_compute_checksum_4al_1"; break;
@@ -540,7 +540,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                         nm = "genericg_compute_checksum_4al_12"; break;
                default: break;
             }
-            fn_spec = (__attribute__((regparm(1))) HWord(*)(HWord))fn;
+            fn_spec = (VEX_REGPARM(1) HWord(*)(HWord))fn;
             nm_spec = nm;
          }
 
@@ -661,7 +661,7 @@ static inline UInt ROL32 ( UInt w, Int n ) {
    return w;
 }
 
-__attribute((regparm(2)))
+VEX_REGPARM(2)
 static UInt genericg_compute_checksum_4al ( HWord first_w32, HWord n_w32s )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -689,7 +689,7 @@ static UInt genericg_compute_checksum_4al ( HWord first_w32, HWord n_w32s )
 
 /* Specialised versions of the above function */
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_1 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -700,7 +700,7 @@ static UInt genericg_compute_checksum_4al_1 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_2 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -713,7 +713,7 @@ static UInt genericg_compute_checksum_4al_2 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_3 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -728,7 +728,7 @@ static UInt genericg_compute_checksum_4al_3 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_4 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -742,7 +742,7 @@ static UInt genericg_compute_checksum_4al_4 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_5 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -758,7 +758,7 @@ static UInt genericg_compute_checksum_4al_5 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_6 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -776,7 +776,7 @@ static UInt genericg_compute_checksum_4al_6 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_7 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -796,7 +796,7 @@ static UInt genericg_compute_checksum_4al_7 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_8 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -815,7 +815,7 @@ static UInt genericg_compute_checksum_4al_8 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_9 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -836,7 +836,7 @@ static UInt genericg_compute_checksum_4al_9 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_10 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -859,7 +859,7 @@ static UInt genericg_compute_checksum_4al_10 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_11 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -884,7 +884,7 @@ static UInt genericg_compute_checksum_4al_11 ( HWord first_w32 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static UInt genericg_compute_checksum_4al_12 ( HWord first_w32 )
 {
    UInt  sum1 = 0, sum2 = 0;
@@ -916,7 +916,7 @@ static inline ULong ROL64 ( ULong w, Int n ) {
    return w;
 }
 
-__attribute((regparm(2)))
+VEX_REGPARM(2)
 static ULong genericg_compute_checksum_8al ( HWord first_w64, HWord n_w64s )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -944,7 +944,7 @@ static ULong genericg_compute_checksum_8al ( HWord first_w64, HWord n_w64s )
 
 /* Specialised versions of the above function */
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_1 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -955,7 +955,7 @@ static ULong genericg_compute_checksum_8al_1 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_2 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -968,7 +968,7 @@ static ULong genericg_compute_checksum_8al_2 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_3 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -983,7 +983,7 @@ static ULong genericg_compute_checksum_8al_3 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_4 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -997,7 +997,7 @@ static ULong genericg_compute_checksum_8al_4 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_5 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1013,7 +1013,7 @@ static ULong genericg_compute_checksum_8al_5 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_6 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1031,7 +1031,7 @@ static ULong genericg_compute_checksum_8al_6 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_7 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1051,7 +1051,7 @@ static ULong genericg_compute_checksum_8al_7 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_8 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1070,7 +1070,7 @@ static ULong genericg_compute_checksum_8al_8 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_9 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1091,7 +1091,7 @@ static ULong genericg_compute_checksum_8al_9 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_10 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1114,7 +1114,7 @@ static ULong genericg_compute_checksum_8al_10 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_11 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;
@@ -1139,7 +1139,7 @@ static ULong genericg_compute_checksum_8al_11 ( HWord first_w64 )
    return sum1 + sum2;
 }
 
-__attribute__((regparm(1)))
+VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_12 ( HWord first_w64 )
 {
    ULong  sum1 = 0, sum2 = 0;

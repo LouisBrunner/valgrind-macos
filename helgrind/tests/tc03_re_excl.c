@@ -10,7 +10,7 @@
 /* A simple function to "use" a value, so that gcc can't
    possibly optimise it into nothing. */
 static void use ( int x ) {
-   __asm__ __volatile__( "nop" : : "r"(x) : "cc","memory" );
+   __asm__ __volatile__( "" : : "r"(x) : "cc","memory" );
 }
 
 static void* worker_thread ( void* argV )

@@ -142,14 +142,19 @@ typedef  unsigned long HWord;
 #if defined(__x86_64__)
 #   define VEX_HOST_WORDSIZE 8
 #   define VEX_REGPARM(_n) /* */
+
 #elif defined(__i386__)
 #   define VEX_HOST_WORDSIZE 4
 #   define VEX_REGPARM(_n) __attribute__((regparm(_n)))
+
 #elif defined(__powerpc__) && defined(__powerpc64__)
 #   define VEX_HOST_WORDSIZE 8
 #   define VEX_REGPARM(_n) /* */
+
 #elif defined(__powerpc__) && !defined(__powerpc64__)
 #   define VEX_HOST_WORDSIZE 4
+#   define VEX_REGPARM(_n) /* */
+
 #elif defined(__arm__)
 #   define VEX_HOST_WORDSIZE 4
 #   define VEX_REGPARM(_n) /* */
@@ -157,6 +162,7 @@ typedef  unsigned long HWord;
 #elif defined(_AIX) && !defined(__64BIT__)
 #   define VEX_HOST_WORDSIZE 4
 #   define VEX_REGPARM(_n) /* */
+
 #elif defined(_AIX) && defined(__64BIT__)
 #   define VEX_HOST_WORDSIZE 8
 #   define VEX_REGPARM(_n) /* */

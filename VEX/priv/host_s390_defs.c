@@ -1109,7 +1109,7 @@ emit_S(UChar *p, UInt op, UChar b2, UShort d2)
 /*------------------------------------------------------------*/
 
 
-static Char *
+static UChar *
 s390_emit_AR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1119,7 +1119,7 @@ s390_emit_AR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1129,7 +1129,7 @@ s390_emit_AGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_A(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1139,7 +1139,7 @@ s390_emit_A(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1149,7 +1149,7 @@ s390_emit_AY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1159,7 +1159,7 @@ s390_emit_AG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1169,7 +1169,7 @@ s390_emit_AFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AGFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1179,7 +1179,7 @@ s390_emit_AGFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1189,7 +1189,7 @@ s390_emit_AH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1199,7 +1199,7 @@ s390_emit_AHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AHI(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1209,7 +1209,7 @@ s390_emit_AHI(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AGHI(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1219,7 +1219,7 @@ s390_emit_AGHI(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1229,7 +1229,7 @@ s390_emit_NR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1239,7 +1239,7 @@ s390_emit_NGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_N(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1249,7 +1249,7 @@ s390_emit_N(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1259,7 +1259,7 @@ s390_emit_NY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1269,7 +1269,7 @@ s390_emit_NG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NIHF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1279,7 +1279,7 @@ s390_emit_NIHF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NILF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1289,7 +1289,7 @@ s390_emit_NILF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_NILL(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1299,7 +1299,7 @@ s390_emit_NILL(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_BASR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1309,7 +1309,7 @@ s390_emit_BASR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_BCR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1319,7 +1319,7 @@ s390_emit_BCR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_BRC(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1329,7 +1329,7 @@ s390_emit_BRC(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1339,7 +1339,7 @@ s390_emit_CR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1349,7 +1349,7 @@ s390_emit_CGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_C(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1359,7 +1359,7 @@ s390_emit_C(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1369,7 +1369,7 @@ s390_emit_CY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1379,7 +1379,7 @@ s390_emit_CG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1389,7 +1389,7 @@ s390_emit_CFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CS(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1399,7 +1399,7 @@ s390_emit_CS(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CSY(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1409,7 +1409,7 @@ s390_emit_CSY(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CSG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1419,7 +1419,7 @@ s390_emit_CSG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CLR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1429,7 +1429,7 @@ s390_emit_CLR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CLGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1439,7 +1439,7 @@ s390_emit_CLGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CL(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1449,7 +1449,7 @@ s390_emit_CL(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CLY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1459,7 +1459,7 @@ s390_emit_CLY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CLG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1469,7 +1469,7 @@ s390_emit_CLG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CLFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1479,7 +1479,7 @@ s390_emit_CLFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1489,7 +1489,7 @@ s390_emit_DR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_D(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1499,7 +1499,7 @@ s390_emit_D(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DLR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1509,7 +1509,7 @@ s390_emit_DLR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DLGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1519,7 +1519,7 @@ s390_emit_DLGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DL(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1529,7 +1529,7 @@ s390_emit_DL(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DLG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1539,7 +1539,7 @@ s390_emit_DLG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DSGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1549,7 +1549,7 @@ s390_emit_DSGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DSG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1559,7 +1559,7 @@ s390_emit_DSG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_XR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1569,7 +1569,7 @@ s390_emit_XR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_XGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1579,7 +1579,7 @@ s390_emit_XGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_X(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1589,7 +1589,7 @@ s390_emit_X(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_XY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1599,7 +1599,7 @@ s390_emit_XY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_XG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1609,7 +1609,7 @@ s390_emit_XG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_XIHF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1619,7 +1619,7 @@ s390_emit_XIHF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_XILF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1629,7 +1629,7 @@ s390_emit_XILF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_FLOGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1639,7 +1639,7 @@ s390_emit_FLOGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IC(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1649,7 +1649,7 @@ s390_emit_IC(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_ICY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1659,7 +1659,7 @@ s390_emit_ICY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IIHF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1669,7 +1669,7 @@ s390_emit_IIHF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IIHH(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1679,7 +1679,7 @@ s390_emit_IIHH(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IIHL(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1689,7 +1689,7 @@ s390_emit_IIHL(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IILF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1699,7 +1699,7 @@ s390_emit_IILF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IILH(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1709,7 +1709,7 @@ s390_emit_IILH(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IILL(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1719,7 +1719,7 @@ s390_emit_IILL(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_IPM(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1729,7 +1729,7 @@ s390_emit_IPM(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1739,7 +1739,7 @@ s390_emit_LR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1749,7 +1749,7 @@ s390_emit_LGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGFR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1759,7 +1759,7 @@ s390_emit_LGFR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_L(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1769,7 +1769,7 @@ s390_emit_L(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1779,7 +1779,7 @@ s390_emit_LY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1789,7 +1789,7 @@ s390_emit_LG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGF(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1799,7 +1799,7 @@ s390_emit_LGF(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1809,7 +1809,7 @@ s390_emit_LGFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LTR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1819,7 +1819,7 @@ s390_emit_LTR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LTGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1829,7 +1829,7 @@ s390_emit_LTGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LT(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1839,7 +1839,7 @@ s390_emit_LT(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LTG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1849,7 +1849,7 @@ s390_emit_LTG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1859,7 +1859,7 @@ s390_emit_LBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1869,7 +1869,7 @@ s390_emit_LGBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LB(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1879,7 +1879,7 @@ s390_emit_LB(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGB(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1889,7 +1889,7 @@ s390_emit_LGB(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LCR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1899,7 +1899,7 @@ s390_emit_LCR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LCGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1909,7 +1909,7 @@ s390_emit_LCGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LHR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1919,7 +1919,7 @@ s390_emit_LHR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGHR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1929,7 +1929,7 @@ s390_emit_LGHR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1939,7 +1939,7 @@ s390_emit_LH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1949,7 +1949,7 @@ s390_emit_LHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGH(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1959,7 +1959,7 @@ s390_emit_LGH(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LHI(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1969,7 +1969,7 @@ s390_emit_LHI(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGHI(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1979,7 +1979,7 @@ s390_emit_LGHI(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLGFR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1989,7 +1989,7 @@ s390_emit_LLGFR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLGF(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -1999,7 +1999,7 @@ s390_emit_LLGF(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLCR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2009,7 +2009,7 @@ s390_emit_LLCR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLGCR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2019,7 +2019,7 @@ s390_emit_LLGCR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLC(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2029,7 +2029,7 @@ s390_emit_LLC(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLGC(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2039,7 +2039,7 @@ s390_emit_LLGC(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLHR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2049,7 +2049,7 @@ s390_emit_LLHR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLGHR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2059,7 +2059,7 @@ s390_emit_LLGHR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLH(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2069,7 +2069,7 @@ s390_emit_LLH(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLGH(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2079,7 +2079,7 @@ s390_emit_LLGH(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLILF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2089,7 +2089,7 @@ s390_emit_LLILF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLILH(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2099,7 +2099,7 @@ s390_emit_LLILH(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LLILL(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2109,7 +2109,7 @@ s390_emit_LLILL(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2119,7 +2119,7 @@ s390_emit_MR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_M(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2129,7 +2129,7 @@ s390_emit_M(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MFY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2139,7 +2139,7 @@ s390_emit_MFY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2149,7 +2149,7 @@ s390_emit_MH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2159,7 +2159,7 @@ s390_emit_MHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MHI(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2169,7 +2169,7 @@ s390_emit_MHI(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MLR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2179,7 +2179,7 @@ s390_emit_MLR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MLGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2189,7 +2189,7 @@ s390_emit_MLGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_ML(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2199,7 +2199,7 @@ s390_emit_ML(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MLG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2209,7 +2209,7 @@ s390_emit_MLG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2219,7 +2219,7 @@ s390_emit_MSR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2229,7 +2229,7 @@ s390_emit_MSGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MS(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2239,7 +2239,7 @@ s390_emit_MS(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2249,7 +2249,7 @@ s390_emit_MSY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2259,7 +2259,7 @@ s390_emit_MSG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2269,7 +2269,7 @@ s390_emit_MSFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSGFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2279,7 +2279,7 @@ s390_emit_MSGFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2289,7 +2289,7 @@ s390_emit_OR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2299,7 +2299,7 @@ s390_emit_OGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_O(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2309,7 +2309,7 @@ s390_emit_O(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2319,7 +2319,7 @@ s390_emit_OY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2329,7 +2329,7 @@ s390_emit_OG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OIHF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2339,7 +2339,7 @@ s390_emit_OIHF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OILF(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2349,7 +2349,7 @@ s390_emit_OILF(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_OILL(UChar *p, UChar r1, UShort i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2359,7 +2359,7 @@ s390_emit_OILL(UChar *p, UChar r1, UShort i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SLL(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2369,7 +2369,7 @@ s390_emit_SLL(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SLLG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2379,7 +2379,7 @@ s390_emit_SLLG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SRA(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2389,7 +2389,7 @@ s390_emit_SRA(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SRAG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2399,7 +2399,7 @@ s390_emit_SRAG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SRL(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2409,7 +2409,7 @@ s390_emit_SRL(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SRLG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2419,7 +2419,7 @@ s390_emit_SRLG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_ST(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2429,7 +2429,7 @@ s390_emit_ST(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2439,7 +2439,7 @@ s390_emit_STY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2449,7 +2449,7 @@ s390_emit_STG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STC(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2459,7 +2459,7 @@ s390_emit_STC(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STCY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2469,7 +2469,7 @@ s390_emit_STCY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2479,7 +2479,7 @@ s390_emit_STH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2489,7 +2489,7 @@ s390_emit_STHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2499,7 +2499,7 @@ s390_emit_SR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2509,7 +2509,7 @@ s390_emit_SGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_S(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2519,7 +2519,7 @@ s390_emit_S(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2529,7 +2529,7 @@ s390_emit_SY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2539,7 +2539,7 @@ s390_emit_SG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2549,7 +2549,7 @@ s390_emit_SH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2559,7 +2559,7 @@ s390_emit_SHY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SLFI(UChar *p, UChar r1, UInt i2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2569,7 +2569,7 @@ s390_emit_SLFI(UChar *p, UChar r1, UInt i2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LDR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2579,7 +2579,7 @@ s390_emit_LDR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LE(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2589,7 +2589,7 @@ s390_emit_LE(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LD(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2599,7 +2599,7 @@ s390_emit_LD(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LEY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2609,7 +2609,7 @@ s390_emit_LEY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2619,7 +2619,7 @@ s390_emit_LDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LFPC(UChar *p, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2629,7 +2629,7 @@ s390_emit_LFPC(UChar *p, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2639,7 +2639,7 @@ s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LGDR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2649,7 +2649,7 @@ s390_emit_LGDR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LZER(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2659,7 +2659,7 @@ s390_emit_LZER(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LZDR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2669,7 +2669,7 @@ s390_emit_LZDR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SFPC(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2679,7 +2679,7 @@ s390_emit_SFPC(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STE(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2689,7 +2689,7 @@ s390_emit_STE(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STD(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2699,7 +2699,7 @@ s390_emit_STD(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STEY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2709,7 +2709,7 @@ s390_emit_STEY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2719,7 +2719,7 @@ s390_emit_STDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_STFPC(UChar *p, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2729,7 +2729,7 @@ s390_emit_STFPC(UChar *p, UChar b2, UShort d2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2739,7 +2739,7 @@ s390_emit_AEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_ADBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2749,7 +2749,7 @@ s390_emit_ADBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_AXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2759,7 +2759,7 @@ s390_emit_AXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2769,7 +2769,7 @@ s390_emit_CEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2779,7 +2779,7 @@ s390_emit_CDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2789,7 +2789,7 @@ s390_emit_CXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CEFBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2799,7 +2799,7 @@ s390_emit_CEFBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CDFBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2809,7 +2809,7 @@ s390_emit_CDFBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CXFBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2819,7 +2819,7 @@ s390_emit_CXFBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CEGBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2829,7 +2829,7 @@ s390_emit_CEGBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CDGBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2839,7 +2839,7 @@ s390_emit_CDGBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CXGBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2849,7 +2849,7 @@ s390_emit_CXGBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CFEBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2859,7 +2859,7 @@ s390_emit_CFEBR(UChar *p, UChar r3, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CFDBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2869,7 +2869,7 @@ s390_emit_CFDBR(UChar *p, UChar r3, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CFXBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2879,7 +2879,7 @@ s390_emit_CFXBR(UChar *p, UChar r3, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CGEBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2889,7 +2889,7 @@ s390_emit_CGEBR(UChar *p, UChar r3, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CGDBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2899,7 +2899,7 @@ s390_emit_CGDBR(UChar *p, UChar r3, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_CGXBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2909,7 +2909,7 @@ s390_emit_CGXBR(UChar *p, UChar r3, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2919,7 +2919,7 @@ s390_emit_DEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2929,7 +2929,7 @@ s390_emit_DDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_DXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2939,7 +2939,7 @@ s390_emit_DXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LCEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2949,7 +2949,7 @@ s390_emit_LCEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LCDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2959,7 +2959,7 @@ s390_emit_LCDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LCXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2969,7 +2969,7 @@ s390_emit_LCXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LDEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2979,7 +2979,7 @@ s390_emit_LDEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LXDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2989,7 +2989,7 @@ s390_emit_LXDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LXEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -2999,7 +2999,7 @@ s390_emit_LXEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LNEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3009,7 +3009,7 @@ s390_emit_LNEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LNDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3019,7 +3019,7 @@ s390_emit_LNDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LNXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3029,7 +3029,7 @@ s390_emit_LNXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LPEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3039,7 +3039,7 @@ s390_emit_LPEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LPDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3049,7 +3049,7 @@ s390_emit_LPDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LPXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3059,7 +3059,7 @@ s390_emit_LPXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LEDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3069,7 +3069,7 @@ s390_emit_LEDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LDXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3079,7 +3079,7 @@ s390_emit_LDXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_LEXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3089,7 +3089,7 @@ s390_emit_LEXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MEEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3099,7 +3099,7 @@ s390_emit_MEEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3109,7 +3109,7 @@ s390_emit_MDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3119,7 +3119,7 @@ s390_emit_MXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MAEBR(UChar *p, UChar r1, UChar r3, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3129,7 +3129,7 @@ s390_emit_MAEBR(UChar *p, UChar r1, UChar r3, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MADBR(UChar *p, UChar r1, UChar r3, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3139,7 +3139,7 @@ s390_emit_MADBR(UChar *p, UChar r1, UChar r3, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSEBR(UChar *p, UChar r1, UChar r3, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3149,7 +3149,7 @@ s390_emit_MSEBR(UChar *p, UChar r1, UChar r3, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_MSDBR(UChar *p, UChar r1, UChar r3, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3159,7 +3159,7 @@ s390_emit_MSDBR(UChar *p, UChar r1, UChar r3, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SQEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3169,7 +3169,7 @@ s390_emit_SQEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SQDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3179,7 +3179,7 @@ s390_emit_SQDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SQXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3189,7 +3189,7 @@ s390_emit_SQXBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SEBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3199,7 +3199,7 @@ s390_emit_SEBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SDBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3209,7 +3209,7 @@ s390_emit_SDBR(UChar *p, UChar r1, UChar r2)
 }
 
 
-static Char *
+static UChar *
 s390_emit_SXBR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))

@@ -394,15 +394,25 @@ typedef
 /* Initialise the library.  You must call this first. */
 
 extern void LibVEX_Init (
+
    /* failure exit function */
+#  if __cplusplus == 1 && __GNUC__ && __GNUC__ <= 3
+   /* g++ 3.x doesn't understand attributes on function parameters.
+      See #265762. */
+#  else
    __attribute__ ((noreturn))
+#  endif
    void (*failure_exit) ( void ),
+
    /* logging output function */
    void (*log_bytes) ( HChar*, Int nbytes ),
+
    /* debug paranoia level */
    Int debuglevel,
+
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
+
    /* Control ... */
    /*READONLY*/VexControl* vcon
 );

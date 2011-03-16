@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <stdlib.h>
 pthread_mutex_t mx[4];
 pthread_cond_t cv;
 pthread_rwlock_t rwl;
@@ -34,7 +35,6 @@ void* rescue_me ( void* uu )
   my_sem_wait( quit_now );
   return NULL;
 }
-
 void* grab_the_lock ( void* uu )
 {
    int r= pthread_mutex_lock( &mx[2] ); assert(!r);

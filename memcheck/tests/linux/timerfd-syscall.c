@@ -268,8 +268,8 @@ int main(int ac, char **av)
     else
     {
       const double delta = (ttmr - tnow) * 1e-6;
-      if (1.9 < delta && delta < 2.2)
-        fprintf(stderr, "got timer ticks (%ld) after about 2s\n", ticks);
+      if (19 <= ticks && ticks <= 21 && 1.9 < delta && delta < 2.2)
+        fprintf(stderr, "got about 20 timer ticks after about 2s\n", ticks);
       else
         fprintf(stderr, "got timer ticks (%ld) after %.2f s\n", ticks, delta);
     }

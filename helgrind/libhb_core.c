@@ -5965,9 +5965,19 @@ void libhb_srange_new ( Thr* thr, Addr a, SizeT szB )
    if (0 && TRACEME(a,szB)) trace(thr,a,szB,"nw-after ");
 }
 
-void libhb_srange_noaccess ( Thr* thr, Addr a, SizeT szB )
+void libhb_srange_noaccess_NoFX ( Thr* thr, Addr a, SizeT szB )
 {
    /* do nothing */
+}
+
+void libhb_srange_noaccess_AHAE ( Thr* thr, Addr a, SizeT szB )
+{
+   /* This really does put the requested range in NoAccess.  It's
+      expensive though. */
+   SVal sv = SVal_NOACCESS;
+   tl_assert(is_sane_SVal_C(sv));
+   zsm_sset_range( a, szB, sv );
+   Filter__clear_range( thr->filter, a, szB );
 }
 
 void libhb_srange_untrack ( Thr* thr, Addr a, SizeT szB )

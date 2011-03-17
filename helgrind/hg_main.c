@@ -942,11 +942,20 @@ static void shadow_mem_make_New ( Thread* thr, Addr a, SizeT len )
    libhb_srange_new( thr->hbthr, a, len );
 }
 
-static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
+static void shadow_mem_make_NoAccess_NoFX ( Thread* thr, Addr aIN, SizeT len )
 {
    if (0 && len > 500)
-      VG_(printf)("make NoAccess ( %#lx, %ld )\n", aIN, len );
-   libhb_srange_noaccess( thr->hbthr, aIN, len );
+      VG_(printf)("make NoAccess_NoFX ( %#lx, %ld )\n", aIN, len );
+   // has no effect (NoFX)
+   libhb_srange_noaccess_NoFX( thr->hbthr, aIN, len );
+}
+
+static void shadow_mem_make_NoAccess_AHAE ( Thread* thr, Addr aIN, SizeT len )
+{
+   if (0 && len > 500)
+      VG_(printf)("make NoAccess_AHAE ( %#lx, %ld )\n", aIN, len );
+   // Actually Has An Effect (AHAE)
+   libhb_srange_noaccess_AHAE( thr->hbthr, aIN, len );
 }
 
 static void shadow_mem_make_Untracked ( Thread* thr, Addr aIN, SizeT len )
@@ -1403,31 +1412,49 @@ void evh__new_mem_w_perms ( Addr a, SizeT len,
 static
 void evh__set_perms ( Addr a, SizeT len,
                       Bool rr, Bool ww, Bool xx ) {
+   // This handles mprotect requests.  If the memory is being put
+   // into no-R no-W state, paint it as NoAccess, for the reasons
+   // documented at evh__die_mem_munmap().
    if (SHOW_EVENTS >= 1)
-      VG_(printf)("evh__set_perms(%p, %lu, %d,%d,%d)\n",
+      VG_(printf)("evh__set_perms(%p, %lu, r=%d w=%d x=%d)\n",
                   (void*)a, len, (Int)rr, (Int)ww, (Int)xx );
    /* Hmm.  What should we do here, that actually makes any sense?
       Let's say: if neither readable nor writable, then declare it
       NoAccess, else leave it alone. */
    if (!(rr || ww))
-      shadow_mem_make_NoAccess( get_current_Thread(), a, len );
+      shadow_mem_make_NoAccess_AHAE( get_current_Thread(), a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__set_perms-post");
 }
 
 static
 void evh__die_mem ( Addr a, SizeT len ) {
-   // urr, libhb ignores this.
+   // Urr, libhb ignores this.
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__die_mem(%p, %lu)\n", (void*)a, len );
-   shadow_mem_make_NoAccess( get_current_Thread(), a, len );
+   shadow_mem_make_NoAccess_NoFX( get_current_Thread(), a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__die_mem-post");
 }
 
 static
+void evh__die_mem_munmap ( Addr a, SizeT len ) {
+   // It's important that libhb doesn't ignore this.  If, as is likely,
+   // the client is subject to address space layout randomization,
+   // then unmapped areas may never get remapped over, even in long
+   // runs.  If we just ignore them we wind up with large resource
+   // (VTS) leaks in libhb.  So force them to NoAccess, so that all
+   // VTS references in the affected area are dropped.  Marking memory
+   // as NoAccess is expensive, but we assume that munmap is sufficiently
+   // rare that the space gains of doing this are worth the costs.
+   if (SHOW_EVENTS >= 2)
+      VG_(printf)("evh__die_mem_munmap(%p, %lu)\n", (void*)a, len );
+   shadow_mem_make_NoAccess_AHAE( get_current_Thread(), a, len );
+}
+
+static
 void evh__untrack_mem ( Addr a, SizeT len ) {
-   // whereas it doesn't ignore this
+   // Libhb doesn't ignore this.
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__untrack_mem(%p, %lu)\n", (void*)a, len );
    shadow_mem_make_Untracked( get_current_Thread(), a, len );
@@ -1718,7 +1745,7 @@ void evh__die_mem_heap ( Addr a, SizeT len ) {
          guarantee that the reference happens before the free. */
       shadow_mem_cwrite_range(thr, a, len);
    }
-   shadow_mem_make_NoAccess( thr, a, len );
+   shadow_mem_make_NoAccess_NoFX( thr, a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read-post");
 }
@@ -4828,8 +4855,8 @@ static void hg_pre_clo_init ( void )
    VG_(track_change_mem_mprotect) ( evh__set_perms );
 
    VG_(track_die_mem_stack_signal)( evh__die_mem );
-   VG_(track_die_mem_brk)         ( evh__die_mem );
-   VG_(track_die_mem_munmap)      ( evh__die_mem );
+   VG_(track_die_mem_brk)         ( evh__die_mem_munmap );
+   VG_(track_die_mem_munmap)      ( evh__die_mem_munmap );
    VG_(track_die_mem_stack)       ( evh__die_mem );
 
    // FIXME: what is this for?

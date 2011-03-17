@@ -1,0 +1,2 @@
+prog: syscalls-2007
+stderr_filter: ../filter_allocs

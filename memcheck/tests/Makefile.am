@@ -95,8 +95,6 @@ EXTRA_DIST = \
 	leak-pool-4.vgtest leak-pool-4.stderr.exp \
 	leak-pool-5.vgtest leak-pool-5.stderr.exp \
 	leak-tree.vgtest leak-tree.stderr.exp \
-	linux-syslog-syscall linux-syslog-syscall.stderr.exp \
-	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
@@ -223,8 +221,6 @@ check_PROGRAMS = \
 	leak-cycle \
 	leak-pool \
 	leak-tree \
-	linux-syslog-syscall \
-	linux-syscalls-2007 \
 	long_namespace_xml \
 	long-supps \
 	mallinfo \

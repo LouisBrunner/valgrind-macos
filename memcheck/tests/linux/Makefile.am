@@ -12,6 +12,8 @@ EXTRA_DIST = \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
 	    stack_changes.stdout.exp2 stack_changes.vgtest \
 	stack_switch.stderr.exp stack_switch.vgtest \
+	syscalls-2007 syscalls-2007.stderr.exp \
+	syslog-syscall syslog-syscall.stderr.exp \
 	timerfd-syscall timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest
 
@@ -23,6 +25,8 @@ check_PROGRAMS = \
 	sigqueue \
 	stack_changes \
 	stack_switch \
+	syscalls-2007 \
+	syslog-syscall \
 	timerfd-syscall
 
 

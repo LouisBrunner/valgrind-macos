@@ -1633,7 +1633,6 @@ AC_CHECK_FUNCS([     \
         strrchr      \
         strstr       \
         syscall      \
-        timerfd      \
         utimensat    \
         ])
 

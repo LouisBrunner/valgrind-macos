@@ -1,31 +1,21 @@
 /* Test whether detached threads are handled properly. */
 
-
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-
 static int s_finished_count;
 static pthread_mutex_t s_mutex;
-
+static pthread_cond_t s_cond;
 
 static void increment_finished_count()
 {
   pthread_mutex_lock(&s_mutex);
   s_finished_count++;
+  pthread_cond_signal(&s_cond);
   pthread_mutex_unlock(&s_mutex);
-}
-
-static int get_finished_count()
-{
-  int result;
-  pthread_mutex_lock(&s_mutex);
-  result = s_finished_count;
-  pthread_mutex_unlock(&s_mutex);
-  return result;
 }
 
 static void* thread_func1(void* arg)
@@ -56,6 +46,7 @@ int main(int argc, char** argv)
     thread_arg[i] = i;
 
   pthread_mutex_init(&s_mutex, 0);
+  pthread_cond_init(&s_cond, 0);
 
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -81,17 +72,18 @@ int main(int argc, char** argv)
   pthread_attr_destroy(&attr);
 
   // Wait until all detached threads have written their output to stdout.
-  while (get_finished_count() < count1 + count2)
-  {
-    struct timespec delay = { 0, 1 * 1000 * 1000 };
-    nanosleep(&delay, 0);
-  }
+  pthread_mutex_lock(&s_mutex);
+  while (s_finished_count < count1 + count2
+         && pthread_cond_wait(&s_cond, &s_mutex) == 0)
+    ;
+  pthread_mutex_unlock(&s_mutex);
 
-  write(STDOUT_FILENO, "\n", 1);
-
+  pthread_cond_destroy(&s_cond);
   pthread_mutex_destroy(&s_mutex);
 
   sleep(1);
+
+  write(STDOUT_FILENO, "\n", 1);
 
   return 0;
 }

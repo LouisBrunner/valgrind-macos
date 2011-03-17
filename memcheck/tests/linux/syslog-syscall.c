@@ -1,7 +1,7 @@
 /** Test program for the syslog() system call.
  *  From the syslog(2) man page:
  *    If you need the libc function syslog()  (which  talks  to  syslogd(8)),
- *    then look at syslog(3).  The system call of this name is about control‐
+ *    then look at syslog(3).  The system call of this name is about control-
  *    ling the kernel printk()  buffer,  and  the  glibc  version  is  called
  *    klogctl().
  */

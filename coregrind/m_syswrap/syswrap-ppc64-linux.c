@@ -1495,6 +1495,8 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_inotify_add_watch,  sys_inotify_add_watch), // 276
    LINX_(__NR_inotify_rm_watch,   sys_inotify_rm_watch),  // 277
 
+   LINXY(__NR_ppoll,             sys_ppoll),              // 281
+
    LINXY(__NR_openat,            sys_openat),             // 286
    LINX_(__NR_mkdirat,           sys_mkdirat),            // 287
    LINX_(__NR_mknodat,           sys_mknodat),            // 288

@@ -2325,9 +2325,20 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
    switch (i->tag) {
 
    case Ain_Imm64:
-      *p++ = toUChar(0x48 + (1 & iregBit3(i->Ain.Imm64.dst)));
-      *p++ = toUChar(0xB8 + iregBits210(i->Ain.Imm64.dst));
-      p = emit64(p, i->Ain.Imm64.imm64);
+      if (i->Ain.Imm64.imm64 <= 0xFFFFFULL) {
+         /* Use the short form (load into 32 bit reg, + default
+            widening rule) for constants under 1 million.  We could
+            use this form for the range 0 to 0x7FFFFFFF inclusive, but
+            limit it to a smaller range for verifiability purposes. */
+         if (1 & iregBit3(i->Ain.Imm64.dst))
+            *p++ = 0x41;
+         *p++ = 0xB8 + iregBits210(i->Ain.Imm64.dst);
+         p = emit32(p, (UInt)i->Ain.Imm64.imm64);
+      } else {
+         *p++ = toUChar(0x48 + (1 & iregBit3(i->Ain.Imm64.dst)));
+         *p++ = toUChar(0xB8 + iregBits210(i->Ain.Imm64.dst));
+         p = emit64(p, i->Ain.Imm64.imm64);
+      }
       goto done;
 
    case Ain_Alu64R:
@@ -2335,7 +2346,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       if (i->Ain.Alu64R.op == Aalu_MOV) {
          switch (i->Ain.Alu64R.src->tag) {
             case Armi_Imm:
-               if (0 == (i->Ain.Alu64R.src->Armi.Imm.imm32 & ~0xFFF)) {
+               if (0 == (i->Ain.Alu64R.src->Armi.Imm.imm32 & ~0xFFFFF)) {
                   /* Actually we could use this form for constants in
                      the range 0 through 0x7FFFFFFF inclusive, but
                      limit it to a small range for verifiability

@@ -131,7 +131,7 @@ typedef enum {
    S390_INSN_MUL,    /* n-bit operands; 2n-bit result */
    S390_INSN_DIV,    /* 2n-bit dividend; n-bit divisor; n-bit quot/rem */
    S390_INSN_DIVS,   /* n-bit dividend; n-bit divisor; n-bit quot/rem */
-   S390_INSN_FLOGR,
+   S390_INSN_CLZ,    /* count left-most zeroes */
    S390_INSN_UNOP,
    S390_INSN_TEST,   /* test operand and set cc */
    S390_INSN_CC2BOOL,/* convert condition code to 0/1 */
@@ -308,10 +308,10 @@ typedef struct s390_insn {
          s390_opnd_RMI op2;
       } divs;
       struct {
-         HReg          bitpos; /* position of leftmost '1' bit  r10 */
-         HReg          modval; /* modified input value          r11 */
+         HReg          num_bits; /* number of leftmost '0' bits  r10 */
+         HReg          clobber;  /* unspecified                  r11 */
          s390_opnd_RMI src;
-      } flogr;
+      } clz;
       struct {
          s390_unop_t   tag;
          HReg          dst;
@@ -418,8 +418,8 @@ s390_insn *s390_insn_mul(UChar size, HReg dst_hi, HReg dst_lo,
 s390_insn *s390_insn_div(UChar size, HReg op1_hi, HReg op1_lo,
                          s390_opnd_RMI op2, Bool signed_divide);
 s390_insn *s390_insn_divs(UChar size, HReg rem, HReg op1, s390_opnd_RMI op2);
-s390_insn *s390_insn_flogr(UChar size, HReg bitpos, HReg modval,
-                           s390_opnd_RMI op);
+s390_insn *s390_insn_clz(UChar size, HReg num_bits, HReg clobber,
+                         s390_opnd_RMI op);
 s390_insn *s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3,
                          HReg old);
 s390_insn *s390_insn_unop(UChar size, s390_unop_t tag, HReg dst,

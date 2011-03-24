@@ -574,10 +574,10 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       s390_opnd_RMI_get_reg_usage(u, insn->variant.divs.op2);
       break;
 
-   case S390_INSN_FLOGR:
-      addHRegUse(u, HRmWrite, insn->variant.flogr.bitpos);
-      addHRegUse(u, HRmWrite, insn->variant.flogr.modval);
-      s390_opnd_RMI_get_reg_usage(u, insn->variant.flogr.src);
+   case S390_INSN_CLZ:
+      addHRegUse(u, HRmWrite, insn->variant.clz.num_bits);
+      addHRegUse(u, HRmWrite, insn->variant.clz.clobber);
+      s390_opnd_RMI_get_reg_usage(u, insn->variant.clz.src);
       break;
 
    case S390_INSN_UNOP:
@@ -781,10 +781,10 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       s390_opnd_RMI_map_regs(m, &insn->variant.divs.op2);
       break;
 
-   case S390_INSN_FLOGR:
-      insn->variant.flogr.bitpos = lookupHRegRemap(m, insn->variant.flogr.bitpos);
-      insn->variant.flogr.modval = lookupHRegRemap(m, insn->variant.flogr.modval);
-      s390_opnd_RMI_map_regs(m, &insn->variant.flogr.src);
+   case S390_INSN_CLZ:
+      insn->variant.clz.num_bits = lookupHRegRemap(m, insn->variant.clz.num_bits);
+      insn->variant.clz.clobber  = lookupHRegRemap(m, insn->variant.clz.clobber);
+      s390_opnd_RMI_map_regs(m, &insn->variant.clz.src);
       break;
 
    case S390_INSN_UNOP:
@@ -3818,19 +3818,19 @@ s390_insn_divs(UChar size, HReg rem, HReg op1, s390_opnd_RMI op2)
 
 
 s390_insn *
-s390_insn_flogr(UChar size, HReg bitpos, HReg modval, s390_opnd_RMI src)
+s390_insn_clz(UChar size, HReg num_bits, HReg clobber, s390_opnd_RMI src)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
    vassert(size == 8);
-   vassert(! hregIsVirtual(bitpos));
-   vassert(! hregIsVirtual(modval));
+   vassert(! hregIsVirtual(num_bits));
+   vassert(! hregIsVirtual(clobber));
 
-   insn->tag  = S390_INSN_FLOGR;
+   insn->tag  = S390_INSN_CLZ;
    insn->size = size;
-   insn->variant.flogr.bitpos = bitpos;   /* bit position */
-   insn->variant.flogr.modval = modval;   /* modified input value */
-   insn->variant.flogr.src = src;
+   insn->variant.clz.num_bits = num_bits;
+   insn->variant.clz.clobber  = clobber;
+   insn->variant.clz.src = src;
 
    return insn;
 }
@@ -4329,9 +4329,9 @@ s390_insn_as_string(const s390_insn *insn)
                    &insn->variant.divs.op2);
       break;
 
-   case S390_INSN_FLOGR:
-      s390_sprintf(buf, "%M %R,%O", "v-flogr", insn->variant.flogr.bitpos,
-                   &insn->variant.flogr.src);
+   case S390_INSN_CLZ:
+      s390_sprintf(buf, "%M %R,%O", "v-clz", insn->variant.clz.num_bits,
+                   &insn->variant.clz.src);
       break;
 
    case S390_INSN_UNOP:
@@ -6003,25 +6003,25 @@ s390_insn_divs_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
-s390_insn_flogr_emit(UChar *buf, const s390_insn *insn)
+s390_insn_clz_emit(UChar *buf, const s390_insn *insn)
 {
    s390_opnd_RMI src;
-   UChar r1, r1p1;
+   UChar r1, r1p1, r2, *p;
 
-   r1   = hregNumber(insn->variant.flogr.bitpos);
-   r1p1 = hregNumber(insn->variant.flogr.modval);
+   r1   = hregNumber(insn->variant.clz.num_bits);
+   r1p1 = hregNumber(insn->variant.clz.clobber);
 
    vassert((r1 & 0x1) == 0);
    vassert(r1p1 == r1 + 1);
 
-   src = insn->variant.flogr.src;
+   p = buf;
+   src = insn->variant.clz.src;
 
+   /* Get operand and move it to r2 */
    switch (src.tag) {
-   case S390_OPND_REG: {
-      UInt r2 = hregNumber(src.variant.reg);
-
-      return s390_emit_FLOGR(buf, r1, r2);
-   }
+   case S390_OPND_REG:
+      r2 = hregNumber(src.variant.reg);
+      break;
 
    case S390_OPND_AMODE: {
       const s390_amode *am = src.variant.am;
@@ -6029,23 +6029,49 @@ s390_insn_flogr_emit(UChar *buf, const s390_insn *insn)
       UChar x = hregNumber(am->x);
       Int   d = am->d;
 
-      buf = s390_emit_LG(buf, R0, x, b, DISP20(d));
-      return s390_emit_FLOGR(buf, r1, R0);
+      p  = s390_emit_LG(p, R0, x, b, DISP20(d));
+      r2 = R0;
+      break;
    }
 
    case S390_OPND_IMMEDIATE: {
       ULong value = src.variant.imm;
 
-      buf = s390_emit_load_64imm(buf, R0, value);
-      return s390_emit_FLOGR(buf, r1, R0);
+      p  = s390_emit_load_64imm(p, R0, value);
+      r2 = R0;
+      break;
    }
 
    default:
       goto fail;
    }
 
+   /* Use FLOGR if you can */
+   if (s390_host_has_eimm) {
+      return s390_emit_FLOGR(p, r1, r2);
+   }
+
+   /*
+      r0 = r2;
+      r1 = 64;
+      while (r0 != 0) {
+        r1 -= 1;
+        r0 >>= 1;
+      }
+   */
+   p = s390_emit_LTGR(p, R0, r2);
+   p = s390_emit_LLILL(p, r1,  64);
+
+   p = s390_emit_BRC(p, S390_CC_E, (4 + 4 + 6 + 4 + 4)/ 2);  /* 4 bytes */
+   p = s390_emit_AGHI(p, r1, (UShort)-1);         /* r1  -= 1;  4 bytes */
+   p = s390_emit_SRLG(p, R0, R0, R0, DISP20(1));  /* r0 >>= 1;  6 bytes */
+   p = s390_emit_LTGR(p, R0, R0);                 /* set cc     4 bytes */
+   p = s390_emit_BRC(p, S390_CC_NE,               /*            4 bytes */
+                     (UShort)(-(4 + 6 + 4) / 2));
+   return p;
+
  fail:
-   vpanic("s390_insn_flogr_emit");
+   vpanic("s390_insn_clz_emit");
 }
 
 
@@ -6721,8 +6747,8 @@ emit_S390Instr(UChar *buf, Int nbuf, struct s390_insn *insn,
       end = s390_insn_divs_emit(buf, insn);
       break;
 
-   case S390_INSN_FLOGR:
-      end = s390_insn_flogr_emit(buf, insn);
+   case S390_INSN_CLZ:
+      end = s390_insn_clz_emit(buf, insn);
       break;
 
    case S390_INSN_UNOP:

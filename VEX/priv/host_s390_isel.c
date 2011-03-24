@@ -1182,17 +1182,14 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_Clz64: {
          HReg r10, r11;
 
-         /* We use non-virtual registers r10 and r11 as pair for the two
-            output values */
+         /* This will be implemented using FLOGR, if possible. So we need to
+            set aside a pair of non-virtual registers. The result (number of
+            left-most zero bits) will be in r10. The value in r11 is unspecified
+            and must not be used. */
          r10  = make_gpr(env, 10);
          r11  = make_gpr(env, 11);
 
-         /* flogr */
-         addInstr(env, s390_insn_flogr(8, r10, r11, opnd));
-
-         /* The result is in registers r10 (bit position) and r11 (modified
-            input value). The value in r11 is not needed and will be
-            discarded. */
+         addInstr(env, s390_insn_clz(8, r10, r11, opnd));
          addInstr(env, s390_insn_move(8, dst, r10));
          return dst;
       }

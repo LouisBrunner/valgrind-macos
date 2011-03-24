@@ -9112,6 +9112,45 @@ s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
    return "xc";
 }
 
+static void
+s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
+{
+   IRTemp counter = newTemp(Ity_I32);
+   IRTemp start = newTemp(Ity_I64);
+   IRTemp addr  = newTemp(Ity_I64);
+
+   assign(start,
+          binop(Iop_Add64, mkU64(d), b != 0 ? get_gpr_dw0(b) : mkU64(0)));
+
+   if (length < 8) {
+      UInt i;
+
+      for (i = 0; i <= length; ++i) {
+         store(binop(Iop_Add64, mkexpr(start), mkU64(i)), mkU8(0));
+      }
+   } else {
+     assign(counter, get_counter_w0());
+
+     assign(addr, binop(Iop_Add64, mkexpr(start),
+                        unop(Iop_32Uto64, mkexpr(counter))));
+
+     store(mkexpr(addr), mkU8(0));
+
+     /* Check for end of field */
+     put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
+     if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)),
+                       guest_IA_curr_instr);
+
+     /* Reset counter */
+     put_counter_dw0(mkU64(0));
+   }
+
+   s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
+
+   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
+}
+
 static HChar *
 s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 {
@@ -12565,9 +12604,14 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    case 0xd6ULL: s390_format_SS_L0RDRD(s390_irgen_OC, ovl.fmt.SS.l,
                                        ovl.fmt.SS.b1, ovl.fmt.SS.d1,
                                        ovl.fmt.SS.b2, ovl.fmt.SS.d2);  goto ok;
-   case 0xd7ULL: s390_format_SS_L0RDRD(s390_irgen_XC, ovl.fmt.SS.l,
-                                       ovl.fmt.SS.b1, ovl.fmt.SS.d1,
-                                       ovl.fmt.SS.b2, ovl.fmt.SS.d2);  goto ok;
+   case 0xd7ULL:
+      if (ovl.fmt.SS.b1 == ovl.fmt.SS.b2 && ovl.fmt.SS.d1 == ovl.fmt.SS.d2)
+         s390_irgen_XC_sameloc(ovl.fmt.SS.l, ovl.fmt.SS.b1, ovl.fmt.SS.d1);
+      else
+        s390_format_SS_L0RDRD(s390_irgen_XC, ovl.fmt.SS.l,
+                              ovl.fmt.SS.b1, ovl.fmt.SS.d1,
+                              ovl.fmt.SS.b2, ovl.fmt.SS.d2);
+      goto ok;
    case 0xd9ULL: /* MVCK */ goto unimplemented;
    case 0xdaULL: /* MVCP */ goto unimplemented;
    case 0xdbULL: /* MVCS */ goto unimplemented;

@@ -342,6 +342,7 @@ DECL_TEMPLATE(arm_linux, sys_sigreturn);
 DECL_TEMPLATE(arm_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(arm_linux, sys_set_tls);
 DECL_TEMPLATE(arm_linux, sys_cacheflush);
+DECL_TEMPLATE(arm_linux, sys_ptrace);
 
 PRE(sys_socketcall)
 {
@@ -1205,6 +1206,124 @@ PRE(sys_cacheflush)
    SET_STATUS_Success(0);
 }
 
+// ARG3 is only used for pointers into the traced process's address
+// space and for offsets into the traced process's struct
+// user_regs_struct. It is never a pointer into this process's memory
+// space, and we should therefore not check anything it points to.
+PRE(sys_ptrace)
+{
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "ptrace", 
+                 long, request, long, pid, long, addr, long, data);
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      PRE_MEM_WRITE( "ptrace(peek)", ARG4, 
+		     sizeof (long));
+      break;
+   case VKI_PTRACE_GETREGS:
+      PRE_MEM_WRITE( "ptrace(getregs)", ARG4, 
+		     sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_GETFPREGS:
+      PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4, 
+		     sizeof (struct vki_user_fp));
+      break;
+   case VKI_PTRACE_GETWMMXREGS:
+      PRE_MEM_WRITE( "ptrace(getwmmxregs)", ARG4, 
+		     VKI_IWMMXT_SIZE);
+      break;
+   case VKI_PTRACE_GETCRUNCHREGS:
+      PRE_MEM_WRITE( "ptrace(getcrunchregs)", ARG4, 
+		     VKI_CRUNCH_SIZE);
+      break;
+   case VKI_PTRACE_GETVFPREGS:
+      PRE_MEM_WRITE( "ptrace(getvfpregs)", ARG4, 
+                     sizeof (struct vki_user_vfp) );
+      break;
+   case VKI_PTRACE_GETHBPREGS:
+      PRE_MEM_WRITE( "ptrace(gethbpregs)", ARG4, 
+                     sizeof (unsigned long) );
+      break;
+   case VKI_PTRACE_SETREGS:
+      PRE_MEM_READ( "ptrace(setregs)", ARG4, 
+		     sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_SETFPREGS:
+      PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
+		     sizeof (struct vki_user_fp));
+      break;
+   case VKI_PTRACE_SETWMMXREGS:
+      PRE_MEM_READ( "ptrace(setwmmxregs)", ARG4, 
+		     VKI_IWMMXT_SIZE);
+      break;
+   case VKI_PTRACE_SETCRUNCHREGS:
+      PRE_MEM_READ( "ptrace(setcrunchregs)", ARG4, 
+		     VKI_CRUNCH_SIZE);
+      break;
+   case VKI_PTRACE_SETVFPREGS:
+      PRE_MEM_READ( "ptrace(setvfpregs)", ARG4, 
+                     sizeof (struct vki_user_vfp));
+      break;
+   case VKI_PTRACE_SETHBPREGS:
+      PRE_MEM_READ( "ptrace(sethbpregs)", ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GET_THREAD_AREA:
+      PRE_MEM_WRITE( "ptrace(get_thread_area)", ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETEVENTMSG:
+      PRE_MEM_WRITE( "ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      PRE_MEM_WRITE( "ptrace(getsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_SETSIGINFO:
+      PRE_MEM_READ( "ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   default:
+      break;
+   }
+}
+
+POST(sys_ptrace)
+{
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      POST_MEM_WRITE( ARG4, sizeof (long));
+      break;
+   case VKI_PTRACE_GETREGS:
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_GETFPREGS:
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_fp));
+      break;
+   case VKI_PTRACE_GETWMMXREGS:
+      POST_MEM_WRITE( ARG4, VKI_IWMMXT_SIZE);
+      break;
+   case VKI_PTRACE_GETCRUNCHREGS:
+      POST_MEM_WRITE( ARG4, VKI_CRUNCH_SIZE);
+      break;
+   case VKI_PTRACE_GETVFPREGS:
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_user_vfp));
+      break;
+   case VKI_PTRACE_GET_THREAD_AREA:
+   case VKI_PTRACE_GETHBPREGS:
+   case VKI_PTRACE_GETEVENTMSG:
+      POST_MEM_WRITE( ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      /* XXX: This is a simplification. Different parts of the
+       * siginfo_t are valid depending on the type of signal.
+       */
+      POST_MEM_WRITE( ARG4, sizeof(vki_siginfo_t));
+      break;
+   default:
+      break;
+   }
+}
 
 #undef PRE
 #undef POST
@@ -1262,7 +1381,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_getuid,            sys_getuid16),       // 24 ## P
 //zz 
 //zz    //   (__NR_stime,             sys_stime),          // 25 * (SVr4,SVID,X/OPEN)
-//   PLAXY(__NR_ptrace,            sys_ptrace),         // 26
+   PLAXY(__NR_ptrace,            sys_ptrace),         // 26
    GENX_(__NR_alarm,             sys_alarm),          // 27
 //zz    //   (__NR_oldfstat,          sys_fstat),          // 28 * L -- obsolete
    GENX_(__NR_pause,             sys_pause),          // 29

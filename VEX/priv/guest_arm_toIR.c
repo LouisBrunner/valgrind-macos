@@ -16010,8 +16010,9 @@ DisResult disInstr_THUMB_WRK (
       UInt rN    = INSN0(3,0);
       UInt rD    = INSN1(11,8);
       Bool valid = !isBadRegT(rN) && !isBadRegT(rD);
-      /* but allow "sub.w sp, sp, #constT" */
-      if (!valid && !isRSB && rN == 13 && rD == 13)
+      /* but allow "sub{s}.w reg, sp, #constT 
+         this is (T2) of "SUB (SP minus immediate)" */
+      if (!valid && !isRSB && rN == 13 && rD != 15)
          valid = True;
       if (valid) {
          IRTemp argL  = newTemp(Ity_I32);
@@ -16158,14 +16159,16 @@ DisResult disInstr_THUMB_WRK (
       UInt how  = INSN1(5,4);
 
       Bool valid = !isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM);
-      /* but allow "add.w reg, sp, reg   w/ no shift */
+      /* but allow "add.w reg, sp, reg   w/ no shift
+         (T3) "ADD (SP plus register) */
       if (!valid && INSN0(8,5) == BITS4(1,0,0,0) // add
-          && rN == 13 && imm5 == 0 && how == 0) {
+          && rD != 15 && rN == 13 && imm5 == 0 && how == 0) {
          valid = True;
       }
-      /* also allow "sub.w sp, sp, reg   w/ no shift */
-      if (!valid && INSN0(8,5) == BITS4(1,1,0,1) // add
-          && rD == 13 && rN == 13 && imm5 == 0 && how == 0) {
+      /* also allow "sub.w reg, sp, reg   w/ no shift
+         (T1) "SUB (SP minus register) */
+      if (!valid && INSN0(8,5) == BITS4(1,1,0,1) // sub
+          && rD != 15 && rN == 13 && imm5 == 0 && how == 0) {
          valid = True;
       }
       if (valid) {

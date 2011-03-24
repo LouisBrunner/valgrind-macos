@@ -3338,7 +3338,7 @@ s390_emit_load_32imm(UChar *p, UChar reg, UInt val)
 /*--- Wrapper functions                                    ---*/
 /*------------------------------------------------------------*/
 
-/* r1[32:63],r1+1[32:63] = r1+1[32:63] * memory[op2addr][32:63] */
+/* r1[32:63],r1+1[32:63] = r1+1[32:63] * memory[op2addr][0:31] */
 static UChar *
 s390_emit_MFYw(UChar *p, UChar r1, UChar x, UChar b,  UShort dl, UChar dh)
 {
@@ -3349,6 +3349,19 @@ s390_emit_MFYw(UChar *p, UChar r1, UChar x, UChar b,  UShort dl, UChar dh)
    /* Load from memory into R0, then MULTIPLY with R1 */
    p = s390_emit_LY(p, R0, x, b, dl, dh);
    return s390_emit_MR(p, r1, R0);
+}
+
+/* r1[32:63] = r1[32:63] * memory[op2addr][0:15] */
+static UChar *
+s390_emit_MHYw(UChar *p, UChar r1, UChar x, UChar b,  UShort dl, UChar dh)
+{
+   if (s390_host_has_gie) {
+      return s390_emit_MHY(p, r1, x, b, dl, dh);
+   }
+
+   /* Load from memory into R0, then MULTIPLY with R1 */
+   p = s390_emit_LHY(p, R0, x, b, dl, dh);
+   return s390_emit_MSR(p, r1, R0);
 }
 
 /* r1[32:63] = r1[32:63] * i2 */
@@ -5023,7 +5036,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
                return s390_emit_SHY(buf, dst, x, b, DISP20(d));
 
             case S390_ALU_MUL:
-               return s390_emit_MHY(buf, dst, x, b, DISP20(d));
+               return s390_emit_MHYw(buf, dst, x, b, DISP20(d));
 
                /* For bitwise operations: Move two bytes from memory into scratch
                   register r0; then perform operation */

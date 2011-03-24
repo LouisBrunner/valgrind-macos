@@ -1848,7 +1848,7 @@ AC_TRY_LINK(,
 [
   ac_have_builtin_atomic=yes
   AC_MSG_RESULT([yes])
-  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() a.o.])
+  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
 ],
 [
   ac_have_builtin_atomic=no
@@ -1859,6 +1859,33 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC], [test x$ac_have_builtin_atomic = xyes])
 
+# does g++ have built-in functions for atomic memory access ?
+AC_MSG_CHECKING([if g++ supports __sync_bool_compare_and_swap])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="$mflag_primary"
+
+AC_LANG_PUSH(C++)
+AC_TRY_LINK(,
+[
+  int variable = 1;
+  return (__sync_bool_compare_and_swap(&variable, 1, 2)
+          && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
+],
+[
+  ac_have_builtin_atomic_cxx=yes
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(HAVE_BUILTIN_ATOMIC_CXX, 1, [Define to 1 if g++ supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
+],
+[
+  ac_have_builtin_atomic_cxx=no
+  AC_MSG_RESULT([no])
+])
+AC_LANG_POP(C++)
+
+CXXFLAGS=$safe_CXXFLAGS
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_CXX], [test x$ac_have_builtin_atomic_cxx = xyes])
 
 #----------------------------------------------------------------------------
 # Ok.  We're done checking.

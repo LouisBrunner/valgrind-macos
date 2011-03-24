@@ -323,9 +323,13 @@ if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS +=        \
   annotate_barrier       \
   annotate_rwlock        \
-  annotate_smart_pointer \
   atomic_var             \
-  circular_buffer        \
+  circular_buffer
+endif
+
+if HAVE_BUILTIN_ATOMIC_CXX
+check_PROGRAMS +=        \
+  annotate_smart_pointer \
   tsan_unittest
 endif
 

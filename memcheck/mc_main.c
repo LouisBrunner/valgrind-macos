@@ -4987,6 +4987,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
    if (!VG_IS_TOOL_USERREQ('M','C',arg[0])
        && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
+       && VG_USERREQ__RESIZEINPLACE_BLOCK != arg[0]
        && VG_USERREQ__FREELIKE_BLOCK   != arg[0]
        && VG_USERREQ__CREATE_MEMPOOL   != arg[0]
        && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
@@ -5119,6 +5120,15 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
          MC_(new_block) ( tid, p, sizeB, /*ignored*/0, is_zeroed, 
                           MC_AllocCustom, MC_(malloc_list) );
+         return True;
+      }
+      case VG_USERREQ__RESIZEINPLACE_BLOCK: {
+         Addr p         = (Addr)arg[1];
+         SizeT oldSizeB =       arg[2];
+         SizeT newSizeB =       arg[3];
+         UInt rzB       =       arg[4];
+
+         MC_(handle_resizeInPlace) ( tid, p, oldSizeB, newSizeB, rzB );
          return True;
       }
       case VG_USERREQ__FREELIKE_BLOCK: {

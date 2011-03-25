@@ -486,6 +486,37 @@ SizeT MC_(malloc_usable_size) ( ThreadId tid, void* p )
    return ( mc ? mc->szB : 0 );
 }
 
+/* This handles the in place resize of a block, as performed by the
+   VALGRIND_RESIZEINPLACE_BLOCK client request.  It is unrelated to,
+   and not used for, handling of the normal libc realloc()
+   function. */
+void MC_(handle_resizeInPlace)(ThreadId tid, Addr p,
+                               SizeT oldSizeB, SizeT newSizeB, SizeT rzB)
+{
+   MC_Chunk* mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)p );
+   if (!mc || mc->szB != oldSizeB || newSizeB == 0) {
+      /* Reject if: p is not found, or oldSizeB is wrong,
+         or new block would be empty. */
+      MC_(record_free_error) ( tid, p );
+      return;
+   }
+
+   if (oldSizeB == newSizeB)
+      return;
+
+   mc->szB = newSizeB;
+   if (newSizeB < oldSizeB) {
+      MC_(make_mem_noaccess)( p + newSizeB, oldSizeB - newSizeB + rzB );
+   } else {
+      ExeContext* ec  = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
+      UInt        ecu = VG_(get_ECU_from_ExeContext)(ec);
+      MC_(make_mem_undefined_w_otag)( p + oldSizeB, newSizeB - oldSizeB,
+                                      ecu | MC_OKIND_HEAP );
+      if (rzB > 0)
+         MC_(make_mem_noaccess)( p + newSizeB, rzB );
+   }
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Memory pool stuff.                                   ---*/

@@ -582,12 +582,13 @@ void MC_(pp_Error) ( Error* err )
       case Err_Free:
          if (xml) {
             emit( "  <kind>InvalidFree</kind>\n" );
-            emit( "  <what>Invalid free() / delete / delete[]</what>\n" );
+            emit( "  <what>Invalid free() / delete / delete[]"
+                  " / realloc()</what>\n" );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             mc_pp_AddrInfo( VG_(get_error_address)(err),
                             &extra->Err.Free.ai, False );
          } else {
-            emit( "Invalid free() / delete / delete[]\n" );
+            emit( "Invalid free() / delete / delete[] / realloc()\n" );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             mc_pp_AddrInfo( VG_(get_error_address)(err),
                             &extra->Err.Free.ai, False );

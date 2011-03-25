@@ -198,7 +198,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>InvalidFree</kind>
-  <what>Invalid free() / delete / delete[]</what>
+  <what>Invalid free() / delete / delete[] / realloc()</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -290,7 +290,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>InvalidFree</kind>
-  <what>Invalid free() / delete / delete[]</what>
+  <what>Invalid free() / delete / delete[] / realloc()</what>
   <stack>
     <frame>
       <ip>0x........</ip>

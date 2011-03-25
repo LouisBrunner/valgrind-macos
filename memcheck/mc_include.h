@@ -127,6 +127,9 @@ void  MC_(__builtin_vec_delete) ( ThreadId tid, void* p );
 void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
 SizeT MC_(malloc_usable_size)   ( ThreadId tid, void* p );
 
+void MC_(handle_resizeInPlace)(ThreadId tid, Addr p,
+                               SizeT oldSizeB, SizeT newSizeB, SizeT rzB);
+
 
 /*------------------------------------------------------------*/
 /*--- Origin tracking translate-time support               ---*/

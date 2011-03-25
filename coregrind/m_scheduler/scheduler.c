@@ -1584,6 +1584,7 @@ void do_client_request ( ThreadId tid )
       }
 
       case VG_USERREQ__MALLOCLIKE_BLOCK:
+      case VG_USERREQ__RESIZEINPLACE_BLOCK:
       case VG_USERREQ__FREELIKE_BLOCK:
          // Ignore them if the addr is NULL;  otherwise pass onto the tool.
          if (!arg[1]) {

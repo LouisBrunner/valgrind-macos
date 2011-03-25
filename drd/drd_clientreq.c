@@ -97,6 +97,22 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
          DRD_(malloclike_block)(vg_tid, arg[1]/*addr*/, arg[2]/*size*/);
       break;
 
+   case VG_USERREQ__RESIZEINPLACE_BLOCK:
+      if (!DRD_(freelike_block)(vg_tid, arg[1]/*addr*/, False))
+      {
+         GenericErrInfo GEI = {
+            .tid = DRD_(thread_get_running_tid)(),
+            .addr = 0,
+         };
+         VG_(maybe_record_error)(vg_tid,
+                                 GenericErr,
+                                 VG_(get_IP)(vg_tid),
+                                 "Invalid VG_USERREQ__RESIZEINPLACE_BLOCK request",
+                                 &GEI);
+      }
+      DRD_(malloclike_block)(vg_tid, arg[1]/*addr*/, arg[3]/*newSize*/);
+      break;
+
    case VG_USERREQ__FREELIKE_BLOCK:
       if (arg[1] && ! DRD_(freelike_block)(vg_tid, arg[1]/*addr*/, False))
       {

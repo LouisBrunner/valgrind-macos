@@ -1988,6 +1988,15 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
       *ret = 0;
       return True;
    }
+   case VG_USERREQ__RESIZEINPLACE_BLOCK: {
+      void* p        = (void*)argv[1];
+      SizeT newSizeB =       argv[3];
+
+      unrecord_block(p, /*maybe_snapshot*/True);
+      record_block(tid, p, newSizeB, /*slop_szB*/0,
+                   /*exclude_first_entry*/False, /*maybe_snapshot*/True);
+      return True;
+   }
    case VG_USERREQ__FREELIKE_BLOCK: {
       void* p = (void*)argv[1];
       unrecord_block(p, /*maybe_snapshot*/True);

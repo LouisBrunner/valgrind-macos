@@ -152,6 +152,15 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
+   <term><command><computeroutput>VALGRIND_RESIZEINPLACE_BLOCK</computeroutput>:</command></term>
+   <listitem>
+    <para>Informs a Valgrind tool that the size of an allocated block has been
+    modified but not its address. See <filename>valgrind.h</filename> for
+    more information on how to use it.</para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
    <term>
    <command><computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput></command>,
    <command><computeroutput>VALGRIND_DESTROY_MEMPOOL</computeroutput></command>,

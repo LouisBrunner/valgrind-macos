@@ -4,21 +4,42 @@ Invalid write of size 4
    at 0x........: custom_alloc (custom_alloc.c:47)
    by 0x........: main (custom_alloc.c:76)
 
-Invalid free() / delete / delete[]
+Invalid write of size 4
+   at 0x........: main (custom_alloc.c:83)
+ Address 0x........ is 0 bytes after a block of size 20 alloc'd
+   at 0x........: custom_alloc (custom_alloc.c:47)
+   by 0x........: main (custom_alloc.c:76)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (custom_alloc.c:90)
+
+Invalid write of size 4
+   at 0x........: main (custom_alloc.c:93)
+ Address 0x........ is 0 bytes after a block of size 28 alloc'd
+   at 0x........: custom_alloc (custom_alloc.c:47)
+   by 0x........: main (custom_alloc.c:76)
+
+Invalid free() / delete / delete[] / realloc()
+   at 0x........: main (custom_alloc.c:96)
+ Address 0x........ is 4 bytes inside a block of size 28 alloc'd
+   at 0x........: custom_alloc (custom_alloc.c:47)
+   by 0x........: main (custom_alloc.c:76)
+
+Invalid free() / delete / delete[] / realloc()
    at 0x........: custom_free (custom_alloc.c:54)
-   by 0x........: main (custom_alloc.c:83)
+   by 0x........: main (custom_alloc.c:100)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Mismatched free() / delete / delete []
    at 0x........: custom_free (custom_alloc.c:54)
-   by 0x........: main (custom_alloc.c:86)
+   by 0x........: main (custom_alloc.c:103)
  Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (custom_alloc.c:85)
+   by 0x........: main (custom_alloc.c:102)
 
 Invalid read of size 4
-   at 0x........: main (custom_alloc.c:89)
- Address 0x........ is 0 bytes inside a block of size 40 free'd
+   at 0x........: main (custom_alloc.c:106)
+ Address 0x........ is 0 bytes inside a block of size 28 free'd
    at 0x........: custom_free (custom_alloc.c:54)
-   by 0x........: main (custom_alloc.c:81)
+   by 0x........: main (custom_alloc.c:98)
 

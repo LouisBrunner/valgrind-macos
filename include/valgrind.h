@@ -4846,6 +4846,7 @@ typedef
           /* These are useful and can be interpreted by any tool that
              tracks malloc() et al, by using vg_replace_malloc.c. */
           VG_USERREQ__MALLOCLIKE_BLOCK = 0x1301,
+          VG_USERREQ__RESIZEINPLACE_BLOCK = 0x130b,
           VG_USERREQ__FREELIKE_BLOCK   = 0x1302,
           /* Memory pool support. */
           VG_USERREQ__CREATE_MEMPOOL   = 0x1303,
@@ -5178,7 +5179,24 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    VALGRIND_FREELIKE_BLOCK should be put immediately after the point where a
    heap block is deallocated.
 
-   In many cases, these two client requests will not be enough to get your
+   VALGRIND_RESIZEINPLACE_BLOCK informs a tool about reallocation. For
+   Memcheck, it does four things:
+
+   - It records that the size of a block has been changed.  This assumes that
+     the block was annotated as having been allocated via
+     VALGRIND_MALLOCLIKE_BLOCK.  Otherwise, an error will be issued.
+
+   - If the block shrunk, it marks the freed memory as being unaddressable.
+
+   - If the block grew, it marks the new area as undefined and defines a red
+     zone past the end of the new block.
+
+   - The V-bits of the overlap between the old and the new block are preserved.
+
+   VALGRIND_RESIZEINPLACE_BLOCK should be put after allocation of the new block
+   and before deallocation of the old block.
+
+   In many cases, these three client requests will not be enough to get your
    allocator working well with Memcheck.  More specifically, if your allocator
    writes to freed blocks in any way then a VALGRIND_MAKE_MEM_UNDEFINED call
    will be necessary to mark the memory as addressable just before the zeroing
@@ -5196,9 +5214,6 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    understand the distinction between the allocator and the rest of the
    program.
 
-   Note: there is currently no VALGRIND_REALLOCLIKE_BLOCK client request;  it
-   has to be emulated with MALLOCLIKE/FREELIKE and memory copying.
-   
    Ignored if addr == 0.
 */
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \
@@ -5206,6 +5221,16 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__MALLOCLIKE_BLOCK,      \
                                addr, sizeB, rzB, is_zeroed, 0);   \
+   }
+
+/* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.
+   Ignored if addr == 0.
+*/
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB)\
+   {unsigned int _qzz_res;                                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__RESIZEINPLACE_BLOCK,     \
+                               addr, oldSizeB, newSizeB, rzB, 0); \
    }
 
 /* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.

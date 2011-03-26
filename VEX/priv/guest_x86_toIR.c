@@ -998,7 +998,10 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op32,
                                    widenUto32(mkexpr(resUS)))) );
    /* Set NDEP even though it isn't used.  This makes redundant-PUT
       elimination of previous stores to this field work better. */
-   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP,
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_NDEP,Ity_I32),
+				   mkU32(0) )));
 }
 
 

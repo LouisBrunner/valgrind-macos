@@ -54,6 +54,7 @@ EXTRA_DIST = \
 	movx.stderr.exp movx.stdout.exp movx.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
+	shift_ndep.stderr.exp shift_ndep.stdout.exp shift_ndep.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
@@ -87,6 +88,7 @@ check_PROGRAMS = \
 	movx \
 	pushpopseg \
 	sbbmisc \
+	shift_ndep \
 	smc1 \
 	x86locked \
 	yield \

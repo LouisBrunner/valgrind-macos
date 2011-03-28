@@ -48,23 +48,23 @@
       || defined(PLAT_ppc32_aix5) || defined(PLAT_ppc64_aix5)
 #  define INC(_lval,_lqual)               \
    __asm__ __volatile__(                  \
-      "L1xyzzy1" _lqual ":\n"             \
+      "1:\n"                              \
       "        lwarx 15,0,%0\n"           \
       "        addi 15,15,1\n"            \
       "        stwcx. 15,0,%0\n"          \
-      "        bne- L1xyzzy1" _lqual      \
+      "        bne- 1b\n"                 \
       : /*out*/ : /*in*/ "b"(&(_lval))    \
       : /*trash*/ "r15", "cr0", "memory"  \
    )
 #elif defined(PLAT_arm_linux)
 #  define INC(_lval,_lqual) \
   __asm__ __volatile__( \
-      "L1xyzzy1" _lqual ":\n"                \
+      "1:\n"                                 \
       "        ldrex r8, [%0, #0]\n"         \
       "        add   r8, r8, #1\n"           \
       "        strex r9, r8, [%0, #0]\n"     \
       "        cmp   r9, #0\n"               \
-      "        bne L1xyzzy1" _lqual          \
+      "        bne   1b\n"                   \
       : /*out*/ : /*in*/ "r"(&(_lval))       \
       : /*trash*/ "r8", "r9", "cc", "memory" \
   );

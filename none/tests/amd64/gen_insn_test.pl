@@ -628,10 +628,7 @@ while (<>)
 
     foreach my $result (@results)
     {
-        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpu[cs]w)$/)
-        {
-            $result->{argnum} = $argnum++;
-        }
+        $result->{argnum} = $argnum++;
     }
     
     foreach my $arg (@presets, @args)
@@ -639,14 +636,6 @@ while (<>)
         if (defined($arg->{name}))
         {
             $arg->{argnum} = $argnum++;
-        }
-    }
-    
-    foreach my $result (@results)
-    {
-        if ($result->{type} =~ /^(r(8|16|32|64)|mm|xmm)$/)
-        {
-            $result->{argnum} = $argnum++;
         }
     }
 
@@ -852,11 +841,8 @@ while (<>)
 
     foreach my $result (@results)
     {
-        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpu[cs]w)$/)
-        {
-            print qq|$prefix\"=m\" \($result->{name}\)|;
-            $prefix = ", ";
-        }
+        print qq|$prefix\"=m\" \($result->{name}\)|;
+        $prefix = ", ";
     }
 
     print qq|\n|;
@@ -868,15 +854,6 @@ while (<>)
         if (defined($arg->{name}))
         {
             print qq|$prefix\"m\" \($arg->{name}\)|;
-            $prefix = ", ";
-        }
-    }
-    
-    foreach my $result (@results)
-    {
-        if ($result->{type} =~ /^(r(8|16|32|64)|mm|xmm)$/)
-        {
-            print qq|$prefix\"m\" \($result->{name}\)|;
             $prefix = ", ";
         }
     }

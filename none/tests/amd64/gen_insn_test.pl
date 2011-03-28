@@ -628,14 +628,30 @@ while (<>)
 
     foreach my $result (@results)
     {
-        $result->{argnum} = $argnum++;
+        if ($result->{type} eq "xmm")
+        {
+            $result->{argnuml} = $argnum++;
+            $result->{argnumh} = $argnum++;
+        }
+        else
+        {
+            $result->{argnum} = $argnum++;
+        }
     }
     
     foreach my $arg (@presets, @args)
     {
         if (defined($arg->{name}))
         {
-            $arg->{argnum} = $argnum++;
+            if ($arg->{type} eq "xmm")
+            {
+                $arg->{argnuml} = $argnum++;
+                $arg->{argnumh} = $argnum++;
+            }
+            else
+            {
+                $arg->{argnum} = $argnum++;
+            }
         }
     }
 
@@ -678,8 +694,8 @@ while (<>)
         }
         elsif ($arg->{type} eq "xmm")
         {
-            print qq|         \"movlps 0+%$arg->{argnum}, %%$arg->{register}\\n\"\n|;
-            print qq|         \"movhps 8+%$arg->{argnum}, %%$arg->{register}\\n\"\n|;
+            print qq|         \"movlps %$arg->{argnuml}, %%$arg->{register}\\n\"\n|;
+            print qq|         \"movhps %$arg->{argnumh}, %%$arg->{register}\\n\"\n|;
         }
         elsif ($arg->{type} eq "st")
         {
@@ -792,8 +808,8 @@ while (<>)
         }
         elsif ($result->{type} eq "xmm")
         {
-            print qq|         \"movlps %%$result->{register}, 0+%$result->{argnum}\\n\"\n|;
-            print qq|         \"movhps %%$result->{register}, 8+%$result->{argnum}\\n\"\n|;
+            print qq|         \"movlps %%$result->{register}, %$result->{argnuml}\\n\"\n|;
+            print qq|         \"movhps %%$result->{register}, %$result->{argnumh}\\n\"\n|;
         }
         elsif ($result->{type} eq "st")
         {
@@ -841,7 +857,15 @@ while (<>)
 
     foreach my $result (@results)
     {
-        print qq|$prefix\"=m\" \($result->{name}\)|;
+        if ($result->{type} eq "xmm")
+        {
+            print qq|$prefix\"=m\" \($result->{name}.uq[0]\), \"=m\" \($result->{name}.uq[1]\)|;
+        }
+        else
+        {
+            print qq|$prefix\"=m\" \($result->{name}\)|;
+        }
+
         $prefix = ", ";
     }
 
@@ -853,7 +877,15 @@ while (<>)
     {
         if (defined($arg->{name}))
         {
-            print qq|$prefix\"m\" \($arg->{name}\)|;
+            if ($arg->{type} eq "xmm")
+            {
+                print qq|$prefix\"m\" \($arg->{name}.uq[0]\), \"m\" \($arg->{name}.uq[1]\)|;
+            }
+            else
+            {
+                print qq|$prefix\"m\" \($arg->{name}\)|;
+            }
+
             $prefix = ", ";
         }
     }

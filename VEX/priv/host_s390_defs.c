@@ -5246,11 +5246,7 @@ static UChar *
 s390_widen_emit(UChar *buf, const s390_insn *insn, UInt from_size,
                 Bool sign_extend)
 {
-   s390_opnd_RMI opnd;
-   UInt dst;
-
-   dst = hregNumber(insn->variant.unop.dst);
-   opnd = insn->variant.unop.src;
+   s390_opnd_RMI opnd = insn->variant.unop.src;
 
    switch (opnd.tag) {
    case S390_OPND_REG: {
@@ -6093,11 +6089,9 @@ s390_insn_branch_emit(UChar *buf, const s390_insn *insn)
 {
    s390_opnd_RMI dst;
    s390_cc_t cond;
-   IRJumpKind kind;
    UInt       trc;
    UChar *p, *ptmp = 0;  /* avoid compiler warnings */
 
-   kind = insn->variant.branch.kind;
    cond = insn->variant.branch.cond;
    dst  = insn->variant.branch.dst;
 

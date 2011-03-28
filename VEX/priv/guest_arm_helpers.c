@@ -333,12 +333,11 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
 
    if (vex_streq(function_name, "armg_calculate_condition")) {
       /* specialise calls to above "armg_calculate condition" function */
-      IRExpr *cond_n_op, *cc_dep1, *cc_dep2, *cc_dep3;
+      IRExpr *cond_n_op, *cc_dep1, *cc_dep2;
       vassert(arity == 4);
       cond_n_op = args[0]; /* ARMCondcode << 4  |  ARMG_CC_OP_* */
       cc_dep1   = args[1];
       cc_dep2   = args[2];
-      cc_dep3   = args[3];
 
       /*---------------- SUB ----------------*/
 

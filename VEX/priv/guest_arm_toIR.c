@@ -3794,7 +3794,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
       case 5:
          if (B == 0) {
             /* VRSHL */
-            IROp op, op_shrn, op_shln, cmp_gt, op_sub, op_add;
+            IROp op, op_shrn, op_shln, cmp_gt, op_add;
             IRTemp shval, old_shval, imm_val, round;
             UInt i;
             ULong imm;
@@ -3814,28 +3814,24 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                switch (size) {
                   case 0:
                      op = Q ? Iop_Shl8x16 : Iop_Shl8x8;
-                     op_sub = Q ? Iop_Sub8x16 : Iop_Sub8x8;
                      op_add = Q ? Iop_Add8x16 : Iop_Add8x8;
                      op_shrn = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
                      op_shln = Q ? Iop_ShlN8x16 : Iop_ShlN8x8;
                      break;
                   case 1:
                      op = Q ? Iop_Shl16x8 : Iop_Shl16x4;
-                     op_sub = Q ? Iop_Sub16x8 : Iop_Sub16x4;
                      op_add = Q ? Iop_Add16x8 : Iop_Add16x4;
                      op_shrn = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
                      op_shln = Q ? Iop_ShlN16x8 : Iop_ShlN16x4;
                      break;
                   case 2:
                      op = Q ? Iop_Shl32x4 : Iop_Shl32x2;
-                     op_sub = Q ? Iop_Sub32x4 : Iop_Sub32x2;
                      op_add = Q ? Iop_Add32x4 : Iop_Add32x2;
                      op_shrn = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
                      op_shln = Q ? Iop_ShlN32x4 : Iop_ShlN32x2;
                      break;
                   case 3:
                      op = Q ? Iop_Shl64x2 : Iop_Shl64;
-                     op_sub = Q ? Iop_Sub64x2 : Iop_Sub64;
                      op_add = Q ? Iop_Add64x2 : Iop_Add64;
                      op_shrn = Q ? Iop_ShrN64x2 : Iop_Shr64;
                      op_shln = Q ? Iop_ShlN64x2 : Iop_Shl64;
@@ -3847,28 +3843,24 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                switch (size) {
                   case 0:
                      op = Q ? Iop_Sal8x16 : Iop_Sal8x8;
-                     op_sub = Q ? Iop_Sub8x16 : Iop_Sub8x8;
                      op_add = Q ? Iop_Add8x16 : Iop_Add8x8;
                      op_shrn = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
                      op_shln = Q ? Iop_ShlN8x16 : Iop_ShlN8x8;
                      break;
                   case 1:
                      op = Q ? Iop_Sal16x8 : Iop_Sal16x4;
-                     op_sub = Q ? Iop_Sub16x8 : Iop_Sub16x4;
                      op_add = Q ? Iop_Add16x8 : Iop_Add16x4;
                      op_shrn = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
                      op_shln = Q ? Iop_ShlN16x8 : Iop_ShlN16x4;
                      break;
                   case 2:
                      op = Q ? Iop_Sal32x4 : Iop_Sal32x2;
-                     op_sub = Q ? Iop_Sub32x4 : Iop_Sub32x2;
                      op_add = Q ? Iop_Add32x4 : Iop_Add32x2;
                      op_shrn = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
                      op_shln = Q ? Iop_ShlN32x4 : Iop_ShlN32x2;
                      break;
                   case 3:
                      op = Q ? Iop_Sal64x2 : Iop_Sal64x1;
-                     op_sub = Q ? Iop_Sub64x2 : Iop_Sub64;
                      op_add = Q ? Iop_Add64x2 : Iop_Add64;
                      op_shrn = Q ? Iop_ShrN64x2 : Iop_Shr64;
                      op_shln = Q ? Iop_ShlN64x2 : Iop_Shl64;
@@ -3939,7 +3931,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                 nreg);
          } else {
             /* VQRSHL */
-            IROp op, op_rev, op_shrn, op_shln, cmp_neq, cmp_gt, op_sub, op_add;
+            IROp op, op_rev, op_shrn, op_shln, cmp_neq, cmp_gt, op_add;
             IRTemp tmp, shval, mask, old_shval, imm_val, round;
             UInt i;
             ULong esize, imm;
@@ -3960,7 +3952,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                switch (size) {
                   case 0:
                      op = Q ? Iop_QShl8x16 : Iop_QShl8x8;
-                     op_sub = Q ? Iop_Sub8x16 : Iop_Sub8x8;
                      op_add = Q ? Iop_Add8x16 : Iop_Add8x8;
                      op_rev = Q ? Iop_Shr8x16 : Iop_Shr8x8;
                      op_shrn = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
@@ -3968,7 +3959,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      break;
                   case 1:
                      op = Q ? Iop_QShl16x8 : Iop_QShl16x4;
-                     op_sub = Q ? Iop_Sub16x8 : Iop_Sub16x4;
                      op_add = Q ? Iop_Add16x8 : Iop_Add16x4;
                      op_rev = Q ? Iop_Shr16x8 : Iop_Shr16x4;
                      op_shrn = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
@@ -3976,7 +3966,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      break;
                   case 2:
                      op = Q ? Iop_QShl32x4 : Iop_QShl32x2;
-                     op_sub = Q ? Iop_Sub32x4 : Iop_Sub32x2;
                      op_add = Q ? Iop_Add32x4 : Iop_Add32x2;
                      op_rev = Q ? Iop_Shr32x4 : Iop_Shr32x2;
                      op_shrn = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
@@ -3984,7 +3973,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      break;
                   case 3:
                      op = Q ? Iop_QShl64x2 : Iop_QShl64x1;
-                     op_sub = Q ? Iop_Sub64x2 : Iop_Sub64;
                      op_add = Q ? Iop_Add64x2 : Iop_Add64;
                      op_rev = Q ? Iop_Shr64x2 : Iop_Shr64;
                      op_shrn = Q ? Iop_ShrN64x2 : Iop_Shr64;
@@ -3997,7 +3985,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                switch (size) {
                   case 0:
                      op = Q ? Iop_QSal8x16 : Iop_QSal8x8;
-                     op_sub = Q ? Iop_Sub8x16 : Iop_Sub8x8;
                      op_add = Q ? Iop_Add8x16 : Iop_Add8x8;
                      op_rev = Q ? Iop_Sar8x16 : Iop_Sar8x8;
                      op_shrn = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
@@ -4005,7 +3992,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      break;
                   case 1:
                      op = Q ? Iop_QSal16x8 : Iop_QSal16x4;
-                     op_sub = Q ? Iop_Sub16x8 : Iop_Sub16x4;
                      op_add = Q ? Iop_Add16x8 : Iop_Add16x4;
                      op_rev = Q ? Iop_Sar16x8 : Iop_Sar16x4;
                      op_shrn = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
@@ -4013,7 +3999,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      break;
                   case 2:
                      op = Q ? Iop_QSal32x4 : Iop_QSal32x2;
-                     op_sub = Q ? Iop_Sub32x4 : Iop_Sub32x2;
                      op_add = Q ? Iop_Add32x4 : Iop_Add32x2;
                      op_rev = Q ? Iop_Sar32x4 : Iop_Sar32x2;
                      op_shrn = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
@@ -4021,7 +4006,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      break;
                   case 3:
                      op = Q ? Iop_QSal64x2 : Iop_QSal64x1;
-                     op_sub = Q ? Iop_Sub64x2 : Iop_Sub64;
                      op_add = Q ? Iop_Add64x2 : Iop_Add64;
                      op_rev = Q ? Iop_Sar64x2 : Iop_Sar64;
                      op_shrn = Q ? Iop_ShrN64x2 : Iop_Shr64;
@@ -5597,11 +5581,10 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
    if (INSN(11,8) == BITS4(1,0,1,1) && !U) {
       IROp op ,op2, dup, get;
       ULong imm;
-      IRTemp res, arg_m, arg_n;
+      IRTemp arg_m, arg_n;
       if (dreg & 1)
          return False;
       dreg >>= 1;
-      res = newTemp(Ity_V128);
       arg_m = newTemp(Ity_I64);
       arg_n = newTemp(Ity_I64);
       assign(arg_n, getDRegI64(nreg));

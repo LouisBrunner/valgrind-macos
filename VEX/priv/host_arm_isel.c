@@ -5943,7 +5943,6 @@ HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
    HReg     hreg, hregHI;
    ISelEnv* env;
    UInt     hwcaps_host = archinfo_host->hwcaps;
-   Bool     neon = False;
    static UInt counter = 0;
 
    /* sanity ... */
@@ -5981,7 +5980,6 @@ HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
          case Ity_I64:
             if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
                hreg = mkHReg(j++, HRcFlt64, True);
-               neon = True;
             } else {
                hregHI = mkHReg(j++, HRcInt32, True);
                hreg   = mkHReg(j++, HRcInt32, True);
@@ -5989,8 +5987,7 @@ HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
             break;
          case Ity_F32:  hreg   = mkHReg(j++, HRcFlt32, True); break;
          case Ity_F64:  hreg   = mkHReg(j++, HRcFlt64, True); break;
-         case Ity_V128: hreg   = mkHReg(j++, HRcVec128, True);
-                        neon   = True; break;
+         case Ity_V128: hreg   = mkHReg(j++, HRcVec128, True); break;
          default: ppIRType(bb->tyenv->types[i]);
                   vpanic("iselBB: IRTemp type");
       }

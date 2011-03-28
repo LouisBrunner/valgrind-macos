@@ -924,20 +924,23 @@ void VG_(redir_initialise) ( void )
    /* If we're using memcheck, use this intercept right from the
       start, otherwise ld.so (glibc-2.3.5) makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      const HChar** mandatory;
+#     if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
+         || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
+         || defined(GLIBC_2_8) || defined(GLIBC_2_9) \
+         || defined(GLIBC_2_10) || defined(GLIBC_2_11)
+      mandatory = NULL;
+#     else
+      /* for glibc-2.12 and later, this is mandatory - can't sanely
+         continue without it */
+      mandatory = complain_about_stripped_glibc_ldso;
+#     endif
       add_hardwired_spec(
          "ld-linux.so.2", "index",
-         (Addr)&VG_(x86_linux_REDIR_FOR_index),
-#        if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
-            || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
-            || defined(GLIBC_2_8) || defined(GLIBC_2_9) \
-            || defined(GLIBC_2_10) || defined(GLIBC_2_11)
-         NULL
-#        else
-         /* for glibc-2.12 and later, this is mandatory - can't sanely
-            continue without it */
-         complain_about_stripped_glibc_ldso
-#        endif
-      );
+         (Addr)&VG_(x86_linux_REDIR_FOR_index), mandatory);
+      add_hardwired_spec(
+         "ld-linux.so.2", "strlen",
+         (Addr)&VG_(x86_linux_REDIR_FOR_strlen), mandatory);
    }
 
 #  elif defined(VGP_amd64_linux)

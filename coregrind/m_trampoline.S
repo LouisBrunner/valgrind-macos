@@ -112,6 +112,27 @@ VG_(x86_linux_REDIR_FOR_index):
         ret
 .size VG_(x86_linux_REDIR_FOR_index), .-VG_(x86_linux_REDIR_FOR_index)
 
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strlen implementation (written in C and compiled by gcc.)
+*/
+.global VG_(x86_linux_REDIR_FOR_strlen)
+.type   VG_(x86_linux_REDIR_FOR_strlen), @function
+VG_(x86_linux_REDIR_FOR_strlen):
+        pushl   %ebp
+        movl    %esp, %ebp
+        movl    8(%ebp), %edx
+        movl    %edx, %eax
+        jmp     2f
+1:      incl    %eax
+2:      cmpb    $0, (%eax)
+        jne     1b
+        subl    %edx, %eax
+        popl    %ebp
+        ret
+.size VG_(x86_linux_REDIR_FOR_strlen), .-VG_(x86_linux_REDIR_FOR_strlen)
+
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

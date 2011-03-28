@@ -60,6 +60,7 @@ extern Addr VG_(trampoline_stuff_end);
 extern Addr VG_(x86_linux_SUBST_FOR_sigreturn);
 extern Addr VG_(x86_linux_SUBST_FOR_rt_sigreturn);
 extern Char* VG_(x86_linux_REDIR_FOR_index) ( const Char*, Int );
+extern UInt VG_(x86_linux_REDIR_FOR_strlen)( void* );
 #endif
 
 #if defined(VGP_amd64_linux)

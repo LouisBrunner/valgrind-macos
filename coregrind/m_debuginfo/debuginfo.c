@@ -3410,7 +3410,6 @@ void* /* really, XArray* of StackBlock */
    /* This is a derivation of consider_vars_in_frame() above. */
    Word       i;
    DebugInfo* di;
-   RegSummary regs;
    Bool debug = False;
 
    XArray* res = VG_(newXA)( ML_(dinfo_zalloc), "di.debuginfo.dgsbai.1",
@@ -3462,9 +3461,6 @@ void* /* really, XArray* of StackBlock */
       variables on each such address range found are in scope right
       now.  Don't descend to level zero as that is the global
       scope. */
-   regs.ip = ip;
-   regs.sp = 0;
-   regs.fp = 0;
 
    /* "for each scope, working outwards ..." */
    for (i = VG_(sizeXA)(di->varinfo) - 1; i >= 1; i--) {

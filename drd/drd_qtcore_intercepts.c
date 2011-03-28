@@ -90,7 +90,7 @@ QT4CORE_FUNC(void, _ZN6QMutexC1ENS_13RecursionModeE,
              qt_mutex_mode mode)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
@@ -106,7 +106,7 @@ QT4CORE_FUNC(void, _ZN6QMutexC2ENS_13RecursionModeE,
              qt_mutex_mode mode)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
@@ -121,7 +121,7 @@ QT4CORE_FUNC(void, _ZN6QMutexD1Ev,
              void* mutex)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
@@ -136,7 +136,7 @@ QT4CORE_FUNC(void, _ZN6QMutexD2Ev,
              void** mutex)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
@@ -151,7 +151,7 @@ QT4CORE_FUNC(void, _ZN6QMutex4lockEv,
              void* mutex)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -166,7 +166,7 @@ QT4CORE_FUNC(int, _ZN6QMutex7tryLockEv,
              void* mutex)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -183,7 +183,7 @@ QT4CORE_FUNC(int, _ZN6QMutex7tryLockEi,
              int timeout_ms)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -199,7 +199,7 @@ QT4CORE_FUNC(void, _ZN6QMutex6unlockEv,
              void* mutex)
 {
    int    ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1,

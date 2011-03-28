@@ -452,7 +452,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
                   Bool is_zeroed )
 {
    tl_assert(p == NULL); // don't handle custom allocators right now
-   SizeT actual_szB, slop_szB;
+   SizeT actual_szB /*, slop_szB*/;
 
    if ((SSizeT)req_szB < 0) return NULL;
 
@@ -468,9 +468,9 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
       if (is_zeroed) VG_(memset)(p, 0, req_szB);
       actual_szB = VG_(malloc_usable_size)(p);
       tl_assert(actual_szB >= req_szB);
-      slop_szB = actual_szB - req_szB;
+      /* slop_szB = actual_szB - req_szB; */
    } else {
-      slop_szB = 0;
+      /* slop_szB = 0; */
    }
 
    // Make new HP_Chunk node, add to malloc_list

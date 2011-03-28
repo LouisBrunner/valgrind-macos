@@ -506,7 +506,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #if defined(VGA_x86)
    { Bool have_sse1, have_sse2, have_cx8, have_lzcnt;
-     UInt eax, ebx, ecx, edx, max_basic, max_extended;
+     UInt eax, ebx, ecx, edx, max_extended;
      UChar vstr[13];
      vstr[0] = 0;
 
@@ -521,7 +521,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Get processor ID string, and max basic/extended index
         values. */
-     max_basic = eax;
      VG_(memcpy)(&vstr[0], &ebx, 4);
      VG_(memcpy)(&vstr[4], &edx, 4);
      VG_(memcpy)(&vstr[8], &ecx, 4);
@@ -575,9 +574,9 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_amd64)
-   { Bool have_sse1, have_sse2, have_sse3, have_cx8, have_cx16;
+   { Bool have_sse3, have_cx8, have_cx16;
      Bool have_lzcnt;
-     UInt eax, ebx, ecx, edx, max_basic, max_extended;
+     UInt eax, ebx, ecx, edx, max_extended;
      UChar vstr[13];
      vstr[0] = 0;
 
@@ -592,7 +591,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Get processor ID string, and max basic/extended index
         values. */
-      max_basic = eax;
      VG_(memcpy)(&vstr[0], &ebx, 4);
      VG_(memcpy)(&vstr[4], &edx, 4);
      VG_(memcpy)(&vstr[8], &ecx, 4);
@@ -604,8 +602,7 @@ Bool VG_(machine_get_hwcaps)( void )
      /* get capabilities bits into edx */
      VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
 
-     have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
-     have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+     // we assume that SSE1 and SSE2 are available by default
      have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
      // ssse3  is ecx:9
      // sse41  is ecx:19

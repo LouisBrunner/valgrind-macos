@@ -326,13 +326,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
          case N_FUN: {                /* function start/end */
             Addr addr = 0;        /* end address for prev line/scope */
-            Bool newfunc = False;
 
             /* if this the end of the function or we haven't
                previously finished the previous function... */
             if (*string == '\0' || func.start != 0) {
                /* end of function */
-               newfunc = False;
                line.first = False;
 
                /* end line at end of function */
@@ -346,7 +344,6 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             if (*string != '\0') {
                /* new function */
-               newfunc = True;
                line.first = True;
 
                /* line ends at start of next function */

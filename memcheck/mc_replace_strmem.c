@@ -91,7 +91,7 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 // extra function in the stack trace.
 #define RECORD_OVERLAP_ERROR(s, src, dst, len) \
 { \
-   Word unused_res; \
+   Word unused_res __attribute__((unused)); \
    VALGRIND_DO_CLIENT_REQUEST(unused_res, 0, \
 			      _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR, \
 			      s, src, dst, len, 0); \

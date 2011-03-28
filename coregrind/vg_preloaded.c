@@ -56,7 +56,7 @@
 void VG_NOTIFY_ON_LOAD(freeres)( void );
 void VG_NOTIFY_ON_LOAD(freeres)( void )
 {
-   int res;
+   int res __attribute__((unused));
 #if !defined(__UCLIBC__) && !defined(VGO_aix5)
    extern void __libc_freeres(void);
    __libc_freeres();
@@ -77,7 +77,7 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
 {
     OrigFn fn;
     Addr result = 0;
-    int res;
+    int res __attribute__((unused));
 
     /* Call the original indirect function and get it's result */
     VALGRIND_GET_ORIG_FN(fn);

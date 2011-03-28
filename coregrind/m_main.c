@@ -1811,8 +1811,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       nul[0] = 0;
       exename = VG_(args_the_exename) ? VG_(args_the_exename)
                                       : "unknown_exename";
-      VG_(write)(fd, VG_(args_the_exename), 
-                     VG_(strlen)( VG_(args_the_exename) ));
+      VG_(write)(fd, exename, VG_(strlen)( exename ));
       VG_(write)(fd, nul, 1);
 
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {

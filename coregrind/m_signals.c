@@ -1414,8 +1414,10 @@ void VG_(kill_self)(Int sigNo)
    VG_(sigprocmask)(VKI_SIG_UNBLOCK, &mask, &origmask);
 
    r = VG_(kill)(VG_(getpid)(), sigNo);
+#  if defined(VGO_linux)
    /* This sometimes fails with EPERM on Darwin.  I don't know why. */
-   /* vg_assert(r == 0); */
+   vg_assert(r == 0);
+#  endif
 
    VG_(convert_sigaction_fromK_to_toK)( &origsa, &origsa2 );
    VG_(sigaction)(sigNo, &origsa2, NULL);

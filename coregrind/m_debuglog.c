@@ -1013,7 +1013,7 @@ static void add_to_buf ( HChar c, void* p )
 void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... )
 {
-   UInt ret, pid;
+   UInt pid;
    Int indent, depth, i;
    va_list vargs;
    printf_buf buf;
@@ -1045,7 +1045,7 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
 
    va_start(vargs,format);
    
-   ret = VG_(debugLog_vprintf) ( add_to_buf, &buf, format, vargs );
+   (void) VG_(debugLog_vprintf) ( add_to_buf, &buf, format, vargs );
 
    if (buf.n > 0) {
       emit( buf.buf, local_strlen(buf.buf) );

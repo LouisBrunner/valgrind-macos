@@ -990,7 +990,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    UInt   acode, abcode;
    ULong  atoffs, blklen;
    Int    level;
-   UShort ver;
+   /* UShort ver; */
 
    UChar addr_size;
    UChar* p = unitblock_img;
@@ -1007,7 +1007,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    p += ui->dw64 ? 12 : 4;
 
    /* version should be 2, 3 or 4 */
-   ver = *((UShort*)p);
+   /* ver = *((UShort*)p); */
    p += 2;
 
    /* get offset in abbrev */

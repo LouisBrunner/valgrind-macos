@@ -1258,8 +1258,7 @@ Bool VG_(translate) ( ThreadId tid,
    Addr64             addr;
    T_Kind             kind;
    Int                tmpbuf_used, verbosity, i;
-   Bool               notrace_until_done, do_self_check;
-   UInt               notrace_until_limit = 0;
+   Bool               do_self_check;
    Bool (*preamble_fn)(void*,IRSB*);
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
@@ -1319,15 +1318,6 @@ Bool VG_(translate) ( ThreadId tid,
                    nraddr, name1,
                    addr, name2 );
    }
-
-   /* If codegen tracing, don't start tracing until
-      notrace_until_limit blocks have gone by.  This avoids printing
-      huge amounts of useless junk when all we want to see is the last
-      few blocks translated prior to a failure.  Set
-      notrace_until_limit to be the number of translations to be made
-      before --trace-codegen= style printing takes effect. */
-   notrace_until_done
-      = VG_(get_bbs_translated)() >= notrace_until_limit;
 
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, 

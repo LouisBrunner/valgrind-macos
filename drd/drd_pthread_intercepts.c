@@ -235,7 +235,7 @@ static __always_inline MutexT DRD_(mutex_type)(pthread_mutex_t* mutex)
  */
 static void DRD_(set_joinable)(const pthread_t tid, const int joinable)
 {
-   int res;
+   int res __attribute__((unused));
    assert(joinable == 0 || joinable == 1);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__SET_JOINABLE,
                               tid, joinable, 0, 0, 0);
@@ -244,7 +244,7 @@ static void DRD_(set_joinable)(const pthread_t tid, const int joinable)
 /** Tell DRD that the calling thread is about to enter pthread_create(). */
 static __always_inline void DRD_(entering_pthread_create)(void)
 {
-   int res;
+   int res __attribute__((unused));
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__ENTERING_PTHREAD_CREATE,
                               0, 0, 0, 0, 0);
 }
@@ -252,7 +252,7 @@ static __always_inline void DRD_(entering_pthread_create)(void)
 /** Tell DRD that the calling thread has left pthread_create(). */
 static __always_inline void DRD_(left_pthread_create)(void)
 {
-   int res;
+   int res __attribute__((unused));
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__LEFT_PTHREAD_CREATE,
                               0, 0, 0, 0, 0);
 }
@@ -263,7 +263,7 @@ static __always_inline void DRD_(left_pthread_create)(void)
  */
 static void* DRD_(thread_wrapper)(void* arg)
 {
-   int res;
+   int res __attribute__((unused));
    DrdPosixThreadArgs* arg_ptr;
    DrdPosixThreadArgs arg_copy;
 
@@ -348,7 +348,7 @@ static void DRD_(check_threading_library)(void)
  */
 static void DRD_(set_main_thread_state)(void)
 {
-   int res;
+   int res __attribute__((unused));
 
    // Make sure that DRD knows about the main thread's POSIX thread ID.
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,
@@ -377,7 +377,7 @@ static __always_inline
 int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
                              void* (*start)(void*), void* arg)
 {
-   int    res;
+   int    res __attribute__((unused));
    int    ret;
    OrigFn fn;
    DrdPosixThreadArgs thread_args;
@@ -428,7 +428,7 @@ static __always_inline
 int pthread_join_intercept(pthread_t pt_joinee, void **thread_return)
 {
    int      ret;
-   int      res;
+   int      res __attribute__((unused));
    OrigFn   fn;
 
    VALGRIND_GET_ORIG_FN(fn);
@@ -467,7 +467,7 @@ PTH_FUNCS(int, pthreadZudetach, pthread_detach_intercept,
 static __always_inline
 int pthread_cancel_intercept(pthread_t pt_thread)
 {
-   int res;
+   int res __attribute__((unused));
    int ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -509,7 +509,7 @@ int pthread_mutex_init_intercept(pthread_mutex_t *mutex,
                                  const pthread_mutexattr_t* attr)
 {
    int ret;
-   int res;
+   int res __attribute__((unused));
    OrigFn fn;
    int mt;
    VALGRIND_GET_ORIG_FN(fn);
@@ -533,7 +533,7 @@ static __always_inline
 int pthread_mutex_destroy_intercept(pthread_mutex_t* mutex)
 {
    int ret;
-   int res;
+   int res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
@@ -551,7 +551,7 @@ static __always_inline
 int pthread_mutex_lock_intercept(pthread_mutex_t* mutex)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -569,7 +569,7 @@ static __always_inline
 int pthread_mutex_trylock_intercept(pthread_mutex_t* mutex)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -588,7 +588,7 @@ int pthread_mutex_timedlock_intercept(pthread_mutex_t *mutex,
                                       const struct timespec *abs_timeout)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -607,7 +607,7 @@ static __always_inline
 int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
 {
    int ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1,
@@ -628,7 +628,7 @@ int pthread_cond_init_intercept(pthread_cond_t* cond,
                                 const pthread_condattr_t* attr)
 {
    int ret;
-   int res;
+   int res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_INIT,
@@ -647,7 +647,7 @@ static __always_inline
 int pthread_cond_destroy_intercept(pthread_cond_t* cond)
 {
    int ret;
-   int res;
+   int res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_DESTROY,
@@ -665,7 +665,7 @@ static __always_inline
 int pthread_cond_wait_intercept(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_WAIT,
@@ -686,7 +686,7 @@ int pthread_cond_timedwait_intercept(pthread_cond_t *cond,
                                      const struct timespec* abstime)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_WAIT,
@@ -712,7 +712,7 @@ static __always_inline
 int pthread_cond_signal_intercept(pthread_cond_t* cond)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_SIGNAL,
@@ -730,7 +730,7 @@ static __always_inline
 int pthread_cond_broadcast_intercept(pthread_cond_t* cond)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_BROADCAST,
@@ -749,7 +749,7 @@ static __always_inline
 int pthread_spin_init_intercept(pthread_spinlock_t *spinlock, int pshared)
 {
    int ret;
-   int res;
+   int res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK,
@@ -767,7 +767,7 @@ static __always_inline
 int pthread_spin_destroy_intercept(pthread_spinlock_t *spinlock)
 {
    int ret;
-   int res;
+   int res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
@@ -785,7 +785,7 @@ static __always_inline
 int pthread_spin_lock_intercept(pthread_spinlock_t *spinlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -803,7 +803,7 @@ static __always_inline
 int pthread_spin_trylock_intercept(pthread_spinlock_t *spinlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
@@ -821,7 +821,7 @@ static __always_inline
 int pthread_spin_unlock_intercept(pthread_spinlock_t *spinlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK,
@@ -844,7 +844,7 @@ int pthread_barrier_init_intercept(pthread_barrier_t* barrier,
                                    unsigned count)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_INIT,
@@ -863,7 +863,7 @@ static __always_inline
 int pthread_barrier_destroy_intercept(pthread_barrier_t* barrier)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_DESTROY,
@@ -881,7 +881,7 @@ static __always_inline
 int pthread_barrier_wait_intercept(pthread_barrier_t* barrier)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_WAIT,
@@ -903,7 +903,7 @@ static __always_inline
 int sem_init_intercept(sem_t *sem, int pshared, unsigned int value)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_INIT,
@@ -921,7 +921,7 @@ static __always_inline
 int sem_destroy_intercept(sem_t *sem)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_DESTROY,
@@ -939,7 +939,7 @@ sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
                           unsigned int value)
 {
    sem_t *ret;
-   int    res;
+   int    res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_OPEN,
@@ -958,7 +958,7 @@ PTH_FUNCS(sem_t *, semZuopen, sem_open_intercept,
 static __always_inline int sem_close_intercept(sem_t *sem)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_CLOSE,
@@ -974,7 +974,7 @@ PTH_FUNCS(int, semZuclose, sem_close_intercept, (sem_t *sem), (sem));
 static __always_inline int sem_wait_intercept(sem_t *sem)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_WAIT,
@@ -990,7 +990,7 @@ PTH_FUNCS(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
 static __always_inline int sem_trywait_intercept(sem_t *sem)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_WAIT,
@@ -1007,7 +1007,7 @@ static __always_inline
 int sem_timedwait_intercept(sem_t *sem, const struct timespec *abs_timeout)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_WAIT,
@@ -1025,7 +1025,7 @@ PTH_FUNCS(int, semZutimedwait, sem_timedwait_intercept,
 static __always_inline int sem_post_intercept(sem_t *sem)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
@@ -1043,7 +1043,7 @@ int pthread_rwlock_init_intercept(pthread_rwlock_t* rwlock,
                                   const pthread_rwlockattr_t* attr)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_INIT,
@@ -1061,7 +1061,7 @@ static __always_inline
 int pthread_rwlock_destroy_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, rwlock);
@@ -1078,7 +1078,7 @@ static __always_inline
 int pthread_rwlock_rdlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_RDLOCK,
@@ -1097,7 +1097,7 @@ static __always_inline
 int pthread_rwlock_wrlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_WRLOCK,
@@ -1116,7 +1116,7 @@ static __always_inline
 int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_RDLOCK,
@@ -1135,7 +1135,7 @@ static __always_inline
 int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_WRLOCK,
@@ -1154,7 +1154,7 @@ static __always_inline
 int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_RDLOCK,
@@ -1173,7 +1173,7 @@ static __always_inline
 int pthread_rwlock_trywrlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_WRLOCK,
@@ -1192,7 +1192,7 @@ static __always_inline
 int pthread_rwlock_unlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
-   int   res;
+   int   res __attribute__((unused));
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_UNLOCK,

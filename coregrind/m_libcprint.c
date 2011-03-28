@@ -233,14 +233,13 @@ static void add_to__snprintf_buf ( HChar c, void* p )
 
 UInt VG_(vsnprintf) ( Char* buf, Int size, const HChar *format, va_list vargs )
 {
-   Int ret;
    snprintf_buf_t b;
    b.buf      = buf;
    b.buf_size = size < 0 ? 0 : size;
    b.buf_used = 0;
 
-   ret = VG_(debugLog_vprintf) 
-            ( add_to__snprintf_buf, &b, format, vargs );
+   (void) VG_(debugLog_vprintf) 
+             ( add_to__snprintf_buf, &b, format, vargs );
 
    return b.buf_used;
 }

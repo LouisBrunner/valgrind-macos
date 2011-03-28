@@ -850,7 +850,7 @@ ZONE_CHECK(VG_Z_LIBC_SONAME, malloc_zone_check);
 __attribute__((constructor))
 static void init(void)
 {
-   int res;
+   int res __attribute__((unused));
 
    // This doesn't look thread-safe, but it should be ok... Bart says:
    //   

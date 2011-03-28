@@ -86,7 +86,8 @@
 
 #define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
    do {                                                  \
-      Word _unused_res, _arg1;                           \
+      Word _unused_res __attribute__((unused));          \
+      Word _arg1;                                        \
       assert(sizeof(_ty1F) == sizeof(Word));             \
       _arg1 = (Word)(_arg1F);                            \
       VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
@@ -96,7 +97,8 @@
 
 #define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
    do {                                                  \
-      Word _unused_res, _arg1, _arg2;                    \
+      Word _unused_res __attribute__((unused));          \
+      Word _arg1, _arg2;                                 \
       assert(sizeof(_ty1F) == sizeof(Word));             \
       assert(sizeof(_ty2F) == sizeof(Word));             \
       _arg1 = (Word)(_arg1F);                            \
@@ -106,7 +108,8 @@
                                  _arg1,_arg2,0,0,0);     \
    } while (0)
 
-#define DO_CREQ_W_WW(_resF, _creqF, _ty1F,_arg1F, _ty2F,_arg2F)        \
+#define DO_CREQ_W_WW(_resF, _creqF, _ty1F,_arg1F,        \
+                     _ty2F,_arg2F)                       \
    do {                                                  \
       Word _res, _arg1, _arg2;                           \
       assert(sizeof(_ty1F) == sizeof(Word));             \
@@ -122,7 +125,8 @@
 #define DO_CREQ_v_WWW(_creqF, _ty1F,_arg1F,              \
                       _ty2F,_arg2F, _ty3F, _arg3F)       \
    do {                                                  \
-      Word _unused_res, _arg1, _arg2, _arg3;             \
+      Word _unused_res __attribute__((unused));          \
+      Word _arg1, _arg2, _arg3;                          \
       assert(sizeof(_ty1F) == sizeof(Word));             \
       assert(sizeof(_ty2F) == sizeof(Word));             \
       assert(sizeof(_ty3F) == sizeof(Word));             \

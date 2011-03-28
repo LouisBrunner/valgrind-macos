@@ -2101,21 +2101,21 @@ static void pdb_dump( struct pdb_reader* pdb,
     */
    file = symbols_image + header_size;
    while ( file - symbols_image < header_size + symbols.module_size ) {
-      int file_nr, file_index, symbol_size, lineno_size;
+      int file_nr, /* file_index, */ symbol_size, lineno_size;
       char *file_name;
 
       if ( symbols.version < 19970000 ) {
          PDB_SYMBOL_FILE *sym_file = (PDB_SYMBOL_FILE *) file;
          file_nr     = sym_file->file;
          file_name   = sym_file->filename;
-         file_index  = sym_file->range.index;
+         /* file_index  = sym_file->range.index; */ /* UNUSED */
          symbol_size = sym_file->symbol_size;
          lineno_size = sym_file->lineno_size;
       } else {
          PDB_SYMBOL_FILE_EX *sym_file = (PDB_SYMBOL_FILE_EX *) file;
          file_nr     = sym_file->file;
          file_name   = sym_file->filename;
-         file_index  = sym_file->range.index;
+         /* file_index  = sym_file->range.index; */ /* UNUSED */
          symbol_size = sym_file->symbol_size;
          lineno_size = sym_file->lineno_size;
       }

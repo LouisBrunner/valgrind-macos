@@ -1985,10 +1985,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             UChar*      shdr_strtab_dimg = NULL;
 
             /* SVMAs covered by rx and rw segments and corresponding bias. */
-            Addr     rx_dsvma_base = 0;
+            /* Addr     rx_dsvma_base = 0; */ /* UNUSED */
             Addr     rx_dsvma_limit = 0;
             PtrdiffT rx_dbias = 0;
-            Addr     rw_dsvma_base = 0;
+            /* Addr     rw_dsvma_base = 0; */ /* UNUSED */
             Addr     rw_dsvma_limit = 0;
             PtrdiffT rw_dbias = 0;
 
@@ -2045,15 +2045,16 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                       && phdr->p_offset >= di->rx_map_foff
                       && phdr->p_offset < di->rx_map_foff + di->rx_map_size
                       && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size) {
-                     rx_dsvma_base = phdr->p_vaddr;
+                     /* rx_dsvma_base = phdr->p_vaddr; */ /* UNUSED */
                      rx_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
                      rx_dbias = di->rx_map_avma - di->rx_map_foff + phdr->p_offset - phdr->p_vaddr;
                   }
-                  else if (rw_dsvma_limit == 0
-                           && phdr->p_offset >= di->rw_map_foff
-                           && phdr->p_offset < di->rw_map_foff + di->rw_map_size
-                           && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size) {
-                     rw_dsvma_base = phdr->p_vaddr;
+                  else
+                  if (rw_dsvma_limit == 0
+                      && phdr->p_offset >= di->rw_map_foff
+                      && phdr->p_offset < di->rw_map_foff + di->rw_map_size
+                      && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size) {
+                     /* rw_dsvma_base = phdr->p_vaddr; */ /* UNUSED */
                      rw_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
                      rw_dbias = di->rw_map_avma - di->rw_map_foff + phdr->p_offset - phdr->p_vaddr;
                   }

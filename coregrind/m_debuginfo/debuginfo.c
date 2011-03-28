@@ -2277,7 +2277,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
 {
    CFSICacheEnt* ce;
    DebugInfo*    di;
-   DiCfSI*       cfsi;
+   DiCfSI*       cfsi __attribute__((unused));
 
    ce = cfsi_cache__find(ip);
 
@@ -2326,12 +2326,11 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
                         Addr max_accessible )
 {
-   Bool               ok;
    DebugInfo*         di;
    DiCfSI*            cfsi = NULL;
    Addr               cfa, ipHere = 0;
    CFSICacheEnt*      ce;
-   CfiExprEvalContext eec;
+   CfiExprEvalContext eec __attribute__((unused));
    D3UnwindRegs       uregsPrev;
 
 #  if defined(VGA_x86) || defined(VGA_amd64)
@@ -2392,7 +2391,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                eec.uregs = uregsHere;                   \
                eec.min_accessible = min_accessible;     \
                eec.max_accessible = max_accessible;     \
-               ok = True;                               \
+               Bool ok = True;                          \
                _prev = evalCfiExpr(di->cfsi_exprs, _off, &eec, &ok ); \
                if (!ok) return False;                   \
                break;                                   \

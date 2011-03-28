@@ -189,7 +189,7 @@ void VG_(sigframe_create)( ThreadId tid,
    Addr sp;
    ThreadState* tst;
    Int sigNo = siginfo->si_signo;
-   Addr faultaddr;
+   /* Addr faultaddr; */ /* UNUSED */
    struct rt_sigframe* frame;
 
    /* Stack must be 16-byte aligned */
@@ -225,9 +225,11 @@ void VG_(sigframe_create)( ThreadId tid,
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
              sp, sizeof(UWord) );
 
+   /* UNUSED:
    faultaddr = (Addr)siginfo->_sifields._sigfault._addr;
    if (sigNo == VKI_SIGILL && siginfo->si_code > 0)
       faultaddr = tst->arch.vex.guest_CIA;
+   */
 
    VG_(memcpy)(&frame->info, siginfo, sizeof(*siginfo));
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid,

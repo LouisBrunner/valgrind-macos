@@ -1046,7 +1046,7 @@ PRE(sys_rt_sigreturn)
    /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
       an explanation of what follows. */
 
-   ThreadState* tst;
+   //ThreadState* tst;
    PRINT("sys_rt_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
@@ -1055,7 +1055,7 @@ PRE(sys_rt_sigreturn)
 
    ///* Adjust esp to point to start of frame; skip back up over handler
    //   ret addr */
-   tst = VG_(get_ThreadState)(tid);
+   //tst = VG_(get_ThreadState)(tid);
    //tst->arch.vex.guest_ESP -= sizeof(Addr);
    // Should we do something equivalent on ppc64-linux?  Who knows.
 

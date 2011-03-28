@@ -2384,7 +2384,7 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
                                        Int            srcix )
 {
    CfiExpr* src;
-   Int      cpL, cpR, cpA, dwreg;
+   Int      cpL, cpR, cpA;
    XArray*  srcxa = srcuc->exprs;
    vg_assert(srcxa);
    vg_assert(dstxa);
@@ -2412,8 +2412,9 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          /* should not see these in input (are created only by this
             conversion step!) */
          VG_(core_panic)("copy_convert_CfiExpr_tree: CfiReg in input");
-      case Cex_DwReg:
+      case Cex_DwReg: {
          /* This is the only place where the conversion can fail. */
+         Int dwreg __attribute__((unused));
          dwreg = src->Cex.DwReg.reg;
 #        if defined(VGA_x86) || defined(VGA_amd64)
          if (dwreg == SP_REG)
@@ -2442,6 +2443,7 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
 #        endif
          /* else we must fail - can't represent the reg */
          return -1;
+      }
       default:
          VG_(core_panic)("copy_convert_CfiExpr_tree: default");
    }

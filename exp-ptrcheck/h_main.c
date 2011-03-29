@@ -1825,8 +1825,8 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
 
    Int  o    = offset;
    Int  sz   = szB;
-   Bool is4  = sz == 4;
-   Bool is8  = sz == 8;
+   //Bool is4  = sz == 4;
+   //Bool is8  = sz == 8;
 
    tl_assert(sz > 0);
    tl_assert(host_is_big_endian());

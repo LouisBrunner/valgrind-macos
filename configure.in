@@ -1602,13 +1602,13 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 
+AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_CHECK_FUNCS([     \
         clock_gettime\
         epoll_create \
         epoll_pwait  \
-        floor        \
         klogctl      \
         mallinfo     \
         memchr       \

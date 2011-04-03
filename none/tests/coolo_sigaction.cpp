@@ -42,12 +42,11 @@ int main()
 {
     int i;
     char buffer[200];
-    size_t dummy_size_t;
     setupHandlers();
     FILE *p = popen("echo Hallo World", "r");
     while (!feof(p)) {
         int n = fread(buffer, 200, 1, p);
-        dummy_size_t = write(2, buffer, n);
+        write(2, buffer, n);
     }
     fclose(p);
     for (i = 0; i < 1000000; i++) ;

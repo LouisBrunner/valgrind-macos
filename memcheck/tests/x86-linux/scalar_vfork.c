@@ -2,7 +2,7 @@
 
 int main(void)
 {
-   int res;
+   int res __attribute__((unused));
    
    // All __NR_xxx numbers are taken from x86
    

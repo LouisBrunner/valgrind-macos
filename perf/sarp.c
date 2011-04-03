@@ -31,7 +31,7 @@ int main(void)
 {
    int i, sum = 0;
 
-   struct timespec req;
+   struct timespec req __attribute__((unused));
    req.tv_sec  = 0;
    req.tv_nsec = 100*1000*1000;   // 0.1s
 

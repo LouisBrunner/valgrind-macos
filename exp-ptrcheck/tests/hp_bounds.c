@@ -2,7 +2,7 @@
 
 int main(void)
 {
-   int  y;
+   int  y __attribute__((unused));
    int* x = malloc(sizeof(int) * 100);
 
    y = x[95];   // ok

@@ -17975,7 +17975,8 @@ static void asm_instr(void)
 {
     CString astr, astr1;
     ASMOperand operands[MAX_ASM_OPERANDS];
-    int nb_inputs, nb_outputs, nb_operands, i, must_subst, out_reg;
+    int nb_inputs __attribute__((unused));
+    int nb_outputs, nb_operands, i, must_subst, out_reg;
     uint8_t clobber_regs[NB_ASM_REGS];
 
     next();
@@ -18916,7 +18917,7 @@ static void put_got_entry(TCCState *s1,
 /* build GOT and PLT entries */
 static void build_got_entries(TCCState *s1)
 {
-    Section *s, *symtab;
+    Section *s, *symtab __attribute__((unused));
     Elf32_Rel *rel, *rel_end;
     Elf32_Sym *sym;
     int i, type, reloc_type, sym_index;
@@ -20590,7 +20591,7 @@ static void rt_printline(unsigned long wanted_pc)
 static int rt_get_caller_pc(unsigned long *paddr, 
                             ucontext_t *uc, int level)
 {
-    unsigned long fp;
+    unsigned long fp __attribute__((unused));
     //int i;
 
     if (level == 0) {
@@ -20757,7 +20758,7 @@ TCCState *tcc_new(void)
 {
     const char *p, *r;
     TCCState *s;
-    TokenSym *ts;
+    TokenSym *ts __attribute__((unused));
     int i, c;
 
     s = tcc_mallocz(sizeof(TCCState));

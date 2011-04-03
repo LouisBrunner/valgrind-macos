@@ -6,7 +6,7 @@
 int main ( void )
 {
    char* x = strdup("hello");
-   char c;
+   char c __attribute__((unused));
    char c0[8], c1[8], c2[8], c3[8], c4[8];
 
    // Each of these pointers has a different alignment

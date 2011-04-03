@@ -15,7 +15,7 @@ int main(void)
 {
    struct sigaction sigsegv;
    
-   char c;
+   char c __attribute__((unused));
    
    // This fails due to a bad fd (at one point I was not handling failing
    // mmap() calls, and would have got a seg fault).

@@ -3,7 +3,7 @@
 int main(void)
 {                                // All sizes are multiples of 16 -- no slop.
    int* x = realloc(NULL, 800);  // equivalent to malloc(800), and ends up
-   int* y;                       // calling Valgrind's (and Massif's) malloc
+   int* y __attribute__((unused)); // calling Valgrind's (and Massif's) malloc
 
    x = realloc(x, 800);          // same size
 

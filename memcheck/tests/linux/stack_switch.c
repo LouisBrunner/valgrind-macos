@@ -32,7 +32,7 @@ static int thread_main(void *arg)
 int main(int argc, char **argv)
 {
    void *stack;
-   int stackid;
+   int stackid __attribute__((unused));
    pid_t pid;
 
    /* "2*" is a ppc64-linux hack */

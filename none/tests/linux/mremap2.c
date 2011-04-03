@@ -74,7 +74,7 @@ char* setup ( void* other_stuff, int other_len )
 /* show the working area */
 void show ( void )
 {
-  int i,r;
+  int i,r __attribute__((unused));
   for (i = 0; i < 200; i++) {
     r = mprotect( workingarea + i * PAGE, PAGE, PROT_NONE );
     // We used to print 'X' or '.' according to the mprotect result, but the

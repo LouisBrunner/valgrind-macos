@@ -15,7 +15,7 @@
 
    struct sigaction sigsegv;
    // Scratch values
-   long  a, tn;
+   long  a, tn __attribute__((unused));
    long* tp;
    
    // Known pointers

@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-   char *s, *a, *b;
+   char *s, *a __attribute__((unused)), *b __attribute__((unused));
    s = malloc(sizeof(char));
 
    // Nb: s[0] is uninitialised, but almost certainly a zero

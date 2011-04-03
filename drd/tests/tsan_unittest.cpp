@@ -3469,7 +3469,7 @@ void Worker() {
   n %= Nlog;
 
   long t0 = clock();
-  long t = t0;
+  long t __attribute__((unused)) = t0;
 
   for (int it = 0; it < N_iter; it++) {
     if(n == 0) {
@@ -5047,7 +5047,7 @@ namespace test105 {
 int     GLOB = 0;
 
 void F1() {
-  int ar[32];
+  int ar[32] __attribute__((unused));
 //  ANNOTATE_TRACE_MEMORY(&ar[0]);
 //  ANNOTATE_TRACE_MEMORY(&ar[31]);
   ar[0] = 1;
@@ -5055,7 +5055,7 @@ void F1() {
 }
 
 void Worker() {
-  int ar[32];
+  int ar[32] __attribute__((unused));
 //  ANNOTATE_TRACE_MEMORY(&ar[0]);
 //  ANNOTATE_TRACE_MEMORY(&ar[31]);
   ar[0] = 1;

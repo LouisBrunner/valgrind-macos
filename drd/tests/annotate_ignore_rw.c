@@ -24,7 +24,6 @@ int main(int argc, char** argv)
 {
   int optchar;
   int ign_rw = 1;
-  int tmp;
   pthread_t tid;
 
   while ((optchar = getopt(argc, argv, "r")) != EOF)
@@ -54,7 +53,7 @@ int main(int argc, char** argv)
   sleep(1);
 
   /* Read s_c. */
-  tmp = s_c;
+  fprintf(stderr, "x" + s_c);
 
   pthread_join(tid, 0);
 

@@ -3,11 +3,11 @@
 
 int main(void)
 {
-   int i;
-   int* y;
+   int i __attribute__((unused));
+   int* y __attribute__((unused));
    int** x  = malloc(sizeof(int*) * 100);
    int* x2 = malloc(sizeof(int) * 100);
-   void* sink;
+   void* sink __attribute__((unused));
    x[0]  = x2;  // this is to check the pointerness is copied across ok
    x[49] = x2;  // this is to check the pointerness is copied across ok
    

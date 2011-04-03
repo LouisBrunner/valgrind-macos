@@ -12,7 +12,7 @@ int main(void)
 {
    pthread_key_t key;
    char *x, *z;
-   char  y;
+   char  y __attribute__((unused));
 
    x = malloc(100);
 

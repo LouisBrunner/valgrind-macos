@@ -13,7 +13,7 @@ int main(void)
    char* h  = "hello, world";
    char* p = strdup(h);
    char  u[20];
-   char* c;
+   char* c __attribute__((unused));
    int   len;
 
    len = strlen(p);

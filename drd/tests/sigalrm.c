@@ -55,15 +55,12 @@ void* thread_func(void* thread_arg)
 
 int main(int argc, char** argv)
 {
-  int vgthreadid;
   pthread_t threadid;
   struct timespec tsDelay;
 
   // Primitive argument parsing.
   if (argc > 1)
     s_debug = 1;
-
-  vgthreadid = DRD_GET_VALGRIND_THREADID;
 
   print_thread_id("main: ");
 

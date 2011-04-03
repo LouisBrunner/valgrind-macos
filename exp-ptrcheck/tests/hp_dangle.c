@@ -11,7 +11,7 @@ int* mk_dangle(void)
 
 int main(void)
 {
-   int  y;
+   int  y __attribute__((unused));
    int* x = mk_dangle();
 
    y = x[5];

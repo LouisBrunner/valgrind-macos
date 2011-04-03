@@ -10,7 +10,7 @@
 
 int main ( void )
 {
-   char c;
+   char c __attribute__((unused));
    char *c0, *c1;
 
    c0 = malloc(10000);

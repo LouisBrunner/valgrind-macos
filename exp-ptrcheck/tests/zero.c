@@ -5,7 +5,7 @@
 
 int main ( void )
 {
-   char c, *c0 = malloc(0), *c1;
+   char c __attribute__((unused)), *c0 = malloc(0), *c1;
 
    c = *c0;    // bad
 

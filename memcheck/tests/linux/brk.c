@@ -12,7 +12,7 @@ int main(void)
    void* orig_ds = sbrk(0);
    void* ds = orig_ds;
    void* vals[10];
-   void* res;
+   void* res __attribute__((unused));
 #define EOL ((void*)( ~(long)0 ))
    vals[0] = (void*)0;
    vals[1] = (void*)1;

@@ -18,7 +18,8 @@ int main(int argc, char **argv) {
   printf("test begins\n");
   unsigned short i,out;
   unsigned int flags;
-  int cf,pf,af,zf,sf,of;
+  int cf __attribute__((unused)),pf,af __attribute__((unused)),zf,sf;
+  int of __attribute__((unused));
   
   /* test AAM */
 

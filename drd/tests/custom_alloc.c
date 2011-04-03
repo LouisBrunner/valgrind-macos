@@ -57,7 +57,7 @@ static void custom_free(void* p)
 
 void make_leak(void)
 {
-   int* array2 = custom_alloc(sizeof(int) * 10);
+   int* array2 __attribute__((unused)) = custom_alloc(sizeof(int) * 10);
    array2 = 0;          // leak
    return;
 }

@@ -3,16 +3,11 @@
 
 int main ( void )
 {
-   int* x3 = malloc(3);
-   float f __attribute__((unused)), *f3 = malloc(3);
-   int* x4 = malloc(4);
-   double d __attribute__((unused)), *d7 = malloc(7);
-   int* x5 = malloc(5);
-   long long int lli __attribute__((unused)), *lli7 = malloc(7);
-   int* x6 = malloc(6);
-   char c __attribute__((unused)), *c0   = malloc(0);
-   int* x7 = malloc(7);
-   short int s __attribute__((unused)), *s1 = malloc(1);
+   int* x3 = malloc(3); float f __attribute__((unused)), *f3 = malloc(3);
+   int* x4 = malloc(4); double d __attribute__((unused)), *d7 = malloc(7);
+   int* x5 = malloc(5); long long int lli __attribute__((unused)), *lli7 = malloc(7);
+   int* x6 = malloc(6); char c __attribute__((unused)), *c0   = malloc(0);
+   int* x7 = malloc(7); short int s __attribute__((unused)), *s1 = malloc(1);
    int  x __attribute__((unused));
    int* y4 = malloc(4);
    int* y5 = malloc(5);

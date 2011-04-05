@@ -235,7 +235,7 @@ void vpanic ( HChar* str )
    New code for vex_util.c should go above this point. */
 #include <stdarg.h>
 
-static Int vex_strlen ( const HChar* str )
+Int vex_strlen ( const HChar* str )
 {
    Int i = 0;
    while (str[i] != 0) i++;

@@ -121,31 +121,52 @@ cab_operand(const HChar *base, UInt mask)
    return buf;
 }
 
+/* Common function used to construct a mnemonic based on a condition code
+   mask. */
+static const HChar *
+construct_mnemonic(const HChar *prefix, const HChar *suffix, UInt mask)
+{
+   HChar *to;
+   const HChar *from;
+
+   static HChar buf[10];
+
+   static HChar mask_id[16][4] = {
+      "", /* 0 -> unused */
+      "o", "h", "nle", "l", "nhe", "lh", "ne",
+      "e", "nlh", "he", "nl", "le", "nh", "no",
+      ""  /* 15 -> unused */
+   };
+
+   /* Guard against buffer overflow */
+   vassert(vex_strlen(prefix) + vex_strlen(suffix) + sizeof mask_id[0] <= sizeof buf);
+
+   /* strcpy(buf, prefix); */
+   for (from = prefix, to = buf; *from; ++from, ++to) {
+      *to = *from;
+   }
+   /* strcat(buf, mask_id); */
+   for (from = mask_id[mask]; *from; ++from, ++to) {
+      *to = *from;
+   }
+   /* strcat(buf, suffix); */
+   for (from = suffix; *from; ++from, ++to) {
+      *to = *from;
+   }
+   *to = '\0';
+
+   return buf;
+}
+
 
 /* Return the special mnemonic for the BCR opcode */
 static const HChar *
 bcr_operand(UInt m1)
 {
-   static const HChar mnemonic[16][6] = {
-      /* 0 */ "nopr",  /* no operation */
-      /* 1 */ "bor",   /* branch on overflow / if ones */
-      /* 2 */ "bhr",   /* branch on high */
-      /* 3 */ "bnler", /* branch on not low or equal */
-      /* 4 */ "blr",   /* branch on low */
-      /* 5 */ "bnher", /* branch on not high or equal */
-      /* 6 */ "blhr",  /* branch on low or high */
-      /* 7 */ "bner",  /* branch on not equal */
-      /* 8 */ "ber",   /* branch on equal */
-      /* 9 */ "bnlhr", /* branch on not low or high */
-      /* a */ "bher",  /* branch on high or equal */
-      /* b */ "bnlr",  /* branch on not low */
-      /* c */ "bler",  /* brach on low or equal */
-      /* d */ "bnhr",  /* branch on not high */
-      /* e */ "bnor",  /* branch on not overflow / if not ones */
-      /* f */ "br",    /* unconditional branch */
-   };
+   if (m1 ==  0) return "nopr";
+   if (m1 == 15) return "br";
 
-   return mnemonic[m1];
+   return construct_mnemonic("b", "r", m1);
 }
 
 
@@ -153,26 +174,10 @@ bcr_operand(UInt m1)
 static const HChar *
 bc_operand(UInt m1)
 {
-   static const HChar mnemonic[16][5] = {
-      /* 0 */ "nop",  // no operation
-      /* 1 */ "bo",   // branch on overflow / if ones
-      /* 2 */ "bh",   // branch on high
-      /* 3 */ "bnle", // branch on not low or equal
-      /* 4 */ "bl",   // branch on low
-      /* 5 */ "bnhe", // branch on not high or equal
-      /* 6 */ "blh",  // branch on low or high
-      /* 7 */ "bne",  // branch on not equal
-      /* 8 */ "be",   // branch on equal
-      /* 9 */ "bnlh", // branch on not low or high
-      /* a */ "bhe",  // branch on high or equal
-      /* b */ "bnl",  // branch on not low
-      /* c */ "ble",  // branch on low or equal
-      /* d */ "bnh",  // branch on not high
-      /* e */ "bno",  // branch on not overflow / if not ones
-      /* f */ "b"     // unconditional branch
-   };
+   if (m1 ==  0) return "nop";
+   if (m1 == 15) return "b";
 
-   return mnemonic[m1];
+   return construct_mnemonic("b", "", m1);
 }
 
 
@@ -180,26 +185,10 @@ bc_operand(UInt m1)
 static const HChar *
 brc_operand(UInt m1)
 {
-   static const HChar mnemonic[16][5] = {
-      /* 0 */ "brc",  /* no special mnemonic */
-      /* 1 */ "jo",   /* jump on overflow / if ones */
-      /* 2 */ "jh",   /* jump on A high */
-      /* 3 */ "jnle", /* jump on not low or equal */
-      /* 4 */ "jl",   /* jump on A low */
-      /* 5 */ "jnhe", /* jump on not high or equal */
-      /* 6 */ "jlh",  /* jump on low or high */
-      /* 7 */ "jne",  /* jump on A not equal B */
-      /* 8 */ "je",   /* jump on A equal B */
-      /* 9 */ "jnlh", /* jump on not low or high */
-      /* a */ "jhe",  /* jump on high or equal */
-      /* b */ "jnl",  /* jump on A not low */
-      /* c */ "jle",  /* jump on low or equal */
-      /* d */ "jnh",  /* jump on A not high */
-      /* e */ "jno",  /* jump on not overflow / if not ones */
-      /* f */ "j",    /* jump */
-   };
+   if (m1 == 0)  return "brc";
+   if (m1 == 15) return "j";
 
-   return mnemonic[m1];
+   return construct_mnemonic("j", "", m1);
 }
 
 
@@ -207,26 +196,31 @@ brc_operand(UInt m1)
 static const HChar *
 brcl_operand(UInt m1)
 {
-   static const HChar mnemonic[16][6] = {
-      /* 0 */ "brcl",  /* no special mnemonic */
-      /* 1 */ "jgo",   /* jump long on overflow / if ones */
-      /* 2 */ "jgh",   /* jump long on high */
-      /* 3 */ "jgnle", /* jump long on not low or equal */
-      /* 4 */ "jgl",   /* jump long on low */
-      /* 5 */ "jgnhe", /* jump long on not high or equal */
-      /* 6 */ "jglh",  /* jump long on low or high */
-      /* 7 */ "jgne",  /* jump long on not equal */
-      /* 8 */ "jge",   /* jump long on equal */
-      /* 9 */ "jgnlh", /* jump long on not low or high */
-      /* a */ "jghe",  /* jump long on high or equal */
-      /* b */ "jgnl",  /* jump long on not low */
-      /* c */ "jgle",  /* jump long on low or equal */
-      /* d */ "jgnh",  /* jump long on not high */
-      /* e */ "jgno",  /* jump long on not overflow / if not ones */
-      /* f */ "jg",    /* jump long */
-   };
+   if (m1 == 0)  return "brcl";
+   if (m1 == 15) return "jg";
 
-   return mnemonic[m1];
+   return construct_mnemonic("jg", "", m1);
+}
+
+
+/* Return the special mnemonic for a conditional load/store  opcode */
+static const HChar *
+cls_operand(Int kind, UInt mask)
+{
+   HChar *prefix;
+
+   switch (kind) {
+   case S390_XMNM_LOCR:   prefix = "locr";  break;
+   case S390_XMNM_LOCGR:  prefix = "locgr"; break;
+   case S390_XMNM_LOC:    prefix = "loc";   break;
+   case S390_XMNM_LOCG:   prefix = "locg";  break;
+   case S390_XMNM_STOC:   prefix = "stoc";  break;
+   case S390_XMNM_STOCG:  prefix = "stocg"; break;
+   default:
+      vpanic("cls_operand");
+   }
+
+   return construct_mnemonic(prefix, "", mask);
 }
 
 
@@ -291,6 +285,7 @@ s390_disasm(UInt command, ...)
    HChar buf[128];  /* holds the disassembled insn */
    HChar *p;
    HChar separator;
+   Int mask_suffix = -1;
 
    va_start(args, command);
 
@@ -349,6 +344,20 @@ s390_disasm(UInt command, ...)
             mnm  = va_arg(args, HChar *);
             mask = va_arg(args, UInt);
             p  += vex_sprintf(p, s390_mnm_fmt, cab_operand(mnm, mask));
+            break;
+
+         case S390_XMNM_LOCR:
+         case S390_XMNM_LOCGR:
+         case S390_XMNM_LOC:
+         case S390_XMNM_LOCG:
+         case S390_XMNM_STOC:
+         case S390_XMNM_STOCG:
+            mask = va_arg(args, UInt);
+            mnm = cls_operand(kind, mask);
+            p  += vex_sprintf(p, s390_mnm_fmt, mnm);
+            /* There are no special opcodes when mask == 0 or 15. In that case
+               the integer mask is appended as the final operand */
+            if (mask == 0 || mask == 15) mask_suffix = mask;
             break;
          }
       }
@@ -439,6 +448,8 @@ s390_disasm(UInt command, ...)
  done:
    va_end(args);
 
+   if (mask_suffix != -1)
+      p += vex_sprintf(p, ",%d", mask_suffix);
    *p = '\0';
 
    vassert(p < buf + sizeof buf);  /* detect buffer overwrite */

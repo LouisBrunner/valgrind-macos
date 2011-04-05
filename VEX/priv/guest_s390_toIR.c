@@ -1564,6 +1564,16 @@ s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
 }
 
 static void
+s390_format_RRF_U0RR(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
+                     UChar m3, UChar r1, UChar r2, Int xmnm_kind)
+{
+   irgen(m3, r1, r2);
+
+   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC3(XMNM, GPR, GPR), xmnm_kind, m3, r1, r2);
+}
+
+static void
 s390_format_RRF_U0RF(HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
                      UChar r3, UChar r1, UChar r2)
 {
@@ -1736,6 +1746,26 @@ s390_format_RSY_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 
    if (unlikely(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, UINT, SDXB), mnm, r1, r3, dh2, dl2, 0, b2);
+}
+
+static void
+s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+                     UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2,
+                     Int xmnm_kind)
+{
+   IRTemp op2addr = newTemp(Ity_I64);
+   IRTemp d2 = newTemp(Ity_I64);
+
+   if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
+                     guest_IA_next_instr);
+   assign(d2, mkU64(((ULong)(Long)(Char)dh2 << 12) | ((ULong)dl2)));
+   assign(op2addr, binop(Iop_Add64, mkexpr(d2), b2 != 0 ? get_gpr_dw0(b2) :
+          mkU64(0)));
+
+   irgen(r1, op2addr);
+
+   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC3(XMNM, GPR, SDXB), xmnm_kind, m3, r1, dh2, dl2, 0, b2);
 }
 
 static void
@@ -5755,6 +5785,44 @@ s390_irgen_LNGFR(UChar r1, UChar r2 __attribute__((unused)))
 }
 
 static HChar *
+s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
+{
+   if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
+                     guest_IA_next_instr);
+   put_gpr_w1(r1, get_gpr_w1(r2));
+
+   return "locr";
+}
+
+static HChar *
+s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
+{
+   if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
+                     guest_IA_next_instr);
+   put_gpr_dw0(r1, get_gpr_dw0(r2));
+
+   return "locgr";
+}
+
+static HChar *
+s390_irgen_LOC(UChar r1, IRTemp op2addr)
+{
+   /* condition is checked in format handler */
+   put_gpr_w1(r1, load(Ity_I32, mkexpr(op2addr)));
+
+   return "loc";
+}
+
+static HChar *
+s390_irgen_LOCG(UChar r1, IRTemp op2addr)
+{
+   /* condition is checked in format handler */
+   put_gpr_dw0(r1, load(Ity_I64, mkexpr(op2addr)));
+
+   return "locg";
+}
+
+static HChar *
 s390_irgen_LPQ(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, load(Ity_I64, mkexpr(op2addr)));
@@ -7161,6 +7229,24 @@ s390_irgen_STFH(UChar r1, IRTemp op2addr)
    store(mkexpr(op2addr), get_gpr_w0(r1));
 
    return "stfh";
+}
+
+static HChar *
+s390_irgen_STOC(UChar r1, IRTemp op2addr)
+{
+   /* condition is checked in format handler */
+   store(mkexpr(op2addr), get_gpr_w1(r1));
+
+   return "stoc";
+}
+
+static HChar *
+s390_irgen_STOCG(UChar r1, IRTemp op2addr)
+{
+   /* condition is checked in format handler */
+   store(mkexpr(op2addr), get_gpr_dw0(r1));
+
+   return "stocg";
 }
 
 static HChar *
@@ -11276,7 +11362,9 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb9df: s390_format_RRE_RR(s390_irgen_CLHLR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb9e1: /* POPCNT */ goto unimplemented;
-   case 0xb9e2: /* LOCGR */ goto unimplemented;
+   case 0xb9e2: s390_format_RRF_U0RR(s390_irgen_LOCGR, ovl.fmt.RRF3.r3,
+                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2,
+                                     S390_XMNM_LOCGR);  goto ok;
    case 0xb9e4: s390_format_RRF_R0RR2(s390_irgen_NGRK, ovl.fmt.RRF4.r3,
                                       ovl.fmt.RRF4.r1, ovl.fmt.RRF4.r2);
                                       goto ok;
@@ -11298,7 +11386,9 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb9eb: s390_format_RRF_R0RR2(s390_irgen_SLGRK, ovl.fmt.RRF4.r3,
                                       ovl.fmt.RRF4.r1, ovl.fmt.RRF4.r2);
                                       goto ok;
-   case 0xb9f2: /* LOCR */ goto unimplemented;
+   case 0xb9f2: s390_format_RRF_U0RR(s390_irgen_LOCR, ovl.fmt.RRF3.r3,
+                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2,
+                                     S390_XMNM_LOCR);  goto ok;
    case 0xb9f4: s390_format_RRF_R0RR2(s390_irgen_NRK, ovl.fmt.RRF4.r3,
                                       ovl.fmt.RRF4.r1, ovl.fmt.RRF4.r2);
                                       goto ok;
@@ -12185,8 +12275,16 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
-   case 0xeb00000000e2ULL: /* LOCG */ goto unimplemented;
-   case 0xeb00000000e3ULL: /* STOCG */ goto unimplemented;
+   case 0xeb00000000e2ULL: s390_format_RSY_RDRM(s390_irgen_LOCG, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2,
+                                                S390_XMNM_LOCG);  goto ok;
+   case 0xeb00000000e3ULL: s390_format_RSY_RDRM(s390_irgen_STOCG,
+                                                ovl.fmt.RSY.r1, ovl.fmt.RSY.r3,
+                                                ovl.fmt.RSY.b2, ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2,
+                                                S390_XMNM_STOCG);  goto ok;
    case 0xeb00000000e4ULL: s390_format_RSY_RRRD(s390_irgen_LANG, ovl.fmt.RSY.r1,
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
@@ -12207,8 +12305,16 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RSY.r1, ovl.fmt.RSY.r3,
                                                 ovl.fmt.RSY.b2, ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
-   case 0xeb00000000f2ULL: /* LOC */ goto unimplemented;
-   case 0xeb00000000f3ULL: /* STOC */ goto unimplemented;
+   case 0xeb00000000f2ULL: s390_format_RSY_RDRM(s390_irgen_LOC, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2, S390_XMNM_LOC);
+                                                goto ok;
+   case 0xeb00000000f3ULL: s390_format_RSY_RDRM(s390_irgen_STOC, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2,
+                                                S390_XMNM_STOC);  goto ok;
    case 0xeb00000000f4ULL: s390_format_RSY_RRRD(s390_irgen_LAN, ovl.fmt.RSY.r1,
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,

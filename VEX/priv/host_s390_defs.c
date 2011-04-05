@@ -2360,12 +2360,12 @@ s390_emit_OILL(UChar *p, UChar r1, UShort i2)
 
 
 static UChar *
-s390_emit_SLL(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
+s390_emit_SLL(UChar *p, UChar r1, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, GPR, UDXB), "sll", r1, d2, 0, b2);
 
-   return emit_RS(p, 0x89000000, r1, r3, b2, d2);
+   return emit_RS(p, 0x89000000, r1, 0, b2, d2);
 }
 
 
@@ -2380,12 +2380,12 @@ s390_emit_SLLG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 
 
 static UChar *
-s390_emit_SRA(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
+s390_emit_SRA(UChar *p, UChar r1, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, GPR, UDXB), "sra", r1, d2, 0, b2);
 
-   return emit_RS(p, 0x8a000000, r1, r3, b2, d2);
+   return emit_RS(p, 0x8a000000, r1, 0, b2, d2);
 }
 
 
@@ -2400,12 +2400,12 @@ s390_emit_SRAG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 
 
 static UChar *
-s390_emit_SRL(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
+s390_emit_SRL(UChar *p, UChar r1, UChar b2, UShort d2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, GPR, UDXB), "srl", r1, d2, 0, b2);
 
-   return emit_RS(p, 0x88000000, r1, r3, b2, d2);
+   return emit_RS(p, 0x88000000, r1, 0, b2, d2);
 }
 
 
@@ -3429,8 +3429,8 @@ s390_emit_LBRw(UChar *p, UChar r1, UChar r2)
    }
 
    p = s390_emit_LR(p, r1, r2);               /* r1 = r2 */
-   p = s390_emit_SLL(p, r1, R0, R0, 24);      /* r1 = r1 << 24  */
-   return s390_emit_SRA(p, r1, R0, R0, 24);   /* r1 = r1 >>a 24 */
+   p = s390_emit_SLL(p, r1, R0, 24);          /* r1 = r1 << 24  */
+   return s390_emit_SRA(p, r1, R0, 24);       /* r1 = r1 >>a 24 */
 }
 
 
@@ -3457,8 +3457,8 @@ s390_emit_LHRw(UChar *p, UChar r1, UChar r2)
    }
 
    p = s390_emit_LR(p, r1, r2);               /* r1 = r2 */
-   p = s390_emit_SLL(p, r1, R0, R0, 16);      /* r1 = r1 << 16  */
-   return s390_emit_SRA(p, r1, R0, R0, 16);   /* r1 = r1 >>a 16 */
+   p = s390_emit_SLL(p, r1, R0, 16);          /* r1 = r1 << 16  */
+   return s390_emit_SRA(p, r1, R0, 16);       /* r1 = r1 >>a 16 */
 }
 
 
@@ -4917,9 +4917,9 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_AND:  return s390_emit_NR(buf, dst, r2);
          case S390_ALU_OR:   return s390_emit_OR(buf, dst, r2);
          case S390_ALU_XOR:  return s390_emit_XR(buf, dst, r2);
-         case S390_ALU_LSH:  return s390_emit_SLL(buf, dst, 0, r2, 0);
-         case S390_ALU_RSH:  return s390_emit_SRL(buf, dst, 0, r2, 0);
-         case S390_ALU_RSHA: return s390_emit_SRA(buf, dst, 0, r2, 0);
+         case S390_ALU_LSH:  return s390_emit_SLL(buf, dst, r2, 0);
+         case S390_ALU_RSH:  return s390_emit_SRL(buf, dst, r2, 0);
+         case S390_ALU_RSHA: return s390_emit_SRA(buf, dst, r2, 0);
          }
          goto fail;
 
@@ -4966,11 +4966,11 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
                return s390_emit_SRAG(buf, dst, dst, R0, DISP20(0));
          } else {
             if (insn->variant.alu.tag == S390_ALU_LSH)
-               return s390_emit_SLL(buf, dst, 0, R0, 0);
+               return s390_emit_SLL(buf, dst, R0, 0);
             if (insn->variant.alu.tag == S390_ALU_RSH)
-               return s390_emit_SRL(buf, dst, 0, R0, 0);
+               return s390_emit_SRL(buf, dst, R0, 0);
             if (insn->variant.alu.tag == S390_ALU_RSHA)
-               return s390_emit_SRA(buf, dst, 0, R0, 0);
+               return s390_emit_SRA(buf, dst, R0, 0);
          }
       }
 
@@ -5144,13 +5144,13 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
             return s390_emit_XR(buf, dst, R0);
 
          case S390_ALU_LSH:
-            return s390_emit_SLL(buf, dst, 0, 0, value);
+            return s390_emit_SLL(buf, dst, 0, value);
 
          case S390_ALU_RSH:
-            return s390_emit_SRL(buf, dst, 0, 0, value);
+            return s390_emit_SRL(buf, dst, 0, value);
 
          case S390_ALU_RSHA:
-            return s390_emit_SRA(buf, dst, 0, 0, value);
+            return s390_emit_SRA(buf, dst, 0, value);
          }
          goto fail;
 
@@ -5167,9 +5167,9 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_AND:  return s390_emit_NILFw(buf, dst, value);
          case S390_ALU_OR:   return s390_emit_OILFw(buf, dst, value);
          case S390_ALU_XOR:  return s390_emit_XILFw(buf, dst, value);
-         case S390_ALU_LSH:  return s390_emit_SLL(buf, dst, 0, 0, value);
-         case S390_ALU_RSH:  return s390_emit_SRL(buf, dst, 0, 0, value);
-         case S390_ALU_RSHA: return s390_emit_SRA(buf, dst, 0, 0, value);
+         case S390_ALU_LSH:  return s390_emit_SLL(buf, dst, 0, value);
+         case S390_ALU_RSH:  return s390_emit_SRL(buf, dst, 0, value);
+         case S390_ALU_RSHA: return s390_emit_SRA(buf, dst, 0, value);
          }
          goto fail;
 

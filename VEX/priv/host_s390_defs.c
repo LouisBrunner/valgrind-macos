@@ -4675,7 +4675,7 @@ s390_emit_load_cc(UChar *p, UChar reg)
    p = s390_emit_LGHI(p, reg, 0);  /* Clear out, cc not affected */
    p = s390_emit_IPM(p, reg, reg);
    /* Shift 28 bits to the right --> [0,1,2,3] */
-   return s390_emit_SRLG(p, reg, reg, 0, DISP20(28)); /* REG = cc */
+   return s390_emit_SRL(p, reg, 0, 28); /* REG = cc */
 }
 
 

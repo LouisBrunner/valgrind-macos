@@ -6,6 +6,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16
 INSN_EI = flogr sub_EI add_EI and_EI or_EI xor_EI insert_EI
 INSN_GE = mul_GE add_GE
+INSN_Z196 = condloadstore
 
 if S390_BUILDS_EI
    INSN_TESTS += $(INSN_EI)
@@ -14,6 +15,11 @@ endif
 if S390_BUILDS_GE
    INSN_TESTS += $(INSN_GE)
 endif
+
+if S390_BUILDS_Z196
+   INSN_TESTS += $(INSN_Z196)
+endif
+
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 ex_sig \
@@ -29,6 +35,9 @@ EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_GE)) \
 	$(addsuffix .stdout.exp,$(INSN_GE)) \
 	$(addsuffix .vgtest,$(INSN_GE)) \
+	$(addsuffix .stderr.exp,$(INSN_Z196)) \
+	$(addsuffix .stdout.exp,$(INSN_Z196)) \
+	$(addsuffix .vgtest,$(INSN_Z196)) \
 	ex_sig.stdout.exp ex_sig.stderr.exp ex_sig.vgtest \
 	ex_clone.stdout.exp ex_clone.stderr.exp ex_clone.vgtest \
 	test.h add.h  and.h  div.h  insert.h \
@@ -56,3 +65,4 @@ and_EI_CFLAGS    = $(AM_CFLAGS) -march=z9-109
 or_EI_CFLAGS    = $(AM_CFLAGS) -march=z9-109
 xor_EI_CFLAGS    = $(AM_CFLAGS) -march=z9-109
 insert_EI_CFLAGS    = $(AM_CFLAGS) -march=z9-109
+condloadstore_CFLAGS    = $(AM_CFLAGS) -march=z196

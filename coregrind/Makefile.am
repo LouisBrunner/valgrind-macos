@@ -441,3 +441,18 @@ clean-local: clean-noinst_DSYMS
 
 install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 
+#----------------------------------------------------------------------------
+# Darwin linker kludges
+#----------------------------------------------------------------------------
+
+if VGCONF_OS_IS_DARWIN
+
+BUILT_SOURCES += fixup_macho_loadcmds
+fixup_macho_loadcmds: fixup_macho_loadcmds.c
+	$(CC) -g -Wall -o fixup_macho_loadcmds fixup_macho_loadcmds.c
+
+CLEANFILES += fixup_macho_loadcmds
+
+endif
+
+EXTRA_DIST += fixup_macho_loadcmds.c

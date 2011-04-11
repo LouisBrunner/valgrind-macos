@@ -178,7 +178,7 @@ $cmd = "$cmd $stack_addr_str $stack_size_str $outname";
 
 print "link_tool_exe_darwin: $cmd\n";
 
-my $r = system("$cmd");
+$r = system("$cmd");
 
 if ($r != 0) {
    exit 1;

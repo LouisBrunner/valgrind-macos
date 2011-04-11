@@ -3955,7 +3955,7 @@ void new_dwarf3_reader_wrk (
 
 static Bool               d3rd_jmpbuf_valid  = False;
 static HChar*             d3rd_jmpbuf_reason = NULL;
-static VG_MINIMAL_JMP_BUF d3rd_jmpbuf;
+static VG_MINIMAL_JMP_BUF(d3rd_jmpbuf);
 
 static __attribute__((noreturn)) void barf ( HChar* reason ) {
    vg_assert(d3rd_jmpbuf_valid);

@@ -635,7 +635,7 @@ lc_push_if_a_chunk_ptr(Addr ptr, Int clique, Bool is_prior_definite)
 }
 
 
-static VG_MINIMAL_JMP_BUF memscan_jmpbuf;
+static VG_MINIMAL_JMP_BUF(memscan_jmpbuf);
 
 static
 void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )

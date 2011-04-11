@@ -423,7 +423,7 @@ Int VG_(machine_arm_archlevel) = 4;
 #if defined(VGA_ppc32) || defined(VGA_ppc64) \
     || defined(VGA_arm) || defined(VGA_s390x)
 #include "pub_tool_libcsetjmp.h"
-static VG_MINIMAL_JMP_BUF env_unsup_insn;
+static VG_MINIMAL_JMP_BUF(env_unsup_insn);
 static void handler_unsup_insn ( Int x ) {
    VG_MINIMAL_LONGJMP(env_unsup_insn);
 }

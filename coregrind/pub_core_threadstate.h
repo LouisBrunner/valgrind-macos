@@ -356,7 +356,7 @@ typedef struct {
 
    /* Per-thread jmp_buf to resume scheduler after a signal */
    Bool               sched_jmpbuf_valid;
-   VG_MINIMAL_JMP_BUF sched_jmpbuf;
+   VG_MINIMAL_JMP_BUF(sched_jmpbuf);
 }
 ThreadState;
 

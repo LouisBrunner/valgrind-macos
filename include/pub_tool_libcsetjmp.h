@@ -64,10 +64,21 @@
    second function (eg, VG_(minimal_setjmp)) doesn't seem to work for
    whatever reason -- returns via a VG_(minimal_longjmp) go wrong.
 */
-#define VG_MINIMAL_JMP_BUF        jmp_buf
+
+#if defined(VGP_ppc32_linux)
+
+#define VG_MINIMAL_JMP_BUF(_name)        UInt _name [32+1+1]
+Int  VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+void VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
+#else
+
+/* The default implementation. */
+#define VG_MINIMAL_JMP_BUF(_name) jmp_buf _name
 #define VG_MINIMAL_SETJMP(_env)   __builtin_setjmp((_env))
 #define VG_MINIMAL_LONGJMP(_env)  __builtin_longjmp((_env),1)
 
+#endif
 
 #endif   // __PUB_TOOL_LIBCSETJMP_H
 

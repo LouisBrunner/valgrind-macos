@@ -61,6 +61,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"    // __NR_sched_yield
+#include "pub_core_libcsetjmp.h"   // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_clreq.h"         // for VG_USERREQ__*
@@ -581,7 +582,7 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
 									\
-      (jumped) = __builtin_setjmp(_qq_tst->sched_jmpbuf);               \
+      (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);              \
       if ((jumped) == 0) {						\
 	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
 	 _qq_tst->sched_jmpbuf_valid = True;				\

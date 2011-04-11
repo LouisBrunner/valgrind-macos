@@ -44,7 +44,6 @@
 #include "pub_core_ume.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
-#include "pub_core_threadstate.h"     /* ThreadArchState */
 #include "pub_core_initimg.h"         /* self */
 
 #include "priv_initimg_pathscan.h"

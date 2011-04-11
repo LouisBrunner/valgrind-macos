@@ -18,6 +18,7 @@ nobase_pkginclude_HEADERS = \
 	pub_tool_libcfile.h 		\
 	pub_tool_libcprint.h 		\
 	pub_tool_libcproc.h 		\
+	pub_tool_libcsetjmp.h 		\
 	pub_tool_libcsignal.h 		\
 	pub_tool_machine.h 		\
 	pub_tool_mallocfree.h 		\

@@ -139,6 +139,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcsetjmp.h"   // setjmp facilities
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"    /* VG_(needs) */
 #include "pub_core_xarray.h"
@@ -3952,18 +3953,14 @@ void new_dwarf3_reader_wrk (
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
-#include <setjmp.h>   /* For jmp_buf */
-/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
-
-static Bool    d3rd_jmpbuf_valid  = False;
-static HChar*  d3rd_jmpbuf_reason = NULL;
-static jmp_buf d3rd_jmpbuf;
+static Bool               d3rd_jmpbuf_valid  = False;
+static HChar*             d3rd_jmpbuf_reason = NULL;
+static VG_MINIMAL_JMP_BUF d3rd_jmpbuf;
 
 static __attribute__((noreturn)) void barf ( HChar* reason ) {
    vg_assert(d3rd_jmpbuf_valid);
    d3rd_jmpbuf_reason = reason;
-   __builtin_longjmp(&d3rd_jmpbuf, 1);
+   VG_MINIMAL_LONGJMP(d3rd_jmpbuf);
    /*NOTREACHED*/
    vg_assert(0);
 }
@@ -3991,7 +3988,7 @@ ML_(new_dwarf3_reader) (
    vg_assert(d3rd_jmpbuf_reason == NULL);
 
    d3rd_jmpbuf_valid = True;
-   jumped = __builtin_setjmp(&d3rd_jmpbuf);
+   jumped = VG_MINIMAL_SETJMP(d3rd_jmpbuf);
    if (jumped == 0) {
       /* try this ... */
       new_dwarf3_reader_wrk( di, barf,

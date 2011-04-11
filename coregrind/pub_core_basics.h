@@ -64,9 +64,6 @@
 #  error Unknown arch
 #endif
 
-// For jmp_buf
-#include <setjmp.h>
-
 
 /* ---------------------------------------------------------------------
    A struct to hold starting values for stack unwinding.

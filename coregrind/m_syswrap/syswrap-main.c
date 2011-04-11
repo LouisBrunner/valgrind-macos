@@ -34,6 +34,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
+#include "pub_core_libcsetjmp.h"    // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -2266,7 +2267,7 @@ void ML_(wqthread_continue_NORETURN)(ThreadId tid)
    sci->status.what = SsIdle;
 
    vg_assert(tst->sched_jmpbuf_valid);
-   __builtin_longjmp(tst->sched_jmpbuf, True);
+   VG_MINIMAL_LONGJMP(tst->sched_jmpbuf, True);
 
    /* NOTREACHED */
    vg_assert(0);

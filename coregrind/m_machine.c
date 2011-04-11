@@ -30,6 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_libcsetjmp.h"   // setjmp facilities
 #include "pub_core_threadstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
@@ -418,11 +419,14 @@ Int VG_(machine_arm_archlevel) = 4;
 /* fixs390: anything for s390x here ? */
 
 /* For hwcaps detection on ppc32/64 and arm we'll need to do SIGILL
-   testing, so we need a jmp_buf. */
-#if defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm) || defined(VGA_s390x)
-#include <setjmp.h> // For jmp_buf
-static jmp_buf env_unsup_insn;
-static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); }
+   testing, so we need a VG_MINIMAL_JMP_BUF. */
+#if defined(VGA_ppc32) || defined(VGA_ppc64) \
+    || defined(VGA_arm) || defined(VGA_s390x)
+#include "pub_tool_libcsetjmp.h"
+static VG_MINIMAL_JMP_BUF env_unsup_insn;
+static void handler_unsup_insn ( Int x ) {
+   VG_MINIMAL_LONGJMP(env_unsup_insn);
+}
 #endif
 
 
@@ -462,7 +466,7 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
    vg_assert(dcbz_szB == 32 || dcbz_szB == 64 || dcbz_szB == 128);
 
    /* dcbzl clears 128B on G5/PPC970, and usually 32B on other platforms */
-   if (__builtin_setjmp(env_unsup_insn)) {
+   if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
       dcbzl_szB = 0; /* indicates unsupported */
    }
    else {
@@ -689,7 +693,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* standard FP insns */
      have_F = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_F = False;
      } else {
         __asm__ __volatile__(".long 0xFC000090"); /*fmr 0,0 */
@@ -697,7 +701,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Altivec insns */
      have_V = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_V = False;
      } else {
         /* Unfortunately some older assemblers don't speak Altivec (or
@@ -710,7 +714,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* General-Purpose optional (fsqrt, fsqrts) */
      have_FX = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_FX = False;
      } else {
         __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0 */
@@ -718,7 +722,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
      have_GX = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_GX = False;
      } else {
         __asm__ __volatile__(".long 0xFC000034"); /* frsqrte 0,0 */
@@ -808,7 +812,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* standard FP insns */
      have_F = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_F = False;
      } else {
         __asm__ __volatile__("fmr 0,0");
@@ -816,7 +820,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Altivec insns */
      have_V = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_V = False;
      } else {
         __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
@@ -824,7 +828,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* General-Purpose optional (fsqrt, fsqrts) */
      have_FX = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_FX = False;
      } else {
         __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0*/
@@ -832,7 +836,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
      have_GX = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_GX = False;
      } else {
         __asm__ __volatile__(".long 0xFC000034"); /*frsqrte 0,0*/
@@ -899,7 +903,7 @@ Bool VG_(machine_get_hwcaps)( void )
         is not supported on z900. */
 
      have_LDISP = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_LDISP = False;
      } else {
        /* BASR loads the address of the next insn into r1. Needed to avoid
@@ -910,7 +914,7 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
      have_EIMM = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_EIMM = False;
      } else {
         __asm__ __volatile__(".long  0xc0090000\n\t"  /* iilf r0,0 */
@@ -918,7 +922,7 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
      have_GIE = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_GIE = False;
      } else {
         __asm__ __volatile__(".long  0xc2010000\n\t"  /* msfi r0,0 */
@@ -926,7 +930,7 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
      have_DFP = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_DFP = False;
      } else {
         __asm__ __volatile__(".long 0xb3d20000"
@@ -1004,7 +1008,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* VFP insns */
      have_VFP = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_VFP = False;
      } else {
         __asm__ __volatile__(".word 0xEEB02B42"); /* VMOV.F64 d2, d2 */
@@ -1016,7 +1020,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* NEON insns */
      have_NEON = True;
-     if (__builtin_setjmp(env_unsup_insn)) {
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_NEON = False;
      } else {
         __asm__ __volatile__(".word 0xF2244154"); /* VMOV q2, q2 */
@@ -1026,7 +1030,7 @@ Bool VG_(machine_get_hwcaps)( void )
      archlevel = 5; /* v5 will be base level */
      if (archlevel < 7) {
         archlevel = 7;
-        if (__builtin_setjmp(env_unsup_insn)) {
+        if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
            archlevel = 5;
         } else {
            __asm__ __volatile__(".word 0xF45FF000"); /* PLI [PC,#-0] */
@@ -1034,7 +1038,7 @@ Bool VG_(machine_get_hwcaps)( void )
      }
      if (archlevel < 6) {
         archlevel = 6;
-        if (__builtin_setjmp(env_unsup_insn)) {
+        if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
            archlevel = 5;
         } else {
            __asm__ __volatile__(".word 0xE6822012"); /* PKHBT r2, r2, r2 */

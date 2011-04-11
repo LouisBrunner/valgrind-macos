@@ -154,6 +154,7 @@ noinst_HEADERS = \
 	pub_core_libcfile.h	\
 	pub_core_libcprint.h	\
 	pub_core_libcproc.h	\
+	pub_core_libcsetjmp.h	\
 	pub_core_libcsignal.h	\
 	pub_core_mach.h		\
 	pub_core_machine.h	\
@@ -239,6 +240,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_libcfile.c \
 	m_libcprint.c \
 	m_libcproc.c \
+	m_libcsetjmp.c \
 	m_libcsignal.c \
 	m_machine.c \
 	m_main.c \

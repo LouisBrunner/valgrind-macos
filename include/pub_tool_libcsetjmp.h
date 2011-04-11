@@ -71,6 +71,12 @@
 Int  VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
 void VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
+#elif defined(VGP_ppc64_linux)
+
+#define VG_MINIMAL_JMP_BUF(_name)        ULong _name [32+1+1]
+Int  VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+void VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
 #else
 
 /* The default implementation. */

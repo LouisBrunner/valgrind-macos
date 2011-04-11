@@ -2267,7 +2267,7 @@ void ML_(wqthread_continue_NORETURN)(ThreadId tid)
    sci->status.what = SsIdle;
 
    vg_assert(tst->sched_jmpbuf_valid);
-   VG_MINIMAL_LONGJMP(tst->sched_jmpbuf, True);
+   VG_MINIMAL_LONGJMP(tst->sched_jmpbuf);
 
    /* NOTREACHED */
    vg_assert(0);

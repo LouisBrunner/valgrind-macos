@@ -2570,6 +2570,16 @@ s390_emit_SLFI(UChar *p, UChar r1, UInt i2)
 
 
 static UChar *
+s390_emit_SLGFI(UChar *p, UChar r1, UInt i2)
+{
+   if (unlikely(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, GPR, UINT), "slgfi", r1, i2);
+
+   return emit_RIL(p, 0xc20400000000ULL, r1, i2);
+}
+
+
+static UChar *
 s390_emit_LDR(UChar *p, UChar r1, UChar r2)
 {
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
@@ -3218,13 +3228,6 @@ s390_emit_SXBR(UChar *p, UChar r1, UChar r2)
    return emit_RRE(p, 0xb34b0000, r1, r2);
 }
 
-/* For both 32-bit and 64-bit clients we can use the instructions that
-   were available on z900. See binutils/opcodes/s390-opc.txt
-
-   Note, that entering a wrapper for a z/arch instruction does not
-   imply that the client is a 64-bit client. It only means that this
-   instruction is a good match for the expression at hand.
-*/
 
 /* Provide a symbolic name for register "R0" */
 #define R0 0
@@ -3614,6 +3617,20 @@ s390_emit_SLFIw(UChar *p, UChar r1, UInt i2)
    /* Load 32 bit immediate to R0 then subtract */
    p = s390_emit_load_32imm(p, R0, i2);
    return s390_emit_SR(p, r1, R0);
+}
+
+
+/* r1[0:63] = r1[0:63] - zero_extend(i2) */
+static UChar *
+s390_emit_SLGFIw(UChar *p, UChar r1, UInt i2)
+{
+   if (s390_host_has_eimm) {
+      return s390_emit_SLGFI(p, r1, i2);
+   }
+
+   /* Load zero-extended 32 bit immediate to R0 then subtract */
+   p = s390_emit_load_64imm(p, R0, i2);
+   return s390_emit_SGR(p, r1, R0);
 }
 
 
@@ -5128,9 +5145,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
             return s390_emit_AHI(buf, dst, value);
 
          case S390_ALU_SUB:
-            /* fixs390 later: as an optimization could perhaps use SLFI ? */
-            buf = s390_emit_LHI(buf, R0, value);
-            return s390_emit_SR(buf, dst, R0);
+            return s390_emit_SLFIw(buf, dst, value);
 
          case S390_ALU_MUL:
             return s390_emit_MHI(buf, dst, value);
@@ -5187,7 +5202,9 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
             return s390_emit_AGR(buf, dst, R0);
 
          case S390_ALU_SUB:
-            /* fixs390 later: as an optimization could perhaps use SLFI ? */
+            if (ulong_fits_unsigned_32bit(value)) {
+               return s390_emit_SLGFIw(buf, dst, value);
+            }
             /* Load value into R0; then subtract from destination reg */
             buf = s390_emit_load_64imm(buf, R0, value);
             return s390_emit_SGR(buf, dst, R0);
@@ -5819,7 +5836,7 @@ s390_insn_mul_emit(UChar *buf, const s390_insn *insn)
             if (signed_multiply)
                return s390_emit_MFYw(buf, r1, x, b, DISP20(d));
             else
-               vpanic("s390_insn_mul_emit");
+               return s390_emit_ML(buf, r1, x, b, DISP20(d));
          }
          goto fail;
 
@@ -5919,11 +5936,11 @@ s390_insn_div_emit(UChar *buf, const s390_insn *insn)
 
          case S390_AMODE_B20:
          case S390_AMODE_BX20:
-            buf = s390_emit_LY(buf, R0, x, b, DISP20(d));
-            if (signed_divide)
+            if (signed_divide) {
+               buf = s390_emit_LY(buf, R0, x, b, DISP20(d));
                return s390_emit_DR(buf, r1, R0);
-            else
-               return s390_emit_DLR(buf, r1, R0);
+            } else
+               return s390_emit_DL(buf, r1, x, b, DISP20(d));
          }
          goto fail;
 

@@ -3,7 +3,6 @@ Requirements
 - You need GCC 3.4 or later to compile the s390 port.
 - A working combination of autotools is required.
 - To run valgrind a z900 machine or any later model is needed.
-- The long displacement facility must be installed on the host machine.
 
 
 Limitations

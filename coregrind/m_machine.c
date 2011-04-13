@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------*/
 /*--- Machine-related stuff.                           m_machine.c ---*/
 /*--------------------------------------------------------------------*/
@@ -34,6 +33,8 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcfile.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_cpuid.h"
 #include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL and SIGFPE
@@ -418,7 +419,7 @@ Int VG_(machine_arm_archlevel) = 4;
 
 /* fixs390: anything for s390x here ? */
 
-/* For hwcaps detection on ppc32/64 and arm we'll need to do SIGILL
+/* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64) \
     || defined(VGA_arm) || defined(VGA_s390x)
@@ -493,7 +494,109 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 }
 #endif /* defined(VGA_ppc32) || defined(VGA_ppc64) */
 
+#ifdef VGA_s390x
 
+/* Read /proc/cpuinfo. Look for lines like these
+
+   processor 0: version = FF,  identification = 0117C9,  machine = 2064
+
+   and return the machine model or VEX_S390X_MODEL_INVALID on error. */
+
+static UInt VG_(get_machine_model)(void)
+{
+   static struct model_map {
+      HChar name[5];
+      UInt  id;
+   } model_map[] = {
+      { "2064", VEX_S390X_MODEL_Z900 },
+      { "2066", VEX_S390X_MODEL_Z800 },
+      { "2084", VEX_S390X_MODEL_Z990 },
+      { "2086", VEX_S390X_MODEL_Z890 },
+      { "2094", VEX_S390X_MODEL_Z9_EC },
+      { "2096", VEX_S390X_MODEL_Z9_BC },
+      { "2097", VEX_S390X_MODEL_Z10_EC },
+      { "2098", VEX_S390X_MODEL_Z10_BC },
+      { "2817", VEX_S390X_MODEL_Z196 },
+   };
+
+   Int    model, n, fh;
+   SysRes fd;
+   SizeT  num_bytes, file_buf_size;
+   HChar *p, *m, *model_name, *file_buf;
+
+   /* Slurp contents of /proc/cpuinfo into FILE_BUF */
+   fd = VG_(open)( "/proc/cpuinfo", 0, VKI_S_IRUSR );
+   if ( sr_isError(fd) ) return VEX_S390X_MODEL_INVALID;
+
+   fh  = sr_Res(fd);
+
+   /* Determine the size of /proc/cpuinfo.
+      Work around broken-ness in /proc file system implementation.
+      fstat returns a zero size for /proc/cpuinfo although it is
+      claimed to be a regular file. */
+   num_bytes = 0;
+   file_buf_size = 1000;
+   file_buf = VG_(malloc)("cpuinfo", file_buf_size + 1);
+   while (42) {
+      n = VG_(read)(fh, file_buf, file_buf_size);
+      if (n < 0) break;
+
+      num_bytes += n;
+      if (n < file_buf_size) break;  /* reached EOF */
+   }
+
+   if (n < 0) num_bytes = 0;   /* read error; ignore contents */
+
+   if (num_bytes > file_buf_size) {
+      VG_(free)( file_buf );
+      VG_(lseek)( fh, 0, VKI_SEEK_SET );
+      file_buf = VG_(malloc)( "cpuinfo", num_bytes + 1 );
+      n = VG_(read)( fh, file_buf, num_bytes );
+      if (n < 0) num_bytes = 0;
+   }
+
+   file_buf[num_bytes] = '\0';
+   VG_(close)(fh);
+
+   /* Parse file */
+   model = VEX_S390X_MODEL_INVALID;
+   for (p = file_buf; *p; ++p) {
+      /* Beginning of line */
+     if (VG_(strncmp)( p, "processor", sizeof "processor" - 1 ) != 0) continue;
+
+     m = VG_(strstr)( p, "machine" );
+     if (m == NULL) continue;
+
+     p = m + sizeof "machine" - 1;
+     while ( VG_(isspace)( *p ) || *p == '=') {
+       if (*p == '\n') goto next_line;
+       ++p;
+     }
+
+     model_name = p;
+     for (n = 0; n < sizeof model_map / sizeof model_map[0]; ++n) {
+       struct model_map *mm = model_map + n;
+       SizeT len = VG_(strlen)( mm->name );
+       if ( VG_(strncmp)( mm->name, model_name, len ) == 0 &&
+            VG_(isspace)( model_name[len] )) {
+         if (mm->id < model) model = mm->id;
+         p = model_name + len;
+         break;
+       }
+     }
+     /* Skip until end-of-line */
+     while (*p != '\n')
+       ++p;
+   next_line: ;
+   }
+
+   VG_(free)( file_buf );
+   VG_(debugLog)(1, "machine", "model = %s\n", model_map[model].name);
+
+   return model;
+}
+
+#endif /* VGA_s390x */
 
 /* Determine what insn set and insn set variant the host has, and
    record it.  To be called once at system startup.  Returns False if
@@ -877,7 +980,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_toK_t     tmp_sigill_act;
 
      volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP;
-     Int r;
+     Int r, model;
 
      /* Unblock SIGILL and stash away the old action for that signal */
      VG_(sigemptyset)(&tmp_set);
@@ -942,19 +1045,27 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
-     VG_(debugLog)(1, "machine", "LDISP %d EIMM %d GIE %d DFP %d\n",
-                   have_LDISP, have_EIMM, have_GIE, have_DFP);
-
-     /* Check for long displacement facility which is required */
-     if (! have_LDISP) return False;
-
      va = VexArchS390X;
 
-     vai.hwcaps = 0;
-     if (have_LDISP) vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
+     model = VG_(get_machine_model)();
+
+     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d\n",
+                   model, have_LDISP, have_EIMM, have_GIE, have_DFP);
+
+     if (model == VEX_S390X_MODEL_INVALID) return False;
+
+     vai.hwcaps = model;
+     if (have_LDISP) {
+        /* Use long displacement only on machines >= z990. For all other machines
+           it is millicoded and therefore slow. */
+        if (model >= VEX_S390X_MODEL_Z990)
+           vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
+     }
      if (have_EIMM)  vai.hwcaps |= VEX_HWCAPS_S390X_EIMM;
      if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
      if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
+
+     VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 
      return True;
    }

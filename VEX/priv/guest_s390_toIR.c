@@ -12947,7 +12947,7 @@ disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
       addStmtToIRSB(irsb, IRStmt_Put(S390_GUEST_OFFSET(guest_IA),
                                      mkaddr_expr(guest_IA_curr_instr)));
 
-      irsb->next = mkaddr_expr(guest_IA_curr_instr);
+      irsb->next = mkaddr_expr(guest_IA_next_instr);
       irsb->jumpkind = Ijk_NoDecode;
       dres.whatNext = Dis_StopHere;
       dres.len = 0;

@@ -1,43 +1,49 @@
 #include <stdio.h>
 #include "insert.h"
+#include "opcodes.h"
+
+#define iihh(r1,i2)  ".long 0xa5" #r1 "0" #i2 "\n\t"
+#define iihl(r1,i2)  ".long 0xa5" #r1 "1" #i2 "\n\t"
+#define iilh(r1,i2)  ".long 0xa5" #r1 "2" #i2 "\n\t"
+#define iill(r1,i2)  ".long 0xa5" #r1 "3" #i2 "\n\t"
 
 static void do_imm_insns(void)
 {
-	immsweep(iihh, 0x55);
-	immsweep(iihl, 0x55);
-	immsweep(iilh, 0x55);
-	immsweep(iill, 0x55);
-	immsweep(iihh, 0xaa);
-	immsweep(iihl, 0xaa);
-	immsweep(iilh, 0xaa);
-	immsweep(iill, 0xaa);
-	immsweep(iihh, 0xff);
-	immsweep(iihl, 0xff);
-	immsweep(iilh, 0xff);
-	immsweep(iill, 0xff);
-	immsweep(iihh, 0x0);
-	immsweep(iihl, 0x0);
-	immsweep(iilh, 0x0);
-	immsweep(iill, 0x0);
-	immsweep(iihh, 0xffff);
-	immsweep(iihl, 0xffff);
-	immsweep(iilh, 0xffff);
-	immsweep(iill, 0xffff);
-	immsweep(iihh, 0xaaaa);
-	immsweep(iihl, 0xaaaa);
-	immsweep(iilh, 0xaaaa);
-	immsweep(iill, 0xaaaa);
-	immsweep(iihh, 0x5555);
-	immsweep(iihl, 0x5555);
-	immsweep(iilh, 0x5555);
-	immsweep(iill, 0x5555);
+	immsweep(iihh, 0055);
+	immsweep(iihl, 0055);
+	immsweep(iilh, 0055);
+	immsweep(iill, 0055);
+	immsweep(iihh, 00aa);
+	immsweep(iihl, 00aa);
+	immsweep(iilh, 00aa);
+	immsweep(iill, 00aa);
+	immsweep(iihh, 00ff);
+	immsweep(iihl, 00ff);
+	immsweep(iilh, 00ff);
+	immsweep(iill, 00ff);
+	immsweep(iihh, 0000);
+	immsweep(iihl, 0000);
+	immsweep(iilh, 0000);
+	immsweep(iill, 0000);
+	immsweep(iihh, ffff);
+	immsweep(iihl, ffff);
+	immsweep(iilh, ffff);
+	immsweep(iill, ffff);
+	immsweep(iihh, aaaa);
+	immsweep(iihl, aaaa);
+	immsweep(iilh, aaaa);
+	immsweep(iill, aaaa);
+	immsweep(iihh, 5555);
+	immsweep(iihl, 5555);
+	immsweep(iilh, 5555);
+	immsweep(iill, 5555);
 }
 
 
 static void do_mem_insns(unsigned long s2)
 {
 	memsweep(ic, s2);
-	memsweep(icy, s2);
+	icysweep(s2);
 }
 
 int main()

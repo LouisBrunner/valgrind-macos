@@ -1,5 +1,11 @@
 #include <stdio.h>
 #include "or.h"
+#include "opcodes.h"
+
+#define oihh(r1,i2)  ".long 0xa5" #r1 "8" #i2 "\n\t"
+#define oihl(r1,i2)  ".long 0xa5" #r1 "9" #i2 "\n\t"
+#define oilh(r1,i2)  ".long 0xa5" #r1 "a" #i2 "\n\t"
+#define oill(r1,i2)  ".long 0xa5" #r1 "b" #i2 "\n\t"
 
 static void do_imm_insns(void)
 {
@@ -8,39 +14,39 @@ static void do_imm_insns(void)
 	memimmsweep(oi, 128);
 	memimmsweep(oi, 0xaa);
 	memimmsweep(oi, 0x55);
-	memimmsweep(oiy, 0);
-	memimmsweep(oiy, 255);
-	memimmsweep(oiy, 128);
-	memimmsweep(oiy, 0xaa);
-	memimmsweep(oiy, 0x55);
-	immsweep(oihh, 0x55);
-	immsweep(oihl, 0x55);
-	immsweep(oilh, 0x55);
-	immsweep(oill, 0x55);
-	immsweep(oihh, 0xaa);
-	immsweep(oihl, 0xaa);
-	immsweep(oilh, 0xaa);
-	immsweep(oill, 0xaa);
-	immsweep(oihh, 0xff);
-	immsweep(oihl, 0xff);
-	immsweep(oilh, 0xff);
-	immsweep(oill, 0xff);
-	immsweep(oihh, 0x0);
-	immsweep(oihl, 0x0);
-	immsweep(oilh, 0x0);
-	immsweep(oill, 0x0);
-	immsweep(oihh, 0xffff);
-	immsweep(oihl, 0xffff);
-	immsweep(oilh, 0xffff);
-	immsweep(oill, 0xffff);
-	immsweep(oihh, 0xaaaa);
-	immsweep(oihl, 0xaaaa);
-	immsweep(oilh, 0xaaaa);
-	immsweep(oill, 0xaaaa);
-	immsweep(oihh, 0x5555);
-	immsweep(oihl, 0x5555);
-	immsweep(oilh, 0x5555);
-	immsweep(oill, 0x5555);
+	oiysweep(00);
+	oiysweep(ff);
+	oiysweep(80);
+	oiysweep(aa);
+	oiysweep(55);
+	immsweep(oihh, 0055);
+	immsweep(oihl, 0055);
+	immsweep(oilh, 0055);
+	immsweep(oill, 0055);
+	immsweep(oihh, 00aa);
+	immsweep(oihl, 00aa);
+	immsweep(oilh, 00aa);
+	immsweep(oill, 00aa);
+	immsweep(oihh, 00ff);
+	immsweep(oihl, 00ff);
+	immsweep(oilh, 00ff);
+	immsweep(oill, 00ff);
+	immsweep(oihh, 0000);
+	immsweep(oihl, 0000);
+	immsweep(oilh, 0000);
+	immsweep(oill, 0000);
+	immsweep(oihh, ffff);
+	immsweep(oihl, ffff);
+	immsweep(oilh, ffff);
+	immsweep(oill, ffff);
+	immsweep(oihh, aaaa);
+	immsweep(oihl, aaaa);
+	immsweep(oilh, aaaa);
+	immsweep(oill, aaaa);
+	immsweep(oihh, 5555);
+	immsweep(oihl, 5555);
+	immsweep(oilh, 5555);
+	immsweep(oill, 5555);
 }
 
 
@@ -50,7 +56,7 @@ static void do_regmem_insns(unsigned long s2)
 	memsweep(og, s2);
 	regsweep(or, s2);
 	regsweep(ogr, s2);
-	memsweep(oy, s2);
+	oysweep(s2);
 }
 
 int main()

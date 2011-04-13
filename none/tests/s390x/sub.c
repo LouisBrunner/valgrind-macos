@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "sub.h"
+#include "opcodes.h"
 
 static void do_regmem_insns(unsigned long s2)
 {
@@ -25,9 +26,9 @@ static void do_regmem_insns(unsigned long s2)
 	memsweep(slbg, s2, 1);
 	regsweep(slbr, s2, 1);
 	regsweep(slbgr, s2, 1);
-	memsweep(shy, s2, 0);
-	memsweep(sly, s2, 0);
-	memsweep(sy, s2, 0);
+	ldispsweep(SHY, s2, 0);
+	ldispsweep(SLY, s2, 0);
+	ldispsweep(SY, s2, 0);
 }
 
 int main()

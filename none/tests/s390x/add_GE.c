@@ -1,28 +1,29 @@
 #include <stdio.h>
 #include "add.h"
+#include "opcodes.h"
 
 static void do_memimm_insns(void)
 {
-	memimmsweep(asi, 0, 0);
-	memimmsweep(agsi, 0, 0);
-	memimmsweep(alsi, 0, 0);
-	memimmsweep(algsi, 0, 0);
-	memimmsweep(asi, 1, 0);
-	memimmsweep(agsi, 1, 0);
-	memimmsweep(alsi, 1, 0);
-	memimmsweep(algsi, 1, 0);
-	memimmsweep(asi, -1, 0);
-	memimmsweep(agsi, -1, 0);
-	memimmsweep(alsi, -1, 0);
-	memimmsweep(algsi, -1, 0);
-	memimmsweep(asi, -128, 0);
-	memimmsweep(agsi, -128, 0);
-	memimmsweep(alsi, -128, 0);
-	memimmsweep(algsi, -128, 0);
-	memimmsweep(asi, 127, 0);
-	memimmsweep(agsi, 127, 0);
-	memimmsweep(alsi, 127, 0);
-	memimmsweep(algsi, 127, 0);
+	memimmsweep(ASI,   00, 0);
+	memimmsweep(AGSI,  00, 0);
+	memimmsweep(ALSI,  00, 0);
+	memimmsweep(ALGSI, 00, 0);
+	memimmsweep(ASI,   01, 0);
+	memimmsweep(AGSI,  01, 0);
+	memimmsweep(ALSI,  01, 0);
+	memimmsweep(ALGSI, 01, 0);
+	memimmsweep(ASI,   ff, 0);
+	memimmsweep(AGSI,  ff, 0);
+	memimmsweep(ALSI,  ff, 0);
+	memimmsweep(ALGSI, ff, 0);
+	memimmsweep(ASI,   80, 0);
+	memimmsweep(AGSI,  80, 0);
+	memimmsweep(ALSI,  80, 0);
+	memimmsweep(ALGSI, 80, 0);
+	memimmsweep(ASI,   7f, 0);
+	memimmsweep(AGSI,  7f, 0);
+	memimmsweep(ALSI,  7f, 0);
+	memimmsweep(ALGSI, 7f, 0);
 }
 
 int main()

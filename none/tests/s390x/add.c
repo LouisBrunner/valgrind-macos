@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "add.h"
+#include "opcodes.h"
 
 static void do_imm_insns(void)
 {
@@ -38,9 +39,9 @@ static void do_regmem_insns(unsigned long s2)
 	memsweep(alcg, s2, 1);
 	regsweep(alcr, s2, 1);
 	regsweep(alcgr, s2, 1);
-	memsweep(ahy, s2, 0);
-	memsweep(ay, s2, 0);
-	memsweep(aly, s2, 0);
+	ldispsweep(AHY, s2, 0);
+	ldispsweep(AY, s2, 0);
+	ldispsweep(ALY, s2, 0);
 }
 
 int main()

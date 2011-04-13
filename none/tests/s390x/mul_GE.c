@@ -1,32 +1,33 @@
 #include <stdio.h>
 #include "mul.h"
+#include "opcodes.h"
 
 static void do_imm_insns(void)
 {
-	immsweep(msfi, 0);
-	immsweep(msfi, -1);
-	immsweep(msfi, -32768);
-	immsweep(msfi, 32767);
-	immsweep(msfi, 32767);
-	immsweep(msfi, 32767);
-	immsweep(msfi, -2147483648);
-	immsweep(msfi, 2147483647);
-	immsweep(msgfi, 0);
-	immsweep(msgfi, -1);
-	immsweep(msgfi, -32768);
-	immsweep(msgfi, 32767);
-	immsweep(msgfi, 32767);
-	immsweep(msgfi, 32767);
-	immsweep(msgfi, -2147483648);
-	immsweep(msgfi, 2147483647);
+	ximmsweep(MSFI,  00000000, 00000000);
+	ximmsweep(MSFI,  ffffffff, ffffffff);
+	ximmsweep(MSFI,  ffffffff, ffff8000);
+	ximmsweep(MSFI,  00000000, 00007fff);
+	ximmsweep(MSFI,  00000000, 00007fff);
+	ximmsweep(MSFI,  00000000, 00007fff);
+	ximmsweep(MSFI,  ffffffff, 80000000);
+	ximmsweep(MSFI,  00000000, 7fffffff);
+	ximmsweep(MSGFI, 00000000, 00000000);
+	ximmsweep(MSGFI, ffffffff, ffffffff);
+	ximmsweep(MSGFI, ffffffff, ffff8000);
+	ximmsweep(MSGFI, 00000000, 00007fff);
+	ximmsweep(MSGFI, 00000000, 00007fff);
+	ximmsweep(MSGFI, 00000000, 00007fff);
+	ximmsweep(MSGFI, ffffffff, 80000000);
+	ximmsweep(MSGFI, 00000000, 7fffffff);
 
 }
 
 
 static void do_regmem_insns(unsigned long m2)
 {
-	memsweep(mhy, m2);
-	memsweep(mfy, m2);
+	mhysweep(m2);
+	mfysweep(m2);
 }
 
 int main()

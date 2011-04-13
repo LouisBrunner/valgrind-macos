@@ -1,21 +1,22 @@
 #include <stdio.h>
 #include "and.h"
+#include "opcodes.h"
 
 static void do_imm_insns(void)
 {
-	immsweep(nihf, 0);
-	immsweep(nihf, 0xff);
-	immsweep(nihf, 0x55);
-	immsweep(nihf, 0xaa);
-	immsweep(nihf, 0xffff);
-	immsweep(nihf, 0x5555);
-	immsweep(nihf, 0xaaaa);
-	immsweep(nihf, 0xffff0000);
-	immsweep(nihf, 0x55550000);
-	immsweep(nihf, 0xaaaa0000);
-	immsweep(nihf, 0xffffffff);
-	immsweep(nihf, 0x55555555);
-	immsweep(nihf, 0xaaaaaaaa);
+	immsweep(NIHF, 00000000);
+	immsweep(NIHF, 000000ff);
+	immsweep(NIHF, 00000055);
+	immsweep(NIHF, 000000aa);
+	immsweep(NIHF, 0000ffff);
+	immsweep(NIHF, 00005555);
+	immsweep(NIHF, 0000aaaa);
+	immsweep(NIHF, ffff0000);
+	immsweep(NIHF, 55550000);
+	immsweep(NIHF, aaaa0000);
+	immsweep(NIHF, ffffffff);
+	immsweep(NIHF, 55555555);
+	immsweep(NIHF, aaaaaaaa);
 }
 
 

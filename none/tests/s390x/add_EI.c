@@ -1,37 +1,40 @@
 #include <stdio.h>
 #include "add.h"
+#include "opcodes.h"
 
 static void do_imm_insns(void)
 {
-	immsweep(afi, 0, 0);
-	immsweep(afi, -1, 0);
-	immsweep(afi, -32768, 0);
-	immsweep(afi, 32767, 0);
-	immsweep(afi, -1, 0);
-	immsweep(afi, -2147483648, 0);
-	immsweep(afi, 2147483647, 0);
-	immsweep(agfi, 0, 0);
-	immsweep(agfi, -1, 0);
-	immsweep(agfi, -32768, 0);
-	immsweep(agfi, 32767, 0);
-	immsweep(agfi, -1, 0);
-	immsweep(agfi, -2147483648, 0);
-	immsweep(agfi, 2147483647, 0);
-	immsweep(alfi, 0, 0);
-	immsweep(alfi, 65535, 0);
-	immsweep(alfi, 32768, 0);
-	immsweep(alfi, 32767, 0);
-	immsweep(alfi, 4294967295, 0);
-	immsweep(alfi, 2147483648, 0);
-	immsweep(alfi, 2147483647, 0);
-	immsweep(algfi, 0, 0);
-	immsweep(algfi, 65535, 0);
-	immsweep(algfi, 32768, 0);
-	immsweep(algfi, 32767, 0);
-	immsweep(algfi, 4294967295, 0);
-	immsweep(algfi, 2147483648, 0);
-	immsweep(algfi, 2147483647, 0);
+	ximmsweep(AFI,  00000000, 00000000, 0);
+	ximmsweep(AFI,  ffffffff, ffffffff, 0);
+	ximmsweep(AFI,  ffffffff, ffff8000, 0);
+	ximmsweep(AFI,  00000000, 00007fff, 0);
+	ximmsweep(AFI,  ffffffff, ffffffff, 0);
+	ximmsweep(AFI,  ffffffff, 80000000, 0);
+	ximmsweep(AFI,  00000000, 7fffffff, 0);
 
+	ximmsweep(AGFI, 00000000, 00000000, 0);
+	ximmsweep(AGFI, ffffffff, ffffffff, 0);
+	ximmsweep(AGFI, ffffffff, ffff8000, 0);
+	ximmsweep(AGFI, 00000000, 00007fff, 0);
+	ximmsweep(AGFI, ffffffff, ffffffff, 0);
+	ximmsweep(AGFI, ffffffff, 80000000, 0);
+	ximmsweep(AGFI, 00000000, 7fffffff, 0);
+
+	ximmsweep(ALFI, 00000000, 00000000, 0);
+	ximmsweep(ALFI, 00000000, 0000ffff, 0);
+	ximmsweep(ALFI, 00000000, 00008000, 0);
+	ximmsweep(ALFI, 00000000, 00007fff, 0);
+	ximmsweep(ALFI, 00000000, ffffffff, 0);
+	ximmsweep(ALFI, 00000000, 80000000, 0);
+	ximmsweep(ALFI, 00000000, 7fffffff, 0);
+
+	ximmsweep(ALGFI, 00000000, 00000000, 0);
+	ximmsweep(ALGFI, 00000000, 0000ffff, 0);
+	ximmsweep(ALGFI, 00000000, 00008000, 0);
+	ximmsweep(ALGFI, 00000000, 00007fff, 0);
+	ximmsweep(ALGFI, 00000000, ffffffff, 0);
+	ximmsweep(ALGFI, 00000000, 80000000, 0);
+	ximmsweep(ALGFI, 00000000, 7fffffff, 0);
 }
 
 int main()

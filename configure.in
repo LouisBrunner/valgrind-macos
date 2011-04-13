@@ -1397,51 +1397,7 @@ if test x$ac_have_as_ppc_mftocrf = xyes ; then
 fi
 
 
-# what facilities does the s390 assembler support?
-AC_MSG_CHECKING([if s390 as supports extended immediate])
-CFLAGS=-march=z9-109
-AC_TRY_COMPILE(, [
-__asm__ __volatile__("flogr 1,2");
-],
-[
-ac_have_as_s390_ei=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_as_s390_ei=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(S390_BUILDS_EI, test x$ac_have_as_s390_ei = xyes)
-
-AC_MSG_CHECKING([if s390 as supports general instruction extension])
-CFLAGS=-march=z10
-AC_TRY_COMPILE(, [
-__asm__ __volatile__("chsi 1,0");
-],
-[
-ac_have_as_s390_ge=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_as_s390_ge=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(S390_BUILDS_GE, test x$ac_have_as_s390_ge = xyes)
 CFLAGS=$safe_CFLAGS
-
-AC_MSG_CHECKING([if s390 as supports z196 instructions])
-CFLAGS=-march=z196
-AC_TRY_COMPILE(, [
-__asm__ __volatile__("locr 1,2,1");
-],
-[
-ac_have_as_s390_z196=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_as_s390_z196=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(S390_BUILDS_Z196, test x$ac_have_as_s390_z196 = xyes)
-CFLAGS=$safe_CFLAGS
-
 
 # does the x86/amd64 assembler understand SSE3 instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "xor.h"
+#include "opcodes.h"
 
 static void do_imm_insns(void)
 {
@@ -8,11 +9,11 @@ static void do_imm_insns(void)
 	memimmsweep(xi, 128);
 	memimmsweep(xi, 0xaa);
 	memimmsweep(xi, 0x55);
-	memimmsweep(xiy, 0);
-	memimmsweep(xiy, 255);
-	memimmsweep(xiy, 128);
-	memimmsweep(xiy, 0xaa);
-	memimmsweep(xiy, 0x55);
+	xiysweep(00);
+	xiysweep(ff);
+	xiysweep(80);
+	xiysweep(aa);
+	xiysweep(55);
 }
 
 
@@ -22,7 +23,7 @@ static void do_regmem_insns(unsigned long s2)
 	memsweep(xg, s2);
 	regsweep(xr, s2);
 	regsweep(xgr, s2);
-	memsweep(xy, s2);
+	xysweep(s2);
 }
 
 int main()

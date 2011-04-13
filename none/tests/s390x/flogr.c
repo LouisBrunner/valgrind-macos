@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "opcodes.h"
 
 /* The FLOGR insn reads from register R2 and writes to register R1 and
    R1 + 1. So we need to distinguish three cases:
@@ -19,7 +20,7 @@ flogr1(unsigned long input, unsigned long *bitpos, unsigned long *modval,
    unsigned int psw;
    register unsigned long value asm("4") = input;
 
-   asm volatile ( ".long 0xB9830024\n\t" // "flogr 2, %[val]\n\t"
+   asm volatile ( FLOGR(2,4)
                   "ipm   %[psw]\n\t"
                   "stg   2, %[bitpos]\n\t"
                   "stg   3, %[modval]\n\t"
@@ -43,7 +44,7 @@ flogr2(unsigned long input, unsigned long *bitpos, unsigned long *modval,
    unsigned int psw;
    register unsigned long value asm("2") = input;
 
-   asm volatile ( ".long 0xB9830022\n\t" // "flogr 2, %[val]\n\t"
+   asm volatile ( FLOGR(2,2)
                   "ipm   %[psw]\n\t"
                   "stg   2, %[bitpos]\n\t"
                   "stg   3, %[modval]\n\t"
@@ -67,7 +68,7 @@ flogr3(unsigned long input, unsigned long *bitpos, unsigned long *modval,
    unsigned int psw;
    register unsigned long value asm("3") = input;
 
-   asm volatile ( ".long 0xB9830023\n\t" // "flogr 2, %[val]\n\t"
+   asm volatile ( FLOGR(2,3)
                   "ipm   %[psw]\n\t"
                   "stg   2, %[bitpos]\n\t"
                   "stg   3, %[modval]\n\t"

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "mul.h"
+#include "opcodes.h"
 
 static void do_imm_insns(void)
 {
@@ -29,7 +30,7 @@ static void do_regmem_insns(unsigned long m2)
 	regsweep(msgr, m2);
 	memsweep(msgf, m2);
 	regsweep(msgfr, m2);
-	memsweep(msy, m2);
+	msysweep(m2);
 }
 
 int main()

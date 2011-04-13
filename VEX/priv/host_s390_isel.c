@@ -227,7 +227,9 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr)
          if (ulong_fits_unsigned_12bit(value)) {
             return s390_amode_b12((Int)value, s390_isel_int_expr(env, arg1));
          }
-         if (ulong_fits_signed_20bit(value)) {
+         /* If long-displacement is not available, do not construct B20 or
+            BX20 amodes because code generation cannot handle them. */
+         if (s390_host_has_ldisp && ulong_fits_signed_20bit(value)) {
             return s390_amode_b20((Int)value, s390_isel_int_expr(env, arg1));
          }
       }
@@ -2350,9 +2352,8 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    /* KLUDGE: export archinfo_host. */
    s390_archinfo_host = archinfo_host;
 
-
    /* Do some sanity checks */
-   vassert((hwcaps_host & ~(VEX_HWCAPS_S390X_ALL)) == 0);
+   vassert((VEX_HWCAPS_S390X(hwcaps_host) & ~(VEX_HWCAPS_S390X_ALL)) == 0);
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

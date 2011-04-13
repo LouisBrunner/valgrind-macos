@@ -483,6 +483,8 @@ HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo * );
 extern const VexArchInfo *s390_archinfo_host;
 
 /* Convenience macros to test installed facilities */
+#define s390_host_has_ldisp \
+                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_LDISP))
 #define s390_host_has_eimm \
                       (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_EIMM))
 #define s390_host_has_gie \

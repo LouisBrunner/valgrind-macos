@@ -94,17 +94,44 @@ typedef
 #define VEX_HWCAPS_PPC64_GX    (1<<14) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
 
-/* s390x: baseline capability is z/Architecture with long displacement */
-#define VEX_HWCAPS_S390X_LDISP (1<<13)  /* Long-displacement facility */
-#define VEX_HWCAPS_S390X_EIMM  (1<<14)  /* Extended-immediate facility */
-#define VEX_HWCAPS_S390X_GIE   (1<<15)  /* General-instruction-extension
-                                           facility */
-#define VEX_HWCAPS_S390X_DFP   (1<<16)  /* Decimal floating point facility */
+/* s390x: Hardware capability encoding
+
+   Bits    Information
+   [26:31] Machine model
+   [25]    Long displacement facility
+   [24]    Extended-immediate facility
+   [23]    General-instruction-extension facility
+   [22]    Decimal floating point facility
+   [0:21]  Currently unused; reserved for future use
+*/
+
+/* Model numbers must be assigned in chronological order.
+   They are used as array index. */
+#define VEX_S390X_MODEL_Z900     0
+#define VEX_S390X_MODEL_Z800     1
+#define VEX_S390X_MODEL_Z990     2
+#define VEX_S390X_MODEL_Z890     3
+#define VEX_S390X_MODEL_Z9_EC    4
+#define VEX_S390X_MODEL_Z9_BC    5
+#define VEX_S390X_MODEL_Z10_EC   6
+#define VEX_S390X_MODEL_Z10_BC   7
+#define VEX_S390X_MODEL_Z196     8
+#define VEX_S390X_MODEL_INVALID  9
+#define VEX_S390X_MODEL_MASK     0x3F
+
+#define VEX_HWCAPS_S390X_LDISP (1<<6)  /* Long-displacement facility */
+#define VEX_HWCAPS_S390X_EIMM  (1<<7)  /* Extended-immediate facility */
+#define VEX_HWCAPS_S390X_GIE   (1<<8)  /* General-instruction-extension facility */
+#define VEX_HWCAPS_S390X_DFP   (1<<9)  /* Decimal floating point facility */
+
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
                                 VEX_HWCAPS_S390X_EIMM  | \
                                 VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_DFP)
+
+#define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
+#define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
 
 /* arm: baseline capability is ARMv4 */
 /* Bits 5:0 - architecture level (e.g. 5 for v5, 6 for v6 etc) */

@@ -934,6 +934,8 @@ static HChar* show_hwcaps_s390x ( UInt hwcaps )
    const UInt GE = VEX_HWCAPS_S390X_GIE;
    const UInt DF = VEX_HWCAPS_S390X_DFP;
 
+   hwcaps = VEX_HWCAPS_S390X(hwcaps);
+
    if (hwcaps == (LD))          return "s390x-ldisp";
    if (hwcaps == (LD|EI))       return "s390x-ldisp-eimm";
    if (hwcaps == (LD|GE))       return "s390x-ldisp-gie";
@@ -943,7 +945,7 @@ static HChar* show_hwcaps_s390x ( UInt hwcaps )
    if (hwcaps == (LD|GE|DF))    return "s390x-ldisp-gie-dfp";
    if (hwcaps == (LD|EI|GE|DF)) return "s390x-ldisp-eimm-gie-dfp";
 
-   return NULL;
+   return "s390-zarch";
 }
 
 /* ---- */

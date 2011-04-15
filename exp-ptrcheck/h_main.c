@@ -1574,77 +1574,118 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
       if (o == GOF(CR7_0))   goto none;
    }
 
+   // With ISA 2.06, the "Vector-Scalar Floating-point" category
+   // provides facilities to support vector and scalar binary floating-
+   // point operations.  A unified register file is an integral part
+   // of this new facility, combining floating point and vector registers
+   // using a 64x128-bit vector.  These are referred to as VSR[0..63].
+   // The floating point registers are now mapped into double word element 0
+   // of VSR[0..31]. The 32x128-bit vector registers defined by the "Vector
+   // Facility [Category: Vector]" are now mapped to VSR[32..63].
+
    /* Exact accesses to FP registers */
-   if (o == GOF(FPR0)  && is8) goto none;
-   if (o == GOF(FPR1)  && is8) goto none;
-   if (o == GOF(FPR2)  && is8) goto none;
-   if (o == GOF(FPR3)  && is8) goto none;
-   if (o == GOF(FPR4)  && is8) goto none;
-   if (o == GOF(FPR5)  && is8) goto none;
-   if (o == GOF(FPR6)  && is8) goto none;
-   if (o == GOF(FPR7)  && is8) goto none;
-   if (o == GOF(FPR8)  && is8) goto none;
-   if (o == GOF(FPR9)  && is8) goto none;
-   if (o == GOF(FPR10) && is8) goto none;
-   if (o == GOF(FPR11) && is8) goto none;
-   if (o == GOF(FPR12) && is8) goto none;
-   if (o == GOF(FPR13) && is8) goto none;
-   if (o == GOF(FPR14) && is8) goto none;
-   if (o == GOF(FPR15) && is8) goto none;
-   if (o == GOF(FPR16) && is8) goto none;
-   if (o == GOF(FPR17) && is8) goto none;
-   if (o == GOF(FPR18) && is8) goto none;
-   if (o == GOF(FPR19) && is8) goto none;
-   if (o == GOF(FPR20) && is8) goto none;
-   if (o == GOF(FPR21) && is8) goto none;
-   if (o == GOF(FPR22) && is8) goto none;
-   if (o == GOF(FPR23) && is8) goto none;
-   if (o == GOF(FPR24) && is8) goto none;
-   if (o == GOF(FPR25) && is8) goto none;
-   if (o == GOF(FPR26) && is8) goto none;
-   if (o == GOF(FPR27) && is8) goto none;
-   if (o == GOF(FPR28) && is8) goto none;
-   if (o == GOF(FPR29) && is8) goto none;
-   if (o == GOF(FPR30) && is8) goto none;
-   if (o == GOF(FPR31) && is8) goto none;
+   if (o == GOF(VSR0)  && is8) goto none;
+   if (o == GOF(VSR1)  && is8) goto none;
+   if (o == GOF(VSR2)  && is8) goto none;
+   if (o == GOF(VSR3)  && is8) goto none;
+   if (o == GOF(VSR4)  && is8) goto none;
+   if (o == GOF(VSR5)  && is8) goto none;
+   if (o == GOF(VSR6)  && is8) goto none;
+   if (o == GOF(VSR7)  && is8) goto none;
+   if (o == GOF(VSR8)  && is8) goto none;
+   if (o == GOF(VSR9)  && is8) goto none;
+   if (o == GOF(VSR10) && is8) goto none;
+   if (o == GOF(VSR11) && is8) goto none;
+   if (o == GOF(VSR12) && is8) goto none;
+   if (o == GOF(VSR13) && is8) goto none;
+   if (o == GOF(VSR14) && is8) goto none;
+   if (o == GOF(VSR15) && is8) goto none;
+   if (o == GOF(VSR16) && is8) goto none;
+   if (o == GOF(VSR17) && is8) goto none;
+   if (o == GOF(VSR18) && is8) goto none;
+   if (o == GOF(VSR19) && is8) goto none;
+   if (o == GOF(VSR20) && is8) goto none;
+   if (o == GOF(VSR21) && is8) goto none;
+   if (o == GOF(VSR22) && is8) goto none;
+   if (o == GOF(VSR23) && is8) goto none;
+   if (o == GOF(VSR24) && is8) goto none;
+   if (o == GOF(VSR25) && is8) goto none;
+   if (o == GOF(VSR26) && is8) goto none;
+   if (o == GOF(VSR27) && is8) goto none;
+   if (o == GOF(VSR28) && is8) goto none;
+   if (o == GOF(VSR29) && is8) goto none;
+   if (o == GOF(VSR30) && is8) goto none;
+   if (o == GOF(VSR31) && is8) goto none;
 
    /* FP admin related */
    if (o == GOF(FPROUND) && is4) goto none;
    if (o == GOF(EMWARN)  && is4) goto none;
 
-   /* Altivec registers */
-   if (o == GOF(VR0)  && sz == 16) goto none;
-   if (o == GOF(VR1)  && sz == 16) goto none;
-   if (o == GOF(VR2)  && sz == 16) goto none;
-   if (o == GOF(VR3)  && sz == 16) goto none;
-   if (o == GOF(VR4)  && sz == 16) goto none;
-   if (o == GOF(VR5)  && sz == 16) goto none;
-   if (o == GOF(VR6)  && sz == 16) goto none;
-   if (o == GOF(VR7)  && sz == 16) goto none;
-   if (o == GOF(VR8)  && sz == 16) goto none;
-   if (o == GOF(VR9)  && sz == 16) goto none;
-   if (o == GOF(VR10) && sz == 16) goto none;
-   if (o == GOF(VR11) && sz == 16) goto none;
-   if (o == GOF(VR12) && sz == 16) goto none;
-   if (o == GOF(VR13) && sz == 16) goto none;
-   if (o == GOF(VR14) && sz == 16) goto none;
-   if (o == GOF(VR15) && sz == 16) goto none;
-   if (o == GOF(VR16) && sz == 16) goto none;
-   if (o == GOF(VR17) && sz == 16) goto none;
-   if (o == GOF(VR18) && sz == 16) goto none;
-   if (o == GOF(VR19) && sz == 16) goto none;
-   if (o == GOF(VR20) && sz == 16) goto none;
-   if (o == GOF(VR21) && sz == 16) goto none;
-   if (o == GOF(VR22) && sz == 16) goto none;
-   if (o == GOF(VR23) && sz == 16) goto none;
-   if (o == GOF(VR24) && sz == 16) goto none;
-   if (o == GOF(VR25) && sz == 16) goto none;
-   if (o == GOF(VR26) && sz == 16) goto none;
-   if (o == GOF(VR27) && sz == 16) goto none;
-   if (o == GOF(VR28) && sz == 16) goto none;
-   if (o == GOF(VR29) && sz == 16) goto none;
-   if (o == GOF(VR30) && sz == 16) goto none;
-   if (o == GOF(VR31) && sz == 16) goto none;
+   /* Vector registers */
+   if (o == GOF(VSR0)  && sz == 16) goto none;
+   if (o == GOF(VSR1)  && sz == 16) goto none;
+   if (o == GOF(VSR2)  && sz == 16) goto none;
+   if (o == GOF(VSR3)  && sz == 16) goto none;
+   if (o == GOF(VSR4)  && sz == 16) goto none;
+   if (o == GOF(VSR5)  && sz == 16) goto none;
+   if (o == GOF(VSR6)  && sz == 16) goto none;
+   if (o == GOF(VSR7)  && sz == 16) goto none;
+   if (o == GOF(VSR8)  && sz == 16) goto none;
+   if (o == GOF(VSR9)  && sz == 16) goto none;
+   if (o == GOF(VSR10) && sz == 16) goto none;
+   if (o == GOF(VSR11) && sz == 16) goto none;
+   if (o == GOF(VSR12) && sz == 16) goto none;
+   if (o == GOF(VSR13) && sz == 16) goto none;
+   if (o == GOF(VSR14) && sz == 16) goto none;
+   if (o == GOF(VSR15) && sz == 16) goto none;
+   if (o == GOF(VSR16) && sz == 16) goto none;
+   if (o == GOF(VSR17) && sz == 16) goto none;
+   if (o == GOF(VSR18) && sz == 16) goto none;
+   if (o == GOF(VSR19) && sz == 16) goto none;
+   if (o == GOF(VSR20) && sz == 16) goto none;
+   if (o == GOF(VSR21) && sz == 16) goto none;
+   if (o == GOF(VSR22) && sz == 16) goto none;
+   if (o == GOF(VSR23) && sz == 16) goto none;
+   if (o == GOF(VSR24) && sz == 16) goto none;
+   if (o == GOF(VSR25) && sz == 16) goto none;
+   if (o == GOF(VSR26) && sz == 16) goto none;
+   if (o == GOF(VSR27) && sz == 16) goto none;
+   if (o == GOF(VSR28) && sz == 16) goto none;
+   if (o == GOF(VSR29) && sz == 16) goto none;
+   if (o == GOF(VSR30) && sz == 16) goto none;
+   if (o == GOF(VSR31) && sz == 16) goto none;
+   if (o == GOF(VSR32) && sz == 16) goto none;
+   if (o == GOF(VSR33) && sz == 16) goto none;
+   if (o == GOF(VSR34) && sz == 16) goto none;
+   if (o == GOF(VSR35) && sz == 16) goto none;
+   if (o == GOF(VSR36) && sz == 16) goto none;
+   if (o == GOF(VSR37) && sz == 16) goto none;
+   if (o == GOF(VSR38) && sz == 16) goto none;
+   if (o == GOF(VSR39) && sz == 16) goto none;
+   if (o == GOF(VSR40) && sz == 16) goto none;
+   if (o == GOF(VSR41) && sz == 16) goto none;
+   if (o == GOF(VSR42) && sz == 16) goto none;
+   if (o == GOF(VSR43) && sz == 16) goto none;
+   if (o == GOF(VSR44) && sz == 16) goto none;
+   if (o == GOF(VSR45) && sz == 16) goto none;
+   if (o == GOF(VSR46) && sz == 16) goto none;
+   if (o == GOF(VSR47) && sz == 16) goto none;
+   if (o == GOF(VSR48) && sz == 16) goto none;
+   if (o == GOF(VSR49) && sz == 16) goto none;
+   if (o == GOF(VSR50) && sz == 16) goto none;
+   if (o == GOF(VSR51) && sz == 16) goto none;
+   if (o == GOF(VSR52) && sz == 16) goto none;
+   if (o == GOF(VSR53) && sz == 16) goto none;
+   if (o == GOF(VSR54) && sz == 16) goto none;
+   if (o == GOF(VSR55) && sz == 16) goto none;
+   if (o == GOF(VSR56) && sz == 16) goto none;
+   if (o == GOF(VSR57) && sz == 16) goto none;
+   if (o == GOF(VSR58) && sz == 16) goto none;
+   if (o == GOF(VSR59) && sz == 16) goto none;
+   if (o == GOF(VSR60) && sz == 16) goto none;
+   if (o == GOF(VSR61) && sz == 16) goto none;
+   if (o == GOF(VSR62) && sz == 16) goto none;
+   if (o == GOF(VSR63) && sz == 16) goto none;
 
    /* Altivec admin related */
    if (o == GOF(VRSAVE) && is4) goto none;
@@ -1737,77 +1778,118 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
       if (o == GOF(CR7_0))   goto none;
    }
 
+   // With ISA 2.06, the "Vector-Scalar Floating-point" category
+   // provides facilities to support vector and scalar binary floating-
+   // point operations.  A unified register file is an integral part
+   // of this new facility, combining floating point and vector registers
+   // using a 64x128-bit vector.  These are referred to as VSR[0..63].
+   // The floating point registers are now mapped into double word element 0
+   // of VSR[0..31]. The 32x128-bit vector registers defined by the "Vector
+   // Facility [Category: Vector]" are now mapped to VSR[32..63].
+
    /* Exact accesses to FP registers */
-   if (o == GOF(FPR0)  && is8) goto none;
-   if (o == GOF(FPR1)  && is8) goto none;
-   if (o == GOF(FPR2)  && is8) goto none;
-   if (o == GOF(FPR3)  && is8) goto none;
-   if (o == GOF(FPR4)  && is8) goto none;
-   if (o == GOF(FPR5)  && is8) goto none;
-   if (o == GOF(FPR6)  && is8) goto none;
-   if (o == GOF(FPR7)  && is8) goto none;
-   if (o == GOF(FPR8)  && is8) goto none;
-   if (o == GOF(FPR9)  && is8) goto none;
-   if (o == GOF(FPR10) && is8) goto none;
-   if (o == GOF(FPR11) && is8) goto none;
-   if (o == GOF(FPR12) && is8) goto none;
-   if (o == GOF(FPR13) && is8) goto none;
-   if (o == GOF(FPR14) && is8) goto none;
-   if (o == GOF(FPR15) && is8) goto none;
-   if (o == GOF(FPR16) && is8) goto none;
-   if (o == GOF(FPR17) && is8) goto none;
-   if (o == GOF(FPR18) && is8) goto none;
-   if (o == GOF(FPR19) && is8) goto none;
-   if (o == GOF(FPR20) && is8) goto none;
-   if (o == GOF(FPR21) && is8) goto none;
-   if (o == GOF(FPR22) && is8) goto none;
-   if (o == GOF(FPR23) && is8) goto none;
-   if (o == GOF(FPR24) && is8) goto none;
-   if (o == GOF(FPR25) && is8) goto none;
-   if (o == GOF(FPR26) && is8) goto none;
-   if (o == GOF(FPR27) && is8) goto none;
-   if (o == GOF(FPR28) && is8) goto none;
-   if (o == GOF(FPR29) && is8) goto none;
-   if (o == GOF(FPR30) && is8) goto none;
-   if (o == GOF(FPR31) && is8) goto none;
+   if (o == GOF(VSR0)  && is8) goto none;
+   if (o == GOF(VSR1)  && is8) goto none;
+   if (o == GOF(VSR2)  && is8) goto none;
+   if (o == GOF(VSR3)  && is8) goto none;
+   if (o == GOF(VSR4)  && is8) goto none;
+   if (o == GOF(VSR5)  && is8) goto none;
+   if (o == GOF(VSR6)  && is8) goto none;
+   if (o == GOF(VSR7)  && is8) goto none;
+   if (o == GOF(VSR8)  && is8) goto none;
+   if (o == GOF(VSR9)  && is8) goto none;
+   if (o == GOF(VSR10) && is8) goto none;
+   if (o == GOF(VSR11) && is8) goto none;
+   if (o == GOF(VSR12) && is8) goto none;
+   if (o == GOF(VSR13) && is8) goto none;
+   if (o == GOF(VSR14) && is8) goto none;
+   if (o == GOF(VSR15) && is8) goto none;
+   if (o == GOF(VSR16) && is8) goto none;
+   if (o == GOF(VSR17) && is8) goto none;
+   if (o == GOF(VSR18) && is8) goto none;
+   if (o == GOF(VSR19) && is8) goto none;
+   if (o == GOF(VSR20) && is8) goto none;
+   if (o == GOF(VSR21) && is8) goto none;
+   if (o == GOF(VSR22) && is8) goto none;
+   if (o == GOF(VSR23) && is8) goto none;
+   if (o == GOF(VSR24) && is8) goto none;
+   if (o == GOF(VSR25) && is8) goto none;
+   if (o == GOF(VSR26) && is8) goto none;
+   if (o == GOF(VSR27) && is8) goto none;
+   if (o == GOF(VSR28) && is8) goto none;
+   if (o == GOF(VSR29) && is8) goto none;
+   if (o == GOF(VSR30) && is8) goto none;
+   if (o == GOF(VSR31) && is8) goto none;
 
    /* FP admin related */
    if (o == GOF(FPROUND) && is4) goto none;
    if (o == GOF(EMWARN)  && is4) goto none;
 
-   /* Altivec registers */
-   if (o == GOF(VR0)  && sz == 16) goto none;
-   if (o == GOF(VR1)  && sz == 16) goto none;
-   if (o == GOF(VR2)  && sz == 16) goto none;
-   if (o == GOF(VR3)  && sz == 16) goto none;
-   if (o == GOF(VR4)  && sz == 16) goto none;
-   if (o == GOF(VR5)  && sz == 16) goto none;
-   if (o == GOF(VR6)  && sz == 16) goto none;
-   if (o == GOF(VR7)  && sz == 16) goto none;
-   if (o == GOF(VR8)  && sz == 16) goto none;
-   if (o == GOF(VR9)  && sz == 16) goto none;
-   if (o == GOF(VR10) && sz == 16) goto none;
-   if (o == GOF(VR11) && sz == 16) goto none;
-   if (o == GOF(VR12) && sz == 16) goto none;
-   if (o == GOF(VR13) && sz == 16) goto none;
-   if (o == GOF(VR14) && sz == 16) goto none;
-   if (o == GOF(VR15) && sz == 16) goto none;
-   if (o == GOF(VR16) && sz == 16) goto none;
-   if (o == GOF(VR17) && sz == 16) goto none;
-   if (o == GOF(VR18) && sz == 16) goto none;
-   if (o == GOF(VR19) && sz == 16) goto none;
-   if (o == GOF(VR20) && sz == 16) goto none;
-   if (o == GOF(VR21) && sz == 16) goto none;
-   if (o == GOF(VR22) && sz == 16) goto none;
-   if (o == GOF(VR23) && sz == 16) goto none;
-   if (o == GOF(VR24) && sz == 16) goto none;
-   if (o == GOF(VR25) && sz == 16) goto none;
-   if (o == GOF(VR26) && sz == 16) goto none;
-   if (o == GOF(VR27) && sz == 16) goto none;
-   if (o == GOF(VR28) && sz == 16) goto none;
-   if (o == GOF(VR29) && sz == 16) goto none;
-   if (o == GOF(VR30) && sz == 16) goto none;
-   if (o == GOF(VR31) && sz == 16) goto none;
+   /* Vector registers */
+   if (o == GOF(VSR0)  && sz == 16) goto none;
+   if (o == GOF(VSR1)  && sz == 16) goto none;
+   if (o == GOF(VSR2)  && sz == 16) goto none;
+   if (o == GOF(VSR3)  && sz == 16) goto none;
+   if (o == GOF(VSR4)  && sz == 16) goto none;
+   if (o == GOF(VSR5)  && sz == 16) goto none;
+   if (o == GOF(VSR6)  && sz == 16) goto none;
+   if (o == GOF(VSR7)  && sz == 16) goto none;
+   if (o == GOF(VSR8)  && sz == 16) goto none;
+   if (o == GOF(VSR9)  && sz == 16) goto none;
+   if (o == GOF(VSR10) && sz == 16) goto none;
+   if (o == GOF(VSR11) && sz == 16) goto none;
+   if (o == GOF(VSR12) && sz == 16) goto none;
+   if (o == GOF(VSR13) && sz == 16) goto none;
+   if (o == GOF(VSR14) && sz == 16) goto none;
+   if (o == GOF(VSR15) && sz == 16) goto none;
+   if (o == GOF(VSR16) && sz == 16) goto none;
+   if (o == GOF(VSR17) && sz == 16) goto none;
+   if (o == GOF(VSR18) && sz == 16) goto none;
+   if (o == GOF(VSR19) && sz == 16) goto none;
+   if (o == GOF(VSR20) && sz == 16) goto none;
+   if (o == GOF(VSR21) && sz == 16) goto none;
+   if (o == GOF(VSR22) && sz == 16) goto none;
+   if (o == GOF(VSR23) && sz == 16) goto none;
+   if (o == GOF(VSR24) && sz == 16) goto none;
+   if (o == GOF(VSR25) && sz == 16) goto none;
+   if (o == GOF(VSR26) && sz == 16) goto none;
+   if (o == GOF(VSR27) && sz == 16) goto none;
+   if (o == GOF(VSR28) && sz == 16) goto none;
+   if (o == GOF(VSR29) && sz == 16) goto none;
+   if (o == GOF(VSR30) && sz == 16) goto none;
+   if (o == GOF(VSR31) && sz == 16) goto none;
+   if (o == GOF(VSR32) && sz == 16) goto none;
+   if (o == GOF(VSR33) && sz == 16) goto none;
+   if (o == GOF(VSR34) && sz == 16) goto none;
+   if (o == GOF(VSR35) && sz == 16) goto none;
+   if (o == GOF(VSR36) && sz == 16) goto none;
+   if (o == GOF(VSR37) && sz == 16) goto none;
+   if (o == GOF(VSR38) && sz == 16) goto none;
+   if (o == GOF(VSR39) && sz == 16) goto none;
+   if (o == GOF(VSR40) && sz == 16) goto none;
+   if (o == GOF(VSR41) && sz == 16) goto none;
+   if (o == GOF(VSR42) && sz == 16) goto none;
+   if (o == GOF(VSR43) && sz == 16) goto none;
+   if (o == GOF(VSR44) && sz == 16) goto none;
+   if (o == GOF(VSR45) && sz == 16) goto none;
+   if (o == GOF(VSR46) && sz == 16) goto none;
+   if (o == GOF(VSR47) && sz == 16) goto none;
+   if (o == GOF(VSR48) && sz == 16) goto none;
+   if (o == GOF(VSR49) && sz == 16) goto none;
+   if (o == GOF(VSR50) && sz == 16) goto none;
+   if (o == GOF(VSR51) && sz == 16) goto none;
+   if (o == GOF(VSR52) && sz == 16) goto none;
+   if (o == GOF(VSR53) && sz == 16) goto none;
+   if (o == GOF(VSR54) && sz == 16) goto none;
+   if (o == GOF(VSR55) && sz == 16) goto none;
+   if (o == GOF(VSR56) && sz == 16) goto none;
+   if (o == GOF(VSR57) && sz == 16) goto none;
+   if (o == GOF(VSR58) && sz == 16) goto none;
+   if (o == GOF(VSR59) && sz == 16) goto none;
+   if (o == GOF(VSR60) && sz == 16) goto none;
+   if (o == GOF(VSR61) && sz == 16) goto none;
+   if (o == GOF(VSR62) && sz == 16) goto none;
+   if (o == GOF(VSR63) && sz == 16) goto none;
 
    /* Altivec admin related */
    if (o == GOF(VRSAVE) && is4) goto none;

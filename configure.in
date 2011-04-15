@@ -968,6 +968,38 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL([HAS_ALTIVEC], [test x$ac_have_altivec = xyes])
 
 
+# Check that both: the compiler supports -mvsx and that the assembler
+# understands VSX instructions.  If either of those doesn't work,
+# conclude that we can't do VSX.  NOTE: basically this is a kludge
+# in that it conflates two things that should be separate -- whether
+# the compiler understands the flag vs whether the assembler 
+# understands the opcodes.  This really ought to be cleaned up
+# and done properly, like it is for x86/x86_64.
+
+AC_MSG_CHECKING([for VSX])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mvsx"
+
+AC_TRY_COMPILE(
+[
+#include <altivec.h>
+], [
+  vector unsigned int v;
+  __asm__ __volatile__("xsmaddadp %vs32, %vs32, %vs33" ::: "memory","cc");
+],
+[
+ac_have_vsx=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_vsx=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL(HAS_VSX, test x$ac_have_vsx = xyes)
+
+
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])
 

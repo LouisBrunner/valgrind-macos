@@ -658,13 +658,13 @@ static void do_pre_run_checks ( ThreadState* tst )
 #  if defined(VGA_ppc32) || defined(VGA_ppc64)
    /* ppc guest_state vector regs must be 16 byte aligned for
       loads/stores.  This is important! */
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VR0));
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VR0));
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VR0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VSR0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VSR0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VSR0));
    /* be extra paranoid .. */
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VR1));
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VR1));
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VR1));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VSR1));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VSR1));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VSR1));
 #  endif
 
 #  if defined(VGA_arm)

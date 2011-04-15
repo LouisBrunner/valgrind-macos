@@ -3864,7 +3864,7 @@ static UInt mb_get_origin_for_guest_offset ( ThreadId tid,
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 PtrdiffT offset, SizeT size)
 {
-#  define MAX_REG_WRITE_SIZE 1408
+#  define MAX_REG_WRITE_SIZE 1664
    UChar area[MAX_REG_WRITE_SIZE];
    tl_assert(size <= MAX_REG_WRITE_SIZE);
    VG_(memset)(area, V_BITS8_DEFINED, size);

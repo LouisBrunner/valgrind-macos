@@ -410,8 +410,9 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 
 #elif defined(VGP_ppc32_linux)
    /* The guest state has the FPR fields declared as ULongs, so need
-      to fish out the values without converting them. */
-#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_FPR##n)
+      to fish out the values without converting them.
+      NOTE: The 32 FP registers map to the first 32 VSX registers.*/
+#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_VSR##n)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
    DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
@@ -420,8 +421,9 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 
 #elif defined(VGP_ppc64_linux)
    /* The guest state has the FPR fields declared as ULongs, so need
-      to fish out the values without converting them. */
-#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_FPR##n)
+      to fish out the values without converting them.
+      NOTE: The 32 FP registers map to the first 32 VSX registers.*/
+#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_VSR##n)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
    DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);

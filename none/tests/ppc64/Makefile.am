@@ -13,10 +13,11 @@ EXTRA_DIST = \
 	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest \
 	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
-	power6_mf_gpr.stderr.exp power6_mf_gpr.stdout.exp power6_mf_gpr.vgtest
+	power6_mf_gpr.stderr.exp power6_mf_gpr.stdout.exp power6_mf_gpr.vgtest \
+	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest
 
 check_PROGRAMS = \
-	jm-insns lsw round std_reg_imm twi_tdi tw_td power6_bcmp power6_mf_gpr
+	jm-insns lsw round std_reg_imm twi_tdi tw_td power6_bcmp power6_mf_gpr test_isa_2_06_part1
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
@@ -27,6 +28,17 @@ ALTIVEC_FLAG = -DHAS_ALTIVEC
 else
 ALTIVEC_FLAG =
 endif
+
+if HAS_VSX
+BUILD_FLAG_VSX = -mvsx
+VSX_FLAG = -DHAS_VSX
+else
+VSX_FLAG =
+BUILD_FLAG_VSX =
+endif
+
+test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
+			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec \
 			@FLAG_M64@ $(ALTIVEC_FLAG)

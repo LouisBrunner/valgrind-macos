@@ -2936,6 +2936,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_RoundF64toF32:
       case Iop_F64toI64S:
       case Iop_I64StoF64:
+      case Iop_I64UtoF64:
       case Iop_SinF64:
       case Iop_CosF64:
       case Iop_TanF64:
@@ -2972,6 +2973,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F64toI32U:
       case Iop_F64toI32S:
       case Iop_F64toF32:
+      case Iop_I64UtoF32:
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
@@ -3452,6 +3454,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return mkPCast16x8(mce,
                assignNew('V', mce, Ity_V128, unop(op, mkPCast8x16(mce, vatom))));
 
+      case Iop_I64UtoF32:
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Unop");

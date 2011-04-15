@@ -667,6 +667,8 @@ typedef
          struct {
             Bool fromI; /* False==F->I, True==I->F */
             Bool int32; /* True== I is 32, False==I is 64 */
+            Bool syned;
+            Bool dst64; /* True==dest is 64bit; False==dest is 32bit */
             HReg src;
             HReg dst;
          } FpCftI;
@@ -811,8 +813,8 @@ extern PPCInstr* PPCInstr_FpMulAcc   ( PPCFpOp op, HReg dst, HReg srcML,
 extern PPCInstr* PPCInstr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
 extern PPCInstr* PPCInstr_FpSTFIW    ( HReg addr, HReg data );
 extern PPCInstr* PPCInstr_FpRSP      ( HReg dst, HReg src );
-extern PPCInstr* PPCInstr_FpCftI     ( Bool fromI, Bool int32, 
-                                       HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpCftI     ( Bool fromI, Bool int32, Bool syned,
+                                       Bool dst64, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpCMov     ( PPCCondCode, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpLdFPSCR  ( HReg src );
 extern PPCInstr* PPCInstr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );

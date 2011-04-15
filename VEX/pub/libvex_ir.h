@@ -617,6 +617,8 @@ typedef
       Iop_I16StoF64, /*                       signed I16 -> F64 */
       Iop_I32StoF64, /*                       signed I32 -> F64 */
       Iop_I64StoF64, /* IRRoundingMode(I32) x signed I64 -> F64 */
+      Iop_I64UtoF64, /* IRRoundingMode(I32) x unsigned I64 -> F64 */
+      Iop_I64UtoF32, /* IRRoundingMode(I32) x unsigned I64 -> F32 */
 
       Iop_I32UtoF64, /*                       unsigned I32 -> F64 */
 

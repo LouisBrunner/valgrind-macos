@@ -126,7 +126,10 @@ fnabs[.]                 if .             n             n
 
 fadd[.]                  if .             y             y
 fadds[.]                 if .             y             y
-fcfid[.] (i64->dbl)      if .             y             y
+fcfid[.] (Si64->dbl)     if .             y             y
+fcfidU[.] (Ui64->dbl)    if .             y             y
+fcfids[.] (Si64->sngl)   if .             Y             Y
+fcfidus[.] (Ui64->sngl)  if .             Y             Y
 fcmpo (cmp, result       n                n             n
 fcmpu  to crfD)          n                n             n
 fctid[.]  (dbl->i64)     if .       ->undef             y
@@ -559,7 +562,7 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
 
    if (bias < -100 || bias > 100) /* somewhat arbitrarily */
       vpanic("genGuestArrayOffset(ppc host)(3)");
-   if (descr->base < 0 || descr->base > 4000) /* somewhat arbitrarily */
+   if (descr->base < 0 || descr->base > 5000) /* somewhat arbitrarily */
       vpanic("genGuestArrayOffset(ppc host)(4)");
 
    /* Compute off into a reg, %off.  Then return:
@@ -1468,8 +1471,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
          sub_from_sp( env, 16 );
-         addInstr(env, PPCInstr_FpCftI(False/*F->I*/, True/*int32*/, 
-                                       ftmp, fsrc));
+         addInstr(env, PPCInstr_FpCftI(False/*F->I*/, True/*int32*/, True,
+                                       False, ftmp, fsrc));
          addInstr(env, PPCInstr_FpSTFIW(r1, ftmp));
          addInstr(env, PPCInstr_Load(4, idst, zero_r1, mode64));
 
@@ -1496,8 +1499,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
             sub_from_sp( env, 16 );
-            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/,
-                                          ftmp, fsrc));
+            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/, True,
+                                          True, ftmp, fsrc));
             addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, ftmp, zero_r1));
             addInstr(env, PPCInstr_Load(8, idst, zero_r1, True/*mode64*/));
             add_to_sp( env, 16 );
@@ -2400,8 +2403,10 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
       case Iop_CmpEQ32:  return mk_PPCCondCode( Pct_TRUE,  Pcf_7EQ );
       case Iop_CmpNE32:  return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
-      case Iop_CmpLT32U: return mk_PPCCondCode( Pct_TRUE,  Pcf_7LT );
-      case Iop_CmpLE32U: return mk_PPCCondCode( Pct_FALSE, Pcf_7GT );
+      case Iop_CmpLT32U: case Iop_CmpLT32S:
+         return mk_PPCCondCode( Pct_TRUE,  Pcf_7LT );
+      case Iop_CmpLE32U: case Iop_CmpLE32S:
+         return mk_PPCCondCode( Pct_FALSE, Pcf_7GT );
       default: vpanic("iselCondCode(ppc): CmpXX32");
       }
    }
@@ -2746,8 +2751,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
             sub_from_sp( env, 16 );
-            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/,
-                                          ftmp, fsrc));
+            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/, True,
+                                          True, ftmp, fsrc));
             addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, ftmp, zero_r1));
             addInstr(env, PPCInstr_Load(4, tHi, zero_r1, False/*mode32*/));
             addInstr(env, PPCInstr_Load(4, tLo, four_r1, False/*mode32*/));
@@ -3185,7 +3190,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-      if (e->Iex.Binop.op == Iop_I64StoF64) {
+      if (e->Iex.Binop.op == Iop_I64StoF64 || e->Iex.Binop.op == Iop_I64UtoF64
+          || e->Iex.Binop.op == Iop_I64UtoF32) {
          if (mode64) {
             HReg fdst = newVRegF(env);
             HReg isrc = iselWordExpr_R(env, e->Iex.Binop.arg2);
@@ -3200,6 +3206,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, PPCInstr_Store(8, zero_r1, isrc, True/*mode64*/));
             addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
             addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
+                                          e->Iex.Binop.op == Iop_I64StoF64 ? True : False,
+                                          e->Iex.Binop.op == Iop_I64UtoF32 ? False : True,
                                           fdst, fdst));
 
             add_to_sp( env, 16 );
@@ -3226,6 +3234,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, PPCInstr_Store(4, four_r1, isrcLo, False/*mode32*/));
             addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
             addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
+                                          e->Iex.Binop.op == Iop_I64StoF64 ? True : False,
+                                          e->Iex.Binop.op == Iop_I64UtoF32 ? False : True,
                                           fdst, fdst));
 
             add_to_sp( env, 16 );
@@ -4129,10 +4139,10 @@ HInstrArray* iselSB_PPC ( IRSB* bb, VexArch      arch_host,
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
-            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX;
+            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX;
 
-   mask64 = VEX_HWCAPS_PPC64_V
-            | VEX_HWCAPS_PPC64_FX | VEX_HWCAPS_PPC64_GX;
+   mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
+	   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX;
 
    if (mode64) {
       vassert((hwcaps_host & mask32) == 0);

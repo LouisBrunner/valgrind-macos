@@ -120,123 +120,131 @@ typedef
       /* 240 */ ULong guest_GPR30;
       /* 248 */ ULong guest_GPR31;
 
-      // Floating Point Registers
-      /* 256 */ ULong guest_FPR0;
-      /* 264 */ ULong guest_FPR1;
-      /* 272 */ ULong guest_FPR2;
-      /* 280 */ ULong guest_FPR3;
-      /* 288 */ ULong guest_FPR4;
-      /* 296 */ ULong guest_FPR5;
-      /* 304 */ ULong guest_FPR6;
-      /* 312 */ ULong guest_FPR7;
-      /* 320 */ ULong guest_FPR8;
-      /* 328 */ ULong guest_FPR9;
-      /* 336 */ ULong guest_FPR10;
-      /* 344 */ ULong guest_FPR11;
-      /* 352 */ ULong guest_FPR12;
-      /* 360 */ ULong guest_FPR13;
-      /* 368 */ ULong guest_FPR14;
-      /* 376 */ ULong guest_FPR15;
-      /* 384 */ ULong guest_FPR16;
-      /* 392 */ ULong guest_FPR17;
-      /* 400 */ ULong guest_FPR18;
-      /* 408 */ ULong guest_FPR19;
-      /* 416 */ ULong guest_FPR20;
-      /* 424 */ ULong guest_FPR21;
-      /* 432 */ ULong guest_FPR22;
-      /* 440 */ ULong guest_FPR23;
-      /* 448 */ ULong guest_FPR24;
-      /* 456 */ ULong guest_FPR25;
-      /* 464 */ ULong guest_FPR26;
-      /* 472 */ ULong guest_FPR27;
-      /* 480 */ ULong guest_FPR28;
-      /* 488 */ ULong guest_FPR29;
-      /* 496 */ ULong guest_FPR30;
-      /* 504 */ ULong guest_FPR31;
+      // Vector Registers, Floating Point Registers, and VSX Registers
+      // With ISA 2.06, the "Vector-Scalar Floating-point" category
+      // provides facilities to support vector and scalar binary floating-
+      // point operations.  A unified register file is an integral part
+      // of this new facility, combining floating point and vector registers
+      // using a 64x128-bit vector.  These are referred to as VSR[0..63].
+      // The floating point registers are now mapped into double word element 0
+      // of VSR[0..31]. The 32x128-bit vector registers defined by the "Vector
+      // Facility [Category: Vector]" are now mapped to VSR[32..63].
 
-      // Vector Registers
       // IMPORTANT: the user of libvex must place the guest state so as
-      // to ensure that guest_VR{0..31}, and any shadows thereof, are
+      // to ensure that guest_VSR{0..63}, and any shadows thereof, are
       // 16-aligned.
-      /*  512 */ U128 guest_VR0;
-      /*  528 */ U128 guest_VR1;
-      /*  544 */ U128 guest_VR2;
-      /*  560 */ U128 guest_VR3;
-      /*  576 */ U128 guest_VR4;
-      /*  592 */ U128 guest_VR5;
-      /*  608 */ U128 guest_VR6;
-      /*  624 */ U128 guest_VR7;
-      /*  640 */ U128 guest_VR8;
-      /*  656 */ U128 guest_VR9;
-      /*  672 */ U128 guest_VR10;
-      /*  688 */ U128 guest_VR11;
-      /*  704 */ U128 guest_VR12;
-      /*  720 */ U128 guest_VR13;
-      /*  736 */ U128 guest_VR14;
-      /*  752 */ U128 guest_VR15;
-      /*  768 */ U128 guest_VR16;
-      /*  784 */ U128 guest_VR17;
-      /*  800 */ U128 guest_VR18;
-      /*  816 */ U128 guest_VR19;
-      /*  832 */ U128 guest_VR20;
-      /*  848 */ U128 guest_VR21;
-      /*  864 */ U128 guest_VR22;
-      /*  880 */ U128 guest_VR23;
-      /*  896 */ U128 guest_VR24;
-      /*  912 */ U128 guest_VR25;
-      /*  928 */ U128 guest_VR26;
-      /*  944 */ U128 guest_VR27;
-      /*  960 */ U128 guest_VR28;
-      /*  976 */ U128 guest_VR29;
-      /*  992 */ U128 guest_VR30;
-      /* 1008 */ U128 guest_VR31;
 
-      /* 1024 */ ULong guest_CIA;    // IP (no arch visible register)
-      /* 1032 */ ULong guest_LR;     // Link Register
-      /* 1040 */ ULong guest_CTR;    // Count Register
+      /*  256 */ U128 guest_VSR0;
+      /*  272 */ U128 guest_VSR1;
+      /*  288 */ U128 guest_VSR2;
+      /*  304 */ U128 guest_VSR3;
+      /*  320 */ U128 guest_VSR4;
+      /*  336 */ U128 guest_VSR5;
+      /*  352 */ U128 guest_VSR6;
+      /*  368 */ U128 guest_VSR7;
+      /*  384 */ U128 guest_VSR8;
+      /*  400 */ U128 guest_VSR9;
+      /*  416 */ U128 guest_VSR10;
+      /*  432 */ U128 guest_VSR11;
+      /*  448 */ U128 guest_VSR12;
+      /*  464 */ U128 guest_VSR13;
+      /*  480 */ U128 guest_VSR14;
+      /*  496 */ U128 guest_VSR15;
+      /*  512 */ U128 guest_VSR16;
+      /*  528 */ U128 guest_VSR17;
+      /*  544 */ U128 guest_VSR18;
+      /*  560 */ U128 guest_VSR19;
+      /*  576 */ U128 guest_VSR20;
+      /*  592 */ U128 guest_VSR21;
+      /*  608 */ U128 guest_VSR22;
+      /*  624 */ U128 guest_VSR23;
+      /*  640 */ U128 guest_VSR24;
+      /*  656 */ U128 guest_VSR25;
+      /*  672 */ U128 guest_VSR26;
+      /*  688 */ U128 guest_VSR27;
+      /*  704 */ U128 guest_VSR28;
+      /*  720 */ U128 guest_VSR29;
+      /*  736 */ U128 guest_VSR30;
+      /*  752 */ U128 guest_VSR31;
+      /*  768 */ U128 guest_VSR32;
+      /*  784 */ U128 guest_VSR33;
+      /*  800 */ U128 guest_VSR34;
+      /*  816 */ U128 guest_VSR35;
+      /*  832 */ U128 guest_VSR36;
+      /*  848 */ U128 guest_VSR37;
+      /*  864 */ U128 guest_VSR38;
+      /*  880 */ U128 guest_VSR39;
+      /*  896 */ U128 guest_VSR40;
+      /*  912 */ U128 guest_VSR41;
+      /*  928 */ U128 guest_VSR42;
+      /*  944 */ U128 guest_VSR43;
+      /*  960 */ U128 guest_VSR44;
+      /*  976 */ U128 guest_VSR45;
+      /*  992 */ U128 guest_VSR46;
+      /* 1008 */ U128 guest_VSR47;
+      /* 1024 */ U128 guest_VSR48;
+      /* 1040 */ U128 guest_VSR49;
+      /* 1056 */ U128 guest_VSR50;
+      /* 1072 */ U128 guest_VSR51;
+      /* 1088 */ U128 guest_VSR52;
+      /* 1104 */ U128 guest_VSR53;
+      /* 1120 */ U128 guest_VSR54;
+      /* 1136 */ U128 guest_VSR55;
+      /* 1152 */ U128 guest_VSR56;
+      /* 1168 */ U128 guest_VSR57;
+      /* 1184 */ U128 guest_VSR58;
+      /* 1200 */ U128 guest_VSR59;
+      /* 1216 */ U128 guest_VSR60;
+      /* 1232 */ U128 guest_VSR61;
+      /* 1248 */ U128 guest_VSR62;
+      /* 1264 */ U128 guest_VSR63;
+
+      /* 1280 */ ULong guest_CIA;    // IP (no arch visible register)
+      /* 1288 */ ULong guest_LR;     // Link Register
+      /* 1296 */ ULong guest_CTR;    // Count Register
 
       /* XER pieces */
-      /* 1048 */ UChar guest_XER_SO; /* in lsb */
-      /* 1049 */ UChar guest_XER_OV; /* in lsb */
-      /* 1050 */ UChar guest_XER_CA; /* in lsb */
-      /* 1051 */ UChar guest_XER_BC; /* all bits */
+      /* 1304 */ UChar guest_XER_SO; /* in lsb */
+      /* 1305 */ UChar guest_XER_OV; /* in lsb */
+      /* 1306 */ UChar guest_XER_CA; /* in lsb */
+      /* 1307 */ UChar guest_XER_BC; /* all bits */
 
       /* CR pieces */
-      /* 1052 */ UChar guest_CR0_321; /* in [3:1] */
-      /* 1053 */ UChar guest_CR0_0;   /* in lsb */
-      /* 1054 */ UChar guest_CR1_321; /* in [3:1] */
-      /* 1055 */ UChar guest_CR1_0;   /* in lsb */
-      /* 1056 */ UChar guest_CR2_321; /* in [3:1] */
-      /* 1057 */ UChar guest_CR2_0;   /* in lsb */
-      /* 1058 */ UChar guest_CR3_321; /* in [3:1] */
-      /* 1059 */ UChar guest_CR3_0;   /* in lsb */
-      /* 1060 */ UChar guest_CR4_321; /* in [3:1] */
-      /* 1061 */ UChar guest_CR4_0;   /* in lsb */
-      /* 1062 */ UChar guest_CR5_321; /* in [3:1] */
-      /* 1063 */ UChar guest_CR5_0;   /* in lsb */
-      /* 1064 */ UChar guest_CR6_321; /* in [3:1] */
-      /* 1065 */ UChar guest_CR6_0;   /* in lsb */
-      /* 1066 */ UChar guest_CR7_321; /* in [3:1] */
-      /* 1067 */ UChar guest_CR7_0;   /* in lsb */
+      /* 1308 */ UChar guest_CR0_321; /* in [3:1] */
+      /* 1309 */ UChar guest_CR0_0;   /* in lsb */
+      /* 1310 */ UChar guest_CR1_321; /* in [3:1] */
+      /* 1311 */ UChar guest_CR1_0;   /* in lsb */
+      /* 1312 */ UChar guest_CR2_321; /* in [3:1] */
+      /* 1313 */ UChar guest_CR2_0;   /* in lsb */
+      /* 1314 */ UChar guest_CR3_321; /* in [3:1] */
+      /* 1315 */ UChar guest_CR3_0;   /* in lsb */
+      /* 1316 */ UChar guest_CR4_321; /* in [3:1] */
+      /* 1317 */ UChar guest_CR4_0;   /* in lsb */
+      /* 1318 */ UChar guest_CR5_321; /* in [3:1] */
+      /* 1319 */ UChar guest_CR5_0;   /* in lsb */
+      /* 1320 */ UChar guest_CR6_321; /* in [3:1] */
+      /* 1321 */ UChar guest_CR6_0;   /* in lsb */
+      /* 1322 */ UChar guest_CR7_321; /* in [3:1] */
+      /* 1323 */ UChar guest_CR7_0;   /* in lsb */
 
       /* FP Status & Control Register fields */
-      /* 1068 */ UInt guest_FPROUND; // FP Rounding Mode
+      /* 1324 */ UInt guest_FPROUND; // FP Rounding Mode
 
       /* Vector Save/Restore Register */
-      /* 1072 */ UInt guest_VRSAVE;
+      /* 1328 */ UInt guest_VRSAVE;
 
       /* Vector Status and Control Register */
-      /* 1076 */ UInt guest_VSCR;
+      /* 1332 */ UInt guest_VSCR;
 
       /* Emulation warnings */
-      /* 1080 */ UInt guest_EMWARN;
+      /* 1336 */ UInt guest_EMWARN;
 
       /* gcc adds 4 bytes padding here: pre-empt it. */
-      /* 1084 */ UInt  padding;
+      /* 1340 */ UInt  padding;
 
       /* For icbi: record start and length of area to invalidate */
-      /* 1088 */ ULong guest_TISTART;
-      /* 1096 */ ULong guest_TILEN;
+      /* 1344 */ ULong guest_TISTART;
+      /* 1352 */ ULong guest_TILEN;
 
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading
@@ -244,26 +252,26 @@ typedef
          find out what the corresponding no-redirection address was.
          Note, this is only set for wrap-style redirects, not for
          replace-style ones. */
-      /* 1104 */ ULong guest_NRADDR;
-      /* 1112 */ ULong guest_NRADDR_GPR2;
+      /* 1360 */ ULong guest_NRADDR;
+      /* 1368 */ ULong guest_NRADDR_GPR2;
 
      /* A grows-upwards stack for hidden saves/restores of LR and R2
         needed for function interception and wrapping on ppc64-linux.
         A horrible hack.  REDIR_SP points to the highest live entry,
         and so starts at -1. */
-      /* 1120 */ ULong guest_REDIR_SP;
-      /* 1128 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
+      /* 1376 */ ULong guest_REDIR_SP;
+      /* 1384 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
       /* Needed for AIX: CIA at the last SC insn.  Used when backing up
          to restart a syscall that has been interrupted by a signal. */
-      /* 1384 */ ULong guest_IP_AT_SYSCALL; 
+      /* 1640 */ ULong guest_IP_AT_SYSCALL;
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
-      /* ???? */ ULong guest_SPRG3_RO;
+      /* 1648 */ ULong guest_SPRG3_RO;
 
-      /* Padding to make it have an 8-aligned size */
-      /* ???? */ ULong padding2;
+      /* Padding to make it have an 16-aligned size */
+      /* 1656 */ ULong padding2;
    }
    VexGuestPPC64State;
 

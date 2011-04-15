@@ -362,6 +362,8 @@ void ppIROp ( IROp op )
       case Iop_I16StoF64: vex_printf("I16StoF64"); return;
       case Iop_I32StoF64: vex_printf("I32StoF64"); return;
       case Iop_I64StoF64: vex_printf("I64StoF64"); return;
+      case Iop_I64UtoF64: vex_printf("I64UtoF64"); return;
+      case Iop_I64UtoF32: vex_printf("I64UtoF32"); return;
 
       case Iop_I32UtoF64: vex_printf("I32UtoF64"); return;
 
@@ -2262,6 +2264,8 @@ void typeOfPrimop ( IROp op,
       case Iop_I16StoF64: UNARY(Ity_I16, Ity_F64);
       case Iop_I32StoF64: UNARY(Ity_I32, Ity_F64);
       case Iop_I64StoF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
+      case Iop_I64UtoF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
+      case Iop_I64UtoF32: BINARY(ity_RMode,Ity_I64, Ity_F64);
 
       case Iop_I32UtoF64: UNARY(Ity_I32, Ity_F64);
 

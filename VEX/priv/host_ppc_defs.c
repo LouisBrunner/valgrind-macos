@@ -962,12 +962,14 @@ PPCInstr* PPCInstr_FpRSP ( HReg dst, HReg src ) {
    i->Pin.FpRSP.src = src;
    return i;
 }
-PPCInstr* PPCInstr_FpCftI ( Bool fromI, Bool int32, 
-                            HReg dst, HReg src ) {
+PPCInstr* PPCInstr_FpCftI ( Bool fromI, Bool int32, Bool syned,
+                            Bool dst64, HReg dst, HReg src ) {
    PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag              = Pin_FpCftI;
    i->Pin.FpCftI.fromI = fromI;
    i->Pin.FpCftI.int32 = int32;
+   i->Pin.FpCftI.syned = syned;
+   i->Pin.FpCftI.dst64 = dst64;
    i->Pin.FpCftI.dst   = dst;
    i->Pin.FpCftI.src   = src;
    vassert(!(int32 && fromI)); /* no such insn ("fcfiw"). */
@@ -1433,15 +1435,21 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppHRegPPC(i->Pin.FpRSP.src);
       return;
    case Pin_FpCftI: {
-      HChar* str = "fc???";
+      HChar* str = "fc?????";
       if (i->Pin.FpCftI.fromI == False && i->Pin.FpCftI.int32 == False)
          str = "fctid";
       else
       if (i->Pin.FpCftI.fromI == False && i->Pin.FpCftI.int32 == True)
          str = "fctiw";
       else
-      if (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False)
-         str = "fcfid";
+      if (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False) {
+         if (i->Pin.FpCftI.syned == True)
+            str = "fcfid";
+         else if (i->Pin.FpCftI.dst64 == True)
+            str = "fcfidu";
+         else
+            str = "fcfidus";
+      }
       vex_printf("%s ", str);
       ppHRegPPC(i->Pin.FpCftI.dst);
       vex_printf(",");
@@ -3385,9 +3393,19 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          goto done;
       }
       if (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False) {
-         // fcfid (conv i64 to f64), PPC64 p434
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 846, 0);
-         goto done;
+         if (i->Pin.FpCftI.syned == True) {
+            // fcfid (conv i64 to f64), PPC64 p434
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 846, 0);
+            goto done;
+         } else if (i->Pin.FpCftI.dst64 == True) {
+            // fcfidu (conv u64 to f64)
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 974, 0);
+            goto done;
+         } else {
+            // fcfidus (conv u64 to f32)
+            p = mkFormX(p, 59, fr_dst, 0, fr_src, 974, 0);
+            goto done;
+         }
       }
       goto bad;
    }

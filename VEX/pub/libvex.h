@@ -87,12 +87,14 @@ typedef
 #define VEX_HWCAPS_PPC32_FX    (1<<10) /* FP extns (fsqrt, fsqrts) */
 #define VEX_HWCAPS_PPC32_GX    (1<<11) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
+#define VEX_HWCAPS_PPC32_VX    (1<<12) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
 
 /* ppc64: baseline capability is integer and basic FP insns */
-#define VEX_HWCAPS_PPC64_V     (1<<12) /* Altivec (VMX) */
-#define VEX_HWCAPS_PPC64_FX    (1<<13) /* FP extns (fsqrt, fsqrts) */
-#define VEX_HWCAPS_PPC64_GX    (1<<14) /* Graphics extns
+#define VEX_HWCAPS_PPC64_V     (1<<13) /* Altivec (VMX) */
+#define VEX_HWCAPS_PPC64_FX    (1<<14) /* FP extns (fsqrt, fsqrts) */
+#define VEX_HWCAPS_PPC64_GX    (1<<15) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
+#define VEX_HWCAPS_PPC64_VX    (1<<16) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
 
 /* s390x: Hardware capability encoding
 

@@ -986,7 +986,7 @@ AC_TRY_COMPILE(
 #include <altivec.h>
 ], [
   vector unsigned int v;
-  __asm__ __volatile__("xsmaddadp %vs32, %vs32, %vs33" ::: "memory","cc");
+  __asm__ __volatile__("xsmaddadp 32, 32, 33" ::: "memory","cc");
 ],
 [
 ac_have_vsx=yes

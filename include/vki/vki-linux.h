@@ -2394,6 +2394,7 @@ struct vki_usbdevfs_ioctl {
 #define VKI_USBDEVFS_REAPURBNDELAY     _VKI_IOW('U', 13, void *)
 #define VKI_USBDEVFS_CONNECTINFO       _VKI_IOW('U', 17, struct vki_usbdevfs_connectinfo)
 #define VKI_USBDEVFS_IOCTL             _VKI_IOWR('U', 18, struct vki_usbdevfs_ioctl)
+#define VKI_USBDEVFS_RESET             _VKI_IO('U', 20)
 
 #define VKI_USBDEVFS_URB_TYPE_ISO              0
 #define VKI_USBDEVFS_URB_TYPE_INTERRUPT        1

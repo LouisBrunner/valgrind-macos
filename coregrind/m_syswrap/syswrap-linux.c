@@ -4778,6 +4778,8 @@ PRE(sys_ioctl)
          }
       }
       break;
+   case VKI_USBDEVFS_RESET:
+      break;
 
       /* I2C (/dev/i2c-*) ioctls */
    case VKI_I2C_SLAVE:

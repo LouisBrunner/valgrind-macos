@@ -28,7 +28,7 @@
 
 #include "global.h"
 
-#include <pub_tool_threadstate.h>
+#include "pub_tool_threadstate.h"
 
 /* forward decls */
 static exec_state* exec_state_save(void);

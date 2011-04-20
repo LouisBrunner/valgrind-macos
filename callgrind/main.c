@@ -35,7 +35,7 @@
 #include "callgrind.h"
 #include "global.h"
 
-#include <pub_tool_threadstate.h>
+#include "pub_tool_threadstate.h"
 
 #include "cg_branchpred.c"
 

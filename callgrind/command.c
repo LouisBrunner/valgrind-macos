@@ -32,7 +32,7 @@
 #include "config.h"
 #include "global.h"
 
-#include <pub_tool_threadstate.h> // VG_N_THREADS
+#include "pub_tool_threadstate.h" // VG_N_THREADS
 
 // Version for the syntax in command/result files for interactive control
 #define COMMAND_VERSION "1.0"

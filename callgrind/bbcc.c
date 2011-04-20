@@ -29,7 +29,7 @@
 #include "global.h"
 #include "costs.h"
 
-#include <pub_tool_threadstate.h>
+#include "pub_tool_threadstate.h"
 
 /*------------------------------------------------------------*/
 /*--- BBCC operations                                      ---*/

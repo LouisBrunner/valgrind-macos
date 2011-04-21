@@ -1079,6 +1079,9 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
          /* TJH 27 Apr 10: in DWARF 4 lineptr (and loclistptr,macptr,
             rangelistptr classes) use FORM_sec_offset which is 64 bits
             in 64 bit DWARF and 32 bits in 32 bit DWARF. */
+         /* JRS 20 Apr 11: LLVM-2.9 encodes DW_AT_stmt_list using
+            FORM_addr rather than the FORM_data4 that GCC uses.  Hence
+            handle FORM_addr too. */
          switch( form ) {
             /* Those cases extract the data properly */
             case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
@@ -1101,13 +1104,24 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                             } else {
                                                cval = *((UInt*)p); p += 4;
                                             }; break;
-            /* TODO : Following ones just skip data - implement if you need */
-            case 0x01: /* FORM_addr */      p += addr_size; break;
-            case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
-            case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
+
             case 0x07: /* FORM_data8 */     if (ui->dw64) cval = *((ULong*)p);
                                             p += 8; break;
-                       /* perhaps should assign unconditionally to cval? */
+                                            /* perhaps should assign
+                                               unconditionally to cval? */
+
+            case 0x01: /* FORM_addr */      if (addr_size == 4) {
+                                               cval = *(UInt*)p;
+                                            } else if (addr_size == 8) {
+                                               cval = *(ULong*)p;
+                                            } else {
+                                               /* wtf, Houston? */
+                                            }
+                                            p += addr_size; break;
+
+            /* TODO : Following ones just skip data - implement if you need */
+            case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
+            case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
             case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;
             case 0x0a: /* FORM_block1 */    p += *p + 1; break;
             case 0x0c: /* FORM_flag */      p++; break;

@@ -46,7 +46,7 @@ int main()
     FILE *p = popen("echo Hallo World", "r");
     while (!feof(p)) {
         int n = fread(buffer, 200, 1, p);
-        write(2, buffer, n);
+        __attribute__((unused)) ssize_t nw = write(2, buffer, n);
     }
     fclose(p);
     for (i = 0; i < 1000000; i++) ;

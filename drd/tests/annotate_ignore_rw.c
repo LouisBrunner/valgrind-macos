@@ -53,7 +53,7 @@ int main(int argc, char** argv)
   sleep(1);
 
   /* Read s_c. */
-  fprintf(stderr, "x" + s_c);
+  fprintf(stderr, "%s", "x" + s_c);
 
   pthread_join(tid, 0);
 

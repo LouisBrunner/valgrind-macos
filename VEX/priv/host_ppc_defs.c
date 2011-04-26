@@ -1067,7 +1067,7 @@ PPCInstr* PPCInstr_AvBin32x4 ( PPCAvOp op, HReg dst,
    i->Pin.AvBin32x4.srcR = srcR;
    return i;
 }
-PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvOp op, HReg dst,
+PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst,
                                 HReg srcL, HReg srcR ) {
    PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                 = Pin_AvBin32Fx4;
@@ -1077,7 +1077,7 @@ PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvOp op, HReg dst,
    i->Pin.AvBin32Fx4.srcR = srcR;
    return i;
 }
-PPCInstr* PPCInstr_AvUn32Fx4 ( PPCAvOp op, HReg dst, HReg src ) {
+PPCInstr* PPCInstr_AvUn32Fx4 ( PPCAvFpOp op, HReg dst, HReg src ) {
    PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_AvUn32Fx4;
    i->Pin.AvUn32Fx4.op  = op;

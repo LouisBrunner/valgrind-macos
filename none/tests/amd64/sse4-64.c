@@ -3851,27 +3851,5 @@ int main ( int argc, char** argv )
 #endif
 
    return 0;
-
-   //////////////////
-
-   Int sse1 = 0, sse2 = 0;
-
-   if (argc == 2 && 0==strcmp(argv[1], "sse1")) {
-      sse1 = 1;
-   }
-   else
-   if (argc == 2 && 0==strcmp(argv[1], "sse2")) {
-      sse2 = 1;
-   }
-   else
-   if (argc == 2 && 0==strcmp(argv[1], "all")) {
-      sse1 = sse2 = 1;
-   }
-   else {
-      fprintf(stderr, "usage: sse_memory [sse1|sse2|all]\n");
-      return 0;
-   }
-
-   return 0;   
 }
 

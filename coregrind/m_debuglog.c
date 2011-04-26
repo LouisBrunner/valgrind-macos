@@ -82,7 +82,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "movl  %%eax, 0(%%ebx)\n" /* block[0] = result */
       "popl  %%ebx\n"           /* restore ebx */
       : /*wr*/
-      : /*rd*/    "g" (block)
+      : /*rd*/    "r" (block)
       : /*trash*/ "eax", "edi", "ecx", "edx", "memory", "cc"
    );
    if (block[0] < 0) 
@@ -125,7 +125,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "popq  %%r15\n"           /* restore r15 */
       "addq  $256, %%rsp\n"     /* restore stack ptr */
       : /*wr*/
-      : /*rd*/    "g" (block)
+      : /*rd*/    "r" (block)
       : /*trash*/ "rax", "rdi", "rsi", "rdx", "memory", "cc"
    );
    if (block[0] < 0) 

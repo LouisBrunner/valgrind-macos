@@ -7142,7 +7142,7 @@ BlockingCounter *blocking_counter;
 int     GLOB = 0;
 
 // Worker(N) will do 2^N increments of GLOB, each increment in a separate thread
-void Worker(int depth) {
+void Worker(long depth) {
   CHECK(depth >= 0);
   if (depth > 0) {
     ThreadPool pool(2);

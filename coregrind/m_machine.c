@@ -1000,7 +1000,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
 
-     volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP;
+     volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
      Int r, model;
 
      /* Unblock SIGILL and stash away the old action for that signal */
@@ -1061,6 +1061,13 @@ Bool VG_(machine_get_hwcaps)( void )
                                : : : "r0", "cc", "memory");  /* adtr r0,r0,r0 */
      }
 
+     have_FGX = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_FGX = False;
+     } else {
+        __asm__ __volatile__(".long 0xb3cd0000" : : : "r0");  /* lgdr r0,f0 */
+     }
+
      /* Restore signals */
      r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      vg_assert(r == 0);
@@ -1070,8 +1077,9 @@ Bool VG_(machine_get_hwcaps)( void )
 
      model = VG_(get_machine_model)();
 
-     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d\n",
-                   model, have_LDISP, have_EIMM, have_GIE, have_DFP);
+     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
+                   "FGX %d\n", model, have_LDISP, have_EIMM, have_GIE,
+                   have_DFP, have_FGX);
 
      if (model == VEX_S390X_MODEL_INVALID) return False;
 
@@ -1085,6 +1093,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_EIMM)  vai.hwcaps |= VEX_HWCAPS_S390X_EIMM;
      if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
      if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
+     if (have_FGX)   vai.hwcaps |= VEX_HWCAPS_S390X_FGX;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 

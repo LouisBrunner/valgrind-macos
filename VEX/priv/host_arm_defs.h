@@ -940,7 +940,7 @@ extern ARMInstr* ARMInstr_MFence   ( void );
 extern ARMInstr* ARMInstr_NLdStQ   ( Bool isLoad, HReg, ARMAModeN* );
 extern ARMInstr* ARMInstr_NLdStD   ( Bool isLoad, HReg, ARMAModeN* );
 extern ARMInstr* ARMInstr_NUnary   ( ARMNeonUnOp, HReg, HReg, UInt, Bool );
-extern ARMInstr* ARMInstr_NUnaryS  ( ARMNeonUnOp, ARMNRS*, ARMNRS*,
+extern ARMInstr* ARMInstr_NUnaryS  ( ARMNeonUnOpS, ARMNRS*, ARMNRS*,
                                      UInt, Bool );
 extern ARMInstr* ARMInstr_NDual    ( ARMNeonDualOp, HReg, HReg, UInt, Bool );
 extern ARMInstr* ARMInstr_NBinary  ( ARMNeonBinOp, HReg, HReg, HReg,

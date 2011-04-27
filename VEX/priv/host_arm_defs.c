@@ -1369,7 +1369,7 @@ ARMInstr* ARMInstr_NUnary ( ARMNeonUnOp op, HReg dQ, HReg nQ,
    return i;
 }
 
-ARMInstr* ARMInstr_NUnaryS ( ARMNeonUnOp op, ARMNRS* dst, ARMNRS* src,
+ARMInstr* ARMInstr_NUnaryS ( ARMNeonUnOpS op, ARMNRS* dst, ARMNRS* src,
                              UInt size, Bool Q ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                = ARMin_NUnaryS;
@@ -1799,8 +1799,8 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_NUnaryS:
          vex_printf("%s%s%s  ",
-                    showARMNeonUnOpS(i->ARMin.NUnary.op),
-                    showARMNeonUnOpSDataType(i->ARMin.NUnary.op),
+                    showARMNeonUnOp(i->ARMin.NUnary.op),
+                    showARMNeonUnOpDataType(i->ARMin.NUnary.op),
                     showARMNeonDataSize(i));
          ppARMNRS(i->ARMin.NUnaryS.dst);
          vex_printf(", ");

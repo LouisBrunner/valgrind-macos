@@ -933,23 +933,38 @@ static HChar* show_hwcaps_arm ( UInt hwcaps )
 
 static HChar* show_hwcaps_s390x ( UInt hwcaps )
 {
-   const UInt LD = VEX_HWCAPS_S390X_LDISP;
-   const UInt EI = VEX_HWCAPS_S390X_EIMM;
-   const UInt GE = VEX_HWCAPS_S390X_GIE;
-   const UInt DF = VEX_HWCAPS_S390X_DFP;
+   static const HChar prefix[] = "s390x";
+   static const HChar facilities[][6] = {
+     { "ldisp" },
+     { "eimm" },
+     { "gie" },
+     { "dfp" },
+     { "fgx" },
+   };
+   static HChar buf[sizeof facilities + sizeof prefix + 1];
+   static HChar *p;
+
+   if (buf[0] != '\0') return buf;  /* already constructed */
 
    hwcaps = VEX_HWCAPS_S390X(hwcaps);
 
-   if (hwcaps == (LD))          return "s390x-ldisp";
-   if (hwcaps == (LD|EI))       return "s390x-ldisp-eimm";
-   if (hwcaps == (LD|GE))       return "s390x-ldisp-gie";
-   if (hwcaps == (LD|DF))       return "s390x-ldisp-dfp";
-   if (hwcaps == (LD|EI|GE))    return "s390x-ldisp-eimm-gie";
-   if (hwcaps == (LD|EI|DF))    return "s390x-ldisp-eimm-dfp";
-   if (hwcaps == (LD|GE|DF))    return "s390x-ldisp-gie-dfp";
-   if (hwcaps == (LD|EI|GE|DF)) return "s390x-ldisp-eimm-gie-dfp";
+   p = buf + vex_sprintf(buf, "%s", prefix);
+   if (hwcaps & VEX_HWCAPS_S390X_LDISP)
+     p = p + vex_sprintf(p, "-%s", facilities[0]);
+   if (hwcaps & VEX_HWCAPS_S390X_EIMM)
+     p = p + vex_sprintf(p, "-%s", facilities[1]);
+   if (hwcaps & VEX_HWCAPS_S390X_GIE)
+     p = p + vex_sprintf(p, "-%s", facilities[2]);
+   if (hwcaps & VEX_HWCAPS_S390X_DFP)
+     p = p + vex_sprintf(p, "-%s", facilities[3]);
+   if (hwcaps & VEX_HWCAPS_S390X_FGX)
+     p = p + vex_sprintf(p, "-%s", facilities[4]);
 
-   return "s390-zarch";
+   /* If there are no facilities, add "zarch" */
+   if (hwcaps == 0)
+     vex_sprintf(p, "-%s", "zarch");
+
+   return buf;
 }
 
 /* ---- */

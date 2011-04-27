@@ -491,6 +491,8 @@ extern const VexArchInfo *s390_archinfo_host;
                       (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_GIE))
 #define s390_host_has_dfp \
                       (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_DFP))
+#define s390_host_has_fgx \
+                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_FGX))
 
 #endif /* ndef __VEX_HOST_S390_DEFS_H */
 

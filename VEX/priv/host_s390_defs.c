@@ -2794,7 +2794,8 @@ s390_emit_LFPC(UChar *p, UChar b2, UShort d2)
 static UChar *
 s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 {
-   /* fixs390: PR 268619 */
+   vassert(s390_host_has_fgx);
+
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, FPR, GPR), "ldgr", r1, r2);
 
@@ -2805,7 +2806,8 @@ s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 static UChar *
 s390_emit_LGDR(UChar *p, UChar r1, UChar r2)
 {
-   /* fixs390: PR 268619 */
+   vassert(s390_host_has_fgx);
+
    if (unlikely(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, GPR, FPR), "lgdr", r1, r2);
 
@@ -3874,6 +3876,55 @@ s390_emit_CLFIw(UChar *p, UChar r1, UInt i2)
    p = s390_emit_load_32imm(p, R0, i2);
    return s390_emit_CLR(p, r1, R0);
 }
+
+
+static UChar *
+s390_emit_LGDRw(UChar *p, UChar r1, UChar r2)
+{
+   if (s390_host_has_fgx) {
+      return s390_emit_LGDR(p, r1, r2);
+   }
+
+   /* Store the FPR at memory[sp - 8]. This is safe because SP grows towards
+      smaller addresses and is 8-byte aligned. Then load the GPR from that
+      memory location/ */
+   if (s390_host_has_ldisp) {
+      p = s390_emit_STDY(p, r2, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
+      return s390_emit_LG(p, r1, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
+   }
+
+   /* No long displacement. Need to adjust SP explicitly as to avoid negative
+      displacements. */
+   p = s390_emit_AGHI(p, S390_REGNO_STACK_POINTER, -8);
+   p = s390_emit_STD(p, r2, R0, S390_REGNO_STACK_POINTER, 0);
+   p = s390_emit_LG(p, r1, R0, S390_REGNO_STACK_POINTER, DISP20(0));
+   return s390_emit_AGHI(p, S390_REGNO_STACK_POINTER, 8);
+}
+
+
+static UChar *
+s390_emit_LDGRw(UChar *p, UChar r1, UChar r2)
+{
+   if (s390_host_has_fgx) {
+      return s390_emit_LDGR(p, r1, r2);
+   }
+
+   /* Store the GPR at memory[sp - 8]. This is safe because SP grows towards
+      smaller addresses and is 8-byte aligned. Then load the FPR from that
+      memory location/ */
+   if (s390_host_has_ldisp) {
+      p = s390_emit_STG(p, r2, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
+      return s390_emit_LDY(p, r1, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
+   }
+
+   /* No long displacement. Need to adjust SP explicitly as to avoid negative
+      displacements. */
+   p = s390_emit_AGHI(p, S390_REGNO_STACK_POINTER, -8);
+   p = s390_emit_STG(p, r2, R0, S390_REGNO_STACK_POINTER, DISP20(0));
+   p = s390_emit_LD(p, r1, R0, S390_REGNO_STACK_POINTER, 0);
+   return s390_emit_AGHI(p, S390_REGNO_STACK_POINTER, 8);
+}
+
 
 /* Split up a 20-bit displacement into its high and low piece
    suitable for passing as function arguments */
@@ -5051,9 +5102,9 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
          return s390_emit_LDR(buf, dst, src);
    } else {
       if (dst_class == HRcFlt64 && src_class == HRcInt64)
-         return s390_emit_LDGR(buf, dst, src);   /* fixs390: PR 268619 */
+         return s390_emit_LDGRw(buf, dst, src);
       if (dst_class == HRcInt64 && src_class == HRcFlt64)
-         return s390_emit_LGDR(buf, dst, src);   /* fixs390: PR 268619 */
+         return s390_emit_LGDRw(buf, dst, src);
       /* A move between floating point registers and general purpose
          registers of different size should never occur and indicates
          an error elsewhere. */

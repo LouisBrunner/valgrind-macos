@@ -5208,30 +5208,56 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
       d = src->d;
 
       /* Shift operands are special here as there are no opcodes that
-         allow a memory operand. So we first load the 2nd operand to R0. */
+         allow a memory operand. So we first load the 2nd operand into
+         some register. R0 is used to save restore the contents of the
+         chosen register.. */
 
-      /* fixs390: NO. Using R0 as the base will ignore the register contents. */
       if (insn->variant.alu.tag == S390_ALU_LSH ||
           insn->variant.alu.tag == S390_ALU_RSH ||
           insn->variant.alu.tag == S390_ALU_RSHA) {
+         UInt b2;
 
-         buf = s390_emit_load_mem(buf, insn->size, R0, src);
+         /* Choose a register (other than DST or R0) into which to stick the
+            shift amount. The following works because r15 is reserved and
+            thusly dst != 15. */
+         vassert(dst != 15);  /* extra paranoia */
+         b2 = (dst + 1) % 16;
+         
+         buf = s390_emit_LGR(buf, R0, b2);  /* save */
+
+         /* Loading SRC to B2 does not modify R0. */
+         buf = s390_emit_load_mem(buf, insn->size, b2, src);
 
          if (insn->size == 8) {
-            if (insn->variant.alu.tag == S390_ALU_LSH)
-               return s390_emit_SLLG(buf, dst, dst, R0, DISP20(0));
-            if (insn->variant.alu.tag == S390_ALU_RSH)
-               return s390_emit_SRLG(buf, dst, dst, R0, DISP20(0));
-            if (insn->variant.alu.tag == S390_ALU_RSHA)
-               return s390_emit_SRAG(buf, dst, dst, R0, DISP20(0));
+            switch (insn->variant.alu.tag) {
+            case S390_ALU_LSH:
+               buf = s390_emit_SLLG(buf, dst, dst, b2, DISP20(0));
+               break;
+            case S390_ALU_RSH:
+               buf = s390_emit_SRLG(buf, dst, dst, b2, DISP20(0));
+               break;
+            case S390_ALU_RSHA:
+               buf = s390_emit_SRAG(buf, dst, dst, b2, DISP20(0));
+               break;
+            default: /* unreachable */
+               goto fail;
+            }
          } else {
-            if (insn->variant.alu.tag == S390_ALU_LSH)
-               return s390_emit_SLL(buf, dst, R0, 0);
-            if (insn->variant.alu.tag == S390_ALU_RSH)
-               return s390_emit_SRL(buf, dst, R0, 0);
-            if (insn->variant.alu.tag == S390_ALU_RSHA)
-               return s390_emit_SRA(buf, dst, R0, 0);
+            switch (insn->variant.alu.tag) {
+            case S390_ALU_LSH:
+               buf = s390_emit_SLL(buf, dst, b2, 0);
+               break;
+            case S390_ALU_RSH:
+               buf = s390_emit_SRL(buf, dst, b2, 0);
+               break;
+            case S390_ALU_RSHA:
+               buf = s390_emit_SRA(buf, dst, b2, 0);
+               break;
+            default: /* unreachable */
+               goto fail;
+            }
          }
+         return s390_emit_LGR(buf, b2, R0);  /* restore */
       }
 
       switch (insn->size) {

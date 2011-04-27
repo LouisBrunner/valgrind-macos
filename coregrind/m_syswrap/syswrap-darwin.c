@@ -690,9 +690,23 @@ void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
 PRE(ioctl)
 {
    *flags |= SfMayBlock;
-   PRINT("ioctl ( %ld, 0x%lx, %#lx )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "ioctl",
-                 unsigned int, fd, unsigned int, request, unsigned long, arg);
+
+   /* Handle ioctls that don't take an arg first */
+   switch (ARG2 /* request */) {
+   case VKI_TIOCSCTTY:
+   case VKI_TIOCEXCL:
+   case VKI_TIOCPTYGRANT:
+   case VKI_TIOCPTYUNLK:
+   case VKI_DTRACEHIOC_REMOVE: 
+      PRINT("ioctl ( %ld, 0x%lx )",ARG1,ARG2);
+      PRE_REG_READ2(long, "ioctl",
+                    unsigned int, fd, unsigned int, request);
+      return;
+   default:
+      PRINT("ioctl ( %ld, 0x%lx, %#lx )",ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "ioctl",
+                    unsigned int, fd, unsigned int, request, unsigned long, arg);
+   }
 
    switch (ARG2 /* request */) {
    case VKI_TIOCGWINSZ:
@@ -720,9 +734,6 @@ PRE(ioctl)
    case VKI_TIOCSPGRP:
       /* Set a process group ID? */
       PRE_MEM_WRITE( "ioctl(TIOCGPGRP)", ARG3, sizeof(vki_pid_t) );
-      break;
-   case VKI_TIOCSCTTY:
-      /* Just takes an int value.  */
       break;
    case VKI_FIONBIO:
       PRE_MEM_READ( "ioctl(FIONBIO)",    ARG3, sizeof(int) );
@@ -846,7 +857,6 @@ PRE(ioctl)
       PRE_MEM_WRITE( "ioctl(FIONREAD)", ARG3, sizeof(int) );
       break;
 
-   case VKI_DTRACEHIOC_REMOVE: 
    case VKI_DTRACEHIOC_ADDDOF: 
        break;
 
@@ -865,9 +875,6 @@ PRE(ioctl)
        break;
    case VKI_TIOCPTYGNAME:
        PRE_MEM_WRITE( "ioctl(TIOCPTYGNAME)", ARG3, 128 );
-       break;
-   case VKI_TIOCPTYGRANT:
-   case VKI_TIOCPTYUNLK:
        break;
 
    default: 

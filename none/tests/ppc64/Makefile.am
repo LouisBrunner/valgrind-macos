@@ -6,7 +6,8 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest \
-	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.vgtest \
+	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
+	jm-vmx.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	std_reg_imm.vgtest std_reg_imm.stderr.exp std_reg_imm.stdout.exp \
 	round.stderr.exp round.stdout.exp round.vgtest \

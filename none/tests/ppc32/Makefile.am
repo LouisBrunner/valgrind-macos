@@ -12,12 +12,15 @@ EXTRA_DIST = \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest \
-	jm-vmx.stderr.exp   jm-vmx.stdout.exp   jm-vmx.vgtest \
+	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
+	jm-vmx.vgtest \
 	mftocrf.stderr.exp mftocrf.stdout.exp mftocrf.vgtest \
 	mcrfs.stderr.exp mcrfs.stdout.exp mcrfs.vgtest \
 	round.stderr.exp round.stdout.exp round.vgtest \
-	test_fx.stderr.exp test_fx.stdout.exp test_fx.vgtest \
-	test_gx.stderr.exp test_gx.stdout.exp test_gx.vgtest \
+	test_fx.stderr.exp test_fx.stdout.exp test_fx.stdout.exp_Minus_nan \
+	test_fx.vgtest \
+	test_gx.stderr.exp test_gx.stdout.exp test_gx.stdout.exp_Minus_nan \
+	test_gx.vgtest \
 	testVMX.stderr.exp  testVMX.stdout.exp  testVMX.vgtest \
 	twi.stderr.exp twi.stdout.exp twi.vgtest \
 	tw.stderr.exp tw.stdout.exp tw.vgtest \

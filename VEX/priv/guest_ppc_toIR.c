@@ -7256,7 +7256,7 @@ static Bool dis_fp_round ( UInt theInstr )
          case 0x3Ce: // fcfidus (Float convert from unsigned DWord to single precision)
             DIP("fcfidus%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
             assign( r_tmp64, unop( Iop_ReinterpF64asI64, mkexpr(frB)) );
-            assign( frD, binop( Iop_I64UtoF32, rm, mkexpr( r_tmp64 ) ) );
+            assign( frD, unop( Iop_F32toF64, binop( Iop_I64UtoF32, rm, mkexpr( r_tmp64 ) ) ) );
             goto putFR;
       }
    }

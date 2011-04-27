@@ -2265,7 +2265,7 @@ void typeOfPrimop ( IROp op,
       case Iop_I32StoF64: UNARY(Ity_I32, Ity_F64);
       case Iop_I64StoF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
       case Iop_I64UtoF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
-      case Iop_I64UtoF32: BINARY(ity_RMode,Ity_I64, Ity_F64);
+      case Iop_I64UtoF32: BINARY(ity_RMode,Ity_I64, Ity_F32);
 
       case Iop_I32UtoF64: UNARY(Ity_I32, Ity_F64);
 

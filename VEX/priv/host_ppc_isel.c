@@ -3190,8 +3190,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-      if (e->Iex.Binop.op == Iop_I64StoF64 || e->Iex.Binop.op == Iop_I64UtoF64
-          || e->Iex.Binop.op == Iop_I64UtoF32) {
+      if (e->Iex.Binop.op == Iop_I64StoF64 || e->Iex.Binop.op == Iop_I64UtoF64) {
          if (mode64) {
             HReg fdst = newVRegF(env);
             HReg isrc = iselWordExpr_R(env, e->Iex.Binop.arg2);
@@ -3206,8 +3205,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, PPCInstr_Store(8, zero_r1, isrc, True/*mode64*/));
             addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
             addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
-                                          e->Iex.Binop.op == Iop_I64StoF64 ? True : False,
-                                          e->Iex.Binop.op == Iop_I64UtoF32 ? False : True,
+                                          e->Iex.Binop.op == Iop_I64StoF64,
+                                          True/*fdst is 64 bit*/,
                                           fdst, fdst));
 
             add_to_sp( env, 16 );
@@ -3234,8 +3233,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, PPCInstr_Store(4, four_r1, isrcLo, False/*mode32*/));
             addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
             addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
-                                          e->Iex.Binop.op == Iop_I64StoF64 ? True : False,
-                                          e->Iex.Binop.op == Iop_I64UtoF32 ? False : True,
+                                          e->Iex.Binop.op == Iop_I64StoF64,
+                                          True/*fdst is 64 bit*/,
                                           fdst, fdst));
 
             add_to_sp( env, 16 );

@@ -181,7 +181,7 @@ case I chased).
 #undef uint32_t
 #undef uint64_t
 #define uint32_t unsigned int
-#define uint64_t unsigned long long
+#define uint64_t unsigned long long int
 
 #ifndef __powerpc64__
 typedef uint32_t  HWord_t;
@@ -4614,7 +4614,7 @@ static void test_int_three_args (const char* name, test_func_t func,
 #ifndef __powerpc64__
             printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
 #else
-            printf("%s %016lx, %016lx, %016lx => %016lx (%08x %08x)\n",
+            printf("%s %016llx, %016llx, %016llx => %016llx (%08x %08x)\n",
 #endif
                    name, iargs[i], iargs[j], iargs[k], res, flags, xer);
          }
@@ -4658,7 +4658,7 @@ static void test_int_two_args (const char* name, test_func_t func,
          printf("%s %08x, %08x => %08x (%08x %08x)\n",
 #else
          if (zap_hi32) res &= 0xFFFFFFFFULL;
-         printf("%s %016lx, %016lx => %016lx (%08x %08x)\n",
+         printf("%s %016llx, %016llx => %016llx (%08x %08x)\n",
 #endif
                 name, iargs[i], iargs[j], res, flags, xer);
       }
@@ -4690,7 +4690,7 @@ static void test_int_one_arg (const char* name, test_func_t func,
 #ifndef __powerpc64__
       printf("%s %08x => %08x (%08x %08x)\n",
 #else
-      printf("%s %016lx => %016lx (%08x %08x)\n",
+      printf("%s %016llx => %016llx (%08x %08x)\n",
 #endif
              name, iargs[i], res, flags, xer);
    }
@@ -4790,7 +4790,7 @@ static void test_int_one_reg_imm16 (const char* name,
 #ifndef __powerpc64__
          printf("%s %08x, %08x => %08x (%08x %08x)\n",
 #else
-         printf("%s %016lx, %08x => %016lx (%08x %08x)\n",
+         printf("%s %016llx, %08x => %016llx (%08x %08x)\n",
 #endif
                 name, iargs[i], ii16[j], res, flags, xer);
       }
@@ -4855,7 +4855,7 @@ static void rlwi_cb (const char* name, test_func_t func_IN,
 #ifndef __powerpc64__
                printf("%s %08x, %2d, %2d, %2d => %08x (%08x %08x)\n",
 #else
-               printf("%s %016lx, %2d, %2d, %2d => %016lx (%08x %08x)\n",
+               printf("%s %016llx, %2d, %2d, %2d => %016llx (%08x %08x)\n",
 #endif
                       name, iargs[i], j, k, l, res, flags, xer);
             }
@@ -4896,7 +4896,7 @@ static void rlwnm_cb (const char* name, test_func_t func_IN,
 #ifndef __powerpc64__
                printf("%s %08x, %08x, %2d, %2d => %08x (%08x %08x)\n",
 #else
-               printf("%s %016lx, %016lx, %2d, %2d => %016lx (%08x %08x)\n",
+               printf("%s %016llx, %016llx, %2d, %2d => %016llx (%08x %08x)\n",
 #endif
                       name, iargs[i], iargs[j], k, l, res, flags, xer);
             }
@@ -4933,7 +4933,7 @@ static void srawi_cb (const char* name, test_func_t func_IN,
 #ifndef __powerpc64__
          printf("%s %08x, %2d => %08x (%08x %08x)\n",
 #else
-         printf("%s %016lx, %2d => %016lx (%08x %08x)\n",
+         printf("%s %016llx, %2d => %016llx (%08x %08x)\n",
 #endif
                 name, iargs[i], j, res, flags, xer);
       }
@@ -4969,7 +4969,7 @@ static void mcrf_cb (const char* name, test_func_t func_IN,
 #ifndef __powerpc64__
             printf("%s %d, %d (%08x) => (%08x %08x)\n",
 #else
-            printf("%s %d, %d (%016lx) => (%08x %08x)\n",
+            printf("%s %d, %d (%016llx) => (%08x %08x)\n",
 #endif
                    name, j, k, iargs[i], flags, xer);
          }
@@ -5029,7 +5029,7 @@ static void mfcr_cb (const char* name, test_func_t func,
 #ifndef __powerpc64__
       printf("%s (%08x) => %08x (%08x %08x)\n",
 #else
-      printf("%s (%016lx) => %016lx (%08x %08x)\n",
+      printf("%s (%016llx) => %016llx (%08x %08x)\n",
 #endif
              name, iargs[i], res, flags, xer);
    }
@@ -5057,7 +5057,7 @@ static void mfspr_cb (const char* name, test_func_t func,
 #ifndef __powerpc64__
       printf("%s 1 (%08x) -> mtxer -> mfxer => %08x\n",
 #else
-      printf("%s 1 (%08x) -> mtxer -> mfxer => %016lx\n",
+      printf("%s 1 (%08x) -> mtxer -> mfxer => %016llx\n",
 #endif
              name, j, res);
    }
@@ -5074,7 +5074,7 @@ static void mfspr_cb (const char* name, test_func_t func,
 #ifndef __powerpc64__
       printf("%s 8 (%08x) ->  mtlr ->  mflr => %08x\n",
 #else
-      printf("%s 8 (%08x) ->  mtlr ->  mflr => %016lx\n",
+      printf("%s 8 (%08x) ->  mtlr ->  mflr => %016llx\n",
 #endif
              name, j, res);
    }
@@ -5091,7 +5091,7 @@ static void mfspr_cb (const char* name, test_func_t func,
 #ifndef __powerpc64__
       printf("%s 9 (%08x) -> mtctr -> mfctr => %08x\n",
 #else
-      printf("%s 9 (%08x) -> mtctr -> mfctr => %016lx\n",
+      printf("%s 9 (%08x) -> mtctr -> mfctr => %016llx\n",
 #endif
              name, j, res);
    }
@@ -5122,7 +5122,7 @@ static void mtcrf_cb (const char* name, test_func_t func_IN,
 #ifndef __powerpc64__
          printf("%s %3d, %08x => (%08x %08x)\n",
 #else
-         printf("%s %3d, %016lx => (%08x %08x)\n",
+         printf("%s %3d, %016llx => (%08x %08x)\n",
 #endif
                 name, j, iargs[i], flags, xer);
       }
@@ -5163,7 +5163,7 @@ static void rldc_cb (const char* name, test_func_t func_IN,
             GET_CR_XER(flags,xer);
             res = r17;
 
-            printf("%s %016lx, %016lx, %2d => %016lx (%08x %08x)\n",
+            printf("%s %016llx, %016llx, %2d => %016llx (%08x %08x)\n",
                    name, iargs[i], iargs[j], k, res, flags, xer);
          }
          if (verbose) printf("\n");
@@ -5198,7 +5198,7 @@ static void rldi_cb (const char* name, test_func_t func_IN,
             GET_CR_XER(flags,xer);
             res = r17;
 
-            printf("%s %016lx, %2d, %2d => %016lx (%08x %08x)\n",
+            printf("%s %016llx, %2d, %2d => %016llx (%08x %08x)\n",
                    name, iargs[i], j, k, res, flags, xer);
          }
          if (verbose) printf("\n");
@@ -5231,7 +5231,7 @@ static void sradi_cb (const char* name, test_func_t func_IN,
          GET_CR_XER(flags,xer);
          res = r17;
 
-         printf("%s %016lx, %2d => %016lx (%08x %08x)\n",
+         printf("%s %016llx, %2d => %016llx (%08x %08x)\n",
                 name, iargs[i], j, res, flags, xer);
       }
       if (verbose) printf("\n");
@@ -5446,7 +5446,7 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
 #else
-      printf("%s %3d, (%016lx) => %016lx, %3ld (%08x %08x)\n",
+      printf("%s %3d, (%016llx) => %016llx, %3lld (%08x %08x)\n",
 #endif
              name, offs, iargs[i], res, r14-base, flags, xer);
    }
@@ -5471,7 +5471,7 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
 #else
-      printf("%s %3d, (%016lx) => %016lx, %3ld (%08x %08x)\n",
+      printf("%s %3d, (%016llx) => %016llx, %3lld (%08x %08x)\n",
 #endif
              name, offs, iargs[nb_iargs-1+i], res, r14-base, flags, xer);
    }
@@ -5500,7 +5500,7 @@ static void test_int_ld_two_regs (const char* name,
 #ifndef __powerpc64__
       printf("%s %d (%08x) => %08x, %d (%08x %08x)\n",
 #else
-      printf("%s %3d, (%016lx) => %016lx, %2ld (%08x %08x)\n",
+      printf("%s %3d, (%016llx) => %016llx, %2lld (%08x %08x)\n",
 #endif
              name, offs, iargs[i], res, r14-base, flags, xer);
    }
@@ -5541,7 +5541,7 @@ static void test_int_st_two_regs_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %08x, %2d => %08x, %2d (%08x %08x)\n",
 #else
-      printf("%s %016lx, %3d => %016lx, %3ld (%08x %08x)\n",
+      printf("%s %016llx, %3d => %016llx, %3lld (%08x %08x)\n",
 #endif
              name, iargs[i], offs, iargs_priv[i], r15-base, flags, xer);
    }
@@ -5569,7 +5569,7 @@ static void test_int_st_two_regs_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %08x, %2d => %08x, %2d (%08x %08x)\n",
 #else
-      printf("%s %016lx, %3d => %016lx, %3ld (%08x %08x)\n",
+      printf("%s %016llx, %3d => %016llx, %3lld (%08x %08x)\n",
 #endif
              name, iargs[nb_iargs-1+i], offs, iargs_priv[nb_iargs-1+i],
              r15-base, flags, xer);
@@ -5605,7 +5605,7 @@ static void test_int_st_three_regs (const char* name,
 #ifndef __powerpc64__
       printf("%s %08x, %d => %08x, %d (%08x %08x)\n",
 #else
-      printf("%s %016lx, %3d => %016lx, %2ld (%08x %08x)\n",
+      printf("%s %016llx, %3d => %016llx, %2lld (%08x %08x)\n",
 #endif
              name, iargs[i], offs, iargs_priv[i], r15-base, flags, xer);
    }
@@ -5667,7 +5667,7 @@ static void test_float_three_args (const char* name, test_func_t func,
 #ifndef __powerpc64__
             printf("%s %016llx, %016llx, %016llx => %016llx",
 #else
-            printf("%s %016lx, %016lx, %016lx => %016lx",
+            printf("%s %016llx, %016llx, %016llx => %016llx",
 #endif
                    name, u0, u1, u2, ur);
 #if defined TEST_FLOAT_FLAGS
@@ -5705,7 +5705,7 @@ static void test_float_two_args (const char* name, test_func_t func,
 #ifndef __powerpc64__
          printf("%s %016llx, %016llx => %016llx",
 #else
-         printf("%s %016lx, %016lx => %016lx",
+         printf("%s %016llx, %016llx => %016llx",
 #endif
                 name, u0, u1, ur);
 #if defined TEST_FLOAT_FLAGS
@@ -5746,7 +5746,7 @@ static void test_float_one_arg (const char* name, test_func_t func,
 #ifndef __powerpc64__
       printf("%s %016llx => %016llx",
 #else
-      printf("%s %016lx => %016lx",
+      printf("%s %016llx => %016llx",
 #endif
              name, u0, ur);
 #if defined TEST_FLOAT_FLAGS
@@ -5854,7 +5854,7 @@ static void test_float_ld_one_reg_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
 #else
-      printf("%s %016lx, %4d => %016lx, %4ld",
+      printf("%s %016llx, %4d => %016llx, %4lld",
 #endif
              name, double_to_bits(src), offs,
              double_to_bits(res), r14-base);
@@ -5897,7 +5897,7 @@ static void test_float_ld_two_regs (const char* name,
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
 #else
-      printf("%s %016lx, %4ld => %016lx, %4ld",
+      printf("%s %016llx, %4lld => %016llx, %4lld",
 #endif
              name, double_to_bits(src), r15/*offs*/,
              double_to_bits(res), r14-base);
@@ -5965,7 +5965,7 @@ static void test_float_st_two_regs_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
 #else
-      printf("%s %016lx, %4d => %016lx, %4ld",
+      printf("%s %016llx, %4d => %016llx, %4lld",
 #endif
              name, double_to_bits(src), offs,
              double_to_bits(*p_dst), r15-base);
@@ -6028,7 +6028,7 @@ static void test_float_st_three_regs (const char* name,
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
 #else
-      printf("%s %016lx, %4ld => %016lx, %4ld",
+      printf("%s %016llx, %4lld => %016llx, %4lld",
 #endif
              name, double_to_bits(src), r16/*offs*/,
              double_to_bits(*p_dst), r15-base);
@@ -6043,7 +6043,7 @@ static void test_float_st_three_regs (const char* name,
 #ifndef __powerpc64__
       printf("%s %016llx (%014e), %4d => %016llx (%014e), %08x (%08x %08x)\n",
 #else
-      printf("%s %016lx (%014e), %4d => %016lx (%014e), %08x (%08x %08x)\n",
+      printf("%s %016llx (%014e), %4d => %016llx (%014e), %08x (%08x %08x)\n",
 #endif
              name, double_to_bits(src), src, offs,
              double_to_bits(*p_dst), *p_dst, r15, flags, xer);
@@ -6052,7 +6052,7 @@ static void test_float_st_three_regs (const char* name,
 #ifndef __powerpc64__
       printf("%s %016llx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
 #else
-      printf("%s %016lx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
+      printf("%s %016llx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
 #endif
              name, double_to_bits(src), src, offs,
              (uint32_t)(double_to_bits(*p_dst) >> 32),

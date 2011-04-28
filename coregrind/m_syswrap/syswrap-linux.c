@@ -3769,9 +3769,6 @@ POST(sys_fcntl64)
 PRE(sys_ioctl)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_ioctl ( %ld, 0x%lx, %#lx )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "ioctl",
-                 unsigned int, fd, unsigned int, request, unsigned long, arg);
 
    // We first handle the ones that don't use ARG3 (even as a
    // scalar/non-pointer argument).

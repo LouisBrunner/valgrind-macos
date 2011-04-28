@@ -99,7 +99,7 @@ VG_(run_innerloop__dispatch_unprofiled):
         /* try a fast lookup in the translation cache */
         // r0 = next guest, r1,r2,r3 scratch
 	ldr  r1, =VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
-	and  r2, r1, r0, LSR #2         // r2 = entry #
+	and  r2, r1, r0, LSR #1         // r2 = entry #
 	ldr  r1, =VG_(tt_fast)          // r1 = &tt_fast[0]
 	add  r1, r1, r2, LSL #3         // r1 = &tt_fast[entry#]
 	ldr  r3, [r1, #0]               /* .guest */
@@ -144,7 +144,7 @@ VG_(run_innerloop__dispatch_profiled):
         /* try a fast lookup in the translation cache */
         // r0 = next guest, r1,r2,r3 scratch
 	ldr  r1, =VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
-	and  r2, r1, r0, LSR #2         // r2 = entry #
+	and  r2, r1, r0, LSR #1         // r2 = entry #
 	ldr  r1, =VG_(tt_fast)          // r1 = &tt_fast[0]
 	add  r1, r1, r2, LSL #3         // r1 = &tt_fast[entry#]
 	ldr  r3, [r1, #0]               /* .guest */

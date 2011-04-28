@@ -54,12 +54,16 @@
 
 /* This macro isn't usable in asm land; nevertheless this seems
    like a good place to put it. */
+
 #if defined(VGA_x86) || defined(VGA_amd64)
 #  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr))     ) & VG_TT_FAST_MASK)
-#elif defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm)
-#  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 2) & VG_TT_FAST_MASK)
-#elif defined(VGA_s390x)
+
+#elif defined(VGA_s390x) || defined(VGA_arm)
 #  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 1) & VG_TT_FAST_MASK)
+
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 2) & VG_TT_FAST_MASK)
+
 #else
 #  error "VG_TT_FAST_HASH: unknown platform"
 #endif

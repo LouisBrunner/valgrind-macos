@@ -308,8 +308,7 @@ system_call(IRExpr *sysno)
    /* Store the system call number in the pseudo register. */
    stmt(IRStmt_Put(OFFSET_s390x_SYSNO, sysno));
 
-   /* Store the current IA into guest_IP_AT_SYSCALL. libvex_ir.h says so.
-      fixs390: As we do not use it, can we get rid of it  ?? */
+   /* Store the current IA into guest_IP_AT_SYSCALL. libvex_ir.h says so. */
    stmt(IRStmt_Put(OFFSET_s390x_IP_AT_SYSCALL, mkU64(guest_IA_curr_instr)));
 
    /* It's important that all ArchRegs carry their up-to-date value
@@ -9174,7 +9173,6 @@ s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
    assign(new1, binop(op, mkexpr(old1), mkexpr(old2)));
 
    /* Special case: xc is used to zero memory */
-   /* fixs390: we also want an instrumentation time shortcut */
    if (op == Iop_Xor8) {
       store(mkexpr(addr1),
             IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(start1),

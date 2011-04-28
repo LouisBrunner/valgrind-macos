@@ -2291,7 +2291,14 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
    }
 
       /* --------- MEM FENCE --------- */
-   case Ist_MBE:  /* fixs390 later */
+   case Ist_MBE:
+      switch (stmt->Ist.MBE.event) {
+         case Imbe_Fence:
+            addInstr(env, s390_insn_mfence());
+            return;
+         default:
+            break;
+      }
       break;
 
       /* --------- Miscellaneous --------- */

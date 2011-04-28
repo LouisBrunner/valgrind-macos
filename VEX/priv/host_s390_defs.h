@@ -147,7 +147,8 @@ typedef enum {
    S390_INSN_BFP128_UNOP,
    S390_INSN_BFP128_COMPARE,
    S390_INSN_BFP128_CONVERT_TO,
-   S390_INSN_BFP128_CONVERT_FROM
+   S390_INSN_BFP128_CONVERT_FROM,
+   S390_INSN_MFENCE
 } s390_insn_tag;
 
 
@@ -451,6 +452,7 @@ s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_bfp_unop_t,
 s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_round_t);
+s390_insn *s390_insn_mfence(void);
 void       s390_insn_map_regs(HRegRemap *, s390_insn *);
 Bool       s390_insn_is_reg_reg_move(const s390_insn *, HReg *, HReg *);
 void       s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *);

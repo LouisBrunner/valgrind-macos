@@ -3059,6 +3059,10 @@ s390_irgen_BCR(UChar r1, UChar r2)
 {
    IRTemp cond = newTemp(Ity_I32);
 
+   if (r2 == 0 && (r1 >= 14)) {    /* serialization */
+      stmt(IRStmt_MBE(Imbe_Fence));
+   }
+
    if ((r2 == 0) || (r1 == 0)) {
    } else {
       if (r1 == 15) {

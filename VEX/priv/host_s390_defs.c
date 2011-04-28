@@ -699,6 +699,9 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       addHRegUse(u, HRmRead,  insn->variant.bfp128_unop.op_lo);
       break;
 
+   case S390_INSN_MFENCE:
+      break;
+
    default:
       vpanic("s390_insn_get_reg_usage");
    }
@@ -897,6 +900,9 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
          lookupHRegRemap(m, insn->variant.bfp128_unop.op_hi);
       insn->variant.bfp128_unop.op_lo =
          lookupHRegRemap(m, insn->variant.bfp128_unop.op_lo);
+      break;
+
+   case S390_INSN_MFENCE:
       break;
 
    default:
@@ -4386,6 +4392,18 @@ s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t tag, HReg dst,
 }
 
 
+s390_insn *
+s390_insn_mfence(void)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_MFENCE;
+   insn->size = 0;   /* not needed */
+
+   return insn;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Debug print                                             ---*/
 /*---------------------------------------------------------------*/
@@ -4796,6 +4814,10 @@ s390_insn_as_string(const s390_insn *insn)
       s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp128_unop.dst_hi,
                    insn->variant.bfp128_unop.op_hi);
       break;
+
+   case S390_INSN_MFENCE:
+      s390_sprintf(buf, "%M", "v-mfence");
+      return buf;   /* avoid printing "size = ..." which is meaningless */
 
    default: goto fail;
    }
@@ -6999,6 +7021,13 @@ s390_insn_bfp128_convert_from_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+static UChar *
+s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
+{
+   return s390_emit_BCR(buf, 0xF, 0x0);
+}
+
+
 Int
 emit_S390Instr(UChar *buf, Int nbuf, struct s390_insn *insn,
                Bool mode64, void *dispatch)
@@ -7108,6 +7137,10 @@ emit_S390Instr(UChar *buf, Int nbuf, struct s390_insn *insn,
 
    case S390_INSN_BFP128_CONVERT_FROM:
       end = s390_insn_bfp128_convert_from_emit(buf, insn);
+      break;
+
+   case S390_INSN_MFENCE:
+      end = s390_insn_mfence_emit(buf, insn);
       break;
 
    default:

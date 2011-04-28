@@ -441,7 +441,7 @@ s390_insn *s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2);
 s390_insn *s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t, HReg dst_hi,
                                   HReg dst_lo, HReg op2_hi, HReg op2_lo,
                                   s390_round_t);
-s390_insn *s390_insn_bfp128_unop(UChar size, s390_bfp_binop_t, HReg dst_hi,
+s390_insn *s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t, HReg dst_hi,
                                  HReg dst_lo, HReg op_hi, HReg op_lo,
                                  s390_round_t);
 s390_insn *s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi,

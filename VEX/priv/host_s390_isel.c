@@ -1474,7 +1474,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
       HReg op_hi, op_lo, f12, f13, f14, f15;
-      s390_bfp_binop_t bfpop;
+      s390_bfp_unop_t bfpop;
       s390_round_t rounding_mode;
 
       /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */

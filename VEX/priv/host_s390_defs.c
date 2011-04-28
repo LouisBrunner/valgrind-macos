@@ -4310,7 +4310,7 @@ s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_bfp128_unop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
+s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t tag, HReg dst_hi,
                       HReg dst_lo, HReg op_hi, HReg op_lo,
                       s390_round_t rounding_mode)
 {

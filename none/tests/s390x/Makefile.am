@@ -15,15 +15,6 @@ EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
-	$(addsuffix .stderr.exp,$(INSN_EI)) \
-	$(addsuffix .stdout.exp,$(INSN_EI)) \
-	$(addsuffix .vgtest,$(INSN_EI)) \
-	$(addsuffix .stderr.exp,$(INSN_GE)) \
-	$(addsuffix .stdout.exp,$(INSN_GE)) \
-	$(addsuffix .vgtest,$(INSN_GE)) \
-	$(addsuffix .stderr.exp,$(INSN_Z196)) \
-	$(addsuffix .stdout.exp,$(INSN_Z196)) \
-	$(addsuffix .vgtest,$(INSN_Z196)) \
 	ex_sig.stdout.exp ex_sig.stderr.exp ex_sig.vgtest \
 	ex_clone.stdout.exp ex_clone.stderr.exp ex_clone.vgtest \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \

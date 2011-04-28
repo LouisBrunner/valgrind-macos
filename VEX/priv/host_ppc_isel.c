@@ -1615,6 +1615,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Not16:
       case Iop_Not32:
       case Iop_Not64: {
+         if (op_unop == Iop_Not64) vassert(mode64);
          HReg r_dst = newVRegI(env);
          HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, PPCInstr_Unary(Pun_NOT,r_dst,r_src));
@@ -2882,6 +2883,18 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          addInstr(env, mk_iMOVds_RR(tHi, tLo));
          *rHi = tHi;
          *rLo = tLo;
+         return;
+      }
+
+      case Iop_Not64: {
+         HReg xLo, xHi;
+         HReg tmpLo = newVRegI(env);
+         HReg tmpHi = newVRegI(env);
+         iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
+         addInstr(env, PPCInstr_Unary(Pun_NOT,tmpLo,xLo));
+         addInstr(env, PPCInstr_Unary(Pun_NOT,tmpHi,xHi));
+         *rHi = tmpHi;
+         *rLo = tmpLo;
          return;
       }
 

@@ -300,22 +300,15 @@ void DRD_(cond_post_wait)(const Addr cond)
    p = DRD_(cond_get)(cond);
    if (!p)
    {
-      struct mutex_info* q;
-      q = &(DRD_(clientobj_get)(p->mutex, ClientMutex)->mutex);
-      {
-	 CondDestrErrInfo cde = {
-	    DRD_(thread_get_running_tid)(),
-	    p->a1,
-	    q ? q->a1 : 0,
-	    q ? q->owner : DRD_INVALID_THREADID
-	 };
-	 VG_(maybe_record_error)(VG_(get_running_tid)(),
-				 CondDestrErr,
-				 VG_(get_IP)(VG_(get_running_tid)()),
-				 "condition variable has been destroyed while"
-				 " being waited upon",
-				 &cde);
-      }
+      CondDestrErrInfo cde = {
+         DRD_(thread_get_running_tid)(), cond, 0, DRD_INVALID_THREADID
+      };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              CondDestrErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "condition variable has been destroyed while"
+                              " being waited upon",
+                              &cde);
       return;
    }
 

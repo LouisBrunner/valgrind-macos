@@ -110,6 +110,7 @@ UInt armg_calculate_flags_nzcv ( UInt cc_op, UInt cc_dep1,
          UInt argL = cc_dep1;
          UInt argR = cc_dep2;
          UInt oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
          UInt res  = (argL + argR) + oldC;
          UInt nf   = lshift( res & (1<<31), ARMG_CC_SHIFT_N - 31 );
          UInt zf   = lshift( res == 0, ARMG_CC_SHIFT_Z );
@@ -127,6 +128,7 @@ UInt armg_calculate_flags_nzcv ( UInt cc_op, UInt cc_dep1,
          UInt argL = cc_dep1;
          UInt argR = cc_dep2;
          UInt oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
          UInt res  = argL - argR - (oldC ^ 1);
          UInt nf   = lshift( res & (1<<31), ARMG_CC_SHIFT_N - 31 );
          UInt zf   = lshift( res == 0, ARMG_CC_SHIFT_Z );
@@ -143,11 +145,13 @@ UInt armg_calculate_flags_nzcv ( UInt cc_op, UInt cc_dep1,
          /* (res, shco, oldV) */
          UInt res  = cc_dep1;
          UInt shco = cc_dep2;
+         vassert((shco & ~1) == 0);
          UInt oldV = cc_dep3;
+         vassert((oldV & ~1) == 0);
          UInt nf   = lshift( res & (1<<31), ARMG_CC_SHIFT_N - 31 );
          UInt zf   = lshift( res == 0, ARMG_CC_SHIFT_Z );
-         UInt cf   = lshift( shco & 1, ARMG_CC_SHIFT_C );
-         UInt vf   = lshift( oldV & 1, ARMG_CC_SHIFT_V );
+         UInt cf   = lshift( shco, ARMG_CC_SHIFT_C );
+         UInt vf   = lshift( oldV, ARMG_CC_SHIFT_V );
          return nf | zf | cf | vf;
       }
       case ARMG_CC_OP_MUL: {
@@ -155,10 +159,11 @@ UInt armg_calculate_flags_nzcv ( UInt cc_op, UInt cc_dep1,
          UInt res  = cc_dep1;
          UInt oldC = (cc_dep3 >> 1) & 1;
          UInt oldV = (cc_dep3 >> 0) & 1;
+         vassert((cc_dep3 & ~3) == 0);
          UInt nf   = lshift( res & (1<<31), ARMG_CC_SHIFT_N - 31 );
          UInt zf   = lshift( res == 0, ARMG_CC_SHIFT_Z );
-         UInt cf   = lshift( oldC & 1, ARMG_CC_SHIFT_C );
-         UInt vf   = lshift( oldV & 1, ARMG_CC_SHIFT_V );
+         UInt cf   = lshift( oldC, ARMG_CC_SHIFT_C );
+         UInt vf   = lshift( oldV, ARMG_CC_SHIFT_V );
          return nf | zf | cf | vf;
       }
       case ARMG_CC_OP_MULL: {
@@ -167,10 +172,11 @@ UInt armg_calculate_flags_nzcv ( UInt cc_op, UInt cc_dep1,
          UInt resHi32 = cc_dep2;
          UInt oldC    = (cc_dep3 >> 1) & 1;
          UInt oldV    = (cc_dep3 >> 0) & 1;
+         vassert((cc_dep3 & ~3) == 0);
          UInt nf      = lshift( resHi32 & (1<<31), ARMG_CC_SHIFT_N - 31 );
          UInt zf      = lshift( (resHi32|resLo32) == 0, ARMG_CC_SHIFT_Z );
-         UInt cf      = lshift( oldC & 1, ARMG_CC_SHIFT_C );
-         UInt vf      = lshift( oldV & 1, ARMG_CC_SHIFT_V );
+         UInt cf      = lshift( oldC, ARMG_CC_SHIFT_C );
+         UInt vf      = lshift( oldV, ARMG_CC_SHIFT_V );
          return nf | zf | cf | vf;
       }
       default:
@@ -185,7 +191,7 @@ UInt armg_calculate_flags_nzcv ( UInt cc_op, UInt cc_dep1,
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate the C flag from the thunk components, in the lowest bit
-   of the word (bit 0). */
+   of the word (bit 0).  Bits 31:1 of the returned value are zero. */
 UInt armg_calculate_flag_c ( UInt cc_op, UInt cc_dep1,
                              UInt cc_dep2, UInt cc_dep3 )
 {
@@ -196,7 +202,7 @@ UInt armg_calculate_flag_c ( UInt cc_op, UInt cc_dep1,
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate the V flag from the thunk components, in the lowest bit
-   of the word (bit 0). */
+   of the word (bit 0).  Bits 31:1 of the returned value are zero. */
 UInt armg_calculate_flag_v ( UInt cc_op, UInt cc_dep1,
                              UInt cc_dep2, UInt cc_dep3 )
 {
@@ -221,7 +227,7 @@ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
 /* Calculate the specified condition from the thunk components, in the
    lowest bit of the word (bit 0). */
 extern 
-UInt armg_calculate_condition ( UInt cond_n_op /* ARMCondcode << 4 | cc_op */,
+UInt armg_calculate_condition ( UInt cond_n_op /* (ARMCondcode << 4) | cc_op */,
                                 UInt cc_dep1,
                                 UInt cc_dep2, UInt cc_dep3 )
 {
@@ -332,12 +338,17 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
    /* --------- specialising "armg_calculate_condition" --------- */
 
    if (vex_streq(function_name, "armg_calculate_condition")) {
-      /* specialise calls to above "armg_calculate condition" function */
-      IRExpr *cond_n_op, *cc_dep1, *cc_dep2;
+
+      /* specialise calls to the "armg_calculate_condition" function.
+         Not sure whether this is strictly necessary, but: the
+         replacement IR must produce only the values 0 or 1.  Bits
+         31:1 are required to be zero. */
+      IRExpr *cond_n_op, *cc_dep1, *cc_dep2, *cc_ndep;
       vassert(arity == 4);
-      cond_n_op = args[0]; /* ARMCondcode << 4  |  ARMG_CC_OP_* */
+      cond_n_op = args[0]; /* (ARMCondcode << 4)  |  ARMG_CC_OP_* */
       cc_dep1   = args[1];
       cc_dep2   = args[2];
+      cc_ndep   = args[3];
 
       /*---------------- SUB ----------------*/
 
@@ -384,7 +395,27 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
                      binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
 
+      /*---------------- SBB ----------------*/
+
+      if (isU32(cond_n_op, (ARMCondHS << 4) | ARMG_CC_OP_SBB)) {
+         /* This seems to happen a lot in softfloat code, eg __divdf3+140 */
+         /* thunk is: (dep1=argL, dep2=argR, ndep=oldC) */
+         /* HS after SBB (same as C after SBB below)
+            --> oldC ? (argL >=u argR) : (argL >u argR)
+            --> oldC ? (argR <=u argL) : (argR <u argL)
+         */
+         return
+            IRExpr_Mux0X(
+               unop(Iop_32to8, cc_ndep),
+               /* case oldC == 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
+               /* case oldC != 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1))
+            );
+      }
+
       /*---------------- LOGIC ----------------*/
+
       if (isU32(cond_n_op, (ARMCondEQ << 4) | ARMG_CC_OP_LOGIC)) {
          /* EQ after LOGIC --> test res == 0 */
          return unop(Iop_1Uto32,
@@ -397,6 +428,7 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
       }
 
       /*----------------- AL -----------------*/
+
       /* A critically important case for Thumb code.
 
          What we're trying to spot is the case where cond_n_op is an
@@ -441,6 +473,107 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
          /* Didn't find any useful binding to the first arg
             in the previous 16 stmts. */
       }
+   }
+
+   /* --------- specialising "armg_calculate_flag_c" --------- */
+
+   else
+   if (vex_streq(function_name, "armg_calculate_flag_c")) {
+
+      /* specialise calls to the "armg_calculate_flag_c" function.
+         Note that the returned value must be either 0 or 1; nonzero
+         bits 31:1 are not allowed.  In turn, incoming oldV and oldC
+         values (from the thunk) are assumed to have bits 31:1
+         clear. */
+      IRExpr *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
+      vassert(arity == 4);
+      cc_op   = args[0]; /* ARMG_CC_OP_* */
+      cc_dep1 = args[1];
+      cc_dep2 = args[2];
+      cc_ndep = args[3];
+
+      if (isU32(cc_op, ARMG_CC_OP_LOGIC)) {
+         /* Thunk args are (result, shco, oldV) */
+         /* C after LOGIC --> shco */
+         return cc_dep2;
+      }
+
+      if (isU32(cc_op, ARMG_CC_OP_SUB)) {
+         /* Thunk args are (argL, argR, unused) */
+         /* C after SUB --> argL >=u argR
+                        --> argR <=u argL */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLE32U, cc_dep2, cc_dep1));
+      }
+
+      if (isU32(cc_op, ARMG_CC_OP_SBB)) {
+         /* This happens occasionally in softfloat code, eg __divdf3+140 */
+         /* thunk is: (dep1=argL, dep2=argR, ndep=oldC) */
+         /* C after SBB (same as HS after SBB above)
+            --> oldC ? (argL >=u argR) : (argL >u argR)
+            --> oldC ? (argR <=u argL) : (argR <u argL)
+         */
+         return
+            IRExpr_Mux0X(
+               unop(Iop_32to8, cc_ndep),
+               /* case oldC == 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
+               /* case oldC != 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1))
+            );
+      }
+
+   }
+
+   /* --------- specialising "armg_calculate_flag_v" --------- */
+
+   else
+   if (vex_streq(function_name, "armg_calculate_flag_v")) {
+
+      /* specialise calls to the "armg_calculate_flag_v" function.
+         Note that the returned value must be either 0 or 1; nonzero
+         bits 31:1 are not allowed.  In turn, incoming oldV and oldC
+         values (from the thunk) are assumed to have bits 31:1
+         clear. */
+      IRExpr *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
+      vassert(arity == 4);
+      cc_op   = args[0]; /* ARMG_CC_OP_* */
+      cc_dep1 = args[1];
+      cc_dep2 = args[2];
+      cc_ndep = args[3];
+
+      if (isU32(cc_op, ARMG_CC_OP_LOGIC)) {
+         /* Thunk args are (result, shco, oldV) */
+         /* V after LOGIC --> oldV */
+         return cc_ndep;
+      }
+
+      if (isU32(cc_op, ARMG_CC_OP_SBB)) {
+         /* This happens occasionally in softfloat code, eg __divdf3+140 */
+         /* thunk is: (dep1=argL, dep2=argR, ndep=oldC) */
+         /* V after SBB
+            --> let res = argL - argR - (oldC ^ 1)
+                in  (argL ^ argR) & (argL ^ res) & 1
+         */
+         return
+            binop(
+               Iop_And32,
+               binop(
+                  Iop_And32,
+                  // argL ^ argR
+                  binop(Iop_Xor32, cc_dep1, cc_dep2),
+                  // argL ^ (argL - argR - (oldC ^ 1))
+                  binop(Iop_Xor32,
+                        cc_dep1,
+                        binop(Iop_Sub32,
+                              binop(Iop_Sub32, cc_dep1, cc_dep2),
+                              binop(Iop_Xor32, cc_ndep, mkU32(1)))
+                  )
+               ),
+               mkU32(1)
+            );
+      }
+
    }
 
 #  undef unop

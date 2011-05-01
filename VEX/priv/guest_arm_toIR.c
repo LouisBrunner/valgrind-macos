@@ -1088,14 +1088,13 @@ static HChar* nCC ( ARMCondcode cond ) {
 static IRExpr* mk_armg_calculate_condition_dyn ( IRExpr* cond )
 {
    vassert(typeOfIRExpr(irsb->tyenv, cond) == Ity_I32);
-   /* And 'cond' had better produce a value in which only bits 7:4
-      bits are nonzero.  However, obviously we can't assert for
-      that. */
+   /* And 'cond' had better produce a value in which only bits 7:4 are
+      nonzero.  However, obviously we can't assert for that. */
 
    /* So what we're constructing for the first argument is 
-      "(cond << 4) | stored-operation-operation".  However,
-      as per comments above, must be supplied pre-shifted to this
-      function.
+      "(cond << 4) | stored-operation".
+      However, as per comments above, 'cond' must be supplied
+      pre-shifted to this function.
 
       This pairing scheme requires that the ARM_CC_OP_ values all fit
       in 4 bits.  Hence we are passing a (COND, OP) pair in the lowest
@@ -1700,6 +1699,12 @@ IRExpr* signed_overflow_after_Add32 ( IRExpr* resE,
 
    The calling convention for res and newC is a bit funny.  They could
    be passed by value, but instead are passed by ref.
+
+   The C (shco) value computed must be zero in bits 31:1, as the IR
+   optimisations for flag handling (guest_arm_spechelper) rely on
+   that, and the slow-path handlers (armg_calculate_flags_nzcv) assert
+   for it.  Same applies to all these functions that compute shco
+   after a shift or rotate, not just this one.
 */
 
 static void compute_result_and_C_after_LSL_by_imm5 (
@@ -1751,7 +1756,7 @@ static void compute_result_and_C_after_LSL_by_reg (
       /* mux0X(amt == 0,
                mux0X(amt < 32, 
                      0,
-                     Rm[(32-amt) & 31])
+                     Rm[(32-amt) & 31]),
                oldC)
       */
       /* About the best you can do is pray that iropt is able
@@ -1767,16 +1772,19 @@ static void compute_result_and_C_after_LSL_by_reg (
                unop(Iop_1Uto8,
                     binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32))),
                mkU32(0),
-               binop(Iop_Shr32,
-                     mkexpr(rMt),
-                     unop(Iop_32to8,
-                          binop(Iop_And32,
-                                binop(Iop_Sub32,
-                                      mkU32(32),
-                                      mkexpr(amtT)),
-                                mkU32(31)
-                          )
-                     )
+               binop(Iop_And32,
+                     binop(Iop_Shr32,
+                           mkexpr(rMt),
+                           unop(Iop_32to8,
+                                binop(Iop_And32,
+                                      binop(Iop_Sub32,
+                                            mkU32(32),
+                                            mkexpr(amtT)),
+                                      mkU32(31)
+                                )
+                           )
+                     ),
+                     mkU32(1)
                )
             ),
             mkexpr(oldC)
@@ -1862,7 +1870,7 @@ static void compute_result_and_C_after_LSR_by_reg (
       /* mux0X(amt == 0,
                mux0X(amt < 32, 
                      0,
-                     Rm[(amt-1) & 31])
+                     Rm[(amt-1) & 31]),
                oldC)
       */
       IRTemp oldC = newTemp(Ity_I32);
@@ -1876,16 +1884,19 @@ static void compute_result_and_C_after_LSR_by_reg (
                unop(Iop_1Uto8,
                     binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32))),
                mkU32(0),
-               binop(Iop_Shr32,
-                     mkexpr(rMt),
-                     unop(Iop_32to8,
-                          binop(Iop_And32,
-                                binop(Iop_Sub32,
-                                      mkexpr(amtT),
-                                      mkU32(1)),
-                                mkU32(31)
-                          )
-                     )
+               binop(Iop_And32,
+                     binop(Iop_Shr32,
+                           mkexpr(rMt),
+                           unop(Iop_32to8,
+                                binop(Iop_And32,
+                                      binop(Iop_Sub32,
+                                            mkexpr(amtT),
+                                            mkU32(1)),
+                                      mkU32(31)
+                                )
+                           )
+                     ),
+                     mkU32(1)
                )
             ),
             mkexpr(oldC)
@@ -1984,20 +1995,26 @@ static void compute_result_and_C_after_ASR_by_reg (
             IRExpr_Mux0X(
                unop(Iop_1Uto8,
                     binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32))),
-               binop(Iop_Shr32,
-                     mkexpr(rMt),
-                     mkU8(31)
+               binop(Iop_And32,
+                     binop(Iop_Shr32,
+                           mkexpr(rMt),
+                           mkU8(31)
+                     ),
+                     mkU32(1)
                ),
-               binop(Iop_Shr32,
-                     mkexpr(rMt),
-                     unop(Iop_32to8,
-                          binop(Iop_And32,
-                                binop(Iop_Sub32,
-                                      mkexpr(amtT),
-                                      mkU32(1)),
-                                mkU32(31)
-                          )
-                     )
+               binop(Iop_And32,
+                     binop(Iop_Shr32,
+                           mkexpr(rMt),
+                           unop(Iop_32to8,
+                                binop(Iop_And32,
+                                      binop(Iop_Sub32,
+                                            mkexpr(amtT),
+                                            mkU32(1)),
+                                      mkU32(31)
+                                )
+                           )
+                     ),
+                     mkU32(1)
                )
             ),
             mkexpr(oldC)

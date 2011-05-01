@@ -148,6 +148,10 @@ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
    that the definedness of the stored flags always depends on
    all 3 DEP values.
 
+   Fields carrying only 1 or 2 bits of useful information (old_C,
+   shifter_co, old_V, oldC:oldV) must have their top 31 or 30 bits
+   (respectively) zero.  The text "31x0:" or "30x0:" denotes this.
+
    A summary of the field usages is:
 
    OP                DEP1              DEP2              DEP3
@@ -156,11 +160,11 @@ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
    OP_COPY           current NZCV      unused            unused
    OP_ADD            argL              argR              unused
    OP_SUB            argL              argR              unused
-   OP_ADC            argL              argR              old_C
-   OP_SBB            argL              argR              old_C
-   OP_LOGIC          result            shifter_co        old_V
-   OP_MUL            result            unused            old_C:old_V
-   OP_MULL           resLO32           resHI32           old_C:old_V
+   OP_ADC            argL              argR              31x0:old_C
+   OP_SBB            argL              argR              31x0:old_C
+   OP_LOGIC          result            31x0:shifter_co   31x0:old_V
+   OP_MUL            result            unused            30x0:old_C:old_V
+   OP_MULL           resLO32           resHI32           30x0:old_C:old_V
 */
 
 enum {

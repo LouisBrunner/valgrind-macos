@@ -4714,6 +4714,7 @@ IRSB* do_iropt_BB(
       bb = cprop_BB(bb);
       bb = spec_helpers_BB ( bb, specHelper );
       redundant_put_removal_BB ( bb, preciseMemExnsFn );
+      do_cse_BB( bb );
       do_deadcode_BB( bb );
    }
 

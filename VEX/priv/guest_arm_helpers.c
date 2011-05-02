@@ -717,6 +717,25 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
          return cc_ndep;
       }
 
+      if (isU32(cc_op, ARMG_CC_OP_SUB)) {
+         /* Thunk args are (argL, argR, unused) */
+         /* V after SUB 
+            --> let res = argL - argR
+                in ((argL ^ argR) & (argL ^ res)) >> 31
+            --> ((argL ^ argR) & (argL ^ (argL - argR))) >> 31
+         */
+         IRExpr* argL = cc_dep1;
+         IRExpr* argR = cc_dep2;
+         return
+            binop(Iop_Shr32,
+                  binop(Iop_And32,
+                        binop(Iop_Xor32, argL, argR),
+                        binop(Iop_Xor32, argL, binop(Iop_Sub32, argL, argR))
+                  ),
+                  mkU8(31)
+            );
+      }
+
       if (isU32(cc_op, ARMG_CC_OP_SBB)) {
          /* This happens occasionally in softfloat code, eg __divdf3+140 */
          /* thunk is: (dep1=argL, dep2=argR, ndep=oldC) */

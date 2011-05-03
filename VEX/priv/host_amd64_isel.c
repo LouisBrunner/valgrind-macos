@@ -863,7 +863,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    DECLARE_PATTERN(p_LDle16_then_16Uto64);
 
    IRType ty = typeOfIRExpr(env->type_env,e);
-   vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
+   switch (ty) {
+      case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8: break;
+      default: vassert(0);
+   }
 
    switch (e->tag) {
 

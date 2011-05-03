@@ -14027,7 +14027,7 @@ DisResult disInstr_ARM_WRK (
          assert here. */
       vassert(dres.whatNext == Dis_Continue);
       vassert(irsb->next == NULL);
-      vassert(irsb->jumpkind = Ijk_Boring);
+      vassert(irsb->jumpkind == Ijk_Boring);
       /* If r15 is unconditionally written, terminate the block by
          jumping to it.  If it's conditionally written, still
          terminate the block (a shame, but we can't do side exits to
@@ -17864,7 +17864,7 @@ DisResult disInstr_THUMB_WRK (
          assert here. */
       vassert(dres.whatNext == Dis_Continue);
       vassert(irsb->next == NULL);
-      vassert(irsb->jumpkind = Ijk_Boring);
+      vassert(irsb->jumpkind == Ijk_Boring);
       /* If r15 is unconditionally written, terminate the block by
          jumping to it.  If it's conditionally written, still
          terminate the block (a shame, but we can't do side exits to

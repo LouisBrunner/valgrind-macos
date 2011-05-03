@@ -2823,7 +2823,9 @@ asm("\n\t"
 );
 #elif defined(VGP_arm_linux)
 asm("\n"
-    "\t.align 2\n"
+    "\t.text\n"
+    "\t.align 4\n"
+    "\t.type _start,#function\n"
     "\t.global _start\n"
     "_start:\n"
     "\tldr  r0, [pc, #36]\n"

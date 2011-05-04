@@ -91,8 +91,10 @@ Char *VG_(getenv)(Char *varname)
 
 void  VG_(env_unsetenv) ( Char **env, const Char *varname )
 {
-   Char **from;
-   Char **to = NULL;
+   Char **from, **to;
+   vg_assert(env);
+   vg_assert(varname);
+   to = NULL;
    Int len = VG_(strlen)(varname);
 
    for (from = to = env; from && *from; from++) {
@@ -302,6 +304,7 @@ Char **VG_(env_clone) ( Char **oldenv )
    Char **newenv;
    Int  envlen;
 
+   vg_assert(oldenv);
    for (oldenvp = oldenv; oldenvp && *oldenvp; oldenvp++);
 
    envlen = oldenvp - oldenv + 1;

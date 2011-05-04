@@ -1571,7 +1571,7 @@ IRAtom* mkLazyN ( MCEnv* mce,
    IRAtom* here;
    IRAtom* curr;
    IRType  mergeTy;
-   IRType  mergeTy64 = True;
+   Bool    mergeTy64 = True;
 
    /* Decide on the type of the merge intermediary.  If all relevant
       args are I64, then it's I64.  In all other circumstances, use

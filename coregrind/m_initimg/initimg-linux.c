@@ -456,7 +456,7 @@ Addr setup_client_stack( void*  init_sp,
 	 stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
       else if (cauxv->a_type == AT_RANDOM)
 	 stringsize += 16;
-      else if (cauxv->a_type == AT_EXECFN)
+      else if (cauxv->a_type == AT_EXECFN && have_exename)
 	 stringsize += VG_(strlen)(VG_(args_the_exename)) + 1;
       auxsize += sizeof(*cauxv);
    }

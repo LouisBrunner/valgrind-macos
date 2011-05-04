@@ -1187,6 +1187,7 @@ void handle_maybe_load_notifier( const UChar* soname,
 
    /* Normal load-notifier handling after here.  First, ignore all
       symbols lacking the right prefix. */
+   vg_assert(symbol); // assert rather than segfault if it is NULL
    if (0 != VG_(strncmp)(symbol, VG_NOTIFY_ON_LOAD_PREFIX, 
                                  VG_NOTIFY_ON_LOAD_PREFIX_LEN))
       /* Doesn't have the right prefix */

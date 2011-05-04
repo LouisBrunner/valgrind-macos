@@ -1601,7 +1601,7 @@ static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
          "Sorry.  Helgrind can only handle programs that create\n"
          "%'llu or fewer threads over their entire lifetime.\n"
          "\n";
-      VG_(umsg)(s, ThrID_MAX_VALID - 1024);
+      VG_(umsg)(s, (ULong)(ThrID_MAX_VALID - 1024));
    } else {
       HChar* s =
          "\n"

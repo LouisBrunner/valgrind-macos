@@ -162,15 +162,16 @@ typedef
       Pcf_7LT  = 28,  /* neg  | lt          */
       Pcf_7GT  = 29,  /* pos  | gt          */
       Pcf_7EQ  = 30,  /* zero | equal       */
-      Pcf_7SO  = 31   /* summary overflow   */
+      Pcf_7SO  = 31,  /* summary overflow   */
+      Pcf_NONE = 32   /* no condition; used with Pct_ALWAYS */
    }
    PPCCondFlag;
 
 typedef
    enum {   /* Maps bc bitfield BO */
-      Pct_FALSE  = 0x4,
-      Pct_TRUE   = 0xC,
-      Pct_ALWAYS = 0x14
+      Pct_FALSE  = 0x4, /* associated PPCCondFlag must not be Pcf_NONE */
+      Pct_TRUE   = 0xC, /* associated PPCCondFlag must not be Pcf_NONE */
+      Pct_ALWAYS = 0x14 /* associated PPCCondFlag must be Pcf_NONE */
    }
    PPCCondTest;
 

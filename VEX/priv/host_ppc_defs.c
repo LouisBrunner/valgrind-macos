@@ -286,6 +286,8 @@ HChar* showPPCCondCode ( PPCCondCode cond )
       return (cond.test == Pct_TRUE) ? "cr7.gt=1" : "cr7.gt=0";
    case Pcf_7LT:
       return (cond.test == Pct_TRUE) ? "cr7.lt=1" : "cr7.lt=0";
+   case Pcf_NONE:
+      return "no-flag";
    default: vpanic("ppPPCCondCode");
    }
 }
@@ -296,6 +298,11 @@ PPCCondCode mk_PPCCondCode ( PPCCondTest test, PPCCondFlag flag )
    PPCCondCode cc;
    cc.flag = flag;
    cc.test = test;
+   if (test == Pct_ALWAYS) { 
+      vassert(flag == Pcf_NONE);
+   } else {
+      vassert(flag != Pcf_NONE);
+   }
    return cc;
 }
 
@@ -3152,6 +3159,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          // Just load 1 to dst => li dst,1
          p = mkFormD(p, 14, r_dst, 0, 1);
       } else {
+         vassert(cond.flag != Pcf_NONE);
          rot_imm = 1 + cond.flag;
          r_tmp = 0;  // Not set in getAllocable, so no need to declare.
 

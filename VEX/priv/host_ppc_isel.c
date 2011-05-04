@@ -785,7 +785,7 @@ void doHelperCall ( ISelEnv* env,
       }
 
       /* Fast scheme only applies for unconditional calls.  Hence: */
-      cc.test = Pct_ALWAYS;
+      cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
    } else {
 
@@ -828,7 +828,7 @@ void doHelperCall ( ISelEnv* env,
          because the argument computations could trash the condition
          codes.  Be a bit clever to handle the common case where the
          guard is 1:Bit. */
-      cc.test = Pct_ALWAYS;
+      cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
       if (guard) {
          if (guard->tag == Iex_Const 
              && guard->Iex.Const.con->tag == Ico_U1

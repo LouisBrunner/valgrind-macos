@@ -2665,7 +2665,16 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
    UChar* basetag   = "auxwhat"; /* a constant */
    UChar tagL[32], tagR[32], xagL[32], xagR[32];
 
-   vg_assert(frameNo >= -1);
+   if (frameNo < -1) {
+      vg_assert(0); /* Not allowed */
+   }
+   else if (frameNo == -1) {
+      vg_assert(tid == VG_INVALID_THREADID);
+   }
+   else /* (frameNo >= 0) */ {
+      vg_assert(tid != VG_INVALID_THREADID);
+   }
+
    vg_assert(dn1 && dn2);
    vg_assert(described);
    vg_assert(var && var->name);
@@ -3152,7 +3161,8 @@ Bool VG_(get_data_description)(
                                                     var->typeR, offset );
             format_message( dname1, dname2,
                             data_addr, var, offset, residual_offset,
-                            described, -1/*frameNo*/, tid );
+                            described, -1/*frameNo*/,
+                            VG_INVALID_THREADID );
             VG_(deleteXA)( described );
             zterm_XA( dname1 );
             zterm_XA( dname2 );

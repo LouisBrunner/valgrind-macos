@@ -4123,7 +4123,7 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
       ppIRExpr(next);
       vex_printf("\n");
    }
-   cond = mk_PPCCondCode( Pct_ALWAYS, Pcf_7EQ );
+   cond = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
    ri = iselWordExpr_RI(env, next);
    addInstr(env, PPCInstr_RdWrLR(True, env->savedLR));
    addInstr(env, PPCInstr_Goto(jk, cond, ri));

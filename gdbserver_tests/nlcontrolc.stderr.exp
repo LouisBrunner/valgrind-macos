@@ -1,0 +1,9 @@
+Nulgrind, the minimal Valgrind tool
+
+(action at startup) vgdb me ... 
+loops/sleep_ms/burn/threads_spec:  1000000000 1000000000 1000000000 BSBSBSBS
+Brussels ready to sleep and/or burn
+London ready to sleep and/or burn
+Petaouchnok ready to sleep and/or burn
+main ready to sleep and/or burn
+

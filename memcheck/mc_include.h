@@ -355,6 +355,9 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
                                   Bool print_record,
                                   Bool count_error );
 
+/* prints a description of address a */
+void MC_(pp_describe_addr) (Addr a);
+
 /* Is this address in a user-specified "ignored range" ? */
 Bool MC_(in_ignored_range) ( Addr a );
 

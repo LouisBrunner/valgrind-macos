@@ -1,0 +1,7 @@
+relaying data between gdb and process ....
+vgdb-error value changed from 0 to 999999
+vgdb-error value changed from 999999 to 0
+n_errs_found 1 (vgdb-error 0)
+vgdb-error value changed from 0 to 0
+monitor command request to kill this process
+Remote connection closed

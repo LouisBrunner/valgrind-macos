@@ -1,0 +1,9 @@
+# test the memcheck monitor help
+prog: t
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mchelp
+stdout_filter: filter_make_empty
+stderr_filter: filter_make_empty
+progB: vgdb
+argsB: --wait=60 --vgdb-prefix=./vgdb-prefix-mchelp -c help -c help debug -c vg.kill
+stdoutB_filter: filter_memcheck_monitor
+stderrB_filter: filter_vgdb

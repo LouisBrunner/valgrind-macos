@@ -95,6 +95,14 @@ extern void VG_(scheduler_init_phase2) ( ThreadId main_tid,
                                          Addr     clstack_end, 
                                          SizeT    clstack_size );
 
+// Allows to disable the polling done to detect vgdb input
+// or to force a poll at next scheduler call.
+extern void VG_(disable_vgdb_poll) (void );
+extern void VG_(force_vgdb_poll) ( void );
+
+/* nr of bbs done since startup. */
+extern ULong VG_(bbs_done) (void);
+
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
 

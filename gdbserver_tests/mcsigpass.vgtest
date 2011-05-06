@@ -1,0 +1,10 @@
+# test the signal handling, when signals are passed to the Valgrind guest.
+prog: ../none/tests/faultstatus
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsigpass
+stderr_filter: filter_memcheck_monitor
+progB: gdb
+argsB: --quiet -l 60 --nx ../none/tests/faultstatus
+stdinB: mcsigpass.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_make_empty
+

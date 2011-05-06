@@ -191,6 +191,11 @@
    VG_(sigtimedwait_zero).  This is trivial on Linux, since it's just a
    syscall.  But on Darwin and AIX, we have to cobble together the
    functionality in a tedious, longwinded and probably error-prone way.
+
+   Finally, if a gdb is debugging the process under valgrind,
+   the signal can be ignored if gdb tells this. So, before resuming the
+   scheduler/delivering the signal, a call to VG_(gdbserver_report_signal)
+   is done. If this returns True, the signal is delivered.
  */
 
 #include "pub_core_basics.h"
@@ -204,6 +209,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debugger.h"      // For VG_(start_debugger)
 #include "pub_core_errormgr.h"
+#include "pub_core_gdbserver.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -656,11 +662,14 @@ typedef
 
 static SKSS skss;
 
-static Bool is_sig_ign(Int sigNo)
+/* returns True if signal is to be ignored. 
+   To check this, possibly call gdbserver with tid. */
+static Bool is_sig_ign(Int sigNo, ThreadId tid)
 {
    vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
-   return scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN;
+   return scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN
+      || !VG_(gdbserver_report_signal) (sigNo, tid);
 }
 
 /* ---------------------------------------------------------------------
@@ -1795,6 +1804,9 @@ static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
    info.si_code = si_code;
    info.VKI_SIGINFO_si_addr = (void*)addr;
 
+   /* even if gdbserver indicates to ignore the signal, we will deliver it */
+   VG_(gdbserver_report_signal) (VKI_SIGSEGV, tid);
+
    /* If they're trying to block the signal, force it to be delivered */
    if (VG_(sigismember)(&VG_(threads)[tid].sig_mask, VKI_SIGSEGV))
       VG_(set_default_handler)(VKI_SIGSEGV);
@@ -1833,8 +1845,12 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    info.si_code  = VKI_ILL_ILLOPC; /* jrs: no idea what this should be */
    info.VKI_SIGINFO_si_addr = (void*)addr;
 
-   resume_scheduler(tid);
-   deliver_signal(tid, &info, NULL);
+   if (VG_(gdbserver_report_signal) (VKI_SIGILL, tid)) {
+      resume_scheduler(tid);
+      deliver_signal(tid, &info, NULL);
+   }
+   else
+      resume_scheduler(tid);
 }
 
 // Synthesise a SIGBUS.
@@ -1854,8 +1870,12 @@ void VG_(synth_sigbus)(ThreadId tid)
       in .si_addr.  Oh well. */
    /* info.VKI_SIGINFO_si_addr = (void*)addr; */
 
-   resume_scheduler(tid);
-   deliver_signal(tid, &info, NULL);
+   if (VG_(gdbserver_report_signal) (VKI_SIGBUS, tid)) {
+      resume_scheduler(tid);
+      deliver_signal(tid, &info, NULL);
+   }
+   else
+      resume_scheduler(tid);
 }
 
 // Synthesise a SIGTRAP.
@@ -1890,8 +1910,12 @@ void VG_(synth_sigtrap)(ThreadId tid)
 #  endif
 
    /* fixs390: do we need to do anything here for s390 ? */
-   resume_scheduler(tid);
-   deliver_signal(tid, &info, &uc);
+   if (VG_(gdbserver_report_signal) (VKI_SIGTRAP, tid)) {
+      resume_scheduler(tid);
+      deliver_signal(tid, &info, &uc);
+   }
+   else
+      resume_scheduler(tid);
 }
 
 /* Make a signal pending for a thread, for later delivery.
@@ -2070,7 +2094,7 @@ void async_signalhandler ( Int sigNo,
 
    /* (2) */
    /* Set up the thread's state to deliver a signal */
-   if (!is_sig_ign(info->si_signo))
+   if (!is_sig_ign(info->si_signo, tid))
       deliver_signal(tid, info, uc);
 
    /* It's crucial that (1) and (2) happen in the order (1) then (2)
@@ -2342,10 +2366,15 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
       }
 
       if (VG_(in_generated_code)) {
-         /* Can't continue; must longjmp back to the scheduler and thus
-            enter the sighandler immediately. */
-         deliver_signal(tid, info, uc);
-         resume_scheduler(tid);
+         if (VG_(gdbserver_report_signal) (sigNo, tid)
+             || VG_(sigismember)(&tst->sig_mask, sigNo)) {
+            /* Can't continue; must longjmp back to the scheduler and thus
+               enter the sighandler immediately. */
+            deliver_signal(tid, info, uc);
+            resume_scheduler(tid);
+         }
+         else
+            resume_scheduler(tid);
       }
 
       /* If resume_scheduler returns or its our fault, it means we
@@ -2545,7 +2574,7 @@ void VG_(poll_signals)(ThreadId tid)
       /* OK, something to do; deliver it */
       if (VG_(clo_trace_signals))
          VG_(dmsg)("Polling found signal %d for tid %d\n", sip->si_signo, tid);
-      if (!is_sig_ign(sip->si_signo))
+      if (!is_sig_ign(sip->si_signo, tid))
 	 deliver_signal(tid, sip, NULL);
       else if (VG_(clo_trace_signals))
          VG_(dmsg)("   signal %d ignored\n", sip->si_signo);

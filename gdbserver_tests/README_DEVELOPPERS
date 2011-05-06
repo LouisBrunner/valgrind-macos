@@ -1,0 +1,203 @@
+Automatic regression tests:
+---------------------------
+The Valgrind gdbserver automatic tests are by default
+executed as part of the Valgrind test suite:
+   make regtest
+
+By default, these tests are running with the gdb found at
+Valgrind configure time.
+
+If you want to test with another gdb version, you can do:
+  make regtest GDB=/path/to/another/gdb
+
+or (to just run the gdbserver tests with another gdb):
+  cd gdbserver_tests
+  make check
+  cd ..
+  gdbserver_tests/make_local_links /path/to/another/gdb
+  perl tests/vg_regtest gdbserver_tests
+
+The minimum version to use the Valgrind gdbserver is gdb >= 6.5.
+    Previous versions do not have the 'target remote |' command.  It
+    would be possible to use an older version by having a tcp relay
+    application between gdb and vgdb (or, alternatively, change vgdb
+    so that it could read/write from/to a tcpip socket rather than
+    read/write from stdin/stdout.
+
+The tests have been run on various platforms using gdb 7.2
+and on some platforms gdb 7.0.
+Some gdb tests implies a gdb >= 7.2. (these are automatically disabled
+if testing with a lower version).
+
+Some tests implies to have a vgdb "ptrace invoker" capable.
+
+The prerequisite are established during make regtest (using marker files).
+Each test verifies the prerequisite using the prereq: line.
+
+
+Naming conventions:
+-------------------
+
+The gdbserver tests are done with various Valgrind tools.  A gdbserver
+test using a tool xxxxxx should have its name starting with the 'short
+two letters code' of this tool.  For example, the test mcvabits.vgtest
+is using Memcheck tool, while the test mssnapshot.vgtest is using
+massif tool.
+
+Typically, a gdbserver test implies to launch two programs:
+     prog: a program running under valgrind
+     progB: another program (typically, either gdb or vgdb standalone)
+The conventions about how to specify the 2nd program in a .vgtest
+are explained in the file ../tests/vg_regtest.in
+Many tests are using gdb as progB. The input for gdb is named
+xxxxxx.stdinB.gdb.
+
+One day, we might imagine to run tests in parallel.
+So, each test gets its own '--vgdb-prefix' argument.
+This also help to avoid interactions between two successive tests:
+if a previous test stayed blocked, the vgdb of the next test
+will not report an error due to multiple possible FIFOs.
+
+
+Rational for test approach
+--------------------------
+Two approaches have been looked at:
+  V: use the 'vg_regtest' approach used by the rest of Valgrind tests
+  G: use the gdb Dejagnu test framework.
+
+Advantages of V: much simpler that G, known by Valgrind developpers,
+no additional dependency for the Valgrind build and test.
+
+Disadvantages of V: not well suited to testing of interactive tools,
+very unflexible way to test the results (everything is in "template"
+files), templates contains often irrelevant data for the test but it
+can make the test fail.  After writing 13 tests, it looks like the
+template diff approach is quite fragile (e.g. changing the gdb version
+and/or the OS version influences the output of irrelevant things which
+are part of the template).
+
+A more flexible template filtering is needed.
+Maybe something like:
+The program under test is outputting its instructions to be filtered in
+special markers e.g.
+#pushf filter_addresses | filter_messages
+... some output
+#pushf an_additional_filter
+... some other output, filtered by both the first and second push
+#popf
+... here output filtered only by the first pushf
+#popf
+
+Advantages of G: much more powerful, well suited to test a gdb with a
+gdbserver, tests can verify specifically some output without being
+impacted by other output, allow to test Valgrind gdbserver with the
+all of the gdb test suite (but a lot of tests will rather test gdb
+than Valgrind gdbserver).
+
+Disadvantages: not an easy beast to understand and master, running the
+whole gdb testsuite with Valgrind gdbserver looks to be a challenge.
+
+Currently, tests are written with vg_regtest. Approach G will be looked at it
+again (e.g. to complement V) once a basic set of tests are available. 
+
+
+Manual tests still to automate:
+-------------------------------
+
+Validate  monitor commands abbreviation recognition
+***************************************************
+mo vg.info all_errors           # to show all errors recorded so far
+mo vg.i a                       # the same
+mo v                            # must give an error: v can match vg.set vg.info
+mo vg                           # the same            vg
+mo vg.                          # the same            vg.
+
+test of gdb detaching or dying
+******************************
+valgrind --vgdb=yes --vgdb-error=0 --vgdb-poll=500 ./t
+
+in another window
+
+gdb ./t
+set remotetimeout 100
+target remote|vgdb
+detach                          valgrind continues
+target remote|vgdb             reattach
+detach                          valgrind continues
+target remote|vgdb             reattach
+monitor vg.wait                 no effect
+
+
+
+test of valgrind/gdb output redirection
+***************************************
+valgrind --vgdb=yes --vgdb-error=1 --vgdb-poll=500 ./t
+
+in another window
+
+**** command to type***         ****** expected behaviour
+gdb ./t
+set remotetimeout 1000 
+target remote | vgdb
+mo vg.set vgdb-error 1000      # so that valgrind does stop only at error 1000 and after
+mo vg.set gdb_output            # to have further valgrind errors output in gdb
+c                               # continue, some errors will appear
+C-c                             # interrupt program
+mo vg.set log_output            # to set back the valgrind output to normal process log output
+mo mc.l                         # leak output to appear in log of process
+mo vg.set mixed_output
+mo mc.l                         # leak output to appear in gdb
+
+
+
+test with a big executable: firefox
+***********************************
+valgrind --vgdb=yes --vgdb-error=1000 --vgdb-poll=50000 --trace-children=yes firefox 2>&1 | tee f.out
+
+wait for some messages from the "big" firefox executable to appear.
+Then:
+
+gdb /usr/lib/firefox-3.5/firefox
+target remote | vgdb
+... then you can do various next/print/bt/bt full/break/... to see it is working
+
+bulk test with the above
+************************
+to verify there is no race condition/no reentrance problem 
+between gdbserver code and valgrind:
+start firefox like in the previous test.
+In another window, do:
+  while true
+  do
+    vgdb mc.leak
+    sleep 1
+  done
+
+NB: this will make firefox run extremely slow, as it will do a leak
+search every second.
+
+ 
+Test of "jump" functionality
+----------------------------
+... to be done : put two breaks, jump over one.
+... same but when error is encountered
+
+
+* test with --max-invoke-ms=0
+-----------------------------
+valgrind --vgdb=yes ./t
+... wait till you see "petachounok sleeping 4 of 15
+then try to gdb it
+
+!!!! this often causes gdb to report a protocol timeout.
+use gdb set remotetimeout <a big time> to avoid that.
+The symptoms of a timeout are:
+    (gdb) tar rem|vgdb --max-invoke-ms=0
+    Remote debugging using |vgdb --max-invoke-ms=0
+    relaying data between gdb and process 2930
+    Ignoring packet error, continuing...
+    warning: unrecognized item "timeout" in "qSupported" response
+
+* tests of shadow registers
+----------------------------
+Show/modify shadow registers

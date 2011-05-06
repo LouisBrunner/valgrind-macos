@@ -1,0 +1,6 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../tests/filter_stderr_basic    |
+sed -e '/^Copyright (C) /d'

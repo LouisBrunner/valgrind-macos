@@ -1,0 +1,64 @@
+Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsignopass
+0x........ in _start () from ...start file...
+Signal        Stop	Print	Pass to program	Description
+SIGSEGV       Yes	Yes	No		Segmentation fault
+Signal        Stop	Print	Pass to program	Description
+SIGBUS        Yes	Yes	Yes		Bus error
+Signal        Stop	Print	Pass to program	Description
+SIGFPE        Yes	Yes	Yes		Arithmetic exception
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Signal        Stop	Print	Pass to program	Description
+SIGSEGV       No	Yes	Yes		Segmentation fault
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+Program received signal SIGBUS, Bus error.
+0x........ in test3 () at faultstatus.c:115
+115		mapping[FILESIZE+10];
+Continuing.
+Program received signal SIGFPE, Arithmetic exception.
+0x........ in test4 () at faultstatus.c:120
+120		volatile int v = 44/zero();
+Continuing.

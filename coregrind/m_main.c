@@ -41,6 +41,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
+#include "pub_core_gdbserver.h"
 #include "pub_core_initimg.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -129,6 +130,9 @@ static void usage_NORETURN ( Bool debug_help )
 "                              but check the argv[] entries for children, rather\n"
 "                              than the exe name, to make a follow/no-follow decision\n"
 "    --child-silent-after-fork=no|yes omit child output between fork & exec? [no]\n"
+"    --vgdb=no|yes|full        activate gdbserver? [yes]\n"
+"                              full is slower but provides precise watchpoint/step\n"
+"    --vgdb-error=<number>     invoke gdbserver after <number> errors [%d] \n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -173,6 +177,9 @@ static void usage_NORETURN ( Bool debug_help )
 "                              and use it to print better error messages in\n"
 "                              tools that make use of it (Memcheck, Helgrind,\n"
 "                              DRD) [no]\n"
+"    --vgdb-poll=<number>      gdbserver poll max every <number> basic blocks [%d] \n"
+"    --vgdb-shadow-registers=no|yes   let gdb see the shadow registers [no]\n"
+"    --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [%s]\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer [none]\n"
@@ -252,8 +259,10 @@ static void usage_NORETURN ( Bool debug_help )
    VG_(log_output_sink).fd = 1;
    VG_(log_output_sink).is_socket = False;
 
-   /* 'usage1' expects one char* argument and one SizeT argument. */
-   VG_(printf)(usage1, gdb_path, VG_MIN_MALLOC_SZB);
+   /* 'usage1' expects two int, two char* argument, and one SizeT argument. */
+   VG_(printf)(usage1, 
+               VG_(clo_vgdb_error), gdb_path, VG_MIN_MALLOC_SZB,
+               VG_(clo_vgdb_poll), VG_(clo_vgdb_prefix)); 
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)
@@ -457,6 +466,14 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_BOOL_CLO(arg, "--stats",          VG_(clo_stats)) {}
       else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml)) {}
+      else if VG_XACT_CLO(arg, "--vgdb=no",        VG_(clo_vgdb), Vg_VgdbNo) {}
+      else if VG_XACT_CLO(arg, "--vgdb=yes",       VG_(clo_vgdb), Vg_VgdbYes) {}
+      else if VG_XACT_CLO(arg, "--vgdb=full",      VG_(clo_vgdb), Vg_VgdbFull) {}
+      else if VG_INT_CLO (arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
+      else if VG_INT_CLO (arg, "--vgdb-error",     VG_(clo_vgdb_error)) {}
+      else if VG_STR_CLO (arg, "--vgdb-prefix",    VG_(clo_vgdb_prefix)) {}
+      else if VG_BOOL_CLO(arg, "--vgdb-shadow-registers",
+                            VG_(clo_vgdb_shadow_registers)) {}
       else if VG_BOOL_CLO(arg, "--db-attach",      VG_(clo_db_attach)) {}
       else if VG_BOOL_CLO(arg, "--demangle",       VG_(clo_demangle)) {}
       else if VG_BOOL_CLO(arg, "--error-limit",    VG_(clo_error_limit)) {}
@@ -670,6 +687,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
+
+   VG_(dyn_vgdb_error) = VG_(clo_vgdb_error);
 
    if (VG_(clo_gen_suppressions) > 0 && 
        !VG_(needs).core_errors && !VG_(needs).tool_errors) {
@@ -2426,7 +2445,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    /* In XML mode, this merely prints the used suppressions. */
    if (VG_(needs).core_errors || VG_(needs).tool_errors)
-      VG_(show_all_errors)();
+      VG_(show_all_errors)(VG_(clo_verbosity), VG_(clo_xml));
 
    if (VG_(clo_xml)) {
       VG_(printf_xml)("\n");
@@ -2460,6 +2479,10 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    /* Flush any output cached by previous calls to VG_(message). */
    VG_(message_flush)();
+
+   /* terminate gdbserver if ever it was started. We terminate it here so that it get
+      the output above if output was redirected to gdb */
+   VG_(gdbserver) (0);
 
    /* Ok, finally exit in the os-specific way, according to the scheduler's
       return code.  In short, if the (last) thread exited by calling

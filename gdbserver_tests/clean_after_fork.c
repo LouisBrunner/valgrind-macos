@@ -1,0 +1,34 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+main()
+{
+   int mem = 0;
+   int pid;
+   
+   pid = fork();
+   if (pid == -1) {
+      mem = 1;
+      perror("fork");
+      exit(1);
+   }
+
+   if (pid == 0) {
+      if (mem == 0)
+         exit(0);
+      else
+         exit(1);
+   } else {
+      int ret;
+      int status;
+      while((ret = waitpid(pid, &status, 0)) != pid) {
+         if (errno != EINTR) {
+            perror("waitpid");
+            exit(1);
+         }
+      }
+      mem = status;
+   }
+   if (mem == 0)
+      printf("mem is zero\n");
+}

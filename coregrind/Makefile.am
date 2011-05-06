@@ -31,6 +31,7 @@ EXTRA_DIST = \
 
 bin_PROGRAMS = \
 	valgrind \
+	vgdb \
 	no_op_client_for_valgrind
 
 if VGCONF_OS_IS_LINUX
@@ -57,6 +58,12 @@ valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif
+
+vgdb_SOURCES = vgdb.c
+vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
+vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) -lpthread
 
 no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
 no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
@@ -147,6 +154,7 @@ noinst_HEADERS = \
 	pub_core_dispatch_asm.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
+	pub_core_gdbserver.h	\
 	pub_core_hashtable.h	\
 	pub_core_initimg.h	\
 	pub_core_libcbase.h	\
@@ -202,6 +210,12 @@ noinst_HEADERS = \
 	m_demangle/demangle.h	\
 	m_demangle/safe-ctype.h \
 	m_demangle/vg_libciface.h \
+	m_gdbserver/regcache.h \
+	m_gdbserver/regdef.h \
+	m_gdbserver/server.h \
+	m_gdbserver/target.h \
+	m_gdbserver/valgrind_low.h \
+	m_gdbserver/gdb/signals.h \
 	m_initimg/priv_initimg_pathscan.h \
 	m_initimg/simple_huffman.c \
 	m_scheduler/priv_sema.h \
@@ -291,12 +305,29 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-amd64-linux.S \
 	m_dispatch/dispatch-ppc32-linux.S \
 	m_dispatch/dispatch-ppc64-linux.S \
- 	m_dispatch/dispatch-arm-linux.S \
+	m_dispatch/dispatch-arm-linux.S \
 	m_dispatch/dispatch-s390x-linux.S \
 	m_dispatch/dispatch-ppc32-aix5.S \
 	m_dispatch/dispatch-ppc64-aix5.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
+	m_gdbserver/m_gdbserver.c \
+	m_gdbserver/inferiors.c \
+	m_gdbserver/m_gdbserver.c \
+	m_gdbserver/regcache.c \
+	m_gdbserver/remote-utils.c \
+	m_gdbserver/server.c \
+	m_gdbserver/signals.c \
+	m_gdbserver/target.c \
+	m_gdbserver/utils.c \
+	m_gdbserver/valgrind-low.c \
+	m_gdbserver/valgrind-low-x86.c \
+	m_gdbserver/valgrind-low-amd64.c \
+	m_gdbserver/valgrind-low-arm.c \
+	m_gdbserver/valgrind-low-ppc32.c \
+	m_gdbserver/valgrind-low-ppc64.c \
+	m_gdbserver/valgrind-low-s390x.c \
+	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-aix5.c \
 	m_initimg/initimg-darwin.c \
@@ -312,7 +343,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_sigframe/sigframe-ppc64-linux.c \
- 	m_sigframe/sigframe-arm-linux.c \
+	m_sigframe/sigframe-arm-linux.c \
 	m_sigframe/sigframe-s390x-linux.c \
 	m_sigframe/sigframe-ppc32-aix5.c \
 	m_sigframe/sigframe-ppc64-aix5.c \
@@ -322,7 +353,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-amd64-linux.S \
 	m_syswrap/syscall-ppc32-linux.S \
 	m_syswrap/syscall-ppc64-linux.S \
- 	m_syswrap/syscall-arm-linux.S \
+	m_syswrap/syscall-arm-linux.S \
 	m_syswrap/syscall-s390x-linux.S \
 	m_syswrap/syscall-ppc32-aix5.S \
 	m_syswrap/syscall-ppc64-aix5.S \
@@ -338,7 +369,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-amd64-linux.c \
 	m_syswrap/syswrap-ppc32-linux.c \
 	m_syswrap/syswrap-ppc64-linux.c \
- 	m_syswrap/syswrap-arm-linux.c \
+	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \
 	m_syswrap/syswrap-ppc32-aix5.c \
 	m_syswrap/syswrap-ppc64-aix5.c \
@@ -434,10 +465,103 @@ vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
 endif
 
 #----------------------------------------------------------------------------
+# gdbserver xml target descriptions
+#----------------------------------------------------------------------------
+pkglib_DATA =
+
+if VGCONF_ARCHS_INCLUDE_ARM
+pkglib_DATA += 	m_gdbserver/arm-core-valgrind-s1.xml \
+		m_gdbserver/arm-core-valgrind-s2.xml \
+		m_gdbserver/arm-core.xml \
+		m_gdbserver/arm-vfpv3-valgrind-s1.xml \
+		m_gdbserver/arm-vfpv3-valgrind-s2.xml \
+		m_gdbserver/arm-vfpv3.xml \
+		m_gdbserver/arm-with-vfpv3-valgrind.xml \
+		m_gdbserver/arm-with-vfpv3.xml
+endif
+
+if VGCONF_ARCHS_INCLUDE_X86
+pkglib_DATA += 	m_gdbserver/32bit-core-valgrind-s1.xml \
+		m_gdbserver/32bit-core-valgrind-s2.xml \
+		m_gdbserver/32bit-core.xml \
+		m_gdbserver/32bit-sse-valgrind-s1.xml \
+		m_gdbserver/32bit-sse-valgrind-s2.xml \
+		m_gdbserver/32bit-sse.xml
+if VGCONF_OS_IS_LINUX
+pkglib_DATA +=	m_gdbserver/32bit-linux-valgrind-s1.xml \
+		m_gdbserver/32bit-linux-valgrind-s2.xml \
+		m_gdbserver/32bit-linux.xml \
+		m_gdbserver/i386-linux-valgrind.xml
+endif
+if VGCONF_OS_IS_DARWIN
+pkglib_DATA +=	m_gdbserver/i386-coresse-valgrind.xml
+endif
+endif
+
+if VGCONF_ARCHS_INCLUDE_AMD64
+pkglib_DATA +=	m_gdbserver/64bit-core-valgrind-s1.xml \
+		m_gdbserver/64bit-core-valgrind-s2.xml \
+		m_gdbserver/64bit-core.xml \
+		m_gdbserver/64bit-sse-valgrind-s1.xml \
+		m_gdbserver/64bit-sse-valgrind-s2.xml \
+		m_gdbserver/64bit-sse.xml
+
+if VGCONF_OS_IS_LINUX
+pkglib_DATA +=	m_gdbserver/64bit-linux-valgrind-s1.xml \
+		m_gdbserver/64bit-linux-valgrind-s2.xml \
+		m_gdbserver/64bit-linux.xml \
+		m_gdbserver/amd64-linux-valgrind.xml
+endif
+if VGCONF_OS_IS_DARWIN
+pkglib_DATA +=	m_gdbserver/amd64-coresse-valgrind.xml
+endif
+endif
+
+if VGCONF_ARCHS_INCLUDE_PPC32
+pkglib_DATA +=	m_gdbserver/power-altivec-valgrind-s1.xml \
+		m_gdbserver/power-altivec-valgrind-s2.xml \
+		m_gdbserver/power-altivec.xml \
+		m_gdbserver/power-core.xml \
+		m_gdbserver/power-fpu-valgrind-s1.xml \
+		m_gdbserver/power-fpu-valgrind-s2.xml \
+		m_gdbserver/power-fpu.xml \
+		m_gdbserver/power-linux-valgrind-s1.xml \
+		m_gdbserver/power-linux-valgrind-s2.xml \
+		m_gdbserver/power-linux.xml \
+		m_gdbserver/powerpc-altivec32l-valgrind.xml \
+		m_gdbserver/powerpc-altivec32l.xml
+endif
+
+if VGCONF_ARCHS_INCLUDE_PPC64
+pkglib_DATA +=	m_gdbserver/power64-core-valgrind-s1.xml \
+		m_gdbserver/power64-core-valgrind-s2.xml \
+		m_gdbserver/power64-core.xml \
+		m_gdbserver/power64-linux-valgrind-s1.xml \
+		m_gdbserver/power64-linux-valgrind-s2.xml \
+		m_gdbserver/power64-linux.xml \
+		m_gdbserver/powerpc-altivec64l-valgrind.xml \
+		m_gdbserver/powerpc-altivec64l.xml
+if ! VGCONF_ARCHS_INCLUDE_PPC32
+pkglib_DATA +=	m_gdbserver/power-altivec-valgrind-s1.xml \
+		m_gdbserver/power-altivec-valgrind-s2.xml \
+		m_gdbserver/power-altivec.xml \
+		m_gdbserver/power-fpu-valgrind-s1.xml \
+		m_gdbserver/power-fpu-valgrind-s2.xml \
+		m_gdbserver/power-fpu.xml
+endif
+endif
+
+
+#----------------------------------------------------------------------------
 # General stuff
 #----------------------------------------------------------------------------
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
+	mkdir -p $(inplacedir); \
+	for f in $(pkglib_DATA); do \
+	  rm -f $(inplacedir)/$$f; \
+	  ln -f -s ../$(subdir)/$$f $(inplacedir); \
+	done
 
 clean-local: clean-noinst_DSYMS
 

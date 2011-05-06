@@ -4843,6 +4843,10 @@ typedef
              errors. */
           VG_USERREQ__COUNT_ERRORS = 0x1201,
 
+          /* Allows a string (gdb monitor command) to be passed to the tool
+             Used for interaction with vgdb/gdb */
+          VG_USERREQ__GDB_MONITOR_COMMAND = 0x1202,
+
           /* These are useful and can be interpreted by any tool that
              tracks malloc() et al, by using vg_replace_malloc.c. */
           VG_USERREQ__MALLOCLIKE_BLOCK = 0x1301,

@@ -1,0 +1,433 @@
+This file contains various notes/ideas/history/... related
+to gdbserver in valgrind.
+
+How to use Valgrind gdbserver ?
+-------------------------------
+This is described in the Valgrind user manual.
+Before reading the below, you better read the user manual first.
+
+What is gdbserver ?
+-------------------
+gdb debugger typically is used to debug a process running
+on the same machine : gdb uses system calls (such as ptrace) 
+to fetch data from the process being debugged
+or to change data in the process 
+or interrupt the process 
+or ...
+
+gdb can also debug processes running in a different computer
+(e.g. it can debug a process running on a small real time
+board).
+
+gdb does this by sending some commands (e.g. using tcp/ip) to a piece
+of code running on the remote computer. This piece of code (called a
+gdb stub in small boards, or gdbserver when the remote computer runs
+an OS such as GNU/linux) will provide a set of commands allowing gdb
+to remotely debug the process.  Examples of commands are: "get the
+registers", "get the list of running threads", "read xxx bytes at
+address yyyyyyyy", etc.  The definition of all these commands and the
+associated replies is the gdb remote serial protocol, which is
+documented in Appendix D of gdb user manual.
+
+The standard gdb distribution has a standalone gdbserver (a small
+executable) which implements this protocol and the needed system calls
+to allow gdb to remotely debug process running on a linux or MacOS or
+...
+
+Activation of gdbserver code inside valgrind
+--------------------------------------------
+The gdbserver code (from gdb 6.6, GPL2+) has been modified so as to
+link it with valgrind and allow the valgrind guest process to be
+debugged by a gdb speaking to this gdbserver embedded in valgrind.
+The ptrace system calls inside gdbserver have been replaced by reading
+the state of the guest.
+
+The gdbserver functionality is activated with valgrind command line
+options. If gdbserver is not enabled, then the impact on valgrind
+runtime is minimal: basically it just checks at startup the command
+line option to see that there is nothing to do for what concerns gdb
+server: there is a "if gdbserver is active" check in the translate
+function of translate.c and an "if" in the valgrind scheduler.
+If the valgrind gdbserver is activated (--vgdb=yes), the impact
+is minimal (from time to time, the valgrind scheduler checks a counter
+in memory). Option --vgdb-poll=yyyyy controls how often the scheduler
+will do a (somewhat) more heavy check to see if gdbserver needs to
+stop execution of the guest to allow debugging.
+If valgrind gdbserver is activated with --vgdb=full, then
+each instruction is instrumented with an additional call to a dirty
+helper. 
+
+How does gdbserver code interacts with valgrind ?
+-------------------------------------------------
+When an error is reported, the gdbserver code is called.  It reads
+commands from gdb using read system call on a FIFO (e.g. a command
+such as "get the registers").  It executes the command (e.g. fetches
+the registers from the guest state) and writes the reply (e.g. a
+packet containing the register data).  When gdb instructs gdbserver to
+"continue", the control is returned to valgrind, which then continues
+to execute guest code.  The FIFOs used to communication between
+valgrind and gdb are created at startup if gdbserver is activated
+according to the --vgdb=no/yes/full command line option.
+
+How are signals "handled" ?
+---------------------------
+When a signal is to be given to the guest, valgrind core first calls
+gdbserver (if a gdb is currently connected to valgrind, otherwise the
+signal is delivered immediately). If gdb instructs to give the signal
+to the process, the signal is delivered to the guest.  Otherwise, the
+signal is ignored (not given to the guest). The user can
+with gdb further decide to pass (or not pass) the signal.
+Note that some (fatal) signals cannot be ignored.
+
+How are "break/step/stepi/next/..." implemented ?
+-------------------------------------------------
+When a break is put by gdb on an instruction, a command is sent to the
+gdbserver in valgrind. This causes the basic block of this instruction
+to be discarded and then re-instrumented so as to insert calls to a
+dirty helper which calls the gdb server code.  When a block is
+instrumented for gdbserver, all the "jump targets" of this block are
+invalidated, so as to allow step/stepi/next to properly work: these
+blocks will themselves automatically be re-instrumented for gdbserver
+if they are jumped to.
+The valgrind gdbserver remembers which blocks have been instrumented
+due to this "lazy 'jump targets' debugging instrumentation" so as to
+discard these "debugging translation" when gdb instructs to continue
+the execution normally.
+The blocks in which an explicit break has been put by the user
+are kept instrumented for gdbserver.
+(but note that by default, gdb removes all breaks when the
+process is stopped, and re-inserts all breaks when the process
+is continued). This behaviour can be changed using the gdb
+command 'set breakpoint always-inserted'.
+
+How are watchpoints implemented ?
+---------------------------------
+Watchpoints implies support from the tool to detect that
+a location is read and/or written. Currently, only memcheck
+supports this : when a watchpoint is placed, memcheck changes
+the addressability bits of the watched memory zone to be unacessible.
+Before an access, memcheck then detects an error, but sees this error
+is due to a watchpoint and gives the control back to gdb.
+Stopping on the exact instruction for a write watchpoint implies
+to use --vgdb=full. This is because the error is detected by memcheck
+before modifying the value. gdb checks that the value has not changed
+and so "does not believe" the information that the write watchpoint
+was triggered, and continues the execution. At the next watchpoint
+occurence, gdb sees the value has changed. But the watchpoints are all
+reported "off by one". To avoid this, Valgrind gdbserver must
+terminate the current instruction before reporting the write watchpoint.
+Terminating precisely the current instruction implies to have
+instrumented all the instructions of the block for gdbserver even
+if there is no break in this block. This is ensured by --vgdb=full.
+See m_gdbserver.c Bool VG_(is_watched) where watchpoint handling
+is implemented.
+
+How is the Valgrind gdbserver receiving commands/packets from gdb ?
+-------------------------------------------------------------------
+The embedded gdbserver reads gdb commands on a named pipe having
+(by default) the name   /tmp/vgdb-pipe-from-vgdb-to-%d
+where %d will be replaced by the pid.
+The embedded gdbserver will reply to gdb commands on a named pipe
+/tmp/vgdb-pipe-to-vgdb-from-%d
+
+gdb does not speak directly with gdbserver in valgrind: a relay application
+called vgdb is needed between gdb and the valgrind-ified process.
+gdb writes commands on the stdin of vgdb. vgdb reads these
+commands and writes them on FIFO /tmp/vgdb-pipe-from-vgdb-to-%d.
+vgdb reads replies on FIFO /tmp/vgdb-pipe-to-vgdb-from-%d and writes
+them on its stdout. 
+
+Note: The solution of named pipes was preferred to tcp ip connections as
+it allows a discovery of which valgrind-ified processes are ready to accept
+command by looking at files starting with the /tmp/vgdb-pipe- prefix
+(changeable by a command line option).
+Also, the usual unix protections are protecting 
+the valgrind process against other users sending commands.
+The relay process also takes into account the wake up of the valgrind
+process in case all threads are blocked in a system call.
+The relay process can also be used in a shell to send commands
+without a gdb (this allows to have a standard mechanism to control
+valgrind tools from the command line, rather than specialized mechanism
+e.g. in callgrind).
+
+How is gdbserver activated if all Valgrind threads are blocked in a syscall ?
+-----------------------------------------------------------------------------
+vgdb relays characters from gdb to valgrind. The scheduler will from
+time to time check if gdbserver has to handle incoming characters.
+(the check is efficient i.e. most of the time consists in checking
+a counter in (shared) memory).
+
+However, it might be that all the threads in the valgrind process are
+blocked in a system call. In such a case, no polling will be done by
+the valgrind scheduler (as no activity takes place).  By default, vgdb
+will check after 100ms if the characters it has written have been read
+by valgrind. If not, vgdb will force the invocation of the gdbserver
+code inside the valgrind process.
+
+This forced invocation is implemented using the ptrace system call:
+using ptrace, vgdb will cause the valgrind process to call the
+gdbserver code.
+
+This wake up is *not* done using signals as this would imply to
+implement a syscall restart logic in valgrind for all system
+calls. When using ptrace as above, the linux kernel is responsible to
+restart the system call.
+
+This wakeup is also *not* implemented by having a "system thread"
+started by valgrind as this would transform all non-threaded programs
+in threaded programs when running under valgrind. Also, such a 'system
+thread' for gdbserver was tried by Greg Parker in the early MacOS
+port, and was unreliable.  
+
+So, the ptrace based solution was chosen instead.
+
+There used to be some bugs in the kernel when using ptrace on 
+a process blocked in a system call : the symptom is that the system
+call fails with an unknown errno 512. This typically happens
+with a vgdb in 64bits ptrace-ing a 32 bits process.
+A bypass for old kernels has been integrated in vgdb.c (sign extend
+register rax).
+
+At least on a fedora core 12 (kernel 2.6.32), syscall restart of read
+and select are working ok and red-hat 5.3 (an old kernel), everything
+works properly.
+
+Need to investigate if darwin and/or AIX can similarly do syscall
+restart with ptrace.
+
+The vgdb argument --max-invoke-ms=xxx allows to control the nr of
+milli-seconds after which vgdb will force the invocation of gdbserver
+code.  If xxx is 0, this disables the forced invocation.
+Also, disabling this ptrace mechanism is necessary in case you are
+debugging the valgrind code at the same time as debugging the guest
+process using gdbserver.
+
+Do not kill -9 vgdb while it has interrupted the valgrind process,
+otherwise the valgrind process will very probably stay stopped or die.
+
+
+Implementation is based on the gdbserver code from gdb 6.6
+----------------------------------------------------------
+The gdbserver implementation is derived from the gdbserver included
+in the gdb distribution.
+The files originating from gdb are : inferiors.c, regcache.[ch],
+regdef.h, remote-utils.c, server.[ch], signals.c, target.[ch], utils.c,
+version.c.
+valgrind-low-* are inspired from gdb files.
+
+This code had to be changed to integrate properly within valgrind
+(e.g. no libc usage).  Some of these changes have been ensured by
+using the preprocessor to replace calls by valgrind equivalent,
+e.g. #define memcpy(...) VG_(memcpy) (...).
+
+Some "control flow" changes are due to the fact that gdbserver inside
+valgrind must return the control to valgrind when the 'debugged'
+process has to run, while in a classical gdbserver usage, the
+gdbserver process waits for a debugged process to stop on a break or
+similar.  This has implied to have some variables to remember the
+state of gdbserver before returning to valgrind (search for
+resume_packet_needed in server.c) and "goto" the place where gdbserver
+expects a stopped process to return control to gdbserver.
+
+How does a tool need to be changed to be "debuggable" ?
+-------------------------------------------------------
+There is no need to modify a tool to have it "debuggable" via
+gdbserver : e.g. reports of errors, break etc will work "out of the
+box".  If an interactive usage of tool client requests or similar is
+desired for a tool, then simple code can be written for that via a
+specific client request VG_USERREQ__GDB_MONITOR_COMMAND code. The tool
+function "handle_client_request" must then parse the string received
+in argument and call the expected valgrind or tool code.  See
+e.g. massif ms_handle_client_request as an example.
+
+
+Automatic regression tests:
+---------------------------
+Automatic Valgrind gdbserver tests are in the directory
+$(top_srcdir)/gdbserver_tests.
+Read $(top_srcdir)/gdbserver_tests/README_DEVELOPPERS for more
+info about testing.
+
+How to integrate support for a new architecture xxx?
+----------------------------------------------------
+Let's imagine a new architecture hal9000 has to be supported.
+
+Mandatory:
+The main thing to do is to make a file valgrind-low-hal9000.c.
+Start from an existing file (e.g. valgrind-low-x86.c).
+The data structures 'struct reg regs'
+and 'const char *expedite_regs' are build from files
+in the gdb sources, e.g. for an new arch hal9000
+   cd gdb/regformats
+   ./regdat.sh reg-hal9000.dat hal9000
+
+From the generated file hal9000, you copy/paste in
+valgrind-low-hal9000.c the two needed data structures and change their
+name to 'regs' and 'expedite_regs'
+
+Then adapt the set of functions needed to initialize the structure
+'static struct valgrind_target_ops low_target'.
+
+Optional but heavily recommended:
+To have a proper wake up of a Valgrind process with all threads
+blocked in a system call, some architecture specific code
+has to be done in vgdb.c : search for PTRACEINVOKER processor symbol
+to see what has to be completed.
+
+For Linux based platforms, all the ptrace calls should be ok.
+The only thing needed is the code needed to "push a dummy call" on the stack,
+i.e. assign the relevant registers in the struct user_regs_struct, and push
+values on the stack according to the ABI.
+
+For other platforms (i.e. Macos), more work is needed as the ptrace calls
+on Macos are either different and/or incomplete (and so, 'Mach' specific
+things are needed e.g. to attach to threads etc).
+A courageous Mac aficionado is welcome on this aspect.
+
+Optional:
+To let gdb see the Valgrind shadow registers, xml description
+files have to be provided + valgrind-low-hal9000.c has
+to give the top xml file.
+Start from the xml files found in the gdb distribution directory
+gdb/features. You need to duplicate and modify these files to provide
+shadow1 and shadow2 register sets description.
+
+Modify coregrind/Makefile.am:
+    add valgrind-low-hal9000.c
+    If you have target xml description, also add them in pkglib_DATA 
+
+
+A not handled comment given by Julian at FOSDEM.
+------------------------------------------------
+* the check for vgdb-poll in scheduler.c could/should be moved to another place:
+    instead of having it in run_thread_for_a_while
+    the vgdb poll check could be in VG_(scheduler).
+  (not clear to me why one is better than the other ???)
+
+TODO and/or additional nice things to have
+------------------------------------------
+* many options can be changed on-line without problems.
+  => would be nice to have a vg.option command that would evaluate
+  its arguments like the  startup options of m_main.c and tool clo processing.
+
+* have a mc.who_points_at <address> | <loss_record_nr>
+    that would describe the addresses where a pointer is found
+    to address (or address leaked at loss_record_nr>)
+  This would allow to interactively searching who is "keeping" a piece
+  of memory.
+
+* some GDBTD in the code 
+
+(GDBTD = GDB To Do = something still to look at and/or a question)
+
+* All architectures and platforms are done.
+  But there are still some "GDBTD" to convert between gdb registers
+  and VEX registers :
+  e.g. some registers in x86 or amd64 that I could not
+  translate to VEX registers. Someone with a good knowledge
+  of these architectures might complete this 
+  (see the GDBTD in valgrind-low-*.c)
+
+* "hardware" watchpoint (read/write/access watchpoints) are implemented 
+  but can't persuade gdb to insert a hw watchpoint of what valgrind
+  supports (i.e. of whatever length).
+  The reason why gdb does not accept a hardware watch of let's say
+  10 bytes is:
+default_region_ok_for_hw_watchpoint (addr=134520360, len=10) at target.c:2738
+2738	  return (len <= gdbarch_ptr_bit (target_gdbarch) / TARGET_CHAR_BIT);
+#0  default_region_ok_for_hw_watchpoint (addr=134520360, len=10)
+    at target.c:2738
+2738	  return (len <= gdbarch_ptr_bit (target_gdbarch) / TARGET_CHAR_BIT);
+#1  0x08132e65 in can_use_hardware_watchpoint (v=0x85a8ef0)
+    at breakpoint.c:8300
+8300		  if (!target_region_ok_for_hw_watchpoint (vaddr, len))
+#2  0x0813bd17 in watch_command_1 (arg=0x84169f0 "", accessflag=2, 
+    from_tty=<value optimized out>) at breakpoint.c:8140
+  A small patch in gdb remote.c allowed to control the remote target watchpoint
+  length limit. This patch is to be submitted.
+
+* Currently, at least on recent linux kernel, vgdb can properly wake
+  up a valgrind process which is blocked in system calls. Maybe we
+  need to see till which kernel version the ptrace + syscall restart
+  is broken, and put the default value of --max-invoke-ms to 0 in this
+  case.
+
+* more client requests can be programmed in various tools.  Currently,
+  there are only a few standard valgrind or memcheck client requests
+  implemented.
+  vg.suppression [generate|add|delete] might be an interesting command: 
+     generate would output a suppression, add/delete would add a suppression
+     in memory for the last (or selected?) error.
+  vg.break on fn calls/entry/exit + commands associated to it 
+    (such as search leaks)?
+
+
+
+* currently jump(s) and inferior call(s) are somewhat dangerous
+  when called from a block not yet instrumented : instead
+  of continuing till the next Imark, where there will be a
+  debugger call that can properly jump at an instruction boundary,
+  the jump/call will quit the "middle" of an instruction.
+  We could detect if the current block is instrumented by a trick
+  like this:
+     /* Each time helperc_CallDebugger is called, we will store
+        the address from which is it called and the nr of bbs_done
+        when called. This allows to detect that gdbserver is called
+        from a block which is instrumented. */
+     static HWord CallDebugger_addr;
+     static ULong CallDebugger_bbs_done;
+
+     Bool VG_(gdbserver_current_IP_instrumented) (ThreadId tid)
+     {
+        if (VG_(get_IP) (tid) != CallDebugger_addr
+            || CallDebugger_bbs_done != VG_(bbs_done)())
+           return False;
+        return True;
+     }
+
+  Alternatively, we ensure we can re-instrument the current
+  block for gdbserver while executing it.
+  Something like:
+  keep current block till the end of the current instruction, then
+  go back to scheduler.
+  Unsure if and how this is do-able.
+
+
+* ensure that all non static symbols of gdbserver files are #define
+  xxxxx VG_(xxxxx) ???? Is this really needed ? I have tried to put in
+  a test program variables and functions with the same name as valgrind
+  stuff, and everything seems to be ok.
+  I see that all exported symbols in valgrind have a unique prefix
+  created with VG_ or MC_ or ...
+  This is not done for the "gdb gdbserver code", where I have kept
+  the original names. Is this a problem ? I could not create
+  a "symbol" collision between the user symbol and the valgrind
+  core gdbserver symbol.
+
+* currently, gdbserver can only stop/continue the whole process. It
+  might be interesting to have a fine-grained thread control (vCont
+  packet) maybe for tools such as helgrind, drd.  This would allow the
+  user to stop/resume specific threads.  Also, maybe this would solve
+  the following problem: wait for a breakpoint to be encountered,
+  switch thread, next. This sometimes causes an internal error in gdb,
+  probably because gdb believes the current thread will be continued ?
+
+* would be nice to have some more tests.
+
+* better valgrind target support in gdb (see comments of Tom Tromey).
+
+
+-------- description of how gdb invokes a function in the inferior
+to call a function in the inferior (below is for x86):
+gdb writes ESP and EBP to have some more stack space
+push a return address equal to  0x8048390 <_start>
+puts a break                at  0x8048390
+put address of the function to call (e.g. hello_world in EIP (0x8048444))
+continue
+break encountered at 0x8048391 (90 after decrement)
+  => report stop to gdb
+  => gdb restores esp/ebp/eip to what it was (eg. 0x804848C)
+  => gdb "s" => causes the EIP to go to the new EIP (i.e. 0x804848C)
+     gdbserver tells "resuming from 0x804848c"
+                     "stop pc is 0x8048491" => informed gdb of this
+

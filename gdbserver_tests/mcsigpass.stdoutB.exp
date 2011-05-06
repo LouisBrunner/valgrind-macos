@@ -1,0 +1,19 @@
+Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsigpass
+0x........ in _start () from ...start file...
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test1 () at faultstatus.c:105
+105		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+0x........ in test2 () at faultstatus.c:110
+110		mapping[0] = 'x';
+Continuing.
+Program received signal SIGBUS, Bus error.
+0x........ in test3 () at faultstatus.c:115
+115		mapping[FILESIZE+10];
+Continuing.
+Program received signal SIGFPE, Arithmetic exception.
+0x........ in test4 () at faultstatus.c:120
+120		volatile int v = 44/zero();
+Continuing.

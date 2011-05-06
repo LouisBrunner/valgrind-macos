@@ -68,7 +68,11 @@ struct vg_stat {
    ULong   ctime_nsec;
 };
 
+extern SysRes VG_(mknod)  ( const Char* pathname, Int mode, UWord dev );
 extern SysRes VG_(open)   ( const Char* pathname, Int flags, Int mode );
+/* fd_open words like the open(2) system call: 
+   returns fd if success, -1 otherwise */
+extern Int VG_(fd_open)  (const Char* pathname, Int flags, Int mode);
 extern void   VG_(close)  ( Int fd );
 extern Int    VG_(read)   ( Int fd, void* buf, Int count);
 extern Int    VG_(write)  ( Int fd, const void* buf, Int count);
@@ -81,6 +85,8 @@ extern SysRes VG_(dup)    ( Int oldfd );
 extern SysRes VG_(dup2)   ( Int oldfd, Int newfd );
 extern Int    VG_(rename) ( const Char* old_name, const Char* new_name );
 extern Int    VG_(unlink) ( const Char* file_name );
+
+extern Int    VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
 
 extern Int    VG_(readlink)( const Char* path, Char* buf, UInt bufsize );
 extern Int    VG_(getdents)( Int fd, struct vki_dirent *dirp, UInt count );

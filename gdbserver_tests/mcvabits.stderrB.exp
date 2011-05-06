@@ -1,0 +1,55 @@
+relaying data between gdb and process ....
+vgdb-error value changed from 0 to 999999
+Address 0x........ len 10 addressable
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+Address 0x........ len 10 defined
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+00000000 00000000 0000
+Address 0x........ len 10 addressable
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+Address 0x........ len 10 not defined:
+Uninitialised value at 0x........
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+ff00ff00 ff00ff00 ff00
+Address 0x........ len 10 addressable
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+Address 0x........ len 10 not defined:
+Uninitialised value at 0x........
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+ff000000 0000ff00 ff00
+Address 0x........ len 10 addressable
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+Address 0x........ len 10 not defined:
+Uninitialised value at 0x........
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+ff00ffff ffffff00 ff00
+Address 0x........ len 2 addressable
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+Address 0x........ len 2 not defined:
+Uninitialised value at 0x........
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+ff00
+Address 0x........ len 2 not addressable:
+bad address 0x........
+ Address 0x........ is 2 bytes inside data symbol "undefined"
+Address 0x........ len 2 not addressable:
+bad address 0x........
+ Address 0x........ is 2 bytes inside data symbol "undefined"
+____
+Address 0x........ len 2 has 2 bytes unaddressable
+Address 0x........ len 6 addressable
+ Address 0x........ is 4 bytes inside data symbol "undefined"
+Address 0x........ len 6 not defined:
+Uninitialised value at 0x........
+ Address 0x........ is 4 bytes inside data symbol "undefined"
+ffffff00 ff00
+Address 0x........ len 10 not addressable:
+bad address 0x........
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+Address 0x........ len 10 not addressable:
+bad address 0x........
+ Address 0x........ is 0 bytes inside data symbol "undefined"
+0000____ 00000000 0000
+Address 0x........ len 10 has 2 bytes unaddressable
+monitor command request to kill this process
+Remote connection closed

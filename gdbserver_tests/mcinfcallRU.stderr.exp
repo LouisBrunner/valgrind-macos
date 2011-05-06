@@ -1,0 +1,7 @@
+loops/sleep_ms/burn/threads_spec:  1 0 2000000000 B-B-B-B-
+Brussels ready to sleep and/or burn
+London ready to sleep and/or burn
+Petaouchnok ready to sleep and/or burn
+main ready to sleep and/or burn
+pid .... Thread .... inferior call pushed from gdb in mcinfcallRU.stdinB.gdb
+Reset valgrind output to log (orderly_finish)

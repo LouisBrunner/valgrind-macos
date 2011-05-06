@@ -1,0 +1,33 @@
+Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcwatchpoints
+0x........ in _start () from ...start file...
+Breakpoint 1 at 0x........: file watchpoints.c, line 7.
+Continuing.
+Breakpoint 1, breakme (line=19) at watchpoints.c:7
+7	   fprintf(stderr, "breakme function called from line %d\n", line);
+Hardware read watchpoint 2: undefined[0]
+Hardware access (read/write) watchpoint 3: undefined[4]
+Hardware watchpoint 4: undefined[8]
+Continuing.
+Hardware read watchpoint 2: undefined[0]
+Value = 117 'u'
+main (argc=1, argv=0x........) at watchpoints.c:23
+23	   if (undefined[0] == 'u')
+Continuing.
+Hardware access (read/write) watchpoint 3: undefined[4]
+Value = 102 'f'
+main (argc=1, argv=0x........) at watchpoints.c:28
+28	   if (undefined[4] == 'f')
+Continuing.
+Hardware access (read/write) watchpoint 3: undefined[4]
+Old value = 102 'f'
+New value = 70 'F'
+main (argc=1, argv=0x........) at watchpoints.c:46
+46	   fprintf(stderr, "before writing 8\n");
+Continuing.
+Hardware watchpoint 4: undefined[8]
+Old value = 100 'd'
+New value = 68 'D'
+main (argc=1, argv=0x........) at watchpoints.c:49
+49	   fprintf(stderr, "after writing 8\n");
+Delete all breakpoints? (y or n) [answered Y; input not from terminal]
+Continuing.

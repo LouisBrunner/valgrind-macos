@@ -36,6 +36,7 @@
 #include "global.h"
 
 #include "pub_tool_threadstate.h"
+#include "pub_tool_gdbserver.h"
 
 #include "cg_branchpred.c"
 
@@ -1355,11 +1356,56 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
 		 reason, state ? "ON" : "OFF");
 }
   
+static void print_monitor_help ( void )
+{
+   VG_(gdb_printf) ("\n");
+   VG_(gdb_printf) ("callgrind monitor commands:\n");
+   VG_(gdb_printf) ("  ct.dump [<dump_hint>]\n");
+   VG_(gdb_printf) ("        dump counters\n");
+   VG_(gdb_printf) ("  ct.zero\n");
+   VG_(gdb_printf) ("        zero counters\n");
+   VG_(gdb_printf) ("\n");
+}
+
+/* return True if request recognised, False otherwise */
+static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
+{
+   Char* wcmd;
+   Char s[VG_(strlen(req))]; /* copy for strtok_r */
+   Char *ssaveptr;
+
+   VG_(strcpy) (s, req);
+
+   wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
+   switch (VG_(keyword_id) ("help ct.dump ct.zero", 
+                            wcmd, kwd_report_duplicated_matches)) {
+   case -2: /* multiple matches */
+      return True;
+   case -1: /* not found */
+      return False;
+   case  0: /* help */
+      print_monitor_help();
+      return True;
+   case  1: { /* ct.dump */
+      CLG_(dump_profile)(req, False);
+      return True;
+   }
+   case  2: { /* ct.zero */
+      CLG_(zero_all_cost)(False);
+      return True;
+   }
+
+   default: 
+      tl_assert(0);
+      return False;
+   }
+}
 
 static
 Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 {
-   if (!VG_IS_TOOL_USERREQ('C','T',args[0]))
+   if (!VG_IS_TOOL_USERREQ('C','T',args[0])
+       && VG_USERREQ__GDB_MONITOR_COMMAND   != args[0])
       return False;
 
    switch(args[0]) {
@@ -1399,6 +1445,14 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
      *ret = 0;                 /* meaningless */
      break;
 
+   case VG_USERREQ__GDB_MONITOR_COMMAND: {
+      Bool handled = handle_gdb_monitor_command (tid, (Char*)args[1]);
+      if (handled)
+         *ret = 1;
+      else
+         *ret = 0;
+      return handled;
+   }
    default:
       return False;
    }

@@ -1,0 +1,95 @@
+#! /bin/sh
+
+# filter the output of gdb.
+
+dir=`dirname $0`
+
+$dir/filter_stderr                                                  |
+
+# Anonymise addresses
+$dir/../tests/filter_addresses                                      |
+
+# memcheck stuff
+$dir/filter_memcheck_monitor                                        |
+
+
+# Anonymise or remove :
+#       initial tty control character sent by gdb 7.0
+#       remove missing debuginfos
+#       vgdb message
+#       pid numbers
+#       Thread numbers
+#       delete thread switches
+#       info threads output (e.g. which thread is running and syscall)
+#       delete Reading symbols file lines
+#       delete Loaded symbols file lines
+#       initial break message
+#       remove gdb prompts.
+#       remove gdb continuation prompts.
+#       remove gdb done prompts.
+#       a 'general' system calls stack trace part
+#       a more specialised system call select stack trace part
+#             (on 32 bits, we have an int_80, on 64 bits, directly select)
+#       and yet another (gdb 7.0 way) to get a system call
+#       and yet another (gdb 7.0 arm way) to get a system call
+#       and cleanup some lines for a system call (on ubuntu 10 64 bits)
+#           (pay attention : there are tab characters there in)
+#           + yet another way to get a select system call
+#       which registers can't be modified
+#       special transform for arm/ppc watchpoints which have an additional address
+#              at the beginning
+#       special transform for backtrace of arm division by zero which gives
+#             a location in the nptl lib rather than our sources (same as
+#              standard gdb gdbserver) gdb 7.0
+#       same special transform but for gdb 7.2
+#       delete lines telling that some memory can't be accessed: this is
+#         a.o. produced by gdb 7.2 on arm (same with standard gdbserver)
+#       delete empty lines (the last line (only made of prompts) sometimes
+#           finishes with a new line, sometimes not ???).
+sed -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
+    -e '/Missing separate debuginfos, use: debuginfo-install/d'                                       \
+    -e 's/\(relaying data between gdb and process \)[0-9][0-9]*/\1..../'                              \
+    -e 's/pid [0-9][0-9]*/pid ..../g'                                                                 \
+    -e 's/Thread [0-9][0-9]*/Thread ..../g'                                                           \
+    -e '/\[Switching to Thread ....\]/d'                                                              \
+    -e 's/^\([ \* ] [0-9] Thread .... (tid [0-9] VgTs_WaitSys)  0x........ in\).*$/\1 syscall .../'   \
+    -e 's/#[0-9]\(  0x........ in sleeper_or_burner\)/#.\1/'                                          \
+    -e '/^Reading symbols from .*\.\.\.done\./d'                                                      \
+    -e '/^Loaded symbols for .*$/d'                                                                   \
+    -e '1,8s/_start () from [^ ][^ ]*/_start () from ...start file.../'                               \
+    -e '1,8s/\(0x........ in\) ?? () from \/lib\/ld-linux\.so\../\1 _start () from ...start file.../' \
+    -e '1,8s/\(0x........ in\) ?? () from \/lib\/ld\.so\../\1 _start () from ...start file.../'       \
+    -e '1,8s/\(0x........ in\) ?? () from \/lib64\/ld64\.so\../\1 _start () from ...start file.../'   \
+    -e '1,8s/\(0x........ in\) ?? () from \/lib64\/ld-linux-x86-64\.so\../\1 _start () from ...start file.../'   \
+    -e '1,8s/\(0x........ in\) ?? ()$/\1 _start () from ...start file.../'                            \
+    -e 's/(gdb) //g'                                                                                  \
+    -e 's/^>[> ]*//'                                                                                  \
+    -e '/^done\.$/d'                                                                                  \
+    -e 's/in _dl_sysinfo_int80 () from \/lib\/ld-linux.so.*/in syscall .../'                          \
+    -e 's/in _dl_sysinfo_int80 ()/in syscall .../'                                                    \
+    -e '/^   from \/lib\/ld-linux.so.*$/d'                                                            \
+    -e 's/\(0x........\) in ?? () from \/lib\/ld-linux\.so\../\1 in syscall .../'                     \
+    -e 's/\(0x........\) in ?? () from \/lib64\/tls\/libc\.so\../\1 in syscall .../'                  \
+    -e 's/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../'                                      \
+    -e '/^   from \/lib\/libc.so.*$/d'                                                                \
+    -e 's/in select ()$/in syscall .../'                                                              \
+    -e 's/in select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../'                \
+    -e '/^[ 	]*at \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \
+    -e '/^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \
+    -e '/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d'                                 \
+    -e '/^[1-9][0-9]*[ 	]in *\.\.\/sysdeps\/unix\/syscall-template\.S/d'                              \
+    -e 's/\(Could not write register \)".*"/\1 "xxx"/'                                                \
+    -e 's/\(ERROR changing register \).*$/\1 xxx regno y/'                                            \
+    -e 's/0x........ in \(main (argc=1, argv=0x........) at watchpoints.c:[24][3689]\)/\1/'           \
+    -e 's/0x........ in \(main () at clean_after_fork.c:32\)/\1/'                                     \
+    -e 's/0x........ in \*__GI_raise (sig=8)/0x........ in test4 () at faultstatus.c:120/'            \
+    -e 's/    at ..\/nptl\/sysdeps\/unix\/sysv\/linux\/raise.c:[0-9]*/120		volatile int v = 44\/zero();/' \
+    -e '/	in ..\/nptl\/sysdeps\/unix\/sysv\/linux\/raise.c/d'                                   \
+    -e 's/0x........ in \.\{0,1\}raise () from \/lib[0-9]\{0,2\}\/libc\.so\../0x........ in test4 () at faultstatus.c:120\n120		volatile int v = 44\/zero();'/ \
+    -e '/Cannot access memory at address 0x......../d'                                                \
+    -e '/^$/d' |
+
+# join together two lines that gdb 7.1 splits in two (???)
+# (in a separate sed, as the below influences the behaviour of the other expressions)
+sed    -e :a -e '$!N;s/\n    at sleepers.c:39/ at sleepers.c:39/;ta' -e 'P;D'
+

@@ -1,0 +1,11 @@
+# test execution control (break, next, step) and inferior calls
+# when stopped on these events
+prog: t
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcbreak
+stdout_filter: filter_gdb
+stderr_filter: filter_make_empty
+progB: gdb
+argsB:  --quiet -l 60 --nx ./t
+stdinB: mcbreak.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_memcheck_monitor

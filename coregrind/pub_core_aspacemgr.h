@@ -283,10 +283,16 @@ extern SysRes VG_(am_mmap_anon_float_valgrind)( SizeT cszB );
 extern SysRes VG_(am_sbrk_anon_float_valgrind)( SizeT cszB );
 
 
-/* Map a file at an unconstrained address for V, and update the
+/* Map privately a file at an unconstrained address for V, and update the
    segment array accordingly.  This is used by V for transiently
    mapping in object files to read their debug info.  */
 extern SysRes VG_(am_mmap_file_float_valgrind)
+   ( SizeT length, UInt prot, Int fd, Off64T offset );
+
+/* Map shared a file at an unconstrained address for V, and update the
+   segment array accordingly.  This is used by V for communicating
+   with vgdb.  */
+extern SysRes VG_(am_shared_mmap_file_float_valgrind)
    ( SizeT length, UInt prot, Int fd, Off64T offset );
 
 /* Unmap the given address range and update the segment array

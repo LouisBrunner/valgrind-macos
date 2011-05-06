@@ -58,11 +58,13 @@ extern Int  VG_(fork)   ( void);
 extern void VG_(execv)  ( Char* filename, Char** argv );
 
 /* ---------------------------------------------------------------------
-   Resource limits
+   Resource limits and capabilities
    ------------------------------------------------------------------ */
 
 extern Int VG_(getrlimit) ( Int resource, struct vki_rlimit *rlim );
 extern Int VG_(setrlimit) ( Int resource, const struct vki_rlimit *rlim );
+extern Int VG_(prctl) (Int option, 
+                       ULong arg2, ULong arg3, ULong arg4, ULong arg5);
 
 /* ---------------------------------------------------------------------
    pids, etc

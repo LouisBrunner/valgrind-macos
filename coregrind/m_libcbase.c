@@ -89,6 +89,31 @@ Long VG_(strtoll10) ( Char* str, Char** endptr )
    return n;
 }
 
+ULong VG_(strtoull10) ( Char* str, Char** endptr )
+{
+   Bool converted = False;
+   ULong n = 0;
+   Long digit = 0;
+   Char* str0 = str;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '+'.
+   if (*str == '+') { str++; }
+
+   while (is_dec_digit(*str, &digit)) {
+      converted = True;          // Ok, we've actually converted a digit.
+      n = 10*n + digit;
+      str++;
+   }
+
+   if (!converted) str = str0;   // If nothing converted, endptr points to
+   //   the start of the string.
+   if (endptr) *endptr = str;    // Record first failing character.
+   return n;
+}
+
 Long VG_(strtoll16) ( Char* str, Char** endptr )
 {
    Bool neg = False, converted = False;
@@ -118,6 +143,39 @@ Long VG_(strtoll16) ( Char* str, Char** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    if (neg) n = -n;              //   the start of the string.
+   if (endptr) *endptr = str;    // Record first failing character.
+   return n;
+}
+
+ULong VG_(strtoull16) ( Char* str, Char** endptr )
+{
+   Bool converted = False;
+   ULong n = 0;
+   Long digit = 0;
+   Char* str0 = str;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '+'.
+   if (*str == '+') { str++; }
+
+   // Allow leading "0x", but only if there's a hex digit
+   // following it.
+   if (*str == '0'
+    && (*(str+1) == 'x' || *(str+1) == 'X')
+    && is_hex_digit( *(str+2), &digit )) {
+      str += 2;
+   }
+
+   while (is_hex_digit(*str, &digit)) {
+      converted = True;          // Ok, we've actually converted a digit.
+      n = 16*n + digit;
+      str++;
+   }
+
+   if (!converted) str = str0;   // If nothing converted, endptr points to
+   //   the start of the string.
    if (endptr) *endptr = str;    // Record first failing character.
    return n;
 }
@@ -354,6 +412,88 @@ Char* VG_(strrchr) ( const Char* s, Char c )
       if (s[n] == c) return (Char*)s + n;
    }
    return NULL;
+}
+
+/* (code copied from glib then updated to valgrind types) */
+static Char *olds;
+Char *
+VG_(strtok) (Char *s, const Char *delim)
+{
+   return VG_(strtok_r) (s, delim, &olds);
+}
+
+Char *
+VG_(strtok_r) (Char* s, const Char* delim, Char** saveptr)
+{
+   Char *token;
+
+   if (s == NULL)
+      s = *saveptr;
+
+   /* Scan leading delimiters.  */
+   s += VG_(strspn (s, delim));
+   if (*s == '\0')
+      {
+         *saveptr = s;
+         return NULL;
+      }
+
+   /* Find the end of the token.  */
+   token = s;
+   s = VG_(strpbrk (token, delim));
+   if (s == NULL)
+      /* This token finishes the string.  */
+      *saveptr = token + VG_(strlen) (token);
+   else
+      {
+         /* Terminate the token and make OLDS point past it.  */
+         *s = '\0';
+         *saveptr = s + 1;
+      }
+   return token;
+}
+
+static Bool isHex ( UChar c )
+{
+  return ((c >= '0' && c <= '9') ||
+	  (c >= 'a' && c <= 'f') ||
+	  (c >= 'A' && c <= 'F'));
+}
+
+static UInt fromHex ( UChar c )
+{
+   if (c >= '0' && c <= '9')
+      return (UInt)c - (UInt)'0';
+   if (c >= 'a' && c <= 'f')
+      return 10 +  (UInt)c - (UInt)'a';
+   if (c >= 'A' && c <= 'F')
+      return 10 +  (UInt)c - (UInt)'A';
+   /*NOTREACHED*/
+   // ??? need to vg_assert(0);
+   return 0;
+}
+
+Bool VG_(parse_Addr) ( UChar** ppc, Addr* result )
+{
+   Int used, limit = 2 * sizeof(Addr);
+   if (**ppc != '0')
+      return False;
+   (*ppc)++;
+   if (**ppc != 'x')
+      return False;
+   (*ppc)++;
+   *result = 0;
+   used = 0;
+   while (isHex(**ppc)) {
+      // ??? need to vg_assert(d < fromHex(**ppc));
+      *result = ((*result) << 4) | fromHex(**ppc);
+      (*ppc)++;
+      used++;
+      if (used > limit) return False;
+   }
+   if (used == 0)
+      return False;
+   return True;
 }
 
 SizeT VG_(strspn) ( const Char* s, const Char* accpt )

@@ -1,0 +1,11 @@
+#! /bin/sh
+
+# simulate control_c by sending SIGUSR1 to the vgdb using prefix $1 in $2 seconds
+VGDBPID=`./vgdb -D $1 2>&1 | awk '/vgdb pid/ {print $3}'`
+if [ "$VGDBPID" = "" ]
+then
+  echo "simulate_control_c could not determine the vgdb pid with " $1
+  exit 1
+fi
+(sleep $2; kill -10 $VGDBPID) &
+

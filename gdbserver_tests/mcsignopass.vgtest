@@ -1,0 +1,15 @@
+# test the signal handling, when signals are *not* passed to the Valgrind guest.
+# We detect this two ways:
+#   the gdb output will not contain the signal handling
+#   faultstatus C code will report a failure for the signal not passed
+#      (i.e. SIGBUG, Test 3). Other tests will be succesful, because signals
+#      are eventually passed.
+prog: ../none/tests/faultstatus
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsignopass
+stderr_filter: filter_memcheck_monitor
+progB: gdb
+argsB: --quiet -l 60 --nx ../none/tests/faultstatus
+stdinB: mcsignopass.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_make_empty
+

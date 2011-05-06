@@ -1,0 +1,10 @@
+#! /bin/sh
+
+# A filter filtering everything.
+
+# To still allow to see what is happening, the content
+# is copied to a file, together with date and process.
+
+ps -lf -p $PPID >> garbage.filtered.out
+date            >> garbage.filtered.out
+cat             >> garbage.filtered.out

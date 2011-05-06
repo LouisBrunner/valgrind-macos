@@ -296,6 +296,7 @@ typedef struct vki_sigaltstack {
 					   extend change to end
 					   of growsup vma */
 
+#define VKI_MAP_SHARED		0x0001  /* Share changes */
 #define VKI_MAP_PRIVATE 	0x0002	/*  */
 #define VKI_MAP_FIXED   	0x0010	/*  */
 #define VKI_MAP_ANONYMOUS	0x0020	/*  */
@@ -314,6 +315,7 @@ typedef struct vki_sigaltstack {
 #define VKI_O_NOCTTY        00000400        /* not fcntl */
 #define VKI_O_TRUNC         00001000        /* not fcntl */
 #define VKI_O_APPEND        00002000
+#define VKI_O_NONBLOCK      00004000
 
 #define VKI_AT_FDCWD            -100
 
@@ -605,6 +607,7 @@ struct vki_pollfd {
 	short revents;
 };
 
+#define VKI_POLLIN          0x0001
 
 //----------------------------------------------------------------------
 // From linux-2.6.16.60/include/asm-s390/ptrace.h

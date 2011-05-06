@@ -1,0 +1,58 @@
+relaying data between gdb and process ....
+vgdb-error value changed from 0 to 999999
+10 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+10 (+10) bytes in 1 (+1) blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+21 (+21) bytes in 1 (+1) blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:23)
+   by 0x........: main (leak-delta.c:60)
+
+65 (+65) bytes in 2 (+2) blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:28)
+   by 0x........: main (leak-delta.c:60)
+
+10 (+10) bytes in 1 (+1) blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+0 (-10) bytes in 0 (-1) blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+10 (+10) bytes in 1 (+1) blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+0 (-10) bytes in 0 (-1) blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+10 (+10) bytes in 1 (+1) blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+32 (+32) bytes in 1 (+1) blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:28)
+   by 0x........: main (leak-delta.c:60)
+
+33 (-32) bytes in 1 (-1) blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:28)
+   by 0x........: main (leak-delta.c:60)
+
+Remote connection closed

@@ -2488,11 +2488,11 @@ SysRes VG_(am_sbrk_anon_float_valgrind)( SizeT cszB )
 
 
 /* Map a file at an unconstrained address for V, and update the
-   segment array accordingly.  This is used by V for transiently
-   mapping in object files to read their debug info.  */
+   segment array accordingly. Use the provided flags */
 
-SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot, 
-                                          Int fd, Off64T offset )
+static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
+                                                       UInt flags,
+                                                       Int fd, Off64T offset )
 {
    SysRes     sres;
    NSegment   seg;
@@ -2520,7 +2520,7 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
       any resulting failure immediately. */
    sres = VG_(am_do_mmap_NO_NOTIFY)( 
              advised, length, prot, 
-             VKI_MAP_FIXED|VKI_MAP_PRIVATE, 
+             flags,
              fd, offset 
           );
    if (sr_isError(sres))
@@ -2556,7 +2556,25 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    AM_SANITY_CHECK;
    return sres;
 }
+/* Map privately a file at an unconstrained address for V, and update the
+   segment array accordingly.  This is used by V for transiently
+   mapping in object files to read their debug info.  */
 
+SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot, 
+                                          Int fd, Off64T offset )
+{
+   return VG_(am_mmap_file_float_valgrind_flags) (length, prot,
+                                                  VKI_MAP_FIXED|VKI_MAP_PRIVATE,
+                                                  fd, offset );
+}
+
+extern SysRes VG_(am_shared_mmap_file_float_valgrind)
+   ( SizeT length, UInt prot, Int fd, Off64T offset )
+{
+   return VG_(am_mmap_file_float_valgrind_flags) (length, prot,
+                                                  VKI_MAP_FIXED|VKI_MAP_SHARED,
+                                                  fd, offset );
+}
 
 /* --- --- munmap helper --- --- */
 

@@ -108,6 +108,17 @@ Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
 #  endif
 }
 
+SysRes VG_(mknod) ( const Char* pathname, Int mode, UWord dev )
+{  
+#  if defined(VGO_linux) || defined(VGO_aix5) || defined(VGO_darwin)
+   SysRes res = VG_(do_syscall3)(__NR_mknod,
+                                 (UWord)pathname, mode, dev);
+#  else
+#    error Unknown OS
+#  endif
+   return res;
+}
+
 SysRes VG_(open) ( const Char* pathname, Int flags, Int mode )
 {  
 #  if defined(VGO_linux) || defined(VGO_aix5)
@@ -120,6 +131,16 @@ SysRes VG_(open) ( const Char* pathname, Int flags, Int mode )
 #    error Unknown OS
 #  endif
    return res;
+}
+
+Int VG_(fd_open) (const Char* pathname, Int flags, Int mode)
+{
+   SysRes sr;
+   sr = VG_(open) (pathname, flags, mode);
+   if (sr_isError (sr))
+      return -1;
+   else
+      return sr_Res (sr);
 }
 
 void VG_(close) ( Int fd )
@@ -443,6 +464,14 @@ Bool VG_(get_startup_wd) ( Char* buf, SizeT size )
    VG_(strncpy_safely)(buf, startup_wd, size);
    return True;
 }
+
+Int    VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
+{
+   SysRes res;
+   res = VG_(do_syscall3)(__NR_poll, (UWord)fds, nfds, timeout);
+   return sr_isError(res) ? -1 : sr_Res(res);
+}
+
 
 Int VG_(readlink) (const Char* path, Char* buf, UInt bufsiz)
 {

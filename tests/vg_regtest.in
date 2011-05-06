@@ -55,12 +55,21 @@
 #                                                    multiple are allowed)
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
+#
+#   - progB:  <prog to run in parallel with prog>   (default: none)
+#   - argsB:  <args for progB>                      (default: none)
+#   - stdinB: <input file for progB>                (default: none)
+#   - stdoutB_filter: <filter progB stdout through> (default: none)
+#   - stderrB_filter: <filter progB stderr through> (default: ./filter_stderr)
+#
 #   - prereq: <prerequisite command>                (default: none)
 #   - post: <post-test check command>               (default: none)
 #   - cleanup: <post-test cleanup cmd>              (default: none)
 #
+# If prog or probB is a relative path, it will be prefix with the test directory.
 # Note that filters are necessary for stderr results to filter out things that
 # always change, eg. process id numbers.
+# Note that if a progB is specified, it is started in background (before prog).
 #
 # Expected stdout (filtered) is kept in <test>.stdout.exp* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
@@ -68,8 +77,13 @@
 # one stderr.exp* file.  Any .exp* file that ends in '~' or '#' is ignored;
 # this is because Emacs creates temporary files of these names.
 #
+# Expected output for progB is handled similarly, except that
+# expected stdout and stderr for progB are in  <test>.stdoutB.exp*
+# and <test>.stderrB.exp*.
+#
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff*.
+# (for progB, in <test>.std<strm>2.out and <test>.std<strm>2.diff*).
 #
 # The prerequisite command, if present, works like this:
 # - if it returns 0 the test is run
@@ -112,6 +126,11 @@ my $prog;               # test prog
 my $args;               # test prog args
 my $stdout_filter;      # filter program to run stdout results file through
 my $stderr_filter;      # filter program to run stderr results file through
+my $progB;              # Same but for progB
+my $argsB;              # 
+my $stdoutB_filter;     # 
+my $stderrB_filter;     # 
+my $stdinB;             # Input file for progB
 my $prereq;             # prerequisite test to satisfy before running test
 my $post;               # check command after running test
 my $cleanup;            # cleanup command to run
@@ -119,7 +138,9 @@ my $cleanup;            # cleanup command to run
 my @failures;           # List of failed tests
 
 my $num_tests_done      = 0;
-my %num_failures        = (stderr => 0, stdout => 0, post => 0);
+my %num_failures        = (stderr => 0, stdout => 0, 
+                           stderrB => 0, stdoutB => 0,
+                           post => 0);
 
 # Default valgrind to use is this build tree's (uninstalled) one
 my $valgrind = "./coregrind/valgrind";
@@ -204,12 +225,16 @@ sub read_vgtest_file($)
     my ($f) = @_;
 
     # Defaults.
-    ($vgopts, $prog, $args)          = ("", undef, "");
-    ($stdout_filter, $stderr_filter) = (undef, undef);
-    ($prereq, $post, $cleanup)       = (undef, undef, undef);
+    ($vgopts, $prog, $args)            = ("", undef, "");
+    ($stdout_filter, $stderr_filter)   = (undef, undef);
+    ($progB, $argsB, $stdinB)          = (undef, "", undef);
+    ($stdoutB_filter, $stderrB_filter) = (undef, undef);
+    ($prereq, $post, $cleanup)         = (undef, undef, undef);
 
     # Every test directory must have a "filter_stderr"
     $stderr_filter = validate_program(".", $default_stderr_filter, 1, 1);
+    $stderrB_filter = validate_program(".", $default_stderr_filter, 1, 1);
+    
 
     open(INPUTFILE, "< $f") || die "File $f not openable\n";
 
@@ -228,6 +253,16 @@ sub read_vgtest_file($)
             $stdout_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
             $stderr_filter = validate_program(".", $1, 1, 1);
+        } elsif ($line =~ /^\s*progB:\s*(.*)$/) {
+            $progB = validate_program(".", $1, 0, 0);
+        } elsif ($line =~ /^\s*argsB:\s*(.*)$/) {
+            $argsB = $1;
+        } elsif ($line =~ /^\s*stdinB:\s*(.*)$/) {
+            $stdinB = $1;
+        } elsif ($line =~ /^\s*stdoutB_filter:\s*(.*)$/) {
+            $stdoutB_filter = validate_program(".", $1, 1, 1);
+        } elsif ($line =~ /^\s*stderrB_filter:\s*(.*)$/) {
+            $stderrB_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {
             $prereq = $1;
         } elsif ($line =~ /^\s*post:\s*(.*)$/) {
@@ -333,8 +368,27 @@ sub do_one_test($$)
         }
     }
 
-    printf("%-16s valgrind $extraopts $vgopts $prog $args\n", "$name:");
 
+    if (defined $progB) {
+        # If there is a progB, let's start it in background:
+        printf("%-16s valgrind $extraopts $vgopts $prog $args (progB: $progB $argsB)\n",
+               "$name:");
+        # progB.done used to detect child has finished. See below.
+        # Note: redirection of stdout and stderr is before $progB to allow argsB
+        # to e.g. redirect stdoutB to stderrB
+        if (defined $stdinB) {
+            mysystem("(rm -f progB.done;"
+                     . " < $stdinB > $name.stdoutB.out 2> $name.stderrB.out $progB $argsB;"
+                     . "touch progB.done) &");
+        } else {
+            mysystem("(rm -f progB.done;"
+                     . " > $name.stdoutB.out 2> $name.stderrB.out $progB $argsB;"
+                     . "touch progB.done)  &");
+        }
+    } else {
+        printf("%-16s valgrind $extraopts $vgopts $prog $args\n", "$name:");
+    }
+ 
     # Pass the appropriate --tool option for the directory (can be overridden
     # by an "args:" line, though).  Set both VALGRIND_LIB and
     # VALGRIND_LIB_INNER in case this Valgrind was configured with
@@ -362,6 +416,38 @@ sub do_one_test($$)
     my @stderr_exps = <$name.stderr.exp*>;
     (0 != scalar @stderr_exps) or die "Could not find `$name.stderr.exp*'\n";
     do_diffs($fullname, $name, "stderr", \@stderr_exps); 
+
+    if (defined $progB) {
+        # wait for the child to be finished
+        # tried things such as:
+        #   wait;
+        #   $SIG{CHLD} = sub { wait };
+        # but nothing worked:
+        # e.g. running mssnapshot.vgtest in a loop failed from time to time
+        # due to some missing output (not yet written?).
+        # So, we search progB.done during max 100 times 100 millisecond.
+        my $count;
+        for ($count = 1; $count <= 100; $count++) {
+            (-f "progB.done") or select(undef, undef, undef, 0.100);
+        }
+        # Filter stdout
+        if (defined $stdoutB_filter) {
+            mysystem("$stdoutB_filter < $name.stdoutB.out > $tmp");
+            rename($tmp, "$name.stdoutB.out");
+        }
+        # Find all the .stdoutB.exp files.  If none, use /dev/null.
+        my @stdoutB_exps = <$name.stdoutB.exp*>;
+        @stdoutB_exps = ( "/dev/null" ) if (0 == scalar @stdoutB_exps);
+        do_diffs($fullname, $name, "stdoutB", \@stdoutB_exps); 
+        
+        # Filter stderr
+        mysystem("$stderrB_filter < $name.stderrB.out > $tmp");
+        rename($tmp, "$name.stderrB.out");
+        # Find all the .stderrB.exp files.  At least one must exist.
+        my @stderrB_exps = <$name.stderrB.exp*>;
+        (0 != scalar @stderrB_exps) or die "Could not find `$name.stderrB.exp*'\n";
+        do_diffs($fullname, $name, "stderrB", \@stderrB_exps); 
+    }
 
     # Maybe do post-test check
     if (defined $post) {
@@ -449,10 +535,13 @@ sub summarise_results
     my $x = ( $num_tests_done == 1 ? "test" : "tests" );
     
     printf("\n== %d test%s, %d stderr failure%s, %d stdout failure%s, "
+                         . "%d stderrB failure%s, %d stdoutB failure%s, "
                          . "%d post failure%s ==\n", 
            $num_tests_done, plural($num_tests_done),
            $num_failures{"stderr"},   plural($num_failures{"stderr"}),
            $num_failures{"stdout"},   plural($num_failures{"stdout"}),
+           $num_failures{"stderrB"},  plural($num_failures{"stderrB"}),
+           $num_failures{"stdoutB"},  plural($num_failures{"stdoutB"}),
            $num_failures{"post"},     plural($num_failures{"post"}));
 
     foreach my $failure (@failures) {
@@ -508,6 +597,8 @@ if ($ENV{"EXTRA_REGTEST_OPTS"}) {
 
 if (0 == $num_failures{"stdout"} &&
     0 == $num_failures{"stderr"} &&
+    0 == $num_failures{"stdoutB"} &&
+    0 == $num_failures{"stderrB"} &&
     0 == $num_failures{"post"}) {
     exit 0;
 } else {

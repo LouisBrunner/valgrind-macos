@@ -1075,6 +1075,32 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 
 </sect1>
 
+<sect1 id="cl-manual.monitor-commands" xreflabel="Callgrind Monitor Commands">
+<title>Callgrind Monitor Commands</title>
+<para>The Callgrind tool provides monitor commands handled by the Valgrind
+gdbserver (see <xref linkend="manual-core.gdbserver-commandhandling"/>).
+</para>
+
+<itemizedlist>
+  <listitem>
+    <para><varname>ct.dump [&lt;dump_hint&gt;]</varname> requests to dump the
+    profile data. </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>ct.zero</varname> requests to zero the profile data
+    counters. </para>
+  </listitem>
+
+  <listitem>
+    <para>It would be nice to have some more callgrind monitor
+    commands such as e.g. toggle collect and start instrumentation.
+    </para>
+  </listitem>
+
+</itemizedlist>
+</sect1>
+
 <sect1 id="cl-manual.clientrequests" xreflabel="Client request reference">
 <title>Callgrind specific client requests</title>
 

@@ -31,6 +31,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_debuglog.h"
+#include "pub_core_gdbserver.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"   // VG_(write)(), VG_(write_socket)()
@@ -47,7 +48,10 @@
 /* The destination sinks for normal and XML output.  These have their
    initial values here; they are set to final values by
    m_main.main_process_cmd_line_options().  See comment at the top of
-   that function for the associated logic. */
+   that function for the associated logic. 
+   After startup, the gdbserver monitor command might temporarily
+   set the fd of log_output_sink to -2 to indicate that output is
+   to be given to gdb rather than output to the startup fd */
 OutputSink VG_(log_output_sink) = {  2, False }; /* 2 = stderr */
 OutputSink VG_(xml_output_sink) = { -1, False }; /* disabled */
  
@@ -70,6 +74,8 @@ void send_bytes_to_logging_sink ( OutputSink* sink, Char* msg, Int nbytes )
          any more output. */
       if (sink->fd >= 0)
          VG_(write)( sink->fd, msg, nbytes );
+      else if (sink->fd == -2)
+         VG_(gdb_printf)("%s", msg);
    }
 }
 
@@ -107,7 +113,7 @@ static UInt vprintf_to_buf ( printf_buf_t* b,
                              const HChar *format, va_list vargs )
 {
    UInt ret = 0;
-   if (b->sink->fd >= 0) {
+   if (b->sink->fd >= 0 || b->sink->fd == -2) {
       ret = VG_(debugLog_vprintf) 
                ( add_to__printf_buf, b, format, vargs );
    }

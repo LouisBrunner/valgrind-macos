@@ -63,6 +63,8 @@ extern Char VG_(tolower) ( Char c );
 // If you really want that behaviour, you can use "VG_(strtoll10)(str, NULL)".
 extern Long  VG_(strtoll10) ( Char* str, Char** endptr );
 extern Long  VG_(strtoll16) ( Char* str, Char** endptr );
+extern ULong  VG_(strtoull10) ( Char* str, Char** endptr );
+extern ULong  VG_(strtoull16) ( Char* str, Char** endptr );
 
 // Convert a string to a double.  After leading whitespace is ignored, a
 // '+' or '-' is allowed, and then it accepts a non-empty sequence of
@@ -96,6 +98,16 @@ extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strrchr)        ( const Char* s, Char c );
 extern SizeT VG_(strspn)         ( const Char* s, const Char* accpt );
 extern SizeT VG_(strcspn)        ( const Char* s, const char* reject );
+
+/* strtok* functions and some parsing utilities. */
+extern Char* VG_(strtok_r)       (Char* s, const Char* delim, Char** saveptr);
+extern Char* VG_(strtok)         (Char* s, const Char* delim);
+
+/* Parse a 32- or 64-bit hex number, including leading 0x, from string
+   starting at *ppc, putting result in *result, and return True.  Or
+   fail, in which case *ppc and *result are undefined, and return
+   False. */
+extern Bool VG_(parse_Addr) ( UChar** ppc, Addr* result );
 
 /* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
    last character. */

@@ -1,0 +1,58 @@
+#! /bin/sh
+
+# (must be called from the valgrind top source dir).
+#
+# Make local links in the gdbserver_tests directory
+# so that tests needing gdb can be disabled if
+# a tool old version of gdb is provided or if no gdb is
+# provided.
+#
+# The vgdb link is needed either for gdb tests
+# or for standalone vgdb tests.
+
+ln -f -s $1 gdbserver_tests/gdb
+if [ -x gdbserver_tests/gdb ]
+then
+   # Try to extract the gdb version.
+   VERSIONLINE=`gdbserver_tests/gdb --version | head -1`
+   VERSION=`echo $VERSIONLINE                         |
+            sed -e 's/[^0-9\.]//g' -e 's/\./ /g'`
+   
+   # We need at least a 6.5 version to run any gdb test
+   VERSIONOK=`echo $VERSION |
+              awk '{ if ( ($1 >= 7) || (($1 == 6) && ($2 >= 5)) ) print "version ok"}'`
+   if [ "$VERSIONOK" = "" ]
+   then
+      echo "gdbserver tests suppressed as $1 version is not >= 6.5: " $VERSIONLINE
+      rm gdbserver_tests/gdb
+   fi
+
+   # We need at least a 7.2 version for gdb tests using eval command
+   VERSIONOK=`echo $VERSION |
+              awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 2)) ) print "version ok"}'`
+   if [ "$VERSIONOK" = "" ]
+   then
+      echo "gdbserver eval tests suppressed as $1 version is not >= 7.2: " $VERSIONLINE
+      rm -f gdbserver_tests/gdb.eval
+   else
+      touch gdbserver_tests/gdb.eval
+   fi
+else
+   echo "gdbserver gdb tests suppressed as $1 is not executable"
+fi
+
+ln -f -s ../coregrind/vgdb gdbserver_tests/vgdb
+
+# if ptrace not implemented in vgdb or OS restricts the initial attach,
+# some tests would block for a loooonnnng time.
+if gdbserver_tests/vgdb --help 2>&1 |
+    grep -e 'ptrace invoker not implemented' \
+         -e 'kernel restricts ptrace invoker' > /dev/null
+then
+    rm -f gdbserver_tests/vgdb.ptraceinvoker
+else
+    touch gdbserver_tests/vgdb.ptraceinvoker
+fi
+
+# cleanup the possibly big garbage previously collected output
+rm -f gdbserver_tests/garbage.filtered.out

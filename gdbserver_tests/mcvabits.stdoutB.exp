@@ -1,0 +1,13 @@
+Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcvabits
+0x........ in _start () from ...start file...
+Breakpoint 1 at 0x........: file t.c, line 100.
+Continuing.
+Breakpoint 1, breakme (line=112) at t.c:100
+100	   if (line > 1000)
+#1  0x........ in main (argc=1, argv=0x........) at t.c:112
+112	  breakme(__LINE__); //break1
+$1 = 0x........ "main name"
+$2 = "undefined"
+Continuing.
+Breakpoint 1, breakme (line=117) at t.c:100
+100	   if (line > 1000)

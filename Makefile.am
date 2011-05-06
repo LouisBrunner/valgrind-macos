@@ -25,6 +25,7 @@ else
   TEST_EXP_TOOLS = exp-bbv
 endif
 
+
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
 SUBDIRS = \
@@ -36,6 +37,7 @@ SUBDIRS = \
 	$(EXP_TOOLS) \
 	tests \
 	perf \
+	gdbserver_tests \
 	auxprogs \
 	mpi \
 	docs
@@ -72,11 +74,15 @@ default.supp: $(DEFAULT_SUPP_FILES)
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
-	@PERL@ tests/vg_regtest $(TEST_TOOLS) $(TEST_EXP_TOOLS)
+	gdbserver_tests/make_local_links $(GDB)
+	@PERL@ tests/vg_regtest gdbserver_tests $(TEST_TOOLS) $(TEST_EXP_TOOLS)
 nonexp-regtest: check
 	@PERL@ tests/vg_regtest $(TEST_TOOLS)
 exp-regtest: check
-	@PERL@ tests/vg_regtest $(TEST_EXP_TOOLS)
+	@PERL@ tests/vg_regtest gdbserver_tests $(TEST_EXP_TOOLS)
+# Nb: gdbserver_tests are put in exp-regtest rather than nonexp-regtest
+# because they are tested with various valgrind tools, so might be using
+# an experimental tool.
 
 ## Preprend @PERL@ because tests/vg_perf isn't executable
 perf: check

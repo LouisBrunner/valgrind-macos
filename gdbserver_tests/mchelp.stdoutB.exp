@@ -1,0 +1,66 @@
+general valgrind monitor commands:
+  help [debug]             : monitor command help. With debug: + debugging commands
+  vg.wait [<ms>]           : sleep <ms> (default 0) then continue
+  vg.info all_errors       : show all errors found so far
+  vg.info last_error       : show last error found
+  vg.info n_errs_found     : show the nr of errors found so far
+  vg.kill                  : kill the Valgrind process
+  vg.set gdb_output        : set valgrind output to gdb
+  vg.set log_output        : set valgrind output to log
+  vg.set mixed_output      : set valgrind output to log, interactive output to gdb
+  vg.set vgdb-error <errornr> : debug me at error >= <errornr> 
+
+memcheck monitor commands:
+  mc.get_vbits <addr> [<len>]
+        returns validity bits for <len> (or 1) bytes at <addr>
+            bit values 0 = valid, 1 = invalid, __ = unaddressable byte
+        Example: mc.get_vbits 0x........ 10
+  mc.make_memory [noaccess|undefined
+                     |defined|ifaddressabledefined] <addr> [<len>]
+        mark <len> (or 1) bytes at <addr> with the given accessibility
+  mc.check_memory [addressable|defined] <addr> [<len>]
+        check that <len> (or 1) bytes at <addr> have the given accessibility
+            and outputs a description of <addr>
+  mc.leak_check [full*|summary]
+                [reachable|leakpossible*|definiteleak]
+            * = defaults
+        Examples: mc.leak_check
+                  mc.leak_check any summary
+
+general valgrind monitor commands:
+  help [debug]             : monitor command help. With debug: + debugging commands
+  vg.wait [<ms>]           : sleep <ms> (default 0) then continue
+  vg.info all_errors       : show all errors found so far
+  vg.info last_error       : show last error found
+  vg.info n_errs_found     : show the nr of errors found so far
+  vg.kill                  : kill the Valgrind process
+  vg.set gdb_output        : set valgrind output to gdb
+  vg.set log_output        : set valgrind output to log
+  vg.set mixed_output      : set valgrind output to log, interactive output to gdb
+  vg.set vgdb-error <errornr> : debug me at error >= <errornr> 
+debugging valgrind internals monitor commands:
+  vg.info gdbserver_status : show gdbserver status
+  vg.info memory           : show valgrind heap memory stats
+  vg.set debuglog <level>  : set valgrind debug log level to <level>
+  vg.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>
+    (default traceflags 0b00100000 : show after instrumentation)
+   An additional flag  0b100000000 allows to show gdbserver instrumentation
+
+memcheck monitor commands:
+  mc.get_vbits <addr> [<len>]
+        returns validity bits for <len> (or 1) bytes at <addr>
+            bit values 0 = valid, 1 = invalid, __ = unaddressable byte
+        Example: mc.get_vbits 0x........ 10
+  mc.make_memory [noaccess|undefined
+                     |defined|ifaddressabledefined] <addr> [<len>]
+        mark <len> (or 1) bytes at <addr> with the given accessibility
+  mc.check_memory [addressable|defined] <addr> [<len>]
+        check that <len> (or 1) bytes at <addr> have the given accessibility
+            and outputs a description of <addr>
+  mc.leak_check [full*|summary]
+                [reachable|leakpossible*|definiteleak]
+            * = defaults
+        Examples: mc.leak_check
+                  mc.leak_check any summary
+
+monitor command request to kill this process

@@ -1,0 +1,15 @@
+# test inferior calls when all threads are in Runnable or Yielding mode
+prog: sleepers
+args: 1 0 2000000000 B-B-B-B-
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcinfcallRU
+# filter_gdb to replace pid and Thread numbers.
+# Well, the test will verify we have 4 calls (for each thread)
+# but no way to check that this is effectively in the 4 different threads.
+stderr_filter: filter_gdb
+# Disable on Darwin: inferior call rejected as it cannot find malloc.
+prereq: ../tests/os_test linux
+progB: gdb
+argsB:  --quiet -l 60 --nx ./sleepers
+stdinB: mcinfcallRU.stdinB.gdb
+stdoutB_filter: filter_make_empty
+stderrB_filter: filter_make_empty

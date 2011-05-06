@@ -1,0 +1,40 @@
+(action at startup) vgdb me ... 
+expecting details 10 bytes reachable
+10 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+expecting to have NO details
+expecting details +10 bytes lost, +21 bytes reachable
+expecting details +65 bytes reachable
+expecting to have NO details
+expecting details +10 bytes reachable
+expecting details -10 bytes reachable, +10 bytes lost
+expecting details -10 bytes lost, +10 bytes reachable
+expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable
+finished
+leaked:      32 bytes in  1 blocks
+dubious:      0 bytes in  0 blocks
+reachable:   64 bytes in  3 blocks
+suppressed:   0 bytes in  0 blocks
+10 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:14)
+   by 0x........: main (leak-delta.c:60)
+
+21 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:23)
+   by 0x........: main (leak-delta.c:60)
+
+32 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:28)
+   by 0x........: main (leak-delta.c:60)
+
+33 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: f (leak-delta.c:28)
+   by 0x........: main (leak-delta.c:60)
+

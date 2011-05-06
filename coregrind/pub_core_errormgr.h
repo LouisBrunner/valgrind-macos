@@ -51,7 +51,14 @@ typedef
 
 extern void VG_(load_suppressions)        ( void );
 
-extern void VG_(show_all_errors)          ( void );
+// if verbosity == 0,           print nothing.
+// else if xml                  print suppressions used (in xml format)
+// else if verbosity == 1       print Error summary
+// else                         print all errors and suppressions used.
+extern void VG_(show_all_errors)          ( Int verbosity, Bool xml );
+
+/* Print (in readable format) the last error that occured. */
+extern void VG_(show_last_error)          ( void );
 
 extern void VG_(show_error_counts_as_XML) ( void );
 

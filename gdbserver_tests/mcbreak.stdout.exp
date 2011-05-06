@@ -1,0 +1,8 @@
+pid .... Thread .... first
+pid .... Thread .... second
+pid .... Thread .... third
+pid .... Thread .... fourth
+pid .... Thread .... after next: inferior call pushed from mcbreak.stdinB.gdb
+pid .... Thread .... called from level
+called from level int_und is not zero
+pid .... Thread .... called from main

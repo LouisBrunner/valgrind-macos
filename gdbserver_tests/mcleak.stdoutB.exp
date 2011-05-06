@@ -1,0 +1,49 @@
+Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcleak
+0x........ in _start () from ...start file...
+Breakpoint 1 at 0x........: file leak-delta.c, line 9.
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:16
+16	   fprintf(stderr, "expecting details 10 bytes reachable\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:19
+19	   fprintf(stderr, "expecting to have NO details\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:24
+24	   fprintf(stderr, "expecting details +10 bytes lost, +21 bytes reachable\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:29
+29	   fprintf(stderr, "expecting details +65 bytes reachable\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:32
+32	   fprintf(stderr, "expecting to have NO details\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:36
+36	   fprintf(stderr, "expecting details +10 bytes reachable\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:40
+40	   fprintf(stderr, "expecting details -10 bytes reachable, +10 bytes lost\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:44
+44	   fprintf(stderr, "expecting details -10 bytes lost, +10 bytes reachable\n"); fflush(stderr); breakme();
+Continuing.
+Breakpoint 1, breakme () at leak-delta.c:9
+9	static void breakme() {};
+#1  0x........ in f () at leak-delta.c:48
+48	   fprintf(stderr, "expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable\n"); fflush(stderr); breakme();
+Continuing.

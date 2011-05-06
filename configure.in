@@ -1907,6 +1907,7 @@ AC_CONFIG_FILES([
    tests/vg_regtest 
    perf/Makefile 
    perf/vg_perf
+   gdbserver_tests/Makefile
    include/Makefile 
    auxprogs/Makefile
    mpi/Makefile

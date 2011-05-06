@@ -1,0 +1,19 @@
+#! /bin/sh
+
+# invoker is used to test the invocation of gdbserver.
+# The first argument is the nr of times vgdb has to be called.
+# rest of args are given to vgdb
+# At the end of the loop, an additional call is done
+# but adding " -c vg.kill" to kill Valgrind process.
+
+LOOPS=$1
+shift
+
+i=0
+while [ $i -lt $LOOPS ]
+do
+   ./vgdb "$@"  
+   i=`expr $i + 1`
+done
+
+./vgdb "$@"  -c vg.kill

@@ -1,0 +1,20 @@
+
+(action at startup) vgdb me ... 
+Test 1: Invalid write of size 4
+   at 0x........: test1 (faultstatus.c:105)
+   by 0x........: main (faultstatus.c:168)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+  PASS
+Test 2:   PASS
+Test 3:   PASS
+Test 4:   PASS
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 11 errors from 1 contexts (suppressed: 0 from 0)

@@ -418,6 +418,21 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
+/* Support for prctl. */
+Int VG_(prctl) (Int option, 
+                ULong arg2, ULong arg3, ULong arg4, ULong arg5)
+{
+   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+#  if defined(VGO_linux)
+   /* res = prctl( option, arg2, arg3, arg4, arg5 ); */
+   res = VG_(do_syscall5)(__NR_prctl, (UWord) option,
+                          (UWord) arg2, (UWord) arg3, (UWord) arg4,
+                          (UWord) arg5);
+#  endif
+
+   return sr_isError(res) ? -1 : sr_Res(res);
+}
+
 /* ---------------------------------------------------------------------
    pids, etc
    ------------------------------------------------------------------ */

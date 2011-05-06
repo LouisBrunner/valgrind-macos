@@ -67,6 +67,7 @@
 #include "pub_core_clreq.h"         // for VG_USERREQ__*
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"      // For VG_(get_n_errs_found)()
+#include "pub_core_gdbserver.h"     // for VG_(gdbserver) and VG_(gdbserver_activity)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -112,6 +113,13 @@ UInt VG_(dispatch_ctr);
 
 /* 64-bit counter for the number of basic blocks done. */
 static ULong bbs_done = 0;
+
+/* Counter to see if vgdb activity is to be verified.
+   When nr of bbs done reaches vgdb_next_poll, scheduler will
+   poll for gdbserver activity. VG_(force_vgdb_poll) and 
+   VG_(disable_vgdb_poll) allows the valgrind core (e.g. m_gdbserver)
+   to control when the next poll will be done. */
+static ULong vgdb_next_poll;
 
 /* Forwards */
 static void do_client_request ( ThreadId tid );
@@ -684,6 +692,20 @@ static void do_pre_run_checks ( ThreadState* tst )
 #  endif
 }
 
+// NO_VGDB_POLL value ensures vgdb is not polled, while
+// VGDB_POLL_ASAP ensures that the next scheduler call
+// will cause a poll.
+#define NO_VGDB_POLL    0xffffffffffffffffULL
+#define VGDB_POLL_ASAP  0x0ULL
+
+void VG_(disable_vgdb_poll) (void )
+{
+   vgdb_next_poll = NO_VGDB_POLL;
+}
+void VG_(force_vgdb_poll) ( void )
+{
+   vgdb_next_poll = VGDB_POLL_ASAP;
+}
 
 /* Run the thread tid for a while, and return a VG_TRC_* value
    indicating why VG_(run_innerloop) stopped. */
@@ -769,6 +791,16 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    // Tell the tool this thread has stopped running client code
    VG_TRACK( stop_client_code, tid, bbs_done );
 
+   if (bbs_done >= vgdb_next_poll) {
+      if (VG_(clo_vgdb_poll))
+         vgdb_next_poll = bbs_done + (ULong)VG_(clo_vgdb_poll);
+      else
+         /* value was changed due to gdbserver invocation via ptrace */
+         vgdb_next_poll = NO_VGDB_POLL;
+      if (VG_(gdbserver_activity) (tid))
+         VG_(gdbserver) (tid);
+   }
+
    return trc;
 }
 
@@ -852,6 +884,11 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    VG_TRACK( stop_client_code, tid, bbs_done );
 
    return retval;
+}
+
+ULong VG_(bbs_done) (void)
+{
+   return bbs_done;
 }
 
 
@@ -959,9 +996,68 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 {
    UInt     trc;
    ThreadState *tst = VG_(get_ThreadState)(tid);
+   static Bool vgdb_startup_action_done = False;
 
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "entering VG_(scheduler)");      
+
+   /* Do vgdb initialization (but once). Only the first (main) task
+      starting up will do the below.
+      Initialize gdbserver earlier than at the first 
+      thread VG_(scheduler) is causing problems:
+      * at the end of VG_(scheduler_init_phase2) :
+        The main thread is in VgTs_Init state, but in a not yet
+        consistent state => the thread cannot be reported to gdb
+        (e.g. causes an assert in LibVEX_GuestX86_get_eflags when giving
+        back the guest registers to gdb).
+      * at end of valgrind_main, just
+        before VG_(main_thread_wrapper_NORETURN)(1) :
+        The main thread is still in VgTs_Init state but in a
+        more advanced state. However, the thread state is not yet
+        completely initialized : a.o., the os_state is not yet fully
+        set => the thread is then not properly reported to gdb,
+        which is then confused (causing e.g. a duplicate thread be
+        shown, without thread id).
+      * it would be possible to initialize gdbserver "lower" in the
+        call stack (e.g. in VG_(main_thread_wrapper_NORETURN)) but
+        these are platform dependent and the place at which
+        the thread state is completely initialized is not
+        specific anymore to the main thread (so a similar "do it only
+        once" would be needed).
+
+        => a "once only" initialization here is the best compromise. */
+   if (!vgdb_startup_action_done) {
+      vg_assert(tid == 1); // it must be the main thread.
+      vgdb_startup_action_done = True;
+      if (VG_(clo_vgdb) != Vg_VgdbNo) {
+         /* If we have to poll, ensures we do an initial poll at first
+            scheduler call. Otherwise, ensure no poll (unless interrupted
+            by ptrace). */
+         if (VG_(clo_vgdb_poll))
+            VG_(force_vgdb_poll) ();
+         else
+            VG_(disable_vgdb_poll) ();
+
+         vg_assert (VG_(dyn_vgdb_error) == VG_(clo_vgdb_error));
+         /* As we are initializing, VG_(dyn_vgdb_error) can't have been
+            changed yet. */
+
+         if (VG_(dyn_vgdb_error) == 0) {
+            /* The below call allows gdb to attach at startup
+               before the first guest instruction is executed. */
+            VG_(umsg)("(action at startup) vgdb me ... \n");
+            VG_(gdbserver)(1); 
+         } else {
+            /* User has activated gdbserver => initialize now the FIFOs
+               to let vgdb/gdb contact us either via the scheduler poll
+               mechanism or via vgdb ptrace-ing valgrind. */
+            if (VG_(gdbserver_activity) (1))
+               VG_(gdbserver) (1);
+         }
+      } else {
+         VG_(disable_vgdb_poll) ();
+      }
+   }
 
    /* set the proper running signal mask */
    block_signals();

@@ -146,6 +146,12 @@ extern Int  VG_(clo_verbosity);
 /* Show tool and core statistics */
 extern Bool VG_(clo_stats);
 
+/* wait for vgdb/gdb after reporting that amount of error.
+   Note that this is the initial value provided from the command line.
+   The real value is maintained in VG_(dyn_vgdb_error) and
+   can be changed dynamically.*/
+extern Int VG_(clo_vgdb_error);
+
 /* Emit all messages as XML? default: NO */
 /* If clo_xml is set, various other options are set in a non-default
    way.  See vg_main.c and mc_main.c. */

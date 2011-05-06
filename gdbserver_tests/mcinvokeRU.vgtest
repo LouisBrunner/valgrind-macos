@@ -1,0 +1,12 @@
+# test that vgdb can invoke a process when all threads are in Runnable or Yielding mode
+# If the test goes wrong, it might consume CPU during a long time.
+prog: sleepers
+args: 1 0 1000000000 B-B-B-B-
+vgopts: --tool=memcheck --vgdb=yes --vgdb-prefix=./vgdb-prefix-mcinvokeRU
+stderr_filter: filter_make_empty
+# as the Valgrind process is always busy, we do not need the vgdb.ptraceinvoker prereq.
+progB: invoker
+argsB: 10 --vgdb-prefix=./vgdb-prefix-mcinvokeRU --wait=60 -c vg.wait 0
+# if the --wait is not enough, the test will fail or block.
+stdoutB_filter: filter_memcheck_monitor
+stderrB_filter: filter_vgdb

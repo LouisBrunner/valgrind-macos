@@ -720,6 +720,49 @@ in most cases.  We group the available options by rough categories.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.vgdb" xreflabel="--vgdb">
+    <term>
+      <option><![CDATA[--vgdb=<no|yes|full> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Valgrind will enable its embedded gdbserver if value yes
+      or full is given. This allows an
+      external <computeroutput>gdb</computeroutput> debuggger to debug
+      your program running under Valgrind. See
+      <xref linkend="manual-core.gdbserver"/> for a detailed
+      description.
+      </para>
+
+      <para> If the embedded gdbserver is enabled but no gdb is
+      currently being used, the <xref linkend="manual-core.vgdb"/>
+      command line utility can send "monitor commands" to Valgrind
+      from a shell.  The Valgrind core provides a set of
+      <xref linkend="manual-core.valgrind-monitor-commands"/>. A tool
+      can optionally provide tool specific monitor commands, which are
+      documented in the tool specific chapter.
+      </para>
+
+      <para>The value 'full' has a significant overhead 
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.vgdb-error" xreflabel="--vgdb-error">
+    <term>
+      <option><![CDATA[--vgdb-error=<number> [default: 999999999] ]]></option>
+    </term>
+    <listitem>
+      <para> Use this option when the Valgrind gdbserver is enabled with
+      <option>--vgdb</option> yes or full value.  Tools that report
+      errors will invoke the embedded gdbserver for each error above
+      number. The value 0 will cause gdbserver to be invoked before
+      executing your program. This is typically used to insert gdb
+      breakpoints before execution, and will also work with tools that
+      do not report errors, such as Massif.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.track-fds" xreflabel="--track-fds">
     <term>
       <option><![CDATA[--track-fds=<yes|no> [default: no] ]]></option>
@@ -1140,6 +1183,13 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       debugger, quit from it, and the program will continue. Trying to
       continue from inside the debugger doesn't work.</para>
 
+      <para>
+      Note : if you use gdb, a more powerful debugging support is
+      provided by the <option>--vgdb</option> yes or full value,
+      allowing among others to insert breakpoints, continue from
+      inside the debugger, etc.
+      </para> 
+
       <para><varname>C Ret</varname> or <varname>c Ret</varname> causes
       Valgrind not to start a debugger, and not to ask again.</para>
     </listitem>
@@ -1473,6 +1523,57 @@ need to use these.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.vgdb-poll" xreflabel="--vgdb-poll">
+    <term>
+      <option><![CDATA[--vgdb-poll=<number> [default: 5000] ]]></option>
+    </term>
+    <listitem>
+      <para> As part of its main loop, the Valgrind scheduler will
+      poll to check if some activity (such as an external command or
+      some input from a gdb) has to be handled by gdbserver.  This
+      activity poll will be done after having run the given number of
+      basic blocks (or slightly more than the given number of basic
+      blocks). This poll is quite cheap so the default value is set
+      relatively low. You might further decrease this value if vgdb
+      cannot use ptrace system call to interrupt Valgrind if all
+      threads are (most of the time) blocked in a system call.
+      </para>
+      <para> GDBTD??? unclear why we have sometimes slightly more BB:
+      it seems that from time to time, some BB are run outside of
+      run_thread_for_a_while.  Maybe this is due to block chasing ?  I
+      do not think this is a problem, as I never saw more than a few
+      additional basic blocks being run without being visible in the
+      blocks executed by run_thread_for_a_while.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.vgdb-shadow-registers" xreflabel="--vgdb-shadow-registers">
+    <term>
+      <option><![CDATA[--vgdb-shadow-registers=no|yes [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para> When activated, gdbserver will expose the Valgrind shadow registers
+      to gdb. With this, the value of the Valgrind shadow registers can be examined
+      or changed using gdb. Exposing shadows registers only works with a gdb version
+      &gt;= 7.1.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.vgdb-prefix" xreflabel="--vgdb-prefix">
+    <term>
+      <option><![CDATA[--vgdb-prefix=<prefix> [default: /tmp/vgdb-pipe] ]]></option>
+    </term>
+    <listitem>
+      <para> To communicate with gdb/vgdb, the Valgrind gdbserver
+      creates 3 files (2 named FIFOs and a mmap shared memory
+      file). The prefix option controls the directory and prefix for
+      the creation of these files.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.run-libc-freeres" xreflabel="--run-libc-freeres">
     <term>
       <option><![CDATA[--run-libc-freeres=<yes|no> [default: yes] ]]></option>
@@ -1630,6 +1731,13 @@ need to use these.</para>
 Valgrind itself.  You shouldn't need to use them in the normal run of
 things.  If you wish to see the list, use the
 <option>--help-debug</option> option.</para>
+
+<para>If you wish to debug your program rather than debugging
+Valgrind itself, then you should use the options
+<option>--vgdb=yes</option> or <option>--vgdb=full</option>
+or <option>--db-attach=yes</option>.
+</para>
+
 <!-- end of xi:include in the manpage -->
 
 </sect2>
@@ -1692,7 +1800,869 @@ don't understand
 </sect1>
 
 
+<sect1 id="manual-core.gdbserver" 
+       xreflabel="Debugging your program using Valgrind gdbserver and gdb">
+<title>Debugging your program using Valgrind gdbserver and gdb</title>
 
+<para>A program running under Valgrind is not executed directly by the
+CPU.  It rather runs on a synthetic CPU provided by Valgrind. This is
+why a debugger cannot debug your program under Valgrind the usual way.
+</para>
+<para>
+This section describes the special way gdb can interact with the
+Valgrind gdbserver to provide a fully debuggable program under
+Valgrind. Used in this way, gdb also provides an interactive usage of
+Valgrind core or tool functionalities (such as incremental leak search
+under Memcheck, on-demand Massif snapshot production, ...).
+</para>
+
+<sect2 id="manual-core.gdbserver-simple"
+       xreflabel="gdbserver simple example">
+<title>Quick Start : debugging in 3 steps</title>
+
+<para>If you want to debug a program with gdb when using Memcheck
+tool, start Valgrind the following way:
+<screen><![CDATA[
+valgrind --vgdb=yes --vgdb-error=0 prog
+]]></screen></para>
+
+<para>In another window, start a gdb the following way:
+<screen><![CDATA[
+gdb prog
+]]></screen></para>
+
+<para>Then give the following command to gdb:
+<screen><![CDATA[
+(gdb) target remote | vgdb
+]]></screen></para>
+
+<para>You can now debug your program e.g. by inserting a breakpoint
+and then using the gdb 'continue' command.</para>
+
+<para> The above quick start is enough for a basic usage of the
+Valgrind gdbserver. Read the sections below to learn about the
+advanced functionalities provided by the combination of Valgrind and
+gdb. Note that the option --vgdb=yes can be omitted, as this is the
+default value.
+</para>
+
+</sect2>
+
+<sect2 id="manual-core.gdbserver-concept"
+       xreflabel="gdbserver">
+<title>Valgrind gdbserver concept</title>
+<para>The gdb debugger is typically used to debug a process running on
+the same machine : gdb uses system calls to do actions such as read
+the values of the process variables or registers. This technique only
+allows gdb to debug a program running on the same computer.
+</para>
+
+<para>Gdb can also debug processes running on a different computer.
+For this, gdb defines a protocol (i.e. a set of query and reply
+packets) that allows to e.g. fetch the value of memory or registers,
+to set breakpoints, etc.  A gdbserver is an implementation of this
+'gdb remote debugging' protocol. To debug a process running on a
+remote computer, a gdbserver (sometimes also called a gdb stub) must
+run at the remote computer side.
+</para>
+
+<para>The Valgrind core integrates an embedded gdbserver
+implementation, which is activated using <option>--vgdb=yes</option>
+or <option>--vgdb=full</option>. This gdbserver allows the process
+running on the Valgrind synthetic CPU to be debugged 'remotely' by gdb
+: gdb sends protocol query packets (such as 'get registers values') to
+the Valgrind embedded gdbserver.  The embedded gdbserver executes the
+queries (for example, it will get the registers values of the
+synthetic CPU) and give the result back to gdb.
+</para>
+
+<para> Gdb can use various ways (tcp/ip, serial line, ...) to send and
+receive the remote protocol packets to a gdbserver. In the case of the
+Valgrind gdbserver, gdb communicates using a pipe and the
+<xref linkend="manual-core.vgdb"/> command as a relay application.  If
+no gdb is currently being used, vgdb can also be used to send monitor
+commands to the Valgrind gdbserver from the shell command line.
+</para>
+
+</sect2>
+
+<sect2 id="manual-core.gdbserver-gdb"
+       xreflabel="Connecting gdb to a Valgrind gdbserver">
+<title>Connecting gdb to a Valgrind gdbserver</title>
+<para>To debug a program <filename>prog</filename> running under
+Valgrind, ensures that the Valgrind gdbserver is activated
+(i.e. --vgdb=yes or --vgdb=full). The option
+<![CDATA[--vgdb-error=<number> ]]> can be used to ask an invocation of
+the gdbserver for each error above number.  A zero value will cause an
+invocation of the Valgrind gdbserver at startup, allowing to insert
+breakpoints before starting the execution.  Example:
+<screen><![CDATA[
+valgrind --tool=memcheck --vgdb=yes --vgdb-error=0 ./prog
+]]></screen></para>
+
+<para>With the above command, the Valgrind gdbserver is invoked at startup
+and indicates it is waiting for a connection from a gdb:</para>
+
+<programlisting><![CDATA[
+==2418== Memcheck, a memory error detector
+==2418== Copyright (C) 2002-2010, and GNU GPL'd, by Julian Seward et al.
+==2418== Using Valgrind-3.7.0.SVN and LibVEX; rerun with -h for copyright info
+==2418== Command: ./prog
+==2418== 
+==2418== (action at startup) vgdb me ... 
+]]></programlisting>
+
+
+<para>A gdb in another window can then be connected to the Valgrind gdbserver.
+For this, gdb must be started on the program <filename>prog</filename>:
+<screen><![CDATA[
+gdb ./prog
+]]></screen></para>
+
+
+<para>You then indicate to gdb that a remote target debugging is to be done:
+<screen><![CDATA[
+(gdb) target remote | vgdb
+]]></screen>
+gdb then starts a vgdb relay application to communicate with the 
+Valgrind embedded gdbserver:</para>
+
+<programlisting><![CDATA[
+(gdb) target remote | vgdb
+Remote debugging using | vgdb
+relaying data between gdb and process 2418
+Reading symbols from /lib/ld-linux.so.2...done.
+Reading symbols from /usr/lib/debug/lib/ld-2.11.2.so.debug...done.
+Loaded symbols for /lib/ld-linux.so.2
+[Switching to Thread 2418]
+0x001f2850 in _start () from /lib/ld-linux.so.2
+(gdb) 
+]]></programlisting>
+
+<para> In case vgdb detects that multiple Valgrind gdbserver can be connected
+to, it will exit after reporting the list of the debuggable Valgrind
+processes and their PIDs. You can then relaunch the gdb 'target' command, but
+specifying the process id of the process you want to debug:
+</para>
+
+<programlisting><![CDATA[
+(gdb) target remote | vgdb
+Remote debugging using | vgdb
+no --pid= arg given and multiple valgrind pids found:
+use --pid=2479 for valgrind --tool=memcheck --vgdb=yes --vgdb-error=0 ./prog 
+use --pid=2481 for valgrind --tool=memcheck --vgdb=yes --vgdb-error=0 ./prog 
+use --pid=2483 for valgrind --vgdb=yes --vgdb-error=0 ./another_prog 
+Remote communication error: Resource temporarily unavailable.
+(gdb)  target remote | vgdb --pid=2479
+Remote debugging using | vgdb --pid=2479
+relaying data between gdb and process 2479
+Reading symbols from /lib/ld-linux.so.2...done.
+Reading symbols from /usr/lib/debug/lib/ld-2.11.2.so.debug...done.
+Loaded symbols for /lib/ld-linux.so.2
+[Switching to Thread 2479]
+0x001f2850 in _start () from /lib/ld-linux.so.2
+(gdb) 
+]]></programlisting>
+
+<para>Once gdb is connected to the Valgrind gdbserver, gdb can be used
+similarly to a native debugging session:</para>
+ <itemizedlist>
+  <listitem>
+    <para> Breakpoints can be inserted or deleted. </para>
+  </listitem>
+  <listitem>
+    <para> Variables and registers values can be examined or modified.
+    </para>
+  </listitem>
+  <listitem>
+    <para> Signal handling can be configured (printing, ignoring, ...).
+    </para>
+  </listitem>
+  <listitem>
+    <para> Execution can be controlled (continue, step, next, stepi, ...).
+    </para>
+  </listitem>
+  <listitem>
+    <para> Program execution can be interrupted using Control-C. </para>
+  </listitem>
+  <listitem>
+    <para> ... </para>
+  </listitem>
+ </itemizedlist>
+
+<para> Refer to the gdb user manual for a complete list of gdb functionalities.
+</para>
+
+</sect2>
+
+<sect2 id="manual-core.gdbserver-commandhandling"
+       xreflabel="Monitor command handling by the Valgrind gdbserver">
+<title>Monitor command handling by the Valgrind gdbserver</title>
+
+<para> The Valgrind gdbserver provides a set of additional specific
+functionalities through "monitor commands". Such monitor commands can
+be sent from the gdb command line or from the shell command line. See
+<xref linkend="manual-core.valgrind-monitor-commands"/> for the list
+of the Valgrind core monitor commands.
+</para>
+
+<para> Each tool can also provide tool specific monitor commands. An
+example of a tool specific monitor command is the Memcheck monitor
+command <computeroutput>mc.leak_check any full
+reachable</computeroutput>.  This requests a full reporting of the
+allocated memory blocks. To have this leak check executed, use the gdb
+command:
+<screen><![CDATA[
+(gdb) monitor mc.leak_check any full reachable
+]]></screen>
+</para>
+
+<para> gdb will send the mc.leak_check command to the Valgrind gdbserver. The
+Valgrind gdbserver will either execute the monitor command itself (if
+it recognises a Valgrind core monitor command) or let the tool execute the
+tool specific monitor commands:
+</para>
+<programlisting><![CDATA[
+(gdb) monitor mc.leak_check any full reachable
+==2418== 100 bytes in 1 blocks are still reachable in loss record 1 of 1
+==2418==    at 0x4006E9E: malloc (vg_replace_malloc.c:236)
+==2418==    by 0x804884F: main (prog.c:88)
+==2418== 
+==2418== LEAK SUMMARY:
+==2418==    definitely lost: 0 bytes in 0 blocks
+==2418==    indirectly lost: 0 bytes in 0 blocks
+==2418==      possibly lost: 0 bytes in 0 blocks
+==2418==    still reachable: 100 bytes in 1 blocks
+==2418==         suppressed: 0 bytes in 0 blocks
+==2418== 
+(gdb) 
+]]></programlisting>
+
+<para> Like for the gdb commands, the Valgrind gdbserver will accept
+abbreviated monitor command names and arguments, as long as the given
+abbreviation is non ambiguous. For example, the above mc.leak_check
+command can also be typed as:
+<screen><![CDATA[
+(gdb) mo mc.l a f r
+]]></screen>
+
+The letters <computeroutput>mo</computeroutput> are recognised by gdb as being
+<computeroutput>monitor</computeroutput>.  So, gdb sends the
+string <computeroutput>mc.l a f r</computeroutput> to the Valgrind
+gdbserver. The letters provided in this string are unambiguous for the
+Valgrind gdbserver.  So, this will give the same output as the non
+abbreviated command and arguments. If the provided abbreviation is
+ambiguous, the Valgrind gdbserver will report the list of commands (or
+argument values) that can match:
+<programlisting><![CDATA[
+(gdb) mo mc. a r f
+mc. can match mc.get_vbits mc.leak_check mc.make_memory mc.check_memory
+(gdb) 
+]]></programlisting>
+</para>
+
+<para> Instead of sending a monitor command from gdb, you can also
+send these from a shell command line. For example, the below command lines
+given in a shell will cause the same leak search to be executed by the
+process 3145:
+<screen><![CDATA[
+vgdb --pid=3145 mc.leak_check any full reachable
+vgdb --pid=3145 mc.l a f r
+]]></screen></para>
+
+<para>Note that the Valgrind gdbserver automatically continues the
+execution of the program after a standalone invocation of
+vgdb. Monitor commands sent from gdb do not cause the program to
+continue: the program execution is controlled explicitely using gdb
+commands such as 'continue' or 'next'.</para>
+
+</sect2>
+
+<sect2 id="manual-core.gdbserver-threads"
+       xreflabel="Valgrind gdbserver thread info">
+<title>Valgrind gdbserver thread info</title>
+
+<para> The Valgrind gdbserver enriches the output of the
+gdb <computeroutput>info threads</computeroutput> with Valgrind
+specific information. The operating system thread number is followed
+by the Valgrind 'tid' and the Valgrind scheduler thread state:</para>
+
+<programlisting><![CDATA[
+(gdb) info threads
+  4 Thread 6239 (tid 4 VgTs_Yielding)  0x001f2832 in _dl_sysinfo_int80 () from /lib/ld-linux.so.2
+* 3 Thread 6238 (tid 3 VgTs_Runnable)  make_error (s=0x8048b76 "called from London") at prog.c:20
+  2 Thread 6237 (tid 2 VgTs_WaitSys)  0x001f2832 in _dl_sysinfo_int80 () from /lib/ld-linux.so.2
+  1 Thread 6234 (tid 1 VgTs_Yielding)  main (argc=1, argv=0xbedcc274) at prog.c:105
+(gdb) 
+]]></programlisting>
+
+</sect2>
+
+<sect2 id="manual-core.gdbserver-shadowregisters"
+       xreflabel="Examining and modifying Valgrind shadow registers">
+<title>Examining and modifying Valgrind shadow registers</title>
+
+<para> When the option <![CDATA[--vgdb-shadow-registers=yes ]]> is
+given, the Valgrind gdbserver will let gdb examine and/or modify the
+Valgrind shadow registers. A gdb version &gt;= 7.1 is needed for this
+to work.</para>
+
+<para> For each CPU register, the Valgrind core maintains two
+shadow registers. These shadow registers can be accessed from
+gdb by giving a postfix s1 or s2 for respectively the first
+and second shadow registers. As an example, the x86 register
+<computeroutput>eax</computeroutput> and its two shadow
+registers can be examined using the following commands:</para>
+
+<programlisting><![CDATA[
+(gdb) p $eax
+$1 = 0
+(gdb) p $eaxs1
+$2 = 0
+(gdb) p $eaxs2
+$3 = 0
+(gdb) 
+]]></programlisting>
+
+</sect2>
+
+
+<sect2 id="manual-core.gdbserver-limitations"
+       xreflabel="Limitations of the Valgrind gdbserver">
+<title>Limitations of the Valgrind gdbserver</title>
+
+<para>Debugging with the Valgrind gdbserver is very similar to native
+debugging. The implementation of the Valgrind gdbserver is quite
+complete, and so provides most of the gdb debugging facilities. There
+are however some limitations or particularities described in details
+in this section:</para>
+ <itemizedlist>
+   <listitem>
+     <para> Precision of 'stopped at instruction'.</para>
+     <para>Gdb commands such as 'step', 'next', 'stepi', breakpoints,
+     watchpoints, ... will stop the execution of the process.  With
+     the option --vgdb=yes, the process might not stop at the exact
+     instruction needed. Instead, it might continue execution of the
+     current block and stop at one of the following blocks. This is
+     linked to the fact that Valgrind gdbserver has to instrument a
+     block to allow stopping at the exact instruction requested.
+     Currently, re-instrumenting the current block being executed is
+     not supported. So, if the action requested by gdb (e.g. single
+     stepping or inserting a breakpoint) implies to re-instrument the
+     current block, the gdb action might not be executed precisely.
+     </para>
+     <para> This limitation will be triggered when the current block
+     being executed has not (yet) been instrumented for debugging.
+     This typically happens when the gdbserver is activated due to the
+     tool reporting an error or to a watchpoint. If the gdbserver
+     block has been activated following a breakpoint (or if a
+     breakpoint has been inserted in the block before its execution),
+     then the block has already been instrumented for debugging.
+     </para>
+     <para> If you use the option --vgdb=full, then gdb 'stop actions'
+     will always be obeyed precisely, but this implies that each
+     instruction will be instrumented with an additional call to a
+     gdbserver helper function, which implies some overhead compared
+     to --vgdb=no. Option --vgdb=yes has neglectible overhead compared
+     to --vgdb=no.
+     </para>
+   </listitem>
+
+   <listitem>
+     <para>Hardware watchpoint support by the Valgrind
+     gdbserver.</para>
+
+     <para> The Valgrind gdbserver can simulate hardware watchpoints
+     (but only if the tool provides the support for this). Currently,
+     only Memcheck provides hardware watchpoint simulation. The
+     hardware watchpoint simulation provided by Memcheck is much
+     faster that gdb software watchpoints (which are implemented by
+     gdb checking the value of the watched zone(s) after each
+     instruction). Hardware watchpoint simulation also provides read
+     watchpoints.  The hardware watchpoint simulation by Memcheck has
+     some limitations compared to the real hardware
+     watchpoints. However, the number and length of simulated
+     watchpoints are not limited.
+     </para>
+     <para> Typically, the number of (real) hardware watchpoint is
+     limited.  For example, the x86 architecture supports a maximum of
+     4 hardware watchpoints, each watchpoint watching 1, 2, 4 or 8
+     bytes. The Valgrind gdbserver does not have a limitation on the
+     number of simulated hardware watchpoints. It also has no
+     limitation on the length of the memory zone being
+     watched. However, gdb currently does not (yet) understand that
+     Valgrind gdbserver watchpoints have no length limit.  A gdb patch
+     providing a command 'set remote hardware-watchpoint-length-limit'
+     has been developped. The integration of this patch in gdb would
+     allow to fully use the flexibility of the Valgrind gdbserver
+     simulated hardware watchpoints (is there a gdb developper reading
+     this ?).
+     </para>
+     <para> Memcheck implements hardware watchpoint simulation by
+     marking the watched zone(s) as being unaddressable. In case a
+     hardware watchpoint is removed, the zone is marked as addressable
+     and defined.  Hardware watchpoint simulation of addressable
+     undefined memory zones will properly work, but will have as a
+     side effect to mark the zone as defined when the watchpoint is
+     removed.</para>
+     <para> Write watchpoints might not be reported at the instruction
+     which is modifying the value unless option --vgdb=full is
+     given. Read watchpoints will always be reported at the exact
+     instruction reading the watched memory.</para>
+     <para> It is better to avoid using hardware watchpoint of not
+     addressable (yet) memory: in such a case, gdb will fallback to
+     extremely slow software watchpoints. Also, if you do not quit gdb
+     between two debugging sessions, the hardware watchpoints of the
+     previous sessions will be re-inserted as software watchpoints if
+     the watched memory zone is not addressable at program startup.
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> Stepping inside shared libraries on ARM.</para>
+     <para> For a not (yet?) clear reason, stepping inside a shared
+     library on ARM might fail. The bypass is to use the ldd command
+     to find the list of shared libraries and their loading address
+     and inform gdb of the loading address using the gdb command
+     'add-symbol-file'. Example (for a ./p executable):
+     <programlisting><![CDATA[
+(gdb) shell ldd ./p
+	libc.so.6 => /lib/libc.so.6 (0x4002c000)
+	/lib/ld-linux.so.3 (0x40000000)
+(gdb) add-symbol-file /lib/libc.so.6 0x4002c000
+add symbol table from file "/lib/libc.so.6" at
+	.text_addr = 0x4002c000
+(y or n) y
+Reading symbols from /lib/libc.so.6...(no debugging symbols found)...done.
+(gdb) 
+]]></programlisting>
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> gdb version needed for ARM and PPC32/64.</para>
+     <para> You must use a gdb version which is able to read XML
+     target description sent by gdbserver (this is the standard setup
+     if the gdb was configured on a computer with the expat
+     library). If your gdb was not configured with XML support, it
+     will report an error message when using the target
+     command. Debugging will not work because gdb will then not be
+     able to fetch the registers from the Valgrind gdbserver.
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> Stack unwinding on PPC32/PPC64. </para>
+     <para> On PPC32/PPC64, stack unwinding for leaf functions
+     (i.e. functions not calling other functions) does work properly
+     only with <option>--vex-iropt-precise-memory-exns=yes</option>
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> Breakpoint encountered multiple times. </para>
+     <para> Some instructions (e.g. the x86 "rep movsb")
+     are translated by Valgrind using a loop. If a breakpoint is placed
+     on such an instruction, the breakpoint will be encountered
+     multiple times (i.e. once for each step of the "implicit" loop
+     implementing the instruction).
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> Execution of Inferior function calls by the Valgrind
+     gdbserver. </para>
+
+     <para> gdb allows the user to "call" functions inside the process
+     being debugged. Such calls are named 'Inferior calls' in the gdb
+     terminology.  A typical usage of an 'Inferior call' is to execute
+     a function that outputs a readable image of a complex data
+     structure. To make an Inferior call, use the gdb 'print' command
+     followed by the function to call and its arguments. As an
+     example, the following gdb command causes an Inferior call to the
+     libc printf function to be executed by (and inside) the process
+     being debugged:
+     </para>
+     <programlisting><![CDATA[
+(gdb) p printf("process being debugged has pid %d\n", getpid())
+$5 = 36
+(gdb) 
+]]></programlisting>
+
+     <para>The Valgrind gdbserver accepts Inferior function
+     calls. During Inferior calls, the Valgrind tool will report
+     errors as usual. If you do not want to have such errors stopping
+     the execution of the Inferior call, you can use 'vg.set
+     vgdb-error' to set a big value before the call, and reset the
+     value after the Inferior call.</para>
+
+     <para>To execute Inferior calls, gdb changes registers such as
+     the program counter, and then continues the execution of the
+     program. In a multi-thread program, all threads are continued,
+     not only the thread instructed to make an Inferior call. If
+     another thread reports an error or encounters a break, the
+     evaluation of the Inferior call is abandonned.</para>
+
+     <para> Note that Inferior function calls is a powerful gdb
+     functionality but it has to be used with caution. For example, if
+     the program being debugged is stopped inside the function printf,
+     'forcing' a recursive call to printf via an Inferior call will
+     very probably create problems. The Valgrind tool might also add
+     another level of complexity to Inferior calls, e.g. by reporting
+     tool errors during the Inferior call or due to the
+     instrumentation done.
+     </para>
+
+   </listitem>
+
+   <listitem>
+     <para>Connecting to or interrupting a Valgrind process blocked in
+     a system call.</para>
+
+     <para> Connecting to or interrupting a Valgrind process blocked
+     in a system call is depending on ptrace system call, which might
+     be disabled on your kernel. </para>
+
+     <para> At regular interval, after having executed some basic
+     blocks, the Valgrind scheduler checks if some input is to be
+     handled by the Valgrind gdbserver. However, this check is only
+     done if at least one thread of the process is executing (enough)
+     basic blocks.  If all the threads of the process are blocked in a
+     system call, then no basic blocks are being executed, and the
+     Valgrind scheduler will not invoke the Valgrind gdbserver.  In
+     such a case, the vgdb relay application will 'force' the Valgrind
+     gdbserver to be invoked, without the intervention of the Valgrind
+     scheduler.
+     </para>
+
+     <para> Such forced invocation of the Valgrind gdbserver is
+     implemented by vgdb using ptrace system calls. On a properly
+     implemented kernel, the ptrace calls done by vgdb will not
+     influence the behaviour of the program running under Valgrind. In
+     case of unexpected impact, giving the option --max-invoke-ms=0 to
+     the vgdb relay application will disable the usage of ptrace
+     system call. The consequence of disabling ptrace system call in
+     vgdb is that a Valgrind process blocked in a system call cannot
+     be waken up or interrupted from gdb till it executes (enough)
+     basic blocks to let the scheduler poll invoke the gdbserver..
+     </para>
+     <para>When ptrace is disabled in vgdb, you might increase the
+     responsiveness of the Valgrind gdbserver to commands or
+     interrupts by giving a lower value to the option --vgdb-poll: if
+     your application is most of the time blocked in a system call,
+     using a very low value for vgdb-poll will cause a faster
+     invocation of gdbserver. As the gdbserver poll done by the
+     scheduler is very efficient, the more frequent check by the
+     scheduler should not cause significant performance degradation.
+     </para>
+     <para>When ptrace is disabled in vgdb, a query packet sent by gdb
+     might take a significant time to be handled by the Valgrind
+     gdbserver.  In such a case, gdb might encounter a protocol
+     timeout.  To avoid having gdb encountering such a timeout error,
+     you can increase the value of this timeout by using the gdb
+     command 'set remotetimeout'.
+     </para>
+
+     <para> Ubuntu version &gt;= 10.10 can also restrict the scope of
+     ptrace to the children of the process calling ptrace. As the
+     Valgrind process is not a child of vgdb, such restricted scope
+     causes ptrace system call to fail.  To avoid that, when Valgrind
+     gdbserver receives the first packet from a vgdb, it calls
+     prctl(PR_SET_PTRACER, vgdb_pid, 0, 0, 0) to ensure vgdb can use
+     ptrace. Once vgdb_pid has been set as ptracer, vgdb can then
+     properly force the invocation of Valgrind gdbserver when
+     needed. To ensure the vgdb is set as ptracer before the Valgrind
+     process could be blocked in a system call, connect your gdb to
+     the Valgrind gdbserver at startup (i.e. use --vgdb-error=0).
+     Note that this 'set ptracer' is not solving the problem for the
+     connection of a standalone vgdb: the first command to be sent by
+     a standalone vgdb must wake up the Valgrind process before
+     Valgrind gdbserver will set vgdb as ptracer.
+     </para>
+
+     <para> Unblocking a process blocked in a system call is
+     not implemented on Darwin. So, waiting for vgdb on Darwin to
+     be enhanced, you cannot connect/interrupt a process blocked
+     in a system call on Darwin.
+     </para>
+
+   </listitem>
+
+   <listitem>
+     <para> Changing registers of a thread.</para>
+     <para> The Valgrind gdbserver only accepts to modify the values
+     of the registers of a thread when the thread is in status
+     Runnable or Yielding. In other states (typically, WaitSys), changing
+     registers values will not be accepted. This among others ensures
+     that Inferior calls are not executed for a thread which is in a
+     system call : the Valgrind gdbserver does not implement system
+     call restart.
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> gdb functionalities not supported.</para>
+     <para> gdb provides an awful lot of debugging functionalities.
+     At least the following are not supported: reversible debugging,
+     tracepoints.
+     </para>
+   </listitem>
+
+   <listitem>
+     <para> Unknown limitations or problems.</para>
+     <para> The combination of gdb, Valgrind and the Valgrind
+     gdbserver has for sure some still unknown other
+     limitations/problems but we do not know about these unknown
+     limitations/problems :).  If you encounter such (annoying)
+     limitations or problems, feel free to report a bug.  But first
+     verify if the limitation or problem is not inherent to gdb or the
+     gdb remote protocol e.g. by checking the behaviour with the
+     standard gdbserver part of the gdb package.
+     </para>
+   </listitem>
+
+ </itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="manual-core.vgdb"
+       xreflabel="vgdb">
+<title>vgdb command line options</title>
+<para> Usage: vgdb [OPTION]... [[-c] COMMAND]...</para>
+
+<para> vgdb (Valgrind to gdb) has two usages:</para>
+<orderedlist>
+  <listitem id="manual-core.vgdb-standalone" xreflabel="vgdb standalone">
+    <para>As a standalone utility, it is used from a shell command
+    line to send monitor commands to a process running under
+    Valgrind. For this usage, the vgdb OPTION(s) must be followed by
+    the monitor command to send. To send more than one command,
+    separate them with the -c option.
+    </para>
+  </listitem>
+
+  <listitem id="manual-core.vgdb-relay" xreflabel="vgdb relay">
+    <para>In combination with gdb 'target remote |' command, it is
+    used as the relay application between gdb and the Valgrind
+    gdbserver.  For this usage, only OPTION(s) can be given, no
+    command can be given.
+    </para>
+  </listitem>
+
+</orderedlist>
+
+<para><computeroutput>vgdb</computeroutput> accepts the following
+options:</para>
+<itemizedlist>
+  <listitem>
+    <para><option>--pid=&lt;number&gt;</option>: specifies the pid of
+    the process to which vgdb must connect to. This option is useful
+    in case more than one Valgrind gdbserver can be connected to. If
+    --pid argument is not given and multiple Valgrind gdbserver
+    processes are running, vgdb will report the list of such processes
+    and then exit.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>--vgdb-prefix</option> must be given to both
+    Valgrind and vgdb utility if you want to change the default prefix
+    for the FIFOs communication between the Valgrind gdbserver and
+    vgdb. </para>
+  </listitem>
+
+  <listitem>
+    <para><option>--max-invoke-ms=&lt;number&gt;</option> gives the
+    number of milli-seconds after which vgdb will force the invocation
+    of gdbserver embedded in valgrind. Default value is 100
+    milli-seconds. A value of 0 disables the forced invocation.
+    </para>
+
+    <para>If you specify a big value here, you might need to increase
+    the gdb remote timeout. The default value of the gdb remotetimeout
+    is 2 seconds. You should ensure that the gdb remotetimeout (in
+    seconds) is bigger than the max-invoke-ms value. For example, for
+    a 5000 --max-invoke-ms, the following gdb command will set a value
+    big enough:
+    <screen><![CDATA[
+    (gdb) set remotetimeout 6
+    ]]></screen>
+    </para>
+  </listitem>
+   
+  <listitem>
+    <para><option>--wait=&lt;number&gt;</option> instructs vgdb to
+    check during the specified number of seconds if a Valgrind
+    gdbserver can be found. This allows to start a vgdb before the
+    Valgrind gdbserver is started. This option will be more useful in
+    combination with a --vgdb-prefix unique for the process you want
+    to wait for. Also, if you use the --wait argument in the gdb
+    'target remote' command, you must set the gdb remotetimeout to a
+    value bigger than the --wait argument value. See option
+    --max-invoke-ms for an example of setting this remotetimeout
+    value.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>-c</option> To give more than one command, separate
+    the commands by an option -c. Example:
+    <screen><![CDATA[
+vgdb vg.set log_output -c mc.leak_check any
+]]></screen></para>
+  </listitem>  
+
+  <listitem>
+    <para><option>-d</option> instructs vgdb to produce debugging
+    output.  Give multiple -d args for more debug info.</para>
+  </listitem>
+  
+  <listitem>
+    <para><option>-D</option> instructs vgdb to show the state of the
+    shared memory used by the Valgrind gdbserver. vgdb will exit after
+    having shown the Valgrind gdbserver shared memory state.</para>
+  </listitem>
+</itemizedlist>
+ 
+</sect1>
+
+
+<sect1 id="manual-core.valgrind-monitor-commands" 
+       xreflabel="Valgrind monitor commands">
+<title>Valgrind monitor commands</title>
+
+<para>The Valgrind monitor commands are available whatever the
+tool. They can be sent either from a shell command line (using a
+standalone vgdb) or from gdb (using the gdb 'monitor' command).</para>
+
+<itemizedlist>
+  <listitem>
+    <para><varname>help [debug]</varname> instructs Valgrind gdbserver
+    to give the list of all monitor commands of the Valgrind core and
+    of the tool. The optional 'debug' argument tells to also give help
+    for the monitor commands aimed at Valgrind internals debugging.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.info all_errors</varname> shows all errors found
+    so far.</para>
+  </listitem>
+  <listitem>
+    <para><varname>vg.info last_error</varname> shows the last error
+    found.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.info n_errs_found</varname> shows the nr of
+    errors found so far and the current value of the --vgdb-error
+    argument.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.set {gdb_output | log_output |
+    mixed_output}</varname> allows to redirect the Valgrind output
+    (e.g. the errors detected by the tool). By default, the setting is
+    mixed_output. </para>
+    
+    <para>With mixed_output, the Valgrind output goes to the Valgrind
+    log (typically stderr) while the output of the interactive gdb
+    monitor commands (e.g. vg.info last_error) is displayed by
+    gdb.</para>
+    
+    <para>With gdb_output, both the Valgrind output and the
+    interactive gdb monitor commands output is displayed by
+    gdb.</para>
+    
+    <para>With log_output, both the Valgrind output and the
+    interactive gdb monitor commands output go to the Valgrind
+    log.</para>
+  </listitem>
+  
+  <listitem>
+    <para><varname>vg.wait [ms (default 0)]</varname> instructs
+    Valgrind gdbserver to sleep 'ms' milli-seconds and then
+    continue. When sent from a standalone vgdb, if this is the last
+    command, the Valgrind process will continue the execution of the
+    guest process. The typical usage of this is to use vgdb to send a
+    "no-op" command to a Valgrind gdbserver so as to continue the
+    execution of the guess process.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.kill;</varname> requests the gdbserver to kill
+    the process. This can be used from a standalone vgdb to properly
+    kill a Valgrind process which is currently expecting a vgdb
+    connection.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.set vgdb-error &lt;errornr&gt;</varname>
+    dynamically changes the value of the --vgdb-error argument. A
+    typical usage of this is to start with --vgdb-error=0 on the
+    command line, then set a few breakpoints, set the vgdb-error value
+    to a huge value and continue execution.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>The below Valgrind monitor commands are useful to investigate
+the behaviour of Valgrind or Valgrind gdbserver in case of problem or
+bug.</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para><varname>vg.info gdbserver_status</varname> shows the
+    gdbserver status. In case of problem (e.g. of communications),
+    this gives the value of some relevant Valgrind gdbserver internal
+    variables.  Note that the variables related to breakpoints and
+    watchpoints (e.g. the nr of gdbserved addresses and the nr of
+    watchpoints) will be zero, as gdb by default removes all
+    watchpoints and breakpoints when execution stops, and re-inserts
+    them when resuming the execution of the debugged process. You can
+    change this gdb behaviour by using the gdb command 'set breakpoint
+    always-inserted on'.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.info memory</varname> shows the statistics of
+    the Valgrind heap management. If
+    option <option>--profile-heap=yes=yes</option> was given, detailed
+    statistics will be output.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.set debuglog &lt;intvalue&gt;</varname> sets the
+    valgrind debug log level to &lt;intvalue&gt;. This allows to
+    dynamically change the log level of Valgrind e.g. when a problem
+    is detected.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>vg.translate &lt;address&gt;
+    [&lt;traceflags&gt;]</varname> traces the translation of the block
+    containing address with the given trace flags. The traceflags is a
+    bit pattern similar to the --trace-flags option.  It can be given
+    in hexadecimal (e.g. 0x20) or decimal (e.g. 32) or in binary 1s
+    and 0s bit (e.g. 0b00100000). The default value of the traceflags
+    is 0b00100000, corresponding to 'show after instrumentation'. Note
+    that the output of this command always goes to the Valgrind
+    log. The additional bit flag 0b100000000 traces in addition the
+    gdbserver specific instrumentation. Note that bit can only enable
+    the addition of the gdbserver instrumentation in the trace.
+    Keeping this flag to 0 will not disable the tracing of the
+    gdbserver instrumentation if it is active for another reason
+    (e.g. because there is a breakpoint at this address or because
+    gdbserver is in single stepping mode). </para>
+  </listitem>
+
+</itemizedlist>
+
+</sect1>
 
 <sect1 id="manual-core.pthreads" xreflabel="Support for Threads">
 <title>Support for Threads</title>

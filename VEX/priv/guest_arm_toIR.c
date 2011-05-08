@@ -17740,21 +17740,35 @@ DisResult disInstr_THUMB_WRK (
    }
 
    /* -------------- v7 barrier insns -------------- */
-   if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF0F) == 0x8F0F) {
+   if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF00) == 0x8F00) {
       /* XXX this isn't really right, is it?  The generated IR does
          them unconditionally.  I guess it doesn't matter since it
          doesn't do any harm to do them even when the guarding
          condition is false -- it's just a performance loss. */
-      switch (INSN1(7,4)) {
-         case 0x4: /* DSB */
+      switch (INSN1(7,0)) {
+         case 0x4F: /* DSB sy */
+         case 0x4E: /* DSB st */
+         case 0x4B: /* DSB ish */
+         case 0x4A: /* DSB ishst */
+         case 0x47: /* DSB nsh */
+         case 0x46: /* DSB nshst */
+         case 0x43: /* DSB osh */
+         case 0x42: /* DSB oshst */
             stmt( IRStmt_MBE(Imbe_Fence) );
             DIP("DSB\n");
             goto decode_success;
-         case 0x5: /* DMB */
+         case 0x5F: /* DMB sy */
+         case 0x5E: /* DMB st */
+         case 0x5B: /* DMB ish */
+         case 0x5A: /* DMB ishst */
+         case 0x57: /* DMB nsh */
+         case 0x56: /* DMB nshst */
+         case 0x53: /* DMB osh */
+         case 0x52: /* DMB oshst */
             stmt( IRStmt_MBE(Imbe_Fence) );
             DIP("DMB\n");
             goto decode_success;
-         case 0x6: /* ISB */
+         case 0x6F: /* ISB */
             stmt( IRStmt_MBE(Imbe_Fence) );
             DIP("ISB\n");
             goto decode_success;

@@ -24,6 +24,7 @@ static pid_t gettid()
 }
 
 // will be invoked from gdb.
+static void whoami(char *msg) __attribute__((unused));
 static void whoami(char *msg)
 {
    fprintf(stderr, "pid %d Thread %d %s\n", getpid(), gettid(), msg);
@@ -131,7 +132,7 @@ int main (int argc, char *argv[])
   char *threads_spec;
   pthread_t ebbr, egll, zzzz;
   struct spec b, l, p, m;
-  char *some_mem = malloc(100);
+  char *some_mem __attribute__((unused)) = malloc(100);
   setaffinity();
 
   if (argc > 1)

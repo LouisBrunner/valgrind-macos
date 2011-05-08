@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-main()
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main()
 {
    int mem = 0;
    int pid;
@@ -31,4 +34,6 @@ main()
    }
    if (mem == 0)
       printf("mem is zero\n");
+
+   return 0;
 }

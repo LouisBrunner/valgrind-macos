@@ -33,9 +33,9 @@ static int int_und;
 static int sleeps = 15;
 static void make_error (char *s)
 {
-  char *make_error_name = "make_error name";
-  char c;
-  double pi2 = 2.0 * pi;
+  char *make_error_name __attribute__((unused)) = "make_error name";
+  char c __attribute__((unused));
+  double pi2 __attribute__((unused)) = 2.0 * pi;
   whoami(s);
   if (int_und == 0)
      printf ("%s int_und is zero %d\n", s, int_und);
@@ -46,7 +46,7 @@ static void make_error (char *s)
 
 static void level ()
 {
-  char *level_name = "level name";
+  char *level_name __attribute__((unused)) = "level name";
   make_error ("called from level");
 }
 
@@ -55,12 +55,12 @@ static void loops (int *loopnr)
   int i, j;
   for (i = 0; i < LOOPS; i++)
     for (j = 0; i < LOOPS; i++)
-      *loopnr++;
+      (*loopnr)++;
 }
  
 static void *brussels_fn(void *v)
 {
-  char *brussels_name = "Brussels";
+  char *brussels_name __attribute__((unused)) = "Brussels";
   make_error ("called from Brussels");
   loopt1 = 1;
   while (! (loopt1 && loopt2 && loopmain))
@@ -70,7 +70,7 @@ static void *brussels_fn(void *v)
 }
 static void *london_fn(void *v)
 {
-  char *london_name = "London";
+  char *london_name __attribute__((unused)) = "London";
   make_error ("called from London");
   loopt2 = 1;
   while (! (loopt1 && loopt2 && loopmain))
@@ -81,7 +81,7 @@ static void *london_fn(void *v)
 }
 static void *petaouchnok_fn(void *v)
 {
-  char *petaouchnok_name = "Petaouchnok";
+  char *petaouchnok_name __attribute__((unused)) = "Petaouchnok";
   struct timeval t;
   int i;
   for (i = 1; i <= sleeps; i++) {
@@ -102,11 +102,11 @@ static void breakme(int line)
 }
 int main (int argc, char *argv[])
 {
-  char *main_name = "main name";
+  char *main_name __attribute__((unused)) = "main name";
   pthread_t ebbr, egll, zzzz;
   int i = 1234;
   char undef = '?';
-  char *some_mem = malloc(100);
+  char *some_mem __attribute__((unused)) = malloc(100);
   VALGRIND_MAKE_MEM_UNDEFINED(&undef, 1);
   int len = strlen(undefined);
   breakme(__LINE__); //break1

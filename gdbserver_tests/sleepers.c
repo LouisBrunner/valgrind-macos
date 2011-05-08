@@ -22,7 +22,6 @@ static pid_t gettid()
    return getpid();
 #endif
 }
-
 // will be invoked from gdb.
 static void whoami(char *msg) __attribute__((unused));
 static void whoami(char *msg)

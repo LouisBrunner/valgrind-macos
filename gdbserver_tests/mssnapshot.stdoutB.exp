@@ -3,4 +3,4 @@ Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mssnapshot
 Breakpoint 1 at 0x........: file t.c, line 105.
 Continuing.
 Breakpoint 1, main (argc=1, argv=0x........) at t.c:105
-105	  char *main_name = "main name";
+105	  char *main_name __attribute__((unused)) = "main name";

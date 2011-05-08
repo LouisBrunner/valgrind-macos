@@ -3,12 +3,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
 int main()
 {
-   int mem = 0;
-   int pid;
-   
+   int mem = 0, pid;
    pid = fork();
    if (pid == -1) {
       mem = 1;

@@ -969,17 +969,65 @@ PPCInstr* PPCInstr_FpRSP ( HReg dst, HReg src ) {
    i->Pin.FpRSP.src = src;
    return i;
 }
+
+/*
+Valid combo | fromI | int32 | syned | flt64 |
+--------------------------------------------
+            |  n       n       n       n    |
+--------------------------------------------
+ F64->I64U  |  n       n       n       y    |
+--------------------------------------------
+            |  n       n       y       n    |
+--------------------------------------------
+ F64->I64S  |  n       n       y       y    |
+--------------------------------------------
+            |  n       y       n       n    |
+--------------------------------------------
+ F64->I32U  |  n       y       n       y    |
+--------------------------------------------
+            |  n       y       y       n    |
+--------------------------------------------
+ F64->I32S  |  n       y       y       y    |
+--------------------------------------------
+ I64U->F32  |  y       n       n       n    |
+--------------------------------------------
+ I64U->F64  |  y       n       n       y    |
+--------------------------------------------
+            |  y       n       y       n    |
+--------------------------------------------
+ I64S->F64  |  y       n       y       y    |
+--------------------------------------------
+            |  y       y       n       n    |
+--------------------------------------------
+            |  y       y       n       y    |
+--------------------------------------------
+            |  y       y       y       n    |
+--------------------------------------------
+            |  y       y       y       y    |
+--------------------------------------------
+*/
 PPCInstr* PPCInstr_FpCftI ( Bool fromI, Bool int32, Bool syned,
-                            Bool dst64, HReg dst, HReg src ) {
+                            Bool flt64, HReg dst, HReg src ) {
+   Bool tmp = fromI | int32 | syned | flt64;
+   vassert(tmp == True || tmp == False); // iow, no high bits set
+   UShort conversion = 0;
+   conversion = (fromI << 3) | (int32 << 2) | (syned << 1) | flt64;
+   switch (conversion) {
+      // Supported conversion operations
+      case 1: case 3: case 5: case 7:
+      case 8: case 9: case 11:
+         break;
+      default:
+         vpanic("PPCInstr_FpCftI(ppc_host)");
+   }
    PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag              = Pin_FpCftI;
    i->Pin.FpCftI.fromI = fromI;
    i->Pin.FpCftI.int32 = int32;
    i->Pin.FpCftI.syned = syned;
-   i->Pin.FpCftI.dst64 = dst64;
+   i->Pin.FpCftI.flt64 = flt64;
    i->Pin.FpCftI.dst   = dst;
    i->Pin.FpCftI.src   = src;
-   vassert(!(int32 && fromI)); /* no such insn ("fcfiw"). */
    return i;
 }
 PPCInstr* PPCInstr_FpCMov ( PPCCondCode cond, HReg dst, HReg src ) {
@@ -1452,7 +1500,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       if (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False) {
          if (i->Pin.FpCftI.syned == True)
             str = "fcfid";
-         else if (i->Pin.FpCftI.dst64 == True)
+         else if (i->Pin.FpCftI.flt64 == True)
             str = "fcfidu";
          else
             str = "fcfidus";
@@ -3405,7 +3453,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
             // fcfid (conv i64 to f64), PPC64 p434
             p = mkFormX(p, 63, fr_dst, 0, fr_src, 846, 0);
             goto done;
-         } else if (i->Pin.FpCftI.dst64 == True) {
+         } else if (i->Pin.FpCftI.flt64 == True) {
             // fcfidu (conv u64 to f64)
             p = mkFormX(p, 63, fr_dst, 0, fr_src, 974, 0);
             goto done;

@@ -462,7 +462,7 @@ typedef
       Pin_FpLdSt,     /* FP load/store */
       Pin_FpSTFIW,    /* stfiwx */
       Pin_FpRSP,      /* FP round IEEE754 double to IEEE754 single */
-      Pin_FpCftI,     /* fcfid/fctid/fctiw */
+      Pin_FpCftI,     /* fcfid[u,s,us]/fctid[u]/fctiw[u] */
       Pin_FpCMov,     /* FP floating point conditional move */
       Pin_FpLdFPSCR,  /* mtfsf */
       Pin_FpCmp,      /* FP compare, generating value into int reg */
@@ -663,13 +663,15 @@ typedef
             HReg src;
             HReg dst;
          } FpRSP;
-         /* fcfid/fctid/fctiw.  Note there's no fcfiw so fromI==True
-            && int32==True is not allowed. */
+         /* fcfid[u,s,us]/fctid[u]/fctiw[u].  Only some combinations
+            of the various fields are allowed.  This is asserted for
+            and documented in the code for the constructor,
+            PPCInstr_FpCftI, in host_ppc_defs.c.  */
          struct {
-            Bool fromI; /* False==F->I, True==I->F */
-            Bool int32; /* True== I is 32, False==I is 64 */
+            Bool fromI; /* True== I->F,    False== F->I */
+            Bool int32; /* True== I is 32, False== I is 64 */
             Bool syned;
-            Bool dst64; /* True==dest is 64bit; False==dest is 32bit */
+            Bool flt64; /* True== F is 64, False== F is 32 */
             HReg src;
             HReg dst;
          } FpCftI;

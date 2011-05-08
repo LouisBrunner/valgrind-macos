@@ -14863,7 +14863,7 @@ DisResult disInstr_THUMB_WRK (
             putIRegT( 14, mkU32( (guest_R15_curr_instr_notENC + 2) | 1 ),
                           IRTemp_INVALID );
             irsb->next     = mkexpr(dst);
-            irsb->jumpkind = Ijk_Boring;
+            irsb->jumpkind = Ijk_Call;
             dres.whatNext  = Dis_StopHere;
             DIP("blx r%u (possibly switch to ARM mode)\n", rM);
             goto decode_success;

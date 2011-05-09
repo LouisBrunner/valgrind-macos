@@ -32,7 +32,7 @@
 #define __PUB_TOOL_LIBCBASSERT_H
 
 #define tl_assert(expr)                                                 \
-  ((void) ((expr) ? 0 :                                                 \
+  ((void) (LIKELY(expr) ? 0 :                                           \
            (VG_(assert_fail) (/*isCore?*/False, (const Char*)#expr,     \
                               (const Char*)__FILE__, __LINE__,          \
                               (const Char*)__PRETTY_FUNCTION__,         \
@@ -40,7 +40,7 @@
                               0)))
 
 #define tl_assert2(expr, format, args...)                               \
-  ((void) ((expr) ? 0 :                                                 \
+  ((void) (LIKELY(expr) ? 0 :                                           \
            (VG_(assert_fail) (/*isCore?*/False, (const Char*)#expr,     \
                               (const Char*)__FILE__, __LINE__,          \
                               (const Char*)__PRETTY_FUNCTION__,         \

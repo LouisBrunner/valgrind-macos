@@ -47,14 +47,14 @@
                      "valgrind", VG_BUGS_TO, "")
 
 #define vg_assert(expr)                                                 \
-  ((void) ((expr) ? 0 :                                                 \
+  ((void) (LIKELY(expr) ? 0 :                                           \
            (VG_(assert_fail) (/*isCore*/True, #expr,                    \
                               __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
                               ""),                                      \
                               0)))
 
 #define vg_assert2(expr, format, args...)                               \
-  ((void) ((expr) ? 0 :                                                 \
+  ((void) (LIKELY(expr) ? 0 :                                           \
            (VG_(assert_fail) (/*isCore*/True, #expr,                    \
                               __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
                               format, ##args),                          \

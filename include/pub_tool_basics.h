@@ -316,9 +316,9 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #define VG_BUGS_TO "www.valgrind.org"
 
 /* Branch prediction hints. */
-#if 1 /*HAVE_BUILTIN_EXPECT*/
+#if defined(__GNUC__)
 #  define LIKELY(x)   __builtin_expect(!!(x), 1)
-#  define UNLIKELY(x) __builtin_expect((x), 0)
+#  define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
 #  define LIKELY(x)   (x)
 #  define UNLIKELY(x) (x)

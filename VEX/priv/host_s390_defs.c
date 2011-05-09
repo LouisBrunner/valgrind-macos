@@ -3400,7 +3400,7 @@ s390_emit_SXBR(UChar *p, UChar r1, UChar r2)
 
 /* Split up a 20-bit displacement into its high and low piece
    suitable for passing as function arguments */
-#define DISP20(d) ((d) & 0xFFF), (((d) >> 12) & 0xFF)
+#define DISP20(d) (((UInt)d) & 0xFFF), ((((UInt)d) >> 12) & 0xFF)
 
 /*---------------------------------------------------------------*/
 /*--- Helper functions                                        ---*/
@@ -3931,10 +3931,6 @@ s390_emit_LDGRw(UChar *p, UChar r1, UChar r2)
    return s390_emit_AGHI(p, S390_REGNO_STACK_POINTER, 8);
 }
 
-
-/* Split up a 20-bit displacement into its high and low piece
-   suitable for passing as function arguments */
-#define DISP20(d) ((d) & 0xFFF), (((d) >> 12) & 0xFF)
 
 /*---------------------------------------------------------------*/
 /*--- Constructors for the various s390_insn kinds            ---*/

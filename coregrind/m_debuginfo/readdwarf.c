@@ -860,7 +860,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             data += bytes_read;
             state_machine_regs.column = adv;
             if (di->ddump_line)
-               VG_(printf)("  DWARF2-line: set_column\n");
+               VG_(printf)("  Set column to %d\n", (Int)adv);
             break;
 
          case DW_LNS_negate_stmt:

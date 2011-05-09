@@ -64,6 +64,9 @@ vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) -lpthread
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+vgdb_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 
 no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
 no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)

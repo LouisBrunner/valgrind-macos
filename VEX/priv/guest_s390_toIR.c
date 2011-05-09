@@ -45,12 +45,6 @@
 #include "host_s390_disasm.h"
 #include "host_s390_defs.h"          /* S390_ROUND_xyzzy */
 
-#undef likely
-#undef unlikely
-#define likely(x)	__builtin_expect(!!(x), 1)
-#define unlikely(x)	__builtin_expect(!!(x), 0)
-
-
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -1269,7 +1263,7 @@ s390_format_I(HChar *(*irgen)(UChar i),
 {
    HChar *mnm = irgen(i);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, UINT), mnm, i);
 }
 
@@ -1286,7 +1280,7 @@ s390_format_RI_RU(HChar *(*irgen)(UChar r1, UShort i2),
 {
    HChar *mnm = irgen(r1, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, UINT), mnm, r1, i2);
 }
 
@@ -1296,7 +1290,7 @@ s390_format_RI_RI(HChar *(*irgen)(UChar r1, UShort i2),
 {
    HChar *mnm = irgen(r1, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, INT), mnm, r1, (Int)(Short)i2);
 }
 
@@ -1306,7 +1300,7 @@ s390_format_RI_RP(HChar *(*irgen)(UChar r1, UShort i2),
 {
    HChar *mnm = irgen(r1, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, PCREL), mnm, r1, (Int)(Short)i2);
 }
 
@@ -1316,7 +1310,7 @@ s390_format_RIE_RRP(HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
 {
    HChar *mnm = irgen(r1, r3, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, PCREL), mnm, r1, r3, (Int)(Short)i2);
 }
 
@@ -1326,7 +1320,7 @@ s390_format_RIE_RRI0(HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
 {
    HChar *mnm = irgen(r1, r3, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, INT), mnm, r1, r3, (Int)(Short)i2);
 }
 
@@ -1337,7 +1331,7 @@ s390_format_RIE_RRUUU(HChar *(*irgen)(UChar r1, UChar r2, UChar i3, UChar i4,
 {
    HChar *mnm = irgen(r1, r2, i3, i4, i5);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC6(MNM, GPR, GPR, UINT, UINT, UINT), mnm, r1, r2, i3, i4,
                   i5);
 }
@@ -1348,7 +1342,7 @@ s390_format_RIE_RRPU(HChar *(*irgen)(UChar r1, UChar r2, UShort i4, UChar m3),
 {
    HChar *mnm = irgen(r1, r2, i4, m3);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, GPR, CABM, PCREL), S390_XMNM_CAB, mnm, m3, r1,
                   r2, m3, (Int)(Short)i4);
 }
@@ -1359,7 +1353,7 @@ s390_format_RIE_RUPU(HChar *(*irgen)(UChar r1, UChar m3, UShort i4, UChar i2),
 {
    HChar *mnm = irgen(r1, m3, i4, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, UINT, CABM, PCREL), S390_XMNM_CAB, mnm, m3,
                   r1, i2, m3, (Int)(Short)i4);
 }
@@ -1370,7 +1364,7 @@ s390_format_RIE_RUPI(HChar *(*irgen)(UChar r1, UChar m3, UShort i4, UChar i2),
 {
    HChar *mnm = irgen(r1, m3, i4, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, INT, CABM, PCREL), S390_XMNM_CAB, mnm, m3, r1,
                   (Int)(Char)i2, m3, (Int)(Short)i4);
 }
@@ -1388,7 +1382,7 @@ s390_format_RIL_RU(HChar *(*irgen)(UChar r1, UInt i2),
 {
    HChar *mnm = irgen(r1, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, UINT), mnm, r1, i2);
 }
 
@@ -1398,7 +1392,7 @@ s390_format_RIL_RI(HChar *(*irgen)(UChar r1, UInt i2),
 {
    HChar *mnm = irgen(r1, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, INT), mnm, r1, i2);
 }
 
@@ -1408,7 +1402,7 @@ s390_format_RIL_RP(HChar *(*irgen)(UChar r1, UInt i2),
 {
    HChar *mnm = irgen(r1, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, PCREL), mnm, r1, i2);
 }
 
@@ -1418,7 +1412,7 @@ s390_format_RIL_UP(HChar *(*irgen)(void),
 {
    HChar *mnm = irgen();
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UINT, PCREL), mnm, r1, i2);
 }
 
@@ -1435,7 +1429,7 @@ s390_format_RIS_RURDI(HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
 
    mnm = irgen(r1, m3, i2, op4addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, INT, CABM, UDXB), S390_XMNM_CAB, mnm, m3, r1,
                   (Int)(Char)i2, m3, d4, 0, b4);
 }
@@ -1453,7 +1447,7 @@ s390_format_RIS_RURDU(HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
 
    mnm = irgen(r1, m3, i2, op4addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, UINT, CABM, UDXB), S390_XMNM_CAB, mnm, m3, r1,
                   i2, m3, d4, 0, b4);
 }
@@ -1471,7 +1465,7 @@ s390_format_RR_RR(HChar *(*irgen)(UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, GPR), mnm, r1, r2);
 }
 
@@ -1481,7 +1475,7 @@ s390_format_RR_FF(HChar *(*irgen)(UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, FPR), mnm, r1, r2);
 }
 
@@ -1498,7 +1492,7 @@ s390_format_RRE_RR(HChar *(*irgen)(UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, GPR), mnm, r1, r2);
 }
 
@@ -1508,7 +1502,7 @@ s390_format_RRE_FF(HChar *(*irgen)(UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, FPR), mnm, r1, r2);
 }
 
@@ -1518,7 +1512,7 @@ s390_format_RRE_RF(HChar *(*irgen)(UChar, UChar),
 {
    HChar *mnm = irgen(r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, FPR), mnm, r1, r2);
 }
 
@@ -1528,7 +1522,7 @@ s390_format_RRE_FR(HChar *(*irgen)(UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, GPR), mnm, r1, r2);
 }
 
@@ -1538,7 +1532,7 @@ s390_format_RRE_R0(HChar *(*irgen)(UChar r1),
 {
    HChar *mnm = irgen(r1);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, GPR), mnm, r1);
 }
 
@@ -1548,7 +1542,7 @@ s390_format_RRE_F0(HChar *(*irgen)(UChar r1),
 {
    HChar *mnm = irgen(r1);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, FPR), mnm, r1);
 }
 
@@ -1558,7 +1552,7 @@ s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
 {
    HChar *mnm = irgen(r1, r3, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, FPR, FPR, FPR), mnm, r1, r3, r2);
 }
 
@@ -1568,7 +1562,7 @@ s390_format_RRF_U0RR(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
 {
    irgen(m3, r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, GPR), xmnm_kind, m3, r1, r2);
 }
 
@@ -1578,7 +1572,7 @@ s390_format_RRF_U0RF(HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r3, r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, UINT, FPR), mnm, r1, r3, r2);
 }
 
@@ -1588,7 +1582,7 @@ s390_format_RRF_F0FF2(HChar *(*irgen)(UChar, UChar, UChar),
 {
    HChar *mnm = irgen(r3, r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, FPR, FPR, FPR), mnm, r1, r3, r2);
 }
 
@@ -1598,7 +1592,7 @@ s390_format_RRF_R0RR2(HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
 {
    HChar *mnm = irgen(r3, r1, r2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, GPR), mnm, r1, r2, r3);
 }
 
@@ -1614,7 +1608,7 @@ s390_format_RRS(HChar *(*irgen)(UChar r1, UChar r2, UChar m3, IRTemp op4addr),
 
    mnm = irgen(r1, r2, m3, op4addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, GPR, CABM, UDXB), S390_XMNM_CAB, mnm, m3, r1,
                   r2, m3, d4, 0, b4);
 }
@@ -1631,7 +1625,7 @@ s390_format_RS_R0RD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    mnm = irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, UDXB), mnm, r1, d2, 0, b2);
 }
 
@@ -1647,7 +1641,7 @@ s390_format_RS_RRRD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 
    mnm = irgen(r1, r3, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, UDXB), mnm, r1, r3, d2, 0, b2);
 }
 
@@ -1663,7 +1657,7 @@ s390_format_RS_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 
    mnm = irgen(r1, r3, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, UINT, UDXB), mnm, r1, r3, d2, 0, b2);
 }
 
@@ -1679,7 +1673,7 @@ s390_format_RS_AARD(HChar *(*irgen)(UChar, UChar, IRTemp),
 
    mnm = irgen(r1, r3, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, AR, AR, UDXB), mnm, r1, r3, d2, 0, b2);
 }
 
@@ -1689,7 +1683,7 @@ s390_format_RSI_RRP(HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
 {
    HChar *mnm = irgen(r1, r3, i2);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, PCREL), mnm, r1, r3, (Int)(Short)i2);
 }
 
@@ -1707,7 +1701,7 @@ s390_format_RSY_RRRD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 
    mnm = irgen(r1, r3, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, SDXB), mnm, r1, r3, dh2, dl2, 0, b2);
 }
 
@@ -1725,7 +1719,7 @@ s390_format_RSY_AARD(HChar *(*irgen)(UChar, UChar, IRTemp),
 
    mnm = irgen(r1, r3, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, AR, AR, SDXB), mnm, r1, r3, dh2, dl2, 0, b2);
 }
 
@@ -1743,7 +1737,7 @@ s390_format_RSY_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 
    mnm = irgen(r1, r3, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, UINT, SDXB), mnm, r1, r3, dh2, dl2, 0, b2);
 }
 
@@ -1763,7 +1757,7 @@ s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, SDXB), xmnm_kind, m3, r1, dh2, dl2, 0, b2);
 }
 
@@ -1794,7 +1788,7 @@ s390_format_RX_RRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    mnm = irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, UDXB), mnm, r1, d2, x2, b2);
 }
 
@@ -1811,7 +1805,7 @@ s390_format_RX_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    mnm = irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, UDXB), mnm, r1, d2, x2, b2);
 }
 
@@ -1828,7 +1822,7 @@ s390_format_RXE_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    mnm = irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, UDXB), mnm, r1, d2, x2, b2);
 }
 
@@ -1845,7 +1839,7 @@ s390_format_RXF_FRRDF(HChar *(*irgen)(UChar, IRTemp, UChar),
 
    mnm = irgen(r3, op2addr, r1);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), mnm, r1, r3, d2, x2, b2);
 }
 
@@ -1864,7 +1858,7 @@ s390_format_RXY_RRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    mnm = irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, SDXB), mnm, r1, dh2, dl2, x2, b2);
 }
 
@@ -1883,7 +1877,7 @@ s390_format_RXY_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 
    mnm = irgen(r1, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, SDXB), mnm, r1, dh2, dl2, x2, b2);
 }
 
@@ -1902,7 +1896,7 @@ s390_format_RXY_URRD(HChar *(*irgen)(void),
 
    mnm = irgen();
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UINT, SDXB), mnm, r1, dh2, dl2, x2, b2);
 }
 
@@ -1918,7 +1912,7 @@ s390_format_S_RD(HChar *(*irgen)(IRTemp op2addr),
 
    mnm = irgen(op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, UDXB), mnm, d2, 0, b2);
 }
 
@@ -1934,7 +1928,7 @@ s390_format_SI_URD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
 
    mnm = irgen(i2, op1addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDXB, UINT), mnm, d1, 0, b1, i2);
 }
 
@@ -1952,7 +1946,7 @@ s390_format_SIY_URD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
 
    mnm = irgen(i2, op1addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, SDXB, UINT), mnm, dh1, dl1, 0, b1, i2);
 }
 
@@ -1970,7 +1964,7 @@ s390_format_SIY_IRD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
 
    mnm = irgen(i2, op1addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, SDXB, INT), mnm, dh1, dl1, 0, b1, (Int)(Char)i2);
 }
 
@@ -1989,7 +1983,7 @@ s390_format_SS_L0RDRD(HChar *(*irgen)(UChar, IRTemp, IRTemp),
 
    mnm = irgen(l, op1addr, op2addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), mnm, d1, l, b1, d2, 0, b2);
 }
 
@@ -2005,7 +1999,7 @@ s390_format_SIL_RDI(HChar *(*irgen)(UShort i2, IRTemp op1addr),
 
    mnm = irgen(i2, op1addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDXB, INT), mnm, d1, 0, b1, (Int)(Short)i2);
 }
 
@@ -2021,7 +2015,7 @@ s390_format_SIL_RDU(HChar *(*irgen)(UShort i2, IRTemp op1addr),
 
    mnm = irgen(i2, op1addr);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDXB, UINT), mnm, d1, 0, b1, i2);
 }
 
@@ -3072,7 +3066,7 @@ s390_irgen_BCR(UChar r1, UChar r2)
                                         mkU32(0)), get_gpr_dw0(r2));
       }
    }
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(XMNM, GPR), S390_XMNM_BCR, r1, r2);
 
    return "bcr";
@@ -3093,7 +3087,7 @@ s390_irgen_BC(UChar r1, UChar x2, UChar b2, UShort d2, IRTemp op2addr)
                                         mkU32(0)), mkexpr(op2addr));
       }
    }
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(XMNM, UDXB), S390_XMNM_BC, r1, d2, x2, b2);
 
    return "bc";
@@ -3230,7 +3224,7 @@ s390_irgen_BRC(UChar r1, UShort i2)
 
       }
    }
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(XMNM, PCREL), S390_XMNM_BRC, r1, (Int)(Short)i2);
 
    return "brc";
@@ -3251,7 +3245,7 @@ s390_irgen_BRCL(UChar r1, UInt i2)
                            guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1));
       }
    }
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(XMNM, PCREL), S390_XMNM_BRCL, r1, i2);
 
    return "brcl";
@@ -4630,7 +4624,7 @@ static HChar *
 s390_irgen_CPYA(UChar r1, UChar r2)
 {
    put_ar_w0(r1, get_ar_w0(r2));
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, AR, AR), "cpya", r1, r2);
 
    return "cpya";
@@ -4824,7 +4818,7 @@ static HChar *
 s390_irgen_EAR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, get_ar_w0(r2));
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, AR), "ear", r1, r2);
 
    return "ear";
@@ -6785,7 +6779,7 @@ static HChar *
 s390_irgen_SAR(UChar r1, UChar r2)
 {
    put_ar_w0(r1, get_gpr_w1(r2));
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, AR, GPR), "sar", r1, r2);
 
    return "sar";
@@ -8857,7 +8851,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       bytes = (UChar *) &last_execute_target;
       s390_decode_and_irgen(bytes, ((((bytes[0] >> 6) + 1) >> 1) + 1) << 1,
                             dis_res);
-      if (unlikely(vex_traceflags & VEX_TRACE_FE))
+      if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
          vex_printf("    which was executed by\n");
       /* dont make useless translations in the next execute */
       last_execute_target = 0;
@@ -9235,7 +9229,7 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
 
-   if (unlikely(vex_traceflags & VEX_TRACE_FE))
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
 }
 

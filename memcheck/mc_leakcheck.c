@@ -1005,7 +1005,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
 
       } else {
          VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx",
-                   start1, end1, start1, end2);
+                   start1, end1, start2, end2);
          VG_(umsg)("This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK");
          VG_(umsg)("in an inappropriate way.");
          tl_assert (0);

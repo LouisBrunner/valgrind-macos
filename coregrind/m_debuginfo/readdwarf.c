@@ -1110,16 +1110,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                             /* perhaps should assign
                                                unconditionally to cval? */
 
-            case 0x01: /* FORM_addr */      if (addr_size == 4) {
-                                               cval = *(UInt*)p;
-                                            } else if (addr_size == 8) {
-                                               cval = *(ULong*)p;
-                                            } else {
-                                               /* wtf, Houston? */
-                                            }
-                                            p += addr_size; break;
-
             /* TODO : Following ones just skip data - implement if you need */
+            case 0x01: /* FORM_addr */      p += addr_size; break;
             case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
             case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
             case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;

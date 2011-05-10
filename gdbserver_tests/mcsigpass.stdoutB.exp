@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsigpass
-0x........ in _start () from ...start file...
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
 0x........ in test1 () at faultstatus.c:105

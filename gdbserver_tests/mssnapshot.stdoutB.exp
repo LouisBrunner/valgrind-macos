@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mssnapshot
-0x........ in _start () from ...start file...
 Breakpoint 1 at 0x........: file t.c, line 105.
 Continuing.
 Breakpoint 1, main (argc=1, argv=0x........) at t.c:105

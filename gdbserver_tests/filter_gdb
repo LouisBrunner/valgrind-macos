@@ -14,6 +14,10 @@ $dir/filter_memcheck_monitor                                        |
 
 
 # Anonymise or remove :
+#       delete the initial lines between the launch of vgdb and the
+#         output of the echo command telling it is launched.
+#         This removes a whole lot of uninteresting lines varying
+#         with OS/glibc/gdb dep
 #       initial tty control character sent by gdb 7.0
 #       remove missing debuginfos
 #       vgdb message
@@ -23,7 +27,7 @@ $dir/filter_memcheck_monitor                                        |
 #       info threads output (e.g. which thread is running and syscall)
 #       delete Reading symbols file lines
 #       delete Loaded symbols file lines
-#       initial break message
+#       delete language switch messages.
 #       remove gdb prompts.
 #       remove gdb continuation prompts.
 #       remove gdb done prompts.
@@ -46,7 +50,8 @@ $dir/filter_memcheck_monitor                                        |
 #         a.o. produced by gdb 7.2 on arm (same with standard gdbserver)
 #       delete empty lines (the last line (only made of prompts) sometimes
 #           finishes with a new line, sometimes not ???).
-sed -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
+sed -e '/Remote debugging using/,/vgdb launched process attached/d' \
+    -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
     -e '/Missing separate debuginfos, use: debuginfo-install/d'                                       \
     -e 's/\(relaying data between gdb and process \)[0-9][0-9]*/\1..../'                              \
     -e 's/pid [0-9][0-9]*/pid ..../g'                                                                 \
@@ -56,12 +61,8 @@ sed -e 's/^\[?1034hReading symbols/Reading symbols/'                           
     -e 's/#[0-9]\(  0x........ in sleeper_or_burner\)/#.\1/'                                          \
     -e '/^Reading symbols from .*\.\.\.done\./d'                                                      \
     -e '/^Loaded symbols for .*$/d'                                                                   \
-    -e '1,8s/_start () from [^ ][^ ]*/_start () from ...start file.../'                               \
-    -e '1,8s/\(0x........ in\) ?? () from \/lib\/ld-linux\.so\../\1 _start () from ...start file.../' \
-    -e '1,8s/\(0x........ in\) ?? () from \/lib\/ld\.so\../\1 _start () from ...start file.../'       \
-    -e '1,8s/\(0x........ in\) ?? () from \/lib64\/ld64\.so\../\1 _start () from ...start file.../'   \
-    -e '1,8s/\(0x........ in\) ?? () from \/lib64\/ld-linux-x86-64\.so\../\1 _start () from ...start file.../'   \
-    -e '1,8s/\(0x........ in\) ?? ()$/\1 _start () from ...start file.../'                            \
+    -e '/^Current language.*/d'                                                                       \
+    -e '/^The current source language is.*/d'                                                         \
     -e 's/(gdb) //g'                                                                                  \
     -e 's/^>[> ]*//'                                                                                  \
     -e '/^done\.$/d'                                                                                  \
@@ -70,9 +71,13 @@ sed -e 's/^\[?1034hReading symbols/Reading symbols/'                           
     -e '/^   from \/lib\/ld-linux.so.*$/d'                                                            \
     -e 's/\(0x........\) in ?? () from \/lib\/ld-linux\.so\../\1 in syscall .../'                     \
     -e 's/\(0x........\) in ?? () from \/lib64\/tls\/libc\.so\../\1 in syscall .../'                  \
+    -e 's/\(0x........\) in ?? ()$/\1 in syscall .../'                                                \
     -e 's/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../'                                      \
     -e '/^   from \/lib\/libc.so.*$/d'                                                                \
+    -e '/^   from \/lib64\/libc.so.*$/d'                                                              \
+    -e '/^   from \/lib64\/tls\/libc.so.*$/d'                                                         \
     -e 's/in select ()$/in syscall .../'                                                              \
+    -e 's/in \.__select ()$/in syscall .../'                                                          \
     -e 's/in select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../'                \
     -e '/^[ 	]*at \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \
     -e '/^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \

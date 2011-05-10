@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsignopass
-0x........ in _start () from ...start file...
 Signal        Stop	Print	Pass to program	Description
 SIGSEGV       Yes	Yes	No		Segmentation fault
 Signal        Stop	Print	Pass to program	Description

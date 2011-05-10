@@ -1,7 +1,9 @@
 # test inferior calls when some threads are in Runnable or Yielding mode,
 # some threads are in WaitSys.
 prog: sleepers
-args: 100 100000000 1000000000 -S-SB-B-
+# We would like to have two threads running (i.e. -S-SB-B-)
+# but this introduces too much dependencies to scheduler fairness.
+args: 100 100000000 1000000000 -S-S-SB-
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU
 # Disable on Darwin: inferior call rejected as it cannot find malloc.
 prereq: ../tests/os_test linux

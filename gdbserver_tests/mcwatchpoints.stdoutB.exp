@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcwatchpoints
-0x........ in _start () from ...start file...
 Breakpoint 1 at 0x........: file watchpoints.c, line 7.
 Continuing.
 Breakpoint 1, breakme (line=19) at watchpoints.c:7

@@ -1,5 +1,6 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mssnapshot
+echo vgdb launched process attached\n
 monitor vg.set vgdb-error 999999
 #
 #

@@ -51,6 +51,7 @@
 
 #  if defined(VGO_linux)
 #include <sys/prctl.h>
+#include <linux/ptrace.h>
 #  endif
 
 /* vgdb has two usages:
@@ -624,67 +625,137 @@ void detach_from_all_threads(int pid)
 static int pid_of_save_regs = 0;
 static struct user user_save;
 
+// The below indicates if ptrace_getregs (and ptrace_setregs) can be used.
+// Note that some linux versions are defining PTRACE_GETREGS but using
+// it gives back EIO.
+// has_working_ptrace_getregs can take the following values:
+//  -1 : PTRACE_GETREGS is defined
+//       runtime check not yet done.
+//   0 : PTRACE_GETREGS runtime check has failed.
+//   1 : PTRACE_GETREGS defined and runtime check ok.
+#ifdef PTRACE_GETREGS
+static int has_working_ptrace_getregs = -1;
+#endif
+
 /* Get the registers from pid into regs.
+   regs_bsz value gives the length of *regs. 
    Returns True if all ok, otherwise False. */
 static
-Bool getregs (int pid, void *regs)
+Bool getregs (int pid, void *regs, long regs_bsz)
 {
-#  ifdef VGA_s390x
-   char *pregs = (char *) regs;
-   long offset;
-   errno = 0;
-   DEBUG(1, "getregs PTRACE_PEEKUSER(s)\n");
-   for (offset = 0; offset < PT_ENDREGS; offset = offset + sizeof(long)) {
-      *(long *)(pregs+offset) = ptrace(PTRACE_PEEKUSER, pid, offset, NULL);
-      if (errno != 0) {
-         ERROR(errno, "PTRACE_PEEKUSER offset %ld\n", offset);
+   DEBUG(1, "getregs regs_bsz %ld\n", regs_bsz);
+#  ifdef PTRACE_GETREGS
+   if (has_working_ptrace_getregs) {
+      // Platforms having GETREGS
+      long res;
+      DEBUG(1, "getregs PTRACE_GETREGS\n");
+      res = ptrace (PTRACE_GETREGS, pid, NULL, regs);
+      if (res == 0) {
+         if (has_working_ptrace_getregs == -1) {
+            // First call to PTRACE_GETREGS succesful =>
+            has_working_ptrace_getregs = 1;
+            DEBUG(1, "detected a working PTRACE_GETREGS\n");
+         }
+         assert (has_working_ptrace_getregs == 1);
+         return True;
+      }
+      else if (has_working_ptrace_getregs == 1) {
+         // We had a working call, but now it fails.
+         // This is unexpected.
+         ERROR(errno, "PTRACE_GETREGS %ld\n", res);
          return False;
+      } else {
+         // Check this is the first call:
+         assert (has_working_ptrace_getregs == -1);
+         if (errno == EIO) {
+            DEBUG(1, "detected a broken PTRACE_GETREGS with EIO\n");
+            has_working_ptrace_getregs = 0;
+            // Fall over to the PTRACE_PEEKUSER case.
+         } else {
+            ERROR(errno, "broken PTRACE_GETREGS unexpected errno %ld\n", res);
+            return False;
+         }
       }
    }
-   return True;
-#  else
-   // Platforms having GETREGS
-   long res;
-   DEBUG(1, "getregs PTRACE_GETREGS\n");
-   res = ptrace (PTRACE_GETREGS, pid, NULL, regs);
-   if (res != 0) {
-      ERROR(errno, "PTRACE_GETREGS %ld\n", res);
-      return False;
-   }
-   return True;
 #  endif
+
+   // We assume  PTRACE_PEEKUSER is defined everywhere.
+   {
+#     ifdef PT_ENDREGS
+      long peek_bsz = PT_ENDREGS;
+      assert (peek_bsz <= regs_bsz);
+#     else
+      long peek_bsz = regs_bsz-1;
+#     endif
+      char *pregs = (char *) regs;
+      long offset;
+      errno = 0;
+      DEBUG(1, "getregs PTRACE_PEEKUSER(s) peek_bsz %ld\n", peek_bsz);
+      for (offset = 0; offset < peek_bsz; offset = offset + sizeof(long)) {
+         *(long *)(pregs+offset) = ptrace(PTRACE_PEEKUSER, pid, offset, NULL);
+         if (errno != 0) {
+            ERROR(errno, "PTRACE_PEEKUSER offset %ld\n", offset);
+            return False;
+         }
+      }
+      return True;
+   }
+
+   // If neither PTRACE_GETREGS not PTRACE_PEEKUSER have returned,
+   // then we are in serious trouble.
+   assert (0);
 }
 
 /* Set the registers of pid to regs.
+   regs_bsz value gives the length of *regs. 
    Returns True if all ok, otherwise False. */
 static
-Bool setregs (int pid, void *regs)
+Bool setregs (int pid, void *regs, long regs_bsz)
 {
-#  ifdef VGA_s390x
-   char *pregs = (char *) regs;
-   long offset;
-   long res;
-   errno = 0;
-   DEBUG(1, "setregs PTRACE_POKEUSER(s)\n");
-   for (offset = 0; offset < PT_ENDREGS; offset = offset + sizeof(long)) {
-      res = ptrace(PTRACE_POKEUSER, pid, offset, *(long*)(pregs+offset));
-      if (errno != 0) {
-         ERROR(errno, "PTRACE_POKEUSER offset %ld res %ld\n", offset, res);
+   DEBUG(1, "setregs regs_bsz %ld\n", regs_bsz);
+// Note : the below is checking for GETREGS, not SETREGS
+// as if one is defined and working, the other one should also work.
+#  ifdef PTRACE_GETREGS
+   if (has_working_ptrace_getregs) {
+      // Platforms having SETREGS
+      long res;
+      // setregs can never be called before getregs has done a runtime check.
+      assert (has_working_ptrace_getregs == 1);
+      DEBUG(1, "setregs PTRACE_SETREGS\n");
+      res = ptrace (PTRACE_SETREGS, pid, NULL, regs);
+      if (res != 0) {
+         ERROR(errno, "PTRACE_SETREGS %ld\n", res);
          return False;
       }
+      return True;
    }
-   return True;
-#  else
-   // Platforms having SETREGS
-   long res;
-   DEBUG(1, "setregs PTRACE_SETREGS\n");
-   res = ptrace (PTRACE_SETREGS, pid, NULL, regs);
-   if (res != 0) {
-      ERROR(errno, "PTRACE_SETREGS %ld\n", res);
-      return False;
-   }
-   return True;
 #  endif
+
+   {
+      char *pregs = (char *) regs;
+      long offset;
+      long res;
+#     ifdef PT_ENDREGS
+      long peek_bsz = PT_ENDREGS;
+      assert (peek_bsz <= regs_bsz);
+#     else
+      long peek_bsz = regs_bsz-1;
+#     endif
+      errno = 0;
+      DEBUG(1, "setregs PTRACE_POKEUSER(s) %ld\n", peek_bsz);
+      for (offset = 0; offset < peek_bsz; offset = offset + sizeof(long)) {
+         res = ptrace(PTRACE_POKEUSER, pid, offset, *(long*)(pregs+offset));
+         if (errno != 0) {
+            ERROR(errno, "PTRACE_POKEUSER offset %ld res %ld\n", offset, res);
+            return False;
+         }
+      }
+      return True;
+   }
+
+   // If neither PTRACE_SETREGS not PTRACE_POKEUSER have returned,
+   // then we are in serious trouble.
+   assert (0);
 }
 
 /* Restore the registers to the saved value, then detaches from all threads */
@@ -701,7 +772,7 @@ void restore_and_detach(int pid)
       }
 
       DEBUG(1, "setregs restore registers pid %d\n", pid_of_save_regs);
-      if (!setregs(pid_of_save_regs, &user_save.regs)) {
+      if (!setregs(pid_of_save_regs, &user_save.regs, sizeof(user_save.regs))) {
          ERROR(errno, "setregs restore registers pid %d after cont\n",
                pid_of_save_regs);
       }
@@ -757,7 +828,7 @@ Bool invoke_gdbserver (int pid)
       return False;
    }
 
-   if (!getregs(pid, &user_mod.regs)) {
+   if (!getregs(pid, &user_mod.regs, sizeof(user_mod.regs))) {
       detach_from_all_threads(pid);
       return False;
    }
@@ -944,7 +1015,7 @@ Bool invoke_gdbserver (int pid)
       assert(0);
    }
    
-   if (!setregs(pid, &user_mod.regs)) {
+   if (!setregs(pid, &user_mod.regs, sizeof(user_mod.regs))) {
       detach_from_all_threads(pid);
       return False;
    }

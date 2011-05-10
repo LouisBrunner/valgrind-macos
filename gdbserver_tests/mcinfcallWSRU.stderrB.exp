@@ -1,6 +1,4 @@
 relaying data between gdb and process ....
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU
-0x........ in _start () from ...start file...
 vgdb-error value changed from 0 to 999999
 Breakpoint 1 at 0x........: file sleepers.c, line 72.
 Continuing.
@@ -41,8 +39,13 @@ set pc, calling from gdb a function in the debugged process, ...)
 can only be accepted if the thread is VgTs_Runnable or VgTs_Yielding state
 Thread status is VgTs_WaitSys
 '
-[Switching to thread 4 (Thread ....)]#0  0x........ in do_burn () at sleepers.c:39
-39	   for (i = 0; i < burn; i++) loopnr++;
-$2 = void
+[Switching to thread 4 (Thread ....)]#0  0x........ in syscall ...
+Could not write register  "xxx"; remote failure reply 'E.
+ERROR changing register  xxx regno y
+gdb commands changing registers (pc, sp, ...) (e.g. 'jump',
+set pc, calling from gdb a function in the debugged process, ...)
+can only be accepted if the thread is VgTs_Runnable or VgTs_Yielding state
+Thread status is VgTs_WaitSys
+'
 monitor command request to kill this process
 Remote connection closed

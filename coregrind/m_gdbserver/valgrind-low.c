@@ -176,7 +176,7 @@ void fetch_register (int regno)
       return;
    }
    size = register_size (regno);
-   {
+   if (size > 0) {
       Bool mod;
       char buf [size];
       VG_(memset) (buf, 0, size); // registers not fetched will be seen as 0.
@@ -225,7 +225,7 @@ void usr_store_inferior_registers (int regno)
       }
       
       size = register_size (regno);
-      {
+      if (size > 0) {
          Bool mod;
          Addr old_SP, new_SP;
          char buf[size];

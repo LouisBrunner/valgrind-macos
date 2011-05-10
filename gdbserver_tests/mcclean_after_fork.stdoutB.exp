@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcclean_after_fork
-0x........ in _start () from ...start file...
 Breakpoint 1 at 0x........: file clean_after_fork.c, line 9.
 Breakpoint 2 at 0x........: file clean_after_fork.c, line 18.
 Breakpoint 3 at 0x........: file clean_after_fork.c, line 20.

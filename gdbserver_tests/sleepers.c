@@ -155,23 +155,32 @@ int main (int argc, char *argv[])
   b.name = "Brussels";
   b.burn = *threads_spec++ == 'B';
   b.sleep = *threads_spec++ == 'S';
-  b.t = 1;
-  pthread_create(&ebbr, NULL, sleeper_or_burner, &b);
-  wait_ready();
+  b.t = -1;
+  if (b.burn || b.sleep) {
+     b.t = 1;
+     pthread_create(&ebbr, NULL, sleeper_or_burner, &b);
+     wait_ready();
+  }
   
   l.name = "London";
   l.burn = *threads_spec++ == 'B';
   l.sleep = *threads_spec++ == 'S';
-  l.t = 2;
-  pthread_create(&egll, NULL, sleeper_or_burner, &l);
-  wait_ready();
+  l.t = -1;
+  if (l.burn || l.sleep) {
+     l.t = 2;
+     pthread_create(&egll, NULL, sleeper_or_burner, &l);
+     wait_ready();
+  }
 
   p.name = "Petaouchnok";
   p.burn = *threads_spec++ == 'B';
   p.sleep = *threads_spec++ == 'S';
-  p.t = 3;
-  pthread_create(&zzzz, NULL, sleeper_or_burner, &p);
-  wait_ready();
+  p.t = -1;
+  if (p.burn || p.sleep) {
+     p.t = 3;
+     pthread_create(&zzzz, NULL, sleeper_or_burner, &p);
+     wait_ready();
+  }
 
   m.name = "main";
   m.burn = *threads_spec++ == 'B';
@@ -179,9 +188,9 @@ int main (int argc, char *argv[])
   m.t = 0;
   sleeper_or_burner(&m);
 
-  pthread_join(ebbr, NULL);
-  pthread_join(egll, NULL);
-  pthread_join(zzzz, NULL);
+  if (b.t != -1) pthread_join(ebbr, NULL);
+  if (l.t != -1) pthread_join(egll, NULL);
+  if (p.t != -1) pthread_join(zzzz, NULL);
 
   return 0;
 }

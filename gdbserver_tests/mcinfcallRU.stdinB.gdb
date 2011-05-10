@@ -1,5 +1,6 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcinfcallRU
+echo vgdb launched process attached\n
 monitor vg.set vgdb-error 999999
 #
 # We will interrupt in a few seconds (be sure all tasks are in

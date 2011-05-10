@@ -1,5 +1,6 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcclean_after_fork
+echo vgdb launched process attached\n
 monitor vg.set vgdb-error 999999
 #
 # put a break in main, and then a watch

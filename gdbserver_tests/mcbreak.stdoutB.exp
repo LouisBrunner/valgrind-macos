@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcbreak
-0x........ in _start () from ...start file...
 Breakpoint 1 at 0x........: file t.c, line 112.
 Breakpoint 2 at 0x........: file t.c, line 117.
 Continuing.

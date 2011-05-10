@@ -37,6 +37,8 @@
 #   --valgrind-lib: valgrind libraries to use.  Default is $tests_dir/.in_place.
 #               (This option should probably only be used in conjunction with
 #               --valgrind.)
+#   --keep-unfiltered: keep a copy of the unfiltered output/error output
+#     of each test by adding an extension .unfiltered.out
 #
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
@@ -113,10 +115,10 @@ use strict;
 # Global vars
 #----------------------------------------------------------------------------
 my $usage="\n"
-          . "Usage:\n"
-          . "   vg_regtest [--all, --valgrind, --valgrind-lib]\n"
-          . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
-          . "\n";
+     . "Usage:\n"
+     . "   vg_regtest [--all, --valgrind, --valgrind-lib, --keep-unfiltered]\n"
+     . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
+     . "\n";
 
 my $tmp="vg_regtest.tmp.$$";
 
@@ -148,6 +150,7 @@ my $valgrind = "./coregrind/valgrind";
 chomp(my $tests_dir = `pwd`);
 
 my $valgrind_lib = "$tests_dir/.in_place";
+my $keepunfiltered = 0;
 
 # default filter is the one named "filter_stderr" in the test's directory
 my $default_stderr_filter = "filter_stderr";
@@ -196,6 +199,8 @@ sub process_command_line()
                 $valgrind = $1;
             } elsif ($arg =~ /^--valgrind-lib=(.*)$/) {
                 $valgrind_lib = $1;
+            } elsif ($arg =~ /^--keep-unfiltered$/) {
+                $keepunfiltered = 1;
             } else {
                 die $usage;
             }
@@ -291,6 +296,17 @@ sub mysystem($)
     ($exit_code == 2) and exit 1;      # 2 is SIGINT
     return $exit_code;
 }
+
+# if $keepunfiltered, copies $1 to $1.unfiltered.out
+# renames $0 tp $1
+sub filtered_rename($$) 
+{
+    if ($keepunfiltered == 1) {
+        mysystem("cp  $_[1] $_[1].unfiltered.out");
+    }
+    rename ($_[0], $_[1]);
+}
+
 
 # from a directory name like "/foo/cachesim/tests/" determine the tool name
 sub determine_tool()
@@ -402,7 +418,7 @@ sub do_one_test($$)
     # Filter stdout
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");
-        rename($tmp, "$name.stdout.out");
+        filtered_rename($tmp, "$name.stdout.out");
     }
     # Find all the .stdout.exp files.  If none, use /dev/null.
     my @stdout_exps = <$name.stdout.exp*>;
@@ -411,7 +427,7 @@ sub do_one_test($$)
 
     # Filter stderr
     mysystem("$stderr_filter < $name.stderr.out > $tmp");
-    rename($tmp, "$name.stderr.out");
+    filtered_rename($tmp, "$name.stderr.out");
     # Find all the .stderr.exp files.  At least one must exist.
     my @stderr_exps = <$name.stderr.exp*>;
     (0 != scalar @stderr_exps) or die "Could not find `$name.stderr.exp*'\n";
@@ -433,7 +449,7 @@ sub do_one_test($$)
         # Filter stdout
         if (defined $stdoutB_filter) {
             mysystem("$stdoutB_filter < $name.stdoutB.out > $tmp");
-            rename($tmp, "$name.stdoutB.out");
+            filtered_rename($tmp, "$name.stdoutB.out");
         }
         # Find all the .stdoutB.exp files.  If none, use /dev/null.
         my @stdoutB_exps = <$name.stdoutB.exp*>;
@@ -442,7 +458,7 @@ sub do_one_test($$)
         
         # Filter stderr
         mysystem("$stderrB_filter < $name.stderrB.out > $tmp");
-        rename($tmp, "$name.stderrB.out");
+        filtered_rename($tmp, "$name.stderrB.out");
         # Find all the .stderrB.exp files.  At least one must exist.
         my @stderrB_exps = <$name.stderrB.exp*>;
         (0 != scalar @stderrB_exps) or die "Could not find `$name.stderrB.exp*'\n";

@@ -400,6 +400,10 @@ void modify_macho_loadcmds ( HChar* filename,
                if (DEBUGPRINTING)
                   printf("LC_SYMTAB");
                break;
+            case LC_DYSYMTAB:
+               if (DEBUGPRINTING)
+                  printf("LC_DYSYMTAB");
+               break;
             case LC_UUID:
                if (DEBUGPRINTING)
                   printf("LC_UUID");

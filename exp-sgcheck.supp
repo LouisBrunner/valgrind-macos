@@ -1,0 +1,20 @@
+{
+   ld-2.X possibly applying relocations
+   exp-sgcheck:SorG
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+}
+
+# I'm pretty sure this is a false positive caused by the sg_ stuff
+{
+   glibc realpath false positive
+   exp-sgcheck:SorG
+   fun:realpath
+   fun:*
+}
+
+{
+   I think this is glibc's ultra optimised getenv doing 2 byte reads
+   exp-sgcheck:SorG
+   fun:getenv
+}

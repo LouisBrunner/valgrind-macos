@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.tool.am
 
-EXTRA_DIST = docs/pc-manual.xml
+EXTRA_DIST = docs/sg-manual.xml
 
 #----------------------------------------------------------------------------
 # Headers, etc
@@ -12,12 +12,12 @@ noinst_HEADERS = \
 	sg_main.h
 
 #----------------------------------------------------------------------------
-# exp-ptrcheck-<platform>
+# exp-sgcheck-<platform>
 #----------------------------------------------------------------------------
 
-noinst_PROGRAMS  = exp-ptrcheck-@VGCONF_ARCH_PRI@-@VGCONF_OS@
+noinst_PROGRAMS  = exp-sgcheck-@VGCONF_ARCH_PRI@-@VGCONF_OS@
 if VGCONF_HAVE_PLATFORM_SEC
-noinst_PROGRAMS += exp-ptrcheck-@VGCONF_ARCH_SEC@-@VGCONF_OS@
+noinst_PROGRAMS += exp-sgcheck-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
 EXP_PTRCHECK_SOURCES_COMMON = \
@@ -26,53 +26,53 @@ EXP_PTRCHECK_SOURCES_COMMON = \
 	pc_main.c \
 	sg_main.c
 
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
 	$(EXP_PTRCHECK_SOURCES_COMMON)
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS     = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS       = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS       = \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_DEPENDENCIES = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_DEPENDENCIES = \
 	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_PRI_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDADD        = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDADD        = \
 	$(TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS      = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS      = \
 	$(TOOL_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LINK = \
+exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LINK = \
 	$(top_builddir)/coregrind/link_tool_exe_@VGCONF_OS@ \
 	@VALT_LOAD_ADDRESS_PRI@ \
 	$(LINK) \
-	$(exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) \
-	$(exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS)
+	$(exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) \
+	$(exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS)
 
 if VGCONF_HAVE_PLATFORM_SEC
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES      = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES      = \
 	$(EXP_PTRCHECK_SOURCES_COMMON)
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS     = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS       = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS       = \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_DEPENDENCIES = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_DEPENDENCIES = \
 	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_SEC_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDADD        = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDADD        = \
 	$(TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS      = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS      = \
 	$(TOOL_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LINK = \
+exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LINK = \
 	$(top_builddir)/coregrind/link_tool_exe_@VGCONF_OS@ \
 	@VALT_LOAD_ADDRESS_SEC@ \
 	$(LINK) \
-	$(exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) \
-	$(exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS)
+	$(exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) \
+	$(exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS)
 endif
 
 #----------------------------------------------------------------------------
-# vgpreload_exp-ptrcheck-<platform>.so
+# vgpreload_exp-sgcheck-<platform>.so
 #----------------------------------------------------------------------------
 
-noinst_PROGRAMS += vgpreload_exp-ptrcheck-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+noinst_PROGRAMS += vgpreload_exp-sgcheck-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
 if VGCONF_HAVE_PLATFORM_SEC
-noinst_PROGRAMS += vgpreload_exp-ptrcheck-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+noinst_PROGRAMS += vgpreload_exp-sgcheck-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
 endif
 
 if VGCONF_OS_IS_DARWIN
@@ -81,28 +81,28 @@ endif
 
 VGPRELOAD_EXP_PTRCHECK_SOURCES_COMMON = h_intercepts.c
 
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = \
 	$(VGPRELOAD_EXP_PTRCHECK_SOURCES_COMMON)
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS     = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS       = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS       = \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC) -O2
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_DEPENDENCIES = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_DEPENDENCIES = \
 	$(LIBREPLACEMALLOC_@VGCONF_PLATFORM_PRI_CAPS@)
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
 	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 
 if VGCONF_HAVE_PLATFORM_SEC
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = \
 	$(VGPRELOAD_EXP_PTRCHECK_SOURCES_COMMON)
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS     = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS       = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS       = \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC) -O2
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_DEPENDENCIES = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_DEPENDENCIES = \
 	$(LIBREPLACEMALLOC_@VGCONF_PLATFORM_SEC_CAPS@)
-vgpreload_exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \
+vgpreload_exp_sgcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) \
 	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 endif

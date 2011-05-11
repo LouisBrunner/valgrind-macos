@@ -12,7 +12,7 @@ TOOLS =		memcheck \
 		helgrind \
 		drd
 
-EXP_TOOLS = 	exp-ptrcheck \
+EXP_TOOLS = 	exp-sgcheck \
 		exp-bbv \
 		exp-dhat
 
@@ -50,7 +50,7 @@ SUPP_FILES = \
 	glibc-2.34567-NPTL-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \
 	glibc-2.X-drd.supp \
-	exp-ptrcheck.supp \
+	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@

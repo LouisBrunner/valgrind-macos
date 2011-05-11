@@ -38,7 +38,7 @@
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../exp-dhat/docs/dh-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="../../exp-ptrcheck/docs/pc-manual.xml" parse="xml"  
+  <xi:include href="../../exp-sgcheck/docs/sg-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../exp-bbv/docs/bbv-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />      

@@ -57,18 +57,18 @@ static void pc_pre_clo_init(void)
 {
 #if defined(VGO_darwin)
    // This makes the (all-failing) regtests run much faster.
-   VG_(printf)("Ptrcheck doesn't work on Darwin yet, sorry.\n");
+   VG_(printf)("SGCheck doesn't work on Darwin yet, sorry.\n");
    VG_(exit)(1);
 #endif
 #if defined(VGA_s390x)
    /* fixs390: to be done. */
-   VG_(printf)("Ptrcheck doesn't work s390x yet, sorry.\n");
+   VG_(printf)("SGCheck doesn't work s390x yet, sorry.\n");
    VG_(exit)(1);
 #endif
 
    // Can't change the name until we change the names in suppressions
    // too.
-   VG_(details_name)            ("exp-ptrcheck");
+   VG_(details_name)            ("exp-sgcheck");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a stack and global array "
                                  "overrun detector");

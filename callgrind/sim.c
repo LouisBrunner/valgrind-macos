@@ -977,7 +977,7 @@ void cacheuse_finish(void)
   if (!CLG_(current_state).collect) return;
 
   CLG_(bb_base) = 0;
-  current_ii = &ii;
+  current_ii = &ii; /* needs to be set for update_XX_use */
   CLG_(cost_base) = 0;
 
   /* update usage counters */
@@ -995,6 +995,8 @@ void cacheuse_finish(void)
     for (i = 0; i < LL.sets * LL.assoc; i++)
       if (LL.loaded[i].use_base)
 	update_LL_use(i, 0);
+
+  current_ii = 0;
 }
   
 

@@ -126,6 +126,7 @@ typedef
             SSizeT sszB;  /* -ve is write, +ve is read */
             HChar  expect[128];
             HChar  actual[128];
+            HChar  delta[32]; // text showing relation to expected
          } SorG;
          struct {
             Addr     addr;
@@ -155,7 +156,7 @@ typedef
 
 void sg_record_error_SorG ( ThreadId tid,
                             Addr addr, SSizeT sszB,
-                            HChar* expect, HChar* actual )
+                            HChar* expect, HChar* actual, HChar* delta )
 {
    XError xe;
    VG_(memset)(&xe, 0, sizeof(xe));
@@ -166,8 +167,11 @@ void sg_record_error_SorG ( ThreadId tid,
                  expect, sizeof(xe.XE.SorG.expect) );
    VG_(strncpy)( &xe.XE.SorG.actual[0],
                  actual, sizeof(xe.XE.SorG.actual) );
+   VG_(strncpy)( &xe.XE.SorG.delta[0],
+                 delta, sizeof(xe.XE.SorG.delta) );
    xe.XE.SorG.expect[ sizeof(xe.XE.SorG.expect)-1 ] = 0;
    xe.XE.SorG.actual[ sizeof(xe.XE.SorG.actual)-1 ] = 0;
+   xe.XE.SorG.delta[ sizeof(xe.XE.SorG.delta)-1 ] = 0;
    VG_(maybe_record_error)( tid, XE_SorG, 0, NULL, &xe );
 }
 
@@ -335,7 +339,8 @@ void pc_pp_Error ( Error* err )
          emit( " Address %#lx expected vs actual:\n", xe->XE.SorG.addr );
          emit( " Expected: %s\n", &xe->XE.SorG.expect[0] );
          emit( " Actual:   %s\n", &xe->XE.SorG.actual[0] );
-
+         if (xe->XE.SorG.delta[0] != 0)
+            emit(" Actual:   is %s Expected\n", &xe->XE.SorG.delta[0]);
       }
       break;
 

@@ -49,105 +49,9 @@
 
 //////////////////////////////////////////////////////////////
 //                                                          //
-//                                                          //
-//                                                          //
-//////////////////////////////////////////////////////////////
-
-
-//////////////////////////////////////////////////////////////
-//                                                          //
 // main                                                     //
 //                                                          //
 //////////////////////////////////////////////////////////////
-
-static void pc_fini ( Int exitcode ) {
-   h_fini( exitcode );
-   sg_fini( exitcode );
-}
-
-static void pc_die_mem_stack ( Addr old_SP, SizeT len ) {
-   /* h_die_mem_stack( old_SP, len ); */
-   sg_die_mem_stack( old_SP, len );
-}
-
-static 
-void pc_pre_thread_ll_create ( ThreadId parent, ThreadId child ) {
-   /* h_pre_thread_ll_create(); */
-   sg_pre_thread_ll_create(parent,child);
-}
-
-static void pc_pre_thread_first_insn ( ThreadId tid ) {
-   /* h_pre_thread_first_insn(tid); */
-   sg_pre_thread_first_insn(tid);
-}
-
-static 
-void pc_new_mem_mmap ( Addr a, SizeT len,
-                       Bool rr, Bool ww, Bool xx, ULong di_handle )
-{
-   h_new_mem_mmap(a, len, rr, ww, xx, di_handle);
-   sg_new_mem_mmap(a, len, rr, ww, xx, di_handle);
-}
-
-static
-void pc_new_mem_startup ( Addr a, SizeT len,
-                          Bool rr, Bool ww, Bool xx, ULong di_handle )
-{
-   h_new_mem_startup(a, len, rr, ww, xx, di_handle);
-   sg_new_mem_startup(a, len, rr, ww, xx, di_handle);
-}
-
-static void pc_die_mem_munmap ( Addr a, SizeT len ) {
-   h_die_mem_munmap(a, len);
-   sg_die_mem_munmap(a, len);
-}
-
-static void pc_pre_mem_read ( CorePart part, ThreadId tid, Char* s,
-                              Addr base, SizeT size ) {
-   h_pre_mem_access(part, tid, s, base, size );
-   /* sg_pre_mem_read(part, tid, s, base, size); */
-}
-
-static void pc_pre_mem_read_asciiz ( CorePart part, ThreadId tid, 
-                                     Char* s, Addr lo )
-{
-   h_pre_mem_read_asciiz(part, tid, s, lo);
-   /* sg_pre_mem_read_asciiz(part, tid, s, lo); */
-}
-
-static void pc_pre_mem_write ( CorePart part, ThreadId tid, Char* s,
-                               Addr base, SizeT size ) {
-   h_pre_mem_access(part, tid, s, base, size);
-   /* sg_pre_mem_write(part, tid, s, base, size); */
-}
-
-static void pc_post_clo_init ( void )
-{
-   h_post_clo_init();
-   sg_post_clo_init();
-#  if defined(VGA_x86) || defined(VGA_amd64)
-   /* nothing */
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm)
-   if (VG_(clo_verbosity) >= 1 && sg_clo_enable_sg_checks) {
-      VG_(message)(Vg_UserMsg, 
-         "WARNING: exp-ptrcheck on ppc32/ppc64/arm platforms: "
-         "stack and global array\n");
-      VG_(message)(Vg_UserMsg, 
-         "WARNING: checking is not currently supported.  "
-         "Only heap checking is\n");
-      VG_(message)(Vg_UserMsg, 
-         "WARNING: supported.  Disabling s/g checks "
-         "(like --enable-sg-checks=no).\n");
-   }
-   sg_clo_enable_sg_checks = False;
-#  elif defined(VGA_s390x)
-   /* fixs390: to be done. */
-      VG_(message)(Vg_UserMsg,
-         "ERROR: exp-ptrcheck on s390x platform is not supported yet.\n");
-#  else
-#    error "Unsupported architecture"
-#  endif
-}
 
 static void pc_pre_clo_init(void)
 {
@@ -156,19 +60,26 @@ static void pc_pre_clo_init(void)
    VG_(printf)("Ptrcheck doesn't work on Darwin yet, sorry.\n");
    VG_(exit)(1);
 #endif
+#if defined(VGA_s390x)
+   /* fixs390: to be done. */
+   VG_(printf)("Ptrcheck doesn't work s390x yet, sorry.\n");
+   VG_(exit)(1);
+#endif
 
+   // Can't change the name until we change the names in suppressions
+   // too.
    VG_(details_name)            ("exp-ptrcheck");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("a heap, stack and global array "
+   VG_(details_description)     ("a stack and global array "
                                  "overrun detector");
    VG_(details_copyright_author)(
       "Copyright (C) 2003-2010, and GNU GPL'd, by OpenWorks Ltd et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 496 );
 
-   VG_(basic_tool_funcs)        (pc_post_clo_init,
+   VG_(basic_tool_funcs)        (sg_post_clo_init,
                                  h_instrument,
-                                 pc_fini);
+                                 sg_fini);
 
    VG_(needs_malloc_replacement)( h_replace_malloc,
                                   h_replace___builtin_new,
@@ -198,29 +109,29 @@ static void pc_pre_clo_init(void)
 
    VG_(needs_xml_output)        ();
 
-   VG_(needs_syscall_wrapper)( h_pre_syscall,
-                               h_post_syscall );
+   //VG_(needs_syscall_wrapper)( h_pre_syscall,
+   //                            h_post_syscall );
 
    VG_(needs_command_line_options)( pc_process_cmd_line_options,
                                     pc_print_usage,
                                     pc_print_debug_usage );
 
-   VG_(track_die_mem_stack)        ( pc_die_mem_stack );
-   VG_(track_pre_thread_ll_create) ( pc_pre_thread_ll_create );
-   VG_(track_pre_thread_first_insn)( pc_pre_thread_first_insn );
+   VG_(track_die_mem_stack)        ( sg_die_mem_stack );
+   VG_(track_pre_thread_ll_create) ( sg_pre_thread_ll_create );
+   VG_(track_pre_thread_first_insn)( sg_pre_thread_first_insn );
 
-   VG_(track_new_mem_mmap)         ( pc_new_mem_mmap );
-   VG_(track_new_mem_startup)      ( pc_new_mem_startup);
-   VG_(track_die_mem_munmap)       ( pc_die_mem_munmap );
+   VG_(track_new_mem_mmap)         ( sg_new_mem_mmap );
+   VG_(track_new_mem_startup)      ( sg_new_mem_startup);
+   VG_(track_die_mem_munmap)       ( sg_die_mem_munmap );
 
-   VG_(track_pre_mem_read)         ( pc_pre_mem_read );
-   VG_(track_pre_mem_read_asciiz)  ( pc_pre_mem_read_asciiz );
-   VG_(track_pre_mem_write)        ( pc_pre_mem_write );
+   /* Really we ought to give handlers for these, to
+      check that syscalls don't read across array boundaries. */
+   /*
+   VG_(track_pre_mem_read)         ( NULL );
+   VG_(track_pre_mem_read_asciiz)  ( NULL );
+   VG_(track_pre_mem_write)        ( NULL );
+   */
 
-   VG_(track_post_reg_write_clientcall_return) ( h_post_reg_write_clientcall );
-   VG_(track_post_reg_write)( h_post_reg_write_demux );
-
-   h_pre_clo_init();
    sg_pre_clo_init();
 
    VG_(clo_vex_control).iropt_unroll_thresh = 0;

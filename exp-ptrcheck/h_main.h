@@ -67,26 +67,6 @@ void  h_replace___builtin_vec_delete ( ThreadId tid, void* p );
 void* h_replace_realloc ( ThreadId tid, void* p_old, SizeT new_size );
 SizeT h_replace_malloc_usable_size ( ThreadId tid, void* p );
 
-void h_new_mem_startup( Addr a, SizeT len,
-                        Bool rr, Bool ww, Bool xx, ULong di_handle );
-void h_new_mem_mmap( Addr a, SizeT len,
-                     Bool rr, Bool ww, Bool xx, ULong di_handle );
-void h_die_mem_munmap( Addr a, SizeT len );
-void h_pre_mem_access ( CorePart part, ThreadId tid, Char* s,
-                        Addr base, SizeT size );
-void h_pre_mem_read_asciiz ( CorePart part, ThreadId tid, 
-                             Char* s, Addr lo );
-
-void h_post_reg_write_demux ( CorePart part, ThreadId tid,
-                              PtrdiffT guest_state_offset, SizeT size);
-void h_post_reg_write_clientcall(ThreadId tid, PtrdiffT guest_state_offset,
-                                 SizeT size, Addr f );
-
-void h_pre_syscall ( ThreadId tid, UInt syscallno,
-                     UWord* args, UInt nArgs );
-void h_post_syscall ( ThreadId tid, UInt syscallno,
-                      UWord* args, UInt nArgs, SysRes res );
-
 /* Note that this also does the sg_ instrumentation. */
 IRSB* h_instrument ( VgCallbackClosure* closure,
                      IRSB* sbIn,

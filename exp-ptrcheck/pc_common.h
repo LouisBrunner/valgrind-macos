@@ -38,7 +38,7 @@ typedef  struct _Seg  Seg;   /* abstract every except in h_main.c */
 
 void sg_record_error_SorG ( ThreadId tid,
                             Addr addr, SSizeT sszB,
-                            HChar* expect, HChar* actual );
+                            HChar* expect, HChar* actual, HChar* delta );
 
 void h_record_heap_error( Addr a, SizeT size, Seg* vseg, Bool is_write );
 

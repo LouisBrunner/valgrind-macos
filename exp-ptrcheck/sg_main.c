@@ -890,12 +890,62 @@ static Bool eq_Invar ( Invar* i1, Invar* i2 )
    tl_assert(0);
 }
 
+/* Generate a piece of text showing 'ea' is relative to 'invar', if
+   known.  If unknown, generate an empty string.  'buf' must be at
+   least 32 bytes in size.  Also return the absolute value of the
+   delta, if known, or zero if not known.
+*/
+static void gen_delta_str ( /*OUT*/HChar* buf,
+                            /*OUT*/UWord* absDelta,
+                            Invar* inv, Addr ea )
+{
+   Addr  block = 0;
+   SizeT szB   = 0;
+
+   buf[0] = 0;
+   *absDelta = 0;
+
+   switch (inv->tag) {
+      case Inv_Unknown:
+      case Inv_Unset:
+         return; /* unknown */
+      case Inv_Stack0:
+         block = inv->Inv.Stack0.addr;
+         szB   = inv->Inv.Stack0.szB;
+         break;
+      case Inv_StackN:
+         block = inv->Inv.StackN.nd->addr;
+         szB   = inv->Inv.StackN.nd->szB;
+         break;
+      case Inv_Global:
+         block = inv->Inv.Global.nd->addr;
+         szB = inv->Inv.Global.nd->szB;
+         break;
+      default:
+         tl_assert(0);
+   }
+   tl_assert(szB > 0);
+   if (ea < block) {
+      *absDelta = block - ea;
+      VG_(sprintf)(buf, "%'lu before", *absDelta);
+   }
+   else if (ea >= block + szB) {
+      *absDelta = ea - (block + szB);
+      VG_(sprintf)(buf, "%'lu after", *absDelta);
+   }
+   else {
+     // Leave *absDelta at zero.
+     VG_(sprintf)(buf, "%'lu inside", ea - block);
+   }
+}
+
+
 /* Print selected parts of an Invar, suitable for use in error
    messages. */
 static void show_Invar( HChar* buf, Word nBuf, Invar* inv, Word depth )
 {
    HChar* str;
-   tl_assert(nBuf >= 96);
+   tl_assert(nBuf >= 128);
    buf[0] = 0;
    switch (inv->tag) {
       case Inv_Unknown:
@@ -903,19 +953,22 @@ static void show_Invar( HChar* buf, Word nBuf, Invar* inv, Word depth )
          break;
       case Inv_Stack0:
          str = "array";
-         VG_(sprintf)(buf, "stack %s \"%s\" in this frame",
-                      str, inv->Inv.Stack0.descr->name );
+         VG_(sprintf)(buf, "stack %s \"%s\" of size %'lu in this frame",
+                      str, inv->Inv.Stack0.descr->name,
+                      inv->Inv.Stack0.szB );
          break;
       case Inv_StackN:
          str = "array";
-         VG_(sprintf)(buf, "stack %s \"%s\" in frame %lu back from here",
+         VG_(sprintf)(buf, "stack %s \"%s\" of size %'lu in frame %lu back from here",
                       str, inv->Inv.StackN.nd->descr->name,
+                           inv->Inv.StackN.nd->descr->szB,
                            depth - inv->Inv.StackN.nd->depth );
          break;
       case Inv_Global:
          str = "array";
-         VG_(sprintf)(buf, "global %s \"%s\" in object with soname \"%s\"",
+         VG_(sprintf)(buf, "global %s \"%s\" of size %'lu in object with soname \"%s\"",
                       str, inv->Inv.Global.nd->descr->name,
+                           inv->Inv.Global.nd->descr->szB,
                            inv->Inv.Global.nd->descr->soname );
          break;
       case Inv_Unset:
@@ -1718,7 +1771,7 @@ void helperc__mem_access ( /* Known only at run time: */
    Invar new_inv;
    ThreadId tid = VG_(get_running_tid)();
    StackFrame* frame;
-   HChar bufE[128], bufA[128];
+   HChar bufE[160], bufA[160], bufD[32];
 
    stats__total_accesses++;
 
@@ -1757,7 +1810,7 @@ void helperc__mem_access ( /* Known only at run time: */
 
    /* Did we see something different from before?  If no, then there's
       no error. */
-   if (eq_Invar(&new_inv, inv))
+   if (LIKELY(eq_Invar(&new_inv, inv)))
       return;
 
    tl_assert(inv->tag != Inv_Unset);
@@ -1768,7 +1821,12 @@ void helperc__mem_access ( /* Known only at run time: */
    VG_(memset)(bufA, 0, sizeof(bufA));
    show_Invar( bufA, sizeof(bufA)-1, &new_inv, frame->depth );
 
-   sg_record_error_SorG( tid, ea, sszB, bufE, bufA );
+   VG_(memset)(bufD, 0, sizeof(bufD));
+   UWord absDelta;
+   gen_delta_str( bufD, &absDelta, inv, ea );
+
+   if (absDelta < 1024)
+      sg_record_error_SorG( tid, ea, sszB, bufE, bufA, bufD );
 
    /* And now install the new observation as "standard", so as to
       make future error messages make more sense. */

@@ -1822,6 +1822,7 @@ void report_pid (int pid)
          if (cmdline[i] == 0)
             cmdline[i] = ' ';
       cmdline[sz] = 0;
+      close (fd);
    }  
    fprintf(stderr, "use --pid=%d for %s\n", pid, cmdline);
    fflush(stderr);

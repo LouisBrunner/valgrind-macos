@@ -34,6 +34,24 @@ Some tests implies to have a vgdb "ptrace invoker" capable.
 The prerequisite are established during make regtest (using marker files).
 Each test verifies the prerequisite using the prereq: line.
 
+In case of failing tests
+------------------------
+gdbserver tests are often failing due to (irrelevant) differences
+depending on the gdb version and/or the OS version.
+Such irrelevant differences have to be filtered by gdbserver_tests/filter_gdb.
+
+To report such problems, the best is to re-run the gdbserver tests
+the following way:
+   perl tests/vg_regtest --keep-unfiltered gdbserver_tests
+
+Then file a bug in bugzilla, giving the following information:
+  output of
+    gdbserver_tests/gdb --version
+    uname -a
+    cat /etc/issue
+    valgrind --version (and/or svn version)
+  and attach a tar file containing all the *.out files in gdbserver_tests
+    directory
 
 Naming conventions:
 -------------------

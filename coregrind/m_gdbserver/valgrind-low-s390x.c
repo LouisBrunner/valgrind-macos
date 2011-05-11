@@ -130,7 +130,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    switch (regno) { 
    // numbers here have to match the order of regs above
    // Attention: gdb order does not match valgrind order.
-   case 0:  *mod = False; //GDBTD??? { "pswm", 0, 64 },  
+   case 0:  *mod = False; break; //GDBTD??? { "pswm", 0, 64 },  
    case 1:  VG_(transfer) (&s390x->guest_IA,  buf, dir, size, mod); break;
    case 2:  VG_(transfer) (&s390x->guest_r0,  buf, dir, size, mod); break;
    case 3:  VG_(transfer) (&s390x->guest_r1,  buf, dir, size, mod); break;

@@ -5,7 +5,7 @@
 #      (i.e. SIGBUG, Test 3). Other tests will be succesful, because signals
 #      are eventually passed.
 prog: ../none/tests/faultstatus
-vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsignopass
+vgopts: --tool=memcheck --vgdb=full --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsignopass
 stderr_filter: filter_memcheck_monitor
 progB: gdb
 argsB: --quiet -l 60 --nx ../none/tests/faultstatus

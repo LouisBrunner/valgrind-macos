@@ -261,8 +261,21 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
       /* Add an instruction-mark statement.  We won't know until after
          disassembling the instruction how long it instruction is, so
-         just put in a zero length and we'll fix it up later. */
-      addStmtToIRSB( irsb, IRStmt_IMark( guest_IP_curr_instr, 0 ));
+         just put in a zero length and we'll fix it up later.
+
+         On ARM, the least significant bit of the instr address
+         distinguishes ARM vs Thumb instructions.  All instructions
+         actually start on at least 2-aligned addresses.  So we need
+         to ignore the bottom bit of the insn address when forming the
+         IMark.  For more details of this convention, see comments on
+         definition of guest_R15 in libvex_guest_arm.h. */
+      addStmtToIRSB( irsb,
+                     IRStmt_IMark( arch_guest == VexArchARM
+                                      ? (guest_IP_curr_instr & ~(Addr64)1)
+                                      : guest_IP_curr_instr,
+                                   0
+                     )
+      );
 
       /* for the first insn, the dispatch loop will have set
          %IP, but for all the others we have to do it ourselves. */

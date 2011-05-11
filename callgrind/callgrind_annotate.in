@@ -607,7 +607,7 @@ sub read_input_file()
                 if (defined $curr_file);
 
             $curr_file = uncompressed_name("fl",$1);
-	    $curr_file =~ s/^$pwd//;
+            $curr_file =~ s/^\Q$pwd\E//;
             $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
 
@@ -617,7 +617,7 @@ sub read_input_file()
             $all_ind_CCs{$curr_file} = $curr_file_ind_CCs;
 
             $curr_file = uncompressed_name("fl",$2);
-	    $curr_file =~ s/^$pwd//;
+            $curr_file =~ s/^\Q$pwd\E//;
             $curr_name = "$curr_file:$curr_fn";
             $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);

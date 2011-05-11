@@ -2234,6 +2234,35 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    }
    res = True;
 
+   /* If reading Dwarf3 variable type/location info, print a line
+      showing the number of variables read for each object.
+      (Currently disabled -- is a sanity-check mechanism for
+      exp-sgcheck.) */
+   if (0 && (VG_(needs).var_info || VG_(clo_read_var_info))) {
+      UWord nVars = 0;
+      Word  j;
+      if (di->varinfo) {
+         for (j = 0; j < VG_(sizeXA)(di->varinfo); j++) {
+            OSet* /* of DiAddrRange */ scope
+               = *(OSet**)VG_(indexXA)(di->varinfo, j);
+            vg_assert(scope);
+            VG_(OSetGen_ResetIter)( scope );
+            while (True) {
+               DiAddrRange* range  = VG_(OSetGen_Next)( scope );
+               if (!range) break;
+               vg_assert(range->vars);
+               Word w = VG_(sizeXA)(range->vars);
+               vg_assert(w >= 0);
+               if (0) VG_(printf)("range %#lx %#lx %ld\n",
+                                  range->aMin, range->aMax, w);
+               nVars += (UWord)w;
+            }
+         }
+      }
+      VG_(umsg)("VARINFO: %7lu vars   %7ld text_size   %s\n",
+                nVars, di->text_size, di->filename);
+   }
+
   out: {
    SysRes m_res;
 

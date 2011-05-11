@@ -115,7 +115,7 @@ struct _CommandLineOptions {
 #define MIN_LINE_SIZE   16
 
 /* Size of various buffers used for storing strings */
-#define FILENAME_LEN                    256
+#define FILENAME_LEN                    VKI_PATH_MAX
 #define FN_NAME_LEN                    4096 /* for C++ code :-) */
 #define OBJ_NAME_LEN                    256
 #define COSTS_LEN                       512 /* at least 17x 64bit values */

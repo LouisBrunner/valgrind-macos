@@ -1,3 +1,0 @@
-prereq: ./is_arch_supported
-vgopts: --suppressions=supp.supp
-prog: supp

@@ -1,3 +1,0 @@
-prereq: ./is_arch_supported
-prog: partial
-vgopts: --partial-loads-ok=yes

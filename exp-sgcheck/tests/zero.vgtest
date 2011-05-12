@@ -1,2 +1,0 @@
-prereq: ./is_arch_supported
-prog: zero

@@ -1,3 +1,0 @@
-prereq: ./is_arch_supported
-prog: base
-stderr_filter: filter_add

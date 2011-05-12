@@ -1,2 +1,0 @@
-prog: neg
-stderr_filter: filter_add

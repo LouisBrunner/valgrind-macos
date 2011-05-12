@@ -1,49 +1,28 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr filter_add filter_suppgen \
-	sh_script
+dist_noinst_SCRIPTS = filter_stderr filter_add filter_suppgen
 
 EXTRA_DIST = \
 	is_arch_supported \
-	add.vgtest-disabled add.stderr.exp \
-	and.vgtest-disabled and.stderr.exp \
-	arith.vgtest-disabled arith.stderr.exp \
-	arith_include1.c arith_include2.c \
 	bad_percentify.vgtest bad_percentify.c \
 	bad_percentify.stdout.exp bad_percentify.stderr.exp-glibc28-amd64 \
-	cmp.vgtest-disabled cmp.stderr.exp \
 	globalerr.vgtest globalerr.stdout.exp \
 	globalerr.stderr.exp-glibc28-amd64 \
 	hackedbz2.vgtest hackedbz2.stdout.exp \
 	hackedbz2.stderr.exp-glibc28-amd64 \
 	hsg.vgtest hsg.stdout.exp hsg.stderr.exp \
-	idiv.vgtest-disabled idiv.stderr.exp \
-	imul.vgtest-disabled imul.stderr.exp \
-	mm.vgtest-disabled mm.stderr.exp \
-	neg.vgtest-disabled neg.stderr.exp \
-	not.vgtest-disabled not.stderr.exp \
-	or.vgtest-disabled or.stderr.exp \
 	preen_invars.vgtest preen_invars.stdout.exp \
 	preen_invars.stderr.exp-glibc28-amd64 \
-	sh_script.vgtest-disabled sh_script.stderr.exp \
 	stackerr.vgtest stackerr.stdout.exp \
-	stackerr.stderr.exp-glibc28-amd64 stackerr.stderr.exp-glibc27-x86 \
-	strlen_bad.vgtest-disabled strlen_bad.stderr.exp \
-	strlen_good.vgtest-disabled strlen_good.stderr.exp \
-	sub.vgtest-disabled sub.stderr.exp \
-	suppgen.vgtest-disabled suppgen.stderr.exp suppgen.stdin \
-	syscall.vgtest-disabled syscall.stderr.exp \
-	xor.vgtest-disabled xor.stderr.exp
+	stackerr.stderr.exp-glibc28-amd64 stackerr.stderr.exp-glibc27-x86
 
 check_PROGRAMS = \
-	add and arith bad_percentify cmp \
+	bad_percentify \
 	globalerr hackedbz2 \
-	hsg idiv imul \
-	mm not neg or \
+	hsg \
 	preen_invars preen_invars_so.so \
-	stackerr \
-	strlen sub syscall xor
+	stackerr
 
 # DDD: not sure if these ones should work on Darwin or not... if not, should
 # be moved into x86-linux/.

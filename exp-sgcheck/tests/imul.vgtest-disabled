@@ -1,2 +1,0 @@
-prog: imul
-stderr_filter: filter_add

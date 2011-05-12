@@ -1,2 +1,0 @@
-prog: or
-stderr_filter: filter_add

@@ -53,9 +53,9 @@ U8 build(int size, U1 byte)
    // res is now considered partially defined, but we know exactly what its
    // value is (it happens to be the same as its metavalue).
    
-   VALGRIND_GET_VBITS(&res, &shres, 8);
+   (void)VALGRIND_GET_VBITS(&res, &shres, 8);
    res2 = res;
-   VALGRIND_MAKE_MEM_DEFINED(&res2, 8);      // avoid the 'undefined' warning
+   (void)VALGRIND_MAKE_MEM_DEFINED(&res2, 8);  // avoid the 'undefined' warning
    assert(res2 == shres);
    return res;
 }
@@ -73,7 +73,7 @@ void check(U1* arr, int n, char* who)
    U1* shadow = malloc(n);
    U1 arr_i;
    U8 sum = 0;
-   VALGRIND_GET_VBITS(arr, shadow, n);
+   (void)VALGRIND_GET_VBITS(arr, shadow, n);
    for (i = 0; i < n; i++) {
       arr_i = make_defined(arr[i]);
       if (arr_i != shadow[i]) {

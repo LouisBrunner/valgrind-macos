@@ -144,20 +144,21 @@ typedef
 
 #define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
    do {                                                  \
-      long _unused_res __attribute__((unused)), _arg1;   \
+      long int _arg1;                                    \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
-      VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
+      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
                                  (_creqF),               \
                                  _arg1, 0,0,0,0);        \
    } while (0)
 
 #define DO_CREQ_W_W(_resF, _dfltF, _creqF, _ty1F,_arg1F) \
    do {                                                  \
-      long int _qzz_res, _arg1;                          \
+      long int arg1;                                     \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
-      VALGRIND_DO_CLIENT_REQUEST(_qzz_res, (_dfltF),     \
+      _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(        \
+                                 (_dfltF),               \
                                  (_creqF),               \
                                  _arg1, 0,0,0,0);        \
       _resF = _qzz_res;                                  \
@@ -165,13 +166,12 @@ typedef
 
 #define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
    do {                                                  \
-      long _unused_res __attribute__((unused));          \
-      long _arg1, _arg2;                                 \
+      long int _arg1, _arg2;                             \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
       _arg2 = (long int)(_arg2F);                        \
-      VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
+      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
                                  (_creqF),               \
                                  _arg1,_arg2,0,0,0);     \
    } while (0)
@@ -179,15 +179,14 @@ typedef
 #define DO_CREQ_v_WWW(_creqF, _ty1F,_arg1F,              \
                       _ty2F,_arg2F, _ty3F, _arg3F)       \
    do {                                                  \
-      long _unused_res __attribute__((unused));          \
-      long _arg1, _arg2, _arg3;                          \
+      long int _arg1, _arg2, _arg3;                      \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
       /* assert(sizeof(_ty3F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
       _arg2 = (long int)(_arg2F);                        \
       _arg3 = (long int)(_arg3F);                        \
-      VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
+      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
                                  (_creqF),               \
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)

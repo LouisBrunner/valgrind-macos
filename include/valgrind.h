@@ -157,17 +157,31 @@
 /* in here of use to end-users -- skip to the next section.           */
 /* ------------------------------------------------------------------ */
 
+/*
+ * VALGRIND_DO_CLIENT_REQUEST(): a statement that invokes a Valgrind client
+ * request. Accepts both pointers and integers as arguments.
+ *
+ * VALGRIND_DO_CLIENT_REQUEST_EXPR(): a C expression that invokes a Valgrind
+ * client request and whose value equals the client request result. Accepts
+ * both pointers and integers as arguments.
+ */
+
+#define VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default,            \
+                                   _zzq_request, _zzq_arg1, _zzq_arg2,  \
+                                   _zzq_arg3, _zzq_arg4, _zzq_arg5)     \
+  { (_zzq_rlval) = VALGRIND_DO_CLIENT_REQUEST_EXPR((_zzq_default),      \
+                        (_zzq_request), (_zzq_arg1), (_zzq_arg2),       \
+                        (_zzq_arg3), (_zzq_arg4), (_zzq_arg5)); }
+
 #if defined(NVALGRIND)
 
 /* Define NVALGRIND to completely remove the Valgrind magic sequence
    from the compiled code (analogous to NDEBUG's effects on
    assert()) */
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
-   {                                                              \
-      (_zzq_rlval) = (_zzq_default);                              \
-   }
+      (_zzq_default)
 
 #else  /* ! NVALGRIND */
 
@@ -221,10 +235,11 @@ typedef
                      "roll $3,  %%edi ; roll $13, %%edi\n\t"      \
                      "roll $29, %%edi ; roll $19, %%edi\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
-  { volatile unsigned int _zzq_args[6];                           \
+  __extension__                                                   \
+  ({volatile unsigned int _zzq_args[6];                           \
     volatile unsigned int _zzq_result;                            \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
     _zzq_args[1] = (unsigned int)(_zzq_arg1);                     \
@@ -239,8 +254,8 @@ typedef
                      : "a" (&_zzq_args[0]), "0" (_zzq_default)    \
                      : "cc", "memory"                             \
                     );                                            \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+  })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -277,25 +292,36 @@ typedef
                      __asm rol edi, 3  __asm rol edi, 13          \
                      __asm rol edi, 29 __asm rol edi, 19
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
-  { volatile uintptr_t _zzq_args[6];                              \
-    volatile unsigned int _zzq_result;                            \
-    _zzq_args[0] = (uintptr_t)(_zzq_request);                     \
-    _zzq_args[1] = (uintptr_t)(_zzq_arg1);                        \
-    _zzq_args[2] = (uintptr_t)(_zzq_arg2);                        \
-    _zzq_args[3] = (uintptr_t)(_zzq_arg3);                        \
-    _zzq_args[4] = (uintptr_t)(_zzq_arg4);                        \
-    _zzq_args[5] = (uintptr_t)(_zzq_arg5);                        \
-    __asm { __asm lea eax, _zzq_args __asm mov edx, _zzq_default  \
-            __SPECIAL_INSTRUCTION_PREAMBLE                        \
-            /* %EDX = client_request ( %EAX ) */                  \
-            __asm xchg ebx,ebx                                    \
-            __asm mov _zzq_result, edx                            \
-    }                                                             \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    valgrind_do_client_request_expr((uintptr_t)(_zzq_default),    \
+        (uintptr_t)(_zzq_request), (uintptr_t)(_zzq_arg1),        \
+        (uintptr_t)(_zzq_arg2), (uintptr_t)(_zzq_arg3),           \
+        (uintptr_t)(_zzq_arg4), (uintptr_t)(_zzq_arg5))
+
+static __inline uintptr_t
+valgrind_do_client_request_expr(uintptr_t _zzq_default, uintptr_t _zzq_request,
+                                uintptr_t _zzq_arg1, uintptr_t _zzq_arg2,
+                                uintptr_t _zzq_arg3, uintptr_t _zzq_arg4,
+                                uintptr_t _zzq_arg5)
+{
+    volatile uintptr_t _zzq_args[6];
+    volatile unsigned int _zzq_result;
+    _zzq_args[0] = (uintptr_t)(_zzq_request);
+    _zzq_args[1] = (uintptr_t)(_zzq_arg1);
+    _zzq_args[2] = (uintptr_t)(_zzq_arg2);
+    _zzq_args[3] = (uintptr_t)(_zzq_arg3);
+    _zzq_args[4] = (uintptr_t)(_zzq_arg4);
+    _zzq_args[5] = (uintptr_t)(_zzq_arg5);
+    __asm { __asm lea eax, _zzq_args __asm mov edx, _zzq_default
+            __SPECIAL_INSTRUCTION_PREAMBLE
+            /* %EDX = client_request ( %EAX ) */
+            __asm xchg ebx,ebx
+            __asm mov _zzq_result, edx
+    }
+    return _zzq_result;
+}
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -330,10 +356,11 @@ typedef
                      "rolq $3,  %%rdi ; rolq $13, %%rdi\n\t"      \
                      "rolq $61, %%rdi ; rolq $51, %%rdi\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
-  { volatile unsigned long long int _zzq_args[6];                 \
+    __extension__                                                 \
+    ({ volatile unsigned long long int _zzq_args[6];              \
     volatile unsigned long long int _zzq_result;                  \
     _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
     _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
@@ -348,8 +375,8 @@ typedef
                      : "a" (&_zzq_args[0]), "0" (_zzq_default)    \
                      : "cc", "memory"                             \
                     );                                            \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+    })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -384,11 +411,12 @@ typedef
                      "rlwinm 0,0,3,0,0  ; rlwinm 0,0,13,0,0\n\t"  \
                      "rlwinm 0,0,29,0,0 ; rlwinm 0,0,19,0,0\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  {          unsigned int  _zzq_args[6];                          \
+    __extension__                                                 \
+  ({         unsigned int  _zzq_args[6];                          \
              unsigned int  _zzq_result;                           \
              unsigned int* _zzq_ptr;                              \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
@@ -407,8 +435,8 @@ typedef
                      : "=b" (_zzq_result)                         \
                      : "b" (_zzq_default), "b" (_zzq_ptr)         \
                      : "cc", "memory", "r3", "r4");               \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+    })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -445,11 +473,12 @@ typedef
                      "rotldi 0,0,3  ; rotldi 0,0,13\n\t"          \
                      "rotldi 0,0,61 ; rotldi 0,0,51\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  {          unsigned long long int  _zzq_args[6];                \
+  __extension__                                                   \
+  ({         unsigned long long int  _zzq_args[6];                \
     register unsigned long long int  _zzq_result __asm__("r3");   \
     register unsigned long long int* _zzq_ptr __asm__("r4");      \
     _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
@@ -465,8 +494,8 @@ typedef
                      : "=r" (_zzq_result)                         \
                      : "0" (_zzq_default), "r" (_zzq_ptr)         \
                      : "cc", "memory");                           \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+  })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -510,11 +539,12 @@ typedef
             "mov r12, r12, ror #3  ; mov r12, r12, ror #13 \n\t"  \
             "mov r12, r12, ror #29 ; mov r12, r12, ror #19 \n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  { volatile unsigned int  _zzq_args[6];                          \
+  __extension__                                                   \
+  ({volatile unsigned int  _zzq_args[6];                          \
     volatile unsigned int  _zzq_result;                           \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
     _zzq_args[1] = (unsigned int)(_zzq_arg1);                     \
@@ -531,8 +561,8 @@ typedef
                      : "=r" (_zzq_result)                         \
                      : "r" (_zzq_default), "r" (&_zzq_args[0])    \
                      : "cc","memory", "r3", "r4");                \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+  })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -570,11 +600,12 @@ typedef
                      "rlwinm 0,0,3,0,0  ; rlwinm 0,0,13,0,0\n\t"  \
                      "rlwinm 0,0,29,0,0 ; rlwinm 0,0,19,0,0\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  {          unsigned int  _zzq_args[7];                          \
+  __extension__                                                   \
+  ({         unsigned int  _zzq_args[7];                          \
     register unsigned int  _zzq_result;                           \
     register unsigned int* _zzq_ptr;                              \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
@@ -594,8 +625,8 @@ typedef
                      : "=b" (_zzq_result)                         \
                      : "b" (_zzq_ptr)                             \
                      : "r3", "r4", "cc", "memory");               \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+  })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -642,11 +673,12 @@ typedef
                      "rotldi 0,0,3  ; rotldi 0,0,13\n\t"          \
                      "rotldi 0,0,61 ; rotldi 0,0,51\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                               \
-        _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
+        _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  {          unsigned long long int  _zzq_args[7];                \
+  __extension__                                                   \
+  ({         unsigned long long int  _zzq_args[7];                \
     register unsigned long long int  _zzq_result;                 \
     register unsigned long long int* _zzq_ptr;                    \
     _zzq_args[0] = (unsigned int long long)(_zzq_request);        \
@@ -666,8 +698,8 @@ typedef
                      : "=b" (_zzq_result)                         \
                      : "b" (_zzq_ptr)                             \
                      : "r3", "r4", "cc", "memory");               \
-    _zzq_rlval = _zzq_result;                                     \
-  }
+    _zzq_result;                                                  \
+  })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -723,10 +755,11 @@ typedef
 #define __GET_NR_CONTEXT_CODE "lr 3,3\n\t"
 #define __CALL_NO_REDIR_CODE  "lr 4,4\n\t"
 
-#define VALGRIND_DO_CLIENT_REQUEST(                              \
-       _zzq_rlval, _zzq_default, _zzq_request,                   \
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                         \
+       _zzq_default, _zzq_request,                               \
        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
- { volatile unsigned long long int _zzq_args[6];                 \
+  __extension__                                                  \
+ ({volatile unsigned long long int _zzq_args[6];                 \
    volatile unsigned long long int _zzq_result;                  \
    _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
@@ -746,8 +779,8 @@ typedef
                     : "a" (&_zzq_args[0]), "0" (_zzq_default)    \
                     : "cc", "2", "3", "memory"                   \
                    );                                            \
-   _zzq_rlval = _zzq_result;                                     \
- }
+   _zzq_result;                                                  \
+ })
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                      \
  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
@@ -4892,64 +4925,12 @@ typedef
 #endif
 
 
-/*
- * VALGRIND_DO_CLIENT_REQUEST_EXPR(): a C expression that invokes a Valgrind
- * client request and whose value equals the client request result.
- */
-
-#if defined(NVALGRIND)
-
-#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                               \
-        _zzq_default, _zzq_request,                                    \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)         \
-   (_zzq_default)
-
-#else /*defined(NVALGRIND)*/
-
-#if defined(_MSC_VER)
-
-#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                                \
-        _zzq_default, _zzq_request,                                     \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)          \
-   (vg_VALGRIND_DO_CLIENT_REQUEST_EXPR((uintptr_t)(_zzq_default),       \
-        (_zzq_request), (uintptr_t)(_zzq_arg1), (uintptr_t)(_zzq_arg2), \
-        (uintptr_t)(_zzq_arg3), (uintptr_t)(_zzq_arg4),                 \
-        (uintptr_t)(_zzq_arg5)))
-
-static __inline unsigned
-vg_VALGRIND_DO_CLIENT_REQUEST_EXPR(uintptr_t _zzq_default,
-                                   unsigned _zzq_request, uintptr_t _zzq_arg1,
-                                   uintptr_t _zzq_arg2, uintptr_t _zzq_arg3,
-                                   uintptr_t _zzq_arg4, uintptr_t _zzq_arg5)
-{
-    unsigned _zzq_rlval;
-    VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default, _zzq_request,
-                      _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5);
-    return _zzq_rlval;
-}
-
-#else /*defined(_MSC_VER)*/
-
-#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                               \
-        _zzq_default, _zzq_request,                                    \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)         \
-   (__extension__({unsigned int _zzq_rlval;                            \
-    VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default, _zzq_request, \
-                _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5) \
-    _zzq_rlval;                                                        \
-   }))
-
-#endif /*defined(_MSC_VER)*/
-
-#endif /*defined(NVALGRIND)*/
-
-
 /* Returns the number of Valgrinds this code is running under.  That
    is, 0 if running natively, 1 if running under Valgrind, 2 if
    running under Valgrind which is running under another Valgrind,
    etc. */
 #define RUNNING_ON_VALGRIND                                           \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* if not */,                   \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* if not */,         \
                                     VG_USERREQ__RUNNING_ON_VALGRIND,  \
                                     0, 0, 0, 0, 0)                    \
 
@@ -4959,11 +4940,9 @@ vg_VALGRIND_DO_CLIENT_REQUEST_EXPR(uintptr_t _zzq_default,
    since it provides a way to make sure valgrind will retranslate the
    invalidated area.  Returns no value. */
 #define VALGRIND_DISCARD_TRANSLATIONS(_qzz_addr,_qzz_len)         \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__DISCARD_TRANSLATIONS,  \
-                               _qzz_addr, _qzz_len, 0, 0, 0);     \
-   }
+                               _qzz_addr, _qzz_len, 0, 0, 0)
 
 
 /* These requests are for getting Valgrind itself to print something.
@@ -4986,17 +4965,21 @@ VALGRIND_PRINTF(const char *format, ...)
 #if defined(NVALGRIND)
    return 0;
 #else /* NVALGRIND */
+#if defined(_MSC_VER)
+   uintptr_t _qzz_res;
+#else
    unsigned long _qzz_res;
+#endif
    va_list vargs;
    va_start(vargs, format);
 #if defined(_MSC_VER)
-   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+   _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(0,
                               VG_USERREQ__PRINTF_VALIST_BY_REF,
                               (uintptr_t)format,
                               (uintptr_t)&vargs,
                               0, 0, 0);
 #else
-   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+   _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(0,
                               VG_USERREQ__PRINTF_VALIST_BY_REF,
                               (unsigned long)format,
                               (unsigned long)&vargs, 
@@ -5020,17 +5003,21 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #if defined(NVALGRIND)
    return 0;
 #else /* NVALGRIND */
+#if defined(_MSC_VER)
+   uintptr_t _qzz_res;
+#else
    unsigned long _qzz_res;
+#endif
    va_list vargs;
    va_start(vargs, format);
 #if defined(_MSC_VER)
-   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+   _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(0,
                               VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
                               (uintptr_t)format,
                               (uintptr_t)&vargs,
                               0, 0, 0);
 #else
-   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+   _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(0,
                               VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
                               (unsigned long)format,
                               (unsigned long)&vargs, 
@@ -5066,58 +5053,39 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    with a lot in the past.
 */
 #define VALGRIND_NON_SIMD_CALL0(_qyy_fn)                          \
-   __extension__                                                  \
-   ({unsigned long _qyy_res;                                      \
-    VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
-                               VG_USERREQ__CLIENT_CALL0,          \
-                               _qyy_fn,                           \
-                               0, 0, 0, 0);                       \
-    _qyy_res;                                                     \
-   })
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,       \
+                                    VG_USERREQ__CLIENT_CALL0,     \
+                                    _qyy_fn,                      \
+                                    0, 0, 0, 0)
 
-#define VALGRIND_NON_SIMD_CALL1(_qyy_fn, _qyy_arg1)               \
-   __extension__                                                  \
-   ({unsigned long _qyy_res;                                      \
-    VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
-                               VG_USERREQ__CLIENT_CALL1,          \
-                               _qyy_fn,                           \
-                               _qyy_arg1, 0, 0, 0);               \
-    _qyy_res;                                                     \
-   })
+#define VALGRIND_NON_SIMD_CALL1(_qyy_fn, _qyy_arg1)                    \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,            \
+                                    VG_USERREQ__CLIENT_CALL1,          \
+                                    _qyy_fn,                           \
+                                    _qyy_arg1, 0, 0, 0)
 
-#define VALGRIND_NON_SIMD_CALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)    \
-   __extension__                                                  \
-   ({unsigned long _qyy_res;                                      \
-    VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
-                               VG_USERREQ__CLIENT_CALL2,          \
-                               _qyy_fn,                           \
-                               _qyy_arg1, _qyy_arg2, 0, 0);       \
-    _qyy_res;                                                     \
-   })
+#define VALGRIND_NON_SIMD_CALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)         \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,            \
+                                    VG_USERREQ__CLIENT_CALL2,          \
+                                    _qyy_fn,                           \
+                                    _qyy_arg1, _qyy_arg2, 0, 0)
 
 #define VALGRIND_NON_SIMD_CALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3) \
-   __extension__                                                  \
-   ({unsigned long _qyy_res;                                      \
-    VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
-                               VG_USERREQ__CLIENT_CALL3,          \
-                               _qyy_fn,                           \
-                               _qyy_arg1, _qyy_arg2,              \
-                               _qyy_arg3, 0);                     \
-    _qyy_res;                                                     \
-   })
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,             \
+                                    VG_USERREQ__CLIENT_CALL3,           \
+                                    _qyy_fn,                            \
+                                    _qyy_arg1, _qyy_arg2,               \
+                                    _qyy_arg3, 0)
 
 
 /* Counts the number of errors that have been recorded by a tool.  Nb:
    the tool must record the errors with VG_(maybe_record_error)() or
    VG_(unique_error)() for them to be counted. */
 #define VALGRIND_COUNT_ERRORS                                     \
-   __extension__                                                  \
-   ({unsigned int _qyy_res;                                       \
-    VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(                    \
+                               0 /* default return */,            \
                                VG_USERREQ__COUNT_ERRORS,          \
-                               0, 0, 0, 0, 0);                    \
-    _qyy_res;                                                     \
-   })
+                               0, 0, 0, 0, 0)
 
 /* Several Valgrind tools (Memcheck, Massif, Helgrind, DRD) rely on knowing
    when heap blocks are allocated in order to give accurate results.  This
@@ -5221,143 +5189,107 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    Ignored if addr == 0.
 */
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__MALLOCLIKE_BLOCK,      \
-                               addr, sizeB, rzB, is_zeroed, 0);   \
-   }
+                               addr, sizeB, rzB, is_zeroed, 0)
 
 /* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.
    Ignored if addr == 0.
 */
 #define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__RESIZEINPLACE_BLOCK,   \
-                               addr, oldSizeB, newSizeB, rzB, 0); \
-   }
+                               addr, oldSizeB, newSizeB, rzB, 0)
 
 /* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.
    Ignored if addr == 0.
 */
 #define VALGRIND_FREELIKE_BLOCK(addr, rzB)                        \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__FREELIKE_BLOCK,        \
-                               addr, rzB, 0, 0, 0);               \
-   }
+                               addr, rzB, 0, 0, 0)
 
 /* Create a memory pool. */
 #define VALGRIND_CREATE_MEMPOOL(pool, rzB, is_zeroed)             \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__CREATE_MEMPOOL,        \
-                               pool, rzB, is_zeroed, 0, 0);       \
-   }
+                               pool, rzB, is_zeroed, 0, 0)
 
 /* Destroy a memory pool. */
 #define VALGRIND_DESTROY_MEMPOOL(pool)                            \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__DESTROY_MEMPOOL,       \
-                               pool, 0, 0, 0, 0);                 \
-   }
+                               pool, 0, 0, 0, 0)
 
 /* Associate a piece of memory with a memory pool. */
 #define VALGRIND_MEMPOOL_ALLOC(pool, addr, size)                  \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__MEMPOOL_ALLOC,         \
-                               pool, addr, size, 0, 0);           \
-   }
+                               pool, addr, size, 0, 0)
 
 /* Disassociate a piece of memory from a memory pool. */
 #define VALGRIND_MEMPOOL_FREE(pool, addr)                         \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__MEMPOOL_FREE,          \
-                               pool, addr, 0, 0, 0);              \
-   }
+                               pool, addr, 0, 0, 0)
 
 /* Disassociate any pieces outside a particular range. */
 #define VALGRIND_MEMPOOL_TRIM(pool, addr, size)                   \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__MEMPOOL_TRIM,          \
-                               pool, addr, size, 0, 0);           \
-   }
+                               pool, addr, size, 0, 0)
 
 /* Resize and/or move a piece associated with a memory pool. */
 #define VALGRIND_MOVE_MEMPOOL(poolA, poolB)                       \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__MOVE_MEMPOOL,          \
-                               poolA, poolB, 0, 0, 0);            \
-   }
+                               poolA, poolB, 0, 0, 0)
 
 /* Resize and/or move a piece associated with a memory pool. */
 #define VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB, size)         \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__MEMPOOL_CHANGE,        \
-                               pool, addrA, addrB, size, 0);      \
-   }
+                               pool, addrA, addrB, size, 0)
 
 /* Return 1 if a mempool exists, else 0. */
 #define VALGRIND_MEMPOOL_EXISTS(pool)                             \
-   __extension__                                                  \
-   ({unsigned int _qzz_res;                                       \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__MEMPOOL_EXISTS,        \
-                               pool, 0, 0, 0, 0);                 \
-    _qzz_res;                                                     \
-   })
+                               pool, 0, 0, 0, 0)
 
 /* Mark a piece of memory as being a stack. Returns a stack id. */
 #define VALGRIND_STACK_REGISTER(start, end)                       \
-   __extension__                                                  \
-   ({unsigned int _qzz_res;                                       \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__STACK_REGISTER,        \
-                               start, end, 0, 0, 0);              \
-    _qzz_res;                                                     \
-   })
+                               start, end, 0, 0, 0)
 
 /* Unmark the piece of memory associated with a stack id as being a
    stack. */
 #define VALGRIND_STACK_DEREGISTER(id)                             \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__STACK_DEREGISTER,      \
-                               id, 0, 0, 0, 0);                   \
-   }
+                               id, 0, 0, 0, 0)
 
 /* Change the start and end address of the stack id. */
 #define VALGRIND_STACK_CHANGE(id, start, end)                     \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__STACK_CHANGE,          \
-                               id, start, end, 0, 0);             \
-   }
+                               id, start, end, 0, 0)
 
 /* Load PDB debug info for Wine PE image_map. */
 #define VALGRIND_LOAD_PDB_DEBUGINFO(fd, ptr, total_size, delta)   \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
                                VG_USERREQ__LOAD_PDB_DEBUGINFO,    \
-                               fd, ptr, total_size, delta, 0);    \
-   }
+                               fd, ptr, total_size, delta, 0)
 
 /* Map a code address to a source file name and line number.  buf64
    must point to a 64-byte buffer in the caller's address space.  The
    result will be dumped in there and is guaranteed to be zero
    terminated.  If no info is found, the first byte is set to zero. */
 #define VALGRIND_MAP_IP_TO_SRCLOC(addr, buf64)                    \
-   {unsigned int _qzz_res __attribute((unused));                  \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__MAP_IP_TO_SRCLOC,      \
-                               addr, buf64, 0, 0, 0);             \
-   }
+                               addr, buf64, 0, 0, 0)
 
 
 #undef PLAT_x86_linux

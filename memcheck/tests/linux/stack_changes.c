@@ -62,9 +62,9 @@ int main(int argc, char **argv)
 
     swapcontext(&oldc, &ctx1);
 
-    VALGRIND_STACK_DEREGISTER(c1);
+    (void)VALGRIND_STACK_DEREGISTER(c1);
     //free(ctx1.uc_stack.ss_sp);
-    VALGRIND_STACK_DEREGISTER(c2);
+    (void)VALGRIND_STACK_DEREGISTER(c2);
     //free(ctx2.uc_stack.ss_sp);
 
     return 0;

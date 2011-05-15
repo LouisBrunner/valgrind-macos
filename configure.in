@@ -1282,6 +1282,52 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -Wno-nonnull ?
+
+AC_MSG_CHECKING([if gcc accepts -Wno-nonnull])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-nonnull"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_W_NO_NONNULL], [-Wno-nonnull])
+AC_MSG_RESULT([yes])
+],
+[
+AC_SUBST([FLAG_W_NO_NONNULL], [])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
+# does this compiler support -Wno-overflow ?
+
+AC_MSG_CHECKING([if gcc accepts -Wno-overflow])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-overflow"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_W_NO_OVERFLOW], [-Wno-overflow])
+AC_MSG_RESULT([yes])
+],
+[
+AC_SUBST([FLAG_W_NO_OVERFLOW], [])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support -Wno-uninitialized ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-uninitialized])

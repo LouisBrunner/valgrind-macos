@@ -108,6 +108,7 @@ AM_CCASFLAGS += @FLAG_M64@
 # generic C ones
 amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
+fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
 insn_mmx_SOURCES	= insn_mmx.def

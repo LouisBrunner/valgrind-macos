@@ -54,7 +54,7 @@ static void loops (int *loopnr)
 {
   int i, j;
   for (i = 0; i < LOOPS; i++)
-    for (j = 0; i < LOOPS; i++)
+    for (j = 0; j < LOOPS; j++)
       (*loopnr)++;
 }
  

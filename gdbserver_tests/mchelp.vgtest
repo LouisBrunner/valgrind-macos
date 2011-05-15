@@ -1,5 +1,4 @@
 # test the memcheck monitor help
-prereq: test -e gdb
 prog: t
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mchelp
 stdout_filter: filter_make_empty

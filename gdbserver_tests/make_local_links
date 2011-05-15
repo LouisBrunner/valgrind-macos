@@ -14,7 +14,7 @@ if [ -x "$1" ]
 then
    ln -f -s "$1" gdbserver_tests/gdb
    # Try to extract the gdb version.
-   VERSIONLINE=`gdbserver_tests/gdb --version | head -1`
+   VERSIONLINE=`gdbserver_tests/gdb --version | head -n 1`
    VERSION=`echo $VERSIONLINE                         |
             sed -e 's/[^0-9\.]//g' -e 's/\./ /g'`
    

@@ -214,6 +214,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Extra stuff for C tests
 ansi_CFLAGS		= $(AM_CFLAGS) -ansi
+execve_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 floored_LDADD 		= -lm
 manythreads_LDADD	= -lpthread
 if VGCONF_OS_IS_DARWIN

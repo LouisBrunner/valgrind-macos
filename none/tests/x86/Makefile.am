@@ -120,6 +120,7 @@ endif
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.S
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them.
 fpu_lazy_eflags_CFLAGS	= $(AM_CFLAGS) -O2 -march=pentiumpro
+fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@
 fxtract_LDADD		= -lm
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm

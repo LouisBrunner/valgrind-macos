@@ -274,6 +274,10 @@ deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
 
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
+execve_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+
+execve2_CFLAGS = $(AM_CFLASG) @FLAG_W_NO_NONNULL@
+
 inits_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 long_namespace_xml_SOURCES = long_namespace_xml.cpp

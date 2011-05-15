@@ -1,4 +1,5 @@
 # test cleanup of break and watchpoints after fork
+prereq: test -e gdb
 prog: clean_after_fork
 vgopts: --tool=memcheck --vgdb=full --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcclean_after_fork
 stderr_filter: filter_memcheck_monitor

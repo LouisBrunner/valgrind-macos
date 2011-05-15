@@ -4,6 +4,7 @@
 #   faultstatus C code will report a failure for the signal not passed
 #      (i.e. SIGBUG, Test 3). Other tests will be succesful, because signals
 #      are eventually passed.
+prereq: test -e gdb
 prog: ../none/tests/faultstatus
 vgopts: --tool=memcheck --vgdb=full --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsignopass
 stderr_filter: filter_memcheck_monitor

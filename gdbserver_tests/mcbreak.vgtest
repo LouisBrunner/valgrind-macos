@@ -1,5 +1,6 @@
 # test execution control (break, next, step) and inferior calls
 # when stopped on these events
+prereq: test -e gdb
 prog: t
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcbreak
 stdout_filter: filter_gdb

@@ -1,4 +1,5 @@
 # test the memcheck V and A bits monitor functionality
+prereq: test -e gdb
 prog: t
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcvabits
 stdout_filter: filter_make_empty

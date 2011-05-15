@@ -9,7 +9,7 @@ vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mc
 # but no way to check that this is effectively in the 4 different threads.
 stderr_filter: filter_gdb
 # Disable on Darwin: inferior call rejected as it cannot find malloc.
-prereq: ../tests/os_test linux
+prereq: test -e gdb && ../tests/os_test linux
 progB: gdb
 argsB:  --quiet -l 60 --nx ./sleepers
 stdinB: mcinfcallRU.stdinB.gdb

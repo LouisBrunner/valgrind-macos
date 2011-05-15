@@ -1,5 +1,6 @@
 # test the memcheck watchpoint functionality
 # Note: we need --vgdb=full to stop at the instruction following the watchpoint.
+prereq: test -e gdb
 prog: watchpoints
 vgopts: --tool=memcheck --vgdb=full --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcwatchpoints
 stdout_filter: filter_make_empty

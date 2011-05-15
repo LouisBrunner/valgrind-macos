@@ -10,9 +10,9 @@
 # The vgdb link is needed either for gdb tests
 # or for standalone vgdb tests.
 
-ln -f -s $1 gdbserver_tests/gdb
-if [ -x gdbserver_tests/gdb ]
+if [ -x "$1" ]
 then
+   ln -f -s "$1" gdbserver_tests/gdb
    # Try to extract the gdb version.
    VERSIONLINE=`gdbserver_tests/gdb --version | head -1`
    VERSION=`echo $VERSIONLINE                         |

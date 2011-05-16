@@ -2135,9 +2135,9 @@ static void instrument_mem_access ( struct _SGEnv* sge,
 #if defined(VGA_x86)
    { UChar* p = (UChar*)curr_IP;
      // pop %ebp; RET
-     if (p[-1] == 0x5d && p[0] == 0xc3) return;
+     if (p[0] == 0xc3 && p[-1] == 0x5d) return;
      // pop %ebp; RET $imm16
-     if (p[-1] == 0x5d && p[0] == 0xc2) return;
+     if (p[0] == 0xc2 && p[-1] == 0x5d) return;
      // PUSH %EBP; mov %esp,%ebp
      if (p[0] == 0x55 && p[1] == 0x89 && p[2] == 0xe5) return;
    }

@@ -80,6 +80,9 @@ UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
 /*--- Dirty Helper functions.                              ---*/
 /*------------------------------------------------------------*/
 void s390x_dirtyhelper_EX(ULong torun);
+ULong s390x_dirtyhelper_STCK(ULong *addr);
+ULong s390x_dirtyhelper_STCKF(ULong *addr);
+ULong s390x_dirtyhelper_STCKE(ULong *addr);
 
 /*------------------------------------------------------------*/
 /*--- IR generators for special opcodes.                   ---*/

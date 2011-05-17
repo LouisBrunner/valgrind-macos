@@ -234,6 +234,49 @@ s390x_dirtyhelper_EX(ULong torun)
    last_execute_target = torun;
 }
 
+
+/*------------------------------------------------------------*/
+/*--- Dirty helper for Clock instructions                  ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+ULong s390x_dirtyhelper_STCK(ULong *addr)
+{
+   int cc;
+
+   asm volatile("stck %0\n"
+                "ipm %1\n"
+                "srl %1,28\n"
+                : "+Q" (*addr), "=d" (cc) : : "cc");
+   return cc;
+}
+
+ULong s390x_dirtyhelper_STCKE(ULong *addr)
+{
+   int cc;
+
+   asm volatile("stcke %0\n"
+                "ipm %1\n"
+                "srl %1,28\n"
+                : "+Q" (*addr), "=d" (cc) : : "cc");
+   return cc;
+}
+
+ULong s390x_dirtyhelper_STCKF(ULong *addr)
+{
+   int cc;
+
+   asm volatile(".insn s,0xb27c0000,%0\n"
+                "ipm %1\n"
+                "srl %1,28\n"
+                : "+Q" (*addr), "=d" (cc) : : "cc");
+   return cc;
+}
+#else
+ULong s390x_dirtyhelper_STCK(ULong *addr)  {return 3;}
+ULong s390x_dirtyhelper_STCKF(ULong *addr) {return 3;}
+ULong s390x_dirtyhelper_STCKE(ULong *addr) {return 3;}
+#endif /* VGA_s390x */
+
 /*------------------------------------------------------------*/
 /*--- Helper for condition code.                           ---*/
 /*------------------------------------------------------------*/

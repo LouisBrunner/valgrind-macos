@@ -10498,6 +10498,60 @@ s390_irgen_FLOGR(UChar r1, UChar r2)
    return "flogr";
 }
 
+static HChar *
+s390_irgen_STCK(IRTemp op2addr)
+{
+   IRDirty *d;
+   IRTemp cc = newTemp(Ity_I64);
+
+   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCK",
+                         &s390x_dirtyhelper_STCK,
+                         mkIRExprVec_1(mkexpr(op2addr)));
+   d->mFx   = Ifx_Write;
+   d->mAddr = mkexpr(op2addr);
+   d->mSize = 8;
+   stmt(IRStmt_Dirty(d));
+   s390_cc_thunk_fill(mkU64(S390_CC_OP_SET),
+                      mkexpr(cc), mkU64(0), mkU64(0));
+   return "stck";
+}
+
+static HChar *
+s390_irgen_STCKF(IRTemp op2addr)
+{
+   IRDirty *d;
+   IRTemp cc = newTemp(Ity_I64);
+
+   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCKF",
+                         &s390x_dirtyhelper_STCKF,
+                         mkIRExprVec_1(mkexpr(op2addr)));
+   d->mFx   = Ifx_Write;
+   d->mAddr = mkexpr(op2addr);
+   d->mSize = 8;
+   stmt(IRStmt_Dirty(d));
+   s390_cc_thunk_fill(mkU64(S390_CC_OP_SET),
+                      mkexpr(cc), mkU64(0), mkU64(0));
+   return "stckf";
+}
+
+static HChar *
+s390_irgen_STCKE(IRTemp op2addr)
+{
+   IRDirty *d;
+   IRTemp cc = newTemp(Ity_I64);
+
+   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCKE",
+                         &s390x_dirtyhelper_STCKE,
+                         mkIRExprVec_1(mkexpr(op2addr)));
+   d->mFx   = Ifx_Write;
+   d->mAddr = mkexpr(op2addr);
+   d->mSize = 16;
+   stmt(IRStmt_Dirty(d));
+   s390_cc_thunk_fill(mkU64(S390_CC_OP_SET),
+                      mkexpr(cc), mkU64(0), mkU64(0));
+   return "stcke";
+}
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -10844,7 +10898,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
                                  goto ok;
    case 0xb202: /* STIDP */ goto unimplemented;
    case 0xb204: /* SCK */ goto unimplemented;
-   case 0xb205: /* STCK */ goto unimplemented;
+   case 0xb205: s390_format_S_RD(s390_irgen_STCK, ovl.fmt.S.b2, ovl.fmt.S.d2);goto ok;
    case 0xb206: /* SCKC */ goto unimplemented;
    case 0xb207: /* STCKC */ goto unimplemented;
    case 0xb208: /* SPT */ goto unimplemented;
@@ -10921,9 +10975,9 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb274: /* SIGA */ goto unimplemented;
    case 0xb276: /* XSCH */ goto unimplemented;
    case 0xb277: /* RP */ goto unimplemented;
-   case 0xb278: /* STCKE */ goto unimplemented;
+   case 0xb278: s390_format_S_RD(s390_irgen_STCKE, ovl.fmt.S.b2, ovl.fmt.S.d2);goto ok;
    case 0xb279: /* SACF */ goto unimplemented;
-   case 0xb27c: /* STCKF */ goto unimplemented;
+   case 0xb27c: s390_format_S_RD(s390_irgen_STCKF, ovl.fmt.S.b2, ovl.fmt.S.d2);goto ok;
    case 0xb27d: /* STSI */ goto unimplemented;
    case 0xb299: s390_format_S_RD(s390_irgen_SRNM, ovl.fmt.S.b2, ovl.fmt.S.d2);
                                  goto ok;

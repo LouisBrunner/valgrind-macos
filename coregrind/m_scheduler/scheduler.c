@@ -1042,18 +1042,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          /* As we are initializing, VG_(dyn_vgdb_error) can't have been
             changed yet. */
 
-         if (VG_(dyn_vgdb_error) == 0) {
-            /* The below call allows gdb to attach at startup
-               before the first guest instruction is executed. */
-            VG_(umsg)("(action at startup) vgdb me ... \n");
-            VG_(gdbserver)(1); 
-         } else {
-            /* User has activated gdbserver => initialize now the FIFOs
-               to let vgdb/gdb contact us either via the scheduler poll
-               mechanism or via vgdb ptrace-ing valgrind. */
-            if (VG_(gdbserver_activity) (1))
-               VG_(gdbserver) (1);
-         }
+         VG_(gdbserver_prerun_action) (1);
       } else {
          VG_(disable_vgdb_poll) ();
       }

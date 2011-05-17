@@ -494,6 +494,24 @@ static void invalidate_current_ip (ThreadId tid, char *who)
    invalidate_if_jump_not_yet_gdbserved (VG_(get_IP) (tid), who);
 }
 
+void VG_(gdbserver_prerun_action) (ThreadId tid)
+{
+   // Using VG_(dyn_vgdb_error) allows the user to control if gdbserver
+   // stops after a fork.
+   if (VG_(dyn_vgdb_error) == 0) {
+      /* The below call allows gdb to attach at startup
+         before the first guest instruction is executed. */
+      VG_(umsg)("(action at startup) vgdb me ... \n");
+      VG_(gdbserver)(tid); 
+   } else {
+      /* User has activated gdbserver => initialize now the FIFOs
+         to let vgdb/gdb contact us either via the scheduler poll
+         mechanism or via vgdb ptrace-ing valgrind. */
+      if (VG_(gdbserver_activity) (tid))
+         VG_(gdbserver) (tid);
+   }
+}
+
 /* when fork is done, various cleanup is needed in the child process.
    In particular, child must have its own connection to avoid stealing 
    data from its parent */
@@ -520,6 +538,11 @@ static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
    } else {
       vg_assert (gs_addresses == NULL);
       vg_assert (gs_watches == NULL);
+   }
+
+   
+   if (VG_(clo_trace_children)) {
+      VG_(gdbserver_prerun_action) (me);
    }
 }
 

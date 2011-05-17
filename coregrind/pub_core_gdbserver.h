@@ -32,6 +32,14 @@
 
 #include "pub_tool_gdbserver.h"
 
+
+// After a fork or after an exec, call the below to (possibly) terminate
+// the previous gdbserver and then activate a new gdbserver
+// before any guest code execution, to e.g. allow the user to set
+// breakpoints before execution.
+// If VG_(clo_vgdb) == No, the below has no effect.
+void VG_(gdbserver_prerun_action) (ThreadId tid);
+
 // True if there is some activity from vgdb
 // If it returns True, then extern void VG_(gdbserver) can be called
 // to handle this incoming vgdb request.                                

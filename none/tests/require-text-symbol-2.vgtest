@@ -1,2 +1,3 @@
 prog: require-text-symbol
-vgopts: -q "--require-text-symbol=:*libc.so*:doesntexist"
+vgopts: -q "--require-text-symbol=:*libc.so*:doesntexist" --vgdb-prefix=./vgdb-prefix-require-text-symbol-2
+cleanup: rm ./vgdb-prefix-require-text-symbol-2*

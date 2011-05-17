@@ -1,6 +1,7 @@
 /* Test whether detached threads are handled properly. */
 
 #include <assert.h>
+#include <limits.h>  /* PTHREAD_STACK_MIN */
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,13 +38,9 @@ int main(int argc, char** argv)
 {
   const int count1 = argc > 1 ? atoi(argv[1]) : 100;
   const int count2 = argc > 2 ? atoi(argv[2]) : 100;
-  int thread_arg[count1 > count2 ? count1 : count2];
   int i;
   int detachstate;
   pthread_attr_t attr;
-
-  for (i = 0; i < count1 || i < count2; i++)
-    thread_arg[i] = i;
 
   pthread_mutex_init(&s_mutex, 0);
   pthread_cond_init(&s_cond, 0);
@@ -52,13 +49,13 @@ int main(int argc, char** argv)
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   assert(pthread_attr_getdetachstate(&attr, &detachstate) == 0);
   assert(detachstate == PTHREAD_CREATE_DETACHED);
-  pthread_attr_setstacksize(&attr, 16384);
+  pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096);
   // Create count1 detached threads by setting the "detached" property via
   // thread attributes.
   for (i = 0; i < count1; i++)
   {
     pthread_t thread;
-    pthread_create(&thread, &attr, thread_func1, &thread_arg[i]);
+    pthread_create(&thread, &attr, thread_func1, NULL);
   }
   // Create count2 detached threads by letting the threads detach themselves.
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -67,7 +64,7 @@ int main(int argc, char** argv)
   for (i = 0; i < count2; i++)
   {
     pthread_t thread;
-    pthread_create(&thread, &attr, thread_func2, &thread_arg[i]);
+    pthread_create(&thread, &attr, thread_func2, NULL);
   }
   pthread_attr_destroy(&attr);
 

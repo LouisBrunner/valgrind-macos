@@ -1,33 +1,31 @@
+exp-sgcheck, a stack and global array overrun detector
 
 Invalid read of size 1
-   at 0x........: strlen (h_intercepts.c:...)
-   by 0x........: ...
-   by 0x........: ...
-   by 0x........: VG_print_translation_stats (bad_percentify.c:88)
-   by 0x........: main (bad_percentify.c:107)
+   at 0x........: local_strlen (bad_percentify.c:138)
+   by 0x........: VG_vsprintf (bad_percentify.c:531)
+   by 0x........: VG_sprintf (bad_percentify.c:541)
+   by 0x........: VG_percentify (bad_percentify.c:568)
+   by 0x........: VG_print_translation_stats (bad_percentify.c:621)
+   by 0x........: main (bad_percentify.c:641)
  Address 0x........ expected vs actual:
- Expected: stack array "buf" in frame 3 back from here
+ Expected: stack array "buf" of size 6 in frame 4 back from here
  Actual:   unknown
+ Actual:   is 0 after Expected
 
 Invalid read of size 1
-   at 0x........: strlen (h_intercepts.c:...)
-   by 0x........: ...
-   by 0x........: ...
-   by 0x........: VG_print_translation_stats (bad_percentify.c:93)
-   by 0x........: main (bad_percentify.c:107)
+   at 0x........: local_strlen (bad_percentify.c:138)
+   by 0x........: myvprintf_str (bad_percentify.c:187)
+   by 0x........: VG_debugLog_vprintf (bad_percentify.c:479)
+   by 0x........: vprintf_to_buf (bad_percentify.c:89)
+   by 0x........: vprintf_WRK (bad_percentify.c:102)
+   by 0x........: VG_vprintf (bad_percentify.c:115)
+   by 0x........: VG_printf (bad_percentify.c:124)
+   by 0x........: VG_print_translation_stats (bad_percentify.c:622)
+   by 0x........: main (bad_percentify.c:641)
  Address 0x........ expected vs actual:
- Expected: stack array "buf" in frame 3 back from here
+ Expected: stack array "buf" of size 6 in frame 7 back from here
  Actual:   unknown
-
-Invalid read of size 1
-   at 0x........: strlen (h_intercepts.c:...)
-   by 0x........: ...
-   by 0x........: ...
-   by 0x........: VG_print_translation_stats (bad_percentify.c:98)
-   by 0x........: main (bad_percentify.c:107)
- Address 0x........ expected vs actual:
- Expected: stack array "buf" in frame 3 back from here
- Actual:   unknown
+ Actual:   is 0 after Expected
 
 
-ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 6 errors from 2 contexts (suppressed: 0 from 0)

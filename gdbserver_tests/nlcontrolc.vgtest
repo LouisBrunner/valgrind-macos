@@ -14,7 +14,5 @@ prereq: test -e gdb -a -f vgdb.ptraceinvoker
 progB: gdb
 argsB: --quiet -l 60 --nx ./sleepers
 stdinB: nlcontrolc.stdinB.gdb
-#stdoutB_filter: /bin/cat
 stdoutB_filter: filter_gdb
-#stderrB_filter: /bin/cat
 stderrB_filter: filter_make_empty

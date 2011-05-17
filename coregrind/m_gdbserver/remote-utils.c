@@ -121,7 +121,9 @@ void set_ptracer(void)
 
    o = VG_(open) (ptrace_scope_setting_file, VKI_O_RDONLY, 0);
    if (sr_isError(o)) {
-      sr_perror(o, "error VG_(open) %s\n", ptrace_scope_setting_file);
+      if (VG_(debugLog_getLevel)() >= 1) {
+         sr_perror(o, "error VG_(open) %s\n", ptrace_scope_setting_file);
+      }
       /* can't read setting. Assuming ptrace can be called by vgdb. */
       return;
    }

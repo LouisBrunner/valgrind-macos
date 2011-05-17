@@ -4,9 +4,7 @@ prog: sleepers
 # too much dependencies to the scheduler fairness.
 args: 1 0 2000000000 ------B-
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcinfcallRU
-# filter_gdb to replace pid and Thread numbers.
-# Well, the test will verify we have 4 calls (for each thread)
-# but no way to check that this is effectively in the 4 different threads.
+# filter_gdb to replace pid and Thread numbers in the output of the program:
 stderr_filter: filter_gdb
 # Disable on Darwin: inferior call rejected as it cannot find malloc.
 prereq: test -e gdb && ../tests/os_test linux

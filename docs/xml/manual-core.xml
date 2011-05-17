@@ -2255,7 +2255,9 @@ Reading symbols from /lib/libc.so.6...(no debugging symbols found)...done.
      <para> Stack unwinding on PPC32/PPC64. </para>
      <para> On PPC32/PPC64, stack unwinding for leaf functions
      (i.e. functions not calling other functions) does work properly
-     only with <option>--vex-iropt-precise-memory-exns=yes</option>
+     only with <option>--vex-iropt-precise-memory-exns=yes</option>.
+     You must also pass this option to have a precise stack when
+     a signal is trapped by gdb.
      </para>
    </listitem>
 
@@ -2521,6 +2523,11 @@ vgdb vg.set log_output -c mc.leak_check any
     <para><option>-D</option> instructs vgdb to show the state of the
     shared memory used by the Valgrind gdbserver. vgdb will exit after
     having shown the Valgrind gdbserver shared memory state.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>-l</option> instructs vgdb to report the list of
+    the Valgrind gdbserver processes running and then exit.</para>
   </listitem>
 </itemizedlist>
  

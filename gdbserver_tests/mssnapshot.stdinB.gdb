@@ -15,7 +15,7 @@ monitor help
 #
 # test non detailed and detailed snapshot
 monitor ms.snapshot
-monitor ms.snapshot detailed
+monitor ms.detailed_snapshot
 #
 #
 monitor vg.kill

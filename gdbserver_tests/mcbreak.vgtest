@@ -4,11 +4,9 @@ prereq: test -e gdb
 prog: t
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcbreak
 stdout_filter: filter_gdb
-#stdout_filter: /bin/cat
 stderr_filter: filter_make_empty
 progB: gdb
 argsB:  --quiet -l 60 --nx ./t
 stdinB: mcbreak.stdinB.gdb
 stdoutB_filter: filter_gdb
-#stdoutB_filter: /bin/cat
 stderrB_filter: filter_memcheck_monitor

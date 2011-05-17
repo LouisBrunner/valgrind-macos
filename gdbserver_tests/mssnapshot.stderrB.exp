@@ -13,10 +13,11 @@ general valgrind monitor commands:
   vg.set vgdb-error <errornr> : debug me at error >= <errornr> 
 
 massif monitor commands:
-  ms.snapshot [<filename>] [detailed]
-       takes a snapshot and saves it in <filename>
+  ms.snapshot [<filename>]
+  ms.detailed_snapshot [<filename>]
+       takes a snapshot (or a detailed snapshot)
+       and saves it in <filename>
              default <filename> is massif.vgdb.out
-             if present, detailed argument indicates to take a detailed snapshot
 
 monitor command request to kill this process
 Remote connection closed

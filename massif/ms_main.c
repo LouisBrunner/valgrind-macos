@@ -1982,10 +1982,11 @@ static void print_monitor_help ( void )
 {
    VG_(gdb_printf) ("\n");
    VG_(gdb_printf) ("massif monitor commands:\n");
-   VG_(gdb_printf) ("  ms.snapshot [<filename>] [detailed]\n");
-   VG_(gdb_printf) ("       takes a snapshot and saves it in <filename>\n");
+   VG_(gdb_printf) ("  ms.snapshot [<filename>]\n");
+   VG_(gdb_printf) ("  ms.detailed_snapshot [<filename>]\n");
+   VG_(gdb_printf) ("       takes a snapshot (or a detailed snapshot)\n");
+   VG_(gdb_printf) ("       and saves it in <filename>\n");
    VG_(gdb_printf) ("             default <filename> is massif.vgdb.out\n");
-   VG_(gdb_printf) ("             if present, detailed argument indicates to take a detailed snapshot\n");
    VG_(gdb_printf) ("\n");
 }
 
@@ -2379,6 +2380,18 @@ static void write_snapshots_array_to_file(void)
    VG_(free)(massif_out_file);
 }
 
+static handle_snapshot_monitor_command (Char *filename, Bool detailed)
+{
+   Snapshot snapshot;
+
+   clear_snapshot(&snapshot, /* do_sanity_check */ False);
+   take_snapshot(&snapshot, Normal, get_time(), detailed);
+   write_snapshots_to_file ((filename == NULL) ? (Char*) "massif.vgdb.out" : filename,
+                            &snapshot,
+                            1);
+   delete_snapshot(&snapshot);
+}
+
 static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
 {
    Char* wcmd;
@@ -2388,7 +2401,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    VG_(strcpy) (s, req);
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
-   switch (VG_(keyword_id) ("help ms.snapshot", 
+   switch (VG_(keyword_id) ("help ms.snapshot ms.detailed_snapshot", 
                             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -2398,29 +2411,15 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       print_monitor_help();
       return True;
    case  1: { /* ms.snapshot */
-      Char* kw;
-      Char* filename = NULL;
-      Bool detailed = False;
-      Snapshot snapshot;
-      
-      for (kw = VG_(strtok_r) (NULL, " ", &ssaveptr); 
-           kw != NULL; 
-           kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
-        if (filename == NULL)
-           filename = kw;
-        else if (0 == VG_(strncmp)(kw, "detailed", VG_(strlen) (kw))) 
-           detailed = True;
-        else {
-           VG_(gdb_printf) ("invalid 2nd arg\n");
-           return True;
-        }
-      }
-      clear_snapshot(&snapshot, /* do_sanity_check */ False);
-      take_snapshot(&snapshot, Normal, get_time(), detailed);
-      write_snapshots_to_file ((filename == NULL) ? (Char*) "massif.vgdb.out" : filename,
-                               &snapshot,
-                               1);
-      delete_snapshot(&snapshot);
+      Char* filename;
+      filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      handle_snapshot_monitor_command (filename, False /* detailed */);
+      return True;
+   }
+   case  2: { /* ms.detailed_snapshot */
+      Char* filename;
+      filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      handle_snapshot_monitor_command (filename, True /* detailed */);
       return True;
    }
    default: 

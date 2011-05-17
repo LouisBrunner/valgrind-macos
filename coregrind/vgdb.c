@@ -1845,8 +1845,10 @@ void ptrace_restrictions(void)
                "blocked in a system call *after* an initial successful attach\n",
                ptrace_scope_setting_file);
    } else if (ptrace_scope == 'X') {
-      fprintf(stderr, "Could not determine ptrace scope from %s\n",
-              ptrace_scope_setting_file);
+      DEBUG (1, 
+             "PR_SET_PTRACER defined"
+             " but could not determine ptrace scope from %s\n",
+             ptrace_scope_setting_file);
    }
    if (fd >= 0)
       close (fd);
@@ -1873,7 +1875,7 @@ void usage(void)
 "     Only OPTION(s) can be given.\n"
 "\n"
 " OPTIONS are [--pid=<number>] [--vgdb-prefix=<prefix>]\n"
-"             [--max-invoke-ms=<number>] [--wait=<number>] [-d] -D]\n"
+"             [--max-invoke-ms=<number>] [--wait=<number>] [-d] [-D] [-l]\n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
 "  --vgdb-prefix arg must be given to both Valgrind and vgdb utility\n"
 "      if you want to change the default prefix for the FIFOs communication\n"
@@ -1885,13 +1887,21 @@ void usage(void)
 "           is blocked in a system call).\n"
 "  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
 "  -D  arg tells to show shared mem status and then exit.\n"
+"  -l  arg tells to show the list of running Valgrind gdbserver and then exit.\n"
+"\n"
+"  -h --help shows this message\n"
+"  To get help from the Valgrind gdbserver, use vgdb help\n"
 "\n"
            );
    ptrace_restrictions();  
 }
 
-/* If arg_pid == -1, waits maximum check_trials seconds to discover
+/* If show_list, shows the list of Valgrind processes with gdbserver activated.
+                 and then exits.
+
+   else if arg_pid == -1, waits maximum check_trials seconds to discover
    a valgrind pid appearing.
+
    Otherwise verify arg_pid is valid and corresponds to a Valgrind process
    with gdbserver activated.
 
@@ -1899,7 +1909,7 @@ void usage(void)
    or exits in case of error (e.g. no pid found corresponding to arg_pid */
 
 static
-int search_arg_pid(int arg_pid, int check_trials)
+int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
 {
    int i;
    int pid = -1;
@@ -1941,6 +1951,7 @@ int search_arg_pid(int arg_pid, int check_trials)
 
       /* try to find FIFOs with valid pid.
          On exit of the loop, pid is set to:
+         the last pid found if show_list (or -1 if no process was listed)
          -1 if no FIFOs matching a running process is found
          -2 if multiple FIFOs of running processes are found
          otherwise it is set to the (only) pid found that can be debugged
@@ -1980,7 +1991,10 @@ int search_arg_pid(int arg_pid, int check_trials)
                   if (*wrongpid == '\0' && newpid > 0 
                       && kill (newpid, 0) == 0) {
                      nr_valid_pid++;
-                     if (arg_pid != -1) {
+                     if (show_list) {
+                        report_pid (newpid);
+                        pid = newpid;
+                     } else if (arg_pid != -1) {
                         if (arg_pid == newpid) {
                            pid = newpid;
                         }
@@ -2014,8 +2028,10 @@ int search_arg_pid(int arg_pid, int check_trials)
       free (vgdb_dir_name);
       free (vgdb_format);
    }
-
-   if (pid == -1) {
+   
+   if (show_list) {
+      exit (1);
+   } else if (pid == -1) {
       if (arg_pid == -1)
          fprintf (stderr, "vgdb error: no FIFO found and no pid given\n");
       else
@@ -2071,12 +2087,14 @@ Bool is_opt(char* arg, char *option)
 static
 void parse_options(int argc, char** argv,
                    Bool *p_show_shared_mem,
+                   Bool *p_show_list,
                    int *p_arg_pid,
                    int *p_check_trials,
                    int *p_last_command,
                    char *commands[])
 {
    Bool show_shared_mem = False;
+   Bool show_list = False;
    int arg_pid = -1;
    int check_trials = 1;
    int last_command = -1;
@@ -2092,6 +2110,8 @@ void parse_options(int argc, char** argv,
          debuglevel++;
       } else if (is_opt(argv[i], "-D")) {
          show_shared_mem = True;
+      } else if (is_opt(argv[i], "-l")) {
+         show_list = True;
       } else if (is_opt(argv[i], "--pid=")) {
          int newpid;
          if (!numeric_val(argv[i], &newpid)) {
@@ -2143,12 +2163,35 @@ void parse_options(int argc, char** argv,
             
       }
    }
+
+   if (isatty(0) 
+       && !show_shared_mem 
+       && !show_list
+       && last_command == -1) {
+      arg_errors++;
+      fprintf (stderr, 
+               "Using vgdb standalone implies to give -D or -l or a COMMAND\n");
+   }
+
+   if (show_shared_mem && show_list) {
+      arg_errors++;
+      fprintf (stderr,
+               "Can't use both -D and -l options\n");
+   }
+
+   if (show_list && arg_pid != -1) {
+      arg_errors++;
+      fprintf (stderr,
+               "Can't use both --pid and -l options\n");
+   }
+
    if (arg_errors > 0) {
       fprintf (stderr, "args error. Try `vgdb --help` for more information\n");
       exit(1);
    }
 
    *p_show_shared_mem = show_shared_mem;
+   *p_show_list = show_list;
    *p_arg_pid = arg_pid;
    *p_check_trials = check_trials;
    *p_last_command = last_command;
@@ -2160,6 +2203,7 @@ int main(int argc, char** argv)
    int pid;
 
    Bool show_shared_mem;
+   Bool show_list;
    int arg_pid;
    int check_trials;
    int last_command;
@@ -2167,6 +2211,7 @@ int main(int argc, char** argv)
 
    parse_options(argc, argv,
                  &show_shared_mem,
+                 &show_list,
                  &arg_pid,
                  &check_trials,
                  &last_command,
@@ -2179,7 +2224,7 @@ int main(int argc, char** argv)
    if (max_invoke_ms > 0 || last_command == -1)
       install_handlers();
 
-   pid = search_arg_pid (arg_pid, check_trials);
+   pid = search_arg_pid (arg_pid, check_trials, show_list);
 
    prepare_fifos_and_shared_mem(pid);
 

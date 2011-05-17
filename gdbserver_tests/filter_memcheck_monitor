@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# used to filter memcheck output shown by vgdb.
+# used to filter memcheck output shown by gdb/vgdb.
 
 dir=`dirname $0`
 
@@ -10,7 +10,20 @@ $dir/../memcheck/tests/filter_stderr                   |
 $dir/filter_vgdb                                       |
 
 
+
+# filter some normal error messages provided by some gdb
+#
+# gdb 7.2 sometimes tries to access address 0x0 (same as with standard gdbserver)
+#
+# filter a debian 6.0/ppc32 line
+#
+# filter some missing info msg from s390
+#
 # Bypass a s390x kernel bug which makes faultstatus test3 fail. In our case, we are
 # not interested in checking the si_code, but rather the signal passing
 # in mcsig(no)pass
-sed -e 's/Test 3:   FAIL: expected si_code==2, not 128/Test 3:   PASS/'
+sed -e '/Cannot access memory at address 0x......../d'                   \
+    -e '/^[1-9][0-9]*	\.\.\/sysdeps\/powerpc\/powerpc32\/dl-start\.S: No such file or directory\./d' \
+    -e '/^Missing separate debuginfo/d'                                  \
+    -e '/^Try: zypper install -C/d'                                      \
+    -e 's/Test 3:   FAIL: expected si_code==2, not 128/Test 3:   PASS/'

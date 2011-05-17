@@ -25,9 +25,11 @@ The minimum version to use the Valgrind gdbserver is gdb >= 6.5.
     read/write from stdin/stdout.
 
 The tests have been run on various platforms using gdb 7.2
-and on some platforms gdb 7.0.
+and on some platforms gdb 7.0 and 7.1.
 Some gdb tests implies a gdb >= 7.2. (these are automatically disabled
 if testing with a lower version).
+Test behaviour with gdb < 7.0 is unknown: some might fail,
+some might block or loop for a very long time.
 
 Some tests implies to have a vgdb "ptrace invoker" capable.
 
@@ -36,12 +38,14 @@ Each test verifies the prerequisite using the prereq: line.
 
 In case of failing tests
 ------------------------
-gdbserver tests are often failing due to (irrelevant) differences
-depending on the gdb version and/or the OS version.
+When executed with a new gdb version and/or depending on the OS version,
+gdbserver tests might often fail due to (irrelevant) differences.
 Such irrelevant differences have to be filtered by gdbserver_tests/filter_gdb.
 
-To report such problems, the best is to re-run the gdbserver tests
-the following way:
+You are welcome to fix such bugs by enhancing filter_gdb.
+
+Alternatively, to report such problems, the best is to re-run
+the gdbserver tests the following way:
    perl tests/vg_regtest --keep-unfiltered gdbserver_tests
 
 Then file a bug in bugzilla, giving the following information:
@@ -50,8 +54,24 @@ Then file a bug in bugzilla, giving the following information:
     uname -a
     cat /etc/issue
     valgrind --version (and/or svn version)
-  and attach a tar file containing all the *.out files in gdbserver_tests
-    directory
+  and attach a tar file containing all the *.out and *.diff
+  files in gdbserver_tests directory
+
+If a gdbserver test fails for other reasons, you can run the test
+manually in two windows:
+  In one window, the valgrind
+  In another window, you launch gdb yourself, and you copy paste
+  the command from xxxx.stdinB.gdb. This might help to see what is
+  wrong.
+
+Another good trick is also to execute the same kind of actions
+using a gdb connected to the gdbserver part of gdb.
+You can examine what is happening by enabling the trace
+of the packets being sent using the gdb command:
+   set debug remote 1
+Note however that the packets might be different
+(e.g. the Valgrind gdbserver understands the 'P' packet,
+which might not be understood by the gdbserver of gdb).
 
 Naming conventions:
 -------------------

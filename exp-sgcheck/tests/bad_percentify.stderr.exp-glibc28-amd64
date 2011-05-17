@@ -1,4 +1,3 @@
-exp-sgcheck, a stack and global array overrun detector
 
 Invalid read of size 1
    at 0x........: local_strlen (bad_percentify.c:138)

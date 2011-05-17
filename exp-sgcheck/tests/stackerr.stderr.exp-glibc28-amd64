@@ -4,14 +4,16 @@ Invalid write of size 8
    by 0x........: bar (stackerr.c:32)
    by 0x........: main (stackerr.c:41)
  Address 0x........ expected vs actual:
- Expected: stack array "a" in frame 2 back from here
+ Expected: stack array "a" of size 56 in frame 2 back from here
  Actual:   unknown
+ Actual:   is 0 after Expected
 
 Invalid write of size 8
    at 0x........: main (stackerr.c:44)
  Address 0x........ expected vs actual:
- Expected: stack array "a" in this frame
+ Expected: stack array "a" of size 56 in this frame
  Actual:   unknown
+ Actual:   is 0 after Expected
 
 Invalid write of size 1
    at 0x........: _IO_default_xsputn (in /...libc...)
@@ -20,8 +22,9 @@ Invalid write of size 1
    by 0x........: ...
    by 0x........: main (stackerr.c:49)
  Address 0x........ expected vs actual:
- Expected: stack array "buf" in frame 4 back from here
+ Expected: stack array "buf" of size 8 in frame 4 back from here
  Actual:   unknown
+ Actual:   is 0 after Expected
 
 
 ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

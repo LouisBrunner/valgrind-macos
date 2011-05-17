@@ -54,6 +54,8 @@
       Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
       if      VG_STREQ(val, "yes") (qq_var) = True; \
       else if VG_STREQ(val, "no")  (qq_var) = False; \
+      else VG_(fmsg_bad_option)(qq_arg, "Invalid boolean value '%s'" \
+                                " (should be 'yes' or 'no')\n", val);    \
       True; \
     }) \
    )

@@ -5,6 +5,15 @@ Release 3.7.0 (???)
 - Further reduction in overheads caused by --smc-check=all, especially
   on 64-bit targets.
 
+* IBM z/Architecture (s390x) running Linux
+  Valgrind can analyse 64-bit programs running on z/Architecture.
+  Most user space instructions up to and including z10 are supported.
+  Valgrind has been tested extensively on z9, z10, and z196 machines
+  running SLES 10/11, RedHat 5/6m, and Fedora. The Memcheck and Massif
+  tools are known to work well. Callgrind, Helgrind, and DRD work
+  reasonably well on z9 and later models. See README.s390 for more
+  details.
+
 
 Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -294,6 +294,12 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
             valgrind_set_single_stepping(True); 
             // to force gdbserver instrumentation.
          }
+#        if defined(VGA_arm)
+         // on arm, we need to (potentially) convert this address
+         // to the thumb form.
+         address = thumb_pc (address);
+#        endif
+
          VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
                           address,
                           /*debugging*/True, 

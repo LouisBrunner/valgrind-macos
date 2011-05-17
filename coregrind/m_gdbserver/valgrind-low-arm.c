@@ -31,6 +31,7 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_core_gdbserver.h" 
+#include "pub_core_debuginfo.h"
 
 #include "valgrind_low.h"
 
@@ -122,6 +123,57 @@ void set_pc (CORE_ADDR newpc)
       dlog(1, "set pc not changed %p\n", C2v (newpc));
 }
 
+Addr thumb_pc (Addr pc)
+{
+   // If the thumb bit (bit 0) is already set, we trust it.
+   if (pc & 1) {
+      dlog (1, "%p = thumb (bit0 is set)\n", C2v (pc));
+      return pc;
+   }
+
+   // Here, bit 0 is not set.
+   // For a pc aligned on 4 bytes, we have to use the debug
+   // info to determine the thumb-ness.
+   // else (aligned on 2 bytes), we trust this is a thumb
+   // address and we set the thumb bit.
+
+   if (pc & 2) {
+      dlog (1, "bit0 not set, bit1 set => %p = thumb\n", C2v (pc));
+      return pc | 1;
+   }
+
+   // pc aligned on 4 bytes. We need to use debug info.
+   {
+      Char fnname[200]; // ??? max size
+      Addr entrypoint;
+      Addr ptoc; // unused but needed.
+      // If this is a thumb instruction, we need to ask
+      // the debug info with the bit0 set
+      // (why can't debug info do that for us ???)
+      // (why if this is a 4 bytes thumb instruction ???)
+      if (VG_(get_fnname_raw) (pc | 1, fnname, 200)) {
+         if (VG_(lookup_symbol_SLOW)( "*", fnname, &entrypoint, &ptoc )) {
+            dlog (1, "fnname %s lookupsym %p => %p %s.\n",
+                  fnname, C2v(entrypoint), C2v(pc),
+                  (entrypoint & 1 ? "thumb" : "arm"));
+            if (entrypoint & 1)
+               return pc | 1;
+            else
+               return pc;
+            
+         } else {
+            dlog (1, "%p fnname %s lookupsym failed?. Assume arm\n",
+                  C2v (pc), fnname);
+            return pc;
+         }
+      } else {
+         // Can't find function name. We assume this is arm
+         dlog (1, "%p unknown fnname?. Assume arm\n", C2v (pc));
+         return pc;
+      }
+   }
+}
+
 /* store registers in the guest state (gdbserver_to_valgrind)
    or fetch register from the guest state (valgrind_to_gdbserver). */
 static
@@ -153,7 +205,15 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 12: VG_(transfer) (&arm->guest_R12,  buf, dir, size, mod); break;
    case 13: VG_(transfer) (&arm->guest_R13,  buf, dir, size, mod); break;
    case 14: VG_(transfer) (&arm->guest_R14,  buf, dir, size, mod); break;
-   case 15: VG_(transfer) (&arm->guest_R15T, buf, dir, size, mod); break;
+   case 15: { 
+      VG_(transfer) (&arm->guest_R15T, buf, dir, size, mod);
+      if (dir == gdbserver_to_valgrind && *mod) {
+         // If gdb is changing the PC, we have to set the thumb bit
+         // if needed.
+         arm->guest_R15T = thumb_pc(arm->guest_R15T);
+      }
+      break;
+   }
    case 16:
    case 17:
    case 18:

@@ -33,6 +33,8 @@ unsigned long step_thread;
 unsigned long thread_from_wait;
 unsigned long old_thread_from_wait;
 
+int pass_signals[TARGET_SIGNAL_LAST];
+
 /* for a gdbserver integrated in valgrind, resuming the process consists
    in returning the control to valgrind.
    Then at the next error or break or ..., valgrind calls gdbserver again.

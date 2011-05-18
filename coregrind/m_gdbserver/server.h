@@ -242,7 +242,7 @@ extern Bool gdbserver_deliver_signal (Int sigNo);
    A 0 indicates gdb has to be consulted to see if signal has
    or has not to be passed. The gdb consultation is to
    be done using the above two functions. */
-int pass_signals[TARGET_SIGNAL_LAST];
+extern int pass_signals[];
 
 
 #include "target.h"

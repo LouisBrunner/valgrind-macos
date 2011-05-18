@@ -2380,7 +2380,7 @@ static void write_snapshots_array_to_file(void)
    VG_(free)(massif_out_file);
 }
 
-static handle_snapshot_monitor_command (Char *filename, Bool detailed)
+static void handle_snapshot_monitor_command (Char *filename, Bool detailed)
 {
    Snapshot snapshot;
 

@@ -46,12 +46,6 @@ static Bool DRD_(s_report_signal_unlocked) = True;
 static Bool DRD_(s_trace_cond);
 
 
-/* Global variables. */
-
-Addr DRD_(pthread_cond_initializer);
-int DRD_(pthread_cond_initializer_size);
-
-
 /* Function definitions. */
 
 void DRD_(cond_set_report_signal_unlocked)(const Bool r)

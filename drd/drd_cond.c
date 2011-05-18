@@ -48,8 +48,8 @@ static Bool DRD_(s_trace_cond);
 
 /* Global variables. */
 
-Addr DRD_(pthread_cond_initializer);
-int DRD_(pthread_cond_initializer_size);
+extern Addr DRD_(pthread_cond_initializer);
+extern int DRD_(pthread_cond_initializer_size);
 
 
 /* Function definitions. */

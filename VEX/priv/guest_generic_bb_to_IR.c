@@ -267,15 +267,30 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
          distinguishes ARM vs Thumb instructions.  All instructions
          actually start on at least 2-aligned addresses.  So we need
          to ignore the bottom bit of the insn address when forming the
-         IMark.  For more details of this convention, see comments on
-         definition of guest_R15 in libvex_guest_arm.h. */
-      addStmtToIRSB( irsb,
-                     IRStmt_IMark( arch_guest == VexArchARM
-                                      ? (guest_IP_curr_instr & ~(Addr64)1)
-                                      : guest_IP_curr_instr,
-                                   0
-                     )
-      );
+         IMark's address field, but put that bottom bit in the delta
+         field, so that comparisons against guest_R15T for Thumb can
+         be done correctly.  By inspecting the delta field,
+         instruction processors can determine whether the instruction
+         was originally Thumb or ARM.  For more details of this
+         convention, see comments on definition of guest_R15T in
+         libvex_guest_arm.h. */
+      if (arch_guest == VexArchARM && (guest_IP_curr_instr & (Addr64)1)) {
+         /* Thumb insn => mask out the T bit, but put it in delta */
+         addStmtToIRSB( irsb,
+                        IRStmt_IMark(guest_IP_curr_instr & ~(Addr64)1,
+                                     0, /* len */
+                                     1  /* delta */
+                        )
+         );
+      } else {
+         /* All other targets: store IP as-is, and set delta to zero. */
+         addStmtToIRSB( irsb,
+                        IRStmt_IMark(guest_IP_curr_instr,
+                                     0, /* len */
+                                     0  /* delta */
+                        )
+         );
+      }
 
       /* for the first insn, the dispatch loop will have set
          %IP, but for all the others we have to do it ourselves. */

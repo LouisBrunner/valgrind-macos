@@ -104,7 +104,7 @@
 
    One Vex IR translation for this code would be this:
 
-     ------ IMark(0x24F275, 7) ------
+     ------ IMark(0x24F275, 7, 0) ------
      t3 = GET:I32(0)             # get %eax, a 32-bit integer
      t2 = GET:I32(12)            # get %ebx, a 32-bit integer
      t1 = Add32(t3,t2)           # addl
@@ -147,7 +147,7 @@
    This becomes (again ignoring condition code and instruction pointer
    updates):
 
-     ------ IMark(0x4000ABA, 3) ------
+     ------ IMark(0x4000ABA, 3, 0) ------
      t3 = Add32(GET:I32(0),0x4:I32)
      t2 = LDle:I32(t3)
      t1 = GET:I32(8)
@@ -1894,12 +1894,27 @@ typedef
             the IRSB).  Contains the address and length of the
             instruction.
 
-            ppIRStmt output: ------ IMark(<addr>, <len>) ------,
-                         eg. ------ IMark(0x4000792, 5) ------,
+            It also contains a delta value.  The delta must be
+            subtracted from a guest program counter value before
+            attempting to establish, by comparison with the address
+            and length values, whether or not that program counter
+            value refers to this instruction.  For x86, amd64, ppc32,
+            ppc64 and arm, the delta value is zero.  For Thumb
+            instructions, the delta value is one.  This is because, on
+            Thumb, guest PC values (guest_R15T) are encoded using the
+            top 31 bits of the instruction address and a 1 in the lsb;
+            hence they appear to be (numerically) 1 past the start of
+            the instruction they refer to.  IOW, guest_R15T on ARM
+            holds a standard ARM interworking address.
+
+            ppIRStmt output: ------ IMark(<addr>, <len>, <delta>) ------,
+                         eg. ------ IMark(0x4000792, 5, 0) ------,
          */
          struct {
             Addr64 addr;   /* instruction address */
             Int    len;    /* instruction length */
+            UChar  delta;  /* addr = program counter as encoded in guest state
+                                     - delta */
          } IMark;
 
          /* META: An ABI hint, which says something about this
@@ -2076,7 +2091,7 @@ typedef
 
 /* Statement constructors. */
 extern IRStmt* IRStmt_NoOp    ( void );
-extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len );
+extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len, UChar delta );
 extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len, IRExpr* nia );
 extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 

@@ -1997,7 +1997,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
       }
 
       case Ist_IMark:
-         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+         return IRStmt_IMark(st->Ist.IMark.addr,
+                             st->Ist.IMark.len,
+                             st->Ist.IMark.delta);
 
       case Ist_NoOp:
          return IRStmt_NoOp();
@@ -4269,7 +4271,9 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
                    st->Ist.Exit.dst
                 );
       case Ist_IMark:
-         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+         return IRStmt_IMark(st->Ist.IMark.addr,
+                             st->Ist.IMark.len,
+                             st->Ist.IMark.delta);
       case Ist_NoOp:
          return IRStmt_NoOp();
       case Ist_MBE:

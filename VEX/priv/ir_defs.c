@@ -1148,8 +1148,9 @@ void ppIRStmt ( IRStmt* s )
          vex_printf("IR-NoOp");
          break;
       case Ist_IMark:
-         vex_printf( "------ IMark(0x%llx, %d) ------", 
-                     s->Ist.IMark.addr, s->Ist.IMark.len);
+         vex_printf( "------ IMark(0x%llx, %d, %u) ------", 
+                     s->Ist.IMark.addr, s->Ist.IMark.len,
+                     (UInt)s->Ist.IMark.delta);
          break;
       case Ist_AbiHint:
          vex_printf("====== AbiHint(");
@@ -1604,11 +1605,12 @@ IRStmt* IRStmt_NoOp ( void )
    static_closure.tag = Ist_NoOp;
    return &static_closure;
 }
-IRStmt* IRStmt_IMark ( Addr64 addr, Int len ) {
-   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag            = Ist_IMark;
-   s->Ist.IMark.addr = addr;
-   s->Ist.IMark.len  = len;
+IRStmt* IRStmt_IMark ( Addr64 addr, Int len, UChar delta ) {
+   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag             = Ist_IMark;
+   s->Ist.IMark.addr  = addr;
+   s->Ist.IMark.len   = len;
+   s->Ist.IMark.delta = delta;
    return s;
 }
 IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len, IRExpr* nia ) {
@@ -1871,7 +1873,9 @@ IRStmt* deepCopyIRStmt ( IRStmt* s )
                                s->Ist.AbiHint.len,
                                deepCopyIRExpr(s->Ist.AbiHint.nia));
       case Ist_IMark:
-         return IRStmt_IMark(s->Ist.IMark.addr, s->Ist.IMark.len);
+         return IRStmt_IMark(s->Ist.IMark.addr,
+                             s->Ist.IMark.len,
+                             s->Ist.IMark.delta);
       case Ist_Put: 
          return IRStmt_Put(s->Ist.Put.offset, 
                            deepCopyIRExpr(s->Ist.Put.data));
@@ -3214,9 +3218,11 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
    switch (stmt->tag) {
       case Ist_IMark:
          /* Somewhat heuristic, but rule out totally implausible
-            instruction sizes. */
+            instruction sizes and deltas. */
          if (stmt->Ist.IMark.len < 0 || stmt->Ist.IMark.len > 20)
             sanityCheckFail(bb,stmt,"IRStmt.IMark.len: implausible");
+         if (stmt->Ist.IMark.delta > 1)
+            sanityCheckFail(bb,stmt,"IRStmt.IMark.delta: implausible");
          break;
       case Ist_AbiHint:
          if (typeOfIRExpr(tyenv, stmt->Ist.AbiHint.base) != gWordTy)

@@ -84,10 +84,11 @@ static char* ppCallReason(CallReason reason)
 
 /* An instruction instrumented for gdbserver looks like this:
     1. Ist_Mark (0x1234)
-    2. helperc_CallDebugger (0x1234)   
+    2. Put (IP, 0x1234)
+    3. helperc_CallDebugger (0x1234)   
          This will give control to gdb if there is a break at 0x1234
          or if we are single stepping
-    3. ... here the real IR for the instruction at 0x1234
+    4. ... here the real IR for the instruction at 0x1234
 
     When there is a break at 0x1234:
       if user does "continue" or "step" or similar, 
@@ -180,24 +181,41 @@ typedef
    single stepping (kind == GS_jump).
    When gdbserver is not single stepping anymore, all GS_jump entries
    are removed, their translations are invalidated.
+
+   Note for ARM: addr in GS_Address is the value without the thumb bit set.
 */
 static VgHashTable gs_addresses = NULL;
+
+// Transform addr in the form stored in the list of addresses.
+// For the ARM architecture, we store it with the thumb bit set to 0.
+static Addr HT_addr ( Addr addr )
+{
+#if defined(VGA_arm)
+  return addr & ~(Addr)1;
+#else
+  return addr;
+#endif
+}
 
 static void add_gs_address (Addr addr, GS_Kind kind, char* from)
 {
    GS_Address *p;
 
    p = VG_(arena_malloc)(VG_AR_CORE, from, sizeof(GS_Address));
-   p->addr = addr;
+   p->addr = HT_addr (addr);
    p->kind = kind;
    VG_(HT_add_node)(gs_addresses, p);
-   VG_(discard_translations) (addr, 1, from);
+   /* It should be sufficient to discard a range of 1.
+      We use 2 to ensure the below is not sensitive to the presence
+      of thumb bit in the range of addresses to discard. */ 
+   VG_(discard_translations) (addr, 2, from);
 }
 
 static void remove_gs_address (GS_Address* g, char* from)
 {
    VG_(HT_remove) (gs_addresses, g->addr);
-   VG_(discard_translations) (g->addr, 1, from);
+   // See add_gs_address for the explanation for the range 2 below.
+   VG_(discard_translations) (g->addr, 2, from);
    VG_(arena_free) (VG_AR_CORE, g);
 }
 
@@ -231,7 +249,7 @@ static void breakpoint (Bool insert, CORE_ADDR addr)
 {
    GS_Address *g;
 
-   g = VG_(HT_lookup) (gs_addresses, (UWord)addr);
+   g = VG_(HT_lookup) (gs_addresses, (UWord)HT_addr(addr));
    if (insert) {
       /* insert a breakpoint at addr or upgrade its kind */
       if (g == NULL) {
@@ -419,7 +437,8 @@ static VgVgdb VG_(gdbserver_instrumentation_needed) (VexGuestExtents* vge)
    VG_(HT_ResetIter) (gs_addresses);
    while ((g = VG_(HT_Next) (gs_addresses))) {
       for (e = 0; e < vge->n_used; e++) {
-         if (g->addr >= vge->base[e] && g->addr < vge->base[e] + vge->len[e]) {
+         if (g->addr >= HT_addr(vge->base[e]) 
+             && g->addr < HT_addr(vge->base[e]) + vge->len[e]) {
             dlog(2,
                  "gdbserver_instrumentation_needed %p %s reason %s\n",
                  C2v(g->addr), sym(g->addr, /* is_code */ True),
@@ -484,7 +503,7 @@ static void clear_watched_addresses(void)
 
 static void invalidate_if_jump_not_yet_gdbserved (Addr addr, char* from)
 {
-   if (VG_(HT_lookup) (gs_addresses, (UWord)addr))
+   if (VG_(HT_lookup) (gs_addresses, (UWord)HT_addr(addr)))
       return;
    add_gs_address (addr, GS_jump, from);
 }
@@ -859,9 +878,9 @@ void VG_(helperc_CallDebugger) ( HWord iaddr )
       return;
 
    if (valgrind_single_stepping() ||
-       ((g = VG_(HT_lookup) (gs_addresses, (UWord)iaddr)) &&
+       ((g = VG_(HT_lookup) (gs_addresses, (UWord)HT_addr(iaddr))) &&
         (g->kind == GS_break))) {
-      if (iaddr == ignore_this_break_once) {
+      if (iaddr == HT_addr(ignore_this_break_once)) {
          dlog(1, "ignoring ignore_this_break_once %s\n", 
               sym(ignore_this_break_once, /* is_code */ True));
          ignore_this_break_once = 0;
@@ -952,7 +971,8 @@ static void VG_(add_stmt_call_gdbserver)
       VexGuestLayout* layout, 
       VexGuestExtents* vge,
       IRType gWordTy, IRType hWordTy,
-      Addr iaddr,                 /* Addr of instruction being instrumented */
+      Addr  iaddr,                /* Addr of instruction being instrumented */
+      UChar delta,                /* delta to add to iaddr to obtain IP */
       IRSB* irsb)                 /* irsb block to which call is added */
 {
    void*    fn;
@@ -969,8 +989,17 @@ static void VG_(add_stmt_call_gdbserver)
       remove the redundant store. And in any case, when debugging a
       piece of code, the efficiency requirement is not critical: very
       few blocks will be instrumented for debugging. */
-   
-   addStmtToIRSB(irsb, IRStmt_Put(layout->offset_IP , mkIRExpr_HWord(iaddr)));
+
+   /* For platforms on which the IP can differ from the addr of the instruction
+      being executed, we need to add the delta to obtain the IP.
+      This IP will be given to gdb (e.g. if a breakpoint is put at iaddr).
+
+      For ARM, this delta will ensure that the thumb bit is set in the
+      IP when executing thumb code. gdb uses this thumb bit a.o.
+      to properly guess the next IP for the 'step' and 'stepi' commands. */
+   vg_assert(delta <= 1);
+   addStmtToIRSB(irsb, IRStmt_Put(layout->offset_IP ,
+                                  mkIRExpr_HWord(iaddr + (Addr)delta)));
 
    fn    = &VG_(helperc_CallDebugger);
    nm    = "VG_(helperc_CallDebugger)";
@@ -1065,6 +1094,7 @@ IRSB* VG_(instrument_for_gdbserver_if_needed)
             VG_(add_stmt_call_gdbserver) ( sb_in, layout, vge,
                                            gWordTy, hWordTy,
                                            st->Ist.IMark.addr,
+                                           st->Ist.IMark.delta,
                                            sb_out);
             /* There is an optimisation possible here for Vg_VgdbFull:
                Put a guard ensuring we only call gdbserver if 'FullCallNeeded'.

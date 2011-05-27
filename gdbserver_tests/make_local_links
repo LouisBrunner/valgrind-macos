@@ -23,8 +23,25 @@ then
               awk '{ if ( ($1 >= 7) || (($1 == 6) && ($2 >= 5)) ) print "version ok"}'`
    if [ "$VERSIONOK" = "" ]
    then
-      echo "gdbserver tests suppressed as $1 version is not >= 6.5: " $VERSIONLINE
-      rm gdbserver_tests/gdb
+      echo "gdbserver tests suppressed as $1 version is < 6.5: " $VERSIONLINE
+      rm -f gdbserver_tests/gdb
+   fi
+
+   # We need at least a 7.1 version on ARM to run tests doing step/next/...
+   # (gdb 7.0 has bugs in the 'guess next pc' heuristic in thumb mode).
+   if tests/arch_test arm
+   then
+      VERSIONOK=`echo $VERSION |
+                 awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 1)) ) print "version ok"}'`
+      if [ "$VERSIONOK" = "" ]
+      then
+          echo "gdbserver 'step/next' tests suppressed as arm $1 version is < 7.1: " $VERSIONLINE
+         rm -f gdbserver_tests/gdb.step
+      else
+         touch gdbserver_tests/gdb.step
+      fi
+   else
+      touch gdbserver_tests/gdb.step
    fi
 
    # We need at least a 7.2 version for gdb tests using eval command
@@ -32,7 +49,7 @@ then
               awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 2)) ) print "version ok"}'`
    if [ "$VERSIONOK" = "" ]
    then
-      echo "gdbserver eval tests suppressed as $1 version is not >= 7.2: " $VERSIONLINE
+      echo "gdbserver eval tests suppressed as $1 version is < 7.2: " $VERSIONLINE
       rm -f gdbserver_tests/gdb.eval
    else
       touch gdbserver_tests/gdb.eval

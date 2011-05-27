@@ -20,10 +20,12 @@ Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
 0x........ in do_burn () at sleepers.c:39
 39	   for (i = 0; i < burn; i++) loopnr++;
-[Switching to thread 1 (Thread ....)]#0  0x........ in do_burn () at sleepers.c:39
+[Switching to thread 1 (Thread ....)]
+#0  0x........ in do_burn () at sleepers.c:39
 39	   for (i = 0; i < burn; i++) loopnr++;
 $1 = void
-[Switching to thread 2 (Thread ....)]#0  0x........ in syscall ...
+[Switching to thread 2 (Thread ....)]
+#0  0x........ in syscall ...
 Could not write register  "xxx"; remote failure reply 'E.
 ERROR changing register  xxx regno y
 gdb commands changing registers (pc, sp, ...) (e.g. 'jump',
@@ -31,7 +33,8 @@ set pc, calling from gdb a function in the debugged process, ...)
 can only be accepted if the thread is VgTs_Runnable or VgTs_Yielding state
 Thread status is VgTs_WaitSys
 '
-[Switching to thread 3 (Thread ....)]#0  0x........ in syscall ...
+[Switching to thread 3 (Thread ....)]
+#0  0x........ in syscall ...
 Could not write register  "xxx"; remote failure reply 'E.
 ERROR changing register  xxx regno y
 gdb commands changing registers (pc, sp, ...) (e.g. 'jump',
@@ -39,7 +42,8 @@ set pc, calling from gdb a function in the debugged process, ...)
 can only be accepted if the thread is VgTs_Runnable or VgTs_Yielding state
 Thread status is VgTs_WaitSys
 '
-[Switching to thread 4 (Thread ....)]#0  0x........ in syscall ...
+[Switching to thread 4 (Thread ....)]
+#0  0x........ in syscall ...
 Could not write register  "xxx"; remote failure reply 'E.
 ERROR changing register  xxx regno y
 gdb commands changing registers (pc, sp, ...) (e.g. 'jump',

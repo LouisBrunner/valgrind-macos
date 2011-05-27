@@ -2248,6 +2248,9 @@ Reading symbols from /lib/libc.so.6...(no debugging symbols found)...done.
      will report an error message when using the target
      command. Debugging will not work because gdb will then not be
      able to fetch the registers from the Valgrind gdbserver.
+     For ARM programs using the thumb instruction set, you must use
+     a gdb version &gt;= 7.1 as previous versions have problems
+     with next/step/breakpoints/... in thumb code.
      </para>
    </listitem>
 

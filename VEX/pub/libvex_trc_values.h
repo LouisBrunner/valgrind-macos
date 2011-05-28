@@ -46,6 +46,11 @@
 
    These values should be 61 or above so as not to conflict
    with Valgrind's VG_TRC_ values, which are 60 or below.
+
+   These values *must* be odd (have bit 0 set) because the dispatchers
+   (coregrind/m_dispatch/dispatch-*-*.S) use this fact to distinguish
+   a TRC value from the unchanged baseblock pointer -- which has 0 as
+   its lowest bit.
 */
 
 #define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before

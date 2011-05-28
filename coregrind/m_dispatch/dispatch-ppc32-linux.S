@@ -179,7 +179,7 @@ LafterVMX1:
         /* r3 holds guest_state */
         /* r4 holds do_profiling */
         mr      31,3      /* r31 (generated code gsp) = r3 */
-        stw     3,28(1)   /* spill orig guest_state ptr (UNUSED) */
+        stw     3,28(1)   /* spill orig guest_state ptr */
 
         /* 24(sp) used later to stop ctr reg being clobbered */
         /* 20(sp) used later to load fpscr with zero */

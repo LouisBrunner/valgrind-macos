@@ -186,7 +186,7 @@ VG_(run_innerloop):
         /* r3 holds guest_state */
         /* r4 holds do_profiling */
         mr      31,3
-        std     3,104(1)       /* spill orig guest_state ptr (UNUSED) */
+        std     3,104(1)       /* spill orig guest_state ptr */
 
         /* 96(sp) used later to check FPSCR[RM] */
         /* 88(sp) used later to load fpscr with zero */

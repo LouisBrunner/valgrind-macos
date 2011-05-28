@@ -1096,7 +1096,7 @@ Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
    /* Since we're creating the entire IRSB right here, give it a
       proper IMark, as it won't get one any other way, and cachegrind
       will barf if it doesn't have one (fair enough really). */
-   addStmtToIRSB( bb, IRStmt_IMark( closure->readdr, 4 ) );
+   addStmtToIRSB( bb, IRStmt_IMark( closure->readdr, 4, 0 ) );
    /* Generate the magic sequence:
          pop R2 from hidden stack
          pop LR from hidden stack

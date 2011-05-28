@@ -121,12 +121,9 @@ VG_(run_innerloop__dispatch_unprofiled):
 	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
            modified guest state ptr */
 
-	/* Has the guest state pointer been messed with?  If yes, exit.
-           Also, set %rcx to be &VG_(tt_fast), some insns before it is
-           used, in the hope of getting it off the critical path.  This
-           location seems to be optimal on 2.2GHz Athlon64. */
-	cmpq	8(%rsp), %rbp
-	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
+	/* Has the guest state pointer been messed with?  If yes,
+	   exit. */
+	testq   $1, %rbp
 	jnz	gsp_changed
 
 	/* save the jump address in the guest state */
@@ -137,6 +134,7 @@ VG_(run_innerloop__dispatch_unprofiled):
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
+	movabsq $VG_(tt_fast), %rcx
 	movq	%rax, %rbx		/* next guest addr */
 	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
 	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */
@@ -162,12 +160,9 @@ VG_(run_innerloop__dispatch_profiled):
 	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
            modified guest state ptr */
 
-	/* Has the guest state pointer been messed with?  If yes, exit.
-           Also, set %rcx to be &VG_(tt_fast), some insns before it is
-           used, in the hope of getting it off the critical path.  This
-           location seems to be optimal on 2.2GHz Athlon64. */
-	cmpq	8(%rsp), %rbp
-	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
+	/* Has the guest state pointer been messed with?  If yes,
+	   exit. */
+	testq   $1, %rbp
 	jnz	gsp_changed
 
 	/* save the jump address in the guest state */
@@ -178,6 +173,7 @@ VG_(run_innerloop__dispatch_profiled):
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
+	movabsq $VG_(tt_fast), %rcx
 	movq	%rax, %rbx
 	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
 	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */

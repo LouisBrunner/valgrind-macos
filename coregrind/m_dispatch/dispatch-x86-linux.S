@@ -111,7 +111,7 @@ VG_(run_innerloop__dispatch_unprofiled):
            modified guest state ptr */
 
 	/* Has the guest state pointer been messed with?  If yes, exit. */
-	cmpl	28(%esp), %ebp
+	testl	$1, %ebp
 	jnz	gsp_changed
 
 	/* save the jump address in the guest state */
@@ -147,7 +147,7 @@ VG_(run_innerloop__dispatch_profiled):
            modified guest state ptr */
 
 	/* Has the guest state pointer been messed with?  If yes, exit. */
-	cmpl	28(%esp), %ebp
+	testl	$1, %ebp
 	jnz	gsp_changed
 
 	/* save the jump address in the guest state */

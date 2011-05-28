@@ -186,7 +186,7 @@ VG_(run_innerloop):
         /* r3 holds guest_state */
         /* r4 holds do_profiling */
         mr      31,3
-        std     3,104(1)       /* spill orig guest_state ptr */
+        std     3,104(1)       /* spill orig guest_state ptr (UNUSED) */
 
         /* 96(sp) used later to check FPSCR[RM] */
         /* 88(sp) used later to load fpscr with zero */
@@ -268,15 +268,13 @@ VG_(run_innerloop__dispatch_unprofiled):
 		r29 (=dispatch_ctr)
 		r31 (=guest_state)
 	   Stack state:
-		152(r1) (=orig guest_state)
 		144(r1) (=var space for FPSCR[RM])
 	*/
 	/* Has the guest state pointer been messed with?  If yes, exit.
            Also set up & VG_(tt_fast) early in an attempt at better
            scheduling. */
-        ld      9,152(1)        /* original guest_state ptr */
 	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
-        cmpd    9,31
+        rldicl. 0,31,0,63
         bne	.gsp_changed
 
         /* save the jump address in the guest state */
@@ -335,15 +333,13 @@ VG_(run_innerloop__dispatch_profiled):
 		r29 (=dispatch_ctr)
 		r31 (=guest_state)
 	   Stack state:
-		152(r1) (=orig guest_state)
 		144(r1) (=var space for FPSCR[RM])
 	*/
 	/* Has the guest state pointer been messed with?  If yes, exit.
            Also set up & VG_(tt_fast) early in an attempt at better
            scheduling. */
-        ld      9,152(1)        /* original guest_state ptr */
 	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
-        cmpd    9,31
+        rldicl. 0,31,0,63
         bne	.gsp_changed
 
         /* save the jump address in the guest state */

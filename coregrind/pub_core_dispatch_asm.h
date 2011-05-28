@@ -41,7 +41,13 @@
 #include "libvex_trc_values.h"
 
 /* And some more of our own.  These must not have the same values as
-   those from libvex_trc_values.h.  (viz, 60 or below is safe). */
+   those from libvex_trc_values.h.  (viz, 60 or below is safe).
+
+   These values *must* be odd (have bit 0 set) because the dispatchers
+   (coregrind/m_dispatch/dispatch-*-*.S) use this fact to distinguish
+   a TRC value from the unchanged baseblock pointer -- which has 0 as
+   its lowest bit.
+*/
 #define VG_TRC_BORING             29 /* no event; just keep going */
 #define VG_TRC_INNER_FASTMISS     37 /* TRC only; means fast-cache miss. */
 #define VG_TRC_INNER_COUNTERZERO  41 /* TRC only; means bb ctr == 0 */

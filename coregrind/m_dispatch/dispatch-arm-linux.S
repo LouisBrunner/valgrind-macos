@@ -85,10 +85,9 @@ VG_(run_innerloop__dispatch_unprofiled):
         modified guest state ptr */
 
         /* Has the guest state pointer been messed with?  If yes, exit. */
-	ldr  r1, [sp, #0]
         movw r3, #:lower16:VG_(dispatch_ctr)
+        tst  r8, #1
 
-	cmp  r8, r1
         movt r3, #:upper16:VG_(dispatch_ctr)
 
 	bne  gsp_changed
@@ -142,10 +141,9 @@ VG_(run_innerloop__dispatch_profiled):
         modified guest state ptr */
 
         /* Has the guest state pointer been messed with?  If yes, exit. */
-	ldr  r1, [sp, #0]
         movw r3, #:lower16:VG_(dispatch_ctr)
+	tst  r8, #1
 
-	cmp  r8, r1
         movt r3, #:upper16:VG_(dispatch_ctr)
 
 	bne  gsp_changed

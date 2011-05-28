@@ -75,6 +75,9 @@ VG_(run_innerloop):
 /*--- NO-PROFILING (standard) dispatcher           ---*/
 /*----------------------------------------------------*/
 
+/* Pairing of insns below is my guesstimate of how dual dispatch would
+   work on an A8.  JRS, 2011-May-28 */
+ 
 .global	VG_(run_innerloop__dispatch_unprofiled)
 VG_(run_innerloop__dispatch_unprofiled):
 
@@ -83,35 +86,47 @@ VG_(run_innerloop__dispatch_unprofiled):
 
         /* Has the guest state pointer been messed with?  If yes, exit. */
 	ldr  r1, [sp, #0]
+        movw r3, #:lower16:VG_(dispatch_ctr)
+
 	cmp  r8, r1
+        movt r3, #:upper16:VG_(dispatch_ctr)
+
 	bne  gsp_changed
 
 	/* save the jump address in the guest state */
         str  r0, [r8, #OFFSET_arm_R15T]
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-        ldr  r1, =VG_(dispatch_ctr)
-        ldr  r2, [r1]
+        ldr  r2, [r3]
+
         subs r2, r2, #1
-        str  r2, [r1]
+
+        str  r2, [r3]
+
         beq  counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        // r0 = next guest, r1,r2,r3 scratch
-	ldr  r1, =VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
+        // r0 = next guest, r1,r2,r3,r4 scratch
+        movw r1, #VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
+        movw r4, #:lower16:VG_(tt_fast)
+
 	and  r2, r1, r0, LSR #1         // r2 = entry #
-	ldr  r1, =VG_(tt_fast)          // r1 = &tt_fast[0]
-	add  r1, r1, r2, LSL #3         // r1 = &tt_fast[entry#]
-	ldr  r3, [r1, #0]               /* .guest */
-	ldr  r1, [r1, #4]               /* .host  */
-	cmp  r0, r3
+        movt r4, #:upper16:VG_(tt_fast) // r4 = &VG_(tt_fast)
+
+	add  r1, r4, r2, LSL #3         // r1 = &tt_fast[entry#]
+
+        ldrd r4, r5, [r1, #0]           // r4 = .guest, r5 = .host
+
+	cmp  r4, r0
+
 	bne  fast_lookup_failed
-        // r1: live, next-host    r8: live, gsp
-        // r2: entry # (but not live)
-        // r0, r3: dead
+        // r5: next-host    r8: live, gsp
+        // r4: next-guest
+        // r2: entry #
+        // LIVE: r5, r8; all others dead
         
         /* Found a match.  Jump to .host. */
-	blx  r1
+	blx  r5
 	b    VG_(run_innerloop__dispatch_unprofiled)
 .ltorg
 	/*NOTREACHED*/
@@ -128,42 +143,55 @@ VG_(run_innerloop__dispatch_profiled):
 
         /* Has the guest state pointer been messed with?  If yes, exit. */
 	ldr  r1, [sp, #0]
+        movw r3, #:lower16:VG_(dispatch_ctr)
+
 	cmp  r8, r1
+        movt r3, #:upper16:VG_(dispatch_ctr)
+
 	bne  gsp_changed
 
 	/* save the jump address in the guest state */
         str  r0, [r8, #OFFSET_arm_R15T]
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-        ldr  r1, =VG_(dispatch_ctr)
-        ldr  r2, [r1]
+        ldr  r2, [r3]
+
         subs r2, r2, #1
-        str  r2, [r1]
+
+        str  r2, [r3]
+
         beq  counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        // r0 = next guest, r1,r2,r3 scratch
-	ldr  r1, =VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
+        // r0 = next guest, r1,r2,r3,r4 scratch
+        movw r1, #VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
+        movw r4, #:lower16:VG_(tt_fast)
+
 	and  r2, r1, r0, LSR #1         // r2 = entry #
-	ldr  r1, =VG_(tt_fast)          // r1 = &tt_fast[0]
-	add  r1, r1, r2, LSL #3         // r1 = &tt_fast[entry#]
-	ldr  r3, [r1, #0]               /* .guest */
-	ldr  r1, [r1, #4]               /* .host  */
-	cmp  r0, r3
+        movt r4, #:upper16:VG_(tt_fast) // r4 = &VG_(tt_fast)
+
+	add  r1, r4, r2, LSL #3         // r1 = &tt_fast[entry#]
+
+        ldrd r4, r5, [r1, #0]           // r4 = .guest, r5 = .host
+
+	cmp  r4, r0
+
 	bne  fast_lookup_failed
-        // r1: live, next-host    r8: live, gsp
-        // r2: entry # (but not live)
-        // r0, r3: dead
+        // r5: next-host    r8: live, gsp
+        // r4: next-guest
+        // r2: entry #
+        // LIVE: r5, r8; all others dead
         
         /* increment bb profile counter */
-        ldr  r0, =VG_(tt_fastN)         // r0 = &tt_fastN[0]
-        ldr  r0, [r0, r2, LSL #2]       // r0 = tt_fast[entry #]
-        ldr  r3, [r0]                   // *r0 ++
+        movw r0, #:lower16:VG_(tt_fastN)
+        movt r0, #:upper16:VG_(tt_fastN) // r0 = &tt_fastN[0]
+        ldr  r0, [r0, r2, LSL #2]        // r0 = tt_fast[entry #]
+        ldr  r3, [r0]                    // *r0 ++
         add  r3, r3, #1
         str  r3, [r0]
 
         /* Found a match.  Jump to .host. */
-	blx  r1
+	blx  r5
 	b    VG_(run_innerloop__dispatch_profiled)
 	/*NOTREACHED*/
 

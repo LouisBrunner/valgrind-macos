@@ -107,8 +107,8 @@ VG_(run_innerloop):
 
 	/* fall into main loop  (the right one) */
 	cmpq	$0, %rsi
-	je	VG_(run_innerloop__dispatch_unprofiled)
-	jmp	VG_(run_innerloop__dispatch_profiled)
+	je	VG_(run_innerloop__dispatch_unassisted_unprofiled)
+	jmp	VG_(run_innerloop__dispatch_unassisted_profiled)
 	/*NOTREACHED*/	
 
 /*----------------------------------------------------*/
@@ -116,15 +116,10 @@ VG_(run_innerloop):
 /*----------------------------------------------------*/
 
 .align	16
-.global	VG_(run_innerloop__dispatch_unprofiled)
-VG_(run_innerloop__dispatch_unprofiled):
-	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
-           modified guest state ptr */
-
-	/* Has the guest state pointer been messed with?  If yes,
-	   exit. */
-	testq   $1, %rbp
-	jnz	gsp_changed
+.global	VG_(run_innerloop__dispatch_unassisted_unprofiled)
+VG_(run_innerloop__dispatch_unassisted_unprofiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           unmodified guest state ptr */
 
 	/* save the jump address in the guest state */
 	movq	%rax, OFFSET_amd64_RIP(%rbp)
@@ -146,8 +141,20 @@ VG_(run_innerloop__dispatch_unprofiled):
         /* Found a match.  Jump to .host. */
 	jmp 	*%r11
 	ud2	/* persuade insn decoders not to speculate past here */
-	/* generated code should run, then jump back to
-	   VG_(run_innerloop__dispatch_unprofiled). */
+	/* generated code should run, then jump back to either
+	   VG_(run_innerloop__dispatch_unassisted_unprofiled)
+	   VG_(run_innerloop__dispatch_assisted_unprofiled). */
+	/*NOTREACHED*/
+
+.align	16
+.global	VG_(run_innerloop__dispatch_assisted_unprofiled)
+VG_(run_innerloop__dispatch_assisted_unprofiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           modified guest state ptr */
+	/* We know the guest state pointer has been modified.
+	   So jump directly to gsp_changed. */
+	jmp	gsp_changed
+	ud2
 	/*NOTREACHED*/
 
 /*----------------------------------------------------*/
@@ -155,15 +162,10 @@ VG_(run_innerloop__dispatch_unprofiled):
 /*----------------------------------------------------*/
 
 .align	16
-.global	VG_(run_innerloop__dispatch_profiled)
-VG_(run_innerloop__dispatch_profiled):
-	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
-           modified guest state ptr */
-
-	/* Has the guest state pointer been messed with?  If yes,
-	   exit. */
-	testq   $1, %rbp
-	jnz	gsp_changed
+.global	VG_(run_innerloop__dispatch_unassisted_profiled)
+VG_(run_innerloop__dispatch_unassisted_profiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           unmodified guest state ptr */
 
 	/* save the jump address in the guest state */
 	movq	%rax, OFFSET_amd64_RIP(%rbp)
@@ -183,7 +185,7 @@ VG_(run_innerloop__dispatch_profiled):
 	jnz	fast_lookup_failed
 
 	/* increment bb profile counter */
-	movq	VG_(tt_fastN)@GOTPCREL(%rip), %rdx
+	movabsq	$VG_(tt_fastN), %rdx
 	shrq	$1, %rbx		/* entry# * sizeof(UInt*) */
 	movq	(%rdx,%rbx,1), %rdx
 	addl	$1, (%rdx)
@@ -191,8 +193,21 @@ VG_(run_innerloop__dispatch_profiled):
         /* Found a match.  Jump to .host. */
 	jmp 	*%r11
 	ud2	/* persuade insn decoders not to speculate past here */
-	/* generated code should run, then jump back to
-	   VG_(run_innerloop__dispatch_profiled). */
+	/* generated code should run, then jump back to either
+	   VG_(run_innerloop__dispatch_unassisted_profiled)
+	   VG_(run_innerloop__dispatch_assisted_profiled). */
+	/*NOTREACHED*/
+
+.align	16
+.global	VG_(run_innerloop__dispatch_assisted_profiled)
+VG_(run_innerloop__dispatch_assisted_profiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           modified guest state ptr */
+
+	/* Well, we know the guest state pointer has been modified.
+	   So jump directly to gsp_changed. */
+	jmp	gsp_changed
+	ud2
 	/*NOTREACHED*/
 
 /*----------------------------------------------------*/

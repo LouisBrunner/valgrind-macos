@@ -1515,23 +1515,38 @@ Bool VG_(translate) ( ThreadId tid,
    /* Set up the dispatch-return info.  For archs without a link
       register, vex generates a jump back to the specified dispatch
       address.  Else, it just generates a branch-to-LR. */
-#  if defined(VGA_x86) || defined(VGA_amd64)
-   vta.dispatch 
-      = (!allow_redirection)
-        ? /* It's a no-redir translation.  Will be run with the nonstandard
-           dispatcher VG_(run_a_noredir_translation)
-           and so needs a nonstandard return point. */
-          (void*) &VG_(run_a_noredir_translation__return_point)
 
-        : /* normal translation.  Uses VG_(run_innerloop).  Return
-             point depends on whether we're profiling bbs or not. */
-          VG_(clo_profile_flags) > 0
-          ? (void*) &VG_(run_innerloop__dispatch_profiled)
-          : (void*) &VG_(run_innerloop__dispatch_unprofiled);
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   if (!allow_redirection) {
+      /* It's a no-redir translation.  Will be run with the
+         nonstandard dispatcher VG_(run_a_noredir_translation) and so
+         needs a nonstandard return point. */
+      vta.dispatch_assisted
+         = (void*) &VG_(run_a_noredir_translation__return_point);
+      vta.dispatch_unassisted
+         = vta.dispatch_assisted;
+   }
+   else
+   if (VG_(clo_profile_flags) > 0) {
+      /* normal translation; although we're profiling. */
+      vta.dispatch_assisted
+         = (void*) &VG_(run_innerloop__dispatch_assisted_profiled);
+      vta.dispatch_unassisted
+         = (void*) &VG_(run_innerloop__dispatch_unassisted_profiled);
+   }
+   else {
+      /* normal translation and we're not profiling (the normal case) */
+      vta.dispatch_assisted
+         = (void*) &VG_(run_innerloop__dispatch_assisted_unprofiled);
+      vta.dispatch_unassisted
+         = (void*) &VG_(run_innerloop__dispatch_unassisted_unprofiled);
+   }
+
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
         || defined(VGA_arm) || defined(VGA_s390x)
    /* See comment libvex.h; machine has link register --> dipatch = NULL */
    vta.dispatch = NULL;
+
 #  else
 #    error "Unknown arch"
 #  endif

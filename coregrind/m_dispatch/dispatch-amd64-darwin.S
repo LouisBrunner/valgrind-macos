@@ -106,8 +106,8 @@ VG_(run_innerloop):
 
 	/* fall into main loop  (the right one) */
 	cmpq	$0, %rsi
-	je	VG_(run_innerloop__dispatch_unprofiled)
-	jmp	VG_(run_innerloop__dispatch_profiled)
+	je	VG_(run_innerloop__dispatch_unassisted_unprofiled)
+	jmp	VG_(run_innerloop__dispatch_unassisted_profiled)
 	/*NOTREACHED*/	
 
 /*----------------------------------------------------*/
@@ -115,15 +115,10 @@ VG_(run_innerloop):
 /*----------------------------------------------------*/
 
 .align	4
-.globl	VG_(run_innerloop__dispatch_unprofiled)
-VG_(run_innerloop__dispatch_unprofiled):
-	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
-           modified guest state ptr */
-
-	/* Has the guest state pointer been messed with?  If yes, exit. */
-	cmpq	8(%rsp), %rbp
-	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
-	jnz	gsp_changed
+.globl	VG_(run_innerloop__dispatch_unassisted_unprofiled)
+VG_(run_innerloop__dispatch_unassisted_unprofiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           unmodified guest state ptr */
 
 	/* save the jump address in the guest state */
 	movq	%rax, OFFSET_amd64_RIP(%rbp)
@@ -133,6 +128,7 @@ VG_(run_innerloop__dispatch_unprofiled):
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
+	movabsq	$VG_(tt_fast), %rcx
 	movq	%rax, %rbx
 	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
 	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */
@@ -145,23 +141,28 @@ VG_(run_innerloop__dispatch_unprofiled):
 	jmp 	*%r11
 	ud2	/* persuade insn decoders not to speculate past here */
 	/* generated code should run, then jump back to
-	   VG_(run_innerloop__dispatch_unprofiled). */
+	   VG_(run_innerloop__dispatch_{un,}assisted_unprofiled). */
 	/*NOTREACHED*/
+
+.align	4
+.globl	VG_(run_innerloop__dispatch_assisted_unprofiled)
+VG_(run_innerloop__dispatch_assisted_unprofiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           modified guest state ptr.  Since the GSP has changed,
+           jump directly to gsp_changed. */
+        jmp     gsp_changed
+        ud2
+        /*NOTREACHED*/
 
 /*----------------------------------------------------*/
 /*--- PROFILING dispatcher (can be much slower)    ---*/
 /*----------------------------------------------------*/
 
 .align	4
-.globl	VG_(run_innerloop__dispatch_profiled)
-VG_(run_innerloop__dispatch_profiled):
-	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
-           modified guest state ptr */
-
-	/* Has the guest state pointer been messed with?  If yes, exit. */
-	cmpq	8(%rsp), %rbp
-	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
-	jnz	gsp_changed
+.globl	VG_(run_innerloop__dispatch_unassisted_profiled)
+VG_(run_innerloop__dispatch_unassisted_profiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           unmodified guest state ptr */
 
 	/* save the jump address in the guest state */
 	movq	%rax, OFFSET_amd64_RIP(%rbp)
@@ -171,6 +172,7 @@ VG_(run_innerloop__dispatch_profiled):
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
+        movabsq $VG_(tt_fast), %rcx
 	movq	%rax, %rbx
 	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
 	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */
@@ -180,7 +182,7 @@ VG_(run_innerloop__dispatch_profiled):
 	jnz	fast_lookup_failed
 
 	/* increment bb profile counter */
-	movq	VG_(tt_fastN)@GOTPCREL(%rip), %rdx
+	movabsq	$VG_(tt_fastN), %rdx
 	shrq	$1, %rbx		/* entry# * sizeof(UInt*) */
 	movq	(%rdx,%rbx,1), %rdx
 	addl	$1, (%rdx)
@@ -189,8 +191,18 @@ VG_(run_innerloop__dispatch_profiled):
 	jmp 	*%r11
 	ud2	/* persuade insn decoders not to speculate past here */
 	/* generated code should run, then jump back to
-	   VG_(run_innerloop__dispatch_profiled). */
+	   VG_(run_innerloop__dispatch_{un,}assisted_profiled). */
 	/*NOTREACHED*/
+
+.align	4
+.globl	VG_(run_innerloop__dispatch_assisted_profiled)
+VG_(run_innerloop__dispatch_assisted_profiled):
+	/* AT ENTRY: %rax is next guest addr, %rbp is the
+           modified guest state ptr.  Since the GSP has changed,
+           jump directly to gsp_changed. */
+        jmp     gsp_changed
+        ud2
+        /*NOTREACHED*/
 
 /*----------------------------------------------------*/
 /*--- exit points                                  ---*/

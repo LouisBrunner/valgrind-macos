@@ -474,7 +474,8 @@ void ppHRegS390(HReg);
 void  getRegUsage_S390Instr( HRegUsage *, struct s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, struct s390_insn *, Bool );
 Bool  isMove_S390Instr     ( struct s390_insn *, HReg *, HReg * );
-Int   emit_S390Instr       ( UChar *, Int, struct s390_insn *, Bool, void * );
+Int   emit_S390Instr       ( UChar *, Int, struct s390_insn *, Bool,
+                             void *, void * );
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );

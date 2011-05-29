@@ -960,7 +960,9 @@ extern void getRegUsage_ARMInstr ( HRegUsage*, ARMInstr*, Bool );
 extern void mapRegs_ARMInstr     ( HRegRemap*, ARMInstr*, Bool );
 extern Bool isMove_ARMInstr      ( ARMInstr*, HReg*, HReg* );
 extern Int  emit_ARMInstr        ( UChar* buf, Int nbuf, ARMInstr*, 
-                                   Bool, void* dispatch );
+                                   Bool,
+                                   void* dispatch_unassisted,
+                                   void* dispatch_assisted );
 
 extern void genSpill_ARM  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );

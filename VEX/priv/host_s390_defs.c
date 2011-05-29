@@ -7021,7 +7021,8 @@ s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
 
 Int
 emit_S390Instr(UChar *buf, Int nbuf, struct s390_insn *insn,
-               Bool mode64, void *dispatch)
+               Bool mode64,
+               void *dispatch_unassisted, void *dispatch_assisted)
 {
    UChar *end;
 
@@ -7087,6 +7088,8 @@ emit_S390Instr(UChar *buf, Int nbuf, struct s390_insn *insn,
       break;
 
    case S390_INSN_BRANCH:
+      vassert(dispatch_unassisted == NULL);
+      vassert(dispatch_assisted == NULL);
       end = s390_insn_branch_emit(buf, insn);
       break;
 

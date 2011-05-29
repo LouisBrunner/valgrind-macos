@@ -2303,7 +2303,9 @@ static UChar* do_ffree_st ( UChar* p, Int n )
    imperative to emit position-independent code. */
 
 Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i, 
-                      Bool mode64, void* dispatch )
+                      Bool mode64,
+                      void* dispatch_unassisted,
+                      void* dispatch_assisted )
 {
    UInt /*irno,*/ opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
    UInt   xtra;
@@ -2716,7 +2718,11 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       goto done;
    }
 
-   case Ain_Goto:
+   case Ain_Goto: {
+      void* dispatch_to_use = NULL;
+      vassert(dispatch_unassisted != NULL);
+      vassert(dispatch_assisted != NULL);
+
       /* Use ptmp for backpatching conditional jumps. */
       ptmp = NULL;
 
@@ -2732,7 +2738,10 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       /* If a non-boring, set %rbp (the guest state pointer)
          appropriately.  Since these numbers are all small positive
          integers, we can get away with "movl $N, %ebp" rather than
-         the longer "movq $N, %rbp". */
+         the longer "movq $N, %rbp".  Also, decide which dispatcher we
+         need to use. */
+      dispatch_to_use = dispatch_assisted;
+
       /* movl $magic_number, %ebp */
       switch (i->Ain.Goto.jk) {
          case Ijk_ClientReq: 
@@ -2771,6 +2780,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:
+            dispatch_to_use = dispatch_unassisted;
             break;
          default: 
             ppIRJumpKind(i->Ain.Goto.jk);
@@ -2798,19 +2808,18 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          after the load of %rax since %rdx might be carrying the value
          destined for %rax immediately prior to this Ain_Goto. */
       vassert(sizeof(ULong) == sizeof(void*));
-      vassert(dispatch != NULL);
 
-      if (fitsIn32Bits(Ptr_to_ULong(dispatch))) {
+      if (fitsIn32Bits(Ptr_to_ULong(dispatch_to_use))) {
          /* movl sign-extend(imm32), %rdx */
          *p++ = 0x48;
          *p++ = 0xC7;
          *p++ = 0xC2;
-         p = emit32(p, (UInt)Ptr_to_ULong(dispatch));
+         p = emit32(p, (UInt)Ptr_to_ULong(dispatch_to_use));
       } else {
          /* movabsq $imm64, %rdx */
          *p++ = 0x48;
          *p++ = 0xBA;
-         p = emit64(p, Ptr_to_ULong(dispatch));
+         p = emit64(p, Ptr_to_ULong(dispatch_to_use));
       }
       /* jmp *%rdx */
       *p++ = 0xFF;
@@ -2823,6 +2832,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          *ptmp = toUChar(delta-1);
       }
       goto done;
+   }
 
    case Ain_CMov64:
       vassert(i->Ain.CMov64.cond != Acc_ALWAYS);

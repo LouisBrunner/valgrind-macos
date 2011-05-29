@@ -847,7 +847,9 @@ extern void         getRegUsage_PPCInstr ( HRegUsage*, PPCInstr*, Bool mode64 );
 extern void         mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
 extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
 extern Int          emit_PPCInstr        ( UChar* buf, Int nbuf, PPCInstr*, 
-                                           Bool mode64, void* dispatch );
+                                           Bool mode64,
+                                           void* dispatch_unassisted,
+                                           void* dispatch_assisted );
 
 extern void genSpill_PPC  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );

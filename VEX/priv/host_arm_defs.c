@@ -2672,14 +2672,13 @@ static UInt* imm32_to_iregNo ( UInt* p, Int rD, UInt imm32 )
 
 
 Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
-                    Bool mode64, void* dispatch ) 
+                    Bool mode64,
+                    void* dispatch_unassisted, void* dispatch_assisted ) 
 {
    UInt* p = (UInt*)buf;
    vassert(nbuf >= 32);
    vassert(mode64 == False);
    vassert(0 == (((HWord)buf) & 3));
-   /* since we branch to lr(r13) to get back to dispatch: */
-   vassert(dispatch == NULL);
 
    switch (i->tag) {
       case ARMin_Alu: {
@@ -2867,6 +2866,9 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          ARMCondCode cond  = i->ARMin.Goto.cond;
          UInt        rnext = iregNo(i->ARMin.Goto.gnext);
          Int         trc   = -1;
+         /* since we branch to lr(r13) to get back to dispatch: */
+         vassert(dispatch_unassisted == NULL);
+         vassert(dispatch_assisted == NULL);
          switch (jk) {
             case Ijk_Ret: case Ijk_Call: case Ijk_Boring:
                break; /* no need to set GST in these common cases */

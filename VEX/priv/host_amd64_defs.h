@@ -734,7 +734,9 @@ extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr*, Bool );
 extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
 extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
 extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr*, 
-                                             Bool, void* dispatch );
+                                             Bool,
+                                             void* dispatch_unassisted,
+                                             void* dispatch_assisted );
 
 extern void genSpill_AMD64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );

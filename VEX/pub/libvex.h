@@ -552,8 +552,8 @@ typedef
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;
 
-      /* IN: address of the dispatcher entry point.  Describes the
-         place where generated code should jump to at the end of each
+      /* IN: address of the dispatcher entry points.  Describes the
+         places where generated code should jump to at the end of each
          bb.
 
          At the end of each translation, the next guest address is
@@ -567,19 +567,26 @@ typedef
          control; caller supplies this) in the following way:
 
          - On host archs which lack a link register (x86, amd64), by a
-           jump to the host address specified in 'dispatcher', which
-           must be non-NULL.
+           jump to the host address specified in
+           'dispatcher_assisted', if the guest state pointer has been
+           changed so as to request some action before the next block
+           is run, or 'dispatcher_unassisted' (the fast path), in
+           which it is assumed that the guest state pointer is
+           unchanged and we wish to continue directly with the next
+           translation.  Both of these must be non-NULL.
 
          - On host archs which have a link register (ppc32, ppc64), by
            a branch to the link register (which is guaranteed to be
            unchanged from whatever it was at entry to the
-           translation).  'dispatch' must be NULL.
+           translation).  'dispatch_assisted' and
+           'dispatch_unassisted' must be NULL.
 
          The aim is to get back and forth between translations and the
          dispatcher without creating memory traffic to store return
          addresses.
       */
-      void* dispatch;
+      void* dispatch_unassisted;
+      void* dispatch_assisted;
    }
    VexTranslateArgs;
 

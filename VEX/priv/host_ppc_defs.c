@@ -2653,7 +2653,8 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    code and back.
 */
 Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i, 
-                    Bool mode64, void* dispatch )
+                    Bool mode64,
+                    void* dispatch_unassisted, void* dispatch_assisted )
 {
    UChar* p = &buf[0];
    UChar* ptmp = p;
@@ -3042,7 +3043,8 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       UInt r_dst;
       ULong imm_dst;
 
-      vassert(dispatch == NULL);
+      vassert(dispatch_unassisted == NULL);
+      vassert(dispatch_assisted == NULL);
       
       /* First off, if this is conditional, create a conditional
          jump over the rest of it. */

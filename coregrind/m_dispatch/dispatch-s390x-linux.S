@@ -135,8 +135,9 @@ run_innerloop__dispatch_unprofiled:
            r15 = stack pointer (as usual)
         */
 
-	/* Has the guest state pointer been messed with?  If yes, exit. */
-        cg   %r13,S390_LOC_SAVED_GSP    /* r13 = actual guest state pointer */
+        /* Has the guest state pointer been messed with? If yes, exit.
+           The mess is recognised by r13 containing an odd value. */
+        tmll %r13,1
         larl %r8, VG_(tt_fast)
         jne  gsp_changed
 
@@ -188,8 +189,9 @@ run_innerloop__dispatch_unprofiled:
 
 run_innerloop__dispatch_profiled:
 
-	/* Has the guest state pointer been messed with?  If yes, exit. */
-        cg   %r13,S390_LOC_SAVED_GSP    /* r13 = actual guest state pointer */
+        /* Has the guest state pointer been messed with?  If yes, exit.
+           The mess is recognised by r13 containing an odd value. */
+        tmll %r13,1
         larl %r8, VG_(tt_fast)
         jne  gsp_changed
 

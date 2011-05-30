@@ -1544,8 +1544,11 @@ Bool VG_(translate) ( ThreadId tid,
 
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
         || defined(VGA_arm) || defined(VGA_s390x)
-   /* See comment libvex.h; machine has link register --> dipatch = NULL */
-   vta.dispatch = NULL;
+   /* See comment in libvex.h.  This target uses a
+      return-to-link-register scheme to get back to the dispatcher, so
+      both fields are NULL. */
+   vta.dispatch_assisted   = NULL;
+   vta.dispatch_unassisted = NULL;
 
 #  else
 #    error "Unknown arch"

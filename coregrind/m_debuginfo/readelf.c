@@ -1446,6 +1446,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("rw: contains svmas %#lx .. %#lx with bias %#lx\n",
                 rw_svma_base, rw_svma_limit - 1, rw_bias );
 
+   /* Iterate over section headers */
    for (i = 0; i < shdr_nent; i++) {
       ElfXX_Shdr* shdr = INDEX_BIS( shdr_img, i, shdr_ent_szB );
       UChar* name = shdr_strtab_img + shdr->sh_name;
@@ -1801,19 +1802,22 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .eh_frame where mapped as rx (code).  This seems to be
          the common case.  However, if that doesn't pan out, try for
-         rw (data) instead. */
+         rw (data) instead.  We can handle up to N_EHFRAME_SECTS per
+         ELF object. */
       if (0 == VG_(strcmp)(name, ".eh_frame")) {
-         if (inrx && size > 0 && !di->ehframe_present) {
-            di->ehframe_present = True;
-            di->ehframe_avma = svma + rx_bias;
-            di->ehframe_size = size;
-            TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n", di->ehframe_avma);
+         if (inrx && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
+            di->ehframe_avma[di->n_ehframe] = svma + rx_bias;
+            di->ehframe_size[di->n_ehframe] = size;
+            TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
+                         di->ehframe_avma[di->n_ehframe]);
+            di->n_ehframe++;
          } else
-         if (inrw && size > 0 && !di->ehframe_present) {
-            di->ehframe_present = True;
-            di->ehframe_avma = svma + rw_bias;
-            di->ehframe_size = size;
-            TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n", di->ehframe_avma);
+         if (inrw && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
+            di->ehframe_avma[di->n_ehframe] = svma + rw_bias;
+            di->ehframe_size[di->n_ehframe] = size;
+            TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
+                         di->ehframe_avma[di->n_ehframe]);
+            di->n_ehframe++;
          } else {
             BAD(".eh_frame");
          }
@@ -1857,9 +1861,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar*     debug_frame_img  = NULL; /* .debug_frame  (dwarf2) */
       UChar*     dwarf1d_img      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l_img      = NULL; /* .line         (dwarf1) */
-      UChar*     ehframe_img      = NULL; /* .eh_frame     (dwarf2) */
       UChar*     opd_img          = NULL; /* .opd (dwarf2,
                                                    ppc64-linux) */
+      UChar*     ehframe_img[N_EHFRAME_SECTS]; /* .eh_frame (dwarf2) */
+
       /* Section sizes, in bytes */
       SizeT      strtab_sz       = 0;
       SizeT      symtab_sz       = 0;
@@ -1877,43 +1882,59 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       SizeT      debug_frame_sz  = 0;
       SizeT      dwarf1d_sz      = 0;
       SizeT      dwarf1l_sz      = 0;
-      SizeT      ehframe_sz      = 0;
       SizeT      opd_sz_unused   = 0;
+      SizeT      ehframe_sz[N_EHFRAME_SECTS];
+
+      for (i = 0; i < N_EHFRAME_SECTS; i++) {
+         ehframe_img[i] = NULL;
+         ehframe_sz[i]  = 0;
+      }
 
       /* Find all interesting sections */
 
-      /* What FIND does: it finds the section called SEC_NAME.  The
-         size of it is assigned to SEC_SIZE.  The address of the
-         section in the transiently loaded oimage is assigned to
-         SEC_FILEA.  Even for sections which are marked loadable, the
-         client's ld.so may not have loaded them yet, so there is no
-         guarantee that we can safely prod around in any such area).
-         Because the entire object file is transiently mapped aboard
-         for inspection, it's always safe to inspect that area. */
+      UInt ehframe_ix = 0;
 
+      /* What FIND does: it finds the section called _SEC_NAME.  The
+         size of it is assigned to _SEC_SIZE.  The address of the
+         section in the transiently loaded oimage is assigned to
+         _SEC_IMG.  If the section is found, _POST_FX is executed
+         after _SEC_NAME and _SEC_SIZE have been assigned to.
+
+         Even for sections which are marked loadable, the client's
+         ld.so may not have loaded them yet, so there is no guarantee
+         that we can safely prod around in any such area).  Because
+         the entire object file is transiently mapped aboard for
+         inspection, it's always safe to inspect that area. */
+
+      /* Iterate over section headers (again) */
       for (i = 0; i < ehdr_img->e_shnum; i++) {
 
-#        define FIND(sec_name, sec_size, sec_img) \
+#        define FINDX(_sec_name, _sec_size, _sec_img, _post_fx)     \
          do { ElfXX_Shdr* shdr \
                  = INDEX_BIS( shdr_img, i, shdr_ent_szB ); \
-            if (0 == VG_(strcmp)(sec_name, shdr_strtab_img \
-                                           + shdr->sh_name)) { \
+            if (0 == VG_(strcmp)(_sec_name, shdr_strtab_img \
+                                            + shdr->sh_name)) { \
                Bool nobits; \
-               sec_img  = (void*)(oimage + shdr->sh_offset); \
-               sec_size = shdr->sh_size; \
-               nobits   = shdr->sh_type == SHT_NOBITS; \
+               _sec_img  = (void*)(oimage + shdr->sh_offset); \
+               _sec_size = shdr->sh_size; \
+               nobits    = shdr->sh_type == SHT_NOBITS; \
                TRACE_SYMTAB( "%18s:  img %p .. %p\n", \
-                             sec_name, (UChar*)sec_img, \
-                             ((UChar*)sec_img) + sec_size - 1); \
+                             _sec_name, (UChar*)_sec_img, \
+                             ((UChar*)_sec_img) + _sec_size - 1); \
                /* SHT_NOBITS sections have zero size in the file. */ \
                if ( shdr->sh_offset \
-                    + (nobits ? 0 : sec_size) > n_oimage ) { \
+                    + (nobits ? 0 : _sec_size) > n_oimage ) { \
                   ML_(symerr)(di, True, \
                               "   section beyond image end?!"); \
                   goto out; \
                } \
+               _post_fx; \
             } \
          } while (0);
+
+         /* Version with no post-effects */
+#        define FIND(_sec_name, _sec_size, _sec_img) \
+            FINDX(_sec_name, _sec_size, _sec_img, /**/)
 
          /*   NAME              SIZE             IMAGE addr */
          FIND(".dynsym",        dynsym_sz,       dynsym_img)
@@ -1936,10 +1957,27 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          FIND(".debug",         dwarf1d_sz,      dwarf1d_img)
          FIND(".line",          dwarf1l_sz,      dwarf1l_img)
-         FIND(".eh_frame",      ehframe_sz,      ehframe_img)
 
          FIND(".opd",           opd_sz_unused,   opd_img)
 
+         FINDX(".eh_frame",     ehframe_sz[ehframe_ix],
+                                                 ehframe_img[ehframe_ix], 
+               do { ehframe_ix++; vg_assert(ehframe_ix <= N_EHFRAME_SECTS); }
+                    while (0)
+         )
+         /* Comment_on_EH_FRAME_MULTIPLE_INSTANCES: w.r.t. .eh_frame
+            multi-instance kludgery, how are we assured that the order
+            in which we fill in ehframe_sz[] and ehframe_img[] is
+            consistent with the order in which we previously filled in
+            di->ehframe_avma[] and di->ehframe_size[] ?  By the fact
+            that in both cases, these arrays were filled in by
+            iterating over the section headers top-to-bottom.  So both
+            loops (this one and the previous one) encounter the
+            .eh_frame entries in the same order and so fill in these
+            arrays in a consistent order.
+         */
+
+#        undef FINDX
 #        undef FIND
       }
 
@@ -2176,14 +2214,24 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          False, opd_img);
       }
 
-      /* Read .eh_frame and .debug_frame (call-frame-info) if any */
-      if (ehframe_img) {
-         vg_assert(ehframe_sz == di->ehframe_size);
-         ML_(read_callframe_info_dwarf3)( di, ehframe_img, ehframe_sz, True );
+      /* Read .eh_frame and .debug_frame (call-frame-info) if any.  Do
+         the .eh_frame section(s) first. */
+      vg_assert(di->n_ehframe >= 0 && di->n_ehframe <= N_EHFRAME_SECTS);
+      for (i = 0; i < di->n_ehframe; i++) {
+         /* see Comment_on_EH_FRAME_MULTIPLE_INSTANCES above for why
+            this next assertion should hold. */
+         vg_assert(ehframe_sz[i] == di->ehframe_size[i]);
+         ML_(read_callframe_info_dwarf3)( di,
+                                          ehframe_img[i],
+                                          ehframe_sz[i],
+                                          di->ehframe_avma[i],
+                                          True/*is_ehframe*/ );
       }
       if (debug_frame_sz) {
-         ML_(read_callframe_info_dwarf3)( di, debug_frame_img,
-                                          debug_frame_sz, False );
+         ML_(read_callframe_info_dwarf3)( di,
+                                          debug_frame_img, debug_frame_sz,
+                                          0/*assume zero avma*/,
+                                          False/*!is_ehframe*/ );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It

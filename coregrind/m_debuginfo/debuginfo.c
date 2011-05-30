@@ -187,8 +187,8 @@ DebugInfo* alloc_DebugInfo( const UChar* filename,
    di->memname   = memname ? ML_(dinfo_strdup)("di.debuginfo.aDI.3", memname)
                            : NULL;
 
-   /* Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
-      Now set up the debugging-output flags. */
+   /* Everything else -- pointers, sizes, arrays -- is zeroed by
+      ML_(dinfo_zalloc).  Now set up the debugging-output flags. */
    traceme 
       = VG_(string_match)( VG_(clo_trace_symtab_patt), filename )
         || (memname && VG_(string_match)( VG_(clo_trace_symtab_patt), 

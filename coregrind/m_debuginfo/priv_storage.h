@@ -370,6 +370,12 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
 
 #define SEGINFO_STRCHUNKSIZE (64*1024)
 
+/* We may encounter more than one .eh_frame section in an object --
+   unusual but apparently allowed by ELF.  See
+   http://sourceware.org/bugzilla/show_bug.cgi?id=12675
+*/
+#define N_EHFRAME_SECTS 2
+
 struct _DebugInfo {
 
    /* Admin stuff */
@@ -626,10 +632,11 @@ struct _DebugInfo {
    Bool   opd_present;
    Addr   opd_avma;
    SizeT  opd_size;
-   /* .ehframe -- needed on amd64-linux for stack unwinding */
-   Bool   ehframe_present;
-   Addr   ehframe_avma;
-   SizeT  ehframe_size;
+   /* .ehframe -- needed on amd64-linux for stack unwinding.  We might
+      see more than one, hence the arrays. */
+   UInt   n_ehframe;  /* 0 .. N_EHFRAME_SECTS */
+   Addr   ehframe_avma[N_EHFRAME_SECTS];
+   SizeT  ehframe_size[N_EHFRAME_SECTS];
 
    /* Sorted tables of stuff we snarfed from the file.  This is the
       eventual product of reading the debug info.  All this stuff

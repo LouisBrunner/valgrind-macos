@@ -3708,29 +3708,41 @@ static void init_CIE ( CIE* cie )
 static CIE the_CIEs[N_CIEs];
 
 
+/* Read, summarise and store CFA unwind info from .eh_frame and
+   .debug_frame sections.  is_ehframe tells us which kind we are
+   dealing with -- they are slightly different. */
 void ML_(read_callframe_info_dwarf3)
-        ( /*OUT*/struct _DebugInfo* di, UChar* frame_image, SizeT frame_size,
-          Bool for_eh )
+        ( /*OUT*/struct _DebugInfo* di,
+          UChar* frame_image, SizeT frame_size, Addr frame_avma,
+          Bool is_ehframe )
 {
    Int    nbytes;
    HChar* how = NULL;
    Int    n_CIEs = 0;
    UChar* data = frame_image;
-   UWord  ehframe_cfsis = 0;
-   Addr   frame_avma = for_eh ? di->ehframe_avma : 0;
+   UWord  cfsi_used_orig;
+
+   /* If we're dealing with a .debug_frame, assume zero frame_avma. */
+   if (!is_ehframe)
+      vg_assert(frame_avma == 0);
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    /* These targets don't use CFI-based stack unwinding.  */
    return;
 #  endif
 
-   /* If we are reading .debug_frame after .eh_frame has been read, only
-      add FDEs which weren't covered in .eh_frame.  To be able to quickly
-      search the FDEs, the records must be sorted.  */
-   if ( ! for_eh && di->ehframe_size && di->cfsi_used ) {
+   /* If we read more than one .debug_frame or .eh_frame for this
+      DebugInfo*, the second and subsequent reads should only add FDEs
+      for address ranges not already covered by the FDEs already
+      present.  To be able to quickly check which address ranges are
+      already present, any existing records (DiCFSIs) must be sorted,
+      so we can binary-search them in the code below.  We also record
+      di->cfsi_used so that we know where the boundary is between
+      existing and new records. */
+   if (di->cfsi_used > 0) {
       ML_(canonicaliseCFI) ( di );
-      ehframe_cfsis = di->cfsi_used;
    }
+   cfsi_used_orig = di->cfsi_used;
 
    if (di->trace_cfi) {
       VG_(printf)("\n-----------------------------------------------\n");
@@ -3825,7 +3837,7 @@ void ML_(read_callframe_info_dwarf3)
 
       /* If cie_pointer is zero for .eh_frame or all ones for .debug_frame,
          we've got a CIE; else it's an FDE. */
-      if (cie_pointer == (for_eh ? 0ULL
+      if (cie_pointer == (is_ehframe ? 0ULL
                           : dw64 ? 0xFFFFFFFFFFFFFFFFULL : 0xFFFFFFFFULL)) {
 
          Int    this_CIE;
@@ -4040,7 +4052,7 @@ void ML_(read_callframe_info_dwarf3)
             cie_pointer bytes back from here. */
 
          /* re sizeof(UInt) / sizeof(ULong), matches XXX above. */
-         if (for_eh)
+         if (is_ehframe)
             look_for = (data - (dw64 ? sizeof(ULong) : sizeof(UInt)) 
                              - frame_image) 
                        - cie_pointer;
@@ -4130,11 +4142,14 @@ void ML_(read_callframe_info_dwarf3)
 
 	 data += fde_ilen;
 
-         if (ehframe_cfsis) {
+         /* If this object's DebugInfo* had some DiCFSIs from a
+            previous .eh_frame or .debug_frame read, we must check
+            that we're not adding a duplicate. */
+         if (cfsi_used_orig > 0) {
             Addr a_mid_lo, a_mid_hi;
             Word mid, size, 
                  lo = 0, 
-                 hi = ehframe_cfsis-1;
+                 hi = cfsi_used_orig-1;
             while (True) {
                /* current unsearched space is from lo to hi, inclusive. */
                if (lo > hi) break; /* not found */

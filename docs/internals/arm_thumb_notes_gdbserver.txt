@@ -1,0 +1,90 @@
+(for general information
+  about gdbserver, read coregrind/m_gdbserver/README_DEVELOPPERS
+  about gdbserver tests, read gdbserver_tests/README_DEVELOPPERS).
+
+ARM thumb and gdbserver
+-----------------------
+
+When executing thumb code, the ARM cpu program counter value is
+not equal to the address of the instruction being executed: the fact
+that the instruction being executed is a thumb instruction is
+encoded in the bit0 of the program counter.
+For more information about this, see VEX/pub/libvex_guest_arm.h.
+
+This additional bit set in the ARM guest_IP caused some difficulties
+at several places in the gdbserver code.
+
+
+* breakpoint handling:
+  gdbsrv code detects that a breakpoint is reached
+  by comparing the current guest_IP with the breakpoint addresses given
+  by gdb. As gdb is giving breakpoints without the thumb bit set,
+  the gdbsrv code has to ensure breakpoint comparisons are done without
+  the thumb bit.
+  => the breakpoints are stored in the gdbserver breakpoints hash table
+  without the thumb bit.
+  => when the guest_IP is compared with these breakpoints, the thumb bit
+  must be masked.
+
+* Thumb bit in IstMark:
+  When instrumenting a SB for gdbserver, a PUT of the current instruction
+  address is done to the IP, to ensure that the gdbserver helper call
+  sees the correct IP. This PUT must be done with the thumb bit set,
+  as this value will be given back to gdb. gdb uses the thumb bit a.o.
+  to guess the next program counter after this instruction.
+  Such a guess is needed for gdb commands such as next/step/...
+  If the thumb bit is not properly set, these commands are not working.
+  As gdbserver instrumentation code uses the IstMark to find the IP
+  of the instruction being instrumented, the thumb bit must be accessible
+  or found. Multiple approaches were tried (see below) before the
+  current one (which is to have a field Delta in IstMark which encodes
+  the thumb bit).
+
+* Thumb bit in extents
+  When a breakpoint is placed at an instruction, the translation for this
+  instruction must be discarded to have the SB re-instrumented for gdbserver.
+  At least at this moment (r2155/r11786), the extents for ARM/thumb blocks
+  contains addresses with the thumb bit set. It is not clear that this is
+  a good thing: extents should preferrably reference the real address range of
+  instructions, not an adress range which can be "off by one" due to the
+  fact that the instruction is a thumb instruction.
+ 
+  Due to this "off by one", gdbserver is discarding a range of two bytes
+  to ensure it is not sensitive to the presence (or not) of the thumb
+  bit in the range being discarded.
+
+* Handling of monitor vg.translate
+  When the translation is requested, the thumb bit must be properly set
+  in the address, as this bit is used by the Valgrind translator
+  to decide to decode in ARM or in thumb mode.
+  The monitor command guesses the thumb bit based on the debug information.
+
+* gdb 7.0 is buggy with thumb code
+  The logic of gdb to guess the next PC in thumb code is not working
+  properly in version gdb 7.0. Several gdbserver tests are disabled
+  on ARM if gdb version is < 7.1.
+
+* The (historical) list of difficulties encountered is the following:
+  - initially, IstMark contained the thumb bit in the addr.
+    This caused the breakpoints to not work (comparison between
+    gdb address and gdbserver failed).
+    (see breakpoint handling above).
+  - A change was done to mask the thumb bit in the IstMark
+    This made breakpoints work, but then gdb next/step/... was then failing
+    (see Thumb bit in IstMark above).
+  - So, it was needed to have the thumb bit when instrumenting an
+    IstMark. 3 solutions were looked at:
+     * use the debug info : this solution was discarded as often debug
+       info does not allow a 100% correct solution. debug info is acceptable
+       for vg.translate (which is only for internal valgrind debugging),
+       but is better not used for 'end user functionnality'.
+     * Derive the thumb bit for a SB from the extent address.
+       This was discarded as this implies that an SB cannot mix thumb
+       and ARM code. This implied to disable chasing at transition between
+       ARM/thumb code, which potentially decreases performance.
+       Also, it would oblige to keep the thumb bit in the extents, which
+       seems not nice.
+     * the final solution implemented was to add a Delta fied in IstMark.
+       This Delta field gives the delta to add to the IstMark addr field
+       to obtain the guest_IP : for thumb code, this field is 1,
+       and is 0 for ARM code and for all other architectures.

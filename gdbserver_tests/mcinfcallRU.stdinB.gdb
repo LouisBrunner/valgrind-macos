@@ -3,12 +3,9 @@ target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcinfcallRU
 echo vgdb launched process attached\n
 monitor vg.set vgdb-error 999999
 #
-# We will interrupt in a few seconds (be sure all tasks are in
-# Runnable/Yielding state). We need to wait enough seconds to be sure
-# Valgrind has started to execute the threads.
-# On a heavily loaded slow arm gcc compile farm system, 5 seconds
-# was not enough.
-shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-mcinfcallRU 10
+# We will interrupt in a few seconds (be sure the main task is ready).
+# Once it is ready, we still have to wait to be sure it is running.
+shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-mcinfcallRU 1 grep main mcinfcallRU.stderr.out
 #
 continue
 info threads

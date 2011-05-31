@@ -13,7 +13,7 @@ continue
 # Here the 4 threads have been started.
 # We will interrupt in a few seconds (be sure all tasks are in Runnable/Yielding state
 # or in WaitSys state.
-shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU 10
+shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU 1 grep main mcinfcallWSRU.stderr.out
 #
 continue
 #

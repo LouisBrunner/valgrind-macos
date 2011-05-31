@@ -1,11 +1,27 @@
 #! /bin/sh
 
 # simulate control_c by sending SIGUSR1 to the vgdb using prefix $1 in $2 seconds
-VGDBPID=`./vgdb -D $1 2>&1 | awk '/vgdb pid/ {print $3}'`
+# If there are some args after $2, the rest of these args is a command and its arg
+# which is run every second. When this command is succesful, then the sleep and
+# the control c simul is done.
+PREFIX=$1
+shift
+SLEEP=$1
+shift
+GUARDCMD="$@"
+if [ "$GUARDCMD" = "" ]
+then
+  GUARDCMD="true"
+fi
+VGDBPID=`./vgdb -D $PREFIX 2>&1 | awk '/vgdb pid/ {print $3}'`
 if [ "$VGDBPID" = "" ]
 then
-  echo "simulate_control_c could not determine the vgdb pid with " $1
+  echo "simulate_control_c could not determine the vgdb pid with " $PREFIX
   exit 1
 fi
-(sleep $2; kill -10 $VGDBPID) &
-
+(while ! $GUARDCMD >> garbage.filtered.out 2>&1
+ do
+   sleep 1
+ done
+ sleep $SLEEP
+ kill -10 $VGDBPID) &

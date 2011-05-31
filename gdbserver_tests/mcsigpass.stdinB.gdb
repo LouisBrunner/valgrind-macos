@@ -20,6 +20,7 @@ continue
 #
 # SIGFPE  : line 114
 continue
+echo after continue SIGFPE
 #
 # program will exit
 quit

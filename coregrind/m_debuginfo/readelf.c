@@ -1150,6 +1150,13 @@ Word file_offset_from_svma ( /*OUT*/Bool* ok,
    info) and anything else we want, into the tables within the
    supplied DebugInfo.
 */
+
+/* Temporarily holds information copied out of PT_LOAD entries
+   in ML_(read_elf_debug_info. */
+typedef
+   struct { Addr svma_base; Addr svma_limit; PtrdiffT bias; }
+   RangeAndBias;
+
 Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 {
    Bool          res, ok;
@@ -1182,13 +1189,20 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    UWord       shdr_ent_szB    = 0;
    UChar*      shdr_strtab_img = NULL;
 
-   /* SVMAs covered by rx and rw segments and corresponding bias. */
-   Addr     rx_svma_base = 0;
-   Addr     rx_svma_limit = 0;
-   PtrdiffT rx_bias = 0;
-   Addr     rw_svma_base = 0;
-   Addr     rw_svma_limit = 0;
-   PtrdiffT rw_bias = 0;
+   /* SVMAs covered by rx and rw segments and corresponding biases.
+      We keep separate lists of rx and rw areas.  Each can have up to
+      N_RX_RW_AREAS entries.  Normally each object would provide just
+      one rx and one rw area, but Mike Hommey's elfhack creates
+      objects with two rx PT_LOAD entries, hence the generality. */
+   const Int N_RX_RW_AREAS = 2;
+
+   RangeAndBias rx[N_RX_RW_AREAS];
+   RangeAndBias rw[N_RX_RW_AREAS];
+   Word n_rx = 0; /* 0 .. N_RX_RW_AREAS */
+   Word n_rw = 0; /* 0 .. N_RX_RW_AREAS */
+   /* Pointless paranoia: */
+   VG_(memset)( rx, 0, sizeof(rx) );
+   VG_(memset)( rw, 0, sizeof(rw) );
 
    /* Build ID */
    Char* buildid = NULL;
@@ -1222,8 +1236,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       di->*rw_map* fields.  First we examine the file's ELF Program
       Header, and, by comparing that against the di->*r{w,x}_map*
       info, try to figure out the AVMAs for the sections we care
-      about, that should have been mapped: text, data, sdata, bss got,
-      plt, and toc.
+      about, that should have been mapped: text, data, sdata, bss,
+      got, plt, and toc.
       ---------------------------------------------------------- */
 
    res = False;
@@ -1338,9 +1352,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    TRACE_SYMTAB("shdr:   string table at %p\n", shdr_strtab_img );
 
-   /* Do another amazingly tedious thing: find out the .soname for
-      this object.  Apparently requires looking through the program
-      header table. */
+   /* Look through the program header table, and:
+      - copy information from suitable PT_LOAD entries into rx[] or
+        rw[]
+      - find (or fake up) the .soname for this object.
+   */
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ Looking for the soname ------\n");
    vg_assert(di->soname == NULL);
@@ -1350,7 +1366,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       for (i = 0; i < phdr_nent; i++) {
          ElfXX_Phdr* phdr = INDEX_BIS( phdr_img, i, phdr_ent_szB );
 
-         /* Make sure the PT_LOADable entries are in order */
+         /* Make sure the PT_LOADable entries are in order and
+            non-overlapping.  This in turn means the address ranges
+            slurped into rx[] and rw[] are in order and
+            non-overlapping. */
+         vg_assert(n_rx >= 0 && n_rx <= N_RX_RW_AREAS);
+         vg_assert(n_rw >= 0 && n_rw <= N_RX_RW_AREAS);
+
          if (phdr->p_type == PT_LOAD) {
             TRACE_SYMTAB("PT_LOAD in order?: %#lx %#lx\n",
                          prev_svma + 0UL,
@@ -1361,21 +1383,36 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                goto out;
             }
             prev_svma = phdr->p_vaddr;
-            if (rx_svma_limit == 0
-                && phdr->p_offset >= di->rx_map_foff
+            if (phdr->p_offset >= di->rx_map_foff
                 && phdr->p_offset < di->rx_map_foff + di->rx_map_size
-                && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size) {
-               rx_svma_base = phdr->p_vaddr;
-               rx_svma_limit = phdr->p_vaddr + phdr->p_memsz;
-               rx_bias = di->rx_map_avma - di->rx_map_foff + phdr->p_offset - phdr->p_vaddr;
+                && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size
+                && (phdr->p_flags & (PF_R | PF_W | PF_X)) == (PF_R | PF_X)) {
+               if (n_rx == N_RX_RW_AREAS) {
+                  ML_(symerr)(di, True,
+                              "N_RX_RW_AREAS is too low; increase and recompile.");
+                  goto out;
+               }
+               rx[n_rx].svma_base  = phdr->p_vaddr;
+               rx[n_rx].svma_limit = phdr->p_vaddr + phdr->p_memsz;
+               rx[n_rx].bias       = di->rx_map_avma - di->rx_map_foff
+                                     + phdr->p_offset - phdr->p_vaddr;
+               n_rx++;
             }
-            else if (rw_svma_limit == 0
-                     && phdr->p_offset >= di->rw_map_foff
-                     && phdr->p_offset < di->rw_map_foff + di->rw_map_size
-                     && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size) {
-               rw_svma_base = phdr->p_vaddr;
-               rw_svma_limit = phdr->p_vaddr + phdr->p_memsz;
-               rw_bias = di->rw_map_avma - di->rw_map_foff + phdr->p_offset - phdr->p_vaddr;
+            else
+            if (phdr->p_offset >= di->rw_map_foff
+                && phdr->p_offset < di->rw_map_foff + di->rw_map_size
+                && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size
+                && (phdr->p_flags & (PF_R | PF_W | PF_X)) == (PF_R | PF_W)) {
+               if (n_rw == N_RX_RW_AREAS) {
+                  ML_(symerr)(di, True,
+                              "N_RX_RW_AREAS is too low; increase and recompile.");
+                  goto out;
+               }
+               rw[n_rw].svma_base  = phdr->p_vaddr;
+               rw[n_rw].svma_limit = phdr->p_vaddr + phdr->p_memsz;
+               rw[n_rw].bias       = di->rw_map_avma - di->rw_map_foff
+                                     + phdr->p_offset - phdr->p_vaddr;
+               n_rw++;
             }
          }
 
@@ -1428,8 +1465,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       di->soname = "NONE";
    }
 
-   vg_assert(rx_svma_limit != 0);
-   vg_assert(rw_svma_limit != 0);
+   vg_assert(n_rx >= 0 && n_rx <= N_RX_RW_AREAS);
+   vg_assert(n_rw >= 0 && n_rw <= N_RX_RW_AREAS);
+   for (i = 0; i < n_rx; i++) {
+      vg_assert(rx[i].svma_limit != 0);
+   }
+   for (i = 0; i < n_rw; i++) {
+      vg_assert(rw[i].svma_limit != 0);
+   }
 
    /* Now read the section table. */
    TRACE_SYMTAB("\n");
@@ -1438,13 +1481,17 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
                di->rx_map_avma,
                di->rx_map_foff, di->rx_map_foff + di->rx_map_size - 1 );
-   TRACE_SYMTAB("rx: contains svmas %#lx .. %#lx with bias %#lx\n",
-                rx_svma_base, rx_svma_limit - 1, rx_bias );
+   for (i = 0; i < n_rx; i++) {
+      TRACE_SYMTAB("rx[%ld]: contains svmas %#lx .. %#lx with bias %#lx\n",
+                   i, rx[i].svma_base, rx[i].svma_limit - 1, rx[i].bias );
+   }
    TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
                di->rw_map_avma,
                di->rw_map_foff, di->rw_map_foff + di->rw_map_size - 1 );
-   TRACE_SYMTAB("rw: contains svmas %#lx .. %#lx with bias %#lx\n",
-                rw_svma_base, rw_svma_limit - 1, rw_bias );
+   for (i = 0; i < n_rw; i++) {
+      TRACE_SYMTAB("rw[%ld]: contains svmas %#lx .. %#lx with bias %#lx\n",
+                   i, rw[i].svma_base, rw[i].svma_limit - 1, rw[i].bias );
+   }
 
    /* Iterate over section headers */
    for (i = 0; i < shdr_nent; i++) {
@@ -1455,8 +1502,26 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UWord  size = shdr->sh_size;
       UInt   alyn = shdr->sh_addralign;
       Bool   bits = !(shdr->sh_type == SHT_NOBITS);
-      Bool   inrx = svma >= rx_svma_base && svma < rx_svma_limit;
-      Bool   inrw = svma >= rw_svma_base && svma < rw_svma_limit;
+      /* Look through our collection of info obtained from the PT_LOAD
+         headers, and make 'inrx' and 'inrw' point to the first entry
+         in each that intersects 'avma'.  If in each case none is found,
+         leave the relevant pointer at NULL. */
+      RangeAndBias* inrx = NULL;
+      RangeAndBias* inrw = NULL;
+      { Word j;
+        for (j = 0; j < n_rx; j++) {
+           if (svma >= rx[j].svma_base && svma < rx[j].svma_limit) {
+             inrx = &rx[j];
+             break;
+           }
+        }
+        for (j = 0; j < n_rw; j++) {
+           if (svma >= rw[j].svma_base && svma < rw[j].svma_limit) {
+             inrw = &rw[j];
+             break;
+           }
+        }
+      }
 
       TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6ld  "
                   "  svma %p  name \"%s\"\n", 
@@ -1492,11 +1557,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrx && size >= 0 && !di->text_present) {
             di->text_present = True;
             di->text_svma = svma;
-            di->text_avma = svma + rx_bias;
+            di->text_avma = svma + rx->bias;
             di->text_size = size;
-            di->text_bias = rx_bias;
+            di->text_bias = rx->bias;
             di->text_debug_svma = svma;
-            di->text_debug_bias = rx_bias;
+            di->text_debug_bias = rx->bias;
             TRACE_SYMTAB("acquiring .text svma = %#lx .. %#lx\n",
                          di->text_svma, 
                          di->text_svma + di->text_size - 1);
@@ -1514,11 +1579,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrw && size >= 0 && !di->data_present) {
             di->data_present = True;
             di->data_svma = svma;
-            di->data_avma = svma + rw_bias;
+            di->data_avma = svma + inrw->bias;
             di->data_size = size;
-            di->data_bias = rw_bias;
+            di->data_bias = inrw->bias;
             di->data_debug_svma = svma;
-            di->data_debug_bias = rw_bias;
+            di->data_debug_bias = inrw->bias;
             TRACE_SYMTAB("acquiring .data svma = %#lx .. %#lx\n",
                          di->data_svma,
                          di->data_svma + di->data_size - 1);
@@ -1536,11 +1601,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrw && size > 0 && !di->sdata_present) {
             di->sdata_present = True;
             di->sdata_svma = svma;
-            di->sdata_avma = svma + rw_bias;
+            di->sdata_avma = svma + inrw->bias;
             di->sdata_size = size;
-            di->sdata_bias = rw_bias;
+            di->sdata_bias = inrw->bias;
             di->sdata_debug_svma = svma;
-            di->sdata_debug_bias = rw_bias;
+            di->sdata_debug_bias = inrw->bias;
             TRACE_SYMTAB("acquiring .sdata svma = %#lx .. %#lx\n",
                          di->sdata_svma,
                          di->sdata_svma + di->sdata_size - 1);
@@ -1558,11 +1623,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrx && size >= 0 && !di->rodata_present) {
             di->rodata_present = True;
             di->rodata_svma = svma;
-            di->rodata_avma = svma + rx_bias;
+            di->rodata_avma = svma + rx->bias;
             di->rodata_size = size;
-            di->rodata_bias = rx_bias;
+            di->rodata_bias = rx->bias;
             di->rodata_debug_svma = svma;
-            di->rodata_debug_bias = rw_bias;
+            di->rodata_debug_bias = inrx->bias;
+                                    /* NB was 'inrw' prior to rXXXXX */
             TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
                          di->rodata_svma,
                          di->rodata_svma + di->rodata_size - 1);
@@ -1580,11 +1646,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             dynbss_present = True;
             di->bss_present = True;
             di->bss_svma = svma;
-            di->bss_avma = svma + rw_bias;
+            di->bss_avma = svma + inrw->bias;
             di->bss_size = size;
-            di->bss_bias = rw_bias;
+            di->bss_bias = inrw->bias;
             di->bss_debug_svma = svma;
-            di->bss_debug_bias = rw_bias;
+            di->bss_debug_bias = inrw->bias;
             TRACE_SYMTAB("acquiring .dynbss svma = %#lx .. %#lx\n",
                          di->bss_svma,
                          di->bss_svma + di->bss_size - 1);
@@ -1605,18 +1671,18 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .bss svma = %#lx .. %#lx\n",
                          svma, svma + size - 1);
             TRACE_SYMTAB("acquiring .bss avma = %#lx .. %#lx\n",
-                         svma + rw_bias, svma + rw_bias + size - 1);
+                         svma + inrw->bias, svma + inrw->bias + size - 1);
             TRACE_SYMTAB("acquiring .bss bias = %#lx\n", di->bss_bias);
          } else
 
          if (inrw && size >= 0 && !di->bss_present) {
             di->bss_present = True;
             di->bss_svma = svma;
-            di->bss_avma = svma + rw_bias;
+            di->bss_avma = svma + inrw->bias;
             di->bss_size = size;
-            di->bss_bias = rw_bias;
+            di->bss_bias = inrw->bias;
             di->bss_debug_svma = svma;
-            di->bss_debug_bias = rw_bias;
+            di->bss_debug_bias = inrw->bias;
             TRACE_SYMTAB("acquiring .bss svma = %#lx .. %#lx\n",
                          di->bss_svma,
                          di->bss_svma + di->bss_size - 1);
@@ -1665,11 +1731,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             sdynbss_present = True;
             di->sbss_present = True;
             di->sbss_svma = svma;
-            di->sbss_avma = svma + rw_bias;
+            di->sbss_avma = svma + inrw->bias;
             di->sbss_size = size;
-            di->sbss_bias = rw_bias;
+            di->sbss_bias = inrw->bias;
             di->sbss_debug_svma = svma;
-            di->sbss_debug_bias = rw_bias;
+            di->sbss_debug_bias = inrw->bias;
             TRACE_SYMTAB("acquiring .sdynbss svma = %#lx .. %#lx\n",
                          di->sbss_svma,
                          di->sbss_svma + di->sbss_size - 1);
@@ -1690,18 +1756,18 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
                          svma, svma + size - 1);
             TRACE_SYMTAB("acquiring .sbss avma = %#lx .. %#lx\n",
-                         svma + rw_bias, svma + rw_bias + size - 1);
+                         svma + inrw->bias, svma + inrw->bias + size - 1);
             TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", di->sbss_bias);
          } else
 
          if (inrw && size > 0 && !di->sbss_present) {
             di->sbss_present = True;
             di->sbss_svma = svma;
-            di->sbss_avma = svma + rw_bias;
+            di->sbss_avma = svma + inrw->bias;
             di->sbss_size = size;
-            di->sbss_bias = rw_bias;
+            di->sbss_bias = inrw->bias;
             di->sbss_debug_svma = svma;
-            di->sbss_debug_bias = rw_bias;
+            di->sbss_debug_bias = inrw->bias;
             TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
                          di->sbss_svma,
                          di->sbss_svma + di->sbss_size - 1);
@@ -1718,7 +1784,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".got")) {
          if (inrw && size > 0 && !di->got_present) {
             di->got_present = True;
-            di->got_avma = svma + rw_bias;
+            di->got_avma = svma + inrw->bias;
             di->got_size = size;
             TRACE_SYMTAB("acquiring .got avma = %#lx\n", di->got_avma);
          } else {
@@ -1730,7 +1796,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".got.plt")) {
          if (inrw && size > 0 && !di->gotplt_present) {
             di->gotplt_present = True;
-            di->gotplt_avma = svma + rw_bias;
+            di->gotplt_avma = svma + inrw->bias;
             di->gotplt_size = size;
             TRACE_SYMTAB("acquiring .got.plt avma = %#lx\n", di->gotplt_avma);
          } else if (size != 0) {
@@ -1745,7 +1811,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = svma + rx_bias;
+            di->plt_avma = svma + rx->bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else {
@@ -1757,7 +1823,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrw && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = svma + rw_bias;
+            di->plt_avma = svma + inrw->bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else {
@@ -1769,7 +1835,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrw && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = svma + rw_bias;
+            di->plt_avma = svma + inrw->bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else 
@@ -1792,7 +1858,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".opd")) {
          if (inrw && size > 0 && !di->opd_present) {
             di->opd_present = True;
-            di->opd_avma = svma + rw_bias;
+            di->opd_avma = svma + inrw->bias;
             di->opd_size = size;
             TRACE_SYMTAB("acquiring .opd avma = %#lx\n", di->opd_avma);
          } else {
@@ -1806,14 +1872,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          ELF object. */
       if (0 == VG_(strcmp)(name, ".eh_frame")) {
          if (inrx && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
-            di->ehframe_avma[di->n_ehframe] = svma + rx_bias;
+            di->ehframe_avma[di->n_ehframe] = svma + rx->bias;
             di->ehframe_size[di->n_ehframe] = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
                          di->ehframe_avma[di->n_ehframe]);
             di->n_ehframe++;
          } else
          if (inrw && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
-            di->ehframe_avma[di->n_ehframe] = svma + rw_bias;
+            di->ehframe_avma[di->n_ehframe] = svma + inrw->bias;
             di->ehframe_size[di->n_ehframe] = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
                          di->ehframe_avma[di->n_ehframe]);

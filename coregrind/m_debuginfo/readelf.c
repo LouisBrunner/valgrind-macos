@@ -1557,11 +1557,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrx && size >= 0 && !di->text_present) {
             di->text_present = True;
             di->text_svma = svma;
-            di->text_avma = svma + rx->bias;
+            di->text_avma = svma + inrx->bias;
             di->text_size = size;
-            di->text_bias = rx->bias;
+            di->text_bias = inrx->bias;
             di->text_debug_svma = svma;
-            di->text_debug_bias = rx->bias;
+            di->text_debug_bias = inrx->bias;
             TRACE_SYMTAB("acquiring .text svma = %#lx .. %#lx\n",
                          di->text_svma, 
                          di->text_svma + di->text_size - 1);
@@ -1623,12 +1623,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrx && size >= 0 && !di->rodata_present) {
             di->rodata_present = True;
             di->rodata_svma = svma;
-            di->rodata_avma = svma + rx->bias;
+            di->rodata_avma = svma + inrx->bias;
             di->rodata_size = size;
-            di->rodata_bias = rx->bias;
+            di->rodata_bias = inrx->bias;
             di->rodata_debug_svma = svma;
             di->rodata_debug_bias = inrx->bias;
-                                    /* NB was 'inrw' prior to rXXXXX */
+                                    /* NB was 'inrw' prior to r11794 */
             TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
                          di->rodata_svma,
                          di->rodata_svma + di->rodata_size - 1);
@@ -1811,7 +1811,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = svma + rx->bias;
+            di->plt_avma = svma + inrx->bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else {
@@ -1872,7 +1872,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          ELF object. */
       if (0 == VG_(strcmp)(name, ".eh_frame")) {
          if (inrx && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
-            di->ehframe_avma[di->n_ehframe] = svma + rx->bias;
+            di->ehframe_avma[di->n_ehframe] = svma + inrx->bias;
             di->ehframe_size[di->n_ehframe] = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
                          di->ehframe_avma[di->n_ehframe]);

@@ -1173,19 +1173,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* Handle misc other ops. */
 
       if (e->Iex.Binop.op == Iop_Max32U) {
-         /* This generates a truly rotten piece of code.  Just as well
-            it doesn't happen very often. */
-         HReg src1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg src1L = newVRegI(env);
-         HReg src2  = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         HReg src2L = newVRegI(env);
-         HReg dst   = newVRegI(env);
-         addInstr(env, mk_iMOVsd_RR(src1,dst));
-         addInstr(env, mk_iMOVsd_RR(src1,src1L));
-         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, src1L));
-         addInstr(env, mk_iMOVsd_RR(src2,src2L));
-         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, src2L));
-         addInstr(env, AMD64Instr_Alu64R(Aalu_CMP, AMD64RMI_Reg(src2L), src1L));
+         HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg dst  = newVRegI(env);
+         HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(src1, dst));
+         addInstr(env, AMD64Instr_Alu32R(Aalu_CMP, AMD64RMI_Reg(src2), dst));
          addInstr(env, AMD64Instr_CMov64(Acc_B, AMD64RM_Reg(src2), dst));
          return dst;
       }
@@ -1422,6 +1414,36 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
       }
 
+      /* 32Uto64( Add32/Sub32/And32/Or32/Xor32(expr32, expr32) )
+         Use 32 bit arithmetic and let the default zero-extend rule
+         do the 32Uto64 for free. */
+      if (e->Iex.Unop.op == Iop_32Uto64 && e->Iex.Unop.arg->tag == Iex_Binop) {
+         IROp    opi  = e->Iex.Unop.arg->Iex.Binop.op; /* inner op */
+         IRExpr* argL = e->Iex.Unop.arg->Iex.Binop.arg1;
+         IRExpr* argR = e->Iex.Unop.arg->Iex.Binop.arg2;
+         AMD64AluOp aluOp = Aalu_INVALID;
+         switch (opi) {
+            case Iop_Add32: aluOp = Aalu_ADD; break;
+            case Iop_Sub32: aluOp = Aalu_SUB; break;
+            case Iop_And32: aluOp = Aalu_AND; break;
+            case Iop_Or32:  aluOp = Aalu_OR;  break;
+            case Iop_Xor32: aluOp = Aalu_XOR; break;
+            default: break;
+         }
+         if (aluOp != Aalu_INVALID) {
+            /* For commutative ops we assume any literal values are on
+               the second operand. */
+            HReg dst      = newVRegI(env);
+            HReg reg      = iselIntExpr_R(env, argL);
+            AMD64RMI* rmi = iselIntExpr_RMI(env, argR);
+            addInstr(env, mk_iMOVsd_RR(reg,dst));
+            addInstr(env, AMD64Instr_Alu32R(aluOp, rmi, dst));
+            return dst;
+         }
+         /* just fall through to normal handling for Iop_32Uto64 */
+      }
+
+      /* Fallback cases */
       switch (e->Iex.Unop.op) {
          case Iop_32Uto64:
          case Iop_32Sto64: {
@@ -2176,10 +2198,8 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop 
        && e->Iex.Unop.op == Iop_CmpNEZ32) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Unop.arg);
-      HReg      tmp  = newVRegI(env);
       AMD64RMI* rmi2 = AMD64RMI_Imm(0);
-      addInstr(env, AMD64Instr_MovxLQ(False, r1, tmp));
-      addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,rmi2,tmp));
+      addInstr(env, AMD64Instr_Alu32R(Aalu_CMP,rmi2,r1));
       return Acc_NZ;
    }
 
@@ -2249,25 +2269,6 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   /* CmpEQ32 / CmpNE32 */
-   if (e->tag == Iex_Binop 
-       && (e->Iex.Binop.op == Iop_CmpEQ32
-           || e->Iex.Binop.op == Iop_CmpNE32
-           || e->Iex.Binop.op == Iop_CasCmpEQ32
-           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
-      HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-      HReg      r    = newVRegI(env);
-      addInstr(env, mk_iMOVsd_RR(r1,r));
-      addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
-      addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, r));
-      switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ32: case Iop_CasCmpEQ32: return Acc_Z;
-         case Iop_CmpNE32: case Iop_CasCmpNE32: return Acc_NZ;
-         default: vpanic("iselCondCode(amd64): CmpXX32");
-      }
-   }
-
    /* CmpNE64(ccall, 64-bit constant) (--smc-check=all optimisation).
       Saves a "movq %rax, %tmp" compared to the default route. */
    if (e->tag == Iex_Binop 
@@ -2309,6 +2310,30 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 	 case Iop_CmpLE64S: return Acc_LE;
          case Iop_CmpLE64U: return Acc_BE;
          default: vpanic("iselCondCode(amd64): CmpXX64");
+      }
+   }
+
+   /* Cmp*32*(x,y) */
+   if (e->tag == Iex_Binop 
+       && (e->Iex.Binop.op == Iop_CmpEQ32
+           || e->Iex.Binop.op == Iop_CmpNE32
+           || e->Iex.Binop.op == Iop_CmpLT32S
+           || e->Iex.Binop.op == Iop_CmpLT32U
+           || e->Iex.Binop.op == Iop_CmpLE32S
+           || e->Iex.Binop.op == Iop_CmpLE32U
+           || e->Iex.Binop.op == Iop_CasCmpEQ32
+           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
+      HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+      addInstr(env, AMD64Instr_Alu32R(Aalu_CMP,rmi2,r1));
+      switch (e->Iex.Binop.op) {
+         case Iop_CmpEQ32: case Iop_CasCmpEQ32: return Acc_Z;
+         case Iop_CmpNE32: case Iop_CasCmpNE32: return Acc_NZ;
+	 case Iop_CmpLT32S: return Acc_L;
+	 case Iop_CmpLT32U: return Acc_B;
+	 case Iop_CmpLE32S: return Acc_LE;
+         case Iop_CmpLE32U: return Acc_BE;
+         default: vpanic("iselCondCode(amd64): CmpXX32");
       }
    }
 

@@ -314,13 +314,16 @@ AMD64RMI* AMD64RMI_Mem ( AMD64AMode* am ) {
    return op;
 }
 
-void ppAMD64RMI ( AMD64RMI* op ) {
+static void ppAMD64RMI_wrk ( AMD64RMI* op, Bool lo32 ) {
    switch (op->tag) {
       case Armi_Imm: 
          vex_printf("$0x%x", op->Armi.Imm.imm32);
          return;
-      case Armi_Reg: 
-         ppHRegAMD64(op->Armi.Reg.reg);
+      case Armi_Reg:
+         if (lo32)
+            ppHRegAMD64_lo32(op->Armi.Reg.reg);
+         else
+            ppHRegAMD64(op->Armi.Reg.reg);
          return;
       case Armi_Mem: 
          ppAMD64AMode(op->Armi.Mem.am);
@@ -328,6 +331,12 @@ void ppAMD64RMI ( AMD64RMI* op ) {
      default: 
          vpanic("ppAMD64RMI");
    }
+}
+void ppAMD64RMI ( AMD64RMI* op ) {
+   ppAMD64RMI_wrk(op, False/*!lo32*/);
+}
+void ppAMD64RMI_lo32 ( AMD64RMI* op ) {
+   ppAMD64RMI_wrk(op, True/*lo32*/);
 }
 
 /* An AMD64RMI can only be used in a "read" context (what would it mean
@@ -677,6 +686,19 @@ AMD64Instr* AMD64Instr_Lea64 ( AMD64AMode* am, HReg dst ) {
    i->tag             = Ain_Lea64;
    i->Ain.Lea64.am    = am;
    i->Ain.Lea64.dst   = dst;
+   return i;
+}
+AMD64Instr* AMD64Instr_Alu32R ( AMD64AluOp op, AMD64RMI* src, HReg dst ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_Alu32R;
+   i->Ain.Alu32R.op  = op;
+   i->Ain.Alu32R.src = src;
+   i->Ain.Alu32R.dst = dst;
+   switch (op) {
+      case Aalu_ADD: case Aalu_SUB: case Aalu_CMP:
+      case Aalu_AND: case Aalu_OR:  case Aalu_XOR: break;
+      default: vassert(0);
+   }
    return i;
 }
 AMD64Instr* AMD64Instr_MulL ( Bool syned, AMD64RM* src ) {
@@ -1083,6 +1105,12 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          vex_printf(",");
          ppHRegAMD64(i->Ain.Lea64.dst);
          return;
+      case Ain_Alu32R:
+         vex_printf("%sl ", showAMD64AluOp(i->Ain.Alu32R.op));
+         ppAMD64RMI_lo32(i->Ain.Alu32R.src);
+         vex_printf(",");
+         ppHRegAMD64_lo32(i->Ain.Alu32R.dst);
+         return;
       case Ain_MulL:
          vex_printf("%cmulq ", i->Ain.MulL.syned ? 's' : 'u');
          ppAMD64RM(i->Ain.MulL.src);
@@ -1423,6 +1451,15 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          addRegUsage_AMD64AMode(u, i->Ain.Lea64.am);
          addHRegUse(u, HRmWrite, i->Ain.Lea64.dst);
          return;
+      case Ain_Alu32R:
+         vassert(i->Ain.Alu32R.op != Aalu_MOV);
+         addRegUsage_AMD64RMI(u, i->Ain.Alu32R.src);
+         if (i->Ain.Alu32R.op == Aalu_CMP) { 
+            addHRegUse(u, HRmRead, i->Ain.Alu32R.dst);
+            return;
+         }
+         addHRegUse(u, HRmModify, i->Ain.Alu32R.dst);
+         return;
       case Ain_MulL:
          addRegUsage_AMD64RM(u, i->Ain.MulL.src, HRmRead);
          addHRegUse(u, HRmModify, hregAMD64_RAX());
@@ -1718,6 +1755,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
       case Ain_Lea64:
          mapRegs_AMD64AMode(m, i->Ain.Lea64.am);
          mapReg(m, &i->Ain.Lea64.dst);
+         return;
+      case Ain_Alu32R:
+         mapRegs_AMD64RMI(m, i->Ain.Alu32R.src);
+         mapReg(m, &i->Ain.Alu32R.dst);
          return;
       case Ain_MulL:
          mapRegs_AMD64RM(m, i->Ain.MulL.src);
@@ -2585,6 +2626,69 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       *p++ = 0x8D;
       p = doAMode_M(p, i->Ain.Lea64.dst, i->Ain.Lea64.am);
       goto done;
+
+   case Ain_Alu32R:
+      /* ADD/SUB/AND/OR/XOR/CMP */
+      opc = opc_rr = subopc_imm = opc_imma = 0;
+      switch (i->Ain.Alu32R.op) {
+         case Aalu_ADD: opc = 0x03; opc_rr = 0x01; 
+                        subopc_imm = 0; opc_imma = 0x05; break;
+         case Aalu_SUB: opc = 0x2B; opc_rr = 0x29; 
+                        subopc_imm = 5; opc_imma = 0x2D; break;
+         case Aalu_AND: opc = 0x23; opc_rr = 0x21; 
+                        subopc_imm = 4; opc_imma = 0x25; break;
+         case Aalu_XOR: opc = 0x33; opc_rr = 0x31; 
+                        subopc_imm = 6; opc_imma = 0x35; break;
+         case Aalu_OR:  opc = 0x0B; opc_rr = 0x09; 
+                        subopc_imm = 1; opc_imma = 0x0D; break;
+         case Aalu_CMP: opc = 0x3B; opc_rr = 0x39; 
+                        subopc_imm = 7; opc_imma = 0x3D; break;
+         default: goto bad;
+      }
+      switch (i->Ain.Alu32R.src->tag) {
+         case Armi_Imm:
+            if (i->Ain.Alu32R.dst == hregAMD64_RAX()
+                && !fits8bits(i->Ain.Alu32R.src->Armi.Imm.imm32)) {
+               goto bad; /* FIXME: awaiting test case */
+               *p++ = toUChar(opc_imma);
+               p = emit32(p, i->Ain.Alu32R.src->Armi.Imm.imm32);
+            } else
+            if (fits8bits(i->Ain.Alu32R.src->Armi.Imm.imm32)) {
+               rex  = clearWBit( rexAMode_R( fake(0), i->Ain.Alu32R.dst ) );
+               if (rex != 0x40) *p++ = rex;
+               *p++ = 0x83; 
+               p    = doAMode_R(p, fake(subopc_imm), i->Ain.Alu32R.dst);
+               *p++ = toUChar(0xFF & i->Ain.Alu32R.src->Armi.Imm.imm32);
+            } else {
+               rex  = clearWBit( rexAMode_R( fake(0), i->Ain.Alu32R.dst) );
+               if (rex != 0x40) *p++ = rex;
+               *p++ = 0x81; 
+               p    = doAMode_R(p, fake(subopc_imm), i->Ain.Alu32R.dst);
+               p    = emit32(p, i->Ain.Alu32R.src->Armi.Imm.imm32);
+            }
+            goto done;
+         case Armi_Reg:
+            rex  = clearWBit( 
+                   rexAMode_R( i->Ain.Alu32R.src->Armi.Reg.reg,
+                               i->Ain.Alu32R.dst) );
+            if (rex != 0x40) *p++ = rex;
+            *p++ = toUChar(opc_rr);
+            p = doAMode_R(p, i->Ain.Alu32R.src->Armi.Reg.reg,
+                             i->Ain.Alu32R.dst);
+            goto done;
+         case Armi_Mem:
+            rex  = clearWBit(
+                   rexAMode_M( i->Ain.Alu32R.dst,
+                               i->Ain.Alu32R.src->Armi.Mem.am) );
+            if (rex != 0x40) *p++ = rex;
+            *p++ = toUChar(opc);
+            p = doAMode_M(p, i->Ain.Alu32R.dst,
+                             i->Ain.Alu32R.src->Armi.Mem.am);
+            goto done;
+         default: 
+            goto bad;
+      }
+      break;
 
    case Ain_MulL:
       subopc = i->Ain.MulL.syned ? 5 : 4;

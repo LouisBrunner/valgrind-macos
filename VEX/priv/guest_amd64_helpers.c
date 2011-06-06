@@ -1030,6 +1030,15 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            mkU32(0)));
       }
 
+      if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondB)) {
+         /* long sub/cmp, then B (unsigned less than)
+            --> test dst <u src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT32U,
+                           unop(Iop_64to32, cc_dep1),
+                           unop(Iop_64to32, cc_dep2)));
+      }
+
       /*---------------- SUBW ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondZ)) {
@@ -1072,6 +1081,15 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                      binop(Iop_CmpNE8, 
                            unop(Iop_64to8,cc_dep1),
                            unop(Iop_64to8,cc_dep2)));
+      }
+
+      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondBE)) {
+         /* byte sub/cmp, then BE (unsigned less than or equal)
+            --> test dst <=u src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLE64U, 
+                           binop(Iop_And64, cc_dep1, mkU64(0xFF)),
+                           binop(Iop_And64, cc_dep2, mkU64(0xFF))));
       }
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondS)
@@ -1131,7 +1149,6 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            unop(Iop_64to32, cc_dep1), 
                            mkU32(0)));
       }
-
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondNZ)) {
          /* long and/or/xor, then NZ --> test dst!=0 */
          return unop(Iop_1Uto64,
@@ -1151,6 +1168,21 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                      binop(Iop_CmpLE32S,
                            unop(Iop_64to32, cc_dep1), 
                            mkU32(0)));
+      }
+
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondS)) {
+         /* long and/or/xor, then S --> (ULong)result[31] */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64, cc_dep1, mkU8(31)),
+                      mkU64(1));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondNS)) {
+         /* long and/or/xor, then S --> (ULong) ~ result[31] */
+         return binop(Iop_Xor64,
+                binop(Iop_And64,
+                      binop(Iop_Shr64, cc_dep1, mkU8(31)),
+                      mkU64(1)),
+                mkU64(1));
       }
 
       /*---------------- LOGICB ----------------*/

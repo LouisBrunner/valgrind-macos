@@ -160,6 +160,21 @@ void print_sched_event ( ThreadId tid, Char* what )
    VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s\n", tid, what );
 }
 
+/* For showing SB counts, if the user asks to see them. */
+#define SHOW_SBCOUNT_EVERY (20ULL * 1000 * 1000)
+static ULong bbs_done_lastcheck = 0;
+
+static
+void maybe_show_sb_counts ( void )
+{
+   Long delta = bbs_done - bbs_done_lastcheck;
+   vg_assert(delta >= 0);
+   if (UNLIKELY(delta >= SHOW_SBCOUNT_EVERY)) {
+      VG_(umsg)("%'lld superblocks executed\n", bbs_done);
+      bbs_done_lastcheck = bbs_done;
+   }
+}
+
 static
 HChar* name_of_sched_event ( UInt event )
 {
@@ -1347,6 +1362,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 break;
 
       } /* switch (trc) */
+
+      if (0)
+         maybe_show_sb_counts();
    }
 
    if (VG_(clo_trace_sched))

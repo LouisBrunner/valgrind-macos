@@ -2179,8 +2179,15 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                           shdr_strtab_dimg + shdr->sh_name)) { \
                      vg_assert(di->sec##_size == shdr->sh_size); \
                      vg_assert(di->sec##_avma +  shdr->sh_addr + seg##_dbias); \
+                     /* Assume we have a correct value for the main */ \
+                     /* object's bias.  Use that to derive the debuginfo */ \
+                     /* object's bias, by adding the difference in SVMAs */ \
+                     /* for the corresponding sections in the two files. */ \
+                     /* That should take care of all prelinking effects. */ \
                      di->sec##_debug_svma = shdr->sh_addr; \
-                     di->sec##_debug_bias = seg##_dbias; \
+                     di->sec##_debug_bias \
+                        = di->sec##_bias + \
+                          di->sec##_svma - di->sec##_debug_svma; \
                      TRACE_SYMTAB("acquiring ." #sec " debug svma = %#lx .. %#lx\n", \
                                   di->sec##_debug_svma, \
                                   di->sec##_debug_svma + di->sec##_size - 1); \

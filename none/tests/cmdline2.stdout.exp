@@ -57,8 +57,10 @@ usage: valgrind [options] prog-and-args
                               part of the path after 'string'.  Allows removal
                               of path prefixes.  Use this flag multiple times
                               to specify a set of prefixes to remove.
-    --smc-check=none|stack|all  checks for self-modifying code: none,
-                              only for code found in stacks, or all [stack]
+    --smc-check=none|stack|all|all-non-file [stack]
+                              checks for self-modifying code: none, only for
+                              code found in stacks, for all code, or for all
+                              code except that from file-backed mappings
     --read-var-info=yes|no    read debug info on stack and global variables
                               and use it to print better error messages in
                               tools that make use of it (Memcheck, Helgrind,

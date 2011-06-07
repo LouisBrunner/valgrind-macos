@@ -1444,7 +1444,7 @@ need to use these.</para>
 
   <varlistentry id="opt.smc-check" xreflabel="--smc-check">
     <term>
-      <option><![CDATA[--smc-check=<none|stack|all> [default: stack] ]]></option>
+      <option><![CDATA[--smc-check=<none|stack|all|all-non-file> [default: stack] ]]></option>
     </term>
     <listitem>
       <para>This option controls Valgrind's detection of self-modifying
@@ -1453,24 +1453,41 @@ need to use these.</para>
       continue to execute the translations it made for the old code.  This
       will likely lead to incorrect behaviour and/or crashes.</para>
       
-      <para>Valgrind has three levels of self-modifying code detection:
+      <para>Valgrind has four levels of self-modifying code detection:
       no detection, detect self-modifying code on the stack (which is used by
-      GCC to implement nested functions), or detect self-modifying code
-      everywhere.  Note that the default option will catch the vast majority
+      GCC to implement nested functions), detect self-modifying code
+      everywhere, and detect self-modifying code everywhere except in
+      file-backed mappings.
+
+      Note that the default option will catch the vast majority
       of cases.  The main case it will not catch is programs such as JIT
       compilers that dynamically generate code <emphasis>and</emphasis>
       subsequently overwrite part or all of it.  Running with
-      <varname>all</varname> will slow Valgrind down noticeably.  Running with
+      <varname>all</varname> will slow Valgrind down noticeably.
+      Running with
       <varname>none</varname> will rarely speed things up, since very little
       code gets put on the stack for most programs.  The
-      <function>VALGRIND_DISCARD_TRANSLATIONS</function> client request is
-      an alternative to <option>--smc-check=all</option> that requires more
-      effort but is much faster.
+      <function>VALGRIND_DISCARD_TRANSLATIONS</function> client
+      request is an alternative to <option>--smc-check=all</option>
+      that requires more programmer effort but allows Valgrind to run
+      your program faster, by telling it precisely when translations
+      need to be re-made.
       <!-- commented out because it causes broken links in the man page
       ;  see <xref
       linkend="manual-core-adv.clientreq"/> for more details.
       -->
       </para>
+
+      <para><option>--smc-check=all-non-file</option> provides a
+      cheaper but more limited version
+      of <option>--smc-check=all</option>.  It adds checks to any
+      translations that do not originate from file-backed memory
+      mappings.  Typical applications that generate code, for example
+      JITs in web browsers, generate code into anonymous mmaped areas,
+      whereas the "fixed" code of the browser always lives in
+      file-backed mappings.  <option>--smc-check=all-non-file</option>
+      takes advantage of this observation, limiting the overhead of
+      checking to code which is likely to be JIT generated.</para>
 
       <para>Some architectures (including ppc32, ppc64 and ARM) require
       programs which create code at runtime to flush the instruction
@@ -1478,8 +1495,8 @@ need to use these.</para>
       observes and honours such instructions.  Hence, on ppc32/Linux,
       ppc64/Linux and ARM/Linux, Valgrind always provides complete, transparent
       support for self-modifying code.  It is only on platforms such as
-      x86/Linux, AMD64/Linux and x86/Darwin that you need to use this
-      option.</para>
+      x86/Linux, AMD64/Linux, x86/Darwin and AMD64/Darwin 
+      that you need to use this option.</para>
     </listitem>
   </varlistentry>
 

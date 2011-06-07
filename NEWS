@@ -4,6 +4,7 @@ Release 3.7.0 (???)
 - Added the --mod-funcname option to cg_diff.
 - Further reduction in overheads caused by --smc-check=all, especially
   on 64-bit targets.
+- new variant --smc-check=all-non-file
 
 * IBM z/Architecture (s390x) running Linux
   Valgrind can analyse 64-bit programs running on z/Architecture.

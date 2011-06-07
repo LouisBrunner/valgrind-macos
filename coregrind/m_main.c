@@ -171,8 +171,10 @@ static void usage_NORETURN ( Bool debug_help )
 "                              part of the path after 'string'.  Allows removal\n"
 "                              of path prefixes.  Use this flag multiple times\n"
 "                              to specify a set of prefixes to remove.\n"
-"    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
-"                              only for code found in stacks, or all [stack]\n"
+"    --smc-check=none|stack|all|all-non-file [stack]\n"
+"                              checks for self-modifying code: none, only for\n"
+"                              code found in stacks, for all code, or for all\n"
+"                              code except that from file-backed mappings\n"
 "    --read-var-info=yes|no    read debug info on stack and global variables\n"
 "                              and use it to print better error messages in\n"
 "                              tools that make use of it (Memcheck, Helgrind,\n"
@@ -519,6 +521,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                                     Vg_SmcStack);
       else if VG_XACT_CLO(arg, "--smc-check=all",   VG_(clo_smc_check),
                                                     Vg_SmcAll);
+      else if VG_XACT_CLO(arg, "--smc-check=all-non-file",
+                                                    VG_(clo_smc_check),
+                                                    Vg_SmcAllNonFile);
 
       else if VG_STR_CLO (arg, "--kernel-variant",  VG_(clo_kernel_variant)) {}
 

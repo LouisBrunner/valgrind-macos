@@ -228,7 +228,9 @@ typedef
       Vg_SmcNone,  // never generate self-checking translations
       Vg_SmcStack, // generate s-c-t's for code found in stacks
                    // (this is the default)
-      Vg_SmcAll    // make all translations self-checking.
+      Vg_SmcAll,   // make all translations self-checking.
+      Vg_SmcAllNonFile // make all translations derived from
+                   // non-file-backed memory self checking
    } 
    VgSmc;
 

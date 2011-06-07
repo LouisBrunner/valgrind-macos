@@ -729,41 +729,87 @@ static Bool translations_allowable_from_seg ( NSegment const* seg )
 }
 
 
-/* Is a self-check required for a translation of a guest address
-   inside segment SEG when requested by thread TID ? */
+/* Produce a bitmask stating which of the supplied extents needs a
+   self-check.  See documentation of
+   VexTranslateArgs::needs_self_check for more details about the
+   return convention. */
 
-static Bool self_check_required ( NSegment const* seg, ThreadId tid )
+static UInt needs_self_check ( void* closureV,
+                               VexGuestExtents* vge )
 {
-#if defined(VGO_darwin)
-   // GrP fixme hack - dyld i386 IMPORT gets rewritten
-   // to really do this correctly, we'd need to flush the 
-   // translation cache whenever a segment became +WX
-   if (seg->hasX  && seg->hasW) {
-      return True;
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   UInt i, bitset;
+
+   vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
+   bitset = 0;
+
+   for (i = 0; i < vge->n_used; i++) {
+      Bool  check = False;
+      Addr  addr  = (Addr)vge->base[i];
+      SizeT len   = (SizeT)vge->len[i];
+      NSegment const* segA = NULL;
+
+#     if defined(VGO_darwin)
+      // GrP fixme hack - dyld i386 IMPORT gets rewritten.
+      // To really do this correctly, we'd need to flush the 
+      // translation cache whenever a segment became +WX.
+      segA = VG_(am_find_nsegment)(addr);
+      if (segA && segA->hasX && segA->hasW)
+         check = True;
+#     endif
+
+      if (!check) {
+         switch (VG_(clo_smc_check)) {
+            case Vg_SmcNone:
+               /* never check (except as per Darwin hack above) */
+               break;
+            case Vg_SmcAll: 
+               /* always check */
+               check = True;
+               break;
+            case Vg_SmcStack: {
+               /* check if the address is in the same segment as this
+                  thread's stack pointer */
+               Addr sp = VG_(get_SP)(closure->tid);
+               if (!segA) {
+                  segA = VG_(am_find_nsegment)(addr);
+               }
+               NSegment const* segSP = VG_(am_find_nsegment)(sp);
+               if (segA && segSP && segA == segSP)
+                  check = True;
+               break;
+            }
+            case Vg_SmcAllNonFile: {
+               /* check if any part of the extent is not in a
+                  file-mapped segment */
+               if (!segA) {
+                  segA = VG_(am_find_nsegment)(addr);
+               }
+               if (segA && segA->kind == SkFileC && segA->start <= addr
+                   && (len == 0 || addr + len <= segA->end + 1)) {
+                  /* in a file-mapped segment; skip the check */
+               } else {
+                  check = True;
+               }
+               break;
+            }
+            default:
+               vg_assert(0);
+         }
+      }
+
+      if (check)
+         bitset |= (1 << i);
    }
-#endif
-   switch (VG_(clo_smc_check)) {
-      case Vg_SmcNone:  return False;
-      case Vg_SmcAll:   return True;
-      case Vg_SmcStack: 
-         return seg 
-                ? (seg->start <= VG_(get_SP)(tid)
-                   && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
-                : False;
-         break;
-      default: 
-         vg_assert2(0, "unknown VG_(clo_smc_check) value");
-   }
+
+   return bitset;
 }
 
 
 /* This is a callback passed to LibVEX_Translate.  It stops Vex from
    chasing into function entry points that we wish to redirect.
    Chasing across them obviously defeats the redirect mechanism, with
-   bad effects for Memcheck, Addrcheck, and possibly others.
-
-   Also, we must stop Vex chasing into blocks for which we might want
-   to self checking.
+   bad effects for Memcheck, Helgrind, DRD, Massif, and possibly others.
 */
 static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 {
@@ -1284,7 +1330,6 @@ Bool VG_(translate) ( ThreadId tid,
    Addr64             addr;
    T_Kind             kind;
    Int                tmpbuf_used, verbosity, i;
-   Bool               do_self_check;
    Bool (*preamble_fn)(void*,IRSB*);
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
@@ -1391,9 +1436,6 @@ Bool VG_(translate) ( ThreadId tid,
       }
       return False;
    }
-
-   /* Do we want a self-checking translation? */
-   do_self_check = self_check_required( seg, tid );
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;
@@ -1509,7 +1551,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.finaltidy        = VG_(needs).final_IR_tidy_pass
                              ? VG_(tdict).tool_final_IR_tidy_pass
                              : NULL;
-   vta.do_self_check    = do_self_check;
+   vta.needs_self_check = needs_self_check;
    vta.traceflags       = verbosity;
 
    /* Set up the dispatch-return info.  For archs without a link
@@ -1557,7 +1599,8 @@ Bool VG_(translate) ( ThreadId tid,
    /* Sheesh.  Finally, actually _do_ the translation! */
    tres = LibVEX_Translate ( &vta );
 
-   vg_assert(tres == VexTransOK);
+   vg_assert(tres.status == VexTransOK);
+   vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 
@@ -1594,7 +1637,7 @@ Bool VG_(translate) ( ThreadId tid,
                                 nraddr,
                                 (Addr)(&tmpbuf[0]), 
                                 tmpbuf_used,
-                                do_self_check );
+                                tres.n_sc_extents > 0 );
       } else {
           VG_(add_to_unredir_transtab)( &vge,
                                         nraddr,

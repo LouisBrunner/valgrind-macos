@@ -578,25 +578,25 @@ Syscall param sigaction(act->sa_handler) points to unaddressable byte(s)
    ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 Syscall param sigaction(act->sa_mask) points to unaddressable byte(s)
    ...
  Address 0x........ is 4 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 Syscall param sigaction(act->sa_flags) points to unaddressable byte(s)
    ...
  Address 0x........ is 8 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 Syscall param sigaction(oldact) points to unaddressable byte(s)
    ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 -----------------------------------------------------
  68:       __NR_sgetmask n/a
@@ -1228,13 +1228,13 @@ Syscall param sigprocmask(set) points to unaddressable byte(s)
    ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 Syscall param sigprocmask(oldset) points to unaddressable byte(s)
    ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 -----------------------------------------------------
 127:  __NR_create_module ni
@@ -1747,7 +1747,7 @@ Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
    ...
  Address 0x........ is 4 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 Syscall param rt_sigaction(act->sa_mask) points to unaddressable byte(s)
    ...
@@ -1757,13 +1757,13 @@ Syscall param rt_sigaction(act->sa_flags) points to unaddressable byte(s)
    ...
  Address 0x........ is 8 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 Syscall param rt_sigaction(oldact) points to unaddressable byte(s)
    ...
  Address 0x........ is 4 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:28)
+   by 0x........: main (scalar.c:30)
 
 -----------------------------------------------------
 175: __NR_rt_sigprocmask 4s 2m

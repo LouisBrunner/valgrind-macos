@@ -1146,7 +1146,7 @@ static Int find_nsegment_idx_WRK ( Addr a )
 
 inline static Int find_nsegment_idx ( Addr a )
 {
-#  define N_CACHE 63
+#  define N_CACHE 131 /*prime*/
    static Addr cache_pageno[N_CACHE];
    static Int  cache_segidx[N_CACHE];
    static Bool cache_inited = False;

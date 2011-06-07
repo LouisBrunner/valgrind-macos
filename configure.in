@@ -779,6 +779,13 @@ case "${GLIBC_VERSION}" in
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
+     2.14)
+	AC_MSG_RESULT(2.14 family)
+	AC_DEFINE([GLIBC_2_14], 1, [Define to 1 if you're using glibc 2.14.x])
+	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+	;;
      aix5)
 	AC_MSG_RESULT(AIX 5.1 or 5.2 or 5.3)
 	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1 or 5.2 or 5.3])
@@ -792,7 +799,7 @@ case "${GLIBC_VERSION}" in
 
      *)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.13])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.14])
 	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 GLIBC_VERSION])
 	AC_MSG_ERROR([or Darwin libc])
 	;;

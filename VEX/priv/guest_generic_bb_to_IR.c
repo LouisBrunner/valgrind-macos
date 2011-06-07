@@ -112,8 +112,16 @@ static Bool const_False ( void* callback_opaque, Addr64 a ) {
    dis_instr_fn is the arch-specific fn to disassemble on function; it
    is this that does the real work.
 
-   do_self_check indicates that the caller needs a self-checking
-   translation.
+   needs_self_check is a callback used to ask the caller which of the
+   extents, if any, a self check is required for.  The returned value
+   is a bitmask with a 1 in position i indicating that the i'th extent
+   needs a check.  Since there can be at most 3 extents, the returned
+   values must be between 0 and 7.
+
+   The number of extents which did get a self check (0 to 3) is put in
+   n_sc_extents.  The caller already knows this because it told us
+   which extents to add checks for, via the needs_self_check callback,
+   but we ship the number back out here for the caller's convenience.
 
    preamble_function is a callback which allows the caller to add
    its own IR preamble (following the self-check, if any).  May be
@@ -132,27 +140,31 @@ static Bool const_False ( void* callback_opaque, Addr64 a ) {
    (In fact it's a VgInstrumentClosure.)
 */
 
-IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
-                 /*IN*/ void*            callback_opaque,
-                 /*IN*/ DisOneInstrFn    dis_instr_fn,
-                 /*IN*/ UChar*           guest_code,
-                 /*IN*/ Addr64           guest_IP_bbstart,
-                 /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
-                 /*IN*/ Bool             host_bigendian,
-                 /*IN*/ VexArch          arch_guest,
-                 /*IN*/ VexArchInfo*     archinfo_guest,
-                 /*IN*/ VexAbiInfo*      abiinfo_both,
-                 /*IN*/ IRType           guest_word_type,
-                 /*IN*/ Bool             do_self_check,
-                 /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
-                 /*IN*/ Int              offB_TISTART,
-                 /*IN*/ Int              offB_TILEN )
+IRSB* bb_to_IR ( 
+         /*OUT*/VexGuestExtents* vge,
+         /*OUT*/UInt*            n_sc_extents,
+         /*IN*/ void*            callback_opaque,
+         /*IN*/ DisOneInstrFn    dis_instr_fn,
+         /*IN*/ UChar*           guest_code,
+         /*IN*/ Addr64           guest_IP_bbstart,
+         /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
+         /*IN*/ Bool             host_bigendian,
+         /*IN*/ VexArch          arch_guest,
+         /*IN*/ VexArchInfo*     archinfo_guest,
+         /*IN*/ VexAbiInfo*      abiinfo_both,
+         /*IN*/ IRType           guest_word_type,
+         /*IN*/ UInt             (*needs_self_check)(void*,VexGuestExtents*),
+         /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
+         /*IN*/ Int              offB_TISTART,
+         /*IN*/ Int              offB_TILEN
+      )
 {
    Long       delta;
    Int        i, n_instrs, first_stmt_idx;
    Bool       resteerOK, need_to_put_IP, debug_print;
    DisResult  dres;
    IRStmt*    imark;
+   IRStmt*    nop;
    static Int n_resteers = 0;
    Int        d_resteers = 0;
    Int        selfcheck_idx = 0;
@@ -164,11 +176,6 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    Bool (*resteerOKfn)(void*,Addr64) = NULL;
 
    debug_print = toBool(vex_traceflags & VEX_TRACE_FE);
-
-   /* Note: for adler32 to work without % operation for the self
-      check, need to limit length of stuff it scans to 5552 bytes.
-      Therefore limiting the max bb len to 100 insns seems generously
-      conservative. */
 
    /* check sanity .. */
    vassert(sizeof(HWord) == sizeof(void*));
@@ -182,6 +189,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    vge->n_used  = 1;
    vge->base[0] = guest_IP_bbstart;
    vge->len[0]  = 0;
+   *n_sc_extents = 0;
 
    /* And a new IR superblock to dump the result into. */
    irsb = emptyIRSB();
@@ -191,24 +199,21 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    delta    = 0;
    n_instrs = 0;
 
-   /* Guest addresses as IRConsts.  Used in the two self-checks
-      generated. */
-   if (do_self_check) {
-      guest_IP_bbstart_IRConst
-         = guest_word_type==Ity_I32 
-              ? IRConst_U32(toUInt(guest_IP_bbstart))
-              : IRConst_U64(guest_IP_bbstart);
-   }
+   /* Guest addresses as IRConsts.  Used in self-checks to specify the
+      restart-after-discard point. */
+   guest_IP_bbstart_IRConst
+      = guest_word_type==Ity_I32 
+           ? IRConst_U32(toUInt(guest_IP_bbstart))
+           : IRConst_U64(guest_IP_bbstart);
 
-   /* If asked to make a self-checking translation, leave 15 spaces in
-      which to put the check statements (up to 3 extents, and 5 stmts
-      required for each).  We'll fill them in later when we know the
-      extents and checksums of the areas to check. */
-   if (do_self_check) {
-      selfcheck_idx = irsb->stmts_used;
-      for (i = 0; i < 3 * 5; i++)
-         addStmtToIRSB( irsb, IRStmt_NoOp() );
-   }
+   /* Leave 15 spaces in which to put the check statements for a self
+      checking translation (up to 3 extents, and 5 stmts required for
+      each).  We won't know until later the extents and checksums of
+      the areas, if any, that need to be checked. */
+   nop = IRStmt_NoOp();
+   selfcheck_idx = irsb->stmts_used;
+   for (i = 0; i < 3 * 5; i++)
+      addStmtToIRSB( irsb, nop );
 
    /* If the caller supplied a function to add its own preamble, use
       it now. */
@@ -218,7 +223,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
          /* The callback has completed the IR block without any guest
             insns being disassembled into it, so just return it at
             this point, even if a self-check was requested - as there
-            is nothing to self-check.  The five self-check no-ops will
+            is nothing to self-check.  The 15 self-check no-ops will
             still be in place, but they are harmless. */
          return irsb;
       }
@@ -423,7 +428,8 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
   done:
    /* We're done.  The only thing that might need attending to is that
-      a self-checking preamble may need to be created.
+      a self-checking preamble may need to be created.  If so it gets
+      placed in the 15 slots reserved above.
 
       The scheme is to compute a rather crude checksum of the code
       we're making a translation of, and add to the IR a call to a
@@ -432,23 +438,26 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       match.  This is obviously very expensive and considerable
       efforts are made to speed it up:
 
-      * the checksum is computed from all the 32-bit words that
-        overlap the translated code.  That means it could depend on up
-        to 3 bytes before and 3 bytes after which aren't part of the
-        translated area, and so if those change then we'll
-        unnecessarily have to discard and retranslate.  This seems
-        like a pretty remote possibility and it seems as if the
-        benefit of not having to deal with the ends of the range at
-        byte precision far outweigh any possible extra translations
-        needed.
+      * the checksum is computed from all the naturally aligned
+        host-sized words that overlap the translated code.  That means
+        it could depend on up to 7 bytes before and 7 bytes after
+        which aren't part of the translated area, and so if those
+        change then we'll unnecessarily have to discard and
+        retranslate.  This seems like a pretty remote possibility and
+        it seems as if the benefit of not having to deal with the ends
+        of the range at byte precision far outweigh any possible extra
+        translations needed.
 
       * there's a generic routine and 12 specialised cases, which
         handle the cases of 1 through 12-word lengths respectively.
         They seem to cover about 90% of the cases that occur in
         practice.
-   */
-   if (do_self_check) {
 
+      We ask the caller, via needs_self_check, which of the 3 vge
+      extents needs a check, and only generate check code for those
+      that do.
+   */
+   {
       Addr64   base2check;
       UInt     len2check;
       HWord    expectedhW;
@@ -462,12 +471,28 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       UInt     host_word_szB = sizeof(HWord);
       IRType   host_word_type = Ity_INVALID;
 
+      VexGuestExtents vge_tmp = *vge;
+      UInt extents_needing_check
+         = needs_self_check(callback_opaque, &vge_tmp);
+
       if (host_word_szB == 4) host_word_type = Ity_I32;
       if (host_word_szB == 8) host_word_type = Ity_I64;
       vassert(host_word_type != Ity_INVALID);
 
       vassert(vge->n_used >= 1 && vge->n_used <= 3);
+
+      /* Caller shouldn't claim that nonexistent extents need a
+         check. */
+      vassert((extents_needing_check >> vge->n_used) == 0);
+
       for (i = 0; i < vge->n_used; i++) {
+
+         /* Do we need to generate a check for this extent? */
+         if ((extents_needing_check & (1 << i)) == 0)
+            continue;
+
+         /* Tell the caller */
+         (*n_sc_extents)++;
 
          /* the extent we're generating a check for */
          base2check = vge->base[i];
@@ -491,7 +516,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
          vassert(hWs_to_check > 0
                  && hWs_to_check < 1004/*arbitrary*/ / host_word_szB);
 
-         /* vex_printf("%lx %lx  %ld\n", first_w32, last_w32, w32s_to_check); */
+         /* vex_printf("%lx %lx  %ld\n", first_hW, last_hW, hWs_to_check); */
 
          if (host_word_szB == 8) {
             fn_generic =  (VEX_REGPARM(2) HWord(*)(HWord, HWord))
@@ -662,7 +687,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                     failure actually happened in. */
                  guest_IP_bbstart_IRConst
               );
-      }
+      } /* for (i = 0; i < vge->n_used; i++) */
    }
 
    return irsb;

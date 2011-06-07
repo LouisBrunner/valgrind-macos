@@ -84,7 +84,12 @@ IRSB* mc_instrument ( void* closureV,
                       IRType gWordTy, IRType hWordTy );
 #endif
 
-static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) { return False; }
+static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) {
+   return False;
+}
+static UInt needs_self_check ( void* opaque, VexGuestExtents* vge ) {
+   return 0;
+}
 
 int main ( int argc, char** argv )
 {
@@ -210,11 +215,12 @@ int main ( int argc, char** argv )
       vta.instrument1     = mc_instrument;
       vta.instrument2     = NULL;
 #endif
-      vta.do_self_check   = False;
+      vta.needs_self_check  = needs_self_check;
       vta.preamble_function = NULL;
       vta.traceflags      = TEST_FLAGS;
 #if 1 /* x86, amd64 hosts */
-      vta.dispatch        = (void*)0x12345678;
+      vta.dispatch_unassisted = (void*)0x12345678;
+      vta.dispatch_assisted   = (void*)0x12345678;
 #else /* ppc32, ppc64 hosts */
       vta.dispatch        = NULL;
 #endif
@@ -224,9 +230,10 @@ int main ( int argc, char** argv )
       for (i = 0; i < TEST_N_ITERS; i++)
          tres = LibVEX_Translate ( &vta );
 
-      if (tres != VexTransOK)
-         printf("\ntres = %d\n", (Int)tres);
-      assert(tres == VexTransOK);
+      if (tres.status != VexTransOK)
+         printf("\ntres = %d\n", (Int)tres.status);
+      assert(tres.status == VexTransOK);
+      assert(tres.n_sc_extents == 0);
       assert(vge.n_used == 1);
       assert((UInt)(vge.len[0]) == orig_nbytes);
 

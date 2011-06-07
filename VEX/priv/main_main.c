@@ -483,6 +483,11 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vpanic("LibVEX_Translate: unsupported guest insn set");
    }
 
+   /* Set up result struct. */
+   VexTranslateResult res;
+   res.status       = VexTransOK;
+   res.n_sc_extents = 0;
+
    /* yet more sanity checks ... */
    if (vta->arch_guest == vta->arch_host) {
       /* doesn't necessarily have to be true, but if it isn't it means
@@ -499,6 +504,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                    "------------------------\n\n");
 
    irsb = bb_to_IR ( vta->guest_extents,
+                     &res.n_sc_extents,
                      vta->callback_opaque,
                      disInstrFn,
                      vta->guest_bytes, 
@@ -509,7 +515,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                      &vta->archinfo_guest,
                      &vta->abiinfo_both,
                      guest_word_type,
-                     vta->do_self_check,
+                     vta->needs_self_check,
                      vta->preamble_function,
                      offB_TISTART,
                      offB_TILEN );
@@ -520,7 +526,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       /* Access failure. */
       vexSetAllocModeTEMP_and_clear();
       vex_traceflags = 0;
-      return VexTransAccessFail;
+      res.status = VexTransAccessFail; return res;
    }
 
    vassert(vta->guest_extents->n_used >= 1 && vta->guest_extents->n_used <= 3);
@@ -636,7 +642,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    }
 
    /* HACK */
-   if (0) { *(vta->host_bytes_used) = 0; return VexTransOK; }
+   if (0) {
+      *(vta->host_bytes_used) = 0;
+      res.status = VexTransOK; return res;
+   }
    /* end HACK */
 
    if (vex_traceflags & VEX_TRACE_VCODE)
@@ -684,7 +693,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    }
 
    /* HACK */
-   if (0) { *(vta->host_bytes_used) = 0; return VexTransOK; }
+   if (0) { 
+      *(vta->host_bytes_used) = 0;
+      res.status = VexTransOK; return res;
+   }
    /* end HACK */
 
    /* Assemble */
@@ -713,7 +725,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       if (out_used + j > vta->host_bytes_size) {
          vexSetAllocModeTEMP_and_clear();
          vex_traceflags = 0;
-         return VexTransOutputFull;
+         res.status = VexTransOutputFull;
+         return res;
       }
       for (k = 0; k < j; k++) {
          vta->host_bytes[out_used] = insn_bytes[k];
@@ -728,7 +741,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    vexSetAllocModeTEMP_and_clear();
 
    vex_traceflags = 0;
-   return VexTransOK;
+   res.status = VexTransOK;
+   return res;
 }
 
 

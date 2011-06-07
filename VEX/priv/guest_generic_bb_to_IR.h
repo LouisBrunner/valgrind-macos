@@ -158,21 +158,24 @@ typedef
 
 /* See detailed comment in bb_to_IR.c. */
 extern
-IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
-                 /*IN*/ void*            closure_opaque,
-                 /*IN*/ DisOneInstrFn    dis_instr_fn,
-                 /*IN*/ UChar*           guest_code,
-                 /*IN*/ Addr64           guest_IP_bbstart,
-                 /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
-                 /*IN*/ Bool             host_bigendian,
-                 /*IN*/ VexArch          arch_guest,
-                 /*IN*/ VexArchInfo*     archinfo_guest,
-                 /*IN*/ VexAbiInfo*      abiinfo_both,
-                 /*IN*/ IRType           guest_word_type,
-                 /*IN*/ Bool             do_self_check,
-                 /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
-                 /*IN*/ Int              offB_TISTART,
-                 /*IN*/ Int              offB_TILEN );
+IRSB* bb_to_IR ( 
+         /*OUT*/VexGuestExtents* vge,
+         /*OUT*/UInt*            n_sc_extents,
+         /*IN*/ void*            callback_opaque,
+         /*IN*/ DisOneInstrFn    dis_instr_fn,
+         /*IN*/ UChar*           guest_code,
+         /*IN*/ Addr64           guest_IP_bbstart,
+         /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
+         /*IN*/ Bool             host_bigendian,
+         /*IN*/ VexArch          arch_guest,
+         /*IN*/ VexArchInfo*     archinfo_guest,
+         /*IN*/ VexAbiInfo*      abiinfo_both,
+         /*IN*/ IRType           guest_word_type,
+         /*IN*/ UInt             (*needs_self_check)(void*,VexGuestExtents*),
+         /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
+         /*IN*/ Int              offB_TISTART,
+         /*IN*/ Int              offB_TILEN
+      );
 
 
 #endif /* ndef __VEX_GUEST_GENERIC_BB_TO_IR_H */

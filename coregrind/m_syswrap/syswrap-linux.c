@@ -2631,9 +2631,9 @@ PRE(sys_perf_event_open)
                  unsigned long, flags);
    attr = (struct vki_perf_event_attr *)ARG1;
    PRE_MEM_READ( "perf_event_open(attr->size)",
-                 &attr->size, sizeof(attr->size) );
+                 (Addr)&attr->size, sizeof(attr->size) );
    PRE_MEM_READ( "perf_event_open(attr)",
-                 attr, attr->size );
+                 (Addr)attr, attr->size );
 }
 
 POST(sys_perf_event_open)

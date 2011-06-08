@@ -1500,7 +1500,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev, sys_pwritev),                                  // 329
 
 // ?????(__NR_rt_tgsigqueueinfo, ),
-   LINXY(__NR_perf_event_open, sys_perf_counter_open),                // 331
+   LINXY(__NR_perf_event_open, sys_perf_event_open),                  // 331
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

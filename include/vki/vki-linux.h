@@ -931,6 +931,11 @@ struct vki_rlimit {
 	unsigned long	rlim_max;
 };
 
+struct vki_rlimit64 {
+	__vki_u64 rlim_cur;
+	__vki_u64 rlim_max;
+};
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/elfcore.h
 //----------------------------------------------------------------------

@@ -101,6 +101,8 @@ DECL_TEMPLATE(linux, sys_eventfd2);
 
 DECL_TEMPLATE(linux, sys_fallocate);
 
+DECL_TEMPLATE(linux, sys_prlimit64);
+
 DECL_TEMPLATE(linux, sys_gettid);
 DECL_TEMPLATE(linux, sys_set_tid_address);
 DECL_TEMPLATE(linux, sys_tkill);

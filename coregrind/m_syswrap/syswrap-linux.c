@@ -1240,6 +1240,43 @@ PRE(sys_fallocate)
       SET_STATUS_Failure( VKI_EBADF );
 }
 
+PRE(sys_prlimit64)
+{
+   PRINT("sys_prlimit64 ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "prlimit64",
+                 vki_pid_t, pid, unsigned int, resource,
+                 const struct rlimit64 *, new_rlim,
+                 struct rlimit64 *, old_rlim);
+   if (ARG3)
+      PRE_MEM_READ( "rlimit64(new_rlim)", ARG3, sizeof(struct vki_rlimit64) );
+   if (ARG4)
+      PRE_MEM_WRITE( "rlimit64(old_rlim)", ARG4, sizeof(struct vki_rlimit64) );
+}
+
+POST(sys_prlimit64)
+{
+   if (ARG4) {
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_rlimit64) );
+
+      switch (ARG2) {
+      case VKI_RLIMIT_NOFILE:
+         ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(fd_soft_limit);
+         ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(fd_hard_limit);
+         break;
+
+      case VKI_RLIMIT_DATA:
+         ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(client_rlimit_data).rlim_cur;
+         ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(client_rlimit_data).rlim_max;
+         break;
+
+      case VKI_RLIMIT_STACK:
+         ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(client_rlimit_stack).rlim_cur;
+         ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(client_rlimit_stack).rlim_max;
+         break;
+      }
+   }
+}
+
 /* ---------------------------------------------------------------------
    tid-related wrappers
    ------------------------------------------------------------------ */

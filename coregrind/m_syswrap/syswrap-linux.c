@@ -2583,22 +2583,26 @@ PRE(sys_stime)
    PRE_MEM_READ( "stime(t)", ARG1, sizeof(vki_time_t) );
 }
 
-PRE(sys_perf_counter_open)
+PRE(sys_perf_event_open)
 {
-   PRINT("sys_perf_counter_open ( %#lx, %ld, %ld, %ld, %ld )",
+   struct vki_perf_event_attr *attr;
+   PRINT("sys_perf_event_open ( %#lx, %ld, %ld, %ld, %ld )",
          ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(long, "perf_counter_open",
-                 struct vki_perf_counter_attr *, attr,
+   PRE_REG_READ5(long, "perf_event_open",
+                 struct vki_perf_event_attr *, attr,
                  vki_pid_t, pid, int, cpu, int, group_fd,
                  unsigned long, flags);
-   PRE_MEM_READ( "perf_counter_open(attr)",
-                 ARG1, sizeof(struct vki_perf_counter_attr) );
+   attr = (struct vki_perf_event_attr *)ARG1;
+   PRE_MEM_READ( "perf_event_open(attr->size)",
+                 &attr->size, sizeof(attr->size) );
+   PRE_MEM_READ( "perf_event_open(attr)",
+                 attr, attr->size );
 }
 
-POST(sys_perf_counter_open)
+POST(sys_perf_event_open)
 {
    vg_assert(SUCCESS);
-   if (!ML_(fd_allowed)(RES, "perf_counter_open", tid, True)) {
+   if (!ML_(fd_allowed)(RES, "perf_event_open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {

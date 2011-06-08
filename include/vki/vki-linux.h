@@ -2625,10 +2625,10 @@ struct	vki_iwreq
 };
 
 /*--------------------------------------------------------------------*/
-// From linux-2.6.31.5/include/linux/perf_counter.h
+// From linux-2.6.31.5/include/linux/perf_event.h
 /*--------------------------------------------------------------------*/
 
-struct vki_perf_counter_attr {
+struct vki_perf_event_attr {
 
 	/*
 	 * Major type: hardware/software/tracepoint/etc.
@@ -2667,13 +2667,37 @@ struct vki_perf_counter_attr {
 					inherit_stat   :  1, /* per task counts       */
 					enable_on_exec :  1, /* next exec enables     */
 					task           :  1, /* trace fork/exit       */
+					watermark      :  1, /* wakeup_watermark      */
+					/*
+					 * precise_ip:
+					 *
+					 *  0 - SAMPLE_IP can have arbitrary skid
+					 *  1 - SAMPLE_IP must have constant skid
+					 *  2 - SAMPLE_IP requested to have 0 skid
+					 *  3 - SAMPLE_IP must have 0 skid
+					 *
+					 *  See also PERF_RECORD_MISC_EXACT_IP
+					 */
+					precise_ip     :  2, /* skid constraint       */
+					mmap_data      :  1, /* non-exec mmap data    */
+					sample_id_all  :  1, /* sample_type all events */
 
-					__reserved_1   : 50;
+					__reserved_1   : 45;
 
-	__vki_u32			wakeup_events;	/* wakeup every n events */
-	__vki_u32			__reserved_2;
+	union {
+		__vki_u32		wakeup_events;	  /* wakeup every n events */
+		__vki_u32		wakeup_watermark; /* bytes before wakeup   */
+	};
 
-	__vki_u64			__reserved_3;
+	__vki_u32			bp_type;
+	union {
+		__vki_u64		bp_addr;
+		__vki_u64		config1; /* extension of config */
+	};
+	union {
+		__vki_u64		bp_len;
+		__vki_u64		config2; /* extension of config1 */
+	};
 };
 
 /*--------------------------------------------------------------------*/

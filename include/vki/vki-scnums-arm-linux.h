@@ -397,6 +397,21 @@
 #define __NR_dup3                       358
 #define __NR_pipe2                      359
 #define __NR_inotify_init1              360
+#define __NR_preadv			361
+#define __NR_pwritev			362
+#define __NR_rt_tgsigqueueinfo		363
+#define __NR_perf_event_open		364
+#define __NR_recvmmsg			365
+#define __NR_accept4			366
+#define __NR_fanotify_init		367
+#define __NR_fanotify_mark		368
+#define __NR_prlimit64			369
+#define __NR_name_to_handle_at		370
+#define __NR_open_by_handle_at		371
+#define __NR_clock_adjtime		372
+#define __NR_syncfs			373
+#define __NR_sendmmsg			374
+#define __NR_setns			375
 
 
 

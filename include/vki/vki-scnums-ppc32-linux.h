@@ -365,6 +365,34 @@
 #define __NR_preadv             320
 #define __NR_pwritev            321
 #define __NR_rt_tgsigqueueinfo  322
+#define __NR_fanotify_init	323
+#define __NR_fanotify_mark	324
+#define __NR_prlimit64		325
+#define __NR_socket		326
+#define __NR_bind		327
+#define __NR_connect		328
+#define __NR_listen		329
+#define __NR_accept		330
+#define __NR_getsockname	331
+#define __NR_getpeername	332
+#define __NR_socketpair		333
+#define __NR_send		334
+#define __NR_sendto		335
+#define __NR_recv		336
+#define __NR_recvfrom		337
+#define __NR_shutdown		338
+#define __NR_setsockopt		339
+#define __NR_getsockopt		340
+#define __NR_sendmsg		341
+#define __NR_recvmsg		342
+#define __NR_recvmmsg		343
+#define __NR_accept4		344
+#define __NR_name_to_handle_at	345
+#define __NR_open_by_handle_at	346
+#define __NR_clock_adjtime	347
+#define __NR_syncfs		348
+#define __NR_sendmmsg		349
+#define __NR_setns		350
 
 #endif /* __VKI_SCNUMS_PPC32_LINUX_H */
 

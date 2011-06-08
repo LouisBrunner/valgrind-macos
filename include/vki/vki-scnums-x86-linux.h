@@ -371,6 +371,16 @@
 #define __NR_pwritev            334
 #define __NR_rt_tgsigqueueinfo  335
 #define __NR_perf_event_open	336
+#define __NR_recvmmsg		337
+#define __NR_fanotify_init	338
+#define __NR_fanotify_mark	339
+#define __NR_prlimit64		340
+#define __NR_name_to_handle_at	341
+#define __NR_open_by_handle_at  342
+#define __NR_clock_adjtime	343
+#define __NR_syncfs             344
+#define __NR_sendmmsg		345
+#define __NR_setns		346
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

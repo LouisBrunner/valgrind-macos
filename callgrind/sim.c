@@ -286,7 +286,7 @@ static CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
 
     /* Access straddles two lines. */
     /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
-    else if (((set1 + 1) & (c->sets-1)) == set2) {
+    else if (((set1 + 1) & (c->sets_min_1)) == set2) {
 	UWord tag2  = (a+size-1) >> c->tag_shift;
 
 	/* the call updates cache structures as side effect */
@@ -390,7 +390,7 @@ CacheResult cachesim_ref_wb(cache_t2* c, RefType ref, Addr a, UChar size)
 
     /* Access straddles two lines. */
     /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
-    else if (((set1 + 1) & (c->sets-1)) == set2) {
+    else if (((set1 + 1) & (c->sets_min_1)) == set2) {
 	UWord tag2  = (a+size-1) & c->tag_mask;
 
 	/* the call updates cache structures as side effect */
@@ -735,7 +735,7 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
                                                                             \
    /* Second case: word straddles two lines. */                             \
    /* Nb: this is a fast way of doing ((set1+1) % L.sets) */                \
-   } else if (((set1 + 1) & (L.sets-1)) == set2) {                          \
+   } else if (((set1 + 1) & (L.sets_min_1)) == set2) {                      \
       Int miss1=0, miss2=0; /* 0: L1 hit, 1:L1 miss, 2:LL miss */           \
       set = &(L.tags[set1 * L.assoc]);                                      \
       use_mask = L.line_start_mask[a & L.line_size_mask];		    \

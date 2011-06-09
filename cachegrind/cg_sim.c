@@ -139,7 +139,7 @@ void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *mL)         \
                                                                             \
    /* Second case: word straddles two lines. */                             \
    /* Nb: this is a fast way of doing ((set1+1) % L.sets) */                \
-   } else if (((set1 + 1) & (L.sets-1)) == set2) {                          \
+   } else if (((set1 + 1) & (L.sets_min_1)) == set2) {                      \
       set = &(L.tags[set1 * L.assoc]);                                      \
       if (tag == set[0]) {                                                  \
          goto block2;                                                       \

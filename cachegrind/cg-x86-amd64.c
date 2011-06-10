@@ -66,7 +66,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
    Int family;
    Int model;
    UChar info[16];
-   Int   i, trials;
+   Int   i, j, trials;
    Bool  L2_found = False;
    /* If we see L3 cache info, copy it into L3c.  Then, at the end,
       copy it into *LLc.  Hence if a L3 cache is specified, *LLc will
@@ -83,13 +83,13 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
    }
 
    /* family/model needed to distinguish code reuse (currently 0x49) */
-   VG_(cpuid)(1, &cpuid1_eax, &cpuid1_ignore,
+   VG_(cpuid)(1, 0, &cpuid1_eax, &cpuid1_ignore,
 	      &cpuid1_ignore, &cpuid1_ignore);
    family = (((cpuid1_eax >> 20) & 0xff) << 4) + ((cpuid1_eax >> 8) & 0xf);
    model =  (((cpuid1_eax >> 16) & 0xf) << 4) + ((cpuid1_eax >> 4) & 0xf);
 
-   VG_(cpuid)(2, (Int*)&info[0], (Int*)&info[4], 
-                 (Int*)&info[8], (Int*)&info[12]);
+   VG_(cpuid)(2, 0, (Int*)&info[0], (Int*)&info[4], 
+                    (Int*)&info[8], (Int*)&info[12]);
    trials  = info[0] - 1;   /* AL register - bits 0..7 of %eax */
    info[0] = 0x0;           /* reset AL */
 
@@ -237,6 +237,61 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
       case 0xf0: case 0xf1:
          break;
 
+      case 0xff:
+         j = 0;
+         VG_(cpuid)(4, j++, (Int*)&info[0], (Int*)&info[4], 
+                            (Int*)&info[8], (Int*)&info[12]);
+
+         while ((info[0] & 0x1f) != 0) {
+            UInt assoc = ((*(UInt *)&info[4] >> 22) & 0x3ff) + 1;
+            UInt parts = ((*(UInt *)&info[4] >> 12) & 0x3ff) + 1;
+            UInt line_size = (*(UInt *)&info[4] & 0x7ff) + 1;
+            UInt sets = *(UInt *)&info[8] + 1;
+            cache_t c;
+
+            c.size = assoc * parts * line_size * sets / 1024;
+            c.assoc = assoc;
+            c.line_size = line_size;
+
+            switch ((info[0] & 0xe0) >> 5)
+            {
+            case 1:
+               switch (info[0] & 0x1f)
+               {
+               case 1: *D1c = c; break;
+               case 2: *I1c = c; break;
+               case 3: VG_(dmsg)("warning: L1 unified cache ignored\n"); break;
+               default: VG_(dmsg)("warning: L1 cache of unknown type ignored\n"); break;
+               }
+               break;
+            case 2:
+               switch (info[0] & 0x1f)
+               {
+               case 1: VG_(dmsg)("warning: L2 data cache ignored\n"); break;
+               case 2: VG_(dmsg)("warning: L2 instruction cache ignored\n"); break;
+               case 3: *LLc = c; L2_found = True; break;
+               default: VG_(dmsg)("warning: L2 cache of unknown type ignored\n"); break;
+               }
+               break;
+            case 3:
+               switch (info[0] & 0x1f)
+               {
+               case 1: VG_(dmsg)("warning: L3 data cache ignored\n"); break;
+               case 2: VG_(dmsg)("warning: L3 instruction cache ignored\n"); break;
+               case 3: L3c = c; L3_found = True; break;
+               default: VG_(dmsg)("warning: L3 cache of unknown type ignored\n"); break;
+               }
+               break;
+            default:
+               VG_(dmsg)("warning: L%u cache ignored\n", (info[0] & 0xe0) >> 5);
+               break;
+            }
+
+            VG_(cpuid)(4, j++, (Int*)&info[0], (Int*)&info[4], 
+                               (Int*)&info[8], (Int*)&info[12]);
+         }
+         break;
+
       default:
          VG_(dmsg)("warning: Unknown Intel cache config value (0x%x), ignoring\n",
                    info[i]);
@@ -311,7 +366,7 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* LLc)
    UInt dummy, model;
    UInt I1i, D1i, L2i, L3i;
    
-   VG_(cpuid)(0x80000000, &ext_level, &dummy, &dummy, &dummy);
+   VG_(cpuid)(0x80000000, 0, &ext_level, &dummy, &dummy, &dummy);
 
    if (0 == (ext_level & 0x80000000) || ext_level < 0x80000006) {
       VG_(dmsg)("warning: ext_level < 0x80000006 for AMD processor (0x%x)\n", 
@@ -319,10 +374,10 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* LLc)
       return -1;
    }
 
-   VG_(cpuid)(0x80000005, &dummy, &dummy, &D1i, &I1i);
-   VG_(cpuid)(0x80000006, &dummy, &dummy, &L2i, &L3i);
+   VG_(cpuid)(0x80000005, 0, &dummy, &dummy, &D1i, &I1i);
+   VG_(cpuid)(0x80000006, 0, &dummy, &dummy, &L2i, &L3i);
 
-   VG_(cpuid)(0x1, &model, &dummy, &dummy, &dummy);
+   VG_(cpuid)(0x1, 0, &model, &dummy, &dummy, &dummy);
 
    /* Check for Duron bug */
    if (model == 0x630) {
@@ -367,7 +422,7 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* LLc)
       return -1;
    }
 
-   VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
+   VG_(cpuid)(0, 0, &level, (int*)&vendor_id[0], 
 	      (int*)&vendor_id[8], (int*)&vendor_id[4]);    
    vendor_id[12] = '\0';
 

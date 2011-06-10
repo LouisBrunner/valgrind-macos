@@ -621,7 +621,7 @@ Bool VG_(machine_get_hwcaps)( void )
         /* we can't do cpuid at all.  Give up. */
         return False;
 
-     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0, 0, &eax, &ebx, &ecx, &edx);
      if (eax < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
@@ -633,11 +633,11 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(memcpy)(&vstr[8], &ecx, 4);
      vstr[12] = 0;
 
-     VG_(cpuid)(0x80000000, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0x80000000, 0, &eax, &ebx, &ecx, &edx);
      max_extended = eax;
 
      /* get capabilities bits into edx */
-     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(1, 0, &eax, &ebx, &ecx, &edx);
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
@@ -653,7 +653,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_lzcnt = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
          && max_extended >= 0x80000001) {
-        VG_(cpuid)(0x80000001, &eax, &ebx, &ecx, &edx);
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 
@@ -691,7 +691,7 @@ Bool VG_(machine_get_hwcaps)( void )
         /* we can't do cpuid at all.  Give up. */
         return False;
 
-     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0, 0, &eax, &ebx, &ecx, &edx);
      if (eax < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
@@ -703,11 +703,11 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(memcpy)(&vstr[8], &ecx, 4);
      vstr[12] = 0;
 
-     VG_(cpuid)(0x80000000, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0x80000000, 0, &eax, &ebx, &ecx, &edx);
      max_extended = eax;
 
      /* get capabilities bits into edx */
-     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(1, 0, &eax, &ebx, &ecx, &edx);
 
      // we assume that SSE1 and SSE2 are available by default
      have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
@@ -729,7 +729,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_lzcnt = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
          && max_extended >= 0x80000001) {
-        VG_(cpuid)(0x80000001, &eax, &ebx, &ecx, &edx);
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 

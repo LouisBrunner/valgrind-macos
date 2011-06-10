@@ -34,7 +34,7 @@
 #if defined(VGA_x86) || defined(VGA_amd64)
 extern Bool VG_(has_cpuid) ( void );
 
-extern void VG_(cpuid) ( UInt eax,
+extern void VG_(cpuid) ( UInt eax, UInt ecx,
                          UInt* eax_ret, UInt* ebx_ret,
                          UInt* ecx_ret, UInt* edx_ret );
 #endif

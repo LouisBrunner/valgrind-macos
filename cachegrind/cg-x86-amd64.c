@@ -108,9 +108,11 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
           
       /* TLB info, ignore */
       case 0x01: case 0x02: case 0x03: case 0x04: case 0x05:
+      case 0x0b:
       case 0x4f: case 0x50: case 0x51: case 0x52: case 0x55:
       case 0x56: case 0x57: case 0x59:
       case 0x5a: case 0x5b: case 0x5c: case 0x5d:
+      case 0x76:
       case 0xb0: case 0xb1: case 0xb2:
       case 0xb3: case 0xb4: case 0xba: case 0xc0:
       case 0xca:
@@ -123,6 +125,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
 
       case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
       case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
+      case 0x0d: *D1c = (cache_t) { 16, 4, 64 }; break;
       case 0x0e: *D1c = (cache_t) { 24, 6, 64 }; break;
       case 0x2c: *D1c = (cache_t) { 32, 8, 64 }; break;
 
@@ -460,7 +463,7 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* LLc)
    I1c->size *= 1024;
    D1c->size *= 1024;
    LLc->size *= 1024;
-      
+
    return ret;
 }
 

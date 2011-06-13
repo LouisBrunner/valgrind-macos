@@ -464,6 +464,59 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* LLc)
    D1c->size *= 1024;
    LLc->size *= 1024;
 
+   /* If the LL cache config isn't something the simulation functions
+      can handle, try to adjust it so it is.  Caches are characterised
+      by (total size T, line size L, associativity A), and then we
+      have
+
+        number of sets S = T / (L * A)
+
+      The required constraints are:
+
+      * L must be a power of 2, but it always is in practice, so
+        no problem there
+
+      * A can be any value >= 1
+
+      * T can be any value, but ..
+
+      * S must be a power of 2.
+
+      That sometimes gives a problem.  For example, some Core iX based
+      Intel CPUs have T = 12MB, A = 16, L = 64, which gives 12288
+      sets.  The "fix" in this case is to increase the associativity
+      by 50% to 24, which reduces the number of sets to 8192, making
+      it a power of 2.  That's what the following code does (handing
+      the "3/2 rescaling case".)  We might need to deal with other
+      ratios later (5/4 ?).
+
+      The "fix" is "justified" (cough, cough) by alleging that
+      increases of associativity above about 4 have very little effect
+      on the actual miss rate.  It would be far more inaccurate to
+      fudge this by changing the size of the simulated cache --
+      changing the associativity is a much better option.
+   */
+   if (LLc->size > 0 && LLc->assoc > 0 && LLc->line_size > 0) {
+      Long nSets = (Long)LLc->size / (Long)(LLc->line_size * LLc->assoc);
+      if (/* stay sane */
+          nSets >= 4
+          /* nSets is not a power of 2 */
+          && VG_(log2_64)( (ULong)nSets ) == -1
+          /* nSets is 50% above a power of 2 */
+          && VG_(log2_64)( (ULong)((2 * nSets) / (Long)3) ) != -1
+          /* associativity can be increased by exactly 50% */
+          && (LLc->assoc % 2) == 0
+         ) {
+         /* # sets is 1.5 * a power of two, but the associativity is
+            even, so we can increase that up by 50% and implicitly
+            scale the # sets down accordingly. */
+         Int new_assoc = LLc->assoc + (LLc->assoc / 2);
+         VG_(dmsg)("warning: pretending that LL cache has associativity"
+                   " %d instead of actual %d\n", new_assoc, LLc->assoc);
+         LLc->assoc = new_assoc;
+      }
+   }
+
    return ret;
 }
 

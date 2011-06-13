@@ -181,9 +181,12 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
 extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                         Int (*compar)(void*, void*) );
 
-/* Returns the base-2 logarithm of x.  Returns -1 if x is not a power
-   of two.  Nb: VG_(log2)(1) == 0.  */
+/* Returns the base-2 logarithm of a 32 bit unsigned number.  Returns
+ -1 if it is not a power of two.  Nb: VG_(log2)(1) == 0. */
 extern Int VG_(log2) ( UInt x );
+
+/* Ditto for 64 bit unsigned numbers. */
+extern Int VG_(log2_64)( ULong x );
 
 // A pseudo-random number generator returning a random UInt.  If pSeed
 // is NULL, it uses its own seed, which starts at zero.  If pSeed is

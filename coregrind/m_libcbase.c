@@ -794,6 +794,15 @@ Int VG_(log2) ( UInt x )
    return -1;
 }
 
+/* Ditto for 64 bit numbers. */
+Int VG_(log2_64) ( ULong x ) 
+{
+   Int i;
+   for (i = 0; i < 64; i++) {
+      if ((1ULL << i) == x) return i;
+   }
+   return -1;
+}
 
 // Generic quick sort.
 void VG_(ssort)( void* base, SizeT nmemb, SizeT size,

@@ -1429,6 +1429,13 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       is interrupted by a signal. */
    sysno = sci->orig_args.sysno;
 
+   /* It's sometimes useful, as a crude debugging hack, to get a
+      stack trace at each (or selected) syscalls. */
+   if (0 /* sysno == __NR_mmap */) {
+      VG_(umsg)("\n");
+      VG_(get_and_pp_StackTrace)(tid, 10);
+   }
+
 #  if defined(VGO_darwin)
    /* Record syscall class.  But why?  Because the syscall might be
       interrupted by a signal, and in the signal handler (which will

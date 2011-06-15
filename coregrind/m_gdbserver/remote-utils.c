@@ -279,10 +279,6 @@ void remote_open (char *name)
          fatal("error writing %d bytes to shared mem %s\n",
                (int) sizeof(VgdbShared), shared_mem);
       }
-      shared_mem_fd = VG_(safe_fd)(shared_mem_fd);
-      if (shared_mem_fd == -1) {
-         fatal("safe_fd for vgdb shared_mem %s failed\n", shared_mem);
-      }
       {
          SysRes res = VG_(am_shared_mmap_file_float_valgrind)
             (sizeof(VgdbShared), VKI_PROT_READ|VKI_PROT_WRITE, 
@@ -295,6 +291,7 @@ void remote_open (char *name)
          addr_shared = sr_Res (res);
       }
       shared = (VgdbShared*) addr_shared;
+      VG_(close) (shared_mem_fd);
    }
    
    /* we open the read side FIFO in non blocking mode

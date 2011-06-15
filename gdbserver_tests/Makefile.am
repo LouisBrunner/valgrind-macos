@@ -72,10 +72,14 @@ EXTRA_DIST = \
 	nlcontrolc.stderr.exp \
 	nlcontrolc.stdinB.gdb \
 	nlcontrolc.stdoutB.exp \
-	nlcontrolc.vgtest
+	nlcontrolc.vgtest \
+	nlfork_chain.stderr.exp \
+	nlfork_chain.stdout.exp \
+	nlfork_chain.vgtest
 
 check_PROGRAMS = \
 	clean_after_fork \
+	fork_chain \
 	sleepers \
 	t \
 	watchpoints

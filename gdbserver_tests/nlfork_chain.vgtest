@@ -1,0 +1,4 @@
+# test that gdbserver properly cleans up its resources in a chain
+# of forked processes.
+prog: fork_chain
+vgopts: --tool=none --vgdb=yes --trace-children=yes --vgdb-prefix=./vgdb-prefix-nlfork_chain

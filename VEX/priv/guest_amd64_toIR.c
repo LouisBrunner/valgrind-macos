@@ -15999,6 +15999,40 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0f 38 2B /r = PACKUSDW xmm1, xmm2/m128
+      2x 32x4 S->U saturating narrow from xmm2/m128 to xmm1 */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x2B ) {
+  
+      modrm = insn[3];
+
+      IRTemp argL = newTemp(Ity_V128);
+      IRTemp argR = newTemp(Ity_V128);
+
+      if ( epartIsReg(modrm) ) {
+         assign( argL, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1;
+         DIP( "packusdw %s,%s\n",
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
+         assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
+         delta += 3+alen;
+         DIP( "packusdw %s,%s\n",
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      assign(argR, getXMMReg( gregOfRexRM(pfx, modrm) ));
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_QNarrow32Sto16Ux8, mkexpr(argL), mkexpr(argR)) );
+
+      goto decode_success;
+   }
+
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
    /* ---------------------------------------------------- */

@@ -104,6 +104,14 @@ static inline UChar sar8 ( UChar v, UInt n )
    return toUChar(((Char)v) >> n);
 }
 
+static inline UShort qnarrow32Sto16U ( UInt xx0 )
+{
+   Int xx = (Int)xx0;
+   if (xx < 0)     xx = 0;
+   if (xx > 65535) xx = 65535;
+   return (UShort)xx;
+}
+
 void h_generic_calc_Mul32x4 ( /*OUT*/V128* res,
                               V128* argL, V128* argR )
 {
@@ -262,6 +270,20 @@ void h_generic_calc_SarN8x16 ( /*OUT*/V128* res,
    res->w8[14] = sar8(argL->w8[14], nn);
    res->w8[15] = sar8(argL->w8[15], nn);
 }
+
+void h_generic_calc_QNarrow32Sto16Ux8 ( /*OUT*/V128* res,
+                                        V128* argL, V128* argR )
+{
+   res->w16[0] = qnarrow32Sto16U(argR->w32[0]);
+   res->w16[1] = qnarrow32Sto16U(argR->w32[1]);
+   res->w16[2] = qnarrow32Sto16U(argR->w32[2]);
+   res->w16[3] = qnarrow32Sto16U(argR->w32[3]);
+   res->w16[4] = qnarrow32Sto16U(argL->w32[0]);
+   res->w16[5] = qnarrow32Sto16U(argL->w32[1]);
+   res->w16[6] = qnarrow32Sto16U(argL->w32[2]);
+   res->w16[7] = qnarrow32Sto16U(argL->w32[3]);
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                              host_generic_simd128.c ---*/

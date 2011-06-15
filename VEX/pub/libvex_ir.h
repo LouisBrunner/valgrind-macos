@@ -1195,7 +1195,7 @@ typedef
 
       /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
       /* See comments above w.r.t. U vs S issues in saturated narrowing. */
-      Iop_QNarrow16Sto8Ux16,
+      Iop_QNarrow16Sto8Ux16, Iop_QNarrow32Sto16Ux8,
       Iop_QNarrow16Sto8Sx16, Iop_QNarrow32Sto16Sx8,
       Iop_QNarrow16Uto8Ux16, Iop_QNarrow32Uto16Ux8,
       Iop_Narrow16x8, Iop_Narrow32x4,

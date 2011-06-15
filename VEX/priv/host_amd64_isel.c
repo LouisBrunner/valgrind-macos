@@ -3660,6 +3660,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
                            goto do_SseAssistedBinary;
       case Iop_CmpGT64Sx2: fn = (HWord)h_generic_calc_CmpGT64Sx2;
                            goto do_SseAssistedBinary;
+      case Iop_QNarrow32Sto16Ux8:
+                           fn = (HWord)h_generic_calc_QNarrow32Sto16Ux8;
+                           goto do_SseAssistedBinary;
       do_SseAssistedBinary: {
          /* RRRufff!  RRRufff code is what we're generating here.  Oh
             well. */

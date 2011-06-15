@@ -1991,6 +1991,7 @@ IRAtom* vectorNarrowV128 ( MCEnv* mce, IROp narrow_op,
       case Iop_QNarrow32Uto16Ux8: pcast = mkPCast32x4; break;
       case Iop_QNarrow32Sto16Ux8: pcast = mkPCast32x4; break;
       case Iop_QNarrow16Sto8Sx16: pcast = mkPCast16x8; break;
+      case Iop_QNarrow16Uto8Ux16: pcast = mkPCast16x8; break;
       case Iop_QNarrow16Sto8Ux16: pcast = mkPCast16x8; break;
       default: VG_(tool_panic)("vectorNarrowV128");
    }
@@ -2708,6 +2709,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QNarrow32Uto16Ux8:
       case Iop_QNarrow32Sto16Ux8:
       case Iop_QNarrow16Sto8Sx16:
+      case Iop_QNarrow16Uto8Ux16:
       case Iop_QNarrow16Sto8Ux16:
          return vectorNarrowV128(mce, op, vatom1, vatom2);
 

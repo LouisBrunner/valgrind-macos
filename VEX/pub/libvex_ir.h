@@ -896,9 +896,27 @@ typedef
       Iop_QSalN8x8, Iop_QSalN16x4, Iop_QSalN32x2, Iop_QSalN64x1,
 
       /* NARROWING -- narrow 2xI64 into 1xI64, hi half from left arg */
-      Iop_QNarrow16Ux4,
-      Iop_QNarrow16Sx4,
-      Iop_QNarrow32Sx2,
+      /* For saturated narrowing, I believe there are 4 variants of
+         the basic arithmetic operation, depending on the signedness
+         of argument and result.  Here are examples that exemplify
+         what I mean:
+
+         QNarrow16Uto8U ( UShort x )  if (x >u 255) x = 255;
+                                      return x[7:0];
+
+         QNarrow16Sto8S ( Short x )   if (x <s -128) x = -128;
+                                      if (x >s  127) x = 127;
+                                      return x[7:0];
+
+         QNarrow16Uto8S ( UShort x )  if (x >u 127) x = 127;
+                                      return x[7:0];
+
+         QNarrow16Sto8U ( Short x )   if (x <s 0)   x = 0;
+                                      if (x >s 255) x = 255;
+                                      return x[7:0];
+      */
+      Iop_QNarrow16Sto8Ux8,
+      Iop_QNarrow16Sto8Sx8, Iop_QNarrow32Sto16Sx4,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of
@@ -1176,9 +1194,10 @@ typedef
       Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2,
 
       /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
-      /* Note: the 16{U,S} and 32{U,S} are the pre-narrow lane widths. */
-      Iop_QNarrow16Ux8, Iop_QNarrow32Ux4,
-      Iop_QNarrow16Sx8, Iop_QNarrow32Sx4,
+      /* See comments above w.r.t. U vs S issues in saturated narrowing. */
+      Iop_QNarrow16Sto8Ux16,
+      Iop_QNarrow16Sto8Sx16, Iop_QNarrow32Sto16Sx8,
+      Iop_QNarrow16Uto8Ux16, Iop_QNarrow32Uto16Ux8,
       Iop_Narrow16x8, Iop_Narrow32x4,
       /* Shortening V128->I64, lo half from each element */
       Iop_Shorten16x8, Iop_Shorten32x4, Iop_Shorten64x2,

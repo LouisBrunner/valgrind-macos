@@ -2386,12 +2386,12 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          case Iop_QAdd16Ux4:
             fn = (HWord)h_generic_calc_QAdd16Ux4; goto binnish;
 
-         case Iop_QNarrow32Sx2:
-            fn = (HWord)h_generic_calc_QNarrow32Sx2; goto binnish;
-         case Iop_QNarrow16Sx4:
-            fn = (HWord)h_generic_calc_QNarrow16Sx4; goto binnish;
-         case Iop_QNarrow16Ux4:
-            fn = (HWord)h_generic_calc_QNarrow16Ux4; goto binnish;
+         case Iop_QNarrow32Sto16Sx4:
+            fn = (HWord)h_generic_calc_QNarrow32Sto16Sx4; goto binnish;
+         case Iop_QNarrow16Sto8Sx8:
+            fn = (HWord)h_generic_calc_QNarrow16Sto8Sx8; goto binnish;
+         case Iop_QNarrow16Sto8Ux8:
+            fn = (HWord)h_generic_calc_QNarrow16Sto8Ux8; goto binnish;
 
          case Iop_QSub8Sx8:
             fn = (HWord)h_generic_calc_QSub8Sx8; goto binnish;
@@ -3500,11 +3500,11 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_QNarrow32Sx4: 
+      case Iop_QNarrow32Sto16Sx8: 
          op = Xsse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
-      case Iop_QNarrow16Sx8: 
+      case Iop_QNarrow16Sto8Sx16: 
          op = Xsse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
-      case Iop_QNarrow16Ux8: 
+      case Iop_QNarrow16Sto8Ux16: 
          op = Xsse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
 
       case Iop_InterleaveHI8x16: 

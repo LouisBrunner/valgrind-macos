@@ -1531,9 +1531,9 @@ IRAtom* vectorNarrowV128 ( MCEnv* mce, IROp narrow_op,
    IRAtom *at1, *at2, *at3;
    IRAtom* (*pcast)( MCEnv*, IRAtom* );
    switch (narrow_op) {
-      case Iop_QNarrow32Sx4: pcast = mkPCast32x4; break;
-      case Iop_QNarrow16Sx8: pcast = mkPCast16x8; break;
-      case Iop_QNarrow16Ux8: pcast = mkPCast16x8; break;
+      case Iop_QNarrow32Sto16Sx8: pcast = mkPCast32x4; break;
+      case Iop_QNarrow16Sto8Sx16: pcast = mkPCast16x8; break;
+      case Iop_QNarrow16Sto8Ux16: pcast = mkPCast16x8; break;
       default: VG_(tool_panic)("vectorNarrowV128");
    }
    tl_assert(isShadowAtom(mce,vatom1));
@@ -1671,9 +1671,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QAdd64Sx2:
          return binary64Ix2(mce, vatom1, vatom2);
 
-      case Iop_QNarrow32Sx4:
-      case Iop_QNarrow16Sx8:
-      case Iop_QNarrow16Ux8:
+      case Iop_QNarrow32Sto16Sx8:
+      case Iop_QNarrow16Sto8Sx16:
+      case Iop_QNarrow16Sto8Ux16:
          return vectorNarrowV128(mce, op, vatom1, vatom2);
 
       case Iop_Sub64Fx2:

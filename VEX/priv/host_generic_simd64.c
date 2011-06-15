@@ -272,7 +272,7 @@ static inline UChar cmpnez8 ( UChar xx )
    return toUChar(xx==0 ? 0 : 0xFF);
 }
 
-static inline Short qnarrow32Sto16 ( UInt xx0 )
+static inline Short qnarrow32Sto16S ( UInt xx0 )
 {
    Int xx = (Int)xx0;
    if (xx < -32768) xx = -32768;
@@ -280,7 +280,7 @@ static inline Short qnarrow32Sto16 ( UInt xx0 )
    return (Short)xx;
 }
 
-static inline Char qnarrow16Sto8 ( UShort xx0 )
+static inline Char qnarrow16Sto8S ( UShort xx0 )
 {
    Short xx = (Short)xx0;
    if (xx < -128) xx = -128;
@@ -288,7 +288,7 @@ static inline Char qnarrow16Sto8 ( UShort xx0 )
    return (Char)xx;
 }
 
-static inline UChar qnarrow16Uto8 ( UShort xx0 )
+static inline UChar qnarrow16Sto8U ( UShort xx0 )
 {
    Short xx = (Short)xx0;
    if (xx < 0)   xx = 0;
@@ -759,21 +759,21 @@ ULong h_generic_calc_CmpNEZ8x8 ( ULong xx )
 
 /* ------------ Saturating narrowing ------------ */
 
-ULong h_generic_calc_QNarrow32Sx2 ( ULong aa, ULong bb )
+ULong h_generic_calc_QNarrow32Sto16Sx4 ( ULong aa, ULong bb )
 {
    UInt d = sel32x2_1(aa);
    UInt c = sel32x2_0(aa);
    UInt b = sel32x2_1(bb);
    UInt a = sel32x2_0(bb);
    return mk16x4( 
-             qnarrow32Sto16(d),
-             qnarrow32Sto16(c),
-             qnarrow32Sto16(b),
-             qnarrow32Sto16(a)
+             qnarrow32Sto16S(d),
+             qnarrow32Sto16S(c),
+             qnarrow32Sto16S(b),
+             qnarrow32Sto16S(a)
           );
 }
 
-ULong h_generic_calc_QNarrow16Sx4 ( ULong aa, ULong bb )
+ULong h_generic_calc_QNarrow16Sto8Sx8 ( ULong aa, ULong bb )
 {
    UShort h = sel16x4_3(aa);
    UShort g = sel16x4_2(aa);
@@ -784,18 +784,18 @@ ULong h_generic_calc_QNarrow16Sx4 ( ULong aa, ULong bb )
    UShort b = sel16x4_1(bb);
    UShort a = sel16x4_0(bb);
    return mk8x8( 
-             qnarrow16Sto8(h),
-             qnarrow16Sto8(g),
-             qnarrow16Sto8(f),
-             qnarrow16Sto8(e),
-             qnarrow16Sto8(d),
-             qnarrow16Sto8(c),
-             qnarrow16Sto8(b),
-             qnarrow16Sto8(a)
+             qnarrow16Sto8S(h),
+             qnarrow16Sto8S(g),
+             qnarrow16Sto8S(f),
+             qnarrow16Sto8S(e),
+             qnarrow16Sto8S(d),
+             qnarrow16Sto8S(c),
+             qnarrow16Sto8S(b),
+             qnarrow16Sto8S(a)
           );
 }
 
-ULong h_generic_calc_QNarrow16Ux4 ( ULong aa, ULong bb )
+ULong h_generic_calc_QNarrow16Sto8Ux8 ( ULong aa, ULong bb )
 {
    UShort h = sel16x4_3(aa);
    UShort g = sel16x4_2(aa);
@@ -806,14 +806,14 @@ ULong h_generic_calc_QNarrow16Ux4 ( ULong aa, ULong bb )
    UShort b = sel16x4_1(bb);
    UShort a = sel16x4_0(bb);
    return mk8x8( 
-             qnarrow16Uto8(h),
-             qnarrow16Uto8(g),
-             qnarrow16Uto8(f),
-             qnarrow16Uto8(e),
-             qnarrow16Uto8(d),
-             qnarrow16Uto8(c),
-             qnarrow16Uto8(b),
-             qnarrow16Uto8(a)
+             qnarrow16Sto8U(h),
+             qnarrow16Sto8U(g),
+             qnarrow16Sto8U(f),
+             qnarrow16Sto8U(e),
+             qnarrow16Sto8U(d),
+             qnarrow16Sto8U(c),
+             qnarrow16Sto8U(b),
+             qnarrow16Sto8U(a)
           );
 }
 

@@ -506,9 +506,9 @@ void ppIROp ( IROp op )
       case Iop_SarN8x8: vex_printf("SarN8x8"); return;
       case Iop_SarN16x4: vex_printf("SarN16x4"); return;
       case Iop_SarN32x2: vex_printf("SarN32x2"); return;
-      case Iop_QNarrow16Ux4: vex_printf("QNarrow16Ux4"); return;
-      case Iop_QNarrow16Sx4: vex_printf("QNarrow16Sx4"); return;
-      case Iop_QNarrow32Sx2: vex_printf("QNarrow32Sx2"); return;
+      case Iop_QNarrow16Sto8Ux8: vex_printf("QNarrow16Sto8Ux8"); return;
+      case Iop_QNarrow16Sto8Sx8: vex_printf("QNarrow16Sto8Sx8"); return;
+      case Iop_QNarrow32Sto16Sx4: vex_printf("QNarrow32Sto16Sx4"); return;
       case Iop_InterleaveHI8x8: vex_printf("InterleaveHI8x8"); return;
       case Iop_InterleaveHI16x4: vex_printf("InterleaveHI16x4"); return;
       case Iop_InterleaveHI32x2: vex_printf("InterleaveHI32x2"); return;
@@ -846,10 +846,10 @@ void ppIROp ( IROp op )
 
       case Iop_Narrow16x8:   vex_printf("Narrow16x8"); return;
       case Iop_Narrow32x4:   vex_printf("Narrow32x4"); return;
-      case Iop_QNarrow16Ux8: vex_printf("QNarrow16Ux8"); return;
-      case Iop_QNarrow32Ux4: vex_printf("QNarrow32Ux4"); return;
-      case Iop_QNarrow16Sx8: vex_printf("QNarrow16Sx8"); return;
-      case Iop_QNarrow32Sx4: vex_printf("QNarrow32Sx4"); return;
+      case Iop_QNarrow16Sto8Ux16: vex_printf("QNarrow16Sto8Ux16"); return;
+      case Iop_QNarrow32Uto16Ux8: vex_printf("QNarrow32Uto16Ux8"); return;
+      case Iop_QNarrow16Sto8Sx16: vex_printf("QNarrow16Sto8Sx16"); return;
+      case Iop_QNarrow32Sto16Sx8: vex_printf("QNarrow32Sto16Sx8"); return;
       case Iop_Shorten16x8: vex_printf("Shorten16x8"); return;
       case Iop_Shorten32x4: vex_printf("Shorten32x4"); return;
       case Iop_Shorten64x2: vex_printf("Shorten64x2"); return;
@@ -2052,8 +2052,8 @@ void typeOfPrimop ( IROp op,
       case Iop_QAdd32Ux2: case Iop_QAdd64Ux1:
       case Iop_PwAdd8x8: case Iop_PwAdd16x4: case Iop_PwAdd32x2:
       case Iop_PwAdd32Fx2:
-      case Iop_QNarrow32Sx2:
-      case Iop_QNarrow16Sx4: case Iop_QNarrow16Ux4:
+      case Iop_QNarrow32Sto16Sx4:
+      case Iop_QNarrow16Sto8Sx8: case Iop_QNarrow16Sto8Ux8:
       case Iop_Sub8x8: case Iop_Sub16x4: case Iop_Sub32x2:
       case Iop_QSub8Sx8: case Iop_QSub16Sx4:
       case Iop_QSub32Sx2: case Iop_QSub64Sx1:
@@ -2418,8 +2418,9 @@ void typeOfPrimop ( IROp op,
       case Iop_Sar8x16: case Iop_Sar16x8: case Iop_Sar32x4: case Iop_Sar64x2:
       case Iop_Sal8x16: case Iop_Sal16x8: case Iop_Sal32x4: case Iop_Sal64x2:
       case Iop_Rol8x16: case Iop_Rol16x8: case Iop_Rol32x4:
-      case Iop_QNarrow16Ux8: case Iop_QNarrow32Ux4:
-      case Iop_QNarrow16Sx8: case Iop_QNarrow32Sx4:
+      case Iop_QNarrow16Sto8Ux16:
+      case Iop_QNarrow16Sto8Sx16: case Iop_QNarrow32Sto16Sx8:
+      case Iop_QNarrow32Uto16Ux8:
       case Iop_Narrow16x8:   case Iop_Narrow32x4:
       case Iop_InterleaveHI8x16: case Iop_InterleaveHI16x8:
       case Iop_InterleaveHI32x4: case Iop_InterleaveHI64x2:

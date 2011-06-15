@@ -3791,7 +3791,6 @@ int main ( int argc, char** argv )
    test_INSERTPS();       // done Apr.01.2010
    // MOVNTDQA  ***
    //test_MPSADBW();
-   //test_PACKUSDW();
    //test_PCMPEQQ();
    test_PEXTRB();         // done Apr.15.2010
    test_PEXTRD();         // done Apr.14.2010
@@ -3839,11 +3838,11 @@ int main ( int argc, char** argv )
    // ------ SSE 4.2 ------
    test_PCMPGTQ();
    // CRC32B,Q
+   test_PACKUSDW();
 
 #else
 #if 0
    test_MPSADBW();
-   test_PACKUSDW();
    test_PCMPEQQ();
    test_PHMINPOSUW();
    test_PMULDQ();

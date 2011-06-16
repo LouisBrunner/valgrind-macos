@@ -6504,9 +6504,9 @@ ULong dis_MMXop_regmem_to_reg ( VexAbiInfo* vbi,
       case 0x65: op = Iop_CmpGT16Sx4; break;
       case 0x66: op = Iop_CmpGT32Sx2; break;
 
-      case 0x6B: op = Iop_QNarrow32Sto16Sx4; eLeft = True; break;
-      case 0x63: op = Iop_QNarrow16Sto8Sx8;  eLeft = True; break;
-      case 0x67: op = Iop_QNarrow16Sto8Ux8;  eLeft = True; break;
+      case 0x6B: op = Iop_QNarrowBin32Sto16Sx4; eLeft = True; break;
+      case 0x63: op = Iop_QNarrowBin16Sto8Sx8;  eLeft = True; break;
+      case 0x67: op = Iop_QNarrowBin16Sto8Ux8;  eLeft = True; break;
 
       case 0x68: op = Iop_InterleaveHI8x8;  eLeft = True; break;
       case 0x69: op = Iop_InterleaveHI16x4; eLeft = True; break;
@@ -11787,7 +11787,7 @@ DisResult disInstr_AMD64_WRK (
        && insn[0] == 0x0F && insn[1] == 0x6B) {
       delta = dis_SSEint_E_to_G( vbi, pfx, delta+2, 
                                  "packssdw",
-                                 Iop_QNarrow32Sto16Sx8, True );
+                                 Iop_QNarrowBin32Sto16Sx8, True );
       goto decode_success;
    }
 
@@ -11796,7 +11796,7 @@ DisResult disInstr_AMD64_WRK (
        && insn[0] == 0x0F && insn[1] == 0x63) {
       delta = dis_SSEint_E_to_G( vbi, pfx, delta+2, 
                                  "packsswb",
-                                 Iop_QNarrow16Sto8Sx16, True );
+                                 Iop_QNarrowBin16Sto8Sx16, True );
       goto decode_success;
    }
 
@@ -11805,7 +11805,7 @@ DisResult disInstr_AMD64_WRK (
        && insn[0] == 0x0F && insn[1] == 0x67) {
       delta = dis_SSEint_E_to_G( vbi, pfx, delta+2, 
                                  "packuswb",
-                                 Iop_QNarrow16Sto8Ux16, True );
+                                 Iop_QNarrowBin16Sto8Ux16, True );
       goto decode_success;
    }
 
@@ -16028,7 +16028,8 @@ DisResult disInstr_AMD64_WRK (
       assign(argR, getXMMReg( gregOfRexRM(pfx, modrm) ));
 
       putXMMReg( gregOfRexRM(pfx, modrm), 
-                 binop( Iop_QNarrow32Sto16Ux8, mkexpr(argL), mkexpr(argR)) );
+                 binop( Iop_QNarrowBin32Sto16Ux8,
+                        mkexpr(argL), mkexpr(argR)) );
 
       goto decode_success;
    }

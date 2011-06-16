@@ -87,9 +87,9 @@ extern ULong h_generic_calc_CmpNEZ32x2 ( ULong );
 extern ULong h_generic_calc_CmpNEZ16x4 ( ULong );
 extern ULong h_generic_calc_CmpNEZ8x8  ( ULong );
 
-extern ULong h_generic_calc_QNarrow32Sto16Sx4 ( ULong, ULong );
-extern ULong h_generic_calc_QNarrow16Sto8Sx8  ( ULong, ULong );
-extern ULong h_generic_calc_QNarrow16Sto8Ux8  ( ULong, ULong );
+extern ULong h_generic_calc_QNarrowBin32Sto16Sx4 ( ULong, ULong );
+extern ULong h_generic_calc_QNarrowBin16Sto8Sx8  ( ULong, ULong );
+extern ULong h_generic_calc_QNarrowBin16Sto8Ux8  ( ULong, ULong );
 
 extern ULong h_generic_calc_InterleaveHI8x8 ( ULong, ULong );
 extern ULong h_generic_calc_InterleaveLO8x8 ( ULong, ULong );

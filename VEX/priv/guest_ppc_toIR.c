@@ -9418,7 +9418,7 @@ static Bool dis_av_multarith ( UInt theInstr )
                                mkU8(15))) );
 
       putVReg( vD_addr,
-               binop(Iop_QNarrow32Sto16Sx8, mkexpr(zHi), mkexpr(zLo)) );
+               binop(Iop_QNarrowBin32Sto16Sx8, mkexpr(zHi), mkexpr(zLo)) );
       break;
    }
    case 0x21: { // vmhraddshs (Mult High Round, Add Signed HW Saturate, AV p186)
@@ -9453,7 +9453,7 @@ static Bool dis_av_multarith ( UInt theInstr )
                                mkU8(15))) );
 
       putVReg( vD_addr,
-               binop(Iop_QNarrow32Sto16Sx8, mkexpr(zHi), mkexpr(zLo)) );
+               binop(Iop_QNarrowBin32Sto16Sx8, mkexpr(zHi), mkexpr(zLo)) );
       break;
    }
    case 0x22: { // vmladduhm (Mult Low, Add Unsigned HW Modulo, AV p194)
@@ -9471,7 +9471,8 @@ static Bool dis_av_multarith ( UInt theInstr )
       assign(zHi, binop(Iop_Add32x4,
                      binop(Iop_MullEven16Ux8, mkexpr(aHi), mkexpr(bHi)),
                      mkexpr(cHi)));
-      putVReg(vD_addr, binop(Iop_Narrow32x4, mkexpr(zHi), mkexpr(zLo)));
+      putVReg( vD_addr,
+               binop(Iop_NarrowBin32to16x8, mkexpr(zHi), mkexpr(zLo)) );
       break;
    }
 
@@ -9955,25 +9956,27 @@ static Bool dis_av_pack ( UInt theInstr )
    /* Packing */
    case 0x00E: // vpkuhum (Pack Unsigned HW Unsigned Modulo, AV p224)
       DIP("vpkuhum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Narrow16x8, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr,
+               binop(Iop_NarrowBin16to8x16, mkexpr(vA), mkexpr(vB)) );
       return True;
 
    case 0x04E: // vpkuwum (Pack Unsigned W Unsigned Modulo, AV p226)
       DIP("vpkuwum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Narrow32x4, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr,
+               binop(Iop_NarrowBin32to16x8, mkexpr(vA), mkexpr(vB)) );
       return True;
 
    case 0x08E: // vpkuhus (Pack Unsigned HW Unsigned Saturate, AV p225)
       DIP("vpkuhus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr,
-               binop(Iop_QNarrow16Uto8Ux16, mkexpr(vA), mkexpr(vB)) );
+               binop(Iop_QNarrowBin16Uto8Ux16, mkexpr(vA), mkexpr(vB)) );
       // TODO: set VSCR[SAT]
       return True;
 
    case 0x0CE: // vpkuwus (Pack Unsigned W Unsigned Saturate, AV p227)
       DIP("vpkuwus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr,
-               binop(Iop_QNarrow32Uto16Ux8, mkexpr(vA), mkexpr(vB)) );
+               binop(Iop_QNarrowBin32Uto16Ux8, mkexpr(vA), mkexpr(vB)) );
       // TODO: set VSCR[SAT]
       return True;
 
@@ -9992,7 +9995,7 @@ static Bool dis_av_pack ( UInt theInstr )
                             unop(Iop_NotV128,
                                  binop(Iop_SarN16x8,
                                        mkexpr(vB), mkU8(15)))) );
-      putVReg( vD_addr, binop(Iop_QNarrow16Uto8Ux16,
+      putVReg( vD_addr, binop(Iop_QNarrowBin16Uto8Ux16,
                               mkexpr(vA_tmp), mkexpr(vB_tmp)) );
       // TODO: set VSCR[SAT]
       return True;
@@ -10012,7 +10015,7 @@ static Bool dis_av_pack ( UInt theInstr )
                             unop(Iop_NotV128,
                                  binop(Iop_SarN32x4,
                                        mkexpr(vB), mkU8(31)))) );
-      putVReg( vD_addr, binop(Iop_QNarrow32Uto16Ux8,
+      putVReg( vD_addr, binop(Iop_QNarrowBin32Uto16Ux8,
                               mkexpr(vA_tmp), mkexpr(vB_tmp)) );
       // TODO: set VSCR[SAT]
       return True;
@@ -10020,14 +10023,14 @@ static Bool dis_av_pack ( UInt theInstr )
    case 0x18E: // vpkshss (Pack Signed HW Signed Saturate, AV p220)
       DIP("vpkshss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr,
-               binop(Iop_QNarrow16Sto8Sx16, mkexpr(vA), mkexpr(vB)) );
+               binop(Iop_QNarrowBin16Sto8Sx16, mkexpr(vA), mkexpr(vB)) );
       // TODO: set VSCR[SAT]
       return True;
 
    case 0x1CE: // vpkswss (Pack Signed W Signed Saturate, AV p222)
       DIP("vpkswss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr,
-               binop(Iop_QNarrow32Sto16Sx8, mkexpr(vA), mkexpr(vB)) );
+               binop(Iop_QNarrowBin32Sto16Sx8, mkexpr(vA), mkexpr(vB)) );
       // TODO: set VSCR[SAT]
       return True;
 
@@ -10067,7 +10070,7 @@ static Bool dis_av_pack ( UInt theInstr )
       assign( b_tmp, binop(Iop_OrV128, mkexpr(b1),
                            binop(Iop_OrV128, mkexpr(b2), mkexpr(b3))) );
 
-      putVReg( vD_addr, binop(Iop_Narrow32x4,
+      putVReg( vD_addr, binop(Iop_NarrowBin32to16x8,
                               mkexpr(a_tmp), mkexpr(b_tmp)) );
       return True;
    }

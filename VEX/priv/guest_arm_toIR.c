@@ -4815,15 +4815,15 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
          size = B;
          switch (size) {
             case 0:
-               cvt = U ? Iop_Longen8Ux8 : Iop_Longen8Sx8;
+               cvt = U ? Iop_Widen8Uto16x8 : Iop_Widen8Sto16x8;
                op = (A & 2) ? Iop_Sub16x8 : Iop_Add16x8;
                break;
             case 1:
-               cvt = U ? Iop_Longen16Ux4 : Iop_Longen16Sx4;
+               cvt = U ? Iop_Widen16Uto32x4 : Iop_Widen16Sto32x4;
                op = (A & 2) ? Iop_Sub32x4 : Iop_Add32x4;
                break;
             case 2:
-               cvt = U ? Iop_Longen32Ux2 : Iop_Longen32Sx2;
+               cvt = U ? Iop_Widen32Uto64x2 : Iop_Widen32Sto64x2;
                op = (A & 2) ? Iop_Sub64x2 : Iop_Add64x2;
                break;
             case 3:
@@ -4860,7 +4860,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
          switch (size) {
             case 0:
                op = Iop_Add16x8;
-               cvt = Iop_Shorten16x8;
+               cvt = Iop_NarrowUn16to8x8;
                sh = Iop_ShrN16x8;
                imm = 1U << 7;
                imm = (imm << 16) | imm;
@@ -4868,14 +4868,14 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
                break;
             case 1:
                op = Iop_Add32x4;
-               cvt = Iop_Shorten32x4;
+               cvt = Iop_NarrowUn32to16x4;
                sh = Iop_ShrN32x4;
                imm = 1U << 15;
                imm = (imm << 32) | imm;
                break;
             case 2:
                op = Iop_Add64x2;
-               cvt = Iop_Shorten64x2;
+               cvt = Iop_NarrowUn64to32x2;
                sh = Iop_ShrN64x2;
                imm = 1U << 31;
                break;
@@ -4910,22 +4910,22 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
          switch (size) {
             case 0:
                cmp = U ? Iop_CmpGT8Ux8 : Iop_CmpGT8Sx8;
-               cvt = U ? Iop_Longen8Ux8 : Iop_Longen8Sx8;
-               cvt2 = Iop_Longen8Sx8;
+               cvt = U ? Iop_Widen8Uto16x8 : Iop_Widen8Sto16x8;
+               cvt2 = Iop_Widen8Sto16x8;
                op = Iop_Sub16x8;
                op2 = Iop_Add16x8;
                break;
             case 1:
                cmp = U ? Iop_CmpGT16Ux4 : Iop_CmpGT16Sx4;
-               cvt = U ? Iop_Longen16Ux4 : Iop_Longen16Sx4;
-               cvt2 = Iop_Longen16Sx4;
+               cvt = U ? Iop_Widen16Uto32x4 : Iop_Widen16Sto32x4;
+               cvt2 = Iop_Widen16Sto32x4;
                op = Iop_Sub32x4;
                op2 = Iop_Add32x4;
                break;
             case 2:
                cmp = U ? Iop_CmpGT32Ux2 : Iop_CmpGT32Sx2;
-               cvt = U ? Iop_Longen32Ux2 : Iop_Longen32Sx2;
-               cvt2 = Iop_Longen32Sx2;
+               cvt = U ? Iop_Widen32Uto64x2 : Iop_Widen32Sto64x2;
+               cvt2 = Iop_Widen32Sto64x2;
                op = Iop_Sub64x2;
                op2 = Iop_Add64x2;
                break;
@@ -4968,7 +4968,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 0:
                op = Iop_Sub16x8;
                op2 = Iop_Add16x8;
-               cvt = Iop_Shorten16x8;
+               cvt = Iop_NarrowUn16to8x8;
                sh = Iop_ShrN16x8;
                imm = 1U << 7;
                imm = (imm << 16) | imm;
@@ -4977,7 +4977,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 1:
                op = Iop_Sub32x4;
                op2 = Iop_Add32x4;
-               cvt = Iop_Shorten32x4;
+               cvt = Iop_NarrowUn32to16x4;
                sh = Iop_ShrN32x4;
                imm = 1U << 15;
                imm = (imm << 32) | imm;
@@ -4985,7 +4985,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 2:
                op = Iop_Sub64x2;
                op2 = Iop_Add64x2;
-               cvt = Iop_Shorten64x2;
+               cvt = Iop_NarrowUn64to32x2;
                sh = Iop_ShrN64x2;
                imm = 1U << 31;
                break;
@@ -5020,20 +5020,20 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
          switch (size) {
             case 0:
                cmp = U ? Iop_CmpGT8Ux8 : Iop_CmpGT8Sx8;
-               cvt = U ? Iop_Longen8Ux8 : Iop_Longen8Sx8;
-               cvt2 = Iop_Longen8Sx8;
+               cvt = U ? Iop_Widen8Uto16x8 : Iop_Widen8Sto16x8;
+               cvt2 = Iop_Widen8Sto16x8;
                op = Iop_Sub16x8;
                break;
             case 1:
                cmp = U ? Iop_CmpGT16Ux4 : Iop_CmpGT16Sx4;
-               cvt = U ? Iop_Longen16Ux4 : Iop_Longen16Sx4;
-               cvt2 = Iop_Longen16Sx4;
+               cvt = U ? Iop_Widen16Uto32x4 : Iop_Widen16Sto32x4;
+               cvt2 = Iop_Widen16Sto32x4;
                op = Iop_Sub32x4;
                break;
             case 2:
                cmp = U ? Iop_CmpGT32Ux2 : Iop_CmpGT32Sx2;
-               cvt = U ? Iop_Longen32Ux2 : Iop_Longen32Sx2;
-               cvt2 = Iop_Longen32Sx2;
+               cvt = U ? Iop_Widen32Uto64x2 : Iop_Widen32Sto64x2;
+               cvt2 = Iop_Widen32Sto64x2;
                op = Iop_Sub64x2;
                break;
             case 3:
@@ -6339,15 +6339,15 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
                switch (size) {
                   case 1:
                      op = Iop_ShrN16x8;
-                     narOp = Iop_Shorten16x8;
+                     narOp = Iop_NarrowUn16to8x8;
                      break;
                   case 2:
                      op = Iop_ShrN32x4;
-                     narOp = Iop_Shorten32x4;
+                     narOp = Iop_NarrowUn32to16x4;
                      break;
                   case 3:
                      op = Iop_ShrN64x2;
-                     narOp = Iop_Shorten64x2;
+                     narOp = Iop_NarrowUn64to32x2;
                      break;
                   default:
                      vassert(0);
@@ -6380,17 +6380,17 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
                   case 1:
                      addOp = Iop_Add16x8;
                      shOp = Iop_ShrN16x8;
-                     narOp = Iop_Shorten16x8;
+                     narOp = Iop_NarrowUn16to8x8;
                      break;
                   case 2:
                      addOp = Iop_Add32x4;
                      shOp = Iop_ShrN32x4;
-                     narOp = Iop_Shorten32x4;
+                     narOp = Iop_NarrowUn32to16x4;
                      break;
                   case 3:
                      addOp = Iop_Add64x2;
                      shOp = Iop_ShrN64x2;
-                     narOp = Iop_Shorten64x2;
+                     narOp = Iop_NarrowUn64to32x2;
                      break;
                   default:
                      vassert(0);
@@ -6429,18 +6429,18 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             switch (size) {
                case 1:
                   op = U ? Iop_ShrN16x8 : Iop_SarN16x8;
-                  cvt = U ? Iop_QShortenU16Ux8 : Iop_QShortenS16Sx8;
-                  cvt2 = U ? Iop_Longen8Ux8 : Iop_Longen8Sx8;
+                  cvt = U ? Iop_QNarrowUn16Uto8Ux8 : Iop_QNarrowUn16Sto8Sx8;
+                  cvt2 = U ? Iop_Widen8Uto16x8 : Iop_Widen8Sto16x8;
                   break;
                case 2:
                   op = U ? Iop_ShrN32x4 : Iop_SarN32x4;
-                  cvt = U ? Iop_QShortenU32Ux4 : Iop_QShortenS32Sx4;
-                  cvt2 = U ? Iop_Longen16Ux4 : Iop_Longen16Sx4;
+                  cvt = U ? Iop_QNarrowUn32Uto16Ux4 : Iop_QNarrowUn32Sto16Sx4;
+                  cvt2 = U ? Iop_Widen16Uto32x4 : Iop_Widen16Sto32x4;
                   break;
                case 3:
                   op = U ? Iop_ShrN64x2 : Iop_SarN64x2;
-                  cvt = U ? Iop_QShortenU64Ux2 : Iop_QShortenS64Sx2;
-                  cvt2 = U ? Iop_Longen32Ux2 : Iop_Longen32Sx2;
+                  cvt = U ? Iop_QNarrowUn64Uto32Ux2 : Iop_QNarrowUn64Sto32Sx2;
+                  cvt2 = U ? Iop_Widen32Uto64x2 : Iop_Widen32Sto64x2;
                   break;
                default:
                   vassert(0);
@@ -6452,18 +6452,18 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             switch (size) {
                case 1:
                   op = Iop_SarN16x8;
-                  cvt = Iop_QShortenU16Sx8;
-                  cvt2 = Iop_Longen8Ux8;
+                  cvt = Iop_QNarrowUn16Sto8Ux8;
+                  cvt2 = Iop_Widen8Uto16x8;
                   break;
                case 2:
                   op = Iop_SarN32x4;
-                  cvt = Iop_QShortenU32Sx4;
-                  cvt2 = Iop_Longen16Ux4;
+                  cvt = Iop_QNarrowUn32Sto16Ux4;
+                  cvt2 = Iop_Widen16Uto32x4;
                   break;
                case 3:
                   op = Iop_SarN64x2;
-                  cvt = Iop_QShortenU64Sx2;
-                  cvt2 = Iop_Longen32Ux2;
+                  cvt = Iop_QNarrowUn64Sto32Ux2;
+                  cvt2 = Iop_Widen32Uto64x2;
                   break;
                default:
                   vassert(0);
@@ -6523,15 +6523,15 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
          switch (size) {
             case 0:
                op = Iop_ShlN16x8;
-               cvt = U ? Iop_Longen8Ux8 : Iop_Longen8Sx8;
+               cvt = U ? Iop_Widen8Uto16x8 : Iop_Widen8Sto16x8;
                break;
             case 1:
                op = Iop_ShlN32x4;
-               cvt = U ? Iop_Longen16Ux4 : Iop_Longen16Sx4;
+               cvt = U ? Iop_Widen16Uto32x4 : Iop_Widen16Sto32x4;
                break;
             case 2:
                op = Iop_ShlN64x2;
-               cvt = U ? Iop_Longen32Ux2 : Iop_Longen32Sx2;
+               cvt = U ? Iop_Widen32Uto64x2 : Iop_Widen32Sto64x2;
                break;
             case 3:
                return False;
@@ -7340,9 +7340,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
             IROp op;
             mreg >>= 1;
             switch (size) {
-               case 0: op = Iop_Shorten16x8; break;
-               case 1: op = Iop_Shorten32x4; break;
-               case 2: op = Iop_Shorten64x2; break;
+               case 0: op = Iop_NarrowUn16to8x8;  break;
+               case 1: op = Iop_NarrowUn32to16x4; break;
+               case 2: op = Iop_NarrowUn64to32x2; break;
                case 3: return False;
                default: vassert(0);
             }
@@ -7359,9 +7359,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                return False;
             mreg >>= 1;
             switch (size) {
-               case 0: op2 = Iop_Shorten16x8; break;
-               case 1: op2 = Iop_Shorten32x4; break;
-               case 2: op2 = Iop_Shorten64x2; break;
+               case 0: op2 = Iop_NarrowUn16to8x8;  break;
+               case 1: op2 = Iop_NarrowUn32to16x4; break;
+               case 2: op2 = Iop_NarrowUn64to32x2; break;
                case 3: return False;
                default: vassert(0);
             }
@@ -7370,9 +7370,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                   vassert(0);
                case 1:
                   switch (size) {
-                     case 0: op = Iop_QShortenU16Sx8; break;
-                     case 1: op = Iop_QShortenU32Sx4; break;
-                     case 2: op = Iop_QShortenU64Sx2; break;
+                     case 0: op = Iop_QNarrowUn16Sto8Ux8;  break;
+                     case 1: op = Iop_QNarrowUn32Sto16Ux4; break;
+                     case 2: op = Iop_QNarrowUn64Sto32Ux2; break;
                      case 3: return False;
                      default: vassert(0);
                   }
@@ -7380,9 +7380,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                   break;
                case 2:
                   switch (size) {
-                     case 0: op = Iop_QShortenS16Sx8; break;
-                     case 1: op = Iop_QShortenS32Sx4; break;
-                     case 2: op = Iop_QShortenS64Sx2; break;
+                     case 0: op = Iop_QNarrowUn16Sto8Sx8;  break;
+                     case 1: op = Iop_QNarrowUn32Sto16Sx4; break;
+                     case 2: op = Iop_QNarrowUn64Sto32Sx2; break;
                      case 3: return False;
                      default: vassert(0);
                   }
@@ -7390,9 +7390,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                   break;
                case 3:
                   switch (size) {
-                     case 0: op = Iop_QShortenU16Ux8; break;
-                     case 1: op = Iop_QShortenU32Ux4; break;
-                     case 2: op = Iop_QShortenU64Ux2; break;
+                     case 0: op = Iop_QNarrowUn16Uto8Ux8;  break;
+                     case 1: op = Iop_QNarrowUn32Uto16Ux4; break;
+                     case 2: op = Iop_QNarrowUn64Uto32Ux2; break;
                      case 3: return False;
                      default: vassert(0);
                   }
@@ -7422,9 +7422,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
             shift_imm = 8 << size;
             res = newTemp(Ity_V128);
             switch (size) {
-               case 0: op = Iop_ShlN16x8; cvt = Iop_Longen8Ux8; break;
-               case 1: op = Iop_ShlN32x4; cvt = Iop_Longen16Ux4; break;
-               case 2: op = Iop_ShlN64x2; cvt = Iop_Longen32Ux2; break;
+               case 0: op = Iop_ShlN16x8; cvt = Iop_Widen8Uto16x8;  break;
+               case 1: op = Iop_ShlN32x4; cvt = Iop_Widen16Uto32x4; break;
+               case 2: op = Iop_ShlN64x2; cvt = Iop_Widen32Uto64x2; break;
                case 3: return False;
                default: vassert(0);
             }

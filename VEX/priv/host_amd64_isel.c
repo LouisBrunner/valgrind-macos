@@ -1094,12 +1094,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_QAdd16Ux4:
             fn = (HWord)h_generic_calc_QAdd16Ux4; break;
 
-         case Iop_QNarrow32Sto16Sx4:
-            fn = (HWord)h_generic_calc_QNarrow32Sto16Sx4; break;
-         case Iop_QNarrow16Sto8Sx8:
-            fn = (HWord)h_generic_calc_QNarrow16Sto8Sx8; break;
-         case Iop_QNarrow16Sto8Ux8:
-            fn = (HWord)h_generic_calc_QNarrow16Sto8Ux8; break;
+         case Iop_QNarrowBin32Sto16Sx4:
+            fn = (HWord)h_generic_calc_QNarrowBin32Sto16Sx4; break;
+         case Iop_QNarrowBin16Sto8Sx8:
+            fn = (HWord)h_generic_calc_QNarrowBin16Sto8Sx8; break;
+         case Iop_QNarrowBin16Sto8Ux8:
+            fn = (HWord)h_generic_calc_QNarrowBin16Sto8Ux8; break;
 
          case Iop_QSub8Sx8:
             fn = (HWord)h_generic_calc_QSub8Sx8; break;
@@ -3544,11 +3544,11 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_QNarrow32Sto16Sx8: 
+      case Iop_QNarrowBin32Sto16Sx8: 
          op = Asse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
-      case Iop_QNarrow16Sto8Sx16: 
+      case Iop_QNarrowBin16Sto8Sx16: 
          op = Asse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
-      case Iop_QNarrow16Sto8Ux16: 
+      case Iop_QNarrowBin16Sto8Ux16: 
          op = Asse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
 
       case Iop_InterleaveHI8x16: 
@@ -3660,8 +3660,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
                            goto do_SseAssistedBinary;
       case Iop_CmpGT64Sx2: fn = (HWord)h_generic_calc_CmpGT64Sx2;
                            goto do_SseAssistedBinary;
-      case Iop_QNarrow32Sto16Ux8:
-                           fn = (HWord)h_generic_calc_QNarrow32Sto16Ux8;
+      case Iop_QNarrowBin32Sto16Ux8:
+                           fn = (HWord)h_generic_calc_QNarrowBin32Sto16Ux8;
                            goto do_SseAssistedBinary;
       do_SseAssistedBinary: {
          /* RRRufff!  RRRufff code is what we're generating here.  Oh

@@ -271,8 +271,8 @@ void h_generic_calc_SarN8x16 ( /*OUT*/V128* res,
    res->w8[15] = sar8(argL->w8[15], nn);
 }
 
-void h_generic_calc_QNarrow32Sto16Ux8 ( /*OUT*/V128* res,
-                                        V128* argL, V128* argR )
+void h_generic_calc_QNarrowBin32Sto16Ux8 ( /*OUT*/V128* res,
+                                           V128* argL, V128* argR )
 {
    res->w16[0] = qnarrow32Sto16U(argR->w32[0]);
    res->w16[1] = qnarrow32Sto16U(argR->w32[1]);

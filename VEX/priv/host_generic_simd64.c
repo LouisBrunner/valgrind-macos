@@ -759,7 +759,7 @@ ULong h_generic_calc_CmpNEZ8x8 ( ULong xx )
 
 /* ------------ Saturating narrowing ------------ */
 
-ULong h_generic_calc_QNarrow32Sto16Sx4 ( ULong aa, ULong bb )
+ULong h_generic_calc_QNarrowBin32Sto16Sx4 ( ULong aa, ULong bb )
 {
    UInt d = sel32x2_1(aa);
    UInt c = sel32x2_0(aa);
@@ -773,7 +773,7 @@ ULong h_generic_calc_QNarrow32Sto16Sx4 ( ULong aa, ULong bb )
           );
 }
 
-ULong h_generic_calc_QNarrow16Sto8Sx8 ( ULong aa, ULong bb )
+ULong h_generic_calc_QNarrowBin16Sto8Sx8 ( ULong aa, ULong bb )
 {
    UShort h = sel16x4_3(aa);
    UShort g = sel16x4_2(aa);
@@ -795,7 +795,7 @@ ULong h_generic_calc_QNarrow16Sto8Sx8 ( ULong aa, ULong bb )
           );
 }
 
-ULong h_generic_calc_QNarrow16Sto8Ux8 ( ULong aa, ULong bb )
+ULong h_generic_calc_QNarrowBin16Sto8Ux8 ( ULong aa, ULong bb )
 {
    UShort h = sel16x4_3(aa);
    UShort g = sel16x4_2(aa);

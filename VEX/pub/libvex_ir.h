@@ -895,7 +895,8 @@ typedef
       Iop_QShlN8x8, Iop_QShlN16x4, Iop_QShlN32x2, Iop_QShlN64x1,
       Iop_QSalN8x8, Iop_QSalN16x4, Iop_QSalN32x2, Iop_QSalN64x1,
 
-      /* NARROWING -- narrow 2xI64 into 1xI64, hi half from left arg */
+      /* NARROWING (binary) 
+         -- narrow 2xI64 into 1xI64, hi half from left arg */
       /* For saturated narrowing, I believe there are 4 variants of
          the basic arithmetic operation, depending on the signedness
          of argument and result.  Here are examples that exemplify
@@ -915,8 +916,8 @@ typedef
                                       if (x >s 255) x = 255;
                                       return x[7:0];
       */
-      Iop_QNarrow16Sto8Ux8,
-      Iop_QNarrow16Sto8Sx8, Iop_QNarrow32Sto16Sx4,
+      Iop_QNarrowBin16Sto8Ux8,
+      Iop_QNarrowBin16Sto8Sx8, Iop_QNarrowBin32Sto16Sx4,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of
@@ -1035,6 +1036,7 @@ typedef
       Iop_Fixed32UToF32x4_RN, Iop_Fixed32SToF32x4_RN, /* fixed-point -> fp */
 
       /* --- Single to/from half conversion --- */
+      /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
       Iop_F32toF16x4, Iop_F16toF32x4,         /* F32x4 <-> F16x4      */
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
@@ -1193,31 +1195,32 @@ typedef
       Iop_QShlN8x16, Iop_QShlN16x8, Iop_QShlN32x4, Iop_QShlN64x2,
       Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2,
 
-      /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
+      /* NARROWING (binary) 
+         -- narrow 2xV128 into 1xV128, hi half from left arg */
       /* See comments above w.r.t. U vs S issues in saturated narrowing. */
-      Iop_QNarrow16Sto8Ux16, Iop_QNarrow32Sto16Ux8,
-      Iop_QNarrow16Sto8Sx16, Iop_QNarrow32Sto16Sx8,
-      Iop_QNarrow16Uto8Ux16, Iop_QNarrow32Uto16Ux8,
-      Iop_Narrow16x8, Iop_Narrow32x4,
-      /* Shortening V128->I64, lo half from each element */
-      Iop_Shorten16x8, Iop_Shorten32x4, Iop_Shorten64x2,
-      /* Saturating shortening from signed source to signed/unsigned destination */
-      Iop_QShortenS16Sx8, Iop_QShortenS32Sx4, Iop_QShortenS64Sx2,
-      Iop_QShortenU16Sx8, Iop_QShortenU32Sx4, Iop_QShortenU64Sx2,
-      /* Saturating shortening from unsigned source to unsigned destination */
-      Iop_QShortenU16Ux8, Iop_QShortenU32Ux4, Iop_QShortenU64Ux2,
+      Iop_QNarrowBin16Sto8Ux16, Iop_QNarrowBin32Sto16Ux8,
+      Iop_QNarrowBin16Sto8Sx16, Iop_QNarrowBin32Sto16Sx8,
+      Iop_QNarrowBin16Uto8Ux16, Iop_QNarrowBin32Uto16Ux8,
+      Iop_NarrowBin16to8x16, Iop_NarrowBin32to16x8,
 
-      /* WIDENING */
-      /* Longening --- sign or zero extends each element of the argument
-         vector to the twice original size. The resulting vector consists of
+      /* NARROWING (unary) -- narrow V128 into I64 */
+      Iop_NarrowUn16to8x8, Iop_NarrowUn32to16x4, Iop_NarrowUn64to32x2,
+      /* Saturating narrowing from signed source to signed/unsigned destination */
+      Iop_QNarrowUn16Sto8Sx8, Iop_QNarrowUn32Sto16Sx4, Iop_QNarrowUn64Sto32Sx2,
+      Iop_QNarrowUn16Sto8Ux8, Iop_QNarrowUn32Sto16Ux4, Iop_QNarrowUn64Sto32Ux2,
+      /* Saturating narrowing from unsigned source to unsigned destination */
+      Iop_QNarrowUn16Uto8Ux8, Iop_QNarrowUn32Uto16Ux4, Iop_QNarrowUn64Uto32Ux2,
+
+      /* WIDENING -- sign or zero extend each element of the argument
+         vector to the twice original size.  The resulting vector consists of
          the same number of elements but each element and the vector itself
-         are two times wider.
+         are twice as wide.
          All operations are I64->V128.
          Example
-            Iop_Longen32Sx2( [a, b] ) = [c, d]
+            Iop_Widen32Sto64x2( [a, b] ) = [c, d]
                where c = Iop_32Sto64(a) and d = Iop_32Sto64(b) */
-      Iop_Longen8Ux8, Iop_Longen16Ux4, Iop_Longen32Ux2,
-      Iop_Longen8Sx8, Iop_Longen16Sx4, Iop_Longen32Sx2,
+      Iop_Widen8Uto16x8, Iop_Widen16Uto32x4, Iop_Widen32Uto64x2,
+      Iop_Widen8Sto16x8, Iop_Widen16Sto32x4, Iop_Widen32Sto64x2,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of

@@ -3678,9 +3678,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shr16x8:    op = Pav_SHR;    goto do_AvBin16x8;
       case Iop_Sar16x8:    op = Pav_SAR;    goto do_AvBin16x8;
       case Iop_Rol16x8:    op = Pav_ROTL;   goto do_AvBin16x8;
-      case Iop_Narrow16x8:        op = Pav_PACKUU;  goto do_AvBin16x8;
-      case Iop_QNarrow16Uto8Ux16: op = Pav_QPACKUU; goto do_AvBin16x8;
-      case Iop_QNarrow16Sto8Sx16: op = Pav_QPACKSS; goto do_AvBin16x8;
+      case Iop_NarrowBin16to8x16:    op = Pav_PACKUU;  goto do_AvBin16x8;
+      case Iop_QNarrowBin16Uto8Ux16: op = Pav_QPACKUU; goto do_AvBin16x8;
+      case Iop_QNarrowBin16Sto8Sx16: op = Pav_QPACKSS; goto do_AvBin16x8;
       case Iop_InterleaveHI16x8:  op = Pav_MRGHI;  goto do_AvBin16x8;
       case Iop_InterleaveLO16x8:  op = Pav_MRGLO;  goto do_AvBin16x8;
       case Iop_Add16x8:    op = Pav_ADDU;   goto do_AvBin16x8;
@@ -3712,9 +3712,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shr32x4:    op = Pav_SHR;    goto do_AvBin32x4;
       case Iop_Sar32x4:    op = Pav_SAR;    goto do_AvBin32x4;
       case Iop_Rol32x4:    op = Pav_ROTL;   goto do_AvBin32x4;
-      case Iop_Narrow32x4:        op = Pav_PACKUU;  goto do_AvBin32x4;
-      case Iop_QNarrow32Uto16Ux8: op = Pav_QPACKUU; goto do_AvBin32x4;
-      case Iop_QNarrow32Sto16Sx8: op = Pav_QPACKSS; goto do_AvBin32x4;
+      case Iop_NarrowBin32to16x8:    op = Pav_PACKUU;  goto do_AvBin32x4;
+      case Iop_QNarrowBin32Uto16Ux8: op = Pav_QPACKUU; goto do_AvBin32x4;
+      case Iop_QNarrowBin32Sto16Sx8: op = Pav_QPACKSS; goto do_AvBin32x4;
       case Iop_InterleaveHI32x4:  op = Pav_MRGHI;  goto do_AvBin32x4;
       case Iop_InterleaveLO32x4:  op = Pav_MRGLO;  goto do_AvBin32x4;
       case Iop_Add32x4:    op = Pav_ADDU;   goto do_AvBin32x4;

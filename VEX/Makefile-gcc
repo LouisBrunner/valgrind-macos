@@ -87,6 +87,7 @@ endif
 CCFLAGS = -Wall -Wmissing-prototypes -Wshadow \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
 		-Wcast-align -Wmissing-declarations \
+		-Wno-pointer-sign \
 		$(EXTRA_CFLAGS) -g -O2 -fstrict-aliasing
 
 #CC = icc

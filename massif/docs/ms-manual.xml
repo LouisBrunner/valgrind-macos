@@ -861,7 +861,7 @@ in a particular column, which makes following the allocation chains easier.
 <sect1 id="ms-manual.monitor-commands" xreflabel="Massif Monitor Commands">
 <title>Massif Monitor Commands</title>
 <para>The Massif tool provides monitor commands handled by the Valgrind
-gdbserver (see <xref linkend="manual-core.gdbserver-commandhandling"/>).
+gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 </para>
 
 <itemizedlist>

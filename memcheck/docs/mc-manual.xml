@@ -1273,7 +1273,7 @@ is:</para>
 <sect1 id="mc-manual.monitor-commands" xreflabel="Memcheck Monitor Commands">
 <title>Memcheck Monitor Commands</title>
 <para>The Memcheck tool provides monitor commands handled by the Valgrind
-gdbserver (see <xref linkend="manual-core.gdbserver-commandhandling"/>).
+gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 </para>
 
 <itemizedlist>

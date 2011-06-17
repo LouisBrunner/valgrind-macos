@@ -1078,7 +1078,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 <sect1 id="cl-manual.monitor-commands" xreflabel="Callgrind Monitor Commands">
 <title>Callgrind Monitor Commands</title>
 <para>The Callgrind tool provides monitor commands handled by the Valgrind
-gdbserver (see <xref linkend="manual-core.gdbserver-commandhandling"/>).
+gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 </para>
 
 <itemizedlist>

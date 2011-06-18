@@ -250,13 +250,30 @@ void remote_open (char *name)
       VG_(umsg)("embedded gdbserver: reading from %s\n", from_gdb);
       VG_(umsg)("embedded gdbserver: writing to   %s\n", to_gdb);
       VG_(umsg)("embedded gdbserver: shared mem   %s\n", shared_mem);
-      VG_(umsg)("CONTROL ME using: vgdb --pid=%d%s%s ...command...\n",
+      VG_(umsg)("\n");
+      VG_(umsg)("TO CONTROL THIS PROCESS USING vgdb (which you probably\n"
+                "don't want to do, unless you know exactly what you're doing,\n"
+                "or are doing some strange experiment):\n"
+                "  %s/../../bin/vgdb --pid=%d%s%s ...command...\n",
+                VG_LIBDIR,
                 pid, (name_default ? "" : " --vgdb="),
                 (name_default ? "" : name));
-      VG_(umsg)("DEBUG ME using: (gdb) target remote | vgdb --pid=%d%s%s\n",
-                pid, (name_default ? "" : " --vgdb="), 
-                (name_default ? "" : name));
-      VG_(umsg)("   --pid optional if only one valgrind process is running\n");
+   }
+   if (VG_(clo_verbosity) > 1 
+       || VG_(clo_vgdb_error) < 999999999) {
+      VG_(umsg)("\n");
+      VG_(umsg)(
+         "TO DEBUG THIS PROCESS USING GDB: start GDB like this\n"
+         "  /path/to/gdb %s\n"
+         "and then give GDB the following command\n"
+         "  target remote | %s/../../bin/vgdb --pid=%d%s%s\n",
+         VG_(args_the_exename),
+         VG_LIBDIR,
+         pid, (name_default ? "" : " --vgdb="), 
+         (name_default ? "" : name)
+      );
+      VG_(umsg)("--pid is optional if only one valgrind process is running\n");
+      VG_(umsg)("\n");
    }
 
    if (!mknod_done) {

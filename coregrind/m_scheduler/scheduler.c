@@ -901,11 +901,6 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    return retval;
 }
 
-ULong VG_(bbs_done) (void)
-{
-   return bbs_done;
-}
-
 
 /* ---------------------------------------------------------------------
    The scheduler proper.

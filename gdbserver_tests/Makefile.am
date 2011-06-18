@@ -7,6 +7,7 @@ dist_noinst_SCRIPTS = \
 	filter_memcheck_monitor filter_stderr filter_vgdb
 
 EXTRA_DIST = \
+	README_DEVELOPERS \
 	mcbreak.stderrB.exp \
 	mcbreak.stderr.exp \
 	mcbreak.stdinB.gdb \

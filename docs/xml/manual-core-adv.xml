@@ -295,6 +295,13 @@ under Memcheck and on-demand Massif snapshot production.
        xreflabel="gdbserver simple example">
 <title>Quick Start: debugging in 3 steps</title>
 
+<para>The simplest way to get started is to run Valgrind with the
+flag <option>--vgdb-error=0</option>.  Then follow the on-screen
+directions, which give you the precise commands needed to start GDB
+and connect it to your program.</para>
+
+<para>Otherwise, here's a slightly more verbose overview.</para>
+
 <para>If you want to debug a program with GDB when using the Memcheck
 tool, start Valgrind the following way:
 <screen><![CDATA[

@@ -3,4 +3,10 @@
 dir=`dirname $0`
 
 $dir/../tests/filter_stderr_basic    |
-sed -e '/^Copyright (C) /d'
+sed -e '/^Copyright (C) /d' \
+    \
+    -e '/TO DEBUG THIS PROCESS USING GDB/d' \
+    -e '/\/path\/to\/gdb/d' \
+    -e '/and then give GDB the following command/d' \
+    -e '/target remote |/d' \
+    -e '/pid is optional if only one valgrind process is running/d'

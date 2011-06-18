@@ -100,9 +100,6 @@ extern void VG_(scheduler_init_phase2) ( ThreadId main_tid,
 extern void VG_(disable_vgdb_poll) (void );
 extern void VG_(force_vgdb_poll) ( void );
 
-/* nr of bbs done since startup. */
-extern ULong VG_(bbs_done) (void);
-
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
 

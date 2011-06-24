@@ -53,15 +53,16 @@ can be difficult to find by other means.</para>
 <para>Helgrind is aware of all the pthread abstractions and tracks
 their effects as accurately as it can.  On x86 and amd64 platforms, it
 understands and partially handles implicit locking arising from the
-use of the LOCK instruction prefix.
+use of the LOCK instruction prefix.  On PowerPC/POWER and ARM
+platforms, it partially handles implicit locking arising from 
+load-linked and store-conditional instruction pairs.
 </para>
 
 <para>Helgrind works best when your application uses only the POSIX
 pthreads API.  However, if you want to use custom threading 
 primitives, you can describe their behaviour to Helgrind using the
 <varname>ANNOTATE_*</varname> macros defined
-in <varname>helgrind.h</varname>.  This functionality was added in
-release 3.5.0 of Valgrind, and is considered experimental.</para>
+in <varname>helgrind.h</varname>.</para>
 
 
 
@@ -211,27 +212,38 @@ lock, the graph is updated, and then checked to see if it now contains
 a cycle.  The presence of a cycle indicates a potential deadlock involving
 the locks in the cycle.</para>
 
-<para>In simple situations, where the cycle only contains two locks,
-Helgrind will show where the required order was established:</para>
+<para>In general, Helgrind will choose two locks involved in the cycle
+and show you how their acquisition ordering has become inconsistent.
+It does this by showing the program points that first defined the
+ordering, and the program points which later violated it.  Here is a
+simple example involving just two locks:</para>
 
 <programlisting><![CDATA[
-Thread #1: lock order "0x7FEFFFAB0 before 0x7FEFFFA80" violated
-   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
-   by 0x40081F: main (tc13_laog1.c:24)
-  Required order was established by acquisition of lock at 0x7FEFFFAB0
-   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
-   by 0x400748: main (tc13_laog1.c:17)
-  followed by a later acquisition of lock at 0x7FEFFFA80
-   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
-   by 0x400773: main (tc13_laog1.c:18)
+Thread #1: lock order "0x7FF0006D0 before 0x7FF0006A0" violated
+
+Observed (incorrect) order is: acquisition of lock at 0x7FF0006A0
+   at 0x4C2BC62: pthread_mutex_lock (hg_intercepts.c:494)
+   by 0x400825: main (tc13_laog1.c:23)
+
+ followed by a later acquisition of lock at 0x7FF0006D0
+   at 0x4C2BC62: pthread_mutex_lock (hg_intercepts.c:494)
+   by 0x400853: main (tc13_laog1.c:24)
+
+Required order was established by acquisition of lock at 0x7FF0006D0
+   at 0x4C2BC62: pthread_mutex_lock (hg_intercepts.c:494)
+   by 0x40076D: main (tc13_laog1.c:17)
+
+ followed by a later acquisition of lock at 0x7FF0006A0
+   at 0x4C2BC62: pthread_mutex_lock (hg_intercepts.c:494)
+   by 0x40079B: main (tc13_laog1.c:18)
 ]]></programlisting>
 
 <para>When there are more than two locks in the cycle, the error is
 equally serious.  However, at present Helgrind does not show the locks
-involved, so as to avoid flooding you with information.  That could be
-fixed in future.  For example, here is an example involving a cycle
-of five locks from a naive implementation the famous Dining
-Philosophers problem
+involved, sometimes because it that information is not available, but
+also so as to avoid flooding you with information.  For example, here
+is an example involving a cycle of five locks from a naive
+implementation the famous Dining Philosophers problem
 (see <computeroutput>helgrind/tests/tc14_laog_dinphils.c</computeroutput>).
 In this case Helgrind has detected that all 5 philosophers could
 simultaneously pick up their left fork and then deadlock whilst
@@ -239,11 +251,15 @@ waiting to pick up their right forks.</para>
 
 <programlisting><![CDATA[
 Thread #6: lock order "0x6010C0 before 0x601160" violated
-   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
-   by 0x4007C0: dine (tc14_laog_dinphils.c:19)
-   by 0x4C25DF7: mythread_wrapper (hg_intercepts.c:178)
-   by 0x4E2F09D: start_thread (in /lib64/libpthread-2.5.so)
-   by 0x51054CC: clone (in /lib64/libc-2.5.so)
+
+Observed (incorrect) order is: acquisition of lock at 0x601160
+   (stack unavailable)
+
+ followed by a later acquisition of lock at 0x6010C0
+   at 0x4C2BC62: pthread_mutex_lock (hg_intercepts.c:494)
+   by 0x4007DE: dine (tc14_laog_dinphils.c:19)
+   by 0x4C2CBE7: mythread_wrapper (hg_intercepts.c:219)
+   by 0x4E369C9: start_thread (pthread_create.c:300)
 ]]></programlisting>
 
 </sect1>
@@ -312,14 +328,18 @@ Thread #2 was created
    by 0x400605: main (simple_race.c:12)
 
 Possible data race during read of size 4 at 0x601038 by thread #1
+Locks held: none
    at 0x400606: main (simple_race.c:13)
- This conflicts with a previous write of size 4 by thread #2
+
+This conflicts with a previous write of size 4 by thread #2
+Locks held: none
    at 0x4005DC: child_fn (simple_race.c:6)
    by 0x4C29AFF: mythread_wrapper (hg_intercepts.c:194)
    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
    by 0x511C0CC: clone (in /lib64/libc-2.8.so)
- Location 0x601038 is 0 bytes inside global var "var"
- declared at simple_race.c:3
+
+Location 0x601038 is 0 bytes inside global var "var"
+declared at simple_race.c:3
 ]]></programlisting>
 
 <para>This is quite a lot of detail for an apparently simple error.
@@ -348,7 +368,10 @@ program.</para>
    threads.</para>
   <para>By examining your program at the two locations, you should be
    able to get at least some idea of what the root cause of the
-   problem is.</para>
+   problem is.  For each location, Helgrind shows the set of locks
+   held at the time of the access.  This often makes it clear which
+   thread, if any, failed to take a required lock.  In this example
+   neither thread holds a lock during the access.</para>
  </listitem>
  <listitem>
   <para>For races which occur on global or stack variables, Helgrind
@@ -600,17 +623,21 @@ Thread #3 was created
    by 0x4008F2: main (tc21_pthonce.c:86)
 
 Possible data race during read of size 4 at 0x601070 by thread #3
+Locks held: none
    at 0x40087A: child (tc21_pthonce.c:74)
    by 0x4C29AFF: mythread_wrapper (hg_intercepts.c:194)
    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
    by 0x511C0CC: clone (in /lib64/libc-2.8.so)
- This conflicts with a previous write of size 4 by thread #2
+
+This conflicts with a previous write of size 4 by thread #2
+Locks held: none
    at 0x400883: child (tc21_pthonce.c:74)
    by 0x4C29AFF: mythread_wrapper (hg_intercepts.c:194)
    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
    by 0x511C0CC: clone (in /lib64/libc-2.8.so)
- Location 0x601070 is 0 bytes inside local var "unprotected2"
- declared at tc21_pthonce.c:51, in frame #0 of thread 3
+
+Location 0x601070 is 0 bytes inside local var "unprotected2"
+declared at tc21_pthonce.c:51, in frame #0 of thread 3
 ]]></programlisting>
 
 <para>Helgrind first announces the creation points of any threads
@@ -656,8 +683,9 @@ thread-safe:</para>
  <listitem><para>Perhaps the location was intended to be protected by
   a mutex?  If so, you need to lock and unlock the mutex at both
   access points, even if one of the accesses is reported to be a read.
-  Did you perhaps forget the locking at one or other of the
-  accesses?</para>
+  Did you perhaps forget the locking at one or other of the accesses?
+  To help you do this, Helgrind shows the set of locks held by each
+  threads at the time they accessed the raced-on location.</para>
  </listitem>
  <listitem><para>Alternatively, perhaps you intended to use a some
   other scheme to make it safe, such as signalling on a condition
@@ -763,6 +791,74 @@ of false data-race errors.</para>
       failures with more recent versions.</para>
      </listitem>
     </itemizedlist>
+
+    <para>If you must implement your own threading primitives, there
+      are a set of client request macros
+      in <computeroutput>helgrind.h</computeroutput> to help you
+      describe your primitives to Helgrind.  You should be able to
+      mark up mutexes, condition variables, etc, without difficulty.
+    </para>
+    <para>
+      It is also possible to mark up the effects of thread-safe
+      reference counting using the
+      <computeroutput>ANNOTATE_HAPPENS_BEFORE</computeroutput>,
+      <computeroutput>ANNOTATE_HAPPENS_AFTER</computeroutput> and
+      <computeroutput>ANNOTATE_HAPPENS_BEFORE_FORGET_ALL</computeroutput>,
+      macros.  Thread-safe reference counting using an atomically
+      incremented/decremented refcount variable causes Helgrind
+      problems because a one-to-zero transition of the reference count
+      means the accessing thread has exclusive ownership of the
+      associated resource (normally, a C++ object) and can therefore
+      access it (normally, to run its destructor) without locking.
+      Helgrind doesn't understand this, and markup is essential to
+      avoid false positives.
+    </para>
+
+    <para>
+      Here are recommended guidelines for marking up thread safe
+      reference counting in C++.  You only need to mark up your
+      release methods -- the ones which decrement the reference count.
+      Given a class like this:
+    </para>
+
+<programlisting><![CDATA[
+class MyClass {
+   unsigned int mRefCount;
+
+   void Release ( void ) {
+      unsigned int newCount = atomic_decrement(&mRefCount);
+      if (newCount == 0) {
+         delete this;
+      }
+   }
+}
+]]></programlisting>
+
+   <para>
+     the release method should be marked up as follows:
+   </para>
+
+<programlisting><![CDATA[
+   void Release ( void ) {
+      unsigned int newCount = atomic_decrement(&mRefCount);
+      if (newCount == 0) {
+         ANNOTATE_HAPPENS_AFTER(&mRefCount);
+         ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(&mRefCount);
+         delete this;
+      } else {
+         ANNOTATE_HAPPENS_BEFORE(&mRefCount);
+      }
+   }
+]]></programlisting>
+
+    <para>
+      There are a number of complex, mostly-theoretical objections to
+      this scheme.  From a theoretical standpoint it appears to be
+      impossible to devise a markup scheme which is completely correct
+      in the sense of guaranteeing to remove all false races.  The
+      proposed scheme however works well in practice.
+    </para>
+
   </listitem>
 
   <listitem>
@@ -1057,6 +1153,24 @@ unlock(mx)                             unlock(mx)
         gigabytes or so of memory.</para>
     </listitem>
   </varlistentry>
+
+  <varlistentry id="opt.check-stack-refs"
+                xreflabel="--check-stack-refs">
+    <term>
+      <option><![CDATA[--check-stack-refs=no|yes
+      [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>
+        By default Helgrind checks all data memory accesses made by your
+        program.  This flag enables you to skip checking for accesses
+        to thread stacks (local variables).  This can improve
+        performance, but comes at the cost of missing races on
+        stack-allocated data.
+      </para>
+    </listitem>
+  </varlistentry>
+
 
 </variablelist>
 <!-- end of xi:include in the manpage -->

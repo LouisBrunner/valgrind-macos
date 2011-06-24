@@ -6,6 +6,23 @@ Release 3.7.0 (???)
   on 64-bit targets.
 - new variant --smc-check=all-non-file
 
+- hg: performance improvements and memory use reductions, particularly
+  for large, long running applications which perform many synch events.
+
+  showing of locksets for both threads involved in a race
+
+  general improvement of formatting/clarity of error messages
+
+  add facilities and documentation regarding annotation of thread safe
+  reference counted C++ classes
+
+  new flag --check-stack-refs=no|yes [yes], to disable race checking
+  on thread stacks (performance hack)
+
+  new flag --free-is-write=no|yes [no], to enable detection of races
+  where one thread accesses heap memory but another one frees it,
+  without any coordinating synchronisation event
+
 * IBM z/Architecture (s390x) running Linux
   Valgrind can analyse 64-bit programs running on z/Architecture.
   Most user space instructions up to and including z10 are supported.

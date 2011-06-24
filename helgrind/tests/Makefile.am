@@ -44,9 +44,7 @@ EXTRA_DIST = \
 	tc07_hbl1.vgtest tc07_hbl1.stdout.exp tc07_hbl1.stderr.exp \
 	tc08_hbl2.vgtest tc08_hbl2.stdout.exp tc08_hbl2.stderr.exp \
 	tc09_bad_unlock.vgtest tc09_bad_unlock.stdout.exp \
-		tc09_bad_unlock.stderr.exp-glibc23-amd64 \
 		tc09_bad_unlock.stderr.exp-glibc25-amd64 \
-		tc09_bad_unlock.stderr.exp-glibc25-x86 \
 	tc10_rec_lock.vgtest tc10_rec_lock.stdout.exp tc10_rec_lock.stderr.exp \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
 	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
@@ -62,12 +60,10 @@ EXTRA_DIST = \
 	tc17_sembar.vgtest tc17_sembar.stdout.exp \
 		tc17_sembar.stderr.exp \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
-		tc18_semabuse.stderr.exp-glibc25-amd64 \
 		tc18_semabuse.stderr.exp-glibc28-amd64 \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
-		tc20_verifywrap.stderr.exp-glibc25-amd64 \
 		tc20_verifywrap.stderr.exp-glibc27-amd64 \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \

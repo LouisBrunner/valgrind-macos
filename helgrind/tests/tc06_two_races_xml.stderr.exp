@@ -40,16 +40,17 @@
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>clone</fn>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>do_clone</fn>
+      <dir>...</dir>
+      <file>clone.S</file>
+      <line>...</line>
     </frame>
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>pthread_create@@GLIBC_2.2.5</fn>
+      <dir>...</dir>
+      <file>createthread.c</file>
+      <line>...</line>
     </frame>
     <frame>
       <ip>0x........</ip>
@@ -121,11 +122,12 @@
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>start_thread</fn>
+      <dir>...</dir>
+      <file>pthread_create.c</file>
+      <line>...</line>
     </frame>
     <frame>
       <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>clone</fn>
     </frame>
   </stack>
   <auxwhat>Location 0x........ is 0 bytes inside global var "unprot1"</auxwhat>
@@ -175,11 +177,12 @@
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>start_thread</fn>
+      <dir>...</dir>
+      <file>pthread_create.c</file>
+      <line>...</line>
     </frame>
     <frame>
       <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>clone</fn>
     </frame>
   </stack>
   <auxwhat>Location 0x........ is 0 bytes inside global var "unprot1"</auxwhat>
@@ -229,11 +232,12 @@
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>start_thread</fn>
+      <dir>...</dir>
+      <file>pthread_create.c</file>
+      <line>...</line>
     </frame>
     <frame>
       <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>clone</fn>
     </frame>
   </stack>
   <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>
@@ -283,11 +287,12 @@
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>start_thread</fn>
+      <dir>...</dir>
+      <file>pthread_create.c</file>
+      <line>...</line>
     </frame>
     <frame>
       <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>clone</fn>
     </frame>
   </stack>
   <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>

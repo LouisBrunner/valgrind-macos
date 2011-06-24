@@ -1,19 +1,29 @@
 
+---Thread-Announcement------------------------------------------
+
 Thread #x was created
    ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (hg03_inherit.c:46)
 
+---Thread-Announcement------------------------------------------
+
 Thread #x is the program's root thread
 
+----------------------------------------------------------------
+
 Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: t2 (hg03_inherit.c:28)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- This conflicts with a previous read of size 4 by thread #x
+
+This conflicts with a previous read of size 4 by thread #x
+Locks held: none
    at 0x........: main (hg03_inherit.c:60)
- Location 0x........ is 0 bytes inside shared[1],
- declared at hg03_inherit.c:11, in frame #x of thread x
+
+Location 0x........ is 0 bytes inside shared[1],
+declared at hg03_inherit.c:11, in frame #x of thread x
 
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

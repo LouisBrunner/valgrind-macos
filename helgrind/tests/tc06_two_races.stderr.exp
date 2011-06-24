@@ -1,46 +1,74 @@
 
+---Thread-Announcement------------------------------------------
+
 Thread #x is the program's root thread
+
+---Thread-Announcement------------------------------------------
 
 Thread #x was created
    ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc06_two_races.c:26)
 
+----------------------------------------------------------------
+
 Possible data race during read of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: main (tc06_two_races.c:31)
- This conflicts with a previous write of size 4 by thread #x
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
    at 0x........: child_fn (tc06_two_races.c:14)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- Location 0x........ is 0 bytes inside global var "unprot1"
- declared at tc06_two_races.c:9
+
+Location 0x........ is 0 bytes inside global var "unprot1"
+declared at tc06_two_races.c:9
+
+----------------------------------------------------------------
 
 Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: main (tc06_two_races.c:31)
- This conflicts with a previous write of size 4 by thread #x
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
    at 0x........: child_fn (tc06_two_races.c:14)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- Location 0x........ is 0 bytes inside global var "unprot1"
- declared at tc06_two_races.c:9
+
+Location 0x........ is 0 bytes inside global var "unprot1"
+declared at tc06_two_races.c:9
+
+----------------------------------------------------------------
 
 Possible data race during read of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: main (tc06_two_races.c:35)
- This conflicts with a previous write of size 4 by thread #x
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
    at 0x........: child_fn (tc06_two_races.c:18)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- Location 0x........ is 0 bytes inside global var "unprot2"
- declared at tc06_two_races.c:9
+
+Location 0x........ is 0 bytes inside global var "unprot2"
+declared at tc06_two_races.c:9
+
+----------------------------------------------------------------
 
 Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: main (tc06_two_races.c:35)
- This conflicts with a previous write of size 4 by thread #x
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
    at 0x........: child_fn (tc06_two_races.c:18)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- Location 0x........ is 0 bytes inside global var "unprot2"
- declared at tc06_two_races.c:9
+
+Location 0x........ is 0 bytes inside global var "unprot2"
+declared at tc06_two_races.c:9
 
 
 ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

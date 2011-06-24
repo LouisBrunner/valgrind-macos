@@ -1,35 +1,51 @@
 
+---Thread-Announcement------------------------------------------
+
 Thread #x was created
    ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (hg04_race.c:21)
+
+---Thread-Announcement------------------------------------------
 
 Thread #x was created
    ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (hg04_race.c:19)
 
+----------------------------------------------------------------
+
 Possible data race during read of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: th (hg04_race.c:10)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- This conflicts with a previous write of size 4 by thread #x
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
    at 0x........: th (hg04_race.c:10)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- Location 0x........ is 0 bytes inside local var "shared"
- declared at hg04_race.c:6, in frame #x of thread x
+
+Location 0x........ is 0 bytes inside local var "shared"
+declared at hg04_race.c:6, in frame #x of thread x
+
+----------------------------------------------------------------
 
 Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: none
    at 0x........: th (hg04_race.c:10)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- This conflicts with a previous write of size 4 by thread #x
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
    at 0x........: th (hg04_race.c:10)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
- Location 0x........ is 0 bytes inside local var "shared"
- declared at hg04_race.c:6, in frame #x of thread x
+
+Location 0x........ is 0 bytes inside local var "shared"
+declared at hg04_race.c:6, in frame #x of thread x
 
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

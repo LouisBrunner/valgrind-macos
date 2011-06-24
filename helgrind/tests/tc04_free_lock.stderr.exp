@@ -1,5 +1,9 @@
 
+---Thread-Announcement------------------------------------------
+
 Thread #x is the program's root thread
+
+----------------------------------------------------------------
 
 Thread #x: Exiting thread still holds 2 locks
    ...

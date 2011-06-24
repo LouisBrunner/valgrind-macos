@@ -1,13 +1,25 @@
 
+---Thread-Announcement------------------------------------------
+
 Thread #x is the program's root thread
 
+----------------------------------------------------------------
+
 Thread #x: lock order "0x........ before 0x........" violated
+
+Observed (incorrect) order is: acquisition of lock at 0x........
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: main (tc13_laog1.c:23)
+
+ followed by a later acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: main (tc13_laog1.c:24)
-  Required order was established by acquisition of lock at 0x........
+
+Required order was established by acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: main (tc13_laog1.c:17)
-  followed by a later acquisition of lock at 0x........
+
+ followed by a later acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: main (tc13_laog1.c:18)
 

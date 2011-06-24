@@ -21,6 +21,18 @@ EXTRA_DIST = \
 	hg05_race2.vgtest hg05_race2.stdout.exp hg05_race2.stderr.exp \
 	hg06_readshared.vgtest hg06_readshared.stdout.exp \
 		hg06_readshared.stderr.exp \
+	locked_vs_unlocked1_fwd.vgtest \
+		locked_vs_unlocked1_fwd.stderr.exp \
+		locked_vs_unlocked1_fwd.stdout.exp \
+	locked_vs_unlocked1_rev.vgtest \
+		locked_vs_unlocked1_rev.stderr.exp \
+		locked_vs_unlocked1_rev.stdout.exp \
+	locked_vs_unlocked2.vgtest \
+		locked_vs_unlocked2.stderr.exp \
+		locked_vs_unlocked2.stdout.exp \
+	locked_vs_unlocked3.vgtest \
+		locked_vs_unlocked3.stderr.exp \
+		locked_vs_unlocked3.stdout.exp \
 	pth_barrier1.vgtest pth_barrier1.stdout.exp pth_barrier1.stderr.exp \
 	pth_barrier2.vgtest pth_barrier2.stdout.exp pth_barrier2.stderr.exp \
 	pth_barrier3.vgtest pth_barrier3.stdout.exp pth_barrier3.stderr.exp \
@@ -84,6 +96,9 @@ check_PROGRAMS = \
 	hg04_race \
 	hg05_race2 \
 	hg06_readshared \
+	locked_vs_unlocked1 \
+	locked_vs_unlocked2 \
+	locked_vs_unlocked3 \
 	tc01_simple_race \
 	tc02_simple_tls \
 	tc03_re_excl \

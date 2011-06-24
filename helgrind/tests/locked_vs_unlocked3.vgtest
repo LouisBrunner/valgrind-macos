@@ -1,0 +1,2 @@
+prog: locked_vs_unlocked3
+vgopts: -q --num-callers=3

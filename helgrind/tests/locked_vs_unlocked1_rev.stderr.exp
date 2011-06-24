@@ -1,0 +1,34 @@
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@@GLIBC_2.2.5 (in /...libpthread...)
+   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@@GLIBC_2.2.5 (in /...libpthread...)
+   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
+
+----------------------------------------------------------------
+
+Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: child_fn (locked_vs_unlocked1.c:18)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: 1, at address 0x........
+   at 0x........: child_fn (locked_vs_unlocked1.c:19)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
+   at 0x........: child_fn (locked_vs_unlocked1.c:19)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+

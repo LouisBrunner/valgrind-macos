@@ -110,6 +110,22 @@ extern Word HG_(clo_sanity_flags);
    before the free. */
 extern Bool HG_(clo_free_is_write);
 
+/* Controls the application of VTS pruning.  There are three levels:
+
+   0: "never": VTS pruning is never done
+
+   1: "auto": (the default): VTS pruning is sometimes done after VTS
+      GCs, just frequently enough to keep space use under control, as
+      determined by heuristics in libhb_core.c.
+
+   2: "always": VTS pruning is done after every VTS GC.  This is
+      mostly a big time waster, but minimises space use. */
+extern UWord HG_(clo_vts_pruning);
+
+/* When False, race checking ignores memory references which are to
+   the stack, which speeds things up a bit.  Default: True. */
+extern Bool HG_(clo_check_stack_refs); 
+
 #endif /* ! __HG_BASICS_H */
 
 /*--------------------------------------------------------------------*/

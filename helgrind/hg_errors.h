@@ -57,8 +57,12 @@ void HG_(record_error_UnlockUnlocked) ( Thread*, Lock* );
 void HG_(record_error_UnlockForeign)  ( Thread*, Thread*, Lock* );
 void HG_(record_error_UnlockBogus)    ( Thread*, Addr );
 void HG_(record_error_PthAPIerror)    ( Thread*, HChar*, Word, HChar* );
+
+/* see the implementation for meaning of these params */
 void HG_(record_error_LockOrder)      ( Thread*, Addr, Addr,
-                                        ExeContext*, ExeContext* );
+                                        ExeContext*, ExeContext*,
+                                        ExeContext* );
+
 void HG_(record_error_Misc_w_aux)     ( Thread*, HChar* errstr,
                                         HChar* auxstr, ExeContext* auxctx );
 void HG_(record_error_Misc)           ( Thread* thr, HChar* errstr );

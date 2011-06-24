@@ -79,8 +79,8 @@ extern void VG_(sortXA) ( XArray* );
 /* Lookup (by binary search) 'key' in the array.  Set *first to be the
    index of the first, and *last to be the index of the last matching
    value found.  If any values are found, return True, else return
-   False, and don't change *first or *last.  Bomb if the array is not
-   sorted. */
+   False, and don't change *first or *last.  first and/or last may be
+   NULL.  Bomb if the array is not sorted. */
 extern Bool VG_(lookupXA) ( XArray*, void* key, 
                             /*OUT*/Word* first, /*OUT*/Word* last );
 

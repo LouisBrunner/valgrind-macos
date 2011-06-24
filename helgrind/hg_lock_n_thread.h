@@ -45,9 +45,9 @@
 #define LockP_MAGIC    0x755b5456 /* persistent (copied) locks */
 
 
-/* These are handles for Word sets.  CONSTRAINTS: must be (very) small
-   ints numbered from zero, since < 30-bit versions of them are used to
-   encode thread-sets and lock-sets in 32-bit shadow words. */
+/* These are handles for Word sets.  CONSTRAINTS: must be small ints
+   numbered from zero, since 32-bit versions of them are used to
+   encode lock-sets in libhb's history records (Thr_n_RCEC). */
 typedef  WordSet  WordSetID;
 
 
@@ -97,6 +97,8 @@ typedef
    }
    Thread;
 
+/* Get hg's admin_threads value, so libhb can visit all of them. */
+Thread* get_admin_threads ( void );
 
 /* Stores information about a lock's current state.  These are
    allocated and later freed (when the containing memory becomes
@@ -153,6 +155,8 @@ typedef
          for LK_rdwr, w-holdings may only have sizeTotal(heldBy) == 1 */
    }
    Lock;
+
+#define Lock_INVALID  ((Lock*)1UL)
 
 /*----------------------------------------------------------------*/
 /*--- Sanity checking                                          ---*/

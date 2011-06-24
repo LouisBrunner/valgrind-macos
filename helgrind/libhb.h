@@ -55,7 +55,8 @@ void libhb_shutdown ( Bool show_stats );
 Thr* libhb_create ( Thr* parent );
 
 /* Thread async exit */
-void libhb_async_exit ( Thr* exitter );
+void libhb_async_exit      ( Thr* exitter );
+void libhb_joinedwith_done ( Thr* exitter );
 
 /* Synchronisation objects (abstract to caller) */
 
@@ -145,10 +146,21 @@ void libhb_maybe_GC ( void );
 
 /* Extract info from the conflicting-access machinery. */
 Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
-                              /*OUT*/Thr**  resThr,
-                              /*OUT*/SizeT* resSzB,
-                              /*OUT*/Bool*  resIsW,
+                              /*OUT*/Thr**        resThr,
+                              /*OUT*/SizeT*       resSzB,
+                              /*OUT*/Bool*        resIsW,
+                              /*OUT*/WordSetID*   locksHeldW,
                               Thr* thr, Addr a, SizeT szB, Bool isW );
+
+/* ------ Exported from hg_main.c ------ */
+/* Yes, this is a horrible tangle.  Sigh. */
+
+/* Get the univ_lset (universe for locksets) from hg_main.c.  Sigh. */
+WordSetU* HG_(get_univ_lsets) ( void );
+
+/* Get the the header pointer for the double linked list of locks
+   (admin_locks). */
+Lock* HG_(get_admin_locks) ( void );
 
 #endif /* __LIBHB_H */
 

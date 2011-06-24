@@ -120,6 +120,7 @@ static void all__sanity_check ( Char* who ); /* fwds */
 
 /* Admin linked list of Threads */
 static Thread* admin_threads = NULL;
+Thread* get_admin_threads ( void ) { return admin_threads; }
 
 /* Admin double linked list of Locks */
 /* We need a double linked list to properly and efficiently
@@ -135,6 +136,14 @@ static WordFM* map_locks = NULL; /* WordFM LockAddr Lock* */
 /* The word-set universes for lock sets. */
 static WordSetU* univ_lsets = NULL; /* sets of Lock* */
 static WordSetU* univ_laog  = NULL; /* sets of Lock*, for LAOG */
+
+/* Allow libhb to get at the universe of locksets stored
+   here.  Sigh. */
+WordSetU* HG_(get_univ_lsets) ( void ) { return univ_lsets; }
+
+/* Allow libhb to get at the list of locks stored here.  Ditto
+   sigh. */
+Lock* HG_(get_admin_locks) ( void ) { return admin_locks; }
 
 
 /*----------------------------------------------------------------*/
@@ -537,6 +546,7 @@ static void pp_everything ( Int flags, Char* caller )
 static void initialise_data_structures ( Thr* hbthr_root )
 {
    Thread*   thr;
+   WordSetID wsid;
 
    /* Get everything initialised and zeroed. */
    tl_assert(admin_threads == NULL);
@@ -558,6 +568,11 @@ static void initialise_data_structures ( Thr* hbthr_root )
    univ_lsets = HG_(newWordSetU)( HG_(zalloc), "hg.ids.4", HG_(free),
                                   8/*cacheSize*/ );
    tl_assert(univ_lsets != NULL);
+   /* Ensure that univ_lsets is non-empty, with lockset zero being the
+      empty lockset.  hg_errors.c relies on the assumption that
+      lockset number zero in univ_lsets is always valid. */
+   wsid = HG_(emptyWS)(univ_lsets);
+   tl_assert(wsid == 0);
 
    tl_assert(univ_laog == NULL);
    if (HG_(clo_track_lockorders)) {
@@ -1653,9 +1668,20 @@ void evh__HG_PTHREAD_JOIN_POST ( ThreadId stay_tid, Thread* quit_thr )
    /* Send last arg of _so_send as False, since the sending thread
       doesn't actually exist any more, so we don't want _so_send to
       try taking stack snapshots of it. */
-   libhb_so_send(hbthr_q, so, True/*strong_send*/);
+   libhb_so_send(hbthr_q, so, True/*strong_send*//*?!? wrt comment above*/);
    libhb_so_recv(hbthr_s, so, True/*strong_recv*/);
    libhb_so_dealloc(so);
+
+   /* Tell libhb that the quitter has been reaped.  Note that we might
+      have to be cleverer about this, to exclude 2nd and subsequent
+      notifications for the same hbthr_q, in the case where the app is
+      buggy (calls pthread_join twice or more on the same thread) AND
+      where libpthread is also buggy and doesn't return ESRCH on
+      subsequent calls.  (If libpthread isn't thusly buggy, then the
+      wrapper for pthread_join in hg_intercepts.c will stop us getting
+      notified here multiple times for the same joinee.)  See also
+      comments in helgrind/tests/jointwice.c. */
+   libhb_joinedwith_done(hbthr_q);
 
    /* evh__pre_thread_ll_exit issues an error message if the exiting
       thread holds any locks.  No need to check here. */
@@ -2152,32 +2178,53 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
    // Hmm.  POSIX doesn't actually say that it's an error to call 
    // pthread_cond_signal with the associated mutex being unlocked.
    // Although it does say that it should be "if consistent scheduling
-   // is desired."
+   // is desired."  For that reason, print "dubious" if the lock isn't
+   // held by any thread.  Skip the "dubious" if it is held by some
+   // other thread; that sounds straight-out wrong.
    //
-   // For the moment, disable these checks.
-   //lk = map_locks_maybe_lookup(cvi->mx_ga);
-   //if (lk == NULL || cvi->mx_ga == 0) {
-   //   HG_(record_error_Misc)( thr, 
-   //      "pthread_cond_{signal,broadcast}: "
-   //      "no or invalid mutex associated with cond");
-   //}
-   ///* note: lk could be NULL.  Be careful. */
-   //if (lk) {
-   //   if (lk->kind == LK_rdwr) {
-   //      HG_(record_error_Misc)(thr,
-   //         "pthread_cond_{signal,broadcast}: associated lock is a rwlock");
-   //   }
-   //   if (lk->heldBy == NULL) {
-   //      HG_(record_error_Misc)(thr,
-   //         "pthread_cond_{signal,broadcast}: "
-   //         "associated lock is not held by any thread");
-   //   }
-   //   if (lk->heldBy != NULL && 0 == VG_(elemBag)(lk->heldBy, (Word)thr)) {
-   //      HG_(record_error_Misc)(thr,
-   //         "pthread_cond_{signal,broadcast}: "
-   //         "associated lock is not held by calling thread");
-   //   }
-   //}
+   // Anybody who writes code that signals on a CV without holding
+   // the associated MX needs to be shipped off to a lunatic asylum
+   // ASAP, even though POSIX doesn't actually declare such behaviour
+   // illegal -- it makes code extremely difficult to understand/
+   // reason about.  In particular it puts the signalling thread in
+   // a situation where it is racing against the released waiter
+   // as soon as the signalling is done, and so there needs to be
+   // some auxiliary synchronisation mechanism in the program that
+   // makes this safe -- or the race(s) need to be harmless, or
+   // probably nonexistent.
+   //
+   if (1) {
+      Lock* lk = NULL;
+      if (cvi->mx_ga != 0) {
+         lk = map_locks_maybe_lookup( (Addr)cvi->mx_ga );
+      }
+      /* note: lk could be NULL.  Be careful. */
+      if (lk) {
+         if (lk->kind == LK_rdwr) {
+            HG_(record_error_Misc)(thr,
+               "pthread_cond_{signal,broadcast}: associated lock is a rwlock");
+         }
+         if (lk->heldBy == NULL) {
+            HG_(record_error_Misc)(thr,
+               "pthread_cond_{signal,broadcast}: dubious: "
+               "associated lock is not held by any thread");
+         }
+         if (lk->heldBy != NULL && 0 == VG_(elemBag)(lk->heldBy, (Word)thr)) {
+            HG_(record_error_Misc)(thr,
+               "pthread_cond_{signal,broadcast}: "
+               "associated lock is not held by calling thread");
+         }
+      } else {
+         /* Couldn't even find the damn thing. */
+         // But actually .. that's not necessarily an error.  We don't
+         // know the (CV,MX) binding until a pthread_cond_wait or bcast
+         // shows us what it is, and if that may not have happened yet.
+         // So just keep quiet in this circumstance.
+         //HG_(record_error_Misc)( thr, 
+         //   "pthread_cond_{signal,broadcast}: "
+         //   "no or invalid mutex associated with cond");
+      }
+   }
 
    libhb_so_send( thr->hbthr, cvi->so, True/*strong_send*/ );
 }
@@ -2280,7 +2327,7 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
          it?  If this happened it would surely be a bug in the threads
          library.  Or one of those fabled "spurious wakeups". */
       HG_(record_error_Misc)( thr, "Bug in libpthread: pthread_cond_wait "
-                                   "succeeded on"
+                                   "succeeded"
                                    " without prior pthread_cond_post");
    }
 
@@ -3533,12 +3580,12 @@ static void laog__pre_thread_acquires_lock (
          tl_assert(found->dst_ec);
          HG_(record_error_LockOrder)( 
             thr, lk->guestaddr, other->guestaddr,
-                 found->src_ec, found->dst_ec );
+                 found->src_ec, found->dst_ec, other->acquired_at );
       } else {
          /* Hmm.  This can't happen (can it?) */
          HG_(record_error_LockOrder)(
             thr, lk->guestaddr, other->guestaddr,
-                 NULL, NULL );
+                 NULL, NULL, NULL );
       }
    }
 
@@ -3901,11 +3948,18 @@ Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/
 
-static void instrument_mem_access ( IRSB*   bbOut, 
+#define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
+#define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
+#define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
+#define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
+#define assign(_t, _e)           IRStmt_WrTmp((_t), (_e))
+
+static void instrument_mem_access ( IRSB*   sbOut, 
                                     IRExpr* addr,
                                     Int     szB,
                                     Bool    isStore,
-                                    Int     hWordTy_szB )
+                                    Int     hWordTy_szB,
+                                    Int     goff_sp )
 {
    IRType   tyAddr   = Ity_INVALID;
    HChar*   hName    = NULL;
@@ -3914,10 +3968,15 @@ static void instrument_mem_access ( IRSB*   bbOut,
    IRExpr** argv     = NULL;
    IRDirty* di       = NULL;
 
+   // THRESH is the size of the window above SP (well,
+   // mostly above) that we assume implies a stack reference.
+   const Int THRESH = 4096 * 4; // somewhat arbitrary
+   const Int rz_szB = VG_STACK_REDZONE_SZB;
+
    tl_assert(isIRAtom(addr));
    tl_assert(hWordTy_szB == 4 || hWordTy_szB == 8);
 
-   tyAddr = typeOfIRExpr( bbOut->tyenv, addr );
+   tyAddr = typeOfIRExpr( sbOut->tyenv, addr );
    tl_assert(tyAddr == Ity_I32 || tyAddr == Ity_I64);
 
    /* So the effective address is in 'addr' now. */
@@ -3984,14 +4043,71 @@ static void instrument_mem_access ( IRSB*   bbOut,
       }
    }
 
-   /* Add the helper. */
+   /* Create the helper. */
    tl_assert(hName);
    tl_assert(hAddr);
    tl_assert(argv);
    di = unsafeIRDirty_0_N( regparms,
                            hName, VG_(fnptr_to_fnentry)( hAddr ),
                            argv );
-   addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+
+   if (! HG_(clo_check_stack_refs)) {
+      /* We're ignoring memory references which are (obviously) to the
+         stack.  In fact just skip stack refs that are within 4 pages
+         of SP (SP - the redzone, really), as that's simple, easy, and
+         filters out most stack references. */
+      /* Generate the guard condition: "(addr - (SP - RZ)) >u N", for
+         some arbitrary N.  If that is true then addr is outside the
+         range (SP - RZ .. SP + N - RZ).  If N is smallish (a few
+         pages) then we can say addr is within a few pages of SP and
+         so can't possibly be a heap access, and so can be skipped.
+
+         Note that the condition simplifies to
+            (addr - SP + RZ) >u N
+         which generates better code in x86/amd64 backends, but it does
+         not unfortunately simplify to
+            (addr - SP) >u (N - RZ)
+         (would be beneficial because N - RZ is a constant) because
+         wraparound arithmetic messes up the comparison.  eg.
+         20 >u 10 == True,
+         but (20 - 15) >u (10 - 15) == 5 >u (MAXINT-5) == False.
+      */
+      IRTemp sp = newIRTemp(sbOut->tyenv, tyAddr);
+      addStmtToIRSB( sbOut, assign(sp, IRExpr_Get(goff_sp, tyAddr)));
+
+      /* "addr - SP" */
+      IRTemp addr_minus_sp = newIRTemp(sbOut->tyenv, tyAddr);
+      addStmtToIRSB(
+         sbOut,
+         assign(addr_minus_sp,
+                tyAddr == Ity_I32
+                   ? binop(Iop_Sub32, addr, mkexpr(sp))
+                   : binop(Iop_Sub64, addr, mkexpr(sp)))
+      );
+
+      /* "addr - SP + RZ" */
+      IRTemp diff = newIRTemp(sbOut->tyenv, tyAddr);
+      addStmtToIRSB(
+         sbOut,
+         assign(diff,
+                tyAddr == Ity_I32 
+                   ? binop(Iop_Add32, mkexpr(addr_minus_sp), mkU32(rz_szB))
+                   : binop(Iop_Add64, mkexpr(addr_minus_sp), mkU64(rz_szB)))
+      );
+
+      IRTemp guard = newIRTemp(sbOut->tyenv, Ity_I1);
+      addStmtToIRSB(
+         sbOut,
+         assign(guard,
+                tyAddr == Ity_I32 
+                   ? binop(Iop_CmpLT32U, mkU32(THRESH), mkexpr(diff))
+                   : binop(Iop_CmpLT64U, mkU64(THRESH), mkexpr(diff)))
+      );
+      di->guard = mkexpr(guard);
+   }
+
+   /* Add the helper. */
+   addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 }
 
 
@@ -4038,6 +4154,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
    IRStmt* st;
    Bool    inLDSO = False;
    Addr64  inLDSOmask4K = 1; /* mismatches on first check */
+
+   const Int goff_sp = layout->offset_SP;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -4130,7 +4248,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   (isDCAS ? 2 : 1)
                      * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
                   False/*!isStore*/,
-                  sizeofIRType(hWordTy)
+                  sizeofIRType(hWordTy), goff_sp
                );
             }
             break;
@@ -4150,7 +4268,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      st->Ist.LLSC.addr,
                      sizeofIRType(dataTy),
                      False/*!isStore*/,
-                     sizeofIRType(hWordTy)
+                     sizeofIRType(hWordTy), goff_sp
                   );
                }
             } else {
@@ -4169,7 +4287,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   st->Ist.Store.addr, 
                   sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
                   True/*isStore*/,
-                  sizeofIRType(hWordTy)
+                  sizeofIRType(hWordTy), goff_sp
                );
             }
             break;
@@ -4185,7 +4303,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      data->Iex.Load.addr,
                      sizeofIRType(data->Iex.Load.ty),
                      False/*!isStore*/,
-                     sizeofIRType(hWordTy)
+                     sizeofIRType(hWordTy), goff_sp
                   );
                }
             }
@@ -4205,7 +4323,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   if (!inLDSO) {
                      instrument_mem_access( 
                         bbOut, d->mAddr, dataSize, False/*!isStore*/,
-                        sizeofIRType(hWordTy)
+                        sizeofIRType(hWordTy), goff_sp
                      );
                   }
                }
@@ -4213,7 +4331,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   if (!inLDSO) {
                      instrument_mem_access( 
                         bbOut, d->mAddr, dataSize, True/*isStore*/,
-                        sizeofIRType(hWordTy)
+                        sizeofIRType(hWordTy), goff_sp
                      );
                   }
                }
@@ -4236,6 +4354,12 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
 
    return bbOut;
 }
+
+#undef binop
+#undef mkexpr
+#undef mkU32
+#undef mkU64
+#undef assign
 
 
 /*----------------------------------------------------------------*/
@@ -4620,6 +4744,17 @@ static Bool hg_process_cmd_line_option ( Char* arg )
 
    else if VG_BOOL_CLO(arg, "--free-is-write",
                             HG_(clo_free_is_write)) {}
+
+   else if VG_XACT_CLO(arg, "--vts-pruning=never",
+                            HG_(clo_vts_pruning), 0);
+   else if VG_XACT_CLO(arg, "--vts-pruning=auto",
+                            HG_(clo_vts_pruning), 1);
+   else if VG_XACT_CLO(arg, "--vts-pruning=always",
+                            HG_(clo_vts_pruning), 2);
+
+   else if VG_BOOL_CLO(arg, "--check-stack-refs",
+                            HG_(clo_check_stack_refs)) {}
+
    else 
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -4636,6 +4771,8 @@ static void hg_print_usage ( void )
 "       approx: full trace for one thread, approx for the other (faster)\n"
 "       none:   only show trace for one thread in a race (fastest)\n"
 "    --conflict-cache-size=N   size of 'full' history cache [1000000]\n"
+"    --check-stack-refs=no|yes race-check reads and writes on the\n"
+"                              main stack and thread stacks? [yes]\n"
    );
 }
 
@@ -4653,6 +4790,12 @@ static void hg_print_debug_usage ( void )
                "ranges >= %d bytes\n", SCE_BIGRANGE_T);
    VG_(printf)("       000010   at lock/unlock events\n");
    VG_(printf)("       000001   at thread create/join events\n");
+   VG_(printf)(
+"    --vts-pruning=never|auto|always [auto]\n"
+"       never:   is never done (may cause big space leaks in Helgrind)\n"
+"       auto:    done just often enough to keep space usage under control\n"
+"       always:  done after every VTS GC (mostly just a big time waster)\n"
+    );
 }
 
 static void hg_fini ( Int exitcode )

@@ -233,8 +233,6 @@ Bool VG_(lookupXA_UNSAFE) ( XArray* xao, void* key,
    void* midv;
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
-   vg_assert(first);
-   vg_assert(last);
    lo = 0;
    hi = xa->usedsizeE-1;
    while (True) {
@@ -248,13 +246,20 @@ Bool VG_(lookupXA_UNSAFE) ( XArray* xao, void* key,
       /* Found it, at mid.  See how far we can expand this. */
       vg_assert(cmpFn( key, VG_(indexXA)(xa, lo) ) >= 0);
       vg_assert(cmpFn( key, VG_(indexXA)(xa, hi) ) <= 0);
-      *first = *last = mid;
-      while (*first > 0 
-             && 0 == cmpFn( key, VG_(indexXA)(xa, (*first)-1)))
-         (*first)--;
-      while (*last < xa->usedsizeE-1
-             && 0 == cmpFn( key, VG_(indexXA)(xa, (*last)+1)))
-         (*last)++;
+      if (first) {
+         *first = mid;
+         while (*first > 0 
+                && 0 == cmpFn( key, VG_(indexXA)(xa, (*first)-1))) {
+            (*first)--;
+         }
+      }
+      if (last) {
+         *last = mid;
+         while (*last < xa->usedsizeE-1
+                && 0 == cmpFn( key, VG_(indexXA)(xa, (*last)+1))) {
+            (*last)++;
+         }
+      }
       return True;
    }
 }

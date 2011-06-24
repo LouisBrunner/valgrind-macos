@@ -5292,13 +5292,16 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
                                addr, buf64, 0, 0, 0)
 
 
+#undef PLAT_ppc64_aix5
+#undef PLAT_ppc32_aix5
+#undef PLAT_x86_darwin
+#undef PLAT_amd64_darwin
+#undef PLAT_x86_win32
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
 #undef PLAT_s390x_linux
-#undef PLAT_ppc32_aix5
-#undef PLAT_ppc64_aix5
 
 #endif   /* __VALGRIND_H */

@@ -303,12 +303,12 @@ and connect it to your program.</para>
 <para>Otherwise, here's a slightly more verbose overview.</para>
 
 <para>If you want to debug a program with GDB when using the Memcheck
-tool, start Valgrind the following way:
+tool, start Valgrind like this:
 <screen><![CDATA[
 valgrind --vgdb=yes --vgdb-error=0 prog
 ]]></screen></para>
 
-<para>In another window, start a GDB the following way:
+<para>In another shell, start GDB:
 <screen><![CDATA[
 gdb prog
 ]]></screen></para>
@@ -431,7 +431,7 @@ distribution.  You do not need to install it separately.</para>
 <para>If vgdb detects that there are multiple Valgrind gdbservers that
 can be connected to, it will list all such servers and their PIDs, and
 then exit.  You can then reissue the GDB "target" command, but
-specifying the PID the process you want to debug:
+specifying the PID of the process you want to debug:
 </para>
 
 <programlisting><![CDATA[
@@ -497,7 +497,7 @@ of the Valgrind core monitor commands.
 An example of a tool specific monitor command is the Memcheck monitor
 command <computeroutput>mc.leak_check any full
 reachable</computeroutput>.  This requests a full reporting of the
-allocated memory blocks.  To have this leak check executed, use the gdb
+allocated memory blocks.  To have this leak check executed, use the GDB
 command:
 <screen><![CDATA[
 (gdb) monitor mc.leak_check any full reachable
@@ -599,12 +599,12 @@ Valgrind's shadow registers.  GDB version 7.1 or later is needed for this
 to work.</para>
 
 <para>For each CPU register, the Valgrind core maintains two
-shadow registers. These shadow registers can be accessed from
+shadow register sets.  These shadow registers can be accessed from
 GDB by giving a postfix <computeroutput>s1</computeroutput>
 or <computeroutput>s2</computeroutput> for respectively the first
-and second shadow registers.  For example, the x86 register
-<computeroutput>eax</computeroutput> and its two shadow
-registers can be examined using the following commands:</para>
+and second shadow register.  For example, the x86 register
+<computeroutput>eax</computeroutput> and its two shadows
+can be examined using the following commands:</para>
 
 <programlisting><![CDATA[
 (gdb) p $eax
@@ -639,7 +639,7 @@ are however some limitations and peculiarities:</para>
        of the following basic blocks. This is linked to the fact that
        Valgrind gdbserver has to instrument a block to allow stopping
        at the exact instruction requested.  Currently,
-       re-instrumentation the block currently being executed is not
+       re-instrumentation of the block currently being executed is not
        supported. So, if the action requested by GDB (e.g. single
        stepping or inserting a breakpoint) implies re-instrumentation
        of the current block, the GDB action may not be executed
@@ -695,7 +695,7 @@ are however some limitations and peculiarities:</para>
      allow full use of the flexibility of the Valgrind gdbserver's
      simulated hardware watchpoints.
      </para>
-     <para> Memcheck implements hardware watchpoint simulation by
+     <para>Memcheck implements hardware watchpoint simulation by
      marking the watched address ranges as being unaddressable.  When
      a hardware watchpoint is removed, the range is marked as
      addressable and defined.  Hardware watchpoint simulation of
@@ -709,9 +709,9 @@ are however some limitations and peculiarities:</para>
      will always be reported at the exact instruction reading the
      watched memory.
      </para>
-     <para> It is better to avoid using hardware watchpoint of not
-     addressable (yet) memory: in such a case, gdb will fallback to
-     extremely slow software watchpoints. Also, if you do not quit gdb
+     <para>It is better to avoid using hardware watchpoint of not
+     addressable (yet) memory: in such a case, GDB will fall back to
+     extremely slow software watchpoints.  Also, if you do not quit GDB
      between two debugging sessions, the hardware watchpoints of the
      previous sessions will be re-inserted as software watchpoints if
      the watched memory zone is not addressable at program startup.
@@ -744,8 +744,8 @@ Reading symbols from /lib/libc.so.6...(no debugging symbols found)...done.
      <para>GDB version needed for ARM and PPC32/64.</para>
      <para>You must use a GDB version which is able to read XML
      target description sent by a gdbserver.  This is the standard setup
-     if GDB was configured and built "expat"
-     library.  If your gdb was not configured with XML support, it
+     if GDB was configured and built with the "expat"
+     library.  If your GDB was not configured with XML support, it
      will report an error message when using the "target"
      command.  Debugging will not work because GDB will then not be
      able to fetch the registers from the Valgrind gdbserver.
@@ -786,7 +786,7 @@ Reading symbols from /lib/libc.so.6...(no debugging symbols found)...done.
      a function that prints a human-readable version of a complex data
      structure.  To make an inferior call, use the GDB "print" command
      followed by the function to call and its arguments.  As an
-     example, the following gdb command causes an inferior call to the
+     example, the following GDB command causes an inferior call to the
      libc "printf" function to be executed by the process
      being debugged:
      </para>
@@ -896,7 +896,7 @@ $5 = 36
      will mark vgdb as a ptracer.
      </para>
 
-     <para>Unblocking a processes blocked in a system calls is not
+     <para>Unblocking processes blocked in system calls is not
      currently implemented on Mac OS X.  So you cannot connect to or
      interrupt a process blocked in a system call on Mac OS X.
      </para>
@@ -905,7 +905,7 @@ $5 = 36
 
    <listitem>
      <para>Changing register values.</para>
-     <para>The Valgrind gdbserver will only modify the values of the a
+     <para>The Valgrind gdbserver will only modify the values of the
      thread's registers when the thread is in status Runnable or
      Yielding.  In other states (typically, WaitSys), attempts to
      change register values will fail.  Amongst other things, this
@@ -945,8 +945,8 @@ $5 = 36
 <para> Usage: <computeroutput>vgdb [OPTION]... [[-c] COMMAND]...</computeroutput></para>
 
 <para> vgdb ("Valgrind to GDB") is a small program that is used as an
-intermediary between GDB and Valgrind.  Normally you should not use it
-directly.  It has two usage modes:
+intermediary between Valgrind and GDB or a shell.
+Therefore, it has two usage modes:
 </para>
 <orderedlist>
   <listitem id="manual-core-adv.vgdb-standalone" xreflabel="vgdb standalone">
@@ -1097,11 +1097,11 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
     is displayed by GDB.</para>
     
     <para>With <computeroutput>gdb_output</computeroutput>, both the
-    Valgrind output and the interactive gdb monitor commands output are
-    displayed by gdb.</para>
+    Valgrind output and the interactive GDB monitor commands output are
+    displayed by GDB.</para>
     
     <para>With <computeroutput>log_output</computeroutput>, both the
-    Valgrind output and the interactive gdb monitor commands output go
+    Valgrind output and the interactive GDB monitor commands output go
     to the Valgrind log.</para>
   </listitem>
   
@@ -1112,7 +1112,7 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
     command, the Valgrind process will continue the execution of the
     guest process. The typical usage of this is to use vgdb to send a
     "no-op" command to a Valgrind gdbserver so as to continue the
-    execution of the guess process.
+    execution of the guest process.
     </para>
   </listitem>
 
@@ -1150,7 +1150,7 @@ problems or bugs.</para>
     watchpoints) will be zero, as GDB by default removes all
     watchpoints and breakpoints when execution stops, and re-inserts
     them when resuming the execution of the debugged process.  You can
-    change this gdb behaviour by using the GDB command
+    change this GDB behaviour by using the GDB command
     <computeroutput>set breakpoint always-inserted on</computeroutput>.
     </para>
   </listitem>
@@ -1175,7 +1175,7 @@ problems or bugs.</para>
     [&lt;traceflags&gt;]</varname> shows the translation of the block
     containing <computeroutput>address</computeroutput> with the given
     trace flags. The <computeroutput>traceflags</computeroutput> value
-    bit pattern with similar meaning to Valgrind's
+    bit patterns have similar meaning to Valgrind's
     <option>--trace-flags</option> option.  It can be given
     in hexadecimal (e.g. 0x20) or decimal (e.g. 32) or in binary 1s
     and 0s bit (e.g. 0b00100000). The default value of the traceflags

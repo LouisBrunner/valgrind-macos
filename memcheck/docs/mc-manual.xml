@@ -1286,7 +1286,8 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
     0 if the bit is valid and 1 if the bit is invalid. In the
     following example, 'string10' is an array of 10 characters in
     which one byte on two is undefined. If a byte is not addressable,
-    its validity bits are replaced by __. In the below example, the byte 6
+    its validity bits are replaced by __. In the below example, the byte 
+    corresponding to string10[5]
     is not addressable.</para>
 <programlisting><![CDATA[
 (gdb) p &string10

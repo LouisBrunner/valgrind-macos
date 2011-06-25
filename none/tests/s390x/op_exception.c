@@ -33,6 +33,6 @@ int main()
         asm volatile(".long 0xffffffff\n.long 0xffff0000\n");
         if (got_ill)
                 printf("0xffffffff does not loop\n");
-
+	return 0;
 }
 

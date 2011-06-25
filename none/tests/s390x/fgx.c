@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "opcodes.h"
 
 int main()

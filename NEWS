@@ -258,6 +258,7 @@ fixed
 275151] New: Fedora 15 / glibc-2.14 'make regtest' FAIL
 fixed
 
+275339 - s390x: fix testcase compile warnings
 
 
 Release 3.6.1 (16 February 2011)

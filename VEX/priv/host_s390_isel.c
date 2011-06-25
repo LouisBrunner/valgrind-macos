@@ -244,7 +244,7 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr)
 static s390_amode *
 s390_isel_amode(ISelEnv *env, IRExpr *expr)
 {
-   s390_amode *am = s390_isel_amode_wrk(env, expr);
+   s390_amode *am;
 
    /* Address computation should yield a 64-bit value */
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);

@@ -270,6 +270,15 @@ typedef
    }
    LeakCheckMode;
 
+typedef
+   enum {
+      LCD_Any,       // output all loss records, whatever the delta
+      LCD_Increased, // output loss records with an increase in size or blocks
+      LCD_Changed,   // output loss records with an increase or 
+                     //decrease in size or blocks
+   }
+   LeakCheckDeltaMode;
+
 /* When a LossRecord is put into an OSet, these elements represent the key. */
 typedef
    struct _LossRecordKey {
@@ -287,10 +296,33 @@ typedef
       SizeT szB;          // Sum of all MC_Chunk.szB values.
       SizeT indirect_szB; // Sum of all LC_Extra.indirect_szB values.
       UInt  num_blocks;   // Number of blocks represented by the record.
+      SizeT old_szB;          // old_* values are the values found during the 
+      SizeT old_indirect_szB; // previous leak search. old_* values are used to
+      UInt  old_num_blocks;   // output only the changed/new loss records
    }
    LossRecord;
 
-void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode );
+typedef
+   struct _LeakCheckParams {
+      LeakCheckMode mode;
+      Bool show_reachable;
+      Bool show_possibly_lost;
+      LeakCheckDeltaMode deltamode;
+      Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
+   }
+   LeakCheckParams;
+
+void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams lcp);
+
+// maintains the lcp.deltamode given in the last call to detect_memory_leaks
+extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
+
+// if delta_mode == LC_Any, prints in buf an empty string
+// otherwise prints a delta in the layout  " (+%'lu)" or " (-%'lu)" 
+extern char * MC_(snprintf_delta) (char * buf, Int size, 
+                                   SizeT current_val, SizeT old_val, 
+                                   LeakCheckDeltaMode delta_mode);
+
 
 Bool MC_(is_valid_aligned_word)     ( Addr a );
 Bool MC_(is_within_valid_secondary) ( Addr a );

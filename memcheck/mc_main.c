@@ -4945,11 +4945,11 @@ static void print_monitor_help ( void )
 "  mc.check_memory [addressable|defined] <addr> [<len>]\n"
 "        check that <len> (or 1) bytes at <addr> have the given accessibility\n"
 "            and outputs a description of <addr>\n"
-"  mc.leak_check [full*|summary]\n"
-"                [reachable|leakpossible*|definiteleak]\n"
+"  mc.leak_check [full*|summary] [reachable|leakpossible*|definiteleak]\n"
+"                [increased*|changed|any]\n"
 "            * = defaults\n"
 "        Examples: mc.leak_check\n"
-"                  mc.leak_check any summary\n"
+"                  mc.leak_check summary any\n"
 "\n");
 }
 
@@ -5013,40 +5013,50 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    }
    case  2: { /* mc.leak_check */
       Int err = 0;
-      Bool save_clo_show_reachable = MC_(clo_show_reachable);
-      Bool save_clo_show_possibly_lost = MC_(clo_show_possibly_lost);
+      LeakCheckParams lcp;
       Char* kw;
-
-      LeakCheckMode mode;
       
-      MC_(clo_show_reachable) = False;
-      mode = LC_Full;
+      lcp.mode               = LC_Full;
+      lcp.show_reachable     = False;
+      lcp.show_possibly_lost = True;
+      lcp.deltamode          = LCD_Increased;
+      lcp.requested_by_monitor_command = True;
       
       for (kw = VG_(strtok_r) (NULL, " ", &ssaveptr); 
            kw != NULL; 
            kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
          switch (VG_(keyword_id) 
                  ("full summary "
-                  "reachable leakpossible definiteleak",
+                  "reachable leakpossible definiteleak "
+                  "increased changed any",
                   kw, kwd_report_all)) {
          case -2: err++; break;
          case -1: err++; break;
-         case  0: mode = LC_Full; break;
-         case  1: mode = LC_Summary; break;
-         case  2: MC_(clo_show_reachable) = True; 
-                  MC_(clo_show_possibly_lost) = True; break;
-         case  3: MC_(clo_show_reachable) = False;
-                  MC_(clo_show_possibly_lost) = True; break;
-         case  4: MC_(clo_show_reachable) = False;
-                  MC_(clo_show_possibly_lost) = False; break;
-         default: tl_assert (0);
+         case  0: /* full */
+            lcp.mode = LC_Full; break;
+         case  1: /* summary */
+            lcp.mode = LC_Summary; break;
+         case  2: /* reachable */
+            lcp.show_reachable = True; 
+            lcp.show_possibly_lost = True; break;
+         case  3: /* leakpossible */
+            lcp.show_reachable = False;
+            lcp.show_possibly_lost = True; break;
+         case  4: /* definiteleak */
+            lcp.show_reachable = False;
+            lcp.show_possibly_lost = False; break;
+         case  5: /* increased */
+            lcp.deltamode = LCD_Increased; break;
+         case  6: /* changed */
+            lcp.deltamode = LCD_Changed; break;
+         case  7: /* any */
+            lcp.deltamode = LCD_Any; break;
+         default:
+            tl_assert (0);
          }
       }
       if (!err)
-         MC_(detect_memory_leaks)(tid, mode);
-      
-      MC_(clo_show_reachable) = save_clo_show_reachable;
-      MC_(clo_show_possibly_lost) = save_clo_show_possibly_lost;
+         MC_(detect_memory_leaks)(tid, lcp);
       return True;
    }
       
@@ -5189,10 +5199,40 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          break;
       }
 
-      case VG_USERREQ__DO_LEAK_CHECK:
-         MC_(detect_memory_leaks)(tid, arg[1] ? LC_Summary : LC_Full);
+      case VG_USERREQ__DO_LEAK_CHECK: {
+         LeakCheckParams lcp;
+         
+         if (arg[1] == 0)
+            lcp.mode = LC_Full;
+         else if (arg[1] == 1)
+            lcp.mode = LC_Summary;
+         else {
+            VG_(message)(Vg_UserMsg, 
+                         "Warning: unknown memcheck leak search mode\n");
+            lcp.mode = LC_Full;
+         }
+          
+         lcp.show_reachable = MC_(clo_show_reachable);
+         lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+
+         if (arg[2] == 0)
+            lcp.deltamode = LCD_Any;
+         else if (arg[2] == 1)
+            lcp.deltamode = LCD_Increased;
+         else if (arg[2] == 2)
+            lcp.deltamode = LCD_Changed;
+         else {
+            VG_(message)
+               (Vg_UserMsg, 
+                "Warning: unknown memcheck leak search deltamode\n");
+            lcp.deltamode = LCD_Any;
+         }
+         lcp.requested_by_monitor_command = False;
+         
+         MC_(detect_memory_leaks)(tid, lcp);
          *ret = 0; /* return value is meaningless */
          break;
+      }
 
       case VG_USERREQ__MAKE_MEM_NOACCESS:
          MC_(make_mem_noaccess) ( arg[1], arg[2] );
@@ -5854,7 +5894,13 @@ static void mc_fini ( Int exitcode )
    MC_(print_malloc_stats)();
 
    if (MC_(clo_leak_check) != LC_Off) {
-      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, MC_(clo_leak_check));
+      LeakCheckParams lcp;
+      lcp.mode = MC_(clo_leak_check);
+      lcp.show_reachable = MC_(clo_show_reachable);
+      lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+      lcp.deltamode = LCD_Any;
+      lcp.requested_by_monitor_command = False;
+      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, lcp);
    } else {
       if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
          VG_(umsg)(

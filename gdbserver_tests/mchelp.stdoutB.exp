@@ -21,11 +21,11 @@ memcheck monitor commands:
   mc.check_memory [addressable|defined] <addr> [<len>]
         check that <len> (or 1) bytes at <addr> have the given accessibility
             and outputs a description of <addr>
-  mc.leak_check [full*|summary]
-                [reachable|leakpossible*|definiteleak]
+  mc.leak_check [full*|summary] [reachable|leakpossible*|definiteleak]
+                [increased*|changed|any]
             * = defaults
         Examples: mc.leak_check
-                  mc.leak_check any summary
+                  mc.leak_check summary any
 
 general valgrind monitor commands:
   help [debug]             : monitor command help. With debug: + debugging commands
@@ -57,10 +57,10 @@ memcheck monitor commands:
   mc.check_memory [addressable|defined] <addr> [<len>]
         check that <len> (or 1) bytes at <addr> have the given accessibility
             and outputs a description of <addr>
-  mc.leak_check [full*|summary]
-                [reachable|leakpossible*|definiteleak]
+  mc.leak_check [full*|summary] [reachable|leakpossible*|definiteleak]
+                [increased*|changed|any]
             * = defaults
         Examples: mc.leak_check
-                  mc.leak_check any summary
+                  mc.leak_check summary any
 
 monitor command request to kill this process

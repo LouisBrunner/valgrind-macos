@@ -1,8 +1,7 @@
 # test the memcheck leak functionality.
 prog: ../memcheck/tests/leak-delta
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcleak -q --leak-check=yes --show-reachable=yes --leak-resolution=high
-# temorarily disabled, waiting for leak-delta test program (next patch)
-prereq: test -e gdb -a -x ../memcheck/tests/leak-delta
+prereq: test -e gdb
 stdout_filter: filter_memcheck_monitor
 stderr_filter: filter_memcheck_monitor
 progB: gdb

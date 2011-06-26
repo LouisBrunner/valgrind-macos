@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcleak
-0x........ in _start () from ...start file...
 Breakpoint 1 at 0x........: file leak-delta.c, line 9.
 Continuing.
 Breakpoint 1, breakme () at leak-delta.c:9

@@ -1272,23 +1272,27 @@ is:</para>
 
 <sect1 id="mc-manual.monitor-commands" xreflabel="Memcheck Monitor Commands">
 <title>Memcheck Monitor Commands</title>
-<para>The Memcheck tool provides monitor commands handled by the Valgrind
-gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+<para>The Memcheck tool provides monitor commands handled by Valgrind's
+built-in gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 </para>
 
 <itemizedlist>
   <listitem>
     <para><varname>mc.get_vbits &lt;addr&gt; [&lt;len&gt;]</varname>
-    outputs the validity bits for the range of &lt;len&gt; (default 1)
-    bytes at &lt;addr&gt;.  The validity of each byte of the range is
-    given using two hexadecimal digits.  These hexadecimal digits are
-    encoding the validity of each bit of the corresponding byte, using
-    0 if the bit is valid and 1 if the bit is invalid. In the
-    following example, 'string10' is an array of 10 characters in
-    which one byte on two is undefined. If a byte is not addressable,
-    its validity bits are replaced by __. In the below example, the byte 
-    corresponding to string10[5]
-    is not addressable.</para>
+    shows the definedness (V) bits for &lt;len&gt; (default 1) bytes
+    starting at &lt;addr&gt;.  The definedness of each byte in the
+    range is given using two hexadecimal digits.  These hexadecimal
+    digits encode the validity of each bit of the corresponding byte,
+    using 0 if the bit is defined and 1 if the bit is undefined.
+    If a byte is not addressable, its validity bits are replaced
+    by <varname>__</varname> (a double underscore).
+    </para>
+    <para>
+    In the following example, <varname>string10</varname> is an array
+    of 10 characters, in which the even numbered bytes are
+    undefined. In the below example, the byte corresponding
+    to <varname>string10[5]</varname> is not addressable.
+    </para>
 <programlisting><![CDATA[
 (gdb) p &string10
 $4 = (char (*)[10]) 0x8049e28
@@ -1299,14 +1303,22 @@ ff00ff00 ff__ff00 ff00
   </listitem>
 
   <listitem>
-    <para><varname>mc.make_memory [noaccess|undefined|defined|ifaddressabledefined] &lt;addr&gt; [&lt;len&gt;]</varname>
-    marks the range of &lt;len&gt; (default 1) bytes at &lt;addr&gt;
-    with the given accessibility. Marking with 'noaccess' changes the
-    (A) bits of the range to be not addressable.  Marking with
-    'undefined' or 'defined' are changing the definedness of the
-    range.  'ifaddressabledefined' marks the range as defined but only
-    if the range is addressable.  In the following example, the first
-    byte of the 'string10' is marked as defined.
+    <para><varname>mc.make_memory
+    [noaccess|undefined|defined|ifaddressabledefined] &lt;addr&gt;
+    [&lt;len&gt;]</varname> marks the range of &lt;len&gt; (default 1)
+    bytes at &lt;addr&gt; as having the given status. Parameter
+    <varname>noaccess</varname> marks the range as non-accessible, so
+    Memcheck will report an error on any access to it.
+    <varname>undefined</varname> or <varname>defined</varname> mark
+    the area as accessible, but Memcheck regards the bytes in it
+    respectively as having undefined or defined values.
+    <varname>ifaddressabledefined</varname> marks as defined, bytes in
+    the range which are already addressible, but makes no change to
+    the status of bytes in the range which are not addressible.</para>
+
+    <para>
+    In the following example, the first byte of the
+    <varname>string10</varname> is marked as defined:
     </para>
 <programlisting><![CDATA[
 (gdb) monitor mc.make_memory defined 0x8049e28  1
@@ -1319,10 +1331,11 @@ ff00ff00 ff__ff00 ff00
   <listitem>
     <para><varname>mc.check_memory [addressable|defined] &lt;addr&gt;
     [&lt;len&gt;]</varname> checks that the range of &lt;len&gt;
-    (default 1) bytes at &lt;addr&gt; has the given accessibility.  It
-    then outputs a description of &lt;addr&gt;. In the below case, a
-    detailed description is given as the option --read-var-info=yes
-    was used to start Valgrind.
+    (default 1) bytes at &lt;addr&gt; has the specified accessibility.  It
+    then outputs a description of &lt;addr&gt;. In the following example, a
+    detailed description is given available because 
+    the option <option>--read-var-info=yes</option>
+    was given Valgrind at startup:
     </para>
 <programlisting><![CDATA[
 (gdb) monitor mc.check_memory defined 0x8049e28  1
@@ -1334,58 +1347,93 @@ Address 0x8049E28 len 1 defined
   </listitem>
 
   <listitem>
-    <para><varname>mc.leak_check
-    [full*|summary] [reachable|leakpossible*|definiteleak]</varname>
-    starts a leak checking. The * in the arguments above indicates the
-    default value. </para>
+    <para><varname>mc.leak_check [full*|summary]
+                                 [reachable|leakpossible*|definiteleak]
+                                 [increased*|changed|any]
+          </varname>
+    performs a leak check. The <varname>*</varname> in the arguments
+    indicates the default value. </para>
 
-    <para> If the first argument is 'summary', only a summary of
-    the leak search is given.
+    <para> If the first argument is <varname>summary</varname>, only a
+    summary of the leak search is given; otherwise a full leak report
+    is produced.  A full leak report gives detailed information for
+    each leak: the stack trace where the leaked blocks were allocated,
+    the number of blocks leaked and their total size.  When a full
+    report is requested, the next two arguments further specify what
+    kind of leaks to report.  A leak's details are shown if they match
+    both the second and third argument.
     </para>
 
-    <para>The second argument controls which entries are output
-    for a 'full' leak search.  The value 'definiteleak' indicates to
-    output only the definitely leaked blocks. The value 'leakpossible'
-    will output in addition the possibly leaked blocks. The value
-    'reachable' will output all blocks (reachable, possibly leaked,
-    definitely leaked).
+    <para>The second argument controls what kind of blocks are shown for
+    a <varname>full</varname> leak search.  The
+    value <varname>definiteleak</varname> specifies that only
+    definitely leaked blocks should be shown.  The
+    value <varname>leakpossible</varname> will also show possibly
+    leaked blocks (those for which only an interior pointer was
+    found).  The value
+    <varname>reachable</varname> will show all block categories
+    (reachable, possibly leaked, definitely leaked).
     </para>
-    <para>The below is an example of using the mc.leak_check monitor
-    command on the leak-cases Memcheck regression tests.</para>
+
+    <para>The third argument controls what kinds of changes are shown
+    for a <varname>full</varname> leak search. The
+    value <varname>increased</varname> specifies that only block
+    allocation stacks with an increased number of leaked bytes or
+    blocks since the previous leak check should be shown.  The
+    value <varname>changed</varname> specifies that allocation stacks
+    with any change since the previous leak check should be shown.
+    The value <varname>any</varname> specifies that all leak entries
+    should be shown, regardless of any increase or decrease.  When
+    If <varname>increased</varname> or <varname>changed</varname> are
+    specified, the leak report entries will show the delta relative to
+    the previous leak report.
+    </para>
+
+    <para>The following example shows usage of the 
+    <varname>mc.leak_check monitor</varname> command on
+    the <varname>memcheck/tests/leak-cases.c</varname> regression
+    test. The first command outputs one entry having an increase in
+    the leaked bytes.  The second command is the same as the first
+    command, but uses the abbreviated forms accepted by GDB and the
+    Valgrind gdbserver. It only outputs the summary information, as
+    there was no increase since the previous leak search.</para>
 <programlisting><![CDATA[
-(gdb)  monitor mc.leak_check full leakpossible
-==14729== 16 bytes in 1 blocks are possibly lost in loss record 13 of 16
+(gdb) monitor mc.leak_check full leakpossible increased
+==14729== 16 (+16) bytes in 1 (+1) blocks are possibly lost in loss record 13 of 16
 ==14729==    at 0x4006E9E: malloc (vg_replace_malloc.c:236)
 ==14729==    by 0x80484D5: mk (leak-cases.c:52)
 ==14729==    by 0x804855F: f (leak-cases.c:81)
 ==14729==    by 0x80488F5: main (leak-cases.c:107)
 ==14729== 
 ==14729== LEAK SUMMARY:
-==14729==    definitely lost: 32 bytes in 2 blocks
-==14729==    indirectly lost: 16 bytes in 1 blocks
-==14729==      possibly lost: 32 bytes in 2 blocks
-==14729==    still reachable: 96 bytes in 6 blocks
-==14729==         suppressed: 0 bytes in 0 blocks
+==14729==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
+==14729==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
+==14729==      possibly lost: 32 (+16) bytes in 2 (+1) blocks
+==14729==    still reachable: 96 (+16) bytes in 6 (+1) blocks
+==14729==         suppressed: 0 (+0) bytes in 0 (+0) blocks
 ==14729== Reachable blocks (those to which a pointer was found) are not shown.
-==14729== To see them, rerun with: --leak-check=full --show-reachable=yes
+==14729== o see them, add 'reachable any' args to mc.leak_check
 ==14729== 
 (gdb) mo mc.l
 ==14729== LEAK SUMMARY:
-==14729==    definitely lost: 32 bytes in 2 blocks
-==14729==    indirectly lost: 16 bytes in 1 blocks
-==14729==      possibly lost: 32 bytes in 2 blocks
-==14729==    still reachable: 96 bytes in 6 blocks
-==14729==         suppressed: 0 bytes in 0 blocks
+==14729==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
+==14729==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
+==14729==      possibly lost: 32 (+0) bytes in 2 (+0) blocks
+==14729==    still reachable: 96 (+0) bytes in 6 (+0) blocks
+==14729==         suppressed: 0 (+0) bytes in 0 (+0) blocks
 ==14729== Reachable blocks (those to which a pointer was found) are not shown.
-==14729== To see them, rerun with: --leak-check=full --show-reachable=yes
+==14729== To see them, add 'reachable any' args to mc.leak_check
 ==14729== 
 (gdb) 
 ]]></programlisting>
-    <para>Note that when using the Valgrind gdbserver, it is not
-    needed to rerun with --leak-check=full --show-reachable=yes to see
-    the reachable blocks. You can obtain the same information without
-    rerunning by using the gdb command 'monitor mc.leak_check full
-    reachable' (or, using abbreviation: 'mo mc.l f r').
+    <para>Note that when using Valgrind's gdbserver, it is not
+    necessary to rerun
+    with <option>--leak-check=full</option>
+    <option>--show-reachable=yes</option> to see the reachable
+    blocks. You can obtain the same information without rerunning by
+    using the GDB command <computeroutput>monitor mc.leak_check full
+    reachable any</computeroutput> (or, using
+    abbreviation: <computeroutput>mo mc.l f r a</computeroutput>).
     </para>
   </listitem>
 </itemizedlist>
@@ -1440,6 +1488,22 @@ arguments.</para>
     check (like <option>--leak-check=full</option>) right now.
     This is useful for incrementally checking for leaks between arbitrary
     places in the program's execution.  It has no return value.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_DO_ADDED_LEAK_CHECK</varname>: same as
+   <varname> VALGRIND_DO_LEAK_CHECK</varname> but only shows the
+    entries for which there was an increase in leaked bytes or leaked
+    number of blocks since the previous leak search.  It has no return
+    value.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_DO_CHANGED_LEAK_CHECK</varname>: same as
+    <varname>VALGRIND_DO_LEAK_CHECK</varname> but only shows the
+    entries for which there was an increase or decrease in leaked
+    bytes or leaked number of blocks since the previous leak search. It
+    has no return value.</para>
   </listitem>
 
   <listitem>

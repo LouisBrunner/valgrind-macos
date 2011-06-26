@@ -13,13 +13,13 @@ continue
 #
 #   fprintf(stderr, "expecting details 10 bytes reachable\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check any reachable full
+monitor mc.leak_check full reachable any
 continue
 #   VALGRIND_DO_LEAK_CHECK;
 #
 #   fprintf(stderr, "expecting to have NO details\n"); fflush(stderr);
 up
-monitor mc.leak_check increased reachable full
+monitor mc.leak_check full reachable increased
 continue
 #   VALGRIND_DO_ADDED_LEAK_CHECK;
 #
@@ -27,7 +27,7 @@ continue
 #   b21 = malloc (21);
 #   fprintf(stderr, "expecting details +10 bytes lost, +21 bytes reachable\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check increased reachable full
+monitor mc.leak_check full reachable increased
 continue
 #   VALGRIND_DO_ADDED_LEAK_CHECK;
 #
@@ -35,41 +35,41 @@ continue
 #      b32_33[i] = malloc (32+i);
 #   fprintf(stderr, "expecting details +65 bytes reachable\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check increased reachable full
+monitor mc.leak_check full reachable increased
 continue
 #   VALGRIND_DO_ADDED_LEAK_CHECK;
 #
 #   fprintf(stderr, "expecting to have NO details\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check increased reachable full
+monitor mc.leak_check full reachable increased
 continue
 #   VALGRIND_DO_ADDED_LEAK_CHECK;
 #
 #   b10++;
 #   fprintf(stderr, "expecting details +10 bytes reachable\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check increased reachable full
+monitor mc.leak_check full reachable increased
 continue
 #   VALGRIND_DO_ADDED_LEAK_CHECK;
 #
 #   b10--;
 #   fprintf(stderr, "expecting details -10 bytes reachable, +10 bytes lost\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check changed reachable full
+monitor mc.leak_check full reachable changed
 continue
 #   VALGRIND_DO_CHANGED_LEAK_CHECK;
 #
 #   b10++;
 #   fprintf(stderr, "expecting details -10 bytes lost, +10 bytes reachable\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check changed reachable full
+monitor mc.leak_check full reachable changed
 continue
 #   VALGRIND_DO_CHANGED_LEAK_CHECK;
 #
 #   b32_33[0]--;
 #   fprintf(stderr, "expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable\n"); fflush(stderr); breakme();
 up
-monitor mc.leak_check changed reachable full
+monitor mc.leak_check full reachable changed
 continue
 #   VALGRIND_DO_CHANGED_LEAK_CHECK;
 #

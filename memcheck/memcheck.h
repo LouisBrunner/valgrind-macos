@@ -188,6 +188,26 @@ typedef
                             VG_USERREQ__DO_LEAK_CHECK,           \
                             0, 0, 0, 0, 0)
 
+/* Same as VALGRIND_DO_LEAK_CHECK but only showing the entries for
+   which there was an increase in leaked bytes or leaked nr of blocks
+   since the previous leak search. */
+#define VALGRIND_DO_ADDED_LEAK_CHECK                             \
+   {unsigned long _qzz_res;                                      \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+                            VG_USERREQ__DO_LEAK_CHECK,           \
+                            0, 1, 0, 0, 0);                      \
+   }
+
+/* Same as VALGRIND_DO_ADDED_LEAK_CHECK but showing entries with
+   increased or decreased leaked bytes/blocks since previous leak
+   search. */
+#define VALGRIND_DO_CHANGED_LEAK_CHECK                           \
+   {unsigned long _qzz_res;                                      \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+                            VG_USERREQ__DO_LEAK_CHECK,           \
+                            0, 2, 0, 0, 0);                      \
+   }
+
 /* Do a summary memory leak check (like --leak-check=summary) mid-execution. */
 #define VALGRIND_DO_QUICK_LEAK_CHECK                             \
     VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                           \

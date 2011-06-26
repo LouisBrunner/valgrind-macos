@@ -88,6 +88,7 @@ EXTRA_DIST = \
 	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \
 	leak-cases-summary.vgtest leak-cases-summary.stderr.exp \
 	leak-cycle.vgtest leak-cycle.stderr.exp \
+	leak-delta.vgtest leak-delta.stderr.exp \
 	leak-pool-0.vgtest leak-pool-0.stderr.exp \
 	leak-pool-1.vgtest leak-pool-1.stderr.exp \
 	leak-pool-2.vgtest leak-pool-2.stderr.exp \
@@ -219,6 +220,7 @@ check_PROGRAMS = \
 	leak-0 \
 	leak-cases \
 	leak-cycle \
+	leak-delta \
 	leak-pool \
 	leak-tree \
 	long_namespace_xml \

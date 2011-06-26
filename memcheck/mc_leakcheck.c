@@ -434,6 +434,16 @@ typedef
 static MC_Chunk** lc_chunks;
 // How many chunks we're dealing with.
 static Int        lc_n_chunks;
+// chunks will be converted and merged in loss record, maintained in lr_table
+// lr_table elements are kept from one leak_search to another to implement
+// the "print new/changed leaks" client request
+static OSet*        lr_table;
+
+// DeltaMode used the last time we called detect_memory_leaks.
+// The recorded leak errors must be output using a logic based on this delta_mode.
+// The below avoids replicating the delta_mode in each LossRecord.
+LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
+
 
 // This has the same number of entries as lc_chunks, and each entry
 // in lc_chunks corresponds with the entry here (ie. lc_chunks[i] and
@@ -770,20 +780,35 @@ static Int cmp_LossRecords(void* va, void* vb)
    return 0;
 }
 
-static void print_results(ThreadId tid, Bool is_full_check)
+static void print_results(ThreadId tid, LeakCheckParams lcp)
 {
    Int          i, n_lossrecords;
-   OSet*        lr_table;
    LossRecord** lr_array;
    LossRecord*  lr;
    Bool         is_suppressed;
+   SizeT        old_bytes_leaked      = MC_(bytes_leaked); /* to report delta in summary */
+   SizeT        old_bytes_indirect    = MC_(bytes_indirect); 
+   SizeT        old_bytes_dubious     = MC_(bytes_dubious); 
+   SizeT        old_bytes_reachable   = MC_(bytes_reachable); 
+   SizeT        old_bytes_suppressed  = MC_(bytes_suppressed); 
+   SizeT        old_blocks_leaked     = MC_(blocks_leaked);
+   SizeT        old_blocks_indirect   = MC_(blocks_indirect);
+   SizeT        old_blocks_dubious    = MC_(blocks_dubious);
+   SizeT        old_blocks_reachable  = MC_(blocks_reachable);
+   SizeT        old_blocks_suppressed = MC_(blocks_suppressed);
 
-   // Create the lr_table, which holds the loss records.
-   lr_table =
-      VG_(OSetGen_Create)(offsetof(LossRecord, key),
-                          cmp_LossRecordKey_LossRecord,
-                          VG_(malloc), "mc.pr.1",
-                          VG_(free)); 
+   if (lr_table == NULL)
+      // Create the lr_table, which holds the loss records.
+      // If the lr_table already exists, it means it contains
+      // loss_records from the previous leak search. The old_*
+      // values in these records are used to implement the
+      // leak check delta mode
+      lr_table =
+         VG_(OSetGen_Create)(offsetof(LossRecord, key),
+                             cmp_LossRecordKey_LossRecord,
+                             VG_(malloc), "mc.pr.1",
+                             VG_(free));
+
 
    // Convert the chunks into loss records, merging them where appropriate.
    for (i = 0; i < lc_n_chunks; i++) {
@@ -810,6 +835,9 @@ static void print_results(ThreadId tid, Bool is_full_check)
          lr->szB              = ch->szB;
          lr->indirect_szB     = ex->indirect_szB;
          lr->num_blocks       = 1;
+         lr->old_szB          = 0;
+         lr->old_indirect_szB = 0;
+         lr->old_num_blocks   = 0;
          VG_(OSetGen_Insert)(lr_table, lr);
       }
    }
@@ -837,7 +865,7 @@ static void print_results(ThreadId tid, Bool is_full_check)
 
    // Print the loss records (in size order) and collect summary stats.
    for (i = 0; i < n_lossrecords; i++) {
-      Bool count_as_error, print_record;
+      Bool count_as_error, print_record, delta_considered;
       // Rules for printing:
       // - We don't show suppressed loss records ever (and that's controlled
       //   within the error manager).
@@ -851,18 +879,37 @@ static void print_results(ThreadId tid, Bool is_full_check)
       // includes indirectly lost blocks!
       //
       lr = lr_array[i];
-      print_record = is_full_check &&
-                     ( MC_(clo_show_reachable) ||
+      switch (lcp.deltamode) {
+         case LCD_Any: 
+            delta_considered = lr->num_blocks > 0;
+            break;
+         case LCD_Increased:
+            delta_considered 
+               = lr_array[i]->szB > lr_array[i]->old_szB
+                 || lr_array[i]->indirect_szB > lr_array[i]->old_indirect_szB
+                 || lr->num_blocks > lr->old_num_blocks;
+            break;
+         case LCD_Changed: 
+            delta_considered = lr_array[i]->szB != lr_array[i]->old_szB
+            || lr_array[i]->indirect_szB != lr_array[i]->old_indirect_szB
+            || lr->num_blocks != lr->old_num_blocks;
+            break;
+         default:
+            tl_assert(0);
+      }
+
+      print_record = lcp.mode == LC_Full && delta_considered &&
+                     ( lcp.show_reachable ||
                        Unreached == lr->key.state || 
-                       ( MC_(clo_show_possibly_lost) && 
+                       ( lcp.show_possibly_lost && 
                          Possible  == lr->key.state ) );
-      // We don't count a leaks as errors with --leak-check=summary.
+      // We don't count a leaks as errors with lcp.mode==LC_Summary.
       // Otherwise you can get high error counts with few or no error
       // messages, which can be confusing.  Also, you could argue that
       // indirect leaks should be counted as errors, but it seems better to
       // make the counting criteria similar to the printing criteria.  So we
       // don't count them.
-      count_as_error = is_full_check && 
+      count_as_error = lcp.mode == LC_Full && delta_considered &&
                        ( Unreached == lr->key.state || 
                          Possible  == lr->key.state );
       is_suppressed = 
@@ -894,31 +941,74 @@ static void print_results(ThreadId tid, Bool is_full_check)
       }
    }
 
+   for (i = 0; i < n_lossrecords; i++)
+      {
+         if (lr->num_blocks == 0)
+            // remove from lr_table the old loss_records with 0 bytes found
+            VG_(OSetGen_Remove) (lr_table, &lr_array[i]->key);
+         else
+            {
+               // move the leak sizes to old_* and zero the current sizes
+               // for next leak search
+               lr_array[i]->old_szB          = lr_array[i]->szB;
+               lr_array[i]->old_indirect_szB = lr_array[i]->indirect_szB;
+               lr_array[i]->old_num_blocks   = lr_array[i]->num_blocks;
+               lr_array[i]->szB              = 0;
+               lr_array[i]->indirect_szB     = 0;
+               lr_array[i]->num_blocks       = 0;
+            }
+      }
+   VG_(free)(lr_array); 
+
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
+      char d_bytes[20];
+      char d_blocks[20];
+
       VG_(umsg)("LEAK SUMMARY:\n");
-      VG_(umsg)("   definitely lost: %'lu bytes in %'lu blocks\n",
-                MC_(bytes_leaked), MC_(blocks_leaked) );
-      VG_(umsg)("   indirectly lost: %'lu bytes in %'lu blocks\n",
-                MC_(bytes_indirect), MC_(blocks_indirect) );
-      VG_(umsg)("     possibly lost: %'lu bytes in %'lu blocks\n",
-                MC_(bytes_dubious), MC_(blocks_dubious) );
-      VG_(umsg)("   still reachable: %'lu bytes in %'lu blocks\n",
-                MC_(bytes_reachable), MC_(blocks_reachable) );
-      VG_(umsg)("        suppressed: %'lu bytes in %'lu blocks\n",
-                MC_(bytes_suppressed), MC_(blocks_suppressed) );
-      if (!is_full_check &&
+      VG_(umsg)("   definitely lost: %'lu%s bytes in %'lu%s blocks\n",
+                MC_(bytes_leaked), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_leaked), old_bytes_leaked, lcp.deltamode),
+                MC_(blocks_leaked),
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_leaked), old_blocks_leaked, lcp.deltamode));
+      VG_(umsg)("   indirectly lost: %'lu%s bytes in %'lu%s blocks\n",
+                MC_(bytes_indirect), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_indirect), old_bytes_indirect, lcp.deltamode),
+                MC_(blocks_indirect),
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_indirect), old_blocks_indirect, lcp.deltamode) );
+      VG_(umsg)("     possibly lost: %'lu%s bytes in %'lu%s blocks\n",
+                MC_(bytes_dubious), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_dubious), old_bytes_dubious, lcp.deltamode), 
+                MC_(blocks_dubious),
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_dubious), old_blocks_dubious, lcp.deltamode) );
+      VG_(umsg)("   still reachable: %'lu%s bytes in %'lu%s blocks\n",
+                MC_(bytes_reachable), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_reachable), old_bytes_reachable, lcp.deltamode), 
+                MC_(blocks_reachable),
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_reachable), old_blocks_reachable, lcp.deltamode) );
+      VG_(umsg)("        suppressed: %'lu%s bytes in %'lu%s blocks\n",
+                MC_(bytes_suppressed), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_suppressed), old_bytes_suppressed, lcp.deltamode), 
+                MC_(blocks_suppressed),
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_suppressed), old_blocks_suppressed, lcp.deltamode) );
+      if (lcp.mode != LC_Full &&
           (MC_(blocks_leaked) + MC_(blocks_indirect) +
            MC_(blocks_dubious) + MC_(blocks_reachable)) > 0) {
-         VG_(umsg)("Rerun with --leak-check=full to see details "
-                   "of leaked memory\n");
+         if (lcp.requested_by_monitor_command)
+            VG_(umsg)("To see details of leaked memory, give 'full' arg to mc.leak_check\n");
+         else
+            VG_(umsg)("Rerun with --leak-check=full to see details "
+                      "of leaked memory\n");
       }
-      if (is_full_check &&
-          MC_(blocks_reachable) > 0 && !MC_(clo_show_reachable))
+      if (lcp.mode == LC_Full &&
+          MC_(blocks_reachable) > 0 && !lcp.show_reachable)
       {
          VG_(umsg)("Reachable blocks (those to which a pointer "
                    "was found) are not shown.\n");
-         VG_(umsg)("To see them, rerun with: --leak-check=full "
-                   "--show-reachable=yes\n");
+         if (lcp.requested_by_monitor_command)
+            VG_(umsg)("To see them, add 'reachable any' args to mc.leak_check\n");
+         else
+            VG_(umsg)("To see them, rerun with: --leak-check=full "
+                      "--show-reachable=yes\n");
       }
       VG_(umsg)("\n");
    }
@@ -928,16 +1018,26 @@ static void print_results(ThreadId tid, Bool is_full_check)
 /*--- Top-level entry point.                               ---*/
 /*------------------------------------------------------------*/
 
-void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
+void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams lcp)
 {
    Int i, j;
    
-   tl_assert(mode != LC_Off);
+   tl_assert(lcp.mode != LC_Off);
+
+   MC_(detect_memory_leaks_last_delta_mode) = lcp.deltamode;
 
    // Get the chunks, stop if there were none.
    lc_chunks = find_active_chunks(&lc_n_chunks);
    if (lc_n_chunks == 0) {
       tl_assert(lc_chunks == NULL);
+      if (lr_table != NULL) {
+         // forget the previous recorded LossRecords as next leak search will in any case
+         // just create new leaks.
+         // Maybe it would be better to rather call print_result ?
+         // (at least when leak decrease are requested)
+         // This will then output all LossRecords with a size decreasing to 0
+         VG_(OSetGen_Destroy) (lr_table);
+      }
       if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
          VG_(umsg)("All heap blocks were freed -- no leaks are possible\n");
          VG_(umsg)("\n");
@@ -1124,7 +1224,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
       }
    }
       
-   print_results( tid, ( mode == LC_Full ? True : False ) );
+   print_results( tid, lcp);
 
    VG_(free) ( lc_chunks );
    VG_(free) ( lc_extras );

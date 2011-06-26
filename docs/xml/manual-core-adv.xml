@@ -495,12 +495,12 @@ of the Valgrind core monitor commands.
 
 <para>Each tool can also provide tool-specific monitor commands.
 An example of a tool specific monitor command is the Memcheck monitor
-command <computeroutput>mc.leak_check any full
-reachable</computeroutput>.  This requests a full reporting of the
+command <computeroutput>mc.leak_check full
+reachable any</computeroutput>.  This requests a full reporting of the
 allocated memory blocks.  To have this leak check executed, use the GDB
 command:
 <screen><![CDATA[
-(gdb) monitor mc.leak_check any full reachable
+(gdb) monitor mc.leak_check full reachable any
 ]]></screen>
 </para>
 
@@ -511,7 +511,7 @@ monitor command.  If it is not recognised as such, it is assumed to
 be tool-specific and is handed to the tool for execution.  For example:
 </para>
 <programlisting><![CDATA[
-(gdb) monitor mc.leak_check any full reachable
+(gdb) monitor mc.leak_check full reachable any
 ==2418== 100 bytes in 1 blocks are still reachable in loss record 1 of 1
 ==2418==    at 0x4006E9E: malloc (vg_replace_malloc.c:236)
 ==2418==    by 0x804884F: main (prog.c:88)
@@ -532,12 +532,12 @@ abbreviation is unambiguous.  For example, the above
 <computeroutput>mc.leak_check</computeroutput>
 command can also be typed as:
 <screen><![CDATA[
-(gdb) mo mc.l a f r
+(gdb) mo mc.l f r a
 ]]></screen>
 
 The letters <computeroutput>mo</computeroutput> are recognised by GDB as being
 an abbreviation for <computeroutput>monitor</computeroutput>.  So GDB sends the
-string <computeroutput>mc.l a f r</computeroutput> to the Valgrind
+string <computeroutput>mc.l f r a</computeroutput> to the Valgrind
 gdbserver.  The letters provided in this string are unambiguous for the
 Valgrind gdbserver.  This therefore gives the same output as the
 unabbreviated command and arguments.  If the provided abbreviation is
@@ -556,7 +556,7 @@ lines, when given in a shell, will cause the same leak search to be executed
 by the process 3145:
 <screen><![CDATA[
 vgdb --pid=3145 mc.leak_check any full reachable
-vgdb --pid=3145 mc.l a f r
+vgdb --pid=3145 mc.l f r a
 ]]></screen></para>
 
 <para>Note that the Valgrind gdbserver automatically continues the

@@ -1,4 +1,6 @@
 (action at startup) vgdb me ... 
+
+
 expecting details 10 bytes reachable
 10 bytes in 1 blocks are still reachable in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)

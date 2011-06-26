@@ -1,0 +1,13 @@
+
+(action at startup) vgdb me ... 
+
+
+
+HEAP SUMMARY:
+    in use at exit: 16 bytes in 1 blocks
+  total heap usage: 1 allocs, 0 frees, 16 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

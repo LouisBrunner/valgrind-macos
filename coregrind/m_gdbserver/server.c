@@ -26,6 +26,7 @@
 #include "pub_core_options.h"
 #include "pub_core_translate.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_initimg.h"
 
 unsigned long cont_thread;
 unsigned long general_thread;
@@ -580,6 +581,59 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
    }
 
+   if (strncmp ("qXfer:auxv:read:", arg_own_buf, 16) == 0) {
+      unsigned char *data;
+      int n;
+      CORE_ADDR ofs;
+      unsigned int len;
+      char *annex;
+
+      /* Reject any annex; grab the offset and length.  */
+      if (decode_xfer_read (arg_own_buf + 16, &annex, &ofs, &len) < 0
+          || annex[0] != '\0') {
+         strcpy (arg_own_buf, "E00");
+         return;
+      }
+
+      if (len > PBUFSIZ - 2)
+         len = PBUFSIZ - 2;
+      data = malloc (len);
+
+      {
+         UWord *client_auxv = VG_(client_auxv);
+         unsigned int client_auxv_len = 0;
+         while (*client_auxv != 0) {
+            dlog(4, "auxv %lld %llx\n",
+                 (ULong)*client_auxv,
+                 (ULong)*(client_auxv+1));
+            client_auxv++;
+            client_auxv++;
+            client_auxv_len += 2 * sizeof(UWord);
+         }
+         client_auxv_len += 2 * sizeof(UWord);
+         dlog(4, "auxv len %d\n", client_auxv_len);
+
+         if (ofs >= client_auxv_len)
+            n = -1;
+         else {
+            n = client_auxv_len - ofs;
+            VG_(memcpy) (data, (unsigned char *) VG_(client_auxv), n);
+         }
+      }
+
+      if (n < 0)
+         write_enn (arg_own_buf);
+      else if (n > len)
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, data, len, 1);
+      else
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, data, n, 0);
+      
+      free (data);
+      
+      return;
+   }
+
+
    /* Protocol features query.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
        && (arg_own_buf[10] == ':' || arg_own_buf[10] == '\0')) {
@@ -589,6 +643,8 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       
       strcat (arg_own_buf, ";QStartNoAckMode+");
       strcat (arg_own_buf, ";QPassSignals+");
+      if (VG_(client_auxv))
+         strcat (arg_own_buf, ";qXfer:auxv:read+");
 
       if ((*the_target->target_xml)() != NULL
           || (*the_target->shadow_target_xml)() != NULL) {

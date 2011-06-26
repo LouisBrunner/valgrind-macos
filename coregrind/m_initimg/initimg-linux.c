@@ -611,6 +611,11 @@ Addr setup_client_stack( void*  init_sp,
    /* --- auxv --- */
    auxv = (struct auxv *)ptr;
    *client_auxv = (UInt *)auxv;
+   VG_(client_auxv) = (UWord *)*client_auxv;
+   // ??? According to 'man proc', auxv is a array of unsigned long
+   // terminated by two zeros. Why is valgrind working with UInt ?
+   // We do not take ULong* (as ULong 8 bytes on a 32 bits),
+   // => we take UWord*
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    auxv[0].a_type  = AT_IGNOREPPC;
@@ -658,6 +663,11 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
          case AT_BASE:
+            /* When gdbserver sends the auxv to gdb, the AT_BASE has
+               to be ignored, as otherwise gdb adds this offset
+               to loaded shared libs, causing wrong address
+               relocation e.g. when inserting breaks. */
+            auxv->a_type = AT_IGNORE;
             auxv->u.a_val = info->interp_base;
             break;
 

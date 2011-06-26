@@ -1,0 +1,16 @@
+# test that gdbserver/gdb properly handle a PIC executable
+# On linux, this implies a proper transfer of the auxv
+# information via the gdbserver protocol packet qXfer:auxv:read:
+# The content of the auxv data can be shown by gdb using
+# gdb command 'info auxv'
+prereq: test -e gdb
+prog: main_pic
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcmain_pic
+stdout_filter: filter_gdb
+stderr_filter: filter_memcheck_monitor
+progB: gdb
+argsB: --quiet -l 60 --nx ./main_pic
+stdinB: mcmain_pic.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_memcheck_monitor
+

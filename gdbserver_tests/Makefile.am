@@ -44,6 +44,7 @@ EXTRA_DIST = \
 	mcleak.stdinB.gdb \
 	mcleak.stdoutB.exp \
 	mcleak.vgtest \
+	mcmain_pic.vgtest \
 	mcsignopass.stderrB.exp \
 	mcsignopass.stderr.exp \
 	mcsignopass.stdinB.gdb \
@@ -82,6 +83,7 @@ check_PROGRAMS = \
 	clean_after_fork \
 	fork_chain \
 	sleepers \
+	main_pic \
 	t \
 	watchpoints
 
@@ -89,3 +91,6 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 LDADD = -lpthread
+
+main_pic_LDFLAGS = -pie
+main_pic_CFLAGS	 = $(AM_CFLAGS) -fPIC

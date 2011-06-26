@@ -51,6 +51,10 @@ Addr  VG_(clstk_base)  = 0;
 Addr  VG_(clstk_end)   = 0;
 UWord VG_(clstk_id)    = 0;
 
+/* linux only: where is the client auxv ? */
+/* This is set up as part of setup_client_stack in initimg-linux.c. */
+UWord* VG_(client_auxv) = NULL;
+
 Addr  VG_(brk_base)    = 0;       /* start of brk */
 Addr  VG_(brk_limit)   = 0;       /* current brk */
 

@@ -77,11 +77,20 @@ EXTRA_DIST = \
 	nlcontrolc.vgtest \
 	nlfork_chain.stderr.exp \
 	nlfork_chain.stdout.exp \
-	nlfork_chain.vgtest
+	nlfork_chain.vgtest \
+	nlpasssigalrm.vgtest \
+	nlpasssigalrm.stderrB.exp \
+	nlpasssigalrm.stderr.exp \
+	nlpasssigalrm.stdinB.gdb \
+	nlsigvgdb.vgtest \
+	nlsigvgdb.stderr.exp \
+	nlsigvgdb.stderrB.exp \
+	nlsigvgdb.stdinB.gdb
 
 check_PROGRAMS = \
 	clean_after_fork \
 	fork_chain \
+	passsigalrm \
 	sleepers \
 	main_pic \
 	t \

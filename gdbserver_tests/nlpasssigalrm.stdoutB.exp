@@ -1,0 +1,8 @@
+Signal        Stop	Print	Pass to program	Description
+SIGALRM       Yes	Yes	Yes		Alarm clock
+Continuing.
+Program received signal SIGALRM, Alarm clock.
+0x........ in syscall ...
+Signal        Stop	Print	Pass to program	Description
+SIGALRM       No	No	Yes		Alarm clock
+Continuing.

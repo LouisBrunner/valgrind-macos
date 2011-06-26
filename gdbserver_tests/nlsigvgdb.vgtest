@@ -1,0 +1,15 @@
+# Tests the case when gdb sends a character to gdbserver while
+# the gdbserver was forced invoked just before.
+# gdbserver must send a signal to itself that is wait-ed for by vgdb.
+# But if this signal is masked, then vgdb does not recuperate the control
+# and Valgrind dies. See function give_control_back_to_vgdb in m_gdbserver.c
+prog: sleepers
+args: 1 10000000 0 -S-S-S-S
+vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlsigvgdb
+stderr_filter: filter_stderr
+prereq: test -e gdb -a -f vgdb.ptraceinvoker
+progB: gdb
+argsB: --quiet -l 60 --nx ./sleepers
+stdinB: nlsigvgdb.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_gdb

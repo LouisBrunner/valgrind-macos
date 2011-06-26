@@ -1,0 +1,15 @@
+# test that signals that must be "directly" passed by gdbserver
+# are properly handled.
+# GDB optimises "handle SIGNAL nostop noprint pass" 
+# by telling gdbserver (with QPassSignals packet) to pass
+# it directly to the process, without roundtrip to gdb.
+
+prog: passsigalrm
+vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlpasssigalrm
+stderr_filter: filter_stderr
+prereq: test -e gdb
+progB: gdb
+argsB: --quiet -l 60 --nx ./passsigalrm
+stdinB: nlpasssigalrm.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_gdb

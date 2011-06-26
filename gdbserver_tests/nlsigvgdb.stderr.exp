@@ -1,0 +1,6 @@
+Nulgrind, the minimal Valgrind tool
+
+(action at startup) vgdb me ... 
+
+
+Reset valgrind output to log (orderly_finish)

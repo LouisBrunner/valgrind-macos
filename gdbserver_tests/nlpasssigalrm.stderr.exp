@@ -1,0 +1,9 @@
+Nulgrind, the minimal Valgrind tool
+
+(action at startup) vgdb me ... 
+
+
+starting ...
+ok: 1st SIGALRM received
+ok: 2nd SIGALRM received
+

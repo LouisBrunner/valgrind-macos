@@ -720,23 +720,24 @@ static int interrupts_non_interruptible = 0;
    ptrace. To do that, vgdb 'pushes' a call to invoke_gdbserver
    on the stack using ptrace. invoke_gdbserver must not return.
    Instead, it must call give_control_back_to_vgdb.
-   vgdb expects to receive a SIGTRAP, which this function generates.
-   When vgdb gets this SIGTRAP, it knows invoke_gdbserver call
+   vgdb expects to receive a SIGSTOP, which this function generates.
+   When vgdb gets this SIGSTOP, it knows invoke_gdbserver call
    is finished and can reset the Valgrind process in the state prior to
    the 'pushed call' (using ptrace again).
    This all works well. However, the user must avoid
    'kill-9ing' vgdb during such a pushed call, otherwise
-   the SIGTRAP generated below will be seen by the Valgrind core,
-   instead of being handled by vgdb. When the Valgrind core gets
-   such a SIGTRAP, it will assert. */
+   the SIGSTOP generated below will be seen by the Valgrind core,
+   instead of being handled by vgdb. The OS will then handle the SIGSTOP
+   by stopping the Valgrind process.
+   We use SIGSTOP as this process cannot be masked. */
 
 static void give_control_back_to_vgdb(void)
 {
-   /* cause a SIGTRAP to be sent to ourself, so that vgdb takes control.
+   /* cause a SIGSTOP to be sent to ourself, so that vgdb takes control.
       vgdb will then restore the stack so as to resume the activity
       before the ptrace (typically do_syscall_WRK). */
-   if (VG_(kill)(VG_(getpid)(), VKI_SIGTRAP) != 0)
-      vg_assert2(0, "SIGTRAP for vgdb could not be generated\n");
+   if (VG_(kill)(VG_(getpid)(), VKI_SIGSTOP) != 0)
+      vg_assert2(0, "SIGSTOP for vgdb could not be generated\n");
 
    /* If we arrive here, it means a call was pushed on the stack
       by vgdb, but during this call, vgdb and/or connection
@@ -841,12 +842,15 @@ Bool VG_(gdbserver_report_signal) (Int sigNo, ThreadId tid)
    /* if gdbserver is currently not connected, then signal
       is to be given to the process */
    if (!remote_connected()) {
-       dlog(1, "not connected => pass\n");
-       return True;
+      dlog(1, "not connected => pass\n");
+      return True;
    }
+   /* if gdb has informed gdbserver that this signal can be
+      passed directly without informing gdb, then signal is
+      to be given to the process. */
    if (pass_signals[sigNo]) {
       dlog(1, "pass_signals => pass\n");
-      return False;
+      return True;
    }
    
    /* indicate to gdbserver that there is a signal */

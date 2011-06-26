@@ -4,7 +4,7 @@
 11 May 2009
 
 Protocols 1 through 3 supported Memcheck only.  Protocol 4 provides
-XML output for Memcheck, Helgrind and Ptrcheck.  Technically there are
+XML output for Memcheck, Helgrind and SGcheck.  Technically there are
 three variants of Protocol 4, one for each tool, since they produce
 different errors.  The three variants differ only in the definition of
 the ERROR nonterminal and are otherwise identical.
@@ -82,7 +82,7 @@ XWHAT, and between AUXWHAT and XAUXWHAT.
 The definition of Protocol 4 now follows.  It is structured similarly
 to that of the previous protocols, except that there is a separate
 definition of a nonterminal called TOOLSPECIFIC for each of Memcheck,
-Helgrind and Ptrcheck.  The XWHAT and XAUXWHAT nonterminals also have
+Helgrind and SGcheck.  The XWHAT and XAUXWHAT nonterminals also have
 tool-specific components.  Apart from that, the structure is common
 to all supported tools.
 
@@ -200,7 +200,7 @@ the following in sequence:
      </status>
 
 * Zero or more of (either ERRORCOUNTS or TOOLSPECIFIC).  In Memcheck's
-  case these will be complaints from the leak checker.  For Ptrcheck
+  case these will be complaints from the leak checker.  For SGcheck
   and Helgrind we don't expect any output here (but the spec does not
   guarantee that either).
 
@@ -560,18 +560,18 @@ The possible values are:
 
 ====================================================================
 
-TOOLSPECIFIC definition for Ptrcheck
-------------------------------------
+TOOLSPECIFIC definition for SGcheck
+-----------------------------------
 
-For Ptrcheck, a TOOLSPECIFIC is simply an ERROR:
+For SGcheck, a TOOLSPECIFIC is simply an ERROR:
 
 TOOLSPECIFIC = ERROR
 
 
-ERROR details for Ptrcheck
---------------------------
+ERROR details for SGcheck
+-------------------------
 
-Ptrcheck does not produce any XWHAT records, despite the fact that
+SGcheck does not produce any XWHAT records, despite the fact that
 "ERROR definition -- common structure" says that tools may do so.
 
 
@@ -585,8 +585,8 @@ components (along with the mandatory <text>...</text> component):
 * <dir>TEXT</dir>, as defined in FRAME
 
 
-KIND for Ptrcheck
------------------
+KIND for SGcheck
+----------------
 This is a small enumeration indicating roughly the nature of an error.
 The possible values are:
 
@@ -595,22 +595,6 @@ The possible values are:
       Stack or global array inconsistency (roughly speaking, an
       overrun of a stack or global array).  The <auxwhat> blocks give
       further details.
-
-   Heap
-
-      Usage of a pointer derived from a heap block, to access 
-      outside that heap block
-
-   Arith
-
-      Doing arithmetic on pointers in a way that cannot possibly
-      result in another valid pointer.  Eg, adding two pointer values.
-
-   SysParam
-
-      Special case of "Heap", in which the invalidly-addressed memory
-      is presented as an argument to a system call which reads or
-      writes memory.
 
 
 ====================================================================

@@ -60,10 +60,10 @@ and without disturbing the existing structure.</para>
   </listitem>
 
   <listitem>
-    <para><command>Ptrcheck</command> is an experimental heap, stack and
-    global array overrun detector.  Its functionality overlaps somewhat
-    with Memcheck's, but it can find some problems that Memcheck would
-    miss.</para>
+    <para><command>SGcheck</command> is an experimental tool that can
+    detect overruns of stack and global arrays.  Its functionality is
+    complementary to that of Memcheck: SGcheck finds problems that
+    Memcheck can't, and vice versa..</para>
   </listitem>
 
   <listitem>

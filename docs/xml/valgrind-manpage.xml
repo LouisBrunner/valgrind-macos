@@ -189,11 +189,11 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 
 
-<refsect1 id="ptrcheck-options">
-<title>Ptrcheck Options</title>
+<refsect1 id="sgcheck-options">
+<title>SGcheck Options</title>
 
-<xi:include href="../../exp-ptrcheck/docs/pc-manual.xml" 
-            xpointer="pc.opts.list"
+<xi:include href="../../exp-sgcheck/docs/sg-manual.xml" 
+            xpointer="sg.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>

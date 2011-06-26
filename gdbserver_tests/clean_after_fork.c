@@ -14,6 +14,8 @@ int main()
    }
 
    if (pid == 0) {
+      int burn;
+      for (burn = 0; burn < 100000; burn++) /* burncpu */__asm__ __volatile("":::"memory") ;
       if (mem == 0)
          exit(0);
       else

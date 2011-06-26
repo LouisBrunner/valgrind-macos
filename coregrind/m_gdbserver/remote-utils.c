@@ -256,7 +256,7 @@ void remote_open (char *name)
                 "or are doing some strange experiment):\n"
                 "  %s/../../bin/vgdb --pid=%d%s%s ...command...\n",
                 VG_LIBDIR,
-                pid, (name_default ? "" : " --vgdb="),
+                pid, (name_default ? "" : " --vgdb-prefix="),
                 (name_default ? "" : name));
    }
    if (VG_(clo_verbosity) > 1 
@@ -269,7 +269,7 @@ void remote_open (char *name)
          "  target remote | %s/../../bin/vgdb --pid=%d%s%s\n",
          VG_(args_the_exename),
          VG_LIBDIR,
-         pid, (name_default ? "" : " --vgdb="), 
+         pid, (name_default ? "" : " --vgdb-prefix="), 
          (name_default ? "" : name)
       );
       VG_(umsg)("--pid is optional if only one valgrind process is running\n");

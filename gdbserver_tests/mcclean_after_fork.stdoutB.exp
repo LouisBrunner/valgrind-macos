@@ -1,6 +1,6 @@
 Breakpoint 1 at 0x........: file clean_after_fork.c, line 9.
-Breakpoint 2 at 0x........: file clean_after_fork.c, line 18.
-Breakpoint 3 at 0x........: file clean_after_fork.c, line 20.
+Breakpoint 2 at 0x........: file clean_after_fork.c, line 20.
+Breakpoint 3 at 0x........: file clean_after_fork.c, line 22.
 Continuing.
 Breakpoint 1, main () at clean_after_fork.c:9
 9	   pid = fork();
@@ -8,5 +8,5 @@ Hardware read watchpoint 4: mem
 Continuing.
 Hardware read watchpoint 4: mem
 Value = 0
-main () at clean_after_fork.c:32
-32	   if (mem == 0)
+main () at clean_after_fork.c:34
+34	   if (mem == 0)

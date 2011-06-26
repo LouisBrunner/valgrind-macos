@@ -7,8 +7,8 @@ monitor vg.set vgdb-error 999999
 # also put breaks in code that only the child will execute.
 # These breaks should not be encountered.
 break clean_after_fork.c:9
-break clean_after_fork.c:18
 break clean_after_fork.c:20
+break clean_after_fork.c:22
 #
 continue
 # first break encountered.

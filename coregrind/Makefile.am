@@ -470,90 +470,64 @@ endif
 #----------------------------------------------------------------------------
 # gdbserver xml target descriptions
 #----------------------------------------------------------------------------
-pkglib_DATA =
 
-if VGCONF_ARCHS_INCLUDE_ARM
-pkglib_DATA += 	m_gdbserver/arm-core-valgrind-s1.xml \
-		m_gdbserver/arm-core-valgrind-s2.xml \
-		m_gdbserver/arm-core.xml \
-		m_gdbserver/arm-vfpv3-valgrind-s1.xml \
-		m_gdbserver/arm-vfpv3-valgrind-s2.xml \
-		m_gdbserver/arm-vfpv3.xml \
-		m_gdbserver/arm-with-vfpv3-valgrind.xml \
-		m_gdbserver/arm-with-vfpv3.xml
-endif
+GDBSERVER_XML_FILES = \
+	m_gdbserver/32bit-core-valgrind-s1.xml \
+	m_gdbserver/32bit-core-valgrind-s2.xml \
+	m_gdbserver/32bit-core.xml \
+	m_gdbserver/32bit-linux-valgrind-s1.xml \
+	m_gdbserver/32bit-linux-valgrind-s2.xml \
+	m_gdbserver/32bit-linux.xml \
+	m_gdbserver/32bit-sse-valgrind-s1.xml \
+	m_gdbserver/32bit-sse-valgrind-s2.xml \
+	m_gdbserver/32bit-sse.xml \
+	m_gdbserver/64bit-core-valgrind-s1.xml \
+	m_gdbserver/64bit-core-valgrind-s2.xml \
+	m_gdbserver/64bit-core.xml \
+	m_gdbserver/64bit-linux-valgrind-s1.xml \
+	m_gdbserver/64bit-linux-valgrind-s2.xml \
+	m_gdbserver/64bit-linux.xml \
+	m_gdbserver/64bit-sse-valgrind-s1.xml \
+	m_gdbserver/64bit-sse-valgrind-s2.xml \
+	m_gdbserver/64bit-sse.xml \
+	m_gdbserver/amd64-coresse-valgrind.xml \
+	m_gdbserver/amd64-linux-valgrind.xml \
+	m_gdbserver/arm-core-valgrind-s1.xml \
+	m_gdbserver/arm-core-valgrind-s2.xml \
+	m_gdbserver/arm-core.xml \
+	m_gdbserver/arm-vfpv3-valgrind-s1.xml \
+	m_gdbserver/arm-vfpv3-valgrind-s2.xml \
+	m_gdbserver/arm-vfpv3.xml \
+	m_gdbserver/arm-with-vfpv3-valgrind.xml \
+	m_gdbserver/arm-with-vfpv3.xml \
+	m_gdbserver/i386-coresse-valgrind.xml \
+	m_gdbserver/i386-linux-valgrind.xml \
+	m_gdbserver/power64-core-valgrind-s1.xml \
+	m_gdbserver/power64-core-valgrind-s2.xml \
+	m_gdbserver/power64-core.xml \
+	m_gdbserver/power64-linux-valgrind-s1.xml \
+	m_gdbserver/power64-linux-valgrind-s2.xml \
+	m_gdbserver/power64-linux.xml \
+	m_gdbserver/power-altivec-valgrind-s1.xml \
+	m_gdbserver/power-altivec-valgrind-s2.xml \
+	m_gdbserver/power-altivec.xml \
+	m_gdbserver/power-core.xml \
+	m_gdbserver/power-fpu-valgrind-s1.xml \
+	m_gdbserver/power-fpu-valgrind-s2.xml \
+	m_gdbserver/power-fpu.xml \
+	m_gdbserver/power-linux-valgrind-s1.xml \
+	m_gdbserver/power-linux-valgrind-s2.xml \
+	m_gdbserver/power-linux.xml \
+	m_gdbserver/powerpc-altivec32l-valgrind.xml \
+	m_gdbserver/powerpc-altivec32l.xml \
+	m_gdbserver/powerpc-altivec64l-valgrind.xml \
+	m_gdbserver/powerpc-altivec64l.xml
 
-if VGCONF_ARCHS_INCLUDE_X86
-pkglib_DATA += 	m_gdbserver/32bit-core-valgrind-s1.xml \
-		m_gdbserver/32bit-core-valgrind-s2.xml \
-		m_gdbserver/32bit-core.xml \
-		m_gdbserver/32bit-sse-valgrind-s1.xml \
-		m_gdbserver/32bit-sse-valgrind-s2.xml \
-		m_gdbserver/32bit-sse.xml
-if VGCONF_OS_IS_LINUX
-pkglib_DATA +=	m_gdbserver/32bit-linux-valgrind-s1.xml \
-		m_gdbserver/32bit-linux-valgrind-s2.xml \
-		m_gdbserver/32bit-linux.xml \
-		m_gdbserver/i386-linux-valgrind.xml
-endif
-if VGCONF_OS_IS_DARWIN
-pkglib_DATA +=	m_gdbserver/i386-coresse-valgrind.xml
-endif
-endif
+# so as to make sure these get copied into the install tree
+pkglib_DATA  = $(GDBSERVER_XML_FILES)
 
-if VGCONF_ARCHS_INCLUDE_AMD64
-pkglib_DATA +=	m_gdbserver/64bit-core-valgrind-s1.xml \
-		m_gdbserver/64bit-core-valgrind-s2.xml \
-		m_gdbserver/64bit-core.xml \
-		m_gdbserver/64bit-sse-valgrind-s1.xml \
-		m_gdbserver/64bit-sse-valgrind-s2.xml \
-		m_gdbserver/64bit-sse.xml
-
-if VGCONF_OS_IS_LINUX
-pkglib_DATA +=	m_gdbserver/64bit-linux-valgrind-s1.xml \
-		m_gdbserver/64bit-linux-valgrind-s2.xml \
-		m_gdbserver/64bit-linux.xml \
-		m_gdbserver/amd64-linux-valgrind.xml
-endif
-if VGCONF_OS_IS_DARWIN
-pkglib_DATA +=	m_gdbserver/amd64-coresse-valgrind.xml
-endif
-endif
-
-if VGCONF_ARCHS_INCLUDE_PPC32
-pkglib_DATA +=	m_gdbserver/power-altivec-valgrind-s1.xml \
-		m_gdbserver/power-altivec-valgrind-s2.xml \
-		m_gdbserver/power-altivec.xml \
-		m_gdbserver/power-core.xml \
-		m_gdbserver/power-fpu-valgrind-s1.xml \
-		m_gdbserver/power-fpu-valgrind-s2.xml \
-		m_gdbserver/power-fpu.xml \
-		m_gdbserver/power-linux-valgrind-s1.xml \
-		m_gdbserver/power-linux-valgrind-s2.xml \
-		m_gdbserver/power-linux.xml \
-		m_gdbserver/powerpc-altivec32l-valgrind.xml \
-		m_gdbserver/powerpc-altivec32l.xml
-endif
-
-if VGCONF_ARCHS_INCLUDE_PPC64
-pkglib_DATA +=	m_gdbserver/power64-core-valgrind-s1.xml \
-		m_gdbserver/power64-core-valgrind-s2.xml \
-		m_gdbserver/power64-core.xml \
-		m_gdbserver/power64-linux-valgrind-s1.xml \
-		m_gdbserver/power64-linux-valgrind-s2.xml \
-		m_gdbserver/power64-linux.xml \
-		m_gdbserver/powerpc-altivec64l-valgrind.xml \
-		m_gdbserver/powerpc-altivec64l.xml
-if ! VGCONF_ARCHS_INCLUDE_PPC32
-pkglib_DATA +=	m_gdbserver/power-altivec-valgrind-s1.xml \
-		m_gdbserver/power-altivec-valgrind-s2.xml \
-		m_gdbserver/power-altivec.xml \
-		m_gdbserver/power-fpu-valgrind-s1.xml \
-		m_gdbserver/power-fpu-valgrind-s2.xml \
-		m_gdbserver/power-fpu.xml
-endif
-endif
-
+# so as to make sure these get copied into the tarball
+EXTRA_DIST  += $(GDBSERVER_XML_FILES)
 
 #----------------------------------------------------------------------------
 # General stuff

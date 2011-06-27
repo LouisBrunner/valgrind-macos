@@ -45,6 +45,11 @@ EXTRA_DIST = \
 	mcleak.stdoutB.exp \
 	mcleak.vgtest \
 	mcmain_pic.vgtest \
+	mcmain_pic.stderrB.exp \
+	mcmain_pic.stderr.exp \
+	mcmain_pic.stdinB.gdb \
+	mcmain_pic.stdoutB.exp \
+	mcmain_pic.stdout.exp \
 	mcsignopass.stderrB.exp \
 	mcsignopass.stderr.exp \
 	mcsignopass.stdinB.gdb \

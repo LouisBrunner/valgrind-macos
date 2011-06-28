@@ -1,7 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-nlpasssigalrm
 echo vgdb launched process attached\n
-monitor vg.set vgdb-error 999999
+monitor v.set vgdb-error 999999
 #
 #
 # ensure SIGALRM can be passed directly to the process, without

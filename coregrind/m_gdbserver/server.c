@@ -115,7 +115,7 @@ void kill_request (char *msg)
    Note that in case of ambiguous command, 1 is returned.
 
    *sink_wanted_at_return is modified if one of the commands 
-   'vg.set *_output' is handled.
+   'v.set *_output' is handled.
 */
 static
 int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
@@ -133,9 +133,9 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    strcpy (s, mon);
    wcmd = strtok_r (s, " ", &ssaveptr);
    /* NB: if possible, avoid introducing a new command below which
-      starts with the same 4 first letters as an already existing
+      starts with the same 3 first letters as an already existing
       command. This ensures a shorter abbreviation for the user. */
-   switch (VG_(keyword_id) ("help vg.set vg.info vg.wait vg.kill vg.translate",
+   switch (VG_(keyword_id) ("help v.set v.info v.wait v.kill v.translate",
                             wcmd, kwd_report_duplicated_matches)) {
    case -2:
       ret = 1;
@@ -159,26 +159,26 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       VG_(gdb_printf) (
 "general valgrind monitor commands:\n"
 "  help [debug]             : monitor command help. With debug: + debugging commands\n"
-"  vg.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
-"  vg.info all_errors       : show all errors found so far\n"
-"  vg.info last_error       : show last error found\n"
-"  vg.info n_errs_found     : show the nr of errors found so far\n"
-"  vg.kill                  : kill the Valgrind process\n"
-"  vg.set gdb_output        : set valgrind output to gdb\n"
-"  vg.set log_output        : set valgrind output to log\n"
-"  vg.set mixed_output      : set valgrind output to log, interactive output to gdb\n"
-"  vg.set vgdb-error <errornr> : debug me at error >= <errornr> \n");
+"  v.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
+"  v.info all_errors       : show all errors found so far\n"
+"  v.info last_error       : show last error found\n"
+"  v.info n_errs_found     : show the nr of errors found so far\n"
+"  v.kill                  : kill the Valgrind process\n"
+"  v.set gdb_output        : set valgrind output to gdb\n"
+"  v.set log_output        : set valgrind output to log\n"
+"  v.set mixed_output      : set valgrind output to log, interactive output to gdb\n"
+"  v.set vgdb-error <errornr> : debug me at error >= <errornr> \n");
       if (int_value) { VG_(gdb_printf) (
 "debugging valgrind internals monitor commands:\n"
-"  vg.info gdbserver_status : show gdbserver status\n"
-"  vg.info memory           : show valgrind heap memory stats\n"
-"  vg.set debuglog <level>  : set valgrind debug log level to <level>\n"
-"  vg.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
+"  v.info gdbserver_status : show gdbserver status\n"
+"  v.info memory           : show valgrind heap memory stats\n"
+"  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
+"  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
 "    (default traceflags 0b00100000 : show after instrumentation)\n"
 "   An additional flag  0b100000000 allows to show gdbserver instrumentation\n");
       }
       break;
-   case  1: /* vg.set */
+   case  1: /* v.set */
       ret = 1;
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
@@ -230,7 +230,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          vg_assert (0);
       }
       break;
-   case  2: /* vg.info */ {
+   case  2: /* v.info */ {
       ret = 1;
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
@@ -265,7 +265,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       }
       break;
    }
-   case  3: /* vg.wait */
+   case  3: /* v.wait */
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       if (wcmd != NULL) {
          int_value = strtol (wcmd, &endptr, 10);
@@ -275,10 +275,10 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       VG_(gdb_printf) ("gdbserver: continuing after wait ...\n");
       ret = 1;
       break;
-   case  4: /* vg.kill */
+   case  4: /* v.kill */
       kill_request ("monitor command request to kill this process\n");
       break;
-   case  5: { /* vg.translate */
+   case  5: { /* v.translate */
       Addr address;
       SizeT verbosity = 0x20;
       

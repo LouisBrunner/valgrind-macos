@@ -307,10 +307,11 @@ A not handled comment given by Julian at FOSDEM.
 TODO and/or additional nice things to have
 ------------------------------------------
 * many options can be changed on-line without problems.
-  => would be nice to have a vg.option command that would evaluate
+  => would be nice to have a v.option command that would evaluate
   its arguments like the  startup options of m_main.c and tool clo processing.
 
-* have a mc.who_points_at <address> | <loss_record_nr>
+* have a memcheck monitor command
+  who_points_at <address> | <loss_record_nr>
     that would describe the addresses where a pointer is found
     to address (or address leaked at loss_record_nr>)
   This would allow to interactively searching who is "keeping" a piece
@@ -355,10 +356,10 @@ default_region_ok_for_hw_watchpoint (addr=134520360, len=10) at target.c:2738
 * more client requests can be programmed in various tools.  Currently,
   there are only a few standard valgrind or memcheck client requests
   implemented.
-  vg.suppression [generate|add|delete] might be an interesting command: 
+  v.suppression [generate|add|delete] might be an interesting command: 
      generate would output a suppression, add/delete would add a suppression
      in memory for the last (or selected?) error.
-  vg.break on fn calls/entry/exit + commands associated to it 
+  v.break on fn calls/entry/exit + commands associated to it 
     (such as search leaks)?
 
 

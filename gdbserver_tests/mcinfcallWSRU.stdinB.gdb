@@ -1,7 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU
 echo vgdb launched process attached\n
-monitor vg.set vgdb-error 999999
+monitor v.set vgdb-error 999999
 #
 # ensure all threads are known
 break sleeper_or_burner
@@ -25,5 +25,5 @@ thread 3
 print whoami("thread 3 inferior call pushed from gdb in mcinfcallWSRU.stdinB.gdb")
 thread 4
 print whoami("thread 4 inferior call pushed from gdb in mcinfcallWSRU.stdinB.gdb")
-monitor vg.kill
+monitor v.kill
 quit

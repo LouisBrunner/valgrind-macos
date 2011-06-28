@@ -495,23 +495,23 @@ of the Valgrind core monitor commands.
 
 <para>Each tool can also provide tool-specific monitor commands.
 An example of a tool specific monitor command is the Memcheck monitor
-command <computeroutput>mc.leak_check full
+command <computeroutput>leak_check full
 reachable any</computeroutput>.  This requests a full reporting of the
 allocated memory blocks.  To have this leak check executed, use the GDB
 command:
 <screen><![CDATA[
-(gdb) monitor mc.leak_check full reachable any
+(gdb) monitor leak_check full reachable any
 ]]></screen>
 </para>
 
-<para>GDB will send the <computeroutput>mc.leak_check</computeroutput>
+<para>GDB will send the <computeroutput>leak_check</computeroutput>
 command to the Valgrind gdbserver.  The Valgrind gdbserver will
 execute the monitor command itself, if it recognises it to be a Valgrind core
 monitor command.  If it is not recognised as such, it is assumed to
 be tool-specific and is handed to the tool for execution.  For example:
 </para>
 <programlisting><![CDATA[
-(gdb) monitor mc.leak_check full reachable any
+(gdb) monitor leak_check full reachable any
 ==2418== 100 bytes in 1 blocks are still reachable in loss record 1 of 1
 ==2418==    at 0x4006E9E: malloc (vg_replace_malloc.c:236)
 ==2418==    by 0x804884F: main (prog.c:88)
@@ -529,23 +529,25 @@ be tool-specific and is handed to the tool for execution.  For example:
 <para>As with other GDB commands, the Valgrind gdbserver will accept
 abbreviated monitor command names and arguments, as long as the given
 abbreviation is unambiguous.  For example, the above
-<computeroutput>mc.leak_check</computeroutput>
+<computeroutput>leak_check</computeroutput>
 command can also be typed as:
 <screen><![CDATA[
-(gdb) mo mc.l f r a
+(gdb) mo l f r a
 ]]></screen>
 
 The letters <computeroutput>mo</computeroutput> are recognised by GDB as being
 an abbreviation for <computeroutput>monitor</computeroutput>.  So GDB sends the
-string <computeroutput>mc.l f r a</computeroutput> to the Valgrind
+string <computeroutput>l f r a</computeroutput> to the Valgrind
 gdbserver.  The letters provided in this string are unambiguous for the
 Valgrind gdbserver.  This therefore gives the same output as the
 unabbreviated command and arguments.  If the provided abbreviation is
 ambiguous, the Valgrind gdbserver will report the list of commands (or
 argument values) that can match:
 <programlisting><![CDATA[
-(gdb) mo mc. a r f
-mc. can match mc.get_vbits mc.leak_check mc.make_memory mc.check_memory
+(gdb) mo v. n
+v. can match v.set v.info v.wait v.kill v.translate
+(gdb) mo v.i n
+n_errs_found 0 (vgdb-error 0)
 (gdb) 
 ]]></programlisting>
 </para>
@@ -555,8 +557,8 @@ these from a shell command line.  For example, the following command
 lines, when given in a shell, will cause the same leak search to be executed
 by the process 3145:
 <screen><![CDATA[
-vgdb --pid=3145 mc.leak_check any full reachable
-vgdb --pid=3145 mc.l f r a
+vgdb --pid=3145 leak_check any full reachable
+vgdb --pid=3145 l f r a
 ]]></screen></para>
 
 <para>Note that the Valgrind gdbserver automatically continues the
@@ -800,7 +802,7 @@ $5 = 36
      Whilst an inferior call is running, the Valgrind tool will report
      errors as usual.  If you do not want to have such errors stop the
      execution of the inferior call, you can
-     use <computeroutput>vg.set vgdb-error</computeroutput> to set a
+     use <computeroutput>v.set vgdb-error</computeroutput> to set a
      big value before the call, then manually reset it to its original
      value when the call is complete.</para>
 
@@ -988,10 +990,28 @@ options:</para>
   </listitem>
 
   <listitem>
+    <para><option>--wait=&lt;number&gt;</option> instructs vgdb to
+    search for available Valgrind gdbservers for the specified number
+    of seconds.  This makes it possible start a vgdb process 
+    before starting the Valgrind gdbserver with which you intend the
+    vgdb to communicate.  This option is useful when used in
+    conjunction with a <option>--vgdb-prefix</option> that is
+    unique to the process you want to wait for.
+    Also, if you use the <option>--wait</option> argument in the GDB
+    "target remote" command, you must set the GDB remotetimeout to a
+    value bigger than the --wait argument value.  See option
+    <option>--max-invoke-ms</option> (just below)
+    for an example of setting the remotetimeout value.</para>
+  </listitem>
+
+  <listitem>
     <para><option>--max-invoke-ms=&lt;number&gt;</option> gives the
     number of milliseconds after which vgdb will force the invocation
-    of gdbserver embedded in valgrind.  The default value is 100
-    milliseconds. A value of 0 disables forced invocation.
+    of gdbserver embedded in Valgrind.  The default value is 100
+    milliseconds. A value of 0 disables forced invocation. The forced
+    invocation is used when vgdb is connected to a Valgrind gdbserver,
+    and the Valgrind process has all its threads blocked in a system
+    call.
     </para>
 
     <para>If you specify a large value, you might need to increase the
@@ -1005,46 +1025,45 @@ options:</para>
     ]]></screen>
     </para>
   </listitem>
-   
-  <listitem>
-    <para><option>--wait=&lt;number&gt;</option> instructs vgdb to
-    search for available Valgrind gdbservers for the specified number
-    of seconds.  This makes it possible start a vgdb process 
-    before starting the Valgrind gdbserver with which you intend the
-    vgdb to communicate.  This option is useful when used in
-    conjunction with a <option>--vgdb-prefix</option> that is
-    unique to the process you want to wait for.
-    Also, if you use the <option>--wait</option> argument in the GDB
-    "target remote" command, you must set the GDB remotetimeout to a
-    value bigger than the --wait argument value.  See option
-    <option>--max-invoke-ms</option> (just above)
-    for an example of setting the remotetimeout value.</para>
-  </listitem>
 
   <listitem>
-    <para><option>-c</option> To give more than one command, separate
-    the commands by an option <option>-c</option>. Example:
+    <para><option>--cmd-time-out=&lt;number&gt;</option> instructs a
+    standalone vgdb to exit if the Valgrind gdbserver it is connected
+    to does not process a command in the specified number of seconds.
+    The default value is to never time out.</para>
+  </listitem>
+
+   
+  <listitem>
+    <para><option>-c</option> To give more than one command to a
+    standalone vgdb, separate the commands by an
+    option <option>-c</option>. Example:
     <screen><![CDATA[
-vgdb vg.set log_output -c mc.leak_check any
+vgdb v.set log_output -c leak_check any
 ]]></screen></para>
   </listitem>  
 
   <listitem>
-    <para><option>-d</option> instructs vgdb to produce debugging
-    output.  Give multiple <option>-d</option> args to increase the
-    verbosity.</para>
-  </listitem>
-  
-  <listitem>
-    <para><option>-D</option> instructs vgdb to show the state of the
-    shared memory used by the Valgrind gdbserver.  vgdb will exit after
-    having shown the Valgrind gdbserver shared memory state.</para>
+    <para><option>-l</option> instructs a standalone vgdb to report
+    the list of the Valgrind gdbserver processes running and then
+    exit.</para>
   </listitem>
 
   <listitem>
-    <para><option>-l</option> instructs vgdb to report the list of
-    the Valgrind gdbserver processes running and then exit.</para>
+    <para><option>-D</option> instructs a standalone vgdb to show the
+    state of the shared memory used by the Valgrind gdbserver.  vgdb
+    will exit after having shown the Valgrind gdbserver shared memory
+    state.</para>
   </listitem>
+
+  <listitem>
+    <para><option>-d</option> instructs vgdb to produce debugging
+    output.  Give multiple <option>-d</option> args to increase the
+    verbosity. When giving <option>-d</option> to a relay vgdb, you better
+    redirect the standard error (stderr) of vgdb to a file to avoid
+    interaction between GDB and vgdb debugging output.</para>
+  </listitem>
+  
 </itemizedlist>
  
 </sect2>
@@ -1069,23 +1088,23 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
   </listitem>
 
   <listitem>
-    <para><varname>vg.info all_errors</varname> shows all errors found
+    <para><varname>v.info all_errors</varname> shows all errors found
     so far.</para>
   </listitem>
   <listitem>
-    <para><varname>vg.info last_error</varname> shows the last error
+    <para><varname>v.info last_error</varname> shows the last error
     found.</para>
   </listitem>
 
   <listitem>
-    <para><varname>vg.info n_errs_found</varname> shows the number of
+    <para><varname>v.info n_errs_found</varname> shows the number of
     errors found so far and the current value of the 
     <option>--vgdb-error</option>
     argument.</para>
   </listitem>
 
   <listitem>
-    <para><varname>vg.set {gdb_output | log_output |
+    <para><varname>v.set {gdb_output | log_output |
     mixed_output}</varname> allows redirection of the Valgrind output
     (e.g. the errors detected by the tool).  The default setting is
     <computeroutput>mixed_output</computeroutput>.</para>
@@ -1093,7 +1112,7 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
     <para>With <computeroutput>mixed_output</computeroutput>, the
     Valgrind output goes to the Valgrind log (typically stderr) while
     the output of the interactive GDB monitor commands (e.g. 
-    <computeroutput>vg.info last_error</computeroutput>)
+    <computeroutput>v.info last_error</computeroutput>)
     is displayed by GDB.</para>
     
     <para>With <computeroutput>gdb_output</computeroutput>, both the
@@ -1106,7 +1125,7 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
   </listitem>
   
   <listitem>
-    <para><varname>vg.wait [ms (default 0)]</varname> instructs
+    <para><varname>v.wait [ms (default 0)]</varname> instructs
     Valgrind gdbserver to sleep "ms" milli-seconds and then
     continue.  When sent from a standalone vgdb, if this is the last
     command, the Valgrind process will continue the execution of the
@@ -1117,14 +1136,14 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
   </listitem>
 
   <listitem>
-    <para><varname>vg.kill</varname> requests the gdbserver to kill
+    <para><varname>v.kill</varname> requests the gdbserver to kill
     the process. This can be used from a standalone vgdb to properly
     kill a Valgrind process which is currently expecting a vgdb
     connection.</para>
   </listitem>
 
   <listitem>
-    <para><varname>vg.set vgdb-error &lt;errornr&gt;</varname>
+    <para><varname>v.set vgdb-error &lt;errornr&gt;</varname>
     dynamically changes the value of the 
     <option>--vgdb-error</option> argument. A
     typical usage of this is to start with
@@ -1142,7 +1161,7 @@ problems or bugs.</para>
 <itemizedlist>
 
   <listitem>
-    <para><varname>vg.info gdbserver_status</varname> shows the
+    <para><varname>v.info gdbserver_status</varname> shows the
     gdbserver status. In case of problems (e.g. of communications),
     this showns the values of some relevant Valgrind gdbserver internal
     variables.  Note that the variables related to breakpoints and
@@ -1156,7 +1175,7 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
-    <para><varname>vg.info memory</varname> shows the statistics of
+    <para><varname>v.info memory</varname> shows the statistics of
     Valgrind's internal heap management. If
     option <option>--profile-heap=yes</option> was given, detailed
     statistics will be output.
@@ -1164,14 +1183,14 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
-    <para><varname>vg.set debuglog &lt;intvalue&gt;</varname> sets the
+    <para><varname>v.set debuglog &lt;intvalue&gt;</varname> sets the
     Valgrind debug log level to &lt;intvalue&gt;.  This allows to
     dynamically change the log level of Valgrind e.g. when a problem
     is detected.</para>
   </listitem>
 
   <listitem>
-    <para><varname>vg.translate &lt;address&gt;
+    <para><varname>v.translate &lt;address&gt;
     [&lt;traceflags&gt;]</varname> shows the translation of the block
     containing <computeroutput>address</computeroutput> with the given
     trace flags. The <computeroutput>traceflags</computeroutput> value

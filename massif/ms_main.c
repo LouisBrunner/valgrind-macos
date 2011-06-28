@@ -1977,8 +1977,8 @@ static void print_monitor_help ( void )
 {
    VG_(gdb_printf) ("\n");
    VG_(gdb_printf) ("massif monitor commands:\n");
-   VG_(gdb_printf) ("  ms.snapshot [<filename>]\n");
-   VG_(gdb_printf) ("  ms.detailed_snapshot [<filename>]\n");
+   VG_(gdb_printf) ("  snapshot [<filename>]\n");
+   VG_(gdb_printf) ("  detailed_snapshot [<filename>]\n");
    VG_(gdb_printf) ("       takes a snapshot (or a detailed snapshot)\n");
    VG_(gdb_printf) ("       and saves it in <filename>\n");
    VG_(gdb_printf) ("             default <filename> is massif.vgdb.out\n");
@@ -2396,7 +2396,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    VG_(strcpy) (s, req);
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
-   switch (VG_(keyword_id) ("help ms.snapshot ms.detailed_snapshot", 
+   switch (VG_(keyword_id) ("help snapshot detailed_snapshot", 
                             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -2405,13 +2405,13 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  0: /* help */
       print_monitor_help();
       return True;
-   case  1: { /* ms.snapshot */
+   case  1: { /* snapshot */
       Char* filename;
       filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
       handle_snapshot_monitor_command (filename, False /* detailed */);
       return True;
    }
-   case  2: { /* ms.detailed_snapshot */
+   case  2: { /* detailed_snapshot */
       Char* filename;
       filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
       handle_snapshot_monitor_command (filename, True /* detailed */);

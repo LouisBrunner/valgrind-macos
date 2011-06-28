@@ -31,6 +31,7 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
 
+#include <limits.h>
 #include <unistd.h>
 #include <string.h>
 #include <poll.h>
@@ -92,6 +93,10 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 #if defined(VGO_darwin)
 #undef PTRACEINVOKER
 #endif
+
+// Outputs information for the user about ptrace_scope protection
+// or ptrace not working.
+static void ptrace_restrictions_msg(void);
 
 static int debuglevel;
 static struct timeval dbgtv;
@@ -476,14 +481,26 @@ static
 Bool attach (int pid, char *msg)
 {
    long res;
+   static Bool output_error = True;
+   static Bool initial_attach = True;
+   // For a ptrace_scope protected system, we do not want to output 
+   // repetitively attach error. We will output once an error
+   // for the initial_attach. Once the 1st attach has succeeded, we
+   // again show all errors.
 
    DEBUG(1, "%s PTRACE_ATTACH pid %d\n", msg, pid);
    res = ptrace (PTRACE_ATTACH, pid, NULL, NULL);
    if (res != 0) {
-      ERROR(errno, "%s PTRACE_ATTACH pid %d %ld\n", msg, pid, res);
+      if (output_error || debuglevel > 0) {
+         ERROR(errno, "%s PTRACE_ATTACH pid %d %ld\n", msg, pid, res);
+         if (initial_attach)
+            output_error = False;
+      }
       return False;
    }
 
+   initial_attach = False;
+   output_error = True;
    return waitstopped(pid, SIGSTOP, msg);
 }
 
@@ -791,6 +808,7 @@ void restore_and_detach(int pid)
 static
 Bool invoke_gdbserver (int pid)
 {
+   static Bool ptrace_restrictions_msg_given = False;
    long res;
    Bool stopped;
    struct user user_mod;
@@ -813,7 +831,11 @@ Bool invoke_gdbserver (int pid)
 
    DEBUG(1, "attach to 'main' pid %d\n", pid);
    if (!attach(pid, "attach main pid")) {
-      ERROR(0, "error attach main pid %d\n", pid);
+      if (!ptrace_restrictions_msg_given) {
+         ptrace_restrictions_msg_given = True;
+         ERROR(0, "error attach main pid %d\n", pid);
+         ptrace_restrictions_msg();
+      }
       return False;
    }
 
@@ -1074,14 +1096,21 @@ void cleanup_restore_and_detach(void *v_pid)
    (if PTRACE_INVOKER is defined) to ensure that the gdbserver code is
    called soon by valgrind. */
 static int max_invoke_ms = 100;
+#define NEVER 99999999
+static int cmd_time_out = NEVER;
 static
 void *invoke_gdbserver_in_valgrind(void *v_pid)
 {
+   struct timeval cmd_max_end_time;
+   Bool cmd_started = False;
+   struct timeval invoke_time;
+
    int pid = *(int *)v_pid;
    int written_by_vgdb_before_sleep;
    int seen_by_valgrind_before_sleep;
    
    int invoked_written = -1;
+   unsigned int usecs;
 
    pthread_cleanup_push(cleanup_restore_and_detach, v_pid);
 
@@ -1093,15 +1122,44 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
             "seen_by_valgrind_before_sleep %d\n",
             written_by_vgdb_before_sleep,
             seen_by_valgrind_before_sleep);
-      if (usleep(1000 * max_invoke_ms) != 0) {
+      if (cmd_time_out != NEVER
+          && !cmd_started
+          && written_by_vgdb_before_sleep > seen_by_valgrind_before_sleep) {
+         /* A command was started. Record the time at which it was started. */
+         DEBUG(1, "IO for command started\n");
+         gettimeofday(&cmd_max_end_time, NULL);
+         cmd_max_end_time.tv_sec += cmd_time_out;
+         cmd_started = True;
+      }
+      if (max_invoke_ms > 0) {
+         usecs = 1000 * max_invoke_ms;
+         gettimeofday(&invoke_time, NULL);
+         invoke_time.tv_sec += max_invoke_ms / 1000;
+         invoke_time.tv_usec += 1000 * (max_invoke_ms % 1000);
+         invoke_time.tv_sec += invoke_time.tv_usec / (1000 * 1000);
+         invoke_time.tv_usec = invoke_time.tv_usec % (1000 * 1000);
+      } else {
+         usecs = 0;
+      }
+      if (cmd_started) {
+         // 0 usecs here means the thread just has to check gdbserver eats
+         // the characters in <= cmd_time_out seconds.
+         // We will just wait by 1 second max at a time.
+         if (usecs == 0 || usecs > 1000 * 1000)
+            usecs = 1000 * 1000;
+      }
+      if (usleep(usecs) != 0) {
          if (errno == EINTR)
             continue;
          XERROR (errno, "error usleep\n");
       }
-      /* if nothing happened during our sleep, let's try to wake up valgrind */
+      /* If nothing happened during our sleep, let's try to wake up valgrind
+         or check for cmd time out. */
       if (written_by_vgdb_before_sleep == VS_written_by_vgdb
           && seen_by_valgrind_before_sleep == VS_seen_by_valgrind
           && VS_written_by_vgdb > VS_seen_by_valgrind) {
+         struct timeval now;
+         gettimeofday(&now, NULL);
          DEBUG(2,
                "after sleep "
                "written_by_vgdb %d "
@@ -1115,20 +1173,33 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
            XERROR (errno, 
                    "invoke_gdbserver_in_valgrind: "
                    "check for pid %d existence failed\n", pid);
-
-         #if defined(PTRACEINVOKER)
-         /* only need to wake up if the nr written has changed since
-            last invoke. */
-         if (invoked_written != written_by_vgdb_before_sleep) {
-            if (invoke_gdbserver(pid)) {
-               /* If invoke succesful, no need to invoke again
-                  for the same value of written_by_vgdb_before_sleep. */
-               invoked_written = written_by_vgdb_before_sleep;
-            }
+         if (cmd_started) {
+            if (timercmp (&now, &cmd_max_end_time, >))
+               XERROR (0, 
+                       "pid %d did not handle a command in %d seconds\n",
+                       pid, cmd_time_out);
          }
-         #else
-         DEBUG(2, "invoke_gdbserver via ptrace not (yet) implemented\n");
-         #endif
+         if (max_invoke_ms > 0 && timercmp (&now, &invoke_time, >=)) {
+            #if defined(PTRACEINVOKER)
+            /* only need to wake up if the nr written has changed since
+               last invoke. */
+            if (invoked_written != written_by_vgdb_before_sleep) {
+               if (invoke_gdbserver(pid)) {
+                  /* If invoke succesful, no need to invoke again
+                     for the same value of written_by_vgdb_before_sleep. */
+                  invoked_written = written_by_vgdb_before_sleep;
+               }
+            }
+            #else
+            DEBUG(2, "invoke_gdbserver via ptrace not (yet) implemented\n");
+            #endif
+         }
+      } else {
+         // Something happened => restart timer check.
+         if (cmd_time_out != NEVER) {
+            DEBUG(2, "some IO was done => restart command\n");
+            cmd_started = False;
+         }
       }
    }
    pthread_cleanup_pop(0);
@@ -1531,7 +1602,7 @@ void close_connection(int to_pid, int from_pid)
       in the valgrind process can stay stopped if vgdb main
       exits before the invoke thread had time to detach from
       all valgrind threads. */
-   if (max_invoke_ms > 0) {
+   if (max_invoke_ms > 0 || cmd_time_out != NEVER) {
       int join;
 
       /* It is surprisingly complex to properly shutdown or exit the
@@ -1705,7 +1776,7 @@ void standalone_send_commands(int pid,
    int nc;
 
 
-   if (max_invoke_ms > 0)
+   if (max_invoke_ms > 0 || cmd_time_out != NEVER)
       pthread_create(&invoke_gdbserver_in_valgrind_thread, NULL, 
                      invoke_gdbserver_in_valgrind, (void *) &pid);
 
@@ -1803,7 +1874,7 @@ void standalone_send_commands(int pid,
 /* report to user the existence of a vgdb-able valgrind process 
    with given pid */
 static
-void report_pid (int pid)
+void report_pid (int pid, Bool on_stdout)
 {
    char cmdline_file[100];
    char cmdline[1000];
@@ -1824,14 +1895,14 @@ void report_pid (int pid)
       cmdline[sz] = 0;
       close (fd);
    }  
-   fprintf(stderr, "use --pid=%d for %s\n", pid, cmdline);
-   fflush(stderr);
+   fprintf((on_stdout ? stdout : stderr), "use --pid=%d for %s\n", pid, cmdline);
+   fflush((on_stdout ? stdout : stderr));
 }
 
-/* Eventually produces additional usage information documenting the
+/* Possibly produces additional usage information documenting the
    ptrace restrictions. */
 static
-void ptrace_restrictions(void)
+void ptrace_restrictions_msg(void)
 {
 #  ifdef PR_SET_PTRACER
    char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
@@ -1875,28 +1946,32 @@ void usage(void)
 "     Only OPTION(s) can be given.\n"
 "\n"
 " OPTIONS are [--pid=<number>] [--vgdb-prefix=<prefix>]\n"
-"             [--max-invoke-ms=<number>] [--wait=<number>] [-d] [-D] [-l]\n"
+"             [--wait=<number>] [--max-invoke-ms=<number>]\n"
+"             [--cmd-time-out=<number>] [-l] [-D] [-d]\n"
+"             \n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
 "  --vgdb-prefix arg must be given to both Valgrind and vgdb utility\n"
 "      if you want to change the default prefix for the FIFOs communication\n"
 "      between the Valgrind gdbserver and vgdb.\n"
-"  --wait arg tells vgdb to check during the specified number\n"
+"  --wait (default 0) tells vgdb to check during the specified number\n"
 "      of seconds if a Valgrind gdbserver can be found.\n"
-"  --max-invoke-ms gives the nr of milli-seconds after which vgdb will force\n"
-"      the invocation of the Valgrind gdbserver (if the Valgrind process\n"
-"           is blocked in a system call).\n"
-"  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
-"  -D  arg tells to show shared mem status and then exit.\n"
+"  --max-invoke-ms (default 100) gives the nr of milli-seconds after which vgdb\n"
+"      will force the invocation of the Valgrind gdbserver (if the Valgrind\n"
+"         process is blocked in a system call).\n"
+"  --cmd-time-out (default 99999999) tells vgdb to exit if the found Valgrind\n"
+"     gdbserver has not processed a command after number seconds\n"
 "  -l  arg tells to show the list of running Valgrind gdbserver and then exit.\n"
+"  -D  arg tells to show shared mem status and then exit.\n"
+"  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
 "\n"
 "  -h --help shows this message\n"
 "  To get help from the Valgrind gdbserver, use vgdb help\n"
 "\n"
            );
-   ptrace_restrictions();  
+   ptrace_restrictions_msg();  
 }
 
-/* If show_list, shows the list of Valgrind processes with gdbserver activated.
+/* If show_list, outputs on stdout the list of Valgrind processes with gdbserver activated.
                  and then exits.
 
    else if arg_pid == -1, waits maximum check_trials seconds to discover
@@ -1992,7 +2067,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
                       && kill (newpid, 0) == 0) {
                      nr_valid_pid++;
                      if (show_list) {
-                        report_pid (newpid);
+                        report_pid (newpid, /*on_stdout*/ True);
                         pid = newpid;
                      } else if (arg_pid != -1) {
                         if (arg_pid == newpid) {
@@ -2004,10 +2079,10 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
                               (stderr, 
                                "no --pid= arg given"
                                " and multiple valgrind pids found:\n");
-                           report_pid (pid);
+                           report_pid (pid, /*on_stdout*/ False);
                         }
                         pid = -2;
-                        report_pid (newpid);
+                        report_pid (newpid, /*on_stdout*/ False);
                      } else {
                         pid = newpid;
                      }
@@ -2057,14 +2132,18 @@ Bool numeric_val(char* arg, int *value)
 {
    const char *eq_pos = strchr(arg, '=');
    char *wrong;
+   long long int long_value;
 
    if (eq_pos == NULL)
       return False;
 
-   *value = strtol(eq_pos+1, &wrong, 10);
+   long_value = strtoll(eq_pos+1, &wrong, 10);
+   if (long_value < 0 || long_value > INT_MAX)
+      return False;
    if (*wrong)
       return False;
 
+   *value = (int) long_value;
    return True;
 }
 
@@ -2115,22 +2194,27 @@ void parse_options(int argc, char** argv,
       } else if (is_opt(argv[i], "--pid=")) {
          int newpid;
          if (!numeric_val(argv[i], &newpid)) {
-            fprintf (stderr, "invalid pid argument %s\n", argv[i]);
+            fprintf (stderr, "invalid --pid argument %s\n", argv[i]);
             arg_errors++;
          } else if (arg_pid != -1) {
-            fprintf (stderr, "multiple pid arguments given\n");
+            fprintf (stderr, "multiple --pid arguments given\n");
             arg_errors++;
          } else {
             arg_pid = newpid;
          }
       } else if (is_opt(argv[i], "--wait=")) {
          if (!numeric_val(argv[i], &check_trials)) {
-            fprintf (stderr, "invalid wait argument %s\n", argv[i]);
+            fprintf (stderr, "invalid --wait argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--max-invoke-ms=")) {
          if (!numeric_val(argv[i], &max_invoke_ms)) {
-            fprintf (stderr, "invalid max-invoke-ms argument %s\n", argv[i]);
+            fprintf (stderr, "invalid --max-invoke-ms argument %s\n", argv[i]);
+            arg_errors++;
+         }
+      } else if (is_opt(argv[i], "--cmd-time-out=")) {
+         if (!numeric_val(argv[i], &cmd_time_out)) {
+            fprintf (stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--vgdb-prefix=")) {
@@ -2177,6 +2261,14 @@ void parse_options(int argc, char** argv,
       arg_errors++;
       fprintf (stderr,
                "Can't use both -D and -l options\n");
+   }
+
+   if (max_invoke_ms > 0 
+       && cmd_time_out != NEVER
+       && (cmd_time_out * 1000) <= max_invoke_ms) {
+      arg_errors++;
+      fprintf (stderr,
+               "--max-invoke-ms must be < --cmd-time-out * 1000\n");
    }
 
    if (show_list && arg_pid != -1) {

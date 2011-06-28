@@ -1083,12 +1083,12 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 
 <itemizedlist>
   <listitem>
-    <para><varname>ct.dump [&lt;dump_hint&gt;]</varname> requests to dump the
+    <para><varname>dump [&lt;dump_hint&gt;]</varname> requests to dump the
     profile data. </para>
   </listitem>
 
   <listitem>
-    <para><varname>ct.zero</varname> requests to zero the profile data
+    <para><varname>zero</varname> requests to zero the profile data
     counters. </para>
   </listitem>
 

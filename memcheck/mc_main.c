@@ -4928,28 +4928,27 @@ static void show_client_block_stats ( void )
       cgb_allocs, cgb_discards, cgb_used_MAX, cgb_search 
    );
 }
-
 static void print_monitor_help ( void )
 {
    VG_(gdb_printf) 
       (
 "\n"
 "memcheck monitor commands:\n"
-"  mc.get_vbits <addr> [<len>]\n"
+"  get_vbits <addr> [<len>]\n"
 "        returns validity bits for <len> (or 1) bytes at <addr>\n"
 "            bit values 0 = valid, 1 = invalid, __ = unaddressable byte\n"
-"        Example: mc.get_vbits 0x8049c78 10\n"
-"  mc.make_memory [noaccess|undefined\n"
-"                     |defined|ifaddressabledefined] <addr> [<len>]\n"
+"        Example: get_vbits 0x8049c78 10\n"
+"  make_memory [noaccess|undefined\n"
+"                     |defined|Definedifaddressable] <addr> [<len>]\n"
 "        mark <len> (or 1) bytes at <addr> with the given accessibility\n"
-"  mc.check_memory [addressable|defined] <addr> [<len>]\n"
+"  check_memory [addressable|defined] <addr> [<len>]\n"
 "        check that <len> (or 1) bytes at <addr> have the given accessibility\n"
 "            and outputs a description of <addr>\n"
-"  mc.leak_check [full*|summary] [reachable|leakpossible*|definiteleak]\n"
+"  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]\n"
 "                [increased*|changed|any]\n"
 "            * = defaults\n"
-"        Examples: mc.leak_check\n"
-"                  mc.leak_check summary any\n"
+"        Examples: leak_check\n"
+"                  leak_check summary any\n"
 "\n");
 }
 
@@ -4964,10 +4963,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
    /* NB: if possible, avoid introducing a new command below which
-      starts with the same 4 first letters as an already existing
+      starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help mc.get_vbits mc.leak_check mc.make_memory mc.check_memory", 
+           ("help get_vbits leak_check make_memory check_memory", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -4976,7 +4975,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  0: /* help */
       print_monitor_help();
       return True;
-   case  1: { /* mc.get_vbits */
+   case  1: { /* get_vbits */
       Addr address;
       SizeT szB = 1;
       VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
@@ -5011,7 +5010,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       }
       return True;
    }
-   case  2: { /* mc.leak_check */
+   case  2: { /* leak_check */
       Int err = 0;
       LeakCheckParams lcp;
       Char* kw;
@@ -5027,7 +5026,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
            kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
          switch (VG_(keyword_id) 
                  ("full summary "
-                  "reachable leakpossible definiteleak "
+                  "reachable possibleleak definiteleak "
                   "increased changed any",
                   kw, kwd_report_all)) {
          case -2: err++; break;
@@ -5039,7 +5038,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
          case  2: /* reachable */
             lcp.show_reachable = True; 
             lcp.show_possibly_lost = True; break;
-         case  3: /* leakpossible */
+         case  3: /* possibleleak */
             lcp.show_reachable = False;
             lcp.show_possibly_lost = True; break;
          case  4: /* definiteleak */
@@ -5060,11 +5059,11 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       return True;
    }
       
-   case  3: { /* mc.make_memory */
+   case  3: { /* make_memory */
       Addr address;
       SizeT szB = 1;
       int kwdid = VG_(keyword_id) 
-         ("noaccess undefined defined ifaddressabledefined",
+         ("noaccess undefined defined Definedifaddressable",
           VG_(strtok_r) (NULL, " ", &ssaveptr), kwd_report_all);
       VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
       if (address == (Addr) 0 && szB == 0) return True;
@@ -5081,7 +5080,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       return True;
    }
 
-   case  4: { /* mc.check_memory */
+   case  4: { /* check_memory */
       Addr address;
       SizeT szB = 1;
       Addr bad_addr;

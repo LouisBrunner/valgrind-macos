@@ -317,7 +317,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams lcp);
 // maintains the lcp.deltamode given in the last call to detect_memory_leaks
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
-// if delta_mode == LC_Any, prints in buf an empty string
+// if delta_mode == LCD_Any, prints in buf an empty string
 // otherwise prints a delta in the layout  " (+%'lu)" or " (-%'lu)" 
 extern char * MC_(snprintf_delta) (char * buf, Int size, 
                                    SizeT current_val, SizeT old_val, 

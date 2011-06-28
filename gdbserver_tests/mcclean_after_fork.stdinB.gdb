@@ -1,7 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcclean_after_fork
 echo vgdb launched process attached\n
-monitor vg.set vgdb-error 999999
+monitor v.set vgdb-error 999999
 #
 # put a break in main, and then a watch
 # also put breaks in code that only the child will execute.
@@ -21,5 +21,5 @@ continue
 #
 # we should now have encountered the read watchpoint in the parent.
 # let's kill the parent:
-monitor vg.kill
+monitor v.kill
 quit

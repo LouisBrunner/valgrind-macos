@@ -1278,7 +1278,7 @@ built-in gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling
 
 <itemizedlist>
   <listitem>
-    <para><varname>mc.get_vbits &lt;addr&gt; [&lt;len&gt;]</varname>
+    <para><varname>get_vbits &lt;addr&gt; [&lt;len&gt;]</varname>
     shows the definedness (V) bits for &lt;len&gt; (default 1) bytes
     starting at &lt;addr&gt;.  The definedness of each byte in the
     range is given using two hexadecimal digits.  These hexadecimal
@@ -1296,15 +1296,32 @@ built-in gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling
 <programlisting><![CDATA[
 (gdb) p &string10
 $4 = (char (*)[10]) 0x8049e28
-(gdb) monitor mc.get_vbits 0x8049e28 10
+(gdb) monitor get_vbits 0x8049e28 10
 ff00ff00 ff__ff00 ff00
 (gdb) 
 ]]></programlisting>
+
+    <para> The command get_vbits cannot be used with registers. To get
+    the validity bits of a register, you must start Valgrind with the
+    option <option>--vgdb-shadow-registers=yes</option>. The validity
+    bits of a register can be obtained by printing the 'shadow 1'
+    corresponding register.  In the below x86 example, the register
+    eax has all its bits undefined, while the register ebx is fully
+    defined.
+    </para>
+<programlisting><![CDATA[
+(gdb) p /x $eaxs1
+$9 = 0xffffffff
+(gdb) p /x $ebxs1
+$10 = 0x0
+(gdb) 
+]]></programlisting>
+
   </listitem>
 
   <listitem>
-    <para><varname>mc.make_memory
-    [noaccess|undefined|defined|ifaddressabledefined] &lt;addr&gt;
+    <para><varname>make_memory
+    [noaccess|undefined|defined|Definedifaddressable] &lt;addr&gt;
     [&lt;len&gt;]</varname> marks the range of &lt;len&gt; (default 1)
     bytes at &lt;addr&gt; as having the given status. Parameter
     <varname>noaccess</varname> marks the range as non-accessible, so
@@ -1312,33 +1329,36 @@ ff00ff00 ff__ff00 ff00
     <varname>undefined</varname> or <varname>defined</varname> mark
     the area as accessible, but Memcheck regards the bytes in it
     respectively as having undefined or defined values.
-    <varname>ifaddressabledefined</varname> marks as defined, bytes in
+    <varname>Definedifaddressable</varname> marks as defined, bytes in
     the range which are already addressible, but makes no change to
-    the status of bytes in the range which are not addressible.</para>
+    the status of bytes in the range which are not addressible. Note
+    that the first letter of <varname>Definedifaddressable</varname>
+    is an uppercase D to avoid confusion with <varname>defined</varname>.
+    </para>
 
     <para>
     In the following example, the first byte of the
     <varname>string10</varname> is marked as defined:
     </para>
 <programlisting><![CDATA[
-(gdb) monitor mc.make_memory defined 0x8049e28  1
-(gdb) monitor mc.get_vbits 0x8049e28 10
+(gdb) monitor make_memory defined 0x8049e28  1
+(gdb) monitor get_vbits 0x8049e28 10
 0000ff00 ff00ff00 ff00
 (gdb) 
 ]]></programlisting>
   </listitem>
 
   <listitem>
-    <para><varname>mc.check_memory [addressable|defined] &lt;addr&gt;
+    <para><varname>check_memory [addressable|defined] &lt;addr&gt;
     [&lt;len&gt;]</varname> checks that the range of &lt;len&gt;
-    (default 1) bytes at &lt;addr&gt; has the specified accessibility.  It
-    then outputs a description of &lt;addr&gt;. In the following example, a
-    detailed description is given available because 
-    the option <option>--read-var-info=yes</option>
-    was given Valgrind at startup:
+    (default 1) bytes at &lt;addr&gt; has the specified accessibility.
+    It then outputs a description of &lt;addr&gt;. In the following
+    example, a detailed description is available because the
+    option <option>--read-var-info=yes</option> was given Valgrind at
+    startup:
     </para>
 <programlisting><![CDATA[
-(gdb) monitor mc.check_memory defined 0x8049e28  1
+(gdb) monitor check_memory defined 0x8049e28  1
 Address 0x8049E28 len 1 defined
 ==14698==  Location 0x8049e28 is 0 bytes inside string10[0],
 ==14698==  declared at prog.c:10, in frame #0 of thread 1
@@ -1347,9 +1367,9 @@ Address 0x8049E28 len 1 defined
   </listitem>
 
   <listitem>
-    <para><varname>mc.leak_check [full*|summary]
-                                 [reachable|leakpossible*|definiteleak]
-                                 [increased*|changed|any]
+    <para><varname>leak_check [full*|summary]
+                              [reachable|possibleleak*|definiteleak]
+                              [increased*|changed|any]
           </varname>
     performs a leak check. The <varname>*</varname> in the arguments
     indicates the default value. </para>
@@ -1368,7 +1388,7 @@ Address 0x8049E28 len 1 defined
     a <varname>full</varname> leak search.  The
     value <varname>definiteleak</varname> specifies that only
     definitely leaked blocks should be shown.  The
-    value <varname>leakpossible</varname> will also show possibly
+    value <varname>possibleleak</varname> will also show possibly
     leaked blocks (those for which only an interior pointer was
     found).  The value
     <varname>reachable</varname> will show all block categories
@@ -1390,7 +1410,7 @@ Address 0x8049E28 len 1 defined
     </para>
 
     <para>The following example shows usage of the 
-    <varname>mc.leak_check monitor</varname> command on
+    <varname>leak_check monitor</varname> command on
     the <varname>memcheck/tests/leak-cases.c</varname> regression
     test. The first command outputs one entry having an increase in
     the leaked bytes.  The second command is the same as the first
@@ -1398,7 +1418,7 @@ Address 0x8049E28 len 1 defined
     Valgrind gdbserver. It only outputs the summary information, as
     there was no increase since the previous leak search.</para>
 <programlisting><![CDATA[
-(gdb) monitor mc.leak_check full leakpossible increased
+(gdb) monitor leak_check full possibleleak increased
 ==14729== 16 (+16) bytes in 1 (+1) blocks are possibly lost in loss record 13 of 16
 ==14729==    at 0x4006E9E: malloc (vg_replace_malloc.c:236)
 ==14729==    by 0x80484D5: mk (leak-cases.c:52)
@@ -1412,9 +1432,9 @@ Address 0x8049E28 len 1 defined
 ==14729==    still reachable: 96 (+16) bytes in 6 (+1) blocks
 ==14729==         suppressed: 0 (+0) bytes in 0 (+0) blocks
 ==14729== Reachable blocks (those to which a pointer was found) are not shown.
-==14729== o see them, add 'reachable any' args to mc.leak_check
+==14729== To see them, add 'reachable any' args to leak_check
 ==14729== 
-(gdb) mo mc.l
+(gdb) mo l
 ==14729== LEAK SUMMARY:
 ==14729==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
 ==14729==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
@@ -1422,7 +1442,7 @@ Address 0x8049E28 len 1 defined
 ==14729==    still reachable: 96 (+0) bytes in 6 (+0) blocks
 ==14729==         suppressed: 0 (+0) bytes in 0 (+0) blocks
 ==14729== Reachable blocks (those to which a pointer was found) are not shown.
-==14729== To see them, add 'reachable any' args to mc.leak_check
+==14729== To see them, add 'reachable any' args to leak_check
 ==14729== 
 (gdb) 
 ]]></programlisting>
@@ -1431,9 +1451,9 @@ Address 0x8049E28 len 1 defined
     with <option>--leak-check=full</option>
     <option>--show-reachable=yes</option> to see the reachable
     blocks. You can obtain the same information without rerunning by
-    using the GDB command <computeroutput>monitor mc.leak_check full
+    using the GDB command <computeroutput>monitor leak_check full
     reachable any</computeroutput> (or, using
-    abbreviation: <computeroutput>mo mc.l f r a</computeroutput>).
+    abbreviation: <computeroutput>mo l f r a</computeroutput>).
     </para>
   </listitem>
 </itemizedlist>

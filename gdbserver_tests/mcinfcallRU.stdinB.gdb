@@ -1,7 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcinfcallRU
 echo vgdb launched process attached\n
-monitor vg.set vgdb-error 999999
+monitor v.set vgdb-error 999999
 #
 # We will interrupt in a few seconds (be sure the main task is ready).
 # Once it is ready, we still have to wait to be sure it is running.
@@ -15,5 +15,5 @@ thread apply all bt full
 # before they have a chance to execute the whoami
 # thread apply all
 print whoami("inferior call pushed from gdb in mcinfcallRU.stdinB.gdb")
-monitor vg.kill
+monitor v.kill
 quit

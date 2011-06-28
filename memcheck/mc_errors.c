@@ -717,7 +717,7 @@ void MC_(pp_Error) ( Error* err )
          UInt        n_total_records = extra->Err.Leak.n_total_records;
          LossRecord* lr              = extra->Err.Leak.lr;
          // char arrays to produce the indication of increase/decrease in case
-         // of delta_mode != LC_Any
+         // of delta_mode != LCD_Any
          char        d_bytes[20];
          char        d_direct_bytes[20];
          char        d_indirect_bytes[20];

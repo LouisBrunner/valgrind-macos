@@ -1,7 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcbreak
 echo vgdb launched process attached\n
-monitor vg.set vgdb-error 999999
+monitor v.set vgdb-error 999999
 #
 define checkstep
   set $old_pc=$pc
@@ -25,7 +25,7 @@ checkstep
 checkstep
 checkstep
 #
-monitor vg.set vgdb-error 0
+monitor v.set vgdb-error 0
 #
 next
 print whoami("first")
@@ -57,13 +57,13 @@ finish
 # delete all breaks
 delete
 continue
-monitor vg.info n_errs_found 
+monitor v.info n_errs_found 
 # inferior call "in the middle" of an instruction is not working at least
 # on all platforms, so comment the below.
 # print whoami("after error: inferior call pushed from mcbreak.stdinB.gdb")
 checkstep
-monitor vg.set vgdb-error 0
+monitor v.set vgdb-error 0
 continue
 # stop the process a.o. to avoid non deterministic output
-monitor vg.kill
+monitor v.kill
 quit

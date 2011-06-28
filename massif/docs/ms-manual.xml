@@ -866,13 +866,13 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 
 <itemizedlist>
   <listitem>
-    <para><varname>ms.snapshot [&lt;filename&gt;]</varname> requests
+    <para><varname>snapshot [&lt;filename&gt;]</varname> requests
     to take a snapshot and save it in the given &lt;filename&gt;
     (default massif.vgdb.out).
     </para>
   </listitem>
   <listitem>
-    <para><varname>ms.detailed_snapshot [&lt;filename&gt;]</varname>
+    <para><varname>detailed_snapshot [&lt;filename&gt;]</varname>
     requests to take a detailed snapshot and save it in the given
     &lt;filename&gt; (default massif.vgdb.out).
     </para>

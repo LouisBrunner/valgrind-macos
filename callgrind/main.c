@@ -1360,9 +1360,9 @@ static void print_monitor_help ( void )
 {
    VG_(gdb_printf) ("\n");
    VG_(gdb_printf) ("callgrind monitor commands:\n");
-   VG_(gdb_printf) ("  ct.dump [<dump_hint>]\n");
+   VG_(gdb_printf) ("  dump [<dump_hint>]\n");
    VG_(gdb_printf) ("        dump counters\n");
-   VG_(gdb_printf) ("  ct.zero\n");
+   VG_(gdb_printf) ("  zero\n");
    VG_(gdb_printf) ("        zero counters\n");
    VG_(gdb_printf) ("\n");
 }
@@ -1377,7 +1377,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    VG_(strcpy) (s, req);
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
-   switch (VG_(keyword_id) ("help ct.dump ct.zero", 
+   switch (VG_(keyword_id) ("help dump zero", 
                             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -1386,11 +1386,11 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  0: /* help */
       print_monitor_help();
       return True;
-   case  1: { /* ct.dump */
+   case  1: { /* dump */
       CLG_(dump_profile)(req, False);
       return True;
    }
-   case  2: { /* ct.zero */
+   case  2: { /* zero */
       CLG_(zero_all_cost)(False);
       return True;
    }

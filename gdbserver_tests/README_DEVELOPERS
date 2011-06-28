@@ -144,11 +144,11 @@ Manual tests still to automate:
 
 Validate  monitor commands abbreviation recognition
 ***************************************************
-mo vg.info all_errors           # to show all errors recorded so far
-mo vg.i a                       # the same
-mo v                            # must give an error: v can match vg.set vg.info
-mo vg                           # the same            vg
-mo vg.                          # the same            vg.
+mo v.info all_errors            # to show all errors recorded so far
+mo v.i a                        # the same
+mo v                            # must give an error: v can match v.set v.info
+mo v                            # the same            v
+mo v.                           # the same            v.
 
 test of gdb detaching or dying
 ******************************
@@ -159,11 +159,11 @@ in another window
 gdb ./t
 set remotetimeout 100
 target remote|vgdb
-detach                          valgrind continues
+detach                         valgrind continues
 target remote|vgdb             reattach
-detach                          valgrind continues
+detach                         valgrind continues
 target remote|vgdb             reattach
-monitor vg.wait                 no effect
+monitor v.wait                 no effect
 
 
 
@@ -177,14 +177,14 @@ in another window
 gdb ./t
 set remotetimeout 1000 
 target remote | vgdb
-mo vg.set vgdb-error 1000      # so that valgrind does stop only at error 1000 and after
-mo vg.set gdb_output            # to have further valgrind errors output in gdb
+mo v.set vgdb-error 1000        # so that valgrind does stop only at error 1000 and after
+mo v.set gdb_output             # to have further valgrind errors output in gdb
 c                               # continue, some errors will appear
 C-c                             # interrupt program
-mo vg.set log_output            # to set back the valgrind output to normal process log output
-mo mc.l                         # leak output to appear in log of process
-mo vg.set mixed_output
-mo mc.l                         # leak output to appear in gdb
+mo v.set log_output             # to set back the valgrind output to normal process log output
+mo l                            # leak output to appear in log of process
+mo v.set mixed_output
+mo l                            # leak output to appear in gdb
 
 
 
@@ -207,7 +207,7 @@ start firefox like in the previous test.
 In another window, do:
   while true
   do
-    vgdb mc.leak
+    vgdb leak
     sleep 1
   done
 

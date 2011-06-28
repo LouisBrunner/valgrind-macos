@@ -121,7 +121,7 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
 extern
 Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf );
 
-/* ------ Implemented seperately in aspacemgr-{linux,aix5}.c ------ */
+/* ------ Implemented separately in aspacemgr-linux.c ------ */
 
 /* Do a sanity check (/proc/self/maps sync check) */
 extern void ML_(am_do_sanity_check)( void );

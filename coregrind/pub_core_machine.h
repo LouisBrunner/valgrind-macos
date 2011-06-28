@@ -65,11 +65,6 @@
 #  define VG_ELF_MACHINE      EM_ARM
 #  define VG_ELF_CLASS        ELFCLASS32
 #  undef  VG_PLAT_USES_PPCTOC
-#elif defined(VGO_aix5)
-#  undef  VG_ELF_DATA2XXX
-#  undef  VG_ELF_MACHINE
-#  undef  VG_ELF_CLASS
-#  define VG_PLAT_USES_PPCTOC 1
 #elif defined(VGO_darwin)
 #  undef  VG_ELF_DATA2XXX
 #  undef  VG_ELF_MACHINE

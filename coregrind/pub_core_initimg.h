@@ -36,8 +36,7 @@
 //--------------------------------------------------------------------
 // PURPOSE: Map the client executable into memory, then set up its
 // stack, environment and data section, ready for execution.  Quite a
-// lot of work on Linux (ELF) but nearly a no-op on AIX (XCOFF) since
-// the AIX kernel does most of the work for us.
+// lot of work on Linux (ELF).
 //--------------------------------------------------------------------
 
 /* These are OS-specific and defined below. */
@@ -87,87 +86,6 @@ struct _IIFinaliseImageInfo {
    Addr  initial_client_TOC;
    UInt* client_auxv;
 };
-
-
-/* ------------------------- AIX5 ------------------------- */
-
-#elif defined(VGO_aix5)
-
-/* First we need to define this auxiliary structure. */
-typedef
-   struct {
-      /* NOTE: VG_(ppc32/64_aix5_do_preloads_then_start_client) has
-         these offsets hardwired in.  Do not change them without
-         changing it too. */
-      /* system call numbers */
-      /*   0 */ UInt nr_load; /* is __NR___loadx for 32-bit, 
-                                    __NR_kload for 64 */
-      /*   4 */ UInt nr_kwrite;
-      /*   8 */ UInt nr__exit;
-      /* offset/length of error message, if the preloads fail */
-      /*  12 */ UInt off_errmsg;
-      /*  16 */ UInt len_errmsg;
-      /* offsets from start of this struct to the the preload file
-         names */
-      /*  20 */ UInt off_preloadcorename;
-      /*  24 */ UInt off_preloadtoolname;
-      /*  28 */ UInt off_ld_preloadname;
-      /* Once the preloading is done, we'll need to restore the guest
-         state to what it needs to be at client startup.  Here's the
-         relevant info.  Are ULongs; for 32-bit the data is at the
-         lsb (high addressed) end. */
-      /*  32 */ ULong client_start;
-      /*  40 */ ULong r2;
-      /*  48 */ ULong r3;
-      /*  56 */ ULong r4;
-      /*  64 */ ULong r5;
-      /*  72 */ ULong r6;
-      /*  80 */ ULong r7;
-      /*  88 */ ULong r8;
-      /*  96 */ ULong r9;
-      /* 104 */ ULong r10;
-      /* If the loading fails, we'll want to call a diagnostic
-         function in C to figure out what happened.  Here's it's
-         function descriptor.  Note, this runs on the simd cpu
-         (a kludge, and will segfault in 64-bit mode). */
-      /* 112 */ void* p_diagnose_load_failure;
-   }
-   AIX5PreloadPage;
-
-struct _IICreateImageInfo {
-   /* ------ Mandatory fields ------ */
-   HChar* toolname; 
-   Addr   sp_at_startup; /* Not used on AIX. */
-   Addr   clstack_top;   /* Not used on AIX. */
-   /* ------ Per-OS fields ------ */
-   /* Initial values for guest int registers (GPR0 .. GPR31, PC, CR,
-      LR, CTR, XER).  Passed to us from the launcher. */
-   ULong* intregs37;
-   /* AIX5Bootblock*, really */
-   void* bootblock;
-   /* Adler32 checksum of uncompressed data of compressed page. */
-   UInt adler32_exp;
-};
-
-struct _IIFinaliseImageInfo {
-   /* ------ Mandatory fields ------ */
-   SizeT clstack_max_size;
-   /* Initial value for SP (which is merely a copy of r1's value,
-      intregs37[1]). */
-   Addr initial_client_SP;
-   /* ------ Per-OS fields ------ */
-   /* Pointer to the preload page.  The preload page and this pointer
-      to it are set up by VG_(ii_create_image). */
-   AIX5PreloadPage* preloadpage;
-   /* Initial values for guest int registers (GPR0 .. GPR31, PC,
-      CR, LR, CTR, XER).  Copied from the CII. */
-   ULong* intregs37;
-   /* Address of the page compressed by the launcher. */
-   Addr compressed_page;
-   /* Adler32 checksum of uncompressed data of said page. */
-   UInt adler32_exp;
-};
-
 
 /* ------------------------- Darwin ------------------------- */
 

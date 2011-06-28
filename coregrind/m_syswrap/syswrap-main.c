@@ -68,6 +68,7 @@
    ppc32  r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
    ppc64  r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
    arm    r7    r0   r1   r2   r3   r4   r5   n/a  n/a  r0        (== ARG1)
+
    On s390x the svc instruction is used for system calls. The system call
    number is encoded in the instruction (8 bit immediate field). Since Linux
    2.6 it is also allowed to use svc 0 with the system call number in r1.
@@ -75,9 +76,6 @@
    also possible to see the svc 0 together with an EXecute instruction, that
    fills in the immediate field.
    s390x r1/SVC r2   r3   r4   r5   r6   r7   n/a  n/a  r2        (== ARG1)
-   AIX:
-   ppc32  r2  r3   r4   r5   r6   r7   r8   r9   r10  r3(res),r4(err)
-   ppc64  r2  r3   r4   r5   r6   r7   r8   r9   r10  r3(res),r4(err)
 
    DARWIN:
    x86    eax +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
@@ -276,14 +274,6 @@ UWord ML_(do_syscall_for_client_WRK)( Word syscallno,
                                       const vki_sigset_t *syscall_mask,
                                       const vki_sigset_t *restore_mask,
                                       Word sigsetSzB );
-#elif defined(VGO_aix5)
-extern
-UWord ML_(do_syscall_for_client_WRK)( Word syscallno, 
-                                      void* guest_state,
-                                      const vki_sigset_t *syscall_mask,
-                                      const vki_sigset_t *restore_mask,
-                                      Word sigsetSzB, /* unused */
-                                      Word __nr_sigprocmask );
 #elif defined(VGO_darwin)
 extern
 UWord ML_(do_syscall_for_client_unix_WRK)( Word syscallno, 
@@ -319,12 +309,6 @@ void do_syscall_for_client ( Int syscallno,
    err = ML_(do_syscall_for_client_WRK)(
             syscallno, &tst->arch.vex, 
             syscall_mask, &saved, sizeof(vki_sigset_t)
-         );
-#  elif defined(VGO_aix5)
-   err = ML_(do_syscall_for_client_WRK)(
-            syscallno, &tst->arch.vex, 
-            syscall_mask, &saved, 0/*unused:sigsetSzB*/,
-            __NR_rt_sigprocmask
          );
 #  elif defined(VGO_darwin)
    switch (VG_DARWIN_SYSNO_CLASS(syscallno)) {
@@ -477,30 +461,6 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg6  = gst->guest_R5;
    canonical->arg7  = 0;
    canonical->arg8  = 0;
-
-#elif defined(VGP_ppc32_aix5)
-   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
-   canonical->sysno = gst->guest_GPR2;
-   canonical->arg1  = gst->guest_GPR3;
-   canonical->arg2  = gst->guest_GPR4;
-   canonical->arg3  = gst->guest_GPR5;
-   canonical->arg4  = gst->guest_GPR6;
-   canonical->arg5  = gst->guest_GPR7;
-   canonical->arg6  = gst->guest_GPR8;
-   canonical->arg7  = gst->guest_GPR9;
-   canonical->arg8  = gst->guest_GPR10;
-
-#elif defined(VGP_ppc64_aix5)
-   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
-   canonical->sysno = gst->guest_GPR2;
-   canonical->arg1  = gst->guest_GPR3;
-   canonical->arg2  = gst->guest_GPR4;
-   canonical->arg3  = gst->guest_GPR5;
-   canonical->arg4  = gst->guest_GPR6;
-   canonical->arg5  = gst->guest_GPR7;
-   canonical->arg6  = gst->guest_GPR8;
-   canonical->arg7  = gst->guest_GPR9;
-   canonical->arg8  = gst->guest_GPR10;
 
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
@@ -691,30 +651,6 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_R4 = canonical->arg5;
    gst->guest_R5 = canonical->arg6;
 
-#elif defined(VGP_ppc32_aix5)
-   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
-   gst->guest_GPR2  = canonical->sysno;
-   gst->guest_GPR3  = canonical->arg1;
-   gst->guest_GPR4  = canonical->arg2;
-   gst->guest_GPR5  = canonical->arg3;
-   gst->guest_GPR6  = canonical->arg4;
-   gst->guest_GPR7  = canonical->arg5;
-   gst->guest_GPR8  = canonical->arg6;
-   gst->guest_GPR9  = canonical->arg7;
-   gst->guest_GPR10 = canonical->arg8;
-
-#elif defined(VGP_ppc64_aix5)
-   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
-   gst->guest_GPR2  = canonical->sysno;
-   gst->guest_GPR3  = canonical->arg1;
-   gst->guest_GPR4  = canonical->arg2;
-   gst->guest_GPR5  = canonical->arg3;
-   gst->guest_GPR6  = canonical->arg4;
-   gst->guest_GPR7  = canonical->arg5;
-   gst->guest_GPR8  = canonical->arg6;
-   gst->guest_GPR9  = canonical->arg7;
-   gst->guest_GPR10 = canonical->arg8;
-
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -795,18 +731,6 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #  elif defined(VGP_arm_linux)
    VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
    canonical->sres = VG_(mk_SysRes_arm_linux)( gst->guest_R0 );
-   canonical->what = SsComplete;
-
-#  elif defined(VGP_ppc32_aix5)
-   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
-   canonical->sres = VG_(mk_SysRes_ppc32_aix5)( gst->guest_GPR3, 
-                                                gst->guest_GPR4 );
-   canonical->what = SsComplete;
-
-#  elif defined(VGP_ppc64_aix5)
-   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
-   canonical->sres = VG_(mk_SysRes_ppc64_aix5)( gst->guest_GPR3, 
-                                                gst->guest_GPR4 );
    canonical->what = SsComplete;
 
 #  elif defined(VGP_x86_darwin)
@@ -966,26 +890,6 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
              OFFSET_arm_R0, sizeof(UWord) );
 
-#  elif defined(VGP_ppc32_aix5)
-   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
-   vg_assert(canonical->what == SsComplete);
-   gst->guest_GPR3 = canonical->sres.res;
-   gst->guest_GPR4 = canonical->sres.err;
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
-             OFFSET_ppc32_GPR3, sizeof(UWord) );
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
-             OFFSET_ppc32_GPR4, sizeof(UWord) );
-
-#  elif defined(VGP_ppc64_aix5)
-   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
-   vg_assert(canonical->what == SsComplete);
-   gst->guest_GPR3 = canonical->sres.res;
-   gst->guest_GPR4 = canonical->sres.err;
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
-             OFFSET_ppc64_GPR3, sizeof(UWord) );
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
-             OFFSET_ppc64_GPR4, sizeof(UWord) );
-
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1129,28 +1033,6 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
-#elif defined(VGP_ppc32_aix5)
-   layout->o_sysno  = OFFSET_ppc32_GPR2;
-   layout->o_arg1   = OFFSET_ppc32_GPR3;
-   layout->o_arg2   = OFFSET_ppc32_GPR4;
-   layout->o_arg3   = OFFSET_ppc32_GPR5;
-   layout->o_arg4   = OFFSET_ppc32_GPR6;
-   layout->o_arg5   = OFFSET_ppc32_GPR7;
-   layout->o_arg6   = OFFSET_ppc32_GPR8;
-   layout->o_arg7   = OFFSET_ppc32_GPR9;
-   layout->o_arg8   = OFFSET_ppc32_GPR10;
-
-#elif defined(VGP_ppc64_aix5)
-   layout->o_sysno  = OFFSET_ppc64_GPR2;
-   layout->o_arg1   = OFFSET_ppc64_GPR3;
-   layout->o_arg2   = OFFSET_ppc64_GPR4;
-   layout->o_arg3   = OFFSET_ppc64_GPR5;
-   layout->o_arg4   = OFFSET_ppc64_GPR6;
-   layout->o_arg5   = OFFSET_ppc64_GPR7;
-   layout->o_arg6   = OFFSET_ppc64_GPR8;
-   layout->o_arg7   = OFFSET_ppc64_GPR9;
-   layout->o_arg8   = OFFSET_ppc64_GPR10;
-
 #elif defined(VGP_x86_darwin)
    layout->o_sysno  = OFFSET_x86_EAX;
    // syscall parameters are on stack in C convention
@@ -1226,12 +1108,6 @@ static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
 
 #  if defined(VGO_linux)
    sys = ML_(get_linux_syscall_entry)( syscallno );
-
-#  elif defined(VGP_ppc32_aix5)
-   sys = ML_(get_ppc32_aix5_syscall_entry) ( syscallno );
-
-#  elif defined(VGP_ppc64_aix5)
-   sys = ML_(get_ppc64_aix5_syscall_entry) ( syscallno );
 
 #  elif defined(VGO_darwin)
    Int idx = VG_DARWIN_SYSNO_INDEX(syscallno);
@@ -1442,10 +1318,10 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       be m_signals.async_signalhandler) we will need to build a SysRes
       reflecting the syscall return result.  In order to do that we
       need to know the syscall class.  Hence stash it in the guest
-      state of this thread.  This madness is not needed on Linux or
-      AIX5, because those OSs only have a single syscall return
-      convention and so there is no ambiguity involved in converting
-      the post-signal machine state into a SysRes. */
+      state of this thread.  This madness is not needed on Linux
+      because it only has a single syscall return convention and so
+      there is no ambiguity involved in converting the post-signal
+      machine state into a SysRes. */
    tst->arch.vex.guest_SC_CLASS = VG_DARWIN_SYSNO_CLASS(sysno);
 #  endif
 
@@ -1837,7 +1713,7 @@ void VG_(post_syscall) (ThreadId tid)
 /* These are addresses within ML_(do_syscall_for_client_WRK).  See
    syscall-$PLAT.S for details. 
 */
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
   extern const Addr ML_(blksys_setup);
   extern const Addr ML_(blksys_restart);
   extern const Addr ML_(blksys_complete);
@@ -1965,32 +1841,6 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(valid);
    }
 
-#elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   /* Hmm.  This is problematic, because on AIX the kernel resumes
-      after a syscall at LR, not at the insn following SC.  Hence
-      there is no obvious way to figure out where the SC is.  Current
-      solution is to have a pseudo-register in the guest state,
-      CIA_AT_SC, which holds the address of the most recent SC
-      executed.  Backing up to that syscall then simply involves
-      copying that value back into CIA (the program counter). */
-   arch->vex.guest_CIA = arch->vex.guest_CIA_AT_SC;
-
-   /* Make sure our caller is actually sane, and we're really backing
-      back over a syscall.
-
-      sc == 44 00 00 02
-   */
-   {
-      UChar *p = (UChar *)arch->vex.guest_CIA;
-
-      if (p[0] != 0x44 || p[1] != 0x0 || p[2] != 0x0 || p[3] != 0x02)
-         VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %#lx %02x %02x %02x %02x\n",
-                      (UWord)arch->vex.guest_CIA, p[0], p[1], p[2], p[3]);
-
-      vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
-   }
-
 #elif defined(VGP_x86_darwin)
    arch->vex.guest_EIP = arch->vex.guest_IP_AT_SYSCALL; 
 
@@ -2100,7 +1950,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
         in_complete_to_committed, // [3,4) in the .S files
         in_committed_to_finished; // [4,5) in the .S files
 
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    outside_range
       = ip < ML_(blksys_setup) || ip >= ML_(blksys_finished);
    in_setup_to_restart

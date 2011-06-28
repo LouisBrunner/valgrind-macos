@@ -88,10 +88,6 @@ Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
    else
       return False;
 
-#  elif defined(VGO_aix5)
-   I_die_here; /* maybe just return False? */
-   return False;
-
 #  elif defined(VGO_darwin)
    HChar tmp[VKI_MAXPATHLEN+1];
    if (0 == VG_(fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {
@@ -110,7 +106,7 @@ Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
 
 SysRes VG_(mknod) ( const Char* pathname, Int mode, UWord dev )
 {  
-#  if defined(VGO_linux) || defined(VGO_aix5) || defined(VGO_darwin)
+#  if defined(VGO_linux) || defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_mknod,
                                  (UWord)pathname, mode, dev);
 #  else
@@ -121,7 +117,7 @@ SysRes VG_(mknod) ( const Char* pathname, Int mode, UWord dev )
 
 SysRes VG_(open) ( const Char* pathname, Int flags, Int mode )
 {  
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res = VG_(do_syscall3)(__NR_open,
                                  (UWord)pathname, flags, mode);
 #  elif defined(VGO_darwin)
@@ -146,7 +142,7 @@ Int VG_(fd_open) (const Char* pathname, Int flags, Int mode)
 void VG_(close) ( Int fd )
 {
    /* Hmm.  Return value is not checked.  That's uncool. */
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_close, fd);
 #  elif defined(VGO_darwin)
    (void)VG_(do_syscall1)(__NR_close_nocancel, fd);
@@ -158,7 +154,7 @@ void VG_(close) ( Int fd )
 Int VG_(read) ( Int fd, void* buf, Int count)
 {
    Int    ret;
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
 #  elif defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_read_nocancel, fd, (UWord)buf, count);
@@ -178,7 +174,7 @@ Int VG_(read) ( Int fd, void* buf, Int count)
 Int VG_(write) ( Int fd, const void* buf, Int count)
 {
    Int    ret;
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res = VG_(do_syscall3)(__NR_write, fd, (UWord)buf, count);
 #  elif defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_write_nocancel, fd, (UWord)buf, count);
@@ -198,7 +194,7 @@ Int VG_(write) ( Int fd, const void* buf, Int count)
 
 Int VG_(pipe) ( Int fd[2] )
 {
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res = VG_(do_syscall1)(__NR_pipe, (UWord)fd);
    return sr_isError(res) ? -1 : 0;
 #  elif defined(VGO_darwin)
@@ -216,7 +212,7 @@ Int VG_(pipe) ( Int fd[2] )
 
 OffT VG_(lseek) ( Int fd, OffT offset, Int whence )
 {
-#  if defined(VGO_linux) || defined(VGO_aix5) || defined(VGP_amd64_darwin)
+#  if defined(VGO_linux) || defined(VGP_amd64_darwin)
    SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
    vg_assert(sizeof(OffT) == sizeof(Word));
 #  elif defined(VGP_x86_darwin)
@@ -281,25 +277,6 @@ SysRes VG_(stat) ( const Char* file_name, struct vg_stat* vgbuf )
      return res;
    }
 
-#  elif defined(VGO_aix5)
-   { struct vki_stat buf;
-     res = VG_(do_syscall4)(__NR_AIX5_statx,
-                            (UWord)file_name,
-                            (UWord)&buf,
-                            sizeof(struct vki_stat),
-                            VKI_STX_NORMAL);
-     if (!sr_isError(res)) {
-        VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
-        vgbuf->dev  = (ULong)buf.st_dev;
-        vgbuf->ino  = (ULong)buf.st_ino;
-        vgbuf->mode = (UInt)buf.st_mode;
-        vgbuf->uid  = (UInt)buf.st_uid;
-        vgbuf->gid  = (UInt)buf.st_gid;
-        vgbuf->size = (Long)buf.st_size;
-     }
-     return res;
-   }
-
 #  else
 #    error Unknown OS
 #  endif
@@ -331,9 +308,6 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
      return sr_isError(res) ? (-1) : 0;
    }
 
-#  elif defined(VGO_aix5)
-   I_die_here;
-
 #  else
 #    error Unknown OS
 #  endif
@@ -364,10 +338,8 @@ SysRes VG_(dup) ( Int oldfd )
 
 SysRes VG_(dup2) ( Int oldfd, Int newfd )
 {
-#  if defined(VGO_linux)  ||  defined(VGO_darwin)
+#  if defined(VGO_linux) || defined(VGO_darwin)
    return VG_(do_syscall2)(__NR_dup2, oldfd, newfd);
-#  elif defined(VGO_aix5)
-   I_die_here;
 #  else
 #    error Unknown OS
 #  endif
@@ -376,7 +348,7 @@ SysRes VG_(dup2) ( Int oldfd, Int newfd )
 /* Returns -1 on error. */
 Int VG_(fcntl) ( Int fd, Int cmd, Addr arg )
 {
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
 #  elif defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_fcntl_nocancel, fd, cmd, arg);
@@ -430,7 +402,7 @@ Bool VG_(record_startup_wd) ( void )
         return True;
      }
    }
-#  elif defined(VGO_aix5) || defined(VGO_darwin)
+#  elif defined(VGO_darwin)
    /* We can't ask the kernel, so instead rely on launcher-*.c to
       tell us the startup path.  Note the env var is keyed to the
       parent's PID, not ours, since our parent is the launcher
@@ -483,7 +455,7 @@ Int VG_(readlink) (const Char* path, Char* buf, UInt bufsiz)
 
 Int VG_(getdents) (Int fd, struct vki_dirent *dirp, UInt count)
 {
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res;
    /* res = getdents( fd, dirp, count ); */
    res = VG_(do_syscall3)(__NR_getdents, fd, (UWord)dirp, count);
@@ -594,15 +566,14 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
    return 0;
 }
 
-/* DDD: Note this moves (or at least, is believed to move) the file pointer
-   on Linux and AIX5 but doesn't on Darwin.  This inconsistency should
-   be fixed.  (In other words, why isn't the Linux/AIX5 version implemented in
-   terms of pread()?) */
+/* DDD: Note this moves (or at least, is believed to move) the file
+   pointer on Linux but doesn't on Darwin.  This inconsistency should
+   be fixed.  (In other words, why isn't the Linux version implemented
+   in terms of pread()?) */
 SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
 {
    SysRes res;
-#  if defined(VGO_linux) || defined(VGO_aix5)
-   /* Linux, AIX5 */
+#  if defined(VGO_linux)
    OffT off = VG_(lseek)( fd, offset, VKI_SEEK_SET);
    if (off < 0)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
@@ -666,10 +637,6 @@ Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
 /* ---------------------------------------------------------------------
    Socket-related stuff.
    ------------------------------------------------------------------ */
-
-#if defined(VGO_aix5)
-struct vki_sockaddr_in;
-#endif
 
 static
 Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port );
@@ -767,9 +734,6 @@ Int VG_(connect_via_socket)( UChar* str )
 
    return sd;
 
-#  elif defined(VGO_aix5)
-   I_die_here;
-
 #  else
 #    error "Unknown OS"
 #  endif
@@ -838,9 +802,6 @@ Int VG_(socket) ( Int domain, Int type, Int protocol )
    res = VG_(do_syscall3)(__NR_socket, domain, type, protocol );
    return sr_isError(res) ? -1 : sr_Res(res);
 
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   I_die_here;
-
 #  elif defined(VGO_darwin)
    SysRes res;
    res = VG_(do_syscall3)(__NR_socket, domain, type, protocol);
@@ -878,9 +839,6 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen )
    SysRes res;
    res = VG_(do_syscall3)(__NR_connect, sockfd, (UWord)serv_addr, addrlen);
    return sr_isError(res) ? -1 : sr_Res(res);
-
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   I_die_here;
 
 #  elif defined(VGO_darwin)
    SysRes res;
@@ -921,9 +879,6 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
                                        count, VKI_MSG_NOSIGNAL, 0,0);
    return sr_isError(res) ? -1 : sr_Res(res);
 
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   I_die_here;
-
 #  elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
    SysRes res;
    res = VG_(do_syscall3)(__NR_write_nocancel, sd, (UWord)msg, count);
@@ -951,9 +906,6 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    res = VG_(do_syscall3)( __NR_getsockname,
                            (UWord)sd, (UWord)name, (UWord)namelen );
    return sr_isError(res) ? -1 : sr_Res(res);
-
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   I_die_here;
 
 #  elif defined(VGO_darwin)
    SysRes res;
@@ -983,9 +935,6 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    res = VG_(do_syscall3)( __NR_getpeername,
                            (UWord)sd, (UWord)name, (UWord)namelen );
    return sr_isError(res) ? -1 : sr_Res(res);
-
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   I_die_here;
 
 #  elif defined(VGO_darwin)
    SysRes res;
@@ -1019,9 +968,6 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                            (UWord)sd, (UWord)level, (UWord)optname, 
                            (UWord)optval, (UWord)optlen );
    return sr_isError(res) ? -1 : sr_Res(res);
-
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   I_die_here;
 
 #  elif defined(VGO_darwin)
    SysRes res;

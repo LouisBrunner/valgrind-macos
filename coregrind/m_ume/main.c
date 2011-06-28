@@ -51,14 +51,13 @@ typedef struct {
 } ExeHandler;
 
 static ExeHandler exe_handlers[] = {
-   // Nb: AIX5 doesn't use m_ume, which is why it's not represented here.
-#if defined(VGO_linux)
+#  if defined(VGO_linux)
    { VG_(match_ELF),    VG_(load_ELF) },
-#elif defined(VGO_darwin)
+#  elif defined(VGO_darwin)
    { VG_(match_macho),  VG_(load_macho) },
-#else
-#  error "unknown OS"
-#endif
+#  else
+#    error "unknown OS"
+#  endif
    { VG_(match_script), VG_(load_script) },
 };
 #define EXE_HANDLER_COUNT (sizeof(exe_handlers)/sizeof(exe_handlers[0]))

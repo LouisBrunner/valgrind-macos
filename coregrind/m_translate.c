@@ -856,7 +856,7 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 
 /* --------------- helpers for with-TOC platforms --------------- */
 
-/* NOTE: with-TOC platforms are: ppc64-linux, ppc32-aix5, ppc64-aix5. */
+/* NOTE: with-TOC platforms are: ppc64-linux. */
 
 static IRExpr* mkU64 ( ULong n ) {
    return IRExpr_Const(IRConst_U64(n));
@@ -888,7 +888,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    IRTemp      t1;
    IRExpr*     one;
 
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -979,7 +979,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
 
 static IRTemp gen_POP ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -1068,7 +1068,7 @@ static IRTemp gen_POP ( IRSB* bb )
 
 static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 {
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
@@ -1077,15 +1077,6 @@ static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
    addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
    addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, mkU64( new_R2_value )) );
 
-#  elif defined(VGP_ppc32_aix5)
-   Addr32 bogus_RA  = (Addr32)&VG_(ppctoc_magic_redirect_return_stub);
-   Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
-   Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
-   gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I32) );
-   gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I32) );
-   addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU32( bogus_RA )) );
-   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, mkU32( new_R2_value )) );
-
 #  else
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
@@ -1093,7 +1084,7 @@ static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 
 static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I64 );
@@ -1110,25 +1101,6 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
       else one _Call will have resulted in two _Rets. */
    bb->jumpkind = Ijk_Boring;
    bb->next = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
-
-#  elif defined(VGP_ppc32_aix5)
-   Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
-   Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
-   IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I32 );
-   IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I32 );
-   /* Restore R2 */
-   old_R2 = gen_POP( bb );
-   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, IRExpr_RdTmp(old_R2)) );
-   /* Restore LR */
-   old_LR = gen_POP( bb );
-   addStmtToIRSB( bb, IRStmt_Put( offB_LR, IRExpr_RdTmp(old_LR)) );
-
-   /* Branch to LR */
-   /* re boring, we arrived here precisely because a wrapped fn did a
-      blr (hence Ijk_Ret); so we should just mark this jump as Boring,
-      else one _Call will have resulted in two _Rets. */
-   bb->jumpkind = Ijk_Boring;
-   bb->next = IRExpr_Binop(Iop_And32, IRExpr_RdTmp(old_LR), mkU32(~3));
 
 #  else
 #    error Platform is not TOC-afflicted, fortunately
@@ -1225,8 +1197,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
             : IRExpr_Const(IRConst_U32( (UInt)closure->nraddr ))
       )
    );
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
-                               || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    addStmtToIRSB( 
       bb,
       IRStmt_Put( 
@@ -1245,48 +1216,6 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
 __attribute__((unused))
 static Bool const_True ( Addr64 guest_addr )
 {
-   return True;
-}
-
-__attribute__((unused))
-static Bool bl_RZ_zap_ok_for_AIX ( Addr64 bl_target )
-{
-   /* paranoia */
-   if (sizeof(void*) == 4)
-      bl_target &= 0xFFFFFFFFULL;
-
-   /* don't zap the redzone for calls to millicode. */
-   if (bl_target < 0x10000ULL)
-      return False;
-
-   /* don't zap the redzone for calls to .$SAVEF14 .. .$SAVEF31.
-      First we need to be reasonably sure we won't segfault by looking
-      at the branch target. */
-   { NSegment const*const seg = VG_(am_find_nsegment)( (Addr)bl_target );
-     if (seg && seg->hasR) {
-        switch ( *(UInt*)(Addr)bl_target ) {
-           case 0xd9c1ff70: /* stfd f14,-144(r1) */
-           case 0xd9e1ff78: /* stfd f15,-136(r1) */
-           case 0xda01ff80: /* stfd f16,-128(r1) */
-           case 0xda21ff88: /* stfd f17,-120(r1) */
-           case 0xda41ff90: /* stfd f18,-112(r1) */
-           case 0xda61ff98: /* stfd f19,-104(r1) */
-           case 0xda81ffa0: /* stfd f20,-96(r1) */
-           case 0xdaa1ffa8: /* stfd f21,-88(r1) */
-           case 0xdac1ffb0: /* stfd f22,-80(r1) */
-           case 0xdae1ffb8: /* stfd f23,-72(r1) */
-           case 0xdb01ffc0: /* stfd f24,-64(r1) */
-           case 0xdb21ffc8: /* stfd f25,-56(r1) */
-           case 0xdb41ffd0: /* stfd f26,-48(r1) */
-           case 0xdb61ffd8: /* stfd f27,-40(r1) */
-           case 0xdb81ffe0: /* stfd f28,-32(r1) */
-           case 0xdba1ffe8: /* stfd f29,-24(r1) */
-           case 0xdbc1fff0: /* stfd f30,-16(r1) */
-           case 0xdbe1fff8: /* stfd f31,-8(r1) */
-              return False;
-        }
-     }
-   }
    return True;
 }
 
@@ -1497,12 +1426,6 @@ Bool VG_(translate) ( ThreadId tid,
 #  if defined(VGP_ppc64_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
-   vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
-#  endif
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
-   vex_abiinfo.guest_ppc_zap_RZ_at_bl         = bl_RZ_zap_ok_for_AIX;
-   vex_abiinfo.guest_ppc_sc_continues_at_LR   = True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
 #  endif
 

@@ -1,22 +1,22 @@
 
-/* On AIX 5.2, _LINUX_SOURCE_COMPAT needs to be defined when reading
-   sys/socket.h in order to make CMSG_SPACE and CMSG_LEN visible. */
 
-#if defined(_AIX)
-#define _LINUX_SOURCE_COMPAT 1
-#endif
+
+
+
+
+
 
 #include <sys/socket.h>
 
-#if defined(_AIX)
-#undef _LINUX_SOURCE_COMPAT
-#endif
 
 
-/* Needed for 'memset' on AIX 5.2 */
-#if defined(_AIX)
-# include <memory.h>
-#endif
+
+
+
+
+
+
+
 
 #include <string.h>
 #include <sys/types.h>

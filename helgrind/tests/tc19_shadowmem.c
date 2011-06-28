@@ -2287,5 +2287,5 @@ void* steer ( void* infoV )
    if (wot == 999) return fn(info);
    __asm__ __volatile__("");
    assert(0);
-   return 0; /* keep gcc happy on AIX */
+   /*NOTREACHED*/return 0;
 }

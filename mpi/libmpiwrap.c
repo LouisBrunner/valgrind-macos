@@ -112,21 +112,11 @@
    Open MPI      lib/libmpi.so,   soname = libmpi.so.0
    Quadrics MPI  lib/libmpi.so,   soname = libmpi.so.0
    MPICH         libmpich.so.1.0, soname = libmpich.so.1.0
-   AIX: in /usr/lpp/ppe.poe/lib/libmpi_r.a(mpicore*_r.o)
 
-   For the non-AIX targets, a suitable soname to match with
-   is "libmpi*.so*".
+   A suitable soname to match with is therefore "libmpi*.so*".
 */
-#if defined(_AIX)
-# define I_WRAP_FNNAME_U(_name) \
-         I_WRAP_SONAME_FNNAME_ZU(libmpiZurZdaZLmpicoreZaZurZdoZR,_name)
-  /* Don't change this without also changing all the names in
-     libmpiwrap.exp. */
-#else
-# define I_WRAP_FNNAME_U(_name) \
-         I_WRAP_SONAME_FNNAME_ZU(libmpiZaZdsoZa,_name)
-
-#endif
+#define I_WRAP_FNNAME_U(_name) \
+        I_WRAP_SONAME_FNNAME_ZU(libmpiZaZdsoZa,_name)
 
 
 /* Define HAVE_MPI_STATUS_IGNORE iff we have to deal with
@@ -1124,11 +1114,7 @@ int WRAPPER_FOR(PMPI_Get_count)(MPI_Status* status,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Get_count");
-#  if defined(_AIX)
-   check_mem_is_addressable_untyped(status, sizeof(*status));
-#  else
    check_mem_is_defined_untyped(status, sizeof(*status));
-#  endif
    CALL_FN_W_WWW(err, fn, status,ty,count);
    after("Get_count", err);
    return err;

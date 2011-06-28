@@ -467,7 +467,7 @@ test_strchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(_AIX) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 static void
 test_strchrnul (void)
 {
@@ -501,10 +501,10 @@ test_strchrnul (void)
       }
    }
 }
-#endif /* !defined(_AIX) */
+#endif
 
 // DDD: better done by testing for the function.
-#if !defined(_AIX) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 static void
 test_rawmemchr (void)
 {
@@ -531,7 +531,7 @@ test_rawmemchr (void)
       }
    }
 }
-#endif /* !defined(_AIX) */
+#endif
 
 static void
 test_index (void)
@@ -580,7 +580,7 @@ test_strrchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(_AIX) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 static void
 test_memrchr (void)
 {
@@ -626,7 +626,7 @@ test_memrchr (void)
     }
   }
 }
-#endif /* !defined(_AIX) */
+#endif
 
 static void
 test_rindex (void)
@@ -902,7 +902,7 @@ test_strsep (void)
   equal(one+4, "c", 50);
 
   {
-#   if !defined(_AIX) && !defined(__APPLE__)
+#   if !defined(__APPLE__)
     char text[] = "This,is,a,test";
     char *list = strdupa (text);
     equal (strsep (&list, ","), "This", 51);
@@ -1063,7 +1063,7 @@ test_memcpy (void)
     }
 }
 
-#if !defined(_AIX) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 static void
 test_mempcpy (void)
 {
@@ -1100,7 +1100,7 @@ test_mempcpy (void)
       equal (two, "hi there", 12 + (i * 6));
     }
 }
-#endif /* !defined(_AIX) */
+#endif
 
 static void
 test_memmove (void)
@@ -1410,12 +1410,12 @@ main (void)
   /* strchr.  */
   test_strchr ();
 
-# if !defined(_AIX) && !defined(__APPLE__)
+# if !defined(__APPLE__)
   /* strchrnul.  */
   test_strchrnul ();
 # endif
 
-# if !defined(_AIX) && !defined(__APPLE__)
+# if !defined(__APPLE__)
   /* rawmemchr.  */
   test_rawmemchr ();
 # endif
@@ -1426,7 +1426,7 @@ main (void)
   /* strrchr.  */
   test_strrchr ();
 
-# if !defined(_AIX) && !defined(__APPLE__)
+# if !defined(__APPLE__)
   /* memrchr.  */
   test_memrchr ();
 # endif
@@ -1467,7 +1467,7 @@ main (void)
   /* memmove - must work on overlap.  */
   test_memmove ();
 
-# if !defined(_AIX) && !defined(__APPLE__)
+# if !defined(__APPLE__)
   /* mempcpy */
   test_mempcpy ();
 # endif

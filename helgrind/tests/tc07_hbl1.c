@@ -6,8 +6,6 @@
 /* Simple test program, no race.  Parent and child both modify x and
    use the hardware bus lock. */
 
-#undef PLAT_ppc64_aix5
-#undef PLAT_ppc32_aix5
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
 #undef PLAT_x86_linux
@@ -17,11 +15,7 @@
 #undef PLAT_arm_linux
 #undef PLAT_s390x_linux
 
-#if defined(_AIX) && defined(__64BIT__)
-#  define PLAT_ppc64_aix5 1
-#elif defined(_AIX) && !defined(__64BIT__)
-#  define PLAT_ppc32_aix5 1
-#elif defined(__APPLE__) && defined(__i386__)
+#if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
@@ -44,8 +38,7 @@
 #  define INC(_lval,_lqual) \
       __asm__ __volatile__ ( \
       "lock ; incl (%0)" : /*out*/ : /*in*/"r"(&(_lval)) : "memory", "cc" )
-#elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
-      || defined(PLAT_ppc32_aix5) || defined(PLAT_ppc64_aix5)
+#elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux)
 #  define INC(_lval,_lqual)               \
    __asm__ __volatile__(                  \
       "1:\n"                              \

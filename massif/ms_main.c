@@ -344,12 +344,7 @@ static void init_alloc_fns(void)
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
    DO("operator new(unsigned long, std::nothrow_t const&)"  );
    DO("operator new[](unsigned long, std::nothrow_t const&)");
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   DO("malloc_common"                                       );
-   DO("calloc_common"                                       );
-   DO("realloc_common"                                      );
-   DO("memalign_common"                                     );
-#elif defined(VGO_darwin)
+#if defined(VGO_darwin)
    DO("malloc_zone_malloc"                                  );
    DO("malloc_zone_calloc"                                  );
    DO("malloc_zone_realloc"                                 );

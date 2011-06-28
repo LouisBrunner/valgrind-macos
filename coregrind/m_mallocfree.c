@@ -578,18 +578,10 @@ void ensure_mm_init ( ArenaId aid )
             VG_(exit)(1);
          }
       }
-      // Initialise the client arena.  On AIX it's important to have
-      // relatively large client blocks so as not to cause excessively
-      // fine-grained interleaving of V and C address space.  On Linux
-      // this is irrelevant since aspacem can keep the two spaces
-      // well apart, but not so on AIX.  On all platforms though, 
+      // Initialise the client arena.  On all platforms,
       // increasing the superblock size reduces the number of superblocks
       // in the client arena, which makes findSb cheaper.
-#     if defined(VGO_aix5)
-      ar_client_sbszB = 16777216;
-#     else
       ar_client_sbszB = 4194304;
-#     endif
       arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, ar_client_sbszB );
       client_inited = True;
 

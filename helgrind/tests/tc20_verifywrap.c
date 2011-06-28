@@ -18,7 +18,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#if !defined(_AIX) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 
 #if !defined(__GLIBC_PREREQ)
 # error "This program needs __GLIBC_PREREQ (in /usr/include/features.h)"
@@ -261,10 +261,10 @@ int main ( void )
    return 0;
 }
 
-#else /* defined(_AIX) */
+#else /* defined(__APPLE__) */
 int main ( void )
 {
-   fprintf(stderr, "This program does not work on AIX.\n");
+   fprintf(stderr, "This program does not work on Mac OS X.\n");
    return 0;
 }
 #endif

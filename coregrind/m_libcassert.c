@@ -77,7 +77,7 @@
         (srP)->r_sp = rsp;                                \
         (srP)->misc.AMD64.r_rbp = rbp;                    \
       }
-#elif defined(VGP_ppc32_linux) || defined(VGP_ppc32_aix5)
+#elif defined(VGP_ppc32_linux)
 #  define GET_STARTREGS(srP)                              \
       { UInt cia, r1, lr;                                 \
         __asm__ __volatile__(                             \
@@ -96,7 +96,7 @@
         (srP)->r_sp = (ULong)r1;                          \
         (srP)->misc.PPC32.r_lr = lr;                      \
       }
-#elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#elif defined(VGP_ppc64_linux)
 #  define GET_STARTREGS(srP)                              \
       { ULong cia, r1, lr;                                \
         __asm__ __volatile__(                             \
@@ -163,7 +163,7 @@ void VG_(exit)( Int status )
 {
 #if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
-#elif defined(VGO_aix5) || defined(VGO_darwin)
+#elif defined(VGO_darwin)
    (void)VG_(do_syscall1)(__NR_exit, status );
 #else
 #  error Unknown OS

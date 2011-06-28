@@ -1134,7 +1134,7 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
    vlena = VG_(strlen)(a->name);
    vlenb = VG_(strlen)(b->name);
 
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
 #  define VERSION_CHAR '@'
 #elif defined(VGO_darwin)
 #  define VERSION_CHAR '$'

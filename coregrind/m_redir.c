@@ -291,7 +291,6 @@ static void*  dinfo_zalloc(HChar* ec, SizeT);
 static void   dinfo_free(void*);
 static HChar* dinfo_strdup(HChar* ec, HChar*);
 static Bool   is_plausible_guest_addr(Addr);
-static Bool   is_aix5_glink_idiom(Addr);
 
 static void   show_redir_state ( HChar* who );
 static void   show_active ( HChar* left, Active* act );
@@ -553,16 +552,6 @@ void generate_and_add_actives (
 
       /* ignore data symbols */
       if (!isText)
-         continue;
-
-      /* On AIX, we cannot redirect calls to a so-called glink
-         function for reasons which are not obvious - something to do
-         with saving r2 across the call.  Not a problem, as we don't
-         want to anyway; presumably it is the target of the glink we
-         need to redirect.  Hence just spot them and ignore them.
-         They are always of a very specific (more or less
-         ABI-mandated) form. */
-      if (is_aix5_glink_idiom(sym_addr))
          continue;
 
       for (sp = specs; sp; sp = sp->next) {
@@ -1040,12 +1029,6 @@ void VG_(redir_initialise) ( void )
    }
    /* nothing so far */
 
-#  elif defined(VGP_ppc32_aix5)
-   /* nothing so far */
-
-#  elif defined(VGP_ppc64_aix5)
-   /* nothing so far */
-
 #  elif defined(VGP_x86_darwin)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise dyld makes a lot of noise. */
@@ -1124,43 +1107,6 @@ static Bool is_plausible_guest_addr(Addr a)
    return seg != NULL
           && (seg->kind == SkAnonC || seg->kind == SkFileC)
           && (seg->hasX || seg->hasR); /* crude x86-specific hack */
-}
-
-/* A function which spots AIX 'glink' functions.  A 'glink' function
-   is a stub function which has something to do with AIX-style dynamic
-   linking, and jumps to the real target (with which it typically
-   shares the same name).  See also comment where this function is
-   used (above). */
-static Bool is_aix5_glink_idiom ( Addr sym_addr )
-{
-#  if defined(VGP_ppc32_aix5)
-   UInt* w = (UInt*)sym_addr;
-   if (VG_IS_4_ALIGNED(w)
-       && is_plausible_guest_addr((Addr)(w+0))
-       && is_plausible_guest_addr((Addr)(w+6))
-       && (w[0] & 0xFFFF0000) == 0x81820000 /* lwz r12,func@toc(r2) */
-       && w[1] == 0x90410014                /* stw r2,20(r1) */
-       && w[2] == 0x800c0000                /* lwz r0,0(r12) */
-       && w[3] == 0x804c0004                /* lwz r2,4(r12) */
-       && w[4] == 0x7c0903a6                /* mtctr r0 */
-       && w[5] == 0x4e800420                /* bctr */
-       && w[6] == 0x00000000                /* illegal */)
-      return True;
-#  elif defined(VGP_ppc64_aix5)
-   UInt* w = (UInt*)sym_addr;
-   if (VG_IS_4_ALIGNED(w)
-       && is_plausible_guest_addr((Addr)(w+0))
-       && is_plausible_guest_addr((Addr)(w+6))
-       && (w[0] & 0xFFFF0000) == 0xE9820000 /* ld  r12,func@toc(r2) */
-       && w[1] == 0xF8410028                /* std r2,40(r1) */
-       && w[2] == 0xE80C0000                /* ld  r0,0(r12) */
-       && w[3] == 0xE84C0008                /* ld  r2,8(r12) */
-       && w[4] == 0x7c0903a6                /* mtctr r0 */
-       && w[5] == 0x4e800420                /* bctr */
-       && w[6] == 0x00000000                /* illegal */)
-      return True;
-#  endif
-   return False;
 }
 
 

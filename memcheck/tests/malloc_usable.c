@@ -5,7 +5,7 @@
 
 int main(void)
 {
-#  if !defined(VGO_aix5) && !defined(VGO_darwin)
+#  if !defined(VGO_darwin)
    // Because Memcheck marks any slop as inaccessible, it doesn't round up
    // sizes for malloc_usable_size().
    int* x = malloc(99);

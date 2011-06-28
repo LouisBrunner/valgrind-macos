@@ -386,8 +386,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 /* -----------------------ppc32/64 ---------------------- */
 
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-    || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -412,9 +411,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    Addr ip = (Addr)startRegs->r_pc;
    Addr sp = (Addr)startRegs->r_sp;
    Addr fp = sp;
-#  if defined(VGP_ppc32_linux) || defined(VGP_ppc32_aix5)
+#  if defined(VGP_ppc32_linux)
    Addr lr = startRegs->misc.PPC32.r_lr;
-#  elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  elif defined(VGP_ppc64_linux)
    Addr lr = startRegs->misc.PPC64.r_lr;
 #  endif
    Addr fp_min = sp;
@@ -450,11 +449,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
       frame pointers. */
 
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    redir_stack_size = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
-   redirs_used      = 0;
-#  elif defined(VGP_ppc32_aix5)
-   redir_stack_size = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
    redirs_used      = 0;
 #  endif
 
@@ -506,7 +502,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
       while (True) {
 
-        /* On ppc64-linux (ppc64-elf, really), and on AIX, the lr save
+        /* On ppc64-linux (ppc64-elf, really), the lr save
            slot is 2 words back from sp, whereas on ppc32-elf(?) it's
            only one word back. */
 #        if defined(VG_PLAT_USES_PPCTOC)
@@ -530,15 +526,15 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #           if defined(VG_PLAT_USES_PPCTOC)
             /* Nasty hack to do with function replacement/wrapping on
-               ppc64-linux/ppc64-aix/ppc32-aix.  If LR points to our
-               magic return stub, then we are in a wrapped or
-               intercepted function, in which LR has been messed with.
-               The original LR will have been pushed onto the thread's
-               hidden REDIR stack one down from the top (top element
-               is the saved R2) and so we should restore the value
-               from there instead.  Since nested redirections can and
-               do happen, we keep track of the number of nested LRs
-               used by the unwinding so far with 'redirs_used'. */
+               ppc64-linux.  If LR points to our magic return stub,
+               then we are in a wrapped or intercepted function, in
+               which LR has been messed with.  The original LR will
+               have been pushed onto the thread's hidden REDIR stack
+               one down from the top (top element is the saved R2) and
+               so we should restore the value from there instead.
+               Since nested redirections can and do happen, we keep
+               track of the number of nested LRs used by the unwinding
+               so far with 'redirs_used'. */
             if (ip == (Addr)&VG_(ppctoc_magic_redirect_return_stub)
                 && VG_(is_valid_tid)(tid_if_known)) {
                Word hsp = VG_(threads)[tid_if_known]

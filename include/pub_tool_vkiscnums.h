@@ -37,7 +37,7 @@
 
 
 // This converts a syscall number into a string, suitable for printing.  It is
-// needed because some platforms (AIX, Darwin) munge sysnums in various ways.
+// needed because some platforms (Darwin) munge sysnums in various ways.
 // It is used in places where the sycall name will be printed alongside.
 extern Char* VG_(sysnum_string)      (Word sysnum, SizeT n_buf, Char* buf);
 
@@ -52,21 +52,6 @@ extern Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf);
 #define VG_SYSNUM_STRING_EXTRA(sysnum) \
    ({ Char qq_zz_buf[64]; VG_(sysnum_string_extra)(sysnum, 64, qq_zz_buf); })
 
-
-#if defined(VGO_linux)
-   // Nothing.
-
-#elif defined(VGO_aix5)
-   // See the AIX5-specific case in pub_tool_vkiscnums_asm.h for an
-   // explanation of why we include this here rather than there.
-#  include "vki/vki-scnums-aix5.h"
-
-#elif defined(VGO_darwin)
-   // Nothing.
-
-#else
-#  error Unknown OS
-#endif
 
 #endif   // __PUB_TOOL_VKISCNUMS_H
 

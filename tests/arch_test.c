@@ -51,15 +51,6 @@ static Bool go(char* arch)
 #elif defined(VGP_s390x_linux)
    if ( 0 == strcmp( arch, "s390x" ) ) return True;
 
-#elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   if (sizeof(void*) == 8) {
-      /* CPU is in 64-bit mode */
-      if ( 0 == strcmp( arch, "ppc64" ) ) return True;
-      if ( 0 == strcmp( arch, "ppc32" ) ) return True;
-   } else {
-      if ( 0 == strcmp( arch, "ppc32" ) ) return True;
-   }
-
 #elif defined(VGP_arm_linux)
    if ( 0 == strcmp( arch, "arm" ) ) return True;
 

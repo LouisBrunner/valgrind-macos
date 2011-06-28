@@ -43,12 +43,6 @@
 // __NR_name, and this file must contain nothing else, since it will
 // be included in assembly code (m_trampoline.S).
 //
-// On AIX the __NR_name consts are renamings of global variables which
-// tell us the number for each syscall.  This elaboration is necessary
-// because on AIX the syscall numbers are not constant; they can be
-// different for each process (in principle; in practice they rarely
-// change).  32- and 64-bit AIX5 share a common "implementation".
-//
 // On Darwin the __NR_name consts are #define'd constants which are
 // encoded using various macros.  32- and 64-bit Darwin share a common
 // "implementation" also.
@@ -65,22 +59,6 @@
 
 #include "pub_core_vkiscnums_asm.h"
 #include "pub_tool_vkiscnums.h"
-
-
-#if defined(VGO_linux)
-   // Nothing
-
-#elif defined(VGO_aix5)
-/* Bind the given syscall name to the given number.  Returns True if
-   successful, False if the name is unknown. */
-extern Bool VG_(aix5_register_syscall)( Int, UChar* );
-
-#elif defined(VGO_darwin)
-   // Nothing
-
-#else
-#  error Unknown OS
-#endif
 
 #endif // __PUB_CORE_VKISCNUMS_H
 

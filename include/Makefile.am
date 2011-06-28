@@ -60,9 +60,3 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-scnums-arm-linux.h	\
 	vki/vki-scnums-s390x-linux.h	\
 	vki/vki-scnums-darwin.h
-
-noinst_HEADERS = \
-	vki/vki-ppc32-aix5.h		\
-	vki/vki-ppc64-aix5.h		\
-	vki/vki-scnums-aix5.h
-

@@ -98,15 +98,6 @@ typedef
       Int o_arg6;
       Int uu_arg7;
       Int uu_arg8;
-#     elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-      Int o_arg1;
-      Int o_arg2;
-      Int o_arg3;
-      Int o_arg4;
-      Int o_arg5;
-      Int o_arg6;
-      Int o_arg7;
-      Int o_arg8;
 #     elif defined(VGP_x86_darwin)
       Int s_arg1;
       Int s_arg2;
@@ -179,17 +170,6 @@ typedef
 #if defined(VGO_linux)
 extern
 SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
-
-#elif defined(VGP_ppc32_aix5)
-/* Same scheme on AIX5.  This is more complex than the simple fixed
-   table lookup typical for Linux, since the syscalls don't have fixed
-   numbers. */
-extern
-SyscallTableEntry* ML_(get_ppc32_aix5_syscall_entry) ( UInt sysno );
-
-#elif defined(VGP_ppc64_aix5)
-extern
-SyscallTableEntry* ML_(get_ppc64_aix5_syscall_entry) ( UInt sysno );
 
 #elif defined(VGO_darwin)
 /* XXX: Darwin still uses the old scheme of exposing the table
@@ -277,7 +257,7 @@ extern const UInt ML_(syscall_table_size);
     vgSysWrap_##auxstr##_##name##_after
 
 /* Add a generic wrapper to a syscall table. */
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
 #  define GENX_(sysno, name)  WRAPPER_ENTRY_X_(generic, sysno, name)
 #  define GENXY(sysno, name)  WRAPPER_ENTRY_XY(generic, sysno, name)
 #elif defined(VGO_darwin)
@@ -291,18 +271,6 @@ extern const UInt ML_(syscall_table_size);
    table. */
 #define LINX_(sysno, name)    WRAPPER_ENTRY_X_(linux, sysno, name) 
 #define LINXY(sysno, name)    WRAPPER_ENTRY_XY(linux, sysno, name)
-
-/* Add an AIX5-specific, arch-independent wrapper to a syscall
-   table. */
-#define AIXXY(sysno, name)                     \
-   { & sysno,                                  \
-     { & WRAPPER_PRE_NAME(aix5, name),         \
-       & WRAPPER_POST_NAME(aix5, name) }} 
-
-#define AIXX_(sysno, name)                     \
-   { & sysno,                                  \
-     { & WRAPPER_PRE_NAME(aix5, name),         \
-       NULL }} 
 
 
 /* ---------------------------------------------------------------------
@@ -396,9 +364,6 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA4(s,t,a) PRRAn(4,s,t,a)
 #  define PRA5(s,t,a) PRRAn(5,s,t,a)
 #  define PRA6(s,t,a) PRRAn(6,s,t,a)
-
-#elif defined(VGO_aix5)
-#  error Need to fill this in for AIX5
 
 #elif defined(VGP_x86_darwin)
    /* Up to 8 parameters, all on the stack. */

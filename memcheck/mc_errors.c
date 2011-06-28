@@ -837,35 +837,6 @@ void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,
    if (VG_(is_watched)( (isWrite ? write_watchpoint : read_watchpoint), a, szB))
       return;
 
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   /* AIX zero-page handling.  On AIX, reads from page zero are,
-      bizarrely enough, legitimate.  Writes to page zero aren't,
-      though.  Since memcheck can't distinguish reads from writes, the
-      best we can do is to 'act normal' and mark the A bits in the
-      normal way as noaccess, but then hide any reads from that page
-      that get reported here. */
-   if ((!isWrite) && a >= 0 && a < 4096 && a+szB <= 4096) 
-      return;
-
-   /* Appalling AIX hack.  It suppresses reads done by glink
-      fragments.  Getting rid of this would require figuring out
-      somehow where the referenced data areas are (and their
-      sizes). */
-   if ((!isWrite) && szB == sizeof(Word)) { 
-      UInt i1, i2;
-      UInt* pc = (UInt*)VG_(get_IP)(tid);
-      if (sizeof(Word) == 4) {
-         i1 = 0x800c0000; /* lwz r0,0(r12) */
-         i2 = 0x804c0004; /* lwz r2,4(r12) */
-      } else {
-         i1 = 0xe80c0000; /* ld  r0,0(r12) */
-         i2 = 0xe84c0008; /* ld  r2,8(r12) */
-      }
-      if (pc[0] == i1 && pc[1] == i2) return;
-      if (pc[0] == i2 && pc[-1] == i1) return;
-   }
-#  endif
-
    just_below_esp = is_just_below_ESP( VG_(get_SP)(tid), a );
 
    /* If this is caused by an access immediately below %ESP, and the

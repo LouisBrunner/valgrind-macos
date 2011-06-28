@@ -140,20 +140,6 @@ typedef
       Word exitcode; // in the case of exitgroup, set by someone else
       Int  fatalsig; // fatal signal
 
-#     if defined(VGO_aix5)
-      /* AIX specific fields to make thread cancellation sort-of work */
-      /* What is this thread's current cancellation state a la
-         POSIX (deferred vs async, enable vs disabled) ? */
-      Bool cancel_async;   // current cancel mode (async vs deferred)
-      Bool cancel_disabled; // cancellation disabled?
-      /* What's happened so far? */
-      enum { Canc_NoRequest=0, // no cancellation requested
-             Canc_Requested=1, // requested but not actioned
-             Canc_Actioned=2 } // requested and actioned
-           cancel_progress;
-      /* Initial state is False, False, Canc_Normal. */
-#     endif
-
 #     if defined(VGO_darwin)
       // Mach trap POST handler as chosen by PRE
       void (*post_mach_trap_fn)(ThreadId tid,

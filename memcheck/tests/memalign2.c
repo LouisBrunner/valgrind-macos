@@ -19,11 +19,9 @@
 
 int main ( void )
 {
-#  if defined(VGO_aix5)
-   // AIX 5.2 has neither memalign() nor posix_memalign();  do nothing.
-
-#  elif defined(VGO_darwin)
-   // Likewise for Mac OS X.
+#  if defined(VGO_darwin)
+   // Mac OS X has neither memalign() nor posix_memalign();  do nothing.
+   // Still true for 10.6 / 10.7 ?
 
 #  else
    // Nb: assuming VG_MIN_MALLOC_SZB is 8 or more...

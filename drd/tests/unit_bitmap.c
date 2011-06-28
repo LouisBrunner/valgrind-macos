@@ -73,7 +73,7 @@ struct { Addr address; SizeT size; BmAccessTypeT access_type; }
     {               0x00ffffffULL, 1, eLoad  },
     { 0xffffffffULL - (((1 << ADDR_LSB_BITS) + 1) << ADDR_IGNORED_BITS),
                                    1, eStore },
-#if defined(VGP_amd64_linux) || defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#if defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
     { 0xffffffffULL - (1 << ADDR_LSB_BITS << ADDR_IGNORED_BITS),
                                    1, eStore },
     {               0xffffffffULL, 1, eStore },

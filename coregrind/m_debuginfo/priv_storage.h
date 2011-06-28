@@ -45,7 +45,7 @@
 
 /* --------------------- SYMBOLS --------------------- */
 
-/* A structure to hold an ELF/XCOFF symbol (very crudely). */
+/* A structure to hold an ELF/MachO symbol (very crudely). */
 typedef 
    struct { 
       Addr  addr;    /* lowest address of entity */

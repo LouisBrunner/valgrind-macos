@@ -64,23 +64,6 @@
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB      0
 
-#elif defined(VGP_ppc32_aix5)
-#  define VG_MIN_INSTR_SZB          4
-#  define VG_MAX_INSTR_SZB          4 
-#  define VG_CLREQ_SZB             20
-   /* The PowerOpen ABI actually says 220 bytes, but that is not an
-      8-aligned number, and frequently forces Memcheck's
-      mc_{new,die}_mem_stack_N routines into slow cases by losing
-      8-alignment of the area to be messed with.  So let's just say
-      224 instead.  Gdb has a similar kludge. */
-#  define VG_STACK_REDZONE_SZB    224
-
-#elif defined(VGP_ppc64_aix5)
-#  define VG_MIN_INSTR_SZB          4
-#  define VG_MAX_INSTR_SZB          4 
-#  define VG_CLREQ_SZB             20
-#  define VG_STACK_REDZONE_SZB    288 // is this right?
-
 #elif defined(VGP_s390x_linux)
 #  define VG_MIN_INSTR_SZB          2
 #  define VG_MAX_INSTR_SZB          6

@@ -231,12 +231,6 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    uregs.ARM_cpsr = LibVEX_GuestARM_get_cpsr(vex);
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &uregs);
 
-#elif defined(VGP_ppc32_aix5)
-   I_die_here;
-
-#elif defined(VGP_ppc64_aix5)
-   I_die_here;
-
 #elif defined(VGP_x86_darwin)
    I_die_here;
 

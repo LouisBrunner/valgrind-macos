@@ -82,8 +82,7 @@ AC_SUBST(ASFLAGS)
 AC_MSG_CHECKING([for diff -u])
 AC_SUBST(DIFF)
 
-# Comparing two identical files results in 0, unless -u isn't supported (as
-# it's not on AIX).
+# Comparing two identical files results in 0.
 tmpfile="tmp-xxx-yyy-zzz"
 touch $tmpfile;
 if diff -u $tmpfile $tmpfile ; then
@@ -139,23 +138,14 @@ case "${host_cpu}" in
         ;;
 
      powerpc64)
-        # This value can only happen on Linux, not on AIX
         AC_MSG_RESULT([ok (${host_cpu})])
         ARCH_MAX="ppc64"
         ;;
 
      powerpc)
-        # Complexity.  'powerpc' on AIX implies a 64-bit capable CPU.
-        # Whereas in Linux that means only a 32-bit capable CPU.
+        # On Linux this means only a 32-bit capable CPU.
         AC_MSG_RESULT([ok (${host_cpu})])
-	case "${host_os}" in
-	   aix5.*)
-	      ARCH_MAX="ppc64"
-              ;;
-           *)
-              ARCH_MAX="ppc32"
-              ;;
-        esac
+        ARCH_MAX="ppc32"
         ;;
 
      s390x)
@@ -242,19 +232,6 @@ case "${host_os}" in
         esac
 
         ;;
-
-     aix5.1.*)
-        AC_MSG_RESULT([ok (${host_os})])
-        VGCONF_OS="aix5"
-        ;;
-     aix5.2.*)
-        AC_MSG_RESULT([ok (${host_os})])
-        VGCONF_OS="aix5"
-        ;;       
-     aix5.3.*)
-        AC_MSG_RESULT([ok (${host_os})])
-        VGCONF_OS="aix5"
-        ;;       
 
      *darwin*)
         AC_MSG_RESULT([ok (${host_os})])
@@ -426,29 +403,6 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
-     ppc64-aix5)
-        valt_load_address_pri_norml="0xUNSET"
-        valt_load_address_pri_inner="0xUNSET"
-        valt_load_address_sec_norml="0xUNSET"
-        valt_load_address_sec_inner="0xUNSET"
-	if test x$vg_cv_only64bit = xyes; then
-           VGCONF_ARCH_PRI="ppc64"
-           VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="PPC64_AIX5"
-	   VGCONF_PLATFORM_SEC_CAPS=""
-	elif test x$vg_cv_only32bit = xyes; then
-	   VGCONF_ARCH_PRI="ppc32"
-           VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="PPC32_AIX5"
-	   VGCONF_PLATFORM_SEC_CAPS=""
-	else
-	   VGCONF_ARCH_PRI="ppc64"
-           VGCONF_ARCH_SEC="ppc32"
-	   VGCONF_PLATFORM_PRI_CAPS="PPC64_AIX5"
-	   VGCONF_PLATFORM_SEC_CAPS="PPC32_AIX5"
-	fi
-        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
-	;;
      ppc64-linux)
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
@@ -564,12 +518,9 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_AMD64,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
-                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
-                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5 )
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC64, 
-               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 )
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_S390X,
@@ -593,12 +544,6 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_S390X_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xS390X_LINUX)
 
-AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5, 
-               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
-                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5)
-AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5, 
-               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
-
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
@@ -616,9 +561,6 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX)
-AM_CONDITIONAL(VGCONF_OS_IS_AIX5,
-               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
 AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
@@ -671,14 +613,6 @@ glibc version is: __GLIBC__ __GLIBC_MINOR__
 _ACEOF
   GLIBC_VERSION="`$CPP conftest.$ac_ext | $SED -n 's/^glibc version is: //p' | $SED 's/ /./g'`"
 fi
-
-AC_EGREP_CPP([AIX5_LIBC], [
-#include <standards.h>
-#if defined(_AIXVERSION_510) || defined(_AIXVERSION_520) || defined(_AIXVERSION_530)
-  AIX5_LIBC
-#endif
-],
-GLIBC_VERSION="aix5")
 
 # not really a version check
 AC_EGREP_CPP([DARWIN_LIBC], [
@@ -786,11 +720,6 @@ case "${GLIBC_VERSION}" in
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
-     aix5)
-	AC_MSG_RESULT(AIX 5.1 or 5.2 or 5.3)
-	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1 or 5.2 or 5.3])
-	DEFAULT_SUPP="aix5libc.supp ${DEFAULT_SUPP}"
-	;;
      darwin)
 	AC_MSG_RESULT(Darwin)
 	AC_DEFINE([DARWIN_LIBC], 1, [Define to 1 if you're using Darwin])
@@ -800,7 +729,6 @@ case "${GLIBC_VERSION}" in
      *)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
 	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.14])
-	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 GLIBC_VERSION])
 	AC_MSG_ERROR([or Darwin libc])
 	;;
 esac
@@ -1094,27 +1022,6 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_M32)
 
 
-# does this compiler support -maix32 ?
-AC_MSG_CHECKING([if gcc accepts -maix32])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-maix32"
-
-AC_TRY_COMPILE(, [
-  return 0;
-],
-[
-FLAG_MAIX32="-maix32"
-AC_MSG_RESULT([yes])
-], [
-FLAG_MAIX32=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-AC_SUBST(FLAG_MAIX32)
-
-
 # does this compiler support -m64 ?
 AC_MSG_CHECKING([if gcc accepts -m64])
 
@@ -1134,27 +1041,6 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_M64)
-
-
-# does this compiler support -maix64 ?
-AC_MSG_CHECKING([if gcc accepts -maix64])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-maix64"
-
-AC_TRY_COMPILE(, [
-  return 0;
-],
-[
-FLAG_MAIX64="-maix64"
-AC_MSG_RESULT([yes])
-], [
-FLAG_MAIX64=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-AC_SUBST(FLAG_MAIX64)
 
 
 # does this compiler support -mmmx ?
@@ -1711,36 +1597,26 @@ AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
 #----------------------------------------------------------------------------
 # Do we have a useable MPI setup on the primary and/or secondary targets?
 # On Linux, by default, assumes mpicc and -m32/-m64
-# On AIX, by default, assumes mpxlc and -q32/-q64
 # Note: this is a kludge in that it assumes the specified mpicc 
-# understands -m32/-m64/-q32/-q64 regardless of what is specified using
+# understands -m32/-m64 regardless of what is specified using
 # --with-mpicc=.
 MPI_CC="mpicc"
-if test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 ; then
-  MPI_CC="mpxlc"
-fi
 
 mflag_primary=
 if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX ; then
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
   mflag_primary=$FLAG_M64
-elif test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 ; then
-  mflag_primary=-q32
-elif test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 ; then
-  mflag_primary=-q64
 fi
 
 mflag_secondary=
 if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX ; then
   mflag_secondary=$FLAG_M32
-elif test x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5 ; then
-  mflag_secondary=-q32
 fi
 
 
@@ -2023,8 +1899,6 @@ AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
                 [chmod +x coregrind/link_tool_exe_linux])
 AC_CONFIG_FILES([coregrind/link_tool_exe_darwin],
                 [chmod +x coregrind/link_tool_exe_darwin])
-AC_CONFIG_FILES([coregrind/link_tool_exe_aix5],
-                [chmod +x coregrind/link_tool_exe_aix5])
 AC_OUTPUT
 
 cat<<EOF

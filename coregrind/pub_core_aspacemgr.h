@@ -193,51 +193,6 @@ extern SysRes VG_(am_do_mmap_NO_NOTIFY)
 
 
 //--------------------------------------------------------------
-// Functions pertaining to AIX5-specific notifications.
-
-/* Describes followup actions that need to be done following a call to
-   VG_(am_aix5_reread_procmap).  When acquire==True, the specified
-   code and data segments have been mapped into the process, and so
-   m_debuginfo needs to read info for it; also m_redir needs to know,
-   and the tool needs to be told.  When acquire==False, the specified
-   segments have been unloaded and m_debuginfo, m_redir and the tool
-   (and m_transtab?) need to notified appropriately. */
-typedef
-   struct {
-      Addr   code_start;
-      Word   code_len;
-      Addr   data_start;
-      Word   data_len;
-      UChar* file_name;
-      UChar* mem_name;
-      Bool   is_mainexe;
-      Bool   acquire;
-   }
-   AixCodeSegChange;
-
-/* Tell aspacem that /proc/<pid>/map may have changed (eg following
-   __loadx) and so it should be re-read, and the code/data segment
-   list updated accordingly.  The resulting array of AixCodeChangeSeg
-   directives are written to 'directives', and the number of entries
-   to *ndirectives. */
-extern void VG_(am_aix5_reread_procmap)
-   ( /*OUT*/AixCodeSegChange* directives, /*OUT*/Int* ndirectives );
-
-/* Find out the size of the AixCodeSegChange that must be
-   presented to VG_(am_aix5_reread_procmap). */
-extern Int VG_(am_aix5_reread_procmap_howmany_directives)(void);
-
-/* Tell aspacem where the initial client stack is, so that it
-   can later produce a faked-up NSegment in response to
-   VG_(am_find_nsegment) for athat address, if asked. */
-extern void VG_(am_aix5_set_initial_client_sp)( Addr );
-
-/* The AIX5 aspacem implementation needs to be told when it is and
-   isn't allowed to use sbrk to allocate memory.  Hence: */
-extern Bool VG_(am_aix5_sbrk_allowed);
-
-
-//--------------------------------------------------------------
 // Dealing with mappings which do not arise directly from the
 // simulation of the client.  These are typically used for
 // loading the client and building its stack/data segment, before

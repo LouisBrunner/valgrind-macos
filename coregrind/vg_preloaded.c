@@ -47,7 +47,7 @@
 #include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
 #include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
 
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
 
 /* ---------------------------------------------------------------------
    Hook for running __libc_freeres once the program exits.
@@ -56,7 +56,7 @@
 void VG_NOTIFY_ON_LOAD(freeres)( void );
 void VG_NOTIFY_ON_LOAD(freeres)( void )
 {
-#if !defined(__UCLIBC__) && !defined(VGO_aix5)
+#if !defined(__UCLIBC__)
    extern void __libc_freeres(void);
    __libc_freeres();
 #endif

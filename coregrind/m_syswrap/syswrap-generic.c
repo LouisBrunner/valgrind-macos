@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Wrappers for generic (non-AIX5!) Unix system calls           ---*/
+/*--- Wrappers for generic Unix system calls                       ---*/
 /*---                                            syswrap-generic.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -771,7 +771,6 @@ void init_preopened_fds_without_proc_self_fd(void)
 
 void VG_(init_preopened_fds)(void)
 {
-// Nb: AIX5 is handled in syswrap-aix5.c.
 // DDD: should probably use HAVE_PROC here or similar, instead.
 #if defined(VGO_linux)
    Int ret;
@@ -2981,7 +2980,7 @@ PRE(sys_fork)
 
    if (!SUCCESS) return;
 
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
    // RES is 0 for child, non-0 (the child's PID) for parent.
    is_child = ( RES == 0 ? True : False );
    child_pid = ( is_child ? -1 : RES );

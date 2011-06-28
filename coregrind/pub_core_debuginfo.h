@@ -56,7 +56,7 @@ extern void VG_(di_initialise) ( void );
    in later queries to m_debuginfo.  In this case the handle value
    will be one or above.  If the returned value is zero, no debug info
    was read. */
-#if defined(VGO_linux)  ||  defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin)
 extern ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV );
 
 extern void VG_(di_notify_munmap)( Addr a, SizeT len );
@@ -67,28 +67,6 @@ extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
 extern void VG_(di_notify_pdb_debuginfo)( Int fd, Addr avma,
                                           SizeT total_size,
                                           PtrdiffT unknown_purpose__reloc );
-#endif
-
-#if defined(VGO_aix5)
-// GrP fixme use this instead for darwin?
-/* AIX5: Very similar, except packaged more neatly.  The supplied
-   parameters describe a code segment and its associated data segment,
-   that have recently been mapped in -- so we need to read debug info
-   for it -- or conversely, have recently been dumped, in which case
-   the relevant debug info has to be unloaded.
-
-   The returned ULong has the same meaning as documented for
-   VG_(di_notify_mmap) just above. */
-extern ULong VG_(di_aix5_notify_segchange)( 
-                Addr   code_start,
-                Word   code_len,
-                Addr   data_start,
-                Word   data_len,
-                UChar* file_name,
-                UChar* mem_name,
-                Bool   is_mainexe,
-                Bool   acquire
-             );
 #endif
 
 extern void VG_(di_discard_ALL_debuginfo)( void );

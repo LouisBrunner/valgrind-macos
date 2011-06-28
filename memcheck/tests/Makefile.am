@@ -329,34 +329,9 @@ varinfo4_CFLAGS		= $(AM_CFLAGS) -O
 varinfo5_CFLAGS		= $(AM_CFLAGS) -O
 varinfo6_CFLAGS		= $(AM_CFLAGS) -O
 
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
-else
- # persuade the AIX linker not to junk apparently unused
- # function descriptors.  Unfortunately -Wl,-G -Wl,-bnogc
- # produces a link error on 64-bit AIX, hence only 32-bit
- # gets these flags.
- wrap1_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap2_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap3_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap4_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap5_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap6_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap8_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-endif
-endif
-
 # Build shared object for varinfo5
 varinfo5_SOURCES        = varinfo5.c
 varinfo5_DEPENDENCIES   = varinfo5so.so
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
- varinfo5_LDADD         = `pwd`/varinfo5so.so
- varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI)
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- varinfo5_LDADD         = `pwd`/varinfo5so.so
- varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-else
 if VGCONF_OS_IS_DARWIN
  varinfo5_LDADD         = `pwd`/varinfo5so.so
  varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI)
@@ -365,17 +340,9 @@ else
  varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI) \
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
 endif
-endif
 
 varinfo5so_so_SOURCES   = varinfo5so.c
 varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
- varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
-				-Wl,-G -Wl,-bnogc
-else
 if VGCONF_OS_IS_DARWIN
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
 				-dynamiclib -all_load
@@ -383,20 +350,10 @@ else
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,varinfo5so.so
 endif
-endif
-endif
 
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c
 wrap7_DEPENDENCIES      = wrap7so.so
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
- wrap7_LDADD            = `pwd`/wrap7so.so
- wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI)
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- wrap7_LDADD            = `pwd`/wrap7so.so
- wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-else
 if VGCONF_OS_IS_DARWIN
  wrap7_LDADD            = `pwd`/wrap7so.so
  wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI)
@@ -405,27 +362,14 @@ else
  wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
 endif
-endif
-endif
 
 wrap7so_so_SOURCES      = wrap7so.c
 wrap7so_so_CFLAGS       = $(AM_CFLAGS) -fpic
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
- wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
-				-Wl,-G -Wl,-bnogc
-else
 if VGCONF_OS_IS_DARWIN
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
 				-dynamiclib -all_load
 else
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,wrap7so.so
-endif
-endif
-endif
-
 endif
 

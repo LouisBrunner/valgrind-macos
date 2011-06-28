@@ -5,7 +5,7 @@
 
 int main(void)
 {
-#  if !defined(VGO_aix5) && !defined(VGO_darwin)
+#  if !defined(VGO_darwin)
    // Because our allocations are in multiples of 8 or 16, 99 will round up
    // to 104 or 112.
    int* x = malloc(99);

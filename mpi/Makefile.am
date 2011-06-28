@@ -12,7 +12,6 @@ CFLAGS =
 LDFLAGS =
 
 EXTRA_DIST = \
-	libmpiwrap_aix5.exp \
 	mpiwrap_type_test.c
 
 #----------------------------------------------------------------------------
@@ -37,15 +36,6 @@ if VGCONF_OS_IS_LINUX
  LDFLAGS_MPI = -fpic -shared
  MPI_FLAG_M3264_PRI = $(AM_FLAG_M3264_PRI)
  MPI_FLAG_M3264_SEC = $(AM_FLAG_M3264_SEC)
-endif
-if VGCONF_OS_IS_AIX5
- # MPICC on AIX is called XLC.  It uses weird options.
- CFLAGS_MPI = -g -O -qflag=w:w -qlanglvl=extended
- LDFLAGS_MPI = -bE:libmpiwrap_aix5.exp -bM:SRE -bnoentry \
-			-qflag=w:w -qlanglvl=extended
- # The sed bit changes eg. "maix32" to "q32" which is the XLC option.
- MPI_FLAG_M3264_PRI = `echo $(AM_FLAG_M3264_PRI) | sed s/maix/q/g`
- MPI_FLAG_M3264_SEC = `echo $(AM_FLAG_M3264_SEC) | sed s/maix/q/g`
 endif
 if VGCONF_OS_IS_DARWIN
  CFLAGS_MPI  = -g -O -fno-omit-frame-pointer -Wall -dynamic

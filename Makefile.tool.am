@@ -32,8 +32,6 @@ endif
 # is unusable. So we have to tell ld not to generate that, with --build-id=none.
 TOOL_LDFLAGS_COMMON_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u _start @FLAG_NO_BUILD_ID@
-TOOL_LDFLAGS_COMMON_AIX5 = \
-	-static -Wl,-e_start_valgrind
 TOOL_LDFLAGS_COMMON_DARWIN = \
 	-nodefaultlibs -nostartfiles -Wl,-u,__start -Wl,-e,__start
 
@@ -54,12 +52,6 @@ TOOL_LDFLAGS_ARM_LINUX = \
 
 TOOL_LDFLAGS_S390X_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@
-
-TOOL_LDFLAGS_PPC32_AIX5 = \
-	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX32@
-
-TOOL_LDFLAGS_PPC64_AIX5 = \
-	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX64@ -Wl,-bbigtoc
 
 TOOL_LDFLAGS_X86_DARWIN = \
 	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch i386
@@ -95,12 +87,6 @@ LIBREPLACEMALLOC_PPC64_LINUX = \
 LIBREPLACEMALLOC_ARM_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-arm-linux.a
 
-LIBREPLACEMALLOC_PPC32_AIX5 = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc32-aix5.a
-
-LIBREPLACEMALLOC_PPC64_AIX5 = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc64-aix5.a
-
 LIBREPLACEMALLOC_X86_DARWIN = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-darwin.a
 
@@ -135,12 +121,6 @@ LIBREPLACEMALLOC_LDFLAGS_ARM_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_ARM_LINUX) \
 	-Wl,--no-whole-archive
-
-LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5 = \
-	$(LIBREPLACEMALLOC_PPC32_AIX5)
-
-LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5 = \
-	$(LIBREPLACEMALLOC_PPC64_AIX5)
 
 LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN = \
 	$(LIBREPLACEMALLOC_X86_DARWIN)

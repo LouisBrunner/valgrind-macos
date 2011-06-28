@@ -66,15 +66,6 @@
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
 
-/* Stuff for reading AIX5 /proc/<pid>/sysent files */
-#if defined(VGO_aix5)
-   /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
-#  include <sys/procfs.h>  /* prsysent_t */
-   /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
-#  define VG_AIX5_SYSENT_SIZE 100000
-   static UChar aix5_sysent_buf[VG_AIX5_SYSENT_SIZE];
-#endif
-
 
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
@@ -1258,16 +1249,6 @@ static void setup_file_descriptors(void)
       VG_(printf)("fd limits: host, before: cur %lu max %lu\n", 
                   (UWord)rl.rlim_cur, (UWord)rl.rlim_max);
 
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   /* I don't know why this kludge is needed; however if rl.rlim_cur
-      is RLIM_INFINITY, then VG_(safe_fd)'s attempts using VG_(fcntl)
-      to lift V's file descriptors above the threshold RLIM_INFINITY -
-      N_RESERVED_FDS fail.  So just use a relatively conservative
-      value in this case. */
-   if (rl.rlim_cur > 1024)
-      rl.rlim_cur = 1024;
-#  endif
-
    /* Work out where to move the soft limit to. */
    if (rl.rlim_cur + N_RESERVED_FDS <= rl.rlim_max) {
       rl.rlim_cur = rl.rlim_cur + N_RESERVED_FDS;
@@ -1482,60 +1463,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                             VERSION " debug logging\n");
 
    //--------------------------------------------------------------
-   // AIX5 only: register the system call numbers
-   //   p: logging
-   //   p: that the initial few syscall numbers stated in the
-   //      bootblock have been installed (else we can't 
-   //      open/read/close).
-   //--------------------------------------------------------------
-#  if defined(VGO_aix5)
-   VG_(debugLog)(1, "main", "aix5: registering syscalls ..\n");
-   { UChar  sysent_name[50];
-     SysRes fd;
-     Bool   ok;
-     Int    n_unregd, sysent_used = 0;
-     prsysent_t* sysent_hdr;
-
-     VG_(sprintf)(sysent_name, "/proc/%d/sysent", VG_(getpid)());
-     fd = VG_(open)(sysent_name, VKI_O_RDONLY, 0);
-     if (fd.isError)
-        VG_(err_config_error)("aix5: can't open /proc/<pid>/sysent");
-
-     sysent_used = VG_(read)(fd.res, aix5_sysent_buf, VG_AIX5_SYSENT_SIZE);
-     if (sysent_used < 0)
-        VG_(err_config_error)("aix5: error reading /proc/<pid>/sysent");
-     if (sysent_used >= VG_AIX5_SYSENT_SIZE)
-        VG_(err_config_error)("aix5: VG_AIX5_SYSENT_SIZE is too low; "
-                              "increase and recompile");
-     VG_(close)(fd.res);
-
-     vg_assert(sysent_used > 0 && sysent_used < VG_AIX5_SYSENT_SIZE);
-
-     sysent_hdr = (prsysent_t*)&aix5_sysent_buf[0];
-
-     n_unregd = 0;
-     for (i = 0; i < sysent_hdr->pr_nsyscalls; i++) {
-        UChar* name = &aix5_sysent_buf[ sysent_hdr
-                                        ->pr_syscall[i].pr_nameoff ];
-        UInt   nmbr = sysent_hdr->pr_syscall[i].pr_number;
-        VG_(debugLog)(3, "main", "aix5: bind syscall %d to \"%s\"\n", 
-                                 nmbr, name);
-        ok = VG_(aix5_register_syscall)(nmbr, name);
-        if (!ok)
-           n_unregd++;
-	if (!ok)
-           VG_(debugLog)(3, "main", 
-                            "aix5: bind FAILED: %d to \"%s\"\n", 
-                            nmbr, name);
-     }
-     VG_(debugLog)(1, "main", "aix5: .. %d syscalls known, %d unknown\n",
-                      sysent_hdr->pr_nsyscalls - n_unregd, n_unregd );
-     VG_(debugLog)(1, "main", "aix5: __NR_AIX5_FAKE_SIGRETURN = %d\n",
-                      __NR_AIX5_FAKE_SIGRETURN );
-   }
-#  endif
-
-   //--------------------------------------------------------------
    // Ensure we're on a plausible stack.
    //   p: logging
    //--------------------------------------------------------------
@@ -1667,7 +1594,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
    //--------------------------------------------------------------
    // Record the working directory at startup
-   //   p: none (Linux), getenv and sys_getpid work (AIX)
+   //   p: none
    VG_(debugLog)(1, "main", "Getting the working directory at startup\n");
    { Bool ok = VG_(record_startup_wd)();
      if (!ok) 
@@ -1712,18 +1639,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          );
    }
 
-#  if defined(VGO_aix5)
-   /* Tolerate ptraced-based launchers.  They can't run 'no program'
-      if the user types "valgrind --help", so they run a do-nothing
-      program $prefix/bin/no_op_client_for_valgrind, and we catch that
-      here and turn it the exe name back into NULL.  Then --help,
-      --version etc work as they should. */
-   if (VG_(args_the_exename) 
-       && VG_(strstr)( VG_(args_the_exename), "/no_op_client_for_valgrind" )) {
-      VG_(args_the_exename) = NULL;
-   }
-#  endif
-
    //--------------------------------------------------------------
    // Extract tool name and whether help has been requested.
    // Note we can't print the help message yet, even if requested,
@@ -1766,37 +1681,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       the_iicii.argv              = argv;
       the_iicii.envp              = envp;
       the_iicii.toolname          = toolname;
-#     elif defined(VGO_aix5)
-      /* the_iicii.intregs37      already set up */
-      /* the_iicii.bootblock      already set up */
-      /* the_iicii.adler32_exp    already set up */
-      /* the_iicii.sp_at_startup  is irrelevant */
-      /* the_iicii.clstack_top    is irrelevant */
-      the_iicii.toolname          = toolname;
 #     else
 #       error "Unknown platform"
 #     endif
 
       /* NOTE: this call reads VG_(clo_main_stacksize). */
       the_iifii = VG_(ii_create_image)( the_iicii );
-
-#     if defined(VGO_aix5)
-      /* Tell aspacem where the initial client stack is, so that it
-         can later produce a faked-up NSegment in response to
-         VG_(am_find_nsegment) for that address range, if asked. */
-      /* NOTE: this call reads VG_(clo_main_stacksize). */
-      VG_(am_aix5_set_initial_client_sp)( the_iifii.initial_client_SP );
-      /* Now have a look at said fake segment, so we can find out
-         the size of it. */
-      { SizeT sz;
-        NSegment const* seg 
-           = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
-        vg_assert(seg);
-        sz = seg->end - seg->start + 1;
-        vg_assert(sz >= 0 && sz <= (256+1)*1024*1024); /* stay sane */
-        the_iifii.clstack_max_size = sz;
-      }
-#     endif
    }
 
    //==============================================================
@@ -1966,8 +1856,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       iters = 1;
 #     elif defined(VGP_s390x_linux)
       iters = 10;
-#     elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-      iters = 4;
 #     elif defined(VGO_darwin)
       iters = 3;
 #     else
@@ -1996,7 +1884,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: initialise m_debuginfo
    //
    // While doing this, make a note of the debuginfo-handles that
-   // come back from VG_(di_notify_mmap)/VG_(di_aix5_notify_segchange).
+   // come back from VG_(di_notify_mmap).
    // Later, in "Tell the tool about the initial client memory permissions"
    // (just below) we can then hand these handles off to the tool in
    // calls to VG_TRACK(new_mem_startup, ...).  This gives the tool the
@@ -2035,42 +1923,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      }
 
      VG_(free)( seg_starts );
-   }
-#  elif defined(VGO_aix5)
-   { AixCodeSegChange* changes;
-     Int changes_size, changes_used;
-     Addr_n_ULong anu;
-
-     /* Find out how many AixCodeSegChange records we will need,
-	and acquire them. */
-     changes_size = VG_(am_aix5_reread_procmap_howmany_directives)(); 
-     changes = VG_(malloc)("main.vm.3", changes_size * sizeof(AixCodeSegChange));
-     vg_assert(changes);
-
-     /* Now re-read /proc/<pid>/map and acquire a change set */
-     VG_(am_aix5_reread_procmap)( changes, &changes_used );
-     vg_assert(changes_used >= 0 && changes_used <= changes_size);
-
-     /* And notify m_debuginfo of the changes. */
-     for (i = 0; i < changes_used; i++) {
-        anu.ull = VG_(di_aix5_notify_segchange)(
-                     changes[i].code_start,
-                     changes[i].code_len,
-                     changes[i].data_start,
-                     changes[i].data_len,
-                     changes[i].file_name,
-                     changes[i].mem_name,
-                     changes[i].is_mainexe,
-                     changes[i].acquire
-                  );
-        if (anu.ull > 0) {
-           tl_assert(changes[i].acquire);
-           anu.a = changes[i].code_start; /* is this correct? */
-           VG_(addToXA)( addr2dihandle, &anu );
-        }
-     }
-
-     VG_(free)(changes);
    }
 #  elif defined(VGO_darwin)
    { Addr* seg_starts;
@@ -2214,10 +2066,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
        vg_assert(seg->kind == SkAnonC);
        vg_assert(the_iifii.initial_client_SP >= seg->start);
        vg_assert(the_iifii.initial_client_SP <= seg->end);
-#      if defined(VGO_aix5)
-       VG_(clstk_base) = seg->start;
-       VG_(clstk_end) = seg->end;
-#      endif
 
        /* Stuff below the initial SP is unaddressable.  Take into
 	  account any ABI-mandated space below the stack pointer that
@@ -2349,7 +2197,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 }
 
 /* Do everything which needs doing when the last thread exits or when
-   a thread exits requesting a complete process exit (exit on AIX).
+   a thread exits requesting a complete process exit.
 
    We enter here holding The Lock.  For the case VgSrc_ExitProcess we
    must never release it, because to do so would allow other threads
@@ -2500,7 +2348,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    switch (tids_schedretcode) {
    case VgSrc_ExitThread:  /* the normal way out (Linux) */
-   case VgSrc_ExitProcess: /* the normal way out (AIX) */
+   case VgSrc_ExitProcess: /* the normal way out (AIX) -- still needed? */
       /* Change the application return code to user's return code,
          if an error was found */
       if (VG_(clo_error_exitcode) > 0 
@@ -2555,9 +2403,6 @@ static void final_tidyup(ThreadId tid)
         !VG_(clo_run_libc_freeres) ||
         0 == __libc_freeres_wrapper )
       return;			/* can't/won't do it */
-#  if defined(VGO_aix5)
-   return; /* inapplicable on non-Linux platforms */
-#  endif
 
 #  if defined(VGP_ppc64_linux)
    r2 = VG_(get_tocptr)( __libc_freeres_wrapper );
@@ -2922,121 +2767,6 @@ void _start_in_C_linux ( UWord* pArgc )
    /* NOTREACHED */
    VG_(exit)(r);
 }
-
-
-/*====================================================================*/
-/*=== Getting to main() alive: AIX5                                ===*/
-/*====================================================================*/
-
-#elif defined(VGO_aix5)
-
-/* This is somewhat simpler than the Linux case.  _start_valgrind
-   receives control from the magic piece of code created in this
-   process' address space by the launcher, via use of ptrace().  At
-   the point of entry:
-
-   - the initial client process image is in memory and ready to roll,
-     except that we've partially trashed its integer register state
-     in order to get this far.   So ..
-
-   - intregs37 holds the client's initial integer register state, so
-     we can restore it before starting the client on the VCPU.
-
-   - we're on the client's stack.  This is not good; therefore the
-     first order of business is to switch to our temporary stack.  
-
-   - the client's initial argc/v/envp is in r3/r4/r5 (32 bit mode) or
-     r14/r15/r16 (64 bit mode).  They are pulled out of the stashed
-     integer register state and passed to our main().
-
-   The launcher will have played some games with argv.  If the launcher
-   ($prefix/bin/valgrind) was started like this
-
-      valgrind [args-for-V] app [args-for-app]
-
-   then the launcher will have started the client as
-
-      app [args-for-V] app [args-for-app]
-
-   m_initimg will have to mess with the client's initial r4/r5
-   (32-bit) or r15/r16 (64-bit) so that it believes it was execd as
-   "app [args-for-app]".  Well, that's no big deal.
-*/
-
-#include "launcher-aix5-bootblock.h"
-
-void _start_in_C_aix5 ( AIX5Bootblock* bootblock );
-void _start_in_C_aix5 ( AIX5Bootblock* bootblock )
-{
-   Int     r;
-   ULong* intregs37;
-   UWord   argc, argv, envp;
-   __NR_getpid = bootblock->__NR_getpid;
-   __NR_write  = bootblock->__NR_write;
-   __NR_exit   = bootblock->__NR_exit;
-   __NR_open   = bootblock->__NR_open;
-   __NR_read   = bootblock->__NR_read;
-   __NR_close  = bootblock->__NR_close;
-
-   VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
-   VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
-
-   intregs37 = &bootblock->iregs_pc_cr_lr_ctr_xer[0];
-   the_iicii.intregs37   = intregs37;
-   the_iicii.bootblock   = (void*)bootblock;
-   the_iicii.adler32_exp = bootblock->adler32;
-
-   /* Not important on AIX. */
-   the_iicii.sp_at_startup = (Addr)0x31415927ULL;
-
-#  if defined(VGP_ppc32_aix5)
-   argc = (UWord)intregs37[3];  /* client's r3 == argc */
-   argv = (UWord)intregs37[4];
-   envp = (UWord)intregs37[5];
-#  else /* defined(VGP_ppc64_aix5) */
-   argc = (UWord)intregs37[14];  /* client's r14 == argc */
-   argv = (UWord)intregs37[15];
-   envp = (UWord)intregs37[16];
-#  endif
-
-   r = valgrind_main( (Int)argc, (HChar**)argv, (HChar**)envp );
-
-   /* NOTREACHED */
-   VG_(exit)(r);
-}
-
-/* THE ENTRY POINT */
-void _start_valgrind ( AIX5Bootblock* bootblock );
-void _start_valgrind ( AIX5Bootblock* bootblock )
-{
-   /* Switch immediately to our temporary stack, and continue.  This
-      is pretty dodgy in that it assumes that gcc does not place on
-      the stack, anything needed to form the _start_in_C_aix5 call,
-      since it will be on the old stack. */
-   register UWord new_r1;
-   new_r1  = (UWord)&VG_(interim_stack);
-   new_r1 += VG_STACK_GUARD_SZB;  /* step over lower guard page */
-   new_r1 += VG_STACK_ACTIVE_SZB; /* step to top of active area */
-   new_r1 -= 512; /* paranoia */
-   __asm__ __volatile__("mr 1,%0" :/*wr*/ 
-                                  :/*rd*/ "b"(new_r1) 
-                                  :/*trash*/"r1","memory");
-   _start_in_C_aix5(bootblock);
-   /*NOTREACHED*/
-   VG_(exit)(0);
-}
-
-/* At some point in Oct 2008, static linking appeared to stop working
-   on AIX 5.3.  This breaks the build since we link statically.  The
-   linking fails citing absence of the following five symbols as the
-   reason.  In the absence of a better solution, here are stand-ins
-   for them.  Kludge appears to work; presumably said functions,
-   assuming they are indeed functions, are never called. */
-void encrypted_pw_passlen ( void ) { vg_assert(0); }
-void crypt_r              ( void ) { vg_assert(0); }
-void max_history_size     ( void ) { vg_assert(0); }
-void getpass_auto         ( void ) { vg_assert(0); }
-void max_pw_passlen       ( void ) { vg_assert(0); }
 
 
 /*====================================================================*/

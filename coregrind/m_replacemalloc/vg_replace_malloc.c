@@ -86,30 +86,6 @@
 __attribute__ ((__noreturn__))
 extern void _exit(int);
 
-/* Apparently it is necessary to make ourselves free of any dependency
-   on memcpy() on ppc32-aix5; else programs linked with -brtl fail.
-   memcpy() is used by gcc for a struct assignment in mallinfo()
-   below.  Add the following conservative implementation (memmove,
-   really). */
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-__attribute__((weak))
-void *memcpy(void *destV, const void *srcV, unsigned long n)
-{
-   unsigned char* src = (unsigned char*)srcV;
-   unsigned char* dest = (unsigned char*)destV;
-   unsigned long  i;
-   if (dest < src) {
-      for (i = 0; i < n; i++)
-         dest[i] = src[i];
-   }
-   if (dest > src) {
-      for (i = n; i > 0; i--)
-         dest[i-1] = src[i-1];
-   }
-   return dest;
-}
-#endif
-
 
 /* Compute the high word of the double-length unsigned product of U
    and V.  This is for calloc argument overflow checking; see comments
@@ -234,9 +210,7 @@ static void init(void);
 // malloc
 ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, malloc,      malloc);
 ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc,      malloc);
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc_common, malloc);
-#elif defined(VGO_darwin)
+#if defined(VGO_darwin)
 ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME, malloc_zone_malloc, malloc);
 #endif
 
@@ -257,14 +231,9 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_new,  __builtin_new);
 #endif
 
 // operator new(unsigned long), GNU mangling
-#if VG_WORDSIZE == 8 || defined(VGP_ppc32_aix5) || defined(VGO_darwin)
+#if VG_WORDSIZE == 8 || defined(VGO_darwin)
  ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwm,          __builtin_new);
  ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znwm,          __builtin_new);
-#endif
-
-// operator new(unsigned long), ARM/cfront mangling
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
- ALLOC_or_BOMB(VG_Z_LIBC_DOT_A,       __nw__FUl,      __builtin_new);
 #endif
 
 
@@ -277,14 +246,9 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_new,  __builtin_new);
 #endif
 
 // operator new(unsigned long, std::nothrow_t const&), GNU mangling
-#if VG_WORDSIZE == 8 || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5) || defined(VGO_darwin)
+#if VG_WORDSIZE == 8 || defined(VGO_darwin)
  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnwmRKSt9nothrow_t,  __builtin_new);
  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnwmRKSt9nothrow_t,  __builtin_new);
-#endif
-
-// operator new(unsigned long, std::nothrow_t const&), ARM/cfront mangling
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
- ALLOC_or_NULL(VG_Z_LIBC_DOT_A,    __nw__FUlRCQ2_3std9nothrow_t, __builtin_new);
 #endif
 
 
@@ -301,14 +265,9 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
 #endif
 
 // operator new[](unsigned long), GNU mangling
-#if VG_WORDSIZE == 8 || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5) || defined(VGO_darwin)
+#if VG_WORDSIZE == 8 || defined(VGO_darwin)
  ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znam,             __builtin_vec_new );
  ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znam,             __builtin_vec_new );
-#endif
-
-// operator new[](unsigned long), ARM/cfront mangling
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
- ALLOC_or_BOMB(VG_Z_LIBC_DOT_A,       __vn__FUl,         __builtin_vec_new);
 #endif
 
 
@@ -321,14 +280,9 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
 #endif
 
 // operator new[](unsigned long, std::nothrow_t const&), GNU mangling
-#if VG_WORDSIZE == 8 || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5) || defined(VGO_darwin)
+#if VG_WORDSIZE == 8 || defined(VGO_darwin)
  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnamRKSt9nothrow_t, __builtin_vec_new );
  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnamRKSt9nothrow_t, __builtin_vec_new );
-#endif
-
-// operator new [](unsigned long, std::nothrow_t const&), ARM/cfront mangling
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
- ALLOC_or_BOMB(VG_Z_LIBC_DOT_A,   __vn__FUlRCQ2_3std9nothrow_t, __builtin_vec_new );
 #endif
 
 
@@ -364,9 +318,7 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
 // free
 FREE(VG_Z_LIBSTDCXX_SONAME,  free,                 free );
 FREE(VG_Z_LIBC_SONAME,       free,                 free );
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-FREE(VG_Z_LIBC_SONAME,       free_common,          free );
-#elif defined(VGO_darwin)
+#if defined(VGO_darwin)
 ZONEFREE(VG_Z_LIBC_SONAME,   malloc_zone_free,     free );
 #endif
 
@@ -387,11 +339,6 @@ FREE(VG_Z_LIBC_SONAME,        __builtin_delete,     __builtin_delete );
 FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
 FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
 
-// operator delete(void*), ARM/cfront mangling
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-FREE(VG_Z_LIBC_DOT_A,        __dl__FPv,            __builtin_delete );
-#endif
-
 
 /*---------------------- delete nothrow ----------------------*/
 
@@ -408,11 +355,6 @@ FREE(VG_Z_LIBC_SONAME,        __builtin_vec_delete, __builtin_vec_delete );
 // operator delete[](void*), GNU mangling
 FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
 FREE(VG_Z_LIBC_SONAME,       _ZdaPv,               __builtin_vec_delete );
-
-// operator delete[](void*), ARM/cfront mangling
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-FREE(VG_Z_LIBC_DOT_A,        __vd__FPv,            __builtin_vec_delete );
-#endif
 
 
 /*---------------------- delete [] nothrow ----------------------*/
@@ -465,9 +407,7 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
    }
 
 CALLOC(VG_Z_LIBC_SONAME, calloc);
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-CALLOC(VG_Z_LIBC_SONAME, calloc_common);
-#elif defined(VGO_darwin)
+#if defined(VGO_darwin)
 ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
 #endif
 
@@ -523,9 +463,7 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
    }
 
 REALLOC(VG_Z_LIBC_SONAME, realloc);
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-REALLOC(VG_Z_LIBC_SONAME, realloc_common);
-#elif defined(VGO_darwin)
+#if defined(VGO_darwin)
 ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
 #endif
 
@@ -587,12 +525,8 @@ ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_zone_memalign);
 /*---------------------- valloc ----------------------*/
 
 static int local__getpagesize ( void ) {
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   return 4096; /* kludge - toc problems prevent calling getpagesize() */
-#  else
    extern int getpagesize (void);
    return getpagesize();
-#  endif
 }
 
 #define VALLOC(soname, fnname) \
@@ -707,12 +641,6 @@ MALLOC_TRIM(VG_Z_LIBC_SONAME, malloc_trim);
    }
 
 POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-/* 27 Nov 07: it appears that xlc links into executables, a
-   posix_memalign, which calls onwards to memalign_common, with the
-   same args. */
-POSIX_MEMALIGN(VG_Z_LIBC_SONAME, memalign_common);
-#endif
 
 
 /*---------------------- malloc_usable_size ----------------------*/

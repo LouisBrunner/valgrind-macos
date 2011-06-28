@@ -174,11 +174,6 @@
 
 #if defined(VGO_linux)
 #  define  VG_Z_LIBC_SONAME  libcZdsoZa              // libc.so*
-#elif defined(VGP_ppc32_aix5)
-   /* AIX has both /usr/lib/libc.a and /usr/lib/libc_r.a. */
-#  define  VG_Z_LIBC_SONAME  libcZaZdaZLshrZdoZR     // libc*.a(shr.o)
-#elif defined(VGP_ppc64_aix5)
-#  define  VG_Z_LIBC_SONAME  libcZaZdaZLshrZu64ZdoZR // libc*.a(shr_64.o)
 #elif defined(VGO_darwin)
 #  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
 #else
@@ -190,20 +185,9 @@
 // Valid on all platforms(?)
 #define  VG_Z_LIBSTDCXX_SONAME  libstdcZpZpZa           // libstdc++*
 
-/* --- Soname of XLC's C++ library. --- */
-
-/* AIX: xlC's C++ runtime library is called libC.a, and the
-   interesting symbols appear to be in ansicore_32.o or ansicore_64.o
-   respectively. */
-#if defined(VGP_ppc32_aix5)
-#  define  VG_Z_LIBC_DOT_A   libCZdaZLansicoreZu32ZdoZR // libC.a(ansicore_32.o)
-#elif defined(VGP_ppc64_aix5)
-#  define  VG_Z_LIBC_DOT_A   libCZdaZLansicoreZu64ZdoZR // libC.a(ansicore_64.o)
-#endif
-
 /* --- Soname of the pthreads library. --- */
 
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
 #  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd0     // libpthread.so.0
 #elif defined(VGO_darwin)
 #  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib

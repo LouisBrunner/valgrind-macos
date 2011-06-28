@@ -48,7 +48,7 @@
 
 #define VGAPPEND(str1,str2) str1##str2
  
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
 #  define VG_(str)    VGAPPEND( vgPlain_,          str)
 #  define ML_(str)    VGAPPEND( vgModuleLocal_,    str)
 #elif defined(VGO_darwin)

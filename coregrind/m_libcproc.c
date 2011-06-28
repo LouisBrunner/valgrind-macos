@@ -65,7 +65,7 @@ Char** VG_(client_envp) = NULL;
 const Char *VG_(libdir) = VG_LIBDIR;
 
 const Char *VG_(LD_PRELOAD_var_name) =
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
    "LD_PRELOAD";
 #elif defined(VGO_darwin)
    "DYLD_INSERT_LIBRARIES";
@@ -283,14 +283,6 @@ Int VG_(waitpid)(Int pid, Int *status, Int options)
    SysRes res = VG_(do_syscall4)(__NR_wait4_nocancel,
                                  pid, (UWord)status, options, 0);
    return sr_isError(res) ? -1 : sr_Res(res);
-#  elif defined(VGO_aix5)
-   /* magic number 4 obtained by truss-ing a C program doing
-      'waitpid'.  Note status and pid args opposite way round from
-      POSIX. */
-   SysRes res = VG_(do_syscall5)(__NR_AIX5_kwaitpid, 
-                                 (UWord)status, pid, 4 | options,0,0);
-   if (0) VG_(printf)("waitpid: got 0x%lx 0x%lx\n", sr_Res(res), res.err);
-   return sr_isError(res) ? -1 : sr_Res(res);
 #  else
 #    error Unknown OS
 #  endif
@@ -474,14 +466,6 @@ Int VG_(gettid)(void)
 
    return sr_Res(res);
 
-#  elif defined(VGO_aix5)
-   SysRes res;
-   Int    r;
-   vg_assert(__NR_AIX5__thread_self != __NR_AIX5_UNKNOWN);
-   res = VG_(do_syscall0)(__NR_AIX5__thread_self);
-   r = sr_Res(res);
-   return r;
-
 #  elif defined(VGO_darwin)
    // Darwin's gettid syscall is something else.
    // Use Mach thread ports for lwpid instead.
@@ -514,9 +498,7 @@ Int VG_(getppid) ( void )
 Int VG_(geteuid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   return sr_Res( VG_(do_syscall1)(__NR_AIX5_getuidx, 1) );
-#  elif defined(__NR_geteuid32)
+#  if defined(__NR_geteuid32)
    // We use the 32-bit version if it's supported.  Otherwise, IDs greater
    // than 65536 cause problems, as bug #151209 showed.
    return sr_Res( VG_(do_syscall0)(__NR_geteuid32) );
@@ -528,9 +510,7 @@ Int VG_(geteuid) ( void )
 Int VG_(getegid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   return sr_Res( VG_(do_syscall1)(__NR_AIX5_getgidx, 1) );
-#  elif defined(__NR_getegid32)
+#  if defined(__NR_getegid32)
    // We use the 32-bit version if it's supported.  Otherwise, IDs greater
    // than 65536 cause problems, as bug #151209 showed.
    return sr_Res( VG_(do_syscall0)(__NR_getegid32) );
@@ -562,7 +542,6 @@ Int VG_(getgroups)( Int size, UInt* list )
 
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)  \
         || defined(VGP_arm_linux)                             \
-        || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5) \
         || defined(VGO_darwin) || defined(VGP_s390x_linux)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
@@ -594,7 +573,7 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 
 Int VG_(fork) ( void )
 {
-#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(VGO_linux)
    SysRes res;
    res = VG_(do_syscall0)(__NR_fork);
    if (sr_isError(res))
@@ -641,25 +620,6 @@ UInt VG_(read_millisecond_timer) ( void )
        now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
      }
    }
-
-#  elif defined(VGO_aix5)
-   /* AIX requires a totally different implementation since
-      sys_gettimeofday doesn't exist.  We use the POWER real-time
-      register facility.  This will SIGILL on PowerPC 970 on AIX,
-      since PowerPC doesn't support these instructions. */
-   UWord nsec, sec1, sec2;
-   while (1) {
-      __asm__ __volatile__ ("\n"
-         "\tmfspr %0,4\n" /* 4==RTCU */
-         "\tmfspr %1,5\n" /* 5==RTCL */
-         "\tmfspr %2,4\n" /* 4==RTCU */
-         : "=b" (sec1), "=b" (nsec), "=b" (sec2)
-      );
-      if (sec1 == sec2) break;
-   }
-   vg_assert(nsec < 1000*1000*1000);
-   now  = ((ULong)sec1) * 1000000ULL;
-   now += (ULong)(nsec / 1000);
 
 #  elif defined(VGO_darwin)
    // Weird: it seems that gettimeofday() doesn't fill in the timeval, but

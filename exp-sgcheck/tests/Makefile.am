@@ -47,14 +47,6 @@ hackedbz2_CFLAGS	= $(AM_CFLAGS) -O -Wno-inline
 
 # Build shared object for preen_invars
 preen_invars_DEPENDENCIES      = preen_invars_so.so
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
- preen_invars_LDADD            = -ldl
- preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI)
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- preen_invars_LDADD            = -ldl
- preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-else
 if VGCONF_OS_IS_DARWIN
  preen_invars_LDADD            = -ldl
  preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI)
@@ -63,25 +55,14 @@ else
  preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
 endif
-endif
-endif
 
 preen_invars_so_so_SOURCES      = preen_invars_so.c	# For automake-1.7.
 preen_invars_so_so_CFLAGS       = $(AM_CFLAGS) -fpic
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
- preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
-					-Wl,-G -Wl,-bnogc
-else
 if VGCONF_OS_IS_DARWIN
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
 					-dynamiclib -all_load
 else
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 					-Wl,-soname -Wl,preen_invars_so.so
-endif
-endif
 endif
 

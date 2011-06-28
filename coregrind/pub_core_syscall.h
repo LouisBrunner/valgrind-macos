@@ -74,8 +74,6 @@ extern SysRes VG_(mk_SysRes_amd64_linux) ( Long val );
 extern SysRes VG_(mk_SysRes_ppc32_linux) ( UInt  val, UInt  cr0so );
 extern SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so );
 extern SysRes VG_(mk_SysRes_arm_linux)   ( Int val );
-extern SysRes VG_(mk_SysRes_ppc32_aix5)  ( UInt val, UInt err );
-extern SysRes VG_(mk_SysRes_ppc64_aix5)  ( ULong val, ULong err );
 extern SysRes VG_(mk_SysRes_x86_darwin)  ( UChar scclass, Bool isErr,
                                            UInt wHI, UInt wLO );
 extern SysRes VG_(mk_SysRes_amd64_darwin)( UChar scclass, Bool isErr,

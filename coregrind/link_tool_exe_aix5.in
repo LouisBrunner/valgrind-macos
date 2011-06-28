@@ -1,6 +1,0 @@
-#! @PERL@
-
-use warnings;
-use strict;
-
-die "link_tool_exe_@VGCONF_OS@ requires implementation";

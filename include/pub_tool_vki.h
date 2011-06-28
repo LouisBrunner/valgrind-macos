@@ -47,10 +47,6 @@
 
 #if defined(VGO_linux)
 #  include "vki/vki-linux.h"
-#elif defined(VGP_ppc32_aix5)
-#  include "vki/vki-ppc32-aix5.h"
-#elif defined(VGP_ppc64_aix5)
-#  include "vki/vki-ppc64-aix5.h"
 #elif defined(VGO_darwin)
 #  include "vki/vki-darwin.h"
 #else

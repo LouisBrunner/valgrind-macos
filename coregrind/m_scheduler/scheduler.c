@@ -428,10 +428,6 @@ static void os_state_clear(ThreadState *tst)
    tst->os_state.threadgroup = 0;
 #  if defined(VGO_linux)
    /* no other fields to clear */
-#  elif defined(VGO_aix5)
-   tst->os_state.cancel_async    = False;
-   tst->os_state.cancel_disabled = False;
-   tst->os_state.cancel_progress = Canc_NoRequest;
 #  elif defined(VGO_darwin)
    tst->os_state.post_mach_trap_fn = NULL;
    tst->os_state.pthread           = 0;
@@ -744,22 +740,6 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    trc = 0;
    dispatch_ctr_SAVED = VG_(dispatch_ctr);
 
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   /* On AIX, we need to get a plausible value for SPRG3 for this
-      thread, since it's used I think as a thread-state pointer.  It
-      is presumably set by the kernel for each dispatched thread and
-      cannot be changed by user space.  It therefore seems safe enough
-      to copy the host's value of it into the guest state at the point
-      the thread is dispatched.
-      (Later): Hmm, looks like SPRG3 is only used in 32-bit mode.
-      Oh well. */
-   { UWord host_sprg3;
-     __asm__ __volatile__( "mfspr %0,259\n" : "=b"(host_sprg3) );
-    VG_(threads)[tid].arch.vex.guest_SPRG3_RO = host_sprg3;
-    vg_assert(sizeof(VG_(threads)[tid].arch.vex.guest_SPRG3_RO) == sizeof(void*));
-   }
-#  endif
-
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
 
@@ -1069,17 +1049,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       if (VG_(dispatch_ctr) == 1) {
 
-#        if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-         /* Note: count runnable threads before dropping The Lock. */
-         Int rt = VG_(count_runnable_threads)();
-#        endif
-
 	 /* Our slice is done, so yield the CPU to another thread.  On
             Linux, this doesn't sleep between sleeping and running,
-            since that would take too much time.  On AIX, we have to
-            prod the scheduler to get it consider other threads; not
-            doing so appears to cause very long delays before other
-            runnable threads get rescheduled. */
+            since that would take too much time. */
 
 	 /* 4 July 06: it seems that a zero-length nsleep is needed to
             cause async thread cancellation (canceller.c) to terminate
@@ -1097,20 +1069,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 VG_(release_BigLock)(tid, VgTs_Yielding, 
                                    "VG_(scheduler):timeslice");
 	 /* ------------ now we don't have The Lock ------------ */
-
-#        if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-         { static Int ctr=0;
-           vg_assert(__NR_AIX5__nsleep != __NR_AIX5_UNKNOWN);
-           vg_assert(__NR_AIX5_yield   != __NR_AIX5_UNKNOWN);
-           if (1 && rt > 0 && ((++ctr % 3) == 0)) { 
-              //struct vki_timespec ts;
-              //ts.tv_sec = 0;
-              //ts.tv_nsec = 0*1000*1000;
-              //VG_(do_syscall2)(__NR_AIX5__nsleep, (UWord)&ts, (UWord)NULL);
-	      VG_(do_syscall0)(__NR_AIX5_yield);
-           }
-         }
-#        endif
 
 	 VG_(acquire_BigLock)(tid, "VG_(scheduler):timeslice");
 	 /* ------------ now we do have The Lock ------------ */

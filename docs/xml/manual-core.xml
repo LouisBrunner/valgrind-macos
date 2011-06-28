@@ -1376,8 +1376,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
       <para>On Linux, you may request a stack of size up to 2GB.
       Valgrind will stop with a diagnostic message if the stack cannot
-      be allocated.  On AIX5 the allowed stack size is restricted to
-      128MB.</para>
+      be allocated.</para>
 
       <para><option>--main-stacksize</option> only affects the stack
       size for the program's initial thread.  It has no bearing on the

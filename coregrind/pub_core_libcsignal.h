@@ -68,8 +68,8 @@ extern Int VG_(sigaction)   ( Int signum,
                               vki_sigaction_fromK_t* oldact );
 
 /* Convert a sigaction which you got from the kernel (a _fromK_t) to
-   one which you can give back to the kernel (a _toK_t).  On Linux and
-   AIX, vki_sigaction_{toK,fromK}_t are identical, so this is a no-op
+   one which you can give back to the kernel (a _toK_t).  On Linux,
+   vki_sigaction_{toK,fromK}_t are identical, so this is a no-op
    (structure copy), but on Darwin it's not a no-op. */
 extern void VG_(convert_sigaction_fromK_to_toK)(
                vki_sigaction_fromK_t*, /*OUT*/vki_sigaction_toK_t*);

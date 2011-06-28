@@ -4896,7 +4896,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       to cause IR sanity check failures, due to references to
       non-existent shadows.  This is only evident for the complex
       preambles used for function wrapping on TOC-afflicted platforms
-      (ppc64-linux, ppc32-aix5, ppc64-aix5).
+      (ppc64-linux).
 
       The following loop therefore scans the preamble looking for
       assignments to temporaries.  For each one found it creates an

@@ -127,11 +127,6 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 #  elif defined(VGP_arm_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_R0 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_R0 = s2res;
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   VG_(threads)[tid].arch.vex_shadow1.guest_GPR3 = s1res;
-   VG_(threads)[tid].arch.vex_shadow2.guest_GPR3 = s2res;
-   VG_(threads)[tid].arch.vex_shadow1.guest_GPR4 = s1err;
-   VG_(threads)[tid].arch.vex_shadow2.guest_GPR4 = s2err;
 #  elif defined(VGO_darwin)
    // GrP fixme darwin syscalls may return more values (2 registers plus error)
 #  elif defined(VGP_s390x_linux)
@@ -1280,21 +1275,20 @@ void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
 // produce a pointer to the actual entry point for the function.
 void* VG_(fnptr_to_fnentry)( void* f )
 {
-#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
-    || defined(VGP_arm_linux)                           \
-    || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
-    || defined(VGP_s390x_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
+      || defined(VGP_arm_linux)                           \
+      || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
+      || defined(VGP_s390x_linux)
    return f;
-#elif defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
-                               || defined(VGP_ppc64_aix5)
-   /* All other ppc variants use the AIX scheme, in which f is a
-      pointer to a 3-word function descriptor, of which the first word
-      is the entry address. */
+#  elif defined(VGP_ppc64_linux)
+   /* ppc64-linux uses the AIX scheme, in which f is a pointer to a
+      3-word function descriptor, of which the first word is the entry
+      address. */
    UWord* descr = (UWord*)f;
    return (void*)(descr[0]);
-#else
-#  error "Unknown platform"
-#endif
+#  else
+#    error "Unknown platform"
+#  endif
 }
 
 /*--------------------------------------------------------------------*/

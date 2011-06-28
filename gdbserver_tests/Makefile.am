@@ -87,6 +87,7 @@ EXTRA_DIST = \
 	nlpasssigalrm.stderrB.exp \
 	nlpasssigalrm.stderr.exp \
 	nlpasssigalrm.stdinB.gdb \
+	nlpasssigalrm.stdoutB.exp \
 	nlsigvgdb.vgtest \
 	nlsigvgdb.stderr.exp \
 	nlsigvgdb.stderrB.exp \

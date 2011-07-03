@@ -210,9 +210,9 @@ static __inline__
 Bool DRD_(IsValidDrdThreadId)(const DrdThreadId tid)
 {
    return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
-           && ! (DRD_(g_threadinfo)[tid].vg_thread_exists == False
-                 && DRD_(g_threadinfo)[tid].posix_thread_exists == False
-                 && DRD_(g_threadinfo)[tid].detached_posix_thread == False));
+           && (DRD_(g_threadinfo)[tid].vg_thread_exists
+               || DRD_(g_threadinfo)[tid].posix_thread_exists
+               || DRD_(g_threadinfo)[tid].detached_posix_thread));
 }
 
 /** Returns the DRD thread ID of the currently running thread. */

@@ -1509,10 +1509,10 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
 
       for (q = DRD_(g_threadinfo)[j].last; q; q = q->prev)
       {
-         const int included_in_old_conflict_set
+         const Bool included_in_old_conflict_set
             = ! DRD_(vc_lte)(&q->vc, old_vc)
             && ! DRD_(vc_lte)(old_vc, &q->vc);
-         const int included_in_new_conflict_set
+         const Bool included_in_new_conflict_set
             = ! DRD_(vc_lte)(&q->vc, new_vc)
             && ! DRD_(vc_lte)(new_vc, &q->vc);
          if (included_in_old_conflict_set != included_in_new_conflict_set)
@@ -1546,19 +1546,17 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
    DRD_(bm_clear_marked)(DRD_(g_conflict_set));
 
    p = DRD_(g_threadinfo)[tid].last;
+   for (j = 0; j < DRD_N_THREADS; j++)
    {
-      for (j = 0; j < DRD_N_THREADS; j++)
+      if (j != tid && DRD_(IsValidDrdThreadId)(j))
       {
-         if (j != tid && DRD_(IsValidDrdThreadId)(j))
+         Segment* q;
+         for (q = DRD_(g_threadinfo)[j].last; q; q = q->prev)
          {
-            Segment* q;
-            for (q = DRD_(g_threadinfo)[j].last; q; q = q->prev)
+            if (! DRD_(vc_lte)(&q->vc, &p->vc)
+                && ! DRD_(vc_lte)(&p->vc, &q->vc))
             {
-               if (! DRD_(vc_lte)(&q->vc, &p->vc)
-                   && ! DRD_(vc_lte)(&p->vc, &q->vc))
-               {
-                  DRD_(bm_merge2_marked)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
-               }
+               DRD_(bm_merge2_marked)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
             }
          }
       }

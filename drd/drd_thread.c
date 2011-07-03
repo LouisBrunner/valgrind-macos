@@ -1515,31 +1515,19 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
          const Bool included_in_new_conflict_set
             = ! DRD_(vc_lte)(&q->vc, new_vc)
             && ! DRD_(vc_lte)(new_vc, &q->vc);
+         if (s_trace_conflict_set) {
+            char* str;
+
+            str = DRD_(vc_aprint)(&q->vc);
+            VG_(message)(Vg_DebugMsg,
+                         "conflict set: [%d] %s segment %s\n", j,
+                         included_in_old_conflict_set
+                         != included_in_new_conflict_set
+                         ? "merging" : "ignoring", str);
+            VG_(free)(str);
+         }
          if (included_in_old_conflict_set != included_in_new_conflict_set)
-         {
-            if (s_trace_conflict_set)
-            {
-               char* str;
-
-               str = DRD_(vc_aprint)(&q->vc);
-               VG_(message)(Vg_DebugMsg,
-                            "conflict set: [%d] merging segment %s\n", j, str);
-               VG_(free)(str);
-            }
             DRD_(bm_mark)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
-         }
-         else
-         {
-            if (s_trace_conflict_set)
-            {
-               char* str;
-
-               str = DRD_(vc_aprint)(&q->vc);
-               VG_(message)(Vg_DebugMsg,
-                            "conflict set: [%d] ignoring segment %s\n", j, str);
-               VG_(free)(str);
-            }
-         }
       }
    }
 

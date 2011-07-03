@@ -1496,6 +1496,7 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
    }
 
    new_vc = &DRD_(g_threadinfo)[tid].last->vc;
+   tl_assert(DRD_(vc_lte)(old_vc, new_vc));
 
    DRD_(bm_unmark)(DRD_(g_conflict_set));
 

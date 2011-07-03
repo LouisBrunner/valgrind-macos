@@ -1051,12 +1051,8 @@ void DRD_(bm_mark)(struct bitmap* bml, struct bitmap* bmr)
         (bm2r = VG_(OSetGen_Next)(bmr->oset)) != 0;
         )
    {
-      /*if (DRD_(bm_has_any_access(bmr, make_address(bm2r->addr, 0),
-        make_address(bm2r->addr + 1, 0))))*/
-      {
-         bm2l = bm2_lookup_or_insert(bml, bm2r->addr);
-         bm2l->recalc = True;
-      }
+      bm2l = bm2_lookup_or_insert(bml, bm2r->addr);
+      bm2l->recalc = True;
    }
 }
 

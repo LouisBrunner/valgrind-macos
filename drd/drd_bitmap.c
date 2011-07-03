@@ -1080,8 +1080,6 @@ void DRD_(bm_merge2_marked)(struct bitmap* const lhs, struct bitmap* const rhs)
    struct bitmap2* bm2l;
    struct bitmap2* bm2r;
 
-   tl_assert(lhs != rhs);
-
    /*
     * It's not possible to have two independent iterators over the same OSet,
     * so complain if lhs == rhs.

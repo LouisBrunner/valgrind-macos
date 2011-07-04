@@ -32,6 +32,6 @@ void fork_chain(int level)
 }
 int main()
 {
-   fork_chain (20);
+   fork_chain (15);
    return 0;
 }

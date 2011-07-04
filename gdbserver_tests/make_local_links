@@ -18,30 +18,35 @@ then
    VERSION=`echo $VERSIONLINE                         |
             sed -e 's/[^0-9\.]//g' -e 's/\./ /g'`
    
-   # We need at least a 6.5 version to run any gdb test
+   # We need at least a 6.5 version to use the Valgrind gdbserver.
+   # However, the tests are only supported/maintained for gdb >= 7
    VERSIONOK=`echo $VERSION |
-              awk '{ if ( ($1 >= 7) || (($1 == 6) && ($2 >= 5)) ) print "version ok"}'`
+              awk '{ if ($1 >= 7) print "version ok"}'`
    if [ "$VERSIONOK" = "" ]
    then
       echo "gdbserver tests suppressed as $1 version is < 6.5: " $VERSIONLINE
       rm -f gdbserver_tests/gdb
    fi
 
-   # We need at least a 7.1 version on ARM to run tests doing step/next/...
+   # We need at least a 7.1 version to run the 'pic' executable test
+   # (with 7.0, it fails on many platforms)
+   # On ARM, we need at least 7.1 to run the 'next/step/...' tests.
    # (gdb 7.0 has bugs in the 'guess next pc' heuristic in thumb mode).
-   if tests/arch_test arm
+   VERSIONOK=`echo $VERSION |
+              awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 1)) ) print "version ok"}'`
+   # By default, consider step/next/... tests are ok. We will remove for ARM if needed.
+   touch gdbserver_tests/gdb.step
+   if [ "$VERSIONOK" = "" ]
    then
-      VERSIONOK=`echo $VERSION |
-                 awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 1)) ) print "version ok"}'`
-      if [ "$VERSIONOK" = "" ]
+      echo "gdbserver 'pic' tests suppressed as $1 version is < 7.1: " $VERSIONLINE
+      rm -f gdbserver_tests/gdb.pic
+      if tests/arch_test arm
       then
-          echo "gdbserver 'step/next' tests suppressed as arm $1 version is < 7.1: " $VERSIONLINE
+         echo "gdbserver 'step/next' tests suppressed as arm $1 version is < 7.1: " $VERSIONLINE
          rm -f gdbserver_tests/gdb.step
-      else
-         touch gdbserver_tests/gdb.step
       fi
    else
-      touch gdbserver_tests/gdb.step
+      touch gdbserver_tests/gdb.pic
    fi
 
    # We need at least a 7.2 version for gdb tests using eval command

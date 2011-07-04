@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
    sa.sa_handler = sigalrm_handler;
    sigemptyset(&sa.sa_mask);
    sa.sa_flags = 0;
-   sa.sa_restorer = NULL;
+
    if (sigaction (SIGALRM, &sa, NULL) != 0)
       perror("sigaction");
    if (kill(getpid(), SIGALRM) != 0)

@@ -14078,6 +14078,8 @@ DisResult disInstr_ARM_WRK (
 /*--- Disassemble a single Thumb2 instruction              ---*/
 /*------------------------------------------------------------*/
 
+static const UChar it_length_table[256]; /* fwds */
+
 /* NB: in Thumb mode we do fetches of regs with getIRegT, which
    automagically adds 4 to fetches of r15.  However, writes to regs
    are done with putIRegT, which disallows writes to r15.  Hence any
@@ -14263,8 +14265,8 @@ DisResult disInstr_THUMB_WRK (
       if (pageoff >= 18) {
          /* It's safe to poke about in the 9 halfwords preceding this
             insn.  So, have a look at them. */
-         guaranteedUnconditional = True; /* assume no 'it' insn found, till we do */
-
+         guaranteedUnconditional = True; /* assume no 'it' insn found,
+                                            till we do */
          UShort* hwp = (UShort*)(HWord)pc;
          Int i;
          for (i = -1; i >= -9; i--) {
@@ -14275,10 +14277,25 @@ DisResult disInstr_THUMB_WRK (
                       == ( pc & 0xFFFFF000 ) );
             */
             /* All valid IT instructions must have the form 0xBFxy,
-               where x can be anything, but y must be nonzero. */
-            if ((hwp[i] & 0xFF00) == 0xBF00 && (hwp[i] & 0xF) != 0) {
-               /* might be an 'it' insn.  Play safe. */
-               guaranteedUnconditional = False;
+               where x can be anything, but y must be nonzero.  Find
+               the number of insns covered by it (1 .. 4) and check to
+               see if it can possibly reach up to the instruction in
+               question.  Some (x,y) combinations mean UNPREDICTABLE,
+               and the table is constructed to be conservative by
+               returning 4 for those cases, so the analysis is safe
+               even if the code uses unpredictable IT instructions (in
+               which case its authors are nuts, but hey.)  */
+            UShort hwp_i = hwp[i];
+            if (UNLIKELY((hwp_i & 0xFF00) == 0xBF00 && (hwp_i & 0xF) != 0)) {
+               /* might be an 'it' insn. */
+               /* # guarded insns */
+               Int n_guarded = (Int)it_length_table[hwp_i & 0xFF];
+               vassert(n_guarded >= 1 && n_guarded <= 4);
+               if (n_guarded * 2 /* # guarded HWs, worst case */
+                   > (-(i+1)))   /* -(i+1): # remaining HWs after the IT */
+                   /* -(i+0) also seems to work, even though I think
+                      it's wrong.  I don't understand that. */
+                  guaranteedUnconditional = False;
                break;
             }
          }
@@ -17927,6 +17944,85 @@ DisResult disInstr_THUMB_WRK (
 
 #undef DIP
 #undef DIS
+
+
+/* Helper table for figuring out how many insns an IT insn
+   conditionalises.
+
+   An ITxyz instruction of the format "1011 1111 firstcond mask"
+   conditionalises some number of instructions, as indicated by the
+   following table.  A value of zero indicates the instruction is
+   invalid in some way.
+
+   mask = 0 means this isn't an IT instruction
+   fc = 15 (NV) means unpredictable
+
+   The line fc = 14 (AL) is different from the others; there are
+   additional constraints in this case.
+
+          mask(0 ..                   15)
+        +--------------------------------
+   fc(0 | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+   ..   | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 0 2 0 0 0 1 0 0 0 0 0 0 0 
+   15)  | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
+   To be conservative with the analysis, let's rule out the mask = 0
+   case, since that isn't an IT insn at all.  But for all the other
+   cases where the table contains zero, that means unpredictable, so
+   let's say 4 to be conservative.  Hence we have a safe value for any
+   IT (mask,fc) pair that the CPU would actually identify as an IT
+   instruction.  The final table is
+
+          mask(0 ..                   15)
+        +--------------------------------
+   fc(0 | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+   ..   | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 3 4 1 4 3 4 2 4 3 4 
+        | 0 4 3 4 2 4 4 4 1 4 4 4 4 4 4 4 
+   15)  | 0 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 
+*/
+static const UChar it_length_table[256]
+   = { 0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4, 
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4,
+       0, 4, 3, 4, 2, 4, 4, 4, 1, 4, 4, 4, 4, 4, 4, 4,
+       0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
+     };
 
 
 /*------------------------------------------------------------*/

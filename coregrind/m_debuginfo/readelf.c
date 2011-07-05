@@ -1313,12 +1313,16 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    shdr_ent_szB = ehdr_img->e_shentsize;
 
    TRACE_SYMTAB("------ Basic facts about the object ------\n");
-   TRACE_SYMTAB("object: img %p n_oimage %ld\n",
+   TRACE_SYMTAB("object:  img %p n_oimage %ld\n",
                (void*)oimage, n_oimage);
-   TRACE_SYMTAB("phdr:   img %p nent %ld ent_szB %ld\n",
+   TRACE_SYMTAB("phdr:    img %p nent %ld ent_szB %ld\n",
                phdr_img, phdr_nent, phdr_ent_szB);
-   TRACE_SYMTAB("shdr:   img %p nent %ld ent_szB %ld\n",
+   TRACE_SYMTAB("shdr:    img %p nent %ld ent_szB %ld\n",
                shdr_img, shdr_nent, shdr_ent_szB);
+   TRACE_SYMTAB("rx_map:  avma %#lx  size %lu  foff %lu\n",
+                di->rx_map_avma, di->rx_map_size, di->rx_map_foff);
+   TRACE_SYMTAB("rw_map:  avma %#lx  size %lu  foff %lu\n",
+                di->rw_map_avma, di->rw_map_size, di->rw_map_foff);
 
    if (phdr_nent == 0
        || !contained_within(
@@ -1350,7 +1354,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       goto out;
    }
 
-   TRACE_SYMTAB("shdr:   string table at %p\n", shdr_strtab_img );
+   TRACE_SYMTAB("shdr:    string table at %p\n", shdr_strtab_img );
 
    /* Look through the program header table, and:
       - copy information from suitable PT_LOAD entries into rx[] or
@@ -1358,7 +1362,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       - find (or fake up) the .soname for this object.
    */
    TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ Looking for the soname ------\n");
+   TRACE_SYMTAB("------ Examining the program headers ------\n");
    vg_assert(di->soname == NULL);
    {
       ElfXX_Addr prev_svma = 0;
@@ -1374,9 +1378,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          vg_assert(n_rw >= 0 && n_rw <= N_RX_RW_AREAS);
 
          if (phdr->p_type == PT_LOAD) {
-            TRACE_SYMTAB("PT_LOAD in order?: %#lx %#lx\n",
-                         prev_svma + 0UL,
-                         phdr->p_vaddr + 0UL);
+            TRACE_SYMTAB("PT_LOAD[%ld]: p_vaddr %#lx (prev %#lx)\n",
+                         i, (UWord)phdr->p_vaddr, (UWord)prev_svma);
+            TRACE_SYMTAB("PT_LOAD[%ld]:   p_offset %#lx, p_filesz %lu,"
+                         " perms %c%c%c\n",
+                         i, (UWord)phdr->p_offset, (UWord)phdr->p_filesz,
+                         phdr->p_flags & PF_R ? 'r' : '-',
+                         phdr->p_flags & PF_W ? 'w' : '-',
+                         phdr->p_flags & PF_X ? 'x' : '-');
             if (phdr->p_vaddr < prev_svma) {
                ML_(symerr)(di, True,
                            "ELF Program Headers are not in ascending order");
@@ -1397,6 +1406,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                rx[n_rx].bias       = di->rx_map_avma - di->rx_map_foff
                                      + phdr->p_offset - phdr->p_vaddr;
                n_rx++;
+               TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rx\n", i);
             }
             else
             if (phdr->p_offset >= di->rw_map_foff
@@ -1413,6 +1423,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                rw[n_rw].bias       = di->rw_map_avma - di->rw_map_foff
                                      + phdr->p_offset - phdr->p_vaddr;
                n_rw++;
+               TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rw\n", i);
             }
          }
 
@@ -1476,8 +1487,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    /* Now read the section table. */
    TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ Examining the section headers "
-                "and program headers ------\n");
+   TRACE_SYMTAB("------ Examining the section headers ------\n");
    TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
                di->rx_map_avma,
                di->rx_map_foff, di->rx_map_foff + di->rx_map_size - 1 );

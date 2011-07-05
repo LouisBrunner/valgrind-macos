@@ -2899,6 +2899,22 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             op = Cop_And; opname = "and"; goto binop;
          case DW_OP_mul:
             op = Cop_Mul; opname = "mul"; goto binop;
+         case DW_OP_shl:
+            op = Cop_Shl; opname = "shl"; goto binop;
+         case DW_OP_shr:
+            op = Cop_Shr; opname = "shr"; goto binop;
+         case DW_OP_eq:
+            op = Cop_Eq; opname = "eq"; goto binop;
+         case DW_OP_ge:
+            op = Cop_Ge; opname = "ge"; goto binop;
+         case DW_OP_gt:
+            op = Cop_Gt; opname = "gt"; goto binop;
+         case DW_OP_le:
+            op = Cop_Le; opname = "le"; goto binop;
+         case DW_OP_lt:
+            op = Cop_Lt; opname = "lt"; goto binop;
+         case DW_OP_ne:
+            op = Cop_Ne; opname = "ne"; goto binop;
          binop:
             POP( ix );
             POP( ix2 );

@@ -1880,6 +1880,14 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Cop_Sub: return wL - wR;
             case Cop_And: return wL & wR;
             case Cop_Mul: return wL * wR;
+            case Cop_Shl: return wL << wR;
+            case Cop_Shr: return wL >> wR;
+            case Cop_Eq: return wL == wR ? 1 : 0;
+            case Cop_Ge: return wL >= wR ? 1 : 0;
+            case Cop_Gt: return wL > wR ? 1 : 0;
+            case Cop_Le: return wL <= wR ? 1 : 0;
+            case Cop_Lt: return wL < wR ? 1 : 0;
+            case Cop_Ne: return wL != wR ? 1 : 0;
             default: goto unhandled;
          }
          /*NOTREACHED*/

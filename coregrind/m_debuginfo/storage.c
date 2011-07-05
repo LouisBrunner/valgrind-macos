@@ -603,6 +603,14 @@ static void ppCfiOp ( CfiOp op )
       case Cop_Sub: VG_(printf)("-"); break;
       case Cop_And: VG_(printf)("&"); break;
       case Cop_Mul: VG_(printf)("*"); break;
+      case Cop_Shl: VG_(printf)("<<"); break;
+      case Cop_Shr: VG_(printf)(">>"); break;
+      case Cop_Eq: VG_(printf)("=="); break;
+      case Cop_Ge: VG_(printf)(">="); break;
+      case Cop_Gt: VG_(printf)(">"); break;
+      case Cop_Le: VG_(printf)("<="); break;
+      case Cop_Lt: VG_(printf)("<"); break;
+      case Cop_Ne: VG_(printf)("!="); break;
       default:      vg_assert(0);
    }
 }

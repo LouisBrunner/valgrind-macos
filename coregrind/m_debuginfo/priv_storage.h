@@ -249,7 +249,15 @@ typedef
       Cop_Add=0x321,
       Cop_Sub,
       Cop_And,
-      Cop_Mul
+      Cop_Mul,
+      Cop_Shl,
+      Cop_Shr,
+      Cop_Eq,
+      Cop_Ge,
+      Cop_Gt,
+      Cop_Le,
+      Cop_Lt,
+      Cop_Ne
    }
    CfiOp;
 

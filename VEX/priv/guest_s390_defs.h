@@ -38,9 +38,9 @@
 #include "libvex.h"                   // VexArch  (needed by bb_to_IR.h)
 #include "guest_generic_bb_to_IR.h"   // DisResult
 
+
 /* Convert one s390 insn to IR.  See the type DisOneInstrFn in
    bb_to_IR.h. */
-extern
 DisResult disInstr_S390 ( IRSB*        irbb,
                           Bool         put_IP,
                           Bool         (*resteerOkFn) ( void*, Addr64 ),
@@ -55,7 +55,6 @@ DisResult disInstr_S390 ( IRSB*        irbb,
                           Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */
-extern
 IRExpr* guest_s390x_spechelper ( HChar   *function_name,
                                  IRExpr **args,
                                  IRStmt **precedingStmts,
@@ -65,14 +64,10 @@ IRExpr* guest_s390x_spechelper ( HChar   *function_name,
 /* Describes to the optimser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
    state description. */
-extern
 Bool guest_s390x_state_requires_precise_mem_exns ( Int, Int );
 
-extern
-VexGuestLayout s390xGuest_layout;
+extern VexGuestLayout s390xGuest_layout;
 
-
-UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
 
 #define S390_GUEST_OFFSET(x)  offsetof(VexGuestS390XState, x)
 
@@ -84,19 +79,8 @@ ULong s390x_dirtyhelper_STCK(ULong *addr);
 ULong s390x_dirtyhelper_STCKF(ULong *addr);
 ULong s390x_dirtyhelper_STCKE(ULong *addr);
 
-/*------------------------------------------------------------*/
-/*--- IR generators for special opcodes.                   ---*/
-/*------------------------------------------------------------*/
-void s390_irgen_client_request(void);
-void s390_irgen_guest_NRADDR(void);
-void s390_irgen_call_noredir(void);
-void s390_irgen_internal_return(void);
-
-#include "libvex_basictypes.h"
-#include "libvex_ir.h"
 
 /* The various ways to compute the condition code. */
-
 enum {
    S390_CC_OP_BITWISE = 0,
    S390_CC_OP_SIGNED_COMPARE = 1,
@@ -190,7 +174,7 @@ enum {
 */
 
 /*------------------------------------------------------------*/
-/*--- condition code helpers.                             ---*/
+/*--- Condition code helpers.                             ---*/
 /*------------------------------------------------------------*/
 UInt s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2,
                        ULong cc_ndep);

@@ -47,6 +47,12 @@
 
 
 /*------------------------------------------------------------*/
+/*--- Forward declarations                                 ---*/
+/*------------------------------------------------------------*/
+static UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
+
+
+/*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
 
@@ -10556,7 +10562,7 @@ s390_irgen_STCKE(IRTemp op2addr)
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
 
-void
+static void
 s390_irgen_client_request(void)
 {
    if (0)
@@ -10570,7 +10576,7 @@ s390_irgen_client_request(void)
    dis_res->whatNext = Dis_StopHere;
 }
 
-void
+static void
 s390_irgen_guest_NRADDR(void)
 {
    if (0)
@@ -10579,7 +10585,7 @@ s390_irgen_guest_NRADDR(void)
    put_gpr_dw0(3, IRExpr_Get(S390_GUEST_OFFSET(guest_NRADDR), Ity_I64));
 }
 
-void
+static void
 s390_irgen_call_noredir(void)
 {
    /* Continue after special op */
@@ -12863,7 +12869,7 @@ s390_decode_special_and_irgen(UChar *bytes)
 
 
 /* Function returns # bytes that were decoded or 0 in case of failure */
-UInt
+static UInt
 s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
 {
    s390_decode_t status;

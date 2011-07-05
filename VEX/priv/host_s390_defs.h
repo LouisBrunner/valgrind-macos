@@ -41,8 +41,6 @@
 /* --------- Registers --------- */
 const HChar *s390_hreg_as_string(HReg);
 
-void s390_hreg_get_allocable(Int *nregs, HReg **arr);
-
 /* Dedicated registers */
 HReg s390_hreg_guest_state_pointer(void);
 
@@ -73,7 +71,7 @@ typedef enum {
    S390_AMODE_BX20
 } s390_amode_t;
 
-typedef struct s390_amode {
+typedef struct {
    s390_amode_t tag;
    HReg b;
    HReg x;       /* hregNumber(x) == 0  for S390_AMODE_B12/B20 kinds */
@@ -87,13 +85,9 @@ s390_amode *s390_amode_bx12(Int d, HReg b, HReg x);
 s390_amode *s390_amode_bx20(Int d, HReg b, HReg x);
 s390_amode *s390_amode_for_guest_state(Int d);
 Bool        s390_amode_is_sane(const s390_amode *);
-void        s390_amode_get_reg_usage(HRegUsage *, const s390_amode *);
-void        s390_amode_map_regs(HRegRemap *, s390_amode *);
 
 const HChar *s390_amode_as_string(const s390_amode *);
 
-struct s390_insn;
-struct s390_amode;
 /* ------------- 2nd (right) operand of binary operation ---------------- */
 
 typedef enum {
@@ -260,7 +254,7 @@ s390_cc_invert(s390_cc_t cond)
 }
 
 
-typedef struct s390_insn {
+typedef struct {
    s390_insn_tag tag;
    UChar size;            /* size of the result in bytes */
    union {
@@ -453,10 +447,7 @@ s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_round_t);
 s390_insn *s390_insn_mfence(void);
-void       s390_insn_map_regs(HRegRemap *, s390_insn *);
-Bool       s390_insn_is_reg_reg_move(const s390_insn *, HReg *, HReg *);
-void       s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *);
-UInt       s390_insn_emit(UChar *buf, Int nbuf, const struct s390_insn *insn,
+UInt       s390_insn_emit(UChar *buf, Int nbuf, const s390_insn *insn,
                           void *dispatch);
 
 const HChar *s390_insn_as_string(const s390_insn *);
@@ -465,21 +456,21 @@ const HChar *s390_insn_as_string(const s390_insn *);
 /* --- Interface exposed to VEX                       --- */
 /*--------------------------------------------------------*/
 
-void ppS390AMode(struct s390_amode *);
-void ppS390Instr(struct s390_insn *, Bool mode64);
+void ppS390AMode(s390_amode *);
+void ppS390Instr(s390_insn *, Bool mode64);
 void ppHRegS390(HReg);
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-void  getRegUsage_S390Instr( HRegUsage *, struct s390_insn *, Bool );
-void  mapRegs_S390Instr    ( HRegRemap *, struct s390_insn *, Bool );
-Bool  isMove_S390Instr     ( struct s390_insn *, HReg *, HReg * );
-Int   emit_S390Instr       ( UChar *, Int, struct s390_insn *, Bool,
+void  getRegUsage_S390Instr( HRegUsage *, s390_insn *, Bool );
+void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
+Bool  isMove_S390Instr     ( s390_insn *, HReg *, HReg * );
+Int   emit_S390Instr       ( UChar *, Int, s390_insn *, Bool,
                              void *, void * );
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
-struct s390_insn *directReload_S390 ( struct s390_insn *, HReg, Short );
+s390_insn *directReload_S390 ( s390_insn *, HReg, Short );
 HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo * );
 
 /* KLUDGE: See detailled comment in host_s390_defs.c. */

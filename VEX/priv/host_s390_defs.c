@@ -51,6 +51,16 @@
    before they are emitted. */
 const VexArchInfo *s390_archinfo_host;
 
+
+/*------------------------------------------------------------*/
+/*--- Forward declarations                                 ---*/
+/*------------------------------------------------------------*/
+
+static Bool s390_insn_is_reg_reg_move(const s390_insn *, HReg *src, HReg *dst);
+static void s390_insn_map_regs(HRegRemap *, s390_insn *);
+static void s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *);
+
+
 /*------------------------------------------------------------*/
 /*--- Registers                                            ---*/
 /*------------------------------------------------------------*/
@@ -100,7 +110,7 @@ s390_hreg_as_string(HReg reg)
 
 
 /* Tell the register allocator which registers can be allocated. */
-void
+static void
 s390_hreg_get_allocable(Int *nregs, HReg **arr)
 {
    UInt i;
@@ -336,7 +346,7 @@ s390_amode_is_sane(const s390_amode *am)
 
 
 /* Record the register use of an amode */
-void
+static void
 s390_amode_get_reg_usage(HRegUsage *u, const s390_amode *am)
 {
    switch (am->tag) {
@@ -357,7 +367,7 @@ s390_amode_get_reg_usage(HRegUsage *u, const s390_amode *am)
 }
 
 
-void
+static void
 s390_amode_map_regs(HRegRemap *m, s390_amode *am)
 {
    switch (am->tag) {
@@ -378,15 +388,14 @@ s390_amode_map_regs(HRegRemap *m, s390_amode *am)
 }
 
 
-
 void
-ppS390AMode(struct s390_amode *am)
+ppS390AMode(s390_amode *am)
 {
    vex_printf("%s", s390_amode_as_string(am));
 }
 
 void
-ppS390Instr(struct s390_insn *insn, Bool mode64)
+ppS390Instr(s390_insn *insn, Bool mode64)
 {
    vex_printf("%s", s390_insn_as_string(insn));
 }
@@ -412,7 +421,7 @@ getAllocableRegs_S390(Int *nregs, HReg **arr, Bool mode64)
 /* Tell the register allocator how the given instruction uses the registers
    it refers to. */
 void
-getRegUsage_S390Instr(HRegUsage *u, struct s390_insn *insn, Bool mode64)
+getRegUsage_S390Instr(HRegUsage *u, s390_insn *insn, Bool mode64)
 {
    s390_insn_get_reg_usage(u, insn);
 }
@@ -420,7 +429,7 @@ getRegUsage_S390Instr(HRegUsage *u, struct s390_insn *insn, Bool mode64)
 
 /* Map the registers of the given instruction */
 void
-mapRegs_S390Instr(HRegRemap *m, struct s390_insn *insn, Bool mode64)
+mapRegs_S390Instr(HRegRemap *m, s390_insn *insn, Bool mode64)
 {
    s390_insn_map_regs(m, insn);
 }
@@ -430,7 +439,7 @@ mapRegs_S390Instr(HRegRemap *m, struct s390_insn *insn, Bool mode64)
    assign the source and destination to *src and *dst.  If in doubt say No.
    Used by the register allocator to do move coalescing. */
 Bool
-isMove_S390Instr(struct s390_insn *insn, HReg *src, HReg *dst)
+isMove_S390Instr(s390_insn *insn, HReg *src, HReg *dst)
 {
    return s390_insn_is_reg_reg_move(insn, src, dst);
 }
@@ -514,7 +523,7 @@ s390_opnd_RMI_get_reg_usage(HRegUsage *u, s390_opnd_RMI op)
 
 
 /* Tell the register allocator how the given insn uses the registers */
-void
+static void
 s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
 {
    initHRegUsage(u);
@@ -730,7 +739,7 @@ s390_opnd_RMI_map_regs(HRegRemap *m, s390_opnd_RMI *op)
 }
 
 
-void
+static void
 s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
 {
    switch (insn->tag) {
@@ -914,7 +923,7 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
 /* Return True, if INSN is a move between two registers of the same class.
    In that case assign the source and destination registers to SRC and DST,
    respectively. */
-Bool
+static Bool
 s390_insn_is_reg_reg_move(const s390_insn *insn, HReg *src, HReg *dst)
 {
    if (insn->tag == S390_INSN_MOVE &&
@@ -931,7 +940,6 @@ s390_insn_is_reg_reg_move(const s390_insn *insn, HReg *src, HReg *dst)
 /*------------------------------------------------------------*/
 /*--- Functions to emit a sequence of bytes                ---*/
 /*------------------------------------------------------------*/
-
 
 static __inline__ UChar *
 emit_2bytes(UChar *p, ULong val)
@@ -957,7 +965,6 @@ emit_6bytes(UChar *p, ULong val)
 /*------------------------------------------------------------*/
 /*--- Functions to emit various instruction formats        ---*/
 /*------------------------------------------------------------*/
-
 
 static UChar *
 emit_RI(UChar *p, UInt op, UChar r1, UShort i2)
@@ -1106,7 +1113,6 @@ emit_S(UChar *p, UInt op, UChar b2, UShort d2)
 /*------------------------------------------------------------*/
 /*--- Functions to emit particular instructions            ---*/
 /*------------------------------------------------------------*/
-
 
 static UChar *
 s390_emit_AR(UChar *p, UChar r1, UChar r2)
@@ -7020,8 +7026,7 @@ s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
 
 
 Int
-emit_S390Instr(UChar *buf, Int nbuf, struct s390_insn *insn,
-               Bool mode64,
+emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
                void *dispatch_unassisted, void *dispatch_assisted)
 {
    UChar *end;

@@ -1934,7 +1934,6 @@ static test_t tests_fcr_ops_two[] = {
 
 #if !defined (NO_FLOAT)
 
-#if 0   // TODO: Not yet supported
 static void test_fres (void)
 {
     __asm__ __volatile__ ("fres         17, 14");
@@ -1944,7 +1943,6 @@ static void test_frsqrte (void)
 {
     __asm__ __volatile__ ("frsqrte      17, 14");
 }
-#endif
 
 static void test_frsp (void)
 {
@@ -2004,8 +2002,8 @@ static void test_fctidz (void)
 #endif // #ifdef __powerpc64__
 
 static test_t tests_fa_ops_one[] = {
-   //    { &test_fres            , "        fres", },   // TODO: Not yet supported
-   //    { &test_frsqrte         , "     frsqrte", },   // TODO: Not yet supported
+    { &test_fres            , "        fres", },
+    { &test_frsqrte         , "     frsqrte", },
     { &test_frsp            , "        frsp", },
     { &test_fctiw           , "       fctiw", },
     { &test_fctiwz          , "      fctiwz", },
@@ -2025,7 +2023,6 @@ static test_t tests_fa_ops_one[] = {
 
 #if !defined (NO_FLOAT)
 
-#if 0   // TODO: Not yet supported
 static void test_fres_ (void)
 {
     __asm__ __volatile__ ("fres.        17, 14");
@@ -2035,7 +2032,6 @@ static void test_frsqrte_ (void)
 {
     __asm__ __volatile__ ("frsqrte.     17, 14");
 }
-#endif
 
 static void test_frsp_ (void)
 {
@@ -2090,8 +2086,8 @@ static void test_fctidz_ (void)
 #endif // #ifdef __powerpc64__
 
 static test_t tests_far_ops_one[] = {
-   //    { &test_fres_           , "       fres.", },   // TODO: Not yet supported
-    //    { &test_frsqrte_        , "    frsqrte.", },   // TODO: Not yet supported
+    { &test_fres_           , "       fres.", },
+    { &test_frsqrte_        , "    frsqrte.", },
     { &test_frsp_           , "       frsp.", },
     { &test_fctiw_          , "      fctiw.", },
     { &test_fctiwz_         , "     fctiwz.", },
@@ -5723,11 +5719,16 @@ static void test_float_one_arg (const char* name, test_func_t func,
    double res;
    uint64_t u0, ur;
    volatile uint32_t flags;
-   int i, zap_hi_32bits;
+   int i;
+   unsigned zap_hi_32bits, zap_lo_44bits, zap_lo_47bits;
 
    /* if we're testing fctiw or fctiwz, zap the hi 32bits,
       as they're undefined */
-   zap_hi_32bits = strstr(name, "fctiw") != NULL;
+   zap_hi_32bits = strstr(name, " fctiw")    != NULL  ? 1 : 0;
+   zap_lo_44bits = strstr(name, " fres")     != NULL  ? 1 : 0;
+   zap_lo_47bits = strstr(name, " frsqrte")  != NULL  ? 1 : 0;
+
+   assert(zap_hi_32bits + zap_lo_44bits + zap_lo_47bits <= 1);
 
    for (i=0; i<nb_fargs; i++) {
       u0 = *(uint64_t *)(&fargs[i]);
@@ -5741,7 +5742,11 @@ static void test_float_one_arg (const char* name, test_func_t func,
        ur = *(uint64_t *)(&res);
 
       if (zap_hi_32bits)
-         ur &= 0xFFFFFFFFULL;
+         ur &= 0x00000000FFFFFFFFULL;
+      if (zap_lo_44bits)
+         ur &= 0xFFFFF00000000000ULL;
+      if (zap_lo_47bits)
+         ur &= 0xFFFF800000000000ULL;
 
 #ifndef __powerpc64__
       printf("%s %016llx => %016llx",

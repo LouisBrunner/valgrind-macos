@@ -362,10 +362,10 @@ put_fpr_pair(UInt archreg, IRExpr *expr)
 
 
 /* Flags thunk offsets */
-#define S390X_GUEST_OFFSET_CC_OP    S390_GUEST_OFFSET(guest_CC_OP)
-#define S390X_GUEST_OFFSET_CC_DEP1  S390_GUEST_OFFSET(guest_CC_DEP1)
-#define S390X_GUEST_OFFSET_CC_DEP2  S390_GUEST_OFFSET(guest_CC_DEP2)
-#define S390X_GUEST_OFFSET_CC_NDEP  S390_GUEST_OFFSET(guest_CC_NDEP)
+#define S390X_GUEST_OFFSET_CC_OP    S390X_GUEST_OFFSET(guest_CC_OP)
+#define S390X_GUEST_OFFSET_CC_DEP1  S390X_GUEST_OFFSET(guest_CC_DEP1)
+#define S390X_GUEST_OFFSET_CC_DEP2  S390X_GUEST_OFFSET(guest_CC_DEP2)
+#define S390X_GUEST_OFFSET_CC_NDEP  S390X_GUEST_OFFSET(guest_CC_NDEP)
 
 /*------------------------------------------------------------*/
 /*--- Build the flags thunk.                               ---*/
@@ -629,8 +629,8 @@ s390_call_calculate_cond(UInt m)
         s390_call_calculate_icc(op,dep1,dep2,True)
 
 
-#define OFFB_TISTART   offsetof(VexGuestS390XState, guest_TISTART)
-#define OFFB_TILEN     offsetof(VexGuestS390XState, guest_TILEN)
+#define OFFB_TISTART   S390X_GUEST_OFFSET(guest_TISTART)
+#define OFFB_TILEN     S390X_GUEST_OFFSET(guest_TILEN)
 
 
 /*------------------------------------------------------------*/
@@ -647,22 +647,22 @@ static UInt
 ar_offset(UInt archreg)
 {
    static const UInt offset[16] = {
-      offsetof(VexGuestS390XState, guest_a0),
-      offsetof(VexGuestS390XState, guest_a1),
-      offsetof(VexGuestS390XState, guest_a2),
-      offsetof(VexGuestS390XState, guest_a3),
-      offsetof(VexGuestS390XState, guest_a4),
-      offsetof(VexGuestS390XState, guest_a5),
-      offsetof(VexGuestS390XState, guest_a6),
-      offsetof(VexGuestS390XState, guest_a7),
-      offsetof(VexGuestS390XState, guest_a8),
-      offsetof(VexGuestS390XState, guest_a9),
-      offsetof(VexGuestS390XState, guest_a10),
-      offsetof(VexGuestS390XState, guest_a11),
-      offsetof(VexGuestS390XState, guest_a12),
-      offsetof(VexGuestS390XState, guest_a13),
-      offsetof(VexGuestS390XState, guest_a14),
-      offsetof(VexGuestS390XState, guest_a15),
+      S390X_GUEST_OFFSET(guest_a0),
+      S390X_GUEST_OFFSET(guest_a1),
+      S390X_GUEST_OFFSET(guest_a2),
+      S390X_GUEST_OFFSET(guest_a3),
+      S390X_GUEST_OFFSET(guest_a4),
+      S390X_GUEST_OFFSET(guest_a5),
+      S390X_GUEST_OFFSET(guest_a6),
+      S390X_GUEST_OFFSET(guest_a7),
+      S390X_GUEST_OFFSET(guest_a8),
+      S390X_GUEST_OFFSET(guest_a9),
+      S390X_GUEST_OFFSET(guest_a10),
+      S390X_GUEST_OFFSET(guest_a11),
+      S390X_GUEST_OFFSET(guest_a12),
+      S390X_GUEST_OFFSET(guest_a13),
+      S390X_GUEST_OFFSET(guest_a14),
+      S390X_GUEST_OFFSET(guest_a15),
    };
 
    vassert(archreg < 16);
@@ -704,22 +704,22 @@ static UInt
 fpr_offset(UInt archreg)
 {
    static const UInt offset[16] = {
-      offsetof(VexGuestS390XState, guest_f0),
-      offsetof(VexGuestS390XState, guest_f1),
-      offsetof(VexGuestS390XState, guest_f2),
-      offsetof(VexGuestS390XState, guest_f3),
-      offsetof(VexGuestS390XState, guest_f4),
-      offsetof(VexGuestS390XState, guest_f5),
-      offsetof(VexGuestS390XState, guest_f6),
-      offsetof(VexGuestS390XState, guest_f7),
-      offsetof(VexGuestS390XState, guest_f8),
-      offsetof(VexGuestS390XState, guest_f9),
-      offsetof(VexGuestS390XState, guest_f10),
-      offsetof(VexGuestS390XState, guest_f11),
-      offsetof(VexGuestS390XState, guest_f12),
-      offsetof(VexGuestS390XState, guest_f13),
-      offsetof(VexGuestS390XState, guest_f14),
-      offsetof(VexGuestS390XState, guest_f15),
+      S390X_GUEST_OFFSET(guest_f0),
+      S390X_GUEST_OFFSET(guest_f1),
+      S390X_GUEST_OFFSET(guest_f2),
+      S390X_GUEST_OFFSET(guest_f3),
+      S390X_GUEST_OFFSET(guest_f4),
+      S390X_GUEST_OFFSET(guest_f5),
+      S390X_GUEST_OFFSET(guest_f6),
+      S390X_GUEST_OFFSET(guest_f7),
+      S390X_GUEST_OFFSET(guest_f8),
+      S390X_GUEST_OFFSET(guest_f9),
+      S390X_GUEST_OFFSET(guest_f10),
+      S390X_GUEST_OFFSET(guest_f11),
+      S390X_GUEST_OFFSET(guest_f12),
+      S390X_GUEST_OFFSET(guest_f13),
+      S390X_GUEST_OFFSET(guest_f14),
+      S390X_GUEST_OFFSET(guest_f15),
    };
 
    vassert(archreg < 16);
@@ -784,22 +784,22 @@ static UInt
 gpr_offset(UInt archreg)
 {
    static const UInt offset[16] = {
-      offsetof(VexGuestS390XState, guest_r0),
-      offsetof(VexGuestS390XState, guest_r1),
-      offsetof(VexGuestS390XState, guest_r2),
-      offsetof(VexGuestS390XState, guest_r3),
-      offsetof(VexGuestS390XState, guest_r4),
-      offsetof(VexGuestS390XState, guest_r5),
-      offsetof(VexGuestS390XState, guest_r6),
-      offsetof(VexGuestS390XState, guest_r7),
-      offsetof(VexGuestS390XState, guest_r8),
-      offsetof(VexGuestS390XState, guest_r9),
-      offsetof(VexGuestS390XState, guest_r10),
-      offsetof(VexGuestS390XState, guest_r11),
-      offsetof(VexGuestS390XState, guest_r12),
-      offsetof(VexGuestS390XState, guest_r13),
-      offsetof(VexGuestS390XState, guest_r14),
-      offsetof(VexGuestS390XState, guest_r15),
+      S390X_GUEST_OFFSET(guest_r0),
+      S390X_GUEST_OFFSET(guest_r1),
+      S390X_GUEST_OFFSET(guest_r2),
+      S390X_GUEST_OFFSET(guest_r3),
+      S390X_GUEST_OFFSET(guest_r4),
+      S390X_GUEST_OFFSET(guest_r5),
+      S390X_GUEST_OFFSET(guest_r6),
+      S390X_GUEST_OFFSET(guest_r7),
+      S390X_GUEST_OFFSET(guest_r8),
+      S390X_GUEST_OFFSET(guest_r9),
+      S390X_GUEST_OFFSET(guest_r10),
+      S390X_GUEST_OFFSET(guest_r11),
+      S390X_GUEST_OFFSET(guest_r12),
+      S390X_GUEST_OFFSET(guest_r13),
+      S390X_GUEST_OFFSET(guest_r14),
+      S390X_GUEST_OFFSET(guest_r15),
    };
 
    vassert(archreg < 16);
@@ -1157,7 +1157,7 @@ get_gpr_b2(UInt archreg)
 static UInt
 counter_offset(void)
 {
-   return offsetof(VexGuestS390XState, guest_counter);
+   return S390X_GUEST_OFFSET(guest_counter);
 }
 
 /* Return the guest state offset of double word #0 of the counter register. */
@@ -1233,7 +1233,7 @@ get_counter_w1(void)
 static UInt
 fpc_offset(void)
 {
-   return offsetof(VexGuestS390XState, guest_fpc);
+   return S390X_GUEST_OFFSET(guest_fpc);
 }
 
 /* Return the guest state offset of word #0 of the fpc register. */
@@ -10582,7 +10582,7 @@ s390_irgen_guest_NRADDR(void)
    if (0)
       vex_printf("%%R3 = guest_NRADDR\n");
 
-   put_gpr_dw0(3, IRExpr_Get(S390_GUEST_OFFSET(guest_NRADDR), Ity_I64));
+   put_gpr_dw0(3, IRExpr_Get(S390X_GUEST_OFFSET(guest_NRADDR), Ity_I64));
 }
 
 static void
@@ -13000,7 +13000,7 @@ disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
          IA should be up-to-date since it made so at the start of each
          insn, but nevertheless be paranoid and update it again right
          now. */
-      addStmtToIRSB(irsb, IRStmt_Put(S390_GUEST_OFFSET(guest_IA),
+      addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
                                      mkaddr_expr(guest_IA_curr_instr)));
 
       irsb->next = mkaddr_expr(guest_IA_next_instr);
@@ -13050,7 +13050,7 @@ disInstr_S390(IRSB        *irsb_IN,
 
    /* We may be asked to update the guest IA before going further. */
    if (put_IP)
-      addStmtToIRSB(irsb, IRStmt_Put(S390_GUEST_OFFSET(guest_IA),
+      addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
                                      mkaddr_expr(guest_IA_curr_instr)));
 
    return disInstr_S390_WRK(guest_code + delta, resteerOkFn, callback_opaque);

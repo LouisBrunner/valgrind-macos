@@ -147,13 +147,13 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
 Bool
 guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
-   Int lr_min = offsetof(VexGuestS390XState, guest_LR);
+   Int lr_min = S390X_GUEST_OFFSET(guest_LR);
    Int lr_max = lr_min + 8 - 1;
-   Int sp_min = offsetof(VexGuestS390XState, guest_SP);
+   Int sp_min = S390X_GUEST_OFFSET(guest_SP);
    Int sp_max = sp_min + 8 - 1;
-   Int fp_min = offsetof(VexGuestS390XState, guest_FP);
+   Int fp_min = S390X_GUEST_OFFSET(guest_FP);
    Int fp_max = fp_min + 8 - 1;
-   Int ia_min = offsetof(VexGuestS390XState, guest_IA);
+   Int ia_min = S390X_GUEST_OFFSET(guest_IA);
    Int ia_max = ia_min + 8 - 1;
 
    if (maxoff < lr_min || minoff > lr_max) {
@@ -185,7 +185,7 @@ guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 
 
 #define ALWAYSDEFD(field)                             \
-    { offsetof(VexGuestS390XState, field),            \
+    { S390X_GUEST_OFFSET(field),            \
       (sizeof ((VexGuestS390XState*)0)->field) }
 
 VexGuestLayout s390xGuest_layout = {
@@ -194,15 +194,15 @@ VexGuestLayout s390xGuest_layout = {
    .total_sizeB = sizeof(VexGuestS390XState),
 
    /* Describe the stack pointer. */
-   .offset_SP = offsetof(VexGuestS390XState, guest_SP),
+   .offset_SP = S390X_GUEST_OFFSET(guest_SP),
    .sizeof_SP = 8,
 
    /* Describe the frame pointer. */
-   .offset_FP = offsetof(VexGuestS390XState, guest_FP),
+   .offset_FP = S390X_GUEST_OFFSET(guest_FP),
    .sizeof_FP = 8,
 
    /* Describe the instruction pointer. */
-   .offset_IP = offsetof(VexGuestS390XState, guest_IA),
+   .offset_IP = S390X_GUEST_OFFSET(guest_IA),
    .sizeof_IP = 8,
 
    /* Describe any sections to be regarded by Memcheck as

@@ -33,7 +33,7 @@
 #ifndef __VEX_GUEST_S390_DEFS_H
 #define __VEX_GUEST_S390_DEFS_H
 
-#include "libvex_basictypes.h"
+#include "libvex_basictypes.h"        // offsetof
 #include "libvex_ir.h"                // IRSB  (needed by bb_to_IR.h)
 #include "libvex.h"                   // VexArch  (needed by bb_to_IR.h)
 #include "guest_generic_bb_to_IR.h"   // DisResult
@@ -69,7 +69,7 @@ Bool guest_s390x_state_requires_precise_mem_exns ( Int, Int );
 extern VexGuestLayout s390xGuest_layout;
 
 
-#define S390_GUEST_OFFSET(x)  offsetof(VexGuestS390XState, x)
+#define S390X_GUEST_OFFSET(x)  offsetof(VexGuestS390XState, x)
 
 /*------------------------------------------------------------*/
 /*--- Dirty Helper functions.                              ---*/

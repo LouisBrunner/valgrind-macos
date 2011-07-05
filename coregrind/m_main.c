@@ -1841,8 +1841,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    if (VG_(clo_wait_for_gdb)) {
-      Long iters;
-      volatile Long q;
+      ULong iters, q;
       VG_(debugLog)(1, "main", "Wait for GDB\n");
       VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
 
@@ -1862,9 +1861,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #       error "Unknown plat"
 #     endif
 
-      iters *= 1000*1000*1000;
+      iters *= 1000ULL * 1000 * 1000;
       for (q = 0; q < iters; q++) 
-         ;
+         __asm__ __volatile__("" ::: "memory","cc");
    }
 
    //--------------------------------------------------------------

@@ -4733,14 +4733,14 @@ PRE(sys_ioctl)
             PRE_MEM_WRITE( "ioctl(USBDEVFS_BULK).data", (Addr)vkub->data, vkub->len);
          else
             PRE_MEM_READ( "ioctl(USBDEVFS_BULK).data", (Addr)vkub->data, vkub->len);
-         break;
       }
+      break;
    case VKI_USBDEVFS_GETDRIVER:
       if ( ARG3 ) {
          struct vki_usbdevfs_getdriver *vkugd = (struct vki_usbdevfs_getdriver *) ARG3;
          PRE_MEM_WRITE( "ioctl(USBDEVFS_GETDRIVER)", (Addr)&vkugd->driver, sizeof(vkugd->driver));
-         break;
       }
+      break;
    case VKI_USBDEVFS_SUBMITURB:
       if ( ARG3 ) {
          struct vki_usbdevfs_urb *vkuu = (struct vki_usbdevfs_urb *)ARG3;
@@ -4784,20 +4784,20 @@ PRE(sys_ioctl)
                PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
             PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).actual_length", (Addr)&vkuu->actual_length, sizeof(vkuu->actual_length));
          }
-         break;
       }
+      break;
    case VKI_USBDEVFS_DISCARDURB:
       break;
    case VKI_USBDEVFS_REAPURB:
       if ( ARG3 ) {
          PRE_MEM_WRITE( "ioctl(USBDEVFS_REAPURB)", ARG3, sizeof(struct vki_usbdevfs_urb **));
-         break;
       }
+      break;
    case VKI_USBDEVFS_REAPURBNDELAY:
       if ( ARG3 ) {
          PRE_MEM_WRITE( "ioctl(USBDEVFS_REAPURBNDELAY)", ARG3, sizeof(struct vki_usbdevfs_urb **));
-         break;
       }
+      break;
    case VKI_USBDEVFS_CONNECTINFO:
       PRE_MEM_WRITE( "ioctl(USBDEVFS_CONNECTINFO)", ARG3, sizeof(struct vki_usbdevfs_connectinfo));
       break;
@@ -5577,21 +5577,21 @@ POST(sys_ioctl)
          struct vki_usbdevfs_ctrltransfer *vkuc = (struct vki_usbdevfs_ctrltransfer *)ARG3;
          if (vkuc->bRequestType & 0x80)
             POST_MEM_WRITE((Addr)vkuc->data, RES);
-         break;
       }
+      break;
    case VKI_USBDEVFS_BULK:
       if ( ARG3 ) {
          struct vki_usbdevfs_bulktransfer *vkub = (struct vki_usbdevfs_bulktransfer *)ARG3;
          if (vkub->ep & 0x80)
             POST_MEM_WRITE((Addr)vkub->data, RES);
-         break;
       }
+      break;
    case VKI_USBDEVFS_GETDRIVER:
       if ( ARG3 ) {
          struct vki_usbdevfs_getdriver *vkugd = (struct vki_usbdevfs_getdriver *)ARG3;
          POST_MEM_WRITE((Addr)&vkugd->driver, sizeof(vkugd->driver));
-         break;
       }
+      break;
    case VKI_USBDEVFS_REAPURB:
    case VKI_USBDEVFS_REAPURBNDELAY:
       if ( ARG3 ) {
@@ -5621,8 +5621,8 @@ POST(sys_ioctl)
                POST_MEM_WRITE((Addr)(*vkuu)->buffer, (*vkuu)->actual_length);
             POST_MEM_WRITE((Addr)&(*vkuu)->actual_length, sizeof((*vkuu)->actual_length));
          }
-         break;
       }
+      break;
    case VKI_USBDEVFS_CONNECTINFO:
       POST_MEM_WRITE(ARG3, sizeof(struct vki_usbdevfs_connectinfo));
       break;

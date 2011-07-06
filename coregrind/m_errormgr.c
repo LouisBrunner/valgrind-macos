@@ -346,14 +346,6 @@ static void gen_suppression(Error* err)
 
    vg_assert(err);
 
-   /* In XML mode, we also need to print the plain text version of the
-      suppresion in a CDATA section.  What that really means is, we
-      need to generate the plaintext version both in XML and text
-      mode.  So generate it into TEXT. */
-   text = VG_(newXA)( VG_(malloc), "errormgr.gen_suppression.1",
-                      VG_(free), sizeof(HChar) );
-   vg_assert(text);
-
    ec = VG_(get_error_where)(err);
    vg_assert(ec);
 
@@ -363,6 +355,14 @@ static void gen_suppression(Error* err)
                 VG_(details).name);
       return;
    }
+
+   /* In XML mode, we also need to print the plain text version of the
+      suppresion in a CDATA section.  What that really means is, we
+      need to generate the plaintext version both in XML and text
+      mode.  So generate it into TEXT. */
+   text = VG_(newXA)( VG_(malloc), "errormgr.gen_suppression.1",
+                      VG_(free), sizeof(HChar) );
+   vg_assert(text);
 
    /* Ok.  Generate the plain text version into TEXT. */
    VG_(xaprintf)(text, "{\n");

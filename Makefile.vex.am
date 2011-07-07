@@ -66,7 +66,8 @@ pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 			    pub/libvex_guest_arm.h \
 			    pub/libvex_guest_s390x.h
 	rm -f auxprogs/genoffsets.s
-	$(CC) $(LIBVEX_CFLAGS) \
+	$(CC) $(CFLAGS) \
+	      $(LIBVEX_CFLAGS) \
 	      $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
 				-O -S -o auxprogs/genoffsets.s \
 					 auxprogs/genoffsets.c

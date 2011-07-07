@@ -1126,6 +1126,11 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          return unop(Iop_1Uto64,
                      binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
       }
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondNZ)) {
+         /* long long and/or/xor, then NZ --> test dst!=0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+      }
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondL)) {
          /* long long and/or/xor, then L

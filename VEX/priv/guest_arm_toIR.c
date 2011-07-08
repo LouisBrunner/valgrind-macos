@@ -15977,6 +15977,30 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* ---------------- (T4) ADDW Rd, Rn, #uimm12 -------------- */
+   if (INSN0(15,11) == BITS5(1,1,1,1,0)
+       && INSN0(9,4) == BITS6(1,0,0,0,0,0)
+       && INSN1(15,15) == 0) {
+      UInt rN = INSN0(3,0);
+      UInt rD = INSN1(11,8);
+      Bool valid = !isBadRegT(rN) && !isBadRegT(rD);
+      /* but allow "addw sp, sp, #uimm12" */
+      if (!valid && rD == 13 && rN == 13)
+         valid = True;
+      if (valid) {
+         IRTemp argL = newTemp(Ity_I32);
+         IRTemp argR = newTemp(Ity_I32);
+         IRTemp res  = newTemp(Ity_I32);
+         UInt imm12  = (INSN0(10,10) << 11) | (INSN1(14,12) << 8) | INSN1(7,0);
+         assign(argL, getIRegT(rN));
+         assign(argR, mkU32(imm12));
+         assign(res,  binop(Iop_Add32, mkexpr(argL), mkexpr(argR)));
+         putIRegT(rD, mkexpr(res), condT);
+         DIP("addw r%u, r%u, #%u\n", rD, rN, imm12);
+         goto decode_success;
+      }
+   }
+
    /* ---------------- (T2) CMP.W Rn, #constT ---------------- */
    /* ---------------- (T2) CMN.W Rn, #constT ---------------- */
    if (INSN0(15,11) == BITS5(1,1,1,1,0)
@@ -16064,6 +16088,30 @@ DisResult disInstr_THUMB_WRK (
          }
          DIP("%s%s.w r%u, r%u, #%u\n",
              isRSB ? "rsb" : "sub", bS == 1 ? "s" : "", rD, rN, imm32);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T4) SUBW Rd, Rn, #uimm12 ------------------- */
+   if (INSN0(15,11) == BITS5(1,1,1,1,0)
+       && INSN0(9,4) == BITS6(1,0,1,0,1,0)
+       && INSN1(15,15) == 0) {
+      UInt rN = INSN0(3,0);
+      UInt rD = INSN1(11,8);
+      Bool valid = !isBadRegT(rN) && !isBadRegT(rD);
+      /* but allow "subw sp, sp, #uimm12" */
+      if (!valid && rD == 13 && rN == 13)
+         valid = True;
+      if (valid) {
+         IRTemp argL  = newTemp(Ity_I32);
+         IRTemp argR  = newTemp(Ity_I32);
+         IRTemp res   = newTemp(Ity_I32);
+         UInt imm12   = (INSN0(10,10) << 11) | (INSN1(14,12) << 8) | INSN1(7,0);
+         assign(argL, getIRegT(rN));
+         assign(argR, mkU32(imm12));
+         assign(res,  binop(Iop_Sub32, mkexpr(argL), mkexpr(argR)));
+         putIRegT(rD, mkexpr(res), condT);
+         DIP("subw r%u, r%u, #%u\n", rD, rN, imm12);
          goto decode_success;
       }
    }

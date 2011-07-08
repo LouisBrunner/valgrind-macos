@@ -1,6 +1,6 @@
 
 /* How to compile:
-   gcc -O -g -Wall -mcpu=cortex-a8 -o testarmv6int testarmv6int.c
+   gcc -O -g -Wall -mcpu=cortex-a8 -o v6intThumb none/tests/arm/v6intThumb.c
 */
 
 #include <stdio.h>
@@ -1375,6 +1375,16 @@ int main ( void )
    TESTINST2("add.w  r1, r2, #0x0dd00000", 0x7fffffff, r1, r2, cv);
    TESTCARRYEND
 
+   printf("(T4) ADDW Rd, Rn, #uimm12\n");
+   TESTCARRY
+   TESTINST2("addw r1, r2, #0x000", 0x31415927, r1, r2, cv);
+   TESTINST2("addw r1, r2, #0x000", 0x91415927, r1, r2, cv);
+   TESTINST2("addw r1, r2, #0xABC", 0x31415927, r1, r2, cv);
+   TESTINST2("addw r1, r2, #0xABC", 0x91415927, r1, r2, cv);
+   TESTINST2("addw r1, r2, #0xFFF", 0x31415927, r1, r2, cv);
+   TESTINST2("addw r1, r2, #0xFFF", 0x91415927, r1, r2, cv);
+   TESTCARRYEND
+
    printf("(T3) CMP.W Rn, #constT [allegedly]\n");
    TESTCARRY
    TESTINST1x("cmp.w r1, #0xffffffff", 0x31415927, r1, cv);
@@ -1471,6 +1481,16 @@ int main ( void )
    TESTINST2("sub.w  r1, r2, #0x80000000", 0x7fffffff, r1, r2, cv);
    TESTINST2("sub.w  r1, r2, #0xff000000", 0x80000000, r1, r2, cv);
    TESTINST2("sub.w  r1, r2, #0x0dd00000", 0x7fffffff, r1, r2, cv);
+   TESTCARRYEND
+
+   printf("(T4) SUBW Rd, Rn, #uimm12\n");
+   TESTCARRY
+   TESTINST2("subw r1, r2, #0x000", 0x31415927, r1, r2, cv);
+   TESTINST2("subw r1, r2, #0x000", 0x91415927, r1, r2, cv);
+   TESTINST2("subw r1, r2, #0xABC", 0x31415927, r1, r2, cv);
+   TESTINST2("subw r1, r2, #0xABC", 0x91415927, r1, r2, cv);
+   TESTINST2("subw r1, r2, #0xFFF", 0x31415927, r1, r2, cv);
+   TESTINST2("subw r1, r2, #0xFFF", 0x91415927, r1, r2, cv);
    TESTCARRYEND
 
    printf("(T3) RSB{S}.W Rd, Rn, #constT [allegedly]\n");

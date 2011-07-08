@@ -934,6 +934,31 @@ add.w  r1, r2, #0x80000000 :: rd 0x00000000 rm 0x80000000, c:v-in 3, cpsr 0xf000
 add.w  r1, r2, #0x80000000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 add.w  r1, r2, #0xff000000 :: rd 0x7f000000 rm 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
 add.w  r1, r2, #0x0dd00000 :: rd 0x8dcfffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+(T4) ADDW Rd, Rn, #uimm12
+addw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+addw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 0, cpsr 0xc0000000 NZ  
+addw r1, r2, #0xABC :: rd 0x314163e3 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+addw r1, r2, #0xABC :: rd 0x914163e3 rm 0x91415927, c:v-in 0, cpsr 0xc0000000 NZ  
+addw r1, r2, #0xFFF :: rd 0x31416926 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+addw r1, r2, #0xFFF :: rd 0x91416926 rm 0x91415927, c:v-in 0, cpsr 0xc0000000 NZ  
+addw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+addw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 1, cpsr 0xd0000000 NZ V
+addw r1, r2, #0xABC :: rd 0x314163e3 rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+addw r1, r2, #0xABC :: rd 0x914163e3 rm 0x91415927, c:v-in 1, cpsr 0xd0000000 NZ V
+addw r1, r2, #0xFFF :: rd 0x31416926 rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+addw r1, r2, #0xFFF :: rd 0x91416926 rm 0x91415927, c:v-in 1, cpsr 0xd0000000 NZ V
+addw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+addw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 2, cpsr 0xe0000000 NZC 
+addw r1, r2, #0xABC :: rd 0x314163e3 rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+addw r1, r2, #0xABC :: rd 0x914163e3 rm 0x91415927, c:v-in 2, cpsr 0xe0000000 NZC 
+addw r1, r2, #0xFFF :: rd 0x31416926 rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+addw r1, r2, #0xFFF :: rd 0x91416926 rm 0x91415927, c:v-in 2, cpsr 0xe0000000 NZC 
+addw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+addw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 3, cpsr 0xf0000000 NZCV
+addw r1, r2, #0xABC :: rd 0x314163e3 rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+addw r1, r2, #0xABC :: rd 0x914163e3 rm 0x91415927, c:v-in 3, cpsr 0xf0000000 NZCV
+addw r1, r2, #0xFFF :: rd 0x31416926 rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+addw r1, r2, #0xFFF :: rd 0x91416926 rm 0x91415927, c:v-in 3, cpsr 0xf0000000 NZCV
 (T3) CMP.W Rn, #constT [allegedly]
 cmp.w r1, #0xffffffff :: rd 0x31415927, c:v-in 0, cpsr 0x00000000     
 cmp.w r1, #0xee00ee00 :: rd 0x31415927, c:v-in 0, cpsr 0x00000000     
@@ -1251,6 +1276,31 @@ sub.w  r1, r2, #0x80000000 :: rd 0x00000000 rm 0x80000000, c:v-in 3, cpsr 0xf000
 sub.w  r1, r2, #0x80000000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 sub.w  r1, r2, #0xff000000 :: rd 0x81000000 rm 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
 sub.w  r1, r2, #0x0dd00000 :: rd 0x722fffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+(T4) SUBW Rd, Rn, #uimm12
+subw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+subw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 0, cpsr 0xc0000000 NZ  
+subw r1, r2, #0xABC :: rd 0x31414e6b rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+subw r1, r2, #0xABC :: rd 0x91414e6b rm 0x91415927, c:v-in 0, cpsr 0xc0000000 NZ  
+subw r1, r2, #0xFFF :: rd 0x31414928 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+subw r1, r2, #0xFFF :: rd 0x91414928 rm 0x91415927, c:v-in 0, cpsr 0xc0000000 NZ  
+subw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+subw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 1, cpsr 0xd0000000 NZ V
+subw r1, r2, #0xABC :: rd 0x31414e6b rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+subw r1, r2, #0xABC :: rd 0x91414e6b rm 0x91415927, c:v-in 1, cpsr 0xd0000000 NZ V
+subw r1, r2, #0xFFF :: rd 0x31414928 rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+subw r1, r2, #0xFFF :: rd 0x91414928 rm 0x91415927, c:v-in 1, cpsr 0xd0000000 NZ V
+subw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+subw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 2, cpsr 0xe0000000 NZC 
+subw r1, r2, #0xABC :: rd 0x31414e6b rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+subw r1, r2, #0xABC :: rd 0x91414e6b rm 0x91415927, c:v-in 2, cpsr 0xe0000000 NZC 
+subw r1, r2, #0xFFF :: rd 0x31414928 rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+subw r1, r2, #0xFFF :: rd 0x91414928 rm 0x91415927, c:v-in 2, cpsr 0xe0000000 NZC 
+subw r1, r2, #0x000 :: rd 0x31415927 rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+subw r1, r2, #0x000 :: rd 0x91415927 rm 0x91415927, c:v-in 3, cpsr 0xf0000000 NZCV
+subw r1, r2, #0xABC :: rd 0x31414e6b rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+subw r1, r2, #0xABC :: rd 0x91414e6b rm 0x91415927, c:v-in 3, cpsr 0xf0000000 NZCV
+subw r1, r2, #0xFFF :: rd 0x31414928 rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+subw r1, r2, #0xFFF :: rd 0x91414928 rm 0x91415927, c:v-in 3, cpsr 0xf0000000 NZCV
 (T3) RSB{S}.W Rd, Rn, #constT [allegedly]
 rsbs.w r1, r2, #0xffffffff :: rd 0xcebea6d8 rm 0x31415927, c:v-in 0, cpsr 0xa0000000 N C 
 rsbs.w r1, r2, #0xee00ee00 :: rd 0xbcbf94d9 rm 0x31415927, c:v-in 0, cpsr 0xa0000000 N C 

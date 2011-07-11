@@ -2783,6 +2783,68 @@ POST(sys_sigprocmask)
    if (RES == 0 && ARG3 != 0)
       POST_MEM_WRITE( ARG3, sizeof(vki_old_sigset_t));
 }
+
+/* Convert from non-RT to RT sigset_t's */
+static 
+void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
+{
+   VG_(sigemptyset)(set);
+   set->sig[0] = *oldset;
+}
+PRE(sys_sigaction)
+{
+   vki_sigaction_toK_t   new, *newp;
+   vki_sigaction_fromK_t old, *oldp;
+
+   PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "sigaction",
+                 int, signum, const struct old_sigaction *, act,
+                 struct old_sigaction *, oldact);
+
+   newp = oldp = NULL;
+
+   if (ARG2 != 0) {
+      struct vki_old_sigaction *sa = (struct vki_old_sigaction *)ARG2;
+      PRE_MEM_READ( "sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
+      PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
+      PRE_MEM_READ( "sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
+      if (ML_(safe_to_deref)(sa,sizeof(sa)) 
+          && (sa->sa_flags & VKI_SA_RESTORER))
+         PRE_MEM_READ( "sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
+   }
+
+   if (ARG3 != 0) {
+      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
+      oldp = &old;
+   }
+
+   if (ARG2 != 0) {
+      struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
+
+      new.ksa_handler = oldnew->ksa_handler;
+      new.sa_flags = oldnew->sa_flags;
+      new.sa_restorer = oldnew->sa_restorer;
+      convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
+      newp = &new;
+   }
+
+   SET_STATUS_from_SysRes( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
+
+   if (ARG3 != 0 && SUCCESS && RES == 0) {
+      struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
+
+      oldold->ksa_handler = oldp->ksa_handler;
+      oldold->sa_flags = oldp->sa_flags;
+      oldold->sa_restorer = oldp->sa_restorer;
+      oldold->sa_mask = oldp->sa_mask.sig[0];
+   }
+}
+POST(sys_sigaction)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0 && ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
+}
 #endif
 
 PRE(sys_signalfd)

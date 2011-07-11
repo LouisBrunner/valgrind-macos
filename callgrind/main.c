@@ -1355,6 +1355,91 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
     VG_(message)(Vg_DebugMsg, "%s: instrumentation switched %s\n",
 		 reason, state ? "ON" : "OFF");
 }
+
+/* helper for dump_state_togdb */
+static void dump_state_of_thread_togdb(thread_info* ti)
+{
+    static Char buf[512];
+    static FullCost sum = 0, tmp = 0;
+    Int t, p, i;
+    BBCC *from, *to;
+    call_entry* ce;
+
+    t = CLG_(current_tid);
+    CLG_(init_cost_lz)( CLG_(sets).full, &sum );
+    CLG_(copy_cost_lz)( CLG_(sets).full, &tmp, ti->lastdump_cost );
+    CLG_(add_diff_cost)( CLG_(sets).full, sum, ti->lastdump_cost,
+			 ti->states.entry[0]->cost);
+    CLG_(copy_cost)( CLG_(sets).full, ti->lastdump_cost, tmp );
+    CLG_(sprint_mappingcost)(buf, CLG_(dumpmap), sum);
+    VG_(gdb_printf)("events-%d: %s\n", t, buf);
+    VG_(gdb_printf)("frames-%d: %d\n", t, CLG_(current_call_stack).sp);
+
+    ce = 0;
+    for(i = 0; i < CLG_(current_call_stack).sp; i++) {
+      ce = CLG_(get_call_entry)(i);
+      /* if this frame is skipped, we don't have counters */
+      if (!ce->jcc) continue;
+      
+      from = ce->jcc->from;
+      VG_(gdb_printf)("function-%d-%d: %s\n",t, i, from->cxt->fn[0]->name);
+      VG_(gdb_printf)("calls-%d-%d: %llu\n",t, i, ce->jcc->call_counter);
+      
+      /* FIXME: EventSets! */
+      CLG_(copy_cost)( CLG_(sets).full, sum, ce->jcc->cost );
+      CLG_(copy_cost)( CLG_(sets).full, tmp, ce->enter_cost );
+      CLG_(add_diff_cost)( CLG_(sets).full, sum,
+			  ce->enter_cost, CLG_(current_state).cost );
+      CLG_(copy_cost)( CLG_(sets).full, ce->enter_cost, tmp );
+      
+      p = VG_(sprintf)(buf, "events-%d-%d: ",t, i);
+      CLG_(sprint_mappingcost)(buf + p, CLG_(dumpmap), sum );
+      VG_(gdb_printf)("%s\n", buf);
+    }
+    if (ce && ce->jcc) {
+      to = ce->jcc->to;
+      VG_(gdb_printf)("function-%d-%d: %s\n",t, i, to->cxt->fn[0]->name );
+    }
+}
+
+/* Dump current state */
+static void dump_state_togdb(void)
+{
+    static Char buf[512];
+    thread_info** th;
+    int t, p;
+    Int orig_tid = CLG_(current_tid);
+
+    VG_(gdb_printf)("instrumentation: %s\n",
+		    CLG_(instrument_state) ? "on":"off");
+    if (!CLG_(instrument_state)) return;
+
+    VG_(gdb_printf)("executed-bbs: %llu\n", CLG_(stat).bb_executions);
+    VG_(gdb_printf)("executed-calls: %llu\n", CLG_(stat).call_counter);
+    VG_(gdb_printf)("distinct-bbs: %d\n", CLG_(stat).distinct_bbs);
+    VG_(gdb_printf)("distinct-calls: %d\n", CLG_(stat).distinct_jccs);
+    VG_(gdb_printf)("distinct-functions: %d\n", CLG_(stat).distinct_fns);
+    VG_(gdb_printf)("distinct-contexts: %d\n", CLG_(stat).distinct_contexts);
+
+    /* "events:" line. Given here because it will be dynamic in the future */
+    p = VG_(sprintf)(buf, "events: ");
+    CLG_(sprint_eventmapping)(buf+p, CLG_(dumpmap));
+    VG_(gdb_printf)("%s\n", buf);
+    /* "part:" line (number of last part. Is 0 at start */
+    VG_(gdb_printf)("part: %d\n", CLG_(get_dump_counter)());
+		
+    /* threads */
+    th = CLG_(get_threads)();
+    p = VG_(sprintf)(buf, "threads:");
+    for(t=1;t<VG_N_THREADS;t++) {
+	if (!th[t]) continue;
+	p += VG_(sprintf)(buf+p, " %d", t);
+    }
+    VG_(gdb_printf)("%s\n", buf);
+    VG_(gdb_printf)("current-tid: %d\n", orig_tid);
+    CLG_(forall_threads)(dump_state_of_thread_togdb);
+}
+
   
 static void print_monitor_help ( void )
 {
@@ -1364,6 +1449,10 @@ static void print_monitor_help ( void )
    VG_(gdb_printf) ("        dump counters\n");
    VG_(gdb_printf) ("  zero\n");
    VG_(gdb_printf) ("        zero counters\n");
+   VG_(gdb_printf) ("  status\n");
+   VG_(gdb_printf) ("        print status (statistics and shadow stacks)\n");
+   VG_(gdb_printf) ("  instrumentation [on|off]\n");
+   VG_(gdb_printf) ("        get/set (if on/off given) instrumentation state\n");
    VG_(gdb_printf) ("\n");
 }
 
@@ -1377,7 +1466,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    VG_(strcpy) (s, req);
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
-   switch (VG_(keyword_id) ("help dump zero", 
+   switch (VG_(keyword_id) ("help dump zero status instrumentation", 
                             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -1393,6 +1482,20 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  2: { /* zero */
       CLG_(zero_all_cost)(False);
       return True;
+   }
+   case 3: { /* status */
+     dump_state_togdb();
+     return True;
+   }
+   case 4: { /* instrumentation */
+     Char* arg = VG_(strtok_r) (0, " ", &ssaveptr);
+     if (!arg) {
+       VG_(gdb_printf)("instrumentation: %s\n",
+		       CLG_(instrument_state) ? "on":"off");
+     }
+     else
+       CLG_(set_instrument_state)("Command", VG_(strcmp)(arg,"off")!=0);
+     return True;
    }
 
    default: 

@@ -1,0 +1,2 @@
+prog:stfle
+prereq: ../../../tests/s390x_features s390x-stfle z196

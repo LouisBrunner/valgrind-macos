@@ -7,8 +7,7 @@
 #  This file is part of Callgrind, a cache-simulator and call graph
 #  tracer built on Valgrind.
 #
-#  Copyright (C) 2003,2004,2005 Josef Weidendorfer
-#     Josef.Weidendorfer@gmx.de
+#  Copyright (C) 2003-2011 Josef Weidendorfer <Josef.Weidendorfer@gmx.de>
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License as
@@ -28,39 +27,18 @@
 sub getCallgrindPids {
 
   @pids = ();
-  foreach $f (</tmp/callgrind.info.*>) {
-    ($pid) = ($f =~ /info\.(\d+)/);
-    if ($pid eq "") { next; }
-    $mapfile = "/proc/$pid/maps";
-    if (!-e $mapfile) { next; }
-
-    open MAP, "<$mapfile";
-    $found = 0;
-    while(<MAP>) {
-      # works both for VG 3.0 and VG 3.1+
-      if (/callgrind/) { $found = 1; }
-    }
-    close MAP;
-    if ($found == 0) { next; }
-
-    $res = open INFO, "<$f";
-    if (!$res) { next; }
-    while(<INFO>) {
-      if (/version: (\d+)/) { $mversion{$pid} = $1; }
-      if (/cmd: (.+)$/) { $cmd{$pid} = $1; }
-      if (/control: (.+)$/) { $control{$pid} = $1; }
-      if (/base: (.+)$/) { $base{$pid} = $1; }
-      if (/result: (.+)$/) { $result{$pid} = $1; }
-    }
-    close INFO;
-
-    if ($mversion{$pid} > 1) {
-      print " PID $pid: Unsupported command interface (version $mversion{$pid}) ?!\n\n";
-      next;
-    }
-
-    push(@pids, $pid);
+  open LIST, "vgdb -l|";
+  while(<LIST>) {
+      if (/^use --pid=(\d+) for valgrind\s+(.*)$/) {
+	  $pid = $1;
+	  $cmd = $2;
+	  if (!($cmd =~ /--tool=callgrind/)) { next; }
+	  while($cmd =~ s/^-+\S+\s+//) {}
+	  $cmd{$pid} = $cmd;
+	  push(@pids, $pid);
+      }
   }
+  close LIST;
 }
 
 sub printHeader {
@@ -68,7 +46,7 @@ sub printHeader {
   $headerPrinted = 1;
 
   print "Observe the status and control currently active callgrind runs.\n";
-  print "(C) 2003-2005, Josef Weidendorfer (Josef.Weidendorfer\@gmx.de)\n\n";
+  print "(C) 2003-2011, Josef Weidendorfer (Josef.Weidendorfer\@gmx.de)\n\n";
 }
 
 sub printVersion {
@@ -88,24 +66,22 @@ sub printHelp {
   print "If no pids/names are given, an action is applied to all currently\n";
   print "active Callgrind runs. Default action is printing short information.\n\n";
   print "Options:\n";
-  print "  -h --help        Show this help text\n";
-  print "  --version        Show version\n";
-  print "  -l --long        Show more information\n";
-  print "  -s --stat        Show statistics\n";
-  print "  -b --back        Show stack/back trace\n";
-  print "  -e [<A>,...]     Show event counters for <A>,... (default: all)\n";
-  print "  --dump[=<s>]     Request a dump optionally using <s> as description\n";
-  print "  -z --zero        Zero all event counters\n";
-  print "  -k --kill        Kill\n";
-  print "  --instr=<on|off> Switch instrumentation state on/off\n";
-  print "  -w=<dir>         Specify the startup directory of an active Callgrind run\n";
+  print "  -h --help         Show this help text\n";
+  print "  --version         Show version\n";
+  print "  -s --stat         Show statistics\n";
+  print "  -b --back         Show stack/back trace\n";
+  print "  -e [<A>,...]      Show event counters for <A>,... (default: all)\n";
+  print "  --dump[=<s>]      Request a dump optionally using <s> as description\n";
+  print "  -z --zero         Zero all event counters\n";
+  print "  -k --kill         Kill\n";
+  print "  -i --instr=on|off Switch instrumentation state on/off\n";
   print "\n";
   exit;
 }
 
 
 #
-# Parts more or less copied from ct_annotate (author: Nicholas Nethercote)
+# Parts more or less copied from cg_annotate (author: Nicholas Nethercote)
 #
 
 sub prepareEvents {
@@ -213,25 +189,18 @@ $requestDump = 0;
 $switchInstr = 0;
 $headerPrinted = 0;
 $dumpHint = "";
-$gotW = 0;
-$workingDir = "";
 
 %spids = ();
 foreach $arg (@ARGV) {
   if ($arg =~ /^-/) {
     if ($requestDump == 1) { $requestDump = 2; }
     if ($requestEvents == 1) { $requestEvents = 2; }
-    if ($gotW == 1) { $gotW = 2; }
 
     if ($arg =~ /^(-h|--help)$/) {
 	printHelp;
     }
     elsif ($arg =~ /^--version$/) {
 	printVersion;
-    }
-    elsif ($arg =~ /^(-l|--long)$/) {
-	$printLong = 1;
-	next;
     }
     elsif ($arg =~ /^(-s|--stat)$/) {
 	$printStatus = 1;
@@ -267,25 +236,14 @@ foreach $arg (@ARGV) {
     elsif ($arg =~ /^(-i|--instr)(|=on|=off)$/) {
 	$switchInstr = 2;
 	if ($2 eq "=on") {
-	    $switchInstrMode = "+";
+	    $switchInstrMode = "on";
 	}
 	elsif ($2 eq "=off") {
-	    $switchInstrMode = "-";
+	    $switchInstrMode = "off";
 	}
 	else {
 	    # check next argument for "on" or "off"
 	    $switchInstr = 1;
-	}
-	next;
-    }
-    elsif ($arg =~ /^-w(|=.*)$/) {
-	if ($1 ne "") {
-	    $gotW = 2;
-	    $workingDir = substr($1,1);
-	}
-	else {
-	    # take next argument as working directory
-	    $gotW = 1;
 	}
 	next;
     }
@@ -312,10 +270,10 @@ foreach $arg (@ARGV) {
     if ($switchInstr == 1) {
       $switchInstr = 2;
       if ($arg eq "on") {
-	  $switchInstrMode = "+";
+	  $switchInstrMode = "on";
       }
       elsif ($arg eq "off") {
-	  $switchInstrMode = "-";
+	  $switchInstrMode = "off";
       }
       else {
 	  print "Error: need to specify 'on' or 'off' after '-i'.\n";
@@ -323,12 +281,6 @@ foreach $arg (@ARGV) {
       }
       next;
     }
-  }
-
-  if ($gotW == 1) {
-      $gotW = 2;
-      $workingDir = $arg;
-      next;
   }
 
   if (defined $cmd{$arg}) { $spids{$arg} = 1; next; }
@@ -345,56 +297,31 @@ foreach $arg (@ARGV) {
   shortHelp;
 }
 
-if ($gotW == 1) {
-  print "Error: no directory specified after '-w'.\n";
-  shortHelp;
-}
 
 if ($switchInstr == 1) {
   print "Error: need to specify 'on' or 'off' after '-i'.\n";
   shortHelp;
 }
 
-if ($workingDir ne "") {
-    if (!-d $workingDir) {
-	print "Error: directory '$workingDir' does not exist.\n";
-	shortHelp;
-    }
-
-    # Generate dummy information for dummy pid 0
-    $pid = "0";
-    $mversion{$pid} = "1.0";
-    $cmd{$pid} = "???";
-    $base{$pid} = $workingDir;
-    $control{$pid} = "$workingDir/callgrind.cmd";
-    $result{$pid} = "$workingDir/callgrind.res";
-
-    # Only handle this faked callgrind run
-    @pids = ($pid);
-}
-
 if (scalar @pids == 0) {
   print "No active callgrind runs detected.\n";
-  #print "Detection fails when /proc/*/maps is not readable.\n";
-  print "[Detection can fail on some systems; to work around this,\n";
-  print " specify the working directory of a callgrind run with '-w']\n";
   exit;
 }
 
 @spids = keys %spids;
 if (scalar @spids >0) { @pids = @spids; }
 
-$command = "";
+$vgdbCommand = "";
 $waitForAnswer = 0;
 if ($requestDump) {
-  $command = "Dump";
-  if ($dumpHint ne "") { $command .= " ".$dumpHint; }
+  $vgdbCommand = "dump";
+  if ($dumpHint ne "") { $vgdbCommand .= " ".$dumpHint; }
 }
-if ($requestZero) { $command = "Zero"; }
-if ($requestKill) { $command = "Kill"; }
-if ($switchInstr) { $command = $switchInstrMode."Instrumentation"; }
+if ($requestZero) { $vgdbCommand = "zero"; }
+if ($requestKill) { $vgdbCommand = "v.kill"; }
+if ($switchInstr) { $vgdbCommand = "instrumentation ".$switchInstrMode; }
 if ($printStatus || $printBacktrace || $requestEvents) {
-  $command = "Status";
+  $vgdbCommand = "status";
   $waitForAnswer = 1;
 }
 
@@ -402,39 +329,12 @@ foreach $pid (@pids) {
   $pidstr = "PID $pid: ";
   if ($pid >0) { print $pidstr.$cmd{$pid}; }
 
-  if ($command eq "") {
-    if ($printLong) {
-      #print " " x length $pidstr;
-      print " (in $base{$pid})\n";
-    }
-    else {
+  if ($vgdbCommand eq "") {
       print "\n";
-    }
-    next;
-  }
-  else {
-    if (! (open CONTROL, ">$control{$pid}")) {
-      print " [sending '$command' failed: permission denied]\n";
       next;
-    }
-    print " [requesting '$command'...]\n";
-    print CONTROL $command;
-    close CONTROL;
-
-    while(-e $control{$pid}) {
-      # sleep for 250 ms
-      select(undef, undef, undef, 0.25);
-    }
   }
-
-  #print "Reading ".$result{$pid}. "...\n";
-  if ($result{$pid} eq "") { $waitForAnswer=0; }
-  if (!$waitForAnswer) { print "  OK.\n"; next; }
-
-  if (! (open RESULT, "<$result{$pid}")) {
-    print " Warning: Can't open expected result file $result{$pid}.\n";
-    next;
-  }
+  print " [requesting '$vgdbCommand']\n";
+  open RESULT, "vgdb --pid=$pid $vgdbCommand|";
 
   @tids = ();
   $ctid = 0;
@@ -488,7 +388,8 @@ foreach $pid (@pids) {
     elsif (/instrumentation: (\w+)$/) { $instrumentation = $1; }
   }
 
-  unlink $result{$pid};
+  #if ($? ne "0") { print " Got Error $?\n"; }
+  if (!$waitForAnswer) { print "  OK.\n"; next; }
 
   if ($instrumentation eq "off") {
     print "  No information available as instrumentation is switched off.\n\n";

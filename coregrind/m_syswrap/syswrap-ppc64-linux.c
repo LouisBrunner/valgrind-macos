@@ -448,7 +448,6 @@ DECL_TEMPLATE(ppc64_linux, sys_ipc);
 DECL_TEMPLATE(ppc64_linux, sys_clone);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
 DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
-//zz DECL_TEMPLATE(ppc64_linux, sys_sigaction);
 DECL_TEMPLATE(ppc64_linux, sys_fadvise64);
 
 PRE(sys_socketcall)
@@ -1076,73 +1075,6 @@ PRE(sys_rt_sigreturn)
    /* Check to see if any signals arose as a result of this. */
    *flags |= SfPollAfter;
 }
-
-//zz /* Convert from non-RT to RT sigset_t's */
-//zz static 
-//zz void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
-//zz {
-//zz    VG_(sigemptyset)(set);
-//zz    set->sig[0] = *oldset;
-//zz }
-//zz PRE(sys_sigaction)
-//zz {
-//zz    struct vki_sigaction new, old;
-//zz    struct vki_sigaction *newp, *oldp;
-//zz 
-//zz    PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ3(int, "sigaction",
-//zz                  int, signum, const struct old_sigaction *, act,
-//zz                  struct old_sigaction *, oldact);
-//zz 
-//zz    newp = oldp = NULL;
-//zz 
-//zz    if (ARG2 != 0) {
-//zz       struct vki_old_sigaction *sa = (struct vki_old_sigaction *)ARG2;
-//zz       PRE_MEM_READ( "sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
-//zz       PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
-//zz       PRE_MEM_READ( "sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
-//zz       if (ML_(safe_to_deref)(sa,sizeof(sa)) 
-//zz           && (sa->sa_flags & VKI_SA_RESTORER))
-//zz          PRE_MEM_READ( "sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
-//zz    }
-//zz 
-//zz    if (ARG3 != 0) {
-//zz       PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
-//zz       oldp = &old;
-//zz    }
-//zz 
-//zz    //jrs 20050207: what?!  how can this make any sense?
-//zz    //if (VG_(is_kerror)(SYSRES))
-//zz    //   return;
-//zz 
-//zz    if (ARG2 != 0) {
-//zz       struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
-//zz 
-//zz       new.ksa_handler = oldnew->ksa_handler;
-//zz       new.sa_flags = oldnew->sa_flags;
-//zz       new.sa_restorer = oldnew->sa_restorer;
-//zz       convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
-//zz       newp = &new;
-//zz    }
-//zz 
-//zz    SET_STATUS_from_SysRes( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
-//zz 
-//zz    if (ARG3 != 0 && SUCCESS && RES == 0) {
-//zz       struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
-//zz 
-//zz       oldold->ksa_handler = oldp->ksa_handler;
-//zz       oldold->sa_flags = oldp->sa_flags;
-//zz       oldold->sa_restorer = oldp->sa_restorer;
-//zz       oldold->sa_mask = oldp->sa_mask.sig[0];
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_sigaction)
-//zz {
-//zz    vg_assert(SUCCESS);
-//zz    if (RES == 0 && ARG3 != 0)
-//zz       POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
-//zz }
 
 #undef PRE
 #undef POST

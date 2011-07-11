@@ -341,6 +341,7 @@ DECL_TEMPLATE(arm_linux, sys_fstat64);
 DECL_TEMPLATE(arm_linux, sys_clone);
 DECL_TEMPLATE(arm_linux, sys_sigreturn);
 DECL_TEMPLATE(arm_linux, sys_rt_sigreturn);
+DECL_TEMPLATE(arm_linux, sys_sigsuspend);
 DECL_TEMPLATE(arm_linux, sys_set_tls);
 DECL_TEMPLATE(arm_linux, sys_cacheflush);
 DECL_TEMPLATE(arm_linux, sys_ptrace);
@@ -1188,6 +1189,26 @@ PRE(sys_rt_sigreturn)
    *flags |= SfPollAfter;
 }
 
+/* NB: clone of x86-linux version, and ppc32-linux has an almost
+   identical one. */
+PRE(sys_sigsuspend)
+{
+   /* The C library interface to sigsuspend just takes a pointer to
+      a signal mask but this system call has three arguments - the first
+      two don't appear to be used by the kernel and are always passed as
+      zero by glibc and the third is the first word of the signal mask
+      so only 32 signals are supported.
+     
+      In fact glibc normally uses rt_sigsuspend if it is available as
+      that takes a pointer to the signal mask so supports more signals.
+    */
+   *flags |= SfMayBlock;
+   PRINT("sys_sigsuspend ( %ld, %ld, %ld )", ARG1,ARG2,ARG3 );
+   PRE_REG_READ3(int, "sigsuspend",
+                 int, history0, int, history1,
+                 vki_old_sigset_t, mask);
+}
+
 /* Very much ARM specific */
 
 PRE(sys_set_tls)
@@ -1431,13 +1452,13 @@ static SyscallTableEntry syscall_main_table[] = {
 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
    GENX_(__NR_setsid,            sys_setsid),         // 66
-//      _____(__NR_sigaction,         sys_sigaction),      // 67
+   LINXY(__NR_sigaction,         sys_sigaction),      // 67
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
 //zz    //   (__NR_ssetmask,          sys_ssetmask),       // 69 */* (ANSI C)
 //zz 
    LINX_(__NR_setreuid,          sys_setreuid16),     // 70
    LINX_(__NR_setregid,          sys_setregid16),     // 71
-//   _____(__NR_sigsuspend,        sys_sigsuspend),     // 72
+   PLAX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
    LINXY(__NR_sigpending,        sys_sigpending),     // 73
 //zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
 //zz 
@@ -1502,7 +1523,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //zz    LINXY(__NR_adjtimex,          sys_adjtimex),       // 124
 //zz 
    GENXY(__NR_mprotect,          sys_mprotect),       // 125
-   //   LINXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
+   LINXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
 //zz    // Nb: create_module() was removed 2.4-->2.6
 //   GENX_(__NR_create_module,     sys_ni_syscall),     // 127
    LINX_(__NR_init_module,       sys_init_module),    // 128

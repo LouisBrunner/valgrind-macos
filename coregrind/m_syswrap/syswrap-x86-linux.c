@@ -1707,6 +1707,8 @@ POST(sys_socketcall)
 #  undef ARG2_5
 }
 
+/* NB: arm-linux has a clone of this one, and ppc32-linux has an almost
+   identical version. */
 PRE(sys_sigsuspend)
 {
    /* The C library interface to sigsuspend just takes a pointer to

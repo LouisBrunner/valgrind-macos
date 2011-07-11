@@ -1391,6 +1391,8 @@ PRE(sys_rt_sigreturn)
 //..    }
 //.. }
 
+/* NB: This is an almost identical clone of versions for x86-linux and
+   arm-linux, which are themselves literally identical. */
 PRE(sys_sigsuspend)
 {
    /* The C library interface to sigsuspend just takes a pointer to

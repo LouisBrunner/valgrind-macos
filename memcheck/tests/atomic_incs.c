@@ -5,6 +5,11 @@
    atomicity of the relevant instructions in the generated code; but
    the post-DCAS-merge versions of Valgrind do behave correctly. */
 
+/* On ARM, this can be compiled into either ARM or Thumb code, so as
+   to test both A and T encodings of LDREX/STREX et al.  Also on ARM,
+   it tests doubleword atomics (LDREXD, STREXD) which I don't think it
+   does on any other platform. */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -75,7 +80,22 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       );
    } while (success != 1);
 #elif defined(VGA_arm)
-   *p += n;
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "mov    r5, %0"         "\n\t"
+         "ldr    r9, [r5, #0]"   "\n\t" // p
+         "ldr    r10, [r5, #4]"  "\n\t" // n
+         "ldrexb r8, [r9]"       "\n\t"
+         "add    r8, r8, r10"    "\n\t"
+         "strexb r4, r8, [r9]"   "\n\t"
+         "str    r4, [r5, #8]"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10", "r4"
+      );
+   } while (block[2] != 0);
 #elif defined(VGA_s390x)
    int dummy;
    __asm__ __volatile__(
@@ -153,7 +173,22 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       );
    } while (success != 1);
 #elif defined(VGA_arm)
-   *p += n;
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "mov    r5, %0"         "\n\t"
+         "ldr    r9, [r5, #0]"   "\n\t" // p
+         "ldr    r10, [r5, #4]"  "\n\t" // n
+         "ldrexh r8, [r9]"       "\n\t"
+         "add    r8, r8, r10"    "\n\t"
+         "strexh r4, r8, [r9]"   "\n\t"
+         "str    r4, [r5, #8]"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10", "r4"
+      );
+   } while (block[2] != 0);
 #elif defined(VGA_s390x)
    int dummy;
    __asm__ __volatile__(
@@ -237,11 +272,11 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          "ldr   r10, [r5, #4]"  "\n\t" // n
          "ldrex r8, [r9]"       "\n\t"
          "add   r8, r8, r10"    "\n\t"
-         "strex r11, r8, [r9]"  "\n\t"
-         "str   r11, [r5, #8]"  "\n\t"
+         "strex r4, r8, [r9]"   "\n\t"
+         "str   r4, [r5, #8]"   "\n\t"
          : /*out*/
          : /*in*/ "r"(&block[0])
-         : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10"
+         : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10", "r4"
       );
    } while (block[2] != 0);
 #elif defined(VGA_s390x)
@@ -261,7 +296,7 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
 
 __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n ) 
 {
-#if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_arm)
+#if defined(VGA_x86) || defined(VGA_ppc32)
    /* do nothing; is not supported */
 #elif defined(VGA_amd64)
    // this is a bit subtle.  It relies on the fact that, on a 64-bit platform,
@@ -290,6 +325,26 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
          : /*trash*/ "memory", "cc", "r15"
       );
    } while (success != 1);
+#elif defined(VGA_arm)
+   unsigned long long int block[3]
+     = { (unsigned long long int)(unsigned long)p,
+         (unsigned long long int)n, 
+         0xFFFFFFFFFFFFFFFFULL };
+   do {
+      __asm__ __volatile__(
+         "mov    r5, %0"             "\n\t"
+         "ldr    r8,     [r5, #0]"   "\n\t" // p
+         "ldrd   r2, r3, [r5, #8]"   "\n\t" // n
+         "ldrexd r0, r1, [r8]"       "\n\t"
+         "adds   r2, r2, r0"         "\n\t"
+         "adc    r3, r3, r1"         "\n\t"
+         "strexd r1, r2, r3, [r8]"   "\n\t"
+         "str    r1, [r5, #16]"      "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "r5", "r0", "r1", "r8", "r2", "r3"
+      );
+   } while (block[2] != 0xFFFFFFFF00000000ULL);
 #elif defined(VGA_s390x)
    __asm__ __volatile__(
       "   lg	0,%0\n\t"

@@ -596,6 +596,15 @@ fi
 
 
 #----------------------------------------------------------------------------
+# Extra fine-tuning of installation directories
+#----------------------------------------------------------------------------
+AC_ARG_WITH(tmpdir,
+   [  --with-tmpdir=PATH      Specify path for temporary files],
+   tmpdir="$withval",
+   tmpdir="/tmp")
+AC_DEFINE_UNQUOTED(VG_TMPDIR, "$tmpdir", [Temporary files directory])
+
+#----------------------------------------------------------------------------
 # Libc and suppressions
 #----------------------------------------------------------------------------
 # This variable will collect the suppression files to be used.
@@ -622,6 +631,15 @@ AC_EGREP_CPP([DARWIN_LIBC], [
 #endif
 ],
 GLIBC_VERSION="darwin")
+
+# not really a version check
+AC_EGREP_CPP([BIONIC_LIBC], [
+#if defined(__ANDROID__)
+  BIONIC_LIBC
+#endif
+],
+GLIBC_VERSION="bionic")
+
 
 AC_MSG_CHECKING([the GLIBC_VERSION version])
 
@@ -725,6 +743,11 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([DARWIN_LIBC], 1, [Define to 1 if you're using Darwin])
 	# DEFAULT_SUPP set by kernel version check above.
 	;;
+     bionic)
+	AC_MSG_RESULT(Bionic)
+	AC_DEFINE([BIONIC_LIBC], 1, [Define to 1 if you're using Bionic])
+	DEFAULT_SUPP="bionic.supp ${DEFAULT_SUPP}"
+	;;
 
      *)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
@@ -745,6 +768,57 @@ DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
 
 # Add glibc and X11 suppressions for exp-sgcheck
 DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
+
+
+#----------------------------------------------------------------------------
+# Platform variants?
+#----------------------------------------------------------------------------
+
+# Normally the PLAT = (ARCH, OS) characterisation of the platform is enough.
+# But there are times where we need a bit more control.  The motivating
+# and currently only case is Android: this is almost identical to arm-linux,
+# but not quite.  So this introduces the concept of platform variant tags,
+# which get passed in the compile as -DVGPV_<arch>_<os>_<variant> along
+# with the main -DVGP_<arch>_<os> definition.
+#
+# In almost all cases, the <variant> bit is "vanilla".  But for Android
+# it is "android" instead.
+#
+# Consequently (eg), plain arm-linux would build with
+#
+#   -DVGP_arm_linux -DVGPV_arm_linux_vanilla
+#
+# whilst an Android build would have
+#
+#   -DVGP_arm_linux -DVGPV_arm_linux_android
+#
+# The setup of the platform variant is pushed relatively far down this
+# file in order that we can inspect any of the variables set above.
+
+# In the normal case ..
+VGCONF_PLATVARIANT="vanilla"
+
+# Android on ARM ?
+if test "$VGCONF_ARCH_PRI-$VGCONF_OS" = "arm-linux" \
+        -a "$GLIBC_VERSION" = "bionic";
+then
+   VGCONF_PLATVARIANT="android"
+fi
+
+AC_SUBST(VGCONF_PLATVARIANT)
+
+
+# FIXME: do we also want to define automake variables
+# VGCONF_PLATVARIANT_IS_<WHATEVER>, where WHATEVER is (currently)
+# VANILLA or ANDROID ?  This would be in the style of VGCONF_ARCHS_INCLUDE,
+# VGCONF_PLATFORMS_INCLUDE and VGCONF_OS_IS above?  Could easily enough
+# do that.  Problem is that we can't do and-ing in Makefile.am's, but
+# that's what we'd need to do to use this, since what we'd want to write
+# is something like
+#
+# VGCONF_PLATFORMS_INCLUDE_ARM_LINUX && VGCONF_PLATVARIANT_IS_ANDROID
+#
+# Oh well, something to figure out properly later on.
 
 
 #----------------------------------------------------------------------------
@@ -1909,6 +1983,8 @@ cat<<EOF
                    Build OS: ${VGCONF_OS}
        Primary build target: ${VGCONF_PLATFORM_PRI_CAPS}
      Secondary build target: ${VGCONF_PLATFORM_SEC_CAPS}
+           Platform variant: ${VGCONF_PLATVARIANT}
+      Primary -DVGPV string: -DVGPV_${VGCONF_ARCH_PRI}_${VGCONF_OS}_${VGCONF_PLATVARIANT}=1
          Default supp files: ${DEFAULT_SUPP}
 
 EOF

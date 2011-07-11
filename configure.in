@@ -846,6 +846,26 @@ AC_MSG_RESULT([no])
 ])
 
 
+# Check for PTHREAD_RWLOCK_T
+
+AC_MSG_CHECKING([for pthread_rwlock_t])
+
+AC_TRY_COMPILE(
+[
+#define _GNU_SOURCE
+#include <pthread.h>
+], [
+  pthread_rwlock_t rwl;
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_RWLOCK_T], 1,
+          [Define to 1 if you have the `pthread_rwlock_t' type.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
 # Check for PTHREAD_MUTEX_ADAPTIVE_NP
 
 AC_MSG_CHECKING([for PTHREAD_MUTEX_ADAPTIVE_NP])

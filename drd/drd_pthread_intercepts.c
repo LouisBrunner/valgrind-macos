@@ -999,6 +999,10 @@ static __always_inline int sem_post_intercept(sem_t *sem)
 
 PTH_FUNCS(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));
 
+/* Android's pthread.h doesn't say anything about rwlocks, hence these
+   functions have to be conditionally compiled. */
+#if defined(HAVE_PTHREAD_RWLOCK_T)
+
 static __always_inline
 int pthread_rwlock_init_intercept(pthread_rwlock_t* rwlock,
                                   const pthread_rwlockattr_t* attr)
@@ -1158,3 +1162,5 @@ int pthread_rwlock_unlock_intercept(pthread_rwlock_t* rwlock)
 PTH_FUNCS(int,
           pthreadZurwlockZuunlock, pthread_rwlock_unlock_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+
+#endif /* defined(HAVE_PTHREAD_RWLOCK_T) */

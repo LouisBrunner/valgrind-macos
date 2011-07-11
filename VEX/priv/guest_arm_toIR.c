@@ -16019,7 +16019,7 @@ DisResult disInstr_THUMB_WRK (
       UInt rD = INSN1(11,8);
       Bool valid = !isBadRegT(rN) && !isBadRegT(rD);
       /* but allow "add.w reg, sp, #constT" */ 
-      if (!valid && rN == 13)
+      if (!valid && rN == 13 && rD != 15)
          valid = True;
       if (valid) {
          IRTemp argL  = newTemp(Ity_I32);

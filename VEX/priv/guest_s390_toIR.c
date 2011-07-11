@@ -37,7 +37,7 @@
 #include "libvex_guest_s390x.h"      /* VexGuestS390XState */
 #include "libvex.h"                  /* needed for bb_to_IR.h */
 #include "libvex_guest_offsets.h"    /* OFFSET_s390x_SYSNO */
-
+#include "libvex_s390x_common.h"
 #include "main_util.h"               /* vassert */
 #include "main_globals.h"            /* vex_traceflags */
 #include "guest_generic_bb_to_IR.h"  /* DisResult */
@@ -10558,6 +10558,35 @@ s390_irgen_STCKE(IRTemp op2addr)
    return "stcke";
 }
 
+static HChar *
+s390_irgen_STFLE(IRTemp op2addr)
+{
+   IRDirty *d;
+   IRTemp cc = newTemp(Ity_I64);
+
+   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STFLE",
+                         &s390x_dirtyhelper_STFLE,
+                         mkIRExprVec_1(mkexpr(op2addr)));
+
+   d->needsBBP = 1;  /* Need to pass pointer to guest state to helper */
+
+   d->fxState[0].fx     = Ifx_Modify;  /* read then write */
+   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_r0);
+   d->fxState[0].size   = sizeof(ULong);
+   d->nFxState = 1;
+
+   d->mAddr = mkexpr(op2addr);
+   /* Pretend all double words are written */
+   d->mSize = S390_NUM_FACILITY_DW * sizeof(ULong);
+   d->mFx   = Ifx_Write;
+
+   stmt(IRStmt_Dirty(d));
+
+   s390_cc_thunk_fill(mkU64(S390_CC_OP_SET), mkexpr(cc), mkU64(0), mkU64(0));
+
+   return "stfle";
+}
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -10994,7 +11023,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb2a5: /* TRE */ goto unimplemented;
    case 0xb2a6: /* CU21 */ goto unimplemented;
    case 0xb2a7: /* CU12 */ goto unimplemented;
-   case 0xb2b0: /* STFLE */ goto unimplemented;
+   case 0xb2b0: s390_format_S_RD(s390_irgen_STFLE, ovl.fmt.S.b2, ovl.fmt.S.d2);
+                                 goto ok;
    case 0xb2b1: /* STFL */ goto unimplemented;
    case 0xb2b2: /* LPSWE */ goto unimplemented;
    case 0xb2b8: /* SRNMB */ goto unimplemented;

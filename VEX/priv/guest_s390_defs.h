@@ -78,7 +78,7 @@ void s390x_dirtyhelper_EX(ULong torun);
 ULong s390x_dirtyhelper_STCK(ULong *addr);
 ULong s390x_dirtyhelper_STCKF(ULong *addr);
 ULong s390x_dirtyhelper_STCKE(ULong *addr);
-
+ULong s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr);
 
 /* The various ways to compute the condition code. */
 enum {

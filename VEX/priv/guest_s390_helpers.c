@@ -35,6 +35,7 @@
 #include "libvex_guest_s390x.h"
 #include "libvex_ir.h"
 #include "libvex.h"
+#include "libvex_s390x_common.h"
 
 #include "main_util.h"
 #include "guest_generic_bb_to_IR.h"
@@ -275,6 +276,46 @@ ULong s390x_dirtyhelper_STCKF(ULong *addr)
 ULong s390x_dirtyhelper_STCK(ULong *addr)  {return 3;}
 ULong s390x_dirtyhelper_STCKF(ULong *addr) {return 3;}
 ULong s390x_dirtyhelper_STCKE(ULong *addr) {return 3;}
+#endif /* VGA_s390x */
+
+/*------------------------------------------------------------*/
+/*--- Dirty helper for Store Facility instruction          ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+ULong
+s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
+{
+   ULong hoststfle[S390_NUM_FACILITY_DW], cc, num_dw, i;
+   register ULong reg0 asm("0") = guest_state->guest_r0 & 0xF;  /* r0[56:63] */
+
+   /* We cannot store more than S390_NUM_FACILITY_DW
+      (and it makes not much sense to do so anyhow) */
+   if (reg0 > S390_NUM_FACILITY_DW - 1)
+      reg0 = S390_NUM_FACILITY_DW - 1;
+
+   num_dw = reg0 + 1;  /* number of double words written */
+
+   asm volatile(" .insn s,0xb2b00000,%0\n"   /* stfle */
+                "ipm    %2\n"
+                "srl    %2,28\n"
+                : "=m" (hoststfle), "+d"(reg0), "=d"(cc) : : "cc", "memory");
+
+   /* Update guest register 0  with what STFLE set r0 to */
+   guest_state->guest_r0 = reg0;
+
+   for (i = 0; i < num_dw; ++i)
+      ((ULong *)addr)[i] = hoststfle[i];
+
+   return cc;
+}
+
+#else
+
+ULong
+s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
+{
+   return 3;
+}
 #endif /* VGA_s390x */
 
 /*------------------------------------------------------------*/

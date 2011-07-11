@@ -709,18 +709,21 @@ typedef
          struct {
             ARMMulOp op;
          } Mul;
-         /* LDREX{,H,B} r0, [r1]
+         /* LDREX{,H,B} r2, [r4]  and
+            LDREXD r2, r3, [r4]   (on LE hosts, transferred value is r3:r2)
             Again, hardwired registers since this is not performance
             critical, and there are possibly constraints on the
             registers that we can't express in the register allocator.*/
          struct {
-            Int  szB; /* currently only 4 is allowed */
+            Int  szB; /* 1, 2, 4 or 8 */
          } LdrEX;
-         /* STREX{,H,B} r0, r1, [r2]
-            r0 = SC( [r2] = r1 )
+         /* STREX{,H,B} r0, r2, [r4]  and  
+            STREXD r0, r2, r3, [r4]   (on LE hosts, transferred value is r3:r2)
+            r0 = SC( [r4] = r2 )      (8, 16, 32 bit transfers)
+            r0 = SC( [r4] = r3:r2)    (64 bit transfers)
             Ditto comment re fixed registers. */
          struct {
-            Int  szB; /* currently only 4 is allowed */
+            Int  szB; /* 1, 2, 4 or 8 */
          } StrEX;
          /* VFP INSTRUCTIONS */
          /* 64-bit Fp load/store */

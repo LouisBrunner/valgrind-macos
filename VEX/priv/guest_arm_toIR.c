@@ -13370,52 +13370,107 @@ DisResult disInstr_ARM_WRK (
    /* -- ARMv6 instructions                                    -- */
    /* ----------------------------------------------------------- */
 
-   /* --------------------- ldrex, strex --------------------- */
+   /* ------------------- {ldr,str}ex{,b,h,d} ------------------- */
 
-   // LDREX
-   if (0x01900F9F == (insn & 0x0FF00FFF)) {
-      UInt rT = INSN(15,12);
-      UInt rN = INSN(19,16);
-      if (rT == 15 || rN == 15) {
-         /* undecodable; fall through */
+   // LDREXD, LDREX, LDREXH, LDREXB
+   if (0x01900F9F == (insn & 0x0F900FFF)) {
+      UInt   rT    = INSN(15,12);
+      UInt   rN    = INSN(19,16);
+      IRType ty    = Ity_INVALID;
+      IROp   widen = Iop_INVALID;
+      HChar* nm    = NULL;
+      Bool   valid = True;
+      switch (INSN(22,21)) {
+         case 0: nm = "";  ty = Ity_I32; break;
+         case 1: nm = "d"; ty = Ity_I64; break;
+         case 2: nm = "b"; ty = Ity_I8;  widen = Iop_8Uto32; break;
+         case 3: nm = "h"; ty = Ity_I16; widen = Iop_16Uto32; break;
+         default: vassert(0);
+      }
+      if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
+         if (rT == 15 || rN == 15)
+            valid = False;
       } else {
+         vassert(ty == Ity_I64);
+         if ((rT & 1) == 1 || rT == 14 || rN == 15)
+            valid = False;
+      }
+      if (valid) {
          IRTemp res;
          /* make unconditional */
          if (condT != IRTemp_INVALID) {
-            mk_skip_over_A32_if_cond_is_false( condT );
-            condT = IRTemp_INVALID;
+           mk_skip_over_A32_if_cond_is_false( condT );
+           condT = IRTemp_INVALID;
          }
          /* Ok, now we're unconditional.  Do the load. */
-         res = newTemp(Ity_I32);
+         res = newTemp(ty);
+         // FIXME: assumes little-endian guest
          stmt( IRStmt_LLSC(Iend_LE, res, getIRegA(rN),
                            NULL/*this is a load*/) );
-         putIRegA(rT, mkexpr(res), IRTemp_INVALID, Ijk_Boring);
-         DIP("ldrex%s r%u, [r%u]\n", nCC(INSN_COND), rT, rN);
+         if (ty == Ity_I64) {
+            // FIXME: assumes little-endian guest
+            putIRegA(rT+0, unop(Iop_64to32, mkexpr(res)),
+                           IRTemp_INVALID, Ijk_Boring);
+            putIRegA(rT+1, unop(Iop_64HIto32, mkexpr(res)),
+                           IRTemp_INVALID, Ijk_Boring);
+            DIP("ldrex%s%s r%u, r%u, [r%u]\n",
+                nm, nCC(INSN_COND), rT+0, rT+1, rN);
+         } else {
+            putIRegA(rT, widen == Iop_INVALID
+                            ? mkexpr(res) : unop(widen, mkexpr(res)),
+                     IRTemp_INVALID, Ijk_Boring);
+            DIP("ldrex%s%s r%u, [r%u]\n", nm, nCC(INSN_COND), rT, rN);
+         }
          goto decode_success;
       }
-      /* fall through */
+      /* undecodable; fall through */
    }
 
-   // STREX
-   if (0x01800F90 == (insn & 0x0FF00FF0)) {
-      UInt rT = INSN(3,0);
-      UInt rN = INSN(19,16);
-      UInt rD = INSN(15,12);
-      if (rT == 15 || rN == 15 || rD == 15
-          || rD == rT || rD == rN) {
-         /* undecodable; fall through */
+   // STREXD, STREX, STREXH, STREXB
+   if (0x01800F90 == (insn & 0x0F900FF0)) {
+      UInt   rT     = INSN(3,0);
+      UInt   rN     = INSN(19,16);
+      UInt   rD     = INSN(15,12);
+      IRType ty     = Ity_INVALID;
+      IROp   narrow = Iop_INVALID;
+      HChar* nm     = NULL;
+      Bool   valid  = True;
+      switch (INSN(22,21)) {
+         case 0: nm = "";  ty = Ity_I32; break;
+         case 1: nm = "d"; ty = Ity_I64; break;
+         case 2: nm = "b"; ty = Ity_I8;  narrow = Iop_32to8; break;
+         case 3: nm = "h"; ty = Ity_I16; narrow = Iop_32to16; break;
+         default: vassert(0);
+      }
+      if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
+         if (rD == 15 || rN == 15 || rT == 15
+             || rD == rN || rD == rT)
+            valid = False;
       } else {
-         IRTemp resSC1, resSC32;
-
+         vassert(ty == Ity_I64);
+         if (rD == 15 || (rT & 1) == 1 || rT == 14 || rN == 15
+             || rD == rN || rD == rT || rD == rT+1)
+            valid = False;
+      }
+      if (valid) {
+         IRTemp resSC1, resSC32, data;
          /* make unconditional */
          if (condT != IRTemp_INVALID) {
             mk_skip_over_A32_if_cond_is_false( condT );
             condT = IRTemp_INVALID;
          }
-
          /* Ok, now we're unconditional.  Do the store. */
+         data = newTemp(ty);
+         assign(data,
+                ty == Ity_I64
+                   // FIXME: assumes little-endian guest
+                   ? binop(Iop_32HLto64, getIRegA(rT+1), getIRegA(rT+0))
+                   : narrow == Iop_INVALID
+                      ? getIRegA(rT)
+                      : unop(narrow, getIRegA(rT)));
          resSC1 = newTemp(Ity_I1);
-         stmt( IRStmt_LLSC(Iend_LE, resSC1, getIRegA(rN), getIRegA(rT)) );
+         // FIXME: assumes little-endian guest
+         stmt( IRStmt_LLSC(Iend_LE, resSC1, getIRegA(rN), mkexpr(data)) );
 
          /* Set rD to 1 on failure, 0 on success.  Currently we have
             resSC1 == 0 on failure, 1 on success. */
@@ -13425,7 +13480,13 @@ DisResult disInstr_ARM_WRK (
 
          putIRegA(rD, mkexpr(resSC32),
                       IRTemp_INVALID, Ijk_Boring);
-         DIP("strex%s r%u, r%u, [r%u]\n", nCC(INSN_COND), rD, rT, rN);
+         if (ty == Ity_I64) {
+            DIP("strex%s%s r%u, r%u, r%u, [r%u]\n",
+                nm, nCC(INSN_COND), rD, rT, rT+1, rN);
+         } else {
+            DIP("strex%s%s r%u, r%u, [r%u]\n",
+                nm, nCC(INSN_COND), rD, rT, rN);
+         }
          goto decode_success;
       }
       /* fall through */
@@ -17771,6 +17832,49 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* --------------- (T1) LDREX{B,H} --------------- */
+   if (INSN0(15,4) == 0xE8D
+       && (INSN1(11,0) == 0xF4F || INSN1(11,0) == 0xF5F)) {
+      UInt rN  = INSN0(3,0);
+      UInt rT  = INSN1(15,12);
+      Bool isH = INSN1(11,0) == 0xF5F;
+      if (!isBadRegT(rT) && rN != 15) {
+         IRTemp res;
+         // go uncond
+         mk_skip_over_T32_if_cond_is_false( condT );
+         // now uncond
+         res = newTemp(isH ? Ity_I16 : Ity_I8);
+         stmt( IRStmt_LLSC(Iend_LE, res, getIRegT(rN),
+                           NULL/*this is a load*/ ));
+         putIRegT(rT, unop(isH ? Iop_16Uto32 : Iop_8Uto32, mkexpr(res)),
+                      IRTemp_INVALID);
+         DIP("ldrex%c r%u, [r%u]\n", isH ? 'h' : 'b', rT, rN);
+         goto decode_success;
+      }
+   }
+
+   /* --------------- (T1) LDREXD --------------- */
+   if (INSN0(15,4) == 0xE8D && INSN1(7,0) == 0x7F) {
+      UInt rN  = INSN0(3,0);
+      UInt rT  = INSN1(15,12);
+      UInt rT2 = INSN1(11,8);
+      if (!isBadRegT(rT) && !isBadRegT(rT2) && rT != rT2 && rN != 15) {
+         IRTemp res;
+         // go uncond
+         mk_skip_over_T32_if_cond_is_false( condT );
+         // now uncond
+         res = newTemp(Ity_I64);
+         // FIXME: assumes little-endian guest
+         stmt( IRStmt_LLSC(Iend_LE, res, getIRegT(rN),
+                           NULL/*this is a load*/ ));
+         // FIXME: assumes little-endian guest
+         putIRegT(rT,  unop(Iop_64to32,   mkexpr(res)), IRTemp_INVALID);
+         putIRegT(rT2, unop(Iop_64HIto32, mkexpr(res)), IRTemp_INVALID);
+         DIP("ldrexd r%u, r%u, [r%u]\n", rT, rT2, rN);
+         goto decode_success;
+      }
+   }
+
    /* ----------------- (T1) STREX ----------------- */
    if (INSN0(15,4) == 0xE84) {
       UInt rN   = INSN0(3,0);
@@ -17780,30 +17884,84 @@ DisResult disInstr_THUMB_WRK (
       if (!isBadRegT(rD) && !isBadRegT(rT) && rN != 15 
           && rD != rN && rD != rT) {
          IRTemp resSC1, resSC32;
-
          // go uncond
          mk_skip_over_T32_if_cond_is_false( condT );
          // now uncond
-
          /* Ok, now we're unconditional.  Do the store. */
          resSC1 = newTemp(Ity_I1);
          stmt( IRStmt_LLSC(Iend_LE,
                            resSC1,
                            binop(Iop_Add32, getIRegT(rN), mkU32(imm8 * 4)),
                            getIRegT(rT)) );
-
          /* Set rD to 1 on failure, 0 on success.  Currently we have
             resSC1 == 0 on failure, 1 on success. */
          resSC32 = newTemp(Ity_I32);
          assign(resSC32,
                 unop(Iop_1Uto32, unop(Iop_Not1, mkexpr(resSC1))));
-
          putIRegT(rD, mkexpr(resSC32), IRTemp_INVALID);
          DIP("strex r%u, r%u, [r%u, #+%u]\n", rD, rT, rN, imm8 * 4);
          goto decode_success;
       }
    }
 
+   /* --------------- (T1) STREX{B,H} --------------- */
+   if (INSN0(15,4) == 0xE8C
+       && (INSN1(11,4) == 0xF4 || INSN1(11,4) == 0xF5)) {
+      UInt rN  = INSN0(3,0);
+      UInt rT  = INSN1(15,12);
+      UInt rD  = INSN1(3,0);
+      Bool isH = INSN1(11,4) == 0xF5;
+      if (!isBadRegT(rD) && !isBadRegT(rT) && rN != 15 
+          && rD != rN && rD != rT) {
+         IRTemp resSC1, resSC32;
+         // go uncond
+         mk_skip_over_T32_if_cond_is_false( condT );
+         // now uncond
+         /* Ok, now we're unconditional.  Do the store. */
+         resSC1 = newTemp(Ity_I1);
+         stmt( IRStmt_LLSC(Iend_LE, resSC1, getIRegT(rN),
+                           unop(isH ? Iop_32to16 : Iop_32to8,
+                                getIRegT(rT))) );
+         /* Set rD to 1 on failure, 0 on success.  Currently we have
+            resSC1 == 0 on failure, 1 on success. */
+         resSC32 = newTemp(Ity_I32);
+         assign(resSC32,
+                unop(Iop_1Uto32, unop(Iop_Not1, mkexpr(resSC1))));
+         putIRegT(rD, mkexpr(resSC32), IRTemp_INVALID);
+         DIP("strex%c r%u, r%u, [r%u]\n", isH ? 'h' : 'b', rD, rT, rN);
+         goto decode_success;
+      }
+   }
+
+   /* ---------------- (T1) STREXD ---------------- */
+   if (INSN0(15,4) == 0xE8C && INSN1(7,4) == BITS4(0,1,1,1)) {
+      UInt rN  = INSN0(3,0);
+      UInt rT  = INSN1(15,12);
+      UInt rT2 = INSN1(11,8);
+      UInt rD  = INSN1(3,0);
+      if (!isBadRegT(rD) && !isBadRegT(rT) && !isBadRegT(rT2)
+          && rN != 15 && rD != rN && rD != rT && rD != rT) {
+         IRTemp resSC1, resSC32, data;
+         // go uncond
+         mk_skip_over_T32_if_cond_is_false( condT );
+         // now uncond
+         /* Ok, now we're unconditional.  Do the store. */
+         resSC1 = newTemp(Ity_I1);
+         data = newTemp(Ity_I64);
+         // FIXME: assumes little-endian guest
+         assign(data, binop(Iop_32HLto64, getIRegT(rT2), getIRegT(rT)));
+         // FIXME: assumes little-endian guest
+         stmt( IRStmt_LLSC(Iend_LE, resSC1, getIRegT(rN), mkexpr(data)));
+         /* Set rD to 1 on failure, 0 on success.  Currently we have
+            resSC1 == 0 on failure, 1 on success. */
+         resSC32 = newTemp(Ity_I32);
+         assign(resSC32,
+                unop(Iop_1Uto32, unop(Iop_Not1, mkexpr(resSC1))));
+         putIRegT(rD, mkexpr(resSC32), IRTemp_INVALID);
+         DIP("strexd r%u, r%u, r%u, [r%u]\n", rD, rT, rT2, rN);
+         goto decode_success;
+      }
+   }
    /* -------------- v7 barrier insns -------------- */
    if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF00) == 0x8F00) {
       /* XXX this isn't really right, is it?  The generated IR does

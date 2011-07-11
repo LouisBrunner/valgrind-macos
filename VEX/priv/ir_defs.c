@@ -3344,14 +3344,16 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          tyRes = typeOfIRTemp(tyenv, stmt->Ist.LLSC.result);
          if (stmt->Ist.LLSC.storedata == NULL) {
             /* it's a LL */
-            if (tyRes != Ity_I64 && tyRes != Ity_I32 && tyRes != Ity_I8)
+            if (tyRes != Ity_I64 && tyRes != Ity_I32
+                && tyRes != Ity_I16 && tyRes != Ity_I8)
                sanityCheckFail(bb,stmt,"Ist.LLSC(LL).result :: bogus");
          } else {
             /* it's a SC */
             if (tyRes != Ity_I1)
                sanityCheckFail(bb,stmt,"Ist.LLSC(SC).result: not :: Ity_I1");
             tyData = typeOfIRExpr(tyenv, stmt->Ist.LLSC.storedata);
-            if (tyData != Ity_I64 && tyData != Ity_I32 && tyData != Ity_I8)
+            if (tyData != Ity_I64 && tyData != Ity_I32
+                && tyData != Ity_I16 && tyData != Ity_I8)
                sanityCheckFail(bb,stmt,
                                "Ist.LLSC(SC).result :: storedata bogus");
          }

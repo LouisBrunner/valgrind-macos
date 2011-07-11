@@ -211,8 +211,8 @@ static ARMAMode2*  iselIntExpr_AMode2     ( ISelEnv* env, IRExpr* e );
 static ARMAModeV*  iselIntExpr_AModeV_wrk ( ISelEnv* env, IRExpr* e );
 static ARMAModeV*  iselIntExpr_AModeV     ( ISelEnv* env, IRExpr* e );
 
-static ARMAModeN* iselIntExpr_AModeN_wrk  ( ISelEnv* env, IRExpr* e );
-static ARMAModeN* iselIntExpr_AModeN      ( ISelEnv* env, IRExpr* e );
+static ARMAModeN*  iselIntExpr_AModeN_wrk ( ISelEnv* env, IRExpr* e );
+static ARMAModeN*  iselIntExpr_AModeN     ( ISelEnv* env, IRExpr* e );
 
 static ARMRI84*    iselIntExpr_RI84_wrk
         ( /*OUT*/Bool* didInv, Bool mayInv, ISelEnv* env, IRExpr* e );
@@ -5820,50 +5820,86 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          /* LL */
          IRTemp res = stmt->Ist.LLSC.result;
          IRType ty  = typeOfIRTemp(env->type_env, res);
-         if (ty == Ity_I32 || ty == Ity_I8) {
+         if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
             Int  szB   = 0;
             HReg r_dst = lookupIRTemp(env, res);
             HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
             switch (ty) {
                case Ity_I8:  szB = 1; break;
+               case Ity_I16: szB = 2; break;
                case Ity_I32: szB = 4; break;
                default:      vassert(0);
             }
-            addInstr(env, mk_iMOVds_RR(hregARM_R1(), raddr));
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), raddr));
             addInstr(env, ARMInstr_LdrEX(szB));
-            addInstr(env, mk_iMOVds_RR(r_dst, hregARM_R0()));
+            addInstr(env, mk_iMOVds_RR(r_dst, hregARM_R2()));
             return;
          }
-         /* else fall thru; is unhandled */
+         if (ty == Ity_I64) {
+            HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), raddr));
+            addInstr(env, ARMInstr_LdrEX(8));
+            /* Result is in r3:r2.  On a non-NEON capable CPU, we must
+               move it into a result register pair.  On a NEON capable
+               CPU, the result register will be a 64 bit NEON
+               register, so we must move it there instead. */
+            if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+               HReg dst = lookupIRTemp(env, res);
+               addInstr(env, ARMInstr_VXferD(True, dst, hregARM_R3(),
+                                                        hregARM_R2()));
+            } else {
+               HReg r_dst_hi, r_dst_lo;
+               lookupIRTemp64(&r_dst_hi, &r_dst_lo, env, res);
+               addInstr(env, mk_iMOVds_RR(r_dst_lo, hregARM_R2()));
+               addInstr(env, mk_iMOVds_RR(r_dst_hi, hregARM_R3()));
+            }
+            return;
+         }
+         /*NOTREACHED*/
+         vassert(0); 
       } else {
          /* SC */
-         IRTemp res = stmt->Ist.LLSC.result;
-         IRType ty  = typeOfIRTemp(env->type_env, res);
          IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.storedata);
-         vassert(ty == Ity_I1);
-         if (tyd == Ity_I32 || tyd == Ity_I8) {
-            Int  szB     = 0;
-            HReg r_res   = lookupIRTemp(env, res);
-            HReg rD      = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
-            HReg rA      = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-            ARMRI84* one = ARMRI84_I84(1,0);
+         if (tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
+            Int  szB = 0;
+            HReg rD  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
+            HReg rA  = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
             switch (tyd) {
                case Ity_I8:  szB = 1; break;
+               case Ity_I16: szB = 2; break;
                case Ity_I32: szB = 4; break;
                default:      vassert(0);
             }
-            addInstr(env, mk_iMOVds_RR(hregARM_R1(), rD));
-            addInstr(env, mk_iMOVds_RR(hregARM_R2(), rA));
+            addInstr(env, mk_iMOVds_RR(hregARM_R2(), rD));
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), rA));
             addInstr(env, ARMInstr_StrEX(szB));
-            /* now r0 is 1 if failed, 0 if success.  Change to IR
-               conventions (0 is fail, 1 is success).  Also transfer
-               result to r_res. */
-            addInstr(env, ARMInstr_Alu(ARMalu_XOR, r_res, hregARM_R0(), one));
-            /* And be conservative -- mask off all but the lowest bit */
-            addInstr(env, ARMInstr_Alu(ARMalu_AND, r_res, r_res, one));
-            return;
+         } else {
+            vassert(tyd == Ity_I64);
+            /* This is really ugly.  There is no is/is-not NEON
+               decision akin to the case for LL, because iselInt64Expr
+               fudges this for us, and always gets the result into two
+               GPRs even if this means moving it from a NEON
+               register. */
+            HReg rDhi, rDlo;
+            iselInt64Expr(&rDhi, &rDlo, env, stmt->Ist.LLSC.storedata);
+            HReg rA = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            addInstr(env, mk_iMOVds_RR(hregARM_R2(), rDlo));
+            addInstr(env, mk_iMOVds_RR(hregARM_R3(), rDhi));
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), rA));
+            addInstr(env, ARMInstr_StrEX(8));
          }
-         /* else fall thru; is unhandled */
+         /* now r0 is 1 if failed, 0 if success.  Change to IR
+            conventions (0 is fail, 1 is success).  Also transfer
+            result to r_res. */
+         IRTemp   res   = stmt->Ist.LLSC.result;
+         IRType   ty    = typeOfIRTemp(env->type_env, res);
+         HReg     r_res = lookupIRTemp(env, res);
+         ARMRI84* one   = ARMRI84_I84(1,0);
+         vassert(ty == Ity_I1);
+         addInstr(env, ARMInstr_Alu(ARMalu_XOR, r_res, hregARM_R0(), one));
+         /* And be conservative -- mask off all but the lowest bit */
+         addInstr(env, ARMInstr_Alu(ARMalu_AND, r_res, r_res, one));
+         return;
       }
       break;
    }

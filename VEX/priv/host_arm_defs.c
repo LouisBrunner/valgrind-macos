@@ -1206,14 +1206,14 @@ ARMInstr* ARMInstr_LdrEX ( Int szB ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag             = ARMin_LdrEX;
    i->ARMin.LdrEX.szB = szB;
-   vassert(szB == 4 || szB == 1);
+   vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARMInstr* ARMInstr_StrEX ( Int szB ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag             = ARMin_StrEX;
    i->ARMin.StrEX.szB = szB;
-   vassert(szB == 4 || szB == 1);
+   vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARMInstr* ARMInstr_VLdStD ( Bool isLoad, HReg dD, ARMAModeV* am ) {
@@ -1603,16 +1603,28 @@ void ppARMInstr ( ARMInstr* i ) {
             vex_printf("r1:r0, r2, r3");
          }
          return;
-      case ARMin_LdrEX:
-         vex_printf("ldrex%s ", i->ARMin.LdrEX.szB == 1 ? "b"
-                                : i->ARMin.LdrEX.szB == 2 ? "h" : "");
-         vex_printf("r0, [r1]");
+      case ARMin_LdrEX: {
+         HChar* sz = "";
+         switch (i->ARMin.LdrEX.szB) {
+            case 1: sz = "b"; break; case 2: sz = "h"; break;
+            case 8: sz = "d"; break; case 4: break;
+            default: vassert(0);
+         }      
+         vex_printf("ldrex%s %sr2, [r4]",
+                    sz, i->ARMin.LdrEX.szB == 8 ? "r3:" : "");
          return;
-      case ARMin_StrEX:
-         vex_printf("strex%s ", i->ARMin.StrEX.szB == 1 ? "b"
-                                : i->ARMin.StrEX.szB == 2 ? "h" : "");
-         vex_printf("r0, r1, [r2]");
+      }
+      case ARMin_StrEX: {
+         HChar* sz = "";
+         switch (i->ARMin.StrEX.szB) {
+            case 1: sz = "b"; break; case 2: sz = "h"; break;
+            case 8: sz = "d"; break; case 4: break;
+            default: vassert(0);
+         }      
+         vex_printf("strex%s r0, %sr2, [r4]",
+                    sz, i->ARMin.StrEX.szB == 8 ? "r3:" : "");
          return;
+      }
       case ARMin_VLdStD:
          if (i->ARMin.VLdStD.isLoad) {
             vex_printf("fldd  ");
@@ -1989,13 +2001,17 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
             addHRegUse(u, HRmWrite, hregARM_R1());
          return;
       case ARMin_LdrEX:
-         addHRegUse(u, HRmWrite, hregARM_R0());
-         addHRegUse(u, HRmRead, hregARM_R1());
+         addHRegUse(u, HRmRead, hregARM_R4());
+         addHRegUse(u, HRmWrite, hregARM_R2());
+         if (i->ARMin.LdrEX.szB == 8)
+            addHRegUse(u, HRmWrite, hregARM_R3());
          return;
       case ARMin_StrEX:
+         addHRegUse(u, HRmRead, hregARM_R4());
          addHRegUse(u, HRmWrite, hregARM_R0());
-         addHRegUse(u, HRmRead, hregARM_R1());
          addHRegUse(u, HRmRead, hregARM_R2());
+         if (i->ARMin.StrEX.szB == 8)
+            addHRegUse(u, HRmRead, hregARM_R3());
          return;
       case ARMin_VLdStD:
          addRegUsage_ARMAModeV(u, i->ARMin.VLdStD.amode);
@@ -2959,27 +2975,31 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          goto bad;
       }
       case ARMin_LdrEX: {
-         /* E1910F9F   ldrex    r0, [r1]
-            E1F10F9F   ldrexh   r0, [r1]
-            E1D10F9F   ldrexb   r0, [r1]
+         /* E1D42F9F   ldrexb r2, [r4]
+            E1F42F9F   ldrexh r2, [r4]
+            E1942F9F   ldrex  r2, [r4]
+            E1B42F9F   ldrexd r2, r3, [r4]
          */
          switch (i->ARMin.LdrEX.szB) {
-            case 4: *p++ = 0xE1910F9F; goto done;
-            //case 2: *p++ = 0xE1F10F9F; goto done;
-            case 1: *p++ = 0xE1D10F9F; goto done;
+            case 1: *p++ = 0xE1D42F9F; goto done;
+            case 2: *p++ = 0xE1F42F9F; goto done;
+            case 4: *p++ = 0xE1942F9F; goto done;
+            case 8: *p++ = 0xE1B42F9F; goto done;
             default: break;
          }
          goto bad;
       }
       case ARMin_StrEX: {
-         /* E1820F91   strex   r0, r1, [r2]
-            E1E20F91   strexh  r0, r1, [r2]
-            E1C20F91   strexb  r0, r1, [r2]
+         /* E1C40F92   strexb r0, r2, [r4]
+            E1E40F92   strexh r0, r2, [r4]
+            E1840F92   strex  r0, r2, [r4]
+            E1A40F92   strexd r0, r2, r3, [r4]
          */
          switch (i->ARMin.StrEX.szB) {
-            case 4: *p++ = 0xE1820F91; goto done;
-            //case 2: *p++ = 0xE1E20F91; goto done;
-            case 1: *p++ = 0xE1C20F91; goto done;
+            case 1: *p++ = 0xE1C40F92; goto done;
+            case 2: *p++ = 0xE1E40F92; goto done;
+            case 4: *p++ = 0xE1840F92; goto done;
+            case 8: *p++ = 0xE1A40F92; goto done;
             default: break;
          }
          goto bad;

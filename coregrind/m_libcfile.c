@@ -614,8 +614,8 @@ Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
    while (True) {
       if (tries++ > 10) 
          return -1;
-      VG_(sprintf)( buf, "/tmp/valgrind_%s_%08x", 
-                         part_of_name, VG_(random)( &seed ));
+      VG_(sprintf)( buf, "%s/valgrind_%s_%08x", 
+                         VG_TMPDIR, part_of_name, VG_(random)( &seed ));
       if (0)
          VG_(printf)("VG_(mkstemp): trying: %s\n", buf);
 

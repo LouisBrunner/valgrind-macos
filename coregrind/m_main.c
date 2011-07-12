@@ -1723,7 +1723,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(sprintf)(buf, "proc_%d_cmdline", VG_(getpid)());
       fd = VG_(mkstemp)( buf, buf2 );
       if (fd == -1)
-         VG_(err_config_error)("Can't create client cmdline file in /tmp.");
+         VG_(err_config_error)("Can't create client cmdline file in " VG_TMPDIR);
 
       nul[0] = 0;
       exename = VG_(args_the_exename) ? VG_(args_the_exename)
@@ -1744,7 +1744,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       /* Now delete it, but hang on to the fd. */
       r = VG_(unlink)( buf2 );
       if (r)
-         VG_(err_config_error)("Can't delete client cmdline file in /tmp.");
+         VG_(err_config_error)("Can't delete client cmdline file in " VG_TMPDIR);
 
       VG_(cl_cmdline_fd) = fd;
    }

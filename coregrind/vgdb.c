@@ -48,6 +48,7 @@ int main (int argc, char** argv)
 #include "pub_core_gdbserver.h"
 
 #include <limits.h>
+#include <unistd.h>
 #include <string.h>
 #include <poll.h>
 #include <pthread.h>

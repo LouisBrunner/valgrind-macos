@@ -99,7 +99,7 @@ static inline void my_exit ( int x )
    while (1) {}
 #  else
    extern void _exit(int status);
-   _exit(x)
+   _exit(x);
 #  endif
 }
 

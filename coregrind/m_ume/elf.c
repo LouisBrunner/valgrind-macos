@@ -390,7 +390,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
             ESZ(Phdr) *iph = &interp->p[j];
             ESZ(Addr) end;
 
-            if (iph->p_type != PT_LOAD)
+            if (iph->p_type != PT_LOAD || iph->p_memsz == 0)
                continue;
             
             if (!baseaddr_set) {

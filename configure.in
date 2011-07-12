@@ -604,6 +604,7 @@ AC_ARG_WITH(tmpdir,
    tmpdir="/tmp")
 AC_DEFINE_UNQUOTED(VG_TMPDIR, "$tmpdir", [Temporary files directory])
 
+
 #----------------------------------------------------------------------------
 # Libc and suppressions
 #----------------------------------------------------------------------------
@@ -818,7 +819,12 @@ AC_SUBST(VGCONF_PLATVARIANT)
 #
 # VGCONF_PLATFORMS_INCLUDE_ARM_LINUX && VGCONF_PLATVARIANT_IS_ANDROID
 #
-# Oh well, something to figure out properly later on.
+# Hmm.  Can't think of a nice clean solution to this.
+
+AM_CONDITIONAL(VGCONF_PLATVARIANT_IS_VANILLA,
+               test x$VGCONF_PLATVARIANT = xvanilla)
+AM_CONDITIONAL(VGCONF_PLATVARIANT_IS_ANDROID,
+               test x$VGCONF_PLATVARIANT = xandroid)
 
 
 #----------------------------------------------------------------------------

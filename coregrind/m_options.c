@@ -46,11 +46,17 @@
 VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
 Int    VG_(clo_error_exitcode) = 0;
-VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes; 
+
+#if defined(VGPV_arm_linux_android)
+VgVgdb VG_(clo_vgdb)           = Vg_VgdbNo; // currently disabled on Android
+#else
+VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
+#endif
 Int    VG_(clo_vgdb_poll)      = 5000; 
 Int    VG_(clo_vgdb_error)     = 999999999;
 Char*  VG_(clo_vgdb_prefix)    = VG_CLO_VGDB_PREFIX_DEFAULT;
 Bool   VG_(clo_vgdb_shadow_registers) = False;
+
 Bool   VG_(clo_db_attach)      = False;
 Char*  VG_(clo_db_command)     = GDB_PATH " -nw %f %p";
 Int    VG_(clo_gen_suppressions) = 0;

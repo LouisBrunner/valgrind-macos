@@ -25,11 +25,21 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
-#include "pub_core_basics.h"
-#include "pub_core_vki.h"
-#include "pub_core_libcsetjmp.h"
-#include "pub_core_threadstate.h"
-#include "pub_core_gdbserver.h"
+
+/* Too difficult to make this work on Android right now.  Let's
+   skip for the time being at least. */
+#if defined(VGPV_arm_linux_android)
+
+#include <stdio.h>
+int main (int argc, char** argv)
+{
+   fprintf(stderr,
+           "%s: is not currently available on Android, sorry.\n",
+           argv[0]);
+   return 0;
+}
+
+#else /* all other (Linux?) platforms */
 
 #include <limits.h>
 #include <unistd.h>
@@ -50,10 +60,16 @@
 #include "assert.h"
 #include <sys/user.h>
 
-#  if defined(VGO_linux)
-#include <sys/prctl.h>
-#include <linux/ptrace.h>
-#  endif
+#if defined(VGO_linux)
+#  include <sys/prctl.h>
+#  include <linux/ptrace.h>
+#endif
+
+#include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_libcsetjmp.h"
+#include "pub_core_threadstate.h"
+#include "pub_core_gdbserver.h"
 
 /* vgdb has two usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.
@@ -2348,3 +2364,5 @@ int main(int argc, char** argv)
       free (commands[i]);
    return 0;
 }
+
+#endif /* !defined(VGPV_arm_linux_android) */

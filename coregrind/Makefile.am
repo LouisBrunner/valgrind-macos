@@ -56,7 +56,10 @@ vgdb_SOURCES = vgdb.c
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) -lpthread
+vgdb_LDFLAGS   = $(AM_CFLAGS_PRI)
+if !VGCONF_PLATVARIANT_IS_ANDROID
+vgdb_LDFLAGS   += -lpthread
+endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 vgdb_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif

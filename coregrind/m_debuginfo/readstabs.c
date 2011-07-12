@@ -28,13 +28,15 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin)
-
 /*
    Stabs reader greatly improved by Nick Nethercote, Apr 02.
    This module was also extensively hacked on by Jeremy Fitzhardinge
    and Tom Hughes.
 */
+
+/* "on Linux (except android), or on Darwin" */
+#if (defined(VGO_linux) && !defined(VGPV_arm_linux_android)) \
+    || defined(VGO_darwin)
 
 #include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"
@@ -386,7 +388,8 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
    }
 }
 
-#endif // defined(VGO_linux) || defined(VGO_darwin)
+#endif /* (defined(VGO_linux) && !defined(VGPV_arm_linux_android)) \
+          || defined(VGO_darwin) */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

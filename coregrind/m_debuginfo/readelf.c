@@ -865,6 +865,7 @@ static
 Char *find_buildid(Addr image, UWord n_image)
 {
    Char* buildid = NULL;
+   __attribute__((unused)) /* on Android, at least */
    ElfXX_Ehdr* ehdr = (ElfXX_Ehdr*)image;
 
 #ifdef NT_GNU_BUILD_ID
@@ -2322,9 +2323,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          we ignore it.  On s390x stabs also doesnt work and we always
          have the dwarf info in the eh_frame.  We also segfault on
          ppc64-linux when reading stabs, so skip that.  ppc32-linux
-         seems OK though. */
-#     if !defined(VGP_amd64_linux) && !defined(VGP_s390x_linux) \
-         && !defined(VGP_ppc64_linux)
+         seems OK though.  Also skip on Android. */
+#     if !defined(VGP_amd64_linux) \
+         && !defined(VGP_s390x_linux) \
+         && !defined(VGP_ppc64_linux) \
+         && !defined(VGPV_arm_linux_android)
       if (stab_img && stabstr_img) {
          ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );

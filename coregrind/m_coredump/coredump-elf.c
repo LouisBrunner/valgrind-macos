@@ -56,7 +56,7 @@
  */
 #include <elf.h>
 #ifndef NT_PRXFPREG
-#define NT_PRXFPREG     0x46e62b7f      /* copied from gdb5.1/include/elf/common.h */
+#define NT_PRXFPREG    0x46e62b7f /* copied from gdb5.1/include/elf/common.h */
 #endif /* NT_PRXFPREG */
 
 #if	VG_WORDSIZE == 8
@@ -136,6 +136,17 @@ static void fill_phdr(ESZ(Phdr) *phdr, const NSegment *seg, UInt off, Bool write
    phdr->p_align = VKI_PAGE_SIZE;
 }
 
+#if defined(VGPV_arm_linux_android)
+/* Android's libc doesn't provide a definition for this.  Hence: */
+typedef
+   struct {
+      Elf32_Word n_namesz;
+      Elf32_Word n_descsz;
+      Elf32_Word n_type;
+   }
+   Elf32_Nhdr;
+#endif
+
 struct note {
    struct note *next;
    ESZ(Nhdr) note;
@@ -144,10 +155,13 @@ struct note {
 
 static UInt note_size(const struct note *n)
 {
-   return sizeof(ESZ(Nhdr)) + VG_ROUNDUP(VG_(strlen)(n->name)+1, 4) + VG_ROUNDUP(n->note.n_descsz, 4);
+   return sizeof(ESZ(Nhdr)) + VG_ROUNDUP(VG_(strlen)(n->name)+1, 4)
+                            + VG_ROUNDUP(n->note.n_descsz, 4);
 }
 
-static void add_note(struct note **list, const Char *name, UInt type, const void *data, UInt datasz)
+#if !defined(VGPV_arm_linux_android)
+static void add_note(struct note **list, const Char *name, UInt type,
+                     const void *data, UInt datasz)
 {
    Int namelen = VG_(strlen)(name)+1;
    Int notelen = sizeof(struct note) + 
@@ -167,13 +181,15 @@ static void add_note(struct note **list, const Char *name, UInt type, const void
    VG_(memcpy)(n->name, name, namelen);
    VG_(memcpy)(n->name+VG_ROUNDUP(namelen,4), data, datasz);
 }
+#endif /* !defined(VGPV_arm_linux_android) */
 
 static void write_note(Int fd, const struct note *n)
 {
    VG_(write)(fd, &n->note, note_size(n));
 }
 
-static void fill_prpsinfo(const ThreadState *tst, struct vki_elf_prpsinfo *prpsinfo)
+static void fill_prpsinfo(const ThreadState *tst,
+                          struct vki_elf_prpsinfo *prpsinfo)
 {
    static Char name[VKI_PATH_MAX];
 
@@ -552,25 +568,31 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
       if (VG_(threads)[i].status == VgTs_Empty)
 	 continue;
 
-#if defined(VGP_x86_linux)
+#     if defined(VGP_x86_linux)
       {
          vki_elf_fpxregset_t xfpu;
          fill_xfpu(&VG_(threads)[i], &xfpu);
          add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
       }
-#endif
+#     endif
 
       fill_fpu(&VG_(threads)[i], &fpu);
+#     if !defined(VGPV_arm_linux_android)
       add_note(&notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
+#     endif
 
       fill_prstatus(&VG_(threads)[i], &prstatus, si);
+#     if !defined(VGPV_arm_linux_android)
       add_note(&notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
+#     endif
    }
 
    fill_prpsinfo(&VG_(threads)[tid], &prpsinfo);
+#  if !defined(VGPV_arm_linux_android)
    add_note(&notelist, "CORE", NT_PRPSINFO, &prpsinfo, sizeof(prpsinfo));
+#  endif
 
-   for(note = notelist, notesz = 0; note != NULL; note = note->next)
+   for (note = notelist, notesz = 0; note != NULL; note = note->next)
       notesz += note_size(note);
 
    off = sizeof(ehdr) + sizeof(*phdrs) * num_phdrs;
@@ -594,7 +616,8 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
       if (!may_dump(seg))
 	 continue;
 
-      fill_phdr(&phdrs[idx], seg, off, (seg->end - seg->start + off) < max_size);
+      fill_phdr(&phdrs[idx], seg, off,
+                (seg->end - seg->start + off) < max_size);
       
       off += phdrs[idx].p_filesz;
 
@@ -617,7 +640,8 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 	 continue;
 
       if (phdrs[idx].p_filesz > 0) {
-	 vg_assert(VG_(lseek)(core_fd, phdrs[idx].p_offset, VKI_SEEK_SET) == phdrs[idx].p_offset);
+	 vg_assert(VG_(lseek)(core_fd, phdrs[idx].p_offset, VKI_SEEK_SET) 
+                   == phdrs[idx].p_offset);
 	 vg_assert(seg->end - seg->start >= phdrs[idx].p_filesz);
 
 	 (void)VG_(write)(core_fd, (void *)seg->start, phdrs[idx].p_filesz);

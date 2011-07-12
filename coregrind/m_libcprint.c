@@ -590,12 +590,16 @@ void VG_(err_missing_prog) ( void  )
 }
 
 __attribute__((noreturn))
-void VG_(err_config_error) ( Char* msg )
+void VG_(err_config_error) ( Char* format, ... )
 {
+   va_list vargs;
+   va_start(vargs,format);
    revert_to_stderr();
-   VG_(fmsg)("Startup or configuration error:\n   %s\n", msg);
-   VG_(fmsg)("Unable to start up properly.  Giving up.\n");
+   VG_(message) (Vg_FailMsg, "Startup or configuration error:\n   ");
+   VG_(vmessage)(Vg_FailMsg, format, vargs );
+   VG_(message) (Vg_FailMsg, "Unable to start up properly.  Giving up.\n");
    VG_(exit)(1);
+   va_end(vargs);
 }
 
 

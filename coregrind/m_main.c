@@ -391,7 +391,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
    /* Check for sane path in ./configure --prefix=... */
    if (VG_LIBDIR[0] != '/') 
       VG_(err_config_error)("Please use absolute paths in "
-                            "./configure --prefix=... or --libdir=...");
+                            "./configure --prefix=... or --libdir=...\n");
 
    vg_assert( VG_(args_for_valgrind) );
 
@@ -1599,7 +1599,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    { Bool ok = VG_(record_startup_wd)();
      if (!ok) 
         VG_(err_config_error)( "Can't establish current working "
-                               "directory at startup");
+                               "directory at startup\n");
    }
    { Char buf[VKI_PATH_MAX+1];
      Bool ok = VG_(get_startup_wd)( buf, sizeof(buf) );
@@ -1723,7 +1723,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(sprintf)(buf, "proc_%d_cmdline", VG_(getpid)());
       fd = VG_(mkstemp)( buf, buf2 );
       if (fd == -1)
-         VG_(err_config_error)("Can't create client cmdline file in " VG_TMPDIR);
+         VG_(err_config_error)("Can't create client cmdline file in %s\n", buf2);
 
       nul[0] = 0;
       exename = VG_(args_the_exename) ? VG_(args_the_exename)
@@ -1744,7 +1744,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       /* Now delete it, but hang on to the fd. */
       r = VG_(unlink)( buf2 );
       if (r)
-         VG_(err_config_error)("Can't delete client cmdline file in " VG_TMPDIR);
+         VG_(err_config_error)("Can't delete client cmdline file in %s\n", buf2);
 
       VG_(cl_cmdline_fd) = fd;
    }

@@ -603,6 +603,7 @@ Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
    Int    n, tries, fd;
    UInt   seed;
    SysRes sres;
+   const HChar *tmpdir;
 
    vg_assert(part_of_name);
    n = VG_(strlen)(part_of_name);
@@ -610,12 +611,17 @@ Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
 
    seed = (VG_(getpid)() << 9) ^ VG_(getppid)();
 
+   /* Determine sensible location for temporary files */
+   tmpdir = VG_(getenv)("TMPDIR");
+   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = VG_TMPDIR;
+   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = "/tmp";    /* fallback */
+
    tries = 0;
    while (True) {
       if (tries++ > 10) 
          return -1;
-      VG_(sprintf)( buf, "%s/valgrind_%s_%08x", 
-                         VG_TMPDIR, part_of_name, VG_(random)( &seed ));
+      VG_(sprintf)( buf, "%s/valgrind_%s_%08x",
+                    tmpdir, part_of_name, VG_(random)( &seed ));
       if (0)
          VG_(printf)("VG_(mkstemp): trying: %s\n", buf);
 

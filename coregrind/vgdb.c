@@ -59,6 +59,7 @@ int main (int argc, char** argv)
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>

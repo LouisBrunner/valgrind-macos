@@ -41,8 +41,13 @@ int main (int argc, char** argv)
 
 #else /* all other (Linux?) platforms */
 
+#include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_libcsetjmp.h"
+#include "pub_core_threadstate.h"
+#include "pub_core_gdbserver.h"
+
 #include <limits.h>
-#include <unistd.h>
 #include <string.h>
 #include <poll.h>
 #include <pthread.h>
@@ -53,23 +58,16 @@ int main (int argc, char** argv)
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
-#include "assert.h"
+#include <assert.h>
 #include <sys/user.h>
 
 #if defined(VGO_linux)
 #  include <sys/prctl.h>
 #  include <linux/ptrace.h>
 #endif
-
-#include "pub_core_basics.h"
-#include "pub_core_vki.h"
-#include "pub_core_libcsetjmp.h"
-#include "pub_core_threadstate.h"
-#include "pub_core_gdbserver.h"
 
 /* vgdb has two usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.

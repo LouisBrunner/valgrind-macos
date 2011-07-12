@@ -100,6 +100,7 @@ EXTRA_DIST = \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	README.s390 \
+	README.android \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec

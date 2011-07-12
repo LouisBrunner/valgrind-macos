@@ -2159,6 +2159,10 @@ QT4_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE,
          long  recmode)
 {
    assert(0);
+   /*NOTREACHED*/
+   /* Android's gcc behaves like it doesn't know that assert(0)
+      never returns.  Hence: */
+   return NULL;
 }
 
 
@@ -2167,6 +2171,9 @@ QT4_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE,
 QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
 {
    assert(0);
+   /* Android's gcc behaves like it doesn't know that assert(0)
+      never returns.  Hence: */
+   return NULL;
 }
 
 

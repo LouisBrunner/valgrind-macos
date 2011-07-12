@@ -53,6 +53,7 @@
    THEY RUN ON THE SIMD CPU!
    ------------------------------------------------------------------ */
 
+
 /* Figure out if [dst .. dst+dstlen-1] overlaps with 
                  [src .. src+srclen-1].
    We assume that the address ranges do not wrap around
@@ -60,7 +61,7 @@
    are not accessible and the program will segfault in this
    circumstance, presumably).
 */
-static __inline__
+static inline
 Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 {
    Addr loS, hiS, loD, hiD;
@@ -86,6 +87,22 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
       return True;
    }
 }
+
+
+/* Call here to exit if we can't continue.  On Android we can't call
+   _exit for some reason, so we have to blunt-instrument it. */
+__attribute__ ((__noreturn__))
+static inline void my_exit ( int x )
+{
+#  if defined(VGPV_arm_linux_android)
+   __asm__ __volatile__(".word 0xFFFFFFFF");
+   while (1) {}
+#  else
+   extern void _exit(int status);
+   _exit(x)
+#  endif
+}
+
 
 // This is a macro rather than a function because we don't want to have an
 // extra function in the stack trace.
@@ -421,8 +438,10 @@ STRNCMP(VG_Z_DYLD,        strncmp)
       return 0; \
    }
 
+#if !defined(VGPV_arm_linux_android)
 STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
-#if defined(VGO_linux)
+#endif
+#if defined(VGO_linux) && !defined(VGPV_arm_linux_android)
 STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
 #endif
 
@@ -448,8 +467,10 @@ STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
       } \
    }
 
+#if !defined(VGPV_arm_linux_android)
 STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
-#if defined(VGO_linux)
+#endif
+#if defined(VGO_linux) && !defined(VGPV_arm_linux_android)
 STRNCASECMP(VG_Z_LIBC_SONAME, __GI_strncasecmp)
 #elif defined(VGO_darwin)
 STRNCASECMP(VG_Z_DYLD,        strncasecmp)
@@ -799,7 +820,6 @@ BCOPY(VG_Z_DYLD,        bcopy)
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
             (void *dstV, const void *srcV, SizeT n, SizeT destlen) \
    { \
-      extern void _exit(int status); \
       SizeT i; \
       Char* dst = (Char*)dstV; \
       Char* src = (Char*)srcV; \
@@ -819,7 +839,7 @@ BCOPY(VG_Z_DYLD,        bcopy)
       VALGRIND_PRINTF_BACKTRACE( \
          "*** memmove_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     _exit(127); \
+     my_exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
    }
@@ -870,7 +890,6 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
                                (char* dst, const char* src, SizeT len) \
    { \
-      extern void _exit(int status); \
       char* ret = dst; \
       if (! len) \
          goto badness; \
@@ -882,7 +901,7 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
       VALGRIND_PRINTF_BACKTRACE( \
          "*** strcpy_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     _exit(127); \
+     my_exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
    }
@@ -898,7 +917,6 @@ GLIBC25___STRCPY_CHK(VG_Z_LIBC_SONAME, __strcpy_chk)
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
                                (char* dst, const char* src, SizeT len) \
    { \
-      extern void _exit(int status); \
       if (! len) \
          goto badness; \
       while ((*dst++ = *src++) != '\0') \
@@ -909,7 +927,7 @@ GLIBC25___STRCPY_CHK(VG_Z_LIBC_SONAME, __strcpy_chk)
       VALGRIND_PRINTF_BACKTRACE( \
          "*** stpcpy_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     _exit(127); \
+     my_exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
    }
@@ -962,7 +980,6 @@ GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
             (void* dst, const void* src, SizeT len, SizeT dstlen ) \
    { \
-      extern void _exit(int status); \
       register char *d; \
       register char *s; \
       \
@@ -992,7 +1009,7 @@ GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
       VALGRIND_PRINTF_BACKTRACE( \
          "*** memcpy_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     _exit(127); \
+     my_exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
    }

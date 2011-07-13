@@ -217,7 +217,7 @@ Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
    Off64T result;
    SysRes res = VG_(do_syscall5)(__NR__llseek, fd,
                                  offset >> 32, offset & 0xffffffff,
-                                 &result, whence);
+                                 (UWord)&result, whence);
    return sr_isError(res) ? (-1) : result;
 #  else
    SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);

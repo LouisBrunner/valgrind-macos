@@ -210,18 +210,27 @@ Int VG_(pipe) ( Int fd[2] )
 #  endif
 }
 
-OffT VG_(lseek) ( Int fd, OffT offset, Int whence )
+Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
 {
 #  if defined(VGO_linux) || defined(VGP_amd64_darwin)
+#  if defined(__NR__llseek)
+   Off64T result;
+   SysRes res = VG_(do_syscall5)(__NR__llseek, fd,
+                                 offset >> 32, offset & 0xffffffff,
+                                 &result, whence);
+   return sr_isError(res) ? (-1) : result;
+#  else
    SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
-   vg_assert(sizeof(OffT) == sizeof(Word));
+   vg_assert(sizeof(Off64T) == sizeof(Word));
+   return sr_isError(res) ? (-1) : sr_Res(res);
+#  endif
 #  elif defined(VGP_x86_darwin)
    SysRes res = VG_(do_syscall4)(__NR_lseek, fd, 
                                  offset & 0xffffffff, offset >> 32, whence);
+   return sr_isError(res) ? (-1) : sr_Res(res);
 #  else
 #    error "Unknown plat"
 #  endif
-   return sr_isError(res) ? (-1) : sr_Res(res);
    /* if you change the error-reporting conventions of this, also
       change VG_(pread) and all other usage points. */
 }

@@ -520,6 +520,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
    vg_assert(buf);
 
    for(;;) {
+      Int oflags = VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC;
       SysRes sres;
 
       if (seq == 0)
@@ -530,9 +531,11 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 		      basename, coreext, VG_(getpid)(), seq);
       seq++;
 
-      sres = VG_(open)(buf, 			   
-                       VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
-                       VKI_S_IRUSR|VKI_S_IWUSR);
+#     if defined(VKI_O_LARGEFILE)
+      oflags |= VKI_O_LARGEFILE;
+#     endif
+
+      sres = VG_(open)(buf, oflags, VKI_S_IRUSR|VKI_S_IWUSR);
       if (!sr_isError(sres)) {
          core_fd = sr_Res(sres);
 	 break;

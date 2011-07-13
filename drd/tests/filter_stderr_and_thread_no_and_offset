@@ -1,0 +1,4 @@
+#!/bin/sh
+
+./filter_stderr_and_thread_no \
+| sed "s/ is at offset [0-9]* from / is at offset ... from /"

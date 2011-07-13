@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS =		    \
 	filter_error_summary	    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
+	filter_stderr_and_thread_no_and_offset \
 	run_openmp_test             \
 	supported_libpthread	    \
 	supported_sem_init

@@ -33,6 +33,8 @@ EXTRA_DIST =                                        \
 	annotate_publish_hg.vgtest		    \
 	annotate_smart_pointer.stderr.exp	    \
 	annotate_smart_pointer.vgtest		    \
+	annotate_smart_pointer2.stderr.exp	    \
+	annotate_smart_pointer2.vgtest		    \
 	annotate_spinlock.stderr.exp		    \
 	annotate_spinlock.vgtest		    \
 	annotate_rwlock.stderr.exp		    \

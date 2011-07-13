@@ -1,0 +1,10 @@
+
+Conflicting store by thread x at 0x........ size 4
+   at 0x........: main (annotate_smart_pointer.cpp:?)
+Address 0x........ is at offset 24 from 0x......... Allocation context:
+   at 0x........: ...operator new... (vg_replace_malloc.c:...)
+   by 0x........: main (annotate_smart_pointer.cpp:?)
+
+Done.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

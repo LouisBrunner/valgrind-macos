@@ -38,7 +38,7 @@
 #include "unified_annotations.h"
 
 
-static bool s_enable_annotations = true;
+static bool s_enable_annotations;
 
 
 #ifdef _WIN32

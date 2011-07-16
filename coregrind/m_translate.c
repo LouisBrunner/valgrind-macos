@@ -842,6 +842,18 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    if (addr == TRANSTAB_BOGUS_GUEST_ADDR)
       goto dontchase;
 
+#  if defined(VGA_s390x)
+   /* Never chase into an EX instruction. Generating IR for EX causes
+      a round-trip through the scheduler including VG_(discard_translations).
+      And that's expensive as shown by perf/tinycc.c:
+      Chasing into EX increases the number of EX translations from 21 to
+      102666 causing a 7x runtime increase for "none" and a 3.2x runtime
+      increase for memcheck. */
+   if (((UChar *)ULong_to_Ptr(addr))[0] == 0x44 ||   /* EX */
+       ((UChar *)ULong_to_Ptr(addr))[0] == 0xC6)     /* EXRL */
+     goto dontchase;
+#  endif
+
    /* well, ok then.  go on and chase. */
    return True;
 

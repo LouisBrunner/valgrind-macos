@@ -69,6 +69,10 @@ static Addr64 guest_IA_next_instr;
 /* Result of disassembly step. */
 static DisResult *dis_res;
 
+/* Resteer function and callback data */
+static Bool (*resteer_fn)(void *, Addr64);
+static void *resteer_data;
+
 /* The last seen execute target instruction */
 ULong last_execute_target;
 
@@ -245,6 +249,20 @@ call_function(IRExpr *callee_address)
    dis_res->whatNext = Dis_StopHere;
 }
 
+/* Function call with known target. */
+static void
+call_function_and_chase(Addr64 callee_address)
+{
+   if (resteer_fn(resteer_data, callee_address)) {
+      dis_res->whatNext   = Dis_ResteerU;
+      dis_res->continueAt = callee_address;
+   } else {
+      irsb->next = mkU64(callee_address);
+      irsb->jumpkind = Ijk_Call;
+      dis_res->whatNext = Dis_StopHere;
+   }
+}
+
 /* Function return sequence */
 static void
 return_from_function(IRExpr *return_address)
@@ -299,6 +317,20 @@ always_goto(IRExpr *target)
    irsb->jumpkind = Ijk_Boring;
 
    dis_res->whatNext = Dis_StopHere;
+}
+
+/* An unconditional branch to a known target. */
+static void
+always_goto_and_chase(Addr64 target)
+{
+   if (resteer_fn(resteer_data, target)) {
+      dis_res->whatNext   = Dis_ResteerU;
+      dis_res->continueAt = target;
+   } else {
+      irsb->next = mkU64(target);
+      irsb->jumpkind = Ijk_Boring;
+      dis_res->whatNext = Dis_StopHere;
+   }
 }
 
 /* A system call */
@@ -3199,7 +3231,7 @@ static HChar *
 s390_irgen_BRAS(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 4ULL));
-   call_function(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1)));
+   call_function_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
 
    return "bras";
 }
@@ -3208,7 +3240,7 @@ static HChar *
 s390_irgen_BRASL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 6ULL));
-   call_function(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)));
+   call_function_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1));
 
    return "brasl";
 }
@@ -3221,8 +3253,8 @@ s390_irgen_BRC(UChar r1, UShort i2)
    if (r1 == 0) {
    } else {
       if (r1 == 15) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1))
-                     );
+         always_goto_and_chase(
+               guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
       } else {
          assign(cond, s390_call_calculate_cond(r1));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
@@ -3244,7 +3276,7 @@ s390_irgen_BRCL(UChar r1, UInt i2)
    if (r1 == 0) {
    } else {
       if (r1 == 15) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)));
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1));
       } else {
          assign(cond, s390_call_calculate_cond(r1));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
@@ -3555,8 +3587,8 @@ s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(
+                guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
@@ -3584,8 +3616,8 @@ s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(
+                guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
@@ -3667,8 +3699,7 @@ s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (Int)(Char)i2;
@@ -3696,8 +3727,7 @@ s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (Long)(Char)i2;
@@ -4228,8 +4258,7 @@ s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
@@ -4257,8 +4286,7 @@ s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
@@ -4340,8 +4368,7 @@ s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (UInt)i2;
@@ -4369,8 +4396,7 @@ s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1))
-                     );
+         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (ULong)i2;
@@ -8637,10 +8663,11 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
                            mkU64(0)),
                      guest_IA_next_instr);
 
-   always_goto(mkU64(guest_IA_curr_instr));
+   always_goto_and_chase(guest_IA_curr_instr);
 
    return "clcle";
 }
+
 static void
 s390_irgen_XC_EX(IRTemp length, IRTemp start1, IRTemp start2)
 {
@@ -13020,6 +13047,8 @@ disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
 
    /* fixs390: we should probably pass the resteer-function and the callback
       data. It's not needed for correctness but improves performance. */
+   resteer_fn = resteerOkFn;
+   resteer_data = callback_data;
 
    /* Normal and special instruction handling starts here. */
    if (s390_decode_and_irgen(insn, insn_length, &dres) == 0) {

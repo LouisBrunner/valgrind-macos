@@ -13045,8 +13045,8 @@ disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
    dres.len        = insn_length;
    dres.continueAt = 0;
 
-   /* fixs390: we should probably pass the resteer-function and the callback
-      data. It's not needed for correctness but improves performance. */
+   /* fixs390: consider chasing of conditional jumps */
+
    resteer_fn = resteerOkFn;
    resteer_data = callback_data;
 

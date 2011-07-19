@@ -7694,7 +7694,7 @@ Bool dis_neon_data_1reg_and_imm ( UInt theInstr, IRTemp condT )
          break;
       case 15:
          imm = (imm_raw & 0x80) << 5;
-         imm |= ~((imm_raw & 0x40) << 5);
+         imm |= ((~imm_raw & 0x40) << 5);
          for(i = 1; i <= 4; i++)
             imm |= (imm_raw & 0x40) << i;
          imm |= (imm_raw & 0x7f);

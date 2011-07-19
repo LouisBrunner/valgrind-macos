@@ -588,7 +588,7 @@ ULong ARMNImm_to_Imm64 ( ARMNImm* imm ) {
          return x;
       case 10:
          x |= (x & 0x80) << 5;
-         x |= ~(x & 0x40) << 5;
+         x |= (~x & 0x40) << 5;
          x &= 0x187F; /* 0001 1000 0111 1111 */
          x |= (x & 0x40) << 4;
          x |= (x & 0x40) << 3;

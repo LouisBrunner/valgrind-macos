@@ -5527,25 +5527,40 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          }
          assign(arg_m, unop(dup, binop(get, getDRegI64(mreg), mkU8(index))));
       }
-      switch (size) {
-         case 1:
-            op = Q ? Iop_Mul16x8 : Iop_Mul16x4;
-            break;
-         case 2:
-            op = Q ? Iop_Mul32x4 : Iop_Mul32x2;
-            break;
-         case 0:
-         case 3:
-            return False;
-         default:
-            vassert(0);
+      if (INSN(8,8)) {
+         switch (size) {
+            case 2:
+               op = Q ? Iop_Mul32Fx4 : Iop_Mul32Fx2;
+               break;
+            case 0:
+            case 1:
+            case 3:
+               return False;
+            default:
+               vassert(0);
+         }
+      } else {
+         switch (size) {
+            case 1:
+               op = Q ? Iop_Mul16x8 : Iop_Mul16x4;
+               break;
+            case 2:
+               op = Q ? Iop_Mul32x4 : Iop_Mul32x2;
+               break;
+            case 0:
+            case 3:
+               return False;
+            default:
+               vassert(0);
+         }
       }
       assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
       if (Q)
          putQReg(dreg, mkexpr(res), condT);
       else
          putDRegI64(dreg, mkexpr(res), condT);
-      DIP("vmul.i%u %c%u, %c%u, d%u[%u]\n", 8 << size, Q ? 'q' : 'd', dreg,
+      DIP("vmul.%c%u %c%u, %c%u, d%u[%u]\n", INSN(8,8) ? 'f' : 'i',
+          8 << size, Q ? 'q' : 'd', dreg,
           Q ? 'q' : 'd', nreg, mreg, index);
       return True;
    }

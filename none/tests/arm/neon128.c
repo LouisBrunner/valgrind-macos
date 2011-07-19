@@ -2404,6 +2404,35 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmul.f32 q0, q1, q2", q0, q1, i32, f2u(-INFINITY), q2, i32, f2u(INFINITY));
     TESTINSN_bin("vmul.f32 q0, q1, q2", q0, q1, i32, f2u(-INFINITY), q2, i32, f2u(-INFINITY));
 
+    printf("---- VMUL (fp by scalar) ----\n");
+    TESTINSN_bin("vmul.f32 q0, q1, d4[0]", q0, q1, i32, f2u(24), d4, i32, f2u(120));
+    TESTINSN_bin("vmul.f32 q15, q8, d7[1]", q15, q8, i32, f2u(140), d7, i32, f2u(-120));
+    TESTINSN_bin("vmul.f32 q4, q8, d15[1]", q4, q8, i32, (1 << 31) + 1, d15, i32, (1 << 31) + 2);
+    TESTINSN_bin("vmul.f32 q7, q8, d1[1]", q7, q8, i32, (1 << 31), d1, i16, 12);
+    TESTINSN_bin("vmul.f32 q7, q8, d1[1]", q7, q8, i32, (1 << 31) + 1, d1, i32, (1 << 31) + 2);
+    TESTINSN_bin("vmul.f32 q7, q8, d1[0]", q7, q8, i32, f2u(1e22), d1, i32, f2u(1e-19));
+    TESTINSN_bin("vmul.f32 q7, q8, d1[0]", q7, q8, i32, f2u(1e12), d1, i32, f2u(1e11));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(NAN), d2, i32, f2u(NAN));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(NAN), d2, i32, f2u(1.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(NAN), d2, i32, f2u(0.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(NAN), d2, i32, f2u(INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(NAN), d2, i32, f2u(-INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(0.0), d2, i32, f2u(NAN));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(0.0), d2, i32, f2u(1.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(0.0), d2, i32, f2u(0.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(0.0), d2, i32, f2u(INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(0.0), d2, i32, f2u(-INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(INFINITY), d2, i32, f2u(NAN));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(INFINITY), d2, i32, f2u(1.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(INFINITY), d2, i32, f2u(0.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(INFINITY), d2, i32, f2u(INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(INFINITY), d2, i32, f2u(-INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(-INFINITY), d2, i32, f2u(NAN));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(-INFINITY), d2, i32, f2u(1.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(-INFINITY), d2, i32, f2u(0.0));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
+    TESTINSN_bin("vmul.f32 q0, q1, d2[0]", q0, q1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
+
     printf("---- VMLA (fp) ----\n");
     TESTINSN_bin_f("vmla.f32 q0, q5, q2", q0, q5, i32, f2u(23.04), q2, i32, f2u(-45.5687));
     TESTINSN_bin_f("vmla.f32 q3, q4, q5", q3, q4, i32, f2u(-347856.475), q5, i32, f2u(1346));

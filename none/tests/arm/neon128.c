@@ -362,6 +362,8 @@ int main(int argc, char **argv)
     TESTINSN_imm("vmov.i32 q13", q13, 0x7FF);
     TESTINSN_imm("vmov.i32 q14", q14, 0x7FFFF);
     TESTINSN_imm("vmov.i64 q15", q15, 0xFF0000FF00FFFF00);
+    TESTINSN_imm("vmov.f32 q0", q0, 0.328125);
+    TESTINSN_imm("vmov.f32 q0", q0, -0.328125);
 
     printf("----- VMVN (immediate) -----\n");
     TESTINSN_imm("vmvn.i32 q0", q0, 0x7);

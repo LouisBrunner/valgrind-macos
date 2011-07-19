@@ -13004,7 +13004,7 @@ DisResult disInstr_ARM_WRK (
        && INSN(19,12) == BITS8(1,1,1,1,1,1,1,1)
        && (INSN(11,4) == BITS8(1,1,1,1,0,0,1,1)
            || INSN(11,4) == BITS8(1,1,1,1,0,0,0,1))) {
-      IRExpr* dst;
+      IRTemp  dst = newTemp(Ity_I32);
       UInt    link = (INSN(11,4) >> 1) & 1;
       UInt    rM   = INSN(3,0);
       // we don't decode the case (link && rM == 15), as that's
@@ -13016,12 +13016,12 @@ DisResult disInstr_ARM_WRK (
          // rM contains an interworking address exactly as we require
          // (with continuation CPSR.T in bit 0), so we can use it
          // as-is, with no masking.
-         dst = getIRegA(rM);
+         assign( dst, getIRegA(rM) );
          if (link) {
             putIRegA( 14, mkU32(guest_R15_curr_instr_notENC + 4),
                       IRTemp_INVALID/*because AL*/, Ijk_Boring );
          }
-         irsb->next     = dst;
+         irsb->next     = mkexpr(dst);
          irsb->jumpkind = link ? Ijk_Call
                                : (rM == 14 ? Ijk_Ret : Ijk_Boring);
          dres.whatNext  = Dis_StopHere;

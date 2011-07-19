@@ -347,7 +347,7 @@ const unsigned int mem[] = {
 	 instruction ", [%0], " #RM "\n\t" \
 	 "str %0, [%3]\n\t" \
 	 : "+r" (addr) \
-	 : "r" (out), "r" (mem), "r"(&out[8]), "r"(#RMval) \
+	 : "r" (out), "r" (mem), "r"(&out[8]), "r"(RMval) \
 	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
 	 ); \
    printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\

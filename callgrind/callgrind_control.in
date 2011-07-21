@@ -29,12 +29,15 @@ sub getCallgrindPids {
   @pids = ();
   open LIST, "vgdb -l|";
   while(<LIST>) {
-      if (/^use --pid=(\d+) for valgrind\s+(.*)$/) {
+      if (/^use --pid=(\d+) for \S*?valgrind\s+(.*?)\s*$/) {
 	  $pid = $1;
 	  $cmd = $2;
 	  if (!($cmd =~ /--tool=callgrind/)) { next; }
 	  while($cmd =~ s/^-+\S+\s+//) {}
+	  $cmdline{$pid} = $cmd;
+	  $cmd =~ s/^(\S*).*/$1/;
 	  $cmd{$pid} = $cmd;
+	  #print "Found PID $pid, cmd '$cmd{$pid}', cmdline '$cmdline{$pid}'.\n";
 	  push(@pids, $pid);
       }
   }
@@ -286,7 +289,7 @@ foreach $arg (@ARGV) {
   if (defined $cmd{$arg}) { $spids{$arg} = 1; next; }
   $nameFound = 0;
   foreach $p (@pids) {
-    if ($cmd{$p} =~ /^$arg/) {
+    if ($cmd{$p} =~ /$arg$/) {
       $nameFound = 1;
       $spids{$p} = 1;
     }
@@ -327,7 +330,7 @@ if ($printStatus || $printBacktrace || $requestEvents) {
 
 foreach $pid (@pids) {
   $pidstr = "PID $pid: ";
-  if ($pid >0) { print $pidstr.$cmd{$pid}; }
+  if ($pid >0) { print $pidstr.$cmdline{$pid}; }
 
   if ($vgdbCommand eq "") {
       print "\n";

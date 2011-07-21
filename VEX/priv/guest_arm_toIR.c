@@ -7926,13 +7926,13 @@ void mk_neon_elem_store_from_one_lane( UInt rD, UInt inc, UInt index,
 
 /* A7.7 Advanced SIMD element or structure load/store instructions */
 static
-Bool dis_neon_elem_or_struct_load ( UInt theInstr,
-                                    Bool isT, IRTemp condT )
+Bool dis_neon_load_or_store ( UInt theInstr,
+                              Bool isT, IRTemp condT )
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(theInstr, (_bMax), (_bMin))
-   UInt A = INSN(23,23);
-   UInt B = INSN(11,8);
-   UInt L = INSN(21,21);
+   UInt bA = INSN(23,23);
+   UInt fB = INSN(11,8);
+   UInt bL = INSN(21,21);
    UInt rD = (INSN(22,22) << 4) | INSN(15,12);
    UInt rN = INSN(19,16);
    UInt rM = INSN(3,0);
@@ -7957,12 +7957,18 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
    IRTemp initialRm = newTemp(Ity_I32);
    assign(initialRm, isT ? getIRegT(rM) : getIRegA(rM));
 
-   if (A) {
-      N = B & 3;
-      if ((B >> 2) < 3) {
-         /* VSTn / VLDn (n-element structure from/to one lane) */
+   /* There are 3 cases:
+      (1) VSTn / VLDn (n-element structure from/to one lane)
+      (2) VLDn (single element to all lanes)
+      (3) VSTn / VLDn (multiple n-element structures)
+   */
+   if (bA) {
+      N = fB & 3;
+      if ((fB >> 2) < 3) {
+         /* ------------ Case (1) ------------
+            VSTn / VLDn (n-element structure from/to one lane) */
 
-         size = B >> 2;
+         size = fB >> 2;
 
          switch (size) {
             case 0: i = INSN(7,5); inc = 1; break;
@@ -7980,11 +7986,11 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
             mk_skip_over_T32_if_cond_is_false(condT);
          // now uncond
 
-         if (L)
+         if (bL)
             mk_neon_elem_load_to_one_lane(rD, inc, i, N, size, addr);
          else
             mk_neon_elem_store_from_one_lane(rD, inc, i, N, size, addr);
-         DIP("v%s%u.%u {", L ? "ld" : "st", N + 1, 8 << size);
+         DIP("v%s%u.%u {", bL ? "ld" : "st", N + 1, 8 << size);
          for (j = 0; j <= N; j++) {
             if (j)
                DIP(", ");
@@ -7997,9 +8003,10 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
             DIP("%s\n", (rM != 15) ? "!" : "");
          }
       } else {
-         /* VLDn (single element to all lanes) */
+         /* ------------ Case (2) ------------ 
+            VLDn (single element to all lanes) */
          UInt r;
-         if (L == 0)
+         if (bL == 0)
             return False;
 
          inc = INSN(5,5) + 1;
@@ -8115,31 +8122,32 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
       }
       return True;
    } else {
+      /* ------------ Case (3) ------------
+         VSTn / VLDn (multiple n-element structures) */
       IRTemp tmp;
       UInt r, elems;
-      /* VSTn / VLDn (multiple n-element structures) */
-      if (B == BITS4(0,0,1,0) || B == BITS4(0,1,1,0)
-          || B == BITS4(0,1,1,1) || B == BITS4(1,0,1,0)) {
+      if (fB == BITS4(0,0,1,0) || fB == BITS4(0,1,1,0)
+          || fB == BITS4(0,1,1,1) || fB == BITS4(1,0,1,0)) {
          N = 0;
-      } else if (B == BITS4(0,0,1,1) || B == BITS4(1,0,0,0)
-                 || B == BITS4(1,0,0,1)) {
+      } else if (fB == BITS4(0,0,1,1) || fB == BITS4(1,0,0,0)
+                 || fB == BITS4(1,0,0,1)) {
          N = 1;
-      } else if (B == BITS4(0,1,0,0) || B == BITS4(0,1,0,1)) {
+      } else if (fB == BITS4(0,1,0,0) || fB == BITS4(0,1,0,1)) {
          N = 2;
-      } else if (B == BITS4(0,0,0,0) || B == BITS4(0,0,0,1)) {
+      } else if (fB == BITS4(0,0,0,0) || fB == BITS4(0,0,0,1)) {
          N = 3;
       } else {
          return False;
       }
-      inc = (B & 1) + 1;
-      if (N == 1 && B == BITS4(0,0,1,1)) {
+      inc = (fB & 1) + 1;
+      if (N == 1 && fB == BITS4(0,0,1,1)) {
          regs = 2;
       } else if (N == 0) {
-         if (B == BITS4(1,0,1,0)) {
+         if (fB == BITS4(1,0,1,0)) {
             regs = 2;
-         } else if (B == BITS4(0,1,1,0)) {
+         } else if (fB == BITS4(0,1,1,0)) {
             regs = 3;
-         } else if (B == BITS4(0,0,1,0)) {
+         } else if (fB == BITS4(0,0,1,0)) {
             regs = 4;
          }
       }
@@ -8162,7 +8170,7 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
 
       for (r = 0; r < regs; r++) {
          for (i = 0; i < elems; i++) {
-            if (L)
+            if (bL)
                mk_neon_elem_load_to_one_lane(rD + r, inc, i, N, size, addr);
             else
                mk_neon_elem_store_from_one_lane(rD + r, inc, i, N, size, addr);
@@ -8192,7 +8200,7 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
                putIRegA(rN, e, IRTemp_INVALID, Ijk_Boring);
          }
       }
-      DIP("v%s%u.%u {", L ? "ld" : "st", N + 1, 8 << INSN(7,6));
+      DIP("v%s%u.%u {", bL ? "ld" : "st", N + 1, 8 << INSN(7,6));
       if ((inc == 1 && regs * (N + 1) > 1)
           || (inc == 2 && regs > 1 && N > 0)) {
          DIP("d%u-d%u", rD, rD + regs * (N + 1) - 1);
@@ -8284,12 +8292,12 @@ static Bool decode_NEON_instruction (
    */
    if (!isT && INSN(31,24) == BITS8(1,1,1,1,0,1,0,0)) {
       // ARM, memory
-      return dis_neon_elem_or_struct_load(INSN(31,0), isT, condT);
+      return dis_neon_load_or_store(INSN(31,0), isT, condT);
    }
    if (isT && INSN(31,24) == BITS8(1,1,1,1,1,0,0,1)) {
       UInt reformatted = INSN(23,0);
       reformatted |= (BITS8(1,1,1,1,0,1,0,0) << 24);
-      return dis_neon_elem_or_struct_load(reformatted, isT, condT);
+      return dis_neon_load_or_store(reformatted, isT, condT);
    }
 
    /* Doesn't match. */

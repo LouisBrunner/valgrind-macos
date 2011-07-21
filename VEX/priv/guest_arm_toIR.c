@@ -18015,6 +18015,38 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* ---------------------- PLD{,W} ---------------------- */
+   if ((INSN0(15,4) & 0xFFD) == 0xF89 && INSN1(15,12) == 0xF) {
+      /* PLD/PLDW immediate, encoding T1 */
+      UInt rN    = INSN0(3,0);
+      UInt bW    = INSN0(5,5);
+      UInt imm12 = INSN1(11,0);
+      DIP("pld%s [r%u, #%u]\n", bW ? "w" : "",  rN, imm12);
+      goto decode_success;
+   }
+
+   if ((INSN0(15,4) & 0xFFD) == 0xF81 && INSN1(15,8) == 0xFC) {
+      /* PLD/PLDW immediate, encoding T2 */
+      UInt rN    = INSN0(3,0);
+      UInt bW    = INSN0(5,5);
+      UInt imm8  = INSN1(7,0);
+      DIP("pld%s [r%u, #-%u]\n", bW ? "w" : "",  rN, imm8);
+      goto decode_success;
+   }
+
+   if ((INSN0(15,4) & 0xFFD) == 0xF81 && INSN1(15,6) == 0x3C0) {
+      /* PLD/PLDW register, encoding T1 */
+      UInt rN   = INSN0(3,0);
+      UInt rM   = INSN1(3,0);
+      UInt bW   = INSN0(5,5);
+      UInt imm2 = INSN1(5,4);
+      if (!isBadRegT(rM)) {
+         DIP("pld%s [r%u, r%u, lsl %d]\n", bW ? "w" : "", rN, rM, imm2);
+         goto decode_success;
+      }
+      /* fall through */
+   }
+
    /* -------------- read CP15 TPIDRURO register ------------- */
    /* mrc     p15, 0,  r0, c13, c0, 3  up to
       mrc     p15, 0, r14, c13, c0, 3

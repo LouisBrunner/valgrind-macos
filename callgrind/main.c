@@ -1330,8 +1330,8 @@ void zero_state_cost(thread_info* t)
     CLG_(zero_cost)( CLG_(sets).full, CLG_(current_state).cost );
 }
 
-/* Ups, this can go wrong... */
-extern void VG_(discard_translations) ( Addr64 start, ULong range );
+/* Ups, this can go very wrong... */
+extern void VG_(discard_translations) ( Addr64 start, ULong range, HChar* who );
 
 void CLG_(set_instrument_state)(Char* reason, Bool state)
 {
@@ -1344,7 +1344,7 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
   CLG_DEBUG(2, "%s: Switching instrumentation %s ...\n",
 	   reason, state ? "ON" : "OFF");
 
-  VG_(discard_translations)( (Addr64)0x1000, (ULong) ~0xfffl);
+  VG_(discard_translations)( (Addr64)0x1000, (ULong) ~0xfffl, "callgrind");
 
   /* reset internal state: call stacks, simulator */
   CLG_(forall_threads)(unwind_thread);

@@ -13018,8 +13018,7 @@ mkaddr_expr(Addr64 addr)
 
 /* Disassemble a single instruction INSN into IR. */
 static DisResult
-disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
-                  void *callback_data)
+disInstr_S390_WRK(UChar *insn)
 {
    UChar byte;
    UInt  insn_length;
@@ -13047,9 +13046,6 @@ disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
 
    /* fixs390: consider chasing of conditional jumps */
 
-   resteer_fn = resteerOkFn;
-   resteer_data = callback_data;
-
    /* Normal and special instruction handling starts here. */
    if (s390_decode_and_irgen(insn, insn_length, &dres) == 0) {
       /* All decode failures end up here. The decoder has already issued an
@@ -13066,8 +13062,6 @@ disInstr_S390_WRK(UChar *insn, Bool (*resteerOkFn)(void *, Addr64),
       irsb->jumpkind = Ijk_NoDecode;
       dres.whatNext = Dis_StopHere;
       dres.len = 0;
-
-      return dres;
    }
 
    return dres;
@@ -13102,17 +13096,16 @@ disInstr_S390(IRSB        *irsb_IN,
 
    /* Set globals (see top of this file) */
    guest_IA_curr_instr = guest_IP;
-
    irsb = irsb_IN;
-
-   vassert(guest_arch == VexArchS390X);
+   resteer_fn = resteerOkFn;
+   resteer_data = callback_opaque;
 
    /* We may be asked to update the guest IA before going further. */
    if (put_IP)
       addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
                                      mkaddr_expr(guest_IA_curr_instr)));
 
-   return disInstr_S390_WRK(guest_code + delta, resteerOkFn, callback_opaque);
+   return disInstr_S390_WRK(guest_code + delta);
 }
 
 /*---------------------------------------------------------------*/

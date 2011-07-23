@@ -4061,6 +4061,14 @@ static IRExpr* fold_IRExpr_Binop ( IROp op, IRExpr* a1, IRExpr* a2 )
                              IRExpr_Binop( Iop_Or32, a1->Iex.Unop.arg, 
                                                      a2->Iex.Unop.arg ) );
       break;
+
+   case Iop_CmpNE32:
+      /* Since X has type Ity_I1 we can simplify:
+         CmpNE32(1Uto32(X),0)) ==> X */
+      if (is_Unop(a1, Iop_1Uto32) && isZeroU32(a2))
+         return a1->Iex.Unop.arg;
+      break;
+
    default:
       break;
    }
@@ -4103,6 +4111,14 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* CmpNEZ32( Left32(x) ) --> CmpNEZ32(x) */
       if (is_Unop(aa, Iop_Left32)) 
          return IRExpr_Unop(Iop_CmpNEZ32, aa->Iex.Unop.arg);
+      /* CmpNEZ32( 1Uto32(X) ) --> X */
+      if (is_Unop(aa, Iop_1Uto32))
+         return aa->Iex.Unop.arg;
+      break;
+   case Iop_CmpNEZ8:
+      /* CmpNEZ8( 1Uto8(X) ) --> X */
+      if (is_Unop(aa, Iop_1Uto8))
+         return aa->Iex.Unop.arg;
       break;
    case Iop_Left32:
       /* Left32( Left32(x) ) --> Left32(x) */

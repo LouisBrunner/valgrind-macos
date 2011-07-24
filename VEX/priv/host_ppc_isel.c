@@ -1284,24 +1284,30 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
       /* How about a div? */
       if (e->Iex.Binop.op == Iop_DivS32 || 
-          e->Iex.Binop.op == Iop_DivU32) {
+          e->Iex.Binop.op == Iop_DivU32 ||
+          e->Iex.Binop.op == Iop_DivU32E) {
          Bool syned  = toBool(e->Iex.Binop.op == Iop_DivS32);
          HReg r_dst  = newVRegI(env);
          HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
          HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, PPCInstr_Div(syned, True/*32bit div*/,
-                                    r_dst, r_srcL, r_srcR));
+         addInstr( env,
+                      PPCInstr_Div( e->Iex.Binop.op == Iop_DivU32E ? True
+                                                                   : False,
+                                    syned, True/*32bit div*/, r_dst,
+                                    r_srcL, r_srcR ) );
          return r_dst;
       }
       if (e->Iex.Binop.op == Iop_DivS64 || 
-          e->Iex.Binop.op == Iop_DivU64) {
-         Bool syned  = toBool(e->Iex.Binop.op == Iop_DivS64);
+          e->Iex.Binop.op == Iop_DivU64 || e->Iex.Binop.op == Iop_DivS64E) {
+         Bool syned  = toBool((e->Iex.Binop.op == Iop_DivS64) ||(e->Iex.Binop.op == Iop_DivS64E));
          HReg r_dst  = newVRegI(env);
          HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
          HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
          vassert(mode64);
-         addInstr(env, PPCInstr_Div(syned, False/*64bit div*/,
-                                    r_dst, r_srcL, r_srcR));
+         addInstr( env,
+                      PPCInstr_Div( e->Iex.Binop.op == Iop_DivS64E ? True : False,
+                                    syned, False/*64bit div*/,
+                                    r_dst, r_srcL, r_srcR ) );
          return r_dst;
       }
 
@@ -1459,7 +1465,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_ccIR;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI32S) {
+      if ( e->Iex.Binop.op == Iop_F64toI32S ||
+               e->Iex.Binop.op == Iop_F64toI32U ) {
          /* This works in both mode64 and mode32. */
          HReg      r1      = StackFramePtr(env->mode64);
          PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
@@ -1472,7 +1479,9 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          sub_from_sp( env, 16 );
          addInstr(env, PPCInstr_FpCftI(False/*F->I*/, True/*int32*/,
-                                       True/*syned*/, True/*flt64*/,
+                                       e->Iex.Binop.op == Iop_F64toI32S ? True/*syned*/
+                                                                     : False,
+                                       True/*flt64*/,
                                        ftmp, fsrc));
          addInstr(env, PPCInstr_FpSTFIW(r1, ftmp));
          addInstr(env, PPCInstr_Load(4, idst, zero_r1, mode64));
@@ -1488,7 +1497,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return idst;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI64S) {
+      if (e->Iex.Binop.op == Iop_F64toI64S || e->Iex.Binop.op == Iop_F64toI64U ) {
          if (mode64) {
             HReg      r1      = StackFramePtr(env->mode64);
             PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
@@ -1500,7 +1509,9 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
             sub_from_sp( env, 16 );
-            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/, True,
+            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/,
+                                          ( e->Iex.Binop.op == Iop_F64toI64S ) ? True
+                                                                            : False,
                                           True, ftmp, fsrc));
             addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, ftmp, zero_r1));
             addInstr(env, PPCInstr_Load(8, idst, zero_r1, True/*mode64*/));
@@ -2738,8 +2749,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             *rLo = iselWordExpr_R(env, e->Iex.Binop.arg2);
             return;
 
-         /* F64toI64S */
-         case Iop_F64toI64S: {
+         /* F64toI64[S|U] */
+         case Iop_F64toI64S: case Iop_F64toI64U: {
             HReg      tLo     = newVRegI(env);
             HReg      tHi     = newVRegI(env);
             HReg      r1      = StackFramePtr(env->mode64);
@@ -2753,7 +2764,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
             sub_from_sp( env, 16 );
-            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/, True,
+            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/,
+                                          (op_binop == Iop_F64toI64S) ? True : False,
                                           True, ftmp, fsrc));
             addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, ftmp, zero_r1));
             addInstr(env, PPCInstr_Load(4, tHi, zero_r1, False/*mode32*/));
@@ -3351,7 +3363,31 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
                return mk_LoadR64toFPR( env, r_src );
             }
          }
+
          case Iop_F32toF64: {
+            if (e->Iex.Unop.arg->tag == Iex_Unop &&
+                     e->Iex.Unop.arg->Iex.Unop.op == Iop_ReinterpI32asF32 ) {
+               e = e->Iex.Unop.arg;
+
+               HReg src = iselWordExpr_R(env, e->Iex.Unop.arg);
+               HReg fr_dst = newVRegF(env);
+               PPCAMode *am_addr;
+
+               sub_from_sp( env, 16 );        // Move SP down 16 bytes
+               am_addr = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
+
+               // store src as Ity_I32's
+               addInstr(env, PPCInstr_Store( 4, am_addr, src, env->mode64 ));
+
+               // load single precision float, but the end results loads into a
+               // 64-bit FP register -- i.e., F64.
+               addInstr(env, PPCInstr_FpLdSt(True/*load*/, 4, fr_dst, am_addr));
+
+               add_to_sp( env, 16 );          // Reset SP
+               return fr_dst;
+            }
+
+
             /* this is a no-op */
             HReg res = iselFltExpr(env, e->Iex.Unop.arg);
             return res;

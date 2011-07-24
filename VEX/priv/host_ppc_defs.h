@@ -560,6 +560,7 @@ typedef
          } MulL;
          /* ppc32 div/divu instruction. */
          struct {
+            Bool extended;
             Bool syned;
             Bool sz32;   /* mode64 has both 32 & 64bit div */
             HReg dst;
@@ -793,7 +794,7 @@ extern PPCInstr* PPCInstr_AddSubC    ( Bool, Bool, HReg, HReg, HReg );
 extern PPCInstr* PPCInstr_Cmp        ( Bool, Bool, UInt, HReg, PPCRH* );
 extern PPCInstr* PPCInstr_Unary      ( PPCUnaryOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
-extern PPCInstr* PPCInstr_Div        ( Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_Div        ( Bool extended, Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt );
 extern PPCInstr* PPCInstr_Goto       ( IRJumpKind, PPCCondCode cond, PPCRI* dst );
 extern PPCInstr* PPCInstr_CMov       ( PPCCondCode, HReg dst, PPCRI* src );

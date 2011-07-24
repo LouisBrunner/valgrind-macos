@@ -8,7 +8,8 @@ EXTRA_DIST = \
 	alloc-fns-B.post.exp alloc-fns-B.stderr.exp alloc-fns-B.vgtest \
 	basic.post.exp basic.stderr.exp basic.vgtest \
 	basic2.post.exp basic2.stderr.exp basic2.vgtest \
-	big-alloc.post.exp big-alloc.stderr.exp big-alloc.vgtest \
+	big-alloc.post.exp big-alloc.post.exp-64bit \
+	big-alloc.stderr.exp big-alloc.vgtest \
 	deep-A.post.exp deep-A.stderr.exp deep-A.vgtest \
 	deep-B.post.exp deep-B.stderr.exp deep-B.vgtest \
 	deep-C.post.exp deep-C.stderr.exp deep-C.vgtest \

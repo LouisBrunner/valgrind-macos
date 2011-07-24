@@ -151,6 +151,19 @@ typedef
 // 8-bytes on 32-bit machines with an 8-byte VG_MIN_MALLOC_SZB -- because
 // it's too hard to make a constant expression that works perfectly in all
 // cases.
+// reclaimable is set to NULL if superblock cannot be reclaimed, otherwise
+// it is set to the address of the superblock. A reclaimable superblock
+// will contain only one allocated block. The superblock segment will
+// be unmapped when the allocated block is freed.
+// The free space at the end of a reclaimable superblock is not used to
+// make a free block. Note that this means that a reclaimable superblock can
+// have up to slightly less than 1 page of unused bytes at the end of the
+// superblock.
+// reclaimable is used to avoid quadratic memory usage for linear reallocation
+// of big structures (see http://bugs.kde.org/show_bug.cgi?id=250101).
+// ??? reclaimable replaces 'void *padding2'. Choosed this
+// ??? to avoid changing the alignment logic. Maybe something cleaner
+// ??? can be done.
 // payload_bytes[] is made a single big Block when the Superblock is
 // created, and then can be split and the splittings remerged, but Blocks
 // always cover its entire length -- there's never any unused bytes at the
@@ -158,7 +171,7 @@ typedef
 typedef
    struct _Superblock {
       SizeT n_payload_bytes;
-      void* padding2;
+      struct _Superblock* reclaimable;
       UByte padding[ VG_MIN_MALLOC_SZB -
                         ((sizeof(struct _Superblock*) + sizeof(SizeT)) %
                          VG_MIN_MALLOC_SZB) ];
@@ -174,6 +187,11 @@ typedef
       Bool         clientmem;        // Allocates in the client address space?
       SizeT        rz_szB;           // Red zone size in bytes
       SizeT        min_sblock_szB;   // Minimum superblock size in bytes
+      SizeT        min_reclaimable_sblock_szB;
+      // Minimum reclaimable superblock size in bytes. All superblocks with
+      // a size >= min_reclaimable_sblock_szB will be reclaimed when
+      // their (only) allocated block is freed.
+      // Smaller size superblocks are not reclaimable.
       Block*       freelist[N_MALLOC_LISTS];
       // A dynamically expanding, ordered array of (pointers to)
       // superblocks in the arena.  If this array is expanded, which
@@ -196,6 +214,7 @@ typedef
       // If profiling, when should the next profile happen at
       // (in terms of stats__bytes_on_loan_max) ?
       SizeT        next_profile_at;
+      SizeT        stats__bytes_mmaped_max;
    }
    Arena;
 
@@ -458,7 +477,8 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
 // Initialise an arena.  rz_szB is the minimum redzone size;  it might be
 // made bigger to ensure that VG_MIN_MALLOC_SZB is observed.
 static
-void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
+void arena_init ( ArenaId aid, Char* name, SizeT rz_szB,
+                  SizeT min_sblock_szB, SizeT min_reclaimable_sblock_szB )
 {
    SizeT  i;
    Arena* a = arenaId_to_ArenaP(aid);
@@ -481,6 +501,7 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
    vg_assert(overhead_szB_lo(a) - hp_overhead_szB() == overhead_szB_hi(a));
 
    a->min_sblock_szB = min_sblock_szB;
+   a->min_reclaimable_sblock_szB = min_reclaimable_sblock_szB;
    for (i = 0; i < N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
 
    a->sblocks                  = & a->sblocks_initial[0];
@@ -489,6 +510,7 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
    a->stats__bytes_on_loan     = 0;
    a->stats__bytes_mmaped      = 0;
    a->stats__bytes_on_loan_max = 0;
+   a->stats__bytes_mmaped_max  = 0;
    a->stats__tot_blocks        = 0;
    a->stats__tot_bytes         = 0;
    a->stats__nsearches         = 0;
@@ -504,10 +526,11 @@ void VG_(print_all_arena_stats) ( void )
    for (i = 0; i < VG_N_ARENAS; i++) {
       Arena* a = arenaId_to_ArenaP(i);
       VG_(message)(Vg_DebugMsg,
-         "%8s: %8ld mmap'd,  %8ld/%8ld max/curr,  "
+         "%8s: %8ld/%8ld  max/curr mmap'd,  %8ld/%8ld max/curr,  "
                    "%10llu/%10llu totalloc-blocks/bytes,"
                    "  %10llu searches\n",
-                   a->name, a->stats__bytes_mmaped,
+                   a->name,
+                   a->stats__bytes_mmaped_max, a->stats__bytes_mmaped,
                    a->stats__bytes_on_loan_max,
                    a->stats__bytes_on_loan,
                    a->stats__tot_blocks, a->stats__tot_bytes,
@@ -582,7 +605,9 @@ void ensure_mm_init ( ArenaId aid )
       // increasing the superblock size reduces the number of superblocks
       // in the client arena, which makes findSb cheaper.
       ar_client_sbszB = 4194304;
-      arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, ar_client_sbszB );
+      // superblocks with a size > ar_client_sbszB will be reclaimed.
+      arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, 
+                   ar_client_sbszB, ar_client_sbszB+1);
       client_inited = True;
 
    } else {
@@ -590,13 +615,19 @@ void ensure_mm_init ( ArenaId aid )
          return;
       }
       // Initialise the non-client arenas
-      arena_init ( VG_AR_CORE,      "core",     4,             1048576 );
-      arena_init ( VG_AR_TOOL,      "tool",     4,             4194304 );
-      arena_init ( VG_AR_DINFO,     "dinfo",    4,             1048576 );
-      arena_init ( VG_AR_DEMANGLE,  "demangle", 4,               65536 );
-      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,             1048576 );
-      arena_init ( VG_AR_ERRORS,    "errors",   4,               65536 );
-      arena_init ( VG_AR_TTAUX,     "ttaux",    4,               65536 );
+      // superblocks of non-client arena are not reclaimed.
+      // If big transient allocations are done in an arena,
+      // then activating reclaim for these arenas might be useful.
+      // A test done with memcheck on a big executable with reclaim
+      // set to min_sblock_szB+1 for all arenas has shown that
+      // some superblocks in dinfo and tool would be reclaimed.
+      arena_init ( VG_AR_CORE,      "core",     4,   1048576, MAX_PSZB );
+      arena_init ( VG_AR_TOOL,      "tool",     4,   4194304, MAX_PSZB );
+      arena_init ( VG_AR_DINFO,     "dinfo",    4,   1048576, MAX_PSZB );
+      arena_init ( VG_AR_DEMANGLE,  "demangle", 4,     65536, MAX_PSZB );
+      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,   1048576, MAX_PSZB );
+      arena_init ( VG_AR_ERRORS,    "errors",   4,     65536, MAX_PSZB );
+      arena_init ( VG_AR_TTAUX,     "ttaux",    4,     65536, MAX_PSZB );
       nonclient_inited = True;
    }
 
@@ -667,6 +698,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 {
    Superblock* sb;
    SysRes      sres;
+   Bool        reclaimable;
 
    // Take into account admin bytes in the Superblock.
    cszB += sizeof(Superblock);
@@ -674,10 +706,20 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    if (cszB < a->min_sblock_szB) cszB = a->min_sblock_szB;
    cszB = VG_PGROUNDUP(cszB);
 
+   if (cszB >= a->min_reclaimable_sblock_szB)
+      reclaimable = True;
+   else
+      reclaimable = False;   
+
+
    if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
-      sres = VG_(am_sbrk_anon_float_client)
-                ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
+      if (reclaimable)
+         sres = VG_(am_mmap_anon_float_client)
+                   ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
+      else
+         sres = VG_(am_sbrk_anon_float_client)
+                   ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
       if (sr_isError(sres))
          return 0;
       sb = (Superblock*)(AddrH)sr_Res(sres);
@@ -689,7 +731,10 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       );
    } else {
       // non-client allocation -- abort if it fails
-      sres = VG_(am_sbrk_anon_float_valgrind)( cszB );
+      if (reclaimable)
+         sres = VG_(am_mmap_anon_float_valgrind)( cszB );
+      else
+         sres = VG_(am_sbrk_anon_float_valgrind)( cszB );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("newSuperblock", cszB);
          /* NOTREACHED */
@@ -702,12 +747,71 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    //zzVALGRIND_MAKE_MEM_UNDEFINED(sb, cszB);
    vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
    sb->n_payload_bytes = cszB - sizeof(Superblock);
+   sb->reclaimable = (reclaimable ? sb : NULL);
    a->stats__bytes_mmaped += cszB;
+   if (a->stats__bytes_mmaped > a->stats__bytes_mmaped_max)
+      a->stats__bytes_mmaped_max = a->stats__bytes_mmaped;
    VG_(debugLog)(1, "mallocfree",
-                    "newSuperblock at %p (pszB %7ld) owner %s/%s\n", 
-                    sb, sb->n_payload_bytes, 
+                    "newSuperblock at %p (pszB %7ld) %s owner %s/%s\n", 
+                    sb, sb->n_payload_bytes, (reclaimable ? "reclaimable" : ""),
                     a->clientmem ? "CLIENT" : "VALGRIND", a->name );
    return sb;
+}
+
+// Reclaims the given (reclaimable) superblock:
+//  * removes sb from arena sblocks list.
+//  * munmap the superblock segment.
+static
+void reclaimSuperblock ( Arena* a, Superblock* sb)
+{
+   SysRes sres;
+   SizeT  cszB;
+   UInt   i, j;
+
+   VG_(debugLog)(1, "mallocfree",
+                    "reclaimSuperblock at %p (pszB %7ld) owner %s/%s\n", 
+                    sb, sb->n_payload_bytes, 
+                    a->clientmem ? "CLIENT" : "VALGRIND", a->name );
+
+   vg_assert (sb->reclaimable);
+   vg_assert (sb->reclaimable == sb);
+
+   // Take into account admin bytes in the Superblock.
+   cszB = sizeof(Superblock) + sb->n_payload_bytes;
+   vg_assert (cszB >= a->min_reclaimable_sblock_szB);
+
+   // removes sb from superblock list.
+   for (i = 0; i < a->sblocks_used; i++) {
+      if (a->sblocks[i] == sb)
+         break;
+   }
+   vg_assert(i >= 0 && i < a->sblocks_used);
+   for (j = i; j < a->sblocks_used; j++)
+      a->sblocks[j] = a->sblocks[j+1];
+   a->sblocks_used--;
+   a->sblocks[a->sblocks_used] = NULL;
+   // paranoia: NULLify ptr to reclaimed sb or NULLify copy of ptr to last sb.
+
+   // Now that the sb is removed from the list, mnumap its space.
+   if (a->clientmem) {
+      // reclaimable client allocation 
+      Bool need_discard = False;
+      sres = VG_(am_munmap_client)(&need_discard, (Addr) sb, cszB);
+      /* If need_discard is ever True (iow, if the following assertion
+         ever fails), we'll need to tell m_transtab to discard the
+         range.  This unfortunately give it and this a circular
+         dependency.  It would be better to let this routine return
+         and have its caller to the discard, than do it here (no
+         effect on deadlocking etc but it might be easier to read.)
+      */
+      vg_assert (!need_discard);
+      vg_assert2(! sr_isError(sres), "superblock client munmap failure\n");
+   } else {
+      // reclaimable non-client allocation
+      sres = VG_(am_munmap_valgrind)((Addr) sb, cszB);
+      vg_assert2(! sr_isError(sres), "superblock valgrind munmap failure\n");
+   }
+   a->stats__bytes_mmaped -= cszB;
 }
 
 // Find the superblock containing the given chunk.
@@ -923,8 +1027,9 @@ void ppSuperblocks ( Arena* a )
       Superblock * sb = a->sblocks[j];
 
       VG_(printf)( "\n" );
-      VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %lu\n",
-                   blockno++, sb, sb->n_payload_bytes);
+      VG_(printf)( "superblock %d at %p %s, sb->n_pl_bs = %lu\n",
+                   blockno++, sb, (sb->reclaimable ? "reclaimable" : ""),
+                   sb->n_payload_bytes);
       for (i = 0; i < sb->n_payload_bytes; i += b_bszB) {
          Block* b = (Block*)&sb->payload_bytes[i];
          b_bszB   = get_bszB(b);
@@ -1002,8 +1107,8 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 
    if (arena_bytes_on_loan != a->stats__bytes_on_loan) {
 #     ifdef VERBOSE_MALLOC
-      VG_(printf)( "sanity_check_malloc_arena: a->bytes_on_loan %ld, "
-                   "arena_bytes_on_loan %ld: "
+      VG_(printf)( "sanity_check_malloc_arena: a->bytes_on_loan %lu, "
+                   "arena_bytes_on_loan %lu: "
                    "MISMATCH\n", a->bytes_on_loan, arena_bytes_on_loan);
 #     endif
       ppSuperblocks(a);
@@ -1098,8 +1203,9 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
    sanity_check_malloc_arena(aid);
 
    VG_(printf)(
-      "-------- Arena \"%s\": %ld mmap'd, %ld/%ld max/curr --------\n",
-      a->name, a->stats__bytes_mmaped,
+      "-------- Arena \"%s\": %lu/%lu max/curr mmap'd, "
+      "%lu/%lu max/curr on_loan --------\n",
+      a->name, a->stats__bytes_mmaped_max, a->stats__bytes_mmaped,
       a->stats__bytes_on_loan_max, a->stats__bytes_on_loan 
    );
 
@@ -1273,7 +1379,7 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
 {
    SizeT       req_bszB, frag_bszB, b_bszB;
    UInt        lno, i;
-   Superblock* new_sb;
+   Superblock* new_sb = NULL;
    Block*      b = NULL;
    Arena*      a;
    void*       v;
@@ -1398,8 +1504,10 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
    vg_assert(b_bszB >= req_bszB);
 
    // Could we split this block and still get a useful fragment?
+   // A block in a reclaimable superblock can never be splitted.
    frag_bszB = b_bszB - req_bszB;
-   if (frag_bszB >= min_useful_bszB(a)) {
+   if (frag_bszB >= min_useful_bszB(a)
+       && (NULL == new_sb || ! new_sb->reclaimable)) {
       // Yes, split block in two, put the fragment on the appropriate free
       // list, and update b_bszB accordingly.
       // printf( "split %dB into %dB and %dB\n", b_bszB, req_bszB, frag_bszB );
@@ -1502,60 +1610,73 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    if (aid != VG_AR_CLIENT)
       VG_(memset)(ptr, 0xDD, (SizeT)b_pszB);
 
-   // Put this chunk back on a list somewhere.
-   b_listno = pszB_to_listNo(b_pszB);
-   mkFreeBlock( a, b, b_bszB, b_listno );
-   if (VG_(clo_profile_heap))
-      set_cc(b, "admin.free-1");
+   if (! sb->reclaimable) {
+      // Put this chunk back on a list somewhere.
+      b_listno = pszB_to_listNo(b_pszB);
+      mkFreeBlock( a, b, b_bszB, b_listno );
+      if (VG_(clo_profile_heap))
+         set_cc(b, "admin.free-1");
 
-   // See if this block can be merged with its successor.
-   // First test if we're far enough before the superblock's end to possibly
-   // have a successor.
-   other_b = b + b_bszB;
-   if (other_b+min_useful_bszB(a)-1 <= (Block*)sb_end) {
-      // Ok, we have a successor, merge if it's not in use.
-      other_bszB = get_bszB(other_b);
-      if (!is_inuse_block(other_b)) {
-         // VG_(printf)( "merge-successor\n");
-#        ifdef DEBUG_MALLOC
-         vg_assert(blockSane(a, other_b));
-#        endif
-         unlinkBlock( a, b, b_listno );
-         unlinkBlock( a, other_b, pszB_to_listNo(bszB_to_pszB(a,other_bszB)) );
-         b_bszB += other_bszB;
-         b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
-         mkFreeBlock( a, b, b_bszB, b_listno );
-         if (VG_(clo_profile_heap))
-            set_cc(b, "admin.free-2");
+      // See if this block can be merged with its successor.
+      // First test if we're far enough before the superblock's end to possibly
+      // have a successor.
+      other_b = b + b_bszB;
+      if (other_b+min_useful_bszB(a)-1 <= (Block*)sb_end) {
+         // Ok, we have a successor, merge if it's not in use.
+         other_bszB = get_bszB(other_b);
+         if (!is_inuse_block(other_b)) {
+            // VG_(printf)( "merge-successor\n");
+#           ifdef DEBUG_MALLOC
+            vg_assert(blockSane(a, other_b));
+#           endif
+            unlinkBlock( a, b, b_listno );
+            unlinkBlock( a, other_b,
+                         pszB_to_listNo(bszB_to_pszB(a,other_bszB)) );
+            b_bszB += other_bszB;
+            b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
+            mkFreeBlock( a, b, b_bszB, b_listno );
+            if (VG_(clo_profile_heap))
+               set_cc(b, "admin.free-2");
+         }
+      } else {
+         // Not enough space for successor: check that b is the last block
+         // ie. there are no unused bytes at the end of the Superblock.
+         vg_assert(other_b-1 == (Block*)sb_end);
+      }
+
+      // Then see if this block can be merged with its predecessor.
+      // First test if we're far enough after the superblock's start to possibly
+      // have a predecessor.
+      if (b >= (Block*)sb_start + min_useful_bszB(a)) {
+         // Ok, we have a predecessor, merge if it's not in use.
+         other_b = get_predecessor_block( b );
+         other_bszB = get_bszB(other_b);
+         if (!is_inuse_block(other_b)) {
+            // VG_(printf)( "merge-predecessor\n");
+            unlinkBlock( a, b, b_listno );
+            unlinkBlock( a, other_b,
+                         pszB_to_listNo(bszB_to_pszB(a, other_bszB)) );
+            b = other_b;
+            b_bszB += other_bszB;
+            b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
+            mkFreeBlock( a, b, b_bszB, b_listno );
+            if (VG_(clo_profile_heap))
+               set_cc(b, "admin.free-3");
+         }
+      } else {
+         // Not enough space for predecessor: check that b is the first block,
+         // ie. there are no unused bytes at the start of the Superblock.
+         vg_assert((Block*)sb_start == b);
       }
    } else {
-      // Not enough space for successor: check that b is the last block
-      // ie. there are no unused bytes at the end of the Superblock.
-      vg_assert(other_b-1 == (Block*)sb_end);
-   }
-
-   // Then see if this block can be merged with its predecessor.
-   // First test if we're far enough after the superblock's start to possibly
-   // have a predecessor.
-   if (b >= (Block*)sb_start + min_useful_bszB(a)) {
-      // Ok, we have a predecessor, merge if it's not in use.
-      other_b = get_predecessor_block( b );
-      other_bszB = get_bszB(other_b);
-      if (!is_inuse_block(other_b)) {
-         // VG_(printf)( "merge-predecessor\n");
-         unlinkBlock( a, b, b_listno );
-         unlinkBlock( a, other_b, pszB_to_listNo(bszB_to_pszB(a, other_bszB)) );
-         b = other_b;
-         b_bszB += other_bszB;
-         b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
-         mkFreeBlock( a, b, b_bszB, b_listno );
-         if (VG_(clo_profile_heap))
-            set_cc(b, "admin.free-3");
-      }
-   } else {
-      // Not enough space for predecessor: check that b is the first block,
-      // ie. there are no unused bytes at the start of the Superblock.
+      // b must be first block (i.e. no unused bytes at the beginning)
       vg_assert((Block*)sb_start == b);
+
+      // b must be last block (i.e. no unused bytes at the end)
+      other_b = b + b_bszB;
+      vg_assert(other_b-1 == (Block*)sb_end);
+
+      reclaimSuperblock (a, sb);
    }
 
 #  ifdef DEBUG_MALLOC

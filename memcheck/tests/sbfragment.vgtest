@@ -1,0 +1,2 @@
+prog: sbfragment
+stderr_filter: filter_allocs

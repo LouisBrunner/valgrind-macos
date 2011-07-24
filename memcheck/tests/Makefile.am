@@ -161,6 +161,7 @@ EXTRA_DIST = \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
+	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
@@ -247,6 +248,7 @@ check_PROGRAMS = \
 	pipe pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
+	sbfragment \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask sigkill \
 	strchr \

@@ -2952,6 +2952,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_RoundF64toInt:
       case Iop_RoundF64toF32:
       case Iop_F64toI64S:
+      case Iop_F64toI64U:
       case Iop_I64StoF64:
       case Iop_I64UtoF64:
       case Iop_SinF64:
@@ -3050,10 +3051,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Sad8Ux4: /* maybe we could do better?  ftm, do mkLazy2. */
       case Iop_DivS32:
       case Iop_DivU32:
+      case Iop_DivU32E:
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_DivS64:
       case Iop_DivU64:
+      case Iop_DivS64E:
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_Add32:
@@ -3306,6 +3309,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return mkPCastTo(mce, Ity_I32, vatom);
 
       case Iop_1Uto64:
+      case Iop_1Sto64:
       case Iop_8Uto64:
       case Iop_8Sto64:
       case Iop_16Uto64:
@@ -3347,6 +3351,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return assignNew('V', mce, Ity_I16, unop(op, vatom));
 
       case Iop_1Uto8:
+      case Iop_1Sto8:
       case Iop_16to8:
       case Iop_16HIto8:
       case Iop_32to8:

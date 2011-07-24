@@ -1,0 +1,36 @@
+
+--------- p: disabling errors (expect 0) ---------
+
+
+--------- p: creating child ---------
+
+
+--------- c: start (expect 1) ---------
+
+Thread 2:
+Invalid read of size 1
+   at 0x........: err (err_disable3.c:25)
+   by 0x........: child_fn (err_disable3.c:31)
+   by 0x........: start_thread (pthread_create.c:300)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable3.c:42)
+
+
+--------- c: end ---------
+
+
+--------- p: join child ---------
+
+
+--------- p: re_enabled (expect 1) ---------
+
+Thread 1:
+Invalid read of size 1
+   at 0x........: err (err_disable3.c:25)
+   by 0x........: main (err_disable3.c:60)
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable3.c:42)
+

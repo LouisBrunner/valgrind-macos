@@ -1,6 +1,9 @@
 
 Release 3.7.0 (???)
 ~~~~~~~~~~~~~~~~~~~
+
+- new client requests VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING
+
 - Added the --mod-funcname option to cg_diff.
 - Further reduction in overheads caused by --smc-check=all, especially
   on 64-bit targets.

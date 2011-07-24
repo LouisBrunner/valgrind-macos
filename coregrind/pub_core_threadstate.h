@@ -340,6 +340,14 @@ typedef struct {
    /* OS-specific thread state */
    ThreadOSstate os_state;
 
+   /* Error disablement level.  A counter which allows selectively
+      disabling error reporting in threads.  When zero, reporting is
+      enabled.  When nonzero, it is disabled.  This is controlled by
+      the client request 'VG_USERREQ__CHANGE_ERR_DISABLEMENT'.  New
+      threads are always created with this as zero (errors
+      enabled). */
+   UInt err_disablement_level;
+
    /* Per-thread jmp_buf to resume scheduler after a signal */
    Bool               sched_jmpbuf_valid;
    VG_MINIMAL_JMP_BUF(sched_jmpbuf);

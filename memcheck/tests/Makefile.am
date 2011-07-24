@@ -72,6 +72,10 @@ EXTRA_DIST = \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
+	err_disable1.vgtest err_disable1.stderr.exp err_disable1.stdout.exp \
+	err_disable2.vgtest err_disable2.stderr.exp err_disable2.stdout.exp \
+	err_disable3.vgtest err_disable3.stderr.exp err_disable3.stdout.exp \
+	err_disable4.vgtest err_disable4.stderr.exp err_disable4.stdout.exp \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
@@ -215,6 +219,7 @@ check_PROGRAMS = \
 	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
+	err_disable1 err_disable2 err_disable3 err_disable4 \
 	file_locking \
 	fprw fwrite inits inline \
 	leak-0 \
@@ -273,6 +278,9 @@ endif
 
 deep_templates_SOURCES	= deep_templates.cpp
 deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
+
+err_disable3_LDADD 	= -lpthread
+err_disable4_LDADD 	= -lpthread
 
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

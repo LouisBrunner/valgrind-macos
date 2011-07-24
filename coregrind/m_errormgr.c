@@ -693,6 +693,12 @@ void VG_(maybe_record_error) ( ThreadId tid,
       return;
    }
 
+   /* Ignore it if error acquisition is disabled for this thread. */
+   { ThreadState* tst = VG_(get_ThreadState)(tid);
+     if (tst->err_disablement_level > 0)
+        return;
+   }
+
    /* After M_COLLECT_ERRORS_SLOWLY_AFTER different errors have
       been found, be much more conservative about collecting new
       ones. */
@@ -817,6 +823,11 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
    Error err;
    Supp *su;
 
+   /* Ignore it if error acquisition is disabled for this thread. */
+   ThreadState* tst = VG_(get_ThreadState)(tid);
+   if (tst->err_disablement_level > 0)
+      return False; /* ignored, not suppressed */
+   
    /* Build ourselves the error */
    construct_error ( &err, tid, ekind, a, s, extra, where );
 

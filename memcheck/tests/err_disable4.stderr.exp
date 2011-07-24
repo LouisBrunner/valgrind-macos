@@ -1,0 +1,2503 @@
+
+-------- Letting 498 threads exit w/ errs disabled ------
+
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.
+
+-------- Letting 498 threads make an error ------
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+Thread x:
+Invalid read of size 1
+   at 0x........: err (err_disable4.c:41)
+   by 0x........: child_fn_2 (err_disable4.c:55)
+   by 0x........: start_thread (in /...libpthread...)
+   by 0x........: ???
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:68)
+
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.

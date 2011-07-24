@@ -81,6 +81,9 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
       VG_(printf)("thread tid %d started: stack = %p\n",
 		  tid, &tid);
 
+   /* Make sure error reporting is enabled in the new thread. */
+   tst->err_disablement_level = 0;
+
    VG_TRACK(pre_thread_first_insn, tid);
 
    tst->os_state.lwpid = VG_(gettid)();
@@ -119,10 +122,14 @@ static void run_a_thread_NORETURN ( Word tidW )
    ThreadId          tid = (ThreadId)tidW;
    VgSchedReturnCode src;
    Int               c;
+   ThreadState*      tst;
 
    VG_(debugLog)(1, "syswrap-linux", 
                     "run_a_thread_NORETURN(tid=%lld): pre-thread_wrapper\n",
                     (ULong)tidW);
+
+   tst = VG_(get_ThreadState)(tid);
+   vg_assert(tst);
 
    /* Run the thread all the way through. */
    src = thread_wrapper(tid);  
@@ -136,6 +143,27 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    // Tell the tool this thread is exiting
    VG_TRACK( pre_thread_ll_exit, tid );
+
+   /* If the thread is exiting with errors disabled, complain loudly;
+      doing so is bad (does the user know this has happened?)  Also,
+      in all cases, be paranoid and clear the flag anyway so that the
+      thread slot is safe in this respect if later reallocated.  This
+      should be unnecessary since the flag should be cleared when the
+      slot is reallocated, in thread_wrapper(). */
+   if (tst->err_disablement_level > 0) {
+      VG_(umsg)(
+         "WARNING: exiting thread has error reporting disabled.\n"
+         "WARNING: possibly as a result of some mistake in the use\n"
+         "WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.\n"
+      );
+      VG_(debugLog)(
+         1, "syswrap-linux", 
+            "run_a_thread_NORETURN(tid=%lld): "
+            "WARNING: exiting thread has err_disablement_level = %u\n",
+            (ULong)tidW, tst->err_disablement_level
+      );
+   }
+   tst->err_disablement_level = 0;
 
    if (c == 1) {
 
@@ -151,15 +179,12 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    } else {
 
-      ThreadState *tst;
-
       VG_(debugLog)(1, "syswrap-linux", 
                        "run_a_thread_NORETURN(tid=%lld): "
                           "not last one standing\n",
                           (ULong)tidW);
 
       /* OK, thread is dead, but others still exist.  Just exit. */
-      tst = VG_(get_ThreadState)(tid);
 
       /* This releases the run lock */
       VG_(exit_thread)(tid);

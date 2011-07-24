@@ -1,0 +1,46 @@
+
+--------- SIMPLE TEST ---------
+
+
+--------- enabled (expect 1) ---------
+
+Invalid read of size 1
+   at 0x........: err (err_disable1.c:21)
+   by 0x........: main (err_disable1.c:32)
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable1.c:27)
+
+
+--------- disabled (expect 0) ---------
+
+
+--------- re-enabled (expect 1) ---------
+
+Invalid read of size 1
+   at 0x........: err (err_disable1.c:21)
+   by 0x........: main (err_disable1.c:42)
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable1.c:27)
+
+
+--------- MULTI-LEVEL TEST (expect 2) ---------
+
+Invalid read of size 1
+   at 0x........: err (err_disable1.c:21)
+   by 0x........: main (err_disable1.c:67)
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable1.c:27)
+
+Invalid read of size 1
+   at 0x........: err (err_disable1.c:21)
+   by 0x........: main (err_disable1.c:70)
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable1.c:27)
+
+
+--------- MULTI-LEVEL TEST end ---------
+

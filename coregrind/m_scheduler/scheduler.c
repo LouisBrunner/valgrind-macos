@@ -549,6 +549,7 @@ ThreadId VG_(scheduler_init_phase1) ( void )
       VG_(threads)[i].status                    = VgTs_Empty;
       VG_(threads)[i].client_stack_szB          = 0;
       VG_(threads)[i].client_stack_highest_word = (Addr)NULL;
+      VG_(threads)[i].err_disablement_level     = 0;
    }
 
    tid_main = VG_(alloc_ThreadState)();
@@ -1636,6 +1637,22 @@ void do_client_request ( ThreadId tid )
             buf64[0] = 0;
          }
 
+         SET_CLREQ_RETVAL( tid, 0 ); /* return value is meaningless */
+         break;
+      }
+
+      case VG_USERREQ__CHANGE_ERR_DISABLEMENT: {
+         Word delta = arg[1];
+         vg_assert(delta == 1 || delta == -1);
+         ThreadState* tst = VG_(get_ThreadState)(tid);
+         vg_assert(tst);
+         if (delta == 1 && tst->err_disablement_level < 0xFFFFFFFF) {
+            tst->err_disablement_level++;
+         }
+         else
+         if (delta == -1 && tst->err_disablement_level > 0) {
+            tst->err_disablement_level--;
+         }
          SET_CLREQ_RETVAL( tid, 0 ); /* return value is meaningless */
          break;
       }

@@ -98,6 +98,13 @@
 /* Include Valgrind magic macros for writing wrappers. */
 #include "../memcheck/memcheck.h"
 
+/* Include macros for VALGRIND_{DIS,EN}ABLE_ERROR_REPORTING.
+   This is somewhat experimental and hence disable-able, by
+   setting cONFIG_DER to zero. */
+#include "../include/valgrind.h"
+
+#define cONFIG_DER  1   /* set to 0 to disable */
+
 
 /*------------------------------------------------------------*/
 /*--- Connect to MPI library                               ---*/
@@ -1055,7 +1062,9 @@ int generic_Send(void *buf, int count, MPI_Datatype datatype,
    VALGRIND_GET_ORIG_FN(fn);
    before("{,B,S,R}Send");
    check_mem_is_defined(buf, count, datatype);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_6W(err, fn, buf,count,datatype,dest,tag,comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("{,B,S,R}Send", err);
    return err;
 }
@@ -1095,7 +1104,9 @@ int WRAPPER_FOR(PMPI_Recv)(void *buf, int count, MPI_Datatype datatype,
       status = &fake_status;
    check_mem_is_addressable(buf, count, datatype);
    check_mem_is_addressable_untyped(status, sizeof(*status));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS && count_from_Status(&recv_count,datatype,status)) {
       make_mem_defined_if_addressable(buf, recv_count, datatype);
    }
@@ -1115,7 +1126,9 @@ int WRAPPER_FOR(PMPI_Get_count)(MPI_Status* status,
    VALGRIND_GET_ORIG_FN(fn);
    before("Get_count");
    check_mem_is_defined_untyped(status, sizeof(*status));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWW(err, fn, status,ty,count);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Get_count", err);
    return err;
 }
@@ -1364,7 +1377,9 @@ int generic_Isend(void *buf, int count, MPI_Datatype datatype,
    before("{,B,S,R}Isend");
    check_mem_is_defined(buf, count, datatype);
    check_mem_is_addressable_untyped(request, sizeof(*request));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, buf,count,datatype,dest,tag,comm,request);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success_untyped(err, request, sizeof(*request));
    after("{,B,S,R}Isend", err);
    return err;
@@ -1407,7 +1422,9 @@ int WRAPPER_FOR(PMPI_Irecv)( void* buf, int count, MPI_Datatype datatype,
    before("Irecv");
    check_mem_is_addressable(buf, count, datatype);
    check_mem_is_addressable_untyped(request, sizeof(*request));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,request);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS) {
       make_mem_defined_if_addressable_untyped(request, sizeof(*request));
       add_shadow_Request( *request, buf,count,datatype );
@@ -1436,7 +1453,9 @@ int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
    check_mem_is_addressable_untyped(status, sizeof(MPI_Status));
    check_mem_is_defined_untyped(request, sizeof(MPI_Request));
    request_before = *request;
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WW(err, fn, request,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS) {
       maybe_complete(False/*err in status?*/, 
                      request_before, *request, status);
@@ -1467,7 +1486,9 @@ int WRAPPER_FOR(PMPI_Waitany)( int count,
       check_mem_is_defined_untyped(&requests[i], sizeof(MPI_Request));
    }
    requests_before = clone_Request_array( count, requests );
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWWW(err, fn, count,requests,index,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS && *index >= 0 && *index < count) {
       maybe_complete(False/*err in status?*/, 
                      requests_before[*index], requests[*index], status);
@@ -1500,7 +1521,9 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
       check_mem_is_defined_untyped(&requests[i], sizeof(MPI_Request));
    }
    requests_before = clone_Request_array( count, requests );
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWW(err, fn, count,requests,statuses);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS /*complete success*/
        || err == MPI_ERR_IN_STATUS /* partial success */) {
       Bool e_i_s = err == MPI_ERR_IN_STATUS;
@@ -1536,7 +1559,9 @@ int WRAPPER_FOR(PMPI_Test)( MPI_Request* request, int* flag,
    check_mem_is_addressable_untyped(flag, sizeof(int));
    check_mem_is_defined_untyped(request, sizeof(MPI_Request));
    request_before = *request;
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWW(err, fn, request,flag,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS && *flag) {
       maybe_complete(False/*err in status?*/, 
                      request_before, *request, status);
@@ -1568,7 +1593,9 @@ int WRAPPER_FOR(PMPI_Testall)( int count, MPI_Request* requests,
       check_mem_is_defined_untyped(&requests[i], sizeof(MPI_Request));
    }
    requests_before = clone_Request_array( count, requests );
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWWW(err, fn, count,requests,flag,statuses);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    /* Urk.  Is the following "if (...)" really right?  I don't know. */
    if (*flag
        && (err == MPI_SUCCESS /*complete success*/
@@ -1606,7 +1633,9 @@ int WRAPPER_FOR(PMPI_Iprobe)(int source, int tag,
       status = &fake_status;
    check_mem_is_addressable_untyped(flag, sizeof(*flag));
    check_mem_is_addressable_untyped(status, sizeof(*status));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_5W(err, fn, source,tag,comm,flag,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS) {
       make_mem_defined_if_addressable_untyped(flag, sizeof(*flag));
       if (*flag)
@@ -1630,7 +1659,9 @@ int WRAPPER_FOR(PMPI_Probe)(int source, int tag,
    if (isMSI(status))
       status = &fake_status;
    check_mem_is_addressable_untyped(status, sizeof(*status));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWWW(err, fn, source,tag,comm,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success_untyped(err, status, sizeof(*status));
    after("Probe", err);
    return err;
@@ -1649,7 +1680,9 @@ int WRAPPER_FOR(PMPI_Cancel)(MPI_Request* request)
    before("Cancel");
    check_mem_is_addressable_untyped(request, sizeof(*request));
    tmp = *request;
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_W(err, fn, request);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS)
       delete_shadow_Request(tmp);
    after("Cancel", err);
@@ -1686,9 +1719,11 @@ int WRAPPER_FOR(PMPI_Sendrecv)(
    check_mem_is_defined(sendbuf, sendcount, sendtype);
    check_mem_is_addressable(recvbuf, recvcount, recvtype);
    check_mem_is_addressable_untyped(status, sizeof(*status));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_12W(err, fn, sendbuf,sendcount,sendtype,dest,sendtag,
                           recvbuf,recvcount,recvtype,source,recvtag,
                           comm,status);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS 
        && count_from_Status(&recvcount_actual,recvtype,status)) {
       make_mem_defined_if_addressable(recvbuf, recvcount_actual, recvtype);
@@ -1725,7 +1760,9 @@ int WRAPPER_FOR(PMPI_Type_commit)( MPI_Datatype* ty )
    VALGRIND_GET_ORIG_FN(fn);
    before("Type_commit");
    check_mem_is_defined_untyped(ty, sizeof(*ty));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_W(err, fn, ty);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Type_commit", err);
    return err;
 }
@@ -1738,7 +1775,9 @@ int WRAPPER_FOR(PMPI_Type_free)( MPI_Datatype* ty )
    VALGRIND_GET_ORIG_FN(fn);
    before("Type_free");
    check_mem_is_defined_untyped(ty, sizeof(*ty));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_W(err, fn, ty);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Type_free", err);
    return err;
 }
@@ -1783,7 +1822,9 @@ int WRAPPER_FOR(PMPI_Pack)( void* inbuf, int incount, MPI_Datatype datatype,
       );
    }
 
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, inbuf,incount,datatype, outbuf,outsize,position, comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
 
    if (err == MPI_SUCCESS && (*position) > position_ORIG) {
       /* paint output */
@@ -1830,7 +1871,9 @@ int WRAPPER_FOR(PMPI_Unpack)( void* inbuf, int insize, int* position,
       );
    }
 
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, inbuf,insize,position, outbuf,outcount,datatype, comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
 
    if (err == MPI_SUCCESS && (*position) > position_ORIG) {
       /* recheck input more carefully */
@@ -1875,7 +1918,9 @@ int WRAPPER_FOR(PMPI_Bcast)(void *buffer, int count,
    } else {
       check_mem_is_addressable(buffer, count, datatype);
    }
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_5W(err, fn, buffer,count,datatype,root,comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success(err, buffer, count, datatype);
    after("Bcast", err);
    return err; 
@@ -1914,9 +1959,11 @@ int WRAPPER_FOR(PMPI_Gather)(
    check_mem_is_defined(sendbuf, sendcount, sendtype);
    if (me == root)
       check_mem_is_addressable(recvbuf, recvcount * sz, recvtype);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          root,comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (me == root)
       make_mem_defined_if_addressable_if_success(err, recvbuf, recvcount * sz, recvtype);
    after("Gather", err);
@@ -1948,9 +1995,11 @@ int WRAPPER_FOR(PMPI_Scatter)(
    check_mem_is_addressable(recvbuf, recvcount, recvtype);
    if (me == root)
       check_mem_is_defined(sendbuf, sendcount * sz, sendtype);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          root,comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success(err, recvbuf, recvcount, recvtype);
    after("Scatter", err);
    return err;
@@ -1979,9 +2028,11 @@ int WRAPPER_FOR(PMPI_Alltoall)(
    sz = comm_size(comm);
    check_mem_is_defined(sendbuf, sendcount * sz, sendtype);
    check_mem_is_addressable(recvbuf, recvcount * sz, recvtype);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success(err, recvbuf, recvcount * sz, recvtype);
    after("Alltoall", err);
    return err;
@@ -2012,7 +2063,9 @@ int WRAPPER_FOR(PMPI_Reduce)(void *sendbuf, void *recvbuf,
    check_mem_is_defined(sendbuf, count, datatype);
    if (i_am_root)
       check_mem_is_addressable(recvbuf, count, datatype);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, sendbuf,recvbuf,count,datatype,op,root,comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (i_am_root)
       make_mem_defined_if_addressable_if_success(err, recvbuf, count, datatype);
    after("Reduce", err);
@@ -2035,7 +2088,9 @@ int WRAPPER_FOR(PMPI_Allreduce)(void *sendbuf, void *recvbuf,
    before("Allreduce");
    check_mem_is_defined(sendbuf, count, datatype);
    check_mem_is_addressable(recvbuf, count, datatype);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_6W(err, fn, sendbuf,recvbuf,count,datatype,op,comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success(err, recvbuf, count, datatype);
    after("Allreduce", err);
    return err;
@@ -2055,7 +2110,9 @@ int WRAPPER_FOR(PMPI_Op_create)( MPI_User_function* function,
    VALGRIND_GET_ORIG_FN(fn);
    before("Op_create");
    check_mem_is_addressable_untyped(op, sizeof(*op));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWW(err, fn, function,commute,op);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success_untyped(err, op, sizeof(*op));
    after("Op_create", err);
    return err;
@@ -2080,7 +2137,9 @@ int WRAPPER_FOR(PMPI_Comm_create)(MPI_Comm comm, MPI_Group group,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_create");
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWW(err, fn, comm,group,newcomm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Comm_create", err);
    return err;
 }
@@ -2093,7 +2152,9 @@ int WRAPPER_FOR(PMPI_Comm_dup)(MPI_Comm comm, MPI_Comm* newcomm)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_dup");
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WW(err, fn, comm,newcomm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Comm_dup", err);
    return err;
 }
@@ -2106,7 +2167,9 @@ int WRAPPER_FOR(PMPI_Comm_free)(MPI_Comm* comm)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_free");
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_W(err, fn, comm);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Comm_free", err);
    return err;
 }
@@ -2120,7 +2183,9 @@ int WRAPPER_FOR(PMPI_Comm_rank)(MPI_Comm comm, int *rank)
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_rank");
    check_mem_is_addressable_untyped(rank, sizeof(*rank));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WW(err, fn, comm,rank);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success_untyped(err, rank, sizeof(*rank));
    after("Comm_rank", err);
    return err;
@@ -2135,7 +2200,9 @@ int WRAPPER_FOR(PMPI_Comm_size)(MPI_Comm comm, int *size)
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_size");
    check_mem_is_addressable_untyped(size, sizeof(*size));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WW(err, fn, comm,size);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success_untyped(err, size, sizeof(*size));
    after("Comm_size", err);
    return err;
@@ -2165,7 +2232,9 @@ int WRAPPER_FOR(PMPI_Error_string)( int errorcode, char* string,
    before("Error_string");
    check_mem_is_addressable_untyped(resultlen, sizeof(int));
    check_mem_is_addressable_untyped(string, MPI_MAX_ERROR_STRING);
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WWW(err, fn, errorcode,string,resultlen);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    /* Don't bother to paint the result; we assume the real function
       will have filled it with defined characters :-) */
    after("Error_string", err);
@@ -2193,7 +2262,9 @@ long WRAPPER_FOR(PMPI_Init)(int *argc, char ***argv)
    if (argc && argv) {
       check_mem_is_defined_untyped(*argv, *argc * sizeof(char**));
    }
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WW(err, fn, argc,argv);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Init", err);
    if (opt_initkludge)
       return (long)(void*)&mpiwrap_walk_type_EXTERNALLY_VISIBLE;
@@ -2209,7 +2280,9 @@ int WRAPPER_FOR(PMPI_Initialized)(int* flag)
    VALGRIND_GET_ORIG_FN(fn);
    before("Initialized");
    check_mem_is_addressable_untyped(flag, sizeof(int));
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_W(err, fn, flag);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    make_mem_defined_if_addressable_if_success_untyped(err, flag, sizeof(int));
    after("Initialized", err);
    return err;
@@ -2222,7 +2295,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Finalize");
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_v(err, fn);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    after("Finalize", err);
    return err;
 }
@@ -2257,7 +2332,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
    UWord WRAPPER_FOR(PMPI_##basename)( void )                     \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_v(res, fn);                                       \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2265,7 +2342,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
    UWord WRAPPER_FOR(PMPI_##basename)( UWord a1 )                 \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_W(res, fn, a1);                                   \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2273,7 +2352,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
    UWord WRAPPER_FOR(PMPI_##basename)( UWord a1, UWord a2 )       \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_WW(res, fn, a1,a2);                               \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2282,7 +2363,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
       ( UWord a1, UWord a2, UWord a3 )                            \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_WWW(res, fn, a1,a2,a3);                           \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2291,7 +2374,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
       ( UWord a1, UWord a2, UWord a3, UWord a4 )                  \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_WWWW(res, fn, a1,a2,a3,a4);                       \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2300,7 +2385,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
       ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5 )        \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_5W(res, fn, a1,a2,a3,a4,a5);                      \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2310,7 +2397,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
         UWord a6 )                                                \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_6W(res, fn, a1,a2,a3,a4,a5,a6);                   \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2320,7 +2409,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
         UWord a6, UWord a7 )                                      \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_7W(res, fn, a1,a2,a3,a4,a5,a6,a7);                \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2330,7 +2421,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
         UWord a6, UWord a7, UWord a8 )                            \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_8W(res, fn, a1,a2,a3,a4,a5,a6,a7,a8);             \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2340,7 +2433,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
         UWord a6, UWord a7, UWord a8, UWord a9 )                  \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_9W(res, fn, a1,a2,a3,a4,a5,a6,a7,a8,a9);          \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2350,7 +2445,9 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
         UWord a6, UWord a7, UWord a8, UWord a9, UWord a10 )       \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_10W(res, fn, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10);     \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 
@@ -2361,8 +2458,10 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
         UWord a11, UWord a12 )                                    \
    {                                                              \
       DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;           \
       CALL_FN_W_12W(res, fn, a1,a2,a3,a4,a5,a6,                   \
                              a7,a8,a9,a10,a11,a12);               \
+      if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;            \
       return res;                                                 \
    }
 

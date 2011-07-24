@@ -3644,7 +3644,14 @@ typedef
           VG_USERREQ__LOAD_PDB_DEBUGINFO = 0x1601,
 
           /* Querying of debug info. */
-          VG_USERREQ__MAP_IP_TO_SRCLOC = 0x1701
+          VG_USERREQ__MAP_IP_TO_SRCLOC = 0x1701,
+
+          /* Disable/enable error reporting level.  Takes a single
+             Word arg which is the delta to this thread's error
+             disablement indicator.  Hence 1 disables or further
+             disables errors, and -1 moves back towards enablement.
+             Other values are not allowed. */
+          VG_USERREQ__CHANGE_ERR_DISABLEMENT = 0x1801
    } Vg_ClientRequest;
 
 #if !defined(__GNUC__)
@@ -4017,6 +4024,30 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__MAP_IP_TO_SRCLOC,      \
                                addr, buf64, 0, 0, 0)
+
+/* Disable error reporting for this thread.  Behaves in a stack like
+   way, so you can safely call this multiple times provided that
+   VALGRIND_ENABLE_ERROR_REPORTING is called the same number of times
+   to re-enable reporting.  The first call of this macro disables
+   reporting.  Subsequent calls have no effect except to increase the
+   number of VALGRIND_ENABLE_ERROR_REPORTING calls needed to re-enable
+   reporting.  Child threads do not inherit this setting from their
+   parents -- they are always created with reporting enabled. */
+#define VALGRIND_DISABLE_ERROR_REPORTING                           \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                        \
+                               VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
+                               1, 0, 0, 0, 0);                     \
+   }
+
+/* Re-enable error reporting, as per comments on
+   VALGRIND_DISABLE_ERROR_REPORTING. */
+#define VALGRIND_ENABLE_ERROR_REPORTING                            \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                        \
+                               VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
+                               (-1), 0, 0, 0, 0);                  \
+   }
 
 
 #undef PLAT_x86_darwin

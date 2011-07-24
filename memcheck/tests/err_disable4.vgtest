@@ -1,0 +1,6 @@
+prog: err_disable4
+vgopts: -q
+stderr_filter: ../../helgrind/tests/filter_stderr
+## This is so as to get rid of the "Thread #" lines, which
+## otherwise perturb the output due to differences in 
+## thread scheduling between runs.

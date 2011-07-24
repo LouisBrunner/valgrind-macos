@@ -1,0 +1,19 @@
+
+--------- enabled (expect 1) ---------
+
+Invalid read of size 1
+   at 0x........: err (err_disable2.c:22)
+   by 0x........: main (err_disable2.c:32)
+ Address 0x........ is 5 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable2.c:28)
+
+
+--------- disabled (expect 0) ---------
+
+
+--------- exiting (expect complaint) ---------
+
+WARNING: exiting thread has error reporting disabled.
+WARNING: possibly as a result of some mistake in the use
+WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.

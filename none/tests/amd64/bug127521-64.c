@@ -66,7 +66,7 @@ void do_cmpxchg16b ( /*OUT*/
                      ULong memHiIn, ULong memLoIn,
                      ULong rcxIn,   ULong rbxIn )
 {
-   ULong mem[2];
+   ULong mem[2] __attribute__((aligned(16)));
    ULong block[6];
    mem[0] = memLoIn;
    mem[1] = memHiIn;

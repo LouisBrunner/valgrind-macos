@@ -4000,7 +4000,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 /* Unmark the piece of memory associated with a stack id as being a
    stack. */
 #define VALGRIND_STACK_DEREGISTER(id)                             \
-    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
+   VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                             \
                                VG_USERREQ__STACK_DEREGISTER,      \
                                id, 0, 0, 0, 0)
 

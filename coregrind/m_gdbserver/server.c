@@ -670,7 +670,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
 
 /* Handle all of the extended 'v' packets.  */
 static
-void handle_v_requests (char *arg_own_buf, char *status, int *signal)
+void handle_v_requests (char *arg_own_buf, char *status, int *zignal)
 {
    /* vcont packet code from gdb 6.6 removed */
 
@@ -729,14 +729,14 @@ void gdbserver_terminate (void)
 void server_main (void)
 {
    static char status;
-   static int signal;
+   static int zignal;
 
    char ch;
    int i = 0;
    unsigned int len;
    CORE_ADDR mem_addr;
 
-   signal = mywait (&status);
+   zignal = mywait (&status);
    if (VG_MINIMAL_SETJMP(toplevel)) {
       dlog(0, "error caused VG_MINIMAL_LONGJMP to server_main\n");
    }
@@ -747,7 +747,7 @@ void server_main (void)
       
       if (resume_packet_needed) {
          resume_packet_needed = False;
-         prepare_resume_reply (own_buf, status, signal);
+         prepare_resume_reply (own_buf, status, zignal);
          putpkt (own_buf);
       }
 
@@ -788,7 +788,7 @@ void server_main (void)
          own_buf[0] = '\0';
          break;
       case '?':
-         prepare_resume_reply (own_buf, status, signal);
+         prepare_resume_reply (own_buf, status, zignal);
          break;
       case 'H':
          if (own_buf[1] == 'c' || own_buf[1] == 'g' || own_buf[1] == 's') {
@@ -888,20 +888,20 @@ void server_main (void)
       case 'C':
          convert_ascii_to_int (own_buf + 1, &sig, 1);
          if (target_signal_to_host_p (sig))
-            signal = target_signal_to_host (sig);
+            zignal = target_signal_to_host (sig);
          else
-            signal = 0;
+            zignal = 0;
          set_desired_inferior (0);
-         myresume (0, signal);
+         myresume (0, zignal);
          return; // return control to valgrind
       case 'S':
          convert_ascii_to_int (own_buf + 1, &sig, 1);
          if (target_signal_to_host_p (sig))
-            signal = target_signal_to_host (sig);
+            zignal = target_signal_to_host (sig);
          else
-            signal = 0;
+            zignal = 0;
          set_desired_inferior (0);
-         myresume (1, signal);
+         myresume (1, zignal);
          return; // return control to valgrind
       case 'c':
          set_desired_inferior (0);
@@ -992,7 +992,7 @@ void server_main (void)
          break;
       case 'v':
          /* Extended (long) request.  */
-         handle_v_requests (own_buf, &status, &signal);
+         handle_v_requests (own_buf, &status, &zignal);
          break;
       default:
          /* It is a request we don't understand.  Respond with an
@@ -1008,11 +1008,11 @@ void server_main (void)
          putpkt (own_buf);
       
       if (status == 'W')
-         VG_(umsg) ("\nChild exited with status %d\n", signal);
+         VG_(umsg) ("\nChild exited with status %d\n", zignal);
       if (status == 'X')
-         VG_(umsg) ("\nChild terminated with signal = 0x%x (%s)\n",
-                    target_signal_to_host (signal),
-                    target_signal_to_name (signal));
+         VG_(umsg) ("\nChild terminated with zignal = 0x%x (%s)\n",
+                    target_signal_to_host (zignal),
+                    target_signal_to_name (zignal));
       if (status == 'W' || status == 'X') {
          VG_(umsg) ("Process exiting\n");
          VG_(exit) (0);

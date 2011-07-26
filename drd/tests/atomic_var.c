@@ -36,6 +36,9 @@ static int s_y = 0;
 
 static void* thread_func_1(void* arg)
 {
+  struct timespec delay = { 0, 100 * 1000 * 1000 };
+
+  nanosleep(&delay, 0);
   s_y = 1;
   (void) sync_add_and_fetch(&s_x, 1);
   return 0;

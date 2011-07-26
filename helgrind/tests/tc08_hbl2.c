@@ -121,6 +121,7 @@ void* child_fn ( void* arg )
 
 int main ( void )
 {
+   struct timespec delay = { 0, 100 * 1000 * 1000 };
    pthread_t child;
    int i;
 
@@ -128,6 +129,8 @@ int main ( void )
       perror("pthread_create");
       exit(1);
    }
+
+   nanosleep(&delay, 0);
 
    for (i = 0; i < LIMIT; i++) {
       INC(x, "main");

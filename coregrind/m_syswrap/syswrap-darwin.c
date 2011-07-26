@@ -105,7 +105,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
                   tid, &tid);
 
    /* Make sure error reporting is enabled in the new thread. */
-   ctst->err_disablement_level = 0;
+   tst->err_disablement_level = 0;
 
    VG_TRACK(pre_thread_first_insn, tid);
 
@@ -234,7 +234,7 @@ static void run_a_thread_NORETURN ( Word tidW )
       thread slot is safe in this respect if later reallocated.  This
       should be unnecessary since the flag should be cleared when the
       slot is reallocated, in thread_wrapper(). */
-   if (tst->disablement_level > 0) {
+   if (tst->err_disablement_level > 0) {
       VG_(umsg)(
          "WARNING: exiting thread has error reporting disabled.\n"
          "WARNING: possibly as a result of some mistake in the use\n"

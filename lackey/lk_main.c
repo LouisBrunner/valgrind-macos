@@ -301,7 +301,7 @@ typedef enum { OpLoad=0, OpStore=1, OpAlu=2 } Op;
 
 /* --- Types --- */
 
-#define N_TYPES 9
+#define N_TYPES 10
 
 static Int type2index ( IRType ty )
 {

@@ -24,6 +24,11 @@
    drd:ConflictingAccess
    obj:/lib*/libc-*
 }
+{
+   drd-libc-thread-cancellation-test
+   drd:ConflictingAccess
+   fun:write
+}
 
 #
 # Suppression patterns for libstdc++, the implementation of the standard C++

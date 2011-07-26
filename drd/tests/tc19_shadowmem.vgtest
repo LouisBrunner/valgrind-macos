@@ -1,4 +1,4 @@
-prereq: ./supported_libpthread
+prereq: false && ./supported_libpthread
 prog: ../../helgrind/tests/tc19_shadowmem
 vgopts: --error-limit=no --read-var-info=yes --show-confl-seg=no --num-callers=3
 stderr_filter: filter_stderr_and_thread_no

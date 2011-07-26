@@ -55,6 +55,10 @@
 #include <stdio.h>          /* fprintf() */
 #include <stdlib.h>         /* malloc(), free() */
 #include <unistd.h>         /* confstr() */
+#ifdef __linux__
+#include <asm/unistd.h>     /* __NR_futex */
+#include <linux/futex.h>    /* FUTEX_WAIT */
+#endif
 #include "config.h"         /* HAVE_PTHREAD_MUTEX_ADAPTIVE_NP etc. */
 #include "drd_basics.h"     /* DRD_() */
 #include "drd_clientreq.h"
@@ -129,12 +133,16 @@ static int never_true;
 
 /* Local data structures. */
 
+typedef struct {
+   volatile int counter;
+} DrdSema;
+
 typedef struct
 {
    void* (*start)(void*);
    void* arg;
    int   detachstate;
-   int   wrapper_started;
+   DrdSema wrapper_started;
 } DrdPosixThreadArgs;
 
 
@@ -143,6 +151,10 @@ typedef struct
 static void DRD_(init)(void) __attribute__((constructor));
 static void DRD_(check_threading_library)(void);
 static void DRD_(set_main_thread_state)(void);
+static void DRD_(sema_init)(DrdSema* sema);
+static void DRD_(sema_destroy)(DrdSema* sema);
+static void DRD_(sema_down)(DrdSema* sema);
+static void DRD_(sema_up)(DrdSema* sema);
 
 
 /* Function definitions. */
@@ -161,6 +173,38 @@ static void DRD_(init)(void)
 {
    DRD_(check_threading_library)();
    DRD_(set_main_thread_state)();
+}
+
+static void DRD_(sema_init)(DrdSema* sema)
+{
+   DRD_IGNORE_VAR(sema->counter);
+   sema->counter = 0;
+}
+
+static void DRD_(sema_destroy)(DrdSema* sema)
+{
+}
+
+static void DRD_(sema_down)(DrdSema* sema)
+{
+   while (sema->counter == 0) {
+#ifdef __linux__
+      syscall(__NR_futex, (UWord)&sema->counter,
+              FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0);
+#else
+      sched_yield();
+#endif
+   }
+   sema->counter--;
+}
+
+static void DRD_(sema_up)(DrdSema* sema)
+{
+   sema->counter++;
+#ifdef __linux__
+   syscall(__NR_futex, (UWord)&sema->counter,
+           FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
+#endif
 }
 
 /**
@@ -277,7 +321,7 @@ static void* DRD_(thread_wrapper)(void* arg)
     * DRD_(set_joinable)() have been invoked to avoid a race with
     * a pthread_detach() invocation for this thread from another thread.
     */
-   arg_ptr->wrapper_started = 1;
+   DRD_(sema_up)(&arg_ptr->wrapper_started);
 
    return (arg_copy.start)(arg_copy.arg);
 }
@@ -379,8 +423,7 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
 
    thread_args.start           = start;
    thread_args.arg             = arg;
-   DRD_IGNORE_VAR(thread_args.wrapper_started);
-   thread_args.wrapper_started = 0;
+   DRD_(sema_init)(&thread_args.wrapper_started);
    /*
     * Find out whether the thread will be started as a joinable thread
     * or as a detached thread. If no thread attributes have been specified,
@@ -402,9 +445,10 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
    if (ret == 0)
    {
       /* Wait until the thread wrapper started. */
-      while (!thread_args.wrapper_started)
-         sched_yield();
+      DRD_(sema_down)(&thread_args.wrapper_started);
    }
+
+   DRD_(sema_destroy)(&thread_args.wrapper_started);
 
    VALGRIND_DO_CLIENT_REQUEST_EXPR(-1, VG_USERREQ__DRD_START_NEW_SEGMENT,
                                    pthread_self(), 0, 0, 0, 0);

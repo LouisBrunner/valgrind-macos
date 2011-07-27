@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static int s_finished_count;
+static int s_finished_count; /* protected by s_mutex */
 static pthread_mutex_t s_mutex;
 static pthread_cond_t s_cond;
 
@@ -70,15 +70,14 @@ int main(int argc, char** argv)
 
   // Wait until all detached threads have written their output to stdout.
   pthread_mutex_lock(&s_mutex);
-  while (s_finished_count < count1 + count2
-         && pthread_cond_wait(&s_cond, &s_mutex) == 0)
-    ;
+  while (s_finished_count < count1 + count2) {
+    const int ret = pthread_cond_wait(&s_cond, &s_mutex);
+    assert(ret == 0);
+  }
   pthread_mutex_unlock(&s_mutex);
 
   pthread_cond_destroy(&s_cond);
   pthread_mutex_destroy(&s_mutex);
-
-  sleep(1);
 
   write(STDOUT_FILENO, "\n", 1);
 

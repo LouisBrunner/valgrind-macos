@@ -12966,8 +12966,8 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
         break;
       }
    }
-   /* next instruction is execute, stop here */
-   if (irsb->next == NULL && (*(char *)(HWord) guest_IA_next_instr == 0x44)) {
+   /* If next instruction is execute, stop here */
+   if (irsb->next == NULL && bytes[insn_length] == 0x44) {
       irsb->next = IRExpr_Const(IRConst_U64(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
    }

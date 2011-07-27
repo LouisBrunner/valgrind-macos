@@ -305,6 +305,7 @@ static void* thread_func(void* arg)
 
 int main(int argc, char** argv)
 {
+  struct timespec delay = { 0, 100 * 1000 * 1000 };
   const int nthreads = std::max(argc > 1 ? atoi(argv[1]) : 1, 1);
   const int iterations = std::max(argc > 2 ? atoi(argv[2]) : 1, 1);
   s_enable_annotations = argc > 3 ? !!atoi(argv[3]) : true;
@@ -318,6 +319,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < nthreads; ++i)
       T[i].Create(thread_func, new smart_ptr<counter>(p));
     p = NULL;
+    nanosleep(&delay, 0);
     for (int i = 0; i < nthreads; ++i)
       T[i].Join();
   }

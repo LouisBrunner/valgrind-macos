@@ -14,11 +14,14 @@ static void *th(void *v)
 
 int main()
 {
+	const struct timespec delay = { 0, 100 * 1000 * 1000 };
 	pthread_t a, b;
 
 	pthread_create(&a, NULL, th, NULL);	
-	sleep(1);		/* force ordering */
+	nanosleep(&delay, 0);	/* force ordering */
 	pthread_create(&b, NULL, th, NULL);
+
+	nanosleep(&delay, 0);	/* avoid false ordering between threads */
 
 	pthread_join(a, NULL);
 	pthread_join(b, NULL);

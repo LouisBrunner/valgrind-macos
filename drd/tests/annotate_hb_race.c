@@ -32,11 +32,11 @@ int main(int argc, char** argv)
 
   U_ANNOTATE_HAPPENS_BEFORE(&s_i);
   pthread_create(&tid[0], 0, thread_func, &result[0]);
-  pthread_create(&tid[1], 0, thread_func, &result[1]);
+  //pthread_create(&tid[1], 0, thread_func, &result[1]);
   s_i = 1;
 
   pthread_join(tid[0], NULL);
-  pthread_join(tid[1], NULL);
+  //pthread_join(tid[1], NULL);
 
   fprintf(stderr, "Done.\n");
 

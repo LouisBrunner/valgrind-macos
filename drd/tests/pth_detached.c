@@ -80,6 +80,7 @@ int main(int argc, char** argv)
   pthread_mutex_destroy(&s_mutex);
 
   write(STDOUT_FILENO, "\n", 1);
+  fprintf(stderr, "Done.\n");
 
   return 0;
 }

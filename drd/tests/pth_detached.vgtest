@@ -1,3 +1,4 @@
 prereq: ./supported_libpthread
 prog: pth_detached
 args: 1 1
+stdout_filter: ../../tests/filter_sink

@@ -76,6 +76,9 @@ static Bool     s_trace_fork_join = False;
 static Bool     s_segment_merging = True;
 static Bool     s_new_segments_since_last_merge;
 static int      s_segment_merge_interval = 10;
+static unsigned s_join_list_vol = 10;
+static unsigned s_deletion_head;
+static unsigned s_deletion_tail;
 
 
 /* Function definitions. */
@@ -133,6 +136,11 @@ void DRD_(thread_set_segment_merge_interval)(const int i)
    s_segment_merge_interval = i;
 }
 
+void DRD_(thread_set_join_list_vol)(const int jlv)
+{
+   s_join_list_vol = jlv;
+}
+
 /**
  * Convert Valgrind's ThreadId into a DrdThreadId.
  *
@@ -167,12 +175,11 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
 
    for (i = 1; i < DRD_N_THREADS; i++)
    {
-      if (DRD_(g_threadinfo)[i].vg_thread_exists == False
-          && DRD_(g_threadinfo)[i].posix_thread_exists == False
-          && DRD_(g_threadinfo)[i].detached_posix_thread == False)
+      if (!DRD_(g_threadinfo)[i].valid)
       {
          tl_assert(! DRD_(IsValidDrdThreadId)(i));
 
+         DRD_(g_threadinfo)[i].valid         = True;
          DRD_(g_threadinfo)[i].vg_thread_exists = True;
          DRD_(g_threadinfo)[i].vg_threadid   = tid;
          DRD_(g_threadinfo)[i].pt_threadid   = INVALID_POSIX_THREADID;
@@ -186,6 +193,7 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
          DRD_(g_threadinfo)[i].is_recording_stores = True;
          DRD_(g_threadinfo)[i].pthread_create_nesting_level = 0;
          DRD_(g_threadinfo)[i].synchr_nesting = 0;
+         DRD_(g_threadinfo)[i].deletion_seq = s_deletion_tail - 1;
          tl_assert(DRD_(g_threadinfo)[i].first == 0);
          tl_assert(DRD_(g_threadinfo)[i].last == 0);
 
@@ -323,6 +331,32 @@ DrdThreadId DRD_(thread_post_create)(const ThreadId vg_created)
    return created;
 }
 
+static void DRD_(thread_delayed_delete)(const DrdThreadId tid)
+{
+   int j;
+
+   DRD_(g_threadinfo)[tid].vg_thread_exists = False;
+   DRD_(g_threadinfo)[tid].posix_thread_exists = False;
+   DRD_(g_threadinfo)[tid].deletion_seq = s_deletion_head++;
+#if 0
+   VG_(message)(Vg_DebugMsg, "Adding thread %d to the deletion list\n", tid);
+#endif
+   if (s_deletion_head - s_deletion_tail >= s_join_list_vol) {
+      for (j = 0; j < DRD_N_THREADS; ++j) {
+         if (DRD_(IsValidDrdThreadId)(j)
+             && DRD_(g_threadinfo)[j].deletion_seq == s_deletion_tail)
+         {
+            s_deletion_tail++;
+#if 0
+            VG_(message)(Vg_DebugMsg, "Delayed delete of thread %d\n", j);
+#endif
+            DRD_(thread_delete)(j, False);
+            break;
+         }
+      }
+   }
+}
+
 /**
  * Process VG_USERREQ__POST_THREAD_JOIN. This client request is invoked just
  * after thread drd_joiner joined thread drd_joinee.
@@ -367,7 +401,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                                DRD_(thread_get_stack_max)(drd_joinee));
    }
    DRD_(clientobj_delete_thread)(drd_joinee);
-   DRD_(thread_delete)(drd_joinee, False);
+   DRD_(thread_delayed_delete)(drd_joinee);
 }
 
 /**
@@ -447,8 +481,7 @@ Int DRD_(thread_get_threads_on_alt_stack)(void)
 }
 
 /**
- * Clean up thread-specific data structures. Call this just after
- * pthread_join().
+ * Clean up thread-specific data structures.
  */
 void DRD_(thread_delete)(const DrdThreadId tid, const Bool detached)
 {
@@ -465,6 +498,7 @@ void DRD_(thread_delete)(const DrdThreadId tid, const Bool detached)
       sg->next = 0;
       DRD_(sg_put)(sg);
    }
+   DRD_(g_threadinfo)[tid].valid = False;
    DRD_(g_threadinfo)[tid].vg_thread_exists = False;
    DRD_(g_threadinfo)[tid].posix_thread_exists = False;
    if (detached)
@@ -1217,9 +1251,10 @@ void DRD_(thread_print_all)(void)
       if (DRD_(g_threadinfo)[i].first)
       {
          VG_(printf)("**************\n"
-                     "* thread %3d (%d/%d/%d/0x%lx/%d) *\n"
+                     "* thread %3d (%d/%d/%d/%d/0x%lx/%d) *\n"
                      "**************\n",
                      i,
+                     DRD_(g_threadinfo)[i].valid,
                      DRD_(g_threadinfo)[i].vg_thread_exists,
                      DRD_(g_threadinfo)[i].vg_threadid,
                      DRD_(g_threadinfo)[i].posix_thread_exists,

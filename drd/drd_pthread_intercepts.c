@@ -530,7 +530,9 @@ int pthread_once_intercept(pthread_once_t *once_control,
     * any known adverse effects.
     */
    DRD_IGNORE_VAR(*once_control);
+   ANNOTATE_IGNORE_READS_AND_WRITES_BEGIN();
    CALL_FN_W_WW(ret, fn, once_control, init_routine);
+   ANNOTATE_IGNORE_READS_AND_WRITES_END();
    DRD_STOP_IGNORING_VAR(*once_control);
    return ret;
 }

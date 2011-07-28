@@ -69,6 +69,7 @@ static Bool s_trace_alloc;
 static Bool DRD_(process_cmd_line_option)(Char* arg)
 {
    int check_stack_accesses   = -1;
+   int join_list_vol          = -1;
    int exclusive_threshold_ms = -1;
    int first_race_only        = -1;
    int report_signal_unlocked = -1;
@@ -92,6 +93,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    Char* trace_address        = 0;
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
+   else if VG_INT_CLO (arg, "--join-list-vol",       join_list_vol) {}
    else if VG_BOOL_CLO(arg, "--drd-stats",           s_print_stats) {}
    else if VG_BOOL_CLO(arg, "--first-race-only",     first_race_only) {}
    else if VG_BOOL_CLO(arg, "--free-is-write",       DRD_(g_free_is_write)) {}
@@ -134,6 +136,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    {
       DRD_(set_first_race_only)(first_race_only);
    }
+   if (join_list_vol != -1)
+      DRD_(thread_set_join_list_vol)(join_list_vol);
    if (report_signal_unlocked != -1)
    {
       DRD_(cond_set_report_signal_unlocked)(report_signal_unlocked);

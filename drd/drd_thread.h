@@ -78,6 +78,8 @@ typedef struct
    SizeT     stack_size;    /**< Maximum size of stack. */
    char      name[64];      /**< User-assigned thread name. */
    Bool      on_alt_stack;
+   /** Whether this structure contains valid information. */
+   Bool      valid;
    /** Indicates whether the Valgrind core knows about this thread. */
    Bool      vg_thread_exists;
    /** Indicates whether there is an associated POSIX thread ID. */
@@ -95,6 +97,8 @@ typedef struct
    Int       pthread_create_nesting_level;
    /** Nesting level of synchronization functions called by the client. */
    Int       synchr_nesting;
+   /** Delayed thread deletion sequence number. */
+   unsigned  deletion_seq;
 } ThreadInfo;
 
 
@@ -125,6 +129,7 @@ void DRD_(thread_set_trace_fork_join)(const Bool t);
 void DRD_(thread_set_segment_merging)(const Bool m);
 int DRD_(thread_get_segment_merge_interval)(void);
 void DRD_(thread_set_segment_merge_interval)(const int i);
+void DRD_(thread_set_join_list_vol)(const int jlv);
 
 DrdThreadId DRD_(VgThreadIdToDrdThreadId)(const ThreadId tid);
 DrdThreadId DRD_(NewVgThreadIdToDrdThreadId)(const ThreadId tid);
@@ -210,9 +215,7 @@ static __inline__
 Bool DRD_(IsValidDrdThreadId)(const DrdThreadId tid)
 {
    return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
-           && (DRD_(g_threadinfo)[tid].vg_thread_exists
-               || DRD_(g_threadinfo)[tid].posix_thread_exists
-               || DRD_(g_threadinfo)[tid].detached_posix_thread));
+           && (DRD_(g_threadinfo)[tid].valid));
 }
 
 /** Returns the DRD thread ID of the currently running thread. */

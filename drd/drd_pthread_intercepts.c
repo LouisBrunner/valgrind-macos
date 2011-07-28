@@ -49,6 +49,7 @@
 #endif
 
 #include <assert.h>         /* assert() */
+#include <errno.h>
 #include <pthread.h>        /* pthread_mutex_t */
 #include <semaphore.h>      /* sem_t */
 #include <stdint.h>         /* uintptr_t */
@@ -58,6 +59,9 @@
 #ifdef __linux__
 #include <asm/unistd.h>     /* __NR_futex */
 #include <linux/futex.h>    /* FUTEX_WAIT */
+#ifndef FUTEX_PRIVATE_FLAG
+#define FUTEX_PRIVATE_FLAG 0
+#endif
 #endif
 #include "config.h"         /* HAVE_PTHREAD_MUTEX_ADAPTIVE_NP etc. */
 #include "drd_basics.h"     /* DRD_() */
@@ -187,13 +191,26 @@ static void DRD_(sema_destroy)(DrdSema* sema)
 
 static void DRD_(sema_down)(DrdSema* sema)
 {
+   int res = ENOSYS;
+
    while (sema->counter == 0) {
-#ifdef __linux__
-      syscall(__NR_futex, (UWord)&sema->counter,
-              FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0);
-#else
-      sched_yield();
+#if defined(__linux__) && defined(__NR_futex)
+      if (syscall(__NR_futex, (UWord)&sema->counter,
+                  FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0) == 0) {
+         res = 0;
+      } else {
+         res = errno;
+         assert(res == EWOULDBLOCK || res == ENOSYS);
+      }
 #endif
+      /*
+       * Invoke sched_yield() on non-Linux systems, if the futex syscall has
+       * not been invoked or if this code has been built on a Linux system
+       * where __NR_futex is defined and is run on a Linux system that does
+       * not support the futex syscall.
+       */
+      if (res == ENOSYS)
+         sched_yield();
    }
    sema->counter--;
 }
@@ -201,7 +218,7 @@ static void DRD_(sema_down)(DrdSema* sema)
 static void DRD_(sema_up)(DrdSema* sema)
 {
    sema->counter++;
-#ifdef __linux__
+#if defined(__linux__) && defined(__NR_futex)
    syscall(__NR_futex, (UWord)&sema->counter,
            FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
 #endif

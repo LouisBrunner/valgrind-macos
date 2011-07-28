@@ -173,6 +173,7 @@ static void gj_threadfunc(struct gj_threadinfo* p)
   elem_t* const a = p->a;
   const int rows = p->rows;
   const int cols = p->cols;
+  elem_t aii;
 
   for (i = 0; i < p->rows; i++)
   {
@@ -197,13 +198,10 @@ static void gj_threadfunc(struct gj_threadinfo* p)
         }
       }
       // Normalize row i.
-      if (a[i * cols + i] != 0)
-      {
-        for (k = cols - 1; k >= 0; k--)
-        {
-          a[i * cols + k] /= a[i * cols + i];
-        }
-      }
+      aii = a[i * cols + i];
+      if (aii != 0)
+        for (k = i; k < cols; k++)
+          a[i * cols + k] /= aii;
     }
     pthread_barrier_wait(p->b);
     // Reduce all rows j != i.

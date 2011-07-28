@@ -335,6 +335,8 @@ void Worker() {
 void Parent() {
   MyThread t(Worker);
   t.Start();
+  const timespec delay = { 0, 100 * 1000 * 1000 };
+  nanosleep(&delay, 0);
   GLOB = 2;
   t.Join();
 }

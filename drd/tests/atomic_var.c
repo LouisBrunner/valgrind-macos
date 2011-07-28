@@ -53,13 +53,11 @@ int main(int argc, char** argv)
 {
   int i;
   const int n_threads = 2;
-  const struct timespec delay = { 0, 100 * 1000 * 1000 };
   pthread_t tid[n_threads];
 
   fprintf(stderr, "Start of test.\n");
   pthread_create(&tid[0], 0, thread_func_1, 0);
   pthread_create(&tid[1], 0, thread_func_2, 0);
-  nanosleep(&delay, 0);
   for (i = 0; i < n_threads; i++)
     pthread_join(tid[i], 0);
   fprintf(stderr, "Test finished.\n");

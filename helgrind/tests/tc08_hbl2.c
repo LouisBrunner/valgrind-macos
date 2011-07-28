@@ -121,7 +121,6 @@ void* child_fn ( void* arg )
 
 int main ( void )
 {
-   const struct timespec delay = { 0, 100 * 1000 * 1000 };
    pthread_t child;
    int i;
 
@@ -134,8 +133,6 @@ int main ( void )
       INC(x, "main");
       if (i == 5) sleep(1); /* make sure child doesn't starve */
    }
-
-   nanosleep(&delay, 0);
 
    if (pthread_join(child, NULL)) {
       perror("pthread join");

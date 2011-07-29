@@ -623,10 +623,11 @@ lc_push_with_clique_if_a_chunk_ptr(Addr ptr, Int clique)
       if (VG_DEBUG_CLIQUE) {
          if (ex->indirect_szB > 0)
             VG_(printf)("  clique %d joining clique %d adding %lu+%lu\n", 
-                        ch_no, clique, (SizeT)ch->szB, (SizeT)ex->indirect_szB);
+                        ch_no, clique, (unsigned long)ch->szB,
+			(unsigned long)ex->indirect_szB);
          else
             VG_(printf)("  block %d joining clique %d adding %lu\n", 
-                        ch_no, clique, (SizeT)ch->szB);
+                        ch_no, clique, (unsigned long)ch->szB);
       }
 
       lc_extras[clique].indirect_szB += ch->szB;

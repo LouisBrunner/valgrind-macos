@@ -1,4 +1,5 @@
 prereq: ./supported_libpthread && ./supported_sem_init
 prog: pth_detached_sem
 args: 10 10
-stderr_filter: filter_error_summary
+stdout_filter: ../../tests/filter_sink
+stderr_filter: filter_stderr_and_thread_no

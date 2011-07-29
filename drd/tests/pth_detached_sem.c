@@ -82,6 +82,7 @@ int main(int argc, char** argv)
   }
 
   write(STDOUT_FILENO, "\n", 1);
+  fprintf(stderr, "Done.\n");
 
   sem_destroy(&s_sem);
 

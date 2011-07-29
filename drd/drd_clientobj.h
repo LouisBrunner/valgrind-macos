@@ -125,7 +125,8 @@ struct barrier_info
    Word     post_iteration;    // post barrier completion count modulo two.
    Word     pre_waiters_left;  // number of waiters left for a complete barrier.
    Word     post_waiters_left; // number of waiters left for a complete barrier.
-   OSet*    oset;              // Per-thread barrier information.
+   OSet*    oset[2];           // Per-thread barrier information for the latest
+                               // two barrier iterations.
 };
 
 struct rwlock_info

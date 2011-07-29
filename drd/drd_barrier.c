@@ -43,8 +43,6 @@ struct barrier_thread_info
 {
    UWord       tid;           // A DrdThreadId declared as UWord because
                               // this member variable is the key of an OSet.
-   Word        iteration;     // iteration of last pthread_barrier_wait()
-                              // call thread tid participated in.
    Segment*    sg[2];         // Segments of the last two
                               // pthread_barrier() calls by thread tid.
    ExeContext* wait_call_ctxt;// call stack for *_barrier_wait() call.
@@ -83,11 +81,9 @@ void DRD_(barrier_set_trace)(const Bool trace_barrier)
  */
 static
 void DRD_(barrier_thread_initialize)(struct barrier_thread_info* const p,
-                                     const DrdThreadId tid,
-                                     const Word iteration)
+                                     const DrdThreadId tid)
 {
    p->tid            = tid;
-   p->iteration      = iteration;
    p->sg[0]          = 0;
    p->sg[1]          = 0;
    p->wait_call_ctxt = 0;
@@ -374,7 +370,7 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
    if (q == 0)
    {
       q = VG_(OSetGen_AllocNode)(p->oset, sizeof(*q));
-      DRD_(barrier_thread_initialize)(q, tid, p->pre_iteration);
+      DRD_(barrier_thread_initialize)(q, tid);
       VG_(OSetGen_Insert)(p->oset, q);
       tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
    }
@@ -450,7 +446,7 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
                               &bei);
 
       q = VG_(OSetGen_AllocNode)(p->oset, sizeof(*q));
-      DRD_(barrier_thread_initialize)(q, tid, p->pre_iteration);
+      DRD_(barrier_thread_initialize)(q, tid);
       VG_(OSetGen_Insert)(p->oset, q);
       tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
    }

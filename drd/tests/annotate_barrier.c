@@ -124,6 +124,7 @@ static void* threadfunc(struct threadinfo* p)
 /* Actual test, consisting of nthread threads. */
 static void barriers_and_races(const int nthread, const int iterations)
 {
+  const struct timespec delay = { 0, 100 * 1000 * 1000 };
   int i;
   struct threadinfo* t;
   barrier_t b;
@@ -144,6 +145,7 @@ static void barriers_and_races(const int nthread, const int iterations)
     t[i].array = array;
     t[i].iterations = iterations;
     pthread_create(&t[i].tid, 0, (void*(*)(void*))threadfunc, &t[i]);
+    nanosleep(&delay, 0);
   }
 
   for (i = 0; i < nthread; i++)

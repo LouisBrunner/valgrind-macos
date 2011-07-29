@@ -1,3 +1,4 @@
 prereq: ./supported_libpthread
 vgopts: --show-confl-seg=no --read-var-info=yes --num-callers=2
 prog: rwlock_race
+stderr_filter: filter_stderr_and_thread_no

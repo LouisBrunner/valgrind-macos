@@ -1,16 +1,15 @@
 
-Thread 3:
-Conflicting load by thread 3 at 0x........ size 4
+Conflicting load by thread x at 0x........ size 4
    at 0x........: thread_func (rwlock_race.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:18, in frame #? of thread 3
+declared at rwlock_race.c:18, in frame #? of thread x
 
-Conflicting store by thread 3 at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: thread_func (rwlock_race.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:18, in frame #? of thread 3
+declared at rwlock_race.c:18, in frame #? of thread x
 
 Result: 2
 

@@ -56,6 +56,7 @@ struct block_allocator_chunk {
 
 /* Local variables. */
 
+static SizeT s_root_node_size;
 static SizeT s_bm2_node_size;
 static struct block_allocator_chunk* s_first;
 
@@ -120,7 +121,9 @@ void* DRD_(bm2_alloc_node)(HChar* const ec, const SizeT szB)
     * allocate an AVL tree root node. Otherwise it has been called to allocate
     * an AVL tree branch or leaf node.
     */
-   if (szB < sizeof(struct bitmap2))
+   if (s_root_node_size == 0)
+      s_root_node_size = szB;
+   if (szB == s_root_node_size)
       return VG_(malloc)(ec, szB);
 
    while (True)

@@ -196,12 +196,10 @@ static void DRD_(sema_down)(DrdSema* sema)
    while (sema->counter == 0) {
 #if defined(__linux__) && defined(__NR_futex)
       if (syscall(__NR_futex, (UWord)&sema->counter,
-                  FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0) == 0) {
+                  FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0) == 0)
          res = 0;
-      } else {
+      else
          res = errno;
-         assert(res == EWOULDBLOCK || res == ENOSYS);
-      }
 #endif
       /*
        * Invoke sched_yield() on non-Linux systems, if the futex syscall has
@@ -209,7 +207,7 @@ static void DRD_(sema_down)(DrdSema* sema)
        * where __NR_futex is defined and is run on a Linux system that does
        * not support the futex syscall.
        */
-      if (res == ENOSYS)
+      if (res != 0 && res != EWOULDBLOCK)
          sched_yield();
    }
    sema->counter--;

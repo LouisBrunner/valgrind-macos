@@ -3,6 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS =		    \
 	compare_error_count_with    \
+	filter_error_count	    \
 	filter_error_summary	    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \

@@ -1,4 +1,4 @@
 prereq: test -e pth_barrier && ./supported_libpthread
 prog: pth_barrier
 args: 2 32 1
-stderr_filter: filter_error_summary
+stderr_filter: filter_error_count

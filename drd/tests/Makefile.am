@@ -135,6 +135,7 @@ EXTRA_DIST =                                        \
 	pth_barrier_reinit.vgtest                   \
 	pth_barrier_thr_cr.stderr.exp               \
 	pth_barrier_thr_cr.vgtest                   \
+	pth_barrier_thr_cr.supp                     \
 	pth_broadcast.stderr.exp                    \
 	pth_broadcast.vgtest                        \
 	pth_cancel_locked.stderr.exp		    \

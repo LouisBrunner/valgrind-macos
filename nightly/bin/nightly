@@ -88,7 +88,7 @@ svn_new_date=`date $svn_date_format`
 cd $DIR
 
 # Clean up output files produced by a previous run.
-rm -rf diffs diff.short final new.short new.verbose old.short old.verbose
+rm -rf diffs diffs.txt diff.short final new.short new.verbose old.short old.verbose
 rm -rf sendmail.log unchanged.log valgrind-old valgrind-new
 
 # Setup any relevant environment variables from conf/<tag>.conf.
@@ -230,8 +230,12 @@ else
    done
 fi
 
+# Rename diffs into diffs.txt such that it can be viewed easily with an
+# e-mail client.
+mv diffs diffs.txt
+
 # Use the conf/<tag>.sendmail script to email the results.
 conf/$TAG.sendmail \
    "$changed_str$START nightly build ($TAG, $ABT_DETAILS)" \
    final \
-   diffs > sendmail.log 2>&1
+   diffs.txt > sendmail.log 2>&1

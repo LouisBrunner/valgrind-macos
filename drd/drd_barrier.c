@@ -164,7 +164,7 @@ static void barrier_cleanup(struct barrier_info* p)
                               " upon",
                               &bei);
    } else {
-      oset = p->oset[1 - p->pre_iteration];
+      oset = p->oset[1 - (p->pre_iteration & 1)];
       VG_(OSetGen_ResetIter)(oset);
       for ( ; (q = VG_(OSetGen_Next)(oset)) != 0; ) {
          if (q->post_wait_sg && !DRD_(vc_lte)(&q->post_wait_sg->vc,
@@ -377,7 +377,7 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
    }
 
    /* Clean up nodes associated with finished threads. */
-   oset = p->oset[p->pre_iteration];
+   oset = p->oset[p->pre_iteration & 1];
    tl_assert(oset);
    VG_(OSetGen_ResetIter)(oset);
    for ( ; (q = VG_(OSetGen_Next)(oset)) != 0; ) {
@@ -414,7 +414,7 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
     */
    if (--p->pre_waiters_left <= 0)
    {
-      p->pre_iteration    = 1 - p->pre_iteration;
+      p->pre_iteration++;
       p->pre_waiters_left = p->count;
    }
 }
@@ -456,10 +456,17 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
    if (! waited)
       return;
 
-   oset = p->oset[p->post_iteration];
+   oset = p->oset[p->post_iteration & 1];
    q = VG_(OSetGen_Lookup)(oset, &word_tid);
-   if (q == 0)
-   {
+   if (p->pre_iteration - p->post_iteration > 1) {
+      BarrierErrInfo bei = { DRD_(thread_get_running_tid)(), p->a1, 0, 0 };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              BarrierErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Number of concurrent pthread_barrier_wait()"
+                              " calls exceeds the barrier count",
+                              &bei);
+   } else if (q == NULL) {
       BarrierErrInfo bei = { DRD_(thread_get_running_tid)(), p->a1, 0, 0 };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               BarrierErr,
@@ -469,11 +476,13 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
                               " barrier_destroy() and finished after"
                               " barrier_destroy()",
                               &bei);
-
+   }
+   if (q == NULL) {
       q = VG_(OSetGen_AllocNode)(oset, sizeof(*q));
       DRD_(barrier_thread_initialize)(q, tid);
       VG_(OSetGen_Insert)(oset, q);
       tl_assert(VG_(OSetGen_Lookup)(oset, &word_tid) == q);
+      DRD_(thread_get_latest_segment)(&q->sg, tid);
    }
 
    /* Create a new segment and store a pointer to that segment. */
@@ -510,7 +519,7 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
     */
    if (--p->post_waiters_left <= 0)
    {
-      p->post_iteration    = 1 - p->post_iteration;
+      p->post_iteration++;
       p->post_waiters_left = p->count;
    }
 }

@@ -12970,6 +12970,7 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
    if (irsb->next == NULL && bytes[insn_length] == 0x44) {
       irsb->next = IRExpr_Const(IRConst_U64(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
+      dis_res->continueAt = 0;
    }
 
    if (status == S390_DECODE_OK) return insn_length;  /* OK */

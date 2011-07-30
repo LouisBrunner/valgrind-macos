@@ -14,34 +14,43 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static pthread_barrier_t s_barrier;
+static pthread_barrier_t* s_barrier;
 
 static void* thread(void* arg)
 {
   write(STDOUT_FILENO, ".", 1);
-  pthread_barrier_wait(&s_barrier);
+  pthread_barrier_wait(s_barrier);
   return NULL;
 }
 
 int main(int argc, char** argv)
 {
   pthread_t *tid;
-  int barriers = argc > 2 ? atoi(argv[1]) : 20;
+  int barriers = argc > 1 ? atoi(argv[1]) : 20;
   int barrier_participants = 2;
   int thread_count = barriers * barrier_participants;
-  int i;
+  int res, i;
 
-  pthread_barrier_init(&s_barrier, NULL, barrier_participants);
+  s_barrier = malloc(sizeof(*s_barrier));
+  res = pthread_barrier_init(s_barrier, NULL, barrier_participants);
+  assert(res == 0);
 
   tid = malloc(thread_count * sizeof(*tid));
   assert(tid);
-  for (i = 0; i < thread_count; i++)
-	  pthread_create(&tid[i], NULL, thread, NULL);
-  for (i = 0; i < thread_count; i++)
-	  pthread_join(tid[i], NULL);
+  for (i = 0; i < thread_count; i++) {
+    res = pthread_create(&tid[i], NULL, thread, NULL);
+    assert(res == 0);
+  }
+  for (i = 0; i < thread_count; i++) {
+    res = pthread_join(tid[i], NULL);
+    assert(res == 0);
+  }
   free(tid);
 
-  pthread_barrier_destroy(&s_barrier);
+  res = pthread_barrier_destroy(s_barrier);
+  assert(res == 0);
+  free(s_barrier);
+  s_barrier = NULL;
 
   write(STDOUT_FILENO, "\n", 1);
   fprintf(stderr, "Done.\n");

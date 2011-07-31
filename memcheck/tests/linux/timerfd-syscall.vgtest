@@ -1,2 +1,2 @@
-prereq: [ "$(uname)" = "Linux" ] && awk 'END{exit("'$(uname -r)'" >= "2.6.25" ? 0 : 1)}' </dev/null
+prereq: ../../../tests/os_test linux 2.6.25
 prog: timerfd-syscall

@@ -269,6 +269,8 @@ fixed
 
 267020 - Make directory for temporary files configurable at run-time.
 
+279062 - Remove a redundant check in the insn selector for ppc.
+
 
 Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

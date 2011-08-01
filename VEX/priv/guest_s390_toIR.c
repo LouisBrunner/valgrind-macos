@@ -12943,9 +12943,12 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
 
       /* Handle special instruction that follows that preamble. */
       if (0) vex_printf("special function handling...\n");
-      bytes += S390_SPECIAL_OP_PREAMBLE_SIZE;
-      status = s390_decode_special_and_irgen(bytes);
-      insn_length = S390_SPECIAL_OP_SIZE;
+
+      insn_length = S390_SPECIAL_OP_PREAMBLE_SIZE + S390_SPECIAL_OP_SIZE;
+      guest_IA_next_instr = guest_IA_curr_instr + insn_length;
+
+      status =
+         s390_decode_special_and_irgen(bytes + S390_SPECIAL_OP_PREAMBLE_SIZE);
    } else {
       /* Handle normal instructions. */
       switch (insn_length) {

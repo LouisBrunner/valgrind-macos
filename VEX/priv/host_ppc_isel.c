@@ -1601,8 +1601,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_16Sto64: {
          HReg   r_dst = newVRegI(env);
          HReg   r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
-         UShort amt   = toUShort(op_unop==Iop_8Sto64  ? 56 :
-                                 op_unop==Iop_16Sto64 ? 48 : 32);
+         UShort amt   = toUShort(op_unop==Iop_8Sto64  ? 56 : 48);
          vassert(mode64);
          addInstr(env,
                   PPCInstr_Shft(Pshft_SHL, False/*64bit shift*/,

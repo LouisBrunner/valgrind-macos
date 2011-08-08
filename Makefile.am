@@ -14,8 +14,7 @@ TOOLS =		memcheck \
 
 EXP_TOOLS = 	exp-sgcheck \
 		exp-bbv \
-		exp-dhat \
-		exp-dmd
+		exp-dhat
 
 # DDD: once all tools work on Darwin, TEST_TOOLS and TEST_EXP_TOOLS can be
 # replaced with TOOLS and EXP_TOOLS.

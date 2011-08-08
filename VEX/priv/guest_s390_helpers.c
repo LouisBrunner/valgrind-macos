@@ -239,6 +239,8 @@ s390x_dirtyhelper_00(VexGuestS390XState *guest_state)
 
    asm volatile(".hword 0\n");
 }
+#else
+void s390x_dirtyhelper_00(VexGuestS390XState *guest_state) { }
 #endif
 
 /*------------------------------------------------------------*/

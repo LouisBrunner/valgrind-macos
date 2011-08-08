@@ -1708,7 +1708,7 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
          // touched.  What an awful function.
          return NULL;
       }
-      VG_(memcpy)(p_new, p_old, old_req_szB);
+      VG_(memcpy)(p_new, p_old, old_req_szB + old_slop_szB);
       VG_(cli_free)(p_old);
       new_actual_szB = VG_(malloc_usable_size)(p_new);
       tl_assert(new_actual_szB >= new_req_szB);

@@ -1241,6 +1241,9 @@ xchgb_2 ... ok
 xchgb_3 ... ok
 xchgw_1 ... ok
 xchgw_2 ... ok
+xchgw_3 ... ok
+xchgw_4 ... ok
+xchgw_5 ... ok
 xchgl_1 ... ok
 xchgl_2 ... ok
 xchgl_3 ... ok

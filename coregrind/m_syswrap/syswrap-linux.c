@@ -3745,6 +3745,7 @@ PRE(sys_fcntl)
    case VKI_F_GETOWN:
    case VKI_F_GETSIG:
    case VKI_F_GETLEASE:
+   case VKI_F_GETPIPE_SZ:
       PRINT("sys_fcntl ( %ld, %ld )", ARG1,ARG2);
       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
       break;
@@ -3758,6 +3759,7 @@ PRE(sys_fcntl)
    case VKI_F_NOTIFY:
    case VKI_F_SETOWN:
    case VKI_F_SETSIG:
+   case VKI_F_SETPIPE_SZ:
       PRINT("sys_fcntl[ARG3=='arg'] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd, unsigned long, arg);

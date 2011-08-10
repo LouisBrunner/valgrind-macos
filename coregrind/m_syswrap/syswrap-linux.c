@@ -4007,6 +4007,9 @@ PRE(sys_ioctl)
    case VKI_FIONREAD:                /* identical to SIOCINQ */
       PRE_MEM_WRITE( "ioctl(FIONREAD)",  ARG3, sizeof(int) );
       break;
+   case VKI_FIOQSIZE:
+      PRE_MEM_WRITE( "ioctl(FIOQSIZE)",  ARG3, sizeof(vki_loff_t) );
+      break;
 
    case VKI_TIOCSERGETLSR:
       PRE_MEM_WRITE( "ioctl(TIOCSERGETLSR)", ARG3, sizeof(int) );
@@ -5101,6 +5104,9 @@ POST(sys_ioctl)
       break;
    case VKI_FIONREAD:                /* identical to SIOCINQ */
       POST_MEM_WRITE( ARG3, sizeof(int) );
+      break;
+   case VKI_FIOQSIZE:
+      POST_MEM_WRITE( ARG3, sizeof(vki_loff_t) );
       break;
 
    case VKI_TIOCSERGETLSR:

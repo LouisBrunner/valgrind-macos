@@ -596,6 +596,11 @@ struct vki_termios {
 
 #define VKI_TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
 
+//----------------------------------------------------------------------
+// From linux-2.6.39-rc2/arch/s390/include/asm/ioctls.h
+//----------------------------------------------------------------------
+
+#define VKI_FIOQSIZE 0x545E
 
 //----------------------------------------------------------------------
 // From linux-2.6.16.60/include/asm-s390/poll.h

@@ -2751,6 +2751,14 @@ struct vki_getcpu_cache {
 #define VKI_EV_MAX		0x1f
 #define VKI_EV_CNT		(VKI_EV_MAX+1)
 
+//----------------------------------------------------------------------
+// From linux-2.6.39-rc2/include/asm_generic/ioctls.h
+//----------------------------------------------------------------------
+
+#ifndef VKI_FIOQSIZE
+#define VKI_FIOQSIZE 0x5460     /* Value differs on some platforms */
+#endif
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

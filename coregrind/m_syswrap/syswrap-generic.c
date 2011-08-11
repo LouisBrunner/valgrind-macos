@@ -278,8 +278,9 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       goto eINVAL;
 
    /* reject wraparounds */
-   if (old_addr + old_len < old_addr
-       || new_addr + new_len < new_len)
+   if (old_addr + old_len < old_addr)
+      goto eINVAL;
+   if (f_fixed == True && new_addr + new_len < new_len)
       goto eINVAL;
 
    /* kernel rejects all fixed, no-move requests (which are

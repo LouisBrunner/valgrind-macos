@@ -271,6 +271,8 @@ fixed
 
 279062 - Remove a redundant check in the insn selector for ppc.
 
+275517 - s390x: Provide support for CKSM instruction
+
 
 Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,0 +1,6 @@
+
+
+Process terminating with default action of signal 4 (SIGILL)
+ Illegal opcode at address 0x........
+   at 0x........: main (op00.c:5)
+

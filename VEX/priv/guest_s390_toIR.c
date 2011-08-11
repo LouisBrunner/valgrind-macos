@@ -10634,6 +10634,73 @@ s390_irgen_STFLE(IRTemp op2addr)
    return "stfle";
 }
 
+static HChar *
+s390_irgen_CKSM(UChar r1,UChar r2)
+{
+   IRTemp addr = newTemp(Ity_I64);
+   IRTemp op = newTemp(Ity_I32);
+   IRTemp len = newTemp(Ity_I64);
+   IRTemp oldval = newTemp(Ity_I32);
+   IRTemp mask = newTemp(Ity_I32);
+   IRTemp newop = newTemp(Ity_I32);
+   IRTemp result = newTemp(Ity_I32);
+   IRTemp result1 = newTemp(Ity_I32);
+   IRTemp inc = newTemp(Ity_I64);
+
+   assign(oldval, get_gpr_w1(r1));
+   assign(addr, get_gpr_dw0(r2));
+   assign(len, get_gpr_dw0(r2+1));
+
+   /* Condition code is always zero. */
+   s390_cc_set(0);
+
+   /* If length is zero, there is no need to calculate the checksum */
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Assiging the increment variable to adjust address and length
+      later on. */
+   assign(inc, mkite(binop(Iop_CmpLT64U, mkexpr(len), mkU64(4)),
+                           mkexpr(len), mkU64(4)));
+
+   /* If length < 4 the final 4-byte 2nd operand value is computed by 
+      appending the remaining bytes to the right with 0. This is done
+      by AND'ing the 4 bytes loaded from memory with an appropriate
+      mask. If length >= 4, that mask is simply 0xffffffff. */
+
+   assign(mask, mkite(binop(Iop_CmpLT64U, mkexpr(len), mkU64(4)),
+                      /* Mask computation when len < 4:
+                         0xffffffff << (32 - (len % 4)*8) */
+                      binop(Iop_Shl32, mkU32(0xffffffff),
+                            unop(Iop_32to8,
+                                 binop(Iop_Sub32, mkU32(32),
+                                       binop(Iop_Shl32,
+                                             unop(Iop_64to32,
+                                                  binop(Iop_And64,
+                                                        mkexpr(len), mkU64(3))),
+                                             mkU8(3))))),
+                      mkU32(0xffffffff)));
+
+   assign(op, load(Ity_I32, mkexpr(addr)));
+   assign(newop, binop(Iop_And32, mkexpr(op), mkexpr(mask)));
+   assign(result, binop(Iop_Add32, mkexpr(newop), mkexpr(oldval)));
+
+   /* Checking for carry */
+   assign(result1, mkite(binop(Iop_CmpLT32U, mkexpr(result), mkexpr(newop)),
+                         binop(Iop_Add32, mkexpr(result), mkU32(1)),
+                         mkexpr(result)));
+
+   put_gpr_w1(r1, mkexpr(result1));
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(addr), mkexpr(inc)));
+   put_gpr_dw0(r2+1, binop(Iop_Sub64, mkexpr(len), mkexpr(inc)));
+
+   if_condition_goto(binop(Iop_CmpNE64, mkexpr(len), mkU64(0)),
+                     guest_IA_curr_instr);
+
+   return "cksm";
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -11026,7 +11093,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb23b: /* RCHP */ goto unimplemented;
    case 0xb23c: /* SCHM */ goto unimplemented;
    case 0xb240: /* BAKR */ goto unimplemented;
-   case 0xb241: /* CKSM */ goto unimplemented;
+   case 0xb241: s390_format_RRE(s390_irgen_CKSM, ovl.fmt.RRE.r1,
+                                ovl.fmt.RRE.r2);  goto ok;
    case 0xb244: /* SQDR */ goto unimplemented;
    case 0xb245: /* SQER */ goto unimplemented;
    case 0xb246: /* STURA */ goto unimplemented;

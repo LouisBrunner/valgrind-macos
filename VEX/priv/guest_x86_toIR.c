@@ -15006,11 +15006,12 @@ DisResult disInstr_X86_WRK (
          break;
       }
 
+      case 0x0E: /* FEMMS */
       case 0x77: /* EMMS */
          if (sz != 4)
             goto decode_failure;
          do_EMMS_preamble();
-         DIP("emms\n");
+         DIP("{f}emms\n");
          break;
 
       /* =-=-=-=-=-=-=-=-=- SGDT and SIDT =-=-=-=-=-=-=-=-=-=-= */

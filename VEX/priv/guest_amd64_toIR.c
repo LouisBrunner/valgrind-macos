@@ -4122,7 +4122,7 @@ void dis_string_op_increment ( Int sz, IRTemp t_inc )
 }
 
 static
-void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
+void dis_string_op( void (*dis_OP)( Int, IRTemp, Prefix pfx ),
                     Int sz, HChar* name, Prefix pfx )
 {
    IRTemp t_inc = newTemp(Ity_I64);
@@ -4130,67 +4130,98 @@ void dis_string_op( void (*dis_OP)( Int, IRTemp ),
       The following assertion catches any resulting sillyness. */
    vassert(pfx == clearSegBits(pfx));
    dis_string_op_increment(sz, t_inc);
-   dis_OP( sz, t_inc );
+   dis_OP( sz, t_inc, pfx );
    DIP("%s%c\n", name, nameISize(sz));
 }
 
 static 
-void dis_MOVS ( Int sz, IRTemp t_inc )
+void dis_MOVS ( Int sz, IRTemp t_inc, Prefix pfx )
 {
    IRType ty = szToITy(sz);
    IRTemp td = newTemp(Ity_I64);   /* RDI */
    IRTemp ts = newTemp(Ity_I64);   /* RSI */
+   IRExpr *incd, *incs;
 
-   assign( td, getIReg64(R_RDI) );
-   assign( ts, getIReg64(R_RSI) );
+   if (haveASO(pfx)) {
+      assign( td, unop(Iop_32Uto64, getIReg32(R_RDI)) );
+      assign( ts, unop(Iop_32Uto64, getIReg32(R_RSI)) );
+   } else {
+      assign( td, getIReg64(R_RDI) );
+      assign( ts, getIReg64(R_RSI) );
+   }
 
    storeLE( mkexpr(td), loadLE(ty,mkexpr(ts)) );
 
-   putIReg64( R_RDI, binop(Iop_Add64, mkexpr(td), mkexpr(t_inc)) );
-   putIReg64( R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
+   incd = binop(Iop_Add64, mkexpr(td), mkexpr(t_inc));
+   incs = binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc));
+   if (haveASO(pfx)) {
+      incd = unop(Iop_32Uto64, unop(Iop_64to32, incd));
+      incs = unop(Iop_32Uto64, unop(Iop_64to32, incs));
+   }
+   putIReg64( R_RDI, incd );
+   putIReg64( R_RSI, incs );
 }
 
 static 
-void dis_LODS ( Int sz, IRTemp t_inc )
+void dis_LODS ( Int sz, IRTemp t_inc, Prefix pfx )
 {
    IRType ty = szToITy(sz);
    IRTemp ts = newTemp(Ity_I64);   /* RSI */
+   IRExpr *incs;
 
-   assign( ts, getIReg64(R_RSI) );
+   if (haveASO(pfx))
+      assign( ts, unop(Iop_32Uto64, getIReg32(R_RSI)) );
+   else
+      assign( ts, getIReg64(R_RSI) );
 
    putIRegRAX ( sz, loadLE(ty, mkexpr(ts)) );
 
-   putIReg64( R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
+   incs = binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc));
+   if (haveASO(pfx))
+      incs = unop(Iop_32Uto64, unop(Iop_64to32, incs));
+   putIReg64( R_RSI, incs );
 }
 
 static 
-void dis_STOS ( Int sz, IRTemp t_inc )
+void dis_STOS ( Int sz, IRTemp t_inc, Prefix pfx )
 {
    IRType ty = szToITy(sz);
    IRTemp ta = newTemp(ty);        /* rAX */
    IRTemp td = newTemp(Ity_I64);   /* RDI */
+   IRExpr *incd;
 
    assign( ta, getIRegRAX(sz) );
 
-   assign( td, getIReg64(R_RDI) );
+   if (haveASO(pfx))
+      assign( td, unop(Iop_32Uto64, getIReg32(R_RDI)) );
+   else
+      assign( td, getIReg64(R_RDI) );
 
    storeLE( mkexpr(td), mkexpr(ta) );
 
-   putIReg64( R_RDI, binop(Iop_Add64, mkexpr(td), mkexpr(t_inc)) );
+   incd = binop(Iop_Add64, mkexpr(td), mkexpr(t_inc));
+   if (haveASO(pfx))
+      incd = unop(Iop_32Uto64, unop(Iop_64to32, incd));
+   putIReg64( R_RDI, incd );
 }
 
 static 
-void dis_CMPS ( Int sz, IRTemp t_inc )
+void dis_CMPS ( Int sz, IRTemp t_inc, Prefix pfx )
 {
    IRType ty  = szToITy(sz);
    IRTemp tdv = newTemp(ty);      /* (RDI) */
    IRTemp tsv = newTemp(ty);      /* (RSI) */
    IRTemp td  = newTemp(Ity_I64); /*  RDI  */
    IRTemp ts  = newTemp(Ity_I64); /*  RSI  */
+   IRExpr *incd, *incs;
 
-   assign( td, getIReg64(R_RDI) );
-
-   assign( ts, getIReg64(R_RSI) );
+   if (haveASO(pfx)) {
+      assign( td, unop(Iop_32Uto64, getIReg32(R_RDI)) );
+      assign( ts, unop(Iop_32Uto64, getIReg32(R_RSI)) );
+   } else {
+      assign( td, getIReg64(R_RDI) );
+      assign( ts, getIReg64(R_RSI) );
+   }
 
    assign( tdv, loadLE(ty,mkexpr(td)) );
 
@@ -4198,28 +4229,40 @@ void dis_CMPS ( Int sz, IRTemp t_inc )
 
    setFlags_DEP1_DEP2 ( Iop_Sub8, tsv, tdv, ty );
 
-   putIReg64(R_RDI, binop(Iop_Add64, mkexpr(td), mkexpr(t_inc)) );
-
-   putIReg64(R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
+   incd = binop(Iop_Add64, mkexpr(td), mkexpr(t_inc));
+   incs = binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc));
+   if (haveASO(pfx)) {
+      incd = unop(Iop_32Uto64, unop(Iop_64to32, incd));
+      incs = unop(Iop_32Uto64, unop(Iop_64to32, incs));
+   }
+   putIReg64( R_RDI, incd );
+   putIReg64( R_RSI, incs );
 }
 
 static 
-void dis_SCAS ( Int sz, IRTemp t_inc )
+void dis_SCAS ( Int sz, IRTemp t_inc, Prefix pfx )
 {
    IRType ty  = szToITy(sz);
    IRTemp ta  = newTemp(ty);       /*  rAX  */
    IRTemp td  = newTemp(Ity_I64);  /*  RDI  */
    IRTemp tdv = newTemp(ty);       /* (RDI) */
+   IRExpr *incd;
 
    assign( ta, getIRegRAX(sz) );
 
-   assign( td, getIReg64(R_RDI) );
+   if (haveASO(pfx))
+      assign( td, unop(Iop_32Uto64, getIReg32(R_RDI)) );
+   else
+      assign( td, getIReg64(R_RDI) );
 
    assign( tdv, loadLE(ty,mkexpr(td)) );
 
    setFlags_DEP1_DEP2 ( Iop_Sub8, ta, tdv, ty );
 
-   putIReg64(R_RDI, binop(Iop_Add64, mkexpr(td), mkexpr(t_inc)) );
+   incd = binop(Iop_Add64, mkexpr(td), mkexpr(t_inc));
+   if (haveASO(pfx))
+      incd = unop(Iop_32Uto64, unop(Iop_64to32, incd));
+   putIReg64( R_RDI, incd );
 }
 
 
@@ -4228,27 +4271,37 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
    the next insn, rather than just falling through. */
 static 
 void dis_REP_op ( AMD64Condcode cond,
-                  void (*dis_OP)(Int, IRTemp),
+                  void (*dis_OP)(Int, IRTemp, Prefix),
                   Int sz, Addr64 rip, Addr64 rip_next, HChar* name,
                   Prefix pfx )
 {
    IRTemp t_inc = newTemp(Ity_I64);
-   IRTemp tc    = newTemp(Ity_I64);  /*  RCX  */
+   IRTemp tc;
+   IRExpr* cmp;
 
    /* Really we ought to inspect the override prefixes, but we don't.
       The following assertion catches any resulting sillyness. */
    vassert(pfx == clearSegBits(pfx));
 
-   assign( tc, getIReg64(R_RCX) );
+   if (haveASO(pfx)) {
+      tc = newTemp(Ity_I32);  /*  ECX  */
+      assign( tc, getIReg32(R_RCX) );
+      cmp = binop(Iop_CmpEQ32, mkexpr(tc), mkU32(0));
+   } else {
+      tc = newTemp(Ity_I64);  /*  RCX  */
+      assign( tc, getIReg64(R_RCX) );
+      cmp = binop(Iop_CmpEQ64, mkexpr(tc), mkU64(0));
+   }
 
-   stmt( IRStmt_Exit( binop(Iop_CmpEQ64,mkexpr(tc),mkU64(0)),
-                      Ijk_Boring,
-                      IRConst_U64(rip_next) ) );
+   stmt( IRStmt_Exit( cmp, Ijk_Boring, IRConst_U64(rip_next) ) );
 
-   putIReg64(R_RCX, binop(Iop_Sub64, mkexpr(tc), mkU64(1)) );
+   if (haveASO(pfx))
+      putIReg32(R_RCX, binop(Iop_Sub32, mkexpr(tc), mkU32(1)) );
+  else
+      putIReg64(R_RCX, binop(Iop_Sub64, mkexpr(tc), mkU64(1)) );
 
    dis_string_op_increment(sz, t_inc);
-   dis_OP (sz, t_inc);
+   dis_OP (sz, t_inc, pfx);
 
    if (cond == AMD64CondAlways) {
       jmp_lit(Ijk_Boring,rip);
@@ -17372,8 +17425,6 @@ DisResult disInstr_AMD64_WRK (
    case 0xAE:
    case 0xAF:
       /* F2 AE/AF: repne scasb/repne scas{w,l,q} */
-      if (haveASO(pfx)) 
-         goto decode_failure;
       if (haveF2(pfx) && !haveF3(pfx)) {
          if (opc == 0xAE)
             sz = 1;
@@ -17384,8 +17435,6 @@ DisResult disInstr_AMD64_WRK (
          break;
       }
       /* F3 AE/AF: repe scasb/repe scas{w,l,q} */
-      if (haveASO(pfx)) 
-         goto decode_failure;
       if (!haveF2(pfx) && haveF3(pfx)) {
          if (opc == 0xAE)
             sz = 1;
@@ -17408,8 +17457,6 @@ DisResult disInstr_AMD64_WRK (
    case 0xA6:
    case 0xA7:
       /* F3 A6/A7: repe cmps/rep cmps{w,l,q} */
-      if (haveASO(pfx)) 
-         goto decode_failure;
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA6)
             sz = 1;
@@ -17425,8 +17472,6 @@ DisResult disInstr_AMD64_WRK (
    case 0xAA:
    case 0xAB:
       /* F3 AA/AB: rep stosb/rep stos{w,l,q} */
-      if (haveASO(pfx)) 
-         goto decode_failure;
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xAA)
             sz = 1;
@@ -17449,8 +17494,6 @@ DisResult disInstr_AMD64_WRK (
    case 0xA4:
    case 0xA5:
       /* F3 A4: rep movsb */
-      if (haveASO(pfx)) 
-         goto decode_failure;
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA4)
             sz = 1;

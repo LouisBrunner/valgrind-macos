@@ -13,6 +13,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 
 /*********************/
@@ -81,7 +83,11 @@ static void barriers_and_races(const int nthread, const int iterations)
     t[i].b = &b;
     t[i].array = array;
     t[i].iterations = iterations;
-    pthread_create(&t[i].tid, 0, (void*(*)(void*))threadfunc, &t[i]);
+    if (pthread_create(&t[i].tid, 0, (void*(*)(void*))threadfunc, &t[i])) {
+      fprintf(stderr, "Could not create thread #%d (of %d): %s\n",
+              i, nthread, strerror(errno));
+      exit(1);
+    }
   }
 
   for (i = 0; i < nthread; i++)

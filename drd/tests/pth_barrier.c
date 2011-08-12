@@ -10,11 +10,11 @@
 /***********************/
 
 #include <assert.h>
+#include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 
 /*********************/
@@ -65,7 +65,8 @@ static void* threadfunc(struct threadinfo* p)
 /** Actual test, consisting of nthread threads. */
 static void barriers_and_races(const int nthread, const int iterations)
 {
-  int i;
+  int i, res;
+  pthread_attr_t attr;
   struct threadinfo* t;
   pthread_barrier_t b;
   int* array;
@@ -78,17 +79,24 @@ static void barriers_and_races(const int nthread, const int iterations)
 
   pthread_barrier_init(&b, 0, nthread);
 
+  pthread_attr_init(&attr);
+  res = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096);
+  assert(res == 0);
+
   for (i = 0; i < nthread; i++)
   {
     t[i].b = &b;
     t[i].array = array;
     t[i].iterations = iterations;
-    if (pthread_create(&t[i].tid, 0, (void*(*)(void*))threadfunc, &t[i])) {
+    res = pthread_create(&t[i].tid, &attr, (void*(*)(void*))threadfunc, &t[i]);
+    if (res != 0) {
       fprintf(stderr, "Could not create thread #%d (of %d): %s\n",
-              i, nthread, strerror(errno));
+              i, nthread, strerror(res));
       exit(1);
     }
   }
+
+  pthread_attr_destroy(&attr);
 
   for (i = 0; i < nthread; i++)
   {

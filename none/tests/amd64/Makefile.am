@@ -22,6 +22,7 @@ endif
 
 EXTRA_DIST = \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
+	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
 	bug132813-amd64.stderr.exp \
@@ -66,6 +67,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	amd64locked \
+	asorep \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
 	cmpxchg \

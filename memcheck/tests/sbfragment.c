@@ -1,16 +1,24 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "../../config.h"
+#if defined(HAVE_MALLINFO)
 #include <malloc.h>
+#endif
 
 #define BIGINCREASE 32000
 int debug = 0;
 
 void stats(char *msg)
 {
+#if defined(HAVE_MALLINFO)
   struct mallinfo mallinfo_result;
   mallinfo_result = mallinfo();
+#endif
+
   /* from /usr/include/malloc.h */
   printf("%s\n", msg);
+
+#if defined(HAVE_MALLINFO)
   printf("%10d int arena;    /* non-mmapped space allocated from system */\n", mallinfo_result.arena);
   printf("%10d int ordblks;  /* number of free chunks */\n", mallinfo_result.ordblks);
   printf("%10d int smblks;   /* number of fastbin blocks */\n", mallinfo_result.smblks);
@@ -22,6 +30,7 @@ void stats(char *msg)
   printf("%10d int fordblks; /* total free space */\n", mallinfo_result.fordblks);
   printf("%10d int keepcost; /* top-most, releasable (via malloc_trim) space */\n", mallinfo_result.keepcost);
   printf("\n");
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -68,6 +77,7 @@ int main(int argc, char *argv[])
   printf ("after %d loops, last size block requested %lu\n", loop, bigsize);
   // verify if superblock fragmentation occured
   // We consider that an arena of up to 3 times more than bigsize is ok.
+#if defined(HAVE_MALLINFO)
   {
      struct mallinfo mallinfo_result;
      mallinfo_result = mallinfo();
@@ -82,6 +92,7 @@ int main(int argc, char *argv[])
      else
         printf("reasonable heap usage\n");
   }
+#endif
 
   if (debug)
      stats ("before freeing last block");

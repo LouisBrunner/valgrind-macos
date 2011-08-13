@@ -543,7 +543,7 @@ struct vki_termios {
 #define VKI_FIONBIO		_VKI_IOW('f', 126, int)
 #define VKI_FIONREAD		_VKI_IOR('f', 127, int)
 //#define VKI_TIOCINQ		VKI_FIONREAD
-//#define VKI_FIOQSIZE		_VKI_IOR('f', 128, vki_loff_t)
+#define VKI_FIOQSIZE		_VKI_IOR('f', 128, vki_loff_t)
 
 //#define VKI_TIOCGETP		_VKI_IOR('t', 8, struct vki_sgttyb)
 //#define VKI_TIOCSETP		_VKI_IOW('t', 9, struct vki_sgttyb)
@@ -636,12 +636,6 @@ struct vki_termios {
 
 //#define VKI_TIOCMIWAIT	0x545C  /* wait for a change on serial input line(s) */
 #define VKI_TIOCGICOUNT		0x545D  /* read serial port inline interrupt counts */
-
-//----------------------------------------------------------------------
-// From linux-2.6.39-rc2/arch/powerpc/include/asm/ioctls.h
-//----------------------------------------------------------------------
-
-#define VKI_FIOQSIZE    VKI_IOR('f', 128, vki_loff_t)
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-ppc/poll.h

@@ -620,12 +620,7 @@ struct vki_termios {
 #define VKI_FIOASYNC        _VKI_IOW('f', 125, int)
 #define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
 #define VKI_TIOCGICOUNT	    0x545D /* read serial port inline interrupt counts */
-
-//----------------------------------------------------------------------
-// From linux-2.6.39-rc2/arch/powerpc/include/asm/ioctls.h
-//----------------------------------------------------------------------
-
-#define VKI_FIOQSIZE    VKI_IOR('f', 128, vki_loff_t)
+#define VKI_FIOQSIZE        _VKI_IOR('f', 128, vki_loff_t)
 
 //----------------------------------------------------------------------
 // From linux-2.6.13/include/asm-ppc64/poll.h

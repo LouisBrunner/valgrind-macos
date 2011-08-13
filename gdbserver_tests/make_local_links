@@ -10,6 +10,20 @@
 # The vgdb link is needed either for gdb tests
 # or for standalone vgdb tests.
 
+# Make sure we're in the correct directory, i.e. the root of the valgrind
+# source tree. We use the existence of the coregrind directory as evidence
+# that we're in the right place.
+if [ ! -d "coregrind" ]; then
+  echo  "make_local_links is not invoked from the top-of-tree directory" 1>&2
+  exit 1
+fi
+
+# Make sure there is an argument
+if [ "x$1" = "x" ]; then
+  echo  "usage: make_local_links /path/to/gdb" 1>&2
+  exit 1
+fi
+
 if [ -x "$1" ]
 then
    ln -f -s "$1" gdbserver_tests/gdb

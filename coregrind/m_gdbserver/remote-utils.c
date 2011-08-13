@@ -278,6 +278,15 @@ void remote_open (char *name)
 
    if (!mknod_done) {
       mknod_done++;
+
+      /*
+       * Unlink just in case a previous process with the same PID had been
+       * killed and hence Valgrind hasn't had the chance yet to remove these.
+       */
+      VG_(unlink)(from_gdb);
+      VG_(unlink)(to_gdb);
+      VG_(unlink)(shared_mem);
+
       safe_mknod(from_gdb);
       safe_mknod(to_gdb);
 

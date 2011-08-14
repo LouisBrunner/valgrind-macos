@@ -77,8 +77,8 @@ int main(int argc, char *argv[])
   printf ("after %d loops, last size block requested %lu\n", loop, bigsize);
   // verify if superblock fragmentation occured
   // We consider that an arena of up to 3 times more than bigsize is ok.
-#if defined(HAVE_MALLINFO)
   {
+#if defined(HAVE_MALLINFO)
      struct mallinfo mallinfo_result;
      mallinfo_result = mallinfo();
      // Under valgrind, hblkhd is 0 : all the space is in arena.
@@ -90,9 +90,9 @@ int main(int argc, char *argv[])
                (unsigned long) mallinfo_result.arena 
                + (unsigned long) mallinfo_result.hblkhd);
      else
+#endif
         printf("reasonable heap usage\n");
   }
-#endif
 
   if (debug)
      stats ("before freeing last block");

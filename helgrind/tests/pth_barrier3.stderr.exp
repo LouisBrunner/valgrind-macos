@@ -28,6 +28,6 @@ Locks held: none
 
 Address 0x........ is 0 bytes inside a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:107)
+   by 0x........: barriers_and_races (pth_barrier.c:75)
    by 0x........: main (pth_barrier.c:121)
 

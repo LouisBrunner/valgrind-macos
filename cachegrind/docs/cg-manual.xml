@@ -1117,9 +1117,9 @@ int i;
 ...
 switch (e)
 {
-    case A: i += 1;
-    case B: i += 2;
-    case C: i += 3;
+    case A: i += 1; break;
+    case B: i += 2; break;
+    case C: i += 3; break;
 }
 ]]></programlisting>
 

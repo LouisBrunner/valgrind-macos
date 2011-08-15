@@ -49,6 +49,19 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 
 
+<refsect1 id="tool-selection-options">
+<title>Tool Selection Options</title>
+
+<xi:include href="manual-core.xml" xpointer="tool.opts.para"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<xi:include href="manual-core.xml" xpointer="tool.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
 <refsect1 id="basic-options">
 <title>Basic Options</title>
 

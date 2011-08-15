@@ -564,9 +564,9 @@ in most cases.  We group the available options by rough categories.</para>
 <sect2 id="manual-core.toolopts" xreflabel="Tool-selection Option">
 <title>Tool-selection Option</title>
 
-<para>The single most important option.</para>
+<para id="tool.opts.para">The single most important option.</para>
 
-<variablelist>
+<variablelist id="tool.opts.list">
 
   <varlistentry id="tool_name" xreflabel="--tool">
     <term>

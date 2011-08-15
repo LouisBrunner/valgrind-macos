@@ -325,7 +325,7 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
 {
    Int    i;
    Addr   sym_addr;
-   DiSym  risym;
+   DiSym  disym;
    UChar* name;
 
    static UChar* s_a_t_v = NULL; /* do not make non-static */
@@ -363,43 +363,45 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
       if (*name == 0)
          continue;
 
-      risym.tocptr = 0;
-      risym.addr = sym_addr;
-      risym.size = // let canonicalize fix it
-                   di->text_avma+di->text_size - sym_addr;
-      risym.name = ML_(addStr)(di, name, -1);
-      risym.isText = True;
-      risym.isIFunc = False;
+      disym.addr      = sym_addr;
+      disym.tocptr    = 0;
+      disym.pri_name  = ML_(addStr)(di, name, -1);
+      disym.sec_names = NULL;
+      disym.size      = // let canonicalize fix it
+                        di->text_avma+di->text_size - sym_addr;
+      disym.isText    = True;
+      disym.isIFunc   = False;
       // Lots of user function names get prepended with an underscore.  Eg. the
       // function 'f' becomes the symbol '_f'.  And the "below main"
       // function is called "start".  So we skip the leading underscore, and
       // if we see 'start' and --show-below-main=no, we rename it as
       // "start_according_to_valgrind", which makes it easy to spot later
       // and display as "(below main)".
-      if (risym.name[0] == '_') {
-         risym.name++;
-      } else if (!VG_(clo_show_below_main) && VG_STREQ(risym.name, "start")) {
+      if (disym.pri_name[0] == '_') {
+         disym.pri_name++;
+      } 
+      else if (!VG_(clo_show_below_main) && VG_STREQ(disym.pri_name, "start")) {
          if (s_a_t_v == NULL)
             s_a_t_v = ML_(addStr)(di, "start_according_to_valgrind", -1);
          vg_assert(s_a_t_v);
-         risym.name = s_a_t_v;
+         disym.pri_name = s_a_t_v;
       }
 
-      vg_assert(risym.name);
-      VG_(addToXA)( syms, &risym );
+      vg_assert(disym.pri_name);
+      VG_(addToXA)( syms, &disym );
    }
 }
 
 
 /* Compare DiSyms by their start address, and for equal addresses, use
-   the name as a secondary sort key. */
+   the primary name as a secondary sort key. */
 static Int cmp_DiSym_by_start_then_name ( void* v1, void* v2 )
 {
    DiSym* s1 = (DiSym*)v1;
    DiSym* s2 = (DiSym*)v2;
    if (s1->addr < s2->addr) return -1;
    if (s1->addr > s2->addr) return 1;
-   return VG_(strcmp)(s1->name, s2->name);
+   return VG_(strcmp)(s1->pri_name, s2->pri_name);
 }
 
 /* 'cand' is a bunch of candidate symbols obtained by reading
@@ -468,13 +470,13 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
          s_i  = (DiSym*)VG_(indexXA)(syms, i);
          if (s_i->addr != s_j1->addr
              || s_i->size != s_j1->size
-             || 0 != VG_(strcmp)(s_i->name, s_j1->name)) {
+             || 0 != VG_(strcmp)(s_i->pri_name, s_j1->pri_name)) {
             *s_j = *s_i;
             j++;
          } else {
             if (trace_symtab)
                VG_(printf)("nlist cleanup: dump duplicate avma %010lx  %s\n",
-                           s_i->addr, s_i->name );
+                           s_i->addr, s_i->pri_name );
          }
       }
    }
@@ -870,9 +872,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       nCandSyms = VG_(sizeXA)( candSyms );
       for (i = 0; i < nCandSyms; i++) {
          DiSym* cand = (DiSym*) VG_(indexXA)( candSyms, i );
+         vg_assert(cand->pri_name != NULL);
+         vg_assert(cand->sec_names == NULL);
          if (di->trace_symtab)
             VG_(printf)("nlist final: acquire  avma %010lx-%010lx  %s\n",
-                        cand->addr, cand->addr + cand->size - 1, cand->name );
+                        cand->addr, cand->addr + cand->size - 1,
+                        cand->pri_name );
          ML_(addSym)( di, cand );
       }
       VG_(deleteXA)( candSyms );

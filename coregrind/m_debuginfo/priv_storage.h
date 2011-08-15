@@ -45,19 +45,37 @@
 
 /* --------------------- SYMBOLS --------------------- */
 
-/* A structure to hold an ELF/MachO symbol (very crudely). */
+/* A structure to hold an ELF/MachO symbol (very crudely).  Usually
+   the symbol only has one name, which is stored in ::pri_name, and
+   ::sec_names is NULL.  If there are other names, these are stored in
+   ::sec_names, which is a NULL terminated vector holding the names.
+   The vector is allocated in VG_AR_DINFO, the names themselves live
+   in DebugInfo::strchunks.
+
+   From the point of view of ELF, the primary vs secondary distinction
+   is artificial: they are all just names associated with the address,
+   none of which has higher precedence than any other.  However, from
+   the point of view of mapping an address to a name to display to the
+   user, we need to choose one "preferred" name, and so that might as
+   well be installed as the pri_name, whilst all others can live in
+   sec_names[].  This has the convenient side effect that, in the
+   common case where there is only one name for the address,
+   sec_names[] does not need to be allocated.
+*/
 typedef 
    struct { 
-      Addr  addr;    /* lowest address of entity */
-      Addr  tocptr;  /* ppc64-linux only: value that R2 should have */
-      UChar *name;   /* name */
-      // XXX: this could be shrunk (on 32-bit platforms) by using 31 bits for
-      // the size and 1 bit for the isText.  If you do this, make sure that
-      // all assignments to isText use 0 or 1 (or True or False), and that a
-      // positive number larger than 1 is never used to represent True.
-      UInt  size;    /* size in bytes */
-      Bool  isText;
-      Bool  isIFunc; /* symbol is an indirect function? */
+      Addr    addr;    /* lowest address of entity */
+      Addr    tocptr;  /* ppc64-linux only: value that R2 should have */
+      UChar*  pri_name;  /* primary name, never NULL */
+      UChar** sec_names; /* NULL, or a NULL term'd array of other names */
+      // XXX: this could be shrunk (on 32-bit platforms) by using 30
+      // bits for the size and 1 bit each for isText and isIFunc.  If you
+      // do this, make sure that all assignments to the latter two use
+      // 0 or 1 (or True or False), and that a positive number larger
+      // than 1 is never used to represent True.
+      UInt    size;    /* size in bytes */
+      Bool    isText;
+      Bool    isIFunc; /* symbol is an indirect function? */
    }
    DiSym;
 
@@ -726,7 +744,11 @@ struct _DebugInfo {
 
 /* ------ Adding ------ */
 
-/* Add a symbol to si's symbol table. */
+/* Add a symbol to si's symbol table.  The contents of 'sym' are
+   copied.  It is assumed (and checked) that 'sym' only contains one
+   name, so there is no auxiliary ::sec_names vector to duplicate.
+   IOW, the copy is a shallow copy, and there are assertions in place
+   to ensure that's OK. */
 extern void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym );
 
 /* Add a line-number record to a DebugInfo. */

@@ -202,18 +202,22 @@ PtrdiffT      VG_(DebugInfo_get_text_bias)   ( const DebugInfo *di );
 const DebugInfo* VG_(next_DebugInfo)    ( const DebugInfo *di );
 
 /* Functions for traversing all the symbols in a DebugInfo.  _howmany
-   tells how many there are.  _getidx retrieves the n'th, for n in 0
-   .. _howmany-1.  You may not modify the function name thereby
-   acquired; if you want to do so, first strdup it. */
+   tells how many symbol table entries there are.  _getidx retrieves
+   the n'th entry, for n in 0 .. _howmany-1.  You may not modify the
+   function names thereby acquired; if you want to do so, first strdup
+   them.  The primary name is returned in *pri_name, and *sec_names is
+   set either to NULL or to a NULL terminated vector containing
+   pointers to the secondary names. */
 Int  VG_(DebugInfo_syms_howmany) ( const DebugInfo *di );
 void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di, 
                                    Int idx,
-                                   /*OUT*/Addr*   avma,
-                                   /*OUT*/Addr*   tocptr,
-                                   /*OUT*/UInt*   size,
-                                   /*OUT*/HChar** name,
-                                   /*OUT*/Bool*   isText,
-                                   /*OUT*/Bool*   isIFunc );
+                                   /*OUT*/Addr*    avma,
+                                   /*OUT*/Addr*    tocptr,
+                                   /*OUT*/UInt*    size,
+                                   /*OUT*/UChar**  pri_name,
+                                   /*OUT*/UChar*** sec_names,
+                                   /*OUT*/Bool*    isText,
+                                   /*OUT*/Bool*    isIFunc );
 
 /* A simple enumeration to describe the 'kind' of various kinds of
    segments that arise from the mapping of object files. */

@@ -588,7 +588,7 @@ void read_elf_symtab__normal(
    Int        sym_size;
    Addr       sym_tocptr;
    Bool       from_opd, is_text, is_ifunc;
-   DiSym      risym;
+   DiSym      disym;
    ElfXX_Sym *sym;
 
    if (strtab_img == NULL || symtab_img == NULL) {
@@ -621,24 +621,25 @@ void read_elf_symtab__normal(
                               &sym_tocptr,
                               &from_opd, &is_text, &is_ifunc)) {
 
-         risym.addr    = sym_avma_really;
-         risym.size    = sym_size;
-         risym.name    = ML_(addStr) ( di, sym_name_really, -1 );
-         risym.tocptr  = sym_tocptr;
-         risym.isText  = is_text;
-         risym.isIFunc = is_ifunc;
-         vg_assert(risym.name != NULL);
-         vg_assert(risym.tocptr == 0); /* has no role except on ppc64-linux */
-         ML_(addSym) ( di, &risym );
+         disym.addr      = sym_avma_really;
+         disym.tocptr    = sym_tocptr;
+         disym.pri_name  = ML_(addStr) ( di, sym_name_really, -1 );
+         disym.sec_names = NULL;
+         disym.size      = sym_size;
+         disym.isText    = is_text;
+         disym.isIFunc   = is_ifunc;
+         vg_assert(disym.pri_name);
+         vg_assert(disym.tocptr == 0); /* has no role except on ppc64-linux */
+         ML_(addSym) ( di, &disym );
 
          if (di->trace_symtab) {
             VG_(printf)("    rec(%c) [%4ld]:          "
                         "  val %#010lx, sz %4d  %s\n",
                         is_text ? 't' : 'd',
                         i,
-                        risym.addr,
-                        (Int)risym.size,
-                        (HChar*)risym.name
+                        disym.addr,
+                        (Int)disym.size,
+                        (HChar*)disym.pri_name
             );
          }
 
@@ -691,7 +692,7 @@ void read_elf_symtab__ppc64_linux(
    Int         sym_size;
    Addr        sym_tocptr;
    Bool        from_opd, modify_size, modify_tocptr, is_text, is_ifunc;
-   DiSym       risym;
+   DiSym       disym;
    ElfXX_Sym  *sym;
    OSet       *oset;
    TempSymKey  key;
@@ -828,24 +829,25 @@ void read_elf_symtab__ppc64_linux(
    VG_(OSetGen_ResetIter)( oset );
 
    while ( (elem = VG_(OSetGen_Next)(oset)) ) {
-      risym.addr    = elem->key.addr;
-      risym.size    = elem->size;
-      risym.name    = ML_(addStr) ( di, elem->key.name, -1 );
-      risym.tocptr  = elem->tocptr;
-      risym.isText  = elem->is_text;
-      risym.isIFunc = elem->is_ifunc;
-      vg_assert(risym.name != NULL);
+      disym.addr      = elem->key.addr;
+      disym.tocptr    = elem->tocptr;
+      disym.pri_name  = ML_(addStr) ( di, elem->key.name, -1 );
+      disym.sec_names = NULL;
+      disym.size      = elem->size;
+      disym.isText    = elem->is_text;
+      disym.isIFunc   = elem->is_ifunc;
+      vg_assert(disym.pri_name != NULL);
 
-      ML_(addSym) ( di, &risym );
+      ML_(addSym) ( di, &disym );
       if (di->trace_symtab) {
          VG_(printf)("    rec(%c) [%4ld]:          "
                      "   val %#010lx, toc %#010lx, sz %4d  %s\n",
-                     risym.isText ? 't' : 'd',
+                     disym.isText ? 't' : 'd',
                      i,
-                     risym.addr,
-                     risym.tocptr,
-                     (Int)   risym.size,
-                     (HChar*)risym.name
+                     disym.addr,
+                     disym.tocptr,
+                     (Int)   disym.size,
+                     (HChar*)disym.pri_name
                );
       }
       i++;

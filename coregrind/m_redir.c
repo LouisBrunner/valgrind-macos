@@ -329,7 +329,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
    Spec*        spec;
    TopSpec*     ts;
    TopSpec*     newts;
-   HChar*       sym_name;
+   UChar*       sym_name_pri;
    Addr         sym_addr, sym_toc;
    HChar        demangled_sopatt[N_DEMANGLED];
    HChar        demangled_fnpatt[N_DEMANGLED];
@@ -357,8 +357,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
    nsyms = VG_(DebugInfo_syms_howmany)( newsi );
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc,
-                                  NULL, &sym_name, &isText, NULL );
-      ok = VG_(maybe_Z_demangle)( sym_name, demangled_sopatt, N_DEMANGLED,
+                                  NULL, &sym_name_pri, NULL, &isText, NULL );
+      ok = VG_(maybe_Z_demangle)( sym_name_pri, demangled_sopatt, N_DEMANGLED,
                                   demangled_fnpatt, N_DEMANGLED, &isWrap );
       /* ignore data symbols */
       if (!isText)
@@ -366,7 +366,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
       if (!ok) {
          /* It's not a full-scale redirect, but perhaps it is a load-notify
             fn?  Let the load-notify department see it. */
-         handle_maybe_load_notifier( newsi_soname, sym_name, sym_addr );
+         handle_maybe_load_notifier( newsi_soname, sym_name_pri, sym_addr );
          continue; 
       }
       if (check_ppcTOCs && sym_toc == 0) {
@@ -395,10 +395,11 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
          VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc,
-                                     NULL, &sym_name, &isText, NULL );
+                                     NULL, &sym_name_pri, NULL,
+                                     &isText, NULL );
          ok = isText
               && VG_(maybe_Z_demangle)( 
-                    sym_name, demangled_sopatt, N_DEMANGLED,
+                    sym_name_pri, demangled_sopatt, N_DEMANGLED,
                     demangled_fnpatt, N_DEMANGLED, &isWrap );
          if (!ok)
             /* not a redirect.  Ignore. */
@@ -526,7 +527,7 @@ void generate_and_add_actives (
    Active act;
    Int    nsyms, i;
    Addr   sym_addr;
-   HChar* sym_name;
+   UChar* sym_name_pri;
 
    /* First figure out which of the specs match the seginfo's soname.
       Also clear the 'done' bits, so that after the main loop below
@@ -548,7 +549,7 @@ void generate_and_add_actives (
    nsyms = VG_(DebugInfo_syms_howmany)( di );
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, NULL,
-                                  &sym_name, &isText, &isIFunc );
+                                  &sym_name_pri, NULL, &isText, &isIFunc );
 
       /* ignore data symbols */
       if (!isText)
@@ -557,7 +558,7 @@ void generate_and_add_actives (
       for (sp = specs; sp; sp = sp->next) {
          if (!sp->mark)
             continue; /* soname doesn't match */
-         if (VG_(string_match)( sp->from_fnpatt, sym_name )) {
+         if (VG_(string_match)( sp->from_fnpatt, sym_name_pri )) {
             /* got a new binding.  Add to collection. */
             act.from_addr   = sym_addr;
             act.to_addr     = sp->to_addr;
@@ -1214,16 +1215,17 @@ static void handle_require_text_symbols ( DebugInfo* di )
       HChar* fnpatt = fnpatts[i];
       Int    nsyms = VG_(DebugInfo_syms_howmany)(di);
       for (j = 0; j < nsyms; j++) {
-         Bool   isText   = False;
-         HChar* sym_name = NULL;
+         Bool   isText       = False;
+         UChar* sym_name_pri = NULL;
          VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL,
-                                     NULL, &sym_name, &isText, NULL );
+                                     NULL, &sym_name_pri, NULL,
+                                     &isText, NULL );
          /* ignore data symbols */
-         if (0) VG_(printf)("QQQ %s\n", sym_name);
-         vg_assert(sym_name);
+         if (0) VG_(printf)("QQQ %s\n", sym_name_pri);
+         vg_assert(sym_name_pri);
          if (!isText)
             continue;
-         if (VG_(string_match)(fnpatt, sym_name)) {
+         if (VG_(string_match)(fnpatt, sym_name_pri)) {
             found = True;
             break;
          }

@@ -210,11 +210,23 @@ static void free_DebugInfo ( DebugInfo* di )
 
    vg_assert(di != NULL);
    if (di->filename)   ML_(dinfo_free)(di->filename);
-   if (di->symtab)     ML_(dinfo_free)(di->symtab);
    if (di->loctab)     ML_(dinfo_free)(di->loctab);
    if (di->cfsi)       ML_(dinfo_free)(di->cfsi);
    if (di->cfsi_exprs) VG_(deleteXA)(di->cfsi_exprs);
    if (di->fpo)        ML_(dinfo_free)(di->fpo);
+
+   if (di->symtab) {
+      /* We have to visit all the entries so as to free up any
+         sec_names arrays that might exist. */
+      n = di->symtab_used;
+      for (i = 0; i < n; i++) {
+         DiSym* sym = &di->symtab[i];
+         if (sym->sec_names)
+            ML_(dinfo_free)(sym->sec_names);
+      }
+      /* and finally .. */
+      ML_(dinfo_free)(di->symtab);
+   }
 
    for (chunk = di->strchunks; chunk != NULL; chunk = next) {
       next = chunk->next;
@@ -1263,8 +1275,9 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    if (di == NULL) 
       return False;
 
+   vg_assert(di->symtab[sno].pri_name);
    VG_(demangle) ( do_cxx_demangling, do_z_demangling,
-                   di->symtab[sno].name, buf, nbuf );
+                   di->symtab[sno].pri_name, buf, nbuf );
 
    /* Do the below-main hack */
    // To reduce the endless nuisance of multiple different names 
@@ -1612,11 +1625,26 @@ Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name,
          continue;
       }
       for (i = 0; i < si->symtab_used; i++) {
-         if (0==VG_(strcmp)(name, si->symtab[i].name)
+         UChar* pri_name = si->symtab[i].pri_name;
+         tl_assert(pri_name);
+         if (0==VG_(strcmp)(name, pri_name)
              && (require_pToc ? si->symtab[i].tocptr : True)) {
             *pEnt = si->symtab[i].addr;
             *pToc = si->symtab[i].tocptr;
             return True;
+         }
+         UChar** sec_names = si->symtab[i].sec_names;
+         if (sec_names) {
+            tl_assert(sec_names[0]);
+            while (*sec_names) {
+               if (0==VG_(strcmp)(name, *sec_names)
+                   && (require_pToc ? si->symtab[i].tocptr : True)) {
+                  *pEnt = si->symtab[i].addr;
+                  *pToc = si->symtab[i].tocptr;
+                  return True;
+               }
+               sec_names++;
+            }
          }
       }
    }
@@ -3611,20 +3639,22 @@ Int VG_(DebugInfo_syms_howmany) ( const DebugInfo *si )
 
 void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si, 
                                         Int idx,
-                                  /*OUT*/Addr*   avma,
-                                  /*OUT*/Addr*   tocptr,
-                                  /*OUT*/UInt*   size,
-                                  /*OUT*/HChar** name,
-                                  /*OUT*/Bool*   isText,
-                                  /*OUT*/Bool*   isIFunc )
+                                  /*OUT*/Addr*    avma,
+                                  /*OUT*/Addr*    tocptr,
+                                  /*OUT*/UInt*    size,
+                                  /*OUT*/UChar**  pri_name,
+                                  /*OUT*/UChar*** sec_names,
+                                  /*OUT*/Bool*    isText,
+                                  /*OUT*/Bool*    isIFunc )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
-   if (avma)    *avma    = si->symtab[idx].addr;
-   if (tocptr)  *tocptr  = si->symtab[idx].tocptr;
-   if (size)    *size    = si->symtab[idx].size;
-   if (name)    *name    = (HChar*)si->symtab[idx].name;
-   if (isText)  *isText  = si->symtab[idx].isText;
-   if (isIFunc) *isIFunc = si->symtab[idx].isIFunc;
+   if (avma)      *avma      = si->symtab[idx].addr;
+   if (tocptr)    *tocptr    = si->symtab[idx].tocptr;
+   if (size)      *size      = si->symtab[idx].size;
+   if (pri_name)  *pri_name  = si->symtab[idx].pri_name;
+   if (sec_names) *sec_names = si->symtab[idx].sec_names;
+   if (isText)    *isText    = si->symtab[idx].isText;
+   if (isIFunc)   *isIFunc   = si->symtab[idx].isIFunc;
 }
 
 

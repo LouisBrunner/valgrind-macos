@@ -90,11 +90,22 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
 /* Print a symbol. */
 void ML_(ppSym) ( Int idx, DiSym* sym )
 {
-   VG_(printf)( "%5d:  %#8lx .. %#8lx (%d)      %s\n",
+   UChar** sec_names = sym->sec_names;
+   vg_assert(sym->pri_name);
+   if (sec_names)
+      vg_assert(sec_names);
+   VG_(printf)( "%5d:  %#8lx .. %#8lx (%d)      %s%s",
                 idx,
                 sym->addr, 
                 sym->addr + sym->size - 1, sym->size,
-	        sym->name );
+                sym->pri_name, sec_names ? " " : "" );
+   if (sec_names) {
+      while (*sec_names) {
+         VG_(printf)("%s%s", *sec_names, *(sec_names+1) ? " " : "");
+         sec_names++;
+      }
+   }
+   VG_(printf)("\n");
 }
 
 /* Print a call-frame-info summary. */
@@ -235,12 +246,17 @@ UChar* ML_(addStr) ( struct _DebugInfo* di, UChar* str, Int len )
 }
 
 
-/* Add a symbol to the symbol table. 
+/* Add a symbol to the symbol table, by copying *sym.  'sym' may only
+   have one name, so there's no complexities to do with deep vs
+   shallow copying of the sec_name array.  This is checked.
 */
 void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
 {
    UInt   new_sz, i;
    DiSym* new_tab;
+
+   vg_assert(sym->pri_name != NULL);
+   vg_assert(sym->sec_names == NULL);
 
    /* Ignore zero-sized syms. */
    if (sym->size == 0) return;
@@ -259,8 +275,7 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
       di->symtab_size = new_sz;
    }
 
-   di->symtab[di->symtab_used] = *sym;
-   di->symtab_used++;
+   di->symtab[di->symtab_used++] = *sym;
    vg_assert(di->symtab_used <= di->symtab_size);
 }
 
@@ -1102,11 +1117,13 @@ static Int compare_DiSym ( void* va, void* vb )
 }
 
 
-/* Two symbols have the same address.  Which name do we prefer?  In order:
+/* An address is associated with more than one name.  Which do we
+   prefer as the "display" name (that we show the user in stack
+   traces)?  In order:
 
    - Prefer "PMPI_<foo>" over "MPI_<foo>".
 
-   - Else, prefer a non-NULL name over a NULL one.
+   - Else, prefer a non-empty name over an empty one.
 
    - Else, prefer a non-whitespace name over an all-whitespace name.
 
@@ -1121,14 +1138,20 @@ static Int compare_DiSym ( void* va, void* vb )
      
    - Else, use alphabetical ordering.
 
-   - Otherwise, they must be the same;  use the symbol with the lower address.
+   - Otherwise, they must be the same;  use the name with the lower address.
 
    Very occasionally this goes wrong (eg. 'memcmp' and 'bcmp' are
    aliases in glibc, we choose the 'bcmp' symbol because it's shorter,
    so we can misdescribe memcmp() as bcmp()).  This is hard to avoid.
    It's mentioned in the FAQ file.
+
+   Returned value is True if a_name is preferred, False if b_name is
+   preferred.
  */
-static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
+static
+Bool preferName ( struct _DebugInfo* di,
+                  UChar* a_name, UChar* b_name,
+                  Addr sym_avma/*exposition only*/ )
 {
    Word cmp;
    Word vlena, vlenb;		/* length without version */
@@ -1137,36 +1160,40 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
    Bool preferA = False;
    Bool preferB = False;
 
-   vg_assert(a->addr == b->addr);
+   vg_assert(a_name);
+   vg_assert(b_name);
+   vg_assert(a_name != b_name);
 
-   vlena = VG_(strlen)(a->name);
-   vlenb = VG_(strlen)(b->name);
+   vlena = VG_(strlen)(a_name);
+   vlenb = VG_(strlen)(b_name);
 
-#if defined(VGO_linux)
-#  define VERSION_CHAR '@'
-#elif defined(VGO_darwin)
-#  define VERSION_CHAR '$'
-#else
-#  error Unknown OS
-#endif
+#  if defined(VGO_linux)
+#    define VERSION_CHAR '@'
+#  elif defined(VGO_darwin)
+#    define VERSION_CHAR '$'
+#  else
+#    error Unknown OS
+#  endif
 
-   vpa = VG_(strchr)(a->name, VERSION_CHAR);
-   vpb = VG_(strchr)(b->name, VERSION_CHAR);
+   vpa = VG_(strchr)(a_name, VERSION_CHAR);
+   vpb = VG_(strchr)(b_name, VERSION_CHAR);
+
+#  undef VERSION_CHAR
 
    if (vpa)
-      vlena = vpa - a->name;
+      vlena = vpa - a_name;
    if (vpb)
-      vlenb = vpb - b->name;
+      vlenb = vpb - b_name;
 
    /* MPI hack: prefer PMPI_Foo over MPI_Foo */
-   if (0==VG_(strncmp)(a->name, "MPI_", 4)
-       && 0==VG_(strncmp)(b->name, "PMPI_", 5)
-       && 0==VG_(strcmp)(a->name, 1+b->name)) {
+   if (0==VG_(strncmp)(a_name, "MPI_", 4)
+       && 0==VG_(strncmp)(b_name, "PMPI_", 5)
+       && 0==VG_(strcmp)(a_name, 1+b_name)) {
       preferB = True; goto out;
    } 
-   if (0==VG_(strncmp)(b->name, "MPI_", 4)
-       && 0==VG_(strncmp)(a->name, "PMPI_", 5)
-       && 0==VG_(strcmp)(b->name, 1+a->name)) {
+   if (0==VG_(strncmp)(b_name, "MPI_", 4)
+       && 0==VG_(strncmp)(a_name, "PMPI_", 5)
+       && 0==VG_(strcmp)(b_name, 1+a_name)) {
       preferA = True; goto out;
    }
 
@@ -1183,14 +1210,14 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
       Bool blankA = True;
       Bool blankB = True;
       Char *s;
-      s = a->name;
+      s = a_name;
       while (*s) {
          if (!VG_(isspace)(*s++)) {
             blankA = False;
             break;
          }
       }
-      s = b->name;
+      s = b_name;
       while (*s) {
          if (!VG_(isspace)(*s++)) {
             blankB = False;
@@ -1224,7 +1251,7 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 
    /* Either both versioned or neither is versioned; select them
       alphabetically */
-   cmp = VG_(strcmp)(a->name, b->name);
+   cmp = VG_(strcmp)(a_name, b_name);
    if (cmp < 0) {
       preferA = True; goto out;
    }
@@ -1238,31 +1265,87 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
       well choose the one with the lowest DiSym* address, so as to try
       and make the comparison mechanism more stable (a la sorting
       parlance).  Also, skip the diagnostic printing in this case. */
-   return a <= b  ? a  : b;
+   return a_name <= b_name  ? True  : False;
 
    /*NOTREACHED*/
    vg_assert(0);
   out:
    if (preferA && !preferB) {
       TRACE_SYMTAB("sym at %#lx: prefer '%s' to '%s'\n",
-                   a->addr, a->name, b->name );
-      return a;
+                   sym_avma, a_name, b_name );
+      return True;
    }
    if (preferB && !preferA) {
       TRACE_SYMTAB("sym at %#lx: prefer '%s' to '%s'\n",
-                   b->addr, b->name, a->name );
-      return b;
+                   sym_avma, b_name, a_name );
+      return False;
    }
    /*NOTREACHED*/
    vg_assert(0);
 }
 
+
+/* Add the names in FROM to the names in TO. */
+static
+void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
+{
+   vg_assert(to->pri_name);
+   vg_assert(from->pri_name);
+   /* Figure out how many names there will be in the new combined
+      secondary vector. */
+   UChar** to_sec   = to->sec_names;
+   UChar** from_sec = from->sec_names;
+   Word n_new_sec = 1;
+   if (from_sec) {
+      while (*from_sec) {
+         n_new_sec++;
+         from_sec++;
+      }
+   }
+   if (to_sec) {
+      while (*to_sec) {
+         n_new_sec++;
+         to_sec++;
+      }
+   }
+   if (0)
+      TRACE_SYMTAB("merge: -> %ld\n", n_new_sec);
+   /* Create the new sec and copy stuff into it, putting the new
+      entries at the end. */
+   UChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
+                                        (n_new_sec+1) * sizeof(UChar*) );
+   from_sec = from->sec_names;
+   to_sec   = to->sec_names;
+   Word i = 0;
+   if (to_sec) {
+      while (*to_sec) {
+         new_sec[i++] = *to_sec;
+         to_sec++;
+      }
+   }
+   new_sec[i++] = from->pri_name;
+   if (from_sec) {
+      while (*from_sec) {
+         new_sec[i++] = *from_sec;
+         from_sec++;
+      }
+   }
+   vg_assert(i == n_new_sec);
+   vg_assert(new_sec[i] == NULL);
+   /* If we're replacing an existing secondary vector, free it. */
+   if (to->sec_names) {
+      ML_(dinfo_free)(to->sec_names);
+   }
+   to->sec_names = new_sec;
+}
+
+
 static void canonicaliseSymtab ( struct _DebugInfo* di )
 {
-   Word  i, j, n_merged, n_truncated;
-   Addr  s1, s2, e1, e2, p1, p2;
-   UChar *n1, *n2;
-   Bool t1, t2, f1, f2;
+   Word  i, j, n_truncated;
+   Addr  sta1, sta2, end1, end2, toc1, toc2;
+   UChar *pri1, *pri2, **sec1, **sec2;
+   Bool  ist1, ist2, isf1, isf2;
 
 #  define SWAP(ty,aa,bb) \
       do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0)
@@ -1270,34 +1353,68 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    if (di->symtab_used == 0)
       return;
 
+   /* Check initial invariants */
+   for (i = 0; i < di->symtab_used; i++) {
+      DiSym* sym = &di->symtab[i];
+      vg_assert(sym->pri_name);
+      vg_assert(!sym->sec_names);
+   }
+
+   /* Sort by address. */
    VG_(ssort)(di->symtab, di->symtab_used, 
                           sizeof(*di->symtab), compare_DiSym);
 
   cleanup_more:
  
-   /* If two symbols have identical address ranges, we pick one
-      using prefersym() (see it for details). */
-   do {
+   /* If two symbols have identical address ranges, and agree on
+      .isText and .isIFunc, merge them into a single entry, but
+      preserve both names, so we end up knowing all the names for that
+      particular address range. */
+   while (1) {
+      Word r, w, n_merged;
       n_merged = 0;
-      j = di->symtab_used;
-      di->symtab_used = 0;
-      for (i = 0; i < j; i++) {
-         if (i < j-1
-             && di->symtab[i].addr   == di->symtab[i+1].addr
-             && di->symtab[i].size   == di->symtab[i+1].size
-             ) {
-            n_merged++;
+      w = 0;
+      /* A pass merging entries together */
+      for (r = 1; r < di->symtab_used; r++) {
+         vg_assert(w < r);
+         if (   di->symtab[w].addr      == di->symtab[r].addr
+             && di->symtab[w].size      == di->symtab[r].size
+             && !!di->symtab[w].isText  == !!di->symtab[r].isText
+             && !!di->symtab[w].isIFunc == !!di->symtab[r].isIFunc) {
             /* merge the two into one */
-	    di->symtab[di->symtab_used++] 
-               = *prefersym(di, &di->symtab[i], &di->symtab[i+1]);
-            i++;
+            n_merged++;
+            add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
+            /* and use ::pri_names to indicate this slot is no longer in use */
+            di->symtab[r].pri_name = NULL;
+            if (di->symtab[r].sec_names) {
+               ML_(dinfo_free)(di->symtab[r].sec_names);
+               di->symtab[r].sec_names = NULL;
+            }
+            /* Completely zap the entry -- paranoia to make it more
+               likely we'll notice if we inadvertantly use it
+               again. */
+            VG_(memset)(&di->symtab[r], 0, sizeof(DiSym));
          } else {
-            di->symtab[di->symtab_used++] = di->symtab[i];
+            w = r;
          }
       }
       TRACE_SYMTAB( "canonicaliseSymtab: %ld symbols merged\n", n_merged);
+      if (n_merged == 0)
+         break;
+      /* Now a pass to squeeze out any unused ones */
+      w = 0;
+      for (r = 0; r < di->symtab_used; r++) {
+         vg_assert(w <= r);
+         if (di->symtab[r].pri_name == NULL)
+            continue;
+         if (w < r) {
+            di->symtab[w] = di->symtab[r];
+         }
+         w++;
+      }
+      vg_assert(w + n_merged == di->symtab_used);
+      di->symtab_used = w;
    }
-   while (n_merged > 0);
 
    /* Detect and "fix" overlapping address ranges. */
    n_truncated = 0;
@@ -1321,46 +1438,56 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       }
 
       /* Truncate one or the other. */
-      s1 = di->symtab[i].addr;
-      e1 = s1 + di->symtab[i].size - 1;
-      p1 = di->symtab[i].tocptr;
-      n1 = di->symtab[i].name;
-      t1 = di->symtab[i].isText;
-      f1 = di->symtab[i].isIFunc;
-      s2 = di->symtab[i+1].addr;
-      e2 = s2 + di->symtab[i+1].size - 1;
-      p2 = di->symtab[i+1].tocptr;
-      n2 = di->symtab[i+1].name;
-      t2 = di->symtab[i+1].isText;
-      f2 = di->symtab[i+1].isIFunc;
-      if (s1 < s2) {
-         e1 = s2-1;
+      sta1 = di->symtab[i].addr;
+      end1 = sta1 + di->symtab[i].size - 1;
+      toc1 = di->symtab[i].tocptr;
+      pri1 = di->symtab[i].pri_name;
+      sec1 = di->symtab[i].sec_names;
+      ist1 = di->symtab[i].isText;
+      isf1 = di->symtab[i].isIFunc;
+
+      sta2 = di->symtab[i+1].addr;
+      end2 = sta2 + di->symtab[i+1].size - 1;
+      toc2 = di->symtab[i+1].tocptr;
+      pri2 = di->symtab[i+1].pri_name;
+      sec2 = di->symtab[i+1].sec_names;
+      ist2 = di->symtab[i+1].isText;
+      isf2 = di->symtab[i+1].isIFunc;
+
+      if (sta1 < sta2) {
+         end1 = sta2 - 1;
       } else {
-         vg_assert(s1 == s2);
-         if (e1 > e2) { 
-            s1 = e2+1; SWAP(Addr,s1,s2); SWAP(Addr,e1,e2); SWAP(Addr,p1,p2);
-                       SWAP(UChar *,n1,n2); SWAP(Bool,t1,t2);
+         vg_assert(sta1 == sta2);
+         if (end1 > end2) { 
+            sta1 = end2 + 1;
+            SWAP(Addr,sta1,sta2); SWAP(Addr,end1,end2); SWAP(Addr,toc1,toc2);
+            SWAP(UChar*,pri1,pri2); SWAP(UChar**,sec1,sec2);
+            SWAP(Bool,ist1,ist2); SWAP(Bool,isf1,isf2);
          } else 
-         if (e1 < e2) {
-            s2 = e1+1;
+         if (end1 < end2) {
+            sta2 = end1 + 1;
          } else {
-	   /* e1 == e2.  Identical addr ranges.  We'll eventually wind
+	   /* end1 == end2.  Identical addr ranges.  We'll eventually wind
               up back at cleanup_more, which will take care of it. */
 	 }
       }
-      di->symtab[i].addr    = s1;
-      di->symtab[i].size    = e1 - s1 + 1;
-      di->symtab[i].tocptr  = p1;
-      di->symtab[i].name    = n1;
-      di->symtab[i].isText  = t1;
-      di->symtab[i].isIFunc = f1;
-      di->symtab[i+1].addr    = s2;
-      di->symtab[i+1].size    = e2 - s2 + 1;
-      di->symtab[i+1].tocptr  = p2;
-      di->symtab[i+1].name    = n2;
-      di->symtab[i+1].isText  = t2;
-      di->symtab[i+1].isIFunc = f2;
-      vg_assert(s1 <= s2);
+      di->symtab[i].addr      = sta1;
+      di->symtab[i].size      = end1 - sta1 + 1;
+      di->symtab[i].tocptr    = toc1;
+      di->symtab[i].pri_name  = pri1;
+      di->symtab[i].sec_names = sec1;
+      di->symtab[i].isText    = ist1;
+      di->symtab[i].isIFunc   = isf1;
+
+      di->symtab[i+1].addr      = sta2;
+      di->symtab[i+1].size      = end2 - sta2 + 1;
+      di->symtab[i+1].tocptr    = toc2;
+      di->symtab[i+1].pri_name  = pri2;
+      di->symtab[i+1].sec_names = sec2;
+      di->symtab[i+1].isText    = ist2;
+      di->symtab[i+1].isIFunc   = isf2;
+
+      vg_assert(sta1 <= sta2);
       vg_assert(di->symtab[i].size > 0);
       vg_assert(di->symtab[i+1].size > 0);
       /* It may be that the i+1 entry now needs to be moved further
@@ -1385,7 +1512,62 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       /* No overlaps. */
       vg_assert(di->symtab[i].addr + di->symtab[i].size - 1
                 < di->symtab[i+1].addr);
+      /* Names are sane(ish) */
+      vg_assert(di->symtab[i].pri_name);
+      if (di->symtab[i].sec_names) {
+         vg_assert(di->symtab[i].sec_names[0]);
+      }
    }
+
+   /* For each symbol that has more than one name, use preferName to
+      select the primary name.  This is a complete kludge in that
+      doing it properly requires making a total ordering on the
+      candidate names, whilst what we have to work with is an ad-hoc
+      binary relation (preferName) that certainly doesn't have the
+      relevant transitivity etc properties that are needed to induce a
+      legitimate total order.  Doesn't matter though if it doesn't
+      always work right since this is only used to generate names to
+      show the user. */
+   for (i = 0; i < ((Word)di->symtab_used)-1; i++) {
+      DiSym*  sym = &di->symtab[i];
+      UChar** sec = sym->sec_names;
+      if (!sec)
+         continue;
+      /* Slow but simple.  Copy all the cands into a temp array,
+         choose the primary name, and copy them all back again. */
+      Word n_tmp = 1;
+      while (*sec) { n_tmp++; sec++; }
+      j = 0;
+      UChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
+                                       (n_tmp+1) * sizeof(UChar*) );
+      tmp[j++] = sym->pri_name;
+      sec = sym->sec_names;
+      while (*sec) { tmp[j++] = *sec; sec++; }
+      vg_assert(j == n_tmp);
+      vg_assert(tmp[n_tmp] == NULL); /* because of zalloc */
+      /* Choose the most favoured. */
+      Word best = 0;
+      for (j = 1; j < n_tmp; j++) {
+         if (preferName(di, tmp[best], tmp[j], di->symtab[i].addr)) {
+            /* best is unchanged */
+         } else {
+            best = j;
+         }
+      }
+      vg_assert(best >= 0 && best < n_tmp);
+      /* Copy back */
+      sym->pri_name = tmp[best];
+      UChar** cursor = sym->sec_names;
+      for (j = 0; j < n_tmp; j++) {
+         if (j == best)
+            continue;
+         *cursor = tmp[j];
+         cursor++;
+      }
+      vg_assert(*cursor == NULL);
+      ML_(dinfo_free)( tmp );
+   }
+
 #  undef SWAP
 }
 

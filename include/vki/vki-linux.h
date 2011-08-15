@@ -1972,7 +1972,9 @@ struct vki_hd_geometry {
 //----------------------------------------------------------------------
 
 #define VKI_FBIOGET_VSCREENINFO	0x4600
+#define VKI_FBIOPUT_VSCREENINFO	0x4601
 #define VKI_FBIOGET_FSCREENINFO	0x4602
+#define VKI_FBIOPAN_DISPLAY	0x4606
 
 struct vki_fb_fix_screeninfo {
 	char id[16];			/* identification string eg "TT Builtin" */

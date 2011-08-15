@@ -4479,11 +4479,19 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(FBIOGET_VSCREENINFO)", ARG3,
                      sizeof(struct vki_fb_var_screeninfo));
       break;
+   case VKI_FBIOPUT_VSCREENINFO:
+      PRE_MEM_READ( "ioctl(FBIOPUT_VSCREENINFO)", ARG3,
+                    sizeof(struct vki_fb_var_screeninfo));
+      break;
    case VKI_FBIOGET_FSCREENINFO: /* 0x4602 */
       PRE_MEM_WRITE( "ioctl(FBIOGET_FSCREENINFO)", ARG3,
                      sizeof(struct vki_fb_fix_screeninfo));
       break;
+   case VKI_FBIOPAN_DISPLAY:
+      PRE_MEM_READ( "ioctl(FBIOPAN_DISPLAY)", ARG3,
+                    sizeof(struct vki_fb_var_screeninfo));
 
+      break;
    case VKI_PPCLAIM:
    case VKI_PPEXCL:
    case VKI_PPYIELD:

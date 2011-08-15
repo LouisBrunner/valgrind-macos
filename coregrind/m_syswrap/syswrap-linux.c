@@ -1641,7 +1641,7 @@ PRE(sys_mbind)
                  unsigned long, maxnode, unsigned, flags);
    if (ARG1 != 0)
       PRE_MEM_READ( "mbind(nodemask)", ARG4,
-                    VG_ROUNDUP( ARG5, sizeof(UWord) ) / sizeof(UWord) );
+                    VG_ROUNDUP( ARG5-1, sizeof(UWord) * 8 ) / 8 );
 }
 
 PRE(sys_set_mempolicy)
@@ -1651,7 +1651,7 @@ PRE(sys_set_mempolicy)
                  int, policy, unsigned long *, nodemask,
                  unsigned long, maxnode);
    PRE_MEM_READ( "set_mempolicy(nodemask)", ARG2,
-                 VG_ROUNDUP( ARG3, sizeof(UWord) ) / sizeof(UWord) );
+                 VG_ROUNDUP( ARG3-1, sizeof(UWord) * 8 ) / 8 );
 }
 
 PRE(sys_get_mempolicy)
@@ -1665,14 +1665,14 @@ PRE(sys_get_mempolicy)
       PRE_MEM_WRITE( "get_mempolicy(policy)", ARG1, sizeof(Int) );
    if (ARG2 != 0)
       PRE_MEM_WRITE( "get_mempolicy(nodemask)", ARG2,
-                     VG_ROUNDUP( ARG3, sizeof(UWord) * 8 ) / sizeof(UWord) );
+                     VG_ROUNDUP( ARG3-1, sizeof(UWord) * 8 ) / 8 );
 }
 POST(sys_get_mempolicy)
 {
    if (ARG1 != 0)
       POST_MEM_WRITE( ARG1, sizeof(Int) );
    if (ARG2 != 0)
-      POST_MEM_WRITE( ARG2, VG_ROUNDUP( ARG3, sizeof(UWord) * 8 ) / sizeof(UWord) );
+      POST_MEM_WRITE( ARG2, VG_ROUNDUP( ARG3-1, sizeof(UWord) * 8 ) / 8 );
 }
 
 /* ---------------------------------------------------------------------

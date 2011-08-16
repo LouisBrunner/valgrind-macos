@@ -51,6 +51,26 @@
    sure you use the VG_REPLACE_FN_ macros and not the VG_WRAP_FN_
    macros.
 
+   Finally there is the concept of behavioural equivalence tags.  A
+   tag is a 4-digit decimal number (0001 to 9999) encoded in the name.
+   If two replacement functions have the same tag then the redirect
+   mechanism will assume that they have identical behaviour.  If, when
+   processing redirections at library load time, the set of available
+   specifications yields more than one replacement or wrapper function
+   for a given address, the system will try to resolve the situation
+   by examining the tags on the replacements/wrappers.  In particular,
+   if all of them have the same tag, then they are all claiming to
+   behave identically, so any of them may be chosen to be the actual
+   redirection target.  Of course if not all of them have the same tag
+   then the redirection is ambiguous and the system will have to stop.
+
+   The tag is mandatory and must comprise 4 decimal digits.  The tag
+   0000 is special and means "does not have behaviour identical to any
+   other replacement/wrapper function".  Hence if you wish to write a
+   wrap/replacement function that is not subject to the above
+   resolution rules, use 0000 for the tag.
+
+
    Replacement
    ~~~~~~~~~~~
    To write a replacement function, do this:
@@ -61,12 +81,16 @@
          ... body ...
       }
 
-   zEncodedSoname should be a Z-encoded soname (see below for Z-encoding
-   details) and fnname should be an unencoded fn name.  The resulting name is
+   zEncodedSoname should be a Z-encoded soname (see below for
+   Z-encoding details) and fnname should be an unencoded fn name.  A
+   default-safe equivalence tag of 0000 is assumed (see comments
+   above).  The resulting name is
 
-      _vgrZU_zEncodedSoname_fnname
+      _vgr0000ZU_zEncodedSoname_fnname
 
-   The "_vgrZU_" is a prefix that gets discarded upon decoding.
+   The "_vgr0000ZU_" is a prefix that gets discarded upon decoding.
+   It identifies this function as a replacement and specifies its
+   equivalence tag.
 
    It is also possible to write
 
@@ -80,7 +104,7 @@
    Z-encoded.  This can sometimes be necessary.  In this case the
    resulting function name is
 
-      _vgrZZ_zEncodedSoname_zEncodedFnname
+      _vgr0000ZZ_zEncodedSoname_zEncodedFnname
 
    When it sees this either such name, the core's symbol-table reading
    machinery and redirection machinery first Z-decode the soname and 
@@ -112,6 +136,16 @@
    underscores, since the intercept-handlers in m_redir.c detect the
    end of the soname by looking for the first trailing underscore.
 
+   To write function names which explicitly state the equivalence class
+   tag, use
+     VG_REPLACE_FUNCTION_EZU(4-digit-tag,zEncodedSoname,fnname)
+   or
+     VG_REPLACE_FUNCTION_EZZ(4-digit-tag,zEncodedSoname,zEncodedFnname)
+
+   As per comments above, the tag must be a 4 digit decimal number,
+   padded with leading zeroes, in the range 0001 to 9999 inclusive.
+
+
    Wrapping
    ~~~~~~~~
    This is identical to replacement, except that you should use the
@@ -119,6 +153,8 @@
 
       VG_WRAP_FUNCTION_ZU
       VG_WRAP_FUNCTION_ZZ
+      VG_WRAP_FUNCTION_EZU
+      VG_WRAP_FUNCTION_EZZ
 
    instead.
 
@@ -153,11 +189,34 @@
    args are fully macro-expanded before pasting them together. */
 #define VG_CONCAT4(_aa,_bb,_cc,_dd) _aa##_bb##_cc##_dd
 
-#define VG_REPLACE_FUNCTION_ZU(soname,fnname) VG_CONCAT4(_vgrZU_,soname,_,fnname)
-#define VG_REPLACE_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgrZZ_,soname,_,fnname)
+#define VG_CONCAT6(_aa,_bb,_cc,_dd,_ee,_ff) _aa##_bb##_cc##_dd##_ee##_ff
 
-#define VG_WRAP_FUNCTION_ZU(soname,fnname) VG_CONCAT4(_vgwZU_,soname,_,fnname)
-#define VG_WRAP_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgwZZ_,soname,_,fnname)
+/* The 4 basic macros. */
+#define VG_REPLACE_FUNCTION_EZU(_eclasstag,_soname,_fnname) \
+   VG_CONCAT6(_vgr,_eclasstag,ZU_,_soname,_,_fnname)
+
+#define VG_REPLACE_FUNCTION_EZZ(_eclasstag,_soname,_fnname) \
+   VG_CONCAT6(_vgr,_eclasstag,ZZ_,_soname,_,_fnname)
+
+#define VG_WRAP_FUNCTION_EZU(_eclasstag,_soname,_fnname) \
+   VG_CONCAT6(_vgw,_eclasstag,ZU_,_soname,_,_fnname)
+
+#define VG_WRAP_FUNCTION_EZZ(_eclasstag,_soname,_fnname) \
+   VG_CONCAT6(_vgw,_eclasstag,ZZ_,_soname,_,_fnname)
+
+/* Convenience macros defined in terms of the above 4. */
+#define VG_REPLACE_FUNCTION_ZU(_soname,_fnname) \
+   VG_CONCAT6(_vgr,0000,ZU_,_soname,_,_fnname)
+
+#define VG_REPLACE_FUNCTION_ZZ(_soname,_fnname) \
+   VG_CONCAT6(_vgr,0000,ZZ_,_soname,_,_fnname)
+
+#define VG_WRAP_FUNCTION_ZU(_soname,_fnname) \
+   VG_CONCAT6(_vgw,0000,ZU_,_soname,_,_fnname)
+
+#define VG_WRAP_FUNCTION_ZZ(_soname,_fnname) \
+   VG_CONCAT6(_vgw,0000,ZZ_,_soname,_,_fnname)
+
 
 /* --------- Some handy Z-encoded names. --------- */
 

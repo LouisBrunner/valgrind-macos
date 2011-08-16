@@ -59,7 +59,8 @@ extern
 Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
                              /*OUT*/HChar* so, Int soLen,
                              /*OUT*/HChar* fn, Int fnLen,
-                             /*OUT*/Bool* isWrap );
+                             /*OUT*/Bool* isWrap,
+                             /*OUT*/Int*  eclassTag );
 
 #endif   // __PUB_CORE_DEMANGLE_H
 

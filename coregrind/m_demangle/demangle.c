@@ -100,7 +100,7 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
       interested in that). */
    if (do_z_demangling) {
       if (VG_(maybe_Z_demangle)( orig, NULL,0,/*soname*/
-                                 z_demangled, N_ZBUF, NULL)) {
+                                 z_demangled, N_ZBUF, NULL, NULL )) {
          orig = z_demangled;
       }
    }
@@ -146,7 +146,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
 Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
                              /*OUT*/HChar* so, Int soLen,
                              /*OUT*/HChar* fn, Int fnLen,
-                             /*OUT*/Bool* isWrap )
+                             /*OUT*/Bool* isWrap,
+                             /*OUT*/Int*  eclassTag )
 {
 #  define EMITSO(ch)                           \
       do {                                     \
@@ -181,32 +182,50 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
            &&  sym[1] == 'v'
            &&  sym[2] == 'g'
            && (sym[3] == 'r' || sym[3] == 'w' || sym[3] == 'n')
-           &&  sym[4] == 'Z'
-           && (sym[5] == 'Z' || sym[5] == 'U')
-           &&  sym[6] == '_';
+           &&  VG_(isdigit)(sym[4])
+           &&  VG_(isdigit)(sym[5])
+           &&  VG_(isdigit)(sym[6])
+           &&  VG_(isdigit)(sym[7])
+           &&  sym[8] == 'Z'
+           && (sym[9] == 'Z' || sym[9] == 'U')
+           &&  sym[10] == '_';
+   if (valid && sym[3] == 'n') {
+      /* for _vgn (notify-on-load symbols), the equivalence class has
+         no meaning; hence ensure it is the default 0000 value. */
+      if (sym[4] != '0' || sym[5] != '0' || sym[6] != '0' || sym[7] != '0')
+         valid = False;
+   }
    if (!valid)
       return False;
 
-   fn_is_encoded = sym[5] == 'Z';
+   fn_is_encoded = sym[9] == 'Z';
 
    if (isWrap)
       *isWrap = sym[3] == 'w';
 
+   if (eclassTag) {
+      *eclassTag =    1000 * ((Int)sym[4] - '0')
+                   +  100 * ((Int)sym[5] - '0')
+                   +  10 * ((Int)sym[6] - '0')
+                   +  1 * ((Int)sym[7] - '0');
+      vg_assert(*eclassTag >= 0 && *eclassTag <= 9999);
+   }
+
    /* Now check the soname prefix isn't "VG_Z_", as described in
       pub_tool_redir.h. */
    is_VG_Z_prefixed =
-      sym[ 7] == 'V' &&
-      sym[ 8] == 'G' &&
-      sym[ 9] == '_' &&
-      sym[10] == 'Z' &&
-      sym[11] == '_';
+      sym[11] == 'V' &&
+      sym[12] == 'G' &&
+      sym[13] == '_' &&
+      sym[14] == 'Z' &&
+      sym[15] == '_';
    if (is_VG_Z_prefixed) {
       vg_assert2(0, "symbol with a 'VG_Z_' prefix: %s.\n"
                     "see pub_tool_redir.h for an explanation.", sym);
    }
 
    /* Now scan the Z-encoded soname. */
-   i = 7;
+   i = 11;
    while (True) {
 
       if (sym[i] == '_')

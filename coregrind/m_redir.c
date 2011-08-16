@@ -708,7 +708,7 @@ void generate_and_add_actives (
 static void maybe_add_active ( Active act )
 {
    HChar*  what = NULL;
-   Active* old;
+   Active* old  = NULL;
 
    /* Complain and ignore manifestly bogus 'from' addresses.
 
@@ -735,10 +735,24 @@ static void maybe_add_active ( Active act )
       /* Dodgy.  Conflicting binding. */
       vg_assert(old->from_addr == act.from_addr);
       if (old->to_addr != act.to_addr) {
-         /* we have to ignore it -- otherwise activeSet would contain
-            conflicting bindings. */
-         what = "new redirection conflicts with existing -- ignoring it";
-         goto bad;
+         /* We've got a conflicting binding -- that is, from_addr is
+            specified to redirect to two different destinations,
+            old->to_addr and act.to_addr.  If we can prove that they
+            are behaviourally equivalent then that's no problem.  So
+            we can look at the behavioural eclass tags for both
+            functions to see if that's so.  If they are equal, and
+            nonzero, then that's fine.  But if not, we can't show they
+            are equivalent, so we have to complain, and ignore the new
+            binding. */
+         vg_assert(old->becTag >= 0 && old->becTag <= 9999);
+         vg_assert(act.becTag  >= 0 && act.becTag  <= 9999);
+         if (old->becTag != 0 && act.becTag != 0 && old->becTag == act.becTag) {
+            /* the replacements are behaviourally equivalent, so we can
+               safely ignore this conflict, and not add the new one. */
+         } else {
+            what = "new redirection conflicts with existing -- ignoring it";
+            goto bad;
+         }
       } else {
          /* This appears to be a duplicate of an existing binding.
             Safe(ish) -- ignore. */
@@ -765,6 +779,9 @@ static void maybe_add_active ( Active act )
    vg_assert(what);
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_UserMsg, "WARNING: %s\n", what);
+      if (old) {
+         show_active(             "    old: ", old);
+      }
       show_active(             "    new: ", &act);
    }
 }

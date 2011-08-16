@@ -482,9 +482,10 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
       if (ptrV == NULL) \
          /* We need to call a malloc-like function; so let's use \
             one which we know exists. GrP fixme use zonemalloc instead? */ \
-         return VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,malloc) (new_size); \
+         return VG_REPLACE_FUNCTION_EZU(1001,VG_Z_LIBC_SONAME,malloc) \
+                   (new_size); \
       if (new_size <= 0) { \
-         VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,free)(ptrV); \
+         VG_REPLACE_FUNCTION_EZU(1005,VG_Z_LIBC_SONAME,free)(ptrV); \
          MALLOC_TRACE(" = 0\n"); \
          return NULL; \
       } \
@@ -608,7 +609,7 @@ ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_zone_memalign);
       static int pszB = 0; \
       if (pszB == 0) \
          pszB = my_getpagesize(); \
-      return VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,memalign) \
+      return VG_REPLACE_FUNCTION_EZU(1011,VG_Z_LIBC_SONAME,memalign) \
                 ((SizeT)pszB, size); \
    }
 
@@ -786,11 +787,11 @@ static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved
     NULL, // reserved
     NULL, // GrP fixme malloc_size
-    (void*)VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, malloc_zone_malloc), 
-    (void*)VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, malloc_zone_calloc), 
-    (void*)VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, malloc_zone_valloc), 
-    (void*)VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, malloc_zone_free), 
-    (void*)VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, malloc_zone_realloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(1002,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(1006,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(1013,VG_Z_LIBC_SONAME,malloc_zone_valloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(1004,VG_Z_LIBC_SONAME,malloc_zone_free), 
+    (void*)VG_REPLACE_FUNCTION_EZU(1008,VG_Z_LIBC_SONAME,malloc_zone_realloc), 
     NULL, // GrP fixme destroy
     "ValgrindMallocZone", 
     NULL, // batch_malloc

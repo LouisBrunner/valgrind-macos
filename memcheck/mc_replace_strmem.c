@@ -632,9 +632,9 @@ MEMCHR(VG_Z_DYLD,        memchr)
 
 
 #define MEMMOVE_OR_MEMCPY(becTag, soname, fnname, do_ol_check)  \
-   void* VG_REPLACE_FUNCTION_EZU(becTag,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZZ(becTag,soname,fnname) \
             ( void *dst, const void *src, SizeT len ); \
-   void* VG_REPLACE_FUNCTION_EZU(becTag,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZZ(becTag,soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
       if (do_ol_check && is_overlap(dst, src, len, len)) \
@@ -711,12 +711,13 @@ MEMCHR(VG_Z_DYLD,        memchr)
 #if defined(VGO_linux)
 /* For older memcpy we have to use memmove-like semantics and skip the
    overlap check; sigh; see #275284. */
-MEMMOVE(VG_Z_LIBC_SONAME, memcpy)
-MEMMOVE(VG_Z_LD_SO_1,     memcpy) /* ld.so.1 */
-MEMMOVE(VG_Z_LD64_SO_1,   memcpy) /* ld64.so.1 */
+MEMMOVE(VG_Z_LIBC_SONAME, memcpyZAGLIBCZu2Zd2Zd5) /* memcpy@GLIBC_2.2.5 */
+MEMCPY(VG_Z_LIBC_SONAME,  memcpyZAZAGLIBCZu2Zd14) /* memcpy@@GLIBC_2.14 */
+MEMCPY(VG_Z_LD_SO_1,      memcpy) /* ld.so.1 */
+MEMCPY(VG_Z_LD64_SO_1,    memcpy) /* ld64.so.1 */
 #elif defined(VGO_darwin)
-MEMCPY(VG_Z_LIBC_SONAME, memcpy)
-MEMCPY(VG_Z_DYLD,        memcpy)
+MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+MEMCPY(VG_Z_DYLD,         memcpy)
 #endif
 /* icc9 blats these around all over the place.  Not only in the main
    executable but various .so's.  They are highly tuned and read
@@ -726,7 +727,7 @@ MEMCPY(VG_Z_DYLD,        memcpy)
    only until we understand more about the problem.  See
    http://bugs.kde.org/show_bug.cgi?id=139776
  */
-MEMCPY(NONE, _intel_fast_memcpy)
+MEMCPY(NONE, ZuintelZufastZumemcpy)
 
 
 #define MEMCMP(soname, fnname) \

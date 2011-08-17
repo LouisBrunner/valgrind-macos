@@ -749,6 +749,11 @@ static void maybe_add_active ( Active act )
          if (old->becTag != 0 && act.becTag != 0 && old->becTag == act.becTag) {
             /* the replacements are behaviourally equivalent, so we can
                safely ignore this conflict, and not add the new one. */
+            if (VG_(clo_verbosity) > 2) {
+               VG_(message)(Vg_UserMsg, "Ignoring duplicate redirection:\n");
+               show_active(             "    old: ", old);
+               show_active(             "    new: ", &act);
+            }
          } else {
             what = "new redirection conflicts with existing -- ignoring it";
             goto bad;
@@ -772,6 +777,10 @@ static void maybe_add_active ( Active act )
                                  "redir_new_DebugInfo(from_addr)");
       VG_(discard_translations)( (Addr64)act.to_addr, 1,
                                  "redir_new_DebugInfo(to_addr)");
+      if (VG_(clo_verbosity) > 2) {
+         VG_(message)(Vg_UserMsg, "Adding active redirection:\n");
+         show_active(             "    new: ", &act);
+      }
    }
    return;
 

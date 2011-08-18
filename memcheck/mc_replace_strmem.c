@@ -643,60 +643,62 @@ MEMCHR(VG_Z_DYLD,        memchr)
       const Addr WS = sizeof(UWord); /* 8 or 4 */ \
       const Addr WM = WS - 1;        /* 7 or 3 */ \
       \
-      if (dst < src) { \
-      \
-         /* Copying backwards. */ \
-         SizeT n = len; \
-         Addr  d = (Addr)dst; \
-         Addr  s = (Addr)src; \
+      if (len > 0) { \
+         if (dst < src) { \
          \
-         if (((s^d) & WM) == 0) { \
-            /* s and d have same UWord alignment. */ \
-            /* Pull up to a UWord boundary. */ \
-            while ((s & WM) != 0 && n >= 1) \
+            /* Copying backwards. */ \
+            SizeT n = len; \
+            Addr  d = (Addr)dst; \
+            Addr  s = (Addr)src; \
+            \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Pull up to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { *(UShort*)d = *(UShort*)s; s += 2; d += 2; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
                { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
-            /* Copy UWords. */ \
-            while (n >= WS) \
-               { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
-            if (n == 0) \
-               return dst; \
-         } \
-         if (((s|d) & 1) == 0) { \
-            /* Both are 16-aligned; copy what we can thusly. */ \
-            while (n >= 2) \
-               { *(UShort*)d = *(UShort*)s; s += 2; d += 2; n -= 2; } \
-         } \
-         /* Copy leftovers, or everything if misaligned. */ \
-         while (n >= 1) \
-            { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
-      \
-      } else if (dst > src) { \
-      \
-         SizeT n = len; \
-         Addr  d = ((Addr)dst) + n; \
-         Addr  s = ((Addr)src) + n; \
          \
-         /* Copying forwards. */ \
-         if (((s^d) & WM) == 0) { \
-            /* s and d have same UWord alignment. */ \
-            /* Back down to a UWord boundary. */ \
-            while ((s & WM) != 0 && n >= 1) \
+         } else if (dst > src) { \
+         \
+            SizeT n = len; \
+            Addr  d = ((Addr)dst) + n; \
+            Addr  s = ((Addr)src) + n; \
+            \
+            /* Copying forwards. */ \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Back down to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { s -= 2; d -= 2; *(UShort*)d = *(UShort*)s; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
                { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
-            /* Copy UWords. */ \
-            while (n >= WS) \
-               { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
-            if (n == 0) \
-               return dst; \
+            \
          } \
-         if (((s|d) & 1) == 0) { \
-            /* Both are 16-aligned; copy what we can thusly. */ \
-            while (n >= 2) \
-               { s -= 2; d -= 2; *(UShort*)d = *(UShort*)s; n -= 2; } \
-         } \
-         /* Copy leftovers, or everything if misaligned. */ \
-         while (n >= 1) \
-            { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
-         \
       } \
       \
       return dst; \

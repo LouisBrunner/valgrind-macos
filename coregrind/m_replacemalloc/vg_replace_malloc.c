@@ -73,28 +73,28 @@
 /* Assignment of behavioural equivalence class tags: 1NNN is intended
    to be reserved for the Valgrind core.  Current usage:
 
-   1001 ALLOC_or_NULL
-   1002 ZONEALLOC_or_NULL
-   1003 ALLOC_or_BOMB
-   1004 ZONEFREE
-   1005 FREE
-   1006 ZONECALLOC
-   1007 CALLOC
-   1008 ZONEREALLOC
-   1009 REALLOC
-   1010 ZONEMEMALIGN
-   1011 MEMALIGN
-   1012 VALLOC
-   1013 ZONEVALLOC
-   1014 MALLOPT
-   1015 MALLOC_TRIM
-   1016 POSIX_MEMALIGN
-   1017 MALLOC_USABLE_SIZE
-   1018 PANIC
-   1019 MALLOC_STATS
-   1020 MALLINFO
-   1021 DEFAULT_ZONE
-   1022 ZONE_CHECK
+   10010 ALLOC_or_NULL
+   10020 ZONEALLOC_or_NULL
+   10030 ALLOC_or_BOMB
+   10040 ZONEFREE
+   10050 FREE
+   10060 ZONECALLOC
+   10070 CALLOC
+   10080 ZONEREALLOC
+   10090 REALLOC
+   10100 ZONEMEMALIGN
+   10110 MEMALIGN
+   10120 VALLOC
+   10130 ZONEVALLOC
+   10140 MALLOPT
+   10150 MALLOC_TRIM
+   10160 POSIX_MEMALIGN
+   10170 MALLOC_USABLE_SIZE
+   10180 PANIC
+   10190 MALLOC_STATS
+   10200 MALLINFO
+   10210 DEFAULT_ZONE
+   10220 ZONE_CHECK
 */
 
 /* 2 Apr 05: the Portland Group compiler, which uses cfront/ARM style
@@ -198,8 +198,8 @@ static void init(void);
 */
 #define ALLOC_or_NULL(soname, fnname, vg_replacement) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1001,soname,fnname) (SizeT n); \
-   void* VG_REPLACE_FUNCTION_EZU(1001,soname,fnname) (SizeT n)  \
+   void* VG_REPLACE_FUNCTION_EZU(10010,soname,fnname) (SizeT n); \
+   void* VG_REPLACE_FUNCTION_EZU(10010,soname,fnname) (SizeT n)  \
    { \
       void* v; \
       \
@@ -213,8 +213,8 @@ static void init(void);
 
 #define ZONEALLOC_or_NULL(soname, fnname, vg_replacement) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1002,soname,fnname) (void *zone, SizeT n); \
-   void* VG_REPLACE_FUNCTION_EZU(1002,soname,fnname) (void *zone, SizeT n)  \
+   void* VG_REPLACE_FUNCTION_EZU(10020,soname,fnname) (void *zone, SizeT n); \
+   void* VG_REPLACE_FUNCTION_EZU(10020,soname,fnname) (void *zone, SizeT n)  \
    { \
       void* v; \
       \
@@ -233,8 +233,8 @@ static void init(void);
 */
 #define ALLOC_or_BOMB(soname, fnname, vg_replacement)  \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1003,soname,fnname) (SizeT n); \
-   void* VG_REPLACE_FUNCTION_EZU(1003,soname,fnname) (SizeT n)  \
+   void* VG_REPLACE_FUNCTION_EZU(10030,soname,fnname) (SizeT n); \
+   void* VG_REPLACE_FUNCTION_EZU(10030,soname,fnname) (SizeT n)  \
    { \
       void* v; \
       \
@@ -342,8 +342,8 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
 */
 #define ZONEFREE(soname, fnname, vg_replacement) \
    \
-   void VG_REPLACE_FUNCTION_EZU(1004,soname,fnname) (void *zone, void *p); \
-   void VG_REPLACE_FUNCTION_EZU(1004,soname,fnname) (void *zone, void *p)  \
+   void VG_REPLACE_FUNCTION_EZU(10040,soname,fnname) (void *zone, void *p); \
+   void VG_REPLACE_FUNCTION_EZU(10040,soname,fnname) (void *zone, void *p)  \
    { \
       if (!init_done) init(); \
       MALLOC_TRACE(#vg_replacement "(%p, %p)\n", zone, p ); \
@@ -354,8 +354,8 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
 
 #define FREE(soname, fnname, vg_replacement) \
    \
-   void VG_REPLACE_FUNCTION_EZU(1005,soname,fnname) (void *p); \
-   void VG_REPLACE_FUNCTION_EZU(1005,soname,fnname) (void *p)  \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p); \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p)  \
    { \
       if (!init_done) init(); \
       MALLOC_TRACE(#vg_replacement "(%p)\n", p ); \
@@ -417,9 +417,9 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
 #define ZONECALLOC(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1006,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10060,soname,fnname) \
             ( void *zone, SizeT nmemb, SizeT size ); \
-   void* VG_REPLACE_FUNCTION_EZU(1006,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10060,soname,fnname) \
             ( void *zone, SizeT nmemb, SizeT size )  \
    { \
       void* v; \
@@ -434,9 +434,9 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
 #define CALLOC(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1007,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10070,soname,fnname) \
             ( SizeT nmemb, SizeT size ); \
-   void* VG_REPLACE_FUNCTION_EZU(1007,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10070,soname,fnname) \
             ( SizeT nmemb, SizeT size )  \
    { \
       void* v; \
@@ -469,9 +469,9 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
 
 #define ZONEREALLOC(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1008,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10080,soname,fnname) \
             ( void *zone, void* ptrV, SizeT new_size ); \
-   void* VG_REPLACE_FUNCTION_EZU(1008,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10080,soname,fnname) \
             ( void *zone, void* ptrV, SizeT new_size ) \
    { \
       void* v; \
@@ -482,10 +482,10 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
       if (ptrV == NULL) \
          /* We need to call a malloc-like function; so let's use \
             one which we know exists. GrP fixme use zonemalloc instead? */ \
-         return VG_REPLACE_FUNCTION_EZU(1001,VG_Z_LIBC_SONAME,malloc) \
+         return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
                    (new_size); \
       if (new_size <= 0) { \
-         VG_REPLACE_FUNCTION_EZU(1005,VG_Z_LIBC_SONAME,free)(ptrV); \
+         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
          MALLOC_TRACE(" = 0\n"); \
          return NULL; \
       } \
@@ -496,9 +496,9 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
 
 #define REALLOC(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1009,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10090,soname,fnname) \
             ( void* ptrV, SizeT new_size );\
-   void* VG_REPLACE_FUNCTION_EZU(1009,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10090,soname,fnname) \
             ( void* ptrV, SizeT new_size ) \
    { \
       void* v; \
@@ -509,10 +509,10 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
       if (ptrV == NULL) \
          /* We need to call a malloc-like function; so let's use \
             one which we know exists. */ \
-         return VG_REPLACE_FUNCTION_EZU(1001,VG_Z_LIBC_SONAME,malloc) \
+         return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
                    (new_size); \
       if (new_size <= 0) { \
-         VG_REPLACE_FUNCTION_EZU(1005,VG_Z_LIBC_SONAME,free)(ptrV); \
+         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
          MALLOC_TRACE(" = 0\n"); \
          return NULL; \
       } \
@@ -531,9 +531,9 @@ ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
 
 #define ZONEMEMALIGN(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1010,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10100,soname,fnname) \
             ( void *zone, SizeT alignment, SizeT n ); \
-   void* VG_REPLACE_FUNCTION_EZU(1010,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10100,soname,fnname) \
             ( void *zone, SizeT alignment, SizeT n ) \
    { \
       void* v; \
@@ -556,9 +556,9 @@ ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
 
 #define MEMALIGN(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1011,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
             ( SizeT alignment, SizeT n ); \
-   void* VG_REPLACE_FUNCTION_EZU(1011,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
             ( SizeT alignment, SizeT n )  \
    { \
       void* v; \
@@ -589,27 +589,27 @@ ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_zone_memalign);
 
 #define VALLOC(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1012,soname,fnname) ( SizeT size ); \
-   void* VG_REPLACE_FUNCTION_EZU(1012,soname,fnname) ( SizeT size ) \
+   void* VG_REPLACE_FUNCTION_EZU(10120,soname,fnname) ( SizeT size ); \
+   void* VG_REPLACE_FUNCTION_EZU(10120,soname,fnname) ( SizeT size ) \
    { \
       static int pszB = 0; \
       if (pszB == 0) \
          pszB = my_getpagesize(); \
-      return VG_REPLACE_FUNCTION_EZU(1011,VG_Z_LIBC_SONAME,memalign) \
+      return VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
                 ((SizeT)pszB, size); \
    }
 
 #define ZONEVALLOC(soname, fnname) \
    \
-   void* VG_REPLACE_FUNCTION_EZU(1013,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10130,soname,fnname) \
             ( void *zone, SizeT size ); \
-   void* VG_REPLACE_FUNCTION_EZU(1013,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(10130,soname,fnname) \
             ( void *zone, SizeT size )  \
    { \
       static int pszB = 0; \
       if (pszB == 0) \
          pszB = my_getpagesize(); \
-      return VG_REPLACE_FUNCTION_EZU(1011,VG_Z_LIBC_SONAME,memalign) \
+      return VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
                 ((SizeT)pszB, size); \
    }
 
@@ -625,8 +625,8 @@ ZONEVALLOC(VG_Z_LIBC_SONAME, malloc_zone_valloc);
 
 #define MALLOPT(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_EZU(1014,soname,fnname) ( int cmd, int value ); \
-   int VG_REPLACE_FUNCTION_EZU(1014,soname,fnname) ( int cmd, int value ) \
+   int VG_REPLACE_FUNCTION_EZU(10140,soname,fnname) ( int cmd, int value ); \
+   int VG_REPLACE_FUNCTION_EZU(10140,soname,fnname) ( int cmd, int value ) \
    { \
       /* In glibc-2.2.4, 1 denotes a successful return value for \
          mallopt */ \
@@ -661,8 +661,8 @@ MALLOPT(VG_Z_LIBC_SONAME, mallopt);
 // For simplicity, we always return 0.
 #define MALLOC_TRIM(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_EZU(1015,soname,fnname) ( SizeT pad ); \
-   int VG_REPLACE_FUNCTION_EZU(1015,soname,fnname) ( SizeT pad ) \
+   int VG_REPLACE_FUNCTION_EZU(10150,soname,fnname) ( SizeT pad ); \
+   int VG_REPLACE_FUNCTION_EZU(10150,soname,fnname) ( SizeT pad ) \
    { \
       /* 0 denotes that malloc_trim() either wasn't able \
          to do anything, or was not implemented */ \
@@ -676,9 +676,9 @@ MALLOC_TRIM(VG_Z_LIBC_SONAME, malloc_trim);
 
 #define POSIX_MEMALIGN(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_EZU(1016,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(10160,soname,fnname) \
           ( void **memptr, SizeT alignment, SizeT size ); \
-   int VG_REPLACE_FUNCTION_EZU(1016,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(10160,soname,fnname) \
           ( void **memptr, SizeT alignment, SizeT size ) \
    { \
       void *mem; \
@@ -689,7 +689,7 @@ MALLOC_TRIM(VG_Z_LIBC_SONAME, malloc_trim);
           || (alignment & (alignment - 1)) != 0) \
          return VKI_EINVAL; \
       \
-      mem = VG_REPLACE_FUNCTION_EZU(1011,VG_Z_LIBC_SONAME,memalign) \
+      mem = VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
                (alignment, size); \
       \
       if (mem != NULL) { \
@@ -707,8 +707,8 @@ POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
 
 #define MALLOC_USABLE_SIZE(soname, fnname) \
    \
-   SizeT VG_REPLACE_FUNCTION_EZU(1017,soname,fnname) ( void* p ); \
-   SizeT VG_REPLACE_FUNCTION_EZU(1017,soname,fnname) ( void* p ) \
+   SizeT VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) ( void* p ); \
+   SizeT VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) ( void* p ) \
    {  \
       SizeT pszB; \
       \
@@ -740,8 +740,8 @@ static void panic(const char *str)
 
 #define PANIC(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(1018,soname,fnname) ( void ); \
-   void VG_REPLACE_FUNCTION_EZU(1018,soname,fnname) ( void )  \
+   void VG_REPLACE_FUNCTION_EZU(10180,soname,fnname) ( void ); \
+   void VG_REPLACE_FUNCTION_EZU(10180,soname,fnname) ( void )  \
    { \
       panic(#fnname); \
    }
@@ -752,8 +752,8 @@ PANIC(VG_Z_LIBC_SONAME, malloc_set_state);
 
 #define MALLOC_STATS(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(1019,soname,fnname) ( void ); \
-   void VG_REPLACE_FUNCTION_EZU(1019,soname,fnname) ( void )  \
+   void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void ); \
+   void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void )  \
    { \
       /* Valgrind's malloc_stats implementation does nothing. */ \
    } 
@@ -768,8 +768,8 @@ MALLOC_STATS(VG_Z_LIBC_SONAME, malloc_stats);
 // doesn't know that the call to mallinfo fills in mi.
 #define MALLINFO(soname, fnname) \
    \
-   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(1020,soname,fnname) ( void ); \
-   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(1020,soname,fnname) ( void ) \
+   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(10200,soname,fnname) ( void ); \
+   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(10200,soname,fnname) ( void ) \
    { \
       static struct vg_mallinfo mi; \
       if (!init_done) init(); \
@@ -787,11 +787,11 @@ static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved
     NULL, // reserved
     NULL, // GrP fixme malloc_size
-    (void*)VG_REPLACE_FUNCTION_EZU(1002,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
-    (void*)VG_REPLACE_FUNCTION_EZU(1006,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
-    (void*)VG_REPLACE_FUNCTION_EZU(1013,VG_Z_LIBC_SONAME,malloc_zone_valloc), 
-    (void*)VG_REPLACE_FUNCTION_EZU(1004,VG_Z_LIBC_SONAME,malloc_zone_free), 
-    (void*)VG_REPLACE_FUNCTION_EZU(1008,VG_Z_LIBC_SONAME,malloc_zone_realloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(10020,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(10060,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(10040,VG_Z_LIBC_SONAME,malloc_zone_free), 
+    (void*)VG_REPLACE_FUNCTION_EZU(10080,VG_Z_LIBC_SONAME,malloc_zone_realloc), 
     NULL, // GrP fixme destroy
     "ValgrindMallocZone", 
     NULL, // batch_malloc
@@ -806,8 +806,8 @@ static vki_malloc_zone_t vg_default_zone = {
 
 #define DEFAULT_ZONE(soname, fnname) \
    \
-   void *VG_REPLACE_FUNCTION_EZU(1021,soname,fnname) ( void ); \
-   void *VG_REPLACE_FUNCTION_EZU(1021,soname,fnname) ( void )  \
+   void *VG_REPLACE_FUNCTION_EZU(10210,soname,fnname) ( void ); \
+   void *VG_REPLACE_FUNCTION_EZU(10210,soname,fnname) ( void )  \
    { \
       return &vg_default_zone; \
    }
@@ -820,8 +820,8 @@ DEFAULT_ZONE(VG_Z_LIBC_SONAME, malloc_default_zone);
 // GrP fixme bypass libc's use of zone->introspect->check
 #define ZONE_CHECK(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_EZU(1022,soname,fnname)(void* zone); \
-   int VG_REPLACE_FUNCTION_EZU(1022,soname,fnname)(void* zone)  \
+   int VG_REPLACE_FUNCTION_EZU(10220,soname,fnname)(void* zone); \
+   int VG_REPLACE_FUNCTION_EZU(10220,soname,fnname)(void* zone)  \
    { \
       return 1; \
    }

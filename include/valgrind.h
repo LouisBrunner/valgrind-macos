@@ -689,10 +689,10 @@ typedef
 #define VG_CONCAT4(_aa,_bb,_cc,_dd) _aa##_bb##_cc##_dd
 
 #define I_WRAP_SONAME_FNNAME_ZU(soname,fnname)                    \
-   VG_CONCAT4(_vgw0000ZU_,soname,_,fnname)
+   VG_CONCAT4(_vgw00000ZU_,soname,_,fnname)
 
 #define I_WRAP_SONAME_FNNAME_ZZ(soname,fnname)                    \
-   VG_CONCAT4(_vgw0000ZZ_,soname,_,fnname)
+   VG_CONCAT4(_vgw00000ZZ_,soname,_,fnname)
 
 /* Use this macro from within a wrapper function to collect the
    context (address and possibly other info) of the original function.

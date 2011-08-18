@@ -53,43 +53,46 @@
    THEY RUN ON THE SIMD CPU!
    ------------------------------------------------------------------ */
 
-/* Assignment of behavioural equivalence class tags: 2NNN is intended
+/* Assignment of behavioural equivalence class tags: 2NNNP is intended
    to be reserved for Memcheck.  Current usage:
 
-   2001 STRRCHR
-   2002 STRCHR
-   2003 STRCAT
-   2004 STRNCAT
-   2005 STRLCAT
-   2006 STRNLEN
-   2007 STRLEN
-   2008 STRCPY
-   2009 STRNCPY
-   2010 STRLCPY
-   2011 STRNCMP
-   2012 STRCASECMP
-   2013 STRNCASECMP
-   2014 STRCASECMP_L
-   2015 STRNCASECMP_L
-   2016 STRCMP
-   2017 MEMCHR
-   2018 MEMMOVE
-   2019 MEMCMP
-   2020 STPCPY
-   2021 MEMSET
-   2022 MEMCPY
-   2023 BCOPY
-   2024 GLIBC25___MEMMOVE_CHK
-   2025 GLIBC232_STRCHRNUL
-   2026 GLIBC232_RAWMEMCHR
-   2027 GLIBC25___STRCPY_CHK
-   2028 GLIBC25___STPCPY_CHK
-   2029 GLIBC25_MEMPCPY
-   2030 GLIBC26___MEMCPY_CHK
-   2031 STRSTR
-   2032 STRPBRK
-   2033 STRCSPN
-   2034 STRSPN
+   20010 STRRCHR
+   20020 STRCHR
+   20030 STRCAT
+   20040 STRNCAT
+   20050 STRLCAT
+   20060 STRNLEN
+   20070 STRLEN
+   20080 STRCPY
+   20090 STRNCPY
+   20100 STRLCPY
+   20110 STRNCMP
+   20120 STRCASECMP
+   20130 STRNCASECMP
+   20140 STRCASECMP_L
+   20150 STRNCASECMP_L
+   20160 STRCMP
+   20170 MEMCHR
+
+   20180 MEMCPY    if there's a conflict between memcpy and
+   20181 MEMMOVE   memmove, prefer memmove
+
+   20190 MEMCMP
+   20200 STPCPY
+   20210 MEMSET
+   2022P unused (was previously MEMMOVE)
+   20230 BCOPY
+   20240 GLIBC25___MEMMOVE_CHK
+   20250 GLIBC232_STRCHRNUL
+   20260 GLIBC232_RAWMEMCHR
+   20270 GLIBC25___STRCPY_CHK
+   20280 GLIBC25___STPCPY_CHK
+   20290 GLIBC25_MEMPCPY
+   20300 GLIBC26___MEMCPY_CHK
+   20310 STRSTR
+   20320 STRPBRK
+   20330 STRCSPN
+   20340 STRSPN
 */
 
 
@@ -152,8 +155,8 @@ static inline void my_exit ( int x )
 
 
 #define STRRCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2001,soname,fnname)( const char* s, int c ); \
-   char* VG_REPLACE_FUNCTION_EZU(2001,soname,fnname)( const char* s, int c ) \
+   char* VG_REPLACE_FUNCTION_EZU(20010,soname,fnname)( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_EZU(20010,soname,fnname)( const char* s, int c ) \
    { \
       UChar  ch   = (UChar)((UInt)c); \
       UChar* p    = (UChar*)s; \
@@ -178,8 +181,8 @@ STRRCHR(VG_Z_DYLD,          rindex)
    
 
 #define STRCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2002,soname,fnname) ( const char* s, int c ); \
-   char* VG_REPLACE_FUNCTION_EZU(2002,soname,fnname) ( const char* s, int c ) \
+   char* VG_REPLACE_FUNCTION_EZU(20020,soname,fnname) ( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_EZU(20020,soname,fnname) ( const char* s, int c ) \
    { \
       UChar  ch = (UChar)((UInt)c); \
       UChar* p  = (UChar*)s; \
@@ -206,9 +209,9 @@ STRCHR(VG_Z_DYLD,                 index)
 
 
 #define STRCAT(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2003,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20030,soname,fnname) \
             ( char* dst, const char* src ); \
-   char* VG_REPLACE_FUNCTION_EZU(2003,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20030,soname,fnname) \
             ( char* dst, const char* src ) \
    { \
       const Char* src_orig = src; \
@@ -234,9 +237,9 @@ STRCAT(VG_Z_LIBC_SONAME, __GI_strcat)
 #endif
 
 #define STRNCAT(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2004,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20040,soname,fnname) \
             ( char* dst, const char* src, SizeT n ); \
-   char* VG_REPLACE_FUNCTION_EZU(2004,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20040,soname,fnname) \
             ( char* dst, const char* src, SizeT n ) \
    { \
       const Char* src_orig = src; \
@@ -270,9 +273,9 @@ STRNCAT(VG_Z_DYLD,        strncat)
    Truncation occurred if retval >= n. 
 */
 #define STRLCAT(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_EZU(2005,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20050,soname,fnname) \
         ( char* dst, const char* src, SizeT n ); \
-   SizeT VG_REPLACE_FUNCTION_EZU(2005,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20050,soname,fnname) \
         ( char* dst, const char* src, SizeT n ) \
    { \
       const Char* src_orig = src; \
@@ -307,9 +310,9 @@ STRLCAT(VG_Z_DYLD,        strlcat)
 
 
 #define STRNLEN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_EZU(2006,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20060,soname,fnname) \
             ( const char* str, SizeT n ); \
-   SizeT VG_REPLACE_FUNCTION_EZU(2006,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20060,soname,fnname) \
             ( const char* str, SizeT n ) \
    { \
       SizeT i = 0; \
@@ -328,9 +331,9 @@ STRNLEN(VG_Z_LIBC_SONAME, __GI_strnlen)
 // confusing if you aren't expecting it.  Other small functions in this file
 // may also be inline by gcc.
 #define STRLEN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_EZU(2007,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20070,soname,fnname) \
       ( const char* str ); \
-   SizeT VG_REPLACE_FUNCTION_EZU(2007,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20070,soname,fnname) \
       ( const char* str )  \
    { \
       SizeT i = 0; \
@@ -345,9 +348,9 @@ STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 
 
 #define STRCPY(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2008,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20080,soname,fnname) \
       ( char* dst, const char* src ); \
-   char* VG_REPLACE_FUNCTION_EZU(2008,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20080,soname,fnname) \
       ( char* dst, const char* src ) \
    { \
       const Char* src_orig = src; \
@@ -376,9 +379,9 @@ STRCPY(VG_Z_DYLD,        strcpy)
 
 
 #define STRNCPY(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2009,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20090,soname,fnname) \
             ( char* dst, const char* src, SizeT n ); \
-   char* VG_REPLACE_FUNCTION_EZU(2009,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20090,soname,fnname) \
             ( char* dst, const char* src, SizeT n ) \
    { \
       const Char* src_orig = src; \
@@ -406,9 +409,9 @@ STRNCPY(VG_Z_DYLD,        strncpy)
 /* Copy up to n-1 bytes from src to dst. Then nul-terminate dst if n > 0. 
    Returns strlen(src). Does not zero-fill the remainder of dst. */
 #define STRLCPY(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_EZU(2010,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20100,soname,fnname) \
        ( char* dst, const char* src, SizeT n ); \
-   SizeT VG_REPLACE_FUNCTION_EZU(2010,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20100,soname,fnname) \
        ( char* dst, const char* src, SizeT n ) \
    { \
       const char* src_orig = src; \
@@ -435,9 +438,9 @@ STRLCPY(VG_Z_DYLD,        strlcpy)
 
 
 #define STRNCMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2011,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20110,soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax ); \
-   int VG_REPLACE_FUNCTION_EZU(2011,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20110,soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax ) \
    { \
       SizeT n = 0; \
@@ -463,9 +466,9 @@ STRNCMP(VG_Z_DYLD,        strncmp)
 
 
 #define STRCASECMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2012,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20120,soname,fnname) \
           ( const char* s1, const char* s2 ); \
-   int VG_REPLACE_FUNCTION_EZU(2012,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20120,soname,fnname) \
           ( const char* s1, const char* s2 ) \
    { \
       extern int tolower(int); \
@@ -492,9 +495,9 @@ STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
 
 
 #define STRNCASECMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2013,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20130,soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax ); \
-   int VG_REPLACE_FUNCTION_EZU(2013,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20130,soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax ) \
    { \
       extern int tolower(int); \
@@ -525,9 +528,9 @@ STRNCASECMP(VG_Z_DYLD,        strncasecmp)
 
 
 #define STRCASECMP_L(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2014,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20140,soname,fnname) \
           ( const char* s1, const char* s2, void* locale ); \
-   int VG_REPLACE_FUNCTION_EZU(2014,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20140,soname,fnname) \
           ( const char* s1, const char* s2, void* locale ) \
    { \
       extern int tolower_l(int, void*) __attribute__((weak));    \
@@ -553,9 +556,9 @@ STRCASECMP_L(VG_Z_LIBC_SONAME, __GI___strcasecmp_l)
 
 
 #define STRNCASECMP_L(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2015,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20150,soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax, void* locale ); \
-   int VG_REPLACE_FUNCTION_EZU(2015,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20150,soname,fnname) \
           ( const char* s1, const char* s2, SizeT nmax, void* locale ) \
    { \
       extern int tolower_l(int, void*) __attribute__((weak));    \
@@ -584,9 +587,9 @@ STRNCASECMP_L(VG_Z_DYLD,        strncasecmp_l)
 
 
 #define STRCMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2016,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20160,soname,fnname) \
           ( const char* s1, const char* s2 ); \
-   int VG_REPLACE_FUNCTION_EZU(2016,soname,fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20160,soname,fnname) \
           ( const char* s1, const char* s2 ) \
    { \
       register unsigned char c1; \
@@ -612,9 +615,9 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
 
 
 #define MEMCHR(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2017,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20170,soname,fnname) \
             (const void *s, int c, SizeT n); \
-   void* VG_REPLACE_FUNCTION_EZU(2017,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20170,soname,fnname) \
             (const void *s, int c, SizeT n) \
    { \
       SizeT i; \
@@ -705,16 +708,17 @@ MEMCHR(VG_Z_DYLD,        memchr)
    }
 
 #define MEMMOVE(soname, fnname)  \
-   MEMMOVE_OR_MEMCPY(2018, soname, fnname, 0)
+   MEMMOVE_OR_MEMCPY(20181, soname, fnname, 0)
 
 #define MEMCPY(soname, fnname) \
-   MEMMOVE_OR_MEMCPY(2022, soname, fnname, 1)
+   MEMMOVE_OR_MEMCPY(20180, soname, fnname, 1)
 
 #if defined(VGO_linux)
 /* For older memcpy we have to use memmove-like semantics and skip the
    overlap check; sigh; see #275284. */
 MEMMOVE(VG_Z_LIBC_SONAME, memcpyZAGLIBCZu2Zd2Zd5) /* memcpy@GLIBC_2.2.5 */
 MEMCPY(VG_Z_LIBC_SONAME,  memcpyZAZAGLIBCZu2Zd14) /* memcpy@@GLIBC_2.14 */
+MEMCPY(VG_Z_LIBC_SONAME,  memcpy) /* fallback case */
 MEMCPY(VG_Z_LD_SO_1,      memcpy) /* ld.so.1 */
 MEMCPY(VG_Z_LD64_SO_1,    memcpy) /* ld64.so.1 */
 #elif defined(VGO_darwin)
@@ -733,9 +737,9 @@ MEMCPY(NONE, ZuintelZufastZumemcpy)
 
 
 #define MEMCMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION_EZU(2019,soname,fnname)       \
+   int VG_REPLACE_FUNCTION_EZU(20190,soname,fnname)       \
           ( const void *s1V, const void *s2V, SizeT n ); \
-   int VG_REPLACE_FUNCTION_EZU(2019,soname,fnname)       \
+   int VG_REPLACE_FUNCTION_EZU(20190,soname,fnname)       \
           ( const void *s1V, const void *s2V, SizeT n )  \
    { \
       int res; \
@@ -770,9 +774,9 @@ MEMCMP(VG_Z_DYLD,        bcmp)
 /* Copy SRC to DEST, returning the address of the terminating '\0' in
    DEST. (minor variant of strcpy) */
 #define STPCPY(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2020,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20200,soname,fnname) \
             ( char* dst, const char* src ); \
-   char* VG_REPLACE_FUNCTION_EZU(2020,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20200,soname,fnname) \
             ( char* dst, const char* src ) \
    { \
       const Char* src_orig = src; \
@@ -803,9 +807,9 @@ STPCPY(VG_Z_DYLD,                 stpcpy)
 
 
 #define MEMSET(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2021,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20210,soname,fnname) \
             (void *s, Int c, SizeT n); \
-   void* VG_REPLACE_FUNCTION_EZU(2021,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20210,soname,fnname) \
             (void *s, Int c, SizeT n) \
    { \
       Addr a  = (Addr)s;   \
@@ -827,7 +831,7 @@ MEMSET(VG_Z_DYLD,        memset)
 #endif
 
 
-/* memmove -- use the MEMMOVE defn which also serves for memcpy. */
+/* memmove -- use the MEMMOVE defn above. */
 MEMMOVE(VG_Z_LIBC_SONAME, memmove)
 #if defined(VGO_darwin)
 MEMMOVE(VG_Z_DYLD,        memmove)
@@ -835,9 +839,9 @@ MEMMOVE(VG_Z_DYLD,        memmove)
 
 
 #define BCOPY(soname, fnname) \
-   void VG_REPLACE_FUNCTION_EZU(2023,soname,fnname) \
+   void VG_REPLACE_FUNCTION_EZU(20230,soname,fnname) \
             (const void *srcV, void *dstV, SizeT n); \
-   void VG_REPLACE_FUNCTION_EZU(2023,soname,fnname) \
+   void VG_REPLACE_FUNCTION_EZU(20230,soname,fnname) \
             (const void *srcV, void *dstV, SizeT n) \
    { \
       SizeT i; \
@@ -863,9 +867,9 @@ BCOPY(VG_Z_DYLD,        bcopy)
 /* glibc 2.5 variant of memmove which checks the dest is big enough.
    There is no specific part of glibc that this is copied from. */
 #define GLIBC25___MEMMOVE_CHK(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2024,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20240,soname,fnname) \
             (void *dstV, const void *srcV, SizeT n, SizeT destlen); \
-   void* VG_REPLACE_FUNCTION_EZU(2024,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20240,soname,fnname) \
             (void *dstV, const void *srcV, SizeT n, SizeT destlen) \
    { \
       SizeT i; \
@@ -897,9 +901,9 @@ GLIBC25___MEMMOVE_CHK(VG_Z_LIBC_SONAME, __memmove_chk)
 
 /* Find the first occurrence of C in S or the final NUL byte.  */
 #define GLIBC232_STRCHRNUL(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2025,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20250,soname,fnname) \
             (const char* s, int c_in); \
-   char* VG_REPLACE_FUNCTION_EZU(2025,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20250,soname,fnname) \
             (const char* s, int c_in) \
    { \
       unsigned char  c        = (unsigned char) c_in; \
@@ -916,9 +920,9 @@ GLIBC232_STRCHRNUL(VG_Z_LIBC_SONAME, strchrnul)
 
 /* Find the first occurrence of C in S.  */
 #define GLIBC232_RAWMEMCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2026,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20260,soname,fnname) \
             (const char* s, int c_in); \
-   char* VG_REPLACE_FUNCTION_EZU(2026,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20260,soname,fnname) \
             (const char* s, int c_in) \
    { \
       unsigned char  c        = (unsigned char) c_in; \
@@ -937,9 +941,9 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
 /* glibc variant of strcpy that checks the dest is big enough.
    Copied from glibc-2.5/debug/test-strcpy_chk.c. */
 #define GLIBC25___STRCPY_CHK(soname,fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2027,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20270,soname,fnname) \
             (char* dst, const char* src, SizeT len); \
-   char* VG_REPLACE_FUNCTION_EZU(2027,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20270,soname,fnname) \
             (char* dst, const char* src, SizeT len) \
    { \
       char* ret = dst; \
@@ -964,9 +968,9 @@ GLIBC25___STRCPY_CHK(VG_Z_LIBC_SONAME, __strcpy_chk)
 /* glibc variant of stpcpy that checks the dest is big enough.
    Copied from glibc-2.5/debug/test-stpcpy_chk.c. */
 #define GLIBC25___STPCPY_CHK(soname,fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(2028,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20280,soname,fnname) \
             (char* dst, const char* src, SizeT len); \
-   char* VG_REPLACE_FUNCTION_EZU(2028,soname,fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20280,soname,fnname) \
             (char* dst, const char* src, SizeT len) \
    { \
       if (! len) \
@@ -989,9 +993,9 @@ GLIBC25___STPCPY_CHK(VG_Z_LIBC_SONAME, __stpcpy_chk)
 
 /* mempcpy */
 #define GLIBC25_MEMPCPY(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2029,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20290,soname,fnname) \
             ( void *dst, const void *src, SizeT len ); \
-   void* VG_REPLACE_FUNCTION_EZU(2029,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20290,soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
       register char *d; \
@@ -1027,9 +1031,9 @@ GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
 
 
 #define GLIBC26___MEMCPY_CHK(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2030,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20300,soname,fnname) \
             (void* dst, const void* src, SizeT len, SizeT dstlen ); \
-   void* VG_REPLACE_FUNCTION_EZU(2030,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20300,soname,fnname) \
             (void* dst, const void* src, SizeT len, SizeT dstlen ) \
    { \
       register char *d; \
@@ -1070,9 +1074,9 @@ GLIBC26___MEMCPY_CHK(VG_Z_LIBC_SONAME, __memcpy_chk)
 
 
 #define STRSTR(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2031,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20310,soname,fnname) \
          (void* haystack, void* needle); \
-   void* VG_REPLACE_FUNCTION_EZU(2031,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20310,soname,fnname) \
          (void* haystack, void* needle) \
    { \
       UChar* h = (UChar*)haystack; \
@@ -1112,9 +1116,9 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
 
 
 #define STRPBRK(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(2032,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20320,soname,fnname) \
          (void* sV, void* acceptV); \
-   void* VG_REPLACE_FUNCTION_EZU(2032,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20320,soname,fnname) \
          (void* sV, void* acceptV) \
    { \
       UChar* s = (UChar*)sV; \
@@ -1149,9 +1153,9 @@ STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
 
 
 #define STRCSPN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_EZU(2033,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20330,soname,fnname) \
          (void* sV, void* rejectV); \
-   SizeT VG_REPLACE_FUNCTION_EZU(2033,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20330,soname,fnname) \
          (void* sV, void* rejectV) \
    { \
       UChar* s = (UChar*)sV; \
@@ -1187,9 +1191,9 @@ STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
 
 
 #define STRSPN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_EZU(2034,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20340,soname,fnname) \
          (void* sV, void* acceptV); \
-   SizeT VG_REPLACE_FUNCTION_EZU(2034,soname,fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20340,soname,fnname) \
          (void* sV, void* acceptV) \
    { \
       UChar* s = (UChar*)sV; \

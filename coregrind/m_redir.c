@@ -233,6 +233,9 @@ typedef
       Int    becTag; /* 0 through 9999.  Behavioural equivalance class tag.
                         If two wrappers have the same (non-zero) tag, they
                         are promising that they behave identically. */
+      Int    becPrio; /* 0 through 9.  Behavioural equivalence class prio.
+                         Used to choose between competing wrappers with
+                         the same (non-zero) tag. */
       const HChar** mandatory; /* non-NULL ==> abort V and print the
                                   strings if from_sopatt is loaded but
                                   from_fnpatt cannot be found */
@@ -278,6 +281,7 @@ typedef
       TopSpec* parent_spec; /* the TopSpec which supplied the Spec */
       TopSpec* parent_sym;  /* the TopSpec which supplied the symbol */
       Int      becTag;      /* behavioural eclass tag for ::to_addr */
+      Int      becPrio;     /* and its priority */
       Bool     isWrap;      /* wrap or replacement? */
       Bool     isIFunc;     /* indirect function? */
    }
@@ -371,7 +375,7 @@ static void free_symname_array ( UChar** names, UChar** twoslots )
 void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 {
    Bool         ok, isWrap;
-   Int          i, nsyms, becTag;
+   Int          i, nsyms, becTag, becPrio;
    Spec*        specList;
    Spec*        spec;
    TopSpec*     ts;
@@ -416,7 +420,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          ok = VG_(maybe_Z_demangle)( *names,
                                      demangled_sopatt, N_DEMANGLED,
                                      demangled_fnpatt, N_DEMANGLED,
-                                     &isWrap, &becTag );
+                                     &isWrap, &becTag, &becPrio );
          /* ignore data symbols */
          if (!isText)
             continue;
@@ -442,6 +446,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          spec->to_addr = sym_addr;
          spec->isWrap = isWrap;
          spec->becTag = becTag;
+         spec->becPrio = becPrio;
          /* check we're not adding manifestly stupid destinations */
          vg_assert(is_plausible_guest_addr(sym_addr));
          spec->next = specList;
@@ -465,7 +470,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             ok = isText
                  && VG_(maybe_Z_demangle)( 
                        *names, demangled_sopatt, N_DEMANGLED,
-                       demangled_fnpatt, N_DEMANGLED, &isWrap, NULL );
+                       demangled_fnpatt, N_DEMANGLED, &isWrap, NULL, NULL );
             if (!ok)
                /* not a redirect.  Ignore. */
                continue;
@@ -640,6 +645,7 @@ void generate_and_add_actives (
                act.parent_spec = parent_spec;
                act.parent_sym  = parent_sym;
                act.becTag      = sp->becTag;
+               act.becPrio     = sp->becPrio;
                act.isWrap      = sp->isWrap;
                act.isIFunc     = isIFunc;
                sp->done = True;
@@ -707,8 +713,9 @@ void generate_and_add_actives (
    conflicting bindings. */
 static void maybe_add_active ( Active act )
 {
-   HChar*  what = NULL;
-   Active* old  = NULL;
+   HChar*  what    = NULL;
+   Active* old     = NULL;
+   Bool    add_act = False;
 
    /* Complain and ignore manifestly bogus 'from' addresses.
 
@@ -744,26 +751,63 @@ static void maybe_add_active ( Active act )
             nonzero, then that's fine.  But if not, we can't show they
             are equivalent, so we have to complain, and ignore the new
             binding. */
-         vg_assert(old->becTag >= 0 && old->becTag <= 9999);
-         vg_assert(act.becTag  >= 0 && act.becTag  <= 9999);
-         if (old->becTag != 0 && act.becTag != 0 && old->becTag == act.becTag) {
-            /* the replacements are behaviourally equivalent, so we can
-               safely ignore this conflict, and not add the new one. */
+         vg_assert(old->becTag  >= 0 && old->becTag  <= 9999);
+         vg_assert(old->becPrio >= 0 && old->becPrio <= 9);
+         vg_assert(act.becTag   >= 0 && act.becTag   <= 9999);
+         vg_assert(act.becPrio  >= 0 && act.becPrio  <= 9);
+         if (old->becTag == 0)
+            vg_assert(old->becPrio == 0);
+         if (act.becTag == 0)
+            vg_assert(act.becPrio == 0);
+
+         if (old->becTag == 0 || act.becTag == 0 || old->becTag != act.becTag) {
+            /* We can't show that they are equivalent.  Complain and
+               ignore. */
+            what = "new redirection conflicts with existing -- ignoring it";
+            goto bad;
+         }
+         /* They have the same eclass tag.  Use the priorities to
+            resolve the ambiguity. */
+         if (act.becPrio <= old->becPrio) {
+            /* The new one doesn't have a higher priority, so just
+               ignore it. */
             if (VG_(clo_verbosity) > 2) {
-               VG_(message)(Vg_UserMsg, "Ignoring duplicate redirection:\n");
+               VG_(message)(Vg_UserMsg, "Ignoring %s redirection:\n",
+                            act.becPrio < old->becPrio ? "lower priority" 
+                                                       : "duplicate");
                show_active(             "    old: ", old);
                show_active(             "    new: ", &act);
             }
          } else {
-            what = "new redirection conflicts with existing -- ignoring it";
-            goto bad;
+            /* The tricky case.  The new one has a higher priority, so
+               we need to get the old one out of the OSet and install
+               this one in its place. */
+            if (VG_(clo_verbosity) > 1) {
+               VG_(message)(Vg_UserMsg, 
+                           "Preferring higher priority redirection:\n");
+               show_active(             "    old: ", old);
+               show_active(             "    new: ", &act);
+            }
+            add_act = True;
+            void* oldNd = VG_(OSetGen_Remove)( activeSet, &act.from_addr );
+            vg_assert(oldNd == old);
+            VG_(OSetGen_FreeNode)( activeSet, old );
+            old = NULL;
          }
       } else {
          /* This appears to be a duplicate of an existing binding.
             Safe(ish) -- ignore. */
          /* XXXXXXXXXXX COMPLAIN if new and old parents differ */
       }
+
    } else {
+      /* There's no previous binding for this from_addr, so we must
+         add 'act' to the active set. */
+      add_act = True;
+   }
+
+   /* So, finally, actually add it. */
+   if (add_act) {
       Active* a = VG_(OSetGen_AllocNode)(activeSet, sizeof(Active));
       vg_assert(a);
       *a = act;
@@ -786,6 +830,7 @@ static void maybe_add_active ( Active act )
 
   bad:
    vg_assert(what);
+   vg_assert(!add_act);
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_UserMsg, "WARNING: %s\n", what);
       if (old) {
@@ -936,6 +981,7 @@ static void add_hardwired_active ( Addr from, Addr to )
    act.parent_spec = NULL;
    act.parent_sym  = NULL;
    act.becTag      = 0; /* "not equivalent to any other fn" */
+   act.becPrio     = 0; /* mandatory when becTag == 0 */
    act.isWrap      = False;
    act.isIFunc     = False;
    maybe_add_active( act );
@@ -1248,7 +1294,8 @@ void handle_maybe_load_notifier( const UChar* soname,
 
    if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(freeres))) == 0)
       VG_(client___libc_freeres_wrapper) = addr;
-   else if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(ifunc_wrapper))) == 0)
+   else
+   if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(ifunc_wrapper))) == 0)
       iFuncWrapper = addr;
    else
       vg_assert2(0, "unrecognised load notification function: %s", symbol);
@@ -1381,11 +1428,11 @@ static void handle_require_text_symbols ( DebugInfo* di )
 static void show_spec ( HChar* left, Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
-                 "%s%25s %30s %s-> (%04d) 0x%08llx\n",
+                 "%s%25s %30s %s-> (%04d.%d) 0x%08llx\n",
                  left,
                  spec->from_sopatt, spec->from_fnpatt,
                  spec->isWrap ? "W" : "R",
-                 spec->becTag,
+                 spec->becTag, spec->becPrio,
                  (ULong)spec->to_addr );
 }
 
@@ -1400,11 +1447,12 @@ static void show_active ( HChar* left, Active* act )
    ok = VG_(get_fnname_w_offset)(act->to_addr, name2, 64);
    if (!ok) VG_(strcpy)(name2, "???");
 
-   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> (%04d) 0x%08llx %s\n", 
+   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> (%04d.%d) 0x%08llx %s\n", 
                              left, 
                              (ULong)act->from_addr, name1,
                              act->isWrap ? "W" : "R",
-                             act->becTag, (ULong)act->to_addr, name2 );
+                             act->becTag, act->becPrio,
+                             (ULong)act->to_addr, name2 );
 }
 
 static void show_redir_state ( HChar* who )

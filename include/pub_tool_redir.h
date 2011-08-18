@@ -51,24 +51,31 @@
    sure you use the VG_REPLACE_FN_ macros and not the VG_WRAP_FN_
    macros.
 
-   Finally there is the concept of behavioural equivalence tags.  A
-   tag is a 4-digit decimal number (0001 to 9999) encoded in the name.
-   If two replacement functions have the same tag then the redirect
-   mechanism will assume that they have identical behaviour.  If, when
-   processing redirections at library load time, the set of available
-   specifications yields more than one replacement or wrapper function
-   for a given address, the system will try to resolve the situation
-   by examining the tags on the replacements/wrappers.  In particular,
-   if all of them have the same tag, then they are all claiming to
-   behave identically, so any of them may be chosen to be the actual
-   redirection target.  Of course if not all of them have the same tag
-   then the redirection is ambiguous and the system will have to stop.
+   Finally there is the concept of prioritised behavioural equivalence
+   tags.  A tag is a 5-digit decimal number (00000 to 99999) encoded
+   in the name.  The top 4 digits are the equivalence class number,
+   and the last digit is a priority.
 
-   The tag is mandatory and must comprise 4 decimal digits.  The tag
-   0000 is special and means "does not have behaviour identical to any
+   When processing redirections at library load time, if the set of
+   available specifications yields more than one replacement or
+   wrapper function for a given address, the system will try to
+   resolve the situation by examining the tags on the
+   replacements/wrappers.
+
+   If two replacement/wrapper functions have the same tag and
+   priority, then the redirection machinery will assume they have
+   identical behaviour and can choose between them arbitrarily.  If
+   they have the same tag but different priorities, then the one with
+   higher priority will be chosen.  If neither case holds, then the
+   redirection is ambiguous and the system will ignore one of them
+   arbitrarily, but print a warning when running at -v or above.
+
+   The tag is mandatory and must comprise 5 decimal digits.  The tag
+   00000 is special and means "does not have behaviour identical to any
    other replacement/wrapper function".  Hence if you wish to write a
    wrap/replacement function that is not subject to the above
-   resolution rules, use 0000 for the tag.
+   resolution rules, use 00000 for the tag.  Tags 00001 through 00009
+   may not be used for any purpose.
 
 
    Replacement
@@ -83,12 +90,12 @@
 
    zEncodedSoname should be a Z-encoded soname (see below for
    Z-encoding details) and fnname should be an unencoded fn name.  A
-   default-safe equivalence tag of 0000 is assumed (see comments
+   default-safe equivalence tag of 00000 is assumed (see comments
    above).  The resulting name is
 
-      _vgr0000ZU_zEncodedSoname_fnname
+      _vgr00000ZU_zEncodedSoname_fnname
 
-   The "_vgr0000ZU_" is a prefix that gets discarded upon decoding.
+   The "_vgr00000ZU_" is a prefix that gets discarded upon decoding.
    It identifies this function as a replacement and specifies its
    equivalence tag.
 
@@ -104,7 +111,7 @@
    Z-encoded.  This can sometimes be necessary.  In this case the
    resulting function name is
 
-      _vgr0000ZZ_zEncodedSoname_zEncodedFnname
+      _vgr00000ZZ_zEncodedSoname_zEncodedFnname
 
    When it sees this either such name, the core's symbol-table reading
    machinery and redirection machinery first Z-decode the soname and 
@@ -138,12 +145,12 @@
 
    To write function names which explicitly state the equivalence class
    tag, use
-     VG_REPLACE_FUNCTION_EZU(4-digit-tag,zEncodedSoname,fnname)
+     VG_REPLACE_FUNCTION_EZU(5-digit-tag,zEncodedSoname,fnname)
    or
-     VG_REPLACE_FUNCTION_EZZ(4-digit-tag,zEncodedSoname,zEncodedFnname)
+     VG_REPLACE_FUNCTION_EZZ(5-digit-tag,zEncodedSoname,zEncodedFnname)
 
-   As per comments above, the tag must be a 4 digit decimal number,
-   padded with leading zeroes, in the range 0001 to 9999 inclusive.
+   As per comments above, the tag must be a 5 digit decimal number,
+   padded with leading zeroes, in the range 00010 to 99999 inclusive.
 
 
    Wrapping
@@ -206,16 +213,16 @@
 
 /* Convenience macros defined in terms of the above 4. */
 #define VG_REPLACE_FUNCTION_ZU(_soname,_fnname) \
-   VG_CONCAT6(_vgr,0000,ZU_,_soname,_,_fnname)
+   VG_CONCAT6(_vgr,00000,ZU_,_soname,_,_fnname)
 
 #define VG_REPLACE_FUNCTION_ZZ(_soname,_fnname) \
-   VG_CONCAT6(_vgr,0000,ZZ_,_soname,_,_fnname)
+   VG_CONCAT6(_vgr,00000,ZZ_,_soname,_,_fnname)
 
 #define VG_WRAP_FUNCTION_ZU(_soname,_fnname) \
-   VG_CONCAT6(_vgw,0000,ZU_,_soname,_,_fnname)
+   VG_CONCAT6(_vgw,00000,ZU_,_soname,_,_fnname)
 
 #define VG_WRAP_FUNCTION_ZZ(_soname,_fnname) \
-   VG_CONCAT6(_vgw,0000,ZZ_,_soname,_,_fnname)
+   VG_CONCAT6(_vgw,00000,ZZ_,_soname,_,_fnname)
 
 
 /* --------- Some handy Z-encoded names. --------- */

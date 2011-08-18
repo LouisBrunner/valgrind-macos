@@ -345,6 +345,9 @@ static inline UWord getERR ( SyscallStatus* st ) {
    if (VG_(clo_trace_syscalls))                      \
       VG_(printf)(format, ## args)
 
+#define FUSE_COMPATIBLE_MAY_BLOCK()                       \
+   if (VG_(strstr)(VG_(clo_sim_hints),"fuse-compatible")) \
+      *flags |= SfMayBlock
 
 
 /* Macros used to tell tools about uses of scalar arguments.  Note,

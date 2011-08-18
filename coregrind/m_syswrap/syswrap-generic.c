@@ -2412,6 +2412,7 @@ PRE(sys_sync)
 
 PRE(sys_fstatfs)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fstatfs ( %ld, %#lx )",ARG1,ARG2);
    PRE_REG_READ2(long, "fstatfs",
                  unsigned int, fd, struct statfs *, buf);
@@ -2425,6 +2426,7 @@ POST(sys_fstatfs)
 
 PRE(sys_fstatfs64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fstatfs64 ( %ld, %llu, %#lx )",ARG1,(ULong)ARG2,ARG3);
    PRE_REG_READ3(long, "fstatfs64",
                  unsigned int, fd, vki_size_t, size, struct statfs64 *, buf);
@@ -2471,6 +2473,7 @@ POST(sys_pread64)
 
 PRE(sys_mknod)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_mknod ( %#lx(%s), 0x%lx, 0x%lx )", ARG1, (char*)ARG1, ARG2, ARG3 );
    PRE_REG_READ3(long, "mknod",
                  const char *, pathname, int, mode, unsigned, dev);
@@ -2849,6 +2852,7 @@ PRE(sys_brk)
 
 PRE(sys_chdir)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_chdir ( %#lx(%s) )", ARG1,(char*)ARG1);
    PRE_REG_READ1(long, "chdir", const char *, path);
    PRE_MEM_RASCIIZ( "chdir(path)", ARG1 );
@@ -2856,6 +2860,7 @@ PRE(sys_chdir)
 
 PRE(sys_chmod)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_chmod ( %#lx(%s), %ld )", ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "chmod", const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "chmod(path)", ARG1 );
@@ -2863,6 +2868,7 @@ PRE(sys_chmod)
 
 PRE(sys_chown)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_chown ( %#lx(%s), 0x%lx, 0x%lx )", ARG1,(char*)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "chown",
                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
@@ -2871,6 +2877,7 @@ PRE(sys_chown)
 
 PRE(sys_lchown)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_lchown ( %#lx(%s), 0x%lx, 0x%lx )", ARG1,(char*)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "lchown",
                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
@@ -2879,6 +2886,7 @@ PRE(sys_lchown)
 
 PRE(sys_close)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_close ( %ld )", ARG1);
    PRE_REG_READ1(long, "close", unsigned int, fd);
 
@@ -2930,12 +2938,14 @@ POST(sys_dup2)
 
 PRE(sys_fchdir)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchdir ( %ld )", ARG1);
    PRE_REG_READ1(long, "fchdir", unsigned int, fd);
 }
 
 PRE(sys_fchown)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchown ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "fchown",
                  unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
@@ -2943,12 +2953,14 @@ PRE(sys_fchown)
 
 PRE(sys_fchmod)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchmod ( %ld, %ld )", ARG1,ARG2);
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
 PRE(sys_newfstat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_newfstat ( %ld, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(long, "fstat", unsigned int, fd, struct stat *, buf);
    PRE_MEM_WRITE( "fstat(buf)", ARG2, sizeof(struct vki_stat) );
@@ -3741,6 +3753,7 @@ POST(sys_poll)
 
 PRE(sys_readlink)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    Word saved = SYSNO;
 
    PRINT("sys_readlink ( %#lx(%s), %#lx, %llu )", ARG1,(char*)ARG1,ARG2,(ULong)ARG3);
@@ -3822,6 +3835,7 @@ POST(sys_readv)
 
 PRE(sys_rename)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_rename ( %#lx(%s), %#lx(%s) )", ARG1,(char*)ARG1,ARG2,(char*)ARG2);
    PRE_REG_READ2(long, "rename", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "rename(oldpath)", ARG1 );
@@ -4121,6 +4135,7 @@ PRE(sys_writev)
 
 PRE(sys_utimes)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_utimes ( %#lx(%s), %#lx )", ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );

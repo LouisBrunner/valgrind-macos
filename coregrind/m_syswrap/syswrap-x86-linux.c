@@ -1404,6 +1404,7 @@ POST(sys_lstat64)
 
 PRE(sys_stat64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_stat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
@@ -1417,6 +1418,7 @@ POST(sys_stat64)
 
 PRE(sys_fstatat64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )",ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);

@@ -1647,6 +1647,15 @@ need to use these.</para>
           magic needed when the program being run is itself
           Valgrind.</para>
         </listitem>
+        <listitem>
+          <para><option>fuse-compatible: </option> Enable special
+            handling for certain system calls that may block in a FUSE
+            file-system.  This may be necessary when running Valgrind
+            on a multi-threaded program that uses one thread to manage
+            a FUSE file-system and another thread to access that
+            file-system.
+          </para>
+        </listitem>
       </itemizedlist>
     </listitem>
   </varlistentry>

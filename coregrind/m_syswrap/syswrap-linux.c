@@ -3267,6 +3267,7 @@ PRE(sys_utimensat)
 
 PRE(sys_newfstatat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_newfstatat ( %ld, %#lx(%s), %#lx )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(long, "fstatat",
                  int, dfd, char *, file_name, struct stat *, buf);

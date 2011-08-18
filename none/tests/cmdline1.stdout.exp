@@ -72,7 +72,7 @@ usage: valgrind [options] prog-and-args
     --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [/tmp/vgdb-pipe]
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  known hints:
-                                 lax-ioctls, enable-outer [none]
+                                 lax-ioctls, enable-outer, fuse-compatible [none]
     --kernel-variant=variant1,variant2,...  known variants: bproc [none]
                               handle non-standard kernel variants
     --show-emwarns=no|yes     show warnings about emulation limits? [no]

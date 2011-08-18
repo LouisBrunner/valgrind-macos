@@ -177,7 +177,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [%s]\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  known hints:\n"
-"                                 lax-ioctls, enable-outer [none]\n"
+"                                 lax-ioctls, enable-outer, fuse-compatible [none]\n"
 "    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
 "                              handle non-standard kernel variants\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"

@@ -3278,18 +3278,13 @@ ULong dis_Grp2 ( VexAbiInfo* vbi,
    }
 
    isShift = False;
-   switch (gregLO3ofRM(modrm)) { case 4: case 5: case 7: isShift = True; }
+   switch (gregLO3ofRM(modrm)) { case 4: case 5: case 6: case 7: isShift = True; }
 
    isRotate = False;
    switch (gregLO3ofRM(modrm)) { case 0: case 1: isRotate = True; }
 
    isRotateC = False;
    switch (gregLO3ofRM(modrm)) { case 2: case 3: isRotateC = True; }
-
-   if (gregLO3ofRM(modrm) == 6) {
-      *decode_OK = False;
-      return delta;
-   }
 
    if (!isShift && !isRotate && !isRotateC) {
       /*NOTREACHED*/
@@ -3365,6 +3360,7 @@ ULong dis_Grp2 ( VexAbiInfo* vbi,
       switch (gregLO3ofRM(modrm)) { 
          case 4: op64 = Iop_Shl64; break;
          case 5: op64 = Iop_Shr64; break;
+         case 6: op64 = Iop_Shl64; break;
          case 7: op64 = Iop_Sar64; break;
          /*NOTREACHED*/
          default: vpanic("dis_Grp2:shift"); break;

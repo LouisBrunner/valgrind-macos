@@ -2392,18 +2392,13 @@ UInt dis_Grp2 ( UChar sorb,
    }
 
    isShift = False;
-   switch (gregOfRM(modrm)) { case 4: case 5: case 7: isShift = True; }
+   switch (gregOfRM(modrm)) { case 4: case 5: case 6: case 7: isShift = True; }
 
    isRotate = False;
    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
 
    isRotateC = False;
    switch (gregOfRM(modrm)) { case 2: case 3: isRotateC = True; }
-
-   if (gregOfRM(modrm) == 6) {
-      *decode_OK = False;
-      return delta;
-   }
 
    if (!isShift && !isRotate && !isRotateC) {
       /*NOTREACHED*/
@@ -2449,6 +2444,7 @@ UInt dis_Grp2 ( UChar sorb,
       switch (gregOfRM(modrm)) { 
          case 4: op32 = Iop_Shl32; break;
          case 5: op32 = Iop_Shr32; break;
+         case 6: op32 = Iop_Shl32; break;
          case 7: op32 = Iop_Sar32; break;
          /*NOTREACHED*/
          default: vpanic("dis_Grp2:shift"); break;

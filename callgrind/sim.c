@@ -1325,6 +1325,16 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* LLc)
    // architecture).
    VG_(configure_caches)( I1c, D1c, LLc, all_caches_clo_defined );
 
+   if (VG_(clo_verbosity) > 2) {
+      VG_(umsg)("Cache configuration detected:\n");
+      VG_(umsg)("  I1: %dB, %d-way, %dB lines\n",
+                I1c->size, I1c->assoc, I1c->line_size);
+      VG_(umsg)("  D1: %dB, %d-way, %dB lines\n",
+                D1c->size, D1c->assoc, D1c->line_size);
+      VG_(umsg)("  LL: %dB, %d-way, %dB lines\n",
+                LLc->size, LLc->assoc, LLc->line_size);
+   }
+
    // Check the default/auto-detected values.
    checkRes = check_cache(I1c);  tl_assert(!checkRes);
    checkRes = check_cache(D1c);  tl_assert(!checkRes);

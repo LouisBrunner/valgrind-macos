@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- s390x-specific definitions.                       cg-s390x.c ---*/
@@ -41,6 +42,62 @@
 void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
                            Bool all_caches_clo_defined)
 {
+   // z900
+   //
+   // Source:
+   // The microarchitecture of the IBM eServer z900 processor
+   // IBM Journal of Research and Development
+   // Volume 46, Number 4/5, pp 381-395, July/September 2002
+   //
+   // Split L1 I/D cache
+   // Size: 256 kB each
+   // Line size: 256 bytes
+   // 4-way set associative
+   // L2 cache: 16 MB x 2 (16 MB per 10 CPs)  (Charles Webb)
+
+   // z800
+   //
+   // Source:  Charles Webb from IBM
+   //
+   // Split L1 I/D cache
+   // Size: 256 kB each
+   // Line size: 256 bytes
+   // 4-way set associative
+   // L2 cache: 16 MB  (or half that size)
+
+   // z990
+   //
+   // The IBM eServer z990 microprocessor
+   // IBM Journal of Research and Development
+   // Volume 48, Number 3/4, pp 295-309, May/July 2004 
+   //
+   // Split L1 I/D cache
+   // Size: 256 kB each
+   // Line size: 256 bytes
+   // 4-way set associative
+   // L2 cache: 32 MB x 4 (32 MB per book/node)  (Charles Webb)
+
+   // z890
+   //
+   // Source:  Charles Webb from IBM
+   //
+   // Split L1 I/D cache
+   // Size: 256 kB each
+   // Line size: 256 bytes
+   // 4-way set associative
+   // L2 cache: 32 MB  (or half that size)
+
+   // z9
+   //
+   // Source:  Charles Webb from IBM
+   //
+   // Split L1 I/D cache
+   // Size: 256 kB each
+   // Line size: 256 bytes
+   // 4-way set associative
+   // L2 cache: 40 MB x 4 (40 MB per book/node)
+
+
    // Set caches to z10 default.
    // See IBM Journal of Research and Development
    // Issue Date: Jan. 2009

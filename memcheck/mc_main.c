@@ -49,6 +49,15 @@
 #include "memcheck.h"   /* for client requests */
 
 
+/* We really want this frame-pointer-less on all platforms, since the
+   helper functions are small and called very frequently.  By default
+   on x86-linux, though, Makefile.all.am doesn't specify it, so do it
+   here.  Requires gcc >= 4.4, unfortunately. */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+# pragma GCC optimize("-fomit-frame-pointer")
+#endif
+
+
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0
 
@@ -1099,9 +1108,7 @@ static Bool parse_ignore_ranges ( UChar* str0 )
 /* --------------- Load/store slow cases. --------------- */
 
 static
-#ifndef PERF_FAST_LOADV
-INLINE
-#endif
+__attribute__((noinline))
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
    /* Make up a 64-bit result V word, which contains the loaded data for
@@ -1188,9 +1195,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 
 
 static
-#ifndef PERF_FAST_STOREV
-INLINE
-#endif
+__attribute__((noinline))
 void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 {
    SizeT szB = nBits / 8;
@@ -4204,8 +4209,8 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
       // Handle common case quickly: a is suitably aligned, is mapped, and is
       // addressible.
       // Convert V bits from compact memory form to expanded register form
-      if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS16_DEFINED;   }
-      else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS16_UNDEFINED; }
+      if      (LIKELY(vabits8 == VA_BITS8_DEFINED  )) { return V_BITS16_DEFINED;   }
+      else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) { return V_BITS16_UNDEFINED; }
       else {
          // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
          // the two sub-bytes.
@@ -4316,8 +4321,8 @@ UWord MC_(helperc_LOADV8) ( Addr a )
       // Convert V bits from compact memory form to expanded register form
       // Handle common case quickly: a is mapped, and the entire
       // word32 it lives in is addressible.
-      if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS8_DEFINED;   }
-      else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS8_UNDEFINED; }
+      if      (LIKELY(vabits8 == VA_BITS8_DEFINED  )) { return V_BITS8_DEFINED;   }
+      else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) { return V_BITS8_UNDEFINED; }
       else {
          // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
          // the single byte.

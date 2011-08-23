@@ -3208,6 +3208,104 @@ Long __moddi3 (Long u, Long v)
   return r;
 }
 
+/* ------------------------------------------------
+   ld_classic: Undefined symbols:
+      ___fixunsdfdi
+   ------------------------------------------------
+*/
+
+/* ===-- fixunsdfdi.c - Implement __fixunsdfdi -----------------------------===
+ *
+ *                     The LLVM Compiler Infrastructure
+ *
+ * This file is dual licensed under the MIT and the University of Illinois Open
+ * Source Licenses. See LICENSE.TXT for details.
+ *
+ * ===----------------------------------------------------------------------===
+ *
+ * This file implements __fixunsdfdi for the compiler_rt library.
+ *
+ * ===----------------------------------------------------------------------===
+ */
+
+/* As per http://www.gnu.org/licenses/license-list.html#GPLCompatibleLicenses,
+
+   the "NCSA/University of Illinois Open Source License" is compatible
+   with the GPL (both version 2 and 3).  What is claimed to be
+   compatible is this
+
+   http://www.opensource.org/licenses/UoI-NCSA.php
+
+   and the LLVM documentation at
+
+   http://www.llvm.org/docs/DeveloperPolicy.html#license
+
+   says all the code in LLVM is available under the University of
+   Illinois/NCSA Open Source License, at this URL
+
+   http://www.opensource.org/licenses/UoI-NCSA.php
+
+   viz, the same one that the FSF pages claim is compatible.  So I
+   think it's OK to include it.
+*/
+
+/* Returns: convert a to a unsigned long long, rounding toward zero.
+ *          Negative values all become zero.
+ */
+
+/* Assumption: double is a IEEE 64 bit floating point type 
+ *             du_int is a 64 bit integral type
+ *             value in double is representable in du_int or is negative 
+ *                 (no range checking performed)
+ */
+
+/* seee eeee eeee mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm */
+
+typedef unsigned long long du_int;
+typedef unsigned su_int;
+
+typedef union
+{
+    du_int all;
+    struct
+    {
+#if VG_LITTLEENDIAN
+        su_int low;
+        su_int high;
+#else
+        su_int high;
+        su_int low;
+#endif /* VG_LITTLEENDIAN */
+    }s;
+} udwords;
+
+typedef union
+{
+    udwords u;
+    double  f;
+} double_bits;
+
+du_int __fixunsdfdi(double a);
+
+du_int
+__fixunsdfdi(double a)
+{
+    double_bits fb;
+    fb.f = a;
+    int e = ((fb.u.s.high & 0x7FF00000) >> 20) - 1023;
+    if (e < 0 || (fb.u.s.high & 0x80000000))
+        return 0;
+    udwords r;
+    r.s.high = (fb.u.s.high & 0x000FFFFF) | 0x00100000;
+    r.s.low = fb.u.s.low;
+    if (e > 52)
+        r.all <<= (e - 52);
+    else
+        r.all >>= (52 - e);
+    return r.all;
+}
+
+
 #endif
 
 

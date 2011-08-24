@@ -483,12 +483,18 @@ int pthread_join_intercept(pthread_t pt_joinee, void **thread_return)
    OrigFn   fn;
 
    VALGRIND_GET_ORIG_FN(fn);
+   /*
+    * Avoid that the sys_futex(td->tid) call invoked by the NPTL pthread_join()
+    * implementation triggers a (false positive) race report.
+    */
+   ANNOTATE_IGNORE_READS_AND_WRITES_BEGIN();
    CALL_FN_W_WW(ret, fn, pt_joinee, thread_return);
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST_EXPR(-1, VG_USERREQ__POST_THREAD_JOIN,
                                       pt_joinee, 0, 0, 0, 0);
    }
+   ANNOTATE_IGNORE_READS_AND_WRITES_END();
    return ret;
 }
 

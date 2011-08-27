@@ -16174,6 +16174,37 @@ DisResult disInstr_AMD64_WRK (
 //.. //--       DIP("enter 0x%x, 0x%x", d32, abyte);
 //.. //--       break;
 
+   case 0xC8: /* ENTER */
+      /* Same comments re operand size as for LEAVE below apply.
+         Also, only handles the case "enter $imm16, $0"; other cases
+         for the second operand (nesting depth) are not handled. */
+      if (sz != 4)
+         goto decode_failure;
+      d64 = getUDisp16(delta);
+      delta += 2;
+      vassert(d64 >= 0 && d64 <= 0xFFFF);
+      if (getUChar(delta) != 0)
+         goto decode_failure;
+      delta++;
+      /* Intel docs seem to suggest:
+           push rbp
+           temp = rsp
+           rbp = temp
+           rsp = rsp - imm16
+      */
+      t1 = newTemp(Ity_I64);
+      assign(t1, getIReg64(R_RBP));
+      t2 = newTemp(Ity_I64);
+      assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
+      putIReg64(R_RSP, mkexpr(t2));
+      storeLE(mkexpr(t2), mkexpr(t1));
+      putIReg64(R_RBP, mkexpr(t2));
+      if (d64 > 0) {
+         putIReg64(R_RSP, binop(Iop_Sub64, mkexpr(t2), mkU64(d64)));
+      }
+      DIP("enter $%u, $0\n", (UInt)d64);
+      break;
+
    case 0xC9: /* LEAVE */
       /* In 64-bit mode this defaults to a 64-bit operand size.  There
          is no way to encode a 32-bit variant.  Hence sz==4 but we do

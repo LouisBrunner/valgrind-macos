@@ -28,7 +28,8 @@ EXTRA_DIST = \
 	power5+_round.stderr.exp power5+_round.stdout.exp power5+_round.vgtest \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
-	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest
+	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
+	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest
 
 check_PROGRAMS = \
 	bug129390-ppc32 \
@@ -36,7 +37,8 @@ check_PROGRAMS = \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
 	testVMX twi tw xlc_dbl_u32 power5+_round power6_bcmp \
 	test_isa_2_06_part1 \
-	test_isa_2_06_part2
+	test_isa_2_06_part2 \
+	test_isa_2_06_part3
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
@@ -66,5 +68,8 @@ test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_
 			@FLAG_M32@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
 test_isa_2_06_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
+			@FLAG_M32@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
+
+test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(VSX_FLAG) \
 			@FLAG_M32@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 

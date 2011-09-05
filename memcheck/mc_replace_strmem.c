@@ -176,11 +176,13 @@ static inline void my_exit ( int x )
  STRRCHR(VG_Z_LIBC_SONAME,   rindex)
  STRRCHR(VG_Z_LIBC_SONAME,   __GI_strrchr)
  STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
+
 #elif defined(VGO_darwin)
  STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
  STRRCHR(VG_Z_LIBC_SONAME,   rindex)
  STRRCHR(VG_Z_DYLD,          strrchr)
  STRRCHR(VG_Z_DYLD,          rindex)
+
 #endif
    
 
@@ -210,11 +212,13 @@ static inline void my_exit ( int x )
   STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
   STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
 # endif
+
 #elif defined(VGO_darwin)
  STRCHR(VG_Z_LIBC_SONAME,          strchr)
  STRCHR(VG_Z_LIBC_SONAME,          index)
  STRCHR(VG_Z_DYLD,                 strchr)
  STRCHR(VG_Z_DYLD,                 index)
+
 #endif
 
 
@@ -246,8 +250,10 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRCAT(VG_Z_LIBC_SONAME, strcat)
  STRCAT(VG_Z_LIBC_SONAME, __GI_strcat)
+
 #elif defined(VGO_darwin)
  STRCAT(VG_Z_LIBC_SONAME, strcat)
+
 #endif
 
 
@@ -280,9 +286,11 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRNCAT(VG_Z_LIBC_SONAME, strncat)
+
 #elif defined(VGO_darwin)
  STRNCAT(VG_Z_LIBC_SONAME, strncat)
  STRNCAT(VG_Z_DYLD,        strncat)
+
 #endif
 
 
@@ -325,9 +333,11 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+
 #elif defined(VGO_darwin)
  STRLCAT(VG_Z_LIBC_SONAME, strlcat)
  STRLCAT(VG_Z_DYLD,        strlcat)
+
 #endif
 
 
@@ -347,8 +357,10 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRNLEN(VG_Z_LIBC_SONAME, strnlen)
  STRNLEN(VG_Z_LIBC_SONAME, __GI_strnlen)
+
 #elif defined(VGO_darwin)
  STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+
 #endif
    
 
@@ -373,8 +385,10 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
  STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
+
 #elif defined(VGO_darwin)
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
+
 #endif
 
 
@@ -406,9 +420,11 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
  STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
+
 #elif defined(VGO_darwin)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
  STRCPY(VG_Z_DYLD,        strcpy)
+
 #endif
 
 
@@ -437,9 +453,11 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
  STRNCPY(VG_Z_LIBC_SONAME, __GI_strncpy)
+
 #elif defined(VGO_darwin)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
  STRNCPY(VG_Z_DYLD,        strncpy)
+
 #endif
 
 
@@ -471,9 +489,11 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+
 #elif defined(VGO_darwin)
  STRLCPY(VG_Z_LIBC_SONAME, strlcpy)
  STRLCPY(VG_Z_DYLD,        strlcpy)
+
 #endif
 
 
@@ -502,9 +522,11 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRNCMP(VG_Z_LIBC_SONAME, strncmp)
  STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
+
 #elif defined(VGO_darwin)
  STRNCMP(VG_Z_LIBC_SONAME, strncmp)
  STRNCMP(VG_Z_DYLD,        strncmp)
+
 #endif
 
 
@@ -536,8 +558,10 @@ static inline void my_exit ( int x )
   STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
   STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
 # endif
+
 #elif defined(VGO_darwin)
  STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
+
 #endif
 
 
@@ -571,9 +595,11 @@ static inline void my_exit ( int x )
   STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
   STRNCASECMP(VG_Z_LIBC_SONAME, __GI_strncasecmp)
 # endif
+
 #elif defined(VGO_darwin)
  STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
  STRNCASECMP(VG_Z_DYLD,        strncasecmp)
+
 #endif
 
 
@@ -604,8 +630,10 @@ static inline void my_exit ( int x )
  STRCASECMP_L(VG_Z_LIBC_SONAME, strcasecmp_l)
  STRCASECMP_L(VG_Z_LIBC_SONAME, __GI_strcasecmp_l)
  STRCASECMP_L(VG_Z_LIBC_SONAME, __GI___strcasecmp_l)
+
 #elif defined(VGO_darwin)
  STRCASECMP_L(VG_Z_LIBC_SONAME, strcasecmp_l)
+
 #endif
 
 
@@ -637,9 +665,11 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI_strncasecmp_l)
+
 #elif defined(VGO_darwin)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
  STRNCASECMP_L(VG_Z_DYLD,        strncasecmp_l)
+
 #endif
 
 
@@ -670,8 +700,10 @@ static inline void my_exit ( int x )
  STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
  STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
  STRCMP(VG_Z_LD64_SO_1,            strcmp)
+
 #elif defined(VGO_darwin)
  STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+
 #endif
 
 
@@ -693,9 +725,11 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)
+
 #elif defined(VGO_darwin)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)
  MEMCHR(VG_Z_DYLD,        memchr)
+
 #endif
 
 
@@ -788,9 +822,6 @@ static inline void my_exit ( int x )
  MEMCPY(VG_Z_LIBC_SONAME,  memcpy) /* fallback case */
  MEMCPY(VG_Z_LD_SO_1,      memcpy) /* ld.so.1 */
  MEMCPY(VG_Z_LD64_SO_1,    memcpy) /* ld64.so.1 */
-#elif defined(VGO_darwin)
- MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
- MEMCPY(VG_Z_DYLD,         memcpy)
  /* icc9 blats these around all over the place.  Not only in the main
     executable but various .so's.  They are highly tuned and read
     memory beyond the source boundary (although work correctly and
@@ -800,6 +831,11 @@ static inline void my_exit ( int x )
     http://bugs.kde.org/show_bug.cgi?id=139776
  */
  MEMCPY(NONE, ZuintelZufastZumemcpy)
+
+#elif defined(VGO_darwin)
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+ MEMCPY(VG_Z_DYLD,         memcpy)
+
 #endif
 
 
@@ -834,11 +870,13 @@ static inline void my_exit ( int x )
  MEMCMP(VG_Z_LIBC_SONAME, memcmp)
  MEMCMP(VG_Z_LIBC_SONAME, bcmp)
  MEMCMP(VG_Z_LD_SO_1,     bcmp)
+
 #elif defined(VGO_darwin)
  MEMCMP(VG_Z_LIBC_SONAME, memcmp)
  MEMCMP(VG_Z_LIBC_SONAME, bcmp)
  MEMCMP(VG_Z_DYLD,        memcmp)
  MEMCMP(VG_Z_DYLD,        bcmp)
+
 #endif
 
 
@@ -874,9 +912,11 @@ static inline void my_exit ( int x )
  STPCPY(VG_Z_LIBC_SONAME,          __GI_stpcpy)
  STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
  STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
+
 #elif defined(VGO_darwin)
  STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
  STPCPY(VG_Z_DYLD,                 stpcpy)
+
 #endif
 
 
@@ -905,9 +945,11 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  MEMSET(VG_Z_LIBC_SONAME, memset)
+
 #elif defined(VGO_darwin)
  MEMSET(VG_Z_LIBC_SONAME, memset)
  MEMSET(VG_Z_DYLD,        memset)
+
 #endif
 
 
@@ -916,9 +958,11 @@ static inline void my_exit ( int x )
 /* memmove -- use the MEMMOVE defn above. */
 #if defined(VGO_linux)
  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
+
 #elif defined(VGO_darwin)
  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
  MEMMOVE(VG_Z_DYLD,        memmove)
+
 #endif
 
 
@@ -945,9 +989,11 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+
 #elif defined(VGO_darwin)
  BCOPY(VG_Z_LIBC_SONAME, bcopy)
  BCOPY(VG_Z_DYLD,        bcopy)
+
 #endif
 
 
@@ -987,7 +1033,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  GLIBC25___MEMMOVE_CHK(VG_Z_LIBC_SONAME, __memmove_chk)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1011,7 +1059,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  GLIBC232_STRCHRNUL(VG_Z_LIBC_SONAME, strchrnul)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1035,7 +1085,9 @@ static inline void my_exit ( int x )
 #if defined (VGO_linux)
  GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, rawmemchr)
  GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1067,7 +1119,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  GLIBC25___STRCPY_CHK(VG_Z_LIBC_SONAME, __strcpy_chk)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1098,7 +1152,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  GLIBC25___STPCPY_CHK(VG_Z_LIBC_SONAME, __stpcpy_chk)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1140,8 +1196,10 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)
  GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
+
 #elif defined(VGO_darwin)
  GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)
+
 #endif
 
 
@@ -1189,7 +1247,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  GLIBC26___MEMCPY_CHK(VG_Z_LIBC_SONAME, __memcpy_chk)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1234,7 +1294,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRSTR(VG_Z_LIBC_SONAME,          strstr)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1274,7 +1336,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1315,7 +1379,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 
@@ -1357,7 +1423,9 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRSPN(VG_Z_LIBC_SONAME,          strspn)
+
 #elif defined(VGO_darwin)
+
 #endif
 
 

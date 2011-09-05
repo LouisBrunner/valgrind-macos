@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- pthread intercepts for thread checking.                      ---*/
-/*---                                              tc_intercepts.c ---*/
+/*---                                              hg_intercepts.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -2285,13 +2285,16 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    }
 
 // Apparently index() is the same thing as strchr()
-STRCHR(VG_Z_LIBC_SONAME,          strchr)
-STRCHR(VG_Z_LIBC_SONAME,          index)
 #if defined(VGO_linux)
-STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
-STRCHR(VG_Z_LD_LINUX_SO_2,        index)
-STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
-STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
+ STRCHR(VG_Z_LIBC_SONAME,          strchr)
+ STRCHR(VG_Z_LIBC_SONAME,          index)
+ STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
+ STRCHR(VG_Z_LD_LINUX_SO_2,        index)
+ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
+ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
+#elif defined(VGO_darwin)
+ STRCHR(VG_Z_LIBC_SONAME,          strchr)
+ STRCHR(VG_Z_LIBC_SONAME,          index)
 #endif
 
 
@@ -2308,10 +2311,12 @@ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
       return i; \
    }
 
-STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #if defined(VGO_linux)
-STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
-STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+ STRLEN(VG_Z_LIBC_SONAME,          strlen)
+ STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
+ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+#elif defined(VGO_darwin)
+ STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #endif
 
 
@@ -2327,7 +2332,11 @@ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
       return (char*)dst_orig; \
    }
 
-STRCPY(VG_Z_LIBC_SONAME, strcpy)
+#if defined(VGO_linux)
+ STRCPY(VG_Z_LIBC_SONAME, strcpy)
+#elif defined(VGO_darwin)
+ STRCPY(VG_Z_LIBC_SONAME, strcpy)
+#endif
 
 
 #define STRCMP(soname, fnname) \
@@ -2350,10 +2359,12 @@ STRCPY(VG_Z_LIBC_SONAME, strcpy)
       return 0; \
    }
 
-STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 #if defined(VGO_linux)
-STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
-STRCMP(VG_Z_LD64_SO_1,            strcmp)
+ STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+ STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
+ STRCMP(VG_Z_LD64_SO_1,            strcmp)
+#elif defined(VGO_darwin)
+ STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 #endif
 
 
@@ -2399,22 +2410,24 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
       return dst; \
    }
 
-MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
 #if defined(VGO_linux)
-MEMCPY(VG_Z_LD_SO_1,        memcpy) /* ld.so.1 */
-MEMCPY(VG_Z_LD64_SO_1,      memcpy) /* ld64.so.1 */
-#endif
-/* icc9 blats these around all over the place.  Not only in the main
-   executable but various .so's.  They are highly tuned and read
-   memory beyond the source boundary (although work correctly and
-   never go across page boundaries), so give errors when run natively,
-   at least for misaligned source arg.  Just intercepting in the exe
-   only until we understand more about the problem.  See
-   http://bugs.kde.org/show_bug.cgi?id=139776
+ MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+ MEMCPY(VG_Z_LD_SO_1,        memcpy) /* ld.so.1 */
+ MEMCPY(VG_Z_LD64_SO_1,      memcpy) /* ld64.so.1 */
+ /* icc9 blats these around all over the place.  Not only in the main
+    executable but various .so's.  They are highly tuned and read
+    memory beyond the source boundary (although work correctly and
+    never go across page boundaries), so give errors when run
+    natively, at least for misaligned source arg.  Just intercepting
+    in the exe only until we understand more about the problem.  See
+    http://bugs.kde.org/show_bug.cgi?id=139776
  */
-MEMCPY(NONE, _intel_fast_memcpy)
+ MEMCPY(NONE, _intel_fast_memcpy)
+#elif defined(VGO_darwin)
+ MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+#endif
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                          tc_intercepts.c ---*/
+/*--- end                                          hg_intercepts.c ---*/
 /*--------------------------------------------------------------------*/

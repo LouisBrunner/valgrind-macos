@@ -48,7 +48,11 @@
       return i;                                                         \
    }
 
-STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+#if defined(VGO_linux)
+ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+#elif defined(VGO_darwin)
+ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+#endif
 
 
 // Note that this replacement often doesn't get used because gcc inlines
@@ -64,10 +68,12 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
       return i;                                                         \
    }
 
-STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #if defined(VGO_linux)
-STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
-STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+ STRLEN(VG_Z_LIBC_SONAME,          strlen)
+ STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
+ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+#elif defined(VGO_darwin)
+ STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #endif
 
 /*--------------------------------------------------------------------*/

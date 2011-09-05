@@ -1285,29 +1285,41 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* How about a div? */
       if (e->Iex.Binop.op == Iop_DivS32 || 
           e->Iex.Binop.op == Iop_DivU32 ||
+          e->Iex.Binop.op == Iop_DivS32E ||
           e->Iex.Binop.op == Iop_DivU32E) {
-         Bool syned  = toBool(e->Iex.Binop.op == Iop_DivS32);
+         Bool syned  = toBool((e->Iex.Binop.op == Iop_DivS32) || (e->Iex.Binop.op == Iop_DivS32E));
          HReg r_dst  = newVRegI(env);
          HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
          HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
          addInstr( env,
-                      PPCInstr_Div( e->Iex.Binop.op == Iop_DivU32E ? True
-                                                                   : False,
-                                    syned, True/*32bit div*/, r_dst,
-                                    r_srcL, r_srcR ) );
+                      PPCInstr_Div( ( ( e->Iex.Binop.op == Iop_DivU32E )
+                                             || ( e->Iex.Binop.op == Iop_DivS32E ) ) ? True
+                                                                                     : False,
+                                    syned,
+                                    True/*32bit div*/,
+                                    r_dst,
+                                    r_srcL,
+                                    r_srcR ) );
          return r_dst;
       }
       if (e->Iex.Binop.op == Iop_DivS64 || 
-          e->Iex.Binop.op == Iop_DivU64 || e->Iex.Binop.op == Iop_DivS64E) {
+          e->Iex.Binop.op == Iop_DivU64 || e->Iex.Binop.op == Iop_DivS64E
+          || e->Iex.Binop.op == Iop_DivU64E ) {
          Bool syned  = toBool((e->Iex.Binop.op == Iop_DivS64) ||(e->Iex.Binop.op == Iop_DivS64E));
          HReg r_dst  = newVRegI(env);
          HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
          HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
          vassert(mode64);
          addInstr( env,
-                      PPCInstr_Div( e->Iex.Binop.op == Iop_DivS64E ? True : False,
-                                    syned, False/*64bit div*/,
-                                    r_dst, r_srcL, r_srcR ) );
+                      PPCInstr_Div( ( ( e->Iex.Binop.op == Iop_DivS64E )
+                                             || ( e->Iex.Binop.op
+                                                      == Iop_DivU64E ) ) ? True
+                                                                         : False,
+                                    syned,
+                                    False/*64bit div*/,
+                                    r_dst,
+                                    r_srcL,
+                                    r_srcR ) );
          return r_dst;
       }
 

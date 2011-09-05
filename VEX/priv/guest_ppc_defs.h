@@ -128,6 +128,8 @@ enum {
    /* 13 */ PPCG_FLAG_OP_SRADI,   // sradi
    /* 14 */ PPCG_FLAG_OP_DIVDE,   // divdeo
    /* 15 */ PPCG_FLAG_OP_DIVWEU,  // divweuo
+   /* 16 */ PPCG_FLAG_OP_DIVWE,   // divweo
+   /* 17 */ PPCG_FLAG_OP_DIVDEU,  // divdeuo
    PPCG_FLAG_OP_NUMBER
 };
 

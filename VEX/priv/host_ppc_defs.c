@@ -3011,8 +3011,12 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
                // divweu r_dst,r_srcL,r_srcR
                p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 395, 0);
          } else {
-            // divde r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 425, 0);
+            if (syned)
+               // divde r_dst,r_srcL,r_srcR
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 425, 0);
+            else
+               // divdeu r_dst,r_srcL,r_srcR
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 393, 0);
          }
       } else if (sz32) {
          if (syned)  // divw r_dst,r_srcL,r_srcR

@@ -469,8 +469,10 @@ typedef
       Iop_DivS32,   // ditto, signed
       Iop_DivU64,   // :: I64,I64 -> I64 (simple div, no mod)
       Iop_DivS64,   // ditto, signed
-      Iop_DivS64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi) concat with 64 0's (low))
+      Iop_DivU64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi) concat with 64 0's (low))
+      Iop_DivS64E,  // ditto, signed
       Iop_DivU32E,  // :: I32,I32 -> I32 (dividend is 32-bit arg (hi) concat with 32 0's (low))
+      Iop_DivS32E,  // ditto, signed
 
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod

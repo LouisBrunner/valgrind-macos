@@ -245,8 +245,13 @@ void do_wait ( UWord* w )
 {
   UWord w0 = *w;
   UWord volatile * wV = w;
-  while (*wV == w0)
+  while (*wV == w0) {
+#ifdef VGA_s390x
+    asm volatile ("bcr 15,0\n\t");  /* load barrier */
+#else
     ;
+#endif
+  }
   ANNOTATE_HAPPENS_AFTER(w);
 }
 

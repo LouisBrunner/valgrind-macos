@@ -814,6 +814,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       di->soname = ML_(dinfo_strdup)("di.readmacho.noname", "NONE");
    }
 
+   if (di->trace_symtab) {
+      VG_(printf)("\n");
+      VG_(printf)("SONAME = %s\n", di->soname);
+      VG_(printf)("\n");
+   }
+
    /* Now we have the base object to hand.  Read symbols from it. */
 
    if (ii.macho_img && ii.macho_img_szB > 0 && symcmd && dysymcmd) {

@@ -11,7 +11,11 @@
 
 # Returns the revision number of the source files with date $1.
 get_svn_revision() {
-  svn info -r "{$1}" "${valgrind_svn_repo}" | sed -n 's/^Revision: //p'
+  (cd $DIR; rm -rf infodir;
+   svn co -r "{$1}" "${valgrind_svn_repo}/nightly" infodir > /dev/null;
+   revno=`svn info infodir | sed -n 's/^Revision: //p'`;
+   rm -rf infodir;
+   echo $revno)
 }
 
 runcmd () {

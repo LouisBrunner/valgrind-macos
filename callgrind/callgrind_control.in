@@ -192,6 +192,7 @@ $requestDump = 0;
 $switchInstr = 0;
 $headerPrinted = 0;
 $dumpHint = "";
+$verbose = 0;
 
 %spids = ();
 foreach $arg (@ARGV) {
@@ -204,6 +205,10 @@ foreach $arg (@ARGV) {
     }
     elsif ($arg =~ /^--version$/) {
 	printVersion;
+    }
+    elsif ($arg =~ /^-v$/) {
+	$verbose++;
+	next;
     }
     elsif ($arg =~ /^(-s|--stat)$/) {
 	$printStatus = 1;
@@ -324,7 +329,7 @@ if ($requestZero) { $vgdbCommand = "zero"; }
 if ($requestKill) { $vgdbCommand = "v.kill"; }
 if ($switchInstr) { $vgdbCommand = "instrumentation ".$switchInstrMode; }
 if ($printStatus || $printBacktrace || $requestEvents) {
-  $vgdbCommand = "status";
+  $vgdbCommand = "status internal";
   $waitForAnswer = 1;
 }
 
@@ -336,7 +341,11 @@ foreach $pid (@pids) {
       print "\n";
       next;
   }
-  print " [requesting '$vgdbCommand']\n";
+  if ($verbose>0) {
+      print " [requesting '$vgdbCommand']\n";
+  } else {
+      print "\n";
+  }
   open RESULT, "vgdb --pid=$pid $vgdbCommand|";
 
   @tids = ();

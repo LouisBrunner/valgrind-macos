@@ -1093,9 +1093,14 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
   </listitem>
 
   <listitem>
-    <para>It would be nice to have some more callgrind monitor
-    commands such as e.g. toggle collect and start instrumentation.
+    <para><varname>instrumentation [on|off]</varname> requests to set 
+    (if parameter on/off is given) or get the current instrumentation state.
     </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>status</varname> requests to print out some status
+    information.</para>
   </listitem>
 
 </itemizedlist>

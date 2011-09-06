@@ -1266,97 +1266,9 @@ static void log_0I1Dw(InstrInfo* ii, Addr data_addr, Word data_size)
 /*--- Cache configuration                                  ---*/
 /*------------------------------------------------------------*/
 
-#define UNDEFINED_CACHE     ((cache_t) { -1, -1, -1 }) 
-
 static cache_t clo_I1_cache = UNDEFINED_CACHE;
 static cache_t clo_D1_cache = UNDEFINED_CACHE;
 static cache_t clo_LL_cache = UNDEFINED_CACHE;
-
-
-// Checks cache config is ok.  Returns NULL if ok, or a pointer to an error
-// string otherwise.
-static Char* check_cache(cache_t* cache)
-{
-   // Simulator requires line size and set count to be powers of two.
-   if (( cache->size % (cache->line_size * cache->assoc) != 0) ||
-       (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc)))
-   {
-      return "Cache set count is not a power of two.\n";
-   }
-
-   // Simulator requires line size to be a power of two.
-   if (-1 == VG_(log2)(cache->line_size)) {
-      return "Cache line size is not a power of two.\n";
-   }
-
-   // Then check line size >= 16 -- any smaller and a single instruction could
-   // straddle three cache lines, which breaks a simulation assertion and is
-   // stupid anyway.
-   if (cache->line_size < MIN_LINE_SIZE) {
-      return "Cache line size is too small.\n";
-   }
-
-   /* Then check cache size > line size (causes seg faults if not). */
-   if (cache->size <= cache->line_size) {
-      return "Cache size <= line size.\n";
-   }
-
-   /* Then check assoc <= (size / line size) (seg faults otherwise). */
-   if (cache->assoc > (cache->size / cache->line_size)) {
-      return "Cache associativity > (size / line size).\n";
-   }
-
-   return NULL;
-}
-
-static
-void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* LLc)
-{
-#define DEFINED(L)   (-1 != L.size  || -1 != L.assoc || -1 != L.line_size)
-
-   Char* checkRes;
-
-   Bool all_caches_clo_defined =
-      (DEFINED(clo_I1_cache) &&
-       DEFINED(clo_D1_cache) &&
-       DEFINED(clo_LL_cache));
-
-   // Set the cache config (using auto-detection, if supported by the
-   // architecture).
-   VG_(configure_caches)( I1c, D1c, LLc, all_caches_clo_defined );
-
-   if (VG_(clo_verbosity) > 2) {
-      VG_(umsg)("Cache configuration detected:\n");
-      VG_(umsg)("  I1: %dB, %d-way, %dB lines\n",
-                I1c->size, I1c->assoc, I1c->line_size);
-      VG_(umsg)("  D1: %dB, %d-way, %dB lines\n",
-                D1c->size, D1c->assoc, D1c->line_size);
-      VG_(umsg)("  LL: %dB, %d-way, %dB lines\n",
-                LLc->size, LLc->assoc, LLc->line_size);
-   }
-
-   // Check the default/auto-detected values.
-   checkRes = check_cache(I1c);  tl_assert(!checkRes);
-   checkRes = check_cache(D1c);  tl_assert(!checkRes);
-   checkRes = check_cache(LLc);  tl_assert(!checkRes);
-
-   // Then replace with any defined on the command line.
-   if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; }
-   if (DEFINED(clo_D1_cache)) { *D1c = clo_D1_cache; }
-   if (DEFINED(clo_LL_cache)) { *LLc = clo_LL_cache; }
-
-   if (VG_(clo_verbosity) > 1) {
-      VG_(umsg)("Cache configuration used:\n");
-      VG_(umsg)("  I1: %dB, %d-way, %dB lines\n",
-                I1c->size, I1c->assoc, I1c->line_size);
-      VG_(umsg)("  D1: %dB, %d-way, %dB lines\n",
-                D1c->size, D1c->assoc, D1c->line_size);
-      VG_(umsg)("  LL: %dB, %d-way, %dB lines\n",
-                LLc->size, LLc->assoc, LLc->line_size);
-   }
-#undef CMD_LINE_DEFINED
-}
-
 
 /* Initialize and clear simulator state */
 static void cachesim_post_clo_init(void)
@@ -1386,8 +1298,11 @@ static void cachesim_post_clo_init(void)
   }
 
   /* Configuration of caches only needed with real cache simulation */
-  configure_caches(&I1c, &D1c, &LLc);
-  
+  VG_(post_clo_init_configure_caches)(&I1c, &D1c, &LLc,
+                                      &clo_I1_cache,
+                                      &clo_D1_cache,
+                                      &clo_LL_cache);
+
   I1.name = "I1";
   D1.name = "D1";
   LL.name = "LL";
@@ -1499,47 +1414,8 @@ void cachesim_print_opts(void)
 #if CLG_EXPERIMENTAL
 "    --simulate-sectors=no|yes Simulate sectored behaviour [no]\n"
 #endif
-"    --cacheuse=no|yes         Collect cache block use [no]\n"
-"    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
-"    --D1=<size>,<assoc>,<line_size>  set D1 cache manually\n"
-"    --LL=<size>,<assoc>,<line_size>  set LL cache manually\n"
-	      );
-}
-
-static void parse_opt ( cache_t* cache,
-                        char* opt, Char* optval, UChar kind )
-{
-   Long i1, i2, i3;
-   Char* endptr;
-   Char* checkRes;
-
-   // Option argument looks like "65536,2,64".  Extract them.
-   i1 = VG_(strtoll10)(optval,   &endptr); if (*endptr != ',')  goto bad;
-   i2 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != ',')  goto bad;
-   i3 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != '\0') goto bad;
-
-   // Check for overflow.
-   cache->size      = (Int)i1;
-   cache->assoc     = (Int)i2;
-   cache->line_size = (Int)i3;
-   if (cache->size      != i1) goto overflow;
-   if (cache->assoc     != i2) goto overflow;
-   if (cache->line_size != i3) goto overflow;
-
-   checkRes = check_cache(cache);
-   if (checkRes) {
-      VG_(fmsg)("%s", checkRes);
-      goto bad;
-   }
-
-   return;
-
-  bad:
-   VG_(fmsg_bad_option)(opt, "");
-
-  overflow:
-   VG_(fmsg_bad_option)(opt,
-      "One of the cache parameters was too large and overflowed.\n");
+"    --cacheuse=no|yes         Collect cache block use [no]\n");
+  VG_(print_cache_clo_opts)();
 }
 
 /* Check for command line option for cache configuration.
@@ -1549,8 +1425,6 @@ static void parse_opt ( cache_t* cache,
  */
 static Bool cachesim_parse_opt(Char* arg)
 {
-   Char* tmp_str;
-
    if      VG_BOOL_CLO(arg, "--simulate-wb",      clo_simulate_writeback) {}
    else if VG_BOOL_CLO(arg, "--simulate-hwpref",  clo_simulate_hwpref)    {}
    else if VG_BOOL_CLO(arg, "--simulate-sectors", clo_simulate_sectors)   {}
@@ -1562,15 +1436,13 @@ static Bool cachesim_parse_opt(Char* arg)
       }
    }
 
-   else if VG_STR_CLO(arg, "--I1", tmp_str)
-      parse_opt(&clo_I1_cache, arg, tmp_str, 'i');
-   else if VG_STR_CLO(arg, "--D1", tmp_str)
-      parse_opt(&clo_D1_cache, arg, tmp_str, '1');
-   else if (VG_STR_CLO(arg, "--L2", tmp_str) || // for backwards compatibility
-            VG_STR_CLO(arg, "--LL", tmp_str))
-      parse_opt(&clo_LL_cache, arg, tmp_str, '2');
-  else
-    return False;
+   else if (VG_(str_clo_cache_opt)(arg,
+                                   &clo_I1_cache,
+                                   &clo_D1_cache,
+                                   &clo_LL_cache)) {}
+
+   else
+     return False;
 
   return True;
 }

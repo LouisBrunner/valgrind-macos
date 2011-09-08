@@ -273,6 +273,8 @@ fixed
 
 275517 - s390x: Provide support for CKSM instruction
 
+279027 - s390x: Provide support for CLCL and MVCL instructions
+
 
 Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

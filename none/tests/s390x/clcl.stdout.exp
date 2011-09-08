@@ -1,0 +1,41 @@
+--- test 1 ---
+cc: 0, len1: 0, len2: 0, addr1 diff: 0, addr2 diff: 0
+cc: 0, len1: 0, len2: 0, addr1 diff: 0, addr2 diff: 0
+--- test 2 ---
+cc: 1, len1: 1, len2: 1, addr1 diff: 0, addr2 diff: 0
+cc: 0, len1: 0, len2: 0, addr1 diff: 1, addr2 diff: 1
+cc: 2, len1: 1, len2: 1, addr1 diff: 0, addr2 diff: 0
+cc: 1, len1: 1, len2: 1, addr1 diff: 0, addr2 diff: 0
+cc: 0, len1: 0, len2: 0, addr1 diff: 1, addr2 diff: 1
+cc: 2, len1: 1, len2: 1, addr1 diff: 0, addr2 diff: 0
+--- test 3 ---
+cc: 0, len1: 0, len2: 0, addr1 diff: 0, addr2 diff: 1
+cc: 1, len1: 0, len2: 1, addr1 diff: 0, addr2 diff: 0
+cc: 2, len1: 0, len2: 1, addr1 diff: 0, addr2 diff: 0
+cc: 0, len1: 0, len2: 0, addr1 diff: 1, addr2 diff: 0
+cc: 2, len1: 1, len2: 0, addr1 diff: 0, addr2 diff: 0
+cc: 1, len1: 1, len2: 0, addr1 diff: 0, addr2 diff: 0
+--- test 4 ---
+cc: 1, len1: 1, len2: 0, addr1 diff: 0, addr2 diff: 0
+cc: 0, len1: 0, len2: 0, addr1 diff: 1, addr2 diff: 0
+--- test 5 ---
+cc: 0, len1: 0, len2: 0, addr1 diff: 4, addr2 diff: 0
+cc: 2, len1: 4, len2: 0, addr1 diff: 0, addr2 diff: 0
+cc: 1, len1: 4, len2: 0, addr1 diff: 0, addr2 diff: 0
+--- test 6 ---
+cc: 2, len1: 5, len2: 5, addr1 diff: 0, addr2 diff: 0
+cc: 1, len1: 5, len2: 5, addr1 diff: 0, addr2 diff: 0
+cc: 0, len1: 0, len2: 0, addr1 diff: 5, addr2 diff: 5
+--- test 7 ---
+cc: 1, len1: 1, len2: 1, addr1 diff: 4, addr2 diff: 4
+cc: 0, len1: 0, len2: 0, addr1 diff: 5, addr2 diff: 5
+--- test 8 ---
+cc: 1, len1: 0, len2: 2, addr1 diff: 5, addr2 diff: 5
+cc: 2, len1: 2, len2: 0, addr1 diff: 5, addr2 diff: 5
+cc: 0, len1: 0, len2: 0, addr1 diff: 5, addr2 diff: 7
+cc: 0, len1: 0, len2: 0, addr1 diff: 7, addr2 diff: 5
+--- test 9 ---
+cc: 1, len1: 2, len2: 4, addr1 diff: 3, addr2 diff: 3
+cc: 2, len1: 4, len2: 2, addr1 diff: 3, addr2 diff: 3
+cc: 1, len1: 2, len2: 4, addr1 diff: 3, addr2 diff: 3
+cc: 2, len1: 4, len2: 2, addr1 diff: 3, addr2 diff: 3

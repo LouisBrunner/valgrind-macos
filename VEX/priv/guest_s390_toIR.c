@@ -8591,6 +8591,88 @@ s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 }
 
 static HChar *
+s390_irgen_CLCL(UChar r1, UChar r2)
+{
+   IRTemp addr1 = newTemp(Ity_I64);
+   IRTemp addr2 = newTemp(Ity_I64);
+   IRTemp addr1_load = newTemp(Ity_I64);
+   IRTemp addr2_load = newTemp(Ity_I64);
+   IRTemp len1 = newTemp(Ity_I32);
+   IRTemp len2 = newTemp(Ity_I32);
+   IRTemp r1p1 = newTemp(Ity_I32);   /* contents of r1 + 1 */
+   IRTemp r2p1 = newTemp(Ity_I32);   /* contents of r2 + 1 */
+   IRTemp single1 = newTemp(Ity_I8);
+   IRTemp single2 = newTemp(Ity_I8);
+   IRTemp pad = newTemp(Ity_I8);
+
+   assign(addr1, get_gpr_dw0(r1));
+   assign(r1p1, get_gpr_w1(r1 + 1));
+   assign(len1, binop(Iop_And32, mkexpr(r1p1), mkU32(0x00ffffff)));
+   assign(addr2, get_gpr_dw0(r2));
+   assign(r2p1, get_gpr_w1(r2 + 1));
+   assign(len2, binop(Iop_And32, mkexpr(r2p1), mkU32(0x00ffffff)));
+   assign(pad, get_gpr_b4(r2 + 1));
+
+   /* len1 == 0 and len2 == 0? Exit */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ32, binop(Iop_Or32, mkexpr(len1),
+                                              mkexpr(len2)), mkU32(0)),
+                     guest_IA_next_instr);
+
+   /* Because mkite evaluates both the then-clause and the else-clause
+      we cannot load directly from addr1 here. If len1 is 0, then adddr1
+      may be NULL and loading from there would segfault. So we provide a
+      valid dummy address in that case. Loading from there does no harm and
+      the value will be discarded at runtime. */
+   assign(addr1_load,
+          mkite(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)),
+                mkU64(guest_IA_curr_instr), mkexpr(addr1)));
+   assign(single1,
+          mkite(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)),
+                mkexpr(pad), load(Ity_I8, mkexpr(addr1_load))));
+
+   assign(addr2_load,
+          mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                mkU64(guest_IA_curr_instr), mkexpr(addr2)));
+   assign(single2,
+          mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                mkexpr(pad), load(Ity_I8, mkexpr(addr2_load))));
+
+   s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, single1, single2, False);
+   /* Fields differ ? */
+   if_condition_goto(binop(Iop_CmpNE8, mkexpr(single1), mkexpr(single2)),
+                     guest_IA_next_instr);
+
+   /* Update len1 and addr1, unless len1 == 0. */
+   put_gpr_dw0(r1,
+               mkite(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)),
+                     mkexpr(addr1),
+                     binop(Iop_Add64, mkexpr(addr1), mkU64(1))));
+
+   /* When updating len1 we must not modify bits (r1+1)[0:39] */
+   put_gpr_w1(r1 + 1,
+              mkite(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)),
+                    binop(Iop_And32, mkexpr(r1p1), mkU32(0xFF000000u)),
+                    binop(Iop_Sub32, mkexpr(r1p1), mkU32(1))));
+
+   /* Update len2 and addr2, unless len2 == 0. */
+   put_gpr_dw0(r2,
+               mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                     mkexpr(addr2),
+                     binop(Iop_Add64, mkexpr(addr2), mkU64(1))));
+
+   /* When updating len2 we must not modify bits (r2+1)[0:39] */
+   put_gpr_w1(r2 + 1,
+              mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                    binop(Iop_And32, mkexpr(r2p1), mkU32(0xFF000000u)),
+                    binop(Iop_Sub32, mkexpr(r2p1), mkU32(1))));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "clcl";
+}
+
+static HChar *
 s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
 {
    IRTemp addr1, addr3, addr1_load, addr3_load, len1, len3, single1, single3;
@@ -9321,6 +9403,92 @@ s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
 
    return "mvc";
 }
+
+static HChar *
+s390_irgen_MVCL(UChar r1, UChar r2)
+{
+   IRTemp addr1 = newTemp(Ity_I64);
+   IRTemp addr2 = newTemp(Ity_I64);
+   IRTemp addr2_load = newTemp(Ity_I64);
+   IRTemp r1p1 = newTemp(Ity_I32);   /* contents of r1 + 1 */
+   IRTemp r2p1 = newTemp(Ity_I32);   /* contents of r2 + 1 */
+   IRTemp len1 = newTemp(Ity_I32);
+   IRTemp len2 = newTemp(Ity_I32);
+   IRTemp pad = newTemp(Ity_I8);
+   IRTemp single = newTemp(Ity_I8);
+
+   assign(addr1, get_gpr_dw0(r1));
+   assign(r1p1, get_gpr_w1(r1 + 1));
+   assign(len1, binop(Iop_And32, mkexpr(r1p1), mkU32(0x00ffffff)));
+   assign(addr2, get_gpr_dw0(r2));
+   assign(r2p1, get_gpr_w1(r2 + 1));
+   assign(len2, binop(Iop_And32, mkexpr(r2p1), mkU32(0x00ffffff)));
+   assign(pad, get_gpr_b4(r2 + 1));
+
+   /* len1 == 0 ? */
+   s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len2, False);
+   if_condition_goto(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)),
+                     guest_IA_next_instr);
+
+   /* Check for destructive overlap:
+      addr1 > addr2 && addr2 + len1 > addr1 && (addr2 + len2) > addr1 */
+   s390_cc_set(3);
+   IRTemp cond1 = newTemp(Ity_I32);
+   assign(cond1, unop(Iop_1Uto32,
+                      binop(Iop_CmpLT64U, mkexpr(addr2), mkexpr(addr1))));
+   IRTemp cond2 = newTemp(Ity_I32);
+   assign(cond2, unop(Iop_1Uto32,
+                      binop(Iop_CmpLT64U, mkexpr(addr1),
+                            binop(Iop_Add64, mkexpr(addr2),
+                                  unop(Iop_32Uto64, mkexpr(len1))))));
+   IRTemp cond3 = newTemp(Ity_I32);
+   assign(cond3, unop(Iop_1Uto32,
+                      binop(Iop_CmpLT64U, 
+                            mkexpr(addr1),
+                            binop(Iop_Add64, mkexpr(addr2),
+                                  unop(Iop_32Uto64, mkexpr(len2))))));
+
+   if_condition_goto(binop(Iop_CmpEQ32,
+                           binop(Iop_And32,
+                                 binop(Iop_And32, mkexpr(cond1), mkexpr(cond2)),
+                                 mkexpr(cond3)),
+                           mkU32(1)),
+                     guest_IA_next_instr);
+
+   /* See s390_irgen_CLCL for explanation why we cannot load directly
+      and need two steps. */
+   assign(addr2_load,
+          mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                mkU64(guest_IA_curr_instr), mkexpr(addr2)));
+   assign(single,
+          mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                mkexpr(pad), load(Ity_I8, mkexpr(addr2_load))));
+
+   store(mkexpr(addr1), mkexpr(single));
+
+   /* Update addr1 and len1 */
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(addr1), mkU64(1)));
+   put_gpr_w1(r1 + 1, binop(Iop_Sub32, mkexpr(r1p1), mkU32(1)));
+
+   /* Update addr2 and len2 */
+   put_gpr_dw0(r2,
+               mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                     mkexpr(addr2),
+                     binop(Iop_Add64, mkexpr(addr2), mkU64(1))));
+
+   /* When updating len2 we must not modify bits (r2+1)[0:39] */
+   put_gpr_w1(r2 + 1,
+              mkite(binop(Iop_CmpEQ32, mkexpr(len2), mkU32(0)),
+                    binop(Iop_And32, mkexpr(r2p1), mkU32(0xFF000000u)),
+                    binop(Iop_Sub32, mkexpr(r2p1), mkU32(1))));
+
+   s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len2, False);
+   if_condition_goto(binop(Iop_CmpNE32, mkexpr(len1), mkU32(1)),
+                     guest_IA_curr_instr);
+
+   return "mvcl";
+}
+
 
 static HChar *
 s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
@@ -10801,8 +10969,10 @@ s390_decode_2byte_and_irgen(UChar *bytes)
    case 0x0c: /* BASSM */ goto unimplemented;
    case 0x0d: s390_format_RR_RR(s390_irgen_BASR, ovl.fmt.RR.r1, ovl.fmt.RR.r2);
                                 goto ok;
-   case 0x0e: /* MVCL */ goto unimplemented;
-   case 0x0f: /* CLCL */ goto unimplemented;
+   case 0x0e: s390_format_RR(s390_irgen_MVCL, ovl.fmt.RR.r1, ovl.fmt.RR.r2);
+                             goto ok;
+   case 0x0f: s390_format_RR(s390_irgen_CLCL, ovl.fmt.RR.r1, ovl.fmt.RR.r2);
+                             goto ok;
    case 0x10: s390_format_RR_RR(s390_irgen_LPR, ovl.fmt.RR.r1, ovl.fmt.RR.r2);
                                 goto ok;
    case 0x11: s390_format_RR_RR(s390_irgen_LNR, ovl.fmt.RR.r1, ovl.fmt.RR.r2);

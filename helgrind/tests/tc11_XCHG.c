@@ -54,8 +54,25 @@
         : "memory", "cc" \
      )
 
+#elif defined(PLAT_s390x_linux)
+#  define XCHG_M_R(_addr,_lval)                              \
+     do {                                                    \
+        __asm__ __volatile__(                                \
+           "0: l   0,%[global]\n\t"                          \
+           "   cs  0,%[local],%[global]\n\t"                 \
+           "   bne 0b\n\t"                                   \
+           "   lr  %[local],0\n\t"                           \
+           : /*out*/ [global]"+m"(_addr), [local]"+d"(_lval) \
+           : /*in*/                                          \
+           : "0", "memory", "cc"                             \
+        );                                                   \
+     } while (0)
+
+#  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
+      XCHG_M_R(_addr,_lval)
+
 #elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
-      || defined(PLAT_arm_linux) || defined(PLAT_s390x_linux)
+      || defined(PLAT_arm_linux)
 #  if defined(HAVE_BUILTIN_ATOMIC)
 #    define XCHG_M_R(_addr,_lval)                                           \
         do {                                                                \

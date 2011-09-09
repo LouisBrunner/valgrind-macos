@@ -8701,29 +8701,23 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
       from reading from addr1 if it should read from the pad. Since the pad
       has no address, just read from the instruction, we discard that anyway */
    assign(addr1_load,
-          IRExpr_Mux0X(unop(Iop_1Uto8,
-                            binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0))),
-                       mkexpr(addr1),
-                       mkU64(guest_IA_curr_instr)));
+          mkite(binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0)),
+                mkU64(guest_IA_curr_instr), mkexpr(addr1)));
 
    /* same for addr3 */
    assign(addr3_load,
-          IRExpr_Mux0X(unop(Iop_1Uto8,
-                            binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0))),
-                       mkexpr(addr3),
-                       mkU64(guest_IA_curr_instr)));
+          mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                mkU64(guest_IA_curr_instr), mkexpr(addr3)));
 
    assign(single1,
-          IRExpr_Mux0X(unop(Iop_1Uto8,
-                            binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0))),
-                       load(Ity_I8, mkexpr(addr1_load)),
-                       unop(Iop_64to8, mkexpr(pad2))));
+          mkite(binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0)),
+                unop(Iop_64to8, mkexpr(pad2)),
+                load(Ity_I8, mkexpr(addr1_load))));
 
    assign(single3,
-          IRExpr_Mux0X(unop(Iop_1Uto8,
-                            binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0))),
-                       load(Ity_I8, mkexpr(addr3_load)),
-                       unop(Iop_64to8, mkexpr(pad2))));
+          mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                unop(Iop_64to8, mkexpr(pad2)),
+                load(Ity_I8, mkexpr(addr3_load))));
 
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, single1, single3, False);
    /* Both fields differ ? */
@@ -8732,28 +8726,22 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
 
    /* If a length in 0 we must not change this length and the address */
    put_gpr_dw0(r1,
-               IRExpr_Mux0X(unop(Iop_1Uto8,
-                                 binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0))),
-                            binop(Iop_Add64, mkexpr(addr1), mkU64(1)),
-                            mkexpr(addr1)));
+               mkite(binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0)),
+                     mkexpr(addr1),
+                     binop(Iop_Add64, mkexpr(addr1), mkU64(1))));
 
    put_gpr_dw0(r1 + 1,
-               IRExpr_Mux0X(unop(Iop_1Uto8,
-                                 binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0))),
-                            binop(Iop_Sub64, mkexpr(len1), mkU64(1)),
-                            mkU64(0)));
+               mkite(binop(Iop_CmpEQ64, mkexpr(len1), mkU64(0)),
+                     mkU64(0), binop(Iop_Sub64, mkexpr(len1), mkU64(1))));
 
    put_gpr_dw0(r3,
-               IRExpr_Mux0X(unop(Iop_1Uto8,
-                                 binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0))),
-                            binop(Iop_Add64, mkexpr(addr3), mkU64(1)),
-                            mkexpr(addr3)));
+               mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                     mkexpr(addr3),
+                     binop(Iop_Add64, mkexpr(addr3), mkU64(1))));
 
    put_gpr_dw0(r3 + 1,
-               IRExpr_Mux0X(unop(Iop_1Uto8,
-                                 binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0))),
-                            binop(Iop_Sub64, mkexpr(len3), mkU64(1)),
-                            mkU64(0)));
+               mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                     mkU64(0), binop(Iop_Sub64, mkexpr(len3), mkU64(1))));
 
    /* The architecture requires that we exit with CC3 after a machine specific
       amount of bytes. We do that if len1+len3 % 4096 == 0 */
@@ -8790,9 +8778,8 @@ s390_irgen_XC_EX(IRTemp length, IRTemp start1, IRTemp start2)
    assign(new1, binop(Iop_Xor8, mkexpr(old1), mkexpr(old2)));
 
    store(mkexpr(addr1),
-         IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(start1),
-                                            mkexpr(start2))),
-                      mkexpr(new1), mkU8(0)));
+         mkite(binop(Iop_CmpEQ64, mkexpr(start1), mkexpr(start2)),
+               mkU8(0), mkexpr(new1)));
    put_counter_w1(binop(Iop_Or32, unop(Iop_8Uto32, mkexpr(new1)),
                         get_counter_w1()));
 
@@ -9304,9 +9291,8 @@ s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
    /* Special case: xc is used to zero memory */
    if (op == Iop_Xor8) {
       store(mkexpr(addr1),
-            IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(start1),
-                                               mkexpr(start2))),
-                         mkexpr(new1), mkU8(0)));
+            mkite(binop(Iop_CmpEQ64, mkexpr(start1), mkexpr(start2)),
+                  mkU8(0), mkexpr(new1)));
    } else
       store(mkexpr(addr1), mkexpr(new1));
    put_counter_w1(binop(Iop_Or32, unop(Iop_8Uto32, mkexpr(new1)),
@@ -9516,16 +9502,13 @@ s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
       should read from the pad. Since the pad has no address, just
       read from the instruction, we discard that anyway */
    assign(addr3_load,
-          IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(len3),
-                                             mkU64(0))),
-                       mkexpr(addr3),
-                       mkU64(guest_IA_curr_instr)));
+          mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                mkU64(guest_IA_curr_instr), mkexpr(addr3)));
 
    assign(single,
-          IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(len3),
-                                             mkU64(0))),
-                       load(Ity_I8, mkexpr(addr3_load)),
-                       unop(Iop_64to8, mkexpr(pad2))));
+          mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                unop(Iop_64to8, mkexpr(pad2)),
+                load(Ity_I8, mkexpr(addr3_load))));
    store(mkexpr(addr1), mkexpr(single));
 
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(addr1), mkU64(1)));
@@ -9533,22 +9516,18 @@ s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
    put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1), mkU64(1)));
 
    put_gpr_dw0(r3,
-               IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(len3),
-                                                  mkU64(0))),
-                            binop(Iop_Add64, mkexpr(addr3), mkU64(1)),
-                            mkexpr(addr3)));
+               mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                     mkexpr(addr3),
+                     binop(Iop_Add64, mkexpr(addr3), mkU64(1))));
 
    put_gpr_dw0(r3 + 1,
-               IRExpr_Mux0X(unop(Iop_1Uto8, binop(Iop_CmpEQ64, mkexpr(len3),
-                                                  mkU64(0))),
-                            binop(Iop_Sub64, mkexpr(len3), mkU64(1)),
-                            mkU64(0)));
+               mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
+                     mkU64(0), binop(Iop_Sub64, mkexpr(len3), mkU64(1))));
 
    /* We should set CC=3 (faked by overflow add) and leave after
       a maximum of ~4096 bytes have been processed. This is simpler:
       we leave whenever (len1 % 4096) == 0 */
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_ADD_64, mktemp(Ity_I64, mkU64(-1ULL)),
-
                       mktemp(Ity_I64, mkU64(-1ULL)), False);
    if_condition_goto(binop(Iop_CmpEQ64,
                            binop(Iop_And64, mkexpr(len1), mkU64(0xfff)),
@@ -10704,13 +10683,13 @@ s390_irgen_FLOGR(UChar r1, UChar r2)
                           mkU64(1))));
 
    put_gpr_dw0(r1 + 1,
-           mkite(binop(Iop_CmpLE64U, mkexpr(input), mkU64(1)),
-             /* == 0 || == 1*/ mkU64(0),
-             /* otherwise */
-             binop(Iop_Shr64,
-               binop(Iop_Shl64, mkexpr(input),
-                 mkexpr(shift_amount)),
-               mkexpr(shift_amount))));
+               mkite(binop(Iop_CmpLE64U, mkexpr(input), mkU64(1)),
+                     /* == 0 || == 1*/ mkU64(0),
+                     /* otherwise */
+                     binop(Iop_Shr64,
+                           binop(Iop_Shl64, mkexpr(input),
+                                 mkexpr(shift_amount)),
+                           mkexpr(shift_amount))));
 
    /* Compare the original value as an unsigned integer with 0. */
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, input,

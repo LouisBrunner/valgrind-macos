@@ -1,0 +1,8 @@
+if [ $# -ge 3 ]; then
+  gzip -9 <"$3" >"$3.gz"
+  /usr/bin/mail -s "$1" -r "Christian Borntraeger <borntraeger@de.ibm.com>"  -a "$3.gz" valgrind-developers@lists.sourceforge.net < $2
+  rm -f "$3.gz"
+else
+  /usr/bin/mail -s "$1" -r "Christian Borntraeger <borntraeger@de.ibm.com>" valgrind-developers@lists.sourceforge.net < $2
+fi
+ 

@@ -40,7 +40,7 @@ static int *test_so_extern(void)
 	return &so_extern;
 }
 
-static const struct timespec awhile = { 0, 100000000 };
+static const struct timespec awhile = { 0, 200000000 };
 
 typedef int *(*func_t)(void);
 struct testcase {

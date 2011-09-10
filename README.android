@@ -1,35 +1,45 @@
 
 How to cross-compile for Android.
 
-This is known to work at least for Android 3.0 running on a Motorola
-Xoom.  Other configurations and toolchains might work, but haven't
-been tested.  Feedback is welcome.
+This is known to work at least for Android 2.3.4 running on a (rooted,
+AOSP build) Nexus S.  It has also worked in the past on a
+un-messed-with Motorola Xoom, although I haven't tested it recently.
+Other configurations and toolchains might work, but haven't been
+tested.  Feedback is welcome.
 
-You need the android-ndk-r5c native development kit.  Install it
+You need the android-ndk-r6 native development kit.  Install it
 somewhere.  Then do this:
 
-# Maybe not all of these are necessary -- I'm just being cautious.
-#
-export AR=/path/to/android-ndk-r5c/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ar
-export CPP=/path/to/android-ndk-r5c/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-cpp
-export LD=/path/to/android-ndk-r5c/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ld
-export CXX=/path/to/android-ndk-r5c/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-g++
-export CC=/path/to/android-ndk-r5c/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-gcc
 
-# Configure.  This will build a Valgrind that needs to go in
-# /data/local/Inst on the device and that uses /data/local/tmp
-# as the tmp dir on the device.  This means it can operate on
-# non-rooted (production) devices.
+# Modify this (obviously).
 #
+export NDKROOT=/path/to/android-ndk-r6
 
-cd trunk
+
+# And then (unmodified)
+#
+export AR=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ar
+export CPP=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-cpp
+export LD=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ld
+export CXX=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-g++
+export CC=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-gcc
+
+
+# Then cd to the root of your Valgrind source tree.
+#
+cd /path/to/valgrind/source/tree
+
+
+# Do configuration stuff.  Don't mess with the --prefix in the
+# configure command below, even if you think it's wrong.
+
 ./autogen.sh
 
-CPPFLAGS="--sysroot=/path/to/android-ndk-r5c/platforms/android-3/arch-arm" \
-   CFLAGS="--sysroot=/path/to/android-ndk-r5c/platforms/android-3/arch-arm" \
+CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm" \
+   CFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm" \
    ./configure --prefix=/data/local/Inst \
    --host=armv7-unknown-linux --target=armv7-unknown-linux \
-   --with-tmpdir=/data/local/tmp
+   --with-tmpdir=/sdcard
 
 
 # At the end of the configure run, a few lines of details
@@ -44,8 +54,9 @@ CPPFLAGS="--sysroot=/path/to/android-ndk-r5c/platforms/android-3/arch-arm" \
 
 
 # Build, and park the install tree in `pwd`/Inst
-make
-make install DESTDIR=`pwd`/Inst
+#
+make -j2
+make -j2 install DESTDIR=`pwd`/Inst
 
 
 # To get the install tree onto the device:
@@ -55,4 +66,25 @@ make install DESTDIR=`pwd`/Inst
 adb push Inst /
 
 # To run (on the device)
-/data/local/Bin/valgrind [the usual args etc]
+/data/local/Inst/bin/valgrind [the usual args etc]
+
+
+# Once you're up and running, a handy modify-V-rebuild-reinstall
+# command line (on the host, of course) is
+#
+mq -j2 && mq -j2 install DESTDIR=`pwd`/Inst && adb push Inst /
+#
+# where 'mq' is an alias for 'make --quiet'.
+
+
+# One common cause of runs failing at startup is the inability of
+# Valgrind to find a suitable temporary directory.  On the device,
+# there doesn't seem to be any one location which we always have
+# permission to write to.  The instructions above use /sdcard.  If
+# that doesn't work for you, and you're Valgrinding one specific
+# application which is already installed, you could try using its
+# temporary directory, in /data/data, for example
+# /data/data/org.mozilla.firefox_beta.
+#
+# Using /system/bin/logcat on the device is helpful for diagnosing
+# these kinds of problems.

@@ -1383,7 +1383,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (phdr->p_type == PT_LOAD) {
             TRACE_SYMTAB("PT_LOAD[%ld]: p_vaddr %#lx (prev %#lx)\n",
                          i, (UWord)phdr->p_vaddr, (UWord)prev_svma);
-            TRACE_SYMTAB("PT_LOAD[%ld]:   p_offset %#lx, p_filesz %lu,"
+            TRACE_SYMTAB("PT_LOAD[%ld]:   p_offset %lu, p_filesz %lu,"
                          " perms %c%c%c\n",
                          i, (UWord)phdr->p_offset, (UWord)phdr->p_filesz,
                          phdr->p_flags & PF_R ? 'r' : '-',

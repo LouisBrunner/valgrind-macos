@@ -1,0 +1,435 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>memcheck</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>memcheck</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./xml1</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidRead</kind>
+  <what>Invalid read of size 1</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 0 bytes after a block of size 40 alloc'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>malloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UninitCondition</kind>
+  <what>Conditional jump or move depends on uninitialised value(s)</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UninitValue</kind>
+  <what>Use of uninitialised value of size N</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidFree</kind>
+  <what>Invalid free() / delete / delete[] / realloc()</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>free</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 0 bytes inside a block of size 40 free'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>free</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidFree</kind>
+  <what>Invalid free() / delete / delete[] / realloc()</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>free</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is on thread 1's stack</auxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>SyscallParam</kind>
+  <what>Syscall param exit(status) contains uninitialised byte(s)</what>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Leak_DefinitelyLost</kind>
+  <xwhat>
+    <text>396 bytes in 1 blocks are definitely lost in loss record ... of ...</text>
+    <leakedbytes>396</leakedbytes>
+    <leakedblocks>1</leakedblocks>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>malloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame3</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame2</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>frame1</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>xml1.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

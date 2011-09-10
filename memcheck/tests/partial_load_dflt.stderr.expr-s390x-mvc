@@ -1,0 +1,34 @@
+
+Invalid read of size 1
+   at 0x........: main (partial_load.c:16)
+ Address 0x........ is 0 bytes after a block of size 7 alloc'd
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   by 0x........: main (partial_load.c:14)
+
+Invalid read of size 8
+   at 0x........: main (partial_load.c:23)
+ Address 0x........ is 1 bytes inside a block of size 8 alloc'd
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   by 0x........: main (partial_load.c:20)
+
+Invalid read of size 2
+   at 0x........: main (partial_load.c:30)
+ Address 0x........ is 0 bytes inside a block of size 1 alloc'd
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   by 0x........: main (partial_load.c:28)
+
+Invalid read of size 8
+   at 0x........: main (partial_load.c:37)
+ Address 0x........ is 0 bytes inside a block of size 8 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (partial_load.c:36)
+
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

@@ -1,2 +1,2 @@
 prog: memalign2
-vgopts: -q
+vgopts: -q --freelist-vol=100000

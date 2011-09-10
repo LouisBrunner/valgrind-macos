@@ -1559,6 +1559,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          do { ML_(symerr)(di, True,                        \
                           "Can't make sense of " _secname  \
                           " section mapping");             \
+              /* make sure we don't assert if we find */   \
+              /* ourselves back in this routine later, */  \
+              /* with the same di */                       \
+              di->soname = NULL;                           \
               goto out;                                    \
          } while (0)
 

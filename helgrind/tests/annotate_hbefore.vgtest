@@ -1,3 +1,2 @@
-prereq:  (../../tests/arch_test s390x; if [ $? = 0 ]; then false; else true; fi)
 vgopts: -q
 prog: annotate_hbefore

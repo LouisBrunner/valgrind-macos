@@ -1,0 +1,6 @@
+
+Test 1:   PASS
+Test 2:   PASS
+Test 3:   FAIL: expected si_code==2, not 128
+Test 4:   PASS
+

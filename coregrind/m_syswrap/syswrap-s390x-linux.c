@@ -938,13 +938,13 @@ PRE(sys_clone)
    UInt cloneflags;
 
    PRINT("sys_clone ( %lx, %#lx, %#lx, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4, ARG5);
-   PRE_REG_READ4(int, "clone",
+   PRE_REG_READ2(int, "clone",
                  void *,        child_stack,
-                 unsigned long, flags,
-                 int *,         parent_tidptr,
-                 int *,         child_tidptr);
+                 unsigned long, flags);
 
    if (ARG2 & VKI_CLONE_PARENT_SETTID) {
+      if (VG_(tdict).track_pre_reg_read)
+         PRA3("clone(parent_tidptr)", int *, parent_tidptr);
       PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
       if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int),
                                              VKI_PROT_WRITE)) {
@@ -953,6 +953,8 @@ PRE(sys_clone)
       }
    }
    if (ARG2 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      if (VG_(tdict).track_pre_reg_read)
+         PRA4("clone(child_tidptr)", int *, child_tidptr);
       PRE_MEM_WRITE("clone(child_tidptr)", ARG4, sizeof(Int));
       if (!VG_(am_is_valid_for_client)(ARG4, sizeof(Int),
                                              VKI_PROT_WRITE)) {

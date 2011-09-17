@@ -154,11 +154,15 @@ run_innerloop__dispatch_unprofiled:
            and  sizeof(FastCacheEntry) == 16
 
            offset = ((addr >> 1) & VG_TT_FAST_MASK) << 4
+           which is
+           offset = ((addr & (VG_TT_FAST_MASK << 1) ) << 3
         */
-        lghi %r5,VG_TT_FAST_MASK
-        srlg %r7, %r2,1              /* next guest addr >> 1*/
-        ngr  %r7,%r5
-        sllg %r7,%r7,4
+        llill %r5,( VG_TT_FAST_MASK << 1) & 0xffff
+#if ((( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16 != 0)
+        iilh %r5,(( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16
+#endif
+        ngr  %r5,%r2
+        sllg %r7,%r5,3
 
         /* Set the return address to the beginning of the loop here to
            have some instruction between setting r7 and using it as an
@@ -207,11 +211,15 @@ run_innerloop__dispatch_profiled:
            and  sizeof(FastCacheEntry) == 16
 
            offset = ((addr >> 1) & VG_TT_FAST_MASK) << 4
+           which is
+           offset = ((addr & (VG_TT_FAST_MASK << 1) ) << 3
         */
-        lghi %r5,VG_TT_FAST_MASK
-        srlg %r7,%r2,1              /* next guest addr >> 1*/
-        ngr  %r7,%r5
-        sllg %r7,%r7,4
+        llill %r5,( VG_TT_FAST_MASK << 1) & 0xffff
+#if ((( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16 != 0)
+        iilh %r5,(( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16
+#endif
+        ngr  %r5,%r2
+        sllg %r7,%r5,3
 
         /* Set the return address to the beginning of the loop here to
            have some instruction between setting r7 and using it as an

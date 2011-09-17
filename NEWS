@@ -277,6 +277,8 @@ fixed
 
 281883 - s390x: Fix system call wrapper for "clone".
 
+274378 - s390x: Various dispatcher tweaks
+
 
 Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

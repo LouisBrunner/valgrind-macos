@@ -173,10 +173,8 @@ run_innerloop__dispatch_unprofiled:
         ahi  S390_REGNO_DISPATCH_CTR,-1
         jz   counter_is_zero
 
-
-        lg   %r10, 0(%r8,%r7)      /* .guest */
         lg   %r11, 8(%r8,%r7)      /* .host */
-        cgr  %r2, %r10
+        cg   %r2,  0(%r8,%r7)      /* next guest address == .guest ? */
         jne  fast_lookup_failed
 
         /* Found a match.  Call .host.
@@ -230,9 +228,8 @@ run_innerloop__dispatch_profiled:
         ahi  S390_REGNO_DISPATCH_CTR,-1
         jz   counter_is_zero
 
-        lg   %r10, 0(%r8,%r7)      /* .guest */
         lg   %r11, 8(%r8,%r7)      /* .host */
-        cgr  %r2, %r10
+        cg   %r2,  0(%r8,%r7)      /* next guest address == .guest ? */
         jne  fast_lookup_failed
 
         /* sizeof(FastCacheEntry) == 16, sizeof(*UInt)==8 */

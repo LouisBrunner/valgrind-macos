@@ -56,14 +56,14 @@
 #include <stdio.h>          /* fprintf() */
 #include <stdlib.h>         /* malloc(), free() */
 #include <unistd.h>         /* confstr() */
-#ifdef __linux__
+#include "config.h"         /* HAVE_PTHREAD_MUTEX_ADAPTIVE_NP etc. */
+#ifdef HAVE_USABLE_LINUX_FUTEX_H
 #include <asm/unistd.h>     /* __NR_futex */
 #include <linux/futex.h>    /* FUTEX_WAIT */
 #ifndef FUTEX_PRIVATE_FLAG
 #define FUTEX_PRIVATE_FLAG 0
 #endif
 #endif
-#include "config.h"         /* HAVE_PTHREAD_MUTEX_ADAPTIVE_NP etc. */
 #include "drd_basics.h"     /* DRD_() */
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h" /* VG_WRAP_FUNCTION_ZZ() */
@@ -194,7 +194,7 @@ static void DRD_(sema_down)(DrdSema* sema)
    int res = ENOSYS;
 
    while (sema->counter == 0) {
-#if defined(__linux__) && defined(__NR_futex)
+#ifdef HAVE_USABLE_LINUX_FUTEX_H
       if (syscall(__NR_futex, (UWord)&sema->counter,
                   FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0) == 0)
          res = 0;
@@ -216,7 +216,7 @@ static void DRD_(sema_down)(DrdSema* sema)
 static void DRD_(sema_up)(DrdSema* sema)
 {
    sema->counter++;
-#if defined(__linux__) && defined(__NR_futex)
+#ifdef HAVE_USABLE_LINUX_FUTEX_H
    syscall(__NR_futex, (UWord)&sema->counter,
            FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
 #endif

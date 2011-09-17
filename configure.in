@@ -1629,6 +1629,22 @@ AC_CHECK_HEADERS([       \
         sys/types.h      \
         ])
 
+# Verify whether the <linux/futex.h> header is usable.
+AC_MSG_CHECKING([if <linux/futex.h> is usable])
+
+AC_TRY_COMPILE([
+#include <linux/futex.h>
+], [
+  return FUTEX_WAIT;
+],
+[
+AC_DEFINE([HAVE_USABLE_LINUX_FUTEX_H], 1,
+          [Define to 1 if you have a usable <linux/futex.h> header file.])
+AC_MSG_RESULT([yes])
+], [
+AC_MSG_RESULT([no])
+])
+
 #----------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
 #----------------------------------------------------------------------------

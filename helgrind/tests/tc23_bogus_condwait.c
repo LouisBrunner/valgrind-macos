@@ -66,7 +66,7 @@ int main ( void )
      trouble */
 
   /* mx is bogus */
-  r= pthread_cond_wait(&cv, (pthread_mutex_t*)(1 + (char*)&mx[0]) );
+  r= pthread_cond_wait(&cv, (pthread_mutex_t*)(4 + (char*)&mx[0]) );
 
   /* mx is not locked */
   r= pthread_cond_wait(&cv, &mx[0]);

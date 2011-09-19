@@ -22,7 +22,7 @@ echo "GLIBC version:     $glibc_version"  >> $MAILFILE
 echo "uname -mrs:        $uname_stuff"    >> $MAILFILE
 echo "Vendor version:    $vendor_stuff"   >> $MAILFILE
 echo "  " >> $MAILFILE
-cat "$2"  >> $MAILFILE
+cat "$summary"  >> $MAILFILE
 echo "  " >> $MAILFILE
-cat "$3"  >> $MAILFILE
+# cat "$diffs"  >> $MAILFILE
 /usr/sbin/sendmail -t -i -fbritzel@acm.org < $MAILFILE

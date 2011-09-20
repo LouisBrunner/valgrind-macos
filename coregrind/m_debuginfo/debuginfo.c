@@ -176,8 +176,8 @@ DebugInfo* alloc_DebugInfo( const UChar* filename )
    vg_assert(filename);
 
    di = ML_(dinfo_zalloc)("di.debuginfo.aDI.1", sizeof(DebugInfo));
-   di->handle    = handle_counter++;
-   di->filename  = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
+   di->handle       = handle_counter++;
+   di->fsm.filename = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
 
    /* Everything else -- pointers, sizes, arrays -- is zeroed by
       ML_(dinfo_zalloc).  Now set up the debugging-output flags. */
@@ -204,11 +204,11 @@ static void free_DebugInfo ( DebugInfo* di )
    GExpr* gexpr;
 
    vg_assert(di != NULL);
-   if (di->filename)   ML_(dinfo_free)(di->filename);
-   if (di->loctab)     ML_(dinfo_free)(di->loctab);
-   if (di->cfsi)       ML_(dinfo_free)(di->cfsi);
-   if (di->cfsi_exprs) VG_(deleteXA)(di->cfsi_exprs);
-   if (di->fpo)        ML_(dinfo_free)(di->fpo);
+   if (di->fsm.filename) ML_(dinfo_free)(di->fsm.filename);
+   if (di->loctab)       ML_(dinfo_free)(di->loctab);
+   if (di->cfsi)         ML_(dinfo_free)(di->cfsi);
+   if (di->cfsi_exprs)   VG_(deleteXA)(di->cfsi_exprs);
+   if (di->fpo)          ML_(dinfo_free)(di->fpo);
 
    if (di->symtab) {
       /* We have to visit all the entries so as to free up any
@@ -307,7 +307,8 @@ static void discard_DebugInfo ( DebugInfo* di )
                          "Discarding syms at %#lx-%#lx in %s due to %s()\n",
                          di->text_avma, 
                          di->text_avma + di->text_size,
-                         curr->filename ? curr->filename : (UChar*)"???",
+                         curr->fsm.filename ? curr->fsm.filename
+                                            : (UChar*)"???",
                          reason);
          vg_assert(*prev_next_ptr == curr);
          *prev_next_ptr = curr->next;
@@ -390,24 +391,24 @@ static Bool do_DebugInfos_overlap ( DebugInfo* di1, DebugInfo* di2 )
    vg_assert(di1);
    vg_assert(di2);
 
-   if (di1->have_rx_map && di2->have_rx_map
-       && ranges_overlap(di1->rx_map_avma, di1->rx_map_size,
-                         di2->rx_map_avma, di2->rx_map_size))
+   if (di1->fsm.have_rx_map && di2->fsm.have_rx_map
+       && ranges_overlap(di1->fsm.rx_map_avma, di1->fsm.rx_map_size,
+                         di2->fsm.rx_map_avma, di2->fsm.rx_map_size))
       return True;
 
-   if (di1->have_rx_map && di2->have_rw_map
-       && ranges_overlap(di1->rx_map_avma, di1->rx_map_size,
-                         di2->rw_map_avma, di2->rw_map_size))
+   if (di1->fsm.have_rx_map && di2->fsm.have_rw_map
+       && ranges_overlap(di1->fsm.rx_map_avma, di1->fsm.rx_map_size,
+                         di2->fsm.rw_map_avma, di2->fsm.rw_map_size))
       return True;
 
-   if (di1->have_rw_map && di2->have_rx_map
-       && ranges_overlap(di1->rw_map_avma, di1->rw_map_size,
-                         di2->rx_map_avma, di2->rx_map_size))
+   if (di1->fsm.have_rw_map && di2->fsm.have_rx_map
+       && ranges_overlap(di1->fsm.rw_map_avma, di1->fsm.rw_map_size,
+                         di2->fsm.rx_map_avma, di2->fsm.rx_map_size))
       return True;
 
-   if (di1->have_rw_map && di2->have_rw_map
-       && ranges_overlap(di1->rw_map_avma, di1->rw_map_size,
-                         di2->rw_map_avma, di2->rw_map_size))
+   if (di1->fsm.have_rw_map && di2->fsm.have_rw_map
+       && ranges_overlap(di1->fsm.rw_map_avma, di1->fsm.rw_map_size,
+                         di2->fsm.rw_map_avma, di2->fsm.rw_map_size))
       return True;
 
    return False;
@@ -467,8 +468,8 @@ static DebugInfo* find_or_create_DebugInfo_for ( UChar* filename )
    DebugInfo* di;
    vg_assert(filename);
    for (di = debugInfo_list; di; di = di->next) {
-      vg_assert(di->filename);
-      if (0==VG_(strcmp)(di->filename, filename))
+      vg_assert(di->fsm.filename);
+      if (0==VG_(strcmp)(di->fsm.filename, filename))
          break;
    }
    if (!di) {
@@ -492,31 +493,33 @@ static void check_CFSI_related_invariants ( DebugInfo* di )
    /* This fn isn't called until after debuginfo for this object has
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
-   vg_assert(di->have_rx_map);
-   vg_assert(di->have_rw_map);
+   vg_assert(di->fsm.have_rx_map);
+   vg_assert(di->fsm.have_rw_map);
    /* degenerate case: r-x section is empty */
-   if (di->rx_map_size == 0) {
+   if (di->fsm.rx_map_size == 0) {
       vg_assert(di->cfsi == NULL);
       return;
    }
    /* normal case: r-x section is nonempty */
    /* invariant (0) */
-   vg_assert(di->rx_map_size > 0);
+   vg_assert(di->fsm.rx_map_size > 0);
    /* invariant (1) */
    for (di2 = debugInfo_list; di2; di2 = di2->next) {
       if (di2 == di)
          continue;
-      if (di2->rx_map_size == 0)
+      if (di2->fsm.rx_map_size == 0)
          continue;
-      vg_assert(di->rx_map_avma + di->rx_map_size <= di2->rx_map_avma
-                || di2->rx_map_avma + di2->rx_map_size <= di->rx_map_avma);
+      vg_assert(
+         di->fsm.rx_map_avma + di->fsm.rx_map_size <= di2->fsm.rx_map_avma
+         || di2->fsm.rx_map_avma + di2->fsm.rx_map_size <= di->fsm.rx_map_avma
+      );
    }
    di2 = NULL;
    /* invariant (2) */
    if (di->cfsi) {
       vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
-      vg_assert(di->cfsi_minavma >= di->rx_map_avma);
-      vg_assert(di->cfsi_maxavma < di->rx_map_avma + di->rx_map_size);
+      vg_assert(di->cfsi_minavma >= di->fsm.rx_map_avma);
+      vg_assert(di->cfsi_maxavma < di->fsm.rx_map_avma + di->fsm.rx_map_size);
    }
    /* invariants (3) and (4) */
    if (di->cfsi) {
@@ -643,7 +646,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
       Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL;
       if (!quiet && VG_(clo_verbosity) > 1) {
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
-         fake_di.filename = filename;
+         fake_di.fsm.filename = filename;
          ML_(symerr)(&fake_di, True, "failed to stat64/stat this file");
       }
       return 0;
@@ -737,7 +740,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
       if (sr_Err(fd) != VKI_EACCES) {
          DebugInfo fake_di;
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
-         fake_di.filename = filename;
+         fake_di.fsm.filename = filename;
          ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
       }
       return 0;
@@ -750,7 +753,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    if (nread < 0) {
       DebugInfo fake_di;
       VG_(memset)(&fake_di, 0, sizeof(fake_di));
-      fake_di.filename = filename;
+      fake_di.fsm.filename = filename;
       ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
       return 0;
    }
@@ -774,11 +777,11 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    if (is_rx_map) {
       /* We have a text-like mapping.  Note the details. */
-      if (!di->have_rx_map) {
-         di->have_rx_map = True;
-         di->rx_map_avma = a;
-         di->rx_map_size = seg->end + 1 - seg->start;
-         di->rx_map_foff = seg->offset;
+      if (!di->fsm.have_rx_map) {
+         di->fsm.have_rx_map = True;
+         di->fsm.rx_map_avma = a;
+         di->fsm.rx_map_size = seg->end + 1 - seg->start;
+         di->fsm.rx_map_foff = seg->offset;
       } else {
          /* FIXME: complain about a second text-like mapping */
       }
@@ -786,11 +789,11 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    if (is_rw_map) {
       /* We have a data-like mapping.  Note the details. */
-      if (!di->have_rw_map) {
-         di->have_rw_map = True;
-         di->rw_map_avma = a;
-         di->rw_map_size = seg->end + 1 - seg->start;
-         di->rw_map_foff = seg->offset;
+      if (!di->fsm.have_rw_map) {
+         di->fsm.have_rw_map = True;
+         di->fsm.rw_map_avma = a;
+         di->fsm.rw_map_size = seg->end + 1 - seg->start;
+         di->fsm.rw_map_foff = seg->offset;
       } else {
          /* FIXME: complain about a second data-like mapping */
       }
@@ -799,15 +802,15 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    /* If we don't have an rx and rw mapping, or if we already have
       debuginfo for this mapping for whatever reason, go no
       further. */
-   if ( ! (di->have_rx_map && di->have_rw_map && !di->have_dinfo) )
+   if ( ! (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) )
       return 0;
 
    /* Ok, so, finally, let's try to read the debuginfo. */
-   vg_assert(di->filename);
+   vg_assert(di->fsm.filename);
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ start ELF OBJECT "
                 "------------------------------\n");
-   TRACE_SYMTAB("------ name = %s\n", di->filename);
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
    TRACE_SYMTAB("\n");
 
    /* We're going to read symbols and debug info for the avma
@@ -855,7 +858,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    }
 
    TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ name = %s\n", di->filename);
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
    TRACE_SYMTAB("------ end ELF OBJECT "
                 "------------------------------\n");
    TRACE_SYMTAB("\n");
@@ -1100,7 +1103,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    { DebugInfo* di = find_or_create_DebugInfo_for(exename);
 
      /* this di must be new, since we just nuked any old stuff in the range */
-     vg_assert(di && !di->have_rx_map && !di->have_rw_map);
+     vg_assert(di && !di->fsm.have_rx_map && !di->fsm.have_rw_map);
      vg_assert(!di->have_dinfo);
 
      /* don't set up any of the di-> fields; let
@@ -1172,10 +1175,10 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
          /* Consider any symbol in the r-x mapped area to be text.
             See Comment_Regarding_Text_Range_Checks in storage.c for
             details. */
-         inRange = di->have_rx_map
-                   && di->rx_map_size > 0
-                   && di->rx_map_avma <= ptr
-                   && ptr < di->rx_map_avma + di->rx_map_size;
+         inRange = di->fsm.have_rx_map
+                   && di->fsm.rx_map_size > 0
+                   && di->fsm.rx_map_avma <= ptr
+                   && ptr < di->fsm.rx_map_avma + di->fsm.rx_map_size;
       } else {
          inRange = (di->data_present
                     && di->data_size > 0
@@ -1467,7 +1470,7 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
           && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
-         VG_(strncpy_safely)(buf, di->filename, nbuf);
+         VG_(strncpy_safely)(buf, di->fsm.filename, nbuf);
          buf[nbuf-1] = 0;
          return True;
       }
@@ -3602,7 +3605,7 @@ const UChar* VG_(DebugInfo_get_soname)(const DebugInfo* di)
 
 const UChar* VG_(DebugInfo_get_filename)(const DebugInfo* di)
 {
-   return di->filename;
+   return di->fsm.filename;
 }
 
 PtrdiffT VG_(DebugInfo_get_text_bias)(const DebugInfo* di)
@@ -3674,7 +3677,7 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
          VG_(printf)(
             "addr=%#lx di=%p %s got=%#lx,%ld plt=%#lx,%ld "
             "data=%#lx,%ld bss=%#lx,%ld\n",
-            a, di, di->filename,
+            a, di, di->fsm.filename,
             di->got_avma,  di->got_size,
             di->plt_avma,  di->plt_size,
             di->data_avma, di->data_size,
@@ -3744,9 +3747,9 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
 
       vg_assert(n_name >= 8);
 
-      if (di && di->filename) {
+      if (di && di->fsm.filename) {
          Int i, j;
-         Int fnlen = VG_(strlen)(di->filename);
+         Int fnlen = VG_(strlen)(di->fsm.filename);
          Int start_at = 1 + fnlen - n_name;
          if (start_at < 0) start_at = 0;
          vg_assert(start_at < fnlen);
@@ -3754,8 +3757,8 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
          while (True) {
             vg_assert(j >= 0 && j < n_name);
             vg_assert(i >= 0 && i <= fnlen);
-            name[j] = di->filename[i];
-            if (di->filename[i] == 0) break;
+            name[j] = di->fsm.filename[i];
+            if (di->fsm.filename[i] == 0) break;
             i++; j++;
          }
          vg_assert(i == fnlen);

@@ -532,9 +532,10 @@ Bool get_elf_symbol_info (
          "Comment_Regarding_Text_Range_Checks" in storage.c for
          background. */
       Bool in_rx;
-      vg_assert(di->have_rx_map);
-      in_rx = (!(*sym_avma_out + *sym_size_out <= di->rx_map_avma
-                 || *sym_avma_out >= di->rx_map_avma + di->rx_map_size));
+      vg_assert(di->fsm.have_rx_map);
+      in_rx = (!(*sym_avma_out + *sym_size_out <= di->fsm.rx_map_avma
+                 || *sym_avma_out >= di->fsm.rx_map_avma
+                                     + di->fsm.rx_map_size));
       if (in_text)
          vg_assert(in_rx);
       if (!in_rx) {
@@ -548,7 +549,8 @@ Bool get_elf_symbol_info (
    } else {
      if (!(in_data || in_sdata || in_rodata || in_bss || in_sbss)) {
          TRACE_SYMTAB(
-            "ignore -- %#lx .. %#lx outside .data / .sdata / .rodata / .bss / .sbss svma ranges\n",
+            "ignore -- %#lx .. %#lx outside .data / .sdata / .rodata "
+            "/ .bss / .sbss svma ranges\n",
             *sym_avma_out, *sym_avma_out + *sym_size_out);
          return False;
       }
@@ -876,7 +878,8 @@ Char *find_buildid(Addr image, UWord n_image)
       Word i;
 
       for (i = 0; i < ehdr->e_phnum; i++) {
-         ElfXX_Phdr* phdr = (ElfXX_Phdr*)(image + ehdr->e_phoff + i * ehdr->e_phentsize);
+         ElfXX_Phdr* phdr
+            = (ElfXX_Phdr*)(image + ehdr->e_phoff + i * ehdr->e_phentsize);
 
          if (phdr->p_type == PT_NOTE) {
             ElfXX_Off offset =  phdr->p_offset;
@@ -889,10 +892,12 @@ Char *find_buildid(Addr image, UWord n_image)
 
                if (VG_(strcmp)(name, ELF_NOTE_GNU) == 0 &&
                    note->n_type == NT_GNU_BUILD_ID) {
-                  buildid = ML_(dinfo_zalloc)("di.fbi.1", note->n_descsz * 2 + 1);
+                  buildid = ML_(dinfo_zalloc)("di.fbi.1",
+                                              note->n_descsz * 2 + 1);
                   
                   for (j = 0; j < note->n_descsz; j++) {
-                     VG_(sprintf)(buildid + VG_(strlen)(buildid), "%02x", desc[j]);
+                     VG_(sprintf)(buildid + VG_(strlen)(buildid), 
+                                  "%02x", desc[j]);
                   }
                }
 
@@ -1018,7 +1023,8 @@ Addr open_debug_file( Char* name, Char* buildid, UInt crc, /*OUT*/UWord* size )
          vg_assert(!sr_isError(res));
          if (VG_(clo_verbosity) > 1)
             VG_(message)(Vg_DebugMsg, 
-               "  .. build-id mismatch (found %s wanted %s)\n", debug_buildid, buildid);
+               "  .. build-id mismatch (found %s wanted %s)\n", 
+               debug_buildid, buildid);
          ML_(dinfo_free)(debug_buildid);
          return 0;
       }
@@ -1211,12 +1217,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    Char* buildid = NULL;
 
    vg_assert(di);
-   vg_assert(di->have_rx_map == True);
-   vg_assert(di->have_rw_map == True);
-   vg_assert(di->rx_map_size > 0);
-   vg_assert(di->rw_map_size > 0);
+   vg_assert(di->fsm.have_rx_map == True);
+   vg_assert(di->fsm.have_rw_map == True);
+   vg_assert(di->fsm.rx_map_size > 0);
+   vg_assert(di->fsm.rw_map_size > 0);
    vg_assert(di->have_dinfo == False);
-   vg_assert(di->filename);
+   vg_assert(di->fsm.filename);
    vg_assert(!di->symtab);
    vg_assert(!di->loctab);
    vg_assert(!di->cfsi);
@@ -1227,8 +1233,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* If these don't hold true, it means that m_syswrap/m_aspacemgr
       managed to do a mapping where the start isn't page aligned.
       Which sounds pretty bogus to me. */
-   vg_assert(VG_IS_PAGE_ALIGNED(di->rx_map_avma));
-   vg_assert(VG_IS_PAGE_ALIGNED(di->rw_map_avma));
+   vg_assert(VG_IS_PAGE_ALIGNED(di->fsm.rx_map_avma));
+   vg_assert(VG_IS_PAGE_ALIGNED(di->fsm.rw_map_avma));
 
    /* ----------------------------------------------------------
       At this point, there is very little information in the
@@ -1247,13 +1253,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)\n",
-                                di->filename, di->rx_map_avma );
+                                di->fsm.filename, di->fsm.rx_map_avma );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
       thereafter; it is only aboard transiently. */
 
-   fd = VG_(open)(di->filename, VKI_O_RDONLY, 0);
+   fd = VG_(open)(di->fsm.filename, VKI_O_RDONLY, 0);
    if (sr_isError(fd)) {
       ML_(symerr)(di, True, "Can't open .so/.exe to read symbols?!");
       return False;
@@ -1274,7 +1280,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    VG_(close)(sr_Res(fd));
 
    if (sr_isError(sres)) {
-      VG_(message)(Vg_UserMsg, "warning: mmap failed on %s\n", di->filename );
+      VG_(message)(Vg_UserMsg, "warning: mmap failed on %s\n",
+                               di->fsm.filename );
       VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded\n" );
       return False;
    }
@@ -1322,9 +1329,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("shdr:    img %p nent %ld ent_szB %ld\n",
                shdr_img, shdr_nent, shdr_ent_szB);
    TRACE_SYMTAB("rx_map:  avma %#lx  size %lu  foff %lu\n",
-                di->rx_map_avma, di->rx_map_size, di->rx_map_foff);
+                di->fsm.rx_map_avma, di->fsm.rx_map_size, di->fsm.rx_map_foff);
    TRACE_SYMTAB("rw_map:  avma %#lx  size %lu  foff %lu\n",
-                di->rw_map_avma, di->rw_map_size, di->rw_map_foff);
+                di->fsm.rw_map_avma, di->fsm.rw_map_size, di->fsm.rw_map_foff);
 
    if (phdr_nent == 0
        || !contained_within(
@@ -1394,35 +1401,39 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                goto out;
             }
             prev_svma = phdr->p_vaddr;
-            if (phdr->p_offset >= di->rx_map_foff
-                && phdr->p_offset < di->rx_map_foff + di->rx_map_size
-                && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size
+            if (phdr->p_offset >= di->fsm.rx_map_foff
+                && phdr->p_offset < di->fsm.rx_map_foff + di->fsm.rx_map_size
+                && phdr->p_offset + phdr->p_filesz
+                   <= di->fsm.rx_map_foff + di->fsm.rx_map_size
                 && (phdr->p_flags & (PF_R | PF_W | PF_X)) == (PF_R | PF_X)) {
                if (n_rx == N_RX_RW_AREAS) {
                   ML_(symerr)(di, True,
-                              "N_RX_RW_AREAS is too low; increase and recompile.");
+                              "N_RX_RW_AREAS is too low; "
+                              "increase and recompile.");
                   goto out;
                }
                rx[n_rx].svma_base  = phdr->p_vaddr;
                rx[n_rx].svma_limit = phdr->p_vaddr + phdr->p_memsz;
-               rx[n_rx].bias       = di->rx_map_avma - di->rx_map_foff
+               rx[n_rx].bias       = di->fsm.rx_map_avma - di->fsm.rx_map_foff
                                      + phdr->p_offset - phdr->p_vaddr;
                n_rx++;
                TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rx\n", i);
             }
             else
-            if (phdr->p_offset >= di->rw_map_foff
-                && phdr->p_offset < di->rw_map_foff + di->rw_map_size
-                && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size
+            if (phdr->p_offset >= di->fsm.rw_map_foff
+                && phdr->p_offset < di->fsm.rw_map_foff + di->fsm.rw_map_size
+                && phdr->p_offset + phdr->p_filesz 
+                   <= di->fsm.rw_map_foff + di->fsm.rw_map_size
                 && (phdr->p_flags & (PF_R | PF_W | PF_X)) == (PF_R | PF_W)) {
                if (n_rw == N_RX_RW_AREAS) {
                   ML_(symerr)(di, True,
-                              "N_RX_RW_AREAS is too low; increase and recompile.");
+                              "N_RX_RW_AREAS is too low; "
+                              "increase and recompile.");
                   goto out;
                }
                rw[n_rw].svma_base  = phdr->p_vaddr;
                rw[n_rw].svma_limit = phdr->p_vaddr + phdr->p_memsz;
-               rw[n_rw].bias       = di->rw_map_avma - di->rw_map_foff
+               rw[n_rw].bias       = di->fsm.rw_map_avma - di->fsm.rw_map_foff
                                      + phdr->p_offset - phdr->p_vaddr;
                n_rw++;
                TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rw\n", i);
@@ -1491,15 +1502,17 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ Examining the section headers ------\n");
    TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
-               di->rx_map_avma,
-               di->rx_map_foff, di->rx_map_foff + di->rx_map_size - 1 );
+                di->fsm.rx_map_avma,
+                di->fsm.rx_map_foff,
+                di->fsm.rx_map_foff + di->fsm.rx_map_size - 1 );
    for (i = 0; i < n_rx; i++) {
       TRACE_SYMTAB("rx[%ld]: contains svmas %#lx .. %#lx with bias %#lx\n",
                    i, rx[i].svma_base, rx[i].svma_limit - 1, rx[i].bias );
    }
    TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
-               di->rw_map_avma,
-               di->rw_map_foff, di->rw_map_foff + di->rw_map_size - 1 );
+                di->fsm.rw_map_avma,
+                di->fsm.rw_map_foff, 
+                di->fsm.rw_map_foff + di->fsm.rw_map_size - 1 );
    for (i = 0; i < n_rw; i++) {
       TRACE_SYMTAB("rw[%ld]: contains svmas %#lx .. %#lx with bias %#lx\n",
                    i, rw[i].svma_base, rw[i].svma_limit - 1, rw[i].bias );
@@ -1724,8 +1737,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                VG_(message)(Vg_UserMsg,
                             "Warning: the following file's .bss is "
                             "mapped r-x only - ignoring .bss syms\n");
-               VG_(message)(Vg_UserMsg,   " %s\n", di->filename 
-                                                      ? di->filename
+               VG_(message)(Vg_UserMsg,   " %s\n", di->fsm.filename 
+                                                      ? di->fsm.filename
                                                       : (UChar*)"(null?!)" );
             }
          } else
@@ -2079,11 +2092,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             crc = *(UInt *)(debuglink_img + crc_offset);
 
             /* See if we can find a matching debug file */
-            dimage = find_debug_file( di, di->filename, buildid,
+            dimage = find_debug_file( di, di->fsm.filename, buildid,
                                       debuglink_img, crc, &n_dimage );
          } else {
             /* See if we can find a matching debug file */
-            dimage = find_debug_file( di, di->filename, buildid, NULL, 0, &n_dimage );
+            dimage = find_debug_file( di, di->fsm.filename, buildid,
+                                      NULL, 0, &n_dimage );
          }
 
          ML_(dinfo_free)(buildid);
@@ -2162,21 +2176,27 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                           i, phdr_ent_szB );
                if (phdr->p_type == PT_LOAD) {
                   if (rx_dsvma_limit == 0
-                      && phdr->p_offset >= di->rx_map_foff
-                      && phdr->p_offset < di->rx_map_foff + di->rx_map_size
-                      && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size) {
+                      && phdr->p_offset >= di->fsm.rx_map_foff
+                      && phdr->p_offset
+                         < di->fsm.rx_map_foff + di->fsm.rx_map_size
+                      && phdr->p_offset + phdr->p_filesz
+                         <= di->fsm.rx_map_foff + di->fsm.rx_map_size) {
                      /* rx_dsvma_base = phdr->p_vaddr; */ /* UNUSED */
                      rx_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
-                     rx_dbias = di->rx_map_avma - di->rx_map_foff + phdr->p_offset - phdr->p_vaddr;
+                     rx_dbias = di->fsm.rx_map_avma - di->fsm.rx_map_foff 
+                                + phdr->p_offset - phdr->p_vaddr;
                   }
                   else
                   if (rw_dsvma_limit == 0
-                      && phdr->p_offset >= di->rw_map_foff
-                      && phdr->p_offset < di->rw_map_foff + di->rw_map_size
-                      && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size) {
+                      && phdr->p_offset >= di->fsm.rw_map_foff
+                      && phdr->p_offset
+                         < di->fsm.rw_map_foff + di->fsm.rw_map_size
+                      && phdr->p_offset + phdr->p_filesz
+                         <= di->fsm.rw_map_foff + di->fsm.rw_map_size) {
                      /* rw_dsvma_base = phdr->p_vaddr; */ /* UNUSED */
                      rw_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
-                     rw_dbias = di->rw_map_avma - di->rw_map_foff + phdr->p_offset - phdr->p_vaddr;
+                     rw_dbias = di->fsm.rw_map_avma - di->fsm.rw_map_foff
+                                + phdr->p_offset - phdr->p_vaddr;
                   }
                }
             }
@@ -2204,7 +2224,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                      di->sec##_debug_bias \
                         = di->sec##_bias + \
                           di->sec##_svma - di->sec##_debug_svma; \
-                     TRACE_SYMTAB("acquiring ." #sec " debug svma = %#lx .. %#lx\n", \
+                     TRACE_SYMTAB("acquiring ." #sec \
+                                  " debug svma = %#lx .. %#lx\n",       \
                                   di->sec##_debug_svma, \
                                   di->sec##_debug_svma + di->sec##_size - 1); \
                      TRACE_SYMTAB("acquiring ." #sec " debug bias = %#lx\n", \
@@ -2402,7 +2423,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
       VG_(umsg)("VARINFO: %7lu vars   %7ld text_size   %s\n",
-                nVars, di->text_size, di->filename);
+                nVars, di->text_size, di->fsm.filename);
    }
 
   out: {

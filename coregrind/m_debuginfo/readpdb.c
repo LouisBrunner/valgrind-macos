@@ -86,8 +86,8 @@
    doesn't make much sense.  Here, we use text_bias as empirically
    producing the most ranges that fall inside the text segments for a
    multi-dll program.  Of course, it could still be nonsense :-) */
-#define BIAS_FOR_SYMBOLS   (di->rx_map_avma)
-#define BIAS_FOR_LINETAB   (di->rx_map_avma)
+#define BIAS_FOR_SYMBOLS   (di->fsm.rx_map_avma)
+#define BIAS_FOR_LINETAB   (di->fsm.rx_map_avma)
 #define BIAS_FOR_LINETAB2  (di->text_bias)
 #define BIAS_FOR_FPO       (di->text_bias)
 /* Using di->text_bias for the FPOs causes 981 in range and 1 out of
@@ -2259,7 +2259,7 @@ Bool ML_(read_pdb_debug_info)(
         + OFFSET_OF(IMAGE_NT_HEADERS, OptionalHeader)
         + ntheaders_avma->FileHeader.SizeOfOptionalHeader;
 
-   di->rx_map_avma = (Addr)obj_avma;
+   di->fsm.rx_map_avma = (Addr)obj_avma;
 
    /* Iterate over PE(?) headers.  Try to establish the text_bias,
       that's all we really care about. */
@@ -2290,35 +2290,35 @@ Bool ML_(read_pdb_debug_info)(
             the real text section and valgrind will compute the wrong
             avma value and hence the wrong bias. */
          if (!(pe_sechdr_avma->Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA)) {
-            di->have_rx_map = True;
-            if (di->rx_map_avma == 0) {
-               di->rx_map_avma = mapped_avma;
+            di->fsm.have_rx_map = True;
+            if (di->fsm.rx_map_avma == 0) {
+               di->fsm.rx_map_avma = mapped_avma;
             }
-            if (di->rx_map_size==0) {
-               di->rx_map_foff = pe_sechdr_avma->PointerToRawData;
+            if (di->fsm.rx_map_size==0) {
+               di->fsm.rx_map_foff = pe_sechdr_avma->PointerToRawData;
             }
             di->text_present = True;
             if (di->text_avma==0) {
                di->text_avma = mapped_avma;
             }
             di->text_size   += pe_sechdr_avma->Misc.VirtualSize;
-            di->rx_map_size += pe_sechdr_avma->Misc.VirtualSize;
+            di->fsm.rx_map_size += pe_sechdr_avma->Misc.VirtualSize;
          }
       }
       else if (pe_sechdr_avma->Characteristics 
                & IMAGE_SCN_CNT_INITIALIZED_DATA) {
-         di->have_rw_map = True;
-         if (di->rw_map_avma == 0) {
-            di->rw_map_avma = mapped_avma;
+         di->fsm.have_rw_map = True;
+         if (di->fsm.rw_map_avma == 0) {
+            di->fsm.rw_map_avma = mapped_avma;
          }
-         if (di->rw_map_size==0) {
-            di->rw_map_foff = pe_sechdr_avma->PointerToRawData;
+         if (di->fsm.rw_map_size==0) {
+            di->fsm.rw_map_foff = pe_sechdr_avma->PointerToRawData;
          }
          di->data_present = True;
          if (di->data_avma==0) {
             di->data_avma = mapped_avma;
          }
-         di->rw_map_size += pe_sechdr_avma->Misc.VirtualSize;
+         di->fsm.rw_map_size += pe_sechdr_avma->Misc.VirtualSize;
          di->data_size   += pe_sechdr_avma->Misc.VirtualSize;
       }
       else if (pe_sechdr_avma->Characteristics
@@ -2331,29 +2331,29 @@ Bool ML_(read_pdb_debug_info)(
       mapped_avma     = VG_PGROUNDDN(mapped_avma);
       mapped_end_avma = VG_PGROUNDUP(mapped_end_avma);
 
-      /* Urr.  These tests are bogus; ->rx_map_avma is not necessarily
+      /* Urr.  These tests are bogus; ->fsm.rx_map_avma is not necessarily
          the start of the text section. */
       if ((1 /*VG_(needs).data_syms*/ 
            || (pe_sechdr_avma->Characteristics & IMAGE_SCN_CNT_CODE))
-          && mapped_avma >= di->rx_map_avma
-          && mapped_avma <= (di->rx_map_avma+di->text_size)
-          && mapped_end_avma > (di->rx_map_avma+di->text_size)) {
-         UInt newsz = mapped_end_avma - di->rx_map_avma;
+          && mapped_avma >= di->fsm.rx_map_avma
+          && mapped_avma <= (di->fsm.rx_map_avma+di->text_size)
+          && mapped_end_avma > (di->fsm.rx_map_avma+di->text_size)) {
+         UInt newsz = mapped_end_avma - di->fsm.rx_map_avma;
          if (newsz > di->text_size) {
             /* extending the mapping is always needed for PE files
                under WINE */
             di->text_size = newsz;
-            di->rx_map_size = newsz;
+            di->fsm.rx_map_size = newsz;
          }
       }
    }
 
-   if (di->have_rx_map && di->have_rw_map && !di->have_dinfo) {
-      vg_assert(di->filename);
+   if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+      vg_assert(di->fsm.filename);
       TRACE_SYMTAB("\n");
       TRACE_SYMTAB("------ start PE OBJECT with PDB INFO "
                    "---------------------\n");
-      TRACE_SYMTAB("------ name = %s\n", di->filename);
+      TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
       TRACE_SYMTAB("\n");
    }
 
@@ -2366,14 +2366,17 @@ Bool ML_(read_pdb_debug_info)(
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_DebugMsg,
                    "rx_map: avma %#lx size %7lu foff %llu\n",
-                   di->rx_map_avma, di->rx_map_size, (Off64T)di->rx_map_foff);
+                   di->fsm.rx_map_avma, di->fsm.rx_map_size,
+                   (Off64T)di->fsm.rx_map_foff);
       VG_(message)(Vg_DebugMsg,
                    "rw_map: avma %#lx size %7lu foff %llu\n",
-                   di->rw_map_avma, di->rw_map_size, (Off64T)di->rw_map_foff);
+                   di->fsm.rw_map_avma, di->fsm.rw_map_size,
+                   (Off64T)di->fsm.rw_map_foff);
 
       VG_(message)(Vg_DebugMsg,
                    "  text: avma %#lx svma %#lx size %7lu bias %#lx\n",
-                   di->text_avma, di->text_svma, di->text_size, di->text_bias);
+                   di->text_avma, di->text_svma,
+                   di->text_size, di->text_bias);
    }
 
    /*
@@ -2429,7 +2432,7 @@ Bool ML_(read_pdb_debug_info)(
    }
 
    TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ name = %s\n", di->filename);
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
    TRACE_SYMTAB("------ end PE OBJECT with PDB INFO "
                 "--------------------\n");
    TRACE_SYMTAB("\n");

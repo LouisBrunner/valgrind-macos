@@ -394,13 +394,53 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    information pertaining to one mapped ELF object.  This type is
    exported only abstractly - in pub_tool_debuginfo.h. */
 
+/* First though, here's an auxiliary data structure.  It is only ever
+   used as part of a struct _DebugInfo.  We use it to record
+   observations about mappings and permission changes to the
+   associated file, so as to decide when to read debug info.  It's
+   essentially an ultra-trivial finite state machine which, when it
+   reaches an accept state, signals that we should now read debug info
+   from the object into the associated struct _DebugInfo.  The accept
+   state is arrived at when have_rx_map and have_rw_map both become
+   true.
+
+   This is all rather ad-hoc; for example it has no way to record more
+   than one rw or rx mapping for a given object, not because such
+   events have never been observed, but because we've never needed to
+   note more than the first one of any such in order when to decide to
+   read debug info.  It may be that in future we need to track more
+   state in order to make the decision, so this struct would then get
+   expanded.
+*/
+struct _DebugInfoFSM
+{
+   UChar* filename; /* in mallocville (VG_AR_DINFO) */
+
+   Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
+   Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
+
+   Addr  rx_map_avma; /* these fields record the file offset, length */
+   SizeT rx_map_size; /* and map address of the r?x mapping we believe */
+   OffT  rx_map_foff; /* is the .text segment mapping */
+
+   Addr  rw_map_avma; /* ditto, for the rw? mapping we believe is the */
+   SizeT rw_map_size; /* .data segment mapping */
+   OffT  rw_map_foff;
+};
+
+
+/* To do with the string table in struct _DebugInfo (::strchunks) */
 #define SEGINFO_STRCHUNKSIZE (64*1024)
+
 
 /* We may encounter more than one .eh_frame section in an object --
    unusual but apparently allowed by ELF.  See
    http://sourceware.org/bugzilla/show_bug.cgi?id=12675
 */
 #define N_EHFRAME_SECTS 2
+
+
+/* So, the main structure for holding debug info for one object. */
 
 struct _DebugInfo {
 
@@ -431,28 +471,20 @@ struct _DebugInfo {
    Bool ddump_line;   /* mimic /usr/bin/readelf --debug-dump=line */
    Bool ddump_frames; /* mimic /usr/bin/readelf --debug-dump=frames */
 
-   /* Fields that must be filled in before we can start reading
-      anything from the ELF file.  These fields are filled in by
-      VG_(di_notify_mmap) and its immediate helpers. */
+   /* The "decide when it is time to read debuginfo" state machine.
+      This structure must get filled in before we can start reading
+      anything from the ELF/MachO file.  This structure is filled in
+      by VG_(di_notify_mmap) and its immediate helpers. */
+   struct _DebugInfoFSM fsm;
 
-   UChar* filename; /* in mallocville (VG_AR_DINFO) */
-
-   Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
-   Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
-
-   Addr  rx_map_avma; /* these fields record the file offset, length */
-   SizeT rx_map_size; /* and map address of the r?x mapping we believe */
-   OffT  rx_map_foff; /* is the .text segment mapping */
-
-   Addr  rw_map_avma; /* ditto, for the rw? mapping we believe is the */
-   SizeT rw_map_size; /* .data segment mapping */
-   OffT  rw_map_foff;
-
-   /* Once both a rw? and r?x mapping for .filename have been
-      observed, we can go on to read the symbol tables and debug info.
-      .have_dinfo flags when that has happened. */
-   /* If have_dinfo is False, then all fields except "*rx_map*" and
-      "*rw_map*" are invalid and should not be consulted. */
+   /* Once the ::fsm has reached an accept state -- typically, when
+      both a rw? and r?x mapping for .filename have been observed --
+      we can go on to read the symbol tables and debug info.
+      .have_dinfo changes from False to True when the debug info has
+      been completely read in and postprocessed (canonicalised) and is
+      now suitable for querying. */
+   /* If have_dinfo is False, then all fields below this point are
+      invalid and should not be consulted. */
    Bool  have_dinfo; /* initially False */
 
    /* All the rest of the fields in this structure are filled in once

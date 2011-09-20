@@ -3765,7 +3765,7 @@ void ML_(read_callframe_info_dwarf3)
       VG_(printf)("CFI info: szB %ld, _avma %#lx, _image %p\n",
                   frame_size, frame_avma, frame_image );
       VG_(printf)("CFI info: name %s\n",
-                  di->filename );
+                  di->fsm.filename );
    }
 
    /* Loop over CIEs/FDEs */

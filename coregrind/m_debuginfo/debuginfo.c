@@ -168,8 +168,7 @@ static ULong handle_counter = 1;
 
 /* Allocate and zero out a new DebugInfo record. */
 static 
-DebugInfo* alloc_DebugInfo( const UChar* filename,
-                            const UChar* memname )
+DebugInfo* alloc_DebugInfo( const UChar* filename )
 {
    Bool       traceme;
    DebugInfo* di;
@@ -179,15 +178,11 @@ DebugInfo* alloc_DebugInfo( const UChar* filename,
    di = ML_(dinfo_zalloc)("di.debuginfo.aDI.1", sizeof(DebugInfo));
    di->handle    = handle_counter++;
    di->filename  = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
-   di->memname   = memname ? ML_(dinfo_strdup)("di.debuginfo.aDI.3", memname)
-                           : NULL;
 
    /* Everything else -- pointers, sizes, arrays -- is zeroed by
       ML_(dinfo_zalloc).  Now set up the debugging-output flags. */
    traceme 
-      = VG_(string_match)( VG_(clo_trace_symtab_patt), filename )
-        || (memname && VG_(string_match)( VG_(clo_trace_symtab_patt), 
-                                          memname ));
+      = VG_(string_match)( VG_(clo_trace_symtab_patt), filename );
    if (traceme) {
       di->trace_symtab = VG_(clo_trace_symtab);
       di->trace_cfi    = VG_(clo_trace_cfi);
@@ -464,25 +459,20 @@ static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
 }
 
 
-/* Find the existing DebugInfo for (memname,filename) or if not found,
-   create one.  In the latter case memname and filename are strdup'd
-   into VG_AR_DINFO, and the new DebugInfo is added to
-   debugInfo_list. */
-static
-DebugInfo* find_or_create_DebugInfo_for ( UChar* filename, UChar* memname )
+/* Find the existing DebugInfo for |filename| or if not found, create
+   one.  In the latter case |filename| is strdup'd into VG_AR_DINFO,
+   and the new DebugInfo is added to debugInfo_list. */
+static DebugInfo* find_or_create_DebugInfo_for ( UChar* filename )
 {
    DebugInfo* di;
    vg_assert(filename);
    for (di = debugInfo_list; di; di = di->next) {
       vg_assert(di->filename);
-      if (0==VG_(strcmp)(di->filename, filename)
-          && ( (memname && di->memname) 
-                  ? 0==VG_(strcmp)(memname, di->memname)
-                  : True ))
+      if (0==VG_(strcmp)(di->filename, filename))
          break;
    }
    if (!di) {
-      di = alloc_DebugInfo(filename, memname);
+      di = alloc_DebugInfo(filename);
       vg_assert(di);
       di->next = debugInfo_list;
       debugInfo_list = di;
@@ -779,7 +769,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* See if we have a DebugInfo for this filename.  If not,
       create one. */
-   di = find_or_create_DebugInfo_for( filename, NULL/*membername*/ );
+   di = find_or_create_DebugInfo_for( filename );
    vg_assert(di);
 
    if (is_rx_map) {
@@ -1107,7 +1097,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    /* dump old info for this range, if any */
    discard_syms_in_range( avma_obj, total_size );
 
-   { DebugInfo* di = find_or_create_DebugInfo_for(exename, NULL/*membername*/ );
+   { DebugInfo* di = find_or_create_DebugInfo_for(exename);
 
      /* this di must be new, since we just nuked any old stuff in the range */
      vg_assert(di && !di->have_rx_map && !di->have_rw_map);
@@ -1466,7 +1456,6 @@ Bool VG_(get_datasym_and_offset)( Addr data_addr,
    require debug info.  Caller supplies buf and nbuf. */
 Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
-   Int used;
    DebugInfo* di;
    const NSegment *seg;
    HChar* filename;
@@ -1479,17 +1468,6 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
          VG_(strncpy_safely)(buf, di->filename, nbuf);
-         if (di->memname) {
-            used = VG_(strlen)(buf);
-            if (used < nbuf) 
-               VG_(strncpy_safely)(&buf[used], "(", nbuf-used);
-            used = VG_(strlen)(buf);
-            if (used < nbuf) 
-               VG_(strncpy_safely)(&buf[used], di->memname, nbuf-used);
-            used = VG_(strlen)(buf);
-            if (used < nbuf) 
-               VG_(strncpy_safely)(&buf[used], ")", nbuf-used);
-         }
          buf[nbuf-1] = 0;
          return True;
       }

@@ -1217,7 +1217,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    vg_assert(di->rw_map_size > 0);
    vg_assert(di->have_dinfo == False);
    vg_assert(di->filename);
-   vg_assert(!di->memname);
    vg_assert(!di->symtab);
    vg_assert(!di->loctab);
    vg_assert(!di->cfsi);

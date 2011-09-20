@@ -682,17 +682,18 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,
-                   "%s (%#lx)\n", di->filename, di->rx_map_avma );
+                   "%s (%#lx)\n", di->fsm.filename, di->fsm.rx_map_avma );
 
-   /* This should be ensured by our caller. */
-   vg_assert(di->have_rx_map);
-   vg_assert(di->have_rw_map);
+   /* This should be ensured by our caller (that we're in the accept
+      state). */
+   vg_assert(di->fsm.have_rx_map);
+   vg_assert(di->fsm.have_rw_map);
 
    VG_(memset)(&ii,   0, sizeof(ii));
    VG_(memset)(&iid,  0, sizeof(iid));
    VG_(memset)(&uuid, 0, sizeof(uuid));
 
-   ok = map_image_aboard( di, &ii, di->filename );
+   ok = map_image_aboard( di, &ii, di->fsm.filename );
    if (!ok) goto fail;
 
    vg_assert(ii.macho_img != NULL && ii.macho_img_szB > 0);
@@ -778,7 +779,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                 && seg->fileoff == 0 && seg->filesize != 0) {
                di->text_present = True;
                di->text_svma = (Addr)seg->vmaddr;
-               di->text_avma = di->rx_map_avma;
+               di->text_avma = di->fsm.rx_map_avma;
                di->text_size = seg->vmsize;
                di->text_bias = di->text_avma - di->text_svma;
                /* Make the _debug_ values be the same as the
@@ -795,7 +796,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                 /* && DDD:seg->fileoff == 0 */ && seg->filesize != 0) {
                di->data_present = True;
                di->data_svma = (Addr)seg->vmaddr;
-               di->data_avma = di->rw_map_avma;
+               di->data_avma = di->fsm.rw_map_avma;
                di->data_size = seg->vmsize;
                di->data_bias = di->data_avma - di->data_svma;
                di->data_debug_svma = di->data_svma;
@@ -903,7 +904,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* mmap the dSYM file to look for DWARF debug info.  If successful,
       use the .macho_img and .macho_img_szB in iid. */
 
-   dsymfilename = find_separate_debug_file( di->filename );
+   dsymfilename = find_separate_debug_file( di->fsm.filename );
 
    /* Try to load it. */
    if (dsymfilename) {
@@ -936,13 +937,13 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       give up.  (possible reasons: is system lib, or in /usr etc, or
       the dsym dir would not be writable by the user, or we're running
       as root) */
-   vg_assert(di->filename);
-   if (is_systemish_library_name(di->filename))
+   vg_assert(di->fsm.filename);
+   if (is_systemish_library_name(di->fsm.filename))
       goto success;
 
    if (!VG_(clo_dsymutil)) {
       if (VG_(clo_verbosity) == 1) {
-         VG_(message)(Vg_DebugMsg, "%s:\n", di->filename);
+         VG_(message)(Vg_DebugMsg, "%s:\n", di->fsm.filename);
       }
       if (VG_(clo_verbosity) > 0)
          VG_(message)(Vg_DebugMsg, "%sdSYM directory %s; consider using "
@@ -958,19 +959,19 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
      HChar* dsymutil = "/usr/bin/dsymutil ";
      HChar* cmd = ML_(dinfo_zalloc)( "di.readmacho.tmp1", 
                                      VG_(strlen)(dsymutil)
-                                     + VG_(strlen)(di->filename)
+                                     + VG_(strlen)(di->fsm.filename)
                                      + 32 /* misc */ );
      VG_(strcpy)(cmd, dsymutil);
      if (0) VG_(strcat)(cmd, "--verbose ");
      VG_(strcat)(cmd, "\"");
-     VG_(strcat)(cmd, di->filename);
+     VG_(strcat)(cmd, di->fsm.filename);
      VG_(strcat)(cmd, "\"");
      VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
      r = VG_(system)( cmd );
      if (r)
         VG_(message)(Vg_DebugMsg, "run: %s FAILED\n", dsymutil);
      ML_(dinfo_free)(cmd);
-     dsymfilename = find_separate_debug_file(di->filename);
+     dsymfilename = find_separate_debug_file(di->fsm.filename);
    }
 
    /* Try again to load it. */
@@ -1000,7 +1001,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                (UInt)uuid[11], (UInt)uuid[12], (UInt)uuid[13],
                (UInt)uuid[14], (UInt)uuid[15] );
             VG_(message)(Vg_DebugMsg,
-                         "WARNING: for %s\n", di->filename);
+                         "WARNING: for %s\n", di->fsm.filename);
          }
          unmap_image( &iid );
          /* unmap_image zeroes the fields, so the following test makes
@@ -1057,7 +1058,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             VG_(message)(Vg_DebugMsg,
                          "Reading dwarf3 for %s (%#lx) from %s"
                          " (%ld %ld %ld %ld %ld %ld)\n",
-                         di->filename, di->text_avma, dsymfilename,
+                         di->fsm.filename, di->text_avma, dsymfilename,
                          debug_info_sz, debug_abbv_sz, debug_line_sz, 
                          debug_str_sz, debug_ranges_sz, debug_loc_sz
                          );

@@ -67,6 +67,9 @@ extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
 extern void VG_(di_notify_pdb_debuginfo)( Int fd, Addr avma,
                                           SizeT total_size,
                                           PtrdiffT unknown_purpose__reloc );
+
+/* this should also really return ULong */
+extern void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot );
 #endif
 
 extern void VG_(di_discard_ALL_debuginfo)( void );

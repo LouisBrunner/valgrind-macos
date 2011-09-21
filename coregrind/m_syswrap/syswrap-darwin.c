@@ -4316,6 +4316,79 @@ PRE(host_request_notification)
    mach_msg: messages to a task
    ------------------------------------------------------------------ */
 
+// JRS 2011-Aug-25: just guessing here.  I have no clear idea how
+// these structs are derived.  They obviously relate to the various
+// .def files in the xnu sources, and can also be found in some
+// form in /usr/include/mach/*.h, but not sure how these all
+// relate to each other.
+
+PRE(mach_port_set_context)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      mach_port_name_t name;
+      mach_vm_address_t context;
+   } Request;
+#pragma pack()
+
+   Request *req = (Request *)ARG1;
+
+   PRINT("mach_port_set_context(%s, %s, 0x%llx)",
+        name_for_port(MACH_REMOTE), 
+        name_for_port(req->name), req->context);
+
+   AFTER = POST_FN(mach_port_set_context);
+}
+
+POST(mach_port_set_context)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+   } Reply;
+#pragma pack()
+}
+
+
+// JRS 2011-Aug-25 FIXME completely bogus
+PRE(task_get_exception_ports)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      exception_mask_t exception_mask;
+   } Request;
+#pragma pack()
+
+   PRINT("task_get_exception_ports(BOGUS)");
+   AFTER = POST_FN(task_get_exception_ports);
+}
+
+POST(task_get_exception_ports)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      /* start of the kernel processed data */
+      mach_msg_body_t msgh_body;
+      mach_msg_port_descriptor_t old_handlers[32];
+      /* end of the kernel processed data */
+      NDR_record_t NDR;
+      mach_msg_type_number_t masksCnt;
+      exception_mask_t masks[32];
+      exception_behavior_t old_behaviors[32];
+      thread_state_flavor_t old_flavors[32];
+   } Reply;
+#pragma pack()
+}
+
+
+///////////////////////////////////////////////////
 
 PRE(mach_port_type)
 {
@@ -5332,6 +5405,7 @@ POST(vm_protect)
             //VG_(mprotect_max_range)(start, end-start, prot);
          } else {
             ML_(notify_core_and_tool_of_mprotect)(start, end-start, prot);
+            VG_(di_notify_vm_protect)(start, end-start, prot);
          }
       }
    } else {
@@ -6752,6 +6826,9 @@ PRE(mach_msg_host)
    }
 } 
 
+// JRS 2011-Aug-25: these magic numbers (3201 etc) come from
+// /usr/include/mach/mach_port.h et al (grep in /usr/include
+// for them)
 PRE(mach_msg_task)
 {
    // message to a task port
@@ -6804,7 +6881,11 @@ PRE(mach_msg_task)
    case 3227:
       CALL_PRE(mach_port_extract_member);
       return;
-        
+
+   case 3229:
+      CALL_PRE(mach_port_set_context);
+      return;
+
    case 3402:
       CALL_PRE(task_threads);
       return;
@@ -6827,6 +6908,10 @@ PRE(mach_msg_task)
       return;
    case 3412:
       CALL_PRE(thread_create_running);
+      return;
+
+   case 3414:
+      CALL_PRE(task_get_exception_ports);
       return;
       
    case 3418:
@@ -7630,6 +7715,103 @@ PRE(thread_fast_set_cthread_self)
 
 
 /* ---------------------------------------------------------------------
+   Added for OSX 10.7 (Lion)
+   ------------------------------------------------------------------ */
+
+PRE(getaudit_addr)
+{
+   PRINT("getaudit_addr(%#lx, %lu)", ARG1, ARG2);
+   PRE_REG_READ1(void*, "auditinfo_addr", int, "length");
+   PRE_MEM_WRITE("getaudit_addr(auditinfo_addr)", ARG1, ARG2);
+}
+POST(getaudit_addr)
+{
+   POST_MEM_WRITE(ARG1, ARG2);
+}
+
+PRE(psynch_mutexwait)
+{
+   PRINT("psynch_mutexwait(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_mutexwait)
+{
+}
+
+PRE(psynch_mutexdrop)
+{
+   PRINT("psynch_mutexdrop(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_mutexdrop)
+{
+}
+
+PRE(psynch_cvbroad)
+{
+   PRINT("psynch_cvbroad(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_cvbroad)
+{
+}
+
+PRE(psynch_cvsignal)
+{
+   PRINT("psynch_cvsignal(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_cvsignal)
+{
+}
+
+PRE(psynch_cvwait)
+{
+   PRINT("psynch_cvwait(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_cvwait)
+{
+}
+
+PRE(psynch_rw_rdlock)
+{
+   PRINT("psynch_rw_rdlock(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_rw_rdlock)
+{
+}
+
+PRE(psynch_rw_wrlock)
+{
+   PRINT("psynch_rw_wrlock(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_rw_wrlock)
+{
+}
+
+PRE(psynch_rw_unlock)
+{
+   PRINT("psynch_rw_unlock(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_rw_unlock)
+{
+}
+
+PRE(psynch_cvclrprepost)
+{
+   PRINT("psynch_cvclrprepost(BOGUS)\n");
+   *flags |= SfMayBlock;
+}
+POST(psynch_cvclrprepost)
+{
+}
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -7970,18 +8152,18 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(298)),   // old new_system_shared_regions 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(299)),   // old shared_region_map_file_np 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(300)),   // old shared_region_make_private_np
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(301)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(302)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(303)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(304)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(305)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(306)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)),   // ???
+   MACXY(__NR_psynch_mutexwait, psynch_mutexwait), // 301
+   MACXY(__NR_psynch_mutexdrop, psynch_mutexdrop), // 302
+   MACXY(__NR_psynch_cvbroad,   psynch_cvbroad),   // 303
+   MACXY(__NR_psynch_cvsignal,  psynch_cvsignal),  // 304
+   MACXY(__NR_psynch_cvwait,    psynch_cvwait),    // 305
+   MACXY(__NR_psynch_rw_rdlock, psynch_rw_rdlock), // 306
+   MACXY(__NR_psynch_rw_wrlock, psynch_rw_wrlock), // 307
+   MACXY(__NR_psynch_rw_unlock, psynch_rw_unlock), // 308
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(309)),   // ???
 // _____(__NR_getsid), 
 // _____(__NR_settid_with_pid), 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(312)),   // ???
+   MACXY(__NR_psynch_cvclrprepost, psynch_cvclrprepost), // 312
 // _____(__NR_aio_fsync), 
    MACXY(__NR_aio_return,     aio_return), 
    MACX_(__NR_aio_suspend,    aio_suspend), 
@@ -8028,7 +8210,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setauid), 
 // _____(__NR_getaudit), 
 // _____(__NR_setaudit), 
-// _____(__NR_getaudit_addr), 
+#if DARWIN_VERS >= DARWIN_10_7
+   MACXY(__NR_getaudit_addr, getaudit_addr),
+#endif
 // _____(__NR_setaudit_addr), 
 // _____(__NR_auditctl), 
    MACXY(__NR_bsdthread_create,     bsdthread_create),   // 360

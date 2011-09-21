@@ -571,10 +571,87 @@ void VG_(di_initialise) ( void )
 #if defined(VGO_linux)  ||  defined(VGO_darwin)
 
 /* The debug info system is driven by notifications that a text
-   segment has been mapped in, or unmapped.  When that happens it
-   tries to acquire/discard whatever info is available for the
-   corresponding object.  This section contains the notification
-   handlers. */
+   segment has been mapped in, or unmapped, or when sections change
+   permission.  It's all a bit kludgey and basically means watching
+   syscalls, trying to second-guess when the system's dynamic linker
+   is done with mapping in a new object for execution.  This is all
+   tracked using the DebugInfoFSM struct for the object.  Anyway, once
+   we finally decide we've got to an accept state, this section then
+   will acquire whatever info is available for the corresponding
+   object.  This section contains the notification handlers, which
+   update the FSM and determine when an accept state has been reached.
+*/
+
+/* When the sequence of observations causes a DebugInfoFSM to move
+   into the accept state, call here to actually get the debuginfo read
+   in.  Returns a ULong whose purpose is described in comments 
+   preceding VG_(di_notify_mmap) just below.
+*/
+static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
+{
+   ULong di_handle;
+   Bool  ok;
+
+   vg_assert(di->fsm.filename);
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ start ELF OBJECT "
+                "------------------------------\n");
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
+   TRACE_SYMTAB("\n");
+
+   /* We're going to read symbols and debug info for the avma
+      ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
+      +rw_map_size).  First get rid of any other DebugInfos which
+      overlap either of those ranges (to avoid total confusion). */
+   discard_DebugInfos_which_overlap_with( di );
+
+   /* .. and acquire new info. */
+#  if defined(VGO_linux)
+   ok = ML_(read_elf_debug_info)( di );
+#  elif defined(VGO_darwin)
+   ok = ML_(read_macho_debug_info)( di );
+#  else
+#    error "unknown OS"
+#  endif
+
+   if (ok) {
+
+      TRACE_SYMTAB("\n------ Canonicalising the "
+                   "acquired info ------\n");
+      /* invalidate the CFI unwind cache. */
+      cfsi_cache__invalidate();
+      /* prepare read data for use */
+      ML_(canonicaliseTables)( di );
+      /* notify m_redir about it */
+      TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
+      VG_(redir_notify_new_DebugInfo)( di );
+      /* Note that we succeeded */
+      di->have_dinfo = True;
+      tl_assert(di->handle > 0);
+      di_handle = di->handle;
+      /* Check invariants listed in
+         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
+         priv_storage.h. */
+      check_CFSI_related_invariants(di);
+
+   } else {
+      TRACE_SYMTAB("\n------ ELF reading failed ------\n");
+      /* Something went wrong (eg. bad ELF file).  Should we delete
+         this DebugInfo?  No - it contains info on the rw/rx
+         mappings, at least. */
+      di_handle = 0;
+      vg_assert(di->have_dinfo == False);
+   }
+
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
+   TRACE_SYMTAB("------ end ELF OBJECT "
+                "------------------------------\n");
+   TRACE_SYMTAB("\n");
+
+   return di_handle;
+}
+
 
 /* Notify the debuginfo system about a new mapping.  This is the way
    new debug information gets loaded.  If allow_SkFileV is True, it
@@ -594,9 +671,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 {
    NSegment const * seg;
    HChar*     filename;
-   Bool       ok, is_rx_map, is_rw_map;
+   Bool       is_rx_map, is_rw_map, is_ro_map;
    DebugInfo* di;
-   ULong      di_handle;
    SysRes     fd;
    Int        nread, oflags;
    HChar      buf1k[1024];
@@ -707,6 +783,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    */
    is_rx_map = False;
    is_rw_map = False;
+   is_ro_map = False;
+
 #  if defined(VGA_x86) || defined(VGA_ppc32)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
@@ -720,12 +798,16 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 #    error "Unknown platform"
 #  endif
 
+#  if defined(VGP_x86_darwin) && DARWIN_VERS == DARWIN_10_7
+   is_ro_map = seg->hasR && !seg->hasW && !seg->hasX;
+#  endif
+
    if (debug)
       VG_(printf)("di_notify_mmap-3: is_rx_map %d, is_rw_map %d\n",
                   (Int)is_rx_map, (Int)is_rw_map);
 
-   /* If it is neither text-ish nor data-ish, we're not interested. */
-   if (!(is_rx_map || is_rw_map))
+   /* Ignore mappings with permissions we can't possibly be interested in. */
+   if (!(is_rx_map || is_rw_map || is_ro_map))
       return 0;
 
    /* Peer at the first few bytes of the file, to see if it is an ELF */
@@ -799,71 +881,30 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
       }
    }
 
-   /* If we don't have an rx and rw mapping, or if we already have
-      debuginfo for this mapping for whatever reason, go no
-      further. */
-   if ( ! (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) )
-      return 0;
-
-   /* Ok, so, finally, let's try to read the debuginfo. */
-   vg_assert(di->fsm.filename);
-   TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ start ELF OBJECT "
-                "------------------------------\n");
-   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
-   TRACE_SYMTAB("\n");
-
-   /* We're going to read symbols and debug info for the avma
-      ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
-      +rw_map_size).  First get rid of any other DebugInfos which
-      overlap either of those ranges (to avoid total confusion). */
-   discard_DebugInfos_which_overlap_with( di );
-
-   /* .. and acquire new info. */
-#  if defined(VGO_linux)
-   ok = ML_(read_elf_debug_info)( di );
-#  elif defined(VGO_darwin)
-   ok = ML_(read_macho_debug_info)( di );
-#  else
-#    error "unknown OS"
-#  endif
-
-   if (ok) {
-
-      TRACE_SYMTAB("\n------ Canonicalising the "
-                   "acquired info ------\n");
-      /* invalidate the CFI unwind cache. */
-      cfsi_cache__invalidate();
-      /* prepare read data for use */
-      ML_(canonicaliseTables)( di );
-      /* notify m_redir about it */
-      TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
-      VG_(redir_notify_new_DebugInfo)( di );
-      /* Note that we succeeded */
-      di->have_dinfo = True;
-      tl_assert(di->handle > 0);
-      di_handle = di->handle;
-      /* Check invariants listed in
-         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
-         priv_storage.h. */
-      check_CFSI_related_invariants(di);
-
-   } else {
-      TRACE_SYMTAB("\n------ ELF reading failed ------\n");
-      /* Something went wrong (eg. bad ELF file).  Should we delete
-         this DebugInfo?  No - it contains info on the rw/rx
-         mappings, at least. */
-      di_handle = 0;
-      vg_assert(di->have_dinfo == False);
+   if (is_ro_map) {
+      /* We have a r-- mapping.  Note the details (OSX 10.7, 32-bit only) */
+      if (!di->fsm.have_ro_map) {
+         di->fsm.have_ro_map = True;
+         di->fsm.ro_map_avma = a;
+         di->fsm.ro_map_size = seg->end + 1 - seg->start;
+         di->fsm.ro_map_foff = seg->offset;
+      } else {
+         /* FIXME: complain about a second r-- mapping */
+      }
    }
 
-   TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
-   TRACE_SYMTAB("------ end ELF OBJECT "
-                "------------------------------\n");
-   TRACE_SYMTAB("\n");
-
-   return di_handle;
+   /* So, finally, are we in an accept state? */
+   if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+      /* Ok, so, finally, we found what we need, and we haven't
+         already read debuginfo for this object.  So let's do so now.
+         Yee-ha! */
+      return di_notify_ACHIEVE_ACCEPT_STATE ( di );
+   } else {
+      /* If we don't have an rx and rw mapping, or if we already have
+         debuginfo for this mapping for whatever reason, go no
+         further. */
+      return 0;
+   }
 }
 
 
@@ -895,6 +936,72 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
          cfsi_cache__invalidate();
    }
 }
+
+
+/* This is a MacOSX 10.7 32-bit only special.  See comments on the
+   declaration of struct _DebugInfoFSM for details. */
+void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
+{
+   Bool do_nothing = True;
+#  if defined(VGP_x86_darwin) && DARWIN_VERS == DARWIN_10_7
+   do_nothing = False;
+#  endif
+   if (do_nothing /* wrong platform */)
+      return;
+
+   Bool r_ok = toBool(prot & VKI_PROT_READ);
+   Bool w_ok = toBool(prot & VKI_PROT_WRITE);
+   Bool x_ok = toBool(prot & VKI_PROT_EXEC);
+   if (! (r_ok && !w_ok && x_ok))
+      return; /* not an upgrade to r-x */
+
+   /* Find a DebugInfo containing a FSM that has [a, +len) previously
+      observed as a r-- mapping, plus some other rw- mapping.  If such
+      is found, conclude we're in an accept state and read debuginfo
+      accordingly. */
+   DebugInfo* di;
+   for (di = debugInfo_list; di; di = di->next) {
+      vg_assert(di->fsm.filename);
+      if (di->have_dinfo)
+         continue; /* already have debuginfo for this object */
+      if (!di->fsm.have_ro_map)
+         continue; /* need to have a r-- mapping for this object */
+      if (di->fsm.have_rx_map)
+         continue; /* rx- mapping already exists */
+      if (!di->fsm.have_rw_map)
+         continue; /* need to have a rw- mapping */
+      if (di->fsm.ro_map_avma != a || di->fsm.ro_map_size != len)
+         continue; /* this isn't an upgrade of the r-- mapping */
+      /* looks like we're in luck! */
+      break;
+   }
+   if (di == NULL)
+      return; /* didn't find anything */
+
+   /* Do the upgrade.  Copy the RO map info into the RX map info and
+      pretend we never saw the RO map at all. */
+   vg_assert(di->fsm.have_rw_map);
+   vg_assert(di->fsm.have_ro_map);
+   vg_assert(!di->fsm.have_rx_map);
+
+   di->fsm.have_rx_map = True;
+   di->fsm.rx_map_avma = di->fsm.ro_map_avma;
+   di->fsm.rx_map_size = di->fsm.ro_map_size;
+   di->fsm.rx_map_foff = di->fsm.ro_map_foff;
+
+   di->fsm.have_ro_map = False;
+   di->fsm.ro_map_avma = 0;
+   di->fsm.ro_map_size = 0;
+   di->fsm.ro_map_foff = 0;
+
+   /* And since we're now in an accept state, read debuginfo.  Finally. */
+   ULong di_handle __attribute__((unused))
+      = di_notify_ACHIEVE_ACCEPT_STATE( di );
+   /* di_handle is ignored. That's not a problem per se -- it just
+      means nobody will ever be able to refer to this debuginfo by
+      handle since nobody will know what the handle value is. */
+}
+
 
 /*--------- PDB (windows debug info) reading --------- */
 

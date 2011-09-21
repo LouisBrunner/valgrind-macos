@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_REDIR_H
 #define __PUB_TOOL_REDIR_H
 
+#include "config.h"           /* DARWIN_VERS */
+
 /* The following macros facilitate function replacement and wrapping.
 
    Function wrapping and function replacement are similar but not
@@ -240,10 +242,16 @@
 
 #if defined(VGO_linux)
 #  define  VG_Z_LIBC_SONAME  libcZdsoZa              // libc.so*
-#elif defined(VGO_darwin)
+
+#elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
 #  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
+
+#elif defined(VGO_darwin) && (DARWIN_VERS == DARWIN_10_7)
+#  define  VG_Z_LIBC_SONAME  libsystemZucZaZddylib   // libsystem_c*.dylib
+
 #else
 #  error "Unknown platform"
+
 #endif
 
 /* --- Soname of the GNU C++ library. --- */

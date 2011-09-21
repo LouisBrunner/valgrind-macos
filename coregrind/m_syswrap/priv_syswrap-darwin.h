@@ -358,18 +358,18 @@ DECL_TEMPLATE(darwin, settid);                  // 285
 // old new_system_shared_regions
 // old shared_region_map_file_np
 // old shared_region_make_private_np
-// NYI __pthread_mutex_destroy 301
-// NYI __pthread_mutex_init 302
-// NYI __pthread_mutex_lock 303
-// NYI __pthread_mutex_trylock 304
-// NYI __pthread_mutex_unlock 305
-// NYI __pthread_cond_init 306
-// NYI __pthread_cond_destroy 307
-// NYI __pthread_cond_broadcast 308
+DECL_TEMPLATE(darwin, psynch_mutexwait);       // 301 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_mutexdrop);       // 302 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_cvbroad);         // 303 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_cvsignal);        // 304 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_cvwait);          // 305 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_rw_rdlock);       // 306 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_rw_wrlock);       // 307 // new in 10.7 ?
+DECL_TEMPLATE(darwin, psynch_rw_unlock);       // 308 // new in 10.7 ?
 // NYI __pthread_cond_signal 309
 // NYI getsid 310
 // NYI settid_with_pid 311
-// NYI __pthread_cond_timedwait 312
+DECL_TEMPLATE(darwin, psynch_cvclrprepost);    // 312 // new in 10.7 ?
 // NYI aio_fsync 313
 DECL_TEMPLATE(darwin, aio_return);             // 314
 DECL_TEMPLATE(darwin, aio_suspend);            // 315
@@ -416,7 +416,9 @@ DECL_TEMPLATE(darwin, auditon);                 // 351
 // NYI setauid 354
 // NYI getaudit 355
 // NYI setaudit 356
-// NYI getaudit_addr 357
+#if DARWIN_VERS >= DARWIN_10_7
+DECL_TEMPLATE(darwin, getaudit_addr)            // 357
+#endif
 // NYI setaudit_addr 358
 // NYI auditctl 359
 DECL_TEMPLATE(darwin, bsdthread_create);        // 360
@@ -491,6 +493,7 @@ DECL_TEMPLATE(darwin, audit_session_self);       // 428
 // NYI audit_session_join 429
 
 // Mach message helpers
+DECL_TEMPLATE(darwin, mach_port_set_context);
 DECL_TEMPLATE(darwin, host_info);
 DECL_TEMPLATE(darwin, host_page_size);
 DECL_TEMPLATE(darwin, host_get_io_master);
@@ -512,6 +515,7 @@ DECL_TEMPLATE(darwin, mach_port_get_attributes);
 DECL_TEMPLATE(darwin, mach_port_set_attributes);
 DECL_TEMPLATE(darwin, mach_port_insert_member);
 DECL_TEMPLATE(darwin, task_get_special_port);
+DECL_TEMPLATE(darwin, task_get_exception_ports);
 DECL_TEMPLATE(darwin, semaphore_create);
 DECL_TEMPLATE(darwin, semaphore_destroy);
 DECL_TEMPLATE(darwin, mach_ports_lookup);

@@ -402,7 +402,8 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    reaches an accept state, signals that we should now read debug info
    from the object into the associated struct _DebugInfo.  The accept
    state is arrived at when have_rx_map and have_rw_map both become
-   true.
+   true.  The initial state is one in which we have no observations,
+   so have_rx_map and have_rw_map are both false.
 
    This is all rather ad-hoc; for example it has no way to record more
    than one rw or rx mapping for a given object, not because such
@@ -411,9 +412,25 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    read debug info.  It may be that in future we need to track more
    state in order to make the decision, so this struct would then get
    expanded.
+
+   The normal sequence of events is one of
+
+   start  -->  r-x mapping  -->  rw- mapping  -->  accept
+   start  -->  rw- mapping  -->  r-x mapping  -->  accept
+
+   that is, take the first r-x and rw- mapping we see, and we're done.
+
+   On MacOSX 10.7, 32-bit, there appears to be a new variant:
+
+   start  -->  r-- mapping  -->  rw- mapping  
+          -->  upgrade r-- mapping to r-x mapping  -->  accept
+
+   where the upgrade is done by a call to vm_protect.  Hence we
+   need to also track this possibility.
 */
 struct _DebugInfoFSM
 {
+   /* --- all targets --- */
    UChar* filename; /* in mallocville (VG_AR_DINFO) */
 
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
@@ -426,6 +443,13 @@ struct _DebugInfoFSM
    Addr  rw_map_avma; /* ditto, for the rw? mapping we believe is the */
    SizeT rw_map_size; /* .data segment mapping */
    OffT  rw_map_foff;
+
+   /* --- OSX 10.7, 32-bit only --- */
+   Bool  have_ro_map; /* did we see a r-- mapping yet for the file? */
+
+   Addr  ro_map_avma; /* file offset, length, avma for said mapping */
+   SizeT ro_map_size;
+   OffT  ro_map_foff;
 };
 
 

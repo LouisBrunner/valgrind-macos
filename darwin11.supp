@@ -1,0 +1,122 @@
+
+# Suppressions for Darwin 11.x / Mac OS X 10.7 Lion
+
+##----------------------------------------------------------------------##
+# Memcheck
+##----------------------------------------------------------------------##
+
+# Dunno where this is a real bug, or due to borked 10.7-specific syscall
+# wrappers.  64-bit mode; not sure if occurs in 32-bit mode. 
+# Anyway, for the tine being:
+#
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x1973E6: __mtx_droplock (in /usr/lib/system/libsystem_c.dylib)
+#    by 0x1976AA: pthread_mutex_unlock (in /usr/lib/system/libsystem_c.dylib)
+#    by 0x100B3D: unlock_node (in /usr/lib/system/libkeymgr.dylib)
+{
+   OSX107:__mtx_droplock
+   Memcheck:Cond
+   fun:__mtx_droplock
+   fun:pthread_mutex_unlock
+   fun:unlock_node
+}
+
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x2EB883: ??? (in /usr/lib/system/libxpc.dylib)
+#    by 0x237C6: ??? (in /usr/lib/libSystem.B.dylib)
+#    by 0x8FE1115A: ImageLoaderMachO::doModInitFunctions(ImageLoader::LinkContext const&) (in /usr/lib/dyld)
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   obj:/usr/lib/system/libxpc.dylib
+   obj:/usr/lib/libSystem.B.dylib
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+}
+
+# ZLib stuff.  How come this wasn't necessary in 10.6 ?
+{
+   OSX107:zlib-C
+   Memcheck:Cond
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+{
+   OSX107:zlib-8
+   Memcheck:Value8
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
+# Really a bug?  I don't know.
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x3A322FE: __mtx_droplock (in /usr/lib/system/libsystem_c.dylib)
+#    by 0x3A326AA: pthread_mutex_unlock (in /usr/lib/system/libsystem_c.dylib)
+#    by 0x26382: load_images (in /usr/lib/libobjc.A.dylib)
+{
+   OSX107:blah
+   Memcheck:Cond
+   fun:__mtx_droplock
+   fun:pthread_mutex_unlock
+}
+
+{
+   OSX107:blah
+   Memcheck:Cond
+   fun:pthread_mutex_lock
+}
+
+
+
+##########################################################################
+### The ones below are from darwin10.supp (for Snow Leopard).  I don't
+### know whether they are still necessary.
+
+# afaict this is legit.  Might be caused by setenv("VAR=")
+# where the value string is empty (not sure)
+{
+   macos-Cond-7
+   Memcheck:Cond
+   fun:__setenv
+}
+
+# From Jesse Ruderman.
+#{
+#   Mac OS X 10.6.4. rdar://8145289. "new[]" paired with "delete" in the DesktopServicesPriv framework.
+#   Memcheck:Free
+#   fun:_ZdlPv
+#   fun:_ZN5TChar18RemovePtrReferenceEv
+# }
+
+# From Jesse Ruderman.
+#{
+#   Mac OS X 10.6.4. rdar://8145318. Uninitialized memory from HIMenuBarView::MeasureAppMenus is used in HIMenuBarView::SetAdjustTextTitleBoundsAtIndex.
+#   Memcheck:Cond
+#   fun:_ZN13HIMenuBarView31SetAdjustTextTitleBoundsAtIndexEih
+#   fun:_ZN13HIMenuBarView15MeasureAppMenusEv
+#}
+
+#{
+#   TFontFeatures::TFontFeatures(CGFont*) (in CoreText.framework)
+#   Memcheck:Cond
+#   fun:_ZN13TFontFeaturesC2EP6CGFont
+#   fun:_ZNK9TBaseFont12CopyFeaturesEv
+#}
+
+# See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
+# unavoidable due to BSD setenv() semantics.
+#{
+#   macos-__setenv-leak-see-our-bug-188572
+#   Memcheck:Leak
+#   fun:malloc_zone_malloc
+#   fun:__setenv
+#}
+
+#{
+#   libSystem-keymgr-leak-at-exit
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:get_or_create_key_element
+#   fun:_keymgr_get_and_lock_processwide_ptr_2
+#   fun:__keymgr_initializer
+#   fun:libSystem_initializer
+#}

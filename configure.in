@@ -246,11 +246,19 @@ case "${host_os}" in
         # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
         # has only one relevant version, the OS version. The `uname` check
         # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
-        # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard), 
+        # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
+        # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion), 
         # and we don't know of an macros similar to __GLIBC__ to get that info.
         #
         # XXX: `uname -r` won't do the right thing for cross-compiles, but
         # that's not a problem yet.
+        #
+        # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
+        # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
+        # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
+        # time support for 10.5 (the 9.* pattern just below), I'll leave it
+        # in for now, just in case anybody wants to give it a try.  But I'm
+        # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
 	case "${kernel}" in
 	     9.*)
 		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
@@ -264,9 +272,16 @@ case "${host_os}" in
 		  DEFAULT_SUPP="darwin10.supp ${DEFAULT_SUPP}"
 		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-     *) 
+	     11.*)
+		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
+		  AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X version])
+                  # FIXME: change these to xx11.supp
+		  DEFAULT_SUPP="darwin11.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+		  ;;
+             *) 
 		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 9.x and 10.x (Mac OS X 10.5 and 10.6)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x and 11.x (Mac OS X 10.6/7)])
 		  ;;
 	esac
         ;;

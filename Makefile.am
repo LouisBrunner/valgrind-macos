@@ -53,6 +53,7 @@ SUPP_FILES = \
 	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp \
+	darwin11.supp \
 	bionic.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
@@ -116,4 +117,5 @@ all-local: default.supp
 clean-local:
 	rm -rf $(inplacedir)
 
-
+# Need config.h in the installed tree, since some files depend on it
+pkginclude_HEADERS = config.h

@@ -515,18 +515,18 @@
 			/* 298  old new_system_shared_regions */
 			/* 299  old shared_region_map_file_np */
 			/* 300  old shared_region_make_private_np */
-			/* 301 */
-			/* 302 */
-			/* 303 */
-			/* 304 */
-			/* 305 */
-			/* 306 */
-			/* 307 */
-			/* 308 */
+#define __NR_psynch_mutexwait VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(301)
+#define __NR_psynch_mutexdrop VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(302)
+#define __NR_psynch_cvbroad   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(303)
+#define __NR_psynch_cvsignal  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(304)
+#define __NR_psynch_cvwait    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(305)
+#define __NR_psynch_rw_rdlock VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(306)
+#define __NR_psynch_rw_wrlock VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)
+#define __NR_psynch_rw_unlock VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)
 			/* 309 */
 #define	__NR_getsid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(310)
 #define	__NR_settid_with_pid VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(311)
-			/* 312 */
+#define __NR_psynch_cvclrprepost VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(312)
 #define	__NR_aio_fsync      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(313)
 #define	__NR_aio_return     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(314)
 #define	__NR_aio_suspend    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(315)

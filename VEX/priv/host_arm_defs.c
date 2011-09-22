@@ -1811,8 +1811,8 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_NUnaryS:
          vex_printf("%s%s%s  ",
-                    showARMNeonUnOp(i->ARMin.NUnary.op),
-                    showARMNeonUnOpDataType(i->ARMin.NUnary.op),
+                    showARMNeonUnOpS(i->ARMin.NUnaryS.op),
+                    showARMNeonUnOpSDataType(i->ARMin.NUnaryS.op),
                     showARMNeonDataSize(i));
          ppARMNRS(i->ARMin.NUnaryS.dst);
          vex_printf(", ");

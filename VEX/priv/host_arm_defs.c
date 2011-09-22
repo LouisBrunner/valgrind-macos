@@ -2353,11 +2353,17 @@ Bool isMove_ARMInstr ( ARMInstr* i, HReg* src, HReg* dst )
             return True;
          }
          break;
+      case ARMin_NUnary:
+         if (i->ARMin.NUnary.op == ARMneon_COPY) {
+            *src = i->ARMin.NUnary.src;
+            *dst = i->ARMin.NUnary.dst;
+            return True;
+         }
+         break;
       default:
          break;
    }
 
-   // todo: float, vector moves
    return False;
 }
 

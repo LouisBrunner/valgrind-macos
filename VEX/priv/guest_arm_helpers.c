@@ -676,6 +676,21 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
                      binop(Iop_CmpNE32, cc_dep1, mkU32(0)));
       }
 
+      if (isU32(cond_n_op, (ARMCondPL << 4) | ARMG_CC_OP_LOGIC)) {
+         /* PL after LOGIC --> test (res >> 31) == 0 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ32,
+                           binop(Iop_Shr32, cc_dep1, mkU8(31)),
+                           mkU32(0)));
+      }
+      if (isU32(cond_n_op, (ARMCondMI << 4) | ARMG_CC_OP_LOGIC)) {
+         /* MI after LOGIC --> test (res >> 31) == 1 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ32,
+                           binop(Iop_Shr32, cc_dep1, mkU8(31)),
+                           mkU32(1)));
+      }
+
       /*----------------- AL -----------------*/
 
       /* A critically important case for Thumb code.

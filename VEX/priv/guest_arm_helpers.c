@@ -51,12 +51,69 @@
 */
 
 
+/* Set to 1 to get detailed profiling info about individual N, Z, C
+   and V flag evaluation. */
+#define PROFILE_NZCV_FLAGS 0
+
+#if PROFILE_NZCV_FLAGS
+
+static UInt tab_n_eval[ARMG_CC_OP_NUMBER];
+static UInt tab_z_eval[ARMG_CC_OP_NUMBER];
+static UInt tab_c_eval[ARMG_CC_OP_NUMBER];
+static UInt tab_v_eval[ARMG_CC_OP_NUMBER];
+static UInt initted = 0;
+static UInt tot_evals = 0;
+
+static void initCounts ( void )
+{
+   UInt i;
+   for (i = 0; i < ARMG_CC_OP_NUMBER; i++) {
+      tab_n_eval[i] = tab_z_eval[i] = tab_c_eval[i] = tab_v_eval[i] = 0;
+   }
+   initted = 1;
+}
+
+static void showCounts ( void )
+{
+   UInt i;
+   vex_printf("\n                 N          Z          C          V\n");
+   vex_printf(  "---------------------------------------------------\n");
+   for (i = 0; i < ARMG_CC_OP_NUMBER; i++) {
+      vex_printf("CC_OP=%d  %9d  %9d  %9d  %9d\n",
+                 i,
+                 tab_n_eval[i], tab_z_eval[i],
+                 tab_c_eval[i], tab_v_eval[i] );
+    }
+}
+
+#define NOTE_N_EVAL(_cc_op) NOTE_EVAL(_cc_op, tab_n_eval)
+#define NOTE_Z_EVAL(_cc_op) NOTE_EVAL(_cc_op, tab_z_eval)
+#define NOTE_C_EVAL(_cc_op) NOTE_EVAL(_cc_op, tab_c_eval)
+#define NOTE_V_EVAL(_cc_op) NOTE_EVAL(_cc_op, tab_v_eval)
+
+#define NOTE_EVAL(_cc_op, _tab) \
+   do { \
+      if (!initted) initCounts(); \
+      vassert( ((UInt)(_cc_op)) < ARMG_CC_OP_NUMBER); \
+      _tab[(UInt)(_cc_op)]++; \
+      tot_evals++; \
+      if (0 == (tot_evals & 0xFFFFF)) \
+        showCounts(); \
+   } while (0)
+
+#endif /* PROFILE_NZCV_FLAGS */
+
+
 /* Calculate the N flag from the supplied thunk components, in the
    least significant bit of the word.  Returned bits 31:1 are zero. */
 static
 UInt armg_calculate_flag_n ( UInt cc_op, UInt cc_dep1,
                              UInt cc_dep2, UInt cc_dep3 )
 {
+#  if PROFILE_NZCV_FLAGS
+   NOTE_N_EVAL(cc_op);
+#  endif
+
    switch (cc_op) {
       case ARMG_CC_OP_COPY: {
          /* (nzcv:28x0, unused, unused) */
@@ -133,6 +190,10 @@ static
 UInt armg_calculate_flag_z ( UInt cc_op, UInt cc_dep1,
                              UInt cc_dep2, UInt cc_dep3 )
 {
+#  if PROFILE_NZCV_FLAGS
+   NOTE_Z_EVAL(cc_op);
+#  endif
+
    switch (cc_op) {
       case ARMG_CC_OP_COPY: {
          /* (nzcv:28x0, unused, unused) */
@@ -210,6 +271,10 @@ UInt armg_calculate_flag_z ( UInt cc_op, UInt cc_dep1,
 UInt armg_calculate_flag_c ( UInt cc_op, UInt cc_dep1,
                              UInt cc_dep2, UInt cc_dep3 )
 {
+#  if PROFILE_NZCV_FLAGS
+   NOTE_C_EVAL(cc_op);
+#  endif
+
    switch (cc_op) {
       case ARMG_CC_OP_COPY: {
          /* (nzcv:28x0, unused, unused) */
@@ -287,6 +352,10 @@ UInt armg_calculate_flag_c ( UInt cc_op, UInt cc_dep1,
 UInt armg_calculate_flag_v ( UInt cc_op, UInt cc_dep1,
                              UInt cc_dep2, UInt cc_dep3 )
 {
+#  if PROFILE_NZCV_FLAGS
+   NOTE_V_EVAL(cc_op);
+#  endif
+
    switch (cc_op) {
       case ARMG_CC_OP_COPY: {
          /* (nzcv:28x0, unused, unused) */

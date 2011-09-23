@@ -532,6 +532,12 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
                      binop(Iop_CmpNE32, cc_dep1, cc_dep2));
       }
 
+      if (isU32(cond_n_op, (ARMCondGT << 4) | ARMG_CC_OP_SUB)) {
+         /* GT after SUB --> test argL >s argR
+                         --> test argR <s argL */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32S, cc_dep2, cc_dep1));
+      }
       if (isU32(cond_n_op, (ARMCondLE << 4) | ARMG_CC_OP_SUB)) {
          /* LE after SUB --> test argL <=s argR */
          return unop(Iop_1Uto32,
@@ -556,6 +562,11 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
                          --> test argR <=u argL */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32U, cc_dep2, cc_dep1));
+      }
+      if (isU32(cond_n_op, (ARMCondLO << 4) | ARMG_CC_OP_SUB)) {
+         /* LO after SUB --> test argL <u argR */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
       }
 
       if (isU32(cond_n_op, (ARMCondLS << 4) | ARMG_CC_OP_SUB)) {

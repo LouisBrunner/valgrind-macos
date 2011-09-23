@@ -228,6 +228,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    vex_traceflags = vta->traceflags;
 
    vassert(vex_initdone);
+   vassert(vta->needs_self_check != NULL);
+
    vexSetAllocModeTEMP_and_clear();
    vexAllocSanityCheck();
 

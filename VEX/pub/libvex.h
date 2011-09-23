@@ -539,10 +539,10 @@ typedef
       IRSB* (*finaltidy) ( IRSB* );
 
       /* IN: a callback used to ask the caller which of the extents,
-         if any, a self check is required for.  The returned value is
-         a bitmask with a 1 in position i indicating that the i'th
-         extent needs a check.  Since there can be at most 3 extents,
-         the returned values must be between 0 and 7. */
+         if any, a self check is required for.  Must not be NULL.
+         The returned value is a bitmask with a 1 in position i indicating
+         that the i'th extent needs a check.  Since there can be at most
+         3 extents, the returned values must be between 0 and 7. */
       UInt (*needs_self_check)( /*callback_opaque*/void*,
                                 VexGuestExtents* );
 

@@ -58,6 +58,9 @@
 /* Location of saved guest state pointer */
 #define S390_LOC_SAVED_GSP S390_OFFSET_SAVED_GSP(SP)
 
+/* Location of saved R2 register */
+#define S390_LOC_SAVED_R2 S390_OFFSET_SAVED_R2(SP)
+
 /*----------------------------------------------------*/
 /*--- Preamble (set everything up)                 ---*/
 /*----------------------------------------------------*/
@@ -126,6 +129,15 @@ VG_(run_innerloop):
 /*----------------------------------------------------*/
 
 run_innerloop__dispatch_unprofiled:
+        /* Load the link register with the address the jitted code will
+           return to when it's done executing. The link register is loaded
+           exactly once per loop. This is safe, because the jitted code 
+           cannot possibly modify the LR. How else would it be able to return
+           to the location in the LR otherwise? */
+        basr LR,0
+
+        /* Loop begins here */
+        
         /* This is the story:
 
            r2  = IA = next guest address
@@ -134,11 +146,10 @@ run_innerloop__dispatch_unprofiled:
                  special value
            r15 = stack pointer (as usual)
         */
-
+innermost_loop: 
         /* Has the guest state pointer been messed with? If yes, exit.
            The mess is recognised by r13 containing an odd value. */
         tmll %r13,1
-        larl %r8, VG_(tt_fast)
         jne  gsp_changed
 
         /* Save the jump address in the guest state */
@@ -157,17 +168,13 @@ run_innerloop__dispatch_unprofiled:
            which is
            offset = ((addr & (VG_TT_FAST_MASK << 1) ) << 3
         */
+        larl  %r8, VG_(tt_fast)
         llill %r5,( VG_TT_FAST_MASK << 1) & 0xffff
 #if ((( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16 != 0)
         iilh %r5,(( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16
 #endif
         ngr  %r5,%r2
         sllg %r7,%r5,3
-
-        /* Set the return address to the beginning of the loop here to
-           have some instruction between setting r7 and using it as an
-           address */
-	larl LR,run_innerloop__dispatch_unprofiled
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
         ahi  S390_REGNO_DISPATCH_CTR,-1
@@ -190,66 +197,29 @@ run_innerloop__dispatch_unprofiled:
 /*----------------------------------------------------*/
 
 run_innerloop__dispatch_profiled:
+        stg  %r2,S390_LOC_SAVED_R2
 
-        /* Has the guest state pointer been messed with?  If yes, exit.
-           The mess is recognised by r13 containing an odd value. */
-        tmll %r13,1
-        larl %r8, VG_(tt_fast)
-        jne  gsp_changed
+        /* Load the link register with the address the jitted code will
+           return to when it's done executing. */
+        bras LR,innermost_loop
 
-        /* Save the jump address in the guest state */
-        stg  %r2,OFFSET_s390x_IA(%r13)
+        /* Jitted code returns here. Update profile counter for previous IA */
 
-	/* Try a fast lookup in the translation cache:
-           Compute offset (not index) into VT_(tt_fast):
-
-           offset = VG_TT_FAST_HASH(addr) * sizeof(FastCacheEntry)
-
-           with VG_TT_FAST_HASH(addr) == (addr >> 1) & VG_TT_FAST_MASK
-           and  sizeof(FastCacheEntry) == 16
-
-           offset = ((addr >> 1) & VG_TT_FAST_MASK) << 4
-           which is
-           offset = ((addr & (VG_TT_FAST_MASK << 1) ) << 3
-        */
         llill %r5,( VG_TT_FAST_MASK << 1) & 0xffff
 #if ((( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16 != 0)
         iilh %r5,(( VG_TT_FAST_MASK << 1) & 0xffff0000) >> 16
 #endif
-        ngr  %r5,%r2
-        sllg %r7,%r5,3
+        ng   %r5,S390_LOC_SAVED_R2
+        sllg %r7,%r5,2
 
-        /* Set the return address to the beginning of the loop here to
-           have some instruction between setting r7 and using it as an
-           address */
-	larl LR,run_innerloop__dispatch_profiled
-
-	/* Are we out of timeslice?  If yes, defer to scheduler. */
-        ahi  S390_REGNO_DISPATCH_CTR,-1
-        jz   counter_is_zero
-
-        lg   %r11, 8(%r8,%r7)      /* .host */
-        cg   %r2,  0(%r8,%r7)      /* next guest address == .guest ? */
-        jne  fast_lookup_failed
-
-        /* sizeof(FastCacheEntry) == 16, sizeof(*UInt)==8 */
-        srlg %r7,%r7,1
-
-        /* we got a hit: VG_(tt_fastN) is guaranteed to point to count */
+        /* Increment bb profile counter */
         larl %r8, VG_(tt_fastN)
-
-        /* increment bb profile counter */
         lg   %r9,0(%r8,%r7)
         l    %r10,0(%r9)
         ahi  %r10,1
         st   %r10,0(%r9)
 
-        /* Found a match.  Call .host.
-           r11 is an address. There we will find the instrumented client code.
-           That code may modify the guest state register r13. The client code
-           will return to the beginning of this loop start by issuing br LR.
-           We can simply branch to the host code */
-        br %r11
+        j    run_innerloop__dispatch_profiled
 
 /*----------------------------------------------------*/
 /*--- exit points                                  ---*/

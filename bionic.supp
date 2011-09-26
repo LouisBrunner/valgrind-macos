@@ -1,4 +1,37 @@
 # Suppressions for Android's libc (bionic) and probably other
 # stuff too.
 
-# This is currently empty.
+# this is a real bug in the Android stack -- this routine really does read and write below sp.
+{
+   sha1_block_data_order-reads-below-sp
+   Memcheck:Addr4
+   fun:sha1_block_data_order
+}
+
+# This is a false error, and it's reported in the wrong place.  Memcheck misinterprets
+# a restore path in dvmPlatformInvoke: "ldmdb   r4, {r4, r5, r6, r7, r8, r9, sp, pc}"
+# because it breaks this up into non-atomic IR.  This non atomic IR restores PC
+# first, then SP, and then r4-r9; the latter of which happen after (from Memcheck's
+# point of view) the assignment to SP, hence constitute a read below SP (depends
+# which way SP moved, I guess).  Worse, because these happen after the restore to SP,
+# the errors are reported in the callers of this function, not here :-(
+# General bogusness all round, but I don't see how to handle it any better.  Hence
+# hide all the callers; fortunately there appear to be not many.
+#
+{
+   dvmPlatformInvoke-misinterpretation-1
+   Memcheck:Addr4
+   fun:dvmCallJNIMethod_virtualNoRef
+}
+
+{
+   dvmPlatformInvoke-misinterpretation-2
+   Memcheck:Addr4
+   fun:dvmCallJNIMethod_staticNoRef
+}
+
+{
+   dvmPlatformInvoke-misinterpretation-3
+   Memcheck:Addr4
+   fun:dvmCallJNIMethod_general
+}

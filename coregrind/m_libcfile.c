@@ -637,8 +637,10 @@ Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
       sres = VG_(open)(buf,
                        VKI_O_CREAT|VKI_O_RDWR|VKI_O_EXCL|VKI_O_TRUNC,
                        VKI_S_IRUSR|VKI_S_IWUSR);
-      if (sr_isError(sres))
+      if (sr_isError(sres)) {
+         VG_(umsg)("VG_(mkstemp): failed to create temp file: %s\n", buf);
          continue;
+      }
       /* VG_(safe_fd) doesn't return if it fails. */
       fd = VG_(safe_fd)( sr_Res(sres) );
       if (fullname)

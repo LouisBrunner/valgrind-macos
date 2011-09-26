@@ -1307,9 +1307,10 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
    /* It's sometimes useful, as a crude debugging hack, to get a
       stack trace at each (or selected) syscalls. */
-   if (0 /* sysno == __NR_mmap */) {
-      VG_(umsg)("\n");
+   if (0 && sysno == __NR_ioctl) {
+      VG_(umsg)("\nioctl:\n");
       VG_(get_and_pp_StackTrace)(tid, 10);
+      VG_(umsg)("\n");
    }
 
 #  if defined(VGO_darwin)

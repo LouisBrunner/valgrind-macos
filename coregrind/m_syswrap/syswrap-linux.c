@@ -205,7 +205,9 @@ static void run_a_thread_NORETURN ( Word tidW )
          "movl	%3, %%ebx\n"    /* set %ebx = tst->os_state.exitcode */
          "int	$0x80\n"	/* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
-         : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+         : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "eax", "ebx"
+      );
 #elif defined(VGP_amd64_linux)
       asm volatile (
          "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
@@ -213,7 +215,9 @@ static void run_a_thread_NORETURN ( Word tidW )
          "movq	%3, %%rdi\n"    /* set %rdi = tst->os_state.exitcode */
          "syscall\n"		/* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
-         : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+         : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "rax", "rdi"
+      );
 #elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
       { UInt vgts_empty = (UInt)VgTs_Empty;
         asm volatile (
@@ -222,7 +226,9 @@ static void run_a_thread_NORETURN ( Word tidW )
           "lwz 3,%3\n\t"           /* set r3 = tst->os_state.exitcode */
           "sc\n\t"                 /* exit(tst->os_state.exitcode) */
           : "=m" (tst->status)
-          : "r" (vgts_empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+          : "r" (vgts_empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+          : "r0", "r3"
+        );
       }
 #elif defined(VGP_arm_linux)
       asm volatile (
@@ -231,7 +237,9 @@ static void run_a_thread_NORETURN ( Word tidW )
          "ldr  r0, %3\n"      /* set %r0 = tst->os_state.exitcode */
          "svc  0x00000000\n"  /* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
-         : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+         : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "r0", "r7"
+      );
 #elif defined(VGP_s390x_linux)
       asm volatile (
          "st   %1, %0\n"        /* set tst->status = VgTs_Empty */
@@ -239,7 +247,8 @@ static void run_a_thread_NORETURN ( Word tidW )
          "svc %2\n"             /* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
          : "d" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
-         : "2");
+         : "2"
+      );
 #else
 # error Unknown platform
 #endif

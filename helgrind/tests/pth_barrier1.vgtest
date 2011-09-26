@@ -2,3 +2,4 @@ prereq: test -e bar_trivial
 prog: ../../drd/tests/pth_barrier
 args: 2 1 1
 vgopts: -q
+stderr_filter_args: pth_barrier.c

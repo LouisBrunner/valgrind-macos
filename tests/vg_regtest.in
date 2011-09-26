@@ -57,12 +57,16 @@
 #                                                    multiple are allowed)
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
+#   - stdout_filter_args: <args for stdout_filter>  (default: basename of .vgtest file)
+#   - stderr_filter_args: <args for stderr_filter>  (default: basename of .vgtest file)
 #
 #   - progB:  <prog to run in parallel with prog>   (default: none)
 #   - argsB:  <args for progB>                      (default: none)
 #   - stdinB: <input file for progB>                (default: none)
 #   - stdoutB_filter: <filter progB stdout through> (default: none)
 #   - stderrB_filter: <filter progB stderr through> (default: ./filter_stderr)
+#   - stdoutB_filter_args: <args for stdout_filterB> (default: basename of .vgtest file)
+#   - stderrB_filter_args: <args for stderr_filterB>  (default: basename of .vgtest file)
 #
 #   - prereq: <prerequisite command>                (default: none)
 #   - post: <post-test check command>               (default: none)
@@ -128,10 +132,14 @@ my $prog;               # test prog
 my $args;               # test prog args
 my $stdout_filter;      # filter program to run stdout results file through
 my $stderr_filter;      # filter program to run stderr results file through
+my $stdout_filter_args; # arguments passed to stdout_filter
+my $stderr_filter_args; # arguments passed to stderr_filter
 my $progB;              # Same but for progB
 my $argsB;              # 
 my $stdoutB_filter;     # 
 my $stderrB_filter;     # 
+my $stdoutB_filter_args;# arguments passed to stdout_filterB
+my $stderrB_filter_args;# arguments passed to stderr_filterB
 my $stdinB;             # Input file for progB
 my $prereq;             # prerequisite test to satisfy before running test
 my $post;               # check command after running test
@@ -235,6 +243,8 @@ sub read_vgtest_file($)
     ($progB, $argsB, $stdinB)          = (undef, "", undef);
     ($stdoutB_filter, $stderrB_filter) = (undef, undef);
     ($prereq, $post, $cleanup)         = (undef, undef, undef);
+    ($stdout_filter_args, $stderr_filter_args)   = (undef, undef);
+    ($stdoutB_filter_args, $stderrB_filter_args) = (undef, undef);
 
     # Every test directory must have a "filter_stderr"
     $stderr_filter = validate_program(".", $default_stderr_filter, 1, 1);
@@ -258,6 +268,10 @@ sub read_vgtest_file($)
             $stdout_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
             $stderr_filter = validate_program(".", $1, 1, 1);
+        } elsif ($line =~ /^\s*stdout_filter_args:\s*(.*)$/) {
+            $stdout_filter_args = $1;
+        } elsif ($line =~ /^\s*stderr_filter_args:\s*(.*)$/) {
+            $stderr_filter_args = $1;
         } elsif ($line =~ /^\s*progB:\s*(.*)$/) {
             $progB = validate_program(".", $1, 0, 0);
         } elsif ($line =~ /^\s*argsB:\s*(.*)$/) {
@@ -417,7 +431,8 @@ sub do_one_test($$)
 
     # Filter stdout
     if (defined $stdout_filter) {
-        mysystem("$stdout_filter < $name.stdout.out > $tmp");
+        $stdout_filter_args = $name if (! defined $stdout_filter_args);
+        mysystem("$stdout_filter $stdout_filter_args < $name.stdout.out > $tmp");
         filtered_rename($tmp, "$name.stdout.out");
     }
     # Find all the .stdout.exp files.  If none, use /dev/null.
@@ -426,7 +441,8 @@ sub do_one_test($$)
     do_diffs($fullname, $name, "stdout", \@stdout_exps); 
 
     # Filter stderr
-    mysystem("$stderr_filter < $name.stderr.out > $tmp");
+    $stderr_filter_args = $name if (! defined $stderr_filter_args);
+    mysystem("$stderr_filter $stderr_filter_args < $name.stderr.out > $tmp");
     filtered_rename($tmp, "$name.stderr.out");
     # Find all the .stderr.exp files.  At least one must exist.
     my @stderr_exps = <$name.stderr.exp*>;
@@ -448,7 +464,8 @@ sub do_one_test($$)
         }
         # Filter stdout
         if (defined $stdoutB_filter) {
-            mysystem("$stdoutB_filter < $name.stdoutB.out > $tmp");
+            $stdoutB_filter_args = $name if (! defined $stdoutB_filter_args);
+            mysystem("$stdoutB_filter $stdoutB_filter_args < $name.stdoutB.out > $tmp");
             filtered_rename($tmp, "$name.stdoutB.out");
         }
         # Find all the .stdoutB.exp files.  If none, use /dev/null.
@@ -457,7 +474,8 @@ sub do_one_test($$)
         do_diffs($fullname, $name, "stdoutB", \@stdoutB_exps); 
         
         # Filter stderr
-        mysystem("$stderrB_filter < $name.stderrB.out > $tmp");
+        $stderrB_filter_args = $name if (! defined $stderrB_filter_args);
+        mysystem("$stderrB_filter $stderrB_filter_args < $name.stderrB.out > $tmp");
         filtered_rename($tmp, "$name.stderrB.out");
         # Find all the .stderrB.exp files.  At least one must exist.
         my @stderrB_exps = <$name.stderrB.exp*>;

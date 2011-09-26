@@ -1,2 +1,3 @@
 prog: locked_vs_unlocked1
-vgopts: -q --num-callers=3
+vgopts: -q
+stderr_filter_args: locked_vs_unlocked1.c

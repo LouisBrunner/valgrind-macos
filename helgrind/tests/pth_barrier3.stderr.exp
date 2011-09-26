@@ -1,16 +1,20 @@
 ---Thread-Announcement------------------------------------------
 
 Thread #x was created
-   at 0x........: clone (in /...libc...)
-   by 0x........: pthread_create@@GLIBC_2.2.5 (in /...libpthread...)
+   ...
    by 0x........: pthread_create_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:91)
+   by 0x........: main (pth_barrier.c:121)
 
 ---Thread-Announcement------------------------------------------
 
 Thread #x was created
-   at 0x........: clone (in /...libc...)
-   by 0x........: pthread_create@@GLIBC_2.2.5 (in /...libpthread...)
+   ...
    by 0x........: pthread_create_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:91)
+   by 0x........: main (pth_barrier.c:121)
 
 ----------------------------------------------------------------
 

@@ -307,6 +307,7 @@ static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
 // darwin: pthread_join
 // darwin: pthread_join$NOCANCEL$UNIX2003
 // darwin  pthread_join$UNIX2003
+__attribute__((noinline))
 static int pthread_join_WRK(pthread_t thread, void** value_pointer)
 {
    int ret;
@@ -643,6 +644,7 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
 // darwin: pthread_cond_wait$NOCANCEL$UNIX2003
 // darwin: pthread_cond_wait$UNIX2003
 //
+__attribute__((noinline))
 static int pthread_cond_wait_WRK(pthread_cond_t* cond,
                                  pthread_mutex_t* mutex)
 {
@@ -723,6 +725,7 @@ static int pthread_cond_wait_WRK(pthread_cond_t* cond,
 // darwin: pthread_cond_timedwait$UNIX2003
 // darwin: pthread_cond_timedwait_relative_np (trapped)
 //
+__attribute__((noinline))
 static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                                       pthread_mutex_t* mutex, 
                                       struct timespec* abstime)
@@ -812,6 +815,7 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
 // darwin: pthread_cond_signal
 // darwin: pthread_cond_signal_thread_np (don't intercept this)
 //
+__attribute__((noinline))
 static int pthread_cond_signal_WRK(pthread_cond_t* cond)
 {
    int ret;
@@ -863,6 +867,7 @@ static int pthread_cond_signal_WRK(pthread_cond_t* cond)
 // point of view, with cond_signal, so the code is duplicated.
 // Maybe it should be commoned up.
 //
+__attribute__((noinline))
 static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
 {
    int ret;
@@ -910,6 +915,7 @@ static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
 // glibc:  pthread_cond_destroy@GLIBC_2.0
 // darwin: pthread_cond_destroy
 //
+__attribute__((noinline))
 static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
 {
    int ret;
@@ -1098,6 +1104,7 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
 // glibc:  pthread_spin_init
 // glibc:  pthread_spin_unlock
 // darwin: (doesn't appear to exist)
+__attribute__((noinline))
 static int pthread_spin_init_or_unlock_WRK(pthread_spinlock_t* lock,
                                            int pshared) {
    int    ret;
@@ -1294,6 +1301,7 @@ PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
 // glibc:  pthread_rwlock_init
 // darwin: pthread_rwlock_init
 // darwin: pthread_rwlock_init$UNIX2003
+__attribute__((noinline))
 static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
                                    pthread_rwlockattr_t* attr)
 {
@@ -1340,6 +1348,7 @@ static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
 // darwin: pthread_rwlock_destroy
 // darwin: pthread_rwlock_destroy$UNIX2003
 //
+__attribute__((noinline))
 static int pthread_rwlock_destroy_WRK(pthread_rwlock_t* rwl)
 {
    int    ret;
@@ -1383,6 +1392,7 @@ static int pthread_rwlock_destroy_WRK(pthread_rwlock_t* rwl)
 // darwin: pthread_rwlock_wrlock
 // darwin: pthread_rwlock_wrlock$UNIX2003
 //
+__attribute__((noinline))
 static int pthread_rwlock_wrlock_WRK(pthread_rwlock_t* rwlock)
 {
    int    ret;
@@ -1430,6 +1440,7 @@ static int pthread_rwlock_wrlock_WRK(pthread_rwlock_t* rwlock)
 // darwin: pthread_rwlock_rdlock
 // darwin: pthread_rwlock_rdlock$UNIX2003
 //
+__attribute__((noinline))
 static int pthread_rwlock_rdlock_WRK(pthread_rwlock_t* rwlock)
 {
    int    ret;
@@ -1477,6 +1488,7 @@ static int pthread_rwlock_rdlock_WRK(pthread_rwlock_t* rwlock)
 // darwin: pthread_rwlock_trywrlock
 // darwin: pthread_rwlock_trywrlock$UNIX2003
 //
+__attribute__((noinline))
 static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
 {
    int    ret;
@@ -1530,6 +1542,7 @@ static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
 // darwin: pthread_rwlock_trywrlock
 // darwin: pthread_rwlock_trywrlock$UNIX2003
 //
+__attribute__((noinline))
 static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
 {
    int    ret;
@@ -1582,6 +1595,7 @@ static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
 // glibc:  pthread_rwlock_unlock
 // darwin: pthread_rwlock_unlock
 // darwin: pthread_rwlock_unlock$UNIX2003
+__attribute__((noinline))
 static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 {
    int    ret;
@@ -1656,6 +1670,7 @@ static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 // glibc:  sem_init@GLIBC_2.0
 // darwin: sem_init
 //
+__attribute__((noinline))
 static int sem_init_WRK(sem_t* sem, int pshared, unsigned long value)
 {
    OrigFn fn;
@@ -1703,6 +1718,7 @@ static int sem_init_WRK(sem_t* sem, int pshared, unsigned long value)
 // glibc:  sem_destroy@@GLIBC_2.1
 // glibc:  sem_destroy@@GLIBC_2.2.5
 // darwin: sem_destroy
+__attribute__((noinline))
 static int sem_destroy_WRK(sem_t* sem)
 {
    OrigFn fn;
@@ -1753,6 +1769,7 @@ static int sem_destroy_WRK(sem_t* sem)
 // darwin: sem_wait$UNIX2003
 //
 /* wait: decrement semaphore - acquire lockage */
+__attribute__((noinline))
 static int sem_wait_WRK(sem_t* sem)
 {
    OrigFn fn;
@@ -1805,6 +1822,7 @@ static int sem_wait_WRK(sem_t* sem)
 // darwin: sem_post
 //
 /* post: increment semaphore - release lockage */
+__attribute__((noinline))
 static int sem_post_WRK(sem_t* sem)
 {
    OrigFn fn;

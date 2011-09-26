@@ -7,35 +7,6 @@ $dir/../../tests/filter_stderr_basic                    |
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |
 
-# Remove "Helgrind, ..." line and the following copyright line;
-# also the standard postamble (does such a word exist?)
-sed \
- -e "/^Helgrind, a thread error detector/ , /./ d" \
- -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" \
- -e "/^Use --history-level=approx or =none to gain increased speed, at$/d" \
- -e "/^the cost of reduced accuracy of conflicting-access information$/d" |
-
-# Anonymise line numbers in hg_intercepts.c
-sed "s/hg_intercepts.c:[0-9]*/hg_intercepts.c:.../g"  |
-
-# Change (eg) "/lib64/libpthread-2.5.so" into "/...libpthread..."
-sed \
- -e "s/(in \/.*libpthread.*)$/(in \/...libpthread...)/" \
- -e "s/(within \/.*libpthread.*)$/(within \/...libpthread...)/" |
-
-# Tidy up in cases where glibc (+ libdl + libpthread + ld) have
-# been built with debugging information, hence source locs are present
-sed \
- -e "s/(createthread.c:[0-9]*)/(in \/...libpthread...)/g" \
- -e "s/(clone.S:[0-9]*)/(in \/...libc...)/g" \
- -e "s/start_thread (pthread_create.c:[0-9]*)$/start_thread (in \/...libpthread...)/g" |
-
-# Merge sem_wait and sem_wait@*, as either could be used.  Likewise for
-# sem_post.
-sed \
- -e "s/sem_wait@\*/sem_wait/" \
- -e "s/sem_post@\*/sem_post/" |
-
 # get rid of the numbers in bits of text "Thread #n", "thread #n",
 # "Thread n" and "thread n",
 # as these make some tests more scheduling sensitive -- those where
@@ -47,20 +18,20 @@ sed \
 # Likewise for frame numbers, which depend on compilation.
 sed -e "s/frame #[0-9][0-9]*/frame #x/g" | \
 
-# "Thread #x was created" stack traces are unreliable once you get above
-# "pthread_create@* (hg_intercepts.c:...)" -- they can contan
-# "pthread_create@GLIBC_", "do_clone", "clone", etc.  So we cut all the
-# "at"/"by" lines above "pthread_create@*".  We also convert
-# "pthread_create" into "pthread_create@*".
-perl -p -0 -e 's/(Thread #. was created\n)(   (at|by)[^\n]*\n)*(   by 0x........: pthread_create)(@\*)?( \(hg_intercepts.c:...\)\n)/$1   ...\n$4@*$6/gs' |
+# Merge sem_wait and sem_wait@*, as either could be used.  Likewise for
+# sem_post.
+sed \
+ -e "s/sem_wait@\*/sem_wait/" \
+ -e "s/sem_post@\*/sem_post/" |
 
-# Anything below "mythread_wrapper" in stack traces is unreliable,
-# containing libc and libpthread stuff like start_thread, clone, etc.  So we
-# remove all the "by" lines below "mythread_wrapper".
-perl -p -0 -e 's/(   by 0x........: mythread_wrapper \(hg_intercepts.c:...\)\n)(   by[^\n]*\n)*/$1   ...\n/gs' |
+# Remove "Helgrind, ..." line and the following copyright line;
+# also the standard postamble (does such a word exist?)
+sed \
+ -e "/^Helgrind, a thread error detector/ , /./ d" \
+ -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" \
+ -e "/^Use --history-level=approx or =none to gain increased speed, at$/d" \
+ -e "/^the cost of reduced accuracy of conflicting-access information$/d" |
 
-# Entire trace in a "Exiting thread still holds <N> lock(s)" is unreliable,
-# containing libc stuff like _Exit(), exit(), etc.  So we remove all the
-# "at"/"by" lines below the message.
-perl -p -0 -e 's/(Thread #.: Exiting thread still holds [0-9]+ locks?\n)(   (at|by)[^\n]*\n)*/$1   ...\n/gs'
+$dir/../../helgrind/tests/filter_helgrind "$@"
 
+exit 0

@@ -1,4 +1,5 @@
 prereq: test -e bar_trivial
 prog: ../../drd/tests/pth_barrier
 args: 32 1 1
-vgopts: -q --num-callers=3
+vgopts: -q
+stderr_filter_args: pth_barrier.c

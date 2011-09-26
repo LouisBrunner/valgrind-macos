@@ -7,7 +7,8 @@ Thread #x is the program's root thread
 
 Thread #x's call to sem_init failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: sem_init@* (hg_intercepts.c:...)
+   at 0x........: sem_init_WRK (hg_intercepts.c:...)
+   by 0x........: sem_init@* (hg_intercepts.c:...)
    by 0x........: main (tc18_semabuse.c:23)
 
 ----------------------------------------------------------------

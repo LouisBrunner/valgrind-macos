@@ -2,6 +2,7 @@
 
 Thread #x was created
    ...
+   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: barriers_and_races (pth_barrier.c:91)
    by 0x........: main (pth_barrier.c:121)
@@ -10,6 +11,7 @@ Thread #x was created
 
 Thread #x was created
    ...
+   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: barriers_and_races (pth_barrier.c:91)
    by 0x........: main (pth_barrier.c:121)

@@ -13,6 +13,7 @@ Thread #x is the program's root thread
 
 Thread #x was created
    ...
+   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:76)
 
@@ -35,7 +36,8 @@ declared at tc20_verifywrap.c:27
 
 Thread #x's call to pthread_join failed
    with error code 35 (EDEADLK: Resource deadlock would occur)
-   at 0x........: pthread_join (hg_intercepts.c:...)
+   at 0x........: pthread_join_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_join (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:83)
 
 
@@ -116,7 +118,8 @@ Thread #x's call to pthread_cond_wait failed
 ----------------------------------------------------------------
 
 Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
-   at 0x........: pthread_cond_signal@* (hg_intercepts.c:...)
+   at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:152)
 
 
@@ -125,7 +128,8 @@ FIXME: can't figure out how to verify wrap of pthread_cond_signal
 ----------------------------------------------------------------
 
 Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
-   at 0x........: pthread_cond_broadcast@* (hg_intercepts.c:...)
+   at 0x........: pthread_cond_broadcast_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_broadcast@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:158)
 
 
@@ -152,10 +156,12 @@ Thread #x's call to pthread_cond_timedwait failed
 ----------------------------------------------------------------
 
 Thread #x unlocked a not-locked lock at 0x........
-   at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:179)
   Lock at 0x........ was first observed
-   at 0x........: pthread_rwlock_init (hg_intercepts.c:...)
+   at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:178)
 
 (1) no error on next line
@@ -164,10 +170,12 @@ Thread #x unlocked a not-locked lock at 0x........
 ----------------------------------------------------------------
 
 Thread #x unlocked a not-locked lock at 0x........
-   at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:196)
   Lock at 0x........ was first observed
-   at 0x........: pthread_rwlock_init (hg_intercepts.c:...)
+   at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:186)
 
 (4) no error on next line
@@ -178,10 +186,12 @@ Thread #x unlocked a not-locked lock at 0x........
 ----------------------------------------------------------------
 
 Thread #x unlocked a not-locked lock at 0x........
-   at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:212)
   Lock at 0x........ was first observed
-   at 0x........: pthread_rwlock_init (hg_intercepts.c:...)
+   at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:186)
 
 
@@ -191,7 +201,8 @@ Thread #x unlocked a not-locked lock at 0x........
 
 Thread #x's call to sem_init failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: sem_init@* (hg_intercepts.c:...)
+   at 0x........: sem_init_WRK (hg_intercepts.c:...)
+   by 0x........: sem_init@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:228)
 
 

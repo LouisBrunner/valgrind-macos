@@ -2,3 +2,4 @@ prereq: test -e bar_trivial
 prog: ../../drd/tests/pth_barrier
 args: 2 32 1
 vgopts: -q --cmp-race-err-addrs=yes
+stderr_filter_args: pth_barrier.c

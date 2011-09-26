@@ -388,6 +388,9 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
  STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
+# if defined(VGPV_arm_linux_android)
+  STRLEN(NONE, __dl_strlen); /* in /system/bin/linker */
+# endif
 
 #elif defined(VGO_darwin)
  //STRLEN(VG_Z_LIBC_SONAME,          strlen)
@@ -708,6 +711,9 @@ static inline void my_exit ( int x )
  STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
  STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
  STRCMP(VG_Z_LD64_SO_1,            strcmp)
+# if defined(VGPV_arm_linux_android)
+  STRCMP(NONE, __dl_strcmp); /* in /system/bin/linker */
+# endif
 
 #elif defined(VGO_darwin)
  //STRCMP(VG_Z_LIBC_SONAME,          strcmp)

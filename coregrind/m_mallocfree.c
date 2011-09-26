@@ -1578,7 +1578,7 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
          /* next profile after 10% more growth */
          a->next_profile_at 
             = (SizeT)( 
-                 (((ULong)a->stats__bytes_on_loan_max) * 110ULL) / 100ULL );
+                 (((ULong)a->stats__bytes_on_loan_max) * 105ULL) / 100ULL );
          if (VG_(clo_profile_heap))
             cc_analyse_alloc_arena(aid);
       }

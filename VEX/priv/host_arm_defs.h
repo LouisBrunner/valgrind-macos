@@ -1,4 +1,3 @@
-
 /*---------------------------------------------------------------*/
 /*--- begin                                   host_arm_defs.h ---*/
 /*---------------------------------------------------------------*/
@@ -587,6 +586,7 @@ typedef
       ARMin_VCvtID,
       ARMin_FPSCR,
       ARMin_MFence,
+      ARMin_CLREX,
       /* Neon */
       ARMin_NLdStQ,
       ARMin_NLdStD,
@@ -827,6 +827,9 @@ typedef
          */
          struct {
          } MFence;
+         /* A CLREX instruction. */
+         struct {
+         } CLREX;
          /* Neon data processing instruction: 3 registers of the same
             length */
          struct {
@@ -940,6 +943,7 @@ extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
                                      HReg dst, HReg src );
 extern ARMInstr* ARMInstr_FPSCR    ( Bool toFPSCR, HReg iReg );
 extern ARMInstr* ARMInstr_MFence   ( void );
+extern ARMInstr* ARMInstr_CLREX    ( void );
 extern ARMInstr* ARMInstr_NLdStQ   ( Bool isLoad, HReg, ARMAModeN* );
 extern ARMInstr* ARMInstr_NLdStD   ( Bool isLoad, HReg, ARMAModeN* );
 extern ARMInstr* ARMInstr_NUnary   ( ARMNeonUnOp, HReg, HReg, UInt, Bool );

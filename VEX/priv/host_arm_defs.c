@@ -1338,6 +1338,11 @@ ARMInstr* ARMInstr_MFence ( void ) {
    i->tag      = ARMin_MFence;
    return i;
 }
+ARMInstr* ARMInstr_CLREX( void ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag      = ARMin_CLREX;
+   return i;
+}
 
 ARMInstr* ARMInstr_NLdStQ ( Bool isLoad, HReg dQ, ARMAModeN *amode ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
@@ -1759,6 +1764,9 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf("mfence (mcr 15,0,r0,c7,c10,4; 15,0,r0,c7,c10,5; "
                     "15,0,r0,c7,c5,4)");
          return;
+      case ARMin_CLREX:
+         vex_printf("clrex");
+         return;
       case ARMin_NLdStQ:
          if (i->ARMin.NLdStQ.isLoad)
             vex_printf("vld1.32 {");
@@ -2097,6 +2105,8 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_MFence:
          return;
+      case ARMin_CLREX:
+         return;
       case ARMin_NLdStQ:
          if (i->ARMin.NLdStQ.isLoad)
             addHRegUse(u, HRmWrite, i->ARMin.NLdStQ.dQ);
@@ -2274,6 +2284,8 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          i->ARMin.FPSCR.iReg = lookupHRegRemap(m, i->ARMin.FPSCR.iReg);
          return;
       case ARMin_MFence:
+         return;
+      case ARMin_CLREX:
          return;
       case ARMin_NLdStQ:
          i->ARMin.NLdStQ.dQ = lookupHRegRemap(m, i->ARMin.NLdStQ.dQ);
@@ -3286,6 +3298,11 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          *p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
          goto done;
       }
+      case ARMin_CLREX: {
+         *p++ = 0xF57FF01F; /* clrex */
+         goto done;
+      }
+
       case ARMin_NLdStQ: {
          UInt regD = qregNo(i->ARMin.NLdStQ.dQ) << 1;
          UInt regN, regM;

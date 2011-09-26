@@ -5908,7 +5908,10 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_MBE:
       switch (stmt->Ist.MBE.event) {
          case Imbe_Fence:
-            addInstr(env,ARMInstr_MFence());
+            addInstr(env, ARMInstr_MFence());
+            return;
+         case Imbe_CancelReservation:
+            addInstr(env, ARMInstr_CLREX());
             return;
          default:
             break;

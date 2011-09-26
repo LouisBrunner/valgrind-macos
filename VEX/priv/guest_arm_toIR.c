@@ -11991,6 +11991,16 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
          break;
    }
 
+   /* ------------------- CLREX ------------------ */
+   if (insn == 0xF57FF01F) {
+      /* AFAICS, this simply cancels a (all?) reservations made by a
+         (any?) preceding LDREX(es).  Arrange to hand it through to
+         the back end. */
+      stmt( IRStmt_MBE(Imbe_CancelReservation) );
+      DIP("clrex\n");
+      return True;
+   }
+
    /* ------------------- NEON ------------------- */
    if (archinfo->hwcaps & VEX_HWCAPS_ARM_NEON) {
       Bool ok_neon = decode_NEON_instruction(
@@ -17987,6 +17997,7 @@ DisResult disInstr_THUMB_WRK (
    }
    /* -------------- v7 barrier insns -------------- */
    if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF00) == 0x8F00) {
+      /* FIXME: should this be unconditional? */
       /* XXX this isn't really right, is it?  The generated IR does
          them unconditionally.  I guess it doesn't matter since it
          doesn't do any harm to do them even when the guarding
@@ -18025,6 +18036,7 @@ DisResult disInstr_THUMB_WRK (
 
    /* ---------------------- PLD{,W} ---------------------- */
    if ((INSN0(15,4) & 0xFFD) == 0xF89 && INSN1(15,12) == 0xF) {
+      /* FIXME: should this be unconditional? */
       /* PLD/PLDW immediate, encoding T1 */
       UInt rN    = INSN0(3,0);
       UInt bW    = INSN0(5,5);
@@ -18034,6 +18046,7 @@ DisResult disInstr_THUMB_WRK (
    }
 
    if ((INSN0(15,4) & 0xFFD) == 0xF81 && INSN1(15,8) == 0xFC) {
+      /* FIXME: should this be unconditional? */
       /* PLD/PLDW immediate, encoding T2 */
       UInt rN    = INSN0(3,0);
       UInt bW    = INSN0(5,5);
@@ -18043,6 +18056,7 @@ DisResult disInstr_THUMB_WRK (
    }
 
    if ((INSN0(15,4) & 0xFFD) == 0xF81 && INSN1(15,6) == 0x3C0) {
+      /* FIXME: should this be unconditional? */
       /* PLD/PLDW register, encoding T1 */
       UInt rN   = INSN0(3,0);
       UInt rM   = INSN1(3,0);
@@ -18062,8 +18076,8 @@ DisResult disInstr_THUMB_WRK (
    /* I don't know whether this is really v7-only.  But anyway, we
       have to support it since arm-linux uses TPIDRURO as a thread
       state register. */
-   
    if ((INSN0(15,0) == 0xEE1D) && (INSN1(11,0) == 0x0F70)) {
+      /* FIXME: should this be unconditional? */
       UInt rD = INSN1(15,12);
       if (!isBadRegT(rD)) {
          putIRegT(rD, IRExpr_Get(OFFB_TPIDRURO, Ity_I32), IRTemp_INVALID);
@@ -18071,6 +18085,17 @@ DisResult disInstr_THUMB_WRK (
          goto decode_success;
       }
       /* fall through */
+   }
+
+   /* ------------------- CLREX ------------------ */
+   if (INSN0(15,0) == 0xF3BF && INSN1(15,0) == 0x8F2F) {
+      /* AFAICS, this simply cancels a (all?) reservations made by a
+         (any?) preceding LDREX(es).  Arrange to hand it through to
+         the back end. */
+      mk_skip_over_T32_if_cond_is_false( condT );
+      stmt( IRStmt_MBE(Imbe_CancelReservation) );
+      DIP("clrex\n");
+      goto decode_success;
    }
 
    /* ------------------- NOP ------------------ */

@@ -1772,6 +1772,10 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 typedef
    enum { 
       Imbe_Fence=0x18000, 
+      /* Needed only on ARM.  It cancels a reservation made by a
+         preceding Linked-Load, and needs to be handed through to the
+         back end, just as LL and SC themselves are. */
+      Imbe_CancelReservation
    }
    IRMBusEvent;
 

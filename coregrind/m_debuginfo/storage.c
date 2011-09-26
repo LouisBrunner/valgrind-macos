@@ -281,24 +281,6 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
 }
 
 
-/* Resize the symbol table to save memory.
-*/
-void ML_(shrinkSym)( struct _DebugInfo* di )
-{
-   DiSym* new_tab;
-   UInt new_sz = di->symtab_used;
-   if (new_sz == di->symtab_size) return;
-
-   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkSym", 
-                                new_sz * sizeof(DiSym) );
-   VG_(memcpy)(new_tab, di->symtab, new_sz * sizeof(DiSym));
-
-   ML_(dinfo_free)(di->symtab);
-   di->symtab = new_tab;
-   di->symtab_size = new_sz;
-}
-
-
 /* Add a location to the location table. 
 */
 static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
@@ -329,15 +311,18 @@ static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
 }
 
 
-/* Resize the lineinfo table to save memory.
+/* Resize the LocTab (line number table) to save memory, by removing
+   (and, potentially, allowing m_mallocfree to unmap) any unused space
+   at the end of the table.
 */
-void ML_(shrinkLineInfo)( struct _DebugInfo* di )
+static void shrinkLocTab ( struct _DebugInfo* di )
 {
    DiLoc* new_tab;
-   UInt new_sz = di->loctab_used;
+   UWord new_sz = di->loctab_used;
    if (new_sz == di->loctab_size) return;
+   vg_assert(new_sz < di->loctab_size);
 
-   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkLineInfo", 
+   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkLocTab", 
                                 new_sz * sizeof(DiLoc) );
    VG_(memcpy)(new_tab, di->loctab, new_sz * sizeof(DiLoc));
 
@@ -1648,6 +1633,9 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
                 < di->loctab[i+1].addr);
    }
 #  undef SWAP
+
+   /* Free up unused space at the end of the table. */
+   shrinkLocTab(di);
 }
 
 

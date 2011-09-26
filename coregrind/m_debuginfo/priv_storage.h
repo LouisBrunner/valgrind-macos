@@ -813,12 +813,6 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
                         UChar*   dirname,  /* NULL is allowable */
                         Addr this, Addr next, Int lineno, Int entry);
 
-/* Shrink completed tables to save memory. */
-extern 
-void ML_(shrinkSym) ( struct _DebugInfo *di );
-extern 
-void ML_(shrinkLineInfo) ( struct _DebugInfo *di );
-
 /* Add a CFI summary record.  The supplied DiCfSI is copied. */
 extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );
 

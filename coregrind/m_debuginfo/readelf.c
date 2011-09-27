@@ -1071,6 +1071,83 @@ Addr open_debug_file( Char* name, Char* buildid, UInt crc, /*OUT*/UWord* size )
    return sr_Res(sres);
 }
 
+
+/* Try to find and map in a debuginfo file by some totally ad-hoc
+   scheme.  If successful, set *dimage and *n_dimage to point to the
+   image, and return True, else return False.  A temporary hack for
+   Android; does nothing on any other platform. */
+static
+Bool find_ad_hoc_debug_image( struct _DebugInfo* di, 
+                              Char* filename,
+                              /*OUT*/Addr* dimage,
+                              /*OUT*/SizeT* n_dimage )
+{
+#  if !defined(VGPV_arm_linux_android)
+   return False; /* we don't know narfink */
+
+#  else /* android specific hacks; look away now. */
+
+   /* The deal is: if we're looking for for a debuginfo file for some
+      object /system/blah (where blah can be any path), see if we can
+      find the file /sdcard/symbols/system/blah.  So for example it
+      produces the following mappings, both of which are important for
+      Memcheck:
+
+      /system/bin/linker  --> /sdcard/symbols/system/bin/linker
+      /system/lib/libc.so --> /sdcard/symbols/system/lib/libc.so
+
+      These /symbols files come from the AOSP build tree for your
+      device, for example out/target/product/crespo/symbols/system
+      (for a Nexus S), so one simple thing you can do is take the tree
+      rooted at out/target/product/crespo/symbols/system on the host
+      and park it at /sdcard/symbols/system on the device.  Then,
+      assuming it matches what's actually running on the device,
+      you'll have full debuginfo for all the libraries on the device.
+  
+      But beware: there is no checking that the debuginfo file, if
+      found, matches the main file in any way.
+   */
+   if (0 != VG_(strncmp)(filename, "/system/", 8))
+      return False;
+
+   HChar* nm = ML_(dinfo_zalloc)("di.fahdi.1", 
+                                 50 + VG_(strlen)(filename));
+   VG_(sprintf)(nm, "/sdcard/symbols%s", filename);
+
+   SysRes fd = VG_(open)(nm, VKI_O_RDONLY, 0);
+   if (sr_isError(fd)) goto fail;
+
+   struct vg_stat stat_buf;
+   if (VG_(fstat)(sr_Res(fd), &stat_buf) != 0) {
+      VG_(close)(sr_Res(fd));
+      goto fail;
+   }
+
+   *n_dimage = stat_buf.size;
+
+   SysRes sres = VG_(am_mmap_file_float_valgrind)
+                    ( *n_dimage, VKI_PROT_READ, sr_Res(fd), 0 );
+
+   VG_(close)(sr_Res(fd));
+   if (sr_isError(sres))
+     goto fail;
+
+   *dimage = sr_Res(sres);
+
+   if (VG_(clo_verbosity) > 1)
+      VG_(dmsg)("  Using debuginfo from %s\n", nm);
+
+   ML_(dinfo_free)(nm);
+   return True;
+
+  fail:
+   if (nm) ML_(dinfo_free)(nm);
+   return False;
+
+#  endif
+}
+
+
 /*
  * Try to find a separate debug file for a given object file.
  */
@@ -2149,6 +2226,15 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (buildid) {
          ML_(dinfo_free)(buildid);
          buildid = NULL; /* paranoia */
+      }
+
+      /* Still no luck?  Let's have one last roll of the dice. */
+      if (dimage == 0) {
+         vg_assert(n_dimage == 0);
+         Bool found = find_ad_hoc_debug_image( di, di->fsm.filename,
+                                               &dimage, &n_dimage );
+         if (found)
+            vg_assert(dimage != 0);
       }
 
       /* TOPLEVEL */

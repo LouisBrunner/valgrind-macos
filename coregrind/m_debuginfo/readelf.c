@@ -360,14 +360,35 @@ Bool get_elf_symbol_info (
    if (!plausible)
       return False;
 
-   /* Ignore if nameless, or zero-sized. */
-   if (sym->st_name == (ElfXX_Word)0
+   /* Ignore if nameless. */
+   if (sym_name == (ElfXX_Word)0
        || /* VG_(strlen)(sym_name) == 0 */
           /* equivalent but cheaper ... */
-          sym_name[0] == 0
-       || sym->st_size == 0) {
+          sym_name[0] == 0) {
+      TRACE_SYMTAB("    ignore -- nameless: %s\n", sym_name);
+      return False;
+   }
+
+   /* Ignore if zero-sized.  Except on Android:
+
+      On Android 2.3.5, some of the symbols that Memcheck needs to
+      intercept (for noise reduction purposes) have zero size, due to
+      lack of .size directives in handwritten assembly sources.  So we
+      can't reject them out of hand -- instead give them a bogusly
+      large size and let canonicaliseSymtab trim them so they don't
+      overlap any following symbols.  At least the following symbols
+      are known to be affected:
+
+      in /system/lib/libc.so: strlen strcmp strcpy memcmp memcpy
+      in /system/bin/linker:  __dl_strcmp __dl_strlen
+   */
+   if (sym->st_size == 0) {
+#     if defined(VGPV_arm_linux_android)
+      *sym_size_out = 1024;
+#     else
       TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
       return False;
+#     endif
    }
 
    /* This seems to significantly reduce the number of junk

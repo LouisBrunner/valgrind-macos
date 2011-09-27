@@ -1082,6 +1082,8 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
                               /*OUT*/Addr* dimage,
                               /*OUT*/SizeT* n_dimage )
 {
+   vg_assert(*dimage == 0 && *n_dimage == 0);
+
 #  if !defined(VGPV_arm_linux_android)
    return False; /* we don't know narfink */
 
@@ -1148,17 +1150,22 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
 }
 
 
-/*
- * Try to find a separate debug file for a given object file.
- */
+/* Try to find a separate debug file for a given object file.  If
+   found, it will be mapped in and the address and size returned in
+   *dimage and *n_dimage.  If not, *dimage and *n_dimage will be
+   unchanged.  The caller should set them to zero before the call. */
 static
-Addr find_debug_file( struct _DebugInfo* di,
+void find_debug_file( struct _DebugInfo* di,
                       Char* objpath, Char* buildid,
                       Char* debugname, UInt crc,
-                      /*OUT*/UWord* size )
+                      /*OUT*/Addr*  dimage,
+                      /*OUT*/SizeT* n_dimage )
 {
-   Char *debugpath = NULL;
-   Addr addr = 0;
+   Char* debugpath = NULL;
+   Addr  addr = 0;
+   UWord size = 0;
+
+   vg_assert(*dimage == 0 && *n_dimage == 0);
 
    if (buildid != NULL) {
       debugpath = ML_(dinfo_zalloc)(
@@ -1168,7 +1175,7 @@ Addr find_debug_file( struct _DebugInfo* di,
       VG_(sprintf)(debugpath, "/usr/lib/debug/.build-id/%c%c/%s.debug",
                    buildid[0], buildid[1], buildid + 2);
 
-      if ((addr = open_debug_file(debugpath, buildid, 0, size)) == 0) {
+      if ((addr = open_debug_file(debugpath, buildid, 0, &size)) == 0) {
          ML_(dinfo_free)(debugpath);
          debugpath = NULL;
       }
@@ -1187,25 +1194,25 @@ Addr find_debug_file( struct _DebugInfo* di,
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
 
-      if ((addr = open_debug_file(debugpath, NULL, crc, size)) == 0) {
+      if ((addr = open_debug_file(debugpath, NULL, crc, &size)) == 0) {
          VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
-         if ((addr = open_debug_file(debugpath, NULL, crc, size)) == 0) {
+         if ((addr = open_debug_file(debugpath, NULL, crc, &size)) == 0) {
             VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
-            addr = open_debug_file(debugpath, NULL, crc, size);
+            addr = open_debug_file(debugpath, NULL, crc, &size);
          }
       }
 
       ML_(dinfo_free)(objdir);
    }
 
-   if (addr) {
+   if (addr > 0 && size > 0) {
       TRACE_SYMTAB("\n");
       TRACE_SYMTAB("------ Found a debuginfo file: %s\n", debugpath);
+      *dimage = addr;
+      *n_dimage = size;
    }
 
    ML_(dinfo_free)(debugpath);
-
-   return addr;
 }
 
 
@@ -2214,12 +2221,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             crc = *(UInt *)(debuglink_img + crc_offset);
 
             /* See if we can find a matching debug file */
-            dimage = find_debug_file( di, di->fsm.filename, buildid,
-                                      debuglink_img, crc, &n_dimage );
+            find_debug_file( di, di->fsm.filename, buildid,
+                             debuglink_img, crc, &dimage, &n_dimage );
          } else {
             /* See if we can find a matching debug file */
-            dimage = find_debug_file( di, di->fsm.filename, buildid,
-                                      NULL, 0, &n_dimage );
+            find_debug_file( di, di->fsm.filename, buildid,
+                             NULL, 0, &dimage, &n_dimage );
          }
       }
 

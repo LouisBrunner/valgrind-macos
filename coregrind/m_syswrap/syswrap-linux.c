@@ -5135,6 +5135,88 @@ PRE(sys_ioctl)
 POST(sys_ioctl)
 {
    vg_assert(SUCCESS);
+
+   /* --- BEGIN special IOCTL handlers for specific Android hardware --- */
+
+#  if defined(VGPV_arm_linux_android)
+
+#  if defined(ANDROID_HARDWARE_nexus_s)
+
+   /* BEGIN undocumented ioctls for the graphics hardware (??)
+      (libpvr) on Nexus S */
+   if (ARG2 >= 0xC01C6700 && ARG2 <= 0xC01C67FF && ARG3 >= 0x1000) {
+      /* What's going on here: there appear to be a bunch of ioctls of
+         the form 0xC01C67xx which are undocumented, and if unhandled
+         give rise to a vast number of false positives in Memcheck.
+
+         The "normal" intrepretation of an ioctl of this form would be
+         that the 3rd arg is a pointer to an area of size 0x1C (28
+         bytes) which is filled in by the kernel.  Hence you might
+         think that "POST_MEM_WRITE(ARG3, 28)" would fix it.  But it
+         doesn't.
+
+         It requires POST_MEM_WRITE(ARG3, 256) to silence them.  One
+         interpretation of this is that ARG3 really does point to a 28
+         byte struct, but inside that are pointers to other areas also
+         filled in by the kernel.  If these happen to be allocated
+         just back up the stack then the 256 byte paint might cover
+         them too, somewhat indiscriminately.
+
+         By printing out ARG3 and also the 28 bytes that it points at,
+         it's possible to guess that the 7 word structure has this form
+
+           0            1    2    3        4    5        6           
+           ioctl-number 0x1C ptr1 ptr1size ptr2 ptr2size aBitMask
+
+         Unfortunately that doesn't seem to work for some reason, so
+         stay with the blunt-instrument approach for the time being.
+      */
+      if (1) {
+         /* blunt-instrument approach */
+         if (0) VG_(printf)("QQQQQQQQQQ c01c quick hack actioned (%08lx, %08lx)\n", ARG2, ARG3);
+         POST_MEM_WRITE(ARG3, 256);
+      } else {
+         /* be a bit more sophisticated */
+         if (0) VG_(printf)("QQQQQQQQQQ c01c quick hack actioned (%08lx, %08lx) (fancy)\n", ARG2, ARG3);
+         POST_MEM_WRITE(ARG3, 28);
+         UInt* word = (UInt*)ARG3;
+         if (word && word[2] && word[3] < 0x200/*stay sane*/)
+            POST_MEM_WRITE(word[2], word[3]); // "ptr1"
+         if (word && word[4] && word[5] < 0x200/*stay sane*/)
+            POST_MEM_WRITE(word[4], word[5]); // "ptr2"
+      }
+      if (0) {
+         Int i;
+         VG_(printf)("QQQQQQQQQQ ");
+         for (i = 0; i < (0x1C/4); i++) {
+            VG_(printf)("%08x ", ((UInt*)(ARG3))[i]);
+         }
+         VG_(printf)("\n");
+      }
+      return;
+   }
+   /* END Nexus S specific ioctls */
+
+#  else /* no ANDROID_HARDWARE_anything defined */
+
+#   warning ""
+#   warning "You need to define one the CPP symbols ANDROID_HARDWARE_blah"
+#   warning "at configure time, to tell Valgrind what hardware you are"
+#   warning "building for.  Currently known values are"
+#   warning ""
+#   warning "   ANDROID_HARDWARE_nexus_s       Samsung Nexus S"
+#   warning ""
+#   warning "Make sure you exactly follow the steps in README.android."
+#   warning ""
+#   error "No CPP symbol ANDROID_HARDWARE_blah defined.  Giving up."
+
+#  endif /* cases for ANDROID_HARDWARE_blah */
+
+#  endif /* defined(VGPV_arm_linux_android) */
+
+   /* --- END special IOCTL handlers for specific Android hardware --- */
+
+   /* --- normal handling --- */
    switch (ARG2 /* request */) {
    case VKI_TCSETS:
    case VKI_TCSETSW:

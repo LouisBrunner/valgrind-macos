@@ -5032,6 +5032,74 @@ PRE(sys_ioctl)
       }
       break;
 
+#  if defined(VGPV_arm_linux_android)
+   /* ashmem */
+   case VKI_ASHMEM_GET_SIZE:
+   case VKI_ASHMEM_SET_SIZE:
+   case VKI_ASHMEM_GET_PROT_MASK:
+   case VKI_ASHMEM_SET_PROT_MASK:
+   case VKI_ASHMEM_GET_PIN_STATUS:
+   case VKI_ASHMEM_PURGE_ALL_CACHES:
+       break;
+   case VKI_ASHMEM_GET_NAME:
+       PRE_MEM_WRITE( "ioctl(ASHMEM_SET_NAME)", ARG3, VKI_ASHMEM_NAME_LEN );
+       break;
+   case VKI_ASHMEM_SET_NAME:
+       PRE_MEM_RASCIIZ( "ioctl(ASHMEM_SET_NAME)", ARG3);
+       break;
+   case VKI_ASHMEM_PIN:
+   case VKI_ASHMEM_UNPIN:
+       PRE_MEM_READ( "ioctl(ASHMEM_PIN|ASHMEM_UNPIN)",
+                     ARG3, sizeof(struct vki_ashmem_pin) );
+       break;
+
+   /* binder */
+   case VKI_BINDER_WRITE_READ:
+       if (ARG3) {
+           struct vki_binder_write_read* bwr
+              = (struct vki_binder_write_read*)ARG3;
+
+           PRE_FIELD_READ("ioctl(BINDER_WRITE_READ).write_buffer",
+                          bwr->write_buffer);
+           PRE_FIELD_READ("ioctl(BINDER_WRITE_READ).write_size",
+                          bwr->write_size);
+           PRE_FIELD_READ("ioctl(BINDER_WRITE_READ).write_consumed",
+                          bwr->write_consumed);
+           PRE_FIELD_READ("ioctl(BINDER_WRITE_READ).read_buffer",
+                          bwr->read_buffer);
+           PRE_FIELD_READ("ioctl(BINDER_WRITE_READ).read_size",
+                          bwr->read_size);
+           PRE_FIELD_READ("ioctl(BINDER_WRITE_READ).read_consumed",
+                          bwr->read_consumed);
+
+           PRE_FIELD_WRITE("ioctl(BINDER_WRITE_READ).write_consumed",
+                           bwr->write_consumed);
+           PRE_FIELD_WRITE("ioctl(BINDER_WRITE_READ).read_consumed",
+                           bwr->read_consumed);
+
+           if (bwr->read_size)
+               PRE_MEM_WRITE("ioctl(BINDER_WRITE_READ).read_buffer[]",
+                             (Addr)bwr->read_buffer, bwr->read_size);
+           if (bwr->write_size)
+               PRE_MEM_READ("ioctl(BINDER_WRITE_READ).write_buffer[]",
+                            (Addr)bwr->write_buffer, bwr->write_size);
+       }
+       break;
+
+   case VKI_BINDER_SET_IDLE_TIMEOUT:
+   case VKI_BINDER_SET_MAX_THREADS:
+   case VKI_BINDER_SET_IDLE_PRIORITY:
+   case VKI_BINDER_SET_CONTEXT_MGR:
+   case VKI_BINDER_THREAD_EXIT:
+       break;
+   case VKI_BINDER_VERSION:
+       if (ARG3) {
+           struct vki_binder_version* bv = (struct vki_binder_version*)ARG3;
+           PRE_FIELD_WRITE("ioctl(BINDER_VERSION)", bv->protocol_version);
+       }
+       break;
+#  endif /* defined(VGPV_arm_linux_android) */
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -5846,6 +5914,49 @@ POST(sys_ioctl)
                         sizeof(struct vki_sockaddr));
       }
       break;
+
+#  if defined(VGPV_arm_linux_android)
+   /* ashmem */
+   case VKI_ASHMEM_GET_SIZE:
+   case VKI_ASHMEM_SET_SIZE:
+   case VKI_ASHMEM_GET_PROT_MASK:
+   case VKI_ASHMEM_SET_PROT_MASK:
+   case VKI_ASHMEM_GET_PIN_STATUS:
+   case VKI_ASHMEM_PURGE_ALL_CACHES:
+   case VKI_ASHMEM_SET_NAME:
+   case VKI_ASHMEM_PIN:
+   case VKI_ASHMEM_UNPIN:
+       break;
+   case VKI_ASHMEM_GET_NAME:
+       POST_MEM_WRITE( ARG3, VKI_ASHMEM_NAME_LEN );
+       break;
+
+   /* binder */
+   case VKI_BINDER_WRITE_READ:
+       if (ARG3) {
+           struct vki_binder_write_read* bwr
+              = (struct vki_binder_write_read*)ARG3;
+           POST_FIELD_WRITE(bwr->write_consumed);
+           POST_FIELD_WRITE(bwr->read_consumed);
+
+           if (bwr->read_size)
+               POST_MEM_WRITE((Addr)bwr->read_buffer, bwr->read_consumed);
+       }
+       break;
+
+   case VKI_BINDER_SET_IDLE_TIMEOUT:
+   case VKI_BINDER_SET_MAX_THREADS:
+   case VKI_BINDER_SET_IDLE_PRIORITY:
+   case VKI_BINDER_SET_CONTEXT_MGR:
+   case VKI_BINDER_THREAD_EXIT:
+       break;
+   case VKI_BINDER_VERSION:
+       if (ARG3) {
+           struct vki_binder_version* bv = (struct vki_binder_version*)ARG3;
+           POST_FIELD_WRITE(bv->protocol_version);
+       }
+       break;
+#  endif /* defined(VGPV_arm_linux_android) */
 
    default:
       /* EVIOC* are variable length and return size written on success */

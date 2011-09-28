@@ -937,7 +937,7 @@ int main ( int argc, char** argv )
       show_CacheProfFile( outfile, cpf );
       if (ferror(outfile)) {
          fprintf(stderr, "%s: error writing output file %s\n", 
-                         argv0, outfilename);
+                         argv0, outfilename ? outfilename : "(stdout)" );
          perror(argv0);
          if (outfile != stdout)
             fclose(outfile);

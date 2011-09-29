@@ -597,18 +597,19 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    ------------------------------------------------------------------ */
 
 /* Use gcc's built-in setjmp/longjmp.  longjmp must not restore signal
-   mask state, but does need to pass "val" through. */
+   mask state, but does need to pass "val" through.  jumped must be a
+   volatile UWord. */
 #define SCHEDSETJMP(tid, jumped, stmt)					\
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
 									\
       (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);              \
-      if ((jumped) == 0) {						\
+      if ((jumped) == ((UWord)0)) {                                     \
 	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
 	 _qq_tst->sched_jmpbuf_valid = True;				\
 	 stmt;								\
       }	else if (VG_(clo_trace_sched))					\
-	 VG_(printf)("SCHEDSETJMP(line %d) tid %d, jumped=%d\n",        \
+	 VG_(printf)("SCHEDSETJMP(line %d) tid %d, jumped=%ld\n",       \
                      __LINE__, tid, jumped);                            \
       vg_assert(_qq_tst->sched_jmpbuf_valid);				\
       _qq_tst->sched_jmpbuf_valid = False;				\
@@ -723,7 +724,7 @@ void VG_(force_vgdb_poll) ( void )
    indicating why VG_(run_innerloop) stopped. */
 static UInt run_thread_for_a_while ( ThreadId tid )
 {
-   volatile Int          jumped;
+   volatile UWord        jumped;
    volatile ThreadState* tst = NULL; /* stop gcc complaining */
    volatile UInt         trc;
    volatile Int          dispatch_ctr_SAVED;
@@ -771,7 +772,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(VG_(in_generated_code) == True);
    VG_(in_generated_code) = False;
 
-   if (jumped) {
+   if (jumped != (UWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
       vg_assert(trc == 0);
@@ -805,7 +806,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    VG_TRC_* value. */
 static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
 {
-   volatile Int          jumped;
+   volatile UWord        jumped;
    volatile ThreadState* tst; 
    volatile UWord        argblock[4];
    volatile UInt         retval;
@@ -857,7 +858,7 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
 
    VG_(in_generated_code) = False;
 
-   if (jumped) {
+   if (jumped != (UWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
       vg_assert(argblock[2] == 0); /* next guest IP was not written */
@@ -915,7 +916,7 @@ static void handle_tt_miss ( ThreadId tid )
 static void handle_syscall(ThreadId tid, UInt trc)
 {
    ThreadState * volatile tst = VG_(get_ThreadState)(tid);
-   Bool jumped; 
+   volatile UWord jumped; 
 
    /* Syscall may or may not block; either way, it will be
       complete by the time this call returns, and we'll be
@@ -935,7 +936,7 @@ static void handle_syscall(ThreadId tid, UInt trc)
 		  tid, VG_(running_tid), tid, tst->status);
    vg_assert(VG_(is_running_thread)(tid));
    
-   if (jumped) {
+   if (jumped != (UWord)0) {
       block_signals();
       VG_(poll_signals)(tid);
    }

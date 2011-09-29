@@ -80,6 +80,8 @@ clean-noinst_DSYMS:
 
 # Baseline flags for all compilations.  Aim here is to maximise
 # performance and get whatever useful warnings we can out of gcc.
+# -fno-builtin is important for defeating LLVM's idiom recognition
+# that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
@@ -89,7 +91,8 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
-	-fno-strict-aliasing
+	-fno-strict-aliasing \
+	-fno-builtin
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good
@@ -97,9 +100,11 @@ AM_CFLAGS_BASE = \
 # into (and through) the preloads.
 if VGCONF_OS_IS_DARWIN
 AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-		-mno-dynamic-no-pic -fpic -fPIC
+		-mno-dynamic-no-pic -fpic -fPIC \
+		-fno-builtin
 else
-AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+		-fno-builtin
 endif
 
 

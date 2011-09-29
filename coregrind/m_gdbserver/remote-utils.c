@@ -228,7 +228,7 @@ void remote_open (char *name)
        offsetof(ThreadState, status),
        offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid)};
    const int pid = VG_(getpid)();
-   const int name_default = strcmp(name, VG_CLO_VGDB_PREFIX_DEFAULT) == 0;
+   const int name_default = strcmp(name, VG_(vgdb_prefix_default)()) == 0;
    Addr addr_shared;
    SysRes o;
    int shared_mem_fd = INVALID_DESCRIPTOR;
@@ -1059,3 +1059,19 @@ int decode_X_packet (char *from, int packet_len, CORE_ADDR *mem_addr_ptr,
    return 0;
 }
 
+
+/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+   to communicate with valgrind */
+HChar *
+VG_(vgdb_prefix_default)(void)
+{
+   const HChar *tmpdir;
+   HChar *prefix;
+   
+   tmpdir = VG_(tmpdir)();
+   prefix = malloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+   strcpy(prefix, tmpdir);
+   strcat(prefix, "/vgdb-pipe");
+
+   return prefix;
+}

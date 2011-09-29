@@ -671,6 +671,10 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
    /* END command-line processing loop */
 
+   /* Determine the path prefix for vgdb */
+   if (VG_(clo_vgdb_prefix) == NULL)
+     VG_(clo_vgdb_prefix) = VG_(vgdb_prefix_default)();
+
    /* Make VEX control parameters sane */
 
    if (VG_(clo_vex_control).guest_chase_thresh

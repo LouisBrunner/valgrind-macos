@@ -46,6 +46,7 @@ int main (int argc, char** argv)
 #include "pub_core_libcsetjmp.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
+#include "config.h"
 
 #include <limits.h>
 #include <unistd.h>
@@ -141,7 +142,7 @@ static struct timeval dbgtv;
                             fflush(stderr),                              \
                             exit(1))
 
-static char *vgdb_prefix = "/tmp/vgdb-pipe";
+static char *vgdb_prefix = NULL;
 
 /* Will be set to True when any condition indicating we have to shutdown
    is encountered. */
@@ -176,6 +177,35 @@ void *vrealloc(void *ptr,size_t size)
    if (mem == NULL)
       XERROR (errno, "can't reallocate memory\n");
    return mem;
+}
+
+/* Return the name of a directory for temporary files. */
+static
+const char *vgdb_tmpdir(void)
+{
+   const char *tmpdir;
+
+   tmpdir = getenv("TMPDIR");
+   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = VG_TMPDIR;
+   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = "/tmp";    /* fallback */
+
+   return tmpdir;
+}
+
+/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+   to communicate with valgrind */
+static
+char *vgdb_prefix_default(void)
+{
+   const char *tmpdir;
+   HChar *prefix;
+   
+   tmpdir = vgdb_tmpdir();
+   prefix = vmalloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+   strcpy(prefix, tmpdir);
+   strcat(prefix, "/vgdb-pipe");
+
+   return prefix;
 }
 
 /* add nrw to the written_by_vgdb field of shared32 or shared64 */ 
@@ -2263,6 +2293,9 @@ void parse_options(int argc, char** argv,
             
       }
    }
+
+   if (vgdb_prefix == NULL)
+      vgdb_prefix = vgdb_prefix_default();
 
    if (isatty(0) 
        && !show_shared_mem 

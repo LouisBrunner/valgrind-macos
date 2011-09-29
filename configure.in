@@ -100,13 +100,24 @@ AC_MSG_CHECKING([for a supported version of gcc])
 
 [gcc_version=`${CC} --version | head -n 1 | $SED 's/^[^0-9]*\([0-9.]*\).*$/\1/'`]
 
-case "${gcc_version}" in
-     2.*)
-	AC_MSG_RESULT([no (${gcc_version})])
-	AC_MSG_ERROR([please use a recent (>= gcc-3.0) version of gcc])
+is_clang="notclang"
+if test "x`${CC} --version | head -n 1 | $SED 's/\(clang\) version.*/\1/'`" = "xclang" ; then
+   is_clang="clang"
+fi
+
+case "${is_clang}-${gcc_version}" in
+     notclang-3.*)
+	AC_MSG_RESULT([ok (${gcc_version})])
+	;;
+     notclang-4.*)
+	AC_MSG_RESULT([ok (${gcc_version})])
+	;;
+     clang-2.9)
+	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
      *)
-	AC_MSG_RESULT([ok (${gcc_version})])
+	AC_MSG_RESULT([no (${gcc_version})])
+	AC_MSG_ERROR([please use gcc >= 3.0 or clang >= 2.9])
 	;;
 esac
 

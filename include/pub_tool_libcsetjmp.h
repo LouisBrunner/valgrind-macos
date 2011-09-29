@@ -63,27 +63,57 @@
    functions and typedefs, since wrapping __builtin_setjmp up in a
    second function (eg, VG_(minimal_setjmp)) doesn't seem to work for
    whatever reason -- returns via a VG_(minimal_longjmp) go wrong.
+
+   VG_MINIMAL_SETJMP stores the current integer register state in the
+   supplied argument, and returns zero.  VG_MINIMAL_LONGJMP resumes
+   with the previously saved state, and returns a nonzero, word-sized
+   value.  The caller must test all bits of the value in order to make
+   a zero/non-zero determination.
 */
 
 #if defined(VGP_ppc32_linux)
 
 #define VG_MINIMAL_JMP_BUF(_name)        UInt _name [32+1+1]
-Int  VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+__attribute__((returns_twice))
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
 __attribute__((noreturn))
-void VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
 
 #elif defined(VGP_ppc64_linux)
 
 #define VG_MINIMAL_JMP_BUF(_name)        ULong _name [32+1+1]
-Int  VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+__attribute__((returns_twice))
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
 __attribute__((noreturn))
-void VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
+
+#elif defined(VGP_amd64_linux)
+
+#define VG_MINIMAL_JMP_BUF(_name)        ULong _name [16+1]
+__attribute__((returns_twice))
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+__attribute__((noreturn))
+void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
+
+#elif defined(VGP_x86_linux)
+
+#define VG_MINIMAL_JMP_BUF(_name)        UInt _name [8+1]
+__attribute__((returns_twice))
+__attribute__((regparm(1))) // this is critical; don't delete
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+__attribute__((noreturn))
+__attribute__((regparm(1))) // ditto
+void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
 
 #else
 
 /* The default implementation. */
 #define VG_MINIMAL_JMP_BUF(_name) jmp_buf _name
-#define VG_MINIMAL_SETJMP(_env)   __builtin_setjmp((_env))
+#define VG_MINIMAL_SETJMP(_env)   ((UWord)(__builtin_setjmp((_env))))
 #define VG_MINIMAL_LONGJMP(_env)  __builtin_longjmp((_env),1)
 
 #endif

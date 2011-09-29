@@ -268,8 +268,132 @@ __asm__(
 ".previous"  "\n"
 );
 
-
 #endif /* VGP_ppc64_linux */
+
+
+/* ------------ amd64-linux ------------ */
+
+#if defined(VGP_amd64_linux)
+
+__asm__(
+".text"  "\n"
+""       "\n"
+".global VG_MINIMAL_SETJMP"  "\n"  // rdi = jmp_buf
+"VG_MINIMAL_SETJMP:"  "\n"
+"        movq   %rax,   0(%rdi)"   "\n"
+"        movq   %rbx,   8(%rdi)"   "\n"
+"        movq   %rcx,  16(%rdi)"   "\n"
+"        movq   %rdx,  24(%rdi)"   "\n"
+"        movq   %rdi,  32(%rdi)"   "\n"
+"        movq   %rsi,  40(%rdi)"   "\n"
+"        movq   %rbp,  48(%rdi)"   "\n"
+"        movq   %rsp,  56(%rdi)"   "\n"
+"        movq   %r8,   64(%rdi)"   "\n"
+"        movq   %r9,   72(%rdi)"   "\n"
+"        movq   %r10,  80(%rdi)"   "\n"
+"        movq   %r11,  88(%rdi)"   "\n"
+"        movq   %r12,  96(%rdi)"   "\n"
+"        movq   %r13, 104(%rdi)"   "\n"
+"        movq   %r14, 112(%rdi)"   "\n"
+"        movq   %r15, 120(%rdi)"   "\n"
+         // store the return address
+"        movq   0(%rsp), %rax"     "\n"
+"        movq   %rax, 128(%rdi)"   "\n"
+         // and return zero
+"        movq   $0, %rax"          "\n"
+"        ret"                      "\n"
+""       "\n"
+
+".globl VG_MINIMAL_LONGJMP"  "\n"
+"VG_MINIMAL_LONGJMP:"  "\n"    // rdi = jmp_buf
+         // skip restoring rax; it's pointless
+"        movq     8(%rdi),  %rbx"    "\n"
+"        movq    16(%rdi),  %rcx"    "\n"
+"        movq    24(%rdi),  %rdx"    "\n"
+         // defer restoring rdi; we still need it
+"        movq    40(%rdi),  %rsi"    "\n"
+"        movq    48(%rdi),  %rbp"    "\n"
+"        movq    56(%rdi),  %rsp"    "\n"
+"        movq    64(%rdi),  %r8"     "\n"
+"        movq    72(%rdi),  %r9"     "\n"
+"        movq    80(%rdi),  %r10"    "\n"
+"        movq    88(%rdi),  %r11"    "\n"
+"        movq    96(%rdi),  %r12"    "\n"
+"        movq   104(%rdi),  %r13"    "\n"
+"        movq   112(%rdi),  %r14"    "\n"
+"        movq   120(%rdi),  %r15"    "\n"
+         // restore the return address
+"        movq   128(%rdi), %rax"     "\n"
+         // restore rdi; this is the last use
+"        movq   32(%rdi), %rdi"      "\n"
+         // make %rsp look like we really did a return
+"        addq   $8, %rsp"            "\n"
+         // continue at RA of original call.  Note: this is a
+         // nasty trick.  We assume that %rax is nonzero, and so the
+         // caller can differentiate this case from the normal _SETJMP
+         // return case.  If the return address ever is zero, then
+         // we're hosed; but that seems pretty unlikely given that it
+         // would mean we'd be executing at the wraparound point of the
+         // address space.
+"        jmp *%rax"                  "\n"
+""       "\n"
+
+".previous"       "\n"
+);
+
+#endif /* VGP_amd64_linux */
+
+
+/* ------------ x86-linux ------------ */
+
+#if defined(VGP_x86_linux)
+
+__asm__(
+".text"  "\n"
+""       "\n"
+".global VG_MINIMAL_SETJMP"  "\n"  // eax = jmp_buf
+"VG_MINIMAL_SETJMP:"  "\n"
+"        movl   %eax,   0(%eax)"   "\n"
+"        movl   %ebx,   4(%eax)"   "\n"
+"        movl   %ecx,   8(%eax)"   "\n"
+"        movl   %edx,  12(%eax)"   "\n"
+"        movl   %edi,  16(%eax)"   "\n"
+"        movl   %esi,  20(%eax)"   "\n"
+"        movl   %ebp,  24(%eax)"   "\n"
+"        movl   %esp,  28(%eax)"   "\n"
+         // store the return address
+"        movl   0(%esp), %ebx"     "\n"
+"        movl   %ebx, 32(%eax)"    "\n"
+         // un-trash ebx (necessary?  i don't know)
+"        movl   4(%eax), %ebx"     "\n"
+         // and return zero
+"        movl   $0, %eax"          "\n"
+"        ret"                      "\n"
+""       "\n"
+
+".globl VG_MINIMAL_LONGJMP"  "\n"
+"VG_MINIMAL_LONGJMP:"  "\n"    // eax = jmp_buf
+         // skip restoring eax; it's pointless
+"        movl     4(%eax),  %ebx"    "\n"
+"        movl     8(%eax),  %ecx"    "\n"
+"        movl    12(%eax),  %edx"    "\n"
+"        movl    16(%eax),  %edi"    "\n"
+"        movl    20(%eax),  %esi"    "\n"
+"        movl    24(%eax),  %ebp"    "\n"
+"        movl    28(%eax),  %esp"    "\n"
+         // restore the return address
+"        movl    32(%eax), %eax"     "\n"
+         // make %esp look like we really did a return
+"        addl    $4, %esp"           "\n"
+         // continue at RA of original call.  Same zero-vs-nonzero
+         // trick/assumption as documented for the amd64-linux case.
+"        jmp *%eax"                  "\n"
+""       "\n"
+
+".previous"       "\n"
+);
+
+#endif /* VGP_x86_linux */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

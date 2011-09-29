@@ -36,8 +36,10 @@
 
 /* See include/pub_tool_libcsetjmp.h for background and rationale. */
 
-/* The only alternative implementations are for ppc{32,64}-linux.  See
-   #259977. */
+/* The alternative implementations are for ppc{32,64}-linux and
+   {amd64,x86}-{linux,darwin}.  See #259977.  That leaves only
+   {arm,s390x}-linux using the gcc builtins now.
+*/
 
 /* ------------ ppc32-linux ------------ */
 
@@ -271,15 +273,26 @@ __asm__(
 #endif /* VGP_ppc64_linux */
 
 
-/* ------------ amd64-linux ------------ */
+/* ------------ amd64-{linux,darwin} ------------ */
 
-#if defined(VGP_amd64_linux)
+#if defined(VGP_amd64_linux) || defined(VGP_amd64_darwin)
 
 __asm__(
 ".text"  "\n"
 ""       "\n"
+
+#if defined(VGP_amd64_linux)
 ".global VG_MINIMAL_SETJMP"  "\n"  // rdi = jmp_buf
 "VG_MINIMAL_SETJMP:"  "\n"
+
+#elif defined(VGP_amd64_darwin)
+".globl _VG_MINIMAL_SETJMP"  "\n"  // rdi = jmp_buf
+"_VG_MINIMAL_SETJMP:"  "\n"
+
+#else
+#   error "Huh?"
+#endif
+
 "        movq   %rax,   0(%rdi)"   "\n"
 "        movq   %rbx,   8(%rdi)"   "\n"
 "        movq   %rcx,  16(%rdi)"   "\n"
@@ -304,8 +317,18 @@ __asm__(
 "        ret"                      "\n"
 ""       "\n"
 
-".globl VG_MINIMAL_LONGJMP"  "\n"
+
+#if defined(VGP_amd64_linux)
+".global VG_MINIMAL_LONGJMP"  "\n"
 "VG_MINIMAL_LONGJMP:"  "\n"    // rdi = jmp_buf
+
+#elif defined(VGP_amd64_darwin)
+".globl _VG_MINIMAL_LONGJMP"  "\n"
+"_VG_MINIMAL_LONGJMP:"  "\n"    // rdi = jmp_buf
+
+#else
+#   error "Huh?"
+#endif
          // skip restoring rax; it's pointless
 "        movq     8(%rdi),  %rbx"    "\n"
 "        movq    16(%rdi),  %rcx"    "\n"
@@ -338,21 +361,34 @@ __asm__(
 "        jmp *%rax"                  "\n"
 ""       "\n"
 
+#if !defined(VGP_amd64_darwin)
 ".previous"       "\n"
+#endif
 );
 
-#endif /* VGP_amd64_linux */
+#endif /* VGP_amd64_linux || VGP_amd64_darwin */
 
 
-/* ------------ x86-linux ------------ */
+/* ------------ x86-{linux,darwin} ------------ */
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_x86_darwin)
 
 __asm__(
 ".text"  "\n"
 ""       "\n"
+
+#if defined(VGP_x86_linux)
 ".global VG_MINIMAL_SETJMP"  "\n"  // eax = jmp_buf
 "VG_MINIMAL_SETJMP:"  "\n"
+
+#elif defined(VGP_x86_darwin)
+".globl _VG_MINIMAL_SETJMP"  "\n"  // eax = jmp_buf
+"_VG_MINIMAL_SETJMP:"  "\n"
+
+#else
+#   error "Huh?"
+#endif
+
 "        movl   %eax,   0(%eax)"   "\n"
 "        movl   %ebx,   4(%eax)"   "\n"
 "        movl   %ecx,   8(%eax)"   "\n"
@@ -371,8 +407,19 @@ __asm__(
 "        ret"                      "\n"
 ""       "\n"
 
-".globl VG_MINIMAL_LONGJMP"  "\n"
+
+#if defined(VGP_x86_linux)
+".global VG_MINIMAL_LONGJMP"  "\n"
 "VG_MINIMAL_LONGJMP:"  "\n"    // eax = jmp_buf
+
+#elif defined(VGP_x86_darwin)
+".globl _VG_MINIMAL_LONGJMP"  "\n"
+"_VG_MINIMAL_LONGJMP:"  "\n"    // eax = jmp_buf
+
+#else
+#   error "Huh?"
+#endif
+
          // skip restoring eax; it's pointless
 "        movl     4(%eax),  %ebx"    "\n"
 "        movl     8(%eax),  %ecx"    "\n"
@@ -390,10 +437,12 @@ __asm__(
 "        jmp *%eax"                  "\n"
 ""       "\n"
 
+#if !defined(VGP_x86_darwin)
 ".previous"       "\n"
+#endif
 );
 
-#endif /* VGP_x86_linux */
+#endif /* VGP_x86_linux || VGP_x86_darwin */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -100,8 +100,10 @@ static void print_all_stats ( void )
 
 static void usage_NORETURN ( Bool debug_help )
 {
-   /* 'usage1' contains a %s for the name of the GDB executable, which
-      must be supplied when it is VG_(printf)'d. */
+   /* 'usage1' contains a %s 
+      - for the name of the GDB executable
+      - for the name of vgdb's path prefix
+      which must be supplied when they are VG_(printf)'d. */
    Char* usage1 = 
 "usage: valgrind [options] prog-and-args\n"
 "\n"
@@ -257,7 +259,7 @@ static void usage_NORETURN ( Bool debug_help )
    /* 'usage1' expects two int, two char* argument, and one SizeT argument. */
    VG_(printf)(usage1, 
                VG_(clo_vgdb_error), gdb_path, VG_MIN_MALLOC_SZB,
-               VG_(clo_vgdb_poll), VG_(clo_vgdb_prefix)); 
+               VG_(clo_vgdb_poll), VG_(vgdb_prefix_default)()); 
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)

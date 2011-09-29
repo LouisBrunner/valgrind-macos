@@ -1411,13 +1411,28 @@ Bool read_from_pid_write_to_gdb(int from_pid)
 static
 void prepare_fifos_and_shared_mem(int pid)
 {
-   from_gdb_to_pid = vmalloc (strlen(vgdb_prefix) + 30);
-   to_gdb_from_pid = vmalloc (strlen(vgdb_prefix) + 30);
-   shared_mem      = vmalloc (strlen(vgdb_prefix) + 30);
+   const HChar *user, *host;
+   unsigned len;
+
+   user = getenv("LOGNAME");
+   if (user == NULL) user = getenv("USER");
+   if (user == NULL) user = "???";
+
+   host = getenv("HOST");
+   if (host == NULL) host = getenv("HOSTNAME");
+   if (host == NULL) host = "???";
+
+   len = strlen(vgdb_prefix) + strlen(user) + strlen(host) + 40;
+   from_gdb_to_pid = vmalloc (len);
+   to_gdb_from_pid = vmalloc (len);
+   shared_mem      = vmalloc (len);
    /* below 3 lines must match the equivalent in remote-utils.c */
-   sprintf(from_gdb_to_pid, "%s-from-vgdb-to-%d",    vgdb_prefix, pid);
-   sprintf(to_gdb_from_pid, "%s-to-vgdb-from-%d",    vgdb_prefix, pid);
-   sprintf(shared_mem,      "%s-shared-mem-vgdb-%d", vgdb_prefix, pid);
+   sprintf(from_gdb_to_pid, "%s-from-vgdb-to-%d-by-%s-on-%s",    vgdb_prefix,
+           pid, user, host);
+   sprintf(to_gdb_from_pid, "%s-to-vgdb-from-%d-by-%s-on-%s",    vgdb_prefix,
+           pid, user, host);
+   sprintf(shared_mem,      "%s-shared-mem-vgdb-%d-by-%s-on-%s", vgdb_prefix,
+           pid, user, host);
    DEBUG (1, "vgdb: using %s %s %s\n", 
           from_gdb_to_pid, to_gdb_from_pid, shared_mem);
 
@@ -2109,7 +2124,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
                             strlen (vgdb_format)) == 0) {
                   newpid = strtol(pathname + strlen (vgdb_format), 
                                   &wrongpid, 10);
-                  if (*wrongpid == '\0' && newpid > 0 
+                  if (*wrongpid == '-' && newpid > 0 
                       && kill (newpid, 0) == 0) {
                      nr_valid_pid++;
                      if (show_list) {

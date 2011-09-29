@@ -98,7 +98,18 @@ rm $tmpfile
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
 
-[gcc_version=`${CC} --version | head -n 1 | $SED 's/^[^0-9]*\([0-9.]*\).*$/\1/'`]
+# Try to get the gcc version, sed-ing out some unexpected stuff
+# that appears with the default gcc on OSX 10.6 and 10.7 respectively.
+# Without this, the version number comes out as 686, 10 or 11 :-(
+# 
+# i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
+# i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
+#
+[gcc_version=`${CC} --version \
+             | head -n 1 \
+             | $SED 's/i686-apple-darwin10//' \
+             | $SED 's/i686-apple-darwin11//' \
+             | $SED 's/^[^0-9]*\([0-9.]*\).*$/\1/'`]
 
 is_clang="notclang"
 if test "x`${CC} --version | head -n 1 | $SED 's/\(clang\) version.*/\1/'`" = "xclang" ; then

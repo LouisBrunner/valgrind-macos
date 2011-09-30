@@ -2,6 +2,15 @@
 Release 3.7.0 (???)
 ~~~~~~~~~~~~~~~~~~~
 
+- It is now possible to build a working Valgrind using Clang-2.9 on
+  Linux.
+
+- preliminary support for MacOSX 10.7.  Both 32- and 64-bit processes
+  are supported.  Some complex threaded applications (Firefox) are
+  observed to hang when run as 32 bit applications, whereas 64-bit
+  versions run OK.  The cause is unknown.  Memcheck will likely report
+  some false errors.  In general, expect some rough spots.
+
 - new client requests VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING
 
 - Added the --mod-funcname option to cg_diff.

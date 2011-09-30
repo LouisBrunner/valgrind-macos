@@ -908,8 +908,8 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
 static void lk_fini(Int exitcode)
 {
-   char percentify_buf[4]; /* Two digits, '%' and 0. */
-   const int percentify_size = sizeof(percentify_buf);
+   char percentify_buf[5]; /* Two digits, '%' and 0. */
+   const int percentify_size = sizeof(percentify_buf) - 1;
    const int percentify_decs = 0;
    
    tl_assert(clo_fnname);

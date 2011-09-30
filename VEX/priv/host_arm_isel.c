@@ -4217,7 +4217,42 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                   }
                }
             }
-            /* Does not match "VMOV Reg, Imm" form */
+            /* Does not match "VMOV Reg, Imm" form.  We'll have to do
+               it the slow way. */
+            { 
+               /* local scope */
+               /* Done via the stack for ease of use. */
+               /* FIXME: assumes little endian host */
+               HReg       w3, w2, w1, w0;
+               HReg       res  = newVRegV(env);
+               ARMAMode1* sp_0  = ARMAMode1_RI(hregARM_R13(), 0);
+               ARMAMode1* sp_4  = ARMAMode1_RI(hregARM_R13(), 4);
+               ARMAMode1* sp_8  = ARMAMode1_RI(hregARM_R13(), 8);
+               ARMAMode1* sp_12 = ARMAMode1_RI(hregARM_R13(), 12);
+               ARMRI84*   c_16  = ARMRI84_I84(16,0);
+               /* Make space for SP */
+               addInstr(env, ARMInstr_Alu(ARMalu_SUB, hregARM_R13(),
+                                                      hregARM_R13(), c_16));
+
+               /* Store the less significant 64 bits */
+               iselInt64Expr(&w1, &w0, env, e->Iex.Binop.arg2);
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w0, sp_0));
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w1, sp_4));
+         
+               /* Store the more significant 64 bits */
+               iselInt64Expr(&w3, &w2, env, e->Iex.Binop.arg1);
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w2, sp_8));
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w3, sp_12));
+         
+                /* Load result back from stack. */
+                addInstr(env, ARMInstr_NLdStQ(True/*load*/, res,
+                                              mkARMAModeN_R(hregARM_R13())));
+
+                /* Restore SP */
+                addInstr(env, ARMInstr_Alu(ARMalu_ADD, hregARM_R13(),
+                                           hregARM_R13(), c_16));
+                return res;
+            } /* local scope */
             goto neon_expr_bad;
          case Iop_AndV128: {
             HReg res = newVRegV(env);

@@ -403,6 +403,16 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
    if (reuse) {
+
+      /* For whatever reason, tst->os_state.pthread appear to have a
+         constant offset of 72 on 10.7, but zero on 10.6 and 10.5.  No
+         idea why. */
+#     if DARWIN_VERS <= DARWIN_10_6
+      UWord magic_delta = 0;
+#     elif DARWIN_VERS == DARWIN_10_7
+      UWord magic_delta = 0x48;
+#     endif
+
       // This thread already exists; we're merely re-entering 
       // after leaving via workq_ops(WQOPS_THREAD_RETURN). 
       // Don't allocate any V thread resources.
@@ -412,8 +422,14 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       vg_assert(mach_thread_self() == kport);
 
       tst = VG_(get_ThreadState)(tid);
+
+      if (0) VG_(printf)("wqthread_hijack reuse %s: tid %d, tst %p, "
+                         "tst->os_state.pthread %#lx, self %#lx\n",
+                         tst->os_state.pthread == self ? "SAME" : "DIFF",
+                         tid, tst, tst->os_state.pthread, self);
+
       vex = &tst->arch.vex;
-      vg_assert(tst->os_state.pthread == self);
+      vg_assert(tst->os_state.pthread - magic_delta == self);
    }
    else {
       // This is a new thread.

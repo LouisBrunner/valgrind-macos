@@ -7731,7 +7731,7 @@ POST(getaudit_addr)
 
 PRE(psynch_mutexwait)
 {
-   PRINT("psynch_mutexwait(BOGUS)\n");
+   PRINT("psynch_mutexwait(BOGUS)");
    *flags |= SfMayBlock;
 }
 POST(psynch_mutexwait)
@@ -7740,7 +7740,7 @@ POST(psynch_mutexwait)
 
 PRE(psynch_mutexdrop)
 {
-   PRINT("psynch_mutexdrop(BOGUS)\n");
+   PRINT("psynch_mutexdrop(BOGUS)");
    *flags |= SfMayBlock;
 }
 POST(psynch_mutexdrop)
@@ -7749,8 +7749,7 @@ POST(psynch_mutexdrop)
 
 PRE(psynch_cvbroad)
 {
-   PRINT("psynch_cvbroad(BOGUS)\n");
-   *flags |= SfMayBlock;
+   PRINT("psynch_cvbroad(BOGUS)");
 }
 POST(psynch_cvbroad)
 {
@@ -7758,8 +7757,7 @@ POST(psynch_cvbroad)
 
 PRE(psynch_cvsignal)
 {
-   PRINT("psynch_cvsignal(BOGUS)\n");
-   *flags |= SfMayBlock;
+   PRINT("psynch_cvsignal(BOGUS)");
 }
 POST(psynch_cvsignal)
 {
@@ -7767,7 +7765,7 @@ POST(psynch_cvsignal)
 
 PRE(psynch_cvwait)
 {
-   PRINT("psynch_cvwait(BOGUS)\n");
+   PRINT("psynch_cvwait(BOGUS)");
    *flags |= SfMayBlock;
 }
 POST(psynch_cvwait)
@@ -7776,7 +7774,7 @@ POST(psynch_cvwait)
 
 PRE(psynch_rw_rdlock)
 {
-   PRINT("psynch_rw_rdlock(BOGUS)\n");
+   PRINT("psynch_rw_rdlock(BOGUS)");
    *flags |= SfMayBlock;
 }
 POST(psynch_rw_rdlock)
@@ -7785,7 +7783,7 @@ POST(psynch_rw_rdlock)
 
 PRE(psynch_rw_wrlock)
 {
-   PRINT("psynch_rw_wrlock(BOGUS)\n");
+   PRINT("psynch_rw_wrlock(BOGUS)");
    *flags |= SfMayBlock;
 }
 POST(psynch_rw_wrlock)
@@ -7794,8 +7792,7 @@ POST(psynch_rw_wrlock)
 
 PRE(psynch_rw_unlock)
 {
-   PRINT("psynch_rw_unlock(BOGUS)\n");
-   *flags |= SfMayBlock;
+   PRINT("psynch_rw_unlock(BOGUS)");
 }
 POST(psynch_rw_unlock)
 {
@@ -7803,7 +7800,7 @@ POST(psynch_rw_unlock)
 
 PRE(psynch_cvclrprepost)
 {
-   PRINT("psynch_cvclrprepost(BOGUS)\n");
+   PRINT("psynch_cvclrprepost(BOGUS)");
    *flags |= SfMayBlock;
 }
 POST(psynch_cvclrprepost)

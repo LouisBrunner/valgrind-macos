@@ -279,6 +279,8 @@ fixed
 
 274378 - s390x: Various dispatcher tweaks
 
+282238 - SLES10: make check fails
+
 
 Release 3.6.1 (16 February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

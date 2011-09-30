@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
-#include <linux/mman.h>
+#include <sys/mman.h>
 
 // Since we use vki_unistd.h, we can't include <unistd.h>.  So we have to
 // declare this ourselves.

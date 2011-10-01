@@ -1,0 +1,156 @@
+#!/usr/bin/env perl
+
+#---------------------------------------------------------------------
+# Quick and dirty program to filter helgrind's XML output.
+# 
+# The script works line-by-line and is generally unaware of XML structure
+# and does not bother with issues of well-formedness.
+#
+# Consists of two parts
+# (1) Global match and replace (see PATTERNS below)
+# (2) Removal of stack frames
+#     Stack frames whose associated file name does not match any name in
+#     TOOL_FILES or in the list of files given on the command line
+#     will be discarded. For a sequence of one or more discarded frames
+#     a line   <frame>...</frame> will be inserted.
+#
+#---------------------------------------------------------------------
+
+use warnings;
+use strict;
+
+#---------------------------------------------------------------------
+# A list of files specific to the tool at hand. Line numbers in
+# these files will be removed from stack frames matching these files.
+#---------------------------------------------------------------------
+my @tool_files = ( "hg_intercepts.c", "vg_replace_malloc.c" );
+
+# List of patterns and replacement strings. 
+# Each pattern must identify a substring which will be replaced.
+my %patterns = (
+    "<pid>(.*)</pid>"       => "...",
+    "<ppid>(.*)</ppid>"     => "...",
+    "<time>(.*)</time>"     => "...",
+    "<obj>(.*)</obj>"       => "...",
+    "<dir>(.*)</dir>"       => "...",
+    "<exe>(.*)</exe>"       => "...",
+    "<tid>(.*)</tid>"       => "...",
+    "<unique>(.*)</unique>" => "...",
+    "thread #([0-9]+)"      => "x",
+    "0x([0-9a-zA-Z]+)"      => "........",
+    "Using Valgrind-([^\\s]*)"    => "X.Y.X",
+    "Copyright \\(C\\) ([0-9]{4}-[0-9]{4}).*" => "XXXX-YYYY"
+);
+
+# List of XML sections to be ignored.
+my %ignore_sections = (
+    "<errorcounts>" => "</errorcounts>",
+    "<suppcounts>"  => "</suppcounts>"
+);
+
+
+# If FILE matches any of the FILES return 1
+sub file_matches ($$) {
+    my ($file, $files) = @_;
+    my ($string, $qstring);
+
+    foreach $string (@$files) {
+        $qstring = quotemeta($string);
+        return 1 if ($file =~ /$qstring/);
+    }
+
+    return 0;
+}
+
+
+my $frame_buf = "";
+my ($file, $lineno, $in_frame, $keep_frame, $num_discarded, $ignore_line);
+
+$in_frame = $keep_frame = $num_discarded = $ignore_line = 0;
+
+line: 
+while (<STDIN>) {
+    my $line = $_;
+    chomp($line);
+
+# Check whether we're ignoring this piece of XML..
+    if ($ignore_line) {
+        foreach my $tag (keys %ignore_sections) {
+            if ($line =~ $ignore_sections{$tag}) {
+                print "$tag...$ignore_sections{$tag}\n";
+                $ignore_line = 0;
+                next line;
+            }
+        }
+    } else {
+        foreach my $tag (keys %ignore_sections) {
+            if ($line =~ $tag) {
+                $ignore_line = 1;
+            }
+        }
+    }
+
+    next if ($ignore_line);
+
+# OK. This line is not to be ignored.
+
+# Massage line by applying PATTERNS.
+    foreach my $key (keys %patterns) {
+        if ($line =~ $key) {
+                $line =~ s/$1/$patterns{$key}/g;
+        }
+    }
+
+# Handle frames
+    if ($in_frame) {
+        if ($line =~ /<\/frame>/) {
+            $frame_buf .= "$line\n";
+# The end of a frame
+            if ($keep_frame) {
+# First: If there were any preceding frames that were discarded
+#        print <frame>...</frame>
+                if ($num_discarded) {
+                    print "    <frame>...</frame>\n";
+                    $num_discarded = 0;
+                }
+# Secondly: Write out the frame itself
+                print "$frame_buf";
+            } else {
+# We don't want to write this frame
+                ++$num_discarded;
+            }
+            $in_frame = $keep_frame = 0;
+            $file = "";
+        } elsif ($line =~ /<file>(.*)<\/file>/) {
+            $frame_buf .= "$line\n";
+            $file = $1;
+            if (file_matches($file, \@tool_files) ||
+                file_matches($file, \@ARGV)) {
+                $keep_frame = 1;
+            }
+        } elsif ($line =~ /<line>(.*)<\/line>/) {
+# This code assumes that <file> always precedes <line>
+            $lineno = $1;
+            if (file_matches($file, \@tool_files)) {
+                $line =~ s/$1/.../;
+            }
+            $frame_buf .= "$line\n";
+        } else {
+            $frame_buf .= "$line\n";
+        }
+    } else {
+# not within frame
+        if ($line =~ /<\/stack>/) {
+            print "    <frame>...</frame>\n" if ($num_discarded);
+            $num_discarded = 0;
+        }
+        if ($line =~ /<frame>/)  {
+            $in_frame = 1;
+            $frame_buf = "$line\n";
+        } else {
+            print "$line\n";
+        }
+    }
+} 
+
+exit 0;

@@ -51,6 +51,7 @@ UShort ML_(read_UShort)( UChar* data );
 UInt ML_(read_UInt)( UChar* data );
 ULong ML_(read_ULong)( UChar* data );
 UChar ML_(read_UChar)( UChar* data );
+Addr ML_(read_Addr)( UChar* data );
 
 /* A handy type, a la Haskell's Maybe type.  Yes, I know, C sucks.
    Been there.  Done that.  Seen the movie.  Got the T-shirt.  Etc. */

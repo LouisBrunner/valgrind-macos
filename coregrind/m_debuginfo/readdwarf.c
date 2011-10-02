@@ -393,7 +393,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
          break;
 
       case DW_LNE_set_address:
-         adr = ML_(read_UInt)(data);  // FIXME: read_encoded_Addr ??
+         adr = ML_(read_Addr)(data);
          state_machine_regs.address = adr;
          if (di->ddump_line)
             VG_(printf)("  Extended opcode %d: set Address to 0x%lx\n",

@@ -180,6 +180,16 @@ UChar ML_(read_UChar) ( UChar* data ) {
    return data[0];
 }
 
+Addr ML_(read_Addr) ( UChar* data ) {
+   if (sizeof(Addr) == sizeof(UInt)) {
+      return ML_(read_UInt)(data);
+   } else if  (sizeof(Addr) == sizeof(ULong)) {
+      return ML_(read_ULong)(data);
+   } else {
+      vg_assert(0);
+   }
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                   misc.c ---*/

@@ -277,10 +277,10 @@ static Long read_leb128S( UChar **data )
 */
 static ULong read_initial_length_field ( UChar* p_img, /*OUT*/Bool* is64 )
 {
-   UInt w32 = *((UInt*)p_img);
+   UInt w32 = ML_(read_UInt)(p_img);
    if (w32 == 0xFFFFFFFF) {
       *is64 = True;
-      return *((ULong*)(p_img+4));
+      return ML_(read_ULong)(p_img+4);
    } else {
       *is64 = False;
       return (ULong)w32;
@@ -393,7 +393,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
          break;
 
       case DW_LNE_set_address:
-         adr = *((Addr *)data);
+         adr = ML_(read_UInt)(data);  // FIXME: read_encoded_Addr ??
          state_machine_regs.address = adr;
          if (di->ddump_line)
             VG_(printf)("  Extended opcode %d: set Address to 0x%lx\n",
@@ -514,7 +514,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    }
 
    /* Check its version number.  */
-   info.li_version = * ((UShort *)external);
+   info.li_version = ML_(read_UShort)(external);
    external += 2;
    if (di->ddump_line)
       VG_(printf)("  DWARF Version:               %d\n", 
@@ -527,8 +527,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       goto out;
    }
 
-   info.li_header_length = ui->dw64 ? *((ULong*)external) 
-                                    : (ULong)(*((UInt*)external));
+   info.li_header_length = ui->dw64 ? ML_(read_ULong)(external) 
+                                    : (ULong)(ML_(read_UInt)(external));
    external += ui->dw64 ? 8 : 4;
    if (di->ddump_line)
       VG_(printf)("  Prologue Length:             %llu\n", 
@@ -889,7 +889,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
          case DW_LNS_fixed_advance_pc:
             /* XXX: Need something to get 2 bytes */
-            adv = *((UShort *)data);
+            adv = ML_(read_UShort)(data);
             data += 2;
             state_machine_regs.address += adv;
             if (0) VG_(printf)("smr.a += %#x\n", adv );
@@ -1007,11 +1007,11 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    p += ui->dw64 ? 12 : 4;
 
    /* version should be 2, 3 or 4 */
-   /* ver = *((UShort*)p); */
+   /* ver = ML_(read_UShort)(p); */
    p += 2;
 
    /* get offset in abbrev */
-   atoffs = ui->dw64 ? *((ULong*)p) : (ULong)(*((UInt*)p));
+   atoffs = ui->dw64 ? ML_(read_ULong)(p) : (ULong)(ML_(read_UInt)(p));
    p += ui->dw64 ? 8 : 4;
 
    /* Address size */
@@ -1084,36 +1084,36 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             handle FORM_addr too. */
          switch( form ) {
             /* Those cases extract the data properly */
-            case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
-            case 0x06: /* FORM_data4 */     cval = *((UInt*)p);p +=4; break;
+            case 0x05: /* FORM_data2 */     cval = ML_(read_UShort)(p); p +=2; break;
+            case 0x06: /* FORM_data4 */     cval = ML_(read_UInt)(p);   p +=4; break;
             case 0x0e: /* FORM_strp */      /* pointer in .debug_str */
                        /* 2006-01-01: only generate a value if
                           debugstr is non-NULL (which means that a
                           debug_str section was found) */
                                             if (debugstr_img && !ui->dw64)
-                                               sval = debugstr_img + *((UInt*)p); 
+                                               sval = debugstr_img + ML_(read_UInt)(p); 
                                             if (debugstr_img && ui->dw64)
-                                               sval = debugstr_img + *((ULong*)p); 
+                                               sval = debugstr_img + ML_(read_ULong)(p); 
                                             p += ui->dw64 ? 8 : 4; 
                                             break;
             case 0x08: /* FORM_string */    sval = (Char*)p; 
                                             p += VG_(strlen)((Char*)p) + 1; break;
             case 0x0b: /* FORM_data1 */     cval = *p; p++; break;
             case 0x17: /* FORM_sec_offset */if (ui->dw64) {
-                                               cval = *((ULong*)p); p += 8;
+                                               cval = ML_(read_ULong)(p); p += 8;
                                             } else {
-                                               cval = *((UInt*)p); p += 4;
+                                               cval = ML_(read_UInt)(p); p += 4;
                                             }; break;
 
-            case 0x07: /* FORM_data8 */     if (ui->dw64) cval = *((ULong*)p);
+            case 0x07: /* FORM_data8 */     if (ui->dw64) cval = ML_(read_ULong)(p);
                                             p += 8; break;
                                             /* perhaps should assign
                                                unconditionally to cval? */
 
             /* TODO : Following ones just skip data - implement if you need */
             case 0x01: /* FORM_addr */      p += addr_size; break;
-            case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
-            case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
+            case 0x03: /* FORM_block2 */    p += ML_(read_UShort)(p) + 2; break;
+            case 0x04: /* FORM_block4 */    p += ML_(read_UInt)(p) + 4; break;
             case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;
             case 0x0a: /* FORM_block1 */    p += *p + 1; break;
             case 0x0c: /* FORM_flag */      p++; break;
@@ -1205,7 +1205,7 @@ void ML_(read_debuginfo_dwarf3)
       }
 
       /* version should be 2 */
-      ver = *((UShort*)( block_img + blklen_len ));
+      ver = ML_(read_UShort)( block_img + blklen_len );
       if ( ver != 2 && ver != 3 && ver != 4 ) {
          ML_(symerr)( di, True,
                       "Ignoring non-Dwarf2/3/4 block in .debug_info" );
@@ -1413,8 +1413,8 @@ void ML_(read_debuginfo_dwarf1) (
    while (True) {
       if (die_offset >= dwarf1d_sz) break;
 
-      die_szb  = *(Int*)(dwarf1d + die_offset);
-      die_kind = *(UShort*)(dwarf1d + die_offset + 4);
+      die_szb  = ML_(read_Int)(dwarf1d + die_offset);
+      die_kind = ML_(read_UShort)(dwarf1d + die_offset + 4);
 
       /* We're only interested in compile_unit DIEs; ignore others. */
       if (die_kind != TAG_compile_unit) {
@@ -1442,7 +1442,7 @@ void ML_(read_debuginfo_dwarf1) (
       while (True) {
          if (at_offset >= die_szb-6) break;
 
-         at_kind = *(UShort*)(at_base + at_offset);
+         at_kind = ML_(read_UShort)(at_base + at_offset);
          if (0) VG_(printf)("atoffset %d, attag 0x%x\n", 
                             at_offset, (Int)at_kind );
          at_offset += 2; /* step over the attribute itself */
@@ -1454,7 +1454,7 @@ void ML_(read_debuginfo_dwarf1) (
             case AT_sibling:
                if (at_kind == AT_stmt_list) {
                   stmt_list_found = True;
-                  stmt_list = *(Int*)(at_base+at_offset);
+                  stmt_list = ML_(read_Int)(at_base+at_offset);
                }
                at_offset += 4; break;
             case AT_high_pc:
@@ -1502,16 +1502,16 @@ void ML_(read_debuginfo_dwarf1) (
          prev_line = prev_delta = 0;
 
          ptr = dwarf1l + stmt_list;
-         len  =        *(Int*)ptr;    ptr += sizeof(Int);
-         base = (Addr)(*(void**)ptr); ptr += sizeof(void*);
+         len  = ML_(read_Int)(ptr);  ptr += sizeof(Int);
+         base = ML_(read_UInt)(ptr); ptr += sizeof(void*);  // FIXME: read_encoded_Addr ??
          len -= (sizeof(Int) + sizeof(void*));
          while (len > 0) {
             UInt   line;
             UShort col;
             UInt   delta;
-            line = *(UInt*)ptr;  ptr += sizeof(UInt);
-            col = *(UShort*)ptr;  ptr += sizeof(UShort);
-            delta = *(UShort*)ptr;  ptr += sizeof(UInt);
+            line = ML_(read_UInt)(ptr);    ptr += sizeof(UInt);
+            col  = ML_(read_UShort)(ptr);  ptr += sizeof(UShort);
+            delta = ML_(read_UInt)(ptr);   ptr += sizeof(UInt);
 	    if (0) VG_(printf)("line %d, col %d, delta %d\n", 
                                line, (Int)col, delta );
             len -= (sizeof(UInt) + sizeof(UShort) + sizeof(UInt));

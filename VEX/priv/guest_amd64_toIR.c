@@ -15465,7 +15465,7 @@ DisResult disInstr_AMD64_WRK (
                  isD ? getXMMRegLane64F( eregOfRexRM(pfx, modrm), 0 )
                      : getXMMRegLane32F( eregOfRexRM(pfx, modrm), 0 ) );
          imm = insn[3+1];
-         if (imm & ~7) goto decode_failure;
+         if (imm & ~15) goto decode_failure;
          delta += 3+1+1;
          DIP( "rounds%c $%d,%s,%s\n",
               isD ? 'd' : 's',
@@ -15475,7 +15475,7 @@ DisResult disInstr_AMD64_WRK (
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
          assign( src, loadLE( isD ? Ity_F64 : Ity_F32, mkexpr(addr) ));
          imm = insn[3+alen];
-         if (imm & ~7) goto decode_failure;
+         if (imm & ~15) goto decode_failure;
          delta += 3+alen+1;
          DIP( "rounds%c $%d,%s,%s\n",
               isD ? 'd' : 's',
@@ -15520,7 +15520,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src1, 
                  getXMMRegLane64F( eregOfRexRM(pfx, modrm), 1 ) );
          imm = insn[3+1];
-         if (imm & ~7) goto decode_failure;
+         if (imm & ~15) goto decode_failure;
          delta += 3+1+1;
          DIP( "roundpd $%d,%s,%s\n",
               imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
@@ -15533,7 +15533,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src1, loadLE(Ity_F64,
                               binop(Iop_Add64, mkexpr(addr), mkU64(8) )));
          imm = insn[3+alen];
-         if (imm & ~7) goto decode_failure;
+         if (imm & ~15) goto decode_failure;
          delta += 3+alen+1;
          DIP( "roundpd $%d,%s,%s\n",
               imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
@@ -15583,7 +15583,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src3, 
                  getXMMRegLane32F( eregOfRexRM(pfx, modrm), 3 ) );
          imm = insn[3+1];
-         if (imm & ~7) goto decode_failure;
+         if (imm & ~15) goto decode_failure;
          delta += 3+1+1;
          DIP( "roundps $%d,%s,%s\n",
               imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
@@ -15600,7 +15600,7 @@ DisResult disInstr_AMD64_WRK (
          assign( src3, loadLE(Ity_F32,
                               binop(Iop_Add64, mkexpr(addr), mkU64(12) )));
          imm = insn[3+alen];
-         if (imm & ~7) goto decode_failure;
+         if (imm & ~15) goto decode_failure;
          delta += 3+alen+1;
          DIP( "roundps $%d,%s,%s\n",
               imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );

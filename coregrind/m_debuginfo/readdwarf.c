@@ -2482,135 +2482,13 @@ static void ppUnwindContext_summary ( UnwindContext* ctx )
 
 /* ------------ Pick apart DWARF2 byte streams ------------ */
 
-static inline Bool host_is_little_endian ( void )
-{
-   UInt x = 0x76543210;
-   UChar* p = (UChar*)(&x);
-   return toBool(*p == 0x10);
-}
-
-static Short read_Short ( UChar* data )
-{
-   Short r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 );
-   } else {
-      r = data[1]
-          | ( ((UInt)data[0]) << 8 );
-   }
-   return r;
-}
-
-static Int read_Int ( UChar* data )
-{
-   Int r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 )
-          | ( ((UInt)data[2]) << 16 )
-          | ( ((UInt)data[3]) << 24 );
-   } else {
-      r = data[3]
-          | ( ((UInt)data[2]) << 8 )
-          | ( ((UInt)data[1]) << 16 )
-          | ( ((UInt)data[0]) << 24 );
-   }
-   return r;
-}
-
-static Long read_Long ( UChar* data )
-{
-   Long r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((ULong)data[1]) << 8 )
-          | ( ((ULong)data[2]) << 16 )
-          | ( ((ULong)data[3]) << 24 )
-          | ( ((ULong)data[4]) << 32 )
-          | ( ((ULong)data[5]) << 40 )
-          | ( ((ULong)data[6]) << 48 )
-          | ( ((ULong)data[7]) << 56 );
-   } else {
-      r = data[7]
-          | ( ((ULong)data[6]) << 8 )
-          | ( ((ULong)data[5]) << 16 )
-          | ( ((ULong)data[4]) << 24 )
-          | ( ((ULong)data[3]) << 32 )
-          | ( ((ULong)data[2]) << 40 )
-          | ( ((ULong)data[1]) << 48 )
-          | ( ((ULong)data[0]) << 56 );
-   }
-   return r;
-}
-
-static UShort read_UShort ( UChar* data )
-{
-   UInt r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 );
-   } else {
-      r = data[1]
-          | ( ((UInt)data[0]) << 8 );
-   }
-   return r;
-}
-
-static UInt read_UInt ( UChar* data )
-{
-   UInt r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 )
-          | ( ((UInt)data[2]) << 16 )
-          | ( ((UInt)data[3]) << 24 );
-   } else {
-      r = data[3]
-          | ( ((UInt)data[2]) << 8 )
-          | ( ((UInt)data[1]) << 16 )
-          | ( ((UInt)data[0]) << 24 );
-   }
-   return r;
-}
-
-static ULong read_ULong ( UChar* data )
-{
-   ULong r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-       | ( ((ULong)data[1]) << 8 )
-       | ( ((ULong)data[2]) << 16 )
-       | ( ((ULong)data[3]) << 24 )
-       | ( ((ULong)data[4]) << 32 )
-       | ( ((ULong)data[5]) << 40 )
-       | ( ((ULong)data[6]) << 48 )
-       | ( ((ULong)data[7]) << 56 );
-   } else {
-      r = data[7]
-       | ( ((ULong)data[6]) << 8 )
-       | ( ((ULong)data[5]) << 16 )
-       | ( ((ULong)data[4]) << 24 )
-       | ( ((ULong)data[3]) << 32 )
-       | ( ((ULong)data[2]) << 40 )
-       | ( ((ULong)data[1]) << 48 )
-       | ( ((ULong)data[0]) << 56 );
-   }
-   return r;
-}
-
-static UChar read_UChar ( UChar* data )
-{
-   return data[0];
-}
-
 static ULong read_le_u_encoded_literal ( UChar* data, UInt size )
 {
    switch (size) {
-      case 8:  return (ULong)read_ULong( data );
-      case 4:  return (ULong)read_UInt( data );
-      case 2:  return (ULong)read_UShort( data );
-      case 1:  return (ULong)read_UChar( data );
+      case 8:  return (ULong)ML_(read_ULong)( data );
+      case 4:  return (ULong)ML_(read_UInt)( data );
+      case 2:  return (ULong)ML_(read_UShort)( data );
+      case 1:  return (ULong)ML_(read_UChar)( data );
       default: vg_assert(0); /*NOTREACHED*/ return 0;
    }
 }
@@ -2720,22 +2598,22 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
    switch (encoding & 0x0f) {
       case DW_EH_PE_udata2:
          *nbytes += sizeof(UShort);
-         return base + read_UShort(data);
+         return base + ML_(read_UShort)(data);
       case DW_EH_PE_udata4:
          *nbytes += sizeof(UInt);
-         return base + read_UInt(data);
+         return base + ML_(read_UInt)(data);
       case DW_EH_PE_udata8:
          *nbytes += sizeof(ULong);
-         return base + read_ULong(data);
+         return base + ML_(read_ULong)(data);
       case DW_EH_PE_sdata2:
          *nbytes += sizeof(Short);
-         return base + read_Short(data);
+         return base + ML_(read_Short)(data);
       case DW_EH_PE_sdata4:
          *nbytes += sizeof(Int);
-         return base + read_Int(data);
+         return base + ML_(read_Int)(data);
       case DW_EH_PE_sdata8:
          *nbytes += sizeof(Long);
-         return base + read_Long(data);
+         return base + ML_(read_Long)(data);
       default:
          vg_assert2(0, "read encoded address %d\n", encoding & 0x0f);
    }
@@ -3042,7 +2920,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
             VG_(printf)("  rci:DW_CFA_set_loc\n");
          break;
       case DW_CFA_advance_loc1:
-         delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         delta = (UInt)ML_(read_UChar)(&instr[i]); i+= sizeof(UChar);
          delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
@@ -3050,7 +2928,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                         (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
       case DW_CFA_advance_loc2:
-         delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         delta = (UInt)ML_(read_UShort)(&instr[i]); i+= sizeof(UShort);
          delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
@@ -3058,7 +2936,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                         (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
       case DW_CFA_advance_loc4:
-         delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         delta = (UInt)ML_(read_UInt)(&instr[i]); i+= sizeof(UInt);
          delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
@@ -3449,17 +3327,17 @@ static Int show_CF_instruction ( UChar* instr,
          break;
 
       case DW_CFA_advance_loc1:
-         delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         delta = (UInt)ML_(read_UChar)(&instr[i]); i+= sizeof(UChar);
          VG_(printf)("  sci:DW_CFA_advance_loc1(%d)\n", delta); 
          break;
 
       case DW_CFA_advance_loc2:
-         delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         delta = (UInt)ML_(read_UShort)(&instr[i]); i+= sizeof(UShort);
          VG_(printf)("  sci:DW_CFA_advance_loc2(%d)\n", delta); 
          break;
 
       case DW_CFA_advance_loc4:
-         delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         delta = (UInt)ML_(read_UInt)(&instr[i]); i+= sizeof(UInt);
          VG_(printf)("  DW_CFA_advance_loc4(%d)\n", delta); 
          break;
 
@@ -3814,7 +3692,7 @@ void ML_(read_callframe_info_dwarf3)
                      ciefde_start,
                      ciefde_start - frame_image + 0UL);
 
-      ciefde_len = (ULong) read_UInt(data); data += sizeof(UInt);
+      ciefde_len = (ULong)ML_(read_UInt)(data); data += sizeof(UInt);
       if (di->trace_cfi) 
          VG_(printf)("cie/fde.length  = %lld\n", ciefde_len);
 
@@ -3835,16 +3713,16 @@ void ML_(read_callframe_info_dwarf3)
       dw64 = False;
       if (ciefde_len == 0xFFFFFFFFUL) {
          dw64 = True;
-         ciefde_len = read_ULong(data); data += sizeof(ULong);
+         ciefde_len = ML_(read_ULong)(data); data += sizeof(ULong);
       }
 
       /* Now get the CIE ID, whose size depends on the DWARF 32 vs
 	 64-ness. */
       if (dw64) {
-         cie_pointer = read_ULong(data); 
+         cie_pointer = ML_(read_ULong)(data); 
          data += sizeof(ULong); /* XXX see XXX below */
       } else {
-         cie_pointer = (ULong)read_UInt(data); 
+         cie_pointer = (ULong)ML_(read_UInt)(data); 
          data += sizeof(UInt); /* XXX see XXX below */
       }
 
@@ -3886,7 +3764,7 @@ void ML_(read_callframe_info_dwarf3)
                         (Addr)ciefde_len,
                         (Addr)(UWord)cie_pointer );
 
-         cie_version = read_UChar(data); data += sizeof(UChar);
+         cie_version = ML_(read_UChar)(data); data += sizeof(UChar);
          if (di->trace_cfi)
             VG_(printf)("cie.version     = %d\n", (Int)cie_version);
          if (di->ddump_frames)
@@ -3909,12 +3787,12 @@ void ML_(read_callframe_info_dwarf3)
          }
 
          if (cie_version >= 4) {
-            if (read_UChar(data) != sizeof(Addr)) {
+            if (ML_(read_UChar)(data) != sizeof(Addr)) {
                how = "unexpected address size";
                goto bad;
             }
             data += sizeof(UChar);
-            if (read_UChar(data) != 0) {
+            if (ML_(read_UChar)(data) != 0) {
                how = "unexpected non-zero segment size";
                goto bad;
             }
@@ -3940,7 +3818,7 @@ void ML_(read_callframe_info_dwarf3)
                         (Int)the_CIEs[this_CIE].data_a_f);
 
          if (cie_version == 1) {
-            the_CIEs[this_CIE].ra_reg = (Int)read_UChar(data); 
+            the_CIEs[this_CIE].ra_reg = (Int)ML_(read_UChar)(data); 
             data += sizeof(UChar);
          } else {
             the_CIEs[this_CIE].ra_reg = read_leb128( data, &nbytes, 0);
@@ -3987,11 +3865,11 @@ void ML_(read_callframe_info_dwarf3)
                   break;
                case 'R':
                   the_CIEs[this_CIE].address_encoding 
-                     = read_UChar(data); data += sizeof(UChar);
+                     = ML_(read_UChar)(data); data += sizeof(UChar);
                   cie_augmentation++;
                   break;
                case 'P':
-                  data += size_of_encoded_Addr( read_UChar(data) );
+                  data += size_of_encoded_Addr( ML_(read_UChar)(data) );
                   data++;
                   cie_augmentation++;
                   break;

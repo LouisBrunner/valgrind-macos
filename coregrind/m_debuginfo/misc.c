@@ -59,11 +59,125 @@ UChar* ML_(dinfo_strdup) ( HChar* cc, const UChar* str ) {
    return VG_(arena_strdup)( VG_AR_DINFO, cc, str );
 }
 
-UChar* ML_(dinfo_memdup)( HChar* cc, UChar* str, SizeT nStr ) {
+UChar* ML_(dinfo_memdup) ( HChar* cc, UChar* str, SizeT nStr ) {
    UChar* dst = VG_(arena_malloc)( VG_AR_DINFO, cc, nStr );
    tl_assert(dst);
    VG_(memcpy)(dst, str, nStr);
    return dst;
+}
+
+static inline Bool host_is_little_endian ( void ) {
+   UInt x = 0x76543210;
+   UChar* p = (UChar*)(&x);
+   return toBool(*p == 0x10);
+}
+
+Short ML_(read_Short)( UChar* data ) {
+   Short r = 0;
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 );
+   } else {
+      r = data[1]
+          | ( ((UInt)data[0]) << 8 );
+   }
+   return r;
+}
+
+Int ML_(read_Int) ( UChar* data ) {
+   Int r = 0;
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 )
+          | ( ((UInt)data[2]) << 16 )
+          | ( ((UInt)data[3]) << 24 );
+   } else {
+      r = data[3]
+          | ( ((UInt)data[2]) << 8 )
+          | ( ((UInt)data[1]) << 16 )
+          | ( ((UInt)data[0]) << 24 );
+   }
+   return r;
+}
+
+Long ML_(read_Long) ( UChar* data ) {
+   Long r = 0;
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((ULong)data[1]) << 8 )
+          | ( ((ULong)data[2]) << 16 )
+          | ( ((ULong)data[3]) << 24 )
+          | ( ((ULong)data[4]) << 32 )
+          | ( ((ULong)data[5]) << 40 )
+          | ( ((ULong)data[6]) << 48 )
+          | ( ((ULong)data[7]) << 56 );
+   } else {
+      r = data[7]
+          | ( ((ULong)data[6]) << 8 )
+          | ( ((ULong)data[5]) << 16 )
+          | ( ((ULong)data[4]) << 24 )
+          | ( ((ULong)data[3]) << 32 )
+          | ( ((ULong)data[2]) << 40 )
+          | ( ((ULong)data[1]) << 48 )
+          | ( ((ULong)data[0]) << 56 );
+   }
+   return r;
+}
+
+UShort ML_(read_UShort) ( UChar* data ) {
+   UInt r = 0;
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 );
+   } else {
+      r = data[1]
+          | ( ((UInt)data[0]) << 8 );
+   }
+   return r;
+}
+
+UInt ML_(read_UInt) ( UChar* data ) {
+   UInt r = 0;
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 )
+          | ( ((UInt)data[2]) << 16 )
+          | ( ((UInt)data[3]) << 24 );
+   } else {
+      r = data[3]
+          | ( ((UInt)data[2]) << 8 )
+          | ( ((UInt)data[1]) << 16 )
+          | ( ((UInt)data[0]) << 24 );
+   }
+   return r;
+}
+
+ULong ML_(read_ULong) ( UChar* data ) {
+   ULong r = 0;
+   if (host_is_little_endian()) {
+      r = data[0]
+       | ( ((ULong)data[1]) << 8 )
+       | ( ((ULong)data[2]) << 16 )
+       | ( ((ULong)data[3]) << 24 )
+       | ( ((ULong)data[4]) << 32 )
+       | ( ((ULong)data[5]) << 40 )
+       | ( ((ULong)data[6]) << 48 )
+       | ( ((ULong)data[7]) << 56 );
+   } else {
+      r = data[7]
+       | ( ((ULong)data[6]) << 8 )
+       | ( ((ULong)data[5]) << 16 )
+       | ( ((ULong)data[4]) << 24 )
+       | ( ((ULong)data[3]) << 32 )
+       | ( ((ULong)data[2]) << 40 )
+       | ( ((ULong)data[1]) << 48 )
+       | ( ((ULong)data[0]) << 56 );
+   }
+   return r;
+}
+
+UChar ML_(read_UChar) ( UChar* data ) {
+   return data[0];
 }
 
 

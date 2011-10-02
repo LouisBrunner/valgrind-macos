@@ -2218,7 +2218,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             vg_assert(crc_offset + sizeof(UInt) <= debuglink_sz);
 
             /* Extract the CRC from the debuglink section */
-            crc = *(UInt *)(debuglink_img + crc_offset);
+            crc = ML_(read_UInt)(debuglink_img + crc_offset);
 
             /* See if we can find a matching debug file */
             find_debug_file( di, di->fsm.filename, buildid,

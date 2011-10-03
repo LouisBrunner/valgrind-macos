@@ -2,12 +2,6 @@
 
 use strict;
 
-my @libc_symbols = qw(__libc_start_main accept execve fcntl
-                      getsockname poll readv recvmsg
-                      socket socketpair syscall writev);
-
-my $libc_symbols = join("|", @libc_symbols);
-
 while (<>)
 {
     s/ __getsockname / getsockname /;
@@ -23,8 +17,6 @@ while (<>)
     # libc, on some (eg. Darwin) it will be in the main executable.
     s/\(below main\) \(.+\)$/(below main)/;
 
-    s/($libc_symbols) \(.+\.[cS]:\d+\)$/$1 (in \/...libc...)/;
-
     # Merge the different C++ operator variations.
     s/(at.*)__builtin_new/$1...operator new.../;
     s/(at.*)operator new\(unsigned(| int| long)\)/$1...operator new.../;
@@ -37,10 +29,6 @@ while (<>)
 
     s/(at.*)__builtin_vec_delete/$1...operator delete[].../;
     s/(at.*)operator delete\[\]\(void\*\)/$1...operator delete[].../;
-
-    # Tidy up in cases where glibc (+ libdl + libpthread + ld) have
-    # been built with debugging information, hence source locs are present.
-    s/\((exit|_exit|brk|sbrk).c:[0-9]*\)/(in \/...libc...)/;
 
     print;
 }

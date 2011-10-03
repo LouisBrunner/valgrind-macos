@@ -10,25 +10,9 @@ $dir/../../tests/filter_addresses                       |
 # Remove "Memcheck, ..." line and the following copyright line.
 sed "/^Memcheck, a memory error detector/ , /./ d" |
 
-# Anonymise line numbers in mc_replace_strmem.c
-sed "s/mc_replace_strmem.c:[0-9]*/mc_replace_strmem.c:.../"  |
-
 # Replace exit_group() with exit(), because you can get either on Linux
 # depending on the system.
 perl -p -e "s/param exit_group\(status\)/param exit(status)/" |
-
-# Stack traces ending in syscalls often cause problems, with lots of libc
-# variations: different numbers of entries, line numbers or not depending on
-# whether libc debug info is present, 'writev' vs 'do_writev', 'main' vs.
-# '(below main)', etc.  
-#
-# So we just cut out the entire stack trace.  It's coarse but effective, and
-# there aren't that many cases like this, and the error line gives the
-# syscall name.  
-#
-# The '<' is to avoid matching the XML case;  we don't use '>' because that
-# appears in some of the syscall parameter names (eg "act->sa_handler").
-perl -p -0 -e 's/(Syscall param[^\n<]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs' |
 
 # Leak check filtering.
 sed "s/checked [0-9,]* bytes./checked ... bytes./" |
@@ -36,5 +20,8 @@ sed "s/checked [0-9,]* bytes./checked ... bytes./" |
 # More leak check filtering.  For systems that do extra libc allocations
 # (eg. Darwin) there may be extra (reachable, and thus not shown) loss
 # records.  So we filter out the loss record numbers.
-perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" 
+perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" |
 
+$dir/../../memcheck/tests/filter_memcheck "$@"
+
+exit 0

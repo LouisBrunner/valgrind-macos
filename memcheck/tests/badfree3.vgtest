@@ -1,2 +1,3 @@
 prog: badfree
 vgopts: -q --fullpath-after=${PWD}/
+stderr_filter_args: badfree.c

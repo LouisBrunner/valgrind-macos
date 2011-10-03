@@ -1,3 +1,4 @@
 prog: partial_load
 vgopts: --partial-loads-ok=yes
 stderr_filter: filter_allocs
+stderr_filter_args: partial_load.c

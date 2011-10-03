@@ -25,4 +25,4 @@
 
 sed "s/\/.*\/tests\/amd64-linux\/defcfaexpr/bogus.S:0/" | \
       sed "s/(in /(/" | \
-      ./filter_stderr
+      ./filter_stderr "$@"

@@ -1,3 +1,4 @@
 prog: leak-cases
 vgopts: -q --leak-check=full --leak-resolution=high --show-possibly-lost=no
 stderr_filter: filter_leak_cases_possible
+stderr_filter_args: leak-cases.c

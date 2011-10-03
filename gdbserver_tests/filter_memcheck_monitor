@@ -4,7 +4,7 @@
 
 dir=`dirname $0`
 
-$dir/../memcheck/tests/filter_stderr                   |
+$dir/../memcheck/tests/filter_stderr "$@"              |
 
 # filter vgdb messages
 $dir/filter_vgdb                                       |

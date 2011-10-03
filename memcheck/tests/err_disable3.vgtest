@@ -1,2 +1,2 @@
 prog: err_disable3
-vgopts: -q --num-callers=3
+vgopts: -q

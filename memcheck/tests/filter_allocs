@@ -1,6 +1,6 @@
 #! /bin/sh
 
-./filter_stderr |
+./filter_stderr "$@" |
 sed -e "s/in use at exit: [0-9,]* bytes in [0-9,]* blocks/in use at exit: ... bytes in ... blocks/" \
     -e  "s/total heap usage: [0-9,]* allocs, [0-9,]* frees, [0-9,]* bytes allocated/total heap usage: ... allocs, ... frees, ... bytes allocated/"
 

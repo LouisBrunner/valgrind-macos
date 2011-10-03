@@ -1,2 +1,3 @@
 prog: partial_load
 stderr_filter: filter_allocs
+stderr_filter_args: partial_load.c

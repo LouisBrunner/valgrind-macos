@@ -9,3 +9,5 @@ argsB: --quiet -l 60 --nx ../memcheck/tests/leak-delta
 stdinB: mcleak.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_memcheck_monitor
+stderr_filter_args:  leak-delta.c
+stderrB_filter_args: leak-delta.c

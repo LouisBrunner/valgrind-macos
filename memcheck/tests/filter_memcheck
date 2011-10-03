@@ -1,0 +1,67 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+
+#---------------------------------------------------------------------
+# A list of files specific to the tool at hand. Line numbers in
+# these files will be removed from backtrace entries matching these files.
+#---------------------------------------------------------------------
+my @tool_files = ( "mc_replace_strmem.c", "vg_replace_malloc.c" );
+
+
+sub massage_backtrace_line ($$$) {
+    my ($line, $tool_files, $cmdlin_files) = @_;
+    my ($string, $qstring);
+
+# If LINE matches any of the file names passed on the command line
+# (i.e. in CMDLIN_FILES) return LINE unmodified.
+
+    foreach $string (@$cmdlin_files) {
+        $qstring = quotemeta($string);
+        return $line if ($line =~ /$qstring/);
+    }
+
+# If LINE matches any of the file names in TOOL_FILES remove the line
+# number and return the so modified line.
+
+    foreach $string (@$tool_files) {
+        $qstring = quotemeta($string);
+        return $line if ($line =~ s/$qstring:[0-9]+/$string:.../m);
+# Special case for functions whose line numbers have been removed in 
+# filter_stderr_basic. FIXME: filter_stderr_basic should not do that.
+        return $line if ($line =~ s/$qstring:\.\.\./$string:.../m);
+    }
+
+# Did not match anything
+    $line =~ s/[\w]+.*/.../m;
+
+    return "$line";
+}
+
+
+#---------------------------------------------------------------------
+# Process lines. Two categories
+# (a) lines from back traces
+#     pass through those lines that contain file names we're interested in
+# (b) everything else
+#     pass through as is
+#---------------------------------------------------------------------
+my $prev_line = "";
+while (<STDIN>) {
+    my $line = $_;
+    chomp($line);
+    if ($line =~ /^\s+(at |by )/)  {   # lines in a back trace
+        $line = massage_backtrace_line($line, \@tool_files, \@ARGV);
+        if ($line =~ /\s+\.\.\./) {
+            print "$line\n" if ($prev_line !~ /\s+\.\.\./);
+        } else {
+            print "$line\n";
+        }
+    } else {
+        print "$line\n";  # everything else
+    }
+    $prev_line = $line
+}
+
+exit 0;

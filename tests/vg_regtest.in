@@ -282,6 +282,10 @@ sub read_vgtest_file($)
             $stdoutB_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*stderrB_filter:\s*(.*)$/) {
             $stderrB_filter = validate_program(".", $1, 1, 1);
+        } elsif ($line =~ /^\s*stdoutB_filter_args:\s*(.*)$/) {
+            $stdoutB_filter_args = $1;
+        } elsif ($line =~ /^\s*stderrB_filter_args:\s*(.*)$/) {
+            $stderrB_filter_args = $1;
         } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {
             $prereq = $1;
         } elsif ($line =~ /^\s*post:\s*(.*)$/) {

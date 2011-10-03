@@ -1503,7 +1503,7 @@ void ML_(read_debuginfo_dwarf1) (
 
          ptr = dwarf1l + stmt_list;
          len  = ML_(read_Int)(ptr);  ptr += sizeof(Int);
-         base = ML_(read_UInt)(ptr); ptr += sizeof(void*);  // FIXME: read_encoded_Addr ??
+         base = ML_(read_Addr)(ptr); ptr += sizeof(void*);
          len -= (sizeof(Int) + sizeof(void*));
          while (len > 0) {
             UInt   line;

@@ -80,7 +80,7 @@ EXTRA_DIST = \
 	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
-	execve.stderr.exp execve.vgtest \
+	execve1.stderr.exp execve1.vgtest \
 	execve2.stderr.exp execve2.vgtest \
 	file_locking.stderr.exp file_locking.vgtest \
 	fprw.stderr.exp fprw.vgtest \
@@ -219,7 +219,7 @@ check_PROGRAMS = \
 	custom-overlap \
 	deep_templates \
 	describe-block \
-	doublefree error_counts errs1 exitprog execve execve2 erringfds \
+	doublefree error_counts errs1 exitprog execve1 execve2 erringfds \
 	err_disable1 err_disable2 err_disable3 err_disable4 \
 	file_locking \
 	fprw fwrite inits inline \
@@ -286,7 +286,7 @@ err_disable4_LDADD 	= -lpthread
 
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
-execve_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+execve1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 execve2_CFLAGS = $(AM_CFLASG) @FLAG_W_NO_NONNULL@
 

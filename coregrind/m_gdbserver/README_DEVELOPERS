@@ -125,17 +125,18 @@ is implemented.
 How is the Valgrind gdbserver receiving commands/packets from gdb ?
 -------------------------------------------------------------------
 The embedded gdbserver reads gdb commands on a named pipe having
-(by default) the name   /tmp/vgdb-pipe-from-vgdb-to-%d
-where %d will be replaced by the pid.
+(by default) the name   /tmp/vgdb-pipe-from-vgdb-to-PID-by-USER-on-HOST
+where PID, USER, and HOST will be replaced by the actual pid, the user id,
+and the host name, respectively.
 The embedded gdbserver will reply to gdb commands on a named pipe
-/tmp/vgdb-pipe-to-vgdb-from-%d
+/tmp/vgdb-pipe-to-vgdb-from-PID-by-USER-on-HOST
 
 gdb does not speak directly with gdbserver in valgrind: a relay application
 called vgdb is needed between gdb and the valgrind-ified process.
 gdb writes commands on the stdin of vgdb. vgdb reads these
-commands and writes them on FIFO /tmp/vgdb-pipe-from-vgdb-to-%d.
-vgdb reads replies on FIFO /tmp/vgdb-pipe-to-vgdb-from-%d and writes
-them on its stdout. 
+commands and writes them on FIFO /tmp/vgdb-pipe-from-vgdb-to-PID-by-USER-on-HOST.
+vgdb reads replies on FIFO /tmp/vgdb-pipe-to-vgdb-from-PID-by-USER-on-HOST
+and writes them on its stdout. 
 
 Note: The solution of named pipes was preferred to tcp ip connections as
 it allows a discovery of which valgrind-ified processes are ready to accept

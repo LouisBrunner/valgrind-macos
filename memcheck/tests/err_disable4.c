@@ -75,9 +75,13 @@ int main ( void )
   // set up the semaphore
   r = sem_init(&sem, 0, 0);  assert(!r);
 
+  pthread_attr_t attr;
+  r = pthread_attr_init(&attr); assert(!r);
+  r = pthread_attr_setstacksize(&attr, 64 * 4096); // 256k
+
   // create N threads to do child_fn_1 ...
   for (i = 0; i < NTHREADS; i++) {
-     r = pthread_create(&child[i], NULL, child_fn_1, NULL);
+     r = pthread_create(&child[i], &attr, child_fn_1, NULL);
      assert(!r);
   }
 
@@ -100,7 +104,7 @@ int main ( void )
 
   // create N threads to do child_fn_2 ...
   for (i = 0; i < NTHREADS; i++) {
-     r = pthread_create(&child[i], NULL, child_fn_2, NULL);
+     r = pthread_create(&child[i], &attr, child_fn_2, NULL);
      assert(!r);
   }
 
@@ -113,6 +117,12 @@ int main ( void )
   for (i = 0; i < NTHREADS; i++) {
      r = pthread_join(child[i], NULL);  assert(!r);
   }
+
+  // Print the final error counts.  There need to be 498 errors
+  // in 1 context.  Anything else, and something is not right.
+  int nerrors = VALGRIND_COUNT_ERRORS;
+  fprintf(stderr, "\n-------- Got %d errors (expected %d ==> %s) ------\n\n", 
+          nerrors, NTHREADS, nerrors == NTHREADS ? "PASS" : "FAIL" );
 
   return 0;
 }

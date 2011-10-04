@@ -309,6 +309,9 @@ void pc_pp_Error ( Error* err )
    XError *xe = (XError*)VG_(get_error_extra)(err);
    tl_assert(xe);
 
+   if (xml)
+      emit( "  <kind>%s</kind>\n", pc_get_error_name(err));
+
    switch (VG_(get_error_kind)(err)) {
 
    //----------------------------------------------------------
@@ -316,7 +319,6 @@ void pc_pp_Error ( Error* err )
 
       if (xml) {
 
-         emit( "  <kind>SorG</kind>\n");
          emit( "  <what>Invalid %s of size %ld</what>\n",
                xe->XE.SorG.sszB < 0 ? "write" : "read",
                Word__abs(xe->XE.SorG.sszB) );
@@ -357,7 +359,6 @@ void pc_pp_Error ( Error* err )
 
          if (xml) {
 
-            emit( "  <kind>Heap</kind>\n");
             emit( "  <what>Invalid %s of size %ld</what>\n",
                   readwrite(xe->XE.Heap.sszB),
                   Word__abs(xe->XE.Heap.sszB) );
@@ -392,7 +393,6 @@ void pc_pp_Error ( Error* err )
 
          if (xml) {
 
-            emit( "  <kind>Heap</kind>\n");
             emit( "  <what>%s %s of size %ld</what>\n",
                   how_invalid,
                   readwrite(xe->XE.Heap.sszB),
@@ -475,7 +475,6 @@ void pc_pp_Error ( Error* err )
 
       if (xml) {
 
-         emit( "  <kind>Arith</kind>\n");
          emit( "  <what>Invalid arguments to %s</what>\n",
                xe->XE.Arith.opname );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
@@ -561,7 +560,6 @@ void pc_pp_Error ( Error* err )
 
          if (xml) {
 
-            emit( "  <kind>SysParam</kind>\n");
             emit( "  <what>%s%s contains unaddressable byte(s)</what>\n",
                   what, s );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
@@ -589,7 +587,6 @@ void pc_pp_Error ( Error* err )
 
          if (xml) {
 
-            emit( "  <kind>SysParam</kind>\n");
             emit( "  <what>%s%s is non-contiguous</what>\n",
                   what, s );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );

@@ -178,8 +178,33 @@ done
 # Get times and date
 END=`date "+%F %H:%M:%S %Z"`
 
+# Gather some information about this run and its environment
+valgrind_revision="`svn info valgrind-new | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
+vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
+gcc_version="`gcc --version | head -1`"
+libc_so="`ls -1 /lib/libc.so.* | tail -1`"
+libc="unknown"
+if [ "x$libc_so" != "x" ]; then
+  if [ -e "$libc_so" -a -r "$libc_so" ]; then
+    libc="`/lib/libc.so.* | head -1`"
+  fi
+fi
+uname_stuff="`uname -mrs`"
+if [ -e "/etc/issue.net" -a -r "/etc/issue.net" ]; then
+  vendor_stuff="`cat /etc/issue.net | head -1`"
+else
+  vendor_stuff="unknown"
+fi
+
+echo "valgrind revision: $valgrind_revision" >  final
+echo "VEX revision:      $vex_revision"      >> final
+echo "GCC version:       $gcc_version"       >> final
+echo "C library:         $libc"              >> final
+echo "uname -mrs:        $uname_stuff"       >> final
+echo "Vendor version:    $vendor_stuff"      >> final
+
 # 'final' shows the difference between the old and new results
-echo                                               >  final
+echo                                              >> final
 echo "Nightly build on" $TAG "(" $ABT_DETAILS ")" >> final
 echo "Started at" $START                          >> final
 echo "Ended   at" $END                            >> final

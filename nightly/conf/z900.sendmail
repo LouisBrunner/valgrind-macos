@@ -2,12 +2,6 @@ subject="$1"
 summary="$2"
 diffs="$3"
 
-valgrind_revision="`svn info valgrind-new | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
-vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
-gcc_version="`gcc --version | head -1`"
-glibc_version="`/lib/libc.so.* | head -1`"
-uname_stuff="`uname -mrs`"
-vendor_stuff="`cat /etc/issue.net | head -1`"
 MAILFILE=/opt/tobesent
 rm -f $MAILFILE
 touch $MAILFILE
@@ -15,14 +9,7 @@ echo "Subject: $subject" >> $MAILFILE
 echo "To: valgrind-developers@lists.sourceforge.net" >> $MAILFILE
 echo "Cc: britzel@acm.org" >> $MAILFILE
 echo "  " >> $MAILFILE
-echo "valgrind revision: $valgrind_revision" >> $MAILFILE
-echo "VEX revision:      $vex_revision"   >> $MAILFILE
-echo "GCC version:       $gcc_version"    >> $MAILFILE
-echo "GLIBC version:     $glibc_version"  >> $MAILFILE
-echo "uname -mrs:        $uname_stuff"    >> $MAILFILE
-echo "Vendor version:    $vendor_stuff"   >> $MAILFILE
-echo "  " >> $MAILFILE
 cat "$summary"  >> $MAILFILE
 echo "  " >> $MAILFILE
-# cat "$diffs"  >> $MAILFILE
+cat "$diffs"  >> $MAILFILE
 /usr/sbin/sendmail -t -i -fbritzel@acm.org < $MAILFILE

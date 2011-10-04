@@ -201,7 +201,7 @@ EXTRA_DIST = \
 	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
-	writev.stderr.exp writev.vgtest \
+	writev1.stderr.exp writev1.vgtest \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest
 
 check_PROGRAMS = \
@@ -261,7 +261,7 @@ check_PROGRAMS = \
 	vcpu_fbench vcpu_fnfns \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
-	writev
+	writev1
 
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

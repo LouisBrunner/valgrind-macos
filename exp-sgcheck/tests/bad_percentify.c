@@ -98,8 +98,8 @@ static UInt vprintf_WRK ( OutputSink* sink,
 {
    printf_buf_t myprintf_buf
       = { "", 0, sink };
-   UInt ret
-      = vprintf_to_buf(&myprintf_buf, format, vargs);
+   UInt ret;
+   ret = vprintf_to_buf(&myprintf_buf, format, vargs);
    // Write out any chars left in the buffer.
    if (myprintf_buf.buf_used > 0) {
       send_bytes_to_logging_sink( myprintf_buf.sink,

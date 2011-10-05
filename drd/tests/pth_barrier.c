@@ -47,7 +47,7 @@ static int s_silent;
 static void* threadfunc(struct threadinfo* p)
 {
   int i;
-  int* const array = p->array;
+  int8_t* const array = p->array;
   pthread_barrier_t* const b = p->b;
   if (! s_silent)
     printf("thread %lx iteration 0\n", pthread_self());
@@ -70,7 +70,7 @@ static void barriers_and_races(const int nthread, const int iterations)
   pthread_attr_t attr;
   struct threadinfo* t;
   pthread_barrier_t b;
-  int* array;
+  int8_t* array;
 
   t = malloc(nthread * sizeof(struct threadinfo));
   array = malloc(iterations * sizeof(array[0]));

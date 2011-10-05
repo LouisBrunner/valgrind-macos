@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +26,7 @@ struct threadinfo
 {
   pthread_barrier_t* b;
   pthread_t          tid;
-  int*               array;
+  int8_t*            array;
   int                iterations;
 };
 

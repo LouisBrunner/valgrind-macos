@@ -2,13 +2,14 @@
 
 #include <assert.h>  /* assert() */
 #include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>   /* EOF */
 #include <unistd.h>  /* getopt() */
 #include "../../drd/drd.h"
 
-static int s_a;
-static int s_b;
-static int s_c;
+static int8_t s_a;
+static int8_t s_b;
+static int8_t s_c;
 
 static void* thread_func(void* arg)
 {

@@ -2041,7 +2041,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             return 0;
          }
          /* let's hope it doesn't trap! */
-         return * ((UWord*)a);
+         return ML_(read_UWord)((void *)a);
       default: 
          goto unhandled;
    }
@@ -2242,7 +2242,7 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
          Addr a = uregs->sp + cfsi->cfa_off;
          if (a < min_accessible || a > max_accessible-sizeof(Addr))
             break;
-         cfa = *(Addr*)a;
+         cfa = ML_(read_Addr)((void *)a);
          break;
       }
       case CFIR_SAME:
@@ -2385,7 +2385,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                if (a < min_accessible                   \
                    || a > max_accessible-sizeof(Addr))  \
                   return False;                         \
-               _prev = *(Addr*)a;                       \
+               _prev = ML_(read_Addr)((void *)a);       \
                break;                                   \
             }                                           \
             case CFIR_CFAREL:                           \
@@ -2547,10 +2547,10 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
  
    spHere = *spP;
 
-   *ipP = *(Addr *)(spHere + 4*(fpo->cbRegs + fpo->cdwLocals));
-   *spP =           spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 
-                                            + fpo->cdwParams);
-   *fpP = *(Addr *)(spHere + 4*2);
+   *ipP = ML_(read_Addr)((void *)(spHere + 4*(fpo->cbRegs + fpo->cdwLocals)));
+   *spP =                         spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 
+                                                          + fpo->cdwParams);
+   *fpP = ML_(read_Addr)((void *)(spHere + 4*2));
    return True;
 }
 

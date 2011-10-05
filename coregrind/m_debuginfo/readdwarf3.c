@@ -243,7 +243,7 @@ static UShort get_UShort ( Cursor* c ) {
       /*NOTREACHED*/
       vg_assert(0);
    }
-   r = * (UShort*) &c->region_start_img[ c->region_next ];
+   r = ML_(read_UShort)(&c->region_start_img[ c->region_next ]);
    c->region_next += sizeof(UShort);
    return r;
 }
@@ -255,7 +255,7 @@ static UInt get_UInt ( Cursor* c ) {
       /*NOTREACHED*/
       vg_assert(0);
    }
-   r = * (UInt*) &c->region_start_img[ c->region_next ];
+   r = ML_(read_UInt)(&c->region_start_img[ c->region_next ]);
    c->region_next += sizeof(UInt);
    return r;
 }
@@ -267,7 +267,7 @@ static ULong get_ULong ( Cursor* c ) {
       /*NOTREACHED*/
       vg_assert(0);
    }
-   r = * (ULong*) &c->region_start_img[ c->region_next ];
+   r = ML_(read_ULong)(&c->region_start_img[ c->region_next ]);
    c->region_next += sizeof(ULong);
    return r;
 }
@@ -472,8 +472,8 @@ typedef
 static void bias_GX ( /*MOD*/GExpr* gx, struct _DebugInfo* di )
 {
    UShort nbytes;
-   Addr*  pA;
    UChar* p = &gx->payload[0];
+   UChar* pA;
    UChar  uc;
    uc = *p++; /*biasMe*/
    if (uc == 0)
@@ -486,15 +486,15 @@ static void bias_GX ( /*MOD*/GExpr* gx, struct _DebugInfo* di )
          break; /*isEnd*/
       vg_assert(uc == 0);
       /* t-bias aMin */
-      pA = (Addr*)p;
-      *pA += di->text_debug_bias;
+      pA = (UChar*)p;
+      ML_(write_Addr)(pA, ML_(read_Addr)(pA) + di->text_debug_bias);
       p += sizeof(Addr);
       /* t-bias aMax */
-      pA = (Addr*)p;
-      *pA += di->text_debug_bias;
+      pA = (UChar*)p;
+      ML_(write_Addr)(pA, ML_(read_Addr)(pA) + di->text_debug_bias);
       p += sizeof(Addr);
       /* nbytes, and actual expression */
-      nbytes = * (UShort*)p; p += sizeof(UShort);
+      nbytes = ML_(read_UShort)(p); p += sizeof(UShort);
       p += nbytes;
    }
 }
@@ -520,13 +520,13 @@ static GExpr* make_singleton_GX ( UChar* block, UWord nbytes )
 
    p = pstart = &gx->payload[0];
 
-   * ((UChar*)p)  = 0;          /*biasMe*/ p += sizeof(UChar);
-   * ((UChar*)p)  = 0;          /*!isEnd*/ p += sizeof(UChar);
-   * ((Addr*)p)   = 0;          /*aMin*/   p += sizeof(Addr);
-   * ((Addr*)p)   = ~((Addr)0); /*aMax */  p += sizeof(Addr);
-   * ((UShort*)p) = (UShort)nbytes; /*nbytes*/ p += sizeof(UShort);
+   p = ML_(write_UChar)(p, 0);        /*biasMe*/
+   p = ML_(write_UChar)(p, 0);        /*!isEnd*/
+   p = ML_(write_Addr)(p, 0);         /*aMin*/
+   p = ML_(write_Addr)(p, ~0);        /*aMax*/
+   p = ML_(write_UShort)(p, nbytes);  /*nbytes*/
    VG_(memcpy)(p, block, nbytes); p += nbytes;
-   * ((UChar*)p)  = 1;          /*isEnd*/  p += sizeof(UChar);
+   p = ML_(write_UChar)(p, 1);        /*isEnd*/
 
    vg_assert( (SizeT)(p - pstart) == bytesReqd);
    vg_assert( &gx->payload[bytesReqd] 

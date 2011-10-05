@@ -136,6 +136,27 @@ UShort ML_(read_UShort) ( UChar* data ) {
    return r;
 }
 
+UChar *ML_(write_UShort) ( UChar* ptr, UShort val ) {
+   if (host_is_little_endian()) {
+      ptr[0] = val & 0xff;
+      ptr[1] = ( val >> 8 ) & 0xff;
+   } else {
+      ptr[0] = ( val >> 8 ) & 0xff;
+      ptr[1] = val & 0xff;
+   }
+   return ptr + sizeof(UShort);
+}
+
+UWord ML_(read_UWord) ( UChar* data ) {
+   if (sizeof(UWord) == sizeof(UInt)) {
+      return ML_(read_UInt)(data);
+   } else if  (sizeof(UWord) == sizeof(ULong)) {
+      return ML_(read_ULong)(data);
+   } else {
+      vg_assert(0);
+   }
+}
+
 UInt ML_(read_UInt) ( UChar* data ) {
    UInt r = 0;
    if (host_is_little_endian()) {
@@ -150,6 +171,21 @@ UInt ML_(read_UInt) ( UChar* data ) {
           | ( ((UInt)data[0]) << 24 );
    }
    return r;
+}
+
+UChar* ML_(write_UInt) ( UChar* ptr, UInt val ) {
+   if (host_is_little_endian()) {
+      ptr[0] = val & 0xff;
+      ptr[1] = ( val >> 8 ) & 0xff;
+      ptr[2] = ( val >> 16 ) & 0xff;
+      ptr[3] = ( val >> 24 ) & 0xff;
+   } else {
+      ptr[0] = ( val >> 24 ) & 0xff;
+      ptr[1] = ( val >> 16 ) & 0xff;
+      ptr[2] = ( val >> 8 ) & 0xff;
+      ptr[3] = val & 0xff;
+   }
+   return ptr + sizeof(UInt);
 }
 
 ULong ML_(read_ULong) ( UChar* data ) {
@@ -176,8 +212,36 @@ ULong ML_(read_ULong) ( UChar* data ) {
    return r;
 }
 
+UChar* ML_(write_ULong) ( UChar* ptr, ULong val ) {
+   if (host_is_little_endian()) {
+      ptr[0] = val & 0xff;
+      ptr[1] = ( val >> 8 ) & 0xff;
+      ptr[2] = ( val >> 16 ) & 0xff;
+      ptr[3] = ( val >> 24 ) & 0xff;
+      ptr[4] = ( val >> 32 ) & 0xff;
+      ptr[5] = ( val >> 40 ) & 0xff;
+      ptr[6] = ( val >> 48 ) & 0xff;
+      ptr[7] = ( val >> 56 ) & 0xff;
+   } else {
+      ptr[0] = ( val >> 56 ) & 0xff;
+      ptr[1] = ( val >> 48 ) & 0xff;
+      ptr[2] = ( val >> 40 ) & 0xff;
+      ptr[3] = ( val >> 32 ) & 0xff;
+      ptr[4] = ( val >> 24 ) & 0xff;
+      ptr[5] = ( val >> 16 ) & 0xff;
+      ptr[6] = ( val >> 8 ) & 0xff;
+      ptr[7] = val & 0xff;
+   }
+   return ptr + sizeof(ULong);
+}
+
 UChar ML_(read_UChar) ( UChar* data ) {
    return data[0];
+}
+
+UChar* ML_(write_UChar) ( UChar* ptr, UChar val ) {
+   ptr[0] = val;
+   return ptr + sizeof(UChar);
 }
 
 Addr ML_(read_Addr) ( UChar* data ) {
@@ -185,6 +249,16 @@ Addr ML_(read_Addr) ( UChar* data ) {
       return ML_(read_UInt)(data);
    } else if  (sizeof(Addr) == sizeof(ULong)) {
       return ML_(read_ULong)(data);
+   } else {
+      vg_assert(0);
+   }
+}
+
+UChar* ML_(write_Addr) ( UChar* ptr, Addr val ) {
+   if (sizeof(Addr) == sizeof(UInt)) {
+      return ML_(write_UInt)(ptr, val);
+   } else if  (sizeof(Addr) == sizeof(ULong)) {
+      return ML_(write_ULong)(ptr, val);
    } else {
       vg_assert(0);
    }

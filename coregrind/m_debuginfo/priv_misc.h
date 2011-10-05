@@ -48,10 +48,17 @@ Short ML_(read_Short)( UChar* data );
 Int ML_(read_Int)( UChar* data );
 Long ML_(read_Long)( UChar* data );
 UShort ML_(read_UShort)( UChar* data );
+UWord ML_(read_UWord)( UChar* data );
 UInt ML_(read_UInt)( UChar* data );
 ULong ML_(read_ULong)( UChar* data );
 UChar ML_(read_UChar)( UChar* data );
 Addr ML_(read_Addr)( UChar* data );
+
+UChar* ML_(write_UShort)( UChar* ptr, UShort val );
+UChar* ML_(write_UInt)( UChar* ptr, UInt val );
+UChar* ML_(write_ULong)( UChar* ptr, ULong val );
+UChar* ML_(write_UChar)( UChar* ptr, UChar val );
+UChar* ML_(write_Addr)( UChar* ptr, Addr val );
 
 /* A handy type, a la Haskell's Maybe type.  Yes, I know, C sucks.
    Been there.  Done that.  Seen the movie.  Got the T-shirt.  Etc. */

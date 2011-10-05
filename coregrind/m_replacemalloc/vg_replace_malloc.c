@@ -120,7 +120,7 @@ static inline void my_exit ( int x )
    __asm__ __volatile__(".word 0xFFFFFFFF");
    while (1) {}
 #  else
-   extern void _exit(int status);
+   extern __attribute__ ((__noreturn__)) void _exit(int status);
    _exit(x);
 #  endif
 }

@@ -2563,14 +2563,14 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
 /*--------------------------------------------------------------*/
 
 /* Try to make p2XA(dst, fmt, args..) turn into
-   VG_(xaprintf_no_f_c)(dst, fmt, args) without having to resort to
+   VG_(xaprintf)(dst, fmt, args) without having to resort to
    vararg macros.  As usual with everything to do with varargs, it's
    an ugly hack.
 
    //#define p2XA(dstxa, format, args...)
-   //   VG_(xaprintf_no_f_c)(dstxa, format, ##args)
+   //   VG_(xaprintf)(dstxa, format, ##args)
 */
-#define  p2XA  VG_(xaprintf_no_f_c)
+#define  p2XA  VG_(xaprintf)
 
 /* Add a zero-terminating byte to DST, which must be an XArray* of
    HChar. */
@@ -2712,7 +2712,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%t\",",
+               "Location 0x%lx is %lu byte%s inside local var \"%pS\",",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          TAGL( dn2 );
@@ -2736,18 +2736,18 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%t\"",
+               "Location 0x%lx is %lu byte%s inside local var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %t:%d, in frame #%d of thread %d",
+               "declared at %pS:%d, in frame #%d of thread %d",
                var->fileName, var->lineNo, frameNo, (Int)tid );
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ", 
+               " <file>%pS</file> <line>%d</line> ", 
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -2768,7 +2768,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t",
+               "Location 0x%lx is %lu byte%s inside %pS%pS",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
@@ -2792,19 +2792,19 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t,",
+               "Location 0x%lx is %lu byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %t:%d, in frame #%d of thread %d",
+               "declared at %pS:%d, in frame #%d of thread %d",
                var->fileName, var->lineNo, frameNo, (Int)tid );
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ",
+               " <file>%pS</file> <line>%d</line> ",
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -2826,7 +2826,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%t\"",
+               "Location 0x%lx is %lu byte%s inside global var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
       } else {
@@ -2844,18 +2844,18 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%t\"",
+               "Location 0x%lx is %lu byte%s inside global var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %t:%d",
+               "declared at %pS:%d",
                var->fileName, var->lineNo);
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ",
+               " <file>%pS</file> <line>%d</line> ",
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -2876,7 +2876,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t,",
+               "Location 0x%lx is %lu byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
@@ -2900,19 +2900,19 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t,",
+               "Location 0x%lx is %lu byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "a global variable declared at %t:%d",
+               "a global variable declared at %pS:%d",
                var->fileName, var->lineNo);
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ",
+               " <file>%pS</file> <line>%d</line> ",
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {

@@ -337,15 +337,6 @@ void VG_(xaprintf)( XArray* dst, const HChar* format, ... )
    va_end(vargs);
 }
 
-/* and again .. */
-void VG_(xaprintf_no_f_c)( XArray* dst, const HChar* format, ... )
-{
-   va_list vargs;
-   va_start(vargs, format);
-   VG_(vcbprintf)( add_char_to_XA, (void*)dst, format, vargs );
-   va_end(vargs);
-}
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                               m_xarray.c ---*/

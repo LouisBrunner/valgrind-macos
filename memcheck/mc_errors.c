@@ -349,7 +349,7 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
 
       case Addr_DataSym:
          emiN( "%sAddress 0x%llx is %llu bytes "
-               "inside data symbol \"%t\"%s\n",
+               "inside data symbol \"%pS\"%s\n",
                xpre,
                (ULong)a,
                (ULong)ai->Addr.DataSym.offset,
@@ -372,7 +372,7 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
          break;
 
       case Addr_SectKind:
-         emiN( "%sAddress 0x%llx is in the %t segment of %t%s\n",
+         emiN( "%sAddress 0x%llx is in the %pS segment of %pS%s\n",
                xpre,
                (ULong)a,
                VG_(pp_SectKind)(ai->Addr.SectKind.kind),
@@ -460,7 +460,7 @@ void MC_(pp_Error) ( Error* err )
          // the following code is untested.  Bad.
          if (xml) {
             emit( "  <kind>CoreMemError</kind>\n" );
-            emiN( "  <what>%t contains unaddressable byte(s)</what>\n",
+            emiN( "  <what>%pS contains unaddressable byte(s)</what>\n",
                   VG_(get_error_string)(err));
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          } else {
@@ -518,7 +518,7 @@ void MC_(pp_Error) ( Error* err )
          MC_(any_value_errors) = True;
          if (xml) {
             emit( "  <kind>SyscallParam</kind>\n" );
-            emiN( "  <what>Syscall param %t contains "
+            emiN( "  <what>Syscall param %pS contains "
                   "uninitialised byte(s)</what>\n",
                   VG_(get_error_string)(err) );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
@@ -540,7 +540,7 @@ void MC_(pp_Error) ( Error* err )
             MC_(any_value_errors) = True;
          if (xml) {
             emit( "  <kind>SyscallParam</kind>\n" );
-            emiN( "  <what>Syscall param %t points to %s byte(s)</what>\n",
+            emiN( "  <what>Syscall param %pS points to %s byte(s)</what>\n",
                   VG_(get_error_string)(err),
                   extra->Err.MemParam.isAddrErr 
                      ? "unaddressable" : "uninitialised" );
@@ -669,7 +669,7 @@ void MC_(pp_Error) ( Error* err )
             emit( "  <kind>Overlap</kind>\n" );
             if (extra->Err.Overlap.szB == 0) {
                emiN( "  <what>Source and destination overlap "
-                     "in %t(%#lx, %#lx)\n</what>\n",
+                     "in %pS(%#lx, %#lx)\n</what>\n",
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src );
             } else {
@@ -682,7 +682,7 @@ void MC_(pp_Error) ( Error* err )
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          } else {
             if (extra->Err.Overlap.szB == 0) {
-               emiN( "Source and destination overlap in %t(%#lx, %#lx)\n",
+               emiN( "Source and destination overlap in %pS(%#lx, %#lx)\n",
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src );
             } else {

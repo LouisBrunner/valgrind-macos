@@ -447,12 +447,23 @@ VG_(debugLog_vprintf) (
                ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
                                       (ULong)(va_arg (vargs, UInt)));
             break;
-         case 'p': /* %p */
-            ret += 2;
-            send('0',send_arg2);
-            send('x',send_arg2);
-            ret += myvprintf_int64(send, send_arg2, flags, 16, width, True,
-                                   (ULong)((UWord)va_arg (vargs, void *)));
+         case 'p':
+            if (format[i+1] == 'S') {
+               i++;
+               /* %pS, like %s but escaping chars for XML safety */
+               /* Note: simplistic; ignores field width and flags */
+               char *str = va_arg (vargs, char *);
+               if (str == (char*) 0)
+                  str = "(null)";
+               ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
+            } else {
+               /* %p */
+               ret += 2;
+               send('0',send_arg2);
+               send('x',send_arg2);
+               ret += myvprintf_int64(send, send_arg2, flags, 16, width, True,
+                                      (ULong)((UWord)va_arg (vargs, void *)));
+            }
             break;
          case 'x': /* %x */
          case 'X': /* %X */
@@ -478,13 +489,6 @@ VG_(debugLog_vprintf) (
             if (str == (char*) 0) str = "(null)";
             ret += myvprintf_str(send, send_arg2, 
                                  flags, width, str, format[i]=='S');
-            break;
-         }
-         case 't': { /* %t, like %s but escaping chars for XML safety */
-            /* Note: simplistic; ignores field width and flags */
-            char *str = va_arg (vargs, char *);
-            if (str == (char*) 0) str = "(null)";
-            ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
             break;
          }
 

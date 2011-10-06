@@ -138,14 +138,9 @@ extern void VG_(getContentsXA_UNSAFE)( XArray* sr,
 /* Convenience function: printf into an XArray of HChar, adding stuff
    at the end.  This is very convenient for concocting arbitrary
    length printf output in an XArray.  Note that the resulting string
-   is NOT zero-terminated.  Versions are provided with and without a
-   format check, the latter so the unknown (to gcc) "%t" can be used
-   without gcc complaining. */
+   is NOT zero-terminated. */
 extern void VG_(xaprintf)( XArray* dst, const HChar* format, ... )
                          PRINTF_CHECK(2, 3);
-
-extern void VG_(xaprintf_no_f_c)
-                         ( XArray* dst, const HChar* format, ... );
 
 #endif   // __PUB_TOOL_XARRAY_H
 

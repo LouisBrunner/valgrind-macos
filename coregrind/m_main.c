@@ -1004,9 +1004,9 @@ static void print_file_vars(Char* format)
                   i++;
                }
 
-               VG_(printf_xml_no_f_c)(
-                  "<logfilequalifier> <var>%t</var> "
-                  "<value>%t</value> </logfilequalifier>\n",
+               VG_(printf_xml)(
+                  "<logfilequalifier> <var>%pS</var> "
+                  "<value>%pS</value> </logfilequalifier>\n",
                   qualname,qual
                );
 	       format[i] = '}';
@@ -1073,7 +1073,7 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(printf_xml)("<preamble>\n");
 
       /* Tool details */
-      umsg_or_xml( VG_(clo_xml) ? "%s%t%t%t, %t%s\n" : "%s%s%s%s, %s%s\n",
+      umsg_or_xml( VG_(clo_xml) ? "%s%pS%pS%pS, %pS%s\n" : "%s%s%s%s, %s%s\n",
                    xpre,
                    VG_(details).name, 
                    NULL == VG_(details).version ? "" : "-",
@@ -1089,7 +1089,7 @@ static void print_preamble ( Bool logging_to_fd,
          );
       }
 
-      umsg_or_xml( VG_(clo_xml) ? "%s%t%s\n" : "%s%s%s\n",
+      umsg_or_xml( VG_(clo_xml) ? "%s%pS%s\n" : "%s%s%s\n",
                    xpre, VG_(details).copyright_author, xpost );
 
       /* Core details */
@@ -1125,13 +1125,13 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(printf_xml)("\n");
       VG_(printf_xml)("<pid>%d</pid>\n", VG_(getpid)());
       VG_(printf_xml)("<ppid>%d</ppid>\n", VG_(getppid)());
-      VG_(printf_xml_no_f_c)("<tool>%t</tool>\n", toolname);
+      VG_(printf_xml)("<tool>%pS</tool>\n", toolname);
       if (xml_fname_unexpanded)
          print_file_vars(xml_fname_unexpanded);
       if (VG_(clo_xml_user_comment)) {
          /* Note: the user comment itself is XML and is therefore to
             be passed through verbatim (%s) rather than escaped
-            (%t). */
+            (%pS). */
          VG_(printf_xml)("<usercomment>%s</usercomment>\n",
                          VG_(clo_xml_user_comment));
       }
@@ -1140,14 +1140,14 @@ static void print_preamble ( Bool logging_to_fd,
 
       VG_(printf_xml)("  <vargv>\n");
       if (VG_(name_of_launcher))
-         VG_(printf_xml_no_f_c)("    <exe>%t</exe>\n",
+         VG_(printf_xml)("    <exe>%pS</exe>\n",
                                 VG_(name_of_launcher));
       else
-         VG_(printf_xml_no_f_c)("    <exe>%t</exe>\n",
+         VG_(printf_xml)("    <exe>%pS</exe>\n",
                                 "(launcher name unknown)");
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
-         VG_(printf_xml_no_f_c)(
-            "    <arg>%t</arg>\n",
+         VG_(printf_xml)(
+            "    <arg>%pS</arg>\n",
             * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i )
          );
       }
@@ -1155,11 +1155,11 @@ static void print_preamble ( Bool logging_to_fd,
 
       VG_(printf_xml)("  <argv>\n");
       if (VG_(args_the_exename))
-         VG_(printf_xml_no_f_c)("    <exe>%t</exe>\n",
+         VG_(printf_xml)("    <exe>%pS</exe>\n",
                                 VG_(args_the_exename));
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
-         VG_(printf_xml_no_f_c)(
-            "    <arg>%t</arg>\n",
+         VG_(printf_xml)(
+            "    <arg>%pS</arg>\n",
             * (HChar**) VG_(indexXA)( VG_(args_for_client), i )
          );
       }
@@ -2170,12 +2170,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    if (VG_(clo_xml)) {
       HChar buf[50];
       VG_(elapsed_wallclock_time)(buf);
-      VG_(printf_xml_no_f_c)( "<status>\n"
+      VG_(printf_xml)( "<status>\n"
                               "  <state>RUNNING</state>\n"
-                              "  <time>%t</time>\n"
+                              "  <time>%pS</time>\n"
                               "</status>\n",
                               buf );
-      VG_(printf_xml_no_f_c)( "\n" );
+      VG_(printf_xml)( "\n" );
    }
 
    VG_(debugLog)(1, "main", "Running thread 1\n");
@@ -2280,9 +2280,9 @@ void shutdown_actions_NORETURN( ThreadId tid,
    if (VG_(clo_xml)) {
       HChar buf[50];
       VG_(elapsed_wallclock_time)(buf);
-      VG_(printf_xml_no_f_c)( "<status>\n"
+      VG_(printf_xml)( "<status>\n"
                               "  <state>FINISHED</state>\n"
-                              "  <time>%t</time>\n"
+                              "  <time>%pS</time>\n"
                               "</status>\n"
                               "\n",
                               buf);

@@ -309,12 +309,12 @@ static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 {
    static UChar buf[ERRTXT_LEN];
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
-      VG_(printf_xml_no_f_c)("    <sframe> <fun>%t</fun> </sframe>\n", buf);
+      VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
    } else
    if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
-      VG_(printf_xml_no_f_c)("    <sframe> <obj>%t</obj> </sframe>\n", buf);
+      VG_(printf_xml)("    <sframe> <obj>%pS</obj> </sframe>\n", buf);
    } else {
-      VG_(printf_xml_no_f_c)("    <sframe> <obj>*</obj> </sframe>\n");
+      VG_(printf_xml)("    <sframe> <obj>*</obj> </sframe>\n");
    }
 }
 
@@ -405,10 +405,10 @@ static void gen_suppression(Error* err)
          again. */
       VG_(printf_xml)("  <suppression>\n");
       VG_(printf_xml)("    <sname>%s</sname>\n", dummy_name);
-      VG_(printf_xml_no_f_c)(
-                      "    <skind>%t:%t</skind>\n", VG_(details).name, name);
+      VG_(printf_xml)(
+                      "    <skind>%pS:%pS</skind>\n", VG_(details).name, name);
       if (anyXtra)
-         VG_(printf_xml_no_f_c)("    <skaux>%t</skaux>\n", xtra);
+         VG_(printf_xml)("    <skaux>%pS</skaux>\n", xtra);
 
       // Print stack trace elements
       VG_(apply_StackTrace)(printSuppForIp_XML,
@@ -885,9 +885,9 @@ static Bool show_used_suppressions ( void )
       if (su->count <= 0)
          continue;
       if (VG_(clo_xml)) {
-         VG_(printf_xml_no_f_c)( "  <pair>\n"
+         VG_(printf_xml)( "  <pair>\n"
                                  "    <count>%d</count>\n"
-                                 "    <name>%t</name>\n"
+                                 "    <name>%pS</name>\n"
                                  "  </pair>\n",
                                  su->count, su->sname );
       } else {

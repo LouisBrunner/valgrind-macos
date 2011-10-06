@@ -755,13 +755,6 @@ static void emit ( HChar* format, ... )
    emit_WRK(format, vargs);
    va_end(vargs);
 }
-static void emit_no_f_c ( HChar* format, ... )
-{
-   va_list vargs;
-   va_start(vargs, format);
-   emit_WRK(format, vargs);
-   va_end(vargs);
-}
 
 
 /* Announce (that is, print the point-of-creation) of 'thr'.  Only do
@@ -1052,8 +1045,8 @@ void HG_(pp_Error) ( Error* err )
       if (xml) {
 
          emit( "  <xwhat>\n" );
-         emit_no_f_c(
-            "    <text>Thread #%d's call to %t failed</text>\n",
+         emit(
+            "    <text>Thread #%d's call to %pS failed</text>\n",
             (Int)xe->XE.PthAPIerror.thr->errmsg_index,
             xe->XE.PthAPIerror.fnname );
          emit( "    <hthreadid>%d</hthreadid>\n",
@@ -1065,7 +1058,7 @@ void HG_(pp_Error) ( Error* err )
 
       } else {
 
-         emit_no_f_c( "Thread #%d's call to %t failed\n",
+         emit( "Thread #%d's call to %pS failed\n",
                       (Int)xe->XE.PthAPIerror.thr->errmsg_index,
                       xe->XE.PthAPIerror.fnname );
          emit( "   with error code %ld (%s)\n",

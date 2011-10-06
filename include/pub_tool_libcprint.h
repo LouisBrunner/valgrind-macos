@@ -86,20 +86,11 @@ extern UInt VG_(printf)   ( const HChar *format, ... )
 extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs )
                           PRINTF_CHECK(1, 0);
 
-// The "_no_f_c" functions here are just like their non-"_no_f_c" counterparts
-// but without the PRINTF_CHECK, so they can be used with our non-standard %t
-// format specifier.
-
-// These are the same as the non "_xml" versions above, except the
-// output goes on the selected XML output channel instead of the
-// normal one.
 extern UInt VG_(printf_xml)  ( const HChar *format, ... )
                              PRINTF_CHECK(1, 2);
 
 extern UInt VG_(vprintf_xml) ( const HChar *format, va_list vargs )
                              PRINTF_CHECK(1, 0);
-
-extern UInt VG_(printf_xml_no_f_c) ( const HChar *format, ... );
 
 /* Yet another, totally general, version of vprintf, which hands all
    output bytes to CHAR_SINK, passing it OPAQUE as the second arg. */
@@ -107,7 +98,6 @@ extern void VG_(vcbprintf)( void(*char_sink)(HChar, void* opaque),
                             void* opaque,
                             const HChar* format, va_list vargs );
 
-extern UInt VG_(message_no_f_c)( VgMsgKind kind, const HChar* format, ... );
 extern UInt VG_(message)( VgMsgKind kind, const HChar* format, ... )
    PRINTF_CHECK(2, 3);
 

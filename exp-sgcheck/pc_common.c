@@ -326,9 +326,9 @@ void pc_pp_Error ( Error* err )
    
          emit( "  <auxwhat>Address %#lx expected vs actual:</auxwhat>\n",
                xe->XE.SorG.addr );
-         emiN( "  <auxwhat>Expected: %t</auxwhat>\n",
+         emiN( "  <auxwhat>Expected: %pS</auxwhat>\n",
                &xe->XE.SorG.expect[0] );
-         emiN( "  <auxwhat>Actual:   %t</auxwhat>\n", 
+         emiN( "  <auxwhat>Actual:   %pS</auxwhat>\n", 
                &xe->XE.SorG.actual[0] );
 
       } else {
@@ -433,14 +433,14 @@ void pc_pp_Error ( Error* err )
       if (xml) {
 
          if (xe->XE.Heap.descr1)
-            emiN( "  %t\n",
+            emiN( "  %pS\n",
                   (HChar*)VG_(indexXA)( xe->XE.Heap.descr1, 0 ) );
          if (xe->XE.Heap.descr2)
-            emiN( "  %t\n",
+            emiN( "  %pS\n",
                   (HChar*)VG_(indexXA)( xe->XE.Heap.descr2, 0 ) );
          if (xe->XE.Heap.datasym[0] != 0)
             emiN( "  <auxwhat>Address 0x%llx is %llu bytes "
-                  "inside data symbol \"%t\"</auxwhat>\n",
+                  "inside data symbol \"%pS\"</auxwhat>\n",
                   (ULong)xe->XE.Heap.addr,
                   (ULong)xe->XE.Heap.datasymoff,
                   xe->XE.Heap.datasym );

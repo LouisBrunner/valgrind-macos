@@ -4,8 +4,8 @@ Thread #x was created
    ...
    by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:91)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:92)
+   by 0x........: main (pth_barrier.c:122)
 
 ---Thread-Announcement------------------------------------------
 
@@ -13,614 +13,614 @@ Thread #x was created
    ...
    by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:91)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:92)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 0 bytes inside a block of size 128 alloc'd
+Address 0x........ is 0 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 4 bytes inside a block of size 128 alloc'd
+Address 0x........ is 1 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 8 bytes inside a block of size 128 alloc'd
+Address 0x........ is 2 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 12 bytes inside a block of size 128 alloc'd
+Address 0x........ is 3 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 16 bytes inside a block of size 128 alloc'd
+Address 0x........ is 4 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 20 bytes inside a block of size 128 alloc'd
+Address 0x........ is 5 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 24 bytes inside a block of size 128 alloc'd
+Address 0x........ is 6 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 28 bytes inside a block of size 128 alloc'd
+Address 0x........ is 7 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 32 bytes inside a block of size 128 alloc'd
+Address 0x........ is 8 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 36 bytes inside a block of size 128 alloc'd
+Address 0x........ is 9 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 40 bytes inside a block of size 128 alloc'd
+Address 0x........ is 10 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 44 bytes inside a block of size 128 alloc'd
+Address 0x........ is 11 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 48 bytes inside a block of size 128 alloc'd
+Address 0x........ is 12 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 52 bytes inside a block of size 128 alloc'd
+Address 0x........ is 13 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 56 bytes inside a block of size 128 alloc'd
+Address 0x........ is 14 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 60 bytes inside a block of size 128 alloc'd
+Address 0x........ is 15 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 64 bytes inside a block of size 128 alloc'd
+Address 0x........ is 16 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 68 bytes inside a block of size 128 alloc'd
+Address 0x........ is 17 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 72 bytes inside a block of size 128 alloc'd
+Address 0x........ is 18 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 76 bytes inside a block of size 128 alloc'd
+Address 0x........ is 19 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 80 bytes inside a block of size 128 alloc'd
+Address 0x........ is 20 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 84 bytes inside a block of size 128 alloc'd
+Address 0x........ is 21 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 88 bytes inside a block of size 128 alloc'd
+Address 0x........ is 22 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 92 bytes inside a block of size 128 alloc'd
+Address 0x........ is 23 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 96 bytes inside a block of size 128 alloc'd
+Address 0x........ is 24 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 100 bytes inside a block of size 128 alloc'd
+Address 0x........ is 25 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 104 bytes inside a block of size 128 alloc'd
+Address 0x........ is 26 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 108 bytes inside a block of size 128 alloc'd
+Address 0x........ is 27 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 112 bytes inside a block of size 128 alloc'd
+Address 0x........ is 28 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 116 bytes inside a block of size 128 alloc'd
+Address 0x........ is 29 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 120 bytes inside a block of size 128 alloc'd
+Address 0x........ is 30 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 
 ----------------------------------------------------------------
 
-Possible data race during write of size 4 at 0x........ by thread #x
+Possible data race during write of size 1 at 0x........ by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-This conflicts with a previous write of size 4 by thread #x
+This conflicts with a previous write of size 1 by thread #x
 Locks held: none
-   at 0x........: threadfunc (pth_barrier.c:59)
+   at 0x........: threadfunc (pth_barrier.c:60)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Address 0x........ is 124 bytes inside a block of size 128 alloc'd
+Address 0x........ is 31 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: barriers_and_races (pth_barrier.c:75)
-   by 0x........: main (pth_barrier.c:121)
+   by 0x........: barriers_and_races (pth_barrier.c:76)
+   by 0x........: main (pth_barrier.c:122)
 

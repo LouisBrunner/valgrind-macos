@@ -1,4 +1,4 @@
-
+,,
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_cpuid filter_stderr filter_int gen_insn_test.pl
@@ -38,7 +38,7 @@ EXTRA_DIST = \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
-	none/tests/amd64/fxtract.stdout.exp-older-glibc \
+	fxtract.stdout.exp-older-glibc \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -63,6 +63,7 @@ EXTRA_DIST = \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest \
 	sse4-64.stderr.exp sse4-64.stdout.exp sse4-64.vgtest \
+	sse4-64.stdout.exp-older-glibc \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	xadd.stderr.exp xadd.stdout.exp xadd.vgtest

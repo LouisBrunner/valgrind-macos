@@ -312,31 +312,31 @@ void test_strtoll_and_strtod(void)
       StrtollInputs a[] = {
          // If there's no number at the head of the string, return 0, and
          // make 'endptr' point to the start of the string.
-         { str : "",      res : 0, endptr_val : '\0' },
-         { str : " \n\t", res : 0, endptr_val : ' '  },
-         { str : "one",   res : 0, endptr_val : 'o'  },
-         { str : "\ntwo", res : 0, endptr_val : '\n' },
+         { .str = "",      .res = 0, .endptr_val = '\0' },
+         { .str = " \n\t", .res = 0, .endptr_val = ' '  },
+         { .str = "one",   .res = 0, .endptr_val = 'o'  },
+         { .str = "\ntwo", .res = 0, .endptr_val = '\n' },
 
          // Successful conversion.  Leading whitespace is ignored.  A single
          // '-' or '+' is accepted.
-         { str :  "0",            res :       0, endptr_val : '\0' },
-         { str : "+0",            res :       0, endptr_val : '\0' },
-         { str : "-0",            res :       0, endptr_val : '\0' },
-         { str :  "1",            res :       1, endptr_val : '\0' },
-         { str : "+1",            res :       1, endptr_val : '\0' },
-         { str : "-1",            res :      -1, endptr_val : '\0' },
-         { str : "12",            res :      12, endptr_val : '\0' },
-         { str : "-567",          res :    -567, endptr_val : '\0' },
-         { str : "1234567",       res : 1234567, endptr_val : '\0' },
-         { str : "007",           res :       7, endptr_val : '\0' },
-         { str : "   +42",        res :      42, endptr_val : '\0' },
-         { str : "\n\t\r\v  -56", res :     -56, endptr_val : '\0' },
-         { str : "123xyz",        res :     123, endptr_val : 'x'  },
-         { str : " -123abc",      res :    -123, endptr_val : 'a'  },
+         { .str =  "0",            .res =       0, .endptr_val = '\0' },
+         { .str = "+0",            .res =       0, .endptr_val = '\0' },
+         { .str = "-0",            .res =       0, .endptr_val = '\0' },
+         { .str =  "1",            .res =       1, .endptr_val = '\0' },
+         { .str = "+1",            .res =       1, .endptr_val = '\0' },
+         { .str = "-1",            .res =      -1, .endptr_val = '\0' },
+         { .str = "12",            .res =      12, .endptr_val = '\0' },
+         { .str = "-567",          .res =    -567, .endptr_val = '\0' },
+         { .str = "1234567",       .res = 1234567, .endptr_val = '\0' },
+         { .str = "007",           .res =       7, .endptr_val = '\0' },
+         { .str = "   +42",        .res =      42, .endptr_val = '\0' },
+         { .str = "\n\t\r\v  -56", .res =     -56, .endptr_val = '\0' },
+         { .str = "123xyz",        .res =     123, .endptr_val = 'x'  },
+         { .str = " -123abc",      .res =    -123, .endptr_val = 'a'  },
 
          // Whitespace after the +/- is not allowed;  conversion fails.
-         { str : "+ 1",   res :  0, endptr_val : '+' },
-         { str : "-\n1",  res :  0, endptr_val : '-' },
+         { .str = "+ 1",   .res =  0, .endptr_val = '+' },
+         { .str = "-\n1",  .res =  0, .endptr_val = '-' },
       };
 
       // Nb: We test the results against strtoll() as well.
@@ -358,40 +358,40 @@ void test_strtoll_and_strtod(void)
       StrtollInputs a[] = {
          // If there's no number at the head of the string, return 0, and
          // make 'endptr' point to the start of the string.
-         { str : "",      res : 0, endptr_val : '\0' },
-         { str : " \n\t", res : 0, endptr_val : ' '  },
-         { str : "one",   res : 0, endptr_val : 'o'  },
-         { str : "\ntwo", res : 0, endptr_val : '\n' },
+         { .str = "",      .res = 0, .endptr_val = '\0' },
+         { .str = " \n\t", .res = 0, .endptr_val = ' '  },
+         { .str = "one",   .res = 0, .endptr_val = 'o'  },
+         { .str = "\ntwo", .res = 0, .endptr_val = '\n' },
 
          // Successful conversion.  Leading whitespace is ignored.  A single
          // '-' or '+' is accepted.  "0X" and "0x" are also allowed at the
          // front, but if no digits follow, just the "0" is converted.
-         { str :   "0",           res :        0, endptr_val : '\0' },
-         { str : "0x0",           res :        0, endptr_val : '\0' },
-         { str : "0X0",           res :        0, endptr_val : '\0' },
-         { str : "0x",            res :        0, endptr_val : 'x'  },
-         { str : "0Xg",           res :        0, endptr_val : 'X'  },
-         { str :   "0",           res :        0, endptr_val : '\0' },
-         { str :  "+0",           res :        0, endptr_val : '\0' },
-         { str :  "-0",           res :        0, endptr_val : '\0' },
-         { str :   "1",           res :        1, endptr_val : '\0' },
-         { str :  "+1",           res :        1, endptr_val : '\0' },
-         { str :  "-1",           res :       -1, endptr_val : '\0' },
-         { str :  "1a",           res :       26, endptr_val : '\0' },
-         { str : "-5F7",          res :    -1527, endptr_val : '\0' },
-         { str : "0x1234567",     res : 19088743, endptr_val : '\0' },
-         { str : "007",           res :        7, endptr_val : '\0' },
-         { str : "0X00ABCD",      res :    43981, endptr_val : '\0' },
-         { str : "   +AbC",       res :     2748, endptr_val : '\0' },
-         { str : "   -0xAbC",     res :    -2748, endptr_val : '\0' },
-         { str : "   -0xxx",      res :        0, endptr_val : 'x'  },
-         { str : "\n\t\r\v  -56", res :      -86, endptr_val : '\0' },
-         { str : "123xyz",        res :      291, endptr_val : 'x'  },
-         { str : " -123defghi",   res : -1195503, endptr_val : 'g'  },
+         { .str =   "0",           .res =        0, .endptr_val = '\0' },
+         { .str = "0x0",           .res =        0, .endptr_val = '\0' },
+         { .str = "0X0",           .res =        0, .endptr_val = '\0' },
+         { .str = "0x",            .res =        0, .endptr_val = 'x'  },
+         { .str = "0Xg",           .res =        0, .endptr_val = 'X'  },
+         { .str =   "0",           .res =        0, .endptr_val = '\0' },
+         { .str =  "+0",           .res =        0, .endptr_val = '\0' },
+         { .str =  "-0",           .res =        0, .endptr_val = '\0' },
+         { .str =   "1",           .res =        1, .endptr_val = '\0' },
+         { .str =  "+1",           .res =        1, .endptr_val = '\0' },
+         { .str =  "-1",           .res =       -1, .endptr_val = '\0' },
+         { .str =  "1a",           .res =       26, .endptr_val = '\0' },
+         { .str = "-5F7",          .res =    -1527, .endptr_val = '\0' },
+         { .str = "0x1234567",     .res = 19088743, .endptr_val = '\0' },
+         { .str = "007",           .res =        7, .endptr_val = '\0' },
+         { .str = "0X00ABCD",      .res =    43981, .endptr_val = '\0' },
+         { .str = "   +AbC",       .res =     2748, .endptr_val = '\0' },
+         { .str = "   -0xAbC",     .res =    -2748, .endptr_val = '\0' },
+         { .str = "   -0xxx",      .res =        0, .endptr_val = 'x'  },
+         { .str = "\n\t\r\v  -56", .res =      -86, .endptr_val = '\0' },
+         { .str = "123xyz",        .res =      291, .endptr_val = 'x'  },
+         { .str = " -123defghi",   .res = -1195503, .endptr_val = 'g'  },
 
          // Whitespace after the +/- is not allowed;  conversion fails.
-         { str : "+ 1",    res :  0, endptr_val : '+' },
-         { str : "-\n0x1", res :  0, endptr_val : '-' },
+         { .str = "+ 1",    .res =  0, .endptr_val = '+' },
+         { .str = "-\n0x1", .res =  0, .endptr_val = '-' },
       };
 
       // Nb: We test the results against strtoll() as well.

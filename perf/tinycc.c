@@ -2162,7 +2162,7 @@ typedef union CValue {
     unsigned long long ull;
     struct CString *cstr;
     void *ptr;
-    int tab[1];
+    int tab[sizeof(long double) / sizeof(int)];
 } CValue;
 
 /* value on stack */
@@ -7305,7 +7305,7 @@ char *get_tok_str(int v, CValue *cv)
     case TOK_CLLONG:
     case TOK_CULLONG:
         /* XXX: not quite exact, but only useful for testing  */
-        sprintf(p, "%Lu", cv->ull);
+        sprintf(p, "%llu", cv->ull);
         break;
     case TOK_CCHAR:
     case TOK_LCHAR:

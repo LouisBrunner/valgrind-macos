@@ -129,8 +129,6 @@ template <bool b> struct vki_static_assert { int m_bitfield:(2*b-1); };
 
 # define __user
 
-# define __attribute_const__    /* unimplemented */
-
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/posix_types.h
 //----------------------------------------------------------------------

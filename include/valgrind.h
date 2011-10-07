@@ -4041,22 +4041,21 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    number of VALGRIND_ENABLE_ERROR_REPORTING calls needed to re-enable
    reporting.  Child threads do not inherit this setting from their
    parents -- they are always created with reporting enabled. */
-#define VALGRIND_DISABLE_ERROR_REPORTING                           \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                        \
-                               VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
-                               1, 0, 0, 0, 0);                     \
-   }
+#define VALGRIND_DISABLE_ERROR_REPORTING                                \
+  do {                                                                  \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                                  \
+                                    VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
+                                    1, 0, 0, 0, 0);                     \
+  } while (0)
 
 /* Re-enable error reporting, as per comments on
    VALGRIND_DISABLE_ERROR_REPORTING. */
-#define VALGRIND_ENABLE_ERROR_REPORTING                            \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                        \
-                               VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
-                               (-1), 0, 0, 0, 0);                  \
-   }
-
+#define VALGRIND_ENABLE_ERROR_REPORTING                                 \
+  do {                                                                  \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                                  \
+                                    VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
+                                    -1, 0, 0, 0, 0);                    \
+  } while (0)
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin

@@ -39,6 +39,7 @@ EXTRA_DIST = \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
+	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
 	int.stderr.exp int.stdout.exp int.disabled \

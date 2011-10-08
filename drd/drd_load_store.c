@@ -129,7 +129,7 @@ static void drd_report_race(const Addr addr, const SizeT size,
    VG_(maybe_record_error)(VG_(get_running_tid)(),
                            DataRaceErr,
                            VG_(get_IP)(VG_(get_running_tid)()),
-                           "Conflicting accesses",
+                           "Conflicting access",
                            &drei);
 
    if (s_first_race_only)

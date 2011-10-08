@@ -387,12 +387,13 @@ void DRD_(rwlock_pre_rdlock)(const Addr rwlock, const RwLockT rwlock_type)
    p = DRD_(rwlock_get_or_allocate)(rwlock, rwlock_type);
    tl_assert(p);
 
-   if (DRD_(rwlock_is_wrlocked_by)(p, DRD_(thread_get_running_tid)()))
-   {
-      VG_(message)(Vg_UserMsg,
-                   "reader-writer lock 0x%lx is already locked for"
-                   " writing by calling thread\n",
-                   p->a1);
+   if (DRD_(rwlock_is_wrlocked_by)(p, DRD_(thread_get_running_tid)())) {
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              RwlockErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Already locked for writing by calling thread",
+                              &REI);
    }
 }
 

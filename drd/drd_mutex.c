@@ -28,13 +28,13 @@
 #include "drd_error.h"
 #include "drd_mutex.h"
 #include "pub_tool_vki.h"
-#include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
-#include "pub_tool_libcassert.h"  // tl_assert()
-#include "pub_tool_libcbase.h"    // VG_(strlen)
-#include "pub_tool_libcprint.h"   // VG_(message)()
-#include "pub_tool_libcproc.h"    // VG_(read_millisecond_timer)()
-#include "pub_tool_machine.h"     // VG_(get_IP)()
-#include "pub_tool_threadstate.h" // VG_(get_running_tid)()
+#include "pub_tool_errormgr.h"    /* VG_(maybe_record_error)()     */
+#include "pub_tool_libcassert.h"  /* tl_assert()                   */
+#include "pub_tool_libcbase.h"    /* VG_(strlen)                   */
+#include "pub_tool_libcprint.h"   /* VG_(message)()                */
+#include "pub_tool_libcproc.h"    /* VG_(read_millisecond_timer)() */
+#include "pub_tool_machine.h"     /* VG_(get_IP)()                 */
+#include "pub_tool_threadstate.h" /* VG_(get_running_tid)()        */
 
 
 /* Local functions. */
@@ -302,8 +302,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
    if (! p || ! took_lock)
       return;
 
-   if (p->recursion_count == 0)
-   {
+   if (p->recursion_count == 0) {
       if (p->owner != drd_tid && p->owner != DRD_INVALID_THREADID)
       {
          tl_assert(p->last_locked_segment);
@@ -320,14 +319,16 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
       p->acquiry_time_ms = VG_(read_millisecond_timer)();
       p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
       s_mutex_lock_count++;
-   }
-   else if (p->owner != drd_tid)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "The impossible happened: mutex 0x%lx is locked"
-                   " simultaneously by two threads (recursion count %d,"
-                   " owners %d and %d) !\n",
-                   p->a1, p->recursion_count, p->owner, drd_tid);
+   } else if (p->owner != drd_tid) {
+      const ThreadId vg_tid = VG_(get_running_tid)();
+      MutexErrInfo MEI = { DRD_(thread_get_running_tid)(),
+                           p->a1, p->recursion_count, p->owner };
+      VG_(maybe_record_error)(vg_tid,
+                              MutexErr,
+                              VG_(get_IP)(vg_tid),
+                              "The impossible happened: mutex is locked"
+                              " simultaneously by two threads",
+                              &MEI);
       p->owner = drd_tid;
    }
    p->recursion_count++;
@@ -379,10 +380,11 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    }
 
    tl_assert(p);
-   if (p->mutex_type != mutex_type)
-   {
-      VG_(message)(Vg_UserMsg, "??? mutex 0x%lx: type changed from %d into %d\n",
-                   p->a1, p->mutex_type, mutex_type);
+   if (p->mutex_type != mutex_type) {
+      MutexErrInfo MEI = { DRD_(thread_get_running_tid)(),
+                           p->a1, p->recursion_count, p->owner };
+      VG_(maybe_record_error)(vg_tid, MutexErr, VG_(get_IP)(vg_tid),
+                              "Mutex type changed", &MEI);
    }
    tl_assert(p->mutex_type == mutex_type);
    tl_assert(p->owner != DRD_INVALID_THREADID);

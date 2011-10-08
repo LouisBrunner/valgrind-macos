@@ -72,7 +72,14 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:53)
 
-The impossible happened: mutex 0x........ is locked simultaneously by two threads (recursion count 1, owners 2 and 1) !
+Thread 1:
+The impossible happened: mutex is locked simultaneously by two threads: mutex 0x........, recursion count 1, owner 2.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:78)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:53)
+
 Thread 2:
 Mutex not locked by calling thread: mutex 0x........, recursion count 2, owner 1.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
@@ -83,4 +90,4 @@ mutex 0x........ was first observed at:
    by 0x........: main (tc23_bogus_condwait.c:53)
 
 
-ERROR SUMMARY: 11 errors from 9 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 12 errors from 10 contexts (suppressed: 0 from 0)

@@ -335,20 +335,20 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
    OSet* oset;
 
    p = DRD_(barrier_get)(barrier);
-   if (p == 0 && barrier_type == gomp_barrier)
-   {
+   if (p == 0 && barrier_type == gomp_barrier) {
       /*
        * gomp_barrier_wait() call has been intercepted but gomp_barrier_init()
        * not. The only cause I know of that can trigger this is that libgomp.so
        * has been compiled with --enable-linux-futex.
        */
-      VG_(message)(Vg_UserMsg, "\n");
-      VG_(message)(Vg_UserMsg,
-                   "Please verify whether gcc has been configured"
-                   " with option --disable-linux-futex.\n");
-      VG_(message)(Vg_UserMsg,
-                   "See also the section about OpenMP in the DRD manual.\n");
-      VG_(message)(Vg_UserMsg, "\n");
+      BarrierErrInfo bei = { DRD_(thread_get_running_tid)(), 0, 0, 0 };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              BarrierErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Please verify whether gcc has been configured"
+                              " with option --disable-linux-futex. See also"
+                              " the section about OpenMP in the DRD manual.",
+                              &bei);
    }
    tl_assert(p);
 

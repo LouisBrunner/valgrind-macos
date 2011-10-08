@@ -1,5 +1,6 @@
 # test that vgdb can invoke a process when all threads are in Runnable or Yielding mode
 # If the test goes wrong, it might consume CPU during a long time.
+prereq: ! test -e "/proc/sys/kernel/yama/ptrace_scope" || [ "`cat /proc/sys/kernel/yama/ptrace_scope`" = "0" ]
 prog: sleepers
 args: 1 0 1000000000 B-B-B-B-
 vgopts: --tool=memcheck --vgdb=yes --vgdb-prefix=./vgdb-prefix-mcinvokeRU

@@ -24,6 +24,7 @@
 
 
 #include "drd_clientobj.h"
+#include "drd_error.h"
 #include "drd_suppression.h"
 #include "pub_tool_basics.h"
 #include "pub_tool_libcassert.h"
@@ -133,9 +134,7 @@ DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t)
    tl_assert(VG_(OSetGen_Lookup)(s_clientobj_set, &a1) == 0);
 
    if (s_trace_clientobj)
-   {
-      VG_(message)(Vg_UserMsg, "Adding client object 0x%lx of type %d\n", a1, t);
-   }
+      DRD_(trace_msg)("Adding client object 0x%lx of type %d\n", a1, t);
 
    p = VG_(OSetGen_AllocNode)(s_clientobj_set, sizeof(*p));
    VG_(memset)(p, 0, sizeof(*p));
@@ -180,10 +179,9 @@ static Bool clientobj_remove_obj(DrdClientobj* const p)
 {
    tl_assert(p);
 
-   if (s_trace_clientobj)
-   {
-      VG_(message)(Vg_UserMsg, "Removing client object 0x%lx of type %d\n",
-                   p->any.a1, p->any.type);
+   if (s_trace_clientobj) {
+      DRD_(trace_msg)("Removing client object 0x%lx of type %d\n", p->any.a1,
+                      p->any.type);
 #if 0
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));

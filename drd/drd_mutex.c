@@ -89,15 +89,11 @@ static void mutex_cleanup(struct mutex_info* p)
    tl_assert(p);
 
    if (s_trace_mutex)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] mutex_destroy   %s 0x%lx rc %d owner %d\n",
-                   DRD_(thread_get_running_tid)(),
-                   DRD_(mutex_get_typename)(p),
-                   p->a1,
-                   p ? p->recursion_count : -1,
-                   p ? p->owner : DRD_INVALID_THREADID);
-   }
+      DRD_(trace_msg)("[%d] mutex_destroy   %s 0x%lx rc %d owner %d\n",
+                      DRD_(thread_get_running_tid)(),
+                      DRD_(mutex_get_typename)(p), p->a1,
+                      p ? p->recursion_count : -1,
+                      p ? p->owner : DRD_INVALID_THREADID);
 
    if (mutex_is_locked(p))
    {
@@ -184,13 +180,10 @@ DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
    struct mutex_info* p;
 
    if (s_trace_mutex)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] mutex_init      %s 0x%lx\n",
-                   DRD_(thread_get_running_tid)(),
-                   DRD_(mutex_type_name)(mutex_type),
-                   mutex);
-   }
+      DRD_(trace_msg)("[%d] mutex_init      %s 0x%lx\n",
+                      DRD_(thread_get_running_tid)(),
+                      DRD_(mutex_type_name)(mutex_type),
+                      mutex);
 
    if (mutex_type == mutex_type_invalid_mutex)
    {
@@ -248,16 +241,12 @@ void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
       mutex_type = p->mutex_type;
 
    if (s_trace_mutex)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] %s %s 0x%lx rc %d owner %d\n",
-                   DRD_(thread_get_running_tid)(),
-                   trylock ? "pre_mutex_lock " : "mutex_trylock  ",
-                   p ? DRD_(mutex_get_typename)(p) : "(?)",
-                   mutex,
-                   p ? p->recursion_count : -1,
-                   p ? p->owner : DRD_INVALID_THREADID);
-   }
+      DRD_(trace_msg)("[%d] %s %s 0x%lx rc %d owner %d\n",
+                      DRD_(thread_get_running_tid)(),
+                      trylock ? "pre_mutex_lock " : "mutex_trylock  ",
+                      p ? DRD_(mutex_get_typename)(p) : "(?)",
+                      mutex, p ? p->recursion_count : -1,
+                      p ? p->owner : DRD_INVALID_THREADID);
 
    if (p == 0)
    {
@@ -302,17 +291,13 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
    p = DRD_(mutex_get)(mutex);
 
    if (s_trace_mutex)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] %s %s 0x%lx rc %d owner %d%s\n",
-                   drd_tid,
-                   post_cond_wait ? "cond_post_wait " : "post_mutex_lock",
-                   p ? DRD_(mutex_get_typename)(p) : "(?)",
-                   mutex,
-                   p ? p->recursion_count : 0,
-                   p ? p->owner : VG_INVALID_THREADID,
-                   took_lock ? "" : " (locking failed)");
-   }
+      DRD_(trace_msg)("[%d] %s %s 0x%lx rc %d owner %d%s\n",
+                      drd_tid,
+                      post_cond_wait ? "cond_post_wait " : "post_mutex_lock",
+                      p ? DRD_(mutex_get_typename)(p) : "(?)",
+                      mutex, p ? p->recursion_count : 0,
+                      p ? p->owner : VG_INVALID_THREADID,
+                      took_lock ? "" : " (locking failed)");
 
    if (! p || ! took_lock)
       return;
@@ -369,14 +354,10 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    if (p && mutex_type == mutex_type_unknown)
       mutex_type = p->mutex_type;
 
-   if (s_trace_mutex)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] mutex_unlock    %s 0x%lx rc %d\n",
-                   drd_tid,
-                   p ? DRD_(mutex_get_typename)(p) : "(?)",
-                   mutex,
-                   p ? p->recursion_count : 0);
+   if (s_trace_mutex) {
+      DRD_(trace_msg)("[%d] mutex_unlock    %s 0x%lx rc %d\n",
+                      drd_tid, p ? DRD_(mutex_get_typename)(p) : "(?)",
+                      mutex, p ? p->recursion_count : 0);
    }
 
    if (p == 0 || mutex_type == mutex_type_invalid_mutex)

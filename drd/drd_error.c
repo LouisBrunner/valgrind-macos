@@ -37,6 +37,7 @@
 #include "pub_tool_libcprint.h"   /* VG_(printf)()            */
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  /* VG_(malloc), VG_(free)   */
+#include "pub_tool_options.h"     /* VG_(clo_xml)             */
 #include "pub_tool_threadstate.h" /* VG_(get_pthread_id)()    */
 #include "pub_tool_tooliface.h"   /* VG_(needs_tool_errors)() */
 
@@ -49,6 +50,14 @@ static Bool s_show_conflicting_segments = True;
 void DRD_(set_show_conflicting_segments)(const Bool scs)
 {
    s_show_conflicting_segments = scs;
+}
+
+void DRD_(trace_msg)(const char* format, ...)
+{
+   va_list vargs;
+   va_start(vargs, format);
+   VG_(vmessage)(Vg_UserMsg, format, vargs);
+   va_end(vargs);
 }
 
 /**

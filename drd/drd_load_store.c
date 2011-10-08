@@ -93,21 +93,12 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
       char* vc;
 
       vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
-      VG_(message)(Vg_UserMsg,
-                   "%s 0x%lx size %ld (thread %d / vc %s)\n",
-                   access_type == eLoad
-                   ? "load "
-                   : access_type == eStore
-                   ? "store"
-                   : access_type == eStart
-                   ? "start"
-                   : access_type == eEnd
-                   ? "end  "
-                   : "????",
-                   addr,
-                   size,
-                   DRD_(thread_get_running_tid)(),
-                   vc);
+      DRD_(trace_msg)("%s 0x%lx size %ld (thread %d / vc %s)\n",
+                      access_type == eLoad ? "load "
+                      : access_type == eStore ? "store"
+                      : access_type == eStart ? "start"
+                      : access_type == eEnd ? "end  " : "????",
+                      addr, size, DRD_(thread_get_running_tid)(), vc);
       VG_(free)(vc);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));

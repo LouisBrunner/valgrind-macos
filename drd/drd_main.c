@@ -311,9 +311,9 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
    tl_assert(a1 <= a2);
 
    if (!is_stack_mem && s_trace_alloc)
-      VG_(message)(Vg_UserMsg, "Started using memory range 0x%lx + %ld%s\n",
-                   a1, len, DRD_(running_thread_inside_pthread_create)()
-                   ? " (inside pthread_create())" : "");
+      DRD_(trace_msg)("Started using memory range 0x%lx + %ld%s\n",
+                      a1, len, DRD_(running_thread_inside_pthread_create)()
+                      ? " (inside pthread_create())" : "");
 
    if (!is_stack_mem && DRD_(g_free_is_write))
       DRD_(thread_stop_using_mem)(a1, a2);
@@ -355,8 +355,8 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
       DRD_(trace_mem_access)(a1, len, eEnd);
 
    if (!is_stack_mem && s_trace_alloc)
-      VG_(message)(Vg_UserMsg, "Stopped using memory range 0x%lx + %ld\n",
-                   a1, len);
+      DRD_(trace_msg)("Stopped using memory range 0x%lx + %ld\n",
+                      a1, len);
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
    {

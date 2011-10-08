@@ -175,13 +175,9 @@ struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
    Segment* sg;
 
    if (s_trace_semaphore)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] sem_init      0x%lx value %u\n",
-                   DRD_(thread_get_running_tid)(),
-                   semaphore,
-                   value);
-   }
+      DRD_(trace_msg)("[%d] sem_init      0x%lx value %u\n",
+                      DRD_(thread_get_running_tid)(), semaphore, value);
+
    p = semaphore_get(semaphore);
    if (p)
    {
@@ -227,13 +223,9 @@ void DRD_(semaphore_destroy)(const Addr semaphore)
    p = semaphore_get(semaphore);
 
    if (s_trace_semaphore)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] sem_destroy   0x%lx value %u\n",
-                   DRD_(thread_get_running_tid)(),
-                   semaphore,
-                   p ? p->value : 0);
-   }
+      DRD_(trace_msg)("[%d] sem_destroy   0x%lx value %u\n",
+                      DRD_(thread_get_running_tid)(), semaphore,
+                      p ? p->value : 0);
 
    if (p == 0)
    {
@@ -261,13 +253,10 @@ struct semaphore_info* DRD_(semaphore_open)(const Addr semaphore,
    Segment* sg;
 
    if (s_trace_semaphore)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] sem_open      0x%lx name %s"
-                   " oflag %#lx mode %#lo value %u\n",
-                   DRD_(thread_get_running_tid)(),
-                   semaphore, name, oflag, mode, value);
-   }
+      DRD_(trace_msg)("[%d] sem_open      0x%lx name %s"
+                      " oflag %#lx mode %#lo value %u\n",
+                      DRD_(thread_get_running_tid)(),
+                      semaphore, name, oflag, mode, value);
 
    /* Return if the sem_open() call failed. */
    if (! semaphore)
@@ -307,13 +296,9 @@ void DRD_(semaphore_close)(const Addr semaphore)
    p = semaphore_get(semaphore);
 
    if (s_trace_semaphore)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] sem_close     0x%lx value %u\n",
-                   DRD_(thread_get_running_tid)(),
-                   semaphore,
-                   p ? p->value : 0);
-   }
+      DRD_(trace_msg)("[%d] sem_close     0x%lx value %u\n",
+                      DRD_(thread_get_running_tid)(), semaphore,
+                      p ? p->value : 0);
 
    if (p == 0)
    {
@@ -366,14 +351,9 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
 
    p = semaphore_get(semaphore);
    if (s_trace_semaphore)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] sem_wait      0x%lx value %u -> %u\n",
-                   DRD_(thread_get_running_tid)(),
-                   semaphore,
-                   p ? p->value : 0,
-                   p ? p->value - 1 : 0);
-   }
+      DRD_(trace_msg)("[%d] sem_wait      0x%lx value %u -> %u\n",
+                      DRD_(thread_get_running_tid)(), semaphore,
+                      p ? p->value : 0, p ? p->value - 1 : 0);
 
    if (p)
    {
@@ -427,13 +407,9 @@ void DRD_(semaphore_pre_post)(const DrdThreadId tid, const Addr semaphore)
    p->value++;
 
    if (s_trace_semaphore)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "[%d] sem_post      0x%lx value %u -> %u\n",
-                   DRD_(thread_get_running_tid)(),
-                   semaphore,
-                   p->value - 1, p->value);
-   }
+      DRD_(trace_msg)("[%d] sem_post      0x%lx value %u -> %u\n",
+                      DRD_(thread_get_running_tid)(),
+                      semaphore, p->value - 1, p->value);
 
    p->last_sem_post_tid = tid;
    sg = 0;

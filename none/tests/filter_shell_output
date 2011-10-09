@@ -1,0 +1,3 @@
+#!/bin/sh
+
+"$(dirname $0)"/filter_linenos | sed 's/Is a directory/is a directory/'

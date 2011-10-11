@@ -1968,6 +1968,17 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      vg_assert(change_ownership_v_c_OK);
    }
 
+   if (VG_(clo_xml)) {
+      HChar buf[50];
+      VG_(elapsed_wallclock_time)(buf);
+      VG_(printf_xml)( "<status>\n"
+                       "  <state>RUNNING</state>\n"
+                       "  <time>%pS</time>\n"
+                       "</status>\n",
+                       buf );
+      VG_(printf_xml)( "\n" );
+   }
+
    //--------------------------------------------------------------
    // Initialise the scheduler (phase 1) [generates tid_main]
    //   p: none, afaics
@@ -2169,17 +2180,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    // Run!
    //--------------------------------------------------------------
-   if (VG_(clo_xml)) {
-      HChar buf[50];
-      VG_(elapsed_wallclock_time)(buf);
-      VG_(printf_xml)( "<status>\n"
-                              "  <state>RUNNING</state>\n"
-                              "  <time>%pS</time>\n"
-                              "</status>\n",
-                              buf );
-      VG_(printf_xml)( "\n" );
-   }
-
    VG_(debugLog)(1, "main", "Running thread 1\n");
 
    /* As a result of the following call, the last thread standing

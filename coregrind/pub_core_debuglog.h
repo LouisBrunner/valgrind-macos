@@ -59,6 +59,10 @@ extern
 void VG_(debugLog_startup) ( Int level, HChar* who );
 
 
+/* Whether %ps should escape XML metacharacters. */
+extern void VG_(debugLog_setXml)(Bool xml);
+
+
 /* Get the logging threshold level, as set by the most recent call to
    VG_(debugLog_startup), or zero if there have been no such calls so
    far. */

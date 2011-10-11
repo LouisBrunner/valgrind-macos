@@ -56,6 +56,13 @@
 #include "pub_core_debuglog.h"   /* our own iface */
 #include "valgrind.h"            /* for RUNNING_ON_VALGRIND */
 
+static Bool clo_xml;
+
+void VG_(debugLog_setXml)(Bool xml)
+{
+   clo_xml = xml;
+}
+
 /*------------------------------------------------------------*/
 /*--- Stuff to make us completely independent.             ---*/
 /*------------------------------------------------------------*/
@@ -730,6 +737,17 @@ VG_(debugLog_vprintf) (
                if (str == (char*) 0)
                   str = "(null)";
                ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
+            } else if (format[i+1] == 's') {
+               i++;
+               /* %ps, synonym for %s with --xml=no / %pS with --xml=yes */
+               char *str = va_arg (vargs, char *);
+               if (str == (char*) 0)
+                  str = "(null)";
+               if (clo_xml)
+                  ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
+               else
+                  ret += myvprintf_str(send, send_arg2, flags, width, str,
+                                       False);
             } else {
                /* %p */
                ret += 2;

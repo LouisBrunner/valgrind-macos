@@ -462,7 +462,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          VG_(clo_verbosity)--;
 
       else if VG_BOOL_CLO(arg, "--stats",          VG_(clo_stats)) {}
-      else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml)) {}
+      else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml))
+         VG_(debugLog_setXml)(VG_(clo_xml));
+
       else if VG_XACT_CLO(arg, "--vgdb=no",        VG_(clo_vgdb), Vg_VgdbNo) {}
       else if VG_XACT_CLO(arg, "--vgdb=yes",       VG_(clo_vgdb), Vg_VgdbYes) {}
       else if VG_XACT_CLO(arg, "--vgdb=full",      VG_(clo_vgdb), Vg_VgdbFull) {}

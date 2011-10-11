@@ -77,7 +77,7 @@ int main ( void )
 
   pthread_attr_t attr;
   r = pthread_attr_init(&attr); assert(!r);
-  r = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096); assert(!r);
+  r = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
 
   // create N threads to do child_fn_1 ...
   for (i = 0; i < NTHREADS; i++) {

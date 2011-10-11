@@ -1,0 +1,4 @@
+prereq: test -e thread_name && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --num-callers=3 --xml=yes --xml-fd=2
+prog: thread_name
+stderr_filter: ../../memcheck/tests/filter_xml

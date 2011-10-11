@@ -1,0 +1,3 @@
+#! /bin/sh
+
+../../memcheck/tests/filter_xml | ./filter_thread_no

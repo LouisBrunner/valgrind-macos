@@ -1,0 +1,4 @@
+prereq: ./supported_libpthread
+vgopts: --read-var-info=yes --xml=yes --xml-fd=2 --trace-fork-join=yes
+prog: fp_race
+stderr_filter: ../../memcheck/tests/filter_xml

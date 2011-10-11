@@ -1,0 +1,4 @@
+prereq: test -e ../../helgrind/tests/bar_bad && ./supported_libpthread
+vgopts: --xml=yes --xml-fd=2
+prog: ../../helgrind/tests/bar_bad
+stderr_filter: ../../memcheck/tests/filter_xml

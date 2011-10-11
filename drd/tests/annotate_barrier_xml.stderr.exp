@@ -1,0 +1,335 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>drd</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>drd</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./annotate_barrier</exe>
+    <arg>2</arg>
+    <arg>1</arg>
+    <arg>1</arg>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UnimpDrdClReq</kind>
+  <what>The annotation macro ANNOTATE_BARRIER_INIT has not yet been implemented in &lt;valgrind/drd.h&gt;</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barrier_init</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barriers_and_races</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UnimpDrdClReq</kind>
+  <what>The annotation macro ANNOTATE_BARRIER_WAIT_BEFORE has not yet been implemented in &lt;valgrind/drd.h&gt;</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barrier_wait</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>threadfunc</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>vgDrd_thread_wrapper</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UnimpDrdClReq</kind>
+  <what>The annotation macro ANNOTATE_BARRIER_WAIT_AFTER has not yet been implemented in &lt;valgrind/drd.h&gt;</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barrier_wait</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>threadfunc</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>vgDrd_thread_wrapper</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UnimpDrdClReq</kind>
+  <what>The annotation macro ANNOTATE_BARRIER_WAIT_BEFORE has not yet been implemented in &lt;valgrind/drd.h&gt;</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barrier_wait</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>threadfunc</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>vgDrd_thread_wrapper</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>ConflictingAccess</kind>
+  <what>Conflicting store by thread 2 at 0x........ size 4</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>threadfunc</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>vgDrd_thread_wrapper</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>start_thread</fn>
+      <dir>...</dir>
+      <file>pthread_create.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>
+    <text>Address 0x........ is at offset 0 from 0x.........</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>malloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barriers_and_races</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </auxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UnimpDrdClReq</kind>
+  <what>The annotation macro ANNOTATE_BARRIER_WAIT_AFTER has not yet been implemented in &lt;valgrind/drd.h&gt;</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barrier_wait</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>threadfunc</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>vgDrd_thread_wrapper</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UnimpDrdClReq</kind>
+  <what>The annotation macro ANNOTATE_BARRIER_DESTROY has not yet been implemented in &lt;valgrind/drd.h&gt;</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barrier_destroy</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>barriers_and_races</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_barrier.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+Done.
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

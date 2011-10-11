@@ -1,0 +1,5 @@
+prereq: test -e tsan_unittest && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=2 --xml=yes --xml-fd=2
+prog: tsan_unittest
+args: 1
+stderr_filter: ./filter_xml_and_thread_no

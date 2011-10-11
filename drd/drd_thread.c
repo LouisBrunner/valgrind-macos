@@ -390,7 +390,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                        ", new vc: %s", vc);
          VG_(free)(vc);
       }
-      DRD_(trace_msg)("%s\n", msg);
+      DRD_(trace_msg)("%pS\n", msg);
       VG_(free)(msg);
    }
 
@@ -1249,29 +1249,19 @@ void DRD_(thread_print_all)(void)
 }
 
 /** Show a call stack involved in a data race. */
-static void show_call_stack(const DrdThreadId tid,
-                            const Char* const msg,
-                            ExeContext* const callstack)
+static void show_call_stack(const DrdThreadId tid, ExeContext* const callstack)
 {
    const ThreadId vg_tid = DRD_(DrdThreadIdToVgThreadId)(tid);
 
-   VG_(message)(Vg_UserMsg, "%s (thread %d)\n", msg, tid);
-
-   if (vg_tid != VG_INVALID_THREADID)
-   {
+   if (vg_tid != VG_INVALID_THREADID) {
       if (callstack)
-      {
          VG_(pp_ExeContext)(callstack);
-      }
       else
-      {
          VG_(get_and_pp_StackTrace)(vg_tid, VG_(clo_backtrace_size));
-      }
-   }
-   else
-   {
-      VG_(message)(Vg_UserMsg,
-                   "   (thread finished, call stack no longer available)\n");
+   } else {
+      if (!VG_(clo_xml))
+         VG_(message)(Vg_UserMsg,
+                      "   (thread finished, call stack no longer available)\n");
    }
 }
 
@@ -1310,10 +1300,21 @@ thread_report_conflicting_segments_segment(const DrdThreadId tid,
                                               access_type))
                {
                   tl_assert(q->stacktrace);
-                  show_call_stack(i,        "Other segment start",
-                                  q->stacktrace);
-                  show_call_stack(i,        "Other segment end",
-                                  q->next ? q->next->stacktrace : 0);
+                  if (VG_(clo_xml))
+                     VG_(printf_xml)("  <other_segment_start>\n");
+                  else
+                     VG_(message)(Vg_UserMsg,
+                                  "Other segment start (thread %d)\n", i);
+                  show_call_stack(i, q->stacktrace);
+                  if (VG_(clo_xml))
+                     VG_(printf_xml)("  </other_segment_start>\n"
+                                     "  <other_segment_end>\n");
+                  else
+                     VG_(message)(Vg_UserMsg,
+                                  "Other segment end (thread %d)\n", i);
+                  show_call_stack(i, q->next ? q->next->stacktrace : 0);
+                  if (VG_(clo_xml))
+                     VG_(printf_xml)("  </other_segment_end>\n");
                }
             }
          }

@@ -42,6 +42,11 @@
 #include "pub_tool_tooliface.h"   /* VG_(needs_tool_errors)() */
 
 
+/* Local function declarations. */
+
+static Char* drd_get_error_name(Error* e);
+
+
 /* Local variables. */
 
 static Bool s_show_conflicting_segments = True;
@@ -56,7 +61,28 @@ void DRD_(trace_msg)(const char* format, ...)
 {
    va_list vargs;
    va_start(vargs, format);
-   VG_(vmessage)(Vg_UserMsg, format, vargs);
+   if (VG_(clo_xml)) {
+      VG_(printf_xml)("<traceline>\n  ");
+      VG_(vprintf_xml)(format, vargs);
+      VG_(printf_xml)("</traceline>\n");
+   } else {
+      VG_(vmessage)(Vg_UserMsg, format, vargs);
+   }
+   va_end(vargs);
+}
+
+/**
+ * Emit error message detail in the format requested by the user.
+ */
+static void print_err_detail(const char* format, ...) PRINTF_CHECK(1, 2);
+static void print_err_detail(const char* format, ...)
+{
+   va_list vargs;
+   va_start(vargs, format);
+   if (VG_(clo_xml))
+      VG_(vprintf_xml)(format, vargs);
+   else
+      VG_(vmessage)(Vg_UserMsg, format, vargs);
    va_end(vargs);
 }
 
@@ -89,20 +115,30 @@ static void first_observed(const Addr obj)
    DrdClientobj* cl;
 
    cl = DRD_(clientobj_get_any)(obj);
-   if (cl)
-   {
+   if (cl) {
       tl_assert(cl->any.first_observed_at);
-      VG_(message)(Vg_UserMsg,
-                   "%s 0x%lx was first observed at:\n",
-                   DRD_(clientobj_type_name)(cl->any.type),
-                   obj);
-      VG_(pp_ExeContext)(cl->any.first_observed_at);
+      if (VG_(clo_xml)) {
+         print_err_detail("  <first_observed_at>\n"
+                          "    <what>%pS</what>\n"
+                          "    <address>0x%lx</address>\n",
+                          DRD_(clientobj_type_name)(cl->any.type), obj);
+         VG_(pp_ExeContext)(cl->any.first_observed_at);
+         print_err_detail("  </first_observed_at>\n");
+      } else {
+         print_err_detail("%s 0x%lx was first observed at:\n",
+                          DRD_(clientobj_type_name)(cl->any.type), obj);
+         VG_(pp_ExeContext)(cl->any.first_observed_at);
+      }
    }
 }
 
 static
 void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
 {
+   const Bool xml = VG_(clo_xml);
+   const char* const what_prefix = xml ? "  <what>" : "";
+   const char* const what_suffix = xml ? "</what>" : "";
+   const char* const indent = xml ? "  " : "";
    AddrInfo ai;
 
    XArray* /* of HChar */ descr1
@@ -143,44 +179,50 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
       /* No.  Do Plan B. */
       describe_malloced_addr(dri->addr, &ai);
    }
-   VG_(message)(Vg_UserMsg,
-                "Conflicting %s by thread %d at 0x%08lx size %ld\n",
-                dri->access_type == eStore ? "store" : "load",
-                dri->tid,
-                dri->addr,
-                dri->size);
+
+   print_err_detail("%sConflicting %s by thread %d at 0x%08lx size %ld%s\n",
+                    what_prefix, dri->access_type == eStore ? "store" : "load",
+                    dri->tid, dri->addr, dri->size, what_suffix);
+
    VG_(pp_ExeContext)(VG_(get_error_where)(err));
-   if (descr1 != NULL)
-   {
-      VG_(message)(Vg_UserMsg, "%s\n", (HChar*)VG_(indexXA)(descr1, 0));
+   if (descr1 != NULL) {
+      print_err_detail("%s%s\n", indent, (HChar*)VG_(indexXA)(descr1, 0));
       if (descr2 != NULL)
-         VG_(message)(Vg_UserMsg, "%s\n", (HChar*)VG_(indexXA)(descr2, 0));
-   }
-   else if (ai.akind == eMallocd && ai.lastchange)
-   {
-      VG_(message)(Vg_UserMsg,
-                   "Address 0x%lx is at offset %ld from 0x%lx."
-                   " Allocation context:\n",
-                   dri->addr, ai.rwoffset, dri->addr - ai.rwoffset);
+         print_err_detail("%s%s\n", indent, (HChar*)VG_(indexXA)(descr2, 0));
+   } else if (ai.akind == eMallocd && ai.lastchange) {
+      if (xml)
+         print_err_detail("  <auxwhat>\n    <text>");
+      print_err_detail("Address 0x%lx is at offset %ld from 0x%lx.",
+                       dri->addr, ai.rwoffset, dri->addr - ai.rwoffset);
+      if (xml)
+         print_err_detail("</text>\n");
+      else
+         print_err_detail(" Allocation context:\n");
       VG_(pp_ExeContext)(ai.lastchange);
-   }
-   else
-   {
+      if (xml)
+         print_err_detail("  </auxwhat>\n");
+   } else {
       char sect_name[64];
       VgSectKind sect_kind;
 
       sect_kind = VG_(DebugInfo_sect_kind)(sect_name, sizeof(sect_name),
                                            dri->addr);
-      if (sect_kind != Vg_SectUnknown)
-      {
-         VG_(message)(Vg_UserMsg,
-                      "Allocation context: %s section of %s\n",
-                      VG_(pp_SectKind)(sect_kind),
-                      sect_name);
-      }
-      else
-      {
-         VG_(message)(Vg_UserMsg, "Allocation context: unknown.\n");
+      if (xml) {
+         print_err_detail("  <auxwhat><text>");
+         if (sect_kind != Vg_SectUnknown) {
+            print_err_detail("      Allocation context: %pS section of %pS\n",
+                             VG_(pp_SectKind)(sect_kind), sect_name);
+         } else {
+            print_err_detail("      Allocation context: unknown.\n");
+         }
+         print_err_detail("  </text><auxwhat>\n");
+      } else {
+         if (sect_kind != Vg_SectUnknown) {
+            print_err_detail("Allocation context: %s section of %s\n",
+                             VG_(pp_SectKind)(sect_kind), sect_name);
+         } else {
+            print_err_detail("Allocation context: unknown.\n");
+         }
       }
    }
    if (s_show_conflicting_segments)
@@ -238,8 +280,7 @@ static void drd_tool_error_before_pp(Error* const e)
 
    err_extra = VG_(get_error_extra)(e);
 
-   if (err_extra && *err_extra != s_last_tid_printed)
-   {
+   if (err_extra && *err_extra != s_last_tid_printed && !VG_(clo_xml)) {
       VG_(umsg)("%s:\n", DRD_(thread_get_name)(*err_extra));
       s_last_tid_printed = *err_extra;
    }
@@ -248,6 +289,13 @@ static void drd_tool_error_before_pp(Error* const e)
 /** Report an error to the user. */
 static void drd_tool_error_pp(Error* const e)
 {
+   const Bool xml = VG_(clo_xml);
+   const char* const what_prefix = xml ? "  <what>" : "";
+   const char* const what_suffix = xml ? "</what>" : "";
+
+   if (xml)
+      VG_(printf_xml)( "  <kind>%pS</kind>\n", drd_get_error_name(e));
+
    switch (VG_(get_error_kind)(e))
    {
    case DataRaceErr: {
@@ -257,20 +305,13 @@ static void drd_tool_error_pp(Error* const e)
    case MutexErr: {
       MutexErrInfo* p = (MutexErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(p);
-      if (p->recursion_count >= 0)
-      {
-         VG_(message)(Vg_UserMsg,
-                      "%s: mutex 0x%lx, recursion count %d, owner %d.\n",
-                      VG_(get_error_string)(e),
-                      p->mutex,
-                      p->recursion_count,
-                      p->owner);
-      }
-      else
-      {
-         VG_(message)(Vg_UserMsg,
-                      "The object at address 0x%lx is not a mutex.\n",
-                      p->mutex);
+      if (p->recursion_count >= 0) {
+         print_err_detail("%s%s: mutex 0x%lx, recursion count %d, owner %d."
+                          "%s\n", what_prefix, VG_(get_error_string)(e),
+                          p->mutex, p->recursion_count, p->owner, what_suffix);
+      } else {
+         print_err_detail("%sThe object at address 0x%lx is not a mutex.%s\n",
+                          what_prefix, p->mutex, what_suffix);
       }
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(p->mutex);
@@ -278,32 +319,27 @@ static void drd_tool_error_pp(Error* const e)
    }
    case CondErr: {
       CondErrInfo* cdei =(CondErrInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "%s: cond 0x%lx\n",
-                   VG_(get_error_string)(e),
-                   cdei->cond);
+      print_err_detail("%s%s: cond 0x%lx%s\n", what_prefix,
+                       VG_(get_error_string)(e), cdei->cond, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(cdei->cond);
       break;
    }
    case CondDestrErr: {
       CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "%s: cond 0x%lx, mutex 0x%lx locked by thread %d\n",
-                   VG_(get_error_string)(e),
-                   cdi->cond, cdi->mutex,
-                   cdi->owner);
+      print_err_detail("%s%s: cond 0x%lx, mutex 0x%lx locked by thread %d%s\n",
+                       what_prefix, VG_(get_error_string)(e), cdi->cond,
+                       cdi->mutex, cdi->owner, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(cdi->mutex);
       break;
    }
    case CondRaceErr: {
       CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "Probably a race condition: condition variable 0x%lx has"
-                   " been signaled but the associated mutex 0x%lx is not"
-                   " locked by the signalling thread.\n",
-                   cei->cond, cei->mutex);
+      print_err_detail("%sProbably a race condition: condition variable 0x%lx"
+                       " has been signaled but the associated mutex 0x%lx is"
+                       " not locked by the signalling thread.%s\n",
+                       what_prefix, cei->cond, cei->mutex, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(cei->cond);
       first_observed(cei->mutex);
@@ -311,12 +347,9 @@ static void drd_tool_error_pp(Error* const e)
    }
    case CondWaitErr: {
       CondWaitErrInfo* cwei = (CondWaitErrInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "%s: condition variable 0x%lx, mutexes 0x%lx and 0x%lx\n",
-                   VG_(get_error_string)(e),
-                   cwei->cond,
-                   cwei->mutex1,
-                   cwei->mutex2);
+      print_err_detail("%s%s: condition variable 0x%lx, mutexes 0x%lx and"
+                       " 0x%lx%s\n", what_prefix, VG_(get_error_string)(e),
+                       cwei->cond, cwei->mutex1, cwei->mutex2, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(cwei->cond);
       first_observed(cwei->mutex1);
@@ -326,10 +359,8 @@ static void drd_tool_error_pp(Error* const e)
    case SemaphoreErr: {
       SemaphoreErrInfo* sei = (SemaphoreErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(sei);
-      VG_(message)(Vg_UserMsg,
-                   "%s: semaphore 0x%lx\n",
-                   VG_(get_error_string)(e),
-                   sei->semaphore);
+      print_err_detail("%s%s: semaphore 0x%lx%s\n", VG_(get_error_string)(e),
+                       what_prefix, sei->semaphore, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(sei->semaphore);
       break;
@@ -337,17 +368,17 @@ static void drd_tool_error_pp(Error* const e)
    case BarrierErr: {
       BarrierErrInfo* bei = (BarrierErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(bei);
-      VG_(message)(Vg_UserMsg,
-                   "%s: barrier 0x%lx\n",
-                   VG_(get_error_string)(e),
-                   bei->barrier);
+      print_err_detail("%s%s: barrier 0x%lx%s\n", what_prefix,
+                       VG_(get_error_string)(e), bei->barrier, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
-      if (bei->other_context)
-      {
-         VG_(message)(Vg_UserMsg,
-                      "Conflicting wait call by thread %d:\n",
-                      bei->other_tid);
+      if (bei->other_context) {
+         if (xml)
+            print_err_detail("  <confl_wait_call>\n");
+         print_err_detail("%sConflicting wait call by thread %d:%s\n",
+                          what_prefix, bei->other_tid, what_suffix);
          VG_(pp_ExeContext)(bei->other_context);
+         if (xml)
+            print_err_detail("  </confl_wait_call>\n");
       }
       first_observed(bei->barrier);
       break;
@@ -355,10 +386,8 @@ static void drd_tool_error_pp(Error* const e)
    case RwlockErr: {
       RwlockErrInfo* p = (RwlockErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(p);
-      VG_(message)(Vg_UserMsg,
-                   "%s: rwlock 0x%lx.\n",
-                   VG_(get_error_string)(e),
-                   p->rwlock);
+      print_err_detail("%s%s: rwlock 0x%lx.%s\n", what_prefix,
+                       VG_(get_error_string)(e), p->rwlock, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(p->rwlock);
       break;
@@ -367,21 +396,25 @@ static void drd_tool_error_pp(Error* const e)
       HoldtimeErrInfo* p =(HoldtimeErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(p);
       tl_assert(p->acquired_at);
-      VG_(message)(Vg_UserMsg, "Acquired at:\n");
+      if (xml)
+         print_err_detail("  <acquired_at>\n");
+      else
+         print_err_detail("Acquired at:\n");
       VG_(pp_ExeContext)(p->acquired_at);
-      VG_(message)(Vg_UserMsg,
-                   "Lock on %s 0x%lx was held during %d ms (threshold: %d ms).\n",
-                   VG_(get_error_string)(e),
-                   p->synchronization_object,
-                   p->hold_time_ms,
-                   p->threshold_ms);
+      print_err_detail("%sLock on %s 0x%lx was held during %d ms"
+                       " (threshold: %d ms).%s\n", what_prefix,
+                       VG_(get_error_string)(e), p->synchronization_object,
+                       p->hold_time_ms, p->threshold_ms, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      if (xml)
+         print_err_detail("  </acquired_at>\n");
       first_observed(p->synchronization_object);
       break;
    }
    case GenericErr: {
       GenericErrInfo* gei = (GenericErrInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg, "%s\n", VG_(get_error_string)(e));
+      print_err_detail("%s%s%s\n", what_prefix, VG_(get_error_string)(e),
+                       what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       if (gei->addr)
 	 first_observed(gei->addr);
@@ -389,33 +422,30 @@ static void drd_tool_error_pp(Error* const e)
    }
    case InvalidThreadId: {
       InvalidThreadIdInfo* iti =(InvalidThreadIdInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "%s 0x%llx\n", VG_(get_error_string)(e), iti->ptid);
+      print_err_detail("%s%s 0x%llx%s\n", what_prefix, VG_(get_error_string)(e),
+                       iti->ptid, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
    case UnimpHgClReq: {
       UnimpClReqInfo* uicr =(UnimpClReqInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "The annotation macro %s has not yet been implemented in"
-                   " <valgrind/helgrind.h>\n",
-                   /*VG_(get_error_string)(e),*/ uicr->descr);
+      print_err_detail("%sThe annotation macro %s has not yet been implemented"
+                       " in %ps%s\n", what_prefix, uicr->descr,
+                       "<valgrind/helgrind.h>", what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
    case UnimpDrdClReq: {
       UnimpClReqInfo* uicr =(UnimpClReqInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "The annotation macro %s has not yet been implemented in"
-                   " <valgrind/drd.h>\n",
-                   uicr->descr);
+      print_err_detail("%sThe annotation macro %s has not yet been implemented"
+                       " in %ps%s\n", what_prefix, uicr->descr,
+                       "<valgrind/drd.h>", what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
    default:
-      VG_(message)(Vg_UserMsg,
-                   "%s\n",
-                   VG_(get_error_string)(e));
+      print_err_detail("%s%s%s\n", what_prefix, VG_(get_error_string)(e),
+                       what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }

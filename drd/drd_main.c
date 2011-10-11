@@ -573,9 +573,8 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    }
    if (DRD_(thread_get_trace_fork_join)())
    {
-      VG_(message)(Vg_DebugMsg,
-                   "drd_pre_thread_create creator = %d, created = %d\n",
-                   drd_creator, created);
+      DRD_(trace_msg)("drd_pre_thread_create creator = %d, created = %d\n",
+                      drd_creator, created);
    }
 }
 
@@ -592,9 +591,7 @@ void drd_post_thread_create(const ThreadId vg_created)
    drd_created = DRD_(thread_post_create)(vg_created);
    if (DRD_(thread_get_trace_fork_join)())
    {
-      VG_(message)(Vg_DebugMsg,
-                   "drd_post_thread_create created = %d\n",
-                   drd_created);
+      DRD_(trace_msg)("drd_post_thread_create created = %d\n", drd_created);
    }
    if (! DRD_(get_check_stack_accesses)())
    {
@@ -615,15 +612,11 @@ static void drd_thread_finished(ThreadId vg_tid)
    drd_tid = DRD_(VgThreadIdToDrdThreadId)(vg_tid);
    if (DRD_(thread_get_trace_fork_join)())
    {
-      VG_(message)(Vg_DebugMsg,
-                   "drd_thread_finished tid = %d%s\n",
-                   drd_tid,
-                   DRD_(thread_get_joinable)(drd_tid)
-                   ? ""
-                   : " (which is a detached thread)");
+      DRD_(trace_msg)("drd_thread_finished tid = %d%s\n", drd_tid,
+                      DRD_(thread_get_joinable)(drd_tid)
+                      ? "" : " (which is a detached thread)");
    }
-   if (s_show_stack_usage)
-   {
+   if (s_show_stack_usage && !VG_(clo_xml)) {
       const SizeT stack_size = DRD_(thread_get_stack_size)(drd_tid);
       const SizeT used_stack
          = (DRD_(thread_get_stack_max)(drd_tid)
@@ -633,11 +626,8 @@ static void drd_thread_finished(ThreadId vg_tid)
                    " on its stack. Margin: %ld bytes.\n",
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
-                   ? ""
-                   : " (which is a detached thread)",
-                   used_stack,
-                   stack_size,
-                   stack_size - used_stack);
+                   ? "" : " (which is a detached thread)",
+                   used_stack, stack_size, stack_size - used_stack);
 
    }
    drd_stop_using_mem(DRD_(thread_get_stack_min)(drd_tid),
@@ -689,12 +679,11 @@ static void DRD_(fini)(Int exitcode)
 {
    // thread_print_all();
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg,
-                   "For counts of detected and suppressed errors, "
+      VG_(message)(Vg_UserMsg, "For counts of detected and suppressed errors, "
                    "rerun with: -v\n");
    }
 
-   if (VG_(clo_stats) || s_print_stats)
+   if ((VG_(clo_stats) || s_print_stats) && !VG_(clo_xml))
    {
       ULong pu = DRD_(thread_get_update_conflict_set_count)();
       ULong pu_seg_cr = DRD_(thread_get_update_conflict_set_new_sg_count)();
@@ -706,21 +695,21 @@ static void DRD_(fini)(Int exitcode)
                    DRD_(thread_get_context_switch_count)());
       VG_(message)(Vg_UserMsg,
                    "confl set: %lld full updates and %lld partial updates;\n",
-		   DRD_(thread_get_compute_conflict_set_count)(),
-		   pu);
+                   DRD_(thread_get_compute_conflict_set_count)(),
+                   pu);
       VG_(message)(Vg_UserMsg,
                    "           %lld partial updates during segment creation,\n",
-		   pu_seg_cr);
+                   pu_seg_cr);
       VG_(message)(Vg_UserMsg,
                    "           %lld because of mutex/sema/cond.var. operations,\n",
-		   pu_mtx_cv);
+                   pu_mtx_cv);
       VG_(message)(Vg_UserMsg,
                    "           %lld because of barrier/rwlock operations and\n",
 		   pu - pu_seg_cr - pu_mtx_cv - pu_join);
       VG_(message)(Vg_UserMsg,
                    "           %lld partial updates because of thread join"
-		   " operations.\n",
-		   pu_join);
+                   " operations.\n",
+                   pu_join);
       VG_(message)(Vg_UserMsg,
                    " segments: created %lld segments, max %lld alive,\n",
                    DRD_(sg_get_segments_created_count)(),
@@ -767,6 +756,7 @@ void drd_pre_clo_init(void)
    VG_(needs_command_line_options)(DRD_(process_cmd_line_option),
                                    DRD_(print_usage),
                                    DRD_(print_debug_usage));
+   VG_(needs_xml_output)          ();
 
    // Error handling.
    DRD_(register_error_handlers)();

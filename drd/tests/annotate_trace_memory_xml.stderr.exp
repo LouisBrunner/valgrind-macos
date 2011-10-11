@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>drd</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>drd</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./tsan_unittest</exe>
+    <arg>1</arg>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+FLAGS [phb=1, fm=0]
+test01: positive
+<traceline>
+  store 0x........ size 4 (thread x / vc ...)
+</traceline>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>test01::Worker()</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>MyThread::ThreadBody(MyThread*)</fn>
+      <dir>...</dir>
+      <file>tsan_thread_wrappers_pthread.h</file>
+      <line>...</line>
+    </frame>
+  </stack>
+<traceline>
+  store 0x........ size 4 (thread x / vc ...)
+</traceline>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>test01::Parent()</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>test01::Run()</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>ConflictingAccess</kind>
+  <what>Conflicting store by thread x at 0x........ size 4</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>test01::Parent()</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>test01::Run()</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat><text>      Allocation context: BSS section of tsan_unittest
+  </text><auxwhat>
+</error>
+
+<traceline>
+  load  0x........ size 4 (thread x / vc ...)
+</traceline>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>test01::Run()</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tsan_unittest.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+	GLOB=2
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>drd</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>drd</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./fp_race</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<traceline>
+  drd_pre_thread_create creator = 0, created = 1
+</traceline>
+<traceline>
+  drd_post_thread_create created = 1
+</traceline>
+<traceline>
+  drd_pre_thread_create creator = 1, created = 2
+</traceline>
+<traceline>
+  drd_post_thread_create created = 2
+</traceline>
+<traceline>
+  drd_thread_finished tid = 2
+</traceline>
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>ConflictingAccess</kind>
+  <what>Conflicting load by thread 1 at 0x........ size 8</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>fp_race.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside local var "s_d3"</auxwhat>
+  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread 1</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
+  <other_segment_start>
+  </other_segment_start>
+  <other_segment_end>
+  </other_segment_end>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>ConflictingAccess</kind>
+  <what>Conflicting store by thread 1 at 0x........ size 8</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>fp_race.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside local var "s_d3"</auxwhat>
+  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread 1</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
+  <other_segment_start>
+  </other_segment_start>
+  <other_segment_end>
+  </other_segment_end>
+</error>
+
+<traceline>
+  drd_post_thread_join joiner = 1, joinee = 2, new vc: [ 1: 4, 2: 1 ]
+</traceline>
+<traceline>
+  drd_thread_finished tid = 1
+</traceline>
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

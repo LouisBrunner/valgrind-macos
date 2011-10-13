@@ -352,8 +352,8 @@ static void drd_tool_error_pp(Error* const e)
    case SemaphoreErr: {
       SemaphoreErrInfo* sei = (SemaphoreErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(sei);
-      print_err_detail("%s%s: semaphore 0x%lx%s\n", VG_(get_error_string)(e),
-                       what_prefix, sei->semaphore, what_suffix);
+      print_err_detail("%s%s: semaphore 0x%lx%s\n", what_prefix,
+                       VG_(get_error_string)(e), sei->semaphore, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(sei->semaphore);
       break;
@@ -394,13 +394,13 @@ static void drd_tool_error_pp(Error* const e)
       else
          print_err_detail("Acquired at:\n");
       VG_(pp_ExeContext)(p->acquired_at);
+      if (xml)
+         print_err_detail("  </acquired_at>\n");
       print_err_detail("%sLock on %s 0x%lx was held during %d ms"
                        " (threshold: %d ms).%s\n", what_prefix,
                        VG_(get_error_string)(e), p->synchronization_object,
                        p->hold_time_ms, p->threshold_ms, what_suffix);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
-      if (xml)
-         print_err_detail("  </acquired_at>\n");
       first_observed(p->synchronization_object);
       break;
    }

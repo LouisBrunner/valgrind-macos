@@ -35,6 +35,11 @@ Release 3.7.0 (???)
   where one thread accesses heap memory but another one frees it,
   without any coordinating synchronisation event
 
+- DRD: enabled XML output; added support for delayed thread deletion in order
+  to detect races that occur close to the end of a thread (--join-list-vol);
+  fixed a memory leak triggered by repeated client memory allocatation and
+  deallocation; improved Darwin support.
+
 * IBM z/Architecture (s390x) running Linux
   Valgrind can analyse 64-bit programs running on z/Architecture.
   Most user space instructions up to and including z10 are supported.

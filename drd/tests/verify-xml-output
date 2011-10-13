@@ -1,0 +1,22 @@
+#!/bin/sh
+
+cd "$(dirname $0)" || exit $?
+for f in *.vgtest
+do
+  b="${f%.vgtest}"
+  if [ ${b%_xml} != $b ]; then
+    continue
+  fi
+  echo === $b
+  prereq="$(sed -n 's/^prereq: //p' $f)"
+  if [ "$prereq" = "" ]; then
+    prereq="true"
+  fi
+  prog="$(sed -n 's/^prog: //p' $f)"
+  args="$(sed -n 's/^args: //p' $f)"
+  vgopts="$(sed -n 's/^vgopts: //p' $f)"
+  if eval $prereq; then
+    ../../vg-in-place --tool=drd --xml=yes --xml-file=$b.xml $vgopts ./$prog $args
+    xmllint --noout --schema ../docs/drd-xml-output.xsd $b.xml 2>&1 | tee $b.xmllint
+  fi
+done

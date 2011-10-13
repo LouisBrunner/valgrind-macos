@@ -83,3 +83,7 @@ How to test DRD
      drd/scripts/download-and-build-firefox
    Now run the following command:
      LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --tool=drd --check-stack-var=yes --trace-children=yes --show-confl-seg=no $HOME/software/mozilla-build/dist/bin/firefox-bin
+
+13. Verify that the XML output matches the DRD XML output XSD.
+
+   drd/tests/verify-xml-output

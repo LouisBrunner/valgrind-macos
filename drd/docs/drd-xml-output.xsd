@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- Header printed by Valgrind tool as multiple lines of text -->
+  <xs:complexType name="vgPreamble">
+    <xs:sequence>
+      <xs:element name="line" type="xs:string"
+		  minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Executable path and arguments -->
+  <xs:complexType name="vgExeAndArgs">
+    <xs:sequence>
+      <xs:element name="exe" type="xs:string"/>
+      <xs:element name="arg" type="xs:string"
+		  minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Valgrind tool and client executable path and arguments -->
+  <xs:complexType name="vgArgs">
+    <xs:sequence>
+      <xs:element name="vargv" type="vgExeAndArgs"/>
+      <xs:element name="argv" type="vgExeAndArgs"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="vgSchedState">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="RUNNING"/>
+      <xs:enumeration value="FINISHED"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Valgrind scheduler state and time at which a state has been reached -->
+  <xs:complexType name="vgSchedulerStatus">
+    <xs:sequence>
+      <xs:element name="state" type="vgSchedState"/>
+      <xs:element name="time" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Client call stack -->
+  <xs:complexType name="vgStack">
+    <xs:sequence>
+      <xs:element name="frame" minOccurs="0" maxOccurs="unbounded">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="ip" type="xs:string"/>
+	    <xs:element name="obj" type="xs:string" minOccurs="0"/>
+	    <xs:element name="fn" type="xs:string" minOccurs="0"/>
+	    <xs:element name="dir" type="xs:string" minOccurs="0"/>
+	    <xs:element name="file" type="xs:string" minOccurs="0"/>
+	    <xs:element name="line" type="xs:string" minOccurs="0"/>
+	  </xs:sequence>
+	</xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="vgErrorCount">
+    <xs:sequence>
+      <xs:element name="pair" minOccurs="0" maxOccurs="unbounded">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="count" type="xs:integer"/>
+	    <xs:element name="unique" type="xs:string"/>
+	  </xs:sequence>
+	</xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="vgSuppCount">
+    <xs:sequence>
+      <xs:element name="pair" minOccurs="0" maxOccurs="unbounded">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="count" type="xs:integer"/>
+	    <xs:element name="name" type="xs:string"/>
+	  </xs:sequence>
+	</xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="drdErrorKind">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ConflictingAccess"/>
+      <xs:enumeration value="MutexErr"/>
+      <xs:enumeration value="CondErr"/>
+      <xs:enumeration value="CondDestrErr"/>
+      <xs:enumeration value="CondRaceErr"/>
+      <xs:enumeration value="CondWaitErr"/>
+      <xs:enumeration value="SemaphoreErr"/>
+      <xs:enumeration value="BarrierErr"/>
+      <xs:enumeration value="RwlockErr"/>
+      <xs:enumeration value="HoldtimeErr"/>
+      <xs:enumeration value="GenericErr"/>
+      <xs:enumeration value="InvalidThreadId"/>
+      <xs:enumeration value="UnimpHgClReq"/>
+      <xs:enumeration value="UnimpDrdClReq"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Single line of trace information with an optional call stack -->
+  <xs:complexType name="drdTrace">
+    <xs:sequence>
+      <xs:element name="text" type="xs:string"/>
+      <xs:element name="stack" type="vgStack" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Context information about a DRD error -->
+  <xs:complexType name="drdContext">
+    <xs:sequence>
+      <xs:element name="what" type="xs:string" minOccurs="0"/>
+      <xs:element name="address" type="xs:string" minOccurs="0"/>
+      <xs:element name="stack" type="vgStack"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="drdError">
+    <xs:sequence>
+      <xs:element name="unique" type="xs:string"/>
+      <xs:element name="tid" type="xs:integer"/>
+      <xs:element name="kind" type="drdErrorKind"/>
+      <xs:element name="acquired_at" type="drdContext" minOccurs="0"/>
+      <xs:element name="what" type="xs:string"/>
+      <xs:element name="stack" type="vgStack"/>
+      <xs:element name="auxwhat" type="xs:string" minOccurs="0"/>
+      <xs:element name="allocation_context" minOccurs="0"/>
+      <xs:element name="confl_wait_call" type="drdContext"
+		  minOccurs="0"/>
+      <xs:element name="first_observed_at" type="drdContext"
+		  minOccurs="0" maxOccurs="3"/>
+      <xs:element name="xauxwhat" minOccurs="0">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="text" type="xs:string"/>
+	    <xs:element name="file" type="xs:string"/>
+	    <xs:element name="line" type="xs:integer"/>
+	  </xs:sequence>
+	</xs:complexType>
+      </xs:element>
+      <xs:element name="other_segment_start" minOccurs="0">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="stack" type="vgStack" minOccurs="0"/>
+	  </xs:sequence>
+	</xs:complexType>
+      </xs:element>
+      <xs:element name="other_segment_end" minOccurs="0">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="stack" type="vgStack" minOccurs="0"/>
+	  </xs:sequence>
+	</xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="valgrindoutput">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+	<xs:element name="protocolversion" type="xs:string"/>
+	<xs:element name="protocoltool" type="xs:string"/>
+	<xs:element name="preamble" type="vgPreamble"/>
+	<xs:element name="pid" type="xs:string"/>
+	<xs:element name="ppid" type="xs:string"/>
+	<xs:element name="tool" type="xs:string"/>
+	<xs:element name="args" type="vgArgs"/>
+	<xs:element name="trace" type="drdTrace"/>
+	<xs:element name="error" type="drdError"
+		    minOccurs="0" maxOccurs="unbounded"/>
+	<xs:element name="status" type="vgSchedulerStatus"/>
+	<xs:element name="errorcounts" type="vgErrorCount"/>
+	<xs:element name="suppcounts" type="vgSuppCount" minOccurs="0"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -215,7 +215,7 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
          } else {
             print_err_detail("      Allocation context: unknown.\n");
          }
-         print_err_detail("  </text><auxwhat>\n");
+         print_err_detail("  </text></auxwhat>\n");
       } else {
          if (sect_kind != Vg_SectUnknown) {
             print_err_detail("Allocation context: %s section of %s\n",

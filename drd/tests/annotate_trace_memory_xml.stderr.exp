@@ -97,7 +97,7 @@ test01: positive
     </frame>
   </stack>
   <auxwhat><text>      Allocation context: BSS section of tsan_unittest
-  </text><auxwhat>
+  </text></auxwhat>
 </error>
 
 <traceline>

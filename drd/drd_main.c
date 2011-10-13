@@ -199,6 +199,7 @@ static void DRD_(print_usage)(void)
 "                              a memory location instead of all races [no].\n"
 "    --free-is-write=yes|no    Whether to report races between freeing memory\n"
 "                              and subsequent accesses of that memory[no].\n"
+"    --join-list-vol=<n>       Number of threads to delay cleanup for [10].\n"
 "    --report-signal-unlocked=yes|no Whether to report calls to\n"
 "                              pthread_cond_signal() where the mutex associated\n"
 "                              with the signal via pthread_cond_wait() is not\n"
@@ -223,6 +224,7 @@ static void DRD_(print_usage)(void)
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
 "    --trace-cond=yes|no       Trace all condition variable activity [no].\n"
 "    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"
+"    --trace-hb=yes|no         Trace ANNOTATE_HAPPENS_BEFORE() etc. [no].\n"
 "    --trace-mutex=yes|no      Trace all mutex activity [no].\n"
 "    --trace-rwlock=yes|no     Trace all reader-writer lock activity[no].\n"
 "    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n",

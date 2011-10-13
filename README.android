@@ -27,7 +27,7 @@ export NDKROOT=/path/to/android-ndk-r6
 #
 # Currently the only supported value is:  nexus_s
 #
-export HWKIND=nexus_t         # Samsung Nexus S
+export HWKIND=nexus_s         # Samsung Nexus S
 
 
 # Then cd to the root of your Valgrind source tree.

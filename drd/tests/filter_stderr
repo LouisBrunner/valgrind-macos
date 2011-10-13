@@ -25,7 +25,7 @@ sed \
 -e "s/[A-Za-z_]* (in [^ ]*libpthread-[0-9.]*\.so)/(within libpthread-?.?.so)/" \
 -e "s:(within /lib[0-9]*/ld-[0-9.]*\.so):(within ld-?.?.so):" \
 -e "s/was held during [0-9][0-9]*/was held during .../" \
--e "s: BSS section of .*/: BSS section of :g" \
+-e "s: BSS section of [^<]*/: BSS section of :g" \
 -e "s: vc \[[ ,:0-9]*\]: vc ...:g" \
 -e "s/[@\$*]* (drd_pthread_intercepts.c:/ (drd_pthread_intercepts.c:/" \
 -e "s/ (\([a-zA-Z_]*\.c\):[0-9]*)/ (\1:?)/" \

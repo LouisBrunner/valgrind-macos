@@ -62,13 +62,32 @@ void DRD_(trace_msg)(const char* format, ...)
    va_list vargs;
    va_start(vargs, format);
    if (VG_(clo_xml)) {
-      VG_(printf_xml)("<traceline>\n  ");
+      VG_(printf_xml)("  <trace><text>");
       VG_(vprintf_xml)(format, vargs);
-      VG_(printf_xml)("</traceline>\n");
+      VG_(printf_xml)("</text></trace>\n");
    } else {
       VG_(vmessage)(Vg_UserMsg, format, vargs);
+      VG_(message)(Vg_UserMsg, "\n");
    }
    va_end(vargs);
+}
+
+void DRD_(trace_msg_w_bt)(const char* format, ...)
+{
+   va_list vargs;
+   va_start(vargs, format);
+   if (VG_(clo_xml)) {
+      VG_(printf_xml)("  <trace><text>");
+      VG_(vprintf_xml)(format, vargs);
+      VG_(printf_xml)("</text>\n");
+   } else {
+      VG_(vmessage)(Vg_UserMsg, format, vargs);
+      VG_(message)(Vg_UserMsg, "\n");
+   }
+   VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));
+   va_end(vargs);
+   if (VG_(clo_xml))
+      VG_(printf_xml)("  </trace>\n");
 }
 
 /**

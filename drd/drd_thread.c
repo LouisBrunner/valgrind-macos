@@ -390,7 +390,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                        ", new vc: %s", vc);
          VG_(free)(vc);
       }
-      DRD_(trace_msg)("%pS\n", msg);
+      DRD_(trace_msg)("%pS", msg);
       VG_(free)(msg);
    }
 
@@ -564,7 +564,7 @@ void DRD_(thread_pre_cancel)(const DrdThreadId tid)
    tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
 
    if (DRD_(thread_get_trace_fork_join)())
-      DRD_(trace_msg)("[%d] drd_thread_pre_cancel %d\n",
+      DRD_(trace_msg)("[%d] drd_thread_pre_cancel %d",
                       DRD_(g_drd_running_tid), tid);
 }
 

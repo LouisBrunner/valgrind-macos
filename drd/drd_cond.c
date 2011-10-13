@@ -148,7 +148,7 @@ void DRD_(cond_pre_init)(const Addr cond)
    struct cond_info* p;
 
    if (DRD_(s_trace_cond))
-      DRD_(trace_msg)("[%d] cond_init       cond 0x%lx\n",
+      DRD_(trace_msg)("[%d] cond_init       cond 0x%lx",
                       DRD_(thread_get_running_tid)(), cond);
 
    p = DRD_(cond_get)(cond);
@@ -172,7 +172,7 @@ void DRD_(cond_post_destroy)(const Addr cond)
    struct cond_info* p;
 
    if (DRD_(s_trace_cond))
-      DRD_(trace_msg)("[%d] cond_destroy    cond 0x%lx\n",
+      DRD_(trace_msg)("[%d] cond_destroy    cond 0x%lx",
                       DRD_(thread_get_running_tid)(), cond);
 
    p = DRD_(cond_get)(cond);
@@ -211,7 +211,7 @@ void DRD_(cond_pre_wait)(const Addr cond, const Addr mutex)
    struct mutex_info* q;
 
    if (DRD_(s_trace_cond))
-      DRD_(trace_msg)("[%d] cond_pre_wait   cond 0x%lx\n",
+      DRD_(trace_msg)("[%d] cond_pre_wait   cond 0x%lx",
                       DRD_(thread_get_running_tid)(), cond);
 
    p = cond_get_or_allocate(cond);
@@ -272,7 +272,7 @@ void DRD_(cond_post_wait)(const Addr cond)
    struct cond_info* p;
 
    if (DRD_(s_trace_cond))
-      DRD_(trace_msg)("[%d] cond_post_wait  cond 0x%lx\n",
+      DRD_(trace_msg)("[%d] cond_post_wait  cond 0x%lx",
                       DRD_(thread_get_running_tid)(), cond);
 
    p = DRD_(cond_get)(cond);
@@ -353,7 +353,7 @@ void DRD_(cond_pre_signal)(Addr const cond)
 
    p = DRD_(cond_get)(cond);
    if (DRD_(s_trace_cond))
-      DRD_(trace_msg)("[%d] cond_signal     cond 0x%lx\n",
+      DRD_(trace_msg)("[%d] cond_signal     cond 0x%lx",
                       DRD_(thread_get_running_tid)(), cond);
 
    tl_assert(DRD_(pthread_cond_initializer));
@@ -376,7 +376,7 @@ void DRD_(cond_pre_broadcast)(Addr const cond)
    struct cond_info* p;
 
    if (DRD_(s_trace_cond))
-      DRD_(trace_msg)("[%d] cond_broadcast  cond 0x%lx\n",
+      DRD_(trace_msg)("[%d] cond_broadcast  cond 0x%lx",
                       DRD_(thread_get_running_tid)(), cond);
 
    p = DRD_(cond_get)(cond);

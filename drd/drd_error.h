@@ -181,6 +181,7 @@ typedef struct {
 void DRD_(set_show_conflicting_segments)(const Bool scs);
 void DRD_(register_error_handlers)(void);
 void DRD_(trace_msg)(const char* format, ...) PRINTF_CHECK(1, 2);
+void DRD_(trace_msg_w_bt)(const char* format, ...) PRINTF_CHECK(1, 2);
 
 
 #endif /* __DRD_ERROR_H */

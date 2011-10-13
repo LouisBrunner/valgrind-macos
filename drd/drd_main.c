@@ -311,7 +311,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
    tl_assert(a1 <= a2);
 
    if (!is_stack_mem && s_trace_alloc)
-      DRD_(trace_msg)("Started using memory range 0x%lx + %ld%s\n",
+      DRD_(trace_msg)("Started using memory range 0x%lx + %ld%s",
                       a1, len, DRD_(running_thread_inside_pthread_create)()
                       ? " (inside pthread_create())" : "");
 
@@ -355,7 +355,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
       DRD_(trace_mem_access)(a1, len, eEnd);
 
    if (!is_stack_mem && s_trace_alloc)
-      DRD_(trace_msg)("Stopped using memory range 0x%lx + %ld\n",
+      DRD_(trace_msg)("Stopped using memory range 0x%lx + %ld",
                       a1, len);
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
@@ -573,7 +573,7 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    }
    if (DRD_(thread_get_trace_fork_join)())
    {
-      DRD_(trace_msg)("drd_pre_thread_create creator = %d, created = %d\n",
+      DRD_(trace_msg)("drd_pre_thread_create creator = %d, created = %d",
                       drd_creator, created);
    }
 }
@@ -591,7 +591,7 @@ void drd_post_thread_create(const ThreadId vg_created)
    drd_created = DRD_(thread_post_create)(vg_created);
    if (DRD_(thread_get_trace_fork_join)())
    {
-      DRD_(trace_msg)("drd_post_thread_create created = %d\n", drd_created);
+      DRD_(trace_msg)("drd_post_thread_create created = %d", drd_created);
    }
    if (! DRD_(get_check_stack_accesses)())
    {
@@ -612,7 +612,7 @@ static void drd_thread_finished(ThreadId vg_tid)
    drd_tid = DRD_(VgThreadIdToDrdThreadId)(vg_tid);
    if (DRD_(thread_get_trace_fork_join)())
    {
-      DRD_(trace_msg)("drd_thread_finished tid = %d%s\n", drd_tid,
+      DRD_(trace_msg)("drd_thread_finished tid = %d%s", drd_tid,
                       DRD_(thread_get_joinable)(drd_tid)
                       ? "" : " (which is a detached thread)");
    }

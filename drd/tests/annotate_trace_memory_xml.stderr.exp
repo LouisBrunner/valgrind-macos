@@ -31,9 +31,7 @@
 
 FLAGS [phb=1, fm=0]
 test01: positive
-<traceline>
-  store 0x........ size 4 (thread x / vc ...)
-</traceline>
+  <trace><text>store 0x........ size 4 (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -52,9 +50,8 @@ test01: positive
       <line>...</line>
     </frame>
   </stack>
-<traceline>
-  store 0x........ size 4 (thread x / vc ...)
-</traceline>
+  </trace>
+  <trace><text>store 0x........ size 4 (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -73,6 +70,7 @@ test01: positive
       <line>...</line>
     </frame>
   </stack>
+  </trace>
 <error>
   <unique>0x........</unique>
   <tid>...</tid>
@@ -99,9 +97,7 @@ test01: positive
   <auxwhat>Allocation context: BSS section of tsan_unittest</auxwhat>
 </error>
 
-<traceline>
-  load  0x........ size 4 (thread x / vc ...)
-</traceline>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -120,6 +116,7 @@ test01: positive
       <line>...</line>
     </frame>
   </stack>
+  </trace>
 	GLOB=2
 
 <status>

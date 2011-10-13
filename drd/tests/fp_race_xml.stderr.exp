@@ -28,21 +28,11 @@
   <time>...</time>
 </status>
 
-<traceline>
-  drd_pre_thread_create creator = 0, created = 1
-</traceline>
-<traceline>
-  drd_post_thread_create created = 1
-</traceline>
-<traceline>
-  drd_pre_thread_create creator = 1, created = 2
-</traceline>
-<traceline>
-  drd_post_thread_create created = 2
-</traceline>
-<traceline>
-  drd_thread_finished tid = 2
-</traceline>
+  <trace><text>drd_pre_thread_create creator = 0, created = 1</text></trace>
+  <trace><text>drd_post_thread_create created = 1</text></trace>
+  <trace><text>drd_pre_thread_create creator = 1, created = 2</text></trace>
+  <trace><text>drd_post_thread_create created = 2</text></trace>
+  <trace><text>drd_thread_finished tid = 2</text></trace>
 <error>
   <unique>0x........</unique>
   <tid>...</tid>
@@ -89,12 +79,8 @@
   </other_segment_end>
 </error>
 
-<traceline>
-  drd_post_thread_join joiner = 1, joinee = 2, new vc: [ 1: 4, 2: 1 ]
-</traceline>
-<traceline>
-  drd_thread_finished tid = 1
-</traceline>
+  <trace><text>drd_post_thread_join joiner = 1, joinee = 2, new vc: [ 1: 4, 2: 1 ]</text></trace>
+  <trace><text>drd_thread_finished tid = 1</text></trace>
 
 <status>
   <state>FINISHED</state>

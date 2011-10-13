@@ -349,6 +349,20 @@ behavior of the DRD tool itself:</para>
   </varlistentry>
   <varlistentry>
     <term>
+      <option><![CDATA[--join-list-vol=<n> [default: 10]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Data races that occur between a statement at the end of one thread
+	and another thread can be missed if memory access information is
+	discarded immediately after a thread has been joined. This option
+	allows to specify for how many joined threads memory access information
+	should be retained.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
       <option>
         <![CDATA[--first-race-only=<yes|no> [default: no]]]>
       </option>
@@ -551,6 +565,18 @@ client program:
     <listitem>
       <para>
         Trace all thread creation and all thread termination events.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-hb=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace execution of the <literal>ANNOTATE_HAPPENS_BEFORE()</literal>,
+	<literal>ANNOTATE_HAPPENS_AFTER()</literal> and
+	<literal>ANNOTATE_HAPPENS_DONE()</literal> client requests.
       </para>
     </listitem>
   </varlistentry>

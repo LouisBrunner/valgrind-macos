@@ -194,8 +194,8 @@
       <line>...</line>
     </frame>
   </stack>
-  <auxwhat>
-    <text>Address 0x........ is at offset 0 from 0x.........</text>
+  <auxwhat>Address 0x........ is at offset 0 from 0x.........</auxwhat>
+  <allocation_context>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -222,7 +222,7 @@
       <line>...</line>
     </frame>
   </stack>
-  </auxwhat>
+  </allocation_context>
 </error>
 
 <error>

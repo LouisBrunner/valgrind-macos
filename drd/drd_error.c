@@ -138,6 +138,8 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
    const Bool xml = VG_(clo_xml);
    const char* const what_prefix = xml ? "  <what>" : "";
    const char* const what_suffix = xml ? "</what>" : "";
+   const char* const auxwhat_prefix = xml ? "  <auxwhat>" : "";
+   const char* const auxwhat_suffix = xml ? "</auxwhat>" : "";
    const char* const indent = xml ? "  " : "";
    AddrInfo ai;
 
@@ -190,39 +192,30 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
       if (descr2 != NULL)
          print_err_detail("%s%s\n", indent, (HChar*)VG_(indexXA)(descr2, 0));
    } else if (ai.akind == eMallocd && ai.lastchange) {
+      print_err_detail("%sAddress 0x%lx is at offset %ld from 0x%lx.%s%s",
+                       auxwhat_prefix, dri->addr, ai.rwoffset,
+                       dri->addr - ai.rwoffset, auxwhat_suffix,
+                       xml ? "\n" : "");
       if (xml)
-         print_err_detail("  <auxwhat>\n    <text>");
-      print_err_detail("Address 0x%lx is at offset %ld from 0x%lx.",
-                       dri->addr, ai.rwoffset, dri->addr - ai.rwoffset);
-      if (xml)
-         print_err_detail("</text>\n");
+         print_err_detail("  <allocation_context>\n");
       else
          print_err_detail(" Allocation context:\n");
       VG_(pp_ExeContext)(ai.lastchange);
       if (xml)
-         print_err_detail("  </auxwhat>\n");
+         print_err_detail("  </allocation_context>\n");
    } else {
       char sect_name[64];
       VgSectKind sect_kind;
 
       sect_kind = VG_(DebugInfo_sect_kind)(sect_name, sizeof(sect_name),
                                            dri->addr);
-      if (xml) {
-         print_err_detail("  <auxwhat><text>");
-         if (sect_kind != Vg_SectUnknown) {
-            print_err_detail("      Allocation context: %pS section of %pS\n",
-                             VG_(pp_SectKind)(sect_kind), sect_name);
-         } else {
-            print_err_detail("      Allocation context: unknown.\n");
-         }
-         print_err_detail("  </text></auxwhat>\n");
+      if (sect_kind != Vg_SectUnknown) {
+         print_err_detail("%sAllocation context: %ps section of %ps%s\n",
+                          auxwhat_prefix, VG_(pp_SectKind)(sect_kind),
+                          sect_name, auxwhat_suffix);
       } else {
-         if (sect_kind != Vg_SectUnknown) {
-            print_err_detail("Allocation context: %s section of %s\n",
-                             VG_(pp_SectKind)(sect_kind), sect_name);
-         } else {
-            print_err_detail("Allocation context: unknown.\n");
-         }
+         print_err_detail("%sAllocation context: unknown.%s\n",
+                          auxwhat_prefix, auxwhat_suffix);
       }
    }
    if (s_show_conflicting_segments)

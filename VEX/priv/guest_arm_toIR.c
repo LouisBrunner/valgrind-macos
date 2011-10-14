@@ -10234,6 +10234,7 @@ static void mk_ldm_stm ( Bool arm,     /* True: ARM, False: Thumb */
                          UInt regList )
 {
    Int i, r, m, nRegs;
+   IRTemp jk = Ijk_Boring;
 
    /* Get hold of the old Rn value.  We might need to write its value
       to memory during a store, and if it's also the writeback
@@ -10360,6 +10361,15 @@ static void mk_ldm_stm ( Bool arm,     /* True: ARM, False: Thumb */
       }
    }
 
+   /* According to the Cortex A8 TRM Sec. 5.2.1, LDM(1) with r13 as the base
+       register and PC in the register list is a return for purposes of branch
+       prediction.
+      The ARM ARM Sec. C9.10.1 further specifies that writeback must be enabled
+       to be counted in event 0x0E (Procedure return).*/
+   if (rN == 13 && bL == 1 && bINC && !bBEFORE && bW == 1) {
+      jk = Ijk_Ret;
+   }
+
    /* Actually generate the transfers */
    for (i = 0; i < nX; i++) {
       r = xReg[i];
@@ -10368,7 +10378,7 @@ static void mk_ldm_stm ( Bool arm,     /* True: ARM, False: Thumb */
                             binop(opADDorSUB, mkexpr(anchorT),
                                   mkU32(xOff[i])));
          if (arm) {
-            putIRegA( r, e, IRTemp_INVALID, Ijk_Ret );
+            putIRegA( r, e, IRTemp_INVALID, jk );
          } else {
             // no: putIRegT( r, e, IRTemp_INVALID );
             // putIRegT refuses to write to R15.  But that might happen.
@@ -12292,6 +12302,7 @@ DisResult disInstr_ARM_WRK (
          case BITS4(1,1,0,1):   /* MOV: Rd = shifter_operand */
          case BITS4(1,1,1,1): { /* MVN: Rd = not(shifter_operand) */
             Bool isMVN = INSN(24,21) == BITS4(1,1,1,1);
+            IRTemp jk = Ijk_Boring;
             if (rN != 0)
                break; /* rN must be zero */
             ok = mk_shifter_operand(
@@ -12310,8 +12321,13 @@ DisResult disInstr_ARM_WRK (
             } else {
                vassert(shco == IRTemp_INVALID);
             }
+            /* According to the Cortex A8 TRM Sec. 5.2.1, MOV PC, r14 is a
+                return for purposes of branch prediction. */
+            if (!isMVN && INSN(11,0) == 14) {
+              jk = Ijk_Ret;
+            }
             // can't safely read guest state after here
-            putIRegA( rD, mkexpr(res), condT, Ijk_Boring );
+            putIRegA( rD, mkexpr(res), condT, jk );
             /* Update the flags thunk if necessary */
             if (bitS) {
                setFlags_D1_D2_ND( ARMG_CC_OP_LOGIC, 
@@ -12615,8 +12631,18 @@ DisResult disInstr_ARM_WRK (
 
         /* generate the transfer */
         if (bB == 0) { // word load
+           IRTemp jk = Ijk_Boring;
+           /* According to the Cortex A8 TRM Sec. 5.2.1, LDR(1) with r13 as the
+               base register and PC as the destination register is a return for
+               purposes of branch prediction.
+              The ARM ARM Sec. C9.10.1 further specifies that it must use a
+               post-increment by immediate addressing mode to be counted in
+               event 0x0E (Procedure return).*/
+           if (rN == 13 && summary == (3 | 16) && bB == 0) {
+              jk = Ijk_Ret;
+           }
            putIRegA( rD, loadLE(Ity_I32, mkexpr(taT)),
-                     IRTemp_INVALID, Ijk_Boring );
+                     IRTemp_INVALID, jk );
         } else { // byte load
            vassert(bB == 1);
            putIRegA( rD, unop(Iop_8Uto32, loadLE(Ity_I8, mkexpr(taT))),
@@ -13007,7 +13033,7 @@ DisResult disInstr_ARM_WRK (
             stmt( IRStmt_Exit( unop(Iop_32to1, mkexpr(condT)),
                                jk, IRConst_U32(dst) ));
             irsb->next     = mkU32(guest_R15_curr_instr_notENC + 4);
-            irsb->jumpkind = jk;
+            irsb->jumpkind = Ijk_Boring;
             dres.whatNext  = Dis_StopHere;
          }
          DIP("b%s%s 0x%x %s\n", link ? "l" : "", nCC(INSN_COND),
@@ -14950,7 +14976,7 @@ DisResult disInstr_THUMB_WRK (
             assign( dst, mkU32(guest_R15_curr_instr_notENC + 4) );
          }
          irsb->next     = mkexpr(dst);
-         irsb->jumpkind = Ijk_Boring;
+         irsb->jumpkind = rM == 14 ? Ijk_Ret : Ijk_Boring;
          dres.whatNext  = Dis_StopHere;
          DIP("bx r%u (possibly switch to ARM mode)\n", rM);
          goto decode_success;
@@ -15089,7 +15115,7 @@ DisResult disInstr_THUMB_WRK (
             // now uncond
             /* non-interworking branch */
             irsb->next = binop(Iop_Or32, mkexpr(val), mkU32(1));
-            irsb->jumpkind = Ijk_Boring;
+            irsb->jumpkind = rM == 14 ? Ijk_Ret : Ijk_Boring;
             dres.whatNext = Dis_StopHere;
          }
          DIP("mov r%u, r%u\n", rD, rM);

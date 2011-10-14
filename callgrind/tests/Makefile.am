@@ -11,6 +11,9 @@ EXTRA_DIST = \
 	simwork1.vgtest simwork1.stdout.exp simwork1.stderr.exp \
 	simwork2.vgtest simwork2.stdout.exp simwork2.stderr.exp \
 	simwork3.vgtest simwork3.stdout.exp simwork3.stderr.exp \
+	simwork-both.vgtest simwork-both.stdout.exp simwork-both.stderr.exp \
+	simwork-branch.vgtest simwork-branch.stdout.exp simwork-branch.stderr.exp \
+	simwork-cache.vgtest simwork-cache.stdout.exp simwork-cache.stderr.exp \
 	notpower2.vgtest notpower2.stderr.exp \
 	notpower2-wb.vgtest notpower2-wb.stderr.exp \
 	notpower2-hwpref.vgtest notpower2-hwpref.stderr.exp \

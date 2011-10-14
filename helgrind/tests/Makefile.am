@@ -80,6 +80,7 @@ EXTRA_DIST = \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
 		tc22_exit_w_lock.stderr.exp \
+		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \

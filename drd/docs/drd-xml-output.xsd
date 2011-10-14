@@ -8,6 +8,21 @@
     </xs:sequence>
   </xs:complexType>
 
+  <!-- Name and value of an environment variable used in XML output file name via %q{...} -->
+  <xs:complexType name="vgLogfileQual">
+    <xs:sequence>
+      <xs:element name="var" type="xs:string"/>
+      <xs:element name="value" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- User comment specified via xml-user-comment=... -->
+  <xs:complexType name="vgUserComment">
+    <xs:sequence>
+      <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <!-- Executable path and arguments -->
   <xs:complexType name="vgExeAndArgs">
     <xs:sequence>
@@ -38,6 +53,13 @@
       <xs:element name="state" type="vgSchedState"/>
       <xs:element name="time" type="xs:string"/>
     </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="vgSupprFrame">
+    <xs:choice>
+      <xs:element name="fun" type="xs:string"/>
+      <xs:element name="obj" type="xs:string"/>
+    </xs:choice>
   </xs:complexType>
 
   <!-- Client call stack -->
@@ -103,6 +125,26 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- Same as drdErrorKind but with the "drd:" prefix -->
+  <xs:simpleType name="drdSuppressionKind">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="drd:ConflictingAccess"/>
+      <xs:enumeration value="drd:MutexErr"/>
+      <xs:enumeration value="drd:CondErr"/>
+      <xs:enumeration value="drd:CondDestrErr"/>
+      <xs:enumeration value="drd:CondRaceErr"/>
+      <xs:enumeration value="drd:CondWaitErr"/>
+      <xs:enumeration value="drd:SemaphoreErr"/>
+      <xs:enumeration value="drd:BarrierErr"/>
+      <xs:enumeration value="drd:RwlockErr"/>
+      <xs:enumeration value="drd:HoldtimeErr"/>
+      <xs:enumeration value="drd:GenericErr"/>
+      <xs:enumeration value="drd:InvalidThreadId"/>
+      <xs:enumeration value="drd:UnimpHgClReq"/>
+      <xs:enumeration value="drd:UnimpDrdClReq"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <!-- Single line of trace information with an optional call stack -->
   <xs:complexType name="drdTrace">
     <xs:sequence>
@@ -120,6 +162,17 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="drdSuppression">
+    <xs:sequence>
+      <xs:element name="sname" type="xs:string"/>
+      <xs:element name="skind" type="drdSuppressionKind"/>
+      <xs:element name="skaux" type="xs:string" minOccurs="0"/>
+      <xs:element name="sframe" type="vgSupprFrame"
+		  minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="rawtext" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="drdError">
     <xs:sequence>
       <xs:element name="unique" type="xs:string"/>
@@ -129,7 +182,7 @@
       <xs:element name="what" type="xs:string"/>
       <xs:element name="stack" type="vgStack"/>
       <xs:element name="auxwhat" type="xs:string" minOccurs="0"/>
-      <xs:element name="allocation_context" minOccurs="0"/>
+      <xs:element name="allocation_context" type="drdContext" minOccurs="0"/>
       <xs:element name="confl_wait_call" type="drdContext"
 		  minOccurs="0"/>
       <xs:element name="first_observed_at" type="drdContext"
@@ -157,6 +210,7 @@
 	  </xs:sequence>
 	</xs:complexType>
       </xs:element>
+      <xs:element name="suppression" type="drdSuppression" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -169,6 +223,8 @@
 	<xs:element name="pid" type="xs:string"/>
 	<xs:element name="ppid" type="xs:string"/>
 	<xs:element name="tool" type="xs:string"/>
+	<xs:element name="logfilequalifier" type="vgLogfileQual" minOccurs="0"/>
+	<xs:element name="usercomment" type="vgUserComment" minOccurs="0"/>
 	<xs:element name="args" type="vgArgs"/>
 	<xs:element name="trace" type="drdTrace"/>
 	<xs:element name="error" type="drdError"

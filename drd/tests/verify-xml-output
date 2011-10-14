@@ -16,7 +16,9 @@ do
   args="$(sed -n 's/^args: //p' $f)"
   vgopts="$(sed -n 's/^vgopts: //p' $f)"
   if eval $prereq; then
-    ../../vg-in-place --tool=drd --xml=yes --xml-file=$b.xml $vgopts ./$prog $args
-    xmllint --noout --schema ../docs/drd-xml-output.xsd $b.xml 2>&1 | tee $b.xmllint
+    ../../vg-in-place --tool=drd --xml=yes --xml-file="$b-%q{USER}.xml" --xml-user-comment="<runBy>$(basename $0)</runBy>" --gen-suppressions=all $vgopts ./$prog $args
+    xmllint --noout --schema ../docs/drd-xml-output.xsd $b-${USER}.xml 2>&1 | tee $b.xmllint
+  else
+    echo "Skipping because $prereq failed"
   fi
 done

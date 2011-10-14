@@ -1,16 +1,16 @@
 
 ====================================================================
 
-11 May 2009
+14 October 2011
 
 Protocols 1 through 3 supported Memcheck only.  Protocol 4 provides
-XML output for Memcheck, Helgrind and SGcheck.  Technically there are
-three variants of Protocol 4, one for each tool, since they produce
-different errors.  The three variants differ only in the definition of
-the ERROR nonterminal and are otherwise identical.
+XML output for Memcheck, Helgrind, DRD and SGcheck.  Technically there
+are four variants of Protocol 4, one for each tool, since they
+produce different errors.  The four variants differ only in the
+definition of the ERROR nonterminal and are otherwise identical.
 
 NOTE that Protocol 4 (for the current svn trunk, which will eventually
-become 3.5.x) is still under development.  The text herein should not
+become 3.7.x) is still under development.  The text herein should not
 be regarded as the final definition.
 
 
@@ -39,7 +39,7 @@ is common to all error producing tools.
 
 TOPLEVEL references TOOLSPECIFICs for each tool, and these are defined
 differently for each tool.  Each TOOLSPECIFIC is an error, which is
-tool-specific.  For Helgrind, a TOOLSPECIFIC may also contain a
+tool-specific.  For Helgrind and DRD, a TOOLSPECIFIC may also contain a
 so-called thread-announcement record (described below).
 
 Overall there is a very high degree of format commonality between the
@@ -82,9 +82,9 @@ XWHAT, and between AUXWHAT and XAUXWHAT.
 The definition of Protocol 4 now follows.  It is structured similarly
 to that of the previous protocols, except that there is a separate
 definition of a nonterminal called TOOLSPECIFIC for each of Memcheck,
-Helgrind and SGcheck.  The XWHAT and XAUXWHAT nonterminals also have
-tool-specific components.  Apart from that, the structure is common
-to all supported tools.
+Helgrind, DRD and SGcheck.  The XWHAT and XAUXWHAT nonterminals also
+have tool-specific components.  Apart from that, the structure is
+common to all supported tools.
 
 
 ====================================================================
@@ -115,7 +115,7 @@ Valgrind versions 3.0.0 and 3.0.1 emit protocol version 1.  Versions
 3.1.X and 3.2.X [and 3.3.X ??] emit protocol version 2.  3.4.X emits
 protocol version 3.  3.5.X emits version 4.
 
-The TEXT in <protocoltool> is either "memcheck", "helgrind" or
+The TEXT in <protocoltool> is either "memcheck", "helgrind", "drd" or
 "exp-ptrcheck" and determines the allowed format of the ERROR
 nonterminal.  Note that <protocoltool> is only present when the
 protocol version is 4 or above.

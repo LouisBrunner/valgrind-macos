@@ -42,6 +42,8 @@ EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	insn_pclmulqdq.vgtest insn_pclmulqdq.stdout.exp \
+	insn_pclmulqdq.stderr.exp \
 	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
 	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \

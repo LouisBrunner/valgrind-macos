@@ -70,6 +70,7 @@ EXTRA_DIST = \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
+	empty-exe.vgtest empty-exe.stderr.exp \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp \
 	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 exec-sigmask.stderr.exp \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \

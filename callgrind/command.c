@@ -2,7 +2,7 @@
    This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
-   Copyright (C) 2002-2010, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This tool is derived from and contains lot of code from Cachegrind
    Copyright (C) 2002 Nicholas Nethercote (njn@valgrind.org)
@@ -58,6 +58,7 @@ static void setup_control(void)
   Int fd, size;
   SysRes res;
   Char* dir;
+  const HChar *tmpdir;
 
   CLG_ASSERT(thisPID != 0);
 
@@ -95,10 +96,12 @@ static void setup_control(void)
   VG_(sprintf)(result_file2, "%s/%s",
                dir, DEFAULT_RESULTNAME);
 
+  tmpdir = VG_(tmpdir)();
   info_file = (char*) CLG_MALLOC("cl.command.sc.5",
+				 VG_(strlen)(tmpdir) +
                                  VG_(strlen)(DEFAULT_INFONAME) + 10);
   CLG_ASSERT(info_file != 0);
-  VG_(sprintf)(info_file, "%s.%d", DEFAULT_INFONAME, thisPID);
+  VG_(sprintf)(info_file, "%s/%s.%d", tmpdir, DEFAULT_INFONAME, thisPID);
 
   CLG_DEBUG(1, "Setup for interactive control (PID: %d):\n", thisPID);
   CLG_DEBUG(1, "  output file:    '%s'\n", out_file);

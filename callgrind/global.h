@@ -53,7 +53,7 @@
 #define DEFAULT_OUTFORMAT   "callgrind.out.%p"
 #define DEFAULT_COMMANDNAME "callgrind.cmd"
 #define DEFAULT_RESULTNAME  "callgrind.res"
-#define DEFAULT_INFONAME    "/tmp/callgrind.info"
+#define DEFAULT_INFONAME    "callgrind.info"
 
 typedef struct _CommandLineOptions CommandLineOptions;
 struct _CommandLineOptions {

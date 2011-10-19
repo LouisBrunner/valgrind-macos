@@ -15733,7 +15733,7 @@ DisResult disInstr_AMD64_WRK (
       switch (imm) {
          case 0x00:
          case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
-         case 0x1A: case 0x3A: case 0x44: case 0x4A:
+         case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
             break;
          default:
             goto decode_failure;

@@ -57,6 +57,7 @@ extern void h_generic_calc_Max16Ux8   ( /*OUT*/V128*, V128*, V128* );
 extern void h_generic_calc_Min16Ux8   ( /*OUT*/V128*, V128*, V128* );
 extern void h_generic_calc_Max8Sx16   ( /*OUT*/V128*, V128*, V128* );
 extern void h_generic_calc_Min8Sx16   ( /*OUT*/V128*, V128*, V128* );
+extern void h_generic_calc_CmpEQ64x2  ( /*OUT*/V128*, V128*, V128* );
 extern void h_generic_calc_CmpGT64Sx2 ( /*OUT*/V128*, V128*, V128* );
 extern void h_generic_calc_SarN64x2   ( /*OUT*/V128*, V128*, UInt );
 extern void h_generic_calc_SarN8x16   ( /*OUT*/V128*, V128*, UInt );

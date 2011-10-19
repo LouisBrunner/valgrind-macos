@@ -16135,6 +16135,17 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 38 29 = PCMPEQQ
+      64x2 equality comparison
+   */
+   if ( have66noF2noF3( pfx ) && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x29) {
+      /* FIXME: this needs an alignment check */
+      delta = dis_SSEint_E_to_G( vbi, pfx, delta+3, 
+                                 "pcmpeqq", Iop_CmpEQ64x2, False );
+      goto decode_success;
+   }
+
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
    /* ---------------------------------------------------- */

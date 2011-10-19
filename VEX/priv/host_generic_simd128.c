@@ -88,6 +88,12 @@ static inline UChar min8S ( Char xx, Char yy )
    return toUChar((xx < yy) ? xx : yy);
 }
 
+static inline ULong cmpEQ64 ( Long xx, Long yy )
+{
+   return (((Long)xx) == ((Long)yy))
+             ? 0xFFFFFFFFFFFFFFFFULL : 0ULL;
+}
+
 static inline ULong cmpGT64S ( Long xx, Long yy )
 {
    return (((Long)xx) > ((Long)yy))
@@ -223,6 +229,13 @@ void h_generic_calc_Min8Sx16 ( /*OUT*/V128* res,
    res->w8[13] = min8S(argL->w8[13], argR->w8[13]);
    res->w8[14] = min8S(argL->w8[14], argR->w8[14]);
    res->w8[15] = min8S(argL->w8[15], argR->w8[15]);
+}
+
+void h_generic_calc_CmpEQ64x2 ( /*OUT*/V128* res,
+                                V128* argL, V128* argR )
+{
+   res->w64[0] = cmpEQ64(argL->w64[0], argR->w64[0]);
+   res->w64[1] = cmpEQ64(argL->w64[1], argR->w64[1]);
 }
 
 void h_generic_calc_CmpGT64Sx2 ( /*OUT*/V128* res,

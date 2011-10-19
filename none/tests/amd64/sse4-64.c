@@ -3791,7 +3791,7 @@ int main ( int argc, char** argv )
    test_INSERTPS();       // done Apr.01.2010
    // MOVNTDQA  ***
    //test_MPSADBW();
-   //test_PCMPEQQ();
+   test_PCMPEQQ();
    test_PEXTRB();         // done Apr.15.2010
    test_PEXTRD();         // done Apr.14.2010
    test_PEXTRQ();         // done Apr.14.2010
@@ -3824,7 +3824,7 @@ int main ( int argc, char** argv )
    test_POPCNTW();
    test_POPCNTL();
    test_POPCNTQ();
-   //test_PMULDQ();
+   test_PMULDQ();
    test_PMULLD();
    test_PTEST();
    test_ROUNDSD_w_immediate_rounding();

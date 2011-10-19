@@ -16095,6 +16095,46 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 38 28 = PMULUDQ -- signed widening multiply of 32-lanes 0 x
+      0 to form lower 64-bit half and lanes 2 x 2 to form upper 64-bit
+      half */
+   /* This is a really poor translation -- could be improved if
+      performance critical.  It's a copy-paste of PMULDQ, too. */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x28) {
+      IRTemp sV, dV;
+      IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
+      sV = newTemp(Ity_V128);
+      dV = newTemp(Ity_V128);
+      s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
+      t1 = newTemp(Ity_I64);
+      t0 = newTemp(Ity_I64);
+      modrm = insn[3];
+      assign( dV, getXMMReg(gregOfRexRM(pfx,modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRexRM(pfx,modrm)) );
+         delta += 3+1;
+         DIP("pmuldq %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
+                               nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 3+alen;
+         DIP("pmuldq %s,%s\n", dis_buf,
+                               nameXMMReg(gregOfRexRM(pfx,modrm)));
+      }
+
+      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+
+      assign( t0, binop( Iop_MullS32, mkexpr(d0), mkexpr(s0)) );
+      putXMMRegLane64( gregOfRexRM(pfx,modrm), 0, mkexpr(t0) );
+      assign( t1, binop( Iop_MullS32, mkexpr(d2), mkexpr(s2)) );
+      putXMMRegLane64( gregOfRexRM(pfx,modrm), 1, mkexpr(t1) );
+      goto decode_success;
+   }
+
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
    /* ---------------------------------------------------- */

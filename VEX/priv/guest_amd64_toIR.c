@@ -15814,7 +15814,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 66 0f 38 17 /r = PTEST xmm1, xmm2/m128
       Logical compare (set ZF and CF from AND/ANDN of the operands) */
-   if (have66noF2noF3( pfx ) && sz == 2 
+   if (have66noF2noF3( pfx )
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x17) {
       modrm = insn[3];
       IRTemp vecE = newTemp(Ity_V128);

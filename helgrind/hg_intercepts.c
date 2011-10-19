@@ -733,6 +733,7 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
    int ret;
    OrigFn fn;
    unsigned long mutex_is_valid;
+   Bool abstime_is_valid;
    VALGRIND_GET_ORIG_FN(fn);
 
    if (TRACE_PTH_FNS) {
@@ -749,16 +750,24 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                 pthread_cond_t*,cond, pthread_mutex_t*,mutex);
    assert(mutex_is_valid == 1 || mutex_is_valid == 0);
 
+   abstime_is_valid = abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000;
+
    /* Tell the tool we're about to drop the mutex.  This reflects the
       fact that in a cond_wait, we show up holding the mutex, and the
       call atomically drops the mutex and waits for the cv to be
       signalled. */
-   if (mutex_is_valid) {
+   if (mutex_is_valid && abstime_is_valid) {
       DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
                   pthread_mutex_t*,mutex);
    }
 
    CALL_FN_W_WWW(ret, fn, cond,mutex,abstime);
+
+   if (!abstime_is_valid && ret != EINVAL) {
+      DO_PthAPIerror("Bug in libpthread: pthread_cond_timedwait "
+                     "invalid abstime did not cause"
+                     " EINVAL", ret);
+   }
 
    if ((ret == 0 || ret == ETIMEDOUT) && mutex_is_valid) {
       /* and now we have the mutex again */

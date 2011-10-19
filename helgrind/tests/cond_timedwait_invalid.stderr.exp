@@ -1,0 +1,15 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_cond_timedwait failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: pthread_cond_timedwait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
+   by 0x........: main (cond_timedwait_invalid.c:16)
+
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

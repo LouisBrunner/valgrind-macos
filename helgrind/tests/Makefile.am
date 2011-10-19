@@ -10,6 +10,8 @@ EXTRA_DIST = \
 		annotate_rwlock.stderr.exp \
 	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
 		annotate_smart_pointer.stderr.exp \
+	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
+		cond_timedwait_invalid.stderr.exp
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
@@ -90,6 +92,7 @@ EXTRA_DIST = \
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
+	cond_timedwait_invalid \
 	free_is_write \
 	hg01_all_ok \
 	hg02_deadlock \
@@ -179,4 +182,7 @@ else
 annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
 
+if VGCONF_OS_IS_LINUX
+cond_timedwait_invalid_LDADD = -lrt
+endif
 

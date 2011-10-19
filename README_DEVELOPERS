@@ -17,6 +17,23 @@ output spewed out during compilation, letting you actually see any errors,
 warnings, etc.
 
 
+Building a distribution tarball
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To build a distribution tarball from the valgrind sources:
+
+  make dist
+
+In addition to compiling, linking and packaging everything up, the command
+will also build the documentation. Even if all required tools for building the
+documentation are installed, this step may not succeed because of hidden
+dependencies. E.g. on Ubuntu you must have "docbook-xsl" installed.
+Additionally, specific tool versions maybe needed.
+
+If you only want to test whether the generated tarball is complete and runs
+regression tests successfully, building documentation is not needed.
+Edit docs/Makefile.am, search for BUILD_ALL_DOCS and follow instructions there.
+
+
 Running the regression tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To build and run all the regression tests, run "make [--quiet] regtest".

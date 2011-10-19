@@ -2705,6 +2705,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Sub64x2:
       case Iop_Add64x2:
+      case Iop_CmpEQ64x2:
       case Iop_CmpGT64Sx2:
       case Iop_QSal64x2:
       case Iop_QShl64x2:

@@ -2036,7 +2036,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
          a = evalCfiExpr( exprs, e->Cex.Deref.ixAddr, eec, ok );
          if (!(*ok)) return 0;
          if (a < eec->min_accessible
-             || (a + sizeof(UWord) - 1) > eec->max_accessible) {
+             || a > eec->max_accessible - sizeof(UWord) + 1) {
             *ok = False;
             return 0;
          }

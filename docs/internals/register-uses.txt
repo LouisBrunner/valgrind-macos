@@ -126,6 +126,42 @@ insns have reg+offset forms for offsets only up to 1020, which
 often isn't enough.
 
 
+s390x-linux
+~~~~~~~~~~~
+
+Reg        Callee      Arg
+Name       Saves?      Reg?     Comment              Vex-uses?
+--------------------------------------------------------------
+r0         n                    see below            unavail
+r1         n                                         avail
+r2         n           int#1    return value         avail
+r3         n           int#2                         avail
+r4         n           int#3                         avail
+r5         n           int#4                         avail
+r6         y           int#5                         avail
+r7         y                                         avail
+r8         y                                         avail
+r9         y                                         avail
+r10        y                    see below            avail
+r11        y                    see below            avail
+r12        y                                         unavail VG_(dispatch_ctr)
+r13        y                                         unavail gsp
+r14(lr)    n                                         unavail lr
+r15(sp)    y                                         unavail sp
+
+f0         n                    return value         avail
+f1-f7      n                                         avail
+f8-f11     y                                         avail
+f12-f15    y                    see below            avail
+
+When r0 is used as a base or index register its contents is
+ignored and the value 0 is used instead. This is the reason
+why VEX cannot use it.
+
+r10, r11 as well as f12-f15 are used as real regs during insn
+selection when register pairs are required.
+
+
 ppc32-aix5
 ~~~~~~~~~~
 

@@ -853,7 +853,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
                     "DW_OP_call_frame_cfa but no reg info");
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
             /* Valgrind on ppc32/ppc64 currently doesn't use unwind info. */
-            uw1 = ML_(read_Addr)(regs->sp);
+            uw1 = ML_(read_Addr)((UChar*)regs->sp);
 #else
             uw1 = ML_(get_CFA)(regs->ip, regs->sp, regs->fp, 0, ~(UWord) 0);
 #endif

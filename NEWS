@@ -73,7 +73,6 @@ I thought we implemented this in 3.6
 FIXED
 
 271776 - s390x: provide STFLE instruction support 
-waiting to review/land
 FIXED
 
 273536 - Build error: multiple definition of
@@ -92,7 +91,6 @@ ptrcheck
 FIXED
 
 274378 New: s390x: dispatcher tweak
-has patch.  did this land?
 FIXED
 
 274926 New: valgrind does not build against linux-3

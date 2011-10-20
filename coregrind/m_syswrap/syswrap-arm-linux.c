@@ -1784,7 +1784,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 316
 //   LINX_(__NR_move_pages,        sys_ni_syscall),       // 317
 //   LINX_(__NR_getcpu,            sys_ni_syscall),       // 318
-//   LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 319
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 320
    LINXY(__NR_signalfd,          sys_signalfd),         // 321
@@ -1805,6 +1804,8 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINX_(__NR_pselect6,          sys_pselect6),         // 335
    LINXY(__NR_ppoll,             sys_ppoll),            // 336
+
+   LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 346
 
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 355
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 356

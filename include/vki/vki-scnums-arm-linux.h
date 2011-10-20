@@ -382,7 +382,7 @@
 #define __NR_vmsplice			343
 #define __NR_move_pages			344
 #define __NR_getcpu			345
-					/* 346 for epoll_pwait */
+#define __NR_epoll_pwait		346
 #define __NR_kexec_load			347
 #define __NR_utimensat			348
 #define __NR_signalfd			349

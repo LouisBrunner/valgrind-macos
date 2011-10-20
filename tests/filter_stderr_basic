@@ -52,5 +52,10 @@ perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(co
 sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/" |
 
 # Remove the size in "The main thread stack size..." message.
-sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../"
+sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
 
+# Suppress warnings from incompatible debug info
+sed '/warning: the debug information found in "[^"]*" does not match/d' |
+
+# Suppress warnings from Dwarf reader
+sed '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d'

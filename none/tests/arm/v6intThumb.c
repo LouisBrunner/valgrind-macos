@@ -5271,8 +5271,6 @@ int main ( void )
    TESTINST3("asr.w  r1, r2, r3", 0x91415927, 0x00000021, r1, r2, r3, cv);
    TESTCARRYEND
 
-#if 0
-   // not handled by vex
    printf("(T?) ROR{S}.W Rd, Rn, Rm\n");
    TESTCARRY
    TESTINST3("rors.w r1, r2, r3", 0x31415927, 0x00000000, r1, r2, r3, cv);
@@ -5292,7 +5290,6 @@ int main ( void )
    TESTINST3("ror.w  r1, r2, r3", 0x31415927, 0x00000020, r1, r2, r3, cv);
    TESTINST3("ror.w  r1, r2, r3", 0x31415927, 0x00000021, r1, r2, r3, cv);
    TESTCARRYEND
-#endif
 
    printf("MVN{S}.W Rd, Rn, shift,   and MOV{S}.W ditto\n");
    TESTCARRY

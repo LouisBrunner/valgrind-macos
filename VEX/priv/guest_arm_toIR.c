@@ -16568,7 +16568,6 @@ DisResult disInstr_THUMB_WRK (
       UInt rM  = INSN1(3,0);
       UInt bS  = INSN0(4,4);
       Bool valid = !isBadRegT(rN) && !isBadRegT(rM) && !isBadRegT(rD);
-      if (how == 3) valid = False; //ATC
       if (valid) {
          IRTemp rNt    = newTemp(Ity_I32);
          IRTemp rMt    = newTemp(Ity_I32);

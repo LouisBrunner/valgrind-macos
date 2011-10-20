@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_cpuid filter_stderr filter_int gen_insn_test.pl
+dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 

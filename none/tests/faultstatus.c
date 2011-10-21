@@ -45,9 +45,9 @@ static jmp_buf escape;
 
 #define BADADDR	((int *)0x1234)
 
-#define FILESIZE	(16*1024)
+#define FILESIZE	(4*__pagesize)
 #define MAPSIZE		(2*FILESIZE)
-
+static unsigned int __pagesize;
 static char volatile *volatile mapping;
 
 static int testsig(int sig, int want)
@@ -130,7 +130,7 @@ int main()
 	int fd, i;
 	static const int sigs[] = { SIGSEGV, SIGILL, SIGBUS, SIGFPE, SIGTRAP };
 	struct sigaction sa;
-
+	__pagesize = (unsigned int)sysconf(_SC_PAGE_SIZE);
 	sa.sa_sigaction = handler;
 	sa.sa_flags = SA_SIGINFO;
 	sigfillset(&sa.sa_mask);

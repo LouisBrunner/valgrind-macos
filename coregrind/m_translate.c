@@ -1337,12 +1337,21 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
-      Char fnname[64] = "";
+      Char fnname[64] = "UNKNOWN_FUNCTION";
       VG_(get_fnname_w_offset)(addr, fnname, 64);
+      const UChar* objname = "UNKNOWN_OBJECT";
+      OffT         objoff  = 0;
+      DebugInfo*   di      = VG_(find_DebugInfo)( addr );
+      if (di) {
+         objname = VG_(DebugInfo_get_filename)(di);
+         objoff  = addr - VG_(DebugInfo_get_text_bias)(di);
+      }
+      vg_assert(objname);
       VG_(printf)(
-              "==== SB %d [tid %d] %s(0x%llx) SBs exec'd %lld ====\n",
-              VG_(get_bbs_translated)(), (Int)tid, fnname, addr, 
-              bbs_done);
+         "==== SB %d (exec'd %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
+         VG_(get_bbs_translated)(), bbs_done, (Int)tid, addr,
+         fnname, objname, (ULong)objoff
+      );
    }
 
    /* Are we allowed to translate here? */

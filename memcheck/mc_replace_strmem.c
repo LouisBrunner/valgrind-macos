@@ -93,6 +93,7 @@
    20320 STRPBRK
    20330 STRCSPN
    20340 STRSPN
+   20350 STRCASESTR
 */
 
 
@@ -1445,6 +1446,54 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRSPN(VG_Z_LIBC_SONAME,          strspn)
+
+#elif defined(VGO_darwin)
+
+#endif
+
+
+/*---------------------- strcasestr ----------------------*/
+
+#define STRCASESTR(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20350,soname,fnname) \
+         (void* haystack, void* needle); \
+   void* VG_REPLACE_FUNCTION_EZU(20350,soname,fnname) \
+         (void* haystack, void* needle) \
+   { \
+      extern int tolower(int); \
+      UChar* h = (UChar*)haystack; \
+      UChar* n = (UChar*)needle; \
+      \
+      /* find the length of n, not including terminating zero */ \
+      UWord nlen = 0; \
+      while (n[nlen]) nlen++; \
+      \
+      /* if n is the empty string, match immediately. */ \
+      if (nlen == 0) return h; \
+      \
+      /* assert(nlen >= 1); */ \
+      UChar n0 = tolower(n[0]);                 \
+      \
+      while (1) { \
+         UChar hh = tolower(*h);    \
+         if (hh == 0) return NULL; \
+         if (hh != n0) { h++; continue; } \
+         \
+         UWord i; \
+         for (i = 0; i < nlen; i++) { \
+            if (tolower(n[i]) != tolower(h[i]))  \
+               break; \
+         } \
+         /* assert(i >= 0 && i <= nlen); */ \
+         if (i == nlen) \
+            return h; \
+         \
+         h++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+ STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
 
 #elif defined(VGO_darwin)
 

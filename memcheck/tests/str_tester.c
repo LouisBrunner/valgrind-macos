@@ -1373,6 +1373,33 @@ test_strncasecmp (void)
   check(strncasecmp("ADC", "abcd", 2) > 0, 20);
 }
 
+static void
+test_strcasestr (void)
+{
+  it = "strcasestr";
+  check(strcasestr("abCd", "z") == NULL, 1);	/* Not found. */
+  check(strcasestr("AbcD", "abX") == NULL, 2);	/* Dead end. */
+  (void) strcpy(one, "abCd");
+  check(strcasestr(one, "c") == one+2, 3);	/* Basic test. */
+  check(strcasestr(one, "Bc") == one+1, 4);	/* Multichar. */
+  check(strcasestr(one, "d") == one+3, 5);	/* End of string. */
+  check(strcasestr(one, "Cd") == one+2, 6);	/* Tail of string. */
+  check(strcasestr(one, "aBc") == one, 7);	/* Beginning. */
+  check(strcasestr(one, "aBcd") == one, 8);	/* Exact match. */
+  check(strcasestr(one, "AbcDe") == NULL, 9);	/* Too long. */
+  check(strcasestr(one, "dE") == NULL, 10);	/* Past end. */
+  check(strcasestr(one, "") == one, 11);	/* Finding empty. */
+  (void) strcpy(one, "abAba");
+  check(strcasestr(one, "Ba") == one+1, 12);	/* Finding first. */
+  (void) strcpy(one, "");
+  check(strcasestr(one, "b") == NULL, 13);	/* Empty string. */
+  check(strcasestr(one, "") == one, 14);	/* Empty in empty string. */
+  (void) strcpy(one, "BcbCa");
+  check(strcasestr(one, "bCa") == one+2, 15);	/* False start. */
+  (void) strcpy(one, "bbBcaBbcA");
+  check(strcasestr(one, "bbCa") == one+1, 16);	/* With overlap. */
+}
+
 int
 main (void)
 {
@@ -1500,6 +1527,8 @@ main (void)
 
   /* strncasecmp.  Without locale dependencies.  */
   test_strncasecmp ();
+
+  test_strcasestr ();
 
   if (errors == 0)
     {

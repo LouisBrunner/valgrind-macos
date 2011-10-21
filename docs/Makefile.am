@@ -127,6 +127,7 @@ FAQ.txt:
 
 # the valgrind manpages
 man-pages:
+	set -e; \
 	for x in $(XSL_MAN_STYLES) ; do \
 	    if test -f $$x; then \
 		echo "Using manpage stylesheet: $$x"; \
@@ -178,6 +179,7 @@ print-docs:
 # be the one to handle the else/endif parts, not GNU make
 # as we intend.
 install-data-hook:
+	set -e; \
 	if test -r html ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp -r html $(DESTDIR)$(datadir)/doc/valgrind; \
@@ -189,10 +191,12 @@ install-data-hook:
 		fi \
 	done
  ifeq ($(BUILD_ALL_DOCS),yes)
+	set -e; \
 	if test -r index.pdf ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp index.pdf $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.pdf; \
 	fi
+	set -e; \
 	if test -r index.ps ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp index.ps $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.ps; \

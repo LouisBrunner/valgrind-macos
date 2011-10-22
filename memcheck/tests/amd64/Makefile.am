@@ -12,6 +12,7 @@ EXTRA_DIST = \
 	bt_everything.stderr.exp bt_everything.stdout.exp \
 		bt_everything.vgtest \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
+	bug279698.vgtest bug279698.stderr.exp bug279698.stdout.exp \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
@@ -21,6 +22,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	bt_everything \
 	bug132146 \
+	bug279698 \
 	fxsave-amd64 \
 	more_x87_fp \
 	sse_memory \

@@ -1026,19 +1026,24 @@ static void print_file_vars(Char* format)
 /*=== Printing the preamble                                        ===*/
 /*====================================================================*/
 
-// Print the command, escaping any chars that require it.
-static void umsg_or_xml_arg(const Char* arg,
-                            UInt (*umsg_or_xml)( const HChar*, ... ) )
+// Print the argument, escaping any chars that require it.
+static void umsg_arg(const Char* arg)
 {
    SizeT len = VG_(strlen)(arg);
    Char* special = " \\<>";
    Int i;
    for (i = 0; i < len; i++) {
       if (VG_(strchr)(special, arg[i])) {
-         umsg_or_xml("\\");   // escape with a backslash if necessary
+         VG_(umsg)("\\");   // escape with a backslash if necessary
       }
-      umsg_or_xml("%c", arg[i]);
+      VG_(umsg)("%c", arg[i]);
    }
+}
+
+// Send output to the XML-stream and escape any XML meta-characters.
+static void xml_arg(const Char* arg)
+{
+   VG_(printf_xml)("%pS", arg);
 }
 
 /* Ok, the logging sink is running now.  Print a suitable preamble.
@@ -1054,6 +1059,9 @@ static void print_preamble ( Bool logging_to_fd,
    HChar* xpost = VG_(clo_xml) ? "</line>" : "";
    UInt (*umsg_or_xml)( const HChar*, ... )
       = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
+
+   UInt (*umsg_or_xml_arg)( const HChar* )
+      = VG_(clo_xml) ? xml_arg : umsg_arg;
 
    vg_assert( VG_(args_for_client) );
    vg_assert( VG_(args_for_valgrind) );
@@ -1106,11 +1114,12 @@ static void print_preamble ( Bool logging_to_fd,
       // favour utility and simplicity over aesthetics.
       umsg_or_xml("%sCommand: ", xpre);
       if (VG_(args_the_exename))
-         umsg_or_xml_arg(VG_(args_the_exename), umsg_or_xml);
+         umsg_or_xml_arg(VG_(args_the_exename));
+          
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          HChar* s = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
          umsg_or_xml(" ");
-         umsg_or_xml_arg(s, umsg_or_xml);
+         umsg_or_xml_arg(s);
       }
       umsg_or_xml("%s\n", xpost);
 

@@ -1060,7 +1060,7 @@ static void print_preamble ( Bool logging_to_fd,
    UInt (*umsg_or_xml)( const HChar*, ... )
       = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
 
-   UInt (*umsg_or_xml_arg)( const HChar* )
+   void (*umsg_or_xml_arg)( const Char* )
       = VG_(clo_xml) ? xml_arg : umsg_arg;
 
    vg_assert( VG_(args_for_client) );

@@ -55,7 +55,8 @@ WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( HChar*, SizeT ),
 /* Free up the WordSetU. */
 void HG_(deleteWordSetU) ( WordSetU* );
 
-/* Get the number of elements in this WordSetU. */
+/* Get the number of elements in this WordSetU. Note that the dead
+   WordSet are included in the WordSetU number of elements. */
 UWord HG_(cardinalityWSU) ( WordSetU* );
 
 /* Show performance stats for this WordSetU. */
@@ -82,11 +83,35 @@ WordSet HG_(singletonWS)    ( WordSetU*, UWord );
 WordSet HG_(isSubsetOf)     ( WordSetU*, WordSet, WordSet );
 
 Bool    HG_(plausibleWS)    ( WordSetU*, WordSet );
+
+
 Bool    HG_(saneWS_SLOW)    ( WordSetU*, WordSet );
 
 void    HG_(ppWS)           ( WordSetU*, WordSet );
+
 void    HG_(getPayloadWS)   ( /*OUT*/UWord** words, /*OUT*/UWord* nWords, 
                              WordSetU*, WordSet );
+
+/* HG_(dieWS) indicates WordSet is not used/not referenced anymore,
+   and its memory can be reclaimed.
+   If ever a WordSet with the same content would be needed again,
+   a new WordSet will be reallocated.
+
+   BUG ALERT: !!! Using HG_(dieWS) on a WSU introduces a risk of
+   dangling references.  Dangling references can be created by keeping
+   a ws after having marked it dead. This ws (just an index in
+   reality) will be re-cycled : a newly created wv can get the same
+   index. This implies that the wrong wv will be used if the 
+   "old" ws has been kept.
+   Re-using a "dead" ws will be detected if the index has not been
+   re-cycled yet.
+
+   Another possibility of bug is to ask for the payload of a ws, and
+   then have this ws marked dead while the payload is still being
+   examined. This is a real dangling reference in free or re-allocated
+   memory. */
+void    HG_(dieWS)          ( WordSetU*, WordSet );
+
 
 
 //------------------------------------------------------------------//

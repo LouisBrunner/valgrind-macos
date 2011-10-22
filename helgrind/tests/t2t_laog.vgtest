@@ -1,0 +1,4 @@
+# performance test for a big laog graph + shake the add/del
+# in the laog data structure.
+prog: t2t
+args: 30 10 4

@@ -136,6 +136,9 @@ static WordFM* map_locks = NULL; /* WordFM LockAddr Lock* */
 /* The word-set universes for lock sets. */
 static WordSetU* univ_lsets = NULL; /* sets of Lock* */
 static WordSetU* univ_laog  = NULL; /* sets of Lock*, for LAOG */
+static Int next_gc_univ_laog = 1;
+/* univ_laog will be garbaged collected when the nr of element in univ_laog is 
+   >= next_gc_univ_laog. */
 
 /* Allow libhb to get at the universe of locksets stored
    here.  Sigh. */
@@ -3300,6 +3303,85 @@ static void laog__show ( Char* who ) {
    VG_(printf)("}\n");
 }
 
+static void univ_laog_do_GC ( void ) {
+   Word i;
+   LAOGLinks* links;
+   Word seen = 0;
+   Int prev_next_gc_univ_laog = next_gc_univ_laog;
+   const UWord univ_laog_cardinality = HG_(cardinalityWSU)( univ_laog);
+
+   Bool *univ_laog_seen = HG_(zalloc) ( "hg.gc_univ_laog.1",
+                                        (Int) univ_laog_cardinality 
+                                        * sizeof(Bool) );
+   // univ_laog_seen[*] set to 0 (False) by zalloc.
+
+   if (VG_(clo_stats))
+      VG_(message)(Vg_DebugMsg,
+                   "univ_laog_do_GC enter cardinality %'10d\n",
+                   (Int)univ_laog_cardinality);
+
+   VG_(initIterFM)( laog );
+   links = NULL;
+   while (VG_(nextIterFM)( laog, NULL, (UWord*)&links )) {
+      tl_assert(links);
+      tl_assert(links->inns >= 0 && links->inns < univ_laog_cardinality);
+      univ_laog_seen[links->inns] = True;
+      tl_assert(links->outs >= 0 && links->outs < univ_laog_cardinality);
+      univ_laog_seen[links->outs] = True;
+      links = NULL;
+   }
+   VG_(doneIterFM)( laog );
+
+   for (i = 0; i < (Int)univ_laog_cardinality; i++) {
+      if (univ_laog_seen[i])
+         seen++;
+      else
+         HG_(dieWS) ( univ_laog, (WordSet)i );
+   }
+
+   HG_(free) (univ_laog_seen);
+
+   // We need to decide the value of the next_gc.
+   // 3 solutions were looked at:
+   // Sol 1: garbage collect at seen * 2
+   //   This solution was a lot slower, probably because we both do a lot of
+   //   garbage collection and do not keep long enough laog WV that will become
+   //   useful  again very soon.
+   // Sol 2: garbage collect at a percentage increase of the current cardinality
+   //         (with a min increase of 1)
+   //   Trials on a small test program with 1%, 5% and 10% increase was done.
+   //   1% is slightly faster than 5%, which is slightly slower than 10%.
+   //   However, on a big application, this caused the memory to be exhausted,
+   //   as even a 1% increase of size at each gc becomes a lot, when many gc
+   //   are done.
+   // Sol 3: always garbage collect at current cardinality + 1.
+   //   This solution was the fastest of the 3 solutions, and caused no memory
+   //   exhaustion in the big application.
+   // 
+   // With regards to cost introduced by gc: on the t2t perf test (doing only
+   // lock/unlock operations), t2t 50 10 2 was about 25% faster than the
+   // version with garbage collection. With t2t 50 20 2, my machine started
+   // to page out, and so the garbage collected version was much faster.
+   // On smaller lock sets (e.g. t2t 20 5 2, giving about 100 locks), the
+   // difference performance is insignificant (~ 0.1 s).
+   // Of course, it might be that real life programs are not well represented
+   // by t2t.
+   
+   // If ever we want to have a more sophisticated control
+   // (e.g. clo options to control the percentage increase or fixed increased),
+   // we should do it here, eg.
+   //     next_gc_univ_laog = prev_next_gc_univ_laog + VG_(clo_laog_gc_fixed);
+   // Currently, we just hard-code the solution 3 above.
+   next_gc_univ_laog = prev_next_gc_univ_laog + 1;
+
+   if (VG_(clo_stats))
+      VG_(message)
+         (Vg_DebugMsg,
+          "univ_laog_do_GC exit seen %'8d next gc at cardinality %'10d\n",
+          (Int)seen, next_gc_univ_laog);
+}
+
+
 __attribute__((noinline))
 static void laog__add_edge ( Lock* src, Lock* dst ) {
    Word       keyW;
@@ -3378,13 +3460,16 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
          VG_(addToFM)( laog_exposition, (Word)expo2, (Word)NULL );
       }
    }
+
+   if (HG_(cardinalityWSU) (univ_laog) >= next_gc_univ_laog)
+      univ_laog_do_GC();
 }
 
 __attribute__((noinline))
 static void laog__del_edge ( Lock* src, Lock* dst ) {
    Word       keyW;
    LAOGLinks* links;
-   if (0) VG_(printf)("laog__del_edge %p %p\n", src, dst);
+   if (0) VG_(printf)("laog__del_edge enter %p %p\n", src, dst);
    /* Update the out edges for src */
    keyW  = 0;
    links = NULL;
@@ -3401,6 +3486,27 @@ static void laog__del_edge ( Lock* src, Lock* dst ) {
       tl_assert(keyW == (Word)dst);
       links->inns = HG_(delFromWS)( univ_laog, links->inns, (Word)src );
    }
+
+   /* Remove the exposition of src,dst (if present) */
+   {
+      LAOGLinkExposition *fm_expo;
+      
+      LAOGLinkExposition expo;
+      expo.src_ga = src->guestaddr;
+      expo.dst_ga = dst->guestaddr;
+      expo.src_ec = NULL;
+      expo.dst_ec = NULL;
+
+      if (VG_(delFromFM) (laog_exposition, 
+                          (UWord*)&fm_expo, NULL, (UWord)&expo )) {
+         HG_(free) (fm_expo);
+      }
+   }
+
+   /* deleting edges can increase nr of of WS so check for gc. */
+   if (HG_(cardinalityWSU) (univ_laog) >= next_gc_univ_laog)
+      univ_laog_do_GC();
+   if (0) VG_(printf)("laog__del_edge exit\n");
 }
 
 __attribute__((noinline))
@@ -3611,6 +3717,21 @@ static void laog__pre_thread_acquires_lock (
       all_except_Locks__sanity_check("laog__pre_thread_acquires_lock-post");
 }
 
+/* Allocates a duplicate of words. Caller must HG_(free) the result. */
+static UWord* UWordV_dup(UWord* words, Word words_size)
+{
+   UInt i;
+
+   if (words_size == 0)
+      return NULL;
+
+   UWord *dup = HG_(zalloc) ("hg.dup.1", (SizeT) words_size * sizeof(UWord));
+
+   for (i = 0; i < words_size; i++)
+      dup[i] = words[i];
+
+   return dup;
+}
 
 /* Delete from 'laog' any pair mentioning a lock in locksToDelete */
 
@@ -3624,11 +3745,17 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
    preds = laog__preds( lk );
    succs = laog__succs( lk );
 
+   // We need to duplicate the payload, as these can be garbage collected
+   // during the del/add operations below.
    HG_(getPayloadWS)( &preds_words, &preds_size, univ_laog, preds );
+   preds_words = UWordV_dup(preds_words, preds_size);
+
+   HG_(getPayloadWS)( &succs_words, &succs_size, univ_laog, succs );
+   succs_words = UWordV_dup(succs_words, succs_size);
+
    for (i = 0; i < preds_size; i++)
       laog__del_edge( (Lock*)preds_words[i], lk );
 
-   HG_(getPayloadWS)( &succs_words, &succs_size, univ_laog, succs );
    for (j = 0; j < succs_size; j++)
       laog__del_edge( lk, (Lock*)succs_words[j] );
 
@@ -3642,6 +3769,24 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
          }
       }
    }
+
+   if (preds_words)
+      HG_(free) (preds_words);
+   if (succs_words)
+      HG_(free) (succs_words);
+
+   // Remove lk information from laog links FM
+   {
+      LAOGLinks *links;
+      Lock* linked_lk;
+
+      if (VG_(delFromFM) (laog, 
+                          (UWord*)&linked_lk, (UWord*)&links, (UWord)lk)) {
+         tl_assert (linked_lk == lk);
+         HG_(free) (links);
+      }
+   }
+   /* FIXME ??? What about removing lock lk data from EXPOSITION ??? */
 }
 
 //__attribute__((noinline))
@@ -3654,6 +3799,7 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
 //
 //
 //   HG_(getPayloadWS)( &ws_words, &ws_size, univ_lsets, locksToDelete );
+//   UWordV_dup call needed here ...
 //   for (i = 0; i < ws_size; i++)
 //      laog__handle_one_lock_deletion( (Lock*)ws_words[i] );
 //

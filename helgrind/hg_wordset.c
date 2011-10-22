@@ -44,6 +44,9 @@
 #include "hg_basics.h"
 #include "hg_wordset.h"     /* self */
 
+// define to 1 to have (a lot of) debugging of add/re-use/die WSU entries.
+#define HG_DEBUG 0
+
 //------------------------------------------------------------------//
 //--- Word Cache                                                 ---//
 //------------------------------------------------------------------//
@@ -139,7 +142,11 @@ typedef
 /* ix2vec[0 .. ix2vec_used-1] are pointers to the lock sets (WordVecs)
    really.  vec2ix is the inverse mapping, mapping WordVec* to the
    corresponding ix2vec entry number.  The two mappings are mutually
-   redundant. */
+   redundant. 
+
+   If a WordVec WV is marked as dead by HG(dieWS), WV is removed from
+   vec2ix. The entry of the dead WVs in ix2vec are used to maintain a
+   linked list of free (to be re-used) ix2vec entries. */
 struct _WordSetU {
       void*     (*alloc)(HChar*,SizeT);
       HChar*    cc;
@@ -148,6 +155,7 @@ struct _WordSetU {
       WordVec** ix2vec; /* WordSet-to-WordVec mapping array */
       UWord     ix2vec_size;
       UWord     ix2vec_used;
+      WordVec** ix2vec_free;
       WordSet   empty; /* cached, for speed */
       /* Caches for some operations */
       WCache    cache_addTo;
@@ -159,6 +167,7 @@ struct _WordSetU {
       UWord     n_add_uncached;
       UWord     n_del;
       UWord     n_del_uncached;
+      UWord     n_die;
       UWord     n_union;
       UWord     n_intersect;
       UWord     n_intersect_uncached;
@@ -235,7 +244,7 @@ static void ensure_ix2vec_space ( WordSetU* wsu )
    if (wsu->ix2vec_used < wsu->ix2vec_size)
       return;
    new_sz = 2 * wsu->ix2vec_size;
-   if (new_sz == 0) new_sz = 2;
+   if (new_sz == 0) new_sz = 1;
    new_vec = wsu->alloc( wsu->cc, new_sz * sizeof(WordVec*) );
    tl_assert(new_vec);
    for (i = 0; i < wsu->ix2vec_size; i++)
@@ -246,9 +255,20 @@ static void ensure_ix2vec_space ( WordSetU* wsu )
    wsu->ix2vec_size = new_sz;
 }
 
+/* True if wv is a dead entry (i.e. is in the linked list of free to be re-used
+   entries in ix2vec). */
+static inline Bool is_dead ( WordSetU* wsu, WordVec* wv )
+{
+   if (wv == NULL) /* last element in free linked list in ix2vec */
+      return True;
+   else
+      return (WordVec**)wv >= &(wsu->ix2vec[1]) 
+         &&  (WordVec**)wv < &(wsu->ix2vec[wsu->ix2vec_size]);
+}
 /* Index into a WordSetU, doing the obvious range check.  Failure of
    the assertions marked XXX and YYY is an indication of passing the
-   wrong WordSetU* in the public API of this module. */
+   wrong WordSetU* in the public API of this module.
+   Accessing a dead ws will assert. */
 static WordVec* do_ix2vec ( WordSetU* wsu, WordSet ws )
 {
    WordVec* wv;
@@ -259,9 +279,29 @@ static WordVec* do_ix2vec ( WordSetU* wsu, WordSet ws )
       that does not come from the 'wsu' universe. */
    tl_assert(ws < wsu->ix2vec_used); /* XXX */
    wv = wsu->ix2vec[ws];
-   /* Make absolutely sure that 'ws' is a member of 'wsu'. */
+   /* Make absolutely sure that 'ws' is a non dead member of 'wsu'. */
    tl_assert(wv);
+   tl_assert(!is_dead(wsu,wv));
    tl_assert(wv->owner == wsu); /* YYY */
+   return wv;
+}
+
+/* Same as do_ix2vec but returns NULL for a dead ws. */
+static WordVec* do_ix2vec_with_dead ( WordSetU* wsu, WordSet ws )
+{
+   WordVec* wv;
+   tl_assert(wsu->ix2vec_used <= wsu->ix2vec_size);
+   if (wsu->ix2vec_used > 0)
+      tl_assert(wsu->ix2vec);
+   /* If this assertion fails, it may mean you supplied a 'ws'
+      that does not come from the 'wsu' universe. */
+   tl_assert(ws < wsu->ix2vec_used); /* XXX */
+   wv = wsu->ix2vec[ws];
+   /* Make absolutely sure that 'ws' is either dead or a member of 'wsu'. */
+   if (is_dead(wsu,wv))
+      wv = NULL;
+   else
+      tl_assert(wv->owner == wsu); /* YYY */
    return wv;
 }
 
@@ -289,13 +329,23 @@ static WordSet add_or_dealloc_WordVec( WordSetU* wsu, WordVec* wv_new )
       tl_assert(wsu->ix2vec[ix_old] == wv_old);
       delete_WV( wv_new );
       return (WordSet)ix_old;
+   } else if (wsu->ix2vec_free) {
+      WordSet ws;
+      tl_assert(is_dead(wsu,(WordVec*)wsu->ix2vec_free));
+      ws = wsu->ix2vec_free - &(wsu->ix2vec[0]);
+      tl_assert(wsu->ix2vec[ws] == NULL || is_dead(wsu,wsu->ix2vec[ws]));
+      wsu->ix2vec_free = (WordVec **) wsu->ix2vec[ws];
+      wsu->ix2vec[ws] = wv_new;
+      VG_(addToFM)( wsu->vec2ix, (Word)wv_new, ws );
+      if (HG_DEBUG) VG_(printf)("aodW %s re-use free %d %p\n", wsu->cc, (Int)ws, wv_new );
+      return ws;
    } else {
       ensure_ix2vec_space( wsu );
       tl_assert(wsu->ix2vec);
       tl_assert(wsu->ix2vec_used < wsu->ix2vec_size);
       wsu->ix2vec[wsu->ix2vec_used] = wv_new;
       VG_(addToFM)( wsu->vec2ix, (Word)wv_new, (Word)wsu->ix2vec_used );
-      if (0) VG_(printf)("aodW %d\n", (Int)wsu->ix2vec_used );
+      if (HG_DEBUG) VG_(printf)("aodW %s %d %p\n", wsu->cc, (Int)wsu->ix2vec_used, wv_new  );
       wsu->ix2vec_used++;
       tl_assert(wsu->ix2vec_used <= wsu->ix2vec_size);
       return (WordSet)(wsu->ix2vec_used - 1);
@@ -321,6 +371,7 @@ WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( HChar*, SizeT ),
    wsu->ix2vec_used = 0;
    wsu->ix2vec_size = 0;
    wsu->ix2vec      = NULL;
+   wsu->ix2vec_free = NULL;
    WCache_INIT(wsu->cache_addTo,     cacheSize);
    WCache_INIT(wsu->cache_delFrom,   cacheSize);
    WCache_INIT(wsu->cache_intersect, cacheSize);
@@ -397,11 +448,48 @@ void HG_(getPayloadWS) ( /*OUT*/UWord** words, /*OUT*/UWord* nWords,
                          WordSetU* wsu, WordSet ws )
 {
    WordVec* wv;
+   if (HG_DEBUG) VG_(printf)("getPayloadWS %s %d\n", wsu->cc, (Int)ws);
    tl_assert(wsu);
    wv = do_ix2vec( wsu, ws );
    tl_assert(wv->size >= 0);
    *nWords = wv->size;
    *words  = wv->words;
+}
+
+void HG_(dieWS) ( WordSetU* wsu, WordSet ws )
+{
+   WordVec* wv = do_ix2vec_with_dead( wsu, ws );
+   WordVec* wv_in_vec2ix;
+   UWord/*Set*/ wv_ix = -1;
+
+   if (HG_DEBUG) VG_(printf)("dieWS %s %d %p\n", wsu->cc, (Int)ws, wv);
+
+   if (ws == 0)
+      return; // we never die the empty set.
+
+   if (!wv)
+      return; // already dead. (or a bug ?).
+
+   wsu->n_die++;
+   
+   
+   wsu->ix2vec[ws] = (WordVec*) wsu->ix2vec_free;
+   wsu->ix2vec_free = &wsu->ix2vec[ws];
+
+   VG_(delFromFM) ( wsu->vec2ix, 
+                    (Word*)&wv_in_vec2ix, (Word*)&wv_ix,
+                    (Word)wv );
+
+   if (HG_DEBUG) VG_(printf)("dieWS wv_ix %d\n", (Int)wv_ix);
+   tl_assert (wv_ix);
+   tl_assert (wv_ix == ws);
+
+   delete_WV( wv );
+
+   wsu->cache_addTo.inUse = 0;
+   wsu->cache_delFrom.inUse = 0;
+   wsu->cache_intersect.inUse = 0;
+   wsu->cache_minus.inUse = 0;
 }
 
 Bool HG_(plausibleWS) ( WordSetU* wsu, WordSet ws )
@@ -511,6 +599,7 @@ void HG_(ppWSUstats) ( WordSetU* wsu, HChar* name )
    VG_(printf)("      isSingleton  %10lu\n",   wsu->n_isSingleton);
    VG_(printf)("      anyElementOf %10lu\n",   wsu->n_anyElementOf);
    VG_(printf)("      isSubsetOf   %10lu\n",   wsu->n_isSubsetOf);
+   VG_(printf)("      dieWS        %10lu\n",   wsu->n_die);
 }
 
 WordSet HG_(addToWS) ( WordSetU* wsu, WordSet ws, UWord w )

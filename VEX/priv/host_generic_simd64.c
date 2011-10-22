@@ -296,6 +296,16 @@ static inline UChar qnarrow16Sto8U ( UShort xx0 )
    return (UChar)xx;
 }
 
+static inline UShort narrow32to16 ( UInt xx )
+{
+   return (UShort)xx;
+}
+
+static inline UChar narrow16to8 ( UShort xx )
+{
+   return (UChar)xx;
+}
+
 /* shifts: we don't care about out-of-range ones, since
    that is dealt with at a higher level. */
 
@@ -814,6 +824,44 @@ ULong h_generic_calc_QNarrowBin16Sto8Ux8 ( ULong aa, ULong bb )
              qnarrow16Sto8U(c),
              qnarrow16Sto8U(b),
              qnarrow16Sto8U(a)
+          );
+}
+
+/* ------------ Truncating narrowing ------------ */
+
+ULong h_generic_calc_NarrowBin32to16x4 ( ULong aa, ULong bb )
+{
+   UInt d = sel32x2_1(aa);
+   UInt c = sel32x2_0(aa);
+   UInt b = sel32x2_1(bb);
+   UInt a = sel32x2_0(bb);
+   return mk16x4( 
+             narrow32to16(d),
+             narrow32to16(c),
+             narrow32to16(b),
+             narrow32to16(a)
+          );
+}
+
+ULong h_generic_calc_NarrowBin16to8x8 ( ULong aa, ULong bb )
+{
+   UShort h = sel16x4_3(aa);
+   UShort g = sel16x4_2(aa);
+   UShort f = sel16x4_1(aa);
+   UShort e = sel16x4_0(aa);
+   UShort d = sel16x4_3(bb);
+   UShort c = sel16x4_2(bb);
+   UShort b = sel16x4_1(bb);
+   UShort a = sel16x4_0(bb);
+   return mk8x8( 
+             narrow16to8(h),
+             narrow16to8(g),
+             narrow16to8(f),
+             narrow16to8(e),
+             narrow16to8(d),
+             narrow16to8(c),
+             narrow16to8(b),
+             narrow16to8(a)
           );
 }
 

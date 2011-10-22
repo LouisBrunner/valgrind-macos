@@ -923,6 +923,7 @@ typedef
       */
       Iop_QNarrowBin16Sto8Ux8,
       Iop_QNarrowBin16Sto8Sx8, Iop_QNarrowBin32Sto16Sx4,
+      Iop_NarrowBin16to8x8,    Iop_NarrowBin32to16x4,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of

@@ -164,9 +164,9 @@
 #define VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default,            \
                                    _zzq_request, _zzq_arg1, _zzq_arg2,  \
                                    _zzq_arg3, _zzq_arg4, _zzq_arg5)     \
-  { (_zzq_rlval) = VALGRIND_DO_CLIENT_REQUEST_EXPR((_zzq_default),      \
+  do { (_zzq_rlval) = VALGRIND_DO_CLIENT_REQUEST_EXPR((_zzq_default),   \
                         (_zzq_request), (_zzq_arg1), (_zzq_arg2),       \
-                        (_zzq_arg3), (_zzq_arg4), (_zzq_arg5)); }
+                        (_zzq_arg3), (_zzq_arg4), (_zzq_arg5)); } while (0)
 
 #if defined(NVALGRIND)
 

@@ -1555,27 +1555,22 @@ AM_CONDITIONAL(BUILD_SSE42_TESTS, test x$ac_have_as_sse42 = xyes)
 # when building the tool executables.  I think we should get rid of it.
 #
 # Check for TLS support in the compiler and linker
-if test "x${cross_compiling}" = "xno"; then
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
+                                [[return foo;]])],
+                               [vg_cv_linktime_tls=yes],
+                               [vg_cv_linktime_tls=no])
 # Native compilation: check whether running a program using TLS succeeds.
 # Linking only is not sufficient -- e.g. on Red Hat 7.3 linking TLS programs
 # succeeds but running programs using TLS fails.
+# Cross-compiling: check whether linking a program using TLS succeeds.
 AC_CACHE_CHECK([for TLS support], vg_cv_tls,
 	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],
 		[vg_cv_tls=$enableval],
                	[AC_RUN_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
                                                 [[return foo;]])],
                                [vg_cv_tls=yes],
-                               [vg_cv_tls=no])])])
-else
-# Cross-compiling: check whether linking a program using TLS succeeds.
-AC_CACHE_CHECK([for TLS support], vg_cv_tls,
-	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],
-		[vg_cv_tls=$enableval],
-               	[AC_LINK_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
-                                                [[return foo;]])],
-                               [vg_cv_tls=yes],
-                               [vg_cv_tls=no])])])
-fi
+                               [vg_cv_tls=no],
+                               [vg_cv_tls=$vg_cv_linktime_tls])])])
 
 if test "$vg_cv_tls" = yes; then
 AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])

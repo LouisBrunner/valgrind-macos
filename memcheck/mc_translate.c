@@ -1957,36 +1957,91 @@ IRAtom* unary32Fx2 ( MCEnv* mce, IRAtom* vatomX )
 
 /* --- --- Vector saturated narrowing --- --- */
 
-/* This is quite subtle.  What to do is simple:
+/* We used to do something very clever here, but on closer inspection
+   (2011-Jun-15), and in particular bug #279698, it turns out to be
+   wrong.  Part of the problem came from the fact that for a long
+   time, the IR primops to do with saturated narrowing were
+   underspecified and managed to confuse multiple cases which needed
+   to be separate: the op names had a signedness qualifier, but in
+   fact the source and destination signednesses needed to be specified
+   independently, so the op names really need two independent
+   signedness specifiers.
 
-   Let the original narrowing op be QNarrowW{S,U}xN.  Produce:
+   As of 2011-Jun-15 (ish) the underspecification was sorted out
+   properly.  The incorrect instrumentation remained, though.  That
+   has now (2011-Oct-22) been fixed.
 
-      the-narrowing-op( PCastWxN(vatom1), PCastWxN(vatom2))
+   What we now do is simple:
 
-   Why this is right is not so simple.  Consider a lane in the args,
-   vatom1 or 2, doesn't matter.
+   Let the original narrowing op be QNarrowBinXtoYxZ, where Z is a
+   number of lanes, X is the source lane width and signedness, and Y
+   is the destination lane width and signedness.  In all cases the
+   destination lane width is half the source lane width, so the names
+   have a bit of redundancy, but are at least easy to read.
 
-   After the PCast, that lane is all 0s (defined) or all
-   1s(undefined).
+   For example, Iop_QNarrowBin32Sto16Ux8 narrows 8 lanes of signed 32s
+   to unsigned 16s.
 
-   Both signed and unsigned saturating narrowing of all 0s produces
-   all 0s, which is what we want.
+   Let Vanilla(OP) be a function that takes OP, one of these
+   saturating narrowing ops, and produces the same "shaped" narrowing
+   op which is not saturating, but merely dumps the most significant
+   bits.  "same shape" means that the lane numbers and widths are the
+   same as with OP.
 
-   The all-1s case is more complex.  Unsigned narrowing interprets an
-   all-1s input as the largest unsigned integer, and so produces all
-   1s as a result since that is the largest unsigned value at the
-   smaller width.
+   For example, Vanilla(Iop_QNarrowBin32Sto16Ux8) 
+                  = Iop_NarrowBin32to16x8,
+   that is, narrow 8 lanes of 32 bits to 8 lanes of 16 bits, by
+   dumping the top half of each lane.
 
-   Signed narrowing interprets all 1s as -1.  Fortunately, -1 narrows
-   to -1, so we still wind up with all 1s at the smaller width.
+   So, with that in place, the scheme is simple, and it is simple to
+   pessimise each lane individually and then apply Vanilla(OP) so as
+   to get the result in the right "shape".  If the original OP is
+   QNarrowBinXtoYxZ then we produce
 
-   So: In short, pessimise the args, then apply the original narrowing
-   op.
+   Vanilla(OP)( PCast-X-to-X-x-Z(vatom1), PCast-X-to-X-x-Z(vatom2) )
 
-   FIXME JRS 2011-Jun-15: figure out if this is still correct
-   following today's rationalisation/cleanup of vector narrowing
-   primops.
+   or for the case when OP is unary (Iop_QNarrowUn*)
+
+   Vanilla(OP)( PCast-X-to-X-x-Z(vatom) )
 */
+static
+IROp vanillaNarrowingOpOfShape ( IROp qnarrowOp )
+{
+   switch (qnarrowOp) {
+      /* Binary: (128, 128) -> 128 */
+      case Iop_QNarrowBin16Sto8Ux16:
+      case Iop_QNarrowBin16Sto8Sx16:
+      case Iop_QNarrowBin16Uto8Ux16:
+         return Iop_NarrowBin16to8x16;
+      case Iop_QNarrowBin32Sto16Ux8:
+      case Iop_QNarrowBin32Sto16Sx8:
+      case Iop_QNarrowBin32Uto16Ux8:
+         return Iop_NarrowBin32to16x8;
+      /* Binary: (64, 64) -> 64 */
+      case Iop_QNarrowBin32Sto16Sx4:
+         return Iop_NarrowBin32to16x4;
+      case Iop_QNarrowBin16Sto8Ux8:
+      case Iop_QNarrowBin16Sto8Sx8:
+         return Iop_NarrowBin16to8x8;
+      /* Unary: 128 -> 64 */
+      case Iop_QNarrowUn64Uto32Ux2:
+      case Iop_QNarrowUn64Sto32Sx2:
+      case Iop_QNarrowUn64Sto32Ux2:
+         return Iop_NarrowUn64to32x2;
+      case Iop_QNarrowUn32Uto16Ux4:
+      case Iop_QNarrowUn32Sto16Sx4:
+      case Iop_QNarrowUn32Sto16Ux4:
+         return Iop_NarrowUn32to16x4;
+      case Iop_QNarrowUn16Uto8Ux8:
+      case Iop_QNarrowUn16Sto8Sx8:
+      case Iop_QNarrowUn16Sto8Ux8:
+         return Iop_NarrowUn16to8x8;
+      default: 
+         ppIROp(qnarrowOp);
+         VG_(tool_panic)("vanillaNarrowOpOfShape");
+   }
+}
+
 static
 IRAtom* vectorNarrowBinV128 ( MCEnv* mce, IROp narrow_op, 
                               IRAtom* vatom1, IRAtom* vatom2)
@@ -2002,11 +2057,12 @@ IRAtom* vectorNarrowBinV128 ( MCEnv* mce, IROp narrow_op,
       case Iop_QNarrowBin16Sto8Ux16: pcast = mkPCast16x8; break;
       default: VG_(tool_panic)("vectorNarrowBinV128");
    }
+   IROp vanilla_narrow = vanillaNarrowingOpOfShape(narrow_op);
    tl_assert(isShadowAtom(mce,vatom1));
    tl_assert(isShadowAtom(mce,vatom2));
    at1 = assignNew('V', mce, Ity_V128, pcast(mce, vatom1));
    at2 = assignNew('V', mce, Ity_V128, pcast(mce, vatom2));
-   at3 = assignNew('V', mce, Ity_V128, binop(narrow_op, at1, at2));
+   at3 = assignNew('V', mce, Ity_V128, binop(vanilla_narrow, at1, at2));
    return at3;
 }
 
@@ -2022,26 +2078,36 @@ IRAtom* vectorNarrowBin64 ( MCEnv* mce, IROp narrow_op,
       case Iop_QNarrowBin16Sto8Ux8:  pcast = mkPCast16x4; break;
       default: VG_(tool_panic)("vectorNarrowBin64");
    }
+   IROp vanilla_narrow = vanillaNarrowingOpOfShape(narrow_op);
    tl_assert(isShadowAtom(mce,vatom1));
    tl_assert(isShadowAtom(mce,vatom2));
    at1 = assignNew('V', mce, Ity_I64, pcast(mce, vatom1));
    at2 = assignNew('V', mce, Ity_I64, pcast(mce, vatom2));
-   at3 = assignNew('V', mce, Ity_I64, binop(narrow_op, at1, at2));
+   at3 = assignNew('V', mce, Ity_I64, binop(vanilla_narrow, at1, at2));
    return at3;
 }
 
 static
-IRAtom* vectorNarrowUnV128 ( MCEnv* mce, IROp shorten_op,
+IRAtom* vectorNarrowUnV128 ( MCEnv* mce, IROp narrow_op,
                              IRAtom* vatom1)
 {
    IRAtom *at1, *at2;
    IRAtom* (*pcast)( MCEnv*, IRAtom* );
-   switch (shorten_op) {
-      /* FIXME: first 3 are too pessimistic; we can just
-         apply them directly to the V bits. */
-      case Iop_NarrowUn16to8x8:     pcast = mkPCast16x8; break;
-      case Iop_NarrowUn32to16x4:    pcast = mkPCast32x4; break;
-      case Iop_NarrowUn64to32x2:    pcast = mkPCast64x2; break;
+   tl_assert(isShadowAtom(mce,vatom1));
+   /* For vanilla narrowing (non-saturating), we can just apply
+      the op directly to the V bits. */
+   switch (narrow_op) {
+      case Iop_NarrowUn16to8x8:
+      case Iop_NarrowUn32to16x4:
+      case Iop_NarrowUn64to32x2:
+         at1 = assignNew('V', mce, Ity_I64, unop(narrow_op, vatom1));
+         return at1;
+      default:
+         break; /* Do Plan B */
+   }
+   /* Plan B: for ops that involve a saturation operation on the args,
+      we must PCast before the vanilla narrow. */
+   switch (narrow_op) {
       case Iop_QNarrowUn16Sto8Sx8:  pcast = mkPCast16x8; break;
       case Iop_QNarrowUn16Sto8Ux8:  pcast = mkPCast16x8; break;
       case Iop_QNarrowUn16Uto8Ux8:  pcast = mkPCast16x8; break;
@@ -2053,9 +2119,9 @@ IRAtom* vectorNarrowUnV128 ( MCEnv* mce, IROp shorten_op,
       case Iop_QNarrowUn64Uto32Ux2: pcast = mkPCast64x2; break;
       default: VG_(tool_panic)("vectorNarrowUnV128");
    }
-   tl_assert(isShadowAtom(mce,vatom1));
+   IROp vanilla_narrow = vanillaNarrowingOpOfShape(narrow_op);
    at1 = assignNew('V', mce, Ity_V128, pcast(mce, vatom1));
-   at2 = assignNew('V', mce, Ity_I64, unop(shorten_op, at1));
+   at2 = assignNew('V', mce, Ity_I64, unop(vanilla_narrow, at1));
    return at2;
 }
 

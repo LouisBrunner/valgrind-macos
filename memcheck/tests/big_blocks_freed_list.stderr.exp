@@ -1,0 +1,50 @@
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:22)
+ Address 0x........ is 1,000 bytes inside a block of size 1,000,001 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (big_blocks_freed_list.c:21)
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:23)
+ Address 0x........ is 1,000 bytes inside a block of size 900,000 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (big_blocks_freed_list.c:20)
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:33)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:34)
+ Address 0x........ is 2,000 bytes inside a block of size 900,000 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (big_blocks_freed_list.c:20)
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:41)
+ Address 0x........ is 10 bytes inside a block of size 10,000 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (big_blocks_freed_list.c:28)
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:46)
+ Address 0x........ is 10 bytes inside a block of size 1,000,001 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (big_blocks_freed_list.c:40)
+
+Invalid read of size 1
+   at 0x........: main (big_blocks_freed_list.c:55)
+ Address 0x........ is 10 bytes inside a block of size 10,000 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (big_blocks_freed_list.c:28)
+
+
+HEAP SUMMARY:
+    in use at exit: 1,000,000 bytes in 100 blocks
+  total heap usage: 104 allocs, 4 frees, 3,910,002 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 7 errors from 7 contexts (suppressed: 0 from 0)

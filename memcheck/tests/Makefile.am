@@ -62,6 +62,7 @@ EXTRA_DIST = \
 	badloop.stderr.exp badloop.vgtest \
 	badpoll.stderr.exp badpoll.vgtest \
 	badrw.stderr.exp badrw.vgtest badrw.stderr.exp-s390x-mvc \
+	big_blocks_freed_list.stderr.exp big_blocks_freed_list.vgtest \
 	brk2.stderr.exp brk2.vgtest \
 	buflen_check.stderr.exp buflen_check.vgtest buflen_check.stderr.exp-kfail \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
@@ -214,6 +215,7 @@ check_PROGRAMS = \
 	badloop \
 	badpoll \
 	badrw \
+	big_blocks_freed_list \
 	brk2 \
 	buflen_check \
 	calloc-overflow \

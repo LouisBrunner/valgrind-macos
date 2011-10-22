@@ -96,7 +96,10 @@ void MC_(move_mempool)    ( Addr poolA, Addr poolB );
 void MC_(mempool_change)  ( Addr pool, Addr addrA, Addr addrB, SizeT size );
 Bool MC_(mempool_exists)  ( Addr pool );
 
-MC_Chunk* MC_(get_freed_list_head)( void );
+/* Searches for a recently freed block which might bracket Addr a.
+   Return the MC_Chunk* for this block or NULL if no bracketting block
+   is found. */
+MC_Chunk* MC_(get_freed_block_bracketting)( Addr a );
 
 /* For tracking malloc'd blocks.  Nb: it's quite important that it's a
    VgHashTable, because VgHashTable allows duplicate keys without complaint.
@@ -423,6 +426,10 @@ extern Bool MC_(clo_partial_loads_ok);
 
 /* Max volume of the freed blocks queue. */
 extern Long MC_(clo_freelist_vol);
+
+/* Blocks with a size >= MC_(clo_freelist_big_blocks) will be put
+   in the "big block" freed blocks queue. */
+extern Long MC_(clo_freelist_big_blocks);
 
 /* Do leak check at exit?  default: NO */
 extern LeakCheckMode MC_(clo_leak_check);

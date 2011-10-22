@@ -1103,18 +1103,15 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
       return;
    }
    /* -- Search for a recently freed block which might bracket it. -- */
-   mc = MC_(get_freed_list_head)();
-   while (mc) {
-      if (addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
-         ai->tag = Addr_Block;
-         ai->Addr.Block.block_kind = Block_Freed;
-         ai->Addr.Block.block_desc = "block";
-         ai->Addr.Block.block_szB  = mc->szB;
-         ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
-         ai->Addr.Block.lastchange = mc->where;
-         return;
-      }
-      mc = mc->next; 
+   mc = MC_(get_freed_block_bracketting)( a );
+   if (mc) {
+      ai->tag = Addr_Block;
+      ai->Addr.Block.block_kind = Block_Freed;
+      ai->Addr.Block.block_desc = "block";
+      ai->Addr.Block.block_szB  = mc->szB;
+      ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
+      ai->Addr.Block.lastchange = mc->where;
+      return;
    }
    /* -- Search for a currently malloc'd block which might bracket it. -- */
    VG_(HT_ResetIter)(MC_(malloc_list));

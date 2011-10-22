@@ -790,6 +790,24 @@ criteria:</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.freelist-big-blocks" xreflabel="--freelist-big-blocks">
+    <term>
+      <option><![CDATA[--freelist-big-blocks=<number> [default: 1000000] ]]></option>
+    </term>
+    <listitem>
+      <para>When making blocks from the queue of freed blocks available
+      for re-allocation, Memcheck will in priority re-circulate the blocks
+      with a size greater or equal to <option>--freelist-big-blocks</option>.
+      This ensures that freeing big blocks (in particular freeing blocks bigger than
+      <option>--freelist-vol</option>) does not immediately lead to a re-circulation
+      of all (or a lot of) the small blocks in the free list. In other words,
+      this option increases the likelihood to discover dangling pointers
+      for the "small" blocks, even when big blocks are freed.</para>
+      <para>Setting a value of 0 means that all the blocks are re-circulated
+      in a FIFO order. </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.workaround-gcc296-bugs" xreflabel="--workaround-gcc296-bugs">
     <term>
       <option><![CDATA[--workaround-gcc296-bugs=<yes|no> [default: no] ]]></option>

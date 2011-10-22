@@ -1,0 +1,2 @@
+prog: big_blocks_freed_list
+vgopts: --freelist-vol=1000000 --freelist-big-blocks=50000

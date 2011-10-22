@@ -4701,6 +4701,7 @@ static Bool mc_expensive_sanity_check ( void )
 
 Bool          MC_(clo_partial_loads_ok)       = False;
 Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
+Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 Bool          MC_(clo_show_reachable)         = False;
@@ -4761,7 +4762,11 @@ static Bool mc_process_cmd_line_options(Char* arg)
 
    else if VG_BINT_CLO(arg, "--freelist-vol",  MC_(clo_freelist_vol), 
                                                0, 10*1000*1000*1000LL) {}
-   
+
+   else if VG_BINT_CLO(arg, "--freelist-big-blocks",
+                       MC_(clo_freelist_big_blocks),
+                       0, 10*1000*1000*1000LL) {}
+
    else if VG_XACT_CLO(arg, "--leak-check=no",
                             MC_(clo_leak_check), LC_Off) {}
    else if VG_XACT_CLO(arg, "--leak-check=summary",
@@ -4831,7 +4836,8 @@ static void mc_print_usage(void)
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
-"    --freelist-vol=<number>          volume of freed blocks queue [20000000]\n"
+"    --freelist-vol=<number>          volume of freed blocks queue      [20000000]\n"
+"    --freelist-big-blocks=<number>   releases first blocks with size >= [1000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
@@ -5838,6 +5844,13 @@ static void mc_post_clo_init ( void )
       /* MC_(clo_show_reachable) = True; */
       MC_(clo_leak_check) = LC_Full;
    }
+
+   if (MC_(clo_freelist_big_blocks) >= MC_(clo_freelist_vol))
+      VG_(message)(Vg_UserMsg,
+                   "Warning: --freelist-big-blocks value %lld has no effect\n"
+                   "as it is >= to --freelist-vol value %lld\n",
+                   MC_(clo_freelist_big_blocks),
+                   MC_(clo_freelist_vol));
 
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 

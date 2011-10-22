@@ -24,6 +24,9 @@ st0        n ?         n        fp retreg            y
 st1-7      n ?         n                             y
 xmm0-7     n ?         n                             y
 
+In the case where arguments are passed in registers, the arg1,2,3
+registers are EAX, EDX, and ECX respectively.
+
 
 amd64-linux
 ~~~~~~~~~~~

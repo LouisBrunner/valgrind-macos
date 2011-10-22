@@ -26,21 +26,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Too difficult to make this work on Android right now.  Let's
-   skip for the time being at least. */
-#if defined(VGPV_arm_linux_android)
-
-#include <stdio.h>
-int main (int argc, char** argv)
-{
-   fprintf(stderr,
-           "%s: is not currently available on Android, sorry.\n",
-           argv[0]);
-   return 0;
-}
-
-#else /* all other (Linux?) platforms */
-
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_libcsetjmp.h"
@@ -61,17 +46,14 @@ int main (int argc, char** argv)
 #include <sys/time.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <assert.h>
-#include <sys/user.h>
-
-#if defined(VGO_linux)
-#  include <sys/prctl.h>
-#  include <linux/ptrace.h>
-#endif
-
 /* vgdb has two usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.
    2. standalone to send monitor commands to a running valgrind-ified process
@@ -110,6 +92,19 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 #if defined(VGO_darwin)
 #undef PTRACEINVOKER
 #endif
+
+#if defined(VGPV_arm_linux_android)
+#undef PTRACEINVOKER
+#endif
+
+#if defined(PTRACEINVOKER)
+#include <sys/user.h>
+#if defined(VGO_linux)
+#  include <sys/prctl.h>
+#  include <linux/ptrace.h>
+#endif
+#endif
+
 
 // Outputs information for the user about ptrace_scope protection
 // or ptrace not working.
@@ -1194,11 +1189,8 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
          if (usecs == 0 || usecs > 1000 * 1000)
             usecs = 1000 * 1000;
       }
-      if (usleep(usecs) != 0) {
-         if (errno == EINTR)
-            continue;
-         XERROR (errno, "error usleep\n");
-      }
+      usleep(usecs);
+
       /* If nothing happened during our sleep, let's try to wake up valgrind
          or check for cmd time out. */
       if (written_by_vgdb_before_sleep == VS_written_by_vgdb
@@ -1272,7 +1264,12 @@ int open_fifo (char* name, int flags, char* desc)
 static
 void acquire_lock (int fd, int valgrind_pid)
 {
-   if (lockf(fd, F_TLOCK, 1) < 0) {
+   struct flock fl;
+   fl.l_type = F_WRLCK;
+   fl.l_whence = SEEK_SET;
+   fl.l_start = 0;
+   fl.l_len = 1;
+   if (fcntl(fd, F_SETLK, &fl) < 0) {
       if (errno == EAGAIN || errno == EACCES) {
          XERROR(errno, 
                 "Cannot acquire lock.\n"
@@ -1359,7 +1356,7 @@ char *ppConnectionKind (ConnectionKind con)
 
 static char *shared_mem;
 
-static const int from_gdb = 0;
+static int from_gdb = 0; /* stdin by default, changed if --port is given. */
 static char *from_gdb_to_pid; /* fifo name to write gdb command to pid */
 /* Returns True in case read/write operations were done properly.
    Returns False in case of error.
@@ -1383,7 +1380,7 @@ Bool read_from_gdb_write_to_pid(int to_pid)
    return write_buf(to_pid, buf, nrread, "to_pid", /* notify */ True);
 }
 
-static const int to_gdb = 1;
+static int to_gdb = 1; /* stdout by default, changed if --port is given. */
 static char *to_gdb_from_pid; /* fifo name to read pid replies */
 /* Returns True in case read/write operations were done properly.
    Returns False in case of error.
@@ -1405,6 +1402,44 @@ Bool read_from_pid_write_to_gdb(int from_pid)
       return False;
    }
    return write_buf(to_gdb, buf, nrread, "to_gdb", /* notify */ False);
+}
+
+static
+void wait_for_gdb_connect (int in_port)
+{
+   struct sockaddr_in addr;
+
+   int listen_gdb = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+   int gdb_connect;
+ 
+   if (-1 == listen_gdb) {
+      XERROR(errno, "cannot create socket");
+   }
+ 
+    memset(&addr, 0, sizeof(addr));
+ 
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short int)in_port);
+    addr.sin_addr.s_addr = INADDR_ANY;
+ 
+    if (-1 == bind(listen_gdb,(struct sockaddr *)&addr, sizeof(addr))) {
+      XERROR(errno, "bind failed");
+    }
+    fprintf(stderr, "listening on port %d ...", in_port);
+    fflush(stderr);
+    if (-1 == listen(listen_gdb, 1)) {
+      XERROR(errno, "error listen failed");
+    }
+
+    gdb_connect = accept(listen_gdb, NULL, NULL);
+    if (gdb_connect < 0) {
+        XERROR(errno, "accept failed");
+    }
+    fprintf(stderr, "connected.\n");
+    fflush(stderr);
+    close(listen_gdb);
+    from_gdb = gdb_connect;
+    to_gdb = gdb_connect;
 }
 
 /* prepares the FIFOs filenames, map the shared memory. */
@@ -1584,12 +1619,19 @@ void received_signal (int signum)
       sigpipe++;
    } else if (signum == SIGALRM) {
       sigalrm++;
-      DEBUG(1, "pthread_cancel invoke_gdbserver_in_valgrind_thread\n");
+#if defined(VGPV_arm_linux_android)
+      /* Android has no pthread_cancel. As it also does not have
+         PTRACE_INVOKER, there is no need for cleanup action.
+         So, we just do nothing. */
+      DEBUG(1, "sigalrm received, no action on android\n");
+#else
       /* Note: we cannot directly invoke restore_and_detach : this must
          be done by the thread that has attached. 
          We have in this thread pushed a cleanup handler that will
          cleanup what is needed. */
+      DEBUG(1, "pthread_cancel invoke_gdbserver_in_valgrind_thread\n");
       pthread_cancel(invoke_gdbserver_in_valgrind_thread);
+#endif
    } else {
       ERROR(0, "unexpected signal %d\n", signum);
    }
@@ -2008,6 +2050,7 @@ void usage(void)
 "\n"
 " OPTIONS are [--pid=<number>] [--vgdb-prefix=<prefix>]\n"
 "             [--wait=<number>] [--max-invoke-ms=<number>]\n"
+"             [--port=<portnr>\n"
 "             [--cmd-time-out=<number>] [-l] [-D] [-d]\n"
 "             \n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
@@ -2019,6 +2062,7 @@ void usage(void)
 "  --max-invoke-ms (default 100) gives the nr of milli-seconds after which vgdb\n"
 "      will force the invocation of the Valgrind gdbserver (if the Valgrind\n"
 "         process is blocked in a system call).\n"
+"  --port instructs vgdb to listen for gdb on the specified port nr.\n"
 "  --cmd-time-out (default 99999999) tells vgdb to exit if the found Valgrind\n"
 "     gdbserver has not processed a command after number seconds\n"
 "  -l  arg tells to show the list of running Valgrind gdbserver and then exit.\n"
@@ -2230,6 +2274,7 @@ void parse_options(int argc, char** argv,
                    Bool *p_show_list,
                    int *p_arg_pid,
                    int *p_check_trials,
+                   int *p_port,
                    int *p_last_command,
                    char *commands[])
 {
@@ -2238,6 +2283,7 @@ void parse_options(int argc, char** argv,
    int arg_pid = -1;
    int check_trials = 1;
    int last_command = -1;
+   int int_port = 0;
 
    int i;
    int arg_errors = 0;
@@ -2278,6 +2324,11 @@ void parse_options(int argc, char** argv,
             fprintf (stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
             arg_errors++;
          }
+      } else if (is_opt(argv[i], "--port=")) {
+         if (!numeric_val(argv[i], &int_port)) {
+            fprintf (stderr, "invalid --port argument %s\n", argv[i]);
+            arg_errors++;
+         }
       } else if (is_opt(argv[i], "--vgdb-prefix=")) {
          vgdb_prefix = argv[i] + 14;
       } else if (is_opt(argv[i], "-c")) {
@@ -2315,6 +2366,7 @@ void parse_options(int argc, char** argv,
    if (isatty(0) 
        && !show_shared_mem 
        && !show_list
+       && int_port == 0
        && last_command == -1) {
       arg_errors++;
       fprintf (stderr, 
@@ -2341,6 +2393,12 @@ void parse_options(int argc, char** argv,
                "Can't use both --pid and -l options\n");
    }
 
+   if (int_port > 0 && last_command != -1) {
+      arg_errors++;
+      fprintf (stderr,
+               "Can't use --port to send commands\n");
+   }
+
    if (arg_errors > 0) {
       fprintf (stderr, "args error. Try `vgdb --help` for more information\n");
       exit(1);
@@ -2350,6 +2408,7 @@ void parse_options(int argc, char** argv,
    *p_show_list = show_list;
    *p_arg_pid = arg_pid;
    *p_check_trials = check_trials;
+   *p_port = int_port;
    *p_last_command = last_command;
 }
 
@@ -2362,6 +2421,7 @@ int main(int argc, char** argv)
    Bool show_list;
    int arg_pid;
    int check_trials;
+   int in_port;
    int last_command;
    char *commands[argc]; // we will never have more commands than args.
 
@@ -2370,6 +2430,7 @@ int main(int argc, char** argv)
                  &show_list,
                  &arg_pid,
                  &check_trials,
+                 &in_port,
                  &last_command,
                  commands);
   
@@ -2383,6 +2444,9 @@ int main(int argc, char** argv)
    pid = search_arg_pid (arg_pid, check_trials, show_list);
 
    prepare_fifos_and_shared_mem(pid);
+
+   if (in_port > 0)
+      wait_for_gdb_connect(in_port);
 
    if (show_shared_mem) {
       fprintf(stderr, 
@@ -2412,5 +2476,3 @@ int main(int argc, char** argv)
       free (commands[i]);
    return 0;
 }
-
-#endif /* !defined(VGPV_arm_linux_android) */

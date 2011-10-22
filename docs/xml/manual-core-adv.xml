@@ -482,6 +482,44 @@ description of GDB's functionality.
 
 </sect2>
 
+<sect2 id="manual-core-adv.gdbserver-gdb-android"
+       xreflabel="Connecting to an Android gdbserver">
+<title>Connecting to an Android gdbserver</title>
+<para> When developping applications for Android, you will typically use
+a development system (on which the Android NDK is installed) to compile your
+application. An Android target system or emulator will be used to run
+the application.
+In this setup, Valgrind and vgdb will run on the Android system,
+while GDB will run on the development system. GDB will connect
+to the vgdb running on the Android system using the Android NDK
+'adb forward' application.
+</para>
+<para> Example: on the Android system, execute the following:
+    <screen><![CDATA[
+valgrind --vgdb-error=0 prog
+# and then in another shell, run:
+vgdb --port=1234
+]]></screen>
+</para>
+
+<para> On the development system, execute the following commands:
+<screen><![CDATA[
+adb forward tcp:1234 tcp:1234
+gdb prog
+(gdb) target remote :1234
+]]></screen>
+GDB will use a local tcp/ip connection to connect to the Android adb forwarder.
+Adb will establish a relay connection between the host system and the Android
+target system. Pay attention to use the GDB delivered in the
+Android NDK system (typically, arm-linux-androideabi-gdb), as the host
+GDB is probably not able to debug Android arm applications.
+Note that the local port nr (used by GDB) must not necessarily be equal
+to the port number used by vgdb: adb can forward tcp/ip between different
+port numbers.
+</para>
+
+</sect2>
+
 <sect2 id="manual-core-adv.gdbserver-commandhandling"
        xreflabel="Monitor command handling by the Valgrind gdbserver">
 <title>Monitor command handling by the Valgrind gdbserver</title>
@@ -899,8 +937,9 @@ $5 = 36
      </para>
 
      <para>Unblocking processes blocked in system calls is not
-     currently implemented on Mac OS X.  So you cannot connect to or
-     interrupt a process blocked in a system call on Mac OS X.
+     currently implemented on Mac OS X and Android.  So you cannot
+     connect to or interrupt a process blocked in a system call on Mac
+     OS X or Android.
      </para>
 
    </listitem>
@@ -1033,6 +1072,27 @@ options:</para>
     The default value is to never time out.</para>
   </listitem>
 
+  <listitem>
+    <para><option>--port=&lt;portnr&gt;</option> instructs vgdb to
+    use tcp/ip and listen for GDB on the specified port nr rather than
+    to use a pipe to communicate with GDB. Using tcp/ip allows to have
+    GDB running on one computer and debugging a Valgrind process
+    running on another target computer.
+    Example: 
+    <screen><![CDATA[
+# On the target computer, start your program under valgrind using
+valgrind --vgdb-error=0 prog
+# and then in another shell, run:
+vgdb --port=1234
+]]></screen></para>
+    <para>On the computer which hosts GDB, execute the command:
+    <screen><![CDATA[
+gdb prog
+(gdb) target remote targetip:1234
+]]></screen>
+    where targetip is the ip address or hostname of the target computer.
+    </para>
+  </listitem>
    
   <listitem>
     <para><option>-c</option> To give more than one command to a

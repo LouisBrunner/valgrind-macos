@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Remove the three lines after "<fn>start_thread</fn>" if these start with
+# "<dir>...</dir>" since these last three lines are not generated on all
+# platforms.
+../../memcheck/tests/filter_xml |
+awk '{
+       if ($0 == "      <fn>start_thread</fn>") {
+         line1 = $0
+         getline
+         if ($0 == "      <dir>...</dir>") {
+           line2 = $0
+           getline
+           if ($0 == "      <file>pthread_create.c</file>") {
+             line3 = $0
+             getline
+             if ($0 == "      <line>...</line>") {
+               $0 = line1
+             } else {
+               print line1
+               print line2
+               print line3
+             }
+           } else {
+             print line1
+             print line2
+           }
+         } else {
+           print line1
+         }
+       }
+       print
+     }'

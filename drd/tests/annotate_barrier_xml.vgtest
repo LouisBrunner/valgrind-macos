@@ -1,4 +1,4 @@
 prereq: test -e annotate_barrier && ./supported_libpthread
 vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=3 --xml=yes --xml-fd=2
 prog: annotate_barrier 2 1 1
-stderr_filter: ../../memcheck/tests/filter_xml
+stderr_filter: filter_annotate_barrier_xml

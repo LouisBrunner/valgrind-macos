@@ -189,9 +189,6 @@
       <ip>0x........</ip>
       <obj>...</obj>
       <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
-      <line>...</line>
     </frame>
   </stack>
   <auxwhat>Address 0x........ is at offset 0 from 0x.........</auxwhat>

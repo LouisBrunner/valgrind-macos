@@ -189,14 +189,6 @@ EXTRA_DIST =                                        \
 	pth_spinlock.vgtest                         \
 	pth_uninitialized_cond.stderr.exp           \
 	pth_uninitialized_cond.vgtest               \
-	qt4_atomic.stderr.exp                       \
-	qt4_atomic.vgtest                           \
-	qt4_mutex.stderr.exp                        \
-	qt4_mutex.vgtest                            \
-	qt4_rwlock.stderr.exp                       \
-	qt4_rwlock.vgtest                           \
-	qt4_semaphore.stderr.exp                    \
-	qt4_semaphore.vgtest                        \
 	read_and_free_race.stderr.exp		    \
 	read_and_free_race.vgtest		    \
 	recursive_mutex.stderr.exp-linux            \

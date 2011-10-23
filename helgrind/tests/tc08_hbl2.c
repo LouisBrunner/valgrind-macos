@@ -102,7 +102,8 @@ void* child_fn ( void* arg )
 {
    int q = 0;
    int oldx = 0;
-   int ctr = 0;
+   struct timespec ts = { 0, 1000 * 1000 };
+
    while (1) {
       q = (x >= LIMIT);
       if (x != oldx) {
@@ -111,10 +112,7 @@ void* child_fn ( void* arg )
          fflush(stdout);
       }
       if (q) break;
-      /* Make sure the parent doesn't starve.  Seems to be a problem
-	 on very slow machines. */
-      ctr++;
-      if (ctr == 2000000) sleep(1);
+      nanosleep(&ts, 0);
    }
    return NULL;
 }

@@ -1,0 +1,125 @@
+#!/bin/sh
+
+# Verify consistency of the regression test files present in a directory with
+# the contents of the EXTRA_DIST Makefile.am variable.
+
+# Expand variables in a Makefile ($(NAME) syntax), evaluate $(add_suffix ...)
+# and ignore $(noinst_SCRIPTS).
+parse_makefile() {
+  cat "$1" |
+  awk '/\\$/ {
+         n = $0
+         sub("\\\\$", "", n)
+         if (line != "")
+           line = line " " n
+         else
+           line = n
+       }
+       /[^\\]$/ {
+         if (line != "") {
+           print line " " $0
+           line = ""
+         } else {
+           print
+         }
+       }' |
+  awk '{
+         if (match($0, "^ *[A-Za-z_]* *= *.*$")) {
+           varname = $0
+           gsub("^ *", "", varname)
+           gsub(" *=.*", "", varname)
+           value = $0
+           gsub("^ *[A-Za-z_]* *= *", "", value)
+           var[varname] = value
+         }
+         for (v in var)
+           gsub("\\$\\( *" v " *\\)", var[v])
+         while ((pos = match($0, "\\$\\( *addsuffix *[^,)]*, *[^)]*\\)")) >= 1) {
+           suffix = substr($0, pos)
+           gsub("^\\$\\( *addsuffix *", "", suffix)
+           gsub(",.*", "", suffix)
+           names = substr($0, pos)
+           gsub("^\\$\\( *addsuffix *[^,)]*, *", "", names)
+           gsub("\\).*", "", names)
+           split(names, name)
+           name_and_suff=""
+           for (n in name)
+             name_and_suff = name_and_suff " " name[n] suffix
+           sub("\\$\\( *addsuffix *[^,)]*, *[^)]*\\)", name_and_suff)
+         }
+         print
+       }' |
+  sed 's/\$(noinst_SCRIPTS)//'
+}
+
+if [ $# = 0 ]; then
+  echo "Error: tool name argument is missing."
+  exit 1
+fi
+
+rc=0
+
+# For all directories specified as an argument, find the Makefile.am files
+# beneath and check the consistency of the files *.vgtest and *.exp* files
+# in that directory with the filenames specified in EXTRA_DIST in Makefile.am.
+for t in "$@"
+do
+  find $t -name Makefile.am |
+  while read m; do
+    d="$(dirname "$m")"
+    (
+      rc=0
+      if cd $d; then
+        parsed_makefile="$(parse_makefile Makefile.am)"
+        for f in $(ls -d *.exp* *.gdb *.vgtest 2>/dev/null)
+        do
+          if [ "$f" = "*.exp*" -o "$f" = "*.gdb" -o "$f" = "*.vgtest" ]; then
+            continue
+          fi
+          if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *EXTRA_DIST *=' |
+               grep -qw "$f"
+          then
+            echo "$m:1: error: $f is missing in EXTRA_DIST"
+            rc=1
+          fi
+        done
+  
+        for f in $(ls -d filter* 2>/dev/null)
+        do
+          if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *dist_noinst_SCRIPTS *=' |
+               grep -qw "$f"
+          then
+            echo "$m:1: error: $f is missing in dist_noinst_SCRIPTS"
+            rc=1
+          fi
+        done
+
+        for f in $(parse_makefile Makefile.am | sed -n 's/^ *EXTRA_DIST *=//p')
+        do
+          if [ ! -e "$f" ]; then
+            echo "$m:1: error: $f is in EXTRA_DIST but doesn't exist"
+            rc=1
+          fi
+        done
+
+        for f in $(parse_makefile Makefile.am | sed -n 's/^ *dist_noinst_SCRIPTS *=//p')
+        do
+          if [ ! -e "$f" ]; then
+            echo "$m:1: error: $f is in dist_noinst_SCRIPTS but doesn't exist"
+            rc=1
+          fi
+        done
+      fi
+      [ $rc = 0 ]
+    )
+    if [ $? != 0 ]; then
+      rc=1
+    fi
+    [ $rc = 0 ]
+  done
+  if [ $? != 0 ]; then
+    rc=1
+  fi
+  [ $rc = 0 ]
+done
+exit $?

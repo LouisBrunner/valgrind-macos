@@ -76,6 +76,7 @@ default.supp: $(DEFAULT_SUPP_FILES)
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
+	-tests/check_makefile_consistency gdbserver_tests $(TEST_TOOLS) $(TEST_EXP_TOOLS)
 	gdbserver_tests/make_local_links $(GDB)
 	@PERL@ tests/vg_regtest gdbserver_tests $(TEST_TOOLS) $(TEST_EXP_TOOLS)
 nonexp-regtest: check

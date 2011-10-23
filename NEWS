@@ -49,450 +49,177 @@ Release 3.7.0 (???)
   reasonably well on z9 and later models. See README.s390 for more
   details.
 
-bugs fixed (last update 12 Oct 2011):
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
 
-269884 - overhead for huge blocks exhausts space too soon ==
-250101 - huge "free" memory usage due to m_mallocfree.c "superblocks
-fragmentation" 
-FIXED
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
 
-270320 - patch adds support for Linux FIOQSIZE ioctl() call
-has patch.
-FIXED
-
-270326 - valgrind segfault while trying to sanitize the environment
-passed to execle
-FIXED
-
-270925 New: hyper-optimized strspn() in /lib64/libc-2.13.so
-needs fix (I thought there was one somewhere)
-FIXED
-
-271615 - unhandled instruction "popcnt" (arch=amd10h) 
-I thought we implemented this in 3.6
-FIXED
-
-271776 - s390x: provide STFLE instruction support 
-FIXED
-
-273536 - Build error: multiple definition of
-`vgDrd_pthread_cond_initializer' et al. 
-unclear if fixed or not
-FIXED
-
-273778 - sysno == 259 exp-ptrcheck: the 'impossible' happened:
-unhandled syscall 
-ptrcheck
-FIXED
-
-274089 New: exp-ptrcheck: the 'impossible' happened: unhandled
-syscall (sysno == 208)
-ptrcheck
-FIXED
-
-274378 New: s390x: dispatcher tweak
-FIXED
-
-274926 New: valgrind does not build against linux-3
-FIXED
-
-275168 New: 10.7 Lion: build fails with the 10.6 options
-OSX 10.7
-FIXED
-
-275212 New: lots of false positives from
-__memcpy_ssse3_back/__memmove_ssse3_back
-dup of 275284 (which is FIXED)
-
-275278 - valgrind does not build on Linux kernel 3.0.* due to silly
-configure check 
-FIXED
-
-275284 New: Valgrind memcpy/memmove redirection stopped working in glibc 2.14/x86_64
-FIXED
-
-275308 New: Fix implementation for ppc64 fres instruc
-uninvestigated
-FIXED
-
-
-275517 New: s390x: Provide support for CKSM instruction
-FIXED
-
-275710 New: s390x: get rid of double address mode calculation
-FIXED
-
-275815 New: Valgrind doesn't know about Linux readahead(2) syscall.
-== 247894 (FIXED)
-
-275852 New: valgrind uses all swap space and is killed with (SIGKILL)
-== 250101 (FIXED)
-
-276784 New: Add support for IBM Power ISA 2.06 -- stag
-FIXED
-
-276987 New: gdbsrv: fix tests following recent commits
-FIXED
-
-277045 New: Valgrind crashes with  unhandled DW_OP_ opcode 0x2a in
-gcc (Debian 4.6.1-1) 4.6.1 with debian unstable x64
-FIXED
-
-277199 New: The test_isa_2_06_part1.c in none/tests/ppc64 should be a
-symlink to 32-bit testcase of same name
-FIXED
-
-277471 New: Unhandled syscall: 340
-FIXED
-
-277610 New: valgrind crashes in VG_(lseek)(core_fd,
-phdrs[idx].p_offset, VKI_SEEK_SET) == phdrs[idx].p_offset
-FIXED
-
-277653 New: ARM: support Thumb2 PLD instruction
-FIXED
-
-277663 New: ARM: NEON float VMUL by scalar incorrect
-FIXED
-
-
-277689 New: ARM: tests for VSTn with register post-index are broken
-FIXED
-
-277694 New: ARM: BLX LR instruction broken in ARM mode
-FIXED
-
-277780 New: ARM: VMOV.F32 (immediate) instruction is broken
-FIXED
-
-278057 New: fuse filesystem syscall deadlocks
-FIXED
-
-278078 New: Unimplemented syscall 280 on ppc32
-FIXED
-
-278349 New: F_GETPIPE_SZ and  F_SETPIPE_SZ Linux fcntl commands
-handling is not implemented
-FIXED
-
-278454 New: VALGRIND_STACK_DEREGISTER has wrong output type
-FIXED
-
-278502 New: Valgrind confuses memcpy() and memmove()
-==275284 (FIXED)
-
-279027 New: Support for MVCL and CLCL instruction
-FIXED
-
-279062 New: Minor nit in host_ppc_isel.c
-FIXED
-
-279378 New: exp-ptrcheck: the 'impossible' happened on mkfifo call
-FIXED
-
-279795 New: memcheck reports uninitialised values for mincore on
-amd64
-FIXED
-
-279994 Add support for IBM Power ISA 2.06 -- stage 3
-FIXED
-
-280083 New: mempolicy syscall check errors
-FIXED
-
-280710 New: s390x: config files for nightly builds
-FIXED
-
-281138 New: WARNING: unhandled syscall: 340
-FIXED
-
-281241 New: valgrind useless on Macos 10.7.1 Lion
-FIXED (== 275168)
-
-281304 New: Darwin: dyld "cannot load inserted library" for
-vgpreload_core-x86-darwin.so then assertion fails
-needsinfo
-== 275168 (FIXED)
-
-281305 New: unhandled syscall: unix:357 on Darwin 11.1 and subsequent
-failure
-== 275168 (FIXED)
-
-281468 New: s390x: handle do_clone and gcc clones in call traces
-FIXED
-
-281488 New: VFP register corruption
-FIXED
-
-281828 New: false memmove warning: "Source and destination overlap in memcpy"
-== 275284 (FIXED)
-
-281883 New: s390x: clone system call
-FIXED
-
-282105 New: to reduce memory: generalise 'reclaimSuperBlock' to also reclaim splittable superblock
-FIXED
-
-282238 New: SLES10: make check fails
-FIXED
-
-283000 New: vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xA 0xC0 0x9 0xF3 0xF
-FIXED
-
-283243 New: Regression in ppc64 memcheck tests
-FIXED
-
-283325 New: Valgrind segfaults on startup on OSX 10.6.7 when built with Xcode 4.0
-== 267997 (FIXED)
-
-* don't be spooked by libxul.so linked with gold (rXXXX)
-* don't be spooked by libraries mashed by elfhack# (rXXXX)
-* cachegrind/callgrind: handle CPUID information for Core iX Intel
-  CPUs that with non-power-of-2 sizes (also AMDs)
-
+210935  port valgrind.h (not valgrind) to win32 to support client requests
+214223  valgrind SIGSEGV on startup gcc 4.4.1 ppc32 (G4) Ubuntu 9.10
 243404  Port to zSeries
-Fixed 3.7
-
-265762  make public VEX headers compilable by G++ 3.x
-Fixed 3.7
-
-265771  assertion in jumps.c (r11523) fails with glibc-2.3
-Fixed 3.7
-
-266753  valgrind's configure script does not give the user the option
-        to not use QtCore
-fixed, apparently
-
-266931  gen_insn_test.pl is broken
-fixed
-
-266961  ld-linux.so.2 i?86-linux strlen issues
-fixed
-
-266990  setns instruction causes false positive
-fixed
-
-243935  Helgrind: implementation of ANNOTATE_HAPPENS_BEFORE() /
-        AFTER() is not correct
-fixed, r11624
-
-247223  non-x86: Suppress warning: 'regparm' attribute directive
-        ignored
-fixed
-
-
-267383  Assertion 'vgPlain_strlen(dir) + vgPlain_strlen(file) + 1 <
-        256' failed. 
-fixed
-
-267413  Assertion 'DRD_(g_threadinfo)[tid].synchr_nesting >= 1'
-        failed.
-fixed
-
-210935  port valgrind.h (not valgrind) to win32 so apps run under
-        wine can make client requests
-afaict, this was fixed in 3.6.1 but is not listed in NEWS
-
-267488  regtest: darwin support for 64-bit build
-fixed
-
-267552  SIGSEGV (misaligned_stack_error) with DRD, but not with other
-        tools
-fixed, but is the next one also fixed?
-
-267630  Add support for IBM Power ISA 2.06 -- stage 1
-fixed
-
-267819  Add client request for informing the core about reallocation
-fixed
-
-267968  drd: drd_thread.c:567 (vgDrd_thread_set_joinable): Assertion
-        '0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID'
-        failed.
-fixed
-
-214223  valgrind SIGSEGV on startup gcc 4.4.1 ppc32 (G4) Ubuntu 9.10 ==
-259977  Valgrind segfaults doing __builtin_longjmp
-fixed
-
-268792 - valgrind seg faults on startup when compiled with Xcode 4 compilers... 
-267769 - Darwin: memcheck triggers segmentation fault
-274784 - valgrind ls -l or any other valgrind call(even without parameters) results in Segmentation Fault 
-267342 - segmentation fault on Mac OS 10.6
-271337 - Valgrind segfaults on MacOS X
-270309 - valgrind crash on startup
-269641 - valgrind segfaults immediately (segmentation fault) 
-267997 MacOSX: 64-bit valgrind segfaults on launch when built with
-       Xcode 4.0.1
-fixed
-
+243935  Helgrind: incorrect handling of ANNOTATE_HAPPENS_BEFORE()/AFTER()
+247223  non-x86: Suppress warning: 'regparm' attribute directive ignored
+250101  huge "free" memory usage due to m_mallocfree.c fragmentation
+253206  Some fixes for the faultstatus testcase
+255223  capget testcase fails when running as root
+256703  xlc_dbl_u32.c testcase broken
+256726  Helgrind tests have broken inline asm 
+259977  == 214223 (Valgrind segfaults doing __builtin_longjmp)
 264800  testcase compile failure on zseries
-fixed
+265762  make public VEX headers compilable by G++ 3.x
+265771  assertion in jumps.c (r11523) fails with glibc-2.3
+266753  configure script does not give the user the option to not use QtCore
+266931  gen_insn_test.pl is broken
+266961  ld-linux.so.2 i?86-linux strlen issues
+266990  setns instruction causes false positive
+267020  Make directory for temporary files configurable at run-time.
+267342  == 267997 (segmentation fault on Mac OS 10.6)
+267383  Assertion 'vgPlain_strlen(dir) + vgPlain_strlen(file) + 1 < 256' failed
+267413  Assertion 'DRD_(g_threadinfo)[tid].synchr_nesting >= 1' failed.
+267488  regtest: darwin support for 64-bit build
+267552  SIGSEGV (misaligned_stack_error) with DRD, but not with other tools
+267630  Add support for IBM Power ISA 2.06 -- stage 1
+267769  == 267997 (Darwin: memcheck triggers segmentation fault)
+267819  Add client request for informing the core about reallocation
+267925  laog data structure quadratic for a single sequence of lock
+267968  drd: (vgDrd_thread_set_joinable): Assertion '0 <= (int)tid ..' failed
+267997  MacOSX: 64-bit V segfaults on launch when built with Xcode 4.0.1
+268513  missed optimizations in fold_Expr
+268619  s390x: fpr - gpr transfer facility 
+268620  s390x: reconsider "long displacement" requirement 
+268621  s390x: improve IR generation for XC
+268715  s390x: FLOGR is not universally available
+268792  == 267997 (valgrind seg faults on startup when compiled with Xcode 4)
+268930  s390x: MHY is not universally available
+269078  arm->IR: unhandled instruction SUB (SP minus immediate/register) 
+269079  Support ptrace system call on ARM
+269144  missing "Bad option" error message
+269209  conditional load and store facility (z196)
+269354  Shift by zero on x86 can incorrectly clobber CC_NDEP
+269641  == 267997 (valgrind segfaults immediately (segmentation fault))
+269736  s390x: minor code generation tweaks
+269778  == 272986 (valgrind.h: swap roles of VALGRIND_DO_CLIENT_REQUEST() ..)
+269863  s390x: remove unused function parameters
+269864  s390x: tweak s390_emit_load_cc 
+269884  == 250101 (overhead for huge blocks exhausts space too soon)
+270082  s390x: Make sure to point the PSW address to the next address on SIGILL
+270115  s390x: rewrite some testcases
+270309  == 267997 (valgrind crash on startup)
+270320  add support for Linux FIOQSIZE ioctl() call
+270326  segfault while trying to sanitize the environment passed to execle
+270794  IBM POWER7 support patch causes regression in none/tests
+270851  IBM POWER7 fcfidus instruction causes memcheck to fail
+270856  IBM POWER7 xsnmaddadp instruction causes memcheck to fail on 32bit app 
+270925  hyper-optimized strspn() in /lib64/libc-2.13.so needs fix
+270959  s390x: invalid use of R0 as base register
+271042  VSX configure check fails when it should not 
+271043  Valgrind build fails with assembler error on ppc64 with binutils 2.21 
+271259  s390x: fix code confusion 
+271337  == 267997 (Valgrind segfaults on MacOS X)
+271385  s390x: Implement Ist_MBE 
+271501  s390x: misc cleanups 
+271504  s390x: promote likely and unlikely 
+271579  ppc: using wrong enum type 
+271615  unhandled instruction "popcnt" (arch=amd10h) 
+271730  Fix bug when checking ioctls: duplicate check 
+271776  s390x: provide STFLE instruction support 
+271779  s390x: provide clock instructions like STCK 
+271799  Darwin: ioctls without an arg report a memory error 
+271820  arm: fix type confusion 
+271917  pthread_cond_timedwait failure leads to not-locked false positive 
+272067  s390x: fix DISP20 macro 
+272615  A typo in debug output in mc_leakcheck.c
+272661  callgrind_annotate chokes when run from paths containing regex chars
+272893  amd64->IR: 0x66 0xF 0x38 0x2B 0xC1 0x66 0xF 0x7F == (closed as dup)
+272955  Unhandled syscall error for pwrite64 on ppc64 arch 
+272967  make documentation build-system more robust 
+272986  Fix gcc-4.6 warnings with valgrind.h
+273318  amd64->IR: 0x66 0xF 0x3A 0x61 0xC1 0x38 (missing PCMPxSTRx case)
+273318  unhandled PCMPxSTRx case: vex amd64->IR: 0x66 0xF 0x3A 0x61 0xC1 0x38 
+273431  valgrind segfaults in evalCfiExpr (debuginfo.c:2039)
+273465  Callgrind: jumps.c:164 (new_jcc): Assertion '(0 <= jmp) && ...'
+273536  Build error: multiple definition of `vgDrd_pthread_cond_initializer'
+273640  ppc64-linux: unhandled syscalls setresuid(164) and setresgid(169)
+273729  == 283000 (Illegal opcode for SSE2 "roundsd" instruction)
+273778  exp-ptrcheck: unhandled sysno == 259
+274089  exp-ptrcheck: unhandled sysno == 208
+274378  s390x: Various dispatcher tweaks
+274447  WARNING: unhandled syscall: 340
+274776  amd64->IR: 0x66 0xF 0x38 0x2B 0xC5 0x66
+274784  == 267997 (valgrind ls -l results in Segmentation Fault)
+274926  valgrind does not build against linux-3
+275148  configure FAIL with glibc-2.14
+275151  Fedora 15 / glibc-2.14 'make regtest' FAIL
+275168  Make Valgrind work for MacOSX 10.7 Lion
+275212  == 275284 (lots of false positives from __memcpy_ssse3_back et al)
+275278  valgrind does not build on Linux kernel 3.0.* due to silly
+275284  Valgrind memcpy/memmove redirection stopped working in glibc 2.14/x86_64
+275308  Fix implementation for ppc64 fres instruc
+275339  s390x: fix testcase compile warnings
+275517  s390x: Provide support for CKSM instruction
+275710  s390x: get rid of redundant address mode calculation
+275815  == 247894 (Valgrind doesn't know about Linux readahead(2) syscall)
+275852  == 250101 (valgrind uses all swap space and is killed)
+276784  Add support for IBM Power ISA 2.06 -- stage 3
+276987  gdbsrv: fix tests following recent commits
+277045  Valgrind crashes with  unhandled DW_OP_ opcode 0x2a
+277199  The test_isa_2_06_part1.c in none/tests/ppc64 should be a symlink
+277471  Unhandled syscall: 340
+277610  valgrind crashes in VG_(lseek)(core_fd, phdrs[idx].p_offset, ...)
+277653  ARM: support Thumb2 PLD instruction
+277663  ARM: NEON float VMUL by scalar incorrect
+277689  ARM: tests for VSTn with register post-index are broken
+277694  ARM: BLX LR instruction broken in ARM mode
+277780  ARM: VMOV.F32 (immediate) instruction is broken
+278057  fuse filesystem syscall deadlocks
+278078  Unimplemented syscall 280 on ppc32
+278349  F_GETPIPE_SZ and  F_SETPIPE_SZ Linux fcntl commands
+278454  VALGRIND_STACK_DEREGISTER has wrong output type
+278502  == 275284 (Valgrind confuses memcpy() and memmove())
+279027  Support for MVCL and CLCL instruction
+279027  s390x: Provide support for CLCL and MVCL instructions
+279062  Remove a redundant check in the insn selector for ppc.
+279071  JDK creates PTEST with redundant REX.W prefix
+279212  gdbsrv: add monitor cmd v.info scheduler.
+279378  exp-ptrcheck: the 'impossible' happened on mkfifo call
+279698  memcheck discards valid-bits for packuswb
+279795  memcheck reports uninitialised values for mincore on amd64
+279994  Add support for IBM Power ISA 2.06 -- stage 3
+280083  mempolicy syscall check errors
+280290  vex amd64->IR: 0x66 0xF 0x38 0x28 0xC1 0x66 0xF 0x6F
+280710  s390x: config files for nightly builds
+280757  /tmp dir still used by valgrind even if TMPDIR is specified
+281138  WARNING: unhandled syscall: 340
+281241  == 275168 (valgrind useless on Macos 10.7.1 Lion)
+281304  == 275168 (Darwin: dyld "cannot load inserted library")
+281305  == 275168 (unhandled syscall: unix:357 on Darwin 11.1)
+281468  s390x: handle do_clone and gcc clones in call traces
+281488  ARM: VFP register corruption
+281828  == 275284 (false memmove warning: "Source and destination overlap")
+281883  s390x: Fix system call wrapper for "clone".
+282105  generalise 'reclaimSuperBlock' to also reclaim splittable superblock
+282112  Unhandled instruction bytes: 0xDE 0xD9 0x9B 0xDF (fcompp)
+282238  SLES10: make check fails
+282979  strcasestr needs replacement with recent(>=2.12) glibc
+283000  vex amd64->IR: 0x66 0xF 0x3A 0xA 0xC0 0x9 0xF3 0xF
+283243  Regression in ppc64 memcheck tests
+283325  == 267997 (Darwin: V segfaults on startup when built with Xcode 4.0)
+283427  re-connect epoll_pwait syscall on ARM linux
+283600  gdbsrv: android: port vgdb.c
+283709  none/tests/faultstatus needs to account for page size
+284305  filter_gdb needs enhancement to work on ppc64
+284472  Thumb2 ROR.W encoding T2 not implemented
+n-i-bz  cachegrind/callgrind: handle CPUID information for Core iX Intel CPUs
+        that have non-power-of-2 sizes (also AMDs)
+n-i-bz  don't be spooked by libraries mashed by elfhack
+n-i-bz  don't be spooked by libxul.so linked with gold
 
-265762 - make public VEX headers compilable by G++ 3.x
-fixed
-
-268513] New: missed optimizations in fold_Expr
-fixed
-
-253206 - Some fixes for the faultstatus testcase
-fixed
-
-268619 - s390x: fpr - gpr transfer facility 
-fixed
-
-268620 - s390x: reconsider "long displacement" requirement 
-fixed
-
-268621 - s390x: improve IR generation for XC
-fixed
-
-255223 - [PATCH] capget testcase fails when running as root
-fixed
-
-268715 - s390x: FLOGR is not universally available
-fixed
-
-268930 - s390x: MHY is not universally available
-fixed
-
-269078 - [PATCH] vex: arm->IR: unhandled instruction SUB (SP minus
-immediate/register) 
-fixed
-
-269079 - [PATCH] Support ptrace system call on ARM
-fixed
-
-269144 - missing "Bad option" error message
-fixed
-
-269209] New: [PATCH] conditional load and store facility (z196)
-fixed
-
-269354] New: Shift by zero on x86 can incorrectly clobber CC_NDEP
-(with patch)
-fixed
-
-256726 - Helgrind tests have broken inline asm 
-fixed
-
-269736 - s390x: minor code generation tweaks
-fixed
-
-256703 - xlc_dbl_u32.c testcase broken
-fixed
-
-272986 - gcc-4.6 warnings with valgrind.h ==
-269778] New: valgrind.h: swap roles of VALGRIND_DO_CLIENT_REQUEST()
-and VALGRIND_DO_CLIENT_REQUEST_EXPR()
-fixed
-
-269863 - s390x: remove unused function parameters
-fixed
-
-269864 - s390x: tweak s390_emit_load_cc 
-fixed
-
-270115] New: s390x: rewrite some testcases
-fixed
-
-270082 - s390x: [PATCH] Make sure to point the PSW address to the next
-address on SIGILL
-fixed
-
-270794 - New IBM POWER7 support patch causes regression in none/tests 
-fixed
-
-270851 - New IBM POWER7 fcfidus instruction causes memcheck to fail 
-fixed
-
-270856 - New IBM POWER7 xsnmaddadp instruction causes memcheck to fail
-on 32bit app 
-fixed
-
-270959 - s390x: invalid use of R0 as base register
-fixed
-
-271042 - VSX configure check fails when it should not 
-fixed
-
-271043 - Valgrind build fails with assembler error on ppc64 with
-binutils 2.21 
-fixed
-
-271259 - s390x: fix code confusion 
-fixed
-
-271385 - s390x: Implement Ist_MBE 
-fixed
-
-271501 - s390x : misc cleanups 
-fixed
-
-271504 - s390x: promote likely and unlikely 
-fixed
-
-271579 - ppc: using wrong enum type 
-fixed
-
-271730 - [PATCH] Fix bug when checking ioctls: duplicate check 
-fixed
-
-271779 - s390x: provide clock instructions like STCK 
-fixed
-
-271799 - Darwin: ioctls without an arg report a memory error 
-fixed
-
-271820 - arm: fix type confusion 
-fixed
-
-272067 - s390x: fix DISP20 macro 
-fixed
-
-272615 - A typo in debug output in mc_leakcheck.c
-fixed
-
-272661 - callgrind_annotate chokes when run from paths containing
-regex metacharacters 
-fixed
-
-272955 - Unhandled syscall error for pwrite64 on ppc64 arch 
-fixed
-
-274447] New: WARNING: unhandled syscall: 340
-fixed
-
-272893 - vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x38
-0x2B 0xC1 0x66 0xF 0x7F == (closed as dup)
-274776 - Valgrind unhandled instructions 0x66 0xF 0x38 0x2B 0xC5 0x66 
-FIXED 11816 2160
-
-275148] New: configure FAIL with glibc-2.14
-fixed
-
-275151] New: Fedora 15 / glibc-2.14 'make regtest' FAIL
-fixed
-
-275339 - s390x: fix testcase compile warnings
-
-275710 - s390x: get rid of redundant address mode calculation
-
-271776 - s390x: Support STFLE instruction
-
-267020 - Make directory for temporary files configurable at run-time.
-
-279062 - Remove a redundant check in the insn selector for ppc.
-
-275517 - s390x: Provide support for CKSM instruction
-
-279027 - s390x: Provide support for CLCL and MVCL instructions
-
-281883 - s390x: Fix system call wrapper for "clone".
-
-274378 - s390x: Various dispatcher tweaks
-
-282238 - SLES10: make check fails
 
 
 Release 3.6.1 (16 February 2011)

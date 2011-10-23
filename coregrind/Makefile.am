@@ -23,7 +23,8 @@ endif
 
 EXTRA_DIST = \
 	m_debuginfo/UNUSED_STABS.txt \
-	m_debuginfo/README.txt
+	m_debuginfo/README.txt \
+	m_gdbserver/README_DEVELOPERS
 
 #----------------------------------------------------------------------------
 # The launcher.  Built for the primary target only.

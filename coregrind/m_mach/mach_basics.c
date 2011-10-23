@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005 Apple Inc.
+   Copyright (C) 2005-2011 Apple Inc.
       Greg Parker  gparker@apple.com
 
    This program is free software; you can redistribute it and/or

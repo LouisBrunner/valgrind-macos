@@ -5,7 +5,7 @@
    Copyright (C) 2002-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This tool is derived from and contains lot of code from Cachegrind
-   Copyright (C) 2002 Nicholas Nethercote (njn@valgrind.org)
+   Copyright (C) 2002-2011 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

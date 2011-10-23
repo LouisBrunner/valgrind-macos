@@ -2,6 +2,8 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = \
+	check_isa-2_06_cap \
+	check_makefile_consistency \
 	check_vmx_cap \
 	filter_addresses \
 	filter_discards \

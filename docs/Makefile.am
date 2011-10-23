@@ -28,13 +28,16 @@ EXTRA_DIST = \
 	internals/arm_thumb_notes_gdbserver.txt \
 	internals/BIG_APP_NOTES.txt \
 	internals/Darwin-notes.txt \
+	internals/SPEC-notes.txt \
 	internals/directory-structure.txt \
 	internals/howto_BUILD_KDE42.txt \
 	internals/howto_oprofile.txt \
 	internals/m_replacemalloc.txt \
 	internals/m_syswrap.txt \
 	internals/module-structure.txt \
+	internals/multiple-architectures.txt \
 	internals/notes.txt \
+	internals/performance.txt \
 	internals/porting-HOWTO.txt \
 	internals/mpi2entries.txt \
 	internals/porting-to-ARM.txt \

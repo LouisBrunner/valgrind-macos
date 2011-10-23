@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2009-2010 Julian Seward
+   Copyright (C) 2009-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or

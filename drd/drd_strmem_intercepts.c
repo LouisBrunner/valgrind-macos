@@ -11,7 +11,7 @@
   from memchec/mc_replace_strmem.c, which has the following copyright
   notice:
 
-  Copyright (C) 2000-2010 Julian Seward
+  Copyright (C) 2000-2011 Julian Seward
   jseward@acm.org
 
   This program is free software; you can redistribute it and/or

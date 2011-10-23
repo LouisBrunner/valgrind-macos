@@ -57,6 +57,14 @@ use in Valgrind.
 David Woodhouse has helped out with test and build machines over the course
 of many releases.
 
+Florian Krohm and Christian Borntraeger wrote and maintain the
+S390X/Linux port.  Florian improved and ruggedised the regression test
+system during 2011.
+
+Philippe Waroquiers wrote and maintains the embedded GDB server.  He
+also made a bunch of performance and memory-reduction fixes across
+diverse parts of the system.
+
 Many, many people sent bug reports, patches, and helpful feedback.
 
 Development of Valgrind was supported in part by the Tri-Lab Partners

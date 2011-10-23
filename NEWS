@@ -1,53 +1,124 @@
 
-Release 3.7.0 (???)
-~~~~~~~~~~~~~~~~~~~
+Release 3.7.0 (XX November 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.7.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.
 
-- It is now possible to build a working Valgrind using Clang-2.9 on
+This release supports X86/Linux, AMD64/Linux, ARM/Linux, PPC32/Linux,
+PPC64/Linux, S390X/Linux, ARM/Android, X86/Darwin and AMD64/Darwin.
+Support for recent distros and toolchain components (glibc 2.14, gcc
+4.6, MacOSX 10.7) has been added.
+
+* ================== PLATFORM CHANGES =================
+
+* Support for IBM z/Architecture (s390x) running Linux.  Valgrind can
+  analyse 64-bit programs running on z/Architecture.  Most user space
+  instructions up to and including z10 are supported.  Valgrind has
+  been tested extensively on z9, z10, and z196 machines running SLES
+  10/11, RedHat 5/6m, and Fedora. The Memcheck and Massif tools are
+  known to work well. Callgrind, Helgrind, and DRD work reasonably
+  well on z9 and later models. See README.s390 for more details.
+
+* Preliminary support for MacOSX 10.7 and XCode 4.  Both 32- and
+  64-bit processes are supported.  Some complex threaded applications
+  (Firefox) are observed to hang when run as 32 bit applications,
+  whereas 64-bit versions run OK.  The cause is unknown.  Memcheck
+  will likely report some false errors.  In general, expect some rough
+  spots.  This release also supports MacOSX 10.6, but drops support
+  for 10.5.
+
+* Preliminary support for Android (on ARM).  Valgrind can now run
+  large applications (eg, Firefox) on (eg) a Samsung Nexus S.  See
+  README.android for more details, plus instructions on how to get
+  started.
+
+* Support for the IBM Power ISA 2.06 (Power7 instructions)
+
+* General correctness and performance improvements for ARM/Linux, and,
+  by extension, ARM/Android.
+
+* Further solidification of support for SSE 4.2 on 64-bit mode.  AVX
+  instruction set support is under development but is not available in
+  this release.
+
+* Support for AIX5 has been removed.
+
+* ==================== TOOL CHANGES ====================
+
+* Memcheck: some incremental changes:
+
+  - reduction of memory use in some circumstances
+
+  - improved handling of freed memory, which in some circumstances 
+    can cause detection of use-after-free that would previously have
+    been missed
+
+  - fix of a longstanding bug that could cause false negatives (missed
+    errors) in programs doing vector saturated narrowing instructions.
+
+* Helgrind: performance improvements and major memory use reductions,
+  particularly for large, long running applications which perform many
+  synchronisation (lock, unlock, etc) events.  Plus many smaller
+  changes:
+
+  - display of locksets for both threads involved in a race
+
+  - general improvements in formatting/clarity of error messages
+
+  - addition of facilities and documentation regarding annotation
+    of thread safe reference counted C++ classes
+
+  - new flag --check-stack-refs=no|yes [yes], to disable race checking
+    on thread stacks (a performance hack)
+
+  - new flag --free-is-write=no|yes [no], to enable detection of races
+    where one thread accesses heap memory but another one frees it,
+    without any coordinating synchronisation event
+
+* DRD: enabled XML output; added support for delayed thread deletion
+  in order to detect races that occur close to the end of a thread
+  (--join-list-vol); fixed a memory leak triggered by repeated client
+  memory allocatation and deallocation; improved Darwin support.
+
+* exp-ptrcheck: this tool has been reduced in scope so as to improve
+  performance and remove checking that Memcheck does better.
+  Specifically, the ability to check for overruns for stack and global
+  arrays is unchanged, but the ability to check for overruns of heap
+  blocks has been removed.  The tool has accordingly been renamed to
+  exp-sgcheck ("Stack and Global Array Checking").
+
+* ==================== OTHER CHANGES ====================
+
+* GDB server: Valgrind now has an embedded GDB server.  That means it
+  is possible to control a Valgrind run from GDB, doing all the usual
+  things that GDB can do (single stepping, breakpoints, examining
+  data, etc).  Tool-specific functionality is also available.  For
+  example, it is possible to query the definedness state of variables
+  or memory from within GDB when running Memcheck; arbitrarily large
+  memory watchpoints are supported, etc.  To use the GDB server, start
+  Valgrind with the flag --vgdb-error=0 and follow the on-screen
+  instructions.
+
+* Improved support for unfriendly self-modifying code: a new option
+  --smc-check=all-non-file is available.  This adds the relevant
+  consistency checks only to code that originates in non-file-backed
+  mappings.  In effect this confines the consistency checking only to
+  code that is or might be JIT generated, and avoids checks on code
+  that must have been compiled ahead of time.  This significantly
+  improves performance on applications that generate code at run time.
+
+* It is now possible to build a working Valgrind using Clang-2.9 on
   Linux.
 
-- preliminary support for MacOSX 10.7.  Both 32- and 64-bit processes
-  are supported.  Some complex threaded applications (Firefox) are
-  observed to hang when run as 32 bit applications, whereas 64-bit
-  versions run OK.  The cause is unknown.  Memcheck will likely report
-  some false errors.  In general, expect some rough spots.
+* new client requests VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING.
+  These enable and disable error reporting on a per-thread, and
+  nestable, basis.  This is useful for hiding errors in particularly
+  troublesome pieces of code.  The MPI wrapper library (libmpiwrap.c)
+  now uses this facility.
 
-- new client requests VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING
+* Added the --mod-funcname option to cg_diff.
 
-- Added the --mod-funcname option to cg_diff.
-- Further reduction in overheads caused by --smc-check=all, especially
-  on 64-bit targets.
-- new variant --smc-check=all-non-file
-
-- hg: performance improvements and memory use reductions, particularly
-  for large, long running applications which perform many synch events.
-
-  showing of locksets for both threads involved in a race
-
-  general improvement of formatting/clarity of error messages
-
-  add facilities and documentation regarding annotation of thread safe
-  reference counted C++ classes
-
-  new flag --check-stack-refs=no|yes [yes], to disable race checking
-  on thread stacks (performance hack)
-
-  new flag --free-is-write=no|yes [no], to enable detection of races
-  where one thread accesses heap memory but another one frees it,
-  without any coordinating synchronisation event
-
-- DRD: enabled XML output; added support for delayed thread deletion in order
-  to detect races that occur close to the end of a thread (--join-list-vol);
-  fixed a memory leak triggered by repeated client memory allocatation and
-  deallocation; improved Darwin support.
-
-* IBM z/Architecture (s390x) running Linux
-  Valgrind can analyse 64-bit programs running on z/Architecture.
-  Most user space instructions up to and including z10 are supported.
-  Valgrind has been tested extensively on z9, z10, and z196 machines
-  running SLES 10/11, RedHat 5/6m, and Fedora. The Memcheck and Massif
-  tools are known to work well. Callgrind, Helgrind, and DRD work
-  reasonably well on z9 and later models. See README.s390 for more
-  details.
+* ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us
@@ -219,6 +290,8 @@ n-i-bz  cachegrind/callgrind: handle CPUID information for Core iX Intel CPUs
         that have non-power-of-2 sizes (also AMDs)
 n-i-bz  don't be spooked by libraries mashed by elfhack
 n-i-bz  don't be spooked by libxul.so linked with gold
+
+(3.7.0: XX November 2011, vex rXXXX, valgrind rXXXXX).
 
 
 

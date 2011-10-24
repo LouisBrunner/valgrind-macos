@@ -4,7 +4,7 @@
 #
 # Make local links in the gdbserver_tests directory
 # so that tests needing gdb can be disabled if
-# a tool old version of gdb is provided or if no gdb is
+# a too old version of gdb is provided or if no gdb is
 # provided.
 #
 # The vgdb link is needed either for gdb tests
@@ -24,55 +24,72 @@ if [ "x$1" = "x" ]; then
   exit 1
 fi
 
+
+export GDB=""
+export GDBVERSIONLINE=""
+export GDBMAJ=""
+export GDBMIN=""
+
+# $1 = Major.Minor gdb version needed
+# $2 = marker file to touch (if version ok) or to remove (version not ok)
+# $3 and following: msg in output
+check_version()
+{
+  NEEDED=$1
+  shift
+  NEEDEDMAJ=$(echo $NEEDED | awk -F\. '{ print $1 }')
+  NEEDEDMIN=$(echo $NEEDED | awk -F\. '{ print $2 }')
+
+  MARKERFILE=$1
+  shift
+
+  if [   \( $GDBMAJ -gt $NEEDEDMAJ \)         \
+      -o \(   \( $GDBMAJ -eq $NEEDEDMAJ \)    \
+           -a \( $GDBMIN -ge $NEEDEDMIN \) \)     ]
+  then
+    if [ ! -f $MARKERFILE ]
+    then
+      touch $MARKERFILE
+    fi
+  else
+    echo "$@"  "suppressed as $GDB version" $GDBVERSIONLINE "is <" $NEEDED 
+    rm -f $MARKERFILE
+  fi
+}
+
 if [ -x "$1" ]
 then
-   ln -f -s "$1" gdbserver_tests/gdb
-   # Try to extract the gdb version.
-   VERSIONLINE=`gdbserver_tests/gdb --version | head -n 1`
-   VERSION=`echo $VERSIONLINE                         |
-            sed -e 's/[^0-9\.]//g' -e 's/\./ /g'`
+   GDB=$1
+   ln -f -s "$GDB" gdbserver_tests/gdb
+   # Try to extract the gdb version major and minor numbers.
+   # We assume these are the first two integers separated by a .
+   GDBVERSIONLINE=`gdbserver_tests/gdb --version | head -n 1`
+   GDBMAJ=`echo $GDBVERSIONLINE | sed -e 's/[^0-9\.]//g' |
+                  awk -F\. '{print $1}'`
+   GDBMIN=`echo $GDBVERSIONLINE | sed -e 's/[^0-9\.]//g' |
+                  awk -F\. '{print $2}'`
    
    # We need at least a 6.5 version to use the Valgrind gdbserver.
-   # However, the tests are only supported/maintained for gdb >= 7
-   VERSIONOK=`echo $VERSION |
-              awk '{ if ($1 >= 7) print "version ok"}'`
-   if [ "$VERSIONOK" = "" ]
-   then
-      echo "gdbserver tests suppressed as $1 version is < 6.5: " $VERSIONLINE
-      rm -f gdbserver_tests/gdb
-   fi
+   # However, the gdb tests are only supported/maintained for gdb >= 7
+   check_version 7.0 gdbserver_tests/gdb "gdbserver gdb tests"
 
-   # We need at least a 7.1 version to run the 'pic' executable test
+   # We need at least a 7.1 version to run the 'pic' executable tests
    # (with 7.0, it fails on many platforms)
-   # On ARM, we need at least 7.1 to run the 'next/step/...' tests.
+   check_version 7.1 gdbserver_tests/gdb.pic "pic executable tests"
+
+   # by default, we can run tests needed next/step/...
+   # But on ARM, we need at least 7.1 to run the 'next/step/...' tests.
    # (gdb 7.0 has bugs in the 'guess next pc' heuristic in thumb mode).
-   VERSIONOK=`echo $VERSION |
-              awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 1)) ) print "version ok"}'`
-   # By default, consider step/next/... tests are ok. We will remove for ARM if needed.
-   touch gdbserver_tests/gdb.step
-   if [ "$VERSIONOK" = "" ]
+   if tests/arch_test arm
    then
-      echo "gdbserver 'pic' tests suppressed as $1 version is < 7.1: " $VERSIONLINE
-      rm -f gdbserver_tests/gdb.pic
-      if tests/arch_test arm
-      then
-         echo "gdbserver 'step/next' tests suppressed as arm $1 version is < 7.1: " $VERSIONLINE
-         rm -f gdbserver_tests/gdb.step
-      fi
+      check_version 7.1 gdbserver_tests/gdb.step "gdbserver next/step/... tests ARM"
    else
-      touch gdbserver_tests/gdb.pic
+      check_version 7.0 gdbserver_tests/gdb.step "gdbserver next/step/... tests"
    fi
 
    # We need at least a 7.2 version for gdb tests using eval command
-   VERSIONOK=`echo $VERSION |
-              awk '{ if ( ($1 >= 8) || (($1 == 7) && ($2 >= 2)) ) print "version ok"}'`
-   if [ "$VERSIONOK" = "" ]
-   then
-      echo "gdbserver eval tests suppressed as $1 version is < 7.2: " $VERSIONLINE
-      rm -f gdbserver_tests/gdb.eval
-   else
-      touch gdbserver_tests/gdb.eval
-   fi
+   check_version 7.2 gdbserver_tests/gdb.eval "gdbserver eval tests"
+
 else
    echo "gdbserver gdb tests suppressed as $1 is not executable"
 fi

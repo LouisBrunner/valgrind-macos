@@ -17,14 +17,13 @@ or (to just run the gdbserver tests with another gdb):
   gdbserver_tests/make_local_links /path/to/another/gdb
   perl tests/vg_regtest gdbserver_tests
 
-The minimum version to use the Valgrind gdbserver is gdb >= 6.5.
+The minimum version to run the tests is gdb >= 6.5.
     Previous versions do not have the 'target remote |' command.  It
-    would be possible to use an older version by having a tcp relay
-    application between gdb and vgdb (or, alternatively, change vgdb
-    so that it could read/write from/to a tcpip socket rather than
-    read/write from stdin/stdout.
+    would be possible to use an older version by using the option
+    --port of vgdb, and using the tcp/ip variant of the 'target remote'
+    GDB command.
 
-The tests have been run on various platforms using gdb 7.2
+The tests have been run on various platforms using gdb versions >= 7.2
 and on some platforms gdb 7.0 and 7.1.
 Some gdb tests implies a gdb >= 7.2. (these are automatically disabled
 if testing with a lower version).

@@ -14,6 +14,8 @@ ways.  The subjects covered are:</para>
 
 <itemizedlist>
   <listitem><para>The "Client Request" mechanism</para></listitem>
+  <listitem><para>Debugging your program using Valgrind's gdbserver
+      and GDB</para></listitem>
   <listitem><para>Function Wrapping</para></listitem>
 </itemizedlist>
 
@@ -376,7 +378,7 @@ command line.
 <para>To debug a program "<filename>prog</filename>" running under
 Valgrind, you must ensure that the Valgrind gdbserver is activated by
 specifying either <option>--vgdb=yes</option>
-or <option>--vgdb=full</option>).  A secondary command line option,
+or <option>--vgdb=full</option>.  A secondary command line option,
 <option>--vgdb-error=number</option>, can be used to tell the gdbserver
 only to become active once the specified number of errors have been
 reported.  A value of zero will therefore cause
@@ -595,7 +597,7 @@ these from a shell command line.  For example, the following command
 lines, when given in a shell, will cause the same leak search to be executed
 by the process 3145:
 <screen><![CDATA[
-vgdb --pid=3145 leak_check any full reachable
+vgdb --pid=3145 leak_check full reachable any
 vgdb --pid=3145 l f r a
 ]]></screen></para>
 
@@ -728,12 +730,10 @@ are however some limitations and peculiarities:</para>
      bytes. The Valgrind gdbserver does not have any limitation on the
      number of simulated hardware watchpoints. It also has no
      limitation on the length of the memory zone being
-     watched.  However, GDB currently does not understand that
-     Valgrind gdbserver watchpoints have no length limit.  A GDB patch
-     providing a command "set remote hardware-watchpoint-length-limit"
-     has been developped. Integration of this patch into GDB would
-     allow full use of the flexibility of the Valgrind gdbserver's
-     simulated hardware watchpoints.
+     watched.  Using GDB version 7.4 or later allow full use of the
+     flexibility of the Valgrind gdbserver's simulated hardware watchpoints.
+     Previous GDB versions do not understand that Valgrind gdbserver
+     watchpoints have no length limit.
      </para>
      <para>Memcheck implements hardware watchpoint simulation by
      marking the watched address ranges as being unaddressable.  When
@@ -1223,7 +1223,7 @@ problems or bugs.</para>
   <listitem>
     <para><varname>v.info gdbserver_status</varname> shows the
     gdbserver status. In case of problems (e.g. of communications),
-    this showns the values of some relevant Valgrind gdbserver internal
+    this shows the values of some relevant Valgrind gdbserver internal
     variables.  Note that the variables related to breakpoints and
     watchpoints (e.g. the number of breakpoint addresses and the number of
     watchpoints) will be zero, as GDB by default removes all

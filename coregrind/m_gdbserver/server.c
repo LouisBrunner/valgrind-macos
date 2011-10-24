@@ -1016,7 +1016,7 @@ void server_main (void)
       if (status == 'W')
          VG_(umsg) ("\nChild exited with status %d\n", zignal);
       if (status == 'X')
-         VG_(umsg) ("\nChild terminated with zignal = 0x%x (%s)\n",
+         VG_(umsg) ("\nChild terminated with signal = 0x%x (%s)\n",
                     target_signal_to_host (zignal),
                     target_signal_to_name (zignal));
       if (status == 'W' || status == 'X') {

@@ -1,0 +1,45 @@
+
+---- part defined, address error at end ----
+
+Uninitialised byte(s) found during client check request
+   at 0x........: main (holey_buffer_too_small.c:21)
+ Address 0x........ is 4 bytes inside a block of size 8 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (holey_buffer_too_small.c:19)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (holey_buffer_too_small.c:19)
+
+Unaddressable byte(s) found during client check request
+   at 0x........: main (holey_buffer_too_small.c:21)
+ Address 0x........ is 0 bytes after a block of size 8 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (holey_buffer_too_small.c:19)
+
+
+---- part defined, address error at start ----
+
+Unaddressable byte(s) found during client check request
+   at 0x........: main (holey_buffer_too_small.c:27)
+ Address 0x........ is 1 bytes before a block of size 8 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (holey_buffer_too_small.c:25)
+
+
+---- fully defined, address error at end ----
+
+Unaddressable byte(s) found during client check request
+   at 0x........: main (holey_buffer_too_small.c:33)
+ Address 0x........ is 0 bytes after a block of size 8 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (holey_buffer_too_small.c:31)
+
+
+---- fully defined, address error at start ----
+
+Unaddressable byte(s) found during client check request
+   at 0x........: main (holey_buffer_too_small.c:39)
+ Address 0x........ is 1 bytes before a block of size 8 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (holey_buffer_too_small.c:37)
+

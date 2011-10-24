@@ -87,6 +87,8 @@ EXTRA_DIST = \
 	file_locking.stderr.exp file_locking.vgtest \
 	fprw.stderr.exp fprw.vgtest \
 	fwrite.stderr.exp fwrite.vgtest fwrite.stderr.exp-kfail \
+	holey_buffer_too_small.vgtest holey_buffer_too_small.stdout.exp \
+	holey_buffer_too_small.stderr.exp \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
@@ -228,6 +230,7 @@ check_PROGRAMS = \
 	err_disable1 err_disable2 err_disable3 err_disable4 \
 	file_locking \
 	fprw fwrite inits inline \
+	holey_buffer_too_small \
 	leak-0 \
 	leak-cases \
 	leak-cycle \

@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 
 #if 0
 
-  VALGRIND_DO_CLIENT_REQUEST_EXPR(0, VG_USERREQ__DRD_TRACE_ADDR,
+  VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_TRACE_ADDR,
                                   &s_racy, 0, 0, 0, 0);
 #endif
 

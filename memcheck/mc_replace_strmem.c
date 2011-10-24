@@ -150,7 +150,7 @@ static inline void my_exit ( int x )
 // This is a macro rather than a function because we don't want to have an
 // extra function in the stack trace.
 #define RECORD_OVERLAP_ERROR(s, src, dst, len)                  \
-  VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
+  VALGRIND_DO_CLIENT_REQUEST_STMT(                              \
                   _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR,   \
                   s, src, dst, len, 0)
 

@@ -22,7 +22,7 @@ void someother ( void )
 int main ( void )
 {
   printf("fooble-1() = %d\n", fooble() );
-  (void)VALGRIND_DISCARD_TRANSLATIONS( (char*)(&fooble), 
+  VALGRIND_DISCARD_TRANSLATIONS( (char*)(&fooble), 
           ((char*)(&someother)) - ((char*)(&fooble)) );
   printf("fooble-2() = %d\n", fooble() );
   return 0;

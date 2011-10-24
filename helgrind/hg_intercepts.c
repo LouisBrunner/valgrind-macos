@@ -89,7 +89,7 @@
       Word _arg1;                                        \
       assert(sizeof(_ty1F) == sizeof(Word));             \
       _arg1 = (Word)(_arg1F);                            \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0, (_creqF),       \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1, 0,0,0,0);        \
    } while (0)
 
@@ -100,7 +100,7 @@
       assert(sizeof(_ty2F) == sizeof(Word));             \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0, (_creqF),       \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1,_arg2,0,0,0);     \
    } while (0)
 
@@ -128,7 +128,7 @@
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _arg3 = (Word)(_arg3F);                            \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0, (_creqF),       \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)
 

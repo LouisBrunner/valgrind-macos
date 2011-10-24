@@ -147,7 +147,7 @@ typedef
       long int _arg1;                                    \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
+      VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
                                  _arg1, 0,0,0,0);        \
    } while (0)
@@ -171,7 +171,7 @@ typedef
       /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
       _arg2 = (long int)(_arg2F);                        \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
+      VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
                                  _arg1,_arg2,0,0,0);     \
    } while (0)
@@ -186,7 +186,7 @@ typedef
       _arg1 = (long int)(_arg1F);                        \
       _arg2 = (long int)(_arg2F);                        \
       _arg3 = (long int)(_arg3F);                        \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
+      VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)

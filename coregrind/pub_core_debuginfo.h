@@ -55,9 +55,15 @@ extern void VG_(di_initialise) ( void );
    refer to the debuginfo read as a result of this specific mapping,
    in later queries to m_debuginfo.  In this case the handle value
    will be one or above.  If the returned value is zero, no debug info
-   was read. */
+   was read.
+
+   For VG_(di_notify_mmap), if use_fd is not -1, that is used instead
+   of the filename; this avoids perturbing fcntl locks, which are
+   released by simply re-opening and closing the same file (even via
+   different fd!).
+*/
 #if defined(VGO_linux) || defined(VGO_darwin)
-extern ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV );
+extern ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd );
 
 extern void VG_(di_notify_munmap)( Addr a, SizeT len );
 

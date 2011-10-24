@@ -3550,7 +3550,8 @@ POST(mmap)
    if (RES != -1) {
       ML_(notify_core_and_tool_of_mmap)(RES, ARG2, ARG3, ARG4, ARG5, ARG6);
       // Try to load symbols from the region
-      VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/ );
+      VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/,
+                           -1/*don't use_fd*/ );
    }
 }
 

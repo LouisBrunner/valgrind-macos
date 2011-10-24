@@ -660,6 +660,10 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    carefully control when the thing will read symbols from the
    Valgrind executable itself.
 
+   If use_fd is not -1, that is used instead of the filename; this
+   avoids perturbing fcntl locks, which are released by simply
+   re-opening and closing the same file (even via different fd!).
+
    If a call to VG_(di_notify_mmap) causes debug info to be read, then
    the returned ULong is an abstract handle which can later be used to
    refer to the debuginfo read as a result of this specific mapping,
@@ -667,18 +671,20 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    will be one or above.  If the returned value is zero, no debug info
    was read. */
 
-ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
+ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 {
    NSegment const * seg;
    HChar*     filename;
    Bool       is_rx_map, is_rw_map, is_ro_map;
    DebugInfo* di;
-   SysRes     fd;
-   Int        nread, oflags;
+   Int        actual_fd, oflags;
+   SysRes     preadres;
    HChar      buf1k[1024];
    Bool       debug = False;
    SysRes     statres;
    struct vg_stat statbuf;
+
+   vg_assert(use_fd >= -1);
 
    /* In short, figure out if this mapping is of interest to us, and
       if so, try to guess what ld.so is doing and when/if we should
@@ -817,36 +823,46 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 #  if defined(VKI_O_LARGEFILE)
    oflags |= VKI_O_LARGEFILE;
 #  endif
-   fd = VG_(open)( filename, oflags, 0 );
-   if (sr_isError(fd)) {
-      if (sr_Err(fd) != VKI_EACCES) {
-         DebugInfo fake_di;
-         VG_(memset)(&fake_di, 0, sizeof(fake_di));
-         fake_di.fsm.filename = filename;
-         ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
-      }
-      return 0;
-   }
-   nread = VG_(read)( sr_Res(fd), buf1k, sizeof(buf1k) );
-   VG_(close)( sr_Res(fd) );
 
-   if (nread == 0)
-      return 0;
-   if (nread < 0) {
+   if (use_fd == -1) {
+      SysRes fd = VG_(open)( filename, oflags, 0 );
+      if (sr_isError(fd)) {
+         if (sr_Err(fd) != VKI_EACCES) {
+            DebugInfo fake_di;
+            VG_(memset)(&fake_di, 0, sizeof(fake_di));
+            fake_di.fsm.filename = filename;
+            ML_(symerr)(&fake_di, True,
+                        "can't open file to inspect ELF header");
+         }
+         return 0;
+      }
+      actual_fd = sr_Res(fd);
+   } else {
+      actual_fd = use_fd;
+   }
+
+   preadres = VG_(pread)( actual_fd, buf1k, sizeof(buf1k), 0 );
+   if (use_fd == -1) {
+      VG_(close)( actual_fd );
+   }
+
+   if (sr_isError(preadres)) {
       DebugInfo fake_di;
       VG_(memset)(&fake_di, 0, sizeof(fake_di));
       fake_di.fsm.filename = filename;
       ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
       return 0;
    }
-   vg_assert(nread > 0 && nread <= sizeof(buf1k) );
+   if (sr_Res(preadres) == 0)
+      return 0;
+   vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf1k) );
 
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux)
-   if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
+   if (!ML_(is_elf_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
       return 0;
 #  elif defined(VGO_darwin)
-   if (!ML_(is_macho_object_file)( buf1k, (SizeT)nread ))
+   if (!ML_(is_macho_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
       return 0;
 #  else
 #    error "unknown OS"

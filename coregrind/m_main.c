@@ -1929,7 +1929,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         be True here so that we read info from the valgrind executable
         itself. */
      for (i = 0; i < n_seg_starts; i++) {
-        anu.ull = VG_(di_notify_mmap)( seg_starts[i], True/*allow_SkFileV*/ );
+        anu.ull = VG_(di_notify_mmap)( seg_starts[i], True/*allow_SkFileV*/,
+                                       -1/*Don't use_fd*/);
         /* anu.ull holds the debuginfo handle returned by di_notify_mmap,
            if any. */
         if (anu.ull > 0) {
@@ -1949,8 +1950,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      /* show them all to the debug info reader.  
         Don't read from V segments (unlike Linux) */
      // GrP fixme really?
-     for (i = 0; i < n_seg_starts; i++)
-        VG_(di_notify_mmap)( seg_starts[i], False/*don't allow_SkFileV*/ );
+     for (i = 0; i < n_seg_starts; i++) {
+        VG_(di_notify_mmap)( seg_starts[i], False/*don't allow_SkFileV*/,
+                             -1/*don't use_fd*/);
+     }
 
      VG_(free)( seg_starts );
    }

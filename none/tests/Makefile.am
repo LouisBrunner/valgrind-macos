@@ -92,6 +92,8 @@ EXTRA_DIST = \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
+	mmap_fcntl_bug.vgtest mmap_fcntl_bug.stdout.exp \
+		mmap_fcntl_bug.stderr.exp \
 	mq.stderr.exp mq.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
@@ -168,6 +170,7 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip \
+	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
 	nestedfns \
 	pending \

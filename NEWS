@@ -37,7 +37,7 @@ Support for recent distros and toolchain components (glibc 2.14, gcc
 * General correctness and performance improvements for ARM/Linux, and,
   by extension, ARM/Android.
 
-* Further solidification of support for SSE 4.2 on 64-bit mode.  AVX
+* Further solidification of support for SSE 4.2 in 64-bit mode.  AVX
   instruction set support is under development but is not available in
   this release.
 
@@ -253,6 +253,7 @@ where XXXXXX is the bug number as listed below.
 278349  F_GETPIPE_SZ and  F_SETPIPE_SZ Linux fcntl commands
 278454  VALGRIND_STACK_DEREGISTER has wrong output type
 278502  == 275284 (Valgrind confuses memcpy() and memmove())
+278892  gdbsrv: factorize gdb version handling, fix doc and typos
 279027  Support for MVCL and CLCL instruction
 279027  s390x: Provide support for CLCL and MVCL instructions
 279062  Remove a redundant check in the insn selector for ppc.
@@ -266,6 +267,7 @@ where XXXXXX is the bug number as listed below.
 280290  vex amd64->IR: 0x66 0xF 0x38 0x28 0xC1 0x66 0xF 0x6F
 280710  s390x: config files for nightly builds
 280757  /tmp dir still used by valgrind even if TMPDIR is specified
+280965  Valgrind breaks fcntl locks when program does mmap
 281138  WARNING: unhandled syscall: 340
 281241  == 275168 (valgrind useless on Macos 10.7.1 Lion)
 281304  == 275168 (Darwin: dyld "cannot load inserted library")
@@ -286,10 +288,12 @@ where XXXXXX is the bug number as listed below.
 283709  none/tests/faultstatus needs to account for page size
 284305  filter_gdb needs enhancement to work on ppc64
 284472  Thumb2 ROR.W encoding T2 not implemented
+284621  XML-escape process command line in XML output
 n-i-bz  cachegrind/callgrind: handle CPUID information for Core iX Intel CPUs
         that have non-power-of-2 sizes (also AMDs)
 n-i-bz  don't be spooked by libraries mashed by elfhack
 n-i-bz  don't be spooked by libxul.so linked with gold
+n-i-bz  improved checking for VALGRIND_CHECK_MEM_IS_DEFINED
 
 (3.7.0: XX November 2011, vex rXXXX, valgrind rXXXXX).
 

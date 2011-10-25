@@ -287,6 +287,7 @@ where XXXXXX is the bug number as listed below.
 283600  gdbsrv: android: port vgdb.c
 283709  none/tests/faultstatus needs to account for page size
 284305  filter_gdb needs enhancement to work on ppc64
+284384  clang 3.1 -Wunused-value warnings in valgrind.h, memcheck.h
 284472  Thumb2 ROR.W encoding T2 not implemented
 284621  XML-escape process command line in XML output
 n-i-bz  cachegrind/callgrind: handle CPUID information for Core iX Intel CPUs

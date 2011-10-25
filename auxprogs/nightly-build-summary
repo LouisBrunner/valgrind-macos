@@ -1,0 +1,476 @@
+#!/usr/bin/env perl 
+
+#-----------------------------------------------------------------
+# Quick and dirty script to summarize build information for a
+# set of nightly runs.
+#
+# The results of the nighly regression runs are extracted from 
+# the GMANE mail archive. The URL for a given mail sent to the
+# valgrind-developers mailing list is
+#
+#   http://article.gmane.org/gmane.comp.debugging.valgrind.devel/<integer>
+#
+# The script extracts information about the regression run from a
+# block of information at the beginning of the mail. That information 
+# was added beginning October 4, 2011. Therefore, only regression runs
+# from that date or later can be analyzed.
+#
+# There is unfortunately no good way of figuring out the interval
+# of integers in the above URL that include all nightly regression
+# runs.
+#
+# The function get_regtest_data does all the work. It returns a hash
+# whose keys are the dates at which nightly runs took place. The value
+# is in turn a hash.
+#
+# Each such hash has the following keys:
+#   "builds"                 array of hashes
+#   "num_builds"             int
+#   "num_failing_builds"     int
+#   "num_passing_builds"     int
+#   "num_testcase_failures"  int
+#   "num_failing_testcases"  int
+#   "failure_frequency"      hash indexed by testcase name; value = int
+# 
+# "builds" is an array of hashes with the following keys
+#   "arch"                   string (architecture)
+#   "distro"                 string (distribution, e.g. Fedora-15)
+#   "failures"               array of strings (failing testcases)
+#   "valgrind revision"      integer
+#   "VEX revision"           integer
+#   "GCC version"            string
+#   "C library"              string
+#   "uname -mrs"             string
+#   "Vendor version"         string
+# 
+#-----------------------------------------------------------------
+use strict;
+use warnings; 
+
+use LWP::Simple;
+use Getopt::Long;
+
+my $prog_name = "nightly-build-summary";
+
+my $debug = 0;
+my $keep  = 0;
+
+my $usage=<<EOF;
+USAGE
+
+  $prog_name
+
+     --from=INTEGER    beginning of mail interval; > 14800
+
+    [--to=INTEGER]     end of mail interval; default = from + 100
+
+    [--debug]          verbose mode (debugging)
+
+    [--keep]           write individual emails to files (debugging)
+
+    [--dump]           write results suitable for post-processing
+
+    [--readable]       write results in human readable form (default)
+
+EOF
+
+
+#-----------------------------------------------------------------
+# Search for a line indicating that this is an email containing
+# the results of a valgrind regression run.
+# Return 1, if found and 0 oherwise.
+#-----------------------------------------------------------------
+sub is_regtest_result {
+    my (@lines) = @_;
+
+    foreach my $line (@lines) {
+        return 1 if ($line =~ "^valgrind revision:");
+    }
+
+    return 0;
+}
+
+
+#-----------------------------------------------------------------
+# Extract information from the run. Don't prep the data here. This
+# is done later on.
+#-----------------------------------------------------------------
+sub get_raw_data {
+    my (@lines, $msgno) = @_;
+    my ($i, $n, $line, $date);
+
+    $n = scalar @lines;
+
+    my %hash = ();
+
+# 1) Get the date from the mail header. This comes first
+    for ($i = 0; $i < $n; ++$i) {
+        $line = $lines[$i];
+
+        if ($line =~ /^Date:/) {
+            $date = (split(/ /, $line))[1];
+            last;
+        }
+    }
+    die "no date found in message $msgno" if ($i == $n);
+
+# 2) Locate the section with the info about the environment of this nightly run
+    for ($i = $i + 1; $i < $n; ++$i) {
+        last if ($lines[$i] =~ /^valgrind revision:/);
+    }
+    die "no info block in message $msgno" if ($i == $n);
+
+# 3) Read the info about the build: compiler, valgrind revision etc.
+#    and put it into a hash.
+    for ( ; $i < $n; ++$i) {
+        $line = $lines[$i];
+        last if ($line =~ /^$/);    # empty line indicates end of section
+        my ($key, $value) = split(/:/, $line);
+        $value =~ s/^[ ]*//;        # removing leading blanks
+        $hash{$key} = $value;
+    }
+
+    if ($debug) {
+        foreach my $key (keys %hash) {
+            my ($val) = $hash{$key};
+            print "regtest env: KEY = |$key|  VAL = |$val|\n";
+        }
+    }
+
+# 4) Find out if the regression run failed or passed
+    $hash{"failures"} = [];
+    for ($i = $i + 1; $i < $n; ++$i) {
+        $line = $lines[$i];
+        if ($line =~ /Running regression tests/) {
+            return %hash if ($line =~ /done$/);   # regtest succeeded; no failures
+            die "cannot determine regtest outcome for message $msgno"
+                if (! ($line =~ /failed$/));
+            last;
+        }
+    }
+
+# 5) Regtest failed; locate the section with the list of failing testcases
+    for ($i = $i + 1; $i < $n; ++$i) {
+        $line = $lines[$i];
+# Match for end-of-line == because line might be split.
+        last if ($line =~ /==$/);
+    }
+    die "cannot locate failing testcases in message $msgno" if ($i == $n);
+
+# 6) Get list of failing testcases
+    for ($i = $i + 1; $i < $n; ++$i) {
+        $line = $lines[$i];
+
+        last if ($line =~ /^$/);
+
+        my ($testcase) = (split(/\s+/, $line))[0];
+        print "ADD failing testcase $testcase\n" if ($debug);
+        push @{$hash{"failures"}}, $testcase;
+    }
+
+    return ($date, %hash);
+}
+
+
+#-----------------------------------------------------------------
+# Extract architecture; get a pretty name for the distro
+#-----------------------------------------------------------------
+sub prep_regtest_data {
+    my (%hash) = @_;
+    my ($val, $arch, $distro);
+
+    $val = $hash{"uname -mrs"};
+    die "uname -mrs info is missing" if (! defined $val);
+    $arch = (split(/ /, $val))[2];
+
+    $val = $hash{"Vendor version"};
+    die "Vendor version info is missing" if (! defined $val);
+
+    if ($val =~ /Fedora release ([0-9]+)/) {
+        $distro = "Fedora-$1";
+    } elsif ($val =~ /openSUSE ([0-9]+)\.([0-9]+)/) {
+        $distro = "openSUSE-$1.$2";
+    } elsif ($val =~ /SUSE Linux Enterprise Server 11 SP1/) {
+        $distro = "SLES-11-SP1";
+    } elsif ($val =~ /Red Hat Enterprise Linux AS release 4/) {
+        $distro = "RHEL-4";
+    } else {
+        $distro = "UNKNOWN";
+    }
+
+# Add architecture and distribution to hash
+    $hash{"arch"}   = $arch;
+    $hash{"distro"} = $distro;
+
+    return %hash;
+}
+
+
+#-----------------------------------------------------------------
+# Precompute some summary information and record it
+#-----------------------------------------------------------------
+sub precompute_summary_info
+{
+    my (%dates) = @_;
+
+    foreach my $date (sort keys %dates) {
+        my %failure_frequency = ();
+
+        my %nightly = %{ $dates{$date} };
+        my @builds  = @{ $nightly{"builds"} };
+
+        $nightly{"num_builds"} = scalar (@builds);
+        $nightly{"num_failing_builds"} = 0;
+        $nightly{"num_testcase_failures"} = 0;
+
+        foreach my $build (@builds) {
+            my %regtest_data   = %{ $build };
+
+            my @failures = @{ $regtest_data{"failures"} };
+            my $num_fail = scalar (@failures);
+
+            ++$nightly{"num_failing_builds"} if ($num_fail != 0);
+            $nightly{"num_testcase_failures"} += $num_fail;
+
+# Compute how often a testcase failed
+            foreach my $test ( @failures ) {
+                if (defined $failure_frequency{$test}) {
+                    ++$failure_frequency{$test};
+                } else {
+                    $failure_frequency{$test} = 1;
+                }
+            }
+        }
+
+        $nightly{"num_passing_builds"} = 
+            $nightly{"num_builds"} - $nightly{"num_failing_builds"};
+
+        $nightly{"num_failing_testcases"} = scalar (keys %failure_frequency);
+
+        $nightly{"failure_frequency"} = { %failure_frequency };
+
+        $dates{$date} = { %nightly };
+    }
+
+    return %dates;
+}
+
+
+#-----------------------------------------------------------------
+# Get messages from GMANE, and build up a database of results.
+#-----------------------------------------------------------------
+sub get_regtest_data {
+    my ($from, $to) = @_;
+
+    my $url_base = "http://article.gmane.org/gmane.comp.debugging.valgrind.devel/";
+
+    my %dates = ();
+
+    my $old_date = "-1";
+    my @builds = ();
+
+    for (my $i = $from; $i <= $to; ++$i) {
+        my $url = "$url_base" . "$i";
+
+	my $page = get("$url");
+
+        if ($keep) {
+            open (EMAIL, ">$i");
+            print EMAIL  $page;
+            close(EMAIL);
+        }
+
+# Detect if the article does not exist. Happens for too large --to= values 
+        last if ($page eq "No such file.\n");
+
+# Split the page into lines
+        my @lines = split(/\n/, $page);
+
+# Check whether it contains a regression test result
+        next if (! is_regtest_result(@lines));
+        print "message $i is a regression test result\n" if ($debug);
+
+# Get the raw data
+        my ($date, %regtest_data) = get_raw_data(@lines);
+
+        %regtest_data = prep_regtest_data(%regtest_data);
+
+        if ($date ne $old_date) {
+            my %nightly = ();
+            $nightly{"builds"} = [ @builds ];
+            $dates{$old_date} = { %nightly } if ($old_date ne "-1");
+
+            $old_date = $date;
+            @builds = ();
+        }
+
+        push @builds, { %regtest_data };
+    }
+    my %nightly = ();
+    $nightly{"builds"} = [ @builds ];
+    $dates{$old_date} = { %nightly } if ($old_date ne "-1");
+
+# Convenience: precompute some info we'll be interested in
+    %dates = precompute_summary_info( %dates );
+
+    return %dates;
+}
+
+
+#-----------------------------------------------------------------
+# Write out the results in a form suitable for automatic post-processing
+#-----------------------------------------------------------------
+sub dump_results {
+    my (%dates) = @_;
+
+    foreach my $date (sort keys %dates) {
+
+        my %nightly = %{ $dates{$date} };
+        my @builds  = @{ $nightly{"builds"} };
+
+        foreach my $build (@builds) {
+            my %regtest_data   = %{ $build };
+
+            my $arch     = $regtest_data{"arch"};
+            my $distro   = $regtest_data{"distro"};
+            my @failures = @{ $regtest_data{"failures"} };
+            my $num_fail = scalar (@failures);
+            my $fails    = join(":", sort @failures);
+
+            printf("Regrun: %s  %3d  %-10s %-20s %s\n",
+                   $date, $num_fail, $arch, $distro, $fails);
+        }
+
+        my %failure_frequency = %{ $nightly{"failure_frequency"} };
+
+        foreach my $test (keys %failure_frequency) {
+            printf("Test:   %s  %3d  %s\n",
+                   $date, $failure_frequency{$test}, $test);
+        }
+
+        printf("Total:  %s  builds: %d  %d fail  %d pass  tests: %d fail  %d unique\n",
+               $date, $nightly{"num_builds"}, $nightly{"num_failing_builds"},
+               $nightly{"num_passing_builds"}, $nightly{"num_testcase_failures"},
+               $nightly{"num_failing_testcases"});
+    }
+}
+
+
+sub write_readable_results {
+    my (%dates) = @_;
+
+    foreach my $date (sort keys %dates) {
+        my %nightly = %{ $dates{$date} };
+
+        print "$date\n----------\n";
+
+        printf("%3d builds\n", $nightly{"num_builds"});
+        printf("%3d builds fail\n", $nightly{"num_failing_builds"});
+        printf("%3d builds pass\n", $nightly{"num_passing_builds"});
+        print "\n";
+        printf("%3d testcase failures (across all runs)\n",
+               $nightly{"num_testcase_failures"});
+        printf("%3d failing testcases (unique)\n",
+               $nightly{"num_failing_testcases"});
+        print "\n";
+
+        my @builds  = @{ $nightly{"builds"} };
+
+        if ($nightly{"num_passing_builds"} != 0) {
+            print "Passing builds\n";
+            print "--------------\n";
+            foreach my $build (@builds) {
+                my %regtest_data = %{ $build };
+                my @failures     = @{ $regtest_data{"failures"} };
+                my $num_fail     = scalar (@failures);
+
+                if ($num_fail == 0) {
+                    my $arch   = $regtest_data{"arch"};
+                    my $distro = $regtest_data{"distro"};
+
+                    printf("%-8s %-15s\n", $arch, $distro);
+                }
+                print "\n";
+            }
+            print "\n";
+        }
+
+        if ($nightly{"num_failing_builds"} != 0) {
+            print "Failing builds\n";
+            print "--------------\n";
+            foreach my $build (@builds) {
+                my %regtest_data = %{ $build };
+                my @failures     = @{ $regtest_data{"failures"} };
+                my $num_fail     = scalar (@failures);
+
+                if ($num_fail != 0) {
+                    my $arch     = $regtest_data{"arch"};
+                    my $distro   = $regtest_data{"distro"};
+
+                    printf("%-8s %-15s %d failures\n", $arch, $distro, $num_fail);
+                    foreach my $test (@failures) {
+                        print "         $test\n";
+                    }
+                    print "\n";
+                }
+            }
+            print "\n";
+        }
+
+        print "Failing testcases and their frequency\n";
+        print "-------------------------------------\n";
+        my %failure_frequency = %{ $nightly{"failure_frequency"} };
+
+# Sorted in decreasing frequency
+        foreach my $test (sort {$failure_frequency{$b} cmp $failure_frequency{$a} }
+                          keys %failure_frequency) {
+            printf("%3d  %s\n", $failure_frequency{$test}, $test);
+        }
+        print "\n";
+    }
+}
+
+
+sub main
+{
+    my ($from, $to, $dump, $readable);
+
+    $from = $to = 0;
+    $dump = $readable = 0;
+
+    GetOptions( "from=i"   => \$from,
+                "to=i"     => \$to,
+                "debug"    => \$debug,
+                "dump"     => \$dump,
+                "keep"     => \$keep,
+                "readable" => \$readable
+        ) || die $usage;
+
+# 14800 is about Oct 4, 2011 which is when we began including information
+# about the environment
+
+    die $usage if ($from < 14800);
+
+    $to = $from + 100 if ($to == 0);
+
+    if ($from > $to) {
+        print STDERR "*** invalid [from,to] interval. Try again\n";
+        die $usage;
+    }
+
+    $readable = 1 if ($dump == 0 && $readable == 0);
+
+    print "check message interval [$from...$to]\n" if ($debug);
+
+# Get mails from GMANE mail archive
+
+    my %dates = get_regtest_data($from, $to);
+
+    dump_results(%dates) if ($dump);
+
+    write_readable_results(%dates) if ($readable);
+}
+
+main();
+
+exit 0;

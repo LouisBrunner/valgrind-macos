@@ -811,10 +811,10 @@ void CLG_(setup_bbcc)(BB* bb)
 
     if (delayed_push && !skip) {
       if (CLG_(clo).skip_direct_recursion) {
-	/* do not increment rec. level if called from
-	 * same function */
-	if (!CLG_(current_state).bbcc || 
-	    (CLG_(current_state).bbcc->cxt->fn[0] != bbcc->cxt->fn[0]))
+        /* a call was detected, which means that the source BB != 0 */
+	CLG_ASSERT(CLG_(current_state).bbcc != 0);
+	/* only increment rec. level if called from different function */ 
+	if (CLG_(current_state).bbcc->cxt->fn[0] != bbcc->cxt->fn[0])
 	  level++;
       }
       else level++;

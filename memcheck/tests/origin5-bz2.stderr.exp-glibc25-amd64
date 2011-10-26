@@ -4,7 +4,8 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (origin5-bz2.c:6479)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: handle_compress (origin5-bz2.c:4686)
+   at 0x........: copy_input_until_stop (origin5-bz2.c:4686)
+   by 0x........: handle_compress (origin5-bz2.c:4750)
    by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
    by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
    by 0x........: main (origin5-bz2.c:6484)
@@ -12,7 +13,8 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (origin5-bz2.c:6479)
 
 Use of uninitialised value of size 8
-   at 0x........: handle_compress (origin5-bz2.c:4686)
+   at 0x........: copy_input_until_stop (origin5-bz2.c:4686)
+   by 0x........: handle_compress (origin5-bz2.c:4750)
    by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
    by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
    by 0x........: main (origin5-bz2.c:6484)
@@ -20,7 +22,8 @@ Use of uninitialised value of size 8
    at 0x........: main (origin5-bz2.c:6479)
 
 Use of uninitialised value of size 8
-   at 0x........: handle_compress (origin5-bz2.c:4686)
+   at 0x........: copy_input_until_stop (origin5-bz2.c:4686)
+   by 0x........: handle_compress (origin5-bz2.c:4750)
    by 0x........: BZ2_bzCompress (origin5-bz2.c:4822)
    by 0x........: BZ2_bzBuffToBuffCompress (origin5-bz2.c:5630)
    by 0x........: main (origin5-bz2.c:6484)

@@ -59,6 +59,13 @@ TOOL_LDFLAGS_X86_DARWIN = \
 TOOL_LDFLAGS_AMD64_DARWIN = \
 	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch x86_64
 
+# On Android we must ask for non-executable stack, not sure why.
+if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+if VGCONF_PLATVARIANT_IS_ANDROID
+TOOL_LDFLAGS_ARM_LINUX += -Wl,-z,noexecstack
+endif
+endif
+
 # NB for 64-bit darwin.  We may want to set -Wl,-pagezero_size to
 # something smaller than the default of 4G, so as to facilitate
 # loading clients who are also linked thusly (currently m_ume.c

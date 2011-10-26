@@ -52,6 +52,12 @@ valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif
+# On Android we must ask for non-executable stack, not sure why.
+if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+if VGCONF_PLATVARIANT_IS_ANDROID
+valgrind_LDFLAGS   += -Wl,-z,noexecstack
+endif
+endif
 
 vgdb_SOURCES = vgdb.c
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)

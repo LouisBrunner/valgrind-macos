@@ -5173,11 +5173,13 @@ POST(sys_ioctl)
       */
       if (1) {
          /* blunt-instrument approach */
-         if (0) VG_(printf)("QQQQQQQQQQ c01c quick hack actioned (%08lx, %08lx)\n", ARG2, ARG3);
+         if (0) VG_(printf)("QQQQQQQQQQ c01c quick hack actioned"
+                            " (%08lx, %08lx)\n", ARG2, ARG3);
          POST_MEM_WRITE(ARG3, 256);
       } else {
          /* be a bit more sophisticated */
-         if (0) VG_(printf)("QQQQQQQQQQ c01c quick hack actioned (%08lx, %08lx) (fancy)\n", ARG2, ARG3);
+         if (0) VG_(printf)("QQQQQQQQQQ c01c quick hack actioned"
+                            " (%08lx, %08lx) (fancy)\n", ARG2, ARG3);
          POST_MEM_WRITE(ARG3, 28);
          UInt* word = (UInt*)ARG3;
          if (word && word[2] && word[3] < 0x200/*stay sane*/)
@@ -5197,6 +5199,14 @@ POST(sys_ioctl)
    }
    /* END Nexus S specific ioctls */
 
+
+#  elif defined(ANDROID_HARDWARE_pandaboard)
+
+   /* BEGIN Pandaboard specific ioctls */
+   /* currently none are known */
+   /* END Pandaboard specific ioctls */
+
+
 #  else /* no ANDROID_HARDWARE_anything defined */
 
 #   warning ""
@@ -5205,6 +5215,7 @@ POST(sys_ioctl)
 #   warning "building for.  Currently known values are"
 #   warning ""
 #   warning "   ANDROID_HARDWARE_nexus_s       Samsung Nexus S"
+#   warning "   ANDROID_HARDWARE_pandaboard    Pandaboard running Linaro Android"
 #   warning ""
 #   warning "Make sure you exactly follow the steps in README.android."
 #   warning ""

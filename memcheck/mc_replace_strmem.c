@@ -1493,7 +1493,9 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
- STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
+# if !defined(VGPV_arm_linux_android)
+  STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
+# endif
 
 #elif defined(VGO_darwin)
 

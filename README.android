@@ -25,10 +25,11 @@ export NDKROOT=/path/to/android-ndk-r6
 # NDKROOT above, this is merely to avoid repeated typing; none of the
 # commands read it.
 #
-# Currently the only supported value is:  nexus_s
+# Currently the supported values are:  nexus_s pandaboard
+# So choose one of the below:
 #
 export HWKIND=nexus_s         # Samsung Nexus S
-
+export HWKIND=pandaboard      # Pandaboard running Linaro Android
 
 # Then cd to the root of your Valgrind source tree.
 #
@@ -49,7 +50,7 @@ export CC=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin
 # Do configuration stuff.  Don't mess with the --prefix in the
 # configure command below, even if you think it's wrong.
 # You may need to set the --with-tmpdir path to something
-# different if /sdcard doesn't works on the device -- this is
+# different if /sdcard doesn't work on the device -- this is
 # a known cause of difficulties.
 
 ./autogen.sh

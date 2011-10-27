@@ -512,12 +512,47 @@ gdb prog
 ]]></screen>
 GDB will use a local tcp/ip connection to connect to the Android adb forwarder.
 Adb will establish a relay connection between the host system and the Android
-target system. Pay attention to use the GDB delivered in the
+target system.  Be sure to use the GDB delivered in the
 Android NDK system (typically, arm-linux-androideabi-gdb), as the host
 GDB is probably not able to debug Android arm applications.
 Note that the local port nr (used by GDB) must not necessarily be equal
 to the port number used by vgdb: adb can forward tcp/ip between different
 port numbers.
+</para>
+
+<para>In the 3.7.0 release, the GDB server is not enabled by default
+for Android, due to problems in establishing a suitable directory in
+which Valgrind can create the necessary FIFOs (named pipes) for
+communication purposes.  You can stil try to use the GDB server, but
+you will need to explicitly enable it using the flag 
+<computeroutput>--vgdb=yes</computeroutput> or
+<computeroutput>--vgdb=full</computeroutput>.
+</para>
+
+<para>Additionally, you
+will need to select a temporary directory which is (a) writable
+by Valgrind, and (b) supports FIFOs.  This is the main difficult
+point.  Often, <computeroutput>/sdcard</computeroutput> satisfies
+requirement (a), but fails for (b) because it is a VFAT file system
+and VFAT does not support pipes.  Possibilities you could try are
+<computeroutput>/data/local</computeroutput>,
+<computeroutput>/data/local/Inst</computeroutput> (if you
+installed Valgrind there), or
+<computeroutput>/data/data/name.of.my.app</computeroutput>, if you
+are running a specific application and it has its own directory of 
+that form.  This last possibility may have the highest probability
+of success.</para>
+
+<para>You can specify the temporary directory to use either via
+the <computeroutput>--with-tmpdir=</computeroutput> configure time
+flag, or by setting environment variable TMPDIR when running Valgrind
+(on the device, not the Android device).
+</para>
+
+<para>We hope to have a better story for temporary directory handling
+on Android in the future.  The difficulty is that, unlike in standard
+Unixes, there is no single temporary file directory that reliably
+works across all devices and scenarios.
 </para>
 
 </sect2>

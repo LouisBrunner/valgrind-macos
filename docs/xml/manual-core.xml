@@ -2021,8 +2021,8 @@ subject to the following constraints:</para>
   <listitem>
    <para>On ARM, essentially the entire ARMv7-A instruction set
     is supported, in both ARM and Thumb mode.  ThumbEE and Jazelle are
-    not supported.  NEON and VFPv3 support is fairly complete.  ARMv6
-    media instruction support is mostly done but not yet complete.
+    not supported.  NEON, VFPv3 and ARMv6 media support is fairly
+    complete.
    </para>
   </listitem>
 

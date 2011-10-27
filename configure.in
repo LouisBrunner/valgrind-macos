@@ -1348,9 +1348,9 @@ AC_SUBST([FLAG_W_EXTRA], [-Wextra])
 AC_MSG_RESULT([-Wextra])
 ], [
   CFLAGS="-W"
-  AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[ ]], [[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
     return 0;
-  ]]), [
+  ]])], [
   AC_SUBST([FLAG_W_EXTRA], [-W])
   AC_MSG_RESULT([-W])
   ], [

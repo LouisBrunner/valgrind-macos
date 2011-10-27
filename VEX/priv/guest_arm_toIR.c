@@ -16077,8 +16077,8 @@ DisResult disInstr_THUMB_WRK (
       UInt rN = INSN0(3,0);
       UInt rD = INSN1(11,8);
       Bool valid = !isBadRegT(rN) && !isBadRegT(rD);
-      /* but allow "add.w reg, sp, #constT" */ 
-      if (!valid && rN == 13 && rD != 15)
+      /* but allow "add.w reg, sp, #constT" for reg != PC */ 
+      if (!valid && rD <= 14 && rN == 13)
          valid = True;
       if (valid) {
          IRTemp argL  = newTemp(Ity_I32);
@@ -16104,8 +16104,8 @@ DisResult disInstr_THUMB_WRK (
       UInt rN = INSN0(3,0);
       UInt rD = INSN1(11,8);
       Bool valid = !isBadRegT(rN) && !isBadRegT(rD);
-      /* but allow "addw sp, sp, #uimm12" */
-      if (!valid && rD == 13 && rN == 13)
+      /* but allow "addw reg, sp, #uimm12" for reg != PC */
+      if (!valid && rD <= 14 && rN == 13)
          valid = True;
       if (valid) {
          IRTemp argL = newTemp(Ity_I32);

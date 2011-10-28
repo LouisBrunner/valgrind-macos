@@ -1,3 +1,3 @@
 prog: ssse3_misaligned
-prereq: ../../../tests/x86_amd64_features x86-ssse3
+prereq: test -x ssse3_misaligned && ../../../tests/x86_amd64_features x86-ssse3
 vgopts: -q

@@ -384,7 +384,7 @@ Bool get_elf_symbol_info (
    */
    if (sym->st_size == 0) {
 #     if defined(VGPV_arm_linux_android)
-      *sym_size_out = 1024;
+      *sym_size_out = 2048;
 #     else
       TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
       return False;

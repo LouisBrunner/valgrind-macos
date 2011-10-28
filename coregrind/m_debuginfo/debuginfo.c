@@ -1100,8 +1100,8 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
          */
          Int mashedSzB = VG_(strlen)(pdbname) + VG_(strlen)(wpfx) + 50/*misc*/;
          HChar* mashed = ML_(dinfo_zalloc)("di.debuginfo.dnpdi.1", mashedSzB);
-         VG_(sprintf)(mashed, "%s/drive_%c%s",
-                      wpfx, pdbname[0], &pdbname[2]);
+         VG_(snprintf)(mashed, mashedSzB, "%s/drive_%c%s",
+                       wpfx, pdbname[0], &pdbname[2]);
          vg_assert(mashed[mashedSzB-1] == 0);
          ML_(dinfo_free)(pdbname);
          pdbname = mashed;
@@ -1112,8 +1112,8 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
          */
          Int mashedSzB = VG_(strlen)(pdbname) + VG_(strlen)(home) + 50/*misc*/;
          HChar* mashed = ML_(dinfo_zalloc)("di.debuginfo.dnpdi.2", mashedSzB);
-         VG_(sprintf)(mashed, "%s/.wine/drive_%c%s",
-                      home, pdbname[0], &pdbname[2]);
+         VG_(snprintf)(mashed, mashedSzB, "%s/.wine/drive_%c%s",
+		       home, pdbname[0], &pdbname[2]);
          vg_assert(mashed[mashedSzB-1] == 0);
          ML_(dinfo_free)(pdbname);
          pdbname = mashed;

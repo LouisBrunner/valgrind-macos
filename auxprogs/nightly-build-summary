@@ -103,24 +103,13 @@ sub get_raw_data {
 
     my %hash = ();
 
-# 1) Get the date from the mail header. This comes first
-    for ($i = 0; $i < $n; ++$i) {
-        $line = $lines[$i];
-
-        if ($line =~ /^Date:/) {
-            $date = (split(/ /, $line))[1];
-            last;
-        }
-    }
-    die "no date found in message $msgno" if ($i == $n);
-
-# 2) Locate the section with the info about the environment of this nightly run
+# 1) Locate the section with the info about the environment of this nightly run
     for ($i = $i + 1; $i < $n; ++$i) {
         last if ($lines[$i] =~ /^valgrind revision:/);
     }
     die "no info block in message $msgno" if ($i == $n);
 
-# 3) Read the info about the build: compiler, valgrind revision etc.
+# 2) Read the info about the build: compiler, valgrind revision etc.
 #    and put it into a hash.
     for ( ; $i < $n; ++$i) {
         $line = $lines[$i];
@@ -136,6 +125,19 @@ sub get_raw_data {
             print "regtest env: KEY = |$key|  VAL = |$val|\n";
         }
     }
+
+# 3) Get the date from when the build was kicked off.
+    for ( ; $i < $n; ++$i) {
+        $line = $lines[$i];
+
+        if ($line =~ /^Started at[ ]+([^ ]+)/) {
+            $date = $1;
+            print "DATE = $date\n";
+            last;
+        }
+    }
+    die "no date found in message $msgno" if ($i == $n);
+
 
 # 4) Find out if the regression run failed or passed
     $hash{"failures"} = [];

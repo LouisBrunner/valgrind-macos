@@ -185,8 +185,3 @@ annotate_hbefore_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
 else
 annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
-
-if VGCONF_OS_IS_LINUX
-cond_timedwait_invalid_LDADD = -lrt
-endif
-

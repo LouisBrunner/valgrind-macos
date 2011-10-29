@@ -1,2 +1,1 @@
 prog: add_EI
-prereq: test -x add_EI

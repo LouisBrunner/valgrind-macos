@@ -1,2 +1,1 @@
 prog: flogr
-prereq: test -x flogr

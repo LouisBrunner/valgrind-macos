@@ -1,2 +1,1 @@
 prog: sub_EI
-prereq: test -x sub_EI

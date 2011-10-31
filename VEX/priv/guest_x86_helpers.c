@@ -1787,7 +1787,19 @@ VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
 
    /* Copy the x87 registers out of the image, into a temporary
       Fpu_State struct. */
-   for (i = 0; i < 14; i++) tmp.env[i] = 0;
+
+   /* Defeat LLVM's memset-idiom recognition mechanism.  It
+      appears to turn this into a misaligned movaps, which faults.
+      This is with Xcode 4.1 (Build version 4B110), on x86-darwin,
+      i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 
+      (Based on Apple Inc. build 5658) (LLVM build 2335.15.00),
+      OSX 10.7.1.
+   */
+   /* Code that seems to trigger the problem:
+      for (i = 0; i < 14; i++) tmp.env[i] = 0; */
+   for (i = 0; i < 7; i++) tmp.env[i+0] = 0;
+   for (i = 0; i < 7; i++) tmp.env[i+7] = 0;
+   
    for (i = 0; i < 80; i++) tmp.reg[i] = 0;
    /* fill in tmp.reg[0..7] */
    for (stno = 0; stno < 8; stno++) {

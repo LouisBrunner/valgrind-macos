@@ -130,6 +130,7 @@ insn_ssse3_SOURCES	= insn_ssse3.def
 insn_ssse3_LDADD	= -lm
 insn_fpu_SOURCES	= insn_fpu.def
 insn_fpu_LDADD		= -lm
+insn_pclmulqdq_SOURCES  = insn_pclmulqdq.def
 fxtract_LDADD		= -lm
 
 .def.c: $(srcdir)/gen_insn_test.pl

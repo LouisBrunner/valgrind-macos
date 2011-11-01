@@ -13,7 +13,7 @@ static jmp_buf myjmpbuf;
 static
 void SIGSEGV_handler(int signum)
 {
-   __builtin_longjmp(myjmpbuf, 1);
+   longjmp(myjmpbuf, 1);
 }
 
 int main(void)
@@ -33,7 +33,7 @@ int main(void)
    res = sigaction( SIGSEGV, &sigsegv_new, &sigsegv_saved );
    assert(res == 0);
 
-   if (__builtin_setjmp(myjmpbuf) == 0) {
+   if (setjmp(myjmpbuf) == 0) {
       // Jump to zero; will cause seg fault
 #if defined(__powerpc64__)
       unsigned long int fn[3];

@@ -181,7 +181,8 @@ END=`date "+%F %H:%M:%S %Z"`
 # Gather some information about this run and its environment
 valgrind_revision="`svn info valgrind-new | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
 vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
-gcc_version="`gcc --version | head -1`"
+gcc_version="`gcc --version 2> /dev/null | head -1`"
+as_version="`as --version 2> /dev/null | head -1`"
 libc_so="`ls -1 /lib/libc.so.* | tail -1`"
 libc="unknown"
 if [ "x$libc_so" != "x" ]; then
@@ -198,7 +199,8 @@ fi
 
 echo "valgrind revision: $valgrind_revision" >  final
 echo "VEX revision:      $vex_revision"      >> final
-echo "GCC version:       $gcc_version"       >> final
+echo "C compiler:        $gcc_version"       >> final
+echo "Assembler:         $as_version"        >> final
 echo "C library:         $libc"              >> final
 echo "uname -mrs:        $uname_stuff"       >> final
 echo "Vendor version:    $vendor_stuff"      >> final

@@ -1,3 +1,3 @@
-prereq: ./is_arch_supported
+prereq: ./is_arch_supported && ../../tests/os_test linux
 vgopts: --num-callers=3
 prog: stackerr

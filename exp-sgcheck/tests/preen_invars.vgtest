@@ -1,2 +1,2 @@
-prereq: ./is_arch_supported
+prereq: ./is_arch_supported && ../../tests/os_test linux
 prog: preen_invars

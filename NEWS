@@ -1,6 +1,6 @@
 
-Release 3.7.0 (XX November 2011)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release 3.7.0 (5 November 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.7.0 is a feature release with many significant improvements and the
 usual collection of bug fixes.
 
@@ -296,7 +296,9 @@ n-i-bz  don't be spooked by libraries mashed by elfhack
 n-i-bz  don't be spooked by libxul.so linked with gold
 n-i-bz  improved checking for VALGRIND_CHECK_MEM_IS_DEFINED
 
-(3.7.0: XX November 2011, vex rXXXX, valgrind rXXXXX).
+(3.7.0-TEST1: 27  October 2011, vex r2228, valgrind r12245)
+(3.7.0.RC1:    1 November 2011, vex r2231, valgrind r12257)
+(3.7.0:        5 November 2011, vex r2231, valgrind r12258)
 
 
 

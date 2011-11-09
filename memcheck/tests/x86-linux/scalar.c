@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <signal.h>
-
+#include <linux/mman.h> // MREMAP_FIXED
 
 // Here we are trying to trigger every syscall error (scalar errors and
 // memory errors) for every syscall.  We do this by passing a lot of bogus

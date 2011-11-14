@@ -229,6 +229,18 @@ typedef ULong* UserCost;
 typedef ULong* FullCost; /* Simulator + User */
 
 
+/* The types of control flow changes that can happen between
+ * execution of two BBs in a thread.
+ */
+typedef enum {
+  jk_None = 0,   /* no explicit change by a guest instruction */
+  jk_Jump,       /* regular jump */
+  jk_Call,
+  jk_Return,
+  jk_CondJump    /* conditional jump taken (only used as jCC type) */
+} ClgJumpKind;
+
+
 /* JmpCall cost center
  * for subroutine call (from->bb->jmp_addr => to->bb->addr)
  *
@@ -248,11 +260,9 @@ typedef ULong* FullCost; /* Simulator + User */
  * After updating, <last> is set to current event counters. Thus,
  * events are not counted twice for recursive calls (TODO: True?)
  */
-#define JmpNone (Ijk_Boring+30)
-#define JmpCond (Ijk_Boring+31)
 
 struct _jCC {
-  Int  jmpkind;     /* JmpCall, JmpBoring, JmpCond */
+  ClgJumpKind jmpkind; /* jk_Call, jk_Jump, jk_CondJump */
   jCC* next_hash;   /* for hash entry chain */
   jCC* next_from;   /* next JCC from a BBCC */
   BBCC *from, *to;  /* call arc from/to this BBCC */
@@ -276,13 +286,14 @@ struct _InstrInfo {
 };
 
 
+
 /*
- * Info for a conditional jump in a basic block
+ * Info for a side exit in a BB
  */
 typedef struct _CJmpInfo CJmpInfo;
 struct _CJmpInfo {
-    UInt instr; /* instruction index in this basic block */
-    Bool skip;   /* Cond.Jumps to next instruction should be ignored */
+  UInt instr;          /* instruction index for BB.instr array */
+  ClgJumpKind jmpkind; /* jump kind when leaving BB at this side exit */
 };
 
 
@@ -319,11 +330,10 @@ struct _BB {
   BBCC*      last_bbcc;  /* Temporary: Cached for faster access (LRU) */
 
   /* filled by CLG_(instrument) if not seen before */
-  UInt       cjmp_count;  /* number of conditional exits */
+  UInt       cjmp_count;  /* number of side exits */
   CJmpInfo*  jmp;         /* array of info for condition jumps,
 			   * allocated directly after this struct */
-  Int        jmpkind;    /* remember jump kind of final exit */
-  Bool       cjmp_inverted; /* condition of last cond.jump can be inverted by VEX */
+  Bool       cjmp_inverted; /* is last side exit actually fall through? */
 
   UInt       instr_len;
   UInt       cost_count;
@@ -357,12 +367,12 @@ struct _Context {
 
 
 /*
- * Info for a conditional jump in a basic block
+ * Cost info for a side exits from a BB
  */
 typedef struct _JmpData JmpData;
 struct _JmpData {
     ULong ecounter; /* number of times the BB was left at this exit */
-    jCC*  jcc_list;  /* JCCs for Cond.Jumps from this exit */
+    jCC*  jcc_list; /* JCCs used for this exit */
 };
 
 

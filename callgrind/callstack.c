@@ -235,8 +235,14 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 
     /* return address is only is useful with a real call;
      * used to detect RET w/o CALL */
-    ret_addr = (from->bb->jmpkind == Ijk_Call) ?
-	bb_addr(from->bb) + from->bb->instr_len : 0;
+    if (from->bb->jmp[jmp].jmpkind == jk_Call) {
+      UInt instr = from->bb->jmp[jmp].instr;
+      ret_addr = bb_addr(from->bb) +
+	from->bb->instr[instr].instr_offset +
+	from->bb->instr[instr].instr_size;
+    }
+    else
+      ret_addr = 0;
 
     /* put jcc on call stack */
     current_entry->jcc = jcc;

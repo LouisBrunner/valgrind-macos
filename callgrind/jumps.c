@@ -152,7 +152,7 @@ static jCC* new_jcc(BBCC* from, UInt jmp, BBCC* to)
    jcc->from      = from;
    jcc->jmp       = jmp;
    jcc->to        = to;
-   jcc->jmpkind   = Ijk_Call;
+   jcc->jmpkind   = jk_Call;
    jcc->call_counter = 0;
    jcc->cost = 0;
 

@@ -669,7 +669,7 @@ static void fprint_jcc(Int fd, jCC* jcc, AddrPos* curr, AddrPos* last, ULong eco
 	target.file = last->file;
     }
 
-    if ((jcc->jmpkind == JmpCond) || (jcc->jmpkind == Ijk_Boring)) {
+    if ((jcc->jmpkind == jk_CondJump) || (jcc->jmpkind == jk_Jump)) {
 	    
       /* this is a JCC for a followed conditional or boring jump. */
       CLG_ASSERT(CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost));
@@ -703,7 +703,7 @@ static void fprint_jcc(Int fd, jCC* jcc, AddrPos* curr, AddrPos* last, ULong eco
 		print_fn(fd, outbuf, "jfn", jcc->to->cxt->fn[0]);
 	}
 	    
-	if (jcc->jmpkind == JmpCond) {
+	if (jcc->jmpkind == jk_CondJump) {
 	    /* format: jcnd=<followed>/<executions> <target> */
 	    VG_(sprintf)(outbuf, "jcnd=%llu/%llu ",
 			 jcc->call_counter, ecounter);
@@ -834,7 +834,7 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
     if (bb->jmp[jmp].instr == instr) {
 	jcc_count=0;
 	for(jcc=bbcc->jmp[jmp].jcc_list; jcc; jcc=jcc->next_from)
-	    if (((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0)) ||
+	    if (((jcc->jmpkind != jk_Call) && (jcc->call_counter >0)) ||
 		(!CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost )))
 	      jcc_count++;
 
@@ -848,7 +848,7 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
 	    fprint_apos(fd, &(currCost->p), last, bbcc->cxt->fn[0]->file);
 	    something_written = True;
 	    for(jcc=bbcc->jmp[jmp].jcc_list; jcc; jcc=jcc->next_from) {
-		if (((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0)) ||
+		if (((jcc->jmpkind != jk_Call) && (jcc->call_counter >0)) ||
 		    (!CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost )))
 		    fprint_jcc(fd, jcc, &(currCost->p), last, ecounter);
 	    }
@@ -867,7 +867,7 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
   jcc_count = 0;
   for(jcc=bbcc->jmp[jmp].jcc_list; jcc; jcc=jcc->next_from) {
       /* yes, if JCC only counts jmp arcs or cost >0 */
-      if ( ((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0)) ||
+      if ( ((jcc->jmpkind != jk_Call) && (jcc->call_counter >0)) ||
 	   (!CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost )))
 	  jcc_count++;
   }
@@ -901,7 +901,7 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
     if (jcc_count > 0)
 	for(jcc=bbcc->jmp[jmp].jcc_list; jcc; jcc=jcc->next_from) {
 	    CLG_ASSERT(jcc->jmp == jmp);
-	    if ( ((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0)) ||
+	    if ( ((jcc->jmpkind != jk_Call) && (jcc->call_counter >0)) ||
 		 (!CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost )))
 	  
 		fprint_jcc(fd, jcc, &(currCost->p), last, ecounter);

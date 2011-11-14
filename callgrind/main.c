@@ -1146,8 +1146,20 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 
 	    CLG_ASSERT(clgs.ii_index>0);
 	    if (!clgs.seen_before) {
-		clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
-		clgs.bb->jmp[cJumps].skip = False;
+	      ClgJumpKind jk;
+
+	      if      (st->Ist.Exit.jk == Ijk_Call) jk = jk_Call;
+	      else if (st->Ist.Exit.jk == Ijk_Ret)  jk = jk_Return;
+	      else {
+		if (IRConst2Addr(st->Ist.Exit.dst) ==
+		    origAddr + curr_inode->instr_offset + curr_inode->instr_size)
+		  jk = jk_None;
+		else
+		  jk = jk_Jump;
+	      }
+
+	      clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+	      clgs.bb->jmp[cJumps].jmpkind = jk;
 	    }
 
 	    /* Update global variable jmps_passed before the jump
@@ -1212,18 +1224,45 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    CLG_ASSERT(clgs.bb->cjmp_count == cJumps);
    CLG_ASSERT(clgs.bb->instr_count = clgs.ii_index);
 
-   /* This stores the instr of the call/ret at BB end */
-   clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+   /* Info for final exit from BB */
+   {
+     ClgJumpKind jk;
+
+     if      (sbIn->jumpkind == Ijk_Call) jk = jk_Call;
+     else if (sbIn->jumpkind == Ijk_Ret)  jk = jk_Return;
+     else {
+       jk = jk_Jump;
+       if ((sbIn->next->tag == Iex_Const) &&
+	   (IRConst2Addr(sbIn->next->Iex.Const.con) ==
+	    origAddr + clgs.instr_offset))
+	 jk = jk_None;
+     }
+     clgs.bb->jmp[cJumps].jmpkind = jk;
+     /* Instruction index of the call/ret at BB end
+      * (it is wrong for fall-through, but does not matter) */
+     clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+   }
+
+   /* swap information of last exit with final exit if inverted */
+   if (clgs.bb->cjmp_inverted) {
+     ClgJumpKind jk;
+     UInt instr;
+
+     jk = clgs.bb->jmp[cJumps].jmpkind;
+     clgs.bb->jmp[cJumps].jmpkind = clgs.bb->jmp[cJumps-1].jmpkind;
+     clgs.bb->jmp[cJumps-1].jmpkind = jk;
+     instr = clgs.bb->jmp[cJumps].instr;
+     clgs.bb->jmp[cJumps].instr = clgs.bb->jmp[cJumps-1].instr;
+     clgs.bb->jmp[cJumps-1].instr = instr;
+   }
 
    if (clgs.seen_before) {
        CLG_ASSERT(clgs.bb->cost_count == update_cost_offsets(&clgs));
        CLG_ASSERT(clgs.bb->instr_len = clgs.instr_offset);
-       CLG_ASSERT(clgs.bb->jmpkind == sbIn->jumpkind);
    }
    else {
        clgs.bb->cost_count = update_cost_offsets(&clgs);
        clgs.bb->instr_len = clgs.instr_offset;
-       clgs.bb->jmpkind = sbIn->jumpkind;
    }
 
    CLG_DEBUG(3, "- instrument(BB %#lx): byteLen %u, CJumps %u, CostLen %u\n",

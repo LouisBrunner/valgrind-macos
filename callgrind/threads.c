@@ -189,8 +189,6 @@ void CLG_(run_thread)(ThreadId tid)
        }
     }
 
-    CLG_(check_command)();
-    
     /* now check for thread switch */
     CLG_(switch_thread)(tid);
 }

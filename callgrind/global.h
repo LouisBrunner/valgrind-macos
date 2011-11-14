@@ -51,9 +51,6 @@
 /*------------------------------------------------------------*/
 
 #define DEFAULT_OUTFORMAT   "callgrind.out.%p"
-#define DEFAULT_COMMANDNAME "callgrind.cmd"
-#define DEFAULT_RESULTNAME  "callgrind.res"
-#define DEFAULT_INFONAME    "callgrind.info"
 
 typedef struct _CommandLineOptions CommandLineOptions;
 struct _CommandLineOptions {
@@ -722,11 +719,6 @@ void CLG_(dump_profile)(Char* trigger,Bool only_current_thread);
 void CLG_(zero_all_cost)(Bool only_current_thread);
 Int CLG_(get_dump_counter)(void);
 void CLG_(fini)(Int exitcode);
-
-/* from command.c */
-void CLG_(init_command)(void);
-void CLG_(check_command)(void);
-void CLG_(finish_command)(void);
 
 /* from bb.c */
 void CLG_(init_bb_hash)(void);

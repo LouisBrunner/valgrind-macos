@@ -1706,8 +1706,6 @@ void finish(void)
 
   CLG_(dump_profile)(0, False);
 
-  CLG_(finish_command)();
-
   if (VG_(clo_verbosity) == 0) return;
   
   /* Hash table stats */
@@ -1859,7 +1857,6 @@ void CLG_(post_clo_init)(void)
    }
 
    CLG_(init_dumps)();
-   CLG_(init_command)();
 
    (*CLG_(cachesim).post_clo_init)();
 

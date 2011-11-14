@@ -35,7 +35,6 @@ CALLGRIND_SOURCES_COMMON = \
 	bbcc.c \
 	callstack.c \
 	clo.c \
-	command.c \
 	context.c \
 	costs.c \
 	debug.c \

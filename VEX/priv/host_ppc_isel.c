@@ -1698,13 +1698,16 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return rLo; /* similar stupid comment to the above ... */
          }
          break;
+      case Iop_1Uto64:
       case Iop_1Uto32:
-      case Iop_1Uto8: {
-         HReg        r_dst = newVRegI(env);
-         PPCCondCode cond  = iselCondCode(env, e->Iex.Unop.arg);
-         addInstr(env, PPCInstr_Set(cond,r_dst));
-         return r_dst;
-      }
+      case Iop_1Uto8:
+         if ((op_unop != Iop_1Uto64) || mode64) {
+            HReg        r_dst = newVRegI(env);
+            PPCCondCode cond  = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, PPCInstr_Set(cond,r_dst));
+            return r_dst;
+         }
+         break;
       case Iop_1Sto8:
       case Iop_1Sto16:
       case Iop_1Sto32: {

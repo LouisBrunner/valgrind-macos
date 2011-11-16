@@ -546,7 +546,10 @@ of success.</para>
 <para>You can specify the temporary directory to use either via
 the <computeroutput>--with-tmpdir=</computeroutput> configure time
 flag, or by setting environment variable TMPDIR when running Valgrind
-(on the device, not the Android device).
+(on the Android device, not on the Android NDK development host).
+Another alternative is to specify the directory for the FIFOs using
+the <computeroutput>--vgdb-prefix=</computeroutput> Valgrind command
+line option.
 </para>
 
 <para>We hope to have a better story for temporary directory handling

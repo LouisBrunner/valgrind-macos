@@ -1,3 +1,23 @@
+Release 3.7.1 (????)
+~~~~~~~~~~~~~~~~~~~~
+
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
+
+
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

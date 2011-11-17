@@ -435,33 +435,21 @@ Bool VG_(delFromSWA) ( SparseWA* swa,
 static UWord swa_sizeSWA_wrk ( void* nd )
 {
    Int   i;
-   UWord sum = 0;
    if (*(UWord*)nd == LevelN_MAGIC) {
+      UWord sum = 0;
       LevelN* levelN = (LevelN*)nd;
       for (i = 0; i < 256; i++) {
          if (levelN->child[i]) {
             sum += swa_sizeSWA_wrk( levelN->child[i] );
          }
-      }     
+      }
+      return sum;
    } else {
       Level0* level0;
       vg_assert(*(UWord*)nd == Level0_MAGIC);
       level0 = (Level0*)nd;
-      for (i = 0; i < 256/8; i += 2) {
-         UWord x = level0->inUse[i+0]; /* assume zero-extend */
-         UWord y = level0->inUse[i+1]; /* assume zero-extend */
-         /* do 'sum += popcount(x) + popcount(y)' for byte-sized x, y */
-         /* unroll the loop twice so as to expose more ILP */
-         x = (x & 0x55) + ((x >> 1) & 0x55);
-         y = (y & 0x55) + ((y >> 1) & 0x55);
-         x = (x & 0x33) + ((x >> 2) & 0x33);
-         y = (y & 0x33) + ((y >> 2) & 0x33);
-         x = (x & 0x0F) + ((x >> 4) & 0x0F);
-         y = (y & 0x0F) + ((y >> 4) & 0x0F);
-         sum += x + y;
-      }
+      return level0->nInUse;
    }
-   return sum;
 }
 UWord VG_(sizeSWA) ( SparseWA* swa )
 {

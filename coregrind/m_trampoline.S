@@ -517,6 +517,22 @@ VG_(trampoline_stuff_end):
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
+.global VG_(arm_linux_SUBST_FOR_sigreturn)
+.type   VG_(arm_linux_SUBST_FOR_sigreturn),#function
+VG_(arm_linux_SUBST_FOR_sigreturn):
+	mov r7, # __NR_sigreturn
+        svc #0
+        .long 0xFFFFFFFF /*illegal insn*/
+.size VG_(arm_linux_SUBST_FOR_sigreturn), .-VG_(arm_linux_SUBST_FOR_sigreturn)
+
+.global VG_(arm_linux_SUBST_FOR_rt_sigreturn)
+.type   VG_(arm_linux_SUBST_FOR_rt_sigreturn),#function
+VG_(arm_linux_SUBST_FOR_rt_sigreturn):
+	mov r7, # __NR_rt_sigreturn
+        svc #0
+        .long 0xFFFFFFFF /*illegal insn*/
+.size VG_(arm_linux_SUBST_FOR_rt_sigreturn), .-VG_(arm_linux_SUBST_FOR_rt_sigreturn)
+	
 .global VG_(arm_linux_REDIR_FOR_strlen)
 VG_(arm_linux_REDIR_FOR_strlen):
 	mov	r2, r0

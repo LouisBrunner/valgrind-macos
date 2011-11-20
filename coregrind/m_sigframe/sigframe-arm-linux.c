@@ -259,7 +259,12 @@ void VG_(sigframe_create)( ThreadId tid,
    tst->arch.vex.guest_R0  = sigNo; 
 
    if (flags & VKI_SA_RESTORER)
-       tst->arch.vex.guest_R14 = (Addr) restorer; 
+       tst->arch.vex.guest_R14 = (Addr)restorer; 
+   else
+       tst->arch.vex.guest_R14 
+          = (flags & VKI_SA_SIGINFO)
+            ? (Addr)&VG_(arm_linux_SUBST_FOR_rt_sigreturn)
+            : (Addr)&VG_(arm_linux_SUBST_FOR_sigreturn);
 
    tst->arch.vex.guest_R15T = (Addr) handler; /* R15 == PC */
 }

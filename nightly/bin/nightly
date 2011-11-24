@@ -190,6 +190,7 @@ if [ "x$libc_so" != "x" ]; then
     libc="`/lib/libc.so.* | head -1`"
   fi
 fi
+libc=`echo $libc | sed "s/, by Roland.*//"`
 uname_stuff="`uname -mrs`"
 if [ -e "/etc/issue.net" -a -r "/etc/issue.net" ]; then
   vendor_stuff="`cat /etc/issue.net | head -1`"

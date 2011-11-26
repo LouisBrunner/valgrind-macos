@@ -100,7 +100,9 @@ Support for recent distros and toolchain components (glibc 2.14, gcc
   (--join-list-vol); fixed a memory leak triggered by repeated client
   memory allocatation and deallocation; improved Darwin support.
 
-* exp-ptrcheck: this tool has been reduced in scope so as to improve
+* exp-ptrcheck: this tool has been renamed to exp-sgcheck
+
+* exp-sgcheck: this tool has been reduced in scope so as to improve
   performance and remove checking that Memcheck does better.
   Specifically, the ability to check for overruns for stack and global
   arrays is unchanged, but the ability to check for overruns of heap

@@ -1,7 +1,7 @@
 
 Julian Seward was the original founder, designer and author of
 Valgrind, created the dynamic translation frameworks, wrote Memcheck,
-the 3.X versions of Helgrind, Ptrcheck, DHAT, and did lots of other
+the 3.X versions of Helgrind, SGCheck, DHAT, and did lots of other
 things.
 
 Nicholas Nethercote did the core/tool generalisation, wrote

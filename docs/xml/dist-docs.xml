@@ -74,4 +74,24 @@
           xmlns:xi="http://www.w3.org/2001/XInclude" />
     </literallayout>
     </chapter>
+
+  <chapter id="dist.readme-s390" 
+             xreflabel="Readme S390">
+    <title>README.S390</title>
+    <literallayout>
+      <xi:include href="../../README.s390" 
+          parse="text" 
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.readme-android" 
+             xreflabel="Readme Android">
+    <title>README.android</title>
+    <literallayout>
+      <xi:include href="../../README.android" 
+          parse="text" 
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
 </book>

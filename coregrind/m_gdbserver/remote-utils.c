@@ -269,7 +269,7 @@ void remote_open (char *name)
                 "don't want to do, unless you know exactly what you're doing,\n"
                 "or are doing some strange experiment):\n"
                 "  %s/../../bin/vgdb --pid=%d%s%s ...command...\n",
-                VG_LIBDIR,
+                VG_(libdir),
                 pid, (name_default ? "" : " --vgdb-prefix="),
                 (name_default ? "" : name));
    }
@@ -282,7 +282,7 @@ void remote_open (char *name)
          "and then give GDB the following command\n"
          "  target remote | %s/../../bin/vgdb --pid=%d%s%s\n",
          VG_(args_the_exename),
-         VG_LIBDIR,
+         VG_(libdir),
          pid, (name_default ? "" : " --vgdb-prefix="), 
          (name_default ? "" : name)
       );

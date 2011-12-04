@@ -330,7 +330,3 @@ int main(int argc, char** argv)
   std::cerr << "Done.\n";
   return 0;
 }
-
-// Local variables:
-// c-basic-offset: 2
-// End:

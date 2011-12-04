@@ -46,9 +46,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-/*
- * Local variables:
- * c-basic-offset: 2
- * End:
- */

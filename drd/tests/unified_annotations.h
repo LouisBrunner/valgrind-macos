@@ -62,9 +62,3 @@ static __inline__ void U_AnnotateHappensAfter(void *addr)
 
 
 #endif /* _UNIFIED_ANNOTATIONS_H_ */
-
-/*
- * Local variables:
- * c-basic-offset: 2
- * End:
- */

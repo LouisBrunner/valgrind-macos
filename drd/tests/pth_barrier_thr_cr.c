@@ -1,4 +1,3 @@
-/* -*- mode: C; c-basic-offset: 2; indent-tabs-mode: nil; -*- */
 /*
  * Test program that triggers pthread_barrier_wait() where each
  * pthread_barrier_wait() call is invoked by another thread. This is the only

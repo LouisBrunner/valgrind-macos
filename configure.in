@@ -1612,10 +1612,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   return FUTEX_WAIT;
 ]])], [
+ac_have_usable_linux_futex_h=yes
 AC_DEFINE([HAVE_USABLE_LINUX_FUTEX_H], 1,
           [Define to 1 if you have a usable <linux/futex.h> header file.])
 AC_MSG_RESULT([yes])
 ], [
+ac_have_usable_linux_futex_h=no
 AC_MSG_RESULT([no])
 ])
 
@@ -1855,8 +1857,9 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
 
-# does this compiler have built-in functions for atomic memory access ?
-AC_MSG_CHECKING([if gcc supports __sync_bool_compare_and_swap])
+# does this compiler have built-in functions for atomic memory access for the
+# primary target ?
+AC_MSG_CHECKING([if gcc supports __sync_add_and_fetch for the primary target])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="$mflag_primary"
@@ -1868,7 +1871,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 ]])], [
   ac_have_builtin_atomic=yes
   AC_MSG_RESULT([yes])
-  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
+  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() and __sync_add_and_fetch() for the primary target])
 ], [
   ac_have_builtin_atomic=no
   AC_MSG_RESULT([no])
@@ -1878,8 +1881,38 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC], [test x$ac_have_builtin_atomic = xyes])
 
+
+# does this compiler have built-in functions for atomic memory access for the
+# secondary target ?
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x; then
+
+AC_MSG_CHECKING([if gcc supports __sync_add_and_fetch for the secondary target])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_secondary"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+  int variable = 1;
+  return (__sync_add_and_fetch(&variable, 1) ? 1 : 0)
+]])], [
+  ac_have_builtin_atomic_secondary=yes
+  AC_MSG_RESULT([yes])
+], [
+  ac_have_builtin_atomic_secondary=no
+  AC_MSG_RESULT([no])
+])
+
+CFLAGS=$safe_CFLAGS
+
+fi
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_SECONDARY],
+               [test x$ac_have_builtin_atomic_secondary = xyes])
+
+
 # does g++ have built-in functions for atomic memory access ?
-AC_MSG_CHECKING([if g++ supports __sync_bool_compare_and_swap])
+AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])
 
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="$mflag_primary"
@@ -1902,6 +1935,23 @@ AC_LANG_POP(C++)
 CXXFLAGS=$safe_CXXFLAGS
 
 AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_CXX], [test x$ac_have_builtin_atomic_cxx = xyes])
+
+
+if test x$ac_have_usable_linux_futex_h = xyes \
+        -a x$ac_have_builtin_atomic = xyes; then
+  ac_enable_linux_ticket_lock_primary=yes
+fi
+AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_PRIMARY],
+               [test x$ac_enable_linux_ticket_lock_primary = xyes])
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x \
+        -a x$ac_have_usable_linux_futex_h = xyes \
+        -a x$ac_have_builtin_atomic_secondary = xyes; then
+  ac_enable_linux_ticket_lock_secondary=yes
+fi
+AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_SECONDARY],
+               [test x$ac_enable_linux_ticket_lock_secondary = xyes])
+
 
 #----------------------------------------------------------------------------
 # Ok.  We're done checking.

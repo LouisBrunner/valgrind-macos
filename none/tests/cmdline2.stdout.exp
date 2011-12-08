@@ -73,6 +73,7 @@ usage: valgrind [options] prog-and-args
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  known hints:
                                  lax-ioctls, enable-outer, fuse-compatible [none]
+    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...  known variants: bproc [none]
                               handle non-standard kernel variants
     --show-emwarns=no|yes     show warnings about emulation limits? [no]

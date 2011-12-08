@@ -89,7 +89,7 @@
 #include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
 #include "pub_core_debuginfo.h"     // VG_(di_notify_pdb_debuginfo)
-#include "priv_sema.h"
+#include "priv_sched-lock.h"
 #include "pub_core_scheduler.h"     // self
 #include "pub_core_redir.h"
 
@@ -146,8 +146,10 @@ void VG_(print_scheduler_stats)(void)
                 sanity_fast_count, sanity_slow_count );
 }
 
-/* CPU semaphore, so that threads can run exclusively */
-static vg_sema_t the_BigLock;
+/*
+ * Mutual exclusion object used to serialize threads.
+ */
+static struct sched_lock *the_BigLock;
 
 
 /* ---------------------------------------------------------------------
@@ -241,7 +243,7 @@ void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
    /* First, acquire the_BigLock.  We can't do anything else safely
       prior to this point.  Even doing debug printing prior to this
       point is, technically, wrong. */
-   ML_(sema_down)(&the_BigLock, False/*not LL*/);
+   VG_(acquire_BigLock_LL)(NULL);
 
    tst = VG_(get_ThreadState)(tid);
 
@@ -297,19 +299,31 @@ void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
 
    /* Release the_BigLock; this will reschedule any runnable
       thread. */
-   ML_(sema_up)(&the_BigLock, False/*not LL*/);
+   VG_(release_BigLock_LL)(NULL);
+}
+
+static void init_BigLock(void)
+{
+   vg_assert(!the_BigLock);
+   the_BigLock = ML_(create_sched_lock)();
+}
+
+static void deinit_BigLock(void)
+{
+   ML_(destroy_sched_lock)(the_BigLock);
+   the_BigLock = NULL;
 }
 
 /* See pub_core_scheduler.h for description */
 void VG_(acquire_BigLock_LL) ( HChar* who )
 {
-  ML_(sema_down)(&the_BigLock, True/*LL*/);
+   ML_(acquire_sched_lock)(the_BigLock);
 }
 
 /* See pub_core_scheduler.h for description */
 void VG_(release_BigLock_LL) ( HChar* who )
 {
-   ML_(sema_up)(&the_BigLock, True/*LL*/);
+   ML_(release_sched_lock)(the_BigLock);
 }
 
 
@@ -331,7 +345,7 @@ void VG_(exit_thread)(ThreadId tid)
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "release lock in VG_(exit_thread)");
 
-   ML_(sema_up)(&the_BigLock, False/*not LL*/);
+   VG_(release_BigLock_LL)(NULL);
 }
 
 /* If 'tid' is blocked in a syscall, send it SIGVGKILL so as to get it
@@ -518,9 +532,9 @@ static void sched_fork_cleanup(ThreadId me)
    }
 
    /* re-init and take the sema */
-   ML_(sema_deinit)(&the_BigLock);
-   ML_(sema_init)(&the_BigLock);
-   ML_(sema_down)(&the_BigLock, False/*not LL*/);
+   deinit_BigLock();
+   init_BigLock();
+   VG_(acquire_BigLock_LL)(NULL);
 }
 
 
@@ -535,7 +549,21 @@ ThreadId VG_(scheduler_init_phase1) ( void )
 
    VG_(debugLog)(1,"sched","sched_init_phase1\n");
 
-   ML_(sema_init)(&the_BigLock);
+   if (VG_(clo_fair_sched) != disable_fair_sched
+       && !ML_(set_sched_lock_impl)(sched_lock_ticket)
+       && VG_(clo_fair_sched) == enable_fair_sched)
+   {
+      VG_(printf)("Error: fair scheduling is not supported on this system.\n");
+      VG_(exit)(1);
+   }
+
+   if (VG_(clo_verbosity) > 1) {
+      VG_(message)(Vg_DebugMsg,
+                   "Scheduler: using %s scheduler lock implementation.\n",
+                   ML_(get_sched_lock_name)());
+   }
+
+   init_BigLock();
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       /* Paranoia .. completely zero it out. */
@@ -1758,15 +1786,12 @@ void scheduler_sanity ( ThreadId tid )
       bad = True;
    }
 
-#if !defined(VGO_darwin)
-   // GrP fixme
-   if (lwpid != the_BigLock.owner_lwpid) {
+   if (lwpid != ML_(get_sched_lock_owner)(the_BigLock)) {
       VG_(message)(Vg_DebugMsg,
                    "Thread (LWPID) %d doesn't own the_BigLock\n",
                    tid);
       bad = True;
    }
-#endif
 
    /* Periodically show the state of all threads, for debugging
       purposes. */

@@ -180,6 +180,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer, fuse-compatible [none]\n"
+"    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
 "                              handle non-standard kernel variants\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
@@ -486,6 +487,17 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BOOL_CLO(arg, "--trace-children",   VG_(clo_trace_children)) {}
       else if VG_BOOL_CLO(arg, "--child-silent-after-fork",
                             VG_(clo_child_silent_after_fork)) {}
+      else if VG_STR_CLO(arg, "--fair-sched",        tmp_str) {
+         if (VG_(strcmp)(tmp_str, "yes") == 0)
+            VG_(clo_fair_sched) = enable_fair_sched;
+         else if (VG_(strcmp)(tmp_str, "try") == 0)
+            VG_(clo_fair_sched) = try_fair_sched;
+         else if (VG_(strcmp)(tmp_str, "no") == 0)
+            VG_(clo_fair_sched) = disable_fair_sched;
+         else
+            VG_(fmsg_bad_option)(arg, "");
+
+      }
       else if VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched)) {}
       else if VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals)) {}
       else if VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab)) {}

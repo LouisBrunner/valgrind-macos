@@ -1953,6 +1953,53 @@ AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_SECONDARY],
                [test x$ac_enable_linux_ticket_lock_secondary = xyes])
 
 
+# does libstdc++ support annotating shared pointers ?
+AC_MSG_CHECKING([if libstdc++ supports annotating shared pointers])
+
+safe_CXXFLAGS=$CFLAGS
+CXXFLAGS="-std=c++0x"
+
+AC_LANG_PUSH(C++)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <memory>
+]], [[
+  std::shared_ptr<int> p
+]])], [
+  ac_have_shared_ptr=yes
+], [
+  ac_have_shared_ptr=no
+])
+if test x$ac_have_shared_ptr = xyes; then
+  # If compilation of the program below fails because of a syntax error
+  # triggered by substituting one of the annotation macros then that
+  # means that libstdc++ supports these macros.
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(a) (a)----
+    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(a) (a)----
+    #include <memory>
+  ]], [[
+    std::shared_ptr<int> p
+  ]])], [
+    ac_have_shared_pointer_annotation=no
+    AC_MSG_RESULT([no])
+  ], [
+    ac_have_shared_pointer_annotation=yes
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(HAVE_SHARED_POINTER_ANNOTATION, 1,
+              [Define to 1 if libstd++ supports annotating shared pointers])
+  ])
+else
+  ac_have_shared_pointer_annotation=no
+  AC_MSG_RESULT([no])
+fi
+AC_LANG_POP(C++)
+
+CXXFLAGS=$safe_CXXFLAGS
+
+AM_CONDITIONAL([HAVE_SHARED_POINTER_ANNOTATION],
+               [test x$ac_have_shared_pointer_annotation = xyes])
+
+
 #----------------------------------------------------------------------------
 # Ok.  We're done checking.
 #----------------------------------------------------------------------------

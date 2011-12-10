@@ -219,6 +219,8 @@ EXTRA_DIST =                                        \
 	sigalrm.vgtest                              \
 	sigaltstack.stderr.exp                      \
 	sigaltstack.vgtest                          \
+	std_thread.stderr.exp		  	    \
+	std_thread.vgtest			    \
 	tc01_simple_race.stderr.exp                 \
 	tc01_simple_race.vgtest                     \
 	tc02_simple_tls.stderr.exp                  \
@@ -345,6 +347,11 @@ check_PROGRAMS +=        \
   tsan_unittest
 endif
 
+if HAVE_SHARED_POINTER_ANNOTATION
+check_PROGRAMS += \
+  std_thread
+endif
+
 if HAVE_OPENMP
 check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
@@ -415,3 +422,6 @@ endif
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
 endif
+
+std_thread_SOURCES          = std_thread.cpp
+std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x

@@ -7,6 +7,7 @@ dist_noinst_SCRIPTS = \
 	gsl16test \
 	gsl19test \
 	nightly-build-summary \
+	update-demangler \
 	posixtestsuite-1.5.1-diff-results
 
 EXTRA_DIST = \

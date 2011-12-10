@@ -1,0 +1,106 @@
+#!/bin/sh
+
+set -e
+
+#---------------------------------------------------------------------
+# This quick and dirty script assists in updating the C++ demangler
+# machinery in coregrind/m_demangle.
+# The script will check out 
+# - old and new revisions of the C++ demangler related files from GCC 
+# - m_demangle from valgrind's trunk.
+# It will assemble
+# - a patch file with local changes that were applied to the C++
+#   demangler to make it work within valgrind
+# - a directory new_m_demangle whose contexts should be copied to
+#   m_demangle in valgrind trunk
+# The patch will *not* be applied automacially.
+#---------------------------------------------------------------------
+
+# You need to modify these revision numbers for your update.
+old_gcc_revision=r141363  # the revision of the previous update
+new_gcc_revision=r181975  # the revision for this update
+
+# Unless the organization of demangler related files has changed, no
+# changes below this line should be necessary.
+
+# Setup a temp directory
+DIR=/tmp/demangle
+
+rm -rf $DIR
+mkdir -p $DIR
+
+cd $DIR
+
+echo "Updating the demangler in $DIR"
+
+# 1) Check out files from old GCC revision
+echo "Checking out GCC files @ $old_gcc_revision"
+
+mkdir gcc-$old_gcc_revision
+cd    gcc-$old_gcc_revision
+svn co -$old_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/libiberty libiberty > /dev/null
+svn co -$old_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/include   include   > /dev/null
+rm -rf libiberty/.svn
+rm -rf include/.svn
+cd ..
+
+# 2) Assemble the ones we need in $DIR/$old_gcc_revision
+mkdir $old_gcc_revision
+cd    $old_gcc_revision
+cp    ../gcc-$old_gcc_revision/include/ansidecl.h .
+cp    ../gcc-$old_gcc_revision/include/demangle.h .
+cp    ../gcc-$old_gcc_revision/include/dyn-string.h .
+cp    ../gcc-$old_gcc_revision/include/safe-ctype.h .
+cp    ../gcc-$old_gcc_revision/libiberty/cp-demangle.c .
+cp    ../gcc-$old_gcc_revision/libiberty/cp-demangle.h .
+cp    ../gcc-$old_gcc_revision/libiberty/cplus-dem.c .
+cp    ../gcc-$old_gcc_revision/libiberty/dyn-string.c .
+cp    ../gcc-$old_gcc_revision/libiberty/safe-ctype.c .
+cd ..
+
+# 3) Check out files from new GCC revision
+
+echo "Checking out GCC files @ $new_gcc_revision"
+mkdir gcc-$new_gcc_revision
+cd    gcc-$new_gcc_revision
+svn co -$new_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/libiberty libiberty > /dev/null
+svn co -$new_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/include   include   > /dev/null
+rm -rf libiberty/.svn
+rm -rf include/.svn
+cd ..
+
+# 4) Assemble the ones we need in $DIR/$new_gcc_revision
+
+mkdir $new_gcc_revision
+cd    $new_gcc_revision
+cp    ../gcc-$new_gcc_revision/include/ansidecl.h .
+cp    ../gcc-$new_gcc_revision/include/demangle.h .
+cp    ../gcc-$new_gcc_revision/include/dyn-string.h .
+cp    ../gcc-$new_gcc_revision/include/safe-ctype.h .
+cp    ../gcc-$new_gcc_revision/libiberty/cp-demangle.c .
+cp    ../gcc-$new_gcc_revision/libiberty/cp-demangle.h .
+cp    ../gcc-$new_gcc_revision/libiberty/cplus-dem.c .
+cp    ../gcc-$new_gcc_revision/libiberty/dyn-string.c .
+cp    ../gcc-$new_gcc_revision/libiberty/safe-ctype.c .
+cd ..
+
+# 5) Check out valgrind coregrind/m_demangle into old_m_demangle
+echo "Checking out coregrind/m_demangle"
+svn co svn://svn.valgrind.org/valgrind/trunk/coregrind/m_demangle old_m_demangle > /dev/null
+rm -rf old_m_demangle/.svn
+
+# 6) Create new_m_demangle
+cp -rp old_m_demangle new_m_demangle
+cp -rp $new_gcc_revision/*.[ch] new_m_demangle
+
+# 7) Compare files from previous GCC revision against old_m_demangle
+#    (This gets us the changes we made to the demangler).
+echo "Creating patch"
+set +e
+diff -r -u $old_gcc_revision old_m_demangle > our-changes
+echo "Patch file 'our-changes' created"
+
+# 7) See how the patch would apply
+echo "Attempting to apply the patch (but not actualy doing it)."
+cd new_m_demangle
+patch --dry -p1 < ../our-changes

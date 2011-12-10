@@ -75,13 +75,13 @@
    impedance-match the libiberty code into our own framework.
 
    The current code is from libiberty in the gcc tree, gcc svn
-   r141363, dated 26 Oct 2008 (when the gcc trunk was in Stage 3
-   leading up to a gcc-4.4 release).  As of r141363, libiberty is LGPL
+   r181975, dated 12 Dec 2011 (when the gcc trunk was in Stage 3
+   leading up to a gcc-4.7 release).  As of r141363, libiberty is LGPL
    2.1, which AFAICT is compatible with "GPL 2 or later" and so is OK
    for inclusion in Valgrind.
 
    To update to a newer libiberty, it might be simplest to svn diff
-   the gcc tree libibery against r141363 and then apply those diffs
+   the gcc tree libibery against r181975 and then apply those diffs
    here. */
 
 /* This is the main, standard demangler entry point. */

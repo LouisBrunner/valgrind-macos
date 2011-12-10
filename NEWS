@@ -1,6 +1,14 @@
 Release 3.7.1 (????)
 ~~~~~~~~~~~~~~~~~~~~
 
+* ================== PLATFORM CHANGES =================
+
+* ==================== TOOL CHANGES ====================
+
+* ==================== OTHER CHANGES ====================
+
+* The C++ demangler has been updated so as to work well with C++ 
+  compiled by even the most recent g++'s.
 
 * ==================== FIXED BUGS ====================
 
@@ -16,6 +24,7 @@ https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
+283413  Fix wrong sanity check
 
 
 

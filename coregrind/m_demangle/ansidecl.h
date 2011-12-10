@@ -1,5 +1,6 @@
 /* ANSI and traditional C compatability macros
-   Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001
+   Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
+   2002, 2003, 2004, 2005, 2006, 2007, 2009, 2010
    Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
@@ -114,6 +115,10 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #ifndef	_ANSIDECL_H
 #define _ANSIDECL_H	1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Every source file includes this file,
    so they will all get the switch for lint.  */
 /* LINTLIBRARY */
@@ -136,7 +141,7 @@ So instead we use the macro below and test it against specific values.  */
 #define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
 #endif /* GCC_VERSION */
 
-#if defined (__STDC__) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(_WIN32) || (defined(__alpha) && defined(__cplusplus))
+#if defined (__STDC__) || defined(__cplusplus) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(_WIN32)
 /* All known AIX compilers implement these things (but don't always
    define __STDC__).  The RISC/OS MIPS compiler defines these things
    in SVR4 mode, but does not define __STDC__.  */
@@ -173,7 +178,7 @@ So instead we use the macro below and test it against specific values.  */
 /* inline requires special treatment; it's in C99, and GCC >=2.7 supports
    it too, but it's not in C89.  */
 #undef inline
-#if __STDC_VERSION__ > 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus) || (defined(__SUNPRO_C) && defined(__C99FEATURES__))
 /* it's a keyword */
 #else
 # if GCC_VERSION >= 2007
@@ -256,14 +261,23 @@ So instead we use the macro below and test it against specific values.  */
 # endif /* GNUC >= 2.96 */
 #endif /* ATTRIBUTE_MALLOC */
 
-/* Attributes on labels were valid as of gcc 2.93. */
+/* Attributes on labels were valid as of gcc 2.93 and g++ 4.5.  For
+   g++ an attribute on a label must be followed by a semicolon.  */
 #ifndef ATTRIBUTE_UNUSED_LABEL
-# if (!defined (__cplusplus) && GCC_VERSION >= 2093)
-#  define ATTRIBUTE_UNUSED_LABEL ATTRIBUTE_UNUSED
+# ifndef __cplusplus
+#  if GCC_VERSION >= 2093
+#   define ATTRIBUTE_UNUSED_LABEL ATTRIBUTE_UNUSED
+#  else
+#   define ATTRIBUTE_UNUSED_LABEL
+#  endif
 # else
-#  define ATTRIBUTE_UNUSED_LABEL
-# endif /* !__cplusplus && GNUC >= 2.93 */
-#endif /* ATTRIBUTE_UNUSED_LABEL */
+#  if GCC_VERSION >= 4005
+#   define ATTRIBUTE_UNUSED_LABEL ATTRIBUTE_UNUSED ;
+#  else
+#   define ATTRIBUTE_UNUSED_LABEL
+#  endif
+# endif
+#endif
 
 #ifndef ATTRIBUTE_UNUSED
 #define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
@@ -388,6 +402,33 @@ So instead we use the macro below and test it against specific values.  */
    gcc 2.8.  */
 #if GCC_VERSION < 2008
 #define __extension__
+#endif
+
+/* This is used to declare a const variable which should be visible
+   outside of the current compilation unit.  Use it as
+     EXPORTED_CONST int i = 1;
+   This is because the semantics of const are different in C and C++.
+   "extern const" is permitted in C but it looks strange, and gcc
+   warns about it when -Wc++-compat is not used.  */
+#ifdef __cplusplus
+#define EXPORTED_CONST extern const
+#else
+#define EXPORTED_CONST const
+#endif
+
+/* Be conservative and only use enum bitfields with C++ or GCC.
+   FIXME: provide a complete autoconf test for buggy enum bitfields.  */
+
+#ifdef __cplusplus
+#define ENUM_BITFIELD(TYPE) enum TYPE
+#elif (GCC_VERSION > 2000)
+#define ENUM_BITFIELD(TYPE) __extension__ enum TYPE
+#else
+#define ENUM_BITFIELD(TYPE) unsigned int
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif	/* ansidecl.h	*/

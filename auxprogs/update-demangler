@@ -11,7 +11,7 @@ set -e
 # It will assemble
 # - a patch file with local changes that were applied to the C++
 #   demangler to make it work within valgrind
-# - a directory new_m_demangle whose contexts should be copied to
+# - a directory new_m_demangle whose contents should be copied to
 #   m_demangle in valgrind trunk
 # The patch will *not* be applied automacially.
 #---------------------------------------------------------------------

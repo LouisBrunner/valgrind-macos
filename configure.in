@@ -1869,17 +1869,18 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
   return (__sync_bool_compare_and_swap(&variable, 1, 2)
           && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
 ]])], [
-  ac_have_builtin_atomic=yes
+  ac_have_builtin_atomic_primary=yes
   AC_MSG_RESULT([yes])
   AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() and __sync_add_and_fetch() for the primary target])
 ], [
-  ac_have_builtin_atomic=no
+  ac_have_builtin_atomic_primary=no
   AC_MSG_RESULT([no])
 ])
 
 CFLAGS=$safe_CFLAGS
 
-AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC], [test x$ac_have_builtin_atomic = xyes])
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC],
+               [test x$ac_have_builtin_atomic_primary = xyes])
 
 
 # does this compiler have built-in functions for atomic memory access for the
@@ -1938,7 +1939,7 @@ AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_CXX], [test x$ac_have_builtin_atomic_cxx = x
 
 
 if test x$ac_have_usable_linux_futex_h = xyes \
-        -a x$ac_have_builtin_atomic = xyes; then
+        -a x$ac_have_builtin_atomic_primary = xyes; then
   ac_enable_linux_ticket_lock_primary=yes
 fi
 AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_PRIMARY],

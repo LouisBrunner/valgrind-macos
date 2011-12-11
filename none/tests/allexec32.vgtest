@@ -1,0 +1,4 @@
+prog: allexec32
+args: exec
+vgopts: --trace-children=yes
+prereq: ./allexec_prepare_prereq

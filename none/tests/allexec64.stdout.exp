@@ -1,0 +1,14 @@
+./allexec64 will exec ./allexec32
+program exec-ed: ./allexec32
+child exited
+program exec-ed: ./allexec32 constant_arg1 constant_arg2
+child exited
+program exec-ed: ./allexec32
+child exited
+./allexec64 will exec ./allexec64
+program exec-ed: ./allexec64
+child exited
+program exec-ed: ./allexec64 constant_arg1 constant_arg2
+child exited
+program exec-ed: ./allexec64
+child exited

@@ -65,6 +65,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	aad_aam \
+	allexec \
 	badseg \
 	bt_everything \
 	bt_literal \
@@ -108,6 +109,8 @@ endif
 AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CCASFLAGS += @FLAG_M32@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 if VGCONF_OS_IS_DARWIN
 # Some of the tests (bug125959_x86, bug152818_x86, insn_*) need

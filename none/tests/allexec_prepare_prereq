@@ -1,0 +1,36 @@
+#! /bin/sh
+
+# prepare the hard or soft link allexec32 and allexec64
+# On 'single arch' compiled Valgrind, allexec32 and allexec64 will point
+# to the same executable.
+# On 'bi-arch', they will point respectively to the executable compiled
+# for the revelant arch.
+# This allows to test the various exec system calls the same way.
+
+
+pair()
+{
+  if ../../tests/arch_test $1 || ../../tests/arch_test $2
+  then
+      if ../../tests/arch_test $1
+      then
+         ln -f $1/allexec allexec32
+      else
+         ln -f -s allexec64 allexec32
+      fi
+      if ../../tests/arch_test $2
+      then
+         ln -f $2/allexec allexec64
+      else
+         ln -f -s allexec32 allexec64
+      fi
+  fi
+}
+
+
+pair x86                        amd64
+pair ppc32                      ppc64
+pair s390x_unexisting_in_32bits s390x
+pair arm                        arm_unexisting_in_64bits
+
+exit 0

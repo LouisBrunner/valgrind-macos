@@ -8,6 +8,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl
 
 check_PROGRAMS = $(INSN_TESTS) \
+		 allexec \
 		 ex_sig \
 		 ex_clone \
 		 op00
@@ -25,6 +26,8 @@ EXTRA_DIST = \
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 ex_clone_LDFLAGS = -lpthread
 tcxb_CFLAGS      = $(AM_CFLAGS) -std=gnu99

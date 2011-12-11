@@ -51,6 +51,8 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = fdleak.h
 
 EXTRA_DIST = \
+	allexec32.stdout.exp allexec32.stderr.exp allexec32.vgtest\
+	allexec64.stdout.exp allexec64.stderr.exp allexec64.vgtest\
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
 	async-sigs.stderr.exp async-sigs.vgtest \

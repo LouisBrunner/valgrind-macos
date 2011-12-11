@@ -12,6 +12,7 @@ EXTRA_DIST = \
 	vfp.stdout.exp vfp.stderr.exp vfp.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	neon128 \
 	neon64 \
 	v6intARM \
@@ -22,6 +23,8 @@ check_PROGRAMS = \
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 # These two are specific to their ARM/Thumb respectively and so we
 # hardwire -marm/-mthumb.  neon64 and neon128 are compilable on both,

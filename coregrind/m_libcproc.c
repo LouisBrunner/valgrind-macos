@@ -240,12 +240,18 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
    // - LD_PRELOAD is on Linux, not on Darwin, not sure about AIX
    // - DYLD_INSERT_LIBRARIES and DYLD_SHARED_REGION are Darwin-only
    for (i = 0; envp[i] != NULL; i++) {
-      if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
-         ld_preload_str = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.1", &envp[i][11]);
-      if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
-         ld_library_path_str = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.2", &envp[i][16]);
-      if (VG_(strncmp)(envp[i], "DYLD_INSERT_LIBRARIES=", 22) == 0)
-         dyld_insert_libraries_str = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.3", &envp[i][22]);
+      if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0) {
+         envp[i] = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.1", envp[i]);
+         ld_preload_str = &envp[i][11];
+      }
+      if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0) {
+         envp[i] = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.2", envp[i]);
+         ld_library_path_str = &envp[i][16];
+      }
+      if (VG_(strncmp)(envp[i], "DYLD_INSERT_LIBRARIES=", 22) == 0) {
+         envp[i] = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.3", envp[i]);
+         dyld_insert_libraries_str = &envp[i][22];
+      }
    }
 
    buf = VG_(arena_malloc)(VG_AR_CORE, "libcproc.erves.4",

@@ -71,6 +71,7 @@ EXTRA_DIST = \
 	xadd.stderr.exp xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	amd64locked \
 	asorep \
 	bug127521-64 bug132813-amd64 bug132918 \
@@ -111,6 +112,8 @@ endif
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 # generic C ones
 amd64locked_CFLAGS	= $(AM_CFLAGS) -O

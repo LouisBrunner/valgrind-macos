@@ -20,12 +20,15 @@ EXTRA_DIST = \
 	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	jm-insns lsw round std_reg_imm twi_tdi tw_td power6_bcmp power6_mf_gpr test_isa_2_06_part1 \
 	test_isa_2_06_part2 test_isa_2_06_part3
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 if HAS_ALTIVEC
 ALTIVEC_FLAG = -DHAS_ALTIVEC

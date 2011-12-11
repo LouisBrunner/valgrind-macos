@@ -32,6 +32,7 @@ EXTRA_DIST = \
 	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	bug129390-ppc32 \
 	bug139050-ppc32 \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
@@ -43,6 +44,8 @@ check_PROGRAMS = \
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 if HAS_ALTIVEC
 ALTIVEC_FLAG = -DHAS_ALTIVEC

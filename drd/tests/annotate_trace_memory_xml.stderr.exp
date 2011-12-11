@@ -31,7 +31,7 @@
 
 FLAGS [phb=1, fm=0]
 test01: positive
-  <trace><text>store 0x........ size 4 (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 4 val 0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -51,7 +51,7 @@ test01: positive
     </frame>
   </stack>
   </trace>
-  <trace><text>store 0x........ size 4 (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 4 val 0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>

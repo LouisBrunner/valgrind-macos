@@ -321,7 +321,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {
-      DRD_(trace_mem_access)(a1, len, eStart);
+      DRD_(trace_mem_access)(a1, len, eStart, 0);
    }
 
    if (UNLIKELY(DRD_(running_thread_inside_pthread_create)()))
@@ -353,7 +353,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
    tl_assert(a1 <= a2);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
-      DRD_(trace_mem_access)(a1, len, eEnd);
+      DRD_(trace_mem_access)(a1, len, eEnd, 0);
 
    if (!is_stack_mem && s_trace_alloc)
       DRD_(trace_msg)("Stopped using memory range 0x%lx + %ld",

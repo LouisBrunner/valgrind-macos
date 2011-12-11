@@ -85,19 +85,26 @@ void DRD_(set_first_race_only)(const Bool fro)
 }
 
 void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
-                            const BmAccessTypeT access_type)
+                            const BmAccessTypeT access_type,
+                            const HWord stored_value)
 {
    if (DRD_(is_any_traced)(addr, addr + size))
    {
       char* vc;
 
       vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
-      DRD_(trace_msg_w_bt)("%s 0x%lx size %ld (thread %d / vc %s)",
-                           access_type == eLoad ? "load "
-                           : access_type == eStore ? "store"
-                           : access_type == eStart ? "start"
-                           : access_type == eEnd ? "end  " : "????",
-                           addr, size, DRD_(thread_get_running_tid)(), vc);
+      if (access_type == eStore && size <= sizeof(HWord)) {
+         DRD_(trace_msg_w_bt)("store 0x%lx size %ld val 0x%lx (thread %d /"
+                              " vc %s)", addr, size, stored_value,
+                              DRD_(thread_get_running_tid)(), vc);
+      } else {
+         DRD_(trace_msg_w_bt)("%s 0x%lx size %ld (thread %d / vc %s)",
+                              access_type == eLoad ? "load "
+                              : access_type == eStore ? "store"
+                              : access_type == eStart ? "start"
+                              : access_type == eEnd ? "end  " : "????",
+                              addr, size, DRD_(thread_get_running_tid)(), vc);
+      }
       VG_(free)(vc);
       tl_assert(DRD_(DrdThreadIdToVgThreadId)(DRD_(thread_get_running_tid)())
                 == VG_(get_running_tid)());
@@ -106,12 +113,13 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 
 static VG_REGPARM(2) void drd_trace_mem_load(const Addr addr, const SizeT size)
 {
-   return DRD_(trace_mem_access)(addr, size, eLoad);
+   return DRD_(trace_mem_access)(addr, size, eLoad, 0);
 }
 
-static VG_REGPARM(2) void drd_trace_mem_store(const Addr addr,const SizeT size)
+static VG_REGPARM(3) void drd_trace_mem_store(const Addr addr,const SizeT size,
+                                              const HWord stored_value)
 {
-   return DRD_(trace_mem_access)(addr, size, eStore);
+   return DRD_(trace_mem_access)(addr, size, eStore, stored_value);
 }
 
 static void drd_report_race(const Addr addr, const SizeT size,
@@ -363,23 +371,61 @@ static void instrument_load(IRSB* const bb,
    addStmtToIRSB(bb, IRStmt_Dirty(di));
 }
 
-static void instrument_store(IRSB* const bb,
-                             IRExpr* const addr_expr,
-                             const HWord size)
+static const IROp u_widen_irop[5][9] = {
+   [1][2] = Iop_8Uto16,
+   [1][4] = Iop_8Uto32,
+   [1][8] = Iop_8Uto64,
+   [2][4] = Iop_16Uto32,
+   [2][8] = Iop_16Uto64,
+   [4][8] = Iop_32Uto64,
+};
+
+static void instrument_store(IRSB* const bb, IRExpr* const addr_expr,
+                             IRExpr* const data_expr)
 {
    IRExpr* size_expr;
    IRExpr** argv;
    IRDirty* di;
+   HWord size;
+
+   size = sizeofIRType(typeOfIRExpr(bb->tyenv, data_expr));
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {
+      IRExpr *hword_data_expr;
+
+      if (size == sizeof(HWord)) {
+         hword_data_expr = data_expr;
+      } else {
+         IROp widen_op;
+
+         tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
+         if (size < sizeof(u_widen_irop)/sizeof(u_widen_irop[0])) {
+            widen_op = u_widen_irop[size][sizeof(HWord)];
+            if (!widen_op)
+               widen_op = Iop_INVALID;
+         } else {
+            widen_op = Iop_INVALID;
+         }
+         if (widen_op != Iop_INVALID) {
+            IRTemp tmp;
+
+            tmp = newIRTemp(bb->tyenv, sizeof(HWord) == 4 ? Ity_I32 : Ity_I64);
+            addStmtToIRSB(bb,
+                          IRStmt_WrTmp(tmp, IRExpr_Unop(widen_op, data_expr)));
+            hword_data_expr = IRExpr_RdTmp(tmp);
+         } else {
+            hword_data_expr = mkIRExpr_HWord(0);
+         }
+      }
       addStmtToIRSB(bb,
          IRStmt_Dirty(
-            unsafeIRDirty_0_N(/*regparms*/2,
-			      "drd_trace_mem_store",
-			      VG_(fnptr_to_fnentry)
-			      (drd_trace_mem_store),
-			      mkIRExprVec_2(addr_expr, mkIRExpr_HWord(size)))));
+            unsafeIRDirty_0_N(/*regparms*/3,
+                              "drd_trace_mem_store",
+                              VG_(fnptr_to_fnentry)
+                              (drd_trace_mem_store),
+                              mkIRExprVec_3(addr_expr, mkIRExpr_HWord(size),
+                                            hword_data_expr))));
    }
 
    if (!s_check_stack_accesses && is_stack_access(bb, addr_expr))
@@ -479,12 +525,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
 
       case Ist_Store:
          if (instrument)
-         {
-            instrument_store(bb,
-                             st->Ist.Store.addr,
-                             sizeofIRType(typeOfIRExpr(bb->tyenv,
-                                                       st->Ist.Store.data)));
-         }
+            instrument_store(bb, st->Ist.Store.addr, st->Ist.Store.data);
          addStmtToIRSB(bb, st);
          break;
 

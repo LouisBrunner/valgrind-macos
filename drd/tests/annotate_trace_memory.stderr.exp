@@ -1,10 +1,10 @@
 
 FLAGS [phb=1, fm=0]
 test01: positive
-store 0x........ size 4 (thread x / vc ...)
+store 0x........ size 4 val 0x........ (thread x / vc ...)
    at 0x........: test01::Worker() (tsan_unittest.cpp:?)
    by 0x........: MyThread::ThreadBody(MyThread*) (tsan_thread_wrappers_pthread.h:?)
-store 0x........ size 4 (thread x / vc ...)
+store 0x........ size 4 val 0x........ (thread x / vc ...)
    at 0x........: test01::Parent() (tsan_unittest.cpp:?)
    by 0x........: test01::Run() (tsan_unittest.cpp:?)
 Conflicting store by thread x at 0x........ size 4

@@ -627,7 +627,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                                NULL, False);
          } else {
             /* SC */
-            trace_mem_store(bb, st->Ist.LLSC.addr, st->Ist.LLSC.storedata);  
+            trace_mem_store(bb, st->Ist.LLSC.addr, st->Ist.LLSC.storedata);
          }
          addStmtToIRSB(bb, st);
          break;

@@ -552,7 +552,7 @@ void DRD_(drd_thread_atfork_child)(const DrdThreadId tid)
       if (DRD_(IsValidDrdThreadId(i)))
 	 DRD_(thread_delete)(i, True);
       tl_assert(!DRD_(IsValidDrdThreadId(i)));
-   }   
+   }
 }
 
 /** Called just before pthread_cancel(). */

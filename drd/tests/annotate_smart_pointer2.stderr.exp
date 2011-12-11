@@ -1,6 +1,9 @@
 
 Conflicting store by thread x at 0x........ size 4
-   at 0x........: main (annotate_smart_pointer.cpp:?)
+   at 0x........: counter::~counter() (annotate_smart_pointer.cpp:?)
+   by 0x........: smart_ptr<counter>::set(counter*, AtomicInt32*) (annotate_smart_pointer.cpp:?)
+   by 0x........: smart_ptr<counter>::operator=(counter*) (annotate_smart_pointer.cpp:?)
+   by 0x........: main (annotate_smart_pointer.cpp:?)
 Address 0x........ is at offset ... from 0x......... Allocation context:
    at 0x........: ...operator new... (vg_replace_malloc.c:...)
    by 0x........: main (annotate_smart_pointer.cpp:?)

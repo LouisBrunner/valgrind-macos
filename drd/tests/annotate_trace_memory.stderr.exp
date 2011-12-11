@@ -14,7 +14,7 @@ Allocation context: BSS section of tsan_unittest
 
 load  0x........ size 4 (thread x / vc ...)
    at 0x........: test01::Run() (tsan_unittest.cpp:?)
-   by 0x........: main (tsan_unittest.cpp:?)
+   by 0x........: Test::Run() (tsan_unittest.cpp:?)
 	GLOB=2
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

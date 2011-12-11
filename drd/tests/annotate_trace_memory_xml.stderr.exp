@@ -110,7 +110,7 @@ test01: positive
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>main</fn>
+      <fn>Test::Run()</fn>
       <dir>...</dir>
       <file>tsan_unittest.cpp</file>
       <line>...</line>

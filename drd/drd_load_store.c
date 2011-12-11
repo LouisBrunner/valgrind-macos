@@ -247,9 +247,9 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 {
    if (DRD_(running_thread_is_recording_stores)()
        && (s_check_stack_accesses
-           || ! DRD_(thread_address_on_stack)(addr))
+           || !DRD_(thread_address_on_stack)(addr))
        && bm_access_store_4_triggers_conflict(addr)
-       && ! DRD_(is_suppressed)(addr, addr + 4))
+       && !DRD_(is_suppressed)(addr, addr + 4))
    {
       drd_report_race(addr, 4, eStore);
    }
@@ -312,11 +312,10 @@ static void instrument_load(IRSB* const bb,
       addStmtToIRSB(bb,
          IRStmt_Dirty(
             unsafeIRDirty_0_N(/*regparms*/2,
-                              "drd_trace_load",
+                              "drd_trace_mem_load",
                               VG_(fnptr_to_fnentry)
                               (drd_trace_mem_load),
-                              mkIRExprVec_2(addr_expr,
-                                            mkIRExpr_HWord(size)))));
+                              mkIRExprVec_2(addr_expr, mkIRExpr_HWord(size)))));
    }
 
    if (! s_check_stack_accesses && is_stack_access(bb, addr_expr))
@@ -375,16 +374,15 @@ static void instrument_store(IRSB* const bb,
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {
       addStmtToIRSB(bb,
-                    IRStmt_Dirty(
-                                 unsafeIRDirty_0_N(/*regparms*/2,
-                                                   "drd_trace_store",
-                                                   VG_(fnptr_to_fnentry)
-                                                   (drd_trace_mem_store),
-                                                   mkIRExprVec_2(addr_expr,
-                                                                 mkIRExpr_HWord(size)))));
+         IRStmt_Dirty(
+            unsafeIRDirty_0_N(/*regparms*/2,
+			      "drd_trace_mem_store",
+			      VG_(fnptr_to_fnentry)
+			      (drd_trace_mem_store),
+			      mkIRExprVec_2(addr_expr, mkIRExpr_HWord(size)))));
    }
 
-   if (! s_check_stack_accesses && is_stack_access(bb, addr_expr))
+   if (!s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
 
    switch (size)

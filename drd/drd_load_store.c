@@ -307,26 +307,82 @@ static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
    return result;
 }
 
-static void instrument_load(IRSB* const bb,
-                            IRExpr* const addr_expr,
-                            const HWord size)
+static const IROp u_widen_irop[5][9] = {
+   [1][2] = Iop_8Uto16,
+   [1][4] = Iop_8Uto32,
+   [1][8] = Iop_8Uto64,
+   [2][4] = Iop_16Uto32,
+   [2][8] = Iop_16Uto64,
+   [4][8] = Iop_32Uto64,
+};
+
+static void trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
+                            IRExpr* const data_expr)
+{
+   IRExpr *hword_data_expr;
+   HWord size;
+
+   size = sizeofIRType(typeOfIRExpr(bb->tyenv, data_expr));
+
+   if (size == sizeof(HWord)) {
+      hword_data_expr = data_expr;
+   } else {
+      IROp widen_op;
+
+      tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
+      if (size < sizeof(u_widen_irop)/sizeof(u_widen_irop[0])) {
+         widen_op = u_widen_irop[size][sizeof(HWord)];
+         if (!widen_op)
+            widen_op = Iop_INVALID;
+      } else {
+         widen_op = Iop_INVALID;
+      }
+      if (widen_op != Iop_INVALID) {
+         IRTemp tmp;
+
+         tmp = newIRTemp(bb->tyenv, sizeof(HWord) == 4 ? Ity_I32 : Ity_I64);
+         addStmtToIRSB(bb,
+                       IRStmt_WrTmp(tmp, IRExpr_Unop(widen_op, data_expr)));
+         hword_data_expr = IRExpr_RdTmp(tmp);
+      } else {
+         hword_data_expr = mkIRExpr_HWord(0);
+      }
+   }
+   addStmtToIRSB(bb,
+      IRStmt_Dirty(
+         unsafeIRDirty_0_N(/*regparms*/3,
+                           "drd_trace_mem_store",
+                           VG_(fnptr_to_fnentry)
+                           (drd_trace_mem_store),
+                           mkIRExprVec_3(addr_expr, mkIRExpr_HWord(size),
+                                         hword_data_expr))));
+}
+
+static void instrument_load(IRSB* const bb, IRExpr* const addr_expr,
+                            const HWord size, IRExpr* const data_expr,
+                            Bool is_store)
 {
    IRExpr* size_expr;
    IRExpr** argv;
    IRDirty* di;
 
-   if (UNLIKELY(DRD_(any_address_is_traced)()))
-   {
-      addStmtToIRSB(bb,
-         IRStmt_Dirty(
-            unsafeIRDirty_0_N(/*regparms*/2,
-                              "drd_trace_mem_load",
-                              VG_(fnptr_to_fnentry)
-                              (drd_trace_mem_load),
-                              mkIRExprVec_2(addr_expr, mkIRExpr_HWord(size)))));
+   if (UNLIKELY(DRD_(any_address_is_traced)())) {
+      if (is_store) {
+         tl_assert(data_expr);
+         trace_mem_store(bb, addr_expr, data_expr);
+      } else {
+         addStmtToIRSB(bb,
+            IRStmt_Dirty(
+               unsafeIRDirty_0_N(/*regparms*/2,
+                                 "drd_trace_mem_load",
+                                 VG_(fnptr_to_fnentry)
+                                 (drd_trace_mem_load),
+                                 mkIRExprVec_2(addr_expr,
+                                               mkIRExpr_HWord(size)))));
+      }
    }
 
-   if (! s_check_stack_accesses && is_stack_access(bb, addr_expr))
+   if (!s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
 
    switch (size)
@@ -371,15 +427,6 @@ static void instrument_load(IRSB* const bb,
    addStmtToIRSB(bb, IRStmt_Dirty(di));
 }
 
-static const IROp u_widen_irop[5][9] = {
-   [1][2] = Iop_8Uto16,
-   [1][4] = Iop_8Uto32,
-   [1][8] = Iop_8Uto64,
-   [2][4] = Iop_16Uto32,
-   [2][8] = Iop_16Uto64,
-   [4][8] = Iop_32Uto64,
-};
-
 static void instrument_store(IRSB* const bb, IRExpr* const addr_expr,
                              IRExpr* const data_expr)
 {
@@ -391,42 +438,7 @@ static void instrument_store(IRSB* const bb, IRExpr* const addr_expr,
    size = sizeofIRType(typeOfIRExpr(bb->tyenv, data_expr));
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
-   {
-      IRExpr *hword_data_expr;
-
-      if (size == sizeof(HWord)) {
-         hword_data_expr = data_expr;
-      } else {
-         IROp widen_op;
-
-         tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
-         if (size < sizeof(u_widen_irop)/sizeof(u_widen_irop[0])) {
-            widen_op = u_widen_irop[size][sizeof(HWord)];
-            if (!widen_op)
-               widen_op = Iop_INVALID;
-         } else {
-            widen_op = Iop_INVALID;
-         }
-         if (widen_op != Iop_INVALID) {
-            IRTemp tmp;
-
-            tmp = newIRTemp(bb->tyenv, sizeof(HWord) == 4 ? Ity_I32 : Ity_I64);
-            addStmtToIRSB(bb,
-                          IRStmt_WrTmp(tmp, IRExpr_Unop(widen_op, data_expr)));
-            hword_data_expr = IRExpr_RdTmp(tmp);
-         } else {
-            hword_data_expr = mkIRExpr_HWord(0);
-         }
-      }
-      addStmtToIRSB(bb,
-         IRStmt_Dirty(
-            unsafeIRDirty_0_N(/*regparms*/3,
-                              "drd_trace_mem_store",
-                              VG_(fnptr_to_fnentry)
-                              (drd_trace_mem_store),
-                              mkIRExprVec_3(addr_expr, mkIRExpr_HWord(size),
-                                            hword_data_expr))));
-   }
+      trace_mem_store(bb, addr_expr, data_expr);
 
    if (!s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
@@ -530,15 +542,11 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          break;
 
       case Ist_WrTmp:
-         if (instrument)
-         {
+         if (instrument) {
             const IRExpr* const data = st->Ist.WrTmp.data;
             if (data->tag == Iex_Load)
-            {
-               instrument_load(bb,
-                               data->Iex.Load.addr,
-                               sizeofIRType(data->Iex.Load.ty));
-            }
+               instrument_load(bb, data->Iex.Load.addr,
+                               sizeofIRType(data->Iex.Load.ty), NULL, False);
          }
          addStmtToIRSB(bb, st);
          break;
@@ -600,29 +608,26 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
             dataSize = sizeofIRType(typeOfIRExpr(bb->tyenv, cas->dataLo));
             if (cas->dataHi != NULL)
                dataSize *= 2; /* since it's a doubleword-CAS */
-            instrument_load(bb, cas->addr, dataSize);
+            instrument_load(bb, cas->addr, dataSize, cas->dataLo, True);
          }
          addStmtToIRSB(bb, st);
          break;
 
       case Ist_LLSC: {
-         /* Ignore store-conditionals, and handle load-linked's
-            exactly like normal loads. */
+         /*
+          * Ignore store-conditionals (except for tracing), and handle
+          * load-linked's exactly like normal loads.
+          */
          IRType dataTy;
-         if (st->Ist.LLSC.storedata == NULL)
-         {
+         if (st->Ist.LLSC.storedata == NULL) {
             /* LL */
             dataTy = typeOfIRTemp(bb_in->tyenv, st->Ist.LLSC.result);
-            if (instrument) {
-               instrument_load(bb,
-                               st->Ist.LLSC.addr,
-                               sizeofIRType(dataTy));
-            }
-         }
-         else
-         {
+            if (instrument)
+               instrument_load(bb, st->Ist.LLSC.addr, sizeofIRType(dataTy),
+                               NULL, False);
+         } else {
             /* SC */
-            /*ignore */
+            trace_mem_store(bb, st->Ist.LLSC.addr, st->Ist.LLSC.storedata);  
          }
          addStmtToIRSB(bb, st);
          break;

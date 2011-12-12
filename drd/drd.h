@@ -85,11 +85,18 @@
                                    &(x), sizeof(x), 0, 0, 0)
 
 /**
- * Tell DRD to trace all memory accesses on the specified variable.
+ * Tell DRD to trace all memory accesses for the specified variable
  * until the memory that was allocated for the variable is freed.
  */
 #define DRD_TRACE_VAR(x)                                             \
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_START_TRACE_ADDR, \
+                                   &(x), sizeof(x), 0, 0, 0)
+
+/**
+ * Tell DRD to stop tracing memory accesses for the specified variable.
+ */
+#define DRD_STOP_TRACE_VAR(x)                                       \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_STOP_TRACE_ADDR, \
                                    &(x), sizeof(x), 0, 0, 0)
 
 /**

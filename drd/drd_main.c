@@ -217,7 +217,7 @@ static void DRD_(print_usage)(void)
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
 "\n"
 "  drd options for monitoring process behavior:\n"
-"    --trace-addr=<address>    Trace all load and store activity for the.\n"
+"    --trace-addr=<address>    Trace all load and store activity for the\n"
 "                              specified address [off].\n"
 "    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n""                              [no].\n"
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"

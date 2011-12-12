@@ -308,13 +308,10 @@ static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
 }
 
 static const IROp u_widen_irop[5][9] = {
-   [Ity_I1  - Ity_I1][4] = Iop_1Uto32,
-   [Ity_I1  - Ity_I1][8] = Iop_1Uto64,
-   [Ity_I8  - Ity_I1][4] = Iop_8Uto32,
-   [Ity_I8  - Ity_I1][8] = Iop_8Uto64,
-   [Ity_I16 - Ity_I1][4] = Iop_16Uto32,
-   [Ity_I16 - Ity_I1][8] = Iop_16Uto64,
-   [Ity_I32 - Ity_I1][8] = Iop_32Uto64,
+   [Ity_I1  - Ity_I1] = { [4] = Iop_1Uto32,  [8] = Iop_1Uto64 },
+   [Ity_I8  - Ity_I1] = { [4] = Iop_8Uto32,  [8] = Iop_8Uto64 },
+   [Ity_I16 - Ity_I1] = { [4] = Iop_16Uto32, [8] = Iop_16Uto64 },
+   [Ity_I32 - Ity_I1] = {                    [8] = Iop_32Uto64 },
 };
 
 /**

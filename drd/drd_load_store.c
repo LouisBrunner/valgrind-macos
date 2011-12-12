@@ -308,30 +308,58 @@ static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
 }
 
 static const IROp u_widen_irop[5][9] = {
-   [1][2] = Iop_8Uto16,
-   [1][4] = Iop_8Uto32,
-   [1][8] = Iop_8Uto64,
-   [2][4] = Iop_16Uto32,
-   [2][8] = Iop_16Uto64,
-   [4][8] = Iop_32Uto64,
+   [Ity_I1  - Ity_I1][4] = Iop_1Uto32,
+   [Ity_I1  - Ity_I1][8] = Iop_1Uto64,
+   [Ity_I8  - Ity_I1][4] = Iop_8Uto32,
+   [Ity_I8  - Ity_I1][8] = Iop_8Uto64,
+   [Ity_I16 - Ity_I1][4] = Iop_16Uto32,
+   [Ity_I16 - Ity_I1][8] = Iop_16Uto64,
+   [Ity_I32 - Ity_I1][8] = Iop_32Uto64,
 };
 
-static void trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
-                            IRExpr* const data_expr)
+/**
+ * Instrument the client code to trace a memory load (--trace-addr).
+ */
+static void instr_trace_mem_load(IRSB* const bb, IRExpr* const addr_expr,
+                                 const HWord size)
 {
+   addStmtToIRSB(bb,
+      IRStmt_Dirty(
+         unsafeIRDirty_0_N(/*regparms*/2,
+                           "drd_trace_mem_load",
+                           VG_(fnptr_to_fnentry)
+                           (drd_trace_mem_load),
+                           mkIRExprVec_2(addr_expr, mkIRExpr_HWord(size)))));
+}
+
+/**
+ * Instrument the client code to trace a memory store (--trace-addr).
+ */
+static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
+                                  IRExpr* const data_expr)
+{
+   IRType ty_data_expr;
    IRExpr *hword_data_expr;
    HWord size;
 
-   size = sizeofIRType(typeOfIRExpr(bb->tyenv, data_expr));
+   tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
 
-   if (size == sizeof(HWord)) {
+   ty_data_expr = typeOfIRExpr(bb->tyenv, data_expr);
+   size = sizeofIRType(ty_data_expr);
+
+   if (size == sizeof(HWord)
+       && (ty_data_expr == Ity_I32 || ty_data_expr == Ity_I64))
+   {
+      /* No conversion necessary */
       hword_data_expr = data_expr;
    } else {
       IROp widen_op;
 
-      tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
-      if (size < sizeof(u_widen_irop)/sizeof(u_widen_irop[0])) {
-         widen_op = u_widen_irop[size][sizeof(HWord)];
+      if (Ity_I1 <= ty_data_expr
+          && ty_data_expr
+             < Ity_I1 + sizeof(u_widen_irop)/sizeof(u_widen_irop[0]))
+      {
+         widen_op = u_widen_irop[ty_data_expr - Ity_I1][sizeof(HWord)];
          if (!widen_op)
             widen_op = Iop_INVALID;
       } else {
@@ -340,11 +368,16 @@ static void trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
       if (widen_op != Iop_INVALID) {
          IRTemp tmp;
 
+         /* Widen the integer expression to a HWord */
          tmp = newIRTemp(bb->tyenv, sizeof(HWord) == 4 ? Ity_I32 : Ity_I64);
          addStmtToIRSB(bb,
                        IRStmt_WrTmp(tmp, IRExpr_Unop(widen_op, data_expr)));
          hword_data_expr = IRExpr_RdTmp(tmp);
       } else {
+         /*
+          * Replace anything wider than a HWord and also Ity_F32, Ity_F64,
+          * Ity_F128 and Ity_V128 by zero.
+          */
          hword_data_expr = mkIRExpr_HWord(0);
       }
    }
@@ -359,28 +392,11 @@ static void trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
 }
 
 static void instrument_load(IRSB* const bb, IRExpr* const addr_expr,
-                            const HWord size, IRExpr* const data_expr,
-                            Bool is_store)
+                            const HWord size)
 {
    IRExpr* size_expr;
    IRExpr** argv;
    IRDirty* di;
-
-   if (UNLIKELY(DRD_(any_address_is_traced)())) {
-      if (is_store) {
-         tl_assert(data_expr);
-         trace_mem_store(bb, addr_expr, data_expr);
-      } else {
-         addStmtToIRSB(bb,
-            IRStmt_Dirty(
-               unsafeIRDirty_0_N(/*regparms*/2,
-                                 "drd_trace_mem_load",
-                                 VG_(fnptr_to_fnentry)
-                                 (drd_trace_mem_load),
-                                 mkIRExprVec_2(addr_expr,
-                                               mkIRExpr_HWord(size)))));
-      }
-   }
 
    if (!s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
@@ -438,7 +454,7 @@ static void instrument_store(IRSB* const bb, IRExpr* const addr_expr,
    size = sizeofIRType(typeOfIRExpr(bb->tyenv, data_expr));
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
-      trace_mem_store(bb, addr_expr, data_expr);
+      instr_trace_mem_store(bb, addr_expr, data_expr);
 
    if (!s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
@@ -544,16 +560,20 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
       case Ist_WrTmp:
          if (instrument) {
             const IRExpr* const data = st->Ist.WrTmp.data;
-            if (data->tag == Iex_Load)
+            if (data->tag == Iex_Load) {
+               if (UNLIKELY(DRD_(any_address_is_traced)()))
+                  instr_trace_mem_load(bb, data->Iex.Load.addr,
+                                       sizeofIRType(data->Iex.Load.ty));
+
                instrument_load(bb, data->Iex.Load.addr,
-                               sizeofIRType(data->Iex.Load.ty), NULL, False);
+                               sizeofIRType(data->Iex.Load.ty));
+            }
          }
          addStmtToIRSB(bb, st);
          break;
 
       case Ist_Dirty:
-         if (instrument)
-         {
+         if (instrument) {
             IRDirty* d = st->Ist.Dirty.details;
             IREffect const mFx = d->mFx;
             switch (mFx) {
@@ -591,8 +611,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          break;
 
       case Ist_CAS:
-         if (instrument)
-         {
+         if (instrument) {
             /*
              * Treat compare-and-swap as a read. By handling atomic
              * instructions as read instructions no data races are reported
@@ -603,12 +622,33 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
              */
             Int    dataSize;
             IRCAS* cas = st->Ist.CAS.details;
+
             tl_assert(cas->addr != NULL);
             tl_assert(cas->dataLo != NULL);
             dataSize = sizeofIRType(typeOfIRExpr(bb->tyenv, cas->dataLo));
             if (cas->dataHi != NULL)
                dataSize *= 2; /* since it's a doubleword-CAS */
-            instrument_load(bb, cas->addr, dataSize, cas->dataLo, True);
+
+            if (UNLIKELY(DRD_(any_address_is_traced)())) {
+               if (cas->dataHi) {
+                  IRExpr* data_expr;
+
+                  tl_assert(typeOfIRExpr(bb->tyenv, cas->dataLo) == Ity_I32);
+                  data_expr
+                     = IRExpr_Binop(
+                          Iop_Or64,
+                          IRExpr_Binop(
+                             Iop_Shl64,
+                             IRExpr_Unop(Iop_32Uto64, cas->dataHi),
+                             mkIRExpr_HWord(32)),
+                          IRExpr_Unop(Iop_32Uto64, cas->dataLo));
+                  instr_trace_mem_store(bb, cas->addr, data_expr);
+               } else {
+                  instr_trace_mem_store(bb, cas->addr, cas->dataLo);
+               }
+            }
+
+            instrument_load(bb, cas->addr, dataSize);
          }
          addStmtToIRSB(bb, st);
          break;
@@ -619,15 +659,21 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
           * load-linked's exactly like normal loads.
           */
          IRType dataTy;
+
          if (st->Ist.LLSC.storedata == NULL) {
             /* LL */
             dataTy = typeOfIRTemp(bb_in->tyenv, st->Ist.LLSC.result);
-            if (instrument)
-               instrument_load(bb, st->Ist.LLSC.addr, sizeofIRType(dataTy),
-                               NULL, False);
+            if (instrument) {
+               if (UNLIKELY(DRD_(any_address_is_traced)()))
+                  instr_trace_mem_load(bb, st->Ist.LLSC.addr,
+                                       sizeofIRType(dataTy));
+
+               instrument_load(bb, st->Ist.LLSC.addr, sizeofIRType(dataTy));
+            }
          } else {
             /* SC */
-            trace_mem_store(bb, st->Ist.LLSC.addr, st->Ist.LLSC.storedata);
+            instr_trace_mem_store(bb, st->Ist.LLSC.addr,
+                                  st->Ist.LLSC.storedata);
          }
          addStmtToIRSB(bb, st);
          break;

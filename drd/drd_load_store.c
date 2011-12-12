@@ -94,8 +94,8 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 
       vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
       if (access_type == eStore && size <= sizeof(HWord)) {
-         DRD_(trace_msg_w_bt)("store 0x%lx size %ld val 0x%lx (thread %d /"
-                              " vc %s)", addr, size, stored_value,
+         DRD_(trace_msg_w_bt)("store 0x%lx size %ld val %ld/0x%lx (thread %d /"
+                              " vc %s)", addr, size, stored_value, stored_value,
                               DRD_(thread_get_running_tid)(), vc);
       } else {
          DRD_(trace_msg_w_bt)("%s 0x%lx size %ld (thread %d / vc %s)",

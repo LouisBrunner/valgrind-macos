@@ -19,8 +19,7 @@
 <args>
   <vargv>...</vargv>
   <argv>
-    <exe>./tsan_unittest</exe>
-    <arg>1</arg>
+    <exe>./annotate_trace_memory</exe>
   </argv>
 </args>
 
@@ -29,95 +28,229 @@
   <time>...</time>
 </status>
 
-FLAGS [phb=1, fm=0]
-test01: positive
-  <trace><text>store 0x........ size 4 val 0x........ (thread x / vc ...)</text>
+float
+  <trace><text>store 0x........ size 4 val 1065353216/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>test01::Worker()</fn>
+      <fn>main</fn>
       <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>MyThread::ThreadBody(MyThread*)</fn>
-      <dir>...</dir>
-      <file>tsan_thread_wrappers_pthread.h</file>
+      <file>annotate_trace_memory.c</file>
       <line>...</line>
     </frame>
   </stack>
   </trace>
-  <trace><text>store 0x........ size 4 val 0x........ (thread x / vc ...)</text>
-  <stack>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>test01::Parent()</fn>
-      <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>test01::Run()</fn>
-      <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
-      <line>...</line>
-    </frame>
-  </stack>
-  </trace>
-<error>
-  <unique>0x........</unique>
-  <tid>...</tid>
-  <kind>ConflictingAccess</kind>
-  <what>Conflicting store by thread x at 0x........ size 4</what>
-  <stack>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>test01::Parent()</fn>
-      <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>test01::Run()</fn>
-      <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
-      <line>...</line>
-    </frame>
-  </stack>
-  <auxwhat>Allocation context: BSS section of tsan_unittest</auxwhat>
-</error>
-
   <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>test01::Run()</fn>
+      <fn>main</fn>
       <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>Test::Run()</fn>
-      <dir>...</dir>
-      <file>tsan_unittest.cpp</file>
+      <file>annotate_trace_memory.c</file>
       <line>...</line>
     </frame>
   </stack>
   </trace>
-	GLOB=2
+  <trace><text>store 0x........ size 4 val 1077936128/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+double
+  <trace><text>store 0x........ size 8 val 4613937818241073152/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 8 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 8 val 4619567317775286272/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint8_t
+  <trace><text>store 0x........ size 1 val 5/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 1 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 1 val 11/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint16_t
+  <trace><text>store 0x........ size 2 val 7/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 2 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 2 val 8/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint32_t
+  <trace><text>store 0x........ size 4 val 8/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 9/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint64_t
+  <trace><text>store 0x........ size 8 val 9/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 8 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 8 val 305419905/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+Done.
 
 <status>
   <state>FINISHED</state>
@@ -125,10 +258,6 @@ test01: positive
 </status>
 
 <errorcounts>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
 </errorcounts>
 
 <suppcounts>...</suppcounts>

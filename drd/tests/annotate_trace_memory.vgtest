@@ -1,5 +1,4 @@
-prereq: test -e tsan_unittest && ./supported_libpthread
+prereq: test -e annotate_trace_memory && ./supported_libpthread
 vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=2
-prog: tsan_unittest
-args: 1
+prog: annotate_trace_memory
 stderr_filter: filter_stderr_and_thread_no

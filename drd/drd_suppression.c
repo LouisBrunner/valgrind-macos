@@ -132,10 +132,8 @@ void DRD_(stop_tracing_address_range)(const Addr a1, const Addr a2)
 
    DRD_(bm_clear_load)(DRD_(s_traced), a1, a2);
    if (DRD_(g_any_address_traced))
-   {
       DRD_(g_any_address_traced)
-         = DRD_(bm_has_any_load)(DRD_(s_traced), 0, ~(Addr)0);
-   }
+         = DRD_(bm_has_any_load_g)(DRD_(s_traced));
 }
 
 Bool DRD_(is_any_traced)(const Addr a1, const Addr a2)

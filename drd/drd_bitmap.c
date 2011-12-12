@@ -327,6 +327,29 @@ Bool DRD_(bm_has)(struct bitmap* const bm, const Addr a1, const Addr a2,
       return DRD_(bm_has_any_store)(bm, a1, a2);
 }
 
+Bool DRD_(bm_has_any_load_g)(struct bitmap* const bm)
+{
+   struct bitmap2* bm2;
+
+   tl_assert(bm);
+
+   VG_(OSetGen_ResetIter)(bm->oset);
+   for ( ; (bm2 = VG_(OSetGen_Next)(bm->oset)) != NULL; ) {
+      Addr b_start;
+      Addr b_end;
+      UWord b0;
+      const struct bitmap1* const p1 = &bm2->bm1;
+
+      b_start = make_address(bm2->addr, 0);
+      b_end = make_address(bm2->addr + 1, 0);
+
+      for (b0 = address_lsb(b_start); b0 <= address_lsb(b_end - 1); b0++)
+         if (bm0_is_set(p1->bm0_r, b0))
+            return True;
+   }
+   return False;
+}
+
 Bool
 DRD_(bm_has_any_load)(struct bitmap* const bm, const Addr a1, const Addr a2)
 {

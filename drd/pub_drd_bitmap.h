@@ -97,6 +97,7 @@ void DRD_(bm_access_store_8)(struct bitmap* const bm, const Addr a1);
 Bool DRD_(bm_has)(struct bitmap* const bm,
                   const Addr a1, const Addr a2,
                   const BmAccessTypeT access_type);
+Bool DRD_(bm_has_any_load_g)(struct bitmap* const bm);
 Bool DRD_(bm_has_any_load)(struct bitmap* const bm,
                            const Addr a1, const Addr a2);
 Bool DRD_(bm_has_any_store)(struct bitmap* const bm,

@@ -333,10 +333,9 @@ static void instr_trace_mem_load(IRSB* const bb, IRExpr* const addr_expr,
  * Instrument the client code to trace a memory store (--trace-addr).
  */
 static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
-                                  IRExpr* const data_expr)
+                                  IRExpr* data_expr)
 {
    IRType ty_data_expr;
-   IRExpr *hword_data_expr;
    HWord size;
 
    tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
@@ -348,7 +347,6 @@ static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
        && (ty_data_expr == Ity_I32 || ty_data_expr == Ity_I64))
    {
       /* No conversion necessary */
-      hword_data_expr = data_expr;
    } else {
       IROp widen_op;
 
@@ -369,13 +367,13 @@ static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
          tmp = newIRTemp(bb->tyenv, sizeof(HWord) == 4 ? Ity_I32 : Ity_I64);
          addStmtToIRSB(bb,
                        IRStmt_WrTmp(tmp, IRExpr_Unop(widen_op, data_expr)));
-         hword_data_expr = IRExpr_RdTmp(tmp);
+         data_expr = IRExpr_RdTmp(tmp);
       } else {
          /*
           * Replace anything wider than a HWord and also Ity_F32, Ity_F64,
           * Ity_F128 and Ity_V128 by zero.
           */
-         hword_data_expr = mkIRExpr_HWord(0);
+         data_expr = mkIRExpr_HWord(0);
       }
    }
    addStmtToIRSB(bb,
@@ -385,7 +383,7 @@ static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
                            VG_(fnptr_to_fnentry)
                            (drd_trace_mem_store),
                            mkIRExprVec_3(addr_expr, mkIRExpr_HWord(size),
-                                         hword_data_expr))));
+                                         data_expr))));
 }
 
 static void instrument_load(IRSB* const bb, IRExpr* const addr_expr,

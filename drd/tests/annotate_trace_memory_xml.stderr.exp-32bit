@@ -66,7 +66,7 @@ float
   </stack>
   </trace>
 double
-  <trace><text>store 0x........ size 8 (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 8 val 4613937818241073152/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -90,7 +90,7 @@ double
     </frame>
   </stack>
   </trace>
-  <trace><text>store 0x........ size 8 (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 8 val 4619567317775286272/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -262,7 +262,7 @@ uint64_t
     </frame>
   </stack>
   </trace>
-  <trace><text>store 0x........ size 8 (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 4 val 305419905/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>

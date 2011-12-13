@@ -47,7 +47,8 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                        IRType const hWordTy);
 void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
                             const BmAccessTypeT access_type,
-                            const HWord stored_value);
+                            const HWord stored_value_hi,
+                            const HWord stored_value_lo);
 VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size);
 VG_REGPARM(2) void DRD_(trace_store)(Addr addr, SizeT size);
 void DRD_(clean_memory)(const Addr a1, const SizeT len);

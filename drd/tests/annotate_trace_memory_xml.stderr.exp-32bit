@@ -53,7 +53,7 @@ float
     </frame>
   </stack>
   </trace>
-  <trace><text>store 0x........ size 4 val 0/0x........ (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 4 val 1077936128/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>

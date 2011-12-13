@@ -4,7 +4,7 @@ store 0x........ size 4 val 1065353216/0x........ (thread x / vc ...)
    at 0x........: main (annotate_trace_memory.c:?)
 load  0x........ size 4 (thread x / vc ...)
    at 0x........: main (annotate_trace_memory.c:?)
-store 0x........ size 4 val 0/0x........ (thread x / vc ...)
+store 0x........ size 4 val 1077936128/0x........ (thread x / vc ...)
    at 0x........: main (annotate_trace_memory.c:?)
 double
 store 0x........ size 8 (thread x / vc ...)

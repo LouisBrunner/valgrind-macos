@@ -343,6 +343,37 @@ static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
    ty_data_expr = typeOfIRExpr(bb->tyenv, data_expr);
    size = sizeofIRType(ty_data_expr);
 
+#if 0
+   // Test code
+   if (ty_data_expr == Ity_I32) {
+      IRTemp tmp = newIRTemp(bb->tyenv, Ity_F32);
+      data_expr = IRExpr_Unop(Iop_ReinterpI32asF32, data_expr);
+      addStmtToIRSB(bb, IRStmt_WrTmp(tmp, data_expr));
+      data_expr = IRExpr_RdTmp(tmp);
+      ty_data_expr = Ity_F32;
+   } else if (ty_data_expr == Ity_I64) {
+      IRTemp tmp = newIRTemp(bb->tyenv, Ity_F64);
+      data_expr = IRExpr_Unop(Iop_ReinterpI64asF64, data_expr);
+      addStmtToIRSB(bb, IRStmt_WrTmp(tmp, data_expr));
+      data_expr = IRExpr_RdTmp(tmp);
+      ty_data_expr = Ity_F64;
+   }
+#endif
+
+   if (ty_data_expr == Ity_F32) {
+      IRTemp tmp = newIRTemp(bb->tyenv, Ity_I32);
+      addStmtToIRSB(bb, IRStmt_WrTmp(tmp, IRExpr_Unop(Iop_ReinterpF32asI32,
+                                                      data_expr)));
+      data_expr = IRExpr_RdTmp(tmp);
+      ty_data_expr = Ity_I32;
+   } else if (ty_data_expr == Ity_F64) {
+      IRTemp tmp = newIRTemp(bb->tyenv, Ity_I64);
+      addStmtToIRSB(bb, IRStmt_WrTmp(tmp, IRExpr_Unop(Iop_ReinterpF64asI64,
+                                                      data_expr)));
+      data_expr = IRExpr_RdTmp(tmp);
+      ty_data_expr = Ity_I64;
+   }
+
    if (size == sizeof(HWord)
        && (ty_data_expr == Ity_I32 || ty_data_expr == Ity_I64))
    {
@@ -369,10 +400,7 @@ static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
                        IRStmt_WrTmp(tmp, IRExpr_Unop(widen_op, data_expr)));
          data_expr = IRExpr_RdTmp(tmp);
       } else {
-         /*
-          * Replace anything wider than a HWord and also Ity_F32, Ity_F64,
-          * Ity_F128 and Ity_V128 by zero.
-          */
+         /* Replace anything wider than a HWord with zero. */
          data_expr = mkIRExpr_HWord(0);
       }
    }
@@ -626,18 +654,10 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
 
             if (UNLIKELY(DRD_(any_address_is_traced)())) {
                if (cas->dataHi) {
-                  IRExpr* data_expr;
-
                   tl_assert(typeOfIRExpr(bb->tyenv, cas->dataLo) == Ity_I32);
-                  data_expr
-                     = IRExpr_Binop(
-                          Iop_Or64,
-                          IRExpr_Binop(
-                             Iop_Shl64,
-                             IRExpr_Unop(Iop_32Uto64, cas->dataHi),
-                             mkIRExpr_HWord(32)),
-                          IRExpr_Unop(Iop_32Uto64, cas->dataLo));
-                  instr_trace_mem_store(bb, cas->addr, data_expr);
+                  tl_assert(dataSize == 8);
+                  instr_trace_mem_store(bb, cas->addr,
+                                        IRExpr_Const(IRConst_U64(0)));
                } else {
                   instr_trace_mem_store(bb, cas->addr, cas->dataLo);
                }

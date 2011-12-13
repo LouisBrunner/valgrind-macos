@@ -39,7 +39,7 @@ int main()
   pthread_t pt1, pt2;
 
   // Make sure the program exits in case a deadlock has been triggered.
-  alarm(2);
+  alarm(20);
 
   if (pthread_mutex_init(&s_mutex, NULL) != 0)
   {

@@ -1911,6 +1911,55 @@ fi
 AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_SECONDARY],
                [test x$ac_have_builtin_atomic_secondary = xyes])
 
+# does this compiler have built-in functions for atomic memory access on
+# 64-bit integers for all targets ?
+
+AC_MSG_CHECKING([if gcc supports __sync_add_and_fetch on uint64_t for all targets])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <stdint.h>
+]], [[
+  uint64_t variable = 1;
+  return __sync_add_and_fetch(&variable, 1)
+]])], [
+  ac_have_builtin_atomic64_primary=yes
+], [
+  ac_have_builtin_atomic64_primary=no
+])
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x; then
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_secondary"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <stdint.h>
+]], [[
+  uint64_t variable = 1;
+  return __sync_add_and_fetch(&variable, 1)
+]])], [
+  ac_have_builtin_atomic64_secondary=yes
+], [
+  ac_have_builtin_atomic64_secondary=no
+])
+
+CFLAGS=$safe_CFLAGS
+
+fi
+
+if test x$ac_have_builtin_atomic64_primary = xyes && \
+   test x$VGCONF_PLATFORM_SEC_CAPS = x \
+     -o x$ac_have_builtin_atomic64_secondary = xyes; then
+  AC_MSG_RESULT([yes])
+  ac_have_builtin_atomic64=yes
+else
+  AC_MSG_RESULT([no])
+  ac_have_builtin_atomic64=no
+fi
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC64],
+               [test x$ac_have_builtin_atomic64 = xyes])
+
 
 # does g++ have built-in functions for atomic memory access ?
 AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])

@@ -339,9 +339,13 @@ if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS +=        \
   annotate_barrier       \
   annotate_rwlock        \
-  annotate_trace_memory  \
   atomic_var             \
   circular_buffer
+endif
+
+if HAVE_BUILTIN_ATOMIC64
+check_PROGRAMS +=        \
+  annotate_trace_memory
 endif
 
 if HAVE_BUILTIN_ATOMIC_CXX

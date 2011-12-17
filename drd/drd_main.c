@@ -324,20 +324,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
       DRD_(trace_mem_access)(a1, len, eStart, 0, 0);
    }
 
-   /*
-    * Hack: telling the tool about initial permissions happens before
-    * the pre_thread_first_insn callback is invoked, which sets
-    * DRD_(g_drd_running_tid). Suppress all memory accesses on these
-    * initial memory regions since sporadically it happens that an
-    * (uninteresting) data race is reported on one of these regions, triggered
-    * by the symbol lookup algorithms in the dynamic loader. That behavior
-    * can be reproduced on Linux/amd64 by disabling the DRD_(g_drd_running_tid)
-    * test below and by running the following command:
-    * ./vg-in-place --tool=drd --check-stack-var=yes \
-    * drd/tests/annotate_smart_pointer 50 50
-    */
-   if (UNLIKELY(DRD_(running_thread_inside_pthread_create)()
-                || DRD_(g_drd_running_tid) == DRD_INVALID_THREADID))
+   if (UNLIKELY(DRD_(running_thread_inside_pthread_create)()))
    {
       DRD_(start_suppression)(a1, a2, "pthread_create()");
    }

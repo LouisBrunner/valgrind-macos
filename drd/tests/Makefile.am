@@ -229,7 +229,8 @@ EXTRA_DIST =                                        \
 	tc02_simple_tls.vgtest                      \
 	tc03_re_excl.stderr.exp                     \
 	tc03_re_excl.vgtest                         \
-	tc04_free_lock.stderr.exp                   \
+	tc04_free_lock.stderr.exp-x86               \
+	tc04_free_lock.stderr.exp-ppc               \
 	tc04_free_lock.vgtest                       \
 	tc05_simple_race.stderr.exp                 \
 	tc05_simple_race.vgtest                     \
@@ -241,7 +242,8 @@ EXTRA_DIST =                                        \
 	tc08_hbl2.stderr.exp                        \
 	tc08_hbl2.stdout.exp                        \
 	tc08_hbl2.vgtest                            \
-	tc09_bad_unlock.stderr.exp                  \
+	tc09_bad_unlock.stderr.exp-x86              \
+	tc09_bad_unlock.stderr.exp-ppc              \
 	tc09_bad_unlock.stderr.exp-glibc2.8         \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \

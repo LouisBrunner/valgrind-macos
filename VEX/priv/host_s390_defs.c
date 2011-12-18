@@ -5120,10 +5120,22 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
       if (dst_class == HRcFlt64)
          return s390_emit_LDR(buf, dst, src);
    } else {
-      if (dst_class == HRcFlt64 && src_class == HRcInt64)
-         return s390_emit_LDGRw(buf, dst, src);
-      if (dst_class == HRcInt64 && src_class == HRcFlt64)
-         return s390_emit_LGDRw(buf, dst, src);
+      if (dst_class == HRcFlt64 && src_class == HRcInt64) {
+         if (insn->size == 4) {
+            buf = s390_emit_SLLG(buf, R0, src, 0, DISP20(32)); /* r0 = src << 32 */
+            return s390_emit_LDGRw(buf, dst, R0);
+         } else {
+            return s390_emit_LDGRw(buf, dst, src);
+         }
+      }
+      if (dst_class == HRcInt64 && src_class == HRcFlt64) {
+         if (insn->size == 4) {
+            buf = s390_emit_LGDRw(buf, dst, src);
+            return s390_emit_SRLG(buf, dst, dst, 0, DISP20(32)); /* dst >>= 32 */
+         } else {
+            return s390_emit_LGDRw(buf, dst, src);
+         }
+      }
       /* A move between floating point registers and general purpose
          registers of different size should never occur and indicates
          an error elsewhere. */

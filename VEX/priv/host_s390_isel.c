@@ -1030,7 +1030,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
-      if (unop == Iop_ReinterpF64asI64) {
+      if (unop == Iop_ReinterpF64asI64 || unop == Iop_ReinterpF32asI32) {
          dst = newVRegI(env);
          h1  = s390_isel_float_expr(env, arg);     /* Process the operand */
          addInstr(env, s390_insn_move(size, dst, h1));
@@ -1810,7 +1810,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          return op == Iop_F128LOtoF64 ? dst_lo : dst_hi;
       }
 
-      if (op == Iop_ReinterpI64asF64) {
+      if (op == Iop_ReinterpI64asF64 || op == Iop_ReinterpI32asF32) {
          dst = newVRegF(env);
          h1  = s390_isel_int_expr(env, left);     /* Process the operand */
          addInstr(env, s390_insn_move(size, dst, h1));

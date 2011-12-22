@@ -1984,6 +1984,28 @@ Addr VG_(am_get_advisory_client_simple) ( Addr start, SizeT len,
    return VG_(am_get_advisory)( &mreq, True/*client*/, ok );
 }
 
+/* Similar to VG_(am_find_nsegment) but only returns free segments. */
+static NSegment const * VG_(am_find_free_nsegment) ( Addr a )
+{
+   Int i = find_nsegment_idx(a);
+   aspacem_assert(i >= 0 && i < nsegments_used);
+   aspacem_assert(nsegments[i].start <= a);
+   aspacem_assert(a <= nsegments[i].end);
+   if (nsegments[i].kind == SkFree) 
+      return &nsegments[i];
+   else
+      return NULL;
+}
+
+Bool VG_(am_covered_by_single_free_segment)
+   ( Addr start, SizeT len)
+{
+   NSegment const* segLo = VG_(am_find_free_nsegment)( start );
+   NSegment const* segHi = VG_(am_find_free_nsegment)( start + len - 1 );
+
+   return segLo != NULL && segHi != NULL && segLo == segHi;
+}
+
 
 /* Notifies aspacem that the client completed an mmap successfully.
    The segment array is updated accordingly.  If the returned Bool is

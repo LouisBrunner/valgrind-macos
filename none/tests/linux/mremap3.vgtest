@@ -1,0 +1,2 @@
+prog: mremap3
+stdout_filter: ../../../tests/filter_addresses

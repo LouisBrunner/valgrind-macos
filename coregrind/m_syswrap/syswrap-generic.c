@@ -403,16 +403,8 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
          non-fixed, which is not what we want */
    advised = VG_(am_get_advisory_client_simple)( needA, needL, &ok );
    if (ok) {
-      /* VG_(am_get_advisory_client_simple) (first arg == 0, meaning
-         this-or-nothing) is too lenient, and may allow us to trash
-         the next segment along.  So make very sure that the proposed
-         new area really is free.  This is perhaps overly
-         conservative, but it fixes #129866. */
-      NSegment const* segLo = VG_(am_find_nsegment)( needA );
-      NSegment const* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
-      if (segLo == NULL || segHi == NULL 
-          || segLo != segHi || segLo->kind != SkFree)
-         ok = False;
+      /* Fixes bug #129866. */
+      ok = VG_(am_covered_by_single_free_segment) ( needA, needL );
    }
    if (ok && advised == needA) {
       ok = VG_(am_extend_map_client)( &d, (NSegment*)old_seg, needL );
@@ -466,15 +458,8 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
          non-fixed, which is not what we want */
    advised = VG_(am_get_advisory_client_simple)( needA, needL, &ok );
    if (ok) {
-      /* VG_(am_get_advisory_client_simple) (first arg == 0, meaning
-         this-or-nothing) is too lenient, and may allow us to trash
-         the next segment along.  So make very sure that the proposed
-         new area really is free. */
-      NSegment const* segLo = VG_(am_find_nsegment)( needA );
-      NSegment const* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
-      if (segLo == NULL || segHi == NULL 
-          || segLo != segHi || segLo->kind != SkFree)
-         ok = False;
+      /* Fixes bug #129866. */
+      ok = VG_(am_covered_by_single_free_segment) ( needA, needL );
    }
    if (!ok || advised != needA)
       goto eNOMEM;

@@ -151,6 +151,17 @@ extern Addr VG_(am_get_advisory)
 extern Addr VG_(am_get_advisory_client_simple) 
    ( Addr start, SizeT len, /*OUT*/Bool* ok );
 
+/* Returns True if [start, start + len - 1] is covered by a single
+   free segment, otherwise returns False.
+   This allows to check the following case:
+   VG_(am_get_advisory_client_simple) (first arg == 0, meaning
+   this-or-nothing) is too lenient, and may allow us to trash
+   the next segment along.  So make very sure that the proposed
+   new area really is free.  This is perhaps overly
+   conservative, but it fixes #129866. */
+extern Bool VG_(am_covered_by_single_free_segment)
+   ( Addr start, SizeT len);
+
 /* Notifies aspacem that the client completed an mmap successfully.
    The segment array is updated accordingly.  If the returned Bool is
    True, the caller should immediately discard translations from the

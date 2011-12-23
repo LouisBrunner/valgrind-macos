@@ -1,7 +1,5 @@
 include $(top_srcdir)/Makefile.tool.am
 
-SUBDIRS += perf
-
 EXTRA_DIST = docs/mc-manual.xml docs/mc-tech-docs.xml
 
 #----------------------------------------------------------------------------

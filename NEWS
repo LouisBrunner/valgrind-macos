@@ -23,6 +23,7 @@ To see details of a given bug, visit
 https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+247386  make perf does not run all performance tests
 276993  fix mremap 'no thrash checks' 
 283413  Fix wrong sanity check
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings

@@ -2081,7 +2081,6 @@ AC_CONFIG_FILES([
    memcheck/tests/x86-linux/Makefile
    memcheck/tests/ppc32/Makefile
    memcheck/tests/ppc64/Makefile
-   memcheck/perf/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/x86/Makefile
@@ -2095,7 +2094,6 @@ AC_CONFIG_FILES([
    helgrind/tests/Makefile
    massif/Makefile
    massif/tests/Makefile
-   massif/perf/Makefile
    massif/ms_print
    lackey/Makefile
    lackey/tests/Makefile

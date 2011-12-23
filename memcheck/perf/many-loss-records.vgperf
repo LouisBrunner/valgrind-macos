@@ -1,2 +1,0 @@
-prog: many-loss-records
-vgopts: --leak-check=yes --leak-resolution=high

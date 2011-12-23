@@ -10,12 +10,14 @@ EXTRA_DIST = \
 	fbench.vgperf \
 	ffbench.vgperf \
 	heap.vgperf \
+	many-loss-records.vgperf \
+	many-xpts.vgperf \
 	sarp.vgperf \
 	tinycc.vgperf \
 	test_input_for_tinycc.c
 
 check_PROGRAMS = \
-	bigcode bz2 fbench ffbench heap sarp tinycc
+	bigcode bz2 fbench ffbench heap many-loss-records many-xpts sarp tinycc
 
 AM_CFLAGS   += -O $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += -O $(AM_FLAG_M3264_PRI)

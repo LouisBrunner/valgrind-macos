@@ -1,0 +1,2 @@
+prog: many-xpts
+vgopts: --massif:time-unit=B --massif:depth=100

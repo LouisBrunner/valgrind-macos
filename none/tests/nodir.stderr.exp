@@ -1,0 +1,1 @@
+valgrind: ./nodir.vgtest/foobar: Not a directory

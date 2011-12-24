@@ -695,28 +695,51 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
 const HChar* VG_(strerror) ( UWord errnum )
 {
    switch (errnum) {
-      case VKI_EPERM:       return "Operation not permitted";
-      case VKI_ENOENT:      return "No such file or directory";
-      case VKI_ESRCH:       return "No such process";
-      case VKI_EINTR:       return "Interrupted system call";
-      case VKI_EBADF:       return "Bad file number";
-      case VKI_EAGAIN:      return "Try again";
-      case VKI_ENOMEM:      return "Out of memory";
-      case VKI_EACCES:      return "Permission denied";
-      case VKI_EFAULT:      return "Bad address";
-      case VKI_EEXIST:      return "File exists";
-      case VKI_EINVAL:      return "Invalid argument";
-      case VKI_EMFILE:      return "Too many open files";
-      case VKI_ENOSYS:      return "Function not implemented";
-      case VKI_EOVERFLOW:   return "Value too large for defined data type";
+   case VKI_EPERM:       return "Operation not permitted";
+   case VKI_ENOENT:      return "No such file or directory";
+   case VKI_ESRCH:       return "No such process";
+   case VKI_EINTR:       return "Interrupted system call";
+   case VKI_EIO:         return "Input/output error";
+   case VKI_ENXIO:       return "No such device or address";
+   case VKI_E2BIG:       return "Argument list too long";
+   case VKI_ENOEXEC:     return "Exec format error";
+   case VKI_EBADF:       return "Bad file descriptor";
+   case VKI_ECHILD:      return "No child processes";
+   case VKI_EAGAIN:      return "Resource temporarily unavailable";
+   case VKI_ENOMEM:      return "Cannot allocate memory";
+   case VKI_EACCES:      return "Permission denied";
+   case VKI_EFAULT:      return "Bad address";
+   case VKI_ENOTBLK:     return "Block device required";
+   case VKI_EBUSY:       return "Device or resource busy";
+   case VKI_EEXIST:      return "File exists";
+   case VKI_EXDEV:       return "Invalid cross-device link";
+   case VKI_ENODEV:      return "No such device";
+   case VKI_ENOTDIR:     return "Not a directory";
+   case VKI_EISDIR:      return "Is a directory";
+   case VKI_EINVAL:      return "Invalid argument";
+   case VKI_ENFILE:      return "Too many open files in system";
+   case VKI_EMFILE:      return "Too many open files";
+   case VKI_ENOTTY:      return "Inappropriate ioctl for device";
+   case VKI_ETXTBSY:     return "Text file busy";
+   case VKI_EFBIG:       return "File too large";
+   case VKI_ENOSPC:      return "No space left on device";
+   case VKI_ESPIPE:      return "Illegal seek";
+   case VKI_EROFS:       return "Read-only file system";
+   case VKI_EMLINK:      return "Too many links";
+   case VKI_EPIPE:       return "Broken pipe";
+   case VKI_EDOM:        return "Numerical argument out of domain";
+   case VKI_ERANGE:      return "Numerical result out of range";
+
+   case VKI_ENOSYS:      return "Function not implemented";
+   case VKI_EOVERFLOW:   return "Value too large for defined data type";
 #     if defined(VKI_ERESTARTSYS)
       case VKI_ERESTARTSYS: return "ERESTARTSYS";
 #     endif
-      default:              return "VG_(strerror): unknown error";
+   default:              return "VG_(strerror): unknown error";
    }
 }
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                        ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

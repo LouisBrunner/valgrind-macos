@@ -1158,21 +1158,42 @@ struct  vki_seminfo {
 #define	VKI_ENOENT		 2	/* No such file or directory */
 #define	VKI_ESRCH		 3	/* No such process */
 #define	VKI_EINTR		 4	/* Interrupted system call */
-#define VKI_ENOEXEC              8      /* Exec format error */
+#define	VKI_EIO			 5	/* I/O error */
+#define	VKI_ENXIO		 6	/* No such device or address */
+#define	VKI_E2BIG		 7	/* Argument list too long */
+#define	VKI_ENOEXEC		 8	/* Exec format error */
 #define	VKI_EBADF		 9	/* Bad file number */
-#define VKI_ECHILD              10      /* No child processes */
-#define VKI_EAGAIN		11	/* Try again */
-#define VKI_EWOULDBLOCK		VKI_EAGAIN
+#define	VKI_ECHILD		10	/* No child processes */
+#define	VKI_EAGAIN		11	/* Try again */
 #define	VKI_ENOMEM		12	/* Out of memory */
 #define	VKI_EACCES		13	/* Permission denied */
 #define	VKI_EFAULT		14	/* Bad address */
+#define	VKI_ENOTBLK		15	/* Block device required */
+#define	VKI_EBUSY		16	/* Device or resource busy */
 #define	VKI_EEXIST		17	/* File exists */
+#define	VKI_EXDEV		18	/* Cross-device link */
+#define	VKI_ENODEV		19	/* No such device */
+#define	VKI_ENOTDIR		20	/* Not a directory */
+#define	VKI_EISDIR		21	/* Is a directory */
 #define	VKI_EINVAL		22	/* Invalid argument */
+#define	VKI_ENFILE		23	/* File table overflow */
 #define	VKI_EMFILE		24	/* Too many open files */
+#define	VKI_ENOTTY		25	/* Not a typewriter */
+#define	VKI_ETXTBSY		26	/* Text file busy */
+#define	VKI_EFBIG		27	/* File too large */
+#define	VKI_ENOSPC		28	/* No space left on device */
+#define	VKI_ESPIPE		29	/* Illegal seek */
+#define	VKI_EROFS		30	/* Read-only file system */
+#define	VKI_EMLINK		31	/* Too many links */
+#define	VKI_EPIPE		32	/* Broken pipe */
+#define	VKI_EDOM		33	/* Math argument out of domain of func */
+#define	VKI_ERANGE		34	/* Math result not representable */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/errno.h
 //----------------------------------------------------------------------
+
+#define VKI_EWOULDBLOCK		VKI_EAGAIN
 
 #define	VKI_ENOSYS		38	/* Function not implemented */
 #define	VKI_EOVERFLOW		75	/* Value too large for defined data type */

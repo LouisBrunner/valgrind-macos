@@ -3299,19 +3299,21 @@ static void parse_procselfmaps (
 
     read_line_ok:
 
-      /* Try and find the name of the file mapped to this segment, if
-         it exists.  Note that files can contains spaces. */
+      aspacem_assert(i < buf_n_tot);
 
-      // Move i to the next non-space char, which should be either a '/' or
-      // a newline.
-      while (procmap_buf[i] == ' ' && i < buf_n_tot-1) i++;
+      /* Try and find the name of the file mapped to this segment, if
+         it exists.  Note that file names can contain spaces. */
+
+      // Move i to the next non-space char, which should be either a '/',
+      // a '[', or a newline.
+      while (procmap_buf[i] == ' ') i++;
       
       // Move i_eol to the end of the line.
       i_eol = i;
-      while (procmap_buf[i_eol] != '\n' && i_eol < buf_n_tot-1) i_eol++;
+      while (procmap_buf[i_eol] != '\n') i_eol++;
 
       // If there's a filename...
-      if (i < i_eol-1 && procmap_buf[i] == '/') {
+      if (procmap_buf[i] == '/') {
          /* Minor hack: put a '\0' at the filename end for the call to
             'record_mapping', then restore the old char with 'tmp'. */
          filename = &procmap_buf[i];

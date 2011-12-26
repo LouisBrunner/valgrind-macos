@@ -29,7 +29,7 @@ where XXXXXX is the bug number as listed below.
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
 287858  VG_(strerror): unknown error 
-
+289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

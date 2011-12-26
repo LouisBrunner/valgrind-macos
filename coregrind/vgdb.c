@@ -1364,7 +1364,7 @@ static char *from_gdb_to_pid; /* fifo name to write gdb command to pid */
 static
 Bool read_from_gdb_write_to_pid(int to_pid)
 {
-   char buf[PBUFSIZ];
+   char buf[PBUFSIZ+1]; // +1 for trailing \0
    int nrread;
 
    nrread = read_buf(from_gdb, buf, "from gdb on stdin");
@@ -1388,7 +1388,7 @@ static char *to_gdb_from_pid; /* fifo name to read pid replies */
 static
 Bool read_from_pid_write_to_gdb(int from_pid)
 {
-   char buf[PBUFSIZ];
+   char buf[PBUFSIZ+1]; // +1 for trailing \0
    int nrread;
 
    nrread = read_buf(from_pid, buf, "from pid");
@@ -1493,14 +1493,14 @@ fromhex (int a)
 static int
 readchar (int fd)
 {
-  static unsigned char buf[PBUFSIZ];
+  static unsigned char buf[PBUFSIZ+1]; // +1 for trailing \0
   static int bufcnt = 0;
   static unsigned char *bufp;
 
   if (bufcnt-- > 0)
      return *bufp++;
 
-  bufcnt = read (fd, buf, sizeof (buf));
+  bufcnt = read_buf (fd, buf, "static buf readchar");
 
   if (bufcnt <= 0) {
      if (bufcnt == 0) {
@@ -1810,10 +1810,10 @@ void gdb_relay (int pid)
                if (!read_from_gdb_write_to_pid(to_pid))
                   shutting_down = True;
                break;
-               case FROM_PID:
-                  if (!read_from_pid_write_to_gdb(from_pid))
-                     shutting_down = True;
-                  break;
+            case FROM_PID:
+               if (!read_from_pid_write_to_gdb(from_pid))
+                  shutting_down = True;
+               break;
             default: XERROR(0, "unexpected POLLIN on %s\n",
                                ppConnectionKind(ck));
             }
@@ -1874,7 +1874,7 @@ void standalone_send_commands(int pid,
    unsigned char hex[3];
    unsigned char cksum;
    unsigned char *hexcommand;
-   unsigned char buf[PBUFSIZ];
+   unsigned char buf[PBUFSIZ+1]; // +1 for trailing \0
    int buflen;
    int nc;
 

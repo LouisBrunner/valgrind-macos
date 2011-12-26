@@ -3141,7 +3141,7 @@ static Int readdec64 ( const Char* buf, ULong* val )
 {
    Int n = 0;
    *val = 0;
-   while (hexdigit(*buf) >= 0) {
+   while (decdigit(*buf) >= 0) {
       *val = (*val * 10) + decdigit(*buf);
       n++; buf++;
    }

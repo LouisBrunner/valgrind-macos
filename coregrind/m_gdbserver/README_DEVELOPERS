@@ -246,7 +246,7 @@ Automatic regression tests:
 ---------------------------
 Automatic Valgrind gdbserver tests are in the directory
 $(top_srcdir)/gdbserver_tests.
-Read $(top_srcdir)/gdbserver_tests/README_DEVELOPPERS for more
+Read $(top_srcdir)/gdbserver_tests/README_DEVELOPERS for more
 info about testing.
 
 How to integrate support for a new architecture xxx?

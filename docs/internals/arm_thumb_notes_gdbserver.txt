@@ -1,6 +1,6 @@
 (for general information
-  about gdbserver, read coregrind/m_gdbserver/README_DEVELOPPERS
-  about gdbserver tests, read gdbserver_tests/README_DEVELOPPERS).
+  about gdbserver, read coregrind/m_gdbserver/README_DEVELOPERS
+  about gdbserver tests, read gdbserver_tests/README_DEVELOPERS).
 
 ARM thumb and gdbserver
 -----------------------

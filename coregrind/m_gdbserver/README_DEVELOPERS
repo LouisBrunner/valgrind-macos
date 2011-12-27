@@ -193,7 +193,7 @@ At least on a fedora core 12 (kernel 2.6.32), syscall restart of read
 and select are working ok and red-hat 5.3 (an old kernel), everything
 works properly.
 
-Need to investigate if darwin and/or AIX can similarly do syscall
+Need to investigate if darwin can similarly do syscall
 restart with ptrace.
 
 The vgdb argument --max-invoke-ms=xxx allows to control the nr of
@@ -219,7 +219,7 @@ valgrind-low-* are inspired from gdb files.
 This code had to be changed to integrate properly within valgrind
 (e.g. no libc usage).  Some of these changes have been ensured by
 using the preprocessor to replace calls by valgrind equivalent,
-e.g. #define memcpy(...) VG_(memcpy) (...).
+e.g. #define strcmp(...) VG_(strcmp) (...).
 
 Some "control flow" changes are due to the fact that gdbserver inside
 valgrind must return the control to valgrind when the 'debugged'
@@ -298,13 +298,6 @@ Modify coregrind/Makefile.am:
     If you have target xml description, also add them in pkglib_DATA 
 
 
-A not handled comment given by Julian at FOSDEM.
-------------------------------------------------
-* the check for vgdb-poll in scheduler.c could/should be moved to another place:
-    instead of having it in run_thread_for_a_while
-    the vgdb poll check could be in VG_(scheduler).
-  (not clear to me why one is better than the other ???)
-
 TODO and/or additional nice things to have
 ------------------------------------------
 * many options can be changed on-line without problems.
@@ -329,24 +322,6 @@ TODO and/or additional nice things to have
   translate to VEX registers. Someone with a good knowledge
   of these architectures might complete this 
   (see the GDBTD in valgrind-low-*.c)
-
-* "hardware" watchpoint (read/write/access watchpoints) are implemented 
-  but can't persuade gdb to insert a hw watchpoint of what valgrind
-  supports (i.e. of whatever length).
-  The reason why gdb does not accept a hardware watch of let's say
-  10 bytes is:
-default_region_ok_for_hw_watchpoint (addr=134520360, len=10) at target.c:2738
-2738	  return (len <= gdbarch_ptr_bit (target_gdbarch) / TARGET_CHAR_BIT);
-#0  default_region_ok_for_hw_watchpoint (addr=134520360, len=10)
-    at target.c:2738
-2738	  return (len <= gdbarch_ptr_bit (target_gdbarch) / TARGET_CHAR_BIT);
-#1  0x08132e65 in can_use_hardware_watchpoint (v=0x85a8ef0)
-    at breakpoint.c:8300
-8300		  if (!target_region_ok_for_hw_watchpoint (vaddr, len))
-#2  0x0813bd17 in watch_command_1 (arg=0x84169f0 "", accessflag=2, 
-    from_tty=<value optimized out>) at breakpoint.c:8140
-  A small patch in gdb remote.c allowed to control the remote target watchpoint
-  length limit. This patch is to be submitted.
 
 * Currently, at least on recent linux kernel, vgdb can properly wake
   up a valgrind process which is blocked in system calls. Maybe we

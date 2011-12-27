@@ -520,7 +520,7 @@ to the port number used by vgdb: adb can forward tcp/ip between different
 port numbers.
 </para>
 
-<para>In the 3.7.0 release, the GDB server is not enabled by default
+<para>In the current release, the GDB server is not enabled by default
 for Android, due to problems in establishing a suitable directory in
 which Valgrind can create the necessary FIFOs (named pipes) for
 communication purposes.  You can stil try to use the GDB server, but

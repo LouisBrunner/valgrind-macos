@@ -47,6 +47,7 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = leak.h
 
 EXTRA_DIST = \
+	accounting.stderr.exp accounting.vgtest \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	atomic_incs.stderr.exp atomic_incs.vgtest \
 	atomic_incs.stdout.exp-32bit atomic_incs.stdout.exp-64bit \
@@ -211,6 +212,7 @@ EXTRA_DIST = \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc
 
 check_PROGRAMS = \
+	accounting \
 	addressable \
 	atomic_incs \
 	badaddrvalue badfree badjump badjump2 \

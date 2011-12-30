@@ -238,8 +238,6 @@ void* MC_(new_block) ( ThreadId tid,
 {
    ExeContext* ec;
 
-   cmalloc_n_mallocs ++;
-
    // Allocate and zero if necessary
    if (p) {
       tl_assert(MC_AllocCustom == kind);
@@ -258,7 +256,8 @@ void* MC_(new_block) ( ThreadId tid,
       }
    }
 
-   // Only update this stat if allocation succeeded.
+   // Only update stats if allocation succeeded.
+   cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += (ULong)szB;
 
    ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
@@ -392,12 +391,12 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
    void*     p_new;
    SizeT     old_szB;
 
+   if (complain_about_silly_args(new_szB, "realloc")) 
+      return NULL;
+
    cmalloc_n_frees ++;
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += (ULong)new_szB;
-
-   if (complain_about_silly_args(new_szB, "realloc")) 
-      return NULL;
 
    /* Remove the old block */
    mc = VG_(HT_remove) ( MC_(malloc_list), (UWord)p_old );

@@ -106,7 +106,7 @@ VG_(run_innerloop):
         stfpc S390_LOC_SAVED_FPC_V
 
         /* Load the FPC the way the client code wants it. I.e. pull the
-           value from the guest state.
+           value from the guest state. */
         lfpc OFFSET_s390x_fpc(%r13)
 
         /* Get the IA from the guest state */

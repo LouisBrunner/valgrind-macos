@@ -144,7 +144,12 @@ s390_hreg_get_allocable(Int *nregs, HReg **arr)
       Otherwise, they are available to the allocator */
    (*arr)[i++] = mkHReg(10, HRcInt64, False);
    (*arr)[i++] = mkHReg(11, HRcInt64, False);
-   /* GPR12 is not available because it caches VG_(dispatch_ctr) */
+   /* GPR12 is not available because it caches VG_(dispatch_ctr).
+      Setting aside a register for the counter gives slightly better
+      performance - most of the time. From the 10 tests in "make perf"
+      8 run faster with a max observed speedup of 2.6% for bz2. ffbench
+      is the counter example. It runs 1.3% faster without the dedicated
+      register. */
    /* GPR13 is not available because it is used as guest state pointer */
    /* GPR14 is not available because it is used as link register */
    /* GPR15 is not available because it is used as stack pointer */

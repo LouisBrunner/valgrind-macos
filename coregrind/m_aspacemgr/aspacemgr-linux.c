@@ -1981,7 +1981,7 @@ Addr VG_(am_get_advisory_client_simple) ( Addr start, SizeT len,
    mreq.rkind = start==0 ? MAny : MFixed;
    mreq.start = start;
    mreq.len   = len;
-   return VG_(am_get_advisory)( &mreq, True/*client*/, ok );
+   return VG_(am_get_advisory)( &mreq, True/*forClient*/, ok );
 }
 
 /* Similar to VG_(am_find_nsegment) but only returns free segments. */
@@ -2229,7 +2229,7 @@ SysRes VG_(am_mmap_named_file_fixed_client)
    req.rkind = MFixed;
    req.start = start;
    req.len   = length;
-   advised = VG_(am_get_advisory)( &req, True/*client*/, &ok );
+   advised = VG_(am_get_advisory)( &req, True/*forClient*/, &ok );
    if (!ok || advised != start)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
@@ -2298,7 +2298,7 @@ SysRes VG_(am_mmap_anon_fixed_client) ( Addr start, SizeT length, UInt prot )
    req.rkind = MFixed;
    req.start = start;
    req.len   = length;
-   advised = VG_(am_get_advisory)( &req, True/*client*/, &ok );
+   advised = VG_(am_get_advisory)( &req, True/*forClient*/, &ok );
    if (!ok || advised != start)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
@@ -2356,7 +2356,7 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
    req.rkind = MAny;
    req.start = 0;
    req.len   = length;
-   advised = VG_(am_get_advisory)( &req, True/*client*/, &ok );
+   advised = VG_(am_get_advisory)( &req, True/*forClient*/, &ok );
    if (!ok)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
@@ -2430,7 +2430,7 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
    req.rkind = MAny;
    req.start = 0;
    req.len   = length;
-   advised = VG_(am_get_advisory)( &req, False/*valgrind*/, &ok );
+   advised = VG_(am_get_advisory)( &req, False/*forClient*/, &ok );
    if (!ok)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
@@ -2533,7 +2533,7 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    req.rkind = MAny;
    req.start = 0;
    req.len   = length;
-   advised = VG_(am_get_advisory)( &req, True/*client*/, &ok );
+   advised = VG_(am_get_advisory)( &req, False/*forClient*/, &ok );
    if (!ok)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 

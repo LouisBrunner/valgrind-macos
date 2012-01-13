@@ -181,25 +181,27 @@ const char *vgdb_tmpdir(void)
    const char *tmpdir;
 
    tmpdir = getenv("TMPDIR");
-   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = VG_TMPDIR;
-   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = "/tmp";    /* fallback */
+   if (tmpdir == NULL || *tmpdir == '\0')
+     tmpdir = VG_TMPDIR;
+   if (tmpdir == NULL || *tmpdir == '\0')
+     tmpdir = "/tmp";    /* fallback */
 
    return tmpdir;
 }
 
-/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+/* Return the default path prefix for the named pipes (FIFOs) used by vgdb/gdb
    to communicate with valgrind */
 static
 char *vgdb_prefix_default(void)
 {
-   const char *tmpdir;
-   HChar *prefix;
-   
-   tmpdir = vgdb_tmpdir();
-   prefix = vmalloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
-   strcpy(prefix, tmpdir);
-   strcat(prefix, "/vgdb-pipe");
+   static HChar *prefix;
 
+   if (prefix == NULL) {
+      const char *tmpdir = vgdb_tmpdir();
+      prefix = vmalloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+      strcpy(prefix, tmpdir);
+      strcat(prefix, "/vgdb-pipe");
+   }
    return prefix;
 }
 

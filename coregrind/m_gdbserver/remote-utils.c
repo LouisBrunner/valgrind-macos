@@ -1079,13 +1079,13 @@ int decode_X_packet (char *from, int packet_len, CORE_ADDR *mem_addr_ptr,
 HChar *
 VG_(vgdb_prefix_default)(void)
 {
-   const HChar *tmpdir;
-   HChar *prefix;
+   static HChar *prefix;
    
-   tmpdir = VG_(tmpdir)();
-   prefix = malloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
-   strcpy(prefix, tmpdir);
-   strcat(prefix, "/vgdb-pipe");
-
+   if (prefix == NULL) {
+     const HChar *tmpdir = VG_(tmpdir)();
+     prefix = malloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+     strcpy(prefix, tmpdir);
+     strcat(prefix, "/vgdb-pipe");
+   }
    return prefix;
 }

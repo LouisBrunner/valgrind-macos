@@ -1388,9 +1388,10 @@ Address 0x8049E28 len 1 defined
     <para><varname>leak_check [full*|summary]
                               [reachable|possibleleak*|definiteleak]
                               [increased*|changed|any]
+                              [unlimited*|limited &lt;max_loss_records_output&gt;]
           </varname>
     performs a leak check. The <varname>*</varname> in the arguments
-    indicates the default value. </para>
+    indicates the default values. </para>
 
     <para> If the first argument is <varname>summary</varname>, only a
     summary of the leak search is given; otherwise a full leak report
@@ -1399,7 +1400,12 @@ Address 0x8049E28 len 1 defined
     the number of blocks leaked and their total size.  When a full
     report is requested, the next two arguments further specify what
     kind of leaks to report.  A leak's details are shown if they match
-    both the second and third argument.
+    both the second and third argument. A full leak report might
+    output detailed information for many leaks. The nr of leaks for
+    which information is output can be controlled using
+    the <varname>limited</varname> argument followed by the maximum nr
+    of leak records to output. If this maximum is reached, the leak
+    search  outputs the records with the biggest number of bytes.
     </para>
 
     <para>The second argument controls what kind of blocks are shown for
@@ -1428,7 +1434,7 @@ Address 0x8049E28 len 1 defined
     </para>
 
     <para>The following example shows usage of the 
-    <varname>leak_check monitor</varname> command on
+    <varname>leak_check</varname> monitor command on
     the <varname>memcheck/tests/leak-cases.c</varname> regression
     test. The first command outputs one entry having an increase in
     the leaked bytes.  The second command is the same as the first
@@ -1474,6 +1480,7 @@ Address 0x8049E28 len 1 defined
     abbreviation: <computeroutput>mo l f r a</computeroutput>).
     </para>
   </listitem>
+
 </itemizedlist>
 
 </sect1>

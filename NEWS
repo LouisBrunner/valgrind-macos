@@ -5,6 +5,11 @@ Release 3.8.0 (????)
 
 * ==================== TOOL CHANGES ====================
 
+* Memcheck:
+
+  - The leak_check GDB server monitor command now can
+    control the maximum nr of loss records to output.
+
 * ==================== OTHER CHANGES ====================
 
 * The C++ demangler has been updated so as to work well with C++ 

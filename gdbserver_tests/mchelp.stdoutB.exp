@@ -23,9 +23,11 @@ memcheck monitor commands:
             and outputs a description of <addr>
   leak_check [full*|summary] [reachable|possibleleak*|definiteleak]
                 [increased*|changed|any]
+                [unlimited*|limited <max_loss_records_output>]
             * = defaults
         Examples: leak_check
                   leak_check summary any
+                  leak_check full reachable any limited 100
 
 general valgrind monitor commands:
   help [debug]             : monitor command help. With debug: + debugging commands
@@ -60,8 +62,10 @@ memcheck monitor commands:
             and outputs a description of <addr>
   leak_check [full*|summary] [reachable|possibleleak*|definiteleak]
                 [increased*|changed|any]
+                [unlimited*|limited <max_loss_records_output>]
             * = defaults
         Examples: leak_check
                   leak_check summary any
+                  leak_check full reachable any limited 100
 
 monitor command request to kill this process

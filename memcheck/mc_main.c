@@ -5016,9 +5016,11 @@ static void print_monitor_help ( void )
 "            and outputs a description of <addr>\n"
 "  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]\n"
 "                [increased*|changed|any]\n"
+"                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
+"                  leak_check full reachable any limited 100\n"
 "\n");
 }
 
@@ -5089,6 +5091,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       lcp.show_reachable     = False;
       lcp.show_possibly_lost = True;
       lcp.deltamode          = LCD_Increased;
+      lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;
       
       for (kw = VG_(strtok_r) (NULL, " ", &ssaveptr); 
@@ -5097,7 +5100,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
          switch (VG_(keyword_id) 
                  ("full summary "
                   "reachable possibleleak definiteleak "
-                  "increased changed any",
+                  "increased changed any "
+                  "unlimited limited ",
                   kw, kwd_report_all)) {
          case -2: err++; break;
          case -1: err++; break;
@@ -5120,12 +5124,34 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
             lcp.deltamode = LCD_Changed; break;
          case  7: /* any */
             lcp.deltamode = LCD_Any; break;
+         case  8: /* unlimited */
+            lcp.max_loss_records_output = 999999999; break;
+         case  9: { /* limited */
+            int int_value;
+            char* endptr;
+
+            wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wcmd == NULL) {
+               int_value = 0;
+               endptr = "empty"; /* to report an error below */
+            } else {
+               int_value = VG_(strtoll10) (wcmd, (Char **)&endptr);
+            }
+            if (*endptr != '\0')
+               VG_(gdb_printf) ("missing or malformed integer value\n");
+            else if (int_value > 0)
+               lcp.max_loss_records_output = (UInt) int_value;
+            else
+               VG_(gdb_printf) ("max_loss_records_output must be >= 1, got %d\n",
+                                int_value);
+            break;
+         }
          default:
             tl_assert (0);
          }
       }
       if (!err)
-         MC_(detect_memory_leaks)(tid, lcp);
+         MC_(detect_memory_leaks)(tid, &lcp);
       return True;
    }
       
@@ -5316,9 +5342,10 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
                 "Warning: unknown memcheck leak search deltamode\n");
             lcp.deltamode = LCD_Any;
          }
+         lcp.max_loss_records_output = 999999999;
          lcp.requested_by_monitor_command = False;
          
-         MC_(detect_memory_leaks)(tid, lcp);
+         MC_(detect_memory_leaks)(tid, &lcp);
          *ret = 0; /* return value is meaningless */
          break;
       }
@@ -5995,8 +6022,9 @@ static void mc_fini ( Int exitcode )
       lcp.show_reachable = MC_(clo_show_reachable);
       lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
       lcp.deltamode = LCD_Any;
+      lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = False;
-      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, lcp);
+      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, &lcp);
    } else {
       if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
          VG_(umsg)(

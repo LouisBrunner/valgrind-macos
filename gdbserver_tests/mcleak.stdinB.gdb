@@ -70,6 +70,14 @@ continue
 #   fprintf(stderr, "expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable\n"); fflush(stderr); breakme();
 up
 monitor leak_check full reachable changed
+# output all leak records:
+monitor leak_check full reachable any unlimited
+# output the 2 biggest leak records:
+monitor leak_check full reachable any limited 2
+#output the biggest leak record:
+monitor leak_check full reachable any limited 1
+# output the biggest definitely leaked record:
+monitor leak_check full definiteleak any limited 1
 continue
 #   VALGRIND_DO_CHANGED_LEAK_CHECK;
 #

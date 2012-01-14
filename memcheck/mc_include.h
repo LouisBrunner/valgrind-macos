@@ -311,11 +311,12 @@ typedef
       Bool show_reachable;
       Bool show_possibly_lost;
       LeakCheckDeltaMode deltamode;
+      UInt max_loss_records_output;       // limit on the nr of loss records output.
       Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
    }
    LeakCheckParams;
 
-void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams lcp);
+void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams * lcp);
 
 // maintains the lcp.deltamode given in the last call to detect_memory_leaks
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);

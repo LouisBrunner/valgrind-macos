@@ -781,9 +781,64 @@ static Int cmp_LossRecords(void* va, void* vb)
    return 0;
 }
 
-static void print_results(ThreadId tid, LeakCheckParams lcp)
+
+static void get_printing_rules(LeakCheckParams* lcp,
+                               LossRecord*  lr,
+                               Bool* count_as_error,
+                               Bool* print_record)
 {
-   Int          i, n_lossrecords;
+   // Rules for printing:
+   // - We don't show suppressed loss records ever (and that's controlled
+   //   within the error manager).
+   // - We show non-suppressed loss records that are not "reachable" if 
+   //   --leak-check=yes.
+   // - We show all non-suppressed loss records if --leak-check=yes and
+   //   --show-reachable=yes.
+   //
+   // Nb: here "reachable" means Reachable *or* IndirectLeak;  note that
+   // this is different to "still reachable" used elsewhere because it
+   // includes indirectly lost blocks!
+
+   Bool delta_considered;
+
+   switch (lcp->deltamode) {
+   case LCD_Any: 
+      delta_considered = lr->num_blocks > 0;
+      break;
+   case LCD_Increased:
+      delta_considered 
+         = lr->szB > lr->old_szB
+         || lr->indirect_szB > lr->old_indirect_szB
+         || lr->num_blocks > lr->old_num_blocks;
+      break;
+   case LCD_Changed: 
+      delta_considered = lr->szB != lr->old_szB
+         || lr->indirect_szB != lr->old_indirect_szB
+         || lr->num_blocks != lr->old_num_blocks;
+      break;
+   default:
+      tl_assert(0);
+   }
+
+   *print_record = lcp->mode == LC_Full && delta_considered &&
+      ( lcp->show_reachable ||
+        Unreached == lr->key.state || 
+        ( lcp->show_possibly_lost && 
+          Possible  == lr->key.state ) );
+   // We don't count a leaks as errors with lcp->mode==LC_Summary.
+   // Otherwise you can get high error counts with few or no error
+   // messages, which can be confusing.  Also, you could argue that
+   // indirect leaks should be counted as errors, but it seems better to
+   // make the counting criteria similar to the printing criteria.  So we
+   // don't count them.
+   *count_as_error = lcp->mode == LC_Full && delta_considered &&
+      ( Unreached == lr->key.state || 
+        Possible  == lr->key.state );
+}
+
+static void print_results(ThreadId tid, LeakCheckParams* lcp)
+{
+   Int          i, n_lossrecords, start_lr_output_scan;
    LossRecord** lr_array;
    LossRecord*  lr;
    Bool         is_suppressed;
@@ -864,55 +919,37 @@ static void print_results(ThreadId tid, LeakCheckParams lcp)
    MC_(blocks_reachable)  = MC_(bytes_reachable)  = 0;
    MC_(blocks_suppressed) = MC_(bytes_suppressed) = 0;
 
-   // Print the loss records (in size order) and collect summary stats.
-   for (i = 0; i < n_lossrecords; i++) {
-      Bool count_as_error, print_record, delta_considered;
-      // Rules for printing:
-      // - We don't show suppressed loss records ever (and that's controlled
-      //   within the error manager).
-      // - We show non-suppressed loss records that are not "reachable" if 
-      //   --leak-check=yes.
-      // - We show all non-suppressed loss records if --leak-check=yes and
-      //   --show-reachable=yes.
-      //
-      // Nb: here "reachable" means Reachable *or* IndirectLeak;  note that
-      // this is different to "still reachable" used elsewhere because it
-      // includes indirectly lost blocks!
-      //
-      lr = lr_array[i];
-      switch (lcp.deltamode) {
-         case LCD_Any: 
-            delta_considered = lr->num_blocks > 0;
-            break;
-         case LCD_Increased:
-            delta_considered 
-               = lr_array[i]->szB > lr_array[i]->old_szB
-                 || lr_array[i]->indirect_szB > lr_array[i]->old_indirect_szB
-                 || lr->num_blocks > lr->old_num_blocks;
-            break;
-         case LCD_Changed: 
-            delta_considered = lr_array[i]->szB != lr_array[i]->old_szB
-            || lr_array[i]->indirect_szB != lr_array[i]->old_indirect_szB
-            || lr->num_blocks != lr->old_num_blocks;
-            break;
-         default:
-            tl_assert(0);
+   // If there is a maximum nr of loss records we can output, then first
+   // compute from where the output scan has to start.
+   // By default, start from the first loss record. Compute a higher
+   // value if there is a maximum to respect. We need to print the last
+   // records, as the one with the biggest sizes are more interesting.
+   start_lr_output_scan = 0;
+   if (lcp->mode == LC_Full && lcp->max_loss_records_output < n_lossrecords) {
+      Int nr_printable_records = 0;
+      for (i = n_lossrecords - 1; i >= 0 && start_lr_output_scan == 0; i--) {
+         Bool count_as_error, print_record;
+         lr = lr_array[i];
+         get_printing_rules (lcp, lr, &count_as_error, &print_record);
+         // Do not use get_printing_rules results for is_suppressed, as we
+         // only want to check if the record would be suppressed.
+         is_suppressed = 
+            MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, 
+                                     False /* print_record */,
+                                     False /* count_as_error */);
+         if (print_record && !is_suppressed) {
+            nr_printable_records++;
+            if (nr_printable_records == lcp->max_loss_records_output)
+               start_lr_output_scan = i;
+         }
       }
+   }
 
-      print_record = lcp.mode == LC_Full && delta_considered &&
-                     ( lcp.show_reachable ||
-                       Unreached == lr->key.state || 
-                       ( lcp.show_possibly_lost && 
-                         Possible  == lr->key.state ) );
-      // We don't count a leaks as errors with lcp.mode==LC_Summary.
-      // Otherwise you can get high error counts with few or no error
-      // messages, which can be confusing.  Also, you could argue that
-      // indirect leaks should be counted as errors, but it seems better to
-      // make the counting criteria similar to the printing criteria.  So we
-      // don't count them.
-      count_as_error = lcp.mode == LC_Full && delta_considered &&
-                       ( Unreached == lr->key.state || 
-                         Possible  == lr->key.state );
+   // Print the loss records (in size order) and collect summary stats.
+   for (i = start_lr_output_scan; i < n_lossrecords; i++) {
+      Bool count_as_error, print_record;
+      lr = lr_array[i];
+      get_printing_rules(lcp, lr, &count_as_error, &print_record);
       is_suppressed = 
          MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, print_record,
                                   count_as_error );
@@ -968,44 +1005,44 @@ static void print_results(ThreadId tid, LeakCheckParams lcp)
       VG_(umsg)("LEAK SUMMARY:\n");
       VG_(umsg)("   definitely lost: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_leaked), 
-                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_leaked), old_bytes_leaked, lcp.deltamode),
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_leaked), old_bytes_leaked, lcp->deltamode),
                 MC_(blocks_leaked),
-                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_leaked), old_blocks_leaked, lcp.deltamode));
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_leaked), old_blocks_leaked, lcp->deltamode));
       VG_(umsg)("   indirectly lost: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_indirect), 
-                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_indirect), old_bytes_indirect, lcp.deltamode),
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_indirect), old_bytes_indirect, lcp->deltamode),
                 MC_(blocks_indirect),
-                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_indirect), old_blocks_indirect, lcp.deltamode) );
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_indirect), old_blocks_indirect, lcp->deltamode) );
       VG_(umsg)("     possibly lost: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_dubious), 
-                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_dubious), old_bytes_dubious, lcp.deltamode), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_dubious), old_bytes_dubious, lcp->deltamode), 
                 MC_(blocks_dubious),
-                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_dubious), old_blocks_dubious, lcp.deltamode) );
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_dubious), old_blocks_dubious, lcp->deltamode) );
       VG_(umsg)("   still reachable: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_reachable), 
-                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_reachable), old_bytes_reachable, lcp.deltamode), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_reachable), old_bytes_reachable, lcp->deltamode), 
                 MC_(blocks_reachable),
-                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_reachable), old_blocks_reachable, lcp.deltamode) );
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_reachable), old_blocks_reachable, lcp->deltamode) );
       VG_(umsg)("        suppressed: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_suppressed), 
-                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_suppressed), old_bytes_suppressed, lcp.deltamode), 
+                MC_(snprintf_delta) (d_bytes, 20, MC_(bytes_suppressed), old_bytes_suppressed, lcp->deltamode), 
                 MC_(blocks_suppressed),
-                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_suppressed), old_blocks_suppressed, lcp.deltamode) );
-      if (lcp.mode != LC_Full &&
+                MC_(snprintf_delta) (d_blocks, 20, MC_(blocks_suppressed), old_blocks_suppressed, lcp->deltamode) );
+      if (lcp->mode != LC_Full &&
           (MC_(blocks_leaked) + MC_(blocks_indirect) +
            MC_(blocks_dubious) + MC_(blocks_reachable)) > 0) {
-         if (lcp.requested_by_monitor_command)
+         if (lcp->requested_by_monitor_command)
             VG_(umsg)("To see details of leaked memory, give 'full' arg to leak_check\n");
          else
             VG_(umsg)("Rerun with --leak-check=full to see details "
                       "of leaked memory\n");
       }
-      if (lcp.mode == LC_Full &&
-          MC_(blocks_reachable) > 0 && !lcp.show_reachable)
+      if (lcp->mode == LC_Full &&
+          MC_(blocks_reachable) > 0 && !lcp->show_reachable)
       {
          VG_(umsg)("Reachable blocks (those to which a pointer "
                    "was found) are not shown.\n");
-         if (lcp.requested_by_monitor_command)
+         if (lcp->requested_by_monitor_command)
             VG_(umsg)("To see them, add 'reachable any' args to leak_check\n");
          else
             VG_(umsg)("To see them, rerun with: --leak-check=full "
@@ -1019,13 +1056,13 @@ static void print_results(ThreadId tid, LeakCheckParams lcp)
 /*--- Top-level entry point.                               ---*/
 /*------------------------------------------------------------*/
 
-void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams lcp)
+void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
 {
    Int i, j;
    
-   tl_assert(lcp.mode != LC_Off);
+   tl_assert(lcp->mode != LC_Off);
 
-   MC_(detect_memory_leaks_last_delta_mode) = lcp.deltamode;
+   MC_(detect_memory_leaks_last_delta_mode) = lcp->deltamode;
 
    // Get the chunks, stop if there were none.
    lc_chunks = find_active_chunks(&lc_n_chunks);

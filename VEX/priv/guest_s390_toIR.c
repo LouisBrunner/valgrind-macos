@@ -10870,7 +10870,7 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
    assign(src_addr, get_gpr_dw0(r2));
    assign(des_addr, get_gpr_dw0(r1));
    assign(tab_addr, get_gpr_dw0(1));
-   assign(src_len, get_gpr_dw0(r1+1));
+   assign(src_len, unop(Iop_32Uto64, get_gpr_w1(r1+1)));
    assign(test_byte, get_gpr_b7(0));
 
    IRTemp op = newTemp(Ity_I8);

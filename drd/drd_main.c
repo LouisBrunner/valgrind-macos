@@ -454,13 +454,18 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
  * Assumption: stacks grow downward.
  */
 static __inline__
+void drd_start_using_mem_stack2(const DrdThreadId tid, const Addr a,
+                                const SizeT len)
+{
+   DRD_(thread_set_stack_min)(tid, a - VG_STACK_REDZONE_SZB);
+   drd_start_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB,
+                       True);
+}
+
+static __inline__
 void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
-   DRD_(thread_set_stack_min)(DRD_(thread_get_running_tid)(),
-                              a - VG_STACK_REDZONE_SZB);
-   drd_start_using_mem(a - VG_STACK_REDZONE_SZB,
-                       len + VG_STACK_REDZONE_SZB,
-                       True);
+   drd_start_using_mem_stack2(DRD_(thread_get_running_tid)(), a, len);
 }
 
 /**
@@ -469,12 +474,18 @@ void drd_start_using_mem_stack(const Addr a, const SizeT len)
  * Assumption: stacks grow downward.
  */
 static __inline__
-void drd_stop_using_mem_stack(const Addr a, const SizeT len)
+void drd_stop_using_mem_stack2(const DrdThreadId tid, const Addr a,
+                               const SizeT len)
 {
-   DRD_(thread_set_stack_min)(DRD_(thread_get_running_tid)(),
-                              a + len - VG_STACK_REDZONE_SZB);
+   DRD_(thread_set_stack_min)(tid, a + len - VG_STACK_REDZONE_SZB);
    drd_stop_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB,
                       True);
+}
+
+static __inline__
+void drd_stop_using_mem_stack(const Addr a, const SizeT len)
+{
+   drd_stop_using_mem_stack2(DRD_(thread_get_running_tid)(), a, len);
 }
 
 static

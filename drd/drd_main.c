@@ -602,10 +602,16 @@ static
 void drd_post_thread_create(const ThreadId vg_created)
 {
    DrdThreadId drd_created;
+   Addr stack_max;
 
    tl_assert(vg_created != VG_INVALID_THREADID);
 
    drd_created = DRD_(thread_post_create)(vg_created);
+
+   /* Set up red zone before the code in glibc's clone.S is run. */
+   stack_max = DRD_(thread_get_stack_max)(drd_created);
+   drd_start_using_mem_stack2(drd_created, stack_max, 0);
+
    if (DRD_(thread_get_trace_fork_join)())
    {
       DRD_(trace_msg)("drd_post_thread_create created = %d", drd_created);

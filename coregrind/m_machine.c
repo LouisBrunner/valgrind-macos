@@ -999,6 +999,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_toK_t     tmp_sigill_act;
 
      volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
+     volatile Bool have_STFLE, have_ETF2;
      Int r, model;
 
      /* Unblock SIGILL and stash away the old action for that signal */
@@ -1066,6 +1067,24 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xb3cd0000" : : : "r0");  /* lgdr r0,f0 */
      }
 
+     /* Detect presence of the ETF2-enhancement facility using the
+        STFLE insn. Note, that STFLE and ETF2 were introduced at the same
+        time, so the absence of STLFE implies the absence of ETF2. */
+     have_STFLE = True;
+     have_ETF2 = False;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_STFLE = False;
+     } else {
+         ULong hoststfle[1];
+         register ULong reg0 asm("0") = 0; /* one double word available */
+
+         __asm__ __volatile__(" .insn s,0xb2b00000,%0\n"   /* stfle */
+                              : "=m" (hoststfle), "+d"(reg0)
+                              : : "cc", "memory");
+         if (hoststfle[0] & (1ULL << (63 - 24)))
+             have_ETF2 = True;
+     }
+
      /* Restore signals */
      r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      vg_assert(r == 0);
@@ -1076,8 +1095,8 @@ Bool VG_(machine_get_hwcaps)( void )
      model = VG_(get_machine_model)();
 
      VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
-                   "FGX %d\n", model, have_LDISP, have_EIMM, have_GIE,
-                   have_DFP, have_FGX);
+                   "FGX %d STFLE %d ETF2 %d\n", model, have_LDISP, have_EIMM,
+                   have_GIE, have_DFP, have_FGX, have_STFLE, have_ETF2);
 
      if (model == VEX_S390X_MODEL_INVALID) return False;
 
@@ -1092,6 +1111,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
      if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
      if (have_FGX)   vai.hwcaps |= VEX_HWCAPS_S390X_FGX;
+     if (have_ETF2)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF2;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 

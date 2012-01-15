@@ -5,7 +5,7 @@ dist_noinst_SCRIPTS = filter_stderr
 INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
-             op_exception fgx stck stckf stcke stfle cksm mvcl clcl
+             op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \

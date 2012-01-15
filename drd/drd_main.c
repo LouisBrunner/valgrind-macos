@@ -387,6 +387,8 @@ void DRD_(clean_memory)(const Addr a1, const SizeT len)
    drd_start_using_mem(a1, len, is_stack_memory);
 }
 
+static const Bool trace_sectsuppr = False;
+
 /**
  * Suppress data race reports on all addresses contained in .plt and
  * .got.plt sections inside the address range [ a, a + len [. The data in
@@ -401,23 +403,23 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 {
    const DebugInfo* di;
 
-#if 0
-   VG_(printf)("Evaluating range @ 0x%lx size %ld\n", a, len);
-#endif
+   if (trace_sectsuppr)
+      VG_(dmsg)("Evaluating range @ 0x%lx size %ld\n", a, len);
 
-   for (di = VG_(next_DebugInfo)(0); di; di = VG_(next_DebugInfo)(di))
-   {
+   for (di = VG_(next_DebugInfo)(0); di; di = VG_(next_DebugInfo)(di)) {
       Addr  avma;
       SizeT size;
+
+      if (trace_sectsuppr)
+	 VG_(dmsg)("Examining %s / %s\n", VG_(DebugInfo_get_filename)(di),
+		   VG_(DebugInfo_get_soname)(di));
 
       avma = VG_(DebugInfo_get_plt_avma)(di);
       size = VG_(DebugInfo_get_plt_size)(di);
       tl_assert((avma && size) || (avma == 0 && size == 0));
-      if (size > 0)
-      {
-#if 0
-         VG_(printf)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
-#endif
+      if (size > 0) {
+	 if (trace_sectsuppr)
+	    VG_(dmsg)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectPLT);
          DRD_(start_suppression)(avma, avma + size, ".plt");
       }
@@ -425,11 +427,9 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       avma = VG_(DebugInfo_get_gotplt_avma)(di);
       size = VG_(DebugInfo_get_gotplt_size)(di);
       tl_assert((avma && size) || (avma == 0 && size == 0));
-      if (size > 0)
-      {
-#if 0
-         VG_(printf)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
-#endif
+      if (size > 0) {
+	 if (trace_sectsuppr)
+	    VG_(dmsg)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
          DRD_(start_suppression)(avma, avma + size, ".gotplt");
       }

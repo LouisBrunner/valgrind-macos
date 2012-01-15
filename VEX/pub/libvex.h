@@ -128,13 +128,15 @@ typedef
 #define VEX_HWCAPS_S390X_GIE   (1<<8)   /* General-instruction-extension facility */
 #define VEX_HWCAPS_S390X_DFP   (1<<9)   /* Decimal floating point facility */
 #define VEX_HWCAPS_S390X_FGX   (1<<10)  /* FPR-GR transfer facility */
+#define VEX_HWCAPS_S390X_ETF2  (1<<11)  /* ETF2-enhancement facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
                                 VEX_HWCAPS_S390X_EIMM  | \
                                 VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_DFP   | \
-                                VEX_HWCAPS_S390X_FGX)
+                                VEX_HWCAPS_S390X_FGX   | \
+                                VEX_HWCAPS_S390X_ETF2)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)

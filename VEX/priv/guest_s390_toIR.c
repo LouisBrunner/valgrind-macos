@@ -1585,6 +1585,16 @@ s390_format_RRE_F0(HChar *(*irgen)(UChar r1),
 }
 
 static void
+s390_format_RRF_M0RERE(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
+                       UChar m3, UChar r1, UChar r2)
+{
+   irgen(m3, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC3(MNM, GPR, GPR), m3, r1, r2);
+}
+
+static void
 s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
                      UChar r1, UChar r3, UChar r2)
 {
@@ -10847,6 +10857,55 @@ s390_irgen_CKSM(UChar r1,UChar r2)
    return "cksm";
 }
 
+static HChar *
+s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I8);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_b7(0));
+
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, load(Ity_I8, mkexpr(src_addr)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)),
+                        mkexpr(tab_addr)));
+   assign(op1, load(Ity_I8, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(1)));
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "troo";
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
@@ -11652,7 +11711,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb990: /* TRTT */ goto unimplemented;
    case 0xb991: /* TRTO */ goto unimplemented;
    case 0xb992: /* TROT */ goto unimplemented;
-   case 0xb993: /* TROO */ goto unimplemented;
+   case 0xb993: s390_format_RRF_M0RERE(s390_irgen_TROO, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
    case 0xb994: s390_format_RRE_RR(s390_irgen_LLCR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb995: s390_format_RRE_RR(s390_irgen_LLHR, ovl.fmt.RRE.r1,

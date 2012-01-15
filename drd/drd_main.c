@@ -448,9 +448,11 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
    DRD_(suppress_relocation_conflicts)(a, len);
 }
 
-/* Called by the core when the stack of a thread grows, to indicate that */
-/* the addresses in range [ a, a + len [ may now be used by the client.  */
-/* Assumption: stacks grow downward.                                     */
+/**
+ * Called by the core when the stack of a thread grows, to indicate that
+ * the addresses in range [ a, a + len [ may now be used by the client.
+ * Assumption: stacks grow downward.
+ */
 static __inline__
 void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
@@ -461,9 +463,11 @@ void drd_start_using_mem_stack(const Addr a, const SizeT len)
                        True);
 }
 
-/* Called by the core when the stack of a thread shrinks, to indicate that */
-/* the addresses [ a, a + len [ are no longer accessible for the client.   */
-/* Assumption: stacks grow downward.                                       */
+/**
+ * Called by the core when the stack of a thread shrinks, to indicate that
+ * the addresses [ a, a + len [ are no longer accessible for the client.
+ * Assumption: stacks grow downward.
+ */
 static __inline__
 void drd_stop_using_mem_stack(const Addr a, const SizeT len)
 {
@@ -579,9 +583,10 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    }
 }
 
-/* Called by Valgrind's core before any loads or stores are performed on */
-/* the context of thread "created". At startup, this function is called  */
-/* with arguments (0,1).                                                 */
+/**
+ * Called by Valgrind's core before any loads or stores are performed on
+ * the context of thread "created".
+ */
 static
 void drd_post_thread_create(const ThreadId vg_created)
 {

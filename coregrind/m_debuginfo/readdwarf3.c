@@ -2723,6 +2723,21 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          goto bad_DIE;
    }
 
+   /*
+    * Treat DW_TAG_unspecified_type as type void. An example of DW_TAG_unspecified_type:
+    *
+    * $ readelf --debug-dump /usr/lib/debug/usr/lib/libstdc++.so.6.0.16.debug
+    *  <1><10d4>: Abbrev Number: 53 (DW_TAG_unspecified_type)
+    *     <10d5>   DW_AT_name        : (indirect string, offset: 0xdb7): decltype(nullptr)
+    */
+   if (dtag == DW_TAG_unspecified_type) {
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff           = D3_INVALID_CUOFF;
+      typeE.tag             = Te_TyQual;
+      typeE.Te.TyQual.typeR = D3_FAKEVOID_CUOFF;
+      goto acquire_Type;
+   }
+
    /* else ignore this DIE */
    return;
    /*NOTREACHED*/

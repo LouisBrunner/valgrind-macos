@@ -37,52 +37,49 @@ Bool DRD_(g_any_address_traced) = False;
 
 /* Local variables. */
 
-static struct bitmap* DRD_(s_suppressed);
-static struct bitmap* DRD_(s_traced);
-static Bool DRD_(s_trace_suppression);
+static struct bitmap* s_suppressed;
+static struct bitmap* s_traced;
+static Bool s_trace_suppression;
 
 
 /* Function definitions. */
 
 void DRD_(suppression_set_trace)(const Bool trace_suppression)
 {
-   DRD_(s_trace_suppression) = trace_suppression;
+   s_trace_suppression = trace_suppression;
 }
 
 void DRD_(suppression_init)(void)
 {
-   tl_assert(DRD_(s_suppressed) == 0);
-   tl_assert(DRD_(s_traced)     == 0);
-   DRD_(s_suppressed) = DRD_(bm_new)();
-   DRD_(s_traced)     = DRD_(bm_new)();
-   tl_assert(DRD_(s_suppressed));
-   tl_assert(DRD_(s_traced));
+   tl_assert(s_suppressed == 0);
+   tl_assert(s_traced     == 0);
+   s_suppressed = DRD_(bm_new)();
+   s_traced     = DRD_(bm_new)();
+   tl_assert(s_suppressed);
+   tl_assert(s_traced);
 }
 
 void DRD_(start_suppression)(const Addr a1, const Addr a2,
                              const char* const reason)
 {
-   if (DRD_(s_trace_suppression))
-   {
+   if (s_trace_suppression)
       VG_(message)(Vg_DebugMsg, "start suppression of 0x%lx sz %ld (%s)\n",
                    a1, a2 - a1, reason);
-   }
 
    tl_assert(a1 <= a2);
-   DRD_(bm_access_range_store)(DRD_(s_suppressed), a1, a2);
+   DRD_(bm_access_range_store)(s_suppressed, a1, a2);
 }
 
 void DRD_(finish_suppression)(const Addr a1, const Addr a2)
 {
-   if (DRD_(s_trace_suppression))
-   {
+   if (s_trace_suppression) {
       VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %ld\n",
                    a1, a2 - a1);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
    }
 
    tl_assert(a1 <= a2);
-   DRD_(bm_clear_store)(DRD_(s_suppressed), a1, a2);
+   DRD_(bm_clear_store)(s_suppressed, a1, a2);
 }
 
 /**
@@ -92,7 +89,7 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
  */
 Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)
 {
-   return DRD_(bm_has)(DRD_(s_suppressed), a1, a2, eStore);
+   return DRD_(bm_has)(s_suppressed, a1, a2, eStore);
 }
 
 /**
@@ -102,54 +99,49 @@ Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)
  */
 Bool DRD_(is_any_suppressed)(const Addr a1, const Addr a2)
 {
-   return DRD_(bm_has_any_store)(DRD_(s_suppressed), a1, a2);
+   return DRD_(bm_has_any_store)(s_suppressed, a1, a2);
 }
 
 void DRD_(mark_hbvar)(const Addr a1)
 {
-   DRD_(bm_access_range_load)(DRD_(s_suppressed), a1, a1 + 1);
+   DRD_(bm_access_range_load)(s_suppressed, a1, a1 + 1);
 }
 
 Bool DRD_(range_contains_suppression_or_hbvar)(const Addr a1, const Addr a2)
 {
-   return DRD_(bm_has_any_access)(DRD_(s_suppressed), a1, a2);
+   return DRD_(bm_has_any_access)(s_suppressed, a1, a2);
 }
 
 void DRD_(start_tracing_address_range)(const Addr a1, const Addr a2)
 {
    tl_assert(a1 <= a2);
 
-   DRD_(bm_access_range_load)(DRD_(s_traced), a1, a2);
-   if (! DRD_(g_any_address_traced))
-   {
+   DRD_(bm_access_range_load)(s_traced, a1, a2);
+   if (!DRD_(g_any_address_traced))
       DRD_(g_any_address_traced) = True;
-   }
 }
 
 void DRD_(stop_tracing_address_range)(const Addr a1, const Addr a2)
 {
    tl_assert(a1 <= a2);
 
-   DRD_(bm_clear_load)(DRD_(s_traced), a1, a2);
+   DRD_(bm_clear_load)(s_traced, a1, a2);
    if (DRD_(g_any_address_traced))
       DRD_(g_any_address_traced)
-         = DRD_(bm_has_any_load_g)(DRD_(s_traced));
+         = DRD_(bm_has_any_load_g)(s_traced);
 }
 
 Bool DRD_(is_any_traced)(const Addr a1, const Addr a2)
 {
-   return DRD_(bm_has_any_load)(DRD_(s_traced), a1, a2);
+   return DRD_(bm_has_any_load)(s_traced, a1, a2);
 }
 
 void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
 {
-   if (DRD_(s_trace_suppression))
-   {
+   if (s_trace_suppression) {
       Addr b;
-      for (b = a1; b < a2; b++)
-      {
-         if (DRD_(bm_has_1)(DRD_(s_suppressed), b, eStore))
-         {
+      for (b = a1; b < a2; b++) {
+         if (DRD_(bm_has_1)(s_suppressed, b, eStore)) {
             VG_(message)(Vg_DebugMsg,
                          "stop_using_mem(0x%lx, %ld) finish suppression of"
                          " 0x%lx\n", a1, a2 - a1, b);
@@ -158,6 +150,6 @@ void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
    }
    tl_assert(a1);
    tl_assert(a1 <= a2);
-   DRD_(bm_clear)(DRD_(s_suppressed), a1, a2);
-   DRD_(bm_clear)(DRD_(s_traced), a1, a2);
+   DRD_(bm_clear)(s_suppressed, a1, a2);
+   DRD_(bm_clear)(s_traced, a1, a2);
 }

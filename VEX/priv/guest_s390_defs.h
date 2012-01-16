@@ -101,25 +101,24 @@ enum {
    S390_CC_OP_LOAD_AND_TEST = 15,
    S390_CC_OP_LOAD_POSITIVE_32 = 16,
    S390_CC_OP_LOAD_POSITIVE_64 = 17,
-   S390_CC_OP_TEST_AND_SET = 18,
-   S390_CC_OP_TEST_UNDER_MASK_8 = 19,
-   S390_CC_OP_TEST_UNDER_MASK_16 = 20,
-   S390_CC_OP_SHIFT_LEFT_32 = 21,
-   S390_CC_OP_SHIFT_LEFT_64 = 22,
-   S390_CC_OP_INSERT_CHAR_MASK_32 = 23,
-   S390_CC_OP_BFP_RESULT_32 = 24,
-   S390_CC_OP_BFP_RESULT_64 = 25,
-   S390_CC_OP_BFP_RESULT_128 = 26,
-   S390_CC_OP_BFP_32_TO_INT_32 = 27,
-   S390_CC_OP_BFP_64_TO_INT_32 = 28,
-   S390_CC_OP_BFP_128_TO_INT_32 = 29,
-   S390_CC_OP_BFP_32_TO_INT_64 = 30,
-   S390_CC_OP_BFP_64_TO_INT_64 = 31,
-   S390_CC_OP_BFP_128_TO_INT_64 = 32,
-   S390_CC_OP_BFP_TDC_32 = 33,
-   S390_CC_OP_BFP_TDC_64 = 34,
-   S390_CC_OP_BFP_TDC_128 = 35,
-   S390_CC_OP_SET = 36
+   S390_CC_OP_TEST_UNDER_MASK_8 = 18,
+   S390_CC_OP_TEST_UNDER_MASK_16 = 19,
+   S390_CC_OP_SHIFT_LEFT_32 = 20,
+   S390_CC_OP_SHIFT_LEFT_64 = 21,
+   S390_CC_OP_INSERT_CHAR_MASK_32 = 22,
+   S390_CC_OP_BFP_RESULT_32 = 23,
+   S390_CC_OP_BFP_RESULT_64 = 24,
+   S390_CC_OP_BFP_RESULT_128 = 25,
+   S390_CC_OP_BFP_32_TO_INT_32 = 26,
+   S390_CC_OP_BFP_64_TO_INT_32 = 27,
+   S390_CC_OP_BFP_128_TO_INT_32 = 28,
+   S390_CC_OP_BFP_32_TO_INT_64 = 29,
+   S390_CC_OP_BFP_64_TO_INT_64 = 30,
+   S390_CC_OP_BFP_128_TO_INT_64 = 31,
+   S390_CC_OP_BFP_TDC_32 = 32,
+   S390_CC_OP_BFP_TDC_64 = 33,
+   S390_CC_OP_BFP_TDC_128 = 34,
+   S390_CC_OP_SET = 35
 };
 
 /*------------------------------------------------------------*/
@@ -152,7 +151,6 @@ enum {
    | S390_CC_OP_LOAD_AND_TEST       | S loaded value        |                      |             |
    | S390_CC_OP_LOAD_POSITIVE_32    | S loaded value        |                      |             |
    | S390_CC_OP_LOAD_POSITIVE_64    | S loaded value        |                      |             |
-   | S390_CC_OP_TEST_AND_SET        | Z tested value        |                      |             |
    | S390_CC_OP_TEST_UNDER_MASK_8   | Z tested value        | Z mask               |             |
    | S390_CC_OP_TEST_UNDER_MASK_16  | Z tested value        | Z mask               |             |
    | S390_CC_OP_SHIFT_LEFT_32       | Z value to be shifted | Z shift amount       |             |

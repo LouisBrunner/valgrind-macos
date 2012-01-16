@@ -512,11 +512,6 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
       /* Like signed comparison with 0 */
       return S390_CC_FOR_BINARY("cgr", cc_dep1, (Long)0);
 
-   case S390_CC_OP_TEST_AND_SET:
-      /* Shift the sign bit into the LSB. Note, that the tested value is an
-         8-bit value which has been zero-extended to 32/64 bit. */
-      return cc_dep1 >> 7;
-
    case S390_CC_OP_LOAD_POSITIVE_32:
       __asm__ volatile (
            "lpr  %[result],%[op]\n\t"
@@ -1229,26 +1224,6 @@ guest_s390x_spechelper(HChar *function_name, IRExpr **args,
                                       unop(Iop_64to8, cc_dep1)),
                                 mkU64(8)),
                           mkU64(0)));
-      }
-
-      /* S390_CC_OP_TEST_AND_SET */
-      if (cc_op == S390_CC_OP_TEST_AND_SET) {
-         /* cc_dep1 is the zero-extended loaded value
-
-            cc == 0  --> leftmost bit is zero  (cond == 8)
-            cc == 1  --> leftmost bit is one   (cond == 4)
-
-            As cc is either 0 or 1, only the two leftmost bits of the mask
-            are relevant. */
-         IRExpr *bit = binop(Iop_Shr64, cc_dep1, mkU8(7));
-
-         switch (cond & (8 + 4)) {
-         case 0:     return mkU32(0);
-         case 4:     return unop(Iop_1Uto32, binop(Iop_CmpNE64, bit, mkU64(0)));
-         case 8:     return unop(Iop_1Uto32, binop(Iop_CmpEQ64, bit, mkU64(0)));
-         case 8 + 4: return mkU32(1);
-         }
-         /* not reached */
       }
 
 missed:

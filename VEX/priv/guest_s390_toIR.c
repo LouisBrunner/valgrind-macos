@@ -7866,18 +7866,6 @@ s390_irgen_SVC(UChar i)
 }
 
 static HChar *
-s390_irgen_TS(IRTemp op2addr)
-{
-   IRTemp value = newTemp(Ity_I8);
-
-   assign(value, load(Ity_I8, mkexpr(op2addr)));
-   s390_cc_thunk_putZ(S390_CC_OP_TEST_AND_SET, value);
-   store(mkexpr(op2addr), mkU8(255));
-
-   return "ts";
-}
-
-static HChar *
 s390_irgen_TM(UChar i2, IRTemp op1addr)
 {
    UChar mask;
@@ -11253,11 +11241,11 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    switch ((ovl.value & 0xffff0000) >> 16) {
    case 0x8000: /* SSM */ goto unimplemented;
    case 0x8200: /* LPSW */ goto unimplemented;
-   case 0x9300: s390_format_S_RD(s390_irgen_TS, ovl.fmt.S.b2, ovl.fmt.S.d2);
-                                 goto ok;
+   case 0x9300: /* TS */ goto unimplemented;
    case 0xb202: /* STIDP */ goto unimplemented;
    case 0xb204: /* SCK */ goto unimplemented;
-   case 0xb205: s390_format_S_RD(s390_irgen_STCK, ovl.fmt.S.b2, ovl.fmt.S.d2);goto ok;
+   case 0xb205: s390_format_S_RD(s390_irgen_STCK, ovl.fmt.S.b2, ovl.fmt.S.d2);
+                goto ok;
    case 0xb206: /* SCKC */ goto unimplemented;
    case 0xb207: /* STCKC */ goto unimplemented;
    case 0xb208: /* SPT */ goto unimplemented;

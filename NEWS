@@ -29,13 +29,14 @@ https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
 247386  make perf does not run all performance tests
+270796  s390x: Removed broken support for the TS insn
 276993  fix mremap 'no thrash checks' 
+281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
 283413  Fix wrong sanity check
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
 287858  VG_(strerror): unknown error 
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
-281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

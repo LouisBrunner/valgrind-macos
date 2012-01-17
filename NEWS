@@ -30,6 +30,7 @@ where XXXXXX is the bug number as listed below.
 
 247386  make perf does not run all performance tests
 270796  s390x: Removed broken support for the TS insn
+271438  Fix configure for proper SSE4.2 detection
 276993  fix mremap 'no thrash checks' 
 281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
 283413  Fix wrong sanity check

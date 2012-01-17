@@ -244,6 +244,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \
+	m_poolalloc.c \
 	m_hashtable.c \
 	m_libcbase.c \
 	m_libcassert.c \

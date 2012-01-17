@@ -160,11 +160,18 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 //   - cmp       The comparison function between keys and elements, or NULL
 //               if the OSet should use fast comparisons.
 //   - alloc     The allocation function used for allocating the OSet itself;
-//               it's also called for each invocation of
-//               VG_(OSetGen_AllocNode)().
+//               If a pool allocator is used, it's called to allocate pool of
+//               nodes.
+//               If no pool allocator is used, it's called for each
+//               invocation of VG_(OSetGen_AllocNode)().
 //   - cc        Cost centre string used by 'alloc'.
-//   - free      The deallocation function used by VG_(OSetGen_FreeNode)() and
+//   - free      If no pool allocator is used, this is the deallocation
+//               function used by VG_(OSetGen_FreeNode)() and
 //               VG_(OSetGen_Destroy)().
+//               If a pool allocator is used, the memory used by the nodes is
+//               deallocated when the pool is deleted.
+//   (for more details about pool allocators, see pub_tool_poolalloc.h).
+//   
 //
 //   If cmp is NULL, keyOff must be zero.  This is checked.
 //
@@ -174,9 +181,13 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 //   called.
 //
 // * AllocNode: Allocate and zero memory for a node to go into the OSet.
-//   Uses the alloc function given to VG_(OSetGen_Create)() to allocated a
-//   node which is big enough for both an element and the OSet metadata.
+//   If a pool allocator is used, it uses the pool allocator to allocate a node.
+//   Otherwise, uses the alloc function given to VG_(OSetGen_Create)() to
+//   allocate a node which is big enough for both an element and the OSet
+//   metadata.
 //   Not all elements in one OSet have to be the same size.
+//   However, if a pool allocator is used, elements will all have a size equal
+//   to the max user data size given at creation + the node meta data size.
 //
 //   Note that the element allocated will be at most word-aligned, which may
 //   be less aligned than the element type would normally be.
@@ -187,12 +198,48 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 
 extern OSet* VG_(OSetGen_Create)    ( PtrdiffT keyOff, OSetCmp_t cmp,
                                       OSetAlloc_t alloc, HChar* cc,
-                                      OSetFree_t _free );
+                                      OSetFree_t _free);
+
+
+extern OSet* VG_(OSetGen_Create_With_Pool)    ( PtrdiffT keyOff, OSetCmp_t cmp,
+                                                OSetAlloc_t alloc, HChar* cc,
+                                                OSetFree_t _free,
+                                                SizeT poolSize,
+                                                SizeT maxEltSize);
+// Same as VG_(OSetGen_Create) but created OSet will use a pool allocator to
+// allocate the nodes.
+// The node size is the sum of a fixed small meta data size needed for OSet
+// + the size of the user data element.
+// The maximum size for the user data element is specified by maxEltSize.
+// (if poolSize is 0, maxEltSize is not relevant for the OSet).
+// It is interesting to use a pool allocator when an OSet has many elements,
+// and these elements have a small fixed size, or have a variable size, but
+// always <= than a (small) maximum value.
+// In such a case, allocating the nodes in pools reduces significantly
+// the memory overhead needed by each node.
+// When a node is freed (i.e. OsetGen_Freenode is called), the node is
+// put back in the pool allocator free list (for sub-sequent re-use by
+// Osetgen_Allocnode). Note that the pool memory is only released when
+// the pool is destroyed : calls to VG_(OSetGen_Free) do not cause
+// any calls to OsetFree_t _free function.
+// If there are several OSet managing similar such elements, it might be
+// interesting to use a shared pool for these OSet.
+// To have multiple OSets sharing a pool allocator, create the first OSet
+// with VG_(OSetGen_Create). Create subsequent OSet with
+// VG_(OSetGen_EmptyClone).
+
 extern void  VG_(OSetGen_Destroy)   ( OSet* os );
 extern void* VG_(OSetGen_AllocNode) ( OSet* os, SizeT elemSize );
 extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );
 
-/*--------------------------------------------------------------------*/
+extern OSet* VG_(OSetGen_EmptyClone) (OSet* os);
+// Creates a new empty OSet.
+// The new OSet will have the same characteristics as os.
+// If os uses a pool allocator, this pool allocator will be shared with
+// the new OSet. A shared pool allocator is only deleted (and its memory is
+// released) when the last OSet using the shared pool is destroyed.
+
+/*-------------------------------------------------------------------*/
 /*--- Operations on OSets (Gen)                                    ---*/
 /*--------------------------------------------------------------------*/
 

@@ -33,6 +33,7 @@
 #include "pub_tool_basics.h"
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_gdbserver.h"
+#include "pub_tool_poolalloc.h"
 #include "pub_tool_hashtable.h"     // For mc_include.h
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
@@ -900,10 +901,15 @@ typedef
 
 static OSet* createSecVBitTable(void)
 {
-   return VG_(OSetGen_Create)( offsetof(SecVBitNode, a), 
-                               NULL, // use fast comparisons
-                               VG_(malloc), "mc.cSVT.1 (sec VBit table)", 
-                               VG_(free) );
+   OSet* newSecVBitTable;
+   newSecVBitTable = VG_(OSetGen_Create_With_Pool)
+      ( offsetof(SecVBitNode, a), 
+        NULL, // use fast comparisons
+        VG_(malloc), "mc.cSVT.1 (sec VBit table)", 
+        VG_(free),
+        1000,
+        sizeof(SecVBitNode));
+   return newSecVBitTable;
 }
 
 static void gcSecVBitTable(void)
@@ -997,6 +1003,12 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
       n->last_touched = GCs_done;
       sec_vbits_updates++;
    } else {
+      // Do a table GC if necessary.  Nb: do this before creating and
+      // inserting the new node, to avoid erroneously GC'ing the new node.
+      if (secVBitLimit == VG_(OSetGen_Size)(secVBitTable)) {
+         gcSecVBitTable();
+      }
+
       // New node:  assign the specific byte, make the rest invalid (they
       // should never be read as-is, but be cautious).
       n = VG_(OSetGen_AllocNode)(secVBitTable, sizeof(SecVBitNode));
@@ -1006,12 +1018,6 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
       }
       n->vbits8[amod] = vbits8;
       n->last_touched = GCs_done;
-
-      // Do a table GC if necessary.  Nb: do this before inserting the new
-      // node, to avoid erroneously GC'ing the new node.
-      if (secVBitLimit == VG_(OSetGen_Size)(secVBitTable)) {
-         gcSecVBitTable();
-      }
 
       // Insert the new node.
       VG_(OSetGen_Insert)(secVBitTable, n);
@@ -2144,7 +2150,7 @@ static void init_ocacheL2 ( void )
    ocacheL2 
       = VG_(OSetGen_Create)( offsetof(OCacheLine,tag), 
                              NULL, /* fast cmp */
-                             ocacheL2_malloc, "mc.ioL2", ocacheL2_free );
+                             ocacheL2_malloc, "mc.ioL2", ocacheL2_free);
    tl_assert(ocacheL2);
    stats__ocacheL2_n_nodes = 0;
 }
@@ -6306,6 +6312,11 @@ static void mc_pre_clo_init(void)
    VG_(needs_watchpoint)          ( mc_mark_unaddressable_for_watchpoint );
 
    init_shadow_memory();
+   MC_(chunk_poolalloc) = VG_(newPA) (sizeof(MC_Chunk),
+                                      1000,
+                                      VG_(malloc),
+                                      "mc.cMC.1 (MC_Chunk pools)",
+                                      VG_(free));
    MC_(malloc_list)  = VG_(HT_construct)( "MC_(malloc_list)" );
    MC_(mempool_list) = VG_(HT_construct)( "MC_(mempool_list)" );
    init_prof_mem();

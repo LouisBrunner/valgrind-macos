@@ -90,8 +90,9 @@ extern void VG_(HT_ResetIter) ( VgHashTable table );
    assurance. */
 extern void* VG_(HT_Next) ( VgHashTable table );
 
-/* Destroy a table. */
-extern void VG_(HT_destruct) ( VgHashTable t );
+/* Destroy a table and deallocates the memory used by the nodes using
+   freenode_fn.*/
+extern void VG_(HT_destruct) ( VgHashTable t, void(*freenode_fn)(void*) );
 
 
 #endif   // __PUB_TOOL_HASHTABLE_H

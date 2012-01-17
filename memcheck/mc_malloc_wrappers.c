@@ -31,6 +31,7 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_execontext.h"
+#include "pub_tool_poolalloc.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
@@ -68,7 +69,15 @@ VgHashTable MC_(malloc_list) = NULL;
 /* Memory pools: a hash table of MC_Mempools.  Search key is
    MC_Mempool::pool. */
 VgHashTable MC_(mempool_list) = NULL;
-   
+
+/* Pool allocator for MC_Chunk. */   
+PoolAlloc *MC_(chunk_poolalloc) = NULL;
+static
+MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
+                            MC_AllocKind kind);
+static inline
+void delete_MC_Chunk (MC_Chunk* mc);
+
 /* Records blocks after freeing. */
 /* Blocks freed by the client are queued in one of two lists of
    freed blocks not yet physically freed:
@@ -152,7 +161,7 @@ static void release_oldest_block(void)
          /* free MC_Chunk */
          if (MC_AllocCustom != mc1->allockind)
             VG_(cli_free) ( (void*)(mc1->data) );
-         VG_(free) ( mc1 );
+         delete_MC_Chunk ( mc1 );
       }
    }
 }
@@ -179,7 +188,7 @@ static
 MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
                             MC_AllocKind kind)
 {
-   MC_Chunk* mc  = VG_(malloc)("mc.cMC.1 (a MC_Chunk)", sizeof(MC_Chunk));
+   MC_Chunk* mc  = VG_(allocEltPA)(MC_(chunk_poolalloc));
    mc->data      = p;
    mc->szB       = szB;
    mc->allockind = kind;
@@ -198,6 +207,12 @@ MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
       VG_(tool_panic)("create_MC_Chunk: shadow area is accessible");
    } 
    return mc;
+}
+
+static inline
+void delete_MC_Chunk (MC_Chunk* mc)
+{
+   VG_(freeEltPA) (MC_(chunk_poolalloc), mc);
 }
 
 /*------------------------------------------------------------*/
@@ -642,7 +657,7 @@ void MC_(destroy_mempool)(Addr pool)
       MC_(make_mem_noaccess)(mc->data-mp->rzB, mc->szB + 2*mp->rzB );
    }
    // Destroy the chunk table
-   VG_(HT_destruct)(mp->chunks);
+   VG_(HT_destruct)(mp->chunks, (void (*)(void *))delete_MC_Chunk);
 
    VG_(free)(mp);
 }

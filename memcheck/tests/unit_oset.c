@@ -28,6 +28,14 @@
 #define vgPlain_memset                 memset
 #define vgPlain_memcpy                 memcpy
 
+// Crudely replace some functions (in m_xarray.c, but not needed for
+// this unit test) by (hopefully) failing asserts.
+#define vgPlain_ssort(a,b,c,d) assert(a)
+#define vgPlain_vcbprintf(a,b,...) assert(a == b)
+#include "coregrind/m_xarray.c"
+#undef vgPlain_ssort
+#undef vgPlain_vcbprintf
+#include "coregrind/m_poolalloc.c"
 #include "coregrind/m_oset.c"
 
 #define NN  1000       // Size of OSets being created
@@ -73,18 +81,12 @@ static Word wordCmp(void* vkey, void* velem)
    return *(Word*)vkey - *(Word*)velem;
 }
 
-void example1(void)
+void example1singleset(OSet* oset, char *descr)
 {
    Int  i, n;
    Word v, prev;
    Word* vs[NN];
    Word *pv;
-
-   // Create a static OSet of Ints.  This one uses fast (built-in)
-   // comparisons.
-   OSet* oset = VG_(OSetGen_Create)(0,
-                                    NULL,
-                                    allocate_node, "oset_test.1", free_node);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
@@ -201,12 +203,53 @@ void example1(void)
    }
 
    // Print the list
-   OSet_Print(oset, "oset1", wordToStr);
+   OSet_Print(oset, descr, wordToStr);
+
+}
+
+void example1(void)
+{
+   OSet *oset, *oset_empty_clone;
+
+   // Create a static OSet of Ints.  This one uses fast (built-in)
+   // comparisons.
+
+   // First a single oset, no pool allocator.
+   oset = VG_(OSetGen_Create)(0,
+                              NULL,
+                              allocate_node, "oset_test.1", free_node);
+   example1singleset(oset, "single oset, no pool allocator");
 
    // Destroy the OSet
    VG_(OSetGen_Destroy)(oset);
-}
 
+   // Then same, but with a group allocator
+   oset = VG_(OSetGen_Create_With_Pool)(0,
+                                        NULL,
+                                        allocate_node, "oset_test.1",
+                                        free_node,
+                                        101, sizeof(Word));
+   example1singleset(oset, "single oset, pool allocator");
+
+   // Destroy the OSet
+   VG_(OSetGen_Destroy)(oset);
+
+
+   // Then two sets, sharing a group allocator.
+   oset = VG_(OSetGen_Create_With_Pool)
+      (0,
+       NULL,
+       allocate_node, "oset_test.1", free_node,
+       101, sizeof(Word));
+   oset_empty_clone = VG_(OSetGen_EmptyClone) (oset);
+   example1singleset(oset, "oset, shared pool");
+   example1singleset(oset_empty_clone, "cloned oset, shared pool");
+   // Destroy both OSet
+   
+   VG_(OSetGen_Destroy)(oset_empty_clone);
+   VG_(OSetGen_Destroy)(oset);
+   
+}
 
 void example1b(void)
 {

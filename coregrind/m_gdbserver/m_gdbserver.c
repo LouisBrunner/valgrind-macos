@@ -549,10 +549,10 @@ static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
       vg_assert (gs_addresses != NULL);
       vg_assert (gs_watches != NULL);
       clear_gdbserved_addresses(/* clear only jumps */ False);
-      VG_(HT_destruct) (gs_addresses);
+      VG_(HT_destruct) (gs_addresses, VG_(free));
       gs_addresses = NULL;
       clear_watched_addresses();
-      VG_(HT_destruct) (gs_watches);
+      VG_(HT_destruct) (gs_watches, VG_(free));
       gs_watches = NULL;
    } else {
       vg_assert (gs_addresses == NULL);

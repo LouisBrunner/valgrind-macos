@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "coregrind/m_xarray.c"
+#include "coregrind/m_poolalloc.c"
 #include "coregrind/m_oset.c"
 #include "drd/drd_bitmap.c"
 #include "drd/drd_bitmap2_node.c"
@@ -54,7 +57,13 @@ UInt VG_(message)(VgMsgKind kind, const HChar* format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vprintf(format, vargs); va_end(vargs); printf("\n"); return ret; }
 Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)
 { assert(0); }
-
+void VG_(vcbprintf)(void(*char_sink)(HChar, void* opaque),
+                    void* opaque,
+                    const HChar* format, va_list vargs)
+{ assert(0); }
+void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
+                 Int (*compar)(void*, void*) )
+{ assert(0); }
 
 /* Actual unit test */
 

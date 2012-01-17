@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2011 Nicholas Nethercote
+   Copyright (C) 2005-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -80,6 +80,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_oset.h"
+#include "pub_tool_poolalloc.h"
 
 /*--------------------------------------------------------------------*/
 /*--- Types and constants                                          ---*/
@@ -114,6 +115,8 @@ struct _OSet {
    OSetAlloc_t alloc;      // allocator
    HChar* cc;              // cc for allocator
    OSetFree_t  free;       // deallocator
+   PoolAlloc*  node_pa;    // (optional) pool allocator for nodes.
+   SizeT       maxEltSize; // for node_pa, must be > 0. Otherwise unused.
    Word        nElems;     // number of elements in the tree
    AvlNode*    root;       // root node
 
@@ -302,6 +305,57 @@ AvlTree* VG_(OSetGen_Create)(PtrdiffT _keyOff, OSetCmp_t _cmp,
    t->alloc    = _alloc;
    t->cc       = _cc;
    t->free     = _free;
+   t->node_pa  = NULL;
+   t->maxEltSize = 0; // Just in case it would be wrongly used.
+   t->nElems   = 0;
+   t->root     = NULL;
+   stackClear(t);
+
+   return t;
+}
+
+AvlTree* VG_(OSetGen_Create_With_Pool)(PtrdiffT _keyOff, OSetCmp_t _cmp,
+                                       OSetAlloc_t _alloc, HChar* _cc,
+                                       OSetFree_t _free,
+                                       SizeT _poolSize,
+                                       SizeT _maxEltSize)
+{
+   AvlTree* t;
+
+   t = VG_(OSetGen_Create) (_keyOff, _cmp,
+                            _alloc, _cc,
+                            _free);
+
+   vg_assert (_poolSize > 0);
+   vg_assert (_maxEltSize > 0);
+   t->maxEltSize = _maxEltSize;
+   t->node_pa = VG_(newPA)(sizeof(AvlNode) 
+                           + VG_ROUNDUP(_maxEltSize, sizeof(void*)),
+                           _poolSize,
+                           t->alloc,
+                           _cc,
+                           t->free);
+   VG_(addRefPA) (t->node_pa);
+
+   return t;
+}
+
+AvlTree* VG_(OSetGen_EmptyClone) (AvlTree* os)
+{
+   AvlTree* t;
+
+   vg_assert(os);
+
+   t           = os->alloc(os->cc, sizeof(AvlTree));
+   t->keyOff   = os->keyOff;
+   t->cmp      = os->cmp;
+   t->alloc    = os->alloc;
+   t->cc       = os->cc;
+   t->free     = os->free;
+   t->node_pa  = os->node_pa;
+   if (t->node_pa)
+      VG_(addRefPA) (t->node_pa);
+   t->maxEltSize = os->maxEltSize;
    t->nElems   = 0;
    t->root     = NULL;
    stackClear(t);
@@ -318,34 +372,51 @@ AvlTree* VG_(OSetWord_Create)(OSetAlloc_t _alloc, HChar* _cc,
 // Destructor, frees up all memory held by remaining nodes.
 void VG_(OSetGen_Destroy)(AvlTree* t)
 {
-   AvlNode* n = NULL;
-   Int i = 0;
-   Word sz = 0;
-   
+   Bool has_node_pa;
    vg_assert(t);
-   stackClear(t);
-   if (t->root)
-      stackPush(t, t->root, 1);
 
-   /* Free all the AvlNodes.  This is a post-order traversal, because we */
-   /* must free all children of a node before the node itself. */
-   while (stackPop(t, &n, &i)) {
-      switch (i) {
-      case 1: 
-         stackPush(t, n, 2);
-         if (n->left)  stackPush(t, n->left, 1);
-         break;
-      case 2: 
-         stackPush(t, n, 3);
-         if (n->right) stackPush(t, n->right, 1);
-         break;
-      case 3:
-         t->free(n);
-         sz++;
-         break;
+   has_node_pa = t->node_pa != NULL;
+
+   if (has_node_pa)
+      VG_(releasePA) (t->node_pa); // decrement ref count.
+
+   if (has_node_pa && VG_(nrRefPA) (t->node_pa) == 0) {
+      /* We are the only remaining user of this pool allocator.
+         => release (more efficiently) all the elements
+         by deleting the pool allocator */
+      VG_(deletePA) (t->node_pa);
+   } else {
+      AvlNode* n = NULL;
+      Int i = 0;
+      Word sz = 0;
+   
+      stackClear(t);
+      if (t->root)
+         stackPush(t, t->root, 1);
+
+      /* Free all the AvlNodes.  This is a post-order traversal, because we */
+      /* must free all children of a node before the node itself. */
+      while (stackPop(t, &n, &i)) {
+         switch (i) {
+         case 1: 
+            stackPush(t, n, 2);
+            if (n->left)  stackPush(t, n->left, 1);
+            break;
+         case 2: 
+            stackPush(t, n, 3);
+            if (n->right) stackPush(t, n->right, 1);
+            break;
+         case 3:
+            if (has_node_pa)
+               VG_(freeEltPA) (t->node_pa, n);
+            else
+               t->free(n);
+            sz++;
+            break;
+         }
       }
+      vg_assert(sz == t->nElems);
    }
-   vg_assert(sz == t->nElems);
 
    /* Free the AvlTree itself. */
    t->free(t);
@@ -359,9 +430,15 @@ void VG_(OSetWord_Destroy)(AvlTree* t)
 // Allocate and initialise a new node.
 void* VG_(OSetGen_AllocNode)(AvlTree* t, SizeT elemSize)
 {
+   AvlNode* n;
    Int nodeSize = sizeof(AvlNode) + elemSize;
-   AvlNode* n   = t->alloc( t->cc, nodeSize );
    vg_assert(elemSize > 0);
+   if (t->node_pa) {
+      vg_assert(elemSize <= t->maxEltSize);
+      n = VG_(allocEltPA) (t->node_pa);
+   } else {
+      n = t->alloc( t->cc, nodeSize );
+   }
    VG_(memset)(n, 0, nodeSize);
    n->magic = OSET_MAGIC;
    return elem_of_node(n);
@@ -369,7 +446,10 @@ void* VG_(OSetGen_AllocNode)(AvlTree* t, SizeT elemSize)
 
 void VG_(OSetGen_FreeNode)(AvlTree* t, void* e)
 {
-   t->free( node_of_elem(e) );
+   if (t->node_pa)
+      VG_(freeEltPA) (t->node_pa, node_of_elem (e));
+   else
+      t->free( node_of_elem(e) );
 }
 
 /*--------------------------------------------------------------------*/

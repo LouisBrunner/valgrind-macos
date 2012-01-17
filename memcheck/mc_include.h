@@ -101,6 +101,9 @@ Bool MC_(mempool_exists)  ( Addr pool );
    is found. */
 MC_Chunk* MC_(get_freed_block_bracketting)( Addr a );
 
+/* For efficient pooled alloc/free of the MC_Chunk. */
+extern PoolAlloc* MC_(chunk_poolalloc);
+
 /* For tracking malloc'd blocks.  Nb: it's quite important that it's a
    VgHashTable, because VgHashTable allows duplicate keys without complaint.
    This can occur if a user marks a malloc() block as also a custom block with

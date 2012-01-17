@@ -249,7 +249,7 @@ void* VG_(HT_Next)(VgHashTable table)
    return NULL;
 }
 
-void VG_(HT_destruct)(VgHashTable table)
+void VG_(HT_destruct)(VgHashTable table, void(*freenode_fn)(void*))
 {
    UInt       i;
    VgHashNode *node, *node_next;
@@ -257,7 +257,7 @@ void VG_(HT_destruct)(VgHashTable table)
    for (i = 0; i < table->n_chains; i++) {
       for (node = table->chains[i]; node != NULL; node = node_next) {
          node_next = node->next;
-         VG_(free)(node);
+         freenode_fn(node);
       }
    }
    VG_(free)(table->chains);

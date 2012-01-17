@@ -30,6 +30,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_poolalloc.h"     // For mc_include.h
 #include "pub_tool_hashtable.h"     // For mc_include.h
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"

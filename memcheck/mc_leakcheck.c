@@ -42,7 +42,8 @@
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
 #include "pub_tool_oset.h"
-#include "pub_tool_signals.h"
+#include "pub_tool_poolalloc.h"     
+#include "pub_tool_signals.h"       // Needed for mc_include.h
 #include "pub_tool_libcsetjmp.h"    // setjmp facilities
 #include "pub_tool_tooliface.h"     // Needed for mc_include.h
 

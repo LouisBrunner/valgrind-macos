@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	fbench.vgperf \
 	ffbench.vgperf \
 	heap.vgperf \
+	heap_pdb4.vgperf \
 	many-loss-records.vgperf \
 	many-xpts.vgperf \
 	sarp.vgperf \

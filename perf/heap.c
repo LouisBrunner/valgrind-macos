@@ -7,9 +7,16 @@
 
 char* arr[NLIVE];
 
-int main ( void )
+int main ( int argc, char* argv[] )
 {
    int i, j, nbytes = 0;
+   int pdb = 0;
+   int jpdb;
+
+   if (argc > 1) {
+      pdb = atoi(argv[1]);
+   }
+
    printf("initialising\n");
    for (i = 0; i < NLIVE; i++)
       arr[i] = NULL;
@@ -22,6 +29,12 @@ int main ( void )
       if (arr[j]) 
          free(arr[j]);
       arr[j] = malloc(nbytes);
+      if (pdb > 0) {
+         // create some partially defined bytes in arr[j]
+         for (jpdb=0; jpdb<nbytes; jpdb = jpdb+pdb) {
+            arr[j][jpdb] &= (jpdb & 0xff);
+         }
+      }
 
       // Cycle through the sizes 0,8,16,24,32.  Zero will get rounded up to
       // 8, so the 8B bucket will get twice as much traffic.

@@ -758,6 +758,8 @@ static void DRD_(fini)(Int exitcode)
                    DRD_(get_mutex_lock_count)());
       DRD_(print_malloc_stats)();
    }
+
+   DRD_(bm_module_cleanup)();
 }
 
 static
@@ -809,6 +811,8 @@ void drd_pre_clo_init(void)
    // Other stuff.
    DRD_(register_malloc_wrappers)(drd_start_using_mem_w_ecu,
                                   drd_stop_using_nonstack_mem);
+
+   DRD_(bm_module_init)();
 
    DRD_(clientreq_init)();
 

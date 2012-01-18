@@ -54,7 +54,6 @@ endif
 
 DRD_SOURCES_COMMON =    \
   drd_barrier.c         \
-  drd_bitmap2_node.c    \
   drd_clientobj.c       \
   drd_clientreq.c       \
   drd_cond.c            \

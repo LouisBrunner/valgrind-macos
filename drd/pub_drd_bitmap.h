@@ -75,6 +75,8 @@ struct bitmap
 
 /* Function declarations. */
 
+void DRD_(bm_module_init)(void);
+void DRD_(bm_module_cleanup)(void);
 struct bitmap* DRD_(bm_new)(void);
 void DRD_(bm_delete)(struct bitmap* const bm);
 void DRD_(bm_init)(struct bitmap* const bm);
@@ -147,8 +149,5 @@ void DRD_(bm_print)(struct bitmap* bm);
 ULong DRD_(bm_get_bitmap_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_merge_count)(void);
-
-void* DRD_(bm2_alloc_node)(HChar* const ec, const SizeT szB);
-void  DRD_(bm2_free_node)(void* const bm2);
 
 #endif /* __PUB_DRD_BITMAP_H */

@@ -11,7 +11,6 @@
 #include "coregrind/m_poolalloc.c"
 #include "coregrind/m_oset.c"
 #include "drd/drd_bitmap.c"
-#include "drd/drd_bitmap2_node.c"
 #include "drd/pub_drd_bitmap.h"
 
 
@@ -344,9 +343,11 @@ int main(int argc, char** argv)
 
   fprintf(stderr, "Start of DRD BM unit test.\n");
 
+  DRD_(bm_module_init)();
   bm_test1();
   bm_test2();
   bm_test3(outer_loop_step, inner_loop_step);
+  DRD_(bm_module_cleanup)();
 
   fprintf(stderr, "End of DRD BM unit test.\n");
 

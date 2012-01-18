@@ -45,12 +45,28 @@ static void bm2_print(const struct bitmap2* const bm2);
 
 /* Local variables. */
 
+static OSet* s_bm2_set_template;
 static ULong s_bitmap_creation_count;
 static ULong s_bitmap_merge_count;
 static ULong s_bitmap2_merge_count;
 
 
 /* Function definitions. */
+
+void DRD_(bm_module_init)(void)
+{
+   tl_assert(!s_bm2_set_template);
+   s_bm2_set_template
+      = VG_(OSetGen_Create_With_Pool)(0, 0, VG_(malloc), "drd.bitmap.bn.2",
+                                      VG_(free), 512, sizeof(struct bitmap2));
+}
+
+void DRD_(bm_module_cleanup)(void)
+{
+   tl_assert(s_bm2_set_template);
+   VG_(OSetGen_Destroy)(s_bm2_set_template);
+   s_bm2_set_template = NULL;
+}
 
 struct bitmap* DRD_(bm_new)()
 {
@@ -90,8 +106,7 @@ void DRD_(bm_init)(struct bitmap* const bm)
       bm->cache[i].a1  = ~(UWord)1;
       bm->cache[i].bm2 = 0;
    }
-   bm->oset = VG_(OSetGen_Create)(0, 0, DRD_(bm2_alloc_node),
-                                  "drd.bitmap.bn.2", DRD_(bm2_free_node));
+   bm->oset = VG_(OSetGen_EmptyClone)(s_bm2_set_template);
 
    s_bitmap_creation_count++;
 }

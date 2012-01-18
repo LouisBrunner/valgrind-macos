@@ -377,15 +377,12 @@ void VG_(OSetGen_Destroy)(AvlTree* t)
 
    has_node_pa = t->node_pa != NULL;
 
-   if (has_node_pa)
-      VG_(releasePA) (t->node_pa); // decrement ref count.
-
-   if (has_node_pa && VG_(nrRefPA) (t->node_pa) == 0) {
-      /* We are the only remaining user of this pool allocator.
-         => release (more efficiently) all the elements
-         by deleting the pool allocator */
-      VG_(deletePA) (t->node_pa);
-   } else {
+   /*
+    * If we are the only remaining user of this pool allocator, release all
+    * the elements by deleting the pool allocator. That's more efficient than
+    * deleting tree nodes one by one.
+    */
+   if (!has_node_pa || VG_(releasePA)(t->node_pa) > 0) {
       AvlNode* n = NULL;
       Int i = 0;
       Word sz = 0;

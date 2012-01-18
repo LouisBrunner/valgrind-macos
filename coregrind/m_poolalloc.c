@@ -137,14 +137,13 @@ void VG_(addRefPA) ( PoolAlloc* pa)
    pa->nrRef++;
 }
 
-void VG_(releasePA) ( PoolAlloc* pa)
+UWord VG_(releasePA)(PoolAlloc* pa)
 {
+   UWord nrRef;
+
    vg_assert(pa->nrRef > 0);
-   pa->nrRef--;
+   nrRef = --pa->nrRef;
+   if (nrRef == 0)
+      VG_(deletePA)(pa);
+   return nrRef;
 }
-
-UWord VG_(nrRefPA) (PoolAlloc* pa)
-{
-   return pa->nrRef;
-}
-

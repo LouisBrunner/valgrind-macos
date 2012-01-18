@@ -80,12 +80,10 @@ extern void VG_(freeEltPA) ( PoolAlloc* pa, void* p);
 // VG_(addRefPA) indicates there is a new reference to pa.
 extern void VG_(addRefPA) ( PoolAlloc* pa);
 
-// VG_(releasePA) indicates a reference to pa has been released.
-extern void VG_(releasePA) ( PoolAlloc* pa);
-
-// Returns the current nr of reference to pa.
-// When this drops to 0, VG_(deletePA) can be called by the pa user.
-extern UWord VG_(nrRefPA) (PoolAlloc* pa);
+// VG_(releasePA) decrements the pa reference count and deletes the pa if that
+// reference count has dropped to zero. Returns the new value of the reference
+// count.
+extern UWord VG_(releasePA) ( PoolAlloc* pa);
 
 #endif   // __PUB_TOOL_POOLALLOC_
 

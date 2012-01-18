@@ -624,6 +624,14 @@ HInstrArray* doRegisterAllocation (
                break;
          if (k == n_available_real_regs) 
             continue; /* not found -- ignore. */
+
+#if 0
+available_real_regs[k] is involved in a real live range
+  and since:
+      rreg_state[j].rreg          = available_real_regs[j];
+#endif
+      rreg_state[k].has_hlrs = True;
+
          flush = False;
          switch (reg_usage.mode[j]) {
             case HRmWrite:
@@ -721,7 +729,7 @@ HInstrArray* doRegisterAllocation (
       any HLRs, since ones with HLRs may need to be spilled around
       their HLRs.  Correctness of final assignment is unaffected by
       this mechanism -- it is only an optimisation. */
-
+#if 0
    for (j = 0; j < rreg_lrs_used; j++) {
       rreg = rreg_lrs_la[j].rreg;
       vassert(!hregIsVirtual(rreg));
@@ -733,6 +741,7 @@ HInstrArray* doRegisterAllocation (
       vassert(k < n_rregs); /* else rreg was not found in rreg_state?! */
       rreg_state[k].has_hlrs = True;
    }
+#endif
    if (0) {
       for (j = 0; j < n_rregs; j++) {
          if (!rreg_state[j].has_hlrs)

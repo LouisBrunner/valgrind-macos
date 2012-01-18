@@ -171,6 +171,7 @@
 {
    drd-libxcb-xcb_wait_for_reply
    drd:CondErr
+   ...
    fun:pthread_cond_destroy*
    fun:xcb_wait_for_reply
 }

@@ -79,7 +79,7 @@
   </other_segment_end>
 </error>
 
-  <trace><text>drd_post_thread_join joiner = 1, joinee = 2, new vc: [ 1: 4, 2: 1 ]</text></trace>
+  <trace><text>drd_post_thread_join joiner = 1, joinee = 2, new vc: [ 1: 8, 2: 3 ]</text></trace>
   <trace><text>drd_thread_finished tid = 1</text></trace>
 
 <status>

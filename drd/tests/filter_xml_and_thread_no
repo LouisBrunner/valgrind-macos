@@ -1,3 +1,5 @@
 #! /bin/sh
 
-../../memcheck/tests/filter_xml | ./filter_thread_no
+../../memcheck/tests/filter_xml |
+./filter_thread_no |
+sed 's/ vc: \[[0-9:, ]*\]/ vc: [ ... ]/g'

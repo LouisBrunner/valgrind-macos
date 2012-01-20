@@ -37,7 +37,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>ConflictingAccess</kind>
-  <what>Conflicting load by thread 1 at 0x........ size 8</what>
+  <what>Conflicting load by thread x at 0x........ size 8</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -49,7 +49,7 @@
     </frame>
   </stack>
   <auxwhat>Location 0x........ is 0 bytes inside local var "s_d3"</auxwhat>
-  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread 1</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
+  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread x</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
   <other_segment_start>
   </other_segment_start>
   <other_segment_end>
@@ -60,7 +60,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>ConflictingAccess</kind>
-  <what>Conflicting store by thread 1 at 0x........ size 8</what>
+  <what>Conflicting store by thread x at 0x........ size 8</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -72,14 +72,14 @@
     </frame>
   </stack>
   <auxwhat>Location 0x........ is 0 bytes inside local var "s_d3"</auxwhat>
-  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread 1</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
+  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread x</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
   <other_segment_start>
   </other_segment_start>
   <other_segment_end>
   </other_segment_end>
 </error>
 
-  <trace><text>drd_post_thread_join joiner = 1, joinee = 2, new vc: [ 1: 8, 2: 3 ]</text></trace>
+  <trace><text>drd_post_thread_join joiner = 1, joinee = 2, new vc: [ ... ]</text></trace>
   <trace><text>drd_thread_finished tid = 1</text></trace>
 
 <status>

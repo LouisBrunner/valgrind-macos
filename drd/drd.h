@@ -95,7 +95,7 @@
 /**
  * Tell DRD to stop tracing memory accesses for the specified variable.
  */
-#define DRD_STOP_TRACE_VAR(x)                                       \
+#define DRD_STOP_TRACING_VAR(x)                                       \
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_STOP_TRACE_ADDR, \
                                    &(x), sizeof(x), 0, 0, 0)
 

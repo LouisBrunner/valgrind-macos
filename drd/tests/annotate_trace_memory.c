@@ -37,12 +37,12 @@ int main(int argc, char** argv)
   i64 = 9;
   __sync_add_and_fetch(&i64, 0x12345678ULL);
 
-  DRD_STOP_TRACE_VAR(f);
-  DRD_STOP_TRACE_VAR(d);
-  DRD_STOP_TRACE_VAR(i8);
-  DRD_STOP_TRACE_VAR(i16);
-  DRD_STOP_TRACE_VAR(i32);
-  DRD_STOP_TRACE_VAR(i64);
+  DRD_STOP_TRACING_VAR(f);
+  DRD_STOP_TRACING_VAR(d);
+  DRD_STOP_TRACING_VAR(i8);
+  DRD_STOP_TRACING_VAR(i16);
+  DRD_STOP_TRACING_VAR(i32);
+  DRD_STOP_TRACING_VAR(i64);
 
   fprintf(stderr, "Done.\n");
   return 0;

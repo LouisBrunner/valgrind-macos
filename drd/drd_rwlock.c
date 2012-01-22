@@ -173,20 +173,14 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
 
    DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
    VG_(OSetGen_ResetIter)(p->thread_info);
-   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
-   {
-      if (q->tid != tid)
-      {
+   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; ) {
+      if (q->tid != tid) {
          if (q->latest_wrlocked_segment)
-         {
             DRD_(vc_combine)(DRD_(thread_get_vc)(tid),
                              &q->latest_wrlocked_segment->vc);
-         }
          if (readers_too && q->latest_rdlocked_segment)
-         {
             DRD_(vc_combine)(DRD_(thread_get_vc)(tid),
                              &q->latest_rdlocked_segment->vc);
-         }
       }
    }
    DRD_(thread_update_conflict_set)(tid, &old_vc);

@@ -472,15 +472,14 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
    {
       VectorClock old_vc;
 
-      DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
+      DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
       VG_(OSetGen_ResetIter)(oset);
       for ( ; (r = VG_(OSetGen_Next)(oset)) != 0; )
       {
          if (r != q)
          {
             tl_assert(r->sg);
-            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
-                             &r->sg->vc);
+            DRD_(vc_combine)(DRD_(thread_get_vc)(tid), &r->sg->vc);
          }
       }
       DRD_(thread_update_conflict_set)(tid, &old_vc);

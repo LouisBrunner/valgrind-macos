@@ -210,14 +210,14 @@ void DRD_(hb_happens_after)(const DrdThreadId tid, const Addr hb)
     * Combine all vector clocks that were stored because of happens-before
     * annotations with the vector clock of the current thread.
     */
-   DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
+   DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
    VG_(OSetGen_ResetIter)(p->oset);
    for ( ; (q = VG_(OSetGen_Next)(p->oset)) != 0; )
    {
       if (q->tid != tid)
       {
          tl_assert(q->sg);
-         DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc, &q->sg->vc);
+         DRD_(vc_combine)(DRD_(thread_get_vc)(tid), &q->sg->vc);
       }
    }
    DRD_(thread_update_conflict_set)(tid, &old_vc);

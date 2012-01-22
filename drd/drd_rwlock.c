@@ -171,7 +171,7 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
    struct rwlock_thread_info* q;
    VectorClock old_vc;
 
-   DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
+   DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
    VG_(OSetGen_ResetIter)(p->thread_info);
    for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
    {
@@ -179,12 +179,12 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
       {
          if (q->latest_wrlocked_segment)
          {
-            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+            DRD_(vc_combine)(DRD_(thread_get_vc)(tid),
                              &q->latest_wrlocked_segment->vc);
          }
          if (readers_too && q->latest_rdlocked_segment)
          {
-            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+            DRD_(vc_combine)(DRD_(thread_get_vc)(tid),
                              &q->latest_rdlocked_segment->vc);
          }
       }

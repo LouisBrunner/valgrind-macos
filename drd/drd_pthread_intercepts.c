@@ -138,6 +138,7 @@ static int never_true;
 typedef struct {
    pthread_mutex_t mutex;
    int counter;
+   int waiters;
 } DrdSema;
 
 typedef struct
@@ -183,6 +184,7 @@ static void DRD_(sema_init)(DrdSema* sema)
    DRD_IGNORE_VAR(sema->counter);
    pthread_mutex_init(&sema->mutex, NULL);
    sema->counter = 0;
+   sema->waiters = 0;
 }
 
 static void DRD_(sema_destroy)(DrdSema* sema)
@@ -195,24 +197,28 @@ static void DRD_(sema_down)(DrdSema* sema)
    int res = ENOSYS;
 
    pthread_mutex_lock(&sema->mutex);
-   while (sema->counter == 0) {
-      pthread_mutex_unlock(&sema->mutex);
+   if (sema->counter == 0) {
+      sema->waiters++;
+      while (sema->counter == 0) {
+         pthread_mutex_unlock(&sema->mutex);
 #ifdef HAVE_USABLE_LINUX_FUTEX_H
-      if (syscall(__NR_futex, (UWord)&sema->counter,
-                  FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0) == 0)
-         res = 0;
-      else
-         res = errno;
+         if (syscall(__NR_futex, (UWord)&sema->counter,
+                     FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0) == 0)
+            res = 0;
+         else
+            res = errno;
 #endif
-      /*
-       * Invoke sched_yield() on non-Linux systems, if the futex syscall has
-       * not been invoked or if this code has been built on a Linux system
-       * where __NR_futex is defined and is run on a Linux system that does
-       * not support the futex syscall.
-       */
-      if (res != 0 && res != EWOULDBLOCK)
-         sched_yield();
-      pthread_mutex_lock(&sema->mutex);
+         /*
+          * Invoke sched_yield() on non-Linux systems, if the futex syscall has
+          * not been invoked or if this code has been built on a Linux system
+          * where __NR_futex is defined and is run on a Linux system that does
+          * not support the futex syscall.
+          */
+         if (res != 0 && res != EWOULDBLOCK)
+            sched_yield();
+         pthread_mutex_lock(&sema->mutex);
+      }
+      sema->waiters--;
    }
    sema->counter--;
    pthread_mutex_unlock(&sema->mutex);
@@ -223,8 +229,9 @@ static void DRD_(sema_up)(DrdSema* sema)
    pthread_mutex_lock(&sema->mutex);
    sema->counter++;
 #ifdef HAVE_USABLE_LINUX_FUTEX_H
-   syscall(__NR_futex, (UWord)&sema->counter,
-           FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
+   if (sema->waiters > 0)
+      syscall(__NR_futex, (UWord)&sema->counter,
+              FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
 #endif
    pthread_mutex_unlock(&sema->mutex);
 }

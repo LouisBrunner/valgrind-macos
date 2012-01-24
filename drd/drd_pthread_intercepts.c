@@ -146,7 +146,7 @@ typedef struct
    void* (*start)(void*);
    void* arg;
    int   detachstate;
-   DrdSema wrapper_started;
+   DrdSema* wrapper_started;
 } DrdPosixThreadArgs;
 
 
@@ -350,7 +350,7 @@ static void* DRD_(thread_wrapper)(void* arg)
     * DRD_(set_joinable)() have been invoked to avoid a race with
     * a pthread_detach() invocation for this thread from another thread.
     */
-   DRD_(sema_up)(&arg_ptr->wrapper_started);
+   DRD_(sema_up)(arg_copy.wrapper_started);
 
    return (arg_copy.start)(arg_copy.arg);
 }
@@ -446,13 +446,15 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
 {
    int    ret;
    OrigFn fn;
+   DrdSema wrapper_started;
    DrdPosixThreadArgs thread_args;
 
    VALGRIND_GET_ORIG_FN(fn);
 
+   DRD_(sema_init)(&wrapper_started);
    thread_args.start           = start;
    thread_args.arg             = arg;
-   DRD_(sema_init)(&thread_args.wrapper_started);
+   thread_args.wrapper_started = &wrapper_started;
    /*
     * Find out whether the thread will be started as a joinable thread
     * or as a detached thread. If no thread attributes have been specified,
@@ -471,13 +473,12 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
    CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), &thread_args);
    DRD_(left_pthread_create)();
 
-   if (ret == 0)
-   {
+   if (ret == 0) {
       /* Wait until the thread wrapper started. */
-      DRD_(sema_down)(&thread_args.wrapper_started);
+      DRD_(sema_down)(&wrapper_started);
    }
 
-   DRD_(sema_destroy)(&thread_args.wrapper_started);
+   DRD_(sema_destroy)(&wrapper_started);
 
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_START_NEW_SEGMENT,
                                    pthread_self(), 0, 0, 0, 0);

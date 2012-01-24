@@ -220,7 +220,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__DRD_START_TRACE_ADDR:
-      DRD_(start_tracing_address_range)(arg[1], arg[1] + arg[2]);
+      DRD_(start_tracing_address_range)(arg[1], arg[1] + arg[2], False);
       break;
 
    case VG_USERREQ__DRD_STOP_TRACE_ADDR:

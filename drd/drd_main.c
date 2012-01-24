@@ -90,6 +90,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    int trace_semaphore        = -1;
    int trace_suppression      = -1;
    Char* trace_address        = 0;
+   Char* ptrace_address       = 0;
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_INT_CLO (arg, "--join-list-vol",       join_list_vol) {}
@@ -119,6 +120,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
    else if VG_BOOL_CLO(arg, "--var-info",            s_var_info) {}
    else if VG_INT_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms) {}
+   else if VG_STR_CLO (arg, "--ptrace-addr",         ptrace_address) {}
    else if VG_INT_CLO (arg, "--shared-threshold",    shared_threshold_ms)    {}
    else if VG_STR_CLO (arg, "--trace-addr",          trace_address) {}
    else
@@ -151,10 +153,13 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
       DRD_(thread_set_segment_merge_interval)(segment_merge_interval);
    if (show_confl_seg != -1)
       DRD_(set_show_conflicting_segments)(show_confl_seg);
-   if (trace_address)
-   {
+   if (trace_address) {
       const Addr addr = VG_(strtoll16)(trace_address, 0);
-      DRD_(start_tracing_address_range)(addr, addr + 1);
+      DRD_(start_tracing_address_range)(addr, addr + 1, False);
+   }
+   if (ptrace_address) {
+      const Addr addr = VG_(strtoll16)(ptrace_address, 0);
+      DRD_(start_tracing_address_range)(addr, addr + 1, True);
    }
    if (trace_barrier != -1)
       DRD_(barrier_set_trace)(trace_barrier);
@@ -217,6 +222,10 @@ static void DRD_(print_usage)(void)
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
 "\n"
 "  drd options for monitoring process behavior:\n"
+"    --ptrace-addr=<address>   Trace all load and store activity for the\n"
+"                              specified address and keep doing that even after\n"
+"                              the memory at that address has been freed and\n"
+"                              reallocated [off].\n"
 "    --trace-addr=<address>    Trace all load and store activity for the\n"
 "                              specified address [off].\n"
 "    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n""                              [no].\n"

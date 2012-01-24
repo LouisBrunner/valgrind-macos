@@ -112,30 +112,52 @@ Bool DRD_(range_contains_suppression_or_hbvar)(const Addr a1, const Addr a2)
    return DRD_(bm_has_any_access)(s_suppressed, a1, a2);
 }
 
-void DRD_(start_tracing_address_range)(const Addr a1, const Addr a2)
+/**
+ * Start tracing memory accesses in the range [a1,a2). If persistent == True,
+ * keep tracing even after memory deallocation and reallocation.
+ */
+void DRD_(start_tracing_address_range)(const Addr a1, const Addr a2,
+                                       const Bool persistent)
 {
    tl_assert(a1 <= a2);
 
+   if (s_trace_suppression)
+      VG_(message)(Vg_DebugMsg, "start_tracing(0x%lx, %ld) %s\n",
+                   a1, a2 - a1, persistent ? "persistent" : "non-persistent");
+
    DRD_(bm_access_range_load)(s_traced, a1, a2);
-   if (!DRD_(g_any_address_traced))
+   if (persistent)
+      DRD_(bm_access_range_store)(s_traced, a1, a2);
+   if (!DRD_(g_any_address_traced) && a1 < a2)
       DRD_(g_any_address_traced) = True;
 }
 
+/**
+ * Stop tracing memory accesses in the range [a1,a2).
+ */
 void DRD_(stop_tracing_address_range)(const Addr a1, const Addr a2)
 {
    tl_assert(a1 <= a2);
 
-   DRD_(bm_clear_load)(s_traced, a1, a2);
-   if (DRD_(g_any_address_traced))
-      DRD_(g_any_address_traced)
-         = DRD_(bm_has_any_load_g)(s_traced);
+   if (s_trace_suppression)
+      VG_(message)(Vg_DebugMsg, "stop_tracing(0x%lx, %ld)\n",
+                   a1, a2 - a1);
+
+   if (DRD_(g_any_address_traced)) {
+      DRD_(bm_clear)(s_traced, a1, a2);
+      DRD_(g_any_address_traced) = DRD_(bm_has_any_load_g)(s_traced);
+   }
 }
 
 Bool DRD_(is_any_traced)(const Addr a1, const Addr a2)
 {
-   return DRD_(bm_has_any_load)(s_traced, a1, a2);
+   return DRD_(bm_has_any_access)(s_traced, a1, a2);
 }
 
+/**
+ * Stop using the memory range [a1,a2). Stop tracing memory accesses to
+ * non-persistent address ranges.
+ */
 void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
 {
    if (s_trace_suppression) {
@@ -151,5 +173,5 @@ void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
    tl_assert(a1);
    tl_assert(a1 <= a2);
    DRD_(bm_clear)(s_suppressed, a1, a2);
-   DRD_(bm_clear)(s_traced, a1, a2);
+   DRD_(bm_clear_load)(s_traced, a1, a2);
 }

@@ -33,6 +33,7 @@
  */
 
 
+#include "drd_list.h"
 #include "drd_vc.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_execontext.h" // ExeContext
@@ -41,9 +42,9 @@
 
 typedef struct segment
 {
+   struct list_head   g_list;
    /** Pointers to next and previous segments executed by the same thread. */
-   struct segment*    next;
-   struct segment*    prev;
+   struct list_head   thr_list;
    DrdThreadId        tid;
    /** Reference count: number of pointers that point to this segment. */
    int                refcnt;
@@ -58,6 +59,7 @@ typedef struct segment
    struct bitmap      bm;
 } Segment;
 
+extern struct list_head DRD_(g_sg_list);
 
 Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created);
 static int DRD_(sg_get_refcnt)(const Segment* const sg);

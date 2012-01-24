@@ -29,6 +29,7 @@
 /* Include directives. */
 
 #include "drd_basics.h"
+#include "drd_list.h"
 #include "drd_segment.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_libcassert.h"  /* tl_assert()        */
@@ -66,8 +67,7 @@ typedef UWord PThreadId;
 /** Per-thread information managed by DRD. */
 typedef struct
 {
-   Segment*  first;         /**< Pointer to first segment. */
-   Segment*  last;          /**< Pointer to last segment. */
+   struct list_head sg_list;/**< Segment list. */
    ThreadId  vg_threadid;   /**< Valgrind thread ID. */
    PThreadId pt_threadid;   /**< POSIX thread ID. */
    Addr      stack_min_min; /**< Lowest value stack pointer ever had. */
@@ -130,6 +130,7 @@ int DRD_(thread_get_segment_merge_interval)(void);
 void DRD_(thread_set_segment_merge_interval)(const int i);
 void DRD_(thread_set_join_list_vol)(const int jlv);
 
+void DRD_(thread_init)(void);
 DrdThreadId DRD_(VgThreadIdToDrdThreadId)(const ThreadId tid);
 DrdThreadId DRD_(NewVgThreadIdToDrdThreadId)(const ThreadId tid);
 DrdThreadId DRD_(PtThreadIdToDrdThreadId)(const PThreadId tid);
@@ -339,12 +340,17 @@ Bool DRD_(thread_address_on_any_stack)(const Addr a)
 static __inline__
 Segment* DRD_(thread_get_segment)(const DrdThreadId tid)
 {
+   struct list_head* sg_list;
+
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
-   tl_assert(DRD_(g_threadinfo)[tid].last);
 #endif
-   return DRD_(g_threadinfo)[tid].last;
+   sg_list = &DRD_(g_threadinfo)[tid].sg_list;
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   tl_assert(!list_empty(sg_list));
+#endif
+   return list_last_entry(sg_list, Segment, thr_list);
 }
 
 /** Return a pointer to the latest segment for the running thread. */

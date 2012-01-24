@@ -820,6 +820,8 @@ void drd_pre_clo_init(void)
 
    DRD_(clientobj_init)();
 
+   DRD_(thread_init)();
+
    {
       Char* const smi = VG_(getenv)("DRD_SEGMENT_MERGING_INTERVAL");
       if (smi)

@@ -34,6 +34,11 @@
 #include "pub_tool_threadstate.h" // VG_INVALID_THREADID
 
 
+/* Global variables. */
+
+struct list_head DRD_(g_sg_list) = LIST_HEAD_INIT(DRD_(g_sg_list));
+
+
 /* Local variables. */
 
 static ULong s_segment_merge_count;
@@ -68,8 +73,10 @@ static void sg_init(Segment* const sg,
    creator_sg = (creator != DRD_INVALID_THREADID
                  ? DRD_(thread_get_segment)(creator) : 0);
 
-   sg->next = 0;
-   sg->prev = 0;
+   sg->g_list.next = NULL;
+   sg->g_list.prev = NULL;
+   sg->thr_list.next = NULL;
+   sg->thr_list.prev = NULL;
    sg->tid = created;
    sg->refcnt = 1;
 
@@ -119,6 +126,7 @@ Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created)
    sg = VG_(malloc)("drd.segment.sn.1", sizeof(*sg));
    tl_assert(sg);
    sg_init(sg, creator, created);
+   list_add(&sg->g_list, &DRD_(g_sg_list));
    return sg;
 }
 
@@ -137,6 +145,7 @@ static void DRD_(sg_delete)(Segment* const sg)
    s_segments_alive_count--;
 
    tl_assert(sg);
+   list_del(&sg->g_list);
    DRD_(sg_cleanup)(sg);
    VG_(free)(sg);
 }

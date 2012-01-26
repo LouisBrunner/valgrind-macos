@@ -10,7 +10,7 @@ $dir/filter_stderr                                                  |
 $dir/../tests/filter_addresses                                      |
 
 # memcheck stuff
-$dir/filter_memcheck_monitor                                        |
+$dir/filter_memcheck_monitor "$@"                                   |
 
 
 # Anonymise or remove :

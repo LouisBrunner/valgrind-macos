@@ -1,0 +1,67 @@
+relaying data between gdb and process ....
+vgdb-error value changed from 0 to 999999
+Breakpoint 1 at 0x........: file leak-tree.c, line 42.
+Breakpoint 2 at 0x........: file leak-tree.c, line 67.
+Continuing.
+Breakpoint 1, f () at leak-tree.c:42
+42	   t->l    = mk();   // B
+Continuing.
+Breakpoint 2, main () at leak-tree.c:67
+67	   PRINT_LEAK_COUNTS(stderr);
+Searching for pointers to 0x........
+*0x........ points at 0x........
+ Address 0x........ is 0 bytes inside data symbol "t"
+full leak search 
+16 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:41)
+   by 0x........: main (leak-tree.c:63)
+16 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:42)
+   by 0x........: main (leak-tree.c:63)
+16 bytes in 1 blocks are still reachable in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:45)
+   by 0x........: main (leak-tree.c:63)
+16 bytes in 1 blocks are indirectly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:46)
+   by 0x........: main (leak-tree.c:63)
+16 bytes in 1 blocks are indirectly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:47)
+   by 0x........: main (leak-tree.c:63)
+16 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:44)
+   by 0x........: main (leak-tree.c:63)
+48 (16 direct, 32 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:43)
+   by 0x........: main (leak-tree.c:63)
+block list 6 D 
+16 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:44)
+   by 0x........: main (leak-tree.c:63)
+0x........[16]
+block list 7 C F G 
+48 (16 direct, 32 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:28)
+   by 0x........: f (leak-tree.c:43)
+   by 0x........: main (leak-tree.c:63)
+0x........[16]
+  0x........[16] indirect loss record 4
+  0x........[16] indirect loss record 5
+monitor command request to kill this process
+Remote connection closed

@@ -1,0 +1,12 @@
+# test the memcheck block_list and search monitor commands.
+prog: ../memcheck/tests/leak-tree
+vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcblocklistsearch -q 
+prereq: test -e gdb.eval
+stdout_filter: filter_make_empty
+stderr_filter: filter_make_empty
+progB: gdb
+argsB: --quiet -l 60 --nx 1>&2 ../memcheck/tests/leak-tree
+stdinB: mcblocklistsearch.stdinB.gdb
+stdoutB_filter: filter_make_empty
+stderrB_filter: filter_gdb
+stderrB_filter_args: leak-tree.c

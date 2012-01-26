@@ -13,6 +13,11 @@ Release 3.8.0 (????)
   - reduction of memory use for applications allocating
     many blocks and/or having many partially defined bytes.
 
+  - Addition of GDB server monitor command 'block_list' that lists
+    the addresses/sizes of the blocks of a leak search loss record.
+
+  - Addition of GDB server monitor command 'who_points_at' that lists
+    the locations pointing at a block.
 
 * ==================== OTHER CHANGES ====================
 
@@ -43,6 +48,7 @@ where XXXXXX is the bug number as listed below.
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
 287858  VG_(strerror): unknown error 
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
+289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

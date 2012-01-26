@@ -121,7 +121,8 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 // current threads.
 // This is very Memcheck-specific -- it's used to find the roots when
 // doing leak checking.
-extern void VG_(apply_to_GP_regs)(void (*f)(UWord val));
+extern void VG_(apply_to_GP_regs)(void (*f)(ThreadId tid,
+                                            HChar* regname, UWord val));
 
 // This iterator lets you inspect each live thread's stack bounds.
 // Returns False at the end.  'tid' is the iterator and you can only

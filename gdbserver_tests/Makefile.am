@@ -8,6 +8,10 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = \
 	README_DEVELOPERS \
+	mcblocklistsearch.stderr.exp \
+	mcblocklistsearch.stdinB.gdb \
+	mcblocklistsearch.vgtest \
+	mcblocklistsearch.stderrB.exp \
 	mcbreak.stderrB.exp \
 	mcbreak.stderr.exp \
 	mcbreak.stdinB.gdb \

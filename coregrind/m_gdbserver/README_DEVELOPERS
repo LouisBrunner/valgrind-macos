@@ -305,11 +305,9 @@ TODO and/or additional nice things to have
   its arguments like the  startup options of m_main.c and tool clo processing.
 
 * have a memcheck monitor command
-  who_points_at <address> | <loss_record_nr>
-    that would describe the addresses where a pointer is found
-    to address (or address leaked at loss_record_nr>)
-  This would allow to interactively searching who is "keeping" a piece
-  of memory.
+  show_dangling_pointers [last_n_recently_released_blocks]
+  showing which of the n last recently released blocks are still
+  referenced. These references are (potential) dangling pointers.
 
 * some GDBTD in the code 
 

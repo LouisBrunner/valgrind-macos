@@ -447,6 +447,95 @@ char * MC_(snprintf_delta) (char * buf, Int size,
    return buf;
 }
 
+static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
+                          LossRecord* lr, Bool xml)
+{
+   // char arrays to produce the indication of increase/decrease in case
+   // of delta_mode != LCD_Any
+   char        d_bytes[20];
+   char        d_direct_bytes[20];
+   char        d_indirect_bytes[20];
+   char        d_num_blocks[20];
+
+   MC_(snprintf_delta) (d_bytes, 20, 
+                        lr->szB + lr->indirect_szB, 
+                        lr->old_szB + lr->old_indirect_szB,
+                        MC_(detect_memory_leaks_last_delta_mode));
+   MC_(snprintf_delta) (d_direct_bytes, 20,
+                        lr->szB,
+                        lr->old_szB,
+                        MC_(detect_memory_leaks_last_delta_mode));
+   MC_(snprintf_delta) (d_indirect_bytes, 20,
+                        lr->indirect_szB,
+                        lr->old_indirect_szB,
+                        MC_(detect_memory_leaks_last_delta_mode));
+   MC_(snprintf_delta) (d_num_blocks, 20,
+                        (SizeT) lr->num_blocks,
+                        (SizeT) lr->old_num_blocks,
+                        MC_(detect_memory_leaks_last_delta_mode));
+
+   if (xml) {
+      emit("  <kind>%s</kind>\n", xml_leak_kind(lr->key.state));
+      if (lr->indirect_szB > 0) {
+         emit( "  <xwhat>\n" );
+         emit( "    <text>%'lu%s (%'lu%s direct, %'lu%s indirect) bytes "
+               "in %'u%s blocks"
+               " are %s in loss record %'u of %'u</text>\n",
+               lr->szB + lr->indirect_szB, d_bytes,
+               lr->szB, d_direct_bytes,
+               lr->indirect_szB, d_indirect_bytes,
+               lr->num_blocks, d_num_blocks,
+               str_leak_lossmode(lr->key.state),
+               n_this_record, n_total_records );
+         // Nb: don't put commas in these XML numbers 
+         emit( "    <leakedbytes>%lu</leakedbytes>\n",
+               lr->szB + lr->indirect_szB );
+         emit( "    <leakedblocks>%u</leakedblocks>\n", lr->num_blocks );
+         emit( "  </xwhat>\n" );
+      } else {
+         emit( "  <xwhat>\n" );
+         emit( "    <text>%'lu%s bytes in %'u%s blocks"
+               " are %s in loss record %'u of %'u</text>\n",
+               lr->szB, d_direct_bytes,
+               lr->num_blocks, d_num_blocks,
+               str_leak_lossmode(lr->key.state), 
+               n_this_record, n_total_records );
+         emit( "    <leakedbytes>%ld</leakedbytes>\n", lr->szB);
+         emit( "    <leakedblocks>%d</leakedblocks>\n", lr->num_blocks);
+         emit( "  </xwhat>\n" );
+      }
+      VG_(pp_ExeContext)(lr->key.allocated_at);
+   } else { /* ! if (xml) */
+      if (lr->indirect_szB > 0) {
+         emit(
+            "%'lu%s (%'lu%s direct, %'lu%s indirect) bytes in %'u%s blocks"
+            " are %s in loss record %'u of %'u\n",
+            lr->szB + lr->indirect_szB, d_bytes,
+            lr->szB, d_direct_bytes,
+            lr->indirect_szB, d_indirect_bytes,
+            lr->num_blocks, d_num_blocks,
+            str_leak_lossmode(lr->key.state),
+            n_this_record, n_total_records
+         );
+      } else {
+         emit(
+            "%'lu%s bytes in %'u%s blocks are %s in loss record %'u of %'u\n",
+            lr->szB, d_direct_bytes,
+            lr->num_blocks, d_num_blocks,
+            str_leak_lossmode(lr->key.state),
+            n_this_record, n_total_records
+         );
+      }
+      VG_(pp_ExeContext)(lr->key.allocated_at);
+   } /* if (xml) */
+}
+
+void MC_(pp_LossRecord)(UInt n_this_record, UInt n_total_records,
+                        LossRecord* l)
+{
+   pp_LossRecord (n_this_record, n_total_records, l, /* xml */ False);
+}
+
 void MC_(pp_Error) ( Error* err )
 {
    const Bool xml  = VG_(clo_xml); /* a shorthand */
@@ -717,84 +806,7 @@ void MC_(pp_Error) ( Error* err )
          UInt        n_this_record   = extra->Err.Leak.n_this_record;
          UInt        n_total_records = extra->Err.Leak.n_total_records;
          LossRecord* lr              = extra->Err.Leak.lr;
-         // char arrays to produce the indication of increase/decrease in case
-         // of delta_mode != LCD_Any
-         char        d_bytes[20];
-         char        d_direct_bytes[20];
-         char        d_indirect_bytes[20];
-         char        d_num_blocks[20];
-
-         MC_(snprintf_delta) (d_bytes, 20, 
-                              lr->szB + lr->indirect_szB, 
-                              lr->old_szB + lr->old_indirect_szB,
-                              MC_(detect_memory_leaks_last_delta_mode));
-         MC_(snprintf_delta) (d_direct_bytes, 20,
-                              lr->szB,
-                              lr->old_szB,
-                              MC_(detect_memory_leaks_last_delta_mode));
-         MC_(snprintf_delta) (d_indirect_bytes, 20,
-                              lr->indirect_szB,
-                              lr->old_indirect_szB,
-                              MC_(detect_memory_leaks_last_delta_mode));
-         MC_(snprintf_delta) (d_num_blocks, 20,
-                              (SizeT) lr->num_blocks,
-                              (SizeT) lr->old_num_blocks,
-                              MC_(detect_memory_leaks_last_delta_mode));
-
-         if (xml) {
-            emit("  <kind>%s</kind>\n", xml_leak_kind(lr->key.state));
-            if (lr->indirect_szB > 0) {
-               emit( "  <xwhat>\n" );
-               emit( "    <text>%'lu%s (%'lu%s direct, %'lu%s indirect) bytes "
-                     "in %'u%s blocks"
-                     " are %s in loss record %'u of %'u</text>\n",
-                     lr->szB + lr->indirect_szB, d_bytes,
-                     lr->szB, d_direct_bytes,
-                     lr->indirect_szB, d_indirect_bytes,
-                     lr->num_blocks, d_num_blocks,
-                     str_leak_lossmode(lr->key.state),
-                     n_this_record, n_total_records );
-               // Nb: don't put commas in these XML numbers 
-               emit( "    <leakedbytes>%lu</leakedbytes>\n",
-                     lr->szB + lr->indirect_szB );
-               emit( "    <leakedblocks>%u</leakedblocks>\n", lr->num_blocks );
-               emit( "  </xwhat>\n" );
-            } else {
-               emit( "  <xwhat>\n" );
-               emit( "    <text>%'lu%s bytes in %'u%s blocks"
-                     " are %s in loss record %'u of %'u</text>\n",
-                     lr->szB, d_direct_bytes,
-                     lr->num_blocks, d_num_blocks,
-                     str_leak_lossmode(lr->key.state), 
-                     n_this_record, n_total_records );
-               emit( "    <leakedbytes>%ld</leakedbytes>\n", lr->szB);
-               emit( "    <leakedblocks>%d</leakedblocks>\n", lr->num_blocks);
-               emit( "  </xwhat>\n" );
-            }
-            VG_(pp_ExeContext)(lr->key.allocated_at);
-         } else { /* ! if (xml) */
-            if (lr->indirect_szB > 0) {
-               emit(
-                  "%'lu%s (%'lu%s direct, %'lu%s indirect) bytes in %'u%s blocks"
-                  " are %s in loss record %'u of %'u\n",
-                  lr->szB + lr->indirect_szB, d_bytes,
-                  lr->szB, d_direct_bytes,
-                  lr->indirect_szB, d_indirect_bytes,
-                  lr->num_blocks, d_num_blocks,
-                  str_leak_lossmode(lr->key.state),
-                  n_this_record, n_total_records
-               );
-            } else {
-               emit(
-                  "%'lu%s bytes in %'u%s blocks are %s in loss record %'u of %'u\n",
-                  lr->szB, d_direct_bytes,
-                  lr->num_blocks, d_num_blocks,
-                  str_leak_lossmode(lr->key.state),
-                  n_this_record, n_total_records
-               );
-            }
-            VG_(pp_ExeContext)(lr->key.allocated_at);
-         } /* if (xml) */
+         pp_LossRecord (n_this_record, n_total_records, lr, xml);
          break;
       }
 

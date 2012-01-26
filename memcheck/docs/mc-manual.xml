@@ -1372,7 +1372,7 @@ $10 = 0x0
     (default 1) bytes at &lt;addr&gt; has the specified accessibility.
     It then outputs a description of &lt;addr&gt;. In the following
     example, a detailed description is available because the
-    option <option>--read-var-info=yes</option> was given Valgrind at
+    option <option>--read-var-info=yes</option> was given at Valgrind
     startup:
     </para>
 <programlisting><![CDATA[
@@ -1443,31 +1443,31 @@ Address 0x8049E28 len 1 defined
     there was no increase since the previous leak search.</para>
 <programlisting><![CDATA[
 (gdb) monitor leak_check full possibleleak increased
-==14729== 16 (+16) bytes in 1 (+1) blocks are possibly lost in loss record 13 of 16
-==14729==    at 0x4006E9E: malloc (vg_replace_malloc.c:236)
-==14729==    by 0x80484D5: mk (leak-cases.c:52)
-==14729==    by 0x804855F: f (leak-cases.c:81)
-==14729==    by 0x80488F5: main (leak-cases.c:107)
-==14729== 
-==14729== LEAK SUMMARY:
-==14729==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
-==14729==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
-==14729==      possibly lost: 32 (+16) bytes in 2 (+1) blocks
-==14729==    still reachable: 96 (+16) bytes in 6 (+1) blocks
-==14729==         suppressed: 0 (+0) bytes in 0 (+0) blocks
-==14729== Reachable blocks (those to which a pointer was found) are not shown.
-==14729== To see them, add 'reachable any' args to leak_check
-==14729== 
+==19520== 16 (+16) bytes in 1 (+1) blocks are possibly lost in loss record 9 of 12
+==19520==    at 0x40070B4: malloc (vg_replace_malloc.c:263)
+==19520==    by 0x80484D5: mk (leak-cases.c:52)
+==19520==    by 0x804855F: f (leak-cases.c:81)
+==19520==    by 0x80488E0: main (leak-cases.c:107)
+==19520== 
+==19520== LEAK SUMMARY:
+==19520==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
+==19520==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
+==19520==      possibly lost: 32 (+16) bytes in 2 (+1) blocks
+==19520==    still reachable: 96 (+16) bytes in 6 (+1) blocks
+==19520==         suppressed: 0 (+0) bytes in 0 (+0) blocks
+==19520== Reachable blocks (those to which a pointer was found) are not shown.
+==19520== To see them, add 'reachable any' args to leak_check
+==19520== 
 (gdb) mo l
-==14729== LEAK SUMMARY:
-==14729==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
-==14729==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
-==14729==      possibly lost: 32 (+0) bytes in 2 (+0) blocks
-==14729==    still reachable: 96 (+0) bytes in 6 (+0) blocks
-==14729==         suppressed: 0 (+0) bytes in 0 (+0) blocks
-==14729== Reachable blocks (those to which a pointer was found) are not shown.
-==14729== To see them, add 'reachable any' args to leak_check
-==14729== 
+==19520== LEAK SUMMARY:
+==19520==    definitely lost: 32 (+0) bytes in 2 (+0) blocks
+==19520==    indirectly lost: 16 (+0) bytes in 1 (+0) blocks
+==19520==      possibly lost: 32 (+0) bytes in 2 (+0) blocks
+==19520==    still reachable: 96 (+0) bytes in 6 (+0) blocks
+==19520==         suppressed: 0 (+0) bytes in 0 (+0) blocks
+==19520== Reachable blocks (those to which a pointer was found) are not shown.
+==19520== To see them, add 'reachable any' args to leak_check
+==19520== 
 (gdb) 
 ]]></programlisting>
     <para>Note that when using Valgrind's gdbserver, it is not
@@ -1480,6 +1480,143 @@ Address 0x8049E28 len 1 defined
     abbreviation: <computeroutput>mo l f r a</computeroutput>).
     </para>
   </listitem>
+
+  <listitem>
+    <para><varname>block_list &lt;loss_record_nr&gt; </varname>
+    shows the list of blocks belonging to &lt;loss_record_nr&gt;.
+    </para>
+
+    <para> A leak search merges the allocated blocks in loss records :
+    a loss record re-groups all blocks having the same state (for
+    example, Definitely Lost) and the same allocation backtrace.
+    Each loss record is identified in the leak search result 
+    by a loss record number.
+    The <varname>block_list</varname> command shows the loss record information
+    followed by the addresses and sizes of the blocks which have been
+    merged in the loss record.
+    </para>
+
+    <para> If a directly lost block causes some other blocks to be indirectly
+    lost, the block_list command will also show these indirectly lost blocks.
+    The indirectly lost blocks will be indented according to the level of indirection
+    between the directly lost block and the indirectly lost block(s).
+    Each indirectly lost block is followed by the reference of its loss record.
+    </para>
+
+    <para> The block_list command can be used on the results of a leak search as long
+    as no block has been freed after this leak search: as soon as the program frees
+    a block, a new leak search is needed before block_list can be used again.
+    </para>
+
+    <para>
+    In the below example, the program leaks a tree structure by losing the pointer to 
+    the block A (top of the tree).
+    So, the block A is directly lost, causing an indirect
+    loss of blocks B to G. The first block_list command shows the loss record of A
+    (a definitely lost block with address 0x4028028, size 16). The addresses and sizes
+    of the indirectly lost blocks due to block A are shown below the block A.
+    The second command shows the details of one of the indirect loss records output
+    by the first command.
+    </para>
+<programlisting><![CDATA[
+           A
+         /   \
+        B     C
+       / \   / \ 
+      D   E F   G
+]]></programlisting>
+
+<programlisting><![CDATA[
+(gdb) bt
+#0  main () at leak-tree.c:69
+(gdb) monitor leak_check full any
+==19552== 112 (16 direct, 96 indirect) bytes in 1 blocks are definitely lost in loss record 7 of 7
+==19552==    at 0x40070B4: malloc (vg_replace_malloc.c:263)
+==19552==    by 0x80484D5: mk (leak-tree.c:28)
+==19552==    by 0x80484FC: f (leak-tree.c:41)
+==19552==    by 0x8048856: main (leak-tree.c:63)
+==19552== 
+==19552== LEAK SUMMARY:
+==19552==    definitely lost: 16 bytes in 1 blocks
+==19552==    indirectly lost: 96 bytes in 6 blocks
+==19552==      possibly lost: 0 bytes in 0 blocks
+==19552==    still reachable: 0 bytes in 0 blocks
+==19552==         suppressed: 0 bytes in 0 blocks
+==19552== 
+(gdb) monitor block_list 7
+==19552== 112 (16 direct, 96 indirect) bytes in 1 blocks are definitely lost in loss record 7 of 7
+==19552==    at 0x40070B4: malloc (vg_replace_malloc.c:263)
+==19552==    by 0x80484D5: mk (leak-tree.c:28)
+==19552==    by 0x80484FC: f (leak-tree.c:41)
+==19552==    by 0x8048856: main (leak-tree.c:63)
+==19552== 0x4028028[16]
+==19552==   0x4028068[16] indirect loss record 1
+==19552==      0x40280E8[16] indirect loss record 3
+==19552==      0x4028128[16] indirect loss record 4
+==19552==   0x40280A8[16] indirect loss record 2
+==19552==      0x4028168[16] indirect loss record 5
+==19552==      0x40281A8[16] indirect loss record 6
+(gdb) mo b 2
+==19552== 16 bytes in 1 blocks are indirectly lost in loss record 2 of 7
+==19552==    at 0x40070B4: malloc (vg_replace_malloc.c:263)
+==19552==    by 0x80484D5: mk (leak-tree.c:28)
+==19552==    by 0x8048519: f (leak-tree.c:43)
+==19552==    by 0x8048856: main (leak-tree.c:63)
+==19552== 0x40280A8[16]
+==19552==   0x4028168[16] indirect loss record 5
+==19552==   0x40281A8[16] indirect loss record 6
+(gdb) 
+
+]]></programlisting>
+
+  </listitem>
+
+  <listitem>
+    <para><varname>who_points_at &lt;addr&gt; [&lt;len&gt;]</varname> 
+    shows all the locations where a pointer to addr is found.
+    If len is equal to 1, the command only shows the locations pointing
+    exactly at addr (i.e. the "start pointers" to addr).
+    If len is &gt; 1, "interior pointers" pointing at the len first bytes
+    will also be shown.
+    </para>
+
+    <para>The locations searched for are the same as the locations
+    used in the leak search. So, <varname>who_points_at</varname> can a.o.
+    be used to show why the leak search still can reach a block, or can
+    search for dangling pointers to a freed block.
+    Each location pointing at addr (or pointing inside addr if interior pointers
+    are being searched for) will be described.
+    </para>
+
+    <para>In the below example, the pointers to the 'tree block A' (see example
+    in command <varname>block_list</varname>) is shown before the tree was leaked.
+    The descriptions are detailed as the option <option>--read-var-info=yes</option> 
+    was given at Valgrind startup. The second call shows the pointers (start and interior
+    pointers) to block G. The block G (0x40281A8) is reachable via block C (0x40280a8)
+    and register ECX of tid 1 (tid is the Valgrind thread id).
+    It is "interior reachable" via the register EBX.
+    </para>
+
+<programlisting><![CDATA[
+(gdb) monitor who_points_at 0x4028028
+==20852== Searching for pointers to 0x4028028
+==20852== *0x8049e20 points at 0x4028028
+==20852==  Location 0x8049e20 is 0 bytes inside global var "t"
+==20852==  declared at leak-tree.c:35
+(gdb) monitor who_points_at 0x40281A8 16
+==20852== Searching for pointers pointing in 16 bytes from 0x40281a8
+==20852== *0x40280ac points at 0x40281a8
+==20852==  Address 0x40280ac is 4 bytes inside a block of size 16 alloc'd
+==20852==    at 0x40070B4: malloc (vg_replace_malloc.c:263)
+==20852==    by 0x80484D5: mk (leak-tree.c:28)
+==20852==    by 0x8048519: f (leak-tree.c:43)
+==20852==    by 0x8048856: main (leak-tree.c:63)
+==20852== tid 1 register ECX points at 0x40281a8
+==20852== tid 1 register EBX interior points at 2 bytes inside 0x40281a8
+(gdb)
+]]></programlisting>
+  </listitem>
+
 
 </itemizedlist>
 

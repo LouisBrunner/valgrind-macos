@@ -426,30 +426,45 @@ typedef
    struct {
       UInt  state:2;    // Reachedness.
       UInt  pending:1;  // Scan pending.  
-      SizeT indirect_szB : (sizeof(SizeT)*8)-3; // If Unreached, how many bytes
-                                                //   are unreachable from here.
+      union {
+         SizeT indirect_szB : (sizeof(SizeT)*8)-3; // If Unreached, how many bytes
+                                                   //   are unreachable from here.
+         SizeT  clique :  (sizeof(SizeT)*8)-3;      // if IndirectLeak, clique leader
+                                                   // to which it belongs.
+      } IorC;
    } 
    LC_Extra;
 
 // An array holding pointers to every chunk we're checking.  Sorted by address.
+// lc_chunks is initialised during leak search. It is kept after leak search
+// to support printing the list of blocks belonging to a loss record.
+// lc_chunk array can only be used validly till the next "free" operation
+// (as a free operation potentially destroys one or more chunks).
+// To detect lc_chunk is valid, we store the nr of frees operations done
+// when lc_chunk was build : lc_chunks (and lc_extras) stays valid as
+// long as no free operations has been done since lc_chunks building.
 static MC_Chunk** lc_chunks;
 // How many chunks we're dealing with.
 static Int        lc_n_chunks;
+static SizeT lc_chunks_n_frees_marker;
+// This has the same number of entries as lc_chunks, and each entry
+// in lc_chunks corresponds with the entry here (ie. lc_chunks[i] and
+// lc_extras[i] describe the same block).
+static LC_Extra* lc_extras;
+
 // chunks will be converted and merged in loss record, maintained in lr_table
 // lr_table elements are kept from one leak_search to another to implement
 // the "print new/changed leaks" client request
 static OSet*        lr_table;
+// Array of sorted loss record (produced during last leak search).
+static LossRecord** lr_array;
+
 
 // DeltaMode used the last time we called detect_memory_leaks.
 // The recorded leak errors must be output using a logic based on this delta_mode.
 // The below avoids replicating the delta_mode in each LossRecord.
 LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
-
-// This has the same number of entries as lc_chunks, and each entry
-// in lc_chunks corresponds with the entry here (ie. lc_chunks[i] and
-// lc_extras[i] describe the same block).
-static LC_Extra* lc_extras;
 
 // Records chunks that are currently being processed.  Each element in the
 // stack is an index into lc_chunks and lc_extras.  Its size is
@@ -477,7 +492,6 @@ SizeT MC_(blocks_indirect)   = 0;
 SizeT MC_(blocks_dubious)    = 0;
 SizeT MC_(blocks_reachable)  = 0;
 SizeT MC_(blocks_suppressed) = 0;
-
 
 // Determines if a pointer is to a chunk.  Returns the chunk number et al
 // via call-by-reference.
@@ -587,7 +601,7 @@ lc_push_without_clique_if_a_chunk_ptr(Addr ptr, Bool is_prior_definite)
 }
 
 static void
-lc_push_if_a_chunk_ptr_register(Addr ptr)
+lc_push_if_a_chunk_ptr_register(ThreadId tid, HChar* regname, Addr ptr)
 {
    lc_push_without_clique_if_a_chunk_ptr(ptr, /*is_prior_definite*/True);
 }
@@ -596,7 +610,7 @@ lc_push_if_a_chunk_ptr_register(Addr ptr)
 // before, push it onto the mark stack.  Clique is the index of the
 // clique leader.
 static void
-lc_push_with_clique_if_a_chunk_ptr(Addr ptr, Int clique)
+lc_push_with_clique_if_a_chunk_ptr(Addr ptr, Int clique, Int cur_clique)
 {
    Int ch_no;
    MC_Chunk* ch;
@@ -614,7 +628,6 @@ lc_push_with_clique_if_a_chunk_ptr(Addr ptr, Int clique)
       // Note that, unlike reachable blocks, we currently don't distinguish
       // between start-pointers and interior-pointers here.  We probably
       // should, though.
-      ex->state = IndirectLeak;
       lc_push(ch_no, ch);
 
       // Add the block to the clique, and add its size to the
@@ -622,28 +635,29 @@ lc_push_with_clique_if_a_chunk_ptr(Addr ptr, Int clique)
       // itself a clique leader, it isn't any more, so add its
       // indirect_szB to the new clique leader.
       if (VG_DEBUG_CLIQUE) {
-         if (ex->indirect_szB > 0)
+         if (ex->IorC.indirect_szB > 0)
             VG_(printf)("  clique %d joining clique %d adding %lu+%lu\n", 
                         ch_no, clique, (unsigned long)ch->szB,
-			(unsigned long)ex->indirect_szB);
+			(unsigned long)ex->IorC.indirect_szB);
          else
             VG_(printf)("  block %d joining clique %d adding %lu\n", 
                         ch_no, clique, (unsigned long)ch->szB);
       }
 
-      lc_extras[clique].indirect_szB += ch->szB;
-      lc_extras[clique].indirect_szB += ex->indirect_szB;
-      ex->indirect_szB = 0;    // Shouldn't matter.
+      lc_extras[clique].IorC.indirect_szB += ch->szB;
+      lc_extras[clique].IorC.indirect_szB += ex->IorC.indirect_szB;
+      ex->state = IndirectLeak;
+      ex->IorC.clique = (SizeT) cur_clique;
    }
 }
 
 static void
-lc_push_if_a_chunk_ptr(Addr ptr, Int clique, Bool is_prior_definite)
+lc_push_if_a_chunk_ptr(Addr ptr, Int clique, Int cur_clique, Bool is_prior_definite)
 {
    if (-1 == clique) 
       lc_push_without_clique_if_a_chunk_ptr(ptr, is_prior_definite);
    else
-      lc_push_with_clique_if_a_chunk_ptr(ptr, clique);
+      lc_push_with_clique_if_a_chunk_ptr(ptr, clique, cur_clique);
 }
 
 
@@ -658,12 +672,38 @@ void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
       VG_MINIMAL_LONGJMP(memscan_jmpbuf);
 }
 
+// lc_scan_memory has 2 modes:
+//
+// 1. Leak check mode (searched == 0).
+// -----------------------------------
 // Scan a block of memory between [start, start+len).  This range may
 // be bogus, inaccessable, or otherwise strange; we deal with it.  For each
 // valid aligned word we assume it's a pointer to a chunk a push the chunk
 // onto the mark stack if so.
+// clique is the "highest level clique" in which indirectly leaked blocks have
+// to be collected. cur_clique is the current "lower" level clique through which
+// the memory to be scanned has been found.
+// Example: in the below tree if A is leaked, the top level clique will
+//   be A, while lower level cliques will be B and C. 
+/*
+           A
+         /   \                          
+        B     C
+       / \   / \ 
+      D   E F   G
+*/
+// Proper handling of top and lowest level clique allows block_list of a loss
+// record to describe the hierarchy of indirectly leaked blocks.
+//
+// 2. Search ptr mode (searched != 0).
+// -----------------------------------
+// In this mode, searches for pointers to a specific address range 
+// In such a case, lc_scan_memory just scans [start..start+len[ for pointers to searched
+// and outputs the places where searched is found. It does not recursively scans the
+// found memory.
 static void
-lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite, Int clique)
+lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite, Int clique, Int cur_clique,
+               Addr searched, SizeT szB)
 {
    Addr ptr = VG_ROUNDUP(start,     sizeof(Addr));
    Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
@@ -703,7 +743,18 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite, Int clique)
             addr = *(Addr *)ptr;
             // If we get here, the scanned word is in valid memory.  Now
             // let's see if its contents point to a chunk.
-            lc_push_if_a_chunk_ptr(addr, clique, is_prior_definite);
+            if (searched) {
+               if (addr >= searched && addr < searched + szB) {
+                  if (addr == searched)
+                     VG_(umsg)("*%#lx points at %#lx\n", ptr, searched);
+                  else
+                     VG_(umsg)("*%#lx interior points at %lu bytes inside %#lx\n",
+                               ptr, (long unsigned) addr - searched, searched);
+                  MC_(pp_describe_addr) (ptr);
+               }
+            } else {
+               lc_push_if_a_chunk_ptr(addr, clique, cur_clique, is_prior_definite);
+            }
          } else if (0 && VG_DEBUG_LEAKCHECK) {
             VG_(printf)("%#lx not valid\n", ptr);
          }
@@ -735,7 +786,8 @@ static void lc_process_markstack(Int clique)
       is_prior_definite = ( Possible != lc_extras[top].state );
 
       lc_scan_memory(lc_chunks[top]->data, lc_chunks[top]->szB,
-                     is_prior_definite, clique);
+                     is_prior_definite, clique, (clique == -1 ? -1 : top),
+                     /*searched*/ 0, 0);
    }
 }
 
@@ -780,6 +832,28 @@ static Int cmp_LossRecords(void* va, void* vb)
    if (lr_a->key.allocated_at < lr_b->key.allocated_at) return -1;
    if (lr_a->key.allocated_at > lr_b->key.allocated_at) return  1;
    return 0;
+}
+
+// allocates or reallocates lr_array, and set its elements to the loss records
+// contains in lr_table.
+static Int get_lr_array_from_lr_table(void) {
+   Int          i, n_lossrecords;
+   LossRecord*  lr;
+
+   n_lossrecords = VG_(OSetGen_Size)(lr_table);
+
+   // (re-)create the array of pointers to the loss records.
+   // lr_array is kept to allow producing the block list from gdbserver.
+   if (lr_array != NULL)
+      VG_(free)(lr_array);
+   lr_array = VG_(malloc)("mc.pr.2", n_lossrecords * sizeof(LossRecord*));
+   i = 0;
+   VG_(OSetGen_ResetIter)(lr_table);
+   while ( (lr = VG_(OSetGen_Next)(lr_table)) ) {
+      lr_array[i++] = lr;
+   }
+   tl_assert(i == n_lossrecords);
+   return n_lossrecords;
 }
 
 
@@ -840,7 +914,6 @@ static void get_printing_rules(LeakCheckParams* lcp,
 static void print_results(ThreadId tid, LeakCheckParams* lcp)
 {
    Int          i, n_lossrecords, start_lr_output_scan;
-   LossRecord** lr_array;
    LossRecord*  lr;
    Bool         is_suppressed;
    SizeT        old_bytes_leaked      = MC_(bytes_leaked); /* to report delta in summary */
@@ -866,6 +939,28 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                              VG_(malloc), "mc.pr.1",
                              VG_(free));
 
+   // If we have loss records from a previous search, reset values to have
+   // proper printing of the deltas between previous search and this search.
+   n_lossrecords = get_lr_array_from_lr_table();
+   for (i = 0; i < n_lossrecords; i++) {
+      if (lr_array[i]->num_blocks == 0)
+         // remove from lr_table the old loss_records with 0 bytes found
+         VG_(OSetGen_Remove) (lr_table, &lr_array[i]->key);
+      else {
+         // move the leak sizes to old_* and zero the current sizes
+         // for next leak search
+         lr_array[i]->old_szB          = lr_array[i]->szB;
+         lr_array[i]->old_indirect_szB = lr_array[i]->indirect_szB;
+         lr_array[i]->old_num_blocks   = lr_array[i]->num_blocks;
+         lr_array[i]->szB              = 0;
+         lr_array[i]->indirect_szB     = 0;
+         lr_array[i]->num_blocks       = 0;
+      }
+   }
+   // lr_array now contains "invalid" loss records => free it.
+   // lr_array will be re-created below with the kept and new loss records.
+   VG_(free) (lr_array);
+   lr_array = NULL;
 
    // Convert the chunks into loss records, merging them where appropriate.
    for (i = 0; i < lc_n_chunks; i++) {
@@ -882,7 +977,8 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
          // loss record's details in-situ.  This is safe because we don't
          // change the elements used as the OSet key.
          old_lr->szB          += ch->szB;
-         old_lr->indirect_szB += ex->indirect_szB;
+         if (ex->state == Unreached)
+            old_lr->indirect_szB += ex->IorC.indirect_szB;
          old_lr->num_blocks++;
       } else {
          // No existing loss record matches this chunk.  Create a new loss
@@ -890,7 +986,10 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
          lr = VG_(OSetGen_AllocNode)(lr_table, sizeof(LossRecord));
          lr->key              = lrkey;
          lr->szB              = ch->szB;
-         lr->indirect_szB     = ex->indirect_szB;
+         if (ex->state == Unreached)
+            lr->indirect_szB     = ex->IorC.indirect_szB;
+         else
+            lr->indirect_szB     = 0;
          lr->num_blocks       = 1;
          lr->old_szB          = 0;
          lr->old_indirect_szB = 0;
@@ -898,16 +997,10 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
          VG_(OSetGen_Insert)(lr_table, lr);
       }
    }
-   n_lossrecords = VG_(OSetGen_Size)(lr_table);
 
-   // Create an array of pointers to the loss records.
-   lr_array = VG_(malloc)("mc.pr.2", n_lossrecords * sizeof(LossRecord*));
-   i = 0;
-   VG_(OSetGen_ResetIter)(lr_table);
-   while ( (lr = VG_(OSetGen_Next)(lr_table)) ) {
-      lr_array[i++] = lr;
-   }
-   tl_assert(i == n_lossrecords);
+   // (re-)create the array of pointers to the (new) loss records.
+   n_lossrecords = get_lr_array_from_lr_table ();
+   tl_assert(VG_(OSetGen_Size)(lr_table) == n_lossrecords);
 
    // Sort the array by loss record sizes.
    VG_(ssort)(lr_array, n_lossrecords, sizeof(LossRecord*),
@@ -980,25 +1073,6 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       }
    }
 
-   for (i = 0; i < n_lossrecords; i++)
-      {
-         if (lr->num_blocks == 0)
-            // remove from lr_table the old loss_records with 0 bytes found
-            VG_(OSetGen_Remove) (lr_table, &lr_array[i]->key);
-         else
-            {
-               // move the leak sizes to old_* and zero the current sizes
-               // for next leak search
-               lr_array[i]->old_szB          = lr_array[i]->szB;
-               lr_array[i]->old_indirect_szB = lr_array[i]->indirect_szB;
-               lr_array[i]->old_num_blocks   = lr_array[i]->num_blocks;
-               lr_array[i]->szB              = 0;
-               lr_array[i]->indirect_szB     = 0;
-               lr_array[i]->num_blocks       = 0;
-            }
-      }
-   VG_(free)(lr_array); 
-
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
       char d_bytes[20];
       char d_blocks[20];
@@ -1053,6 +1127,157 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
    }
 }
 
+// print recursively all indirectly leaked blocks collected in clique.
+static void print_clique (Int clique, UInt level)
+{
+   Int ind;
+   Int i,  n_lossrecords;;
+
+   n_lossrecords = VG_(OSetGen_Size)(lr_table);
+
+   for (ind = 0; ind < lc_n_chunks; ind++) {
+      LC_Extra*     ind_ex = &(lc_extras)[ind];
+      if (ind_ex->state == IndirectLeak && ind_ex->IorC.clique == (SizeT) clique) {
+         MC_Chunk*    ind_ch = lc_chunks[ind];
+         LossRecord*  ind_lr;
+         LossRecordKey ind_lrkey;
+         Int lr_i;
+         ind_lrkey.state = ind_ex->state;
+         ind_lrkey.allocated_at = ind_ch->where;
+         ind_lr = VG_(OSetGen_Lookup)(lr_table, &ind_lrkey);
+         for (lr_i = 0; lr_i < n_lossrecords; lr_i++)
+            if (ind_lr == lr_array[lr_i])
+               break;
+         for (i = 0; i < level; i++)
+            VG_(umsg)("  ");
+         VG_(umsg)("%p[%lu] indirect loss record %d\n",
+                   (void *)ind_ch->data, (unsigned long)ind_ch->szB,
+                   lr_i+1); // lr_i+1 for user numbering.
+         if (lr_i >= n_lossrecords)
+            VG_(umsg)
+               ("error: no indirect loss record found for %p[%lu]?????\n",
+                (void *)ind_ch->data, (unsigned long)ind_ch->szB);
+         print_clique(ind, level+1);
+      }
+   }
+ }
+
+Bool MC_(print_block_list) ( UInt loss_record_nr)
+{
+   Int          i,  n_lossrecords;
+   LossRecord*  lr;
+
+   if (lr_table == NULL || lc_chunks == NULL || lc_extras == NULL) {
+      VG_(umsg)("Can't print block list : no valid leak search result\n");
+      return False;
+   }
+
+   if (lc_chunks_n_frees_marker != MC_(get_cmalloc_n_frees)()) {
+      VG_(umsg)("Can't print obsolete block list : redo a leak search first\n");
+      return False;
+   }
+
+   n_lossrecords = VG_(OSetGen_Size)(lr_table);
+   if (loss_record_nr >= n_lossrecords)
+      return False; // Invalid loss record nr.
+
+   tl_assert (lr_array);
+   lr = lr_array[loss_record_nr];
+   
+   // (re-)print the loss record details.
+   // (+1 on loss_record_nr as user numbering for loss records starts at 1).
+   MC_(pp_LossRecord)(loss_record_nr+1, n_lossrecords, lr);
+
+   // Match the chunks with loss records.
+   for (i = 0; i < lc_n_chunks; i++) {
+      MC_Chunk*     ch = lc_chunks[i];
+      LC_Extra*     ex = &(lc_extras)[i];
+      LossRecord*   old_lr;
+      LossRecordKey lrkey;
+      lrkey.state        = ex->state;
+      lrkey.allocated_at = ch->where;
+
+      old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
+      if (old_lr) {
+         // We found an existing loss record matching this chunk.
+         // If this is the loss record we are looking for, then output the pointer.
+         if (old_lr == lr_array[loss_record_nr]) {
+            VG_(umsg)("%p[%lu]\n",
+                      (void *)ch->data, (unsigned long) ch->szB);
+            if (ex->state != Reachable) {
+               // We can print the clique in all states, except Reachable.
+               // In Unreached state, lc_chunk[i] is the clique leader.
+               // In IndirectLeak, lc_chunk[i] might have been a clique leader
+               // which was later collected in another clique.
+               // For Possible, lc_chunk[i] might be the top of a clique
+               // or an intermediate clique.
+               print_clique(i, 1);
+            }
+         }
+      } else {
+         // No existing loss record matches this chunk ???
+         VG_(umsg)("error: no loss record found for %p[%lu]?????\n",
+                   (void *)ch->data, (unsigned long) ch->szB);
+      }
+   }
+   return True;
+}
+
+// If searched = 0, scan memory root set, pushing onto the mark stack the blocks
+// encountered.
+// Otherwise (searched != 0), scan the memory root set searching for ptr pointing
+// inside [searched, searched+szB[.
+static void scan_memory_root_set(Addr searched, SizeT szB)
+{
+   Int   i;
+   Int   n_seg_starts;
+   Addr* seg_starts = VG_(get_segment_starts)( &n_seg_starts );
+
+   tl_assert(seg_starts && n_seg_starts > 0);
+
+   lc_scanned_szB = 0;
+
+   // VG_(am_show_nsegments)( 0, "leakcheck");
+   for (i = 0; i < n_seg_starts; i++) {
+      SizeT seg_size;
+      NSegment const* seg = VG_(am_find_nsegment)( seg_starts[i] );
+      tl_assert(seg);
+
+      if (seg->kind != SkFileC && seg->kind != SkAnonC) continue;
+      if (!(seg->hasR && seg->hasW))                    continue;
+      if (seg->isCH)                                    continue;
+
+      // Don't poke around in device segments as this may cause
+      // hangs.  Exclude /dev/zero just in case someone allocated
+      // memory by explicitly mapping /dev/zero.
+      if (seg->kind == SkFileC 
+          && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
+         HChar* dev_name = VG_(am_get_filename)( (NSegment*)seg );
+         if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
+            // Don't skip /dev/zero.
+         } else {
+            // Skip this device mapping.
+            continue;
+         }
+      }
+
+      if (0)
+         VG_(printf)("ACCEPT %2d  %#lx %#lx\n", i, seg->start, seg->end);
+
+      // Scan the segment.  We use -1 for the clique number, because this
+      // is a root-set.
+      seg_size = seg->end - seg->start + 1;
+      if (VG_(clo_verbosity) > 2) {
+         VG_(message)(Vg_DebugMsg,
+                      "  Scanning root segment: %#lx..%#lx (%lu)\n",
+                      seg->start, seg->end, seg_size);
+      }
+      lc_scan_memory(seg->start, seg_size, /*is_prior_definite*/True,
+                     /*clique*/-1, /*cur_clique*/-1,
+                     searched, szB);
+   }
+}
+
 /*------------------------------------------------------------*/
 /*--- Top-level entry point.                               ---*/
 /*------------------------------------------------------------*/
@@ -1066,16 +1291,22 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
    MC_(detect_memory_leaks_last_delta_mode) = lcp->deltamode;
 
    // Get the chunks, stop if there were none.
+   if (lc_chunks) {
+      VG_(free)(lc_chunks);
+      lc_chunks = NULL;
+   }
    lc_chunks = find_active_chunks(&lc_n_chunks);
+   lc_chunks_n_frees_marker = MC_(get_cmalloc_n_frees)();
    if (lc_n_chunks == 0) {
       tl_assert(lc_chunks == NULL);
       if (lr_table != NULL) {
-         // forget the previous recorded LossRecords as next leak search will in any case
-         // just create new leaks.
+         // forget the previous recorded LossRecords as next leak search
+         // can in any case just create new leaks.
          // Maybe it would be better to rather call print_result ?
-         // (at least when leak decrease are requested)
+         // (at least when leak decreases are requested)
          // This will then output all LossRecords with a size decreasing to 0
          VG_(OSetGen_Destroy) (lr_table);
+         lr_table = NULL;
       }
       if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
          VG_(umsg)("All heap blocks were freed -- no leaks are possible\n");
@@ -1152,11 +1383,15 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
    }
 
    // Initialise lc_extras.
+   if (lc_extras) {
+      VG_(free)(lc_extras);
+      lc_extras = NULL;
+   }
    lc_extras = VG_(malloc)( "mc.dml.2", lc_n_chunks * sizeof(LC_Extra) );
    for (i = 0; i < lc_n_chunks; i++) {
       lc_extras[i].state        = Unreached;
       lc_extras[i].pending      = False;
-      lc_extras[i].indirect_szB = 0;
+      lc_extras[i].IorC.indirect_szB = 0;
    }
 
    // Initialise lc_markstack.
@@ -1174,52 +1409,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
 
    // Scan the memory root-set, pushing onto the mark stack any blocks
    // pointed to.
-   {
-      Int   n_seg_starts;
-      Addr* seg_starts = VG_(get_segment_starts)( &n_seg_starts );
-
-      tl_assert(seg_starts && n_seg_starts > 0);
-
-      lc_scanned_szB = 0;
-
-      // VG_(am_show_nsegments)( 0, "leakcheck");
-      for (i = 0; i < n_seg_starts; i++) {
-         SizeT seg_size;
-         NSegment const* seg = VG_(am_find_nsegment)( seg_starts[i] );
-         tl_assert(seg);
-
-         if (seg->kind != SkFileC && seg->kind != SkAnonC) continue;
-         if (!(seg->hasR && seg->hasW))                    continue;
-         if (seg->isCH)                                    continue;
-
-         // Don't poke around in device segments as this may cause
-         // hangs.  Exclude /dev/zero just in case someone allocated
-         // memory by explicitly mapping /dev/zero.
-         if (seg->kind == SkFileC 
-             && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
-            HChar* dev_name = VG_(am_get_filename)( (NSegment*)seg );
-            if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
-               // Don't skip /dev/zero.
-            } else {
-               // Skip this device mapping.
-               continue;
-            }
-         }
-
-         if (0)
-            VG_(printf)("ACCEPT %2d  %#lx %#lx\n", i, seg->start, seg->end);
-
-         // Scan the segment.  We use -1 for the clique number, because this
-         // is a root-set.
-         seg_size = seg->end - seg->start + 1;
-         if (VG_(clo_verbosity) > 2) {
-            VG_(message)(Vg_DebugMsg,
-                         "  Scanning root segment: %#lx..%#lx (%lu)\n",
-                         seg->start, seg->end, seg_size);
-         }
-         lc_scan_memory(seg->start, seg_size, /*is_prior_definite*/True, -1);
-      }
-   }
+   scan_memory_root_set(/*searched*/0, 0);
 
    // Scan GP registers for chunk pointers.
    VG_(apply_to_GP_regs)(lc_push_if_a_chunk_ptr_register);
@@ -1256,7 +1446,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          
          // Push this Unreached block onto the stack and process it.
          lc_push(i, ch);
-         lc_process_markstack(i);
+         lc_process_markstack(/*clique*/i);
 
          tl_assert(lc_markstack_top == -1);
          tl_assert(ex->state == Unreached);
@@ -1265,9 +1455,62 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
       
    print_results( tid, lcp);
 
-   VG_(free) ( lc_chunks );
-   VG_(free) ( lc_extras );
    VG_(free) ( lc_markstack );
+   lc_markstack = NULL;
+   // lc_chunks, lc_extras, lr_array and lr_table are kept (needed if user
+   // calls MC_(print_block_list)). lr_table also used for delta leak reporting
+   // between this leak search and the next leak search.
+}
+
+static Addr searched_wpa;
+static SizeT searched_szB;
+static void
+search_address_in_GP_reg(ThreadId tid, HChar* regname, Addr addr_in_reg)
+{
+   if (addr_in_reg >= searched_wpa 
+       && addr_in_reg < searched_wpa + searched_szB) {
+      if (addr_in_reg == searched_wpa)
+         VG_(umsg)
+            ("tid %d register %s pointing at %#lx\n",
+             tid, regname, searched_wpa);  
+      else
+         VG_(umsg)
+            ("tid %d register %s interior pointing %lu bytes inside %#lx\n",
+             tid, regname, (long unsigned) addr_in_reg - searched_wpa,
+             searched_wpa);
+   }
+}
+
+void MC_(who_points_at) ( Addr address, SizeT szB)
+{
+   MC_Chunk** chunks;
+   Int        n_chunks;
+   Int        i;
+
+   if (szB == 1)
+      VG_(umsg) ("Searching for pointers to %#lx\n", address);
+   else
+      VG_(umsg) ("Searching for pointers pointing in %lu bytes from %#lx\n",
+                 szB, address);
+
+   // Scan memory root-set, searching for ptr pointing in address[szB]
+   scan_memory_root_set(address, szB);
+
+   // Scan active malloc-ed chunks
+   chunks = find_active_chunks(&n_chunks);
+   for (i = 0; i < n_chunks; i++) {
+      lc_scan_memory(chunks[i]->data, chunks[i]->szB,
+                     /*is_prior_definite*/True,
+                     /*clique*/-1, /*cur_clique*/-1,
+                     address, szB);
+   }
+   VG_(free) ( chunks );
+
+   // Scan GP registers for pointers to address range.
+   searched_wpa = address;
+   searched_szB = szB;
+   VG_(apply_to_GP_regs)(search_address_in_GP_reg);
+
 }
 
 /*--------------------------------------------------------------------*/

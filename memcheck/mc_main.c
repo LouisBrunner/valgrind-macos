@@ -5027,6 +5027,12 @@ static void print_monitor_help ( void )
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
 "                  leak_check full reachable any limited 100\n"
+"  block_list <loss_record_nr>\n"
+"        after a leak search, shows the list of blocks of <loss_record_nr>\n"
+"  who_points_at <addr> [<len>]\n"
+"        shows places pointing inside <len> (default 1) bytes at <addr>\n"
+"        (with len 1, only shows \"start pointers\" pointing exactly to <addr>,\n"
+"         with len > 1, will also show \"interior pointers\")\n"
 "\n");
 }
 
@@ -5044,7 +5050,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help get_vbits leak_check make_memory check_memory", 
+           ("help get_vbits leak_check make_memory check_memory "
+            "block_list who_points_at", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -5246,6 +5253,35 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
          break;
       default: tl_assert(0);
       }
+      return True;
+   }
+
+   case  5: { /* block_list */
+      Char* wl;
+      Char *endptr;
+      UInt lr_nr = 0;
+      wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      lr_nr = VG_(strtoull10) (wl, &endptr);
+      if (wl != NULL && *endptr != '\0') {
+         VG_(gdb_printf) ("malformed integer\n");
+      } else {
+         // lr_nr-1 as what is shown to the user is 1 more than the index in lr_array.
+         if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1))
+            VG_(gdb_printf) ("invalid loss record nr\n");
+      }
+      return True;
+   }
+
+   case  6: { /* who_points_at */
+      Addr address;
+      SizeT szB = 1;
+
+      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
+      if (address == (Addr) 0) {
+         VG_(gdb_printf) ("Cannot search who points at 0x0\n");
+         return True;
+      }
+      MC_(who_points_at) (address, szB);
       return True;
    }
 

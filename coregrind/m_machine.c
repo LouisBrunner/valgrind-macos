@@ -186,115 +186,115 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
 }
 
 
-static void apply_to_GPs_of_tid(VexGuestArchState* vex, void (*f)(Addr))
+static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
 {
+   VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
 #if defined(VGA_x86)
-   (*f)(vex->guest_EAX);
-   (*f)(vex->guest_ECX);
-   (*f)(vex->guest_EDX);
-   (*f)(vex->guest_EBX);
-   (*f)(vex->guest_ESI);
-   (*f)(vex->guest_EDI);
-   (*f)(vex->guest_ESP);
-   (*f)(vex->guest_EBP);
+   (*f)(tid, "EAX", vex->guest_EAX);
+   (*f)(tid, "ECX", vex->guest_ECX);
+   (*f)(tid, "EDX", vex->guest_EDX);
+   (*f)(tid, "EBX", vex->guest_EBX);
+   (*f)(tid, "ESI", vex->guest_ESI);
+   (*f)(tid, "EDI", vex->guest_EDI);
+   (*f)(tid, "ESP", vex->guest_ESP);
+   (*f)(tid, "EBP", vex->guest_EBP);
 #elif defined(VGA_amd64)
-   (*f)(vex->guest_RAX);
-   (*f)(vex->guest_RCX);
-   (*f)(vex->guest_RDX);
-   (*f)(vex->guest_RBX);
-   (*f)(vex->guest_RSI);
-   (*f)(vex->guest_RDI);
-   (*f)(vex->guest_RSP);
-   (*f)(vex->guest_RBP);
-   (*f)(vex->guest_R8);
-   (*f)(vex->guest_R9);
-   (*f)(vex->guest_R10);
-   (*f)(vex->guest_R11);
-   (*f)(vex->guest_R12);
-   (*f)(vex->guest_R13);
-   (*f)(vex->guest_R14);
-   (*f)(vex->guest_R15);
+   (*f)(tid, "RAX", vex->guest_RAX);
+   (*f)(tid, "RCX", vex->guest_RCX);
+   (*f)(tid, "RDX", vex->guest_RDX);
+   (*f)(tid, "RBX", vex->guest_RBX);
+   (*f)(tid, "RSI", vex->guest_RSI);
+   (*f)(tid, "RDI", vex->guest_RDI);
+   (*f)(tid, "RSP", vex->guest_RSP);
+   (*f)(tid, "RBP", vex->guest_RBP);
+   (*f)(tid, "R8" , vex->guest_R8 );
+   (*f)(tid, "R9" , vex->guest_R9 );
+   (*f)(tid, "R10", vex->guest_R10);
+   (*f)(tid, "R11", vex->guest_R11);
+   (*f)(tid, "R12", vex->guest_R12);
+   (*f)(tid, "R13", vex->guest_R13);
+   (*f)(tid, "R14", vex->guest_R14);
+   (*f)(tid, "R15", vex->guest_R15);
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
-   (*f)(vex->guest_GPR0);
-   (*f)(vex->guest_GPR1);
-   (*f)(vex->guest_GPR2);
-   (*f)(vex->guest_GPR3);
-   (*f)(vex->guest_GPR4);
-   (*f)(vex->guest_GPR5);
-   (*f)(vex->guest_GPR6);
-   (*f)(vex->guest_GPR7);
-   (*f)(vex->guest_GPR8);
-   (*f)(vex->guest_GPR9);
-   (*f)(vex->guest_GPR10);
-   (*f)(vex->guest_GPR11);
-   (*f)(vex->guest_GPR12);
-   (*f)(vex->guest_GPR13);
-   (*f)(vex->guest_GPR14);
-   (*f)(vex->guest_GPR15);
-   (*f)(vex->guest_GPR16);
-   (*f)(vex->guest_GPR17);
-   (*f)(vex->guest_GPR18);
-   (*f)(vex->guest_GPR19);
-   (*f)(vex->guest_GPR20);
-   (*f)(vex->guest_GPR21);
-   (*f)(vex->guest_GPR22);
-   (*f)(vex->guest_GPR23);
-   (*f)(vex->guest_GPR24);
-   (*f)(vex->guest_GPR25);
-   (*f)(vex->guest_GPR26);
-   (*f)(vex->guest_GPR27);
-   (*f)(vex->guest_GPR28);
-   (*f)(vex->guest_GPR29);
-   (*f)(vex->guest_GPR30);
-   (*f)(vex->guest_GPR31);
-   (*f)(vex->guest_CTR);
-   (*f)(vex->guest_LR);
+   (*f)(tid, "GPR0" , vex->guest_GPR0 );
+   (*f)(tid, "GPR1" , vex->guest_GPR1 );
+   (*f)(tid, "GPR2" , vex->guest_GPR2 );
+   (*f)(tid, "GPR3" , vex->guest_GPR3 );
+   (*f)(tid, "GPR4" , vex->guest_GPR4 );
+   (*f)(tid, "GPR5" , vex->guest_GPR5 );
+   (*f)(tid, "GPR6" , vex->guest_GPR6 );
+   (*f)(tid, "GPR7" , vex->guest_GPR7 );
+   (*f)(tid, "GPR8" , vex->guest_GPR8 );
+   (*f)(tid, "GPR9" , vex->guest_GPR9 );
+   (*f)(tid, "GPR10", vex->guest_GPR10);
+   (*f)(tid, "GPR11", vex->guest_GPR11);
+   (*f)(tid, "GPR12", vex->guest_GPR12);
+   (*f)(tid, "GPR13", vex->guest_GPR13);
+   (*f)(tid, "GPR14", vex->guest_GPR14);
+   (*f)(tid, "GPR15", vex->guest_GPR15);
+   (*f)(tid, "GPR16", vex->guest_GPR16);
+   (*f)(tid, "GPR17", vex->guest_GPR17);
+   (*f)(tid, "GPR18", vex->guest_GPR18);
+   (*f)(tid, "GPR19", vex->guest_GPR19);
+   (*f)(tid, "GPR20", vex->guest_GPR20);
+   (*f)(tid, "GPR21", vex->guest_GPR21);
+   (*f)(tid, "GPR22", vex->guest_GPR22);
+   (*f)(tid, "GPR23", vex->guest_GPR23);
+   (*f)(tid, "GPR24", vex->guest_GPR24);
+   (*f)(tid, "GPR25", vex->guest_GPR25);
+   (*f)(tid, "GPR26", vex->guest_GPR26);
+   (*f)(tid, "GPR27", vex->guest_GPR27);
+   (*f)(tid, "GPR28", vex->guest_GPR28);
+   (*f)(tid, "GPR29", vex->guest_GPR29);
+   (*f)(tid, "GPR30", vex->guest_GPR30);
+   (*f)(tid, "GPR31", vex->guest_GPR31);
+   (*f)(tid, "CTR"  , vex->guest_CTR  );
+   (*f)(tid, "LR"   , vex->guest_LR   );
 #elif defined(VGA_arm)
-   (*f)(vex->guest_R0);
-   (*f)(vex->guest_R1);
-   (*f)(vex->guest_R2);
-   (*f)(vex->guest_R3);
-   (*f)(vex->guest_R4);
-   (*f)(vex->guest_R5);
-   (*f)(vex->guest_R6);
-   (*f)(vex->guest_R8);
-   (*f)(vex->guest_R9);
-   (*f)(vex->guest_R10);
-   (*f)(vex->guest_R11);
-   (*f)(vex->guest_R12);
-   (*f)(vex->guest_R13);
-   (*f)(vex->guest_R14);
+   (*f)(tid, "R0" , vex->guest_R0 );
+   (*f)(tid, "R1" , vex->guest_R1 );
+   (*f)(tid, "R2" , vex->guest_R2 );
+   (*f)(tid, "R3" , vex->guest_R3 );
+   (*f)(tid, "R4" , vex->guest_R4 );
+   (*f)(tid, "R5" , vex->guest_R5 );
+   (*f)(tid, "R6" , vex->guest_R6 );
+   (*f)(tid, "R8" , vex->guest_R8 );
+   (*f)(tid, "R9" , vex->guest_R9 );
+   (*f)(tid, "R10", vex->guest_R10);
+   (*f)(tid, "R11", vex->guest_R11);
+   (*f)(tid, "R12", vex->guest_R12);
+   (*f)(tid, "R13", vex->guest_R13);
+   (*f)(tid, "R14", vex->guest_R14);
 #elif defined(VGA_s390x)
-   (*f)(vex->guest_r0);
-   (*f)(vex->guest_r1);
-   (*f)(vex->guest_r2);
-   (*f)(vex->guest_r3);
-   (*f)(vex->guest_r4);
-   (*f)(vex->guest_r5);
-   (*f)(vex->guest_r6);
-   (*f)(vex->guest_r7);
-   (*f)(vex->guest_r8);
-   (*f)(vex->guest_r9);
-   (*f)(vex->guest_r10);
-   (*f)(vex->guest_r11);
-   (*f)(vex->guest_r12);
-   (*f)(vex->guest_r13);
-   (*f)(vex->guest_r14);
-   (*f)(vex->guest_r15);
+   (*f)(tid, "r0" , vex->guest_r0 );
+   (*f)(tid, "r1" , vex->guest_r1 );
+   (*f)(tid, "r2" , vex->guest_r2 );
+   (*f)(tid, "r3" , vex->guest_r3 );
+   (*f)(tid, "r4" , vex->guest_r4 );
+   (*f)(tid, "r5" , vex->guest_r5 );
+   (*f)(tid, "r6" , vex->guest_r6 );
+   (*f)(tid, "r7" , vex->guest_r7 );
+   (*f)(tid, "r8" , vex->guest_r8 );
+   (*f)(tid, "r9" , vex->guest_r9 );
+   (*f)(tid, "r10", vex->guest_r10);
+   (*f)(tid, "r11", vex->guest_r11);
+   (*f)(tid, "r12", vex->guest_r12);
+   (*f)(tid, "r13", vex->guest_r13);
+   (*f)(tid, "r14", vex->guest_r14);
+   (*f)(tid, "r15", vex->guest_r15);
 #else
 #  error Unknown arch
 #endif
 }
 
 
-void VG_(apply_to_GP_regs)(void (*f)(UWord))
+void VG_(apply_to_GP_regs)(void (*f)(ThreadId, HChar*, UWord))
 {
    ThreadId tid;
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(is_valid_tid)(tid)) {
-         ThreadState* tst = VG_(get_ThreadState)(tid);
-         apply_to_GPs_of_tid(&(tst->arch.vex), f);
+         apply_to_GPs_of_tid(tid, f);
       }
    }
 }

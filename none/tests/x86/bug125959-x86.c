@@ -22,7 +22,9 @@ static int lookup ( int i )
 
 int main(void) 
 { 
-  int i, j;
+  int i;
+  unsigned j;
+
    for (i = 0; i < 256; i++) 
     buf[i] = (unsigned char) i;
 

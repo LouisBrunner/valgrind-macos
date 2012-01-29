@@ -66,6 +66,7 @@ EXTRA_DIST = \
 	big_blocks_freed_list.stderr.exp big_blocks_freed_list.vgtest \
 	brk2.stderr.exp brk2.vgtest \
 	buflen_check.stderr.exp buflen_check.vgtest buflen_check.stderr.exp-kfail \
+	bug287260.stderr.exp bug287260.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
@@ -222,6 +223,7 @@ check_PROGRAMS = \
 	big_blocks_freed_list \
 	brk2 \
 	buflen_check \
+	bug287260 \
 	calloc-overflow \
 	clientperm \
 	custom_alloc \

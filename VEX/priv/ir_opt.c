@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*---------------------------------------------------------------*/
 /*--- begin                                          ir_opt.c ---*/
@@ -933,6 +934,21 @@ static Bool isZeroU64 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U64 == 0);
 }
 
+/* Is this an integer constant with value 0 ? */
+static Bool isZeroU ( IRExpr* e )
+{
+   if (e->tag != Iex_Const) return False;
+
+   switch (e->Iex.Const.con->tag) {
+      case Ico_U1:    return toBool( e->Iex.Const.con->Ico.U1  == 0);
+      case Ico_U8:    return toBool( e->Iex.Const.con->Ico.U8  == 0);
+      case Ico_U16:   return toBool( e->Iex.Const.con->Ico.U16 == 0);
+      case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32 == 0);
+      case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64 == 0);
+      default: vpanic("isZeroU");
+   }
+}
+
 static Bool notBool ( Bool b )
 {
    if (b == True) return False;
@@ -1581,165 +1597,175 @@ static IRExpr* fold_Expr ( IRExpr* e )
       } else {
 
          /* other cases (identities, etc) */
-
-         /* Shl64/Shr64(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Shl64 || e->Iex.Binop.op == Iop_Shr64)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Shl32/Shr32(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Shl32 || e->Iex.Binop.op == Iop_Shr32)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Or8(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Or8)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Or16(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Or16)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U16 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Or32/Add32/Max32U(x,0) ==> x
-            Or32/Add32/Max32U(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Add32
-             || e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U) {
-            if (isZeroU32(e->Iex.Binop.arg2))
-               e2 = e->Iex.Binop.arg1;
-            else if (isZeroU32(e->Iex.Binop.arg1))
-               e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* Sub64(x,0) ==> x */
-         if (e->Iex.Binop.op == Iop_Sub64 && isZeroU64(e->Iex.Binop.arg2)) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Add32(t,t) ==> t << 1.  Memcheck doesn't understand that
-            x+x produces a defined least significant bit, and it seems
-            simplest just to get rid of the problem by rewriting it
-            out, since the opportunity to do so exists. */
-         if (e->Iex.Binop.op == Iop_Add32
-             && e->Iex.Binop.arg1->tag == Iex_RdTmp
-             && e->Iex.Binop.arg2->tag == Iex_RdTmp
-             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
-                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
-            e2 = IRExpr_Binop(Iop_Shl32,
-                              e->Iex.Binop.arg1,
-                              IRExpr_Const(IRConst_U8(1)));
-         } else
-
-         /* Add64(t,t) ==> t << 1;  rationale as for Add32(t,t) above. */
-         if (e->Iex.Binop.op == Iop_Add64
-             && e->Iex.Binop.arg1->tag == Iex_RdTmp
-             && e->Iex.Binop.arg2->tag == Iex_RdTmp
-             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
-                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
-            e2 = IRExpr_Binop(Iop_Shl64,
-                              e->Iex.Binop.arg1,
-                              IRExpr_Const(IRConst_U8(1)));
-         } else
-
-         /* Add8(t,t) ==> t << 1;  rationale as for Add32(t,t) above. */
-         if (e->Iex.Binop.op == Iop_Add8
-             && e->Iex.Binop.arg1->tag == Iex_RdTmp
-             && e->Iex.Binop.arg2->tag == Iex_RdTmp
-             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
-                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
-            e2 = IRExpr_Binop(Iop_Shl8,
-                              e->Iex.Binop.arg1,
-                              IRExpr_Const(IRConst_U8(1)));
-         } else
-         /* NB no Add16(t,t) case yet as no known test case exists */
-
-         /* Or64/Add64(x,0) ==> x
-            Or64/Add64(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Add64 || e->Iex.Binop.op == Iop_Or64) {
-            if (isZeroU64(e->Iex.Binop.arg2))
-               e2 = e->Iex.Binop.arg1;
-            else if (isZeroU64(e->Iex.Binop.arg1))
-               e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* And32(x,0xFFFFFFFF) ==> x */
-         if (e->Iex.Binop.op == Iop_And32
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0xFFFFFFFF) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* And32(x,0) ==> 0 */
-         if (e->Iex.Binop.op == Iop_And32
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
-            e2 = IRExpr_Const(IRConst_U32(0));
-         } else
-
-         /* And32/Shl32(0,x) ==> 0 */
-         if ((e->Iex.Binop.op == Iop_And32 || e->Iex.Binop.op == Iop_Shl32)
-             && e->Iex.Binop.arg1->tag == Iex_Const
-             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
-            e2 = IRExpr_Const(IRConst_U32(0));
-         } else
-
-         /* Or8(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Or8
-             && e->Iex.Binop.arg1->tag == Iex_Const
-             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* Or8/16/32/64/V128(t,t) ==> t, for some IRTemp t */
-         /* And8/16/32/64(t,t) ==> t, for some IRTemp t */
-         /* Max32U(t,t) ==> t, for some IRTemp t */
          switch (e->Iex.Binop.op) {
-            case Iop_And64: case Iop_And32:
-            case Iop_And16: case Iop_And8:
-            case Iop_Or64: case Iop_Or32:
-            case Iop_Or16: case Iop_Or8: case Iop_OrV128:
-            case Iop_Max32U:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+
+            case Iop_Shl32:
+            case Iop_Shl64:
+            case Iop_Shr64:
+               /* Shl32/Shl64/Shr64(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Shl32/Shl64/Shr64(0,x) ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
                break;
-            default:
-               break;
-         }
 
-         /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
-         /* Sub32/64(t,t) ==> 0, for some IRTemp t */
-         switch (e->Iex.Binop.op) {
-            case Iop_Xor64: case Iop_Xor32:
-            case Iop_Xor16: case Iop_Xor8:
-            case Iop_XorV128:
-            case Iop_Sub64: case Iop_Sub32:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+            case Iop_Shr32:
+               /* Shr32(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Or8:
+            case Iop_Or16:
+            case Iop_Or32:
+            case Iop_Or64:
+            case Iop_Max32U:
+               /* Or8/Or16/Or32/Max32U(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Or8/Or16/Or32/Max32U(0,x) ==> x */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* Or8/Or16/Or32/Max32U(t,t) ==> t, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Add8:
+               /* Add8(t,t) ==> t << 1.
+                  Memcheck doesn't understand that
+                  x+x produces a defined least significant bit, and it seems
+                  simplest just to get rid of the problem by rewriting it
+                  out, since the opportunity to do so exists. */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = IRExpr_Binop(Iop_Shl8, e->Iex.Binop.arg1,
+                                    IRExpr_Const(IRConst_U8(1)));
+                  break;
+               }
+               break;
+
+               /* NB no Add16(t,t) case yet as no known test case exists */
+
+            case Iop_Add32:
+            case Iop_Add64:
+               /* Add32/Add64(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Add32/Add64(0,x) ==> x */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* Add32/Add64(t,t) ==> t << 1. Same rationale as for Add8. */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = IRExpr_Binop(e->Iex.Binop.op == Iop_Add32 ? Iop_Shl32 : Iop_Shl64,
+                                    e->Iex.Binop.arg1, IRExpr_Const(IRConst_U8(1)));
+                  break;
+               }
+               break;
+
+            case Iop_Sub64:
+               /* Sub64(x,0) ==> x */
+               if (isZeroU64(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Sub64(t,t) ==> 0, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
                break;
-            default:
-               break;
-         }
 
-         switch (e->Iex.Binop.op) {
+            case Iop_And32:
+               /* And32(x,0xFFFFFFFF) ==> x */
+               if (e->Iex.Binop.arg2->tag == Iex_Const
+                   && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0xFFFFFFFF) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* And32(x,0) ==> 0 */
+               if (isZeroU32(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* And32(0,x) ==> 0 */
+               if (isZeroU32(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* And32(t,t) ==> t, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_And8:
+            case Iop_And16:
+            case Iop_And64:
+               /* And8/And16/And64(t,t) ==> t, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_OrV128:
+               /* V128(t,t) ==> t, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Xor8:
+            case Iop_Xor16:
+            case Iop_Xor32:
+            case Iop_Xor64:
+            case Iop_XorV128:
+               /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               break;
+
+            case Iop_Sub32:
+               /* Sub32(t,t) ==> 0, for some IRTemp t */
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               break;
+
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ8x16:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
                break;
+
             default:
                break;
          }
-
       }
    }
 

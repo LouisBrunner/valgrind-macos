@@ -73,28 +73,18 @@ void VG_(debugLog_setXml)(Bool xml)
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   volatile Int block[2];
-   block[0] = (Int)buf;
-   block[1] = n;
+   Int result;
+
    __asm__ volatile (
-      "pushl %%ebx\n"           /* ebx is callee-save */
-      "movl  %0, %%ebx\n"       /* ebx = &block */
-      "pushl %%ebx\n"           /* save &block */
-      "movl  0(%%ebx), %%ecx\n" /* %ecx = buf */
-      "movl  4(%%ebx), %%edx\n" /* %edx = n */
       "movl  $"VG_STRINGIFY(__NR_write)", %%eax\n" /* %eax = __NR_write */
       "movl  $2, %%ebx\n"       /* %ebx = stderr */
       "int   $0x80\n"           /* write(stderr, buf, n) */
-      "popl  %%ebx\n"           /* reestablish &block */
-      "movl  %%eax, 0(%%ebx)\n" /* block[0] = result */
-      "popl  %%ebx\n"           /* restore ebx */
-      : /*wr*/
-      : /*rd*/    "r" (block)
-      : /*trash*/ "eax", "edi", "ecx", "edx", "memory", "cc"
+      : /*wr*/    "=a" (result)
+      : /*rd*/    "c" (buf), "d" (n)
+      : /*trash*/ "ebx", "edi", "memory", "cc"
    );
-   if (block[0] < 0) 
-      block[0] = -1;
-   return block[0];
+
+   return result >= 0 ? result : -1;
 }
 
 static UInt local_sys_getpid ( void )

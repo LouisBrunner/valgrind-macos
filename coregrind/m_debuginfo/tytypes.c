@@ -54,9 +54,10 @@ Bool ML_(TyEnt__is_type)( TyEnt* te )
       case Te_EMPTY: case Te_INDIR: case Te_UNKNOWN: 
       case Te_Atom:  case Te_Field: case Te_Bound:
          return False;
-      case Te_TyBase:   case Te_TyPorR: case Te_TyTyDef:
-      case Te_TyStOrUn: case Te_TyEnum: case Te_TyArray:
-      case Te_TyFn:     case Te_TyQual: case Te_TyVoid:
+      case Te_TyBase:   case Te_TyPtr:     case Te_TyRef:
+      case Te_TyPtrMbr: case Te_TyRvalRef: case Te_TyTyDef:
+      case Te_TyStOrUn: case Te_TyEnum:    case Te_TyArray:
+      case Te_TyFn:     case Te_TyQual:    case Te_TyVoid:
          return True;
       default:
          vg_assert(0);
@@ -127,10 +128,20 @@ void ML_(pp_TyEnt)( TyEnt* te )
                      te->Te.TyBase.name ? te->Te.TyBase.name
                                         : (UChar*)"(null)" );
          break;
-      case Te_TyPorR:
-         VG_(printf)("Te_TyPorR(%d,%c,0x%05lx)",
-                     te->Te.TyPorR.szB,
-                     te->Te.TyPorR.isPtr ? 'P' : 'R',
+      case Te_TyPtr:
+         VG_(printf)("Te_TyPtr(%d,0x%05lx)", te->Te.TyPorR.szB,
+                     te->Te.TyPorR.typeR);
+         break;
+      case Te_TyRef:
+         VG_(printf)("Te_TyRef(%d,0x%05lx)", te->Te.TyPorR.szB,
+                     te->Te.TyPorR.typeR);
+         break;
+      case Te_TyPtrMbr:
+         VG_(printf)("Te_TyMbr(%d,0x%05lx)", te->Te.TyPorR.szB,
+                     te->Te.TyPorR.typeR);
+         break;
+      case Te_TyRvalRef:
+         VG_(printf)("Te_TyRvalRef(%d,0x%05lx)", te->Te.TyPorR.szB,
                      te->Te.TyPorR.typeR);
          break;
       case Te_TyTyDef:
@@ -237,9 +248,21 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          if (!ent->Te.TyBase.name) goto unhandled;
          VG_(printf)("%s", ent->Te.TyBase.name);
          break;
-      case Te_TyPorR:
+      case Te_TyPtr:
          ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyPorR.typeR);
-         VG_(printf)("%s", ent->Te.TyPorR.isPtr ? "*" : "&");
+         VG_(printf)("*");
+         break;
+      case Te_TyRef:
+         ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyPorR.typeR);
+         VG_(printf)("&");
+         break;
+      case Te_TyPtrMbr:
+         ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyPorR.typeR);
+         VG_(printf)("*");
+         break;
+      case Te_TyRvalRef:
+         ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyPorR.typeR);
+         VG_(printf)("&&");
          break;
       case Te_TyEnum:
          if (!ent->Te.TyEnum.name) goto unhandled;
@@ -503,12 +526,13 @@ Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 )
       if (r != 0) return r;
       r = Asciiz__cmp(te1->Te.TyBase.name, te2->Te.TyBase.name);
       return r;
-   case Te_TyPorR:
+   case Te_TyPtr:
+   case Te_TyRef:
+   case Te_TyPtrMbr:
+   case Te_TyRvalRef:
       r = Int__cmp(te1->Te.TyPorR.szB, te2->Te.TyPorR.szB);
       if (r != 0) return r;
       r = UWord__cmp(te1->Te.TyPorR.typeR, te2->Te.TyPorR.typeR);
-      if (r != 0) return r;
-      r = Bool__cmp(te1->Te.TyPorR.isPtr, te2->Te.TyPorR.isPtr);
       return r;
    case Te_TyTyDef:
       r = UWord__cmp(te1->Te.TyTyDef.typeR, te2->Te.TyTyDef.typeR);
@@ -584,7 +608,10 @@ void ML_(TyEnt__make_EMPTY) ( TyEnt* te )
       case Te_TyBase:
          if (te->Te.TyBase.name) ML_(dinfo_free)(te->Te.TyBase.name);
          break;
-      case Te_TyPorR:
+      case Te_TyPtr:
+      case Te_TyRef:
+      case Te_TyPtrMbr:
+      case Te_TyRvalRef:
          break;
       case Te_TyTyDef:
          if (te->Te.TyTyDef.name) ML_(dinfo_free)(te->Te.TyTyDef.name);
@@ -661,7 +688,10 @@ MaybeULong ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
          if (ent2->tag == Te_UNKNOWN)
             return mk_MaybeULong_Nothing(); /*UNKNOWN*/
          return ML_(sizeOfType)( tyents, ent->Te.TyTyDef.typeR );
-      case Te_TyPorR:
+      case Te_TyPtr:
+      case Te_TyRef:
+      case Te_TyPtrMbr:
+      case Te_TyRvalRef:
          vg_assert(ent->Te.TyPorR.szB == 4 || ent->Te.TyPorR.szB == 8);
          return mk_MaybeULong_Just( ent->Te.TyPorR.szB );
       case Te_TyStOrUn:
@@ -738,7 +768,10 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
          case Te_TyEnum:
          case Te_TyFn:
          case Te_TyVoid:
-         case Te_TyPorR:
+         case Te_TyPtr:
+         case Te_TyRef:
+         case Te_TyPtrMbr:
+         case Te_TyRvalRef:
          case Te_TyBase:
             goto done;
 

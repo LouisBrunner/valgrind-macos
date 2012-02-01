@@ -45,7 +45,10 @@ typedef
       Te_Field,    /* struct/class field defn */
       Te_Bound,    /* array bounds indication, for one dimension */
       Te_TyBase,   /* base type */
-      Te_TyPorR,   /* pointer or reference type */
+      Te_TyPtr,    /* pointer type */
+      Te_TyRef,    /* reference type */
+      Te_TyPtrMbr, /* pointer to member type */
+      Te_TyRvalRef,/* rvalue reference type */
       Te_TyTyDef,  /* a renaming of some other type */
       Te_TyStOrUn, /* structure or union type */
       Te_TyEnum,   /* an enum type */
@@ -101,7 +104,6 @@ typedef
          struct {
             Int   szB;
             UWord typeR;
-            Bool  isPtr;
          } TyPorR;
          struct {
             UChar* name;  /* in mallocville */

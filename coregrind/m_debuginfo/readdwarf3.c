@@ -2221,19 +2221,41 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       goto acquire_Type;
    }
 
+   /*
+    * An example of DW_TAG_rvalue_reference_type:
+    *
+    * $ readelf --debug-dump /usr/lib/debug/usr/lib/libstdc++.so.6.0.16.debug
+    *  <1><1014>: Abbrev Number: 55 (DW_TAG_rvalue_reference_type)
+    *     <1015>   DW_AT_byte_size   : 4
+    *     <1016>   DW_AT_type        : <0xe52>
+    */
    if (dtag == DW_TAG_pointer_type || dtag == DW_TAG_reference_type
-       || dtag == DW_TAG_ptr_to_member_type) {
+       || dtag == DW_TAG_ptr_to_member_type
+       || dtag == DW_TAG_rvalue_reference_type) {
       /* This seems legit for _pointer_type and _reference_type.  I
          don't know if rolling _ptr_to_member_type in here really is
          legit, but it's better than not handling it at all. */
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = D3_INVALID_CUOFF;
-      typeE.tag   = Te_TyPorR;
+      switch (dtag) {
+      case DW_TAG_pointer_type:
+         typeE.tag = Te_TyPtr;
+         break;
+      case DW_TAG_reference_type:
+         typeE.tag = Te_TyRef;
+         break;
+      case DW_TAG_ptr_to_member_type:
+         typeE.tag = Te_TyPtrMbr;
+         break;
+      case DW_TAG_rvalue_reference_type:
+         typeE.tag = Te_TyRvalRef;
+         break;
+      default:
+         vg_assert(False);
+      }
       /* target type defaults to void */
       typeE.Te.TyPorR.typeR = D3_FAKEVOID_CUOFF;
-      typeE.Te.TyPorR.isPtr = dtag == DW_TAG_pointer_type
-                              || dtag == DW_TAG_ptr_to_member_type;
-      /* These three type kinds don't *have* to specify their size, in
+      /* These four type kinds don't *have* to specify their size, in
          which case we assume it's a machine word.  But if they do
          specify it, it must be a machine word :-)  This probably
          assumes that the word size of the Dwarf3 we're reading is the
@@ -2882,7 +2904,10 @@ static Bool TyEnt__subst_R_fields ( XArray* /* of TyEnt */ ents,
          break;
       case Te_TyBase:
          break;
-      case Te_TyPorR:
+      case Te_TyPtr:
+      case Te_TyRef:
+      case Te_TyPtrMbr:
+      case Te_TyRvalRef:
          te->Te.TyPorR.typeR
             = chase_cuOff( &b, ents, ents_cache, te->Te.TyPorR.typeR );
          if (b) changed = True;

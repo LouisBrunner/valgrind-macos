@@ -639,7 +639,14 @@ static void drd_thread_finished(ThreadId vg_tid)
 {
    DrdThreadId drd_tid;
 
+#if 0
+   /*
+    * The assert statement below doesn't hold if this function is invoked
+    * because thread creation failed. See e.g.
+    * coregrind/m_syswrap/syswrap-amd64-linux.c
+    */
    tl_assert(VG_(get_running_tid)() == vg_tid);
+#endif
 
    drd_tid = DRD_(VgThreadIdToDrdThreadId)(vg_tid);
    if (DRD_(thread_get_trace_fork_join)())

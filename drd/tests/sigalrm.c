@@ -72,7 +72,10 @@ int main(int argc, char** argv)
     sigaction(SIGALRM, &sa, 0);
   }
 
-  pthread_create(&threadid, 0, thread_func, 0);
+  if (pthread_create(&threadid, 0, thread_func, 0) != 0) {
+    fprintf(stderr, "Thread creation failed\n");
+    return 1;
+  }
   // Wait until the thread is inside clock_nanosleep().
   tsDelay.tv_sec = 0;
   tsDelay.tv_nsec = 20 * 1000 * 1000;

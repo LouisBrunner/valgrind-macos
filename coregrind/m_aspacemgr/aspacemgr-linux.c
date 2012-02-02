@@ -2532,10 +2532,22 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    /* Ask for an advisory.  If it's negative, fail immediately. */
    req.rkind = MAny;
    req.start = 0;
-   req.len   = length;
+   #if defined(VGA_arm)
+   aspacem_assert(VKI_SHMLBA >= VKI_PAGE_SIZE);
+   #else
+   aspacem_assert(VKI_SHMLBA == VKI_PAGE_SIZE);
+   #endif
+   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & flags)) {
+      /* arm-linux only. See ML_(generic_PRE_sys_shmat) and bug 290974 */
+      req.len = length + VKI_SHMLBA - VKI_PAGE_SIZE;
+   } else {
+      req.len = length;
+   }
    advised = VG_(am_get_advisory)( &req, False/*forClient*/, &ok );
    if (!ok)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & flags))
+      advised = VG_ROUNDUP(advised, VKI_SHMLBA);
 
    /* We have been advised that the mapping is allowable at the
       specified address.  So hand it off to the kernel, and propagate

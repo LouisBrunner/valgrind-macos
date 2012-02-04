@@ -10894,6 +10894,225 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
    return "troo";
 }
 
+static HChar *
+s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I8);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_b7(0));
+
+   IRTemp op = newTemp(Ity_I16);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, load(Ity_I16, mkexpr(src_addr)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_16Uto64, mkexpr(op)),
+                        mkexpr(tab_addr)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(2)));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(1)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(2)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "trto";
+}
+
+static HChar *
+s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I16);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_hw3(0));
+
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I16);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, binop(Iop_Shl8, load(Ity_I8, mkexpr(src_addr)), mkU8(1)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), 
+                        mkexpr(tab_addr)));
+   assign(op1, load(Ity_I16, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(2)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "trot";
+}
+
+static HChar *
+s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I16);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_hw3(0));
+
+   IRTemp op = newTemp(Ity_I16);
+   IRTemp op1 = newTemp(Ity_I16);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, binop(Iop_Shl16, load(Ity_I16, mkexpr(src_addr)), mkU8(1)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_16Uto64, mkexpr(op)),
+                        mkexpr(tab_addr)));
+   assign(op1, load(Ity_I16, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(2)));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(2)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(2)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "trtt";
+}
+
+static HChar *
+s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
+{
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+   IRTemp counter = newTemp(Ity_I64);
+
+   assign(counter, get_counter_dw0());
+
+   assign(op, load(Ity_I8, binop(Iop_Add64, mkexpr(start1), mkexpr(counter))));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), mkexpr(start2)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+   store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)), mkexpr(op1));
+
+   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
+   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
+                     guest_IA_curr_instr);
+
+   put_counter_dw0(mkU64(0));
+
+   return "tr";
+}
+
+static HChar *
+s390_irgen_TRE(UChar r1,UChar r2)
+{
+   IRTemp src_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   src_len = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I8);
+
+   assign(src_addr, get_gpr_dw0(r1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(tab_addr, get_gpr_dw0(r2));
+   assign(test_byte, get_gpr_b7(0));
+
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */   
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string and compare with test byte */
+   assign(op, load(Ity_I8, mkexpr(src_addr)));
+   
+   s390_cc_set(1);
+   if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op), mkexpr(test_byte)),
+                     guest_IA_next_instr);
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), 
+			mkexpr(tab_addr)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+
+   store(get_gpr_dw0(r1), mkexpr(op1));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
+
+   always_goto(mkU64(guest_IA_curr_instr));
+
+   return "tre";
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
@@ -11333,7 +11552,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
                                  goto ok;
    case 0xb29d: s390_format_S_RD(s390_irgen_LFPC, ovl.fmt.S.b2, ovl.fmt.S.d2);
                                  goto ok;
-   case 0xb2a5: /* TRE */ goto unimplemented;
+   case 0xb2a5: s390_format_RRE_FF(s390_irgen_TRE, ovl.fmt.RRE.r1, ovl.fmt.RRE.r2);  goto ok;
    case 0xb2a6: /* CU21 */ goto unimplemented;
    case 0xb2a7: /* CU12 */ goto unimplemented;
    case 0xb2b0: s390_format_S_RD(s390_irgen_STFLE, ovl.fmt.S.b2, ovl.fmt.S.d2);
@@ -11696,9 +11915,12 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb98a: /* CSPG */ goto unimplemented;
    case 0xb98d: /* EPSW */ goto unimplemented;
    case 0xb98e: /* IDTE */ goto unimplemented;
-   case 0xb990: /* TRTT */ goto unimplemented;
-   case 0xb991: /* TRTO */ goto unimplemented;
-   case 0xb992: /* TROT */ goto unimplemented;
+   case 0xb990: s390_format_RRF_M0RERE(s390_irgen_TRTT, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
+   case 0xb991: s390_format_RRF_M0RERE(s390_irgen_TRTO, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
+   case 0xb992: s390_format_RRF_M0RERE(s390_irgen_TROT, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
    case 0xb993: s390_format_RRF_M0RERE(s390_irgen_TROO, ovl.fmt.RRF3.r3,
                                    ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
    case 0xb994: s390_format_RRE_RR(s390_irgen_LLCR, ovl.fmt.RRE.r1,
@@ -13121,7 +13343,9 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    case 0xd9ULL: /* MVCK */ goto unimplemented;
    case 0xdaULL: /* MVCP */ goto unimplemented;
    case 0xdbULL: /* MVCS */ goto unimplemented;
-   case 0xdcULL: /* TR */ goto unimplemented;
+   case 0xdcULL: s390_format_SS_L0RDRD(s390_irgen_TR, ovl.fmt.SS.l,
+                                       ovl.fmt.SS.b1, ovl.fmt.SS.d1,
+                                       ovl.fmt.SS.b2, ovl.fmt.SS.d2);  goto ok;
    case 0xddULL: /* TRT */ goto unimplemented;
    case 0xdeULL: /* ED */ goto unimplemented;
    case 0xdfULL: /* EDMK */ goto unimplemented;

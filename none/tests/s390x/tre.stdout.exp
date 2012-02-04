@@ -1,0 +1,14 @@
+source address/length not updated properly
+Resulting cc is 0 and the string is 
+Resulting cc is 0 and the string is 
+Resulting cc is 0 and the string is 
+Resulting cc is 1 and the string is a
+Resulting cc is 0 and the string is A
+Resulting cc is 1 and the string is abc
+Resulting cc is 0 and the string is ABC
+Resulting cc is 0 and the string is ABCDEFGH
+Resulting cc is 1 and the string is ABC
+Resulting cc is 1 and the string is abC
+Resulting cc is 0 and the string is abcdefgh
+Resulting cc is 0 and the string is 01234567
+Resulting cc is 0 and the string is 01234567

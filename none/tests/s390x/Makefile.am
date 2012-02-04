@@ -5,7 +5,8 @@ dist_noinst_SCRIPTS = filter_stderr
 INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
-             op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo
+             op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
+             trto trot trtt tr tre
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
@@ -21,13 +22,13 @@ EXTRA_DIST = \
 	ex_clone.stdout.exp ex_clone.stderr.exp ex_clone.vgtest \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
-	mul.h  or.h  sub.h  test.h  xor.h
+	mul.h  or.h  sub.h  test.h  xor.h table.h
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
-allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+allexec_CFLAGS   = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 ex_clone_LDFLAGS = -lpthread
 tcxb_CFLAGS      = $(AM_CFLAGS) -std=gnu99

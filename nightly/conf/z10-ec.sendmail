@@ -1,0 +1,15 @@
+subject="$1"
+summary="$2"
+diffs="$3"
+
+MAILFILE=/opt/tobesent
+rm -f $MAILFILE
+touch $MAILFILE
+echo "Subject: $subject" >> $MAILFILE
+echo "To: valgrind-developers@lists.sourceforge.net" >> $MAILFILE
+echo "Cc: britzel@acm.org" >> $MAILFILE
+echo "  " >> $MAILFILE
+cat "$summary"  >> $MAILFILE
+echo "  " >> $MAILFILE
+cat "$diffs"  >> $MAILFILE
+/usr/sbin/sendmail -t -i -fbritzel@acm.org < $MAILFILE

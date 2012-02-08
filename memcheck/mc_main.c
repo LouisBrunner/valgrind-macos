@@ -6122,10 +6122,13 @@ static void mc_fini ( Int exitcode )
       // Three DSMs, plus the non-DSM ones
       max_SMs_szB = (3 + max_non_DSM_SMs) * sizeof(SecMap);
       // The 3*sizeof(Word) bytes is the AVL node metadata size.
-      // The 4*sizeof(Word) bytes is the malloc metadata size.
-      // Hardwiring these sizes in sucks, but I don't see how else to do it.
+      // The VG_ROUNDUP is because the OSet pool allocator will/must align
+      // the elements on pointer size.
+      // Note that the pool allocator has some additional small overhead
+      // which is not counted in the below.
+      // Hardwiring this logic sucks, but I don't see how else to do it.
       max_secVBit_szB = max_secVBit_nodes * 
-            (sizeof(SecVBitNode) + 3*sizeof(Word) + 4*sizeof(Word));
+            (3*sizeof(Word) + VG_ROUNDUP(sizeof(SecVBitNode), sizeof(void*)));
       max_shmem_szB   = sizeof(primary_map) + max_SMs_szB + max_secVBit_szB;
 
       VG_(message)(Vg_DebugMsg,

@@ -34,7 +34,7 @@
 #define __VKI_SCNUMS_S390X_LINUX_H
 
 //----------------------------------------------------------------------
-// From linux-2.6.39.2/include/asm-s390/unistd.h
+// From linux-2.6/arch/s390/include/asm/unistd.h
 //----------------------------------------------------------------------
 
 /*
@@ -304,7 +304,10 @@
 #define __NR_open_by_handle_at	336
 #define __NR_clock_adjtime	337
 #define __NR_syncfs		338
-#define NR_syscalls 339
+#define __NR_setns		339
+#define __NR_process_vm_readv	340
+#define __NR_process_vm_writev	341
+#define NR_syscalls 342
 
 /* 
  * There are some system calls that are not present on 64 bit, some

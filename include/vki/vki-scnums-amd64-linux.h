@@ -32,7 +32,7 @@
 #ifndef __VKI_SCNUMS_AMD64_LINUX_H
 #define __VKI_SCNUMS_AMD64_LINUX_H
 
-// From linux-2.6.9/include/asm-x86_64/unistd.h
+// Derived from linux-2.6/arch/x86/syscalls/syscall_64.tbl
 
 #define __NR_read                                0
 #define __NR_write                               1
@@ -390,6 +390,9 @@
 #define __NR_syncfs             306
 #define __NR_sendmmsg           307
 #define __NR_setns              308
+#define __NR_getcpu             309
+#define __NR_process_vm_readv   310
+#define __NR_process_vm_writev  311
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

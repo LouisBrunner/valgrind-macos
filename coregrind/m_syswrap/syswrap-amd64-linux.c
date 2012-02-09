@@ -1415,7 +1415,7 @@ static SyscallTableEntry syscall_table[] = {
 
 //   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 300
 //   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 301
-   LINXY(__NR_prlimit64,         sys_prlimit64)         // 302
+   LINXY(__NR_prlimit64,         sys_prlimit64),        // 302
 //   LINX_(__NR_name_to_handle_at, sys_ni_syscall),       // 303
 //   LINX_(__NR_open_by_handle_at, sys_ni_syscall),       // 304
 
@@ -1423,6 +1423,7 @@ static SyscallTableEntry syscall_table[] = {
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 306
 //   LINX_(__NR_sendmmsg,          sys_ni_syscall),       // 307
 //   LINX_(__NR_setns,             sys_ni_syscall),       // 308
+   LINXY(__NR_getcpu,            sys_getcpu)           // 309
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

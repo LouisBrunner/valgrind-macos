@@ -731,6 +731,7 @@ static void maybe_add_active ( Active act )
 #      if defined(VGP_amd64_linux)
        && act.from_addr != 0xFFFFFFFFFF600000ULL
        && act.from_addr != 0xFFFFFFFFFF600400ULL
+       && act.from_addr != 0xFFFFFFFFFF600800ULL
 #      endif
       ) {
       what = "redirection from-address is in non-executable area";
@@ -1089,11 +1090,15 @@ void VG_(redir_initialise) ( void )
    /* Redirect vsyscalls to local versions */
    add_hardwired_active(
       0xFFFFFFFFFF600000ULL,
-      (Addr)&VG_(amd64_linux_REDIR_FOR_vgettimeofday) 
+      (Addr)&VG_(amd64_linux_REDIR_FOR_vgettimeofday)
    );
-   add_hardwired_active( 
+   add_hardwired_active(
       0xFFFFFFFFFF600400ULL,
-      (Addr)&VG_(amd64_linux_REDIR_FOR_vtime) 
+      (Addr)&VG_(amd64_linux_REDIR_FOR_vtime)
+   );
+   add_hardwired_active(
+      0xFFFFFFFFFF600800ULL,
+      (Addr)&VG_(amd64_linux_REDIR_FOR_vgetcpu)
    );
 
    /* If we're using memcheck, use these intercepts right from

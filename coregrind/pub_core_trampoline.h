@@ -67,6 +67,7 @@ extern UInt VG_(x86_linux_REDIR_FOR_strlen)( void* );
 extern Addr VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
 extern Addr VG_(amd64_linux_REDIR_FOR_vgettimeofday);
 extern Addr VG_(amd64_linux_REDIR_FOR_vtime);
+extern Addr VG_(amd64_linux_REDIR_FOR_vgetcpu);
 extern UInt VG_(amd64_linux_REDIR_FOR_strlen)( void* );
 #endif
 

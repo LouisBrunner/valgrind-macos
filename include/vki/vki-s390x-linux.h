@@ -332,6 +332,18 @@ typedef struct vki_sigaltstack {
 #define VKI_F_SETSIG	10	/* for sockets. */
 #define VKI_F_GETSIG	11	/* for sockets. */
 
+#define VKI_F_SETOWN_EX		15
+#define VKI_F_GETOWN_EX		16
+
+#define VKI_F_OWNER_TID		0
+#define VKI_F_OWNER_PID		1
+#define VKI_F_OWNER_PGRP	2
+
+struct vki_f_owner_ex {
+	int	type;
+	__vki_kernel_pid_t	pid;
+};
+
 #define VKI_FD_CLOEXEC  1  /* actually anything with low bit set goes */
 
 #define VKI_F_LINUX_SPECIFIC_BASE   1024

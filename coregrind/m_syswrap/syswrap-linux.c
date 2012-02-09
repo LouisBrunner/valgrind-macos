@@ -3790,6 +3790,22 @@ PRE(sys_fcntl)
                     struct flock64 *, lock);
       break;
 
+   case VKI_F_SETOWN_EX:
+      PRINT("sys_fcntl[F_SETOWN_EX] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct vki_f_owner_ex *, arg);
+      PRE_MEM_READ("fcntl(F_SETOWN_EX)", ARG3, sizeof(struct vki_f_owner_ex));
+      break;
+
+   case VKI_F_GETOWN_EX:
+      PRINT("sys_fcntl[F_GETOWN_EX] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct vki_f_owner_ex *, arg);
+      PRE_MEM_WRITE("fcntl(F_GETOWN_EX)", ARG3, sizeof(struct vki_f_owner_ex));
+      break;
+
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
       I_die_here;
@@ -3824,6 +3840,8 @@ POST(sys_fcntl)
          if (VG_(clo_track_fds))
             ML_(record_fd_open_named)(tid, RES);
       }
+   } else if (ARG2 == VKI_F_GETOWN_EX) {
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_f_owner_ex));
    }
 }
 
@@ -3869,6 +3887,22 @@ PRE(sys_fcntl64)
                     unsigned int, fd, unsigned int, cmd,
                     struct flock64 *, lock);
       break;
+
+   case VKI_F_SETOWN_EX:
+      PRINT("sys_fcntl[F_SETOWN_EX] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct vki_f_owner_ex *, arg);
+      PRE_MEM_READ("fcntl(F_SETOWN_EX)", ARG3, sizeof(struct vki_f_owner_ex));
+      break;
+
+   case VKI_F_GETOWN_EX:
+      PRINT("sys_fcntl[F_GETOWN_EX] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct vki_f_owner_ex *, arg);
+      PRE_MEM_WRITE("fcntl(F_GETOWN_EX)", ARG3, sizeof(struct vki_f_owner_ex));
+      break;
    }
    
 #  if defined(VGP_x86_linux)
@@ -3899,6 +3933,8 @@ POST(sys_fcntl64)
          if (VG_(clo_track_fds))
             ML_(record_fd_open_named)(tid, RES);
       }
+   } else if (ARG2 == VKI_F_GETOWN_EX) {
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_f_owner_ex));
    }
 }
 

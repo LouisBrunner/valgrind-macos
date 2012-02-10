@@ -3554,6 +3554,19 @@ PRE(sys_sendmmsg)
    for (i = 0; i < ARG3; i++) {
       VG_(sprintf)(name, "mmsg[%u]", i);
       ML_(generic_PRE_sys_sendmsg)(tid, name, &mmsg[i].msg_hdr);
+      VG_(sprintf)(name, "sendmmsg(mmsg[%u].msg_len)", i);
+      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+   }
+}
+
+POST(sys_sendmmsg)
+{
+   if (RES > 0) {
+      struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
+      UInt i;
+      for (i = 0; i < RES; i++) {
+         POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+      }
    }
 }
 
@@ -3570,6 +3583,8 @@ PRE(sys_recvmmsg)
    for (i = 0; i < ARG3; i++) {
       VG_(sprintf)(name, "mmsg[%u]", i);
       ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
+      VG_(sprintf)(name, "sendmmsg(mmsg[%u].msg_len)", i);
+      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
    }
    if (ARG5)
       PRE_MEM_READ( "recvmmsg(timeout)", ARG5, sizeof(struct vki_timespec) );

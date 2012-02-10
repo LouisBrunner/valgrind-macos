@@ -1421,7 +1421,7 @@ static SyscallTableEntry syscall_table[] = {
 
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 305
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 306
-   LINX_(__NR_sendmmsg,          sys_sendmmsg),         // 307
+   LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 307
 //   LINX_(__NR_setns,             sys_ni_syscall),       // 308
    LINXY(__NR_getcpu,            sys_getcpu),           // 309
 

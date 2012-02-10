@@ -50,6 +50,8 @@ DECL_TEMPLATE(linux, sys_umount);
 DECL_TEMPLATE(linux, sys_perf_event_open);
 DECL_TEMPLATE(linux, sys_preadv);
 DECL_TEMPLATE(linux, sys_pwritev);
+DECL_TEMPLATE(linux, sys_sendmmsg);
+DECL_TEMPLATE(linux, sys_recvmmsg);
 DECL_TEMPLATE(linux, sys_dup3);
 DECL_TEMPLATE(linux, sys_getcpu);
 DECL_TEMPLATE(linux, sys_splice);

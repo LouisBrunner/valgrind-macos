@@ -1576,7 +1576,7 @@ PRE(sys_socketcall)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-      ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+      ML_(generic_PRE_sys_sendmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
       break;
    }
       
@@ -1587,7 +1587,7 @@ PRE(sys_socketcall)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-      ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+      ML_(generic_PRE_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
       break;
    }
 
@@ -1693,7 +1693,7 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVMSG:
-     ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
 
    default:
@@ -2219,7 +2219,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 335
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 336
-//   LINX_(__NR_recvmmsg,          sys_ni_syscall),       // 337
+   LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 337
 //   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 338
 //   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 339
 
@@ -2229,7 +2229,7 @@ static SyscallTableEntry syscall_table[] = {
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 343
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 344
 
-//   LINX_(__NR_sendmmsg,          sys_ni_syscall),       // 345
+   LINX_(__NR_sendmmsg,          sys_sendmmsg),         // 345
 //   LINX_(__NR_setns,             sys_ni_syscall),       // 346
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 347
    LINX_(__NR_process_vm_writev, sys_process_vm_writev) // 348

@@ -605,6 +605,11 @@ struct vki_msghdr {
 	unsigned	msg_flags;
 };
 
+struct vki_mmsghdr {
+	struct vki_msghdr   msg_hdr;
+	unsigned        msg_len;
+};
+
 struct vki_cmsghdr {
 	__vki_kernel_size_t	cmsg_len;	/* data byte count, including hdr */
         int		cmsg_level;	/* originating protocol */

@@ -816,7 +816,7 @@ void pre_mem_read_sendmsg ( ThreadId tid, Bool read,
                             Char *msg, Addr base, SizeT size )
 {
    Char *outmsg = strdupcat ( "di.syswrap.pmrs.1",
-                              "socketcall.sendmsg", msg, VG_AR_CORE );
+                              "sendmsg", msg, VG_AR_CORE );
    PRE_MEM_READ( outmsg, base, size );
    VG_(arena_free) ( VG_AR_CORE, outmsg );
 }
@@ -826,7 +826,7 @@ void pre_mem_write_recvmsg ( ThreadId tid, Bool read,
                              Char *msg, Addr base, SizeT size )
 {
    Char *outmsg = strdupcat ( "di.syswrap.pmwr.1",
-                              "socketcall.recvmsg", msg, VG_AR_CORE );
+                              "recvmsg", msg, VG_AR_CORE );
    if ( read )
       PRE_MEM_READ( outmsg, base, size );
    else
@@ -844,45 +844,60 @@ void post_mem_write_recvmsg ( ThreadId tid, Bool read,
  
 static
 void msghdr_foreachfield ( 
-        ThreadId tid, 
+        ThreadId tid,
+        Char *name,
         struct vki_msghdr *msg, 
         void (*foreach_func)( ThreadId, Bool, Char *, Addr, SizeT ) 
      )
 {
+   Char *fieldName;
+
    if ( !msg )
       return;
 
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_name, sizeof( msg->msg_name ) );
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_namelen, sizeof( msg->msg_namelen ) );
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_iov, sizeof( msg->msg_iov ) );
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_iovlen, sizeof( msg->msg_iovlen ) );
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_control, sizeof( msg->msg_control ) );
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_controllen, sizeof( msg->msg_controllen ) );
-   foreach_func ( tid, False, "(msg)", (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
+   fieldName = VG_(arena_malloc) ( VG_AR_CORE, "di.syswrap.mfef", VG_(strlen)(name) + 32 );
 
-   if ( msg->msg_name )
-      foreach_func ( tid, False,
-                     "(msg.msg_name)", 
+   VG_(sprintf) ( fieldName, "(%s)", name );
+
+   foreach_func ( tid, True, fieldName, (Addr)&msg->msg_name, sizeof( msg->msg_name ) );
+   foreach_func ( tid, True, fieldName, (Addr)&msg->msg_namelen, sizeof( msg->msg_namelen ) );
+   foreach_func ( tid, True, fieldName, (Addr)&msg->msg_iov, sizeof( msg->msg_iov ) );
+   foreach_func ( tid, True, fieldName, (Addr)&msg->msg_iovlen, sizeof( msg->msg_iovlen ) );
+   foreach_func ( tid, True, fieldName, (Addr)&msg->msg_control, sizeof( msg->msg_control ) );
+   foreach_func ( tid, True, fieldName, (Addr)&msg->msg_controllen, sizeof( msg->msg_controllen ) );
+   foreach_func ( tid, False, fieldName, (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
+
+   if ( msg->msg_name ) {
+      VG_(sprintf) ( fieldName, "(%s.msg_name)", name );
+      foreach_func ( tid, False, fieldName, 
                      (Addr)msg->msg_name, msg->msg_namelen );
+   }
 
    if ( msg->msg_iov ) {
       struct vki_iovec *iov = msg->msg_iov;
       UInt i;
 
-      foreach_func ( tid, True,
-                     "(msg.msg_iov)", 
+      VG_(sprintf) ( fieldName, "(%s.msg_iov)", name );
+
+      foreach_func ( tid, True, fieldName, 
                      (Addr)iov, msg->msg_iovlen * sizeof( struct vki_iovec ) );
 
-      for ( i = 0; i < msg->msg_iovlen; ++i, ++iov )
-         foreach_func ( tid, False,
-                        "(msg.msg_iov[i])", 
+
+      for ( i = 0; i < msg->msg_iovlen; ++i, ++iov ) {
+         VG_(sprintf) ( fieldName, "(%s.msg_iov[%u])", name, i );
+         foreach_func ( tid, False, fieldName, 
                         (Addr)iov->iov_base, iov->iov_len );
+      }
    }
 
-   if ( msg->msg_control )
-      foreach_func ( tid, False,
-                     "(msg.msg_control)", 
+   if ( msg->msg_control ) 
+   {
+      VG_(sprintf) ( fieldName, "(%s.msg_control)", name );
+      foreach_func ( tid, False, fieldName, 
                      (Addr)msg->msg_control, msg->msg_controllen );
+   }
+
+   VG_(arena_free) ( VG_AR_CORE, fieldName );
 }
 
 static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
@@ -1490,31 +1505,23 @@ ML_(generic_POST_sys_getpeername) ( ThreadId tid,
 /* ------ */
 
 void 
-ML_(generic_PRE_sys_sendmsg) ( ThreadId tid,
-                               UWord arg0, UWord arg1 )
+ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
 {
-   /* int sendmsg(int s, const struct msghdr *msg, int flags); */
-   struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
-   msghdr_foreachfield ( tid, msg, pre_mem_read_sendmsg );
+   msghdr_foreachfield ( tid, name, msg, pre_mem_read_sendmsg );
 }
 
 /* ------ */
 
 void
-ML_(generic_PRE_sys_recvmsg) ( ThreadId tid,
-                               UWord arg0, UWord arg1 )
+ML_(generic_PRE_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
 {
-   /* int recvmsg(int s, struct msghdr *msg, int flags); */
-   struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
-   msghdr_foreachfield ( tid, msg, pre_mem_write_recvmsg );
+   msghdr_foreachfield ( tid, name, msg, pre_mem_write_recvmsg );
 }
 
 void 
-ML_(generic_POST_sys_recvmsg) ( ThreadId tid,
-                                UWord arg0, UWord arg1 )
+ML_(generic_POST_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
 {
-   struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
-   msghdr_foreachfield( tid, msg, post_mem_write_recvmsg );
+   msghdr_foreachfield( tid, name, msg, post_mem_write_recvmsg );
    check_cmsg_for_fds( tid, msg );
 }
 

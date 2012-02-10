@@ -3539,6 +3539,57 @@ PRE(sys_process_vm_writev)
 }
 
 /* ---------------------------------------------------------------------
+   {send,recv}mmsg wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_sendmmsg)
+{
+   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
+   Char name[32];
+   UInt i;
+   *flags |= SfMayBlock;
+   PRINT("sys_sendmmsg ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "sendmmsg",
+                 int, s, const struct mmsghdr *, mmsg, int, vlen, int, flags);
+   for (i = 0; i < ARG3; i++) {
+      VG_(sprintf)(name, "mmsg[%u]", i);
+      ML_(generic_PRE_sys_sendmsg)(tid, name, &mmsg[i].msg_hdr);
+   }
+}
+
+PRE(sys_recvmmsg)
+{
+   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
+   Char name[32];
+   UInt i;
+   *flags |= SfMayBlock;
+   PRINT("sys_recvmmsg ( %ld, %#lx, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "recvmmsg",
+                 int, s, struct mmsghdr *, mmsg, int, vlen,
+                 int, flags, struct timespec *, timeout);
+   for (i = 0; i < ARG3; i++) {
+      VG_(sprintf)(name, "mmsg[%u]", i);
+      ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
+   }
+   if (ARG5)
+      PRE_MEM_READ( "recvmmsg(timeout)", ARG5, sizeof(struct vki_timespec) );
+}
+
+POST(sys_recvmmsg)
+{
+   if (RES > 0) {
+      struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
+      Char name[32];
+      UInt i;
+      for (i = 0; i < RES; i++) {
+         VG_(sprintf)(name, "mmsg[%u]", i);
+         ML_(generic_POST_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
+         POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+      }
+   }
+}
+
+/* ---------------------------------------------------------------------
    key retention service wrappers
    ------------------------------------------------------------------ */
 

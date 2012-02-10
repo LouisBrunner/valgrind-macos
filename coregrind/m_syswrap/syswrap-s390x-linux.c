@@ -625,7 +625,7 @@ PRE(sys_socketcall)
          SET_STATUS_Failure( VKI_EFAULT );
          break;
      }
-     ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_sendmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -636,7 +636,7 @@ PRE(sys_socketcall)
          SET_STATUS_Failure( VKI_EFAULT );
          break;
      }
-     ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_recvmsg)( tid, "msg2", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -740,7 +740,7 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_RECVMSG:
-    ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+    ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
     break;
 
   default:

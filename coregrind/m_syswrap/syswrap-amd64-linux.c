@@ -747,7 +747,7 @@ PRE(sys_sendmsg)
    PRINT("sys_sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sendmsg",
                  int, s, const struct msghdr *, msg, int, flags);
-   ML_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_sendmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 
 PRE(sys_recvmsg)
@@ -755,11 +755,11 @@ PRE(sys_recvmsg)
    *flags |= SfMayBlock;
    PRINT("sys_recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
-   ML_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 POST(sys_recvmsg)
 {
-   ML_(generic_POST_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 
 PRE(sys_shutdown)
@@ -1411,7 +1411,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 296
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 297
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 298
-//   LINX_(__NR_recvmmsg,          sys_ni_syscall),       // 299
+   LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 299
 
 //   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 300
 //   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 301
@@ -1421,7 +1421,7 @@ static SyscallTableEntry syscall_table[] = {
 
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 305
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 306
-//   LINX_(__NR_sendmmsg,          sys_ni_syscall),       // 307
+   LINX_(__NR_sendmmsg,          sys_sendmmsg),         // 307
 //   LINX_(__NR_setns,             sys_ni_syscall),       // 308
    LINXY(__NR_getcpu,            sys_getcpu),           // 309
 

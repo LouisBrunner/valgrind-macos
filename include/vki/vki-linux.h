@@ -1751,6 +1751,20 @@ typedef struct vki_sg_scsi_id { /* used by SG_GET_SCSI_ID ioctl() */
 #define VKI_SG_SET_COMMAND_Q 0x2271   /* Change queuing state with 0 or 1 */
 
 //----------------------------------------------------------------------
+// From linux-2.6.34/include/scsi/scsi.h and scsi/scsi_ioctl.h
+//----------------------------------------------------------------------
+
+#define VKI_SCSI_IOCTL_DOORLOCK		0x5380 /* Lock the eject mechanism.  */
+#define VKI_SCSI_IOCTL_DOORUNLOCK	0x5381 /* Unlock the mechanism.  */
+#define VKI_SCSI_IOCTL_GET_IDLUN	0x5382
+#define VKI_SCSI_IOCTL_GET_BUS_NUMBER	0x5386
+
+struct vki_scsi_idlun {
+	__vki_u32 dev_id;
+	__vki_u32 host_unique_id;
+};
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/cdrom.h
 //----------------------------------------------------------------------
 

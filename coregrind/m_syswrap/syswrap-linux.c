@@ -4032,6 +4032,10 @@ PRE(sys_ioctl)
    case VKI_SNDRV_TIMER_IOCTL_STOP:
    case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
    case VKI_SNDRV_TIMER_IOCTL_PAUSE:
+
+      /* SCSI no operand */
+   case VKI_SCSI_IOCTL_DOORLOCK:
+   case VKI_SCSI_IOCTL_DOORUNLOCK:
       PRINT("sys_ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
@@ -4515,6 +4519,14 @@ PRE(sys_ioctl)
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
       PRE_MEM_WRITE( "ioctl(HDIO_GET_IDENTITY)", ARG3,
                      VKI_SIZEOF_STRUCT_HD_DRIVEID );
+      break;
+
+      /* SCSI */
+   case VKI_SCSI_IOCTL_GET_IDLUN: /* 0x5382 */
+      PRE_MEM_WRITE( "ioctl(SCSI_IOCTL_GET_IDLUN)", ARG3, sizeof(struct vki_scsi_idlun));
+      break;
+   case VKI_SCSI_IOCTL_GET_BUS_NUMBER: /* 0x5386 */
+      PRE_MEM_WRITE( "ioctl(SCSI_IOCTL_GET_BUS_NUMBER)", ARG3, sizeof(int));
       break;
 
       /* CD ROM stuff (??)  */
@@ -5618,6 +5630,10 @@ POST(sys_ioctl)
    case VKI_SNDRV_TIMER_IOCTL_STOP:
    case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
    case VKI_SNDRV_TIMER_IOCTL_PAUSE:
+
+      /* SCSI no operand */
+   case VKI_SCSI_IOCTL_DOORLOCK:
+   case VKI_SCSI_IOCTL_DOORUNLOCK:
       break;
 
       /* Real Time Clock (/dev/rtc) ioctls */
@@ -5682,6 +5698,14 @@ POST(sys_ioctl)
       break;
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
       POST_MEM_WRITE(ARG3, VKI_SIZEOF_STRUCT_HD_DRIVEID );
+      break;
+
+      /* SCSI */
+   case VKI_SCSI_IOCTL_GET_IDLUN: /* 0x5382 */
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_scsi_idlun));
+      break;
+   case VKI_SCSI_IOCTL_GET_BUS_NUMBER: /* 0x5386 */
+      POST_MEM_WRITE(ARG3, sizeof(int));
       break;
 
       /* CD ROM stuff (??)  */

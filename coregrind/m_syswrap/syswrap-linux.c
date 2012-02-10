@@ -3552,7 +3552,7 @@ PRE(sys_sendmmsg)
    PRE_REG_READ4(long, "sendmmsg",
                  int, s, const struct mmsghdr *, mmsg, int, vlen, int, flags);
    for (i = 0; i < ARG3; i++) {
-      VG_(sprintf)(name, "mmsg[%u]", i);
+      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
       ML_(generic_PRE_sys_sendmsg)(tid, name, &mmsg[i].msg_hdr);
       VG_(sprintf)(name, "sendmmsg(mmsg[%u].msg_len)", i);
       PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
@@ -3581,7 +3581,7 @@ PRE(sys_recvmmsg)
                  int, s, struct mmsghdr *, mmsg, int, vlen,
                  int, flags, struct timespec *, timeout);
    for (i = 0; i < ARG3; i++) {
-      VG_(sprintf)(name, "mmsg[%u]", i);
+      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
       ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
       VG_(sprintf)(name, "recvmmsg(mmsg[%u].msg_len)", i);
       PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
@@ -3597,7 +3597,7 @@ POST(sys_recvmmsg)
       Char name[32];
       UInt i;
       for (i = 0; i < RES; i++) {
-         VG_(sprintf)(name, "mmsg[%u]", i);
+         VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
          ML_(generic_POST_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
          POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
       }

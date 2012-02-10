@@ -160,7 +160,8 @@ EXTRA_DIST = \
 	threadederrno.vgtest \
 	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
-	vgprintf.stderr.exp vgprintf.vgtest
+	vgprintf.stderr.exp vgprintf.vgtest \
+	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
 
 check_PROGRAMS = \
 	ansi args \
@@ -198,7 +199,8 @@ check_PROGRAMS = \
 	valgrind_cpp_test \
 	vgprintf \
 	coolo_sigaction \
-	gxx304
+	gxx304 \
+	process_vm_readv_writev
 
 # DDD:
 # - manythreads and thread-exits have lots of this:

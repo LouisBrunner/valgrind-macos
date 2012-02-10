@@ -3978,6 +3978,80 @@ Syscall param epoll_create1(flags) contains uninitialised byte(s)
    by 0x........: main (scalar.c:1258)
 
 -----------------------------------------------------
+347:__NR_process_vm_readv 6s 2m
+-----------------------------------------------------
+Syscall param process_vm_readv(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+
+Syscall param process_vm_readv(lvec) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+
+Syscall param process_vm_readv(liovcnt) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+
+Syscall param process_vm_readv(rvec) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+
+Syscall param process_vm_readv(riovcnt) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+
+Syscall param process_vm_readv(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+
+Syscall param process_vm_readv(lvec) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param process_vm_readv(rvec) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:1262)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+348:__NR_process_vm_writev 6s 2m
+-----------------------------------------------------
+Syscall param process_vm_writev(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+
+Syscall param process_vm_writev(lvec) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+
+Syscall param process_vm_writev(liovcnt) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+
+Syscall param process_vm_writev(rvec) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+
+Syscall param process_vm_writev(riovcnt) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+
+Syscall param process_vm_writev(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+
+Syscall param process_vm_writev(lvec) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param process_vm_writev(rvec) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:1266)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 9999:                9999 1e
 -----------------------------------------------------
 WARNING: unhandled syscall: 9999
@@ -3990,5 +4064,5 @@ it at http://valgrind.org/support/bug_reports.html.
 -----------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1266)
+   by 0x........: main (scalar.c:1274)
 

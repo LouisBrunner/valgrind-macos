@@ -263,6 +263,10 @@ DECL_TEMPLATE(linux, sys_delete_module);
 // Linux-specific (oprofile-related)
 DECL_TEMPLATE(linux, sys_lookup_dcookie);        // (*/32/64) L
 
+// Linux-specific (new in Linux 3.2)
+DECL_TEMPLATE(linux, sys_process_vm_readv);
+DECL_TEMPLATE(linux, sys_process_vm_writev);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

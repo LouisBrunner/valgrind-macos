@@ -3472,6 +3472,73 @@ PRE(sys_pwritev)
 }
 
 /* ---------------------------------------------------------------------
+   process_vm_{read,write}v wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_process_vm_readv)
+{
+   PRINT("sys_process_vm_readv ( %lu, %#lx, %lu, %#lx, %lu, %lu )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(ssize_t, "process_vm_readv",
+                 vki_pid_t, pid,
+                 const struct iovec *, lvec,
+                 unsigned long, liovcnt,
+                 const struct iovec *, rvec,
+                 unsigned long, riovcnt,
+                 unsigned long, flags);
+   PRE_MEM_READ( "process_vm_readv(lvec)",
+                 ARG2, ARG3 * sizeof(struct vki_iovec) );
+   PRE_MEM_READ( "process_vm_readv(rvec)",
+                 ARG4, ARG5 * sizeof(struct vki_iovec) );
+   if (ARG2 != 0) {
+      /* TODO: Don't do any of the following if lvec is invalid */
+      const struct vki_iovec *vec = (const struct vki_iovec *)ARG2;
+      UInt i;
+      for (i = 0; i < ARG3; i++)
+         PRE_MEM_WRITE( "process_vm_readv(lvec[...])",
+                        (Addr)vec[i].iov_base, vec[i].iov_len );
+   }
+}
+
+POST(sys_process_vm_readv)
+{
+   const struct vki_iovec *vec = (const struct vki_iovec *)ARG2;
+   UInt remains = RES;
+   UInt i;
+   for (i = 0; i < ARG3; i++) {
+      UInt nReadThisBuf = vec[i].iov_len <= remains ?
+                          vec[i].iov_len : remains;
+      POST_MEM_WRITE( (Addr)vec[i].iov_base, nReadThisBuf );
+      remains -= nReadThisBuf;
+   }
+}
+
+PRE(sys_process_vm_writev)
+{
+   PRINT("sys_process_vm_writev ( %lu, %#lx, %lu, %#lx, %lu, %lu )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(ssize_t, "process_vm_writev",
+                 vki_pid_t, pid,
+                 const struct iovec *, lvec,
+                 unsigned long, liovcnt,
+                 const struct iovec *, rvec,
+                 unsigned long, riovcnt,
+                 unsigned long, flags);
+   PRE_MEM_READ( "process_vm_writev(lvec)",
+                 ARG2, ARG3 * sizeof(struct vki_iovec) );
+   PRE_MEM_READ( "process_vm_writev(rvec)",
+                 ARG4, ARG5 * sizeof(struct vki_iovec) );
+   if (ARG2 != 0) {
+      /* TODO: Don't do any of the following if lvec is invalid */
+      const struct vki_iovec *vec = (const struct vki_iovec *)ARG2;
+      UInt i;
+      for (i = 0; i < ARG3; i++)
+         PRE_MEM_READ( "process_vm_writev(lvec[...])",
+                       (Addr)vec[i].iov_base, vec[i].iov_len );
+   }
+}
+
+/* ---------------------------------------------------------------------
    key retention service wrappers
    ------------------------------------------------------------------ */
 

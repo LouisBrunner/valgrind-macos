@@ -759,7 +759,7 @@ PRE(sys_recvmsg)
 }
 POST(sys_recvmsg)
 {
-   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
+   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2, RES);
 }
 
 PRE(sys_shutdown)

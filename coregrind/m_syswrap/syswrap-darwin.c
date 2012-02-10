@@ -3121,7 +3121,7 @@ PRE(recvmsg)
 
 POST(recvmsg)
 {
-   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
+   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2, RES);
 }
 
 

@@ -237,7 +237,7 @@ extern void   ML_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_getpeername) ( TId, SR, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_sendmsg)      ( TId, Char *, struct vki_msghdr * );
 extern void   ML_(generic_PRE_sys_recvmsg)      ( TId, Char *, struct vki_msghdr * );
-extern void   ML_(generic_POST_sys_recvmsg)     ( TId, Char *, struct vki_msghdr * );
+extern void   ML_(generic_POST_sys_recvmsg)     ( TId, Char *, struct vki_msghdr *, UInt );
 
 extern void   ML_(generic_PRE_sys_semop)        ( TId, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_semtimedop)   ( TId, UW, UW, UW, UW );

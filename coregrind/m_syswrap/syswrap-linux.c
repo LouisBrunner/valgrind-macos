@@ -3598,7 +3598,7 @@ POST(sys_recvmmsg)
       UInt i;
       for (i = 0; i < RES; i++) {
          VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
-         ML_(generic_POST_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
+         ML_(generic_POST_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr, mmsg[i].msg_len);
          POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
       }
    }

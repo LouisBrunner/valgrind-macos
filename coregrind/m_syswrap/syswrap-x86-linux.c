@@ -1693,8 +1693,8 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVMSG:
-     ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
-     break;
+      ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1, RES );
+      break;
 
    default:
       VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%lx\n",ARG1);

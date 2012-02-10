@@ -846,7 +846,8 @@ static
 void msghdr_foreachfield ( 
         ThreadId tid,
         Char *name,
-        struct vki_msghdr *msg, 
+        struct vki_msghdr *msg,
+        UInt length,
         void (*foreach_func)( ThreadId, Bool, Char *, Addr, SizeT ) 
      )
 {
@@ -882,11 +883,12 @@ void msghdr_foreachfield (
       foreach_func ( tid, True, fieldName, 
                      (Addr)iov, msg->msg_iovlen * sizeof( struct vki_iovec ) );
 
-
       for ( i = 0; i < msg->msg_iovlen; ++i, ++iov ) {
+         UInt iov_len = iov->iov_len <= length ? iov->iov_len : length;
          VG_(sprintf) ( fieldName, "(%s.msg_iov[%u])", name, i );
          foreach_func ( tid, False, fieldName, 
-                        (Addr)iov->iov_base, iov->iov_len );
+                        (Addr)iov->iov_base, iov_len );
+         length = length - iov_len;
       }
    }
 
@@ -1507,7 +1509,7 @@ ML_(generic_POST_sys_getpeername) ( ThreadId tid,
 void 
 ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
 {
-   msghdr_foreachfield ( tid, name, msg, pre_mem_read_sendmsg );
+   msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_read_sendmsg );
 }
 
 /* ------ */
@@ -1515,13 +1517,13 @@ ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg 
 void
 ML_(generic_PRE_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
 {
-   msghdr_foreachfield ( tid, name, msg, pre_mem_write_recvmsg );
+   msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_write_recvmsg );
 }
 
 void 
-ML_(generic_POST_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
+ML_(generic_POST_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg, UInt length )
 {
-   msghdr_foreachfield( tid, name, msg, post_mem_write_recvmsg );
+   msghdr_foreachfield( tid, name, msg, length, post_mem_write_recvmsg );
    check_cmsg_for_fds( tid, msg );
 }
 

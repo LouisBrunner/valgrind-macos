@@ -3583,7 +3583,7 @@ PRE(sys_recvmmsg)
    for (i = 0; i < ARG3; i++) {
       VG_(sprintf)(name, "mmsg[%u]", i);
       ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
-      VG_(sprintf)(name, "sendmmsg(mmsg[%u].msg_len)", i);
+      VG_(sprintf)(name, "recvmmsg(mmsg[%u].msg_len)", i);
       PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
    }
    if (ARG5)

@@ -9,13 +9,21 @@
 # Helper functions
 #----------------------------------------------------------------------------
 
-# Returns the revision number of the source files with date $1.
+# Returns the revision number for the source files at date $1 in Subversion
+# repo $2. Note: the "--depth" command line argument is supported from
+# Subversion version 1.5 on.
 get_svn_revision() {
-  (cd $DIR; rm -rf infodir;
-   svn co -r "{$1}" "${valgrind_svn_repo}/nightly" infodir > /dev/null;
-   revno=`svn info infodir | sed -n 's/^Revision: //p'`;
-   rm -rf infodir;
-   echo $revno)
+  (
+    cd $DIR
+    rm -rf infodir
+    if ! svn co -r "{$1}" --depth empty "$2" infodir > /dev/null 2>&1; then
+      # Subversion 1.4 or before.
+      rm -rf infodir
+      svn co -r "{$1}" --non-recursive "$2" infodir > /dev/null
+    fi
+    svn info infodir | sed -n 's/^Revision: //p'
+    rm -rf infodir
+  )
 }
 
 runcmd () {
@@ -52,6 +60,7 @@ runcmd () {
 #----------------------------------------------------------------------------
 
 valgrind_svn_repo="svn://svn.valgrind.org/valgrind/trunk"
+vex_svn_repo="svn://svn.valgrind.org/vex/trunk"
 
 # Must have exactly two arguments
 if [ $# -ne 2 ] ; then
@@ -112,10 +121,13 @@ fi
 # Check out, build, test
 #----------------------------------------------------------------------------
 
-svn_old_rev="`get_svn_revision ${svn_old_date}`"
-svn_new_rev="`get_svn_revision ${svn_new_date}`"
-if [ "${svn_old_rev}" = "${svn_new_rev}" ]; then
-  echo "Both {$svn_old_date} and {$svn_new_date} correspond to r${svn_new_rev}"\
+vg_old_rev="`get_svn_revision ${svn_old_date} ${valgrind_svn_repo}`"
+vg_new_rev="`get_svn_revision ${svn_new_date} ${valgrind_svn_repo}`"
+vex_old_rev="`get_svn_revision ${svn_old_date} ${vex_svn_repo}`"
+vex_new_rev="`get_svn_revision ${svn_new_date} ${vex_svn_repo}`"
+if [ "${vg_old_rev}" = "${vg_new_rev}" -a "${vex_old_rev}" = "${vex_new_rev}" ]
+then
+  echo "Both {$svn_old_date} and {$svn_new_date} correspond to Valgrind r${vg_new_rev} / VEX r${vex_new_rev}"\
        "-- skipping nightly build." >unchanged.log
   exit 0
 fi
@@ -141,7 +153,8 @@ for logfile in old new ; do
    # Check out, build, run tests
    runcmd $logfile \
           "Checking out valgrind source tree" \
-          "svn co ${valgrind_svn_repo} -r {$svn_date} valgrind-$logfile" && \
+          "svn co ${valgrind_svn_repo} -r {$svn_date} valgrind-$logfile\
+           && svn update -r {$svn_date} valgrind-$logfile/VEX" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \

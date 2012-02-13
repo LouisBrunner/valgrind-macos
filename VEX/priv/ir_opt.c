@@ -46,6 +46,9 @@
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
 
+/* Set to 1 to gather some statistics. Currently only for sameIRExprs. */
+#define STATS_IROPT 0
+
 
 /* What iropt does, 29 Dec 04.
 
@@ -883,40 +886,138 @@ static void redundant_put_removal_BB (
 /*--- Constant propagation and folding                        ---*/
 /*---------------------------------------------------------------*/
 
+#if STATS_IROPT
+/* How often sameIRExprs was invoked */
+static UInt invocation_count;
+/* How often sameIRExprs recursed through IRTemp assignments */
+static UInt recursion_count;
+/* How often sameIRExprs found identical IRExprs */
+static UInt success_count;
+/* How often recursing through assignments to IRTemps helped
+   establishing equality. */
+static UInt recursion_success_count;
+/* Whether or not recursing through an IRTemp assignment helped 
+   establishing IRExpr equality for a given sameIRExprs invocation. */
+static Bool recursion_helped;
+/* Whether or not a given sameIRExprs invocation recursed through an
+   IRTemp assignment */
+static Bool recursed;
+/* Maximum number of nodes ever visited when comparing two IRExprs. */
+static UInt max_nodes_visited;
+#endif /* STATS_IROPT */
+
+/* Count the number of nodes visited for a given sameIRExprs invocation. */
+static UInt num_nodes_visited;
+
+/* Do not visit more than NODE_LIMIT nodes when comparing two IRExprs.
+   This is to guard against performance degradation by visiting large
+   trees without success. */
+#define NODE_LIMIT 30
+
+
 /* The env in this section is a map from IRTemp to IRExpr*,
    that is, an array indexed by IRTemp. */
 
-/* Are both expressions simply the same IRTemp ? */
-static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
+/* Do both expressions compute the same value? The answer is generally
+   conservative, i.e. it will report that the expressions do not compute
+   the same value when in fact they do. The reason is that we do not
+   keep track of changes in the guest state and memory. Thusly, two
+   Get's, GetI's or Load's, even when accessing the same location, will be
+   assumed to compute different values. After all the accesses may happen
+   at different times and the guest state / memory can have changed in
+   the meantime. */
+static Bool sameIRExprs_aux ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 {
-   return toBool( e1->tag == Iex_RdTmp
-                  && e2->tag == Iex_RdTmp
-                  && e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp );
-}
+   if (e1->tag != e2->tag) return False;
 
-static Bool sameIcoU32s ( IRExpr* e1, IRExpr* e2 )
-{
-   return toBool( e1->tag == Iex_Const
-                  && e2->tag == Iex_Const
-                  && e1->Iex.Const.con->tag == Ico_U32
-                  && e2->Iex.Const.con->tag == Ico_U32
-                  && e1->Iex.Const.con->Ico.U32
-                     == e2->Iex.Const.con->Ico.U32 );
-}
+   if (num_nodes_visited++ > NODE_LIMIT) return False;
 
-/* Are both expressions either the same IRTemp or IRConst-U32s ?  If
-   in doubt, say No. */
-static Bool sameIRTempsOrIcoU32s ( IRExpr* e1, IRExpr* e2 )
-{
    switch (e1->tag) {
       case Iex_RdTmp:
-         return sameIRTemps(e1, e2);
-      case Iex_Const:
-         return sameIcoU32s(e1, e2);
-      default:
+         if (e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp) return True;
+
+         if (env[e1->Iex.RdTmp.tmp] && env[e2->Iex.RdTmp.tmp]) {
+            Bool same = sameIRExprs_aux(env, env[e1->Iex.RdTmp.tmp],
+                                        env[e2->Iex.RdTmp.tmp]);
+#if STATS_IROPT
+            recursed = True;
+            if (same) recursion_helped = True;
+#endif
+            return same;
+         }
          return False;
+
+      case Iex_Get:
+      case Iex_GetI:
+      case Iex_Load:
+         /* Guest state / memory could have changed in the meantime. */
+         return False;
+
+      case Iex_Binop:
+         return toBool( e1->Iex.Binop.op == e2->Iex.Binop.op
+                        && sameIRExprs_aux( env, e1->Iex.Binop.arg1, e2->Iex.Binop.arg1 )
+                        && sameIRExprs_aux( env, e1->Iex.Binop.arg2, e2->Iex.Binop.arg2 ));
+
+      case Iex_Unop:
+         return toBool( e1->Iex.Unop.op == e2->Iex.Unop.op
+                        && sameIRExprs_aux( env, e1->Iex.Unop.arg, e2->Iex.Unop.arg ));
+
+      case Iex_Const: {
+         IRConst *c1 = e1->Iex.Const.con;
+         IRConst *c2 = e2->Iex.Const.con;
+         vassert(c1->tag == c2->tag);
+         switch (c1->tag) {
+            case Ico_U1:   return toBool( c1->Ico.U1  == c2->Ico.U1 );
+            case Ico_U8:   return toBool( c1->Ico.U8  == c2->Ico.U8 );
+            case Ico_U16:  return toBool( c1->Ico.U16 == c2->Ico.U16 );
+            case Ico_U32:  return toBool( c1->Ico.U32 == c2->Ico.U32 );
+            case Ico_U64:  return toBool( c1->Ico.U64 == c2->Ico.U64 );
+            default: break;
+         }
+         return False;
+      }
+
+      case Iex_Triop:
+         return toBool( e1->Iex.Triop.op == e2->Iex.Triop.op
+                        && sameIRExprs_aux( env, e1->Iex.Triop.arg1, e2->Iex.Triop.arg1 )
+                        && sameIRExprs_aux( env, e1->Iex.Triop.arg2, e2->Iex.Triop.arg2 )
+                        && sameIRExprs_aux( env, e1->Iex.Triop.arg3, e2->Iex.Triop.arg3 ));
+
+      case Iex_Mux0X:
+         return toBool(    sameIRExprs_aux( env, e1->Iex.Mux0X.cond,  e2->Iex.Mux0X.cond )
+                        && sameIRExprs_aux( env, e1->Iex.Mux0X.expr0, e2->Iex.Mux0X.expr0 )
+                        && sameIRExprs_aux( env, e1->Iex.Mux0X.exprX, e2->Iex.Mux0X.exprX ));
+
+      default:
+         /* Not very likely to be "same". */
+         break;
    }
+
+   return False;
 }
+
+static Bool sameIRExprs ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
+{
+   Bool same;
+
+   num_nodes_visited = 0;
+   same = sameIRExprs_aux(env, e1, e2);
+
+#if STATS_IROPT
+   ++invocation_count;
+   if (recursed) ++recursion_count;
+   success_count += same;
+   if (same && recursion_helped)
+      ++recursion_success_count;
+   if (num_nodes_visited > max_nodes_visited)
+      max_nodes_visited = num_nodes_visited;
+   recursed = False; /* reset */
+   recursion_helped = False;  /* reset */
+#endif /* STATS_IROPT */
+
+   return same;
+}
+
 
 /* Is this literally IRExpr_Const(IRConst_U32(0)) ? */
 static Bool isZeroU32 ( IRExpr* e )
@@ -1014,7 +1115,7 @@ static UInt fold_Clz32 ( UInt value )
 }
 
 
-static IRExpr* fold_Expr ( IRExpr* e )
+static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 {
    Int     shift;
    IRExpr* e2 = e; /* e2 is the result of folding e, if possible */
@@ -1638,7 +1739,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                   break;
                }
                /* Or8/Or16/Or32/Max32U(t,t) ==> t, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
@@ -1650,7 +1751,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                   x+x produces a defined least significant bit, and it seems
                   simplest just to get rid of the problem by rewriting it
                   out, since the opportunity to do so exists. */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = IRExpr_Binop(Iop_Shl8, e->Iex.Binop.arg1,
                                     IRExpr_Const(IRConst_U8(1)));
                   break;
@@ -1672,7 +1773,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                   break;
                }
                /* Add32/Add64(t,t) ==> t << 1. Same rationale as for Add8. */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = IRExpr_Binop(e->Iex.Binop.op == Iop_Add32 ? Iop_Shl32 : Iop_Shl64,
                                     e->Iex.Binop.arg1, IRExpr_Const(IRConst_U8(1)));
                   break;
@@ -1686,7 +1787,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                   break;
                }
                /* Sub64(t,t) ==> 0, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
@@ -1710,7 +1811,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                   break;
                }
                /* And32(t,t) ==> t, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
@@ -1720,7 +1821,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
             case Iop_And16:
             case Iop_And64:
                /* And8/And16/And64(t,t) ==> t, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
@@ -1728,7 +1829,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
 
             case Iop_OrV128:
                /* V128(t,t) ==> t, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
@@ -1740,7 +1841,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
             case Iop_Xor64:
             case Iop_XorV128:
                /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
@@ -1748,7 +1849,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
 
             case Iop_Sub32:
                /* Sub32(t,t) ==> 0, for some IRTemp t */
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
@@ -1757,7 +1858,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ8x16:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
@@ -1782,15 +1883,15 @@ static IRExpr* fold_Expr ( IRExpr* e )
       }
       else
       /* are the arms identical? (pretty weedy test) */
-      if (sameIRTempsOrIcoU32s(e->Iex.Mux0X.expr0,
-                               e->Iex.Mux0X.exprX)) {
+      if (sameIRExprs(env, e->Iex.Mux0X.expr0,
+                      e->Iex.Mux0X.exprX)) {
          e2 = e->Iex.Mux0X.expr0;
       }
    }
 
    /* Show cases where we've found but not folded 'op(t,t)'. */
    if (0 && e == e2 && e->tag == Iex_Binop 
-       && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+       && sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
       vex_printf("IDENT: ");
       ppIRExpr(e); vex_printf("\n");
    }
@@ -1828,11 +1929,15 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
    switch (ex->tag) {
       case Iex_RdTmp:
          if (env[(Int)ex->Iex.RdTmp.tmp] != NULL) {
-            return env[(Int)ex->Iex.RdTmp.tmp];
-         } else {
-            /* not bound in env */
-            return ex;
+            IRExpr *rhs = env[(Int)ex->Iex.RdTmp.tmp];
+            if (rhs->tag == Iex_RdTmp)
+               return rhs;
+            if (rhs->tag == Iex_Const
+                && rhs->Iex.Const.con->tag != Ico_F64i)
+               return rhs;
          }
+         /* not bound in env */
+         return ex;
 
       case Iex_Const:
       case Iex_Get:
@@ -1943,15 +2048,15 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.AbiHint.base));
          vassert(isIRAtom(st->Ist.AbiHint.nia));
          return IRStmt_AbiHint(
-                   fold_Expr(subst_Expr(env, st->Ist.AbiHint.base)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.AbiHint.base)),
                    st->Ist.AbiHint.len,
-                   fold_Expr(subst_Expr(env, st->Ist.AbiHint.nia))
+                   fold_Expr(env, subst_Expr(env, st->Ist.AbiHint.nia))
                 );
       case Ist_Put:
          vassert(isIRAtom(st->Ist.Put.data));
          return IRStmt_Put(
                    st->Ist.Put.offset, 
-                   fold_Expr(subst_Expr(env, st->Ist.Put.data)) 
+                   fold_Expr(env, subst_Expr(env, st->Ist.Put.data)) 
                 );
 
       case Ist_PutI:
@@ -1959,9 +2064,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.PutI.data));
          return IRStmt_PutI(
                    st->Ist.PutI.descr,
-                   fold_Expr(subst_Expr(env, st->Ist.PutI.ix)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.PutI.ix)),
                    st->Ist.PutI.bias,
-                   fold_Expr(subst_Expr(env, st->Ist.PutI.data))
+                   fold_Expr(env, subst_Expr(env, st->Ist.PutI.data))
                 );
 
       case Ist_WrTmp:
@@ -1969,7 +2074,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
             allowed to be more than just a constant or a tmp. */
          return IRStmt_WrTmp(
                    st->Ist.WrTmp.tmp,
-                   fold_Expr(subst_Expr(env, st->Ist.WrTmp.data))
+                   fold_Expr(env, subst_Expr(env, st->Ist.WrTmp.data))
                 );
 
       case Ist_Store:
@@ -1977,8 +2082,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.Store.data));
          return IRStmt_Store(
                    st->Ist.Store.end,
-                   fold_Expr(subst_Expr(env, st->Ist.Store.addr)),
-                   fold_Expr(subst_Expr(env, st->Ist.Store.data))
+                   fold_Expr(env, subst_Expr(env, st->Ist.Store.addr)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.Store.data))
                 );
 
       case Ist_CAS: {
@@ -1991,11 +2096,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(cas->dataLo));
          cas2 = mkIRCAS(
                    cas->oldHi, cas->oldLo, cas->end, 
-                   fold_Expr(subst_Expr(env, cas->addr)),
-                   cas->expdHi ? fold_Expr(subst_Expr(env, cas->expdHi)) : NULL,
-                   fold_Expr(subst_Expr(env, cas->expdLo)),
-                   cas->dataHi ? fold_Expr(subst_Expr(env, cas->dataHi)) : NULL,
-                   fold_Expr(subst_Expr(env, cas->dataLo))
+                   fold_Expr(env, subst_Expr(env, cas->addr)),
+                   cas->expdHi ? fold_Expr(env, subst_Expr(env, cas->expdHi)) : NULL,
+                   fold_Expr(env, subst_Expr(env, cas->expdLo)),
+                   cas->dataHi ? fold_Expr(env, subst_Expr(env, cas->dataHi)) : NULL,
+                   fold_Expr(env, subst_Expr(env, cas->dataLo))
                 );
          return IRStmt_CAS(cas2);
       }
@@ -2007,9 +2112,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          return IRStmt_LLSC(
                    st->Ist.LLSC.end,
                    st->Ist.LLSC.result,
-                   fold_Expr(subst_Expr(env, st->Ist.LLSC.addr)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.LLSC.addr)),
                    st->Ist.LLSC.storedata
-                      ? fold_Expr(subst_Expr(env, st->Ist.LLSC.storedata))
+                      ? fold_Expr(env, subst_Expr(env, st->Ist.LLSC.storedata))
                       : NULL
                 );
 
@@ -2022,13 +2127,13 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          d2->args = shallowCopyIRExprVec(d2->args);
          if (d2->mFx != Ifx_None) {
             vassert(isIRAtom(d2->mAddr));
-            d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
+            d2->mAddr = fold_Expr(env, subst_Expr(env, d2->mAddr));
          }
          vassert(isIRAtom(d2->guard));
-         d2->guard = fold_Expr(subst_Expr(env, d2->guard));
+         d2->guard = fold_Expr(env, subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
             vassert(isIRAtom(d2->args[i]));
-            d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
+            d2->args[i] = fold_Expr(env, subst_Expr(env, d2->args[i]));
          }
          return IRStmt_Dirty(d2);
       }
@@ -2047,7 +2152,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
       case Ist_Exit: {
          IRExpr* fcond;
          vassert(isIRAtom(st->Ist.Exit.guard));
-         fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.guard));
+         fcond = fold_Expr(env, subst_Expr(env, st->Ist.Exit.guard));
          if (fcond->tag == Iex_Const) {
             /* Interesting.  The condition on this exit has folded down to
                a constant. */
@@ -2091,10 +2196,9 @@ IRSB* cprop_BB ( IRSB* in )
    out->tyenv = deepCopyIRTypeEnv( in->tyenv );
 
    /* Set up the env with which travels forward.  This holds a
-      substitution, mapping IRTemps to atoms, that is, IRExprs which
-      are either IRTemps or IRConsts.  Thus, copy and constant
-      propagation is done.  The environment is to be applied as we
-      move along.  Keys are IRTemps.  Values are IRExpr*s.
+      substitution, mapping IRTemps to IRExprs. The environment 
+      is to be applied as we move along.  Keys are IRTemps.
+      Values are IRExpr*s.
    */
    for (i = 0; i < n_tmps; i++)
       env[i] = NULL;
@@ -2117,31 +2221,33 @@ IRSB* cprop_BB ( IRSB* in )
       /* If the statement has been folded into a no-op, forget it. */
       if (st2->tag == Ist_NoOp) continue;
 
-      /* Now consider what the stmt looks like.  If it's of the form
-         't = const' or 't1 = t2', add it to the running environment
-         and not to the output BB.  Otherwise, add it to the output
-         BB.  Note, we choose not to propagate const when const is an
-         F64i, so that F64i literals can be CSE'd later.  This helps
-         x86 floating point code generation. */
+      /* If the statement assigns to an IRTemp add it to the running
+         environment. This is for the benefit of copy propagation
+         and to allow sameIRExpr look through IRTemps. */
+      if (st2->tag == Ist_WrTmp) {
+         vassert(env[(Int)(st2->Ist.WrTmp.tmp)] == NULL);
+         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
 
-      if (st2->tag == Ist_WrTmp 
-          && st2->Ist.WrTmp.data->tag == Iex_Const
-          && st2->Ist.WrTmp.data->Iex.Const.con->tag != Ico_F64i) {
-         /* 't = const' -- add to env.  
-             The pair (IRTemp, IRExpr*) is added. */
-         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
+         /* 't1 = t2' -- don't add to BB; will be optimized out */
+         if (st2->Ist.WrTmp.data->tag == Iex_RdTmp) continue;
+
+         /* 't = const' && 'const != F64i' -- don't add to BB
+            Note, we choose not to propagate const when const is an
+            F64i, so that F64i literals can be CSE'd later.  This helps
+            x86 floating point code generation. */
+         if (st2->Ist.WrTmp.data->tag == Iex_Const
+             && st2->Ist.WrTmp.data->Iex.Const.con->tag != Ico_F64i) continue;
       }
-      else
-      if (st2->tag == Ist_WrTmp && st2->Ist.WrTmp.data->tag == Iex_RdTmp) {
-         /* 't1 = t2' -- add to env.  
-             The pair (IRTemp, IRExpr*) is added. */
-         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
-      }
-      else {
-         /* Not interesting, copy st2 into the output block. */
-         addStmtToIRSB( out, st2 );
-      }
+
+      /* Not interesting, copy st2 into the output block. */
+      addStmtToIRSB( out, st2 );
    }
+
+#if STATS_IROPT
+   vex_printf("sameIRExpr: invoked = %u/%u  equal = %u/%u max_nodes = %u\n",
+              invocation_count, recursion_count, success_count,
+              recursion_success_count, max_nodes_visited);
+#endif
 
    out->next     = subst_Expr( env, in->next );
    out->jumpkind = in->jumpkind;

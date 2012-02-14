@@ -21,6 +21,7 @@ endif
 # which failed the BUILD_SSE3_TESTS test in configure.in.
 
 EXTRA_DIST = \
+	aes.vgtest aes.stdout.exp aes.stderr.exp \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
@@ -91,7 +92,7 @@ if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt64
 endif
 if BUILD_SSE42_TESTS
- check_PROGRAMS += pcmpstr64 pcmpxstrx64 sse4-64 crc32
+ check_PROGRAMS += pcmpstr64 pcmpxstrx64 sse4-64 crc32 aes
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

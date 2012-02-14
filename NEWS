@@ -3,6 +3,9 @@ Release 3.8.0 (????)
 
 * ================== PLATFORM CHANGES =================
 
+* Support for AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
+  AESDEC, AESDECLAST, AESIMC).
+
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
@@ -51,6 +54,7 @@ where XXXXXX is the bug number as listed below.
 287858  VG_(strerror): unknown error 
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
 289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks
+290655  Add support for AESKEYGENASSIST instruction 
 290974  vgdb must align pages to VKI_SHMLBA (16KB) on ARM 
 
 Release 3.7.0 (5 November 2011)

@@ -837,15 +837,9 @@ Bool get_vbits8 ( Addr a, UChar* vbits8 )
 //
 // To avoid the stale nodes building up too much, we periodically (once the
 // table reaches a certain size) garbage collect (GC) the table by
-// traversing it and evicting any "sufficiently stale" nodes, ie. nodes that
-// are stale and haven't been touched for a certain number of collections.
+// traversing it and evicting any nodes not having PDB.
 // If more than a certain proportion of nodes survived, we increase the
 // table size so that GCs occur less often.  
-//
-// (So this a bit different to a traditional GC, where you definitely want
-// to remove any dead nodes.  It's more like we have a resizable cache and
-// we're trying to find the right balance how many elements to evict and how
-// big to make the cache.)
 //
 // This policy is designed to avoid bad table bloat in the worst case where
 // a program creates huge numbers of stale PDBs -- we would get this bloat
@@ -856,6 +850,27 @@ Bool get_vbits8 ( Addr a, UChar* vbits8 )
 // lot of them in later again.  The "sufficiently stale" approach avoids
 // this.  (If a program has many live PDBs, performance will just suck,
 // there's no way around that.)
+//
+// Further comments, JRS 14 Feb 2012.  It turns out that the policy of
+// holding on to stale entries for 2 GCs before discarding them can lead
+// to massive space leaks.  So we're changing to an arrangement where
+// lines are evicted as soon as they are observed to be stale during a
+// GC.  This also has a side benefit of allowing the sufficiently_stale
+// field to be removed from the SecVBitNode struct, reducing its size by
+// 8 bytes, which is a substantial space saving considering that the
+// struct was previously 32 or so bytes, on a 64 bit target.
+//
+// In order to try and mitigate the problem that the "sufficiently stale"
+// heuristic was designed to avoid, the table size is allowed to drift
+// up ("DRIFTUP") slowly to 80000, even if the residency is low.  This
+// means that nodes will exist in the table longer on average, and hopefully
+// will be deleted and re-added less frequently.
+//
+// The previous scaling up mechanism (now called STEPUP) is retained:
+// if residency exceeds 50%, the table is scaled up, although by a 
+// factor sqrt(2) rather than 2 as before.  This effectively doubles the
+// frequency of GCs when there are many PDBs at reduces the tendency of
+// stale PDBs to reside for long periods in the table.
 
 static OSet* secVBitTable;
 
@@ -872,19 +887,29 @@ static ULong sec_vbits_updates   = 0;
 // row), but often not.  So we choose something intermediate.
 #define BYTES_PER_SEC_VBIT_NODE     16
 
-// We make the table bigger if more than this many nodes survive a GC.
-#define MAX_SURVIVOR_PROPORTION  0.5
+// We make the table bigger by a factor of STEPUP_GROWTH_FACTOR if
+// more than this many nodes survive a GC.
+#define STEPUP_SURVIVOR_PROPORTION  0.5
+#define STEPUP_GROWTH_FACTOR        1.414213562
 
-// Each time we make the table bigger, we increase it by this much.
-#define TABLE_GROWTH_FACTOR      2
+// If the above heuristic doesn't apply, then we may make the table
+// slightly bigger, by a factor of DRIFTUP_GROWTH_FACTOR, if more than
+// this many nodes survive a GC, _and_ the total table size does
+// not exceed a fixed limit.  The numbers are somewhat arbitrary, but
+// work tolerably well on long Firefox runs.  The scaleup ratio of 1.5%
+// effectively although gradually reduces residency and increases time
+// between GCs for programs with small numbers of PDBs.  The 80000 limit
+// effectively limits the table size to around 2MB for programs with
+// small numbers of PDBs, whilst giving a reasonably long lifetime to
+// entries, to try and reduce the costs resulting from deleting and
+// re-adding of entries.
+#define DRIFTUP_SURVIVOR_PROPORTION 0.15
+#define DRIFTUP_GROWTH_FACTOR       1.015
+#define DRIFTUP_MAX_SIZE            80000
 
-// This defines "sufficiently stale" -- any node that hasn't been touched in
-// this many GCs will be removed.
-#define MAX_STALE_AGE            2
-      
 // We GC the table when it gets this many nodes in it, ie. it's effectively
 // the table size.  It can change.
-static Int  secVBitLimit = 1024;
+static Int  secVBitLimit = 1000;
 
 // The number of GCs done, used to age sec-V-bit nodes for eviction.
 // Because it's unsigned, wrapping doesn't matter -- the right answer will
@@ -895,7 +920,6 @@ typedef
    struct {
       Addr  a;
       UChar vbits8[BYTES_PER_SEC_VBIT_NODE];
-      UInt  last_touched;
    } 
    SecVBitNode;
 
@@ -926,29 +950,19 @@ static void gcSecVBitTable(void)
    // Traverse the table, moving fresh nodes into the new table.
    VG_(OSetGen_ResetIter)(secVBitTable);
    while ( (n = VG_(OSetGen_Next)(secVBitTable)) ) {
-      Bool keep = False;
-      if ( (GCs_done - n->last_touched) <= MAX_STALE_AGE ) {
-         // Keep node if it's been touched recently enough (regardless of
-         // freshness/staleness).
-         keep = True;
-      } else {
-         // Keep node if any of its bytes are non-stale.  Using
-         // get_vabits2() for the lookup is not very efficient, but I don't
-         // think it matters.
-         for (i = 0; i < BYTES_PER_SEC_VBIT_NODE; i++) {
-            if (VA_BITS2_PARTDEFINED == get_vabits2(n->a + i)) {
-               keep = True;      // Found a non-stale byte, so keep
-               break;
-            }
+      // Keep node if any of its bytes are non-stale.  Using
+      // get_vabits2() for the lookup is not very efficient, but I don't
+      // think it matters.
+      for (i = 0; i < BYTES_PER_SEC_VBIT_NODE; i++) {
+         if (VA_BITS2_PARTDEFINED == get_vabits2(n->a + i)) {
+            // Found a non-stale byte, so keep =>
+            // Insert a copy of the node into the new table.
+            SecVBitNode* n2 = 
+               VG_(OSetGen_AllocNode)(secVBitTable2, sizeof(SecVBitNode));
+            *n2 = *n;
+            VG_(OSetGen_Insert)(secVBitTable2, n2);
+            break;
          }
-      }
-
-      if ( keep ) {
-         // Insert a copy of the node into the new table.
-         SecVBitNode* n2 = 
-            VG_(OSetGen_AllocNode)(secVBitTable2, sizeof(SecVBitNode));
-         *n2 = *n;
-         VG_(OSetGen_Insert)(secVBitTable2, n2);
       }
    }
 
@@ -968,10 +982,22 @@ static void gcSecVBitTable(void)
    }
 
    // Increase table size if necessary.
-   if (n_survivors > (secVBitLimit * MAX_SURVIVOR_PROPORTION)) {
-      secVBitLimit *= TABLE_GROWTH_FACTOR;
+   if ((Double)n_survivors 
+       > ((Double)secVBitLimit * STEPUP_SURVIVOR_PROPORTION)) {
+      secVBitLimit = (Int)((Double)secVBitLimit * (Double)STEPUP_GROWTH_FACTOR);
       if (VG_(clo_verbosity) > 1)
-         VG_(message)(Vg_DebugMsg, "memcheck GC: increase table size to %d\n",
+         VG_(message)(Vg_DebugMsg,
+                      "memcheck GC: %d new table size (stepup)\n",
+                      secVBitLimit);
+   }
+   else
+   if (secVBitLimit < DRIFTUP_MAX_SIZE
+       && (Double)n_survivors 
+          > ((Double)secVBitLimit * DRIFTUP_SURVIVOR_PROPORTION)) {
+      secVBitLimit = (Int)((Double)secVBitLimit * (Double)DRIFTUP_GROWTH_FACTOR);
+      if (VG_(clo_verbosity) > 1)
+         VG_(message)(Vg_DebugMsg,
+                      "memcheck GC: %d new table size (driftup)\n",
                       secVBitLimit);
    }
 }
@@ -1000,7 +1026,6 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
    tl_assert(V_BITS8_DEFINED != vbits8 && V_BITS8_UNDEFINED != vbits8);
    if (n) {
       n->vbits8[amod] = vbits8;     // update
-      n->last_touched = GCs_done;
       sec_vbits_updates++;
    } else {
       // Do a table GC if necessary.  Nb: do this before creating and
@@ -1017,7 +1042,6 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
          n->vbits8[i] = V_BITS8_UNDEFINED;
       }
       n->vbits8[amod] = vbits8;
-      n->last_touched = GCs_done;
 
       // Insert the new node.
       VG_(OSetGen_Insert)(secVBitTable, n);

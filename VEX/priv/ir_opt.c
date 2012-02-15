@@ -1120,10 +1120,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
    Int     shift;
    IRExpr* e2 = e; /* e2 is the result of folding e, if possible */
 
-   /* UNARY ops */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.arg->tag == Iex_Const) {
-      switch (e->Iex.Unop.op) {
+   switch (e->tag) {
+   case Iex_Unop:
+      /* UNARY ops */
+      if (e->Iex.Unop.arg->tag == Iex_Const) {
+         switch (e->Iex.Unop.op) {
          case Iop_1Uto8:
             e2 = IRExpr_Const(IRConst_U8(toUChar(
                     e->Iex.Unop.arg->Iex.Const.con->Ico.U1
@@ -1368,10 +1369,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
          default: 
             goto unhandled;
       }
-   }
+      }
+      break;
 
-   /* BINARY ops */
-   if (e->tag == Iex_Binop) {
+   case Iex_Binop:
+      /* BINARY ops */
       if (e->Iex.Binop.arg1->tag == Iex_Const
           && e->Iex.Binop.arg2->tag == Iex_Const) {
          /* cases where both args are consts */
@@ -1868,10 +1870,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                break;
          }
       }
-   }
+      break;
 
-   /* Mux0X */
-   if (e->tag == Iex_Mux0X) {
+   case Iex_Mux0X:
+      /* Mux0X */
+
       /* is the discriminant is a constant? */
       if (e->Iex.Mux0X.cond->tag == Iex_Const) {
          Bool zero;
@@ -1887,6 +1890,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                       e->Iex.Mux0X.exprX)) {
          e2 = e->Iex.Mux0X.expr0;
       }
+      break;
+
+   default:
+      /* not considered */
+      break;
    }
 
    /* Show cases where we've found but not folded 'op(t,t)'. */

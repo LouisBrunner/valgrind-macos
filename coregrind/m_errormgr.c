@@ -82,6 +82,9 @@ static UInt n_errs_found = 0;
 /* Running count of suppressed errors detected. */
 static UInt n_errs_suppressed = 0;
 
+/* Running count of errors shown. */
+static UInt n_errs_shown = 0;
+
 /* Running count of unsuppressed error contexts. */
 static UInt n_err_contexts = 0;
 
@@ -169,6 +172,11 @@ void* VG_(get_error_extra)  ( Error* err )
 UInt VG_(get_n_errs_found)( void )
 {
    return n_errs_found;
+}
+
+UInt VG_(get_n_errs_shown)( void )
+{
+   return n_errs_shown;
 }
 
 /*------------------------------------------------------------*/
@@ -498,7 +506,7 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
    /* if user wants to debug from a certain error nr, then wait for gdb/vgdb */
    if (VG_(clo_vgdb) != Vg_VgdbNo
        && allow_db_attach 
-       && VG_(dyn_vgdb_error) <= n_errs_found) {
+       && VG_(dyn_vgdb_error) <= n_errs_shown) {
       VG_(umsg)("(action on error) vgdb me ... \n");
       VG_(gdbserver)( err->tid );
       VG_(umsg)("Continuing ...\n");
@@ -637,8 +645,6 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
 }
 
 
-
-static Int  n_errs_shown = 0;
 
 /* Top-level entry point to the error management subsystem.
    All detected errors are notified here; this routine decides if/when the
@@ -796,12 +802,12 @@ void VG_(maybe_record_error) ( ThreadId tid,
    p->supp = is_suppressible_error(&err);
    errors  = p;
    if (p->supp == NULL) {
+      /* update stats */
       n_err_contexts++;
       n_errs_found++;
+      n_errs_shown++;
       /* Actually show the error; more complex than you might think. */
       pp_Error( p, /*allow_db_attach*/True, VG_(clo_xml) );
-      /* update stats */
-      n_errs_shown++;
    } else {
       n_supp_contexts++;
       n_errs_suppressed++;
@@ -848,10 +854,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       }
 
       if (print_error) {
-         /* Actually show the error; more complex than you might think. */
-         pp_Error(&err, allow_db_attach, VG_(clo_xml));
          /* update stats */
          n_errs_shown++;
+         /* Actually show the error; more complex than you might think. */
+         pp_Error(&err, allow_db_attach, VG_(clo_xml));
       }
       return False;
 

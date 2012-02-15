@@ -381,7 +381,7 @@ specifying either <option>--vgdb=yes</option>
 or <option>--vgdb=full</option>.  A secondary command line option,
 <option>--vgdb-error=number</option>, can be used to tell the gdbserver
 only to become active once the specified number of errors have been
-reported.  A value of zero will therefore cause
+shown.  A value of zero will therefore cause
 the gdbserver to become active at startup, which allows you to
 insert breakpoints before starting the run.  For example:
 <screen><![CDATA[
@@ -625,7 +625,7 @@ argument values) that can match:
 (gdb) mo v. n
 v. can match v.set v.info v.wait v.kill v.translate
 (gdb) mo v.i n
-n_errs_found 0 (vgdb-error 0)
+n_errs_found 0 n_errs_shown 0 (vgdb-error 0)
 (gdb) 
 ]]></programlisting>
 </para>
@@ -1196,9 +1196,8 @@ line, by using a standalone vgdb, or from GDB, by using GDB's
 
   <listitem>
     <para><varname>v.info n_errs_found</varname> shows the number of
-    errors found so far and the current value of the 
-    <option>--vgdb-error</option>
-    argument.</para>
+    errors found so far, the nr of errors shown so far and the current
+    value of the <option>--vgdb-error</option> argument.</para>
   </listitem>
 
   <listitem>

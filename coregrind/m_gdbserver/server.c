@@ -246,8 +246,9 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          VG_(show_all_errors)(/* verbosity */ 2, /* xml */ False);
          break;
       case  1: // n_errs_found
-         VG_(gdb_printf) ("n_errs_found %d (vgdb-error %d)\n", 
+         VG_(gdb_printf) ("n_errs_found %d n_errs_shown %d (vgdb-error %d)\n", 
                           VG_(get_n_errs_found) (),
+                          VG_(get_n_errs_shown) (),
                           VG_(dyn_vgdb_error));
          break;
       case 2: // last_error

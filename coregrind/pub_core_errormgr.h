@@ -67,6 +67,7 @@ extern Bool VG_(is_action_requested)      ( Char* action, Bool* clo );
 extern Bool VG_(showing_core_errors)      ( void );
 
 extern UInt VG_(get_n_errs_found)         ( void );
+extern UInt VG_(get_n_errs_shown)         ( void );
 
 extern void VG_(print_errormgr_stats)     ( void );
 

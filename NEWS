@@ -58,7 +58,7 @@ where XXXXXX is the bug number as listed below.
 290974  vgdb must align pages to VKI_SHMLBA (16KB) on ARM 
 293088  Add some VEX sanity checks for ppc64 unhandled instructions
 294055  regtest none/tests/shell fails when locale is not set to C
-
+294190  --vgdb-error=xxx can be out of sync with errors shown to the user
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

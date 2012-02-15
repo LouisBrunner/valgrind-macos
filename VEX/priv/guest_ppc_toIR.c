@@ -13589,6 +13589,10 @@ DisResult disInstr_PPC_WRK (
 
    case 0x3C: // VSX instructions (except load/store)
    {
+      // All of these VSX instructions use some VMX facilities, so
+      // if allow_V is not set, we'll skip trying to decode.
+      if (!allow_V) goto decode_noVX;
+
       UInt vsxOpc2 = get_VSX60_opc2(opc2);
       /* The vsxOpc2 returned is the "normalized" value, representing the
        * instructions secondary opcode as taken from the standard secondary
@@ -13654,10 +13658,21 @@ DisResult disInstr_PPC_WRK (
             if (dis_vxv_sp_arith(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
-         case 0x2B0: case 0x2F0: case 0x2D0: // xscvdpsxds, xscvsxddp, xscvuxddp
+         case 0x2D0: case 0x3d0: // xscvuxddp, xvcvuxddp
+         case 0x350: case 0x1d0: // xvcvuxdsp, xvcvuxwdp
+         case 0x090: // xscvdpuxws
+            // The above VSX conversion instructions employ some ISA 2.06
+            // floating point conversion instructions under the covers,
+            // so if allow_VX (which means "supports ISA 2.06") is not set,
+            // we'll skip the decode.
+            if (!allow_VX) goto decode_noVX;
+            if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
+            goto decode_failure;
+
+         case 0x2B0: case 0x2F0: // xscvdpsxds, xscvsxddp
          case 0x1b0: case 0x130: // xvcvdpsxws, xvcvspsxws
          case 0x0b0: case 0x290: // xscvdpsxws, xscvdpuxds
-         case 0x212: case 0x090: // xscvdpsp, xscvdpuxws
+         case 0x212: // xscvdpsp
          case 0x292: case 0x312: // xscvspdp, xvcvdpsp
          case 0x390: case 0x190: // xvcvdpuxds, xvcvdpuxws
          case 0x3B0: case 0x310: // xvcvdpsxds, xvcvspuxds
@@ -13665,8 +13680,6 @@ DisResult disInstr_PPC_WRK (
          case 0x110: case 0x3f0: // xvcvspuxws, xvcvsxddp
          case 0x370: case 0x1f0: // xvcvsxdsp, xvcvsxwdp
          case 0x170: case 0x150: // xvcvsxwsp, xvcvuxwsp
-         case 0x3d0: case 0x350: // xvcvuxddp, xvcvuxdsp
-         case 0x1d0: // xvcvuxwdp
             if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
@@ -14069,6 +14082,10 @@ DisResult disInstr_PPC_WRK (
       case 0x34C: // lxvd2x
       case 0x14C: // lxvdsx
       case 0x30C: // lxvw4x
+        // All of these VSX load instructions use some VMX facilities, so
+        // if allow_V is not set, we'll skip trying to decode.
+        if (!allow_V) goto decode_noV;
+
     	  if (dis_vx_load( theInstr )) goto decode_success;
           goto decode_failure;
 
@@ -14076,6 +14093,10 @@ DisResult disInstr_PPC_WRK (
       case 0x2CC: // stxsdx
       case 0x3CC: // stxvd2x
       case 0x38C: // stxvw4x
+        // All of these VSX store instructions use some VMX facilities, so
+        // if allow_V is not set, we'll skip trying to decode.
+        if (!allow_V) goto decode_noV;
+
     	  if (dis_vx_store( theInstr )) goto decode_success;
     	  goto decode_failure;
 

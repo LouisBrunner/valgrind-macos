@@ -643,6 +643,12 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
+      if (isU32(cond_n_op, (ARMCondHI << 4) | ARMG_CC_OP_SUB)) {
+         /* HI after SUB --> test argL >u argR
+                         --> test argR <u argL */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, cc_dep2, cc_dep1));
+      }
 
       /*---------------- SBB ----------------*/
 

@@ -1503,6 +1503,16 @@ static SyscallTableEntry syscall_table[] = {
 
 // ?????(__NR_rt_tgsigqueueinfo, ),
    LINXY(__NR_perf_event_open, sys_perf_event_open),                  // 331
+// ?????(__NR_fanotify_init, ),                                       // 332
+// ?????(__NR_fanotify_mark, ),                                       // 333
+   LINXY(__NR_prlimit64, sys_prlimit64),                              // 334
+// ?????(__NR_name_to_handle_at, ),                                   // 335
+// ?????(__NR_open_by_handle_at, ),                                   // 336
+// ?????(__NR_clock_adjtime, ),                                       // 337
+// ?????(__NR_syncfs, ),                                              // 338
+// ?????(__NR_setns, ),                                               // 339
+   LINXY(__NR_process_vm_readv, sys_process_vm_readv),                // 340
+   LINX_(__NR_process_vm_writev, sys_process_vm_writev),              // 341
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

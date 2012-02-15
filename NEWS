@@ -56,6 +56,7 @@ where XXXXXX is the bug number as listed below.
 289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks
 290655  Add support for AESKEYGENASSIST instruction 
 290974  vgdb must align pages to VKI_SHMLBA (16KB) on ARM 
+293088  Add some VEX sanity checks for ppc64 unhandled instructions
 294055  regtest none/tests/shell fails when locale is not set to C
 
 

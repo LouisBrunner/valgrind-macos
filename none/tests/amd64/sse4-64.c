@@ -1745,11 +1745,14 @@ void test_PHMINPOSUW ( void )
 {
    V128 src, dst;
    Int i;
-   for (i = 0; i < 10; i++) {
+   for (i = 0; i < 20; i++) {
       randV128(&src);
       randV128(&dst);
       DO_mandr_r("phminposuw", src, dst);
    }
+   memset(src, 0x55, sizeof(src));
+   memset(dst, 0xAA, sizeof(dst));
+   DO_mandr_r("phminposuw", src, dst);
 }
 
 void test_PMAXSB ( void )
@@ -3800,7 +3803,6 @@ int main ( int argc, char** argv )
    test_PINSRD();         // todo
    test_PINSRW(); /* Umm, this is SSE2, not SSE4.  Right? */
    test_PINSRB();         // todo
-   //test_PHMINPOSUW();
    test_PMAXSB();
    test_PMAXSD();         // done Apr.09.2010
    test_PMAXUD();         // done Apr.16.2010
@@ -3839,6 +3841,7 @@ int main ( int argc, char** argv )
    test_PCMPGTQ();
    // CRC32B,Q
    test_PACKUSDW();
+   test_PHMINPOSUW();
 
 #else
 #if 0

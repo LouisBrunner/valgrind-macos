@@ -17432,6 +17432,15 @@ Long dis_ESC_NONE (
       return delta;
    }
 
+   case 0xC2: /* RET imm16 */
+      if (have66orF2orF3(pfx)) goto decode_failure;
+      d64 = getUDisp16(delta); 
+      delta += 2;
+      dis_ret(vbi, d64);
+      dres->whatNext = Dis_StopHere;
+      DIP("ret $%lld\n", d64);
+      return delta;
+
    case 0xC3: /* RET */
       if (have66orF2(pfx)) goto decode_failure;
       /* F3 is acceptable on AMD. */
@@ -19152,15 +19161,6 @@ DisResult disInstr_AMD64_WRK (
    switch (opc) {
 
    /* ------------------------ Control flow --------------- */
-
-   case 0xC2: /* RET imm16 */
-      if (have66orF2orF3(pfx)) goto decode_failure;
-      d64 = getUDisp16(delta); 
-      delta += 2;
-      dis_ret(vbi, d64);
-      dres.whatNext = Dis_StopHere;
-      DIP("ret %lld\n", d64);
-      break;
 
    /* ------------------------ CWD/CDQ -------------------- */
 

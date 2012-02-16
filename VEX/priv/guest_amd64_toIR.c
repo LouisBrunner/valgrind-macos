@@ -9070,7 +9070,8 @@ __attribute__((noinline))
 static
 Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
                         VexAbiInfo* vbi,
-                        Prefix pfx, Int sz, Long deltaIN )
+                        Prefix pfx, Int sz, Long deltaIN,
+                        DisResult* dres )
 {
    IRTemp addr  = IRTemp_INVALID;
    IRTemp t0    = IRTemp_INVALID;
@@ -11386,6 +11387,39 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          DIP("%sfence\n", gregLO3ofRM(getUChar(delta-1))==5 ? "l" : "m");
          goto decode_success;
       }
+
+      /* 0F AE /7 = CLFLUSH -- flush cache line */
+      if (haveNo66noF2noF3(pfx)
+          && !epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 7
+          && sz == 4) {
+
+         /* This is something of a hack.  We need to know the size of
+            the cache line containing addr.  Since we don't (easily),
+            assume 256 on the basis that no real cache would have a
+            line that big.  It's safe to invalidate more stuff than we
+            need, just inefficient. */
+         ULong lineszB = 256ULL;
+
+         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+
+         /* Round addr down to the start of the containing block. */
+         stmt( IRStmt_Put(
+                  OFFB_TISTART,
+                  binop( Iop_And64, 
+                         mkexpr(addr), 
+                         mkU64( ~(lineszB-1) ))) );
+
+         stmt( IRStmt_Put(OFFB_TILEN, mkU64(lineszB) ) );
+ 
+         irsb->jumpkind = Ijk_TInval;
+         irsb->next     = mkU64(guest_RIP_bbstart+delta);
+         dres->whatNext = Dis_StopHere;
+
+         DIP("clflush %s\n", dis_buf);
+         goto decode_success;
+      }
+
       /* 0F AE /3 = STMXCSR m32 -- store %mxcsr */
       if (haveNo66noF2noF3(pfx)
           && !epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 3
@@ -18606,7 +18640,7 @@ Long dis_ESC_0F (
       facility in 64 bit mode. */
    {
       Bool decode_OK = False;
-      delta = dis_ESC_0F__SSE2 ( &decode_OK, vbi, pfx, sz, deltaIN );
+      delta = dis_ESC_0F__SSE2 ( &decode_OK, vbi, pfx, sz, deltaIN, dres );
       if (decode_OK)
          return delta;
    }
@@ -19018,38 +19052,6 @@ DisResult disInstr_AMD64_WRK (
    /* ---------------------------------------------------- */
    /* --- start of the SSE2 decoder.                   --- */
    /* ---------------------------------------------------- */
-
-   /* 0F AE /7 = CLFLUSH -- flush cache line */
-   if (haveNo66noF2noF3(pfx) && sz == 4 
-       && insn[0] == 0x0F && insn[1] == 0xAE
-       && !epartIsReg(insn[2]) && gregLO3ofRM(insn[2]) == 7) {
-
-      /* This is something of a hack.  We need to know the size of the
-         cache line containing addr.  Since we don't (easily), assume
-         256 on the basis that no real cache would have a line that
-         big.  It's safe to invalidate more stuff than we need, just
-         inefficient. */
-      ULong lineszB = 256ULL;
-
-      addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
-      delta += 2+alen;
-
-      /* Round addr down to the start of the containing block. */
-      stmt( IRStmt_Put(
-               OFFB_TISTART,
-               binop( Iop_And64, 
-                      mkexpr(addr), 
-                      mkU64( ~(lineszB-1) ))) );
-
-      stmt( IRStmt_Put(OFFB_TILEN, mkU64(lineszB) ) );
-
-      irsb->jumpkind = Ijk_TInval;
-      irsb->next     = mkU64(guest_RIP_bbstart+delta);
-      dres.whatNext  = Dis_StopHere;
-
-      DIP("clflush %s\n", dis_buf);
-      goto decode_success;
-   }
 
    /* ---------------------------------------------------- */
    /* --- end of the SSE/SSE2 decoder.                 --- */

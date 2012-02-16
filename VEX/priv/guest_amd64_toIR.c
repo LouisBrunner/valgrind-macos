@@ -16262,6 +16262,10 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
             case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
             case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
                break;
+            case 0x01: // the 16-bit character versions of the above
+            case 0x03: case 0x09: case 0x0B: case 0x0D: case 0x13:
+            case 0x1B: case 0x39: case 0x3B: case 0x45: case 0x4B:
+               break;
             default:
                goto decode_failure;
          }

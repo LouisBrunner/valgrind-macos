@@ -2891,6 +2891,15 @@ static UInt zmask_from_V128 ( V128* arg )
    return res;
 }
 
+static UInt zmask_from_V128_wide ( V128* arg )
+{
+   UInt i, res = 0;
+   for (i = 0; i < 8; i++) {
+      res |=  ((arg->w16[i] == 0) ? 1 : 0) << i;
+   }
+   return res;
+}
+
 /* Helps with PCMP{I,E}STR{I,M}.
 
    CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
@@ -2941,7 +2950,7 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    HWord isISTRx = opc4 & 2;
    HWord isxSTRM = (opc4 & 1) ^ 1;
    vassert((opc4 & 0xFC) == 0x60); /* 0x60 .. 0x63 */
-   vassert((imm8 & 1) == 0); /* we support byte-size cases only */
+   HWord wide = (imm8 & 1);
 
    // where the args are
    V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
@@ -2952,34 +2961,63 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    // FIXME: this is only right for the 8-bit data cases.
    // At least that is asserted above.
    UInt zmaskL, zmaskR;
-   if (isISTRx) {
-      zmaskL = zmask_from_V128(argL);
-      zmaskR = zmask_from_V128(argR);
-   } else {
-      Int tmp;
-      tmp = edxIN & 0xFFFFFFFF;
-      if (tmp < -16) tmp = -16;
-      if (tmp > 16)  tmp = 16;
-      if (tmp < 0)   tmp = -tmp;
-      vassert(tmp >= 0 && tmp <= 16);
-      zmaskL = (1 << tmp) & 0xFFFF;
-      tmp = eaxIN & 0xFFFFFFFF;
-      if (tmp < -16) tmp = -16;
-      if (tmp > 16)  tmp = 16;
-      if (tmp < 0)   tmp = -tmp;
-      vassert(tmp >= 0 && tmp <= 16);
-      zmaskR = (1 << tmp) & 0xFFFF;
-   }
 
    // temp spot for the resulting flags and vector.
    V128 resV;
    UInt resOSZACP;
 
-   // do the meyaath
-   Bool ok = compute_PCMPxSTRx ( 
-                &resV, &resOSZACP, argL, argR, 
-                zmaskL, zmaskR, imm8, (Bool)isxSTRM
-             );
+   // for checking whether case was handled
+   Bool ok = False;
+
+   if (wide) {
+      if (isISTRx) {
+         zmaskL = zmask_from_V128_wide(argL);
+         zmaskR = zmask_from_V128_wide(argR);
+      } else {
+         Int tmp;
+         tmp = edxIN & 0xFFFFFFFF;
+         if (tmp < -8) tmp = -8;
+         if (tmp > 8)  tmp = 8;
+         if (tmp < 0)  tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 8);
+         zmaskL = (1 << tmp) & 0xFF;
+         tmp = eaxIN & 0xFFFFFFFF;
+         if (tmp < -8) tmp = -8;
+         if (tmp > 8)  tmp = 8;
+         if (tmp < 0)  tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 8);
+         zmaskR = (1 << tmp) & 0xFF;
+      }
+      // do the meyaath
+      ok = compute_PCMPxSTRx_wide ( 
+              &resV, &resOSZACP, argL, argR, 
+              zmaskL, zmaskR, imm8, (Bool)isxSTRM
+           );
+   } else {
+      if (isISTRx) {
+         zmaskL = zmask_from_V128(argL);
+         zmaskR = zmask_from_V128(argR);
+      } else {
+         Int tmp;
+         tmp = edxIN & 0xFFFFFFFF;
+         if (tmp < -16) tmp = -16;
+         if (tmp > 16)  tmp = 16;
+         if (tmp < 0)   tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 16);
+         zmaskL = (1 << tmp) & 0xFFFF;
+         tmp = eaxIN & 0xFFFFFFFF;
+         if (tmp < -16) tmp = -16;
+         if (tmp > 16)  tmp = 16;
+         if (tmp < 0)   tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 16);
+         zmaskR = (1 << tmp) & 0xFFFF;
+      }
+      // do the meyaath
+      ok = compute_PCMPxSTRx ( 
+              &resV, &resOSZACP, argL, argR, 
+              zmaskL, zmaskR, imm8, (Bool)isxSTRM
+           );
+   }
 
    // front end shouldn't pass us any imm8 variants we can't
    // handle.  Hence:

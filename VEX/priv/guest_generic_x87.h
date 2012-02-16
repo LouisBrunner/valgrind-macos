@@ -117,7 +117,7 @@ typedef
    generated code.  CLEAN HELPER. */
 extern ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp );
 
-/* Compute result and new OSZACP flags for all PCMP{E,I}STR{I,M}
+/* Compute result and new OSZACP flags for all 8-bit PCMP{E,I}STR{I,M}
    variants.  See bigger comment on implementation of this function
    for details on call/return conventions. */
 extern Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
@@ -125,6 +125,15 @@ extern Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
                                 V128* argLV,  V128* argRV,
                                 UInt zmaskL, UInt zmaskR,
                                 UInt imm8,   Bool isxSTRM );
+
+/* Compute result and new OSZACP flags for all 16-bit PCMP{E,I}STR{I,M}
+   variants.  See bigger comment on implementation of this function
+   for details on call/return conventions. */
+extern Bool compute_PCMPxSTRx_wide ( /*OUT*/V128* resV,
+                                     /*OUT*/UInt* resOSZACP,
+                                     V128* argLV,  V128* argRV,
+                                     UInt zmaskL, UInt zmaskR,
+                                     UInt imm8,   Bool isxSTRM );
 
 #endif /* ndef __VEX_GUEST_GENERIC_X87_H */
 

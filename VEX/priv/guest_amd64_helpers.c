@@ -1553,7 +1553,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
    /* handle the control word, setting FPROUND and detecting any
       emulation warnings. */
    pair    = amd64g_check_fldcw ( (ULong)fpucw );
-   fpround = (UInt)pair;
+   fpround = (UInt)pair & 0xFFFFFFFFULL;
    ew      = (VexEmWarn)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
@@ -1929,47 +1929,7 @@ ULong amd64g_create_fpucw ( ULong fpround )
 VexEmWarn amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
-   Int        stno, preg;
-   UInt       tag;
-   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
-   Fpu_State* x87     = (Fpu_State*)x87_state;
-   UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
-   UInt       tagw    = x87->env[FP_ENV_TAG];
-   UInt       fpucw   = x87->env[FP_ENV_CTRL];
-   ULong      c3210   = x87->env[FP_ENV_STAT] & 0x4700;
-   VexEmWarn  ew;
-   ULong      fpround;
-   ULong      pair;
-
-   /* Copy tags */
-   for (stno = 0; stno < 8; stno++) {
-      preg = (stno + ftop) & 7;
-      tag = (tagw >> (2*preg)) & 3;
-      if (tag == 3) {
-         /* register is empty */
-         vexTags[preg] = 0;
-      } else {
-         /* register is non-empty */
-         vexTags[preg] = 1;
-      }
-   }
-
-   /* stack pointer */
-   vex_state->guest_FTOP = ftop;
-
-   /* status word */
-   vex_state->guest_FC3210 = c3210;
-
-   /* handle the control word, setting FPROUND and detecting any
-      emulation warnings. */
-   pair    = amd64g_check_fldcw ( (ULong)fpucw );
-   fpround = pair & 0xFFFFFFFFULL;
-   ew      = (VexEmWarn)(pair >> 32);
-   
-   vex_state->guest_FPROUND = fpround & 3;
-
-   /* emulation warnings --> caller */
-   return ew;
+   return do_put_x87( False, (UChar*)x87_state, vex_state );
 }
 
 
@@ -2011,6 +1971,130 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
    x87->env[FP_ENV_TAG] = toUShort(tagw);
 
    /* We don't dump the x87 registers, tho. */
+}
+
+
+/* This is used to implement 'fnsave'.  
+   Writes 108 bytes at x87_state[0 .. 107]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+void amd64g_dirtyhelper_FNSAVE ( /*IN*/VexGuestAMD64State* vex_state,
+                                 /*OUT*/HWord x87_state)
+{
+   do_get_x87( vex_state, (UChar*)x87_state );
+}
+
+
+/* This is used to implement 'fnsaves'.  
+   Writes 94 bytes at x87_state[0 .. 93]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+void amd64g_dirtyhelper_FNSAVES ( /*IN*/VexGuestAMD64State* vex_state,
+                                  /*OUT*/HWord x87_state)
+{
+   Int           i, stno, preg;
+   UInt          tagw;
+   ULong*        vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
+   UChar*        vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State_16* x87     = (Fpu_State_16*)x87_state;
+   UInt          ftop    = vex_state->guest_FTOP;
+   UInt          c3210   = vex_state->guest_FC3210;
+
+   for (i = 0; i < 7; i++)
+      x87->env[i] = 0;
+
+   x87->env[FPS_ENV_STAT] 
+      = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
+   x87->env[FPS_ENV_CTRL] 
+      = toUShort(amd64g_create_fpucw( vex_state->guest_FPROUND ));
+
+   /* Dump the register stack in ST order. */
+   tagw = 0;
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      if (vexTags[preg] == 0) {
+         /* register is empty */
+         tagw |= (3 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
+      } else {
+         /* register is full. */
+         tagw |= (0 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
+      }
+   }
+   x87->env[FPS_ENV_TAG] = toUShort(tagw);
+}
+
+
+/* This is used to implement 'frstor'.  
+   Reads 108 bytes at x87_state[0 .. 107]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+VexEmWarn amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
+                                      /*IN*/HWord x87_state)
+{
+   return do_put_x87( True, (UChar*)x87_state, vex_state );
+}
+
+
+/* This is used to implement 'frstors'.
+   Reads 94 bytes at x87_state[0 .. 93]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
+                                       /*IN*/HWord x87_state)
+{
+   Int           stno, preg;
+   UInt          tag;
+   ULong*        vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
+   UChar*        vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State_16* x87     = (Fpu_State_16*)x87_state;
+   UInt          ftop    = (x87->env[FPS_ENV_STAT] >> 11) & 7;
+   UInt          tagw    = x87->env[FPS_ENV_TAG];
+   UInt          fpucw   = x87->env[FPS_ENV_CTRL];
+   UInt          c3210   = x87->env[FPS_ENV_STAT] & 0x4700;
+   VexEmWarn     ew;
+   UInt          fpround;
+   ULong         pair;
+
+   /* Copy registers and tags */
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      tag = (tagw >> (2*preg)) & 3;
+      if (tag == 3) {
+         /* register is empty */
+         /* hmm, if it's empty, does it still get written?  Probably
+            safer to say it does.  If we don't, memcheck could get out
+            of sync, in that it thinks all FP registers are defined by
+            this helper, but in reality some have not been updated. */
+         vexRegs[preg] = 0; /* IEEE754 64-bit zero */
+         vexTags[preg] = 0;
+      } else {
+         /* register is non-empty */
+         convert_f80le_to_f64le( &x87->reg[10*stno], 
+                                 (UChar*)&vexRegs[preg] );
+         vexTags[preg] = 1;
+      }
+   }
+
+   /* stack pointer */
+   vex_state->guest_FTOP = ftop;
+
+   /* status word */
+   vex_state->guest_FC3210 = c3210;
+
+   /* handle the control word, setting FPROUND and detecting any
+      emulation warnings. */
+   pair    = amd64g_check_fldcw ( (ULong)fpucw );
+   fpround = (UInt)pair & 0xFFFFFFFFULL;
+   ew      = (VexEmWarn)(pair >> 32);
+   
+   vex_state->guest_FPROUND = fpround & 3;
+
+   /* emulation warnings --> caller */
+   return ew;
 }
 
 

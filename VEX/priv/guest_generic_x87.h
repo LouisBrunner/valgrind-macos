@@ -89,9 +89,28 @@ typedef
 #define FP_ENV_TAG    4
 #define FP_ENV_IP     6 /* and 7 */
 #define FP_ENV_CS     8
+#define FP_ENV_LSTOP  9
 #define FP_ENV_OPOFF  10 /* and 11 */
 #define FP_ENV_OPSEL  12
 #define FP_REG(ii)    (10*(7-(ii)))
+
+
+/* Layout of the 16-bit FNSAVE x87 state. */
+typedef
+   struct {
+      UShort env[7];
+      UChar  reg[80];
+   }
+   Fpu_State_16;
+
+/* Offsets, in 16-bit ints, into the FPU environment (env) area. */
+#define FPS_ENV_CTRL   0
+#define FPS_ENV_STAT   1
+#define FPS_ENV_TAG    2
+#define FPS_ENV_IP     3
+#define FPS_ENV_CS     4
+#define FPS_ENV_OPOFF  5
+#define FPS_ENV_OPSEL  6
 
 
 /* Do the computations for x86/amd64 FXTRACT.  Called directly from

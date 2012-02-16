@@ -6038,108 +6038,149 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_pop();
                break;
 
-//..             case 4: { /* FRSTOR m108 */
-//..                /* Uses dirty helper: 
-//..                      VexEmWarn x86g_do_FRSTOR ( VexGuestX86State*, Addr32 ) */
-//..                IRTemp   ew = newTemp(Ity_I32);
-//..                IRDirty* d  = unsafeIRDirty_0_N ( 
-//..                                 0/*regparms*/, 
-//..                                 "x86g_dirtyhelper_FRSTOR", 
-//..                                 &x86g_dirtyhelper_FRSTOR,
-//..                                 mkIRExprVec_1( mkexpr(addr) )
-//..                              );
-//..                d->needsBBP = True;
-//..                d->tmp      = ew;
-//..                /* declare we're reading memory */
-//..                d->mFx   = Ifx_Read;
-//..                d->mAddr = mkexpr(addr);
-//..                d->mSize = 108;
-//.. 
-//..                /* declare we're writing guest state */
-//..                d->nFxState = 5;
-//.. 
-//..                d->fxState[0].fx     = Ifx_Write;
-//..                d->fxState[0].offset = OFFB_FTOP;
-//..                d->fxState[0].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[1].fx     = Ifx_Write;
-//..                d->fxState[1].offset = OFFB_FPREGS;
-//..                d->fxState[1].size   = 8 * sizeof(ULong);
-//.. 
-//..                d->fxState[2].fx     = Ifx_Write;
-//..                d->fxState[2].offset = OFFB_FPTAGS;
-//..                d->fxState[2].size   = 8 * sizeof(UChar);
-//.. 
-//..                d->fxState[3].fx     = Ifx_Write;
-//..                d->fxState[3].offset = OFFB_FPROUND;
-//..                d->fxState[3].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[4].fx     = Ifx_Write;
-//..                d->fxState[4].offset = OFFB_FC3210;
-//..                d->fxState[4].size   = sizeof(UInt);
-//.. 
-//..                stmt( IRStmt_Dirty(d) );
-//.. 
-//..                /* ew contains any emulation warning we may need to
-//..                   issue.  If needed, side-exit to the next insn,
-//..                   reporting the warning, so that Valgrind's dispatcher
-//..                   sees the warning. */
-//..                put_emwarn( mkexpr(ew) );
-//..                stmt( 
-//..                   IRStmt_Exit(
-//..                      binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
-//..                      Ijk_EmWarn,
-//..                      IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
-//..                   )
-//..                );
-//.. 
-//..                DIP("frstor %s\n", dis_buf);
-//..                break;
-//..             }
-//.. 
-//..             case 6: { /* FNSAVE m108 */
-//..                /* Uses dirty helper: 
-//..                      void x86g_do_FSAVE ( VexGuestX86State*, UInt ) */
-//..                IRDirty* d = unsafeIRDirty_0_N ( 
-//..                                0/*regparms*/, 
-//..                                "x86g_dirtyhelper_FSAVE", 
-//..                                &x86g_dirtyhelper_FSAVE,
-//..                                mkIRExprVec_1( mkexpr(addr) )
-//..                             );
-//..                d->needsBBP = True;
-//..                /* declare we're writing memory */
-//..                d->mFx   = Ifx_Write;
-//..                d->mAddr = mkexpr(addr);
-//..                d->mSize = 108;
-//.. 
-//..                /* declare we're reading guest state */
-//..                d->nFxState = 5;
-//.. 
-//..                d->fxState[0].fx     = Ifx_Read;
-//..                d->fxState[0].offset = OFFB_FTOP;
-//..                d->fxState[0].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[1].fx     = Ifx_Read;
-//..                d->fxState[1].offset = OFFB_FPREGS;
-//..                d->fxState[1].size   = 8 * sizeof(ULong);
-//.. 
-//..                d->fxState[2].fx     = Ifx_Read;
-//..                d->fxState[2].offset = OFFB_FPTAGS;
-//..                d->fxState[2].size   = 8 * sizeof(UChar);
-//.. 
-//..                d->fxState[3].fx     = Ifx_Read;
-//..                d->fxState[3].offset = OFFB_FPROUND;
-//..                d->fxState[3].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[4].fx     = Ifx_Read;
-//..                d->fxState[4].offset = OFFB_FC3210;
-//..                d->fxState[4].size   = sizeof(UInt);
-//.. 
-//..                stmt( IRStmt_Dirty(d) );
-//.. 
-//..                DIP("fnsave %s\n", dis_buf);
-//..                break;
-//..             }
+            case 4: { /* FRSTOR m94/m108 */
+               IRTemp   ew = newTemp(Ity_I32);
+               IRTemp  w64 = newTemp(Ity_I64);
+               IRDirty*  d;
+               if ( have66(pfx) ) {
+                  /* Uses dirty helper: 
+                     VexEmWarn amd64g_dirtyhelper_FRSTORS
+                                  ( VexGuestAMD64State*, HWord ) */
+                  d = unsafeIRDirty_0_N ( 
+                         0/*regparms*/, 
+                         "amd64g_dirtyhelper_FRSTORS",
+                         &amd64g_dirtyhelper_FRSTORS,
+                         mkIRExprVec_1( mkexpr(addr) )
+                      );
+                  d->mSize = 94;
+               } else {
+                  /* Uses dirty helper: 
+                     VexEmWarn amd64g_dirtyhelper_FRSTOR 
+                                  ( VexGuestAMD64State*, HWord ) */
+                  d = unsafeIRDirty_0_N ( 
+                         0/*regparms*/, 
+                         "amd64g_dirtyhelper_FRSTOR",
+                         &amd64g_dirtyhelper_FRSTOR,
+                         mkIRExprVec_1( mkexpr(addr) )
+                      );
+                  d->mSize = 108;
+               }
+
+               d->needsBBP = True;
+               d->tmp      = w64;
+               /* declare we're reading memory */
+               d->mFx   = Ifx_Read;
+               d->mAddr = mkexpr(addr);
+               /* d->mSize set above */
+
+               /* declare we're writing guest state */
+               d->nFxState = 5;
+
+               d->fxState[0].fx     = Ifx_Write;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Write;
+               d->fxState[1].offset = OFFB_FPREGS;
+               d->fxState[1].size   = 8 * sizeof(ULong);
+
+               d->fxState[2].fx     = Ifx_Write;
+               d->fxState[2].offset = OFFB_FPTAGS;
+               d->fxState[2].size   = 8 * sizeof(UChar);
+
+               d->fxState[3].fx     = Ifx_Write;
+               d->fxState[3].offset = OFFB_FPROUND;
+               d->fxState[3].size   = sizeof(ULong);
+
+               d->fxState[4].fx     = Ifx_Write;
+               d->fxState[4].offset = OFFB_FC3210;
+               d->fxState[4].size   = sizeof(ULong);
+
+               stmt( IRStmt_Dirty(d) );
+
+               /* ew contains any emulation warning we may need to
+                  issue.  If needed, side-exit to the next insn,
+                  reporting the warning, so that Valgrind's dispatcher
+                  sees the warning. */
+               assign(ew, unop(Iop_64to32,mkexpr(w64)) );
+               put_emwarn( mkexpr(ew) );
+               stmt( 
+                  IRStmt_Exit(
+                     binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+                     Ijk_EmWarn,
+                     IRConst_U64( guest_RIP_bbstart+delta )
+                  )
+               );
+
+               if ( have66(pfx) ) {
+                  DIP("frstors %s\n", dis_buf);
+               } else {
+                  DIP("frstor %s\n", dis_buf);
+               }
+               break;
+            }
+
+            case 6: { /* FNSAVE m94/m108 */
+               IRDirty *d;
+               if ( have66(pfx) ) {
+                 /* Uses dirty helper: 
+                    void amd64g_dirtyhelper_FNSAVES ( VexGuestX86State*, HWord ) */
+                  d = unsafeIRDirty_0_N ( 
+                         0/*regparms*/, 
+                         "amd64g_dirtyhelper_FNSAVES", 
+                         &amd64g_dirtyhelper_FNSAVES,
+                         mkIRExprVec_1( mkexpr(addr) )
+                         );
+                  d->mSize = 94;
+               } else {
+                 /* Uses dirty helper: 
+                    void amd64g_dirtyhelper_FNSAVE ( VexGuestX86State*, HWord ) */
+                  d = unsafeIRDirty_0_N ( 
+                         0/*regparms*/, 
+                         "amd64g_dirtyhelper_FNSAVE",
+                         &amd64g_dirtyhelper_FNSAVE,
+                         mkIRExprVec_1( mkexpr(addr) )
+                         );
+                  d->mSize = 108;
+               }
+               d->needsBBP = True;
+               /* declare we're writing memory */
+               d->mFx   = Ifx_Write;
+               d->mAddr = mkexpr(addr);
+               /* d->mSize set above */
+
+               /* declare we're reading guest state */
+               d->nFxState = 5;
+
+               d->fxState[0].fx     = Ifx_Read;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Read;
+               d->fxState[1].offset = OFFB_FPREGS;
+               d->fxState[1].size   = 8 * sizeof(ULong);
+
+               d->fxState[2].fx     = Ifx_Read;
+               d->fxState[2].offset = OFFB_FPTAGS;
+               d->fxState[2].size   = 8 * sizeof(UChar);
+
+               d->fxState[3].fx     = Ifx_Read;
+               d->fxState[3].offset = OFFB_FPROUND;
+               d->fxState[3].size   = sizeof(ULong);
+
+               d->fxState[4].fx     = Ifx_Read;
+               d->fxState[4].offset = OFFB_FC3210;
+               d->fxState[4].size   = sizeof(ULong);
+
+               stmt( IRStmt_Dirty(d) );
+
+               if ( have66(pfx) ) {
+                 DIP("fnsaves %s\n", dis_buf);
+               } else {
+                 DIP("fnsave %s\n", dis_buf);
+               }
+               break;
+            }
 
             case 7: { /* FNSTSW m16 */
                IRExpr* sw = get_FPU_sw();
@@ -17550,15 +17591,30 @@ Long dis_ESC_NONE (
       if ( (opc == 0xD9 && getUChar(delta+0) == 0xFA)/*fsqrt*/ )
          redundantREXWok = True;
 
-      if ( (sz == 4 || (sz == 8 && redundantREXWok))
-           && haveNo66noF2noF3(pfx)) {
-         Bool decode_OK = False;
-         delta = dis_FPU ( &decode_OK, vbi, pfx, delta );
-         if (!decode_OK)
-            goto decode_failure;
-      } else {
-         goto decode_failure;
+      Bool size_OK = False;
+      if ( sz == 4 )
+         size_OK = True;
+      else if ( sz == 8 )
+         size_OK = redundantREXWok;
+      else if ( sz == 2 ) {
+         int mod_rm = getUChar(delta+0);
+         int reg = gregLO3ofRM(mod_rm);
+         /* The HotSpot JVM uses these */
+         if ( (opc == 0xDD) && (reg == 0 /* FLDL   */ ||
+                                reg == 4 /* FNSAVE */ ||
+                                reg == 6 /* FRSTOR */ ) )
+            size_OK = True;
       }
+      /* AMD manual says 0x66 size override is ignored, except where
+         it is meaningful */
+      if (!size_OK)
+         goto decode_failure;
+
+      Bool decode_OK = False;
+      delta = dis_FPU ( &decode_OK, vbi, pfx, delta );
+      if (!decode_OK)
+         goto decode_failure;
+
       return delta;
    }
 

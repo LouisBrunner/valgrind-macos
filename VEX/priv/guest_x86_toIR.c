@@ -13074,12 +13074,14 @@ DisResult disInstr_X86_WRK (
          end-of-block here, which forces any TempRegs caching ArchRegs
          to be flushed. */
 
-      /* Handle int $0x40 .. $0x43 by synthesising a segfault and a
+      /* Handle int $0x3F .. $0x4F by synthesising a segfault and a
          restart of this instruction (hence the "-2" two lines below,
          to get the restart EIP to be this instruction.  This is
          probably Linux-specific and it would be more correct to only
-         do this if the VexAbiInfo says that is what we should do. */
-      if (d32 >= 0x40 && d32 <= 0x43) {
+         do this if the VexAbiInfo says that is what we should do.
+         This used to handle just 0x40-0x43; Jikes RVM uses a larger
+         range (0x3F-0x49), and this allows some slack as well. */
+      if (d32 >= 0x3F && d32 <= 0x4F) {
          jmp_lit(Ijk_SigSEGV,((Addr32)guest_EIP_bbstart)+delta-2);
          dres.whatNext = Dis_StopHere;
          DIP("int $0x%x\n", (Int)d32);

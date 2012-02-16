@@ -15017,6 +15017,42 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
       }
       break;
 
+   case 0x41:
+      /* 66 0F 38 41 /r = PHMINPOSUW xmm1, xmm2/m128
+         Packed Horizontal Word Minimum from xmm2/m128 to xmm1 */
+      if (have66noF2noF3(pfx) && sz == 2) {
+         IRTemp sV  = newTemp(Ity_V128);
+         IRTemp sHi = newTemp(Ity_I64);
+         IRTemp sLo = newTemp(Ity_I64);
+         IRTemp dLo = newTemp(Ity_I64);
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) {
+            assign( sV, getXMMReg(eregOfRexRM(pfx,modrm)) );
+            delta += 1;
+            DIP("phminposuw %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                      nameXMMReg(gregOfRexRM(pfx,modrm)));
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            gen_SEGV_if_not_16_aligned(addr);
+            assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+            delta += alen;
+            DIP("phminposuw %s,%s\n", dis_buf,
+                                      nameXMMReg(gregOfRexRM(pfx,modrm)));
+         }
+         assign( sHi, unop(Iop_V128HIto64, mkexpr(sV)) );
+         assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
+         assign( dLo, mkIRExprCCall(
+                         Ity_I64, 0/*regparms*/,
+                         "amd64g_calculate_sse_phminposuw", 
+                         &amd64g_calculate_sse_phminposuw,
+                         mkIRExprVec_2( mkexpr(sLo), mkexpr(sHi) )
+                      ));
+         putXMMReg(gregOfRexRM(pfx,modrm), unop(Iop_64UtoV128, mkexpr(dLo)));
+
+         goto decode_success;
+      } 
+      break;
+
    case 0xDC:
    case 0xDD:
    case 0xDE:

@@ -2841,6 +2841,22 @@ ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi )
+{
+   UShort t, min;
+   UInt   idx;
+   t = sel16x4_0(sLo); if (True)    { min = t; idx = 0; }
+   t = sel16x4_1(sLo); if (t < min) { min = t; idx = 1; }
+   t = sel16x4_2(sLo); if (t < min) { min = t; idx = 2; }
+   t = sel16x4_3(sLo); if (t < min) { min = t; idx = 3; }
+   t = sel16x4_0(sHi); if (t < min) { min = t; idx = 4; }
+   t = sel16x4_1(sHi); if (t < min) { min = t; idx = 5; }
+   t = sel16x4_2(sHi); if (t < min) { min = t; idx = 6; }
+   t = sel16x4_3(sHi); if (t < min) { min = t; idx = 7; }
+   return ((ULong)(idx << 16)) | ((ULong)min);
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong amd64g_calc_crc32b ( ULong crcIn, ULong b )
 {
    UInt  i;

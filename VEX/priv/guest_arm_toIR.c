@@ -14051,18 +14051,25 @@ DisResult disInstr_ARM_WRK (
       means we don't know which they are, so the back end has to
       re-emit them all when it comes acrosss an IR Fence.
    */
+   /* v6 */ /* mcr 15, 0, rT, c7, c10, 5 */
+   if (0xEE070FBA == (insn & 0xFFFF0FFF)) {
+      UInt rT = INSN(15,12);
+      if (rT <= 14) {
+         /* mcr 15, 0, rT, c7, c10, 5 (v6) equiv to DMB (v7).  Data
+            Memory Barrier -- ensures ordering of memory accesses. */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("mcr 15, 0, r%u, c7, c10, 5 (data memory barrier)\n", rT);
+         goto decode_success;
+      }
+      /* fall through */
+   }
+   /* other flavours of barrier */
    switch (insn) {
       case 0xEE070F9A: /* v6 */
          /* mcr 15, 0, r0, c7, c10, 4 (v6) equiv to DSB (v7).  Data
             Synch Barrier -- ensures completion of memory accesses. */
          stmt( IRStmt_MBE(Imbe_Fence) );
          DIP("mcr 15, 0, r0, c7, c10, 4 (data synch barrier)\n");
-         goto decode_success;
-      case 0xEE070FBA: /* v6 */
-         /* mcr 15, 0, r0, c7, c10, 5 (v6) equiv to DMB (v7).  Data
-            Memory Barrier -- ensures ordering of memory accesses. */
-         stmt( IRStmt_MBE(Imbe_Fence) );
-         DIP("mcr 15, 0, r0, c7, c10, 5 (data memory barrier)\n");
          goto decode_success;
       case 0xEE070F95: /* v6 */
          /* mcr 15, 0, r0, c7, c5, 4 (v6) equiv to ISB (v7).

@@ -1,15 +1,18 @@
 
 How to cross-compile for Android.  These notes were last updated on 
-27 Sept 2011, for Valgrind SVN revision 12060/2209.
+17 Feb 2012, for Valgrind SVN revision 12390/2257.
 
-This is known to work at least for Android 2.3.4 running on a (rooted,
-AOSP build) Nexus S.  It has also worked in the past on a
-un-messed-with Motorola Xoom, although I haven't tested it recently.
-Other configurations and toolchains might work, but haven't been
-tested.  Feedback is welcome.
+This is known to work at least for Android 4.0.3 running on a (rooted,
+AOSP build) Nexus S and also on the same on Motorola Xoom.  Android
+2.3.4 on Nexus S worked at some time in the past.  Other
+configurations and toolchains might work, but haven't been tested.
+Feedback is welcome.
 
-You need the android-ndk-r6 native development kit.  Install it
-somewhere.  Doesn't matter where.  Then do this:
+You need the android-ndk-r6 native development kit.  r6b and r7
+give a non-completely-working build; see
+http://code.google.com/p/android/issues/detail?id=23203
+
+Install it somewhere.  Doesn't matter where.  Then do this:
 
 
 # Modify this (obviously).  Note, this "export" command is only done
@@ -28,7 +31,7 @@ export NDKROOT=/path/to/android-ndk-r6
 # Currently the supported values are:  nexus_s pandaboard
 # So choose one of the below:
 #
-export HWKIND=nexus_s         # Samsung Nexus S
+export HWKIND=nexus_s         # Samsung Nexus S; also Xoom (for now)
 export HWKIND=pandaboard      # Pandaboard running Linaro Android
 
 # Then cd to the root of your Valgrind source tree.

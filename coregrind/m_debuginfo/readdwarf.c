@@ -1846,9 +1846,14 @@ void ML_(read_debuginfo_dwarf1) (
 #  error "Unknown platform"
 #endif
 
-/* the number of regs we are prepared to unwind */
+/* The number of regs we are prepared to unwind.  The number for
+   arm-linux (320) seems ludicrously high, but the ARM IHI 0040A page
+   7 (DWARF for the ARM Architecture) specifies that values up to 320
+   might exist, for Neon/VFP-v3. */
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
 # define N_CFI_REGS 72
+#elif defined(VGP_arm_linux)
+# define N_CFI_REGS 320
 #else
 # define N_CFI_REGS 20
 #endif

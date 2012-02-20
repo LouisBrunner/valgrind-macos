@@ -811,6 +811,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(IP_AT_SYSCALL)) return -1;
    if (o == GOF(fpc)) return -1;
    if (o == GOF(IA)) return -1;
+   if (o == GOF(IA) + 4) return -1;
    if (o == GOF(SYSNO)) return -1;
    VG_(printf)("MC_(get_otrack_shadow_offset)(s390x)(off=%d,sz=%d)\n",
                offset,szB);

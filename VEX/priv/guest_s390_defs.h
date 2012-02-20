@@ -37,6 +37,7 @@
 #include "libvex_ir.h"                // IRSB  (needed by bb_to_IR.h)
 #include "libvex.h"                   // VexArch  (needed by bb_to_IR.h)
 #include "guest_generic_bb_to_IR.h"   // DisResult
+#include "libvex_guest_s390x.h"       // VexGuestS390XState
 
 
 /* Convert one s390 insn to IR.  See the type DisOneInstrFn in

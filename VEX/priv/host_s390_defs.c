@@ -714,6 +714,8 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       break;
 
    case S390_INSN_MFENCE:
+   case S390_INSN_GZERO:
+   case S390_INSN_GADD:
       break;
 
    default:
@@ -917,6 +919,8 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       break;
 
    case S390_INSN_MFENCE:
+   case S390_INSN_GZERO:
+   case S390_INSN_GADD:
       break;
 
    default:
@@ -1115,6 +1119,35 @@ emit_S(UChar *p, UInt op, UChar b2, UShort d2)
 }
 
 
+static UChar *
+emit_SIY(UChar *p, ULong op, UChar i2, UChar b1, UShort dl1, UChar dh1)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)i2) << 32;
+   the_insn |= ((ULong)b1) << 28;
+   the_insn |= ((ULong)dl1) << 16;
+   the_insn |= ((ULong)dh1) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_SSa(UChar *p, ULong op, UChar l, UChar b1, UShort d1, UChar b2, UShort d2)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)l)  << 32;
+   the_insn |= ((ULong)b1) << 28;
+   the_insn |= ((ULong)d1) << 16;
+   the_insn |= ((ULong)b2) << 12;
+   the_insn |= ((ULong)d2) << 0;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Functions to emit particular instructions            ---*/
 /*------------------------------------------------------------*/
@@ -1236,6 +1269,18 @@ s390_emit_AGHI(UChar *p, UChar r1, UShort i2)
       s390_disasm(ENC3(MNM, GPR, INT), "aghi", r1, (Int)(Short)i2);
 
    return emit_RI(p, 0xa70b0000, r1, i2);
+}
+
+
+static UChar *
+s390_emit_AGSI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
+{
+   vassert(s390_host_has_gie);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, INT, SDXB), "agsi", (Int)(Char)i2, dh1, dl1, 0, b1);
+
+   return emit_SIY(p, 0xeb000000007aULL, i2, b1, dl1, dh1);
 }
 
 
@@ -1684,6 +1729,16 @@ s390_emit_XILF(UChar *p, UChar r1, UInt i2)
       s390_disasm(ENC3(MNM, GPR, UINT), "xilf", r1, i2);
 
    return emit_RIL(p, 0xc00700000000ULL, r1, i2);
+}
+
+
+static UChar *
+s390_emit_XC(UChar *p, UInt l, UChar b1, UShort d1, UChar b2, UShort d2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d1, l, b1, d2, 0, b2);
+
+   return emit_SSa(p, 0xd70000000000ULL, l, b1, d1, b2, d2);
 }
 
 
@@ -4406,6 +4461,34 @@ s390_insn_mfence(void)
 }
 
 
+s390_insn *
+s390_insn_gzero(UChar size, UInt offset)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_GZERO;
+   insn->size = size;
+   insn->variant.gzero.offset = offset;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_GADD;
+   insn->size = size;
+   insn->variant.gadd.offset = offset;
+   insn->variant.gadd.delta = delta;
+   insn->variant.gadd.value = value;
+
+   return insn;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Debug print                                             ---*/
 /*---------------------------------------------------------------*/
@@ -4475,6 +4558,10 @@ s390_sprintf(HChar *buf, HChar *fmt, ...)
       case 'A':     /* %A = amode */
          p += vex_sprintf(p, "%s",
                           s390_amode_as_string(va_arg(args, s390_amode *)));
+         continue;
+
+      case 'G':     /* %G = guest state @ offset */
+         p += vex_sprintf(p, "guest[%d]", va_arg(args, UInt));
          continue;
 
       case 'C':     /* %C = condition code */
@@ -4820,6 +4907,17 @@ s390_insn_as_string(const s390_insn *insn)
    case S390_INSN_MFENCE:
       s390_sprintf(buf, "%M", "v-mfence");
       return buf;   /* avoid printing "size = ..." which is meaningless */
+
+   case S390_INSN_GZERO:
+      s390_sprintf(buf, "%M %G", "v-gzero", insn->variant.gzero.offset);
+      break;
+
+   case S390_INSN_GADD:
+      s390_sprintf(buf, "%M %G += %I  (= %I)", "v-gadd",
+                   insn->variant.gadd.offset,
+                   (Long)(Char)insn->variant.gadd.delta,
+                   insn->variant.gadd.value);
+      break;
 
    default: goto fail;
    }
@@ -7042,6 +7140,24 @@ s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+static UChar *
+s390_insn_gzero_emit(UChar *buf, const s390_insn *insn)
+{
+   return s390_emit_XC(buf, insn->size - 1,
+                       S390_REGNO_GUEST_STATE_POINTER, insn->variant.gzero.offset,
+                       S390_REGNO_GUEST_STATE_POINTER, insn->variant.gzero.offset);
+}
+
+
+static UChar *
+s390_insn_gadd_emit(UChar *buf, const s390_insn *insn)
+{
+   return s390_emit_AGSI(buf, insn->variant.gadd.delta,
+                         S390_REGNO_GUEST_STATE_POINTER,
+                         DISP20(insn->variant.gadd.offset));
+}
+
+
 Int
 emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
                void *dispatch_unassisted, void *dispatch_assisted)
@@ -7157,6 +7273,14 @@ emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
 
    case S390_INSN_MFENCE:
       end = s390_insn_mfence_emit(buf, insn);
+      break;
+
+   case S390_INSN_GZERO:
+      end = s390_insn_gzero_emit(buf, insn);
+      break;
+
+   case S390_INSN_GADD:
+      end = s390_insn_gadd_emit(buf, insn);
       break;
 
    default:

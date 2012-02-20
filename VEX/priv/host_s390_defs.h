@@ -142,7 +142,9 @@ typedef enum {
    S390_INSN_BFP128_COMPARE,
    S390_INSN_BFP128_CONVERT_TO,
    S390_INSN_BFP128_CONVERT_FROM,
-   S390_INSN_MFENCE
+   S390_INSN_MFENCE,
+   S390_INSN_GZERO,   /* Assign zero to a guest register */
+   S390_INSN_GADD     /* Add a value to a guest register */
 } s390_insn_tag;
 
 
@@ -397,6 +399,14 @@ typedef struct {
          HReg             op2_hi; /* right operand; high part */
          HReg             op2_lo; /* right operand; low part */
       } bfp128_compare;
+      struct {
+         UInt             offset;
+      } gzero;
+      struct {
+         UInt             offset;
+         UChar            delta;
+         ULong            value;  /* for debugging only */
+      } gadd;
    } variant;
 } s390_insn;
 
@@ -447,6 +457,8 @@ s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_round_t);
 s390_insn *s390_insn_mfence(void);
+s390_insn *s390_insn_gzero(UChar size, UInt offset);
+s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
 UInt       s390_insn_emit(UChar *buf, Int nbuf, const s390_insn *insn,
                           void *dispatch);
 

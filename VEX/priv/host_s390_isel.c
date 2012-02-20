@@ -34,10 +34,11 @@
 #include "libvex_ir.h"
 #include "libvex.h"
 #include "libvex_s390x_common.h"
+#include "libvex_guest_offsets.h"
 
-#include "ir_match.h"
 #include "main_util.h"
 #include "main_globals.h"
+#include "guest_s390_defs.h"   /* guest_s390x_state_requires_precise_mem_exns */
 #include "host_generic_regs.h"
 #include "host_s390_defs.h"
 
@@ -68,7 +69,26 @@
 
     - The host subarchitecture we are selecting insns for.
       This is set at the start and does not change.
+
+    - A flag to indicate whether the guest IA has been assigned to.
+
+    - Values of certain guest registers which are often assigned constants.
 */
+
+/* Symbolic names for guest registers whose value we're tracking */
+enum {
+   GUEST_IA,
+   GUEST_CC_OP,
+   GUEST_CC_DEP1,
+   GUEST_CC_DEP2,
+   GUEST_CC_NDEP,
+   GUEST_SYSNO,
+   GUEST_UNKNOWN    /* must be the last entry */
+};
+
+/* Number of registers we're tracking. */
+#define NUM_TRACKED_REGS GUEST_UNKNOWN
+
 
 typedef struct {
    IRTypeEnv   *type_env;
@@ -79,10 +99,12 @@ typedef struct {
 
    HInstrArray *code;
 
+   ULong        old_value[NUM_TRACKED_REGS];
    UInt         vreg_ctr;
 
    UInt         hwcaps;
-
+   Bool         first_IA_assignment;
+   Bool         old_value_valid[NUM_TRACKED_REGS];
 } ISelEnv;
 
 
@@ -95,6 +117,33 @@ static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 static HReg          s390_isel_float_expr(ISelEnv *, IRExpr *);
 static void          s390_isel_float128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 
+
+static Int
+get_guest_reg(Int offset)
+{
+   switch (offset) {
+   case OFFSET_s390x_IA:        return GUEST_IA;
+   case OFFSET_s390x_CC_OP:     return GUEST_CC_OP;
+   case OFFSET_s390x_CC_DEP1:   return GUEST_CC_DEP1;
+   case OFFSET_s390x_CC_DEP2:   return GUEST_CC_DEP2;
+   case OFFSET_s390x_CC_NDEP:   return GUEST_CC_NDEP;
+   case OFFSET_s390x_SYSNO:     return GUEST_SYSNO;
+
+      /* Also make sure there is never a partial write to one of
+         these registers. That would complicate matters. */
+   case OFFSET_s390x_IA+1      ... OFFSET_s390x_IA+7:
+   case OFFSET_s390x_CC_OP+1   ... OFFSET_s390x_CC_OP+7:
+   case OFFSET_s390x_CC_DEP1+1 ... OFFSET_s390x_CC_DEP1+7:
+   case OFFSET_s390x_CC_DEP2+1 ... OFFSET_s390x_CC_DEP2+7:
+   case OFFSET_s390x_CC_NDEP+1 ... OFFSET_s390x_CC_NDEP+7:
+      vassert("partial update of this guest state register is not allowed");
+      break;
+
+   default: break;
+   }
+
+   return GUEST_UNKNOWN;
+}
 
 /* Add an instruction */
 static void
@@ -202,6 +251,16 @@ ulong_fits_signed_20bit(ULong val)
    return val == (ULong)v;
 }
 
+
+static __inline__ Bool
+ulong_fits_signed_8bit(ULong val)
+{
+   Long v = val & 0xFFu;
+
+   v = (v << 56) >> 56;  /* sign extend */
+
+   return val == (ULong)v;
+}
 
 /* EXPR is an expression that is used as an address. Return an s390_amode
    for it. */
@@ -2139,7 +2198,98 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       HReg src;
       s390_amode *am;
+      ULong new_value, old_value, difference;
 
+      /* Detect updates to certain guest registers. We track the contents
+         of those registers as long as they contain constants. If the new
+         constant is either zero or in the 8-bit neighbourhood of the
+         current value we can use a memory-to-memory insn to do the update. */
+
+      Int offset = stmt->Ist.Put.offset;
+
+      /* Check necessary conditions:
+         (1) must be one of the registers we care about
+         (2) assigned value must be a constant */
+      Int guest_reg = get_guest_reg(offset);
+
+      if (guest_reg == GUEST_UNKNOWN) goto not_special;
+
+      if (guest_reg == GUEST_IA) {
+         /* If this is the first assignment to the IA reg, don't special case
+            it. We need to do a full 8-byte assignment here. The reason is 
+            that in case of a redirected translation the guest IA does not 
+            contain the redirected-to address. Instead it contains the 
+            redirected-from address and those can be far apart. So in order to
+            do incremnetal updates if the IA in the future we need to get the
+            initial address of the super block correct. */
+         if (env->first_IA_assignment) {
+            env->first_IA_assignment = False;
+            goto not_special;
+         }
+      }
+
+      if (stmt->Ist.Put.data->tag != Iex_Const) {
+         /* Invalidate guest register contents */
+         env->old_value_valid[guest_reg] = False;
+         goto not_special;
+      }
+
+      /* OK. Necessary conditions are satisfied. */
+
+      /* Get the old value and update it */
+      vassert(tyd == Ity_I64);
+
+      old_value = env->old_value[guest_reg];
+      new_value = stmt->Ist.Put.data->Iex.Const.con->Ico.U64;
+      env->old_value[guest_reg] = new_value;
+
+      Bool old_value_is_valid = env->old_value_valid[guest_reg];
+      env->old_value_valid[guest_reg] = True;
+
+      /* If the register already contains the new value, there is nothing
+         to do here. Unless the guest register requires precise memory
+         exceptions. */
+      if (old_value_is_valid && new_value == old_value) {
+         if (! guest_s390x_state_requires_precise_mem_exns(offset, offset + 8)) {
+            return;
+         }
+      }
+
+      /* guest register = 0 */
+      if (new_value == 0) {
+         addInstr(env, s390_insn_gzero(sizeofIRType(tyd), offset));
+         return;
+      }
+
+      if (old_value_is_valid == False) goto not_special;
+
+      /* If the new value is in the neighbourhood of the old value
+         we can use a memory-to-memory insn */
+      difference = new_value - old_value;
+
+      if (s390_host_has_gie && ulong_fits_signed_8bit(difference)) {
+         addInstr(env, s390_insn_gadd(sizeofIRType(tyd), offset,
+                                      (difference & 0xFF), new_value));
+         return;
+      }
+
+      /* If the high word is the same it is sufficient to load the low word.
+         Use R0 as a scratch reg. */
+      if ((old_value >> 32) == (new_value >> 32)) {
+         HReg r0  = make_gpr(env, 0);
+         HReg gsp = make_gpr(env, S390_REGNO_GUEST_STATE_POINTER);
+         s390_amode *gam;
+
+         gam = s390_amode_b12(offset + 4, gsp);
+         addInstr(env, s390_insn_load_immediate(4, r0,
+                                                new_value & 0xFFFFFFFF));
+         addInstr(env, s390_insn_store(4, gam, r0));
+         return;
+      }
+
+      /* No special case applies... fall through */
+
+   not_special:
       am = s390_amode_for_guest_state(stmt->Ist.Put.offset);
 
       switch (tyd) {
@@ -2230,6 +2380,17 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP;
+      Int i;
+
+      /* Invalidate tracked values of those guest state registers that are
+         modified by this helper. */
+      for (i = 0; i < d->nFxState; ++i) {
+         if ((d->fxState[i].fx == Ifx_Write || d->fxState[i].fx == Ifx_Modify)) {
+            Int guest_reg = get_guest_reg(d->fxState[i].offset);
+            if (guest_reg != GUEST_UNKNOWN)
+               env->old_value_valid[guest_reg] = False;
+         }
+      }
 
       if (d->nFxState == 0)
          vassert(!d->needsBBP);
@@ -2371,6 +2532,13 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
 
    /* Copy BB's type env. */
    env->type_env = bb->tyenv;
+
+   /* Set up data structures for tracking guest register values. */
+   env->first_IA_assignment = True;
+   for (i = 0; i < NUM_TRACKED_REGS; ++i) {
+      env->old_value[i] = 0;  /* just something to have a defined value */
+      env->old_value_valid[i] = False;
+   }
 
    /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
       change as we go along. For some reason types_used has Int type -- but

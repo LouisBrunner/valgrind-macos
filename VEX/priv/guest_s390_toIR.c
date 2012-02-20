@@ -13593,7 +13593,7 @@ disInstr_S390_WRK(UChar *insn)
 
 DisResult
 disInstr_S390(IRSB        *irsb_IN,
-              Bool         put_IP,
+              Bool         put_IP __attribute__((unused)),
               Bool       (*resteerOkFn)(void *, Addr64),
               Bool         resteerCisOk,
               void        *callback_opaque,
@@ -13616,10 +13616,9 @@ disInstr_S390(IRSB        *irsb_IN,
    resteer_fn = resteerOkFn;
    resteer_data = callback_opaque;
 
-   /* We may be asked to update the guest IA before going further. */
-   if (put_IP)
-      addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                                     mkaddr_expr(guest_IA_curr_instr)));
+   /* Always update the guest IA. See comment in s390_isel_stmt for Ist_Put. */
+   addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
+                                  mkaddr_expr(guest_IA_curr_instr)));
 
    return disInstr_S390_WRK(guest_code + delta);
 }

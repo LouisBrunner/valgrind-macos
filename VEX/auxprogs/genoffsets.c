@@ -169,6 +169,10 @@ void foo ( void )
    GENOFFSET(S390X,s390x,SYSNO);
    GENOFFSET(S390X,s390x,IP_AT_SYSCALL);
    GENOFFSET(S390X,s390x,fpc);
+   GENOFFSET(S390X,s390x,CC_OP);
+   GENOFFSET(S390X,s390x,CC_DEP1);
+   GENOFFSET(S390X,s390x,CC_DEP2);
+   GENOFFSET(S390X,s390x,CC_NDEP);
 }
 
 /*--------------------------------------------------------------------*/

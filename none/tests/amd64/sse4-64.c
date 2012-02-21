@@ -1268,7 +1268,7 @@ void test_MPSADBW ( void )
 {
    V128 src, dst;
    Int i;
-   for (i = 0; i < 10; i++) {
+   for (i = 0; i < 50; i++) {
       randV128(&src);
       randV128(&dst);
       DO_imm_mandr_r("mpsadbw", 0, src, dst);
@@ -3793,7 +3793,6 @@ int main ( int argc, char** argv )
    test_EXTRACTPS();
    test_INSERTPS();       // done Apr.01.2010
    // MOVNTDQA  ***
-   //test_MPSADBW();
    test_PCMPEQQ();
    test_PEXTRB();         // done Apr.15.2010
    test_PEXTRD();         // done Apr.14.2010
@@ -3842,14 +3841,9 @@ int main ( int argc, char** argv )
    // CRC32B,Q
    test_PACKUSDW();
    test_PHMINPOSUW();
-
-#else
-#if 0
    test_MPSADBW();
-   test_PCMPEQQ();
-   test_PHMINPOSUW();
-   test_PMULDQ();
-#endif
+#else
+   test_MPSADBW();
 #endif
 
    return 0;

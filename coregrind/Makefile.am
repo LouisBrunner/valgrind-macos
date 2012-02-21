@@ -513,7 +513,8 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/powerpc-altivec64l.xml
 
 # so as to make sure these get copied into the install tree
-pkglib_DATA  = $(GDBSERVER_XML_FILES)
+vglibdir = $(pkglibdir)
+vglib_DATA  = $(GDBSERVER_XML_FILES)
 
 # so as to make sure these get copied into the tarball
 EXTRA_DIST  += $(GDBSERVER_XML_FILES)

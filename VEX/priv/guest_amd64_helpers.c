@@ -2902,6 +2902,59 @@ ULong amd64g_calc_crc32q ( ULong crcIn, ULong q )
 }
 
 
+/* .. helper for next fn .. */
+static inline ULong sad_8x4 ( ULong xx, ULong yy )
+{
+   UInt t = 0;
+   t += (UInt)abdU8( sel8x8_3(xx), sel8x8_3(yy) );
+   t += (UInt)abdU8( sel8x8_2(xx), sel8x8_2(yy) );
+   t += (UInt)abdU8( sel8x8_1(xx), sel8x8_1(yy) );
+   t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
+   return (ULong)t;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
+                            ULong dHi, ULong dLo,
+                            ULong imm_and_return_control_bit )
+{
+   UInt imm8     = imm_and_return_control_bit & 7;
+   Bool calcHi   = (imm_and_return_control_bit >> 7) & 1;
+   UInt srcOffsL = imm8 & 3; /* src offs in 32-bit (L) chunks */
+   UInt dstOffsL = (imm8 >> 2) & 1; /* dst offs in ditto chunks */
+   /* For src we only need 32 bits, so get them into the
+      lower half of a 64 bit word. */
+   ULong src = ((srcOffsL & 2) ? sHi : sLo) >> (32 * (srcOffsL & 1));
+   /* For dst we need to get hold of 56 bits (7 bytes) from a total of
+      11 bytes.  If calculating the low part of the result, need bytes
+      dstOffsL * 4 + (0 .. 6); if calculating the high part,
+      dstOffsL * 4 + (4 .. 10). */
+   ULong dst;
+   /* dstOffL = 0, Lo  ->  0 .. 6
+      dstOffL = 1, Lo  ->  4 .. 10
+      dstOffL = 0, Hi  ->  4 .. 10
+      dstOffL = 1, Hi  ->  8 .. 14
+   */
+   if (calcHi && dstOffsL) {
+      /* 8 .. 14 */
+      dst = dHi & 0x00FFFFFFFFFFFFFFULL;
+   }
+   else if (!calcHi && !dstOffsL) {
+      /* 0 .. 6 */
+      dst = dLo & 0x00FFFFFFFFFFFFFFULL;
+   } 
+   else {
+      /* 4 .. 10 */
+      dst = (dLo >> 32) | ((dHi & 0x00FFFFFFULL) << 32);
+   }
+   ULong r0  = sad_8x4( dst >>  0, src );
+   ULong r1  = sad_8x4( dst >>  8, src );
+   ULong r2  = sad_8x4( dst >> 16, src );
+   ULong r3  = sad_8x4( dst >> 24, src );
+   ULong res = (r3 << 48) | (r2 << 32) | (r1 << 16) | r0;
+   return res;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Helpers for SSE4.2 PCMP{E,I}STR{I,M}                    ---*/
 /*---------------------------------------------------------------*/

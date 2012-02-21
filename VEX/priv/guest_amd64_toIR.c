@@ -16185,6 +16185,96 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
       }
       break;
 
+   case 0x42:
+      /* 66 0F 3A 42 /r ib = MPSADBW xmm1, xmm2/m128, imm8
+         Multiple Packed Sums of Absolule Difference (XMM) */
+      if (have66noF2noF3(pfx) && sz == 2) {
+  
+         Int    imm8;
+         IRTemp src_vec = newTemp(Ity_V128);
+         IRTemp dst_vec = newTemp(Ity_V128);
+
+         modrm = getUChar(delta);
+
+         assign( dst_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+  
+         if ( epartIsReg( modrm ) ) {
+            imm8 = (Int)getUChar(delta+1);
+            assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+            delta += 1+1;
+            DIP( "mpsadbw $%d, %s,%s\n", imm8,
+                 nameXMMReg( eregOfRexRM(pfx, modrm) ),
+                 nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
+                             1/* imm8 is 1 byte after the amode */ );
+            gen_SEGV_if_not_16_aligned( addr );
+            assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+            imm8 = (Int)getUChar(delta+alen);
+            delta += alen+1;
+            DIP( "mpsadbw $%d, %s,%s\n", 
+                 imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+         }
+
+         /* Mask out bits of the operands we don't need.  This isn't
+            strictly necessary, but it does ensure Memcheck doesn't
+            give us any false uninitialised value errors as a
+            result. */
+         UShort src_mask[4] = { 0x000F, 0x00F0, 0x0F00, 0xF000 };
+         UShort dst_mask[2] = { 0x07FF, 0x7FF0 };
+
+         IRTemp src_maskV = newTemp(Ity_V128);
+         IRTemp dst_maskV = newTemp(Ity_V128);
+         assign(src_maskV, mkV128( src_mask[ imm8 & 3 ] ));
+         assign(dst_maskV, mkV128( dst_mask[ (imm8 >> 2) & 1 ] ));
+
+         IRTemp src_masked = newTemp(Ity_V128);
+         IRTemp dst_masked = newTemp(Ity_V128);
+         assign(src_masked,
+                binop(Iop_AndV128, mkexpr(src_vec), mkexpr(src_maskV)));
+         assign(dst_masked,
+                binop(Iop_AndV128, mkexpr(dst_vec), mkexpr(dst_maskV)));
+
+         /* Generate 4 64 bit values that we can hand to a clean helper */
+         IRTemp sHi = newTemp(Ity_I64);
+         IRTemp sLo = newTemp(Ity_I64);
+         assign( sHi, unop(Iop_V128HIto64, mkexpr(src_masked)) );
+         assign( sLo, unop(Iop_V128to64,   mkexpr(src_masked)) );
+
+         IRTemp dHi = newTemp(Ity_I64);
+         IRTemp dLo = newTemp(Ity_I64);
+         assign( dHi, unop(Iop_V128HIto64, mkexpr(dst_masked)) );
+         assign( dLo, unop(Iop_V128to64,   mkexpr(dst_masked)) );
+
+         /* Compute halves of the result separately */
+         IRTemp resHi = newTemp(Ity_I64);
+         IRTemp resLo = newTemp(Ity_I64);
+
+         IRExpr** argsHi
+            = mkIRExprVec_5( mkexpr(sHi), mkexpr(sLo), mkexpr(dHi), mkexpr(dLo),
+                             mkU64( 0x80 | (imm8 & 7) ));
+         IRExpr** argsLo
+            = mkIRExprVec_5( mkexpr(sHi), mkexpr(sLo), mkexpr(dHi), mkexpr(dLo),
+                             mkU64( 0x00 | (imm8 & 7) ));
+
+         assign(resHi, mkIRExprCCall( Ity_I64, 0/*regparm*/,
+                                      "amd64g_calc_mpsadbw",
+                                      &amd64g_calc_mpsadbw,
+                                      argsHi ));
+         assign(resLo, mkIRExprCCall( Ity_I64, 0/*regparm*/,
+                                      "amd64g_calc_mpsadbw",
+                                      &amd64g_calc_mpsadbw,
+                                      argsLo ));
+
+         IRTemp res = newTemp(Ity_V128);
+         assign(res, binop(Iop_64HLtoV128, mkexpr(resHi), mkexpr(resLo)));
+
+         putXMMReg( gregOfRexRM( pfx, modrm ), mkexpr(res) );
+
+         goto decode_success;
+      }
+      break;
+
    case 0x44:
       /* 66 0F 3A 44 /r ib = PCLMULQDQ xmm1, xmm2/m128, imm8
        * Carry-less multiplication of selected XMM quadwords into XMM

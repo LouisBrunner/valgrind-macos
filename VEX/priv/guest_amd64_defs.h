@@ -148,6 +148,10 @@ extern ULong amd64g_calc_crc32w ( ULong crcIn, ULong w );
 extern ULong amd64g_calc_crc32l ( ULong crcIn, ULong l );
 extern ULong amd64g_calc_crc32q ( ULong crcIn, ULong q );
 
+extern ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
+                                   ULong dHi, ULong dLo,
+                                   ULong imm_and_return_control_bit );
+
 /* --- DIRTY HELPERS --- */
 
 extern ULong amd64g_dirtyhelper_loadF80le  ( ULong/*addr*/ );

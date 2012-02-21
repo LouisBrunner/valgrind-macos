@@ -986,10 +986,11 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_EIP = iifii.initial_client_IP;
 
    /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
+      default code, data and stack segments.  Also %es (see #291253). */
    asm volatile("movw %%cs, %0" : : "m" (arch->vex.guest_CS));
    asm volatile("movw %%ds, %0" : : "m" (arch->vex.guest_DS));
    asm volatile("movw %%ss, %0" : : "m" (arch->vex.guest_SS));
+   asm volatile("movw %%es, %0" : : "m" (arch->vex.guest_ES));
 
 #  elif defined(VGP_amd64_linux)
    vg_assert(0 == sizeof(VexGuestAMD64State) % 16);

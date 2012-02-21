@@ -2125,7 +2125,11 @@ VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
    clflush size    : 64  
    cache_alignment : 64  
    address sizes   : 40 bits physical, 48 bits virtual  
-   power management: ts fid vid ttp  
+   power management: ts fid vid ttp
+
+   2012-Feb-21: don't claim 3dnow or 3dnowext, since in fact 
+   we don't support them.  See #291568.  3dnow is 80000001.EDX.31
+   and 3dnowext is 80000001.EDX.30.
 */
 void amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st )
 {
@@ -2147,7 +2151,11 @@ void amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st )
          SET_ABCD(0x80000018, 0x68747541, 0x444d4163, 0x69746e65);
          break;
       case 0x80000001:
-         SET_ABCD(0x00000f5a, 0x00000505, 0x00000000, 0xe1d3fbff);
+         /* Don't claim to support 3dnow or 3dnowext.  0xe1d3fbff is
+            the original it-is-supported value that the h/w provides.
+            See #291568. */
+         SET_ABCD(0x00000f5a, 0x00000505, 0x00000000, /*0xe1d3fbff*/
+                                                      0x21d3fbff);
          break;
       case 0x80000002:
          SET_ABCD(0x20444d41, 0x6574704f, 0x206e6f72, 0x296d7428);

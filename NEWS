@@ -27,6 +27,11 @@ Release 3.8.0 (????)
 * The C++ demangler has been updated so as to work well with C++ 
   compiled by even the most recent g++'s.
 
+* The new option --fair-sched allows to control the locking mechanism
+  used by Valgrind. The locking mechanism influences the performance
+  and scheduling of multithreaded applications (in particular
+  on multiprocessor/multicore systems).
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -41,6 +46,7 @@ https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
 247386  make perf does not run all performance tests
+270006 -Valgrind scheduler unfair 
 270796  s390x: Removed broken support for the TS insn
 271438  Fix configure for proper SSE4.2 detection
 273114  s390x: Support TR, TRE, TROO, TROT, TRTO, and TRTT instructions

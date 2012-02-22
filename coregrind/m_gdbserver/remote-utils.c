@@ -224,10 +224,11 @@ void remote_open (char *name)
    const HChar *user, *host;
    int save_fcntl_flags, len;
    VgdbShared vgdbinit = 
-      {0, 0, 0, (Addr) VG_(invoke_gdbserver),
+      {0, 0, (Addr) VG_(invoke_gdbserver),
        (Addr) VG_(threads), sizeof(ThreadState), 
        offsetof(ThreadState, status),
-       offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid)};
+       offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid),
+       0};
    const int pid = VG_(getpid)();
    const int name_default = strcmp(name, VG_(vgdb_prefix_default)()) == 0;
    Addr addr_shared;

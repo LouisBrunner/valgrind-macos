@@ -143,10 +143,6 @@ extern void VG_(gdbserver_status_output)(void);
 
 typedef 
    struct {
-      // PID of the vgdb that last connected to the Valgrind gdbserver.
-      // It will be set by vgdb after connecting.
-      int vgdb_pid;
-
       // nr of bytes vgdb has written to valgrind
       volatile int written_by_vgdb;
       // nr of bytes seen by valgrind
@@ -161,13 +157,15 @@ typedef
       int sizeof_ThreadState;
       int offset_status;
       int offset_lwpid;
+
+      // PID of the vgdb that last connected to the Valgrind gdbserver.
+      // It will be set by vgdb after connecting.
+      int vgdb_pid;
    } VgdbShared32;
 
 /* Same as VgdbShared32 but for 64 bits arch. */
 typedef 
    struct {
-      int vgdb_pid;
-
       volatile int written_by_vgdb;
       volatile int seen_by_valgrind;
       
@@ -177,6 +175,8 @@ typedef
       int sizeof_ThreadState;
       int offset_status;
       int offset_lwpid;
+
+      int vgdb_pid;
    } VgdbShared64;
 
 // The below typedef makes the life of valgrind easier.

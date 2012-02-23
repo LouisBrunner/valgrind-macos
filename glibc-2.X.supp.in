@@ -39,74 +39,74 @@
 {
    dl-hack3-cond-1
    Memcheck:Cond
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
 }
 {
    dl-hack3-cond-2
    Memcheck:Cond
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/libc-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/libc-@GLIBC_VERSION@*.so*
 }
 {
    dl-hack3-cond-3
    Memcheck:Cond
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/libc-@GLIBC_VERSION@*.so*
-   obj:/lib*/libc-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/libc-@GLIBC_VERSION@*.so*
+   obj:*/lib*/libc-@GLIBC_VERSION@*.so*
 }
 {
    dl-hack3-cond-4
    Memcheck:Cond
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/libdl-@GLIBC_VERSION@*.so*
 }
 
 {
    dl-hack4-64bit-addr-1
    Memcheck:Addr8
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
 }
 {
    dl-hack4-64bit-addr-2
    Memcheck:Addr8
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/libc-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/libc-@GLIBC_VERSION@*.so*
 }
 {
    dl-hack4-64bit-addr-3
    Memcheck:Addr8
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so*
-   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:*/lib*/libdl-@GLIBC_VERSION@*.so*
 }
 
 {
    dl-hack5-32bit-addr-1
    Memcheck:Addr4
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
 }
 {
    dl-hack5-32bit-addr-3
    Memcheck:Addr4
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/libdl-@GLIBC_VERSION@*.so*
 }
 {
    dl-hack5-32bit-addr-4
    Memcheck:Addr4
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
+   obj:*/lib*/libdl-@GLIBC_VERSION@*.so*
+   obj:*/lib*/ld-@GLIBC_VERSION@*.so
 }
 
 
@@ -149,9 +149,9 @@
 {
    glibc-@GLIBC_VERSION@-on-SUSE-10.3-(x86)
    Memcheck:Addr4
-   obj:/lib/ld-@GLIBC_VERSION@*.so
-   obj:/lib/ld-@GLIBC_VERSION@*.so
-   obj:/lib/ld-@GLIBC_VERSION@*.so
+   obj:*/lib/ld-@GLIBC_VERSION@*.so
+   obj:*/lib/ld-@GLIBC_VERSION@*.so
+   obj:*/lib/ld-@GLIBC_VERSION@*.so
 }
 
 {
@@ -225,7 +225,7 @@
    MVL-401-linuxthreads-pthread_create
    Memcheck:Param
    write(buf)
-   obj:/lib/libpthread-0.10.so
+   obj:*/lib/libpthread-0.10.so
    fun:pthread_create
 }
 

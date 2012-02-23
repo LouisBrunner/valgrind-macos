@@ -1,8 +1,8 @@
 {
    ld-2.X possibly applying relocations
    exp-sgcheck:SorG
-   obj:/*lib*/ld-2.*so*
-   obj:/*lib*/ld-2.*so*
+   obj:*/*lib*/ld-2.*so*
+   obj:*/*lib*/ld-2.*so*
 }
 
 # I'm pretty sure this is a false positive caused by the sg_ stuff

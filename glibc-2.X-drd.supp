@@ -6,7 +6,7 @@
 {
    drd-ld
    drd:ConflictingAccess
-   obj:/lib*/ld-*.so
+   obj:*/lib*/ld-*.so
 }
 
 #
@@ -22,7 +22,7 @@
 {
    drd-libc-stdio
    drd:ConflictingAccess
-   obj:/lib*/libc-*
+   obj:*/lib*/libc-*
 }
 {
    drd-libc-thread-cancellation-test
@@ -128,7 +128,7 @@
 {
    drd-libpthread-?
    drd:ConflictingAccess
-   obj:/lib/libgcc_s.so.1
+   obj:*/lib/libgcc_s.so.1
 }
 {
    drd-libpthread-nanosleep

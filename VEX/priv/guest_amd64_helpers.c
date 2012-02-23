@@ -954,6 +954,14 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          return unop(Iop_1Uto64,
                      binop(Iop_CmpLE64U, cc_dep1, cc_dep2));
       }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondNBE)) {
+         /* long long sub/cmp, then NBE (unsigned greater than)
+            --> test !(dst <=u src) */
+         return binop(Iop_Xor64,
+                      unop(Iop_1Uto64,
+                           binop(Iop_CmpLE64U, cc_dep1, cc_dep2)),
+                      mkU64(1));
+      }
 
       /*---------------- SUBL ----------------*/
 

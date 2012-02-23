@@ -950,10 +950,20 @@ static void panic(const char *str)
 
 #if defined(VGO_darwin)
 
+static size_t my_malloc_size ( void* zone, void* ptr )
+{
+   /* Implement "malloc_size" by handing the request through to the
+      tool's .tl_usable_size method. */
+   if (!init_done) init();
+   size_t res = (size_t)VALGRIND_NON_SIMD_CALL1(
+                           info.tl_malloc_usable_size, ptr);
+   return res;
+}
+
 static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved1
     NULL, // reserved2
-    NULL, // GrP fixme: malloc_size
+    my_malloc_size, // JRS fixme: is this right?
     (void*)VG_REPLACE_FUNCTION_EZU(10020,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
     (void*)VG_REPLACE_FUNCTION_EZU(10060,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
     (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc), 

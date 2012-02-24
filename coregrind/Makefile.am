@@ -525,7 +525,7 @@ EXTRA_DIST  += $(GDBSERVER_XML_FILES)
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 	mkdir -p $(inplacedir); \
-	for f in $(pkglib_DATA); do \
+	for f in $(vglib_DATA); do \
 	  rm -f $(inplacedir)/$$f; \
 	  ln -f -s ../$(subdir)/$$f $(inplacedir); \
 	done

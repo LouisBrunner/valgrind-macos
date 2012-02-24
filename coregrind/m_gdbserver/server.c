@@ -553,7 +553,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
 
       {
-         char doc[VG_(strlen)(VG_(libdir)) + 1 + VG_(strlen)(annex)];
+         char doc[VG_(strlen)(VG_(libdir)) + 1 + VG_(strlen)(annex) + 1];
          struct vg_stat stat_doc;
          char toread[len];
          int len_read;

@@ -12100,7 +12100,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
       /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
          mmx(G), turn them into a byte, and put zero-extend of it in
          ireg(G). */
-      if (haveNo66noF2noF3(pfx) && sz == 4) {
+      if (haveNo66noF2noF3(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
             do_MMX_preamble();

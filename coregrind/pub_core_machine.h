@@ -103,6 +103,7 @@
 #  define VG_INSTR_PTR        guest_IA
 #  define VG_STACK_PTR        guest_SP
 #  define VG_FRAME_PTR        guest_FP
+#  define VG_FPC_REG          guest_fpc
 #else
 #  error Unknown arch
 #endif
@@ -111,6 +112,7 @@
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 #define VG_O_INSTR_PTR        (offsetof(VexGuestArchState, VG_INSTR_PTR))
+#define VG_O_FPC_REG          (offsetof(VexGuestArchState, VG_FPC_REG))
 
 
 //-------------------------------------------------------------

@@ -345,6 +345,24 @@ extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
 
 static inline void* LibVEX_Alloc ( Int nbytes )
 {
+   struct { 
+      char c;
+      union {
+         char c;
+         short s;
+         int i;
+         long l;
+         long long ll;
+         float f;
+         double d;
+         /* long double is currently not used and would increase alignment
+            unnecessarily. */
+         /* long double ld; */
+         void *pto;
+         void (*ptf)(void);
+      } x;
+   } s;
+
 #if 0
   /* Nasty debugging hack, do not use. */
   return malloc(nbytes);
@@ -352,7 +370,7 @@ static inline void* LibVEX_Alloc ( Int nbytes )
    HChar* curr;
    HChar* next;
    Int    ALIGN;
-   ALIGN  = sizeof(void*)-1;
+   ALIGN  = ((Int) ((UChar *)&s.x - (UChar *)&s)) - 1;
    nbytes = (nbytes + ALIGN) & ~ALIGN;
    curr   = private_LibVEX_alloc_curr;
    next   = curr + nbytes;

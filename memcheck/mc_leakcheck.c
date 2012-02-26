@@ -1276,6 +1276,7 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
                      /*clique*/-1, /*cur_clique*/-1,
                      searched, szB);
    }
+   VG_(free)(seg_starts);
 }
 
 /*------------------------------------------------------------*/

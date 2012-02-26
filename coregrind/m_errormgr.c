@@ -1103,26 +1103,30 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 }
 
 
-/* *p_caller contains the raw name of a caller, supposedly either
+/* buf contains the raw name of a caller, supposedly either
        fun:some_function_name   or
-       obj:some_object_name.
-   Set *p_ty accordingly and advance *p_caller over the descriptor
-   (fun: or obj:) part.
+       obj:some_object_name     or
+       ...
+   Set p->ty and p->name accordingly.
+   p->name is allocated and set to the string
+   after the descriptor (fun: or obj:) part.
    Returns False if failed.
 */
-static Bool setLocationTy ( SuppLoc* p )
+static Bool setLocationTy ( SuppLoc* p, Char *buf )
 {
-   if (VG_(strncmp)(p->name, "fun:", 4) == 0) {
-      p->name += 4;
+   if (VG_(strncmp)(buf, "fun:", 4) == 0) {
+      p->name = VG_(arena_strdup)(VG_AR_CORE,
+                                  "errormgr.sLTy.1", buf+4);
       p->ty = FunName;
       return True;
    }
-   if (VG_(strncmp)(p->name, "obj:", 4) == 0) {
-      p->name += 4;
+   if (VG_(strncmp)(buf, "obj:", 4) == 0) {
+      p->name = VG_(arena_strdup)(VG_AR_CORE,
+                                  "errormgr.sLTy.2", buf+4);
       p->ty = ObjName;
       return True;
    }
-   if (VG_(strcmp)(p->name, "...") == 0) {
+   if (VG_(strcmp)(buf, "...") == 0) {
       p->name = NULL;
       p->ty = DotDotDot;
       return True;
@@ -1200,7 +1204,10 @@ static void load_one_suppressions_file ( Char* filename )
       supp->string = supp->extra = NULL;
 
       eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
-      if (eof) break;
+      if (eof) {
+         VG_(arena_free)(VG_AR_CORE, supp);
+         break;
+      }
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
@@ -1253,6 +1260,8 @@ static void load_one_suppressions_file ( Char* filename )
             if (VG_STREQ(buf, "}"))
                break;
          }
+         VG_(arena_free)(VG_AR_CORE, supp->sname);
+         VG_(arena_free)(VG_AR_CORE, supp);
          continue;
       }
 
@@ -1280,9 +1289,7 @@ static void load_one_suppressions_file ( Char* filename )
             BOMB("too many callers in stack trace");
          if (i > 0 && i >= VG_(clo_backtrace_size)) 
             break;
-         tmp_callers[i].name = VG_(arena_strdup)(VG_AR_CORE,
-                                                 "errormgr.losf.3", buf);
-         if (!setLocationTy(&(tmp_callers[i])))
+         if (!setLocationTy(&(tmp_callers[i]), buf))
             BOMB("location should be \"...\", or should start "
                  "with \"fun:\" or \"obj:\"");
          i++;

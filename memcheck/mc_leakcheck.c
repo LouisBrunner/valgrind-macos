@@ -943,10 +943,11 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
    // proper printing of the deltas between previous search and this search.
    n_lossrecords = get_lr_array_from_lr_table();
    for (i = 0; i < n_lossrecords; i++) {
-      if (lr_array[i]->num_blocks == 0)
+      if (lr_array[i]->num_blocks == 0) {
          // remove from lr_table the old loss_records with 0 bytes found
          VG_(OSetGen_Remove) (lr_table, &lr_array[i]->key);
-      else {
+         VG_(OSetGen_FreeNode)(lr_table, lr_array[i]);
+      } else {
          // move the leak sizes to old_* and zero the current sizes
          // for next leak search
          lr_array[i]->old_szB          = lr_array[i]->szB;

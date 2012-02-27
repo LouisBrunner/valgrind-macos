@@ -345,7 +345,7 @@ extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
 
 static inline void* LibVEX_Alloc ( Int nbytes )
 {
-   struct { 
+   struct align {
       char c;
       union {
          char c;
@@ -361,7 +361,7 @@ static inline void* LibVEX_Alloc ( Int nbytes )
          void *pto;
          void (*ptf)(void);
       } x;
-   } s;
+   };
 
 #if 0
   /* Nasty debugging hack, do not use. */
@@ -370,7 +370,7 @@ static inline void* LibVEX_Alloc ( Int nbytes )
    HChar* curr;
    HChar* next;
    Int    ALIGN;
-   ALIGN  = ((Int) ((UChar *)&s.x - (UChar *)&s)) - 1;
+   ALIGN  = offsetof(struct align,x) - 1;
    nbytes = (nbytes + ALIGN) & ~ALIGN;
    curr   = private_LibVEX_alloc_curr;
    next   = curr + nbytes;

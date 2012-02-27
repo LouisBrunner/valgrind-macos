@@ -1090,8 +1090,8 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
 #  else /* android specific hacks; look away now. */
 
    /* The deal is: if we're looking for for a debuginfo file for some
-      object /system/blah (where blah can be any path), see if we can
-      find the file /sdcard/symbols/system/blah.  So for example it
+      object /path/to/object (which can be any path), see if we can
+      find the file /sdcard/symbols/path/to/object.  So for example it
       produces the following mappings, both of which are important for
       Memcheck:
 
@@ -1109,7 +1109,7 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
       But beware: there is no checking that the debuginfo file, if
       found, matches the main file in any way.
    */
-   if (0 != VG_(strncmp)(filename, "/system/", 8))
+   if (!filename || *filename != '/')
       return False;
 
    HChar* nm = ML_(dinfo_zalloc)("di.fahdi.1", 

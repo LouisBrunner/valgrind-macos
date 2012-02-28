@@ -91,7 +91,9 @@ int write_inferior_memory (CORE_ADDR memaddr, const unsigned char *myaddr,
 
 void set_target_ops (struct target_ops *target)
 {
-   the_target = (struct target_ops *) malloc (sizeof (*the_target));
+   // Can be called again after a fork => do not re-malloc the_target.
+   if (the_target == NULL)
+      the_target = (struct target_ops *) malloc (sizeof (*the_target));
    VG_(memcpy) (the_target, target, sizeof (*the_target));
 }
 

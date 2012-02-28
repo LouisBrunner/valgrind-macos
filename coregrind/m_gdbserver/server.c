@@ -719,8 +719,12 @@ void gdbserver_init (void)
    dlog(1, "gdbserver_init gdbserver embedded in valgrind: %s\n", version);
    noack_mode = False;
    initialize_low ();
-   own_buf = malloc (PBUFSIZ);
-   mem_buf = malloc (PBUFSIZ);
+   // After a fork, gdbserver_init can be called again.
+   // We do not have to re-malloc the buffers in such a case.
+   if (own_buf == NULL)
+      own_buf = malloc (PBUFSIZ);
+   if (mem_buf == NULL)
+      mem_buf = malloc (PBUFSIZ);
 }
 
 void gdbserver_terminate (void)

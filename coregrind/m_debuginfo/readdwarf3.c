@@ -2547,6 +2547,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             const members in C++ code which are compile time constants
             that do no exist in the class. They're not of any interest
             to us so we ignore them. */
+         ML_(TyEnt__make_EMPTY)(&fieldE);
       }
    }
 

@@ -1318,12 +1318,12 @@ Bool VG_(translate) ( ThreadId tid,
    if ((kind == T_Redir_Wrap || kind == T_Redir_Replace)
        && (VG_(clo_verbosity) >= 2 || VG_(clo_trace_redir))) {
       Bool ok;
-      Char name1[64] = "";
-      Char name2[64] = "";
+      Char name1[512] = "";
+      Char name2[512] = "";
       name1[0] = name2[0] = 0;
-      ok = VG_(get_fnname_w_offset)(nraddr, name1, 64);
+      ok = VG_(get_fnname_w_offset)(nraddr, name1, 512);
       if (!ok) VG_(strcpy)(name1, "???");
-      ok = VG_(get_fnname_w_offset)(addr, name2, 64);
+      ok = VG_(get_fnname_w_offset)(addr, name2, 512);
       if (!ok) VG_(strcpy)(name2, "???");
       VG_(message)(Vg_DebugMsg, 
                    "REDIR: 0x%llx (%s) redirected to 0x%llx (%s)\n",
@@ -1337,8 +1337,8 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
-      Char fnname[64] = "UNKNOWN_FUNCTION";
-      VG_(get_fnname_w_offset)(addr, fnname, 64);
+      Char fnname[512] = "UNKNOWN_FUNCTION";
+      VG_(get_fnname_w_offset)(addr, fnname, 512);
       const UChar* objname = "UNKNOWN_OBJECT";
       OffT         objoff  = 0;
       DebugInfo*   di      = VG_(find_DebugInfo)( addr );

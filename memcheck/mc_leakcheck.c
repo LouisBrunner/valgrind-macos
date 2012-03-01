@@ -1376,10 +1376,14 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          lc_n_chunks--;
 
       } else {
-         VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx",
+         VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx\n",
                    start1, end1, start2, end2);
+         VG_(umsg)("Blocks allocation contexts:\n"),
+         VG_(pp_ExeContext)( ch1->where);
+         VG_(umsg)("\n"),
+         VG_(pp_ExeContext)( ch2->where);
          VG_(umsg)("This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK");
-         VG_(umsg)("in an inappropriate way.");
+         VG_(umsg)("in an inappropriate way.\n");
          tl_assert (0);
       }
    }

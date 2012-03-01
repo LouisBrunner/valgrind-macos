@@ -1285,30 +1285,74 @@ PRE(sys_prlimit64)
       PRE_MEM_READ( "rlimit64(new_rlim)", ARG3, sizeof(struct vki_rlimit64) );
    if (ARG4)
       PRE_MEM_WRITE( "rlimit64(old_rlim)", ARG4, sizeof(struct vki_rlimit64) );
+
+   if (ARG3 &&
+       ((struct vki_rlimit64 *)ARG3)->rlim_cur > ((struct vki_rlimit64 *)ARG3)->rlim_max) {
+      SET_STATUS_Failure( VKI_EINVAL );
+   }
+   else if (ARG1 == 0 || ARG1 == VG_(getpid)()) {
+      switch (ARG2) {
+      case VKI_RLIMIT_NOFILE:
+         SET_STATUS_Success( 0 );
+         if (ARG4) {
+            ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(fd_soft_limit);
+            ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(fd_hard_limit);
+         }
+         if (ARG3) {
+            if (((struct vki_rlimit64 *)ARG3)->rlim_cur > VG_(fd_hard_limit) ||
+                ((struct vki_rlimit64 *)ARG3)->rlim_max != VG_(fd_hard_limit)) {
+               SET_STATUS_Failure( VKI_EPERM );
+            }
+            else {
+               VG_(fd_soft_limit) = ((struct vki_rlimit64 *)ARG3)->rlim_cur;
+            }
+         }
+         break;
+
+      case VKI_RLIMIT_DATA:
+         SET_STATUS_Success( 0 );
+         if (ARG4) {
+            ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(client_rlimit_data).rlim_cur;
+            ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(client_rlimit_data).rlim_max;
+         }
+         if (ARG3) {
+            if (((struct vki_rlimit64 *)ARG3)->rlim_cur > VG_(client_rlimit_data).rlim_max ||
+                ((struct vki_rlimit64 *)ARG3)->rlim_max > VG_(client_rlimit_data).rlim_max) {
+               SET_STATUS_Failure( VKI_EPERM );
+            }
+            else {
+               VG_(client_rlimit_data).rlim_cur = ((struct vki_rlimit64 *)ARG3)->rlim_cur;
+               VG_(client_rlimit_data).rlim_max = ((struct vki_rlimit64 *)ARG3)->rlim_max;
+            }
+         }
+         break;
+
+      case VKI_RLIMIT_STACK:
+         SET_STATUS_Success( 0 );
+         if (ARG4) {
+            ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(client_rlimit_stack).rlim_cur;
+            ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(client_rlimit_stack).rlim_max;
+         }
+         if (ARG3) {
+            if (((struct vki_rlimit64 *)ARG3)->rlim_cur > VG_(client_rlimit_stack).rlim_max ||
+                ((struct vki_rlimit64 *)ARG3)->rlim_max > VG_(client_rlimit_stack).rlim_max) {
+               SET_STATUS_Failure( VKI_EPERM );
+            }
+            else {
+               VG_(threads)[tid].client_stack_szB = ((struct vki_rlimit64 *)ARG3)->rlim_cur;
+               VG_(client_rlimit_stack).rlim_cur = ((struct vki_rlimit64 *)ARG3)->rlim_cur;
+               VG_(client_rlimit_stack).rlim_max = ((struct vki_rlimit64 *)ARG3)->rlim_max;
+           }
+         }
+         break;
+      }
+   }
 }
 
 POST(sys_prlimit64)
 {
-   if (ARG4) {
+   if (ARG4)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_rlimit64) );
-
-      switch (ARG2) {
-      case VKI_RLIMIT_NOFILE:
-         ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(fd_soft_limit);
-         ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(fd_hard_limit);
-         break;
-
-      case VKI_RLIMIT_DATA:
-         ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(client_rlimit_data).rlim_cur;
-         ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(client_rlimit_data).rlim_max;
-         break;
-
-      case VKI_RLIMIT_STACK:
-         ((struct vki_rlimit64 *)ARG4)->rlim_cur = VG_(client_rlimit_stack).rlim_cur;
-         ((struct vki_rlimit64 *)ARG4)->rlim_max = VG_(client_rlimit_stack).rlim_max;
-         break;
-      }
-   }
 }
 
 /* ---------------------------------------------------------------------

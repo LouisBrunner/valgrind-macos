@@ -130,6 +130,7 @@ EXTRA_DIST = \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
+	rlimit64_nofile.stderr.exp rlimit64_nofile.stdout.exp rlimit64_nofile.vgtest \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
 	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
@@ -185,7 +186,7 @@ check_PROGRAMS = \
 	rcrl readline1 \
 	require-text-symbol \
 	res_search resolv \
-	rlimit_nofile selfrun sem semlimit sha1_test \
+	rlimit_nofile rlimit64_nofile selfrun sem semlimit sha1_test \
 	shortpush shorts stackgrowth sigstackgrowth \
 	syscall-restart1 syscall-restart2 \
 	syslog \

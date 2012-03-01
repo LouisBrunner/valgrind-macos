@@ -1,3 +1,6 @@
+#define _LARGEFILE_SOURCE
+#define _LARGEFILE64_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -8,13 +11,13 @@
 
 int main(int argc, char **argv)
 {
-   struct rlimit oldrlim;
-   struct rlimit newrlim;
+   struct rlimit64 oldrlim;
+   struct rlimit64 newrlim;
    int fd;
 
    CLOSE_INHERITED_FDS;
 
-   if (getrlimit(RLIMIT_NOFILE, &oldrlim) < 0)
+   if (getrlimit64(RLIMIT_NOFILE, &oldrlim) < 0)
    {
       perror("getrlimit");
       exit(1);
@@ -22,44 +25,44 @@ int main(int argc, char **argv)
 
    newrlim.rlim_cur = oldrlim.rlim_max+1;
    newrlim.rlim_max = oldrlim.rlim_max;
-   if (setrlimit(RLIMIT_NOFILE, &newrlim) == -1)
+   if (setrlimit64(RLIMIT_NOFILE, &newrlim) == -1)
    {
       if (errno != EINVAL) {
-         fprintf(stderr, "setrlimit exceeding hardlimit must set errno=EINVAL\n");
+         fprintf(stderr, "setrlimit64 exceeding hardlimit must set errno=EINVAL\n");
          exit(1);
       }
    }
    else
    {
-        fprintf(stderr, "setrlimit exceeding hardlimit must return -1\n");
+        fprintf(stderr, "setrlimit64 exceeding hardlimit must return -1\n");
         exit(1);
    }
 
    newrlim.rlim_cur = oldrlim.rlim_max;
    newrlim.rlim_max = oldrlim.rlim_max+1;
-   if (setrlimit(RLIMIT_NOFILE, &newrlim) == -1)
+   if (setrlimit64(RLIMIT_NOFILE, &newrlim) == -1)
    {
       if (errno != EPERM) {
-         fprintf(stderr, "setrlimit changing hardlimit must set errno=EPERM\n");
+         fprintf(stderr, "setrlimit64 changing hardlimit must set errno=EPERM\n");
          exit(1);
       }
    }
    else
    {
-        fprintf(stderr, "setrlimit changing hardlimit must return -1\n");
+        fprintf(stderr, "setrlimit64 changing hardlimit must return -1\n");
         exit(1);
    }
 
    newrlim.rlim_cur = oldrlim.rlim_cur / 2;
    newrlim.rlim_max = oldrlim.rlim_max;
-     
-   if (setrlimit(RLIMIT_NOFILE, &newrlim) < 0)
+
+   if (setrlimit64(RLIMIT_NOFILE, &newrlim) < 0)
    {
-      perror("setrlimit");
+      perror("setrlimit64");
       exit(1);
    }
-     
-   if (getrlimit(RLIMIT_NOFILE, &newrlim) < 0)
+
+   if (getrlimit64(RLIMIT_NOFILE, &newrlim) < 0)
    {
       perror("getrlimit");
       exit(1);
@@ -97,6 +100,6 @@ int main(int argc, char **argv)
    {
       perror("open");
    }
-   
+
    exit(0);
 }

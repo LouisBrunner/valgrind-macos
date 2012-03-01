@@ -3917,7 +3917,11 @@ PRE(sys_setrlimit)
    arg1 &= ~_RLIMIT_POSIX_FLAG;
 #endif
 
-   if (arg1 == VKI_RLIMIT_NOFILE) {
+   if (ARG2 &&
+       ((struct vki_rlimit *)ARG2)->rlim_cur > ((struct vki_rlimit *)ARG2)->rlim_max) {
+      SET_STATUS_Failure( VKI_EINVAL );
+   }
+   else if (arg1 == VKI_RLIMIT_NOFILE) {
       if (((struct vki_rlimit *)ARG2)->rlim_cur > VG_(fd_hard_limit) ||
           ((struct vki_rlimit *)ARG2)->rlim_max != VG_(fd_hard_limit)) {
          SET_STATUS_Failure( VKI_EPERM );

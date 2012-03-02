@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 
   if (mq_setattr(mqdw, &mqa, &mqa) < 0)
     {
-      perror("mq_getattr");
+      perror("mq_setattr");
       mq_close(mqdr);
       mq_close(mqdw);
       exit(1);

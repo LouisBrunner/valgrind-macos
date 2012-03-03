@@ -34,6 +34,10 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"      // For VG_(gettid)()
+#include "pub_tool_inner.h"
+#if defined(ENABLE_INNER_CLIENT_REQUEST)
+#include "helgrind/helgrind.h"
+#endif
 #include "priv_sema.h"
 
 /* 
@@ -72,6 +76,7 @@ void ML_(sema_init)(vg_sema_t *sema)
    buf[0] = sema_char; 
    buf[1] = 0;
    sema_char++;
+   INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(sema));
    res = VG_(write)(sema->pipe[1], buf, 1);
    vg_assert(res == 1);
 }
@@ -80,6 +85,7 @@ void ML_(sema_deinit)(vg_sema_t *sema)
 {
    vg_assert(sema->owner_lwpid != -1); /* must be initialised */
    vg_assert(sema->pipe[0] != sema->pipe[1]);
+   INNER_REQUEST(ANNOTATE_RWLOCK_DESTROY(sema));
    VG_(close)(sema->pipe[0]);
    VG_(close)(sema->pipe[1]);
    sema->pipe[0] = sema->pipe[1] = -1;
@@ -99,6 +105,7 @@ void ML_(sema_down)( vg_sema_t *sema, Bool as_LL )
   again:
    buf[0] = buf[1] = 0;
    ret = VG_(read)(sema->pipe[0], buf, 1);
+   INNER_REQUEST(ANNOTATE_RWLOCK_ACQUIRED(sema, /*is_w*/1));
 
    if (ret != 1) 
       VG_(debugLog)(0, "scheduler", 
@@ -131,6 +138,7 @@ void ML_(sema_up)( vg_sema_t *sema, Bool as_LL )
 
    sema->owner_lwpid = 0;
 
+   INNER_REQUEST(ANNOTATE_RWLOCK_RELEASED(sema, /*is_w*/1));
    ret = VG_(write)(sema->pipe[1], buf, 1);
 
    if (ret != 1) 

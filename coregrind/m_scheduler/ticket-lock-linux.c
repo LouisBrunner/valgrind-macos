@@ -44,6 +44,10 @@
 #include "pub_tool_libcproc.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_threadstate.h"
+#include "pub_tool_inner.h"
+#if defined(ENABLE_INNER_CLIENT_REQUEST)
+#include "helgrind/helgrind.h"
+#endif
 #include "priv_sched-lock.h"
 #include "priv_sched-lock-impl.h"
 
@@ -83,11 +87,13 @@ static struct sched_lock *create_sched_lock(void)
       VG_(memset)((void*)p->futex, 0, sizeof(p->futex));
       p->owner = 0;
    }
+   INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(p));
    return p;
 }
 
 static void destroy_sched_lock(struct sched_lock *p)
 {
+   INNER_REQUEST(ANNOTATE_RWLOCK_DESTROY(p));
    VG_(free)(p);
 }
 
@@ -135,6 +141,7 @@ static void acquire_sched_lock(struct sched_lock *p)
          vg_assert(False);
       }
    }
+   INNER_REQUEST(ANNOTATE_RWLOCK_ACQUIRED(p, /*is_w*/1));
    vg_assert(p->owner == 0);
    p->owner = VG_(gettid)();
 }
@@ -156,6 +163,7 @@ static void release_sched_lock(struct sched_lock *p)
 
    vg_assert(p->owner != 0);
    p->owner = 0;
+   INNER_REQUEST(ANNOTATE_RWLOCK_RELEASED(p, /*is_w*/1));
    wakeup_ticket = __sync_fetch_and_add(&p->head, 1) + 1;
    if (p->tail != wakeup_ticket) {
       futex = &p->futex[wakeup_ticket & TL_FUTEX_MASK];

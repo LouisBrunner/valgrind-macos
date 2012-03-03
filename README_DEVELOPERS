@@ -149,10 +149,22 @@ To run Valgrind under Valgrind:
 (4) Choose a very simple program (date) and try
 
     outer/.../bin/valgrind --sim-hints=enable-outer --trace-children=yes  \
-       --tool=cachegrind -v inner/.../bin/valgrind --tool=none -v prog
+       --run-libc-freeres=no --tool=cachegrind -v \
+       inner/.../bin/valgrind --vgdb-prefix=./inner --tool=none -v prog
 
 If you omit the --trace-children=yes, you'll only monitor Inner's launcher
-program, not its stage2.
+program, not its stage2. Outer needs --run-libc-freeres=no, as otherwise
+it will try to find and run __libc_freeres in the inner, while libc is not
+used by the inner. Inner needs --vgdb-prefix=./inner to avoid inner
+gdbserver colliding with outer gdbserver.
+
+Debugging the whole thing might imply to use up to 3 GDB:
+  * a GDB attached to the Outer valgrind, allowing
+    to examine the state of Outer.
+  * a GDB using Outer gdbserver, allowing to
+    examine the state of Inner.
+  * a GDB using Inner gdbserver, allowing to
+    examine the state of prog.
 
 The whole thing is fragile, confusing and slow, but it does work well enough
 for you to get some useful performance data.  Inner has most of

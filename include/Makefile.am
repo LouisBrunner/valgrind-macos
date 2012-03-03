@@ -15,6 +15,7 @@ nobase_pkginclude_HEADERS = \
 	pub_tool_gdbserver.h 		\
 	pub_tool_poolalloc.h 		\
 	pub_tool_hashtable.h 		\
+	pub_tool_inner.h 		\
 	pub_tool_libcbase.h 		\
 	pub_tool_libcassert.h 		\
 	pub_tool_libcfile.h 		\

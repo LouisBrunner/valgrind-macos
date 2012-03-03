@@ -1643,7 +1643,7 @@ need to use these.</para>
           tiresome.</para>
         </listitem>
         <listitem>
-          <para><option>enable-inner: </option> Enable some special
+          <para><option>enable-outer: </option> Enable some special
           magic needed when the program being run is itself
           Valgrind.</para>
         </listitem>

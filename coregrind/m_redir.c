@@ -36,6 +36,8 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_vki.h"
+#include "pub_core_libcfile.h"
 #include "pub_core_seqmatch.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -49,6 +51,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"  // VG_(client___libc_freeres_wrapper)
 #include "pub_core_demangle.h"     // VG_(maybe_Z_demangle)
+#include "pub_core_libcproc.h"     // VG_(libdir)
 
 #include "config.h" /* GLIBC_2_* */
 
@@ -396,6 +399,82 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    vg_assert(newdi);
    newdi_soname = VG_(DebugInfo_get_soname)(newdi);
    vg_assert(newdi_soname != NULL);
+
+#ifdef ENABLE_INNER
+   {
+      /* When an outer Valgrind is executing an inner Valgrind, the
+         inner "sees" in its address space the mmap-ed vgpreload files
+         of the outer.  The inner must avoid interpreting the
+         redirections given in the outer vgpreload mmap-ed files.
+         Otherwise, some tool combinations badly fail.
+
+         Example: outer memcheck tool executing an inner none tool.
+
+         If inner none interprets the outer malloc redirection, the
+         inner will redirect malloc to a memcheck function it does not
+         have (as the redirection target is from the outer).  With
+         such a failed redirection, a call to malloc inside the inner
+         will then result in a "no-operation" (and so no memory will
+         be allocated).
+
+         When running as an inner, no redirection will be done
+         for a vgpreload file if this file is not located in the
+         inner VALGRIND_LIB directory.
+
+         Recognising a vgpreload file based on a filename pattern
+         is a kludge. An alternate solution would be to change
+         the _vgr prefix according to outer/inner/client.
+      */
+      const UChar* newdi_filename = VG_(DebugInfo_get_filename)(newdi);
+      const UChar* newdi_basename = VG_(basename) (newdi_filename);
+      if (VG_(strncmp) (newdi_basename, "vgpreload_", 10) == 0) {
+         /* This looks like a vgpreload file => check if this file
+            is from the inner VALGRIND_LIB.
+            We do this check using VG_(stat) + dev/inode comparison
+            as vg-in-place defines a VALGRIND_LIB with symlinks
+            pointing to files inside the valgrind build directories. */
+         struct vg_stat newdi_stat;
+         SysRes newdi_res;
+         Char in_vglib_filename[VKI_PATH_MAX];
+         struct vg_stat in_vglib_stat;
+         SysRes in_vglib_res;
+
+         newdi_res = VG_(stat)(newdi_filename, &newdi_stat);
+         
+         VG_(strncpy) (in_vglib_filename, VG_(libdir), VKI_PATH_MAX);
+         VG_(strncat) (in_vglib_filename, "/", VKI_PATH_MAX);
+         VG_(strncat) (in_vglib_filename, newdi_basename, VKI_PATH_MAX);
+         in_vglib_res = VG_(stat)(in_vglib_filename, &in_vglib_stat);
+
+         /* If we find newdi_basename in inner VALGRIND_LIB
+            but newdi_filename is not the same file, then we do
+            not execute the redirection. */
+         if (!sr_isError(in_vglib_res)
+             && !sr_isError(newdi_res)
+             && (newdi_stat.dev != in_vglib_stat.dev 
+                 || newdi_stat.ino != in_vglib_stat.ino)) {
+            /* <inner VALGRIND_LIB>/newdi_basename is an existing file
+               and is different of newdi_filename.
+               So, we do not execute newdi_filename redirection. */
+            if ( VG_(clo_verbosity) > 1 ) {
+               VG_(message)( Vg_DebugMsg,
+                             "Skipping vgpreload redir in %s"
+                             " (not from VALGRIND_LIB_INNER)\n",
+                             newdi_filename);
+            }
+            return;
+         } else {
+            if ( VG_(clo_verbosity) > 1 ) {
+               VG_(message)( Vg_DebugMsg,
+                             "Executing vgpreload redir in %s"
+                             " (from VALGRIND_LIB_INNER)\n",
+                             newdi_filename);
+            }
+         }
+      }
+   }
+#endif
+
 
    /* stay sane: we don't already have this. */
    for (ts = topSpecs; ts; ts = ts->next)

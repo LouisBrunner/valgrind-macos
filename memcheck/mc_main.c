@@ -3884,19 +3884,19 @@ static UInt mb_get_origin_for_guest_offset ( ThreadId tid,
                                              Int offset, SizeT size )
 {
    Int   sh2off;
-   UChar area[6];
+   UInt  area[3];
    UInt  otag;
    sh2off = MC_(get_otrack_shadow_offset)( offset, size );
    if (sh2off == -1)
       return 0;  /* This piece of guest state is not tracked */
    tl_assert(sh2off >= 0);
    tl_assert(0 == (sh2off % 4));
-   area[0] = 0x31;
-   area[5] = 0x27;
-   VG_(get_shadow_regs_area)( tid, &area[1], 2/*shadowno*/,sh2off,4 );
-   tl_assert(area[0] == 0x31);
-   tl_assert(area[5] == 0x27);
-   otag = *(UInt*)&area[1];
+   area[0] = 0x31313131;
+   area[2] = 0x27272727;
+   VG_(get_shadow_regs_area)( tid, (UChar *)&area[1], 2/*shadowno*/,sh2off,4 );
+   tl_assert(area[0] == 0x31313131);
+   tl_assert(area[2] == 0x27272727);
+   otag = area[1];
    return otag;
 }
 

@@ -13,7 +13,7 @@ void tr(uint8_t *codepage, uint8_t *addr, uint64_t len)
                 "   larl    1,1f\n"
                 "1: tr      0(1,%0),0(%2)\n"
                 "   ex      %1,0(1)"
-                : "+&a" (addr), "+d" (len)
+                : "+&a" (addr), "+a" (len)
                 : "a" (codepage) : "cc", "memory", "1");
 }
 

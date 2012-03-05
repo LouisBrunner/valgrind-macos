@@ -725,13 +725,15 @@ in most cases.  We group the available options by rough categories.</para>
       <option><![CDATA[--vgdb=<no|yes|full> [default: yes] ]]></option>
     </term>
     <listitem>
+      
       <para>Valgrind will provide "gdbserver" functionality when
-      <option>--vgdb=yes</option>
-      or <option>--vgdb=full</option> is specified.  This
-      allows an external GNU GDB debugger
-      to control and debug your program when it runs on Valgrind. See
-      <xref linkend="manual-core-adv.gdbserver"/> for a detailed
-      description.
+      <option>--vgdb=yes</option> or <option>--vgdb=full</option> is
+      specified.  This allows an external GNU GDB debugger to control
+      and debug your program when it runs on Valgrind.
+      <option>--vgdb=full</option> incurs significant performance
+      overheads, but provides more precise breakpoints and
+      watchpoints. See <xref linkend="manual-core-adv.gdbserver"/> for
+      a detailed description.
       </para>
 
       <para> If the embedded gdbserver is enabled but no gdb is
@@ -743,9 +745,6 @@ in most cases.  We group the available options by rough categories.</para>
       documented in the tool specific chapter.
       </para>
 
-      <para><option>--vgdb=full</option> incurs
-      significant performance overheads.
-      </para>
     </listitem>
   </varlistentry>
 

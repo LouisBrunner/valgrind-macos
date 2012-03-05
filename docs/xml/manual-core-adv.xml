@@ -747,6 +747,16 @@ are however some limitations and peculiarities:</para>
    </listitem>
 
    <listitem>
+     <para>Registers values.</para>
+     <para>When Valgrind gdbserver stops on an error, registers values
+     might not be always up to date due to the optimisations done by
+     the Valgrind core. The
+     option <option>--vex-iropt-precise-memory-exns=yes</option>
+     ensures precise registers values by disabling some optimisations.
+     </para>
+   </listitem>
+
+   <listitem>
      <para>Hardware watchpoint support by the Valgrind
      gdbserver.</para>
 

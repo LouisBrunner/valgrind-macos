@@ -37,7 +37,7 @@ Release 3.8.0 (????)
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us
 but never got a bugzilla entry.  We encourage you to file bugs in
-bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather than
 mailing the developers (or mailing lists) directly -- bugs that are
 not entered into bugzilla tend to get forgotten about or ignored.
 

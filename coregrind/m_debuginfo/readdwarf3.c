@@ -3644,9 +3644,6 @@ void new_dwarf3_reader_wrk (
          cu_amount_used = cu_offset_now - cc.cu_start_offset;
       }
 
-      if (cu_offset_now == debug_info_sz)
-         break;
-
       /* Preen to level -2.  DIEs have level >= 0 so -2 cannot occur
          anywhere else at all.  Our fake the-entire-address-space
          range is at level -1, so preening to -2 should completely
@@ -3655,6 +3652,9 @@ void new_dwarf3_reader_wrk (
       varstack_preen( &varparser, td3, -2 );
       /* Similarly, empty the type stack out. */
       typestack_preen( &typarser, td3, -2 );
+
+      if (cu_offset_now == debug_info_sz)
+         break;
       /* else keep going */
 
       TRACE_D3("set_abbv_Cursor cache: %lu queries, %lu misses\n",

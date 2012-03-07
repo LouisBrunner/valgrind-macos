@@ -2468,7 +2468,27 @@ struct vki_usbdevfs_setuppacket {
 					/* is already taken!			*/
 #define VKI_I2C_TENBIT		0x0704	/* 0 for 7 bit addrs, != 0 for 10 bit	*/
 #define VKI_I2C_FUNCS		0x0705	/* Get the adapter functionality */
+#define VKI_I2C_RDWR		0x0707	/* Combined R/W transfer (one STOP only) */
 #define VKI_I2C_PEC		0x0708	/* != 0 for SMBus PEC                   */
+
+struct vki_i2c_msg {
+	__vki_u16 addr;		/* slave address			*/
+	__vki_u16 flags;
+#define VKI_I2C_M_TEN		0x0010	/* this is a ten bit chip address */
+#define VKI_I2C_M_RD		0x0001	/* read data, from slave to master */
+#define VKI_I2C_M_NOSTART	0x4000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_REV_DIR_ADDR	0x2000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_IGNORE_NAK	0x1000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_NO_RD_ACK	0x0800	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_RECV_LEN	0x0400	/* length will be first received byte */
+	__vki_u16 len;		/* msg length				*/
+	__vki_u8 *buf;		/* pointer to msg data			*/
+};
+
+struct vki_i2c_rdwr_ioctl_data {
+	struct vki_i2c_msg *msgs;	/* pointers to i2c_msgs */
+	__vki_u32 nmsgs;		/* number of i2c_msgs */
+};
 
 //----------------------------------------------------------------------
 // From linux-2.6.20.1/include/linux/keyctl.h

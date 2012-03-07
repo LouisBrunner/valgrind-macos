@@ -5197,6 +5197,21 @@ PRE(sys_ioctl)
    case VKI_I2C_FUNCS:
       PRE_MEM_WRITE( "ioctl(I2C_FUNCS)", ARG3, sizeof(unsigned long) );
       break;
+   case VKI_I2C_RDWR:
+      if ( ARG3 ) {
+          struct vki_i2c_rdwr_ioctl_data *vkui = (struct vki_i2c_rdwr_ioctl_data *)ARG3;
+          UInt i;
+          PRE_MEM_READ("ioctl(I2C_RDWR)", (Addr)vkui, sizeof(struct vki_i2c_rdwr_ioctl_data));
+          for (i=0; i < vkui->nmsgs; i++) {
+              struct vki_i2c_msg *msg = vkui->msgs + i;
+              PRE_MEM_READ("ioctl(I2C_RDWR).msgs", (Addr)msg, sizeof(struct vki_i2c_msg));
+              if (msg->flags & VKI_I2C_M_RD) 
+                  PRE_MEM_WRITE("ioctl(I2C_RDWR).msgs.buf", (Addr)msg->buf, msg->len);
+              else
+                  PRE_MEM_READ("ioctl(I2C_RDWR).msgs.buf", (Addr)msg->buf, msg->len);
+          }
+      }
+      break;
 
       /* Wireless extensions ioctls */
    case VKI_SIOCSIWCOMMIT:
@@ -6192,6 +6207,17 @@ POST(sys_ioctl)
       break;
    case VKI_I2C_FUNCS:
       POST_MEM_WRITE( ARG3, sizeof(unsigned long) );
+      break;
+   case VKI_I2C_RDWR:
+      if ( ARG3 ) {
+          struct vki_i2c_rdwr_ioctl_data *vkui = (struct vki_i2c_rdwr_ioctl_data *)ARG3;
+          UInt i;
+          for (i=0; i < vkui->nmsgs; i++) {
+              struct vki_i2c_msg *msg = vkui->msgs + i;
+              if (msg->flags & VKI_I2C_M_RD) 
+                  POST_MEM_WRITE((Addr)msg->buf, msg->len);
+          }
+      }
       break;
 
       /* Wireless extensions ioctls */

@@ -5374,6 +5374,17 @@ PRE(sys_ioctl)
        break;
 #  endif /* defined(VGPV_arm_linux_android) */
 
+   case VKI_HCIINQUIRY:
+      if (ARG3) {
+         struct vki_hci_inquiry_req* ir = (struct vki_hci_inquiry_req*)ARG3;
+         PRE_MEM_READ("ioctl(HCIINQUIRY)",
+                      (Addr)ARG3, sizeof(struct vki_hci_inquiry_req));
+         PRE_MEM_WRITE("ioctl(HCIINQUIRY)",
+                       (Addr)ARG3 + sizeof(struct vki_hci_inquiry_req),
+                       ir->num_rsp * sizeof(struct vki_inquiry_info));
+      }
+      break;
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -6347,6 +6358,14 @@ POST(sys_ioctl)
        }
        break;
 #  endif /* defined(VGPV_arm_linux_android) */
+
+   case VKI_HCIINQUIRY:
+      if (ARG3) {
+        struct vki_hci_inquiry_req* ir = (struct vki_hci_inquiry_req*)ARG3;
+        POST_MEM_WRITE((Addr)ARG3 + sizeof(struct vki_hci_inquiry_req),
+                       ir->num_rsp * sizeof(struct vki_inquiry_info));
+      }
+      break;
 
    default:
       /* EVIOC* are variable length and return size written on success */

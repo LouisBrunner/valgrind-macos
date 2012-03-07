@@ -850,8 +850,9 @@ static inline void my_exit ( int x )
  MEMCPY(NONE, ZuintelZufastZumemcpy)
 
 #elif defined(VGO_darwin)
- //MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
- //MEMCPY(VG_Z_DYLD,         memcpy)
+# if DARWIN_VERS <= DARWIN_10_6
+  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+# endif
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
 
@@ -982,8 +983,9 @@ static inline void my_exit ( int x )
  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
 
 #elif defined(VGO_darwin)
- //MEMMOVE(VG_Z_LIBC_SONAME, memmove)
- //MEMMOVE(VG_Z_DYLD,        memmove)#
+# if DARWIN_VERS <= DARWIN_10_6
+  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
+# endif
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
 

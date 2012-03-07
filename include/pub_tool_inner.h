@@ -54,14 +54,14 @@
 #define ENABLE_INNER_CLIENT_REQUEST 1
 
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
-#define INNER_REQUEST(a) a
+#define INNER_REQUEST(__zza)  __zza
 #else
-#define INNER_REQUEST(a) 0
+#define INNER_REQUEST(__zza)  do {} while (0)
 #endif
 
 #else
 
-#define INNER_REQUEST(a) 0
+#define INNER_REQUEST(__zza)  do {} while (0)
 
 #endif
 

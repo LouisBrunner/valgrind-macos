@@ -2840,6 +2840,7 @@ asm("\n"
     "\taddl  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %eax\n"
     "\tsubl  $16, %eax\n"
     "\tandl  $~15, %eax\n"
+    "\tsubl  $12, %esp\n"  // keep stack 16 aligned; see #295428
     /* install it, and collect the original one */
     "\txchgl %eax, %esp\n"
     /* call _start_in_C_darwin, passing it the startup %esp */

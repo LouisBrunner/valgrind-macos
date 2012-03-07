@@ -1051,7 +1051,7 @@ static void sync_check_gap_callback ( Addr addr, SizeT len )
               "segment mismatch: V's gap 1st, kernel's 2nd:\n");
          show_nsegment_full( 0, i, &nsegments[i] );
          VG_(debugLog)(0,"aspacem", 
-            "   : .... %010llx-%010llx %s",
+            "   : .... %010llx-%010llx %s\n",
             (ULong)start, (ULong)end, len_buf);
          return;
       }
@@ -3480,11 +3480,22 @@ static ChangedSeg* css_local;
 static Int         css_size_local;
 static Int         css_used_local;
 
+static Addr Addr__max ( Addr a, Addr b ) { return a > b ? a : b; }
+static Addr Addr__min ( Addr a, Addr b ) { return a < b ? a : b; }
+
 static void add_mapping_callback(Addr addr, SizeT len, UInt prot, 
                                  ULong dev, ULong ino, Off64T offset, 
                                  const UChar *filename)
 {
    // derived from sync_check_mapping_callback()
+
+   /* JRS 2012-Mar-07: this all seems very dubious to me.  It would be
+      safer to see if we can find, in V's segment collection, one
+      single segment that completely covers the range [addr, +len)
+      (and possibly more), and that has the exact same other
+      properties (prot, dev, ino, offset, etc) as the data presented
+      here.  If found, we just skip.  Otherwise add the data presented
+      here into css_local[]. */
 
    Int iLo, iHi, i;
 
@@ -3495,7 +3506,6 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
 
    iLo = find_nsegment_idx( addr );
    iHi = find_nsegment_idx( addr + len - 1 );
-
 
    /* NSegments iLo .. iHi inclusive should agree with the presented
       data. */
@@ -3508,7 +3518,7 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
          continue;
       } 
       else if (nsegments[i].kind == SkFree || nsegments[i].kind == SkResvn) {
-          /* Add mapping for SkResvn regions */
+         /* Add mapping for SkResvn regions */
          ChangedSeg* cs = &css_local[css_used_local];
          if (css_used_local < css_size_local) {
             cs->is_added = True;
@@ -3569,20 +3579,28 @@ static void remove_mapping_callback(Addr addr, SizeT len)
 
    /* NSegments iLo .. iHi inclusive should agree with the presented data. */
    for (i = iLo; i <= iHi; i++) {
-      if (nsegments[i].kind != SkFree  &&  nsegments[i].kind != SkResvn) {
-         // V has a mapping, kernel doesn't
+      if (nsegments[i].kind != SkFree && nsegments[i].kind != SkResvn) {
+         /* V has a mapping, kernel doesn't.  Add to css_local[],
+            directives to chop off the part of the V mapping that
+            falls within the gap that the kernel tells us is
+            present. */
          ChangedSeg* cs = &css_local[css_used_local];
          if (css_used_local < css_size_local) {
             cs->is_added = False;
-            cs->start    = nsegments[i].start;
-            cs->end      = nsegments[i].end;
+            cs->start    = Addr__max(nsegments[i].start, addr);
+            cs->end      = Addr__min(nsegments[i].end,   addr + len - 1);
+            aspacem_assert(VG_IS_PAGE_ALIGNED(cs->start));
+            aspacem_assert(VG_IS_PAGE_ALIGNED(cs->end+1));
+            /* I don't think the following should fail.  But if it
+               does, just omit the css_used_local++ in the cases where
+               it doesn't hold. */
+            aspacem_assert(cs->start < cs->end);
             cs->prot     = 0;
             cs->offset   = 0;
             css_used_local++;
          } else {
             css_overflowed = True;
          }
-         return;
       }
    }
 }

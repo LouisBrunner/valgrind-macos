@@ -603,7 +603,7 @@ typedef
 /* Same as ANNOTATE_BENIGN_RACE(address, description), but applies to
    the memory range [address, address+size). */
 #define ANNOTATE_BENIGN_RACE_SIZED(address, size, description) \
-   _HG_CLIENTREQ_UNIMP("ANNOTATE_BENIGN_RACE_SIZED")
+   VALGRIND_HG_DISABLE_CHECKING(address, size)
 
 /* Request the analysis tool to ignore all reads in the current thread
    until ANNOTATE_IGNORE_READS_END is called.  Useful to ignore

@@ -88,6 +88,7 @@ static struct sched_lock *create_sched_lock(void)
       p->owner = 0;
    }
    INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(p));
+   INNER_REQUEST(ANNOTATE_BENIGN_RACE_SIZED(&p->futex, sizeof(p->futex), ""));
    return p;
 }
 

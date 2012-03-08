@@ -36,7 +36,6 @@
 #include "pub_tool_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "helgrind/helgrind.h"
-#include "drd/drd.h"
 #endif
 
 /*------------------------------------------------------------*/
@@ -55,9 +54,15 @@ void VG_(init_Threads)(void)
 {
    ThreadId tid;
 
-   for (tid = 1; tid < VG_N_THREADS; tid++)
-      INNER_REQUEST(ANNOTATE_BENIGN_RACE_SIZED(&VG_(threads)[tid].status,
-                                        sizeof(VG_(threads)[tid].status), ""));
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      INNER_REQUEST(
+         ANNOTATE_BENIGN_RACE_SIZED(&VG_(threads)[tid].status,
+                                    sizeof(VG_(threads)[tid].status), ""));
+      INNER_REQUEST(
+         ANNOTATE_BENIGN_RACE_SIZED(&VG_(threads)[tid].os_state.exitcode,
+                                    sizeof(VG_(threads)[tid].os_state.exitcode),
+                                    ""));
+   }
 }
 
 const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status )

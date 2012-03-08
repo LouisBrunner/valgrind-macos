@@ -2003,6 +2003,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(printf_xml)( "\n" );
    }
 
+   VG_(init_Threads)();
+
    //--------------------------------------------------------------
    // Initialise the scheduler (phase 1) [generates tid_main]
    //   p: none, afaics

@@ -373,6 +373,9 @@ extern ThreadId VG_(running_tid);
 /*--- Basic operations on the thread table.                ---*/
 /*------------------------------------------------------------*/
 
+/* Initialize the m_threadstate module. */
+void VG_(init_Threads)(void);
+
 // Convert a ThreadStatus to a string.
 const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status );
 

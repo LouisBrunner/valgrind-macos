@@ -33,6 +33,11 @@
 #include "pub_core_libcsetjmp.h"    // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"
 #include "pub_core_libcassert.h"
+#include "pub_tool_inner.h"
+#if defined(ENABLE_INNER_CLIENT_REQUEST)
+#include "helgrind/helgrind.h"
+#include "drd/drd.h"
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Data structures.                                     ---*/
@@ -45,6 +50,15 @@ ThreadState VG_(threads)[VG_N_THREADS];
 /*------------------------------------------------------------*/
 /*--- Operations.                                          ---*/
 /*------------------------------------------------------------*/
+
+void VG_(init_Threads)(void)
+{
+   ThreadId tid;
+
+   for (tid = 1; tid < VG_N_THREADS; tid++)
+      INNER_REQUEST(ANNOTATE_BENIGN_RACE_SIZED(&VG_(threads)[tid].status,
+                                        sizeof(VG_(threads)[tid].status), ""));
+}
 
 const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status )
 {

@@ -1661,7 +1661,8 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 #  endif
 
    aspacem_cStart = aspacem_minAddr; // 64M
-   aspacem_vStart = VG_PGROUNDUP((aspacem_minAddr + aspacem_maxAddr + 1) / 2);
+   aspacem_vStart = VG_PGROUNDUP(aspacem_minAddr 
+                                 + (aspacem_maxAddr - aspacem_minAddr + 1) / 2);
 #  ifdef ENABLE_INNER
    aspacem_vStart -= 0x10000000; // 256M
 #  endif

@@ -77,6 +77,7 @@ void ML_(sema_init)(vg_sema_t *sema)
    buf[1] = 0;
    sema_char++;
    INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(sema));
+   INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(&sema->owner_lwpid));
    res = VG_(write)(sema->pipe[1], buf, 1);
    vg_assert(res == 1);
 }
@@ -85,6 +86,7 @@ void ML_(sema_deinit)(vg_sema_t *sema)
 {
    vg_assert(sema->owner_lwpid != -1); /* must be initialised */
    vg_assert(sema->pipe[0] != sema->pipe[1]);
+   INNER_REQUEST(ANNOTATE_RWLOCK_DESTROY(&sema->owner_lwpid));
    INNER_REQUEST(ANNOTATE_RWLOCK_DESTROY(sema));
    VG_(close)(sema->pipe[0]);
    VG_(close)(sema->pipe[1]);
@@ -99,7 +101,9 @@ void ML_(sema_down)( vg_sema_t *sema, Bool as_LL )
    Int ret;
    Int lwpid = VG_(gettid)();
 
+   INNER_REQUEST(ANNOTATE_RWLOCK_ACQUIRED(&sema->owner_lwpid, /*is_w*/0));
    vg_assert(sema->owner_lwpid != lwpid); /* can't have it already */
+   INNER_REQUEST(ANNOTATE_RWLOCK_RELEASED(&sema->owner_lwpid, /*is_w*/0));
    vg_assert(sema->pipe[0] != sema->pipe[1]);
 
   again:

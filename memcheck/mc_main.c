@@ -1141,19 +1141,6 @@ static
 __attribute__((noinline))
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
-   /* Make up a 64-bit result V word, which contains the loaded data for
-      valid addresses and Defined for invalid addresses.  Iterate over
-      the bytes in the word, from the most significant down to the
-      least. */
-   ULong vbits64     = V_BITS64_UNDEFINED;
-   SizeT szB         = nBits / 8;
-   SSizeT i;                        // Must be signed.
-   SizeT n_addrs_bad = 0;
-   Addr  ai;
-   Bool  partial_load_exemption_applies;
-   UChar vbits8;
-   Bool  ok;
-
    PROF_EVENT(30, "mc_LOADVn_slow");
 
    /* ------------ BEGIN semi-fast cases ------------ */
@@ -1188,37 +1175,92 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
    }
    /* ------------ END semi-fast cases ------------ */
 
+   ULong  vbits64     = V_BITS64_UNDEFINED; /* result */
+   ULong  pessim64    = V_BITS64_DEFINED;   /* only used when p-l-ok=yes */
+   SSizeT szB         = nBits / 8;
+   SSizeT i;          /* Must be signed. */
+   SizeT  n_addrs_bad = 0;
+   Addr   ai;
+   UChar  vbits8;
+   Bool   ok;
+
    tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
+   /* Make up a 64-bit result V word, which contains the loaded data
+      for valid addresses and Defined for invalid addresses.  Iterate
+      over the bytes in the word, from the most significant down to
+      the least.  The vbits to return are calculated into vbits64.
+      Also compute the pessimising value to be used when
+      --partial-loads-ok=yes.  n_addrs_bad is redundant (the relevant
+      info can be gleaned from pessim64) but is used as a
+      cross-check. */
    for (i = szB-1; i >= 0; i--) {
       PROF_EVENT(31, "mc_LOADVn_slow(loop)");
       ai = a + byte_offset_w(szB, bigendian, i);
       ok = get_vbits8(ai, &vbits8);
-      if (!ok) n_addrs_bad++;
       vbits64 <<= 8; 
       vbits64 |= vbits8;
+      if (!ok) n_addrs_bad++;
+      pessim64 <<= 8;
+      pessim64 |= (ok ? V_BITS8_DEFINED : V_BITS8_UNDEFINED);
    }
 
-   /* This is a hack which avoids producing errors for code which
-      insists in stepping along byte strings in aligned word-sized
-      chunks, and there is a partially defined word at the end.  (eg,
-      optimised strlen).  Such code is basically broken at least WRT
-      semantics of ANSI C, but sometimes users don't have the option
-      to fix it, and so this option is provided.  Note it is now
-      defaulted to not-engaged.
+   /* In the common case, all the addresses involved are valid, so we
+      just return the computed V bits and have done. */
+   if (LIKELY(n_addrs_bad == 0))
+      return vbits64;
 
-      A load from a partially-addressible place is allowed if:
-      - the command-line flag is set
+   /* If there's no possibility of getting a partial-loads-ok
+      exemption, report the error and quit. */
+   if (!MC_(clo_partial_loads_ok)) {
+      MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+      return vbits64;
+   }
+
+   /* The partial-loads-ok excemption might apply.  Find out if it
+      does.  If so, don't report an addressing error, but do return
+      Undefined for the bytes that are out of range, so as to avoid
+      false negatives.  If it doesn't apply, just report an addressing
+      error in the usual way. */
+
+   /* Some code steps along byte strings in aligned word-sized chunks
+      even when there is only a partially defined word at the end (eg,
+      optimised strlen).  This is allowed by the memory model of
+      modern machines, since an aligned load cannot span two pages and
+      thus cannot "partially fault".  Despite such behaviour being
+      declared undefined by ANSI C/C++.
+
+      Therefore, a load from a partially-addressible place is allowed
+      if all of the following hold:
+      - the command-line flag is set [by default, it isn't]
       - it's a word-sized, word-aligned load
       - at least one of the addresses in the word *is* valid
-   */
-   partial_load_exemption_applies
-      = MC_(clo_partial_loads_ok) && szB == VG_WORDSIZE 
-                                   && VG_IS_WORD_ALIGNED(a) 
-                                   && n_addrs_bad < VG_WORDSIZE;
 
-   if (n_addrs_bad > 0 && !partial_load_exemption_applies)
-      MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+      Since this suppresses the addressing error, we avoid false
+      negatives by marking bytes undefined when they come from an
+      invalid address.
+   */
+
+   /* "at least one of the addresses is invalid" */
+   tl_assert(pessim64 != V_BITS64_DEFINED);
+
+   if (szB == VG_WORDSIZE && VG_IS_WORD_ALIGNED(a)
+       && n_addrs_bad < VG_WORDSIZE) {
+      /* Exemption applies.  Use the previously computed pessimising
+         value for vbits64 and return the combined result, but don't
+         flag an addressing error.  The pessimising value is Defined
+         for valid addresses and Undefined for invalid addresses. */
+      /* for assumption that doing bitwise or implements UifU */
+      tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
+      /* (really need "UifU" here...)
+         vbits64 UifU= pessim64  (is pessimised by it, iow) */
+      vbits64 |= pessim64;
+      return vbits64;
+   }
+
+   /* Exemption doesn't apply.  Flag an addressing error in the normal
+      way. */
+   MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
 
    return vbits64;
 }

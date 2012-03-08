@@ -187,15 +187,19 @@ EXTRA_DIST = \
 	supp2.stderr.exp supp2.vgtest \
 	supp.supp \
 	suppfree.stderr.exp suppfree.vgtest \
+	test-plo-no.vgtest test-plo-no.stdout.exp \
+	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
+	test-plo-yes.vgtest test-plo-yes.stdout.exp \
+	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	trivialleak.stderr.exp trivialleak.vgtest trivialleak.stderr.exp2 \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
-	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp varinfo1.stderr.exp-ppc64\
-	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp varinfo2.stderr.exp-ppc64\
-	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp varinfo3.stderr.exp-ppc64\
-	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp varinfo4.stderr.exp-ppc64\
-	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp varinfo5.stderr.exp-ppc64\
-	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp varinfo6.stderr.exp-ppc64\
+	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp varinfo1.stderr.exp-ppc64 \
+	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp varinfo2.stderr.exp-ppc64 \
+	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp varinfo3.stderr.exp-ppc64 \
+	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp varinfo4.stderr.exp-ppc64 \
+	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp varinfo5.stderr.exp-ppc64 \
+	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp varinfo6.stderr.exp-ppc64 \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
@@ -266,6 +270,7 @@ check_PROGRAMS = \
 	strchr \
 	str_tester \
 	supp_unknown supp1 supp2 suppfree \
+	test-plo \
 	trivialleak \
 	unit_libcbase unit_oset \
 	varinfo1 varinfo2 varinfo3 varinfo4 \

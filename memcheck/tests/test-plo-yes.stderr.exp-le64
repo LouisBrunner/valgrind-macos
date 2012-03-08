@@ -1,0 +1,9 @@
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+Invalid read of size 8
+   ...
+ Address 0x........ is 8 bytes inside a block of size 24 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   ...
+

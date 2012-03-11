@@ -294,6 +294,7 @@ static void usage_NORETURN ( Bool debug_help )
    - get the toolname (--tool=)
    - set VG_(clo_max_stackframe) (--max-stackframe=)
    - set VG_(clo_main_stacksize) (--main-stacksize=)
+   - set VG_(clo_sim_hints) (--sim-hints=)
 
    That's all it does.  The main command line processing is done below
    by main_process_cmd_line_options.  Note that
@@ -334,6 +335,11 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       // before main_process_cmd_line_options().
       else if VG_INT_CLO(str, "--max-stackframe", VG_(clo_max_stackframe)) {}
       else if VG_INT_CLO(str, "--main-stacksize", VG_(clo_main_stacksize)) {}
+
+      // Set up VG_(clo_sim_hints). This is needed a.o. for an inner
+      // running in an outer, to have "no-inner-prefix" enabled
+      // as early as possible.
+      else if VG_STR_CLO (str, "--sim-hints",     VG_(clo_sim_hints)) {}
    }
 }
 
@@ -451,6 +457,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQ(     arg, "-d")                   {}
       else if VG_STREQN(16, arg, "--max-stackframe")     {}
       else if VG_STREQN(16, arg, "--main-stacksize")     {}
+      else if VG_STREQN(11, arg,  "--sim-hints")         {}
       else if VG_STREQN(14, arg, "--profile-heap")       {}
 
       // These options are new.
@@ -514,7 +521,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls)) {}
       else if VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb)) {}
       else if VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command)) {}
-      else if VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 

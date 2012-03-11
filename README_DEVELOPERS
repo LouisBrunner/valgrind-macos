@@ -141,8 +141,7 @@ To run Valgrind under Valgrind:
 (1) Check out 2 trees, "Inner" and "Outer".  Inner runs the app
     directly.  Outer runs Inner.
 
-(2) Configure inner with --enable-inner and build/install as
-    usual.
+(2) Configure inner with --enable-inner and build/install as usual.
 
 (3) Configure Outer normally and build/install as usual.
 
@@ -169,15 +168,48 @@ Debugging the whole thing might imply to use up to 3 GDB:
 The whole thing is fragile, confusing and slow, but it does work well enough
 for you to get some useful performance data.  Inner has most of
 its output (ie. those lines beginning with "==<pid>==") prefixed with a '>',
-which helps a lot.
+which helps a lot. However, when running regression tests in an Outer/Inner
+setup, this prefix causes the reg test diff to fail. Give 
+--sim-hints=no-inner-prefix to the Inner to disable the production
+of the prefix in the stdout/stderr output of Inner.
 
-At the time of writing the allocator is not annotated with client requests
-so Memcheck is not as useful as it could be.  It also has not been tested
-much, so don't be surprised if you hit problems.
+The allocator (coregrind/m_mallocfree.c) is annotated with client requests
+so Memcheck can be used to find leaks and use after free in an Inner
+Valgrind.
+
+The Valgrind "big lock" is annotated with helgrind client requests
+so helgrind and drd can be used to find race conditions in an Inner
+Valgrind.
+
+All this has not been tested much, so don't be surprised if you hit problems.
 
 When using self-hosting with an outer Callgrind tool, use '--pop-on-jump'
 (on the outer). Otherwise, Callgrind has much higher memory requirements. 
 
+Regression tests in an outer/inner setup:
+ To run all the regression tests with an outer memcheck, do :
+   perl test/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                        --all
+
+ To run a specific regression tests with an outer memcheck, do:
+   perl test/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                        none/tests/args.vgtest
+
+ To run regression tests with another outer tool:
+   perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                         --outer-tool=helgrind " --all
+
+ --outer-args allows to give specific arguments to the outer tool,
+ replacing the default one provided by vg_regtest.
+
+When an outer valgrind runs an inner valgrind, a regression test
+produces one additional file <testname>.outer.log which contains the
+errors detected by the outer valgrind.  E.g. for an outer memcheck, it
+contains the leaks found in the inner, for an outer helgrind or drd,
+it contains the detected race conditions.
+
+The file tests/outer_inner.supp contains suppressions for 
+the irrelevant or benign errors found in the inner.
 
 Printing out problematic blocks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

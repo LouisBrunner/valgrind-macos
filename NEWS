@@ -36,6 +36,8 @@ Release 3.8.0 (????)
   and scheduling of multithreaded applications (in particular
   on multiprocessor/multicore systems).
 
+* Support to run Valgrind on Valgrind has been improved.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

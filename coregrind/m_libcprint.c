@@ -396,11 +396,16 @@ static void add_to__vmessage_buf ( HChar c, void *p )
 
       // Print one '>' in front of the messages for each level of
       // self-hosting being performed.
+      // Do not print such '>' if sim hint "no-inner-prefix" given
+      // (useful to run regression tests in an outer/inner setup
+      // and avoid the diff failing due to these unexpected '>').
       depth = RUNNING_ON_VALGRIND;
-      if (depth > 10)
-         depth = 10; // ?!?!
-      for (i = 0; i < depth; i++) {
-         b->buf[b->buf_used++] = '>';
+      if (depth > 0 && !VG_(strstr)(VG_(clo_sim_hints), "no-inner-prefix")) {
+         if (depth > 10)
+            depth = 10; // ?!?!
+         for (i = 0; i < depth; i++) {
+            b->buf[b->buf_used++] = '>';
+         }
       }
 
       if (Vg_FailMsg == b->kind) {

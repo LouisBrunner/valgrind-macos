@@ -1647,6 +1647,15 @@ need to use these.</para>
           Valgrind.</para>
         </listitem>
         <listitem>
+          <para><option>no-inner-prefix: </option> Disable printing
+          a prefix <option>&gt;</option> in front of each stdout or
+          stderr output line in an inner Valgrind being run by an
+          outer Valgrind. This is useful when running Valgrind
+          regression tests in an outer/inner setup. Note that the
+          prefix <option>&gt;</option> will always be printed in
+          front of the inner debug logging lines.</para>
+        </listitem>
+        <listitem>
           <para><option>fuse-compatible: </option> Enable special
             handling for certain system calls that may block in a FUSE
             file-system.  This may be necessary when running Valgrind

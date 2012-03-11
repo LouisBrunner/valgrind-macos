@@ -8,7 +8,7 @@ int main(int argc, char **argv)
    {
       // This tests the case where argv and envp are NULL, which is easy to
       // get wrong because it's an unusual case.
-      if (execve(argv[0], NULL, NULL) < 0)
+      if (execve("/bin/true", NULL, NULL) < 0)
       {
          perror("execve");
          exit(1);

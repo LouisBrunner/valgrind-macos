@@ -22,6 +22,10 @@ Release 3.8.0 (????)
   - Addition of GDB server monitor command 'who_points_at' that lists
     the locations pointing at a block.
 
+  - if a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now
+    will detect an invalid access of these redzones, by marking them
+    noaccess.
+
 * ==================== OTHER CHANGES ====================
 
 * The C++ demangler has been updated so as to work well with C++ 

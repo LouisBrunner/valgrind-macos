@@ -1115,6 +1115,30 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    if (mempool_block_maybe_describe( a, ai )) {
       return;
    }
+   /* Blocks allocated by memcheck malloc functions are either
+      on the recently freed list or on the malloc-ed list.
+      Custom blocks can be on both : a recently freed block might
+      have been just re-allocated.
+      So, first search the malloc-ed block, as the most recent
+      block is the probable cause of error.
+      We however detect and report that this is a recently re-allocated
+      block. */
+   /* -- Search for a currently malloc'd block which might bracket it. -- */
+   VG_(HT_ResetIter)(MC_(malloc_list));
+   while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
+      if (addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
+         ai->tag = Addr_Block;
+         ai->Addr.Block.block_kind = Block_Mallocd;
+         if (MC_(get_freed_block_bracketting)( a ))
+            ai->Addr.Block.block_desc = "recently re-allocated block";
+         else
+            ai->Addr.Block.block_desc = "block";
+         ai->Addr.Block.block_szB  = mc->szB;
+         ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
+         ai->Addr.Block.lastchange = mc->where;
+         return;
+      }
+   }
    /* -- Search for a recently freed block which might bracket it. -- */
    mc = MC_(get_freed_block_bracketting)( a );
    if (mc) {
@@ -1125,19 +1149,6 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
       ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
       ai->Addr.Block.lastchange = mc->where;
       return;
-   }
-   /* -- Search for a currently malloc'd block which might bracket it. -- */
-   VG_(HT_ResetIter)(MC_(malloc_list));
-   while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
-      if (addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
-         ai->tag = Addr_Block;
-         ai->Addr.Block.block_kind = Block_Mallocd;
-         ai->Addr.Block.block_desc = "block";
-         ai->Addr.Block.block_szB  = mc->szB;
-         ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
-         ai->Addr.Block.lastchange = mc->where;
-         return;
-      }
    }
    /* -- Perhaps the variable type/location data describes it? -- */
    ai->Addr.Variable.descr1

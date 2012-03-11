@@ -5553,11 +5553,15 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       case VG_USERREQ__MALLOCLIKE_BLOCK: {
          Addr p         = (Addr)arg[1];
          SizeT sizeB    =       arg[2];
-         //UInt rzB       =       arg[3];    XXX: unused!
+         UInt rzB       =       arg[3];
          Bool is_zeroed = (Bool)arg[4];
 
          MC_(new_block) ( tid, p, sizeB, /*ignored*/0, is_zeroed, 
                           MC_AllocCustom, MC_(malloc_list) );
+         if (rzB > 0) {
+            MC_(make_mem_noaccess) ( p - rzB, rzB);
+            MC_(make_mem_noaccess) ( p + sizeB, rzB);
+         }
          return True;
       }
       case VG_USERREQ__RESIZEINPLACE_BLOCK: {

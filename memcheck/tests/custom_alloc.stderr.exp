@@ -1,45 +1,108 @@
 Invalid write of size 4
-   at 0x........: main (custom_alloc.c:79)
+   at 0x........: main (custom_alloc.c:117)
  Address 0x........ is 0 bytes after a block of size 40 alloc'd
    at 0x........: custom_alloc (custom_alloc.c:47)
-   by 0x........: main (custom_alloc.c:76)
+   by 0x........: main (custom_alloc.c:114)
 
 Invalid write of size 4
-   at 0x........: main (custom_alloc.c:83)
+   at 0x........: main (custom_alloc.c:121)
  Address 0x........ is 0 bytes after a block of size 20 alloc'd
    at 0x........: custom_alloc (custom_alloc.c:47)
-   by 0x........: main (custom_alloc.c:76)
+   by 0x........: main (custom_alloc.c:114)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (custom_alloc.c:90)
+   at 0x........: main (custom_alloc.c:128)
 
 Invalid write of size 4
-   at 0x........: main (custom_alloc.c:93)
+   at 0x........: main (custom_alloc.c:131)
  Address 0x........ is 0 bytes after a block of size 28 alloc'd
    at 0x........: custom_alloc (custom_alloc.c:47)
-   by 0x........: main (custom_alloc.c:76)
+   by 0x........: main (custom_alloc.c:114)
 
 Invalid free() / delete / delete[] / realloc()
-   at 0x........: main (custom_alloc.c:96)
+   at 0x........: main (custom_alloc.c:134)
  Address 0x........ is 4 bytes inside a block of size 28 alloc'd
    at 0x........: custom_alloc (custom_alloc.c:47)
-   by 0x........: main (custom_alloc.c:76)
+   by 0x........: main (custom_alloc.c:114)
 
 Invalid free() / delete / delete[] / realloc()
    at 0x........: custom_free (custom_alloc.c:54)
-   by 0x........: main (custom_alloc.c:100)
+   by 0x........: main (custom_alloc.c:138)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Mismatched free() / delete / delete []
    at 0x........: custom_free (custom_alloc.c:54)
-   by 0x........: main (custom_alloc.c:103)
+   by 0x........: main (custom_alloc.c:141)
  Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (custom_alloc.c:102)
+   by 0x........: main (custom_alloc.c:140)
 
 Invalid read of size 4
-   at 0x........: main (custom_alloc.c:106)
+   at 0x........: main (custom_alloc.c:144)
  Address 0x........ is 0 bytes inside a block of size 28 free'd
    at 0x........: custom_free (custom_alloc.c:54)
-   by 0x........: main (custom_alloc.c:98)
+   by 0x........: main (custom_alloc.c:136)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:68)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 1 bytes before a block of size 20 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:66)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:69)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 8 bytes before a block of size 20 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:66)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:73)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 0 bytes after a block of size 20 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:66)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:74)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 7 bytes after a block of size 20 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:66)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:83)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 1 bytes before a recently re-allocated block of size 10 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:81)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:84)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 8 bytes before a recently re-allocated block of size 10 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:81)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:88)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 0 bytes after a recently re-allocated block of size 10 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:81)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:89)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 7 bytes after a recently re-allocated block of size 10 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:81)
+   by 0x........: main (custom_alloc.c:151)
+
+Invalid write of size 1
+   at 0x........: checkredzone (custom_alloc.c:90)
+   by 0x........: main (custom_alloc.c:151)
+ Address 0x........ is 8 bytes after a recently re-allocated block of size 10 alloc'd
+   at 0x........: checkredzone (custom_alloc.c:81)
+   by 0x........: main (custom_alloc.c:151)
 

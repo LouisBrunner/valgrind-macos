@@ -1605,7 +1605,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       find a soname, add a fake one. */
    if (di->soname == NULL) {
       TRACE_SYMTAB("No soname found; using (fake) \"NONE\"\n");
-      di->soname = "NONE";
+      di->soname = ML_(dinfo_strdup)("di.redi.2", "NONE");
    }
 
    vg_assert(n_rx >= 0 && n_rx <= N_RX_RW_AREAS);

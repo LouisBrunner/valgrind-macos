@@ -205,6 +205,7 @@ static void free_DebugInfo ( DebugInfo* di )
 
    vg_assert(di != NULL);
    if (di->fsm.filename) ML_(dinfo_free)(di->fsm.filename);
+   if (di->soname)       ML_(dinfo_free)(di->soname);
    if (di->loctab)       ML_(dinfo_free)(di->loctab);
    if (di->cfsi)         ML_(dinfo_free)(di->cfsi);
    if (di->cfsi_exprs)   VG_(deleteXA)(di->cfsi_exprs);

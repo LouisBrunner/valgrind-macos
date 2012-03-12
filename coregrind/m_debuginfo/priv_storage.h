@@ -515,8 +515,7 @@ struct _DebugInfo {
       we have committed to reading the symbols and debug info (that
       is, at the point where .have_dinfo is set to True). */
 
-   /* The file's soname.  FIXME: ensure this is always allocated in
-      VG_AR_DINFO. */
+   /* The file's soname. */
    UChar* soname;
 
    /* Description of some important mapped segments.  The presence or

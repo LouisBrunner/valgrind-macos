@@ -295,7 +295,7 @@ shadow1 and shadow2 register sets description.
 
 Modify coregrind/Makefile.am:
     add valgrind-low-hal9000.c
-    If you have target xml description, also add them in pkglib_DATA 
+    If you have target xml description, also add them to GDBSERVER_XML_FILES
 
 
 TODO and/or additional nice things to have

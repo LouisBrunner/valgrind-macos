@@ -510,7 +510,21 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/powerpc-altivec32l-valgrind.xml \
 	m_gdbserver/powerpc-altivec32l.xml \
 	m_gdbserver/powerpc-altivec64l-valgrind.xml \
-	m_gdbserver/powerpc-altivec64l.xml
+	m_gdbserver/powerpc-altivec64l.xml \
+	m_gdbserver/s390-acr-valgrind-s1.xml \
+	m_gdbserver/s390-acr-valgrind-s2.xml \
+	m_gdbserver/s390-acr.xml \
+	m_gdbserver/s390-fpr-valgrind-s1.xml \
+	m_gdbserver/s390-fpr-valgrind-s2.xml \
+	m_gdbserver/s390-fpr.xml \
+	m_gdbserver/s390x-core64-valgrind-s1.xml \
+	m_gdbserver/s390x-core64-valgrind-s2.xml \
+	m_gdbserver/s390x-core64.xml \
+	m_gdbserver/s390x-generic-valgrind.xml \
+	m_gdbserver/s390x-generic.xml \
+	m_gdbserver/s390x-linux64-valgrind-s1.xml \
+	m_gdbserver/s390x-linux64-valgrind-s2.xml \
+	m_gdbserver/s390x-linux64.xml
 
 # so as to make sure these get copied into the install tree
 vglibdir = $(pkglibdir)

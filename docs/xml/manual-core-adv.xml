@@ -676,7 +676,7 @@ the Valgrind scheduler thread state:</para>
 <para> When the option <option>--vgdb-shadow-registers=yes</option> is
 given, the Valgrind gdbserver will let GDB examine and/or modify
 Valgrind's shadow registers.  GDB version 7.1 or later is needed for this
-to work.</para>
+to work. For x86 and amd64, GDB version 7.2 or later is needed.</para>
 
 <para>For each CPU register, the Valgrind core maintains two
 shadow register sets.  These shadow registers can be accessed from
@@ -695,6 +695,10 @@ $2 = 0
 $3 = 0
 (gdb) 
 ]]></programlisting>
+
+<para>Float shadow registers are shown by GDB as unsigned integer
+values instead of float values, as it is expected that these
+shadow values are mostly used for memcheck validity bits. </para>
 
 </sect2>
 

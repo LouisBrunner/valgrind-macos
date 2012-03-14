@@ -3,7 +3,7 @@ Release 3.8.0 (????)
 
 * ================== PLATFORM CHANGES =================
 
-* Support for AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
+* Support for amd64 AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
   AESDEC, AESDECLAST, AESIMC).
 
 * ==================== TOOL CHANGES ====================
@@ -37,6 +37,10 @@ Release 3.8.0 (????)
   on multiprocessor/multicore systems).
 
 * Support to run Valgrind on Valgrind has been improved.
+
+* gdbserver now shows the float shadow registers as integer
+  rather than float values, as the shadow values are mostly
+  used as bit patterns.
 
 * ==================== FIXED BUGS ====================
 

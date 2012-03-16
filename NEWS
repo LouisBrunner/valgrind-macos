@@ -29,7 +29,7 @@ Release 3.8.0 (????)
 * ==================== OTHER CHANGES ====================
 
 * The C++ demangler has been updated so as to work well with C++ 
-  compiled by even the most recent g++'s.
+  compiled by up to at least g++ 4.6.
 
 * The new option --fair-sched allows to control the locking mechanism
   used by Valgrind. The locking mechanism influences the performance

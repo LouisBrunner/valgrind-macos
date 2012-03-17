@@ -9268,7 +9268,7 @@ s390_irgen_STMG(UChar r1, UChar r3, IRTemp op2addr)
 }
 
 static void
-s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
+s390_irgen_xonc(IROp op, UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp old1 = newTemp(Ity_I8);
    IRTemp old2 = newTemp(Ity_I8);
@@ -9308,7 +9308,7 @@ s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_XONC(Iop_Xor8, length, start1, start2);
+   s390_irgen_xonc(Iop_Xor8, length, start1, start2);
 
    return "xc";
 }
@@ -9355,7 +9355,7 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 static HChar *
 s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_XONC(Iop_And8, length, start1, start2);
+   s390_irgen_xonc(Iop_And8, length, start1, start2);
 
    return "nc";
 }
@@ -9363,7 +9363,7 @@ s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_XONC(Iop_Or8, length, start1, start2);
+   s390_irgen_xonc(Iop_Or8, length, start1, start2);
 
    return "oc";
 }

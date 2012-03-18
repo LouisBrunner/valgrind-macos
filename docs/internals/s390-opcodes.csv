@@ -1,0 +1,968 @@
+a,add,implemented,
+ad,"add normalized (long)","not implemented",
+adr,"add normalized (long)","not implemented",
+ae,"add normalized (short)","not implemented",
+aer,"add normalized (short)","not implemented",
+ah,"add halfword",implemented,
+al,"add logical",implemented,
+alr,"add logical",implemented,
+ap,"add decimal","not implemented",
+ar,add,implemented,
+au,"add unnormalized (short)","not implemented",
+aur,"add unnormalized (short)","not implemented",
+aw,"add unnormalized (long)","not implemented",
+awr,"add unnormalized (long)","not implemented",
+axr,"add normalized","not implemented",
+bakr,"branch and stack","not implemented",
+bal,"branch and link","not implemented",
+balr,"branch and link","not implemented",
+bas,"branch and save",implemented,
+basr,"branch and save",implemented,
+bassm,"branch and save and set mode","not implemented",
+bc,"branch on condition",implemented,
+bcr,"branch on condition",implemented,
+bct,"branch on count",implemented,
+bctr,"branch on count",implemented,
+bsg,"branch in subspace group","not implemented",
+bsm,"branch and set mode","not implemented",
+bxh,"branch on index high",implemented,
+bxle,"branch on index low or equal",implemented,
+c,compare,implemented,
+cd,"compare (long)","not implemented",
+cdr,"compare (long)","not implemented",
+cds,"compare double and swap","not implemented","open bugzilla"
+ce,"compare (short)","not implemented",
+cer,"compare (short)","not implemented",
+cfc,"compare and form codeword","not implemented","issued by gcc"
+ch,"compare halfword",implemented,
+cl,"compare logical",implemented,
+clc,"compare logical",implemented,
+clcl,"compare logical long",implemented,
+cli,"compare logical",implemented,
+clm,"compare logical characters under mask",implemented,
+clr,"compare logical",implemented,
+clst,"compare logical string",implemented,
+cp,"compare decimal","not implemented",
+cpya,"copy access",implemented,
+cr,compare,implemented,
+cs,"compare and swap",implemented,
+csch,"clear subchannel",N/A,"privileged instruction"
+cuse,"compare until substring equal","not implemented",
+csp,"compare and swap and purge",N/A,"privileged instruction"
+cvb,"convert to binary",implemented,
+cvd,"convert to decimal",implemented,
+d,divide,implemented,
+dd,"divide (long)","not implemented",
+ddr,"divide (long)","not implemented",
+de,"divide (short)","not implemented",
+der,"divide (short)","not implemented",
+diag,diagnose,N/A,"privileged instruction"
+dp,"divide decimal","not implemented",
+dr,divide,implemented,
+dxr,"divide (ext.)","not implemented",
+ear,"extract access",implemented,
+ed,edit,"not implemented",
+edmk,"edit and mark","not implemented",
+epar,"extract primary ASN","not implemented",
+ereg,"extract stacked registers","not implemented",
+esar,"extract secondary ASN",N/A,"privileged instruction"
+esta,"extract stacked state","not implemented",
+ex,execute,implemented,
+hdr,"halve (long)","not implemented",
+her,"halve (short)","not implemented",
+hsch,"halt subchannel",N/A,"privileged instruction"
+iac,"insert address space control","not implemented",
+ic,"insert character",implemented,
+icm,"insert characters under mask",implemented,
+ipk,"insert PSW key",N/A,"privileged instruction"
+ipm,"insert program mask",implemented,
+ipte,"invalidate page table entry",N/A,"privileged instruction"
+iske,"insert storage key extended",N/A,"privileged instruction"
+ivsk,"insert virtual storage key",N/A,"privileged instruction"
+l,load,implemented,
+la,"load address",implemented,
+lae,"load address extended",implemented,
+lam,"load access multiple",implemented,
+lasp,"load address space parameters",N/A,"privileged instruction"
+lcdr,"load complement (long)","not implemented",
+lcer,"load complement (short)","not implemented",
+lcr,"load complement",implemented,
+lctl,"load control",N/A,"privileged instruction"
+ld,"load (long)",implemented,
+ldr,"load (long)",implemented,
+le,"load (short)",implemented,
+ler,"load (short)",implemented,
+lh,"load halfword",implemented,
+lm,"load multiple",implemented,
+lndr,"load negative (long)","not implemented",
+lner,"load negative (short)","not implemented",
+lnr,"load negative",implemented,
+lpdr,"load positive (long)","not implemented",
+lper,"load positive (short)","not implemented",
+lpr,"load positive",implemented,
+lpsw,"load PSW",N/A,"privileged instruction"
+lr,load,implemented,
+lra,"load real address",N/A,"privileged instruction"
+ldxr,"load rounded (ext. to long)","not implemented",
+lrdr,"load rounded (ext. to long)","not implemented",
+ledr,"load rounded (long to short)","not implemented",
+lrer,"load rounded (long to short)","not implemented",
+ltdr,"load and test (long)","not implemented",
+lter,"load and test (short)","not implemented",
+ltr,"load and test",implemented,
+lura,"load using real address",N/A,"privileged instruction"
+m,multiply,implemented,
+mc,"monitor call","not implemented",
+md,"multiply (long)","not implemented",
+mdr,"multiply (long)","not implemented",
+mde,"multiply (short to long)","not implemented",
+me,"multiply (short to long)","not implemented",
+mder,"multiply short to long hfp","won't do","hfp instruction"
+mer,"multiply (short to long)","not implemented",
+mh,"multiply halfword",implemented,
+mp,"multiply decimal","not implemented",
+mr,multiply,implemented,
+msch,"modify subchannel",N/A,"privileged instruction"
+msta,"modify stacked state","not implemented",
+mvc,move,implemented,
+mvcdk,"move with destination key",N/A,"privileged instruction"
+mvcin,"move inverse","not implemented",
+mvck,"move with key",N/A,"privileged instruction"
+mvcl,"move long",implemented,
+mvcp,"move to primary",N/A,"privileged instruction"
+mvcs,"move to secondary",N/A,"privileged instruction"
+mvcsk,"move with source key","not implemented",
+mvi,move,implemented,
+mvn,"move numerics","not implemented",
+mvo,"move with offset","not implemented",
+mvpg,"move page",N/A,"privileged instruction"
+mvst,"move string",implemented,
+mvz,"move zones","not implemented",
+mxd,"multiply (long to ext.)","not implemented",
+mxdr,"multiply (long to ext.)","not implemented",
+mxr,"multiply (ext.)","not implemented",
+n,AND,implemented,
+nc,AND,implemented,
+ni,AND,implemented,
+nr,AND,implemented,
+o,OR,implemented,
+oc,OR,implemented,
+oi,OR,implemented,
+or,OR,implemented,
+pack,pack,"not implemented",
+palb,"purge ALB",N/A,"privileged instruction"
+pc,"program call","not implemented",
+pr,"program return","not implemented",
+pt,"program transfer","not implemented",
+ptlb,"purge TLB",N/A,"privileged instruction"
+rchp,"reset channel path",N/A,"privileged instruction"
+rrbe,"reset reference bit extended",N/A,"privileged instruction"
+rsch,"resume subchannel",N/A,"privileged instruction"
+s,subtract,implemented,
+sac,"set address space control",N/A,"privileged instruction"
+sacf,"set address space control fast",N/A,"privileged instruction"
+sal,"set address limit",N/A,"privileged instruction"
+sar,"set access",implemented,
+schm,"set channel monitor",N/A,"privileged instruction"
+sck,"set clock",N/A,"privileged instruction"
+sckc,"set clock comparator",N/A,"privileged instruction"
+sd,"subtract normalized (long)","not implemented",
+sdr,"subtract normalized (long)","not implemented",
+se,"subtract normalized (short)","not implemented",
+ser,"subtract normalized (short)","not implemented",
+sh,"subtract halfword",implemented,
+sie,"start interpretive execution","not implemented",
+sigp,"signal processor",N/A,"privileged instruction"
+sl,"subtract logical",implemented,
+sla,"shift left single",implemented,
+slda,"shift left double (long)",implemented,
+sldl,"shift left double logical (long)",implemented,
+sll,"shift left single logical",implemented,
+slr,"subtract logical",implemented,
+sp,"subtract decimal","not implemented",
+spka,"set PSW key from address",N/A,"privileged instruction"
+spm,"set program mask","not implemented","issued by gcc"
+spt,"set CPU timer",N/A,"privileged instruction"
+spx,"set prefix",N/A,"privileged instruction"
+sqdr,"square root (long)","not implemented",
+sqer,"square root (short)","not implemented",
+sr,subtract,implemented,
+sra,"shift right single",implemented,
+srda,"shift right double (long)",implemented,
+srdl,"shift right double logical (long)",implemented,
+srl,"shift right single logical",implemented,
+srp,"shift and round decimal","not implemented",
+srst,"search string",implemented,
+ssar,"set secondary ASN","not implemented",
+ssch,"start subchannel",N/A,"privileged instruction"
+sske,"set storage key extended",N/A,"privileged instruction"
+ssm,"set system mask",N/A,"privileged instruction"
+st,store,implemented,
+stam,"store access multiple",implemented,
+stap,"store CPU address",N/A,"privileged instruction"
+stc,"store character",implemented,
+stck,"store clock",implemented,
+stckc,"store clock comparator",N/A,"privileged instruction"
+stcm,"store characters under mask",implemented,
+stcps,"store channel path status",N/A,"privileged instruction"
+stcrw,"store channel report word",N/A,"privileged instruction"
+stctl,"store control",N/A,"privileged instruction"
+std,"store (long)",implemented,
+ste,"store (short)",implemented,
+sth,"store halfword",implemented,
+stidp,"store CPU id",N/A,"privileged instruction"
+stm,"store multiple",implemented,
+stnsm,"store then AND system mask",N/A,"privileged instruction"
+stosm,"store then OR system mask",N/A,"privileged instruction"
+stpt,"store CPU timer",N/A,"privileged instruction"
+stpx,"store prefix",N/A,"privileged instruction"
+stsch,"store subchannel",N/A,"privileged instruction"
+stura,"store using real address",N/A,"privileged instruction"
+su,"subtract unnormalized (short)","not implemented",
+sur,"subtract unnormalized (short)","not implemented",
+svc,"supervisor call",implemented,
+sw,"subtract unnormalized (long)","not implemented",
+swr,"subtract unnormalized (long)","not implemented",
+sxr,"subtract normalized (ext.)","not implemented",
+tar,"test access","not implemented",
+tb,"test block",N/A,"privileged instruction"
+tm,"test under mask",implemented,
+tpi,"test pending interruption",N/A,"privileged instruction"
+tprot,"test protection",N/A,"privileged instruction"
+tr,translate,implemented,
+trace,trace,N/A,"privileged instruction"
+trt,"translate and test","not implemented","issued by gcc"
+ts,"test and set","won't do","deprecated instruction"
+tsch,"test subchannel",N/A,"privileged instruction"
+unpk,unpack,"not implemented",
+upt,"update tree","not implemented","issued by gcc"
+x,"exclusive OR",implemented,
+xc,"exclusive OR",implemented,
+xi,"exclusive OR",implemented,
+xr,"exclusive OR",implemented,
+zap,"zero and add","not implemented",
+ahi,"add halfword immediate",implemented,
+brxh,"branch relative on index high",implemented,
+brxle,"branch relative on index low or equal",implemented,
+bras,"branch relative and save",implemented,
+brc,"branch relative on condition",implemented,
+brct,"branch relative on count",implemented,
+cksm,checksum,implemented,
+chi,"compare halfword immediate",implemented,
+clcle,"compare logical long extended",implemented,
+lhi,"load halfword immediate",implemented,
+mvcle,"move long extended",implemented,
+mhi,"multiply halfword immediate",implemented,
+msr,"multiply single",implemented,
+ms,"multiply single",implemented,
+tmlh,"test under mask low high",implemented,
+tmll,"test under mask low low",implemented,
+axbr,"add extended bfp",implemented,
+adbr,"add long bfp",implemented,
+adb,"add long bfp",implemented,
+aebr,"add short bfp",implemented,
+aeb,"add short bfp",implemented,
+cxbr,"compare extended bfp",implemented,
+cdbr,"compare long bfp",implemented,
+cdb,"compare long bfp",implemented,
+cebr,"compare short bfp",implemented,
+ceb,"compare short bfp",implemented,
+kxbr,"compare and signal extended bfp","not implemented",
+kdbr,"compare and signal long bfp","not implemented",
+kdb,"compare and signal long bfp","not implemented",
+kebr,"compare and signal short bfp","not implemented",
+keb,"compare and signal short bfp","not implemented",
+cxfbr,"convert from fixed 32 to extended bfp",implemented,
+cdfbr,"convert from fixed 32 to long bfp",implemented,
+cefbr,"convert from fixed 32 to short bfp",implemented,
+cfxbr,"convert to fixed extended bfp to 32",implemented,
+cfdbr,"convert to fixed long bfp to 32",implemented,
+cfebr,"convert to fixed short bfp to 32",implemented,
+dxbr,"divide extended bfp",implemented,
+ddbr,"divide long bfp",implemented,
+ddb,"divide long bfp",implemented,
+debr,"divide short bfp",implemented,
+deb,"divide short bfp",implemented,
+didbr,"divide to integer long bfp","not implemented",
+diebr,"divide to integer short bfp","not implemented",
+efpc,"extract fpc",implemented,
+ltxbr,"load and test extended bfp",implemented,
+ltdbr,"load and test long bfp",implemented,
+ltebr,"load and test short bfp",implemented,
+lcxbr,"load complement extended bfp",implemented,
+lcdbr,"load complement long bfp",implemented,
+lcebr,"load complement short bfp",implemented,
+fixbr,"load fp integer extended bfp","not implemented",
+fidbr,"load fp integer long bfp","not implemented",
+fiebr,"load fp integer short bfp","not implemented",
+lfpc,"load fpc",implemented,
+lxdbr,"load lengthened long to extended bfp",implemented,
+lxdb,"load lengthened long to extended bfp",implemented,
+lxebr,"load lengthened short to extended bfp",implemented,
+lxeb,"load lengthened short to extended bfp",implemented,
+ldebr,"load lengthened short to long bfp",implemented,
+ldeb,"load lengthened short to long bfp",implemented,
+lnxbr,"load negative extended bfp",implemented,
+lndbr,"load negative long bfp",implemented,
+lnebr,"load negative short bfp",implemented,
+lpxbr,"load positive extended bfp",implemented,
+lpdbr,"load positive long bfp",implemented,
+lpebr,"load positive short bfp",implemented,
+ldxbr,"load rounded extended to long bfp",implemented,
+lexbr,"load rounded extended to short bfp",implemented,
+ledbr,"load rounded long to short bfp",implemented,
+mxbr,"multiply extended bfp",implemented,
+mdbr,"multiply long bfp",implemented,
+mdb,"multiply long bfp",implemented,
+mxdbr,"multiply long to extended bfp","not implemented",
+mxdb,"multiply long to extended bfp","not implemented",
+meebr,"multiply short bfp",implemented,
+meeb,"multiply short bfp",implemented,
+mdebr,"multiply short to long bfp","not implemented",
+mdeb,"multiply short to long bfp","not implemented",
+madbr,"multiply and add long bfp",implemented,
+madb,"multiply and add long bfp",implemented,
+maebr,"multiply and add short bfp",implemented,
+maeb,"multiply and add short bfp",implemented,
+msdbr,"multiply and subtract long bfp",implemented,
+msdb,"multiply and subtract long bfp",implemented,
+msebr,"multiply and subtract short bfp",implemented,
+mseb,"multiply and subtract short bfp",implemented,
+sfpc,"set fpc",implemented,
+srnm,"set rounding mode",implemented,
+sqxbr,"square root extended bfp",implemented,
+sqdbr,"square root long bfp",implemented,
+sqdb,"square root long bfp",implemented,
+sqebr,"square root short bfp",implemented,
+sqeb,"square root short bfp",implemented,
+stfpc,"store fpc",implemented,
+sxbr,"subtract extended bfp",implemented,
+sdbr,"subtract long bfp",implemented,
+sdb,"subtract long bfp",implemented,
+sebr,"subtract short bfp",implemented,
+seb,"subtract short bfp",implemented,
+tcxb,"test data class extended bfp",implemented,
+tcdb,"test data class long bfp",implemented,
+tceb,"test data class short bfp",implemented,
+siga,"signal adapter","not implemented",
+cuutf,"convert unicode to utf-8","not implemented",
+cutfu,"convert utf-8 to unicode","not implemented",
+plo,"perform locked operation","not implemented","issued by gcc"
+bsa,"branch and set authority",N/A,"privileged instruction"
+rp,"resume program",N/A,"privileged instruction"
+sckpf,"set clock programmable field",N/A,"privileged instruction"
+stsi,"store system information",N/A,"privileged instruction"
+trap2,trap,"not implemented",
+trap4,trap4,"not implemented",
+stcke,"store clock extended",implemented,
+tre,"translate extended",implemented,
+mvclu,"move long unicode","not implemented",
+pka,"pack ascii","not implemented",
+pku,"pack unicode","not implemented",
+troo,"translate one to one",implemented,
+trot,"translate one to two",implemented,
+trto,"translate two to one",implemented,
+trtt,"translate two to two",implemented,
+unpka,"unpack ascii","not implemented",
+unpku,"unpack unicode","not implemented",
+thder,"convert short bfp to long hfp","won't do","hfp instruction"
+thdr,"convert long bfp to long hfp","won't do","hfp instruction"
+tbedr,"convert long hfp to short bfp","won't do","hfp instruction"
+tbdr,"convert long hfp to long bfp","won't do","hfp instruction"
+lzer,"load short zero",implemented,
+lzdr,"load long zero",implemented,
+lzxr,"load extended zero",implemented,
+bctgr,"branch on count 64",implemented,
+lpgr,"load positive 64",implemented,
+lpgfr,"load positive 64<32",implemented,
+lngr,"load negative 64",implemented,
+lngfr,"load negative 64<32",implemented,
+ltgr,"load and test 64",implemented,
+ltgfr,"load and test 64<32",implemented,
+lcgr,"load complement 64",implemented,
+lcgfr,"load complement 64<32",implemented,
+ngr,"and 64",implemented,
+clgr,"compare logical 64",implemented,
+clgfr,"compare logical 64<32",implemented,
+ogr,"or 64",implemented,
+xgr,"exclusive or 64",implemented,
+lgr,"load 64",implemented,
+lgfr,"load 64<32",implemented,
+cgr,"compare 64",implemented,
+cgfr,"compare 64<32",implemented,
+agr,"add 64",implemented,
+agfr,"add 64<32",implemented,
+sgr,"subtract 64",implemented,
+sgfr,"subtract 64<32",implemented,
+algr,"add logical 64",implemented,
+algfr,"add logical 64<32",implemented,
+slgr,"subtract logical 64",implemented,
+slgfr,"subtract logical 64<32",implemented,
+bctg,"branch on count 64",implemented,
+cvdg,"convert to decimal 64","not implemented",
+cvbg,"convert to binary 64","not implemented",
+stg,"store 64",implemented,
+ng,"and 64",implemented,
+clg,"compare logical 64",implemented,
+clgf,"compare logical 64<32",implemented,
+og,"or 64",implemented,
+xg,"exclusive or 64",implemented,
+lg,"load 64",implemented,
+lgf,"load 64<32",implemented,
+lgh,"load halfword 64",implemented,
+cg,"compare 64",implemented,
+cgf,"compare 64<32",implemented,
+ag,"add 64",implemented,
+agf,"add 64<32",implemented,
+sg,"subtract 64",implemented,
+sgf,"subtract 64<32",implemented,
+alg,"add logical 64",implemented,
+algf,"add logical 64<32",implemented,
+slg,"subtract logical 64",implemented,
+slgf,"subtract logical 64<32",implemented,
+msg,"multiply single 64",implemented,
+msgf,"multiply single 64<32",implemented,
+brxhg,"branch relative on index high 64",implemented,
+brxlg,"branch relative on index low or equal 64",implemented,
+bxhg,"branch on index high 64",implemented,
+bxleg,"branch on index low or equal 64",implemented,
+srlg,"shift right single logical 64",implemented,
+sllg,"shift left single logical 64",implemented,
+srag,"shift right single 64",implemented,
+slag,"shift left single 64",implemented,
+stmg,"store multiple 64",implemented,
+stmh,"store multiple high",implemented,
+lmg,"load multiple 64",implemented,
+lmh,"load multiple high",implemented,
+lmd,"load multiple disjoint","not implemented",
+tracg,"trace 64",N/A,"privileged instruction"
+lrag,"load real address 64",N/A,"privileged instruction"
+strag,"store read address",N/A,"privileged instruction"
+stctg,"store control 64",N/A,"privileged instruction"
+lctlg,"load control 64",N/A,"privileged instruction"
+csg,"compare and swap 64",implemented,
+cdsg,"compare double and swap 64","not implemented","open bugzilla"
+clmh,"compare logical characters under mask high",implemented,
+stcmh,"store characters under mask high",implemented,
+icmh,"insert characters under mask high",implemented,
+tmhh,"test under mask high high",implemented,
+tmhl,"test under mask high low",implemented,
+brcl,"branch relative on condition long",implemented,
+brasl,"branch relative and save long",implemented,
+brctg,"branch relative on count 64",implemented,
+lghi,"load halfword immediate 64",implemented,
+aghi,"add halfword immediate 64",implemented,
+mghi,"multiply halfword immediate 64",implemented,
+cghi,"compare halfword immediate 64",implemented,
+sturg,"store using real address 64",N/A,"privileged instruction"
+eregg,"extract stacked registers 64","not implemented",
+lurag,"load using real address 64",N/A,"privileged instruction"
+msgr,"multiply single 64",implemented,
+msgfr,"multiply single 64<32",implemented,
+cegbr,"convert from fixed 64 to short bfp",implemented,
+cdgbr,"convert from fixed 64 to long bfp",implemented,
+cxgbr,"convert from fixed 64 to extended bfp",implemented,
+cgebr,"convert to fixed short bfd to 64",implemented,
+cgdbr,"convert to fixed long bfp to 64",implemented,
+cgxbr,"convert to fixed extended bfp to 64",implemented,
+cegr,"convert from fixed 64 to short hfp","won't do","hfp instruction"
+cdgr,"convert from fixed 64 to long hfp","won't do","hfp instruction"
+cxgr,"convert from fixed 64 to extended hfp","won't do","hfp instruction"
+cger,"convert to fixed short hfp to 64","won't do","hfp instruction"
+cgdr,"convert to fixed long hfp to 64","won't do","hfp instruction"
+cgxr,"convert to fixed extended hfp to 64","won't do","hfp instruction"
+tam,"test addressing mode","not implemented",
+sam24,"set addressing mode 24","not implemented",
+sam31,"set addressing mode 31","not implemented",
+sam64,"set addressing mode 64","not implemented",
+iihh,"insert immediate high high",implemented,
+iihl,"insert immediate high low",implemented,
+iilh,"insert immediate low high",implemented,
+iill,"insert immediate low low",implemented,
+nihh,"and immediate high high",implemented,
+nihl,"and immediate high low",implemented,
+nilh,"and immediate low high",implemented,
+nill,"and immediate low low",implemented,
+oihh,"or immediate high high",implemented,
+oihl,"or immediate high low",implemented,
+oilh,"or immediate low high",implemented,
+oill,"or immediate low low",implemented,
+llihh,"load logical immediate high high",implemented,
+llihl,"load logical immediate high low",implemented,
+llilh,"load logical immediate low high",implemented,
+llill,"load logical immediate low low",implemented,
+stfl,"store facility list",N/A,"privileged instruction"
+lpswe,"load psw extended",N/A,"privileged instruction"
+dsgr,"divide single 64",implemented,
+lrvgr,"load reversed 64",implemented,
+llgfr,"load logical 64<32",implemented,
+llgtr,"load logical thirty one bits",implemented,
+dsgfr,"divide single 64<32",implemented,
+lrvr,"load reversed 32",implemented,
+mlgr,"multiply logical 64",implemented,
+dlgr,"divide logical 64",implemented,
+alcgr,"add logical with carry 64",implemented,
+slbgr,"subtract logical with borrow 64",implemented,
+epsw,"extract psw","not implemented",
+mlr,"multiply logical 32",implemented,
+dlr,"divide logical 32",implemented,
+alcr,"add logical with carry 32",implemented,
+slbr,"subtract logical with borrow 32",implemented,
+esea,"extract and set extended authority",N/A,"privileged instruction"
+larl,"load address relative long",implemented,
+dsg,"divide single 64",implemented,
+lrvg,"load reversed 64",implemented,
+llgf,"load logical 64<32",implemented,
+llgt,"load logical thirty one bits",implemented,
+dsgf,"divide single 64<32",implemented,
+lrv,"load reversed 32",implemented,
+lrvh,"load reversed 16",implemented,
+strvg,"store reversed 64",implemented,
+strv,"store reversed 32",implemented,
+strvh,"store reversed 64",implemented,
+mlg,"multiply logical 64",implemented,
+dlg,"divide logical 64",implemented,
+alcg,"add logical with carry 64",implemented,
+slbg,"subtract logical with borrow 64",implemented,
+stpq,"store pair to quadword",implemented,
+lpq,"load pair from quadword",implemented,
+ml,"multiply logical 32",implemented,
+dl,"divide logical 32",implemented,
+alc,"add logical with carry 32",implemented,
+slb,"subtract logical with borrow 32",implemented,
+llgc,"load logical character",implemented,
+llgh,"load logical halfword",implemented,
+rllg,"rotate left single logical 64",implemented,
+rll,"rotate left single logical 32",implemented,
+cxr,"compare extended hfp","won't do","hfp instruction"
+cxfr,"convert from fixed 32 to extended hfp","won't do","hfp instruction"
+cdfr,"convert from fixed 32 to long hfp","won't do","hfp instruction"
+cefr,"convert from fixed 32 to short hfp","won't do","hfp instruction"
+cfxr,"convert to fixed extended hfp to 32","won't do","hfp instruction"
+cfdr,"convert to fixed long hfp to 32","won't do","hfp instruction"
+cfer,"convert to fixed short hfp to 32","won't do","hfp instruction"
+ltxr,"load and test extended hfp","won't do","hfp instruction"
+lcxr,"load complement extended hfp","won't do","hfp instruction"
+fixr,"load fp integer extended hfp","won't do","hfp instruction"
+fidr,"load fp integer long hfp","won't do","hfp instruction"
+fier,"load fp integer short hfp","won't do","hfp instruction"
+lxdr,"load lengthened long to extended hfp","won't do","hfp instruction"
+lxd,"load lengthened long to extended hfp","won't do","hfp instruction"
+lxer,"load lengthened short to extended hfp","won't do","hfp instruction"
+lxe,"load lengthened short to extended hfp","won't do","hfp instruction"
+lder,"load lengthened short to long hfp","won't do","hfp instruction"
+lde,"load lengthened short to long hfp","won't do","hfp instruction"
+lnxr,"load negative extended hfp","won't do","hfp instruction"
+lpxr,"load positive extended hfp","won't do","hfp instruction"
+lexr,"load rounded extended to short hfp","won't do","hfp instruction"
+meer,"multiply short hfp","won't do","hfp instruction"
+mee,"multiply short hfp","won't do","hfp instruction"
+sqxr,"square root extended hfp","won't do","hfp instruction"
+sqe,"square root short hfp","won't do","hfp instruction"
+sqd,"square root long hfp","won't do","hfp instruction"
+cmpsc,"compression call","not implemented",
+tp,"test decimal","not implemented",
+lxr,"load extended fp",implemented,
+pgin,"page in",N/A,"privileged instruction"
+pgout,"page out",N/A,"privileged instruction"
+xsch,"cancel subchannel",N/A,"privileged instruction"
+ay,"add with long offset",implemented,
+ahy,"add halfword with long offset",implemented,
+aly,"add logical with long offset",implemented,
+niy,"and immediate with long offset",implemented,
+ny,"and with long offset",implemented,
+cy,"compare with long offset",implemented,
+csy,"compare and swap with long offset",implemented,
+cdsy,"compare double and swap with long offset","not implemented","open bugzilla"
+chy,"compare halfword with long offset",implemented,
+cly,"compare logical with long offset",implemented,
+cliy,"compare logical immediate with long offset",implemented,
+clmy,"compare logical characters under mask with long offset",implemented,
+cvby,"convert to binary with long offset",implemented,
+cvdy,"convert to decimal with long offset",implemented,
+xiy,"exclusive or immediate with long offset",implemented,
+xy,"exclusive or with long offset",implemented,
+icy,"insert character with long offset",implemented,
+icmy,"insert characters with long offset",implemented,
+ldy,"load (long) with long offset",implemented,
+ley,"load (short) with long offset",implemented,
+ly,"load with long offset",implemented,
+lamy,"load access multiple",implemented,
+lay,"load address with long offset",implemented,
+lb,"load byte with long offset",implemented,
+lgb,"load byte with long offset 64",implemented,
+lhy,"load halfword with long offset",implemented,
+lmy,"load multiple with long offset",implemented,
+lray,"load real address with long offset",N/A,"privileged instruction"
+mviy,"move immediate with long offset",implemented,
+msy,"multiply single with long offset",implemented,
+oiy,"or immediate with long offset",implemented,
+oy,"or with long offset",implemented,
+stdy,"store (long) with long offset",implemented,
+stey,"store (short) with long offset",implemented,
+sty,"store with long offset",implemented,
+stamy,"store access multiple with long offset",implemented,
+stcy,"store character with long offset",implemented,
+stcmy,"store characters under mask with long offset",implemented,
+sthy,"store halfword with long offset",implemented,
+stmy,"store multiple with long offset",implemented,
+sy,"subtract with long offset",implemented,
+shy,"subtract halfword with long offset",implemented,
+sly,"subtract logical with long offset",implemented,
+tmy,"test under mask with long offset",implemented,
+clclu,"compare logical long unicode with long offset","not implemented",
+cspg,"compare and swap and purge",N/A,"privileged instruction"
+idte,"invalidate dat table entry",N/A,"privileged instruction"
+madr,"multiply and add long hfp","won't do","hfp instruction"
+mad,"multiply and add long hfp","won't do","hfp instruction"
+maer,"multiply and add short hfp","won't do","hfp instruction"
+mae,"multiply and add short hfp","won't do","hfp instruction"
+msdr,"multiply and subtract long hfp","won't do","hfp instruction"
+msd,"multiply and subtract long hfp","won't do","hfp instruction"
+mser,"mutliply and subtract short hfp","won't do","hfp instruction"
+mse,"multiply and subttract short hfp","won't do","hfp instruction"
+km,"cipher message","not implemented",
+kmc,"cipher message with chaining","not implemented",
+kimd,"compute intermediate message digest","not implemented",
+klmd,"compute last message digest","not implemented",
+kmac,"compute message authentication code","not implemented",
+afi,"add immediate 32",implemented,
+agfi,"add immediate 64<32",implemented,
+alfi,"add logical immediate 32",implemented,
+algfi,"add logical immediate 64<32",implemented,
+nihf,"and immediate high",implemented,
+nilf,"and immediate low",implemented,
+cfi,"compare immediate 32",implemented,
+cgfi,"compare immediate 64<32",implemented,
+clfi,"compare logical immediate 32",implemented,
+clgfi,"compare logical immediate 64<32",implemented,
+xihf,"exclusive or immediate high",implemented,
+xilf,"exclusive or immediate low",implemented,
+iihf,"insert immediate high",implemented,
+iilf,"insert immediate low",implemented,
+flogr,"find leftmost one",implemented,
+lt,"load and test 32",implemented,
+ltg,"load and test 64",implemented,
+lbr,"load byte 32",implemented,
+lgbr,"load byte 64",implemented,
+lhr,"load halfword 32",implemented,
+lghr,"load halfword 64",implemented,
+lgfi,"load immediate 64<32",implemented,
+llc,"load logical character 32",implemented,
+llcr,"load logical character 32",implemented,
+llgcr,"load logical character 64",implemented,
+llh,"load logical halfword 32",implemented,
+llhr,"load logical halfword 32",implemented,
+llghr,"load logical halfword 64",implemented,
+llihf,"load logical immediate high",implemented,
+llilf,"load logical immediate low",implemented,
+oihf,"or immediate high",implemented,
+oilf,"or immediate low",implemented,
+slfi,"subtract logical immediate 32",implemented,
+slgfi,"subtract logical immediate 64<32",implemented,
+ptff,"perform timing facility function",N/A,"privileged instruction"
+stfle,"store facility list extended",implemented,
+stckf,"store clock fast",implemented,
+mvcos,"move with optional specifications",N/A,"privileged instruction"
+lptea,"load page-table-entry address",N/A,"privileged instruction"
+cu24,"convert utf-16 to utf-32","not implemented","open bugzilla"
+cu21,"convert utf-16 to utf-8","not implemented","open bugzilla"
+cu42,"convert utf-32 to utf-16","not implemented","open bugzilla"
+cu41,"convert utf-32 to utf-8","not implemented","open bugzilla"
+cu12,"convert utf-8 to utf-16","not implemented","open bugzilla"
+cu14,"convert utf-8 to utf-32","not implemented","open bugzilla"
+srstu,"search string unicode","not implemented",
+trtr,"tranlate and test reverse","not implemented",
+myr,"multiply unnormalized long hfp","won't do","hfp instruction"
+myhr,"multiply unnormalized long hfp high","won't do","hfp instruction"
+mylr,"multiply unnormalized long hfp low","won't do","hfp instruction"
+my,"multiply unnormalized long hfp","won't do","hfp instruction"
+myh,"multiply unnormalized long hfp high","won't do","hfp instruction"
+myl,"multiply unnormalized long hfp low","won't do","hfp instruction"
+mayr,"multiply and add unnormalized long hfp","won't do","hfp instruction"
+mayhr,"multiply and add unnormalized long hfp high","won't do","hfp instruction"
+maylr,"multiply and add unnormalized long hfp low","won't do","hfp instruction"
+may,"multiply and add unnormalized long hfp","won't do","hfp instruction"
+mayh,"multiply and add unnormalized long hfp high","won't do","hfp instruction"
+mayl,"multiply and add unnormalized long hfp low","won't do","hfp instruction"
+lpdfr,"load positive no cc",implemented,
+lndfr,"load negative no cc",implemented,
+cpsdr,"copy sign",implemented,
+lcdfr,"load complement no cc",implemented,
+ldgr,"load fpr from gr",implemented,
+lgdr,"load gr from fpr",implemented,
+adtr,"add long dfp","not implemented",
+axtr,"add extended dfp","not implemented",
+cdtr,"compare long dfp","not implemented",
+cxtr,"compare extended dfp","not implemented",
+kdtr,"compare and signal long dfp","not implemented",
+kxtr,"compare and signal extended dfp","not implemented",
+cedtr,"compare exponent long dfp","not implemented",
+cextr,"compare exponent extended dfp","not implemented",
+cdgtr,"convert from fixed long dfp","not implemented",
+cxgtr,"convert from fixed extended dfp","not implemented",
+cdstr,"convert from signed bcd long dfp","not implemented",
+cxstr,"convert from signed bcd extended dfp","not implemented",
+cdutr,"convert from unsigned bcd to long dfp","not implemented",
+cxutr,"convert from unsigned bcd to extended dfp","not implemented",
+cgdtr,"convert from long dfp to fixed","not implemented",
+cgxtr,"convert from extended dfp to fixed","not implemented",
+csdtr,"convert from long dfp to signed bcd","not implemented",
+csxtr,"convert from extended dfp to signed bcd","not implemented",
+cudtr,"convert from long dfp to unsigned bcd","not implemented",
+cuxtr,"convert from extended dfp to unsigned bcd","not implemented",
+ddtr,"divide long dfp","not implemented",
+dxtr,"divide extended dfp","not implemented",
+eedtr,"extract biased exponent from long dfp","not implemented",
+eextr,"extract biased exponent from extended dfp","not implemented",
+esdtr,"extract significance from long dfp","not implemented",
+esxtr,"extract significance from extended dfp","not implemented",
+iedtr,"insert biased exponent long dfp","not implemented",
+iextr,"insert biased exponent extended dfp","not implemented",
+ltdtr,"load and test long dfp","not implemented",
+ltxtr,"load and test extended dfp","not implemented",
+fidtr,"load fp integer long dfp","not implemented",
+fixtr,"load fp integer extended dfp","not implemented",
+lfas,"load fpd and signal","not implemented",
+ldetr,"load lengthened long dfp","not implemented",
+lxdtr,"load lengthened extended dfp","not implemented",
+ledtr,"load rounded long dfp","not implemented",
+ldxtr,"load rounded extended dfp","not implemented",
+mdtr,"multiply long dfp","not implemented",
+mxtr,"multiply extended dfp","not implemented",
+qadtr,"Quantize long dfp","not implemented",
+qaxtr,"Quantize extended dfp","not implemented",
+rrdtr,"Reround long dfp","not implemented",
+rrxtr,"Reround extended dfp","not implemented",
+srnmt,"set rounding mode dfp","not implemented",
+sfasr,"set fpc and signal","not implemented",
+sldt,"shift coefficient left long dfp","not implemented",
+slxt,"shift coefficient left extended dfp","not implemented",
+srdt,"shift coefficient right long dfp","not implemented",
+srxt,"shift coefficient right extended dfp","not implemented",
+sdtr,"subtract long dfp","not implemented",
+sxtr,"subtract extended dfp","not implemented",
+tdcet,"test data class short dfp","not implemented",
+tdcdt,"test data class long dfp","not implemented",
+tdcxt,"test data class extended dfp","not implemented",
+tdget,"test data group short dfp","not implemented",
+tdgdt,"test data group long dfp","not implemented",
+tdgxt,"test data group extended dfp","not implemented",
+pfpo,"perform floating point operation","not implemented",
+ectg,"extract cpu time","not implemented",
+csst,"compare and swap and store","not implemented",
+asi,"add immediate (32<8)",implemented,
+agsi,"add immediate (64<8)",implemented,
+alsi,"add logical with signed immediate (32<8)",implemented,
+algsi,"add logical with signed immediate (64<8)",implemented,
+crl,"compare relative long (32)",implemented,
+cgrl,"compare relative long (64)",implemented,
+cgfrl,"compare relative long (64<32)",implemented,
+crb,"compare and branch (32)",implemented,
+cgrb,"compare and branch (64)",implemented,
+crj,"compare and branch relative (32)",implemented,
+cgrj,"compare and branch relative (64)",implemented,
+cib,"compare immediate and branch (32<8)",implemented,
+cgib,"compare immediate and branch (64<8)",implemented,
+cij,"compare immediate and branch relative (32<8)",implemented,
+cgij,"compare immediate and branch relative (64<8)",implemented,
+crt,"compare and trap","not implemented","issued by gcc"
+cgrt,"compare and trap 64","not implemented","issued by gcc"
+cit,"compare immediate and trap (32<16)","not implemented","issued by gcc"
+cgit,"compare immediate and trap (64<16)","not implemented","issued by gcc"
+cgh,"compare halfword (64<16)",implemented,
+chhsi,"compare halfword immediate (16<16)",implemented,
+chsi,"compare halfword immediate (32<16)",implemented,
+cghsi,"compare halfword immediate (64<16)",implemented,
+chrl,"compare halfword relative long (32<8)",implemented,
+cghrl,"compare halfword relative long (64<8)",implemented,
+clhhsi,"compare logical immediate (16<16)",implemented,
+clfhsi,"compare logical immediate (32<16)",implemented,
+clghsi,"compare logical immediate (64<16)",implemented,
+clrl,"compare logical relative long (32)",implemented,
+clgrl,"compare logical relative long (64)",implemented,
+clgfrl,"compare logical relative long (64<32)",implemented,
+clhrl,"compare logical relative long (32<16)",implemented,
+clghrl,"compare logical relative long (64<16)",implemented,
+clrb,"compare logical and branch (32)",implemented,
+clgrb,"compare logical and branch (64)",implemented,
+clrj,"compare logical and branch relative (32)",implemented,
+clgrj,"compare logical and branch relative (64)",implemented,
+clib,"compare logical immediate and branch (32<8)",implemented,
+clgib,"compare logical immediate and branch (64<8)",implemented,
+clij,"compare logical immediate and branch relative (32<8)",implemented,
+clgij,"compare logical immediate and branch relative (64<8)",implemented,
+clrt,"compare logical and trap (32)","not implemented",
+clgrt,"compare logical and trap (64)","not implemented",
+clfit,"compare logical and trap (32<16)","not implemented",
+clgit,"compare logical and trap (64<16)","not implemented",
+ecag,"extract cache attribute","not implemented","open bugzilla"
+lrl,"load relative long (32)",implemented,
+lgrl,"load relative long (64)",implemented,
+lgfrl,"load relative long (64<32)",implemented,
+laey,"load address extended",implemented,
+ltgf,"load and test (64<32)",implemented,
+lhrl,"load halfword relative long (32<16)",implemented,
+lghrl,"load halfword relative long (64<16)",implemented,
+llgfrl,"load logical relative long (64<32)",implemented,
+llhrl,"load logical halfword relative long (32<16)",implemented,
+llghrl,"load logical halfword relative long (64<16)",implemented,
+mvhhi,"move (16<16)",implemented,
+mvhi,"move (32<16)",implemented,
+mvghi,"move (64<16)",implemented,
+mfy,multiply,implemented,
+mhy,"multiply halfword",implemented,
+msfi,"multiply single immediate (32)",implemented,
+msgfi,"multiply single immediate (64)",implemented,
+pfd,"prefetch data",implemented,
+pfdrl,"prefetch data relative long",implemented,
+rnsbg,"rotate then and selected bits",implemented,
+rxsbg,"rotate then exclusive or selected bits",implemented,
+rosbg,"rotate then or selected bits",implemented,
+risbg,"rotate then insert selected bits",implemented,
+strl,"store relative long (32)",implemented,
+stgrl,"store relative long (64)",implemented,
+sthrl,"store halfword relative long",implemented,
+exrl,"execute relative long",implemented,
+ptf,"perform topology function","not implemented",
+pfmf,"perform frame management function",N/A,"privileged instruction"
+trte,"translate and test extended","not implemented",
+trtre,"translate and test reverse extended","not implemented",
+ecpga,"extract coprocessor-group address",N/A,"privileged instruction"
+ecctr,"extract cpu counter",N/A,"privileged instruction"
+epctr,"extract peripheral counter",N/A,"privileged instruction"
+lcctl,"load cpu-counter-set controls",N/A,"privileged instruction"
+lpctl,"load peripheral-counter-set controls",N/A,"privileged instruction"
+lsctl,"load sampling controls",N/A,"privileged instruction"
+qctri,"query counter information",N/A,"privileged instruction"
+qsi,"query sampling information",N/A,"privileged instruction"
+scctr,"set cpu counter",N/A,"privileged instruction"
+spctr,"set peripheral counter",N/A,"privileged instruction"
+lpp,"load program parameter",N/A,"privileged instruction"
+ahhhr,"add high high",implemented,
+ahhlr,"add high low",implemented,
+aih,"add immediate high",implemented,
+alhhhr,"add logical high high",implemented,
+alhhlr,"add logical high low",implemented,
+alsih,"add logical with signed immediate high with cc",implemented,
+alsihn,"add logical with signed immediate high no cc",implemented,
+brcth,"branch relative on count high","not implemented",
+chhr,"compare high high",implemented,
+chlr,"compare high low",implemented,
+chf,"compare high",implemented,
+cih,"compare immediate high",implemented,
+clhhr,"compare logical high high",implemented,
+clhlr,"compare logical high low",implemented,
+clhf,"compare logical high",implemented,
+clih,"compare logical immediate",implemented,
+lbh,"load byte high",implemented,
+lhh,"load halfword high",implemented,
+lfh,"load high",implemented,
+llch,"load logical character high",implemented,
+llhh,"load logical halfword high",implemented,
+risbhg,"rotate then insert selected bits high","not implemented",
+risblg,"rotate then insert selected bits low","not implemented",
+stch,"store character high",implemented,
+sthh,"store halfword high",implemented,
+stfh,"store high",implemented,
+shhhr,"subtract high high",implemented,
+shhlr,"subtract high low",implemented,
+slhhhr,"subtract logical high high",implemented,
+slhhlr,"subtract logical high low",implemented,
+laa,"load and add 32 bit",implemented,
+laag,"load and add 64 bit",implemented,
+laal,"load and add logical 32 bit",implemented,
+laalg,"load and add logical 64 bit",implemented,
+lan,"load and and 32 bit",implemented,
+lang,"load and and 64 bit",implemented,
+lax,"load and exclusive or 32 bit",implemented,
+laxg,"load and exclusive or 64 bit",implemented,
+lao,"load and or 32 bit",implemented,
+laog,"load and or 64 bit",implemented,
+lpd,"load pair disjoint 32 bit","not implemented",
+lpdg,"load pair disjoint 64 bit","not implemented",
+locr,"load on condition 32 bit",implemented,
+locgr,"load on condition 64 bit",implemented,
+loc,"load on condition 32 bit",implemented,
+locg,"load on condition 64 bit",implemented,
+stoc,"store on condition 32 bit",implemented,
+stocg,"store on condition 64 bit",implemented,
+ark,"add 3 operands 32 bit",implemented,
+agrk,"add 3 operands 64 bit",implemented,
+ahik,"add immediate 3 operands 32 bit",implemented,
+aghik,"add immediate 3 operands 64 bit",implemented,
+alrk,"add logical 3 operands 32 bit",implemented,
+algrk,"add logical 3 operands 64 bit",implemented,
+alhsik,"add logical immediate 3 operands 32 bit",implemented,
+alghsik,"add logical immediate 3 operands 64 bit",implemented,
+nrk,"and 3 operands 32 bit",implemented,
+ngrk,"and 3 operands 64 bit",implemented,
+xrk,"xor 3 operands 32 bit",implemented,
+xgrk,"xor 3 operands 64 bit",implemented,
+ork,"or 3 operands 32 bit",implemented,
+ogrk,"or 3 operands 64 bit",implemented,
+slak,"shift left single 3 operands 32 bit",implemented,
+sllk,"shift left single logical 3 operands 32 bit",implemented,
+srak,"shift right single 3 operands 32 bit",implemented,
+srlk,"shift right single logical 3 operands 32 bit",implemented,
+srk,"subtract 3 operands 32 bit",implemented,
+sgrk,"subtract 3 operands 64 bit",implemented,
+slrk,"subtract logical 3 operands 32 bit",implemented,
+slgrk,"subtract logical 3 operands 64 bit",implemented,
+popcnt,"population count","not implemented",
+rrbm,"reset reference bits multiple",N/A,"privileged instruction"
+cefbra,"convert from 32 bit fixed to short bfp with rounding mode","not implemented","new to z196"
+cdfbra,"convert from 32 bit fixed to long bfp with rounding mode","not implemented","new to z196"
+cxfbra,"convert from 32 bit fixed to extended bfp with rounding mode","not implemented","new to z196"
+cegbra,"convert from 64 bit fixed to short bfp with rounding mode","not implemented","new to z196"
+cdgbra,"convert from 64 bit fixed to long bfp with rounding mode","not implemented","new to z196"
+cxgbra,"convert from 64 bit fixed to extended bfp with rounding mode","not implemented","new to z196"
+celfbr,"convert from 32 bit logical fixed to short bfp with rounding mode","not implemented","open bugzilla"
+cdlfbr,"convert from 32 bit logical fixed to long bfp with rounding mode","not implemented","open bugzilla"
+cxlfbr,"convert from 32 bit logical fixed to extended bfp with rounding mode","not implemented","open bugzilla"
+celgbr,"convert from 64 bit logical fixed to short bfp with rounding mode","not implemented","open bugzilla"
+cdlgbr,"convert from 64 bit logical fixed to long bfp with rounding mode","not implemented","open bugzilla"
+cxlgbr,"convert from 64 bit logical fixed to extended bfp with rounding mode","not implemented","open bugzilla"
+cfebra,"convert to 32 bit fixed from short bfp with rounding mode","not implemented","new to z196"
+cfdbra,"convert to 32 bit fixed from long bfp with rounding mode","not implemented","new to z196"
+cfxbra,"convert to 32 bit fixed from extended bfp with rounding mode","not implemented","new to z196"
+cgebra,"convert to 64 bit fixed from short bfp with rounding mode","not implemented","new to z196"
+cgdbra,"convert to 64 bit fixed from long bfp with rounding mode","not implemented","new to z196"
+cgxbra,"convert to 64 bit fixed from extended bfp with rounding mode","not implemented","new to z196"
+clfebr,"convert to 32 bit fixed logical from short bfp with rounding mode","not implemented","open bugzilla"
+clfdbr,"convert to 32 bit fixed logical from long bfp with rounding mode","not implemented","open bugzilla"
+clfxbr,"convert to 32 bit fixed logical from extended bfp with rounding mode","not implemented","open bugzilla"
+clgebr,"convert to 64 bit fixed logical from short bfp with rounding mode","not implemented","open bugzilla"
+clgdbr,"convert to 64 bit fixed logical from long bfp with rounding mode","not implemented","open bugzilla"
+clgxbr,"convert to 64 bit fixed logical from extended bfp with rounding mode","not implemented","open bugzilla"
+fiebra,"load fp integer short bfp with rounding mode","not implemented","new to z196"
+fidbra,"load fp integer long bfp with rounding mode","not implemented","new to z196"
+fixbra,"load fp integer extended bfp with rounding mode","not implemented","new to z196"
+ledbra,"load rounded short/long bfp to short/long bfp with rounding mode","not implemented","new to z196"
+ldxbra,"load rounded long/extended bfp to long/extended bfp with rounding mode","not implemented","new to z196"
+lexbra,"load rounded short/extended bfp to short/extended bfp with rounding mode","not implemented","new to z196"
+adtra,"add long dfp with rounding mode","not implemented","new to z196"
+axtra,"add extended dfp with rounding mode","not implemented","new to z196"
+cdgtra,"convert from fixed long dfp with rounding mode","not implemented","new to z196"
+cdftr,"convert from 32 bit fixed to long dfp with rounding mode","not implemented",
+cxftr,"convert from 32 bit fixed to extended dfp with rounding mode","not implemented",
+cxgtra,"convert from fixed extended dfp with rounding mode","not implemented","new to z196"
+cdlgtr,"convert from 64 bit fixed logical to long dfp with rounding mode","not implemented",
+cxlgtr,"convert from 64 bit fixed logical to extended dfp with rounding mode","not implemented",
+cdlftr,"convert from 32 bit fixed logical to long dfp with rounding mode","not implemented",
+cxlftr,"convert from 32 bit fixed logical to extended dfp with rounding mode","not implemented",
+cgdtra,"convert to 64 bit fixed from long dfp with rounding mode","not implemented","new to z196"
+cgxtra,"convert to 64 bit fixed from extended dfp with rounding mode","not implemented","new to z196"
+cfdtr,"convert to 32 bit fixed from long dfp source with rounding mode","not implemented",
+cfxtr,"convert to 32 bit fixed from extended dfp source with rounding mode","not implemented",
+clgdtr,"convert to 64 bit fixed logical from long dfp with rounding mode","not implemented",
+clgxtr,"convert to 64 bit fixed logical from extended dfp with rounding mode","not implemented",
+clfdtr,"convert to 32 bit fixed logical from long dfp with rounding mode","not implemented",
+clfxtr,"convert to 32 bit fixed logical from extended dfp with rounding mode","not implemented",
+ddtra,"divide long dfp with rounding mode","not implemented","new to z196"
+dxtra,"divide extended dfp with rounding mode","not implemented","new to z196"
+mdtra,"multiply long dfp with rounding mode","not implemented","new to z196"
+mxtra,"multiply extended dfp with rounding mode","not implemented","new to z196"
+sdtra,"subtract long dfp with rounding mode","not implemented","new to z196"
+sxtra,"subtract extended dfp with rounding mode","not implemented","new to z196"
+srnmb,"set 3 bit bfp rounding mode","not implemented",

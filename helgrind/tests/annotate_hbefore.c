@@ -235,10 +235,18 @@ int main ( void )
 int shared_var = 0;  // is not raced upon
 
 
-void delay500ms ( void )
+void delayXms ( int i )
 {
-   struct timespec ts = { 0, 500 * 1000 * 1000 };
-   nanosleep(&ts, NULL);
+   struct timespec ts = { 0, 1 * 1000 * 1000 };
+   // We do the sleep in small pieces to have scheduling
+   // events ensuring a fair switch between threads, even
+   // without --fair-sched=yes. This is a.o. needed for
+   // running this test under an outer helgrind or an outer
+   // sgcheck.
+   while (i > 0) {
+      nanosleep(&ts, NULL);
+      i--;
+   }
 }
 
 void do_wait ( UWord* w )
@@ -246,7 +254,7 @@ void do_wait ( UWord* w )
   UWord w0 = *w;
   UWord volatile * wV = w;
   while (*wV == w0)
-    ;
+    delayXms(1); // small sleeps, ensuring context switches
   ANNOTATE_HAPPENS_AFTER(w);
 }
 
@@ -261,11 +269,11 @@ void do_signal ( UWord* w )
 void* thread_fn1 ( void* arg )
 {
   UWord* w = (UWord*)arg;
-  delay500ms();    // ensure t2 gets to its wait first
+  delayXms(500);    // ensure t2 gets to its wait first
   shared_var = 1;  // first access
   do_signal(w);    // cause h-b edge to second thread
 
-  delay500ms();
+  delayXms(500);
   return NULL;
 }
 
@@ -275,7 +283,7 @@ void* thread_fn2 ( void* arg )
   do_wait(w);      // wait for h-b edge from first thread
   shared_var = 2;  // second access
 
-  delay500ms();
+  delayXms(500);
   return NULL;
 }
 

@@ -33,7 +33,7 @@ cdr,"compare (long)","not implemented",
 cds,"compare double and swap","not implemented","open bugzilla"
 ce,"compare (short)","not implemented",
 cer,"compare (short)","not implemented",
-cfc,"compare and form codeword","not implemented","issued by gcc"
+cfc,"compare and form codeword","not implemented",
 ch,"compare halfword",implemented,
 cl,"compare logical",implemented,
 clc,"compare logical",implemented,
@@ -181,7 +181,7 @@ sll,"shift left single logical",implemented,
 slr,"subtract logical",implemented,
 sp,"subtract decimal","not implemented",
 spka,"set PSW key from address",N/A,"privileged instruction"
-spm,"set program mask","not implemented","issued by gcc"
+spm,"set program mask","not implemented",
 spt,"set CPU timer",N/A,"privileged instruction"
 spx,"set prefix",N/A,"privileged instruction"
 sqdr,"square root (long)","not implemented",
@@ -231,11 +231,11 @@ tpi,"test pending interruption",N/A,"privileged instruction"
 tprot,"test protection",N/A,"privileged instruction"
 tr,translate,implemented,
 trace,trace,N/A,"privileged instruction"
-trt,"translate and test","not implemented","issued by gcc"
+trt,"translate and test","not implemented",
 ts,"test and set","won't do","deprecated instruction"
 tsch,"test subchannel",N/A,"privileged instruction"
 unpk,unpack,"not implemented",
-upt,"update tree","not implemented","issued by gcc"
+upt,"update tree","not implemented",
 x,"exclusive OR",implemented,
 xc,"exclusive OR",implemented,
 xi,"exclusive OR",implemented,
@@ -347,7 +347,7 @@ tceb,"test data class short bfp",implemented,
 siga,"signal adapter","not implemented",
 cuutf,"convert unicode to utf-8","not implemented",
 cutfu,"convert utf-8 to unicode","not implemented",
-plo,"perform locked operation","not implemented","issued by gcc"
+plo,"perform locked operation","not implemented",
 bsa,"branch and set authority",N/A,"privileged instruction"
 rp,"resume program",N/A,"privileged instruction"
 sckpf,"set clock programmable field",N/A,"privileged instruction"

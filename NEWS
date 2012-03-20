@@ -56,7 +56,7 @@ https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
 247386  make perf does not run all performance tests
-270006 -Valgrind scheduler unfair 
+270006  Valgrind scheduler unfair 
 270796  s390x: Removed broken support for the TS insn
 271438  Fix configure for proper SSE4.2 detection
 273114  s390x: Support TR, TRE, TROO, TROT, TRTO, and TRTT instructions
@@ -76,6 +76,7 @@ where XXXXXX is the bug number as listed below.
 293088  Add some VEX sanity checks for ppc64 unhandled instructions
 294055  regtest none/tests/shell fails when locale is not set to C
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
+295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 
 

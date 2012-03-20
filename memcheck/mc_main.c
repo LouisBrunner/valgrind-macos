@@ -5139,8 +5139,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
                (address+i, (Addr) &vbits, 1, 
                 False, /* get them */
                 False  /* is client request */ ); 
+            /* we are before the first character on next line, print a \n. */
             if ((i % 32) == 0 && i != 0)
                VG_(gdb_printf) ("\n");
+            /* we are before the next block of 4 starts, print a space. */
             else if ((i % 4) == 0 && i != 0)
                VG_(gdb_printf) (" ");
             if (res == 1) {
@@ -5151,8 +5153,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
                VG_(gdb_printf) ("__");
             }
          }
-         if ((i % 80) != 0)
-            VG_(gdb_printf) ("\n");
+         VG_(gdb_printf) ("\n");
          if (unaddressable) {
             VG_(gdb_printf)
                ("Address %p len %ld has %d bytes unaddressable\n",

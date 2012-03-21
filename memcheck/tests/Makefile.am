@@ -191,6 +191,7 @@ EXTRA_DIST = \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
+	    test-plo-no.stderr.exp-s390x-mvc \
 	trivialleak.stderr.exp trivialleak.vgtest trivialleak.stderr.exp2 \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \

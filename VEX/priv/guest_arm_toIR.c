@@ -16365,10 +16365,10 @@ DisResult disInstr_THUMB_WRK (
       UInt how  = INSN1(5,4);
 
       Bool valid = !isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM);
-      /* but allow "add.w reg, sp, reg   w/ no shift
+      /* but allow "add.w reg, sp, reg, lsl #N for N=0,1,2 or 3
          (T3) "ADD (SP plus register) */
       if (!valid && INSN0(8,5) == BITS4(1,0,0,0) // add
-          && rD != 15 && rN == 13 && imm5 == 0 && how == 0) {
+          && rD != 15 && rN == 13 && imm5 <= 3 && how == 0) {
          valid = True;
       }
       /* also allow "sub.w reg, sp, reg   w/ no shift

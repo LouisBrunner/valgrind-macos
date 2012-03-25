@@ -66,7 +66,7 @@ default.supp: $(DEFAULT_SUPP_FILES)
 	cat $(DEFAULT_SUPP_FILES) >> default.supp
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
-## Ensure make exits with error if PERL fails or check_makẹfile_consistency fails.
+## Ensure make exits with error if PERL fails or check_makefile_consistency fails.
 regtest: check
 	gdbserver_tests/make_local_links $(GDB)
 	if @PERL@ tests/vg_regtest gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \

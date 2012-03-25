@@ -7284,7 +7284,7 @@ emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
       break;
 
    default:
-      vpanic("s390_insn_emit");
+      vpanic("emit_S390Instr");
    }
 
    vassert(end - buf <= nbuf);

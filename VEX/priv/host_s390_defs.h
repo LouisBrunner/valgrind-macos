@@ -459,8 +459,6 @@ s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t,
 s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_gzero(UChar size, UInt offset);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
-UInt       s390_insn_emit(UChar *buf, Int nbuf, const s390_insn *insn,
-                          void *dispatch);
 
 const HChar *s390_insn_as_string(const s390_insn *);
 

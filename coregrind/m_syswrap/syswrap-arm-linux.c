@@ -228,6 +228,7 @@ static SysRes do_clone ( ThreadId ptid,
       ctst->client_stack_szB  = 0;
    }
 
+   vg_assert(VG_(owns_BigLock_LL)(ptid));
    VG_TRACK ( pre_thread_ll_create, ptid, ctid );
 
    if (flags & VKI_CLONE_SETTLS) {

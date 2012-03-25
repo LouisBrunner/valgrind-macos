@@ -326,6 +326,12 @@ void VG_(release_BigLock_LL) ( HChar* who )
    ML_(release_sched_lock)(the_BigLock);
 }
 
+Bool VG_(owns_BigLock_LL) ( ThreadId tid )
+{
+   return (ML_(get_sched_lock_owner)(the_BigLock)
+           == VG_(threads)[tid].os_state.lwpid);
+}
+
 
 /* Clear out the ThreadState and release the semaphore. Leaves the
    ThreadState in VgTs_Zombie state, so that it doesn't get

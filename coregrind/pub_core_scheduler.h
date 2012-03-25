@@ -78,6 +78,9 @@ extern void VG_(release_BigLock) ( ThreadId tid,
 /* Matching function to acquire_BigLock_LL. */
 extern void VG_(release_BigLock_LL) ( HChar* who );
 
+/* Whether the specified thread owns the big lock. */
+extern Bool VG_(owns_BigLock_LL) ( ThreadId tid );
+
 /* Yield the CPU for a while.  Drops/acquires the lock using the
    normal (non _LL) functions. */
 extern void VG_(vg_yield)(void);

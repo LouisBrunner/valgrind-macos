@@ -6483,6 +6483,7 @@ POST(bsdthread_create)
    // should be in pthread_hijack instead, just before the call to
    // start_thread_NORETURN(), call_on_new_stack_0_1(), but we don't have the
    // parent tid value there...
+   vg_assert(VG_(owns_BigLock_LL)(ptid));
    VG_TRACK ( pre_thread_ll_create, tid, tst->tid );
 }
 

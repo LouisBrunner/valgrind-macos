@@ -1027,6 +1027,14 @@ static Bool isZeroU32 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U32 == 0);
 }
 
+/* Is this literally IRExpr_Const(IRConst_U32(1---1)) ? */
+static Bool isOnesU32 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_U32
+                  && e->Iex.Const.con->Ico.U32 == 0xFFFFFFFF );
+}
+
 /* Is this literally IRExpr_Const(IRConst_U64(0)) ? */
 static Bool isZeroU64 ( IRExpr* e )
 {
@@ -1039,7 +1047,6 @@ static Bool isZeroU64 ( IRExpr* e )
 static Bool isZeroU ( IRExpr* e )
 {
    if (e->tag != Iex_Const) return False;
-
    switch (e->Iex.Const.con->tag) {
       case Ico_U1:    return toBool( e->Iex.Const.con->Ico.U1  == 0);
       case Ico_U8:    return toBool( e->Iex.Const.con->Ico.U8  == 0);
@@ -1047,6 +1054,21 @@ static Bool isZeroU ( IRExpr* e )
       case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32 == 0);
       case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64 == 0);
       default: vpanic("isZeroU");
+   }
+}
+
+/* Is this an integer constant with value 1---1b ? */
+static Bool isOnesU ( IRExpr* e )
+{
+   if (e->tag != Iex_Const) return False;
+   switch (e->Iex.Const.con->tag) {
+      case Ico_U8:    return toBool( e->Iex.Const.con->Ico.U8  == 0xFF);
+      case Ico_U16:   return toBool( e->Iex.Const.con->Ico.U16 == 0xFFFF);
+      case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32
+                                     == 0xFFFFFFFF);
+      case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64
+                                     == 0xFFFFFFFFFFFFFFFFULL);
+      default: ppIRExpr(e); vpanic("isOnesU");
    }
 }
 
@@ -1080,11 +1102,19 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
    switch (op) {
       case Iop_CmpEQ64:
          return IRExpr_Const(IRConst_U1(toBool(1)));
+      case Iop_Or8:
+         return IRExpr_Const(IRConst_U8(0xFF));
+      case Iop_Or16:
+         return IRExpr_Const(IRConst_U16(0xFFFF));
+      case Iop_Or32:
+         return IRExpr_Const(IRConst_U32(0xFFFFFFFF));
       case Iop_CmpEQ8x8:
+      case Iop_Or64:
          return IRExpr_Const(IRConst_U64(0xFFFFFFFFFFFFFFFFULL));
       case Iop_CmpEQ8x16:
          return IRExpr_Const(IRConst_V128(0xFFFF));
       default:
+         ppIROp(op);
          vpanic("mkOnesOfPrimopResultType: bad primop");
    }
 }
@@ -1730,17 +1760,23 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             case Iop_Or32:
             case Iop_Or64:
             case Iop_Max32U:
-               /* Or8/Or16/Or32/Max32U(x,0) ==> x */
+               /* Or8/Or16/Or32/Or64/Max32U(x,0) ==> x */
                if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* Or8/Or16/Or32/Max32U(0,x) ==> x */
+               /* Or8/Or16/Or32/Or64/Max32U(0,x) ==> x */
                if (isZeroU(e->Iex.Binop.arg1)) {
                   e2 = e->Iex.Binop.arg2;
                   break;
                }
-               /* Or8/Or16/Or32/Max32U(t,t) ==> t, for some IRTemp t */
+               /* Or8/Or16/Or32/Or64/Max32U(x,1---1b) ==> 1---1b */
+               /* Or8/Or16/Or32/Or64/Max32U(1---1b,x) ==> 1---1b */
+               if (isOnesU(e->Iex.Binop.arg1) || isOnesU(e->Iex.Binop.arg2)) {
+                  e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               /* Or8/Or16/Or32/Or64/Max32U(t,t) ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
@@ -1797,8 +1833,7 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 
             case Iop_And32:
                /* And32(x,0xFFFFFFFF) ==> x */
-               if (e->Iex.Binop.arg2->tag == Iex_Const
-                   && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0xFFFFFFFF) {
+               if (isOnesU32(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }

@@ -186,7 +186,7 @@ check_PROGRAMS = \
 	rcrl readline1 \
 	require-text-symbol \
 	res_search resolv \
-	rlimit_nofile rlimit64_nofile selfrun sem semlimit sha1_test \
+	rlimit_nofile selfrun sem semlimit sha1_test \
 	shortpush shorts stackgrowth sigstackgrowth \
 	syscall-restart1 syscall-restart2 \
 	syslog \
@@ -217,6 +217,10 @@ if ! VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
    check_PROGRAMS += \
 	manythreads \
 	thread-exits
+endif
+# This doesn't appear to be compilable on Darwin.
+if ! VGCONF_OS_IS_DARWIN
+   check_PROGRAMS += rlimit64_nofile 
 endif
 
 

@@ -127,12 +127,14 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    sp_top_of_frame &= ~0xf;
    esp = sp_top_of_frame - sizeof(struct hacky_sigframe);
+   esp -= 4; /* ELF ABI says that esp+4 must be 16 aligned on
+                entry to a function. */
 
    tst = VG_(get_ThreadState)(tid);
    if (!extend(tst, esp, sp_top_of_frame - esp))
       return;
 
-   vg_assert(VG_IS_16_ALIGNED(esp));
+   vg_assert(VG_IS_16_ALIGNED(esp+4));
 
    frame = (struct hacky_sigframe *) esp;
 
@@ -182,7 +184,8 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_create (thread %d): next EIP=%#lx, next ESP=%#lx",
+                   "sigframe_create (thread %d): "
+                   "next EIP=%#lx, next ESP=%#lx\n",
                    tid, (Addr)handler, (Addr)frame );
 }
 
@@ -203,11 +206,14 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    esp = VG_(get_SP)(tid);
 
    /* why -4 ? because the signal handler's return will have popped
-      the return address of the stack; and the return address is the
+      the return address off the stack; and the return address is the
       lowest-addressed element of hacky_sigframe. */
    frame = (struct hacky_sigframe*)(esp - 4);
    vg_assert(frame->magicPI == 0x31415927);
-   vg_assert(VG_IS_16_ALIGNED(frame));
+
+   /* This +8 is because of the -4 referred to in the ELF ABI comment
+      in VG_(sigframe_create) just above. */
+   vg_assert(VG_IS_16_ALIGNED((Addr)frame + 4));
 
    /* restore the entire guest state, and shadows, from the
       frame.  Note, as per comments above, this is a kludge - should
@@ -221,7 +227,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_destroy (thread %d): valid magic; next EIP=%#x",
+                   "sigframe_destroy (thread %d): "
+                   "valid magic; next EIP=%#x\n",
                    tid, tst->arch.vex.guest_EIP);
 
    VG_TRACK( die_mem_stack_signal, 

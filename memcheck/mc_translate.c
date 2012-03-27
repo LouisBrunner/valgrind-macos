@@ -188,7 +188,13 @@ typedef
 
       /* MODIFIED: indicates whether "bogus" literals have so far been
          found.  Starts off False, and may change to True. */
-      Bool    bogusLiterals;
+      Bool bogusLiterals;
+
+      /* READONLY: indicates whether we should use expensive
+         interpretations of integer adds, since unfortunately LLVM
+         uses them to do ORs in some circumstances.  Defaulted to True
+         on MacOS and False everywhere else. */
+      Bool useLLVMworkarounds;
 
       /* READONLY: the guest layout.  This indicates which parts of
          the guest state should be regarded as 'always defined'. */
@@ -3130,7 +3136,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_Add32:
-         if (mce->bogusLiterals)
+         if (mce->bogusLiterals || mce->useLLVMworkarounds)
             return expensiveAddSub(mce,True,Ity_I32, 
                                    vatom1,vatom2, atom1,atom2);
          else
@@ -3153,7 +3159,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return doCmpORD(mce, op, vatom1,vatom2, atom1,atom2);
 
       case Iop_Add64:
-         if (mce->bogusLiterals)
+         if (mce->bogusLiterals || mce->useLLVMworkarounds)
             return expensiveAddSub(mce,True,Ity_I64, 
                                    vatom1,vatom2, atom1,atom2);
          else
@@ -4907,6 +4913,20 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    mce.layout         = layout;
    mce.hWordTy        = hWordTy;
    mce.bogusLiterals  = False;
+
+   /* Do expensive interpretation for Iop_Add32 and Iop_Add64 on
+      Darwin.  10.7 is mostly built with LLVM, which uses these for
+      bitfield inserts, and we get a lot of false errors if the cheap
+      interpretation is used, alas.  Could solve this much better if
+      we knew which of such adds came from x86/amd64 LEA instructions,
+      since these are the only ones really needing the expensive
+      interpretation, but that would require some way to tag them in
+      the _toIR.c front ends, which is a lot of faffing around.  So
+      for now just use the slow and blunt-instrument solution. */
+   mce.useLLVMworkarounds = False;
+#  if defined(VGO_darwin)
+   mce.useLLVMworkarounds = True;
+#  endif
 
    mce.tmpMap = VG_(newXA)( VG_(malloc), "mc.MC_(instrument).1", VG_(free),
                             sizeof(TempMapEnt));

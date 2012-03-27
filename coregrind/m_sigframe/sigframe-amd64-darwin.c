@@ -124,12 +124,14 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    sp_top_of_frame &= ~0xfUL;
    rsp = sp_top_of_frame - sizeof(struct hacky_sigframe);
+   rsp -= 8; /* ELF ABI says that rsp+8 must be 16 aligned on
+                entry to a function. */
 
    tst = VG_(get_ThreadState)(tid);
    if (!extend(tst, rsp, sp_top_of_frame - rsp))
       return;
 
-   vg_assert(VG_IS_16_ALIGNED(rsp));
+   vg_assert(VG_IS_16_ALIGNED(rsp+8));
 
    frame = (struct hacky_sigframe *) rsp;
 
@@ -203,11 +205,14 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    rsp = VG_(get_SP)(tid);
 
    /* why -8 ? because the signal handler's return will have popped
-      the return address of the stack; and the return address is the
+      the return address off the stack; and the return address is the
       lowest-addressed element of hacky_sigframe. */
    frame = (struct hacky_sigframe*)(rsp - 8);
    vg_assert(frame->magicPI == 0x31415927);
-   vg_assert(VG_IS_16_ALIGNED(frame));
+
+   /* This +8 is because of the -8 referred to in the ELF ABI comment
+      in VG_(sigframe_create) just above. */
+   vg_assert(VG_IS_16_ALIGNED((Addr)frame + 8));
 
    /* restore the entire guest state, and shadows, from the
       frame.  Note, as per comments above, this is a kludge - should

@@ -1,4 +1,4 @@
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -46,7 +46,7 @@ __attribute__((noinline)) void foo ( int x )
 int
 main(int argc, char *argv[])
 {
-    char *buf = memalign(8, 5);
+    char *buf = memalign16(5);
     buf[0] = 'a';
     buf[1] = 'b';
     buf[2] = 'c';

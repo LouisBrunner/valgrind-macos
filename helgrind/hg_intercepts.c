@@ -2450,8 +2450,14 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
     http://bugs.kde.org/show_bug.cgi?id=139776
  */
  MEMCPY(NONE, _intel_fast_memcpy)
+
 #elif defined(VGO_darwin)
- MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+# if DARWIN_VERS <= DARWIN_10_6
+  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+# endif
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
+
 #endif
 
 

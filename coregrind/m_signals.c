@@ -449,19 +449,57 @@ typedef struct SigQueue {
 #elif defined(VGP_amd64_darwin)
 
    static inline Addr VG_UCONTEXT_INSTR_PTR( void* ucV ) {
-      I_die_here;
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      return ss->__rip;
    }
    static inline Addr VG_UCONTEXT_STACK_PTR( void* ucV ) {
-      I_die_here;
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      return ss->__rsp;
    }
    static inline SysRes VG_UCONTEXT_SYSCALL_SYSRES( void* ucV,
                                                     UWord scclass ) {
-      I_die_here;
+      /* This is copied from the x86-darwin case.  I'm not sure if it
+	 is correct. */
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      /* duplicates logic in m_syswrap.getSyscallStatusFromGuestState */
+      ULong carry = 1 & ss->__rflags;
+      ULong err = 0;
+      ULong wLO = 0;
+      ULong wHI = 0;
+      switch (scclass) {
+         case VG_DARWIN_SYSCALL_CLASS_UNIX:
+            err = carry;
+            wLO = ss->__rax;
+            wHI = ss->__rdx;
+            break;
+         case VG_DARWIN_SYSCALL_CLASS_MACH:
+            wLO = ss->__rax;
+            break;
+         case VG_DARWIN_SYSCALL_CLASS_MDEP:
+            wLO = ss->__rax;
+            break;
+         default: 
+            vg_assert(0);
+            break;
+      }
+      return VG_(mk_SysRes_amd64_darwin)( scclass, err ? True : False, 
+					  wHI, wLO );
    }
    static inline
    void VG_UCONTEXT_TO_UnwindStartRegs( UnwindStartRegs* srP,
                                         void* ucV ) {
-      I_die_here;
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      srP->r_pc = (ULong)(ss->__rip);
+      srP->r_sp = (ULong)(ss->__rsp);
+      srP->misc.AMD64.r_rbp = (ULong)(ss->__rbp);
    }
 
 #elif defined(VGP_s390x_linux)

@@ -34,9 +34,7 @@
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
-#include "libvex_guest_s390x.h"      /* VexGuestS390XState */
 #include "libvex.h"                  /* needed for bb_to_IR.h */
-#include "libvex_guest_offsets.h"    /* OFFSET_s390x_SYSNO */
 #include "libvex_s390x_common.h"
 #include "main_util.h"               /* vassert */
 #include "main_globals.h"            /* vex_traceflags */
@@ -84,6 +82,7 @@ typedef enum {
    S390_DECODE_UNKNOWN_SPECIAL_INSN,
    S390_DECODE_ERROR
 } s390_decode_t;
+
 
 /*------------------------------------------------------------*/
 /*--- Helpers for constructing IR.                         ---*/
@@ -338,10 +337,11 @@ static void
 system_call(IRExpr *sysno)
 {
    /* Store the system call number in the pseudo register. */
-   stmt(IRStmt_Put(OFFSET_s390x_SYSNO, sysno));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_SYSNO), sysno));
 
    /* Store the current IA into guest_IP_AT_SYSCALL. libvex_ir.h says so. */
-   stmt(IRStmt_Put(OFFSET_s390x_IP_AT_SYSCALL, mkU64(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IP_AT_SYSCALL),
+                   mkU64(guest_IA_curr_instr)));
 
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
@@ -393,12 +393,6 @@ put_fpr_pair(UInt archreg, IRExpr *expr)
 }
 
 
-/* Flags thunk offsets */
-#define S390X_GUEST_OFFSET_CC_OP    S390X_GUEST_OFFSET(guest_CC_OP)
-#define S390X_GUEST_OFFSET_CC_DEP1  S390X_GUEST_OFFSET(guest_CC_DEP1)
-#define S390X_GUEST_OFFSET_CC_DEP2  S390X_GUEST_OFFSET(guest_CC_DEP2)
-#define S390X_GUEST_OFFSET_CC_NDEP  S390X_GUEST_OFFSET(guest_CC_NDEP)
-
 /*------------------------------------------------------------*/
 /*--- Build the flags thunk.                               ---*/
 /*------------------------------------------------------------*/
@@ -410,10 +404,10 @@ s390_cc_thunk_fill(IRExpr *op, IRExpr *dep1, IRExpr *dep2, IRExpr *ndep)
 {
    UInt op_off, dep1_off, dep2_off, ndep_off;
 
-   op_off   = S390X_GUEST_OFFSET_CC_OP;
-   dep1_off = S390X_GUEST_OFFSET_CC_DEP1;
-   dep2_off = S390X_GUEST_OFFSET_CC_DEP2;
-   ndep_off = S390X_GUEST_OFFSET_CC_NDEP;
+   op_off   = S390X_GUEST_OFFSET(guest_CC_OP);
+   dep1_off = S390X_GUEST_OFFSET(guest_CC_DEP1);
+   dep2_off = S390X_GUEST_OFFSET(guest_CC_DEP2);
+   ndep_off = S390X_GUEST_OFFSET(guest_CC_NDEP);
 
    stmt(IRStmt_Put(op_off,   op));
    stmt(IRStmt_Put(dep1_off, dep1));
@@ -583,10 +577,10 @@ s390_call_calculate_cc(void)
 {
    IRExpr **args, *call, *op, *dep1, *dep2, *ndep;
 
-   op   = IRExpr_Get(S390X_GUEST_OFFSET_CC_OP,   Ity_I64);
-   dep1 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP1, Ity_I64);
-   dep2 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP2, Ity_I64);
-   ndep = IRExpr_Get(S390X_GUEST_OFFSET_CC_NDEP, Ity_I64);
+   op   = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_OP),   Ity_I64);
+   dep1 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP1), Ity_I64);
+   dep2 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP2), Ity_I64);
+   ndep = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_NDEP), Ity_I64);
 
    args = mkIRExprVec_4(op, dep1, dep2, ndep);
    call = mkIRExprCCall(Ity_I32, 0 /*regparm*/,
@@ -629,10 +623,10 @@ s390_call_calculate_cond(UInt m)
    IRExpr **args, *call, *op, *dep1, *dep2, *ndep, *mask;
 
    mask = mkU64(m);
-   op   = IRExpr_Get(S390X_GUEST_OFFSET_CC_OP,   Ity_I64);
-   dep1 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP1, Ity_I64);
-   dep2 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP2, Ity_I64);
-   ndep = IRExpr_Get(S390X_GUEST_OFFSET_CC_NDEP, Ity_I64);
+   op   = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_OP),   Ity_I64);
+   dep1 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP1), Ity_I64);
+   dep2 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP2), Ity_I64);
+   ndep = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_NDEP), Ity_I64);
 
    args = mkIRExprVec_5(mask, op, dep1, dep2, ndep);
    call = mkIRExprCCall(Ity_I32, 0 /*regparm*/,
@@ -661,8 +655,6 @@ s390_call_calculate_cond(UInt m)
         s390_call_calculate_icc(op,dep1,dep2,True)
 
 
-#define OFFB_TISTART   S390X_GUEST_OFFSET(guest_TISTART)
-#define OFFB_TILEN     S390X_GUEST_OFFSET(guest_TILEN)
 
 
 /*------------------------------------------------------------*/
@@ -8874,8 +8866,9 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    stmt(IRStmt_Dirty(d));
 
    /* and restart */
-   stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_IA_curr_instr)));
-   stmt(IRStmt_Put(OFFB_TILEN, mkU64(4)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+                   mkU64(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
    stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
         IRConst_U64(guest_IA_curr_instr)));
 
@@ -8904,8 +8897,9 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
                              mkIRExprVec_1(load(Ity_I64, mkexpr(addr2))));
       stmt(IRStmt_Dirty(d));
       /* and restart */
-      stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(OFFB_TILEN, mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+                      mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
       stmt(IRStmt_Exit(IRExpr_Const(IRConst_U1(True)), Ijk_TInval,
            IRConst_U64(guest_IA_curr_instr)));
       /* we know that this will be invalidated */
@@ -8962,8 +8956,8 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Dirty(d));
 
       /* and restart */
-      stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(OFFB_TILEN, mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
       stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
            IRConst_U64(guest_IA_curr_instr)));
 
@@ -13571,8 +13565,8 @@ disInstr_S390_WRK(UChar *insn)
          IA should be up-to-date since it made so at the start of each
          insn, but nevertheless be paranoid and update it again right
          now. */
-      addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                                     mkaddr_expr(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
+                      mkaddr_expr(guest_IA_curr_instr)));
 
       irsb->next = mkaddr_expr(guest_IA_next_instr);
       irsb->jumpkind = Ijk_NoDecode;
@@ -13617,8 +13611,8 @@ disInstr_S390(IRSB        *irsb_IN,
    resteer_data = callback_opaque;
 
    /* Always update the guest IA. See comment in s390_isel_stmt for Ist_Put. */
-   addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                                  mkaddr_expr(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
+                   mkaddr_expr(guest_IA_curr_instr)));
 
    return disInstr_S390_WRK(guest_code + delta);
 }

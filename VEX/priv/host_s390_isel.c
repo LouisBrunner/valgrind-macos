@@ -34,7 +34,6 @@
 #include "libvex_ir.h"
 #include "libvex.h"
 #include "libvex_s390x_common.h"
-#include "libvex_guest_offsets.h"
 
 #include "main_util.h"
 #include "main_globals.h"
@@ -122,20 +121,20 @@ static Int
 get_guest_reg(Int offset)
 {
    switch (offset) {
-   case OFFSET_s390x_IA:        return GUEST_IA;
-   case OFFSET_s390x_CC_OP:     return GUEST_CC_OP;
-   case OFFSET_s390x_CC_DEP1:   return GUEST_CC_DEP1;
-   case OFFSET_s390x_CC_DEP2:   return GUEST_CC_DEP2;
-   case OFFSET_s390x_CC_NDEP:   return GUEST_CC_NDEP;
-   case OFFSET_s390x_SYSNO:     return GUEST_SYSNO;
+   case S390X_GUEST_OFFSET(guest_IA):        return GUEST_IA;
+   case S390X_GUEST_OFFSET(guest_CC_OP):     return GUEST_CC_OP;
+   case S390X_GUEST_OFFSET(guest_CC_DEP1):   return GUEST_CC_DEP1;
+   case S390X_GUEST_OFFSET(guest_CC_DEP2):   return GUEST_CC_DEP2;
+   case S390X_GUEST_OFFSET(guest_CC_NDEP):   return GUEST_CC_NDEP;
+   case S390X_GUEST_OFFSET(guest_SYSNO):     return GUEST_SYSNO;
 
       /* Also make sure there is never a partial write to one of
          these registers. That would complicate matters. */
-   case OFFSET_s390x_IA+1      ... OFFSET_s390x_IA+7:
-   case OFFSET_s390x_CC_OP+1   ... OFFSET_s390x_CC_OP+7:
-   case OFFSET_s390x_CC_DEP1+1 ... OFFSET_s390x_CC_DEP1+7:
-   case OFFSET_s390x_CC_DEP2+1 ... OFFSET_s390x_CC_DEP2+7:
-   case OFFSET_s390x_CC_NDEP+1 ... OFFSET_s390x_CC_NDEP+7:
+   case S390X_GUEST_OFFSET(guest_IA)+1      ... S390X_GUEST_OFFSET(guest_IA)+7:
+   case S390X_GUEST_OFFSET(guest_CC_OP)+1   ... S390X_GUEST_OFFSET(guest_CC_OP)+7:
+   case S390X_GUEST_OFFSET(guest_CC_DEP1)+1 ... S390X_GUEST_OFFSET(guest_CC_DEP1)+7:
+   case S390X_GUEST_OFFSET(guest_CC_DEP2)+1 ... S390X_GUEST_OFFSET(guest_CC_DEP2)+7:
+   case S390X_GUEST_OFFSET(guest_CC_NDEP)+1 ... S390X_GUEST_OFFSET(guest_CC_NDEP)+7:
       vassert("partial update of this guest state register is not allowed");
       break;
 

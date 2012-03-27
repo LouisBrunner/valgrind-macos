@@ -33,7 +33,6 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 #include "libvex_trc_values.h"
-#include "libvex_guest_offsets.h"
 #include "libvex_s390x_common.h"
 
 #include "main_util.h"
@@ -41,6 +40,7 @@
 #include "host_generic_regs.h"
 #include "host_s390_defs.h"
 #include "host_s390_disasm.h"
+#include "guest_s390_defs.h"    /* S390X_GUEST_OFFSET */
 #include <stdarg.h>
 
 /* KLUDGE: We need to know the hwcaps of the host when generating
@@ -6756,7 +6756,7 @@ s390_set_fpc_rounding_mode(UChar *buf, s390_round_t rounding_mode)
 
    /* Copy FPC from guest state to R0 and OR in the new rounding mode */
    buf = s390_emit_L(buf, R0, 0, S390_REGNO_GUEST_STATE_POINTER,
-                     OFFSET_s390x_fpc);   // r0 = guest_fpc
+                     S390X_GUEST_OFFSET(guest_fpc));   // r0 = guest_fpc
 
    buf = s390_emit_NILL(buf, R0, 0xFFFC); /* Clear out right-most 2 bits */
    buf = s390_emit_OILL(buf, R0, bits);   /* OR in the new rounding mode */
@@ -6801,7 +6801,7 @@ s390_insn_bfp_triop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -6848,7 +6848,7 @@ s390_insn_bfp_binop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);
+                           S390X_GUEST_OFFSET(guest_fpc));
    }
    return buf;
 
@@ -6937,7 +6937,7 @@ s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -7003,7 +7003,7 @@ s390_insn_bfp128_binop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -7068,7 +7068,7 @@ s390_insn_bfp128_unop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 

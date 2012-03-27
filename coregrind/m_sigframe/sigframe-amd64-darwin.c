@@ -184,7 +184,8 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_create (thread %d): next EIP=%#lx, next ESP=%#lx",
+                   "sigframe_create (thread %d): "
+                   "next EIP=%#lx, next ESP=%#lx\n",
                    tid, (Addr)handler, (Addr)frame );
 }
 
@@ -226,7 +227,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_destroy (thread %d): valid magic; next RIP=%#llx",
+                   "sigframe_destroy (thread %d): "
+                   "valid magic; next RIP=%#llx\n",
                    tid, tst->arch.vex.guest_RIP);
 
    VG_TRACK( die_mem_stack_signal, 

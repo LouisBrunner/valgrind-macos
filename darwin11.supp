@@ -65,6 +65,102 @@
    fun:pthread_mutex_lock
 }
 
+################
+# More OSX 10.7.2 supps from startup of Firefox, for reports
+# that look like they are in the OSX system libraries
+
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x65ADC41: TParsingContext::BuildMacEncTable()
+#    by 0x65AD98B: TParsingContext::GetEncHash(char const*)
+#  Uninitialised value was created by a heap allocation
+#    at 0xC743: malloc (vg_replace_malloc.c:266)
+#    by 0x65ADADA: TParsingContext::BuildMacEncTable()
+{
+   OSX107:more1
+   Memcheck:Cond
+   fun:*TParsingContext16BuildMacEncTable*
+   fun:*TParsingContext10GetEncHash*
+}
+
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x49ABC48: CGColorSpaceAdjustColor
+#    by 0x4A9AEE8: CGGradientCreateWithColorComponents
+#  Uninitialised value was created by a heap allocation
+#    at 0xC743: malloc (vg_replace_malloc.c:266)
+#    by 0x4A9AEC4: CGGradientCreateWithColorComponents
+#    by 0x4A9AC49: CGGradientCreateWithColors
+{
+   OSX107:more2
+   Memcheck:Cond
+   fun:CGColorSpaceAdjustColor
+   fun:CGGradientCreateWithColorComponents
+}
+
+
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x2119CCA8: BitSetNextSetBit
+#    by 0x211A4BA5: BuildInterferenceSets
+#  Uninitialised value was created by a heap allocation
+#    at 0xC743: malloc (vg_replace_malloc.c:266)
+#    by 0x2119CB98: BitSetNew
+#    by 0x2119D06F: BuildGenKill
+{
+   OSX107:more3
+   Memcheck:Cond
+   fun:BitSetNextSetBit
+   fun:BuildInterferenceSets
+}
+
+# and similar
+{
+   OSX107:more4
+   Memcheck:Cond
+   fun:BitSetNextSetBit
+   fun:RegistersReInterfere
+}
+
+
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0x33E4160: CUIRenderer::CreateImage
+#    by 0x33C14A4: CUIRenderer::DrawMenuBar
+#  Uninitialised value was created by a stack allocation
+#    at 0x33C12FC: CUIRenderer::DrawMenuBar
+{
+   OSX107:more5
+   Memcheck:Cond
+   fun:*CUIRenderer*CreateImage*
+   fun:*CUIRenderer*DrawMenu*
+}
+
+# and similar
+{
+   OSX107:more6
+   Memcheck:Cond
+   fun:floor$fenv_access_off
+   fun:*CUIRenderer*CreateImage*
+   fun:*CUIRenderer*DrawMenu*
+}
+
+# This appears a lot, and the origins seem either missing or
+# from system libs.
+# Use of uninitialised value of size 8
+#    at 0x39CC164: aes_encrypt_xmm_no_save
+{
+   OSX107:more7
+   Memcheck:Value8
+   fun:aes_encrypt_xmm_no_save
+}
+
+
+# Conditional jump or move depends on uninitialised value(s)
+#    at 0xD6D193: -[NSPersistentUIManager writeWindowSnapshot:length:...
+#    by 0xD71A03: __-[NSPersistentUIManager _updateSnapshotForWindowN...
+{
+   OSX107:more8
+   Memcheck:Cond
+   fun:-[NSPersistentUIManager?writeWindowSnapshot*
+   fun:__-[NSPersistentUIManager?_updateSnapshotForWindowNumber*
+}
 
 
 ##########################################################################

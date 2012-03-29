@@ -438,17 +438,17 @@ static CORE_ADDR stop_pc;
 */
 static CORE_ADDR resume_pc;
 
-static int signal_to_report;
+static int vki_signal_to_report;
 
-void gdbserver_signal_encountered (Int sigNo)
+void gdbserver_signal_encountered (Int vki_sigNo)
 {
-   signal_to_report = sigNo;
+   vki_signal_to_report = vki_sigNo;
 }
 
-static int signal_to_deliver;
-Bool gdbserver_deliver_signal (Int sigNo)
+static int vki_signal_to_deliver;
+Bool gdbserver_deliver_signal (Int vki_sigNo)
 {
-   return sigNo == signal_to_deliver;
+   return vki_sigNo == vki_signal_to_deliver;
 }
 
 static
@@ -479,10 +479,12 @@ unsigned char valgrind_wait (char *ourstatus)
       and with a signal TRAP (i.e. a breakpoint), unless there is
       a signal to report. */
    *ourstatus = 'T';
-   if (signal_to_report == 0)
+   if (vki_signal_to_report == 0)
       sig = TARGET_SIGNAL_TRAP;
-   else
-      sig = target_signal_from_host(signal_to_report);
+   else {
+      sig = target_signal_from_host(vki_signal_to_report);
+      vki_signal_to_report = 0;
+   }
    
    if (vgdb_interrupted_tid != 0)
       tst = VG_(get_ThreadState) (vgdb_interrupted_tid);
@@ -523,7 +525,7 @@ void valgrind_resume (struct thread_resume *resume_info)
            C2v(stopped_data_address));
       VG_(set_watchpoint_stop_address) ((Addr) 0);
    }
-   signal_to_deliver = resume_info->sig;
+   vki_signal_to_deliver = resume_info->sig;
    
    stepping = resume_info->step;
    resume_pc = (*the_low_target.get_pc) ();

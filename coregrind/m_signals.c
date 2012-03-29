@@ -240,8 +240,6 @@ static void async_signalhandler ( Int sigNo, vki_siginfo_t *info,
 static void sigvgkill_handler	( Int sigNo, vki_siginfo_t *info,
                                              struct vki_ucontext * );
 
-static const Char *signame(Int sigNo);
-
 /* Maximum usable signal. */
 Int VG_(max_signal) = _VKI_NSIG;
 
@@ -1080,18 +1078,18 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
   bad_signo_reserved:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
-                signame(signo));
+                VG_(signame)(signo));
       VG_(umsg)("         the %s signal is used internally by Valgrind\n", 
-                signame(signo));
+                VG_(signame)(signo));
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
-                signame(signo));
+                VG_(signame)(signo));
       VG_(umsg)("         the %s signal is uncatchable\n", 
-                signame(signo));
+                VG_(signame)(signo));
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 }
@@ -1272,7 +1270,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
       if (VG_(clo_trace_signals))
          VG_(dmsg)("delivering signal %d (%s) to thread %d: "
                    "on ALT STACK (%p-%p; %ld bytes)\n",
-                   sigNo, signame(sigNo), tid, tst->altstack.ss_sp,
+                   sigNo, VG_(signame)(sigNo), tid, tst->altstack.ss_sp,
                    (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
                    (Word)tst->altstack.ss_size );
 
@@ -1300,7 +1298,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
 }
 
 
-static const Char *signame(Int sigNo)
+const Char *VG_(signame)(Int sigNo)
 {
    static Char buf[20];
 
@@ -1524,7 +1522,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       VG_(umsg)(
          "\n"
          "Process terminating with default action of signal %d (%s)%s\n",
-         sigNo, signame(sigNo), core ? ": dumping core" : "");
+         sigNo, VG_(signame)(sigNo), core ? ": dumping core" : "");
 
       /* Be helpful - decode some more details about this fault */
       if (is_signal_from_kernel(tid, sigNo, info->si_code)) {
@@ -1669,7 +1667,7 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
 
    if (VG_(clo_trace_signals))
       VG_(dmsg)("delivering signal %d (%s):%d to thread %d\n", 
-                sigNo, signame(sigNo), info->si_code, tid );
+                sigNo, VG_(signame)(sigNo), info->si_code, tid );
 
    if (sigNo == VG_SIGVGKILL) {
       /* If this is a SIGVGKILL, we're expecting it to interrupt any
@@ -2186,7 +2184,7 @@ void sync_signalhandler_from_user ( ThreadId tid,
             signal and what we should do about it, we really can't
             continue unless we get it. */
          VG_(umsg)("Signal %d (%s) appears to have lost its siginfo; "
-                   "I can't go on.\n", sigNo, signame(sigNo));
+                   "I can't go on.\n", sigNo, VG_(signame)(sigNo));
          VG_(printf)(
 "  This may be because one of your programs has consumed your ration of\n"
 "  siginfo structures.  For more information, see:\n"
@@ -2338,7 +2336,7 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
        */
       VG_(dmsg)("VALGRIND INTERNAL ERROR: Valgrind received "
                 "a signal %d (%s) - exiting\n",
-                sigNo, signame(sigNo));
+                sigNo, VG_(signame)(sigNo));
 
       VG_(dmsg)("si_code=%x;  Faulting address: %p;  sp: %#lx\n",
                 info->si_code, info->VKI_SIGINFO_si_addr,

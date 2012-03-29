@@ -230,19 +230,19 @@ struct thread_info;
    gdbserver by calling call_gdbserver.
    On return, call gdbserver_deliver_signal to effectively
    deliver the signal or not. */
-extern void gdbserver_signal_encountered (Int sigNo);
+extern void gdbserver_signal_encountered (Int vki_sigNo);
 /* between these two calls, call call_gdbserver */
 /* If gdbserver_deliver_signal True, then gdb did not ask
    to ignore the signal, so signal can be delivered to the guest. */
-extern Bool gdbserver_deliver_signal (Int sigNo);
+extern Bool gdbserver_deliver_signal (Int vki_sigNo);
 
 /* To optimise signal handling, gdb can instruct gdbserver to
-   not stop on some signals. In the below, a 1 indicates the signal
+   not stop on some signals. In the below, a 1 indicates the gdb_nr signal
    has to be passed directly to the guest, without asking gdb.
    A 0 indicates gdb has to be consulted to see if signal has
    or has not to be passed. The gdb consultation is to
    be done using the above two functions. */
-extern int pass_signals[];
+extern int pass_signals[]; /* indexed by gdb signal nr */
 
 
 #include "target.h"

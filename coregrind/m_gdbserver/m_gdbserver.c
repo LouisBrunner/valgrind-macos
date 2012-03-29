@@ -42,6 +42,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_signals.h"
 #include "pub_tool_machine.h"     // VG_(fnptr_to_fnentry)
 #include "pub_tool_debuginfo.h"
 #include "pub_core_scheduler.h"
@@ -835,9 +836,14 @@ Bool VG_(gdbserver_activity) (ThreadId tid)
    return ret;
 }
 
-Bool VG_(gdbserver_report_signal) (Int sigNo, ThreadId tid)
+Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
 {
-   dlog(1, "signal %d tid %d\n", sigNo, tid);
+   dlog(1, "VG core calling VG_(gdbserver_report_signal) "
+        "vki_nr %d %s gdb_nr %d %s tid %d\n", 
+        vki_sigNo, VG_(signame)(vki_sigNo),
+        target_signal_from_host (vki_sigNo),
+        target_signal_to_name(target_signal_from_host (vki_sigNo)), 
+        tid);
 
    /* if gdbserver is currently not connected, then signal
       is to be given to the process */
@@ -848,19 +854,19 @@ Bool VG_(gdbserver_report_signal) (Int sigNo, ThreadId tid)
    /* if gdb has informed gdbserver that this signal can be
       passed directly without informing gdb, then signal is
       to be given to the process. */
-   if (pass_signals[sigNo]) {
+   if (pass_signals[target_signal_from_host(vki_sigNo)]) {
       dlog(1, "pass_signals => pass\n");
       return True;
    }
    
    /* indicate to gdbserver that there is a signal */
-   gdbserver_signal_encountered (sigNo);
+   gdbserver_signal_encountered (vki_sigNo);
 
    /* let gdbserver do some work, e.g. show the signal to the user */
    call_gdbserver (tid, signal_reason);
    
    /* ask gdbserver what is the final decision */
-   if (gdbserver_deliver_signal (sigNo)) {
+   if (gdbserver_deliver_signal (vki_sigNo)) {
       dlog(1, "gdbserver deliver signal\n");
       return True;
    } else {

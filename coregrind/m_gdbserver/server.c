@@ -34,7 +34,7 @@ unsigned long step_thread;
 unsigned long thread_from_wait;
 unsigned long old_thread_from_wait;
 
-int pass_signals[TARGET_SIGNAL_LAST];
+int pass_signals[TARGET_SIGNAL_LAST]; /* indexed by gdb signal nr */
 
 /* for a gdbserver integrated in valgrind, resuming the process consists
    in returning the control to valgrind.
@@ -412,7 +412,8 @@ void handle_set (char *arg_own_buf, int *new_packet_len_p)
          if (to == NULL) to = end;
          decode_address (&sig, from, to - from);
          pass_signals[(int)sig] = 1;
-         dlog(1, "pass_signal %d\n", (int)sig);
+         dlog(1, "pass_signal gdb_nr %d %s\n",
+              (int)sig, target_signal_to_name(sig));
          from = to;
          if (*from == ';') from++;
       }

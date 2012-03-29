@@ -78,7 +78,8 @@ where XXXXXX is the bug number as listed below.
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
-
+297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
+        and non reset of "C-ontinued" signal
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

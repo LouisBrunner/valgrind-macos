@@ -40,6 +40,9 @@
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);
 
+/* Returns the name of the vki signal sigNo */
+extern const Char *VG_(signame)(Int sigNo);
+
 /* Use high signals because native pthreads wants to use low */
 #define VG_SIGVGKILL       (VG_(max_signal)-0)
 #define VG_SIGVGRTUSERMAX  (VG_(max_signal)-1)

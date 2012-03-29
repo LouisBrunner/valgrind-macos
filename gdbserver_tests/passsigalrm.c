@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
-static int sigalrm_received = 0;
+#include <stdlib.h>
 
+static int sigalrm_received = 0;
 static void sigalrm_handler(int signr)
 {
    sigalrm_received++;
 }
+
+static int breakme = 0;
 
 int main (int argc, char *argv[])
 {
@@ -36,5 +39,7 @@ int main (int argc, char *argv[])
       fprintf (stderr, "wrong 2nd: unexpected value %d sigalrm_received\n",
                sigalrm_received);
 
+   system("../tests/true");
+   breakme++;
    return 0;
 }

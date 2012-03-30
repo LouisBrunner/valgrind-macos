@@ -466,6 +466,22 @@ enum target_signal target_signal_from_host (int hostsig)
       return TARGET_SIGNAL_INFO;
 #endif
 
+#if defined (VKI_SIGRTMIN)
+   if (hostsig >= VKI_SIGRTMIN && hostsig < VKI_SIGRTMAX) {
+      /* This block of TARGET_SIGNAL_REALTIME value is in order.  */
+      if (33 <= hostsig && hostsig <= 63)
+         return (enum target_signal)
+            (hostsig - 33 + (int) TARGET_SIGNAL_REALTIME_33);
+      else if (hostsig == 32)
+         return TARGET_SIGNAL_REALTIME_32;
+      else if (64 <= hostsig && hostsig <= 127)
+         return (enum target_signal)
+            (hostsig - 64 + (int) TARGET_SIGNAL_REALTIME_64);
+   }
+#endif
+
+   error ("Valgrind GDBSERVER bug: (target_signal_from_host):"
+          " unrecognized vki signal %d\n", hostsig);
    return TARGET_SIGNAL_UNKNOWN;
 }
 
@@ -476,7 +492,7 @@ enum target_signal target_signal_from_host (int hostsig)
 
 static
 int do_target_signal_to_host (enum target_signal oursig,
-			  int *oursig_ok)
+                              int *oursig_ok)
 {
    *oursig_ok = 1;
    switch (oursig) {
@@ -700,6 +716,32 @@ int do_target_signal_to_host (enum target_signal oursig,
 #endif
 
    default:
+      {
+#if defined (VKI_SIGRTMIN)
+         int retsig = 0;
+
+         if (oursig >= TARGET_SIGNAL_REALTIME_33
+             && oursig <= TARGET_SIGNAL_REALTIME_63) {
+            /* This block of signals is continuous, and
+               TARGET_SIGNAL_REALTIME_33 is 33 by definition.  */
+            retsig = (int) oursig - (int) TARGET_SIGNAL_REALTIME_33 + 33;
+         } else if (oursig == TARGET_SIGNAL_REALTIME_32) {
+            /* TARGET_SIGNAL_REALTIME_32 isn't contiguous with
+               TARGET_SIGNAL_REALTIME_33.  It is 32 by definition.  */
+            retsig = 32;
+         } else if (oursig >= TARGET_SIGNAL_REALTIME_64
+                    && oursig <= TARGET_SIGNAL_REALTIME_127) {
+            /* This block of signals is continuous, and
+               TARGET_SIGNAL_REALTIME_64 is 64 by definition.  */
+            retsig = (int) oursig - (int) TARGET_SIGNAL_REALTIME_64 + 64;
+         }
+         
+         if (retsig >= VKI_SIGRTMIN && retsig < VKI_SIGRTMAX)
+            return retsig;
+      }
+#endif
+      error ("Valgrind GDBSERVER bug: (do_target_signal_to_host):"
+             " unrecognized target signal %d\n", oursig);
       *oursig_ok = 0;
       return 0;
    }

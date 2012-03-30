@@ -6,4 +6,5 @@ Nulgrind, the minimal Valgrind tool
 starting ...
 ok: 1st SIGALRM received
 ok: 2nd SIGALRM received
+ok: SIGRTMIN received
 

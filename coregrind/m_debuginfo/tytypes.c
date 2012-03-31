@@ -420,29 +420,29 @@ Word ML_(TyEnt__cmp_by_cuOff_only) ( TyEnt* te1, TyEnt* te2 )
 
 /* Generates a total ordering on TyEnts based on everything except
    their .cuOff fields. */
-static __attribute__((always_inline)) Word UWord__cmp ( UWord a, UWord b ) {
+static inline Word UWord__cmp ( UWord a, UWord b ) {
    if (a < b) return -1;
    if (a > b) return 1;
    return 0;
 }
-static __attribute__((always_inline)) Word Long__cmp ( Long a, Long b ) {
+static inline Word Long__cmp ( Long a, Long b ) {
    if (a < b) return -1;
    if (a > b) return 1;
    return 0;
 }
-static __attribute__((always_inline)) Word Bool__cmp ( Bool a, Bool b ) {
+static inline Word Bool__cmp ( Bool a, Bool b ) {
    vg_assert( ((UWord)a) <= 1 );
    vg_assert( ((UWord)b) <= 1 );
    if (a < b) return -1;
    if (a > b) return 1;
    return 0;
 }
-static __attribute__((always_inline)) Word UChar__cmp ( UChar a, UChar b ) {
+static inline Word UChar__cmp ( UChar a, UChar b ) {
    if (a < b) return -1;
    if (a > b) return 1;
    return 0;
 }
-static __attribute__((always_inline)) Word Int__cmp ( Int a, Int b ) {
+static inline Word Int__cmp ( Int a, Int b ) {
    if (a < b) return -1;
    if (a > b) return 1;
    return 0;

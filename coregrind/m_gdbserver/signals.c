@@ -716,8 +716,8 @@ int do_target_signal_to_host (enum target_signal oursig,
 #endif
 
    default:
-      {
 #if defined (VKI_SIGRTMIN)
+      {
          int retsig = 0;
 
          if (oursig >= TARGET_SIGNAL_REALTIME_33

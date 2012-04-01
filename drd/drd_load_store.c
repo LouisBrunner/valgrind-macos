@@ -140,7 +140,8 @@ static void drd_report_race(const Addr addr, const SizeT size,
    ThreadId vg_tid;
 
    vg_tid = VG_(get_running_tid)();
-   if (DRD_(thread_address_on_any_stack)(addr)) {
+   if (!DRD_(get_check_stack_accesses)()
+       && DRD_(thread_address_on_any_stack)(addr)) {
 #if 0
       GenericErrInfo GEI = {
          .tid = DRD_(thread_get_running_tid)(),

@@ -137,21 +137,32 @@ static VG_REGPARM(3) void drd_trace_mem_store(const Addr addr,const SizeT size,
 static void drd_report_race(const Addr addr, const SizeT size,
                             const BmAccessTypeT access_type)
 {
-   DataRaceErrInfo drei;
+   ThreadId vg_tid;
 
-   drei.tid  = DRD_(thread_get_running_tid)();
-   drei.addr = addr;
-   drei.size = size;
-   drei.access_type = access_type;
-   VG_(maybe_record_error)(VG_(get_running_tid)(),
-                           DataRaceErr,
-                           VG_(get_IP)(VG_(get_running_tid)()),
-                           "Conflicting access",
-                           &drei);
+   vg_tid = VG_(get_running_tid)();
+   if (DRD_(thread_address_on_any_stack)(addr)) {
+#if 0
+      GenericErrInfo GEI = {
+         .tid = DRD_(thread_get_running_tid)(),
+         .addr = addr,
+      };
+      VG_(maybe_record_error)(vg_tid, GenericErr, VG_(get_IP)(vg_tid),
+                              "--check-stack-var=no skips checking stack"
+                              " variables shared over threads",
+                              &GEI);
+#endif
+  } else {
+      DataRaceErrInfo drei = {
+         .tid  = DRD_(thread_get_running_tid)(),
+         .addr = addr,
+         .size = size,
+         .access_type = access_type,
+      };
+      VG_(maybe_record_error)(vg_tid, DataRaceErr, VG_(get_IP)(vg_tid),
+                              "Conflicting access", &drei);
 
-   if (s_first_race_only)
-   {
-      DRD_(start_suppression)(addr, addr + size, "first race only");
+      if (s_first_race_only)
+         DRD_(start_suppression)(addr, addr + size, "first race only");
    }
 }
 

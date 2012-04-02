@@ -13591,6 +13591,7 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_FX = False;
    Bool      allow_GX = False;
    Bool      allow_VX = False;  // Equates to "supports Power ISA 2.06
+   Bool      allow_DFP = False;
    UInt      hwcaps = archinfo->hwcaps;
    Long      delta;
 
@@ -13601,12 +13602,14 @@ DisResult disInstr_PPC_WRK (
       allow_FX = (0 != (hwcaps & VEX_HWCAPS_PPC64_FX));
       allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC64_GX));
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC64_VX));
+      allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC64_DFP));
    } else {
       allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
       allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
       allow_FX = (0 != (hwcaps & VEX_HWCAPS_PPC32_FX));
       allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC32_GX));
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC32_VX));
+      allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC32_DFP));
    }
 
    /* The running delta */
@@ -13805,7 +13808,7 @@ DisResult disInstr_PPC_WRK (
          case 0x202:  // dsub - DFP Subtract
          case 0x22:   // dmul - DFP Mult
          case 0x222:  // ddiv - DFP Divide
-	    if (!allow_GX) goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_arith( theInstr ))
                goto decode_success;
          case 0x3CE: // fcfidus (implemented as native insn)
@@ -14029,7 +14032,7 @@ DisResult disInstr_PPC_WRK (
       case 0x202:  // dsubq - DFP Subtract
       case 0x22:   // dmulq - DFP Mult
       case 0x222:  // ddivq - DFP Divide
-         if (!allow_GX) goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_arithq( theInstr ))
             goto decode_success;
          goto decode_failure;
@@ -14586,6 +14589,12 @@ DisResult disInstr_PPC_WRK (
       vex_printf("disInstr(ppc): "
                  "declined to decode a Graphics-Optional insn.\n");
       goto decode_failure;
+   decode_noDFP:
+      vassert(!allow_DFP);
+      vex_printf("disInstr(ppc): "
+               "declined to decode a Decimal Floating Point insn.\n");
+      goto decode_failure;
+
 
    decode_failure:
    /* All decode failures end up here. */
@@ -14658,10 +14667,11 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
-            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX;
+            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX
+            | VEX_HWCAPS_PPC32_DFP;
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
-		   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX;
+		   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP;
 
    if (mode64) {
       vassert((hwcaps_guest & mask32) == 0);

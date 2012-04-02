@@ -4610,10 +4610,11 @@ HInstrArray* iselSB_PPC ( IRSB* bb, VexArch      arch_host,
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
-            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX;
+            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX
+            | VEX_HWCAPS_PPC32_DFP;
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
-	   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX;
+	   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP;
 
    if (mode64) {
       vassert((hwcaps_host & mask32) == 0);

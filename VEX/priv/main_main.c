@@ -890,6 +890,7 @@ static HChar* show_hwcaps_ppc32 ( UInt hwcaps )
    const UInt FX = VEX_HWCAPS_PPC32_FX;
    const UInt GX = VEX_HWCAPS_PPC32_GX;
    const UInt VX = VEX_HWCAPS_PPC32_VX;
+   const UInt DFP = VEX_HWCAPS_PPC32_DFP;
          UInt c  = hwcaps;
    if (c == 0)           return "ppc32-int";
    if (c == F)           return "ppc32-int-flt";
@@ -900,7 +901,8 @@ static HChar* show_hwcaps_ppc32 ( UInt hwcaps )
    if (c == (F|V|FX))    return "ppc32-int-flt-vmx-FX";
    if (c == (F|V|GX))    return "ppc32-int-flt-vmx-GX";
    if (c == (F|V|FX|GX)) return "ppc32-int-flt-vmx-FX-GX";
-   if (c == (F|V|FX|GX|VX)) return "ppc32-int-flt-vmx-FX-GX-VX";
+   if (c == (F|V|FX|GX|DFP))    return "ppc32-int-flt-vmx-FX-GX-DFP";
+   if (c == (F|V|FX|GX|VX|DFP)) return "ppc32-int-flt-vmx-FX-GX-VX-DFP";
    return NULL;
 }
 
@@ -912,6 +914,7 @@ static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
    const UInt FX = VEX_HWCAPS_PPC64_FX;
    const UInt GX = VEX_HWCAPS_PPC64_GX;
    const UInt VX = VEX_HWCAPS_PPC64_VX;
+   const UInt DFP = VEX_HWCAPS_PPC64_DFP;
          UInt c  = hwcaps;
    if (c == 0)         return "ppc64-int-flt";
    if (c == FX)        return "ppc64-int-flt-FX";
@@ -921,7 +924,8 @@ static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
    if (c == (V|FX))    return "ppc64-int-flt-vmx-FX";
    if (c == (V|GX))    return "ppc64-int-flt-vmx-GX";
    if (c == (V|FX|GX)) return "ppc64-int-flt-vmx-FX-GX";
-   if (c == (V|FX|GX|VX)) return "ppc64-int-flt-vmx-FX-GX-VX";
+   if (c == (V|FX|GX|DFP))    return "ppc64-int-flt-vmx-FX-GX-DFP";
+   if (c == (V|FX|GX|VX|DFP)) return "ppc64-int-flt-vmx-FX-GX-VX-DFP";
    return NULL;
 }
 

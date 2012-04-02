@@ -750,7 +750,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
-     volatile Bool have_F, have_V, have_FX, have_GX, have_VX;
+     volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -837,6 +837,13 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp XT,XB */
      }
 
+     /* Check for Decimal Floating Point (DFP) support. */
+     have_DFP = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_DFP = False;
+     } else {
+        __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
+     }
 
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
@@ -848,9 +855,9 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
-     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d\n", 
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d\n",
                     (Int)have_F, (Int)have_V, (Int)have_FX,
-                    (Int)have_GX, (Int)have_VX);
+                    (Int)have_GX, (Int)have_VX, (Int)have_DFP);
      /* Make FP a prerequisite for VMX (bogusly so), and for FX and GX. */
      if (have_V && !have_F)
         have_V = False;
@@ -870,6 +877,8 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_FX) vai.hwcaps |= VEX_HWCAPS_PPC32_FX;
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC32_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC32_VX;
+     if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC32_DFP;
+
 
      /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
         called before we're ready to go. */
@@ -883,7 +892,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
-     volatile Bool have_F, have_V, have_FX, have_GX, have_VX;
+     volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -962,6 +971,14 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp XT,XB */
      }
 
+     /* Check for Decimal Floating Point (DFP) support. */
+     have_DFP = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_DFP = False;
+     } else {
+        __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
+     }
+
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
      find_ppc_dcbz_sz(&vai);
@@ -969,9 +986,9 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d\n", 
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d\n",
                     (Int)have_F, (Int)have_V, (Int)have_FX,
-                    (Int)have_GX, (Int)have_VX);
+                    (Int)have_GX, (Int)have_VX, (Int)have_DFP);
      /* on ppc64, if we don't even have FP, just give up. */
      if (!have_F)
         return False;
@@ -985,6 +1002,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_FX) vai.hwcaps |= VEX_HWCAPS_PPC64_FX;
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC64_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC64_VX;
+     if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC64_DFP;
 
      /* But we're not done yet: VG_(machine_ppc64_set_clszB) must be
         called before we're ready to go. */

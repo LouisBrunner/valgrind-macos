@@ -359,8 +359,13 @@ typedef
       Pfp_INVALID,
 
       /* Ternary */
-      Pfp_MADDD, Pfp_MSUBD, 
-      Pfp_MADDS, Pfp_MSUBS,
+      Pfp_MADDD,  Pfp_MSUBD,
+      Pfp_MADDS,  Pfp_MSUBS,
+      Pfp_DFPADD, Pfp_DFPADDQ,
+      Pfp_DFPSUB, Pfp_DFPSUBQ,
+      Pfp_DFPMUL, Pfp_DFPMULQ,
+      Pfp_DFPDIV, Pfp_DFPDIVQ,
+      Pfp_DQUAQ,  Pfp_DRRNDQ,
 
       /* Binary */
       Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD, 
@@ -485,7 +490,11 @@ typedef
       Pin_AvShlDbl,   /* AV shift-left double by imm */
       Pin_AvSplat,    /* One elem repeated throughout dst */
       Pin_AvLdVSCR,   /* mtvscr */
-      Pin_AvCMov      /* AV conditional move */
+      Pin_AvCMov,     /* AV conditional move */
+      Pin_Dfp64Unary,   /* DFP64  unary op */
+      Pin_Dfp128nary,   /* DFP128 unary op */
+      Pin_Dfp64Binary,  /* DFP64  binary op */
+      Pin_Dfp128Binary  /* DFP128 binary op */
    }
    PPCInstrTag;
 
@@ -685,6 +694,7 @@ typedef
          /* Load FP Status & Control Register */
          struct {
             HReg src;
+            UInt dfp_rm;
          } FpLdFPSCR;
          /* Do a compare, generating result into an int register. */
          struct {
@@ -782,7 +792,35 @@ typedef
          struct {
             HReg src;
          } AvLdVSCR;
-       } Pin;
+         struct {
+            PPCFpOp op;
+            HReg dst;
+            HReg src;
+         } Dfp64Unary;
+         struct {
+            PPCFpOp op;
+            HReg dst;
+            HReg srcL;
+            HReg srcR;
+         } Dfp64Binary;
+         struct {
+            PPCFpOp op;
+            HReg dst_hi;
+            HReg dst_lo;
+            HReg src_hi;
+            HReg src_lo;
+         } Dfp128Unary;
+         struct {
+            /* The dst is used to pass the left source operand in and return
+             * the result.
+             */
+            PPCFpOp op;
+            HReg dst_hi;
+            HReg dst_lo;
+            HReg srcR_hi;
+            HReg srcR_lo;
+         } Dfp128Binary;
+      } Pin;
    }
    PPCInstr;
 
@@ -820,7 +858,7 @@ extern PPCInstr* PPCInstr_FpRSP      ( HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpCftI     ( Bool fromI, Bool int32, Bool syned,
                                        Bool dst64, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpCMov     ( PPCCondCode, HReg dst, HReg src );
-extern PPCInstr* PPCInstr_FpLdFPSCR  ( HReg src );
+extern PPCInstr* PPCInstr_FpLdFPSCR  ( HReg src, Bool dfp_rm );
 extern PPCInstr* PPCInstr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );
 
 extern PPCInstr* PPCInstr_RdWrLR     ( Bool wrLR, HReg gpr );
@@ -840,7 +878,14 @@ extern PPCInstr* PPCInstr_AvSplat    ( UChar sz, HReg dst, PPCVI5s* src );
 extern PPCInstr* PPCInstr_AvCMov     ( PPCCondCode, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvLdVSCR   ( HReg src );
 
-extern void ppPPCInstr ( PPCInstr*, Bool mode64 );
+extern PPCInstr* PPCInstr_Dfp64Unary  ( PPCFpOp op, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_Dfp64Binary ( PPCFpOp op, HReg dst, HReg srcL,
+                                        HReg srcR );
+extern PPCInstr* PPCInstr_Dfp128Binary( PPCFpOp op, HReg dst_hi, HReg dst_lo,
+                                        HReg srcR_hi, HReg srcR_lo );
+
+extern void ppPPCInstr(PPCInstr*, Bool mode64);
+
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */

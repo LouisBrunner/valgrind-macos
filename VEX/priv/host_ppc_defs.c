@@ -630,6 +630,14 @@ HChar* showPPCFpOp ( PPCFpOp op ) {
       case Pfp_FRIN:   return "frin";
       case Pfp_FRIP:   return "frip";
       case Pfp_FRIZ:   return "friz";
+      case Pfp_DFPADD:     return "dadd";
+      case Pfp_DFPADDQ:    return "daddq";
+      case Pfp_DFPSUB:     return "dsub";
+      case Pfp_DFPSUBQ:    return "dsubq";
+      case Pfp_DFPMUL:     return "dmul";
+      case Pfp_DFPMULQ:    return "dmulq";
+      case Pfp_DFPDIV:     return "ddivd";
+      case Pfp_DFPDIVQ:    return "ddivq";
       default: vpanic("showPPCFpOp");
    }
 }
@@ -970,6 +978,35 @@ PPCInstr* PPCInstr_FpRSP ( HReg dst, HReg src ) {
    i->Pin.FpRSP.src = src;
    return i;
 }
+PPCInstr* PPCInstr_Dfp64Unary(PPCFpOp op, HReg dst, HReg src) {
+   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   i->tag = Pin_Dfp64Unary;
+   i->Pin.Dfp64Unary.op = op;
+   i->Pin.Dfp64Unary.dst = dst;
+   i->Pin.Dfp64Unary.src = src;
+   return i;
+}
+PPCInstr* PPCInstr_Dfp64Binary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
+   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   i->tag = Pin_Dfp64Binary;
+   i->Pin.Dfp64Binary.op = op;
+   i->Pin.Dfp64Binary.dst = dst;
+   i->Pin.Dfp64Binary.srcL = srcL;
+   i->Pin.Dfp64Binary.srcR = srcR;
+   return i;
+}
+PPCInstr* PPCInstr_Dfp128Binary(PPCFpOp op, HReg dst_hi, HReg dst_lo,
+                                HReg srcR_hi, HReg srcR_lo) {
+   /* dst is used to pass the srcL argument and return the result */
+   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   i->tag = Pin_Dfp128Binary;
+   i->Pin.Dfp128Binary.op = op;
+   i->Pin.Dfp128Binary.dst_hi = dst_hi;
+   i->Pin.Dfp128Binary.dst_lo = dst_lo;
+   i->Pin.Dfp128Binary.srcR_hi = srcR_hi;
+   i->Pin.Dfp128Binary.srcR_lo = srcR_lo;
+   return i;
+}
 
 /*
 Valid combo | fromI | int32 | syned | flt64 |
@@ -1040,10 +1077,11 @@ PPCInstr* PPCInstr_FpCMov ( PPCCondCode cond, HReg dst, HReg src ) {
    vassert(cond.test != Pct_ALWAYS);
    return i;
 }
-PPCInstr* PPCInstr_FpLdFPSCR ( HReg src ) {
+PPCInstr* PPCInstr_FpLdFPSCR ( HReg src, Bool dfp_rm ) {
    PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_FpLdFPSCR;
    i->Pin.FpLdFPSCR.src = src;
+   i->Pin.FpLdFPSCR.dfp_rm = dfp_rm ? 1 : 0;
    return i;
 }
 PPCInstr* PPCInstr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
@@ -1547,6 +1585,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_FpLdFPSCR:
       vex_printf("mtfsf 0xFF,");
       ppHRegPPC(i->Pin.FpLdFPSCR.src);
+      vex_printf(",0, %s", i->Pin.FpLdFPSCR.dfp_rm ? "1" : "0");
       return;
    case Pin_FpCmp:
       vex_printf("fcmpo %%cr1,");
@@ -1709,6 +1748,29 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_AvLdVSCR:
       vex_printf("mtvscr ");
       ppHRegPPC(i->Pin.AvLdVSCR.src);
+      return;
+
+   case Pin_Dfp64Unary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Dfp64Unary.op));
+      ppHRegPPC(i->Pin.Dfp64Unary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp64Unary.src);
+      return;
+
+   case Pin_Dfp64Binary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Dfp64Binary.op));
+      ppHRegPPC(i->Pin.Dfp64Binary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp64Binary.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp64Binary.srcR);
+      return;
+
+   case Pin_Dfp128Binary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Dfp128Binary.op));
+      ppHRegPPC(i->Pin.Dfp128Binary.dst_hi);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp128Binary.srcR_hi);
       return;
 
    default:
@@ -1978,6 +2040,21 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
    case Pin_AvLdVSCR:
       addHRegUse(u, HRmRead, i->Pin.AvLdVSCR.src);
       return;
+   case Pin_Dfp64Unary:
+      addHRegUse(u, HRmWrite, i->Pin.Dfp64Unary.dst);
+      addHRegUse(u, HRmRead, i->Pin.Dfp64Unary.src);
+      return;
+   case Pin_Dfp64Binary:
+      addHRegUse(u, HRmWrite, i->Pin.Dfp64Binary.dst);
+      addHRegUse(u, HRmRead, i->Pin.Dfp64Binary.srcL);
+      addHRegUse(u, HRmRead, i->Pin.Dfp64Binary.srcR);
+      return;
+   case Pin_Dfp128Binary:
+      addHRegUse(u, HRmWrite, i->Pin.Dfp128Binary.dst_hi);
+      addHRegUse(u, HRmWrite, i->Pin.Dfp128Binary.dst_lo);
+      addHRegUse(u, HRmRead, i->Pin.Dfp128Binary.srcR_hi);
+      addHRegUse(u, HRmRead, i->Pin.Dfp128Binary.srcR_lo);
+      return;
 
    default:
       ppPPCInstr(i, mode64);
@@ -2173,6 +2250,21 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
      return;
    case Pin_AvLdVSCR:
       mapReg(m, &i->Pin.AvLdVSCR.src);
+      return;
+   case Pin_Dfp64Unary:
+      mapReg(m, &i->Pin.Dfp64Unary.dst);
+      mapReg(m, &i->Pin.Dfp64Unary.src);
+      return;
+   case Pin_Dfp64Binary:
+      mapReg(m, &i->Pin.Dfp64Binary.dst);
+      mapReg(m, &i->Pin.Dfp64Binary.srcL);
+      mapReg(m, &i->Pin.Dfp64Binary.srcR);
+      return;
+   case Pin_Dfp128Binary:
+      mapReg(m, &i->Pin.Dfp128Binary.dst_hi);
+      mapReg(m, &i->Pin.Dfp128Binary.dst_lo);
+      mapReg(m, &i->Pin.Dfp128Binary.srcR_hi);
+      mapReg(m, &i->Pin.Dfp128Binary.srcR_lo);
       return;
 
    default:
@@ -2423,12 +2515,12 @@ static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt opc2 )
 }
 
 // Only used by mtfsf
-static UChar* mkFormXFL ( UChar* p, UInt FM, UInt freg )
+static UChar* mkFormXFL ( UChar* p, UInt FM, UInt freg, UInt dfp_rm )
 {
    UInt theInstr;
    vassert(FM   < 0x100);
    vassert(freg < 0x20);
-   theInstr = ((63<<26) | (FM<<17) | (freg<<11) | (711<<1));
+   theInstr = ((63<<26) | (FM<<17) | (dfp_rm<<16) | (freg<<11) | (711<<1));
    return emit32(p, theInstr);
 }
 
@@ -3533,7 +3625,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
 
    case Pin_FpLdFPSCR: {
       UInt fr_src = fregNo(i->Pin.FpLdFPSCR.src);
-      p = mkFormXFL(p, 0xFF, fr_src);     // mtfsf, PPC32 p480
+      p = mkFormXFL(p, 0xFF, fr_src, i->Pin.FpLdFPSCR.dfp_rm);     // mtfsf, PPC32 p480
       goto done;
    }
 
@@ -3947,6 +4039,93 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
    case Pin_AvLdVSCR: {  // mtvscr
       UInt v_src = vregNo(i->Pin.AvLdVSCR.src);
       p = mkFormVX( p, 4, 0, 0, v_src, 1604 );
+      goto done;
+   }
+
+   case Pin_Dfp64Unary: {
+      UInt fr_dst = fregNo( i->Pin.FpUnary.dst );
+      UInt fr_src = fregNo( i->Pin.FpUnary.src );
+
+      switch (i->Pin.Dfp64Unary.op) {
+      case Pfp_MOV: // fmr, PPC32 p410
+         p = mkFormX( p, 63, fr_dst, 0, fr_src, 72, 0 );
+         break;
+      default:
+         goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_Dfp64Binary: {
+      UInt fr_dst = fregNo( i->Pin.Dfp64Binary.dst );
+      UInt fr_srcL = fregNo( i->Pin.Dfp64Binary.srcL );
+      UInt fr_srcR = fregNo( i->Pin.Dfp64Binary.srcR );
+      switch (i->Pin.Dfp64Binary.op) {
+      case Pfp_DFPADD: /* dadd, dfp add, use default RM from reg ignore mode
+                        * from the Iop instruction. */
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 2, 0 );
+         break;
+      case Pfp_DFPSUB: /* dsub, dfp subtract, use default RM from reg ignore
+                        * mode from the Iop instruction. */
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 514, 0 );
+         break;
+      case Pfp_DFPMUL: /* dmul, dfp multipy, use default RM from reg ignore
+                        * mode from the Iop instruction. */
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 34, 0 );
+         break;
+      case Pfp_DFPDIV: /* ddiv, dfp divide, use default RM from reg ignore
+                        * mode from the Iop instruction. */
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 546, 0 );
+         break;
+      default:
+         goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_Dfp128Binary: {
+      /* dst is used to supply the  left source operand and return
+       * the result.
+       */
+      UInt fr_dstHi = fregNo( i->Pin.Dfp128Binary.dst_hi );
+      UInt fr_dstLo = fregNo( i->Pin.Dfp128Binary.dst_lo );
+      UInt fr_srcRHi = fregNo( i->Pin.Dfp128Binary.srcR_hi );
+      UInt fr_srcRLo = fregNo( i->Pin.Dfp128Binary.srcR_lo );
+
+      /* Setup the upper and lower registers of the source operand
+       * register pair.
+       */
+      p = mkFormX( p, 63, 10, 0, fr_dstHi, 72, 0 );
+      p = mkFormX( p, 63, 11, 0, fr_dstLo, 72, 0 );
+      p = mkFormX( p, 63, 12, 0, fr_srcRHi, 72, 0 );
+      p = mkFormX( p, 63, 13, 0, fr_srcRLo, 72, 0 );
+
+      /* Do instruction with 128-bit source operands in registers (10,11)
+       * and (12,13).
+       */
+      switch (i->Pin.Dfp128Binary.op) {
+      case Pfp_DFPADDQ:
+         p = mkFormX( p, 63, 10, 10, 12, 2, 0 );
+         break;
+      case Pfp_DFPSUBQ:
+         p = mkFormX( p, 63, 10, 10, 12, 514, 0 );
+         break;
+      case Pfp_DFPMULQ:
+         p = mkFormX( p, 63, 10, 10, 12, 34, 0 );
+         break;
+      case Pfp_DFPDIVQ:
+         p = mkFormX( p, 63, 10, 10, 12, 546, 0 );
+         break;
+      default:
+         goto bad;
+      }
+
+      /* The instruction will put the 128-bit result in
+       * registers (10,11).  Note, the operand in the instruction only
+       * reference the first of the two registers in the pair.
+       */
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
       goto done;
    }
 

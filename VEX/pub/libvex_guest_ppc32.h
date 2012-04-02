@@ -189,8 +189,11 @@ typedef
       /* 1182 */ UChar guest_CR7_321; /* in [3:1] */
       /* 1183 */ UChar guest_CR7_0;   /* in lsb */
 
-      /* FP Status & Control Register fields */
-      /* 1184 */ UInt guest_FPROUND; // FP Rounding Mode
+      /* FP Status & Control Register fields. Only rounding mode fields are supported. */
+      /* 1184 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
+      /* 1185 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
+      /* 1186 */ UChar pad1;
+      /* 1187 */ UChar pad2;
 
       /* Vector Save/Restore Register */
       /* 1188 */ UInt guest_VRSAVE;

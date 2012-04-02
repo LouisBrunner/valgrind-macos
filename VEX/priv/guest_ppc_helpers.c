@@ -482,7 +482,8 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_CR7_321 = 0;
    vex_state->guest_CR7_0   = 0;
 
-   vex_state->guest_FPROUND = (UInt)PPCrm_NEAREST;
+   vex_state->guest_FPROUND  = PPCrm_NEAREST;
+   vex_state->guest_DFPROUND = PPCrm_NEAREST;
 
    vex_state->guest_VRSAVE = 0;
 
@@ -638,7 +639,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_CR7_321 = 0;
    vex_state->guest_CR7_0   = 0;
 
-   vex_state->guest_FPROUND = (UInt)PPCrm_NEAREST;
+   vex_state->guest_FPROUND  = PPCrm_NEAREST;
+   vex_state->guest_DFPROUND = PPCrm_NEAREST;
 
    vex_state->guest_VRSAVE = 0;
 

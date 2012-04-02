@@ -227,6 +227,9 @@ typedef
       Ity_I128,  /* 128-bit scalar */
       Ity_F32,   /* IEEE 754 float */
       Ity_F64,   /* IEEE 754 double */
+      Ity_D32,   /* 32-bit Decimal floating point */
+      Ity_D64,   /* 64-bit Decimal floating point */
+      Ity_D128,  /* 128-bit Decimal floating point */
       Ity_F128,  /* 128-bit floating point; implementation defined */
       Ity_V128   /* 128-bit SIMD */
    }
@@ -983,6 +986,25 @@ typedef
          See floating-point equiwalents for details. */
       Iop_Recip32x2, Iop_Rsqrte32x2,
 
+      /* ------------------ Decimal Floating Point ------------------ */
+
+      /* ARITHMETIC INSTRUCTIONS   64-bit
+	 ----------------------------------
+	 IRRoundingModeDFP(I32) X D64 X D64 -> D64
+	 Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64
+      */
+      Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64,
+
+      /* ARITHMETIC INSTRUCTIONS  128-bit
+	 ----------------------------------
+	 IRRoundingModeDFP(I32) X D128 X D128 -> D128
+	 Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128
+      */
+      Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128,
+
+      /* Support for 128-bit DFP type */
+      Iop_D64HLtoD128, Iop_D128HItoD64, Iop_D128LOtoD64,
+
       /* ------------------ 128-bit SIMD FP. ------------------ */
 
       /* --- 32x4 vector FP --- */
@@ -1300,6 +1322,27 @@ typedef
       Irrm_ZERO    = 3 
    }
    IRRoundingMode;
+
+/* DFP encoding of IEEE754 2008 specified rounding modes extends the two bit
+ * binary floating point rounding mode (IRRoundingMode) to three bits.  The 
+ * DFP rounding modes are a super set of the binary rounding modes.  The 
+ * encoding was chosen such that the mapping of the least significant two bits
+ * of the IR to POWER encodings is same.  The upper IR encoding bit is just
+ * a logical OR of the upper rounding mode bit from the POWER encoding.
+ */
+typedef
+   enum { 
+      Irrm_DFP_NEAREST              = 0,  // Round to nearest, ties to even
+      Irrm_DFP_NegINF               = 1,  // Round to negative infinity
+      Irrm_DFP_PosINF               = 2,  // Round to posative infinity
+      Irrm_DFP_ZERO                 = 3,  // Round toward zero
+      Irrm_DFP_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
+      Irrm_DFP_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
+                                          // precision
+      Irrm_DFP_AWAY_FROM_ZERO       = 6,  // Round to away from 0
+      Irrm_DFP_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
+   }
+   IRRoundingModeDFP;
 
 /* Floating point comparison result values, as created by Iop_CmpF64.
    This is also derived from what IA32 does. */

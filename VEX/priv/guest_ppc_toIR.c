@@ -222,6 +222,7 @@ static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 #define OFFB_XER_CA      offsetofPPCGuestState(guest_XER_CA)
 #define OFFB_XER_BC      offsetofPPCGuestState(guest_XER_BC)
 #define OFFB_FPROUND     offsetofPPCGuestState(guest_FPROUND)
+#define OFFB_DFPROUND    offsetofPPCGuestState(guest_DFPROUND)
 #define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
 #define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
 #define OFFB_EMWARN      offsetofPPCGuestState(guest_EMWARN)
@@ -373,8 +374,8 @@ typedef enum {
     PPC_GST_MAX
 } PPC_GST;
 
-#define MASK_FPSCR_RN   0x3
-#define MASK_FPSCR_FPRF 0x1F000
+#define MASK_FPSCR_RN   0x3ULL  // Binary floating point rounding mode
+#define MASK_FPSCR_DRN  0x700000000ULL // Decimal floating point rounding mode
 #define MASK_VSCR_VALID 0x00010001
 
 
@@ -415,7 +416,6 @@ static UInt MASK32( UInt begin, UInt end )
    return mask;
 }
 
-/* ditto for 64bit mask */
 static ULong MASK64( UInt begin, UInt end )
 {
    ULong m1, m2, mask;
@@ -1112,6 +1112,45 @@ static void putFReg ( UInt archreg, IRExpr* e )
    vassert(archreg < 32);
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F64);
    stmt( IRStmt_Put(floatGuestRegOffset(archreg), e) );
+}
+
+/* get Decimal float value.  Note, they share floating point register file. */
+static IRExpr* getDReg(UInt archreg) {
+   IRExpr *e;
+   vassert( archreg < 32 );
+   e = IRExpr_Get( floatGuestRegOffset( archreg ), Ity_D64 );
+   return e;
+}
+
+/* Read a floating point register pair and combine their contents into a
+ 128-bit value */
+static IRExpr *getDReg_pair(UInt archreg) {
+   IRExpr *high = getDReg( archreg );
+   IRExpr *low = getDReg( archreg + 1 );
+
+   return binop( Iop_D64HLtoD128, high, low );
+}
+
+/* Ditto, but write to a reg instead. */
+static void putDReg(UInt archreg, IRExpr* e) {
+   vassert( archreg < 32 );
+   vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_D64 );
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg ), e ) );
+}
+
+/* Write a 128-bit floating point value into a register pair. */
+static void putDReg_pair(UInt archreg, IRExpr *e) {
+   IRTemp low = newTemp( Ity_D64 );
+   IRTemp high = newTemp( Ity_D64 );
+
+   vassert( archreg < 32 );
+   vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_D128 );
+
+   assign( low, unop( Iop_D128LOtoD64, e ) );
+   assign( high, unop( Iop_D128HItoD64, e ) );
+
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg ), mkexpr( high ) ) );
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg + 1 ), mkexpr( low ) ) );
 }
 
 static Int vsxGuestRegOffset ( UInt archreg )
@@ -2464,10 +2503,12 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, UInt mask )
          all exceptions masked, round-to-nearest.
          This corresponds to a FPSCR value of 0x0. */
 
-      /* We're only keeping track of the rounding mode,
-         so if the mask isn't asking for this, just return 0x0 */
-      if (mask & (MASK_FPSCR_RN|MASK_FPSCR_FPRF)) {
-         assign( val, IRExpr_Get( OFFB_FPROUND, Ity_I32 ) );
+      /* In the lower 32 bits of FPSCR, we're only keeping track of
+       * the binary floating point rounding mode, so if the mask isn't
+       * asking for this, just return 0x0.
+       */
+      if (mask & MASK_FPSCR_RN) {
+         assign( val, unop( Iop_8Uto32, IRExpr_Get( OFFB_FPROUND, Ity_I8 ) ) );
       } else {
          assign( val, mkU32(0x0) );
       }
@@ -2485,6 +2526,36 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, UInt mask )
       return mkexpr(val);
    }
 }
+
+/* Get a masked word from the given reg */
+static IRExpr* /* ::Ity_I32 */getGST_masked_upper(PPC_GST reg, ULong mask) {
+   IRExpr * val;
+   vassert( reg < PPC_GST_MAX );
+
+   switch (reg) {
+
+   case PPC_GST_FPSCR: {
+      /* In the upper 32 bits of FPSCR, we're only keeping track
+       * of the decimal floating point rounding mode, so if the mask
+       * isn't asking for this, just return 0x0.
+       */
+      if (mask & MASK_FPSCR_DRN) {
+         val = binop( Iop_And32,
+                      unop( Iop_8Uto32, IRExpr_Get( OFFB_DFPROUND, Ity_I8 ) ),
+                      unop( Iop_64HIto32, mkU64( mask ) ) );
+      } else {
+         val = mkU32( 0x0ULL );
+      }
+      break;
+   }
+
+   default:
+      vex_printf( "getGST_masked_upper(ppc): reg = %u", reg );
+      vpanic( "getGST_masked_upper(ppc)" );
+   }
+   return val;
+}
+
 
 /* Fetch the specified REG[FLD] nibble (as per IBM/hardware notation)
    and return it at the bottom of an I32; the top 27 bits are
@@ -2581,32 +2652,30 @@ static void putGST ( PPC_GST reg, IRExpr* src )
 }
 
 /* Write masked src to the given reg */
-static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
+static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    vassert( reg < PPC_GST_MAX );
-   vassert( typeOfIRExpr(irsb->tyenv,src ) == Ity_I32 );
-   
+   vassert( typeOfIRExpr( irsb->tyenv,src ) == Ity_I64 );
+
    switch (reg) {
    case PPC_GST_FPSCR: {
-      /* Allow writes to Rounding Mode */
-      if (mask & (MASK_FPSCR_RN|MASK_FPSCR_FPRF)) {
-         /* construct new fpround from new and old values as per mask:
-            new fpround = (src & (3 & mask)) | (fpround & (3 & ~mask)) */
-         stmt( 
-            IRStmt_Put( 
-               OFFB_FPROUND,
-               binop(
-                  Iop_Or32, 
-                  binop(Iop_And32, src, mkU32((MASK_FPSCR_RN|MASK_FPSCR_FPRF) & mask)),
-                  binop(
-                     Iop_And32, 
-                     IRExpr_Get(OFFB_FPROUND,Ity_I32),
-                     mkU32((MASK_FPSCR_RN|MASK_FPSCR_FPRF) & ~mask)
-                  )
-               )
-            )
-         );
+      /* Allow writes to either binary or decimal floating point
+       * Rounding Mode
+       */
+      if (mask & MASK_FPSCR_RN) {
+         stmt( IRStmt_Put( OFFB_FPROUND,
+                           unop( Iop_32to8,
+                                 binop( Iop_And32,
+                                        unop( Iop_64to32, src ),
+                                        mkU32( MASK_FPSCR_RN & mask ) ) ) ) );
+      } else if (mask & MASK_FPSCR_DRN) {
+         stmt( IRStmt_Put( OFFB_DFPROUND,
+                           unop( Iop_32to8,
+                                 binop( Iop_And32,
+                                        unop( Iop_64HIto32, src ),
+                                        mkU32( ( MASK_FPSCR_DRN & mask )
+                                                 >> 32 ) ) ) ) );
       }
 
       /* Give EmWarn for attempted writes to:
@@ -2641,13 +2710,17 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
    REG[FLD] (as per IBM/hardware notation). */
 static void putGST_field ( PPC_GST reg, IRExpr* src, UInt fld )
 {
-   UInt shft, mask;
+   UInt shft;
+   ULong mask;
 
    vassert( typeOfIRExpr(irsb->tyenv,src ) == Ity_I32 );
-   vassert( fld < 8 );
+   vassert( fld < 16 );
    vassert( reg < PPC_GST_MAX );
    
-   shft = 4*(7-fld);
+   if (fld < 8)
+      shft = 4*(7-fld);
+   else
+      shft = 4*(15-fld);
    mask = 0xF<<shft;
 
    switch (reg) {
@@ -2657,12 +2730,16 @@ static void putGST_field ( PPC_GST reg, IRExpr* src, UInt fld )
       break;
 
    default:
-      if (shft == 0) {
-         putGST_masked( reg, src, mask );
-      } else {
-         putGST_masked( reg,
-                        binop(Iop_Shl32, src, mkU8(toUChar(shft))),
-                        mask );
+      {
+         IRExpr * src64 = unop( Iop_32Uto64, src );
+
+         if (shft == 0) {
+            putGST_masked( reg, src64, mask );
+         } else {
+            putGST_masked( reg,
+                           binop( Iop_Shl64, src64, mkU8( toUChar( shft ) ) ),
+                           mask );
+         }
       }
    }
 }
@@ -6689,6 +6766,33 @@ static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode ( void )
                         mkU32(2) ));
 }
 
+/* The DFP IR rounding modes were chosen such that the existing PPC to IR
+ * mapping would still work with the extended three bit DFP rounding 
+ * mode designator.
+
+ *  rounding mode                     | PPC  |  IR
+ *  -----------------------------------------------
+ *  to nearest, ties to even          | 000  | 000
+ *  to zero                           | 001  | 011
+ *  to +infinity                      | 010  | 010
+ *  to -infinity                      | 011  | 001
+ *  to nearest, ties away from 0      | 100  | 100
+ *  to nearest, ties toward 0         | 101  | 111
+ *  to away from 0                    | 110  | 110
+ *  to prepare for shorter precision  | 111  | 101
+ */
+static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode_DFP( void )
+{
+   IRTemp rm_PPC32 = newTemp( Ity_I32 );
+   assign( rm_PPC32, getGST_masked_upper( PPC_GST_FPSCR, MASK_FPSCR_DRN ) );
+
+   // rm_IR = XOR( rm_PPC32, (rm_PPC32 << 1) & 2)
+   return binop( Iop_Xor32,
+                 mkexpr( rm_PPC32 ),
+                 binop( Iop_And32,
+                        binop( Iop_Shl32, mkexpr( rm_PPC32 ), mkU8( 1 ) ),
+                        mkU32( 2 ) ) );
+}
 
 /*------------------------------------------------------------*/
 /*--- Floating Point Instruction Translation               ---*/
@@ -8224,7 +8328,7 @@ static Bool dis_fp_move ( UInt theInstr )
 /*
   Floating Point Status/Control Register Instructions
 */
-static Bool dis_fp_scr ( UInt theInstr )
+static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 {
    /* Many forms - see each switch case */
    UChar opc1    = ifieldOPC(theInstr);
@@ -8247,7 +8351,8 @@ static Bool dis_fp_scr ( UInt theInstr )
          return False;
       }
       DIP("mtfsb1%s crb%d \n", flag_rC ? ".":"", crbD);
-      putGST_masked( PPC_GST_FPSCR, mkU32(1<<(31-crbD)), 1<<(31-crbD) );
+      putGST_masked( PPC_GST_FPSCR, mkU64( 1 <<( 31 - crbD ) ),
+		     1ULL << ( 31 - crbD ) );
       break;
    }
 
@@ -8283,29 +8388,41 @@ static Bool dis_fp_scr ( UInt theInstr )
          return False;
       }      
       DIP("mtfsb0%s crb%d\n", flag_rC ? ".":"", crbD);
-      putGST_masked( PPC_GST_FPSCR, mkU32(0), 1<<(31-crbD) );
+      putGST_masked( PPC_GST_FPSCR, mkU64( 0 ), 1ULL << ( 31 - crbD ) );
       break;
    }
 
    case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
-      UChar crfD    = toUChar( IFIELD( theInstr, 23, 3 ) );
+      UInt crfD     = IFIELD( theInstr, 23, 3 );
       UChar b16to22 = toUChar( IFIELD( theInstr, 16, 7 ) );
       UChar IMM     = toUChar( IFIELD( theInstr, 12, 4 ) );
       UChar b11     = toUChar( IFIELD( theInstr, 11, 1 ) );
+      UChar Wbit;
 
       if (b16to22 != 0 || b11 != 0) {
          vex_printf("dis_fp_scr(ppc)(instr,mtfsfi)\n");
          return False;
       }      
       DIP("mtfsfi%s crf%d,%d\n", flag_rC ? ".":"", crfD, IMM);
-      putGST_field( PPC_GST_FPSCR, mkU32(IMM), crfD );
+      if (GX_level) {
+         /* This implies that Decimal Floating Point is supported, and the
+          * FPSCR must be managed as a 64-bit register.
+          */
+         Wbit = toUChar( IFIELD(theInstr, 16, 1) );
+      } else {
+         Wbit = 0;
+      }
+      crfD = crfD + (8 * (1 - Wbit) );
+      putGST_field( PPC_GST_FPSCR, mkU32( IMM ), crfD );
       break;
    }
 
    case 0x247: { // mffs (Move from FPSCR, PPC32 p468)
       UChar   frD_addr  = ifieldRegDS(theInstr);
       UInt    b11to20   = IFIELD(theInstr, 11, 10);
-      IRExpr* fpscr_all = getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN );
+      IRExpr* fpscr_lower = getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN );
+      IRExpr* fpscr_upper = getGST_masked_upper( PPC_GST_FPSCR,
+                                                 MASK_FPSCR_DRN );
 
       if (b11to20 != 0) {
          vex_printf("dis_fp_scr(ppc)(instr,mffs)\n");
@@ -8314,7 +8431,7 @@ static Bool dis_fp_scr ( UInt theInstr )
       DIP("mffs%s fr%u\n", flag_rC ? ".":"", frD_addr);
       putFReg( frD_addr,
           unop( Iop_ReinterpI64asF64,
-                unop( Iop_32Uto64, fpscr_all )));
+                binop( Iop_32HLto64, fpscr_upper, fpscr_lower ) ) );
       break;
    }
 
@@ -8323,8 +8440,21 @@ static Bool dis_fp_scr ( UInt theInstr )
       UChar FM       = toUChar( IFIELD(theInstr, 17, 8) );
       UChar frB_addr = ifieldRegB(theInstr);
       IRTemp frB   = newTemp(Ity_F64);
-      IRTemp rB_32 = newTemp(Ity_I32);
-      Int i, mask;
+      IRTemp rB_64 = newTemp( Ity_I64 );
+      Int i;
+      ULong mask;
+      UChar Wbit;
+#define BFP_MASK_SEED 0x3000000000000000ULL
+#define DFP_MASK_SEED 0x7000000000000000ULL
+
+      if (GX_level) {
+         /* This implies that Decimal Floating Point is supported, and the
+          * FPSCR must be managed as a 64-bit register.
+          */
+         Wbit = toUChar( IFIELD(theInstr, 16, 1) );
+      } else {
+         Wbit = 0;
+      }
 
       if (b25 == 1) {
          /* new 64 bit move variant for power 6.  If L field (bit 25) is
@@ -8342,14 +8472,24 @@ static Bool dis_fp_scr ( UInt theInstr )
          mask = 0;
          for (i=0; i<8; i++) {
             if ((FM & (1<<(7-i))) == 1) {
-               mask |= 0xF << (7-i);
+               /* FPSCR field k is set to the contents of the corresponding
+                * field of register FRB, where k = i+8x(1-W).  In the Power
+                * ISA, register field numbering is from left to right, so field
+                * 15 is the least significant field in a 64-bit register.  To
+                * generate the mask, we set all the appropriate rounding mode
+                * bits in the highest order nibble (field 0) and shift right 
+                * 'k x nibble length'.
+                */
+               if (Wbit)
+                  mask |= DFP_MASK_SEED >> ( 4 * ( i + 8 * ( 1 - Wbit ) ) );
+               else
+                  mask |= BFP_MASK_SEED >> ( 4 * ( i + 8 * ( 1 - Wbit ) ) );
             }
          }
       }
       assign( frB, getFReg(frB_addr));
-      assign( rB_32, unop( Iop_64to32,
-                           unop( Iop_ReinterpF64asI64, mkexpr(frB) )));
-      putGST_masked( PPC_GST_FPSCR, mkexpr(rB_32), mask );
+      assign( rB_64, unop( Iop_ReinterpF64asI64, mkexpr( frB ) ) );
+      putGST_masked( PPC_GST_FPSCR, mkexpr( rB_64 ), mask );
       break;
    }
 
@@ -8360,7 +8500,124 @@ static Bool dis_fp_scr ( UInt theInstr )
    return True;
 }
 
+/*------------------------------------------------------------*/
+/*--- Decimal Floating Point (DFP) instruction translation ---*/
+/*------------------------------------------------------------*/
+/* DFP Arithmetic instructions */
+static Bool dis_dfp_arith(UInt theInstr)
+{
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
 
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frB = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+   IRExpr* round = get_IR_roundingmode_DFP();
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+    * operation.  In reality we should set cr1 to indicate the
+    * exception status of the operation, but since we're not
+    * simulating exceptions, the exception status will appear to be
+    * zero.  Hence cr1 should be cleared if this is a . form insn.
+    */
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg( frA_addr ) );
+   assign( frB, getDReg( frB_addr ) );
+
+   switch (opc2) {
+   case 0x2: // dadd
+      DIP( "dadd%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_AddD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x202: // dsub
+      DIP( "dsub%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_SubD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x22: // dmul
+      DIP( "dmul%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_MulD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x222: // ddiv
+      DIP( "ddiv%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_DivD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   }
+
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* Quad DFP Arithmetic instructions */
+static Bool dis_dfp_arithq(UInt theInstr)
+{
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D128 );
+   IRTemp frB = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   IRExpr* round = get_IR_roundingmode_DFP();
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+    * operation.  In reality we should set cr1 to indicate the
+    * exception status of the operation, but since we're not
+    * simulating exceptions, the exception status will appear to be
+    * zero.  Hence cr1 should be cleared if this is a . form insn.
+    */
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg_pair( frA_addr ) );
+   assign( frB, getDReg_pair( frB_addr ) );
+
+   switch (opc2) {
+   case 0x2: // daddq
+      DIP( "daddq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_AddD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x202: // dsubq
+      DIP( "dsubq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_SubD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x22: // dmulq
+      DIP( "dmulq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_MulD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x222: // ddivq
+      DIP( "ddivq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_DivD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   }
+
+   putDReg_pair( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
 
 /*------------------------------------------------------------*/
 /*--- AltiVec Instruction Translation                      ---*/
@@ -13542,7 +13799,15 @@ DisResult disInstr_PPC_WRK (
    case 0x3B:
       if (!allow_F) goto decode_noF;
       opc2 = ifieldOPClo10(theInstr);
+
       switch (opc2) {
+         case 0x2:    // dadd - DFP Add
+         case 0x202:  // dsub - DFP Subtract
+         case 0x22:   // dmul - DFP Mult
+         case 0x222:  // ddiv - DFP Divide
+	    if (!allow_GX) goto decode_failure;
+            if (dis_dfp_arith( theInstr ))
+               goto decode_success;
          case 0x3CE: // fcfidus (implemented as native insn)
             if (!allow_VX)
                goto decode_noVX;
@@ -13759,6 +14024,16 @@ DisResult disInstr_PPC_WRK (
 
       opc2 = IFIELD(theInstr, 1, 10);
       switch (opc2) {
+      /* 128-bit DFP instructions */
+      case 0x2:    // daddq - DFP Add
+      case 0x202:  // dsubq - DFP Subtract
+      case 0x22:   // dmulq - DFP Mult
+      case 0x222:  // ddivq - DFP Divide
+         if (!allow_GX) goto decode_failure;
+         if (dis_dfp_arithq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
       /* Floating Point Compare Instructions */         
       case 0x000: // fcmpu
       case 0x020: // fcmpo
@@ -13812,7 +14087,9 @@ DisResult disInstr_PPC_WRK (
       case 0x086: // mtfsfi
       case 0x247: // mffs
       case 0x2C7: // mtfsf
-         if (dis_fp_scr( theInstr )) goto decode_success;
+         // Some of the above instructions need to know more about the
+         // ISA level supported by the host.
+         if (dis_fp_scr( theInstr, allow_GX )) goto decode_success;
          goto decode_failure;
 
       default:

@@ -4818,6 +4818,9 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
                case Ity_F32: case Ity_F64: case Ity_F128: case Ity_V128:
                   *hasVorFtemps = True;
                   break;
+               case Ity_D32: case Ity_D64: case Ity_D128:
+                  *hasVorFtemps = True;
+                  break;
                default: 
                   goto bad;
             }

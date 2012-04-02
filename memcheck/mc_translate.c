@@ -370,8 +370,11 @@ static IRType shadowTypeV ( IRType ty )
       case Ity_I64: 
       case Ity_I128: return ty;
       case Ity_F32:  return Ity_I32;
+      case Ity_D32:  return Ity_I32;
       case Ity_F64:  return Ity_I64;
+      case Ity_D64:  return Ity_I64;
       case Ity_F128: return Ity_I128;
+      case Ity_D128: return Ity_I128;
       case Ity_V128: return Ity_V128;
       default: ppIRType(ty); 
                VG_(tool_panic)("memcheck:shadowTypeV");
@@ -439,6 +442,7 @@ static IRAtom* assignNew ( HChar cat, MCEnv* mce, IRType ty, IRExpr* e )
    TempKind k;
    IRTemp   t;
    IRType   tyE = typeOfIRExpr(mce->sb->tyenv, e);
+
    tl_assert(tyE == ty); /* so 'ty' is redundant (!) */
    switch (cat) {
       case 'V': k = VSh;  break;
@@ -2322,18 +2326,26 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom3,vatom3));
    switch (op) {
       case Iop_AddF128:
+      case Iop_AddD128:
       case Iop_SubF128:
+      case Iop_SubD128:
       case Iop_MulF128:
+      case Iop_MulD128:
       case Iop_DivF128:
+      case Iop_DivD128:
          /* I32(rm) x F128 x F128 -> F128 */
          return mkLazy3(mce, Ity_I128, vatom1, vatom2, vatom3);
       case Iop_AddF64:
+      case Iop_AddD64:
       case Iop_AddF64r32:
       case Iop_SubF64:
+      case Iop_SubD64:
       case Iop_SubF64r32:
       case Iop_MulF64:
+      case Iop_MulD64:
       case Iop_MulF64r32:
       case Iop_DivF64:
+      case Iop_DivD64:
       case Iop_DivF64r32:
       case Iop_ScaleF64:
       case Iop_Yl2xF64:
@@ -3060,6 +3072,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_F64HLtoF128:
+      case Iop_D64HLtoD128:
          return assignNew('V', mce, Ity_I128, binop(Iop_64HLto128, vatom1, vatom2));
 
       case Iop_F64toI32U:
@@ -3349,8 +3362,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return assignNew('V', mce, Ity_V128, unop(op, vatom));
 
       case Iop_F128HItoF64:  /* F128 -> high half of F128 */
+      case Iop_D128HItoD64:  /* D128 -> high half of D128 */
          return assignNew('V', mce, Ity_I64, unop(Iop_128HIto64, vatom));
       case Iop_F128LOtoF64:  /* F128 -> low  half of F128 */
+      case Iop_D128LOtoD64:  /* D128 -> low  half of D128 */
          return assignNew('V', mce, Ity_I64, unop(Iop_128to64, vatom));
 
       case Iop_NegF128:

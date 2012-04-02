@@ -29,7 +29,8 @@ EXTRA_DIST = \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
-	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest
+	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
+	test_dfp1.stderr.exp test_dfp1.stdout.exp test_dfp1.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -39,7 +40,9 @@ check_PROGRAMS = \
 	testVMX twi tw xlc_dbl_u32 power5+_round power6_bcmp \
 	test_isa_2_06_part1 \
 	test_isa_2_06_part2 \
-	test_isa_2_06_part3
+	test_isa_2_06_part3 \
+	test_dfp1
+
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
@@ -61,6 +64,14 @@ BUILD_FLAG_VSX =
 VSX_FLAG =
 endif
 
+if HAS_DFP
+BUILD_FLAGS_DFP = -mhard-dfp -mcpu=power6
+DFP_FLAG = -DHAS_DFP
+else
+BUILD_FLAGS_DFP =
+DFP_FLAG =
+endif
+
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec \
 			@FLAG_M32@ $(ALTIVEC_FLAG)
 
@@ -76,3 +87,5 @@ test_isa_2_06_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_
 test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(VSX_FLAG) \
 			@FLAG_M32@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
+test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M32@ $(BUILD_FLAGS_DFP)

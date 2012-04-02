@@ -1097,7 +1097,6 @@ ac_gcc_have_dfp=no
 AC_MSG_RESULT([no])
 ])
 
------
 CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes -a x$ac_gcc_have_dfp = xyes)

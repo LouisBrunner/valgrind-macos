@@ -131,10 +131,10 @@ Bool DRD_(freelike_block)(const ThreadId tid, const Addr p, const Bool dealloc)
    if (mc)
    {
       tl_assert(p == mc->data);
-      if (dealloc)
-	 VG_(cli_free)((void*)p);
       if (mc->size > 0)
          s_stop_using_mem_callback(mc->data, mc->size);
+      if (dealloc)
+	 VG_(cli_free)((void*)p);
       VG_(HT_remove)(s_malloc_list, (UWord)p);
       VG_(free)(mc);
       return True;

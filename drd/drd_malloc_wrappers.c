@@ -228,9 +228,9 @@ static void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
          VG_(memcpy)(p_new, p_old, mc->size);
 
          /* Free old memory. */
-         VG_(cli_free)(p_old);
          if (mc->size > 0)
             s_stop_using_mem_callback(mc->data, mc->size);
+         VG_(cli_free)(p_old);
          VG_(HT_remove)(s_malloc_list, (UWord)p_old);
 
          /* Update state information. */

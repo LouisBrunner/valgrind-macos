@@ -1373,7 +1373,8 @@ void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
                   score_here,  buf_here, tops[r].addr, name );
       VG_(printf)("\n");
       VG_(discard_translations)(tops[r].addr, 1, "bb profile");
-      VG_(translate)(0, tops[r].addr, True, VG_(clo_profile_flags), 0, True);
+      VG_(translate)(NULL/*caused_discardP*/,
+                     0, tops[r].addr, True, VG_(clo_profile_flags), 0, True);
       VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-=  end BB rank %d  "
                   "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
    }
@@ -1881,13 +1882,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
 
 #     if defined(VGP_x86_linux)
-      iters = 5;
+      iters = 10;
 #     elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
 #     elif defined(VGP_arm_linux)
-      iters = 1;
+      iters = 5;
 #     elif defined(VGP_s390x_linux)
       iters = 10;
 #     elif defined(VGO_darwin)

@@ -27,6 +27,7 @@
 #define vgPlain_printf                 printf
 #define vgPlain_memset                 memset
 #define vgPlain_memcpy                 memcpy
+#define vgPlain_memmove                memmove
 
 // Crudely replace some functions (in m_xarray.c, but not needed for
 // this unit test) by (hopefully) failing asserts.

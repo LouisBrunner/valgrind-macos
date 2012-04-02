@@ -280,6 +280,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
    bb->tyenv    = deepCopyIRTypeEnv(sb_in->tyenv);
    bb->next     = deepCopyIRExpr(sb_in->next);
    bb->jumpkind = sb_in->jumpkind;
+   bb->offsIP   = sb_in->offsIP;
 
    delta = 0;
 
@@ -1259,14 +1260,18 @@ typedef
    instead of the normal one.
 
    TID is the identity of the thread requesting this translation.
-*/
 
-Bool VG_(translate) ( ThreadId tid, 
-                      Addr64   nraddr,
-                      Bool     debugging_translation,
-                      Int      debugging_verbosity,
-                      ULong    bbs_done,
-                      Bool     allow_redirection )
+   *caused_discardP returns whether or not this translation resulting
+   in code being dumped from the main translation cache in order to
+   make space for the new translation.
+*/
+Bool VG_(translate) ( /*OUT*/Bool* caused_discardP,
+                      ThreadId     tid, 
+                      Addr64       nraddr,
+                      Bool         debugging_translation,
+                      Int          debugging_verbosity,
+                      ULong        bbs_done,
+                      Bool         allow_redirection )
 {
    Addr64             addr;
    T_Kind             kind;
@@ -1280,8 +1285,9 @@ Bool VG_(translate) ( ThreadId tid,
    VexTranslateResult tres;
    VgCallbackClosure  closure;
 
-   /* Make sure Vex is initialised right. */
+   if (caused_discardP) *caused_discardP = False;
 
+   /* Make sure Vex is initialised right. */
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
@@ -1348,7 +1354,7 @@ Bool VG_(translate) ( ThreadId tid,
       }
       vg_assert(objname);
       VG_(printf)(
-         "==== SB %d (exec'd %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
+         "==== SB %d (evchecks %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
          VG_(get_bbs_translated)(), bbs_done, (Int)tid, addr,
          fnname, objname, (ULong)objoff
       );
@@ -1461,11 +1467,10 @@ Bool VG_(translate) ( ThreadId tid,
    vta.arch_host        = vex_arch;
    vta.archinfo_host    = vex_archinfo;
    vta.abiinfo_both     = vex_abiinfo;
+   vta.callback_opaque  = (void*)&closure;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
    vta.guest_bytes_addr = (Addr64)addr;
-   vta.callback_opaque  = (void*)&closure;
    vta.chase_into_ok    = chase_into_ok;
-   vta.preamble_function = preamble_fn;
    vta.guest_extents    = &vge;
    vta.host_bytes       = tmpbuf;
    vta.host_bytes_size  = N_TMPBUF;
@@ -1486,22 +1491,47 @@ Bool VG_(translate) ( ThreadId tid,
                IRSB*,VexGuestLayout*,VexGuestExtents*,
                IRType,IRType)
        = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
-     vta.instrument1    = g;
+     vta.instrument1     = g;
    }
    /* No need for type kludgery here. */
-   vta.instrument2      = need_to_handle_SP_assignment()
-                             ? vg_SP_update_pass
-                             : NULL;
-   vta.finaltidy        = VG_(needs).final_IR_tidy_pass
-                             ? VG_(tdict).tool_final_IR_tidy_pass
-                             : NULL;
-   vta.needs_self_check = needs_self_check;
-   vta.traceflags       = verbosity;
+   vta.instrument2       = need_to_handle_SP_assignment()
+                              ? vg_SP_update_pass
+                              : NULL;
+   vta.finaltidy         = VG_(needs).final_IR_tidy_pass
+                              ? VG_(tdict).tool_final_IR_tidy_pass
+                              : NULL;
+   vta.needs_self_check  = needs_self_check;
+   vta.preamble_function = preamble_fn;
+   vta.traceflags        = verbosity;
+   vta.addProfInc        = VG_(clo_profile_flags) > 0
+                           && kind != T_NoRedir;
 
-   /* Set up the dispatch-return info.  For archs without a link
-      register, vex generates a jump back to the specified dispatch
-      address.  Else, it just generates a branch-to-LR. */
+   /* Set up the dispatch continuation-point info.  If this is a
+      no-redir translation then it cannot be chained, and the chain-me
+      points are set to NULL to indicate that.  The indir point must
+      also be NULL, since we can't allow this translation to do an
+      indir transfer -- that would take it back into the main
+      translation cache too.
 
+      All this is because no-redir translations live outside the main
+      translation cache (in a secondary one) and chaining them would
+      involve more adminstrative complexity that isn't worth the
+      hassle, because we don't expect them to get used often.  So
+      don't bother. */
+   if (allow_redirection) {
+      vta.disp_cp_chain_me_to_slowEP = (void*) &VG_(disp_cp_chain_me_to_slowEP);
+      vta.disp_cp_chain_me_to_fastEP = (void*) &VG_(disp_cp_chain_me_to_fastEP);
+      vta.disp_cp_xindir             = (void*) &VG_(disp_cp_xindir);
+   } else {
+      vta.disp_cp_chain_me_to_slowEP = NULL;
+      vta.disp_cp_chain_me_to_fastEP = NULL;
+      vta.disp_cp_xindir             = NULL;
+   }
+   /* Thins  doesn't involve chaining and so is always allowable. */
+   vta.disp_cp_xassisted = (void*) &VG_(disp_cp_xassisted);
+
+#if 0
+   // FIXME tidy this up and make profiling work again
 #  if defined(VGA_x86) || defined(VGA_amd64)
    if (!allow_redirection) {
       /* It's a no-redir translation.  Will be run with the
@@ -1539,6 +1569,7 @@ Bool VG_(translate) ( ThreadId tid,
 #  else
 #    error "Unknown arch"
 #  endif
+#endif /* 0 */
 
    /* Sheesh.  Finally, actually _do_ the translation! */
    tres = LibVEX_Translate ( &vta );
@@ -1577,12 +1608,18 @@ Bool VG_(translate) ( ThreadId tid,
 
           // Note that we use nraddr (the non-redirected address), not
           // addr, which might have been changed by the redirection
-          VG_(add_to_transtab)( &vge,
-                                nraddr,
-                                (Addr)(&tmpbuf[0]), 
-                                tmpbuf_used,
-                                tres.n_sc_extents > 0 );
+          Bool caused_discard
+             = VG_(add_to_transtab)( &vge,
+                                     nraddr,
+                                     (Addr)(&tmpbuf[0]), 
+                                     tmpbuf_used,
+                                     tres.n_sc_extents > 0,
+                                     tres.offs_profInc,
+                                     vex_arch );
+          if (caused_discardP)
+             *caused_discardP = caused_discard;
       } else {
+          vg_assert(tres.offs_profInc == -1); /* -1 == unset */
           VG_(add_to_unredir_transtab)( &vge,
                                         nraddr,
                                         (Addr)(&tmpbuf[0]), 

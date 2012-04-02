@@ -92,7 +92,9 @@ AM_CFLAGS_BASE = \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
 	-fno-strict-aliasing \
-	-fno-builtin
+	-fno-builtin \
+	\
+	-O
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good

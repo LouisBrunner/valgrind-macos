@@ -285,10 +285,10 @@ check_PROGRAMS = \
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
-if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
-AM_CFLAGS   += -mfloat-abi=softfp
-AM_CXXFLAGS += -mfloat-abi=softfp
-endif
+#if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+#AM_CFLAGS   += -mfloat-abi=softfp
+#AM_CXXFLAGS += -mfloat-abi=softfp
+#endif
 
 if VGCONF_OS_IS_DARWIN
 atomic_incs_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic

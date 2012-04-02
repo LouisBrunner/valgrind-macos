@@ -4317,6 +4317,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
    bbOut->tyenv    = deepCopyIRTypeEnv(bbIn->tyenv);
    bbOut->next     = deepCopyIRExpr(bbIn->next);
    bbOut->jumpkind = bbIn->jumpkind;
+   bbOut->offsIP   = bbIn->offsIP;
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;

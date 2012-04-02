@@ -117,6 +117,12 @@ extern void VG_(dropTailXA) ( XArray*, Word );
    is the number of elements remaining in the XArray. */
 extern void VG_(dropHeadXA) ( XArray*, Word );
 
+/* Remove the specified element of an XArray, and slide all elements
+   beyond it back one place.  This is an O(N) operation, where N is
+   the number of elements after the specified element, in the
+   array. */
+extern void VG_(removeIndexXA)( XArray*, Word );
+
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.
    Returns NULL if the allocation function didn't manage to allocate

@@ -39,14 +39,14 @@ v6intThumb_CFLAGS = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 -mthumb
 v6media_CFLAGS    = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 -mthumb
 
 vfp_CFLAGS        = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
-			-mfpu=neon -mfloat-abi=softfp \
+			-mfpu=neon \
 			-mthumb
 
 
 neon128_CFLAGS    = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
-			-mfpu=neon -mfloat-abi=softfp \
+			-mfpu=neon \
 			-mthumb
 
 neon64_CFLAGS     = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
-			-mfpu=neon -mfloat-abi=softfp \
+			-mfpu=neon \
 			-mthumb

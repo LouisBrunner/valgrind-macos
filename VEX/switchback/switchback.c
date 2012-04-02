@@ -867,6 +867,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    vta.do_self_check    = False;
    vta.traceflags       = verbose ? TEST_FLAGS : DEBUG_TRACE_FLAGS;
    vta.dispatch         = NULL;
+   vta.addProfInc       = False;
 
    tres = LibVEX_Translate ( &vta );
 

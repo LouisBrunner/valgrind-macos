@@ -1511,7 +1511,8 @@ static void casLE ( IRExpr* addr, IRExpr* expVal, IRExpr* newVal,
             binop( mkSizedOp(tyE,Iop_CasCmpNE8),
                    mkexpr(oldTmp), mkexpr(expTmp) ),
             Ijk_Boring, /*Ijk_NoRedir*/
-            IRConst_U64( restart_point ) 
+            IRConst_U64( restart_point ),
+            OFFB_RIP
          ));
 }
 
@@ -2091,36 +2092,55 @@ static HChar nameISize ( Int size )
 /*--- JMP helpers                                          ---*/
 /*------------------------------------------------------------*/
 
-static void jmp_lit( IRJumpKind kind, Addr64 d64 )
+static void jmp_lit( /*MOD*/DisResult* dres,
+                     IRJumpKind kind, Addr64 d64 )
 {
-   irsb->next     = mkU64(d64);
-   irsb->jumpkind = kind;
+   vassert(dres->whatNext    == Dis_Continue);
+   vassert(dres->len         == 0);
+   vassert(dres->continueAt  == 0);
+   vassert(dres->jk_StopHere == Ijk_INVALID);
+   dres->whatNext    = Dis_StopHere;
+   dres->jk_StopHere = kind;
+   stmt( IRStmt_Put( OFFB_RIP, mkU64(d64) ) );
 }
 
-static void jmp_treg( IRJumpKind kind, IRTemp t )
+static void jmp_treg( /*MOD*/DisResult* dres,
+                      IRJumpKind kind, IRTemp t )
 {
-   irsb->next     = mkexpr(t);
-   irsb->jumpkind = kind;
+   vassert(dres->whatNext    == Dis_Continue);
+   vassert(dres->len         == 0);
+   vassert(dres->continueAt  == 0);
+   vassert(dres->jk_StopHere == Ijk_INVALID);
+   dres->whatNext    = Dis_StopHere;
+   dres->jk_StopHere = kind;
+   stmt( IRStmt_Put( OFFB_RIP, mkexpr(t) ) );
 }
 
 static 
-void jcc_01 ( AMD64Condcode cond, Addr64 d64_false, Addr64 d64_true )
+void jcc_01 ( /*MOD*/DisResult* dres,
+              AMD64Condcode cond, Addr64 d64_false, Addr64 d64_true )
 {
    Bool          invert;
    AMD64Condcode condPos;
+   vassert(dres->whatNext    == Dis_Continue);
+   vassert(dres->len         == 0);
+   vassert(dres->continueAt  == 0);
+   vassert(dres->jk_StopHere == Ijk_INVALID);
+   dres->whatNext    = Dis_StopHere;
+   dres->jk_StopHere = Ijk_Boring;
    condPos = positiveIse_AMD64Condcode ( cond, &invert );
    if (invert) {
       stmt( IRStmt_Exit( mk_amd64g_calculate_condition(condPos),
                          Ijk_Boring,
-                         IRConst_U64(d64_false) ) );
-      irsb->next     = mkU64(d64_true);
-      irsb->jumpkind = Ijk_Boring;
+                         IRConst_U64(d64_false),
+                         OFFB_RIP ) );
+      stmt( IRStmt_Put( OFFB_RIP, mkU64(d64_true) ) );
    } else {
       stmt( IRStmt_Exit( mk_amd64g_calculate_condition(condPos),
                          Ijk_Boring,
-                         IRConst_U64(d64_true) ) );
-      irsb->next     = mkU64(d64_false);
-      irsb->jumpkind = Ijk_Boring;
+                         IRConst_U64(d64_true),
+                         OFFB_RIP ) );
+      stmt( IRStmt_Put( OFFB_RIP, mkU64(d64_false) ) );
    }
 }
 
@@ -3966,7 +3986,7 @@ ULong dis_Grp4 ( VexAbiInfo* vbi,
 static
 ULong dis_Grp5 ( VexAbiInfo* vbi,
                  Prefix pfx, Int sz, Long delta,
-                 DisResult* dres, Bool* decode_OK )
+                 /*MOD*/DisResult* dres, /*OUT*/Bool* decode_OK )
 {
    Int     len;
    UChar   modrm;
@@ -4009,8 +4029,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_RIP_bbstart+delta+1));
             make_redzone_AbiHint(vbi, t2, t3/*nia*/, "call-Ev(reg)");
-            jmp_treg(Ijk_Call,t3);
-            dres->whatNext = Dis_StopHere;
+            jmp_treg(dres, Ijk_Call, t3);
+            vassert(dres->whatNext == Dis_StopHere);
             showSz = False;
             break;
          case 4: /* jmp Ev */
@@ -4019,8 +4039,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
-            jmp_treg(Ijk_Boring,t3);
-            dres->whatNext = Dis_StopHere;
+            jmp_treg(dres, Ijk_Boring, t3);
+            vassert(dres->whatNext == Dis_StopHere);
             showSz = False;
             break;
          default: 
@@ -4073,8 +4093,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_RIP_bbstart+delta+len));
             make_redzone_AbiHint(vbi, t2, t3/*nia*/, "call-Ev(mem)");
-            jmp_treg(Ijk_Call,t3);
-            dres->whatNext = Dis_StopHere;
+            jmp_treg(dres, Ijk_Call, t3);
+            vassert(dres->whatNext == Dis_StopHere);
             showSz = False;
             break;
          case 4: /* JMP Ev */
@@ -4083,8 +4103,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
-            jmp_treg(Ijk_Boring,t3);
-            dres->whatNext = Dis_StopHere;
+            jmp_treg(dres, Ijk_Boring, t3);
+            vassert(dres->whatNext == Dis_StopHere);
             showSz = False;
             break;
          case 6: /* PUSH Ev */
@@ -4287,7 +4307,8 @@ void dis_SCAS ( Int sz, IRTemp t_inc, Prefix pfx )
    the insn is the last one in the basic block, and so emit a jump to
    the next insn, rather than just falling through. */
 static 
-void dis_REP_op ( AMD64Condcode cond,
+void dis_REP_op ( /*MOD*/DisResult* dres,
+                  AMD64Condcode cond,
                   void (*dis_OP)(Int, IRTemp, Prefix),
                   Int sz, Addr64 rip, Addr64 rip_next, HChar* name,
                   Prefix pfx )
@@ -4310,7 +4331,8 @@ void dis_REP_op ( AMD64Condcode cond,
       cmp = binop(Iop_CmpEQ64, mkexpr(tc), mkU64(0));
    }
 
-   stmt( IRStmt_Exit( cmp, Ijk_Boring, IRConst_U64(rip_next) ) );
+   stmt( IRStmt_Exit( cmp, Ijk_Boring,
+                      IRConst_U64(rip_next), OFFB_RIP ) );
 
    if (haveASO(pfx))
       putIReg32(R_RCX, binop(Iop_Sub32, mkexpr(tc), mkU32(1)) );
@@ -4321,12 +4343,15 @@ void dis_REP_op ( AMD64Condcode cond,
    dis_OP (sz, t_inc, pfx);
 
    if (cond == AMD64CondAlways) {
-      jmp_lit(Ijk_Boring,rip);
+      jmp_lit(dres, Ijk_Boring, rip);
+      vassert(dres->whatNext == Dis_StopHere);
    } else {
       stmt( IRStmt_Exit( mk_amd64g_calculate_condition(cond),
                          Ijk_Boring,
-                         IRConst_U64(rip) ) );
-      jmp_lit(Ijk_Boring,rip_next);
+                         IRConst_U64(rip),
+                         OFFB_RIP ) );
+      jmp_lit(dres, Ijk_Boring, rip_next);
+      vassert(dres->whatNext == Dis_StopHere);
    }
    DIP("%s%c\n", name, nameISize(sz));
 }
@@ -5130,7 +5155,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                   IRStmt_Exit(
                      binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
                      Ijk_EmWarn,
-                     IRConst_U64( guest_RIP_bbstart+delta )
+                     IRConst_U64( guest_RIP_bbstart+delta ),
+                     OFFB_RIP
                   )
                );
 
@@ -5172,7 +5198,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                   IRStmt_Exit(
                      binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
                      Ijk_EmWarn,
-                     IRConst_U64( guest_RIP_bbstart+delta )
+                     IRConst_U64( guest_RIP_bbstart+delta ),
+                     OFFB_RIP
                   )
                );
                break;
@@ -6108,7 +6135,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                   IRStmt_Exit(
                      binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
                      Ijk_EmWarn,
-                     IRConst_U64( guest_RIP_bbstart+delta )
+                     IRConst_U64( guest_RIP_bbstart+delta ),
+                     OFFB_RIP
                   )
                );
 
@@ -8143,7 +8171,7 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
 //.. }
 
 static
-void dis_ret ( VexAbiInfo* vbi, ULong d64 )
+void dis_ret ( /*MOD*/DisResult* dres, VexAbiInfo* vbi, ULong d64 )
 {
    IRTemp t1 = newTemp(Ity_I64); 
    IRTemp t2 = newTemp(Ity_I64);
@@ -8153,7 +8181,8 @@ void dis_ret ( VexAbiInfo* vbi, ULong d64 )
    assign(t3, binop(Iop_Add64, mkexpr(t1), mkU64(8+d64)));
    putIReg64(R_RSP, mkexpr(t3));
    make_redzone_AbiHint(vbi, t3, t2/*nia*/, "ret");
-   jmp_treg(Ijk_Ret,t2);
+   jmp_treg(dres, Ijk_Ret, t2);
+   vassert(dres->whatNext == Dis_StopHere);
 }
 
 
@@ -8964,7 +8993,8 @@ static void gen_SEGV_if_not_16_aligned ( IRTemp effective_addr )
                binop(Iop_And64,mkexpr(effective_addr),mkU64(0xF)),
                mkU64(0)),
          Ijk_SigSEGV,
-         IRConst_U64(guest_RIP_curr_instr)
+         IRConst_U64(guest_RIP_curr_instr),
+         OFFB_RIP
       )
    );
 }
@@ -11527,7 +11557,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             IRStmt_Exit(
                binop(Iop_CmpNE64, unop(Iop_32Uto64,mkexpr(ew)), mkU64(0)),
                Ijk_EmWarn,
-               IRConst_U64(guest_RIP_bbstart+delta)
+               IRConst_U64(guest_RIP_bbstart+delta),
+               OFFB_RIP
             )
          );
          goto decode_success;
@@ -16954,7 +16985,8 @@ Long dis_ESC_NONE (
                   mk_amd64g_calculate_condition(
                      (AMD64Condcode)(1 ^ (opc - 0x70))),
                   Ijk_Boring,
-                  IRConst_U64(guest_RIP_bbstart+delta) ) );
+                  IRConst_U64(guest_RIP_bbstart+delta),
+                  OFFB_RIP ) );
          dres->whatNext   = Dis_ResteerC;
          dres->continueAt = d64;
          comment = "(assumed taken)";
@@ -16972,7 +17004,8 @@ Long dis_ESC_NONE (
          stmt( IRStmt_Exit( 
                   mk_amd64g_calculate_condition((AMD64Condcode)(opc - 0x70)),
                   Ijk_Boring,
-                  IRConst_U64(d64) ) );
+                  IRConst_U64(d64),
+                  OFFB_RIP ) );
          dres->whatNext   = Dis_ResteerC;
          dres->continueAt = guest_RIP_bbstart+delta;
          comment = "(assumed not taken)";
@@ -16980,10 +17013,9 @@ Long dis_ESC_NONE (
       else {
          /* Conservative default translation - end the block at this
             point. */
-         jcc_01( (AMD64Condcode)(opc - 0x70), 
-                 guest_RIP_bbstart+delta,
-                 d64 );
-         dres->whatNext = Dis_StopHere;
+         jcc_01( dres, (AMD64Condcode)(opc - 0x70),
+                 guest_RIP_bbstart+delta, d64 );
+         vassert(dres->whatNext == Dis_StopHere);
       }
       DIP("j%s-8 0x%llx %s\n", name_AMD64Condcode(opc - 0x70), d64, comment);
       return delta;
@@ -17154,8 +17186,8 @@ Long dis_ESC_NONE (
          DIP("rep nop (P4 pause)\n");
          /* "observe" the hint.  The Vex client needs to be careful not
             to cause very long delays as a result, though. */
-         jmp_lit(Ijk_Yield, guest_RIP_bbstart+delta);
-         dres->whatNext = Dis_StopHere;
+         jmp_lit(dres, Ijk_Yield, guest_RIP_bbstart+delta);
+         vassert(dres->whatNext == Dis_StopHere);
          return delta;
       }
       /* detect and handle NOPs specially */
@@ -17393,7 +17425,7 @@ Long dis_ESC_NONE (
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA4)
             sz = 1;
-         dis_REP_op ( AMD64CondAlways, dis_MOVS, sz,
+         dis_REP_op ( dres, AMD64CondAlways, dis_MOVS, sz,
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "rep movs", pfx );
         dres->whatNext = Dis_StopHere;
@@ -17414,7 +17446,7 @@ Long dis_ESC_NONE (
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA6)
             sz = 1;
-         dis_REP_op ( AMD64CondZ, dis_CMPS, sz, 
+         dis_REP_op ( dres, AMD64CondZ, dis_CMPS, sz, 
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "repe cmps", pfx );
          dres->whatNext = Dis_StopHere;
@@ -17428,11 +17460,11 @@ Long dis_ESC_NONE (
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xAA)
             sz = 1;
-         dis_REP_op ( AMD64CondAlways, dis_STOS, sz,
+         dis_REP_op ( dres, AMD64CondAlways, dis_STOS, sz,
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "rep stos", pfx );
-        dres->whatNext = Dis_StopHere;
-        return delta;
+         vassert(dres->whatNext == Dis_StopHere);
+         return delta;
       }
       /* AA/AB: stosb/stos{w,l,q} */
       if (!haveF3(pfx) && !haveF2(pfx)) {
@@ -17463,20 +17495,20 @@ Long dis_ESC_NONE (
       if (haveF2(pfx) && !haveF3(pfx)) {
          if (opc == 0xAE)
             sz = 1;
-         dis_REP_op ( AMD64CondNZ, dis_SCAS, sz, 
+         dis_REP_op ( dres, AMD64CondNZ, dis_SCAS, sz, 
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "repne scas", pfx );
-         dres->whatNext = Dis_StopHere;
+         vassert(dres->whatNext == Dis_StopHere);
          return delta;
       }
       /* F3 AE/AF: repe scasb/repe scas{w,l,q} */
       if (!haveF2(pfx) && haveF3(pfx)) {
          if (opc == 0xAE)
             sz = 1;
-         dis_REP_op ( AMD64CondZ, dis_SCAS, sz, 
+         dis_REP_op ( dres, AMD64CondZ, dis_SCAS, sz, 
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "repe scas", pfx );
-         dres->whatNext = Dis_StopHere;
+         vassert(dres->whatNext == Dis_StopHere);
          return delta;
       }
       /* AE/AF: scasb/scas{w,l,q} */
@@ -17563,16 +17595,14 @@ Long dis_ESC_NONE (
       if (have66orF2orF3(pfx)) goto decode_failure;
       d64 = getUDisp16(delta); 
       delta += 2;
-      dis_ret(vbi, d64);
-      dres->whatNext = Dis_StopHere;
+      dis_ret(dres, vbi, d64);
       DIP("ret $%lld\n", d64);
       return delta;
 
    case 0xC3: /* RET */
       if (have66orF2(pfx)) goto decode_failure;
       /* F3 is acceptable on AMD. */
-      dis_ret(vbi, 0);
-      dres->whatNext = Dis_StopHere;
+      dis_ret(dres, vbi, 0);
       DIP(haveF3(pfx) ? "rep ; ret\n" : "ret\n");
       return delta;
 
@@ -17655,8 +17685,8 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0xCC: /* INT 3 */
-      jmp_lit(Ijk_SigTRAP, guest_RIP_bbstart + delta);
-      dres->whatNext = Dis_StopHere;
+      jmp_lit(dres, Ijk_SigTRAP, guest_RIP_bbstart + delta);
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("int $0x3\n");
       return delta;
 
@@ -17808,7 +17838,7 @@ Long dis_ESC_NONE (
          default:
 	    vassert(0);
       }
-      stmt( IRStmt_Exit(cond, Ijk_Boring, IRConst_U64(d64)) );
+      stmt( IRStmt_Exit(cond, Ijk_Boring, IRConst_U64(d64), OFFB_RIP) );
 
       DIP("loop%s%s 0x%llx\n", xtra, haveASO(pfx) ? "l" : "", d64);
       return delta;
@@ -17822,20 +17852,22 @@ Long dis_ESC_NONE (
       if (haveASO(pfx)) {
          /* 32-bit */
          stmt( IRStmt_Exit( binop(Iop_CmpEQ64, 
-                            unop(Iop_32Uto64, getIReg32(R_RCX)), 
-                            mkU64(0)),
-               Ijk_Boring,
-               IRConst_U64(d64)) 
-             );
+                                  unop(Iop_32Uto64, getIReg32(R_RCX)), 
+                                  mkU64(0)),
+                            Ijk_Boring,
+                            IRConst_U64(d64),
+                            OFFB_RIP
+             ));
          DIP("jecxz 0x%llx\n", d64);
       } else {
          /* 64-bit */
          stmt( IRStmt_Exit( binop(Iop_CmpEQ64, 
                                   getIReg64(R_RCX), 
                                   mkU64(0)),
-               Ijk_Boring,
-               IRConst_U64(d64)) 
-             );
+                            Ijk_Boring,
+                            IRConst_U64(d64),
+                            OFFB_RIP
+               ));
          DIP("jrcxz 0x%llx\n", d64);
       }
       return delta;
@@ -17953,8 +17985,8 @@ Long dis_ESC_NONE (
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = d64;
       } else {
-         jmp_lit(Ijk_Call,d64);
-         dres->whatNext = Dis_StopHere;
+         jmp_lit(dres, Ijk_Call, d64);
+         vassert(dres->whatNext == Dis_StopHere);
       }
       DIP("call 0x%llx\n",d64);
       return delta;
@@ -17969,8 +18001,8 @@ Long dis_ESC_NONE (
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = d64;
       } else {
-         jmp_lit(Ijk_Boring,d64);
-         dres->whatNext = Dis_StopHere;
+         jmp_lit(dres, Ijk_Boring, d64);
+         vassert(dres->whatNext == Dis_StopHere);
       }
       DIP("jmp 0x%llx\n", d64);
       return delta;
@@ -17985,8 +18017,8 @@ Long dis_ESC_NONE (
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = d64;
       } else {
-         jmp_lit(Ijk_Boring,d64);
-         dres->whatNext = Dis_StopHere;
+         jmp_lit(dres, Ijk_Boring, d64);
+         vassert(dres->whatNext == Dis_StopHere);
       }
       DIP("jmp-8 0x%llx\n", d64);
       return delta;
@@ -18153,8 +18185,8 @@ Long dis_ESC_0F (
       /* It's important that all guest state is up-to-date
          at this point.  So we declare an end-of-block here, which
          forces any cached guest state to be flushed. */
-      jmp_lit(Ijk_Sys_syscall, guest_RIP_next_assumed);
-      dres->whatNext = Dis_StopHere;
+      jmp_lit(dres, Ijk_Sys_syscall, guest_RIP_next_assumed);
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("syscall\n");
       return delta;
 
@@ -18243,7 +18275,9 @@ Long dis_ESC_0F (
                   mk_amd64g_calculate_condition(
                      (AMD64Condcode)(1 ^ (opc - 0x80))),
                   Ijk_Boring,
-                  IRConst_U64(guest_RIP_bbstart+delta) ) );
+                  IRConst_U64(guest_RIP_bbstart+delta),
+                  OFFB_RIP
+             ));
          dres->whatNext   = Dis_ResteerC;
          dres->continueAt = d64;
          comment = "(assumed taken)";
@@ -18262,7 +18296,9 @@ Long dis_ESC_0F (
                   mk_amd64g_calculate_condition((AMD64Condcode)
                                                 (opc - 0x80)),
                   Ijk_Boring,
-                  IRConst_U64(d64) ) );
+                  IRConst_U64(d64),
+                  OFFB_RIP
+             ));
          dres->whatNext   = Dis_ResteerC;
          dres->continueAt = guest_RIP_bbstart+delta;
          comment = "(assumed not taken)";
@@ -18270,10 +18306,9 @@ Long dis_ESC_0F (
       else {
          /* Conservative default translation - end the block at
             this point. */
-         jcc_01( (AMD64Condcode)(opc - 0x80), 
-                 guest_RIP_bbstart+delta,
-                 d64 );
-         dres->whatNext = Dis_StopHere;
+         jcc_01( dres, (AMD64Condcode)(opc - 0x80),
+                 guest_RIP_bbstart+delta, d64 );
+         vassert(dres->whatNext == Dis_StopHere);
       }
       DIP("j%s-32 0x%llx %s\n", name_AMD64Condcode(opc - 0x80), d64, comment);
       return delta;
@@ -18985,7 +19020,6 @@ Long dis_ESC_0F3A (
 static
 DisResult disInstr_AMD64_WRK ( 
              /*OUT*/Bool* expect_CAS,
-             Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              Bool         resteerCisOk,
              void*        callback_opaque,
@@ -19015,10 +19049,10 @@ DisResult disInstr_AMD64_WRK (
    Prefix pfx = PFX_EMPTY;
 
    /* Set result defaults. */
-   dres.whatNext   = Dis_Continue;
-   dres.len        = 0;
-   dres.continueAt = 0;
-
+   dres.whatNext    = Dis_Continue;
+   dres.len         = 0;
+   dres.continueAt  = 0;
+   dres.jk_StopHere = Ijk_INVALID;
    *expect_CAS = False;
 
    vassert(guest_RIP_next_assumed == 0);
@@ -19027,10 +19061,6 @@ DisResult disInstr_AMD64_WRK (
    t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
 
    DIP("\t0x%llx:  ", guest_RIP_bbstart+delta);
-
-   /* We may be asked to update the guest RIP before going further. */
-   if (put_IP)
-      stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_curr_instr)) );
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
@@ -19055,8 +19085,8 @@ DisResult disInstr_AMD64_WRK (
             /* %RDX = client_request ( %RAX ) */
             DIP("%%rdx = client_request ( %%rax )\n");
             delta += 19;
-            jmp_lit(Ijk_ClientReq, guest_RIP_bbstart+delta);
-            dres.whatNext = Dis_StopHere;
+            jmp_lit(&dres, Ijk_ClientReq, guest_RIP_bbstart+delta);
+            vassert(dres.whatNext == Dis_StopHere);
             goto decode_success;
          }
          else
@@ -19080,8 +19110,8 @@ DisResult disInstr_AMD64_WRK (
             assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_RIP_bbstart+delta));
-            jmp_treg(Ijk_NoRedir,t1);
-            dres.whatNext = Dis_StopHere;
+            jmp_treg(&dres, Ijk_NoRedir, t1);
+            vassert(dres.whatNext == Dis_StopHere);
             goto decode_success;
          }
          /* We don't know what it is. */
@@ -19309,7 +19339,7 @@ DisResult disInstr_AMD64_WRK (
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
-      dres.whatNext = Dis_StopHere;
+      vassert(dres.whatNext == Dis_StopHere);
       DIP("int $0x%02x\n", (UInt)d64);
       break;
    }
@@ -19452,9 +19482,9 @@ DisResult disInstr_AMD64_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_curr_instr) ) );
-   jmp_lit(Ijk_NoDecode, guest_RIP_curr_instr);
-   dres.whatNext = Dis_StopHere;
-   dres.len      = 0;
+   jmp_lit(&dres, Ijk_NoDecode, guest_RIP_curr_instr);
+   vassert(dres.whatNext == Dis_StopHere);
+   dres.len = 0;
    /* We also need to say that a CAS is not expected now, regardless
       of what it might have been set to at the start of the function,
       since the IR that we've emitted just above (to synthesis a
@@ -19467,6 +19497,20 @@ DisResult disInstr_AMD64_WRK (
 
   decode_success:
    /* All decode successes end up here. */
+   switch (dres.whatNext) {
+      case Dis_Continue:
+         stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_bbstart + delta) ) );
+         break;
+      case Dis_ResteerU:
+      case Dis_ResteerC:
+         stmt( IRStmt_Put( OFFB_RIP, mkU64(dres.continueAt) ) );
+         break;
+      case Dis_StopHere:
+         break;
+      default:
+         vassert(0);
+   }
+
    DIP("\n");
    dres.len = (Int)toUInt(delta - delta_start);
    return dres;
@@ -19484,7 +19528,6 @@ DisResult disInstr_AMD64_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
-                           Bool         put_IP,
                            Bool         (*resteerOkFn) ( void*, Addr64 ),
                            Bool         resteerCisOk,
                            void*        callback_opaque,
@@ -19514,7 +19557,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
 
    x1 = irsb_IN->stmts_used;
    expect_CAS = False;
-   dres = disInstr_AMD64_WRK ( &expect_CAS, put_IP, resteerOkFn,
+   dres = disInstr_AMD64_WRK ( &expect_CAS, resteerOkFn,
                                resteerCisOk,
                                callback_opaque,
                                delta, archinfo, abiinfo );
@@ -19547,7 +19590,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
       /* inconsistency detected.  re-disassemble the instruction so as
          to generate a useful error message; then assert. */
       vex_traceflags |= VEX_TRACE_FE;
-      dres = disInstr_AMD64_WRK ( &expect_CAS, put_IP, resteerOkFn,
+      dres = disInstr_AMD64_WRK ( &expect_CAS, resteerOkFn,
                                   resteerCisOk,
                                   callback_opaque,
                                   delta, archinfo, abiinfo );

@@ -88,7 +88,9 @@ CCFLAGS = -Wall -Wmissing-prototypes -Wshadow \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
 		-Wcast-align -Wmissing-declarations \
 		-Wno-pointer-sign \
-		$(EXTRA_CFLAGS) -g -O2 -fstrict-aliasing
+		$(EXTRA_CFLAGS) -g -O2 -fstrict-aliasing \
+                \
+                -O
 
 #CC = icc
 #CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188 -wd186

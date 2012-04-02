@@ -80,6 +80,9 @@
 
 #define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
 
+#define VEX_TRC_JMP_BORING       95 /* return to sched, but just 
+                                       keep going; no special action */
+
 #endif /* ndef __LIBVEX_TRC_VALUES_H */
 
 /*---------------------------------------------------------------*/

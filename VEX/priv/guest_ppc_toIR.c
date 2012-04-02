@@ -1500,7 +1500,7 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
    if (mode64) {
       vassert(typeOfIRTemp(irsb->tyenv, addr) == Ity_I64);
       stmt(
-         IRStmt_Exit(
+         IRStmt_Exit3(
             binop(Iop_CmpNE64,
                   binop(Iop_And64, mkexpr(addr), mkU64(align-1)),
                   mkU64(0)),
@@ -1511,7 +1511,7 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
    } else {
       vassert(typeOfIRTemp(irsb->tyenv, addr) == Ity_I32);
       stmt(
-         IRStmt_Exit(
+         IRStmt_Exit3(
             binop(Iop_CmpNE32,
                   binop(Iop_And32, mkexpr(addr), mkU32(align-1)),
                   mkU32(0)),
@@ -2690,7 +2690,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
             so that Valgrind's dispatcher sees the warning. */
          putGST( PPC_GST_EMWARN, mkU32(ew) );
          stmt( 
-            IRStmt_Exit(
+            IRStmt_Exit3(
                binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
                Ijk_EmWarn,
                mkSzConst( ty, nextInsnAddr()) ));
@@ -4975,7 +4975,7 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
 
    for (i = 0; i < maxBytes; i++) {
       /* if (nBytes < (i+1)) goto NIA; */
-      stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
+      stmt( IRStmt_Exit3( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
                          Ijk_Boring, 
                          mkSzConst( ty, nextInsnAddr()) ));
       /* when crossing into a new dest register, set it to zero. */
@@ -5026,7 +5026,7 @@ void generate_stsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
 
    for (i = 0; i < maxBytes; i++) {
       /* if (nBytes < (i+1)) goto NIA; */
-      stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
+      stmt( IRStmt_Exit3( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
                          Ijk_Boring, 
                          mkSzConst( ty, nextInsnAddr() ) ));
       /* check for crossing into a new src register. */
@@ -5301,7 +5301,7 @@ static Bool dis_branch ( UInt theInstr,
          cond_ok is either zero or nonzero, since that's the cheapest
          way to compute it.  Anding them together gives a value which
          is either zero or non zero and so that's what we must test
-         for in the IRStmt_Exit. */
+         for in the IRStmt_Exit3. */
       assign( ctr_ok,  branch_ctr_ok( BO ) );
       assign( cond_ok, branch_cond_ok( BO, BI ) );
       assign( do_branch,
@@ -5316,7 +5316,7 @@ static Bool dis_branch ( UInt theInstr,
       if (flag_LK)
          putGST( PPC_GST_LR, e_nia );
       
-      stmt( IRStmt_Exit(
+      stmt( IRStmt_Exit3(
                binop(Iop_CmpNE32, mkexpr(do_branch), mkU32(0)),
                flag_LK ? Ijk_Call : Ijk_Boring,
                mkSzConst(ty, tgt) ) );
@@ -5351,7 +5351,7 @@ static Bool dis_branch ( UInt theInstr,
          if (flag_LK)
             putGST( PPC_GST_LR, e_nia );
          
-         stmt( IRStmt_Exit(
+         stmt( IRStmt_Exit3(
                   binop(Iop_CmpEQ32, mkexpr(cond_ok), mkU32(0)),
                   Ijk_Boring,
                   c_nia ));
@@ -5391,7 +5391,7 @@ static Bool dis_branch ( UInt theInstr,
          if (flag_LK)
             putGST( PPC_GST_LR,  e_nia );
 
-         stmt( IRStmt_Exit(
+         stmt( IRStmt_Exit3(
                   binop(Iop_CmpEQ32, mkexpr(do_branch), mkU32(0)),
                   Ijk_Boring,
                   c_nia ));
@@ -5558,7 +5558,7 @@ static Bool do_trap ( UChar TO,
    if ((TO & b11100) == b11100 || (TO & b00111) == b00111) {
       /* Unconditional trap.  Just do the exit without 
          testing the arguments. */
-      stmt( IRStmt_Exit( 
+      stmt( IRStmt_Exit3( 
                binop(opCMPEQ, const0, const0), 
                Ijk_SigTRAP,
                mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
@@ -5601,7 +5601,7 @@ static Bool do_trap ( UChar TO,
       tmp = binop(opAND, binop(opCMPORDU, argLe, argRe), const4);
       cond = binop(opOR, tmp, cond);
    }
-   stmt( IRStmt_Exit( 
+   stmt( IRStmt_Exit3( 
             binop(opCMPNE, cond, const0), 
             Ijk_SigTRAP,
             mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 

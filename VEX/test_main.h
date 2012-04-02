@@ -2,15 +2,15 @@
 /* Copy this file (test_main.h.in) to test_main.h, and edit */
 
 /* DEBUG RUN, ON V */
-#if 0
+#if 1
 #define TEST_VSUPPORT  True
 #define TEST_N_ITERS   1
 #define TEST_N_BBS     1
-#define TEST_FLAGS     (1<<7) /* |(1<<2)|(1<<1) */
+#define TEST_FLAGS     (1<<7)|(0<<6)|(1<<3)|(0<<2)|(0<<1)|(0<<0)
 #endif
 
 /* CHECKING RUN, ON V */
-#if 1
+#if 0
 #define TEST_VSUPPORT  True
 #define TEST_N_ITERS   1
 #define TEST_N_BBS     100000

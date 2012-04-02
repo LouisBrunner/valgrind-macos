@@ -363,10 +363,11 @@ typedef
       Ain_Alu32R,      /* 32-bit add/sub/and/or/xor/cmp, dst=REG (a la Alu64R) */
       Ain_MulL,        /* widening multiply */
       Ain_Div,         /* div and mod */
-//..       Xin_Sh3232,    /* shldl or shrdl */
       Ain_Push,        /* push 64-bit value on stack */
       Ain_Call,        /* call to address in register */
-      Ain_Goto,        /* conditional/unconditional jmp to dst */
+      Ain_XDirect,     /* direct transfer to GA */
+      Ain_XIndir,      /* indirect transfer to GA */
+      Ain_XAssisted,   /* assisted transfer to GA */
       Ain_CMov64,      /* conditional move */
       Ain_MovxLQ,      /* reg-reg move, zx-ing/sx-ing top half */
       Ain_LoadEX,      /* mov{s,z}{b,w,l}q from mem to reg */
@@ -377,28 +378,17 @@ typedef
       Ain_ACAS,        /* 8/16/32/64-bit lock;cmpxchg */
       Ain_DACAS,       /* lock;cmpxchg8b/16b (doubleword ACAS, 2 x
                           32-bit or 2 x 64-bit only) */
-
       Ain_A87Free,     /* free up x87 registers */
       Ain_A87PushPop,  /* x87 loads/stores */
       Ain_A87FpOp,     /* x87 operations */
       Ain_A87LdCW,     /* load x87 control word */
       Ain_A87StSW,     /* store x87 status word */
-//.. 
-//..       Xin_FpUnary,   /* FP fake unary op */
-//..       Xin_FpBinary,  /* FP fake binary op */
-//..       Xin_FpLdSt,    /* FP fake load/store */
-//..       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
-//..       Xin_Fp64to32,  /* FP round IEEE754 double to IEEE754 single */
-//..       Xin_FpCMov,    /* FP fake floating point conditional move */
       Ain_LdMXCSR,     /* load %mxcsr */
-//..       Xin_FpStSW_AX, /* fstsw %ax */
       Ain_SseUComIS,   /* ucomisd/ucomiss, then get %rflags into int
                           register */
       Ain_SseSI2SF,    /* scalar 32/64 int to 32/64 float conversion */
       Ain_SseSF2SI,    /* scalar 32/64 float to 32/64 int conversion */
       Ain_SseSDSS,     /* scalar float32 to/from float64 */
-//.. 
-//..       Xin_SseConst,  /* Generate restricted SSE literal */
       Ain_SseLdSt,     /* SSE load/store 32/64/128 bits, no alignment
                           constraints, upper 96/64/0 bits arbitrary */
       Ain_SseLdzLO,    /* SSE load low 32/64 bits, zero remainder of reg */
@@ -408,7 +398,9 @@ typedef
       Ain_Sse64FLo,    /* SSE binary, 64F in lowest lane only */
       Ain_SseReRg,     /* SSE binary general reg-reg, Re, Rg */
       Ain_SseCMov,     /* SSE conditional move */
-      Ain_SseShuf      /* SSE2 shuffle (pshufd) */
+      Ain_SseShuf,     /* SSE2 shuffle (pshufd) */
+      Ain_EvCheck,     /* Event check */
+      Ain_ProfInc      /* 64-bit profile counter increment */
    }
    AMD64InstrTag;
 
@@ -470,13 +462,6 @@ typedef
             Int      sz; /* 4 or 8 only */
             AMD64RM* src;
          } Div;
-//..          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
-//..          struct {
-//..             X86ShiftOp op;
-//..             UInt       amt;   /* shift amount, or 0 means %cl */
-//..             HReg       src;
-//..             HReg       dst;
-//..          } Sh3232;
          struct {
             AMD64RMI* src;
          } Push;
@@ -487,13 +472,29 @@ typedef
             Addr64        target;
             Int           regparms; /* 0 .. 6 */
          } Call;
-         /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Acc_ALWAYS). */
+         /* Update the guest RIP value, then exit requesting to chain
+            to it.  May be conditional. */
          struct {
+            Addr64        dstGA;    /* next guest address */
+            AMD64AMode*   amRIP;    /* amode in guest state for RIP */
+            AMD64CondCode cond;     /* can be Acc_ALWAYS */
+            Bool          toFastEP; /* chain to the slow or fast point? */
+         } XDirect;
+         /* Boring transfer to a guest address not known at JIT time.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg          dstGA;
+            AMD64AMode*   amRIP;
+            AMD64CondCode cond; /* can be Acc_ALWAYS */
+         } XIndir;
+         /* Assisted transfer to a guest address, most general case.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg          dstGA;
+            AMD64AMode*   amRIP;
+            AMD64CondCode cond; /* can be Acc_ALWAYS */
             IRJumpKind    jk;
-            AMD64CondCode cond;
-            AMD64RI*      dst;
-         } Goto;
+         } XAssisted;
          /* Mov src to dst on the given condition, which may not
             be the bogus Acc_ALWAYS. */
          struct {
@@ -588,11 +589,6 @@ typedef
             AMD64AMode* addr;
          }
          LdMXCSR;
-//..          /* fstsw %ax */
-//..          struct {
-//..             /* no fields */
-//..          }
-//..          FpStSW_AX;
          /* ucomisd/ucomiss, then get %rflags into int register */
          struct {
             UChar   sz;   /* 4 or 8 only */
@@ -620,12 +616,6 @@ typedef
             HReg src;
             HReg dst;
          } SseSDSS;
-//.. 
-//..          /* Simplistic SSE[123] */
-//..          struct {
-//..             UShort  con;
-//..             HReg    dst;
-//..          } SseConst;
          struct {
             Bool        isLoad;
             UChar       sz; /* 4, 8 or 16 only */
@@ -674,6 +664,15 @@ typedef
             HReg   src;
             HReg   dst;
          } SseShuf;
+         struct {
+            AMD64AMode* amCounter;
+            AMD64AMode* amFailAddr;
+         } EvCheck;
+         struct {
+            /* No fields.  The address of the counter to inc is
+               installed later, post-translation, by patching it in,
+               as it is not known at translation time. */
+         } ProfInc;
 
       } Ain;
    }
@@ -689,10 +688,14 @@ extern AMD64Instr* AMD64Instr_Sh64       ( AMD64ShiftOp, UInt, HReg );
 extern AMD64Instr* AMD64Instr_Test64     ( UInt imm32, HReg dst );
 extern AMD64Instr* AMD64Instr_MulL       ( Bool syned, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Div        ( Bool syned, Int sz, AMD64RM* );
-//.. extern AMD64Instr* AMD64Instr_Sh3232    ( AMD64ShiftOp, UInt amt, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_Push       ( AMD64RMI* );
 extern AMD64Instr* AMD64Instr_Call       ( AMD64CondCode, Addr64, Int );
-extern AMD64Instr* AMD64Instr_Goto       ( IRJumpKind, AMD64CondCode cond, AMD64RI* dst );
+extern AMD64Instr* AMD64Instr_XDirect    ( Addr64 dstGA, AMD64AMode* amRIP,
+                                           AMD64CondCode cond, Bool toFastEP );
+extern AMD64Instr* AMD64Instr_XIndir     ( HReg dstGA, AMD64AMode* amRIP,
+                                           AMD64CondCode cond );
+extern AMD64Instr* AMD64Instr_XAssisted  ( HReg dstGA, AMD64AMode* amRIP,
+                                           AMD64CondCode cond, IRJumpKind jk );
 extern AMD64Instr* AMD64Instr_CMov64     ( AMD64CondCode, AMD64RM* src, HReg dst );
 extern AMD64Instr* AMD64Instr_MovxLQ     ( Bool syned, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_LoadEX     ( UChar szSmall, Bool syned,
@@ -709,21 +712,11 @@ extern AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush, UChar 
 extern AMD64Instr* AMD64Instr_A87FpOp    ( A87FpOp op );
 extern AMD64Instr* AMD64Instr_A87LdCW    ( AMD64AMode* addr );
 extern AMD64Instr* AMD64Instr_A87StSW    ( AMD64AMode* addr );
-//.. 
-//.. extern AMD64Instr* AMD64Instr_FpUnary   ( AMD64FpOp op, HReg src, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_FpBinary  ( AMD64FpOp op, HReg srcL, HReg srcR, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, AMD64AMode* );
-//.. extern AMD64Instr* AMD64Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, AMD64AMode* );
-//.. extern AMD64Instr* AMD64Instr_Fp64to32  ( HReg src, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_FpCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_LdMXCSR    ( AMD64AMode* );
-//.. extern AMD64Instr* AMD64Instr_FpStSW_AX ( void );
 extern AMD64Instr* AMD64Instr_SseUComIS  ( Int sz, HReg srcL, HReg srcR, HReg dst );
 extern AMD64Instr* AMD64Instr_SseSI2SF   ( Int szS, Int szD, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseSF2SI   ( Int szS, Int szD, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseSDSS    ( Bool from64, HReg src, HReg dst );
-//.. 
-//.. extern AMD64Instr* AMD64Instr_SseConst  ( UShort con, HReg dst );
 extern AMD64Instr* AMD64Instr_SseLdSt    ( Bool isLoad, Int sz, HReg, AMD64AMode* );
 extern AMD64Instr* AMD64Instr_SseLdzLO   ( Int sz, HReg, AMD64AMode* );
 extern AMD64Instr* AMD64Instr_Sse32Fx4   ( AMD64SseOp, HReg, HReg );
@@ -733,6 +726,9 @@ extern AMD64Instr* AMD64Instr_Sse64FLo   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShuf    ( Int order, HReg src, HReg dst );
+extern AMD64Instr* AMD64Instr_EvCheck    ( AMD64AMode* amCounter,
+                                           AMD64AMode* amFailAddr );
+extern AMD64Instr* AMD64Instr_ProfInc    ( void );
 
 
 extern void ppAMD64Instr ( AMD64Instr*, Bool );
@@ -742,10 +738,13 @@ extern void ppAMD64Instr ( AMD64Instr*, Bool );
 extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr*, Bool );
 extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
 extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
-extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr*, 
-                                             Bool,
-                                             void* dispatch_unassisted,
-                                             void* dispatch_assisted );
+extern Int          emit_AMD64Instr        ( /*MB_MOD*/Bool* is_profInc,
+                                             UChar* buf, Int nbuf, AMD64Instr* i, 
+                                             Bool mode64,
+                                             void* disp_cp_chain_me_to_slowEP,
+                                             void* disp_cp_chain_me_to_fastEP,
+                                             void* disp_cp_xindir,
+                                             void* disp_cp_xassisted );
 
 extern void genSpill_AMD64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
@@ -753,9 +752,36 @@ extern void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
 
 extern void         getAllocableRegs_AMD64 ( Int*, HReg** );
-extern HInstrArray* iselSB_AMD64           ( IRSB*, VexArch,
-                                                    VexArchInfo*,
-                                                    VexAbiInfo* );
+extern HInstrArray* iselSB_AMD64           ( IRSB*, 
+                                             VexArch,
+                                             VexArchInfo*,
+                                             VexAbiInfo*,
+                                             Int offs_Host_EvC_Counter,
+                                             Int offs_Host_EvC_FailAddr,
+                                             Bool chainingAllowed,
+                                             Bool addProfInc,
+                                             Addr64 max_ga );
+
+/* How big is an event check?  This is kind of a kludge because it
+   depends on the offsets of host_EvC_FAILADDR and host_EvC_COUNTER,
+   and so assumes that they are both <= 128, and so can use the short
+   offset encoding.  This is all checked with assertions, so in the
+   worst case we will merely assert at startup. */
+extern Int evCheckSzB_AMD64 ( void );
+
+/* Perform a chaining and unchaining of an XDirect jump. */
+extern VexInvalRange chainXDirect_AMD64 ( void* place_to_chain,
+                                          void* disp_cp_chain_me_EXPECTED,
+                                          void* place_to_jump_to );
+
+extern VexInvalRange unchainXDirect_AMD64 ( void* place_to_unchain,
+                                            void* place_to_jump_to_EXPECTED,
+                                            void* disp_cp_chain_me );
+
+/* Patch the counter location into an existing ProfInc point. */
+extern VexInvalRange patchProfInc_AMD64 ( void*  place_to_patch,
+                                          ULong* location_of_counter );
+
 
 #endif /* ndef __VEX_HOST_AMD64_DEFS_H */
 

@@ -41,7 +41,6 @@
    bb_to_IR.h. */
 extern
 DisResult disInstr_ARM ( IRSB*        irbb,
-                         Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,

@@ -289,7 +289,7 @@ if_not_condition_goto_computed(IRExpr *condition, IRExpr *target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr)));
+   stmt(IRStmt_Exit3(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr)));
 
    irsb->next = target;
    irsb->jumpkind = Ijk_Boring;
@@ -303,7 +303,7 @@ if_condition_goto(IRExpr *condition, Addr64 target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(target)));
+   stmt(IRStmt_Exit3(condition, Ijk_Boring, IRConst_U64(target)));
    dis_res->whatNext = Dis_Continue;
 }
 
@@ -8869,7 +8869,7 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
                    mkU64(guest_IA_curr_instr)));
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-   stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
+   stmt(IRStmt_Exit3(mkexpr(cond), Ijk_TInval,
         IRConst_U64(guest_IA_curr_instr)));
 
    ss.bytes = last_execute_target;
@@ -8900,7 +8900,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
                       mkU64(guest_IA_curr_instr)));
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-      stmt(IRStmt_Exit(IRExpr_Const(IRConst_U1(True)), Ijk_TInval,
+      stmt(IRStmt_Exit3(IRExpr_Const(IRConst_U1(True)), Ijk_TInval,
            IRConst_U64(guest_IA_curr_instr)));
       /* we know that this will be invalidated */
       irsb->next = mkU64(guest_IA_next_instr);
@@ -8958,7 +8958,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       /* and restart */
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-      stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
+      stmt(IRStmt_Exit3(mkexpr(cond), Ijk_TInval,
            IRConst_U64(guest_IA_curr_instr)));
 
       /* Now comes the actual translation */
@@ -9032,7 +9032,7 @@ s390_irgen_SRST(UChar r1, UChar r2)
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    put_gpr_dw0(r1, mkexpr(next));
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(address), mkU64(1)));
-   stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
+   stmt(IRStmt_Exit3(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
                     Ijk_Boring, IRConst_U64(guest_IA_curr_instr)));
    // >= 256 bytes done CC=3
    s390_cc_set(3);
@@ -9098,7 +9098,7 @@ s390_irgen_CLST(UChar r1, UChar r2)
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), mkU64(1)));
    put_gpr_dw0(r2, binop(Iop_Add64, get_gpr_dw0(r2), mkU64(1)));
-   stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
+   stmt(IRStmt_Exit3(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
                     Ijk_Boring, IRConst_U64(guest_IA_curr_instr)));
    // >= 256 bytes done CC=3
    s390_cc_set(3);
@@ -9823,7 +9823,7 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
       Otherwise, store the old_value from memory in r1 and yield. */
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
-   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
+   stmt(IRStmt_Exit3(mkexpr(nequal), Ijk_Yield,
         IRConst_U64(guest_IA_next_instr)));
 }
 
@@ -9872,7 +9872,7 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
       Otherwise, store the old_value from memory in r1 and yield. */
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_dw0(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
-   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
+   stmt(IRStmt_Exit3(mkexpr(nequal), Ijk_Yield,
         IRConst_U64(guest_IA_next_instr)));
 
    return "csg";

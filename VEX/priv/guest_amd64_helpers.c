@@ -3452,6 +3452,10 @@ extern void amd64g_dirtyhelper_AESKEYGENASSIST (
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 {
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER = 0;
+   vex_state->pad0 = 0;
+
    vex_state->guest_RAX = 0;
    vex_state->guest_RCX = 0;
    vex_state->guest_RDX = 0;
@@ -3522,7 +3526,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_GS_0x60  = 0;
 
    vex_state->guest_IP_AT_SYSCALL = 0;
-   /* vex_state->padding = 0; */
+   vex_state->pad1 = 0;
 }
 
 

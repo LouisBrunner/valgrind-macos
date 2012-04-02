@@ -52,34 +52,39 @@
 
 typedef
    struct {
-      /*   0 */ ULong  guest_RAX;
-      /*   8 */ ULong  guest_RCX;
-      /*  16 */ ULong  guest_RDX;
-      /*  24 */ ULong  guest_RBX;
-      /*  32 */ ULong  guest_RSP;
-      /*  40 */ ULong  guest_RBP;
-      /*  48 */ ULong  guest_RSI;
-      /*  56 */ ULong  guest_RDI;
-      /*  64 */ ULong  guest_R8;
-      /*  72 */ ULong  guest_R9;
-      /*  80 */ ULong  guest_R10;
-      /*  88 */ ULong  guest_R11;
-      /*  96 */ ULong  guest_R12;
-      /* 104 */ ULong  guest_R13;
-      /* 112 */ ULong  guest_R14;
-      /* 120 */ ULong  guest_R15;
+      /* Event check fail addr, counter, and padding to make RAX 16
+         aligned. */
+      /*   0 */ ULong  host_EvC_FAILADDR;
+      /*   8 */ UInt   host_EvC_COUNTER;
+      /*  12 */ UInt   pad0;
+      /*  16 */ ULong  guest_RAX;
+      /*  24 */ ULong  guest_RCX;
+      /*  32 */ ULong  guest_RDX;
+      /*  40 */ ULong  guest_RBX;
+      /*  48 */ ULong  guest_RSP;
+      /*  56 */ ULong  guest_RBP;
+      /*  64 */ ULong  guest_RSI;
+      /*  72 */ ULong  guest_RDI;
+      /*  80 */ ULong  guest_R8;
+      /*  88 */ ULong  guest_R9;
+      /*  96 */ ULong  guest_R10;
+      /* 104 */ ULong  guest_R11;
+      /* 112 */ ULong  guest_R12;
+      /* 120 */ ULong  guest_R13;
+      /* 128 */ ULong  guest_R14;
+      /* 136 */ ULong  guest_R15;
       /* 4-word thunk used to calculate O S Z A C P flags. */
-      /* 128 */ ULong  guest_CC_OP;
-      /* 136 */ ULong  guest_CC_DEP1;
-      /* 144 */ ULong  guest_CC_DEP2;
-      /* 152 */ ULong  guest_CC_NDEP;
+      /* 144 */ ULong  guest_CC_OP;
+      /* 152 */ ULong  guest_CC_DEP1;
+      /* 160 */ ULong  guest_CC_DEP2;
+      /* 168 */ ULong  guest_CC_NDEP;
       /* The D flag is stored here, encoded as either -1 or +1 */
-      /* 160 */ ULong  guest_DFLAG;
-      /* 168 */ ULong  guest_RIP;
+      /* 176 */ ULong  guest_DFLAG;
+      /* 184 */ ULong  guest_RIP;
       /* Bit 18 (AC) of eflags stored here, as either 0 or 1. */
       /* ... */ ULong  guest_ACFLAG;
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
-      /* 176 */ ULong guest_IDFLAG;
+      /* 192 */ ULong guest_IDFLAG;
       /* Probably a lot more stuff too. 
          D,ID flags
          16  128-bit SSE registers
@@ -89,14 +94,14 @@ typedef
       /* HACK to make tls on amd64-linux work.  %fs only ever seems to
          hold zero, and so guest_FS_ZERO holds the 64-bit offset
          associated with a %fs value of zero. */
-      /* 184 */ ULong guest_FS_ZERO;
+      /* 200 */ ULong guest_FS_ZERO;
 
       /* XMM registers.  Note that these must be allocated
          consecutively in order that the SSE4.2 PCMP{E,I}STR{I,M}
          helpers can treat them as an array.  XMM16 is a fake reg used
          as an intermediary in handling aforementioned insns. */
-      /* 192 */ULong guest_SSEROUND;
-      /* 200 */U128  guest_XMM0;
+      /* 208 */ULong guest_SSEROUND;
+      /* 216 */U128  guest_XMM0;
       U128  guest_XMM1;
       U128  guest_XMM2;
       U128  guest_XMM3;
@@ -118,14 +123,14 @@ typedef
       /* Note.  Setting guest_FTOP to be ULong messes up the
          delicately-balanced PutI/GetI optimisation machinery.
          Therefore best to leave it as a UInt. */
-      /* 456 */UInt  guest_FTOP;
+      UInt  guest_FTOP;
       ULong guest_FPREG[8];
-      /* 528 */ UChar guest_FPTAG[8];
-      /* 536 */ ULong guest_FPROUND;
-      /* 544 */ ULong guest_FC3210;
+      UChar guest_FPTAG[8];
+      ULong guest_FPROUND;
+      ULong guest_FC3210;
 
       /* Emulation warnings */
-      /* 552 */ UInt  guest_EMWARN;
+      UInt  guest_EMWARN;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to
@@ -161,7 +166,7 @@ typedef
       ULong guest_IP_AT_SYSCALL;
 
       /* Padding to make it have an 16-aligned size */
-      ULong padding;
+      ULong pad1;
    }
    VexGuestAMD64State;
 

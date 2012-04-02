@@ -107,7 +107,7 @@ int main ( int argc, char** argv )
    VexTranslateArgs vta;
 
    if (argc != 2) {
-      fprintf(stderr, "usage: vex file.org\n");
+      fprintf(stderr, "usage: vex file.orig\n");
       exit(1);
    }
    f = fopen(argv[1], "r");
@@ -176,8 +176,10 @@ int main ( int argc, char** argv )
       vai_ppc32.ppc_cache_line_szB = 128;
 
       LibVEX_default_VexAbiInfo(&vbi);
+      vbi.guest_stack_redzone_size = 128;
 
       /* ----- Set up args for LibVEX_Translate ----- */
+
 #if 0 /* ppc32 -> ppc32 */
       vta.arch_guest     = VexArchPPC32;
       vta.archinfo_guest = vai_ppc32;
@@ -196,6 +198,7 @@ int main ( int argc, char** argv )
       vta.arch_host      = VexArchX86;
       vta.archinfo_host  = vai_x86;
 #endif
+
       vta.abiinfo_both    = vbi;
       vta.guest_bytes     = origbuf;
       vta.guest_bytes_addr = (Addr64)orig_addr;
@@ -205,7 +208,8 @@ int main ( int argc, char** argv )
       vta.host_bytes      = transbuf;
       vta.host_bytes_size = N_TRANSBUF;
       vta.host_bytes_used = &trans_used;
-#if 0 /* no instrumentation */
+
+#if 1 /* no instrumentation */
       vta.instrument1     = NULL;
       vta.instrument2     = NULL;
 #endif
@@ -213,19 +217,19 @@ int main ( int argc, char** argv )
       vta.instrument1     = ac_instrument;
       vta.instrument2     = NULL;
 #endif
-#if 1 /* memcheck */
+#if 0 /* memcheck */
       vta.instrument1     = mc_instrument;
       vta.instrument2     = NULL;
 #endif
       vta.needs_self_check  = needs_self_check;
       vta.preamble_function = NULL;
       vta.traceflags      = TEST_FLAGS;
-#if 1 /* x86, amd64 hosts */
-      vta.dispatch_unassisted = (void*)0x12345678;
-      vta.dispatch_assisted   = (void*)0x12345678;
-#else /* ppc32, ppc64 hosts */
-      vta.dispatch        = NULL;
-#endif
+      vta.addProfInc      = False;
+
+      vta.disp_cp_chain_me_to_slowEP = (void*)0x12345678;
+      vta.disp_cp_chain_me_to_fastEP = (void*)0x12345679;
+      vta.disp_cp_xindir             = (void*)0x1234567A;
+      vta.disp_cp_xassisted          = (void*)0x1234567B;
 
       vta.finaltidy = NULL;
 

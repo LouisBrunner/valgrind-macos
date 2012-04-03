@@ -1783,7 +1783,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
 //   LINX_(__NR_tee,               sys_ni_syscall),       // 315
 //   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 316
-//   LINX_(__NR_move_pages,        sys_ni_syscall),       // 317
+   LINXY(__NR_move_pages,        sys_move_pages),       // 317
 //   LINX_(__NR_getcpu,            sys_ni_syscall),       // 318
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 320

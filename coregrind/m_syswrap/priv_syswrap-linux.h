@@ -56,6 +56,7 @@ DECL_TEMPLATE(linux, sys_dup3);
 DECL_TEMPLATE(linux, sys_getcpu);
 DECL_TEMPLATE(linux, sys_splice);
 DECL_TEMPLATE(linux, sys_readahead);
+DECL_TEMPLATE(linux, sys_move_pages);
 
 // POSIX, but various sub-cases differ between Linux and Darwin.
 DECL_TEMPLATE(linux, sys_fcntl);

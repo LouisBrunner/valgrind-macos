@@ -2783,6 +2783,24 @@ POST(sys_getcpu)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_getcpu_cache) );
 }
 
+PRE(sys_move_pages)
+{
+   PRINT("sys_move_pages ( %ld, %ld, %#lx, %#lx, %#lx, %lx )",
+         ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(int, "move_pages",
+                 vki_pid_t, pid, unsigned long, nr_pages, const void **, pages,
+                 const int *, nodes, int *, status, int, flags);
+   PRE_MEM_READ("move_pages(pages)", ARG3, ARG2 * sizeof(void *));
+   if (ARG4)
+      PRE_MEM_READ("move_pages(nodes)", ARG4, ARG2 * sizeof(int));
+   PRE_MEM_WRITE("move_pages(status)", ARG5, ARG2 * sizeof(int));
+}
+
+POST(sys_move_pages)
+{
+   POST_MEM_WRITE(ARG5, ARG2 * sizeof(int));
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

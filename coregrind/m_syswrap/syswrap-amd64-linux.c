@@ -1388,7 +1388,7 @@ static SyscallTableEntry syscall_table[] = {
 //   LINX_(__NR_tee,               sys_ni_syscall),       // 276
    LINX_(__NR_sync_file_range,   sys_sync_file_range),  // 277
 //   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 278
-//   LINX_(__NR_move_pages,        sys_ni_syscall),       // 279
+   LINXY(__NR_move_pages,        sys_move_pages),       // 279
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 280
    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 281

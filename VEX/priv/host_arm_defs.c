@@ -1815,8 +1815,7 @@ void ppARMInstr ( ARMInstr* i ) {
          }
          return;
       case ARMin_MFence:
-         vex_printf("mfence (mcr 15,0,r0,c7,c10,4; 15,0,r0,c7,c10,5; "
-                    "15,0,r0,c7,c5,4)");
+         vex_printf("(mfence) dsb sy; dmb sy; isb");
          return;
       case ARMin_CLREX:
          vex_printf("clrex");
@@ -3605,9 +3604,15 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          goto bad; // FPSCR -> iReg case currently ATC
       }
       case ARMin_MFence: {
-         *p++ = 0xEE070F9A; /* mcr 15,0,r0,c7,c10,4 (DSB) */
-         *p++ = 0xEE070FBA; /* mcr 15,0,r0,c7,c10,5 (DMB) */
-         *p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
+         // It's not clear (to me) how these relate to the ARMv7
+         // versions, so let's just use the v7 versions as they
+         // are at least well documented.
+         //*p++ = 0xEE070F9A; /* mcr 15,0,r0,c7,c10,4 (DSB) */
+         //*p++ = 0xEE070FBA; /* mcr 15,0,r0,c7,c10,5 (DMB) */
+         //*p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
+         *p++ = 0xF57FF04F; /* DSB sy */
+         *p++ = 0xF57FF05F; /* DMB sy */
+         *p++ = 0xF57FF06F; /* ISB */
          goto done;
       }
       case ARMin_CLREX: {

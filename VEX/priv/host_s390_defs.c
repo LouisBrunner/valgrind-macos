@@ -4519,6 +4519,31 @@ s390_cc_as_string(s390_cc_t cc)
 }
 
 
+static const HChar *
+s390_jump_kind_as_string(IRJumpKind kind)
+{
+   switch (kind) {
+   case Ijk_Boring:      return "Boring";
+   case Ijk_Call:        return "Call";
+   case Ijk_Ret:         return "Return";
+   case Ijk_ClientReq:   return "ClientReq";
+   case Ijk_Yield:       return "Yield";
+   case Ijk_EmWarn:      return "EmWarn";
+   case Ijk_EmFail:      return "EmFail";
+   case Ijk_NoDecode:    return "NoDecode";
+   case Ijk_MapFail:     return "MapFail";
+   case Ijk_TInval:      return "Invalidate";
+   case Ijk_NoRedir:     return "NoRedir";
+   case Ijk_SigTRAP:     return "SigTRAP";
+   case Ijk_SigSEGV:     return "SigSEGV";
+   case Ijk_SigBUS:      return "SigBUS";
+   case Ijk_Sys_syscall: return "Sys_syscall";
+   default:
+      vpanic("s390_jump_kind_as_string");
+   }
+}
+
+
 /* Helper function for writing out a V insn */
 static void
 s390_sprintf(HChar *buf, HChar *fmt, ...)
@@ -4566,6 +4591,11 @@ s390_sprintf(HChar *buf, HChar *fmt, ...)
 
       case 'C':     /* %C = condition code */
          p += vex_sprintf(p, "%s", s390_cc_as_string(va_arg(args, s390_cc_t)));
+         continue;
+
+      case 'J':     /* &J = jump kind */
+         p += vex_sprintf(p, "%s",
+                          s390_jump_kind_as_string(va_arg(args, IRJumpKind)));
          continue;
 
       case 'L': {   /* %L = argument list in helper call*/
@@ -4763,42 +4793,17 @@ s390_insn_as_string(const s390_insn *insn)
       break;
 
    case S390_INSN_BRANCH:
-      switch (insn->variant.branch.kind) {
-      case Ijk_ClientReq:   op = "clientreq"; break;
-      case Ijk_Sys_syscall: op = "syscall";   break;
-      case Ijk_Yield:       op = "yield";     break;
-      case Ijk_EmWarn:      op = "emwarn";    break;
-      case Ijk_EmFail:      op = "emfail";    break;
-      case Ijk_MapFail:     op = "mapfail";   break;
-      case Ijk_NoDecode:    op = "nodecode";  break;
-      case Ijk_TInval:      op = "tinval";    break;
-      case Ijk_NoRedir:     op = "noredir";   break;
-      case Ijk_SigTRAP:     op = "sigtrap";   break;
-      case Ijk_Boring:      op = "goto";      break;
-      case Ijk_Call:        op = "call";      break;
-      case Ijk_Ret:         op = "return";    break;
-      default:
-         goto fail;
-      }
-      s390_sprintf(buf, "if (%C) %s %O", insn->variant.branch.cond, op,
-                   &insn->variant.branch.dst);
-      break;
+      s390_sprintf(buf, "if (%C) %J %O", insn->variant.branch.cond,
+                   insn->variant.branch.kind, &insn->variant.branch.dst);
+      return buf;   /* avoid printing "size = ..." which is meaningless */
 
    case S390_INSN_HELPER_CALL: {
-
-      if (insn->variant.helper_call.cond != S390_CC_ALWAYS) {
-         s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
-                      insn->variant.helper_call.cond,
-                      insn->variant.helper_call.name,
-                      insn->variant.helper_call.target,
-                      insn->variant.helper_call.num_args);
-      } else {
-         s390_sprintf(buf, "%M %s{%I}(%L)", "v-call",
-                      insn->variant.helper_call.name,
-                      insn->variant.helper_call.target,
-                      insn->variant.helper_call.num_args);
-      }
-      break;
+      s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
+                   insn->variant.helper_call.cond,
+                   insn->variant.helper_call.name,
+                   insn->variant.helper_call.target,
+                   insn->variant.helper_call.num_args);
+      return buf;   /* avoid printing "size = ..." which is meaningless */
    }
 
    case S390_INSN_BFP_TRIOP:

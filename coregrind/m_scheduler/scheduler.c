@@ -818,7 +818,6 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
 {
    volatile HWord        jumped         = 0;
    volatile ThreadState* tst            = NULL; /* stop gcc complaining */
-   volatile UInt         trc            = 0;
    volatile Int          done_this_time = 0;
    volatile HWord        host_code_addr = 0;
 
@@ -894,11 +893,11 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    SCHEDSETJMP(
       tid, 
       jumped, 
-      trc = (UInt)VG_(disp_run_translations)( 
-                     two_words,
-                     (void*)&tst->arch.vex,
-                     host_code_addr
-                  )
+      VG_(disp_run_translations)( 
+         two_words,
+         (void*)&tst->arch.vex,
+         host_code_addr
+      )
    );
 
    vg_assert(VG_(in_generated_code) == True);
@@ -907,7 +906,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    if (jumped != (HWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
-      vg_assert(trc == 0);
+      vg_assert(two_words[0] == 0 && two_words[1] == 0); // correct?
       two_words[0] = VG_TRC_FAULT_SIGNAL;
       two_words[1] = 0;
       block_signals();

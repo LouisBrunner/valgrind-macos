@@ -50,9 +50,9 @@
 /*----------------------------------------------------*/
 
 /* signature:
-UWord VG_(disp_run_translations)( UWord* two_words,
-                                  void*  guest_state, 
-                                  Addr   host_addr );
+void VG_(disp_run_translations)( UWord* two_words,
+                                 void*  guest_state, 
+                                 Addr   host_addr );
 */
 .text
 .globl VG_(disp_run_translations)

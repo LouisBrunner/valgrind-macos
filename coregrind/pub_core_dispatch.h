@@ -60,9 +60,9 @@
    a TRC value.  Second is generally unused, except in the case
    where we have to return a chain-me request.
 */
-HWord VG_(disp_run_translations)( HWord* two_words,
-                                  void*  guest_state, 
-                                  Addr   host_addr );
+void VG_(disp_run_translations)( HWord* two_words,
+                                 void*  guest_state, 
+                                 Addr   host_addr );
 
 /* We need to know addresses of the continuation-point (cp_) labels so
    we can tell VEX what they are.  They will get baked into the code

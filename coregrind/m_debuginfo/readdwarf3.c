@@ -71,7 +71,7 @@
    ML_(sizeOfType): differentiate between zero sized types and types
    for which the size is unknown.  Is this important?  I don't know.
 
-   DW_AT_array_types: deal with explicit sizes (currently we compute
+   DW_TAG_array_types: deal with explicit sizes (currently we compute
    the size from the bounds and the element size, although that's
    fragile, if the bounds incompletely specified, or completely
    absent)
@@ -85,7 +85,7 @@
    expressions correctly, by failing to evaluate them and hence
    effectively ignoring the variable with which they are associated.
 
-   Deal with DW_AT_array_types which have element size != stride
+   Deal with DW_TAG_array_types which have element size != stride
 
    In some cases, the info for a variable is split between two
    different DIEs (generally a declarer and a definer).  We punt on

@@ -195,6 +195,57 @@ typedef
          'in_edges' entries of all blocks we're patched through to, in
          order to remove ourselves from then when we're deleted. */
 
+      /* A translation can disappear for two reasons:
+          1. erased (as part of the oldest sector cleanup) when the
+             youngest sector is full.
+          2. discarded due to calls to VG_(discard_translations).
+             VG_(discard_translations) sets the status of the
+             translation to 'Deleted'.
+             A.o., the gdbserver discards one or more translations
+             when a breakpoint is inserted or removed at an Addr,
+             or when single stepping mode is enabled/disabled
+             or when a translation is instrumented for gdbserver
+             (all the target jumps of this translation are
+              invalidated).
+
+         So, it is possible that the translation A to be patched
+         (to obtain a patched jump from A to B) is invalidated
+         after B is translated and before A is patched.
+         In case a translation is erased or discarded, the patching
+         cannot be done.  VG_(tt_tc_do_chaining) and find_TTEntry_from_hcode
+         are checking the 'from' translation still exists before
+         doing the patching.
+
+         Is it safe to erase or discard the current translation E being 
+         executed ? Amazing, but yes, it is safe.
+         Here is the explanation:
+
+         The translation E being executed can only be erased if a new
+         translation N is being done. A new translation is done only
+         if the host addr is a not yet patched jump to another
+         translation. In such a case, the guest address of N is
+         assigned to the PC in the VEX state. Control is returned
+         to the scheduler. N will be translated. This can erase the
+         translation E (in case of sector full). VG_(tt_tc_do_chaining)
+         will not do the chaining to a non found translation E.
+         The execution will continue at the current guest PC
+         (i.e. the translation N).
+         => it is safe to erase the current translation being executed.
+         
+         The current translation E being executed can also be discarded
+         (e.g. by gdbserver). VG_(discard_translations) will mark
+         this translation E as Deleted, but the translation itself
+         is not erased. In particular, its host code can only
+         be overwritten or erased in case a new translation is done.
+         A new translation will only be done if a not yet translated
+         jump is to be executed. The execution of the Deleted translation
+         E will continue till a non patched jump is encountered.
+         This situation is then similar to the 'erasing' case above :
+         the current translation E can be erased or overwritten, as the
+         execution will continue at the new translation N.
+
+      */
+
       /* It is possible, although very unlikely, that a block A has
          more than one patched jump to block B.  This could happen if
          (eg) A finishes "jcond B; jmp B".
@@ -614,6 +665,10 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
          UInt tteNo = hx->tteNo;
          /* Do some additional sanity checks. */
          vg_assert(tteNo <= N_TTES_PER_SECTOR);
+         /* Entry might have been invalidated. Consider this
+            as not found. */
+         if (sec->tt[tteNo].status == Deleted)
+            return False;
          vg_assert(sec->tt[tteNo].status == InUse);
          /* Can only half check that the found TTEntry contains hcode,
             due to not having a length value for the hcode in the
@@ -676,6 +731,27 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    // stay sane -- the patch src is in some sector's code cache
    vg_assert( is_in_the_main_TC(from__patch_addr) );
 
+   /* Find the TTEntry for the from__ code.  This isn't simple since
+      we only know the patch address, which is going to be somewhere
+      inside the from_ block. */
+   UInt from_sNo   = (UInt)-1;
+   UInt from_tteNo = (UInt)-1;
+   Bool from_found
+      = find_TTEntry_from_hcode( &from_sNo, &from_tteNo,
+                                 from__patch_addr );
+   if (!from_found) {
+      // The from code might have been discarded due to sector re-use
+      // or marked Deleted due to translation invalidation.
+      // In such a case, don't do the chaining.
+      VG_(debugLog)(1,"transtab",
+                    "host code %p not found (discarded? sector recycled?)"
+                    " => no chaining done\n",
+                    from__patch_addr);
+      return;
+   }
+
+   TTEntry* from_tte = index_tte(from_sNo, from_tteNo);
+
    /* Get VEX to do the patching itself.  We have to hand it off
       since it is host-dependent. */
    VexInvalRange vir
@@ -690,16 +766,6 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
       for the two translations involved, so we can undo the chaining
       later, which we will have to do if the to_ block gets removed
       for whatever reason. */
-   /* Find the TTEntry for the from__ code.  This isn't simple since
-      we only know the patch address, which is going to be somewhere
-      inside the from_ block. */
-   UInt from_sNo   = (UInt)-1;
-   UInt from_tteNo = (UInt)-1;
-   Bool from_found
-      = find_TTEntry_from_hcode( &from_sNo, &from_tteNo,
-                                 from__patch_addr );
-   vg_assert(from_found);
-   TTEntry* from_tte = index_tte(from_sNo, from_tteNo);
 
    /* This is the new from_ -> to_ link to add. */
    InEdge ie;

@@ -2661,7 +2661,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       boundE.cuOff = posn;
       vg_assert(parser->qparentE[parser->sp].Te.TyArray.boundRs);
       VG_(addToXA)( parser->qparentE[parser->sp].Te.TyArray.boundRs,
-                    &boundE );
+                    &boundE.cuOff );
       /* And record the child itself */
       goto acquire_Bound;
    }

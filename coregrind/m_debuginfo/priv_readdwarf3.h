@@ -43,6 +43,7 @@ void
 ML_(new_dwarf3_reader) (
    struct _DebugInfo* di,
    UChar* debug_info_img,   SizeT debug_info_sz,
+   UChar* debug_types_img,  SizeT debug_types_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
    UChar* debug_line_img,   SizeT debug_line_sz,
    UChar* debug_str_img,    SizeT debug_str_sz,

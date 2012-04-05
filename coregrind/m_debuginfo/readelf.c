@@ -2072,6 +2072,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar*     stabstr_img      = NULL; /* .stabstr      (stabs)  */
       UChar*     debug_line_img   = NULL; /* .debug_line   (dwarf2) */
       UChar*     debug_info_img   = NULL; /* .debug_info   (dwarf2) */
+      UChar*     debug_types_img  = NULL; /* .debug_types  (dwarf4) */
       UChar*     debug_abbv_img   = NULL; /* .debug_abbrev (dwarf2) */
       UChar*     debug_str_img    = NULL; /* .debug_str    (dwarf2) */
       UChar*     debug_ranges_img = NULL; /* .debug_ranges (dwarf2) */
@@ -2093,6 +2094,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       SizeT      stabstr_sz      = 0;
       SizeT      debug_line_sz   = 0;
       SizeT      debug_info_sz   = 0;
+      SizeT      debug_types_sz   = 0;
       SizeT      debug_abbv_sz   = 0;
       SizeT      debug_str_sz    = 0;
       SizeT      debug_ranges_sz = 0;
@@ -2168,6 +2170,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          FIND(".debug_line",    debug_line_sz,   debug_line_img)
          FIND(".debug_info",    debug_info_sz,   debug_info_img)
+         FIND(".debug_types",   debug_types_sz,  debug_types_img)
          FIND(".debug_abbrev",  debug_abbv_sz,   debug_abbv_img)
          FIND(".debug_str",     debug_str_sz,    debug_str_img)
          FIND(".debug_ranges",  debug_ranges_sz, debug_ranges_img)
@@ -2425,6 +2428,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             FIND(need_stabs,  ".stabstr",      stabstr_sz,    stabstr_img)
             FIND(need_dwarf2, ".debug_line",   debug_line_sz, debug_line_img)
             FIND(need_dwarf2, ".debug_info",   debug_info_sz, debug_info_img)
+            FIND(need_dwarf2, ".debug_types",  debug_types_sz,
+		                                            debug_types_img)
             FIND(need_dwarf2, ".debug_abbrev", debug_abbv_sz, debug_abbv_img)
             FIND(need_dwarf2, ".debug_str",    debug_str_sz,  debug_str_img)
             FIND(need_dwarf2, ".debug_ranges", debug_ranges_sz, 
@@ -2516,6 +2521,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          /* The old reader: line numbers and unwind info only */
          ML_(read_debuginfo_dwarf3) ( di,
                                       debug_info_img, debug_info_sz,
+                                      debug_types_img, debug_types_sz,
                                       debug_abbv_img, debug_abbv_sz,
                                       debug_line_img, debug_line_sz,
                                       debug_str_img,  debug_str_sz );
@@ -2528,6 +2534,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
              || VG_(clo_read_var_info) /* the user asked for it */) {
             ML_(new_dwarf3_reader)(
                di, debug_info_img,   debug_info_sz,
+                   debug_types_img,   debug_types_sz,
                    debug_abbv_img,   debug_abbv_sz,
                    debug_line_img,   debug_line_sz,
                    debug_str_img,    debug_str_sz,

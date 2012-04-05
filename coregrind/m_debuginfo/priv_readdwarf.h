@@ -45,6 +45,7 @@ extern
 void ML_(read_debuginfo_dwarf3)
         ( struct _DebugInfo* di,
           UChar* debug_info_img, Word debug_info_sz,  /* .debug_info */
+          UChar* debug_types_img, Word debug_types_sz,  /* .debug_types */
           UChar* debug_abbv_img, Word debug_abbv_sz,  /* .debug_abbrev */
           UChar* debug_line_img, Word debug_line_sz,  /* .debug_line */
           UChar* debug_str_img,  Word debug_str_sz ); /* .debug_str */

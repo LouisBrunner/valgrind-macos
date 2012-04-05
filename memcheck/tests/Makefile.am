@@ -76,6 +76,7 @@ EXTRA_DIST = \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
+	dw4.vgtest dw4.stderr.exp dw4.stdout.exp \
 	err_disable1.vgtest err_disable1.stderr.exp \
 	err_disable2.vgtest err_disable2.stderr.exp \
 	err_disable3.vgtest err_disable3.stderr.exp \
@@ -281,6 +282,9 @@ check_PROGRAMS = \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev1
 
+if DWARF4
+check_PROGRAMS += dw4
+endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -298,6 +302,8 @@ endif
 
 deep_templates_SOURCES	= deep_templates.cpp
 deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
+
+dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread

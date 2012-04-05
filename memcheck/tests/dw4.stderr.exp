@@ -1,0 +1,19 @@
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:27)
+   by 0x........: main (dw4.c:49)
+ Address 0x........ is 4 bytes inside a block of size 32 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (dw4.c:47)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:27)
+   by 0x........: main (dw4.c:51)
+ Location 0x........ is 0 bytes inside S2[0].i,
+ a global variable declared at dw4.c:42
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:27)
+   by 0x........: main (dw4.c:52)
+ Location 0x........ is 0 bytes inside local.i,
+ declared at dw4.c:46, in frame #1 of thread 1
+

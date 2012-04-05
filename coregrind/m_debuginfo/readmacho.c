@@ -1068,6 +1068,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          /* The old reader: line numbers and unwind info only */
          ML_(read_debuginfo_dwarf3) ( di,
                                       debug_info_img, debug_info_sz,
+				      NULL,           0,
                                       debug_abbv_img, debug_abbv_sz,
                                       debug_line_img, debug_line_sz,
                                       debug_str_img,  debug_str_sz );
@@ -1080,6 +1081,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
              || VG_(clo_read_var_info) /* the user asked for it */) {
             ML_(new_dwarf3_reader)(
                di, debug_info_img,   debug_info_sz,
+	           NULL,             0,
                    debug_abbv_img,   debug_abbv_sz,
                    debug_line_img,   debug_line_sz,
                    debug_str_img,    debug_str_sz,

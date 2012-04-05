@@ -1260,18 +1260,14 @@ typedef
    instead of the normal one.
 
    TID is the identity of the thread requesting this translation.
-
-   *caused_discardP returns whether or not this translation resulting
-   in code being dumped from the main translation cache in order to
-   make space for the new translation.
 */
-Bool VG_(translate) ( /*OUT*/Bool* caused_discardP,
-                      ThreadId     tid, 
-                      Addr64       nraddr,
-                      Bool         debugging_translation,
-                      Int          debugging_verbosity,
-                      ULong        bbs_done,
-                      Bool         allow_redirection )
+
+Bool VG_(translate) ( ThreadId tid, 
+                      Addr64   nraddr,
+                      Bool     debugging_translation,
+                      Int      debugging_verbosity,
+                      ULong    bbs_done,
+                      Bool     allow_redirection )
 {
    Addr64             addr;
    T_Kind             kind;
@@ -1285,9 +1281,8 @@ Bool VG_(translate) ( /*OUT*/Bool* caused_discardP,
    VexTranslateResult tres;
    VgCallbackClosure  closure;
 
-   if (caused_discardP) *caused_discardP = False;
-
    /* Make sure Vex is initialised right. */
+
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
@@ -1608,16 +1603,13 @@ Bool VG_(translate) ( /*OUT*/Bool* caused_discardP,
 
           // Note that we use nraddr (the non-redirected address), not
           // addr, which might have been changed by the redirection
-          Bool caused_discard
-             = VG_(add_to_transtab)( &vge,
-                                     nraddr,
-                                     (Addr)(&tmpbuf[0]), 
-                                     tmpbuf_used,
-                                     tres.n_sc_extents > 0,
-                                     tres.offs_profInc,
-                                     vex_arch );
-          if (caused_discardP)
-             *caused_discardP = caused_discard;
+          VG_(add_to_transtab)( &vge,
+                                nraddr,
+                                (Addr)(&tmpbuf[0]), 
+                                tmpbuf_used,
+                                tres.n_sc_extents > 0,
+                                tres.offs_profInc,
+                                vex_arch );
       } else {
           vg_assert(tres.offs_profInc == -1); /* -1 == unset */
           VG_(add_to_unredir_transtab)( &vge,

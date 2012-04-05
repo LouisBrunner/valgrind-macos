@@ -68,7 +68,6 @@
    - move do_cacheflush out of m_transtab
    - more economical unchaining when nuking an entire sector
    - ditto w.r.t. cache flushes
-   - add comments about caused_discard to handle_chain_me()
    - verify case of 2 paths from A to B
    - check -- is IP_AT_SYSCALL still right?
 */
@@ -965,8 +964,7 @@ static void handle_tt_miss ( ThreadId tid )
                                  ip, True/*upd_fast_cache*/ );
    if (UNLIKELY(!found)) {
       /* Not found; we need to request a translation. */
-      if (VG_(translate)( NULL/*caused_discardP*/,
-                          tid, ip, /*debug*/False, 0/*not verbose*/, 
+      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, 
                           bbs_done, True/*allow redirection*/ )) {
          found = VG_(search_transtab)( NULL, NULL, NULL,
                                        ip, True ); 
@@ -989,14 +987,12 @@ void handle_chain_me ( ThreadId tid, void* place_to_chain, Bool toFastEP )
    Addr ip             = VG_(get_IP)(tid);
    UInt to_sNo         = (UInt)-1;
    UInt to_tteNo       = (UInt)-1;
-   Bool caused_discard = False;
 
    found = VG_(search_transtab)( NULL, &to_sNo, &to_tteNo,
                                  ip, False/*dont_upd_fast_cache*/ );
    if (!found) {
       /* Not found; we need to request a translation. */
-      if (VG_(translate)( &caused_discard,
-                          tid, ip, /*debug*/False, 0/*not verbose*/, 
+      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, 
                           bbs_done, True/*allow redirection*/ )) {
          found = VG_(search_transtab)( NULL, &to_sNo, &to_tteNo,
                                        ip, False ); 
@@ -1017,9 +1013,8 @@ void handle_chain_me ( ThreadId tid, void* place_to_chain, Bool toFastEP )
    /* So, finally we know where to patch through to.  Do the patching
       and update the various admin tables that allow it to be undone
       in the case that the destination block gets deleted. */
-   if (!caused_discard)
-      VG_(tt_tc_do_chaining)( place_to_chain,
-                              to_sNo, to_tteNo, toFastEP );
+   VG_(tt_tc_do_chaining)( place_to_chain,
+                           to_sNo, to_tteNo, toFastEP );
 }
 
 static void handle_syscall(ThreadId tid, UInt trc)
@@ -1068,8 +1063,7 @@ void handle_noredir_jump ( /*OUT*/HWord* two_words,
    Bool  found = VG_(search_unredir_transtab)( &hcode, ip );
    if (!found) {
       /* Not found; we need to request a translation. */
-      if (VG_(translate)( NULL/*caused_discardP*/,
-                          tid, ip, /*debug*/False, 0/*not verbose*/, bbs_done,
+      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, bbs_done,
                           False/*NO REDIRECTION*/ )) {
 
          found = VG_(search_unredir_transtab)( &hcode, ip );

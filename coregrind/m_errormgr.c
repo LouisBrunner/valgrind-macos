@@ -966,8 +966,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
       if ((i+1 == VG_(clo_dump_error))) {
          StackTrace ips = VG_(get_ExeContext_StackTrace)(p_min->where);
-         VG_(translate) ( NULL/*caused_discardP*/,
-                          0 /* dummy ThreadId; irrelevant due to debugging*/,
+         VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
                           ips[0], /*debugging*/True, 0xFE/*verbosity*/,
                           /*bbs_done*/0,
                           /*allow redir?*/True);

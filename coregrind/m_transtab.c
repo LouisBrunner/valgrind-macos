@@ -728,8 +728,6 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    vg_assert( (UChar*)host_code >= (UChar*)sectors[to_sNo].tc );
    vg_assert( (UChar*)host_code <= (UChar*)sectors[to_sNo].tc_next
                                    + sizeof(ULong) - 1 );
-   // stay sane -- the patch src is in some sector's code cache
-   vg_assert( is_in_the_main_TC(from__patch_addr) );
 
    /* Find the TTEntry for the from__ code.  This isn't simple since
       we only know the patch address, which is going to be somewhere
@@ -1290,15 +1288,11 @@ static void invalidateFastCache ( void )
    n_fast_flushes++;
 }
 
-/* Returns True if the sector has been used before (hence, if we have
-   to eject existing code in it), False if it's never been used
-   before. */
-static Bool initialiseSector ( Int sno )
+static void initialiseSector ( Int sno )
 {
    Int     i;
    SysRes  sres;
    Sector* sec;
-   Bool    has_been_used_before = False;
    vg_assert(isValidSector(sno));
 
    { Bool sane = sanity_check_sector_search_order();
@@ -1365,7 +1359,6 @@ static Bool initialiseSector ( Int sno )
 
       /* Sector has been used before.  Dump the old contents. */
       VG_(debugLog)(1,"transtab", "recycle sector %d\n", sno);
-      has_been_used_before = True;
       vg_assert(sec->tt != NULL);
       vg_assert(sec->tc_next != NULL);
       n_dump_count += sec->tt_n_inuse;
@@ -1434,8 +1427,6 @@ VG_(printf)("QQQ unlink-entire-sector: %d END\n", sno);
    { Bool sane = sanity_check_sector_search_order();
      vg_assert(sane);
    }
-
-   return has_been_used_before;
 }
 
 
@@ -1444,11 +1435,8 @@ VG_(printf)("QQQ unlink-entire-sector: %d END\n", sno);
 
    pre: youngest_sector points to a valid (although possibly full)
    sector.
-
-   Returns True if the call caused any existing translation(s) to get
-   thrown away in order to make space for this one.
 */
-Bool VG_(add_to_transtab)( VexGuestExtents* vge,
+void VG_(add_to_transtab)( VexGuestExtents* vge,
                            Addr64           entry,
                            AddrH            code,
                            UInt             code_len,
@@ -1460,11 +1448,6 @@ Bool VG_(add_to_transtab)( VexGuestExtents* vge,
    ULong  *tcptr, *tcptr2;
    UChar* srcP;
    UChar* dstP;
-
-   /* We need to tell the caller whether this call caused any code to
-      be thrown away due to the TC becoming full, and hence the oldest
-      Sector to be emptied out and recycled. */
-   Bool caused_code_discarding = False;
 
    vg_assert(init_done);
    vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
@@ -1485,10 +1468,8 @@ Bool VG_(add_to_transtab)( VexGuestExtents* vge,
    y = youngest_sector;
    vg_assert(isValidSector(y));
 
-   if (sectors[y].tc == NULL) {
-      Bool used_before = initialiseSector(y);
-      vg_assert(!used_before);
-   }
+   if (sectors[y].tc == NULL)
+      initialiseSector(y);
 
    /* Try putting the translation in this sector. */
    reqdQ = (code_len + 7) >> 3;
@@ -1518,8 +1499,7 @@ Bool VG_(add_to_transtab)( VexGuestExtents* vge,
       if (youngest_sector >= N_SECTORS)
          youngest_sector = 0;
       y = youngest_sector;
-      caused_code_discarding = initialiseSector(y);
-      
+      initialiseSector(y);
    }
 
    /* Be sure ... */
@@ -1602,8 +1582,6 @@ Bool VG_(add_to_transtab)( VexGuestExtents* vge,
 
    /* Note the eclass numbers for this translation. */
    upd_eclasses_after_add( &sectors[y], i );
-
-   return caused_code_discarding;
 }
 
 

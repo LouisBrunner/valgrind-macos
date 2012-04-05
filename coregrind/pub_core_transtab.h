@@ -56,7 +56,7 @@ extern __attribute__((aligned(16)))
 extern void VG_(init_tt_tc)       ( void );
 
 extern
-Bool VG_(add_to_transtab)( VexGuestExtents* vge,
+void VG_(add_to_transtab)( VexGuestExtents* vge,
                            Addr64           entry,
                            AddrH            code,
                            UInt             code_len,

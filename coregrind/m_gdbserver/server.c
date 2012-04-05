@@ -310,8 +310,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          address = thumb_pc (address);
 #        endif
 
-         VG_(translate) ( NULL/*caused_discardP*/,
-                          0 /* dummy ThreadId; irrelevant due to debugging*/,
+         VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
                           address,
                           /*debugging*/True, 
                           (Int) vex_verbosity,

@@ -1,2 +1,3 @@
+prereq: test ! `../../tests/arch_test ppc32` && ! `../../tests/arch_test ppc64` && ! `../../tests/arch_test s390x`
 prog: test-plo
 vgopts: -q --partial-loads-ok=yes

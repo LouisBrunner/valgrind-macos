@@ -2153,19 +2153,19 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
          errno = 0; /* avoid complain if vgdb_dir is empty */
          while ((f = readdir (vgdb_dir))) {
             struct stat st;
-            char pathname[strlen(vgdb_dir_name) + strlen(f->d_name)];
+            char pathname[strlen(vgdb_dir_name) + strlen(f->d_name) + 1];
             char *wrongpid;
             int newpid;
 
             strcpy (pathname, vgdb_dir_name);
             strcat (pathname, f->d_name);
-            DEBUG(3, "trying %s\n", pathname);
+            DEBUG(3, "checking pathname is FIFO %s\n", pathname);
             if (stat (pathname, &st) != 0) {
                if (debuglevel >= 3)
                   ERROR (errno, "vgdb error: stat %s searching vgdb fifo\n", 
                          pathname);
             } else if (S_ISFIFO (st.st_mode)) {
-               DEBUG(3, "trying %s\n", pathname);
+               DEBUG(3, "trying FIFO %s\n", pathname);
                if (strncmp (pathname, vgdb_format, 
                             strlen (vgdb_format)) == 0) {
                   newpid = strtol(pathname + strlen (vgdb_format), 

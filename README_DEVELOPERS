@@ -136,7 +136,15 @@ A different and possibly easier way is as follows:
 
 Self-hosting
 ~~~~~~~~~~~~
-To run Valgrind under Valgrind:
+This section explains :
+  (A) How to configure Valgrind to run under Valgrind.
+      Such a setup is called self hosting, or outer/inner setup.
+  (B) How to run Valgrind regression tests in a 'self-hosting' mode,
+      e.g. to verify Valgrind has no bugs such as memory leaks.
+  (C) How to run Valgrind performance tests in a 'self-hosting' mode,
+      to analyse and optimise the performance of Valgrind and its tools.
+
+(A) How to configure Valgrind to run under Valgrind:
 
 (1) Check out 2 trees, "Inner" and "Outer".  Inner runs the app
     directly.  Outer runs Inner.
@@ -148,6 +156,7 @@ To run Valgrind under Valgrind:
 (4) Choose a very simple program (date) and try
 
     outer/.../bin/valgrind --sim-hints=enable-outer --trace-children=yes  \
+       --smc-check=all-non-file \
        --run-libc-freeres=no --tool=cachegrind -v \
        inner/.../bin/valgrind --vgdb-prefix=./inner --tool=none -v prog
 
@@ -156,6 +165,10 @@ program, not its stage2. Outer needs --run-libc-freeres=no, as otherwise
 it will try to find and run __libc_freeres in the inner, while libc is not
 used by the inner. Inner needs --vgdb-prefix=./inner to avoid inner
 gdbserver colliding with outer gdbserver.
+Currently, inner does *not* use the client request 
+VALGRIND_DISCARD_TRANSLATIONS for the JITted code or the code patched for
+translation chaining. So the outer needs --smc-check=all-non-file to
+detect the modified code.
 
 Debugging the whole thing might imply to use up to 3 GDB:
   * a GDB attached to the Outer valgrind, allowing
@@ -186,7 +199,8 @@ All this has not been tested much, so don't be surprised if you hit problems.
 When using self-hosting with an outer Callgrind tool, use '--pop-on-jump'
 (on the outer). Otherwise, Callgrind has much higher memory requirements. 
 
-Regression tests in an outer/inner setup:
+(B) Regression tests in an outer/inner setup:
+
  To run all the regression tests with an outer memcheck, do :
    perl test/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
                         --all
@@ -197,7 +211,7 @@ Regression tests in an outer/inner setup:
 
  To run regression tests with another outer tool:
    perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
-                         --outer-tool=helgrind " --all
+                         --outer-tool=helgrind --all
 
  --outer-args allows to give specific arguments to the outer tool,
  replacing the default one provided by vg_regtest.
@@ -210,6 +224,48 @@ it contains the detected race conditions.
 
 The file tests/outer_inner.supp contains suppressions for 
 the irrelevant or benign errors found in the inner.
+
+(C) Performance tests in an outer/inner setup:
+
+ To run all the performance tests with an outer cachegrind, do :
+    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind perf
+
+ To run a specific perf test (e.g. bz2) in this setup, do :
+    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind perf/bz2
+
+ To run all the performance tests with an outer callgrind, do :
+    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
+                      --outer-tool=callgrind perf
+
+ To compare the performance of multiple Valgrind versions, do :
+    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
+      --vg=../inner_xxxx --vg=../inner_yyyy perf
+  (where inner_xxxx and inner_yyyy are the versions to compare).
+  Cachegrind and cg_diff are particularly handy to obtain a delta
+  between the two versions.
+
+When the outer tool is callgrind or cachegrind, the following
+output files will be created for each test:
+   <outertoolname>.out.<inner_valgrind_dir>.<tt>.<perftestname>.<pid>
+   <outertoolname>.outer.log.<inner_valgrind_dir>.<tt>.<perftestname>.<pid>
+ (where tt is the two letters abbreviation for the inner tool(s) run).
+
+For example, the command
+    perl perf/vg_perf \
+      --outer-valgrind=../outer_trunk/install/bin/valgrind \
+      --outer-tool=callgrind \
+      --vg=../inner_tchain --vg=../inner_trunk perf/many-loss-records
+
+produces the files
+    callgrind.out.inner_tchain.no.many-loss-records.18465
+    callgrind.outer.log.inner_tchain.no.many-loss-records.18465
+    callgrind.out.inner_tchain.me.many-loss-records.21899
+    callgrind.outer.log.inner_tchain.me.many-loss-records.21899
+    callgrind.out.inner_trunk.no.many-loss-records.21224
+    callgrind.outer.log.inner_trunk.no.many-loss-records.21224
+    callgrind.out.inner_trunk.me.many-loss-records.22916
+    callgrind.outer.log.inner_trunk.me.many-loss-records.22916
+
 
 Printing out problematic blocks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

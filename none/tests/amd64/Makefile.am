@@ -51,6 +51,7 @@ EXTRA_DIST = \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
 	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
+	nan80and64.stderr.exp nan80and64.stdout.exp nan80and64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
 	pcmpstr64.stderr.exp pcmpstr64.stdout.exp \
@@ -83,6 +84,7 @@ check_PROGRAMS = \
 	clc \
 	cmpxchg \
 	$(INSN_TESTS) \
+	nan80and64 \
 	rcl-amd64 \
 	redundantRexW \
 	smc1 \

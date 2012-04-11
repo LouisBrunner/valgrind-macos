@@ -192,21 +192,21 @@ void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          preserve them.  Anyway, here, the NaN's identity is
          destroyed.  Could be improved. */
       if (f64[6] & 8) {
-         /* QNaN.  Make a QNaN:
-            S 1--1 (15)  1  1--1 (63) 
+         /* QNaN.  Make a canonical QNaN:
+            S 1--1 (15)  1 1  0--0 (62) 
          */
          f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
-         f80[7] = 0xFF;
+         f80[7] = 0xC0;
          f80[6] = f80[5] = f80[4] = f80[3] 
-                = f80[2] = f80[1] = f80[0] = 0xFF;
+                = f80[2] = f80[1] = f80[0] = 0x00;
       } else {
          /* SNaN.  Make a SNaN:
-            S 1--1 (15)  0  1--1 (63) 
+            S 1--1 (15)  1 0  1--1 (62) 
          */
          f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
-         f80[7] = 0x7F;
+         f80[7] = 0xBF;
          f80[6] = f80[5] = f80[4] = f80[3] 
                 = f80[2] = f80[1] = f80[0] = 0xFF;
       }
@@ -265,9 +265,9 @@ void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    
    /* If the exponent is 7FFF, this is either an Infinity, a SNaN or
       QNaN, as determined by examining bits 62:0, thus:
-          0  ... 0    Inf
-          0X ... X    SNaN
-          1X ... X    QNaN
+          10  ... 0    Inf
+          10X ... X    SNaN
+          11X ... X    QNaN
       where at least one of the Xs is not zero.
    */
    if (bexp == 0x7FFF) {
@@ -289,19 +289,19 @@ void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
          return;
       }
       /* So it's either a QNaN or SNaN.  Distinguish by considering
-         bit 62.  Note, this destroys all the trailing bits
+         bit 61.  Note, this destroys all the trailing bits
          (identity?) of the NaN.  IEEE754 doesn't require preserving
          these (it only requires that there be one QNaN value and one
          SNaN value), but x87 does seem to have some ability to
          preserve them.  Anyway, here, the NaN's identity is
          destroyed.  Could be improved. */
-      if (f80[8] & 0x40) {
-         /* QNaN.  Make a QNaN:
-            S 1--1 (11)  1  1--1 (51) 
+      if (f80[7] & 0x40) {
+         /* QNaN.  Make a canonical QNaN:
+            S 1--1 (11)  1  0--0 (51) 
          */
          f64[7] = toUChar((sign << 7) | 0x7F);
-         f64[6] = 0xFF;
-         f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
+         f64[6] = 0xF8;
+         f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0x00;
       } else {
          /* SNaN.  Make a SNaN:
             S 1--1 (11)  0  1--1 (51) 

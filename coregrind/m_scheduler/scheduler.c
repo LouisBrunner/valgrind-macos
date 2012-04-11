@@ -837,31 +837,35 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    if (use_alt_host_addr) {
       /* unusual case -- no-redir translation */
       host_code_addr = alt_host_addr;
-      vg_assert(host_code_addr != 0); /* implausible */
    } else {
       /* normal case -- redir translation */
-      AddrH res   = 0;
-      Bool  found = VG_(search_transtab)(
-                       &res, NULL, NULL,
-                       (Addr64)tst->arch.vex.VG_INSTR_PTR,
-                       True/*upd cache -- necessary?*/
-                    );
-      if (found) {
-         host_code_addr = res;
-         vg_assert(host_code_addr != 0); /* implausible */
-      } else {
-         host_code_addr = 0;
+      UInt cno = (UInt)VG_TT_FAST_HASH((Addr)tst->arch.vex.VG_INSTR_PTR);
+      if (LIKELY(VG_(tt_fast)[cno].guest == (Addr)tst->arch.vex.VG_INSTR_PTR))
+         host_code_addr = VG_(tt_fast)[cno].host;
+      else {
+         AddrH res   = 0;
+         /* not found in VG_(tt_fast). Searching here the transtab
+            improves the performance compared to returning directly
+            to the scheduler. */
+         Bool  found = VG_(search_transtab)(&res, NULL, NULL,
+                                            (Addr)tst->arch.vex.VG_INSTR_PTR,
+                                            True/*upd cache*/
+                                            );
+         if (LIKELY(found)) {
+            host_code_addr = res;
+         } else {
+            /* At this point, we know that we intended to start at a
+               normal redir translation, but it was not found.  In
+               which case we can return now claiming it's not
+               findable. */
+            two_words[0] = VG_TRC_INNER_FASTMISS; /* hmm, is that right? */
+            return;
+         }
       }
    }
+   /* We have either a no-redir or a redir translation. */
+   vg_assert(host_code_addr != 0); /* implausible */
 
-   /* At this point, either host_code_addr is nonzero, in which case
-      we're OK, or it's zero, in which case we know that we intended
-      to start at a normal redir translation, but it was not found.
-      In which case we can return now claiming it's not findable. */
-   if (host_code_addr == 0) {
-      two_words[0] = VG_TRC_INNER_FASTMISS; /* hmm, is that right? */
-      return;
-   }
 
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);

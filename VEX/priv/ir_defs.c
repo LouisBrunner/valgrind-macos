@@ -937,14 +937,26 @@ void ppIROp ( IROp op )
       case Iop_Fixed32UToF32x2_RN: vex_printf("Fixed32UToF32x2_RN"); return;
       case Iop_Fixed32SToF32x2_RN: vex_printf("Fixed32SToF32x2_RN"); return;
 
+      case Iop_D32toD64:  vex_printf("D32toD64");   return;
+      case Iop_D64toD32:  vex_printf("D64toD32");   return;
       case Iop_AddD64:  vex_printf("AddD64");   return;
       case Iop_SubD64:  vex_printf("SubD64");   return;
       case Iop_MulD64:  vex_printf("MulD64");   return;
       case Iop_DivD64:  vex_printf("DivD64");   return;
+      case Iop_ShlD64:  vex_printf("ShlD64"); return;
+      case Iop_ShrD64:  vex_printf("ShrD64"); return;
+      case Iop_D64toI64S:  vex_printf("D64toI64S");  return;
+      case Iop_I64StoD64:  vex_printf("I64StoD64");  return;
+      case Iop_I64StoD128: vex_printf("I64StoD128"); return;
+      case Iop_D64toD128:  vex_printf("D64toD128");  return;
+      case Iop_D128toD64:  vex_printf("D128toD64");  return;
+      case Iop_D128toI64S: vex_printf("D128toI64S"); return;
       case Iop_AddD128: vex_printf("AddD128");  return;
       case Iop_SubD128: vex_printf("SubD128");  return;
       case Iop_MulD128: vex_printf("MulD128");  return;
       case Iop_DivD128: vex_printf("DivD128");  return;
+      case Iop_ShlD128: vex_printf("ShlD128");  return;
+      case Iop_ShrD128: vex_printf("ShrD128");  return;
       case Iop_D64HLtoD128: vex_printf("D64HLtoD128");  return;
       case Iop_D128HItoD64: vex_printf("D128HItoD64");  return;
       case Iop_D128LOtoD64: vex_printf("D128LOtoD64");  return;
@@ -2606,18 +2618,48 @@ void typeOfPrimop ( IROp op,
       case Iop_F128toF32: BINARY(ity_RMode,Ity_F128, Ity_F32);
       case Iop_F128toF64: BINARY(ity_RMode,Ity_F128, Ity_F64);
 
+      case Iop_D32toD64:
+         UNARY(Ity_D64, Ity_D64);
+
+      case Iop_D64toD128:
+         UNARY(Ity_D64, Ity_D128);
+
+      case Iop_I64StoD128:    /* I64 bit pattern stored in Float register */
+         UNARY(Ity_D64, Ity_D128);
+
       case Iop_D128HItoD64:
       case Iop_D128LOtoD64:
          UNARY(Ity_D128, Ity_D64);
 
+      case Iop_D128toI64S:
+         BINARY(ity_RMode, Ity_D128, Ity_D64);
+
       case Iop_D64HLtoD128:
-         BINARY(Ity_D64,Ity_D64, Ity_D128);
+         BINARY(Ity_D64, Ity_D64, Ity_D128);
+
+      case Iop_ShlD64:
+      case Iop_ShrD64:
+         BINARY(Ity_D64, Ity_I8, Ity_D64 );
+
+      case Iop_D64toD32:  
+      case Iop_D64toI64S:
+         BINARY(ity_RMode, Ity_D64, Ity_D64);
+
+      case Iop_I64StoD64:  /* I64 bit pattern stored in Float register */
+         BINARY(ity_RMode, Ity_D64, Ity_D64);
+
+      case Iop_ShlD128:
+      case Iop_ShrD128:
+         BINARY(Ity_D128, Ity_I8, Ity_D128 );
 
       case Iop_AddD64:
       case Iop_SubD64:
       case Iop_MulD64:
       case Iop_DivD64:
          TERNARY( ity_RMode, Ity_D64, Ity_D64, Ity_D64 );
+
+      case Iop_D128toD64:
+         BINARY( ity_RMode, Ity_D128, Ity_D64 );
 
       case Iop_AddD128:
       case Iop_SubD128:

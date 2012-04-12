@@ -1,4 +1,5 @@
 
+
 /*---------------------------------------------------------------*/
 /*--- begin                                   host_ppc_isel.c ---*/
 /*---------------------------------------------------------------*/
@@ -3619,6 +3620,15 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
    }
 
    if (e->tag == Iex_Unop) {
+      if (e->Iex.Binop.op == Iop_D32toD64) {
+         HReg fr_dst = newVRegF(env);
+         HReg fr_src = iselDfp64Expr(env, e->Iex.Unop.arg);
+         addInstr(env, PPCInstr_Dfp64Unary(Pfp_DCTDP, fr_dst, fr_src));
+         return fr_dst;
+      }
+   }
+
+   if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
       case Iop_D128HItoD64:
          iselDfp128Expr( &r_dstHi, &r_dstLo, env, e->Iex.Unop.arg );
@@ -3629,6 +3639,73 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       default:
          vex_printf( "ERROR: iselDfp64Expr_wrk, UNKNOWN unop case %d\n",
                      e->Iex.Unop.op );
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
+      PPCFpOp fpop = Pfp_INVALID;
+
+      switch (e->Iex.Binop.op) {
+      /* shift instructions F64, I32 -> F64 */
+      case Iop_ShlD64: fpop = Pfp_DSCLI; break;
+      case Iop_ShrD64: fpop = Pfp_DSCRI; break;
+      default: break;
+      }
+      if (fpop != Pfp_INVALID) {
+         HReg fr_dst = newVRegF(env);
+         HReg fr_src = iselDfp64Expr(env, e->Iex.Binop.arg1);
+         PPCRI* shift = iselWordExpr_RI(env, e->Iex.Binop.arg2);
+
+         addInstr(env, PPCInstr_DfpShift(fpop, fr_dst, fr_src, shift));
+         return fr_dst;
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
+
+      switch (e->Iex.Binop.op) {
+      case Iop_D128toI64S: {
+         PPCFpOp fpop = Pfp_DCTFIXQ;
+         HReg fr_dst  = newVRegF(env);
+         HReg r_srcHi = newVRegF(env);
+         HReg r_srcLo = newVRegF(env);
+
+         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1 );
+         iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg2);
+         addInstr(env, PPCInstr_DfpD128toD64(fpop, fr_dst, r_srcHi, r_srcLo));
+         return fr_dst;
+      }
+      case Iop_D128toD64: {
+         PPCFpOp fpop = Pfp_DRDPQ;
+         HReg fr_dst  = newVRegF(env);
+         HReg r_srcHi = newVRegF(env);
+         HReg r_srcLo = newVRegF(env);
+
+         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1 );
+         iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg2);
+         addInstr(env, PPCInstr_DfpD128toD64(fpop, fr_dst, r_srcHi, r_srcLo));
+         return fr_dst;
+      }
+      break;
+      default:
+         break;
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
+      PPCFpOp fpop = Pfp_INVALID;
+      switch (e->Iex.Binop.op) {
+      case Iop_D64toD32:     fpop = Pfp_DRSP;   break;
+      case Iop_I64StoD64:    fpop = Pfp_DCFFIX; break;
+      case Iop_D64toI64S:    fpop = Pfp_DCTFIX; break;
+      default: break;
+      }
+      if (fpop != Pfp_INVALID) {
+         HReg fr_dst = newVRegF(env);
+         HReg fr_src = iselDfp64Expr(env, e->Iex.Binop.arg2);
+         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1 );
+         addInstr(env, PPCInstr_Dfp64Unary(fpop, fr_dst, fr_src));
+         return fr_dst;
       }
    }
 
@@ -3686,6 +3763,34 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
       return;
    }
 
+   if (e->tag == Iex_Unop) {
+      PPCFpOp fpop = Pfp_INVALID;
+      HReg r_dstHi = newVRegF(env);
+      HReg r_dstLo = newVRegF(env);
+
+      if (e->Iex.Unop.op == Iop_I64StoD128) {
+         HReg r_src   = iselDfp64Expr(env, e->Iex.Unop.arg);
+         fpop = Pfp_DCFFIXQ;
+
+         addInstr(env, PPCInstr_DfpI64StoD128(fpop, r_dstHi, r_dstLo,
+                                              r_src));
+      }
+      if (e->Iex.Unop.op == Iop_D64toD128) {
+         HReg r_src   = iselDfp64Expr(env, e->Iex.Unop.arg);
+         fpop = Pfp_DCTQPQ;
+
+         /* Source is 64bit result is 128 bit.  High 64bit source arg,
+          * is ignored by the instruction.  Set high arg to r_src just
+          * to meet the vassert tests.
+          */
+         addInstr(env, PPCInstr_Dfp128Unary(fpop, r_dstHi, r_dstLo,
+                                            r_src, r_src));
+      }
+      *rHi = r_dstHi;
+      *rLo = r_dstLo;
+      return;
+   }
+
    /* --------- OPS --------- */
    if (e->tag == Iex_Binop) {
       HReg r_srcHi;
@@ -3699,6 +3804,40 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          *rLo = r_srcLo;
          return;
          break;
+      case Iop_D128toD64: {
+         PPCFpOp fpop = Pfp_DRDPQ;
+         HReg fr_dst  = newVRegF(env);
+
+         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+         iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg2);
+         addInstr(env, PPCInstr_DfpD128toD64(fpop, fr_dst, r_srcHi, r_srcLo));
+
+         /* Need to meet the interface spec but the result is
+          * just 64-bits so send the result back in both halfs.
+          */
+         *rHi = fr_dst;
+         *rLo = fr_dst;
+         return;
+      }
+      case Iop_ShlD128: 
+      case Iop_ShrD128: {
+         HReg fr_dst_hi = newVRegF(env);  
+         HReg fr_dst_lo = newVRegF(env);
+         PPCRI* shift = iselWordExpr_RI(env, e->Iex.Binop.arg2);
+         PPCFpOp fpop = Pfp_DSCLIQ;  /* fix later if necessary */
+
+         iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg1);
+
+         if (e->Iex.Binop.op == Iop_ShrD128)
+            fpop = Pfp_DSCRIQ;
+
+         addInstr(env, PPCInstr_DfpShift128(fpop, fr_dst_hi, fr_dst_lo,
+                                            r_srcHi, r_srcLo, shift));
+
+         *rHi = fr_dst_hi;
+         *rLo = fr_dst_lo;
+	 return;
+      }
       default:
          vex_printf( "ERROR: iselD128Expr_wrk, UNKNOWN binop case %d\n",
                      e->Iex.Binop.op );
@@ -3745,7 +3884,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
    }
 
    ppIRExpr( e );
-   vpanic( "iselD128Expr(ppc64)" );
+   vpanic( "iselDfp128Expr(ppc64)" );
 }
 
 

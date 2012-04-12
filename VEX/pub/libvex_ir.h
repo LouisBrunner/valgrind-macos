@@ -1002,6 +1002,46 @@ typedef
       */
       Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128,
 
+      /* SHIFT SIGNIFICAND INSTRUCTIONS
+       *    The DFP significand is shifted by the number of digits specified
+       *    by the U8 operand.  Digits shifted out of the leftmost digit are
+       *    lost. Zeros are supplied to the vacated positions on the right.
+       *    The sign of the result is the same as the sign of the original
+       *    operand.
+       */
+      /* D64 x U8  -> D64    left shift and right shift respectively */
+      Iop_ShlD64, Iop_ShrD64,
+
+      /* D128 x U8  -> D128  left shift and right shift respectively */
+      Iop_ShlD128, Iop_ShrD128,
+
+
+      /* FORMAT CONVERSION INSTRUCTIONS
+       *   D32 -> D64
+       */
+      Iop_D32toD64,
+
+      /*   D64 -> D128 */
+      Iop_D64toD128, 
+
+      /*   I64S -> D128 */
+      Iop_I64StoD128, 
+
+      /*   IRRoundingModeDFP(I32) x D64 -> D32 */
+      Iop_D64toD32,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> D64 */
+      Iop_D128toD64,
+
+      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      Iop_I64StoD64,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      Iop_D64toI64S,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      Iop_D128toI64S,
+
       /* Support for 128-bit DFP type */
       Iop_D64HLtoD128, Iop_D128HItoD64, Iop_D128LOtoD64,
 

@@ -368,12 +368,15 @@ typedef
       Pfp_DQUAQ,  Pfp_DRRNDQ,
 
       /* Binary */
-      Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD, 
-      Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS, 
+      Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD,
+      Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS,
+      Pfp_DRSP, Pfp_DCTFIX, Pfp_DCTFIXQ, Pfp_DCFFIX, 
 
       /* Unary */
       Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV, Pfp_RES, Pfp_RSQRTE,
-      Pfp_FRIN, Pfp_FRIM, Pfp_FRIP, Pfp_FRIZ
+      Pfp_FRIN, Pfp_FRIM, Pfp_FRIP, Pfp_FRIZ, 
+      Pfp_DSCLI, Pfp_DSCRI, Pfp_DSCLIQ, Pfp_DSCRIQ, Pfp_DCTDP, Pfp_DCTQPQ,
+      Pfp_DRDPQ, Pfp_DCFFIXQ
    }
    PPCFpOp;
 
@@ -492,9 +495,14 @@ typedef
       Pin_AvLdVSCR,   /* mtvscr */
       Pin_AvCMov,     /* AV conditional move */
       Pin_Dfp64Unary,   /* DFP64  unary op */
-      Pin_Dfp128nary,   /* DFP128 unary op */
+      Pin_Dfp128Unary,  /* DFP128 unary op */
+      Pin_DfpShift,     /* Decimal floating point shift by immediate value */
       Pin_Dfp64Binary,  /* DFP64  binary op */
-      Pin_Dfp128Binary  /* DFP128 binary op */
+      Pin_Dfp128Binary, /* DFP128 binary op */
+      Pin_DfpShift128,  /* 128-bit Decimal floating point shift by 
+                         * immediate value */
+      Pin_DfpD128toD64, /* DFP 128 to DFP 64 op */
+      Pin_DfpI64StoD128, /* DFP signed integer to DFP 128 */
    }
    PPCInstrTag;
 
@@ -805,6 +813,12 @@ typedef
          } Dfp64Binary;
          struct {
             PPCFpOp op;
+            HReg   dst;
+            HReg   src;
+            PPCRI* shift;
+         } DfpShift;
+         struct {
+            PPCFpOp op;
             HReg dst_hi;
             HReg dst_lo;
             HReg src_hi;
@@ -820,6 +834,26 @@ typedef
             HReg srcR_hi;
             HReg srcR_lo;
          } Dfp128Binary;
+         struct {
+            PPCFpOp op;
+            HReg   dst_hi;
+            HReg   dst_lo;
+            HReg   src_hi;
+            HReg   src_lo;
+            PPCRI* shift;
+         } DfpShift128;
+         struct {
+            PPCFpOp op;
+            HReg   dst;
+            HReg   src_hi;
+            HReg   src_lo;
+         } DfpD128toD64;
+         struct {
+            PPCFpOp op;
+            HReg   dst_hi;
+            HReg   dst_lo;
+            HReg   src;
+         } DfpI64StoD128;
       } Pin;
    }
    PPCInstr;
@@ -881,8 +915,19 @@ extern PPCInstr* PPCInstr_AvLdVSCR   ( HReg src );
 extern PPCInstr* PPCInstr_Dfp64Unary  ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_Dfp64Binary ( PPCFpOp op, HReg dst, HReg srcL,
                                         HReg srcR );
-extern PPCInstr* PPCInstr_Dfp128Binary( PPCFpOp op, HReg dst_hi, HReg dst_lo,
-                                        HReg srcR_hi, HReg srcR_lo );
+extern PPCInstr* PPCInstr_DfpShift    ( PPCFpOp op, HReg dst, HReg src,
+	                                     PPCRI* shift );
+extern PPCInstr* PPCInstr_Dfp128Unary  ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
+                                         HReg srcR_hi, HReg srcR_lo );
+extern PPCInstr* PPCInstr_Dfp128Binary ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
+                                         HReg srcR_hi, HReg srcR_lo );
+extern PPCInstr* PPCInstr_DfpShift128  ( PPCFpOp op, HReg dst_hi, HReg src_hi,
+                                         HReg dst_lo, HReg src_lo,
+                                         PPCRI* shift );
+extern PPCInstr* PPCInstr_DfpD128toD64 ( PPCFpOp op, HReg dst,
+                                         HReg dst_lo, HReg src_lo);
+extern PPCInstr* PPCInstr_DfpI64StoD128 ( PPCFpOp op, HReg dst_hi,
+                                          HReg dst_lo, HReg src);
 
 extern void ppPPCInstr(PPCInstr*, Bool mode64);
 

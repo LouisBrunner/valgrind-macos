@@ -8619,6 +8619,195 @@ static Bool dis_dfp_arithq(UInt theInstr)
    return True;
 }
 
+/* DFP 64-bit logical shift instructions  */
+static Bool dis_dfp_shift(UInt theInstr) {
+   UInt opc2       = ifieldOPClo9( theInstr );
+   UChar frS_addr  = ifieldRegDS( theInstr );
+   UChar frA_addr  = ifieldRegA( theInstr );
+   UChar shift_val = IFIELD(theInstr, 10, 6);
+   UChar flag_rC   = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg( frA_addr ) );
+
+   switch (opc2) {
+   case 0x42: // dscli
+      DIP( "dscli%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShlD64, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   case 0x62: // dscri
+      DIP( "dscri%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShrD64, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   }
+
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* Quad DFP  logical shift instructions  */
+static Bool dis_dfp_shiftq(UInt theInstr) {
+   UInt opc2       = ifieldOPClo9( theInstr );
+   UChar frS_addr  = ifieldRegDS( theInstr );
+   UChar frA_addr  = ifieldRegA( theInstr );
+   UChar shift_val = IFIELD(theInstr, 10, 6);
+   UChar flag_rC   = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg_pair( frA_addr ) );
+
+   switch (opc2) {
+   case 0x42: // dscliq
+      DIP( "dscliq%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShlD128, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   case 0x62: // dscriq
+      DIP( "dscriq%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShrD128, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   }
+
+   putDReg_pair( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* DFP 64-bit format conversion instructions */
+static Bool dis_dfp_fmt_conv(UInt theInstr) {
+   UInt opc2      = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   IRExpr* round  = get_IR_roundingmode_DFP();
+   UChar flag_rC  = ifieldBIT0( theInstr );
+   IRTemp frB;
+   IRTemp frS;
+   Bool clear_CR1 = True;
+
+   switch (opc2) {
+   case 0x102: //dctdp
+      DIP( "dctdp%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, unop( Iop_D32toD64, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   case 0x302: // drsp
+      DIP( "drsp%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_D64toD32, round, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   case 0x122: // dctfix
+      DIP( "dctfix%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_D64toI64S, round, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   case 0x322: // dcffix
+      DIP( "dcffix%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_I64StoD64, round, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* Quad DFP format conversion instructions */
+static Bool dis_dfp_fmt_convq(UInt theInstr) {
+   UInt opc2      = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   IRExpr* round  = get_IR_roundingmode_DFP();
+   IRTemp frB64   = newTemp( Ity_D64 );
+   IRTemp frB128  = newTemp( Ity_D128 );
+   IRTemp frS64   = newTemp( Ity_D64 );
+   IRTemp frS128  = newTemp( Ity_D128 );
+   UChar flag_rC  = ifieldBIT0( theInstr );
+   Bool clear_CR1 = True;
+
+   switch (opc2) {
+   case 0x102: // dctqpq
+      DIP( "dctqpq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB64, getDReg( frB_addr ) );
+      assign( frS128, unop( Iop_D64toD128, mkexpr( frB64 ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS128 ) );
+      break;
+   case 0x122: // dctfixq
+      DIP( "dctfixq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB128, getDReg_pair( frB_addr ) );
+      assign( frS64, binop( Iop_D128toI64S, round, mkexpr( frB128 ) ) );
+      putDReg( frS_addr, mkexpr( frS64 ) );
+      break;
+   case 0x302: //drdpq
+      DIP( "drdpq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB128, getDReg_pair( frB_addr ) );
+      assign( frS64, binop( Iop_D128toD64, round, mkexpr( frB128 ) ) );
+      putDReg( frS_addr, mkexpr( frS64 ) );
+      break;
+   case 0x322: // dcffixq
+      /* Have to introduce an IOP for this instruction so it will work
+       * on POWER 6 because emulating the instruction requires a POWER 7
+       * DFP instruction in the emulation code.
+       */
+      DIP( "dcffixq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB64, getDReg( frB_addr ) );
+      assign( frS128, unop( Iop_I64StoD128, mkexpr( frB64 ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS128 ) );
+      break;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
 /*------------------------------------------------------------*/
 /*--- AltiVec Instruction Translation                      ---*/
 /*------------------------------------------------------------*/
@@ -13811,6 +14000,20 @@ DisResult disInstr_PPC_WRK (
             if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_arith( theInstr ))
                goto decode_success;
+         case 0x102: // dctdp  - DFP convert to DFP long
+         case 0x302: // drsp   - DFP round to dfp short
+         case 0x122: // dctfix - DFP convert to fixed
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_fmt_conv( theInstr ))
+               goto decode_success;
+            goto decode_failure;
+         case 0x322: // POWER 7 inst, dcffix - DFP convert from fixed
+            if (!allow_VX)
+               goto decode_failure;
+            if (dis_dfp_fmt_conv( theInstr ))
+               goto decode_success;
+            goto decode_failure;
          case 0x3CE: // fcfidus (implemented as native insn)
             if (!allow_VX)
                goto decode_noVX;
@@ -13821,6 +14024,17 @@ DisResult disInstr_PPC_WRK (
             if (dis_fp_round( theInstr ))
                goto decode_success;
             goto decode_failure;
+      }
+
+      opc2 = ifieldOPClo9( theInstr );
+      switch (opc2) {
+      case 0x42: // dscli, DFP shift left
+      case 0x62: // dscri, DFP shift right
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_shift( theInstr ))
+            goto decode_success;
+         goto decode_failure;
       }
 
       opc2 = IFIELD(theInstr, 1, 5);
@@ -14037,6 +14251,16 @@ DisResult disInstr_PPC_WRK (
             goto decode_success;
          goto decode_failure;
 
+      case 0x102: // dctqpq  - DFP convert to DFP extended
+      case 0x302: // drdpq   - DFP round to dfp Long
+      case 0x122: // dctfixq - DFP convert to fixed quad
+      case 0x322: // dcffixq - DFP convert from fixed quad
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_fmt_convq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
       /* Floating Point Compare Instructions */         
       case 0x000: // fcmpu
       case 0x020: // fcmpo
@@ -14096,10 +14320,24 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       default:
+         break; // Fall through...
+      }
+
+      opc2 = ifieldOPClo9( theInstr );
+      switch (opc2) {
+      case 0x42: // dscli, DFP shift left
+      case 0x62: // dscri, DFP shift right
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_shiftq( theInstr ))
+            goto decode_success;
          goto decode_failure;
+      default:
+         goto decode_failure;
+         break;
       }
       break;
-      
+
    case 0x13:
       switch (opc2) {
 

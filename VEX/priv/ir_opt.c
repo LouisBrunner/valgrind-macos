@@ -4646,7 +4646,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       stmtStores
          = toBool( st->tag == Ist_Store
                    || st->tag == Ist_Dirty
-                   || st->tag == Ist_LLSC );
+                   || st->tag == Ist_LLSC
+                   || st->tag == Ist_CAS );
 
       for (k = A_NENV-1; k >= 0; k--) {
          if (env[k].bindee == NULL)

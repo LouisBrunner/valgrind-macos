@@ -331,7 +331,7 @@ if_condition_goto(IRExpr *condition, Addr64 target)
    stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(target),
                     S390X_GUEST_OFFSET(guest_IA)));
 
-   put_IA(mkaddr_expr(target));
+   put_IA(mkaddr_expr(guest_IA_next_instr));
 
    dis_res->whatNext    = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_Boring;

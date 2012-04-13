@@ -4539,12 +4539,12 @@ s390_insn_xindir(s390_cc_t cond, HReg dst, s390_amode *guest_IA)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_XASSISTED;
+   insn->tag  = S390_INSN_XINDIR;
    insn->size = 0;   /* does not matter */
 
-   insn->variant.xdirect.cond = cond;
-   insn->variant.xdirect.dst = dst;
-   insn->variant.xdirect.guest_IA = guest_IA;
+   insn->variant.xindir.cond = cond;
+   insn->variant.xindir.dst = dst;
+   insn->variant.xindir.guest_IA = guest_IA;
 
    return insn;
 }
@@ -7408,13 +7408,13 @@ s390_insn_xindir_emit(UChar *buf, const s390_insn *insn, void *disp_cp_xindir)
    }
 
    /* Update the guest IA with the address in xdirect.dst. */
-   const s390_amode *amode = insn->variant.xdirect.guest_IA;
+   const s390_amode *amode = insn->variant.xindir.guest_IA;
 
    vassert(amode->tag == S390_AMODE_B12 || amode->tag == S390_AMODE_BX12);
    UInt b = hregNumber(amode->b);
    UInt x = hregNumber(amode->x);  /* 0 for B12 and B20 */
    UInt d = amode->d;
-   UInt regno = hregNumber(insn->variant.xdirect.dst);
+   UInt regno = hregNumber(insn->variant.xindir.dst);
 
    buf = s390_emit_STG(buf, regno, x, b, DISP20(d));
 

@@ -2701,7 +2701,72 @@ GSAliasing getAliasingRelation_II (
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, GetIt } tag;
+      enum { TCc, TCt } tag;
+      union { IRTemp tmp; IRConst* con; } u;
+   }
+   TmpOrConst;
+
+static Bool eqTmpOrConst ( TmpOrConst* tc1, TmpOrConst* tc2 )
+{
+   if (tc1->tag != tc2->tag)
+      return False;
+   switch (tc1->tag) {
+      case TCc:
+         return eqIRConst(tc1->u.con, tc2->u.con);
+      case TCt:
+         return tc1->u.tmp == tc2->u.tmp;
+      default:
+         vpanic("eqTmpOrConst");
+   }
+}
+
+static Bool eqIRCallee ( IRCallee* cee1, IRCallee* cee2 )
+{
+   Bool eq = cee1->addr == cee2->addr;
+   if (eq) {
+      vassert(cee1->regparms == cee2->regparms);
+      vassert(cee1->mcx_mask == cee2->mcx_mask);
+      /* Names should be the same too, but we don't bother to
+         check. */
+   }
+   return eq;
+}
+
+/* Convert a NULL terminated IRExpr* vector to an array of
+   TmpOrConsts, and a length. */
+static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
+                                       /*OUT*/Int* nOuts,
+                                       IRExpr** ins )
+{
+   Int i, n;
+   /* We have to make two passes, one to count, one to copy. */
+   for (n = 0; ins[n]; n++)
+      ;
+   *outs  = LibVEX_Alloc(n * sizeof(TmpOrConst));
+   *nOuts = n;
+   /* and now copy .. */
+   for (i = 0; i < n; i++) {
+      IRExpr*       arg = ins[i];
+      TmpOrConst* dst = &(*outs)[i];
+      if (arg->tag == Iex_RdTmp) {
+         dst->tag   = TCt;
+         dst->u.tmp = arg->Iex.RdTmp.tmp;
+      }
+      else if (arg->tag == Iex_Const) {
+         dst->tag   = TCc;
+         dst->u.con = arg->Iex.Const.con;
+      }
+      else {
+         /* Failure of this is serious; it means that the presented arg
+            isn't an IR atom, as it should be. */
+         vpanic("irExprVec_to_TmpOrConsts");
+      }
+   }
+}
+
+typedef
+   struct {
+      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, GetIt, CCall } tag;
       union {
          /* unop(tmp) */
          struct {
@@ -2742,13 +2807,20 @@ typedef
             IRTemp      ix;
             Int         bias;
          } GetIt;
+         /* Clean helper call */
+         struct {
+            IRCallee*   cee;
+            TmpOrConst* args;
+            Int         nArgs;
+            IRType      retty;
+         } CCall;
       } u;
    }
    AvailExpr;
 
 static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
 {
-   if (a1->tag != a2->tag)
+   if (LIKELY(a1->tag != a2->tag))
       return False;
    switch (a1->tag) {
       case Ut: 
@@ -2780,6 +2852,23 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
          return toBool(eqIRRegArray(a1->u.GetIt.descr, a2->u.GetIt.descr) 
                        && a1->u.GetIt.ix == a2->u.GetIt.ix
                        && a1->u.GetIt.bias == a2->u.GetIt.bias);
+      case CCall: {
+         Int  i, n;
+         Bool eq = a1->u.CCall.nArgs == a2->u.CCall.nArgs
+                   && eqIRCallee(a1->u.CCall.cee, a2->u.CCall.cee);
+         if (eq) {
+            n = a1->u.CCall.nArgs;
+            for (i = 0; i < n; i++) {
+               if (!eqTmpOrConst( &a1->u.CCall.args[i],
+                                  &a2->u.CCall.args[i] )) {
+                  eq = False;
+                  break;
+               }
+            }
+         }
+         if (eq) vassert(a1->u.CCall.retty == a2->u.CCall.retty);
+         return eq;  
+      }
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -2816,6 +2905,25 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
          return IRExpr_GetI(ae->u.GetIt.descr,
                             IRExpr_RdTmp(ae->u.GetIt.ix),
                             ae->u.GetIt.bias);
+      case CCall: {
+         Int i, n = ae->u.CCall.nArgs;
+         vassert(n >= 0);
+         IRExpr** vec = LibVEX_Alloc((n+1) * sizeof(IRExpr*));
+         vec[n] = NULL;
+         for (i = 0; i < n; i++) {
+            TmpOrConst* tc = &ae->u.CCall.args[i];
+            if (tc->tag == TCc) {
+               vec[i] = IRExpr_Const(tc->u.con);
+            }
+            else if (tc->tag == TCt) {
+               vec[i] = IRExpr_RdTmp(tc->u.tmp);
+            }
+            else vpanic("availExpr_to_IRExpr:CCall-arg");
+         }
+         return IRExpr_CCall(ae->u.CCall.cee,
+                             ae->u.CCall.retty,
+                             vec);
+      }
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -2859,6 +2967,16 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
       case GetIt:
          ae->u.GetIt.ix = subst_AvailExpr_Temp( env, ae->u.GetIt.ix );
          break;
+      case CCall: {
+         Int i, n = ae->u.CCall.nArgs;;
+         for (i = 0; i < n; i++) {
+            TmpOrConst* tc = &ae->u.CCall.args[i];
+            if (tc->tag == TCt) {
+               tc->u.tmp = subst_AvailExpr_Temp( env, tc->u.tmp );
+            }
+         }
+         break;
+      }
       default: 
          vpanic("subst_AvailExpr");
    }
@@ -2937,6 +3055,22 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       ae->u.GetIt.descr = e->Iex.GetI.descr;
       ae->u.GetIt.ix    = e->Iex.GetI.ix->Iex.RdTmp.tmp;
       ae->u.GetIt.bias  = e->Iex.GetI.bias;
+      return ae;
+   }
+
+   if (e->tag == Iex_CCall) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag = CCall;
+      /* Ok to share only the cee, since it is immutable. */
+      ae->u.CCall.cee   = e->Iex.CCall.cee;
+      ae->u.CCall.retty = e->Iex.CCall.retty;
+      /* irExprVec_to_TmpOrConsts will assert if the args are
+         neither tmps nor constants, but that's ok .. that's all they
+         should be. */
+      irExprVec_to_TmpOrConsts(
+         &ae->u.CCall.args, &ae->u.CCall.nArgs,
+         e->Iex.CCall.args
+      );
       return ae;
    }
 

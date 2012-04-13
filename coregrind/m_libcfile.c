@@ -232,7 +232,7 @@ Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
 #    error "Unknown plat"
 #  endif
    /* if you change the error-reporting conventions of this, also
-      change VG_(pread) and all other usage points. */
+      change all usage points. */
 }
 
 
@@ -575,26 +575,38 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
    return 0;
 }
 
-/* DDD: Note this moves (or at least, is believed to move) the file
-   pointer on Linux but doesn't on Darwin.  This inconsistency should
-   be fixed.  (In other words, why isn't the Linux version implemented
-   in terms of pread()?) */
 SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
 {
    SysRes res;
-#  if defined(VGO_linux)
-   OffT off = VG_(lseek)( fd, offset, VKI_SEEK_SET);
-   if (off < 0)
-      return VG_(mk_SysRes_Error)( VKI_EINVAL );
-   res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count );
+   // on 32 bits platforms, we receive a 32 bits OffT but
+   // we must extend it to pass a long long 64 bits.
+#  if defined(VGP_x86_linux)
+   vg_assert(sizeof(OffT) == 4);
+   res = VG_(do_syscall5)(__NR_pread64, fd, (UWord)buf, count, 
+                          offset, 0); // Little endian long long
+   return res;
+#  elif defined(VGP_arm_linux)
+   vg_assert(sizeof(OffT) == 4);
+   res = VG_(do_syscall5)(__NR_pread64, fd, (UWord)buf, count, 
+                          0, offset); // Big endian long long
+   return res;
+#  elif defined(VGP_ppc32_linux)
+   vg_assert(sizeof(OffT) == 4);
+   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count, 
+                          0, // Padding needed on PPC32
+                          0, offset); // Big endian long long
+   return res;
+#  elif defined(VGP_amd64_linux) \
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux) 
+   res = VG_(do_syscall4)(__NR_pread64, fd, (UWord)buf, count, offset);
    return res;
 #  elif defined(VGP_amd64_darwin)
    res = VG_(do_syscall4)(__NR_pread_nocancel, fd, (UWord)buf, count, offset);
    return res;
 #  elif defined(VGP_x86_darwin)
-   /* ppc32-darwin is the same, but with the args inverted */
+   vg_assert(sizeof(OffT) == 4);
    res = VG_(do_syscall5)(__NR_pread_nocancel, fd, (UWord)buf, count, 
-                          offset & 0xffffffff, offset >> 32);
+                          offset, 0);
    return res;
 #  else
 #    error "Unknown platform"

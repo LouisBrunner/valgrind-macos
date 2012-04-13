@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 	const char *file = /* argv[1]; */
 			   "mmap_fcntl_bug.c";
 	int fd, status;
+        off_t initial;
 
 	if (!file)
 		errx(1, "Usage: %s <normal-file>", argv[0]);
@@ -26,6 +27,13 @@ int main(int argc, char *argv[])
 	fd = open(file, O_RDWR);
 	if (fd < 0)
 		err(1, "Opening %s", file);
+
+        // reproduce bug 297991: mmap interferes with fd position
+        initial = lseek(fd, 123, SEEK_SET);
+        if (123 != initial)
+                err(1, "initial off_t differs from 123 (TEST FAILED)");
+        if (lseek(fd, 0, SEEK_CUR) != 123)
+                err(1, "zero offset from initial differs from 123 (TEST FAILED)");
 
 	fl.l_type = F_WRLCK;
 	fl.l_whence = SEEK_SET;
@@ -39,6 +47,8 @@ int main(int argc, char *argv[])
 	/* If under valgrind, mmap re-opens and closes file, screwing us */
 	if (mmap(NULL, getpagesize(), PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0) == MAP_FAILED)
 		err(1, "mmap of %s", file);
+        if (lseek(fd, 0, SEEK_CUR) != 123)
+                errx(1, "zero offset from initial after mmap differs from 123 (TEST FAILED)");
 
 	switch (fork()) {
 	case 0:

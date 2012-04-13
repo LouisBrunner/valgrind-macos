@@ -7476,7 +7476,6 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
    switch (insn->variant.xassisted.kind) {
    case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
    case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
-   case Ijk_Sys_int32:   trcval = VEX_TRC_JMP_SYS_INT32;   break;
    case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
    case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
    case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;

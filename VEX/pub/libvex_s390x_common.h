@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Common defs for s390x                  libvex_s390x_common.h ---*/
@@ -27,8 +28,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* -*- mode: C; c-basic-offset: 3; -*- */
-
 #ifndef __LIBVEX_PUB_S390X_H
 #define __LIBVEX_PUB_S390X_H
 
@@ -42,7 +41,7 @@
 /*--------------------------------------------------------------*/
 
 #define S390_REGNO_RETURN_VALUE         2
-#define S390_REGNO_DISPATCH_CTR        12   /* Holds VG_(dispatch_ctr) */
+#define S390_REGNO_TCHAIN_SCRATCH      12
 #define S390_REGNO_GUEST_STATE_POINTER 13
 #define S390_REGNO_LINK_REGISTER       14
 #define S390_REGNO_STACK_POINTER       15
@@ -52,7 +51,7 @@
 /*--- Offsets in the stack frame allocated by the dispatcher ---*/
 /*--------------------------------------------------------------*/
 
-/* Where the profiling dispatcher saves the r2 contents. */
+/* Where the dispatcher saves the r2 contents. */
 #define S390_OFFSET_SAVED_R2 160+96
 
 /* Where client's FPC register is saved. */
@@ -87,6 +86,12 @@
 
 /* Number of double words needed to store all facility bits. */
 #define S390_NUM_FACILITY_DW 2
+
+/* The length of the instructions issued by s390_tchain_load64 */
+#define S390_TCHAIN_LOAD64_LEN 16
+
+/* The length of the call insn (BASR) used in translation chaining */
+#define S390_TCHAIN_CALL_LEN  2
 
 #endif /* __LIBVEX_PUB_S390X_H */
 

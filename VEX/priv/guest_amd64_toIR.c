@@ -11482,10 +11482,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
                          mkU64( ~(lineszB-1) ))) );
 
          stmt( IRStmt_Put(OFFB_TILEN, mkU64(lineszB) ) );
- 
-         irsb->jumpkind = Ijk_TInval;
-         irsb->next     = mkU64(guest_RIP_bbstart+delta);
-         dres->whatNext = Dis_StopHere;
+
+         jmp_lit(dres, Ijk_TInval, (Addr64)(guest_RIP_bbstart+delta));
 
          DIP("clflush %s\n", dis_buf);
          goto decode_success;

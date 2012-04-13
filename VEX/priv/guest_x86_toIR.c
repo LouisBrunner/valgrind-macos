@@ -11549,9 +11549,7 @@ DisResult disInstr_X86_WRK (
 
       stmt( IRStmt_Put(OFFB_TILEN, mkU32(lineszB) ) );
 
-      irsb->jumpkind = Ijk_TInval;
-      irsb->next     = mkU32(guest_EIP_bbstart+delta);
-      dres.whatNext  = Dis_StopHere;
+      jmp_lit(&dres, Ijk_TInval, (Addr32)(guest_EIP_bbstart+delta));
 
       DIP("clflush %s\n", dis_buf);
       goto decode_success;

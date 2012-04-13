@@ -80,6 +80,7 @@ where XXXXXX is the bug number as listed below.
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
         and non reset of "C-ontinued" signal
+297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

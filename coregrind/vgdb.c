@@ -439,8 +439,10 @@ char *status_image (int status)
    if (WIFSTOPPED(status))
       APPEND ("WIFSTOPPED %d ", WSTOPSIG(status));
 
+#ifdef WIFCONTINUED
    if (WIFCONTINUED(status))
       APPEND ("WIFCONTINUED ");
+#endif
 
    return result;
 #undef APPEND

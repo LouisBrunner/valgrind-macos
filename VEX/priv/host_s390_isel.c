@@ -2485,9 +2485,12 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
-      case Ijk_SigSEGV:
       case Ijk_TInval:
-      case Ijk_EmWarn: {
+      case Ijk_Sys_syscall:
+      case Ijk_ClientReq:
+      case Ijk_NoRedir:
+      case Ijk_Yield:
+      case Ijk_SigTRAP: {
          HReg dst = s390_isel_int_expr(env, IRExpr_Const(stmt->Ist.Exit.dst));
          addInstr(env, s390_insn_xassisted(cond, dst, guest_IA,
                                            stmt->Ist.Exit.jk));
@@ -2594,6 +2597,7 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, int offsIP)
 
    /* Case: some other kind of transfer to any address */
    switch (jk) {
+   case Ijk_TInval:
    case Ijk_Sys_syscall:
    case Ijk_ClientReq:
    case Ijk_NoRedir:

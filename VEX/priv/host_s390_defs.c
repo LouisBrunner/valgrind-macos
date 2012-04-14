@@ -7864,7 +7864,7 @@ unchainXDirect_S390(void *place_to_unchain,
    */
    UChar *p = place_to_unchain;
  
-   if (p[0] == 0xc0 && p[1] == (0x04 | S390_REGNO_TCHAIN_SCRATCH)) {
+   if (p[0] == 0xc0 && p[1] == ((S390_CC_ALWAYS << 4) | 0x04)) {
       /* Looks like the short form */
       Int num_hw = *(Int *)&p[2];
       Int delta = 2 *num_hw;

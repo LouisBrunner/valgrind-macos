@@ -196,7 +196,7 @@ static
 void safe_mknod (char *nod)
 {
    SysRes m;
-   m = VG_(mknod) (nod, VKI_S_IFIFO|0666, 0);
+   m = VG_(mknod) (nod, VKI_S_IFIFO|0600, 0);
    if (sr_isError (m)) {
       if (sr_Err (m) == VKI_EEXIST) {
          if (VG_(clo_verbosity) > 1) {
@@ -307,7 +307,7 @@ void remote_open (char *name)
 
       pid_from_to_creator = pid;
       
-      o = VG_(open) (shared_mem, VKI_O_CREAT|VKI_O_RDWR, 0666);
+      o = VG_(open) (shared_mem, VKI_O_CREAT|VKI_O_RDWR, 0600);
       if (sr_isError (o)) {
          sr_perror(o, "cannot create shared_mem file %s\n", shared_mem);
          fatal("");

@@ -142,6 +142,7 @@ Int do_syscall_clone_x86_linux ( Word (*fn)(void *),
                                  vki_modify_ldt_t * );
 asm(
 ".text\n"
+".globl do_syscall_clone_x86_linux\n"
 "do_syscall_clone_x86_linux:\n"
 "        push    %ebx\n"
 "        push    %edi\n"

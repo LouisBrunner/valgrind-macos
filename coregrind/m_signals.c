@@ -777,6 +777,7 @@ extern void my_sigreturn(void);
 #if defined(VGP_x86_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "	movl	$" #name ", %eax\n" \
    "	int	$0x80\n" \
@@ -785,6 +786,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_amd64_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "	movq	$" #name ", %rax\n" \
    "	syscall\n" \
@@ -793,6 +795,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_ppc32_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "	li	0, " #name "\n" \
    "	sc\n" \
@@ -816,6 +819,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_arm_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n\t" \
    "    mov  r7, #" #name "\n\t" \
    "    svc  0x00000000\n" \
@@ -824,6 +828,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_x86_darwin)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "movl $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%eax\n" \
    "int $0x80"
@@ -832,12 +837,14 @@ extern void my_sigreturn(void);
    // DDD: todo
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "ud2\n"
 
 #elif defined(VGP_s390x_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    " svc " #name "\n" \
    ".previous\n"

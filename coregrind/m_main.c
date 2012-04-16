@@ -2769,8 +2769,12 @@ asm("\n"
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 /* Avoid compiler warnings: this fn _is_ used, but labelling it
-   'static' causes gcc to complain it isn't. */
+   'static' causes gcc to complain it isn't.
+   attribute 'used' also ensures the code is not eliminated at link
+   time */
+__attribute__ ((used))
 void _start_in_C_linux ( UWord* pArgc );
+__attribute__ ((used))
 void _start_in_C_linux ( UWord* pArgc )
 {
    Int     r;

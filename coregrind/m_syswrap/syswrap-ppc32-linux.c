@@ -158,6 +158,7 @@ ULong do_syscall_clone_ppc32_linux ( Word (*fn)(void *),
                                      vki_modify_ldt_t * );
 asm(
 ".text\n"
+".globl do_syscall_clone_ppc32_linux\n"
 "do_syscall_clone_ppc32_linux:\n"
 "       stwu    1,-32(1)\n"
 "       stw     29,20(1)\n"

@@ -114,6 +114,7 @@ ULong do_syscall_clone_arm_linux   ( Word (*fn)(void *),
                                      void* tls );
 asm(
 ".text\n"
+".globl do_syscall_clone_arm_linux\n"
 "do_syscall_clone_arm_linux:\n"
 
 /*Setup child stack */

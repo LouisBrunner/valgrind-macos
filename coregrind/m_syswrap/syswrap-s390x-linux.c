@@ -151,6 +151,7 @@ ULong do_syscall_clone_s390x_linux ( void  *stack,
 asm(
    "   .text\n"
    "   .align  4\n"
+   ".globl do_syscall_clone_s390x_linux\n"
    "do_syscall_clone_s390x_linux:\n"
    "   lg    %r1, 160(%r15)\n"   // save fn from parent stack into r1
    "   lg    %r0, 168(%r15)\n"   // save arg from parent stack into r0

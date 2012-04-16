@@ -255,6 +255,7 @@ extern UWord do_syscall_WRK (
        );
 asm(
 ".text\n"
+".globl do_syscall_WRK\n"
 "do_syscall_WRK:\n"
 "	push	%esi\n"
 "	push	%edi\n"
@@ -296,6 +297,7 @@ extern UWord do_syscall_WRK (
        );
 asm(
 ".text\n"
+".globl do_syscall_WRK\n"
 "do_syscall_WRK:\n"
         /* Convert function calling convention --> syscall calling
            convention */
@@ -330,6 +332,7 @@ extern ULong do_syscall_WRK (
        );
 asm(
 ".text\n"
+".globl do_syscall_WRK\n"
 "do_syscall_WRK:\n"
 "        mr      0,3\n"
 "        mr      3,4\n"
@@ -396,6 +399,7 @@ extern UWord do_syscall_WRK (
        );
 asm(
 ".text\n"
+".globl do_syscall_WRK\n"
 "do_syscall_WRK:\n"
 "         push    {r4, r5, r7}\n"
 "         ldr     r4, [sp, #12]\n"

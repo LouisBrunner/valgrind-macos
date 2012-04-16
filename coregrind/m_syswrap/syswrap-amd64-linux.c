@@ -142,6 +142,7 @@ Long do_syscall_clone_amd64_linux ( Word (*fn)(void *),
                                     vki_modify_ldt_t * );
 asm(
 ".text\n"
+".globl do_syscall_clone_amd64_linux\n"
 "do_syscall_clone_amd64_linux:\n"
         // set up child stack, temporarily preserving fn and arg
 "       subq    $16, %rsi\n"            // make space on stack

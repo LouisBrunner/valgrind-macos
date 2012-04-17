@@ -1828,6 +1828,7 @@ s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
           mkU64(0)));
 
    irgen(r1, op2addr);
+   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, SDXB), xmnm_kind, m3, r1, dh2, dl2, 0, b2);
@@ -5873,6 +5874,7 @@ s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
    if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
                      guest_IA_next_instr);
    put_gpr_w1(r1, get_gpr_w1(r2));
+   dummy_put_IA();
 
    return "locr";
 }
@@ -5883,6 +5885,7 @@ s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
    if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
                      guest_IA_next_instr);
    put_gpr_dw0(r1, get_gpr_dw0(r2));
+   dummy_put_IA();
 
    return "locgr";
 }
@@ -8939,8 +8942,9 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
                        IRConst_U64(guest_IA_curr_instr),
                        S390X_GUEST_OFFSET(guest_IA)));
       /* we know that this will be invalidated */
-      irsb->next = mkU64(guest_IA_next_instr);
+      put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_TInval;
       break;
    }
 
@@ -9006,6 +9010,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
          vex_printf("    which was executed by\n");
       /* dont make useless translations in the next execute */
       last_execute_target = 0;
+      dummy_put_IA();
    }
    }
    return "ex";
@@ -9380,10 +9385,10 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 
      /* Reset counter */
      put_counter_dw0(mkU64(0));
-     dummy_put_IA();
    }
 
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
+   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
@@ -11166,12 +11171,13 @@ s390_irgen_client_request(void)
    if (0)
       vex_printf("%%R3 = client_request ( %%R2 )\n");
 
-   irsb->next = mkU64((ULong)(guest_IA_curr_instr
-                              + S390_SPECIAL_OP_PREAMBLE_SIZE
-                              + S390_SPECIAL_OP_SIZE));
-   irsb->jumpkind = Ijk_ClientReq;
+   Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
+                                     + S390_SPECIAL_OP_SIZE;
 
+   dis_res->jk_StopHere = Ijk_ClientReq;
    dis_res->whatNext = Dis_StopHere;
+
+   put_IA(mkaddr_expr(next));
 }
 
 static void
@@ -11186,16 +11192,17 @@ s390_irgen_guest_NRADDR(void)
 static void
 s390_irgen_call_noredir(void)
 {
+   Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
+                                     + S390_SPECIAL_OP_SIZE;
+
    /* Continue after special op */
-   put_gpr_dw0(14, mkU64(guest_IA_curr_instr
-                         + S390_SPECIAL_OP_PREAMBLE_SIZE
-                         + S390_SPECIAL_OP_SIZE));
+   put_gpr_dw0(14, mkaddr_expr(next));
 
    /* The address is in REG1, all parameters are in the right (guest) places */
-   irsb->next     = get_gpr_dw0(1);
-   irsb->jumpkind = Ijk_NoRedir;
+   put_IA(get_gpr_dw0(1));
 
    dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_NoRedir;
 }
 
 /* Force proper alignment for the structures below. */
@@ -13523,11 +13530,10 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
       }
    }
    /* If next instruction is execute, stop here */
-   if (irsb->next == NULL && dis_res->whatNext == Dis_Continue
-       && bytes[insn_length] == 0x44) {
-      irsb->next = IRExpr_Const(IRConst_U64(guest_IA_next_instr));
+   if (dis_res->whatNext == Dis_Continue && bytes[insn_length] == 0x44) {
+      put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
-      dis_res->continueAt = 0;
+      dis_res->jk_StopHere = Ijk_Boring;
    }
 
    if (status == S390_DECODE_OK) return insn_length;  /* OK */

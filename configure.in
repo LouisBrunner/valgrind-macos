@@ -1885,7 +1885,7 @@ int main(int argc, char** argv)
 [
 ac_have_boost_1_35=yes
 AC_SUBST([BOOST_CFLAGS], [])
-AC_SUBST([BOOST_LIBS], ["${CXXFLAGS}"])
+AC_SUBST([BOOST_LIBS], [-lboost_thread-mt])
 AC_MSG_RESULT([yes])
 ], [
 ac_have_boost_1_35=no

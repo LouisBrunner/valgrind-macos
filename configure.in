@@ -1868,7 +1868,9 @@ AC_MSG_CHECKING([for boost])
 
 AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-lboost_thread-mt $mflag_primary"
+CXXFLAGS="$mflag_primary"
+safe_LIBS="$LIBS"
+LIBS="-lboost_thread-mt $LIBS"
 
 AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <boost/thread.hpp>
@@ -1890,6 +1892,7 @@ ac_have_boost_1_35=no
 AC_MSG_RESULT([no])
 ])
 
+LIBS="$safe_LIBS"
 CXXFLAGS=$safe_CXXFLAGS
 AC_LANG(C)
 

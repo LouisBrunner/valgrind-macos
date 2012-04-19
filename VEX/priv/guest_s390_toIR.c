@@ -13619,7 +13619,7 @@ disInstr_S390_WRK(UChar *insn)
       /* Decode success */
       switch (dres.whatNext) {
       case Dis_Continue:
-         put_IA(mkaddr_expr(guest_IA_curr_instr));
+         put_IA(mkaddr_expr(guest_IA_next_instr));
          break;
       case Dis_ResteerU:
       case Dis_ResteerC:

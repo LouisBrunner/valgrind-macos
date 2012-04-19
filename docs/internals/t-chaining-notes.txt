@@ -16,6 +16,9 @@ check also with --vex-guest-chase-cond=yes
 check that all targets can run their insn set tests with
 --vex-guest-max-insns=1.
 
+all targets: run some tests using --profile-flags=... to exercise  
+function patchProfInc_<arch>
+
 
 Cleanups
 ~~~~~~~~

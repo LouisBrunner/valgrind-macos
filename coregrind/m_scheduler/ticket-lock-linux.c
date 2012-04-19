@@ -127,6 +127,7 @@ static void acquire_sched_lock(struct sched_lock *p)
                   VG_(gettid)(), ticket);
    for (;;) {
       futex_value = *futex;
+      __sync_synchronize();
       if (ticket == p->head)
          break;
       if (s_debug)
@@ -142,6 +143,7 @@ static void acquire_sched_lock(struct sched_lock *p)
          vg_assert(False);
       }
    }
+   __sync_synchronize();
    INNER_REQUEST(ANNOTATE_RWLOCK_ACQUIRED(p, /*is_w*/1));
    vg_assert(p->owner == 0);
    p->owner = VG_(gettid)();

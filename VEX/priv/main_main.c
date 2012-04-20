@@ -838,6 +838,10 @@ VexInvalRange LibVEX_Chain ( VexArch arch_host,
          return chainXDirect_PPC(place_to_chain,
                                  disp_cp_chain_me_EXPECTED,
                                  place_to_jump_to, False/*!mode64*/);
+      case VexArchPPC64:
+         return chainXDirect_PPC(place_to_chain,
+                                 disp_cp_chain_me_EXPECTED,
+                                 place_to_jump_to, True/*mode64*/);
       default:
          vassert(0);
    }
@@ -867,6 +871,10 @@ VexInvalRange LibVEX_UnChain ( VexArch arch_host,
          return unchainXDirect_PPC(place_to_unchain,
                                    place_to_jump_to_EXPECTED,
                                    disp_cp_chain_me, False/*!mode64*/);
+      case VexArchPPC64:
+         return unchainXDirect_PPC(place_to_unchain,
+                                   place_to_jump_to_EXPECTED,
+                                   disp_cp_chain_me, True/*mode64*/);
       default:
          vassert(0);
    }
@@ -891,6 +899,7 @@ Int LibVEX_evCheckSzB ( VexArch arch_host )
          case VexArchS390X:
             cached = evCheckSzB_S390(); break;
          case VexArchPPC32:
+         case VexArchPPC64:
             cached = evCheckSzB_PPC(); break;
          default:
             vassert(0);
@@ -916,6 +925,9 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
       case VexArchPPC32:
          return patchProfInc_PPC(place_to_patch,
                                  location_of_counter, False/*!mode64*/);
+      case VexArchPPC64:
+         return patchProfInc_PPC(place_to_patch,
+                                 location_of_counter, True/*mode64*/);
       default:
          vassert(0);
    }

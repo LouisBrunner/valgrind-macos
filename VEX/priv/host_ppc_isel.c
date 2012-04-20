@@ -4600,6 +4600,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          //case Ijk_MapFail:
          //case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn:
          case Ijk_NoDecode: case Ijk_SigBUS: case Ijk_SigTRAP:
+         case Ijk_EmFail:
          {
             HReg r = iselWordExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, PPCInstr_XAssisted(r, amCIA, cc,

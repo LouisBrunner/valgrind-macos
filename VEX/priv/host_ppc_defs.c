@@ -1850,10 +1850,10 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
 
    case Pin_ProfInc:
       if (mode64) {
-         vex_printf("(profInc) imm64 r30,$NotKnownYet;");
+         vex_printf("(profInc) imm64-fixed5 r30,$NotKnownYet; ");
          vex_printf("ld r29,(r30); addi r29,r29,1; std r29,(r30)");
       } else {
-         vex_printf("(profInc) imm32 r30,$NotKnownYet;");
+         vex_printf("(profInc) imm32-fixed2 r30,$NotKnownYet; ");
          vex_printf("lwz r29,4(r30); addic. r29,r29,1; stw r29,4(r30)");
          vex_printf("lwz r29,0(r30); addze r29,r29; stw r29,0(r30)");
       }
@@ -3629,6 +3629,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          //case Ijk_Sys_int128:  trcval = VEX_TRC_JMP_SYS_INT128;  break;
          //case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
          case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
+         case Ijk_EmFail:      trcval = VEX_TRC_JMP_EMFAIL;      break;
          //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
          case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
          case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
@@ -4620,14 +4621,14 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
             64-bit:
               imm64-exactly r30, 0x6555655565556555
               ld      r29, 0(r30)
-              add     r29, r29, 1
+              addi    r29, r29, 1
               std     r29, 0(r30)
       */
       if (mode64) {
          p = mkLoadImm_EXACTLY2or5(
                 p, /*r*/30, 0x6555655565556555ULL, True/*mode64*/);
          p = emit32(p, 0xEBBE0000);
-         p = emit32(p, 0x7FBD0A14);
+         p = emit32(p, 0x3BBD0001);
          p = emit32(p, 0xFBBE0000);
       } else {
          p = mkLoadImm_EXACTLY2or5(
@@ -4774,7 +4775,7 @@ VexInvalRange patchProfInc_PPC ( void*  place_to_patch,
       vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
                                     0x6555655565556555ULL, True/*mode64*/));
       vassert(fetch32(p + 20) == 0xEBBE0000);
-      vassert(fetch32(p + 24) == 0x7FBD0A14);
+      vassert(fetch32(p + 24) == 0x3BBD0001);
       vassert(fetch32(p + 28) == 0xFBBE0000);
       p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
                                 Ptr_to_ULong(location_of_counter),

@@ -753,11 +753,14 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    /* Get VEX to do the patching itself.  We have to hand it off
       since it is host-dependent. */
    VexInvalRange vir
-      = LibVEX_Chain( vex_arch,
-                      from__patch_addr,
-                      to_fastEP ? &VG_(disp_cp_chain_me_to_fastEP)
-                                : &VG_(disp_cp_chain_me_to_slowEP),
-                      (void*)host_code );
+      = LibVEX_Chain(
+           vex_arch,
+           from__patch_addr,
+           VG_(fnptr_to_fnentry)(
+              to_fastEP ? &VG_(disp_cp_chain_me_to_fastEP)
+                        : &VG_(disp_cp_chain_me_to_slowEP)),
+           (void*)host_code
+        );
    VG_(invalidate_icache)( (void*)vir.start, vir.len );
 
    /* Now do the tricky bit -- update the ch_succs and ch_preds info

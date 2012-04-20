@@ -98,28 +98,6 @@ VG_(disp_run_translations):
         /* New stack frame */
         stdu    1,-624(1)  /* sp should maintain 16-byte alignment */
 
-        /* Save callee-saved registers... */
-
-        /* Floating-point reg save area : 144 bytes */
-        stfd    31,616(1)
-        stfd    30,608(1)
-        stfd    29,600(1)
-        stfd    28,592(1)
-        stfd    27,584(1)
-        stfd    26,576(1)
-        stfd    25,568(1)
-        stfd    24,560(1)
-        stfd    23,552(1)
-        stfd    22,544(1)
-        stfd    21,536(1)
-        stfd    20,528(1)
-        stfd    19,520(1)
-        stfd    18,512(1)
-        stfd    17,504(1)
-        stfd    16,496(1)
-        stfd    15,488(1)
-        stfd    14,480(1)
-
         /* General reg save area : 152 bytes */
         std     31,472(1)
         std     30,464(1)
@@ -141,6 +119,27 @@ VG_(disp_run_translations):
         std     14,336(1)
         std     13,328(1)
         std     3,104(1)  /* save two_words for later */
+
+        /* Save callee-saved registers... */
+        /* Floating-point reg save area : 144 bytes */
+        stfd    31,616(1)
+        stfd    30,608(1)
+        stfd    29,600(1)
+        stfd    28,592(1)
+        stfd    27,584(1)
+        stfd    26,576(1)
+        stfd    25,568(1)
+        stfd    24,560(1)
+        stfd    23,552(1)
+        stfd    22,544(1)
+        stfd    21,536(1)
+        stfd    20,528(1)
+        stfd    19,520(1)
+        stfd    18,512(1)
+        stfd    17,504(1)
+        stfd    16,496(1)
+        stfd    15,488(1)
+        stfd    14,480(1)
 
         /* It's necessary to save/restore VRSAVE in the AIX / Darwin ABI.
            The Linux kernel might not actually use VRSAVE for its intended
@@ -252,6 +251,9 @@ VG_(disp_run_translations):
            hold another word (for CHAIN_ME exits, the
            address of the place to patch.) */
 
+        /* undo the "make a stack frame for the code we are calling" */
+        addi    1,1,48
+
         /* We're leaving.  Check that nobody messed with
            VSCR or FPSCR in ways we don't expect. */
 	/* Using r11 - value used again further on, so don't trash! */
@@ -292,8 +294,44 @@ VG_(disp_run_translations):
         /* fall through */
 
 .remove_frame:
-        /* Restore FP regs */
+        /* r11 already holds VG_(machine_ppc32_has_VMX) value */
+        cmplwi  11,0
+        beq     .LafterVMX9
 
+        /* Restore Altivec regs.
+           Use r5 as scratch since r6/r7 are live. */
+        /* VRSAVE */
+        lwz     5,324(1)
+        mfspr   5,256         /* VRSAVE reg is spr number 256 */
+
+        /* Vector regs */
+        li      5,304
+        lvx     31,5,1
+        li      5,288
+        lvx     30,5,1
+        li      5,272
+        lvx     29,5,1
+        li      5,256
+        lvx     28,5,1
+        li      5,240
+        lvx     27,5,1
+        li      5,224
+        lvx     26,5,1
+        li      5,208
+        lvx     25,5,1
+        li      5,192
+        lvx     24,5,1
+        li      5,176
+        lvx     23,5,1
+        li      5,160
+        lvx     22,5,1
+        li      5,144
+        lvx     21,5,1
+        li      5,128
+        lvx     20,5,1
+.LafterVMX9:
+
+        /* Restore FP regs */
         /* Floating-point regs */
         lfd     31,616(1)
         lfd     30,608(1)
@@ -314,44 +352,7 @@ VG_(disp_run_translations):
         lfd     15,488(1)
         lfd     14,480(1)
 
-        /* r11 already holds VG_(machine_ppc32_has_VMX) value */
-        cmplwi  11,0
-        beq     .LafterVMX9
-
-        /* Restore Altivec regs */
-        /* VRSAVE */
-        lwz     4,324(1)
-        mfspr   4,256         /* VRSAVE reg is spr number 256 */
-
-        /* Vector regs */
-        li      4,304
-        lvx     31,4,1
-        li      4,288
-        lvx     30,4,1
-        li      4,272
-        lvx     29,4,1
-        li      4,256
-        lvx     28,4,1
-        li      4,240
-        lvx     27,4,1
-        li      4,224
-        lvx     26,4,1
-        li      4,208
-        lvx     25,4,1
-        li      4,192
-        lvx     24,4,1
-        li      4,176
-        lvx     23,4,1
-        li      4,160
-        lvx     22,4,1
-        li      4,144
-        lvx     21,4,1
-        li      4,128
-        lvx     20,4,1
-.LafterVMX9:
-
         /* restore int regs, including importantly r3 (two_words) */
-        addi    1,1,48
         ld      31,472(1)
         ld      30,464(1)
         ld      29,456(1)
@@ -371,7 +372,7 @@ VG_(disp_run_translations):
         ld      15,344(1)
         ld      14,336(1)
         ld      13,328(1)
-        std     3,104(1)
+        ld      3,104(1)
         /* Stash return values */
         std     6,0(3)
         std     7,8(3)

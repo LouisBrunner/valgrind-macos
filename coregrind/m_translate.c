@@ -1106,6 +1106,7 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 #  if defined(VGP_ppc64_linux)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+   Int    offB_CIA  = offsetof(VexGuestPPC64State,guest_CIA);
    IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I64 );
    IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I64 );
    /* Restore R2 */
@@ -1119,8 +1120,8 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
       blr (hence Ijk_Ret); so we should just mark this jump as Boring,
       else one _Call will have resulted in two _Rets. */
    bb->jumpkind = Ijk_Boring;
-   bb->next = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
-
+   bb->next     = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
+   bb->offsIP   = offB_CIA;
 #  else
 #    error Platform is not TOC-afflicted, fortunately
 #  endif

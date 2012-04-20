@@ -156,7 +156,7 @@ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
    OP                DEP1              DEP2              DEP3
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   OP_COPY           current NZCV      unused            unused
+   OP_COPY           curr_NZCV:28x0    unused            unused
    OP_ADD            argL              argR              unused
    OP_SUB            argL              argR              unused
    OP_ADC            argL              argR              31x0:old_C

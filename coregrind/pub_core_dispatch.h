@@ -66,13 +66,13 @@ void VG_(disp_run_translations)( HWord* two_words,
 
 /* We need to know addresses of the continuation-point (cp_) labels so
    we can tell VEX what they are.  They will get baked into the code
-   VEX generates.  The UChar is entirely mythical, but we need to
+   VEX generates.  The type is entirely mythical, but we need to
    state _some_ type, so as to keep gcc happy. */
-UChar VG_(disp_cp_chain_me_to_slowEP);
-UChar VG_(disp_cp_chain_me_to_fastEP);
-UChar VG_(disp_cp_xindir);
-UChar VG_(disp_cp_xassisted);
-UChar VG_(disp_cp_evcheck_fail);
+void VG_(disp_cp_chain_me_to_slowEP)(void);
+void VG_(disp_cp_chain_me_to_fastEP)(void);
+void VG_(disp_cp_xindir)(void);
+void VG_(disp_cp_xassisted)(void);
+void VG_(disp_cp_evcheck_fail)(void);
 
 #endif   // __PUB_CORE_DISPATCH_H
 

@@ -62,7 +62,7 @@ VG_(disp_run_translations):
 	/* r4 holds guest_state */
         /* r5 holds host_addr */
 
-        /* ----- entry point to VG_(run_innerloop) ----- */
+        /* ----- entry point to VG_(disp_run_translations) ----- */
         /* For Linux/ppc32 we need the SysV ABI, which uses
            LR->4(parent_sp), CR->anywhere.
            (The AIX ABI, used on Darwin,
@@ -104,7 +104,7 @@ VG_(disp_run_translations):
         stfd    14,352(1)
 LafterFP1:
 
-        /* General reg save area : 72 bytes */
+        /* General reg save area : 76 bytes */
         stw     31,348(1)
         stw     30,344(1)
         stw     29,340(1)
@@ -289,8 +289,8 @@ LafterFP8:
         vcmpequw. 8,6,7                   /* CR[24] = 1 if v6 == v7 */
         bt        24,invariant_violation  /* branch if all_equal */
 #endif
-LafterVMX8:
 
+LafterVMX8:
 	/* otherwise we're OK */
         b       remove_frame
 
@@ -410,7 +410,7 @@ VG_(disp_cp_chain_me_to_slowEP):
            handing the caller the pair (Chain_me_S, RA) */
         li   6, VG_TRC_CHAIN_ME_TO_SLOW_EP
         mflr 7
-        /* 8 = imm32 r30, disp_cp_chain_me_to_slowEP
+        /* 8 = imm32-fixed2 r30, disp_cp_chain_me_to_slowEP
            4 = mtctr r30
            4 = btctr
         */
@@ -426,7 +426,7 @@ VG_(disp_cp_chain_me_to_fastEP):
            handing the caller the pair (Chain_me_S, RA) */
         li   6, VG_TRC_CHAIN_ME_TO_FAST_EP
         mflr 7
-        /* 8 = imm32 r30, disp_cp_chain_me_to_fastEP
+        /* 8 = imm32-fixed2 r30, disp_cp_chain_me_to_fastEP
            4 = mtctr r30
            4 = btctr
         */

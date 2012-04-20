@@ -871,8 +871,9 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
 
    /* Set up event counter stuff for the run. */
-   tst->arch.vex.host_EvC_COUNTER  = *dispatchCtrP;
-   tst->arch.vex.host_EvC_FAILADDR = (HWord)&VG_(disp_cp_evcheck_fail);
+   tst->arch.vex.host_EvC_COUNTER = *dispatchCtrP;
+   tst->arch.vex.host_EvC_FAILADDR
+      = (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail) );
 
    if (0) {
       vki_sigset_t m;
@@ -917,7 +918,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
 
    vg_assert((Int)tst->arch.vex.host_EvC_COUNTER >= -1);
    vg_assert(tst->arch.vex.host_EvC_FAILADDR
-             == (HWord)&VG_(disp_cp_evcheck_fail));
+             == (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail)) );
 
    done_this_time = *dispatchCtrP - ((Int)tst->arch.vex.host_EvC_COUNTER + 1);
 

@@ -906,6 +906,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
    IROp   op_CmpNE         = Iop_CmpNE64;
@@ -919,6 +920,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
    IROp   op_CmpNE         = Iop_CmpNE32;
@@ -970,7 +972,8 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
             mkU(0)
          ),
          Ijk_EmFail,
-         is64 ? IRConst_U64(0) : IRConst_U32(0)
+         is64 ? IRConst_U64(0) : IRConst_U32(0),
+         offB_CIA
       )
    );
 
@@ -997,6 +1000,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
    IROp   op_CmpNE         = Iop_CmpNE64;
@@ -1008,6 +1012,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
    IROp   op_CmpNE         = Iop_CmpNE32;
@@ -1049,7 +1054,8 @@ static IRTemp gen_POP ( IRSB* bb )
             mkU(0)
          ),
          Ijk_EmFail,
-         is64 ? IRConst_U64(0) : IRConst_U32(0)
+         is64 ? IRConst_U64(0) : IRConst_U32(0),
+         offB_CIA
       )
    );
 
@@ -1514,57 +1520,20 @@ Bool VG_(translate) ( ThreadId tid,
       hassle, because we don't expect them to get used often.  So
       don't bother. */
    if (allow_redirection) {
-      vta.disp_cp_chain_me_to_slowEP = (void*) &VG_(disp_cp_chain_me_to_slowEP);
-      vta.disp_cp_chain_me_to_fastEP = (void*) &VG_(disp_cp_chain_me_to_fastEP);
-      vta.disp_cp_xindir             = (void*) &VG_(disp_cp_xindir);
+      vta.disp_cp_chain_me_to_slowEP
+         = VG_(fnptr_to_fnentry)( &VG_(disp_cp_chain_me_to_slowEP) );
+      vta.disp_cp_chain_me_to_fastEP
+         = VG_(fnptr_to_fnentry)( &VG_(disp_cp_chain_me_to_fastEP) );
+      vta.disp_cp_xindir
+         = VG_(fnptr_to_fnentry)( &VG_(disp_cp_xindir) );
    } else {
       vta.disp_cp_chain_me_to_slowEP = NULL;
       vta.disp_cp_chain_me_to_fastEP = NULL;
       vta.disp_cp_xindir             = NULL;
    }
-   /* Thins  doesn't involve chaining and so is always allowable. */
-   vta.disp_cp_xassisted = (void*) &VG_(disp_cp_xassisted);
-
-#if 0
-   // FIXME tidy this up and make profiling work again
-#  if defined(VGA_x86) || defined(VGA_amd64)
-   if (!allow_redirection) {
-      /* It's a no-redir translation.  Will be run with the
-         nonstandard dispatcher VG_(run_a_noredir_translation) and so
-         needs a nonstandard return point. */
-      vta.dispatch_assisted
-         = (void*) &VG_(run_a_noredir_translation__return_point);
-      vta.dispatch_unassisted
-         = vta.dispatch_assisted;
-   }
-   else
-   if (VG_(clo_profile_flags) > 0) {
-      /* normal translation; although we're profiling. */
-      vta.dispatch_assisted
-         = (void*) &VG_(run_innerloop__dispatch_assisted_profiled);
-      vta.dispatch_unassisted
-         = (void*) &VG_(run_innerloop__dispatch_unassisted_profiled);
-   }
-   else {
-      /* normal translation and we're not profiling (the normal case) */
-      vta.dispatch_assisted
-         = (void*) &VG_(run_innerloop__dispatch_assisted_unprofiled);
-      vta.dispatch_unassisted
-         = (void*) &VG_(run_innerloop__dispatch_unassisted_unprofiled);
-   }
-
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
-        || defined(VGA_arm) || defined(VGA_s390x)
-   /* See comment in libvex.h.  This target uses a
-      return-to-link-register scheme to get back to the dispatcher, so
-      both fields are NULL. */
-   vta.dispatch_assisted   = NULL;
-   vta.dispatch_unassisted = NULL;
-
-#  else
-#    error "Unknown arch"
-#  endif
-#endif /* 0 */
+   /* This doesn't involve chaining and so is always allowable. */
+   vta.disp_cp_xassisted
+      = VG_(fnptr_to_fnentry)( &VG_(disp_cp_xassisted) );
 
    /* Sheesh.  Finally, actually _do_ the translation! */
    tres = LibVEX_Translate ( &vta );

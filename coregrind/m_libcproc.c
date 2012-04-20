@@ -29,6 +29,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_machine.h"    // For VG_(machine_get_VexArchInfo)
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
 #include "pub_core_libcbase.h"

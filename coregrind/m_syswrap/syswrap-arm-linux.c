@@ -307,6 +307,7 @@ DECL_TEMPLATE(arm_linux, sys_setsockopt);
 DECL_TEMPLATE(arm_linux, sys_getsockopt);
 DECL_TEMPLATE(arm_linux, sys_connect);
 DECL_TEMPLATE(arm_linux, sys_accept);
+DECL_TEMPLATE(arm_linux, sys_accept4);
 DECL_TEMPLATE(arm_linux, sys_sendto);
 DECL_TEMPLATE(arm_linux, sys_recvfrom);
 //XXX: Semaphore code ripped from AMD64.
@@ -389,6 +390,13 @@ PRE(sys_socketcall)
    case VKI_SYS_ACCEPT: {
      /* int accept(int s, struct sockaddr *addr, int *addrlen); */
       PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
+      ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      break;
+   }
+
+   case VKI_SYS_ACCEPT4: {
+      /*int accept(int s, struct sockaddr *add, int *addrlen, int flags)*/
+      PRE_MEM_READ( "socketcall.accept4(args)", ARG2, 4*sizeof(Addr) );
       ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
    }
@@ -538,7 +546,9 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_ACCEPT:
+  case VKI_SYS_ACCEPT4:
     /* int accept(int s, struct sockaddr *addr, int *addrlen); */
+    /* int accept4(int s, struct sockaddr *addr, int *addrlen, int flags); */
     r = ML_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES),
                   ARG2_0, ARG2_1, ARG2_2 );
     SET_STATUS_from_SysRes(r);
@@ -660,6 +670,23 @@ PRE(sys_accept)
    ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_accept)
+{
+   SysRes r;
+   vg_assert(SUCCESS);
+   r = ML_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
+                                         ARG1,ARG2,ARG3);
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_accept4)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_accept4 ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "accept4",
+                 int, s, struct sockaddr *, addr, int, *addrlen, int, flags);
+   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_accept4)
 {
    SysRes r;
    vg_assert(SUCCESS);
@@ -1816,7 +1843,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 357
 
    LINXY(__NR_pipe2,             sys_pipe2),            // 359
-   LINXY(__NR_inotify_init1,     sys_inotify_init1)     // 360
+   LINXY(__NR_inotify_init1,     sys_inotify_init1),    // 360
+
+   PLAXY(__NR_accept4,           sys_accept4)           // 366
 };
 
 

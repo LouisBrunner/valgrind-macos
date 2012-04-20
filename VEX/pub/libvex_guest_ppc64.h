@@ -86,6 +86,12 @@ vrsave    Non-volatile 32-bit register
 
 typedef
    struct {
+     /* Event check fail addr, counter, and padding to make GPR0 16
+        aligned. */
+      /*   0 */ ULong  host_EvC_FAILADDR;
+      /*   8 */ UInt   host_EvC_COUNTER;
+      /*  12 */ UInt   pad0;
+      /* Add 16 to all of the offsets below .. */
       /* General Purpose Registers */
       /*   0 */ ULong guest_GPR0;
       /*   8 */ ULong guest_GPR1;

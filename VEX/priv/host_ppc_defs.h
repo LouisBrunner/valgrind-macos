@@ -451,7 +451,9 @@ typedef
       Pin_MulL,       /* widening multiply */
       Pin_Div,        /* div */
       Pin_Call,       /* call to address in register */
-      Pin_Goto,       /* conditional/unconditional jmp to dst */
+      Pin_XDirect,    /* direct transfer to GA */
+      Pin_XIndir,     /* indirect transfer to GA */
+      Pin_XAssisted,  /* assisted transfer to GA */
       Pin_CMov,       /* conditional move */
       Pin_Load,       /* zero-extending load a 8|16|32|64 bit value from mem */
       Pin_LoadL,      /* load-linked (lwarx/ldarx) 32|64 bit value from mem */
@@ -494,7 +496,9 @@ typedef
       Pin_Dfp64Unary,   /* DFP64  unary op */
       Pin_Dfp128nary,   /* DFP128 unary op */
       Pin_Dfp64Binary,  /* DFP64  binary op */
-      Pin_Dfp128Binary  /* DFP128 binary op */
+      Pin_Dfp128Binary,  /* DFP128 binary op */
+      Pin_EvCheck,    /* Event check */
+      Pin_ProfInc     /* 64-bit profile counter increment */
    }
    PPCInstrTag;
 
@@ -586,13 +590,30 @@ typedef
             Addr64      target;
             UInt        argiregs;
          } Call;
-         /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Pct_ALWAYS). */
+         /* Update the guest CIA value, then exit requesting to chain
+            to it.  May be conditional.  Use of Addr64 in order to cope
+            with 64-bit hosts. */
          struct {
+            Addr64      dstGA;    /* next guest address */
+            PPCAMode*   amCIA;    /* amode in guest state for CIA */
+            PPCCondCode cond;     /* can be ALWAYS */
+            Bool        toFastEP; /* chain to the slow or fast point? */
+         } XDirect;
+         /* Boring transfer to a guest address not known at JIT time.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg        dstGA;
+            PPCAMode*   amCIA;
+            PPCCondCode cond; /* can be ALWAYS */
+         } XIndir;
+         /* Assisted transfer to a guest address, most general case.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg        dstGA;
+            PPCAMode*   amCIA;
+            PPCCondCode cond; /* can be ALWAYS */
             IRJumpKind  jk;
-            PPCCondCode cond;
-            PPCRI*      dst;
-         } Goto;
+         } XAssisted;
          /* Mov src to dst on the given condition, which may not
             be the bogus Pct_ALWAYS. */
          struct {
@@ -820,6 +841,17 @@ typedef
             HReg srcR_hi;
             HReg srcR_lo;
          } Dfp128Binary;
+
+         struct {
+            PPCAMode* amCounter;
+            PPCAMode* amFailAddr;
+         } EvCheck;
+         struct {
+            /* No fields.  The address of the counter to inc is
+               installed later, post-translation, by patching it in,
+               as it is not known at translation time. */
+         } ProfInc;
+
       } Pin;
    }
    PPCInstr;
@@ -834,7 +866,12 @@ extern PPCInstr* PPCInstr_Unary      ( PPCUnaryOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
 extern PPCInstr* PPCInstr_Div        ( Bool extended, Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt );
-extern PPCInstr* PPCInstr_Goto       ( IRJumpKind, PPCCondCode cond, PPCRI* dst );
+extern PPCInstr* PPCInstr_XDirect    ( Addr64 dstGA, PPCAMode* amCIA,
+                                       PPCCondCode cond, Bool toFastEP );
+extern PPCInstr* PPCInstr_XIndir     ( HReg dstGA, PPCAMode* amCIA,
+                                       PPCCondCode cond );
+extern PPCInstr* PPCInstr_XAssisted  ( HReg dstGA, PPCAMode* amCIA,
+                                       PPCCondCode cond, IRJumpKind jk );
 extern PPCInstr* PPCInstr_CMov       ( PPCCondCode, HReg dst, PPCRI* src );
 extern PPCInstr* PPCInstr_Load       ( UChar sz,
                                        HReg dst, PPCAMode* src, Bool mode64 );
@@ -883,6 +920,9 @@ extern PPCInstr* PPCInstr_Dfp64Binary ( PPCFpOp op, HReg dst, HReg srcL,
                                         HReg srcR );
 extern PPCInstr* PPCInstr_Dfp128Binary( PPCFpOp op, HReg dst_hi, HReg dst_lo,
                                         HReg srcR_hi, HReg srcR_lo );
+extern PPCInstr* PPCInstr_EvCheck     ( PPCAMode* amCounter,
+                                        PPCAMode* amFailAddr );
+extern PPCInstr* PPCInstr_ProfInc     ( void );
 
 extern void ppPPCInstr(PPCInstr*, Bool mode64);
 
@@ -892,10 +932,13 @@ extern void ppPPCInstr(PPCInstr*, Bool mode64);
 extern void         getRegUsage_PPCInstr ( HRegUsage*, PPCInstr*, Bool mode64 );
 extern void         mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
 extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
-extern Int          emit_PPCInstr        ( UChar* buf, Int nbuf, PPCInstr*, 
+extern Int          emit_PPCInstr        ( /*MB_MOD*/Bool* is_profInc,
+                                           UChar* buf, Int nbuf, PPCInstr* i, 
                                            Bool mode64,
-                                           void* dispatch_unassisted,
-                                           void* dispatch_assisted );
+                                           void* disp_cp_chain_me_to_slowEP,
+                                           void* disp_cp_chain_me_to_fastEP,
+                                           void* disp_cp_xindir,
+                                           void* disp_cp_xassisted );
 
 extern void genSpill_PPC  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );
@@ -903,9 +946,37 @@ extern void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );
 
 extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
-extern HInstrArray* iselSB_PPC           ( IRSB*, VexArch,
-                                                  VexArchInfo*,
-                                                  VexAbiInfo* );
+extern HInstrArray* iselSB_PPC           ( IRSB*, 
+                                           VexArch,
+                                           VexArchInfo*,
+                                           VexAbiInfo*,
+                                           Int offs_Host_EvC_Counter,
+                                           Int offs_Host_EvC_FailAddr,
+                                           Bool chainingAllowed,
+                                           Bool addProfInc,
+                                           Addr64 max_ga );
+
+/* How big is an event check?  This is kind of a kludge because it
+   depends on the offsets of host_EvC_FAILADDR and
+   host_EvC_COUNTER. */
+extern Int evCheckSzB_PPC ( void );
+
+/* Perform a chaining and unchaining of an XDirect jump. */
+extern VexInvalRange chainXDirect_PPC ( void* place_to_chain,
+                                        void* disp_cp_chain_me_EXPECTED,
+                                        void* place_to_jump_to,
+                                        Bool  mode64 );
+
+extern VexInvalRange unchainXDirect_PPC ( void* place_to_unchain,
+                                          void* place_to_jump_to_EXPECTED,
+                                          void* disp_cp_chain_me,
+                                          Bool  mode64 );
+
+/* Patch the counter location into an existing ProfInc point. */
+extern VexInvalRange patchProfInc_PPC ( void*  place_to_patch,
+                                        ULong* location_of_counter,
+                                        Bool   mode64 );
+
 
 #endif /* ndef __VEX_HOST_PPC_DEFS_H */
 

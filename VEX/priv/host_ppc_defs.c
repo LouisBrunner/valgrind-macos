@@ -838,13 +838,33 @@ PPCInstr* PPCInstr_Call ( PPCCondCode cond,
    vassert(0 == (argiregs & ~mask));
    return i;
 }
-PPCInstr* PPCInstr_Goto ( IRJumpKind jk, 
-                          PPCCondCode cond, PPCRI* dst ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
-   i->tag           = Pin_Goto;
-   i->Pin.Goto.cond = cond;
-   i->Pin.Goto.dst  = dst;
-   i->Pin.Goto.jk   = jk;
+PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
+                             PPCCondCode cond, Bool toFastEP ) {
+   PPCInstr* i             = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                  = Pin_XDirect;
+   i->Pin.XDirect.dstGA    = dstGA;
+   i->Pin.XDirect.amCIA    = amCIA;
+   i->Pin.XDirect.cond     = cond;
+   i->Pin.XDirect.toFastEP = toFastEP;
+   return i;
+}
+PPCInstr* PPCInstr_XIndir ( HReg dstGA, PPCAMode* amCIA,
+                            PPCCondCode cond ) {
+   PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag              = Pin_XIndir;
+   i->Pin.XIndir.dstGA = dstGA;
+   i->Pin.XIndir.amCIA = amCIA;
+   i->Pin.XIndir.cond  = cond;
+   return i;
+}
+PPCInstr* PPCInstr_XAssisted ( HReg dstGA, PPCAMode* amCIA,
+                               PPCCondCode cond, IRJumpKind jk ) {
+   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                 = Pin_XAssisted;
+   i->Pin.XAssisted.dstGA = dstGA;
+   i->Pin.XAssisted.amCIA = amCIA;
+   i->Pin.XAssisted.cond  = cond;
+   i->Pin.XAssisted.jk    = jk;
    return i;
 }
 PPCInstr* PPCInstr_CMov  ( PPCCondCode cond, 
@@ -1007,6 +1027,21 @@ PPCInstr* PPCInstr_Dfp128Binary(PPCFpOp op, HReg dst_hi, HReg dst_lo,
    i->Pin.Dfp128Binary.srcR_lo = srcR_lo;
    return i;
 }
+
+PPCInstr* PPCInstr_EvCheck ( PPCAMode* amCounter,
+                             PPCAMode* amFailAddr ) {
+   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                    = Pin_EvCheck;
+   i->Pin.EvCheck.amCounter  = amCounter;
+   i->Pin.EvCheck.amFailAddr = amFailAddr;
+   return i;
+}
+PPCInstr* PPCInstr_ProfInc ( void ) {
+   PPCInstr* i = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag      = Pin_ProfInc;
+   return i;
+}
+
 
 /*
 Valid combo | fromI | int32 | syned | flt64 |
@@ -1371,26 +1406,53 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       vex_printf("] }");
       break;
    }
-   case Pin_Goto:
-      vex_printf("goto: ");
-      if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%s) ", showPPCCondCode(i->Pin.Goto.cond));
-      }
-      vex_printf("{ ");
-      if (i->Pin.Goto.jk != Ijk_Boring
-          && i->Pin.Goto.jk != Ijk_Call
-          && i->Pin.Goto.jk != Ijk_Ret) {
-         vex_printf("li %%r31,$");
-         ppIRJumpKind(i->Pin.Goto.jk);
-         vex_printf(" ; ");
-      }
-      if (i->Pin.Goto.dst->tag == Pri_Imm) {
-         ppLoadImm(hregPPC_GPR3(mode64), i->Pin.Goto.dst->Pri.Imm,
-                   mode64);
+   case Pin_XDirect:
+      vex_printf("(xDirect) ");
+      vex_printf("if (%s) { ",
+                 showPPCCondCode(i->Pin.XDirect.cond));
+      if (mode64) {
+         vex_printf("imm64 r30,0x%llx; ", i->Pin.XDirect.dstGA);
+         vex_printf("std r30,");
       } else {
-         ppMovReg(hregPPC_GPR3(mode64), i->Pin.Goto.dst->Pri.Reg);
+         vex_printf("imm32 r30,0x%llx; ", i->Pin.XDirect.dstGA);
+         vex_printf("stw r30,");
       }
-      vex_printf(" ; blr }");
+      ppPPCAMode(i->Pin.XDirect.amCIA);
+      vex_printf("; ");
+      if (mode64) {
+         vex_printf("imm64-fixed5 r30,$disp_cp_chain_me_to_%sEP; ",
+                    i->Pin.XDirect.toFastEP ? "fast" : "slow");
+      } else {
+         vex_printf("imm32-fixed2 r30,$disp_cp_chain_me_to_%sEP; ",
+                    i->Pin.XDirect.toFastEP ? "fast" : "slow");
+      }
+      vex_printf("mtctr r30; bctrl }");
+      return;
+   case Pin_XIndir:
+      vex_printf("(xIndir) ");
+      vex_printf("if (%s) { ",
+                 showPPCCondCode(i->Pin.XIndir.cond));
+      vex_printf("%s ", mode64 ? "std" : "stw");
+      ppHRegPPC(i->Pin.XIndir.dstGA);
+      vex_printf(",");
+      ppPPCAMode(i->Pin.XIndir.amCIA);
+      vex_printf("; ");
+      vex_printf("imm%s r30,$disp_cp_xindir; ", mode64 ? "64" : "32");
+      vex_printf("mtctr r30; bctr }");
+      return;
+   case Pin_XAssisted:
+      vex_printf("(xAssisted) ");
+      vex_printf("if (%s) { ",
+                 showPPCCondCode(i->Pin.XAssisted.cond));
+      vex_printf("%s ", mode64 ? "std" : "stw");
+      ppHRegPPC(i->Pin.XAssisted.dstGA);
+      vex_printf(",");
+      ppPPCAMode(i->Pin.XAssisted.amCIA);
+      vex_printf("; ");
+      vex_printf("li r31,$IRJumpKind_to_TRCVAL(%d); ",                            
+                 (Int)i->Pin.XAssisted.jk);
+      vex_printf("imm%s r30,$disp_cp_xindir; ", mode64 ? "64" : "32");
+      vex_printf("mtctr r30; bctr }");
       return;
    case Pin_CMov:
       vex_printf("cmov (%s) ", showPPCCondCode(i->Pin.CMov.cond));
@@ -1773,6 +1835,30 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppHRegPPC(i->Pin.Dfp128Binary.srcR_hi);
       return;
 
+   case Pin_EvCheck:
+      /* Note that the counter dec is 32 bit even in 64-bit mode. */
+      vex_printf("(evCheck) ");
+      vex_printf("lwz r30,");
+      ppPPCAMode(i->Pin.EvCheck.amCounter);
+      vex_printf("; addic. r30,r30,-1; ");
+      vex_printf("stw r30,");
+      ppPPCAMode(i->Pin.EvCheck.amCounter);
+      vex_printf("; bge nofail; lwz r30,");
+      ppPPCAMode(i->Pin.EvCheck.amFailAddr);
+      vex_printf("; mtctr r30; bctr; nofail:");
+      return;
+
+   case Pin_ProfInc:
+      if (mode64) {
+         vex_printf("(profInc) imm64 r30,$NotKnownYet;");
+         vex_printf("ld r29,(r30); addi r29,r29,1; std r29,(r30)");
+      } else {
+         vex_printf("(profInc) imm32 r30,$NotKnownYet;");
+         vex_printf("lwz r29,4(r30); addic. r29,r29,1; stw r29,4(r30)");
+         vex_printf("lwz r29,0(r30); addze r29,r29; stw r29,0(r30)");
+      }
+      break;
+
    default:
       vex_printf("\nppPPCInstr: No such tag(%d)\n", (Int)i->tag);
       vpanic("ppPPCInstr");
@@ -1871,17 +1957,21 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
          and no other, as a destination temporary. */
       return;
    }
-   case Pin_Goto:
-      addRegUsage_PPCRI(u, i->Pin.Goto.dst);
-      /* GPR3 holds destination address from Pin_Goto */
-      addHRegUse(u, HRmWrite, hregPPC_GPR3(mode64));
-      if (i->Pin.Goto.jk != Ijk_Boring
-          && i->Pin.Goto.jk != Ijk_Call
-          && i->Pin.Goto.jk != Ijk_Ret)
-            /* note, this is irrelevant since the guest state pointer
-               register is not actually available to the allocator.
-               But still .. */
-         addHRegUse(u, HRmWrite, GuestStatePtr(mode64));
+   /* XDirect/XIndir/XAssisted are also a bit subtle.  They
+      conditionally exit the block.  Hence we only need to list (1)
+      the registers that they read, and (2) the registers that they
+      write in the case where the block is not exited.  (2) is empty,
+      hence only (1) is relevant here. */
+   case Pin_XDirect:
+      addRegUsage_PPCAMode(u, i->Pin.XDirect.amCIA);
+      return;
+   case Pin_XIndir:
+      addHRegUse(u, HRmRead, i->Pin.XIndir.dstGA);
+      addRegUsage_PPCAMode(u, i->Pin.XIndir.amCIA);
+      return;
+   case Pin_XAssisted:
+      addHRegUse(u, HRmRead, i->Pin.XAssisted.dstGA);
+      addRegUsage_PPCAMode(u, i->Pin.XAssisted.amCIA);
       return;
    case Pin_CMov:
       addRegUsage_PPCRI(u,  i->Pin.CMov.src);
@@ -2055,7 +2145,18 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead, i->Pin.Dfp128Binary.srcR_hi);
       addHRegUse(u, HRmRead, i->Pin.Dfp128Binary.srcR_lo);
       return;
-
+   case Pin_EvCheck:
+      /* We expect both amodes only to mention the GSP (r31), so this
+         is in fact pointless, since GSP isn't allocatable, but
+         anyway.. */
+      addRegUsage_PPCAMode(u, i->Pin.EvCheck.amCounter);
+      addRegUsage_PPCAMode(u, i->Pin.EvCheck.amFailAddr);
+      addHRegUse(u, HRmWrite, hregPPC_GPR30(mode64)); /* also unavail to RA */
+      return;
+   case Pin_ProfInc:
+      addHRegUse(u, HRmWrite, hregPPC_GPR29(mode64));
+      addHRegUse(u, HRmWrite, hregPPC_GPR30(mode64));
+      return;
    default:
       ppPPCInstr(i, mode64);
       vpanic("getRegUsage_PPCInstr");
@@ -2109,8 +2210,16 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       return;
    case Pin_Call:
       return;
-   case Pin_Goto:
-      mapRegs_PPCRI(m, i->Pin.Goto.dst);
+   case Pin_XDirect:
+      mapRegs_PPCAMode(m, i->Pin.XDirect.amCIA);
+      return;
+   case Pin_XIndir:
+      mapReg(m, &i->Pin.XIndir.dstGA);
+      mapRegs_PPCAMode(m, i->Pin.XIndir.amCIA);
+      return;
+   case Pin_XAssisted:
+      mapReg(m, &i->Pin.XAssisted.dstGA);
+      mapRegs_PPCAMode(m, i->Pin.XAssisted.amCIA);
       return;
    case Pin_CMov:
       mapRegs_PPCRI(m, i->Pin.CMov.src);
@@ -2266,7 +2375,16 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.Dfp128Binary.srcR_hi);
       mapReg(m, &i->Pin.Dfp128Binary.srcR_lo);
       return;
-
+   case Pin_EvCheck:
+      /* We expect both amodes only to mention the GSP (r31), so this
+         is in fact pointless, since GSP isn't allocatable, but
+         anyway.. */
+      mapRegs_PPCAMode(m, i->Pin.EvCheck.amCounter);
+      mapRegs_PPCAMode(m, i->Pin.EvCheck.amFailAddr);
+      return;
+   case Pin_ProfInc:
+      /* hardwires r29 and r30 -- nothing to modify. */
+      return;
    default:
       ppPPCInstr(i, mode64);
       vpanic("mapRegs_PPCInstr");
@@ -2400,7 +2518,7 @@ static UInt vregNo ( HReg v )
    return n;
 }
 
-/* Emit 32bit instruction big-endianly */
+/* Emit an instruction big-endianly */
 static UChar* emit32 ( UChar* p, UInt w32 )
 {
    *p++ = toUChar((w32 >> 24) & 0x000000FF);
@@ -2408,6 +2526,17 @@ static UChar* emit32 ( UChar* p, UInt w32 )
    *p++ = toUChar((w32 >>  8) & 0x000000FF);
    *p++ = toUChar((w32)       & 0x000000FF);
    return p;
+}
+
+/* Fetch an instruction big-endianly */
+static UInt fetch32 ( UChar* p )
+{
+   UInt w32 = 0;
+   w32 |= ((0xFF & (UInt)p[0]) << 24);
+   w32 |= ((0xFF & (UInt)p[1]) << 16);
+   w32 |= ((0xFF & (UInt)p[2]) <<  8);
+   w32 |= ((0xFF & (UInt)p[3]) <<  0);
+   return w32;
 }
 
 /* The following mkForm[...] functions refer to ppc instruction forms
@@ -2693,6 +2822,210 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
    return p;
 }
 
+/* A simplified version of mkLoadImm that always generates 2 or 5
+   instructions (32 or 64 bits respectively) even if it could generate
+   fewer.  This is needed for generating fixed sized patchable
+   sequences. */
+static UChar* mkLoadImm_EXACTLY2or5 ( UChar* p,
+                                      UInt r_dst, ULong imm, Bool mode64 )
+{
+   vassert(r_dst < 0x20);
+
+   if (!mode64) {
+      /* In 32-bit mode, make sure the top 32 bits of imm are a sign
+         extension of the bottom 32 bits.  (Probably unnecessary.) */
+      UInt u32 = (UInt)imm;
+      Int  s32 = (Int)u32;
+      Long s64 = (Long)s32;
+      imm = (ULong)s64;
+   }
+
+   if (!mode64) {
+      // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
+      p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF);
+      // ori r_dst, r_dst, (imm & 0xFFFF)
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+
+   } else {
+      // full 64bit immediate load: 5 (five!) insns.
+
+      // load high word
+      // lis r_dst, (imm>>48) & 0xFFFF
+      p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF);
+
+      // ori r_dst, r_dst, (imm>>32) & 0xFFFF
+      p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
+         
+      // shift r_dst low word to high word => rldicr
+      p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1);
+
+      // load low word
+      // oris r_dst, r_dst, (imm>>16) & 0xFFFF
+      p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+
+      // ori r_dst, r_dst, (imm) & 0xFFFF
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+   }
+   return p;
+}
+
+/* Checks whether the sequence of bytes at p was indeed created
+   by mkLoadImm_EXACTLY2or5 with the given parameters. */
+static Bool isLoadImm_EXACTLY2or5 ( UChar* p_to_check,
+                                    UInt r_dst, ULong imm, Bool mode64 )
+{
+   vassert(r_dst < 0x20);
+
+   if (!mode64) {
+      /* In 32-bit mode, make sure the top 32 bits of imm are a sign
+         extension of the bottom 32 bits.  (Probably unnecessary.) */
+      UInt u32 = (UInt)imm;
+      Int  s32 = (Int)u32;
+      Long s64 = (Long)s32;
+      imm = (ULong)s64;
+   }
+
+   if (!mode64) {
+      UInt   expect[2] = { 0, 0 };
+      UChar* p         = (UChar*)&expect[0];
+      // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
+      p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF);
+      // ori r_dst, r_dst, (imm & 0xFFFF)
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+      vassert(p == (UChar*)&expect[2]);
+
+      return fetch32(p_to_check + 0) == expect[0]
+             && fetch32(p_to_check + 4) == expect[1];
+
+   } else {
+      UInt   expect[5] = { 0, 0, 0, 0, 0 };
+      UChar* p         = (UChar*)&expect[0];
+      // full 64bit immediate load: 5 (five!) insns.
+
+      // load high word
+      // lis r_dst, (imm>>48) & 0xFFFF
+      p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF);
+
+      // ori r_dst, r_dst, (imm>>32) & 0xFFFF
+      p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
+         
+      // shift r_dst low word to high word => rldicr
+      p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1);
+
+      // load low word
+      // oris r_dst, r_dst, (imm>>16) & 0xFFFF
+      p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+
+      // ori r_dst, r_dst, (imm) & 0xFFFF
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+
+      vassert(p == (UChar*)&expect[5]);
+
+      return fetch32(p_to_check + 0) == expect[0]
+             && fetch32(p_to_check + 4) == expect[1]
+             && fetch32(p_to_check + 8) == expect[2]
+             && fetch32(p_to_check + 12) == expect[3]
+             && fetch32(p_to_check + 16) == expect[4];
+   }
+}
+
+
+/* Generate a machine-word sized load or store.  Simplified version of
+   the Pin_Load and Pin_Store cases below. */
+static UChar* do_load_or_store_machine_word ( 
+                 UChar* p, Bool isLoad,
+                 UInt reg, PPCAMode* am, Bool mode64 )
+{
+   if (isLoad) {
+      UInt opc1, sz = mode64 ? 8 : 4;
+      switch (am->tag) {
+         case Pam_IR:
+            if (mode64) {
+               vassert(0 == (am->Pam.IR.index & 3));
+            }
+            switch (sz) {
+               case 4:  opc1 = 32; vassert(!mode64); break;
+               case 8:  opc1 = 58; vassert(mode64);  break;
+               default: vassert(0);
+            }
+            p = doAMode_IR(p, opc1, reg, am, mode64);
+            break;
+         case Pam_RR:
+            /* we could handle this case, but we don't expect to ever
+               need to. */
+            vassert(0);
+         default:
+            vassert(0);
+      }
+   } else /*store*/ {
+      UInt opc1, sz = mode64 ? 8 : 4;
+      switch (am->tag) {
+         case Pam_IR:
+            if (mode64) {
+               vassert(0 == (am->Pam.IR.index & 3));
+            }
+            switch (sz) {
+               case 4:  opc1 = 36; vassert(!mode64); break;
+               case 8:  opc1 = 62; vassert(mode64);  break;
+               default: vassert(0);
+            }
+            p = doAMode_IR(p, opc1, reg, am, mode64);
+            break;
+         case Pam_RR:
+            /* we could handle this case, but we don't expect to ever
+               need to. */
+            vassert(0);
+         default:
+            vassert(0);
+      }
+   }
+   return p;
+}
+
+/* Generate a 32-bit sized load or store.  Simplified version of
+   do_load_or_store_machine_word above. */
+static UChar* do_load_or_store_word32 ( 
+                 UChar* p, Bool isLoad,
+                 UInt reg, PPCAMode* am, Bool mode64 )
+{
+   if (isLoad) {
+      UInt opc1;
+      switch (am->tag) {
+         case Pam_IR:
+            if (mode64) {
+               vassert(0 == (am->Pam.IR.index & 3));
+            }
+            opc1 = 32;
+            p = doAMode_IR(p, opc1, reg, am, mode64);
+            break;
+         case Pam_RR:
+            /* we could handle this case, but we don't expect to ever
+               need to. */
+            vassert(0);
+         default:
+            vassert(0);
+      }
+   } else /*store*/ {
+      UInt opc1;
+      switch (am->tag) {
+         case Pam_IR:
+            if (mode64) {
+               vassert(0 == (am->Pam.IR.index & 3));
+            }
+            opc1 = 36;
+            p = doAMode_IR(p, opc1, reg, am, mode64);
+            break;
+         case Pam_RR:
+            /* we could handle this case, but we don't expect to ever
+               need to. */
+            vassert(0);
+         default:
+            vassert(0);
+      }
+   }
+   return p;
+}
+
 /* Move r_dst to r_src */
 static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src )
 {
@@ -2753,18 +3086,19 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
-   imperative to emit position-independent code. 
-
-   Note, dispatch should always be NULL since ppc32/64 backends
-   use a call-return scheme to get from the dispatcher to generated
-   code and back.
+   imperative to emit position-independent code.  If the emitted
+   instruction was a profiler inc, set *is_profInc to True, else leave
+   it unchanged.
 */
-Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i, 
+Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
+                    UChar* buf, Int nbuf, PPCInstr* i, 
                     Bool mode64,
-                    void* dispatch_unassisted, void* dispatch_assisted )
+                    void* disp_cp_chain_me_to_slowEP,
+                    void* disp_cp_chain_me_to_fastEP,
+                    void* disp_cp_xindir,
+                    void* disp_cp_xassisted )
 {
    UChar* p = &buf[0];
-   UChar* ptmp = p;
    vassert(nbuf >= 32);
 
    if (0) {
@@ -3131,6 +3465,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          getRegUsage_PPCInstr above, %r10 is used as an address temp */
 
       /* jump over the following insns if condition does not hold */
+      UChar* ptmp = NULL;
       if (cond.test != Pct_ALWAYS) {
          /* jmp fwds if !condition */
          /* don't know how many bytes to jump over yet...
@@ -3159,75 +3494,175 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       goto done;
    }
 
-   case Pin_Goto: {
-      UInt        trc   = 0;
-      UChar       r_ret = 3;        /* Put target addr into %r3 */
-      PPCCondCode cond  = i->Pin.Goto.cond;
-      UInt r_dst;
-      ULong imm_dst;
+   case Pin_XDirect: {
+      /* NB: what goes on here has to be very closely coordinated
+         with the chainXDirect_PPC and unchainXDirect_PPC below. */
+      /* We're generating chain-me requests here, so we need to be
+            sure this is actually allowed -- no-redir translations
+            can't use chain-me's.  Hence: */
+      vassert(disp_cp_chain_me_to_slowEP != NULL);
+      vassert(disp_cp_chain_me_to_fastEP != NULL);
 
-      vassert(dispatch_unassisted == NULL);
-      vassert(dispatch_assisted == NULL);
-      
-      /* First off, if this is conditional, create a conditional
-         jump over the rest of it. */
-      if (cond.test != Pct_ALWAYS) {
-         /* jmp fwds if !condition */
-         /* don't know how many bytes to jump over yet...
-            make space for a jump instruction and fill in later. */
-         ptmp = p; /* fill in this bit later */
+      /* First off, if this is conditional, create a conditional jump
+         over the rest of it.  Or at least, leave a space for it that
+         we will shortly fill in. */
+      UChar* ptmp = NULL;
+      if (i->Pin.XDirect.cond.test != Pct_ALWAYS) {
+         vassert(i->Pin.XDirect.cond.flag != Pcf_NONE);
+         ptmp = p;
          p += 4;
-      }
-
-      // cond succeeds...
-      
-      /* If a non-boring, set GuestStatePtr appropriately. */
-      switch (i->Pin.Goto.jk) {
-         case Ijk_ClientReq:   trc = VEX_TRC_JMP_CLIENTREQ;   break;
-         case Ijk_Sys_syscall: trc = VEX_TRC_JMP_SYS_SYSCALL; break;
-         case Ijk_Yield:       trc = VEX_TRC_JMP_YIELD;       break;
-         case Ijk_EmWarn:      trc = VEX_TRC_JMP_EMWARN;      break;
-         case Ijk_EmFail:      trc = VEX_TRC_JMP_EMFAIL;      break;
-         case Ijk_MapFail:     trc = VEX_TRC_JMP_MAPFAIL;     break;
-         case Ijk_NoDecode:    trc = VEX_TRC_JMP_NODECODE;    break;
-         case Ijk_TInval:      trc = VEX_TRC_JMP_TINVAL;      break;
-         case Ijk_NoRedir:     trc = VEX_TRC_JMP_NOREDIR;     break;
-         case Ijk_SigTRAP:     trc = VEX_TRC_JMP_SIGTRAP;     break;
-         case Ijk_SigBUS:      trc = VEX_TRC_JMP_SIGBUS;      break;
-         case Ijk_Ret:
-         case Ijk_Call:
-         case Ijk_Boring:
-            break;
-         default: 
-            ppIRJumpKind(i->Pin.Goto.jk);
-            vpanic("emit_PPCInstr.Pin_Goto: unknown jump kind");
-      }
-      if (trc !=0) {
-         vassert(trc < 0x10000);
-         /* addi r31,0,trc */
-         p = mkFormD(p, 14, 31, 0, trc);               // p += 4
-      }
-
-      /* Get the destination address into %r_ret */
-      if (i->Pin.Goto.dst->tag == Pri_Imm) {
-         imm_dst = i->Pin.Goto.dst->Pri.Imm;
-         p = mkLoadImm(p, r_ret, imm_dst, mode64);     // p += 4|8|20
       } else {
-         vassert(i->Pin.Goto.dst->tag == Pri_Reg);
-         r_dst = iregNo(i->Pin.Goto.dst->Pri.Reg, mode64);
-         p = mkMoveReg(p, r_ret, r_dst);               // p += 4
+         vassert(i->Pin.XDirect.cond.flag == Pcf_NONE);
       }
-      
-      /* blr */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 16, 0);    // p += 4
+
+      /* Update the guest CIA. */
+      /* imm32/64 r30, dstGA */
+      if (!mode64) vassert(0 == (((ULong)i->Pin.XDirect.dstGA) >> 32));
+      p = mkLoadImm(p, /*r*/30, (ULong)i->Pin.XDirect.dstGA, mode64);
+      /* stw/std r30, amCIA */
+      p = do_load_or_store_machine_word(
+             p, False/*!isLoad*/,
+             /*r*/30, i->Pin.XDirect.amCIA, mode64
+          );
+
+      /* --- FIRST PATCHABLE BYTE follows --- */
+      /* VG_(disp_cp_chain_me_to_{slowEP,fastEP}) (where we're calling
+         to) backs up the return address, so as to find the address of
+         the first patchable byte.  So: don't change the number of
+         instructions (32-bit: 4, 64-bit: 7) below. */
+      /* imm32/64-fixed r30, VG_(disp_cp_chain_me_to_{slowEP,fastEP} */
+      void* disp_cp_chain_me
+               = i->Pin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
+                                         : disp_cp_chain_me_to_slowEP;
+      p = mkLoadImm_EXACTLY2or5(
+             p, /*r*/30, Ptr_to_ULong(disp_cp_chain_me), mode64);
+      /* mtctr r30 */
+      p = mkFormXFX(p, /*r*/30, 9, 467);
+      /* bctrl */
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
+      /* --- END of PATCHABLE BYTES --- */
 
       /* Fix up the conditional jump, if there was one. */
-      if (cond.test != Pct_ALWAYS) {
+      if (i->Pin.XDirect.cond.test != Pct_ALWAYS) {
          Int delta = p - ptmp;
-         vassert(delta >= 12 && delta <= 32);
+         vassert(delta >= 16 && delta <= 32 && 0 == (delta & 3));
          /* bc !ct,cf,delta */
-         mkFormB(ptmp, invertCondTest(cond.test),
-                 cond.flag, delta>>2, 0, 0);
+         mkFormB(ptmp, invertCondTest(i->Pin.XDirect.cond.test),
+                 i->Pin.XDirect.cond.flag, (delta>>2), 0, 0);
+      }
+      goto done;
+   }
+
+   case Pin_XIndir: {
+      /* We're generating transfers that could lead indirectly to a
+         chain-me, so we need to be sure this is actually allowed --
+         no-redir translations are not allowed to reach normal
+         translations without going through the scheduler.  That means
+         no XDirects or XIndirs out from no-redir translations.
+         Hence: */
+      vassert(disp_cp_xindir != NULL);
+
+      /* First off, if this is conditional, create a conditional jump
+         over the rest of it.  Or at least, leave a space for it that
+         we will shortly fill in. */
+      UChar* ptmp = NULL;
+      if (i->Pin.XIndir.cond.test != Pct_ALWAYS) {
+         vassert(i->Pin.XIndir.cond.flag != Pcf_NONE);
+         ptmp = p;
+         p += 4;
+      } else {
+         vassert(i->Pin.XIndir.cond.flag == Pcf_NONE);
+      }
+
+      /* Update the guest CIA. */
+      /* stw/std r-dstGA, amCIA */
+      p = do_load_or_store_machine_word(
+             p, False/*!isLoad*/,
+             iregNo(i->Pin.XIndir.dstGA, mode64),
+             i->Pin.XIndir.amCIA, mode64
+          );
+
+      /* imm32/64 r30, VG_(disp_cp_xindir) */
+      p = mkLoadImm(p, /*r*/30, (ULong)Ptr_to_ULong(disp_cp_xindir), mode64);
+      /* mtctr r30 */
+      p = mkFormXFX(p, /*r*/30, 9, 467);
+      /* bctr */
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (i->Pin.XIndir.cond.test != Pct_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta >= 16 && delta <= 32 && 0 == (delta & 3));
+         /* bc !ct,cf,delta */
+         mkFormB(ptmp, invertCondTest(i->Pin.XIndir.cond.test),
+                 i->Pin.XIndir.cond.flag, (delta>>2), 0, 0);
+      }
+      goto done;
+   }
+
+   case Pin_XAssisted: {
+      /* First off, if this is conditional, create a conditional jump
+         over the rest of it.  Or at least, leave a space for it that
+         we will shortly fill in. */
+      UChar* ptmp = NULL;
+      if (i->Pin.XAssisted.cond.test != Pct_ALWAYS) {
+         vassert(i->Pin.XAssisted.cond.flag != Pcf_NONE);
+         ptmp = p;
+         p += 4;
+      } else {
+         vassert(i->Pin.XAssisted.cond.flag == Pcf_NONE);
+      }
+
+      /* Update the guest CIA. */
+      /* stw/std r-dstGA, amCIA */
+      p = do_load_or_store_machine_word(
+             p, False/*!isLoad*/,
+             iregNo(i->Pin.XIndir.dstGA, mode64),
+             i->Pin.XIndir.amCIA, mode64
+          );
+
+      /* imm32/64 r31, $magic_number */
+      UInt trcval = 0;
+      switch (i->Pin.XAssisted.jk) {
+         case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
+         case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
+         //case Ijk_Sys_int128:  trcval = VEX_TRC_JMP_SYS_INT128;  break;
+         //case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
+         case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
+         //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
+         case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
+         case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+         case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
+         case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
+         //case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
+         case Ijk_SigBUS:        trcval = VEX_TRC_JMP_SIGBUS;    break;
+         case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
+         /* We don't expect to see the following being assisted. */
+         //case Ijk_Ret:
+         //case Ijk_Call:
+         /* fallthrough */
+         default: 
+            ppIRJumpKind(i->Pin.XAssisted.jk);
+            vpanic("emit_ARMInstr.Pin_XAssisted: unexpected jump kind");
+      }
+      vassert(trcval != 0);
+      p = mkLoadImm(p, /*r*/31, trcval, mode64);
+
+      /* imm32/64 r30, VG_(disp_cp_xassisted) */
+      p = mkLoadImm(p, /*r*/30,
+                       (ULong)Ptr_to_ULong(disp_cp_xassisted), mode64);
+      /* mtctr r30 */
+      p = mkFormXFX(p, /*r*/30, 9, 467);
+      /* bctr */
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (i->Pin.XAssisted.cond.test != Pct_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta >= 16 && delta <= 32 && 0 == (delta & 3));
+         /* bc !ct,cf,delta */
+         mkFormB(ptmp, invertCondTest(i->Pin.XAssisted.cond.test),
+                 i->Pin.XAssisted.cond.flag, (delta>>2), 0, 0);
       }
       goto done;
    }
@@ -3242,6 +3677,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       cond = i->Pin.CMov.cond;
 
       /* branch (if cond fails) over move instrs */
+      UChar* ptmp = NULL;
       if (cond.test != Pct_ALWAYS) {
          /* don't know how many bytes to jump over yet...
             make space for a jump instruction and fill in later. */
@@ -4129,6 +4565,86 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       goto done;
    }
 
+   case Pin_EvCheck: {
+      /* This requires a 32-bit dec/test in both 32- and 64-bit
+         modes. */
+      /* We generate:
+            lwz     r30, amCounter
+            addic.  r30, r30, -1
+            stw     r30, amCounter
+            bge     nofail
+            lwz/ld  r30, amFailAddr
+            mtctr   r30
+            bctr
+           nofail:
+      */
+      UChar* p0 = p;
+      /* lwz r30, amCounter */
+      p = do_load_or_store_word32(p, True/*isLoad*/, /*r*/30,
+                                  i->Pin.EvCheck.amCounter, mode64);
+      /* addic. r30,r30,-1 */
+      p = emit32(p, 0x37DEFFFF);
+      /* stw r30, amCounter */
+      p = do_load_or_store_word32(p, False/*!isLoad*/, /*r*/30,
+                                  i->Pin.EvCheck.amCounter, mode64);
+      /* bge nofail */
+      p = emit32(p, 0x40800010);
+      /* lwz/ld r30, amFailAddr */
+      p = do_load_or_store_machine_word(p, True/*isLoad*/, /*r*/30,
+                                        i->Pin.EvCheck.amFailAddr, mode64);
+      /* mtctr r30 */
+      p = mkFormXFX(p, /*r*/30, 9, 467);
+      /* bctr */
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0);
+      /* nofail: */
+
+      /* Crosscheck */
+      vassert(evCheckSzB_PPC() == (UChar*)p - (UChar*)p0);
+      goto done;
+   }
+
+   case Pin_ProfInc: {
+      /* We generate:
+               (ctrP is unknown now, so use 0x65556555(65556555) in the
+               expectation that a later call to LibVEX_patchProfCtr
+               will be used to fill in the immediate fields once the
+               right value is known.)
+            32-bit:
+              imm32-exactly r30, 0x65556555
+              lwz     r29, 4(r30)
+              addic.  r29, r29, 1
+              stw     r29, 4(r30)
+              lwz     r29, 0(r30)
+              addze   r29, r29
+              stw     r29, 0(r30)
+            64-bit:
+              imm64-exactly r30, 0x6555655565556555
+              ld      r29, 0(r30)
+              add     r29, r29, 1
+              std     r29, 0(r30)
+      */
+      if (mode64) {
+         p = mkLoadImm_EXACTLY2or5(
+                p, /*r*/30, 0x6555655565556555ULL, True/*mode64*/);
+         p = emit32(p, 0xEBBE0000);
+         p = emit32(p, 0x7FBD0A14);
+         p = emit32(p, 0xFBBE0000);
+      } else {
+         p = mkLoadImm_EXACTLY2or5(
+                p, /*r*/30, 0x65556555ULL, False/*!mode64*/);
+         p = emit32(p, 0x83BE0004);
+         p = emit32(p, 0x37BD0001);
+         p = emit32(p, 0x93BE0004);
+         p = emit32(p, 0x83BE0000);
+         p = emit32(p, 0x7FBD0194);
+         p = emit32(p, 0x93BE0000);
+      }
+      /* Tell the caller .. */
+      vassert(!(*is_profInc));
+      *is_profInc = True;
+      goto done;
+   }
+
    default: 
       goto bad;
    }
@@ -4143,6 +4659,147 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];
 }
+
+
+/* How big is an event check?  See case for Pin_EvCheck in
+   emit_PPCInstr just above.  That crosschecks what this returns, so
+   we can tell if we're inconsistent. */
+Int evCheckSzB_PPC ( void )
+{
+  return 28;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   emitInstr case for XDirect, above. */
+VexInvalRange chainXDirect_PPC ( void* place_to_chain,
+                                 void* disp_cp_chain_me_EXPECTED,
+                                 void* place_to_jump_to,
+                                 Bool  mode64 )
+{
+   /* What we're expecting to see is:
+        imm32/64-fixed r30, disp_cp_chain_me_to_EXPECTED
+        mtctr r30
+        bctrl
+      viz
+        <8 or 20 bytes generated by mkLoadImm_EXACTLY2or5>
+        7F C9 03 A6
+        4E 80 04 21
+   */
+   UChar* p = (UChar*)place_to_chain;
+   vassert(0 == (3 & (HWord)p));
+   vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
+                                 Ptr_to_ULong(disp_cp_chain_me_EXPECTED),
+                                 mode64));
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 0) == 0x7FC903A6);
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 4) == 0x4E800421);
+   /* And what we want to change it to is:
+        imm32/64-fixed r30, place_to_jump_to
+        mtctr r30
+        bctr
+      viz
+        <8 or 20 bytes generated by mkLoadImm_EXACTLY2or5>
+        7F C9 03 A6
+        4E 80 04 20
+      The replacement has the same length as the original.
+   */
+   p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
+                             Ptr_to_ULong(place_to_jump_to), mode64);
+   p = emit32(p, 0x7FC903A6);
+   p = emit32(p, 0x4E800420);
+
+   Int len = p - (UChar*)place_to_chain;
+   vassert(len == (mode64 ? 28 : 16)); /* stay sane */
+   VexInvalRange vir = {(HWord)place_to_chain, len};
+   return vir;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   emitInstr case for XDirect, above. */
+VexInvalRange unchainXDirect_PPC ( void* place_to_unchain,
+                                   void* place_to_jump_to_EXPECTED,
+                                   void* disp_cp_chain_me,
+                                   Bool  mode64 )
+{
+   /* What we're expecting to see is:
+        imm32/64-fixed r30, place_to_jump_to_EXPECTED
+        mtctr r30
+        bctr
+      viz
+        <8 or 20 bytes generated by mkLoadImm_EXACTLY2or5>
+        7F C9 03 A6
+        4E 80 04 20
+   */
+   UChar* p = (UChar*)place_to_unchain;
+   vassert(0 == (3 & (HWord)p));
+   vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
+                                 Ptr_to_ULong(place_to_jump_to_EXPECTED),
+                                 mode64));
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 0) == 0x7FC903A6);
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 4) == 0x4E800420);
+   /* And what we want to change it to is:
+        imm32/64-fixed r30, disp_cp_chain_me
+        mtctr r30
+        bctrl
+      viz
+        <8 or 20 bytes generated by mkLoadImm_EXACTLY2or5>
+        7F C9 03 A6
+        4E 80 04 21
+      The replacement has the same length as the original.
+   */
+   p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
+                             Ptr_to_ULong(disp_cp_chain_me), mode64);
+   p = emit32(p, 0x7FC903A6);
+   p = emit32(p, 0x4E800421);
+
+   Int len = p - (UChar*)place_to_unchain;
+   vassert(len == (mode64 ? 28 : 16)); /* stay sane */
+   VexInvalRange vir = {(HWord)place_to_unchain, len};
+   return vir;
+}
+
+
+/* Patch the counter address into a profile inc point, as previously
+   created by the Pin_ProfInc case for emit_PPCInstr. */
+VexInvalRange patchProfInc_PPC ( void*  place_to_patch,
+                                 ULong* location_of_counter,
+                                 Bool   mode64 )
+{
+   UChar* p = (UChar*)place_to_patch;
+   vassert(0 == (3 & (HWord)p));
+
+   Int len = 0;
+   if (mode64) {
+      vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
+                                    0x6555655565556555ULL, True/*mode64*/));
+      vassert(fetch32(p + 20) == 0xEBBE0000);
+      vassert(fetch32(p + 24) == 0x7FBD0A14);
+      vassert(fetch32(p + 28) == 0xFBBE0000);
+      p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
+                                Ptr_to_ULong(location_of_counter),
+                                True/*mode64*/);
+      len = p - (UChar*)place_to_patch;
+      vassert(len == 20);
+   } else {
+      vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
+                                    0x65556555ULL, False/*!mode64*/));
+      vassert(fetch32(p +  8) == 0x83BE0004);
+      vassert(fetch32(p + 12) == 0x37BD0001);
+      vassert(fetch32(p + 16) == 0x93BE0004);
+      vassert(fetch32(p + 20) == 0x83BE0000);
+      vassert(fetch32(p + 24) == 0x7FBD0194);
+      vassert(fetch32(p + 28) == 0x93BE0000);
+      p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
+                                Ptr_to_ULong(location_of_counter),
+                                False/*!mode64*/);
+      len = p - (UChar*)place_to_patch;
+      vassert(len == 8);
+   }
+   VexInvalRange vir = {(HWord)place_to_patch, len};
+   return vir;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                     host_ppc_defs.c ---*/

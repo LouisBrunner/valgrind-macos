@@ -4488,7 +4488,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
 }
 
 
-/* How big is an event check?  See case for Ain_EvCheck in
+/* How big is an event check?  See case for ARMin_EvCheck in
    emit_ARMInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
 Int evCheckSzB_ARM ( void )
@@ -4569,7 +4569,7 @@ VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
 
 
 /* Patch the counter address into a profile inc point, as previously
-   created by the Xin_ProfInc case for emit_ARMInstr. */
+   created by the ARMin_ProfInc case for emit_ARMInstr. */
 VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
                                  ULong* location_of_counter )
 {

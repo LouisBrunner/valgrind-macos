@@ -1500,23 +1500,23 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
    if (mode64) {
       vassert(typeOfIRTemp(irsb->tyenv, addr) == Ity_I64);
       stmt(
-         IRStmt_Exit3(
+         IRStmt_Exit(
             binop(Iop_CmpNE64,
                   binop(Iop_And64, mkexpr(addr), mkU64(align-1)),
                   mkU64(0)),
             Ijk_SigBUS,
-            IRConst_U64( guest_CIA_curr_instr )
+            IRConst_U64( guest_CIA_curr_instr ), OFFB_CIA
          )
       );
    } else {
       vassert(typeOfIRTemp(irsb->tyenv, addr) == Ity_I32);
       stmt(
-         IRStmt_Exit3(
+         IRStmt_Exit(
             binop(Iop_CmpNE32,
                   binop(Iop_And32, mkexpr(addr), mkU32(align-1)),
                   mkU32(0)),
             Ijk_SigBUS,
-            IRConst_U32( guest_CIA_curr_instr )
+            IRConst_U32( guest_CIA_curr_instr ), OFFB_CIA
          )
       );
    }
@@ -2690,10 +2690,10 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
             so that Valgrind's dispatcher sees the warning. */
          putGST( PPC_GST_EMWARN, mkU32(ew) );
          stmt( 
-            IRStmt_Exit3(
+            IRStmt_Exit(
                binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
                Ijk_EmWarn,
-               mkSzConst( ty, nextInsnAddr()) ));
+               mkSzConst( ty, nextInsnAddr()), OFFB_CIA ));
       }
 
       /* Ignore all other writes */
@@ -4975,9 +4975,9 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
 
    for (i = 0; i < maxBytes; i++) {
       /* if (nBytes < (i+1)) goto NIA; */
-      stmt( IRStmt_Exit3( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
+      stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
                          Ijk_Boring, 
-                         mkSzConst( ty, nextInsnAddr()) ));
+                         mkSzConst( ty, nextInsnAddr()), OFFB_CIA ));
       /* when crossing into a new dest register, set it to zero. */
       if ((i % 4) == 0) {
          rD++; if (rD == 32) rD = 0;
@@ -5026,9 +5026,9 @@ void generate_stsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
 
    for (i = 0; i < maxBytes; i++) {
       /* if (nBytes < (i+1)) goto NIA; */
-      stmt( IRStmt_Exit3( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
+      stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
                          Ijk_Boring, 
-                         mkSzConst( ty, nextInsnAddr() ) ));
+                         mkSzConst( ty, nextInsnAddr() ), OFFB_CIA ));
       /* check for crossing into a new src register. */
       if ((i % 4) == 0) {
          rS++; if (rS == 32) rS = 0;
@@ -5250,6 +5250,7 @@ static Bool dis_branch ( UInt theInstr,
 
    /* The default what-next.  Individual cases can override it. */    
    dres->whatNext = Dis_StopHere;
+   vassert(dres->jk_StopHere == Ijk_INVALID);
 
    switch (opc1) {
    case 0x12: // b     (Branch, PPC32 p360)
@@ -5282,8 +5283,8 @@ static Bool dis_branch ( UInt theInstr,
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = tgt;
       } else {
-         irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irsb->next     = mkSzImm(ty, tgt);
+         dres->jk_StopHere = flag_LK ? Ijk_Call : Ijk_Boring; ;
+         putGST( PPC_GST_CIA, mkSzImm(ty, tgt) );
       }
       break;
       
@@ -5301,7 +5302,7 @@ static Bool dis_branch ( UInt theInstr,
          cond_ok is either zero or nonzero, since that's the cheapest
          way to compute it.  Anding them together gives a value which
          is either zero or non zero and so that's what we must test
-         for in the IRStmt_Exit3. */
+         for in the IRStmt_Exit. */
       assign( ctr_ok,  branch_ctr_ok( BO ) );
       assign( cond_ok, branch_cond_ok( BO, BI ) );
       assign( do_branch,
@@ -5316,13 +5317,13 @@ static Bool dis_branch ( UInt theInstr,
       if (flag_LK)
          putGST( PPC_GST_LR, e_nia );
       
-      stmt( IRStmt_Exit3(
+      stmt( IRStmt_Exit(
                binop(Iop_CmpNE32, mkexpr(do_branch), mkU32(0)),
                flag_LK ? Ijk_Call : Ijk_Boring,
-               mkSzConst(ty, tgt) ) );
-      
-      irsb->jumpkind = Ijk_Boring;
-      irsb->next     = e_nia;
+               mkSzConst(ty, tgt), OFFB_CIA ) );
+
+      dres->jk_StopHere = Ijk_Boring;
+      putGST( PPC_GST_CIA, e_nia );
       break;
       
    case 0x13:
@@ -5351,18 +5352,18 @@ static Bool dis_branch ( UInt theInstr,
          if (flag_LK)
             putGST( PPC_GST_LR, e_nia );
          
-         stmt( IRStmt_Exit3(
+         stmt( IRStmt_Exit(
                   binop(Iop_CmpEQ32, mkexpr(cond_ok), mkU32(0)),
                   Ijk_Boring,
-                  c_nia ));
+                  c_nia, OFFB_CIA ));
 
          if (flag_LK && vbi->guest_ppc_zap_RZ_at_bl) {
             make_redzone_AbiHint( vbi, lr_old,
                                   "b-ctr-l (indirect call)" );
 	 }
 
-         irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irsb->next     = mkexpr(lr_old);
+         dres->jk_StopHere = flag_LK ? Ijk_Call : Ijk_Boring;;
+         putGST( PPC_GST_CIA, mkexpr(lr_old) );
          break;
          
       case 0x010: { // bclr (Branch Cond. to Link Register, PPC32 p365) 
@@ -5391,10 +5392,10 @@ static Bool dis_branch ( UInt theInstr,
          if (flag_LK)
             putGST( PPC_GST_LR,  e_nia );
 
-         stmt( IRStmt_Exit3(
+         stmt( IRStmt_Exit(
                   binop(Iop_CmpEQ32, mkexpr(do_branch), mkU32(0)),
                   Ijk_Boring,
-                  c_nia ));
+                  c_nia, OFFB_CIA ));
 
          if (vanilla_return && vbi->guest_ppc_zap_RZ_at_blr) {
             make_redzone_AbiHint( vbi, lr_old,
@@ -5404,8 +5405,8 @@ static Bool dis_branch ( UInt theInstr,
          /* blrl is pretty strange; it's like a return that sets the
             return address of its caller to the insn following this
             one.  Mark it as a return. */
-         irsb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
-         irsb->next     = mkexpr(lr_old);
+         dres->jk_StopHere = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
+         putGST( PPC_GST_CIA, mkexpr(lr_old) );
          break;
       }
       default:
@@ -5558,10 +5559,11 @@ static Bool do_trap ( UChar TO,
    if ((TO & b11100) == b11100 || (TO & b00111) == b00111) {
       /* Unconditional trap.  Just do the exit without 
          testing the arguments. */
-      stmt( IRStmt_Exit3( 
+      stmt( IRStmt_Exit( 
                binop(opCMPEQ, const0, const0), 
                Ijk_SigTRAP,
-               mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
+               mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia),
+               OFFB_CIA
       ));
       return True; /* unconditional trap */
    }
@@ -5601,10 +5603,11 @@ static Bool do_trap ( UChar TO,
       tmp = binop(opAND, binop(opCMPORDU, argLe, argRe), const4);
       cond = binop(opOR, tmp, cond);
    }
-   stmt( IRStmt_Exit3( 
+   stmt( IRStmt_Exit( 
             binop(opCMPNE, cond, const0), 
             Ijk_SigTRAP,
-            mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
+            mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia),
+            OFFB_CIA
    ));
    return False; /* not an unconditional trap */
 }
@@ -5652,9 +5655,9 @@ static Bool dis_trapi ( UInt theInstr,
    if (uncond) {
       /* If the trap shows signs of being unconditional, don't
          continue decoding past it. */
-      irsb->next     = mkSzImm( ty, nextInsnAddr() );
-      irsb->jumpkind = Ijk_Boring;
-      dres->whatNext = Dis_StopHere;
+      putGST( PPC_GST_CIA, mkSzImm( ty, nextInsnAddr() ));
+      dres->jk_StopHere = Ijk_Boring;
+      dres->whatNext    = Dis_StopHere;
    }
 
    return True;
@@ -5706,9 +5709,9 @@ static Bool dis_trap ( UInt theInstr,
    if (uncond) {
       /* If the trap shows signs of being unconditional, don't
          continue decoding past it. */
-      irsb->next     = mkSzImm( ty, nextInsnAddr() );
-      irsb->jumpkind = Ijk_Boring;
-      dres->whatNext = Dis_StopHere;
+      putGST( PPC_GST_CIA, mkSzImm( ty, nextInsnAddr() ));
+      dres->jk_StopHere = Ijk_Boring;
+      dres->whatNext    = Dis_StopHere;
    }
 
    return True;
@@ -5739,12 +5742,12 @@ static Bool dis_syslink ( UInt theInstr,
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   irsb->next     = abiinfo->guest_ppc_sc_continues_at_LR
-                       ? getGST( PPC_GST_LR )
-                       : mkSzImm( ty, nextInsnAddr() );
-   irsb->jumpkind = Ijk_Sys_syscall;
+   putGST( PPC_GST_CIA, abiinfo->guest_ppc_sc_continues_at_LR
+                        ? getGST( PPC_GST_LR )
+                        : mkSzImm( ty, nextInsnAddr() ));
 
-   dres->whatNext = Dis_StopHere;
+   dres->whatNext    = Dis_StopHere;
+   dres->jk_StopHere = Ijk_Sys_syscall;
    return True;
 }
 
@@ -6722,9 +6725,9 @@ static Bool dis_cache_manage ( UInt         theInstr,
       /* be paranoid ... */
       stmt( IRStmt_MBE(Imbe_Fence) );
 
-      irsb->jumpkind = Ijk_TInval;
-      irsb->next     = mkSzImm(ty, nextInsnAddr());
-      dres->whatNext = Dis_StopHere;
+      putGST( PPC_GST_CIA, mkSzImm(ty, nextInsnAddr()));
+      dres->jk_StopHere = Ijk_TInval;
+      dres->whatNext    = Dis_StopHere;
       break;
    }
 
@@ -13572,7 +13575,6 @@ static UInt get_VSX60_opc2(UInt opc2_full)
 
 static   
 DisResult disInstr_PPC_WRK ( 
-             Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              Bool         resteerCisOk,
              void*        callback_opaque,
@@ -13613,9 +13615,10 @@ DisResult disInstr_PPC_WRK (
    delta = (Long)mkSzAddr(ty, (ULong)delta64);
 
    /* Set result defaults. */
-   dres.whatNext   = Dis_Continue;
-   dres.len        = 0;
-   dres.continueAt = 0;
+   dres.whatNext    = Dis_Continue;
+   dres.len         = 0;
+   dres.continueAt  = 0;
+   dres.jk_StopHere = Ijk_INVALID;
 
    /* At least this is simple on PPC32: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now
@@ -13625,10 +13628,6 @@ DisResult disInstr_PPC_WRK (
    if (0) vex_printf("insn: 0x%x\n", theInstr);
 
    DIP("\t0x%llx:  ", (ULong)guest_CIA_curr_instr);
-
-   /* We may be asked to update the guest CIA before going further. */
-   if (put_IP)
-      putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
@@ -13658,9 +13657,9 @@ DisResult disInstr_PPC_WRK (
             /* %R3 = client_request ( %R4 ) */
             DIP("r3 = client_request ( %%r4 )\n");
             delta += 20;
-            irsb->next     = mkSzImm( ty, guest_CIA_bbstart + delta );
-            irsb->jumpkind = Ijk_ClientReq;
-            dres.whatNext  = Dis_StopHere;
+            putGST( PPC_GST_CIA, mkSzImm( ty, guest_CIA_bbstart + delta ));
+            dres.jk_StopHere = Ijk_ClientReq;
+            dres.whatNext    = Dis_StopHere;
             goto decode_success;
          }
          else
@@ -13678,9 +13677,9 @@ DisResult disInstr_PPC_WRK (
             DIP("branch-and-link-to-noredir r11\n");
             delta += 20;
             putGST( PPC_GST_LR, mkSzImm(ty, guest_CIA_bbstart + (Long)delta) );
-            irsb->next     = getIReg(11);
-            irsb->jumpkind = Ijk_NoRedir;
-            dres.whatNext  = Dis_StopHere;
+            putGST( PPC_GST_CIA, getIReg(11));
+            dres.jk_StopHere = Ijk_NoRedir;
+            dres.whatNext    = Dis_StopHere;
             goto decode_success;
          }
          else
@@ -14252,9 +14251,9 @@ DisResult disInstr_PPC_WRK (
          Bool ok = dis_int_ldst_str( theInstr, &stopHere );
          if (!ok) goto decode_failure;
          if (stopHere) {
-            irsb->next     = mkSzImm(ty, nextInsnAddr());
-            irsb->jumpkind = Ijk_Boring;
-            dres.whatNext  = Dis_StopHere;
+            putGST( PPC_GST_CIA, mkSzImm(ty, nextInsnAddr()) );
+            dres.jk_StopHere = Ijk_Boring;
+            dres.whatNext    = Dis_StopHere;
          }
          goto decode_success;
       }
@@ -14601,16 +14600,28 @@ DisResult disInstr_PPC_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
-   irsb->next     = mkSzImm(ty, guest_CIA_curr_instr);
-   irsb->jumpkind = Ijk_NoDecode;
-   dres.whatNext  = Dis_StopHere;
-   dres.len       = 0;
+   dres.whatNext    = Dis_StopHere;
+   dres.jk_StopHere = Ijk_NoDecode;
+   dres.len         = 0;
    return dres;
 
    } /* switch (opc) for the main (primary) opcode switch. */
 
   decode_success:
    /* All decode successes end up here. */
+   switch (dres.whatNext) {
+      case Dis_Continue:
+         putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr + 4));
+         break;
+      case Dis_ResteerU:
+      case Dis_ResteerC:
+         putGST( PPC_GST_CIA, mkSzImm(ty, dres.continueAt));
+         break;
+      case Dis_StopHere:
+         break;
+      default:
+         vassert(0);
+   }
    DIP("\n");
 
    if (dres.len == 0) {
@@ -14633,7 +14644,6 @@ DisResult disInstr_PPC_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_PPC ( IRSB*        irsb_IN,
-                         Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
@@ -14677,8 +14687,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    guest_CIA_curr_instr = mkSzAddr(ty, guest_IP);
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
-   dres = disInstr_PPC_WRK ( put_IP, 
-                             resteerOkFn, resteerCisOk, callback_opaque,
+   dres = disInstr_PPC_WRK ( resteerOkFn, resteerCisOk, callback_opaque,
                              delta, archinfo, abiinfo );
 
    return dres;

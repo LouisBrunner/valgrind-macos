@@ -60,9 +60,11 @@ extern
 void do_deadcode_BB ( IRSB* bb );
 
 /* The tree-builder.  Make (approximately) maximal safe trees.  bb is
-   destructively modified. */
+   destructively modified.  Returns (unrelatedly, but useful later on)
+   the guest address of the highest addressed byte from any insn in
+   this block, or Addr64_MAX if unknown (can that ever happen?) */
 extern
-void ado_treebuild_BB ( IRSB* bb );
+Addr64 ado_treebuild_BB ( IRSB* bb );
 
 #endif /* ndef __VEX_IR_OPT_H */
 

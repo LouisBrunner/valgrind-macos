@@ -467,7 +467,8 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.guard);
          addStmtToIRSB(bb, IRStmt_Exit(e1, st->Ist.Exit.jk,
-                                           st->Ist.Exit.dst));
+                                       st->Ist.Exit.dst,
+                                       st->Ist.Exit.offsIP));
          break;
       default:
          vex_printf("\n");
@@ -489,6 +490,7 @@ static IRSB* flatten_BB ( IRSB* in )
          flatten_Stmt( out, in->stmts[i] );
    out->next     = flatten_Expr( out, in->next );
    out->jumpkind = in->jumpkind;
+   out->offsIP   = in->offsIP;
    return out;
 }
 
@@ -815,6 +817,14 @@ static void redundant_put_removal_BB (
    UInt    key = 0; /* keep gcc -O happy */
 
    HashHW* env = newHHW();
+
+   /* Initialise the running env with the fact that the final exit
+      writes the IP (or, whatever it claims to write.  We don't
+      care.) */
+   key = mk_key_GetPut(bb->offsIP, typeOfIRExpr(bb->tyenv, bb->next));
+   addToHHW(env, (HWord)key, 0);
+
+   /* And now scan backwards through the statements. */
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
 
@@ -823,13 +833,32 @@ static void redundant_put_removal_BB (
 
       /* Deal with conditional exits. */
       if (st->tag == Ist_Exit) {
-         /* Since control may not get beyond this point, we must empty
-            out the set, since we can no longer claim that the next
-            event for any part of the guest state is definitely a
-            write. */
-         vassert(isIRAtom(st->Ist.Exit.guard));
+         //Bool re_add;
+         /* Need to throw out from the env, any part of it which
+            doesn't overlap with the guest state written by this exit.
+            Since the exit only writes one section, it's simplest to
+            do this: (1) check whether env contains a write that
+            completely overlaps the write done by this exit; (2) empty
+            out env; and (3) if (1) was true, add the write done by
+            this exit.
+
+            To make (1) a bit simpler, merely search for a write that
+            exactly matches the one done by this exit.  That's safe
+            because it will fail as often or more often than a full
+            overlap check, and failure to find an overlapping write in
+            env is the safe case (we just nuke env if that
+            happens). */
+         //vassert(isIRAtom(st->Ist.Exit.guard));
+         /* (1) */
+         //key = mk_key_GetPut(st->Ist.Exit.offsIP,
+         //                    typeOfIRConst(st->Ist.Exit.dst));
+         //re_add = lookupHHW(env, NULL, key);
+         /* (2) */
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
+         /* (3) */
+         //if (0 && re_add) 
+         //   addToHHW(env, (HWord)key, 0);
          continue;
       }
 
@@ -926,10 +955,24 @@ static UInt num_nodes_visited;
    assumed to compute different values. After all the accesses may happen
    at different times and the guest state / memory can have changed in
    the meantime. */
+
+/* JRS 20-Mar-2012: split sameIRExprs_aux into a fast inlineable
+   wrapper that deals with the common tags-don't-match case, and a
+   slower out of line general case.  Saves a few insns. */
+
+__attribute__((noinline))
+static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 );
+
+inline
 static Bool sameIRExprs_aux ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 {
    if (e1->tag != e2->tag) return False;
+   return sameIRExprs_aux2(env, e1, e2);
+}
 
+__attribute__((noinline))
+static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
+{
    if (num_nodes_visited++ > NODE_LIMIT) return False;
 
    switch (e1->tag) {
@@ -996,6 +1039,7 @@ static Bool sameIRExprs_aux ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
    return False;
 }
 
+inline
 static Bool sameIRExprs ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 {
    Bool same;
@@ -2217,7 +2261,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                   vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
             }
          }
-         return IRStmt_Exit(fcond, st->Ist.Exit.jk, st->Ist.Exit.dst);
+         return IRStmt_Exit(fcond, st->Ist.Exit.jk,
+                                   st->Ist.Exit.dst, st->Ist.Exit.offsIP);
       }
 
    default:
@@ -2294,6 +2339,7 @@ IRSB* cprop_BB ( IRSB* in )
 
    out->next     = subst_Expr( env, in->next );
    out->jumpkind = in->jumpkind;
+   out->offsIP   = in->offsIP;
    return out;
 }
 
@@ -2519,6 +2565,8 @@ static Bool isOneU1 ( IRExpr* e )
          = IRExpr_Const( bb->stmts[i_unconditional_exit]->Ist.Exit.dst );
       bb->jumpkind
          = bb->stmts[i_unconditional_exit]->Ist.Exit.jk;
+      bb->offsIP
+         = bb->stmts[i_unconditional_exit]->Ist.Exit.offsIP;
       for (i = i_unconditional_exit; i < bb->stmts_used; i++)
          bb->stmts[i] = IRStmt_NoOp();
    }
@@ -4604,7 +4652,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          return IRStmt_Exit(
                    atbSubst_Expr(env, st->Ist.Exit.guard),
                    st->Ist.Exit.jk,
-                   st->Ist.Exit.dst
+                   st->Ist.Exit.dst,
+                   st->Ist.Exit.offsIP
                 );
       case Ist_IMark:
          return IRStmt_IMark(st->Ist.IMark.addr,
@@ -4649,7 +4698,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
    }
 }
 
-/* notstatic */ void ado_treebuild_BB ( IRSB* bb )
+/* notstatic */ Addr64 ado_treebuild_BB ( IRSB* bb )
 {
    Int      i, j, k, m;
    Bool     stmtPuts, stmtStores, invalidateMe;
@@ -4657,19 +4706,37 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
    IRStmt*  st2;
    ATmpInfo env[A_NENV];
 
+   Bool   max_ga_known = False;
+   Addr64 max_ga       = 0;
+
    Int       n_tmps = bb->tyenv->types_used;
    UShort*   uses   = LibVEX_Alloc(n_tmps * sizeof(UShort));
 
    /* Phase 1.  Scan forwards in bb, counting use occurrences of each
-      temp.  Also count occurrences in the bb->next field. */
+      temp.  Also count occurrences in the bb->next field.  Take the
+      opportunity to also find the maximum guest address in the block,
+      since that will be needed later for deciding when we can safely
+      elide event checks. */
 
    for (i = 0; i < n_tmps; i++)
       uses[i] = 0;
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (st->tag == Ist_NoOp)
-         continue;
+      switch (st->tag) {
+         case Ist_NoOp:
+            continue;
+         case Ist_IMark: {
+            Int    len = st->Ist.IMark.len;
+            Addr64 mga = st->Ist.IMark.addr + (len < 1 ? 1 : len) - 1;
+            max_ga_known = True;
+            if (mga > max_ga)
+               max_ga = mga;
+            break;
+         }
+         default:
+            break;
+      }
       aoccCount_Stmt( uses, st );
    }
    aoccCount_Expr(uses, bb->next );
@@ -4842,6 +4909,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       by definition dead? */
    bb->next = atbSubst_Expr(env, bb->next);
    bb->stmts_used = j;
+
+   return max_ga_known ? max_ga : ~(Addr64)0;
 }
 
 

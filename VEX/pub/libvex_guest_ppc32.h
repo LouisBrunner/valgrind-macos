@@ -48,6 +48,12 @@
 
 typedef
    struct {
+      /* Event check fail addr and counter. */
+      /*   0 */ UInt host_EvC_FAILADDR;
+      /*   4 */ UInt host_EvC_COUNTER;
+      /*   8 */ UInt pad3;
+      /*  12 */ UInt pad4; 
+      /* Add 16 to all the numbers below.  Sigh. */
       /* General Purpose Registers */
       /*   0 */ UInt guest_GPR0;
       /*   4 */ UInt guest_GPR1;

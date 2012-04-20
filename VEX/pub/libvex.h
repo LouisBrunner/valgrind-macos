@@ -486,6 +486,9 @@ typedef
              VexTransAccessFail, VexTransOutputFull } status;
       /* The number of extents that have a self-check (0 to 3) */
       UInt n_sc_extents;
+      /* Offset in generated code of the profile inc, or -1 if
+         none.  Needed for later patching. */
+      Int offs_profInc;
    }
    VexTranslateResult;
 
@@ -583,6 +586,10 @@ typedef
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;
 
+      /* IN: profiling: add a 64 bit profiler counter increment to the
+         translation? */
+      Bool    addProfInc;
+
       /* IN: address of the dispatcher entry points.  Describes the
          places where generated code should jump to at the end of each
          bb.
@@ -615,9 +622,13 @@ typedef
          The aim is to get back and forth between translations and the
          dispatcher without creating memory traffic to store return
          addresses.
+
+         FIXME: update this comment
       */
-      void* dispatch_unassisted;
-      void* dispatch_assisted;
+      void* disp_cp_chain_me_to_slowEP;
+      void* disp_cp_chain_me_to_fastEP;
+      void* disp_cp_xindir;
+      void* disp_cp_xassisted;
    }
    VexTranslateArgs;
 
@@ -635,7 +646,60 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* );
    would not be the result.  Therefore chase_into_ok should disallow
    following into #2.  That will force the caller to eventually
    request a new translation starting at #2, at which point Vex will
-   correctly observe the make-a-self-check flag.  */
+   correctly observe the make-a-self-check flag.
+
+   FIXME: is this still up to date? */
+
+
+/*-------------------------------------------------------*/
+/*--- Patch existing translations                     ---*/
+/*-------------------------------------------------------*/
+
+/* Indicates a host address range for which callers to the functions
+   below must request I-D cache syncing after the call.  ::len == 0 is
+   ambiguous -- it could mean either zero bytes or the entire address
+   space, so we mean the former. */
+typedef
+   struct {
+      HWord start;
+      HWord len;
+   }
+   VexInvalRange;
+
+/* Chain an XDirect jump located at place_to_chain so it jumps to
+   place_to_jump_to.  It is expected (and checked) that this site
+   currently contains a call to the dispatcher specified by
+   disp_cp_chain_me_EXPECTED. */
+extern
+VexInvalRange LibVEX_Chain ( VexArch arch_host,
+                             void*   place_to_chain,
+                             void*   disp_cp_chain_me_EXPECTED,
+                             void*   place_to_jump_to );
+
+/* Undo an XDirect jump located at place_to_unchain, so it is
+   converted back into a call to disp_cp_chain_me.  It is expected
+   (and checked) that this site currently contains a jump directly to
+   the address specified by place_to_jump_to_EXPECTED. */
+extern
+VexInvalRange LibVEX_UnChain ( VexArch arch_host,
+                               void*   place_to_unchain,
+                               void*   place_to_jump_to_EXPECTED,
+                               void*   disp_cp_chain_me );
+
+/* Returns a constant -- the size of the event check that is put at
+   the start of every translation.  This makes it possible to
+   calculate the fast entry point address if the slow entry point
+   address is known (the usual case), or vice versa. */
+extern
+Int LibVEX_evCheckSzB ( VexArch arch_host );
+
+
+/* Patch the counter location into an existing ProfInc point.  The
+   specified point is checked to make sure it is plausible. */
+extern
+VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
+                                    void*   place_to_patch,
+                                    ULong*  location_of_counter );
 
 
 /*-------------------------------------------------------*/

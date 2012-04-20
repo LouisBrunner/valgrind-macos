@@ -1712,8 +1712,9 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
    guest to restart a syscall that has been interrupted by a signal.
 */
 typedef
-   enum { 
-      Ijk_Boring=0x16000, /* not interesting; just goto next */
+   enum {
+      Ijk_INVALID=0x16000, 
+      Ijk_Boring,         /* not interesting; just goto next */
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
       Ijk_ClientReq,      /* do guest client req before continuing */
@@ -2194,11 +2195,15 @@ typedef
          /* Conditional exit from the middle of an IRSB.
             ppIRStmt output: if (<guard>) goto {<jk>} <dst>
                          eg. if (t69) goto {Boring} 0x4000AAA:I32
+            If <guard> is true, the guest state is also updated by
+            PUT-ing <dst> at <offsIP>.  This is done because a
+            taken exit must update the guest program counter.
          */
          struct {
             IRExpr*    guard;    /* Conditional expression */
             IRJumpKind jk;       /* Jump kind */
             IRConst*   dst;      /* Jump target (constant only) */
+            Int        offsIP;   /* Guest state offset for IP */
          } Exit;
       } Ist;
    }
@@ -2218,7 +2223,11 @@ extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
-extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
+extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
+                                Int offsIP );
+// TEMP HACK
+#define IRStmt_Exit3(__guard,__jk,__dst) IRStmt_Exit(__guard,__jk,__dst,0)
+
 
 /* Deep-copy an IRStmt. */
 extern IRStmt* deepCopyIRStmt ( IRStmt* );
@@ -2263,6 +2272,8 @@ extern void ppIRTypeEnv ( IRTypeEnv* );
      executes all the way to the end, without a side exit
    - An indication of any special actions (JumpKind) needed
      for this final jump.
+   - Offset of the IP field in the guest state.  This will be
+     updated before the final jump is done.
    
    "IRSB" stands for "IR Super Block".
 */
@@ -2274,6 +2285,7 @@ typedef
       Int        stmts_used;
       IRExpr*    next;
       IRJumpKind jumpkind;
+      Int        offsIP;
    }
    IRSB;
 

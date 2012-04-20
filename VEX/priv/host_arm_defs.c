@@ -1170,13 +1170,33 @@ ARMInstr* ARMInstr_LdSt8U ( Bool isLoad, HReg rD, ARMAMode1* amode ) {
    i->ARMin.LdSt8U.amode  = amode;
    return i;
 }
-//extern ARMInstr* ARMInstr_Ld8S   ( HReg, ARMAMode2* );
-ARMInstr* ARMInstr_Goto ( IRJumpKind jk, ARMCondCode cond, HReg gnext ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
-   i->tag              = ARMin_Goto;
-   i->ARMin.Goto.jk    = jk;
-   i->ARMin.Goto.cond  = cond;
-   i->ARMin.Goto.gnext = gnext;
+ARMInstr* ARMInstr_XDirect ( Addr32 dstGA, ARMAMode1* amR15T,
+                             ARMCondCode cond, Bool toFastEP ) {
+   ARMInstr* i               = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                    = ARMin_XDirect;
+   i->ARMin.XDirect.dstGA    = dstGA;
+   i->ARMin.XDirect.amR15T   = amR15T;
+   i->ARMin.XDirect.cond     = cond;
+   i->ARMin.XDirect.toFastEP = toFastEP;
+   return i;
+}
+ARMInstr* ARMInstr_XIndir ( HReg dstGA, ARMAMode1* amR15T,
+                            ARMCondCode cond ) {
+   ARMInstr* i            = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                 = ARMin_XIndir;
+   i->ARMin.XIndir.dstGA  = dstGA;
+   i->ARMin.XIndir.amR15T = amR15T;
+   i->ARMin.XIndir.cond   = cond;
+   return i;
+}
+ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
+                               ARMCondCode cond, IRJumpKind jk ) {
+   ARMInstr* i               = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                    = ARMin_XAssisted;
+   i->ARMin.XAssisted.dstGA  = dstGA;
+   i->ARMin.XAssisted.amR15T = amR15T;
+   i->ARMin.XAssisted.cond   = cond;
+   i->ARMin.XAssisted.jk     = jk;
    return i;
 }
 ARMInstr* ARMInstr_CMov ( ARMCondCode cond, HReg dst, ARMRI84* src ) {
@@ -1479,6 +1499,21 @@ ARMInstr* ARMInstr_Add32 ( HReg rD, HReg rN, UInt imm32 ) {
    return i;
 }
 
+ARMInstr* ARMInstr_EvCheck ( ARMAMode1* amCounter,
+                             ARMAMode1* amFailAddr ) {
+   ARMInstr* i                 = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                      = ARMin_EvCheck;
+   i->ARMin.EvCheck.amCounter  = amCounter;
+   i->ARMin.EvCheck.amFailAddr = amFailAddr;
+   return i;
+}
+
+ARMInstr* ARMInstr_ProfInc ( void ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag      = ARMin_ProfInc;
+   return i;
+}
+
 /* ... */
 
 void ppARMInstr ( ARMInstr* i ) {
@@ -1564,28 +1599,47 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_Ld8S:
          goto unhandled;
-      case ARMin_Goto:
-         if (i->ARMin.Goto.cond != ARMcc_AL) {
-            vex_printf("if (%%cpsr.%s) { ",
-                       showARMCondCode(i->ARMin.Goto.cond));
-         } else {
-            vex_printf("if (1) { ");
-         }
-         if (i->ARMin.Goto.jk != Ijk_Boring
-             && i->ARMin.Goto.jk != Ijk_Call
-             && i->ARMin.Goto.jk != Ijk_Ret) {
-            vex_printf("mov r8, $");
-            ppIRJumpKind(i->ARMin.Goto.jk);
-            vex_printf(" ; ");
-         }
-         vex_printf("mov r0, ");
-         ppHRegARM(i->ARMin.Goto.gnext);
-         vex_printf(" ; bx r14");
-         if (i->ARMin.Goto.cond != ARMcc_AL) {
-            vex_printf(" }");
-         } else {
-            vex_printf(" }");
-         }
+      case ARMin_XDirect:
+         vex_printf("(xDirect) ");
+         vex_printf("if (%%cpsr.%s) { ",
+                    showARMCondCode(i->ARMin.XDirect.cond));
+         vex_printf("movw r12,0x%x; ",
+                    (UInt)(i->ARMin.XDirect.dstGA & 0xFFFF));
+         vex_printf("movt r12,0x%x; ",
+                    (UInt)((i->ARMin.XDirect.dstGA >> 16) & 0xFFFF));
+         vex_printf("str r12,");
+         ppARMAMode1(i->ARMin.XDirect.amR15T);
+         vex_printf("; movw r12,LO16($disp_cp_chain_me_to_%sEP); ",
+                    i->ARMin.XDirect.toFastEP ? "fast" : "slow");
+         vex_printf("movt r12,HI16($disp_cp_chain_me_to_%sEP); ",
+                    i->ARMin.XDirect.toFastEP ? "fast" : "slow");
+         vex_printf("blx r12 }");
+         return;
+      case ARMin_XIndir:
+         vex_printf("(xIndir) ");
+         vex_printf("if (%%cpsr.%s) { ",
+                    showARMCondCode(i->ARMin.XIndir.cond));
+         vex_printf("str ");
+         ppHRegARM(i->ARMin.XIndir.dstGA);
+         vex_printf(",");
+         ppARMAMode1(i->ARMin.XIndir.amR15T);
+         vex_printf("; movw r12,LO16($disp_cp_xindir); ");
+         vex_printf("movt r12,HI16($disp_cp_xindir); ");
+         vex_printf("blx r12 }");
+         return;
+      case ARMin_XAssisted:
+         vex_printf("(xAssisted) ");
+         vex_printf("if (%%cpsr.%s) { ",
+                    showARMCondCode(i->ARMin.XAssisted.cond));
+         vex_printf("str ");
+         ppHRegARM(i->ARMin.XAssisted.dstGA);
+         vex_printf(",");
+         ppARMAMode1(i->ARMin.XAssisted.amR15T);
+         vex_printf("movw r8,$IRJumpKind_to_TRCVAL(%d); ",
+                    (Int)i->ARMin.XAssisted.jk);
+         vex_printf("movw r12,LO16($disp_cp_xassisted); ");
+         vex_printf("movt r12,HI16($disp_cp_xassisted); ");
+         vex_printf("blx r12 }");
          return;
       case ARMin_CMov:
          vex_printf("mov%s ", showARMCondCode(i->ARMin.CMov.cond));
@@ -1761,8 +1815,7 @@ void ppARMInstr ( ARMInstr* i ) {
          }
          return;
       case ARMin_MFence:
-         vex_printf("mfence (mcr 15,0,r0,c7,c10,4; 15,0,r0,c7,c10,5; "
-                    "15,0,r0,c7,c5,4)");
+         vex_printf("(mfence) dsb sy; dmb sy; isb");
          return;
       case ARMin_CLREX:
          vex_printf("clrex");
@@ -1878,6 +1931,25 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf(", ");
          vex_printf("%d", i->ARMin.Add32.imm32);
          return;
+      case ARMin_EvCheck:
+         vex_printf("(evCheck) ldr r12,");
+         ppARMAMode1(i->ARMin.EvCheck.amCounter);
+         vex_printf("; subs r12,r12,$1; str r12,");
+         ppARMAMode1(i->ARMin.EvCheck.amCounter);
+         vex_printf("; bpl nofail; ldr r12,");
+         ppARMAMode1(i->ARMin.EvCheck.amFailAddr);
+         vex_printf("; bx r12; nofail:");
+         return;
+      case ARMin_ProfInc:
+         vex_printf("(profInc) movw r12,LO16($NotKnownYet); "
+                    "movw r12,HI16($NotKnownYet); "
+                    "ldr r11,[r12]; "
+                    "adds r11,r11,$1; "
+                    "str r11,[r12]; "
+                    "ldr r11,[r12+4]; "
+                    "adc r11,r11,$0; "
+                    "str r11,[r12+4]");
+         return;
       default:
       unhandled:
          vex_printf("ppARMInstr: unhandled case (tag %d)", (Int)i->tag);
@@ -1945,18 +2017,21 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_Ld8S:
          goto unhandled;
-      case ARMin_Goto:
-         /* reads the reg holding the next guest addr */
-         addHRegUse(u, HRmRead, i->ARMin.Goto.gnext);
-         /* writes it to the standard integer return register */
-         addHRegUse(u, HRmWrite, hregARM_R0());
-         /* possibly messes with the baseblock pointer */
-         if (i->ARMin.Goto.jk != Ijk_Boring
-             && i->ARMin.Goto.jk != Ijk_Call
-             && i->ARMin.Goto.jk != Ijk_Ret)
-            /* note, this is irrelevant since r8 is not actually
-               available to the allocator.  But still .. */
-            addHRegUse(u, HRmWrite, hregARM_R8());
+      /* XDirect/XIndir/XAssisted are also a bit subtle.  They
+         conditionally exit the block.  Hence we only need to list (1)
+         the registers that they read, and (2) the registers that they
+         write in the case where the block is not exited.  (2) is
+         empty, hence only (1) is relevant here. */
+      case ARMin_XDirect:
+         addRegUsage_ARMAMode1(u, i->ARMin.XDirect.amR15T);
+         return;
+      case ARMin_XIndir:
+         addHRegUse(u, HRmRead, i->ARMin.XIndir.dstGA);
+         addRegUsage_ARMAMode1(u, i->ARMin.XIndir.amR15T);
+         return;
+      case ARMin_XAssisted:
+         addHRegUse(u, HRmRead, i->ARMin.XAssisted.dstGA);
+         addRegUsage_ARMAMode1(u, i->ARMin.XAssisted.amR15T);
          return;
       case ARMin_CMov:
          addHRegUse(u, HRmWrite, i->ARMin.CMov.dst);
@@ -2159,6 +2234,18 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARMin.Add32.rD);
          addHRegUse(u, HRmRead, i->ARMin.Add32.rN);
          return;
+      case ARMin_EvCheck:
+         /* We expect both amodes only to mention r8, so this is in
+            fact pointless, since r8 isn't allocatable, but
+            anyway.. */
+         addRegUsage_ARMAMode1(u, i->ARMin.EvCheck.amCounter);
+         addRegUsage_ARMAMode1(u, i->ARMin.EvCheck.amFailAddr);
+         addHRegUse(u, HRmWrite, hregARM_R12()); /* also unavail to RA */
+         return;
+      case ARMin_ProfInc:
+         addHRegUse(u, HRmWrite, hregARM_R12());
+         addHRegUse(u, HRmWrite, hregARM_R11());
+         return;
       unhandled:
       default:
          ppARMInstr(i);
@@ -2210,8 +2297,18 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_Ld8S:
          goto unhandled;
-      case ARMin_Goto:
-         i->ARMin.Goto.gnext = lookupHRegRemap(m, i->ARMin.Goto.gnext);
+      case ARMin_XDirect:
+         mapRegs_ARMAMode1(m, i->ARMin.XDirect.amR15T);
+         return;
+      case ARMin_XIndir:
+         i->ARMin.XIndir.dstGA
+            = lookupHRegRemap(m, i->ARMin.XIndir.dstGA);
+         mapRegs_ARMAMode1(m, i->ARMin.XIndir.amR15T);
+         return;
+      case ARMin_XAssisted:
+         i->ARMin.XAssisted.dstGA
+            = lookupHRegRemap(m, i->ARMin.XAssisted.dstGA);
+         mapRegs_ARMAMode1(m, i->ARMin.XAssisted.amR15T);
          return;
       case ARMin_CMov:
          i->ARMin.CMov.dst = lookupHRegRemap(m, i->ARMin.CMov.dst);
@@ -2329,6 +2426,17 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
       case ARMin_Add32:
          i->ARMin.Add32.rD = lookupHRegRemap(m, i->ARMin.Add32.rD);
          i->ARMin.Add32.rN = lookupHRegRemap(m, i->ARMin.Add32.rN);
+         return;
+      case ARMin_EvCheck:
+         /* We expect both amodes only to mention r8, so this is in
+            fact pointless, since r8 isn't allocatable, but
+            anyway.. */
+         mapRegs_ARMAMode1(m, i->ARMin.EvCheck.amCounter);
+         mapRegs_ARMAMode1(m, i->ARMin.EvCheck.amFailAddr);
+         return;
+      case ARMin_ProfInc:
+         /* hardwires r11 and r12 -- nothing to modify. */
+         return;
       unhandled:
       default:
          ppARMInstr(i);
@@ -2586,6 +2694,9 @@ static inline UChar qregNo ( HReg r )
     (((zzx3) & 0xF) << 12) | (((zzx2) & 0xF) <<  8) |  \
     (((zzx1) & 0xF) <<  4) | (((zzx0) & 0xF) <<  0))
 
+#define XX______(zzx7,zzx6) \
+   ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24))
+
 /* Generate a skeletal insn that involves an a RI84 shifter operand.
    Returns a word which is all zeroes apart from bits 25 and 11..0,
    since it is those that encode the shifter operand (at least to the
@@ -2704,10 +2815,92 @@ static UInt* imm32_to_iregNo ( UInt* p, Int rD, UInt imm32 )
    return p;
 }
 
+/* Get an immediate into a register, using only that register, and
+   generating exactly 2 instructions, regardless of the value of the
+   immediate. This is used when generating sections of code that need
+   to be patched later, so as to guarantee a specific size. */
+static UInt* imm32_to_iregNo_EXACTLY2 ( UInt* p, Int rD, UInt imm32 )
+{
+   if (VEX_ARM_ARCHLEVEL(arm_hwcaps) > 6) {
+      /* Generate movw rD, #low16 ;  movt rD, #high16. */
+      UInt lo16 = imm32 & 0xFFFF;
+      UInt hi16 = (imm32 >> 16) & 0xFFFF;
+      UInt instr;
+      instr = XXXXXXXX(0xE, 0x3, 0x0, (lo16 >> 12) & 0xF, rD,
+                       (lo16 >> 8) & 0xF, (lo16 >> 4) & 0xF,
+                       lo16 & 0xF);
+      *p++ = instr;
+      instr = XXXXXXXX(0xE, 0x3, 0x4, (hi16 >> 12) & 0xF, rD,
+                       (hi16 >> 8) & 0xF, (hi16 >> 4) & 0xF,
+                       hi16 & 0xF);
+      *p++ = instr;
+   } else {
+      vassert(0); /* lose */
+   }
+   return p;
+}
 
-Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
+/* Check whether p points at a 2-insn sequence cooked up by
+   imm32_to_iregNo_EXACTLY2(). */
+static Bool is_imm32_to_iregNo_EXACTLY2 ( UInt* p, Int rD, UInt imm32 )
+{
+   if (VEX_ARM_ARCHLEVEL(arm_hwcaps) > 6) {
+      /* Generate movw rD, #low16 ;  movt rD, #high16. */
+      UInt lo16 = imm32 & 0xFFFF;
+      UInt hi16 = (imm32 >> 16) & 0xFFFF;
+      UInt i0, i1;
+      i0 = XXXXXXXX(0xE, 0x3, 0x0, (lo16 >> 12) & 0xF, rD,
+                    (lo16 >> 8) & 0xF, (lo16 >> 4) & 0xF,
+                    lo16 & 0xF);
+      i1 = XXXXXXXX(0xE, 0x3, 0x4, (hi16 >> 12) & 0xF, rD,
+                    (hi16 >> 8) & 0xF, (hi16 >> 4) & 0xF,
+                    hi16 & 0xF);
+      return p[0] == i0 && p[1] == i1;
+   } else {
+      vassert(0); /* lose */
+   }
+}
+
+
+static UInt* do_load_or_store32 ( UInt* p,
+                                  Bool isLoad, UInt rD, ARMAMode1* am )
+{
+   vassert(rD <= 12);
+   vassert(am->tag == ARMam1_RI); // RR case is not handled
+   UInt bB = 0;
+   UInt bL = isLoad ? 1 : 0;
+   Int  simm12;
+   UInt instr, bP;
+   if (am->ARMam1.RI.simm13 < 0) {
+      bP = 0;
+      simm12 = -am->ARMam1.RI.simm13;
+   } else {
+      bP = 1;
+      simm12 = am->ARMam1.RI.simm13;
+   }
+   vassert(simm12 >= 0 && simm12 <= 4095);
+   instr = XXXXX___(X1110,X0101,BITS4(bP,bB,0,bL),
+                    iregNo(am->ARMam1.RI.reg),
+                    rD);
+   instr |= simm12;
+   *p++ = instr;
+   return p;
+}
+
+
+/* Emit an instruction into buf and return the number of bytes used.
+   Note that buf is not the insn's final place, and therefore it is
+   imperative to emit position-independent code.  If the emitted
+   instruction was a profiler inc, set *is_profInc to True, else
+   leave it unchanged. */
+
+Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
+                    UChar* buf, Int nbuf, ARMInstr* i, 
                     Bool mode64,
-                    void* dispatch_unassisted, void* dispatch_assisted ) 
+                    void* disp_cp_chain_me_to_slowEP,
+                    void* disp_cp_chain_me_to_fastEP,
+                    void* disp_cp_xindir,
+                    void* disp_cp_xassisted )
 {
    UInt* p = (UInt*)buf;
    vassert(nbuf >= 32);
@@ -2894,59 +3087,177 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
       }
       case ARMin_Ld8S:
          goto bad;
-      case ARMin_Goto: {
-         UInt        instr;
-         IRJumpKind  jk    = i->ARMin.Goto.jk;
-         ARMCondCode cond  = i->ARMin.Goto.cond;
-         UInt        rnext = iregNo(i->ARMin.Goto.gnext);
-         Int         trc   = -1;
-         /* since we branch to lr(r13) to get back to dispatch: */
-         vassert(dispatch_unassisted == NULL);
-         vassert(dispatch_assisted == NULL);
-         switch (jk) {
-            case Ijk_Ret: case Ijk_Call: case Ijk_Boring:
-               break; /* no need to set GST in these common cases */
-            case Ijk_ClientReq:
-               trc = VEX_TRC_JMP_CLIENTREQ; break;
-            case Ijk_Sys_int128:
-            case Ijk_Sys_int129:
-            case Ijk_Sys_int130:
-            case Ijk_Yield:
-            case Ijk_EmWarn:
-            case Ijk_MapFail:
-               goto unhandled_jk;
-            case Ijk_NoDecode:
-               trc = VEX_TRC_JMP_NODECODE; break;
-            case Ijk_TInval:
-               trc = VEX_TRC_JMP_TINVAL; break;
-            case Ijk_NoRedir:
-               trc = VEX_TRC_JMP_NOREDIR; break;
-            case Ijk_Sys_sysenter:
-            case Ijk_SigTRAP:
-            case Ijk_SigSEGV:
-               goto unhandled_jk;
-            case Ijk_Sys_syscall:
-               trc = VEX_TRC_JMP_SYS_SYSCALL; break;
-            unhandled_jk:
-            default:
-               goto bad;
+
+      case ARMin_XDirect: {
+         /* NB: what goes on here has to be very closely coordinated
+            with the chainXDirect_ARM and unchainXDirect_ARM below. */
+         /* We're generating chain-me requests here, so we need to be
+            sure this is actually allowed -- no-redir translations
+            can't use chain-me's.  Hence: */
+         vassert(disp_cp_chain_me_to_slowEP != NULL);
+         vassert(disp_cp_chain_me_to_fastEP != NULL);
+
+         /* Use ptmp for backpatching conditional jumps. */
+         UInt* ptmp = NULL;
+
+         /* First off, if this is conditional, create a conditional
+            jump over the rest of it.  Or at least, leave a space for
+            it that we will shortly fill in. */
+         if (i->ARMin.XDirect.cond != ARMcc_AL) {
+            vassert(i->ARMin.XDirect.cond != ARMcc_NV);
+            ptmp = p;
+            *p++ = 0;
          }
-         if (trc != -1) {
-            // mov{cond} r8, #trc
-            vassert(trc >= 0 && trc <= 255);
-            instr = (cond << 28) | 0x03A08000 | (0xFF & (UInt)trc);
-            *p++ = instr;
+
+         /* Update the guest R15T. */
+         /* movw r12, lo16(dstGA) */
+         /* movt r12, hi16(dstGA) */
+         /* str r12, amR15T */
+         p = imm32_to_iregNo(p, /*r*/12, i->ARMin.XDirect.dstGA);
+         p = do_load_or_store32(p, False/*!isLoad*/,
+                                /*r*/12, i->ARMin.XDirect.amR15T);
+
+         /* --- FIRST PATCHABLE BYTE follows --- */
+         /* VG_(disp_cp_chain_me_to_{slowEP,fastEP}) (where we're
+            calling to) backs up the return address, so as to find the
+            address of the first patchable byte.  So: don't change the
+            number of instructions (3) below. */
+         /* movw r12, lo16(VG_(disp_cp_chain_me_to_{slowEP,fastEP})) */
+         /* movt r12, hi16(VG_(disp_cp_chain_me_to_{slowEP,fastEP})) */
+         /* blx  r12  (A1) */
+         void* disp_cp_chain_me
+                  = i->ARMin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
+                                              : disp_cp_chain_me_to_slowEP;
+         p = imm32_to_iregNo_EXACTLY2(p, /*r*/12,
+                                      (UInt)Ptr_to_ULong(disp_cp_chain_me));
+         *p++ = 0xE12FFF3C;
+         /* --- END of PATCHABLE BYTES --- */
+
+         /* Fix up the conditional jump, if there was one. */
+         if (i->ARMin.XDirect.cond != ARMcc_AL) {
+            Int delta = (UChar*)p - (UChar*)ptmp; /* must be signed */
+            vassert(delta > 0 && delta < 40);
+            vassert((delta & 3) == 0);
+            UInt notCond = 1 ^ (UInt)i->ARMin.XDirect.cond;
+            vassert(notCond <= 13); /* Neither AL nor NV */
+            delta = (delta >> 2) - 2;
+            *ptmp = XX______(notCond, X1010) | (delta & 0xFFFFFF);
          }
-         // mov{cond} r0, rnext
-         if (rnext != 0) {
-            instr = (cond << 28) | 0x01A00000 | rnext;
-            *p++ = instr;
-         }
-         // bx{cond} r14
-         instr =(cond << 28) | 0x012FFF1E;
-         *p++ = instr;
          goto done;
       }
+
+      case ARMin_XIndir: {
+         /* We're generating transfers that could lead indirectly to a
+            chain-me, so we need to be sure this is actually allowed
+            -- no-redir translations are not allowed to reach normal
+            translations without going through the scheduler.  That
+            means no XDirects or XIndirs out from no-redir
+            translations.  Hence: */
+         vassert(disp_cp_xindir != NULL);
+
+         /* Use ptmp for backpatching conditional jumps. */
+         UInt* ptmp = NULL;
+
+         /* First off, if this is conditional, create a conditional
+            jump over the rest of it.  Or at least, leave a space for
+            it that we will shortly fill in. */
+         if (i->ARMin.XIndir.cond != ARMcc_AL) {
+            vassert(i->ARMin.XIndir.cond != ARMcc_NV);
+            ptmp = p;
+            *p++ = 0;
+         }
+
+         /* Update the guest R15T. */
+         /* str r-dstGA, amR15T */
+         p = do_load_or_store32(p, False/*!isLoad*/,
+                                iregNo(i->ARMin.XIndir.dstGA),
+                                i->ARMin.XIndir.amR15T);
+
+         /* movw r12, lo16(VG_(disp_cp_xindir)) */
+         /* movt r12, hi16(VG_(disp_cp_xindir)) */
+         /* bx   r12  (A1) */
+         p = imm32_to_iregNo(p, /*r*/12,
+                             (UInt)Ptr_to_ULong(disp_cp_xindir));
+         *p++ = 0xE12FFF1C;
+
+         /* Fix up the conditional jump, if there was one. */
+         if (i->ARMin.XIndir.cond != ARMcc_AL) {
+            Int delta = (UChar*)p - (UChar*)ptmp; /* must be signed */
+            vassert(delta > 0 && delta < 40);
+            vassert((delta & 3) == 0);
+            UInt notCond = 1 ^ (UInt)i->ARMin.XIndir.cond;
+            vassert(notCond <= 13); /* Neither AL nor NV */
+            delta = (delta >> 2) - 2;
+            *ptmp = XX______(notCond, X1010) | (delta & 0xFFFFFF);
+         }
+         goto done;
+      }
+
+      case ARMin_XAssisted: {
+         /* Use ptmp for backpatching conditional jumps. */
+         UInt* ptmp = NULL;
+
+         /* First off, if this is conditional, create a conditional
+            jump over the rest of it.  Or at least, leave a space for
+            it that we will shortly fill in. */
+         if (i->ARMin.XAssisted.cond != ARMcc_AL) {
+            vassert(i->ARMin.XAssisted.cond != ARMcc_NV);
+            ptmp = p;
+            *p++ = 0;
+         }
+
+         /* Update the guest R15T. */
+         /* str r-dstGA, amR15T */
+         p = do_load_or_store32(p, False/*!isLoad*/,
+                                iregNo(i->ARMin.XAssisted.dstGA),
+                                i->ARMin.XAssisted.amR15T);
+
+         /* movw r8,  $magic_number */
+         UInt trcval = 0;
+         switch (i->ARMin.XAssisted.jk) {
+            case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
+            case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
+            //case Ijk_Sys_int128:  trcval = VEX_TRC_JMP_SYS_INT128;  break;
+            //case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
+            //case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
+            //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
+            case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
+            //case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+            case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
+            //case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
+            //case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
+            case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
+            /* We don't expect to see the following being assisted. */
+            //case Ijk_Ret:
+            //case Ijk_Call:
+            /* fallthrough */
+            default: 
+               ppIRJumpKind(i->ARMin.XAssisted.jk);
+               vpanic("emit_ARMInstr.ARMin_XAssisted: unexpected jump kind");
+         }
+         vassert(trcval != 0);
+         p = imm32_to_iregNo(p, /*r*/8, trcval);
+
+         /* movw r12, lo16(VG_(disp_cp_xassisted)) */
+         /* movt r12, hi16(VG_(disp_cp_xassisted)) */
+         /* bx   r12  (A1) */
+         p = imm32_to_iregNo(p, /*r*/12,
+                             (UInt)Ptr_to_ULong(disp_cp_xassisted));
+         *p++ = 0xE12FFF1C;
+
+         /* Fix up the conditional jump, if there was one. */
+         if (i->ARMin.XAssisted.cond != ARMcc_AL) {
+            Int delta = (UChar*)p - (UChar*)ptmp; /* must be signed */
+            vassert(delta > 0 && delta < 40);
+            vassert((delta & 3) == 0);
+            UInt notCond = 1 ^ (UInt)i->ARMin.XAssisted.cond;
+            vassert(notCond <= 13); /* Neither AL nor NV */
+            delta = (delta >> 2) - 2;
+            *ptmp = XX______(notCond, X1010) | (delta & 0xFFFFFF);
+         }
+         goto done;
+      }
+
       case ARMin_CMov: {
          UInt instr  = skeletal_RI84(i->ARMin.CMov.src);
          UInt subopc = X1101; /* MOV */
@@ -3293,9 +3604,15 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          goto bad; // FPSCR -> iReg case currently ATC
       }
       case ARMin_MFence: {
-         *p++ = 0xEE070F9A; /* mcr 15,0,r0,c7,c10,4 (DSB) */
-         *p++ = 0xEE070FBA; /* mcr 15,0,r0,c7,c10,5 (DMB) */
-         *p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
+         // It's not clear (to me) how these relate to the ARMv7
+         // versions, so let's just use the v7 versions as they
+         // are at least well documented.
+         //*p++ = 0xEE070F9A; /* mcr 15,0,r0,c7,c10,4 (DSB) */
+         //*p++ = 0xEE070FBA; /* mcr 15,0,r0,c7,c10,5 (DMB) */
+         //*p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
+         *p++ = 0xF57FF04F; /* DSB sy */
+         *p++ = 0xF57FF05F; /* DMB sy */
+         *p++ = 0xF57FF06F; /* ISB */
          goto done;
       }
       case ARMin_CLREX: {
@@ -4099,6 +4416,62 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          *p++ = insn;
          goto done;
       }
+
+      case ARMin_EvCheck: {
+         /* We generate:
+               ldr  r12, [r8 + #4]   4 == offsetof(host_EvC_COUNTER)
+               subs r12, r12, #1  (A1)
+               str  r12, [r8 + #4]   4 == offsetof(host_EvC_COUNTER)
+               bpl  nofail
+               ldr  r12, [r8 + #0]   0 == offsetof(host_EvC_FAILADDR)
+               bx   r12
+              nofail:
+         */
+         UInt* p0 = p;
+         p = do_load_or_store32(p, True/*isLoad*/, /*r*/12,
+                                i->ARMin.EvCheck.amCounter);
+         *p++ = 0xE25CC001; /* subs r12, r12, #1 */
+         p = do_load_or_store32(p, False/*!isLoad*/, /*r*/12,
+                                i->ARMin.EvCheck.amCounter);
+         *p++ = 0x5A000001; /* bpl nofail */
+         p = do_load_or_store32(p, True/*isLoad*/, /*r*/12,
+                                i->ARMin.EvCheck.amFailAddr);
+         *p++ = 0xE12FFF1C; /* bx r12 */
+         /* nofail: */
+
+         /* Crosscheck */
+         vassert(evCheckSzB_ARM() == (UChar*)p - (UChar*)p0);
+         goto done;
+      }
+
+      case ARMin_ProfInc: {
+         /* We generate:
+              (ctrP is unknown now, so use 0x65556555 in the
+              expectation that a later call to LibVEX_patchProfCtr
+              will be used to fill in the immediate fields once the
+              right value is known.)
+            movw r12, lo16(0x65556555)
+            movt r12, lo16(0x65556555)
+            ldr  r11, [r12]
+            adds r11, r11, #1
+            str  r11, [r12]
+            ldr  r11, [r12+4]
+            adc  r11, r11, #0
+            str  r11, [r12+4]
+         */
+         p = imm32_to_iregNo_EXACTLY2(p, /*r*/12, 0x65556555);
+         *p++ = 0xE59CB000;
+         *p++ = 0xE29BB001;
+         *p++ = 0xE58CB000;
+         *p++ = 0xE59CB004;
+         *p++ = 0xE2ABB000;
+         *p++ = 0xE58CB004;
+         /* Tell the caller .. */
+         vassert(!(*is_profInc));
+         *is_profInc = True;
+         goto done;
+      }
+
       /* ... */
       default: 
          goto bad;
@@ -4113,6 +4486,109 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
    vassert(((UChar*)p) - &buf[0] <= 32);
    return ((UChar*)p) - &buf[0];
 }
+
+
+/* How big is an event check?  See case for ARMin_EvCheck in
+   emit_ARMInstr just above.  That crosschecks what this returns, so
+   we can tell if we're inconsistent. */
+Int evCheckSzB_ARM ( void )
+{
+   return 24;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   emitInstr case for XDirect, above. */
+VexInvalRange chainXDirect_ARM ( void* place_to_chain,
+                                 void* disp_cp_chain_me_EXPECTED,
+                                 void* place_to_jump_to )
+{
+   /* What we're expecting to see is:
+        movw r12, lo16(disp_cp_chain_me_to_EXPECTED)
+        movt r12, hi16(disp_cp_chain_me_to_EXPECTED)
+        blx  r12
+      viz
+        <8 bytes generated by imm32_to_iregNo_EXACTLY2>
+        E1 2F FF 3C
+   */
+   UInt* p = (UInt*)place_to_chain;
+   vassert(0 == (3 & (HWord)p));
+   vassert(is_imm32_to_iregNo_EXACTLY2(
+              p, /*r*/12, (UInt)Ptr_to_ULong(disp_cp_chain_me_EXPECTED)));
+   vassert(p[2] == 0xE12FFF3C);
+   /* And what we want to change it to is:
+        movw r12, lo16(place_to_jump_to)
+        movt r12, hi16(place_to_jump_to)
+        bx   r12
+      viz
+        <8 bytes generated by imm32_to_iregNo_EXACTLY2>
+        E1 2F FF 1C
+      The replacement has the same length as the original.
+   */
+   (void)imm32_to_iregNo_EXACTLY2(
+            p, /*r*/12, (UInt)Ptr_to_ULong(place_to_jump_to));
+   p[2] = 0xE12FFF1C;
+   VexInvalRange vir = {(HWord)p, 12};
+   return vir;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   emitInstr case for XDirect, above. */
+VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
+                                   void* place_to_jump_to_EXPECTED,
+                                   void* disp_cp_chain_me )
+{
+   /* What we're expecting to see is:
+        movw r12, lo16(place_to_jump_to_EXPECTED)
+        movt r12, lo16(place_to_jump_to_EXPECTED)
+        bx   r12
+      viz
+        <8 bytes generated by imm32_to_iregNo_EXACTLY2>
+        E1 2F FF 1C
+   */
+   UInt* p = (UInt*)place_to_unchain;
+   vassert(0 == (3 & (HWord)p));
+   vassert(is_imm32_to_iregNo_EXACTLY2(
+              p, /*r*/12, (UInt)Ptr_to_ULong(place_to_jump_to_EXPECTED)));
+   vassert(p[2] == 0xE12FFF1C);
+   /* And what we want to change it to is:
+        movw r12, lo16(disp_cp_chain_me)
+        movt r12, hi16(disp_cp_chain_me)
+        blx  r12
+      viz
+        <8 bytes generated by imm32_to_iregNo_EXACTLY2>
+        E1 2F FF 3C
+   */
+   (void)imm32_to_iregNo_EXACTLY2(
+            p, /*r*/12, (UInt)Ptr_to_ULong(disp_cp_chain_me));
+   p[2] = 0xE12FFF3C;
+   VexInvalRange vir = {(HWord)p, 12};
+   return vir;
+}
+
+
+/* Patch the counter address into a profile inc point, as previously
+   created by the ARMin_ProfInc case for emit_ARMInstr. */
+VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
+                                 ULong* location_of_counter )
+{
+   vassert(sizeof(ULong*) == 4);
+   UInt* p = (UInt*)place_to_patch;
+   vassert(0 == (3 & (HWord)p));
+   vassert(is_imm32_to_iregNo_EXACTLY2(p, /*r*/12, 0x65556555));
+   vassert(p[2] == 0xE59CB000);
+   vassert(p[3] == 0xE29BB001);
+   vassert(p[4] == 0xE58CB000);
+   vassert(p[5] == 0xE59CB004);
+   vassert(p[6] == 0xE2ABB000);
+   vassert(p[7] == 0xE58CB004);
+   imm32_to_iregNo_EXACTLY2(p, /*r*/12, 
+                            (UInt)Ptr_to_ULong(location_of_counter));
+   VexInvalRange vir = {(HWord)p, 8};
+   return vir;
+}
+
 
 #undef BITS4
 #undef X0000
@@ -4136,6 +4612,7 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
 #undef XXX___XX
 #undef XXXXX__X
 #undef XXXXXXXX
+#undef XX______
 
 /*---------------------------------------------------------------*/
 /*--- end                                     host_arm_defs.c ---*/

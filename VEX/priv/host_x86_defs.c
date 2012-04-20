@@ -647,12 +647,33 @@ X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms ) {
    vassert(regparms >= 0 && regparms <= 3);
    return i;
 }
-X86Instr* X86Instr_Goto ( IRJumpKind jk, X86CondCode cond, X86RI* dst ) {
-   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag           = Xin_Goto;
-   i->Xin.Goto.cond = cond;
-   i->Xin.Goto.dst  = dst;
-   i->Xin.Goto.jk   = jk;
+X86Instr* X86Instr_XDirect ( Addr32 dstGA, X86AMode* amEIP,
+                             X86CondCode cond, Bool toFastEP ) {
+   X86Instr* i             = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                  = Xin_XDirect;
+   i->Xin.XDirect.dstGA    = dstGA;
+   i->Xin.XDirect.amEIP    = amEIP;
+   i->Xin.XDirect.cond     = cond;
+   i->Xin.XDirect.toFastEP = toFastEP;
+   return i;
+}
+X86Instr* X86Instr_XIndir ( HReg dstGA, X86AMode* amEIP,
+                            X86CondCode cond ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_XIndir;
+   i->Xin.XIndir.dstGA = dstGA;
+   i->Xin.XIndir.amEIP = amEIP;
+   i->Xin.XIndir.cond  = cond;
+   return i;
+}
+X86Instr* X86Instr_XAssisted ( HReg dstGA, X86AMode* amEIP,
+                               X86CondCode cond, IRJumpKind jk ) {
+   X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                 = Xin_XAssisted;
+   i->Xin.XAssisted.dstGA = dstGA;
+   i->Xin.XAssisted.amEIP = amEIP;
+   i->Xin.XAssisted.cond  = cond;
+   i->Xin.XAssisted.jk    = jk;
    return i;
 }
 X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
@@ -797,7 +818,6 @@ X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst ) {
    i->Xin.FpCmp.dst  = dst;
    return i;
 }
-
 X86Instr* X86Instr_SseConst ( UShort con, HReg dst ) {
    X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
    i->tag                 = Xin_SseConst;
@@ -886,6 +906,19 @@ X86Instr* X86Instr_SseShuf ( Int order, HReg src, HReg dst ) {
    vassert(order >= 0 && order <= 0xFF);
    return i;
 }
+X86Instr* X86Instr_EvCheck ( X86AMode* amCounter,
+                             X86AMode* amFailAddr ) {
+   X86Instr* i               = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                    = Xin_EvCheck;
+   i->Xin.EvCheck.amCounter  = amCounter;
+   i->Xin.EvCheck.amFailAddr = amFailAddr;
+   return i;
+}
+X86Instr* X86Instr_ProfInc ( void ) {
+   X86Instr* i = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag      = Xin_ProfInc;
+   return i;
+}
 
 void ppX86Instr ( X86Instr* i, Bool mode64 ) {
    vassert(mode64 == False);
@@ -953,24 +986,36 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
                     i->Xin.Call.regparms);
          vex_printf("0x%x", i->Xin.Call.target);
          break;
-      case Xin_Goto:
-         if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-            vex_printf("if (%%eflags.%s) { ", 
-                       showX86CondCode(i->Xin.Goto.cond));
-	 }
-         if (i->Xin.Goto.jk != Ijk_Boring
-             && i->Xin.Goto.jk != Ijk_Call
-             && i->Xin.Goto.jk != Ijk_Ret) {
-            vex_printf("movl $");
-            ppIRJumpKind(i->Xin.Goto.jk);
-            vex_printf(",%%ebp ; ");
-         }
+      case Xin_XDirect:
+         vex_printf("(xDirect) ");
+         vex_printf("if (%%eflags.%s) { ",
+                    showX86CondCode(i->Xin.XDirect.cond));
+         vex_printf("movl $0x%x,", i->Xin.XDirect.dstGA);
+         ppX86AMode(i->Xin.XDirect.amEIP);
+         vex_printf("; ");
+         vex_printf("movl $disp_cp_chain_me_to_%sEP,%%edx; call *%%edx }",
+                    i->Xin.XDirect.toFastEP ? "fast" : "slow");
+         return;
+      case Xin_XIndir:
+         vex_printf("(xIndir) ");
+         vex_printf("if (%%eflags.%s) { movl ",
+                    showX86CondCode(i->Xin.XIndir.cond));
+         ppHRegX86(i->Xin.XIndir.dstGA);
+         vex_printf(",");
+         ppX86AMode(i->Xin.XIndir.amEIP);
+         vex_printf("; movl $disp_indir,%%edx; jmp *%%edx }");
+         return;
+      case Xin_XAssisted:
+         vex_printf("(xAssisted) ");
+         vex_printf("if (%%eflags.%s) { ",
+                    showX86CondCode(i->Xin.XAssisted.cond));
          vex_printf("movl ");
-         ppX86RI(i->Xin.Goto.dst);
-         vex_printf(",%%eax ; movl $dispatcher_addr,%%edx ; jmp *%%edx");
-         if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-            vex_printf(" }");
-	 }
+         ppHRegX86(i->Xin.XAssisted.dstGA);
+         vex_printf(",");
+         ppX86AMode(i->Xin.XAssisted.amEIP);
+         vex_printf("; movl $IRJumpKind_to_TRCVAL(%d),%%ebp",
+                    (Int)i->Xin.XAssisted.jk);
+         vex_printf("; movl $disp_assisted,%%edx; jmp *%%edx }");
          return;
       case Xin_CMov32:
          vex_printf("cmov%s ", showX86CondCode(i->Xin.CMov32.cond));
@@ -1152,7 +1197,17 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          vex_printf(",");
          ppHRegX86(i->Xin.SseShuf.dst);
          return;
-
+      case Xin_EvCheck:
+         vex_printf("(evCheck) decl ");
+         ppX86AMode(i->Xin.EvCheck.amCounter);
+         vex_printf("; jns nofail; jmp *");
+         ppX86AMode(i->Xin.EvCheck.amFailAddr);
+         vex_printf("; nofail:");
+         return;
+      case Xin_ProfInc:
+         vex_printf("(profInc) addl $1,NotKnownYet; "
+                    "adcl $0,NotKnownYet+4");
+         return;
       default:
          vpanic("ppX86Instr");
    }
@@ -1258,16 +1313,21 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
             address temporary, depending on the regparmness: 0==EAX,
             1==EDX, 2==ECX, 3==EDI. */
          return;
-      case Xin_Goto:
-         addRegUsage_X86RI(u, i->Xin.Goto.dst);
-         addHRegUse(u, HRmWrite, hregX86_EAX()); /* used for next guest addr */
-         addHRegUse(u, HRmWrite, hregX86_EDX()); /* used for dispatcher addr */
-         if (i->Xin.Goto.jk != Ijk_Boring
-             && i->Xin.Goto.jk != Ijk_Call
-             && i->Xin.Goto.jk != Ijk_Ret)
-            /* note, this is irrelevant since ebp is not actually
-               available to the allocator.  But still .. */
-            addHRegUse(u, HRmWrite, hregX86_EBP());
+      /* XDirect/XIndir/XAssisted are also a bit subtle.  They
+         conditionally exit the block.  Hence we only need to list (1)
+         the registers that they read, and (2) the registers that they
+         write in the case where the block is not exited.  (2) is
+         empty, hence only (1) is relevant here. */
+      case Xin_XDirect:
+         addRegUsage_X86AMode(u, i->Xin.XDirect.amEIP);
+         return;
+      case Xin_XIndir:
+         addHRegUse(u, HRmRead, i->Xin.XIndir.dstGA);
+         addRegUsage_X86AMode(u, i->Xin.XIndir.amEIP);
+         return;
+      case Xin_XAssisted:
+         addHRegUse(u, HRmRead, i->Xin.XAssisted.dstGA);
+         addRegUsage_X86AMode(u, i->Xin.XAssisted.amEIP);
          return;
       case Xin_CMov32:
          addRegUsage_X86RM(u, i->Xin.CMov32.src, HRmRead);
@@ -1410,6 +1470,15 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
          addHRegUse(u, HRmRead,  i->Xin.SseShuf.src);
          addHRegUse(u, HRmWrite, i->Xin.SseShuf.dst);
          return;
+      case Xin_EvCheck:
+         /* We expect both amodes only to mention %ebp, so this is in
+            fact pointless, since %ebp isn't allocatable, but anyway.. */
+         addRegUsage_X86AMode(u, i->Xin.EvCheck.amCounter);
+         addRegUsage_X86AMode(u, i->Xin.EvCheck.amFailAddr);
+         return;
+      case Xin_ProfInc:
+         /* does not use any registers. */
+         return;
       default:
          ppX86Instr(i, False);
          vpanic("getRegUsage_X86Instr");
@@ -1462,8 +1531,16 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
          return;
       case Xin_Call:
          return;
-      case Xin_Goto:
-         mapRegs_X86RI(m, i->Xin.Goto.dst);
+      case Xin_XDirect:
+         mapRegs_X86AMode(m, i->Xin.XDirect.amEIP);
+         return;
+      case Xin_XIndir:
+         mapReg(m, &i->Xin.XIndir.dstGA);
+         mapRegs_X86AMode(m, i->Xin.XIndir.amEIP);
+         return;
+      case Xin_XAssisted:
+         mapReg(m, &i->Xin.XAssisted.dstGA);
+         mapRegs_X86AMode(m, i->Xin.XAssisted.amEIP);
          return;
       case Xin_CMov32:
          mapRegs_X86RM(m, i->Xin.CMov32.src);
@@ -1566,6 +1643,16 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
          mapReg(m, &i->Xin.SseShuf.src);
          mapReg(m, &i->Xin.SseShuf.dst);
          return;
+      case Xin_EvCheck:
+         /* We expect both amodes only to mention %ebp, so this is in
+            fact pointless, since %ebp isn't allocatable, but anyway.. */
+         mapRegs_X86AMode(m, i->Xin.EvCheck.amCounter);
+         mapRegs_X86AMode(m, i->Xin.EvCheck.amFailAddr);
+         return;
+      case Xin_ProfInc:
+         /* does not use any registers. */
+         return;
+
       default:
          ppX86Instr(i, mode64);
          vpanic("mapRegs_X86Instr");
@@ -1986,12 +2073,17 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
-   imperative to emit position-independent code. */
+   imperative to emit position-independent code.  If the emitted
+   instruction was a profiler inc, set *is_profInc to True, else
+   leave it unchanged. */
 
-Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i, 
+Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
+                    UChar* buf, Int nbuf, X86Instr* i, 
                     Bool mode64,
-                    void* dispatch_unassisted,
-                    void* dispatch_assisted )
+                    void* disp_cp_chain_me_to_slowEP,
+                    void* disp_cp_chain_me_to_fastEP,
+                    void* disp_cp_xindir,
+                    void* disp_cp_xassisted )
 {
    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
@@ -2306,110 +2398,153 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       *p++ = toUChar(0xD0 + irno);
       goto done;
 
-   case Xin_Goto: {
-      void* dispatch_to_use = NULL;
-      vassert(dispatch_unassisted != NULL);
-      vassert(dispatch_assisted != NULL);
+   case Xin_XDirect: {
+      /* NB: what goes on here has to be very closely coordinated with the
+         chainXDirect_X86 and unchainXDirect_X86 below. */
+      /* We're generating chain-me requests here, so we need to be
+         sure this is actually allowed -- no-redir translations can't
+         use chain-me's.  Hence: */
+      vassert(disp_cp_chain_me_to_slowEP != NULL);
+      vassert(disp_cp_chain_me_to_fastEP != NULL);
 
       /* Use ptmp for backpatching conditional jumps. */
       ptmp = NULL;
 
       /* First off, if this is conditional, create a conditional
-	 jump over the rest of it. */
-      if (i->Xin.Goto.cond != Xcc_ALWAYS) {
+         jump over the rest of it. */
+      if (i->Xin.XDirect.cond != Xcc_ALWAYS) {
          /* jmp fwds if !condition */
-         *p++ = toUChar(0x70 + (0xF & (i->Xin.Goto.cond ^ 1)));
+         *p++ = toUChar(0x70 + (0xF & (i->Xin.XDirect.cond ^ 1)));
          ptmp = p; /* fill in this bit later */
          *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
       }
 
-      /* If a non-boring, set %ebp (the guest state pointer)
-         appropriately.  Also, decide which dispatcher we need to
-         use. */
-      dispatch_to_use = dispatch_assisted;
+      /* Update the guest EIP. */
+      /* movl $dstGA, amEIP */
+      *p++ = 0xC7;
+      p    = doAMode_M(p, fake(0), i->Xin.XDirect.amEIP);
+      p    = emit32(p, i->Xin.XDirect.dstGA);
 
-      /* movl $magic_number, %ebp */
-      switch (i->Xin.Goto.jk) {
-         case Ijk_ClientReq: 
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
-         case Ijk_Sys_int128:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYS_INT128); break;
-         case Ijk_Sys_int129:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYS_INT129); break;
-         case Ijk_Sys_int130:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYS_INT130); break;
-         case Ijk_Yield: 
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_YIELD); break;
-         case Ijk_EmWarn:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_EMWARN); break;
-         case Ijk_MapFail:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_MAPFAIL); break;
-         case Ijk_NoDecode:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_NODECODE); break;
-         case Ijk_TInval:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_TINVAL); break;
-         case Ijk_NoRedir:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_NOREDIR); break;
-         case Ijk_Sys_sysenter:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYS_SYSENTER); break;
-         case Ijk_SigTRAP:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SIGTRAP); break;
-         case Ijk_SigSEGV:
-            *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SIGSEGV); break;
-         case Ijk_Ret:
-	 case Ijk_Call:
-         case Ijk_Boring:
-            dispatch_to_use = dispatch_unassisted;
-            break;
-         default: 
-            ppIRJumpKind(i->Xin.Goto.jk);
-            vpanic("emit_X86Instr.Xin_Goto: unknown jump kind");
-      }
-
-      /* Get the destination address into %eax */
-      if (i->Xin.Goto.dst->tag == Xri_Imm) {
-         /* movl $immediate, %eax */
-         *p++ = 0xB8;
-         p = emit32(p, i->Xin.Goto.dst->Xri.Imm.imm32);
-      } else {
-         vassert(i->Xin.Goto.dst->tag == Xri_Reg);
-         /* movl %reg, %eax */
-         if (i->Xin.Goto.dst->Xri.Reg.reg != hregX86_EAX()) {
-            *p++ = 0x89;
-            p = doAMode_R(p, i->Xin.Goto.dst->Xri.Reg.reg, hregX86_EAX());
-         }
-      }
-
-      /* Get the dispatcher address into %edx.  This has to happen
-         after the load of %eax since %edx might be carrying the value
-         destined for %eax immediately prior to this Xin_Goto. */
-      vassert(sizeof(UInt) == sizeof(void*));
-      vassert(dispatch_to_use != NULL);
-      /* movl $imm32, %edx */
+      /* --- FIRST PATCHABLE BYTE follows --- */
+      /* VG_(disp_cp_chain_me_to_{slowEP,fastEP}) (where we're calling
+         to) backs up the return address, so as to find the address of
+         the first patchable byte.  So: don't change the length of the
+         two instructions below. */
+      /* movl $disp_cp_chain_me_to_{slow,fast}EP,%edx; */
       *p++ = 0xBA;
-      p = emit32(p, (UInt)Ptr_to_ULong(dispatch_to_use));
+      void* disp_cp_chain_me
+               = i->Xin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
+                                         : disp_cp_chain_me_to_slowEP;
+      p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_chain_me));
+      /* call *%edx */
+      *p++ = 0xFF;
+      *p++ = 0xD2;
+      /* --- END of PATCHABLE BYTES --- */
 
+      /* Fix up the conditional jump, if there was one. */
+      if (i->Xin.XDirect.cond != Xcc_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta > 0 && delta < 40);
+         *ptmp = toUChar(delta-1);
+      }
+      goto done;
+   }
+
+   case Xin_XIndir: {
+      /* We're generating transfers that could lead indirectly to a
+         chain-me, so we need to be sure this is actually allowed --
+         no-redir translations are not allowed to reach normal
+         translations without going through the scheduler.  That means
+         no XDirects or XIndirs out from no-redir translations.
+         Hence: */
+      vassert(disp_cp_xindir != NULL);
+
+      /* Use ptmp for backpatching conditional jumps. */
+      ptmp = NULL;
+
+      /* First off, if this is conditional, create a conditional
+         jump over the rest of it. */
+      if (i->Xin.XIndir.cond != Xcc_ALWAYS) {
+         /* jmp fwds if !condition */
+         *p++ = toUChar(0x70 + (0xF & (i->Xin.XIndir.cond ^ 1)));
+         ptmp = p; /* fill in this bit later */
+         *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+      }
+
+      /* movl dstGA(a reg), amEIP -- copied from Alu32M MOV case */
+      *p++ = 0x89;
+      p = doAMode_M(p, i->Xin.XIndir.dstGA, i->Xin.XIndir.amEIP);
+
+      /* movl $disp_indir, %edx */
+      *p++ = 0xBA;
+      p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_xindir));
       /* jmp *%edx */
       *p++ = 0xFF;
       *p++ = 0xE2;
 
       /* Fix up the conditional jump, if there was one. */
-      if (i->Xin.Goto.cond != Xcc_ALWAYS) {
+      if (i->Xin.XIndir.cond != Xcc_ALWAYS) {
          Int delta = p - ptmp;
-	 vassert(delta > 0 && delta < 20);
+         vassert(delta > 0 && delta < 40);
+         *ptmp = toUChar(delta-1);
+      }
+      goto done;
+   }
+
+   case Xin_XAssisted: {
+      /* Use ptmp for backpatching conditional jumps. */
+      ptmp = NULL;
+
+      /* First off, if this is conditional, create a conditional
+         jump over the rest of it. */
+      if (i->Xin.XAssisted.cond != Xcc_ALWAYS) {
+         /* jmp fwds if !condition */
+         *p++ = toUChar(0x70 + (0xF & (i->Xin.XAssisted.cond ^ 1)));
+         ptmp = p; /* fill in this bit later */
+         *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+      }
+
+      /* movl dstGA(a reg), amEIP -- copied from Alu32M MOV case */
+      *p++ = 0x89;
+      p = doAMode_M(p, i->Xin.XIndir.dstGA, i->Xin.XIndir.amEIP);
+      /* movl $magic_number, %ebp. */
+      UInt trcval = 0;
+      switch (i->Xin.XAssisted.jk) {
+         case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
+         case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
+         case Ijk_Sys_int128:  trcval = VEX_TRC_JMP_SYS_INT128;  break;
+         case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
+         case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
+         case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
+         case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
+         case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+         case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
+         case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
+         case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
+         case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
+         /* We don't expect to see the following being assisted. */
+         case Ijk_Ret:
+         case Ijk_Call:
+         /* fallthrough */
+         default: 
+            ppIRJumpKind(i->Xin.XAssisted.jk);
+            vpanic("emit_X86Instr.Xin_XAssisted: unexpected jump kind");
+      }
+      vassert(trcval != 0);
+      *p++ = 0xBD;
+      p = emit32(p, trcval);
+
+      /* movl $disp_indir, %edx */
+      *p++ = 0xBA;
+      p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_xassisted));
+      /* jmp *%edx */
+      *p++ = 0xFF;
+      *p++ = 0xE2;
+
+      /* Fix up the conditional jump, if there was one. */
+      if (i->Xin.XAssisted.cond != Xcc_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta > 0 && delta < 40);
          *ptmp = toUChar(delta-1);
       }
       goto done;
@@ -3088,6 +3223,63 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       *p++ = (UChar)(i->Xin.SseShuf.order);
       goto done;
 
+   case Xin_EvCheck: {
+      /* We generate:
+            (3 bytes)  decl 4(%ebp)    4 == offsetof(host_EvC_COUNTER)
+            (2 bytes)  jns  nofail     expected taken
+            (3 bytes)  jmp* 0(%ebp)    0 == offsetof(host_EvC_FAILADDR)
+            nofail:
+      */
+      /* This is heavily asserted re instruction lengths.  It needs to
+         be.  If we get given unexpected forms of .amCounter or
+         .amFailAddr -- basically, anything that's not of the form
+         uimm7(%ebp) -- they are likely to fail. */
+      /* Note also that after the decl we must be very careful not to
+         read the carry flag, else we get a partial flags stall.
+         js/jns avoids that, though. */
+      UChar* p0 = p;
+      /* ---  decl 8(%ebp) --- */
+      /* "fake(1)" because + there's no register in this encoding;
+         instead the register + field is used as a sub opcode.  The
+         encoding for "decl r/m32" + is FF /1, hence the fake(1). */
+      *p++ = 0xFF;
+      p = doAMode_M(p, fake(1), i->Xin.EvCheck.amCounter);
+      vassert(p - p0 == 3);
+      /* --- jns nofail --- */
+      *p++ = 0x79;
+      *p++ = 0x03; /* need to check this 0x03 after the next insn */
+      vassert(p - p0 == 5);
+      /* --- jmp* 0(%ebp) --- */
+      /* The encoding is FF /4. */
+      *p++ = 0xFF;
+      p = doAMode_M(p, fake(4), i->Xin.EvCheck.amFailAddr);
+      vassert(p - p0 == 8); /* also ensures that 0x03 offset above is ok */
+      /* And crosscheck .. */
+      vassert(evCheckSzB_X86() == 8);
+      goto done;
+   }
+
+   case Xin_ProfInc: {
+      /* We generate   addl $1,NotKnownYet
+                       adcl $0,NotKnownYet+4
+         in the expectation that a later call to LibVEX_patchProfCtr
+         will be used to fill in the immediate fields once the right
+         value is known.
+           83 05  00 00 00 00  01
+           83 15  00 00 00 00  00
+      */
+      *p++ = 0x83; *p++ = 0x05;
+      *p++ = 0x00; *p++ = 0x00; *p++ = 0x00; *p++ = 0x00;
+      *p++ = 0x01;
+      *p++ = 0x83; *p++ = 0x15;
+      *p++ = 0x00; *p++ = 0x00; *p++ = 0x00; *p++ = 0x00;
+      *p++ = 0x00;
+      /* Tell the caller .. */
+      vassert(!(*is_profInc));
+      *is_profInc = True;
+      goto done;
+   }
+
    default: 
       goto bad;
    }
@@ -3103,6 +3295,140 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
 
 #  undef fake
 }
+
+
+/* How big is an event check?  See case for Xin_EvCheck in
+   emit_X86Instr just above.  That crosschecks what this returns, so
+   we can tell if we're inconsistent. */
+Int evCheckSzB_X86 ( void )
+{
+   return 8;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   emitInstr case for XDirect, above. */
+VexInvalRange chainXDirect_X86 ( void* place_to_chain,
+                                 void* disp_cp_chain_me_EXPECTED,
+                                 void* place_to_jump_to )
+{
+   /* What we're expecting to see is:
+        movl $disp_cp_chain_me_EXPECTED, %edx
+        call *%edx
+      viz
+        BA <4 bytes value == disp_cp_chain_me_EXPECTED>
+        FF D2
+   */
+   UChar* p = (UChar*)place_to_chain;
+   vassert(p[0] == 0xBA);
+   vassert(*(UInt*)(&p[1]) == (UInt)Ptr_to_ULong(disp_cp_chain_me_EXPECTED));
+   vassert(p[5] == 0xFF);
+   vassert(p[6] == 0xD2);
+   /* And what we want to change it to is:
+          jmp disp32   where disp32 is relative to the next insn
+          ud2;
+        viz
+          E9 <4 bytes == disp32>
+          0F 0B
+      The replacement has the same length as the original.
+   */
+   /* This is the delta we need to put into a JMP d32 insn.  It's
+      relative to the start of the next insn, hence the -5.  */
+   Long delta = (Long)((UChar*)place_to_jump_to - (UChar*)p) - (Long)5;
+
+   /* And make the modifications. */
+   p[0] = 0xE9;
+   p[1] = (delta >> 0) & 0xFF;
+   p[2] = (delta >> 8) & 0xFF;
+   p[3] = (delta >> 16) & 0xFF;
+   p[4] = (delta >> 24) & 0xFF;
+   p[5] = 0x0F; p[6]  = 0x0B;
+   /* sanity check on the delta -- top 32 are all 0 or all 1 */
+   delta >>= 32;
+   vassert(delta == 0LL || delta == -1LL);
+   VexInvalRange vir = {0, 0};
+   return vir;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   emitInstr case for XDirect, above. */
+VexInvalRange unchainXDirect_X86 ( void* place_to_unchain,
+                                   void* place_to_jump_to_EXPECTED,
+                                   void* disp_cp_chain_me )
+{
+   /* What we're expecting to see is:
+          jmp d32
+          ud2;
+       viz
+          E9 <4 bytes == disp32>
+          0F 0B
+   */
+   UChar* p     = (UChar*)place_to_unchain;
+   Bool   valid = False;
+   if (p[0] == 0xE9 
+       && p[5]  == 0x0F && p[6]  == 0x0B) {
+      /* Check the offset is right. */
+      Int s32 = *(Int*)(&p[1]);
+      if ((UChar*)p + 5 + s32 == (UChar*)place_to_jump_to_EXPECTED) {
+         valid = True;
+         if (0)
+            vex_printf("QQQ unchainXDirect_X86: found valid\n");
+      }
+   }
+   vassert(valid);
+   /* And what we want to change it to is:
+         movl $disp_cp_chain_me, %edx
+         call *%edx
+      viz
+         BA <4 bytes value == disp_cp_chain_me_EXPECTED>
+         FF D2
+      So it's the same length (convenient, huh).
+   */
+   p[0] = 0xBA;
+   *(UInt*)(&p[1]) = (UInt)Ptr_to_ULong(disp_cp_chain_me);
+   p[5] = 0xFF;
+   p[6] = 0xD2;
+   VexInvalRange vir = {0, 0};
+   return vir;
+}
+
+
+/* Patch the counter address into a profile inc point, as previously
+   created by the Xin_ProfInc case for emit_X86Instr. */
+VexInvalRange patchProfInc_X86 ( void*  place_to_patch,
+                                 ULong* location_of_counter )
+{
+   vassert(sizeof(ULong*) == 4);
+   UChar* p = (UChar*)place_to_patch;
+   vassert(p[0] == 0x83);
+   vassert(p[1] == 0x05);
+   vassert(p[2] == 0x00);
+   vassert(p[3] == 0x00);
+   vassert(p[4] == 0x00);
+   vassert(p[5] == 0x00);
+   vassert(p[6] == 0x01);
+   vassert(p[7] == 0x83);
+   vassert(p[8] == 0x15);
+   vassert(p[9] == 0x00);
+   vassert(p[10] == 0x00);
+   vassert(p[11] == 0x00);
+   vassert(p[12] == 0x00);
+   vassert(p[13] == 0x00);
+   UInt imm32 = (UInt)Ptr_to_ULong(location_of_counter);
+   p[2] = imm32 & 0xFF; imm32 >>= 8;
+   p[3] = imm32 & 0xFF; imm32 >>= 8;
+   p[4] = imm32 & 0xFF; imm32 >>= 8;
+   p[5] = imm32 & 0xFF; imm32 >>= 8;
+   imm32 = 4 + (UInt)Ptr_to_ULong(location_of_counter);
+   p[9]  = imm32 & 0xFF; imm32 >>= 8;
+   p[10] = imm32 & 0xFF; imm32 >>= 8;
+   p[11] = imm32 & 0xFF; imm32 >>= 8;
+   p[12] = imm32 & 0xFF; imm32 >>= 8;
+   VexInvalRange vir = {0, 0};
+   return vir;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                     host_x86_defs.c ---*/

@@ -349,7 +349,9 @@ typedef
       Xin_Sh3232,    /* shldl or shrdl */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
-      Xin_Goto,      /* conditional/unconditional jmp to dst */
+      Xin_XDirect,   /* direct transfer to GA */
+      Xin_XIndir,    /* indirect transfer to GA */
+      Xin_XAssisted, /* assisted transfer to GA */
       Xin_CMov32,    /* conditional move */
       Xin_LoadEX,    /* mov{s,z}{b,w}l from mem to reg */
       Xin_Store,     /* store 16/8 bit value in memory */
@@ -378,7 +380,9 @@ typedef
       Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
       Xin_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
       Xin_SseCMov,   /* SSE conditional move */
-      Xin_SseShuf    /* SSE2 shuffle (pshufd) */
+      Xin_SseShuf,   /* SSE2 shuffle (pshufd) */
+      Xin_EvCheck,   /* Event check */
+      Xin_ProfInc    /* 64-bit profile counter increment */
    }
    X86InstrTag;
 
@@ -444,13 +448,30 @@ typedef
             Addr32      target;
             Int         regparms; /* 0 .. 3 */
          } Call;
-         /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Xcc_ALWAYS). */
+         /* Update the guest EIP value, then exit requesting to chain
+            to it.  May be conditional.  Urr, use of Addr32 implicitly
+            assumes that wordsize(guest) == wordsize(host). */
          struct {
+            Addr32      dstGA;    /* next guest address */
+            X86AMode*   amEIP;    /* amode in guest state for EIP */
+            X86CondCode cond;     /* can be Xcc_ALWAYS */
+            Bool        toFastEP; /* chain to the slow or fast point? */
+         } XDirect;
+         /* Boring transfer to a guest address not known at JIT time.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg        dstGA;
+            X86AMode*   amEIP;
+            X86CondCode cond; /* can be Xcc_ALWAYS */
+         } XIndir;
+         /* Assisted transfer to a guest address, most general case.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg        dstGA;
+            X86AMode*   amEIP;
+            X86CondCode cond; /* can be Xcc_ALWAYS */
             IRJumpKind  jk;
-            X86CondCode cond;
-            X86RI*      dst;
-         } Goto;
+         } XAssisted;
          /* Mov src to dst on the given condition, which may not
             be the bogus Xcc_ALWAYS. */
          struct {
@@ -615,6 +636,15 @@ typedef
             HReg   src;
             HReg   dst;
          } SseShuf;
+         struct {
+            X86AMode* amCounter;
+            X86AMode* amFailAddr;
+         } EvCheck;
+         struct {
+            /* No fields.  The address of the counter to inc is
+               installed later, post-translation, by patching it in,
+               as it is not known at translation time. */
+         } ProfInc;
 
       } Xin;
    }
@@ -632,7 +662,12 @@ extern X86Instr* X86Instr_Div       ( Bool syned, X86RM* );
 extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 extern X86Instr* X86Instr_Push      ( X86RMI* );
 extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
-extern X86Instr* X86Instr_Goto      ( IRJumpKind, X86CondCode cond, X86RI* dst );
+extern X86Instr* X86Instr_XDirect   ( Addr32 dstGA, X86AMode* amEIP,
+                                      X86CondCode cond, Bool toFastEP );
+extern X86Instr* X86Instr_XIndir    ( HReg dstGA, X86AMode* amEIP,
+                                      X86CondCode cond );
+extern X86Instr* X86Instr_XAssisted ( HReg dstGA, X86AMode* amEIP,
+                                      X86CondCode cond, IRJumpKind jk );
 extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
 extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
                                       X86AMode* src, HReg dst );
@@ -663,6 +698,9 @@ extern X86Instr* X86Instr_Sse64FLo  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
 extern X86Instr* X86Instr_SseShuf   ( Int order, HReg src, HReg dst );
+extern X86Instr* X86Instr_EvCheck   ( X86AMode* amCounter,
+                                      X86AMode* amFailAddr );
+extern X86Instr* X86Instr_ProfInc   ( void );
 
 
 extern void ppX86Instr ( X86Instr*, Bool );
@@ -672,10 +710,13 @@ extern void ppX86Instr ( X86Instr*, Bool );
 extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr*, Bool );
 extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr*, Bool );
 extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
-extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr*, 
-                                           Bool,
-                                           void* dispatch_unassisted,
-                                           void* dispatch_assisted );
+extern Int          emit_X86Instr        ( /*MB_MOD*/Bool* is_profInc,
+                                           UChar* buf, Int nbuf, X86Instr* i, 
+                                           Bool mode64,
+                                           void* disp_cp_chain_me_to_slowEP,
+                                           void* disp_cp_chain_me_to_fastEP,
+                                           void* disp_cp_xindir,
+                                           void* disp_cp_xassisted );
 
 extern void genSpill_X86  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
@@ -685,9 +726,36 @@ extern void genReload_X86 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern X86Instr*    directReload_X86     ( X86Instr* i, 
                                            HReg vreg, Short spill_off );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
-extern HInstrArray* iselSB_X86           ( IRSB*, VexArch,
-                                                  VexArchInfo*,
-                                                  VexAbiInfo* );
+extern HInstrArray* iselSB_X86           ( IRSB*, 
+                                           VexArch,
+                                           VexArchInfo*,
+                                           VexAbiInfo*,
+                                           Int offs_Host_EvC_Counter,
+                                           Int offs_Host_EvC_FailAddr,
+                                           Bool chainingAllowed,
+                                           Bool addProfInc,
+                                           Addr64 max_ga );
+
+/* How big is an event check?  This is kind of a kludge because it
+   depends on the offsets of host_EvC_FAILADDR and host_EvC_COUNTER,
+   and so assumes that they are both <= 128, and so can use the short
+   offset encoding.  This is all checked with assertions, so in the
+   worst case we will merely assert at startup. */
+extern Int evCheckSzB_X86 ( void );
+
+/* Perform a chaining and unchaining of an XDirect jump. */
+extern VexInvalRange chainXDirect_X86 ( void* place_to_chain,
+                                        void* disp_cp_chain_me_EXPECTED,
+                                        void* place_to_jump_to );
+
+extern VexInvalRange unchainXDirect_X86 ( void* place_to_unchain,
+                                          void* place_to_jump_to_EXPECTED,
+                                          void* disp_cp_chain_me );
+
+/* Patch the counter location into an existing ProfInc point. */
+extern VexInvalRange patchProfInc_X86 ( void*  place_to_patch,
+                                        ULong* location_of_counter );
+
 
 #endif /* ndef __VEX_HOST_X86_DEFS_H */
 

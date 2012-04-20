@@ -564,7 +564,9 @@ typedef
       ARMin_LdSt16,
       ARMin_LdSt8U,
       ARMin_Ld8S,
-      ARMin_Goto,
+      ARMin_XDirect,     /* direct transfer to GA */
+      ARMin_XIndir,      /* indirect transfer to GA */
+      ARMin_XAssisted,   /* assisted transfer to GA */
       ARMin_CMov,
       ARMin_Call,
       ARMin_Mul,
@@ -604,9 +606,10 @@ typedef
          allocator demands them to consist of no more than two instructions.
          We will split this instruction into 2 or 3 ARM instructions on the
          emiting phase.
-
          NOTE: source and destination registers should be different! */
-      ARMin_Add32
+      ARMin_Add32,
+      ARMin_EvCheck,     /* Event check */
+      ARMin_ProfInc      /* 64-bit profile counter increment */
    }
    ARMInstrTag;
 
@@ -676,13 +679,30 @@ typedef
             HReg       rD;
             ARMAMode2* amode;
          } Ld8S;
-         /* Pseudo-insn.  Go to guest address gnext, on given
-            condition, which could be ARMcc_AL. */
+         /* Update the guest R15T value, then exit requesting to chain
+            to it.  May be conditional.  Urr, use of Addr32 implicitly
+            assumes that wordsize(guest) == wordsize(host). */
          struct {
+            Addr32      dstGA;    /* next guest address */
+            ARMAMode1*  amR15T;   /* amode in guest state for R15T */
+            ARMCondCode cond;     /* can be ARMcc_AL */
+            Bool        toFastEP; /* chain to the slow or fast point? */
+         } XDirect;
+         /* Boring transfer to a guest address not known at JIT time.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg        dstGA;
+            ARMAMode1*  amR15T;
+            ARMCondCode cond; /* can be ARMcc_AL */
+         } XIndir;
+         /* Assisted transfer to a guest address, most general case.
+            Not chainable.  May be conditional. */
+         struct {
+            HReg        dstGA;
+            ARMAMode1*  amR15T;
+            ARMCondCode cond; /* can be ARMcc_AL */
             IRJumpKind  jk;
-            ARMCondCode cond;
-            HReg        gnext;
-         } Goto;
+         } XAssisted;
          /* Mov src to dst on the given condition, which may not
             be ARMcc_AL. */
          struct {
@@ -905,6 +925,15 @@ typedef
             HReg rN;
             UInt imm32;
          } Add32;
+         struct {
+            ARMAMode1* amCounter;
+            ARMAMode1* amFailAddr;
+         } EvCheck;
+         struct {
+            /* No fields.  The address of the counter to inc is
+               installed later, post-translation, by patching it in,
+               as it is not known at translation time. */
+         } ProfInc;
       } ARMin;
    }
    ARMInstr;
@@ -921,7 +950,12 @@ extern ARMInstr* ARMInstr_LdSt16   ( Bool isLoad, Bool signedLoad,
                                      HReg, ARMAMode2* );
 extern ARMInstr* ARMInstr_LdSt8U   ( Bool isLoad, HReg, ARMAMode1* );
 extern ARMInstr* ARMInstr_Ld8S     ( HReg, ARMAMode2* );
-extern ARMInstr* ARMInstr_Goto     ( IRJumpKind, ARMCondCode, HReg gnext );
+extern ARMInstr* ARMInstr_XDirect  ( Addr32 dstGA, ARMAMode1* amR15T,
+                                     ARMCondCode cond, Bool toFastEP );
+extern ARMInstr* ARMInstr_XIndir   ( HReg dstGA, ARMAMode1* amR15T,
+                                     ARMCondCode cond );
+extern ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
+                                      ARMCondCode cond, IRJumpKind jk );
 extern ARMInstr* ARMInstr_CMov     ( ARMCondCode, HReg dst, ARMRI84* src );
 extern ARMInstr* ARMInstr_Call     ( ARMCondCode, HWord, Int nArgRegs );
 extern ARMInstr* ARMInstr_Mul      ( ARMMulOp op );
@@ -957,6 +991,9 @@ extern ARMInstr* ARMInstr_NShift   ( ARMNeonShiftOp, HReg, HReg, HReg,
 extern ARMInstr* ARMInstr_NeonImm  ( HReg, ARMNImm* );
 extern ARMInstr* ARMInstr_NCMovQ   ( ARMCondCode, HReg, HReg );
 extern ARMInstr* ARMInstr_Add32    ( HReg rD, HReg rN, UInt imm32 );
+extern ARMInstr* ARMInstr_EvCheck  ( ARMAMode1* amCounter,
+                                     ARMAMode1* amFailAddr );
+extern ARMInstr* ARMInstr_ProfInc  ( void );
 
 extern void ppARMInstr ( ARMInstr* );
 
@@ -966,10 +1003,13 @@ extern void ppARMInstr ( ARMInstr* );
 extern void getRegUsage_ARMInstr ( HRegUsage*, ARMInstr*, Bool );
 extern void mapRegs_ARMInstr     ( HRegRemap*, ARMInstr*, Bool );
 extern Bool isMove_ARMInstr      ( ARMInstr*, HReg*, HReg* );
-extern Int  emit_ARMInstr        ( UChar* buf, Int nbuf, ARMInstr*, 
-                                   Bool,
-                                   void* dispatch_unassisted,
-                                   void* dispatch_assisted );
+extern Int  emit_ARMInstr        ( /*MB_MOD*/Bool* is_profInc,
+                                   UChar* buf, Int nbuf, ARMInstr* i, 
+                                   Bool mode64,
+                                   void* disp_cp_chain_me_to_slowEP,
+                                   void* disp_cp_chain_me_to_fastEP,
+                                   void* disp_cp_xindir,
+                                   void* disp_cp_xassisted );
 
 extern void genSpill_ARM  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
@@ -977,8 +1017,34 @@ extern void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
 
 extern void getAllocableRegs_ARM ( Int*, HReg** );
-extern HInstrArray* iselSB_ARM   ( IRSB*, VexArch,
-                                   VexArchInfo*, VexAbiInfo* );
+extern HInstrArray* iselSB_ARM   ( IRSB*, 
+                                   VexArch,
+                                   VexArchInfo*,
+                                   VexAbiInfo*,
+                                   Int offs_Host_EvC_Counter,
+                                   Int offs_Host_EvC_FailAddr,
+                                   Bool chainingAllowed,
+                                   Bool addProfInc,
+                                   Addr64 max_ga );
+
+/* How big is an event check?  This is kind of a kludge because it
+   depends on the offsets of host_EvC_FAILADDR and
+   host_EvC_COUNTER. */
+extern Int evCheckSzB_ARM ( void );
+
+/* Perform a chaining and unchaining of an XDirect jump. */
+extern VexInvalRange chainXDirect_ARM ( void* place_to_chain,
+                                        void* disp_cp_chain_me_EXPECTED,
+                                        void* place_to_jump_to );
+
+extern VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
+                                          void* place_to_jump_to_EXPECTED,
+                                          void* disp_cp_chain_me );
+
+/* Patch the counter location into an existing ProfInc point. */
+extern VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
+                                        ULong* location_of_counter );
+
 
 #endif /* ndef __VEX_HOST_ARM_DEFS_H */
 

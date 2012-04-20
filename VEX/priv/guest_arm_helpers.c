@@ -697,6 +697,18 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
                            mkU32(1)));
       }
 
+      /*---------------- COPY ----------------*/
+
+      if (isU32(cond_n_op, (ARMCondNE << 4) | ARMG_CC_OP_COPY)) {
+         /* NE after COPY --> ((cc_dep1 >> ARMG_CC_SHIFT_Z) ^ 1) & 1 */
+         return binop(Iop_And32,
+                      binop(Iop_Xor32,
+                            binop(Iop_Shr32, cc_dep1,
+                                             mkU8(ARMG_CC_SHIFT_Z)),
+                            mkU32(1)),
+                      mkU32(1));
+      }
+
       /*----------------- AL -----------------*/
 
       /* A critically important case for Thumb code.
@@ -937,6 +949,9 @@ UInt LibVEX_GuestARM_get_cpsr ( /*IN*/VexGuestARMState* vex_state )
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
 {
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER = 0;
+
    vex_state->guest_R0  = 0;
    vex_state->guest_R1  = 0;
    vex_state->guest_R2  = 0;
@@ -1014,8 +1029,6 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_ITSTATE = 0;
 
    vex_state->padding1 = 0;
-   vex_state->padding2 = 0;
-   vex_state->padding3 = 0;
 }
 
 

@@ -69,6 +69,18 @@
     - The host subarchitecture we are selecting insns for.
       This is set at the start and does not change.
 
+   - A Bool for indicating whether we may generate chain-me
+     instructions for control flow transfers, or whether we must use
+     XAssisted.
+
+   - The maximum guest address of any guest insn in this block.
+     Actually, the address of the highest-addressed byte from any insn
+     in this block.  Is set at the start and does not change.  This is
+     used for detecting jumps which are definitely forward-edges from
+     this block, and therefore can be made (chained) to the fast entry
+     point of the destination, thereby avoiding the destination's
+     event check.
+
     - A flag to indicate whether the guest IA has been assigned to.
 
     - Values of certain guest registers which are often assigned constants.
@@ -92,16 +104,19 @@ enum {
 typedef struct {
    IRTypeEnv   *type_env;
 
+   HInstrArray *code;
    HReg        *vregmap;
    HReg        *vregmapHI;
    UInt         n_vregmap;
-
-   HInstrArray *code;
+   UInt         vreg_ctr;
+   UInt         hwcaps;
 
    ULong        old_value[NUM_TRACKED_REGS];
-   UInt         vreg_ctr;
 
-   UInt         hwcaps;
+   /* The next two are for translation chaining */
+   Addr64       max_ga;
+   Bool         chaining_allowed;
+
    Bool         first_IA_assignment;
    Bool         old_value_valid[NUM_TRACKED_REGS];
 } ISelEnv;
@@ -2437,17 +2452,56 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       /* --------- EXIT --------- */
    case Ist_Exit: {
-      s390_opnd_RMI dst;
       s390_cc_t cond;
       IRConstTag tag = stmt->Ist.Exit.dst->tag;
 
       if (tag != Ico_U64)
          vpanic("s390_isel_stmt: Ist_Exit: dst is not a 64-bit value");
 
-      dst  = s390_isel_int_expr_RMI(env, IRExpr_Const(stmt->Ist.Exit.dst));
+      s390_amode *guest_IA = s390_amode_for_guest_state(stmt->Ist.Exit.offsIP);
       cond = s390_isel_cc(env, stmt->Ist.Exit.guard);
-      addInstr(env, s390_insn_branch(stmt->Ist.Exit.jk, cond, dst));
-      return;
+
+      /* Case: boring transfer to known address */
+      if (stmt->Ist.Exit.jk == Ijk_Boring) {
+         if (env->chaining_allowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool to_fast_entry
+               = ((Addr64)stmt->Ist.Exit.dst->Ico.U64) > env->max_ga;
+            if (0) vex_printf("%s", to_fast_entry ? "Y" : ",");
+            addInstr(env, s390_insn_xdirect(cond, stmt->Ist.Exit.dst->Ico.U64,
+                                            guest_IA, to_fast_entry));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer,
+               as that's the only alternative that is allowable. */
+            HReg dst = s390_isel_int_expr(env,
+                                          IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, s390_insn_xassisted(cond, dst, guest_IA, Ijk_Boring));
+         }
+         return;
+      }
+
+      /* Case: assisted transfer to arbitrary address */
+      switch (stmt->Ist.Exit.jk) {
+      case Ijk_TInval:
+      case Ijk_Sys_syscall:
+      case Ijk_ClientReq:
+      case Ijk_NoRedir:
+      case Ijk_Yield:
+      case Ijk_SigTRAP: {
+         HReg dst = s390_isel_int_expr(env, IRExpr_Const(stmt->Ist.Exit.dst));
+         addInstr(env, s390_insn_xassisted(cond, dst, guest_IA,
+                                           stmt->Ist.Exit.jk));
+         return;
+      }
+      default:
+         break;
+      }
+
+      /* Do we ever expect to see any other kind? */
+      goto stmt_fail;
    }
 
       /* --------- MEM FENCE --------- */
@@ -2484,20 +2538,80 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 /*---------------------------------------------------------*/
 
 static void
-iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk)
+iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, int offsIP)
 {
-   s390_opnd_RMI dst;
-
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      vex_printf("\n-- goto {");
-      ppIRJumpKind(jk);
-      vex_printf("} ");
+      vex_printf("\n-- PUT(%d) = ", offsIP);
       ppIRExpr(next);
+      vex_printf("; exit-");
+      ppIRJumpKind(jk);
       vex_printf("\n");
    }
 
-   dst = s390_isel_int_expr_RMI(env, next);
-   addInstr(env, s390_insn_branch(jk, S390_CC_ALWAYS, dst));
+   s390_amode *guest_IA = s390_amode_for_guest_state(offsIP);
+
+   /* Case: boring transfer to known address */
+   if (next->tag == Iex_Const) {
+      IRConst *cdst = next->Iex.Const.con;
+      vassert(cdst->tag == Ico_U64);
+      if (jk == Ijk_Boring || jk == Ijk_Call) {
+         /* Boring transfer to known address */
+         if (env->chaining_allowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool to_fast_entry
+               = ((Addr64)cdst->Ico.U64) > env->max_ga;
+            if (0) vex_printf("%s", to_fast_entry ? "X" : ".");
+            addInstr(env, s390_insn_xdirect(S390_CC_ALWAYS, cdst->Ico.U64,
+                                            guest_IA, to_fast_entry));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an indirect transfer,
+               as that's the cheapest alternative that is allowable. */
+            HReg dst = s390_isel_int_expr(env, next);
+            addInstr(env, s390_insn_xassisted(S390_CC_ALWAYS, dst, guest_IA,
+                                              Ijk_Boring));
+         }
+         return;
+      }
+   }
+
+   /* Case: call/return (==boring) transfer to any address */
+   switch (jk) {
+   case Ijk_Boring:
+   case Ijk_Ret:
+   case Ijk_Call: {
+      HReg dst = s390_isel_int_expr(env, next);
+      if (env->chaining_allowed) {
+         addInstr(env, s390_insn_xindir(S390_CC_ALWAYS, dst, guest_IA));
+      } else {
+         addInstr(env, s390_insn_xassisted(S390_CC_ALWAYS, dst, guest_IA,
+                                           Ijk_Boring));
+      }
+      return;
+   }
+   default:
+      break;
+   }
+
+   /* Case: some other kind of transfer to any address */
+   switch (jk) {
+   case Ijk_TInval:
+   case Ijk_Sys_syscall:
+   case Ijk_ClientReq:
+   case Ijk_NoRedir:
+   case Ijk_Yield:
+   case Ijk_SigTRAP: {
+      HReg dst = s390_isel_int_expr(env, next);
+      addInstr(env, s390_insn_xassisted(S390_CC_ALWAYS, dst, guest_IA, jk));
+      return;
+   }
+   default:
+      break;
+   }
+
+   vpanic("iselNext");
 }
 
 
@@ -2509,7 +2623,9 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk)
 
 HInstrArray *
 iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
-             VexAbiInfo *vbi)
+            VexAbiInfo *vbi, Int offset_host_evcheck_counter,
+            Int offset_host_evcheck_fail_addr, Bool chaining_allowed,
+            Bool add_profinc, Addr64 max_ga)
 {
    UInt     i, j;
    HReg     hreg, hregHI;
@@ -2551,6 +2667,9 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
 
    /* and finally ... */
    env->hwcaps    = hwcaps_host;
+
+   env->max_ga = max_ga;
+   env->chaining_allowed = chaining_allowed;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */
@@ -2595,12 +2714,26 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    }
    env->vreg_ctr = j;
 
+   /* The very first instruction must be an event check. */
+   s390_amode *counter, *fail_addr;
+   counter   = s390_amode_for_guest_state(offset_host_evcheck_counter);
+   fail_addr = s390_amode_for_guest_state(offset_host_evcheck_fail_addr);
+   addInstr(env, s390_insn_evcheck(counter, fail_addr));
+
+   /* Possibly a block counter increment (for profiling).  At this
+      point we don't know the address of the counter, so just pretend
+      it is zero.  It will have to be patched later, but before this
+      translation is used, by a call to LibVEX_patchProfInc. */
+   if (add_profinc) {
+      addInstr(env, s390_insn_profinc());
+   }
+
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
       if (bb->stmts[i])
          s390_isel_stmt(env, bb->stmts[i]);
 
-   iselNext(env, bb->next, bb->jumpkind);
+   iselNext(env, bb->next, bb->jumpkind, bb->offsIP);
 
    /* Record the number of vregs we used. */
    env->code->n_vregs = env->vreg_ctr;

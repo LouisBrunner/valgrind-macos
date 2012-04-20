@@ -130,6 +130,8 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
    state->guest_TILEN = 0;
    state->guest_IP_AT_SYSCALL = 0;
    state->guest_EMWARN = EmWarn_NONE;
+   state->host_EvC_COUNTER = 0;
+   state->host_EvC_FAILADDR = 0;
 
 /*------------------------------------------------------------*/
 /*--- Initialise thunk                                     ---*/

@@ -1253,10 +1253,11 @@ void ppIRStmt ( IRStmt* s )
       case Ist_Exit:
          vex_printf( "if (" );
          ppIRExpr(s->Ist.Exit.guard);
-         vex_printf( ") goto {");
-         ppIRJumpKind(s->Ist.Exit.jk);
-         vex_printf("} ");
+         vex_printf( ") { PUT(%d) = ", s->Ist.Exit.offsIP);
          ppIRConst(s->Ist.Exit.dst);
+         vex_printf("; exit-");
+         ppIRJumpKind(s->Ist.Exit.jk);
+         vex_printf(" } ");
          break;
       default: 
          vpanic("ppIRStmt");
@@ -1291,10 +1292,10 @@ void ppIRSB ( IRSB* bb )
       ppIRStmt(bb->stmts[i]);
       vex_printf( "\n");
    }
-   vex_printf( "   goto {");
-   ppIRJumpKind(bb->jumpkind);
-   vex_printf( "} ");
+   vex_printf( "   PUT(%d) = ", bb->offsIP );
    ppIRExpr( bb->next );
+   vex_printf( "; exit-");
+   ppIRJumpKind(bb->jumpkind);
    vex_printf( "\n}\n");
 }
 
@@ -1725,12 +1726,14 @@ IRStmt* IRStmt_MBE ( IRMBusEvent event )
    s->Ist.MBE.event = event;
    return s;
 }
-IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst ) {
-   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag            = Ist_Exit;
-   s->Ist.Exit.guard = guard;
-   s->Ist.Exit.jk    = jk;
-   s->Ist.Exit.dst   = dst;
+IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
+                      Int offsIP ) {
+   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag             = Ist_Exit;
+   s->Ist.Exit.guard  = guard;
+   s->Ist.Exit.jk     = jk;
+   s->Ist.Exit.dst    = dst;
+   s->Ist.Exit.offsIP = offsIP;
    return s;
 }
 
@@ -1758,6 +1761,7 @@ IRSB* emptyIRSB ( void )
    bb->stmts      = LibVEX_Alloc(bb->stmts_size * sizeof(IRStmt*));
    bb->next       = NULL;
    bb->jumpkind   = Ijk_Boring;
+   bb->offsIP     = 0;
    return bb;
 }
 
@@ -1948,7 +1952,8 @@ IRStmt* deepCopyIRStmt ( IRStmt* s )
       case Ist_Exit: 
          return IRStmt_Exit(deepCopyIRExpr(s->Ist.Exit.guard),
                             s->Ist.Exit.jk,
-                            deepCopyIRConst(s->Ist.Exit.dst));
+                            deepCopyIRConst(s->Ist.Exit.dst),
+                            s->Ist.Exit.offsIP);
       default: 
          vpanic("deepCopyIRStmt");
    }
@@ -1975,7 +1980,7 @@ IRSB* deepCopyIRSB ( IRSB* bb )
    sts2 = LibVEX_Alloc(bb2->stmts_used * sizeof(IRStmt*));
    for (i = 0; i < bb2->stmts_used; i++)
       sts2[i] = deepCopyIRStmt(bb->stmts[i]);
-   bb2->stmts    = sts2;
+   bb2->stmts = sts2;
    return bb2;
 }
 
@@ -1985,6 +1990,7 @@ IRSB* deepCopyIRSBExceptStmts ( IRSB* bb )
    bb2->tyenv    = deepCopyIRTypeEnv(bb->tyenv);
    bb2->next     = deepCopyIRExpr(bb->next);
    bb2->jumpkind = bb->jumpkind;
+   bb2->offsIP   = bb->offsIP;
    return bb2;
 }
 
@@ -3508,6 +3514,9 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
             sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: bad dst");
          if (typeOfIRConst(stmt->Ist.Exit.dst) != gWordTy)
             sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: not :: guest word type");
+         /* because it would intersect with host_EvC_* */
+         if (stmt->Ist.Exit.offsIP < 16)
+            sanityCheckFail(bb,stmt,"IRStmt.Exit.offsIP: too low");
          break;
       default:
          vpanic("tcStmt");
@@ -3634,6 +3643,10 @@ void sanityCheckIRSB ( IRSB* bb,          HChar* caller,
          tcStmt( bb, bb->stmts[i], guest_word_size );
    if (typeOfIRExpr(bb->tyenv,bb->next) != guest_word_size)
       sanityCheckFail(bb, NULL, "bb->next field has wrong type");
+   /* because it would intersect with host_EvC_* */
+   if (bb->offsIP < 16)
+      sanityCheckFail(bb, NULL, "bb->offsIP: too low");
+
 }
 
 /*---------------------------------------------------------------*/

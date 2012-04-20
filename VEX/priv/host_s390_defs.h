@@ -130,7 +130,6 @@ typedef enum {
    S390_INSN_TEST,   /* test operand and set cc */
    S390_INSN_CC2BOOL,/* convert condition code to 0/1 */
    S390_INSN_COMPARE,
-   S390_INSN_BRANCH, /* un/conditional goto */
    S390_INSN_HELPER_CALL,
    S390_INSN_CAS,    /* compare and swap */
    S390_INSN_BFP_BINOP, /* Binary floating point 32-bit / 64-bit */
@@ -144,7 +143,13 @@ typedef enum {
    S390_INSN_BFP128_CONVERT_FROM,
    S390_INSN_MFENCE,
    S390_INSN_GZERO,   /* Assign zero to a guest register */
-   S390_INSN_GADD     /* Add a value to a guest register */
+   S390_INSN_GADD,    /* Add a value to a guest register */
+   /* The following 5 insns are mandated by translation chaining */
+   S390_INSN_XDIRECT,     /* direct transfer to guest address */
+   S390_INSN_XINDIR,      /* indirect transfer to guest address */
+   S390_INSN_XASSISTED,   /* assisted transfer to guest address */
+   S390_INSN_EVCHECK,     /* Event check */
+   S390_INSN_PROFINC      /* 64-bit profile counter increment */
 } s390_insn_tag;
 
 
@@ -338,11 +343,6 @@ typedef struct {
          HReg        op3;
          HReg        old_mem;
       } cas;
-      struct {
-         IRJumpKind    kind;
-         s390_cc_t     cond;
-         s390_opnd_RMI dst;
-      } branch;
       /* Pseudo-insn for representing a helper call.
          TARGET is the absolute address of the helper function
          NUM_ARGS says how many arguments are being passed.
@@ -407,6 +407,44 @@ typedef struct {
          UChar            delta;
          ULong            value;  /* for debugging only */
       } gadd;
+
+      /* The next 5 entries are generic to support translation chaining */
+
+      /* Update the guest IA value, then exit requesting to chain
+         to it.  May be conditional. */
+      struct {
+         s390_cc_t     cond;
+         Bool          to_fast_entry;  /* chain to the what entry point? */
+         Addr64        dst;            /* next guest address */
+         s390_amode   *guest_IA;
+      } xdirect;
+      /* Boring transfer to a guest address not known at JIT time.
+         Not chainable.  May be conditional. */
+      struct {
+         s390_cc_t     cond;
+         HReg          dst;
+         s390_amode   *guest_IA;
+      } xindir;
+      /* Assisted transfer to a guest address, most general case.
+         Not chainable.  May be conditional. */
+      struct {
+         s390_cc_t     cond;
+         IRJumpKind    kind;
+         HReg          dst;
+         s390_amode   *guest_IA;
+      } xassisted;
+      struct {
+         /* fixs390: I don't think these are really needed
+            as the gsp and the offset are fixed  no ? */
+         s390_amode   *counter;    /* dispatch counter */
+         s390_amode   *fail_addr;
+      } evcheck;
+      struct {
+         /* No fields.  The address of the counter to increment is
+            installed later, post-translation, by patching it in,
+            as it is not known at translation time. */
+      } profinc;
+
    } variant;
 } s390_insn;
 
@@ -433,7 +471,6 @@ s390_insn *s390_insn_cc2bool(HReg dst, s390_cc_t src);
 s390_insn *s390_insn_test(UChar size, s390_opnd_RMI src);
 s390_insn *s390_insn_compare(UChar size, HReg dst, s390_opnd_RMI opnd,
                              Bool signed_comparison);
-s390_insn *s390_insn_branch(IRJumpKind jk, s390_cc_t cond, s390_opnd_RMI dst);
 s390_insn *s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
                                  HChar *name);
 s390_insn *s390_insn_bfp_triop(UChar size, s390_bfp_triop_t, HReg dst, HReg op2,
@@ -460,6 +497,15 @@ s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_gzero(UChar size, UInt offset);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
 
+/* Five for translation chaining */
+s390_insn *s390_insn_xdirect(s390_cc_t cond, Addr64 dst, s390_amode *guest_IA,
+                             Bool to_fast_entry);
+s390_insn *s390_insn_xindir(s390_cc_t cond, HReg dst, s390_amode *guest_IA);
+s390_insn *s390_insn_xassisted(s390_cc_t cond, HReg dst, s390_amode *guest_IA,
+                               IRJumpKind kind);
+s390_insn *s390_insn_evcheck(s390_amode *counter, s390_amode *fail_addr);
+s390_insn *s390_insn_profinc(void);
+
 const HChar *s390_insn_as_string(const s390_insn *);
 
 /*--------------------------------------------------------*/
@@ -475,13 +521,30 @@ void ppHRegS390(HReg);
 void  getRegUsage_S390Instr( HRegUsage *, s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
 Bool  isMove_S390Instr     ( s390_insn *, HReg *, HReg * );
-Int   emit_S390Instr       ( UChar *, Int, s390_insn *, Bool,
-                             void *, void * );
+Int   emit_S390Instr       ( Bool *, UChar *, Int, s390_insn *, Bool,
+                             void *, void *, void *, void *);
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
 s390_insn *directReload_S390 ( s390_insn *, HReg, Short );
-HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo * );
+HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo *,
+                             Int, Int, Bool, Bool, Addr64);
+
+/* Return the number of bytes of code needed for an event check */
+Int evCheckSzB_S390(void);
+
+/* Perform a chaining and unchaining of an XDirect jump. */
+VexInvalRange chainXDirect_S390(void *place_to_chain,
+                                void *disp_cp_chain_me_EXPECTED,
+                                void *place_to_jump_to);
+
+VexInvalRange unchainXDirect_S390(void *place_to_unchain,
+                                  void *place_to_jump_to_EXPECTED,
+                                  void *disp_cp_chain_me);
+
+/* Patch the counter location into an existing ProfInc point. */
+VexInvalRange patchProfInc_S390(void  *code_to_patch,
+                                ULong *location_of_counter);
 
 /* KLUDGE: See detailled comment in host_s390_defs.c. */
 extern const VexArchInfo *s390_archinfo_host;

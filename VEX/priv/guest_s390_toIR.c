@@ -120,11 +120,34 @@ mkexpr(IRTemp tmp)
    return IRExpr_RdTmp(tmp);
 }
 
+/* Generate an expression node for an address. */
+static __inline__ IRExpr *
+mkaddr_expr(Addr64 addr)
+{
+   return IRExpr_Const(IRConst_U64(addr));
+}
+
 /* Add a statement that assigns to a temporary */
 static __inline__ void
 assign(IRTemp dst, IRExpr *expr)
 {
    stmt(IRStmt_WrTmp(dst, expr));
+}
+
+/* Write an address into the guest_IA */
+static __inline__ void
+put_IA(IRExpr *address)
+{
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA), address));
+}
+
+/* Add a dummy put to the guest_IA to satisfy an assert in bb_to_IR
+   that wants the last statement in an IRSB to be a put to the guest_IA.
+   Mostly used for insns that use the "counter" pseudo guest reg. */
+static __inline__ void
+dummy_put_IA(void)
+{
+   put_IA(IRExpr_Get(S390X_GUEST_OFFSET(guest_IA), Ity_I64));
 }
 
 /* Create a temporary of the given type and assign the expression to it */
@@ -242,10 +265,10 @@ load(IRType type, IRExpr *addr)
 static void
 call_function(IRExpr *callee_address)
 {
-   irsb->next = callee_address;
-   irsb->jumpkind = Ijk_Call;
+   put_IA(callee_address);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Call;
 }
 
 /* Function call with known target. */
@@ -256,9 +279,10 @@ call_function_and_chase(Addr64 callee_address)
       dis_res->whatNext   = Dis_ResteerU;
       dis_res->continueAt = callee_address;
    } else {
-      irsb->next = mkU64(callee_address);
-      irsb->jumpkind = Ijk_Call;
+      put_IA(mkaddr_expr(callee_address));
+
       dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_Call;
    }
 }
 
@@ -266,10 +290,10 @@ call_function_and_chase(Addr64 callee_address)
 static void
 return_from_function(IRExpr *return_address)
 {
-   irsb->next = return_address;
-   irsb->jumpkind = Ijk_Ret;
+   put_IA(return_address);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Ret;
 }
 
 /* A conditional branch whose target is not known at instrumentation time.
@@ -289,12 +313,13 @@ if_not_condition_goto_computed(IRExpr *condition, IRExpr *target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr)));
+   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 
-   irsb->next = target;
-   irsb->jumpkind = Ijk_Boring;
+   put_IA(target);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
 
 /* A conditional branch whose target is known at instrumentation time. */
@@ -303,8 +328,13 @@ if_condition_goto(IRExpr *condition, Addr64 target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(target)));
-   dis_res->whatNext = Dis_Continue;
+   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(target),
+                    S390X_GUEST_OFFSET(guest_IA)));
+
+   put_IA(mkaddr_expr(guest_IA_next_instr));
+
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
 
 /* An unconditional branch. Target may or may not be known at instrumentation
@@ -312,23 +342,26 @@ if_condition_goto(IRExpr *condition, Addr64 target)
 static void
 always_goto(IRExpr *target)
 {
-   irsb->next = target;
-   irsb->jumpkind = Ijk_Boring;
+   put_IA(target);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
+
 
 /* An unconditional branch to a known target. */
 static void
 always_goto_and_chase(Addr64 target)
 {
    if (resteer_fn(resteer_data, target)) {
+      /* Follow into the target */
       dis_res->whatNext   = Dis_ResteerU;
       dis_res->continueAt = target;
    } else {
-      irsb->next = mkU64(target);
-      irsb->jumpkind = Ijk_Boring;
-      dis_res->whatNext = Dis_StopHere;
+      put_IA(mkaddr_expr(target));
+
+      dis_res->whatNext    = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_Boring;
    }
 }
 
@@ -343,14 +376,13 @@ system_call(IRExpr *sysno)
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IP_AT_SYSCALL),
                    mkU64(guest_IA_curr_instr)));
 
+   put_IA(mkaddr_expr(guest_IA_next_instr));
+
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   irsb->next = mkU64(guest_IA_next_instr);
-
-   irsb->jumpkind = Ijk_Sys_syscall;
-
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Sys_syscall;
 }
 
 /* Encode the s390 rounding mode as it appears in the m3/m4 fields of certain
@@ -1796,6 +1828,7 @@ s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
           mkU64(0)));
 
    irgen(r1, op2addr);
+   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, SDXB), xmnm_kind, m3, r1, dh2, dl2, 0, b2);
@@ -5841,6 +5874,7 @@ s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
    if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
                      guest_IA_next_instr);
    put_gpr_w1(r1, get_gpr_w1(r2));
+   dummy_put_IA();
 
    return "locr";
 }
@@ -5851,6 +5885,7 @@ s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
    if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
                      guest_IA_next_instr);
    put_gpr_dw0(r1, get_gpr_dw0(r2));
+   dummy_put_IA();
 
    return "locgr";
 }
@@ -8576,6 +8611,7 @@ s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
    if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
                      guest_IA_curr_instr);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "clc";
 }
@@ -8869,8 +8905,8 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
                    mkU64(guest_IA_curr_instr)));
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-   stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
-        IRConst_U64(guest_IA_curr_instr)));
+   stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 
    ss.bytes = last_execute_target;
    assign(start1, binop(Iop_Add64, mkU64(ss.dec.d1),
@@ -8880,6 +8916,8 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    assign(len, unop(lensize == 64 ? Iop_8Uto64 : Iop_8Uto32, binop(Iop_Or8,
           r != 0 ? get_gpr_b7(r): mkU8(0), mkU8(ss.dec.l))));
    irgen(len, start1, start2);
+   dummy_put_IA();
+
    last_execute_target = 0;
 }
 
@@ -8901,10 +8939,12 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
                       mkU64(guest_IA_curr_instr)));
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
       stmt(IRStmt_Exit(IRExpr_Const(IRConst_U1(True)), Ijk_TInval,
-           IRConst_U64(guest_IA_curr_instr)));
+                       IRConst_U64(guest_IA_curr_instr),
+                       S390X_GUEST_OFFSET(guest_IA)));
       /* we know that this will be invalidated */
-      irsb->next = mkU64(guest_IA_next_instr);
+      put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_TInval;
       break;
    }
 
@@ -8959,7 +8999,8 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
       stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
-           IRConst_U64(guest_IA_curr_instr)));
+                       IRConst_U64(guest_IA_curr_instr),
+                       S390X_GUEST_OFFSET(guest_IA)));
 
       /* Now comes the actual translation */
       bytes = (UChar *) &last_execute_target;
@@ -8969,6 +9010,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
          vex_printf("    which was executed by\n");
       /* dont make useless translations in the next execute */
       last_execute_target = 0;
+      dummy_put_IA();
    }
    }
    return "ex";
@@ -9033,10 +9075,12 @@ s390_irgen_SRST(UChar r1, UChar r2)
    put_gpr_dw0(r1, mkexpr(next));
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(address), mkU64(1)));
    stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
-                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr)));
+                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
    // >= 256 bytes done CC=3
    s390_cc_set(3);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "srst";
 }
@@ -9099,10 +9143,12 @@ s390_irgen_CLST(UChar r1, UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), mkU64(1)));
    put_gpr_dw0(r2, binop(Iop_Add64, get_gpr_dw0(r2), mkU64(1)));
    stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
-                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr)));
+                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
    // >= 256 bytes done CC=3
    s390_cc_set(3);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "clst";
 }
@@ -9297,6 +9343,7 @@ s390_irgen_xonc(IROp op, UChar length, IRTemp start1, IRTemp start2)
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
                       False);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 }
 
 static HChar *
@@ -9341,6 +9388,7 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
    }
 
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
+   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
@@ -9378,6 +9426,7 @@ s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
    if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
                      guest_IA_curr_instr);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "mvc";
 }
@@ -9558,6 +9607,7 @@ s390_irgen_MVST(UChar r1, UChar r2)
    s390_cc_set(1);
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(addr1), mkexpr(counter)));
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "mvst";
 }
@@ -9824,7 +9874,8 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
    stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-        IRConst_U64(guest_IA_next_instr)));
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 }
 
 static HChar *
@@ -9873,7 +9924,8 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_dw0(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
    stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-        IRConst_U64(guest_IA_next_instr)));
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 
    return "csg";
 }
@@ -11059,6 +11111,7 @@ s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
                      guest_IA_curr_instr);
 
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "tr";
 }
@@ -11118,12 +11171,13 @@ s390_irgen_client_request(void)
    if (0)
       vex_printf("%%R3 = client_request ( %%R2 )\n");
 
-   irsb->next = mkU64((ULong)(guest_IA_curr_instr
-                              + S390_SPECIAL_OP_PREAMBLE_SIZE
-                              + S390_SPECIAL_OP_SIZE));
-   irsb->jumpkind = Ijk_ClientReq;
+   Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
+                                     + S390_SPECIAL_OP_SIZE;
 
+   dis_res->jk_StopHere = Ijk_ClientReq;
    dis_res->whatNext = Dis_StopHere;
+
+   put_IA(mkaddr_expr(next));
 }
 
 static void
@@ -11138,16 +11192,17 @@ s390_irgen_guest_NRADDR(void)
 static void
 s390_irgen_call_noredir(void)
 {
+   Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
+                                     + S390_SPECIAL_OP_SIZE;
+
    /* Continue after special op */
-   put_gpr_dw0(14, mkU64(guest_IA_curr_instr
-                         + S390_SPECIAL_OP_PREAMBLE_SIZE
-                         + S390_SPECIAL_OP_SIZE));
+   put_gpr_dw0(14, mkaddr_expr(next));
 
    /* The address is in REG1, all parameters are in the right (guest) places */
-   irsb->next     = get_gpr_dw0(1);
-   irsb->jumpkind = Ijk_NoRedir;
+   put_IA(get_gpr_dw0(1));
 
    dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_NoRedir;
 }
 
 /* Force proper alignment for the structures below. */
@@ -13475,11 +13530,10 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
       }
    }
    /* If next instruction is execute, stop here */
-   if (irsb->next == NULL && dis_res->whatNext == Dis_Continue
-       && bytes[insn_length] == 0x44) {
-      irsb->next = IRExpr_Const(IRConst_U64(guest_IA_next_instr));
+   if (dis_res->whatNext == Dis_Continue && bytes[insn_length] == 0x44) {
+      put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
-      dis_res->continueAt = 0;
+      dis_res->jk_StopHere = Ijk_Boring;
    }
 
    if (status == S390_DECODE_OK) return insn_length;  /* OK */
@@ -13518,14 +13572,6 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
 }
 
 
-/* Generate an IRExpr for an address. */
-static __inline__ IRExpr *
-mkaddr_expr(Addr64 addr)
-{
-   return IRExpr_Const(IRConst_U64(addr));
-}
-
-
 /* Disassemble a single instruction INSN into IR. */
 static DisResult
 disInstr_S390_WRK(UChar *insn)
@@ -13553,6 +13599,7 @@ disInstr_S390_WRK(UChar *insn)
    dres.whatNext   = Dis_Continue;
    dres.len        = insn_length;
    dres.continueAt = 0;
+   dres.jk_StopHere = Ijk_INVALID;
 
    /* fixs390: consider chasing of conditional jumps */
 
@@ -13561,17 +13608,28 @@ disInstr_S390_WRK(UChar *insn)
       /* All decode failures end up here. The decoder has already issued an
          error message.
          Tell the dispatcher that this insn cannot be decoded, and so has
-         not been executed, and (is currently) the next to be executed.
-         IA should be up-to-date since it made so at the start of each
-         insn, but nevertheless be paranoid and update it again right
-         now. */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                      mkaddr_expr(guest_IA_curr_instr)));
+         not been executed, and (is currently) the next to be executed. */
+      put_IA(mkaddr_expr(guest_IA_curr_instr));
 
-      irsb->next = mkaddr_expr(guest_IA_next_instr);
-      irsb->jumpkind = Ijk_NoDecode;
-      dres.whatNext = Dis_StopHere;
-      dres.len = 0;
+      dres.whatNext    = Dis_StopHere;
+      dres.jk_StopHere = Ijk_NoDecode;
+      dres.continueAt  = 0;
+      dres.len         = 0;
+   } else {
+      /* Decode success */
+      switch (dres.whatNext) {
+      case Dis_Continue:
+         put_IA(mkaddr_expr(guest_IA_next_instr));
+         break;
+      case Dis_ResteerU:
+      case Dis_ResteerC:
+         put_IA(mkaddr_expr(dres.continueAt));
+         break;
+      case Dis_StopHere:
+         break;
+      default:
+         vassert(0);
+      }
    }
 
    return dres;
@@ -13587,7 +13645,6 @@ disInstr_S390_WRK(UChar *insn)
 
 DisResult
 disInstr_S390(IRSB        *irsb_IN,
-              Bool         put_IP __attribute__((unused)),
               Bool       (*resteerOkFn)(void *, Addr64),
               Bool         resteerCisOk,
               void        *callback_opaque,
@@ -13609,10 +13666,6 @@ disInstr_S390(IRSB        *irsb_IN,
    irsb = irsb_IN;
    resteer_fn = resteerOkFn;
    resteer_data = callback_opaque;
-
-   /* Always update the guest IA. See comment in s390_isel_stmt for Ist_Put. */
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                   mkaddr_expr(guest_IA_curr_instr)));
 
    return disInstr_S390_WRK(guest_code + delta);
 }

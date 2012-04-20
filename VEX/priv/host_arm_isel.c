@@ -84,9 +84,6 @@
              32-bit virtual HReg, which holds the high half
              of the value.
 
-   - The name of the vreg in which we stash a copy of the link reg, so
-     helper functions don't kill it.
-
    - The code array, that is, the insns selected so far.
 
    - A counter, for generating new virtual registers.
@@ -94,23 +91,38 @@
    - The host hardware capabilities word.  This is set at the start
      and does not change.
 
-   Note, this is all host-independent.  */
+   - A Bool for indicating whether we may generate chain-me
+     instructions for control flow transfers, or whether we must use
+     XAssisted.
+
+   - The maximum guest address of any guest insn in this block.
+     Actually, the address of the highest-addressed byte from any insn
+     in this block.  Is set at the start and does not change.  This is
+     used for detecting jumps which are definitely forward-edges from
+     this block, and therefore can be made (chained) to the fast entry
+     point of the destination, thereby avoiding the destination's
+     event check.
+
+   Note, this is all (well, mostly) host-independent.
+*/
 
 typedef
    struct {
+      /* Constant -- are set at the start and do not change. */
       IRTypeEnv*   type_env;
 
       HReg*        vregmap;
       HReg*        vregmapHI;
       Int          n_vregmap;
 
-      HReg         savedLR;
-
-      HInstrArray* code;
-
-      Int          vreg_ctr;
-
       UInt         hwcaps;
+
+      Bool         chainingAllowed;
+      Addr64       max_ga;
+
+      /* These are modified as we go along. */
+      HInstrArray* code;
+      Int          vreg_ctr;
    }
    ISelEnv;
 
@@ -1514,7 +1526,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
          case Iop_64to8: {
             HReg rHi, rLo;
-            if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+            if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
                HReg tHi = newVRegI(env);
                HReg tLo = newVRegI(env);
                HReg tmp = iselNeon64Expr(env, e->Iex.Unop.arg);
@@ -1819,7 +1831,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
    /* read 64-bit IRTemp */
    if (e->tag == Iex_RdTmp) {
-      if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+      if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
          HReg tHi = newVRegI(env);
          HReg tLo = newVRegI(env);
          HReg tmp = iselNeon64Expr(env, e);
@@ -2028,7 +2040,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    /* It is convenient sometimes to call iselInt64Expr even when we
       have NEON support (e.g. in do_helper_call we need 64-bit
       arguments as 2 x 32 regs). */
-   if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+   if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
       HReg tHi = newVRegI(env);
       HReg tLo = newVRegI(env);
       HReg tmp = iselNeon64Expr(env, e);
@@ -5339,7 +5351,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
          case Iop_ReinterpI64asF64: {
-            if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+            if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
                return iselNeon64Expr(env, e->Iex.Unop.arg);
             } else {
                HReg srcHi, srcLo;
@@ -5631,7 +5643,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (tyd == Ity_I64) {
-         if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+         if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
             HReg dD = iselNeon64Expr(env, stmt->Ist.Store.data);
             ARMAModeN* am = iselIntExpr_AModeN(env, stmt->Ist.Store.addr);
             addInstr(env, ARMInstr_NLdStD(False, dD, am));
@@ -5680,7 +5692,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
            return;
        }
        if (tyd == Ity_I64) {
-          if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+          if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
              HReg addr = newVRegI(env);
              HReg qD = iselNeon64Expr(env, stmt->Ist.Put.data);
              addInstr(env, ARMInstr_Add32(addr, hregARM_R8(),
@@ -5765,7 +5777,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (ty == Ity_I64) {
-         if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+         if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
             HReg src = iselNeon64Expr(env, stmt->Ist.WrTmp.data);
             HReg dst = lookupIRTemp(env, tmp);
             addInstr(env, ARMInstr_NUnary(ARMneon_COPY, dst, src, 4, False));
@@ -5824,7 +5836,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       retty = typeOfIRTemp(env->type_env, d->tmp);
 
       if (retty == Ity_I64) {
-         if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+         if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
             HReg tmp = lookupIRTemp(env, d->tmp);
             addInstr(env, ARMInstr_VXferD(True, tmp, hregARM_R1(),
                                                      hregARM_R0()));
@@ -5878,7 +5890,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                move it into a result register pair.  On a NEON capable
                CPU, the result register will be a 64 bit NEON
                register, so we must move it there instead. */
-            if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+            if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
                HReg dst = lookupIRTemp(env, res);
                addInstr(env, ARMInstr_VXferD(True, dst, hregARM_R3(),
                                                         hregARM_R2()));
@@ -5964,15 +5976,53 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- EXIT --------- */
    case Ist_Exit: {
-      HReg        gnext;
-      ARMCondCode cc;
       if (stmt->Ist.Exit.dst->tag != Ico_U32)
          vpanic("isel_arm: Ist_Exit: dst is not a 32-bit value");
-      gnext = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
-      cc    = iselCondCode(env, stmt->Ist.Exit.guard);
-      addInstr(env, mk_iMOVds_RR(hregARM_R14(), env->savedLR));
-      addInstr(env, ARMInstr_Goto(stmt->Ist.Exit.jk, cc, gnext));
-      return;
+
+      ARMCondCode cc     = iselCondCode(env, stmt->Ist.Exit.guard);
+      ARMAMode1*  amR15T = ARMAMode1_RI(hregARM_R8(),
+                                        stmt->Ist.Exit.offsIP);
+
+      /* Case: boring transfer to known address */
+      if (stmt->Ist.Exit.jk == Ijk_Boring
+          || stmt->Ist.Exit.jk == Ijk_Call
+          || stmt->Ist.Exit.jk == Ijk_Ret) {
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool toFastEP
+               = ((Addr32)stmt->Ist.Exit.dst->Ico.U32) > env->max_ga;
+            if (0) vex_printf("%s", toFastEP ? "Y" : ",");
+            addInstr(env, ARMInstr_XDirect(stmt->Ist.Exit.dst->Ico.U32,
+                                           amR15T, cc, toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer,
+               as that's the only alternative that is allowable. */
+            HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, ARMInstr_XAssisted(r, amR15T, cc, Ijk_Boring));
+         }
+         return;
+      }
+
+      /* Case: assisted transfer to arbitrary address */
+      switch (stmt->Ist.Exit.jk) {
+         //case Ijk_MapFail:
+         //case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn:
+         case Ijk_NoDecode:
+         {
+            HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, ARMInstr_XAssisted(r, amR15T, cc,
+                                             stmt->Ist.Exit.jk));
+            return;
+         }
+         default:
+            break;
+      }
+
+      /* Do we ever expect to see any other kind? */
+      goto stmt_fail;
    }
 
    default: break;
@@ -5987,19 +6037,85 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 /*--- ISEL: Basic block terminators (Nexts)             ---*/
 /*---------------------------------------------------------*/
 
-static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
+static void iselNext ( ISelEnv* env,
+                       IRExpr* next, IRJumpKind jk, Int offsIP )
 {
-   HReg rDst;
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      vex_printf("\n-- goto {");
+      vex_printf( "\n-- PUT(%d) = ", offsIP);
+      ppIRExpr( next );
+      vex_printf( "; exit-");
       ppIRJumpKind(jk);
-      vex_printf("} ");
-      ppIRExpr(next);
-      vex_printf("\n");
+      vex_printf( "\n");
    }
-   rDst = iselIntExpr_R(env, next);
-   addInstr(env, mk_iMOVds_RR(hregARM_R14(), env->savedLR));
-   addInstr(env, ARMInstr_Goto(jk, ARMcc_AL, rDst));
+
+   /* Case: boring transfer to known address */
+   if (next->tag == Iex_Const) {
+      IRConst* cdst = next->Iex.Const.con;
+      vassert(cdst->tag == Ico_U32);
+      if (jk == Ijk_Boring || jk == Ijk_Call) {
+         /* Boring transfer to known address */
+         ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool toFastEP
+               = ((Addr64)cdst->Ico.U32) > env->max_ga;
+            if (0) vex_printf("%s", toFastEP ? "X" : ".");
+            addInstr(env, ARMInstr_XDirect(cdst->Ico.U32,
+                                           amR15T, ARMcc_AL, 
+                                           toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer,
+               as that's the only alternative that is allowable. */
+            HReg r = iselIntExpr_R(env, next);
+            addInstr(env, ARMInstr_XAssisted(r, amR15T, ARMcc_AL,
+                                             Ijk_Boring));
+         }
+         return;
+      }
+   }
+
+   /* Case: call/return (==boring) transfer to any address */
+   switch (jk) {
+      case Ijk_Boring: case Ijk_Ret: case Ijk_Call: {
+         HReg       r      = iselIntExpr_R(env, next);
+         ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);
+         if (env->chainingAllowed) {
+            addInstr(env, ARMInstr_XIndir(r, amR15T, ARMcc_AL));
+         } else {
+            addInstr(env, ARMInstr_XAssisted(r, amR15T, ARMcc_AL,
+                                                Ijk_Boring));
+         }
+         return;
+      }
+      default:
+         break;
+   }
+
+   /* Case: some other kind of transfer to any address */
+   switch (jk) {
+      case Ijk_Sys_syscall: case Ijk_ClientReq: case Ijk_NoDecode:
+      case Ijk_NoRedir:
+      //case Ijk_Sys_int128: 
+      //case Ijk_Yield: case Ijk_SigTRAP:
+      {
+         HReg       r      = iselIntExpr_R(env, next);
+         ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);
+         addInstr(env, ARMInstr_XAssisted(r, amR15T, ARMcc_AL, jk));
+         return;
+      }
+      default:
+         break;
+   }
+
+   vex_printf( "\n-- PUT(%d) = ", offsIP);
+   ppIRExpr( next );
+   vex_printf( "; exit-");
+   ppIRJumpKind(jk);
+   vex_printf( "\n");
+   vassert(0); // are we expecting any other kind?
 }
 
 
@@ -6009,21 +6125,27 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire SB to arm code. */
 
-HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
-                                    VexArchInfo* archinfo_host,
-                                    VexAbiInfo*  vbi/*UNUSED*/ )
+HInstrArray* iselSB_ARM ( IRSB* bb,
+                          VexArch      arch_host,
+                          VexArchInfo* archinfo_host,
+                          VexAbiInfo*  vbi/*UNUSED*/,
+                          Int offs_Host_EvC_Counter,
+                          Int offs_Host_EvC_FailAddr,
+                          Bool chainingAllowed,
+                          Bool addProfInc,
+                          Addr64 max_ga )
 {
-   Int      i, j;
-   HReg     hreg, hregHI;
-   ISelEnv* env;
-   UInt     hwcaps_host = archinfo_host->hwcaps;
-   static UInt counter = 0;
+   Int       i, j;
+   HReg      hreg, hregHI;
+   ISelEnv*  env;
+   UInt      hwcaps_host = archinfo_host->hwcaps;
+   ARMAMode1 *amCounter, *amFailAddr;
 
    /* sanity ... */
    vassert(arch_host == VexArchARM);
 
    /* hwcaps should not change from one ISEL call to another. */
-   arm_hwcaps = hwcaps_host;
+   arm_hwcaps = hwcaps_host; // JRS 2012 Mar 31: FIXME (RM)
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
@@ -6041,6 +6163,11 @@ HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
    env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
+   /* and finally ... */
+   env->chainingAllowed = chainingAllowed;
+   env->hwcaps          = hwcaps_host;
+   env->max_ga          = max_ga;
+
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */
    j = 0;
@@ -6052,7 +6179,7 @@ HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
          case Ity_I16:
          case Ity_I32:  hreg   = mkHReg(j++, HRcInt32, True); break;
          case Ity_I64:
-            if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+            if (hwcaps_host & VEX_HWCAPS_ARM_NEON) {
                hreg = mkHReg(j++, HRcFlt64, True);
             } else {
                hregHI = mkHReg(j++, HRcInt32, True);
@@ -6070,21 +6197,27 @@ HInstrArray* iselSB_ARM ( IRSB* bb, VexArch      arch_host,
    }
    env->vreg_ctr = j;
 
-   /* Keep a copy of the link reg, since any call to a helper function
-      will trash it, and we can't get back to the dispatcher once that
-      happens. */
-   env->savedLR = newVRegI(env);
-   addInstr(env, mk_iMOVds_RR(env->savedLR, hregARM_R14()));
+   /* The very first instruction must be an event check. */
+   amCounter  = ARMAMode1_RI(hregARM_R8(), offs_Host_EvC_Counter);
+   amFailAddr = ARMAMode1_RI(hregARM_R8(), offs_Host_EvC_FailAddr);
+   addInstr(env, ARMInstr_EvCheck(amCounter, amFailAddr));
+
+   /* Possibly a block counter increment (for profiling).  At this
+      point we don't know the address of the counter, so just pretend
+      it is zero.  It will have to be patched later, but before this
+      translation is used, by a call to LibVEX_patchProfCtr. */
+   if (addProfInc) {
+      addInstr(env, ARMInstr_ProfInc());
+   }
 
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
-      iselStmt(env,bb->stmts[i]);
+      iselStmt(env, bb->stmts[i]);
 
-   iselNext(env,bb->next,bb->jumpkind);
+   iselNext(env, bb->next, bb->jumpkind, bb->offsIP);
 
    /* record the number of vregs we used. */
    env->code->n_vregs = env->vreg_ctr;
-   counter++;
    return env->code;
 }
 

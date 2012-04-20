@@ -219,17 +219,20 @@ static IRExpr* bind ( Int binder )
 
    - A mapping from IRTemp to HReg.  This tells the insn selector
      which virtual register(s) are associated with each IRTemp
-      temporary.  This is computed before insn selection starts, and
-      does not change.  We expect this mapping to map precisely the
-      same set of IRTemps as the type mapping does.
+     temporary.  This is computed before insn selection starts, and
+     does not change.  We expect this mapping to map precisely the
+     same set of IRTemps as the type mapping does.
  
-         - vregmap   holds the primary register for the IRTemp.
-         - vregmapHI holds the secondary register for the IRTemp,
+         - vregmapLo    holds the primary register for the IRTemp.
+         - vregmapMedLo holds the secondary register for the IRTemp,
               if any is needed.  That's only for Ity_I64 temps
               in 32 bit mode or Ity_I128 temps in 64-bit mode.
-
-    - The name of the vreg in which we stash a copy of the link reg,
-      so helper functions don't kill it.
+         - vregmapMedHi is only for dealing with Ity_I128 temps in
+              32 bit mode.  It holds bits 95:64 (Intel numbering)
+              of the IRTemp.
+         - vregmapHi is also only for dealing with Ity_I128 temps
+              in 32 bit mode.  It holds the most significant bits
+              (127:96 in Intel numbering) of the IRTemp.
 
     - The code array, that is, the insns selected so far.
  
@@ -248,11 +251,20 @@ static IRExpr* bind ( Int binder )
       described in set_FPU_rounding_mode below.
 
     - A VexMiscInfo*, needed for knowing how to generate
-      function calls for this target
+      function calls for this target.
+
+    - The maximum guest address of any guest insn in this block.
+      Actually, the address of the highest-addressed byte from any
+      insn in this block.  Is set at the start and does not change.
+      This is used for detecting jumps which are definitely
+      forward-edges from this block, and therefore can be made
+      (chained) to the fast entry point of the destination, thereby
+      avoiding the destination's event check.
 */
  
 typedef
    struct {
+      /* Constant -- are set at the start and do not change. */
       IRTypeEnv* type_env;
                               //    64-bit mode              32-bit mode
       HReg*    vregmapLo;     // Low 64-bits [63:0]    Low 32-bits     [31:0]
@@ -261,20 +273,21 @@ typedef
       HReg*    vregmapHi;     // unused                highest 32-bits [127:96]
       Int      n_vregmap;
 
-      HReg     savedLR;
-
-      HInstrArray* code;
- 
-      Int          vreg_ctr;
- 
       /* 27 Jan 06: Not currently used, but should be */
       UInt         hwcaps;
 
       Bool         mode64;
 
-      IRExpr*      previous_rm;
-
       VexAbiInfo*  vbi;
+
+      Bool         chainingAllowed;
+      Addr64       max_ga;
+
+      /* These are modified as we go along. */
+      HInstrArray* code;
+      Int          vreg_ctr;
+
+      IRExpr*      previous_rm;
    }
    ISelEnv;
  
@@ -4684,18 +4697,61 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- EXIT --------- */
    case Ist_Exit: {
-      PPCRI*      ri_dst;
-      PPCCondCode cc;
-      IRConstTag tag = stmt->Ist.Exit.dst->tag;
-      if (!mode64 && (tag != Ico_U32))
+      IRConst* dst = stmt->Ist.Exit.dst;
+      if (!mode64 && dst->tag != Ico_U32)
          vpanic("iselStmt(ppc): Ist_Exit: dst is not a 32-bit value");
-      if (mode64 && (tag != Ico_U64))
+      if (mode64 && dst->tag != Ico_U64)
          vpanic("iselStmt(ppc64): Ist_Exit: dst is not a 64-bit value");
-      ri_dst = iselWordExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
-      cc     = iselCondCode(env,stmt->Ist.Exit.guard);
-      addInstr(env, PPCInstr_RdWrLR(True, env->savedLR));
-      addInstr(env, PPCInstr_Goto(stmt->Ist.Exit.jk, cc, ri_dst));
-      return;
+
+      PPCCondCode cc    = iselCondCode(env, stmt->Ist.Exit.guard);
+      PPCAMode*   amCIA = PPCAMode_IR(stmt->Ist.Exit.offsIP,
+                                      hregPPC_GPR31(mode64));
+
+      /* Case: boring transfer to known address */
+      if (stmt->Ist.Exit.jk == Ijk_Boring
+          || stmt->Ist.Exit.jk == Ijk_Call
+          /* || stmt->Ist.Exit.jk == Ijk_Ret */) {
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool toFastEP
+               = mode64
+               ? (((Addr64)stmt->Ist.Exit.dst->Ico.U64) > (Addr64)env->max_ga)
+               : (((Addr32)stmt->Ist.Exit.dst->Ico.U32) > (Addr32)env->max_ga);
+            if (0) vex_printf("%s", toFastEP ? "Y" : ",");
+            addInstr(env, PPCInstr_XDirect(
+                             mode64 ? (Addr64)stmt->Ist.Exit.dst->Ico.U64
+                                    : (Addr64)stmt->Ist.Exit.dst->Ico.U32,
+                             amCIA, cc, toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer,
+               as that's the only alternative that is allowable. */
+            HReg r = iselWordExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, PPCInstr_XAssisted(r, amCIA, cc, Ijk_Boring));
+         }
+         return;
+      }
+
+      /* Case: assisted transfer to arbitrary address */
+      switch (stmt->Ist.Exit.jk) {
+         //case Ijk_MapFail:
+         //case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn:
+         case Ijk_NoDecode: case Ijk_SigBUS: case Ijk_SigTRAP:
+         case Ijk_EmFail:
+         {
+            HReg r = iselWordExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, PPCInstr_XAssisted(r, amCIA, cc,
+                                             stmt->Ist.Exit.jk));
+            return;
+         }
+         default:
+            break;
+      }
+
+      /* Do we ever expect to see any other kind? */
+      goto stmt_fail;
    }
 
    default: break;
@@ -4710,21 +4766,91 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 /*--- ISEL: Basic block terminators (Nexts)             ---*/
 /*---------------------------------------------------------*/
 
-static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
+static void iselNext ( ISelEnv* env,
+                       IRExpr* next, IRJumpKind jk, Int offsIP )
 {
-   PPCCondCode cond;
-   PPCRI* ri;
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      vex_printf("\n-- goto {");
+      vex_printf( "\n-- PUT(%d) = ", offsIP);
+      ppIRExpr( next );
+      vex_printf( "; exit-");
       ppIRJumpKind(jk);
-      vex_printf("} ");
-      ppIRExpr(next);
-      vex_printf("\n");
+      vex_printf( "\n");
    }
-   cond = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
-   ri = iselWordExpr_RI(env, next);
-   addInstr(env, PPCInstr_RdWrLR(True, env->savedLR));
-   addInstr(env, PPCInstr_Goto(jk, cond, ri));
+
+   PPCCondCode always = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+   /* Case: boring transfer to known address */
+   if (next->tag == Iex_Const) {
+      IRConst* cdst = next->Iex.Const.con;
+      vassert(cdst->tag == (env->mode64 ? Ico_U64 :Ico_U32));
+      if (jk == Ijk_Boring || jk == Ijk_Call) {
+         /* Boring transfer to known address */
+         PPCAMode* amCIA = PPCAMode_IR(offsIP, hregPPC_GPR31(env->mode64));
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool toFastEP
+               = env->mode64
+               ? (((Addr64)cdst->Ico.U64) > (Addr64)env->max_ga)
+               : (((Addr32)cdst->Ico.U32) > (Addr32)env->max_ga);
+            if (0) vex_printf("%s", toFastEP ? "X" : ".");
+            addInstr(env, PPCInstr_XDirect(
+                             env->mode64 ? (Addr64)cdst->Ico.U64
+                                         : (Addr64)cdst->Ico.U32,
+                             amCIA, always, toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer,
+               as that's the only alternative that is allowable. */
+            HReg r = iselWordExpr_R(env, next);
+            addInstr(env, PPCInstr_XAssisted(r, amCIA, always,
+                                             Ijk_Boring));
+         }
+         return;
+      }
+   }
+
+   /* Case: call/return (==boring) transfer to any address */
+   switch (jk) {
+      case Ijk_Boring: case Ijk_Ret: case Ijk_Call: {
+         HReg       r     = iselWordExpr_R(env, next);
+         PPCAMode*  amCIA = PPCAMode_IR(offsIP, hregPPC_GPR31(env->mode64));
+         if (env->chainingAllowed) {
+            addInstr(env, PPCInstr_XIndir(r, amCIA, always));
+         } else {
+            addInstr(env, PPCInstr_XAssisted(r, amCIA, always,
+                                             Ijk_Boring));
+         }
+         return;
+      }
+      default:
+         break;
+   }
+
+   /* Case: some other kind of transfer to any address */
+   switch (jk) {
+      case Ijk_Sys_syscall: case Ijk_ClientReq: case Ijk_NoDecode:
+      case Ijk_EmWarn: case Ijk_SigTRAP: case Ijk_TInval:
+      case Ijk_NoRedir:
+      //case Ijk_Sys_int128: 
+      //case Ijk_Yield:
+      {
+         HReg      r     = iselWordExpr_R(env, next);
+         PPCAMode* amCIA = PPCAMode_IR(offsIP, hregPPC_GPR31(env->mode64));
+         addInstr(env, PPCInstr_XAssisted(r, amCIA, always, jk));
+         return;
+      }
+      default:
+         break;
+   }
+
+   vex_printf( "\n-- PUT(%d) = ", offsIP);
+   ppIRExpr( next );
+   vex_printf( "; exit-");
+   ppIRJumpKind(jk);
+   vex_printf( "\n");
+   vassert(0); // are we expecting any other kind?
 }
 
 
@@ -4732,20 +4858,29 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-/* Translate an entire BS to ppc code. */
-HInstrArray* iselSB_PPC ( IRSB* bb, VexArch      arch_host,
-                                    VexArchInfo* archinfo_host,
-                                    VexAbiInfo*  vbi )
+/* Translate an entire SB to ppc code. */
+HInstrArray* iselSB_PPC ( IRSB* bb, 
+                          VexArch      arch_host,
+                          VexArchInfo* archinfo_host,
+                          VexAbiInfo*  vbi,
+                          Int offs_Host_EvC_Counter,
+                          Int offs_Host_EvC_FailAddr,
+                          Bool chainingAllowed,
+                          Bool addProfInc,
+                          Addr64 max_ga )
 {
-   Int      i, j;
-   HReg     hregLo, hregMedLo, hregMedHi, hregHi;
-   ISelEnv* env;
-   UInt     hwcaps_host = archinfo_host->hwcaps;
-   Bool     mode64 = False;
-   UInt     mask32, mask64;
+   Int       i, j;
+   HReg      hregLo, hregMedLo, hregMedHi, hregHi;
+   ISelEnv*  env;
+   UInt      hwcaps_host = archinfo_host->hwcaps;
+   Bool      mode64 = False;
+   UInt      mask32, mask64;
+   PPCAMode *amCounter, *amFailAddr;
+
 
    vassert(arch_host == VexArchPPC32 || arch_host == VexArchPPC64);
    mode64 = arch_host == VexArchPPC64;
+   if (!mode64) vassert(max_ga <= 0xFFFFFFFFULL);
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
@@ -4783,15 +4918,20 @@ HInstrArray* iselSB_PPC ( IRSB* bb, VexArch      arch_host,
    env->n_vregmap = bb->tyenv->types_used;
    env->vregmapLo    = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
    env->vregmapMedLo = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-   if (!mode64) {
+   if (mode64) {
+      env->vregmapMedHi = NULL;
+      env->vregmapHi    = NULL;
+   } else {
       env->vregmapMedHi = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
       env->vregmapHi    = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
    }
 
    /* and finally ... */
-   env->hwcaps      = hwcaps_host;
-   env->previous_rm = NULL;
-   env->vbi         = vbi;
+   env->chainingAllowed = chainingAllowed;
+   env->max_ga          = max_ga;
+   env->hwcaps          = hwcaps_host;
+   env->previous_rm     = NULL;
+   env->vbi             = vbi;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */
@@ -4838,16 +4978,24 @@ HInstrArray* iselSB_PPC ( IRSB* bb, VexArch      arch_host,
    }
    env->vreg_ctr = j;
 
-   /* Keep a copy of the link reg, so helper functions don't kill it. */
-   env->savedLR = newVRegI(env);
-   addInstr(env, PPCInstr_RdWrLR(False, env->savedLR));
+   /* The very first instruction must be an event check. */
+   amCounter  = PPCAMode_IR(offs_Host_EvC_Counter, hregPPC_GPR31(mode64));
+   amFailAddr = PPCAMode_IR(offs_Host_EvC_FailAddr, hregPPC_GPR31(mode64));
+   addInstr(env, PPCInstr_EvCheck(amCounter, amFailAddr));
+
+   /* Possibly a block counter increment (for profiling).  At this
+      point we don't know the address of the counter, so just pretend
+      it is zero.  It will have to be patched later, but before this
+      translation is used, by a call to LibVEX_patchProfCtr. */
+   if (addProfInc) {
+      addInstr(env, PPCInstr_ProfInc());
+   }
 
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
-      if (bb->stmts[i])
-         iselStmt(env,bb->stmts[i]);
+      iselStmt(env, bb->stmts[i]);
 
-   iselNext(env,bb->next,bb->jumpkind);
+   iselNext(env, bb->next, bb->jumpkind, bb->offsIP);
 
    /* record the number of vregs we used. */
    env->code->n_vregs = env->vreg_ctr;

@@ -112,12 +112,24 @@ static IRExpr* bind ( Int binder )
              64-bit virtual HReg, which holds the high half
              of the value.
 
+   - The host subarchitecture we are selecting insns for.  
+     This is set at the start and does not change.
+
    - The code array, that is, the insns selected so far.
 
    - A counter, for generating new virtual registers.
 
-   - The host subarchitecture we are selecting insns for.  
-     This is set at the start and does not change.
+   - A Bool for indicating whether we may generate chain-me
+     instructions for control flow transfers, or whether we must use
+     XAssisted.
+
+   - The maximum guest address of any guest insn in this block.
+     Actually, the address of the highest-addressed byte from any insn
+     in this block.  Is set at the start and does not change.  This is
+     used for detecting jumps which are definitely forward-edges from
+     this block, and therefore can be made (chained) to the fast entry
+     point of the destination, thereby avoiding the destination's
+     event check.
 
    Note, this is all host-independent.  (JRS 20050201: well, kinda
    ... not completely.  Compare with ISelEnv for X86.)
@@ -125,17 +137,21 @@ static IRExpr* bind ( Int binder )
 
 typedef
    struct {
+      /* Constant -- are set at the start and do not change. */
       IRTypeEnv*   type_env;
 
       HReg*        vregmap;
       HReg*        vregmapHI;
       Int          n_vregmap;
 
-      HInstrArray* code;
-
-      Int          vreg_ctr;
-
       UInt         hwcaps;
+
+      Bool         chainingAllowed;
+      Addr64       max_ga;
+
+      /* These are modified as we go along. */
+      HInstrArray* code;
+      Int          vreg_ctr;
    }
    ISelEnv;
 
@@ -4131,14 +4147,47 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- EXIT --------- */
    case Ist_Exit: {
-      AMD64RI*      dst;
-      AMD64CondCode cc;
       if (stmt->Ist.Exit.dst->tag != Ico_U64)
          vpanic("iselStmt(amd64): Ist_Exit: dst is not a 64-bit value");
-      dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
-      cc  = iselCondCode(env,stmt->Ist.Exit.guard);
-      addInstr(env, AMD64Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
-      return;
+
+      AMD64CondCode cc    = iselCondCode(env, stmt->Ist.Exit.guard);
+      AMD64AMode*   amRIP = AMD64AMode_IR(stmt->Ist.Exit.offsIP,
+                                          hregAMD64_RBP());
+
+      /* Case: boring transfer to known address */
+      if (stmt->Ist.Exit.jk == Ijk_Boring) {
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool toFastEP
+               = ((Addr64)stmt->Ist.Exit.dst->Ico.U64) > env->max_ga;
+            if (0) vex_printf("%s", toFastEP ? "Y" : ",");
+            addInstr(env, AMD64Instr_XDirect(stmt->Ist.Exit.dst->Ico.U64,
+                                             amRIP, cc, toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer,
+               as that's the only alternative that is allowable. */
+            HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, AMD64Instr_XAssisted(r, amRIP, cc, Ijk_Boring));
+         }
+         return;
+      }
+
+      /* Case: assisted transfer to arbitrary address */
+      switch (stmt->Ist.Exit.jk) {
+         case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn: {
+            HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, AMD64Instr_XAssisted(r, amRIP, cc, stmt->Ist.Exit.jk));
+            return;
+         }
+         default:
+            break;
+      }
+
+      /* Do we ever expect to see any other kind? */
+      goto stmt_fail;
    }
 
    default: break;
@@ -4153,18 +4202,83 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 /*--- ISEL: Basic block terminators (Nexts)             ---*/
 /*---------------------------------------------------------*/
 
-static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
+static void iselNext ( ISelEnv* env,
+                       IRExpr* next, IRJumpKind jk, Int offsIP )
 {
-   AMD64RI* ri;
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      vex_printf("\n-- goto {");
+      vex_printf( "\n-- PUT(%d) = ", offsIP);
+      ppIRExpr( next );
+      vex_printf( "; exit-");
       ppIRJumpKind(jk);
-      vex_printf("} ");
-      ppIRExpr(next);
-      vex_printf("\n");
+      vex_printf( "\n");
    }
-   ri = iselIntExpr_RI(env, next);
-   addInstr(env, AMD64Instr_Goto(jk, Acc_ALWAYS,ri));
+
+   /* Case: boring transfer to known address */
+   if (next->tag == Iex_Const) {
+      IRConst* cdst = next->Iex.Const.con;
+      vassert(cdst->tag == Ico_U64);
+      if (jk == Ijk_Boring || jk == Ijk_Call) {
+         /* Boring transfer to known address */
+         AMD64AMode* amRIP = AMD64AMode_IR(offsIP, hregAMD64_RBP());
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards
+               edge. */
+            Bool toFastEP
+               = ((Addr64)cdst->Ico.U64) > env->max_ga;
+            if (0) vex_printf("%s", toFastEP ? "X" : ".");
+            addInstr(env, AMD64Instr_XDirect(cdst->Ico.U64, 
+                                             amRIP, Acc_ALWAYS, 
+                                             toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an indirect transfer,
+               as that's the cheapest alternative that is
+               allowable. */
+            HReg r = iselIntExpr_R(env, next);
+            addInstr(env, AMD64Instr_XAssisted(r, amRIP, Acc_ALWAYS,
+                                               Ijk_Boring));
+         }
+         return;
+      }
+   }
+
+   /* Case: call/return (==boring) transfer to any address */
+   switch (jk) {
+      case Ijk_Boring: case Ijk_Ret: case Ijk_Call: {
+         HReg        r     = iselIntExpr_R(env, next);
+         AMD64AMode* amRIP = AMD64AMode_IR(offsIP, hregAMD64_RBP());
+         if (env->chainingAllowed) {
+            addInstr(env, AMD64Instr_XIndir(r, amRIP, Acc_ALWAYS));
+         } else {
+            addInstr(env, AMD64Instr_XAssisted(r, amRIP, Acc_ALWAYS,
+                                               Ijk_Boring));
+         }
+         return;
+      }
+      default:
+         break;
+   }
+
+   /* Case: some other kind of transfer to any address */
+   switch (jk) {
+      case Ijk_Sys_syscall: case Ijk_ClientReq: case Ijk_NoRedir:
+      case Ijk_Yield: case Ijk_SigTRAP: case Ijk_TInval: {
+         HReg        r     = iselIntExpr_R(env, next);
+         AMD64AMode* amRIP = AMD64AMode_IR(offsIP, hregAMD64_RBP());
+         addInstr(env, AMD64Instr_XAssisted(r, amRIP, Acc_ALWAYS, jk));
+         return;
+      }
+      default:
+         break;
+   }
+
+   vex_printf( "\n-- PUT(%d) = ", offsIP);
+   ppIRExpr( next );
+   vex_printf( "; exit-");
+   ppIRJumpKind(jk);
+   vex_printf( "\n");
+   vassert(0); // are we expecting any other kind?
 }
 
 
@@ -4174,14 +4288,21 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire SB to amd64 code. */
 
-HInstrArray* iselSB_AMD64 ( IRSB* bb, VexArch      arch_host,
-                                      VexArchInfo* archinfo_host,
-                                      VexAbiInfo*  vbi/*UNUSED*/ )
+HInstrArray* iselSB_AMD64 ( IRSB* bb,
+                            VexArch      arch_host,
+                            VexArchInfo* archinfo_host,
+                            VexAbiInfo*  vbi/*UNUSED*/,
+                            Int offs_Host_EvC_Counter,
+                            Int offs_Host_EvC_FailAddr,
+                            Bool chainingAllowed,
+                            Bool addProfInc,
+                            Addr64 max_ga )
 {
-   Int      i, j;
-   HReg     hreg, hregHI;
-   ISelEnv* env;
-   UInt     hwcaps_host = archinfo_host->hwcaps;
+   Int        i, j;
+   HReg       hreg, hregHI;
+   ISelEnv*   env;
+   UInt       hwcaps_host = archinfo_host->hwcaps;
+   AMD64AMode *amCounter, *amFailAddr;
 
    /* sanity ... */
    vassert(arch_host == VexArchAMD64);
@@ -4207,7 +4328,9 @@ HInstrArray* iselSB_AMD64 ( IRSB* bb, VexArch      arch_host,
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
    /* and finally ... */
-   env->hwcaps = hwcaps_host;
+   env->chainingAllowed = chainingAllowed;
+   env->hwcaps          = hwcaps_host;
+   env->max_ga          = max_ga;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */
@@ -4233,12 +4356,25 @@ HInstrArray* iselSB_AMD64 ( IRSB* bb, VexArch      arch_host,
    }
    env->vreg_ctr = j;
 
+   /* The very first instruction must be an event check. */
+   amCounter  = AMD64AMode_IR(offs_Host_EvC_Counter,  hregAMD64_RBP());
+   amFailAddr = AMD64AMode_IR(offs_Host_EvC_FailAddr, hregAMD64_RBP());
+   addInstr(env, AMD64Instr_EvCheck(amCounter, amFailAddr));
+
+   /* Possibly a block counter increment (for profiling).  At this
+      point we don't know the address of the counter, so just pretend
+      it is zero.  It will have to be patched later, but before this
+      translation is used, by a call to LibVEX_patchProfCtr. */
+   if (addProfInc) {
+      addInstr(env, AMD64Instr_ProfInc());
+   }
+
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
       if (bb->stmts[i])
-         iselStmt(env,bb->stmts[i]);
+         iselStmt(env, bb->stmts[i]);
 
-   iselNext(env,bb->next,bb->jumpkind);
+   iselNext(env, bb->next, bb->jumpkind, bb->offsIP);
 
    /* record the number of vregs we used. */
    env->code->n_vregs = env->vreg_ctr;

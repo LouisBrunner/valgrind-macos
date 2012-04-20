@@ -43,7 +43,6 @@
 /* Convert one s390 insn to IR.  See the type DisOneInstrFn in
    bb_to_IR.h. */
 DisResult disInstr_S390 ( IRSB*        irbb,
-                          Bool         put_IP,
                           Bool         (*resteerOkFn) ( void*, Addr64 ),
                           Bool         resteerCisOk,
                           void*        callback_opaque,

@@ -334,7 +334,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchPPC32, vta->archinfo_host.hwcaps));
          break;
-#if 0
+
       case VexArchPPC64:
          mode64      = True;
          getAllocableRegs_PPC ( &n_available_real_regs,
@@ -347,16 +347,14 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppInstr     = (void(*)(HInstr*, Bool)) ppPPCInstr;
          ppReg       = (void(*)(HReg)) ppHRegPPC;
          iselSB      = iselSB_PPC;
-         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*,void*))
+         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
+                               void*,void*,void*,void*))
                        emit_PPCInstr;
          host_is_bigendian = True;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_host.hwcaps));
-         /* return-to-dispatcher scheme */
-         vassert(vta->dispatch_unassisted == NULL);
-         vassert(vta->dispatch_assisted == NULL);
          break;
-#endif
+
       case VexArchS390X:
          mode64      = True;
          getAllocableRegs_S390 ( &n_available_real_regs,
@@ -462,16 +460,20 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN   ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_NRADDR  ) == 4);
          break;
-#if 0
+
       case VexArchPPC64:
-         preciseMemExnsFn = guest_ppc64_state_requires_precise_mem_exns;
-         disInstrFn       = disInstr_PPC;
-         specHelper       = guest_ppc64_spechelper;
-         guest_sizeB      = sizeof(VexGuestPPC64State);
-         guest_word_type  = Ity_I64;
-         guest_layout     = &ppc64Guest_layout;
-         offB_TISTART     = offsetof(VexGuestPPC64State,guest_TISTART);
-         offB_TILEN       = offsetof(VexGuestPPC64State,guest_TILEN);
+         preciseMemExnsFn       = guest_ppc64_state_requires_precise_mem_exns;
+         disInstrFn             = disInstr_PPC;
+         specHelper             = guest_ppc64_spechelper;
+         guest_sizeB            = sizeof(VexGuestPPC64State);
+         guest_word_type        = Ity_I64;
+         guest_layout           = &ppc64Guest_layout;
+         offB_TISTART           = offsetof(VexGuestPPC64State,guest_TISTART);
+         offB_TILEN             = offsetof(VexGuestPPC64State,guest_TILEN);
+         offB_GUEST_IP          = offsetof(VexGuestPPC64State,guest_CIA);
+         szB_GUEST_IP           = sizeof( ((VexGuestPPC64State*)0)->guest_CIA );
+         offB_HOST_EvC_COUNTER  = offsetof(VexGuestPPC64State,host_EvC_COUNTER);
+         offB_HOST_EvC_FAILADDR = offsetof(VexGuestPPC64State,host_EvC_FAILADDR);
          vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_guest.hwcaps));
          vassert(0 == sizeof(VexGuestPPC64State) % 16);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TISTART    ) == 8);
@@ -479,7 +481,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR     ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR_GPR2) == 8);
          break;
-#endif
+
       case VexArchS390X:
          preciseMemExnsFn = guest_s390x_state_requires_precise_mem_exns;
          disInstrFn       = disInstr_S390;

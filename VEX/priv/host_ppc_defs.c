@@ -3545,7 +3545,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* Fix up the conditional jump, if there was one. */
       if (i->Pin.XDirect.cond.test != Pct_ALWAYS) {
          Int delta = p - ptmp;
-         vassert(delta >= 16 && delta <= 32 && 0 == (delta & 3));
+         vassert(delta >= 16 && delta <= 64 && 0 == (delta & 3));
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(i->Pin.XDirect.cond.test),
                  i->Pin.XDirect.cond.flag, (delta>>2), 0, 0);
@@ -4656,7 +4656,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    /*NOTREACHED*/
    
   done:
-   vassert(p - &buf[0] <= 32);
+   vassert(p - &buf[0] <= 64);
    return p - &buf[0];
 }
 

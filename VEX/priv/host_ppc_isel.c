@@ -4719,15 +4719,15 @@ static void iselNext ( ISelEnv* env,
 /*---------------------------------------------------------*/
 
 /* Translate an entire SB to ppc code. */
-HInstrArray* iselSB_PPC           ( IRSB* bb, 
-                                    VexArch      arch_host,
-                                    VexArchInfo* archinfo_host,
-                                    VexAbiInfo*  vbi,
-                                    Int offs_Host_EvC_Counter,
-                                    Int offs_Host_EvC_FailAddr,
-                                    Bool chainingAllowed,
-                                    Bool addProfInc,
-                                    Addr64 max_ga )
+HInstrArray* iselSB_PPC ( IRSB* bb, 
+                          VexArch      arch_host,
+                          VexArchInfo* archinfo_host,
+                          VexAbiInfo*  vbi,
+                          Int offs_Host_EvC_Counter,
+                          Int offs_Host_EvC_FailAddr,
+                          Bool chainingAllowed,
+                          Bool addProfInc,
+                          Addr64 max_ga )
 {
    Int       i, j;
    HReg      hregLo, hregMedLo, hregMedHi, hregHi;
@@ -4740,7 +4740,7 @@ HInstrArray* iselSB_PPC           ( IRSB* bb,
 
    vassert(arch_host == VexArchPPC32 || arch_host == VexArchPPC64);
    mode64 = arch_host == VexArchPPC64;
-   if (mode64) vassert(max_ga <= 0xFFFFFFFFULL);
+   if (!mode64) vassert(max_ga <= 0xFFFFFFFFULL);
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V

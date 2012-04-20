@@ -40,8 +40,9 @@
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
-/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
-/*--- run all translations except no-redir ones.           ---*/
+/*--- The dispatch loop.  VG_(disp_run_translations) is    ---*/
+/*--- used to run all translations,                        ---*/
+/*--- including no-redir ones.                             ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 

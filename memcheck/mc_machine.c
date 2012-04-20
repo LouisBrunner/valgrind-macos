@@ -393,7 +393,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    if (o == GOF(CIA)       && sz == 4) return -1;
    if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
-   if (o == GOF(FPROUND)   && sz == 4) return -1;
+   if (o == GOF(FPROUND)   && sz == 1) return -1;
    if (o == GOF(VRSAVE)    && sz == 4) return -1;
    if (o == GOF(EMWARN)    && sz == 4) return -1;
    if (o == GOF(TISTART)   && sz == 4) return -1;

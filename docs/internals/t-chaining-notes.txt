@@ -1,6 +1,6 @@
 
 DO NOT MERGE
-~~~~~~~~~~~
+~~~~~~~~~~~~
 
 Changes memcheck/tests/Makefile.am w.r.t. -mfloat-abi=softfp
 Ditto none/tests/arm/Makefile.am
@@ -28,16 +28,26 @@ host_x86_defs.c, host_amd64_defs.c: return proper VexInvalRange
 records from the patchers, instead of {0,0}, so that transparent
 self hosting works properly.
 
+host_ppc_defs.h: is RdWrLR still needed?  If not delete.
+
+ditto ARM, Ld8S
+
+make sure IRStmt_Exit3 is completely gone.
+
+all backends: iselStmt(Ist_Exit) vs iselNext: make sure that the same
+JKs are handled, else it's not safe against branch sense switching
+
 
 Optimisations
 ~~~~~~~~~~~~~
 all targets: change VG_(stats__n_xindirs) to a 32 bit counter, and
-empty out every now and again.
+empty out every now and again.  Ditto VG_(stats__n_xindir_misses).
 
 amd64: XDirect: write const value to guest_RIP using single
 insn when the value is < 0x8000'0000
 
 arm: chain_XDirect: generate short form jumps when possible
+ppc: chain_XDirect: generate short form jumps when possible
 
 arm codegen: Generate ORRS for CmpwNEZ32(Or32(x,y))
 

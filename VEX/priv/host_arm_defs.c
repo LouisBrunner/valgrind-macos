@@ -4512,7 +4512,7 @@ VexInvalRange chainXDirect_ARM ( void* place_to_chain,
         E1 2F FF 3C
    */
    UInt* p = (UInt*)place_to_chain;
-   vassert(0 == (3 & (UInt)p));
+   vassert(0 == (3 & (HWord)p));
    vassert(is_imm32_to_iregNo_EXACTLY2(
               p, /*r*/12, (UInt)Ptr_to_ULong(disp_cp_chain_me_EXPECTED)));
    vassert(p[2] == 0xE12FFF3C);
@@ -4548,7 +4548,7 @@ VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
         E1 2F FF 1C
    */
    UInt* p = (UInt*)place_to_unchain;
-   vassert(0 == (3 & (UInt)p));
+   vassert(0 == (3 & (HWord)p));
    vassert(is_imm32_to_iregNo_EXACTLY2(
               p, /*r*/12, (UInt)Ptr_to_ULong(place_to_jump_to_EXPECTED)));
    vassert(p[2] == 0xE12FFF1C);
@@ -4575,7 +4575,7 @@ VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
 {
    vassert(sizeof(ULong*) == 4);
    UInt* p = (UInt*)place_to_patch;
-   vassert(0 == (3 & (UInt)p));
+   vassert(0 == (3 & (HWord)p));
    vassert(is_imm32_to_iregNo_EXACTLY2(p, /*r*/12, 0x65556555));
    vassert(p[2] == 0xE59CB000);
    vassert(p[3] == 0xE29BB001);

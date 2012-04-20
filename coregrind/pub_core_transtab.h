@@ -39,9 +39,8 @@
 
 #include "pub_core_transtab_asm.h"
 
-/* The fast-cache for tt-lookup, and for finding counters.  Unused
-   entries are denoted by .guest == 1, which is assumed to be a bogus
-   address for all guest code. */
+/* The fast-cache for tt-lookup.  Unused entries are denoted by .guest
+   == 1, which is assumed to be a bogus address for all guest code. */
 typedef
    struct { 
       Addr guest;
@@ -54,8 +53,6 @@ extern __attribute__((aligned(16)))
 
 #define TRANSTAB_BOGUS_GUEST_ADDR ((Addr)1)
 
-extern UInt*          VG_(tt_fastN)[VG_TT_FAST_SIZE];
-
 extern void VG_(init_tt_tc)       ( void );
 
 extern
@@ -63,9 +60,19 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
                            Addr64           entry,
                            AddrH            code,
                            UInt             code_len,
-                           Bool             is_self_checking );
+                           Bool             is_self_checking,
+                           Int              offs_profInc,
+                           VexArch          arch_host );
 
-extern Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
+extern
+void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
+                              UInt  to_sNo,
+                              UInt  to_tteNo,
+                              Bool  to_fastEP );
+
+extern Bool VG_(search_transtab) ( /*OUT*/AddrH* res_hcode,
+                                   /*OUT*/UInt*  res_sNo,
+                                   /*OUT*/UInt*  res_tteNo,
                                    Addr64        guest_addr, 
                                    Bool          upd_cache );
 

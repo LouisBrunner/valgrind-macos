@@ -1,0 +1,214 @@
+
+DO NOT MERGE
+~~~~~~~~~~~~
+
+Changes memcheck/tests/Makefile.am w.r.t. -mfloat-abi=softfp
+Ditto none/tests/arm/Makefile.am
+
+
+Verification todo
+~~~~~~~~~~~~~~~~~
+check that illegal insns on all targets don't cause the _toIR.c's to
+assert.
+
+check also with --vex-guest-chase-cond=yes
+
+check that all targets can run their insn set tests with
+--vex-guest-max-insns=1.
+
+all targets: run some tests using --profile-flags=... to exercise  
+function patchProfInc_<arch>
+
+
+Cleanups
+~~~~~~~~
+host_arm_isel.c and host_arm_defs.c: get rid of global var arm_hwcaps.
+
+host_x86_defs.c, host_amd64_defs.c: return proper VexInvalRange
+records from the patchers, instead of {0,0}, so that transparent
+self hosting works properly.
+
+host_ppc_defs.h: is RdWrLR still needed?  If not delete.
+
+ditto ARM, Ld8S
+
+make sure IRStmt_Exit3 is completely gone.
+
+all backends: iselStmt(Ist_Exit) vs iselNext: make sure that the same
+JKs are handled, else it's not safe against branch sense switching
+
+
+Optimisations
+~~~~~~~~~~~~~
+all targets: change VG_(stats__n_xindirs) to a 32 bit counter, and
+empty out every now and again.  Ditto VG_(stats__n_xindir_misses).
+
+amd64: XDirect: write const value to guest_RIP using single
+insn when the value is < 0x8000'0000
+
+arm: chain_XDirect: generate short form jumps when possible
+ppc: chain_XDirect: generate short form jumps when possible
+
+arm codegen: Generate ORRS for CmpwNEZ32(Or32(x,y))
+
+all targets: when nuking an entire sector, don't bother to undo the
+patching for any translations within the sector (nor with their
+invalidations).
+
+(somewhat implausible) for jumps to disp_cp_indir, have multiple
+copies of disp_cp_indir, one for each of the possible registers that
+could have held the target guest address before jumping to the stub.
+Then disp_cp_indir wouldn't have to reload it from memory each time.
+Might also have the effect of spreading out the indirect mispredict
+burden somewhat (across the multiple copies.)
+
+
+Implementation notes
+~~~~~~~~~~~~~~~~~~~~
+T-chaining changes -- summary
+
+* The code generators (host_blah_isel.c, host_blah_defs.[ch]) interact
+  more closely with Valgrind than before.  In particular the
+  instruction selectors must use one of 3 different kinds of
+  control-transfer instructions: XDirect, XIndir and XAssisted.
+  All archs must use these the same; no more ad-hoc control transfer
+  instructions.
+  (more detail below)
+
+
+* With T-chaining, translations can jump between each other without
+  going through the dispatcher loop every time.  This means that the
+  event check (counter dec, and exit if negative) the dispatcher loop
+  previously did now needs to be compiled into each translation.
+
+
+* The assembly dispatcher code (dispatch-arch-os.S) is still
+  present.  It still provides table lookup services for 
+  indirect branches, but it also provides a new feature: 
+  dispatch points, to which the generated code jumps.  There
+  are 5:
+
+  VG_(disp_cp_chain_me_to_slowEP):
+  VG_(disp_cp_chain_me_to_fastEP):
+    These are chain-me requests, used for Boring conditional and
+    unconditional jumps to destinations known at JIT time.  The
+    generated code calls these (doesn't jump to them) and the
+    stub recovers the return address.  These calls never return;
+    instead the call is done so that the stub knows where the
+    calling point is.  It needs to know this so it can patch
+    the calling point to the requested destination.
+  VG_(disp_cp_xindir):
+    Old-style table lookup and go; used for indirect jumps
+  VG_(disp_cp_xassisted):
+    Most general and slowest kind.  Can transfer to anywhere, but
+    first returns to scheduler to do some other event (eg a syscall)
+    before continuing.
+  VG_(disp_cp_evcheck_fail):
+    Code jumps here when the event check fails.
+
+
+* new instructions in backends: XDirect, XIndir and XAssisted.
+  XDirect is used for chainable jumps.  It is compiled into a
+  call to VG_(disp_cp_chain_me_to_slowEP) or
+  VG_(disp_cp_chain_me_to_fastEP).
+
+  XIndir is used for indirect jumps.  It is compiled into a jump
+  to VG_(disp_cp_xindir)
+
+  XAssisted is used for "assisted" (do something first, then jump)
+  transfers.  It is compiled into a jump to VG_(disp_cp_xassisted)
+
+  All 3 of these may be conditional.
+
+  More complexity: in some circumstances (no-redir translations)
+  all transfers must be done with XAssisted.  In such cases the
+  instruction selector will be told this.
+
+
+* Patching: XDirect is compiled basically into
+     %r11 = &VG_(disp_cp_chain_me_to_{slow,fast}EP)
+     call *%r11
+  Backends must provide a function (eg) chainXDirect_AMD64
+  which converts it into a jump to a specified destination
+     jmp $delta-of-PCs
+  or
+     %r11 = 64-bit immediate
+     jmpq *%r11
+  depending on branch distance.
+
+  Backends must provide a function (eg) unchainXDirect_AMD64
+  which restores the original call-to-the-stub version.
+
+
+* Event checks.  Each translation now has two entry points,
+  the slow one (slowEP) and fast one (fastEP).  Like this:
+
+     slowEP:
+        counter--
+        if (counter < 0) goto VG_(disp_cp_evcheck_fail)
+     fastEP:
+        (rest of the translation)
+
+  slowEP is used for control flow transfers that are or might be
+  a back edge in the control flow graph.  Insn selectors are
+  given the address of the highest guest byte in the block so
+  they can determine which edges are definitely not back edges.
+
+  The counter is placed in the first 8 bytes of the guest state,
+  and the address of VG_(disp_cp_evcheck_fail) is placed in
+  the next 8 bytes.  This allows very compact checks on all
+  targets, since no immediates need to be synthesised, eg:
+
+    decq 0(%baseblock-pointer)
+    jns  fastEP
+    jmpq *8(baseblock-pointer)
+    fastEP:
+
+  On amd64 a non-failing check is therefore 2 insns; all 3 occupy
+  just 8 bytes.
+
+  On amd64 the event check is created by a special single
+  pseudo-instruction AMD64_EvCheck.
+
+
+* BB profiling (for --profile-flags=).  The dispatch assembly
+  dispatch-arch-os.S no longer deals with this and so is much
+  simplified.  Instead the profile inc is compiled into each
+  translation, as the insn immediately following the event
+  check.  Again, on amd64 a pseudo-insn AMD64_ProfInc is used.
+  Counters are now 64 bit even on 32 bit hosts, to avoid overflow.
+
+  One complexity is that at JIT time it is not known where the
+  address of the counter is.  To solve this, VexTranslateResult
+  now returns the offset of the profile inc in the generated
+  code.  When the counter address is known, VEX can be called
+  again to patch it in.  Backends must supply eg
+  patchProfInc_AMD64 to make this happen.
+
+
+* Front end changes (guest_blah_toIR.c)
+
+  The way the guest program counter is handled has changed
+  significantly.  Previously, the guest PC was updated (in IR)
+  at the start of each instruction, except for the first insn
+  in an IRSB.  This is inconsistent and doesn't work with the
+  new framework.
+
+  Now, each instruction must update the guest PC as its last
+  IR statement -- not its first.  And no special exemption for
+  the first insn in the block.  As before most of these are
+  optimised out by ir_opt, so no concerns about efficiency.
+
+  As a logical side effect of this, exits (IRStmt_Exit) and the
+  block-end transfer are both considered to write to the guest state
+  (the guest PC) and so need to be told the offset of it.
+
+  IR generators (eg disInstr_AMD64) are no longer allowed to set the
+  IRSB::next, to specify the block-end transfer address.  Instead they
+  now indicate, to the generic steering logic that drives them (iow,
+  guest_generic_bb_to_IR.c), that the block has ended.  This then
+  generates effectively "goto GET(PC)" (which, again, is optimised
+  away).  What this does mean is that if the IR generator function
+  ends the IR of the last instruction in the block with an incorrect
+  assignment to the guest PC, execution will transfer to an incorrect
+  destination -- making the error obvious quickly.

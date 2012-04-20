@@ -280,6 +280,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
    bb->tyenv    = deepCopyIRTypeEnv(sb_in->tyenv);
    bb->next     = deepCopyIRExpr(sb_in->next);
    bb->jumpkind = sb_in->jumpkind;
+   bb->offsIP   = sb_in->offsIP;
 
    delta = 0;
 
@@ -905,6 +906,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
    IROp   op_CmpNE         = Iop_CmpNE64;
@@ -918,6 +920,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
    IROp   op_CmpNE         = Iop_CmpNE32;
@@ -969,7 +972,8 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
             mkU(0)
          ),
          Ijk_EmFail,
-         is64 ? IRConst_U64(0) : IRConst_U32(0)
+         is64 ? IRConst_U64(0) : IRConst_U32(0),
+         offB_CIA
       )
    );
 
@@ -996,6 +1000,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
    IROp   op_CmpNE         = Iop_CmpNE64;
@@ -1007,6 +1012,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
    Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
    IROp   op_CmpNE         = Iop_CmpNE32;
@@ -1048,7 +1054,8 @@ static IRTemp gen_POP ( IRSB* bb )
             mkU(0)
          ),
          Ijk_EmFail,
-         is64 ? IRConst_U64(0) : IRConst_U32(0)
+         is64 ? IRConst_U64(0) : IRConst_U32(0),
+         offB_CIA
       )
    );
 
@@ -1099,6 +1106,7 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 #  if defined(VGP_ppc64_linux)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+   Int    offB_CIA  = offsetof(VexGuestPPC64State,guest_CIA);
    IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I64 );
    IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I64 );
    /* Restore R2 */
@@ -1112,8 +1120,8 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
       blr (hence Ijk_Ret); so we should just mark this jump as Boring,
       else one _Call will have resulted in two _Rets. */
    bb->jumpkind = Ijk_Boring;
-   bb->next = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
-
+   bb->next     = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
+   bb->offsIP   = offB_CIA;
 #  else
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
@@ -1348,7 +1356,7 @@ Bool VG_(translate) ( ThreadId tid,
       }
       vg_assert(objname);
       VG_(printf)(
-         "==== SB %d (exec'd %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
+         "==== SB %d (evchecks %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
          VG_(get_bbs_translated)(), bbs_done, (Int)tid, addr,
          fnname, objname, (ULong)objoff
       );
@@ -1461,11 +1469,10 @@ Bool VG_(translate) ( ThreadId tid,
    vta.arch_host        = vex_arch;
    vta.archinfo_host    = vex_archinfo;
    vta.abiinfo_both     = vex_abiinfo;
+   vta.callback_opaque  = (void*)&closure;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
    vta.guest_bytes_addr = (Addr64)addr;
-   vta.callback_opaque  = (void*)&closure;
    vta.chase_into_ok    = chase_into_ok;
-   vta.preamble_function = preamble_fn;
    vta.guest_extents    = &vge;
    vta.host_bytes       = tmpbuf;
    vta.host_bytes_size  = N_TMPBUF;
@@ -1486,59 +1493,48 @@ Bool VG_(translate) ( ThreadId tid,
                IRSB*,VexGuestLayout*,VexGuestExtents*,
                IRType,IRType)
        = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
-     vta.instrument1    = g;
+     vta.instrument1     = g;
    }
    /* No need for type kludgery here. */
-   vta.instrument2      = need_to_handle_SP_assignment()
-                             ? vg_SP_update_pass
-                             : NULL;
-   vta.finaltidy        = VG_(needs).final_IR_tidy_pass
-                             ? VG_(tdict).tool_final_IR_tidy_pass
-                             : NULL;
-   vta.needs_self_check = needs_self_check;
-   vta.traceflags       = verbosity;
+   vta.instrument2       = need_to_handle_SP_assignment()
+                              ? vg_SP_update_pass
+                              : NULL;
+   vta.finaltidy         = VG_(needs).final_IR_tidy_pass
+                              ? VG_(tdict).tool_final_IR_tidy_pass
+                              : NULL;
+   vta.needs_self_check  = needs_self_check;
+   vta.preamble_function = preamble_fn;
+   vta.traceflags        = verbosity;
+   vta.addProfInc        = VG_(clo_profile_flags) > 0
+                           && kind != T_NoRedir;
 
-   /* Set up the dispatch-return info.  For archs without a link
-      register, vex generates a jump back to the specified dispatch
-      address.  Else, it just generates a branch-to-LR. */
+   /* Set up the dispatch continuation-point info.  If this is a
+      no-redir translation then it cannot be chained, and the chain-me
+      points are set to NULL to indicate that.  The indir point must
+      also be NULL, since we can't allow this translation to do an
+      indir transfer -- that would take it back into the main
+      translation cache too.
 
-#  if defined(VGA_x86) || defined(VGA_amd64)
-   if (!allow_redirection) {
-      /* It's a no-redir translation.  Will be run with the
-         nonstandard dispatcher VG_(run_a_noredir_translation) and so
-         needs a nonstandard return point. */
-      vta.dispatch_assisted
-         = (void*) &VG_(run_a_noredir_translation__return_point);
-      vta.dispatch_unassisted
-         = vta.dispatch_assisted;
+      All this is because no-redir translations live outside the main
+      translation cache (in a secondary one) and chaining them would
+      involve more adminstrative complexity that isn't worth the
+      hassle, because we don't expect them to get used often.  So
+      don't bother. */
+   if (allow_redirection) {
+      vta.disp_cp_chain_me_to_slowEP
+         = VG_(fnptr_to_fnentry)( &VG_(disp_cp_chain_me_to_slowEP) );
+      vta.disp_cp_chain_me_to_fastEP
+         = VG_(fnptr_to_fnentry)( &VG_(disp_cp_chain_me_to_fastEP) );
+      vta.disp_cp_xindir
+         = VG_(fnptr_to_fnentry)( &VG_(disp_cp_xindir) );
+   } else {
+      vta.disp_cp_chain_me_to_slowEP = NULL;
+      vta.disp_cp_chain_me_to_fastEP = NULL;
+      vta.disp_cp_xindir             = NULL;
    }
-   else
-   if (VG_(clo_profile_flags) > 0) {
-      /* normal translation; although we're profiling. */
-      vta.dispatch_assisted
-         = (void*) &VG_(run_innerloop__dispatch_assisted_profiled);
-      vta.dispatch_unassisted
-         = (void*) &VG_(run_innerloop__dispatch_unassisted_profiled);
-   }
-   else {
-      /* normal translation and we're not profiling (the normal case) */
-      vta.dispatch_assisted
-         = (void*) &VG_(run_innerloop__dispatch_assisted_unprofiled);
-      vta.dispatch_unassisted
-         = (void*) &VG_(run_innerloop__dispatch_unassisted_unprofiled);
-   }
-
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
-        || defined(VGA_arm) || defined(VGA_s390x)
-   /* See comment in libvex.h.  This target uses a
-      return-to-link-register scheme to get back to the dispatcher, so
-      both fields are NULL. */
-   vta.dispatch_assisted   = NULL;
-   vta.dispatch_unassisted = NULL;
-
-#  else
-#    error "Unknown arch"
-#  endif
+   /* This doesn't involve chaining and so is always allowable. */
+   vta.disp_cp_xassisted
+      = VG_(fnptr_to_fnentry)( &VG_(disp_cp_xassisted) );
 
    /* Sheesh.  Finally, actually _do_ the translation! */
    tres = LibVEX_Translate ( &vta );
@@ -1581,8 +1577,11 @@ Bool VG_(translate) ( ThreadId tid,
                                 nraddr,
                                 (Addr)(&tmpbuf[0]), 
                                 tmpbuf_used,
-                                tres.n_sc_extents > 0 );
+                                tres.n_sc_extents > 0,
+                                tres.offs_profInc,
+                                vex_arch );
       } else {
+          vg_assert(tres.offs_profInc == -1); /* -1 == unset */
           VG_(add_to_unredir_transtab)( &vge,
                                         nraddr,
                                         (Addr)(&tmpbuf[0]), 

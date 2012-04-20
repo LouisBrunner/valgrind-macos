@@ -41,56 +41,38 @@
 
 #include "pub_core_dispatch_asm.h"
 
-/* This subroutine is called from the C world.  It is passed
-   a pointer to the VEX guest state (arch.vex).  It must run code
-   from the instruction pointer in the guest state, and exit when
-   VG_(dispatch_ctr) reaches zero, or we need to defer to the scheduler.
+/* Run translations, with the given guest state, and starting by
+   running the host code at 'host_addr'.  It is almost always the case
+   that host_addr is the translation for guest_state.guest_IP, that
+   is, host_addr is what it would be if we looked up the address of
+   the translation corresponding to guest_state.guest_IP.
+
+   The only case where this isn't true is where we're running a
+   no-redir translation.  In this case host_addr is the address of the
+   alternative (non-redirected) translation for guest_state.guest_IP.
+
    The return value must indicate why it returned back to the scheduler.
    It can also be exited if the executing code throws a non-resumable
    signal, for example SIGSEGV, in which case control longjmp()s back past
    here.
 
-   If do_profiling is nonzero, the profile counters arrays should be
-   updated for each translation run.
-
-   This code simply handles the common case fast -- when the translation
-   address is found in the translation cache.  For anything else, the
-   scheduler does the work.
-
-   NOTE, VG_(run_innerloop) MUST NOT BE USED for noredir translations.
-   Instead use VG_(run_a_noredir_translation).
+   two_words holds the return values (two words).  First is
+   a TRC value.  Second is generally unused, except in the case
+   where we have to return a chain-me request.
 */
-extern 
-UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
-#if defined(VGA_x86) || defined(VGA_amd64)
-/* We need to locate a couple of labels inside VG_(run_innerloop), so
-   that Vex can add branches to them from generated code.  Hence the
-   following somewhat bogus decls.  At least on x86 and amd64.  ppc32
-   and ppc64 use straightforward bl-blr to get from dispatcher to
-   translation and back and so do not need these labels. */
-extern Addr VG_(run_innerloop__dispatch_unassisted_unprofiled);
-extern Addr VG_(run_innerloop__dispatch_assisted_unprofiled);
-extern Addr VG_(run_innerloop__dispatch_unassisted_profiled);
-extern Addr VG_(run_innerloop__dispatch_assisted_profiled);
-#endif
+void VG_(disp_run_translations)( HWord* two_words,
+                                 void*  guest_state, 
+                                 Addr   host_addr );
 
-
-/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
-   and 2 to carry results:
-      0: input:  ptr to translation
-      1: input:  ptr to guest state
-      2: output: next guest PC
-      3: output: guest state pointer afterwards (== thread return code)
-   MUST NOT BE USED for non-noredir (normal) translations.
-*/
-extern void VG_(run_a_noredir_translation) ( volatile UWord* argblock );
-#if defined(VGA_x86) || defined(VGA_amd64)
-/* We need to a label inside VG_(run_a_noredir_translation), so that
-   Vex can add branches to them from generated code.  Hence the
-   following somewhat bogus decl. */
-extern Addr VG_(run_a_noredir_translation__return_point);
-#endif
-
+/* We need to know addresses of the continuation-point (cp_) labels so
+   we can tell VEX what they are.  They will get baked into the code
+   VEX generates.  The type is entirely mythical, but we need to
+   state _some_ type, so as to keep gcc happy. */
+void VG_(disp_cp_chain_me_to_slowEP)(void);
+void VG_(disp_cp_chain_me_to_fastEP)(void);
+void VG_(disp_cp_xindir)(void);
+void VG_(disp_cp_xassisted)(void);
+void VG_(disp_cp_evcheck_fail)(void);
 
 #endif   // __PUB_CORE_DISPATCH_H
 

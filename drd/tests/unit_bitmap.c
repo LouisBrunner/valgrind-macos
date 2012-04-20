@@ -48,6 +48,8 @@ void* VG_(memset)(void *s, Int c, SizeT sz)
 { return memset(s, c, sz); }
 void* VG_(memcpy)(void *d, const void *s, SizeT sz)
 { return memcpy(d, s, sz); }
+void* VG_(memmove)(void *d, const void *s, SizeT sz)
+{ return memmove(d, s, sz); }
 Int VG_(memcmp)(const void* s1, const void* s2, SizeT n)
 { return memcmp(s1, s2, n); }
 UInt VG_(printf)(const HChar *format, ...)

@@ -593,6 +593,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
    bb->tyenv    = deepCopyIRTypeEnv(bb_in->tyenv);
    bb->next     = deepCopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
+   bb->offsIP   = bb_in->offsIP;
 
    for (i = 0; i < bb_in->stmts_used; i++)
    {

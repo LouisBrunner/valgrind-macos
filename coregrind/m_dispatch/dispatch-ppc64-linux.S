@@ -39,63 +39,88 @@
 /* References to globals via the TOC */
 
 /*
-        .globl vgPlain_tt_fast
+        .globl  vgPlain_tt_fast
         .lcomm  vgPlain_tt_fast,4,4
         .type   vgPlain_tt_fast, @object
 */
-        .section        ".toc","aw"
+.section ".toc","aw"
 .tocent__vgPlain_tt_fast:
         .tc vgPlain_tt_fast[TC],vgPlain_tt_fast
-.tocent__vgPlain_tt_fastN:
-        .tc vgPlain_tt_fastN[TC],vgPlain_tt_fastN
-.tocent__vgPlain_dispatch_ctr:
-        .tc vgPlain_dispatch_ctr[TC],vgPlain_dispatch_ctr
+.tocent__vgPlain_stats__n_xindirs:
+        .tc vgPlain_stats__n_xindirs[TC],vgPlain_stats__n_xindirs
+.tocent__vgPlain_stats__n_xindir_misses:
+        .tc vgPlain_stats__n_xindir_misses[TC],vgPlain_stats__n_xindir_misses
 .tocent__vgPlain_machine_ppc64_has_VMX:
         .tc vgPlain_machine_ppc64_has_VMX[TC],vgPlain_machine_ppc64_has_VMX
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
-/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
-/*--- run all translations except no-redir ones.           ---*/
+/*--- The dispatch loop.  VG_(disp_run_translations) is    ---*/
+/*--- used to run all translations,                        ---*/
+/*--- including no-redir ones.                             ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /*----------------------------------------------------*/
-/*--- Preamble (set everything up)                 ---*/
+/*--- Entry and preamble (set everything up)       ---*/
 /*----------------------------------------------------*/
 
 /* signature:
-UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
+void VG_(disp_run_translations)( UWord* two_words,
+                                 void*  guest_state,
+                                 Addr   host_addr );
 */
 
 .section ".text"
 .align   2
-.globl VG_(run_innerloop)
+.globl   VG_(disp_run_translations)
 .section ".opd","aw"
 .align   3
-VG_(run_innerloop):
-.quad    .VG_(run_innerloop),.TOC.@tocbase,0
+VG_(disp_run_translations):
+.quad    .VG_(disp_run_translations),.TOC.@tocbase,0
 .previous
-.type    .VG_(run_innerloop),@function
-.globl   .VG_(run_innerloop)
-.VG_(run_innerloop):
-	/* r3 holds guest_state */
-	/* r4 holds do_profiling */
+.type    .VG_(disp_run_translations),@function
+.globl   .VG_(disp_run_translations)
+.VG_(disp_run_translations):
+	/* r3 holds two_words */
+	/* r4 holds guest_state */
+        /* r5 holds host_addr */
 
-        /* ----- entry point to VG_(run_innerloop) ----- */
+        /* ----- entry point to VG_(disp_run_translations) ----- */
         /* PPC64 ABI saves LR->16(prt_sp), CR->8(prt_sp)) */
 
         /* Save lr, cr */
-        mflr    0
-        std     0,16(1)
-        mfcr    0
-        std     0,8(1)
+        mflr    6
+        std     6,16(1)
+        mfcr    6
+        std     6,8(1)
 
         /* New stack frame */
         stdu    1,-624(1)  /* sp should maintain 16-byte alignment */
 
-        /* Save callee-saved registers... */
+        /* General reg save area : 152 bytes */
+        std     31,472(1)
+        std     30,464(1)
+        std     29,456(1)
+        std     28,448(1)
+        std     27,440(1)
+        std     26,432(1)
+        std     25,424(1)
+        std     24,416(1)
+        std     23,408(1)
+        std     22,400(1)
+        std     21,392(1)
+        std     20,384(1)
+        std     19,376(1)
+        std     18,368(1)
+        std     17,360(1)
+        std     16,352(1)
+        std     15,344(1)
+        std     14,336(1)
+        std     13,328(1)
+        std     3,104(1)  /* save two_words for later */
 
+        /* Save callee-saved registers... */
         /* Floating-point reg save area : 144 bytes */
         stfd    31,616(1)
         stfd    30,608(1)
@@ -116,77 +141,53 @@ VG_(run_innerloop):
         stfd    15,488(1)
         stfd    14,480(1)
 
-        /* General reg save area : 144 bytes */
-        std     31,472(1)
-        std     30,464(1)
-        std     29,456(1)
-        std     28,448(1)
-        std     27,440(1)
-        std     26,432(1)
-        std     25,424(1)
-        std     24,416(1)
-        std     23,408(1)
-        std     22,400(1)
-        std     21,392(1)
-        std     20,384(1)
-        std     19,376(1)
-        std     18,368(1)
-        std     17,360(1)
-        std     16,352(1)
-        std     15,344(1)
-        std     14,336(1)
-        /* Probably not necessary to save r13 (thread-specific ptr),
-           as VEX stays clear of it... but what the hey. */
-        std     13,328(1)
-
         /* It's necessary to save/restore VRSAVE in the AIX / Darwin ABI.
            The Linux kernel might not actually use VRSAVE for its intended
            purpose, but it should be harmless to preserve anyway. */
-	/* r3, r4 are live here, so use r5 */
-	ld	5,.tocent__vgPlain_machine_ppc64_has_VMX@toc(2)
-	ld	5,0(5)
-        cmpldi  5,0
+	/* r3, r4, r5 are live here, so use r6 */
+	ld	6,.tocent__vgPlain_machine_ppc64_has_VMX@toc(2)
+	ld	6,0(6)
+        cmpldi  6,0
         beq     .LafterVMX1
 
         /* VRSAVE save word : 32 bytes */
-        mfspr   5,256         /* vrsave reg is spr number 256 */
-        stw     5,324(1)
+        mfspr   6,256         /* vrsave reg is spr number 256 */
+        stw     6,324(1)
 
         /* Alignment padding : 4 bytes */
 
         /* Vector reg save area (quadword aligned) : 192 bytes */
-        li      5,304
-        stvx    31,5,1
-        li      5,288
-        stvx    30,5,1
-        li      5,272
-        stvx    29,5,1
-        li      5,256
-        stvx    28,5,1
-        li      5,240
-        stvx    27,5,1
-        li      5,224
-        stvx    26,5,1
-        li      5,208
-        stvx    25,5,1
-        li      5,192
-        stvx    24,5,1
-        li      5,176
-        stvx    23,5,1
-        li      5,160
-        stvx    22,5,1
-        li      5,144
-        stvx    21,5,1
-        li      5,128
-        stvx    20,5,1
+        li      6,304
+        stvx    31,6,1
+        li      6,288
+        stvx    30,6,1
+        li      6,272
+        stvx    29,6,1
+        li      6,256
+        stvx    28,6,1
+        li      6,240
+        stvx    27,6,1
+        li      6,224
+        stvx    26,6,1
+        li      6,208
+        stvx    25,6,1
+        li      6,192
+        stvx    24,6,1
+        li      6,176
+        stvx    23,6,1
+        li      6,160
+        stvx    22,6,1
+        li      6,144
+        stvx    21,6,1
+        li      6,128
+        stvx    20,6,1
 .LafterVMX1:
 
         /* Local variable space... */
 
-        /* r3 holds guest_state */
-        /* r4 holds do_profiling */
-        mr      31,3
-        std     3,104(1)       /* spill orig guest_state ptr */
+	/* r3 holds two_words */
+	/* r4 holds guest_state */
+        /* r5 holds host_addr */
 
         /* 96(sp) used later to check FPSCR[RM] */
         /* 88(sp) used later to load fpscr with zero */
@@ -201,13 +202,6 @@ VG_(run_innerloop):
            0(sp)  : back-chain
         */
 
-// CAB TODO: Use a caller-saved reg for orig guest_state ptr
-// - rem to set non-allocateable in isel.c
-
-        /* hold dispatch_ctr (=32bit value) in r29 */
-	ld	29,.tocent__vgPlain_dispatch_ctr@toc(2)
-	lwz	29,0(29)  /* 32-bit zero-extending load */
-
         /* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
            more info. */
@@ -215,16 +209,16 @@ VG_(run_innerloop):
            fsub 3,3,3 is not a reliable way to do this, since if
            f3 holds a NaN or similar then we don't necessarily
            wind up with zero. */
-        li      5,0
-        stw     5,88(1)
+        li      6,0
+        stw     6,88(1)
         lfs     3,88(1)
         mtfsf   0xFF,3   /* fpscr = lo32 of f3 */
 
         /* set host AltiVec control word to the default mode expected 
            by VEX-generated code. */
-	ld	5,.tocent__vgPlain_machine_ppc64_has_VMX@toc(2)
-	ld	5,0(5)
-        cmpldi  5,0
+	ld	6,.tocent__vgPlain_machine_ppc64_has_VMX@toc(2)
+	ld	6,0(6)
+        cmpldi  6,0
         beq     .LafterVMX2
 
         vspltisw 3,0x0  /* generate zero */
@@ -234,196 +228,37 @@ VG_(run_innerloop):
         /* make a stack frame for the code we are calling */
         stdu    1,-48(1)
 
-        /* fetch %CIA into r3 */
-        ld      3,OFFSET_ppc64_CIA(31)
+        /* Set up the guest state ptr */
+        mr      31,4      /* r31 (generated code gsp) = r4 */
 
-        /* fall into main loop (the right one) */
-	/* r4 = do_profiling.  It's probably trashed after here,
-           but that's OK: we don't need it after here. */
-	cmplwi	4,0
-	beq	.VG_(run_innerloop__dispatch_unprofiled)
-	b	.VG_(run_innerloop__dispatch_profiled)
+        /* and jump into the code cache.  Chained translations in
+           the code cache run, until for whatever reason, they can't
+           continue.  When that happens, the translation in question
+           will jump (or call) to one of the continuation points
+           VG_(cp_...) below. */
+        mtctr   5
+        bctr
 	/*NOTREACHED*/
 
-
 /*----------------------------------------------------*/
-/*--- NO-PROFILING (standard) dispatcher           ---*/
-/*----------------------------------------------------*/
-
-        .section        ".text"
-        .align 2
-        .globl VG_(run_innerloop__dispatch_unprofiled)
-        .section        ".opd","aw"
-        .align 3
-VG_(run_innerloop__dispatch_unprofiled):
-        .quad   .VG_(run_innerloop__dispatch_unprofiled),.TOC.@tocbase,0
-        .previous
-        .type   .VG_(run_innerloop__dispatch_unprofiled),@function
-        .globl  .VG_(run_innerloop__dispatch_unprofiled)
-.VG_(run_innerloop__dispatch_unprofiled):
-	/* At entry: Live regs:
-		r1  (=sp)
-		r2  (toc pointer)
-		r3  (=CIA = next guest address)
-		r29 (=dispatch_ctr)
-		r31 (=guest_state)
-	   Stack state:
-		144(r1) (=var space for FPSCR[RM])
-	*/
-	/* Has the guest state pointer been messed with?  If yes, exit.
-           Also set up & VG_(tt_fast) early in an attempt at better
-           scheduling. */
-	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
-        rldicl. 0,31,0,63
-        bne	.gsp_changed
-
-        /* save the jump address in the guest state */
-        std     3,OFFSET_ppc64_CIA(31)
-
-        /* Are we out of timeslice?  If yes, defer to scheduler. */
-	subi	29,29,1
-	cmpldi	29,0
-        beq	.counter_is_zero
-
-        /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 4 */
-	rldicl	4,3, 62, 64-VG_TT_FAST_BITS   /* entry# */
-	sldi	4,4,4      /* entry# * sizeof(FastCacheEntry) */
-	add	5,5,4      /* & VG_(tt_fast)[entry#] */
-	ld	6,0(5)     /* .guest */
-	ld	7,8(5)     /* .host */
-        cmpd    3,6
-        bne     .fast_lookup_failed
-
-        /* Found a match.  Call .host. */
-        mtctr   7
-        bctrl
-
-        /* On return from guest code:
-	   r3  holds destination (original) address.
-           r31 may be unchanged (guest_state), or may indicate further
-           details of the control transfer requested to *r3.
-        */
-	/* start over */
-	b	.VG_(run_innerloop__dispatch_unprofiled)
-	/*NOTREACHED*/
-        .size .VG_(run_innerloop), .-.VG_(run_innerloop)
-
-
-/*----------------------------------------------------*/
-/*--- PROFILING dispatcher (can be much slower)    ---*/
+/*--- Postamble and exit.                          ---*/
 /*----------------------------------------------------*/
 
-        .section        ".text"
-        .align 2
-        .globl VG_(run_innerloop__dispatch_profiled)
-        .section        ".opd","aw"
-        .align 3
-VG_(run_innerloop__dispatch_profiled):
-        .quad   .VG_(run_innerloop__dispatch_profiled),.TOC.@tocbase,0
-        .previous
-        .type   .VG_(run_innerloop__dispatch_profiled),@function
-        .globl  .VG_(run_innerloop__dispatch_profiled)
-.VG_(run_innerloop__dispatch_profiled):
-	/* At entry: Live regs:
-		r1  (=sp)
-		r2  (toc pointer)
-		r3  (=CIA = next guest address)
-		r29 (=dispatch_ctr)
-		r31 (=guest_state)
-	   Stack state:
-		144(r1) (=var space for FPSCR[RM])
-	*/
-	/* Has the guest state pointer been messed with?  If yes, exit.
-           Also set up & VG_(tt_fast) early in an attempt at better
-           scheduling. */
-	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
-        rldicl. 0,31,0,63
-        bne	.gsp_changed
+.postamble:
+        /* At this point, r6 and r7 contain two
+           words to be returned to the caller.  r6
+           holds a TRC value, and r7 optionally may
+           hold another word (for CHAIN_ME exits, the
+           address of the place to patch.) */
 
-        /* save the jump address in the guest state */
-        std     3,OFFSET_ppc64_CIA(31)
+        /* undo the "make a stack frame for the code we are calling" */
+        addi    1,1,48
 
-        /* Are we out of timeslice?  If yes, defer to scheduler. */
-	subi	29,29,1
-	cmpldi	29,0
-        beq	.counter_is_zero
-
-        /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 4 */
-	rldicl	4,3, 62, 64-VG_TT_FAST_BITS   /* entry# */
-	sldi	4,4,4      /* entry# * sizeof(FastCacheEntry) */
-	add	5,5,4      /* & VG_(tt_fast)[entry#] */
-	ld	6,0(5)     /* .guest */
-	ld	7,8(5)     /* .host */
-        cmpd    3,6
-        bne     .fast_lookup_failed
-
-        /* increment bb profile counter VG_(tt_fastN)[x] (=32bit val) */
-	ld	9, .tocent__vgPlain_tt_fastN@toc(2)
-	srdi	4, 4,1     /* entry# * sizeof(UInt*) */
-	ldx	9, 9,4     /* r7 = VG_(tt_fastN)[VG_TT_HASH(addr)] */
-	lwz	6, 0(9)    /* *(UInt*)r7 ++ */
-	addi	6, 6,1
-	stw	6, 0(9)
-
-        /* Found a match.  Call .host. */
-        mtctr   7
-        bctrl
-
-        /* On return from guest code:
-	   r3  holds destination (original) address.
-           r31 may be unchanged (guest_state), or may indicate further
-           details of the control transfer requested to *r3.
-        */
-	/* start over */
-	b	.VG_(run_innerloop__dispatch_profiled)
-	/*NOTREACHED*/
-        .size .VG_(run_a_noredir_translation), .-.VG_(run_a_noredir_translation)
-
-
-/*----------------------------------------------------*/
-/*--- exit points                                  ---*/
-/*----------------------------------------------------*/
-
-.gsp_changed:
-	/* Someone messed with the gsp (in r31).  Have to
-           defer to scheduler to resolve this.  dispatch ctr
-	   is not yet decremented, so no need to increment. */
-	/* %CIA is NOT up to date here.  First, need to write
-	   %r3 back to %CIA, but without trashing %r31 since
-	   that holds the value we want to return to the scheduler.
-	   Hence use %r5 transiently for the guest state pointer. */
-        ld      5,152(1)         /* original guest_state ptr */
-        std     3,OFFSET_ppc64_CIA(5)
-	mr	3,31		/* r3 = new gsp value */
-	b	.run_innerloop_exit
-	/*NOTREACHED*/
-
-.counter_is_zero:
-	/* %CIA is up to date */
-	/* back out decrement of the dispatch counter */
-        addi    29,29,1
-        li      3,VG_TRC_INNER_COUNTERZERO
-        b       .run_innerloop_exit
-
-.fast_lookup_failed:
-	/* %CIA is up to date */
-	/* back out decrement of the dispatch counter */
-        addi    29,29,1
-        li      3,VG_TRC_INNER_FASTMISS
-	b       .run_innerloop_exit
-
-
-
-/* All exits from the dispatcher go through here.
-   r3 holds the return value. 
-*/
-.run_innerloop_exit: 
         /* We're leaving.  Check that nobody messed with
-           VSCR or FPSCR. */
+           VSCR or FPSCR in ways we don't expect. */
+	/* Using r11 - value used again further on, so don't trash! */
+	ld	11,.tocent__vgPlain_machine_ppc64_has_VMX@toc(2)
+	ld	11,0(11)
 
 	/* Set fpscr back to a known state, since vex-generated code
 	   may have messed with fpscr[rm]. */
@@ -434,10 +269,7 @@ VG_(run_innerloop__dispatch_profiled):
         addi    1,1,16
         mtfsf   0xFF,3   /* fpscr = f3 */
 	
-	/* Using r11 - value used again further on, so don't trash! */
-	ld	11,.tocent__vgPlain_machine_ppc64_has_VMX@toc(2)
-        ld      11,0(11)
-        cmpldi  11,0
+        cmpldi  11,0    /* Do we have altivec? */
         beq     .LafterVMX8
 
         /* Check VSCR[NJ] == 1 */
@@ -451,32 +283,55 @@ VG_(run_innerloop__dispatch_profiled):
         vspltw    7,7,0x3                 /* flags-word to all lanes */
         vcmpequw. 8,6,7                   /* CR[24] = 1 if v6 == v7 */
         bt        24,.invariant_violation /* branch if all_equal */
+
 .LafterVMX8:
-
 	/* otherwise we're OK */
-        b       .run_innerloop_exit_REALLY
-
+        b       .remove_frame
 
 .invariant_violation:
-        li      3,VG_TRC_INVARIANT_FAILED
-        b       .run_innerloop_exit_REALLY
+        li      6,VG_TRC_INVARIANT_FAILED
+        li      7,0
+        /* fall through */
 
-.run_innerloop_exit_REALLY:
-        /* r3 holds VG_TRC_* value to return */
+.remove_frame:
+        /* r11 already holds VG_(machine_ppc32_has_VMX) value */
+        cmplwi  11,0
+        beq     .LafterVMX9
 
-        /* Return to parent stack */
-        addi    1,1,48
+        /* Restore Altivec regs.
+           Use r5 as scratch since r6/r7 are live. */
+        /* VRSAVE */
+        lwz     5,324(1)
+        mfspr   5,256         /* VRSAVE reg is spr number 256 */
 
-        /* Write ctr to VG_(dispatch_ctr) (=32bit value) */
-	ld	5,.tocent__vgPlain_dispatch_ctr@toc(2)
-        stw     29,0(5)
+        /* Vector regs */
+        li      5,304
+        lvx     31,5,1
+        li      5,288
+        lvx     30,5,1
+        li      5,272
+        lvx     29,5,1
+        li      5,256
+        lvx     28,5,1
+        li      5,240
+        lvx     27,5,1
+        li      5,224
+        lvx     26,5,1
+        li      5,208
+        lvx     25,5,1
+        li      5,192
+        lvx     24,5,1
+        li      5,176
+        lvx     23,5,1
+        li      5,160
+        lvx     22,5,1
+        li      5,144
+        lvx     21,5,1
+        li      5,128
+        lvx     20,5,1
+.LafterVMX9:
 
-        /* Restore cr */
-        lwz     0,44(1)
-        mtcr    0
-
-        /* Restore callee-saved registers... */
-
+        /* Restore FP regs */
         /* Floating-point regs */
         lfd     31,616(1)
         lfd     30,608(1)
@@ -497,7 +352,7 @@ VG_(run_innerloop__dispatch_profiled):
         lfd     15,488(1)
         lfd     14,480(1)
 
-        /* General regs */
+        /* restore int regs, including importantly r3 (two_words) */
         ld      31,472(1)
         ld      30,464(1)
         ld      29,456(1)
@@ -517,43 +372,12 @@ VG_(run_innerloop__dispatch_profiled):
         ld      15,344(1)
         ld      14,336(1)
         ld      13,328(1)
+        ld      3,104(1)
+        /* Stash return values */
+        std     6,0(3)
+        std     7,8(3)
 
-        /* r11 already holds VG_(machine_ppc64_has_VMX) value */
-        cmpldi  11,0
-        beq     .LafterVMX9
-
-        /* VRSAVE */
-        lwz     4,324(1)
-        mfspr   4,256         /* VRSAVE reg is spr number 256 */
-
-        /* Vector regs */
-        li      4,304
-        lvx     31,4,1
-        li      4,288
-        lvx     30,4,1
-        li      4,272
-        lvx     29,4,1
-        li      4,256
-        lvx     28,4,1
-        li      4,240
-        lvx     27,4,1
-        li      4,224
-        lvx     26,4,1
-        li      4,208
-        lvx     25,4,1
-        li      4,192
-        lvx     24,4,1
-        li      4,176
-        lvx     23,4,1
-        li      4,160
-        lvx     22,4,1
-        li      4,144
-        lvx     21,4,1
-        li      4,128
-        lvx     20,4,1
-.LafterVMX9:
-
-        /* reset cr, lr, sp */
+        /* restore lr & sp, and leave */
         ld      0,632(1)  /* stack_size + 8 */
         mtcr    0
         ld      0,640(1)  /* stack_size + 16 */
@@ -562,94 +386,146 @@ VG_(run_innerloop__dispatch_profiled):
         blr
 
 
-/*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*--- A special dispatcher, for running no-redir           ---*/
-/*--- translations.  Just runs the given translation once. ---*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
+/*----------------------------------------------------*/
+/*--- Continuation points                          ---*/
+/*----------------------------------------------------*/
 
-/* signature:
-void VG_(run_a_noredir_translation) ( UWord* argblock );
-*/
+/* ------ Chain me to slow entry point ------ */
+        .section ".text"
+        .align   2
+        .globl   VG_(disp_cp_chain_me_to_slowEP)
+        .section ".opd","aw"
+        .align   3
+VG_(disp_cp_chain_me_to_slowEP):
+        .quad    .VG_(disp_cp_chain_me_to_slowEP),.TOC.@tocbase,0
+        .previous
+        .type    .VG_(disp_cp_chain_me_to_slowEP),@function
+        .globl   .VG_(disp_cp_chain_me_to_slowEP)
+.VG_(disp_cp_chain_me_to_slowEP):
+        /* We got called.  The return address indicates
+           where the patching needs to happen.  Collect
+           the return address and, exit back to C land,
+           handing the caller the pair (Chain_me_S, RA) */
+        li   6, VG_TRC_CHAIN_ME_TO_SLOW_EP
+        mflr 7
+        /* 20 = imm64-fixed5 r30, disp_cp_chain_me_to_slowEP
+           4  = mtctr r30
+           4  = btctr
+        */
+        subi 7,7,20+4+4
+        b    .postamble
 
-/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
-   and 2 to carry results:
-      0: input:  ptr to translation
-      1: input:  ptr to guest state
-      2: output: next guest PC
-      3: output: guest state pointer afterwards (== thread return code)
-*/
+/* ------ Chain me to fast entry point ------ */
+        .section ".text"
+        .align   2
+        .globl   VG_(disp_cp_chain_me_to_fastEP)
+        .section ".opd","aw"
+        .align   3
+VG_(disp_cp_chain_me_to_fastEP):
+        .quad    .VG_(disp_cp_chain_me_to_fastEP),.TOC.@tocbase,0
+        .previous
+        .type    .VG_(disp_cp_chain_me_to_fastEP),@function
+        .globl   .VG_(disp_cp_chain_me_to_fastEP)
+.VG_(disp_cp_chain_me_to_fastEP):
+        /* We got called.  The return address indicates
+           where the patching needs to happen.  Collect
+           the return address and, exit back to C land,
+           handing the caller the pair (Chain_me_S, RA) */
+        li   6, VG_TRC_CHAIN_ME_TO_FAST_EP
+        mflr 7
+        /* 20 = imm64-fixed5 r30, disp_cp_chain_me_to_fastEP
+           4  = mtctr r30
+           4  = btctr
+        */
+        subi 7,7,20+4+4
+        b    .postamble
+
+/* ------ Indirect but boring jump ------ */
+        .section ".text"
+        .align   2
+        .globl   VG_(disp_cp_xindir)
+        .section ".opd","aw"
+        .align   3
+VG_(disp_cp_xindir):
+        .quad    .VG_(disp_cp_xindir),.TOC.@tocbase,0
+        .previous
+        .type    .VG_(disp_cp_xindir),@function
+        .globl   .VG_(disp_cp_xindir)
+.VG_(disp_cp_xindir):
+        /* Where are we going? */
+        ld      3,OFFSET_ppc64_CIA(31)
+
+        /* stats only */
+	ld	5, .tocent__vgPlain_stats__n_xindirs@toc(2)
+        ld      6,0(5)
+        addi    6,6,1
+        std     6,0(5)
+
+	/* r5 = &VG_(tt_fast) */
+	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
+
+        /* try a fast lookup in the translation cache */
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 4 */
+	rldicl	4,3, 62, 64-VG_TT_FAST_BITS   /* entry# */
+	sldi	4,4,4      /* entry# * sizeof(FastCacheEntry) */
+	add	5,5,4      /* & VG_(tt_fast)[entry#] */
+	ld	6,0(5)     /* .guest */
+	ld	7,8(5)     /* .host */
+        cmpd    3,6
+        bne     .fast_lookup_failed
+
+        /* Found a match.  Jump to .host. */
+        mtctr   7
+        bctr
+
+.fast_lookup_failed:
+        /* stats only */
+	ld	5, .tocent__vgPlain_stats__n_xindir_misses@toc(2)
+        ld      6,0(5)
+        addi    6,6,1
+        std     6,0(5)
+
+        li      6,VG_TRC_INNER_FASTMISS
+        li      7,0
+        b       .postamble
+	/*NOTREACHED*/
+
+/* ------ Assisted jump ------ */
 .section ".text"
-.align   2
-.globl VG_(run_a_noredir_translation)
-.section ".opd","aw"
-.align   3
-VG_(run_a_noredir_translation):
-.quad    .VG_(run_a_noredir_translation),.TOC.@tocbase,0
-.previous
-.type    .VG_(run_a_noredir_translation),@function
-.globl   .VG_(run_a_noredir_translation)
-.VG_(run_a_noredir_translation):
-	/* save callee-save int regs, & lr */
-	stdu 1,-512(1)
-	std  14,256(1)
-	std  15,264(1)
-	std  16,272(1)
-	std  17,280(1)
-	std  18,288(1)
-	std  19,296(1)
-	std  20,304(1)
-	std  21,312(1)
-	std  22,320(1)
-	std  23,328(1)
-	std  24,336(1)
-	std  25,344(1)
-	std  26,352(1)
-	std  27,360(1)
-	std  28,368(1)
-	std  29,376(1)
-	std  30,384(1)
-	std  31,392(1)
-	mflr 31
-	std  31,400(1)
-	std   2,408(1)  /* also preserve R2, just in case .. */
+        .align   2
+        .globl   VG_(disp_cp_xassisted)
+        .section ".opd","aw"
+        .align   3
+VG_(disp_cp_xassisted):
+        .quad    .VG_(disp_cp_xassisted),.TOC.@tocbase,0
+        .previous
+        .type    .VG_(disp_cp_xassisted),@function
+        .globl   .VG_(disp_cp_xassisted)
+.VG_(disp_cp_xassisted):
+        /* r31 contains the TRC */
+        mr      6,31
+        li      7,0
+        b       .postamble
 
-	std  3,416(1)
-	ld   31,8(3)
-	ld   30,0(3)
-	mtlr 30
-	blrl
+/* ------ Event check failed ------ */
+        .section ".text"
+        .align   2
+        .globl   VG_(disp_cp_evcheck_fail)
+        .section ".opd","aw"
+        .align   3
+VG_(disp_cp_evcheck_fail):
+        .quad    .VG_(disp_cp_evcheck_fail),.TOC.@tocbase,0
+        .previous
+        .type    .VG_(disp_cp_evcheck_fail),@function
+        .globl   .VG_(disp_cp_evcheck_fail)
+.VG_(disp_cp_evcheck_fail):
+        li      6,VG_TRC_INNER_COUNTERZERO
+        li      7,0
+        b       .postamble
 
-	ld   4,416(1)
-	std  3, 16(4)
-	std  31,24(4)
-
-	ld   14,256(1)
-	ld   15,264(1)
-	ld   16,272(1)
-	ld   17,280(1)
-	ld   18,288(1)
-	ld   19,296(1)
-	ld   20,304(1)
-	ld   21,312(1)
-	ld   22,320(1)
-	ld   23,328(1)
-	ld   24,336(1)
-	ld   25,344(1)
-	ld   26,352(1)
-	ld   27,360(1)
-	ld   28,368(1)
-	ld   29,376(1)
-	ld   30,384(1)
-	ld   31,400(1)
-	mtlr 31
-	ld   31,392(1)
-	ld    2,408(1)  /* also preserve R2, just in case .. */
-
-	addi 1,1,512
-	blr
-
+        
+.size .VG_(disp_run_translations), .-.VG_(disp_run_translations)
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

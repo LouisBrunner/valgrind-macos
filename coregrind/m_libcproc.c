@@ -29,6 +29,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_machine.h"    // For VG_(machine_get_VexArchInfo)
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
 #include "pub_core_libcbase.h"
@@ -713,6 +714,59 @@ void VG_(do_atfork_child)(ThreadId tid)
    for (i = 0; i < n_atfork; i++)
       if (atforks[i].child != NULL)
          (*atforks[i].child)(tid);
+}
+
+
+/* ---------------------------------------------------------------------
+   icache invalidation
+   ------------------------------------------------------------------ */
+
+void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
+{
+#  if defined(VGA_ppc32) || defined(VGA_ppc64)
+   Addr startaddr = (Addr) ptr;
+   Addr endaddr   = startaddr + nbytes;
+   Addr cls;
+   Addr addr;
+   VexArchInfo vai;
+
+   if (nbytes == 0) return;
+   vg_assert(nbytes > 0);
+
+   VG_(machine_get_VexArchInfo)( NULL, &vai );
+   cls = vai.ppc_cache_line_szB;
+
+   /* Stay sane .. */
+   vg_assert(cls == 32 || cls == 64 || cls == 128);
+
+   startaddr &= ~(cls - 1);
+   for (addr = startaddr; addr < endaddr; addr += cls) {
+      __asm__ __volatile__("dcbst 0,%0" : : "r" (addr));
+   }
+   __asm__ __volatile__("sync");
+   for (addr = startaddr; addr < endaddr; addr += cls) {
+      __asm__ __volatile__("icbi 0,%0" : : "r" (addr));
+   }
+   __asm__ __volatile__("sync; isync");
+
+#  elif defined(VGA_x86)
+   /* no need to do anything, hardware provides coherence */
+
+#  elif defined(VGA_amd64)
+   /* no need to do anything, hardware provides coherence */
+
+#  elif defined(VGA_s390x)
+   /* no need to do anything, hardware provides coherence */
+
+#  elif defined(VGP_arm_linux)
+   /* ARM cache flushes are privileged, so we must defer to the kernel. */
+   Addr startaddr = (Addr) ptr;
+   Addr endaddr   = startaddr + nbytes;
+   VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
+
+#  else
+#    error "Unknown ARCH"
+#  endif
 }
 
 

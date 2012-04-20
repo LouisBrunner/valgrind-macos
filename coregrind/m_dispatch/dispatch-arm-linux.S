@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------*/
 /*--- The core dispatch loop, for jumping to a code address.       ---*/
 /*---                                         dispatch-arm-linux.S ---*/
@@ -39,256 +40,177 @@
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
-/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
-/*--- run all translations except no-redir ones.           ---*/
+/*--- The dispatch loop.  VG_(disp_run_translations) is    ---*/
+/*--- used to run all translations,                        ---*/
+/*--- including no-redir ones.                             ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /*----------------------------------------------------*/
-/*--- Preamble (set everything up)                 ---*/
+/*--- Entry and preamble (set everything up)       ---*/
 /*----------------------------------------------------*/
 
 /* signature:
-UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
+void VG_(disp_run_translations)( UWord* two_words,
+                                 void*  guest_state, 
+                                 Addr   host_addr );
 */
 .text
-.globl VG_(run_innerloop)
-VG_(run_innerloop):
-	push {r0, r1, r4, r5, r6, r7, r8, r9, fp, lr}
+.global VG_(disp_run_translations)
+VG_(disp_run_translations):
+        /* r0  holds two_words
+           r1  holds guest_state
+           r2  holds host_addr
+        */
+        /* The number of regs in this list needs to be even, in
+           order to keep the stack 8-aligned. */
+	push {r0, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 
         /* set FPSCR to vex-required default value */
         mov  r4, #0
         fmxr fpscr, r4
 
-        /* r0 (hence also [sp,#0]) holds guest_state */
-        /* r1 holds do_profiling */
-	mov r8, r0
-	ldr r0, [r8, #OFFSET_arm_R15T]
+       	/* Set up the guest state pointer */
+        mov r8, r1
+
+        /* and jump into the code cache.  Chained translations in
+           the code cache run, until for whatever reason, they can't
+           continue.  When that happens, the translation in question
+           will jump (or call) to one of the continuation points
+           VG_(cp_...) below. */
+        bx r2
+        /* NOTREACHED */
         
-       	/* fall into main loop (the right one) */
-	cmp r1, #0      /* do_profiling */
-	beq VG_(run_innerloop__dispatch_unprofiled)
-	b   VG_(run_innerloop__dispatch_profiled)
-
-
 /*----------------------------------------------------*/
-/*--- NO-PROFILING (standard) dispatcher           ---*/
+/*--- Postamble and exit.                          ---*/
 /*----------------------------------------------------*/
 
-/* Pairing of insns below is my guesstimate of how dual dispatch would
-   work on an A8.  JRS, 2011-May-28 */
- 
-.global	VG_(run_innerloop__dispatch_unprofiled)
-VG_(run_innerloop__dispatch_unprofiled):
+postamble:
+        /* At this point, r1 and r2 contain two
+           words to be returned to the caller.  r1
+           holds a TRC value, and r2 optionally may
+           hold another word (for CHAIN_ME exits, the
+           address of the place to patch.) */
 
-	/* AT ENTRY: r0 is next guest addr, r8 is possibly
-        modified guest state ptr */
-
-        /* Has the guest state pointer been messed with?  If yes, exit. */
-        movw r3, #:lower16:VG_(dispatch_ctr)
-        tst  r8, #1
-
-        movt r3, #:upper16:VG_(dispatch_ctr)
-
-	bne  gsp_changed
-
-	/* save the jump address in the guest state */
-        str  r0, [r8, #OFFSET_arm_R15T]
-
-        /* Are we out of timeslice?  If yes, defer to scheduler. */
-        ldr  r2, [r3]
-
-        subs r2, r2, #1
-
-        str  r2, [r3]
-
-        beq  counter_is_zero
-
-        /* try a fast lookup in the translation cache */
-        // r0 = next guest, r1,r2,r3,r4 scratch
-        movw r1, #VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
-        movw r4, #:lower16:VG_(tt_fast)
-
-	and  r2, r1, r0, LSR #1         // r2 = entry #
-        movt r4, #:upper16:VG_(tt_fast) // r4 = &VG_(tt_fast)
-
-	add  r1, r4, r2, LSL #3         // r1 = &tt_fast[entry#]
-
-        ldrd r4, r5, [r1, #0]           // r4 = .guest, r5 = .host
-
-	cmp  r4, r0
-
-	bne  fast_lookup_failed
-        // r5: next-host    r8: live, gsp
-        // r4: next-guest
-        // r2: entry #
-        // LIVE: r5, r8; all others dead
-        
-        /* Found a match.  Jump to .host. */
-	blx  r5
-	b    VG_(run_innerloop__dispatch_unprofiled)
-.ltorg
-	/*NOTREACHED*/
-
-/*----------------------------------------------------*/
-/*--- PROFILING dispatcher (can be much slower)    ---*/
-/*----------------------------------------------------*/
-
-.global	VG_(run_innerloop__dispatch_profiled)
-VG_(run_innerloop__dispatch_profiled):
-
-	/* AT ENTRY: r0 is next guest addr, r8 is possibly
-        modified guest state ptr */
-
-        /* Has the guest state pointer been messed with?  If yes, exit. */
-        movw r3, #:lower16:VG_(dispatch_ctr)
-	tst  r8, #1
-
-        movt r3, #:upper16:VG_(dispatch_ctr)
-
-	bne  gsp_changed
-
-	/* save the jump address in the guest state */
-        str  r0, [r8, #OFFSET_arm_R15T]
-
-        /* Are we out of timeslice?  If yes, defer to scheduler. */
-        ldr  r2, [r3]
-
-        subs r2, r2, #1
-
-        str  r2, [r3]
-
-        beq  counter_is_zero
-
-        /* try a fast lookup in the translation cache */
-        // r0 = next guest, r1,r2,r3,r4 scratch
-        movw r1, #VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
-        movw r4, #:lower16:VG_(tt_fast)
-
-	and  r2, r1, r0, LSR #1         // r2 = entry #
-        movt r4, #:upper16:VG_(tt_fast) // r4 = &VG_(tt_fast)
-
-	add  r1, r4, r2, LSL #3         // r1 = &tt_fast[entry#]
-
-        ldrd r4, r5, [r1, #0]           // r4 = .guest, r5 = .host
-
-	cmp  r4, r0
-
-	bne  fast_lookup_failed
-        // r5: next-host    r8: live, gsp
-        // r4: next-guest
-        // r2: entry #
-        // LIVE: r5, r8; all others dead
-        
-        /* increment bb profile counter */
-        movw r0, #:lower16:VG_(tt_fastN)
-        movt r0, #:upper16:VG_(tt_fastN) // r0 = &tt_fastN[0]
-        ldr  r0, [r0, r2, LSL #2]        // r0 = tt_fast[entry #]
-        ldr  r3, [r0]                    // *r0 ++
-        add  r3, r3, #1
-        str  r3, [r0]
-
-        /* Found a match.  Jump to .host. */
-	blx  r5
-	b    VG_(run_innerloop__dispatch_profiled)
-	/*NOTREACHED*/
-
-/*----------------------------------------------------*/
-/*--- exit points                                  ---*/
-/*----------------------------------------------------*/
-
-gsp_changed:
-        // r0 = next guest addr (R15T), r8 = modified gsp
-        /* Someone messed with the gsp.  Have to
-           defer to scheduler to resolve this.  dispatch ctr
-           is not yet decremented, so no need to increment. */
-        /* R15T is NOT up to date here.  First, need to write
-           r0 back to R15T, but without trashing r8 since
-           that holds the value we want to return to the scheduler.
-           Hence use r1 transiently for the guest state pointer. */
-	ldr r1, [sp, #0]
-	str r0, [r1, #OFFSET_arm_R15T]
-	mov r0, r8      // "return modified gsp"
-	b run_innerloop_exit
-        /*NOTREACHED*/
-
-counter_is_zero:
-        /* R15T is up to date here */
-        /* Back out increment of the dispatch ctr */
-        ldr  r1, =VG_(dispatch_ctr)
-        ldr  r2, [r1]
-        add  r2, r2, #1
-        str  r2, [r1]
-        mov  r0, #VG_TRC_INNER_COUNTERZERO
-        b    run_innerloop_exit
-        /*NOTREACHED*/
-        
-fast_lookup_failed:
-        /* R15T is up to date here */
-        /* Back out increment of the dispatch ctr */
-        ldr  r1, =VG_(dispatch_ctr)
-        ldr  r2, [r1]
-        add  r2, r2, #1
-        str  r2, [r1]
-	mov  r0, #VG_TRC_INNER_FASTMISS
-	b    run_innerloop_exit
-        /*NOTREACHED*/
-
-/* All exits from the dispatcher go through here.  %r0 holds
-   the return value. 
-*/
-run_innerloop_exit:
         /* We're leaving.  Check that nobody messed with
            FPSCR in ways we don't expect. */
         fmrx r4, fpscr
         bic  r4, #0xF8000000 /* mask out NZCV and QC */
         bic  r4, #0x0000009F /* mask out IDC,IXC,UFC,OFC,DZC,IOC */
         cmp  r4, #0
-        bne  invariant_violation
-        b    run_innerloop_exit_REALLY
+        beq  remove_frame /* we're OK */
+        /* otherwise we have an invariant violation */
+        movw r1, #VG_TRC_INVARIANT_FAILED
+        movw r2, #0
+        /* fall through */
 
-invariant_violation:
-        mov  r0, #VG_TRC_INVARIANT_FAILED
-        b    run_innerloop_exit_REALLY
+remove_frame:
+        /* Restore int regs, including importantly r0 (two_words) */
+	pop {r0, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}     
+        /* Stash return values */
+        str  r1, [r0, #0]
+        str  r2, [r0, #4]
+        bx   lr
 
-run_innerloop_exit_REALLY:
-	add sp, sp, #8
-	pop {r4, r5, r6, r7, r8, r9, fp, pc}
+/*----------------------------------------------------*/
+/*--- Continuation points                          ---*/
+/*----------------------------------------------------*/
 
-.size VG_(run_innerloop), .-VG_(run_innerloop)
+/* ------ Chain me to slow entry point ------ */
+.global VG_(disp_cp_chain_me_to_slowEP)
+VG_(disp_cp_chain_me_to_slowEP):
+        /* We got called.  The return address indicates
+           where the patching needs to happen.  Collect
+           the return address and, exit back to C land,
+           handing the caller the pair (Chain_me_S, RA) */
+        mov  r1, #VG_TRC_CHAIN_ME_TO_SLOW_EP
+        mov  r2, lr
+        /* 4 = movw r12, lo16(disp_cp_chain_me_to_slowEP)
+           4 = movt r12, hi16(disp_cp_chain_me_to_slowEP)
+           4 = blx  r12 */
+        sub  r2, r2, #4+4+4
+        b    postamble
+
+/* ------ Chain me to fast entry point ------ */
+.global VG_(disp_cp_chain_me_to_fastEP)
+VG_(disp_cp_chain_me_to_fastEP):
+        /* We got called.  The return address indicates
+           where the patching needs to happen.  Collect
+           the return address and, exit back to C land,
+           handing the caller the pair (Chain_me_F, RA) */
+        mov  r1, #VG_TRC_CHAIN_ME_TO_FAST_EP
+        mov  r2, lr
+        /* 4 = movw r12, lo16(disp_cp_chain_me_to_fastEP)
+           4 = movt r12, hi16(disp_cp_chain_me_to_fastEP)
+           4 = blx  r12 */
+        sub  r2, r2, #4+4+4
+        b    postamble
+
+/* ------ Indirect but boring jump ------ */
+.global VG_(disp_cp_xindir)
+VG_(disp_cp_xindir):
+	/* Where are we going? */
+        ldr  r0, [r8, #OFFSET_arm_R15T]
+
+        /* RM ME -- stats only */
+        movw r1, #:lower16:vgPlain_stats__n_xindirs
+        movt r1, #:upper16:vgPlain_stats__n_xindirs
+        ldr  r2, [r1, #0]
+        adds r2, r2, #1
+        str  r2, [r1, #0]
+        ldr  r2, [r1, #4]
+        adc  r2, r2, #0
+        str  r2, [r1, #4]
+        
+        /* try a fast lookup in the translation cache */
+        // r0 = next guest, r1,r2,r3,r4 scratch
+        movw r1, #VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
+        movw r4, #:lower16:VG_(tt_fast)
+
+	and  r2, r1, r0, LSR #1         // r2 = entry #
+        movt r4, #:upper16:VG_(tt_fast) // r4 = &VG_(tt_fast)
+
+	add  r1, r4, r2, LSL #3         // r1 = &tt_fast[entry#]
+
+        ldrd r4, r5, [r1, #0]           // r4 = .guest, r5 = .host
+
+	cmp  r4, r0
+
+        // jump to host if lookup succeeded
+	bxeq r5
+
+        /* otherwise the fast lookup failed */
+        /* RM ME -- stats only */
+        movw r1, #:lower16:vgPlain_stats__n_xindir_misses
+        movt r1, #:upper16:vgPlain_stats__n_xindir_misses
+        ldr  r2, [r1, #0]
+        adds r2, r2, #1
+        str  r2, [r1, #0]
+        ldr  r2, [r1, #4]
+        adc  r2, r2, #0
+        str  r2, [r1, #4]
+
+	mov  r1, #VG_TRC_INNER_FASTMISS
+        mov  r2, #0
+	b    postamble
+
+/* ------ Assisted jump ------ */
+.global VG_(disp_cp_xassisted)
+VG_(disp_cp_xassisted):
+        /* r8 contains the TRC */
+        mov  r1, r8
+        mov  r2, #0
+        b    postamble
+
+/* ------ Event check failed ------ */
+.global VG_(disp_cp_evcheck_fail)
+VG_(disp_cp_evcheck_fail):
+       	mov  r1, #VG_TRC_INNER_COUNTERZERO
+        mov  r2, #0
+	b    postamble
 
 
-/*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*--- A special dispatcher, for running no-redir           ---*/
-/*--- translations.  Just runs the given translation once. ---*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
-
-/* signature:
-void VG_(run_a_noredir_translation) ( UWord* argblock );
-*/
-
-/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
-   and 2 to carry results:
-      0: input:  ptr to translation
-      1: input:  ptr to guest state
-      2: output: next guest PC
-      3: output: guest state pointer afterwards (== thread return code)
-*/
-.global VG_(run_a_noredir_translation)
-VG_(run_a_noredir_translation):
-	push {r0,r1 /* EABI compliance */, r4-r12, lr} 
-	ldr r8, [r0, #4]
-	mov lr, pc
-	ldr pc, [r0, #0]
-
-	pop {r1}
-	str r0, [r1, #8]
-	str r8, [r1, #12]
-	pop {r1/*EABI compliance*/,r4-r12, pc}	
-
-.size VG_(run_a_noredir_translation), .-VG_(run_a_noredir_translation)
+.size VG_(disp_run_translations), .-VG_(disp_run_translations)
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",%progbits

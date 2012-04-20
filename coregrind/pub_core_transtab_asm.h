@@ -42,8 +42,9 @@
    ever be used.  So instead the function is '(address >>u
    2)[VG_TT_FAST_BITS-1 : 0]' on those targets.
 
-   On ARM we do like ppc32/ppc64, although that will have to be
-   revisited when we come to implement Thumb.
+   On ARM we shift by 1, since Thumb insns can be of size 2, hence to
+   minimise collisions and maximise cache utilisation we need to take
+   into account all but the least significant bit.
 
    On s390x the rightmost bit of an instruction address is zero.
    For best table utilization shift the address to the right by 1 bit. */

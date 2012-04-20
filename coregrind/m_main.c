@@ -1881,13 +1881,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
 
 #     if defined(VGP_x86_linux)
-      iters = 5;
+      iters = 10;
 #     elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
 #     elif defined(VGP_arm_linux)
-      iters = 1;
+      iters = 5;
 #     elif defined(VGP_s390x_linux)
       iters = 10;
 #     elif defined(VGO_darwin)

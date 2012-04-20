@@ -44,6 +44,7 @@ EXTRA_DIST = \
 	internals/register-uses.txt \
 	internals/release-HOWTO.txt \
 	internals/segments-seginfos.txt \
+	internals/t-chaining-notes.txt \
 	internals/threads-syscalls-signals.txt \
 	internals/tm-mutexstates.dot \
 	internals/tm-threadstates.dot \

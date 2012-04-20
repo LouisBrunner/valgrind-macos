@@ -7849,9 +7849,9 @@ chainXDirect_S390(void *place_to_chain,
    if (shortOK) {
       p = s390_emit_BRCL(p, S390_CC_ALWAYS, delta);  /* 6 bytes */
 
-      /* Make sre that BRCL fits into the patchable part of an xdirect
+      /* Make sure that BRCL fits into the patchable part of an xdirect
          code sequence */
-      vassert(6 < s390_xdirect_patchable_len());
+      vassert(6 <= s390_xdirect_patchable_len());
 
       /* Fill remaining bytes with 0x00 (invalid opcode) */
       Int i;

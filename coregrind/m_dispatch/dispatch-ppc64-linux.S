@@ -46,10 +46,10 @@
 .section ".toc","aw"
 .tocent__vgPlain_tt_fast:
         .tc vgPlain_tt_fast[TC],vgPlain_tt_fast
-.tocent__vgPlain_stats__n_xindirs:
-        .tc vgPlain_stats__n_xindirs[TC],vgPlain_stats__n_xindirs
-.tocent__vgPlain_stats__n_xindir_misses:
-        .tc vgPlain_stats__n_xindir_misses[TC],vgPlain_stats__n_xindir_misses
+.tocent__vgPlain_stats__n_xindirs_32:
+        .tc vgPlain_stats__n_xindirs_32[TC],vgPlain_stats__n_xindirs_32
+.tocent__vgPlain_stats__n_xindir_misses_32:
+        .tc vgPlain_stats__n_xindir_misses_32[TC],vgPlain_stats__n_xindir_misses_32
 .tocent__vgPlain_machine_ppc64_has_VMX:
         .tc vgPlain_machine_ppc64_has_VMX[TC],vgPlain_machine_ppc64_has_VMX
 
@@ -456,10 +456,10 @@ VG_(disp_cp_xindir):
         ld      3,OFFSET_ppc64_CIA(31)
 
         /* stats only */
-	ld	5, .tocent__vgPlain_stats__n_xindirs@toc(2)
-        ld      6,0(5)
+	ld	5, .tocent__vgPlain_stats__n_xindirs_32@toc(2)
+        lwz     6,0(5)
         addi    6,6,1
-        std     6,0(5)
+        stw     6,0(5)
 
 	/* r5 = &VG_(tt_fast) */
 	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
@@ -481,10 +481,10 @@ VG_(disp_cp_xindir):
 
 .fast_lookup_failed:
         /* stats only */
-	ld	5, .tocent__vgPlain_stats__n_xindir_misses@toc(2)
-        ld      6,0(5)
+	ld	5, .tocent__vgPlain_stats__n_xindir_misses_32@toc(2)
+        lwz     6,0(5)
         addi    6,6,1
-        std     6,0(5)
+        stw     6,0(5)
 
         li      6,VG_TRC_INNER_FASTMISS
         li      7,0

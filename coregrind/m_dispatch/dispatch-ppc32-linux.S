@@ -440,13 +440,10 @@ VG_(disp_cp_xindir):
         lwz     3,OFFSET_ppc32_CIA(31)
 
         /* stats only */
-        lis     5,VG_(stats__n_xindirs)@ha
-        addi    5,5,VG_(stats__n_xindirs)@l
-        lwz     6,4(5)
-        addic.  6,6,1
-        stw     6,4(5)
+        lis     5,VG_(stats__n_xindirs_32)@ha
+        addi    5,5,VG_(stats__n_xindirs_32)@l
         lwz     6,0(5)
-        addze   6,6
+        addi    6,6,1
         stw     6,0(5)
         
         /* r5 = &VG_(tt_fast) */
@@ -469,13 +466,10 @@ VG_(disp_cp_xindir):
 
 fast_lookup_failed:
         /* stats only */
-        lis     5,VG_(stats__n_xindir_misses)@ha
-        addi    5,5,VG_(stats__n_xindir_misses)@l
-        lwz     6,4(5)
-        addic.  6,6,1
-        stw     6,4(5)
+        lis     5,VG_(stats__n_xindir_misses_32)@ha
+        addi    5,5,VG_(stats__n_xindir_misses_32)@l
         lwz     6,0(5)
-        addze   6,6
+        addi    6,6,1
         stw     6,0(5)
 
         li      6,VG_TRC_INNER_FASTMISS

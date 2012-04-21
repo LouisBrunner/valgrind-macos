@@ -963,10 +963,13 @@ static size_t my_malloc_size ( void* zone, void* ptr )
    return res;
 }
 
+/* Note that the (void*) casts below are a kludge which stops
+   compilers complaining about the fact that the the replacement
+   functions aren't really of the right type. */
 static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved1
     NULL, // reserved2
-    my_malloc_size, // JRS fixme: is this right?
+    (void*)my_malloc_size, // JRS fixme: is this right?
     (void*)VG_REPLACE_FUNCTION_EZU(10020,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
     (void*)VG_REPLACE_FUNCTION_EZU(10060,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
     (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc), 

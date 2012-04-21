@@ -601,12 +601,13 @@ SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
    res = VG_(do_syscall4)(__NR_pread64, fd, (UWord)buf, count, offset);
    return res;
 #  elif defined(VGP_amd64_darwin)
+   vg_assert(sizeof(OffT) == 8);
    res = VG_(do_syscall4)(__NR_pread_nocancel, fd, (UWord)buf, count, offset);
    return res;
 #  elif defined(VGP_x86_darwin)
-   vg_assert(sizeof(OffT) == 4);
+   vg_assert(sizeof(OffT) == 8);
    res = VG_(do_syscall5)(__NR_pread_nocancel, fd, (UWord)buf, count, 
-                          offset, 0);
+                          offset & 0xffffffff, offset >> 32);
    return res;
 #  else
 #    error "Unknown platform"

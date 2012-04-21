@@ -1318,6 +1318,18 @@ s390_emit_AGSI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
 
 
 static UChar *
+s390_emit_ASI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
+{
+   vassert(s390_host_has_gie);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, INT, SDXB), "asi", (Int)(Char)i2, dh1, dl1, 0, b1);
+
+   return emit_SIY(p, 0xeb000000006aULL, i2, b1, dl1, dh1);
+}
+
+
+static UChar *
 s390_emit_NR(UChar *p, UChar r1, UChar r2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -7560,10 +7572,13 @@ s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
    d = amode->d;
 
    /* Decrement the dispatch counter in the guest state */
-   /* fixs390: ASI if available */
-   buf = s390_emit_LHI(buf, R0, -1);             /* 4 bytes */
-   buf = s390_emit_A(buf, R0, 0, b, d);          /* 4 bytes */
-   buf = s390_emit_ST(buf, R0, 0, b, d);         /* 4 bytes */
+   if (s390_host_has_gie) {
+      buf = s390_emit_ASI(buf, -1, b, DISP20(d));   /* 6 bytes */
+   } else {
+      buf = s390_emit_LHI(buf, R0, -1);             /* 4 bytes */
+      buf = s390_emit_A(buf, R0, 0, b, d);          /* 4 bytes */
+      buf = s390_emit_ST(buf, R0, 0, b, d);         /* 4 bytes */
+   }
 
    /* Jump over the next insn if >= 0 */
    buf = s390_emit_BRC(buf, S390_CC_HE, (4 + 6 + 2) / 2);  /* 4 bytes */
@@ -7594,9 +7609,13 @@ s390_insn_profinc_emit(UChar *buf,
       template will be patched once the memory location is known.
       For now we do this with address == 0. */
    buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH, 0);
-   buf = s390_emit_LGHI(buf, R0, 1);
-   buf = s390_emit_AG( buf, R0, 0, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
-   buf = s390_emit_STG(buf, R0, 0, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+   if (s390_host_has_gie) {
+      buf = s390_emit_AGSI(buf, 1, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+   } else {
+      buf = s390_emit_LGHI(buf, R0, 1);
+      buf = s390_emit_AG( buf, R0, 0, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+      buf = s390_emit_STG(buf, R0, 0, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+   }
 
    return buf;
 }
@@ -7762,7 +7781,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 Int
 evCheckSzB_S390(void)
 {
-   return 24;
+   return s390_host_has_gie ? 18 : 24;
 }
 
 

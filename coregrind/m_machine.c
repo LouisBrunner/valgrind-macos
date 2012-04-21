@@ -1130,6 +1130,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
      if (have_FGX)   vai.hwcaps |= VEX_HWCAPS_S390X_FGX;
      if (have_ETF2)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF2;
+     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 

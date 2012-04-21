@@ -37,45 +37,35 @@
 #include "libvex_guest_offsets.h"	/* for OFFSET_x86_EIP */
 
 
-/* Global variables */
-/* These are defined here instead of in their respective C files to
-   avoid extra PIC branch code here. */
-.data
-.align 2
-
-/* m_transtab.c */
-.globl VG_(tt_fast)
-.align 4
-VG_(tt_fast):	.space VG_TT_FAST_SIZE*8, 0  /* (2*Addr) [VG_TT_FAST_SIZE] */
-.globl VG_(tt_fastN)
-VG_(tt_fastN):	.space VG_TT_FAST_SIZE*4, 0  /* (UInt *) [VG_TT_FAST_SIZE] */
-
-/* scheduler.c */
-.globl VG_(dispatch_ctr)
-VG_(dispatch_ctr):	.long 0
-
-	
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
-/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
-/*--- run all translations except no-redir ones.           ---*/
+/*--- The dispatch loop.  VG_(disp_run_translations) is    ---*/
+/*--- used to run all translations,                        ---*/
+/*--- including no-redir ones.                             ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /*----------------------------------------------------*/
-/*--- Preamble (set everything up)                 ---*/
+/*--- Entry and preamble (set everything up)       ---*/
 /*----------------------------------------------------*/
 
 /* signature:
-UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
+void VG_(disp_run_translations)( UWord* two_words,
+                                 void*  guest_state, 
+                                 Addr   host_addr );
 */
 .text
-.globl VG_(run_innerloop)
-VG_(run_innerloop):
-	/* 4(%esp) holds guest_state */
-	/* 8(%esp) holds do_profiling */
-	
-	/* ----- entry point to VG_(run_innerloop) ----- */
+.globl VG_(disp_run_translations)
+VG_(disp_run_translations):
+        /* 0(%esp) holds our return address. */
+	/* 4(%esp) holds two_words */
+	/* 8(%esp) holds guest_state */
+	/* 12(%esp) holds host_addr */
+
+        /* The preamble */
+
+        /* Save integer registers, since this is a pseudo-function. */
+        pushl   %eax
 	pushl	%ebx
 	pushl	%ecx
 	pushl	%edx
@@ -83,14 +73,11 @@ VG_(run_innerloop):
 	pushl	%edi
 	pushl	%ebp
 	
-	/* 28(%esp) holds guest_state */
-	/* 32(%esp) holds do_profiling */
+	/* 28+4(%esp) holds two_words */
+	/* 28+8(%esp) holds guest_state */
+	/* 28+12(%esp) holds host_addr */
 
-	/* Set up the guest state pointer */
-	movl	28(%esp), %ebp
-	
-	/* fetch %EIP into %eax */
-	movl	OFFSET_x86_EIP(%ebp), %eax
+        /* Get the host CPU in the state expected by generated code. */
 
 	/* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
@@ -110,140 +97,32 @@ VG_(run_innerloop):
 L1:
 	/* set dir flag to known value */
 	cld
-	
-	/* fall into main loop (the right one) */
-	cmpl	$0, 32(%esp) /* do_profiling */
-	je	VG_(run_innerloop__dispatch_unassisted_unprofiled)
-	jmp	VG_(run_innerloop__dispatch_unassisted_profiled)
+
+	/* Set up the guest state pointer */
+	movl	28+8(%esp), %ebp
+
+        /* and jump into the code cache.  Chained translations in
+           the code cache run, until for whatever reason, they can't
+           continue.  When that happens, the translation in question
+           will jump (or call) to one of the continuation points
+           VG_(cp_...) below. */
+        jmpl    *28+12(%esp)
 	/*NOTREACHED*/
 
 /*----------------------------------------------------*/
-/*--- NO-PROFILING (standard) dispatcher           ---*/
+/*--- Postamble and exit.                          ---*/
 /*----------------------------------------------------*/
 
-.globl	VG_(run_innerloop__dispatch_unassisted_unprofiled)
-VG_(run_innerloop__dispatch_unassisted_unprofiled):
-	/* AT ENTRY: %eax is next guest addr, %ebp is the
-           unmodified guest state ptr */
+postamble:
+        /* At this point, %eax and %edx contain two
+           words to be returned to the caller.  %eax
+           holds a TRC value, and %edx optionally may
+           hold another word (for CHAIN_ME exits, the
+           address of the place to patch.) */
 
-	/* save the jump address in the guest state */
-	movl	%eax, OFFSET_x86_EIP(%ebp)
-
-	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	subl	$1, VG_(dispatch_ctr)
-	jz	counter_is_zero
-
-	/* try a fast lookup in the translation cache */
-	movl	%eax, %ebx
-	andl	$VG_TT_FAST_MASK, %ebx
-	movl	0+VG_(tt_fast)(,%ebx,8), %esi	/* .guest */
-	movl	4+VG_(tt_fast)(,%ebx,8), %edi	/* .host */
-	cmpl	%eax, %esi
-	jnz	fast_lookup_failed
-
-	/* Found a match.  Jump to .host. */
-	jmp 	*%edi
-	ud2	/* persuade insn decoders not to speculate past here */
-	/* generated code should run, then jump back to
-	   VG_(run_innerloop__dispatch_{un,}assisted_unprofiled). */
-	/*NOTREACHED*/
-
-.globl	VG_(run_innerloop__dispatch_assisted_unprofiled)
-VG_(run_innerloop__dispatch_assisted_unprofiled):
-	/* AT ENTRY: %eax is next guest addr, %ebp is the
-           modified guest state ptr */
-        jmp     gsp_changed
-        ud2
-        /*NOTREACHED*/
-
-/*----------------------------------------------------*/
-/*--- PROFILING dispatcher (can be much slower)    ---*/
-/*----------------------------------------------------*/
-
-.globl	VG_(run_innerloop__dispatch_unassisted_profiled)
-VG_(run_innerloop__dispatch_unassisted_profiled):
-	/* AT ENTRY: %eax is next guest addr, %ebp is the
-           unmodified guest state ptr */
-
-	/* save the jump address in the guest state */
-	movl	%eax, OFFSET_x86_EIP(%ebp)
-
-	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	subl	$1, VG_(dispatch_ctr)
-	jz	counter_is_zero
-
-	/* try a fast lookup in the translation cache */
-	movl	%eax, %ebx
-	andl	$VG_TT_FAST_MASK, %ebx
-	movl	0+VG_(tt_fast)(,%ebx,8), %esi	/* .guest */
-	movl	4+VG_(tt_fast)(,%ebx,8), %edi	/* .host */
-	cmpl	%eax, %esi
-	jnz	fast_lookup_failed
-	/* increment bb profile counter */
-	/* note: innocuous as this sounds, it causes a huge amount more
-           stress on D1 and significantly slows everything down. */
-	movl	VG_(tt_fastN)(,%ebx,4), %edx
-	/* Use "addl $1", not "incl", to avoid partial-flags stall on P4 */
-	addl	$1, (%edx)
-
-	/* Found a match.  Jump to .host. */
-	jmp 	*%edi
-	ud2	/* persuade insn decoders not to speculate past here */
-	/* generated code should run, then jump back to
-	   VG_(run_innerloop__dispatch_{un,}assisted_profiled). */
-	/*NOTREACHED*/
-
-.globl	VG_(run_innerloop__dispatch_assisted_profiled)
-VG_(run_innerloop__dispatch_assisted_profiled):
-	/* AT ENTRY: %eax is next guest addr, %ebp is the
-           modified guest state ptr */
-        jmp     gsp_changed
-        ud2
-        /*NOTREACHED*/
-
-/*----------------------------------------------------*/
-/*--- exit points                                  ---*/
-/*----------------------------------------------------*/
-
-gsp_changed:
-	/* Someone messed with the gsp.  Have to
-           defer to scheduler to resolve this.  dispatch ctr
-	   is not yet decremented, so no need to increment. */
-	/* %EIP is NOT up to date here.  First, need to write
-	   %eax back to %EIP, but without trashing %ebp since
-	   that holds the value we want to return to the scheduler.
-	   Hence use %esi transiently for the guest state pointer. */
-	movl	28(%esp), %esi
-	movl	%eax, OFFSET_x86_EIP(%esi)
-	movl	%ebp, %eax
-	jmp	run_innerloop_exit
-	/*NOTREACHED*/
-
-counter_is_zero:
-	/* %EIP is up to date here */
-	/* back out decrement of the dispatch counter */
-	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_COUNTERZERO, %eax
-	jmp	run_innerloop_exit
-	/*NOTREACHED*/
-
-fast_lookup_failed:
-	/* %EIP is up to date here */
-	/* back out decrement of the dispatch counter */
-	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_FASTMISS, %eax
-	jmp	run_innerloop_exit
-	/*NOTREACHED*/
-
-
-
-/* All exits from the dispatcher go through here.  %eax holds
-   the return value. 
-*/
-run_innerloop_exit: 
-	/* We're leaving.  Check that nobody messed with
-           %mxcsr or %fpucw.  We can't mess with %eax here as it
-	   holds the tentative return value, but any other is OK. */
+	/* We're leaving.  Check that nobody messed with %mxcsr
+           or %fpucw.  We can't mess with %eax or %edx here as they
+	   holds the tentative return value, but any others are OK. */
 #if !defined(ENABLE_INNER)
         /* This check fails for self-hosting, so skip in that case */
 	pushl	$0
@@ -252,7 +131,7 @@ run_innerloop_exit:
 	popl	%esi /* get rid of the word without trashing %eflags */
 	jnz	invariant_violation
 #endif
-	cmpl	$0, VG_(machine_x86_have_mxcsr)
+#	cmpl	$0, VG_(machine_x86_have_mxcsr)
 	jz	L2
 	pushl	$0
 	stmxcsr	(%esp)
@@ -261,69 +140,107 @@ run_innerloop_exit:
 	popl	%esi
 	jnz	invariant_violation
 L2:	/* otherwise we're OK */
-	jmp	run_innerloop_exit_REALLY
-
+	jmp	remove_frame
 invariant_violation:
 	movl	$VG_TRC_INVARIANT_FAILED, %eax
-	jmp	run_innerloop_exit_REALLY
+        movl    $0, %edx
 
-run_innerloop_exit_REALLY:
+remove_frame:
+        /* Stash return values */
+        movl    28+4(%esp), %edi        /* two_words */
+        movl    %eax, 0(%edi)
+        movl    %edx, 4(%edi)
+        /* Restore int regs and return. */
 	popl	%ebp
 	popl	%edi
 	popl	%esi
 	popl	%edx
 	popl	%ecx
 	popl	%ebx
+	popl	%eax
 	ret	
+        
+/*----------------------------------------------------*/
+/*--- Continuation points                          ---*/
+/*----------------------------------------------------*/
 
+/* ------ Chain me to slow entry point ------ */
+.globl VG_(disp_cp_chain_me_to_slowEP)
+VG_(disp_cp_chain_me_to_slowEP):
+        /* We got called.  The return address indicates
+           where the patching needs to happen.  Collect
+           the return address and, exit back to C land,
+           handing the caller the pair (Chain_me_S, RA) */
+        movl    $VG_TRC_CHAIN_ME_TO_SLOW_EP, %eax
+        popl    %edx
+        /* 5 = movl $VG_(disp_chain_me_to_slowEP), %edx;
+           2 = call *%edx */
+        subl    $5+2, %edx
+        jmp     postamble
 
-/*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*--- A special dispatcher, for running no-redir           ---*/
-/*--- translations.  Just runs the given translation once. ---*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
+/* ------ Chain me to fast entry point ------ */
+.globl VG_(disp_cp_chain_me_to_fastEP)
+VG_(disp_cp_chain_me_to_fastEP):
+        /* We got called.  The return address indicates
+           where the patching needs to happen.  Collect
+           the return address and, exit back to C land,
+           handing the caller the pair (Chain_me_F, RA) */
+        movl    $VG_TRC_CHAIN_ME_TO_FAST_EP, %eax
+        popl    %edx
+        /* 5 = movl $VG_(disp_chain_me_to_fastEP), %edx;
+           2 = call *%edx */
+        subl    $5+2, %edx
+        jmp     postamble
 
-/* signature:
-void VG_(run_a_noredir_translation) ( UWord* argblock );
-*/
+/* ------ Indirect but boring jump ------ */
+.globl VG_(disp_cp_xindir)
+VG_(disp_cp_xindir):
+	/* Where are we going? */
+	movl	OFFSET_x86_EIP(%ebp), %eax
 
-/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
-   and 2 to carry results:
-      0: input:  ptr to translation
-      1: input:  ptr to guest state
-      2: output: next guest PC
-      3: output: guest state pointer afterwards (== thread return code)
-*/
-.globl VG_(run_a_noredir_translation)
-VG_(run_a_noredir_translation):
-	/* Save callee-saves regs */
-	pushl %esi
-	pushl %edi
-	pushl %ebp
-	pushl %ebx
+        /* RM ME -- stats only */
+        addl    $1, _vgPlain_stats__n_xindirs
+        adcl    $0, _vgPlain_stats__n_xindirs+4
+        
+        /* try a fast lookup in the translation cache */
+        movl    %eax, %ebx                      /* next guest addr */
+        andl    $VG_TT_FAST_MASK, %ebx          /* entry# */
+        movl    0+VG_(tt_fast)(,%ebx,8), %esi   /* .guest */
+        movl    4+VG_(tt_fast)(,%ebx,8), %edi   /* .host */
+        cmpl    %eax, %esi
+        jnz     fast_lookup_failed
 
-	movl 20(%esp), %edi	/* %edi = argblock */
-	movl 4(%edi), %ebp	/* argblock[1] */
-	jmp *0(%edi)		/* argblock[0] */
-	/*NOTREACHED*/
-	ud2
-	/* If the translation has been correctly constructed, we
-	should resume at the the following label. */
-.globl VG_(run_a_noredir_translation__return_point)
-VG_(run_a_noredir_translation__return_point):
-	movl 20(%esp), %edi
-	movl %eax, 8(%edi)	/* argblock[2] */
-	movl %ebp, 12(%edi)	/* argblock[3] */
+        /* Found a match.  Jump to .host. */
+	jmp 	*%edi
+	ud2	/* persuade insn decoders not to speculate past here */
 
-	popl %ebx
-	popl %ebp
-	popl %edi
-	popl %esi
-	ret
+fast_lookup_failed:
+        /* RM ME -- stats only */
+        addl    $1, _vgPlain_stats__n_xindir_misses
+        adcl    $0, _vgPlain_stats__n_xindir_misses+4
+
+	movl	$VG_TRC_INNER_FASTMISS, %eax
+        movl    $0, %edx
+	jmp	postamble
+
+/* ------ Assisted jump ------ */
+.globl VG_(disp_cp_xassisted)
+VG_(disp_cp_xassisted):
+        /* %ebp contains the TRC */
+        movl    %ebp, %eax
+        movl    $0, %edx
+        jmp     postamble
+
+/* ------ Event check failed ------ */
+.globl VG_(disp_cp_evcheck_fail)
+VG_(disp_cp_evcheck_fail):
+       	movl	$VG_TRC_INNER_COUNTERZERO, %eax
+        movl    $0, %edx
+	jmp	postamble
+
 
 #endif // defined(VGP_x86_darwin)
-			
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

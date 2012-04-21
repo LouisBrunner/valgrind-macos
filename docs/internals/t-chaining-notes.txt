@@ -1,9 +1,7 @@
 
-DO NOT MERGE
+Finishing up
 ~~~~~~~~~~~~
-
-Changes memcheck/tests/Makefile.am w.r.t. -mfloat-abi=softfp
-Ditto none/tests/arm/Makefile.am
+redo dispatch-x86-darwin.S and dispatch-amd64-darwin.S
 
 
 Verification todo
@@ -19,6 +17,9 @@ check that all targets can run their insn set tests with
 all targets: run some tests using --profile-flags=... to exercise  
 function patchProfInc_<arch>
 
+figure out if there is a way to write a test program that checks
+that event checks are actually getting triggered
+
 
 Cleanups
 ~~~~~~~~
@@ -26,7 +27,7 @@ host_arm_isel.c and host_arm_defs.c: get rid of global var arm_hwcaps.
 
 host_x86_defs.c, host_amd64_defs.c: return proper VexInvalRange
 records from the patchers, instead of {0,0}, so that transparent
-self hosting works properly.
+self hosting works properly.  Ditto for s390 ?
 
 host_ppc_defs.h: is RdWrLR still needed?  If not delete.
 
@@ -36,6 +37,21 @@ make sure IRStmt_Exit3 is completely gone.
 
 all backends: iselStmt(Ist_Exit) vs iselNext: make sure that the same
 JKs are handled, else it's not safe against branch sense switching
+
+Comments that used to be in m_scheduler.c:
+   tchaining tests:
+   - extensive spinrounds
+   - with sched quantum = 1  -- check that handle_noredir_jump
+     doesn't return with INNER_COUNTERZERO
+   other:
+   - out of date comment w.r.t. bit 0 set in libvex_trc_values.h
+   - can VG_TRC_BORING still happen?  if not, rm
+   - memory leaks in m_transtab (InEdgeArr/OutEdgeArr leaking?)
+   - move do_cacheflush out of m_transtab
+   - more economical unchaining when nuking an entire sector
+   - ditto w.r.t. cache flushes
+   - verify case of 2 paths from A to B
+   - check -- is IP_AT_SYSCALL still right?
 
 
 Optimisations
@@ -48,6 +64,9 @@ insn when the value is < 0x8000'0000
 
 arm: chain_XDirect: generate short form jumps when possible
 ppc: chain_XDirect: generate short form jumps when possible
+
+ppc64: immediate generation is terrible .. should be able
+       to do better
 
 arm codegen: Generate ORRS for CmpwNEZ32(Or32(x,y))
 

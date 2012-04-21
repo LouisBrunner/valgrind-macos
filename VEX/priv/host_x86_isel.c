@@ -4170,6 +4170,7 @@ static void iselNext ( ISelEnv* env,
 
    /* Case: some other kind of transfer to any address */
    switch (jk) {
+      case Ijk_NoDecode:
       case Ijk_Sys_int128: case Ijk_ClientReq: case Ijk_NoRedir:
       case Ijk_Yield: case Ijk_SigTRAP: case Ijk_TInval: {
          HReg      r     = iselIntExpr_R(env, next);

@@ -1454,7 +1454,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          /* return address in client edx */
          VG_(threads)[tid].arch.vex.guest_EIP
             = VG_(threads)[tid].arch.vex.guest_EDX;
-         handle_syscall(tid, trc);
+         handle_syscall(tid, trc[0]);
 #        else
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "sysenter_x86 on non-x86 platform?!?!");

@@ -57,20 +57,6 @@
    way back for the moment, until we do an OS port in earnest...]
 */
 
-/* FIXME tchaining tests:
-   - extensive spinrounds
-   - with sched quantum = 1  -- check that handle_noredir_jump
-     doesn't return with INNER_COUNTERZERO
-   other:
-   - out of date comment w.r.t. bit 0 set in libvex_trc_values.h
-   - can VG_TRC_BORING still happen?  if not, rm
-   - memory leaks in m_transtab (InEdgeArr/OutEdgeArr leaking?)
-   - move do_cacheflush out of m_transtab
-   - more economical unchaining when nuking an entire sector
-   - ditto w.r.t. cache flushes
-   - verify case of 2 paths from A to B
-   - check -- is IP_AT_SYSCALL still right?
-*/
 
 #include "pub_core_basics.h"
 #include "pub_core_debuglog.h"

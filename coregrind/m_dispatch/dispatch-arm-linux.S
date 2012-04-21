@@ -152,15 +152,12 @@ VG_(disp_cp_xindir):
 	/* Where are we going? */
         ldr  r0, [r8, #OFFSET_arm_R15T]
 
-        /* RM ME -- stats only */
-        movw r1, #:lower16:vgPlain_stats__n_xindirs
-        movt r1, #:upper16:vgPlain_stats__n_xindirs
+        /* stats only */
+        movw r1, #:lower16:vgPlain_stats__n_xindirs_32
+        movt r1, #:upper16:vgPlain_stats__n_xindirs_32
         ldr  r2, [r1, #0]
-        adds r2, r2, #1
+        add  r2, r2, #1
         str  r2, [r1, #0]
-        ldr  r2, [r1, #4]
-        adc  r2, r2, #0
-        str  r2, [r1, #4]
         
         /* try a fast lookup in the translation cache */
         // r0 = next guest, r1,r2,r3,r4 scratch
@@ -181,14 +178,11 @@ VG_(disp_cp_xindir):
 
         /* otherwise the fast lookup failed */
         /* RM ME -- stats only */
-        movw r1, #:lower16:vgPlain_stats__n_xindir_misses
-        movt r1, #:upper16:vgPlain_stats__n_xindir_misses
+        movw r1, #:lower16:vgPlain_stats__n_xindir_misses_32
+        movt r1, #:upper16:vgPlain_stats__n_xindir_misses_32
         ldr  r2, [r1, #0]
-        adds r2, r2, #1
+        add  r2, r2, #1
         str  r2, [r1, #0]
-        ldr  r2, [r1, #4]
-        adc  r2, r2, #0
-        str  r2, [r1, #4]
 
 	mov  r1, #VG_TRC_INNER_FASTMISS
         mov  r2, #0

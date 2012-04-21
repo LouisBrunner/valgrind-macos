@@ -1,9 +1,4 @@
 
-Finishing up
-~~~~~~~~~~~~
-redo dispatch-x86-darwin.S and dispatch-amd64-darwin.S
-
-
 Verification todo
 ~~~~~~~~~~~~~~~~~
 check that illegal insns on all targets don't cause the _toIR.c's to
@@ -54,10 +49,6 @@ Comments that used to be in m_scheduler.c:
 
 Optimisations
 ~~~~~~~~~~~~~
-all targets: change VG_(stats__n_xindirs) to a 32 bit counter, and
-empty out every now and again.  Ditto VG_(stats__n_xindir_misses).
-
-arm: chain_XDirect: generate short form jumps when possible
 ppc: chain_XDirect: generate short form jumps when possible
 
 ppc64: immediate generation is terrible .. should be able

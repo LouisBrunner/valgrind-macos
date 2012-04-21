@@ -128,8 +128,16 @@ static void mostly_clear_thread_record ( ThreadId tid );
 static ULong n_scheduling_events_MINOR = 0;
 static ULong n_scheduling_events_MAJOR = 0;
 
-ULong VG_(stats__n_xindirs) = 0;
-ULong VG_(stats__n_xindir_misses) = 0;
+/* Stats: number of XIndirs, and number that missed in the fast
+   cache. */
+static ULong stats__n_xindirs = 0;
+static ULong stats__n_xindir_misses = 0;
+
+/* And 32-bit temp bins for the above, so that 32-bit platforms don't
+   have to do 64 bit incs on the hot path through
+   VG_(cp_disp_xindir). */
+/*global*/ UInt VG_(stats__n_xindirs_32) = 0;
+/*global*/ UInt VG_(stats__n_xindir_misses_32) = 0;
 
 /* Sanity checking counts. */
 static UInt sanity_fast_count = 0;
@@ -141,9 +149,9 @@ void VG_(print_scheduler_stats)(void)
       "scheduler: %'llu event checks.\n", bbs_done );
    VG_(message)(Vg_DebugMsg,
                 "scheduler: %'llu indir transfers, %'llu misses (1 in %llu)\n",
-                VG_(stats__n_xindirs), VG_(stats__n_xindir_misses),
-                VG_(stats__n_xindirs) / (VG_(stats__n_xindir_misses) 
-                                         ? VG_(stats__n_xindir_misses) : 1));
+                stats__n_xindirs, stats__n_xindir_misses,
+                stats__n_xindirs / (stats__n_xindir_misses 
+                                    ? stats__n_xindir_misses : 1));
    VG_(message)(Vg_DebugMsg,
       "scheduler: %'llu/%'llu major/minor sched events.\n",
       n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
@@ -816,6 +824,10 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    do_pre_run_checks( (ThreadState*)tst );
    /* end Paranoia */
 
+   /* Futz with the XIndir stats counters. */
+   vg_assert(VG_(stats__n_xindirs_32) == 0);
+   vg_assert(VG_(stats__n_xindir_misses_32) == 0);
+
    /* Clear return area. */
    two_words[0] = two_words[1] = 0;
 
@@ -851,7 +863,6 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    }
    /* We have either a no-redir or a redir translation. */
    vg_assert(host_code_addr != 0); /* implausible */
-
 
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
@@ -902,6 +913,15 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
       block_signals();
    } 
 
+   /* Merge the 32-bit XIndir/miss counters into the 64 bit versions,
+      and zero out the 32-bit ones in preparation for the next run of
+      generated code. */
+   stats__n_xindirs += (ULong)VG_(stats__n_xindirs_32);
+   VG_(stats__n_xindirs_32) = 0;
+   stats__n_xindir_misses += (ULong)VG_(stats__n_xindir_misses_32);
+   VG_(stats__n_xindir_misses_32) = 0;
+
+   /* Inspect the event counter. */
    vg_assert((Int)tst->arch.vex.host_EvC_COUNTER >= -1);
    vg_assert(tst->arch.vex.host_EvC_FAILADDR
              == (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail)) );

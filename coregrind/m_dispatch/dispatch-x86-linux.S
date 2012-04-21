@@ -199,9 +199,8 @@ VG_(disp_cp_xindir):
 	/* Where are we going? */
 	movl	OFFSET_x86_EIP(%ebp), %eax
 
-        /* RM ME -- stats only */
-        addl    $1, vgPlain_stats__n_xindirs
-        adcl    $0, vgPlain_stats__n_xindirs+4
+        /* stats only */
+        addl    $1, VG_(stats__n_xindirs_32)
         
         /* try a fast lookup in the translation cache */
         movl    %eax, %ebx                      /* next guest addr */
@@ -216,9 +215,8 @@ VG_(disp_cp_xindir):
 	ud2	/* persuade insn decoders not to speculate past here */
 
 fast_lookup_failed:
-        /* RM ME -- stats only */
-        addl    $1, vgPlain_stats__n_xindir_misses
-        adcl    $0, vgPlain_stats__n_xindir_misses+4
+        /* stats only */
+        addl    $1, VG_(stats__n_xindir_misses_32)
 
 	movl	$VG_TRC_INNER_FASTMISS, %eax
         movl    $0, %edx

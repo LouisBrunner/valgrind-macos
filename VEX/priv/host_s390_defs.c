@@ -49,7 +49,7 @@
    Until then, we use a global variable. This variable is set as a side
    effect of iselSB_S390. This is safe because instructions are selected
    before they are emitted. */
-const VexArchInfo *s390_archinfo_host;
+UInt s390_host_hwcaps;
 
 
 /*------------------------------------------------------------*/

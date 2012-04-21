@@ -2619,7 +2619,9 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, int offsIP)
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-/* Translate an entire SB to s390 code. */
+/* Translate an entire SB to s390 code.
+   Note: archinfo_host is a pointer to a stack-allocated variable.
+   Do not assign it to a global variable! */
 
 HInstrArray *
 iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
@@ -2632,8 +2634,8 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    ISelEnv *env;
    UInt     hwcaps_host = archinfo_host->hwcaps;
 
-   /* KLUDGE: export archinfo_host. */
-   s390_archinfo_host = archinfo_host;
+   /* KLUDGE: export hwcaps. */
+   s390_host_hwcaps = hwcaps_host;
 
    /* Do some sanity checks */
    vassert((VEX_HWCAPS_S390X(hwcaps_host) & ~(VEX_HWCAPS_S390X_ALL)) == 0);

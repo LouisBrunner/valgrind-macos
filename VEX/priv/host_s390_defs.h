@@ -547,21 +547,21 @@ VexInvalRange patchProfInc_S390(void  *code_to_patch,
                                 ULong *location_of_counter);
 
 /* KLUDGE: See detailled comment in host_s390_defs.c. */
-extern const VexArchInfo *s390_archinfo_host;
+extern UInt s390_host_hwcaps;
 
 /* Convenience macros to test installed facilities */
 #define s390_host_has_ldisp \
-                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_LDISP))
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_LDISP))
 #define s390_host_has_eimm \
-                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_EIMM))
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_EIMM))
 #define s390_host_has_gie \
-                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_GIE))
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_GIE))
 #define s390_host_has_dfp \
-                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_DFP))
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_DFP))
 #define s390_host_has_fgx \
-                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_FGX))
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_FGX))
 #define s390_host_has_etf2 \
-                      (s390_archinfo_host->hwcaps & (VEX_HWCAPS_S390X_ETF2))
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_ETF2))
 
 #endif /* ndef __VEX_HOST_S390_DEFS_H */
 

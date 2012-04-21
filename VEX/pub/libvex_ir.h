@@ -2225,9 +2225,6 @@ extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
                                 Int offsIP );
-// TEMP HACK
-#define IRStmt_Exit3(__guard,__jk,__dst) IRStmt_Exit(__guard,__jk,__dst,0)
-
 
 /* Deep-copy an IRStmt. */
 extern IRStmt* deepCopyIRStmt ( IRStmt* );

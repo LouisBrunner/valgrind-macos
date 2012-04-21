@@ -2563,10 +2563,20 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
 
       /* Update the guest RIP. */
-      /* movabsq $dstGA, %r11 */
-      *p++ = 0x49;
-      *p++ = 0xBB;
-      p = emit64(p, i->Ain.XDirect.dstGA);
+      if (fitsIn32Bits(i->Ain.XDirect.dstGA)) {
+         /* use a shorter encoding */
+         /* movl sign-extend(dstGA), %r11 */
+         *p++ = 0x49;
+         *p++ = 0xC7;
+         *p++ = 0xC3;
+         p = emit32(p, (UInt)i->Ain.XDirect.dstGA);
+      } else {
+         /* movabsq $dstGA, %r11 */
+         *p++ = 0x49;
+         *p++ = 0xBB;
+         p = emit64(p, i->Ain.XDirect.dstGA);
+      }
+
       /* movq %r11, amRIP */
       *p++ = rexAMode_M(r11, i->Ain.XDirect.amRIP);
       *p++ = 0x89;
@@ -2624,10 +2634,22 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = rexAMode_M(i->Ain.XIndir.dstGA, i->Ain.XIndir.amRIP);
       *p++ = 0x89;
       p = doAMode_M(p, i->Ain.XIndir.dstGA, i->Ain.XIndir.amRIP);
-      /* movabsq $disp_indir, %r11 */
-      *p++ = 0x49;
-      *p++ = 0xBB;
-      p = emit64(p, Ptr_to_ULong(disp_cp_xindir));
+
+      /* get $disp_cp_xindir into %r11 */
+      if (fitsIn32Bits(Ptr_to_ULong(disp_cp_xindir))) {
+         /* use a shorter encoding */
+         /* movl sign-extend(disp_cp_xindir), %r11 */
+         *p++ = 0x49;
+         *p++ = 0xC7;
+         *p++ = 0xC3;
+         p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_xindir));
+      } else {
+         /* movabsq $disp_cp_xindir, %r11 */
+         *p++ = 0x49;
+         *p++ = 0xBB;
+         p = emit64(p, Ptr_to_ULong(disp_cp_xindir));
+      }
+
       /* jmp *%r11 */
       *p++ = 0x41;
       *p++ = 0xFF;

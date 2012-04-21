@@ -4574,9 +4574,8 @@ s390_insn_evcheck(s390_amode *counter, s390_amode *fail_addr)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   vassert(counter->tag == S390_AMODE_B12 || counter->tag == S390_AMODE_BX12);
-   vassert(fail_addr->tag == S390_AMODE_B12 ||
-           fail_addr->tag == S390_AMODE_BX12);
+   vassert(counter->tag   == S390_AMODE_B12);
+   vassert(fail_addr->tag == S390_AMODE_B12);
 
    insn->tag  = S390_INSN_EVCHECK;
    insn->size = 0;   /* does not matter */
@@ -7350,12 +7349,11 @@ s390_insn_xdirect_emit(UChar *buf, const s390_insn *insn,
    buf = s390_emit_load_64imm(buf, R0, insn->variant.xdirect.dst);
 
    const s390_amode *amode = insn->variant.xdirect.guest_IA;
-   vassert(amode->tag == S390_AMODE_B12 || amode->tag == S390_AMODE_BX12);
+   vassert(amode->tag == S390_AMODE_B12);
    UInt b = hregNumber(amode->b);
-   UInt x = hregNumber(amode->x);  /* 0 for B12 and B20 */
    UInt d = amode->d;
 
-   buf = s390_emit_STG(buf, R0, x, b, DISP20(d));
+   buf = s390_emit_STG(buf, R0, 0, b, DISP20(d));
 
    /* --- FIRST PATCHABLE BYTE follows --- */
    /* VG_(disp_cp_chain_me_to_{slowEP,fastEP}) (where we're calling
@@ -7432,13 +7430,12 @@ s390_insn_xindir_emit(UChar *buf, const s390_insn *insn, void *disp_cp_xindir)
    /* Update the guest IA with the address in xdirect.dst. */
    const s390_amode *amode = insn->variant.xindir.guest_IA;
 
-   vassert(amode->tag == S390_AMODE_B12 || amode->tag == S390_AMODE_BX12);
+   vassert(amode->tag == S390_AMODE_B12);
    UInt b = hregNumber(amode->b);
-   UInt x = hregNumber(amode->x);  /* 0 for B12 and B20 */
    UInt d = amode->d;
    UInt regno = hregNumber(insn->variant.xindir.dst);
 
-   buf = s390_emit_STG(buf, regno, x, b, DISP20(d));
+   buf = s390_emit_STG(buf, regno, 0, b, DISP20(d));
 
    /* load tchain_scratch, #disp_indir */
    buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH,
@@ -7485,13 +7482,12 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
    /* Update the guest IA with the address in xassisted.dst. */
    const s390_amode *amode = insn->variant.xassisted.guest_IA;
 
-   vassert(amode->tag == S390_AMODE_B12 || amode->tag == S390_AMODE_BX12);
+   vassert(amode->tag == S390_AMODE_B12);
    UInt b = hregNumber(amode->b);
-   UInt x = hregNumber(amode->x);  /* 0 for B12 and B20 */
    UInt d = amode->d;
    UInt regno = hregNumber(insn->variant.xassisted.dst);
 
-   buf = s390_emit_STG(buf, regno, x, b, DISP20(d));
+   buf = s390_emit_STG(buf, regno, 0, b, DISP20(d));
 
    UInt trcval = 0;
 
@@ -7553,22 +7549,21 @@ static UChar *
 s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
 {
    s390_amode *amode;
-   UInt b, x, d;
+   UInt b, d;
    UChar *code_begin, *code_end;
 
    code_begin = buf;
 
    amode = insn->variant.evcheck.counter;
-   vassert(amode->tag == S390_AMODE_B12 || amode->tag == S390_AMODE_BX12);
+   vassert(amode->tag == S390_AMODE_B12);
    b = hregNumber(amode->b);
-   x = hregNumber(amode->x);  /* 0 for B12 and B20 */
    d = amode->d;
 
    /* Decrement the dispatch counter in the guest state */
    /* fixs390: ASI if available */
    buf = s390_emit_LHI(buf, R0, -1);             /* 4 bytes */
-   buf = s390_emit_A(buf, R0, x, b, d);          /* 4 bytes */
-   buf = s390_emit_ST(buf, R0, x, b, d);         /* 4 bytes */
+   buf = s390_emit_A(buf, R0, 0, b, d);          /* 4 bytes */
+   buf = s390_emit_ST(buf, R0, 0, b, d);         /* 4 bytes */
 
    /* Jump over the next insn if >= 0 */
    buf = s390_emit_BRC(buf, S390_CC_HE, (4 + 6 + 2) / 2);  /* 4 bytes */
@@ -7576,9 +7571,8 @@ s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
    /* Computed goto to fail_address */
    amode = insn->variant.evcheck.fail_addr;
    b = hregNumber(amode->b);
-   x = hregNumber(amode->x);  /* 0 for B12 and B20 */
    d = amode->d;
-   buf = s390_emit_LG(buf, S390_REGNO_TCHAIN_SCRATCH, x, b, DISP20(d));  /* 6 bytes */
+   buf = s390_emit_LG(buf, S390_REGNO_TCHAIN_SCRATCH, 0, b, DISP20(d));  /* 6 bytes */
    buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);  /* 2 bytes */
 
    code_end = buf;

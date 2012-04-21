@@ -2510,18 +2510,21 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* movl $magic_number, %ebp. */
       UInt trcval = 0;
       switch (i->Xin.XAssisted.jk) {
-         case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
-         case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
-         case Ijk_Sys_int128:  trcval = VEX_TRC_JMP_SYS_INT128;  break;
-         case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
-         case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
-         case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
-         case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
-         case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
-         case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
-         case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
-         case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
-         case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
+         case Ijk_ClientReq:    trcval = VEX_TRC_JMP_CLIENTREQ;    break;
+         case Ijk_Sys_syscall:  trcval = VEX_TRC_JMP_SYS_SYSCALL;  break;
+         case Ijk_Sys_int128:   trcval = VEX_TRC_JMP_SYS_INT128;   break;
+         case Ijk_Sys_int129:   trcval = VEX_TRC_JMP_SYS_INT129;   break;
+         case Ijk_Sys_int130:   trcval = VEX_TRC_JMP_SYS_INT130;   break;
+         case Ijk_Sys_sysenter: trcval = VEX_TRC_JMP_SYS_SYSENTER; break;
+         case Ijk_Yield:        trcval = VEX_TRC_JMP_YIELD;        break;
+         case Ijk_EmWarn:       trcval = VEX_TRC_JMP_EMWARN;       break;
+         case Ijk_MapFail:      trcval = VEX_TRC_JMP_MAPFAIL;      break;
+         case Ijk_NoDecode:     trcval = VEX_TRC_JMP_NODECODE;     break;
+         case Ijk_TInval:       trcval = VEX_TRC_JMP_TINVAL;       break;
+         case Ijk_NoRedir:      trcval = VEX_TRC_JMP_NOREDIR;      break;
+         case Ijk_SigTRAP:      trcval = VEX_TRC_JMP_SIGTRAP;      break;
+         case Ijk_SigSEGV:      trcval = VEX_TRC_JMP_SIGSEGV;      break;
+         case Ijk_Boring:       trcval = VEX_TRC_JMP_BORING;       break;
          /* We don't expect to see the following being assisted. */
          case Ijk_Ret:
          case Ijk_Call:

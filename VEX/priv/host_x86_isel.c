@@ -4171,8 +4171,10 @@ static void iselNext ( ISelEnv* env,
    /* Case: some other kind of transfer to any address */
    switch (jk) {
       case Ijk_NoDecode:
-      case Ijk_Sys_int128: case Ijk_ClientReq: case Ijk_NoRedir:
-      case Ijk_Yield: case Ijk_SigTRAP: case Ijk_TInval: {
+      case Ijk_Sys_int128: case Ijk_Sys_int129: case Ijk_Sys_int130:
+      case Ijk_ClientReq: case Ijk_NoRedir:
+      case Ijk_Yield: case Ijk_SigTRAP: case Ijk_TInval:
+      case Ijk_Sys_sysenter: {
          HReg      r     = iselIntExpr_R(env, next);
          X86AMode* amEIP = X86AMode_IR(offsIP, hregX86_EBP());
          addInstr(env, X86Instr_XAssisted(r, amEIP, Xcc_ALWAYS, jk));

@@ -205,9 +205,9 @@ VG_(disp_cp_xindir):
 	/* Where are we going? */
 	movq	OFFSET_amd64_RIP(%rbp), %rax
 
-        /* RM ME -- stats only */
-        movabsq $_vgPlain_stats__n_xindirs, %r10
-        addq    $1, (%r10)
+        /* stats only */
+        movabsq $VG_(stats__n_xindirs_32), %r10
+        addl    $1, (%r10)
         
 	/* try a fast lookup in the translation cache */
 	movabsq $VG_(tt_fast), %rcx
@@ -224,9 +224,9 @@ VG_(disp_cp_xindir):
 	ud2	/* persuade insn decoders not to speculate past here */
 
 fast_lookup_failed:
-        /* RM ME -- stats only */
-        movabsq $_vgPlain_stats__n_xindir_misses, %r10
-        addq    $1, %r10
+        /* stats only */
+        movabsq $VG_(stats__n_xindir_misses_32), %r10
+        addl    $1, (%r10)
 
 	movq	$VG_TRC_INNER_FASTMISS, %rax
         movq    $0, %rdx

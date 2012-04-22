@@ -7244,13 +7244,19 @@ s390_tchain_load64(UChar *buf, UChar regno, ULong value)
 {
    UChar *begin = buf;
 
-   buf = s390_emit_IILL(buf, regno, value & 0xFFFF);
-   value >>= 16;
-   buf = s390_emit_IILH(buf, regno, value & 0xFFFF);
-   value >>= 16;
-   buf = s390_emit_IIHL(buf, regno, value & 0xFFFF);
-   value >>= 16;
-   buf = s390_emit_IIHH(buf, regno, value & 0xFFFF);
+   if (s390_host_has_eimm) {
+      /* Do it in two steps: upper half [0:31] and lower half [32:63] */
+      buf = s390_emit_IIHF(buf, regno, value >> 32);
+      buf = s390_emit_IILF(buf, regno, value & 0xFFFFFFFF);
+   } else {
+      buf = s390_emit_IILL(buf, regno, value & 0xFFFF);
+      value >>= 16;
+      buf = s390_emit_IILH(buf, regno, value & 0xFFFF);
+      value >>= 16;
+      buf = s390_emit_IIHL(buf, regno, value & 0xFFFF);
+      value >>= 16;
+      buf = s390_emit_IIHH(buf, regno, value & 0xFFFF);
+   }
 
    vassert(buf - begin == s390_tchain_load64_len());
 
@@ -7261,6 +7267,9 @@ s390_tchain_load64(UChar *buf, UChar regno, ULong value)
 static UInt
 s390_tchain_load64_len(void)
 {
+   if (s390_host_has_eimm) {
+      return 6 + 6;      /* IIHF + IILF */
+   }
    return 4 + 4 + 4 + 4; /* IIHH + IIHL + IILH + IILL */
 }
 
@@ -7273,33 +7282,44 @@ s390_tchain_verify_load64(const UChar *code, UChar regno, ULong value)
    UInt regmask = regno << 4;
    UInt hw;
 
-   /* Check for IILL */
-   hw = value & 0xFFFF;
-   vassert(code[0]  ==  0xA5);
-   vassert(code[1]  == (0x03 | regmask));
-   vassert(code[2]  == (hw >> 8));
-   vassert(code[3]  == (hw & 0xFF));
+   if (s390_host_has_eimm) {
+      /* Check for IIHF */
+      vassert(code[0]  ==  0xC0);
+      vassert(code[1]  == (0x08 | regmask));
+      vassert(*(const UInt *)&code[2] == (value >> 32));
+      /* Check for IILF */
+      vassert(code[6]  ==  0xC0);
+      vassert(code[7]  == (0x09 | regmask));
+      vassert(*(const UInt *)&code[8] == (value & 0xFFFFFFFF));
+   } else {
+      /* Check for IILL */
+      hw = value & 0xFFFF;
+      vassert(code[0]  ==  0xA5);
+      vassert(code[1]  == (0x03 | regmask));
+      vassert(code[2]  == (hw >> 8));
+      vassert(code[3]  == (hw & 0xFF));
 
-   /* Check for IILH */
-   hw = (value >> 16) & 0xFFFF;
-   vassert(code[4]  ==  0xA5);
-   vassert(code[5]  == (0x02 | regmask));
-   vassert(code[6]  == (hw >> 8));
-   vassert(code[7]  == (hw & 0xFF));
+      /* Check for IILH */
+      hw = (value >> 16) & 0xFFFF;
+      vassert(code[4]  ==  0xA5);
+      vassert(code[5]  == (0x02 | regmask));
+      vassert(code[6]  == (hw >> 8));
+      vassert(code[7]  == (hw & 0xFF));
 
-   /* Check for IIHL */
-   hw = (value >> 32) & 0xFFFF;
-   vassert(code[8]  ==  0xA5);
-   vassert(code[9]  == (0x01 | regmask));
-   vassert(code[10] == (hw >> 8));
-   vassert(code[11] == (hw & 0xFF));
+      /* Check for IIHL */
+      hw = (value >> 32) & 0xFFFF;
+      vassert(code[8]  ==  0xA5);
+      vassert(code[9]  == (0x01 | regmask));
+      vassert(code[10] == (hw >> 8));
+      vassert(code[11] == (hw & 0xFF));
 
-   /* Check for IIHH */
-   hw = (value >> 48) & 0xFFFF;
-   vassert(code[12] ==  0xA5);
-   vassert(code[13] == (0x00 | regmask));
-   vassert(code[14] == (hw >> 8));
-   vassert(code[15] == (hw & 0xFF));
+      /* Check for IIHH */
+      hw = (value >> 48) & 0xFFFF;
+      vassert(code[12] ==  0xA5);
+      vassert(code[13] == (0x00 | regmask));
+      vassert(code[14] == (hw >> 8));
+      vassert(code[15] == (hw & 0xFF));
+   }
 
    return code + s390_tchain_load64_len();
 }
@@ -7310,14 +7330,21 @@ s390_tchain_verify_load64(const UChar *code, UChar regno, ULong value)
 static UChar *
 s390_tchain_patch_load64(UChar *code, ULong imm64)
 {
-   code[3]  = imm64 & 0xFF; imm64 >>= 8;
-   code[2]  = imm64 & 0xFF; imm64 >>= 8;
-   code[7]  = imm64 & 0xFF; imm64 >>= 8;
-   code[6]  = imm64 & 0xFF; imm64 >>= 8;
-   code[11] = imm64 & 0xFF; imm64 >>= 8;
-   code[10] = imm64 & 0xFF; imm64 >>= 8;
-   code[15] = imm64 & 0xFF; imm64 >>= 8;
-   code[14] = imm64 & 0xFF; imm64 >>= 8;
+   if (s390_host_has_eimm) {
+      /* Patch IIHF */
+      *(UInt *)&code[2] = imm64 >> 32;
+      /* Patch IILF */
+      *(UInt *)&code[8] = imm64 & 0xFFFFFFFF;
+   } else {
+      code[3]  = imm64 & 0xFF; imm64 >>= 8;
+      code[2]  = imm64 & 0xFF; imm64 >>= 8;
+      code[7]  = imm64 & 0xFF; imm64 >>= 8;
+      code[6]  = imm64 & 0xFF; imm64 >>= 8;
+      code[11] = imm64 & 0xFF; imm64 >>= 8;
+      code[10] = imm64 & 0xFF; imm64 >>= 8;
+      code[15] = imm64 & 0xFF; imm64 >>= 8;
+      code[14] = imm64 & 0xFF; imm64 >>= 8;
+   }
 
    return code + s390_tchain_load64_len();
 }

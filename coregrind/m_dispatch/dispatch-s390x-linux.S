@@ -39,10 +39,6 @@
 
 #if defined(VGA_s390x)
 
-/*
-#define XINDIR_STATS
-*/
-
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- The dispatch loop.  VG_(disp_run_translations) is    ---*/
@@ -213,13 +209,11 @@ VG_(disp_cp_xindir):
 	/* Where are we going? */
         lg      %r2, OFFSET_s390x_IA(%r13)
 
-#ifdef XINDIR_STATS
-        /* Increment VG_(stats__n_xindirs), an ULong value */
-        larl    %r8, VG_(stats__n_xindirs)
-        lg      %r10,0(%r8)
-        aghi    %r10,1
-        stg     %r10,0(%r8)
-#endif
+        /* Increment VG_(stats__n_xindirs_32) */
+        larl    %r8, VG_(stats__n_xindirs_32)
+        l       %r10,0(%r8)
+        ahi     %r10,1
+        st      %r10,0(%r8)
 
 	/* Try a fast lookup in the translation cache:
            Compute offset (not index) into VT_(tt_fast):
@@ -246,21 +240,17 @@ VG_(disp_cp_xindir):
         
         /* Found a match.  Call .host.
            r11 is an address. There we will find the instrumented client code.
-           That code may modify the guest state register r13. The client code
-           will return to the beginning of this loop start by issuing br LR.
-           We can simply branch to the host code */
-        // FIXME Update comment
+           That code may modify the guest state register r13. */
         br      %r11
         .long   0x0   /* persuade insn decoders not to speculate past here */
 
 fast_lookup_failed:
-#ifdef XINDIR_STATS
-        /* Increment VG_(stats__n_xindir_misses), an ULong value */
-        larl    %r8, VG_(stats__n_xindir_misses)
-        lg      %r10,0(%r8)
-        aghi    %r10,1
-        stg     %r10,0(%r8)
-#endif
+        /* Increment VG_(stats__n_xindir_misses_32) */
+        larl    %r8, VG_(stats__n_xindir_misses_32)
+        l       %r10,0(%r8)
+        ahi     %r10,1
+        st      %r10,0(%r8)
+
         lghi    %r0,VG_TRC_INNER_FASTMISS
         lghi    %r1,0
         j       postamble

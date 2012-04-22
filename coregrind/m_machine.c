@@ -467,7 +467,8 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 
    processor 0: version = FF,  identification = 0117C9,  machine = 2064
 
-   and return the machine model or VEX_S390X_MODEL_INVALID on error. */
+   and return the machine model. If the machine model could not be determined
+   or it is an unknown model, return VEX_S390X_MODEL_UNKNOWN. */
 
 static UInt VG_(get_machine_model)(void)
 {
@@ -494,7 +495,7 @@ static UInt VG_(get_machine_model)(void)
 
    /* Slurp contents of /proc/cpuinfo into FILE_BUF */
    fd = VG_(open)( "/proc/cpuinfo", 0, VKI_S_IRUSR );
-   if ( sr_isError(fd) ) return VEX_S390X_MODEL_INVALID;
+   if ( sr_isError(fd) ) return VEX_S390X_MODEL_UNKNOWN;
 
    fh  = sr_Res(fd);
 
@@ -527,7 +528,7 @@ static UInt VG_(get_machine_model)(void)
    VG_(close)(fh);
 
    /* Parse file */
-   model = VEX_S390X_MODEL_INVALID;
+   model = VEX_S390X_MODEL_UNKNOWN;
    for (p = file_buf; *p; ++p) {
       /* Beginning of line */
      if (VG_(strncmp)( p, "processor", sizeof "processor" - 1 ) != 0) continue;
@@ -560,9 +561,8 @@ static UInt VG_(get_machine_model)(void)
 
    VG_(free)( file_buf );
    VG_(debugLog)(1, "machine", "model = %s\n",
-                 model == VEX_S390X_MODEL_INVALID ? "UNKNOWN"
+                 model == VEX_S390X_MODEL_UNKNOWN ? "UNKNOWN"
                                                   : model_map[model].name);
-
    return model;
 }
 
@@ -1084,11 +1084,13 @@ Bool VG_(machine_get_hwcaps)( void )
 
      model = VG_(get_machine_model)();
 
+     /* If the model is "unknown" don't treat this as an error. Assume
+        this is a brand-new machine model for which we don't have the 
+        identification yet. Keeping fingers crossed. */
+
      VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
                    "FGX %d STFLE %d ETF2 %d\n", model, have_LDISP, have_EIMM,
                    have_GIE, have_DFP, have_FGX, have_STFLE, have_ETF2);
-
-     if (model == VEX_S390X_MODEL_INVALID) return False;
 
      vai.hwcaps = model;
      if (have_LDISP) {

@@ -179,17 +179,10 @@ postamble:
 /* ------ Chain me to slow entry point ------ */
         .global VG_(disp_cp_chain_me_to_slowEP)
 VG_(disp_cp_chain_me_to_slowEP):
-        /* We got called via  BASR  %r1,tchain_scratch, i.e. %r1 is the return
-           address. Collect it, compute the place to patch and return to C land.
-           The return values (TRC, address-to-patch) are stored here in %r0 and %r1,
-           respectively */
+        /* When we come here %r1 contains the address of the place to patch.
+           The return values (TRC, address-to-patch) are stored here in
+           %r0 and %r1, respectively */
         lghi    %r0,VG_TRC_CHAIN_ME_TO_SLOW_EP
-        /* Recover the address where patching needs to happen */
-        /* FIXME: this is not good as it implies that LOAD64_LEN is fixed. But
-           we want it to be variable such that newer machines can take advantage
-           of hardware capabilities. So it would be better if this adjustment is
-           done before transfering control to here. */
-        aghi    %r1,-(S390_TCHAIN_LOAD64_LEN + S390_TCHAIN_CALL_LEN)
         j       postamble
 
 
@@ -197,9 +190,7 @@ VG_(disp_cp_chain_me_to_slowEP):
         .global VG_(disp_cp_chain_me_to_fastEP)
 VG_(disp_cp_chain_me_to_fastEP):
         /* Identical to VG_(disp_cp_chain_me_to_slowEP), except value of %r0. */
-
         lghi    %r0,VG_TRC_CHAIN_ME_TO_FAST_EP
-        aghi    %r1,-(S390_TCHAIN_LOAD64_LEN + S390_TCHAIN_CALL_LEN)
         j       postamble
 
 

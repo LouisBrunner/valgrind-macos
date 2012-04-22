@@ -82,6 +82,7 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
         and non reset of "C-ontinued" signal
 297991  Valgrind interferes with mmap()+ftell() 
 297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
+297993  Fix compilation of valgrind with gcc -g3.
 298394  s390x: Don't bail out on an unknown machine model. Assume it's a new model.
 
 Release 3.7.0 (5 November 2011)

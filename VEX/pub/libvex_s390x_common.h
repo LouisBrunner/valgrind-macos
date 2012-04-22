@@ -87,12 +87,6 @@
 /* Number of double words needed to store all facility bits. */
 #define S390_NUM_FACILITY_DW 2
 
-/* The length of the instructions issued by s390_tchain_load64 */
-#define S390_TCHAIN_LOAD64_LEN 16
-
-/* The length of the call insn (BASR) used in translation chaining */
-#define S390_TCHAIN_CALL_LEN  2
-
 #endif /* __LIBVEX_PUB_S390X_H */
 
 /*--------------------------------------------------------------------*/

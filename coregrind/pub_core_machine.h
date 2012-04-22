@@ -169,6 +169,10 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
                       call VG_(machine_arm_set_has_NEON)
 
           then safe to use VG_(machine_get_VexArchInfo) 
+   -------------
+   s390x: initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo)
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be

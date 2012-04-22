@@ -356,35 +356,7 @@ SizeT VG_(thread_get_altstack_size)(ThreadId tid)
    (2) from the AT_SYSINFO entries the kernel gave us (ppc32 cache
    line size).  It's a bit nasty in the sense that there's no obvious
    way to stop uses of some of this info before it's ready to go.
-
-   Current dependencies are:
-
-   x86:   initially:  call VG_(machine_get_hwcaps)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_x86_have_mxcsr)
-   -------------
-   amd64: initially:  call VG_(machine_get_hwcaps)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-   -------------
-   ppc32: initially:  call VG_(machine_get_hwcaps)
-                      call VG_(machine_ppc32_set_clszB)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_ppc32_has_FP)
-                       and VG_(machine_ppc32_has_VMX)
-   -------------
-   ppc64: initially:  call VG_(machine_get_hwcaps)
-                      call VG_(machine_ppc64_set_clszB)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_ppc64_has_VMX)
-
-   -------------
-   s390x: initially:  call VG_(machine_get_hwcaps)
-
-          then safe to use VG_(machine_get_VexArchInfo)
+   See pub_core_machine.h for more information about that.
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be

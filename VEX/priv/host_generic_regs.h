@@ -188,7 +188,7 @@ extern void addHRegUse ( HRegUsage*, HRegMode, HReg );
    This is precisely the behaviour that the register allocator needs
    to impose its decisions on the instructions it processes.  */
 
-#define N_HREG_REMAP 5
+#define N_HREG_REMAP 6
 
 typedef
    struct {

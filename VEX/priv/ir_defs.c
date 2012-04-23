@@ -957,10 +957,24 @@ void ppIROp ( IROp op )
       case Iop_DivD128: vex_printf("DivD128");  return;
       case Iop_ShlD128: vex_printf("ShlD128");  return;
       case Iop_ShrD128: vex_printf("ShrD128");  return;
+      case Iop_RoundD64toInt:  vex_printf("Iop_RoundD64toInt");  return;
+      case Iop_RoundD128toInt: vex_printf("Iop_RoundD128toInt"); return;
+      case Iop_QuantizeD64:    vex_printf("Iop_QuantizeD64");    return;
+      case Iop_QuantizeD128:   vex_printf("Iop_QuantizeD128");   return;
+      case Iop_ExtractExpD64:  vex_printf("Iop_ExtractExpD64");  return;
+      case Iop_ExtractExpD128: vex_printf("Iop_ExtractExpD128"); return;
+      case Iop_InsertExpD64:   vex_printf("Iop_InsertExpD64");   return;
+      case Iop_InsertExpD128:  vex_printf("Iop_InsertExpD128");  return;
+      case Iop_CmpD64:         vex_printf("CmpD64");    return;
+      case Iop_CmpD128:        vex_printf("CmpD128");   return;
       case Iop_D64HLtoD128: vex_printf("D64HLtoD128");  return;
       case Iop_D128HItoD64: vex_printf("D128HItoD64");  return;
       case Iop_D128LOtoD64: vex_printf("D128LOtoD64");  return;
-
+      case Iop_SignificanceRoundD64: vex_printf("Iop_SignificanceRoundD64");
+         return;
+      case Iop_SignificanceRoundD128: vex_printf("Iop_SignificanceRoundD128");
+         return;
+      case Iop_ReinterpI64asD64: vex_printf("ReinterpI64asD64"); return;
       default: vpanic("ppIROp(1)");
    }
 
@@ -2625,10 +2639,29 @@ void typeOfPrimop ( IROp op,
       case Iop_F128toF64: BINARY(ity_RMode,Ity_F128, Ity_F64);
 
       case Iop_D32toD64:
+      case Iop_ExtractExpD64:
          UNARY(Ity_D64, Ity_D64);
+
+      case Iop_InsertExpD64:
+         BINARY(Ity_D64,Ity_D64, Ity_D64);
+
+      case Iop_ExtractExpD128:
+         UNARY(Ity_D128, Ity_D64);
+
+      case Iop_InsertExpD128:
+         BINARY(Ity_D64,Ity_D128, Ity_D128);
 
       case Iop_D64toD128:
          UNARY(Ity_D64, Ity_D128);
+
+      case Iop_ReinterpI64asD64:
+         UNARY(Ity_I64, Ity_D64);
+
+      case Iop_RoundD64toInt:
+         BINARY(ity_RMode,Ity_D64, Ity_D64);
+
+      case Iop_RoundD128toInt:
+         BINARY(ity_RMode,Ity_D128, Ity_D128);
 
       case Iop_I64StoD128:    /* I64 bit pattern stored in Float register */
          UNARY(Ity_D64, Ity_D128);
@@ -2653,6 +2686,20 @@ void typeOfPrimop ( IROp op,
 
       case Iop_I64StoD64:  /* I64 bit pattern stored in Float register */
          BINARY(ity_RMode, Ity_D64, Ity_D64);
+
+      case Iop_CmpD64:
+         BINARY(Ity_D64,Ity_D64, Ity_I32);
+
+      case Iop_CmpD128:
+         BINARY(Ity_D128,Ity_D128, Ity_I32);
+
+      case Iop_QuantizeD64:
+      case Iop_SignificanceRoundD64:
+         TERNARY(ity_RMode,Ity_D64,Ity_D64, Ity_D64);
+
+      case Iop_QuantizeD128:
+      case Iop_SignificanceRoundD128:
+         TERNARY(ity_RMode,Ity_D128,Ity_D128, Ity_D128);
 
       case Iop_ShlD128:
       case Iop_ShrD128:

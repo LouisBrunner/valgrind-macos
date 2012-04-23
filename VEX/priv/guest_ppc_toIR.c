@@ -254,6 +254,11 @@ static UInt ifieldOPClo9 ( UInt instr) {
    return IFIELD( instr, 1, 9 );
 }
 
+/* Extract 8-bit secondary opcode, instr[8:1] */
+static UInt ifieldOPClo8 ( UInt instr) {
+   return IFIELD( instr, 1, 8 );
+}
+
 /* Extract 5-bit secondary opcode, instr[5:1] */
 static UInt ifieldOPClo5 ( UInt instr) {
    return IFIELD( instr, 1, 5 );
@@ -8811,6 +8816,418 @@ static Bool dis_dfp_fmt_convq(UInt theInstr) {
    return True;
 }
 
+static Bool dis_dfp_round( UInt theInstr ) {
+   UChar frS_addr = ifieldRegDS(theInstr);
+   UChar R        = IFIELD(theInstr, 16, 1);
+   UChar RMC      = IFIELD(theInstr, 9, 2);
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC  = ifieldBIT0( theInstr );
+   IRTemp frB     = newTemp( Ity_D64 );
+   IRTemp frS     = newTemp( Ity_D64 );
+   UInt opc2      = ifieldOPClo8( theInstr );
+   Bool clear_CR1 = True;
+
+   switch (opc2) {
+   /* drintn, is the same as drintx.  The only difference is this
+    * instruction does not generate an exception for an inexact operation.
+    * Currently not supporting inexact exceptions.
+    */
+   case 0x63: // drintx
+   case 0xE3: // drintn
+      DIP( "drintx/drintn%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+
+      /* pass the value of R and RMC in the same field */
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_RoundD64toInt,
+                          mkU32( ( R << 3 ) | RMC ),
+                          mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   default:
+      vex_printf("dis_dfp_round(ppc)(opc2)\n");
+      return False;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_roundq(UInt theInstr) {
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar R = IFIELD(theInstr, 16, 1);
+   UChar RMC = IFIELD(theInstr, 9, 2);
+   UChar flag_rC = ifieldBIT0( theInstr );
+   IRTemp frB = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+   UInt opc2 = ifieldOPClo8( theInstr );
+
+   switch (opc2) {
+   /* drintnq, is the same as drintxq.  The only difference is this
+    * instruction does not generate an exception for an inexact operation.
+    * Currently not supporting inexact exceptions.
+    */
+   case 0x63: // drintxq
+   case 0xE3: // drintnq
+      DIP( "drintxq/drintnq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+
+      /* pass the value of R and RMC in the same field */
+      assign( frB, getDReg_pair( frB_addr ) );
+      assign( frS, binop( Iop_RoundD128toInt,
+                          mkU32( ( R << 3 ) | RMC ),
+                          mkexpr( frB ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS ) );
+      break;
+   default:
+      vex_printf("dis_dfp_roundq(ppc)(opc2)\n");
+      return False;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
+   UInt opc2 = ifieldOPClo8( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+   UInt TE_value = IFIELD(theInstr, 16, 4);
+   UInt TE_sign  = IFIELD(theInstr, 20, 1);
+   UInt RMC = IFIELD(theInstr, 9, 2);
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frB = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+   Bool clear_CR1 = True;
+
+   assign( frB, getDReg( frB_addr ) );
+
+   switch (opc2) {
+   case 0x43: // dquai
+      DIP( "dquai%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      IRTemp TE_D64 = newTemp( Ity_D64 );
+
+      /* Generate a reference DFP value frA with the desired exponent
+       * given by TE using significand from frB.  Need to add the bias
+       * 398 to TE.  TE is stored as a 2's complement number.
+       */
+      if (TE_sign == 1) {
+         /* Take 2's complement of the 5-bit value and subtract from bias. 
+          *  Bias is adjusted for the +1 required when taking 2's complement.
+          */
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Sub64, mkU64( 397 ),
+                              binop( Iop_And64, mkU64( 0xF ),
+                                     unop( Iop_Not64, mkU64( TE_value ) )
+                                           ) ) ) );
+
+      } else {
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Add64, mkU64( 398 ), mkU64( TE_value ) ) ) );
+      }
+
+      assign( frA, binop( Iop_InsertExpD64, mkexpr( TE_D64 ), 
+                          unop( Iop_ReinterpI64asD64, mkU64( 1 ) ) ) );
+
+      assign( frS, triop( Iop_QuantizeD64,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+
+   case 0x3: // dqua
+      DIP( "dqua%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg( frA_addr ) );
+      assign( frS, triop( Iop_QuantizeD64,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   case 0x23: // drrnd
+      DIP( "drrnd%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg( frA_addr ) );
+      assign( frS, triop( Iop_SignificanceRoundD64,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_quantize_sig_rrnd(ppc)(opc2)\n");
+      return False;
+   }
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
+   UInt opc2 = ifieldOPClo8( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+   UInt TE_value = IFIELD(theInstr, 16, 4);
+   UInt TE_sign  = IFIELD(theInstr, 20, 1);
+   UInt RMC = IFIELD(theInstr, 9, 2);
+   IRTemp frA = newTemp( Ity_D128 );
+   IRTemp frB = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+
+   assign( frB, getDReg_pair( frB_addr ) );
+
+   switch (opc2) {
+   case 0x43: // dquaiq
+      DIP( "dquaiq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      IRTemp TE_D64 = newTemp( Ity_D64 );
+
+      /* Generate a reference DFP value frA with the desired exponent
+       * given by TE using significand of 1.  Need to add the bias
+       * 6176 to TE.
+       */
+      if (TE_sign == 1) {
+         /* Take 2's complement of the 5-bit value and subtract from bias. 
+          *  Bias adjusted for the +1 required when taking 2's complement.
+          */
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Sub64, mkU64( 6175 ),
+                              binop( Iop_And64, mkU64( 0xF ),
+                                     unop( Iop_Not64, mkU64( TE_value ) )
+                                           ) ) ) );
+
+      } else {
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Add64, mkU64( 6176 ), mkU64( TE_value ) )
+                            ) );
+      }
+
+      assign( frA,
+              binop( Iop_InsertExpD128, mkexpr( TE_D64 ),
+                     unop( Iop_D64toD128, 
+                           unop( Iop_ReinterpI64asD64, mkU64( 1 ) ) ) ) );
+      assign( frS, triop( Iop_QuantizeD128,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   case 0x3: // dquaq
+      DIP( "dquaiq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg_pair( frA_addr ) );
+      assign( frS, triop( Iop_QuantizeD128,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   case 0x23: // drrndq
+      DIP( "drrndq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg_pair( frA_addr ) );
+      assign( frS, triop( Iop_SignificanceRoundD128,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_quantize_sig_rrndq(ppc)(opc2)\n");
+      return False;
+   }
+   putDReg_pair( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_extract_insert(UInt theInstr) {
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+   Bool clear_CR1 = True;
+
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frB = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+
+   assign( frA, getDReg( frA_addr ) );
+   assign( frB, getDReg( frB_addr ) );
+
+   switch (opc2) {
+   case 0x162: // dxex
+      DIP( "dxex%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, unop( Iop_ExtractExpD64, mkexpr( frB ) ) );
+      break;
+   case 0x362: // diex
+      DIP( "diex%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, binop( Iop_InsertExpD64, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_extract_insert(ppc)(opc2)\n");
+      return False;
+   }
+
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_extract_insertq(UInt theInstr) {
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+
+   IRTemp frA   = newTemp( Ity_D64 );
+   IRTemp frB   = newTemp( Ity_D128 );
+   IRTemp frS64 = newTemp( Ity_D64 );
+   IRTemp frS   = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+
+   assign( frB, getDReg_pair( frB_addr ) );
+
+   switch (opc2) {
+   case 0x162:  // dxexq
+      DIP( "dxexq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr,  frB_addr );
+      /* Instruction actually returns a 64-bit result.  So as to be
+       * consistent and not have to add a new struct, the emulation returns
+       * the 64-bit result in the upper and lower register.
+       */
+      assign( frS64, unop( Iop_ExtractExpD128, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS64 ) );
+      break;
+   case 0x362:  // diexq
+      DIP( "diexq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg( frA_addr ) );
+      assign( frS, binop( Iop_InsertExpD128, mkexpr( frA ), mkexpr( frB ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS ) );
+      break;
+   default:
+      vex_printf("dis_dfp_extract_insertq(ppc)(opc2)\n");
+      return False;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* DFP 64-bit comparison instructions */
+static Bool dis_dfp_compare(UInt theInstr) {
+   /* X-Form */
+   UChar crfD = toUChar( IFIELD( theInstr, 23, 3 ) ); // AKA BF
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UInt opc1 = ifieldOPC( theInstr );
+   IRTemp frA;
+   IRTemp frB;
+
+   IRTemp ccIR = newTemp( Ity_I32 );
+   IRTemp ccPPC32 = newTemp( Ity_I32 );
+
+
+   /* Note: Differences between dcmpu and dcmpo are only in exception
+    flag settings, which aren't supported anyway. */
+   switch (opc1) {
+   case 0x3B: /* dcmpo and dcmpu, DFP 64-bit */
+      DIP( "dcmpo %u,fr%u,fr%u\n", crfD, frA_addr, frB_addr );
+      frA = newTemp( Ity_D64 );
+      frB = newTemp( Ity_D64 );
+
+      assign( frA, getDReg( frA_addr ) );
+      assign( frB, getDReg( frB_addr ) );
+
+      assign( ccIR, binop( Iop_CmpD64, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x3F: /* dcmpoq and dcmpuq,DFP 128-bit */
+      DIP( "dcmpoq %u,fr%u,fr%u\n", crfD, frA_addr, frB_addr );
+      frA = newTemp( Ity_D128 );
+      frB = newTemp( Ity_D128 );
+
+      assign( frA, getDReg_pair( frA_addr ) );
+      assign( frB, getDReg_pair( frB_addr ) );
+      assign( ccIR, binop( Iop_CmpD128, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_compare(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* Map compare result from IR to PPC32 */
+   /*
+    FP cmp result | PPC | IR
+    --------------------------
+    UN            | 0x1 | 0x45
+    EQ            | 0x2 | 0x40
+    GT            | 0x4 | 0x00
+    LT            | 0x8 | 0x01
+    */
+
+   assign( ccPPC32,
+           binop( Iop_Shl32,
+                  mkU32( 1 ),
+                  unop( Iop_32to8,
+                        binop( Iop_Or32,
+                               binop( Iop_And32,
+                                      unop( Iop_Not32,
+                                            binop( Iop_Shr32,
+                                                   mkexpr( ccIR ),
+                                                   mkU8( 5 ) ) ),
+                                      mkU32( 2 ) ),
+                               binop( Iop_And32,
+                                      binop( Iop_Xor32,
+                                             mkexpr( ccIR ),
+                                             binop( Iop_Shr32,
+                                                    mkexpr( ccIR ),
+                                                    mkU8( 6 ) ) ),
+                                      mkU32( 1 ) ) ) ) ) );
+
+   putGST_field( PPC_GST_CR, mkexpr( ccPPC32 ), crfD );
+   return True;
+}
+
 /*------------------------------------------------------------*/
 /*--- AltiVec Instruction Translation                      ---*/
 /*------------------------------------------------------------*/
@@ -13999,6 +14416,13 @@ DisResult disInstr_PPC_WRK (
             if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_arith( theInstr ))
                goto decode_success;
+         case 0x82:   // dcmpo, DFP comparison ordered instruction
+         case 0x282:  // dcmpu, DFP comparison unordered instruction
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_compare( theInstr ) )
+               goto decode_success;
+            goto decode_failure;
          case 0x102: // dctdp  - DFP convert to DFP long
          case 0x302: // drsp   - DFP round to dfp short
          case 0x122: // dctfix - DFP convert to fixed
@@ -14011,6 +14435,13 @@ DisResult disInstr_PPC_WRK (
             if (!allow_VX)
                goto decode_failure;
             if (dis_dfp_fmt_conv( theInstr ))
+               goto decode_success;
+            goto decode_failure;
+         case 0x162:  // dxex - Extract exponent 
+         case 0x362:  // diex - Insert exponent
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_extract_insert( theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x3CE: // fcfidus (implemented as native insn)
@@ -14034,6 +14465,28 @@ DisResult disInstr_PPC_WRK (
          if (dis_dfp_shift( theInstr ))
             goto decode_success;
          goto decode_failure;
+      }
+
+      opc2 = ifieldOPClo8( theInstr );
+      switch (opc2) {
+      case 0x3:   // dqua  - DFP Quantize
+      case 0x23:  // drrnd - DFP Reround
+      case 0x43:  // dquai - DFP Quantize immediate
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_quantize_sig_rrnd( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
+      case 0x63: // drintx - Round to an integer value
+      case 0xE3: // drintn - Round to an integer value
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_round( theInstr ) ) {
+            goto decode_success;
+         }
+         goto decode_failure;
+      default:
+         break;  /* fall through to next opc2 check */
       }
 
       opc2 = IFIELD(theInstr, 1, 5);
@@ -14249,6 +14702,21 @@ DisResult disInstr_PPC_WRK (
          if (dis_dfp_arithq( theInstr ))
             goto decode_success;
          goto decode_failure;
+      case 0x162:  // dxexq - DFP Extract exponent
+      case 0x362:  // diexq - DFP Insert exponent
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_extract_insertq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x82:   // dcmpoq, DFP comparison ordered instruction
+      case 0x282:  // dcmpuq, DFP comparison unordered instruction
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_compare( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
 
       case 0x102: // dctqpq  - DFP convert to DFP extended
       case 0x302: // drdpq   - DFP round to dfp Long
@@ -14332,8 +14800,29 @@ DisResult disInstr_PPC_WRK (
             goto decode_success;
          goto decode_failure;
       default:
-         goto decode_failure;
          break;
+      }
+
+      opc2 = ifieldOPClo8( theInstr );
+      switch (opc2) {
+      case 0x3:   // dquaq  - DFP Quantize Quad
+      case 0x23:  // drrndq - DFP Reround Quad
+      case 0x43:  // dquaiq - DFP Quantize immediate Quad
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_quantize_sig_rrndq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      case 0x63:  // drintxq - DFP Round to an integer value
+      case 0xE3:  // drintnq - DFP Round to an integer value
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_roundq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
+      default:
+         goto decode_failure;
       }
       break;
 

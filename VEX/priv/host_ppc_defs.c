@@ -644,7 +644,13 @@ HChar* showPPCFpOp ( PPCFpOp op ) {
       case Pfp_DCFFIX:     return "dcffix";
       case Pfp_DCTQPQ:     return "dctqpq";
       case Pfp_DCFFIXQ:    return "dcffixq";
-
+      case Pfp_DQUA:       return "dqua";
+      case Pfp_DQUAQ:      return "dquaq";
+      case Pfp_DXEX:       return "dxex";
+      case Pfp_DXEXQ:      return "dxexq";
+      case Pfp_DIEX:       return "diex";
+      case Pfp_DIEXQ:      return "diexq";
+      case Pfp_RRDTR:      return "rrdtr";
       default: vpanic("showPPCFpOp");
    }
 }
@@ -1067,6 +1073,49 @@ PPCInstr* PPCInstr_DfpShift128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
    i->Pin.DfpShift128.dst_lo = dst_lo;
    return i;
 }
+PPCInstr* PPCInstr_DfpRound ( HReg dst, HReg src, PPCRI* r_rmc ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                = Pin_DfpRound;
+   i->Pin.DfpRound.dst   = dst;
+   i->Pin.DfpRound.src   = src;
+   i->Pin.DfpRound.r_rmc = r_rmc;
+   return i;
+}
+PPCInstr* PPCInstr_DfpRound128 ( HReg dst_hi, HReg dst_lo, HReg src_hi, 
+                                 HReg src_lo, PPCRI* r_rmc ) {
+   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                    = Pin_DfpRound128;
+   i->Pin.DfpRound128.dst_hi = dst_hi;
+   i->Pin.DfpRound128.dst_lo = dst_lo;
+   i->Pin.DfpRound128.src_hi = src_hi;
+   i->Pin.DfpRound128.src_lo = src_lo;
+   i->Pin.DfpRound128.r_rmc  = r_rmc;
+   return i;
+}
+PPCInstr* PPCInstr_DfpQuantize ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR,
+                                 PPCRI* rmc ) {
+   PPCInstr* i             = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                  = Pin_DfpQuantize;
+   i->Pin.DfpQuantize.op   = op;
+   i->Pin.DfpQuantize.dst  = dst;
+   i->Pin.DfpQuantize.srcL = srcL;
+   i->Pin.DfpQuantize.srcR = srcR;
+   i->Pin.DfpQuantize.rmc  = rmc;
+   return i;
+}
+PPCInstr* PPCInstr_DfpQuantize128 ( PPCAvFpOp op, HReg dst_hi, HReg dst_lo, 
+                                    HReg src_hi, HReg src_lo, PPCRI* rmc ) {
+   /* dst is used to pass left operand in and return result */
+   PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                       = Pin_DfpQuantize128;
+   i->Pin.DfpQuantize128.op     = op;
+   i->Pin.DfpQuantize128.dst_hi = dst_hi;
+   i->Pin.DfpQuantize128.dst_lo = dst_lo;
+   i->Pin.DfpQuantize128.src_hi = src_hi;
+   i->Pin.DfpQuantize128.src_lo = src_lo;
+   i->Pin.DfpQuantize128.rmc    = rmc;
+   return i;
+}
 PPCInstr* PPCInstr_DfpD128toD64 ( PPCFpOp op, HReg dst,
                                   HReg src_hi, HReg src_lo ) {
    PPCInstr* i                = LibVEX_Alloc(sizeof(PPCInstr));
@@ -1087,6 +1136,49 @@ PPCInstr* PPCInstr_DfpI64StoD128 ( PPCFpOp op, HReg dst_hi,
    i->Pin.DfpI64StoD128.dst_lo = dst_lo;
    return i;
 }
+PPCInstr* PPCInstr_ExtractExpD128 ( PPCFpOp op, HReg dst,
+                                    HReg src_hi, HReg src_lo ) {
+   /* dst is used to pass the srcL argument */                             
+   PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                       = Pin_ExtractExpD128;
+   i->Pin.ExtractExpD128.op     = op;
+   i->Pin.ExtractExpD128.dst    = dst;
+   i->Pin.ExtractExpD128.src_hi = src_hi;
+   i->Pin.ExtractExpD128.src_lo = src_lo;
+   return i;
+}
+PPCInstr* PPCInstr_InsertExpD128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,   
+                                   HReg srcL, HReg srcR_hi, HReg srcR_lo ) {
+   /* dst is used to pass the srcL argument */                             
+   PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                       = Pin_InsertExpD128;
+   i->Pin.InsertExpD128.op      = op;
+   i->Pin.InsertExpD128.dst_hi  = dst_hi;
+   i->Pin.InsertExpD128.dst_lo  = dst_lo;
+   i->Pin.InsertExpD128.srcL    = srcL;
+   i->Pin.InsertExpD128.srcR_hi = srcR_hi;
+   i->Pin.InsertExpD128.srcR_lo = srcR_lo;
+   return i;
+}
+PPCInstr* PPCInstr_Dfp64Cmp (/* UInt crfD,*/ HReg dst, HReg srcL, HReg srcR ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag               = Pin_Dfp64Cmp;
+   i->Pin.Dfp64Cmp.dst = dst;
+   i->Pin.Dfp64Cmp.srcL = srcL;
+   i->Pin.Dfp64Cmp.srcR = srcR;
+   return i;                                                   
+}
+PPCInstr* PPCInstr_Dfp128Cmp ( HReg dst, HReg srcL_hi, HReg srcL_lo,
+                               HReg srcR_hi, HReg srcR_lo ) {
+   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                    = Pin_Dfp128Cmp;
+   i->Pin.Dfp128Cmp.dst      = dst;
+   i->Pin.Dfp128Cmp.srcL_hi  = srcL_hi;
+   i->Pin.Dfp128Cmp.srcL_lo  = srcL_lo;
+   i->Pin.Dfp128Cmp.srcR_hi  = srcR_hi;
+   i->Pin.Dfp128Cmp.srcR_lo  = srcR_lo;
+   return i;                                                   
+}
 PPCInstr* PPCInstr_EvCheck ( PPCAMode* amCounter,
                              PPCAMode* amFailAddr ) {
    PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
@@ -1100,7 +1192,6 @@ PPCInstr* PPCInstr_ProfInc ( void ) {
    i->tag      = Pin_ProfInc;
    return i;
 }
-
 
 /*
 Valid combo | fromI | int32 | syned | flt64 |
@@ -1919,6 +2010,47 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppPPCRI(i->Pin.DfpShift128.shift);
       return;
 
+   case Pin_DfpRound:
+      vex_printf("drintx ");
+      ppHRegPPC(i->Pin.DfpRound.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.DfpRound.src);
+      vex_printf(",");
+      ppPPCRI(i->Pin.DfpRound.r_rmc); /*  R in bit 3 and RMC in bits 2:0 */
+      return;
+
+   case Pin_DfpRound128:
+      vex_printf("drintxq ");
+      ppHRegPPC(i->Pin.DfpRound128.dst_hi);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.DfpRound128.src_hi);
+      vex_printf(",");
+      ppPPCRI(i->Pin.DfpRound128.r_rmc); /*  R in bit 3 and RMC in bits 2:0 */
+      return;
+
+   case Pin_DfpQuantize:
+      vex_printf("%s ", showPPCFpOp(i->Pin.DfpQuantize.op));
+      ppHRegPPC(i->Pin.DfpQuantize.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.DfpQuantize.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.DfpQuantize.srcR);
+      vex_printf(",");
+      ppPPCRI(i->Pin.DfpQuantize.rmc);
+      return;
+
+   case Pin_DfpQuantize128:
+      /*  Dst is used to pass in left source and return result */
+      vex_printf("dquaq ");
+      ppHRegPPC(i->Pin.DfpQuantize128.dst_hi);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.DfpQuantize128.dst_hi);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.DfpQuantize128.src_hi);
+      vex_printf(",");
+      ppPPCRI(i->Pin.DfpQuantize128.rmc);
+      return;
+
    case Pin_DfpD128toD64:
       vex_printf("%s ", showPPCFpOp(i->Pin.DfpD128toD64.op));
       ppHRegPPC(i->Pin.DfpD128toD64.dst);
@@ -1934,7 +2066,46 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppHRegPPC(i->Pin.DfpI64StoD128.src);
       vex_printf(",");
       return;
-
+   case Pin_ExtractExpD128:
+      vex_printf("dxexq ");
+      ppHRegPPC(i->Pin.ExtractExpD128.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.ExtractExpD128.src_hi);
+      return;
+   case Pin_InsertExpD128:
+      vex_printf("diexq ");
+      ppHRegPPC(i->Pin.InsertExpD128.dst_hi);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.InsertExpD128.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.InsertExpD128.srcR_hi);
+      return;
+   case Pin_Dfp64Cmp:
+      vex_printf("dcmpo %%cr1,");
+      ppHRegPPC(i->Pin.Dfp64Cmp.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp64Cmp.srcR);
+      vex_printf("; mfcr ");
+      ppHRegPPC(i->Pin.Dfp64Cmp.dst);
+      vex_printf("; rlwinm ");
+      ppHRegPPC(i->Pin.Dfp64Cmp.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp64Cmp.dst);
+      vex_printf(",8,28,31");
+      return;
+   case Pin_Dfp128Cmp:
+      vex_printf("dcmpoq %%cr1,");
+      ppHRegPPC(i->Pin.Dfp128Cmp.srcL_hi);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp128Cmp.srcR_hi);
+      vex_printf("; mfcr ");
+      ppHRegPPC(i->Pin.Dfp128Cmp.dst);
+      vex_printf("; rlwinm ");
+      ppHRegPPC(i->Pin.Dfp128Cmp.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Dfp128Cmp.dst);
+      vex_printf(",8,28,31");
+      return;
    case Pin_EvCheck:
       /* Note that the counter dec is 32 bit even in 64-bit mode. */
       vex_printf("(evCheck) ");
@@ -1947,7 +2118,6 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppPPCAMode(i->Pin.EvCheck.amFailAddr);
       vex_printf("; mtctr r30; bctr; nofail:");
       return;
-
    case Pin_ProfInc:
       if (mode64) {
          vex_printf("(profInc) imm64-fixed5 r30,$NotKnownYet; ");
@@ -1958,7 +2128,6 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
          vex_printf("lwz r29,0(r30); addze r29,r29; stw r29,0(r30)");
       }
       break;
-
    default:
       vex_printf("\nppPPCInstr: No such tag(%d)\n", (Int)i->tag);
       vpanic("ppPPCInstr");
@@ -2256,6 +2425,28 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead, i->Pin.Dfp128Binary.srcR_hi);
       addHRegUse(u, HRmRead, i->Pin.Dfp128Binary.srcR_lo);
       return;
+   case Pin_DfpRound:
+      addHRegUse(u, HRmWrite, i->Pin.DfpRound.dst);
+      addHRegUse(u, HRmRead,  i->Pin.DfpRound.src);
+      return;
+   case Pin_DfpRound128:
+      addHRegUse(u, HRmWrite, i->Pin.DfpRound128.dst_hi);
+      addHRegUse(u, HRmWrite, i->Pin.DfpRound128.dst_lo);
+      addHRegUse(u, HRmRead,  i->Pin.DfpRound128.src_hi);
+      addHRegUse(u, HRmRead,  i->Pin.DfpRound128.src_lo);
+      return;
+   case Pin_DfpQuantize:
+      addRegUsage_PPCRI(u,  i->Pin.DfpQuantize.rmc);
+      addHRegUse(u, HRmWrite, i->Pin.DfpQuantize.dst);
+      addHRegUse(u, HRmRead,  i->Pin.DfpQuantize.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.DfpQuantize.srcR);
+      return;
+   case Pin_DfpQuantize128:
+      addHRegUse(u, HRmWrite, i->Pin.DfpQuantize128.dst_hi);
+      addHRegUse(u, HRmWrite, i->Pin.DfpQuantize128.dst_lo);
+      addHRegUse(u, HRmRead,  i->Pin.DfpQuantize128.src_hi);
+      addHRegUse(u, HRmRead,  i->Pin.DfpQuantize128.src_lo);
+      return;
    case Pin_DfpShift128:
       addRegUsage_PPCRI(u,    i->Pin.DfpShift128.shift);
       addHRegUse(u, HRmWrite, i->Pin.DfpShift128.src_hi);
@@ -2273,6 +2464,30 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmWrite, i->Pin.DfpI64StoD128.dst_hi);
       addHRegUse(u, HRmWrite, i->Pin.DfpI64StoD128.dst_lo);
       return;
+   case Pin_ExtractExpD128:
+      addHRegUse(u, HRmWrite, i->Pin.ExtractExpD128.dst);
+      addHRegUse(u, HRmRead,  i->Pin.ExtractExpD128.src_hi);
+      addHRegUse(u, HRmRead,  i->Pin.ExtractExpD128.src_lo);
+      return;
+   case Pin_InsertExpD128:
+      addHRegUse(u, HRmWrite, i->Pin.InsertExpD128.dst_hi);
+      addHRegUse(u, HRmWrite, i->Pin.InsertExpD128.dst_lo);
+      addHRegUse(u, HRmRead,  i->Pin.InsertExpD128.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.InsertExpD128.srcR_hi);
+      addHRegUse(u, HRmRead,  i->Pin.InsertExpD128.srcR_lo);
+      return;
+   case Pin_Dfp64Cmp:
+      addHRegUse(u, HRmWrite, i->Pin.Dfp64Cmp.dst);
+      addHRegUse(u, HRmRead,  i->Pin.Dfp64Cmp.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.Dfp64Cmp.srcR);
+      return;
+   case Pin_Dfp128Cmp:
+      addHRegUse(u, HRmWrite, i->Pin.Dfp128Cmp.dst);
+      addHRegUse(u, HRmRead,  i->Pin.Dfp128Cmp.srcL_hi);
+      addHRegUse(u, HRmRead,  i->Pin.Dfp128Cmp.srcL_lo);
+      addHRegUse(u, HRmRead,  i->Pin.Dfp128Cmp.srcR_hi);
+      addHRegUse(u, HRmRead,  i->Pin.Dfp128Cmp.srcR_lo);
+      return;                                           
    case Pin_EvCheck:
       /* We expect both amodes only to mention the GSP (r31), so this
          is in fact pointless, since GSP isn't allocatable, but
@@ -2521,6 +2736,28 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.DfpShift128.dst_hi);
       mapReg(m, &i->Pin.DfpShift128.dst_lo);
       return;
+   case Pin_DfpRound:
+      mapReg(m, &i->Pin.DfpRound.dst);
+      mapReg(m, &i->Pin.DfpRound.src);
+      return;
+   case Pin_DfpRound128:
+      mapReg(m, &i->Pin.DfpRound128.dst_hi);
+      mapReg(m, &i->Pin.DfpRound128.dst_lo);
+      mapReg(m, &i->Pin.DfpRound128.src_hi);
+      mapReg(m, &i->Pin.DfpRound128.src_lo);
+      return;
+   case Pin_DfpQuantize:
+      mapRegs_PPCRI(m, i->Pin.DfpQuantize.rmc);
+      mapReg(m, &i->Pin.DfpQuantize.dst);
+      mapReg(m, &i->Pin.DfpQuantize.srcL);
+      mapReg(m, &i->Pin.DfpQuantize.srcR);
+      return;
+   case Pin_DfpQuantize128:
+      mapRegs_PPCRI(m, i->Pin.DfpQuantize128.rmc);
+      mapReg(m, &i->Pin.DfpQuantize128.dst_hi);
+      mapReg(m, &i->Pin.DfpQuantize128.dst_lo);
+      mapReg(m, &i->Pin.DfpQuantize128.src_hi);
+      mapReg(m, &i->Pin.DfpQuantize128.src_lo);
    case Pin_DfpD128toD64:
       mapReg(m, &i->Pin.DfpD128toD64.src_hi);
       mapReg(m, &i->Pin.DfpD128toD64.src_lo);
@@ -2530,6 +2767,30 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.DfpI64StoD128.src);
       mapReg(m, &i->Pin.DfpI64StoD128.dst_hi);
       mapReg(m, &i->Pin.DfpI64StoD128.dst_lo);
+      return;
+   case Pin_ExtractExpD128:
+      mapReg(m, &i->Pin.ExtractExpD128.dst);
+      mapReg(m, &i->Pin.ExtractExpD128.src_hi);
+      mapReg(m, &i->Pin.ExtractExpD128.src_lo);
+      return;
+   case Pin_InsertExpD128:
+      mapReg(m, &i->Pin.InsertExpD128.dst_hi);
+      mapReg(m, &i->Pin.InsertExpD128.dst_lo);
+      mapReg(m, &i->Pin.InsertExpD128.srcL);
+      mapReg(m, &i->Pin.InsertExpD128.srcR_hi);
+      mapReg(m, &i->Pin.InsertExpD128.srcR_lo);
+      return;
+   case Pin_Dfp64Cmp:
+      mapReg(m, &i->Pin.Dfp64Cmp.dst);
+      mapReg(m, &i->Pin.Dfp64Cmp.srcL);
+      mapReg(m, &i->Pin.Dfp64Cmp.srcR);
+      return;
+   case Pin_Dfp128Cmp:
+      mapReg(m, &i->Pin.Dfp128Cmp.dst);
+      mapReg(m, &i->Pin.Dfp128Cmp.srcL_hi);
+      mapReg(m, &i->Pin.Dfp128Cmp.srcL_lo);
+      mapReg(m, &i->Pin.Dfp128Cmp.srcR_hi);
+      mapReg(m, &i->Pin.Dfp128Cmp.srcR_lo);
       return;
    case Pin_EvCheck:
       /* We expect both amodes only to mention the GSP (r31), so this
@@ -2898,6 +3159,22 @@ static UChar* mkFormZ22 ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0       < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (constant<<10) | (opc2<<1) | (b0));
+   return emit32(p, theInstr);
+}
+
+static UChar* mkFormZ23 ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                          UInt r3, UInt rmc, UInt opc2, UInt b0 )
+{
+   UInt theInstr;
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x20);
+   vassert(rmc  < 0x4);
+   vassert(opc2 < 0x100);
+   vassert(b0   < 0x2);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
+               (r3<<11) | (rmc<<9) | (opc2<<1) | (b0));
    return emit32(p, theInstr);
 }
 
@@ -4671,6 +4948,9 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pfp_DCTFIX:   // D64 to I64 conversion
          p = mkFormX( p, 59, fr_dst, 0, fr_src, 290, 0);
          break;
+      case Pfp_DXEX:     // Extract exponent
+         p = mkFormX( p, 59, fr_dst, 0, fr_src, 354, 0 );
+         break;                                
       default:
          goto bad;
       }
@@ -4697,6 +4977,9 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pfp_DFPDIV: /* ddiv, dfp divide, use default RM from reg ignore
                         * mode from the Iop instruction. */
          p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 546, 0 );
+         break;
+      case Pfp_DIEX:  /* diex, insert exponent */
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 866, 0 );
          break;
       default:
          goto bad;
@@ -4725,6 +5008,31 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       goto done;
    }
 
+   case Pin_ExtractExpD128: {
+      UInt fr_dst   = fregNo(i->Pin.ExtractExpD128.dst);
+      UInt fr_srcHi = fregNo(i->Pin.ExtractExpD128.src_hi);
+      UInt fr_srcLo = fregNo(i->Pin.ExtractExpD128.src_lo);
+
+      switch (i->Pin.ExtractExpD128.op) {
+      case Pfp_DXEXQ:                                                          
+         /* Setup the upper and lower registers of the source operand
+          * register pair.
+          */
+         p = mkFormX( p, 63, 12, 0, fr_srcHi, 72, 0);
+         p = mkFormX( p, 63, 13, 0, fr_srcLo, 72, 0);
+         p = mkFormX( p, 63, 10, 0, 12, 354, 0 );
+
+         /* The instruction will put the 64-bit result in
+          * register 10.
+          */
+         p = mkFormX(p, 63, fr_dst, 0, 10,  72, 0);
+         break;
+      default:
+         vex_printf("Error: emit_PPCInstr case Pin_DfpExtractExp, case inst Default\n");
+         goto bad;
+      }
+      goto done;
+   }
    case Pin_Dfp128Unary: {
      UInt fr_dstHi = fregNo(i->Pin.Dfp128Unary.dst_hi);
      UInt fr_dstLo = fregNo(i->Pin.Dfp128Unary.dst_lo);
@@ -4840,6 +5148,113 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       goto done;
    }
 
+   case Pin_DfpRound: {
+      UInt fr_dst = fregNo(i->Pin.DfpRound.dst);
+      UInt fr_src = fregNo(i->Pin.DfpRound.src);
+      UInt r_rmc, r, rmc;
+
+      r_rmc =  i->Pin.DfpRound.r_rmc->Pri.Imm;
+      r = (r_rmc & 0x8) >> 3;
+      rmc = r_rmc & 0x3;
+
+      // drintx
+      p = mkFormZ23(p, 59, fr_dst, r, fr_src, rmc, 99, 0);
+      goto done;
+   }
+
+   case Pin_DfpRound128: {
+      UInt fr_dstHi = fregNo(i->Pin.DfpRound128.dst_hi);
+      UInt fr_dstLo = fregNo(i->Pin.DfpRound128.dst_lo);
+      UInt fr_srcHi = fregNo(i->Pin.DfpRound128.src_hi);
+      UInt fr_srcLo = fregNo(i->Pin.DfpRound128.src_lo);
+      UInt r_rmc, r, rmc;
+
+      r_rmc =  i->Pin.DfpRound128.r_rmc->Pri.Imm;
+      r = (r_rmc & 0x8) >> 3;
+      rmc = r_rmc & 0x3;
+
+      /* Setup the upper and lower registers of the source operand 
+       * register pair.
+       */
+      p = mkFormX(p, 63, 12, 0, fr_srcHi, 72, 0);
+      p = mkFormX(p, 63, 13, 0, fr_srcLo, 72, 0);
+
+      /* Do drintx instruction with 128-bit source operands in 
+       * registers (12,13).  
+       */
+      p = mkFormZ23(p, 63, 10, r, 12, rmc, 99, 0);
+
+      /* The instruction will put the 128-bit result in 
+       * registers (10,11).  Note, the operand in the instruction only 
+       * reference the first of the two registers in the pair.
+       */
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      goto done;
+   }
+
+   case Pin_DfpQuantize: {
+      UInt fr_dst  = fregNo(i->Pin.DfpQuantize.dst);
+      UInt fr_srcL = fregNo(i->Pin.DfpQuantize.srcL);
+      UInt fr_srcR = fregNo(i->Pin.DfpQuantize.srcR);
+      UInt rmc;
+
+      rmc =  i->Pin.DfpQuantize.rmc->Pri.Imm;
+
+      switch (i->Pin.DfpQuantize.op) {
+      case Pfp_DQUA:
+         p = mkFormZ23(p, 59, fr_dst, fr_srcL, fr_srcR, rmc, 3, 0);
+         break;
+      case Pfp_RRDTR:
+         p = mkFormZ23(p, 59, fr_dst, fr_srcL, fr_srcR, rmc, 35, 0);
+         break;
+      default:
+         break;
+      }
+      goto done;
+   }
+
+   case Pin_DfpQuantize128: {
+      UInt fr_dst_hi = fregNo(i->Pin.DfpQuantize128.dst_hi);
+      UInt fr_dst_lo = fregNo(i->Pin.DfpQuantize128.dst_lo);
+      UInt fr_src_hi = fregNo(i->Pin.DfpQuantize128.src_hi);
+      UInt fr_src_lo = fregNo(i->Pin.DfpQuantize128.src_lo);
+      UInt rmc;
+
+      rmc =  i->Pin.DfpQuantize128.rmc->Pri.Imm;
+      /* Setup the upper and lower registers of the source operand 
+       * register pairs.  Note, left source operand passed in via the
+       * dst register pair.
+       */
+      p = mkFormX(p, 63, 10, 0, fr_dst_hi, 72, 0);
+      p = mkFormX(p, 63, 11, 0, fr_dst_lo, 72, 0);
+      p = mkFormX(p, 63, 12, 0, fr_src_hi, 72, 0);
+      p = mkFormX(p, 63, 13, 0, fr_src_lo, 72, 0);
+
+      /* Do dquaq instruction with 128-bit source operands in 
+       * registers (12,13).  
+       */
+      switch (i->Pin.DfpQuantize128.op) {
+      case Pfp_DQUAQ:
+         p = mkFormZ23(p, 63, 10, 10, 12, rmc, 3, 0);
+         break;
+      case Pfp_DRRNDQ:
+         p = mkFormZ23(p, 63, 10, 10, 12, rmc, 35, 0);
+         break;
+      default:
+         vpanic("Pin_DfpQuantize128: default case, couldn't find inst to issue \n");
+         break;
+      }
+
+      /* The instruction will put the 128-bit result in 
+       * registers (10,11).  Note, the operand in the instruction only 
+       * reference the first of the two registers in the pair.
+       */
+      p = mkFormX(p, 63, fr_dst_hi, 0, 10,  72, 0);
+      p = mkFormX(p, 63, fr_dst_lo, 0, 11,  72, 0);
+      goto done;
+   }
+
    case Pin_DfpD128toD64: {
       UInt fr_dst   = fregNo( i->Pin.DfpD128toD64.dst );
       UInt fr_srcHi = fregNo( i->Pin.DfpD128toD64.src_hi );
@@ -4885,6 +5300,76 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* The instruction will put the 64-bit result in registers 10, 11. */
       p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
       p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      goto done;
+   }
+
+   case Pin_InsertExpD128: {
+      UInt fr_dstHi  = fregNo(i->Pin.InsertExpD128.dst_hi);
+      UInt fr_dstLo  = fregNo(i->Pin.InsertExpD128.dst_lo);
+      UInt fr_srcL   = fregNo(i->Pin.InsertExpD128.srcL);
+      UInt fr_srcRHi = fregNo(i->Pin.InsertExpD128.srcR_hi);
+      UInt fr_srcRLo = fregNo(i->Pin.InsertExpD128.srcR_lo);
+
+      /* The left operand is a single F64 value, the right is an F128
+       * register pair.
+       */
+      p = mkFormX(p, 63, 10, 0, fr_srcL, 72, 0);
+      p = mkFormX(p, 63, 12, 0, fr_srcRHi, 72, 0);
+      p = mkFormX(p, 63, 13, 0, fr_srcRLo, 72, 0);
+      p = mkFormX(p, 63, 10, 10, 12, 866, 0 );
+
+      /* The instruction will put the 128-bit result into
+       * registers (10,11).  Note, the operand in the instruction only
+       * reference the first of the two registers in the pair.
+       */
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      goto done;
+   }                                                                           
+
+   case Pin_Dfp64Cmp:{
+      UChar crfD    = 1;
+      UInt  r_dst   = iregNo(i->Pin.Dfp64Cmp.dst, mode64);
+      UInt  fr_srcL = fregNo(i->Pin.Dfp64Cmp.srcL);
+      UInt  fr_srcR = fregNo(i->Pin.Dfp64Cmp.srcR);
+      vassert(crfD < 8);
+      // dcmpo, dcmpu
+      p = mkFormX(p, 59, crfD<<2, fr_srcL, fr_srcR, 130, 0);
+
+      // mfcr (mv CR to r_dst)
+      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0);
+
+      // rlwinm r_dst,r_dst,8,28,31
+      //  => rotate field 1 to bottomw of word, masking out upper 28
+      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0);
+      goto done;
+   }
+
+   case Pin_Dfp128Cmp: {
+      UChar crfD       = 1;
+      UInt  r_dst      = iregNo(i->Pin.Dfp128Cmp.dst, mode64);
+      UInt  fr_srcL_hi = fregNo(i->Pin.Dfp128Cmp.srcL_hi);
+      UInt  fr_srcL_lo = fregNo(i->Pin.Dfp128Cmp.srcL_lo);
+      UInt  fr_srcR_hi = fregNo(i->Pin.Dfp128Cmp.srcR_hi);
+      UInt  fr_srcR_lo = fregNo(i->Pin.Dfp128Cmp.srcR_lo);
+      vassert(crfD < 8);
+      // dcmpoq, dcmpuq
+      /* Setup the upper and lower registers of the source operand
+       * register pair.
+       */
+      p = mkFormX(p, 63, 10, 0, fr_srcL_hi, 72, 0);
+      p = mkFormX(p, 63, 11, 0, fr_srcL_lo, 72, 0);
+      p = mkFormX(p, 63, 12, 0, fr_srcR_hi, 72, 0);
+      p = mkFormX(p, 63, 13, 0, fr_srcR_lo, 72, 0);
+
+      p = mkFormX(p, 63, crfD<<2, 10, 12, 130, 0);
+
+      // mfcr (mv CR to r_dst)
+      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0);
+
+      // rlwinm r_dst,r_dst,8,28,31
+      //  => rotate field 1 to bottomw of word, masking out upper 28
+      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0);
       goto done;
    }
 

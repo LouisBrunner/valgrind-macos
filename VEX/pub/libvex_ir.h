@@ -991,14 +991,12 @@ typedef
       /* ARITHMETIC INSTRUCTIONS   64-bit
 	 ----------------------------------
 	 IRRoundingModeDFP(I32) X D64 X D64 -> D64
-	 Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64
       */
       Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64,
 
       /* ARITHMETIC INSTRUCTIONS  128-bit
 	 ----------------------------------
 	 IRRoundingModeDFP(I32) X D128 X D128 -> D128
-	 Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128
       */
       Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128,
 
@@ -1008,8 +1006,8 @@ typedef
        *    lost. Zeros are supplied to the vacated positions on the right.
        *    The sign of the result is the same as the sign of the original
        *    operand.
-       */
-      /* D64 x U8  -> D64    left shift and right shift respectively */
+       *
+       * D64 x U8  -> D64    left shift and right shift respectively */
       Iop_ShlD64, Iop_ShrD64,
 
       /* D128 x U8  -> D128  left shift and right shift respectively */
@@ -1042,8 +1040,72 @@ typedef
       /*   IRRoundingModeDFP(I32) x D128 -> I64 */
       Iop_D128toI64S,
 
+      /* ROUNDING INSTRUCTIONS
+       * IRRoundingMode(I32) x D64 -> D64
+       * The D64 operand, if a finite number, is rounded to an integer value.
+       */
+      Iop_RoundD64toInt,
+
+      /* IRRoundingMode(I32) x D128 -> D128 */
+      Iop_RoundD128toInt,
+
+      /* COMPARE INSTRUCTIONS
+       * D64 x D64 -> IRCmpD64Result(I32) */
+      Iop_CmpD64,
+
+      /* D128 x D128 -> IRCmpD64Result(I32) */
+      Iop_CmpD128,
+
+      /* QUANTIZE AND ROUND INSTRUCTIONS
+       * The source operand is converted and rounded to the form with the 
+       * immediate exponent specified by the rounding and exponent parameter.
+       *
+       * The second operand is converted and rounded to the form
+       * of the first operand's exponent and the rounded based on the specified
+       * rounding mode parameter.
+       *
+       * IRRoundingModeDFP(I32) x D64 x D64-> D64 */
+      Iop_QuantizeD64,
+
+      /* IRRoundingModeDFP(I32) x D128 x D128 -> D128 */
+      Iop_QuantizeD128,
+
+      /* IRRoundingModeDFP(I32) x I8 x D64 -> D64
+       *    The Decimal Floating point operand is rounded to the requested 
+       *    significance given by the I8 operand as specified by the rounding 
+       *    mode.
+       */
+      Iop_SignificanceRoundD64,
+
+      /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
+      Iop_SignificanceRoundD128,
+
+      /* EXTRACT AND INSERT INSTRUCTIONS
+       * D64 -> I64
+       *    The exponent of the D32 or D64 operand is extracted.  The 
+       *    extracted exponent is converted to a 64-bit signed binary integer.
+       */
+      Iop_ExtractExpD64,
+
+      /* D128 -> I64 */
+      Iop_ExtractExpD128,
+
+      /* I64 x I64  -> D64 
+       *    The exponent is specified by the first I64 operand the signed
+       *    significand is given by the second I64 value.  The result is a D64
+       *    value consisting of the specified significand and exponent whose 
+       *    sign is that of the specified significand.
+       */
+      Iop_InsertExpD64,
+
+      /* I64 x I128 -> D128 */
+      Iop_InsertExpD128,
+
       /* Support for 128-bit DFP type */
       Iop_D64HLtoD128, Iop_D128HItoD64, Iop_D128LOtoD64,
+
+      /* Conversion I64 -> D64 */
+      Iop_ReinterpI64asD64,
 
       /* ------------------ 128-bit SIMD FP. ------------------ */
 

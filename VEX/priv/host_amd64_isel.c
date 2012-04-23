@@ -4177,7 +4177,17 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
-         case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn: {
+         /* Keep this list in sync with that in iselNext below */
+         case Ijk_ClientReq:
+         case Ijk_EmWarn:
+         case Ijk_NoDecode:
+         case Ijk_NoRedir:
+         case Ijk_SigSEGV:
+         case Ijk_SigTRAP:
+         case Ijk_Sys_syscall:
+         case Ijk_TInval:
+         case Ijk_Yield:
+         {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, AMD64Instr_XAssisted(r, amRIP, cc, stmt->Ist.Exit.jk));
             return;
@@ -4260,11 +4270,18 @@ static void iselNext ( ISelEnv* env,
          break;
    }
 
-   /* Case: some other kind of transfer to any address */
+   /* Case: assisted transfer to arbitrary address */
    switch (jk) {
+      /* Keep this list in sync with that for Ist_Exit above */
+      case Ijk_ClientReq:
+      case Ijk_EmWarn:
       case Ijk_NoDecode:
-      case Ijk_Sys_syscall: case Ijk_ClientReq: case Ijk_NoRedir:
-      case Ijk_Yield: case Ijk_SigTRAP: case Ijk_TInval: {
+      case Ijk_NoRedir:
+      case Ijk_SigSEGV:
+      case Ijk_SigTRAP:
+      case Ijk_Sys_syscall:
+      case Ijk_TInval:
+      case Ijk_Yield: {
          HReg        r     = iselIntExpr_R(env, next);
          AMD64AMode* amRIP = AMD64AMode_IR(offsIP, hregAMD64_RBP());
          addInstr(env, AMD64Instr_XAssisted(r, amRIP, Acc_ALWAYS, jk));

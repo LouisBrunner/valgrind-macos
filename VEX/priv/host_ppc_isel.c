@@ -4736,10 +4736,16 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
-         //case Ijk_MapFail:
-         //case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn:
-         case Ijk_NoDecode: case Ijk_SigBUS: case Ijk_SigTRAP:
+         /* Keep this list in sync with that in iselNext below */
+         case Ijk_ClientReq:
          case Ijk_EmFail:
+         case Ijk_EmWarn:
+         case Ijk_NoDecode:
+         case Ijk_NoRedir:
+         case Ijk_SigBUS:
+         case Ijk_SigTRAP:
+         case Ijk_Sys_syscall:
+         case Ijk_TInval:
          {
             HReg r = iselWordExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, PPCInstr_XAssisted(r, amCIA, cc,
@@ -4828,13 +4834,18 @@ static void iselNext ( ISelEnv* env,
          break;
    }
 
-   /* Case: some other kind of transfer to any address */
+   /* Case: assisted transfer to arbitrary address */
    switch (jk) {
-      case Ijk_Sys_syscall: case Ijk_ClientReq: case Ijk_NoDecode:
-      case Ijk_EmWarn: case Ijk_SigTRAP: case Ijk_TInval:
+      /* Keep this list in sync with that for Ist_Exit above */
+      case Ijk_ClientReq:
+      case Ijk_EmFail:
+      case Ijk_EmWarn:
+      case Ijk_NoDecode:
       case Ijk_NoRedir:
-      //case Ijk_Sys_int128: 
-      //case Ijk_Yield:
+      case Ijk_SigBUS:
+      case Ijk_SigTRAP:
+      case Ijk_Sys_syscall:
+      case Ijk_TInval:
       {
          HReg      r     = iselWordExpr_R(env, next);
          PPCAMode* amCIA = PPCAMode_IR(offsIP, hregPPC_GPR31(env->mode64));

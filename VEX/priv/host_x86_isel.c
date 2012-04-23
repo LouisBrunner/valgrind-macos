@@ -4085,8 +4085,21 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
+         /* Keep this list in sync with that in iselNext below */
+         case Ijk_ClientReq:
+         case Ijk_EmWarn:
          case Ijk_MapFail:
-         case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn: {
+         case Ijk_NoDecode:
+         case Ijk_NoRedir:
+         case Ijk_SigSEGV:
+         case Ijk_SigTRAP:
+         case Ijk_Sys_int128:
+         case Ijk_Sys_int129:
+         case Ijk_Sys_int130:
+         case Ijk_Sys_sysenter:
+         case Ijk_TInval:
+         case Ijk_Yield:
+         {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, X86Instr_XAssisted(r, amEIP, cc, stmt->Ist.Exit.jk));
             return;
@@ -4168,13 +4181,23 @@ static void iselNext ( ISelEnv* env,
          break;
    }
 
-   /* Case: some other kind of transfer to any address */
+   /* Case: assisted transfer to arbitrary address */
    switch (jk) {
+      /* Keep this list in sync with that for Ist_Exit above */
+      case Ijk_ClientReq:
+      case Ijk_EmWarn:
+      case Ijk_MapFail:
       case Ijk_NoDecode:
-      case Ijk_Sys_int128: case Ijk_Sys_int129: case Ijk_Sys_int130:
-      case Ijk_ClientReq: case Ijk_NoRedir:
-      case Ijk_Yield: case Ijk_SigTRAP: case Ijk_TInval:
-      case Ijk_Sys_sysenter: {
+      case Ijk_NoRedir:
+      case Ijk_SigSEGV:
+      case Ijk_SigTRAP:
+      case Ijk_Sys_int128:
+      case Ijk_Sys_int129:
+      case Ijk_Sys_int130:
+      case Ijk_Sys_sysenter:
+      case Ijk_TInval:
+      case Ijk_Yield:
+      {
          HReg      r     = iselIntExpr_R(env, next);
          X86AMode* amEIP = X86AMode_IR(offsIP, hregX86_EBP());
          addInstr(env, X86Instr_XAssisted(r, amEIP, Xcc_ALWAYS, jk));

@@ -6008,9 +6008,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
-         //case Ijk_MapFail:
-         //case Ijk_SigSEGV: case Ijk_TInval: case Ijk_EmWarn:
+         /* Keep this list in sync with that in iselNext below */
+         case Ijk_ClientReq:
          case Ijk_NoDecode:
+         case Ijk_NoRedir:
+         case Ijk_Sys_syscall:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, ARMInstr_XAssisted(r, amR15T, cc,
@@ -6094,12 +6096,13 @@ static void iselNext ( ISelEnv* env,
          break;
    }
 
-   /* Case: some other kind of transfer to any address */
+   /* Case: assisted transfer to arbitrary address */
    switch (jk) {
-      case Ijk_Sys_syscall: case Ijk_ClientReq: case Ijk_NoDecode:
+      /* Keep this list in sync with that for Ist_Exit above */
+      case Ijk_ClientReq:
+      case Ijk_NoDecode:
       case Ijk_NoRedir:
-      //case Ijk_Sys_int128: 
-      //case Ijk_Yield: case Ijk_SigTRAP:
+      case Ijk_Sys_syscall:
       {
          HReg       r      = iselIntExpr_R(env, next);
          ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);

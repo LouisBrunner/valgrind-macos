@@ -10,7 +10,7 @@ check that all targets can run their insn set tests with
 --vex-guest-max-insns=1.
 
 all targets: run some tests using --profile-flags=... to exercise  
-function patchProfInc_<arch>
+function patchProfInc_<arch> [DONE: amd64 x86 ppc32 ppc64 arm s390??]
 
 figure out if there is a way to write a test program that checks
 that event checks are actually getting triggered
@@ -27,10 +27,6 @@ self hosting works properly.  Ditto for s390 ?
 host_ppc_defs.h: is RdWrLR still needed?  If not delete.
 
 ditto ARM, Ld8S
-
-all backends: iselStmt(Ist_Exit) vs iselNext: make sure that the same
-JKs are handled, else it's not safe against branch sense switching
-[DONE: s390]
 
 Comments that used to be in m_scheduler.c:
    tchaining tests:

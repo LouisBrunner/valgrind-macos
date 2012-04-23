@@ -64,8 +64,7 @@
    fits in a UShort, leaving room for 0xFFFF(EC2TTE_DELETED) to denote
    'deleted') and it is strongly recommended not to change this.
    65521 is the largest prime <= 65535. */
-#define N_TTES_PER_SECTOR /*30011*/ /*40009*/ 65521
-//DEBUG-ONLY: #define N_TTES_PER_SECTOR 10007
+#define N_TTES_PER_SECTOR /*10007*/ /*30011*/ /*40009*/ 65521
 
 /* Because each sector contains a hash table of TTEntries, we need to
    specify the maximum allowable loading, after which the sector is
@@ -1372,7 +1371,7 @@ static void initialiseSector ( Int sno )
       VG_(machine_get_VexArchInfo)( &vex_arch, NULL );
 
       /* Visit each just-about-to-be-abandoned translation. */
-VG_(printf)("QQQ unlink-entire-sector: %d START\n", sno);
+      if (0) VG_(printf)("QQQ unlink-entire-sector: %d START\n", sno);
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          if (sec->tt[i].status == InUse) {
             vg_assert(sec->tt[i].n_tte2ec >= 1);
@@ -1391,7 +1390,7 @@ VG_(printf)("QQQ unlink-entire-sector: %d START\n", sno);
          sec->tt[i].status   = Empty;
          sec->tt[i].n_tte2ec = 0;
       }
-VG_(printf)("QQQ unlink-entire-sector: %d END\n", sno);
+      if (0) VG_(printf)("QQQ unlink-entire-sector: %d END\n", sno);
 
       /* Free up the eclass structures. */
       for (i = 0; i < ECLASS_N; i++) {

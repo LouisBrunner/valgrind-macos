@@ -32,7 +32,8 @@ EXTRA_DIST = \
 	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
 	test_dfp1.stderr.exp test_dfp1.stdout.exp test_dfp1.vgtest \
 	test_dfp2.stderr.exp test_dfp2.stdout.exp test_dfp2.vgtest \
-	test_dfp2.stdout.exp_Without_dcffix 
+	test_dfp2.stdout.exp_Without_dcffix \
+	test_dfp3.stderr.exp test_dfp3.stdout.exp test_dfp3.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -43,7 +44,7 @@ check_PROGRAMS = \
 	test_isa_2_06_part1 \
 	test_isa_2_06_part2 \
 	test_isa_2_06_part3 \
-	test_dfp1 test_dfp2
+	test_dfp1 test_dfp2 test_dfp3
 
 
 AM_CFLAGS    += @FLAG_M32@
@@ -92,4 +93,6 @@ test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(
 test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)
 test_dfp2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M32@ $(BUILD_FLAGS_DFP)
+test_dfp3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)

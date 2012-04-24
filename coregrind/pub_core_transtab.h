@@ -62,6 +62,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
                            UInt             code_len,
                            Bool             is_self_checking,
                            Int              offs_profInc,
+                           UInt             n_guest_instrs,
                            VexArch          arch_host );
 
 extern

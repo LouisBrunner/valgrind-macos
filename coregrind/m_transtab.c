@@ -1446,6 +1446,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
                            UInt             code_len,
                            Bool             is_self_checking,
                            Int              offs_profInc,
+                           UInt             n_guest_instrs,
                            VexArch          arch_host )
 {
    Int    tcAvailQ, reqdQ, y, i;
@@ -1458,6 +1459,9 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
 
    /* 60000: should agree with N_TMPBUF in m_translate.c. */
    vg_assert(code_len > 0 && code_len < 60000);
+
+   /* Generally stay sane */
+   vg_assert(n_guest_instrs < 200); /* it can be zero, tho */
 
    if (0)
       VG_(printf)("add_to_transtab(entry = 0x%llx, len = %d)\n",
@@ -1548,7 +1552,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    sectors[y].tt[i].status = InUse;
    sectors[y].tt[i].tcptr  = tcptr;
    sectors[y].tt[i].count  = 0;
-   sectors[y].tt[i].weight = 1;
+   sectors[y].tt[i].weight = n_guest_instrs == 0 ? 1 : n_guest_instrs;
    sectors[y].tt[i].vge    = *vge;
    sectors[y].tt[i].entry  = entry;
 

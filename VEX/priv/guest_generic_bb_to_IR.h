@@ -164,6 +164,7 @@ extern
 IRSB* bb_to_IR ( 
          /*OUT*/VexGuestExtents* vge,
          /*OUT*/UInt*            n_sc_extents,
+         /*OUT*/UInt*            n_guest_instrs, /* stats only */
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ UChar*           guest_code,

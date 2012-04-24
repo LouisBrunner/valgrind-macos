@@ -180,6 +180,7 @@ static Bool const_False ( void* callback_opaque, Addr64 a ) {
 IRSB* bb_to_IR ( 
          /*OUT*/VexGuestExtents* vge,
          /*OUT*/UInt*            n_sc_extents,
+         /*OUT*/UInt*            n_guest_instrs, /* stats only */
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ UChar*           guest_code,
@@ -245,6 +246,7 @@ IRSB* bb_to_IR (
       so far gone. */
    delta    = 0;
    n_instrs = 0;
+   *n_guest_instrs = 0;
 
    /* Guest addresses as IRConsts.  Used in self-checks to specify the
       restart-after-discard point. */
@@ -756,6 +758,7 @@ IRSB* bb_to_IR (
       vex_printf( "\n");
    }
 
+   *n_guest_instrs = n_instrs;
    return irsb;
 }
 

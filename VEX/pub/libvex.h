@@ -491,6 +491,9 @@ typedef
       /* Offset in generated code of the profile inc, or -1 if
          none.  Needed for later patching. */
       Int offs_profInc;
+      /* Stats only: the number of guest insns included in the
+         translation.  It may be zero (!). */
+      UInt n_guest_instrs;
    }
    VexTranslateResult;
 

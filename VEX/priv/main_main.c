@@ -528,9 +528,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
    /* Set up result struct. */
    VexTranslateResult res;
-   res.status       = VexTransOK;
-   res.n_sc_extents = 0;
-   res.offs_profInc = -1;
+   res.status         = VexTransOK;
+   res.n_sc_extents   = 0;
+   res.offs_profInc   = -1;
+   res.n_guest_instrs = 0;
 
    /* yet more sanity checks ... */
    if (vta->arch_guest == vta->arch_host) {
@@ -549,6 +550,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
    irsb = bb_to_IR ( vta->guest_extents,
                      &res.n_sc_extents,
+                     &res.n_guest_instrs,
                      vta->callback_opaque,
                      disInstrFn,
                      vta->guest_bytes, 

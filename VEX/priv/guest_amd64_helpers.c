@@ -1198,6 +1198,23 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                 mkU64(1));
       }
 
+      /*---------------- LOGICW ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondZ)) {
+         /* word and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64,
+                           binop(Iop_And64, cc_dep1, mkU64(0xFFFF)),
+                           mkU64(0)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondNZ)) {
+         /* word and/or/xor, then NZ --> test dst!=0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64,
+                           binop(Iop_And64, cc_dep1, mkU64(0xFFFF)),
+                           mkU64(0)));
+      }
+
       /*---------------- LOGICB ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondZ)) {

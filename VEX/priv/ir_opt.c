@@ -4514,6 +4514,33 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* 32Uto64( 16Uto32( x )) --> 16Uto64(x) */
       if (is_Unop(aa, Iop_16Uto32))
          return IRExpr_Unop(Iop_16Uto64, aa->Iex.Unop.arg);
+      /* 32Uto64(64to32( Shr64( 32Uto64(64to32(x)), sh ))
+                     --> Shr64( 32Uto64(64to32(x)), sh )) */
+      if (is_Unop(aa, Iop_64to32)
+          && is_Binop(aa->Iex.Unop.arg, Iop_Shr64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1, Iop_32Uto64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1->Iex.Unop.arg,
+                     Iop_64to32)) {
+         return aa->Iex.Unop.arg;
+      }
+      /*     32Uto64(64to32( Shl64( 32Uto64(64to32(x)), sh ))
+         --> 32Uto64(64to32( Shl64(                x,   sh )) */
+      if (is_Unop(aa, Iop_64to32)
+          && is_Binop(aa->Iex.Unop.arg, Iop_Shl64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1, Iop_32Uto64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1->Iex.Unop.arg,
+                     Iop_64to32)) {
+         return
+            IRExpr_Unop(
+               Iop_32Uto64,
+               IRExpr_Unop(
+                  Iop_64to32,
+                  IRExpr_Binop(
+                     Iop_Shl64, 
+                     aa->Iex.Unop.arg->Iex.Binop.arg1->Iex.Unop.arg->Iex.Unop.arg,
+                     aa->Iex.Unop.arg->Iex.Binop.arg2
+            )));
+      }
       break;
 
    case Iop_1Sto32:
@@ -4528,7 +4555,6 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
                                ->Iex.Unop.arg->Iex.Unop.arg);
       }
       break;
-
 
    default:
       break;

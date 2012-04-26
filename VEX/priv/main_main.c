@@ -1050,7 +1050,11 @@ static HChar* show_hwcaps_amd64 ( UInt hwcaps )
    /* SSE3 and CX16 are orthogonal and > baseline, although we really
       don't expect to come across anything which can do SSE3 but can't
       do CX16.  Still, we can handle that case.  LZCNT is similarly
-      orthogonal. */
+      orthogonal.  AVX is technically orthogonal, but just add the
+      cases we actually come across.  (This scheme for printing is
+      very stupid.  We should add strings independently based on
+      feature bits, but then it would be hard to return a string that
+      didn't need deallocating by the caller.) */
    switch (hwcaps) {
       case 0:
          return "amd64-sse2";
@@ -1067,7 +1071,9 @@ static HChar* show_hwcaps_amd64 ( UInt hwcaps )
       case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
            | VEX_HWCAPS_AMD64_LZCNT:
          return "amd64-sse3-cx16-lzcnt";
-
+      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
+           | VEX_HWCAPS_AMD64_AVX:
+         return "amd64-sse3-cx16-avx";
       default:
          return NULL;
    }

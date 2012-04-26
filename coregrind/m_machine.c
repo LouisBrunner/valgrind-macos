@@ -652,7 +652,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_amd64)
    { Bool have_sse3, have_cx8, have_cx16;
-     Bool have_lzcnt;
+     Bool have_lzcnt, have_avx /*, have_fma*/;
      UInt eax, ebx, ecx, edx, max_extended;
      UChar vstr[13];
      vstr[0] = 0;
@@ -681,9 +681,33 @@ Bool VG_(machine_get_hwcaps)( void )
 
      // we assume that SSE1 and SSE2 are available by default
      have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
-     // ssse3  is ecx:9
-     // sse41  is ecx:19
-     // sse42  is ecx:20
+     // ssse3   is ecx:9
+     // sse41   is ecx:19
+     // sse42   is ecx:20
+
+     // osxsave is ecx:27
+     // avx     is ecx:28
+     // fma     is ecx:12
+     have_avx = False;
+     /* have_fma = False; */
+     if ( (ecx & ((1<<27)|(1<<28))) == ((1<<27)|(1<<28)) ) {
+        /* processor supports AVX instructions and XGETBV is enabled
+           by OS */
+        ULong w;
+        __asm__ __volatile__("movq $0,%%rcx ; "
+                             ".byte 0x0F,0x01,0xD0 ; " /* xgetbv */
+                             "movq %%rax,%0"
+                             :/*OUT*/"=r"(w) :/*IN*/
+                             :/*TRASH*/"rdx","rcx");
+        if ((w & 6) == 6) {
+           /* OS has enabled both XMM and YMM state support */
+           have_avx = True;
+           /* have_fma = (ecx & (1<<12)) != 0; */
+           /* have_fma: Probably correct, but gcc complains due to
+              unusedness. &*/
+        }
+     }
+
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so
@@ -704,9 +728,10 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
      va         = VexArchAMD64;
-     vai.hwcaps = (have_sse3 ? VEX_HWCAPS_AMD64_SSE3 : 0)
-                  | (have_cx16 ? VEX_HWCAPS_AMD64_CX16 : 0)
-                  | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0);
+     vai.hwcaps = (have_sse3  ? VEX_HWCAPS_AMD64_SSE3  : 0)
+                | (have_cx16  ? VEX_HWCAPS_AMD64_CX16  : 0)
+                | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0)
+                | (have_avx   ? VEX_HWCAPS_AMD64_AVX   : 0);
      return True;
    }
 

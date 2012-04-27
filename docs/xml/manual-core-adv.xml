@@ -1286,10 +1286,13 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
-    <para><varname>v.info memory</varname> shows the statistics of
+    <para><varname>v.info memory [aspacemgr]</varname> shows the statistics of
     Valgrind's internal heap management. If
     option <option>--profile-heap=yes</option> was given, detailed
-    statistics will be output.
+    statistics will be output. With the optional argument
+    <computeroutput>aspacemgr</computeroutput>. the segment list maintained
+    by valgrind address space manager will be output. Note that
+    this list of segments is always output on the Valgrind log.
     </para>
   </listitem>
 

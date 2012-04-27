@@ -171,7 +171,8 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       if (int_value) { VG_(gdb_printf) (
 "debugging valgrind internals monitor commands:\n"
 "  v.info gdbserver_status : show gdbserver status\n"
-"  v.info memory           : show valgrind heap memory stats\n"
+"  v.info memory [aspacemgr] : show valgrind heap memory stats\n"
+"     (with aspacemgr arg, also shows valgrind segments on log ouput)\n"
 "  v.info scheduler        : show valgrind thread state and stacktrace\n"
 "  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
 "  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
@@ -261,6 +262,18 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          VG_(print_all_arena_stats) ();
          if (VG_(clo_profile_heap))
             VG_(print_arena_cc_analysis) ();
+         wcmd = strtok_r (NULL, " ", &ssaveptr);
+         if (wcmd != NULL) {
+            switch (VG_(keyword_id) ("aspacemgr", wcmd, kwd_report_all)) {
+            case -2:
+            case -1: break;
+            case  0: 
+               VG_(am_show_nsegments) (0, "gdbserver v.info memory aspacemgr");
+               break;
+            default: tl_assert (0);
+            }
+         }
+
          ret = 1;
          break;
       case  5: /* scheduler */

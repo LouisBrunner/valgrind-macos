@@ -48,7 +48,8 @@ general valgrind monitor commands:
   v.set vgdb-error <errornr> : debug me at error >= <errornr> 
 debugging valgrind internals monitor commands:
   v.info gdbserver_status : show gdbserver status
-  v.info memory           : show valgrind heap memory stats
+  v.info memory [aspacemgr] : show valgrind heap memory stats
+     (with aspacemgr arg, also shows valgrind segments on log ouput)
   v.info scheduler        : show valgrind thread state and stacktrace
   v.set debuglog <level>  : set valgrind debug log level to <level>
   v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>

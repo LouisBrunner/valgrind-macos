@@ -3508,6 +3508,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_ReinterpI32asF32:
       case Iop_ReinterpF32asI32:
       case Iop_ReinterpI64asD64:
+      case Iop_ReinterpD64asI64:
       case Iop_NotV128:
       case Iop_Not64:
       case Iop_Not32:

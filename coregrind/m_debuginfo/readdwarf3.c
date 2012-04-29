@@ -1121,9 +1121,17 @@ void get_Form_contents ( /*OUT*/ULong* cts,
             So for the moment we merely range-check, to see that they
             actually do specify a plausible offset within this
             object's .debug_info, and return the value unchanged.
+
+            In DWARF 2, DW_FORM_ref_addr is address-sized, but in
+            DWARF 3 and later, it is offset-sized.
          */
-         *cts = (ULong)(UWord)get_UWord(c);
-         *ctsSzB = sizeof(UWord);
+         if (cc->version == 2) {
+            *cts = (ULong)(UWord)get_UWord(c);
+            *ctsSzB = sizeof(UWord);
+         } else {
+            *cts = get_Dwarfish_UWord(c, cc->is_dw64);
+            *ctsSzB = cc->is_dw64 ? sizeof(ULong) : sizeof(UInt);
+         }
          TRACE_D3("0x%lx", (UWord)*cts);
          if (0) VG_(printf)("DW_FORM_ref_addr 0x%lx\n", (UWord)*cts);
          if (/* the following 2 are surely impossible, but ... */

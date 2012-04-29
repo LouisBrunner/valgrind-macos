@@ -1983,6 +1983,27 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          add_to_sp( env, 16 );       // Reset SP
          return r_dst;
       }
+      break;
+
+      case Iop_ReinterpD64asI64:
+         if (mode64) {
+            PPCAMode *am_addr;
+            HReg fr_src = iselDfp64Expr(env, e->Iex.Unop.arg);
+            HReg r_dst  = newVRegI(env);
+
+            sub_from_sp( env, 16 );     // Move SP down 16 bytes
+            am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+
+            // store as D64
+            addInstr(env, PPCInstr_FpLdSt( False/*store*/, 8,
+                                           fr_src, am_addr ));
+            // load as Ity_I64
+            addInstr(env, PPCInstr_Load( 8, r_dst, am_addr, mode64 ));
+            add_to_sp( env, 16 );       // Reset SP
+            return r_dst;
+         } 
+
+         break;
 
       default: 
          break;
@@ -3129,6 +3150,34 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          *rLo = r_dstLo;
          
          add_to_sp( env, 16 );       // Reset SP
+         return;
+      }
+
+      case Iop_ReinterpD64asI64: {
+	  HReg fr_src  = iselDfp64Expr(env, e->Iex.Unop.arg);
+	  PPCAMode *am_addr0, *am_addr1;
+	  HReg r_dstLo = newVRegI(env);
+	  HReg r_dstHi = newVRegI(env);
+
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr0 = PPCAMode_IR( 0, StackFramePtr(False/*mode32*/) );
+         am_addr1 = PPCAMode_IR( 4, StackFramePtr(False/*mode32*/) );
+
+         // store as D64
+         addInstr(env, PPCInstr_FpLdSt( False/*store*/, 8,
+                                        fr_src, am_addr0 ));
+         
+         // load hi,lo as Ity_I32's
+         addInstr(env, PPCInstr_Load( 4, r_dstHi,
+                                      am_addr0, False/*mode32*/ ));
+         addInstr(env, PPCInstr_Load( 4, r_dstLo,
+                                      am_addr1, False/*mode32*/ ));
+         *rHi = r_dstHi;
+         *rLo = r_dstLo;
+         
+         add_to_sp( env, 16 );       // Reset SP
+
          return;
       }
 

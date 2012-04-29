@@ -1107,6 +1107,9 @@ typedef
       /* Conversion I64 -> D64 */
       Iop_ReinterpI64asD64,
 
+      /* Conversion D64 -> I64 */
+      Iop_ReinterpD64asI64,
+
       /* ------------------ 128-bit SIMD FP. ------------------ */
 
       /* --- 32x4 vector FP --- */

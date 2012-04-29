@@ -8509,8 +8509,116 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 }
 
 /*------------------------------------------------------------*/
+/*--- Decimal Floating Point (DFP)  Helper functions       ---*/
+/*------------------------------------------------------------*/
+#define DFP_LONG  1
+#define DFP_EXTND 2
+#define DFP_LONG_ENCODED_FIELD_MASK  0x1F00
+#define DFP_EXTND_ENCODED_FIELD_MASK 0x1F000
+#define DFP_LONG_EXP_MSK   0XFF
+#define DFP_EXTND_EXP_MSK  0XFFF
+
+#define DFP_G_FIELD_LONG_MASK     0x7FFC0000  // upper 32-bits only
+#define DFP_LONG_GFIELD_RT_SHIFT  (63 - 13 - 32) // adj for upper 32-bits 
+#define DFP_G_FIELD_EXTND_MASK    0x7FFFC000  // upper 32-bits only
+#define DFP_EXTND_GFIELD_RT_SHIFT (63 - 17 - 32) //adj for upper 32 bits
+
+#define DFP_T_FIELD_LONG_MASK     0x3FFFF  // mask for upper 32-bits
+#define DFP_T_FIELD_EXTND_MASK    0x03FFFF // mask for upper 32-bits
+
+#define DFP_LONG_EXP_MAX          369      // biased max
+#define DFP_LONG_EXP_MIN          0        // biased min
+#define DFP_EXTND_EXP_MAX         6111     // biased max
+#define DFP_EXTND_EXP_MIN         0        // biased min
+
+#define  AND(x, y) binop( Iop_And32, x, y )
+#define   OR(x, y) binop( Iop_Or32,  x, y )
+#define AND4(w, x, y, z) AND( AND( w, x ), AND( y, z ) )
+#define  OR3(x, y, z)    OR( x, OR( y, z ) )
+#define  OR4(w, x, y, z) OR( OR( w, x ), OR( y, z ) )
+#define  SHL(value, by) binop( Iop_Shl32, value, mkU8( by ) )
+
+static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
+{
+
+   /* Extract the exponent and the left most digit of the mantissa
+    * from the G field bits [0:4].
+    */
+   IRTemp lmd_07_mask   = newTemp( Ity_I32 );
+   IRTemp lmd_8_00_mask = newTemp( Ity_I32 );
+   IRTemp lmd_8_01_mask = newTemp( Ity_I32 );
+   IRTemp lmd_8_10_mask = newTemp( Ity_I32 );
+   IRTemp lmd_9_00_mask = newTemp( Ity_I32 );
+   IRTemp lmd_9_01_mask = newTemp( Ity_I32 );
+   IRTemp lmd_9_10_mask = newTemp( Ity_I32 );
+
+   IRTemp lmd_07_val = newTemp( Ity_I32 );
+   IRTemp lmd_8_val  = newTemp( Ity_I32 );
+   IRTemp lmd_9_val  = newTemp( Ity_I32 );
+
+   /* The left most digit (LMD) encoding is as follows:
+    *    lmd
+    *   0 - 7    (lmexp << 3) | lmd
+    *     8      0b11000 (24 decimal) if lme=0b00;
+    *            0b11010 (26 decimal) if lme=0b01;
+    *            0b11100 (28 decimal) if lme=0b10
+    *     9      0b11001 (25 decimal) if lme=0b00;
+    *            0b11011 (27 decimal) if lme=0b01;
+    *            0b11101 (29 decimal) if lme=0b10;
+    */
+
+   /* Generate the masks for each condition of LMD and exponent bits */
+   assign( lmd_07_mask, unop( Iop_1Sto32, binop( Iop_CmpLE32U,
+                                                 gfield_0_4,
+                                                 mkU32( 0b10111 ) ) ) );
+   assign( lmd_8_00_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                                   gfield_0_4,
+                                                   mkU32( 0b11000 ) ) ) );
+   assign( lmd_8_01_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                                   gfield_0_4,
+                                                   mkU32( 0b11010 ) ) ) );
+   assign( lmd_8_10_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                                   gfield_0_4,
+                                                   mkU32( 0b11100 ) ) ) );
+   assign( lmd_9_00_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                                   gfield_0_4,
+                                                   mkU32( 0b11001 ) ) ) );
+   assign( lmd_9_01_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                                   gfield_0_4,
+                                                   mkU32( 0b11011 ) ) ) );
+   assign( lmd_9_10_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                                   gfield_0_4,
+                                                   mkU32( 0b11101 ) ) ) );
+
+   /* Generate the values for each LMD condition, assuming the condition
+    * is TRUE.
+    */
+   assign( lmd_07_val, binop( Iop_And32, gfield_0_4, mkU32( 0x7 ) ) );
+   assign( lmd_8_val, mkU32( 0x8 ) );
+   assign( lmd_9_val, mkU32( 0x9 ) );
+
+   assign( *lmd,
+           OR( OR3 ( AND( mkexpr( lmd_07_mask ), mkexpr( lmd_07_val ) ),
+                     AND( mkexpr( lmd_8_00_mask ), mkexpr( lmd_8_val ) ),
+                     AND( mkexpr( lmd_8_01_mask ), mkexpr( lmd_8_val ) )),
+                     OR4( AND( mkexpr( lmd_8_10_mask ), mkexpr( lmd_8_val ) ),
+                          AND( mkexpr( lmd_9_00_mask ), mkexpr( lmd_9_val ) ),
+                          AND( mkexpr( lmd_9_01_mask ), mkexpr( lmd_9_val ) ),
+                          AND( mkexpr( lmd_9_10_mask ), mkexpr( lmd_9_val ) )
+                     ) ) );
+}
+
+#undef AND
+#undef OR
+#undef AND4
+#undef OR3
+#undef OR4
+#undef SHL
+
+/*------------------------------------------------------------*/
 /*--- Decimal Floating Point (DFP) instruction translation ---*/
 /*------------------------------------------------------------*/
+
 /* DFP Arithmetic instructions */
 static Bool dis_dfp_arith(UInt theInstr)
 {
@@ -9227,6 +9335,651 @@ static Bool dis_dfp_compare(UInt theInstr) {
    putGST_field( PPC_GST_CR, mkexpr( ccPPC32 ), crfD );
    return True;
 }
+
+/* Test class/group/exponent/significance instructions. */
+static Bool dis_dfp_exponent_test ( UInt theInstr )
+{
+   UChar frA_addr   = ifieldRegA( theInstr );
+   UChar frB_addr   = ifieldRegB( theInstr );
+   UChar crfD       = toUChar( IFIELD( theInstr, 23, 3 ) );
+   IRTemp frA       = newTemp( Ity_D64 );
+   IRTemp frB       = newTemp( Ity_D64 );
+   IRTemp frA128    = newTemp( Ity_D128 );
+   IRTemp frB128    = newTemp( Ity_D128 );
+   UInt opc1        = ifieldOPC( theInstr );
+   IRTemp gfield_A  = newTemp( Ity_I32 );
+   IRTemp gfield_B  = newTemp( Ity_I32 );
+   IRTemp gfield_mask   = newTemp( Ity_I32 );
+   IRTemp exponent_A    = newTemp( Ity_I32 );
+   IRTemp exponent_B    = newTemp( Ity_I32 );
+   IRTemp A_NaN_true    = newTemp( Ity_I32 );
+   IRTemp B_NaN_true    = newTemp( Ity_I32 );
+   IRTemp A_inf_true    = newTemp( Ity_I32 );
+   IRTemp B_inf_true    = newTemp( Ity_I32 );
+   IRTemp A_equals_B    = newTemp( Ity_I32 );
+   IRTemp finite_number = newTemp( Ity_I32 );
+   IRTemp cc0 = newTemp( Ity_I32 );
+   IRTemp cc1 = newTemp( Ity_I32 );
+   IRTemp cc2 = newTemp( Ity_I32 );
+   IRTemp cc3 = newTemp( Ity_I32 );
+
+   /* The dtstex and dtstexg instructions only differ in the size of the
+    * exponent field.  The following switch statement takes care of the size
+    * specific setup.  Once the value of the exponents, the G-field shift
+    * and mask is setup the remaining code is identical.
+    */
+   switch (opc1) {
+   case 0x3b: // dtstex       Extended instruction setup
+      DIP("dtstex %u,r%u,r%d\n", crfD, frA_addr, frB_addr);
+      assign( frA, getDReg( frA_addr ) );
+      assign( frB, getDReg( frB_addr ) );
+      assign( gfield_mask, mkU32( DFP_G_FIELD_LONG_MASK ) );
+      assign(exponent_A, unop( Iop_64to32, 
+                               unop( Iop_ReinterpD64asI64,
+                                     unop( Iop_ExtractExpD64,
+                                           mkexpr( frA ) ) ) ) );
+      assign(exponent_B, unop( Iop_64to32, 
+                               unop( Iop_ReinterpD64asI64,
+                                     unop( Iop_ExtractExpD64,
+                                           mkexpr( frB ) ) ) ) );
+      break;
+
+   case 0x3F: //  dtstexq      Quad instruction setup
+      DIP("dtstexq %u,r%u,r%d\n", crfD, frA_addr, frB_addr);
+      assign( frA128, getDReg_pair( frA_addr ) );
+      assign( frB128, getDReg_pair( frB_addr ) );
+      assign( frA, unop( Iop_D128HItoD64, mkexpr( frA128 ) ) );
+      assign( frB, unop( Iop_D128HItoD64, mkexpr( frB128 ) ) );
+      assign( gfield_mask, mkU32( DFP_G_FIELD_EXTND_MASK ) );
+      assign( exponent_A, unop( Iop_64to32, 
+                                unop( Iop_ReinterpD64asI64,
+                                      unop( Iop_ExtractExpD128,
+                                            mkexpr( frA128 ) ) ) ) );
+      assign( exponent_B, unop( Iop_64to32, 
+                                unop( Iop_ReinterpD64asI64,
+                                      unop( Iop_ExtractExpD128,
+                                            mkexpr( frB128 ) ) ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_exponent_test(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* Extract the Gfield */
+   assign( gfield_A, binop( Iop_And32,
+                            mkexpr( gfield_mask ),
+                            unop( Iop_64HIto32,
+                                  unop( Iop_ReinterpD64asI64,
+                                        mkexpr(frA) ) ) ) );
+
+   assign( gfield_B, binop( Iop_And32,
+                            mkexpr( gfield_mask ),
+                            unop( Iop_64HIto32,
+                                  unop( Iop_ReinterpD64asI64,
+                                        mkexpr(frB) ) ) ) );
+
+   /* check for NAN */
+   assign( A_NaN_true, binop(Iop_Or32,
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_A ),
+                                          mkU32( 0x7C000000 ) ) ),
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_A ),
+                                          mkU32( 0x7E000000 ) )
+                                   ) ) );
+   assign( B_NaN_true, binop(Iop_Or32,
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_B ),
+                                          mkU32( 0x7C000000 ) ) ),
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_B ),
+                                          mkU32( 0x7E000000 ) )
+                             ) ) );
+
+   /* check for infinity */ 
+   assign( A_inf_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        mkexpr( gfield_A ),
+                        mkU32( 0x78000000 ) ) ) );
+
+   assign( B_inf_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        mkexpr( gfield_B ),
+                        mkU32( 0x78000000 ) ) ) );
+
+   assign( finite_number,
+           unop( Iop_Not32,
+                 binop( Iop_Or32,
+                        binop( Iop_Or32,
+                               mkexpr( A_NaN_true ),
+                               mkexpr( B_NaN_true ) ),
+                        binop( Iop_Or32,
+                               mkexpr( A_inf_true ),
+                               mkexpr( B_inf_true ) ) ) ) );
+
+   /* Calculate the condition code bits
+    * If QNaN,SNaN, +infinity, -infinity then cc0, cc1 and cc2 are zero
+    * regardless of the value of the comparisons and cc3 is 1.  Otherwise,
+    * cc0, cc1 and cc0 reflect the results of the comparisons.
+    */
+   assign( A_equals_B,
+           binop( Iop_Or32,
+                  unop( Iop_1Uto32,
+                  binop( Iop_CmpEQ32,
+                         mkexpr( exponent_A ),
+                         mkexpr( exponent_B ) ) ),
+                  binop( Iop_Or32,
+                         binop( Iop_And32,
+                                mkexpr( A_inf_true ),
+                                mkexpr( B_inf_true ) ),
+                         binop( Iop_And32,
+                                mkexpr( A_NaN_true ),
+                                mkexpr( B_NaN_true ) ) ) ) );
+
+   assign( cc0, binop( Iop_And32,
+                       mkexpr( finite_number ),
+                       binop( Iop_Shl32,
+                              unop( Iop_1Uto32,
+                                    binop( Iop_CmpLT32U,
+                                           mkexpr( exponent_A ),
+                                           mkexpr( exponent_B ) ) ),
+                                           mkU8( 3 ) ) ) );
+
+   assign( cc1, binop( Iop_And32,
+                       mkexpr( finite_number ),
+                       binop( Iop_Shl32,
+                              unop( Iop_1Uto32,
+                                    binop( Iop_CmpLT32U,
+                                           mkexpr( exponent_B ),
+                                           mkexpr( exponent_A ) ) ),
+                                           mkU8( 2 ) ) ) );
+
+   assign( cc2, binop( Iop_Shl32, 
+                       binop( Iop_And32,
+                              mkexpr( A_equals_B ),
+                              mkU32( 1 ) ),
+                              mkU8( 1 ) ) );
+
+   assign( cc3, binop( Iop_And32,
+                       unop( Iop_Not32, mkexpr( A_equals_B ) ),
+                       binop( Iop_And32,
+                              mkU32( 0x1 ),
+                              binop( Iop_Or32,
+                                     binop( Iop_Or32,
+                                            mkexpr ( A_inf_true ),
+                                            mkexpr ( B_inf_true ) ),
+                                            binop( Iop_Or32,
+                                                   mkexpr ( A_NaN_true ),
+                                                   mkexpr ( B_NaN_true ) ) )
+                              ) ) );
+
+   /* store the condition code */
+   putGST_field( PPC_GST_CR,
+                 binop( Iop_Or32,
+                        mkexpr( cc0 ),
+                        binop( Iop_Or32,
+                               mkexpr( cc1 ),
+                               binop( Iop_Or32,
+                                      mkexpr( cc2 ),
+                                      mkexpr( cc3 ) ) ) ),
+                 crfD );
+   return True;
+}
+
+/* Test class/group/exponent/significance instructions. */
+static Bool dis_dfp_class_test ( UInt theInstr )
+{
+   UChar frA_addr   = ifieldRegA( theInstr );
+   IRTemp frA       = newTemp( Ity_D64 );
+   IRTemp abs_frA   = newTemp( Ity_D64 );
+   IRTemp frAI64_hi = newTemp( Ity_I64 );
+   IRTemp frAI64_lo = newTemp( Ity_I64 );
+   UInt opc1        = ifieldOPC( theInstr );
+   UInt opc2        = ifieldOPClo9( theInstr );
+   UChar crfD       = toUChar( IFIELD( theInstr, 23, 3 ) );  // AKA BF
+   UInt DCM         = IFIELD( theInstr, 10, 6 );
+   IRTemp DCM_calc  = newTemp( Ity_I32 );
+   UInt max_exp     = 0;
+   UInt min_exp     = 0;
+   IRTemp min_subnormalD64  = newTemp( Ity_D64 );
+   IRTemp min_subnormalD128 = newTemp( Ity_D128 );
+   IRTemp significand64  = newTemp( Ity_D64 );
+   IRTemp significand128 = newTemp( Ity_D128 );
+   IRTemp exp_min_normal = newTemp( Ity_D64 );
+   IRTemp exponent       = newTemp( Ity_I32 );
+
+   IRTemp infinity_true  = newTemp( Ity_I32 );
+   IRTemp SNaN_true      = newTemp( Ity_I32 );
+   IRTemp QNaN_true      = newTemp( Ity_I32 );
+   IRTemp subnormal_true = newTemp( Ity_I32 );
+   IRTemp normal_true    = newTemp( Ity_I32 );
+   IRTemp extreme_true   = newTemp( Ity_I32 );
+   IRTemp lmd            = newTemp( Ity_I32 );
+   IRTemp lmd_zero_true  = newTemp( Ity_I32 );
+   IRTemp zero_true      = newTemp( Ity_I32 );
+   IRTemp sign           = newTemp( Ity_I32 );
+   IRTemp field          = newTemp( Ity_I32 );
+   IRTemp ccIR_zero      = newTemp( Ity_I32 );
+   IRTemp ccIR_subnormal = newTemp( Ity_I32 );
+
+   /* UInt size     = DFP_LONG;  JRS:unused */
+   IRTemp gfield = newTemp( Ity_I32 );
+   IRTemp gfield_0_4_shift  = newTemp( Ity_I8 );
+   IRTemp gfield_mask       = newTemp( Ity_I32 );
+   IRTemp dcm0 = newTemp( Ity_I32 );
+   IRTemp dcm1 = newTemp( Ity_I32 );
+   IRTemp dcm2 = newTemp( Ity_I32 );
+   IRTemp dcm3 = newTemp( Ity_I32 );
+   IRTemp dcm4 = newTemp( Ity_I32 );
+   IRTemp dcm5 = newTemp( Ity_I32 );
+
+   /* The only difference between the dtstdc and dtstdcq instructions is
+    * size of the T and G fields.  The calculation of the 4 bit field
+    * is the same.  Setup the parameters and values that are DFP size
+    * specific.  The rest of the code is independent of the DFP size.
+    *
+    * The Io_CmpD64 is used below.  The instruction sets the ccIR values.
+    * The interpretation of the ccIR values is as follows:
+    *
+    *    DFP cmp result | IR
+    * --------------------------
+    *	 UN             | 0x45
+    *	 EQ             | 0x40
+    *	 GT             | 0x00
+    *	 LT             | 0x01
+    */
+
+   assign( frA, getDReg( frA_addr ) );
+   assign( frAI64_hi, unop( Iop_ReinterpD64asI64, mkexpr( frA ) ) );
+
+   assign( abs_frA, unop( Iop_ReinterpI64asD64,
+                          binop( Iop_And64,
+                                 unop( Iop_ReinterpD64asI64,
+                                       mkexpr( frA ) ),
+                                 mkU64( 0x7FFFFFFFFFFFFFFFULL ) ) ) );
+   assign( gfield_0_4_shift, mkU8( 31 - 5 ) );  // G-field[0:4]
+   switch (opc1) {
+   case 0x3b: // dtstdc, dtstdg
+      DIP("dtstd%s %u,r%u,%d\n", opc2 == 0xc2 ? "c" : "g",
+               crfD, frA_addr, DCM);
+      /* setup the parameters for the long format of the two instructions */
+      assign( frAI64_lo, mkU64( 0 ) );
+      assign( gfield_mask, mkU32( DFP_G_FIELD_LONG_MASK ) );
+      max_exp = DFP_LONG_EXP_MAX;
+      min_exp = DFP_LONG_EXP_MIN;
+
+      assign( exponent, unop( Iop_64to32, 
+                              unop( Iop_ReinterpD64asI64,
+                                    unop( Iop_ExtractExpD64,
+                                          mkexpr( frA ) ) ) ) );
+      assign( significand64,
+              unop( Iop_ReinterpI64asD64,
+                    mkU64( 0x2234000000000001ULL ) ) );  // dfp 1.0
+      assign( exp_min_normal,
+              unop( Iop_ReinterpI64asD64, mkU64( 398 - 383 ) ) );
+      assign( min_subnormalD64,
+              binop( Iop_InsertExpD64,
+                     mkexpr( exp_min_normal ),
+                     mkexpr( significand64 ) ) );
+
+      assign( ccIR_subnormal,
+              binop( Iop_CmpD64,
+                     mkexpr( abs_frA ),
+                     mkexpr( min_subnormalD64 ) ) );
+
+      /* compare absolute value of frA with zero */
+      assign( ccIR_zero,
+              binop( Iop_CmpD64,
+                     mkexpr( abs_frA ),
+                     unop( Iop_ReinterpI64asD64,
+                           mkU64( 0x2238000000000000ULL ) ) ) );
+
+      /* size = DFP_LONG; JRS: unused */
+      break;
+
+   case 0x3F:   // dtstdcq, dtstdgq
+      DIP("dtstd%sq %u,r%u,%d\n", opc2 == 0xc2 ? "c" : "g",
+               crfD, frA_addr, DCM);
+      /* setup the parameters for the extended format of the
+       * two instructions
+       */
+      assign( frAI64_lo, unop( Iop_ReinterpD64asI64,
+                               getDReg( frA_addr+1 ) ) );
+
+      assign( gfield_mask, mkU32( DFP_G_FIELD_EXTND_MASK ) );
+      max_exp = DFP_EXTND_EXP_MAX;
+      min_exp = DFP_EXTND_EXP_MIN;
+      assign( exponent, unop( Iop_64to32, 
+                              unop( Iop_ReinterpD64asI64,
+                                    unop( Iop_ExtractExpD128,
+                                          getDReg_pair( frA_addr) ) ) ) );
+
+      /* create quand exponent for minimum normal number */
+      assign( exp_min_normal,
+              unop( Iop_ReinterpI64asD64, mkU64( 6176 - 6143 ) ) );
+      assign( significand128,
+              unop( Iop_D64toD128,
+                    unop( Iop_ReinterpI64asD64,
+                          mkU64( 0x2234000000000001ULL ) ) ) );  // dfp 1.0
+
+      assign( min_subnormalD128,
+              binop( Iop_InsertExpD128,
+                     mkexpr( exp_min_normal ),
+                     mkexpr( significand128 ) ) );
+
+      assign( ccIR_subnormal, 
+              binop( Iop_CmpD128,
+                     binop( Iop_D64HLtoD128,
+                            unop( Iop_ReinterpI64asD64,
+                                  binop( Iop_And64,
+                                         unop( Iop_ReinterpD64asI64,
+                                               mkexpr( frA ) ),
+                                         mkU64( 0x7FFFFFFFFFFFFFFFULL ) ) ),
+                            getDReg( frA_addr+1 ) ),
+                     mkexpr( min_subnormalD128 ) ) );
+      assign( ccIR_zero,
+              binop( Iop_CmpD128,
+                     binop( Iop_D64HLtoD128,
+                            mkexpr( abs_frA ),
+                            getDReg( frA_addr+1 ) ),
+                     unop( Iop_D64toD128,
+                           unop( Iop_ReinterpI64asD64,
+                                 mkU64( 0x0ULL ) ) ) ) );
+
+      /* size = DFP_EXTND; JRS:unused */
+      break;
+   default:
+      vex_printf("dis_dfp_class_test(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* The G-field is in the upper 32-bits.  The I64 logical operations
+    * do not seem to be supported in 32-bit mode so keep things as 32-bit
+    * operations.
+    */
+   assign( gfield, binop( Iop_And32,
+                          mkexpr( gfield_mask ),
+                          unop( Iop_64HIto32,
+                                mkexpr(frAI64_hi) ) ) );
+
+   /* There is a lot of code that is the same to do the class and group
+    * instructions.  Later there is an if statement to handle the specific
+    * instruction.
+    *
+    * Will be using I32 values, compares, shifts and logical operations for
+    * this code as the 64-bit compare, shifts, logical operations are not 
+    * supported in 32-bit mode.
+    */
+
+   /* Check the bits for Infinity, QNaN or Signaling NaN */
+   assign( infinity_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_And32,
+                               mkU32( 0x7C000000 ),
+                               mkexpr( gfield ) ),
+                        mkU32( 0x78000000 ) ) ) );
+
+   assign( SNaN_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_And32,
+                               mkU32( 0x7E000000 ),
+                               mkexpr( gfield ) ),
+                        mkU32( 0x7E000000 ) ) ) );
+
+   assign( QNaN_true,
+           binop( Iop_And32,
+                  unop( Iop_1Sto32,
+                       binop( Iop_CmpEQ32,
+                              binop( Iop_And32,
+                                     mkU32( 0x7E000000 ),
+                                     mkexpr( gfield ) ),
+                              mkU32( 0x7C000000 ) ) ),
+                  unop( Iop_Not32,
+                        mkexpr( SNaN_true ) ) ) );
+
+   assign( zero_true,
+           binop( Iop_And32,
+                  unop(Iop_1Sto32,
+                       binop( Iop_CmpEQ32,
+                              mkexpr( ccIR_zero ),
+                              mkU32( 0x40 ) ) ),  // ccIR code for Equal
+                  unop( Iop_Not32,
+                        binop( Iop_Or32,
+                               mkexpr( infinity_true ),
+                               binop( Iop_Or32,
+                                      mkexpr( QNaN_true ),
+                                      mkexpr( SNaN_true ) ) ) ) ) );
+
+   /* Do compare of frA the minimum normal value.  Comparison is size
+    * depenent and was done above to get the ccIR value.
+    */
+   assign( subnormal_true, 
+           binop( Iop_And32,
+                  binop( Iop_Or32,
+                         unop( Iop_1Sto32,
+                               binop( Iop_CmpEQ32,
+                                      mkexpr( ccIR_subnormal ),
+                                      mkU32( 0x40 ) ) ), // ccIR code for Equal
+                         unop( Iop_1Sto32,
+                               binop( Iop_CmpEQ32,
+                                      mkexpr( ccIR_subnormal ),
+                                      mkU32( 0x1 ) ) ) ), // ccIR code for LT
+           unop( Iop_Not32,
+                 binop( Iop_Or32,
+                        binop( Iop_Or32,
+                               mkexpr( infinity_true ),
+                               mkexpr( zero_true) ),
+                        binop( Iop_Or32,
+                               mkexpr( QNaN_true ),
+                               mkexpr( SNaN_true ) ) ) ) ) );
+
+   /* Normal number is not subnormal, infinity, NaN or Zero */
+   assign( normal_true,
+           unop( Iop_Not32,
+                 binop( Iop_Or32,
+                        binop( Iop_Or32,
+                               mkexpr( infinity_true ),
+                               mkexpr( zero_true ) ),
+                        binop( Iop_Or32,
+                               mkexpr( subnormal_true ),
+                               binop( Iop_Or32,
+                                      mkexpr( QNaN_true ),
+                                      mkexpr( SNaN_true ) ) ) ) ) );
+
+   /* Calculate the DCM bit field based on the tests for the specific
+    * instruction
+    */
+   if (opc2 == 0xC2) {    // dtstdc, dtstdcq
+      /* DCM[0:5] Bit   Data Class definition
+       *   0   Zero
+       *   1   Subnormal
+       *   2   Normal
+       *   3   Infinity
+       *   4   Quiet NaN
+       *   5   Signaling NaN
+       */
+
+      assign( dcm0, binop( Iop_Shl32,
+                           mkexpr( zero_true ),
+                           mkU8( 5 ) ) );
+      assign( dcm1, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( subnormal_true ),
+                                  mkU32( 1 ) ),
+                           mkU8( 4 ) ) );
+      assign( dcm2, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( normal_true ),
+                                  mkU32( 1 ) ),
+                           mkU8( 3 ) ) );
+      assign( dcm3, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( infinity_true),
+                                  mkU32( 1 ) ),
+                           mkU8( 2 ) ) );
+      assign( dcm4, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( QNaN_true ),
+                                  mkU32( 1 ) ),
+                           mkU8( 1 ) ) );
+      assign( dcm5, binop( Iop_And32, mkexpr( SNaN_true), mkU32( 1 ) ) );
+
+   } else if (opc2 == 0xE2) {   // dtstdg, dtstdgq
+      /* check if the exponent is extreme */
+      assign( extreme_true, binop( Iop_Or32,
+                                   unop( Iop_1Sto32,
+                                         binop( Iop_CmpEQ32,
+                                                mkexpr( exponent ),
+                                                mkU32( max_exp ) ) ),
+                                   unop( Iop_1Sto32,
+                                         binop( Iop_CmpEQ32,
+                                                mkexpr( exponent ),
+                                                mkU32( min_exp ) ) ) ) );
+
+      /* Check if LMD is zero */
+      Get_lmd( &lmd, binop( Iop_Shr32,
+                            mkexpr( gfield ), mkU8( 31 - 5 ) ) );
+
+      assign( lmd_zero_true, unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( lmd ),
+                                          mkU32( 0 ) ) ) );
+
+      /* DCM[0:5] Bit   Data Class definition
+       *  0   Zero with non-extreme exponent
+       *  1   Zero with extreme exponent
+       *  2   Subnormal or (Normal with extreme exponent)
+       *  3   Normal with non-extreme exponent and
+       *      leftmost zero digit in significand
+       *  4   Normal with non-extreme exponent and
+       *      leftmost nonzero digit in significand
+       *  5   Special symbol (Infinity, QNaN, or SNaN)
+       */
+      assign( dcm0, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         unop( Iop_Not32,
+                                               mkexpr( extreme_true ) ),
+                                         mkexpr( zero_true ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 5 ) ) );
+
+      assign( dcm1, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         mkexpr( extreme_true ),
+                                         mkexpr( zero_true ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 4 ) ) );
+
+      assign( dcm2, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_Or32,
+                                         binop( Iop_And32,
+                                                mkexpr( extreme_true ),
+                                                mkexpr( normal_true ) ),
+                                         mkexpr( subnormal_true ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 3 ) ) );
+
+      assign( dcm3, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         binop( Iop_And32,
+                                                unop( Iop_Not32,
+                                                      mkexpr( extreme_true ) ),
+                                                      mkexpr( normal_true ) ),
+                                         unop( Iop_1Sto32,
+                                               binop( Iop_CmpEQ32,
+                                                      mkexpr( lmd ),
+                                                      mkU32( 0 ) ) ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 2 ) ) );
+
+      assign( dcm4, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         binop( Iop_And32,
+                                                unop( Iop_Not32,
+                                                      mkexpr( extreme_true ) ),
+                                                mkexpr( normal_true ) ),
+                                          unop( Iop_1Sto32,
+                                                binop( Iop_CmpNE32,
+                                                       mkexpr( lmd ),
+						       mkU32( 0 ) ) ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 1 ) ) );
+
+      assign( dcm5, binop( Iop_And32,
+                           binop( Iop_Or32,
+                                  mkexpr( SNaN_true),
+                                  binop( Iop_Or32,
+                                         mkexpr( QNaN_true),
+                                         mkexpr( infinity_true) ) ),
+                           mkU32( 0x1 ) ) );
+   }
+
+   /* create DCM field */
+   assign( DCM_calc,
+           binop( Iop_Or32,
+                  mkexpr( dcm0 ),
+                  binop( Iop_Or32,
+                         mkexpr( dcm1 ),
+                         binop( Iop_Or32,
+                                mkexpr( dcm2 ),
+                                binop( Iop_Or32,
+                                       mkexpr( dcm3 ),
+                                       binop( Iop_Or32,
+                                              mkexpr( dcm4 ),
+                                              mkexpr( dcm5 ) ) ) ) ) ) );
+
+   /* Get the sign of the DFP number, ignore sign for QNaN */
+   assign( sign,
+           unop( Iop_1Uto32,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_Shr32,
+                               unop( Iop_64HIto32, mkexpr( frAI64_hi ) ),
+                               mkU8( 63 - 32 ) ),
+                        mkU32( 1 ) ) ) );
+
+   /* This instruction generates a four bit field to be stored in the
+    * condition code register.  The condition code register consists of 7
+    * fields.  The field to be written to is specified by the BF (AKA crfD)
+    * field.
+    *
+    * The field layout is as follows:
+    *
+    *      Field          Meaning
+    *      0000           Operand positive with no match
+    *      0100           Operand positive with at least one match
+    *      0001           Operand negative with no match
+    *      0101           Operand negative with at least one match
+    */
+   assign( field, binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                mkexpr( sign ),
+                                mkU8( 3 ) ),
+                                binop( Iop_Shl32,
+                                       unop( Iop_1Uto32,
+                                             binop( Iop_CmpNE32,
+                                                    binop( Iop_And32,
+                                                           mkU32( DCM ),
+                                                           mkexpr( DCM_calc ) ),
+                                                     mkU32( 0 ) ) ),
+                                       mkU8( 1 ) ) ) );
+
+   putGST_field( PPC_GST_CR, mkexpr( field ), crfD );
+   return True;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- AltiVec Instruction Translation                      ---*/
@@ -14465,6 +15218,13 @@ DisResult disInstr_PPC_WRK (
          if (dis_dfp_shift( theInstr ))
             goto decode_success;
          goto decode_failure;
+      case 0xc2:  // dtstdc, DFP test data class
+      case 0xe2:  // dtstdg, DFP test data group
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_class_test( theInstr ))
+            goto decode_success;
+         goto decode_failure;
       }
 
       opc2 = ifieldOPClo8( theInstr );
@@ -14475,6 +15235,12 @@ DisResult disInstr_PPC_WRK (
          if (!allow_DFP)
             goto decode_failure;
          if (dis_dfp_quantize_sig_rrnd( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
+      case 0xA2: // dtstex - DFP Test exponent
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_exponent_test( theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0x63: // drintx - Round to an integer value
@@ -14799,6 +15565,13 @@ DisResult disInstr_PPC_WRK (
          if (dis_dfp_shiftq( theInstr ))
             goto decode_success;
          goto decode_failure;
+      case 0xc2:  // dtstdc, DFP test data class
+      case 0xe2:  // dtstdg, DFP test data group
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_class_test( theInstr ))
+            goto decode_success;
+         goto decode_failure;
       default:
          break;
       }
@@ -14811,6 +15584,10 @@ DisResult disInstr_PPC_WRK (
          if (!allow_DFP)
             goto decode_failure;
          if (dis_dfp_quantize_sig_rrndq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      case 0xA2: // dtstexq - DFP Test exponent Quad
+         if (dis_dfp_exponent_test( theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0x63:  // drintxq - DFP Round to an integer value

@@ -975,6 +975,7 @@ void ppIROp ( IROp op )
       case Iop_SignificanceRoundD128: vex_printf("Iop_SignificanceRoundD128");
          return;
       case Iop_ReinterpI64asD64: vex_printf("ReinterpI64asD64"); return;
+      case Iop_ReinterpD64asI64: vex_printf("ReinterpD64asI64"); return;
       default: vpanic("ppIROp(1)");
    }
 
@@ -2653,6 +2654,9 @@ void typeOfPrimop ( IROp op,
 
       case Iop_D64toD128:
          UNARY(Ity_D64, Ity_D128);
+
+      case Iop_ReinterpD64asI64:
+	UNARY(Ity_D64, Ity_I64);
 
       case Iop_ReinterpI64asD64:
          UNARY(Ity_I64, Ity_D64);

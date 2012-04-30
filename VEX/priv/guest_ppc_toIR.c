@@ -8537,6 +8537,9 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 #define  OR3(x, y, z)    OR( x, OR( y, z ) )
 #define  OR4(w, x, y, z) OR( OR( w, x ), OR( y, z ) )
 #define  SHL(value, by) binop( Iop_Shl32, value, mkU8( by ) )
+#define BITS5(_b4,_b3,_b2,_b1,_b0) \
+   (((_b4) << 4) | ((_b3) << 3) | ((_b2) << 2) | \
+    ((_b1) << 1) | ((_b0) << 0))
 
 static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
 {
@@ -8568,27 +8571,34 @@ static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
     */
 
    /* Generate the masks for each condition of LMD and exponent bits */
-   assign( lmd_07_mask, unop( Iop_1Sto32, binop( Iop_CmpLE32U,
-                                                 gfield_0_4,
-                                                 mkU32( 0b10111 ) ) ) );
-   assign( lmd_8_00_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
-                                                   gfield_0_4,
-                                                   mkU32( 0b11000 ) ) ) );
-   assign( lmd_8_01_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
-                                                   gfield_0_4,
-                                                   mkU32( 0b11010 ) ) ) );
-   assign( lmd_8_10_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
-                                                   gfield_0_4,
-                                                   mkU32( 0b11100 ) ) ) );
-   assign( lmd_9_00_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
-                                                   gfield_0_4,
-                                                   mkU32( 0b11001 ) ) ) );
-   assign( lmd_9_01_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
-                                                   gfield_0_4,
-                                                   mkU32( 0b11011 ) ) ) );
-   assign( lmd_9_10_mask, unop( Iop_1Sto32, binop( Iop_CmpEQ32,
-                                                   gfield_0_4,
-                                                   mkU32( 0b11101 ) ) ) );
+   assign( lmd_07_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpLE32U,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,0,1,1,1) ) ) ) );
+   assign( lmd_8_00_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,0,0) ) ) ) );
+   assign( lmd_8_01_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,1,0) ) ) ) );
+   assign( lmd_8_10_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,1,0,0) ) ) ) );
+   assign( lmd_9_00_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,0,1) ) ) ) );
+   assign( lmd_9_01_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,1,1) ) ) ) );
+   assign( lmd_9_10_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,1,0,1) ) ) ) );
 
    /* Generate the values for each LMD condition, assuming the condition
     * is TRUE.
@@ -8614,6 +8624,7 @@ static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
 #undef OR3
 #undef OR4
 #undef SHL
+#undef BITS5
 
 /*------------------------------------------------------------*/
 /*--- Decimal Floating Point (DFP) instruction translation ---*/

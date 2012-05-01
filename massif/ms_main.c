@@ -1884,8 +1884,15 @@ void ms_new_mem_startup( Addr a, SizeT len,
 static
 void ms_new_mem_brk ( Addr a, SizeT len, ThreadId tid )
 {
-   tl_assert(VG_IS_PAGE_ALIGNED(len));
-   ms_record_page_mem(a, len);
+   // brk limit is not necessarily aligned on a page boundary.
+   // If new memory being brk-ed implies to allocate a new page,
+   // then call ms_record_page_mem with page aligned parameters
+   // otherwise just ignore.
+   Addr old_bottom_page = VG_PGROUNDDN(a - 1);
+   Addr new_top_page = VG_PGROUNDDN(a + len - 1);
+   if (old_bottom_page != new_top_page)
+      ms_record_page_mem(VG_PGROUNDDN(a),
+                         (new_top_page - old_bottom_page));
 }
 
 static
@@ -1906,8 +1913,14 @@ void ms_die_mem_munmap( Addr a, SizeT len )
 static
 void ms_die_mem_brk( Addr a, SizeT len )
 {
-   tl_assert(VG_IS_PAGE_ALIGNED(len));
-   ms_unrecord_page_mem(a, len);
+   // Call ms_unrecord_page_mem only if one or more pages are de-allocated.
+   // See ms_new_mem_brk for more details.
+   Addr new_bottom_page = VG_PGROUNDDN(a - 1);
+   Addr old_top_page = VG_PGROUNDDN(a + len - 1);
+   if (old_top_page != new_bottom_page)
+      ms_unrecord_page_mem(VG_PGROUNDDN(a),
+                           (old_top_page - new_bottom_page));
+
 }
 
 //------------------------------------------------------------//

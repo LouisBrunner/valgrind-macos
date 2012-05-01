@@ -4,7 +4,6 @@
 #define MAX 20000
 
 int main () {
-  char* ptr;
   int i;
   int inc_dec;
   int delta;

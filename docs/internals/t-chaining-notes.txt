@@ -10,7 +10,7 @@ check that all targets can run their insn set tests with
 --vex-guest-max-insns=1.
 
 all targets: run some tests using --profile-flags=... to exercise  
-function patchProfInc_<arch> [DONE: amd64 x86 ppc32 ppc64 arm s390??]
+function patchProfInc_<arch> [DONE: amd64 x86 ppc32 ppc64 arm s390]
 
 figure out if there is a way to write a test program that checks
 that event checks are actually getting triggered

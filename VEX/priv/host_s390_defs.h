@@ -564,6 +564,8 @@ extern UInt s390_host_hwcaps;
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_ETF2))
 #define s390_host_has_stfle \
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_STFLE))
+#define s390_host_has_etf3 \
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_ETF3))
 
 #endif /* ndef __VEX_HOST_S390_DEFS_H */
 

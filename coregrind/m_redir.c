@@ -1547,11 +1547,15 @@ static void show_redir_state ( HChar* who )
    VG_(message)(Vg_DebugMsg, "<<\n");
    VG_(message)(Vg_DebugMsg, "   ------ REDIR STATE %s ------\n", who);
    for (ts = topSpecs; ts; ts = ts->next) {
-      VG_(message)(Vg_DebugMsg, 
-                   "   TOPSPECS of soname %s\n",
-                   ts->seginfo
-                      ? (HChar*)VG_(DebugInfo_get_soname)(ts->seginfo)
-                      : "(hardwired)" );
+      if (ts->seginfo)
+         VG_(message)(Vg_DebugMsg, 
+                      "   TOPSPECS of soname %s filename %s\n",
+                      (HChar*)VG_(DebugInfo_get_soname)(ts->seginfo),
+                      (HChar*)VG_(DebugInfo_get_filename)(ts->seginfo));
+      else
+         VG_(message)(Vg_DebugMsg, 
+                      "   TOPSPECS of soname (hardwired)\n");
+         
       for (sp = ts->specs; sp; sp = sp->next)
          show_spec("     ", sp);
    }

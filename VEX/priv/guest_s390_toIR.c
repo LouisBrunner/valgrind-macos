@@ -48,6 +48,7 @@
 /*--- Forward declarations                                 ---*/
 /*------------------------------------------------------------*/
 static UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
+static void s390_irgen_xonc(IROp, IRTemp, IRTemp, IRTemp);
 
 
 /*------------------------------------------------------------*/
@@ -8784,38 +8785,25 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
    return "clcle";
 }
 
+
 static void
 s390_irgen_XC_EX(IRTemp length, IRTemp start1, IRTemp start2)
 {
-   IRTemp old1 = newTemp(Ity_I8);
-   IRTemp old2 = newTemp(Ity_I8);
-   IRTemp new1 = newTemp(Ity_I8);
-   IRTemp counter = newTemp(Ity_I32);
-   IRTemp addr1 = newTemp(Ity_I64);
+   s390_irgen_xonc(Iop_Xor8, length, start1, start2);
+}
 
-   assign(counter, get_counter_w0());
 
-   assign(addr1, binop(Iop_Add64, mkexpr(start1),
-                       unop(Iop_32Uto64, mkexpr(counter))));
+static void
+s390_irgen_NC_EX(IRTemp length, IRTemp start1, IRTemp start2)
+{
+   s390_irgen_xonc(Iop_And8, length, start1, start2);
+}
 
-   assign(old1, load(Ity_I8, mkexpr(addr1)));
-   assign(old2, load(Ity_I8, binop(Iop_Add64, mkexpr(start2),
-                                   unop(Iop_32Uto64,mkexpr(counter)))));
-   assign(new1, binop(Iop_Xor8, mkexpr(old1), mkexpr(old2)));
 
-   store(mkexpr(addr1),
-         mkite(binop(Iop_CmpEQ64, mkexpr(start1), mkexpr(start2)),
-               mkU8(0), mkexpr(new1)));
-   put_counter_w1(binop(Iop_Or32, unop(Iop_8Uto32, mkexpr(new1)),
-                        get_counter_w1()));
-
-   /* Check for end of field */
-   put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkexpr(length)),
-                     guest_IA_curr_instr);
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
-                      False);
-   put_counter_dw0(mkU64(0));
+static void
+s390_irgen_OC_EX(IRTemp length, IRTemp start1, IRTemp start2)
+{
+   s390_irgen_xonc(Iop_Or8, length, start1, start2);
 }
 
 
@@ -8963,6 +8951,15 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       s390_irgen_EX_SS(r1, addr2, s390_irgen_XC_EX, 32);
       return "xc via ex";
 
+   case 0xd600000000000000ULL:
+      /* special case OC */
+      s390_irgen_EX_SS(r1, addr2, s390_irgen_OC_EX, 32);
+      return "oc via ex";
+
+   case 0xd400000000000000ULL:
+      /* special case NC */
+      s390_irgen_EX_SS(r1, addr2, s390_irgen_NC_EX, 32);
+      return "nc via ex";
 
    default:
    {
@@ -9308,7 +9305,7 @@ s390_irgen_STMG(UChar r1, UChar r3, IRTemp op2addr)
 }
 
 static void
-s390_irgen_xonc(IROp op, UChar length, IRTemp start1, IRTemp start2)
+s390_irgen_xonc(IROp op, IRTemp length, IRTemp start1, IRTemp start2)
 {
    IRTemp old1 = newTemp(Ity_I8);
    IRTemp old2 = newTemp(Ity_I8);
@@ -9338,7 +9335,7 @@ s390_irgen_xonc(IROp op, UChar length, IRTemp start1, IRTemp start2)
 
    /* Check for end of field */
    put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)),
+   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkexpr(length)),
                      guest_IA_curr_instr);
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
                       False);
@@ -9349,7 +9346,10 @@ s390_irgen_xonc(IROp op, UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_xonc(Iop_Xor8, length, start1, start2);
+   IRTemp len = newTemp(Ity_I32);
+
+   assign(len, mkU32(length));
+   s390_irgen_xonc(Iop_Xor8, len, start1, start2);
 
    return "xc";
 }
@@ -9397,7 +9397,10 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 static HChar *
 s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_xonc(Iop_And8, length, start1, start2);
+   IRTemp len = newTemp(Ity_I32);
+
+   assign(len, mkU32(length));
+   s390_irgen_xonc(Iop_And8, len, start1, start2);
 
    return "nc";
 }
@@ -9405,7 +9408,10 @@ s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_xonc(Iop_Or8, length, start1, start2);
+   IRTemp len = newTemp(Ity_I32);
+
+   assign(len, mkU32(length));
+   s390_irgen_xonc(Iop_Or8, len, start1, start2);
 
    return "oc";
 }

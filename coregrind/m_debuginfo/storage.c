@@ -1372,7 +1372,13 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
              && !!di->symtab[w].isIFunc == !!di->symtab[r].isIFunc) {
             /* merge the two into one */
             n_merged++;
-            add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
+            /* Add r names to w if r has secondary names 
+               or r and w primary names differ. */
+            if (di->symtab[r].sec_names 
+                || (0 != VG_(strcmp)(di->symtab[r].pri_name,
+                                     di->symtab[w].pri_name))) {
+               add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
+            }
             /* and use ::pri_names to indicate this slot is no longer in use */
             di->symtab[r].pri_name = NULL;
             if (di->symtab[r].sec_names) {

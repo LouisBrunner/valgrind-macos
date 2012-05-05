@@ -49,6 +49,7 @@
 /*------------------------------------------------------------*/
 static UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
 static void s390_irgen_xonc(IROp, IRTemp, IRTemp, IRTemp);
+static void s390_irgen_CLC_EX(IRTemp, IRTemp, IRTemp);
 
 
 /*------------------------------------------------------------*/
@@ -8589,29 +8590,10 @@ s390_irgen_SDB(UChar r1, IRTemp op2addr)
 static HChar *
 s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp current1 = newTemp(Ity_I8);
-   IRTemp current2 = newTemp(Ity_I8);
-   IRTemp counter = newTemp(Ity_I64);
+   IRTemp len = newTemp(Ity_I64);
 
-   assign(counter, get_counter_dw0());
-   put_counter_dw0(mkU64(0));
-
-   assign(current1, load(Ity_I8, binop(Iop_Add64, mkexpr(start1),
-                                       mkexpr(counter))));
-   assign(current2, load(Ity_I8, binop(Iop_Add64, mkexpr(start2),
-                                       mkexpr(counter))));
-   s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, current1, current2,
-                      False);
-
-   /* Both fields differ ? */
-   if_condition_goto(binop(Iop_CmpNE8, mkexpr(current1), mkexpr(current2)),
-                     guest_IA_next_instr);
-
-   /* Check for end of field */
-   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
-                     guest_IA_curr_instr);
-   put_counter_dw0(mkU64(0));
+   assign(len, mkU64(length));
+   s390_irgen_CLC_EX(len, start1, start2);
    dummy_put_IA();
 
    return "clc";
@@ -9340,7 +9322,6 @@ s390_irgen_xonc(IROp op, IRTemp length, IRTemp start1, IRTemp start2)
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
                       False);
    put_counter_dw0(mkU64(0));
-   dummy_put_IA();
 }
 
 static HChar *
@@ -9350,6 +9331,7 @@ s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU32(length));
    s390_irgen_xonc(Iop_Xor8, len, start1, start2);
+   dummy_put_IA();
 
    return "xc";
 }
@@ -9401,6 +9383,7 @@ s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU32(length));
    s390_irgen_xonc(Iop_And8, len, start1, start2);
+   dummy_put_IA();
 
    return "nc";
 }
@@ -9412,6 +9395,7 @@ s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU32(length));
    s390_irgen_xonc(Iop_Or8, len, start1, start2);
+   dummy_put_IA();
 
    return "oc";
 }
@@ -9420,18 +9404,10 @@ s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp counter = newTemp(Ity_I64);
+   IRTemp len = newTemp(Ity_I64);
 
-   assign(counter, get_counter_dw0());
-
-   store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)),
-         load(Ity_I8, binop(Iop_Add64, mkexpr(start2), mkexpr(counter))));
-
-   /* Check for end of field */
-   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
-                     guest_IA_curr_instr);
-   put_counter_dw0(mkU64(0));
+   assign(len, mkU64(length));
+   s390_irgen_MVC_EX(len, start1, start2);
    dummy_put_IA();
 
    return "mvc";

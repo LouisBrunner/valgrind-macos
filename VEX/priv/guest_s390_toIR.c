@@ -8834,6 +8834,28 @@ s390_irgen_MVC_EX(IRTemp length, IRTemp start1, IRTemp start2)
    put_counter_dw0(mkU64(0));
 }
 
+static void
+s390_irgen_TR_EX(IRTemp length, IRTemp start1, IRTemp start2)
+{
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+   IRTemp counter = newTemp(Ity_I64);
+
+   assign(counter, get_counter_dw0());
+
+   assign(op, load(Ity_I8, binop(Iop_Add64, mkexpr(start1), mkexpr(counter))));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), mkexpr(start2)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+   store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)), mkexpr(op1));
+
+   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
+   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)),
+                     guest_IA_curr_instr);
+   put_counter_dw0(mkU64(0));
+}
 
 
 static void
@@ -8942,6 +8964,11 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       /* special case NC */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_NC_EX, 32);
       return "nc via ex";
+
+   case 0xdc00000000000000ULL:
+      /* special case TR */
+      s390_irgen_EX_SS(r1, addr2, s390_irgen_TR_EX, 64);
+      return "tr via ex";
 
    default:
    {
@@ -11074,25 +11101,10 @@ s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
 static HChar *
 s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp op = newTemp(Ity_I8);
-   IRTemp op1 = newTemp(Ity_I8);
-   IRTemp result = newTemp(Ity_I64);
-   IRTemp counter = newTemp(Ity_I64);
+   IRTemp len = newTemp(Ity_I64);
 
-   assign(counter, get_counter_dw0());
-
-   assign(op, load(Ity_I8, binop(Iop_Add64, mkexpr(start1), mkexpr(counter))));
-
-   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), mkexpr(start2)));
-
-   assign(op1, load(Ity_I8, mkexpr(result)));
-   store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)), mkexpr(op1));
-
-   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
-                     guest_IA_curr_instr);
-
-   put_counter_dw0(mkU64(0));
+   assign(len, mkU64(length));
+   s390_irgen_TR_EX(len, start1, start2);
    dummy_put_IA();
 
    return "tr";

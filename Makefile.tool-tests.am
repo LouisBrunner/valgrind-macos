@@ -9,6 +9,12 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-DVGO_@VGCONF_OS@=1 \
 		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
 		-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
+
+if VGCONF_HAVE_PLATFORM_SEC
+AM_CPPFLAGS +=	-DVGA_SEC_@VGCONF_ARCH_SEC@=1  \
+		-DVGP_SEC_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+endif
+
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
 AM_CFLAGS   = -Winline -Wall -Wshadow -g

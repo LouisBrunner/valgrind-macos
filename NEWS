@@ -78,6 +78,7 @@ where XXXXXX is the bug number as listed below.
 294055  regtest none/tests/shell fails when locale is not set to C
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
+296983  Fix build issues on x86_64/ppc64 without 32-bit toolchains
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
         and non reset of "C-ontinued" signal

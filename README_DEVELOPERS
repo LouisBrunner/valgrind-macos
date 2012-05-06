@@ -202,12 +202,12 @@ When using self-hosting with an outer Callgrind tool, use '--pop-on-jump'
 (B) Regression tests in an outer/inner setup:
 
  To run all the regression tests with an outer memcheck, do :
-   perl test/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
-                        --all
+   perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                         --all
 
  To run a specific regression tests with an outer memcheck, do:
-   perl test/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
-                        none/tests/args.vgtest
+   perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                         none/tests/args.vgtest
 
  To run regression tests with another outer tool:
    perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \

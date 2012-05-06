@@ -56,7 +56,6 @@ else
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
 endif
 
-preen_invars_so_so_SOURCES      = preen_invars_so.c	# For automake-1.7.
 preen_invars_so_so_CFLAGS       = $(AM_CFLAGS) -fpic
 if VGCONF_OS_IS_DARWIN
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -dynamic \

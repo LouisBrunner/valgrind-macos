@@ -55,6 +55,7 @@ To see details of a given bug, visit
 https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+197914  Building valgrind from svn now requires automake-1.10
 247386  make perf does not run all performance tests
 270006  Valgrind scheduler unfair 
 270796  s390x: Removed broken support for the TS insn

@@ -30,5 +30,4 @@ myprint_so_LDFLAGS	= $(AM_CFLAGS) -dynamic -dynamiclib -all_load -fpic
 else
 myprint_so_LDFLAGS	= $(AM_CFLAGS) -shared -fPIC
 endif
-myprint_so_SOURCES	= myprint.c	# Only needed for automake-1.7.
 myprint_so_CFLAGS	= $(AM_CFLAGS) -fPIC

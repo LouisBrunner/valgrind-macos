@@ -94,6 +94,7 @@ enum {
    GUEST_CC_DEP2,
    GUEST_CC_NDEP,
    GUEST_SYSNO,
+   GUEST_COUNTER,
    GUEST_UNKNOWN    /* must be the last entry */
 };
 
@@ -142,6 +143,7 @@ get_guest_reg(Int offset)
    case S390X_GUEST_OFFSET(guest_CC_DEP2):   return GUEST_CC_DEP2;
    case S390X_GUEST_OFFSET(guest_CC_NDEP):   return GUEST_CC_NDEP;
    case S390X_GUEST_OFFSET(guest_SYSNO):     return GUEST_SYSNO;
+   case S390X_GUEST_OFFSET(guest_counter):   return GUEST_COUNTER;
 
       /* Also make sure there is never a partial write to one of
          these registers. That would complicate matters. */
@@ -150,6 +152,10 @@ get_guest_reg(Int offset)
    case S390X_GUEST_OFFSET(guest_CC_DEP1)+1 ... S390X_GUEST_OFFSET(guest_CC_DEP1)+7:
    case S390X_GUEST_OFFSET(guest_CC_DEP2)+1 ... S390X_GUEST_OFFSET(guest_CC_DEP2)+7:
    case S390X_GUEST_OFFSET(guest_CC_NDEP)+1 ... S390X_GUEST_OFFSET(guest_CC_NDEP)+7:
+   case S390X_GUEST_OFFSET(guest_SYSNO)+1   ... S390X_GUEST_OFFSET(guest_SYSNO)+7:
+      /* counter is used both as 4-byte and as 8-byte entity */
+   case S390X_GUEST_OFFSET(guest_counter)+1 ... S390X_GUEST_OFFSET(guest_counter)+3:
+   case S390X_GUEST_OFFSET(guest_counter)+5 ... S390X_GUEST_OFFSET(guest_counter)+7:
       vassert("partial update of this guest state register is not allowed");
       break;
 

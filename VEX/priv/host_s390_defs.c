@@ -7237,8 +7237,7 @@ s390_insn_is_BR(const UChar *p, UChar reg)
 
 /* Load the 64-bit VALUE into REG. Note that this function must NOT
    optimise the generated code by looking at the value. I.e. using
-   LGHI if value == 0 would be very wrong.
-   fixs390: Do it in a way that works everywhere for now. */
+   LGHI if value == 0 would be very wrong. */
 static UChar *
 s390_tchain_load64(UChar *buf, UChar regno, ULong value)
 {

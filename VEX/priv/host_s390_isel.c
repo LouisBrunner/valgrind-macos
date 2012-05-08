@@ -236,7 +236,7 @@ newVRegF(ISelEnv *env)
 
 /* Construct a non-virtual general purpose register */
 static __inline__ HReg
-make_gpr(ISelEnv *env, UInt regno)
+make_gpr(UInt regno)
 {
    return mkHReg(regno, HRcInt64, False /* virtual */ );
 }
@@ -480,7 +480,7 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
    for (i = 0; i < argreg; i++) {
       HReg finalreg;
 
-      finalreg = mkHReg(s390_gprno_from_arg_index(i), HRcInt64, False);
+      finalreg = make_gpr(s390_gprno_from_arg_index(i));
       size = sizeofIRType(Ity_I64);
       addInstr(env, s390_insn_move(size, finalreg, tmpregs[i]));
    }
@@ -620,8 +620,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          op2 = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
          /* We use non-virtual registers r10 and r11 as pair */
-         r10  = make_gpr(env, 10);
-         r11  = make_gpr(env, 11);
+         r10  = make_gpr(10);
+         r11  = make_gpr(11);
 
          /* Move 1st operand into r11 and */
          addInstr(env, s390_insn_move(8, r11, h1));
@@ -653,8 +653,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
             /* We use non-virtual registers r10 and r11 as pair */
-            r10  = make_gpr(env, 10);
-            r11  = make_gpr(env, 11);
+            r10  = make_gpr(10);
+            r11  = make_gpr(11);
 
             /* Move the first operand to r11 */
             addInstr(env, s390_insn_move(8, r11, h1));
@@ -679,8 +679,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
          /* We use non-virtual registers r10 and r11 as pair */
-         r10  = make_gpr(env, 10);
-         r11  = make_gpr(env, 11);
+         r10  = make_gpr(10);
+         r11  = make_gpr(11);
 
          /* Move high 64 bits of the 1st operand into r10 and
             the low 64 bits into r11. */
@@ -809,8 +809,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
             /* We use non-virtual registers r10 and r11 as pair */
-            r10  = make_gpr(env, 10);
-            r11  = make_gpr(env, 11);
+            r10  = make_gpr(10);
+            r11  = make_gpr(11);
 
             /* Move the first operand to r11 */
             addInstr(env, s390_insn_move(arg_size, r11, h1));
@@ -846,8 +846,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
             /* We use non-virtual registers r10 and r11 as pair */
-            r10  = make_gpr(env, 10);
-            r11  = make_gpr(env, 11);
+            r10  = make_gpr(10);
+            r11  = make_gpr(11);
 
             /* Split the first operand and put the high 32 bits into r10 and
                the low 32 bits into r11. */
@@ -1267,8 +1267,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             set aside a pair of non-virtual registers. The result (number of
             left-most zero bits) will be in r10. The value in r11 is unspecified
             and must not be used. */
-         r10  = make_gpr(env, 10);
-         r11  = make_gpr(env, 11);
+         r10  = make_gpr(10);
+         r11  = make_gpr(11);
 
          addInstr(env, s390_insn_clz(8, r10, r11, opnd));
          addInstr(env, s390_insn_move(8, dst, r10));
@@ -1311,8 +1311,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       /* Move the returned value into the return register */
       addInstr(env, s390_insn_move(sizeofIRType(expr->Iex.CCall.retty), dst,
-                                   mkHReg(S390_REGNO_RETURN_VALUE,
-                                          HRcInt64, False)));
+                                   make_gpr(S390_REGNO_RETURN_VALUE)));
       return dst;
    }
 
@@ -2296,8 +2295,8 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       /* If the high word is the same it is sufficient to load the low word.
          Use R0 as a scratch reg. */
       if ((old_value >> 32) == (new_value >> 32)) {
-         HReg r0  = make_gpr(env, 0);
-         HReg gsp = make_gpr(env, S390_REGNO_GUEST_STATE_POINTER);
+         HReg r0  = make_gpr(0);
+         HReg gsp = make_gpr(S390_REGNO_GUEST_STATE_POINTER);
          s390_amode *gam;
 
          gam = s390_amode_b12(offset + 4, gsp);
@@ -2427,11 +2426,10 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       retty = typeOfIRTemp(env->type_env, d->tmp);
       if (retty == Ity_I64 || retty == Ity_I32
           || retty == Ity_I16 || retty == Ity_I8) {
-         /* Move the returned value into the return register */
+         /* Move the returned value to the destination register */
          HReg dst = lookupIRTemp(env, d->tmp);
          addInstr(env, s390_insn_move(sizeofIRType(retty), dst,
-                                      mkHReg(S390_REGNO_RETURN_VALUE,
-                                             HRcInt64, False)));
+                                      make_gpr(S390_REGNO_RETURN_VALUE)));
          return;
       }
       break;

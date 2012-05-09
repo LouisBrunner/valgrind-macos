@@ -423,19 +423,72 @@ s390_expr_is_const_zero(IRExpr *expr)
 }
 
 
+/* If EXPR can be evaluated with a single s390_insn, do so and assign the
+   value to register DST. If not, return NULL. */
+static s390_insn *
+s390_isel_single_insn_for_int_expr(ISelEnv *env, HReg dst, IRExpr *expr)
+{
+   switch (expr->tag) {
+   case Iex_Const: {
+      ULong value;
+      const IRConst *con = expr->Iex.Const.con;
+
+      /* Bitwise copy of the value. No sign/zero-extension */
+      switch (con->tag) {
+      case Ico_U64: value = con->Ico.U64; break;
+      case Ico_U32: value = con->Ico.U32; break;
+      case Ico_U16: value = con->Ico.U16; break;
+      case Ico_U8:  value = con->Ico.U8;  break;
+      default:      vpanic("s390_isel_single_insn_for_int_expr: invalid constant");
+      }
+
+      return s390_insn_load_immediate(8, dst, value);
+   }
+
+   case Iex_RdTmp: {
+      HReg src = lookupIRTemp(env, expr->Iex.RdTmp.tmp);
+      return s390_insn_move(8, dst, src);
+   }
+
+   case Iex_Get: {
+      UInt size = sizeofIRType(typeOfIRExpr(env->type_env, expr));
+      s390_amode *am = s390_amode_for_guest_state(expr->Iex.Get.offset);
+
+      return s390_insn_load(size, dst, am);
+   }
+
+   case Iex_Load: {
+      UInt size = sizeofIRType(typeOfIRExpr(env->type_env, expr));
+      s390_amode *am = s390_isel_amode(env, expr->Iex.Load.addr);
+
+      vassert(expr->Iex.Load.end == Iend_BE);
+
+      return s390_insn_load(size, dst, am);
+   }
+
+   default:
+      /* too complex */
+      return NULL;
+   }
+}
+
+
 /* Call a helper (clean or dirty)
    Arguments must satisfy the following conditions:
+
    (a) they are expressions yielding an integer result
    (b) there can be no more than S390_NUM_GPRPARMS arguments
-       guard is a Ity_Bit expression indicating whether or not the
-       call happens.  If guard==NULL, the call is unconditional.
+
+   guard is a Ity_Bit expression indicating whether or not the
+   call happens.  If guard == NULL, the call is unconditional.
 */
 static void
 doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
              IRCallee *callee, IRExpr **args)
 {
-   UInt n_args, i, argreg, size;
+   UInt n_args, i, argreg;
    ULong target;
+   s390_insn *insn_for_arg[S390_NUM_GPRPARMS];
    HReg tmpregs[S390_NUM_GPRPARMS];
    s390_cc_t cc;
 
@@ -445,23 +498,6 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
 
    if (n_args > (S390_NUM_GPRPARMS - (passBBP ? 1 : 0))) {
       vpanic("doHelperCall: too many arguments");
-   }
-
-   /* This is the "slow scheme". fixs390: implement the fast one */
-   argreg = 0;
-
-   /* If we need the guest state pointer put it in a temporary arg reg */
-   if (passBBP) {
-      tmpregs[argreg] = newVRegI(env);
-      addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
-                                   s390_hreg_guest_state_pointer()));
-      argreg++;
-   }
-
-   /* Compute the function arguments into a temporary register each */
-   for (i = 0; i < n_args; i++) {
-      tmpregs[argreg] = s390_isel_int_expr(env, args[i]);
-      argreg++;
    }
 
    /* Compute the condition */
@@ -476,13 +512,66 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
       }
    }
 
-   /* Move the args to the final register */
-   for (i = 0; i < argreg; i++) {
-      HReg finalreg;
+   /* Evaluate the function arguments for the helper call.
+      First, as the helper function is written in C, we are free to evaluate
+      argumeqnts in any order we like, as the evaluation order is unspecified
+      by the C standard.
 
-      finalreg = make_gpr(s390_gprno_from_arg_index(i));
-      size = sizeofIRType(Ity_I64);
-      addInstr(env, s390_insn_move(size, finalreg, tmpregs[i]));
+      Secondly, if possible, we want to evaluate the arguments such that its
+      value ends up in the register that is mandated by the ABI for this 
+      argument. The idea is to avoid an additional move insn from a virtual 
+      to a real register. Currently, the register allocator is not very good
+      at eliminating those.
+
+      The complication is that we need to make sure that real registers do not
+      get overwritten while evaluating the arguments. Consider a helper call 
+      with two arguments. The first argument is an integer constant and the 
+      second argument is a complex expression. If we evaluate the 1st argument
+      and load the constant into r2 (as mandated by ABI) and the 2nd argument
+      expression contains a helper call with arguments, then evaluation of the
+      2nd argument will overwrite the contents of r2. Not so good.  Therefore,
+      we first evaluate all those arguments which are complex and assign their
+      value to a virtual register. Then in a second pass we evaluate those
+      arguments where the value can be assigned to the ABI destination register
+      directly. There is no danger now that those can be overwritten. This is
+      what happens conceptually. The implementation is slightly different. */
+
+   argreg = 0;
+
+   /* If we need the guest state pointer put it into the correct register */
+   if (passBBP) {
+      insn_for_arg[argreg] =
+         s390_insn_move(sizeof(ULong),
+                        make_gpr(s390_gprno_from_arg_index(argreg)),
+                        s390_hreg_guest_state_pointer());
+      argreg++;
+   }
+
+   /* Compute the function arguments. Issue insns for complex arguments.
+      Store their value in a temporary register each. For arguments that
+      can be evaluated in their ABI destination register, generate the
+      insn but do not issue it yet. */
+   for (i = 0; i < n_args; i++) {
+      HReg dst = make_gpr(s390_gprno_from_arg_index(argreg));
+
+      insn_for_arg[argreg] =
+         s390_isel_single_insn_for_int_expr(env, dst, args[i]);
+
+      if (insn_for_arg[argreg] == NULL) {
+         tmpregs[argreg] = s390_isel_int_expr(env, args[i]);
+      }
+      argreg++;
+   }
+
+   /* Assign values to ABI registers */
+   for (i = 0; i < argreg; i++) {
+      if (insn_for_arg[i]) {
+         addInstr(env, insn_for_arg[i]);  /* issue insn */
+      } else {
+         /* Move value to ABI register */
+         HReg finalreg = make_gpr(s390_gprno_from_arg_index(i));
+         addInstr(env, s390_insn_move(8, finalreg, tmpregs[i]));
+      }
    }
 
    target = Ptr_to_ULong(callee->addr);

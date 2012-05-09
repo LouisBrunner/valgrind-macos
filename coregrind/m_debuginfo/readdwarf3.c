@@ -1592,6 +1592,7 @@ static void parse_var_DIE (
    if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_type_unit) {
       Bool have_lo    = False;
       Bool have_hi1   = False;
+      Bool hiIsRelative = False;
       Bool have_range = False;
       Addr ip_lo    = 0;
       Addr ip_hi1   = 0;
@@ -1609,6 +1610,8 @@ static void parse_var_DIE (
          if (attr == DW_AT_high_pc && ctsSzB > 0) {
             ip_hi1   = cts;
             have_hi1 = True;
+            if (form != DW_FORM_addr)
+               hiIsRelative = True;
          }
          if (attr == DW_AT_ranges && ctsSzB > 0) {
             rangeoff = cts;
@@ -1618,6 +1621,8 @@ static void parse_var_DIE (
             read_filename_table( parser, cc, (UWord)cts, td3 );
          }
       }
+      if (have_lo && have_hi1 && hiIsRelative)
+         ip_hi1 += ip_lo;
       /* Now, does this give us an opportunity to find this
          CU's svma? */
 #if 0
@@ -1698,6 +1703,7 @@ static void parse_var_DIE (
       Bool   have_lo    = False;
       Bool   have_hi1   = False;
       Bool   have_range = False;
+      Bool   hiIsRelative = False;
       Addr   ip_lo      = 0;
       Addr   ip_hi1     = 0;
       Addr   rangeoff   = 0;
@@ -1716,6 +1722,8 @@ static void parse_var_DIE (
          if (attr == DW_AT_high_pc && ctsSzB > 0) {
             ip_hi1   = cts;
             have_hi1 = True;
+            if (form != DW_FORM_addr)
+               hiIsRelative = True;
          }
          if (attr == DW_AT_ranges && ctsSzB > 0) {
             rangeoff = cts;
@@ -1730,6 +1738,8 @@ static void parse_var_DIE (
             VG_(addToXA)(gexprs, &fbGX);
          }
       }
+      if (have_lo && have_hi1 && hiIsRelative)
+         ip_hi1 += ip_lo;
       /* Do we have something that looks sane? */
       if (dtag == DW_TAG_subprogram 
           && (!have_lo) && (!have_hi1) && (!have_range)) {

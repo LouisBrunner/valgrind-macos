@@ -344,7 +344,9 @@ void* MC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
 static
 void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
 {
-   if (MC_(clo_free_fill) != -1) {
+   /* Note: we do not free fill the custom allocs produced
+      by MEMPOOL or by MALLOC/FREELIKE_BLOCK requests. */
+   if (MC_(clo_free_fill) != -1 && MC_AllocCustom != mc->allockind ) {
       tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
       VG_(memset)((void*)mc->data, MC_(clo_free_fill), mc->szB);
    }

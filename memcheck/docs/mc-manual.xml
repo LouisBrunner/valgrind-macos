@@ -855,7 +855,10 @@ criteria:</para>
       byte.  This can be useful when trying to shake out obscure
       memory corruption problems.  The allocated area is still
       regarded by Memcheck as undefined -- this option only affects its
-      contents.
+      contents. Note that <option>--malloc-fill</option> does not
+      affect a block of memory when it is used as argument
+      to client requests VALGRIND_MEMPOOL_ALLOC or
+      VALGRIND_MALLOCLIKE_BLOCK.
       </para>
     </listitem>
   </varlistentry>
@@ -871,7 +874,9 @@ criteria:</para>
       specified byte value.  This can be useful when trying to shake out
       obscure memory corruption problems.  The freed area is still
       regarded by Memcheck as not valid for access -- this option only
-      affects its contents.
+      affects its contents. Note that <option>--free-fill</option> does not
+      affect a block of memory when it is used as argument to
+      client requests VALGRIND_MEMPOOL_FREE or VALGRIND_FREELIKE_BLOCK.
       </para>
     </listitem>
   </varlistentry>

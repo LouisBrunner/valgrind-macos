@@ -1,0 +1,6 @@
+*s=0x5 after MEMPOOL_ALLOC
+*s=0x5 after MEMPOOL_FREE
+*s=0x5 after second MEMPOOL_ALLOC
+*s=0x5 after MALLOCLIKE_BLOCK
+*s=0x5 after FREELIKE_BLOCK
+*s=0x5 after second MALLOCLIKE_BLOCK

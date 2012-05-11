@@ -70,6 +70,8 @@ EXTRA_DIST = \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
+	clireq_nofill.stderr.exp \
+	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	deep_templates.vgtest \
@@ -233,6 +235,7 @@ check_PROGRAMS = \
 	bug287260 \
 	calloc-overflow \
 	clientperm \
+	clireq_nofill \
 	custom_alloc \
 	custom-overlap \
 	deep_templates \

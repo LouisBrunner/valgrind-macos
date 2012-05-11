@@ -1,0 +1,12 @@
+Invalid read of size 1
+   at 0x........: main (clireq_nofill.c:23)
+ Address 0x........ is 0 bytes inside a recently re-allocated block of size 40 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (clireq_nofill.c:16)
+
+Invalid read of size 1
+   at 0x........: main (clireq_nofill.c:36)
+ Address 0x........ is 0 bytes inside a recently re-allocated block of size 40 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (clireq_nofill.c:29)
+

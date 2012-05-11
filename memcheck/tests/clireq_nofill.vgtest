@@ -1,0 +1,2 @@
+prog: clireq_nofill
+vgopts: -q --undef-value-errors=no --malloc-fill=0xaf --free-fill=0xdb

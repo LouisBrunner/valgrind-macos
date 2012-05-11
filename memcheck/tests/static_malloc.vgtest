@@ -1,0 +1,2 @@
+prog: static_malloc
+vgopts: -q --leak-check=full --soname-synonyms=somalloc=NONE

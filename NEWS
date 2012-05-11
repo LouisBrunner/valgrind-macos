@@ -3,17 +3,22 @@ Release 3.8.0 (????)
 
 * ================== PLATFORM CHANGES =================
 
-* Support for amd64 AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
-  AESDEC, AESDECLAST, AESIMC).
+* Support for intel AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
+  AESDEC, AESDECLAST, AESIMC). Only supported for 64 bit architecture.
 
 * ==================== TOOL CHANGES ====================
+
+* Massif
+  - Using the new option --soname-synonyms, Massif can now understand
+    a program using statically linked malloc or using alternative
+    malloc libraries (such as tcmalloc).
 
 * Memcheck:
 
   - The leak_check GDB server monitor command now can
     control the maximum nr of loss records to output.
 
-  - reduction of memory use for applications allocating
+  - Reduction of memory use for applications allocating
     many blocks and/or having many partially defined bytes.
 
   - Addition of GDB server monitor command 'block_list' that lists
@@ -22,14 +27,21 @@ Release 3.8.0 (????)
   - Addition of GDB server monitor command 'who_points_at' that lists
     the locations pointing at a block.
 
-  - if a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now
+  - If a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now
     will detect an invalid access of these redzones, by marking them
     noaccess.
+
+  - Using the new option --soname-synonyms, Memcheck can now understand
+    a program using statically linked malloc or using alternative
+    malloc libraries (such as tcmalloc).
 
 * ==================== OTHER CHANGES ====================
 
 * The C++ demangler has been updated so as to work well with C++ 
   compiled by up to at least g++ 4.6.
+
+* Replacement/wrapping can be made more flexible thanks to the new option
+  --soname-synonyms.
 
 * The new option --fair-sched allows to control the locking mechanism
   used by Valgrind. The locking mechanism influences the performance
@@ -56,6 +68,7 @@ https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
 197914  Building valgrind from svn now requires automake-1.10
+219156  Valgrind does not handle statically linked malloc or other malloc lib (e.g. tcmalloc) 
 247386  make perf does not run all performance tests
 270006  Valgrind scheduler unfair 
 270796  s390x: Removed broken support for the TS insn

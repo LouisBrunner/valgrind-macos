@@ -1787,6 +1787,62 @@ need to use these.</para>
    </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.soname-synonyms"
+        xreflabel="--soname-synonyms">
+    <term>
+      <option><![CDATA[--soname-synonyms=syn1=pattern1,syn2=pattern2,...]]></option>
+    </term>
+    <listitem>
+      <para>When a shared library is loaded, Valgrind examines if some
+      functions of this library must be replaced or wrapped.
+      For example, memcheck is replacing the malloc related
+      functions (malloc, free, calloc, ...).
+      Such replacements are done by default only in shared libraries whose
+      soname matches a predefined soname pattern (e.g.
+      <varname>libc.so*</varname> on linux).
+      By default, no replacement is done for a statically linked
+      library or for alternative libraries such as tcmalloc.
+      In some cases, the replacements allow
+      <option>--soname-synonyms</option> to specify one additional
+      synonym pattern, giving flexibility in the replacement. </para>
+
+      <para> Currently, this flexibility is only allowed for the
+      malloc related functions, using the
+      synonym <varname>somalloc</varname>.  This synonym is usable for
+      all tools doing standard replacement of malloc related functions
+      (e.g. memcheck, massif, drd, helgrind, exp-dhat, exp-sgcheck).
+      </para>
+
+      <itemizedlist>
+        <listitem>
+
+          <para>Alternate malloc library: to replace the malloc
+          related functions in an alternate library with
+          soname <varname>mymalloclib.so</varname>, give the
+          option <option>--soname-synonyms=somalloc=mymalloclib.so</option>.
+          A pattern can be used to match multiple libraries sonames.
+          For
+          example, <option>--soname-synonyms=somalloc=*tcmalloc*</option>
+          will match the soname of all variants of the tcmalloc library
+          (native, debug, profiled, ... tcmalloc variants). </para>
+          <para>Note: the soname of a elf shared library can be
+          retrieved using the readelf utility. </para>
+
+        </listitem>
+
+        <listitem>
+          <para>Replacements in a statically linked library are done by
+          using the <varname>NONE</varname> pattern. For example, if
+          you link with <varname>libtcmalloc.a</varname>, memcheck 
+          will properly work when you give the
+          option <option>--soname-synonyms=somalloc=NONE</option>.  Note
+          that a NONE pattern will match the main executable and any
+          shared library having no soname. </para>
+        </listitem>
+      </itemizedlist>
+   </listitem>
+  </varlistentry>
+
 
 </variablelist>
 <!-- end of xi:include in the manpage -->

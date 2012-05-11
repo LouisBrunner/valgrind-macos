@@ -300,6 +300,11 @@
 #endif
 
 
+// Prefix for synonym soname synonym handling
+#define VG_SO_SYN(name)       VgSoSyn##name
+#define VG_SO_SYN_PREFIX     "VgSoSyn"
+#define VG_SO_SYN_PREFIX_LEN 7
+
 #endif   // __PUB_TOOL_REDIR_H
 
 /*--------------------------------------------------------------------*/

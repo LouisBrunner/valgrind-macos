@@ -178,6 +178,7 @@ EXTRA_DIST = \
 	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
+	static_malloc.stderr.exp static_malloc.vgtest \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp-darwin \
 	    strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
@@ -268,7 +269,7 @@ check_PROGRAMS = \
 	realloc1 realloc2 realloc3 \
 	sbfragment \
 	sh-mem sh-mem-random \
-	sigaltstack signal2 sigprocmask sigkill \
+	sigaltstack signal2 sigprocmask static_malloc sigkill \
 	strchr \
 	str_tester \
 	supp_unknown supp1 supp2 suppfree \

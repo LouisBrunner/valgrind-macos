@@ -187,6 +187,9 @@ static void usage_NORETURN ( Bool debug_help )
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"
 "                              text symbol.  Patterns can contain ? and *.\n"
+"    --soname-synonyms=syn1=pattern1,syn2=pattern2,... synonym soname\n"
+"                              patterns for some Valgrind wrapping\n"
+"                              or replacement (such as malloc replacement)\n"
 "\n";
 
    Char* usage2 = 
@@ -483,6 +486,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                             VG_(clo_vgdb_shadow_registers)) {}
       else if VG_BOOL_CLO(arg, "--db-attach",      VG_(clo_db_attach)) {}
       else if VG_BOOL_CLO(arg, "--demangle",       VG_(clo_demangle)) {}
+      else if VG_STR_CLO (arg, "--soname-synonyms",VG_(clo_soname_synonyms)) {}
       else if VG_BOOL_CLO(arg, "--error-limit",    VG_(clo_error_limit)) {}
       else if VG_INT_CLO (arg, "--error-exitcode", VG_(clo_error_exitcode)) {}
       else if VG_BOOL_CLO(arg, "--show-emwarns",   VG_(clo_show_emwarns)) {}

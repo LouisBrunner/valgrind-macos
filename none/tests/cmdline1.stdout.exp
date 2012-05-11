@@ -80,6 +80,9 @@ usage: valgrind [options] prog-and-args
     --require-text-symbol=:sonamepattern:symbolpattern    abort run if the
                               stated shared object doesn't have the stated
                               text symbol.  Patterns can contain ? and *.
+    --soname-synonyms=syn1=pattern1,syn2=pattern2,... synonym soname
+                              patterns for some Valgrind wrapping
+                              or replacement (such as malloc replacement)
 
   user options for Nulgrind:
     (none)

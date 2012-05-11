@@ -66,6 +66,7 @@ Bool   VG_(clo_stats)          = False;
 Bool   VG_(clo_xml)            = False;
 HChar* VG_(clo_xml_user_comment) = NULL;
 Bool   VG_(clo_demangle)       = True;
+HChar* VG_(clo_soname_synonyms)    = NULL;
 Bool   VG_(clo_trace_children) = False;
 HChar* VG_(clo_trace_children_skip) = NULL;
 HChar* VG_(clo_trace_children_skip_by_arg) = NULL;

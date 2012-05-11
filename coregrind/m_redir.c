@@ -367,6 +367,18 @@ static void free_symname_array ( UChar** names, UChar** twoslots )
       dinfo_free(names);
 }
 
+static HChar const* advance_to_equal ( HChar const* c ) {
+   while (*c && *c != '=') {
+      ++c;
+   }
+   return c;
+}
+static HChar const* advance_to_comma ( HChar const* c ) {
+   while (*c && *c != ',') {
+      ++c;
+   }
+   return c;
+}
 
 /* Notify m_redir of the arrival of a new DebugInfo.  This is fairly
    complex, but the net effect is to (1) add a new entry to the
@@ -516,6 +528,48 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
                the following loop, and complain at that point. */
             continue;
          }
+
+         if (0 == VG_(strncmp) (demangled_sopatt, 
+                                VG_SO_SYN_PREFIX, VG_SO_SYN_PREFIX_LEN)) {
+            /* This is a redirection for handling lib so synonyms. If we
+               have a matching lib synonym, then replace the sopatt.
+               Otherwise, just ignore this redirection spec. */
+
+            if (!VG_(clo_soname_synonyms))
+               continue; // No synonyms => skip the redir.
+
+            /* Search for a matching synonym=newname*/
+            SizeT const sopatt_syn_len 
+               = VG_(strlen)(demangled_sopatt+VG_SO_SYN_PREFIX_LEN);
+            HChar const* last = VG_(clo_soname_synonyms);
+            
+            while (*last) {
+               HChar const* first = last;
+               last = advance_to_equal(first);
+               
+               if ((last - first) == sopatt_syn_len
+                   && 0 == VG_(strncmp)(demangled_sopatt+VG_SO_SYN_PREFIX_LEN,
+                                        first,
+                                        sopatt_syn_len)) {
+                  // Found the demangle_sopatt synonym => replace it
+                  first = last + 1;
+                  last = advance_to_comma(first);
+                  VG_(strncpy)(demangled_sopatt, first, last - first);
+                  demangled_sopatt[last - first] = '\0';
+                  break;
+               }
+
+               last = advance_to_comma(last);
+               if (*last == ',')
+                  last++;
+            }
+            
+            // If we have not replaced the sopatt, then skip the redir.
+            if (0 == VG_(strncmp) (demangled_sopatt, 
+                                   VG_SO_SYN_PREFIX, VG_SO_SYN_PREFIX_LEN))
+               continue;
+         }
+
          spec = dinfo_zalloc("redir.rnnD.1", sizeof(Spec));
          vg_assert(spec);
          spec->from_sopatt = dinfo_strdup("redir.rnnD.2", demangled_sopatt);

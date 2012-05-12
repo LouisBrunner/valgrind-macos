@@ -1311,7 +1311,7 @@ s390_emit_AGSI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
    vassert(s390_host_has_gie);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC3(MNM, INT, SDXB), "agsi", (Int)(Char)i2, dh1, dl1, 0, b1);
+      s390_disasm(ENC3(MNM, SDXB, INT), "agsi", dh1, dl1, 0, b1, (Int)(Char)i2);
 
    return emit_SIY(p, 0xeb000000007aULL, i2, b1, dl1, dh1);
 }
@@ -1323,7 +1323,7 @@ s390_emit_ASI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
    vassert(s390_host_has_gie);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC3(MNM, INT, SDXB), "asi", (Int)(Char)i2, dh1, dl1, 0, b1);
+      s390_disasm(ENC3(MNM, SDXB, INT), "asi", dh1, dl1, 0, b1, (Int)(Char)i2);
 
    return emit_SIY(p, 0xeb000000006aULL, i2, b1, dl1, dh1);
 }

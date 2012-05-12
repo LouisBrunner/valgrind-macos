@@ -1647,6 +1647,9 @@ struct _IRExpr {
          * it may not access guest memory, since that would hide
            guest memory transactions from the instrumenters
 
+         * it must not assume that arguments are being evaluated in a
+           particular order. The oder of evaluation is unspecified.
+
          This is restrictive, but makes the semantics clean, and does
          not interfere with IR optimisation.
 
@@ -1845,9 +1848,9 @@ extern void ppIRJumpKind ( IRJumpKind );
    call does not access guest state.
 
    IMPORTANT NOTE re GUARDS: Dirty calls are strict, very strict.  The
-   arguments are evaluated REGARDLESS of the guard value.  It is
-   unspecified the relative order of arg evaluation and guard
-   evaluation.
+   arguments are evaluated REGARDLESS of the guard value.  The order of
+   argument evaluation is unspecified. The guard expression is evaluated
+   AFTER the arguments have been evaluated.
 */
 
 #define VEX_N_FXSTATE  7   /* enough for FXSAVE/FXRSTOR on x86 */

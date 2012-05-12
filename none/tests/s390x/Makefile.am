@@ -6,7 +6,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
-             trto trot trtt tr tre
+             trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \

@@ -656,13 +656,6 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
 }
 
 
-UInt
-s390_calculate_icc(ULong op, ULong dep1, ULong dep2)
-{
-   return s390_calculate_cc(op, dep1, dep2, 0 /* unused */);
-}
-
-
 /* Note that this does *not* return a Boolean value. The result needs to be
    explicitly tested against zero. */
 UInt

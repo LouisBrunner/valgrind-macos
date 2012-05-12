@@ -177,7 +177,6 @@ enum {
 /*------------------------------------------------------------*/
 UInt s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2,
                        ULong cc_ndep);
-UInt s390_calculate_icc(ULong op, ULong dep1, ULong dep2);
 UInt s390_calculate_cond(ULong mask, ULong op, ULong dep1, ULong dep2,
                          ULong ndep);
 

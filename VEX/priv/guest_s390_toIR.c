@@ -630,21 +630,35 @@ s390_call_calculate_cc(void)
 /* Build IR to calculate the internal condition code for a "compare and branch"
    insn. Returns an expression of type Ity_I32 */
 static IRExpr *
-s390_call_calculate_icc(UInt opc, IRTemp op1, IRTemp op2, Bool sign_extend)
+s390_call_calculate_icc(UInt m, UInt opc, IRTemp op1, IRTemp op2)
 {
-   IRExpr **args, *call, *op, *dep1, *dep2;
+   IRExpr **args, *call, *op, *dep1, *dep2, *mask;
 
+   switch (opc) {
+   case S390_CC_OP_SIGNED_COMPARE:
+      dep1 = s390_cc_widen(op1, True);
+      dep2 = s390_cc_widen(op2, True);
+      break;
+
+   case S390_CC_OP_UNSIGNED_COMPARE:
+      dep1 = s390_cc_widen(op1, False);
+      dep2 = s390_cc_widen(op2, False);
+      break;
+
+   default:
+      vpanic("s390_call_calculate_icc");
+   }
+
+   mask = mkU64(m);
    op   = mkU64(opc);
-   dep1 = s390_cc_widen(op1, sign_extend);
-   dep2 = s390_cc_widen(op2, sign_extend);
 
-   args = mkIRExprVec_3(op, dep1, dep2);
+   args = mkIRExprVec_5(mask, op, dep1, dep2, mkU64(0) /* unused */);
    call = mkIRExprCCall(Ity_I32, 0 /*regparm*/,
-                        "s390_calculate_icc", &s390_calculate_icc, args);
+                        "s390_calculate_cond", &s390_calculate_cond, args);
 
-   /* Exclude OP from definedness checking.  We're only
-      interested in DEP1 and DEP2. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0);
+   /* Exclude the requested condition, OP and NDEP from definedness
+      checking.  We're only interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1<<4);
 
    return call;
 }
@@ -683,10 +697,6 @@ s390_call_calculate_cond(UInt m)
         s390_cc_thunk_put3(op,dep1,dep2,ndep,False)
 #define s390_cc_thunk_putSSS(op,dep1,dep2,ndep) \
         s390_cc_thunk_put3(op,dep1,dep2,ndep,True)
-#define s390_call_calculate_iccZZ(op,dep1,dep2) \
-        s390_call_calculate_icc(op,dep1,dep2,False)
-#define s390_call_calculate_iccSS(op,dep1,dep2) \
-        s390_call_calculate_icc(op,dep1,dep2,True)
 
 
 
@@ -3584,7 +3594,6 @@ s390_irgen_CRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
    IRTemp op2 = newTemp(Ity_I32);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3594,10 +3603,8 @@ s390_irgen_CRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
+                                              op1, op2));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -3611,7 +3618,6 @@ s390_irgen_CGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
    IRTemp op2 = newTemp(Ity_I64);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3621,10 +3627,8 @@ s390_irgen_CGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
+                                              op1, op2));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -3638,7 +3642,6 @@ s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I32);
    IRTemp op2 = newTemp(Ity_I32);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3649,10 +3652,8 @@ s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
+                                              op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -3667,7 +3668,6 @@ s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I64);
    IRTemp op2 = newTemp(Ity_I64);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3678,10 +3678,8 @@ s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
+                                              op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -3696,7 +3694,6 @@ s390_irgen_CIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
    Int op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3706,10 +3703,8 @@ s390_irgen_CIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (Int)(Char)i2;
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                mktemp(Ity_I32, mkU32((UInt)op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
+                                              mktemp(Ity_I32, mkU32((UInt)op2))));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -3723,7 +3718,6 @@ s390_irgen_CGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
    Long op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3733,10 +3727,8 @@ s390_irgen_CGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (Long)(Char)i2;
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                mktemp(Ity_I64, mkU64((ULong)op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
+                                              mktemp(Ity_I64, mkU64((ULong)op2))));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -3750,7 +3742,6 @@ s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
    Int op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3760,10 +3751,8 @@ s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (Int)(Char)i2;
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                mktemp(Ity_I32, mkU32((UInt)op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
+                                              mktemp(Ity_I32, mkU32((UInt)op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -3778,7 +3767,6 @@ s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
    Long op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -3788,10 +3776,8 @@ s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (Long)(Char)i2;
-         assign(icc, s390_call_calculate_iccSS(S390_CC_OP_SIGNED_COMPARE, op1,
-                mktemp(Ity_I64, mkU64((ULong)op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
+                                              mktemp(Ity_I64, mkU64((ULong)op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -4255,7 +4241,6 @@ s390_irgen_CLRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
    IRTemp op2 = newTemp(Ity_I32);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4265,10 +4250,8 @@ s390_irgen_CLRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
+                                              op1, op2));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -4282,7 +4265,6 @@ s390_irgen_CLGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
    IRTemp op2 = newTemp(Ity_I64);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4292,10 +4274,8 @@ s390_irgen_CLGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
+                                              op1, op2));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -4309,7 +4289,6 @@ s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I32);
    IRTemp op2 = newTemp(Ity_I32);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4319,10 +4298,8 @@ s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
+                                              op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -4337,7 +4314,6 @@ s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I64);
    IRTemp op2 = newTemp(Ity_I64);
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4347,10 +4323,8 @@ s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                op2));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
+                                              op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -4365,7 +4339,6 @@ s390_irgen_CLIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
    UInt op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4375,10 +4348,8 @@ s390_irgen_CLIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (UInt)i2;
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                mktemp(Ity_I32, mkU32(op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
+                                              mktemp(Ity_I32, mkU32(op2))));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -4392,7 +4363,6 @@ s390_irgen_CLGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
    ULong op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4402,10 +4372,8 @@ s390_irgen_CLGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (ULong)i2;
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                mktemp(Ity_I64, mkU64(op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
+                                              mktemp(Ity_I64, mkU64(op2))));
          if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
                                         mkU32(0)), mkexpr(op4addr));
       }
@@ -4419,7 +4387,6 @@ s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
    UInt op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4429,10 +4396,8 @@ s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (UInt)i2;
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                mktemp(Ity_I32, mkU32(op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
+                                              mktemp(Ity_I32, mkU32(op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 
@@ -4447,7 +4412,6 @@ s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
    ULong op2;
-   IRTemp icc = newTemp(Ity_I32);
    IRTemp cond = newTemp(Ity_I32);
 
    if (m3 == 0) {
@@ -4457,10 +4421,8 @@ s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (ULong)i2;
-         assign(icc, s390_call_calculate_iccZZ(S390_CC_OP_UNSIGNED_COMPARE, op1,
-                mktemp(Ity_I64, mkU64(op2))));
-         assign(cond, binop(Iop_And32, binop(Iop_Shl32, mkU32(m3),
-                unop(Iop_32to8, mkexpr(icc))), mkU32(8)));
+         assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
+                                              mktemp(Ity_I64, mkU64(op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
                            guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
 

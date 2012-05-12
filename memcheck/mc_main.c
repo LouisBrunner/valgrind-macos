@@ -6113,6 +6113,10 @@ static void mc_post_clo_init ( void )
       tl_assert(ocacheL1 == NULL);
       tl_assert(ocacheL2 == NULL);
    }
+
+   /* Do not check definedness of guest state if --undef-value-errors=no */
+   if (MC_(clo_mc_level) >= 2)
+      VG_(track_pre_reg_read) ( mc_pre_reg_read );
 }
 
 static void print_SM_info(char* type, int n_SMs)
@@ -6412,9 +6416,6 @@ static void mc_pre_clo_init(void)
    VG_(track_pre_mem_read_asciiz) ( check_mem_is_defined_asciiz );
    VG_(track_pre_mem_write)       ( check_mem_is_addressable );
    VG_(track_post_mem_write)      ( mc_post_mem_write );
-
-   if (MC_(clo_mc_level) >= 2)
-      VG_(track_pre_reg_read)     ( mc_pre_reg_read );
 
    VG_(track_post_reg_write)                  ( mc_post_reg_write );
    VG_(track_post_reg_write_clientcall_return)( mc_post_reg_write_clientcall );

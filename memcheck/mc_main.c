@@ -1532,7 +1532,8 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
          PROF_EVENT(160, "set_address_range_perms-loop64K-free-dist-sm");
          // Free the non-distinguished sec-map that we're replacing.  This
          // case happens moderately often, enough to be worthwhile.
-         VG_(am_munmap_valgrind)((Addr)*sm_ptr, sizeof(SecMap));
+         SysRes sres = VG_(am_munmap_valgrind)((Addr)*sm_ptr, sizeof(SecMap));
+         tl_assert2(! sr_isError(sres), "SecMap valgrind munmap failure\n");
       }
       update_SM_counts(*sm_ptr, example_dsm);
       // Make the sec-map entry point to the example DSM

@@ -50,15 +50,6 @@
 #include "memcheck.h"   /* for client requests */
 
 
-/* We really want this frame-pointer-less on all platforms, since the
-   helper functions are small and called very frequently.  By default
-   on x86-linux, though, Makefile.all.am doesn't specify it, so do it
-   here.  Requires gcc >= 4.4, unfortunately. */
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
-# pragma GCC optimize("-fomit-frame-pointer")
-#endif
-
-
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0
 

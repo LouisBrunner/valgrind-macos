@@ -101,6 +101,7 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
 298394  s390x: Don't bail out on an unknown machine model. Assume it's a new model.
 298943  massif asserts with --pages-as-heap=yes when brk is changing by value different of page size
 299756  for symmetry, --free-fill must be ignored for MEMPOOL_FREE and FREELIKE client requests
+n-i-bz  bypass gcc4.4/4.5 wrong code generation causing out of memory or asserts
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

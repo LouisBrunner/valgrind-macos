@@ -195,24 +195,33 @@ static
 HChar* name_of_sched_event ( UInt event )
 {
    switch (event) {
-      case VEX_TRC_JMP_SYS_SYSCALL:   return "SYSCALL";
-      case VEX_TRC_JMP_SYS_INT32:     return "INT32";
-      case VEX_TRC_JMP_SYS_INT128:    return "INT128";
-      case VEX_TRC_JMP_SYS_INT129:    return "INT129";
-      case VEX_TRC_JMP_SYS_INT130:    return "INT130";
-      case VEX_TRC_JMP_SYS_SYSENTER:  return "SYSENTER";
-      case VEX_TRC_JMP_CLIENTREQ:     return "CLIENTREQ";
-      case VEX_TRC_JMP_YIELD:         return "YIELD";
-      case VEX_TRC_JMP_NODECODE:      return "NODECODE";
-      case VEX_TRC_JMP_MAPFAIL:       return "MAPFAIL";
-      case VEX_TRC_JMP_NOREDIR:       return "NOREDIR";
-      case VEX_TRC_JMP_EMWARN:        return "EMWARN";
-      case VEX_TRC_JMP_TINVAL:        return "TINVAL";
-      case VG_TRC_INVARIANT_FAILED:   return "INVFAILED";
-      case VG_TRC_INNER_COUNTERZERO:  return "COUNTERZERO";
-      case VG_TRC_INNER_FASTMISS:     return "FASTMISS";
-      case VG_TRC_FAULT_SIGNAL:       return "FAULTSIGNAL";
-      default:                        return "??UNKNOWN??";
+      case VEX_TRC_JMP_TINVAL:         return "TINVAL";
+      case VEX_TRC_JMP_NOREDIR:        return "NOREDIR";
+      case VEX_TRC_JMP_SIGTRAP:        return "SIGTRAP";
+      case VEX_TRC_JMP_SIGSEGV:        return "SIGSEGV";
+      case VEX_TRC_JMP_SIGBUS:         return "SIGBUS";
+      case VEX_TRC_JMP_EMWARN:         return "EMWARN";
+      case VEX_TRC_JMP_EMFAIL:         return "EMFAIL";
+      case VEX_TRC_JMP_CLIENTREQ:      return "CLIENTREQ";
+      case VEX_TRC_JMP_YIELD:          return "YIELD";
+      case VEX_TRC_JMP_NODECODE:       return "NODECODE";
+      case VEX_TRC_JMP_MAPFAIL:        return "MAPFAIL";
+      case VEX_TRC_JMP_SYS_SYSCALL:    return "SYSCALL";
+      case VEX_TRC_JMP_SYS_INT32:      return "INT32";
+      case VEX_TRC_JMP_SYS_INT128:     return "INT128";
+      case VEX_TRC_JMP_SYS_INT129:     return "INT129";
+      case VEX_TRC_JMP_SYS_INT130:     return "INT130";
+      case VEX_TRC_JMP_SYS_SYSENTER:   return "SYSENTER";
+      case VEX_TRC_JMP_BORING:         return "VEX_BORING";
+
+      case VG_TRC_BORING:              return "VG_BORING";
+      case VG_TRC_INNER_FASTMISS:      return "FASTMISS";
+      case VG_TRC_INNER_COUNTERZERO:   return "COUNTERZERO";
+      case VG_TRC_FAULT_SIGNAL:        return "FAULTSIGNAL";
+      case VG_TRC_INVARIANT_FAILED:    return "INVFAILED";
+      case VG_TRC_CHAIN_ME_TO_SLOW_EP: return "CHAIN_ME_SLOW";
+      case VG_TRC_CHAIN_ME_TO_FAST_EP: return "CHAIN_ME_FAST";
+      default:                         return "??UNKNOWN??";
   }
 }
 

@@ -74,6 +74,7 @@ where XXXXXX is the bug number as listed below.
 270796  s390x: Removed broken support for the TS insn
 271438  Fix configure for proper SSE4.2 detection
 273114  s390x: Support TR, TRE, TROO, TROT, TRTO, and TRTT instructions
+274078  improved configure logic for mpicc
 276993  fix mremap 'no thrash checks' 
 281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
 282230  group allocator for small fixed size, use it for MC_Chunk/SEc vbit

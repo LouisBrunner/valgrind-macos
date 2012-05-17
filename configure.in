@@ -1769,12 +1769,18 @@ elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
   mflag_primary=$FLAG_M64
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
+  mflag_primary="$FLAG_M32 -arch i386"
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN ; then
+  mflag_primary="$FLAG_M64 -arch x86_64"
 fi
 
 mflag_secondary=
 if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX ; then
   mflag_secondary=$FLAG_M32
+elif test x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN ; then
+  mflag_secondary="$FLAG_M32 -arch i386"
 fi
 
 
@@ -1784,19 +1790,39 @@ AC_ARG_WITH(mpicc,
 )
 AC_SUBST(MPI_CC)
 
+## We AM_COND_IF here instead of automake "if" in mpi/Makefile.am so that we can
+## use these values in the check for a functioning mpicc.
+##
+## We leave the MPI_FLAG_M3264_ logic in mpi/Makefile.am and assume that
+## mflag_primary/mflag_secondary are sufficient approximations of that behavior
+AM_COND_IF([VGCONF_OS_IS_LINUX],
+           [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -fpic"
+            LDFLAGS_MPI="-fpic -shared"])
+AM_COND_IF([VGCONF_OS_IS_DARWIN],
+           [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -dynamic"
+            LDFLAGS_MPI="-dynamic -dynamiclib -all_load"])
+
+AC_SUBST([CFLAGS_MPI])
+AC_SUBST([LDFLAGS_MPI])
+
+
 ## See if MPI_CC works for the primary target
 ##
 AC_MSG_CHECKING([primary target for usable MPI2-compliant C compiler and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
-CFLAGS=$mflag_primary
+CFLAGS="$CFLAGS_MPI $mflag_primary"
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS_MPI $mflag_primary"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <mpi.h>
 #include <stdio.h>
 ]], [[
+  int ni, na, nd, comb;
   int r = MPI_Init(NULL,NULL);
-  r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+  r |= MPI_Type_get_envelope( MPI_INT, &ni, &na, &nd, &comb );
+  r |= MPI_Finalize();
   return r; 
 ]])], [
 ac_have_mpi2_pri=yes
@@ -1807,6 +1833,7 @@ AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
 CFLAGS=$saved_CFLAGS
+LDFLAGS="$saved_LDFLAGS"
 AM_CONDITIONAL(BUILD_MPIWRAP_PRI, test x$ac_have_mpi2_pri = xyes)
 
 ## See if MPI_CC works for the secondary target.  Complication: what if
@@ -1817,18 +1844,22 @@ AM_CONDITIONAL(BUILD_MPIWRAP_PRI, test x$ac_have_mpi2_pri = xyes)
 AC_MSG_CHECKING([secondary target for usable MPI2-compliant C compiler and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS_MPI $mflag_secondary"
 if test x$VGCONF_PLATFORM_SEC_CAPS = x ; then
   CC="$MPI_CC this will surely fail"
 else
   CC=$MPI_CC
 fi
-CFLAGS=$mflag_secondary
+CFLAGS="$CFLAGS_MPI $mflag_secondary"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <mpi.h>
 #include <stdio.h>
 ]], [[
+  int ni, na, nd, comb;
   int r = MPI_Init(NULL,NULL);
-  r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+  r |= MPI_Type_get_envelope( MPI_INT, &ni, &na, &nd, &comb );
+  r |= MPI_Finalize();
   return r; 
 ]])], [
 ac_have_mpi2_sec=yes
@@ -1839,6 +1870,7 @@ AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
 CFLAGS=$saved_CFLAGS
+LDFLAGS="$saved_LDFLAGS"
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
 

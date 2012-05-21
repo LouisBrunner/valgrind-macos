@@ -4999,36 +4999,42 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
                break;
 
-//..             case 2: /* FCOM single-real */
-//..                DIP("fcoms %s\n", dis_buf);
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, 
-//..                                       get_ST(0),
-//..                                       unop(Iop_F32toF64, 
-//..                                            loadLE(Ity_F32,mkexpr(addr)))),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                break;  
-//.. 
-//..             case 3: /* FCOMP single-real */
-//..                DIP("fcomps %s\n", dis_buf);
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, 
-//..                                       get_ST(0),
-//..                                       unop(Iop_F32toF64, 
-//..                                            loadLE(Ity_F32,mkexpr(addr)))),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                fp_pop();
-//..                break;  
+            case 2: /* FCOM single-real */
+               DIP("fcoms %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               /* The AMD documentation suggests that forcing C1 to
+                  zero is correct (Eliot Moss) */
+               put_C3210( 
+                   unop( Iop_32Uto64,
+                       binop( Iop_And32,
+                              binop(Iop_Shl32, 
+                                    binop(Iop_CmpF64, 
+                                          get_ST(0),
+                                          unop(Iop_F32toF64, 
+                                               loadLE(Ity_F32,mkexpr(addr)))),
+                                    mkU8(8)),
+                              mkU32(0x4500)
+                   )));
+               break;  
+
+            case 3: /* FCOMP single-real */
+               /* The AMD documentation suggests that forcing C1 to
+                  zero is correct (Eliot Moss) */
+               DIP("fcomps %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   unop( Iop_32Uto64,
+                       binop( Iop_And32,
+                              binop(Iop_Shl32, 
+                                    binop(Iop_CmpF64, 
+                                          get_ST(0),
+                                          unop(Iop_F32toF64, 
+                                               loadLE(Ity_F32,mkexpr(addr)))),
+                                    mkU8(8)),
+                              mkU32(0x4500)
+                   )));
+               fp_pop();
+               break;  
 
             case 4: /* FSUB single-real */
                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, False );

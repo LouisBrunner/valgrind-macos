@@ -301,7 +301,7 @@ typedef enum { OpLoad=0, OpStore=1, OpAlu=2 } Op;
 
 /* --- Types --- */
 
-#define N_TYPES 10
+#define N_TYPES 11
 
 static Int type2index ( IRType ty )
 {
@@ -316,6 +316,7 @@ static Int type2index ( IRType ty )
       case Ity_F64:     return 7;
       case Ity_F128:    return 8;
       case Ity_V128:    return 9;
+      case Ity_V256:    return 10;
       default: tl_assert(0);
    }
 }
@@ -333,6 +334,7 @@ static HChar* nameOfTypeIndex ( Int i )
       case 7: return "F64";  break;
       case 8: return "F128";  break;
       case 9: return "V128"; break;
+      case 10: return "V256"; break;
       default: tl_assert(0);
    }
 }

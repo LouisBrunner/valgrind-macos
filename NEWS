@@ -1,6 +1,8 @@
 Release 3.8.0 (????)
 ~~~~~~~~~~~~~~~~~~~~
 
+xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
+
 * ================== PLATFORM CHANGES =================
 
 * Support for intel AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,

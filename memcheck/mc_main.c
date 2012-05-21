@@ -5860,6 +5860,16 @@ UWord VG_REGPARM(1) MC_(helperc_b_load16)( Addr a ) {
    return (UWord)oBoth;
 }
 
+UWord VG_REGPARM(1) MC_(helperc_b_load32)( Addr a ) {
+   UInt oQ0   = (UInt)MC_(helperc_b_load8)( a + 0 );
+   UInt oQ1   = (UInt)MC_(helperc_b_load8)( a + 8 );
+   UInt oQ2   = (UInt)MC_(helperc_b_load8)( a + 16 );
+   UInt oQ3   = (UInt)MC_(helperc_b_load8)( a + 24 );
+   UInt oAll  = merge_origins(merge_origins(oQ0, oQ1),
+                              merge_origins(oQ2, oQ3));
+   return (UWord)oAll;
+}
+
 
 /*--------------------------------------------*/
 /*--- Origin tracking: store handlers      ---*/
@@ -5970,6 +5980,13 @@ void VG_REGPARM(2) MC_(helperc_b_store8)( Addr a, UWord d32 ) {
 void VG_REGPARM(2) MC_(helperc_b_store16)( Addr a, UWord d32 ) {
    MC_(helperc_b_store8)( a + 0, d32 );
    MC_(helperc_b_store8)( a + 8, d32 );
+}
+
+void VG_REGPARM(2) MC_(helperc_b_store32)( Addr a, UWord d32 ) {
+   MC_(helperc_b_store8)( a +  0, d32 );
+   MC_(helperc_b_store8)( a +  8, d32 );
+   MC_(helperc_b_store8)( a + 16, d32 );
+   MC_(helperc_b_store8)( a + 24, d32 );
 }
 
 

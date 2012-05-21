@@ -699,15 +699,15 @@ static void do_pre_run_checks ( ThreadState* tst )
                (void*)a_vexsh2, sz_vexsh2,
                (void*)a_spill, sz_spill );
 
-   vg_assert(VG_IS_16_ALIGNED(sz_vex));
-   vg_assert(VG_IS_16_ALIGNED(sz_vexsh1));
-   vg_assert(VG_IS_16_ALIGNED(sz_vexsh2));
-   vg_assert(VG_IS_16_ALIGNED(sz_spill));
+   vg_assert(VG_IS_32_ALIGNED(sz_vex));
+   vg_assert(VG_IS_32_ALIGNED(sz_vexsh1));
+   vg_assert(VG_IS_32_ALIGNED(sz_vexsh2));
+   vg_assert(VG_IS_32_ALIGNED(sz_spill));
 
-   vg_assert(VG_IS_16_ALIGNED(a_vex));
-   vg_assert(VG_IS_16_ALIGNED(a_vexsh1));
-   vg_assert(VG_IS_16_ALIGNED(a_vexsh2));
-   vg_assert(VG_IS_16_ALIGNED(a_spill));
+   vg_assert(VG_IS_32_ALIGNED(a_vex));
+   vg_assert(VG_IS_32_ALIGNED(a_vexsh1));
+   vg_assert(VG_IS_32_ALIGNED(a_vexsh2));
+   vg_assert(VG_IS_32_ALIGNED(a_spill));
 
    /* Check that the guest state and its two shadows have the same
       size, and that there are no holes in between.  The latter is
@@ -739,14 +739,14 @@ static void do_pre_run_checks ( ThreadState* tst )
 #  endif
 
 #  if defined(VGA_amd64)
-   /* amd64 XMM regs must form an array, ie, have no holes in
+   /* amd64 YMM regs must form an array, ie, have no holes in
       between. */
    vg_assert(
-      (offsetof(VexGuestAMD64State,guest_XMM16)
-       - offsetof(VexGuestAMD64State,guest_XMM0))
-      == (17/*#regs*/-1) * 16/*bytes per reg*/
+      (offsetof(VexGuestAMD64State,guest_YMM16)
+       - offsetof(VexGuestAMD64State,guest_YMM0))
+      == (17/*#regs*/-1) * 32/*bytes per reg*/
    );
-   vg_assert(VG_IS_16_ALIGNED(offsetof(VexGuestAMD64State,guest_XMM0)));
+   vg_assert(VG_IS_32_ALIGNED(offsetof(VexGuestAMD64State,guest_YMM0)));
    vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestAMD64State,guest_FPREG)));
    vg_assert(16 == offsetof(VexGuestAMD64State,guest_RAX));
    vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestAMD64State,guest_RAX)));

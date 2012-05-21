@@ -611,23 +611,23 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(FC3210)   && szB == 8) return -1;
 
    /* XMM registers */
-   if (o >= GOF(XMM0)  && o+sz <= GOF(XMM0) +SZB(XMM0))  return GOF(XMM0);
-   if (o >= GOF(XMM1)  && o+sz <= GOF(XMM1) +SZB(XMM1))  return GOF(XMM1);
-   if (o >= GOF(XMM2)  && o+sz <= GOF(XMM2) +SZB(XMM2))  return GOF(XMM2);
-   if (o >= GOF(XMM3)  && o+sz <= GOF(XMM3) +SZB(XMM3))  return GOF(XMM3);
-   if (o >= GOF(XMM4)  && o+sz <= GOF(XMM4) +SZB(XMM4))  return GOF(XMM4);
-   if (o >= GOF(XMM5)  && o+sz <= GOF(XMM5) +SZB(XMM5))  return GOF(XMM5);
-   if (o >= GOF(XMM6)  && o+sz <= GOF(XMM6) +SZB(XMM6))  return GOF(XMM6);
-   if (o >= GOF(XMM7)  && o+sz <= GOF(XMM7) +SZB(XMM7))  return GOF(XMM7);
-   if (o >= GOF(XMM8)  && o+sz <= GOF(XMM8) +SZB(XMM8))  return GOF(XMM8);
-   if (o >= GOF(XMM9)  && o+sz <= GOF(XMM9) +SZB(XMM9))  return GOF(XMM9);
-   if (o >= GOF(XMM10) && o+sz <= GOF(XMM10)+SZB(XMM10)) return GOF(XMM10);
-   if (o >= GOF(XMM11) && o+sz <= GOF(XMM11)+SZB(XMM11)) return GOF(XMM11);
-   if (o >= GOF(XMM12) && o+sz <= GOF(XMM12)+SZB(XMM12)) return GOF(XMM12);
-   if (o >= GOF(XMM13) && o+sz <= GOF(XMM13)+SZB(XMM13)) return GOF(XMM13);
-   if (o >= GOF(XMM14) && o+sz <= GOF(XMM14)+SZB(XMM14)) return GOF(XMM14);
-   if (o >= GOF(XMM15) && o+sz <= GOF(XMM15)+SZB(XMM15)) return GOF(XMM15);
-   if (o >= GOF(XMM16) && o+sz <= GOF(XMM16)+SZB(XMM16)) return GOF(XMM16);
+   if (o >= GOF(YMM0)  && o+sz <= GOF(YMM0) +SZB(YMM0))  return GOF(YMM0);
+   if (o >= GOF(YMM1)  && o+sz <= GOF(YMM1) +SZB(YMM1))  return GOF(YMM1);
+   if (o >= GOF(YMM2)  && o+sz <= GOF(YMM2) +SZB(YMM2))  return GOF(YMM2);
+   if (o >= GOF(YMM3)  && o+sz <= GOF(YMM3) +SZB(YMM3))  return GOF(YMM3);
+   if (o >= GOF(YMM4)  && o+sz <= GOF(YMM4) +SZB(YMM4))  return GOF(YMM4);
+   if (o >= GOF(YMM5)  && o+sz <= GOF(YMM5) +SZB(YMM5))  return GOF(YMM5);
+   if (o >= GOF(YMM6)  && o+sz <= GOF(YMM6) +SZB(YMM6))  return GOF(YMM6);
+   if (o >= GOF(YMM7)  && o+sz <= GOF(YMM7) +SZB(YMM7))  return GOF(YMM7);
+   if (o >= GOF(YMM8)  && o+sz <= GOF(YMM8) +SZB(YMM8))  return GOF(YMM8);
+   if (o >= GOF(YMM9)  && o+sz <= GOF(YMM9) +SZB(YMM9))  return GOF(YMM9);
+   if (o >= GOF(YMM10) && o+sz <= GOF(YMM10)+SZB(YMM10)) return GOF(YMM10);
+   if (o >= GOF(YMM11) && o+sz <= GOF(YMM11)+SZB(YMM11)) return GOF(YMM11);
+   if (o >= GOF(YMM12) && o+sz <= GOF(YMM12)+SZB(YMM12)) return GOF(YMM12);
+   if (o >= GOF(YMM13) && o+sz <= GOF(YMM13)+SZB(YMM13)) return GOF(YMM13);
+   if (o >= GOF(YMM14) && o+sz <= GOF(YMM14)+SZB(YMM14)) return GOF(YMM14);
+   if (o >= GOF(YMM15) && o+sz <= GOF(YMM15)+SZB(YMM15)) return GOF(YMM15);
+   if (o >= GOF(YMM16) && o+sz <= GOF(YMM16)+SZB(YMM16)) return GOF(YMM16);
 
    /* MMX accesses to FP regs.  Need to allow for 32-bit references
       due to dirty helpers for frstor etc, which reference the entire

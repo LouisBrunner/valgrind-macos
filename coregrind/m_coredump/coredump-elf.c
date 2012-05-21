@@ -417,7 +417,8 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 //::    fpu->mxcsr_mask = ?;
 //::    fpu->st_space = ?;
 
-#  define DO(n)  VG_(memcpy)(fpu->xmm_space + n * 4, &arch->vex.guest_XMM##n, sizeof(arch->vex.guest_XMM##n))
+#  define DO(n)  VG_(memcpy)(fpu->xmm_space + n * 4, \
+                             &arch->vex.guest_YMM##n[0], 16)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
 #  undef DO

@@ -251,22 +251,22 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 37: *mod = False; break; // GDBTD ??? equivalent of foseg
    case 38: *mod = False; break; // GDBTD ??? equivalent of fooff
    case 39: *mod = False; break; // GDBTD ??? equivalent of fop
-   case 40: VG_(transfer) (&amd64->guest_XMM0,  buf, dir, size, mod); break;
-   case 41: VG_(transfer) (&amd64->guest_XMM1,  buf, dir, size, mod); break;
-   case 42: VG_(transfer) (&amd64->guest_XMM2,  buf, dir, size, mod); break;
-   case 43: VG_(transfer) (&amd64->guest_XMM3,  buf, dir, size, mod); break;
-   case 44: VG_(transfer) (&amd64->guest_XMM4,  buf, dir, size, mod); break;
-   case 45: VG_(transfer) (&amd64->guest_XMM5,  buf, dir, size, mod); break;
-   case 46: VG_(transfer) (&amd64->guest_XMM6,  buf, dir, size, mod); break;
-   case 47: VG_(transfer) (&amd64->guest_XMM7,  buf, dir, size, mod); break;
-   case 48: VG_(transfer) (&amd64->guest_XMM8,  buf, dir, size, mod); break;
-   case 49: VG_(transfer) (&amd64->guest_XMM9,  buf, dir, size, mod); break;
-   case 50: VG_(transfer) (&amd64->guest_XMM10, buf, dir, size, mod); break;
-   case 51: VG_(transfer) (&amd64->guest_XMM11, buf, dir, size, mod); break;
-   case 52: VG_(transfer) (&amd64->guest_XMM12, buf, dir, size, mod); break;
-   case 53: VG_(transfer) (&amd64->guest_XMM13, buf, dir, size, mod); break;
-   case 54: VG_(transfer) (&amd64->guest_XMM14, buf, dir, size, mod); break;
-   case 55: VG_(transfer) (&amd64->guest_XMM15, buf, dir, size, mod); break;
+   case 40: VG_(transfer) (&amd64->guest_YMM0[0],  buf, dir, size, mod); break;
+   case 41: VG_(transfer) (&amd64->guest_YMM1[0],  buf, dir, size, mod); break;
+   case 42: VG_(transfer) (&amd64->guest_YMM2[0],  buf, dir, size, mod); break;
+   case 43: VG_(transfer) (&amd64->guest_YMM3[0],  buf, dir, size, mod); break;
+   case 44: VG_(transfer) (&amd64->guest_YMM4[0],  buf, dir, size, mod); break;
+   case 45: VG_(transfer) (&amd64->guest_YMM5[0],  buf, dir, size, mod); break;
+   case 46: VG_(transfer) (&amd64->guest_YMM6[0],  buf, dir, size, mod); break;
+   case 47: VG_(transfer) (&amd64->guest_YMM7[0],  buf, dir, size, mod); break;
+   case 48: VG_(transfer) (&amd64->guest_YMM8[0],  buf, dir, size, mod); break;
+   case 49: VG_(transfer) (&amd64->guest_YMM9[0],  buf, dir, size, mod); break;
+   case 50: VG_(transfer) (&amd64->guest_YMM10[0], buf, dir, size, mod); break;
+   case 51: VG_(transfer) (&amd64->guest_YMM11[0], buf, dir, size, mod); break;
+   case 52: VG_(transfer) (&amd64->guest_YMM12[0], buf, dir, size, mod); break;
+   case 53: VG_(transfer) (&amd64->guest_YMM13[0], buf, dir, size, mod); break;
+   case 54: VG_(transfer) (&amd64->guest_YMM14[0], buf, dir, size, mod); break;
+   case 55: VG_(transfer) (&amd64->guest_YMM15[0], buf, dir, size, mod); break;
    case 56: 
       if (dir == valgrind_to_gdbserver) {
          // vex only models the rounding bits (see libvex_guest_x86.h)

@@ -549,11 +549,13 @@ VG_REGPARM(2) void  MC_(helperc_b_store2) ( Addr a, UWord d32 );
 VG_REGPARM(2) void  MC_(helperc_b_store4) ( Addr a, UWord d32 );
 VG_REGPARM(2) void  MC_(helperc_b_store8) ( Addr a, UWord d32 );
 VG_REGPARM(2) void  MC_(helperc_b_store16)( Addr a, UWord d32 );
+VG_REGPARM(2) void  MC_(helperc_b_store32)( Addr a, UWord d32 );
 VG_REGPARM(1) UWord MC_(helperc_b_load1) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load2) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load4) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load8) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load16)( Addr a );
+VG_REGPARM(1) UWord MC_(helperc_b_load32)( Addr a );
 
 /* Functions defined in mc_translate.c */
 IRSB* MC_(instrument) ( VgCallbackClosure* closure,

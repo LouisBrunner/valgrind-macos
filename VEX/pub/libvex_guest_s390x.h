@@ -149,11 +149,12 @@ typedef struct {
    /*  424 */  ULong host_EvC_FAILADDR;
 
 /*------------------------------------------------------------*/
-/*--- Force alignment to 16 bytes                          ---*/
+/*--- Force alignment to 32 bytes                          ---*/
 /*------------------------------------------------------------*/
-   /* No padding needed */
+   /*  432 */  ULong padding1;
+   /*  440 */  ULong padding2;
 
-   /*  432 */  /* This is the size of the guest state */
+   /*  448 */  /* This is the size of the guest state */
 } VexGuestS390XState;
 
 

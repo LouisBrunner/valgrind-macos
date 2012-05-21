@@ -1075,6 +1075,9 @@ static HChar* show_hwcaps_amd64 ( UInt hwcaps )
       case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
            | VEX_HWCAPS_AMD64_AVX:
          return "amd64-sse3-cx16-avx";
+      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
+           | VEX_HWCAPS_AMD64_LZCNT | VEX_HWCAPS_AMD64_AVX:
+         return "amd64-sse3-cx16-lzcnt-avx";
       default:
          return NULL;
    }

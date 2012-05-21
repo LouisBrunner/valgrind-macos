@@ -1055,6 +1055,7 @@ static HChar* show_hwcaps_amd64 ( UInt hwcaps )
       very stupid.  We should add strings independently based on
       feature bits, but then it would be hard to return a string that
       didn't need deallocating by the caller.) */
+   /* FIXME: show_hwcaps_s390x is a much better way to do this. */
    switch (hwcaps) {
       case 0:
          return "amd64-sse2";

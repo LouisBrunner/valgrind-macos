@@ -72,6 +72,11 @@ void ppHRegAMD64 ( HReg reg )
          vassert(r >= 0 && r < 16);
          vex_printf("%%xmm%d", r);
          return;
+      case HRcVec256:
+         r = hregNumber(reg);
+         vassert(r >= 0 && r < 16);
+         vex_printf("%%ymm%d", r);
+         return;
       default:
          vpanic("ppHRegAMD64");
    }
@@ -120,7 +125,6 @@ HReg hregAMD64_R15 ( void ) { return mkHReg(15, HRcInt64, False); }
 
 HReg hregAMD64_XMM0  ( void ) { return mkHReg( 0, HRcVec128, False); }
 HReg hregAMD64_XMM1  ( void ) { return mkHReg( 1, HRcVec128, False); }
-HReg hregAMD64_XMM2  ( void ) { return mkHReg( 2, HRcVec128, False); }
 HReg hregAMD64_XMM3  ( void ) { return mkHReg( 3, HRcVec128, False); }
 HReg hregAMD64_XMM4  ( void ) { return mkHReg( 4, HRcVec128, False); }
 HReg hregAMD64_XMM5  ( void ) { return mkHReg( 5, HRcVec128, False); }
@@ -131,9 +135,11 @@ HReg hregAMD64_XMM9  ( void ) { return mkHReg( 9, HRcVec128, False); }
 HReg hregAMD64_XMM10 ( void ) { return mkHReg(10, HRcVec128, False); }
 HReg hregAMD64_XMM11 ( void ) { return mkHReg(11, HRcVec128, False); }
 HReg hregAMD64_XMM12 ( void ) { return mkHReg(12, HRcVec128, False); }
-HReg hregAMD64_XMM13 ( void ) { return mkHReg(13, HRcVec128, False); }
-HReg hregAMD64_XMM14 ( void ) { return mkHReg(14, HRcVec128, False); }
-HReg hregAMD64_XMM15 ( void ) { return mkHReg(15, HRcVec128, False); }
+
+HReg hregAMD64_YMM2  ( void ) { return mkHReg( 2, HRcVec256, False); }
+HReg hregAMD64_YMM13 ( void ) { return mkHReg(13, HRcVec256, False); }
+HReg hregAMD64_YMM14 ( void ) { return mkHReg(14, HRcVec256, False); }
+HReg hregAMD64_YMM15 ( void ) { return mkHReg(15, HRcVec256, False); }
 
 
 void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
@@ -980,6 +986,23 @@ AMD64Instr* AMD64Instr_SseShuf ( Int order, HReg src, HReg dst ) {
    vassert(order >= 0 && order <= 0xFF);
    return i;
 }
+AMD64Instr* AMD64Instr_AvxLdSt ( Bool isLoad,
+                                 HReg reg, AMD64AMode* addr ) {
+   AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag                = Ain_AvxLdSt;
+   i->Ain.AvxLdSt.isLoad = isLoad;
+   i->Ain.AvxLdSt.reg    = reg;
+   i->Ain.AvxLdSt.addr   = addr;
+   return i;
+}
+AMD64Instr* AMD64Instr_AvxReRg ( AMD64SseOp op, HReg re, HReg rg ) {
+   AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag             = Ain_AvxReRg;
+   i->Ain.AvxReRg.op  = op;
+   i->Ain.AvxReRg.src = re;
+   i->Ain.AvxReRg.dst = rg;
+   return i;
+}
 AMD64Instr* AMD64Instr_EvCheck ( AMD64AMode* amCounter,
                                  AMD64AMode* amFailAddr ) {
    AMD64Instr* i             = LibVEX_Alloc(sizeof(AMD64Instr));
@@ -1275,6 +1298,25 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          vex_printf(",");
          ppHRegAMD64(i->Ain.SseShuf.dst);
          return;
+
+      case Ain_AvxLdSt:
+         vex_printf("vmovups ");
+         if (i->Ain.AvxLdSt.isLoad) {
+            ppAMD64AMode(i->Ain.AvxLdSt.addr);
+            vex_printf(",");
+            ppHRegAMD64(i->Ain.AvxLdSt.reg);
+         } else {
+            ppHRegAMD64(i->Ain.AvxLdSt.reg);
+            vex_printf(",");
+            ppAMD64AMode(i->Ain.AvxLdSt.addr);
+         }
+         return;
+      case Ain_AvxReRg:
+         vex_printf("v%s ", showAMD64SseOp(i->Ain.SseReRg.op));
+         ppHRegAMD64(i->Ain.AvxReRg.src);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.AvxReRg.dst);
+         return;
       case Ain_EvCheck:
          vex_printf("(evCheck) decl ");
          ppAMD64AMode(i->Ain.EvCheck.amCounter);
@@ -1360,7 +1402,7 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          /* First off, claim it trashes all the caller-saved regs
             which fall within the register allocator's jurisdiction.
             These I believe to be: rax rcx rdx rsi rdi r8 r9 r10 r11 
-            and all the xmm registers.
+            and all the xmm/ymm registers.
          */
          addHRegUse(u, HRmWrite, hregAMD64_RAX());
          addHRegUse(u, HRmWrite, hregAMD64_RCX());
@@ -1373,7 +1415,6 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregAMD64_R11());
          addHRegUse(u, HRmWrite, hregAMD64_XMM0());
          addHRegUse(u, HRmWrite, hregAMD64_XMM1());
-         addHRegUse(u, HRmWrite, hregAMD64_XMM2());
          addHRegUse(u, HRmWrite, hregAMD64_XMM3());
          addHRegUse(u, HRmWrite, hregAMD64_XMM4());
          addHRegUse(u, HRmWrite, hregAMD64_XMM5());
@@ -1384,9 +1425,10 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregAMD64_XMM10());
          addHRegUse(u, HRmWrite, hregAMD64_XMM11());
          addHRegUse(u, HRmWrite, hregAMD64_XMM12());
-         addHRegUse(u, HRmWrite, hregAMD64_XMM13());
-         addHRegUse(u, HRmWrite, hregAMD64_XMM14());
-         addHRegUse(u, HRmWrite, hregAMD64_XMM15());
+         addHRegUse(u, HRmWrite, hregAMD64_YMM2());
+         addHRegUse(u, HRmWrite, hregAMD64_YMM13());
+         addHRegUse(u, HRmWrite, hregAMD64_YMM14());
+         addHRegUse(u, HRmWrite, hregAMD64_YMM15());
 
          /* Now we have to state any parameter-carrying registers
             which might be read.  This depends on the regparmness. */
@@ -1567,6 +1609,24 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          addHRegUse(u, HRmRead,  i->Ain.SseShuf.src);
          addHRegUse(u, HRmWrite, i->Ain.SseShuf.dst);
          return;
+      case Ain_AvxLdSt:
+         addRegUsage_AMD64AMode(u, i->Ain.AvxLdSt.addr);
+         addHRegUse(u, i->Ain.AvxLdSt.isLoad ? HRmWrite : HRmRead,
+                       i->Ain.AvxLdSt.reg);
+         return;
+      case Ain_AvxReRg:
+         if ( (i->Ain.AvxReRg.op == Asse_XOR
+               || i->Ain.AvxReRg.op == Asse_CMPEQ32)
+              && i->Ain.AvxReRg.src == i->Ain.AvxReRg.dst) {
+            /* See comments on the case for Ain_SseReRg. */
+            addHRegUse(u, HRmWrite, i->Ain.AvxReRg.dst);
+         } else {
+            addHRegUse(u, HRmRead, i->Ain.AvxReRg.src);
+            addHRegUse(u, i->Ain.AvxReRg.op == Asse_MOV 
+                             ? HRmWrite : HRmModify, 
+                          i->Ain.AvxReRg.dst);
+         }
+         return;
       case Ain_EvCheck:
          /* We expect both amodes only to mention %rbp, so this is in
             fact pointless, since %rbp isn't allocatable, but anyway.. */
@@ -1742,6 +1802,14 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          mapReg(m, &i->Ain.SseShuf.src);
          mapReg(m, &i->Ain.SseShuf.dst);
          return;
+      case Ain_AvxLdSt:
+         mapReg(m, &i->Ain.AvxLdSt.reg);
+         mapRegs_AMD64AMode(m, i->Ain.AvxLdSt.addr);
+         break;
+      case Ain_AvxReRg:
+         mapReg(m, &i->Ain.AvxReRg.src);
+         mapReg(m, &i->Ain.AvxReRg.dst);
+         return;
       case Ain_EvCheck:
          /* We expect both amodes only to mention %rbp, so this is in
             fact pointless, since %rbp isn't allocatable, but anyway.. */
@@ -1763,25 +1831,34 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
 */
 Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
 {
-   /* Moves between integer regs */
-   if (i->tag == Ain_Alu64R) {
-      if (i->Ain.Alu64R.op != Aalu_MOV)
+   switch (i->tag) {
+      case Ain_Alu64R:
+         /* Moves between integer regs */
+         if (i->Ain.Alu64R.op != Aalu_MOV)
+            return False;
+         if (i->Ain.Alu64R.src->tag != Armi_Reg)
+            return False;
+         *src = i->Ain.Alu64R.src->Armi.Reg.reg;
+         *dst = i->Ain.Alu64R.dst;
+         return True;
+      case Ain_SseReRg:
+         /* Moves between SSE regs */
+         if (i->Ain.SseReRg.op != Asse_MOV)
+            return False;
+         *src = i->Ain.SseReRg.src;
+         *dst = i->Ain.SseReRg.dst;
+         return True;
+      case Ain_AvxReRg:
+         /* Moves between AVX regs */
+         if (i->Ain.AvxReRg.op != Asse_MOV)
+            return False;
+         *src = i->Ain.AvxReRg.src;
+         *dst = i->Ain.AvxReRg.dst;
+         return True;
+      default:
          return False;
-      if (i->Ain.Alu64R.src->tag != Armi_Reg)
-         return False;
-      *src = i->Ain.Alu64R.src->Armi.Reg.reg;
-      *dst = i->Ain.Alu64R.dst;
-      return True;
    }
-   /* Moves between vector regs */
-   if (i->tag == Ain_SseReRg) {
-      if (i->Ain.SseReRg.op != Asse_MOV)
-         return False;
-      *src = i->Ain.SseReRg.src;
-      *dst = i->Ain.SseReRg.dst;
-      return True;
-   }
-   return False;
+   /*NOTREACHED*/
 }
 
 
@@ -1805,6 +1882,9 @@ void genSpill_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
       case HRcVec128:
          *i1 = AMD64Instr_SseLdSt ( False/*store*/, 16, rreg, am );
          return;
+      case HRcVec256:
+         *i1 = AMD64Instr_AvxLdSt ( False/*store*/, rreg, am );
+         return;
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genSpill_AMD64: unimplemented regclass");
@@ -1826,6 +1906,9 @@ void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          return;
       case HRcVec128:
          *i1 = AMD64Instr_SseLdSt ( True/*load*/, 16, rreg, am );
+         return;
+      case HRcVec256:
+         *i1 = AMD64Instr_AvxLdSt ( True/*load*/, rreg, am );
          return;
       default: 
          ppHRegClass(hregClass(rreg));
@@ -1878,6 +1961,17 @@ static UInt vreg2ireg ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcVec128);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 15);
+   return mkHReg(n, HRcInt64, False);
+}
+
+/* Ditto for ymm regs. */
+static UInt dvreg2ireg ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcVec256);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 15);
@@ -2083,6 +2177,83 @@ static UChar rexAMode_R ( HReg greg, HReg ereg )
    UChar X = 0; /* not relevant */
    UChar B = iregBit3(ereg);
    return toUChar(0x40 + ((W << 3) | (R << 2) | (X << 1) | (B << 0)));
+}
+
+
+/* Assemble a 2 or 3 byte VEX prefix from parts.  rexR, rexX, rexB and
+   notVvvvv need to be not-ed before packing.  mmmmm, rexW, L and pp go
+   in verbatim.  There's no range checking on the bits. */
+static UInt packVexPrefix ( UInt rexR, UInt rexX, UInt rexB,
+                            UInt mmmmm, UInt rexW, UInt notVvvv,
+                            UInt L, UInt pp )
+{
+   UChar byte0 = 0;
+   UChar byte1 = 0;
+   UChar byte2 = 0;
+   if (rexX == 0 && rexB == 0 && mmmmm == 1 && rexW == 0) {
+      /* 2 byte encoding is possible. */
+      byte0 = 0xC5;
+      byte1 = ((rexR ^ 1) << 7) | ((notVvvv ^ 0xF) << 3) 
+              | (L << 2) | pp;
+   } else {
+      /* 3 byte encoding is needed. */
+      byte0 = 0xC4;
+      byte1 = ((rexR ^ 1) << 7) | ((rexX ^ 1) << 6)
+              | ((rexB ^ 1) << 5) | mmmmm;
+      byte2 = (rexW << 7) | ((notVvvv ^ 0xF) << 3) | (L << 2) | pp;
+   }
+   return (((UInt)byte2) << 16) | (((UInt)byte1) << 8) | ((UInt)byte0);
+}
+
+/* Make up a VEX prefix for a (greg,amode) pair.  First byte in bits
+   7:0 of result, second in 15:8, third (for a 3 byte prefix) in
+   23:16.  Has m-mmmm set to indicate a prefix of 0F, pp set to
+   indicate no SIMD prefix, W=0 (ignore), L=1 (size=256), and
+   vvvv=1111 (unused 3rd reg). */
+static UInt vexAMode_M ( HReg greg, AMD64AMode* am )
+{
+   UChar L       = 1; /* size = 256 */
+   UChar pp      = 0; /* no SIMD prefix */
+   UChar mmmmm   = 1; /* 0F */
+   UChar notVvvv = 0; /* unused */
+   UChar rexW    = 0;
+   UChar rexR    = 0;
+   UChar rexX    = 0;
+   UChar rexB    = 0;
+   /* Same logic as in rexAMode_M. */
+   if (am->tag == Aam_IR) {
+      rexR = iregBit3(greg);
+      rexX = 0; /* not relevant */
+      rexB = iregBit3(am->Aam.IR.reg);
+   }
+   else if (am->tag == Aam_IRRS) {
+      rexR = iregBit3(greg);
+      rexX = iregBit3(am->Aam.IRRS.index);
+      rexB = iregBit3(am->Aam.IRRS.base);
+   } else {
+      vassert(0);
+   }
+   return packVexPrefix( rexR, rexX, rexB, mmmmm, rexW, notVvvv, L, pp );
+}
+
+static UChar* emitVexPrefix ( UChar* p, UInt vex )
+{
+   switch (vex & 0xFF) {
+      case 0xC5:
+         *p++ = 0xC5;
+         *p++ = (vex >> 8) & 0xFF;
+         vassert(0 == (vex >> 16));
+         break;
+      case 0xC4:
+         *p++ = 0xC4;
+         *p++ = (vex >> 8) & 0xFF;
+         *p++ = (vex >> 16) & 0xFF;
+         vassert(0 == (vex >> 24));
+         break;
+      default:
+         vassert(0);
+   }
+   return p;
 }
 
 
@@ -3260,6 +3431,15 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                        vreg2ireg(i->Ain.SseShuf.src) );
       *p++ = (UChar)(i->Ain.SseShuf.order);
       goto done;
+
+   case Ain_AvxLdSt: {
+      UInt vex = vexAMode_M( dvreg2ireg(i->Ain.AvxLdSt.reg),
+                             i->Ain.AvxLdSt.addr );
+      p = emitVexPrefix(p, vex);
+      *p++ = toUChar(i->Ain.AvxLdSt.isLoad ? 0x10 : 0x11);
+      p = doAMode_M(p, dvreg2ireg(i->Ain.AvxLdSt.reg), i->Ain.AvxLdSt.addr);
+      goto done;
+   }
 
    case Ain_EvCheck: {
       /* We generate:

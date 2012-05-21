@@ -207,10 +207,13 @@ Int findMostDistantlyMentionedVReg (
 /* Check that this vreg has been assigned a sane spill offset. */
 static inline void sanity_check_spill_offset ( VRegLR* vreg )
 {
-   if (vreg->reg_class == HRcVec128 || vreg->reg_class == HRcFlt64) {
-      vassert(0 == ((UShort)vreg->spill_offset % 16));
-   } else {
-      vassert(0 == ((UShort)vreg->spill_offset % 8));
+   switch (vreg->reg_class) {
+      case HRcVec256:
+         vassert(0 == ((UShort)vreg->spill_offset % 32)); break;
+      case HRcVec128: case HRcFlt64:
+         vassert(0 == ((UShort)vreg->spill_offset % 16)); break;
+      default:
+         vassert(0 == ((UShort)vreg->spill_offset % 8)); break;
    }
 }
 
@@ -398,9 +401,9 @@ HInstrArray* doRegisterAllocation (
       not at each insn processed. */
    Bool do_sanity_check;
 
-   vassert(0 == (guest_sizeB % 16));
-   vassert(0 == (LibVEX_N_SPILL_BYTES % 16));
-   vassert(0 == (N_SPILL64S % 2));
+   vassert(0 == (guest_sizeB % 32));
+   vassert(0 == (LibVEX_N_SPILL_BYTES % 32));
+   vassert(0 == (N_SPILL64S % 4));
 
    /* The live range numbers are signed shorts, and so limiting the
       number of insns to 10000 comfortably guards against them
@@ -790,17 +793,23 @@ HInstrArray* doRegisterAllocation (
 
    /* Each spill slot is 8 bytes long.  For vregs which take more than
       64 bits to spill (classes Flt64 and Vec128), we have to allocate
-      two spill slots.
+      two consecutive spill slots.  For 256 bit registers (class
+      Vec256), we have to allocate four consecutive spill slots.
 
       For Vec128-class on PowerPC, the spill slot's actual address
       must be 16-byte aligned.  Since the spill slot's address is
       computed as an offset from the guest state pointer, and since
       the user of the generated code must set that pointer to a
-      16-aligned value, we have the residual obligation here of
+      32-aligned value, we have the residual obligation here of
       choosing a 16-aligned spill slot offset for Vec128-class values.
       Since each spill slot is 8 bytes long, that means for
       Vec128-class values we must allocated a spill slot number which
       is zero mod 2.
+
+      Similarly, for Vec256 calss on amd64, find a spill slot number
+      which is zero mod 4.  This guarantees it will be 32 byte
+      aligned, which isn't actually necessary on amd64 (we use movUpd
+      etc to spill), but seems like good practice.
 
       Do a rank-based allocation of vregs to spill slot numbers.  We
       put as few values as possible in spill slots, but nevertheless
@@ -821,48 +830,72 @@ HInstrArray* doRegisterAllocation (
       }
 
       /* The spill slots are 64 bits in size.  As per the comment on
-         definition of HRegClass in host_generic_regs.h, that means, to
-         spill a vreg of class Flt64 or Vec128, we'll need to find two
-         adjacent spill slots to use.  Note, this logic needs to kept
-         in sync with the size info on the definition of HRegClass. */
+         definition of HRegClass in host_generic_regs.h, that means,
+         to spill a vreg of class Flt64 or Vec128, we'll need to find
+         two adjacent spill slots to use.  For Vec256, we'll need to
+         find four adjacent slots to use.  Note, this logic needs to
+         kept in sync with the size info on the definition of
+         HRegClass. */
+      switch (vreg_lrs[j].reg_class) {
 
-      if (vreg_lrs[j].reg_class == HRcVec128
-          || vreg_lrs[j].reg_class == HRcFlt64) {
+         case HRcVec256:
+            /* Find four adjacent free slots in which between them
+               provide 256 bits in which to spill the vreg.  Since we
+               are trying to find an 32-byte-aligned slot, move along
+               in steps of 4 (slots). */
+            for (k = 0; k < N_SPILL64S-3; k += 4)
+               if (ss_busy_until_before[k+0] <= vreg_lrs[j].live_after
+                   && ss_busy_until_before[k+1] <= vreg_lrs[j].live_after
+                   && ss_busy_until_before[k+2] <= vreg_lrs[j].live_after
+                   && ss_busy_until_before[k+3] <= vreg_lrs[j].live_after)
+                  break;
+            if (k >= N_SPILL64S-3) {
+               vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
+                      "Increase and recompile.");
+            }
+            if (0) vex_printf("32-byte spill offset in spill slot %d\n",
+                              (Int)k);
+            ss_busy_until_before[k+0] = vreg_lrs[j].dead_before;
+            ss_busy_until_before[k+1] = vreg_lrs[j].dead_before;
+            ss_busy_until_before[k+2] = vreg_lrs[j].dead_before;
+            ss_busy_until_before[k+3] = vreg_lrs[j].dead_before;
+            break;
 
-         /* Find two adjacent free slots in which between them provide
-            up to 128 bits in which to spill the vreg.  Since we are
-            trying to find an even:odd pair, move along in steps of 2
-            (slots). */
+         case HRcVec128: case HRcFlt64:
+            /* Find two adjacent free slots in which between them
+               provide up to 128 bits in which to spill the vreg.
+               Since we are trying to find an even:odd pair, move
+               along in steps of 2 (slots). */
+            for (k = 0; k < N_SPILL64S-1; k += 2)
+               if (ss_busy_until_before[k+0] <= vreg_lrs[j].live_after
+                   && ss_busy_until_before[k+1] <= vreg_lrs[j].live_after)
+                  break;
+            if (k >= N_SPILL64S-1) {
+               vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
+                      "Increase and recompile.");
+            }
+            if (0) vex_printf("16-byte spill offset in spill slot %d\n",
+                              (Int)k);
+            ss_busy_until_before[k+0] = vreg_lrs[j].dead_before;
+            ss_busy_until_before[k+1] = vreg_lrs[j].dead_before;
+            break;
 
-         for (k = 0; k < N_SPILL64S-1; k += 2)
-            if (ss_busy_until_before[k] <= vreg_lrs[j].live_after
-                && ss_busy_until_before[k+1] <= vreg_lrs[j].live_after)
-               break;
-         if (k >= N_SPILL64S-1) {
-            vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
-                   "Increase and recompile.");
-         }
-         if (0) vex_printf("16-byte spill offset in spill slot %d\n", (Int)k);
-         ss_busy_until_before[k+0] = vreg_lrs[j].dead_before;
-         ss_busy_until_before[k+1] = vreg_lrs[j].dead_before;
+         default:
+            /* The ordinary case -- just find a single spill slot. */
+            /* Find the lowest-numbered spill slot which is available
+               at the start point of this interval, and assign the
+               interval to it. */
+            for (k = 0; k < N_SPILL64S; k++)
+               if (ss_busy_until_before[k] <= vreg_lrs[j].live_after)
+                  break;
+            if (k == N_SPILL64S) {
+               vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
+                      "Increase and recompile.");
+            }
+            ss_busy_until_before[k] = vreg_lrs[j].dead_before;
+            break;
 
-      } else {
-
-         /* The ordinary case -- just find a single spill slot. */
-
-         /* Find the lowest-numbered spill slot which is available at
-            the start point of this interval, and assign the interval
-            to it. */
-         for (k = 0; k < N_SPILL64S; k++)
-            if (ss_busy_until_before[k] <= vreg_lrs[j].live_after)
-               break;
-         if (k == N_SPILL64S) {
-            vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
-                   "Increase and recompile.");
-         }
-         ss_busy_until_before[k] = vreg_lrs[j].dead_before;
-
-      }
+      } /* switch (vreg_lrs[j].reg_class) { */
 
       /* This reflects LibVEX's hard-wired knowledge of the baseBlock
          layout: the guest state, then two equal sized areas following

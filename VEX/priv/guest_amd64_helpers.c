@@ -1723,22 +1723,22 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
            _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
       while (0)
 
-   COPY_U128( xmm[0],  gst->guest_XMM0 );
-   COPY_U128( xmm[1],  gst->guest_XMM1 );
-   COPY_U128( xmm[2],  gst->guest_XMM2 );
-   COPY_U128( xmm[3],  gst->guest_XMM3 );
-   COPY_U128( xmm[4],  gst->guest_XMM4 );
-   COPY_U128( xmm[5],  gst->guest_XMM5 );
-   COPY_U128( xmm[6],  gst->guest_XMM6 );
-   COPY_U128( xmm[7],  gst->guest_XMM7 );
-   COPY_U128( xmm[8],  gst->guest_XMM8 );
-   COPY_U128( xmm[9],  gst->guest_XMM9 );
-   COPY_U128( xmm[10], gst->guest_XMM10 );
-   COPY_U128( xmm[11], gst->guest_XMM11 );
-   COPY_U128( xmm[12], gst->guest_XMM12 );
-   COPY_U128( xmm[13], gst->guest_XMM13 );
-   COPY_U128( xmm[14], gst->guest_XMM14 );
-   COPY_U128( xmm[15], gst->guest_XMM15 );
+   COPY_U128( xmm[0],  gst->guest_YMM0 );
+   COPY_U128( xmm[1],  gst->guest_YMM1 );
+   COPY_U128( xmm[2],  gst->guest_YMM2 );
+   COPY_U128( xmm[3],  gst->guest_YMM3 );
+   COPY_U128( xmm[4],  gst->guest_YMM4 );
+   COPY_U128( xmm[5],  gst->guest_YMM5 );
+   COPY_U128( xmm[6],  gst->guest_YMM6 );
+   COPY_U128( xmm[7],  gst->guest_YMM7 );
+   COPY_U128( xmm[8],  gst->guest_YMM8 );
+   COPY_U128( xmm[9],  gst->guest_YMM9 );
+   COPY_U128( xmm[10], gst->guest_YMM10 );
+   COPY_U128( xmm[11], gst->guest_YMM11 );
+   COPY_U128( xmm[12], gst->guest_YMM12 );
+   COPY_U128( xmm[13], gst->guest_YMM13 );
+   COPY_U128( xmm[14], gst->guest_YMM14 );
+   COPY_U128( xmm[15], gst->guest_YMM15 );
 
 #  undef COPY_U128
 }
@@ -1766,22 +1766,22 @@ VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
            _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
       while (0)
 
-   COPY_U128( gst->guest_XMM0, xmm[0] );
-   COPY_U128( gst->guest_XMM1, xmm[1] );
-   COPY_U128( gst->guest_XMM2, xmm[2] );
-   COPY_U128( gst->guest_XMM3, xmm[3] );
-   COPY_U128( gst->guest_XMM4, xmm[4] );
-   COPY_U128( gst->guest_XMM5, xmm[5] );
-   COPY_U128( gst->guest_XMM6, xmm[6] );
-   COPY_U128( gst->guest_XMM7, xmm[7] );
-   COPY_U128( gst->guest_XMM8, xmm[8] );
-   COPY_U128( gst->guest_XMM9, xmm[9] );
-   COPY_U128( gst->guest_XMM10, xmm[10] );
-   COPY_U128( gst->guest_XMM11, xmm[11] );
-   COPY_U128( gst->guest_XMM12, xmm[12] );
-   COPY_U128( gst->guest_XMM13, xmm[13] );
-   COPY_U128( gst->guest_XMM14, xmm[14] );
-   COPY_U128( gst->guest_XMM15, xmm[15] );
+   COPY_U128( gst->guest_YMM0, xmm[0] );
+   COPY_U128( gst->guest_YMM1, xmm[1] );
+   COPY_U128( gst->guest_YMM2, xmm[2] );
+   COPY_U128( gst->guest_YMM3, xmm[3] );
+   COPY_U128( gst->guest_YMM4, xmm[4] );
+   COPY_U128( gst->guest_YMM5, xmm[5] );
+   COPY_U128( gst->guest_YMM6, xmm[6] );
+   COPY_U128( gst->guest_YMM7, xmm[7] );
+   COPY_U128( gst->guest_YMM8, xmm[8] );
+   COPY_U128( gst->guest_YMM9, xmm[9] );
+   COPY_U128( gst->guest_YMM10, xmm[10] );
+   COPY_U128( gst->guest_YMM11, xmm[11] );
+   COPY_U128( gst->guest_YMM12, xmm[12] );
+   COPY_U128( gst->guest_YMM13, xmm[13] );
+   COPY_U128( gst->guest_YMM14, xmm[14] );
+   COPY_U128( gst->guest_YMM15, xmm[15] );
 
 #  undef COPY_U128
 
@@ -3129,11 +3129,10 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    // In all cases, the new OSZACP value is the lowest 16 of
    // the return value.
    if (isxSTRM) {
-      /* gst->guest_XMM0 = resV; */ // gcc don't like that
-      gst->guest_XMM0[0] = resV.w32[0];
-      gst->guest_XMM0[1] = resV.w32[1];
-      gst->guest_XMM0[2] = resV.w32[2];
-      gst->guest_XMM0[3] = resV.w32[3];
+      gst->guest_YMM0[0] = resV.w32[0];
+      gst->guest_YMM0[1] = resV.w32[1];
+      gst->guest_YMM0[2] = resV.w32[2];
+      gst->guest_YMM0[3] = resV.w32[3];
       return resOSZACP & 0x8D5;
    } else {
       UInt newECX = resV.w32[0] & 0xFFFF;
@@ -3507,29 +3506,31 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    /* Initialise the simulated FPU */
    amd64g_dirtyhelper_FINIT( vex_state );
 
-   /* Initialise the SSE state. */
-#  define SSEZERO(_xmm) _xmm[0]=_xmm[1]=_xmm[2]=_xmm[3] = 0;
-
+   /* Initialise the AVX state. */
+#  define AVXZERO(_ymm) \
+      do { _ymm[0]=_ymm[1]=_ymm[2]=_ymm[3] = 0; \
+           _ymm[4]=_ymm[5]=_ymm[6]=_ymm[7] = 0; \
+      } while (0)
    vex_state->guest_SSEROUND = (ULong)Irrm_NEAREST;
-   SSEZERO(vex_state->guest_XMM0);
-   SSEZERO(vex_state->guest_XMM1);
-   SSEZERO(vex_state->guest_XMM2);
-   SSEZERO(vex_state->guest_XMM3);
-   SSEZERO(vex_state->guest_XMM4);
-   SSEZERO(vex_state->guest_XMM5);
-   SSEZERO(vex_state->guest_XMM6);
-   SSEZERO(vex_state->guest_XMM7);
-   SSEZERO(vex_state->guest_XMM8);
-   SSEZERO(vex_state->guest_XMM9);
-   SSEZERO(vex_state->guest_XMM10);
-   SSEZERO(vex_state->guest_XMM11);
-   SSEZERO(vex_state->guest_XMM12);
-   SSEZERO(vex_state->guest_XMM13);
-   SSEZERO(vex_state->guest_XMM14);
-   SSEZERO(vex_state->guest_XMM15);
-   SSEZERO(vex_state->guest_XMM16);
+   AVXZERO(vex_state->guest_YMM0);
+   AVXZERO(vex_state->guest_YMM1);
+   AVXZERO(vex_state->guest_YMM2);
+   AVXZERO(vex_state->guest_YMM3);
+   AVXZERO(vex_state->guest_YMM4);
+   AVXZERO(vex_state->guest_YMM5);
+   AVXZERO(vex_state->guest_YMM6);
+   AVXZERO(vex_state->guest_YMM7);
+   AVXZERO(vex_state->guest_YMM8);
+   AVXZERO(vex_state->guest_YMM9);
+   AVXZERO(vex_state->guest_YMM10);
+   AVXZERO(vex_state->guest_YMM11);
+   AVXZERO(vex_state->guest_YMM12);
+   AVXZERO(vex_state->guest_YMM13);
+   AVXZERO(vex_state->guest_YMM14);
+   AVXZERO(vex_state->guest_YMM15);
+   AVXZERO(vex_state->guest_YMM16);
 
-#  undef SSEZERO
+#  undef AVXZERO
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 

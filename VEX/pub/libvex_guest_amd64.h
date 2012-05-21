@@ -96,28 +96,28 @@ typedef
          associated with a %fs value of zero. */
       /* 200 */ ULong guest_FS_ZERO;
 
-      /* XMM registers.  Note that these must be allocated
+      /* YMM registers.  Note that these must be allocated
          consecutively in order that the SSE4.2 PCMP{E,I}STR{I,M}
-         helpers can treat them as an array.  XMM16 is a fake reg used
+         helpers can treat them as an array.  YMM16 is a fake reg used
          as an intermediary in handling aforementioned insns. */
       /* 208 */ULong guest_SSEROUND;
-      /* 216 */U128  guest_XMM0;
-      U128  guest_XMM1;
-      U128  guest_XMM2;
-      U128  guest_XMM3;
-      U128  guest_XMM4;
-      U128  guest_XMM5;
-      U128  guest_XMM6;
-      U128  guest_XMM7;
-      U128  guest_XMM8;
-      U128  guest_XMM9;
-      U128  guest_XMM10;
-      U128  guest_XMM11;
-      U128  guest_XMM12;
-      U128  guest_XMM13;
-      U128  guest_XMM14;
-      U128  guest_XMM15;
-      U128  guest_XMM16;
+      /* 216 */U256  guest_YMM0;
+      U256  guest_YMM1;
+      U256  guest_YMM2;
+      U256  guest_YMM3;
+      U256  guest_YMM4;
+      U256  guest_YMM5;
+      U256  guest_YMM6;
+      U256  guest_YMM7;
+      U256  guest_YMM8;
+      U256  guest_YMM9;
+      U256  guest_YMM10;
+      U256  guest_YMM11;
+      U256  guest_YMM12;
+      U256  guest_YMM13;
+      U256  guest_YMM14;
+      U256  guest_YMM15;
+      U256  guest_YMM16;
 
       /* FPU */
       /* Note.  Setting guest_FTOP to be ULong messes up the

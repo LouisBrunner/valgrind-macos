@@ -87,6 +87,7 @@ typedef UInt HReg;
                              so won't fit in a 64-bit slot)
       HRcVec64     64 bits
       HRcVec128    128 bits
+      HRcVec256    256 bits
 
    If you add another regclass, you must remember to update
    host_generic_reg_alloc2.c accordingly.
@@ -99,7 +100,8 @@ typedef
       HRcFlt32=5,     /* 32-bit float */
       HRcFlt64=6,     /* 64-bit float */
       HRcVec64=7,     /* 64-bit SIMD */
-      HRcVec128=8     /* 128-bit SIMD */
+      HRcVec128=8,    /* 128-bit SIMD */
+      HRcVec256=9
    }
    HRegClass;
 
@@ -122,7 +124,7 @@ static inline HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual ) {
 static inline HRegClass hregClass ( HReg r ) {
    UInt rc = r;
    rc = (rc >> 28) & 0x0F;
-   vassert(rc >= HRcInt32 && rc <= HRcVec128);
+   vassert(rc >= HRcInt32 && rc <= HRcVec256);
    return (HRegClass)rc;
 }
 

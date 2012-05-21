@@ -231,7 +231,8 @@ typedef
       Ity_D64,   /* 64-bit Decimal floating point */
       Ity_D128,  /* 128-bit Decimal floating point */
       Ity_F128,  /* 128-bit floating point; implementation defined */
-      Ity_V128   /* 128-bit SIMD */
+      Ity_V128,  /* 128-bit SIMD */
+      Ity_V256   /* 256-bit SIMD */
    }
    IRType;
 
@@ -1407,7 +1408,18 @@ typedef
 
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equiwalents for details. */
-      Iop_Recip32x4, Iop_Rsqrte32x4
+      Iop_Recip32x4, Iop_Rsqrte32x4,
+
+      /* ------------------ 256-bit SIMD Integer. ------------------ */
+
+      /* Pack/unpack */
+      Iop_V256to64_0,  // V256 -> I64, extract least sigificant lane
+      Iop_V256to64_1,
+      Iop_V256to64_2,
+      Iop_V256to64_3,  // V256 -> I64, extract most sigificant lane
+
+      Iop_64x4toV256   // (I64,I64,I64,I64)->V256
+                       // first arg is most significant lane
    }
    IROp;
 

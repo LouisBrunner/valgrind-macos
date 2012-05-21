@@ -57,10 +57,11 @@ void ppIRType ( IRType ty )
       case Ity_F32:     vex_printf( "F32");  break;
       case Ity_F64:     vex_printf( "F64");  break;
       case Ity_F128:    vex_printf( "F128"); break;
-      case Ity_V128:    vex_printf( "V128"); break;
       case Ity_D32:     vex_printf( "D32");  break;
       case Ity_D64:     vex_printf( "D64");  break;
       case Ity_D128:    vex_printf( "D128"); break;
+      case Ity_V128:    vex_printf( "V128"); break;
+      case Ity_V256:    vex_printf( "V256"); break;
       default: vex_printf("ty = 0x%x\n", (Int)ty);
                vpanic("ppIRType");
    }
@@ -976,6 +977,11 @@ void ppIROp ( IROp op )
          return;
       case Iop_ReinterpI64asD64: vex_printf("ReinterpI64asD64"); return;
       case Iop_ReinterpD64asI64: vex_printf("ReinterpD64asI64"); return;
+      case Iop_V256to64_0: vex_printf("V256to64_0"); return;
+      case Iop_V256to64_1: vex_printf("V256to64_1"); return;
+      case Iop_V256to64_2: vex_printf("V256to64_2"); return;
+      case Iop_V256to64_3: vex_printf("V256to64_3"); return;
+      case Iop_64x4toV256: vex_printf("64x4toV256"); return;
       default: vpanic("ppIROp(1)");
    }
 
@@ -2724,6 +2730,13 @@ void typeOfPrimop ( IROp op,
       case Iop_DivD128:
          TERNARY(ity_RMode,Ity_D128,Ity_D128, Ity_D128);
 
+      case Iop_V256to64_0: case Iop_V256to64_1:
+      case Iop_V256to64_2: case Iop_V256to64_3:
+         UNARY(Ity_V256, Ity_I64);
+
+      case Iop_64x4toV256:
+         QUATERNARY(Ity_I64, Ity_I64, Ity_I64, Ity_I64, Ity_V256);
+
       default:
          ppIROp(op);
          vpanic("typeOfPrimop");
@@ -2869,7 +2882,7 @@ Bool isPlausibleIRType ( IRType ty )
       case Ity_I64: case Ity_I128:
       case Ity_F32: case Ity_F64: case Ity_F128:
       case Ity_D32: case Ity_D64: case Ity_D128:
-      case Ity_V128:
+      case Ity_V128: case Ity_V256:
          return True;
       default: 
          return False;
@@ -3742,10 +3755,11 @@ Int sizeofIRType ( IRType ty )
       case Ity_F32:  return 4;
       case Ity_F64:  return 8;
       case Ity_F128: return 16;
-      case Ity_V128: return 16;
       case Ity_D32:  return 4;
       case Ity_D64:  return 8;
       case Ity_D128: return 16;
+      case Ity_V128: return 16;
+      case Ity_V256: return 32;
       default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
                vpanic("sizeofIRType");
    }

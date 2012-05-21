@@ -62,6 +62,9 @@ typedef    signed long long int   Long;
 /* Always 128 bits. */
 typedef  UInt  U128[4];
 
+/* Always 256 bits. */
+typedef  UInt  U256[8];
+
 /* A union for doing 128-bit vector primitives conveniently. */
 typedef
    union {

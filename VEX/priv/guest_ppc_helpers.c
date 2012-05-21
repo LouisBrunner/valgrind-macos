@@ -677,6 +677,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_SPRG3_RO = 0;
 
    vex_state->padding2 = 0;
+   vex_state->padding3 = 0;
+   vex_state->padding4 = 0;
 }
 
 

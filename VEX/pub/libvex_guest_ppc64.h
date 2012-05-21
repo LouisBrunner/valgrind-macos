@@ -280,8 +280,11 @@ typedef
          threading on AIX. */
       /* 1648 */ ULong guest_SPRG3_RO;
 
+      /* offsets in comments are wrong ..*/
       /* Padding to make it have an 16-aligned size */
       /* 1656 */ ULong padding2;
+      /* 16XX */ ULong padding3;
+      /* 16XX */ ULong padding4;
    }
    VexGuestPPC64State;
 

@@ -9551,6 +9551,7 @@ static Long dis_CVTPD2PS ( VexAbiInfo* vbi, Prefix pfx,
 }
 
 
+/* FIXME: why not just use InterleaveLO / InterleaveHI ?? */
 static IRTemp math_UNPCKxPS_128 ( IRTemp sV, IRTemp dV, UChar opc )
 {
    IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
@@ -19273,7 +19274,8 @@ Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG (
         /* The actual operation.  Use either 'op' or 'opfn',
            but not both. */
         IROp op, IRTemp(*opFn)(IRTemp,IRTemp),
-        Bool invertLeftArg
+        Bool invertLeftArg,
+        Bool swapArgs
      )
 {
    UChar  modrm = getUChar(delta);
@@ -19307,10 +19309,11 @@ Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG (
    if (op != Iop_INVALID) {
       vassert(opFn == NULL);
       res = newTemp(Ity_V128);
-      assign(res, binop(op, mkexpr(tSL), mkexpr(tSR)));
+      assign(res, swapArgs ? binop(op, mkexpr(tSR), mkexpr(tSL))
+                           : binop(op, mkexpr(tSL), mkexpr(tSR)));
    } else {
       vassert(opFn != NULL);
-      res = opFn(tSL, tSR);
+      res = swapArgs ? opFn(tSR, tSL) : opFn(tSL, tSR);
    }
 
    putYMMRegLoAndZU(rD, mkexpr(res));
@@ -19321,7 +19324,8 @@ Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG (
 
 
 /* Handle a VEX_NDS_128_66_0F_WIG (3-addr) insn, with a simple IROp
-   for the operation, and no inversion of the left arg. */
+   for the operation, no inversion of the left arg, and no swapping of
+   args. */
 static
 Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple (
         /*OUT*/Bool* uses_vvvv, VexAbiInfo* vbi,
@@ -19330,13 +19334,13 @@ Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple (
      )
 {
    return dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
-             uses_vvvv, vbi, pfx, delta, name, op, NULL, False);
+             uses_vvvv, vbi, pfx, delta, name, op, NULL, False, False);
 }
 
 
 /* Handle a VEX_NDS_128_66_0F_WIG (3-addr) insn, using the given IR
-   generator to compute the result, and no inversion of the left
-   arg. */
+   generator to compute the result, no inversion of the left
+   arg, and no swapping of args. */
 static
 Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG_complex (
         /*OUT*/Bool* uses_vvvv, VexAbiInfo* vbi,
@@ -19345,7 +19349,8 @@ Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG_complex (
      )
 {
    return dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
-             uses_vvvv, vbi, pfx, delta, name, Iop_INVALID, opFn, False);
+             uses_vvvv, vbi, pfx, delta, name,
+             Iop_INVALID, opFn, False, False );
 }
 
 
@@ -20026,14 +20031,14 @@ Long dis_ESC_0F__VEX (
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
                     uses_vvvv, vbi, pfx, delta, "vandpd", Iop_AndV128,
-                    NULL, True/*invertLeftArg*/ );
+                    NULL, True/*invertLeftArg*/, False/*swapArgs*/ );
          goto decode_success;
       }
       /* VANDNPS = VEX.NDS.128.0F.WIG 55 /r */
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
                     uses_vvvv, vbi, pfx, delta, "vandps", Iop_AndV128,
-                    NULL, True/*invertLeftArg*/ );
+                    NULL, True/*invertLeftArg*/, False/*swapArgs*/ );
          goto decode_success;
       }
       break;
@@ -20171,6 +20176,32 @@ Long dis_ESC_0F__VEX (
       if (haveF3no66noF2(pfx)) {
          delta = dis_AVX128_E_V_to_G_lo32(
                     uses_vvvv, vbi, pfx, delta, "vmaxss", Iop_Max32F0x4 );
+         goto decode_success;
+      }
+      break;
+
+   case 0x60:
+      /* VPUNPCKLBW r/m, rV, r ::: r = interleave-lo-bytes(rV, r/m) 
+         (MVR format) */
+      /* VPUNPCKLBW = VEX.NDS.128.0F.WIG 60 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
+                    uses_vvvv, vbi, pfx, delta, "vpunpcklbw",
+                    Iop_InterleaveLO8x16, NULL,
+                    False/*!invertLeftArg*/, True/*swapArgs*/ );
+         goto decode_success;
+      }
+      break;
+
+   case 0x68:
+      /* VPUNPCKHBW r/m, rV, r ::: r = interleave-hi-bytes(rV, r/m) 
+         (MVR format) */
+      /* VPUNPCKHBW = VEX.NDS.128.0F.WIG 68 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
+                    uses_vvvv, vbi, pfx, delta, "vpunpckhbw",
+                    Iop_InterleaveHI8x16, NULL,
+                    False/*!invertLeftArg*/, True/*swapArgs*/ );
          goto decode_success;
       }
       break;

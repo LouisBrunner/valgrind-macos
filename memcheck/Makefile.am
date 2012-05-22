@@ -69,6 +69,9 @@ memcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LINK = \
 	$(memcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS)
 endif
 
+# mc_main.c contains the helper function for memcheck that get called
+# all the time. To maximise performance compile with -fomit-frame-pointer
+# Primary beneficiary is x86.
 mc_main.o: CFLAGS += -fomit-frame-pointer
 
 #----------------------------------------------------------------------------
@@ -112,5 +115,10 @@ vgpreload_memcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 endif
 
+# mc_replace_strmem.c runs on the simulated CPU, and it often appears
+# in stack traces shown to the user.  It is built with
+# -fno-omit-frame-pointer so as to guarantee robust backtraces on x86,
+# on which CFI based unwinding is not the "normal" case and so is
+# sometimes fragile.
 mc_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
 

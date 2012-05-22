@@ -151,8 +151,7 @@ typedef struct {
 /*------------------------------------------------------------*/
 /*--- Force alignment to 32 bytes                          ---*/
 /*------------------------------------------------------------*/
-   /*  432 */  ULong padding1;
-   /*  440 */  ULong padding2;
+   /*  432 */  UChar padding[16];
 
    /*  448 */  /* This is the size of the guest state */
 } VexGuestS390XState;

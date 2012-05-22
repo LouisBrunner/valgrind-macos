@@ -141,8 +141,8 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
    state->guest_CC_DEP1 = 0;
    state->guest_CC_DEP2 = 0;
    state->guest_CC_NDEP = 0;
-   state->padding1 = 0;
-   state->padding2 = 0;
+
+   __builtin_memset(state->padding, 0x0, sizeof(state->padding));
 }
 
 

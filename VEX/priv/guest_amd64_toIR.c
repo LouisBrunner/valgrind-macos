@@ -9424,18 +9424,17 @@ static IRTemp math_PSRLDQ ( IRTemp sV, Int imm )
 
 
 static Long dis_CVTxSD2SI ( VexAbiInfo* vbi, Prefix pfx,
-                             Long delta, Bool isAvx, UChar opc, Int sz )
+                            Long delta, Bool isAvx, UChar opc, Int sz )
 {
    vassert(opc == 0x2D/*CVTSD2SI*/ || opc == 0x2C/*CVTTSD2SI*/);
-   Int    alen  = 0;
    HChar  dis_buf[50];
-   UChar  modrm = getUChar(delta);
-   IRTemp addr  = IRTemp_INVALID;
+   Int    alen   = 0;
+   UChar  modrm  = getUChar(delta);
+   IRTemp addr   = IRTemp_INVALID;
    IRTemp rmode  = newTemp(Ity_I32);
    IRTemp f64lo  = newTemp(Ity_F64);
    Bool   r2zero = toBool(opc == 0x2C);
 
-   modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       delta += 1;
       assign(f64lo, getXMMRegLane64F(eregOfRexRM(pfx,modrm), 0));
@@ -9463,10 +9462,63 @@ static Long dis_CVTxSD2SI ( VexAbiInfo* vbi, Prefix pfx,
       putIReg32( gregOfRexRM(pfx,modrm),
                  binop( Iop_F64toI32S, mkexpr(rmode), mkexpr(f64lo)) );
    } else {
+      vassert(sz == 8);
       putIReg64( gregOfRexRM(pfx,modrm),
                  binop( Iop_F64toI64S, mkexpr(rmode), mkexpr(f64lo)) );
    }
 
+   return delta;
+}
+
+
+static Long dis_CVTxSS2SI ( VexAbiInfo* vbi, Prefix pfx,
+                            Long delta, Bool isAvx, UChar opc, Int sz )
+{
+   vassert(opc == 0x2D/*CVTSS2SI*/ || opc == 0x2C/*CVTTSS2SI*/);
+   HChar  dis_buf[50];
+   Int    alen   = 0;
+   UChar  modrm  = getUChar(delta);
+   IRTemp addr   = IRTemp_INVALID;
+   IRTemp rmode  = newTemp(Ity_I32);
+   IRTemp f32lo  = newTemp(Ity_F32);
+   Bool   r2zero = toBool(opc == 0x2C);
+
+   if (epartIsReg(modrm)) {
+      delta += 1;
+      assign(f32lo, getXMMRegLane32F(eregOfRexRM(pfx,modrm), 0));
+      DIP("%scvt%sss2si %s,%s\n", isAvx ? "v" : "", r2zero ? "t" : "",
+                                  nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                  nameIReg(sz, gregOfRexRM(pfx,modrm), 
+                                           False));
+   } else {
+      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+      assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+      delta += alen;
+      DIP("%scvt%sss2si %s,%s\n", isAvx ? "v" : "", r2zero ? "t" : "",
+                                  dis_buf,
+                                  nameIReg(sz, gregOfRexRM(pfx,modrm),
+                                           False));
+   }
+
+   if (r2zero) {
+      assign( rmode, mkU32((UInt)Irrm_ZERO) );
+   } else {
+      assign( rmode, get_sse_roundingmode() );
+   }
+
+   if (sz == 4) {
+      putIReg32( gregOfRexRM(pfx,modrm),
+                 binop( Iop_F64toI32S, 
+                        mkexpr(rmode), 
+                        unop(Iop_F32toF64, mkexpr(f32lo))) );
+   } else {
+      vassert(sz == 8);
+      putIReg64( gregOfRexRM(pfx,modrm),
+                 binop( Iop_F64toI64S, 
+                        mkexpr(rmode), 
+                        unop(Iop_F32toF64, mkexpr(f32lo))) );
+   }
+   
    return delta;
 }
 
@@ -10371,46 +10423,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
                        truncating towards zero 
       */
       if (haveF3no66noF2(pfx) && (sz == 4 || sz == 8)) {
-         IRTemp rmode  = newTemp(Ity_I32);
-         IRTemp f32lo  = newTemp(Ity_F32);
-         Bool   r2zero = toBool(opc == 0x2C);
-         vassert(sz == 4 || sz == 8);
-
-         modrm = getUChar(delta);
-         if (epartIsReg(modrm)) {
-            delta += 1;
-            assign(f32lo, getXMMRegLane32F(eregOfRexRM(pfx,modrm), 0));
-            DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
-                                      nameXMMReg(eregOfRexRM(pfx,modrm)),
-                                      nameIReg(sz, gregOfRexRM(pfx,modrm), 
-                                               False));
-         } else {
-            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
-            delta += alen;
-            DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
-                                      dis_buf,
-                                      nameIReg(sz, gregOfRexRM(pfx,modrm),
-                                               False));
-         }
-
-         if (r2zero) {
-            assign( rmode, mkU32((UInt)Irrm_ZERO) );
-         } else {
-            assign( rmode, get_sse_roundingmode() );
-         }
-
-         if (sz == 4) {
-            putIReg32( gregOfRexRM(pfx,modrm),
-                       binop( Iop_F64toI32S, 
-                              mkexpr(rmode), 
-                              unop(Iop_F32toF64, mkexpr(f32lo))) );
-         } else {
-            putIReg64( gregOfRexRM(pfx,modrm),
-                       binop( Iop_F64toI64S, 
-                              mkexpr(rmode), 
-                              unop(Iop_F32toF64, mkexpr(f32lo))) );
-         }
+         delta = dis_CVTxSS2SI( vbi, pfx, delta, False/*!isAvx*/, opc, sz);
          goto decode_success;
       }
       /* F2 0F 2D = CVTSD2SI 
@@ -19975,7 +19988,7 @@ Long dis_ESC_0F__VEX (
    }
 
    case 0x2C:
-      /* VCVTTSD2SI xmm1/m64, r32 = VEX.LIG.F2.0F.W0 2C /r */
+      /* VCVTTSD2SI xmm1/m32, r32 = VEX.LIG.F2.0F.W0 2C /r */
       if (haveF2no66noF3(pfx) && 0==getRexW(pfx)/*W0*/) {
          delta = dis_CVTxSD2SI( vbi, pfx, delta, True/*isAvx*/, opc, 4);
          goto decode_success;
@@ -19983,6 +19996,11 @@ Long dis_ESC_0F__VEX (
       /* VCVTTSD2SI xmm1/m64, r64 = VEX.LIG.F2.0F.W1 2C /r */
       if (haveF2no66noF3(pfx) && 1==getRexW(pfx)/*W1*/) {
          delta = dis_CVTxSD2SI( vbi, pfx, delta, True/*isAvx*/, opc, 8);
+         goto decode_success;
+      }
+      /* VCVTTSS2SI xmm1/m32, r32 = VEX.LIG.F3.0F.W0 2C /r */
+      if (haveF3no66noF2(pfx) && 0==getRexW(pfx)/*W0*/) {
+         delta = dis_CVTxSS2SI( vbi, pfx, delta, True/*isAvx*/, opc, 4);
          goto decode_success;
       }
       break;

@@ -20374,7 +20374,7 @@ Long dis_ESC_0F__VEX (
          are wrong.  They seem to imply it is a store when in fact I
          think it is a load.  Also it's unclear whether this is W0, W1
          or WIG. */
-      /* VMOVQ xmm2/m64, xmm1 = VEX.128.F3.0F.W0 */
+      /* VMOVQ xmm2/m64, xmm1 = VEX.128.F3.0F.W0 7E /r */
       if (haveF3no66noF2(pfx) 
           && 0==getVexL(pfx)/*128*/ && 0==getRexW(pfx)/*W0*/) {
          vassert(sz == 4); /* even tho we are transferring 8, not 4. */
@@ -20394,6 +20394,20 @@ Long dis_ESC_0F__VEX (
          /* zero bits 255:64 */
          putXMMRegLane64( rG, 1, mkU64(0) );
          putYMMRegLane128( rG, 1, mkV128(0) );
+         goto decode_success;
+      }
+      /* VMOVQ xmm1, r64 = VEX.128.66.0F.W1 7E /r (reg case only) */
+      /* Moves from G to E, so is a store-form insn */
+      /* Intel docs for this are completely missing, AFAICS */
+      if (have66noF2noF3(pfx)
+          && 0==getVexL(pfx)/*128*/ && 1==getRexW(pfx)/*W1*/
+          && epartIsReg(getUChar(delta))) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx,modrm);
+         UInt  rE    = eregOfRexRM(pfx,modrm);
+         DIP("vmovq %s,%s\n", nameXMMReg(rG), nameIReg64(rE));
+         putIReg64(rE, getXMMRegLane64(rG, 0));
+         delta += 1;
          goto decode_success;
       }
       break;

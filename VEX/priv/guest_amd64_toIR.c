@@ -19734,9 +19734,28 @@ Long dis_ESC_0F__VEX (
       break;
 
    case 0x12:
-      /* MOVDDUP xmm2/m64, xmm1 = VEX.128.F2.0F.WIG /12 r */
+      /* VMOVDDUP xmm2/m64, xmm1 = VEX.128.F2.0F.WIG /12 r */
       if (haveF2no66noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_MOVDDUP_128( vbi, pfx, delta, True/*isAvx*/ );
+         goto decode_success;
+      }
+      /* VMOVHLPS xmm3, xmm2, xmm1 = VEX.NDS.128.0F.WIG 12 /r */
+      /* Insn only exists in reg form */
+      if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
+          && epartIsReg(getUChar(delta))) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx, modrm);
+         UInt  rE    = eregOfRexRM(pfx, modrm);
+         UInt  rV    = getVexNvvvv(pfx);
+         delta++;
+         DIP("vmovhlps %s,%s,%s\n",
+             nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
+         IRTemp res = newTemp(Ity_V128);
+         assign(res, binop(Iop_64HLtoV128,
+                           getXMMRegLane64(rV, 1),
+                           getXMMRegLane64(rE, 1)));
+         putYMMRegLoAndZU(rG, mkexpr(res));
+         *uses_vvvv = True;
          goto decode_success;
       }
       break;

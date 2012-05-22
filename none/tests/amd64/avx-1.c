@@ -308,8 +308,23 @@ GEN_test_RandM(VMULSS_128,
                "vmulss %%xmm6,  %%xmm8, %%xmm7",
                "vmulss (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VPUNPCKLBW_128,
+               "vpunpcklbw %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpcklbw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPUNPCKHBW_128,
+               "vpunpckhbw %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpckhbw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCVTTSS2SI_32,
+               "vcvttss2si %%xmm8,  %%r14d",
+               "vcvttss2si (%%rax), %%r14d")
+
 int main ( void )
 {
+   test_VCVTTSS2SI_32();
+   test_VPUNPCKLBW_128();
+   test_VPUNPCKHBW_128();
    test_VMULSS_128();
    test_VSUBSS_128();
    test_VADDSS_128();

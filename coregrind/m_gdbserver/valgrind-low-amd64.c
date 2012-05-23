@@ -160,16 +160,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 13: VG_(transfer) (&amd64->guest_R13, buf, dir, size, mod); break;
    case 14: VG_(transfer) (&amd64->guest_R14, buf, dir, size, mod); break;
    case 15: VG_(transfer) (&amd64->guest_R15, buf, dir, size, mod); break;
-   case 16: 
-      VG_(transfer) (&amd64->guest_RIP, buf, dir, size, mod);
-      if (*mod && VG_(debugLog_getLevel)() > 2) {
-         char bufimage [2*sizeof(amd64->guest_IP_AT_SYSCALL) + 1];
-         heximage (bufimage, 
-                   (char *) &amd64->guest_IP_AT_SYSCALL, 
-                   sizeof(amd64->guest_IP_AT_SYSCALL));
-         dlog(3, "guest_IP_AT_SYSCALL %s\n", bufimage);
-      }
-      break;
+   case 16: VG_(transfer) (&amd64->guest_RIP, buf, dir, size, mod); break;
    case 17: 
       if (dir == valgrind_to_gdbserver) {
          ULong rflags;

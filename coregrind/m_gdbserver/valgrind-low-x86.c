@@ -137,16 +137,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 5:  VG_(transfer) (&x86->guest_EBP, buf, dir, size, mod); break;
    case 6:  VG_(transfer) (&x86->guest_ESI, buf, dir, size, mod); break;
    case 7:  VG_(transfer) (&x86->guest_EDI, buf, dir, size, mod); break;
-   case 8:  
-      VG_(transfer) (&x86->guest_EIP, buf, dir, size, mod); 
-      if (*mod && VG_(debugLog_getLevel)() > 2) {
-         char bufimage [2*sizeof(x86->guest_IP_AT_SYSCALL) + 1];
-         heximage (bufimage, 
-                   (char *) &x86->guest_IP_AT_SYSCALL, 
-                   sizeof(x86->guest_IP_AT_SYSCALL));
-         dlog(3, "guest_IP_AT_SYSCALL %s\n", bufimage);
-      }
-      break;
+   case 8:  VG_(transfer) (&x86->guest_EIP, buf, dir, size, mod); break;
    case 9:  
       if (dir == valgrind_to_gdbserver) {
          UInt eflags;

@@ -67,20 +67,6 @@ struct valgrind_target_ops
    const char *shadow_target_xml;
 };
 
-
-/* convert from CORE_ADDR to void* */
-extern void* C2v(CORE_ADDR addr);
-
-/* builds an image of bin according to byte order of the architecture 
-   Useful for register and int image */
-extern char* heximage (char *buf, char *bin, int count);
-
-/* returns a pointer to the architecture state corresponding to
-   the provided register set: 0 => normal guest registers,
-                              1 => shadow1
-                              2 => shadow2 */
-VexGuestArchState* get_arch (int set, ThreadState* tst);
-
 extern void x86_init_architecture (struct valgrind_target_ops *target);
 extern void amd64_init_architecture (struct valgrind_target_ops *target);
 extern void arm_init_architecture (struct valgrind_target_ops *target);

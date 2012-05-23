@@ -542,6 +542,29 @@ int hexify (char *hex, const char *bin, int count)
   return i;
 }
 
+/* builds an image of bin according to byte order of the architecture 
+   Useful for register and int image */
+char* heximage (char *buf, char *bin, int count)
+{
+#if defined(VGA_x86) || defined(VGA_amd64)
+   char rev[count]; 
+   /* note: no need for trailing \0, length is known with count */
+  int i;
+  for (i = 0; i < count; i++)
+    rev[i] = bin[count - i - 1];
+  hexify (buf, rev, count);
+#else
+  hexify (buf, bin, count);
+#endif
+  return buf;
+}
+
+void* C2v(CORE_ADDR addr)
+{
+   return (void*) addr;
+}
+
+
 /* Convert BUFFER, binary data at least LEN bytes long, into escaped
    binary data in OUT_BUF.  Set *OUT_LEN to the length of the data
    encoded in OUT_BUF, and return the number of bytes in OUT_BUF
@@ -729,7 +752,7 @@ int putpkt_binary (char *buf, int cnt)
 
       /* Check for an input interrupt while we're here.  */
       if (cc == '\003')
-         (*the_target->send_signal) (VKI_SIGINT);
+         dlog(1, "Received 0x03 character (SIGINT)\n");
    }
    while (cc != '+');
 
@@ -962,15 +985,14 @@ void prepare_resume_reply (char *buf, char status, unsigned char sig)
    if (status == 'T') {
       const char **regp = gdbserver_expedite_regs;
       
-      if (the_target->stopped_by_watchpoint != NULL
-	  && (*the_target->stopped_by_watchpoint) ()) {
+      if (valgrind_stopped_by_watchpoint()) {
          CORE_ADDR addr;
          int i;
 
          strncpy (buf, "watch:", 6);
          buf += 6;
 
-         addr = (*the_target->stopped_data_address) ();
+         addr = valgrind_stopped_data_address ();
 
          /* Convert each byte of the address into two hexadecimal chars.
             Note that we take sizeof (void *) instead of sizeof (addr);

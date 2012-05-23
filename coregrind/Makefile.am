@@ -312,7 +312,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/signals.c \
 	m_gdbserver/target.c \
 	m_gdbserver/utils.c \
-	m_gdbserver/valgrind-low.c \
 	m_gdbserver/valgrind-low-x86.c \
 	m_gdbserver/valgrind-low-amd64.c \
 	m_gdbserver/valgrind-low-arm.c \

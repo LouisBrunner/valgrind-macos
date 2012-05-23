@@ -54,7 +54,7 @@ struct inferior_regcache_data * get_regcache (struct thread_info *inf,
 
    /* FIXME - fetch registers for INF */
    if (fetch && regcache->registers_valid == 0) {
-      fetch_inferior_registers (0);
+      valgrind_fetch_registers (0);
       regcache->registers_valid = 1;
    }
 
@@ -72,7 +72,7 @@ void regcache_invalidate_one (struct inferior_list_entry *entry)
       struct thread_info *saved_inferior = current_inferior;
 
       current_inferior = thread;
-      store_inferior_registers (-1);
+      valgrind_store_registers (-1);
       current_inferior = saved_inferior;
    }
 

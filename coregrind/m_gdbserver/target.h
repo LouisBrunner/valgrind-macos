@@ -1,6 +1,7 @@
-/* Target operations for the remote server for GDB.
-   Copyright (C) 2002, 2003, 2004, 2005
+/* Target operations for the Valgrind remote server for GDB.
+   Copyright (C) 2002, 2003, 2004, 2005, 2012
    Free Software Foundation, Inc.
+   Philippe Waroquiers.
 
    Contributed by MontaVista Software.
 
@@ -25,18 +26,54 @@
 #ifndef TARGET_H
 #define TARGET_H
 
-/* This structure describes how to resume a particular thread (or
-   all threads) based on the client's request.  If thread is -1, then
-   this entry applies to all threads.  These are generally passed around
-   as an array, and terminated by a thread == -1 entry.  */
+/* This file defines the architecture independent Valgrind gdbserver
+   high level operations such as read memory, get/set registers, ...
 
+   These high level operations are called by the gdbserver
+   protocol implementation (e.g. typically server.c).
+   
+   For some of these high level operations, target.c will call
+   low level operations dependent on the architecture.
+   
+   For example, getting or setting the registers will work on a
+   register cache. The exact details of the registers (how much,
+   their size, etc) is not defined by target.c or the register cache.
+
+   Such architecture dependent information is defined by
+   valgrind_low.h/valgrind-low-xxxxx.c providing 'low level operations'
+   specific to the xxxxx architecture (for example,
+   valgrind-low-x86.c, valgrind-low-armc.c). */
+        
+/* -------------------------------------------------------------------------- */
+/* ------------------------ Initialisation ---------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/* Initialize the Valgrind high target. This will in turn
+   initialise the low (architecture specific) target. */
+extern void valgrind_initialize_target(void);
+
+/* initialize or re-initialize the register set of the low target.
+   if shadow_mode, then (re-)define the normal and valgrind shadow registers
+   else (re-)define only the normal registers. */
+extern void initialize_shadow_low (Bool shadow_mode);
+
+/* Returns the name of the xml target description file. 
+   returns NULL if no xml target description available. */
+extern char* valgrind_target_xml (void);
+
+/* Same but describes also the shadow registers. */
+extern char* valgrind_shadow_target_xml (void);
+
+
+
+/* -------------------------------------------------------------------------- */
+/* --------------------------- Execution control ---------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/* This structure describes how to resume the execution.
+   Currently, there is no way to resume only a specific thread.  */
 struct thread_resume
 {
-  unsigned long thread;
-
-  /* If non-zero, leave this thread stopped.  */
-  int leave_stopped;
-
   /* If non-zero, we want to single-step.  */
   int step;
 
@@ -44,114 +81,133 @@ struct thread_resume
   int sig;
 };
 
-struct target_ops
-{
-  /* Return 1 iff the thread with process ID PID is alive.  */
+/* Prepare to Resume (i.e. restart) the guest.
+   The resume info indicates how the resume will be done. 
+   In case GDB has changed the program counter, valgrind_resume
+   will also ensure that the execution will be resumed at this
+   new program counter.
+   The Resume is really only executed once the gdbserver
+   returns (giving back the control to Valgrind). */
+extern void valgrind_resume (struct thread_resume *resume_info);
 
-  int (*thread_alive) (unsigned long pid);
+/* When Valgrind gets the control, it will execute the guest
+   process till there is a reason to call the gdbserver
+   again (e.g. because a breakpoint is encountered or the
+   tool reports an error).
+   In such case, the executionof guest code  stops, and the
+   control is given to gdbserver. Gdbserver will send a resume
+   reply packet to GDB.
 
-  /* Resume the inferior process.  */
+   valgrind_wait gets from Valgrind data structures the
+   information needed produce the resume reply for GDB:
+   a.o. OURSTATUS will be filled in with a response code to send to GDB.
 
-  void (*resume) (struct thread_resume *resume_info);
+   Returns the signal which caused the process to stop, in the
+   remote protocol numbering (e.g. TARGET_SIGNAL_STOP), or the
+   exit code as an integer if *OURSTATUS is 'W'.  */
+extern unsigned char valgrind_wait (char *outstatus);
 
-  /* Wait for the inferior process to change state.
+/* When execution is stopped and gdbserver has control, more
+   info about the stop reason can be retrieved using the following
+   functions. */
 
-     STATUS will be filled in with a response code to send to GDB.
+/* gets the addr at which a (possible) break must be ignored once.
+   If there is no such break to be ignored once, 0 is returned.
+   This is needed for the following case:
+   The user sets a break at address AAA.
+   The break is encountered. Then the user does stepi 
+   (i.e. step one instruction).
+   In such a case, the already encountered break must be ignored
+   to ensure the stepi will advance by one instruction: a "break"
+   is implemented in valgrind by some helper code just after the
+   instruction mark at which the break is set. This helper code
+   verifies if either there is a break at the current PC
+   or if we are in stepping mode. If we are in stepping mode,
+   the already encountered break must be ignored once to advance
+   to the next instruction.
+   ??? need to check if this is *really* needed. */
+extern Addr valgrind_get_ignore_break_once(void);
 
-     Returns the signal which caused the process to stop, in the
-     remote protocol numbering (e.g. TARGET_SIGNAL_STOP), or the
-     exit code as an integer if *STATUS is 'W'.  */
+/* When addr > 0, ensures the next resume reply packet informs
+   gdb about the encountered watchpoint.
+   valgrind_stopped_by_watchpoint() will return 1 till reset.
+   Use addr 0x0 to reset. */
+extern void VG_(set_watchpoint_stop_address) (Addr addr);
 
-  unsigned char (*wait) (char *status);
+/* Returns 1 if target was stopped due to a watchpoint hit, 0 otherwise.  */
+extern int valgrind_stopped_by_watchpoint (void);
 
-  /* Fetch registers from the inferior process.
+/* Returns the address associated with the watchpoint that hit, if any;  
+   returns 0 otherwise.  */
+extern CORE_ADDR valgrind_stopped_data_address (void);
 
-     If REGNO is -1, fetch all registers; otherwise, fetch at least REGNO.  */
+/* True if gdbserver is single stepping the valgrind process */
+extern Bool valgrind_single_stepping(void);
 
-  void (*fetch_registers) (int regno);
+/* Set Valgrind in single stepping mode or not according to Bool. */
+extern void valgrind_set_single_stepping(Bool);
 
-  /* Store registers to the inferior process.
+/* -------------------------------------------------------------------------- */
+/* ----------------- Examining/modifying data while stopped ----------------- */
+/* -------------------------------------------------------------------------- */
 
-     If REGNO is -1, store all registers; otherwise, store at least REGNO.  */
+/* Return 1 iff the thread with ID tid is alive.  */
+extern int valgrind_thread_alive (unsigned long tid);
 
-  void (*store_registers) (int regno);
+/* Allows to controls the thread (current_inferior) used for following
+   valgrind_(fetch|store)_registers calls.
+   If USE_GENERAL,
+     current_inferior is set to general_thread
+   else
+     current_inferior is set to step_thread or else cont_thread.
+   If the above gives no valid thread, then current_inferior is
+   set to the first valid thread. */
+extern void set_desired_inferior (int use_general);
 
-  /* Read memory from the inferior process.  This should generally be
-     called through read_inferior_memory, which handles breakpoint shadowing.
+/* Fetch registers from the current_inferior thread.
+   If REGNO is -1, fetch all registers; otherwise, fetch at least REGNO.  */
+extern void valgrind_fetch_registers (int regno);
 
-     Read LEN bytes at MEMADDR into a buffer at MYADDR.
-  
-     Returns 0 on success and errno on failure.  */
+/* Store registers to the current_inferior thread.
+   If REGNO is -1, store all registers; otherwise, store at least REGNO.  */
+extern void valgrind_store_registers (int regno);
 
-  int (*read_memory) (CORE_ADDR memaddr, unsigned char *myaddr, int len);
 
-  /* Write memory to the inferior process.  This should generally be
-     called through write_inferior_memory, which handles breakpoint shadowing.
 
-     Write LEN bytes from the buffer at MYADDR to MEMADDR.
+/* Read memory from the inferior process.
+   Read LEN bytes at MEMADDR into a buffer at MYADDR.
+   Returns 0 on success and errno on failure.  */
+extern int valgrind_read_memory (CORE_ADDR memaddr,
+                                 unsigned char *myaddr, int len);
 
-     Returns 0 on success and errno on failure.  */
+/* Write memory to the inferior process.
+   Write LEN bytes from the buffer at MYADDR to MEMADDR.
+   Returns 0 on success and errno on failure.  */
+extern int valgrind_write_memory (CORE_ADDR memaddr,
+                                  const unsigned char *myaddr, int len);
 
-  int (*write_memory) (CORE_ADDR memaddr, const unsigned char *myaddr,
-		       int len);
 
-  /* Send a signal to the inferior process, however is appropriate.  */
-  void (*send_signal) (int);
+/* Insert and remove a hardware watchpoint.
+   Returns 0 on success, -1 on failure and 1 on unsupported.  
+   The type is coded as follows:
+   2 = write watchpoint
+   3 = read watchpoint
+   4 = access watchpoint
+*/
+extern int valgrind_insert_watchpoint (char type, CORE_ADDR addr, int len);
+extern int valgrind_remove_watchpoint (char type, CORE_ADDR addr, int len);
 
-  /* Returns the name of the xml target description file. 
-     returns NULL if no xml target description available. */
-  char* (*target_xml)(void);
 
-  /* Same but describes also the shadow registers. */
-  char* (*shadow_target_xml)(void);
+/* -------------------------------------------------------------------------- */
+/* ----------- Utils functions for low level arch specific files ------------ */
+/* -------------------------------------------------------------------------- */
 
-  /* Insert and remove a hardware watchpoint.
-     Returns 0 on success, -1 on failure and 1 on unsupported.  
-     The type is coded as follows:
-       2 = write watchpoint
-       3 = read watchpoint
-       4 = access watchpoint
-  */
-
-  int (*insert_watchpoint) (char type, CORE_ADDR addr, int len);
-  int (*remove_watchpoint) (char type, CORE_ADDR addr, int len);
-
-  /* Returns 1 if target was stopped due to a watchpoint hit, 0 otherwise.  */
-
-  int (*stopped_by_watchpoint) (void);
-
-  /* Returns the address associated with the watchpoint that hit, if any;  
-     returns 0 otherwise.  */
-
-  CORE_ADDR (*stopped_data_address) (void);
-
-};
-
-extern struct target_ops *the_target;
-
-void set_target_ops (struct target_ops *);
-
-#define detach_inferior() \
-  (*the_target->detach) ()
-
-#define mythread_alive(pid) \
-  (*the_target->thread_alive) (pid)
-
-#define fetch_inferior_registers(regno) \
-  (*the_target->fetch_registers) (regno)
-
-#define store_inferior_registers(regno) \
-  (*the_target->store_registers) (regno)
-
-#define mywait(statusp) \
-  (*the_target->wait) (statusp)
-
-int read_inferior_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len);
-
-int write_inferior_memory (CORE_ADDR memaddr, const unsigned char *myaddr,
-			   int len);
-
-void set_desired_inferior (int id);
+/* returns a pointer to the architecture state corresponding to
+   the provided register set: 0 => normal guest registers,
+                              1 => shadow1
+                              2 => shadow2
+*/
+extern VexGuestArchState* get_arch (int set, ThreadState* tst);
 
 /* like memcpy but first check if content of destination and source
    differs. If no difference, no copy is done, *mod set to False.
@@ -172,5 +228,7 @@ extern void  VG_(transfer) (void *valgrind,
                             transfer_direction dir,
                             SizeT sz,
                             Bool *mod);
+
+
 
 #endif /* TARGET_H */

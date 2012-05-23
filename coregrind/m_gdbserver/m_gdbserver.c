@@ -130,13 +130,6 @@ static Addr ignore_this_break_once = 0;
 
 static void call_gdbserver ( ThreadId tid , CallReason reason);
 
-/* convert from CORE_ADDR to void* */
-static
-void* C2v(CORE_ADDR addr)
-{
-   return (void*) addr;
-}
-
 /* Describes the address addr (for debugging/printing purposes).
    Last two results are kept. A third call will replace the
    oldest result. */

@@ -2946,6 +2946,30 @@ struct vki_hci_inquiry_req {
    __vki_u8  num_rsp;
 };
 
+//----------------------------------------------------------------------
+// From linux-3.4/include/linux/kvm.h
+//----------------------------------------------------------------------
+#define KVMIO 0xAE
+
+#define VKI_KVM_GET_API_VERSION       _VKI_IO(KVMIO,   0x00)
+#define VKI_KVM_CREATE_VM             _VKI_IO(KVMIO,   0x01) /* returns a VM fd */
+#define VKI_KVM_CHECK_EXTENSION       _VKI_IO(KVMIO,   0x03)
+#define VKI_KVM_GET_VCPU_MMAP_SIZE    _VKI_IO(KVMIO,   0x04) /* in bytes */
+#define VKI_KVM_S390_ENABLE_SIE       _VKI_IO(KVMIO,   0x06)
+#define VKI_KVM_CREATE_VCPU           _VKI_IO(KVMIO,   0x41)
+#define VKI_KVM_SET_NR_MMU_PAGES      _VKI_IO(KVMIO,   0x44)
+#define VKI_KVM_GET_NR_MMU_PAGES      _VKI_IO(KVMIO,   0x45)
+#define VKI_KVM_SET_TSS_ADDR          _VKI_IO(KVMIO,   0x47)
+#define VKI_KVM_CREATE_IRQCHIP        _VKI_IO(KVMIO,   0x60)
+#define VKI_KVM_CREATE_PIT            _VKI_IO(KVMIO,   0x64)
+#define VKI_KVM_REINJECT_CONTROL      _VKI_IO(KVMIO,   0x71)
+#define VKI_KVM_SET_BOOT_CPU_ID       _VKI_IO(KVMIO,   0x78)
+#define VKI_KVM_SET_TSC_KHZ           _VKI_IO(KVMIO,  0xa2)
+#define VKI_KVM_GET_TSC_KHZ           _VKI_IO(KVMIO,  0xa3)
+#define VKI_KVM_RUN                   _VKI_IO(KVMIO,   0x80)
+#define VKI_KVM_S390_INITIAL_RESET    _VKI_IO(KVMIO,   0x97)
+#define VKI_KVM_NMI                   _VKI_IO(KVMIO,   0x9a)
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

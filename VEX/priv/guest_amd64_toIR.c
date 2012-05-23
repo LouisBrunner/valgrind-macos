@@ -9027,6 +9027,7 @@ static IRExpr* dis_PSIGN_helper ( IRExpr* aax, IRExpr* bbx, Int laneszB )
 
 }
 
+
 /* Helper for the SSSE3 (not SSE3) PABS{B,W,D} insns.  Given a 64-bit
    value aa, computes, for each lane
 
@@ -9036,9 +9037,9 @@ static IRExpr* dis_PSIGN_helper ( IRExpr* aax, IRExpr* bbx, Int laneszB )
    absolute value of the most negative signed input can be
    represented.
 */
-static IRExpr* dis_PABS_helper ( IRExpr* aax, Int laneszB )
+static IRTemp math_PABS_MMX ( IRTemp aa, Int laneszB )
 {
-   IRTemp aa      = newTemp(Ity_I64);
+   IRTemp res     = newTemp(Ity_I64);
    IRTemp zero    = newTemp(Ity_I64);
    IRTemp aaNeg   = newTemp(Ity_I64);
    IRTemp negMask = newTemp(Ity_I64);
@@ -9053,16 +9054,37 @@ static IRExpr* dis_PABS_helper ( IRExpr* aax, Int laneszB )
       default: vassert(0);
    }
 
-   assign( aa,      aax );
    assign( negMask, binop(opSarN, mkexpr(aa), mkU8(8*laneszB-1)) );
    assign( posMask, unop(Iop_Not64, mkexpr(negMask)) );
    assign( zero,    mkU64(0) );
    assign( aaNeg,   binop(opSub, mkexpr(zero), mkexpr(aa)) );
-   return
-      binop(Iop_Or64,
-            binop(Iop_And64, mkexpr(aa),    mkexpr(posMask)),
-            binop(Iop_And64, mkexpr(aaNeg), mkexpr(negMask)) );
+   assign( res,
+           binop(Iop_Or64,
+                 binop(Iop_And64, mkexpr(aa),    mkexpr(posMask)),
+                 binop(Iop_And64, mkexpr(aaNeg), mkexpr(negMask)) ));
+   return res;
 }
+
+/* XMM version of math_PABS_MMX. */
+static IRTemp math_PABS_XMM ( IRTemp aa, Int laneszB )
+{
+   IRTemp res  = newTemp(Ity_V128);
+   IRTemp aaHi = newTemp(Ity_I64);
+   IRTemp aaLo = newTemp(Ity_I64);
+   assign(aaHi, unop(Iop_V128HIto64, mkexpr(aa)));
+   assign(aaLo, unop(Iop_V128to64, mkexpr(aa)));
+   assign(res, binop(Iop_64HLtoV128,
+                     mkexpr(math_PABS_MMX(aaHi, laneszB)),
+                     mkexpr(math_PABS_MMX(aaLo, laneszB))));
+   return res;
+}
+
+/* Specialisations of math_PABS_XMM, since there's no easy way to do
+   partial applications in C :-( */
+static IRTemp math_PABS_XMM_pap4 ( IRTemp aa ) {
+   return math_PABS_XMM(aa, 4);
+}
+
 
 static IRExpr* dis_PALIGNR_XMM_helper ( IRTemp hi64,
                                         IRTemp lo64, Long byteShift )
@@ -13993,10 +14015,8 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
       /* 66 0F 38 1E = PABSD -- Packed Absolute Value 32x4 (XMM) */
       if (have66noF2noF3(pfx) 
           && (sz == 2 || /*redundant REX.W*/ sz == 8)) {
-         IRTemp sV      = newTemp(Ity_V128);
-         IRTemp sHi     = newTemp(Ity_I64);
-         IRTemp sLo     = newTemp(Ity_I64);
-         HChar* str     = "???";
+         IRTemp sV  = newTemp(Ity_V128);
+         HChar* str = "???";
          Int    laneszB = 0;
 
          switch (opc) {
@@ -14007,7 +14027,6 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
          }
 
          modrm = getUChar(delta);
-
          if (epartIsReg(modrm)) {
             assign( sV, getXMMReg(eregOfRexRM(pfx,modrm)) );
             delta += 1;
@@ -14022,16 +14041,8 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
                                        nameXMMReg(gregOfRexRM(pfx,modrm)));
          }
 
-         assign( sHi, unop(Iop_V128HIto64, mkexpr(sV)) );
-         assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
-
-         putXMMReg(
-            gregOfRexRM(pfx,modrm),
-            binop(Iop_64HLtoV128,
-                  dis_PABS_helper( mkexpr(sHi), laneszB ),
-                  dis_PABS_helper( mkexpr(sLo), laneszB )
-            )
-         );
+         putXMMReg( gregOfRexRM(pfx,modrm),
+                    mkexpr(math_PABS_XMM(sV, laneszB)) );
          goto decode_success;
       }
       /* 0F 38 1C = PABSB -- Packed Absolute Value 8x8  (MMX) */
@@ -14065,10 +14076,8 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
                                        nameMMXReg(gregLO3ofRM(modrm)));
          }
 
-         putMMXReg(
-            gregLO3ofRM(modrm),
-            dis_PABS_helper( mkexpr(sV), laneszB )
-         );
+         putMMXReg( gregLO3ofRM(modrm),
+                    mkexpr(math_PABS_MMX( sV, laneszB )) );
          goto decode_success;
       }
       break;
@@ -19629,6 +19638,39 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
 }
 
 
+/* Handles AVX128 unary E-to-G all-lanes operations. */
+static
+Long dis_AVX128_E_to_G_unary ( /*OUT*/Bool* uses_vvvv,
+                               VexAbiInfo* vbi,
+                               Prefix pfx, Long delta, 
+                               HChar* opname,
+                               IRTemp (*opFn)(IRTemp) )
+{
+   HChar  dis_buf[50];
+   Int    alen;
+   IRTemp addr;
+   IRTemp res  = newTemp(Ity_V128);
+   IRTemp arg  = newTemp(Ity_V128);
+   UChar  rm   = getUChar(delta);
+   UInt   rG   = gregOfRexRM(pfx, rm);
+   if (epartIsReg(rm)) {
+      UInt rE = eregOfRexRM(pfx,rm);
+      assign(arg, getXMMReg(rE));
+      delta += 1;
+      DIP("%s %s,%s\n", opname, nameXMMReg(rE), nameXMMReg(rG));
+   } else {
+      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
+      assign(arg, loadLE(Ity_V128, mkexpr(addr)));
+      delta += alen;
+      DIP("%s %s,%s\n", opname, dis_buf, nameXMMReg(rG));
+   }
+   res = opFn(arg);
+   putYMMRegLoAndZU( rG, mkexpr(res) );
+   *uses_vvvv = False;
+   return delta;
+}
+
+
 __attribute__((noinline))
 static
 Long dis_ESC_0F__VEX (
@@ -20417,7 +20459,7 @@ Long dis_ESC_0F__VEX (
       }
       /* VMOVQ xmm1, r64 = VEX.128.66.0F.W1 7E /r (reg case only) */
       /* Moves from G to E, so is a store-form insn */
-      /* Intel docs for this are completely missing, AFAICS */
+      /* Intel docs list this in the VMOVD for some reason. */
       if (have66noF2noF3(pfx)
           && 0==getVexL(pfx)/*128*/ && 1==getRexW(pfx)/*W1*/
           && epartIsReg(getUChar(delta))) {
@@ -20622,6 +20664,16 @@ Long dis_ESC_0F38__VEX (
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_complex(
                     uses_vvvv, vbi, pfx, delta, "vpshufb", math_PSHUFB_XMM );
+         goto decode_success;
+      }
+      break;
+
+   case 0x1E:
+      /* VPABSD xmm2/m128, xmm1 = VEX.128.66.0F38.WIG 1E /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_AVX128_E_to_G_unary(
+                    uses_vvvv, vbi, pfx, delta,
+                    "vpabsd", math_PABS_XMM_pap4 );
          goto decode_success;
       }
       break;

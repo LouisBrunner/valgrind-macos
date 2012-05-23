@@ -142,7 +142,7 @@ void randBlock ( Block* b )
 
 #define GEN_test_RandM(_name, _reg_form, _mem_form)   \
     \
-    static void test_##_name ( void ) \
+    __attribute__ ((noinline)) static void test_##_name ( void )   \
     { \
        Block* b = memalign(32, sizeof(Block)); \
        randBlock(b); \
@@ -187,6 +187,12 @@ void randBlock ( Block* b )
        printf("\n"); \
        free(b); \
     }
+
+#define GEN_test_Ronly(_name, _reg_form) \
+   GEN_test_RandM(_name, _reg_form, "")
+#define GEN_test_Monly(_name, _mem_form) \
+   GEN_test_RandM(_name, "", _mem_form)
+
 
 GEN_test_RandM(VPOR_128,
                "vpor %%xmm6,  %%xmm8, %%xmm7",
@@ -320,8 +326,54 @@ GEN_test_RandM(VCVTTSS2SI_32,
                "vcvttss2si %%xmm8,  %%r14d",
                "vcvttss2si (%%rax), %%r14d")
 
+GEN_test_RandM(VMOVQ_XMMorMEM64_to_XMM,
+               "vmovq %%xmm7,  %%xmm8",
+               "vmovq (%%rax), %%xmm8")
+
+/* NB tests the reg form only */
+GEN_test_Ronly(VMOVQ_XMM_to_IREG64,
+               "vmovq %%xmm7, %%r14")
+
+/* This insn only exists in the reg-reg-reg form. */
+GEN_test_Ronly(VMOVHLPS_128,
+               "vmovhlps %%xmm6, %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPABSD_128,
+               "vpabsd %%xmm6,  %%xmm8",
+               "vpabsd (%%rax), %%xmm8")
+
+/* This insn only exists in the reg-reg-reg form. */
+GEN_test_Ronly(VMOVLHPS_128,
+               "vmovlhps %%xmm6, %%xmm8, %%xmm7")
+
+GEN_test_Monly(VMOVNTDQ_128,
+               "vmovntdq %%xmm8, (%%rax)")
+
+GEN_test_RandM(VMOVUPS_XMM_to_XMMorMEM,
+               "vmovups %%xmm8, %%xmm7",
+               "vmovups %%xmm9, (%%rax)")
+
+GEN_test_RandM(VMOVQ_IREGorMEM64_to_XMM,
+               "vmovq %%r14, %%xmm7",
+               "vmovq (%%rax), %%xmm9")
+
+/* Comment duplicated above, for convenient reference:
+   Allowed operands in test insns:
+     Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
+     Mem form:  (%rax), %ymm7, %ymm8, %ymm9 and %r14.
+   Imm8 etc fields are also allowed, where they make sense.
+*/
+
 int main ( void )
 {
+   test_VMOVQ_IREGorMEM64_to_XMM();
+   test_VMOVUPS_XMM_to_XMMorMEM();
+   test_VMOVNTDQ_128();
+   test_VMOVLHPS_128();
+   test_VPABSD_128();
+   test_VMOVHLPS_128();
+   test_VMOVQ_XMM_to_IREG64();
+   test_VMOVQ_XMMorMEM64_to_XMM();
    test_VCVTTSS2SI_32();
    test_VPUNPCKLBW_128();
    test_VPUNPCKHBW_128();

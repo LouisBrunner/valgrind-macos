@@ -19773,6 +19773,23 @@ Long dis_ESC_0F__VEX (
          }
          goto decode_success;
       }
+      /* VMOVUPS xmm1, xmm2/m128 = VEX.128.0F.WIG 11 /r */
+      if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx,modrm);
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx,modrm);
+            putYMMRegLoAndZU( rE, getXMMReg(rG) );
+            DIP("vmovups %s,%s\n", nameXMMReg(rG), nameXMMReg(rE));
+            delta += 1;
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            storeLE( mkexpr(addr), getXMMReg(rG) );
+            DIP("vmovups %s,%s\n", nameXMMReg(rG), dis_buf);
+            delta += alen;
+         }
+         goto decode_success;
+      }
       break;
 
    case 0x12:
@@ -20333,6 +20350,31 @@ Long dis_ESC_0F__VEX (
          }
          goto decode_success;
       }
+      /* VMOVQ r64/m64, xmm1 = VEX.128.66.0F.W1 6E */
+      if (have66noF2noF3(pfx)
+          && 0==getVexL(pfx)/*128*/ && 1==getRexW(pfx)/*W1*/) {
+         vassert(sz == 2); /* even tho we are transferring 8, not 2. */
+         UChar modrm = getUChar(delta);
+         if (epartIsReg(modrm)) {
+            delta += 1;
+            putYMMRegLoAndZU(
+               gregOfRexRM(pfx,modrm),
+               unop( Iop_64UtoV128, getIReg64(eregOfRexRM(pfx,modrm)) ) 
+            );
+            DIP("vmovq %s, %s\n", nameIReg64(eregOfRexRM(pfx,modrm)), 
+                                  nameXMMReg(gregOfRexRM(pfx,modrm)));
+        } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+            delta += alen;
+            putYMMRegLoAndZU(
+               gregOfRexRM(pfx,modrm),
+               unop( Iop_64UtoV128,loadLE(Ity_I64, mkexpr(addr)))
+                             );
+            DIP("vmovq %s, %s\n", dis_buf, 
+                                  nameXMMReg(gregOfRexRM(pfx,modrm)));
+         }
+         goto decode_success;
+      }
       break;
 
    case 0x6F:
@@ -20571,7 +20613,7 @@ Long dis_ESC_0F__VEX (
       /* Basically: 66 0F D6 = MOVQ -- move 64 bits from G (lo half
          xmm) to E (mem or lo half xmm).  Looks like L==0(128), W==0
          (WIG, maybe?) */
-      if (have66noF2noF3(pfx)  && 0==getVexL(pfx)/*128*/
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
           && 0==getRexW(pfx)/*this might be redundant, dunno*/) {
          UChar modrm = getUChar(delta);
          UInt  rG    = gregOfRexRM(pfx,modrm);
@@ -20585,6 +20627,23 @@ Long dis_ESC_0F__VEX (
             delta += alen;
             goto decode_success;
          }
+      }
+      break;
+
+   case 0xE7:
+      /* MOVNTDQ xmm1, m128 = VEX.128.66.0F.WIG E7 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar modrm = getUChar(delta);
+         UInt rG     = gregOfRexRM(pfx,modrm);
+         if (!epartIsReg(modrm)) {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            gen_SEGV_if_not_16_aligned( addr );
+            storeLE( mkexpr(addr), getXMMReg(rG) );
+            DIP("vmovntdq %s,%s\n", dis_buf, nameXMMReg(rG));
+            delta += alen;
+            goto decode_success;
+         }
+         /* else fall through */
       }
       break;
 

@@ -15566,6 +15566,136 @@ static Long dis_PEXTRD ( VexAbiInfo* vbi, Prefix pfx,
 }
 
 
+/* This can fail, in which case it returns the original (unchanged)
+   delta. */
+static Long dis_PCMPxSTRx ( VexAbiInfo* vbi, Prefix pfx,
+                            Long delta, Bool isAvx, UChar opc )
+{
+   Long   delta0  = delta;
+   UInt   isISTRx = opc & 2;
+   UInt   isxSTRM = (opc & 1) ^ 1;
+   UInt   regNoL  = 0;
+   UInt   regNoR  = 0;
+   UChar  imm     = 0;
+   IRTemp addr    = IRTemp_INVALID;
+   Int    alen    = 0;
+   HChar  dis_buf[50];
+
+   /* This is a nasty kludge.  We need to pass 2 x V128 to the helper
+      (which is clean).  Since we can't do that, use a dirty helper to
+      compute the results directly from the XMM regs in the guest
+      state.  That means for the memory case, we need to move the left
+      operand into a pseudo-register (XMM16, let's call it). */
+   UChar modrm = getUChar(delta);
+   if (epartIsReg(modrm)) {
+      regNoL = eregOfRexRM(pfx, modrm);
+      regNoR = gregOfRexRM(pfx, modrm);
+      imm = getUChar(delta+1);
+      delta += 1+1;
+   } else {
+      regNoL = 16; /* use XMM16 as an intermediary */
+      regNoR = gregOfRexRM(pfx, modrm);
+      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+      /* No alignment check; I guess that makes sense, given that
+         these insns are for dealing with C style strings. */
+      stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
+      imm = getUChar(delta+alen);
+      delta += alen+1;
+   }
+
+   /* Now we know the XMM reg numbers for the operands, and the
+      immediate byte.  Is it one we can actually handle? Throw out any
+      cases for which the helper function has not been verified. */
+   switch (imm) {
+      case 0x00:
+      case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
+      case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
+         break;
+      case 0x01: // the 16-bit character versions of the above
+      case 0x03: case 0x09: case 0x0B: case 0x0D: case 0x13:
+      case 0x1B: case 0x39: case 0x3B: case 0x45: case 0x4B:
+         break;
+      default:
+         return delta0; /*FAIL*/
+   }
+
+   /* Who ya gonna call?  Presumably not Ghostbusters. */
+   void*  fn = &amd64g_dirtyhelper_PCMPxSTRx;
+   HChar* nm = "amd64g_dirtyhelper_PCMPxSTRx";
+
+   /* Round up the arguments.  Note that this is a kludge -- the use
+      of mkU64 rather than mkIRExpr_HWord implies the assumption that
+      the host's word size is 64-bit. */
+   UInt gstOffL = regNoL == 16 ? OFFB_YMM16 : ymmGuestRegOffset(regNoL);
+   UInt gstOffR = ymmGuestRegOffset(regNoR);
+
+   IRExpr*  opc4_and_imm = mkU64((opc << 8) | (imm & 0xFF));
+   IRExpr*  gstOffLe     = mkU64(gstOffL);
+   IRExpr*  gstOffRe     = mkU64(gstOffR);
+   IRExpr*  edxIN        = isISTRx ? mkU64(0) : getIRegRDX(8);
+   IRExpr*  eaxIN        = isISTRx ? mkU64(0) : getIRegRAX(8);
+   IRExpr** args
+      = mkIRExprVec_5( opc4_and_imm, gstOffLe, gstOffRe, edxIN, eaxIN );
+
+   IRTemp   resT = newTemp(Ity_I64);
+   IRDirty* d    = unsafeIRDirty_1_N( resT, 0/*regparms*/, nm, fn, args );
+   /* It's not really a dirty call, but we can't use the clean helper
+      mechanism here for the very lame reason that we can't pass 2 x
+      V128s by value to a helper, nor get one back.  Hence this
+      roundabout scheme. */
+   d->needsBBP = True;
+   d->nFxState = 2;
+   d->fxState[0].fx     = Ifx_Read;
+   d->fxState[0].offset = gstOffL;
+   d->fxState[0].size   = sizeof(U128);
+   d->fxState[1].fx     = Ifx_Read;
+   d->fxState[1].offset = gstOffR;
+   d->fxState[1].size   = sizeof(U128);
+   if (isxSTRM) {
+      /* Declare that the helper writes XMM0. */
+      d->nFxState = 3;
+      d->fxState[2].fx     = Ifx_Write;
+      d->fxState[2].offset = ymmGuestRegOffset(0);
+      d->fxState[2].size   = sizeof(U128);
+   }
+
+   stmt( IRStmt_Dirty(d) );
+
+   /* Now resT[15:0] holds the new OSZACP values, so the condition
+      codes must be updated. And for a xSTRI case, resT[31:16] holds
+      the new ECX value, so stash that too. */
+   if (!isxSTRM) {
+      putIReg64(R_RCX, binop(Iop_And64,
+                             binop(Iop_Shr64, mkexpr(resT), mkU8(16)),
+                             mkU64(0xFFFF)));
+   }
+
+   /* Zap the upper half of the dest reg as per AVX conventions. */
+   if (isxSTRM && isAvx)
+      putYMMRegLane128(/*YMM*/0, 1, mkV128(0));
+
+   stmt( IRStmt_Put(
+            OFFB_CC_DEP1,
+            binop(Iop_And64, mkexpr(resT), mkU64(0xFFFF))
+   ));
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+
+   if (regNoL == 16) {
+      DIP("%spcmp%cstr%c $%x,%s,%s\n",
+          isAvx ? "v" : "", isISTRx ? 'i' : 'e', isxSTRM ? 'm' : 'i',
+          (UInt)imm, dis_buf, nameXMMReg(regNoR));
+   } else {
+      DIP("%spcmp%cstr%c $%x,%s,%s\n",
+          isAvx ? "v" : "", isISTRx ? 'i' : 'e', isxSTRM ? 'm' : 'i',
+          (UInt)imm, nameXMMReg(regNoL), nameXMMReg(regNoR));
+   }
+
+   return delta;
+}
+
+
 __attribute__((noinline))
 static
 Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
@@ -16657,127 +16787,14 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
           not by any means a complete implementation.)
       */
       if (have66noF2noF3(pfx) && sz == 2) {
-
-         UInt  isISTRx = opc & 2;
-         UInt  isxSTRM = (opc & 1) ^ 1;
-         UInt  regNoL = 0;
-         UInt  regNoR = 0;
-         UChar imm    = 0;
-
-         /* This is a nasty kludge.  We need to pass 2 x V128 to the
-            helper (which is clean).  Since we can't do that, use a dirty
-            helper to compute the results directly from the XMM regs in
-            the guest state.  That means for the memory case, we need to
-            move the left operand into a pseudo-register (XMM16, let's
-            call it). */
-         modrm = getUChar(delta);
-         if (epartIsReg(modrm)) {
-            regNoL = eregOfRexRM(pfx, modrm);
-            regNoR = gregOfRexRM(pfx, modrm);
-            imm = getUChar(delta+1);
-            delta += 1+1;
-         } else {
-            regNoL = 16; /* use XMM16 as an intermediary */
-            regNoR = gregOfRexRM(pfx, modrm);
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            /* No alignment check; I guess that makes sense, given that
-               these insns are for dealing with C style strings. */
-            stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
-            imm = getUChar(delta+alen);
-            delta += alen+1;
-         }
-
-         /* Now we know the XMM reg numbers for the operands, and the
-            immediate byte.  Is it one we can actually handle? Throw out
-            any cases for which the helper function has not been
-            verified. */
-         switch (imm) {
-            case 0x00:
-            case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
-            case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
-               break;
-            case 0x01: // the 16-bit character versions of the above
-            case 0x03: case 0x09: case 0x0B: case 0x0D: case 0x13:
-            case 0x1B: case 0x39: case 0x3B: case 0x45: case 0x4B:
-               break;
-            default:
-               goto decode_failure;
-         }
-
-         /* Who ya gonna call?  Presumably not Ghostbusters. */
-         void*  fn = &amd64g_dirtyhelper_PCMPxSTRx;
-         HChar* nm = "amd64g_dirtyhelper_PCMPxSTRx";
-
-         /* Round up the arguments.  Note that this is a kludge -- the
-            use of mkU64 rather than mkIRExpr_HWord implies the
-            assumption that the host's word size is 64-bit. */
-         UInt gstOffL = regNoL == 16 ? OFFB_YMM16 : ymmGuestRegOffset(regNoL);
-         UInt gstOffR = ymmGuestRegOffset(regNoR);
-
-         IRExpr*  opc4_and_imm = mkU64((opc << 8) | (imm & 0xFF));
-         IRExpr*  gstOffLe     = mkU64(gstOffL);
-         IRExpr*  gstOffRe     = mkU64(gstOffR);
-         IRExpr*  edxIN        = isISTRx ? mkU64(0) : getIRegRDX(8);
-         IRExpr*  eaxIN        = isISTRx ? mkU64(0) : getIRegRAX(8);
-         IRExpr** args
-            = mkIRExprVec_5( opc4_and_imm, gstOffLe, gstOffRe, edxIN, eaxIN );
-
-         IRTemp   resT = newTemp(Ity_I64);
-         IRDirty* d    = unsafeIRDirty_1_N( resT, 0/*regparms*/, nm, fn, args );
-         /* It's not really a dirty call, but we can't use the clean
-            helper mechanism here for the very lame reason that we can't
-            pass 2 x V128s by value to a helper, nor get one back.  Hence
-            this roundabout scheme. */
-         d->needsBBP = True;
-         d->nFxState = 2;
-         d->fxState[0].fx     = Ifx_Read;
-         d->fxState[0].offset = gstOffL;
-         d->fxState[0].size   = sizeof(U128);
-         d->fxState[1].fx     = Ifx_Read;
-         d->fxState[1].offset = gstOffR;
-         d->fxState[1].size   = sizeof(U128);
-         if (isxSTRM) {
-            /* Declare that the helper writes XMM0. */
-            d->nFxState = 3;
-            d->fxState[2].fx     = Ifx_Write;
-            d->fxState[2].offset = ymmGuestRegOffset(0);
-            d->fxState[2].size   = sizeof(U128);
-         }
-
-         stmt( IRStmt_Dirty(d) );
-
-         /* Now resT[15:0] holds the new OSZACP values, so the condition
-            codes must be updated. And for a xSTRI case, resT[31:16]
-            holds the new ECX value, so stash that too. */
-         if (!isxSTRM) {
-            putIReg64(R_RCX, binop(Iop_And64,
-                                   binop(Iop_Shr64, mkexpr(resT), mkU8(16)),
-                                   mkU64(0xFFFF)));
-         }
-
-         stmt( IRStmt_Put(
-                  OFFB_CC_DEP1,
-                  binop(Iop_And64, mkexpr(resT), mkU64(0xFFFF))
-         ));
-         stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
-         stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
-         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
-
-         if (regNoL == 16) {
-            DIP("pcmp%cstr%c $%x,%s,%s\n",
-                isISTRx ? 'i' : 'e', isxSTRM ? 'm' : 'i',
-                (UInt)imm, dis_buf, nameXMMReg(regNoR));
-         } else {
-            DIP("pcmp%cstr%c $%x,%s,%s\n",
-                isISTRx ? 'i' : 'e', isxSTRM ? 'm' : 'i',
-                (UInt)imm, nameXMMReg(regNoL), nameXMMReg(regNoR));
-         }
-
-         goto decode_success;
+         Long delta0 = delta;
+         delta = dis_PCMPxSTRx( vbi, pfx, delta, False/*!isAvx*/, opc );
+         if (delta > delta0) goto decode_success;
+         /* else fall though; dis_PCMPxSTRx failed to decode it */
       }
       break;
 
-   case 0xdf:
+   case 0xDF:
       /* 66 0F 3A DF /r ib = AESKEYGENASSIST imm8, xmm2/m128, xmm1 */
       if (have66noF2noF3(pfx) && sz == 2) {
          UInt  regNoL = 0;
@@ -20960,6 +20977,25 @@ Long dis_ESC_0F3A__VEX (
      }
      break;
 
+   case 0x60:
+   case 0x61:
+   case 0x62:
+   case 0x63:
+      /* VEX.128.66.0F3A.WIG 63 /r ib = VPCMPISTRI imm8, xmm2/m128, xmm1
+         VEX.128.66.0F3A.WIG 62 /r ib = VPCMPISTRM imm8, xmm2/m128, xmm1
+         VEX.128.66.0F3A.WIG 61 /r ib = VPCMPESTRI imm8, xmm2/m128, xmm1
+         VEX.128.66.0F3A.WIG 60 /r ib = VPCMPESTRM imm8, xmm2/m128, xmm1
+         (selected special cases that actually occur in glibc,
+          not by any means a complete implementation.)
+      */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         Long delta0 = delta;
+         delta = dis_PCMPxSTRx( vbi, pfx, delta, True/*isAvx*/, opc );
+         if (delta > delta0) goto decode_success;
+         /* else fall though; dis_PCMPxSTRx failed to decode it */
+      }
+      break;
+
    default:
       break;
 
@@ -21305,9 +21341,12 @@ DisResult disInstr_AMD64_WRK (
                                         callback_opaque,
                                         archinfo, vbi, pfx, sz, delta );
             break;
+         case ESC_NONE:
+            /* The presence of a VEX prefix, by Intel definition,
+               always implies at least an 0F escape. */
+            goto decode_failure;
          default:
-            vex_printf("XXX VEX esc = %08x\n", esc);
-            break;
+            vassert(0);
       }
       /* If the insn doesn't use VEX.vvvv then it must be all ones.
          Check this. */

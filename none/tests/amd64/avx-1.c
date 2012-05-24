@@ -138,7 +138,8 @@ void randBlock ( Block* b )
    its mem and reg forms.  The reg form of the insn may mention, as
    operands only %ymm6, %ymm7, %ymm8, %ymm9 and %r14.  The mem form of
    the insn may mention as operands only (%rax), %ymm7, %ymm8, %ymm9
-   and %r14. */
+   and %r14.  It's OK for the insn to clobber ymm0, as this is needed
+   for testing PCMPxSTRx. */
 
 #define GEN_test_RandM(_name, _reg_form, _mem_form)   \
     \
@@ -162,7 +163,7 @@ void randBlock ( Block* b )
           "movq    %%r14, 128(%0)"  "\n\t" \
           : /*OUT*/  \
           : /*IN*/"r"(b) \
-          : /*TRASH*/"xmm7","xmm8","xmm6","xmm9","r14","memory","cc" \
+          : /*TRASH*/"xmm0","xmm7","xmm8","xmm6","xmm9","r14","memory","cc" \
        ); \
        showBlock("after", b); \
        randBlock(b); \
@@ -181,7 +182,7 @@ void randBlock ( Block* b )
           "movq    %%r14, 128(%0)"  "\n\t" \
           : /*OUT*/  \
           : /*IN*/"r"(b) \
-          : /*TRASH*/"xmm8","xmm7","xmm9","r14","rax","memory","cc" \
+          : /*TRASH*/"xmm0","xmm8","xmm7","xmm9","r14","rax","memory","cc" \
        ); \
        showBlock("after", b); \
        printf("\n"); \
@@ -357,6 +358,45 @@ GEN_test_RandM(VMOVQ_IREGorMEM64_to_XMM,
                "vmovq %%r14, %%xmm7",
                "vmovq (%%rax), %%xmm9")
 
+GEN_test_RandM(VPCMPESTRM_0x45_128,
+               "vpcmpestrm $0x45, %%xmm7, %%xmm8;  movapd %%xmm0, %%xmm9",
+               "vpcmpestrm $0x45, (%%rax), %%xmm8; movapd %%xmm0, %%xmm9")
+
+/* NB tests the reg form only */
+GEN_test_Ronly(VMOVD_XMM_to_IREG32,
+               "vmovd %%xmm7, %%r14d")
+
+GEN_test_RandM(VCVTSD2SS_128,
+               "vcvtsd2ss %%xmm9,  %%xmm8, %%xmm7",
+               "vcvtsd2ss (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCVTSS2SD_128,
+               "vcvtss2sd %%xmm9,  %%xmm8, %%xmm7",
+               "vcvtss2sd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPACKUSWB_128,
+               "vpackuswb %%xmm9,  %%xmm8, %%xmm7",
+               "vpackuswb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCVTTSS2SI_64,
+               "vcvttss2si %%xmm8,  %%r14",
+               "vcvttss2si (%%rax), %%r14")
+
+GEN_test_Ronly(VPMOVMSKB_128,
+               "vpmovmskb %%xmm8, %%r14")
+
+GEN_test_RandM(VPAND_128,
+               "vpand %%xmm9,  %%xmm8, %%xmm7",
+               "vpand (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Monly(VMOVHPD_128,
+               "vmovhpd %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPCMPEQB_128,
+               "vpcmpeqb %%xmm9,  %%xmm8, %%xmm7",
+               "vpcmpeqb (%%rax), %%xmm8, %%xmm7")
+
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -366,6 +406,16 @@ GEN_test_RandM(VMOVQ_IREGorMEM64_to_XMM,
 
 int main ( void )
 {
+   test_VPCMPEQB_128();
+   test_VMOVHPD_128();
+   test_VPAND_128();
+   test_VPMOVMSKB_128();
+   test_VCVTTSS2SI_64();
+   test_VPACKUSWB_128();
+   test_VCVTSS2SD_128();
+   test_VCVTSD2SS_128();
+   test_VMOVD_XMM_to_IREG32();
+   test_VPCMPESTRM_0x45_128();
    test_VMOVQ_IREGorMEM64_to_XMM();
    test_VMOVUPS_XMM_to_XMMorMEM();
    test_VMOVNTDQ_128();

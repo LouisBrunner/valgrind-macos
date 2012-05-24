@@ -20384,6 +20384,18 @@ Long dis_ESC_0F__VEX (
       }
       break;
 
+   case 0x67:
+      /* VPACKUSWB r/m, rV, r ::: r = QNarrowBin16Sto8Ux16(rV, r/m) */
+      /* VPACKUWSB = VEX.NDS.128.66.0F.WIG 67 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
+                    uses_vvvv, vbi, pfx, delta, "vpackuswb",
+                    Iop_QNarrowBin16Sto8Ux16, NULL,
+                    False/*!invertLeftArg*/, True/*swapArgs*/ );
+         goto decode_success;
+      }
+      break;
+
    case 0x68:
       /* VPUNPCKHBW r/m, rV, r ::: r = interleave-hi-bytes(rV, r/m) 
          (MVR format) */

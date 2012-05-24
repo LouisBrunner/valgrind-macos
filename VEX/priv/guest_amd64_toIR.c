@@ -9625,6 +9625,31 @@ static Long dis_CVTPD2PS ( VexAbiInfo* vbi, Prefix pfx,
 }
 
 
+static Long dis_PMOVMSKB_128 ( VexAbiInfo* vbi, Prefix pfx,
+                               Long delta, Bool isAvx )
+{
+   /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
+   UChar modrm = getUChar(delta);
+   vassert(epartIsReg(modrm)); /* ensured by caller */
+   UInt   rE = eregOfRexRM(pfx,modrm);
+   UInt   rG = gregOfRexRM(pfx,modrm);
+   IRTemp t0 = newTemp(Ity_I64);
+   IRTemp t1 = newTemp(Ity_I64);
+   IRTemp t5 = newTemp(Ity_I64);
+   assign(t0, getXMMRegLane64(rE, 0));
+   assign(t1, getXMMRegLane64(rE, 1));
+   assign(t5, mkIRExprCCall( Ity_I64, 0/*regparms*/, 
+                             "amd64g_calculate_sse_pmovmskb",
+                             &amd64g_calculate_sse_pmovmskb,
+                             mkIRExprVec_2( mkexpr(t1), mkexpr(t0) )));
+   putIReg32(rG, unop(Iop_64to32,mkexpr(t5)));
+   DIP("%spmovmskb %s,%s\n", isAvx ? "v" : "", nameXMMReg(rE),
+       nameIReg32(rG));
+   delta += 1;
+   return delta;
+}
+
+
 /* FIXME: why not just use InterleaveLO / InterleaveHI ?? */
 static IRTemp math_UNPCKxPS_128 ( IRTemp sV, IRTemp dV, UChar opc )
 {
@@ -12326,27 +12351,10 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          zero-extend of it in ireg(G).  Doing this directly is just
          too cumbersome; give up therefore and call a helper. */
       if (have66noF2noF3(pfx) 
-          && (sz == 2 || /* ignore redundant REX.W */ sz == 8)) {
-         /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
-         modrm = getUChar(delta);
-         if (epartIsReg(modrm)) {
-            t0 = newTemp(Ity_I64);
-            t1 = newTemp(Ity_I64);
-            assign(t0, getXMMRegLane64(eregOfRexRM(pfx,modrm), 0));
-            assign(t1, getXMMRegLane64(eregOfRexRM(pfx,modrm), 1));
-            t5 = newTemp(Ity_I64);
-            assign(t5, mkIRExprCCall(
-                          Ity_I64, 0/*regparms*/, 
-                          "amd64g_calculate_sse_pmovmskb",
-                          &amd64g_calculate_sse_pmovmskb,
-                          mkIRExprVec_2( mkexpr(t1), mkexpr(t0) )));
-            putIReg32(gregOfRexRM(pfx,modrm), unop(Iop_64to32,mkexpr(t5)));
-            DIP("pmovmskb %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
-                                    nameIReg32(gregOfRexRM(pfx,modrm)));
-            delta += 1;
-            goto decode_success;
-         }
-         /* no memory case, it seems */
+          && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
+          && epartIsReg(getUChar(delta))) { /* no memory case, it seems */
+         delta = dis_PMOVMSKB_128( vbi, pfx, delta, False/*!isAvx*/ );
+         goto decode_success;
       }
       /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
       /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
@@ -19888,6 +19896,21 @@ Long dis_ESC_0F__VEX (
       }
       break;
 
+   case 0x17:
+      /* VMOVHPD xmm1, m64 = VEX.128.66.0F.WIG 17 /r */
+      /* Insn exists only in mem form (not sure about this) */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
+          && !epartIsReg(getUChar(delta))) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx, modrm);
+         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         storeLE( mkexpr(addr), getXMMRegLane64( rG, 1));
+         DIP("vmovhpd %s,%s\n", nameXMMReg(rG), dis_buf);
+         goto decode_success;
+      }
+      break;
+
    case 0x28:
       /* VMOVAPD xmm2/m128, xmm1 = VEX.128.66.0F.WIG 28 /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
@@ -20118,6 +20141,11 @@ Long dis_ESC_0F__VEX (
       /* VCVTTSS2SI xmm1/m32, r32 = VEX.LIG.F3.0F.W0 2C /r */
       if (haveF3no66noF2(pfx) && 0==getRexW(pfx)/*W0*/) {
          delta = dis_CVTxSS2SI( vbi, pfx, delta, True/*isAvx*/, opc, 4);
+         goto decode_success;
+      }
+      /* VCVTTSS2SI xmm1/m64, r64 = VEX.LIG.F3.0F.W1 2C /r */
+      if (haveF3no66noF2(pfx) && 1==getRexW(pfx)/*W1*/) {
+         delta = dis_CVTxSS2SI( vbi, pfx, delta, True/*isAvx*/, opc, 8);
          goto decode_success;
       }
       break;
@@ -20555,6 +20583,16 @@ Long dis_ESC_0F__VEX (
       }
       break;
 
+   case 0x74:
+      /* VPCMPEQB r/m, rV, r ::: r = rV `eq-by-8s` r/m (MVR format) */
+      /* VPCMPEQB = VEX.NDS.128.66.0F.WIG 74 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
+                    uses_vvvv, vbi, pfx, delta, "vpcmpeqb", Iop_CmpEQ8x16 );
+         goto decode_success;
+      }
+      break;
+
    case 0x76:
       /* VPCMPEQD r/m, rV, r ::: r = rV `eq-by-32s` r/m (MVR format) */
       /* VPCMPEQD = VEX.NDS.128.66.0F.WIG 76 /r */
@@ -20725,6 +20763,24 @@ Long dis_ESC_0F__VEX (
             delta += alen;
             goto decode_success;
          }
+      }
+      break;
+
+   case 0xD7:
+      /* VEX.128.66.0F.WIG D7 /r = VPMOVMSKB xmm1, r32 */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_PMOVMSKB_128( vbi, pfx, delta, True/*isAvx*/ );
+         goto decode_success;
+      }
+      break;
+
+   case 0xDB:
+      /* VPAND r/m, rV, r ::: r = rV & r/m (MVR format) */
+      /* VEX.NDS.128.66.0F.WIG DB /r = VPAND xmm3/m128, xmm2, xmm1 */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
+                    uses_vvvv, vbi, pfx, delta, "vpand", Iop_AndV128 );
+         goto decode_success;
       }
       break;
 

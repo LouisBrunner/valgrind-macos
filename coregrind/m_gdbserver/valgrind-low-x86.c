@@ -243,6 +243,20 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    }
 }
 
+static
+char* target_xml (Bool shadow_mode)
+{
+   if (shadow_mode) {
+#if defined(VGO_linux)
+   return "i386-linux-valgrind.xml";
+#else
+   return "i386-coresse-valgrind.xml";
+#endif
+   } else {
+      return NULL;
+   }  
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -251,12 +265,7 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "i386",
-   NULL, // target_xml not needed.
-#if defined(VGO_linux)
-   "i386-linux-valgrind.xml"
-#else
-   "i386-coresse-valgrind.xml"
-#endif
+   target_xml
 };
 
 void x86_init_architecture (struct valgrind_target_ops *target)

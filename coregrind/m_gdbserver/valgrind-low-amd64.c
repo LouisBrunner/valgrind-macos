@@ -27,7 +27,7 @@
 #include "regcache.h"
 
 #include "pub_core_aspacemgr.h"
-#include "pub_tool_machine.h"
+#include "pub_core_machine.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_core_gdbserver.h" 
@@ -100,11 +100,29 @@ struct reg regs[] = {
   { "xmm15", 4128, 128 },
   { "mxcsr", 4256, 32  },
 #if defined(VGO_linux)
-  { "orig_rax", 4288, 64 }
+  { "orig_rax", 4288, 64 },
 #endif
+  { "ymm0h", 4352, 128 }, // The ymm?h registers only to be given to GDB
+  { "ymm1h", 4480, 128 }, // if Valgrind is running with AVX instructions.
+  { "ymm2h", 4608, 128 },
+  { "ymm3h", 4736, 128 },
+  { "ymm4h", 4864, 128 },
+  { "ymm5h", 4992, 128 },
+  { "ymm6h", 5120, 128 },
+  { "ymm7h", 5248, 128 },
+  { "ymm8h", 5376, 128 },
+  { "ymm9h", 5504, 128 },
+  { "ymm10h", 5632, 128 },
+  { "ymm11h", 5760, 128 },
+  { "ymm12h", 5888, 128 },
+  { "ymm13h", 6016, 128 },
+  { "ymm14h", 6144, 128 },
+  { "ymm15h", 6272, 128 }
 };
 static const char *expedite_regs[] = { "rbp", "rsp", "rip", 0 };
-#define num_regs (sizeof (regs) / sizeof (regs[0]))
+#define max_num_regs (sizeof (regs) / sizeof (regs[0]))
+static int dyn_num_regs; // if no AVX, we have to give less registers to gdb.
+
 
 static
 CORE_ADDR get_pc (void)
@@ -135,8 +153,8 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
                         transfer_direction dir, int size, Bool *mod)
 {
    ThreadState* tst = VG_(get_ThreadState)(tid);
-   int set = abs_regno / num_regs;
-   int regno = abs_regno % num_regs;
+   int set = abs_regno / dyn_num_regs;
+   int regno = abs_regno % dyn_num_regs;
    *mod = False;
 
    VexGuestAMD64State* amd64 = (VexGuestAMD64State*) get_arch (set, tst);
@@ -269,29 +287,83 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
       }
       break;
    case 57: *mod = False; break; // GDBTD???? VEX equivalent { "orig_rax"},
+   case 58: VG_(transfer) (&amd64->guest_YMM0[4],  buf, dir, size, mod); break;
+   case 59: VG_(transfer) (&amd64->guest_YMM1[4],  buf, dir, size, mod); break;
+   case 60: VG_(transfer) (&amd64->guest_YMM2[4],  buf, dir, size, mod); break;
+   case 61: VG_(transfer) (&amd64->guest_YMM3[4],  buf, dir, size, mod); break;
+   case 62: VG_(transfer) (&amd64->guest_YMM4[4],  buf, dir, size, mod); break;
+   case 63: VG_(transfer) (&amd64->guest_YMM5[4],  buf, dir, size, mod); break;
+   case 64: VG_(transfer) (&amd64->guest_YMM6[4],  buf, dir, size, mod); break;
+   case 65: VG_(transfer) (&amd64->guest_YMM7[4],  buf, dir, size, mod); break;
+   case 66: VG_(transfer) (&amd64->guest_YMM8[4],  buf, dir, size, mod); break;
+   case 67: VG_(transfer) (&amd64->guest_YMM9[4],  buf, dir, size, mod); break;
+   case 68: VG_(transfer) (&amd64->guest_YMM10[4], buf, dir, size, mod); break;
+   case 69: VG_(transfer) (&amd64->guest_YMM11[4], buf, dir, size, mod); break;
+   case 70: VG_(transfer) (&amd64->guest_YMM12[4], buf, dir, size, mod); break;
+   case 71: VG_(transfer) (&amd64->guest_YMM13[4], buf, dir, size, mod); break;
+   case 72: VG_(transfer) (&amd64->guest_YMM14[4], buf, dir, size, mod); break;
+   case 73: VG_(transfer) (&amd64->guest_YMM15[4], buf, dir, size, mod); break;
    default: vg_assert(0);
    }
 }
 
+static
+Bool have_avx(void)
+{
+   VexArch va;
+   VexArchInfo vai;
+   VG_(machine_get_VexArchInfo) (&va, &vai);
+   return (vai.hwcaps & VEX_HWCAPS_AMD64_AVX ? True : False);
+}
+static
+char* target_xml (Bool shadow_mode)
+{
+   if (shadow_mode) {
+#if defined(VGO_linux)
+      if (have_avx())
+         return "amd64-avx-linux-valgrind.xml";
+      else
+         return "amd64-linux-valgrind.xml";
+#else
+      if (have_avx())
+         return "amd64-avx-coresse-valgrind.xml";
+      else
+         return "amd64-coresse-valgrind.xml";
+#endif
+   } else {
+#if defined(VGO_linux)
+      if (have_avx())
+         return "amd64-avx-linux.xml";
+      else
+         return NULL;
+#else
+      if (have_avx())
+         return "amd64-avx-coresse.xml";
+      else
+         return NULL;
+#endif
+   }  
+}
+
 static struct valgrind_target_ops low_target = {
-   num_regs,
+   -1, // Must be computed at init time.
    regs,
    7, //RSP
    transfer_register,
    get_pc,
    set_pc,
    "amd64",
-   NULL, // target_xml not needed.
-#if defined(VGO_linux)
-   "amd64-linux-valgrind.xml"
-#else
-   "amd64-coresse-valgrind.xml"
-#endif
+   target_xml
 };
 
 void amd64_init_architecture (struct valgrind_target_ops *target)
 {
    *target = low_target;
-   set_register_cache (regs, num_regs);
+   if (have_avx())
+      dyn_num_regs = max_num_regs;
+   else
+      dyn_num_regs = max_num_regs - 16; // remove the AVX "high" registers.
+   target->num_regs = dyn_num_regs;
+   set_register_cache (regs, dyn_num_regs);
    gdbserver_expedite_regs = expedite_regs;
 }

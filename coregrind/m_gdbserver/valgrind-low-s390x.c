@@ -187,6 +187,16 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    }
 }
 
+static
+char* target_xml (Bool shadow_mode)
+{
+   if (shadow_mode) {
+      return "s390x-generic-valgrind.xml";
+   } else {
+      return "s390x-generic.xml";
+   }  
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -195,8 +205,7 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "s390x",
-   "s390x-generic.xml",
-   "s390x-generic-valgrind.xml"
+   target_xml
 };
 
 void s390x_init_architecture (struct valgrind_target_ops *target)

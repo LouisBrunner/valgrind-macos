@@ -277,6 +277,16 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    }
 }
 
+static
+char* target_xml (Bool shadow_mode)
+{
+   if (shadow_mode) {
+      return "arm-with-vfpv3-valgrind.xml";
+   } else {
+      return "arm-with-vfpv3.xml";
+   }  
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -285,8 +295,7 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "arm",
-   "arm-with-vfpv3.xml",
-   "arm-with-vfpv3-valgrind.xml"
+   target_xml
 };
 
 void arm_init_architecture (struct valgrind_target_ops *target)

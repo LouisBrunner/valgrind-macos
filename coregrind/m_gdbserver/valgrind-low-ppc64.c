@@ -319,6 +319,16 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    }
 }
 
+static
+char* target_xml (Bool shadow_mode)
+{
+   if (shadow_mode) {
+      return "powerpc-altivec64l-valgrind.xml";
+   } else {
+      return "powerpc-altivec64l.xml";
+   }  
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -327,8 +337,7 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "ppc64",
-   "powerpc-altivec64l.xml",
-   "powerpc-altivec64l-valgrind.xml"
+   target_xml
 };
 
 void ppc64_init_architecture (struct valgrind_target_ops *target)

@@ -700,6 +700,25 @@ $3 = 0
 values instead of float values, as it is expected that these
 shadow values are mostly used for memcheck validity bits. </para>
 
+<para>Intel/amd64 AVX registers <computeroutput>ymm0</computeroutput>
+to <computeroutput>ymm15</computeroutput> have also their shadow
+registers. However, GDB presents the shadow values using two
+"half" registers. For example, the half shadow registers for 
+<computeroutput>ymm9</computeroutput> are
+<computeroutput>xmm9s1</computeroutput> (lower half for set 1),
+<computeroutput>ymm9hs1</computeroutput> (upper half for set 1),
+<computeroutput>xmm9s2</computeroutput> (lower half for set 2),
+<computeroutput>ymm9hs2</computeroutput> (upper half for set 2).
+Note the inconsistent notation for the names of the half registers:
+the lower part starts with an <computeroutput>x</computeroutput>,
+the upper part starts with an <computeroutput>y</computeroutput>
+and has an <computeroutput>h</computeroutput> before the shadow postfix.
+</para>
+<para>The special presentation of the AVX shadow registers is due
+to the fact that GDB retrieves independently the lower and upper half
+of the <computeroutput>ymm</computeroutput> registers. GDB however
+does not know that the shadow half registers have to be shown combined.
+</para>
 </sect2>
 
 

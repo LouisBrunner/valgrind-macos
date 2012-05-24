@@ -532,8 +532,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
    }
 
-   if ( (valgrind_target_xml() != NULL 
-         || valgrind_shadow_target_xml() != NULL)
+   if (valgrind_target_xml(VG_(clo_vgdb_shadow_registers)) != NULL
         && strncmp ("qXfer:features:read:", arg_own_buf, 20) == 0) {
       CORE_ADDR ofs;
       unsigned int len, doc_len;
@@ -549,19 +548,11 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
       
       if (strcmp (annex, "target.xml") == 0) {
-         annex = NULL; // to replace it by the corresponding filename.
-
-         /* If VG_(clo_vgdb_shadow_registers), try to use
-            shadow_target_xml. Fallback to target_xml
-            if not defined. */
-         if (VG_(clo_vgdb_shadow_registers)) {
-            annex = valgrind_shadow_target_xml();
-            if (annex != NULL)
-               /* Ensure the shadow registers are initialized. */
-               initialize_shadow_low(True);
+         annex = valgrind_target_xml(VG_(clo_vgdb_shadow_registers));
+         if (annex != NULL && VG_(clo_vgdb_shadow_registers)) {
+            /* Ensure the shadow registers are initialized. */
+            initialize_shadow_low(True);
          }
-         if (annex == NULL)
-            annex = valgrind_target_xml();
          if (annex == NULL) {
             strcpy (arg_own_buf, "E00");
             return;
@@ -669,8 +660,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       if (VG_(client_auxv))
          strcat (arg_own_buf, ";qXfer:auxv:read+");
 
-      if (valgrind_target_xml() != NULL
-          || valgrind_shadow_target_xml() != NULL) {
+      if (valgrind_target_xml(VG_(clo_vgdb_shadow_registers)) != NULL) {
          strcat (arg_own_buf, ";qXfer:features:read+");
          /* if a new gdb connects to us, we have to reset the register
             set to the normal register sets to allow this new gdb to

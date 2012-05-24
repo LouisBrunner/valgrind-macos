@@ -54,17 +54,17 @@ struct valgrind_target_ops
       or NULL not to answer.  */
    const char *arch_string;
    
-   /* Description of the set of registers.
+   /* Returns the target xml description of the set of registers.
       For some architectures (e.g. arm), it is mandatory
       to give a description of the registers, otherwise
       gdb does not understand the reply to the 'g' packet
-      (which is used to get the registers). */
-   const char *target_xml;
+      (which is used to get the registers).
+      If shadow_mode, returns a target xml description
+      including the two shadow registers sets.
+      This is mandatory to use the option --vgdb-shadow-registers=yes. 
+      Returns NULL if there is no target xml file*/
+   char* (*target_xml) (Bool shadow_mode);
 
-   /* Same as target_xml, but describes also the two shadow
-      registers set.
-      This is mandatory to use the option --vgdb-shadow-registers=yes. */
-   const char *shadow_target_xml;
 };
 
 extern void x86_init_architecture (struct valgrind_target_ops *target);

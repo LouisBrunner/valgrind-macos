@@ -469,6 +469,9 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/32bit-sse-valgrind-s1.xml \
 	m_gdbserver/32bit-sse-valgrind-s2.xml \
 	m_gdbserver/32bit-sse.xml \
+	m_gdbserver/64bit-avx-valgrind-s2.xml \
+	m_gdbserver/64bit-avx-valgrind-s1.xml \
+	m_gdbserver/64bit-avx.xml \
 	m_gdbserver/64bit-core-valgrind-s1.xml \
 	m_gdbserver/64bit-core-valgrind-s2.xml \
 	m_gdbserver/64bit-core.xml \
@@ -478,6 +481,10 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/64bit-sse-valgrind-s1.xml \
 	m_gdbserver/64bit-sse-valgrind-s2.xml \
 	m_gdbserver/64bit-sse.xml \
+	m_gdbserver/amd64-avx-coresse-valgrind.xml \
+	m_gdbserver/amd64-avx-coresse.xml \
+	m_gdbserver/amd64-avx-linux-valgrind.xml \
+	m_gdbserver/amd64-avx-linux.xml \
 	m_gdbserver/amd64-coresse-valgrind.xml \
 	m_gdbserver/amd64-linux-valgrind.xml \
 	m_gdbserver/arm-core-valgrind-s1.xml \

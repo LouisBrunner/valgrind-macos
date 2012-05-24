@@ -491,14 +491,9 @@ int valgrind_point (Bool insert, char type, CORE_ADDR addr, int len)
       return 1; /* error or unsupported */
 }
 
-char* valgrind_target_xml (void)
+char* valgrind_target_xml (Bool shadow_mode)
 {
-   return (char *) the_low_target.target_xml;
-}
-
-char* valgrind_shadow_target_xml (void)
-{
-   return (char *) the_low_target.shadow_target_xml;
+   return (*the_low_target.target_xml) (shadow_mode);
 }
 
 int valgrind_insert_watchpoint (char type, CORE_ADDR addr, int len)

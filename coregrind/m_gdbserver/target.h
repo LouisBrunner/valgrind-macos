@@ -58,12 +58,12 @@ extern void valgrind_initialize_target(void);
 extern void initialize_shadow_low (Bool shadow_mode);
 
 /* Returns the name of the xml target description file. 
-   returns NULL if no xml target description available. */
-extern char* valgrind_target_xml (void);
-
-/* Same but describes also the shadow registers. */
-extern char* valgrind_shadow_target_xml (void);
-
+   returns NULL if no xml target description available.
+   if shadow_mode, then returns the xml target description
+   with the shadow registers
+   else returns the xml target description only for
+   the normal registers. */
+extern char* valgrind_target_xml (Bool shadow_mode);
 
 
 /* -------------------------------------------------------------------------- */

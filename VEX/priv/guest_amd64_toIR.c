@@ -19676,7 +19676,7 @@ Long dis_AVX128_E_to_G_unary ( /*OUT*/Bool* uses_vvvv,
       delta += 1;
       DIP("%s %s,%s\n", opname, nameXMMReg(rE), nameXMMReg(rG));
    } else {
-      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
+      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
       assign(arg, loadLE(Ity_V128, mkexpr(addr)));
       delta += alen;
       DIP("%s %s,%s\n", opname, dis_buf, nameXMMReg(rG));
@@ -21039,7 +21039,7 @@ Long dis_ESC_0F3A__VEX (
                 nameXMMReg(rIS4), nameXMMReg(rE),
                 nameXMMReg(rV), nameXMMReg(rG));
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
             delta += alen;
             assign(vecE, loadLE(Ity_V128, mkexpr(addr)));
             UChar ib = getUChar(delta);

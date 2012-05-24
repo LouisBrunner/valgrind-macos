@@ -15595,7 +15595,7 @@ static Long dis_PCMPxSTRx ( VexAbiInfo* vbi, Prefix pfx,
    } else {
       regNoL = 16; /* use XMM16 as an intermediary */
       regNoR = gregOfRexRM(pfx, modrm);
-      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
       /* No alignment check; I guess that makes sense, given that
          these insns are for dealing with C style strings. */
       stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
@@ -15751,7 +15751,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
                  imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
                       nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
             gen_SEGV_if_not_16_aligned(addr);
             assign( src0, loadLE(Ity_F32,
                                  binop(Iop_Add64, mkexpr(addr), mkU64(0) )));
@@ -15813,7 +15813,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
                  imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
                       nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
             gen_SEGV_if_not_16_aligned(addr);
             assign( src0, loadLE(Ity_F64,
                                  binop(Iop_Add64, mkexpr(addr), mkU64(0) )));
@@ -15868,7 +15868,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
                  imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
                       nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
             assign( src, loadLE( isD ? Ity_F64 : Ity_F32, mkexpr(addr) ));
             imm = getUChar(delta+alen);
             if (imm & ~15) goto decode_failure;
@@ -16811,7 +16811,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             regNoL = 16; /* use XMM16 as an intermediary */
             regNoR = gregOfRexRM(pfx, modrm);
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
             /* alignment check ???? . */
             stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
             imm = getUChar(delta+alen);

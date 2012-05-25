@@ -36,8 +36,8 @@
       /* VMOVDQU xmm2/m128, xmm1 = VEX.128.F3.0F.WIG 6F */
 
 /* VPSHUFD imm8, xmm2/m128, xmm1 = VEX.128.66.0F.WIG 70 /r ib */
-/* VPSLLD imm8, xmm2, xmm1 = VEX.128.66.0F.WIG 72 /6 ib */
-/* VPSRLDQ VEX.NDD.128.66.0F.WIG 73 /3 ib */
+/* . VPSLLD imm8, xmm2, xmm1 = VEX.128.66.0F.WIG 72 /6 ib */
+/* . VPSRLDQ VEX.NDD.128.66.0F.WIG 73 /3 ib */
 /* VPCMPEQD r/m, rV, r ::: r = rV `eq-by-32s` r/m (MVR format) */
 
       /* VMOVDQA ymm1, ymm2/m256 = VEX.256.66.0F.WIG 7F */
@@ -396,6 +396,89 @@ GEN_test_RandM(VPCMPEQB_128,
                "vpcmpeqb %%xmm9,  %%xmm8, %%xmm7",
                "vpcmpeqb (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VSHUFPS_0x39_128,
+               "vshufps $0x39, %%xmm9,  %%xmm8, %%xmm7",
+               "vshufps $0xC6, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMULPS_128,
+               "vmulps %%xmm9,  %%xmm8, %%xmm7",
+               "vmulps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VSUBPS_128,
+               "vsubps %%xmm9,  %%xmm8, %%xmm7",
+               "vsubps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VADDPS_128,
+               "vaddps %%xmm9,  %%xmm8, %%xmm7",
+               "vaddps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMAXPS_128,
+               "vmaxps %%xmm9,  %%xmm8, %%xmm7",
+               "vmaxps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMINPS_128,
+               "vminps %%xmm9,  %%xmm8, %%xmm7",
+               "vminps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCVTPS2DQ_128,
+               "vcvtps2dq %%xmm8, %%xmm7",
+               "vcvtps2dq (%%rax), %%xmm8")
+
+GEN_test_RandM(VPSHUFLW_0x39_128,
+               "vpshuflw $0x39, %%xmm9,  %%xmm7",
+               "vpshuflw $0xC6, (%%rax), %%xmm8")
+
+GEN_test_RandM(VPSHUFHW_0x39_128,
+               "vpshufhw $0x39, %%xmm9,  %%xmm7",
+               "vpshufhw $0xC6, (%%rax), %%xmm8")
+
+GEN_test_RandM(VPMULLW_128,
+               "vpmullw %%xmm9,  %%xmm8, %%xmm7",
+               "vpmullw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPADDUSW_128,
+               "vpaddusw %%xmm9,  %%xmm8, %%xmm7",
+               "vpaddusw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMULHUW_128,
+               "vpmulhuw %%xmm9,  %%xmm8, %%xmm7",
+               "vpmulhuw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPADDUSB_128,
+               "vpaddusb %%xmm9,  %%xmm8, %%xmm7",
+               "vpaddusb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPUNPCKLWD_128,
+               "vpunpcklwd %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpcklwd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPUNPCKHWD_128,
+               "vpunpckhwd %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpckhwd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Ronly(VPSLLD_0x05_128,
+               "vpslld $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_Ronly(VPSRLD_0x05_128,
+               "vpsrld $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_RandM(VPSUBUSB_128,
+               "vpsubusb %%xmm9,  %%xmm8, %%xmm7",
+               "vpsubusb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Ronly(VPSRLDQ_0x05_128,
+               "vpsrldq $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_Ronly(VPSLLDQ_0x05_128,
+               "vpslldq $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_RandM(VPANDN_128,
+               "vpandn %%xmm9,  %%xmm8, %%xmm7",
+               "vpandn (%%rax), %%xmm8, %%xmm7")
+
+/* NB tests the mem form only */
+GEN_test_Monly(VMOVD_XMM_to_MEM32,
+               "vmovd %%xmm7, (%%rax)")
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -406,6 +489,28 @@ GEN_test_RandM(VPCMPEQB_128,
 
 int main ( void )
 {
+   test_VMOVD_XMM_to_MEM32();
+   test_VPANDN_128();
+   test_VPSLLDQ_0x05_128();
+   test_VPSRLDQ_0x05_128();
+   test_VPSUBUSB_128();
+   test_VPSLLD_0x05_128();
+   test_VPSRLD_0x05_128();
+   test_VPUNPCKLWD_128();
+   test_VPUNPCKHWD_128();
+   test_VPADDUSB_128();
+   test_VPMULHUW_128();
+   test_VPADDUSW_128();
+   test_VPMULLW_128();
+   test_VPSHUFHW_0x39_128();
+   test_VPSHUFLW_0x39_128();
+   test_VCVTPS2DQ_128();
+   test_VSUBPS_128();
+   test_VADDPS_128();
+   test_VMULPS_128();
+   test_VMAXPS_128();
+   test_VMINPS_128();
+   test_VSHUFPS_0x39_128();
    test_VPCMPEQB_128();
    test_VMOVHPD_128();
    test_VPAND_128();

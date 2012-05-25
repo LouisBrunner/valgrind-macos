@@ -506,6 +506,8 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/power-altivec-valgrind-s1.xml \
 	m_gdbserver/power-altivec-valgrind-s2.xml \
 	m_gdbserver/power-altivec.xml \
+	m_gdbserver/power-core-valgrind-s1.xml \
+	m_gdbserver/power-core-valgrind-s2.xml \
 	m_gdbserver/power-core.xml \
 	m_gdbserver/power-fpu-valgrind-s1.xml \
 	m_gdbserver/power-fpu-valgrind-s2.xml \

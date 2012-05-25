@@ -498,7 +498,7 @@ to the vgdb running on the Android system using the Android NDK
 </para>
 <para> Example: on the Android system, execute the following:
     <screen><![CDATA[
-valgrind --vgdb-error=0 prog
+valgrind --vgdb-error=0 --vgdb=yes prog
 # and then in another shell, run:
 vgdb --port=1234
 ]]></screen>

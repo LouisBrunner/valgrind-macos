@@ -480,6 +480,29 @@ GEN_test_RandM(VPANDN_128,
 GEN_test_Monly(VMOVD_XMM_to_MEM32,
                "vmovd %%xmm7, (%%rax)")
 
+GEN_test_RandM(VPINSRD_128,
+               "vpinsrd $0, %%r14d,  %%xmm8, %%xmm7",
+               "vpinsrd $3, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPUNPCKLQDQ_128,
+               "vpunpcklqdq %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpcklqdq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Ronly(VPSRLW_0x05_128,
+               "vpsrlw $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_RandM(VPADDW_128,
+               "vpaddw %%xmm6,  %%xmm8, %%xmm7",
+               "vpaddw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPACKSSDW_128,
+               "vpackssdw %%xmm9,  %%xmm8, %%xmm7",
+               "vpackssdw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPUNPCKLDQ_128,
+               "vpunpckldq %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpckldq (%%rax), %%xmm8, %%xmm7")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -489,6 +512,12 @@ GEN_test_Monly(VMOVD_XMM_to_MEM32,
 
 int main ( void )
 {
+   test_VPUNPCKLDQ_128();
+   test_VPACKSSDW_128();
+   test_VPADDW_128();
+   test_VPSRLW_0x05_128();
+   test_VPUNPCKLQDQ_128();
+   test_VPINSRD_128();
    test_VMOVD_XMM_to_MEM32();
    test_VPANDN_128();
    test_VPSLLDQ_0x05_128();

@@ -1524,6 +1524,18 @@ s390_emit_CFI(UChar *p, UChar r1, UInt i2)
 
 
 static UChar *
+s390_emit_CGFI(UChar *p, UChar r1, UInt i2)
+{
+   vassert(s390_host_has_eimm);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, GPR, INT), "cgfi", r1, i2);
+
+   return emit_RIL(p, 0xc20c00000000ULL, r1, i2);
+}
+
+
+static UChar *
 s390_emit_CS(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -1620,6 +1632,18 @@ s390_emit_CLFI(UChar *p, UChar r1, UInt i2)
       s390_disasm(ENC3(MNM, GPR, UINT), "clfi", r1, i2);
 
    return emit_RIL(p, 0xc20f00000000ULL, r1, i2);
+}
+
+
+static UChar *
+s390_emit_CLGFI(UChar *p, UChar r1, UInt i2)
+{
+   vassert(s390_host_has_eimm);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, GPR, UINT), "clgfi", r1, i2);
+
+   return emit_RIL(p, 0xc20e00000000ULL, r1, i2);
 }
 
 
@@ -6309,6 +6333,15 @@ s390_insn_compare_emit(UChar *buf, const s390_insn *insn)
             return s390_emit_CLFIw(buf, r1, value);
 
       case 8:
+         if (s390_host_has_eimm) {
+            if (signed_comparison) {
+               if (ulong_fits_signed_32bit(value))
+                  return s390_emit_CGFI(buf, r1, value);
+            } else {
+               if (ulong_fits_unsigned_32bit(value))
+                  return s390_emit_CLGFI(buf, r1, value);
+            }
+         }
          buf = s390_emit_load_64imm(buf, R0, value);
          if (signed_comparison)
             return s390_emit_CGR(buf, r1, R0);

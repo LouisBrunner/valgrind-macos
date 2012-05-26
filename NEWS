@@ -106,6 +106,7 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
 299756  For symmetry, --free-fill must be ignored for MEMPOOL_FREE and FREELIKE client requests
 n-i-bz  Bypass gcc4.4/4.5 wrong code generation causing out of memory or asserts
 n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
+n-i-bz  Fix false positive in sys_clone on amd64 when optional args are not given (e.g. child_tidptr)
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

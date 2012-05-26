@@ -399,21 +399,35 @@ PRE(sys_clone)
    ULong cloneflags;
 
    PRINT("sys_clone ( %lx, %#lx, %#lx, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(int, "clone",
+   PRE_REG_READ2(int, "clone",
                  unsigned long, flags,
-                 void *, child_stack,
-                 int *, parent_tidptr,
-                 int *, child_tidptr,
-                 void *, tlsaddr);
+                 void *, child_stack);
 
    if (ARG1 & VKI_CLONE_PARENT_SETTID) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA3("clone", int *, parent_tidptr);
+      }
       PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
       if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int), VKI_PROT_WRITE)) {
          SET_STATUS_Failure( VKI_EFAULT );
          return;
       }
    }
+   if (ARG1 & VKI_CLONE_SETTLS) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA4("clone", vki_modify_ldt_t *, tlsinfo);
+      }
+      PRE_MEM_READ("clone(tlsinfo)", ARG4, sizeof(vki_modify_ldt_t));
+      if (!VG_(am_is_valid_for_client)(ARG4, sizeof(vki_modify_ldt_t), 
+                                             VKI_PROT_READ)) {
+         SET_STATUS_Failure( VKI_EFAULT );
+         return;
+      }
+   }
    if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA5("clone", int *, child_tidptr);
+      }
       PRE_MEM_WRITE("clone(child_tidptr)", ARG4, sizeof(Int));
       if (!VG_(am_is_valid_for_client)(ARG4, sizeof(Int), VKI_PROT_WRITE)) {
          SET_STATUS_Failure( VKI_EFAULT );

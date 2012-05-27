@@ -15726,6 +15726,28 @@ static IRTemp math_PINSRD_128 ( IRTemp v128, IRTemp u32, UInt imm8 )
 }
 
 
+static IRTemp math_INSERTPS ( IRTemp dstV, IRTemp toInsertD, UInt imm8 )
+{
+   const IRTemp inval = IRTemp_INVALID;
+   IRTemp dstDs[4] = { inval, inval, inval, inval };
+   breakup128to32s( dstV, &dstDs[3], &dstDs[2], &dstDs[1], &dstDs[0] );
+
+   vassert(imm8 <= 255);
+   dstDs[(imm8 >> 4) & 3] = toInsertD; /* "imm8_count_d" */
+
+   UInt imm8_zmask = (imm8 & 15);
+   IRTemp zero_32 = newTemp(Ity_I32);
+   assign( zero_32, mkU32(0) );
+   IRTemp resV = newTemp(Ity_V128);
+   assign( resV, mk128from32s( 
+                    ((imm8_zmask & 8) == 8) ? zero_32 : dstDs[3], 
+                    ((imm8_zmask & 4) == 4) ? zero_32 : dstDs[2], 
+                    ((imm8_zmask & 2) == 2) ? zero_32 : dstDs[1], 
+                    ((imm8_zmask & 1) == 1) ? zero_32 : dstDs[0]) );
+   return resV;
+}
+
+
 __attribute__((noinline))
 static
 Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
@@ -16342,85 +16364,40 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
       break;
 
    case 0x21:
-      /* 66 0F 3A 21 /r ib = INSERTPS xmm1, xmm2/m32, imm8
+      /* 66 0F 3A 21 /r ib = INSERTPS imm8, xmm2/m32, xmm1
          Insert Packed Single Precision Floating-Point Value (XMM) */
       if (have66noF2noF3(pfx) && sz == 2) {
-
-         Int imm8;
-         Int imm8_count_s;
-         Int imm8_count_d;
-         Int imm8_zmask;
-         IRTemp dstVec   = newTemp(Ity_V128);
-         IRTemp srcDWord = newTemp(Ity_I32);   
+         UInt   imm8;
+         IRTemp d2ins = newTemp(Ity_I32); /* comes from the E part */
+         const IRTemp inval = IRTemp_INVALID;
 
          modrm = getUChar(delta);
-
-         assign( dstVec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+         UInt rG = gregOfRexRM(pfx, modrm);
 
          if ( epartIsReg( modrm ) ) {
-            IRTemp src_vec = newTemp(Ity_V128);
-            assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
-
-            IRTemp src_lane_0 = IRTemp_INVALID;
-            IRTemp src_lane_1 = IRTemp_INVALID;
-            IRTemp src_lane_2 = IRTemp_INVALID;
-            IRTemp src_lane_3 = IRTemp_INVALID;
-            breakup128to32s( src_vec, 
-                             &src_lane_3, &src_lane_2, &src_lane_1, &src_lane_0 );
-
-            imm8 = (Int)getUChar(delta+1);
-            imm8_count_s = ((imm8 >> 6) & 3);
-            switch( imm8_count_s ) {
-              case 0:  assign( srcDWord, mkexpr(src_lane_0) ); break;
-              case 1:  assign( srcDWord, mkexpr(src_lane_1) ); break;
-              case 2:  assign( srcDWord, mkexpr(src_lane_2) ); break;
-              case 3:  assign( srcDWord, mkexpr(src_lane_3) ); break;
-              default: vassert(0);                             break;
-            }
-
+            UInt   rE = eregOfRexRM(pfx, modrm);
+            IRTemp vE = newTemp(Ity_V128);
+            assign( vE, getXMMReg(rE) );
+            IRTemp dsE[4] = { inval, inval, inval, inval };
+            breakup128to32s( vE, &dsE[3], &dsE[2], &dsE[1], &dsE[0] );
+            imm8 = getUChar(delta+1);
+            d2ins = dsE[(imm8 >> 6) & 3]; /* "imm8_count_s" */
             delta += 1+1;
-            DIP( "insertps $%d, %s,%s\n", imm8,
-                 nameXMMReg( eregOfRexRM(pfx, modrm) ),
-                 nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+            DIP( "insertps $%u, %s,%s\n",
+                 imm8, nameXMMReg(rE), nameXMMReg(rG) );
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
-                             1/* const imm8 is 1 byte after the amode */ );
-            assign( srcDWord, loadLE( Ity_I32, mkexpr(addr) ) );
-            imm8 = (Int)getUChar(delta+alen);
-            imm8_count_s = 0;
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( d2ins, loadLE( Ity_I32, mkexpr(addr) ) );
+            imm8 = getUChar(delta+alen);
             delta += alen+1;
-            DIP( "insertps $%d, %s,%s\n", 
-                 imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+            DIP( "insertps $%u, %s,%s\n", 
+                 imm8, dis_buf, nameXMMReg(rG) );
          }
 
-         IRTemp dst_lane_0 = IRTemp_INVALID;
-         IRTemp dst_lane_1 = IRTemp_INVALID;
-         IRTemp dst_lane_2 = IRTemp_INVALID;
-         IRTemp dst_lane_3 = IRTemp_INVALID;
-         breakup128to32s( dstVec,
-                          &dst_lane_3, &dst_lane_2, &dst_lane_1, &dst_lane_0 );
+         IRTemp vG = newTemp(Ity_V128);
+         assign( vG, getXMMReg(rG) );
 
-         imm8_count_d = ((imm8 >> 4) & 3);
-         switch( imm8_count_d ) {
-            case 0:  dst_lane_0 = srcDWord; break;
-            case 1:  dst_lane_1 = srcDWord; break;
-            case 2:  dst_lane_2 = srcDWord; break;
-            case 3:  dst_lane_3 = srcDWord; break;
-            default: vassert(0);            break;
-         }
-
-         imm8_zmask = (imm8 & 15);
-         IRTemp zero_32 = newTemp(Ity_I32);
-         assign( zero_32, mkU32(0) );
-
-         IRExpr* ire_vec_128 = mk128from32s( 
-                                  ((imm8_zmask & 8) == 8) ? zero_32 : dst_lane_3, 
-                                  ((imm8_zmask & 4) == 4) ? zero_32 : dst_lane_2, 
-                                  ((imm8_zmask & 2) == 2) ? zero_32 : dst_lane_1, 
-                                  ((imm8_zmask & 1) == 1) ? zero_32 : dst_lane_0);
-
-         putXMMReg( gregOfRexRM(pfx, modrm), ire_vec_128 );
- 
+         putXMMReg( rG, mkexpr(math_INSERTPS( vG, d2ins, imm8 )) );
          goto decode_success;
       }
       break;
@@ -20325,7 +20302,7 @@ Long dis_ESC_0F__VEX (
       }
       /* VCVTPD2PS xmm2/m128, xmm1 = VEX.128.66.0F.WIG 5A /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
-         delta = dis_CVTPD2PS( vbi, pfx, delta, False/*!isAvx*/ );
+         delta = dis_CVTPD2PS( vbi, pfx, delta, True/*isAvx*/ );
          goto decode_success;
       }
       /* VCVTSD2SS xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.WIG 5A /r */
@@ -21323,7 +21300,7 @@ Long dis_ESC_0F3A__VEX (
       break;
 
    case 0x19:
-     /* VEXTRACTF128 rS, r/m
+     /* VEXTRACTF128 $lane_no, rS, r/m
         ::: r/m:V128 = a lane of rS:V256 (RM format) */
      /* VEXTRACTF128 = VEX.256.66.0F3A.W0 19 /r ib */
       if (have66noF2noF3(pfx)
@@ -21351,6 +21328,46 @@ Long dis_ESC_0F3A__VEX (
          }
          delta++;
          /* doesn't use vvvv */
+         goto decode_success;
+      }
+      break;
+
+   case 0x21:
+      /* VINSERTPS imm8, xmm3/m32, xmm2, xmm1
+         = VEX.NDS.128.66.0F3A.WIG 21 /r ib */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         UInt   rV    = getVexNvvvv(pfx);
+         UInt   imm8;
+         IRTemp d2ins = newTemp(Ity_I32); /* comes from the E part */
+         const IRTemp inval = IRTemp_INVALID;
+
+         if ( epartIsReg( modrm ) ) {
+            UInt   rE = eregOfRexRM(pfx, modrm);
+            IRTemp vE = newTemp(Ity_V128);
+            assign( vE, getXMMReg(rE) );
+            IRTemp dsE[4] = { inval, inval, inval, inval };
+            breakup128to32s( vE, &dsE[3], &dsE[2], &dsE[1], &dsE[0] );
+            imm8 = getUChar(delta+1);
+            d2ins = dsE[(imm8 >> 6) & 3]; /* "imm8_count_s" */
+            delta += 1+1;
+            DIP( "insertps $%u, %s,%s\n",
+                 imm8, nameXMMReg(rE), nameXMMReg(rG) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( d2ins, loadLE( Ity_I32, mkexpr(addr) ) );
+            imm8 = getUChar(delta+alen);
+            delta += alen+1;
+            DIP( "insertps $%u, %s,%s\n", 
+                 imm8, dis_buf, nameXMMReg(rG) );
+         }
+
+         IRTemp vV = newTemp(Ity_V128);
+         assign( vV, getXMMReg(rV) );
+
+         putYMMRegLoAndZU( rG, mkexpr(math_INSERTPS( vV, d2ins, imm8 )) );
+         *uses_vvvv = True;
          goto decode_success;
       }
       break;

@@ -558,11 +558,13 @@ struct vki_ucontext {
 // type for x86 (the final 'lm' field is added);  I'm not sure about the
 // significance of that... --njn
 
-#if 0
 /* [[Nb: This is the structure passed to the modify_ldt syscall.  Just so as
    to confuse and annoy everyone, this is _not_ the same as an
    VgLdtEntry and has to be translated into such.  The logic for doing
    so, in vg_ldt.c, is copied from the kernel sources.]] */
+/* Note also that a comment in ldt.h indicates that the below
+   contains several fields ignored on 64bit, and that modify_ldt
+   is rather for 32bit. */
 struct vki_user_desc {
 	unsigned int  entry_number;
 	unsigned long base_addr;
@@ -578,9 +580,6 @@ struct vki_user_desc {
 
 // [[Nb: for our convenience within Valgrind, use a more specific name]]
 typedef struct vki_user_desc vki_modify_ldt_t;
-#endif
-
-typedef void vki_modify_ldt_t;
 
 //----------------------------------------------------------------------
 // From linux-2.6.11.2/include/asm-x86_64/ipcbuf.h

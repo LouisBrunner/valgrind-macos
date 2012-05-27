@@ -353,6 +353,7 @@ typedef struct {
          s390_cc_t cond;
          Addr64    target;
          UInt      num_args;
+         HReg      dst;       /* if not INVALID_HREG, put return value here */
          HChar    *name;      /* callee's name (for debugging) */
       } helper_call;
       struct {
@@ -472,7 +473,7 @@ s390_insn *s390_insn_test(UChar size, s390_opnd_RMI src);
 s390_insn *s390_insn_compare(UChar size, HReg dst, s390_opnd_RMI opnd,
                              Bool signed_comparison);
 s390_insn *s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                                 HChar *name);
+                                 HChar *name, HReg dst);
 s390_insn *s390_insn_bfp_triop(UChar size, s390_bfp_triop_t, HReg dst, HReg op2,
                                HReg op3, s390_round_t);
 s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst, HReg op2,

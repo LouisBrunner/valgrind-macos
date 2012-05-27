@@ -450,7 +450,7 @@ s390_expr_is_const_zero(IRExpr *expr)
 */
 static void
 doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
-             IRCallee *callee, IRExpr **args)
+             IRCallee *callee, IRExpr **args, HReg dst)
 {
    UInt n_args, i, argreg, size;
    ULong target;
@@ -507,7 +507,7 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
 
    /* Finally, the call itself. */
    addInstr(env, s390_insn_helper_call(cc, (Addr64)target, n_args,
-                                       callee->name));
+                                       callee->name, dst));
 }
 
 
@@ -1325,11 +1325,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       HReg dst = newVRegI(env);
 
       doHelperCall(env, False, NULL, expr->Iex.CCall.cee,
-                   expr->Iex.CCall.args);
-
-      /* Move the returned value into the return register */
-      addInstr(env, s390_insn_move(sizeofIRType(expr->Iex.CCall.retty), dst,
-                                   make_gpr(S390_REGNO_RETURN_VALUE)));
+                   expr->Iex.CCall.args, dst);
       return dst;
    }
 
@@ -2417,6 +2413,7 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP;
+      HReg dst;
       Int i;
 
       /* Invalidate tracked values of those guest state registers that are
@@ -2434,20 +2431,19 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
-      doHelperCall(env, passBBP, d->guard, d->cee, d->args);
-
-      /* Now figure out what to do with the returned value, if any. */
-      if (d->tmp == IRTemp_INVALID)
-         /* No return value.  Nothing to do. */
+      if (d->tmp == IRTemp_INVALID) {
+         /* No return value. */
+         dst = INVALID_HREG;
+         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
          return;
+      }
 
       retty = typeOfIRTemp(env->type_env, d->tmp);
       if (retty == Ity_I64 || retty == Ity_I32
           || retty == Ity_I16 || retty == Ity_I8) {
          /* Move the returned value to the destination register */
-         HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, s390_insn_move(sizeofIRType(retty), dst,
-                                      make_gpr(S390_REGNO_RETURN_VALUE)));
+         dst = lookupIRTemp(env, d->tmp);
+         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
          return;
       }
       break;

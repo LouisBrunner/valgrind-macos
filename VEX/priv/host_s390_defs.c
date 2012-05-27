@@ -624,6 +624,8 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       for (i = 1; i <= 5; ++i) {
          addHRegUse(u, HRmWrite, mkHReg(i, HRcInt64, False));
       }
+      if (insn->variant.helper_call.dst != INVALID_HREG)
+         addHRegUse(u, HRmWrite, insn->variant.helper_call.dst);
 
       /* Ditto for floating point registers. f0 - f7 are volatile */
       for (i = 0; i <= 7; ++i) {
@@ -849,6 +851,8 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
          As for the arguments of the helper call -- they will be loaded into
          non-virtual registers. Again, we don't need to do anything for those
          here. */
+      if (insn->variant.helper_call.dst != INVALID_HREG) 
+         insn->variant.helper_call.dst = lookupHRegRemap(m, insn->variant.helper_call.dst);
       break;
 
    case S390_INSN_BFP_TRIOP:
@@ -4332,7 +4336,7 @@ s390_insn_compare(UChar size, HReg src1, s390_opnd_RMI src2,
 
 s390_insn *
 s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                      HChar *name)
+                      HChar *name, HReg dst)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4342,6 +4346,7 @@ s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
    insn->variant.helper_call.target = target;
    insn->variant.helper_call.num_args = num_args;
    insn->variant.helper_call.name = name;
+   insn->variant.helper_call.dst = dst;
 
    return insn;
 }
@@ -4939,11 +4944,20 @@ s390_insn_as_string(const s390_insn *insn)
       break;
 
    case S390_INSN_HELPER_CALL: {
-      s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
-                   insn->variant.helper_call.cond,
-                   insn->variant.helper_call.name,
-                   insn->variant.helper_call.target,
-                   insn->variant.helper_call.num_args);
+      if (insn->variant.helper_call.dst != INVALID_HREG) {
+         s390_sprintf(buf, "%M if (%C) %R = %s{%I}(%L)", "v-call",
+                      insn->variant.helper_call.cond,
+                      insn->variant.helper_call.dst,
+                      insn->variant.helper_call.name,
+                      insn->variant.helper_call.target,
+                      insn->variant.helper_call.num_args);
+      } else {
+         s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
+                      insn->variant.helper_call.cond,
+                      insn->variant.helper_call.name,
+                      insn->variant.helper_call.target,
+                      insn->variant.helper_call.num_args);
+      }
       return buf;   /* avoid printing "size = ..." which is meaningless */
    }
 
@@ -6739,6 +6753,13 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    buf = s390_emit_STG(buf, S390_REGNO_LINK_REGISTER, 0,        // save LR
                        S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_LR, 0);
    buf = s390_emit_BASR(buf, S390_REGNO_LINK_REGISTER, 1);      // call helper
+
+   /* Move the return value to the destination register */
+   if (insn->variant.helper_call.dst != INVALID_HREG) {
+      buf = s390_emit_LGR(buf, hregNumber(insn->variant.helper_call.dst),
+                          S390_REGNO_RETURN_VALUE);
+   }
+
    buf = s390_emit_LG(buf, S390_REGNO_LINK_REGISTER, 0,         // restore LR
                       S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_LR, 0);
    buf = s390_emit_LFPC(buf, S390_REGNO_STACK_POINTER,          // restore FPC

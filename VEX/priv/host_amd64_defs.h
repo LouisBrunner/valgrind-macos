@@ -82,11 +82,6 @@ extern HReg hregAMD64_XMM10 ( void );
 extern HReg hregAMD64_XMM11 ( void );
 extern HReg hregAMD64_XMM12 ( void );
 
-extern HReg hregAMD64_YMM2  ( void );
-extern HReg hregAMD64_YMM13 ( void );
-extern HReg hregAMD64_YMM14 ( void );
-extern HReg hregAMD64_YMM15 ( void );
-
 
 /* --------- Condition codes, AMD encoding. --------- */
 
@@ -400,9 +395,9 @@ typedef
       Ain_SseReRg,     /* SSE binary general reg-reg, Re, Rg */
       Ain_SseCMov,     /* SSE conditional move */
       Ain_SseShuf,     /* SSE2 shuffle (pshufd) */
-      Ain_AvxLdSt,     /* AVX load/store 256 bits,
-                          no alignment constraints */
-      Ain_AvxReRg,     /* AVX binary general reg-reg, Re, Rg */
+      //uu Ain_AvxLdSt,     /* AVX load/store 256 bits,
+      //uu                     no alignment constraints */
+      //uu Ain_AvxReRg,     /* AVX binary general reg-reg, Re, Rg */
       Ain_EvCheck,     /* Event check */
       Ain_ProfInc      /* 64-bit profile counter increment */
    }
@@ -668,16 +663,16 @@ typedef
             HReg   src;
             HReg   dst;
          } SseShuf;
-         struct {
-            Bool        isLoad;
-            HReg        reg;
-            AMD64AMode* addr;
-         } AvxLdSt;
-         struct {
-            AMD64SseOp op;
-            HReg       src;
-            HReg       dst;
-         } AvxReRg;
+         //uu struct {
+         //uu    Bool        isLoad;
+         //uu    HReg        reg;
+         //uu    AMD64AMode* addr;
+         //uu } AvxLdSt;
+         //uu struct {
+         //uu    AMD64SseOp op;
+         //uu    HReg       src;
+         //uu    HReg       dst;
+         //uu } AvxReRg;
          struct {
             AMD64AMode* amCounter;
             AMD64AMode* amFailAddr;
@@ -740,8 +735,8 @@ extern AMD64Instr* AMD64Instr_Sse64FLo   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShuf    ( Int order, HReg src, HReg dst );
-extern AMD64Instr* AMD64Instr_AvxLdSt    ( Bool isLoad, HReg, AMD64AMode* );
-extern AMD64Instr* AMD64Instr_AvxReRg    ( AMD64SseOp, HReg, HReg );
+//uu extern AMD64Instr* AMD64Instr_AvxLdSt    ( Bool isLoad, HReg, AMD64AMode* );
+//uu extern AMD64Instr* AMD64Instr_AvxReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_EvCheck    ( AMD64AMode* amCounter,
                                            AMD64AMode* amFailAddr );
 extern AMD64Instr* AMD64Instr_ProfInc    ( void );

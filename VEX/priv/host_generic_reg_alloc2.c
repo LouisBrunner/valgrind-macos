@@ -208,8 +208,6 @@ Int findMostDistantlyMentionedVReg (
 static inline void sanity_check_spill_offset ( VRegLR* vreg )
 {
    switch (vreg->reg_class) {
-      case HRcVec256:
-         vassert(0 == ((UShort)vreg->spill_offset % 32)); break;
       case HRcVec128: case HRcFlt64:
          vassert(0 == ((UShort)vreg->spill_offset % 16)); break;
       default:
@@ -837,29 +835,6 @@ HInstrArray* doRegisterAllocation (
          kept in sync with the size info on the definition of
          HRegClass. */
       switch (vreg_lrs[j].reg_class) {
-
-         case HRcVec256:
-            /* Find four adjacent free slots in which between them
-               provide 256 bits in which to spill the vreg.  Since we
-               are trying to find an 32-byte-aligned slot, move along
-               in steps of 4 (slots). */
-            for (k = 0; k < N_SPILL64S-3; k += 4)
-               if (ss_busy_until_before[k+0] <= vreg_lrs[j].live_after
-                   && ss_busy_until_before[k+1] <= vreg_lrs[j].live_after
-                   && ss_busy_until_before[k+2] <= vreg_lrs[j].live_after
-                   && ss_busy_until_before[k+3] <= vreg_lrs[j].live_after)
-                  break;
-            if (k >= N_SPILL64S-3) {
-               vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
-                      "Increase and recompile.");
-            }
-            if (0) vex_printf("32-byte spill offset in spill slot %d\n",
-                              (Int)k);
-            ss_busy_until_before[k+0] = vreg_lrs[j].dead_before;
-            ss_busy_until_before[k+1] = vreg_lrs[j].dead_before;
-            ss_busy_until_before[k+2] = vreg_lrs[j].dead_before;
-            ss_busy_until_before[k+3] = vreg_lrs[j].dead_before;
-            break;
 
          case HRcVec128: case HRcFlt64:
             /* Find two adjacent free slots in which between them

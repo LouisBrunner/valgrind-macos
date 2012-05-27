@@ -196,13 +196,6 @@ static HReg newVRegV ( ISelEnv* env )
    return reg;
 }
 
-static HReg newVRegDV ( ISelEnv* env )
-{
-   HReg reg = mkHReg(env->vreg_ctr, HRcVec256, True/*virtual reg*/);
-   env->vreg_ctr++;
-   return reg;
-}
-
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Forward declarations                        ---*/
@@ -245,9 +238,6 @@ static HReg          iselFltExpr         ( ISelEnv* env, IRExpr* e );
 
 static HReg          iselVecExpr_wrk     ( ISelEnv* env, IRExpr* e );
 static HReg          iselVecExpr         ( ISelEnv* env, IRExpr* e );
-
-static HReg          iselV256Expr_wrk    ( ISelEnv* env, IRExpr* e );
-static HReg          iselV256Expr        ( ISelEnv* env, IRExpr* e );
 
 static void          iselDVecExpr_wrk ( /*OUT*/HReg* rHi, HReg* rLo, 
                                         ISelEnv* env, IRExpr* e );
@@ -323,15 +313,6 @@ static AMD64Instr* mk_vMOVsd_RR ( HReg src, HReg dst )
    vassert(hregClass(src) == HRcVec128);
    vassert(hregClass(dst) == HRcVec128);
    return AMD64Instr_SseReRg(Asse_MOV, src, dst);
-}
-
-/* Make a double-vector (256 bit) reg-reg move. */
-
-static AMD64Instr* mk_dvMOVsd_RR ( HReg src, HReg dst )
-{
-   vassert(hregClass(src) == HRcVec256);
-   vassert(hregClass(dst) == HRcVec256);
-   return AMD64Instr_AvxReRg(Asse_MOV, src, dst);
 }
 
 /* Advance/retreat %rsp by n. */
@@ -3377,62 +3358,6 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
               LibVEX_ppVexHwCaps(VexArchAMD64, env->hwcaps));
    ppIRExpr(e);
    vpanic("iselVecExpr_wrk");
-}
-
-
-/*---------------------------------------------------------*/
-/*--- ISEL: SIMD (V256) expressions, 256 bit.           ---*/
-/*---------------------------------------------------------*/
-
-static HReg iselV256Expr ( ISelEnv* env, IRExpr* e )
-{
-   HReg r = iselV256Expr_wrk( env, e );
-#  if 0
-   vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-#  endif
-   vassert(hregClass(r) == HRcVec256);
-   vassert(hregIsVirtual(r));
-   return r;
-}
-
-
-/* DO NOT CALL THIS DIRECTLY */
-static HReg iselV256Expr_wrk ( ISelEnv* env, IRExpr* e )
-{
-   //HWord      fn = 0; /* address of helper fn, if required */
-   //Bool       arg1isEReg = False;
-   //AMD64SseOp op = Asse_INVALID;
-   IRType     ty = typeOfIRExpr(env->type_env,e);
-   vassert(e);
-   vassert(ty == Ity_V256);
-#if 0
-   if (e->tag == Iex_RdTmp) {
-      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
-   }
-
-   if (e->tag == Iex_Get) {
-      HReg dst = newVRegDV(env);
-      addInstr(env, AMD64Instr_AvxLdSt(
-                       True/*load*/, 
-                       dst,
-                       AMD64AMode_IR(e->Iex.Get.offset, hregAMD64_RBP())
-                    )
-              );
-      return dst;
-   }
-
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
-      HReg        dst = newVRegDV(env);
-      AMD64AMode* am  = iselIntExpr_AMode(env, e->Iex.Load.addr);
-      addInstr(env, AMD64Instr_AvxLdSt( True/*load*/, dst, am ));
-      return dst;
-   }
-#endif
-   //avx_fail:
-   vex_printf("iselV256Expr (amd64, subarch = %s): can't reduce\n",
-              LibVEX_ppVexHwCaps(VexArchAMD64, env->hwcaps));
-   ppIRExpr(e);
-   vpanic("iselV256Expr_wrk");
 }
 
 

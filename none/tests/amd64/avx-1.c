@@ -1,86 +1,13 @@
-      /* VMOVSD m64, xmm1 = VEX.LIG.F2.0F.WIG 10 /r */
-      /* VMOVSS m32, xmm1 = VEX.LIG.F3.0F.WIG 10 /r */
-      /* VMOVSD xmm1, m64 = VEX.LIG.F2.0F.WIG 11 /r */
-      /* VMOVSS xmm1, m64 = VEX.LIG.F3.0F.WIG 11 /r */
-      /* VMOVUPD xmm1, xmm2/m128 = VEX.128.66.0F.WIG 11 /r */
-      /* VMOVAPD xmm2/m128, xmm1 = VEX.128.66.0F.WIG 28 /r */
-      /* VMOVAPD ymm2/m256, ymm1 = VEX.256.66.0F.WIG 28 /r */
-      /* VMOVAPS xmm2/m128, xmm1 = VEX.128.0F.WIG 28 /r */
-      /* VMOVAPS xmm1, xmm2/m128 = VEX.128.0F.WIG 29 /r */
-      /* VMOVAPD xmm1, xmm2/m128 = VEX.128.66.0F.WIG 29 /r */
 
-/* . VCVTSI2SD r/m32, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.W0 2A /r */
-/* . VCVTSI2SD r/m64, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.W1 2A /r */
-/* . VCVTSI2SS r/m64, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.W1 2A /r */
-/* . VCVTTSD2SI xmm1/m64, r32 = VEX.LIG.F2.0F.W0 2C /r */
-/* VCVTTSD2SI xmm1/m64, r64 = VEX.LIG.F2.0F.W1 2C /r */
-/* VUCOMISD xmm2/m64, xmm1 = VEX.LIG.66.0F.WIG 2E /r */
-/* VUCOMISS xmm2/m32, xmm1 = VEX.LIG.0F.WIG 2E /r */
-/* . VSQRTSD xmm3/m64(E), xmm2(V), xmm1(G) = VEX.NDS.LIG.F2.0F.WIG 51 /r */
-/* VANDPD r/m, rV, r ::: r = rV & r/m (MVR format) */
-/* VANDNPD r/m, rV, r ::: r = (not rV) & r/m (MVR format) */
-/* VORPD r/m, rV, r ::: r = rV ^ r/m (MVR format) */
-/* VXORPD r/m, rV, r ::: r = rV ^ r/m (MVR format) */
-/* VXORPS r/m, rV, r ::: r = rV ^ r/m (MVR format) */
-/* VADDSD xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F0.0F.WIG 58 /r */
-/* VMULSD xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F0.0F.WIG 59 /r */
-/* VCVTPS2PD xmm2/m64, xmm1 = VEX.128.0F.WIG 5A /r */
-/* VSUBSD xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.WIG 5C /r */
-/* VMINSD xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.WIG 5D /r */
-/* VDIVSD xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.WIG 5E /r */
-/* VMAXSD xmm3/m64, xmm2, xmm1 = VEX.NDS.LIG.F2.0F.WIG 5F /r */
+/* The following tests appear not to be accepted by the assembler.
+      VCVTPD2PS_128 (memory form)
 
-      /* VMOVD r32/m32, xmm1 = VEX.128.66.0F.W0 6E */
-      /* VMOVDQA ymm2/m256, ymm1 = VEX.256.66.0F.WIG 6F */
-      /* VMOVDQA xmm2/m128, xmm1 = VEX.128.66.0F.WIG 6F */
-      /* VMOVDQU xmm2/m128, xmm1 = VEX.128.F3.0F.WIG 6F */
-
-/* VPSHUFD imm8, xmm2/m128, xmm1 = VEX.128.66.0F.WIG 70 /r ib */
-/* . VPSLLD imm8, xmm2, xmm1 = VEX.128.66.0F.WIG 72 /6 ib */
-/* . VPSRLDQ VEX.NDD.128.66.0F.WIG 73 /3 ib */
-/* VPCMPEQD r/m, rV, r ::: r = rV `eq-by-32s` r/m (MVR format) */
-
-      /* VMOVDQA ymm1, ymm2/m256 = VEX.256.66.0F.WIG 7F */
-      /* VMOVDQA xmm1, xmm2/m128 = VEX.128.66.0F.WIG 7F */
-      /* VMOVDQU xmm1, xmm2/m128 = VEX.128.F3.0F.WIG 7F */
-
-/* . VCMPSD xmm3/m64(E=argL), xmm2(V=argR), xmm1(G) */
-/* . VPOR = VEX.NDS.128.66.0F.WIG EB /r */
-/* . VPXOR = VEX.NDS.128.66.0F.WIG EF /r */
-/* . VPSUBB = VEX.NDS.128.66.0F.WIG EF /r */
-/* . VPSUBD = VEX.NDS.128.66.0F.WIG FE /r */
-/* . VPADDD = VEX.NDS.128.66.0F.WIG FE /r */
-/* . VPSHUFB r/m, rV, r ::: r = shuf(rV, r/m) (MVR format) */
-/* . VPMOVZXBW = VEX.128.66.0F38.WIG 30 /r */
-/* . VPMOVZXWD = VEX.128.66.0F38.WIG 33 /r */
-/* . VPMINSD = VEX.NDS.128.66.0F38.WIG 39 /r */
-/* . VPMAXSD = VEX.NDS.128.66.0F38.WIG 3D /r */
-      /* VPEXTRD imm8, r32/m32, xmm2 */
-      /* VINSERTF128 r/m, rV, rD */
-      /* VEXTRACTF128 rS, r/m */
-
-/* . VPBLENDVB xmmG, xmmE/memE, xmmV, xmmIS4 */
-      /* VEX.128.F2.0F.WIG /12 r = MOVDDUP xmm2/m64, xmm1 */
-     /* VCVTPD2PS xmm2/m128, xmm1 = VEX.128.66.0F.WIG 5A /r */
-/* . VMULSS xmm3/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.WIG 59 /r */
-/* . VSUBSS xmm3/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.WIG 5C /r */
-/* . VADDSS xmm3/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.WIG 58 /r */
-/* . VDIVSS xmm3/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.WIG 5E /r */
-/* . VUNPCKLPS xmm3/m128, xmm2, xmm1 = VEX.NDS.128.0F.WIG 14 /r */
-/* . VCVTSI2SS r/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.W0 2A /r */
-/* . VANDPS = VEX.NDS.128.0F.WIG 54 /r */
-/* . VMINSS xmm3/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.WIG 5D /r */
-/* . VMAXSS xmm3/m32, xmm2, xmm1 = VEX.NDS.LIG.F3.0F.WIG 5F /r */
-
-/* really needs testing -- Intel docs don't make sense */
-/* VMOVQ xmm2/m64, xmm1 = VEX.128.F3.0F.W0 */
-
-/* really needs testing -- Intel docs don't make sense */
-/* of the form vmovq  %xmm0,-0x8(%rsp) */
-
-/* VCMPSS xmm3/m32(E=argL), xmm2(V=argR), xmm1(G) */
-/* . VANDNPS = VEX.NDS.128.0F.WIG 55 /r */
-/* . VORPS = VEX.NDS.128.0F.WIG 56 /r */
+   The following tests currently fail and are disabled:
+      VCMPSD_128_0xD
+      VCMPSS_128_0xD
+      VEXTRACTF128_0x0
+      VEXTRACTF128_0x1
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -254,6 +181,10 @@ GEN_test_RandM(VCVTSI2SS_64,
 GEN_test_RandM(VCVTTSD2SI_32,
                "vcvttsd2si %%xmm8,  %%r14d",
                "vcvttsd2si (%%rax), %%r14d")
+
+GEN_test_RandM(VCVTTSD2SI_64,
+               "vcvttsd2si %%xmm8,  %%r14",
+               "vcvttsd2si (%%rax), %%r14")
 
 GEN_test_RandM(VPSHUFB_128,
                "vpshufb %%xmm6,  %%xmm8, %%xmm7",
@@ -503,6 +434,177 @@ GEN_test_RandM(VPUNPCKLDQ_128,
                "vpunpckldq %%xmm6,  %%xmm8, %%xmm7",
                "vpunpckldq (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VINSERTPS_0x39_128,
+               "vinsertps $0x39, %%xmm6,  %%xmm8, %%xmm7",
+               "vinsertps $0xC6, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Monly(VMOVSD_M64_XMM, "vmovsd (%%rax), %%xmm8")
+
+GEN_test_Monly(VMOVSS_M64_XMM, "vmovss (%%rax), %%xmm8")
+
+GEN_test_Monly(VMOVSD_XMM_M64, "vmovsd %%xmm8, (%%rax)")
+
+GEN_test_Monly(VMOVSS_XMM_M32, "vmovss %%xmm8, (%%rax)")
+
+GEN_test_RandM(VMOVUPD_GtoE_128,
+               "vmovupd %%xmm9,  %%xmm6",
+               "vmovupd %%xmm7, (%%rax)")
+
+GEN_test_RandM(VMOVAPD_EtoG_128,
+               "vmovapd %%xmm6,  %%xmm8",
+               "vmovapd (%%rax), %%xmm9")
+
+GEN_test_RandM(VMOVAPD_EtoG_256,
+               "vmovapd %%ymm6,  %%ymm8",
+               "vmovapd (%%rax), %%ymm9")
+
+GEN_test_RandM(VMOVAPS_EtoG_128,
+               "vmovaps %%xmm6,  %%xmm8",
+               "vmovaps (%%rax), %%xmm9")
+
+GEN_test_RandM(VMOVAPS_GtoE_128,
+               "vmovaps %%xmm9,  %%xmm6",
+               "vmovaps %%xmm7, (%%rax)")
+
+GEN_test_RandM(VMOVAPD_GtoE_128,
+               "vmovapd %%xmm9,  %%xmm6",
+               "vmovapd %%xmm7, (%%rax)")
+
+GEN_test_RandM(VMOVDQU_EtoG_128,
+               "vmovdqu %%xmm6,  %%xmm8",
+               "vmovdqu (%%rax), %%xmm9")
+
+GEN_test_RandM(VMOVDQA_EtoG_128,
+               "vmovdqa %%xmm6,  %%xmm8",
+               "vmovdqa (%%rax), %%xmm9")
+
+GEN_test_RandM(VMOVDQA_EtoG_256,
+               "vmovdqa %%ymm6,  %%ymm8",
+               "vmovdqa (%%rax), %%ymm9")
+
+GEN_test_RandM(VMOVDQU_GtoE_128,
+               "vmovdqu %%xmm9,  %%xmm6",
+               "vmovdqu %%xmm7, (%%rax)")
+
+GEN_test_RandM(VMOVDQA_GtoE_128,
+               "vmovdqa %%xmm9,  %%xmm6",
+               "vmovdqa %%xmm7, (%%rax)")
+
+GEN_test_RandM(VMOVDQA_GtoE_256,
+               "vmovdqa %%ymm9,  %%ymm6",
+               "vmovdqa %%ymm7, (%%rax)")
+
+GEN_test_Monly(VMOVQ_XMM_MEM64, "vmovq %%xmm8, (%%rax)")
+
+GEN_test_RandM(VMOVD_IREGorMEM32_to_XMM,
+               "vmovd %%r14d, %%xmm7",
+               "vmovd (%%rax), %%xmm9")
+
+GEN_test_RandM(VMOVDDUP_XMMorMEM64_to_XMM,
+               "vmovddup %%xmm8,  %%xmm7",
+               "vmovddup (%%rax), %%xmm9")
+
+GEN_test_RandM(VCMPSS_128_0x0,
+               "vcmpss $0, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0xD,
+               "vcmpss $0xd, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xd, (%%rax), %%xmm8, %%xmm7")
+
+// AFAICS this is a E-to-G form insn, but the assembler on Ubuntu 11.10
+// refuses to accept the memory case.  Hence test only the register case.
+// "none/tests/amd64/avx-1.c:527: Error: unsupported syntax for `vcvtpd2ps'"
+//GEN_test_RandM(VCVTPD2PS_128,
+//               "vcvtpd2ps %%xmm8,  %%xmm7",
+//               "vcvtpd2ps (%%rax), %%xmm9")
+GEN_test_Ronly(VCVTPD2PS_128,
+               "vcvtpd2ps %%xmm8,  %%xmm7")
+
+GEN_test_RandM(VEXTRACTF128_0x0,
+               "vextractf128 $0x0, %%ymm7, %%xmm9",
+               "vextractf128 $0x0, %%ymm7, (%%rax)")
+
+GEN_test_RandM(VEXTRACTF128_0x1,
+               "vextractf128 $0x1, %%ymm7, %%xmm9",
+               "vextractf128 $0x1, %%ymm7, (%%rax)")
+
+GEN_test_RandM(VINSERTF128_0x0,
+               "vinsertf128 $0x0, %%xmm9,  %%ymm7, %%ymm8",
+               "vinsertf128 $0x0, (%%rax), %%ymm7, %%ymm8")
+
+GEN_test_RandM(VINSERTF128_0x1,
+               "vinsertf128 $0x1, %%xmm9,  %%ymm7, %%ymm8",
+               "vinsertf128 $0x1, (%%rax), %%ymm7, %%ymm8")
+
+GEN_test_RandM(VPEXTRD_128_0x0,
+               "vpextrd $0x0, %%xmm7, %%r14d",
+               "vpextrd $0x0, %%xmm7, (%%rax)")
+
+GEN_test_RandM(VPEXTRD_128_0x3,
+               "vpextrd $0x3, %%xmm7, %%r14d",
+               "vpextrd $0x3, %%xmm7, (%%rax)")
+
+GEN_test_RandM(VPCMPEQD_128,
+               "vpcmpeqd %%xmm6,  %%xmm8, %%xmm7",
+               "vpcmpeqd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPSHUFD_0x39_128,
+               "vpshufd $0x39, %%xmm9,  %%xmm8",
+               "vpshufd $0xC6, (%%rax), %%xmm7")
+
+GEN_test_RandM(VMAXSD_128,
+               "vmaxsd %%xmm6,  %%xmm8, %%xmm7",
+               "vmaxsd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VDIVSD_128,
+               "vdivsd %%xmm6,  %%xmm8, %%xmm7",
+               "vdivsd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMINSD_128,
+               "vminsd %%xmm6,  %%xmm8, %%xmm7",
+               "vminsd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VSUBSD_128,
+               "vsubsd %%xmm6,  %%xmm8, %%xmm7",
+               "vsubsd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VADDSD_128,
+               "vaddsd %%xmm6,  %%xmm8, %%xmm7",
+               "vaddsd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMULSD_128,
+               "vmulsd %%xmm6,  %%xmm8, %%xmm7",
+               "vmulsd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VXORPS_128,
+               "vxorps %%xmm6,  %%xmm8, %%xmm7",
+               "vxorps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VXORPD_128,
+               "vxorpd %%xmm6,  %%xmm8, %%xmm7",
+               "vxorpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VORPD_128,
+               "vorpd %%xmm6,  %%xmm8, %%xmm7",
+               "vorpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VANDNPD_128,
+               "vandnpd %%xmm6,  %%xmm8, %%xmm7",
+               "vandnpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCVTPS2PD_128,
+               "vcvtps2pd %%xmm6,  %%xmm8",
+               "vcvtps2pd (%%rax), %%xmm8")
+
+GEN_test_RandM(VUCOMISD_128,
+   "vucomisd %%xmm6,  %%xmm8; pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vucomisd (%%rax), %%xmm8; pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VUCOMISS_128,
+   "vucomiss %%xmm6,  %%xmm8; pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vucomiss (%%rax), %%xmm8; pushfq; popq %%r14; andq $0x8D5, %%r14")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -512,6 +614,50 @@ GEN_test_RandM(VPUNPCKLDQ_128,
 
 int main ( void )
 {
+   test_VUCOMISS_128();
+   test_VUCOMISD_128();
+   test_VCVTPS2PD_128();
+   test_VANDNPD_128();
+   test_VORPD_128();
+   test_VXORPD_128();
+   test_VXORPS_128();
+   test_VMULSD_128();
+   test_VADDSD_128();
+   test_VMINSD_128();
+   test_VSUBSD_128();
+   test_VDIVSD_128();
+   test_VMAXSD_128();
+   test_VPSHUFD_0x39_128();
+   test_VPCMPEQD_128();
+   test_VPEXTRD_128_0x3();
+   test_VPEXTRD_128_0x0();
+   test_VINSERTF128_0x0();
+   test_VINSERTF128_0x1();
+   //test_VEXTRACTF128_0x0(); // FIXME
+   //test_VEXTRACTF128_0x1(); // FIXME
+   test_VCVTPD2PS_128(); // see comment on the test
+   test_VCMPSS_128_0x0();
+   // test_VCMPSS_128_0xD(); FIXME
+   test_VMOVDDUP_XMMorMEM64_to_XMM();
+   test_VMOVD_IREGorMEM32_to_XMM();
+   test_VMOVQ_XMM_MEM64();
+   test_VMOVDQA_GtoE_256();
+   test_VMOVDQA_GtoE_128();
+   test_VMOVDQU_GtoE_128();
+   test_VMOVDQA_EtoG_256();
+   test_VMOVDQA_EtoG_128();
+   test_VMOVDQU_EtoG_128();
+   test_VMOVAPD_GtoE_128();
+   test_VMOVAPS_GtoE_128();
+   test_VMOVAPS_EtoG_128();
+   test_VMOVAPD_EtoG_256();
+   test_VMOVAPD_EtoG_128();
+   test_VMOVUPD_GtoE_128();
+   test_VMOVSS_XMM_M32();
+   test_VMOVSD_XMM_M64();
+   test_VMOVSS_M64_XMM();
+   test_VMOVSD_M64_XMM();
+   test_VINSERTPS_0x39_128();
    test_VPUNPCKLDQ_128();
    test_VPACKSSDW_128();
    test_VPADDW_128();
@@ -573,10 +719,11 @@ int main ( void )
    test_VANDNPS_128();
    test_VORPS_128();
    test_VSQRTSD_128();
-   // test_VCMPSD_128_0xD(); BORKED
+   // test_VCMPSD_128_0xD(); FIXME
    test_VCMPSD_128_0x0();
    test_VPSHUFB_128();
    test_VCVTTSD2SI_32();
+   test_VCVTTSD2SI_64();
    test_VCVTSI2SS_64();
    test_VCVTSI2SD_64();
    test_VCVTSI2SD_32();

@@ -102,14 +102,9 @@ typedef
 
 /* s390x: Hardware capability encoding
 
-   Bits    Information
-   [26:31] Machine model
-   [25]    Long displacement facility
-   [24]    Extended-immediate facility
-   [23]    General-instruction-extension facility
-   [22]    Decimal floating point facility
-   [21]    FPR-GR transfer facility
-   [0:20]  Currently unused; reserved for future use
+   Bits [26:31] encode the machine model (see VEX_S390X_MODEL... below)
+   Bits [0:20]  encode specific hardware capabilities
+                (see VEX_HWAPS_S390X_... below)
 */
 
 /* Model numbers must be assigned in chronological order.

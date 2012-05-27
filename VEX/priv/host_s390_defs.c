@@ -6734,7 +6734,8 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    /* Load the target address into a register, that
       (a) is not used for passing parameters to the helper and
       (b) can be clobbered by the callee
-      r1 looks like a good choice.
+      (c) is not special to the BASR insn
+      r1 is the only choice.
       Also, need to arrange for the return address be put into the
       link-register */
    buf = s390_emit_load_64imm(buf, 1, target);

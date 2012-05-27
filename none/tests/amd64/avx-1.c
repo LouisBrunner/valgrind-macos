@@ -508,9 +508,49 @@ GEN_test_RandM(VCMPSS_128_0x0,
                "vcmpss $0, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0, (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VCMPSS_128_0x1,
+               "vcmpss $1, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $1, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0x2,
+               "vcmpss $2, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $2, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0x3,
+               "vcmpss $3, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $3, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0x4,
+               "vcmpss $4, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $4, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0x5,
+               "vcmpss $5, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $5, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0x6,
+               "vcmpss $6, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $6, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0x7,
+               "vcmpss $7, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $7, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0xA,
+               "vcmpss $0xA, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xA, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0xC,
+               "vcmpss $0xC, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xC, (%%rax), %%xmm8, %%xmm7")
+
 GEN_test_RandM(VCMPSS_128_0xD,
-               "vcmpss $0xd, %%xmm6,  %%xmm8, %%xmm7",
-               "vcmpss $0xd, (%%rax), %%xmm8, %%xmm7")
+               "vcmpss $0xD, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xD, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPSS_128_0xE,
+               "vcmpss $0xE, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xE, (%%rax), %%xmm8, %%xmm7")
 
 // AFAICS this is a E-to-G form insn, but the assembler on Ubuntu 11.10
 // refuses to accept the memory case.  Hence test only the register case.
@@ -633,11 +673,23 @@ int main ( void )
    test_VPEXTRD_128_0x0();
    test_VINSERTF128_0x0();
    test_VINSERTF128_0x1();
-   //test_VEXTRACTF128_0x0(); // FIXME
-   //test_VEXTRACTF128_0x1(); // FIXME
+   test_VEXTRACTF128_0x0();
+   test_VEXTRACTF128_0x1();
    test_VCVTPD2PS_128(); // see comment on the test
+   /* Test all CMPSS variants; this code is tricky. */
    test_VCMPSS_128_0x0();
-   // test_VCMPSS_128_0xD(); FIXME
+   test_VCMPSS_128_0x1();
+   test_VCMPSS_128_0x2();
+   test_VCMPSS_128_0x3();
+   test_VCMPSS_128_0x4();
+   test_VCMPSS_128_0x5();
+   test_VCMPSS_128_0x6();
+   test_VCMPSS_128_0x7();
+   test_VCMPSS_128_0xA();
+   /* no 0xB case yet observed */
+   test_VCMPSS_128_0xC();
+   test_VCMPSS_128_0xD();
+   test_VCMPSS_128_0xE();
    test_VMOVDDUP_XMMorMEM64_to_XMM();
    test_VMOVD_IREGorMEM32_to_XMM();
    test_VMOVQ_XMM_MEM64();
@@ -719,7 +771,7 @@ int main ( void )
    test_VANDNPS_128();
    test_VORPS_128();
    test_VSQRTSD_128();
-   // test_VCMPSD_128_0xD(); FIXME
+   test_VCMPSD_128_0xD();
    test_VCMPSD_128_0x0();
    test_VPSHUFB_128();
    test_VCVTTSD2SI_32();

@@ -8559,6 +8559,8 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       case 0xC: XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OQ
       case 0xD: XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OS
       case 0xE: XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OS
+      /* Don't forget to add test cases to VCMPSS_128_<imm8> in
+         avx-1.c if new cases turn up. */
       default: break;
    }
 #  undef XXX
@@ -19612,6 +19614,7 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
                                Prefix pfx, Long delta, 
                                HChar* opname, Bool all_lanes, Int sz )
 {
+   vassert(sz == 4 || sz == 8);
    Long    deltaIN = delta;
    HChar   dis_buf[50];
    Int     alen;
@@ -19622,18 +19625,18 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    Bool    postNot = False;
    IRTemp  plain   = newTemp(Ity_V128);
    UChar   rm      = getUChar(delta);
-   UShort  mask    = 0;
-   vassert(sz == 4 || sz == 8);
-   UInt rG = gregOfRexRM(pfx, rm);
-   UInt rV = getVexNvvvv(pfx);
-   IRExpr *argL = NULL, *argR = NULL;
+   UInt    rG      = gregOfRexRM(pfx, rm);
+   UInt    rV      = getVexNvvvv(pfx);
+   IRTemp argL     = newTemp(Ity_V128);
+   IRTemp argR     = newTemp(Ity_V128);
+
+   assign(argL, getXMMReg(rV));
    if (epartIsReg(rm)) {
       imm8 = getUChar(delta+1);
       Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8, all_lanes, sz);
       if (!ok) return deltaIN; /* FAIL */
       UInt rE = eregOfRexRM(pfx,rm);
-      argL = getXMMReg(rV);
-      argR = getXMMReg(rE);
+      assign(argR, getXMMReg(rE));
       delta += 1+1;
       DIP("%s $%d,%s,%s,%s\n",
           opname, (Int)imm8,
@@ -19643,31 +19646,68 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
       imm8 = getUChar(delta+alen);
       Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8, all_lanes, sz);
       if (!ok) return deltaIN; /* FAIL */
-      argL = getXMMReg(rV);
-      argR = all_lanes   ? loadLE(Ity_V128, mkexpr(addr))
+      assign(argR, 
+             all_lanes   ? loadLE(Ity_V128, mkexpr(addr))
              : sz == 8   ? unop( Iop_64UtoV128, loadLE(Ity_I64, mkexpr(addr)))
-             : /*sz==4*/   unop( Iop_32UtoV128, loadLE(Ity_I32, mkexpr(addr)));
+             : /*sz==4*/   unop( Iop_32UtoV128, loadLE(Ity_I32, mkexpr(addr))));
       delta += alen+1;
       DIP("%s $%d,%s,%s,%s\n",
           opname, (Int)imm8, dis_buf, nameXMMReg(rV), nameXMMReg(rG));
    }
 
-   assign(plain,
-          preSwap ? binop(op, argR, argL) : binop(op, argL, argR));
+   assign(plain, preSwap ? binop(op, mkexpr(argR), mkexpr(argL))
+                         : binop(op, mkexpr(argL), mkexpr(argR)));
 
-   /* FIXME AVX: in the case where we need a preSwap == True and
-      !all_lanes, I am not sure if this is correct or not. */
-
-   if (postNot && all_lanes) {
-      putYMMRegLoAndZU( rG, unop(Iop_NotV128, mkexpr(plain)) );
+   if (all_lanes) {
+      /* This is simple: just invert the result, if necessary, and
+         have done. */
+      if (postNot) {
+         putYMMRegLoAndZU( rG, unop(Iop_NotV128, mkexpr(plain)) );
+      } else {
+         putYMMRegLoAndZU( rG, mkexpr(plain) );
+      }
    }
    else
-   if (postNot && !all_lanes) {
-      mask = toUShort(sz==4 ? 0x000F : 0x00FF);
-      putYMMRegLoAndZU( rG, binop(Iop_XorV128, mkexpr(plain), mkV128(mask)) );
+   if (!preSwap) {
+      /* More complex.  It's a one-lane-only, hence need to possibly
+         invert only that one lane.  But at least the other lanes are
+         correctly "in" the result, having been copied from the left
+         operand (argL). */
+      if (postNot) {
+         IRExpr* mask = mkV128(sz==4 ? 0x000F : 0x00FF);
+         putYMMRegLoAndZU( rG, binop(Iop_XorV128, mkexpr(plain),
+                                                  mask) );
+      } else {
+         putYMMRegLoAndZU( rG, mkexpr(plain) );
+      }
    }
    else {
-      putYMMRegLoAndZU( rG, mkexpr(plain) );
+      /* This is the most complex case.  One-lane-only, but the args
+         were swapped.  So we have to possibly invert the bottom lane,
+         and (definitely) we have to copy the upper lane(s) from argL
+         since, due to the swapping, what's currently there is from
+         argR, which is not correct. */
+      IRTemp res     = newTemp(Ity_V128);
+      IRTemp mask    = newTemp(Ity_V128);
+      IRTemp notMask = newTemp(Ity_V128);
+      assign(mask,    mkV128(sz==4 ? 0x000F : 0x00FF));
+      assign(notMask, mkV128(sz==4 ? 0xFFF0 : 0xFF00));
+      if (postNot) {
+         assign(res,
+                binop(Iop_OrV128,
+                      binop(Iop_AndV128,
+                            unop(Iop_NotV128, mkexpr(plain)),
+                            mkexpr(mask)),
+                      binop(Iop_AndV128, mkexpr(argL), mkexpr(notMask))));
+      } else {
+         assign(res,
+                binop(Iop_OrV128,
+                      binop(Iop_AndV128,
+                            mkexpr(plain),
+                            mkexpr(mask)),
+                      binop(Iop_AndV128, mkexpr(argL), mkexpr(notMask))));
+      }
+      putYMMRegLoAndZU( rG, mkexpr(res) );
    }
 
    *uses_vvvv = True;
@@ -21314,7 +21354,7 @@ Long dis_ESC_0F3A__VEX (
             delta += 1;
             ib = getUChar(delta);
             assign(t128, getYMMRegLane128(rS, ib & 1));
-            putYMMRegLane128(rD, 0, mkexpr(t128));
+            putYMMRegLoAndZU(rD, mkexpr(t128));
             DIP("vextractf128 $%u,%s,%s\n",
                 ib, nameXMMReg(rS), nameYMMReg(rD));
          } else {

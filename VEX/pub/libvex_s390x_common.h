@@ -63,13 +63,10 @@
 /* Where client code will save the link register before calling a helper. */
 #define S390_OFFSET_SAVED_LR 160+72
 
-/* Location of saved guest state pointer */
-#define S390_OFFSET_SAVED_GSP 160+64
-
-/* Size of frame allocated by VG_(run_innerloop)
+/* Size of frame allocated by VG_(disp_run_translations)
    Need size for
        8 FPRs
-     + 3 GPRs (SAVED_GSP, SAVED_LR, and SAVED_R2)
+     + 2 GPRs (SAVED_LR, and SAVED_R2)
      + 2 FPCs (SAVED_FPC_C and SAVED_FPC_V).
 
    Additionally, we need a standard frame for helper functions being called

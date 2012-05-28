@@ -23,10 +23,10 @@ eflags     n           n/a                           y
 st0        n ?         n        fp retreg            y
 st1-7      n ?         n                             y
 xmm0-7     n ?         n                             y
+gs                              Thread ptr
 
 In the case where arguments are passed in registers, the arg1,2,3
 registers are EAX, EDX, and ECX respectively.
-
 
 amd64-linux
 ~~~~~~~~~~~
@@ -53,7 +53,7 @@ xmm0       n           fp#1     fp retreg
 xmm1       n           fp#2     fp-high retreg
 xmm2-7     n           fp#3-8                        y (3-7)
 xmm8-15    n                                         y (8-12)
-
+fs                              thread ptr
 
 ppc32-linux
 ~~~~~~~~~~~
@@ -63,7 +63,7 @@ Name       Saves?      Reg?     Comment              Vex-uses?
 -------------------------------------------------------------------
 r0         n           n        sometimes RAZ
 r1         y           n        stack pointer
-r2         n           n
+r2         n           n        thread ptr
 r3         n           int#1    int[31:0] retreg     y
 r4         n           int#2    also int retreg      y
 r5         n           int#3                         y
@@ -95,6 +95,10 @@ fpscr
 
 ppc64-linux
 ~~~~~~~~~~~
+Reg        Callee      Arg    
+Name       Saves?      Reg?     Comment              Vex-uses?
+-------------------------------------------------------------------
+r13        n           n        thread ptr
 TBD
 
 
@@ -120,6 +124,7 @@ r12                         possibly used by linker? unavail
 r13(sp)                                              unavail
 r14(lr)                                              unavail
 r15(pc)                                              unavail
+cp15/c3/r2                  thread ptr (see libvex_guest_arm.h, guest_TPIDRURO)
 
 VFP: d8-d15 are callee-saved
 r12 (IP) is probably available for use as a caller-saved
@@ -156,6 +161,8 @@ f0         n                    return value         avail
 f1-f7      n                                         avail
 f8-f11     y                                         avail
 f12-f15    y                    see below            avail
+a0         n                    thread ptr high word
+a1         n                    thread ptr low word
 
 When r0 is used as a base or index register its contents is
 ignored and the value 0 is used instead. This is the reason
@@ -163,7 +170,6 @@ why VEX cannot use it.
 
 r10, r11 as well as f12-f15 are used as real regs during insn
 selection when register pairs are required.
-
 
 ppc32-aix5
 ~~~~~~~~~~

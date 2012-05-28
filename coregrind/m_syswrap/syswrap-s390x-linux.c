@@ -965,6 +965,13 @@ PRE(sys_clone)
       }
    }
 
+   /* The kernel simply copies reg6 (ARG5) into AR0 and AR1, no checks */
+   if (ARG2 & VKI_CLONE_SETTLS) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA5("clone", Addr, tlsinfo);
+      }
+   }
+
    cloneflags = ARG2;
 
    if (!ML_(client_signal_OK)(ARG2 & VKI_CSIGNAL)) {

@@ -71,7 +71,7 @@
 
    Additionally, we need a standard frame for helper functions being called
    from client code. (See figure 1-16 in zSeries ABI) */
-#define S390_INNERLOOP_FRAME_SIZE ((8+3+2)*8 + 160)
+#define S390_INNERLOOP_FRAME_SIZE ((8+2+2)*8 + 160)
 
 
 /*--------------------------------------------------------------*/

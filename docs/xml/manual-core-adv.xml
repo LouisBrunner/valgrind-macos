@@ -565,14 +565,28 @@ works across all devices and scenarios.
 <title>Monitor command handling by the Valgrind gdbserver</title>
 
 <para> The Valgrind gdbserver provides additional Valgrind-specific
-functionality via "monitor commands".  Such monitor commands can
-be sent from the GDB command line or from the shell command line.  See
-<xref linkend="manual-core-adv.valgrind-monitor-commands"/> for the list
-of the Valgrind core monitor commands.
+functionality via "monitor commands".  Such monitor commands can be
+sent from the GDB command line or from the shell command line.  See
+<xref linkend="manual-core-adv.valgrind-monitor-commands"/> for the
+list of the Valgrind core monitor commands available regardless of
+the Valgrind tool selected.
 </para>
 
-<para>Each tool can also provide tool-specific monitor commands.
-An example of a tool specific monitor command is the Memcheck monitor
+<para>The following tools provide tool-specific monitor commands:
+  <itemizedlist>
+    <listitem>
+      <para><xref linkend="mc-manual.monitor-commands"/></para>
+    </listitem>
+    <listitem>
+      <para><xref linkend="cl-manual.monitor-commands"/></para>
+    </listitem>
+    <listitem>
+      <para><xref linkend="ms-manual.monitor-commands"/></para>
+    </listitem>
+  </itemizedlist>
+</para>
+
+<para>An example of a tool specific monitor command is the Memcheck monitor
 command <computeroutput>leak_check full
 reachable any</computeroutput>.  This requests a full reporting of the
 allocated memory blocks.  To have this leak check executed, use the GDB
@@ -1204,10 +1218,15 @@ vgdb v.set log_output -c leak_check any
        xreflabel="Valgrind monitor commands">
 <title>Valgrind monitor commands</title>
 
-<para>The Valgrind monitor commands are available regardless of the
-Valgrind tool selected.  They can be sent either from a shell command
-line, by using a standalone vgdb, or from GDB, by using GDB's
-"monitor" command.</para>
+<para>This section describes the Valgrind monitor commands, available
+regardless of the Valgrind tool selected. For the tool specific
+commands, refer to <xref linkend="mc-manual.monitor-commands"/>,
+<xref linkend="cl-manual.monitor-commands"/> and
+<xref linkend="ms-manual.monitor-commands"/>. </para>
+
+<para> The monitor commands can be sent either from a shell command line, by using a
+standalone vgdb, or from GDB, by using GDB's "monitor"
+command (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>). </para>
 
 <itemizedlist>
   <listitem>

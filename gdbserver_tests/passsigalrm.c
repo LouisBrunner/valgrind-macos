@@ -15,6 +15,11 @@ static void sigrtmin_handler(int signr)
 }
 
 static int breakme = 0;
+#ifndef SIGRTMIN
+// at least on MacOS, there is no SIGRTMIN.
+// So, use any other signal instead.
+#define SIGRTMIN SIGUSR1
+#endif
 
 int main (int argc, char *argv[])
 {

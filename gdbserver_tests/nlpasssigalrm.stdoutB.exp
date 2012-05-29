@@ -1,5 +1,5 @@
-Breakpoint 1 at 0x........: file passsigalrm.c, line 48.
-Breakpoint 2 at 0x........: file passsigalrm.c, line 50.
+Breakpoint 1 at 0x........: file passsigalrm.c, line 53.
+Breakpoint 2 at 0x........: file passsigalrm.c, line 55.
 Signal        Stop	Print	Pass to program	Description
 SIGALRM       Yes	Yes	Yes		Alarm clock
 Continuing.
@@ -8,12 +8,12 @@ Program received signal SIGALRM, Alarm clock.
 Signal        Stop	Print	Pass to program	Description
 SIGALRM       No	No	Yes		Alarm clock
 Continuing.
-Breakpoint 1, main (argc=1, argv=0x........) at passsigalrm.c:48
-48	   breakme++;
+Breakpoint 1, main (argc=1, argv=0x........) at passsigalrm.c:53
+53	   breakme++;
 $1 = 0
 Continuing.
-Breakpoint 2, main (argc=1, argv=0x........) at passsigalrm.c:50
-50	   sa.sa_handler = sigrtmin_handler;
+Breakpoint 2, main (argc=1, argv=0x........) at passsigalrm.c:55
+55	   sa.sa_handler = sigrtmin_handler;
 $2 = 1
 Continuing.
 Program received signal SIG34, Real-time event 34.

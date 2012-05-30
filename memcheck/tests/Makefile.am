@@ -18,6 +18,10 @@ if VGCONF_ARCHS_INCLUDE_PPC64
 SUBDIRS += ppc64
 endif
 
+if VGCONF_ARCHS_INCLUDE_S390X
+SUBDIRS += s390x
+endif
+
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
 SUBDIRS += linux

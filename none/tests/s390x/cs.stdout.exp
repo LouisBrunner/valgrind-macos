@@ -1,0 +1,14 @@
+before op1 = 0x10000000
+before op2 = 0x10000000
+before op3 = 0x12345678
+after  op1 = 0x10000000
+after  op2 = 0x12345678
+after  op3 = 0x12345678
+cc = 0
+before op1 = 0x10000000
+before op2 = 0x20000000
+before op3 = 0x12345678
+after  op1 = 0x20000000
+after  op2 = 0x20000000
+after  op3 = 0x12345678
+cc = 1

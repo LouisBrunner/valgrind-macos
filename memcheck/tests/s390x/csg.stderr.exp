@@ -1,0 +1,8 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test (csg.c:14)
+   by 0x........: main (csg.c:27)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test (csg.c:14)
+   by 0x........: main (csg.c:28)
+

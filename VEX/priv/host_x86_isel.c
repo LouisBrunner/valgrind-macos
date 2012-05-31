@@ -3830,31 +3830,33 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Indexed PUT --------- */
    case Ist_PutI: {
+      IRPutI *puti = stmt->Ist.PutI.details;
+
       X86AMode* am 
          = genGuestArrayOffset(
-              env, stmt->Ist.PutI.descr, 
-                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
+              env, puti->descr, 
+                   puti->ix, puti->bias );
 
-      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+      IRType ty = typeOfIRExpr(env->type_env, puti->data);
       if (ty == Ity_F64) {
-         HReg val = iselDblExpr(env, stmt->Ist.PutI.data);
+         HReg val = iselDblExpr(env, puti->data);
          addInstr(env, X86Instr_FpLdSt( False/*store*/, 8, val, am ));
          return;
       }
       if (ty == Ity_I8) {
-         HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
+         HReg r = iselIntExpr_R(env, puti->data);
          addInstr(env, X86Instr_Store( 1, r, am ));
          return;
       }
       if (ty == Ity_I32) {
-         HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
+         HReg r = iselIntExpr_R(env, puti->data);
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(r), am ));
          return;
       }
       if (ty == Ity_I64) {
          HReg rHi, rLo;
          X86AMode* am4 = advance4(am);
-         iselInt64Expr(&rHi, &rLo, env, stmt->Ist.PutI.data);
+         iselInt64Expr(&rHi, &rLo, env, puti->data);
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rLo), am ));
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rHi), am4 ));
          return;

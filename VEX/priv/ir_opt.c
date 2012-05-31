@@ -384,6 +384,7 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
    IRExpr  *e1, *e2, *e3, *e4, *e5;
    IRDirty *d,  *d2;
    IRCAS   *cas, *cas2;
+   IRPutI  *puti, *puti2;
    switch (st->tag) {
       case Ist_Put:
          if (isIRAtom(st->Ist.Put.data)) {
@@ -397,12 +398,11 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          }
          break;
       case Ist_PutI:
-         e1 = flatten_Expr(bb, st->Ist.PutI.ix);
-         e2 = flatten_Expr(bb, st->Ist.PutI.data);
-         addStmtToIRSB(bb, IRStmt_PutI(st->Ist.PutI.descr,
-                                       e1,
-                                       st->Ist.PutI.bias,
-                                       e2));
+         puti = st->Ist.PutI.details;
+         e1 = flatten_Expr(bb, puti->ix);
+         e2 = flatten_Expr(bb, puti->data);
+         puti2 = mkIRPutI(puti->descr, e1, puti->bias, e2);
+         addStmtToIRSB(bb, IRStmt_PutI(puti2));
          break;
       case Ist_WrTmp:
          if (isFlat(st->Ist.WrTmp.data)) {
@@ -628,7 +628,7 @@ static void redundant_get_removal_BB ( IRSB* bb )
                                  typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
          } else {
             vassert(st->tag == Ist_PutI);
-            key = mk_key_GetIPutI( st->Ist.PutI.descr );
+            key = mk_key_GetIPutI( st->Ist.PutI.details->descr );
          }
 
          k_lo = (key >> 16) & 0xFFFF;
@@ -750,8 +750,8 @@ static void handle_gets_Stmt (
          break;
 
       case Ist_PutI:
-         vassert(isIRAtom(st->Ist.PutI.ix));
-         vassert(isIRAtom(st->Ist.PutI.data));
+         vassert(isIRAtom(st->Ist.PutI.details->ix));
+         vassert(isIRAtom(st->Ist.PutI.details->data));
          break;
 
       case Ist_NoOp:
@@ -872,9 +872,9 @@ static void redundant_put_removal_BB (
             break;
          case Ist_PutI:
             isPut = True;
-            key = mk_key_GetIPutI( st->Ist.PutI.descr );
-            vassert(isIRAtom(st->Ist.PutI.ix));
-            vassert(isIRAtom(st->Ist.PutI.data));
+            key = mk_key_GetIPutI( st->Ist.PutI.details->descr );
+            vassert(isIRAtom(st->Ist.PutI.details->ix));
+            vassert(isIRAtom(st->Ist.PutI.details->data));
             break;
          default: 
             isPut = False;
@@ -2146,15 +2146,17 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                    fold_Expr(env, subst_Expr(env, st->Ist.Put.data)) 
                 );
 
-      case Ist_PutI:
-         vassert(isIRAtom(st->Ist.PutI.ix));
-         vassert(isIRAtom(st->Ist.PutI.data));
-         return IRStmt_PutI(
-                   st->Ist.PutI.descr,
-                   fold_Expr(env, subst_Expr(env, st->Ist.PutI.ix)),
-                   st->Ist.PutI.bias,
-                   fold_Expr(env, subst_Expr(env, st->Ist.PutI.data))
-                );
+      case Ist_PutI: {
+         IRPutI *puti, *puti2;
+         puti = st->Ist.PutI.details;
+         vassert(isIRAtom(puti->ix));
+         vassert(isIRAtom(puti->data));
+         puti2 = mkIRPutI(puti->descr,
+                          fold_Expr(env, subst_Expr(env, puti->ix)),
+                          puti->bias,
+                          fold_Expr(env, subst_Expr(env, puti->data)));
+         return IRStmt_PutI(puti2);
+      }
 
       case Ist_WrTmp:
          /* This is the one place where an expr (st->Ist.WrTmp.data) is
@@ -2422,8 +2424,8 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          addUses_Expr(set, st->Ist.AbiHint.nia);
          return;
       case Ist_PutI:
-         addUses_Expr(set, st->Ist.PutI.ix);
-         addUses_Expr(set, st->Ist.PutI.data);
+         addUses_Expr(set, st->Ist.PutI.details->ix);
+         addUses_Expr(set, st->Ist.PutI.details->data);
          return;
       case Ist_WrTmp:
          addUses_Expr(set, st->Ist.WrTmp.data);
@@ -3210,13 +3212,14 @@ static Bool do_cse_BB ( IRSB* bb )
                }
                else 
                if (st->tag == Ist_PutI) {
+                  IRPutI *puti = st->Ist.PutI.details;
                   if (getAliasingRelation_II(
                          ae->u.GetIt.descr, 
                          IRExpr_RdTmp(ae->u.GetIt.ix), 
                          ae->u.GetIt.bias,
-                         st->Ist.PutI.descr,
-                         st->Ist.PutI.ix,
-                         st->Ist.PutI.bias
+                         puti->descr,
+                         puti->ix,
+                         puti->bias
                       ) != NoAlias)
                      invalidate = True;
                }
@@ -3427,22 +3430,22 @@ static void collapse_AddSub_chains_BB ( IRSB* bb )
       }
 
       /* Perhaps st is PutI[t, con] ? */
-
+      IRPutI *puti = st->Ist.PutI.details;
       if (st->tag == Ist_PutI
-          && st->Ist.PutI.ix->tag == Iex_RdTmp
-          && collapseChain(bb, i-1, st->Ist.PutI.ix->Iex.RdTmp.tmp, 
+          && puti->ix->tag == Iex_RdTmp
+          && collapseChain(bb, i-1, puti->ix->Iex.RdTmp.tmp, 
                                &var2, &con2)) {
          if (DEBUG_IROPT) {
             vex_printf("replacing2 ");
             ppIRStmt(st);
             vex_printf(" with ");
          }
-         con2 += st->Ist.PutI.bias;
+         con2 += puti->bias;
          bb->stmts[i]
-           = IRStmt_PutI(st->Ist.PutI.descr,
-                         IRExpr_RdTmp(var2),
-                         con2,
-                         st->Ist.PutI.data);
+            = IRStmt_PutI(mkIRPutI(puti->descr,
+                                   IRExpr_RdTmp(var2),
+                                   con2,
+                                   puti->data));
          if (DEBUG_IROPT) {
             ppIRStmt(bb->stmts[i]);
             vex_printf("\n");
@@ -3514,12 +3517,13 @@ IRExpr* findPutI ( IRSB* bb, Int startHere,
       }
 
       if (st->tag == Ist_PutI) {
+         IRPutI *puti = st->Ist.PutI.details;
 
          relation = getAliasingRelation_II(
                        descrG, ixG, biasG,
-                       st->Ist.PutI.descr,
-                       st->Ist.PutI.ix,
-                       st->Ist.PutI.bias
+                       puti->descr,
+                       puti->ix,
+                       puti->bias
                     );
 
          if (relation == NoAlias) {
@@ -3536,7 +3540,7 @@ IRExpr* findPutI ( IRSB* bb, Int startHere,
 
          /* Otherwise, we've found what we're looking for.  */
          vassert(relation == ExactAlias);
-         return st->Ist.PutI.data;
+         return puti->data;
 
       } /* if (st->tag == Ist_PutI) */
 
@@ -3566,10 +3570,13 @@ static Bool identicalPutIs ( IRStmt* pi, IRStmt* s2 )
    if (s2->tag != Ist_PutI)
       return False;
 
+   IRPutI *p1 = pi->Ist.PutI.details;
+   IRPutI *p2 = s2->Ist.PutI.details;
+
    return toBool(
           getAliasingRelation_II( 
-             pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
-             s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
+             p1->descr, p1->ix, p1->bias, 
+             p2->descr, p2->ix, p2->bias
           )
           == ExactAlias
           );
@@ -3589,7 +3596,10 @@ Bool guestAccessWhichMightOverlapPutI (
    UInt       minoffP, maxoffP;
 
    vassert(pi->tag == Ist_PutI);
-   getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
+
+   IRPutI *p1 = pi->Ist.PutI.details;
+
+   getArrayBounds(p1->descr, &minoffP, &maxoffP);
    switch (s2->tag) {
 
       case Ist_NoOp:
@@ -3619,28 +3629,30 @@ Bool guestAccessWhichMightOverlapPutI (
          vassert(isIRAtom(s2->Ist.Put.data));
          relation 
             = getAliasingRelation_IC(
-                 pi->Ist.PutI.descr, pi->Ist.PutI.ix,
+                 p1->descr, p1->ix,
                  s2->Ist.Put.offset, 
                  typeOfIRExpr(tyenv,s2->Ist.Put.data)
               );
          goto have_relation;
 
-      case Ist_PutI:
-         vassert(isIRAtom(s2->Ist.PutI.ix));
-         vassert(isIRAtom(s2->Ist.PutI.data));
+      case Ist_PutI: {
+         IRPutI *p2 = s2->Ist.PutI.details;
+
+         vassert(isIRAtom(p2->ix));
+         vassert(isIRAtom(p2->data));
          relation
             = getAliasingRelation_II(
-                 pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
-                 s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
+                 p1->descr, p1->ix, p1->bias, 
+                 p2->descr, p2->ix, p2->bias
               );
          goto have_relation;
+      }
 
       case Ist_WrTmp:
          if (s2->Ist.WrTmp.data->tag == Iex_GetI) {
             relation
                = getAliasingRelation_II(
-                    pi->Ist.PutI.descr, pi->Ist.PutI.ix, 
-                                        pi->Ist.PutI.bias, 
+                    p1->descr, p1->ix, p1->bias, 
                     s2->Ist.WrTmp.data->Iex.GetI.descr,
                     s2->Ist.WrTmp.data->Iex.GetI.ix,
                     s2->Ist.WrTmp.data->Iex.GetI.bias
@@ -3650,7 +3662,7 @@ Bool guestAccessWhichMightOverlapPutI (
          if (s2->Ist.WrTmp.data->tag == Iex_Get) {
             relation
                = getAliasingRelation_IC(
-                    pi->Ist.PutI.descr, pi->Ist.PutI.ix,
+                    p1->descr, p1->ix,
                     s2->Ist.WrTmp.data->Iex.Get.offset,
                     s2->Ist.WrTmp.data->Iex.Get.ty
                  );
@@ -3856,8 +3868,8 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(st->Ist.Put.data, delta);
          break;
       case Ist_PutI:
-         deltaIRExpr(st->Ist.PutI.ix, delta);
-         deltaIRExpr(st->Ist.PutI.data, delta);
+         deltaIRExpr(st->Ist.PutI.details->ix, delta);
+         deltaIRExpr(st->Ist.PutI.details->data, delta);
          break;
       case Ist_WrTmp: 
          st->Ist.WrTmp.tmp += delta;
@@ -4335,8 +4347,8 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
          aoccCount_Expr(uses, st->Ist.Put.data);
          return;
       case Ist_PutI:
-         aoccCount_Expr(uses, st->Ist.PutI.ix);
-         aoccCount_Expr(uses, st->Ist.PutI.data);
+         aoccCount_Expr(uses, st->Ist.PutI.details->ix);
+         aoccCount_Expr(uses, st->Ist.PutI.details->data);
          return;
       case Ist_Store:
          aoccCount_Expr(uses, st->Ist.Store.addr);
@@ -4643,6 +4655,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
    Int     i;
    IRDirty *d, *d2;
    IRCAS   *cas, *cas2;
+   IRPutI  *puti, *puti2;
+
    switch (st->tag) {
       case Ist_AbiHint:
          return IRStmt_AbiHint(
@@ -4667,12 +4681,12 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
                    atbSubst_Expr(env, st->Ist.Put.data)
                 );
       case Ist_PutI:
-         return IRStmt_PutI(
-                   st->Ist.PutI.descr,
-                   atbSubst_Expr(env, st->Ist.PutI.ix),
-                   st->Ist.PutI.bias,
-                   atbSubst_Expr(env, st->Ist.PutI.data)
-                );
+         puti  = st->Ist.PutI.details;
+         puti2 = mkIRPutI(puti->descr, 
+                          atbSubst_Expr(env, puti->ix),
+                          puti->bias,
+                          atbSubst_Expr(env, puti->data));
+         return IRStmt_PutI(puti2);
 
       case Ist_Exit:
          return IRStmt_Exit(

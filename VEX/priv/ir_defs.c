@@ -1160,6 +1160,16 @@ void ppIRCAS ( IRCAS* cas )
    vex_printf(")");
 }
 
+void ppIRPutI ( IRPutI* puti )
+{
+   vex_printf( "PUTI" );
+   ppIRRegArray(puti->descr);
+   vex_printf("[");
+   ppIRExpr(puti->ix);
+   vex_printf(",%d] = ", puti->bias);
+   ppIRExpr(puti->data);
+}
+
 void ppIRJumpKind ( IRJumpKind kind )
 {
    switch (kind) {
@@ -1226,12 +1236,7 @@ void ppIRStmt ( IRStmt* s )
          ppIRExpr(s->Ist.Put.data);
          break;
       case Ist_PutI:
-         vex_printf( "PUTI" );
-         ppIRRegArray(s->Ist.PutI.descr);
-         vex_printf("[");
-         ppIRExpr(s->Ist.PutI.ix);
-         vex_printf(",%d] = ", s->Ist.PutI.bias);
-         ppIRExpr(s->Ist.PutI.data);
+         ppIRPutI(s->Ist.PutI.details);
          break;
       case Ist_WrTmp:
          ppIRTemp(s->Ist.WrTmp.tmp);
@@ -1659,6 +1664,20 @@ IRCAS* mkIRCAS ( IRTemp oldHi, IRTemp oldLo,
 }
 
 
+/* Constructors -- IRPutI */
+
+IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
+                   Int bias, IRExpr* data )
+{
+   IRPutI* puti = LibVEX_Alloc(sizeof(IRPutI));
+   puti->descr  = descr;
+   puti->ix     = ix;
+   puti->bias   = bias;
+   puti->data   = data;
+   return puti;
+}
+
+
 /* Constructors -- IRStmt */
 
 IRStmt* IRStmt_NoOp ( void )
@@ -1691,14 +1710,10 @@ IRStmt* IRStmt_Put ( Int off, IRExpr* data ) {
    s->Ist.Put.data   = data;
    return s;
 }
-IRStmt* IRStmt_PutI ( IRRegArray* descr, IRExpr* ix,
-                      Int bias, IRExpr* data ) {
-   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag            = Ist_PutI;
-   s->Ist.PutI.descr = descr;
-   s->Ist.PutI.ix    = ix;
-   s->Ist.PutI.bias  = bias;
-   s->Ist.PutI.data  = data;
+IRStmt* IRStmt_PutI ( IRPutI* details ) {
+   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag             = Ist_PutI;
+   s->Ist.PutI.details = details;
    return s;
 }
 IRStmt* IRStmt_WrTmp ( IRTemp tmp, IRExpr* data ) {
@@ -1929,6 +1944,14 @@ IRCAS* deepCopyIRCAS ( IRCAS* cas )
                    deepCopyIRExpr(cas->dataLo) );
 }
 
+IRPutI* deepCopyIRPutI ( IRPutI * puti )
+{
+  return mkIRPutI( deepCopyIRRegArray(puti->descr),
+                   deepCopyIRExpr(puti->ix),
+                   puti->bias, 
+                   deepCopyIRExpr(puti->data));
+}
+
 IRStmt* deepCopyIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
@@ -1946,10 +1969,7 @@ IRStmt* deepCopyIRStmt ( IRStmt* s )
          return IRStmt_Put(s->Ist.Put.offset, 
                            deepCopyIRExpr(s->Ist.Put.data));
       case Ist_PutI: 
-         return IRStmt_PutI(deepCopyIRRegArray(s->Ist.PutI.descr),
-                            deepCopyIRExpr(s->Ist.PutI.ix),
-                            s->Ist.PutI.bias, 
-                            deepCopyIRExpr(s->Ist.PutI.data));
+         return IRStmt_PutI(deepCopyIRPutI(s->Ist.PutI.details));
       case Ist_WrTmp:
          return IRStmt_WrTmp(s->Ist.WrTmp.tmp,
                              deepCopyIRExpr(s->Ist.WrTmp.data));
@@ -2910,6 +2930,7 @@ Bool isFlatIRStmt ( IRStmt* st )
    IRExpr*  e;
    IRDirty* di;
    IRCAS*   cas;
+   IRPutI*  puti;
 
    switch (st->tag) {
       case Ist_AbiHint:
@@ -2918,8 +2939,9 @@ Bool isFlatIRStmt ( IRStmt* st )
       case Ist_Put:
          return isIRAtom(st->Ist.Put.data);
       case Ist_PutI:
-         return toBool( isIRAtom(st->Ist.PutI.ix) 
-                        && isIRAtom(st->Ist.PutI.data) );
+         puti = st->Ist.PutI.details;
+         return toBool( isIRAtom(puti->ix) 
+                        && isIRAtom(puti->data) );
       case Ist_WrTmp:
          /* This is the only interesting case.  The RHS can be any
             expression, *but* all its subexpressions *must* be
@@ -3131,6 +3153,7 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
    Int      i;
    IRDirty* d;
    IRCAS*   cas;
+   IRPutI*  puti;
    switch (stmt->tag) {
       case Ist_IMark:
          break;
@@ -3142,8 +3165,9 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.data,def_counts);
          break;
       case Ist_PutI:
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.ix,def_counts);
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.data,def_counts);
+         puti = stmt->Ist.PutI.details;
+         useBeforeDef_Expr(bb,stmt,puti->ix,def_counts);
+         useBeforeDef_Expr(bb,stmt,puti->data,def_counts);
          break;
       case Ist_WrTmp:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.WrTmp.data,def_counts);
@@ -3394,6 +3418,7 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
    Int        i;
    IRDirty*   d;
    IRCAS*     cas;
+   IRPutI*    puti;
    IRType     tyExpd, tyData;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
@@ -3419,16 +3444,17 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
             sanityCheckFail(bb,stmt,"IRStmt.Put.data: cannot Put :: Ity_I1");
          break;
       case Ist_PutI:
-         tcExpr( bb, stmt, stmt->Ist.PutI.data, gWordTy );
-         tcExpr( bb, stmt, stmt->Ist.PutI.ix, gWordTy );
-         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) == Ity_I1)
+         puti = stmt->Ist.PutI.details;
+         tcExpr( bb, stmt, puti->data, gWordTy );
+         tcExpr( bb, stmt, puti->ix, gWordTy );
+         if (typeOfIRExpr(tyenv,puti->data) == Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.PutI.data: cannot PutI :: Ity_I1");
-         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) 
-             != stmt->Ist.PutI.descr->elemTy)
+         if (typeOfIRExpr(tyenv,puti->data) 
+             != puti->descr->elemTy)
             sanityCheckFail(bb,stmt,"IRStmt.PutI.data: data ty != elem ty");
-         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.ix) != Ity_I32)
+         if (typeOfIRExpr(tyenv,puti->ix) != Ity_I32)
             sanityCheckFail(bb,stmt,"IRStmt.PutI.ix: not :: Ity_I32");
-         if (!saneIRRegArray(stmt->Ist.PutI.descr))
+         if (!saneIRRegArray(puti->descr))
             sanityCheckFail(bb,stmt,"IRStmt.PutI.descr: invalid descr");
          break;
       case Ist_WrTmp:

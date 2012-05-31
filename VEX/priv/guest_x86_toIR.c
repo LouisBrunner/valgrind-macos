@@ -3522,7 +3522,7 @@ static void put_ST_TAG ( Int i, IRExpr* value )
    IRRegArray* descr;
    vassert(typeOfIRExpr(irsb->tyenv, value) == Ity_I8);
    descr = mkIRRegArray( OFFB_FPTAGS, Ity_I8, 8 );
-   stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
+   stmt( IRStmt_PutI( mkIRPutI(descr, get_ftop(), i, value) ) );
 }
 
 /* Given i, generate an expression yielding 'ST_TAG(i)'.  This will be
@@ -3546,7 +3546,7 @@ static void put_ST_UNCHECKED ( Int i, IRExpr* value )
    IRRegArray* descr;
    vassert(typeOfIRExpr(irsb->tyenv, value) == Ity_F64);
    descr = mkIRRegArray( OFFB_FPREGS, Ity_F64, 8 );
-   stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
+   stmt( IRStmt_PutI( mkIRPutI(descr, get_ftop(), i, value) ) );
    /* Mark the register as in-use. */
    put_ST_TAG(i, mkU8(1));
 }
@@ -5406,7 +5406,7 @@ static void do_MMX_preamble ( void )
    IRExpr*     tag1  = mkU8(1);
    put_ftop(zero);
    for (i = 0; i < 8; i++)
-      stmt( IRStmt_PutI( descr, zero, i, tag1 ) );
+      stmt( IRStmt_PutI( mkIRPutI(descr, zero, i, tag1) ) );
 }
 
 static void do_EMMS_preamble ( void )
@@ -5417,7 +5417,7 @@ static void do_EMMS_preamble ( void )
    IRExpr*     tag0  = mkU8(0);
    put_ftop(zero);
    for (i = 0; i < 8; i++)
-      stmt( IRStmt_PutI( descr, zero, i, tag0 ) );
+      stmt( IRStmt_PutI( mkIRPutI(descr, zero, i, tag0) ) );
 }
 
 

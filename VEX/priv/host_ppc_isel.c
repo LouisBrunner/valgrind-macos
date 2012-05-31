@@ -4666,19 +4666,21 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       
    /* --------- Indexed PUT --------- */
    case Ist_PutI: {
+      IRPutI *puti = stmt->Ist.PutI.details;
+
       PPCAMode* dst_am
          = genGuestArrayOffset(
-              env, stmt->Ist.PutI.descr, 
-                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
-      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+              env, puti->descr, 
+                   puti->ix, puti->bias );
+      IRType ty = typeOfIRExpr(env->type_env, puti->data);
       if (mode64 && ty == Ity_I64) {
-         HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
+         HReg r_src = iselWordExpr_R(env, puti->data);
          addInstr(env, PPCInstr_Store( toUChar(8),
                                        dst_am, r_src, mode64 ));
          return;
       }
       if ((!mode64) && ty == Ity_I32) {
-         HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
+         HReg r_src = iselWordExpr_R(env, puti->data);
          addInstr(env, PPCInstr_Store( toUChar(4),
                                        dst_am, r_src, mode64 ));
          return;

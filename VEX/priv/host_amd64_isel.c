@@ -3581,24 +3581,26 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Indexed PUT --------- */
    case Ist_PutI: {
+      IRPutI *puti = stmt->Ist.PutI.details;
+
       AMD64AMode* am 
          = genGuestArrayOffset(
-              env, stmt->Ist.PutI.descr, 
-                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
+              env, puti->descr, 
+                   puti->ix, puti->bias );
 
-      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+      IRType ty = typeOfIRExpr(env->type_env, puti->data);
       if (ty == Ity_F64) {
-         HReg val = iselDblExpr(env, stmt->Ist.PutI.data);
+         HReg val = iselDblExpr(env, puti->data);
          addInstr(env, AMD64Instr_SseLdSt( False/*store*/, 8, val, am ));
          return;
       }
       if (ty == Ity_I8) {
-         HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
+         HReg r = iselIntExpr_R(env, puti->data);
          addInstr(env, AMD64Instr_Store( 1, r, am ));
          return;
       }
       if (ty == Ity_I64) {
-         AMD64RI* ri = iselIntExpr_RI(env, stmt->Ist.PutI.data);
+         AMD64RI* ri = iselIntExpr_RI(env, puti->data);
          addInstr(env, AMD64Instr_Alu64M( Aalu_MOV, ri, am ));
          return;
       }

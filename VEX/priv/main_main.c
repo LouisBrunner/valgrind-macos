@@ -163,7 +163,7 @@ void LibVEX_Init (
               || sizeof(IRStmt) == 24 /* arm */);
    } else {
       vassert(sizeof(IRExpr) == 48);
-      vassert(sizeof(IRStmt) == 40);
+      vassert(sizeof(IRStmt) == 32);
    }
 
    /* Really start up .. */

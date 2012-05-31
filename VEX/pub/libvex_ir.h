@@ -2034,6 +2034,23 @@ extern IRCAS* mkIRCAS ( IRTemp oldHi, IRTemp oldLo,
 
 extern IRCAS* deepCopyIRCAS ( IRCAS* );
 
+
+/* ------------------ Circular Array Put ------------------ */
+typedef
+   struct {
+      IRRegArray* descr; /* Part of guest state treated as circular */
+      IRExpr*     ix;    /* Variable part of index into array */
+      Int         bias;  /* Constant offset part of index into array */
+      IRExpr*     data;  /* The value to write */
+   } IRPutI;
+
+extern void ppIRPutI ( IRPutI* puti );
+
+extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
+                          Int bias, IRExpr* data );
+
+extern IRPutI* deepCopyIRPutI ( IRPutI* );
+
 /* ------------------ Statements ------------------ */
 
 /* The different kinds of statements.  Their meaning is explained
@@ -2149,10 +2166,7 @@ typedef
                          eg. PUTI(64:8xF64)[t5,0] = t1
          */
          struct {
-            IRRegArray* descr; /* Part of guest state treated as circular */
-            IRExpr*     ix;    /* Variable part of index into array */
-            Int         bias;  /* Constant offset part of index into array */
-            IRExpr*     data;  /* The value to write */
+            IRPutI* details;
          } PutI;
 
          /* Assign a value to a temporary.  Note that SSA rules require
@@ -2281,8 +2295,8 @@ typedef
          */
          struct {
             IRExpr*    guard;    /* Conditional expression */
-            IRJumpKind jk;       /* Jump kind */
             IRConst*   dst;      /* Jump target (constant only) */
+            IRJumpKind jk;       /* Jump kind */
             Int        offsIP;   /* Guest state offset for IP */
          } Exit;
       } Ist;
@@ -2294,8 +2308,7 @@ extern IRStmt* IRStmt_NoOp    ( void );
 extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len, UChar delta );
 extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len, IRExpr* nia );
 extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
-extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 
-                                IRExpr* data );
+extern IRStmt* IRStmt_PutI    ( IRPutI* details );
 extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_CAS     ( IRCAS* details );

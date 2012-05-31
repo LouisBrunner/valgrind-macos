@@ -1274,13 +1274,15 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
    given GETI (passed in in pieces). 
 */
 static
-void do_shadow_PUTI ( MCEnv* mce, 
-                      IRRegArray* descr, 
-                      IRAtom* ix, Int bias, IRAtom* atom )
+void do_shadow_PUTI ( MCEnv* mce, IRPutI *puti)
 {
    IRAtom* vatom;
    IRType  ty, tyS;
    Int     arrSize;;
+   IRRegArray* descr = puti->descr;
+   IRAtom*     ix    = puti->ix;
+   Int         bias  = puti->bias;
+   IRAtom*     atom  = puti->data;
 
    // Don't do shadow PUTIs if we're not doing undefined value checking.
    // Their absence lets Vex's optimiser remove all the shadow computation
@@ -1307,7 +1309,7 @@ void do_shadow_PUTI ( MCEnv* mce,
       IRRegArray* new_descr 
          = mkIRRegArray( descr->base + mce->layout->total_sizeB, 
                          tyS, descr->nElems);
-      stmt( 'V', mce, IRStmt_PutI( new_descr, ix, bias, vatom ));
+      stmt( 'V', mce, IRStmt_PutI( mkIRPutI(new_descr, ix, bias, vatom) ));
    }
 }
 
@@ -4992,8 +4994,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
       case Ist_Put:
          return isBogusAtom(st->Ist.Put.data);
       case Ist_PutI:
-         return isBogusAtom(st->Ist.PutI.ix) 
-                || isBogusAtom(st->Ist.PutI.data);
+         return isBogusAtom(st->Ist.PutI.details->ix) 
+                || isBogusAtom(st->Ist.PutI.details->data);
       case Ist_Store:
          return isBogusAtom(st->Ist.Store.addr) 
                 || isBogusAtom(st->Ist.Store.data);
@@ -5222,11 +5224,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
             break;
 
          case Ist_PutI:
-            do_shadow_PUTI( &mce, 
-                            st->Ist.PutI.descr,
-                            st->Ist.PutI.ix,
-                            st->Ist.PutI.bias,
-                            st->Ist.PutI.data );
+            do_shadow_PUTI( &mce, st->Ist.PutI.details);
             break;
 
          case Ist_Store:
@@ -5966,9 +5964,10 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
          break;
 
       case Ist_PutI: {
+         IRPutI *puti = st->Ist.PutI.details;
          IRRegArray* descr_b;
          IRAtom      *t1, *t2, *t3, *t4;
-         IRRegArray* descr = st->Ist.PutI.descr;
+         IRRegArray* descr = puti->descr;
          IRType equivIntTy
             = MC_(get_otrack_reg_array_equiv_int_type)(descr);
          /* If this array is unshadowable for whatever reason,
@@ -5983,12 +5982,12 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
          /* Compute a value to Put - the conjoinment of the origin for
             the data to be Put-ted (obviously) and of the index value
             (not so obviously). */
-         t1 = schemeE( mce, st->Ist.PutI.data );
-         t2 = schemeE( mce, st->Ist.PutI.ix );
+         t1 = schemeE( mce, puti->data );
+         t2 = schemeE( mce, puti->ix );
          t3 = gen_maxU32( mce, t1, t2 );
          t4 = zWidenFrom32( mce, equivIntTy, t3 );
-         stmt( 'B', mce, IRStmt_PutI( descr_b, st->Ist.PutI.ix,
-                                      st->Ist.PutI.bias, t4 ));
+         stmt( 'B', mce, IRStmt_PutI( mkIRPutI(descr_b, puti->ix,
+                                               puti->bias, t4) ));
          break;
       }
 

@@ -586,7 +586,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          deal with SP changing in weird ways (well, we can, but not at
          this time of night).  */
       if (st->tag == Ist_PutI) {
-         descr = st->Ist.PutI.descr;
+         descr = st->Ist.PutI.details->descr;
          minoff_ST = descr->base;
          maxoff_ST = descr->base 
                      + descr->nElems * sizeofIRType(descr->elemTy) - 1;
@@ -984,8 +984,8 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    /* PutI/GetI have I32-typed indexes regardless of guest word size */
    addStmtToIRSB(
       bb, 
-      IRStmt_PutI(descr, narrowTo32(bb->tyenv,IRExpr_RdTmp(t1)), 0, e)
-   );
+      IRStmt_PutI(mkIRPutI(descr, 
+                           narrowTo32(bb->tyenv,IRExpr_RdTmp(t1)), 0, e)));
 }
 
 

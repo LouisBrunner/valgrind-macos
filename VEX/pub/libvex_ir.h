@@ -1870,7 +1870,7 @@ extern void ppIRJumpKind ( IRJumpKind );
 /* Effects on resources (eg. registers, memory locations) */
 typedef
    enum {
-      Ifx_None = 0x17000,   /* no effect */
+      Ifx_None = 0x1700,    /* no effect */
       Ifx_Read,             /* reads the resource */
       Ifx_Write,            /* writes the resource */
       Ifx_Modify,           /* modifies the resource */
@@ -1882,7 +1882,7 @@ extern void ppIREffect ( IREffect );
 
 
 typedef
-   struct {
+   struct _IRDirty {
       /* What to call, and details of args/results */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
@@ -1898,10 +1898,26 @@ typedef
       Bool needsBBP; /* True => also pass guest state ptr to callee */
       Int  nFxState; /* must be 0 .. VEX_N_FXSTATE */
       struct {
-         IREffect fx;   /* read, write or modify?  Ifx_None is invalid. */
-         Int      offset;
-         Int      size;
+         IREffect fx:16;   /* read, write or modify?  Ifx_None is invalid. */
+         UShort   offset;
+         UShort   size;
+         UChar    nRepeats;
+         UChar    repeatLen;
       } fxState[VEX_N_FXSTATE];
+      /* The access can be repeated, as specified by nRepeats and
+         repeatLen.  To describe only a single access, nRepeats and
+         repeatLen should be zero.  Otherwise, repeatLen must be a
+         multiple of size and greater than size. */
+      /* Overall, the parts of the guest state denoted by (offset,
+         size, nRepeats, repeatLen) is
+               [offset, +size)
+            and, if nRepeats > 0,
+               for (i = 1; i <= nRepeats; i++)
+                  [offset + i * repeatLen, +size)
+         A convenient way to enumerate all segments is therefore
+            for (i = 0; i < 1 + nRepeats; i++)
+               [offset + i * repeatLen, +size)
+      */
    }
    IRDirty;
 
@@ -2050,6 +2066,7 @@ extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
                           Int bias, IRExpr* data );
 
 extern IRPutI* deepCopyIRPutI ( IRPutI* );
+
 
 /* ------------------ Statements ------------------ */
 

@@ -5174,6 +5174,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
                /* declare we're writing guest state */
                d->nFxState = 4;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -5270,6 +5271,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
                /* declare we're reading guest state */
                d->nFxState = 4;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = OFFB_FTOP;
@@ -5927,6 +5929,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
                /* declare we're writing guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -6150,6 +6153,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
                /* declare we're writing guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -6227,6 +6231,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
                /* declare we're reading guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = OFFB_FTOP;
@@ -11850,10 +11855,11 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          /* declare we're writing memory */
          d->mFx   = Ifx_Write;
          d->mAddr = mkexpr(addr);
-         d->mSize = 512;
+         d->mSize = 464; /* according to recent Intel docs */
 
          /* declare we're reading guest state */
          d->nFxState = 7;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
 
          d->fxState[0].fx     = Ifx_Read;
          d->fxState[0].offset = OFFB_FTOP;
@@ -11877,15 +11883,18 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
          d->fxState[5].fx     = Ifx_Read;
          d->fxState[5].offset = OFFB_YMM0;
-         d->fxState[5].size   = 16 * sizeof(U128);
+         d->fxState[5].size   = sizeof(U128);
+         /* plus 15 more of the above, spaced out in YMM sized steps */
+         d->fxState[5].nRepeats  = 15; 
+         d->fxState[5].repeatLen = sizeof(U256);
 
          d->fxState[6].fx     = Ifx_Read;
          d->fxState[6].offset = OFFB_SSEROUND;
          d->fxState[6].size   = sizeof(ULong);
 
          /* Be paranoid ... this assertion tries to ensure the 16 %ymm
-   	 images are packed back-to-back.  If not, the value of
-   	 d->fxState[5].size is wrong. */
+            images are packed back-to-back.  If not, the settings for
+            d->fxState[5] are wrong. */
          vassert(32 == sizeof(U256));
          vassert(OFFB_YMM15 == (OFFB_YMM0 + 15 * 32));
 
@@ -11925,10 +11934,11 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          /* declare we're reading memory */
          d->mFx   = Ifx_Read;
          d->mAddr = mkexpr(addr);
-         d->mSize = 512;
+         d->mSize = 464; /* according to recent Intel docs */
 
          /* declare we're writing guest state */
          d->nFxState = 7;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
 
          d->fxState[0].fx     = Ifx_Write;
          d->fxState[0].offset = OFFB_FTOP;
@@ -11952,15 +11962,18 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
          d->fxState[5].fx     = Ifx_Write;
          d->fxState[5].offset = OFFB_YMM0;
-         d->fxState[5].size   = 16 * sizeof(U128);
+         d->fxState[5].size   = sizeof(U128);
+         /* plus 15 more of the above, spaced out in YMM sized steps */
+         d->fxState[5].nRepeats  = 15; 
+         d->fxState[5].repeatLen = sizeof(U256);
 
          d->fxState[6].fx     = Ifx_Write;
          d->fxState[6].offset = OFFB_SSEROUND;
          d->fxState[6].size   = sizeof(ULong);
 
          /* Be paranoid ... this assertion tries to ensure the 16 %ymm
-   	 images are packed back-to-back.  If not, the value of
-   	 d->fxState[5].size is wrong. */
+            images are packed back-to-back.  If not, the settings for
+            d->fxState[5] are wrong. */
          vassert(32 == sizeof(U256));
          vassert(OFFB_YMM15 == (OFFB_YMM0 + 15 * 32));
 
@@ -15399,6 +15412,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
             this roundabout scheme. */
          d->needsBBP = True;
          d->nFxState = 2;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
          /* AES{ENC,ENCLAST,DEC,DECLAST} read both registers, and writes
             the second.
             AESIMC (0xDB) reads the first register, and writes the second. */
@@ -15644,6 +15658,7 @@ static Long dis_PCMPxSTRx ( VexAbiInfo* vbi, Prefix pfx,
       roundabout scheme. */
    d->needsBBP = True;
    d->nFxState = 2;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
    d->fxState[0].fx     = Ifx_Read;
    d->fxState[0].offset = gstOffL;
    d->fxState[0].size   = sizeof(U128);
@@ -16826,6 +16841,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
             this roundabout scheme. */
          d->needsBBP = True;
          d->nFxState = 2;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
          d->fxState[0].fx     = Ifx_Read;
          d->fxState[0].offset = gstOffL;
          d->fxState[0].size   = sizeof(U128);
@@ -18656,6 +18672,7 @@ Long dis_ESC_0F (
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 4;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Modify;
       d->fxState[0].offset = OFFB_RAX;
       d->fxState[0].size   = 8;

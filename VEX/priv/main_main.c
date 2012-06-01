@@ -147,6 +147,7 @@ void LibVEX_Init (
    vassert(8 == sizeof(Addr64));
    vassert(16 == sizeof(U128));
    vassert(16 == sizeof(V128));
+   vassert(32 == sizeof(U256));
 
    vassert(sizeof(void*) == 4 || sizeof(void*) == 8);
    vassert(sizeof(void*) == sizeof(int*));

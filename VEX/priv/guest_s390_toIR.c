@@ -2120,10 +2120,12 @@ s390_irgen_00(UChar r1 __attribute__((unused)),
                           mkIRExprVec_0());
    d->needsBBP = 1;  /* Need to pass pointer to guest state to helper */
 
+   d->nFxState = 1;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+
    d->fxState[0].fx     = Ifx_Modify;  /* read then write */
    d->fxState[0].offset = S390X_GUEST_OFFSET(guest_IA);
    d->fxState[0].size   = sizeof(ULong);
-   d->nFxState = 1;
 
    stmt(IRStmt_Dirty(d));
 
@@ -10779,10 +10781,12 @@ s390_irgen_STFLE(IRTemp op2addr)
 
    d->needsBBP = 1;  /* Need to pass pointer to guest state to helper */
 
+   d->nFxState = 1;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+
    d->fxState[0].fx     = Ifx_Modify;  /* read then write */
    d->fxState[0].offset = S390X_GUEST_OFFSET(guest_r0);
    d->fxState[0].size   = sizeof(ULong);
-   d->nFxState = 1;
 
    d->mAddr = mkexpr(op2addr);
    /* Pretend all double words are written */

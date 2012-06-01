@@ -254,6 +254,15 @@ Bool vex_streq ( const HChar* s1, const HChar* s2 )
    }
 }
 
+void vex_bzero ( void* sV, UInt n )
+{
+   UInt i;
+   UChar* s = (UChar*)sV;
+   /* No laughing, please.  Just don't call this too often.  Thank you
+      for your attention. */
+   for (i = 0; i < n; i++) s[i] = 0;
+}
+
 
 /* Convert N0 into ascii in BUF, which is assumed to be big enough (at
    least 67 bytes long).  Observe BASE, SYNED and HEXCAPS. */

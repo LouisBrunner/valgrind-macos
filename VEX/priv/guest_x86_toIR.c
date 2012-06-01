@@ -3954,6 +3954,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're writing guest state */
                d->nFxState = 4;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -4049,6 +4050,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're reading guest state */
                d->nFxState = 4;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = OFFB_FTOP;
@@ -4738,6 +4740,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're writing guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -4942,6 +4945,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're writing guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -5000,6 +5004,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're reading guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = OFFB_FTOP;
@@ -8138,10 +8143,11 @@ DisResult disInstr_X86_WRK (
       /* declare we're writing memory */
       d->mFx   = Ifx_Write;
       d->mAddr = mkexpr(addr);
-      d->mSize = 512;
+      d->mSize = 464; /* according to recent Intel docs */
 
       /* declare we're reading guest state */
       d->nFxState = 7;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
 
       d->fxState[0].fx     = Ifx_Read;
       d->fxState[0].offset = OFFB_FTOP;
@@ -8212,10 +8218,11 @@ DisResult disInstr_X86_WRK (
       /* declare we're reading memory */
       d->mFx   = Ifx_Read;
       d->mAddr = mkexpr(addr);
-      d->mSize = 512;
+      d->mSize = 464; /* according to recent Intel docs */
 
       /* declare we're writing guest state */
       d->nFxState = 7;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
 
       d->fxState[0].fx     = Ifx_Write;
       d->fxState[0].offset = OFFB_FTOP;
@@ -14608,6 +14615,7 @@ DisResult disInstr_X86_WRK (
          /* declare guest state effects */
          d->needsBBP = True;
          d->nFxState = 4;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
          d->fxState[0].fx     = Ifx_Modify;
          d->fxState[0].offset = OFFB_EAX;
          d->fxState[0].size   = 4;

@@ -1120,7 +1120,13 @@ void ppIRDirty ( IRDirty* d )
    for (i = 0; i < d->nFxState; i++) {
       vex_printf(" ");
       ppIREffect(d->fxState[i].fx);
-      vex_printf("-gst(%d,%d)", d->fxState[i].offset, d->fxState[i].size);
+      vex_printf("-gst(%u,%u", (UInt)d->fxState[i].offset,
+                               (UInt)d->fxState[i].size);
+      if (d->fxState[i].nRepeats > 0) {
+         vex_printf(",reps%u,step%u", (UInt)d->fxState[i].nRepeats,
+                                      (UInt)d->fxState[i].repeatLen);
+      }
+      vex_printf(")");
    }
    vex_printf(" ::: ");
    ppIRCallee(d->cee);
@@ -3567,6 +3573,15 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          for (i = 0; i < d->nFxState; i++) {
             if (d->fxState[i].fx == Ifx_None) goto bad_dirty;
             if (d->fxState[i].size <= 0) goto bad_dirty;
+            if (d->fxState[i].nRepeats == 0) {
+               if (d->fxState[i].repeatLen != 0) goto bad_dirty;
+            } else {
+               if (d->fxState[i].repeatLen <= d->fxState[i].size)
+                  goto bad_dirty;
+               /* the % is safe because of the .size check above */
+               if ((d->fxState[i].repeatLen % d->fxState[i].size) != 0)
+                  goto bad_dirty;
+            }
          }
          /* check types, minimally */
          if (d->guard == NULL) goto bad_dirty;

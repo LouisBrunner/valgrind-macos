@@ -2419,6 +2419,9 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       /* Invalidate tracked values of those guest state registers that are
          modified by this helper. */
       for (i = 0; i < d->nFxState; ++i) {
+         /* JRS 1 June 2012: AFAICS, s390 guest doesn't use 'repeat'
+            descriptors in guest state effect descriptions.  Hence: */
+         vassert(d->fxState[i].nRepeats == 0 && d->fxState[i].repeatLen == 0);
          if ((d->fxState[i].fx == Ifx_Write || d->fxState[i].fx == Ifx_Modify)) {
             Int guest_reg = get_guest_reg(d->fxState[i].offset);
             if (guest_reg != GUEST_UNKNOWN)

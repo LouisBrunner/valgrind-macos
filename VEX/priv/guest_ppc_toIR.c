@@ -12801,6 +12801,7 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 1;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Write;
       d->fxState[0].offset = vD_off;
       d->fxState[0].size   = sizeof(U128);
@@ -12834,6 +12835,7 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 1;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Write;
       d->fxState[0].offset = vD_off;
       d->fxState[0].size   = sizeof(U128);

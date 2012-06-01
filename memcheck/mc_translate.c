@@ -710,8 +710,8 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
 {
    IRType  src_ty;
    IRAtom* tmp1;
+
    /* Note, dst_ty is a shadow type, not an original type. */
-   /* First of all, collapse vbits down to a single bit. */
    tl_assert(isShadowAtom(mce,vbits));
    src_ty = typeOfIRExpr(mce->sb->tyenv, vbits);
 
@@ -723,11 +723,20 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
       return assignNew('V', mce, Ity_I64, unop(Iop_CmpwNEZ64, vbits));
 
    if (src_ty == Ity_I32 && dst_ty == Ity_I64) {
+      /* PCast the arg, then clone it. */
       IRAtom* tmp = assignNew('V', mce, Ity_I32, unop(Iop_CmpwNEZ32, vbits));
       return assignNew('V', mce, Ity_I64, binop(Iop_32HLto64, tmp, tmp));
    }
 
+   if (src_ty == Ity_I64 && dst_ty == Ity_I32) {
+      /* PCast the arg.  This gives all 0s or all 1s.  Then throw away
+         the top half. */
+      IRAtom* tmp = assignNew('V', mce, Ity_I64, unop(Iop_CmpwNEZ64, vbits));
+      return assignNew('V', mce, Ity_I32, unop(Iop_64to32, tmp));
+   }
+
    /* Else do it the slow way .. */
+   /* First of all, collapse vbits down to a single bit. */
    tmp1   = NULL;
    switch (src_ty) {
       case Ity_I1:
@@ -1027,12 +1036,16 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e ); /* fwds */
 
 static void setHelperAnns ( MCEnv* mce, IRDirty* di ) {
    di->nFxState = 2;
-   di->fxState[0].fx     = Ifx_Read;
-   di->fxState[0].offset = mce->layout->offset_SP;
-   di->fxState[0].size   = mce->layout->sizeof_SP;
-   di->fxState[1].fx     = Ifx_Read;
-   di->fxState[1].offset = mce->layout->offset_IP;
-   di->fxState[1].size   = mce->layout->sizeof_IP;
+   di->fxState[0].fx        = Ifx_Read;
+   di->fxState[0].offset    = mce->layout->offset_SP;
+   di->fxState[0].size      = mce->layout->sizeof_SP;
+   di->fxState[0].nRepeats  = 0;
+   di->fxState[0].repeatLen = 0;
+   di->fxState[1].fx        = Ifx_Read;
+   di->fxState[1].offset    = mce->layout->offset_IP;
+   di->fxState[1].size      = mce->layout->sizeof_IP;
+   di->fxState[1].nRepeats  = 0;
+   di->fxState[1].repeatLen = 0;
 }
 
 
@@ -4180,7 +4193,7 @@ static IRType szToITy ( Int n )
 static
 void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 {
-   Int       i, n, toDo, gSz, gOff;
+   Int       i, k, n, toDo, gSz, gOff;
    IRAtom    *src, *here, *curr;
    IRType    tySrc, tyDst;
    IRTemp    dst;
@@ -4217,34 +4230,37 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       if (d->fxState[i].fx == Ifx_Write)
          continue;
 
-      /* Ignore any sections marked as 'always defined'. */
-      if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size )) {
-         if (0)
-         VG_(printf)("memcheck: Dirty gst: ignored off %d, sz %d\n",
-                     d->fxState[i].offset, d->fxState[i].size );
-         continue;
-      }
+      /* Enumerate the described state segments */
+      for (k = 0; k < 1 + d->fxState[i].nRepeats; k++) {
+         gOff = d->fxState[i].offset + k * d->fxState[i].repeatLen;
+         gSz  = d->fxState[i].size;
 
-      /* This state element is read or modified.  So we need to
-         consider it.  If larger than 8 bytes, deal with it in 8-byte
-         chunks. */
-      gSz  = d->fxState[i].size;
-      gOff = d->fxState[i].offset;
-      tl_assert(gSz > 0);
-      while (True) {
-         if (gSz == 0) break;
-         n = gSz <= 8 ? gSz : 8;
-         /* update 'curr' with UifU of the state slice 
-            gOff .. gOff+n-1 */
-         tySrc = szToITy( n );
-         src   = assignNew( 'V', mce, tySrc, 
-                                 shadow_GET(mce, gOff, tySrc ) );
-         here = mkPCastTo( mce, Ity_I32, src );
-         curr = mkUifU32(mce, here, curr);
-         gSz -= n;
-         gOff += n;
-      }
+         /* Ignore any sections marked as 'always defined'. */
+         if (isAlwaysDefd(mce, gOff, gSz)) {
+            if (0)
+            VG_(printf)("memcheck: Dirty gst: ignored off %d, sz %d\n",
+                        gOff, gSz);
+            continue;
+         }
 
+         /* This state element is read or modified.  So we need to
+            consider it.  If larger than 8 bytes, deal with it in
+            8-byte chunks. */
+         while (True) {
+            tl_assert(gSz >= 0);
+            if (gSz == 0) break;
+            n = gSz <= 8 ? gSz : 8;
+            /* update 'curr' with UifU of the state slice 
+               gOff .. gOff+n-1 */
+            tySrc = szToITy( n );
+            src   = assignNew( 'V', mce, tySrc, 
+                                    shadow_GET(mce, gOff, tySrc ) );
+            here = mkPCastTo( mce, Ity_I32, src );
+            curr = mkUifU32(mce, here, curr);
+            gSz -= n;
+            gOff += n;
+         }
+      }
    }
 
    /* Inputs: memory.  First set up some info needed regardless of
@@ -4309,26 +4325,32 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       tl_assert(d->fxState[i].fx != Ifx_None);
       if (d->fxState[i].fx == Ifx_Read)
          continue;
-      /* Ignore any sections marked as 'always defined'. */
-      if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size ))
-         continue;
-      /* This state element is written or modified.  So we need to
-         consider it.  If larger than 8 bytes, deal with it in 8-byte
-         chunks. */
-      gSz  = d->fxState[i].size;
-      gOff = d->fxState[i].offset;
-      tl_assert(gSz > 0);
-      while (True) {
-         if (gSz == 0) break;
-         n = gSz <= 8 ? gSz : 8;
-         /* Write suitably-casted 'curr' to the state slice 
-            gOff .. gOff+n-1 */
-         tyDst = szToITy( n );
-         do_shadow_PUT( mce, gOff,
-                             NULL, /* original atom */
-                             mkPCastTo( mce, tyDst, curr ) );
-         gSz -= n;
-         gOff += n;
+
+      /* Enumerate the described state segments */
+      for (k = 0; k < 1 + d->fxState[i].nRepeats; k++) {
+         gOff = d->fxState[i].offset + k * d->fxState[i].repeatLen;
+         gSz  = d->fxState[i].size;
+
+         /* Ignore any sections marked as 'always defined'. */
+         if (isAlwaysDefd(mce, gOff, gSz))
+            continue;
+
+         /* This state element is written or modified.  So we need to
+            consider it.  If larger than 8 bytes, deal with it in
+            8-byte chunks. */
+         while (True) {
+            tl_assert(gSz >= 0);
+            if (gSz == 0) break;
+            n = gSz <= 8 ? gSz : 8;
+            /* Write suitably-casted 'curr' to the state slice 
+               gOff .. gOff+n-1 */
+            tyDst = szToITy( n );
+            do_shadow_PUT( mce, gOff,
+                                NULL, /* original atom */
+                                mkPCastTo( mce, tyDst, curr ) );
+            gSz -= n;
+            gOff += n;
+         }
       }
    }
 
@@ -5776,7 +5798,7 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
 static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
 {
    // This is a hacked version of do_shadow_Dirty
-   Int       i, n, toDo, gSz, gOff;
+   Int       i, k, n, toDo, gSz, gOff;
    IRAtom    *here, *curr;
    IRTemp    dst;
 
@@ -5801,38 +5823,42 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
       if (d->fxState[i].fx == Ifx_Write)
          continue;
 
-      /* Ignore any sections marked as 'always defined'. */
-      if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size )) {
-         if (0)
-         VG_(printf)("memcheck: Dirty gst: ignored off %d, sz %d\n",
-                     d->fxState[i].offset, d->fxState[i].size );
-         continue;
-      }
+      /* Enumerate the described state segments */
+      for (k = 0; k < 1 + d->fxState[i].nRepeats; k++) {
+         gOff = d->fxState[i].offset + k * d->fxState[i].repeatLen;
+         gSz  = d->fxState[i].size;
 
-      /* This state element is read or modified.  So we need to
-         consider it.  If larger than 4 bytes, deal with it in 4-byte
-         chunks. */
-      gSz  = d->fxState[i].size;
-      gOff = d->fxState[i].offset;
-      tl_assert(gSz > 0);
-      while (True) {
-         Int b_offset;
-         if (gSz == 0) break;
-         n = gSz <= 4 ? gSz : 4;
-         /* update 'curr' with maxU32 of the state slice 
-            gOff .. gOff+n-1 */
-         b_offset = MC_(get_otrack_shadow_offset)(gOff, 4);
-         if (b_offset != -1) {
-            here = assignNew( 'B',mce,
-                               Ity_I32,
-                               IRExpr_Get(b_offset + 2*mce->layout->total_sizeB,
-                                          Ity_I32));
-            curr = gen_maxU32( mce, curr, here );
+         /* Ignore any sections marked as 'always defined'. */
+         if (isAlwaysDefd(mce, gOff, gSz)) {
+            if (0)
+            VG_(printf)("memcheck: Dirty gst: ignored off %d, sz %d\n",
+                        gOff, gSz);
+            continue;
          }
-         gSz -= n;
-         gOff += n;
-      }
 
+         /* This state element is read or modified.  So we need to
+            consider it.  If larger than 4 bytes, deal with it in
+            4-byte chunks. */
+         while (True) {
+            Int b_offset;
+            tl_assert(gSz >= 0);
+            if (gSz == 0) break;
+            n = gSz <= 4 ? gSz : 4;
+            /* update 'curr' with maxU32 of the state slice 
+               gOff .. gOff+n-1 */
+            b_offset = MC_(get_otrack_shadow_offset)(gOff, 4);
+            if (b_offset != -1) {
+              here = assignNew( 'B',mce,
+                                  Ity_I32,
+                                  IRExpr_Get(b_offset
+                                                + 2*mce->layout->total_sizeB,
+                                             Ity_I32));
+               curr = gen_maxU32( mce, curr, here );
+            }
+            gSz -= n;
+            gOff += n;
+         }
+      }
    }
 
    /* Inputs: memory */
@@ -5884,28 +5910,33 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
       if (d->fxState[i].fx == Ifx_Read)
          continue;
 
-      /* Ignore any sections marked as 'always defined'. */
-      if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size ))
-         continue;
+      /* Enumerate the described state segments */
+      for (k = 0; k < 1 + d->fxState[i].nRepeats; k++) {
+         gOff = d->fxState[i].offset + k * d->fxState[i].repeatLen;
+         gSz  = d->fxState[i].size;
 
-      /* This state element is written or modified.  So we need to
-         consider it.  If larger than 4 bytes, deal with it in 4-byte
-         chunks. */
-      gSz  = d->fxState[i].size;
-      gOff = d->fxState[i].offset;
-      tl_assert(gSz > 0);
-      while (True) {
-         Int b_offset;
-         if (gSz == 0) break;
-         n = gSz <= 4 ? gSz : 4;
-         /* Write 'curr' to the state slice gOff .. gOff+n-1 */
-         b_offset = MC_(get_otrack_shadow_offset)(gOff, 4);
-         if (b_offset != -1) {
-           stmt( 'B', mce, IRStmt_Put(b_offset + 2*mce->layout->total_sizeB,
-                                      curr ));
+         /* Ignore any sections marked as 'always defined'. */
+         if (isAlwaysDefd(mce, gOff, gSz))
+            continue;
+
+         /* This state element is written or modified.  So we need to
+            consider it.  If larger than 4 bytes, deal with it in
+            4-byte chunks. */
+         while (True) {
+            Int b_offset;
+            tl_assert(gSz >= 0);
+            if (gSz == 0) break;
+            n = gSz <= 4 ? gSz : 4;
+            /* Write 'curr' to the state slice gOff .. gOff+n-1 */
+            b_offset = MC_(get_otrack_shadow_offset)(gOff, 4);
+            if (b_offset != -1) {
+               stmt( 'B', mce, IRStmt_Put(b_offset
+                                             + 2*mce->layout->total_sizeB,
+                                          curr ));
+            }
+            gSz -= n;
+            gOff += n;
          }
-         gSz -= n;
-         gOff += n;
       }
    }
 

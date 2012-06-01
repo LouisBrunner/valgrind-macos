@@ -1022,12 +1022,16 @@ static void VG_(add_stmt_call_gdbserver)
       gdb interactions. */
    
    di->nFxState = 2;
-   di->fxState[0].fx     = Ifx_Read;
-   di->fxState[0].offset = layout->offset_SP;
-   di->fxState[0].size   = layout->sizeof_SP;
-   di->fxState[1].fx     = Ifx_Modify;
-   di->fxState[1].offset = layout->offset_IP;
-   di->fxState[1].size   = layout->sizeof_IP;
+   di->fxState[0].fx        = Ifx_Read;
+   di->fxState[0].offset    = layout->offset_SP;
+   di->fxState[0].size      = layout->sizeof_SP;
+   di->fxState[0].nRepeats  = 0;
+   di->fxState[0].repeatLen = 0;
+   di->fxState[1].fx        = Ifx_Modify;
+   di->fxState[1].offset    = layout->offset_IP;
+   di->fxState[1].size      = layout->sizeof_IP;
+   di->fxState[1].nRepeats  = 0;
+   di->fxState[1].repeatLen = 0;
 
    addStmtToIRSB(irsb, IRStmt_Dirty(di));
 

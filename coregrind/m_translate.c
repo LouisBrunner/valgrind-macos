@@ -262,7 +262,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
                           IRType            gWordTy, 
                           IRType            hWordTy )
 {
-   Int         i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
+   Int         i, j, k, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
    Int         first_SP, last_SP, first_Put, last_Put;
    IRDirty     *dcall, *d;
    IRStmt*     st;
@@ -334,6 +334,8 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          dcall->fxState[0].fx     = Ifx_Read;                           \
          dcall->fxState[0].offset = layout->offset_SP;                  \
          dcall->fxState[0].size   = layout->sizeof_SP;                  \
+         dcall->fxState[0].nRepeats  = 0;                               \
+         dcall->fxState[0].repeatLen = 0;                               \
                                                                         \
          addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
@@ -362,6 +364,8 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          dcall->fxState[0].fx     = Ifx_Read;                           \
          dcall->fxState[0].offset = layout->offset_SP;                  \
          dcall->fxState[0].size   = layout->sizeof_SP;                  \
+         dcall->fxState[0].nRepeats  = 0;                               \
+         dcall->fxState[0].repeatLen = 0;                               \
                                                                         \
          addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
@@ -597,13 +601,16 @@ IRSB* vg_SP_update_pass ( void*             closureV,
       if (st->tag == Ist_Dirty) {
          d = st->Ist.Dirty.details;
          for (j = 0; j < d->nFxState; j++) {
-            minoff_ST = d->fxState[j].offset;
-            maxoff_ST = d->fxState[j].offset + d->fxState[j].size - 1;
             if (d->fxState[j].fx == Ifx_Read || d->fxState[j].fx == Ifx_None)
                continue;
-            if (!(offset_SP > maxoff_ST
-                  || (offset_SP + sizeof_SP - 1) < minoff_ST))
-               goto complain;
+            /* Enumerate the described state segments */
+            for (k = 0; k < 1 + d->fxState[j].nRepeats; k++) {
+               minoff_ST = d->fxState[j].offset + k * d->fxState[j].repeatLen;
+               maxoff_ST = minoff_ST + d->fxState[j].size - 1;
+               if (!(offset_SP > maxoff_ST
+                     || (offset_SP + sizeof_SP - 1) < minoff_ST))
+                  goto complain;
+            }
          }
       }
 

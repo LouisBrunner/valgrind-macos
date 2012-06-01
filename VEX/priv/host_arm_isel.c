@@ -1274,7 +1274,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
           || e->Iex.Binop.op == Iop_GetElem16x4
           || e->Iex.Binop.op == Iop_GetElem32x2) {
          HReg res = newVRegI(env);
-         HReg arg = iselNeon64Expr(env, e->Iex.Triop.arg1);
+         HReg arg = iselNeon64Expr(env, e->Iex.Binop.arg1);
          UInt index, size;
          if (e->Iex.Binop.arg2->tag != Iex_Const ||
              typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
@@ -1299,7 +1299,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
           || e->Iex.Binop.op == Iop_GetElem16x8
           || e->Iex.Binop.op == Iop_GetElem32x4) {
          HReg res = newVRegI(env);
-         HReg arg = iselNeonExpr(env, e->Iex.Triop.arg1);
+         HReg arg = iselNeonExpr(env, e->Iex.Binop.arg1);
          UInt index, size;
          if (e->Iex.Binop.arg2->tag != Iex_Const ||
              typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {

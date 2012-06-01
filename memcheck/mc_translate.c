@@ -3824,9 +3824,9 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
       case Iex_Qop:
          return expr2vbits_Qop(
                    mce,
-                   e->Iex.Qop.op,
-                   e->Iex.Qop.arg1, e->Iex.Qop.arg2,
-		   e->Iex.Qop.arg3, e->Iex.Qop.arg4
+                   e->Iex.Qop.details->op,
+                   e->Iex.Qop.details->arg1, e->Iex.Qop.details->arg2,
+                   e->Iex.Qop.details->arg3, e->Iex.Qop.details->arg4
                 );
 
       case Iex_Triop:
@@ -4985,10 +4985,10 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                       || isBogusAtom(e->Iex.Triop.arg2)
                       || isBogusAtom(e->Iex.Triop.arg3);
             case Iex_Qop: 
-               return isBogusAtom(e->Iex.Qop.arg1)
-                      || isBogusAtom(e->Iex.Qop.arg2)
-                      || isBogusAtom(e->Iex.Qop.arg3)
-                      || isBogusAtom(e->Iex.Qop.arg4);
+               return isBogusAtom(e->Iex.Qop.details->arg1)
+                      || isBogusAtom(e->Iex.Qop.details->arg2)
+                      || isBogusAtom(e->Iex.Qop.details->arg3)
+                      || isBogusAtom(e->Iex.Qop.details->arg4);
             case Iex_Mux0X:
                return isBogusAtom(e->Iex.Mux0X.cond)
                       || isBogusAtom(e->Iex.Mux0X.expr0)
@@ -5733,10 +5733,10 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
          return gen_maxU32( mce, b1, gen_maxU32( mce, b2, b3 ));
       }
       case Iex_Qop: {
-         IRAtom* b1 = schemeE( mce, e->Iex.Qop.arg1 );
-         IRAtom* b2 = schemeE( mce, e->Iex.Qop.arg2 );
-         IRAtom* b3 = schemeE( mce, e->Iex.Qop.arg3 );
-         IRAtom* b4 = schemeE( mce, e->Iex.Qop.arg4 );
+         IRAtom* b1 = schemeE( mce, e->Iex.Qop.details->arg1 );
+         IRAtom* b2 = schemeE( mce, e->Iex.Qop.details->arg2 );
+         IRAtom* b3 = schemeE( mce, e->Iex.Qop.details->arg3 );
+         IRAtom* b4 = schemeE( mce, e->Iex.Qop.details->arg4 );
          return gen_maxU32( mce, gen_maxU32( mce, b1, b2 ),
                                  gen_maxU32( mce, b3, b4 ) );
       }

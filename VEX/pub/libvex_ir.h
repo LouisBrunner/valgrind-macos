@@ -1477,6 +1477,9 @@ typedef IRCmpF64Result IRCmpF128Result;
 
 /* ------------------ Expressions ------------------ */
 
+typedef struct _IRQop IRQop;   /* forward declaration */
+
+
 /* The different kinds of expressions.  Their meaning is explained below
    in the comments for IRExpr. */
 typedef
@@ -1580,11 +1583,7 @@ struct _IRExpr {
                       eg. MAddF64r32(t1, t2, t3, t4)
       */
       struct {
-         IROp op;          /* op-code   */
-         IRExpr* arg1;     /* operand 1 */
-         IRExpr* arg2;     /* operand 2 */
-         IRExpr* arg3;     /* operand 3 */
-         IRExpr* arg4;     /* operand 4 */
+        IRQop* details;
       } Qop;
 
       /* A ternary operation.
@@ -1695,6 +1694,15 @@ struct _IRExpr {
          IRExpr* exprX;    /* False expression */
       } Mux0X;
    } Iex;
+};
+
+/* ------------------ A quarternary expression ------------------ */
+struct _IRQop {
+   IROp op;          /* op-code   */
+   IRExpr* arg1;     /* operand 1 */
+   IRExpr* arg2;     /* operand 2 */
+   IRExpr* arg3;     /* operand 3 */
+   IRExpr* arg4;     /* operand 4 */
 };
 
 /* Expression constructors. */

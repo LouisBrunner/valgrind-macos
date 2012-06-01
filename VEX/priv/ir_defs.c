@@ -1017,18 +1017,20 @@ void ppIRExpr ( IRExpr* e )
     case Iex_RdTmp:
       ppIRTemp(e->Iex.RdTmp.tmp);
       break;
-    case Iex_Qop:
-      ppIROp(e->Iex.Qop.op);
+    case Iex_Qop: {
+      IRQop *qop = e->Iex.Qop.details;
+      ppIROp(qop->op);
       vex_printf( "(" );
-      ppIRExpr(e->Iex.Qop.arg1);
+      ppIRExpr(qop->arg1);
       vex_printf( "," );
-      ppIRExpr(e->Iex.Qop.arg2);
+      ppIRExpr(qop->arg2);
       vex_printf( "," );
-      ppIRExpr(e->Iex.Qop.arg3);
+      ppIRExpr(qop->arg3);
       vex_printf( "," );
-      ppIRExpr(e->Iex.Qop.arg4);
+      ppIRExpr(qop->arg4);
       vex_printf( ")" );
       break;
+    }
     case Iex_Triop:
       ppIROp(e->Iex.Triop.op);
       vex_printf( "(" );
@@ -1475,12 +1477,14 @@ IRExpr* IRExpr_RdTmp ( IRTemp tmp ) {
 IRExpr* IRExpr_Qop ( IROp op, IRExpr* arg1, IRExpr* arg2, 
                               IRExpr* arg3, IRExpr* arg4 ) {
    IRExpr* e       = LibVEX_Alloc(sizeof(IRExpr));
+   IRQop*  qop     = LibVEX_Alloc(sizeof(IRQop));
+   qop->op         = op;
+   qop->arg1       = arg1;
+   qop->arg2       = arg2;
+   qop->arg3       = arg3;
+   qop->arg4       = arg4;
    e->tag          = Iex_Qop;
-   e->Iex.Qop.op   = op;
-   e->Iex.Qop.arg1 = arg1;
-   e->Iex.Qop.arg2 = arg2;
-   e->Iex.Qop.arg3 = arg3;
-   e->Iex.Qop.arg4 = arg4;
+   e->Iex.Qop.details = qop;
    return e;
 }
 IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1, 
@@ -1884,12 +1888,15 @@ IRExpr* deepCopyIRExpr ( IRExpr* e )
                             e->Iex.GetI.bias);
       case Iex_RdTmp: 
          return IRExpr_RdTmp(e->Iex.RdTmp.tmp);
-      case Iex_Qop: 
-         return IRExpr_Qop(e->Iex.Qop.op,
-                           deepCopyIRExpr(e->Iex.Qop.arg1),
-                           deepCopyIRExpr(e->Iex.Qop.arg2),
-                           deepCopyIRExpr(e->Iex.Qop.arg3),
-                           deepCopyIRExpr(e->Iex.Qop.arg4));
+      case Iex_Qop: {
+         IRQop* qop = e->Iex.Qop.details;
+
+         return IRExpr_Qop(qop->op,
+                           deepCopyIRExpr(qop->arg1),
+                           deepCopyIRExpr(qop->arg2),
+                           deepCopyIRExpr(qop->arg3),
+                           deepCopyIRExpr(qop->arg4));
+      }
       case Iex_Triop: 
          return IRExpr_Triop(e->Iex.Triop.op,
                              deepCopyIRExpr(e->Iex.Triop.arg1),
@@ -2870,7 +2877,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       case Iex_Const:
          return typeOfIRConst(e->Iex.Const.con);
       case Iex_Qop:
-         typeOfPrimop(e->Iex.Qop.op, 
+         typeOfPrimop(e->Iex.Qop.details->op, 
                       &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          return t_dst;
       case Iex_Triop:
@@ -2937,6 +2944,7 @@ Bool isFlatIRStmt ( IRStmt* st )
    IRDirty* di;
    IRCAS*   cas;
    IRPutI*  puti;
+   IRQop*   qop;
 
    switch (st->tag) {
       case Ist_AbiHint:
@@ -2958,11 +2966,12 @@ Bool isFlatIRStmt ( IRStmt* st )
             case Iex_Get:    return True;
             case Iex_GetI:   return isIRAtom(e->Iex.GetI.ix);
             case Iex_RdTmp:  return True;
-            case Iex_Qop:    return toBool(
-                                    isIRAtom(e->Iex.Qop.arg1) 
-                                    && isIRAtom(e->Iex.Qop.arg2)
-                                    && isIRAtom(e->Iex.Qop.arg3)
-                                    && isIRAtom(e->Iex.Qop.arg4));
+            case Iex_Qop:    qop = e->Iex.Qop.details;
+                             return toBool(
+                                    isIRAtom(qop->arg1) 
+                                    && isIRAtom(qop->arg2)
+                                    && isIRAtom(qop->arg3)
+                                    && isIRAtom(qop->arg4));
             case Iex_Triop:  return toBool(
                                     isIRAtom(e->Iex.Triop.arg1) 
                                     && isIRAtom(e->Iex.Triop.arg2)
@@ -3116,12 +3125,14 @@ void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_RdTmp:
          useBeforeDef_Temp(bb,stmt,expr->Iex.RdTmp.tmp,def_counts);
          break;
-      case Iex_Qop:
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg1,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg2,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg3,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg4,def_counts);
+      case Iex_Qop: {
+         IRQop* qop = expr->Iex.Qop.details;
+         useBeforeDef_Expr(bb,stmt,qop->arg1,def_counts);
+         useBeforeDef_Expr(bb,stmt,qop->arg2,def_counts);
+         useBeforeDef_Expr(bb,stmt,qop->arg3,def_counts);
+         useBeforeDef_Expr(bb,stmt,qop->arg4,def_counts);
          break;
+      }
       case Iex_Triop:
          useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg1,def_counts);
          useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg2,def_counts);
@@ -3234,29 +3245,30 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          break;
       case Iex_Qop: {
          IRType ttarg1, ttarg2, ttarg3, ttarg4;
-         tcExpr(bb,stmt, expr->Iex.Qop.arg1, gWordTy );
-         tcExpr(bb,stmt, expr->Iex.Qop.arg2, gWordTy );
-         tcExpr(bb,stmt, expr->Iex.Qop.arg3, gWordTy );
-         tcExpr(bb,stmt, expr->Iex.Qop.arg4, gWordTy );
-         typeOfPrimop(expr->Iex.Qop.op, 
+         IRQop* qop = expr->Iex.Qop.details;
+         tcExpr(bb,stmt, qop->arg1, gWordTy );
+         tcExpr(bb,stmt, qop->arg2, gWordTy );
+         tcExpr(bb,stmt, qop->arg3, gWordTy );
+         tcExpr(bb,stmt, qop->arg4, gWordTy );
+         typeOfPrimop(qop->op, 
                       &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID 
              || t_arg3 == Ity_INVALID || t_arg4 == Ity_INVALID) {
             vex_printf(" op name: " );
-            ppIROp(expr->Iex.Qop.op);
+            ppIROp(qop->op);
             vex_printf("\n");
             sanityCheckFail(bb,stmt,
                "Iex.Qop: wrong arity op\n"
                "... name of op precedes BB printout\n");
          }
-         ttarg1 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg1);
-         ttarg2 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg2);
-         ttarg3 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg3);
-         ttarg4 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg4);
+         ttarg1 = typeOfIRExpr(tyenv, qop->arg1);
+         ttarg2 = typeOfIRExpr(tyenv, qop->arg2);
+         ttarg3 = typeOfIRExpr(tyenv, qop->arg3);
+         ttarg4 = typeOfIRExpr(tyenv, qop->arg4);
          if (t_arg1 != ttarg1 || t_arg2 != ttarg2 
              || t_arg3 != ttarg3 || t_arg4 != ttarg4) {
             vex_printf(" op name: ");
-            ppIROp(expr->Iex.Qop.op);
+            ppIROp(qop->op);
             vex_printf("\n");
             vex_printf(" op type is (");
             ppIRType(t_arg1);

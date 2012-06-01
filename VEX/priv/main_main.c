@@ -159,11 +159,11 @@ void LibVEX_Init (
    /* These take a lot of space, so make sure we don't have
       any unnoticed size regressions. */
    if (VEX_HOST_WORDSIZE == 4) {
-      vassert(sizeof(IRExpr) == 24);
+      vassert(sizeof(IRExpr) == 20);
       vassert(sizeof(IRStmt) == 20 /* x86 */
               || sizeof(IRStmt) == 24 /* arm */);
    } else {
-      vassert(sizeof(IRExpr) == 48);
+      vassert(sizeof(IRExpr) == 40);
       vassert(sizeof(IRStmt) == 32);
    }
 

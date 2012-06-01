@@ -1760,13 +1760,13 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       s390_bfp_triop_t bfpop;
       s390_round_t rounding_mode;
 
-      op1 = s390_isel_float_expr(env, expr->Iex.Qop.arg2);
-      op2 = s390_isel_float_expr(env, expr->Iex.Qop.arg3);
-      op3 = s390_isel_float_expr(env, expr->Iex.Qop.arg4);
+      op1 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg2);
+      op2 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg3);
+      op3 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg4);
       dst = newVRegF(env);
       addInstr(env, s390_insn_move(size, dst, op1));
 
-      switch (expr->Iex.Qop.op) {
+      switch (expr->Iex.Qop.details->op) {
       case Iop_MAddF32:
       case Iop_MAddF64:  bfpop = S390_BFP_MADD; break;
       case Iop_MSubF32:
@@ -1776,7 +1776,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Qop.arg1);
+      rounding_mode = decode_rounding_mode(expr->Iex.Qop.details->arg1);
       addInstr(env, s390_insn_bfp_triop(size, bfpop, dst, op2, op3,
                                         rounding_mode));
       return dst;

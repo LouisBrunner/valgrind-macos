@@ -3445,7 +3445,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- OPS --------- */
    if (e->tag == Iex_Qop) {
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Qop.op) {
+      switch (e->Iex.Qop.details->op) {
          case Iop_MAddF64:    fpop = Pfp_MADDD; break;
          case Iop_MAddF64r32: fpop = Pfp_MADDS; break;
          case Iop_MSubF64:    fpop = Pfp_MSUBD; break;
@@ -3454,10 +3454,10 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst  = newVRegF(env);
-         HReg r_srcML  = iselDblExpr(env, e->Iex.Qop.arg2);
-         HReg r_srcMR  = iselDblExpr(env, e->Iex.Qop.arg3);
-         HReg r_srcAcc = iselDblExpr(env, e->Iex.Qop.arg4);
-         set_FPU_rounding_mode( env, e->Iex.Qop.arg1 );
+         HReg r_srcML  = iselDblExpr(env, e->Iex.Qop.details->arg2);
+         HReg r_srcMR  = iselDblExpr(env, e->Iex.Qop.details->arg3);
+         HReg r_srcAcc = iselDblExpr(env, e->Iex.Qop.details->arg4);
+         set_FPU_rounding_mode( env, e->Iex.Qop.details->arg1 );
          addInstr(env, PPCInstr_FpMulAcc(fpop, r_dst, 
                                                r_srcML, r_srcMR, r_srcAcc));
          return r_dst;

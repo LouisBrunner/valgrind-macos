@@ -3419,7 +3419,7 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, HReg* rLo,
       return;
    }
 
-   if (e->tag == Iex_Qop && e->Iex.Qop.op == Iop_64x4toV256) {
+   if (e->tag == Iex_Qop && e->Iex.Qop.details->op == Iop_64x4toV256) {
       HReg        rsp     = hregAMD64_RSP();
       HReg        vHi     = newVRegV(env);
       HReg        vLo     = newVRegV(env);
@@ -3427,10 +3427,10 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, HReg* rLo,
       AMD64AMode* m16_rsp = AMD64AMode_IR(-16, rsp);
       /* arg1 is the most significant (Q3), arg4 the least (Q0) */
       /* Get all the args into regs, before messing with the stack. */
-      AMD64RI* q3  = iselIntExpr_RI(env, e->Iex.Qop.arg1);
-      AMD64RI* q2  = iselIntExpr_RI(env, e->Iex.Qop.arg2);
-      AMD64RI* q1  = iselIntExpr_RI(env, e->Iex.Qop.arg3);
-      AMD64RI* q0  = iselIntExpr_RI(env, e->Iex.Qop.arg4);
+      AMD64RI* q3  = iselIntExpr_RI(env, e->Iex.Qop.details->arg1);
+      AMD64RI* q2  = iselIntExpr_RI(env, e->Iex.Qop.details->arg2);
+      AMD64RI* q1  = iselIntExpr_RI(env, e->Iex.Qop.details->arg3);
+      AMD64RI* q0  = iselIntExpr_RI(env, e->Iex.Qop.details->arg4);
       /* less significant lane (Q2) at the lower address (-16(rsp)) */
       addInstr(env, AMD64Instr_Alu64M(Aalu_MOV, q3, m8_rsp));
       addInstr(env, AMD64Instr_Alu64M(Aalu_MOV, q2, m16_rsp));

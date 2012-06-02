@@ -15743,6 +15743,29 @@ static IRTemp math_PINSRD_128 ( IRTemp v128, IRTemp u32, UInt imm8 )
 }
 
 
+static IRTemp math_PINSRQ_128 ( IRTemp v128, IRTemp u64, UInt imm8 )
+{
+   /* Surround u64 with zeroes as per imm, giving us something we can
+      OR into a suitably masked-out v128.*/
+   IRTemp withZs = newTemp(Ity_V128);
+   UShort mask = 0;
+   if (imm8 == 0) { 
+      mask = 0xFF00; 
+      assign(withZs, binop(Iop_64HLtoV128, mkU64(0), mkexpr(u64)));
+   } else {
+      vassert(imm8 == 1);
+      mask = 0x00FF;
+      assign( withZs, binop(Iop_64HLtoV128, mkexpr(u64), mkU64(0)));
+   }
+
+   IRTemp res = newTemp(Ity_V128);
+   assign( res, binop( Iop_OrV128,
+                       mkexpr(withZs),
+                       binop( Iop_AndV128, mkexpr(v128), mkV128(mask) ) ) );
+   return res;
+}
+
+
 static IRTemp math_INSERTPS ( IRTemp dstV, IRTemp toInsertD, UInt imm8 )
 {
    const IRTemp inval = IRTemp_INVALID;
@@ -16455,46 +16478,31 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          Extract Quadword int from gen.reg/mem64 and insert into xmm1 */
       if (have66noF2noF3(pfx) 
           && sz == 8 /* REX.W is present */) {
-
          Int imm8_0;
-         IRTemp src_elems = newTemp(Ity_I64);
-         IRTemp src_vec   = newTemp(Ity_V128);
-
+         IRTemp src_u64 = newTemp(Ity_I64);
          modrm = getUChar(delta);
+         UInt rG = gregOfRexRM(pfx, modrm);
 
          if ( epartIsReg( modrm ) ) {
+            UInt rE = eregOfRexRM(pfx,modrm);
             imm8_0 = (Int)(getUChar(delta+1) & 1);
-            assign( src_elems, getIReg64( eregOfRexRM(pfx,modrm) ) );
+            assign( src_u64, getIReg64( rE ) );
             delta += 1+1;
-            DIP( "pinsrq $%d, %s,%s\n", imm8_0,
-                 nameIReg64( eregOfRexRM(pfx, modrm) ),
-                 nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+            DIP( "pinsrq $%d, %s,%s\n",
+                 imm8_0, nameIReg64(rE), nameXMMReg(rG) );
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
             imm8_0 = (Int)(getUChar(delta+alen) & 1);
-            assign( src_elems, loadLE( Ity_I64, mkexpr(addr) ) );
+            assign( src_u64, loadLE( Ity_I64, mkexpr(addr) ) );
             delta += alen+1;
             DIP( "pinsrq $%d, %s,%s\n", 
-                 imm8_0, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+                 imm8_0, dis_buf, nameXMMReg(rG) );
          }
 
-         UShort mask = 0;
-         if ( imm8_0 == 0 ) { 
-            mask = 0xFF00; 
-            assign( src_vec,
-                    binop( Iop_64HLtoV128, mkU64(0), mkexpr(src_elems) ) );
-         } else {
-            mask = 0x00FF;
-            assign( src_vec,
-                    binop( Iop_64HLtoV128, mkexpr(src_elems), mkU64(0) ) );
-         }
-
-         putXMMReg( gregOfRexRM(pfx, modrm), 
-                    binop( Iop_OrV128, mkexpr(src_vec),
-                           binop( Iop_AndV128, 
-                                  getXMMReg( gregOfRexRM(pfx, modrm) ),
-                                  mkV128(mask) ) ) );
-
+         IRTemp src_vec = newTemp(Ity_V128);
+         assign(src_vec, getXMMReg( rG ));
+         IRTemp res_vec = math_PINSRQ_128( src_vec, src_u64, imm8_0 );
+         putXMMReg( rG, mkexpr(res_vec) );
          goto decode_success;
       }
       break;
@@ -20038,6 +20046,42 @@ Long dis_ESC_0F__VEX (
       break;
 
    case 0x29:
+      /* VMOVAPD xmm1, xmm2/m128 = VEX.128.66.0F.WIG 29 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx,modrm);
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx,modrm);
+            putYMMRegLoAndZU( rE, getXMMReg(rG) );
+            DIP("vmovapd %s,%s\n", nameXMMReg(rG), nameXMMReg(rE));
+            delta += 1;
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            gen_SEGV_if_not_16_aligned( addr );
+            storeLE( mkexpr(addr), getXMMReg(rG) );
+            DIP("vmovapd %s,%s\n", nameXMMReg(rG), dis_buf );
+            delta += alen;
+         }
+         goto decode_success;
+      }
+      /* VMOVAPD ymm1, ymm2/m256 = VEX.256.66.0F.WIG 29 /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx,modrm);
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx,modrm);
+            putYMMReg( rE, getYMMReg(rG) );
+            DIP("vmovapd %s,%s\n", nameYMMReg(rG), nameYMMReg(rE));
+            delta += 1;
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            gen_SEGV_if_not_32_aligned( addr );
+            storeLE( mkexpr(addr), getYMMReg(rG) );
+            DIP("vmovapd %s,%s\n", nameYMMReg(rG), dis_buf );
+            delta += alen;
+         }
+         goto decode_success;
+      }
       /* VMOVAPS xmm1, xmm2/m128 = VEX.128.0F.WIG 29 /r */
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          UChar modrm = getUChar(delta);
@@ -20057,23 +20101,24 @@ Long dis_ESC_0F__VEX (
             goto decode_success;
          }
       }
-      /* VMOVAPD xmm1, xmm2/m128 = VEX.128.66.0F.WIG 29 /r */
-      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+      /* VMOVAPS ymm1, ymm2/m256 = VEX.256.0F.WIG 29 /r */
+      if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
          UChar modrm = getUChar(delta);
          UInt  rG    = gregOfRexRM(pfx,modrm);
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx,modrm);
-            putYMMRegLoAndZU( rE, getXMMReg(rG) );
-            DIP("vmovapd %s,%s\n", nameXMMReg(rG), nameXMMReg(rE));
+            putYMMReg( rE, getYMMReg(rG) );
+            DIP("vmovaps %s,%s\n", nameYMMReg(rG), nameYMMReg(rE));
             delta += 1;
+            goto decode_success;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SEGV_if_not_16_aligned( addr );
-            storeLE( mkexpr(addr), getXMMReg(rG) );
-            DIP("vmovapd %s,%s\n", nameXMMReg(rG), dis_buf );
+            gen_SEGV_if_not_32_aligned( addr );
+            storeLE( mkexpr(addr), getYMMReg(rG) );
+            DIP("vmovaps %s,%s\n", nameYMMReg(rG), dis_buf );
             delta += alen;
+            goto decode_success;
          }
-         goto decode_success;
       }
       break;
 
@@ -20996,6 +21041,16 @@ Long dis_ESC_0F__VEX (
       }
       break;
 
+   case 0xD4:
+      /* VPADDQ r/m, rV, r ::: r = rV + r/m */
+      /* VPADDQ = VEX.NDS.128.66.0F.WIG D4 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
+                    uses_vvvv, vbi, pfx, delta, "vpaddq", Iop_Add64x2 );
+         goto decode_success;
+      }
+      break;
+
    case 0xD5:
       /* VPMULLW xmm3/m128, xmm2, xmm1 = VEX.NDS.128.66.0F.WIG D5 /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
@@ -21131,7 +21186,7 @@ Long dis_ESC_0F__VEX (
 
    case 0xF8:
       /* VPSUBB r/m, rV, r ::: r = rV - r/m */
-      /* VPSUBB = VEX.NDS.128.66.0F.WIG EF /r */
+      /* VPSUBB = VEX.NDS.128.66.0F.WIG F8 /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
                     uses_vvvv, vbi, pfx, delta, "vpsubb", Iop_Sub8x16 );
@@ -21139,12 +21194,32 @@ Long dis_ESC_0F__VEX (
       }
       break;
 
+   case 0xF9:
+      /* VPSUBW r/m, rV, r ::: r = rV - r/m */
+      /* VPSUBW = VEX.NDS.128.66.0F.WIG F9 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
+                    uses_vvvv, vbi, pfx, delta, "vpsubw", Iop_Sub16x8 );
+         goto decode_success;
+      }
+      break;
+
    case 0xFA:
       /* VPSUBD r/m, rV, r ::: r = rV - r/m */
-      /* VPSUBD = VEX.NDS.128.66.0F.WIG FE /r */
+      /* VPSUBD = VEX.NDS.128.66.0F.WIG FA /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
                     uses_vvvv, vbi, pfx, delta, "vpsubd", Iop_Sub32x4 );
+         goto decode_success;
+      }
+      break;
+
+   case 0xFB:
+      /* VPSUBQ r/m, rV, r ::: r = rV - r/m */
+      /* VPSUBQ = VEX.NDS.128.66.0F.WIG FB /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
+                    uses_vvvv, vbi, pfx, delta, "vpsubq", Iop_Sub64x2 );
          goto decode_success;
       }
       break;
@@ -21451,13 +21526,45 @@ Long dis_ESC_0F3A__VEX (
             imm8_10 = (Int)(getUChar(delta+alen) & 3);
             assign( src_u32, loadLE( Ity_I32, mkexpr(addr) ) );
             delta += alen+1;
-            DIP( "pinsrd $%d,%s,%s,%s\n", 
+            DIP( "vpinsrd $%d,%s,%s,%s\n", 
                  imm8_10, dis_buf, nameXMMReg(rV), nameXMMReg(rG) );
          }
 
          IRTemp src_vec = newTemp(Ity_V128);
          assign(src_vec, getXMMReg( rV ));
          IRTemp res_vec = math_PINSRD_128( src_vec, src_u32, imm8_10 );
+         putYMMRegLoAndZU( rG, mkexpr(res_vec) );
+         *uses_vvvv = True;
+         goto decode_success;
+      }
+      /* VPINSRQ r64/m64, xmm2, xmm1 = VEX.NDS.128.66.0F3A.W1 22 /r ib */
+      if (have66noF2noF3(pfx)
+          && 0==getVexL(pfx)/*128*/ && 1==getRexW(pfx)/*W1*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         UInt   rV    = getVexNvvvv(pfx);
+         Int    imm8_0;
+         IRTemp src_u64 = newTemp(Ity_I64);
+
+         if ( epartIsReg( modrm ) ) {
+            UInt rE = eregOfRexRM(pfx,modrm);
+            imm8_0 = (Int)(getUChar(delta+1) & 1);
+            assign( src_u64, getIReg64( rE ) );
+            delta += 1+1;
+            DIP( "vpinsrq $%d,%s,%s,%s\n",
+                 imm8_0, nameIReg64(rE), nameXMMReg(rV), nameXMMReg(rG) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            imm8_0 = (Int)(getUChar(delta+alen) & 1);
+            assign( src_u64, loadLE( Ity_I64, mkexpr(addr) ) );
+            delta += alen+1;
+            DIP( "vpinsrd $%d,%s,%s,%s\n", 
+                 imm8_0, dis_buf, nameXMMReg(rV), nameXMMReg(rG) );
+         }
+
+         IRTemp src_vec = newTemp(Ity_V128);
+         assign(src_vec, getXMMReg( rV ));
+         IRTemp res_vec = math_PINSRQ_128( src_vec, src_u64, imm8_0 );
          putYMMRegLoAndZU( rG, mkexpr(res_vec) );
          *uses_vvvv = True;
          goto decode_success;

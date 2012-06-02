@@ -22,12 +22,13 @@ EXTRA_DIST = \
 	test_dfp2.stderr.exp test_dfp2.stdout.exp test_dfp2.vgtest \
 	test_dfp2.stdout.exp_Without_dcffix \
 	test_dfp3.stderr.exp test_dfp3.stdout.exp test_dfp3.vgtest \
-	test_dfp4.stderr.exp test_dfp4.stdout.exp test_dfp4.vgtest
+	test_dfp4.stderr.exp test_dfp4.stdout.exp test_dfp4.vgtest \
+	test_dfp5.stderr.exp test_dfp5.stdout.exp test_dfp5.vgtest
 
 check_PROGRAMS = \
 	allexec \
 	jm-insns lsw round std_reg_imm twi_tdi tw_td power6_bcmp power6_mf_gpr test_isa_2_06_part1 \
-	test_isa_2_06_part2 test_isa_2_06_part3 test_dfp1 test_dfp2 test_dfp3 test_dfp4
+	test_isa_2_06_part2 test_isa_2_06_part3 test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
@@ -79,3 +80,7 @@ test_dfp3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) 
 
 test_dfp4_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+
+test_dfp5_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+

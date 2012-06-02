@@ -1,0 +1,855 @@
+Test DFP test significance instructions
+dtstsf (ref_sig=0) [tSig]2234000000000e50 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]2234000000000e50 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]2234000000000e50 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]2234000000000e50 => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]2234000000000e50 => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]2234000000000e50 => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]2234000000000e50 => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]2234000000000e50 => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]2234000000000e50 => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]2234000000000e50 => 2 (BF=0)
+dtstsf (ref_sig=4) [tSig]2234000000000e50 => 2 (BF=1)
+dtstsf (ref_sig=4) [tSig]2234000000000e50 => 2 (BF=6)
+dtstsf (ref_sig=6) [tSig]2234000000000e50 => 4 (BF=0)
+dtstsf (ref_sig=6) [tSig]2234000000000e50 => 4 (BF=1)
+dtstsf (ref_sig=6) [tSig]2234000000000e50 => 4 (BF=6)
+dtstsf (ref_sig=63) [tSig]2234000000000e50 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]2234000000000e50 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]2234000000000e50 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]223400000014c000 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]223400000014c000 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]223400000014c000 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]223400000014c000 => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]223400000014c000 => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]223400000014c000 => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]223400000014c000 => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]223400000014c000 => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]223400000014c000 => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]223400000014c000 => 8 (BF=0)
+dtstsf (ref_sig=4) [tSig]223400000014c000 => 8 (BF=1)
+dtstsf (ref_sig=4) [tSig]223400000014c000 => 8 (BF=6)
+dtstsf (ref_sig=6) [tSig]223400000014c000 => 8 (BF=0)
+dtstsf (ref_sig=6) [tSig]223400000014c000 => 8 (BF=1)
+dtstsf (ref_sig=6) [tSig]223400000014c000 => 8 (BF=6)
+dtstsf (ref_sig=63) [tSig]223400000014c000 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]223400000014c000 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]223400000014c000 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]a2340000000000e0 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]a2340000000000e0 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]a2340000000000e0 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]a2340000000000e0 => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]a2340000000000e0 => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]a2340000000000e0 => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]a2340000000000e0 => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]a2340000000000e0 => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]a2340000000000e0 => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]a2340000000000e0 => 4 (BF=0)
+dtstsf (ref_sig=4) [tSig]a2340000000000e0 => 4 (BF=1)
+dtstsf (ref_sig=4) [tSig]a2340000000000e0 => 4 (BF=6)
+dtstsf (ref_sig=6) [tSig]a2340000000000e0 => 4 (BF=0)
+dtstsf (ref_sig=6) [tSig]a2340000000000e0 => 4 (BF=1)
+dtstsf (ref_sig=6) [tSig]a2340000000000e0 => 4 (BF=6)
+dtstsf (ref_sig=63) [tSig]a2340000000000e0 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]a2340000000000e0 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]a2340000000000e0 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]22240000000000cf => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]22240000000000cf => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]22240000000000cf => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]22240000000000cf => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]22240000000000cf => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]22240000000000cf => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]22240000000000cf => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]22240000000000cf => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]22240000000000cf => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]22240000000000cf => 4 (BF=0)
+dtstsf (ref_sig=4) [tSig]22240000000000cf => 4 (BF=1)
+dtstsf (ref_sig=4) [tSig]22240000000000cf => 4 (BF=6)
+dtstsf (ref_sig=6) [tSig]22240000000000cf => 4 (BF=0)
+dtstsf (ref_sig=6) [tSig]22240000000000cf => 4 (BF=1)
+dtstsf (ref_sig=6) [tSig]22240000000000cf => 4 (BF=6)
+dtstsf (ref_sig=63) [tSig]22240000000000cf => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]22240000000000cf => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]22240000000000cf => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]a21400010a395bcf => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]a21400010a395bcf => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]a21400010a395bcf => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]a21400010a395bcf => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]a21400010a395bcf => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]a21400010a395bcf => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]a21400010a395bcf => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]a21400010a395bcf => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]a21400010a395bcf => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]a21400010a395bcf => 8 (BF=0)
+dtstsf (ref_sig=4) [tSig]a21400010a395bcf => 8 (BF=1)
+dtstsf (ref_sig=4) [tSig]a21400010a395bcf => 8 (BF=6)
+dtstsf (ref_sig=6) [tSig]a21400010a395bcf => 8 (BF=0)
+dtstsf (ref_sig=6) [tSig]a21400010a395bcf => 8 (BF=1)
+dtstsf (ref_sig=6) [tSig]a21400010a395bcf => 8 (BF=6)
+dtstsf (ref_sig=63) [tSig]a21400010a395bcf => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]a21400010a395bcf => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]a21400010a395bcf => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]6e4d3f1f534acdd4 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]6e4d3f1f534acdd4 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]6e4d3f1f534acdd4 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]6e4d3f1f534acdd4 => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]6e4d3f1f534acdd4 => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]6e4d3f1f534acdd4 => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]6e4d3f1f534acdd4 => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]6e4d3f1f534acdd4 => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]6e4d3f1f534acdd4 => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]6e4d3f1f534acdd4 => 8 (BF=0)
+dtstsf (ref_sig=4) [tSig]6e4d3f1f534acdd4 => 8 (BF=1)
+dtstsf (ref_sig=4) [tSig]6e4d3f1f534acdd4 => 8 (BF=6)
+dtstsf (ref_sig=6) [tSig]6e4d3f1f534acdd4 => 8 (BF=0)
+dtstsf (ref_sig=6) [tSig]6e4d3f1f534acdd4 => 8 (BF=1)
+dtstsf (ref_sig=6) [tSig]6e4d3f1f534acdd4 => 8 (BF=6)
+dtstsf (ref_sig=63) [tSig]6e4d3f1f534acdd4 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]6e4d3f1f534acdd4 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]6e4d3f1f534acdd4 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]000400000089b000 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]000400000089b000 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]000400000089b000 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]000400000089b000 => 8 (BF=0)
+dtstsf (ref_sig=1) [tSig]000400000089b000 => 8 (BF=1)
+dtstsf (ref_sig=1) [tSig]000400000089b000 => 8 (BF=6)
+dtstsf (ref_sig=2) [tSig]000400000089b000 => 8 (BF=0)
+dtstsf (ref_sig=2) [tSig]000400000089b000 => 8 (BF=1)
+dtstsf (ref_sig=2) [tSig]000400000089b000 => 8 (BF=6)
+dtstsf (ref_sig=4) [tSig]000400000089b000 => 8 (BF=0)
+dtstsf (ref_sig=4) [tSig]000400000089b000 => 8 (BF=1)
+dtstsf (ref_sig=4) [tSig]000400000089b000 => 8 (BF=6)
+dtstsf (ref_sig=6) [tSig]000400000089b000 => 8 (BF=0)
+dtstsf (ref_sig=6) [tSig]000400000089b000 => 8 (BF=1)
+dtstsf (ref_sig=6) [tSig]000400000089b000 => 8 (BF=6)
+dtstsf (ref_sig=63) [tSig]000400000089b000 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]000400000089b000 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]000400000089b000 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]2238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]2238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]2238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]2238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=1) [tSig]2238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=1) [tSig]2238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=2) [tSig]2238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=2) [tSig]2238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=2) [tSig]2238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=4) [tSig]2238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=4) [tSig]2238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=4) [tSig]2238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=6) [tSig]2238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=6) [tSig]2238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=6) [tSig]2238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=63) [tSig]2238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]2238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]2238000000000000 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]a238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]a238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]a238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]a238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=1) [tSig]a238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=1) [tSig]a238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=2) [tSig]a238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=2) [tSig]a238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=2) [tSig]a238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=4) [tSig]a238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=4) [tSig]a238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=4) [tSig]a238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=6) [tSig]a238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=6) [tSig]a238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=6) [tSig]a238000000000000 => 4 (BF=6)
+dtstsf (ref_sig=63) [tSig]a238000000000000 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]a238000000000000 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]a238000000000000 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]4248000000000000 => 4 (BF=0)
+dtstsf (ref_sig=0) [tSig]4248000000000000 => 4 (BF=1)
+dtstsf (ref_sig=0) [tSig]4248000000000000 => 4 (BF=6)
+dtstsf (ref_sig=1) [tSig]4248000000000000 => 4 (BF=0)
+dtstsf (ref_sig=1) [tSig]4248000000000000 => 4 (BF=1)
+dtstsf (ref_sig=1) [tSig]4248000000000000 => 4 (BF=6)
+dtstsf (ref_sig=2) [tSig]4248000000000000 => 4 (BF=0)
+dtstsf (ref_sig=2) [tSig]4248000000000000 => 4 (BF=1)
+dtstsf (ref_sig=2) [tSig]4248000000000000 => 4 (BF=6)
+dtstsf (ref_sig=4) [tSig]4248000000000000 => 4 (BF=0)
+dtstsf (ref_sig=4) [tSig]4248000000000000 => 4 (BF=1)
+dtstsf (ref_sig=4) [tSig]4248000000000000 => 4 (BF=6)
+dtstsf (ref_sig=6) [tSig]4248000000000000 => 4 (BF=0)
+dtstsf (ref_sig=6) [tSig]4248000000000000 => 4 (BF=1)
+dtstsf (ref_sig=6) [tSig]4248000000000000 => 4 (BF=6)
+dtstsf (ref_sig=63) [tSig]4248000000000000 => 4 (BF=0)
+dtstsf (ref_sig=63) [tSig]4248000000000000 => 4 (BF=1)
+dtstsf (ref_sig=63) [tSig]4248000000000000 => 4 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]7e34000000000111 => 1 (BF=0)
+dtstsf (ref_sig=0) [tSig]7e34000000000111 => 1 (BF=1)
+dtstsf (ref_sig=0) [tSig]7e34000000000111 => 1 (BF=6)
+dtstsf (ref_sig=1) [tSig]7e34000000000111 => 1 (BF=0)
+dtstsf (ref_sig=1) [tSig]7e34000000000111 => 1 (BF=1)
+dtstsf (ref_sig=1) [tSig]7e34000000000111 => 1 (BF=6)
+dtstsf (ref_sig=2) [tSig]7e34000000000111 => 1 (BF=0)
+dtstsf (ref_sig=2) [tSig]7e34000000000111 => 1 (BF=1)
+dtstsf (ref_sig=2) [tSig]7e34000000000111 => 1 (BF=6)
+dtstsf (ref_sig=4) [tSig]7e34000000000111 => 1 (BF=0)
+dtstsf (ref_sig=4) [tSig]7e34000000000111 => 1 (BF=1)
+dtstsf (ref_sig=4) [tSig]7e34000000000111 => 1 (BF=6)
+dtstsf (ref_sig=6) [tSig]7e34000000000111 => 1 (BF=0)
+dtstsf (ref_sig=6) [tSig]7e34000000000111 => 1 (BF=1)
+dtstsf (ref_sig=6) [tSig]7e34000000000111 => 1 (BF=6)
+dtstsf (ref_sig=63) [tSig]7e34000000000111 => 1 (BF=0)
+dtstsf (ref_sig=63) [tSig]7e34000000000111 => 1 (BF=1)
+dtstsf (ref_sig=63) [tSig]7e34000000000111 => 1 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]fe000000d0e0a0d0 => 1 (BF=0)
+dtstsf (ref_sig=0) [tSig]fe000000d0e0a0d0 => 1 (BF=1)
+dtstsf (ref_sig=0) [tSig]fe000000d0e0a0d0 => 1 (BF=6)
+dtstsf (ref_sig=1) [tSig]fe000000d0e0a0d0 => 1 (BF=0)
+dtstsf (ref_sig=1) [tSig]fe000000d0e0a0d0 => 1 (BF=1)
+dtstsf (ref_sig=1) [tSig]fe000000d0e0a0d0 => 1 (BF=6)
+dtstsf (ref_sig=2) [tSig]fe000000d0e0a0d0 => 1 (BF=0)
+dtstsf (ref_sig=2) [tSig]fe000000d0e0a0d0 => 1 (BF=1)
+dtstsf (ref_sig=2) [tSig]fe000000d0e0a0d0 => 1 (BF=6)
+dtstsf (ref_sig=4) [tSig]fe000000d0e0a0d0 => 1 (BF=0)
+dtstsf (ref_sig=4) [tSig]fe000000d0e0a0d0 => 1 (BF=1)
+dtstsf (ref_sig=4) [tSig]fe000000d0e0a0d0 => 1 (BF=6)
+dtstsf (ref_sig=6) [tSig]fe000000d0e0a0d0 => 1 (BF=0)
+dtstsf (ref_sig=6) [tSig]fe000000d0e0a0d0 => 1 (BF=1)
+dtstsf (ref_sig=6) [tSig]fe000000d0e0a0d0 => 1 (BF=6)
+dtstsf (ref_sig=63) [tSig]fe000000d0e0a0d0 => 1 (BF=0)
+dtstsf (ref_sig=63) [tSig]fe000000d0e0a0d0 => 1 (BF=1)
+dtstsf (ref_sig=63) [tSig]fe000000d0e0a0d0 => 1 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]fc00000000000000 => 1 (BF=0)
+dtstsf (ref_sig=0) [tSig]fc00000000000000 => 1 (BF=1)
+dtstsf (ref_sig=0) [tSig]fc00000000000000 => 1 (BF=6)
+dtstsf (ref_sig=1) [tSig]fc00000000000000 => 1 (BF=0)
+dtstsf (ref_sig=1) [tSig]fc00000000000000 => 1 (BF=1)
+dtstsf (ref_sig=1) [tSig]fc00000000000000 => 1 (BF=6)
+dtstsf (ref_sig=2) [tSig]fc00000000000000 => 1 (BF=0)
+dtstsf (ref_sig=2) [tSig]fc00000000000000 => 1 (BF=1)
+dtstsf (ref_sig=2) [tSig]fc00000000000000 => 1 (BF=6)
+dtstsf (ref_sig=4) [tSig]fc00000000000000 => 1 (BF=0)
+dtstsf (ref_sig=4) [tSig]fc00000000000000 => 1 (BF=1)
+dtstsf (ref_sig=4) [tSig]fc00000000000000 => 1 (BF=6)
+dtstsf (ref_sig=6) [tSig]fc00000000000000 => 1 (BF=0)
+dtstsf (ref_sig=6) [tSig]fc00000000000000 => 1 (BF=1)
+dtstsf (ref_sig=6) [tSig]fc00000000000000 => 1 (BF=6)
+dtstsf (ref_sig=63) [tSig]fc00000000000000 => 1 (BF=0)
+dtstsf (ref_sig=63) [tSig]fc00000000000000 => 1 (BF=1)
+dtstsf (ref_sig=63) [tSig]fc00000000000000 => 1 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]7800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=0) [tSig]7800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=0) [tSig]7800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=1) [tSig]7800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=1) [tSig]7800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=1) [tSig]7800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=2) [tSig]7800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=2) [tSig]7800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=2) [tSig]7800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=4) [tSig]7800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=4) [tSig]7800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=4) [tSig]7800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=6) [tSig]7800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=6) [tSig]7800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=6) [tSig]7800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=63) [tSig]7800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=63) [tSig]7800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=63) [tSig]7800000000000000 => 1 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]f800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=0) [tSig]f800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=0) [tSig]f800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=1) [tSig]f800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=1) [tSig]f800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=1) [tSig]f800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=2) [tSig]f800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=2) [tSig]f800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=2) [tSig]f800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=4) [tSig]f800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=4) [tSig]f800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=4) [tSig]f800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=6) [tSig]f800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=6) [tSig]f800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=6) [tSig]f800000000000000 => 1 (BF=6)
+dtstsf (ref_sig=63) [tSig]f800000000000000 => 1 (BF=0)
+dtstsf (ref_sig=63) [tSig]f800000000000000 => 1 (BF=1)
+dtstsf (ref_sig=63) [tSig]f800000000000000 => 1 (BF=6)
+
+dtstsf (ref_sig=0) [tSig]7a34000000000000 => 1 (BF=0)
+dtstsf (ref_sig=0) [tSig]7a34000000000000 => 1 (BF=1)
+dtstsf (ref_sig=0) [tSig]7a34000000000000 => 1 (BF=6)
+dtstsf (ref_sig=1) [tSig]7a34000000000000 => 1 (BF=0)
+dtstsf (ref_sig=1) [tSig]7a34000000000000 => 1 (BF=1)
+dtstsf (ref_sig=1) [tSig]7a34000000000000 => 1 (BF=6)
+dtstsf (ref_sig=2) [tSig]7a34000000000000 => 1 (BF=0)
+dtstsf (ref_sig=2) [tSig]7a34000000000000 => 1 (BF=1)
+dtstsf (ref_sig=2) [tSig]7a34000000000000 => 1 (BF=6)
+dtstsf (ref_sig=4) [tSig]7a34000000000000 => 1 (BF=0)
+dtstsf (ref_sig=4) [tSig]7a34000000000000 => 1 (BF=1)
+dtstsf (ref_sig=4) [tSig]7a34000000000000 => 1 (BF=6)
+dtstsf (ref_sig=6) [tSig]7a34000000000000 => 1 (BF=0)
+dtstsf (ref_sig=6) [tSig]7a34000000000000 => 1 (BF=1)
+dtstsf (ref_sig=6) [tSig]7a34000000000000 => 1 (BF=6)
+dtstsf (ref_sig=63) [tSig]7a34000000000000 => 1 (BF=0)
+dtstsf (ref_sig=63) [tSig]7a34000000000000 => 1 (BF=1)
+dtstsf (ref_sig=63) [tSig]7a34000000000000 => 1 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]2207c00000000000 0000000000000e50 => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]2207c00000000000 0000000000000e50 => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]2207c00000000000 0000000000000e50 => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]2207c00000000000 0000000000000e50 => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]2207c00000000000 0000000000000e50 => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]2207c00000000000 0000000000000e50 => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]2207c00000000000 0000000000000e50 => 2 (BF=0)
+dtstsfq (ref_sig=4) [tSig]2207c00000000000 0000000000000e50 => 2 (BF=1)
+dtstsfq (ref_sig=4) [tSig]2207c00000000000 0000000000000e50 => 2 (BF=6)
+dtstsfq (ref_sig=6) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=0)
+dtstsfq (ref_sig=6) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=1)
+dtstsfq (ref_sig=6) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=6)
+dtstsfq (ref_sig=63) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]2207c00000000000 0000000000000e50 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]2207c00000000000 000000000014c000 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]2207c00000000000 000000000014c000 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]2207c00000000000 000000000014c000 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]2207c00000000000 000000000014c000 => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]2207c00000000000 000000000014c000 => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]2207c00000000000 000000000014c000 => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]2207c00000000000 000000000014c000 => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]2207c00000000000 000000000014c000 => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]2207c00000000000 000000000014c000 => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]2207c00000000000 000000000014c000 => 8 (BF=0)
+dtstsfq (ref_sig=4) [tSig]2207c00000000000 000000000014c000 => 8 (BF=1)
+dtstsfq (ref_sig=4) [tSig]2207c00000000000 000000000014c000 => 8 (BF=6)
+dtstsfq (ref_sig=6) [tSig]2207c00000000000 000000000014c000 => 8 (BF=0)
+dtstsfq (ref_sig=6) [tSig]2207c00000000000 000000000014c000 => 8 (BF=1)
+dtstsfq (ref_sig=6) [tSig]2207c00000000000 000000000014c000 => 8 (BF=6)
+dtstsfq (ref_sig=63) [tSig]2207c00000000000 000000000014c000 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]2207c00000000000 000000000014c000 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]2207c00000000000 000000000014c000 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]a207c00000000000 00000000000000e0 => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]a207c00000000000 00000000000000e0 => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]a207c00000000000 00000000000000e0 => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]a207c00000000000 00000000000000e0 => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]a207c00000000000 00000000000000e0 => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]a207c00000000000 00000000000000e0 => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=0)
+dtstsfq (ref_sig=4) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=1)
+dtstsfq (ref_sig=4) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=6)
+dtstsfq (ref_sig=6) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=0)
+dtstsfq (ref_sig=6) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=1)
+dtstsfq (ref_sig=6) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=6)
+dtstsfq (ref_sig=63) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]a207c00000000000 00000000000000e0 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]2206c00000000000 00000000000000cf => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]2206c00000000000 00000000000000cf => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]2206c00000000000 00000000000000cf => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]2206c00000000000 00000000000000cf => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]2206c00000000000 00000000000000cf => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]2206c00000000000 00000000000000cf => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]2206c00000000000 00000000000000cf => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]2206c00000000000 00000000000000cf => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]2206c00000000000 00000000000000cf => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]2206c00000000000 00000000000000cf => 4 (BF=0)
+dtstsfq (ref_sig=4) [tSig]2206c00000000000 00000000000000cf => 4 (BF=1)
+dtstsfq (ref_sig=4) [tSig]2206c00000000000 00000000000000cf => 4 (BF=6)
+dtstsfq (ref_sig=6) [tSig]2206c00000000000 00000000000000cf => 4 (BF=0)
+dtstsfq (ref_sig=6) [tSig]2206c00000000000 00000000000000cf => 4 (BF=1)
+dtstsfq (ref_sig=6) [tSig]2206c00000000000 00000000000000cf => 4 (BF=6)
+dtstsfq (ref_sig=63) [tSig]2206c00000000000 00000000000000cf => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]2206c00000000000 00000000000000cf => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]2206c00000000000 00000000000000cf => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]a205c00000000000 000000010a395bcf => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]a205c00000000000 000000010a395bcf => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]a205c00000000000 000000010a395bcf => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=0)
+dtstsfq (ref_sig=4) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=1)
+dtstsfq (ref_sig=4) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=6)
+dtstsfq (ref_sig=6) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=0)
+dtstsfq (ref_sig=6) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=1)
+dtstsfq (ref_sig=6) [tSig]a205c00000000000 000000010a395bcf => 8 (BF=6)
+dtstsfq (ref_sig=63) [tSig]a205c00000000000 000000010a395bcf => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]a205c00000000000 000000010a395bcf => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]a205c00000000000 000000010a395bcf => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]6209400000fd0000 00253f1f534acdd4 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]6209400000fd0000 00253f1f534acdd4 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]6209400000fd0000 00253f1f534acdd4 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=0)
+dtstsfq (ref_sig=4) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=1)
+dtstsfq (ref_sig=4) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=6)
+dtstsfq (ref_sig=6) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=0)
+dtstsfq (ref_sig=6) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=1)
+dtstsfq (ref_sig=6) [tSig]6209400000fd0000 00253f1f534acdd4 => 8 (BF=6)
+dtstsfq (ref_sig=63) [tSig]6209400000fd0000 00253f1f534acdd4 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]6209400000fd0000 00253f1f534acdd4 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]6209400000fd0000 00253f1f534acdd4 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]000400000089b000 0a6000d000000049 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]000400000089b000 0a6000d000000049 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]000400000089b000 0a6000d000000049 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=0)
+dtstsfq (ref_sig=1) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=1)
+dtstsfq (ref_sig=1) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=6)
+dtstsfq (ref_sig=2) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=0)
+dtstsfq (ref_sig=2) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=1)
+dtstsfq (ref_sig=2) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=6)
+dtstsfq (ref_sig=4) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=0)
+dtstsfq (ref_sig=4) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=1)
+dtstsfq (ref_sig=4) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=6)
+dtstsfq (ref_sig=6) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=0)
+dtstsfq (ref_sig=6) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=1)
+dtstsfq (ref_sig=6) [tSig]000400000089b000 0a6000d000000049 => 8 (BF=6)
+dtstsfq (ref_sig=63) [tSig]000400000089b000 0a6000d000000049 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]000400000089b000 0a6000d000000049 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]000400000089b000 0a6000d000000049 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]2208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]2208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]2208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]2208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=1) [tSig]2208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=1) [tSig]2208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=2) [tSig]2208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=2) [tSig]2208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=2) [tSig]2208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=4) [tSig]2208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=4) [tSig]2208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=4) [tSig]2208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=6) [tSig]2208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=6) [tSig]2208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=6) [tSig]2208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=63) [tSig]2208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]2208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]2208000000000000 0000000000000000 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]a208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]a208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]a208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]a208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=1) [tSig]a208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=1) [tSig]a208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=2) [tSig]a208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=2) [tSig]a208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=2) [tSig]a208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=4) [tSig]a208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=4) [tSig]a208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=4) [tSig]a208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=6) [tSig]a208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=6) [tSig]a208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=6) [tSig]a208000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=63) [tSig]a208000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]a208000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]a208000000000000 0000000000000000 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]a248000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=0) [tSig]a248000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=0) [tSig]a248000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=1) [tSig]a248000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=1) [tSig]a248000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=1) [tSig]a248000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=2) [tSig]a248000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=2) [tSig]a248000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=2) [tSig]a248000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=4) [tSig]a248000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=4) [tSig]a248000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=4) [tSig]a248000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=6) [tSig]a248000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=6) [tSig]a248000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=6) [tSig]a248000000000000 0000000000000000 => 4 (BF=6)
+dtstsfq (ref_sig=63) [tSig]a248000000000000 0000000000000000 => 4 (BF=0)
+dtstsfq (ref_sig=63) [tSig]a248000000000000 0000000000000000 => 4 (BF=1)
+dtstsfq (ref_sig=63) [tSig]a248000000000000 0000000000000000 => 4 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]7c00000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=0) [tSig]7c00000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=0) [tSig]7c00000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=1) [tSig]7c00000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=1) [tSig]7c00000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=1) [tSig]7c00000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=2) [tSig]7c00000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=2) [tSig]7c00000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=2) [tSig]7c00000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=4) [tSig]7c00000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=4) [tSig]7c00000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=4) [tSig]7c00000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=6) [tSig]7c00000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=6) [tSig]7c00000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=6) [tSig]7c00000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=63) [tSig]7c00000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=63) [tSig]7c00000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=63) [tSig]7c00000000000000 0000000000000000 => 1 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=0)
+dtstsfq (ref_sig=0) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=1)
+dtstsfq (ref_sig=0) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=6)
+dtstsfq (ref_sig=1) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=0)
+dtstsfq (ref_sig=1) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=1)
+dtstsfq (ref_sig=1) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=6)
+dtstsfq (ref_sig=2) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=0)
+dtstsfq (ref_sig=2) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=1)
+dtstsfq (ref_sig=2) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=6)
+dtstsfq (ref_sig=4) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=0)
+dtstsfq (ref_sig=4) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=1)
+dtstsfq (ref_sig=4) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=6)
+dtstsfq (ref_sig=6) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=0)
+dtstsfq (ref_sig=6) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=1)
+dtstsfq (ref_sig=6) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=6)
+dtstsfq (ref_sig=63) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=0)
+dtstsfq (ref_sig=63) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=1)
+dtstsfq (ref_sig=63) [tSig]fc00000000000000 c00100035b007700 => 1 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=0)
+dtstsfq (ref_sig=0) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=1)
+dtstsfq (ref_sig=0) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=6)
+dtstsfq (ref_sig=1) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=0)
+dtstsfq (ref_sig=1) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=1)
+dtstsfq (ref_sig=1) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=6)
+dtstsfq (ref_sig=2) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=0)
+dtstsfq (ref_sig=2) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=1)
+dtstsfq (ref_sig=2) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=6)
+dtstsfq (ref_sig=4) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=0)
+dtstsfq (ref_sig=4) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=1)
+dtstsfq (ref_sig=4) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=6)
+dtstsfq (ref_sig=6) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=0)
+dtstsfq (ref_sig=6) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=1)
+dtstsfq (ref_sig=6) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=6)
+dtstsfq (ref_sig=63) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=0)
+dtstsfq (ref_sig=63) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=1)
+dtstsfq (ref_sig=63) [tSig]7e00000000000000 fe000000d0e0a0d0 => 1 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]7800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=0) [tSig]7800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=0) [tSig]7800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=1) [tSig]7800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=1) [tSig]7800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=1) [tSig]7800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=2) [tSig]7800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=2) [tSig]7800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=2) [tSig]7800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=4) [tSig]7800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=4) [tSig]7800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=4) [tSig]7800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=6) [tSig]7800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=6) [tSig]7800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=6) [tSig]7800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=63) [tSig]7800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=63) [tSig]7800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=63) [tSig]7800000000000000 0000000000000000 => 1 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]f800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=0) [tSig]f800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=0) [tSig]f800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=1) [tSig]f800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=1) [tSig]f800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=1) [tSig]f800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=2) [tSig]f800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=2) [tSig]f800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=2) [tSig]f800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=4) [tSig]f800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=4) [tSig]f800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=4) [tSig]f800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=6) [tSig]f800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=6) [tSig]f800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=6) [tSig]f800000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=63) [tSig]f800000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=63) [tSig]f800000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=63) [tSig]f800000000000000 0000000000000000 => 1 (BF=6)
+
+dtstsfq (ref_sig=0) [tSig]f900000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=0) [tSig]f900000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=0) [tSig]f900000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=1) [tSig]f900000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=1) [tSig]f900000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=1) [tSig]f900000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=2) [tSig]f900000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=2) [tSig]f900000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=2) [tSig]f900000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=4) [tSig]f900000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=4) [tSig]f900000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=4) [tSig]f900000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=6) [tSig]f900000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=6) [tSig]f900000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=6) [tSig]f900000000000000 0000000000000000 => 1 (BF=6)
+dtstsfq (ref_sig=63) [tSig]f900000000000000 0000000000000000 => 1 (BF=0)
+dtstsfq (ref_sig=63) [tSig]f900000000000000 0000000000000000 => 1 (BF=1)
+dtstsfq (ref_sig=63) [tSig]f900000000000000 0000000000000000 => 1 (BF=6)
+
+Test DFP DPD-to-BCD instructions
+ddedpd (SP=0) [D->B]2234000000000e50 ==> 0000000000003450
+ddedpd (SP=1) [D->B]2234000000000e50 ==> 0000000000003450
+ddedpd (SP=2) [D->B]2234000000000e50 ==> 000000000003450c
+ddedpd (SP=3) [D->B]2234000000000e50 ==> 000000000003450f
+ddedpd (SP=0) [D->B]223400000014c000 ==> 0000000001230000
+ddedpd (SP=1) [D->B]223400000014c000 ==> 0000000001230000
+ddedpd (SP=2) [D->B]223400000014c000 ==> 000000001230000c
+ddedpd (SP=3) [D->B]223400000014c000 ==> 000000001230000f
+ddedpd (SP=0) [D->B]a2340000000000e0 ==> 0000000000000160
+ddedpd (SP=1) [D->B]a2340000000000e0 ==> 0000000000000160
+ddedpd (SP=2) [D->B]a2340000000000e0 ==> 000000000000160d
+ddedpd (SP=3) [D->B]a2340000000000e0 ==> 000000000000160d
+ddedpd (SP=0) [D->B]22240000000000cf ==> 0000000000000189
+ddedpd (SP=1) [D->B]22240000000000cf ==> 0000000000000189
+ddedpd (SP=2) [D->B]22240000000000cf ==> 000000000000189c
+ddedpd (SP=3) [D->B]22240000000000cf ==> 000000000000189f
+ddedpd (SP=0) [D->B]a21400010a395bcf ==> 0000004123456789
+ddedpd (SP=1) [D->B]a21400010a395bcf ==> 0000004123456789
+ddedpd (SP=2) [D->B]a21400010a395bcf ==> 000004123456789d
+ddedpd (SP=3) [D->B]a21400010a395bcf ==> 000004123456789d
+ddedpd (SP=0) [D->B]6e4d3f1f534acdd4 ==> 9839871234533354
+ddedpd (SP=1) [D->B]6e4d3f1f534acdd4 ==> 9839871234533354
+ddedpd (SP=2) [D->B]6e4d3f1f534acdd4 ==> 839871234533354c
+ddedpd (SP=3) [D->B]6e4d3f1f534acdd4 ==> 839871234533354f
+ddedpd (SP=0) [D->B]000400000089b000 ==> 0000000008864000
+ddedpd (SP=1) [D->B]000400000089b000 ==> 0000000008864000
+ddedpd (SP=2) [D->B]000400000089b000 ==> 000000008864000c
+ddedpd (SP=3) [D->B]000400000089b000 ==> 000000008864000f
+ddedpd (SP=0) [D->B]2238000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]2238000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]2238000000000000 ==> 000000000000000c
+ddedpd (SP=3) [D->B]2238000000000000 ==> 000000000000000f
+ddedpd (SP=0) [D->B]a238000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]a238000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]a238000000000000 ==> 000000000000000d
+ddedpd (SP=3) [D->B]a238000000000000 ==> 000000000000000d
+ddedpd (SP=0) [D->B]4248000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]4248000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]4248000000000000 ==> 000000000000000c
+ddedpd (SP=3) [D->B]4248000000000000 ==> 000000000000000f
+ddedpd (SP=0) [D->B]7e34000000000111 ==> 0000000000000211
+ddedpd (SP=1) [D->B]7e34000000000111 ==> 0000000000000211
+ddedpd (SP=2) [D->B]7e34000000000111 ==> 000000000000211c
+ddedpd (SP=3) [D->B]7e34000000000111 ==> 000000000000211f
+ddedpd (SP=0) [D->B]fe000000d0e0a0d0 ==> 0000003882028150
+ddedpd (SP=1) [D->B]fe000000d0e0a0d0 ==> 0000003882028150
+ddedpd (SP=2) [D->B]fe000000d0e0a0d0 ==> 000003882028150d
+ddedpd (SP=3) [D->B]fe000000d0e0a0d0 ==> 000003882028150d
+ddedpd (SP=0) [D->B]fc00000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]fc00000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]fc00000000000000 ==> 000000000000000d
+ddedpd (SP=3) [D->B]fc00000000000000 ==> 000000000000000d
+ddedpd (SP=0) [D->B]7800000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]7800000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]7800000000000000 ==> 000000000000000c
+ddedpd (SP=3) [D->B]7800000000000000 ==> 000000000000000f
+ddedpd (SP=0) [D->B]f800000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]f800000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]f800000000000000 ==> 000000000000000d
+ddedpd (SP=3) [D->B]f800000000000000 ==> 000000000000000d
+ddedpd (SP=0) [D->B]7a34000000000000 ==> 0000000000000000
+ddedpd (SP=1) [D->B]7a34000000000000 ==> 0000000000000000
+ddedpd (SP=2) [D->B]7a34000000000000 ==> 000000000000000c
+ddedpd (SP=3) [D->B]7a34000000000000 ==> 000000000000000f
+
+ddedpdq (SP=0) [D->B]2207c00000000000 0000000000000e50 ==> 0000000000000000 0000000000003450
+ddedpdq (SP=1) [D->B]2207c00000000000 0000000000000e50 ==> 0000000000000000 0000000000003450
+ddedpdq (SP=2) [D->B]2207c00000000000 0000000000000e50 ==> 0000000000000000 000000000003450c
+ddedpdq (SP=3) [D->B]2207c00000000000 0000000000000e50 ==> 0000000000000000 000000000003450f
+ddedpdq (SP=0) [D->B]2207c00000000000 000000000014c000 ==> 0000000000000000 0000000001230000
+ddedpdq (SP=1) [D->B]2207c00000000000 000000000014c000 ==> 0000000000000000 0000000001230000
+ddedpdq (SP=2) [D->B]2207c00000000000 000000000014c000 ==> 0000000000000000 000000001230000c
+ddedpdq (SP=3) [D->B]2207c00000000000 000000000014c000 ==> 0000000000000000 000000001230000f
+ddedpdq (SP=0) [D->B]a207c00000000000 00000000000000e0 ==> 0000000000000000 0000000000000160
+ddedpdq (SP=1) [D->B]a207c00000000000 00000000000000e0 ==> 0000000000000000 0000000000000160
+ddedpdq (SP=2) [D->B]a207c00000000000 00000000000000e0 ==> 0000000000000000 000000000000160d
+ddedpdq (SP=3) [D->B]a207c00000000000 00000000000000e0 ==> 0000000000000000 000000000000160d
+ddedpdq (SP=0) [D->B]2206c00000000000 00000000000000cf ==> 0000000000000000 0000000000000189
+ddedpdq (SP=1) [D->B]2206c00000000000 00000000000000cf ==> 0000000000000000 0000000000000189
+ddedpdq (SP=2) [D->B]2206c00000000000 00000000000000cf ==> 0000000000000000 000000000000189c
+ddedpdq (SP=3) [D->B]2206c00000000000 00000000000000cf ==> 0000000000000000 000000000000189f
+ddedpdq (SP=0) [D->B]a205c00000000000 000000010a395bcf ==> 0000000000000000 0000004123456789
+ddedpdq (SP=1) [D->B]a205c00000000000 000000010a395bcf ==> 0000000000000000 0000004123456789
+ddedpdq (SP=2) [D->B]a205c00000000000 000000010a395bcf ==> 0000000000000000 000004123456789d
+ddedpdq (SP=3) [D->B]a205c00000000000 000000010a395bcf ==> 0000000000000000 000004123456789d
+ddedpdq (SP=0) [D->B]6209400000fd0000 00253f1f534acdd4 ==> 0000097100000000 9839871234533354
+ddedpdq (SP=1) [D->B]6209400000fd0000 00253f1f534acdd4 ==> 0000097100000000 9839871234533354
+ddedpdq (SP=2) [D->B]6209400000fd0000 00253f1f534acdd4 ==> 0000971000000009 839871234533354c
+ddedpdq (SP=3) [D->B]6209400000fd0000 00253f1f534acdd4 ==> 0000971000000009 839871234533354f
+ddedpdq (SP=0) [D->B]000400000089b000 0a6000d000000049 ==> 0000010954000051 8000640000000049
+ddedpdq (SP=1) [D->B]000400000089b000 0a6000d000000049 ==> 0000010954000051 8000640000000049
+ddedpdq (SP=2) [D->B]000400000089b000 0a6000d000000049 ==> 0000109540000518 000640000000049c
+ddedpdq (SP=3) [D->B]000400000089b000 0a6000d000000049 ==> 0000109540000518 000640000000049f
+ddedpdq (SP=0) [D->B]2208000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]2208000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]2208000000000000 0000000000000000 ==> 0000000000000000 000000000000000c
+ddedpdq (SP=3) [D->B]2208000000000000 0000000000000000 ==> 0000000000000000 000000000000000f
+ddedpdq (SP=0) [D->B]a208000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]a208000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]a208000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=3) [D->B]a208000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=0) [D->B]a248000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]a248000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]a248000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=3) [D->B]a248000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=0) [D->B]7c00000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]7c00000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]7c00000000000000 0000000000000000 ==> 0000000000000000 000000000000000c
+ddedpdq (SP=3) [D->B]7c00000000000000 0000000000000000 ==> 0000000000000000 000000000000000f
+ddedpdq (SP=0) [D->B]fc00000000000000 c00100035b007700 ==> 0000000000080000 0200801330811600
+ddedpdq (SP=1) [D->B]fc00000000000000 c00100035b007700 ==> 0000000000080000 0200801330811600
+ddedpdq (SP=2) [D->B]fc00000000000000 c00100035b007700 ==> 0000000000800000 200801330811600d
+ddedpdq (SP=3) [D->B]fc00000000000000 c00100035b007700 ==> 0000000000800000 200801330811600d
+ddedpdq (SP=0) [D->B]7e00000000000000 fe000000d0e0a0d0 ==> 0000000000088170 0000003882028150
+ddedpdq (SP=1) [D->B]7e00000000000000 fe000000d0e0a0d0 ==> 0000000000088170 0000003882028150
+ddedpdq (SP=2) [D->B]7e00000000000000 fe000000d0e0a0d0 ==> 0000000000881700 000003882028150c
+ddedpdq (SP=3) [D->B]7e00000000000000 fe000000d0e0a0d0 ==> 0000000000881700 000003882028150f
+ddedpdq (SP=0) [D->B]7800000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]7800000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]7800000000000000 0000000000000000 ==> 0000000000000000 000000000000000c
+ddedpdq (SP=3) [D->B]7800000000000000 0000000000000000 ==> 0000000000000000 000000000000000f
+ddedpdq (SP=0) [D->B]f800000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]f800000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]f800000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=3) [D->B]f800000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=0) [D->B]f900000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=1) [D->B]f900000000000000 0000000000000000 ==> 0000000000000000 0000000000000000
+ddedpdq (SP=2) [D->B]f900000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+ddedpdq (SP=3) [D->B]f900000000000000 0000000000000000 ==> 0000000000000000 000000000000000d
+
+Test DFP BCD-to-DPD instructions
+denbcd (S=0) [B->D]0000000000003450 ==> 2238000000000e50
+denbcd (S=1) [B->D]0000000000003450 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000000003450c ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000003450c ==> 2238000000000e50
+denbcd (S=0) [B->D]000000000003450f ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000003450f ==> 2238000000000e50
+denbcd (S=0) [B->D]0000000001230000 ==> 223800000014c000
+denbcd (S=1) [B->D]0000000001230000 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000001230000c ==> 7c00000000000000
+denbcd (S=1) [B->D]000000001230000c ==> 223800000014c000
+denbcd (S=0) [B->D]000000001230000f ==> 7c00000000000000
+denbcd (S=1) [B->D]000000001230000f ==> 223800000014c000
+denbcd (S=0) [B->D]0000000000000160 ==> 22380000000000e0
+denbcd (S=1) [B->D]0000000000000160 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000000000160d ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000160d ==> a2380000000000e0
+denbcd (S=0) [B->D]0000000000000189 ==> 22380000000000cf
+denbcd (S=1) [B->D]0000000000000189 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000000000189c ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000189c ==> 22380000000000cf
+denbcd (S=0) [B->D]000000000000189f ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000189f ==> 22380000000000cf
+denbcd (S=0) [B->D]0000004123456789 ==> 223800010a395bcf
+denbcd (S=1) [B->D]0000004123456789 ==> 7c00000000000000
+denbcd (S=0) [B->D]000004123456789d ==> 7c00000000000000
+denbcd (S=1) [B->D]000004123456789d ==> a23800010a395bcf
+denbcd (S=0) [B->D]9839871234533354 ==> 6e393f1f534acdd4
+denbcd (S=1) [B->D]9839871234533354 ==> 7c00000000000000
+denbcd (S=0) [B->D]839871234533354c ==> 7c00000000000000
+denbcd (S=1) [B->D]839871234533354c ==> 22393f1f534acdd4
+denbcd (S=0) [B->D]839871234533354f ==> 7c00000000000000
+denbcd (S=1) [B->D]839871234533354f ==> 22393f1f534acdd4
+denbcd (S=0) [B->D]0000000008864000 ==> 223800000089b000
+denbcd (S=1) [B->D]0000000008864000 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000008864000c ==> 7c00000000000000
+denbcd (S=1) [B->D]000000008864000c ==> 223800000089b000
+denbcd (S=0) [B->D]000000008864000f ==> 7c00000000000000
+denbcd (S=1) [B->D]000000008864000f ==> 223800000089b000
+denbcd (S=0) [B->D]0000000000000000 ==> 2238000000000000
+denbcd (S=1) [B->D]0000000000000000 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000000000000c ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000000c ==> 2238000000000000
+denbcd (S=0) [B->D]000000000000000f ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000000f ==> 2238000000000000
+denbcd (S=0) [B->D]000000000000000d ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000000d ==> a238000000000000
+denbcd (S=0) [B->D]0000000000000211 ==> 2238000000000111
+denbcd (S=1) [B->D]0000000000000211 ==> 7c00000000000000
+denbcd (S=0) [B->D]000000000000211c ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000211c ==> 2238000000000111
+denbcd (S=0) [B->D]000000000000211f ==> 7c00000000000000
+denbcd (S=1) [B->D]000000000000211f ==> 2238000000000111
+denbcd (S=0) [B->D]0000003882028150 ==> 22380000d0e0a0d0
+denbcd (S=1) [B->D]0000003882028150 ==> 7c00000000000000
+denbcd (S=0) [B->D]000003882028150d ==> 7c00000000000000
+denbcd (S=1) [B->D]000003882028150d ==> a2380000d0e0a0d0
+
+denbcdq (S=0) [B->D]0000000000000000 0000000000003450 ==> 2208000000000000 0000000000000e50
+denbcdq (S=1) [B->D]0000000000000000 0000000000003450 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000000003450c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000003450c ==> 2208000000000000 0000000000000e50
+denbcdq (S=0) [B->D]0000000000000000 000000000003450f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000003450f ==> 2208000000000000 0000000000000e50
+denbcdq (S=0) [B->D]0000000000000000 0000000001230000 ==> 2208000000000000 000000000014c000
+denbcdq (S=1) [B->D]0000000000000000 0000000001230000 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000001230000c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000001230000c ==> 2208000000000000 000000000014c000
+denbcdq (S=0) [B->D]0000000000000000 000000001230000f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000001230000f ==> 2208000000000000 000000000014c000
+denbcdq (S=0) [B->D]0000000000000000 0000000000000160 ==> 2208000000000000 00000000000000e0
+denbcdq (S=1) [B->D]0000000000000000 0000000000000160 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000000000160d ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000000160d ==> a208000000000000 00000000000000e0
+denbcdq (S=0) [B->D]0000000000000000 0000000000000189 ==> 2208000000000000 00000000000000cf
+denbcdq (S=1) [B->D]0000000000000000 0000000000000189 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000000000189c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000000189c ==> 2208000000000000 00000000000000cf
+denbcdq (S=0) [B->D]0000000000000000 000000000000189f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000000189f ==> 2208000000000000 00000000000000cf
+denbcdq (S=0) [B->D]0000000000000000 0000004123456789 ==> 2208000000000000 000000010a395bcf
+denbcdq (S=1) [B->D]0000000000000000 0000004123456789 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000004123456789d ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000004123456789d ==> a208000000000000 000000010a395bcf
+denbcdq (S=0) [B->D]0000097100000000 9839871234533354 ==> 2208000000fd0000 00253f1f534acdd4
+denbcdq (S=1) [B->D]0000097100000000 9839871234533354 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000971000000009 839871234533354c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000971000000009 839871234533354c ==> 2208000000fd0000 00253f1f534acdd4
+denbcdq (S=0) [B->D]0000971000000009 839871234533354f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000971000000009 839871234533354f ==> 2208000000fd0000 00253f1f534acdd4
+denbcdq (S=0) [B->D]0000010954000051 8000640000000049 ==> 220800000089b000 0a6000d000000049
+denbcdq (S=1) [B->D]0000010954000051 8000640000000049 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000109540000518 000640000000049c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000109540000518 000640000000049c ==> 220800000089b000 0a6000d000000049
+denbcdq (S=0) [B->D]0000109540000518 000640000000049f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000109540000518 000640000000049f ==> 220800000089b000 0a6000d000000049
+denbcdq (S=0) [B->D]0000000000000000 0000000000000000 ==> 2208000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 0000000000000000 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000000000000c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000000000c ==> 2208000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000000000000f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000000000f ==> 2208000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000000000 000000000000000d ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000000000 000000000000000d ==> a208000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000080000 0200801330811600 ==> 2208000000000000 c00100035b007700
+denbcdq (S=1) [B->D]0000000000080000 0200801330811600 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000800000 200801330811600d ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000800000 200801330811600d ==> a208000000000000 c00100035b007700
+denbcdq (S=0) [B->D]0000000000088170 0000003882028150 ==> 2208000000000000 fe000000d0e0a0d0
+denbcdq (S=1) [B->D]0000000000088170 0000003882028150 ==> 7c00000000000000 0000000000000000
+denbcdq (S=0) [B->D]0000000000881700 000003882028150c ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000881700 000003882028150c ==> 2208000000000000 fe000000d0e0a0d0
+denbcdq (S=0) [B->D]0000000000881700 000003882028150f ==> 7c00000000000000 0000000000000000
+denbcdq (S=1) [B->D]0000000000881700 000003882028150f ==> 2208000000000000 fe000000d0e0a0d0
+

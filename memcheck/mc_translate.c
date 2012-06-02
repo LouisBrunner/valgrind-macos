@@ -3832,8 +3832,9 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
       case Iex_Triop:
          return expr2vbits_Triop(
                    mce,
-                   e->Iex.Triop.op,
-                   e->Iex.Triop.arg1, e->Iex.Triop.arg2, e->Iex.Triop.arg3
+                   e->Iex.Triop.details->op,
+                   e->Iex.Triop.details->arg1, e->Iex.Triop.details->arg2,
+                   e->Iex.Triop.details->arg3
                 );
 
       case Iex_Binop:
@@ -4981,9 +4982,9 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                return isBogusAtom(e->Iex.Binop.arg1)
                       || isBogusAtom(e->Iex.Binop.arg2);
             case Iex_Triop: 
-               return isBogusAtom(e->Iex.Triop.arg1)
-                      || isBogusAtom(e->Iex.Triop.arg2)
-                      || isBogusAtom(e->Iex.Triop.arg3);
+               return isBogusAtom(e->Iex.Triop.details->arg1)
+                      || isBogusAtom(e->Iex.Triop.details->arg2)
+                      || isBogusAtom(e->Iex.Triop.details->arg3);
             case Iex_Qop: 
                return isBogusAtom(e->Iex.Qop.details->arg1)
                       || isBogusAtom(e->Iex.Qop.details->arg2)
@@ -5741,9 +5742,9 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
                                  gen_maxU32( mce, b3, b4 ) );
       }
       case Iex_Triop: {
-         IRAtom* b1 = schemeE( mce, e->Iex.Triop.arg1 );
-         IRAtom* b2 = schemeE( mce, e->Iex.Triop.arg2 );
-         IRAtom* b3 = schemeE( mce, e->Iex.Triop.arg3 );
+         IRAtom* b1 = schemeE( mce, e->Iex.Triop.details->arg1 );
+         IRAtom* b2 = schemeE( mce, e->Iex.Triop.details->arg2 );
+         IRAtom* b3 = schemeE( mce, e->Iex.Triop.details->arg3 );
          return gen_maxU32( mce, b1, gen_maxU32( mce, b2, b3 ) );
       }
       case Iex_Binop: {

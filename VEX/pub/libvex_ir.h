@@ -1478,6 +1478,7 @@ typedef IRCmpF64Result IRCmpF128Result;
 /* ------------------ Expressions ------------------ */
 
 typedef struct _IRQop IRQop;   /* forward declaration */
+typedef struct _IRQop IRTriop; /* forward declaration */
 
 
 /* The different kinds of expressions.  Their meaning is explained below
@@ -1591,10 +1592,7 @@ struct _IRExpr {
                       eg. MulF64(1, 2.0, 3.0)
       */
       struct {
-         IROp op;          /* op-code   */
-         IRExpr* arg1;     /* operand 1 */
-         IRExpr* arg2;     /* operand 2 */
-         IRExpr* arg3;     /* operand 3 */
+        IRTriop* details;
       } Triop;
 
       /* A binary operation.
@@ -1694,6 +1692,14 @@ struct _IRExpr {
          IRExpr* exprX;    /* False expression */
       } Mux0X;
    } Iex;
+};
+
+/* ------------------ A ternary expression ---------------------- */
+struct _IRTriop {
+   IROp op;          /* op-code   */
+   IRExpr* arg1;     /* operand 1 */
+   IRExpr* arg2;     /* operand 2 */
+   IRExpr* arg3;     /* operand 3 */
 };
 
 /* ------------------ A quarternary expression ------------------ */

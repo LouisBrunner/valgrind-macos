@@ -1517,9 +1517,10 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       /* --------- TERNARY OP --------- */
    case Iex_Triop: {
-      IROp    op    = expr->Iex.Triop.op;
-      IRExpr *left  = expr->Iex.Triop.arg2;
-      IRExpr *right = expr->Iex.Triop.arg3;
+      IRTriop *triop = expr->Iex.Triop.details;
+      IROp    op     = triop->op;
+      IRExpr *left   = triop->arg2;
+      IRExpr *right  = triop->arg3;
       s390_bfp_binop_t bfpop;
       s390_round_t rounding_mode;
       HReg op1_hi, op1_lo, op2_hi, op2_lo, f12, f13, f14, f15;
@@ -1550,7 +1551,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Triop.arg1);
+      rounding_mode = decode_rounding_mode(triop->arg1);
       addInstr(env, s390_insn_bfp128_binop(16, bfpop, f12, f14, f13,
                                            f15, rounding_mode));
 
@@ -1784,9 +1785,10 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       /* --------- TERNARY OP --------- */
    case Iex_Triop: {
-      IROp    op    = expr->Iex.Triop.op;
-      IRExpr *left  = expr->Iex.Triop.arg2;
-      IRExpr *right = expr->Iex.Triop.arg3;
+      IRTriop *triop = expr->Iex.Triop.details;
+      IROp    op     = triop->op;
+      IRExpr *left   = triop->arg2;
+      IRExpr *right  = triop->arg3;
       s390_bfp_binop_t bfpop;
       s390_round_t rounding_mode;
       HReg h1, op2, dst;
@@ -1809,7 +1811,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Triop.arg1);
+      rounding_mode = decode_rounding_mode(triop->arg1);
       addInstr(env, s390_insn_bfp_binop(size, bfpop, dst, op2, rounding_mode));
       return dst;
    }

@@ -3465,8 +3465,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
          case Iop_AddF64:    fpop = Pfp_ADDD; break;
          case Iop_SubF64:    fpop = Pfp_SUBD; break;
          case Iop_MulF64:    fpop = Pfp_MULD; break;
@@ -3479,22 +3480,22 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst  = newVRegF(env);
-         HReg r_srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg r_srcR = iselDblExpr(env, e->Iex.Triop.arg3);
-         set_FPU_rounding_mode( env, e->Iex.Triop.arg1 );
+         HReg r_srcL = iselDblExpr(env, triop->arg2);
+         HReg r_srcR = iselDblExpr(env, triop->arg3);
+         set_FPU_rounding_mode( env, triop->arg1 );
          addInstr(env, PPCInstr_FpBinary(fpop, r_dst, r_srcL, r_srcR));
          return r_dst;
       }
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_QuantizeD64:          fpop = Pfp_DQUA;  break;
       case Iop_SignificanceRoundD64: fpop = Pfp_RRDTR; break;
       default: break;
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst = newVRegF(env);
-         HReg r_srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg r_srcR = iselDblExpr(env, e->Iex.Triop.arg3);
-         PPCRI* rmc  = iselWordExpr_RI(env, e->Iex.Triop.arg1);
+         HReg r_srcL = iselDblExpr(env, triop->arg2);
+         HReg r_srcR = iselDblExpr(env, triop->arg3);
+         PPCRI* rmc  = iselWordExpr_RI(env, triop->arg1);
 
          // will set TE and RMC when issuing instruction
          addInstr(env, PPCInstr_DfpQuantize(fpop, r_dst, r_srcL, r_srcR, rmc));
@@ -3862,9 +3863,10 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
    }
 
    if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
       PPCFpOp fpop = Pfp_INVALID;
 
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_AddD64:
          fpop = Pfp_DFPADD;
          break;
@@ -3882,24 +3884,24 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst = newVRegF( env );
-         HReg r_srcL = iselDfp64Expr( env, e->Iex.Triop.arg2 );
-         HReg r_srcR = iselDfp64Expr( env, e->Iex.Triop.arg3 );
+         HReg r_srcL = iselDfp64Expr( env, triop->arg2 );
+         HReg r_srcR = iselDfp64Expr( env, triop->arg3 );
 
-         set_FPU_DFP_rounding_mode( env, e->Iex.Triop.arg1 );
+         set_FPU_DFP_rounding_mode( env, triop->arg1 );
          addInstr( env, PPCInstr_Dfp64Binary( fpop, r_dst, r_srcL, r_srcR ) );
          return r_dst;
       }
 
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_QuantizeD64:          fpop = Pfp_DQUA;  break;
       case Iop_SignificanceRoundD64: fpop = Pfp_RRDTR; break;
       default: break;
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst = newVRegF(env);
-         HReg r_srcL = iselDfp64Expr(env, e->Iex.Triop.arg2);
-         HReg r_srcR = iselDfp64Expr(env, e->Iex.Triop.arg3);
-         PPCRI* rmc  = iselWordExpr_RI(env, e->Iex.Triop.arg1);
+         HReg r_srcL = iselDfp64Expr(env, triop->arg2);
+         HReg r_srcR = iselDfp64Expr(env, triop->arg3);
+         PPCRI* rmc  = iselWordExpr_RI(env, triop->arg1);
 
          addInstr(env, PPCInstr_DfpQuantize(fpop, r_dst, r_srcL, r_srcR,
                                             rmc));
@@ -4041,8 +4043,9 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
    }
 
    if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_AddD128:
          fpop = Pfp_DFPADDQ;
          break;
@@ -4066,9 +4069,9 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          HReg r_srcRLo = newVRegV( env );
 
          /* dst will be used to pass in the left operand and get the result. */
-         iselDfp128Expr( &r_dstHi, &r_dstLo, env, e->Iex.Triop.arg2 );
-         iselDfp128Expr( &r_srcRHi, &r_srcRLo, env, e->Iex.Triop.arg3 );
-         set_FPU_rounding_mode( env, e->Iex.Triop.arg1 );
+         iselDfp128Expr( &r_dstHi, &r_dstLo, env, triop->arg2 );
+         iselDfp128Expr( &r_srcRHi, &r_srcRLo, env, triop->arg3 );
+         set_FPU_rounding_mode( env, triop->arg1 );
          addInstr( env,
                    PPCInstr_Dfp128Binary( fpop, r_dstHi, r_dstLo,
                                           r_srcRHi, r_srcRLo ) );
@@ -4076,7 +4079,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          *rLo = r_dstLo;
          return;
       }
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_QuantizeD128:          fpop = Pfp_DQUAQ;  break;
       case Iop_SignificanceRoundD128: fpop = Pfp_DRRNDQ; break;
       default: break;
@@ -4089,8 +4092,8 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          PPCRI* rmc = iselWordExpr_RI(env, e->Iex.Binop.arg1);
 
          /* dst will be used to pass in the left operand and get the result */
-         iselDfp128Expr(&r_dstHi, &r_dstLo, env, e->Iex.Triop.arg2);
-         iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Triop.arg3);
+         iselDfp128Expr(&r_dstHi, &r_dstLo, env, triop->arg2);
+         iselDfp128Expr(&r_srcHi, &r_srcLo, env, triop->arg3);
 
          // will set RMC when issuing instruction
          addInstr(env, PPCInstr_DfpQuantize128(fpop, r_dstHi, r_dstLo,

@@ -789,14 +789,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- TERNARY OP --------- */
    case Iex_Triop: {
+      IRTriop *triop = e->Iex.Triop.details;
       /* C3210 flags following FPU partial remainder (fprem), both
          IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
-      if (e->Iex.Triop.op == Iop_PRemC3210F64
-          || e->Iex.Triop.op == Iop_PRem1C3210F64) {
+      if (triop->op == Iop_PRemC3210F64
+          || triop->op == Iop_PRem1C3210F64) {
          HReg junk = newVRegF(env);
          HReg dst  = newVRegI(env);
-         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         HReg srcL = iselDblExpr(env, triop->arg2);
+         HReg srcR = iselDblExpr(env, triop->arg3);
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
          addInstr(env, X86Instr_FpBinary(
@@ -2958,7 +2959,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Triop) {
       X86FpOp fpop = Xfp_INVALID;
-      switch (e->Iex.Triop.op) {
+      IRTriop *triop = e->Iex.Triop.details;
+      switch (triop->op) {
          case Iop_AddF64:    fpop = Xfp_ADD; break;
          case Iop_SubF64:    fpop = Xfp_SUB; break;
          case Iop_MulF64:    fpop = Xfp_MUL; break;
@@ -2973,8 +2975,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Xfp_INVALID) {
          HReg res  = newVRegF(env);
-         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         HReg srcL = iselDblExpr(env, triop->arg2);
+         HReg srcR = iselDblExpr(env, triop->arg3);
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
          addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));

@@ -302,14 +302,16 @@ static IRExpr* flatten_Expr ( IRSB* bb, IRExpr* ex )
          return IRExpr_RdTmp(t1);
       }
 
-      case Iex_Triop:
+      case Iex_Triop: {
+         IRTriop* triop = ex->Iex.Triop.details;
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRSB(bb, IRStmt_WrTmp(t1, 
-            IRExpr_Triop(ex->Iex.Triop.op,
-                         flatten_Expr(bb, ex->Iex.Triop.arg1),
-                         flatten_Expr(bb, ex->Iex.Triop.arg2),
-                         flatten_Expr(bb, ex->Iex.Triop.arg3))));
+            IRExpr_Triop(triop->op,
+                         flatten_Expr(bb, triop->arg1),
+                         flatten_Expr(bb, triop->arg2),
+                         flatten_Expr(bb, triop->arg3))));
          return IRExpr_RdTmp(t1);
+      }
 
       case Iex_Binop:
          t1 = newIRTemp(bb->tyenv, ty);
@@ -1022,11 +1024,14 @@ static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
          return False;
       }
 
-      case Iex_Triop:
-         return toBool( e1->Iex.Triop.op == e2->Iex.Triop.op
-                        && sameIRExprs_aux( env, e1->Iex.Triop.arg1, e2->Iex.Triop.arg1 )
-                        && sameIRExprs_aux( env, e1->Iex.Triop.arg2, e2->Iex.Triop.arg2 )
-                        && sameIRExprs_aux( env, e1->Iex.Triop.arg3, e2->Iex.Triop.arg3 ));
+      case Iex_Triop: {
+         IRTriop *tri1 = e1->Iex.Triop.details;
+         IRTriop *tri2 = e2->Iex.Triop.details;
+         return toBool( tri1->op == tri2->op
+                        && sameIRExprs_aux( env, tri1->arg1, tri2->arg1 )
+                        && sameIRExprs_aux( env, tri1->arg2, tri2->arg2 )
+                        && sameIRExprs_aux( env, tri1->arg3, tri2->arg3 ));
+      }
 
       case Iex_Mux0X:
          return toBool(    sameIRExprs_aux( env, e1->Iex.Mux0X.cond,  e2->Iex.Mux0X.cond )
@@ -2055,16 +2060,18 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
                 );
       }
 
-      case Iex_Triop:
-         vassert(isIRAtom(ex->Iex.Triop.arg1));
-         vassert(isIRAtom(ex->Iex.Triop.arg2));
-         vassert(isIRAtom(ex->Iex.Triop.arg3));
+      case Iex_Triop: {
+         IRTriop* triop = ex->Iex.Triop.details;
+         vassert(isIRAtom(triop->arg1));
+         vassert(isIRAtom(triop->arg2));
+         vassert(isIRAtom(triop->arg3));
          return IRExpr_Triop(
-                   ex->Iex.Triop.op,
-                   subst_Expr(env, ex->Iex.Triop.arg1),
-                   subst_Expr(env, ex->Iex.Triop.arg2),
-                   subst_Expr(env, ex->Iex.Triop.arg3)
+                   triop->op,
+                   subst_Expr(env, triop->arg1),
+                   subst_Expr(env, triop->arg2),
+                   subst_Expr(env, triop->arg3)
                 );
+      }
 
       case Iex_Binop:
          vassert(isIRAtom(ex->Iex.Binop.arg1));
@@ -2393,9 +2400,9 @@ static void addUses_Expr ( Bool* set, IRExpr* e )
          addUses_Expr(set, e->Iex.Qop.details->arg4);
          return;
       case Iex_Triop:
-         addUses_Expr(set, e->Iex.Triop.arg1);
-         addUses_Expr(set, e->Iex.Triop.arg2);
-         addUses_Expr(set, e->Iex.Triop.arg3);
+         addUses_Expr(set, e->Iex.Triop.details->arg1);
+         addUses_Expr(set, e->Iex.Triop.details->arg2);
+         addUses_Expr(set, e->Iex.Triop.details->arg3);
          return;
       case Iex_Binop:
          addUses_Expr(set, e->Iex.Binop.arg1);
@@ -3823,9 +3830,9 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
          deltaIRExpr(e->Iex.Qop.details->arg4, delta);
          break;
       case Iex_Triop:
-         deltaIRExpr(e->Iex.Triop.arg1, delta);
-         deltaIRExpr(e->Iex.Triop.arg2, delta);
-         deltaIRExpr(e->Iex.Triop.arg3, delta);
+         deltaIRExpr(e->Iex.Triop.details->arg1, delta);
+         deltaIRExpr(e->Iex.Triop.details->arg2, delta);
+         deltaIRExpr(e->Iex.Triop.details->arg3, delta);
          break;
       case Iex_Binop:
          deltaIRExpr(e->Iex.Binop.arg1, delta);
@@ -4218,9 +4225,9 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg4);
          return;
       case Iex_Triop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg2);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg3);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg1);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg2);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg3);
          return;
       case Iex_Binop:
          setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg1);
@@ -4292,9 +4299,9 @@ static void aoccCount_Expr ( UShort* uses, IRExpr* e )
          return;
 
       case Iex_Triop: 
-         aoccCount_Expr(uses, e->Iex.Triop.arg1);
-         aoccCount_Expr(uses, e->Iex.Triop.arg2);
-         aoccCount_Expr(uses, e->Iex.Triop.arg3);
+         aoccCount_Expr(uses, e->Iex.Triop.details->arg1);
+         aoccCount_Expr(uses, e->Iex.Triop.details->arg2);
+         aoccCount_Expr(uses, e->Iex.Triop.details->arg3);
          return;
 
       case Iex_Binop: 
@@ -4615,10 +4622,10 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
                 );
       case Iex_Triop:
          return IRExpr_Triop(
-                   e->Iex.Triop.op,
-                   atbSubst_Expr(env, e->Iex.Triop.arg1),
-                   atbSubst_Expr(env, e->Iex.Triop.arg2),
-                   atbSubst_Expr(env, e->Iex.Triop.arg3)
+                   e->Iex.Triop.details->op,
+                   atbSubst_Expr(env, e->Iex.Triop.details->arg1),
+                   atbSubst_Expr(env, e->Iex.Triop.details->arg2),
+                   atbSubst_Expr(env, e->Iex.Triop.details->arg3)
                 );
       case Iex_Binop:
          return fold_IRExpr_Binop(

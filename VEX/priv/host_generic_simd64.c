@@ -1379,7 +1379,132 @@ UInt h_generic_calc_Sad8Ux4 ( UInt xx, UInt yy )
           + absdiff8U( sel8x4_0(xx), sel8x4_0(yy) );
 }
 
+/*------------------------------------------------------------------*/
+/* Decimal Floating Point (DFP) externally visible helper functions */
+/* that implement Iop_BCDtoDPB and Iop_DPBtoBCD                     */
+/*------------------------------------------------------------------*/
+
+#define NOT( x )    ( ( ( x ) == 0) ? 1 : 0)
+#define GET( x, y ) ( ( ( x ) & ( 0x1UL << ( y ) ) ) >> ( y ) )
+#define PUT( x, y ) ( ( x )<< ( y ) )
+
+ULong dpb_to_bcd( ULong chunk )
+{
+   Short a, b, c, d, e, f, g, h, i, j, k, m;
+   Short p, q, r, s, t, u, v, w, x, y;
+   ULong value;
+
+   /* convert 10 bit densely packed BCD to BCD */
+   p = GET( chunk, 9 );
+   q = GET( chunk, 8 );
+   r = GET( chunk, 7 );
+   s = GET( chunk, 6 );
+   t = GET( chunk, 5 );
+   u = GET( chunk, 4 );
+   v = GET( chunk, 3 );
+   w = GET( chunk, 2 );
+   x = GET( chunk, 1 );
+   y = GET( chunk, 0 );
+
+   /* The BCD bit values are given by the following boolean equations.*/
+   a = ( NOT(s) & v & w ) | ( t & v & w & s ) | ( v & w & NOT(x) );
+   b = ( p & s & x & NOT(t) ) | ( p & NOT(w) ) | ( p & NOT(v) );
+   c = ( q & s & x & NOT(t) ) | ( q & NOT(w) ) | ( q & NOT(v) );
+   d = r;
+   e = ( v & NOT(w) & x ) | ( s & v & w & x ) | ( NOT(t) & v & x & w );
+   f = ( p & t & v & w & x & NOT(s) ) | ( s & NOT(x) & v ) | ( s & NOT(v) );
+   g = ( q & t & w & v & x & NOT(s) ) | ( t & NOT(x) & v ) | ( t & NOT(v) );
+   h = u;
+   i = ( t & v & w & x ) | ( s & v & w & x ) | ( v & NOT(w) & NOT(x) );
+   j = ( p & NOT(s) & NOT(t) & w & v ) | ( s & v & NOT(w) & x )
+            | ( p & w & NOT(x) & v ) | ( w & NOT(v) );
+   k = ( q & NOT(s) & NOT(t) & v & w ) | ( t & v & NOT(w) & x )
+            | ( q & v & w & NOT(x) ) | ( x & NOT(v) );
+   m = y;
+
+   value = PUT(a, 11) | PUT(b, 10) | PUT(c, 9) | PUT(d, 8) | PUT(e, 7)
+            | PUT(f, 6) | PUT(g, 5) | PUT(h, 4) | PUT(i, 3) | PUT(j, 2)
+            | PUT(k, 1) | PUT(m, 0);
+   return value;
+}
+
+ULong bcd_to_dpb( ULong chunk )
+{
+   Short a, b, c, d, e, f, g, h, i, j, k, m;
+   Short p, q, r, s, t, u, v, w, x, y;
+   ULong value;
+   /* Convert a 3 digit BCD value to a 10 bit Densely Packed Binary (DPD) value
+    The boolean equations to calculate the value of each of the DPD bit
+    is given in Appendix B  of Book 1: Power ISA User Instruction set.  The
+    bits for the DPD number are [abcdefghijkm].  The bits for the BCD value
+    are [pqrstuvwxy].  The boolean logic equations in psuedo C code are:
+    */
+   a = GET( chunk, 11 );
+   b = GET( chunk, 10 );
+   c = GET( chunk, 9 );
+   d = GET( chunk, 8 );
+   e = GET( chunk, 7 );
+   f = GET( chunk, 6 );
+   g = GET( chunk, 5 );
+   h = GET( chunk, 4 );
+   i = GET( chunk, 3 );
+   j = GET( chunk, 2 );
+   k = GET( chunk, 1 );
+   m = GET( chunk, 0 );
+
+   p = ( f & a & i & NOT(e) ) | ( j & a & NOT(i) ) | ( b & NOT(a) );
+   q = ( g & a & i & NOT(e) ) | ( k & a & NOT(i) ) | ( c & NOT(a) );
+   r = d;
+   s = ( j & NOT(a) & e & NOT(i) ) | ( f & NOT(i) & NOT(e) )
+            | ( f & NOT(a) & NOT(e) ) | ( e & i );
+   t = ( k & NOT(a) & e & NOT(i) ) | ( g & NOT(i) & NOT(e) )
+            | ( g & NOT(a) & NOT(e) ) | ( a & i );
+   u = h;
+   v = a | e | i;
+   w = ( NOT(e) & j & NOT(i) ) | ( e & i ) | a;
+   x = ( NOT(a) & k & NOT(i) ) | ( a & i ) | e;
+   y = m;
+
+   value = PUT(p, 9) | PUT(q, 8) | PUT(r, 7) | PUT(s, 6) | PUT(t, 5) 
+            | PUT(u, 4) | PUT(v, 3) | PUT(w, 2) | PUT(x, 1) | y;
+
+   return value;
+}
+
+ULong h_DPBtoBCD( ULong dpb )
+{
+   ULong result, chunk;
+   Int i;
+
+   result = 0;
+
+   for (i = 0; i < 5; i++) {
+      chunk = dpb >> ( 4 - i ) * 10;
+      result = result << 12;
+      result |= dpb_to_bcd( chunk & 0x3FF );
+   }
+   return result;
+}
+
+ULong h_BCDtoDPB( ULong bcd )
+{
+   ULong result, chunk;
+   Int i;
+
+   result = 0;
+
+   for (i = 0; i < 5; i++) {
+      chunk = bcd >> ( 4 - i ) * 12;
+      result = result << 10;
+      result |= bcd_to_dpb( chunk & 0xFFF );
+   }
+   return result;
+}
+#undef NOT
+#undef GET
+#undef PUT
 
 /*---------------------------------------------------------------*/
 /*--- end                               host_generic_simd64.c ---*/
 /*---------------------------------------------------------------*/
+

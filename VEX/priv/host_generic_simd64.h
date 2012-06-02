@@ -156,6 +156,12 @@ extern UInt h_generic_calc_Sad8Ux4  ( UInt, UInt );
 extern UInt h_generic_calc_CmpNEZ16x2 ( UInt );
 extern UInt h_generic_calc_CmpNEZ8x4  ( UInt );
 
+extern ULong h_DPBtoBCD( ULong dpb );
+extern ULong h_BCDtoDPB( ULong bcd );
+
+ULong dpb_to_bcd(ULong chunk);  // helper for h_DPBtoBCD
+ULong bcd_to_dpb(ULong chunk);  // helper for h_BCDtoDPB
+
 #endif /* ndef __VEX_HOST_GENERIC_SIMD64_H */
 
 /*---------------------------------------------------------------*/

@@ -1105,6 +1105,16 @@ typedef
       /* Support for 128-bit DFP type */
       Iop_D64HLtoD128, Iop_D128HItoD64, Iop_D128LOtoD64,
 
+      /*  I64 -> I64  
+       *     Convert 50-bit densely packed BCD string to 60 bit BCD string
+       */
+      Iop_DPBtoBCD,
+
+      /* I64 -> I64
+       *     Convert 60 bit BCD string to 50-bit densely packed BCD string
+       */
+      Iop_BCDtoDPB,
+
       /* Conversion I64 -> D64 */
       Iop_ReinterpI64asD64,
 

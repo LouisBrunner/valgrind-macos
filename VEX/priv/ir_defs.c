@@ -982,6 +982,8 @@ void ppIROp ( IROp op )
       case Iop_V256to64_2: vex_printf("V256to64_2"); return;
       case Iop_V256to64_3: vex_printf("V256to64_3"); return;
       case Iop_64x4toV256: vex_printf("64x4toV256"); return;
+      case Iop_DPBtoBCD: vex_printf("Iop_DPBtoBCD"); return;
+      case Iop_BCDtoDPB: vex_printf("Iop_BCDtoDPB"); return;
       default: vpanic("ppIROp(1)");
    }
 
@@ -2715,6 +2717,10 @@ void typeOfPrimop ( IROp op,
 
       case Iop_I64StoD128:    /* I64 bit pattern stored in Float register */
          UNARY(Ity_D64, Ity_D128);
+
+      case Iop_DPBtoBCD:
+      case Iop_BCDtoDPB:
+         UNARY(Ity_I64, Ity_I64);
 
       case Iop_D128HItoD64:
       case Iop_D128LOtoD64:

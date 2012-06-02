@@ -42,6 +42,7 @@
 #include "main_util.h"
 #include "main_globals.h"
 #include "host_generic_regs.h"
+#include "host_generic_simd64.h"
 #include "host_ppc_defs.h"
 
 /* GPR register class for ppc32/64 */
@@ -2002,8 +2003,57 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             add_to_sp( env, 16 );       // Reset SP
             return r_dst;
          } 
-
          break;
+
+      case Iop_BCDtoDPB: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[1];
+         HReg        r_dst  = newVRegI(env);
+         Int         argreg;
+         HWord*      fdescr;
+
+         argiregs = 0;
+         argreg = 0;
+         argregs[0] = hregPPC_GPR3(mode64);
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg++],
+                                     iselWordExpr_R(env, e->Iex.Unop.arg) ) );
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+         fdescr = (HWord*)h_BCDtoDPB;
+         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]), argiregs ) );
+
+         addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
+         return r_dst;
+      }
+
+      case Iop_DPBtoBCD: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[1];
+         HReg        r_dst  = newVRegI(env);
+         Int         argreg;
+         HWord*      fdescr;
+
+         argiregs = 0;
+         argreg = 0;
+         argregs[0] = hregPPC_GPR3(mode64);
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg++],
+                                     iselWordExpr_R(env, e->Iex.Unop.arg) ) );
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+         fdescr = (HWord*)h_DPBtoBCD;
+         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]), argiregs ) );
+
+         addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
+         return r_dst;
+      }
 
       default: 
          break;
@@ -3154,10 +3204,10 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
       }
 
       case Iop_ReinterpD64asI64: {
-	  HReg fr_src  = iselDfp64Expr(env, e->Iex.Unop.arg);
-	  PPCAMode *am_addr0, *am_addr1;
-	  HReg r_dstLo = newVRegI(env);
-	  HReg r_dstHi = newVRegI(env);
+         HReg fr_src  = iselDfp64Expr(env, e->Iex.Unop.arg);
+         PPCAMode *am_addr0, *am_addr1;
+         HReg r_dstLo = newVRegI(env);
+         HReg r_dstHi = newVRegI(env);
 
 
          sub_from_sp( env, 16 );     // Move SP down 16 bytes
@@ -3167,7 +3217,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          // store as D64
          addInstr(env, PPCInstr_FpLdSt( False/*store*/, 8,
                                         fr_src, am_addr0 ));
-         
+
          // load hi,lo as Ity_I32's
          addInstr(env, PPCInstr_Load( 4, r_dstHi,
                                       am_addr0, False/*mode32*/ ));
@@ -3175,9 +3225,86 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                       am_addr1, False/*mode32*/ ));
          *rHi = r_dstHi;
          *rLo = r_dstLo;
-         
+
          add_to_sp( env, 16 );       // Reset SP
 
+         return;
+      }
+
+      case Iop_BCDtoDPB: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[2];
+         Int         argreg;
+         HReg        tLo = newVRegI(env);
+         HReg        tHi = newVRegI(env);
+         HReg        tmpHi;
+         HReg        tmpLo;
+         ULong       target;
+         Bool        mode64 = env->mode64;
+
+         argregs[0] = hregPPC_GPR3(mode64);
+         argregs[1] = hregPPC_GPR4(mode64);
+
+         argiregs = 0;
+         argreg = 0;
+
+         iselInt64Expr( &tmpHi, &tmpLo, env, e->Iex.Unop.arg );
+
+         argiregs |= ( 1 << (argreg+3 ) );
+         addInstr( env, mk_iMOVds_RR( argregs[argreg++], tmpHi ) );
+
+         argiregs |= ( 1 << (argreg+3 ) );
+         addInstr( env, mk_iMOVds_RR( argregs[argreg], tmpLo ) );
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+         target = toUInt( Ptr_to_ULong(h_BCDtoDPB ) );
+
+         addInstr( env, PPCInstr_Call( cc, (Addr64)target, argiregs ) );
+         addInstr( env, mk_iMOVds_RR( tHi, argregs[argreg-1] ) );
+         addInstr( env, mk_iMOVds_RR( tLo, argregs[argreg] ) );
+
+         *rHi = tHi;
+         *rLo = tLo;
+         return;
+      }
+
+      case Iop_DPBtoBCD: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[2];
+         Int         argreg;
+         HReg        tLo = newVRegI(env);
+         HReg        tHi = newVRegI(env);
+         HReg        tmpHi;
+         HReg        tmpLo;
+         ULong       target;
+         Bool        mode64 = env->mode64;
+
+         argregs[0] = hregPPC_GPR3(mode64);
+         argregs[1] = hregPPC_GPR4(mode64);
+
+         argiregs = 0;
+         argreg = 0;
+
+         iselInt64Expr(&tmpHi, &tmpLo, env, e->Iex.Unop.arg);
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg++], tmpHi ));
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg], tmpLo));
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+         target = toUInt( Ptr_to_ULong( h_DPBtoBCD ) );
+
+         addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs ) );
+         addInstr(env, mk_iMOVds_RR(tHi, argregs[argreg-1]));
+         addInstr(env, mk_iMOVds_RR(tLo, argregs[argreg]));
+
+         *rHi = tHi;
+         *rLo = tLo;
          return;
       }
 
@@ -4089,7 +4216,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          HReg r_dstLo = newVRegF(env);
          HReg r_srcHi = newVRegF(env);
          HReg r_srcLo = newVRegF(env);
-         PPCRI* rmc = iselWordExpr_RI(env, e->Iex.Binop.arg1);
+         PPCRI* rmc = iselWordExpr_RI(env, triop->arg1);
 
          /* dst will be used to pass in the left operand and get the result */
          iselDfp128Expr(&r_dstHi, &r_dstLo, env, triop->arg2);

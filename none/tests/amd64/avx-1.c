@@ -1,12 +1,6 @@
 
 /* The following tests appear not to be accepted by the assembler.
       VCVTPD2PS_128 (memory form)
-
-   The following tests currently fail and are disabled:
-      VCMPSD_128_0xD
-      VCMPSS_128_0xD
-      VEXTRACTF128_0x0
-      VEXTRACTF128_0x1
 */
 
 #include <stdio.h>
@@ -466,9 +460,17 @@ GEN_test_RandM(VMOVAPS_GtoE_128,
                "vmovaps %%xmm9,  %%xmm6",
                "vmovaps %%xmm7, (%%rax)")
 
+GEN_test_RandM(VMOVAPS_GtoE_256,
+               "vmovaps %%ymm9,  %%ymm6",
+               "vmovaps %%ymm7, (%%rax)")
+
 GEN_test_RandM(VMOVAPD_GtoE_128,
                "vmovapd %%xmm9,  %%xmm6",
                "vmovapd %%xmm7, (%%rax)")
+
+GEN_test_RandM(VMOVAPD_GtoE_256,
+               "vmovapd %%ymm9,  %%ymm6",
+               "vmovapd %%ymm7, (%%rax)")
 
 GEN_test_RandM(VMOVDQU_EtoG_128,
                "vmovdqu %%xmm6,  %%xmm8",
@@ -645,6 +647,23 @@ GEN_test_RandM(VUCOMISS_128,
    "vucomiss %%xmm6,  %%xmm8; pushfq; popq %%r14; andq $0x8D5, %%r14",
    "vucomiss (%%rax), %%xmm8; pushfq; popq %%r14; andq $0x8D5, %%r14")
 
+GEN_test_RandM(VPINSRQ_128,
+               "vpinsrq $0, %%r14,   %%xmm8, %%xmm7",
+               "vpinsrq $1, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPADDQ_128,
+               "vpaddq %%xmm6,  %%xmm8, %%xmm7",
+               "vpaddq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPSUBQ_128,
+               "vpsubq %%xmm6,  %%xmm8, %%xmm7",
+               "vpsubq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPSUBW_128,
+               "vpsubw %%xmm6,  %%xmm8, %%xmm7",
+               "vpsubw (%%rax), %%xmm8, %%xmm7")
+
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -654,6 +673,10 @@ GEN_test_RandM(VUCOMISS_128,
 
 int main ( void )
 {
+   test_VPSUBW_128();
+   test_VPSUBQ_128();
+   test_VPADDQ_128();
+   test_VPINSRQ_128();
    test_VUCOMISS_128();
    test_VUCOMISD_128();
    test_VCVTPS2PD_128();
@@ -700,7 +723,9 @@ int main ( void )
    test_VMOVDQA_EtoG_128();
    test_VMOVDQU_EtoG_128();
    test_VMOVAPD_GtoE_128();
+   test_VMOVAPD_GtoE_256();
    test_VMOVAPS_GtoE_128();
+   test_VMOVAPS_GtoE_256();
    test_VMOVAPS_EtoG_128();
    test_VMOVAPD_EtoG_256();
    test_VMOVAPD_EtoG_128();

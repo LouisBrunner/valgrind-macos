@@ -9,7 +9,7 @@ test(int64_t op1_init, int64_t op2_init, int64_t op3_init, int expected_cc)
    register int64_t op3 asm("9") = op3_init;
    
    int64_t op2 = op2_init;
-   int cc = 1; 
+   int cc = 1 - expected_cc; 
 
    printf("before op1 = %#lx\n", op1);
    printf("before op2 = %#lx\n", op2);

@@ -2,27 +2,8 @@
 Cleanups
 ~~~~~~~~
 
-FXSAVE/FXRSTOR: can no longer say (w.r.t the guest state
-effects declaration) that the SSE regs are written/read
-in one single block.  Instead need to make a declaration
-for each bottom-half independently :-(
+* convert none/tests/amd64/avx-1.c into a proper test
 
-in fact, re-check everything that assumes the XMM regs form
-an array, because they no longer do.  Done: PCMPISTRI et al,
-Also AESENC et al.
-
-* guest state alignment, all targets -- will probably fail now
-
-* FXSAVE/FXRSTOR on amd64, as noted above
-
-* tools other than memcheck -- now fail w/ AVX insns
-
-* remove regclass HRc256
-
-* disable Avx insns in backend (or rm this code, will we
-  ever need it?)
-
-* change amd64 getAllocableRegs back to what it was originally
-  [DONE]
-
-* fix up none/tests/amd64/avx-1.c
+* can dis_AVX128_E_V_to_G be replaced by some variant of
+  dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple ?  Seems like the former is
+  merely a subset of the latter.

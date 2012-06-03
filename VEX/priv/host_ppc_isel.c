@@ -2621,7 +2621,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
                                     7/*cr*/, tmp,PPCRH_Imm(False,0)));
          return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
       } else {  // mode64
-         HReg r_src = iselWordExpr_R(env, e->Iex.Binop.arg1);
+         HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, PPCInstr_Cmp(False/*sign*/, False/*64bit cmp*/,
                                     7/*cr*/, r_src,PPCRH_Imm(False,0)));
          return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
@@ -4377,7 +4377,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Dup8x16:
       case Iop_Dup16x8:
       case Iop_Dup32x4:
-         return mk_AvDuplicateRI(env, e->Iex.Binop.arg1);
+         return mk_AvDuplicateRI(env, e->Iex.Unop.arg);
 
       default:
          break;

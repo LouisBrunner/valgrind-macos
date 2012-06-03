@@ -663,6 +663,14 @@ GEN_test_RandM(VPSUBW_128,
                "vpsubw %%xmm6,  %%xmm8, %%xmm7",
                "vpsubw (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VMOVUPD_GtoE_256,
+               "vmovupd %%ymm9,  %%ymm6",
+               "vmovupd %%ymm7, (%%rax)")
+
+GEN_test_RandM(VMOVUPD_EtoG_256,
+               "vmovupd %%ymm6,  %%ymm9",
+               "vmovupd (%%rax), %%ymm7")
+
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -673,6 +681,8 @@ GEN_test_RandM(VPSUBW_128,
 
 int main ( void )
 {
+   test_VMOVUPD_EtoG_256();
+   test_VMOVUPD_GtoE_256();
    test_VPSUBW_128();
    test_VPSUBQ_128();
    test_VPADDQ_128();

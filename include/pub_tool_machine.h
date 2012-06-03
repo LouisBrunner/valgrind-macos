@@ -152,6 +152,12 @@ extern SizeT VG_(thread_get_altstack_size) ( ThreadId tid );
 // ppc64-linux it isn't (sigh).
 extern void* VG_(fnptr_to_fnentry)( void* );
 
+/* Returns the size of the largest guest register that we will
+   simulate in this run.  This depends on both the guest architecture
+   and on the specific capabilities we are simulating for that guest
+   (eg, AVX or non-AVX ?, for amd64). */
+extern Int VG_(machine_get_size_of_largest_guest_register) ( void );
+
 #endif   // __PUB_TOOL_MACHINE_H
 
 /*--------------------------------------------------------------------*/

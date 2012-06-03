@@ -70,6 +70,12 @@ static Bool  clo_branch_sim = False; /* do branch simulation? */
 static Char* clo_cachegrind_out_file = "cachegrind.out.%p";
 
 /*------------------------------------------------------------*/
+/*--- Cachesim configuration                               ---*/
+/*------------------------------------------------------------*/
+
+static Int min_line_size = 0; /* min of L1 and LL cache line sizes */
+
+/*------------------------------------------------------------*/
 /*--- Types and Data Structures                            ---*/
 /*------------------------------------------------------------*/
 
@@ -846,7 +852,7 @@ void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
    Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
    if (!clo_cache_sim)
       return;
    if (cgs->events_used == N_EVENTS)
@@ -868,7 +874,7 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    Event* evt;
 
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
 
    if (!clo_cache_sim)
       return;
@@ -1058,8 +1064,8 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                // instructions will be done inaccurately, but they're
                // very rare and this avoids errors from hitting more
                // than two cache lines in the simulation.
-               if (dataSize > MIN_LINE_SIZE)
-                  dataSize = MIN_LINE_SIZE;
+               if (dataSize > min_line_size)
+                  dataSize = min_line_size;
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
                   addEvent_Dr( &cgs, curr_inode, dataSize, d->mAddr );
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
@@ -1085,8 +1091,8 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
             if (cas->dataHi != NULL)
                dataSize *= 2; /* since it's a doubleword-CAS */
             /* I don't think this can ever happen, but play safe. */
-            if (dataSize > MIN_LINE_SIZE)
-               dataSize = MIN_LINE_SIZE;
+            if (dataSize > min_line_size)
+               dataSize = min_line_size;
             addEvent_Dr( &cgs, curr_inode, dataSize, cas->addr );
             addEvent_Dw( &cgs, curr_inode, dataSize, cas->addr );
             break;
@@ -1723,6 +1729,26 @@ static void cg_post_clo_init(void)
                                        &clo_I1_cache,
                                        &clo_D1_cache,
                                        &clo_LL_cache);
+
+   // min_line_size is used to make sure that we never feed
+   // accesses to the simulator straddling more than two
+   // cache lines at any cache level
+   min_line_size = (I1c.line_size < D1c.line_size) ? I1c.line_size : D1c.line_size;
+   min_line_size = (LLc.line_size < min_line_size) ? LLc.line_size : min_line_size;
+
+   Int largest_load_or_store_size
+      = VG_(machine_get_size_of_largest_guest_register)();
+   if (min_line_size < largest_load_or_store_size) {
+      /* We can't continue, because the cache simulation might
+         straddle more than 2 lines, and it will assert.  So let's
+         just stop before we start. */
+      VG_(umsg)("Cachegrind: cannot continue: the minimum line size (%d)\n",
+                (Int)min_line_size);
+      VG_(umsg)("  must be equal to or larger than the maximum register size (%d)\n",
+                largest_load_or_store_size );
+      VG_(umsg)("  but it is not.  Exiting now.\n");
+      VG_(exit)(1);
+   }
 
    cachesim_I1_initcache(I1c);
    cachesim_D1_initcache(D1c);

@@ -367,7 +367,7 @@ SizeT VG_(thread_get_altstack_size)(ThreadId tid)
 static Bool hwcaps_done = False;
 
 /* --- all archs --- */
-static VexArch     va;
+static VexArch     va = VexArch_INVALID;
 static VexArchInfo vai;
 
 #if defined(VGA_x86)
@@ -1313,6 +1313,66 @@ void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
    vg_assert(hwcaps_done);
    if (pVa)  *pVa  = va;
    if (pVai) *pVai = vai;
+}
+
+
+/* Returns the size of the largest guest register that we will
+   simulate in this run.  This depends on both the guest architecture
+   and on the specific capabilities we are simulating for that guest
+   (eg, AVX or non-AVX ?, for amd64).  Should return either 4, 8, 16
+   or 32.  General rule: if in doubt, return a value larger than
+   reality.
+
+   This information is needed by Cachegrind and Callgrind to decide
+   what the minimum cache line size they are prepared to simulate is.
+   Basically require that the minimum cache line size is at least as
+   large as the largest register that might get transferred to/from
+   memory, so as to guarantee that any such transaction can straddle
+   at most 2 cache lines.
+*/
+Int VG_(machine_get_size_of_largest_guest_register) ( void )
+{
+   vg_assert(hwcaps_done);
+   /* Once hwcaps_done is True, we can fish around inside va/vai to
+      find the information we need. */
+
+#  if defined(VGA_x86)
+   vg_assert(va == VexArchX86);
+   /* We don't support AVX, so 32 is out.  At the other end, even if
+      we don't support any SSE, the X87 can generate 10 byte
+      transfers, so let's say 16 to be on the safe side.  Hence the
+      answer is always 16. */
+   return 16;
+
+#  elif defined(VGA_amd64)
+   /* if AVX then 32 else 16 */
+   return (vai.hwcaps & VEX_HWCAPS_AMD64_AVX) ? 32 : 16;
+
+#  elif defined(VGA_ppc32)
+   /* 8 if boring; 16 if signs of Altivec or other exotic stuff */
+   if (vai.hwcaps & VEX_HWCAPS_PPC32_V) return 16;
+   if (vai.hwcaps & VEX_HWCAPS_PPC32_VX) return 16;
+   if (vai.hwcaps & VEX_HWCAPS_PPC32_DFP) return 16;
+   return 8;
+
+#  elif defined(VGA_ppc64)
+   /* 8 if boring; 16 if signs of Altivec or other exotic stuff */
+   if (vai.hwcaps & VEX_HWCAPS_PPC64_V) return 16;
+   if (vai.hwcaps & VEX_HWCAPS_PPC64_VX) return 16;
+   if (vai.hwcaps & VEX_HWCAPS_PPC64_DFP) return 16;
+   return 8;
+
+#  elif defined(VGA_s390x)
+   return 8;
+
+#  elif defined(VGA_arm)
+   /* Really it depends whether or not we have NEON, but let's just
+      assume we always do. */
+   return 16;
+
+#  else
+#    error "Unknown arch"
+#  endif
 }
 
 

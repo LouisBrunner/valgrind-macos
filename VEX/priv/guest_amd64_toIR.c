@@ -19831,6 +19831,23 @@ Long dis_ESC_0F__VEX (
          delta += alen;
          goto decode_success;
       }
+      /* VMOVUPD ymm2/m256, ymm1 = VEX.256.66.0F.WIG 10 /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx, modrm);
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx,modrm);
+            putYMMReg( rG, getYMMReg( rE ));
+            DIP("vmovupd %s,%s\n", nameYMMReg(rE), nameYMMReg(rG));
+            delta += 1;
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            putYMMReg( rG, loadLE(Ity_V256, mkexpr(addr)) );
+            DIP("vmovupd %s,%s\n", dis_buf, nameYMMReg(rG));
+            delta += alen;
+         }
+         goto decode_success;
+      }
       break;
 
    case 0x11:
@@ -19888,6 +19905,23 @@ Long dis_ESC_0F__VEX (
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
             storeLE( mkexpr(addr), getXMMReg(rG) );
             DIP("vmovups %s,%s\n", nameXMMReg(rG), dis_buf);
+            delta += alen;
+         }
+         goto decode_success;
+      }
+      /* VMOVUPD ymm1, ymm2/m256 = VEX.256.66.0F.WIG 11 /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx,modrm);
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx,modrm);
+            putYMMReg( rE, getYMMReg(rG) );
+            DIP("vmovupd %s,%s\n", nameYMMReg(rG), nameYMMReg(rE));
+            delta += 1;
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            storeLE( mkexpr(addr), getYMMReg(rG) );
+            DIP("vmovupd %s,%s\n", nameYMMReg(rG), dis_buf);
             delta += alen;
          }
          goto decode_success;

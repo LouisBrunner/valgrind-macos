@@ -827,6 +827,8 @@ extern EventMapping* CLG_(dumpmap);
 /* Function active counter array, indexed by function number */
 extern UInt* CLG_(fn_active_array);
 extern Bool CLG_(instrument_state);
+ /* min of L1 and LL cache line sizes */
+extern Int CLG_(min_line_size);
 
 extern call_stack CLG_(current_call_stack);
 extern fn_stack   CLG_(current_fn_stack);

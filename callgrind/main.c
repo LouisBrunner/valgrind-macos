@@ -52,6 +52,10 @@ Bool CLG_(instrument_state) = True; /* Instrumentation on ? */
 /* thread and signal handler specific */
 exec_state CLG_(current_state);
 
+/* min of L1 and LL cache line sizes.  This only gets set to a
+   non-zero value if we are doing cache simulation. */
+Int CLG_(min_line_size) = 0;
+
 
 /*------------------------------------------------------------*/
 /*--- Statistics                                           ---*/
@@ -613,8 +617,9 @@ void addEvent_Dr ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
    Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1);
    if (!CLG_(clo).simulate_cache) return;
+   tl_assert(datasize <= CLG_(min_line_size));
 
    if (clgs->events_used == N_EVENTS)
       flushEvents(clgs);
@@ -634,8 +639,9 @@ void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    Event* lastEvt;
    Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1);
    if (!CLG_(clo).simulate_cache) return;
+   tl_assert(datasize <= CLG_(min_line_size));
 
    /* Is it possible to merge this write with the preceding read? */
    lastEvt = &clgs->events[clgs->events_used-1];
@@ -1027,8 +1033,8 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	       // instructions will be done inaccurately, but they're
 	       // very rare and this avoids errors from hitting more
 	       // than two cache lines in the simulation.
-	       if (dataSize > MIN_LINE_SIZE)
-		  dataSize = MIN_LINE_SIZE;
+	       if (CLG_(clo).simulate_cache && dataSize > CLG_(min_line_size))
+		  dataSize = CLG_(min_line_size);
 	       if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
 		  addEvent_Dr( &clgs, curr_inode, dataSize, d->mAddr );
 	       if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)

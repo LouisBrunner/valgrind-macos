@@ -1307,6 +1307,28 @@ static void cachesim_post_clo_init(void)
   D1.name = "D1";
   LL.name = "LL";
 
+  // min_line_size is used to make sure that we never feed
+  // accesses to the simulator straddling more than two
+  // cache lines at any cache level
+  CLG_(min_line_size) = (I1c.line_size < D1c.line_size)
+                           ? I1c.line_size : D1c.line_size;
+  CLG_(min_line_size) = (LLc.line_size < CLG_(min_line_size))
+                           ? LLc.line_size : CLG_(min_line_size);
+
+  Int largest_load_or_store_size
+     = VG_(machine_get_size_of_largest_guest_register)();
+  if (CLG_(min_line_size) < largest_load_or_store_size) {
+     /* We can't continue, because the cache simulation might
+        straddle more than 2 lines, and it will assert.  So let's
+        just stop before we start. */
+     VG_(umsg)("Callgrind: cannot continue: the minimum line size (%d)\n",
+               (Int)CLG_(min_line_size));
+     VG_(umsg)("  must be equal to or larger than the maximum register size (%d)\n",
+               largest_load_or_store_size );
+     VG_(umsg)("  but it is not.  Exiting now.\n");
+     VG_(exit)(1);
+  }
+
   cachesim_initcache(I1c, &I1);
   cachesim_initcache(D1c, &D1);
   cachesim_initcache(LLc, &LL);

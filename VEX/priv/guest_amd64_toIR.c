@@ -19602,31 +19602,10 @@ static Long dis_AVX128_E_V_to_G ( /*OUT*/Bool* uses_vvvv,
                                   Prefix pfx, Long delta, 
                                   HChar* opname, IROp op )
 {
-   HChar   dis_buf[50];
-   Int     alen;
-   IRTemp  addr;
-   UChar   rm    = getUChar(delta);
-   UInt    rG    = gregOfRexRM(pfx,rm);
-   UInt    rV    = getVexNvvvv(pfx);
-   IRExpr* vpart = getXMMReg(rV);
-   IRExpr* epart = NULL;
-   if (epartIsReg(rm)) {
-      UInt rE = eregOfRexRM(pfx,rm);
-      epart = getXMMReg(rE);
-      DIP("%s %s,%s,%s\n", opname,
-          nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
-      delta = delta+1;
-   } else {
-      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-      epart = loadLE(Ity_V128, mkexpr(addr));
-      DIP("%s %s,%s,%s\n", opname,
-          dis_buf, nameXMMReg(rV), nameXMMReg(rG));
-      delta = delta+alen;
-   }
-
-   putYMMRegLoAndZU( rG, binop(op, vpart, epart) );
-   *uses_vvvv = True;
-   return delta;
+   return dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
+             uses_vvvv, vbi, pfx, delta, opname, op,
+             NULL, False/*!invertLeftArg*/, False/*!swapArgs*/
+   );
 }
 
 

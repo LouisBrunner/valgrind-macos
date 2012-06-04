@@ -12,6 +12,11 @@
 // - 2 if the asked-for feature isn't recognised (this will be the case for
 //     any feature if run on a non-x86/AMD64 machine).
 // - 3 if there was a usage error (it also prints an error message).
+// viz:
+#define FEATURE_PRESENT       0
+#define FEATURE_NOT_PRESENT   1
+#define UNRECOGNISED_FEATURE  2
+
 
 #define False  0
 #define True   1
@@ -42,11 +47,31 @@ static Bool vendorStringEquals ( char* str )
    return 0 == strcmp(vstr, str);
 }
 
+static Bool have_xgetbv ( void )
+{
+#if defined(VGA_amd64)
+   unsigned long long int w;
+   __asm__ __volatile__("movq $0,%%rcx ; "
+                        ".byte 0x0F,0x01,0xD0 ; " /* xgetbv */
+                        "movq %%rax,%0"
+                        :/*OUT*/"=r"(w) :/*IN*/
+                        :/*TRASH*/"rdx","rcx");
+   if ((w & 6) == 6) {
+      /* OS has enabled both XMM and YMM state support */
+      return True;
+   } else {
+      return False;
+   }
+#else
+   return False;
+#endif
+}
+
 static Bool go(char* cpu)
 { 
    unsigned int level = 0, cmask = 0, dmask = 0, a, b, c, d;
    Bool require_amd = False;
-
+   Bool require_xgetbv = False;
    if        ( strcmp( cpu, "x86-fpu" ) == 0 ) {
      level = 1;
      dmask = 1 << 0;
@@ -95,16 +120,20 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "amd64-sse42" ) == 0 ) {
      level = 1;
      cmask = 1 << 20;
+   } else if ( strcmp( cpu, "amd64-avx" ) == 0 ) {
+     level = 1;
+     cmask = (1 << 20) | (1 << 28);
+     require_xgetbv = True;
 #endif
    } else {
-     return 2;          // Unrecognised feature.
+     return UNRECOGNISED_FEATURE;
    }
 
    assert( !(cmask != 0 && dmask != 0) );
    assert( !(cmask == 0 && dmask == 0) );
 
    if (require_amd && !vendorStringEquals("AuthenticAMD"))
-      return 1; // Feature not present
+      return FEATURE_NOT_PRESENT;
       // regardless of what that feature actually is
 
    cpuid( level & 0x80000000, &a, &b, &c, &d );
@@ -112,17 +141,28 @@ static Bool go(char* cpu)
    if ( a >= level ) {
       cpuid( level, &a, &b, &c, &d );
 
-      if (dmask > 0 && (d & dmask) != 0) return 0;    // Feature present.
-      if (cmask > 0 && (c & cmask) != 0) return 0;    // Feature present.
+      if (dmask > 0 && (d & dmask) == dmask) {
+         if (require_xgetbv && !have_xgetbv())
+            return FEATURE_NOT_PRESENT;
+         else
+            return FEATURE_PRESENT;
+      }
+      if (cmask > 0 && (c & cmask) == dmask) {
+         if (require_xgetbv && !have_xgetbv())
+            return FEATURE_NOT_PRESENT;
+         else
+            return FEATURE_PRESENT;
+      }
    }
-   return 1;                                          // Feature not present.
+   return FEATURE_NOT_PRESENT;
 }
 
 #else
 
 static Bool go(char* cpu)
 {
-   return 2;      // Feature not recognised (non-x86/AMD64 machine!)
+   // Feature not recognised (non-x86/AMD64 machine!)
+   return UNRECOGNISED_FEATURE;
 }
 
 #endif   // defined(VGA_x86)  || defined(VGA_amd64)

@@ -1635,6 +1635,29 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_SSE42_TESTS, test x$ac_have_as_sse42 = xyes)
 
 
+# does the x86/amd64 assembler understand AVX instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_AVX_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks AVX])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x; 
+   __asm__ __volatile__(
+      "vmovupd (%%rsp), %%ymm7" : : : "xmm7" );
+   __asm__ __volatile__(
+      "vaddpd %%ymm6,%%ymm7,%%ymm8" : : : "xmm6","xmm7","xmm8"); }
+  while (0)
+]])], [
+ac_have_as_avx=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_avx=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_AVX_TESTS, test x$ac_have_as_avx = xyes)
+
+
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
 # when building the tool executables.  I think we should get rid of it.
 #

@@ -13,7 +13,10 @@ if BUILD_SSSE3_TESTS
  INSN_TESTS += insn_ssse3
 endif
 if BUILD_PCLMULQDQ_TESTS
-INSN_TESTS += insn_pclmulqdq
+ INSN_TESTS += insn_pclmulqdq
+endif
+if BUILD_AVX_TESTS
+ INSN_TESTS += avx-1
 endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
@@ -23,6 +26,7 @@ endif
 EXTRA_DIST = \
 	aes.vgtest aes.stdout.exp aes.stderr.exp \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
+	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
@@ -101,6 +105,9 @@ if BUILD_SSE42_TESTS
  check_PROGRAMS += \
 	pcmpstr64 pcmpxstrx64 sse4-64 crc32 aes \
 	pcmpstr64w pcmpxstrx64w
+endif
+if BUILD_AVX_TESTS
+ check_PROGRAMS += avx-1
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

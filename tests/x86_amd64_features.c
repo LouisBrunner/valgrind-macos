@@ -16,6 +16,7 @@
 #define FEATURE_PRESENT       0
 #define FEATURE_NOT_PRESENT   1
 #define UNRECOGNISED_FEATURE  2
+#define USAGE_ERROR           3
 
 
 #define False  0
@@ -147,7 +148,7 @@ static Bool go(char* cpu)
          else
             return FEATURE_PRESENT;
       }
-      if (cmask > 0 && (c & cmask) == dmask) {
+      if (cmask > 0 && (c & cmask) == cmask) {
          if (require_xgetbv && !have_xgetbv())
             return FEATURE_NOT_PRESENT;
          else
@@ -175,7 +176,7 @@ int main(int argc, char **argv)
 {
    if ( argc != 2 ) {
       fprintf( stderr, "usage: x86_amd64_features <feature>\n" );
-      exit(3);                // Usage error.
+      exit(USAGE_ERROR);
    }
    return go(argv[1]);
 }

@@ -10,14 +10,12 @@ endif
 if VGCONF_ARCHS_INCLUDE_AMD64
 SUBDIRS += amd64
 endif
-
 if VGCONF_ARCHS_INCLUDE_PPC32
 SUBDIRS += ppc32
 endif
 if VGCONF_ARCHS_INCLUDE_PPC64
 SUBDIRS += ppc64
 endif
-
 if VGCONF_ARCHS_INCLUDE_S390X
 SUBDIRS += s390x
 endif
@@ -38,7 +36,7 @@ if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 SUBDIRS += amd64-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux darwin x86-linux amd64-linux .
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux darwin x86-linux amd64-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_addressable \

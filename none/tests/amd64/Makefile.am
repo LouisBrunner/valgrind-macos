@@ -15,9 +15,6 @@ endif
 if BUILD_PCLMULQDQ_TESTS
  INSN_TESTS += insn_pclmulqdq
 endif
-if BUILD_AVX_TESTS
- INSN_TESTS += avx-1
-endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
 # to avoid packaging screwups if 'make dist' is run on a machine

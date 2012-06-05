@@ -2,8 +2,4 @@
 Cleanups
 ~~~~~~~~
 
-* convert none/tests/amd64/avx-1.c into a proper test
-
-* can dis_AVX128_E_V_to_G be replaced by some variant of
-  dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple ?  Seems like the former is
-  merely a subset of the latter.
+(none at present)

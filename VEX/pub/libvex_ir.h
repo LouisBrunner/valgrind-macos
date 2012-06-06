@@ -1487,8 +1487,8 @@ typedef IRCmpF64Result IRCmpF128Result;
 
 /* ------------------ Expressions ------------------ */
 
-typedef struct _IRQop IRQop;   /* forward declaration */
-typedef struct _IRQop IRTriop; /* forward declaration */
+typedef struct _IRQop   IRQop;   /* forward declaration */
+typedef struct _IRTriop IRTriop; /* forward declaration */
 
 
 /* The different kinds of expressions.  Their meaning is explained below

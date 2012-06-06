@@ -9903,6 +9903,116 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
    return "csg";
 }
 
+/* Implementation for 32-bit compare-double-and-swap */
+static void
+s390_irgen_cdas_32(UChar r1, UChar r3, IRTemp op2addr)
+{
+   IRCAS *cas;
+   IRTemp op1_high = newTemp(Ity_I32);
+   IRTemp op1_low  = newTemp(Ity_I32);
+   IRTemp old_mem_high = newTemp(Ity_I32);
+   IRTemp old_mem_low  = newTemp(Ity_I32);
+   IRTemp op3_high = newTemp(Ity_I32);
+   IRTemp op3_low  = newTemp(Ity_I32);
+   IRTemp result = newTemp(Ity_I32);
+   IRTemp nequal = newTemp(Ity_I1);
+
+   assign(op1_high, get_gpr_w1(r1));
+   assign(op1_low,  get_gpr_w1(r1+1));
+   assign(op3_high, get_gpr_w1(r3));
+   assign(op3_low,  get_gpr_w1(r3+1));
+
+   /* The first and second operands are compared. If they are equal,
+      the third operand is stored at the second-operand location. */
+   cas = mkIRCAS(old_mem_high, old_mem_low,
+                 Iend_BE, mkexpr(op2addr),
+                 mkexpr(op1_high), mkexpr(op1_low), /* expected value */
+                 mkexpr(op3_high), mkexpr(op3_low)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* Set CC. Operands compared equal -> 0, else 1. */
+   assign(result, unop(Iop_1Uto32,
+          binop(Iop_CmpNE32,
+                binop(Iop_Or32,
+                      binop(Iop_Xor32, mkexpr(op1_high), mkexpr(old_mem_high)),
+                      binop(Iop_Xor32, mkexpr(op1_low), mkexpr(old_mem_low))),
+                mkU32(0))));
+
+   s390_cc_thunk_put1(S390_CC_OP_BITWISE, result, False);
+
+   /* If operands were equal (cc == 0) just store the old value op1 in r1.
+      Otherwise, store the old_value from memory in r1 and yield. */
+   assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
+   put_gpr_w1(r1,   mkite(mkexpr(nequal), mkexpr(old_mem_high), mkexpr(op1_high)));
+   put_gpr_w1(r1+1, mkite(mkexpr(nequal), mkexpr(old_mem_low),  mkexpr(op1_low)));
+   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
+}
+
+static HChar *
+s390_irgen_CDS(UChar r1, UChar r3, IRTemp op2addr)
+{
+   s390_irgen_cdas_32(r1, r3, op2addr);
+
+   return "cds";
+}
+
+static HChar *
+s390_irgen_CDSY(UChar r1, UChar r3, IRTemp op2addr)
+{
+   s390_irgen_cdas_32(r1, r3, op2addr);
+
+   return "cdsy";
+}
+
+static HChar *
+s390_irgen_CDSG(UChar r1, UChar r3, IRTemp op2addr)
+{
+   IRCAS *cas;
+   IRTemp op1_high = newTemp(Ity_I64);
+   IRTemp op1_low  = newTemp(Ity_I64);
+   IRTemp old_mem_high = newTemp(Ity_I64);
+   IRTemp old_mem_low  = newTemp(Ity_I64);
+   IRTemp op3_high = newTemp(Ity_I64);
+   IRTemp op3_low  = newTemp(Ity_I64);
+   IRTemp result = newTemp(Ity_I64);
+   IRTemp nequal = newTemp(Ity_I1);
+
+   assign(op1_high, get_gpr_dw0(r1));
+   assign(op1_low,  get_gpr_dw0(r1+1));
+   assign(op3_high, get_gpr_dw0(r3));
+   assign(op3_low,  get_gpr_dw0(r3+1));
+
+   /* The first and second operands are compared. If they are equal,
+      the third operand is stored at the second-operand location. */
+   cas = mkIRCAS(old_mem_high, old_mem_low,
+                 Iend_BE, mkexpr(op2addr),
+                 mkexpr(op1_high), mkexpr(op1_low), /* expected value */
+                 mkexpr(op3_high), mkexpr(op3_low)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* Set CC. Operands compared equal -> 0, else 1. */
+   assign(result, unop(Iop_1Uto64,
+          binop(Iop_CmpNE64,
+                binop(Iop_Or64,
+                      binop(Iop_Xor64, mkexpr(op1_high), mkexpr(old_mem_high)),
+                      binop(Iop_Xor64, mkexpr(op1_low), mkexpr(old_mem_low))),
+                mkU64(0))));
+
+   s390_cc_thunk_put1(S390_CC_OP_BITWISE, result, False);
+
+   /* If operands were equal (cc == 0) just store the old value op1 in r1.
+      Otherwise, store the old_value from memory in r1 and yield. */
+   assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
+   put_gpr_dw0(r1,   mkite(mkexpr(nequal), mkexpr(old_mem_high), mkexpr(op1_high)));
+   put_gpr_dw0(r1+1, mkite(mkexpr(nequal), mkexpr(old_mem_low),  mkexpr(op1_low)));
+   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
+   return "cdsg";
+}
+
 
 /* Binary floating point */
 
@@ -12189,7 +12299,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb7: /* LCTL */ goto unimplemented;
    case 0xba: s390_format_RS_RRRD(s390_irgen_CS, ovl.fmt.RS.r1, ovl.fmt.RS.r3,
                                   ovl.fmt.RS.b2, ovl.fmt.RS.d2);  goto ok;
-   case 0xbb: /* CDS */ goto unimplemented;
+   case 0xbb: s390_format_RS_RRRD(s390_irgen_CDS, ovl.fmt.RS.r1, ovl.fmt.RS.r3,
+                                  ovl.fmt.RS.b2, ovl.fmt.RS.d2);  goto ok;
    case 0xbd: s390_format_RS_RURD(s390_irgen_CLM, ovl.fmt.RS.r1, ovl.fmt.RS.r3,
                                   ovl.fmt.RS.b2, ovl.fmt.RS.d2);  goto ok;
    case 0xbe: s390_format_RS_RURD(s390_irgen_STCM, ovl.fmt.RS.r1, ovl.fmt.RS.r3,
@@ -12818,8 +12929,14 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
-   case 0xeb0000000031ULL: /* CDSY */ goto unimplemented;
-   case 0xeb000000003eULL: /* CDSG */ goto unimplemented;
+   case 0xeb0000000031ULL: s390_format_RSY_RRRD(s390_irgen_CDSY, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2);  goto ok;
+   case 0xeb000000003eULL: s390_format_RSY_RRRD(s390_irgen_CDSG, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2);  goto ok;
    case 0xeb0000000044ULL: s390_format_RSY_RRRD(s390_irgen_BXHG, ovl.fmt.RSY.r1,
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,

@@ -132,6 +132,7 @@ typedef enum {
    S390_INSN_COMPARE,
    S390_INSN_HELPER_CALL,
    S390_INSN_CAS,    /* compare and swap */
+   S390_INSN_CDAS,   /* compare double and swap */
    S390_INSN_BFP_BINOP, /* Binary floating point 32-bit / 64-bit */
    S390_INSN_BFP_UNOP,
    S390_INSN_BFP_TRIOP,
@@ -343,6 +344,16 @@ typedef struct {
          HReg        op3;
          HReg        old_mem;
       } cas;
+      struct {
+         HReg        op1_high;
+         HReg        op1_low;
+         s390_amode *op2;
+         HReg        op3_high;
+         HReg        op3_low;
+         HReg        old_mem_high;
+         HReg        old_mem_low;
+         HReg        scratch;
+      } cdas;
       /* Pseudo-insn for representing a helper call.
          TARGET is the absolute address of the helper function
          NUM_ARGS says how many arguments are being passed.
@@ -466,6 +477,9 @@ s390_insn *s390_insn_clz(UChar size, HReg num_bits, HReg clobber,
                          s390_opnd_RMI op);
 s390_insn *s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3,
                          HReg old);
+s390_insn *s390_insn_cdas(UChar size, HReg op1_high, HReg op1_low,
+                          s390_amode *op2, HReg op3_high, HReg op3_low,
+                          HReg old_high, HReg old_low, HReg scratch);
 s390_insn *s390_insn_unop(UChar size, s390_unop_t tag, HReg dst,
                           s390_opnd_RMI opnd);
 s390_insn *s390_insn_cc2bool(HReg dst, s390_cc_t src);

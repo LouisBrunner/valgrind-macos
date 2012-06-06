@@ -610,6 +610,17 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       addHRegUse(u, HRmWrite,  insn->variant.cas.old_mem);
       break;
 
+   case S390_INSN_CDAS:
+      addHRegUse(u, HRmRead,  insn->variant.cdas.op1_high);
+      addHRegUse(u, HRmRead,  insn->variant.cdas.op1_low);
+      s390_amode_get_reg_usage(u, insn->variant.cas.op2);
+      addHRegUse(u, HRmRead,  insn->variant.cdas.op3_high);
+      addHRegUse(u, HRmRead,  insn->variant.cdas.op3_low);
+      addHRegUse(u, HRmWrite, insn->variant.cdas.old_mem_high);
+      addHRegUse(u, HRmWrite, insn->variant.cdas.old_mem_low);
+      addHRegUse(u, HRmWrite, insn->variant.cdas.scratch);
+      break;
+
    case S390_INSN_COMPARE:
       addHRegUse(u, HRmRead, insn->variant.compare.src1);
       s390_opnd_RMI_get_reg_usage(u, insn->variant.compare.src2);
@@ -837,6 +848,17 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       s390_amode_map_regs(m, insn->variant.cas.op2);
       insn->variant.cas.op3 = lookupHRegRemap(m, insn->variant.cas.op3);
       insn->variant.cas.old_mem = lookupHRegRemap(m, insn->variant.cas.old_mem);
+      break;
+
+   case S390_INSN_CDAS:
+      insn->variant.cdas.op1_high = lookupHRegRemap(m, insn->variant.cdas.op1_high);
+      insn->variant.cdas.op1_low  = lookupHRegRemap(m, insn->variant.cdas.op1_low);
+      s390_amode_map_regs(m, insn->variant.cdas.op2);
+      insn->variant.cdas.op3_high = lookupHRegRemap(m, insn->variant.cdas.op3_high);
+      insn->variant.cdas.op3_low  = lookupHRegRemap(m, insn->variant.cdas.op3_low);
+      insn->variant.cdas.old_mem_high = lookupHRegRemap(m, insn->variant.cdas.old_mem_high);
+      insn->variant.cdas.old_mem_low  = lookupHRegRemap(m, insn->variant.cdas.old_mem_low);
+      insn->variant.cdas.scratch  = lookupHRegRemap(m, insn->variant.cdas.scratch);
       break;
 
    case S390_INSN_COMPARE:
@@ -1570,6 +1592,40 @@ s390_emit_CSG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
       s390_disasm(ENC4(MNM, GPR, GPR, SDXB), "csg", r1, r3, dh2, dl2, 0, b2);
 
    return emit_RSY(p, 0xeb0000000030ULL, r1, r3, b2, dl2, dh2);
+}
+
+
+static UChar *
+s390_emit_CDS(UChar *p, UChar r1, UChar r3, UChar b2, UShort d2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, GPR, UDXB), "cds", r1, r3, d2, 0, b2);
+
+   return emit_RS(p, 0xbb000000, r1, r3, b2, d2);
+}
+
+
+static UChar *
+s390_emit_CDSY(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
+{
+   vassert(s390_host_has_ldisp);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, GPR, SDXB), "cdsy", r1, r3, dh2, dl2, 0, b2);
+
+   return emit_RSY(p, 0xeb0000000031ULL, r1, r3, b2, dl2, dh2);
+}
+
+
+static UChar *
+s390_emit_CDSG(UChar *p, UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
+{
+   vassert(s390_host_has_ldisp || dh2 == 0);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, GPR, SDXB), "cdsg", r1, r3, dh2, dl2, 0, b2);
+
+   return emit_RSY(p, 0xeb000000003eULL, r1, r3, b2, dl2, dh2);
 }
 
 
@@ -4317,6 +4373,32 @@ s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3, HReg old_mem)
 
 
 s390_insn *
+s390_insn_cdas(UChar size, HReg op1_high, HReg op1_low, s390_amode *op2,
+               HReg op3_high, HReg op3_low, HReg old_mem_high, HReg old_mem_low,
+               HReg scratch)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   vassert(size == 4 || size == 8);
+   vassert(op2->x == 0);
+   vassert(hregNumber(scratch) == 1);  /* r0,r1 used as scratch reg pair */
+
+   insn->tag  = S390_INSN_CDAS;
+   insn->size = size;
+   insn->variant.cdas.op1_high = op1_high;
+   insn->variant.cdas.op1_low  = op1_low;
+   insn->variant.cdas.op2 = op2;
+   insn->variant.cdas.op3_high = op3_high;
+   insn->variant.cdas.op3_low  = op3_low;
+   insn->variant.cdas.old_mem_high = old_mem_high;
+   insn->variant.cdas.old_mem_low  = old_mem_low;
+   insn->variant.cdas.scratch = scratch;
+
+   return insn;
+}
+
+
+s390_insn *
 s390_insn_compare(UChar size, HReg src1, s390_opnd_RMI src2,
                   Bool signed_comparison)
 {
@@ -4931,6 +5013,14 @@ s390_insn_as_string(const s390_insn *insn)
       s390_sprintf(buf, "%M %R,%A,%R,%R", "v-cas", insn->variant.cas.op1,
                    insn->variant.cas.op2, insn->variant.cas.op3,
                    insn->variant.cas.old_mem);
+      break;
+
+   case S390_INSN_CDAS:
+      s390_sprintf(buf, "%M %R,%R,%A,%R,%R,%R,%R", "v-cdas",
+                   insn->variant.cdas.op1_high, insn->variant.cdas.op1_low,
+                   insn->variant.cdas.op2, insn->variant.cdas.op3_high,
+                   insn->variant.cdas.op3_low, insn->variant.cdas.old_mem_high,
+                   insn->variant.cdas.old_mem_low);
       break;
 
    case S390_INSN_COMPARE:
@@ -6251,6 +6341,66 @@ s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
       buf = s390_emit_CSG(buf, R0, r3, b, DISP20(d));
       /* Now copy R0 which has the old memory value to OLD */
       return s390_emit_LGR(buf, old, R0);
+
+   default:
+      goto fail;
+   }
+
+ fail:
+   vpanic("s390_insn_cas_emit");
+}
+
+
+/* Only 4-byte and 8-byte operands are handled. */
+static UChar *
+s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
+{
+   UChar r1, r1p1, r3, r3p1, b, old_high, old_low, scratch;
+   Int d;
+   s390_amode *am;
+
+   r1   = hregNumber(insn->variant.cdas.op1_high); /* expected value */
+   r1p1 = hregNumber(insn->variant.cdas.op1_low);  /* expected value */
+   r3   = hregNumber(insn->variant.cdas.op3_high);
+   r3p1 = hregNumber(insn->variant.cdas.op3_low);
+   old_high = hregNumber(insn->variant.cdas.old_mem_high);
+   old_low  = hregNumber(insn->variant.cdas.old_mem_low);
+   scratch  = hregNumber(insn->variant.cdas.scratch);
+   am = insn->variant.cdas.op2;
+   b  = hregNumber(am->b);
+   d  = am->d;
+
+   vassert(scratch == 1);
+
+   switch (insn->size) {
+   case 4:
+      /* r1, r1+1 must not be overwritten. So copy them to R0,scratch
+         and let CDS/CDSY clobber it */
+      buf = s390_emit_LR(buf, R0, r1);
+      buf = s390_emit_LR(buf, scratch, r1p1);
+
+      if (am->tag == S390_AMODE_B12)
+         buf = s390_emit_CDS(buf, R0, r3, b, d);
+      else
+         buf = s390_emit_CDSY(buf, R0, r3, b, DISP20(d));
+
+      /* Now copy R0,scratch which has the old memory value to OLD */
+      buf = s390_emit_LR(buf, old_high, R0);
+      buf = s390_emit_LR(buf, old_low,  scratch);
+      return buf;
+
+   case 8:
+      /* r1, r1+1 must not be overwritten. So copy them to R0,scratch
+         and let CDSG clobber it */
+      buf = s390_emit_LGR(buf, R0, r1);
+      buf = s390_emit_LGR(buf, scratch, r1p1);
+
+      buf = s390_emit_CDSG(buf, R0, r3, b, DISP20(d));
+
+      /* Now copy R0,scratch which has the old memory value to OLD */
+      buf = s390_emit_LGR(buf, old_high, R0);
+      buf = s390_emit_LGR(buf, old_low,  scratch);
+      return buf;
 
    default:
       goto fail;
@@ -7763,6 +7913,10 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_CAS:
       end = s390_insn_cas_emit(buf, insn);
+      break;
+
+   case S390_INSN_CDAS:
+      end = s390_insn_cdas_emit(buf, insn);
       break;
 
    case S390_INSN_COMPARE:

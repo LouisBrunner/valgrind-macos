@@ -2469,7 +2469,45 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          }
          return;
       } else {
-         vpanic("compare double and swap not implemented\n");
+         IRCAS *cas = stmt->Ist.CAS.details;
+         s390_amode *op2 = s390_isel_amode(env,  cas->addr);
+         HReg r8, r9, r10, r11, r1;
+         HReg op3_high = s390_isel_int_expr(env, cas->dataHi);  /* new value */
+         HReg op3_low  = s390_isel_int_expr(env, cas->dataLo);  /* new value */
+         HReg op1_high = s390_isel_int_expr(env, cas->expdHi);  /* expected value */
+         HReg op1_low  = s390_isel_int_expr(env, cas->expdLo);  /* expected value */
+         HReg old_low  = lookupIRTemp(env, cas->oldLo);
+         HReg old_high = lookupIRTemp(env, cas->oldHi);
+
+         /* Use non-virtual registers r8 and r9 as pair for op1
+            and move op1 there */
+         r8 = make_gpr(8);
+         r9 = make_gpr(9);
+         addInstr(env, s390_insn_move(8, r8, op1_high));
+         addInstr(env, s390_insn_move(8, r9, op1_low));
+
+         /* Use non-virtual registers r10 and r11 as pair for op3
+            and move op3 there */
+         r10 = make_gpr(10);
+         r11 = make_gpr(11);
+         addInstr(env, s390_insn_move(8, r10, op3_high));
+         addInstr(env, s390_insn_move(8, r11, op3_low));
+
+         /* Register r1 is used as a scratch register */
+         r1 = make_gpr(1);
+
+         if (typeOfIRTemp(env->type_env, cas->oldLo) == Ity_I32) {
+            addInstr(env, s390_insn_cdas(4, r8, r9, op2, r10, r11,
+                                         old_high, old_low, r1));
+         } else {
+            addInstr(env, s390_insn_cdas(8, r8, r9, op2, r10, r11,
+                                         old_high, old_low, r1));
+         }
+         addInstr(env, s390_insn_move(8, op1_high, r8));
+         addInstr(env, s390_insn_move(8, op1_low,  r9));
+         addInstr(env, s390_insn_move(8, op3_high, r10));
+         addInstr(env, s390_insn_move(8, op3_low,  r11));
+         return;
       }
       break;
 

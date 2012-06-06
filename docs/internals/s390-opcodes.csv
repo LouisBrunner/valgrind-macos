@@ -30,7 +30,7 @@ bxle,"branch on index low or equal",implemented,
 c,compare,implemented,
 cd,"compare (long)","not implemented",
 cdr,"compare (long)","not implemented",
-cds,"compare double and swap","not implemented","open bugzilla"
+cds,"compare double and swap",implemented,
 ce,"compare (short)","not implemented",
 cer,"compare (short)","not implemented",
 cfc,"compare and form codeword","not implemented",
@@ -441,7 +441,7 @@ strag,"store read address",N/A,"privileged instruction"
 stctg,"store control 64",N/A,"privileged instruction"
 lctlg,"load control 64",N/A,"privileged instruction"
 csg,"compare and swap 64",implemented,
-cdsg,"compare double and swap 64","not implemented","open bugzilla"
+cdsg,"compare double and swap 64",implemented,
 clmh,"compare logical characters under mask high",implemented,
 stcmh,"store characters under mask high",implemented,
 icmh,"insert characters under mask high",implemented,
@@ -573,7 +573,7 @@ niy,"and immediate with long offset",implemented,
 ny,"and with long offset",implemented,
 cy,"compare with long offset",implemented,
 csy,"compare and swap with long offset",implemented,
-cdsy,"compare double and swap with long offset","not implemented","open bugzilla"
+cdsy,"compare double and swap with long offset",implemented,
 chy,"compare halfword with long offset",implemented,
 cly,"compare logical with long offset",implemented,
 cliy,"compare logical immediate with long offset",implemented,

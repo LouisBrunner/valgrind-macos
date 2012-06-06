@@ -4940,8 +4940,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_ALU_RSHA: op = "v-rsha"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R,%R,%O", op, insn->variant.alu.dst,
-                   insn->variant.alu.dst   /* op1 same as dst */,
+      s390_sprintf(buf, "%M %R,%O", op, insn->variant.alu.dst, /* also op1 */
                    &insn->variant.alu.op2);
       break;
 
@@ -5057,7 +5056,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_MSUB:  op = "v-fmsub";  break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R,%R,%R,%R", op, insn->variant.bfp_triop.dst,
+      s390_sprintf(buf, "%M %R,%R,%R", op,
                    insn->variant.bfp_triop.dst  /* op1 same as dst */,
                    insn->variant.bfp_triop.op2, insn->variant.bfp_triop.op3);
       break;
@@ -5070,7 +5069,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_DIV:      op = "v-fdiv";  break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R,%R,%R", op, insn->variant.bfp_binop.dst,
+      s390_sprintf(buf, "%M %R,%R", op,
                    insn->variant.bfp_binop.dst  /* op1 same as dst */,
                    insn->variant.bfp_binop.op2);
       break;
@@ -5119,7 +5118,7 @@ s390_insn_as_string(const s390_insn *insn)
       default: goto fail;
       }
       /* Only write the register that identifies the register pair */
-      s390_sprintf(buf, "%M %R,%R,%R", op, insn->variant.bfp128_binop.dst_hi,
+      s390_sprintf(buf, "%M %R,%R", op,
                    insn->variant.bfp128_binop.dst_hi  /* op1 same as dst */,
                    insn->variant.bfp128_binop.op2_hi);
       break;

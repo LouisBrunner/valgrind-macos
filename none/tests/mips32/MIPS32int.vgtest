@@ -1,0 +1,2 @@
+prog: MIPS32int
+vgopts: -q

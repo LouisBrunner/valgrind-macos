@@ -1,0 +1,2 @@
+prog: LoadStore
+vgopts: -q

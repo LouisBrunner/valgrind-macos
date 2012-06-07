@@ -701,9 +701,13 @@ static UChar getIByte(Int delta)
 
 static IRExpr *getIReg(UInt iregNo)
 {
-   IRType ty = mode64 ? Ity_I64 : Ity_I32;
-   vassert(iregNo < 32);
-   return IRExpr_Get(integerGuestRegOffset(iregNo), ty);
+   if (0 == iregNo) {
+      return mode64 ? mkU64(0x0) : mkU32(0x0);
+   } else {
+      IRType ty = mode64 ? Ity_I64 : Ity_I32;
+      vassert(iregNo < 32);
+      return IRExpr_Get(integerGuestRegOffset(iregNo), ty);
+   }
 }
 
 static IRExpr *getHI(void)

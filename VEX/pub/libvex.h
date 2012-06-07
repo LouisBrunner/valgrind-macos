@@ -57,7 +57,8 @@ typedef
       VexArchARM,
       VexArchPPC32,
       VexArchPPC64,
-      VexArchS390X
+      VexArchS390X,
+      VexArchMIPS32
    }
    VexArch;
 
@@ -153,6 +154,22 @@ typedef
 
 /* Get an ARM architecure level from HWCAPS */
 #define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
+
+/* MIPS baseline capability */
+/* Assigned Company values for bits 23:16 of the PRId Register
+   (CP0 register 15, select 0).  As of the MIPS32 and MIPS64 specs from
+   MTI, the PRId register is defined in this (backwards compatible)
+   way:
+
+  +----------------+----------------+----------------+----------------+
+  | Company Options| Company ID     | Processor ID   | Revision       |
+  +----------------+----------------+----------------+----------------+
+   31            24 23            16 15             8 7
+
+*/
+
+#define VEX_PRID_COMP_MIPS      0x00010000
+#define VEX_PRID_COMP_BROADCOM  0x00020000
 
 /* These return statically allocated strings. */
 

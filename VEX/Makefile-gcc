@@ -11,6 +11,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_ppc64.h		\
 		pub/libvex_guest_s390x.h		\
 		pub/libvex_s390x_common.h		\
+		pub/libvex_guest_mips.h			\
 		pub/libvex_guest_offsets.h
 
 PRIV_HEADERS = 	priv/host_x86_defs.h			\
@@ -19,6 +20,7 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/host_ppc_defs.h			\
 		priv/host_s390_defs.h			\
 		priv/host_s390_disasm.h		        \
+		priv/host_mips_defs.h			\
 		priv/host_generic_regs.h	        \
 		priv/host_generic_simd64.h	        \
 		priv/host_generic_simd128.h	        \
@@ -30,6 +32,7 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/guest_amd64_defs.h	               	\
 		priv/guest_arm_defs.h			\
 		priv/guest_ppc_defs.h			\
+		priv/guest_mips_defs.h			\
 		priv/ir_match.h			        \
 		priv/ir_opt.h
 
@@ -44,12 +47,14 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_arm_defs.o			\
 		priv/host_ppc_defs.o			\
 		priv/host_s390_defs.o			\
+		priv/host_mips_defs.o			\
 		priv/host_x86_isel.o			\
 		priv/host_amd64_isel.o			\
 		priv/host_arm_isel.o			\
 		priv/host_ppc_isel.o			\
 		priv/host_s390_isel.o			\
                 priv/host_s390_disasm.o			\
+		priv/host_mips_isel.o			\
 		priv/host_generic_regs.o	        \
 		priv/host_generic_simd64.o	        \
 		priv/host_generic_simd128.o	        \
@@ -61,11 +66,13 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_arm_helpers.o		\
 		priv/guest_ppc_helpers.o		\
 		priv/guest_s390_helpers.o		\
+		priv/guest_mips_helpers.o		\
 		priv/guest_x86_toIR.o			\
 		priv/guest_amd64_toIR.o			\
 		priv/guest_arm_toIR.o			\
 		priv/guest_ppc_toIR.o                   \
-		priv/guest_s390_toIR.o
+		priv/guest_s390_toIR.o			\
+		priv/guest_mips_toIR.o
 
 PUB_INCLUDES = -Ipub
 
@@ -150,6 +157,12 @@ libvex-ppc64-linux.a: TAG-ppc64-linux libvex.a
 TAG-ppc64-linux:
 	if [ ! -f TAG-ppc64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
 	touch TAG-ppc64-linux
+
+libvex-mips-linux.a: TAG-mips32-linux libvex.a
+	mv -f libvex.a libvex-mips32-linux.a
+TAG-mips-linux:
+	if [ ! -f TAG-mips32-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-mips32-linux
 
 libvex-ppc32-aix5.a: TAG-ppc32-aix5 libvex.a
 	mv -f libvex.a libvex-ppc32-aix5.a
@@ -258,6 +271,10 @@ priv/host_s390_defs.o: $(ALL_HEADERS) priv/host_s390_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_defs.o \
 					 -c priv/host_s390_defs.c
 
+priv/host_mips_defs.o: $(ALL_HEADERS) priv/host_mips_defs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_mips_defs.o \
+					 -c priv/host_mips_defs.c
+
 priv/host_x86_isel.o: $(ALL_HEADERS) priv/host_x86_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_x86_isel.o \
 					 -c priv/host_x86_isel.c
@@ -277,6 +294,10 @@ priv/host_ppc_isel.o: $(ALL_HEADERS) priv/host_ppc_isel.c
 priv/host_s390_isel.o: $(ALL_HEADERS) priv/host_s390_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_isel.o \
 					 -c priv/host_s390_isel.c
+
+priv/host_mips_isel.o: $(ALL_HEADERS) priv/host_mips_isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_mips_isel.o \
+					 -c priv/host_mips_isel.c
 
 priv/host_generic_regs.o: $(ALL_HEADERS) priv/host_generic_regs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_regs.o \
@@ -345,3 +366,11 @@ priv/guest_s390_toIR.o: $(ALL_HEADERS) priv/guest_s390_toIR.c
 priv/host_s390_disasm.o: $(ALL_HEADERS) priv/host_s390_disasm.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_disasm.o \
 					 -c priv/host_s390_disasm.c
+
+priv/guest_mips_helpers.o: $(ALL_HEADERS) priv/guest_mips_helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_mips_helpers.o \
+					 -c priv/guest_mips_helpers.c
+
+priv/guest_mips_toIR.o: $(ALL_HEADERS) priv/guest_mips_toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_mips_toIR.o \
+					 -c priv/guest_mips_toIR.c

@@ -41,6 +41,7 @@
 #include "libvex_guest_ppc32.h"
 #include "libvex_guest_ppc64.h"
 #include "libvex_guest_s390x.h"
+#include "libvex_guest_mips32.h"
 
 #include "main_globals.h"
 #include "main_util.h"
@@ -52,6 +53,7 @@
 #include "host_ppc_defs.h"
 #include "host_arm_defs.h"
 #include "host_s390_defs.h"
+#include "host_mips_defs.h"
 
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
@@ -59,6 +61,7 @@
 #include "guest_arm_defs.h"
 #include "guest_ppc_defs.h"
 #include "guest_s390_defs.h"
+#include "guest_mips_defs.h"
 
 #include "host_generic_simd128.h"
 
@@ -395,6 +398,30 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_host.hwcaps));
          break;
 
+      case VexArchMIPS32:
+         mode64      = False;
+         getAllocableRegs_MIPS ( &n_available_real_regs,
+                                &available_real_regs, mode64 );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_MIPSInstr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_MIPSInstr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_MIPSInstr;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_MIPS;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_MIPS;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppMIPSInstr;
+         ppReg       = (void(*)(HReg)) ppHRegMIPS;
+         iselSB      = iselSB_MIPS;
+         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
+                               void*,void*,void*,void*))
+                       emit_MIPSInstr;
+#if defined(VKI_LITTLE_ENDIAN)
+         host_is_bigendian = False;
+#elif defined(VKI_BIG_ENDIAN)
+         host_is_bigendian = True;
+#endif
+         host_word_type    = Ity_I32;
+         vassert(are_valid_hwcaps(VexArchMIPS32, vta->archinfo_host.hwcaps));
+         break;
+
       default:
          vpanic("LibVEX_Translate: unsupported host insn set");
    }
@@ -521,6 +548,26 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(sizeof( ((VexGuestARMState*)0)->guest_TISTART) == 4);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_TILEN  ) == 4);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_NRADDR ) == 4);
+         break;
+
+      case VexArchMIPS32:
+         preciseMemExnsFn       = guest_mips32_state_requires_precise_mem_exns;
+         disInstrFn             = disInstr_MIPS;
+         specHelper             = guest_mips32_spechelper;
+         guest_sizeB            = sizeof(VexGuestMIPS32State);
+         guest_word_type        = Ity_I32;
+         guest_layout           = &mips32Guest_layout;
+         offB_TISTART           = offsetof(VexGuestMIPS32State,guest_TISTART);
+         offB_TILEN             = offsetof(VexGuestMIPS32State,guest_TILEN);
+         offB_GUEST_IP          = offsetof(VexGuestMIPS32State,guest_PC);
+         szB_GUEST_IP           = sizeof( ((VexGuestMIPS32State*)0)->guest_PC );
+         offB_HOST_EvC_COUNTER  = offsetof(VexGuestMIPS32State,host_EvC_COUNTER);
+         offB_HOST_EvC_FAILADDR = offsetof(VexGuestMIPS32State,host_EvC_FAILADDR);
+         vassert(are_valid_hwcaps(VexArchMIPS32, vta->archinfo_guest.hwcaps));
+         vassert(0 == sizeof(VexGuestMIPS32State) % 16);
+         vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_TISTART) == 4);
+         vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_TILEN  ) == 4);
+         vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_NRADDR ) == 4);
          break;
 
       default:
@@ -845,6 +892,10 @@ VexInvalRange LibVEX_Chain ( VexArch arch_host,
          return chainXDirect_PPC(place_to_chain,
                                  disp_cp_chain_me_EXPECTED,
                                  place_to_jump_to, True/*mode64*/);
+      case VexArchMIPS32:
+         return chainXDirect_MIPS(place_to_chain,
+                                  disp_cp_chain_me_EXPECTED,
+                                  place_to_jump_to, False/*!mode64*/);
       default:
          vassert(0);
    }
@@ -878,6 +929,10 @@ VexInvalRange LibVEX_UnChain ( VexArch arch_host,
          return unchainXDirect_PPC(place_to_unchain,
                                    place_to_jump_to_EXPECTED,
                                    disp_cp_chain_me, True/*mode64*/);
+      case VexArchMIPS32:
+         return unchainXDirect_MIPS(place_to_unchain,
+                                   place_to_jump_to_EXPECTED,
+                                   disp_cp_chain_me, False/*!mode64*/);
       default:
          vassert(0);
    }
@@ -904,6 +959,8 @@ Int LibVEX_evCheckSzB ( VexArch arch_host )
          case VexArchPPC32:
          case VexArchPPC64:
             cached = evCheckSzB_PPC(); break;
+         case VexArchMIPS32:
+            cached = evCheckSzB_MIPS(); break;
          default:
             vassert(0);
       }
@@ -931,6 +988,9 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
       case VexArchPPC64:
          return patchProfInc_PPC(place_to_patch,
                                  location_of_counter, True/*mode64*/);
+      case VexArchMIPS32:
+         return patchProfInc_MIPS(place_to_patch,
+                                  location_of_counter, False/*!mode64*/);
       default:
          vassert(0);
    }
@@ -983,6 +1043,7 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchPPC32:    return "PPC32";
       case VexArchPPC64:    return "PPC64";
       case VexArchS390X:    return "S390X";
+      case VexArchMIPS32:   return "MIPS32";
       default:              return "VexArch???";
    }
 }
@@ -1217,16 +1278,24 @@ static HChar* show_hwcaps_s390x ( UInt hwcaps )
    return buf;
 }
 
+static HChar* show_hwcaps_mips32 ( UInt hwcaps )
+{
+   if (hwcaps == 0x00010000) return "MIPS-baseline";
+   if (hwcaps == 0x00020000) return "Broadcom-baseline";
+   return NULL;
+}
+
 /* ---- */
 static HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
 {
    switch (arch) {
-      case VexArchX86:   return show_hwcaps_x86(hwcaps);
-      case VexArchAMD64: return show_hwcaps_amd64(hwcaps);
-      case VexArchPPC32: return show_hwcaps_ppc32(hwcaps);
-      case VexArchPPC64: return show_hwcaps_ppc64(hwcaps);
-      case VexArchARM:   return show_hwcaps_arm(hwcaps);
-      case VexArchS390X: return show_hwcaps_s390x(hwcaps);
+      case VexArchX86:    return show_hwcaps_x86(hwcaps);
+      case VexArchAMD64:  return show_hwcaps_amd64(hwcaps);
+      case VexArchPPC32:  return show_hwcaps_ppc32(hwcaps);
+      case VexArchPPC64:  return show_hwcaps_ppc64(hwcaps);
+      case VexArchARM:    return show_hwcaps_arm(hwcaps);
+      case VexArchS390X:  return show_hwcaps_s390x(hwcaps);
+      case VexArchMIPS32: return show_hwcaps_mips32(hwcaps);
       default: return NULL;
    }
 }

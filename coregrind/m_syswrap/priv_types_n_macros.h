@@ -98,6 +98,15 @@ typedef
       Int o_arg6;
       Int uu_arg7;
       Int uu_arg8;
+#     elif defined(VGP_mips32_linux)
+      Int o_arg1;
+      Int o_arg2;
+      Int o_arg3;
+      Int o_arg4;
+      Int s_arg5;
+      Int s_arg6;
+      Int uu_arg7;
+      Int uu_arg8;
 #     elif defined(VGP_x86_darwin)
       Int s_arg1;
       Int s_arg2;
@@ -167,6 +176,16 @@ typedef
    fixed sized table exposed to the caller, but that's too inflexible;
    hence now use a function which can do arbitrary messing around to
    find the required entry. */
+#if defined(VGP_mips32_linux)
+   /* Up to 6 parameters, 4 in registers 2 on stack. */
+#  define PRA1(s,t,a) PRRAn(1,s,t,a)
+#  define PRA2(s,t,a) PRRAn(2,s,t,a)
+#  define PRA3(s,t,a) PRRAn(3,s,t,a)
+#  define PRA4(s,t,a) PRRAn(4,s,t,a)
+#  define PRA5(s,t,a) PSRAn(5,s,t,a)
+#  define PRA6(s,t,a) PSRAn(6,s,t,a)
+
+#endif
 #if defined(VGO_linux)
 extern
 SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
@@ -359,7 +378,16 @@ static inline UWord getERR ( SyscallStatus* st ) {
    PRAn  == "pre-read-argument"
 */
 
-#if defined(VGO_linux)
+#if defined(VGP_mips32_linux)
+   /* Up to 6 parameters, 4 in registers 2 on stack. */
+#  define PRA1(s,t,a) PRRAn(1,s,t,a)
+#  define PRA2(s,t,a) PRRAn(2,s,t,a)
+#  define PRA3(s,t,a) PRRAn(3,s,t,a)
+#  define PRA4(s,t,a) PRRAn(4,s,t,a)
+#  define PRA5(s,t,a) PSRAn(5,s,t,a)
+#  define PRA6(s,t,a) PSRAn(6,s,t,a)
+
+#elif defined(VGO_linux) && !defined(VGP_mips32_linux)
    /* Up to 6 parameters, all in registers. */
 #  define PRA1(s,t,a) PRRAn(1,s,t,a)
 #  define PRA2(s,t,a) PRRAn(2,s,t,a)
@@ -480,6 +508,18 @@ static inline UWord getERR ( SyscallStatus* st ) {
    since the least significant parts of the guest register are stored
    in memory at the highest address.
 */
+#if (defined(VGP_mips32_linux) && defined (_MIPSEB))
+ #define PSRAn_BE(n,s,t,a)                                         \
+    do {                                                           \
+      Addr next = layout->s_arg##n + sizeof(UWord) +              \
+                  VG_(threads)[tid].arch.vex.guest_r29;           \
+      vg_assert(sizeof(t) <= sizeof(UWord));                      \
+      VG_(tdict).track_pre_mem_read(                              \
+         Vg_CoreSysCallArgInMem, tid, s"("#a")",                  \
+         next-sizeof(t), sizeof(t)                                \
+      );                                                          \
+   } while (0)
+#else
 #define PSRAn_BE(n,s,t,a)                                         \
    do {                                                           \
       Addr next = layout->o_arg##n + sizeof(UWord) +              \
@@ -490,6 +530,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
          next-sizeof(t), sizeof(t)                                \
       );                                                          \
    } while (0)
+#endif
 
 #if defined(VG_BIGENDIAN)
 #  define PSRAn(n,s,t,a) PSRAn_BE(n,s,t,a)

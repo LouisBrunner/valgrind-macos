@@ -17,6 +17,7 @@
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
 #undef PLAT_s390x_linux
+#undef PLAT_mips32_linux
 
 #if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
@@ -34,6 +35,8 @@
 #  define PLAT_arm_linux 1
 #elif defined(__linux__) && defined(__s390x__)
 #  define PLAT_s390x_linux 1
+#elif defined(__linux__) && defined(__mips__)
+#  define PLAT_mips32_linux 1
 #endif
 
 
@@ -67,6 +70,22 @@
            : "0", "memory", "cc"                             \
         );                                                   \
      } while (0)
+
+#  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
+      XCHG_M_R(_addr,_lval)
+
+#elif defined(PLAT_mips32_linux) || defined(PLAT_mips64_linux)
+#  define XCHG_M_R(_addr,_lval)                              \
+     __asm__ __volatile__(                                   \
+        "move $12, %2\n"                                     \
+        "move $13, %1\n"                                     \
+        "ll $14, 0($13)\n"                                   \
+        "sc $12, 0($13)\n"                                   \
+        "move %0, $14\n"                                     \
+        : /*out*/ "=r"(_lval)                                \
+        : /*in*/  "r"(&_addr), "r"(_lval)                    \
+        : "$12", "$13", "$14", "memory", "cc"                \
+     )
 
 #  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
       XCHG_M_R(_addr,_lval)

@@ -62,6 +62,7 @@
 
 SysRes VG_(mk_SysRes_x86_linux) ( Int val ) {
    SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (UInt)(-val);
@@ -74,6 +75,7 @@ SysRes VG_(mk_SysRes_x86_linux) ( Int val ) {
 /* Similarly .. */
 SysRes VG_(mk_SysRes_amd64_linux) ( Long val ) {
    SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (ULong)(-val);
@@ -87,6 +89,7 @@ SysRes VG_(mk_SysRes_amd64_linux) ( Long val ) {
 /* Note this must be in the bottom bit of the second arg */
 SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = (cr0so & 1) != 0;
    res._val     = val;
    return res;
@@ -95,6 +98,7 @@ SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
 /* As per ppc32 version, cr0.so must be in l.s.b. of 2nd arg */
 SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = (cr0so & 1) != 0;
    res._val     = val;
    return res;
@@ -102,6 +106,7 @@ SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
 
 SysRes VG_(mk_SysRes_s390x_linux) ( Long val ) {
    SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = -val;
@@ -113,6 +118,7 @@ SysRes VG_(mk_SysRes_s390x_linux) ( Long val ) {
 
 SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
    SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (UInt)(-val);
@@ -122,9 +128,19 @@ SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
    return res;
 }
 
+/* MIPS uses a3 != 0 to flag an error */
+SysRes VG_(mk_SysRes_mips32_linux) ( UWord v0, UWord v1, UWord a3 ) {
+   SysRes res;
+   res._isError = (a3 != (UWord)0);
+   res._val     = v0;
+   res._valEx   = v1;
+   return res;
+}
+
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    SysRes r;
+   r._valEx   = 0; /* unused except on mips-linux */
    r._isError = True;
    r._val     = err;
    return r;
@@ -132,6 +148,7 @@ SysRes VG_(mk_SysRes_Error) ( UWord err ) {
 
 SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    SysRes r;
+   r._valEx   = 0; /* unused except on mips-linux */
    r._isError = False;
    r._val     = res;
    return r;
@@ -575,6 +592,40 @@ static UWord do_syscall_WRK (
    return (UWord) (__svcres);
 }
 
+#elif defined(VGP_mips32_linux)
+/* Incoming args (syscall number + up to 6 args) come in a0 - a3 and stack.
+
+   The syscall number goes in v0.  The args are passed to the syscall in
+   the regs a0 - a3 and stack, i.e. the kernel's syscall calling convention.
+
+   (a3 != 0) flags an error.
+   We return the syscall return value in v0.
+   MIPS version
+*/
+extern int do_syscall_WRK (
+          int a1, int a2, int a3,
+          int a4, int a5, int a6, int syscall_no, UWord *err,
+          UWord *valHi, UWord* valLo
+       );
+asm(
+".globl do_syscall_WRK\n"
+".ent do_syscall_WRK\n"
+".text\n"
+"do_syscall_WRK:\n"   
+"   lw $2, 24($29)\n"    
+"   syscall\n"
+"   lw $8, 28($29)\n" 
+"   sw $7, ($8)\n"
+"   lw $8, 32($29)\n" 
+"   sw $3, ($8)\n"   // store valHi
+"   lw $8, 36($29)\n" 
+"   sw $2, ($8)\n"   // store valLo
+"   jr $31\n"
+"   nop\n"
+".previous\n"
+".end do_syscall_WRK\n"
+);
+
 #else
 #  error Unknown platform
 #endif
@@ -682,6 +733,13 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    }
 
    return VG_(mk_SysRes_s390x_linux)( val );
+
+#elif defined(VGP_mips32_linux)
+   UWord err   = 0;
+   UWord valHi = 0;
+   UWord valLo = 0;
+   (void) do_syscall_WRK(a1,a2,a3,a4,a5,a6, sysno,&err,&valHi,&valLo);
+   return VG_(mk_SysRes_mips32_linux)( valLo, valHi, (ULong)err );
 #else
 #  error Unknown platform
 #endif

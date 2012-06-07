@@ -110,6 +110,48 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       : "+m" (*p), "+m" (dummy)
       : "d" (n)
       : "cc", "memory", "0", "1");
+#elif defined(VGA_mips32)
+#if defined (_MIPSEL)
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "move   $t0, %0"         "\n\t"
+         "lw   $t1, 0($t0)"       "\n\t" // p
+         "lw   $t2, 4($t0)"       "\n\t" // n
+         "ll   $t3, 0($t1)"       "\n\t"
+         "addu   $t3, $t3, $t2"   "\n\t"
+         "andi   $t3, $t3, 0xFF"  "\n\t"
+         "sc   $t3, 0($t1)"       "\n\t"
+         "sw $t3, 8($t0)"         "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
+#elif defined (_MIPSEB)
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "move   $t0, %0"               "\n\t"
+         "lw   $t1, 0($t0)"             "\n\t" // p
+         "lw   $t2, 4($t0)"             "\n\t" // n
+         "li   $t4, 0x000000FF"         "\n\t"
+         "ll   $t3, 0($t1)"             "\n\t"
+         "addu $t3, $t3, $t2"           "\n\t"
+         "and  $t3, $t3, $t4"           "\n\t"
+         "wsbh $t4, $t3"                "\n\t"
+         "rotr $t4, $t4, 16"            "\n\t"
+         "or   $t3, $t4, $t3"           "\n\t"
+         "sc   $t3, 0($t1)"             "\n\t"
+         "sw $t3, 8($t0)"               "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3", "t4"
+      );
+   } while (block[2] != 1);
+#endif
 #else
 # error "Unsupported arch"
 #endif
@@ -203,6 +245,43 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       : "+m" (*p), "+m" (dummy)
       : "d" (n)
       : "cc", "memory", "0", "1");
+#elif defined(VGA_mips32)
+#if defined (_MIPSEL)
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "move   $t0, %0"         "\n\t"
+         "lw   $t1, 0($t0)"       "\n\t" // p
+         "lw   $t2, 4($t0)"       "\n\t" // n
+         "ll   $t3, 0($t1)"       "\n\t"
+         "addu   $t3, $t3, $t2"   "\n\t"
+         "andi   $t3, $t3, 0xFFFF"  "\n\t"
+         "sc   $t3, 0($t1)"       "\n\t"
+         "sw $t3, 8($t0)"         "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
+#elif defined (_MIPSEB)
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "move   $t0, %0"         "\n\t"
+         "lw   $t1, 0($t0)"       "\n\t" // p
+         "li   $t2, 32694"        "\n\t" // n
+         "li   $t3, 0x1"          "\n\t"
+         "sll  $t2, $t2, 16"      "\n\t"
+         "sw   $t2, 0($t1)"       "\n\t"
+         "sw $t3, 8($t0)"         "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
+#endif
 #else
 # error "Unsupported arch"
 #endif
@@ -289,6 +368,23 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
       : "+m" (*p)
       : "d" (n)
       : "cc", "memory", "0", "1");
+#elif defined(VGA_mips32)
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "move   $t0, %0"         "\n\t"
+         "lw   $t1, 0($t0)"       "\n\t" // p
+         "lw   $t2, 4($t0)"       "\n\t" // n
+         "ll   $t3, 0($t1)"       "\n\t"
+         "addu   $t3, $t3, $t2"   "\n\t"
+         "sc   $t3, 0($t1)"       "\n\t"
+         "sw $t3, 8($t0)"         "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
 #else
 # error "Unsupported arch"
 #endif
@@ -296,7 +392,7 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
 
 __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n ) 
 {
-#if defined(VGA_x86) || defined(VGA_ppc32)
+#if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_mips32)
    /* do nothing; is not supported */
 #elif defined(VGA_amd64)
    // this is a bit subtle.  It relies on the fact that, on a 64-bit platform,

@@ -1081,6 +1081,20 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_INSTR_PTR, 8);
    return;
 
+#  elif defined(VGP_mips32_linux)
+   vg_assert(0 == sizeof(VexGuestMIPS32State) % 16);
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestMIPS32_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestMIPS32State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestMIPS32State));
+
+   arch->vex.guest_r29 = iifii.initial_client_SP;
+   arch->vex.guest_PC = iifii.initial_client_IP;
+   arch->vex.guest_r31 = iifii.initial_client_SP;
+
 #  else
 #    error Unknown platform
 #  endif

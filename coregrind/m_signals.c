@@ -516,6 +516,25 @@ typedef struct SigQueue {
         (srP)->misc.S390X.r_lr = (uc)->uc_mcontext.regs.gprs[14];  \
       }
 
+#elif defined(VGP_mips32_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)   ((UWord)(((uc)->uc_mcontext.sc_pc)))
+#  define VG_UCONTEXT_STACK_PTR(uc)   ((UWord)((uc)->uc_mcontext.sc_regs[29]))
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.sc_regs[30])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.sc_regs[2])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                         \
+      /* Convert the value in uc_mcontext.rax into a SysRes. */  \
+      VG_(mk_SysRes_mips32_linux)( (uc)->uc_mcontext.sc_regs[2], \
+                                   (uc)->uc_mcontext.sc_regs[3], \
+                                   (uc)->uc_mcontext.sc_regs[7]) 
+ 
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)              \
+      { (srP)->r_pc = (uc)->uc_mcontext.sc_pc;                 \
+        (srP)->r_sp = (uc)->uc_mcontext.sc_regs[29];           \
+        (srP)->misc.MIPS32.r30 = (uc)->uc_mcontext.sc_regs[30]; \
+        (srP)->misc.MIPS32.r31 = (uc)->uc_mcontext.sc_regs[31]; \
+        (srP)->misc.MIPS32.r28 = (uc)->uc_mcontext.sc_regs[28]; \
+      }
+
 
 #else 
 #  error Unknown platform
@@ -849,6 +868,14 @@ extern void my_sigreturn(void);
    " svc " #name "\n" \
    ".previous\n"
 
+#elif defined(VGP_mips32_linux)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   "my_sigreturn:\n" \
+   "	li	$2, " #name "\n" /* apparently $2 is v0 */ \
+   "	syscall\n" \
+   ".previous\n"
+
 #else
 #  error Unknown platform
 #endif
@@ -891,7 +918,8 @@ static void handle_SCSS_change ( Bool force_update )
       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
 #     if !defined(VGP_ppc32_linux) && \
-         !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+         !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+         !defined(VGP_mips32_linux)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -924,7 +952,8 @@ static void handle_SCSS_change ( Bool force_update )
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
 #        if !defined(VGP_ppc32_linux) && \
-            !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+            !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+            !defined(VGP_mips32_linux)
          vg_assert(ksa_old.sa_restorer 
                    == my_sigreturn);
 #        endif
@@ -1854,6 +1883,27 @@ void VG_(synth_sigtrap)(ThreadId tid)
    VG_(memset)(&uc,   0, sizeof(uc));
    info.si_signo = VKI_SIGTRAP;
    info.si_code = VKI_TRAP_BRKPT; /* tjh: only ever called for a brkpt ins */
+
+#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+   /* This is for teq on mips. Teq on mips for ins: 0xXXX1f4 
+    * cases VKI_SIGFPE not VKI_SIGTRAP 
+   */
+   // JRS 2012-Jun-06: commented out until we know we need it
+   // This isn't a clean solution; need something that avoids looking
+   // at the guest code.
+   //UInt *ins = (void*)(vgPlain_threads[tid].arch.vex.guest_PC-4);
+   //UInt tcode = (((*ins) >> 6) & ((1 << 10) - 1));
+   //if (tcode == VKI_BRK_OVERFLOW || tcode == VKI_BRK_DIVZERO) {
+   //   if (tcode == VKI_BRK_DIVZERO)
+   //      info.si_code = VKI_FPE_INTDIV;
+   //   else
+   //      info.si_code = VKI_FPE_INTOVF;
+   //   info.si_signo = VKI_SIGFPE;
+   //   info.si_errno = 0;
+   //   info.VKI_SIGINFO_si_addr 
+   //      = (void*)(vgPlain_threads[tid].arch.vex.guest_PC-4);
+   //}
+#  endif
 
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
    uc.uc_mcontext.trapno = 3;     /* tjh: this is the x86 trap number

@@ -69,6 +69,12 @@ void DRD_(clientreq_init)(void)
  * DRD's handler for Valgrind client requests. The code below handles both
  * DRD's public and tool-internal client requests.
  */
+#if defined(VGP_mips32_linux)
+ /* There is a cse related issue in gcc for MIPS. Optimization level
+    has to be lowered, so cse related optimizations are not
+    included. */
+ __attribute__((optimize("O1")))
+#endif
 static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 {
    UWord result = 0;

@@ -726,7 +726,7 @@ void log_bytes ( HChar* bytes, Int nbytes )
 
 static Bool translations_allowable_from_seg ( NSegment const* seg )
 {
-#  if defined(VGA_x86) || defined(VGA_s390x)
+#  if defined(VGA_x86) || defined(VGA_s390x) || defined(VGA_mips32)
    Bool allowR = True;
 #  else
    Bool allowR = False;
@@ -1188,6 +1188,12 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
          nraddr_szB == 8 ? mkU64(0) : mkU32(0)
       )
    );
+#  if defined(VGP_mips32_linux)
+   // t9 needs to be set to point to the start of the redirected function.
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   Int    offB_GPR25 = offsetof(VexGuestMIPS32State,guest_r25);
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR25, mkU32( closure->readdr )) );
+#  endif
 #  if defined(VG_PLAT_USES_PPCTOC)
    { VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
      addStmtToIRSB(
@@ -1224,6 +1230,11 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
             : IRExpr_Const(IRConst_U32( (UInt)closure->nraddr ))
       )
    );
+#  if defined(VGP_mips32_linux)
+   // t9 needs to be set to point to the start of the redirected function.
+   Int    offB_GPR25 = offsetof(VexGuestMIPS32State,guest_r25);
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR25, mkU32( closure->readdr )) );
+#  endif
 #  if defined(VGP_ppc64_linux)
    addStmtToIRSB( 
       bb,

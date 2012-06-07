@@ -103,6 +103,15 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r11;
    regs->misc.S390X.r_lr
       = VG_(threads)[tid].arch.vex.guest_r14;
+#  elif defined(VGA_mips32)
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_r29;
+   regs->misc.MIPS32.r30
+      = VG_(threads)[tid].arch.vex.guest_r30;
+   regs->misc.MIPS32.r31
+      = VG_(threads)[tid].arch.vex.guest_r31;
+   regs->misc.MIPS32.r28
+      = VG_(threads)[tid].arch.vex.guest_r28;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -130,6 +139,9 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 #  elif defined(VGO_darwin)
    // GrP fixme darwin syscalls may return more values (2 registers plus error)
 #  elif defined(VGP_s390x_linux)
+   VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
+   VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
+#  elif defined(VGP_mips32_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
 #  else
@@ -282,6 +294,39 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
    (*f)(tid, "r13", vex->guest_r13);
    (*f)(tid, "r14", vex->guest_r14);
    (*f)(tid, "r15", vex->guest_r15);
+#elif defined(VGA_mips32)
+   (*f)(tid, "r0" , vex->guest_r0 );
+   (*f)(tid, "r1" , vex->guest_r1 );
+   (*f)(tid, "r2" , vex->guest_r2 );
+   (*f)(tid, "r3" , vex->guest_r3 );
+   (*f)(tid, "r4" , vex->guest_r4 );
+   (*f)(tid, "r5" , vex->guest_r5 );
+   (*f)(tid, "r6" , vex->guest_r6 );
+   (*f)(tid, "r7" , vex->guest_r7 );
+   (*f)(tid, "r8" , vex->guest_r8 );
+   (*f)(tid, "r9" , vex->guest_r9 );
+   (*f)(tid, "r10", vex->guest_r10);
+   (*f)(tid, "r11", vex->guest_r11);
+   (*f)(tid, "r12", vex->guest_r12);
+   (*f)(tid, "r13", vex->guest_r13);
+   (*f)(tid, "r14", vex->guest_r14);
+   (*f)(tid, "r15", vex->guest_r15);
+   (*f)(tid, "r16", vex->guest_r16);
+   (*f)(tid, "r17", vex->guest_r17);
+   (*f)(tid, "r18", vex->guest_r18);
+   (*f)(tid, "r19", vex->guest_r19);
+   (*f)(tid, "r20", vex->guest_r20);
+   (*f)(tid, "r21", vex->guest_r21);
+   (*f)(tid, "r22", vex->guest_r22);
+   (*f)(tid, "r23", vex->guest_r23);
+   (*f)(tid, "r24", vex->guest_r24);
+   (*f)(tid, "r25", vex->guest_r25);
+   (*f)(tid, "r26", vex->guest_r26);
+   (*f)(tid, "r27", vex->guest_r27);
+   (*f)(tid, "r28", vex->guest_r28);
+   (*f)(tid, "r29", vex->guest_r29);
+   (*f)(tid, "r30", vex->guest_r30);
+   (*f)(tid, "r31", vex->guest_r31);
 #else
 #  error Unknown arch
 #endif
@@ -389,7 +434,7 @@ Int VG_(machine_arm_archlevel) = 4;
 /* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64) \
-    || defined(VGA_arm) || defined(VGA_s390x)
+    || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32)
 #include "pub_tool_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
 static void handler_unsup_insn ( Int x ) {
@@ -567,6 +612,64 @@ static UInt VG_(get_machine_model)(void)
 }
 
 #endif /* VGA_s390x */
+
+#ifdef VGA_mips32
+
+/* Read /proc/cpuinfo and return the machine model. */
+static UInt VG_(get_machine_model)(void)
+{
+   char *search_MIPS_str = "MIPS";
+   char *search_Broadcom_str = "Broadcom";
+   Int    n, fh;
+   SysRes fd;
+   SizeT  num_bytes, file_buf_size;
+   HChar  *file_buf;
+
+   /* Slurp contents of /proc/cpuinfo into FILE_BUF */
+   fd = VG_(open)( "/proc/cpuinfo", 0, VKI_S_IRUSR );
+   if ( sr_isError(fd) ) return -1;
+
+   fh  = sr_Res(fd);
+
+   /* Determine the size of /proc/cpuinfo.
+      Work around broken-ness in /proc file system implementation.
+      fstat returns a zero size for /proc/cpuinfo although it is
+      claimed to be a regular file. */
+   num_bytes = 0;
+   file_buf_size = 1000;
+   file_buf = VG_(malloc)("cpuinfo", file_buf_size + 1);
+   while (42) {
+      n = VG_(read)(fh, file_buf, file_buf_size);
+      if (n < 0) break;
+
+      num_bytes += n;
+      if (n < file_buf_size) break;  /* reached EOF */
+   }
+
+   if (n < 0) num_bytes = 0;   /* read error; ignore contents */
+
+   if (num_bytes > file_buf_size) {
+      VG_(free)( file_buf );
+      VG_(lseek)( fh, 0, VKI_SEEK_SET );
+      file_buf = VG_(malloc)( "cpuinfo", num_bytes + 1 );
+      n = VG_(read)( fh, file_buf, num_bytes );
+      if (n < 0) num_bytes = 0;
+   }
+
+   file_buf[num_bytes] = '\0';
+   VG_(close)(fh);
+
+   /* Parse file */
+   if (VG_(strstr) (file_buf, search_Broadcom_str) != NULL)
+       return VEX_PRID_COMP_BROADCOM;
+   if (VG_(strstr) (file_buf, search_MIPS_str) != NULL)
+       return VEX_PRID_COMP_MIPS;
+
+   /* Did not find string in the proc file. */
+   return -1;
+}
+
+#endif
 
 /* Determine what insn set and insn set variant the host has, and
    record it.  To be called once at system startup.  Returns False if
@@ -1249,6 +1352,17 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
+#elif defined(VGA_mips32)
+   {
+     va = VexArchMIPS32;
+     UInt model = VG_(get_machine_model)();
+     if (model== -1)
+         return False;
+
+     vai.hwcaps = model;
+     return True;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
@@ -1370,6 +1484,11 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
       assume we always do. */
    return 16;
 
+#  elif defined(VGA_mips32)
+   /* The guest state implies 4, but that can't really be true, can
+      it? */
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1383,7 +1502,7 @@ void* VG_(fnptr_to_fnentry)( void* f )
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
       || defined(VGP_arm_linux)                           \
       || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
-      || defined(VGP_s390x_linux)
+      || defined(VGP_s390x_linux) || defined(VGP_mips32_linux)
    return f;
 #  elif defined(VGP_ppc64_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

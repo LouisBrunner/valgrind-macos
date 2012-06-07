@@ -80,7 +80,8 @@
    can be "waken up". PTRACEINVOKER implies some architecture
    specific code and/or some OS specific code. */
 #if defined(VGA_arm) || defined(VGA_x86) || defined(VGA_amd64) \
-    || defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x)
+    || defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x) \
+    || defined(VGP_mips32_linux)
 #define PTRACEINVOKER
 #else
 I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
@@ -923,6 +924,8 @@ Bool invoke_gdbserver (int pid)
    sp = user_mod.regs.gpr[1];
 #elif defined(VGA_s390x)
    sp = user_mod.regs.gprs[15];
+#elif defined(VGA_mips32)
+   sp = user_mod.regs[29];
 #else
    I_die_here : (sp) architecture missing in vgdb.c
 #endif
@@ -995,6 +998,12 @@ Bool invoke_gdbserver (int pid)
 
 #elif defined(VGA_s390x)
       XERROR(0, "(fn32) s390x has no 32bits implementation");
+#elif defined(VGA_mips32)
+      /* put check arg in register 0 */
+      user_mod.regs[4] = check;
+      /* put NULL return address in ra */
+      user_mod.regs[31] = bad_return;
+      user_mod.regs[25] = shared32->invoke_gdbserver;
 #else
       I_die_here : architecture missing in vgdb.c
 #endif
@@ -1074,6 +1083,8 @@ Bool invoke_gdbserver (int pid)
       user_mod.regs.gprs[15] = sp;
       /* set program counter */
       user_mod.regs.psw.addr = shared64->invoke_gdbserver;
+#elif defined(VGA_mips32)
+      assert(0); // cannot vgdb a 64 bits executable with a 32 bits exe
 #else
       I_die_here: architecture missing in vgdb.c
 #endif

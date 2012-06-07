@@ -257,6 +257,21 @@ typedef
       Int   fp_off;
    }
    DiCfSI;
+#elif defined(VGA_mips32)
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UChar cfa_how; /* a CFIC_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */
+      UChar fp_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   fp_off;
+   }
+   DiCfSI;
 #else
 #  error "Unknown arch"
 #endif
@@ -288,7 +303,8 @@ typedef
       Creg_ARM_R12,
       Creg_ARM_R15,
       Creg_ARM_R14,
-      Creg_S390_R14
+      Creg_S390_R14,
+      Creg_MIPS_RA
    }
    CfiReg;
 

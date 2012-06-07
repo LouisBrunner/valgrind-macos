@@ -597,6 +597,12 @@ Bool DRD_(thread_get_joinable)(const DrdThreadId tid)
 }
 
 /** Store the thread mode: joinable or detached. */
+#if defined(VGP_mips32_linux)
+ /* There is a cse related issue in gcc for MIPS. Optimization level
+    has to be lowered, so cse related optimizations are not
+    included.*/
+ __attribute__((optimize("O1")))
+#endif
 void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS

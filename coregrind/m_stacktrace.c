@@ -668,7 +668,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #endif
 
 /* ------------------------ s390x ------------------------- */
+
 #if defined(VGP_s390x_linux)
+
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
@@ -744,7 +746,156 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    n_found = i;
    return n_found;
 }
+
 #endif
+
+/* ------------------------ mips 32------------------------- */
+
+#if defined(VGP_mips32_linux)
+
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
+{
+   Bool  debug = False;
+   Int   i;
+   Addr  fp_max;
+   UInt  n_found = 0;
+
+   vg_assert(sizeof(Addr) == sizeof(UWord));
+   vg_assert(sizeof(Addr) == sizeof(void*));
+
+   D3UnwindRegs uregs;
+   uregs.pc = startRegs->r_pc;
+   uregs.sp = startRegs->r_sp;
+   Addr fp_min = uregs.sp;
+
+   uregs.fp = startRegs->misc.MIPS32.r30;
+   uregs.ra = startRegs->misc.MIPS32.r31;
+
+   /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
+      stopping when the trail goes cold, which we guess to be
+      when FP is not a reasonable stack location. */
+
+   fp_max = VG_PGROUNDUP(fp_max_orig);
+   if (fp_max >= sizeof(Addr))
+      fp_max -= sizeof(Addr);
+
+   if (debug)
+      VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
+                  "fp_max=0x%lx pc=0x%lx sp=0x%lx fp=0x%lx\n",
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.pc, uregs.sp, uregs.fp);
+
+   if (sps) sps[0] = uregs.sp;
+   if (fps) fps[0] = uregs.fp;
+   ips[0] = uregs.pc;
+   i = 1;
+
+   /* Loop unwinding the stack. */
+
+   while (True) {
+      if (debug) {
+         VG_(printf)("i: %d, pc: 0x%lx, sp: 0x%lx, ra: 0x%lx\n",
+                     i, uregs.pc, uregs.sp, uregs.ra);
+      }
+      if (i >= max_n_ips)
+         break;
+
+      if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
+         if (debug)
+            VG_(printf)("USING CFI: pc: 0x%lx, sp: 0x%lx, ra: 0x%lx\n",
+                        uregs.pc, uregs.sp, uregs.ra);
+         if (0 == uregs.pc || 1 == uregs.pc) break;
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.fp;
+         ips[i++] = uregs.pc - 4;
+         uregs.pc = uregs.pc - 4;
+         continue;
+      }
+
+      int seen_sp_adjust = 0;
+      long frame_offset = 0;
+      PtrdiffT offset;
+      if (VG_(get_inst_offset_in_function)(uregs.pc, &offset)) {
+         Addr start_pc = uregs.pc - offset;
+         Addr limit_pc = uregs.pc;
+         Addr cur_pc;
+         for (cur_pc = start_pc; cur_pc < limit_pc; cur_pc += 4) {
+            unsigned long inst, high_word, low_word;
+            unsigned long * cur_inst;
+            int reg;
+            /* Fetch the instruction.   */
+            cur_inst = (unsigned long *)cur_pc;
+            inst = *((UInt *) cur_inst);
+            if(debug)
+               VG_(printf)("cur_pc: 0x%lx, inst: 0x%lx\n", cur_pc, inst);
+
+            /* Save some code by pre-extracting some useful fields.  */
+            high_word = (inst >> 16) & 0xffff;
+            low_word = inst & 0xffff;
+            reg = high_word & 0x1f;
+
+            if (high_word == 0x27bd        /* addiu $sp,$sp,-i */
+                || high_word == 0x23bd     /* addi $sp,$sp,-i */
+                || high_word == 0x67bd) {  /* daddiu $sp,$sp,-i */
+               if (low_word & 0x8000)	/* negative stack adjustment? */
+                  frame_offset += 0x10000 - low_word;
+               else
+                  /* Exit loop if a positive stack adjustment is found, which
+                     usually means that the stack cleanup code in the function
+                     epilogue is reached.  */
+               break;
+            seen_sp_adjust = 1;
+            }
+         }
+         if(debug)
+            VG_(printf)("offset: 0x%lx\n", frame_offset);
+      }
+      if (seen_sp_adjust) {
+         if (0 == uregs.pc || 1 == uregs.pc) break;
+         if (uregs.pc == uregs.ra - 8) break;
+         if (sps) {
+            sps[i] = uregs.sp + frame_offset;
+         }
+         uregs.sp = uregs.sp + frame_offset;
+         
+         if (fps) {
+            fps[i] = fps[0];
+            uregs.fp = fps[0];
+         }
+         if (0 == uregs.ra || 1 == uregs.ra) break;
+         uregs.pc = uregs.ra - 8;
+         ips[i++] = uregs.ra - 8;
+         continue;
+      }
+
+      if (i == 1) {
+         if (sps) {
+            sps[i] = sps[0];
+            uregs.sp = sps[0];
+         }
+         if (fps) {
+            fps[i] = fps[0];
+            uregs.fp = fps[0];
+         }
+         if (0 == uregs.ra || 1 == uregs.ra) break;
+         uregs.pc = uregs.ra - 8;
+         ips[i++] = uregs.ra - 8;
+         continue;
+      }
+      /* No luck.  We have to give up. */
+      break;
+   }
+
+   n_found = i;
+   return n_found;
+}
+
+#endif
+
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/

@@ -1021,10 +1021,69 @@ VG_(s390x_linux_SUBST_FOR_rt_sigreturn):
 VG_(trampoline_stuff_end):
 	.fill 2048, 2, 0x0000
 
+/*---------------------- mips32-linux ----------------------*/
+#else
+#if defined(VGP_mips32_linux)
+
+#	define UD2_16     trap ; trap ; trap; trap
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(mips32_linux_SUBST_FOR_sigreturn)
+VG_(mips32_linux_SUBST_FOR_sigreturn):
+        li $v0,__NR_sigreturn
+        syscall
+        nop
+        .long 0	/*illegal insn*/
+
+.global VG_(mips32_linux_SUBST_FOR_rt_sigreturn)
+VG_(mips32_linux_SUBST_FOR_rt_sigreturn):
+	li $v0,__NR_rt_sigreturn
+        syscall
+        nop
+        .long 0	/*illegal insn*/
+	
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strlen implementation (written in C and compiled by gcc.)
+*/
+.global VG_(mips32_linux_REDIR_FOR_strlen)
+.type   VG_(mips32_linux_REDIR_FOR_strlen), @function
+VG_(mips32_linux_REDIR_FOR_strlen):
+      li $v0, 0
+      //la $a0, string
+      j strlen_cond
+   strlen_loop:
+      addi $v0, $v0, 1
+      addi $a0, $a0, 1
+   strlen_cond:
+      lbu $t0, ($a0)
+      bne $t0, $zero, strlen_loop
+    jr $ra
+
+.size VG_(mips32_linux_REDIR_FOR_strlen), .-VG_(mips32_linux_REDIR_FOR_strlen)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 /*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

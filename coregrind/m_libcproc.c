@@ -549,7 +549,8 @@ Int VG_(getgroups)( Int size, UInt* list )
 
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)  \
         || defined(VGP_arm_linux)                             \
-        || defined(VGO_darwin) || defined(VGP_s390x_linux)
+        || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
+        || defined(VGP_mips32_linux)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
@@ -763,6 +764,11 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
+
+#  elif defined(VGA_mips32)
+   SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,
+                                 (UWord) nbytes, (UWord) 3);
+   vg_assert( sres._isError == 0 );
 
 #  else
 #    error "Unknown ARCH"

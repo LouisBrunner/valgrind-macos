@@ -87,6 +87,8 @@ typedef
    typedef VexGuestARMState   VexGuestArchState;
 #elif defined(VGA_s390x)
    typedef VexGuestS390XState VexGuestArchState;
+#elif defined(VGA_mips32)
+   typedef VexGuestMIPS32State VexGuestArchState;
 #else
 #  error Unknown architecture
 #endif

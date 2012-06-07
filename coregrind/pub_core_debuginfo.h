@@ -93,6 +93,12 @@ Bool VG_(get_fnname_raw) ( Addr a, Char* buf, Int nbuf );
 extern
 Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, Char* buf, Int nbuf );
 
+/* mips-linux only: find the offset of current address. This is needed for 
+   stack unwinding for MIPS.
+*/
+extern
+Bool VG_(get_inst_offset_in_function)( Addr a, /*OUT*/PtrdiffT* offset );
+
 
 /* Use DWARF2/3 CFA information to do one step of stack unwinding.
    D3UnwindRegs holds the current register values, and is
@@ -113,6 +119,10 @@ typedef
 #elif defined(VGA_s390x)
 typedef
    struct { Addr ia; Addr sp; Addr fp; Addr lr;}
+   D3UnwindRegs;
+#elif defined(VGA_mips32)
+typedef
+   struct { Addr pc; Addr sp; Addr fp; Addr ra; }
    D3UnwindRegs;
 #else
 #  error "Unsupported arch"

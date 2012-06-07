@@ -792,7 +792,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    is_rw_map = False;
    is_ro_map = False;
 
-#  if defined(VGA_x86) || defined(VGA_ppc32)
+#  if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_mips32)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
 #  elif defined(VGA_amd64) || defined(VGA_ppc64) || defined(VGA_arm)
@@ -1516,6 +1516,22 @@ Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, Char* buf, Int nbuf )
                          /*offsetP*/NULL );
 }
 
+/* mips-linux only: find the offset of current address. This is needed for 
+   stack unwinding for MIPS.
+*/
+Bool VG_(get_inst_offset_in_function)( Addr a,
+                                       /*OUT*/PtrdiffT* offset )
+{
+   Char fnname[64];
+   return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
+                         /*below-main-renaming*/False,
+                         a, fnname, 64,
+                         /*match_anywhere_in_sym*/True, 
+                         /*show offset?*/True,
+                         /*data syms only please*/True,
+                         offset );
+}
+
 Vg_FnNameKind VG_(get_fnname_kind) ( Char* name )
 {
    if (VG_STREQ("main", name)) {
@@ -2040,6 +2056,11 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
             case Creg_S390_R14: return eec->uregs->lr;
+#           elif defined(VGA_mips32)
+            case Creg_IA_IP: return eec->uregs->pc;
+            case Creg_IA_SP: return eec->uregs->sp;
+            case Creg_IA_BP: return eec->uregs->fp;
+            case Creg_MIPS_RA: return eec->uregs->ra;
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #           else
 #             error "Unsupported arch"
@@ -2268,6 +2289,16 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
       case CFIC_IA_BPREL:
          cfa = cfsi->cfa_off + uregs->fp;
          break;
+#     elif defined(VGA_mips32)
+      case CFIC_IA_SPREL:
+         cfa = cfsi->cfa_off + uregs->sp;
+         break;
+      case CFIR_SAME:
+         cfa = uregs->fp;
+         break;
+      case CFIC_IA_BPREL:
+         cfa = cfsi->cfa_off + uregs->fp;
+         break;
 #     elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #     else
 #       error "Unsupported arch"
@@ -2362,6 +2393,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->r15;
 #  elif defined(VGA_s390x)
    ipHere = uregsHere->ia;
+#  elif defined(VGA_mips32)
+   ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
 #    error "Unknown arch"
@@ -2436,6 +2469,10 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.r7,  uregsHere->r7,  cfsi->r7_how,  cfsi->r7_off);
 #  elif defined(VGA_s390x)
    COMPUTE(uregsPrev.ia, uregsHere->ia, cfsi->ra_how, cfsi->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
+#  elif defined(VGA_mips32)
+   COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi->ra_how, cfsi->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)

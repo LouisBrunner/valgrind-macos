@@ -780,6 +780,10 @@ static void do_pre_run_checks ( ThreadState* tst )
 #  if defined(VGA_s390x)
    /* no special requirements */
 #  endif
+
+#  if defined(VGA_mips32)
+  /* no special requirements */
+#  endif
 }
 
 // NO_VGDB_POLL value ensures vgdb is not polled, while
@@ -1557,6 +1561,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined (VGA_s390x)
 #  define VG_CLREQ_ARGS       guest_r2
 #  define VG_CLREQ_RET        guest_r3
+#elif defined(VGA_mips32)
+#  define VG_CLREQ_ARGS       guest_r12
+#  define VG_CLREQ_RET        guest_r11
 #else
 #  error Unknown arch
 #endif

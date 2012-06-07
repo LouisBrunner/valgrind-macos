@@ -29,4 +29,5 @@ sed "/warning: L3 cache found, using its data for the LL simulation./d" |
 sed "/Warning: Cannot auto-detect cache config on PPC.., using one or more defaults/d" |
 sed "/Warning: Cannot auto-detect cache config on ARM, using one or more defaults/d" |
 sed "/Warning: Cannot auto-detect cache config on s390x, using one or more defaults/d" |
+sed "/Warning: Cannot auto-detect cache config on MIPS.., using one or more defaults/d" |
 sed "/warning: pretending that LL cache has associativity .*$/d"

@@ -91,6 +91,8 @@
 #  include "vki-posixtypes-arm-linux.h"
 #elif defined(VGA_s390x)
 #  include "vki-posixtypes-s390x-linux.h"
+#elif defined(VGA_mips32)
+#  include "vki-posixtypes-mips32-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -211,6 +213,8 @@ typedef unsigned int	        vki_uint;
 #  include "vki-arm-linux.h"
 #elif defined(VGA_s390x)
 #  include "vki-s390x-linux.h"
+#elif defined(VGA_mips32)
+#  include "vki-mips32-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -383,6 +387,8 @@ struct vki_sched_param {
 // From linux-2.6.8.1/include/asm-generic/siginfo.h
 //----------------------------------------------------------------------
 
+// Some archs, such as MIPS, have non-standard vki_siginfo.
+#ifndef HAVE_ARCH_SIGINFO_T
 typedef union vki_sigval {
 	int sival_int;
 	void __user *sival_ptr;
@@ -462,6 +468,7 @@ typedef struct vki_siginfo {
 		} _sigpoll;
 	} _sifields;
 } vki_siginfo_t;
+#endif
 
 #define __VKI_SI_FAULT	0
 

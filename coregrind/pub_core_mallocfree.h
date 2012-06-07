@@ -80,6 +80,7 @@ typedef Int ArenaId;
       defined(VGP_ppc32_linux) || \
       defined(VGP_ppc64_linux) || \
       defined(VGP_s390x_linux) || \
+      defined(VGP_mips32_linux) || \
       defined(VGP_x86_darwin)  || \
       defined(VGP_amd64_darwin)
 #  define VG_MIN_MALLOC_SZB       16

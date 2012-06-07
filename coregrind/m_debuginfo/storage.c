@@ -189,7 +189,7 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    VG_(printf)(" R7=");
    SHOW_HOW(si->r7_how, si->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
-#  elif defined(VGA_s390x)
+#  elif defined(VGA_s390x) || defined(VGA_mips32)
    VG_(printf)(" SP=");
    SHOW_HOW(si->sp_how, si->sp_off);
    VG_(printf)(" FP=");
@@ -629,6 +629,7 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R12: VG_(printf)("R12"); break;
       case Creg_ARM_R15: VG_(printf)("R15"); break;
       case Creg_ARM_R14: VG_(printf)("R14"); break;
+      case Creg_MIPS_RA: VG_(printf)("RA"); break;
       default: vg_assert(0);
    }
 }

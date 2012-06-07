@@ -79,6 +79,8 @@ extern SysRes VG_(mk_SysRes_x86_darwin)  ( UChar scclass, Bool isErr,
 extern SysRes VG_(mk_SysRes_amd64_darwin)( UChar scclass, Bool isErr,
                                            ULong wHI, ULong wLO );
 extern SysRes VG_(mk_SysRes_s390x_linux) ( Long val );
+extern SysRes VG_(mk_SysRes_mips32_linux)( UWord v0, UWord v1,
+                                           UWord a3 );
 extern SysRes VG_(mk_SysRes_Error)       ( UWord val );
 extern SysRes VG_(mk_SysRes_Success)     ( UWord val );
 

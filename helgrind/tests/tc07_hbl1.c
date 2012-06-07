@@ -14,6 +14,7 @@
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
 #undef PLAT_s390x_linux
+#undef PLAT_mips32_linux
 
 #if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
@@ -31,6 +32,8 @@
 #  define PLAT_arm_linux 1
 #elif defined(__linux__) && defined(__s390x__)
 #  define PLAT_s390x_linux 1
+#elif defined(__linux__) && defined(__mips__)
+#  define PLAT_mips32_linux 1
 #endif
 
 #if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux) \
@@ -70,6 +73,20 @@
       "   cs    0,1,%0\n"                          \
       "   jl    1b\n"                              \
       : "+m" (_lval) :: "cc", "1","2" \
+   )
+#elif defined(PLAT_mips32_linux)
+#  define INC(_lval,_lqual)                         \
+     __asm__ __volatile__ (                         \
+      "1:\n"                                        \
+      "        move $8, %0\n"                       \
+      "        ll $9, 0($8)\n"                      \
+      "        addiu $9, $9, 1\n"                   \
+      "        sc $9, 0($8)\n"                      \
+      "        li $10, 1\n"                         \
+      "        bne $9, $10, 1b\n"                   \
+      "        nop\n"                               \
+      : /*out*/ : /*in*/ "r"(&(_lval))              \
+      : /*trash*/ "$8", "$9", "$10", "cc", "memory" \
    )
 #else
 #  error "Fix Me for this platform"

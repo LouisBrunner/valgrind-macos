@@ -73,5 +73,6 @@ extern void arm_init_architecture (struct valgrind_target_ops *target);
 extern void ppc32_init_architecture (struct valgrind_target_ops *target);
 extern void ppc64_init_architecture (struct valgrind_target_ops *target);
 extern void s390x_init_architecture (struct valgrind_target_ops *target);
+extern void mips32_init_architecture (struct valgrind_target_ops *target);
 
 #endif

@@ -1358,6 +1358,17 @@ void VG_(redir_initialise) ( void )
 #  elif defined(VGP_s390x_linux)
    /* nothing so far */
 
+#  elif defined(VGP_mips32_linux)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      /* this is mandatory - can't sanely continue without it */
+      add_hardwired_spec(
+         "ld.so.3", "strlen",
+         (Addr)&VG_(mips32_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+   }
+
 #  else
 #    error Unknown platform
 #  endif

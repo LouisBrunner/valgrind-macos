@@ -68,7 +68,18 @@ my $cc = $ARGV[1];
 # so, build up the complete command here:
 # 'cc' -static -Ttext='ala' 'restargs'
 
-my $cmd="$cc -static -Wl,-Ttext=$ala";
+# For mips we need to use "--section-start=.reginfo=$ala" because
+# "--section-start=.reginfo=$ala" will put all the sections to the 
+# specificed address ($ala)
+my $x=`$cc -v 2>&1 | grep Target | sed 's/Target: //g'`;
+my $arch=substr($x, 0, index($x, '-'));
+my $cmd;
+
+if (($arch eq 'mips') || ($arch eq 'mipsel')) {
+   $cmd = "$cc -static -Wl,--section-start=.reginfo=$ala";
+} else {
+   $cmd = "$cc -static -Wl,-Ttext=$ala";
+}
 
 # Add the rest of the parameters
 foreach my $n (2 .. $#ARGV) {

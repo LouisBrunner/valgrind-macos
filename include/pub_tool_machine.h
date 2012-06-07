@@ -83,6 +83,12 @@
 #  define VG_CLREQ_SZB             19
 #  define VG_STACK_REDZONE_SZB    128
 
+#elif defined(VGP_mips32_linux)
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_CLREQ_SZB             20
+#  define VG_STACK_REDZONE_SZB      0
+
 #else
 #  error Unknown platform
 #endif

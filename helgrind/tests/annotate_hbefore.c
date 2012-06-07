@@ -186,6 +186,38 @@ UWord do_acasW(UWord* addr, UWord expected, UWord nyu )
    return cc == 0;
 }
 
+#elif defined(VGA_mips32)
+
+// mips
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+  UWord old, success;
+  UWord block[3] = { (UWord)addr, nyu, expected};
+
+   __asm__ __volatile__(
+      ".set noreorder"           "\n\t"
+      "lw     $t0, 0(%1)"        "\n\t"
+      "lw     $t2, 8(%1)"        "\n\t"
+      "lw     $t3, 4(%1)"        "\n\t"
+      "ll     $t1, 0($t0)"       "\n\t"
+      "bne    $t1, $t2, exit_0"  "\n\t"
+      "sc     $t3, 0($t0)"       "\n\t"
+      "move   %0, $t3"           "\n\t"
+      "b exit"                   "\n\t"
+      "nop"                      "\n\t"
+      "exit_0:"                  "\n\t"
+      "move   %0, $0"            "\n\t"
+      "exit:"                     "\n\t"
+      : /*out*/ "=r"(success)
+      : /*in*/ "r"(&block[0])
+      : /*trash*/ "t0", "t1", "t2", "t3", "memory"
+   );
+
+   assert(success == 0 || success == 1);
+   return success;
+}
+
 #endif
 
 void atomic_incW ( UWord* w )

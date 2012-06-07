@@ -159,7 +159,7 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
                           prot, flags, fd, offset / 4096);
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux) \
-        || defined(VGP_s390x_linux)
+        || defined(VGP_s390x_linux) || defined(VGP_mips32_linux)
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
 #  elif defined(VGP_x86_darwin)

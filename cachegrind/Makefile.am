@@ -46,7 +46,8 @@ CACHEGRIND_SOURCES_COMMON = \
 	cg-ppc32.c \
 	cg-ppc64.c \
 	cg-arm.c   \
-	cg-s390x.c
+	cg-s390x.c \
+	cg-mips32.c
 
 cachegrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
 	$(CACHEGRIND_SOURCES_COMMON)

@@ -301,6 +301,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-ppc64-linux.S \
 	m_dispatch/dispatch-arm-linux.S \
 	m_dispatch/dispatch-s390x-linux.S \
+	m_dispatch/dispatch-mips32-linux.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
 	m_gdbserver/m_gdbserver.c \
@@ -318,6 +319,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-ppc32.c \
 	m_gdbserver/valgrind-low-ppc64.c \
 	m_gdbserver/valgrind-low-s390x.c \
+	m_gdbserver/valgrind-low-mips32.c \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-darwin.c \
@@ -337,6 +339,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_sigframe/sigframe-arm-linux.c \
 	m_sigframe/sigframe-s390x-linux.c \
+	m_sigframe/sigframe-mips32-linux.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
 	m_syswrap/syscall-x86-linux.S \
@@ -345,6 +348,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-ppc64-linux.S \
 	m_syswrap/syscall-arm-linux.S \
 	m_syswrap/syscall-s390x-linux.S \
+	m_syswrap/syscall-mips32-linux.S \
 	m_syswrap/syscall-x86-darwin.S \
 	m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syswrap-main.c \
@@ -358,6 +362,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-ppc64-linux.c \
 	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \
+	m_syswrap/syswrap-mips32-linux.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
 	m_ume/elf.c \
@@ -532,7 +537,18 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/s390x-generic.xml \
 	m_gdbserver/s390x-linux64-valgrind-s1.xml \
 	m_gdbserver/s390x-linux64-valgrind-s2.xml \
-	m_gdbserver/s390x-linux64.xml
+	m_gdbserver/s390x-linux64.xml \
+	m_gdbserver/mips-cp0-valgrind-s1.xml \
+	m_gdbserver/mips-cp0-valgrind-s2.xml \
+	m_gdbserver/mips-cp0.xml \
+	m_gdbserver/mips-cpu-valgrind-s1.xml \
+	m_gdbserver/mips-cpu-valgrind-s2.xml \
+	m_gdbserver/mips-cpu.xml \
+	m_gdbserver/mips-linux.xml \
+	m_gdbserver/mips-linux-valgrind.xml \
+	m_gdbserver/mips-fpu-valgrind-s1.xml \
+	m_gdbserver/mips-fpu-valgrind-s2.xml \
+	m_gdbserver/mips-fpu.xml
 
 # so as to make sure these get copied into the install tree
 vglibdir = $(pkglibdir)

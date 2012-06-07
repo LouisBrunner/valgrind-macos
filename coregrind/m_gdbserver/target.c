@@ -618,6 +618,8 @@ void valgrind_initialize_target(void)
    ppc64_init_architecture(&the_low_target);
 #elif defined(VGA_s390x)
    s390x_init_architecture(&the_low_target);
+#elif defined(VGA_mips32)
+   s390x_init_architecture(&the_low_target);
 #else
    architecture missing in target.c valgrind_initialize_target
 #endif

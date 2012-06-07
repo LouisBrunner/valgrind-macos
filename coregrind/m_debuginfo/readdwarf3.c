@@ -2307,8 +2307,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                case DW_ATE_unsigned: case DW_ATE_unsigned_char:
                case DW_ATE_UTF: /* since DWARF4, e.g. char16_t from C++ */
                case DW_ATE_boolean:/* FIXME - is this correct? */
+               case DW_ATE_unsigned_fixed:
                   typeE.Te.TyBase.enc = 'U'; break;
                case DW_ATE_signed: case DW_ATE_signed_char:
+               case DW_ATE_signed_fixed:
                   typeE.Te.TyBase.enc = 'S'; break;
                case DW_ATE_float:
                   typeE.Te.TyBase.enc = 'F'; break;

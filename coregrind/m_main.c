@@ -1539,8 +1539,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
-   vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536);
-   vg_assert(VKI_MAX_PAGE_SIZE == 4096 || VKI_MAX_PAGE_SIZE == 65536);
+   vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536
+             || VKI_PAGE_SIZE     == 16384);
+   vg_assert(VKI_MAX_PAGE_SIZE == 4096 || VKI_MAX_PAGE_SIZE == 65536
+             || VKI_MAX_PAGE_SIZE == 16384);
    vg_assert(VKI_PAGE_SIZE <= VKI_MAX_PAGE_SIZE);
    vg_assert(VKI_PAGE_SIZE     == (1 << VKI_PAGE_SHIFT));
    vg_assert(VKI_MAX_PAGE_SIZE == (1 << VKI_MAX_PAGE_SHIFT));
@@ -1893,6 +1895,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #     elif defined(VGP_arm_linux)
       iters = 5;
 #     elif defined(VGP_s390x_linux)
+      iters = 10;
+#     elif defined(VGP_mips32_linux)
       iters = 10;
 #     elif defined(VGO_darwin)
       iters = 3;
@@ -2473,6 +2477,10 @@ static void final_tidyup(ThreadId tid)
 #  if defined(VGP_ppc64_linux)
    VG_(threads)[tid].arch.vex.guest_GPR2 = r2;
 #  endif
+   /* mips-linux note: we need to set t9 */
+#  if defined(VGP_mips32_linux)
+   VG_(threads)[tid].arch.vex.guest_r25 = __libc_freeres_wrapper;
+#  endif
 
    /* Block all blockable signals by copying the real block state into
       the thread's block state*/
@@ -2760,6 +2768,50 @@ asm("\n"
     "\t.word vgPlain_interim_stack\n"
     "\t.word "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
     "\t.word "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n"
+);
+#elif defined(VGP_mips32_linux)
+asm("\n"
+    "\t.type _gp_disp,@object\n"
+    ".text\n"
+    "\t.globl __start\n"
+    "\t.type __start,@function\n"
+    "__start:\n"
+
+    "\tbal 1f\n"
+    "\tnop\n"
+    
+    "1:\n"    
+
+    "\tlui      $28, %hi(_gp_disp)\n"
+    "\taddiu    $28, $28, %lo(_gp_disp)\n"
+    "\taddu     $28, $28, $31\n"
+    /* t1/$9 <- Addr(interim_stack) */
+    "\tlui      $9, %hi(vgPlain_interim_stack)\n"
+    /* t1/$9 <- Addr(interim_stack) */
+    "\taddiu    $9, %lo(vgPlain_interim_stack)\n"
+
+
+    "\tli    $10, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tli    $11, "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n"
+    
+    "\taddu     $9, $9, $10\n"
+    "\taddu     $9, $9, $11\n"
+    "\tli       $12, 0xFFFFFFF0\n"
+    "\tand      $9, $9, $12\n"
+    /* now t1/$9 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       boundary.  And $29 is the original SP.  Set the SP to t1 and
+       call _start_in_C, passing it the initial SP. */
+       
+    "\tmove    $4, $29\n"     // a0 <- $sp (_start_in_C first arg)
+    "\tmove    $29, $9\n"     // $sp <- t1 (new sp)
+    
+    "\tlui     $25, %hi(_start_in_C_linux)\n"
+    "\taddiu   $25, %lo(_start_in_C_linux)\n"
+    
+    "\tbal  _start_in_C_linux\n"
+    "\tbreak  0x7\n"
+    ".previous\n"
 );
 #else
 #  error "Unknown linux platform"

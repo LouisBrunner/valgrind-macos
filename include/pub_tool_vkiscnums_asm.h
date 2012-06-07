@@ -51,6 +51,9 @@
 #elif defined(VGP_arm_linux)
 #  include "vki/vki-scnums-arm-linux.h"
 
+#elif defined(VGP_mips32_linux)
+#  include "vki/vki-scnums-mips32-linux.h"
+
 #elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
 #  include "vki/vki-scnums-darwin.h"
 

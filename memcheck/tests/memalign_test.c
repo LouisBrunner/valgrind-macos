@@ -10,7 +10,7 @@ int main ( void )
   int i;
   unsigned long pszB = sysconf(_SC_PAGE_SIZE);
   assert(sizeof(long) == sizeof(void*));
-  assert(pszB == 4096 || pszB == 65536);
+  assert(pszB == 4096 || pszB == 16384 || pszB == 65536);
 
   for (i = 0; i < 10; i++) {
     a[i] = valloc(11111 * (i+1));

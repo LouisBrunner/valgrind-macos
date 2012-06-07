@@ -179,12 +179,24 @@ static const char *select_platform(const char *clientname)
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "arm-linux";
             }
+            else
+            if (ehdr->e_machine == EM_MIPS &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "mips32-linux";
+            }
          }
          else if (header[EI_DATA] == ELFDATA2MSB) {
             if (ehdr->e_machine == EM_PPC &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc32-linux";
+            }
+            else 
+            if (ehdr->e_machine == EM_MIPS &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "mips32-linux";
             }
          }
 
@@ -284,7 +296,8 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"ppc32-linux")) ||
        (0==strcmp(VG_PLATFORM,"ppc64-linux")) ||
        (0==strcmp(VG_PLATFORM,"arm-linux"))   ||
-       (0==strcmp(VG_PLATFORM,"s390x-linux")))
+       (0==strcmp(VG_PLATFORM,"s390x-linux")) ||
+       (0==strcmp(VG_PLATFORM,"mips32-linux")))
       default_platform = VG_PLATFORM;
    else
       barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);

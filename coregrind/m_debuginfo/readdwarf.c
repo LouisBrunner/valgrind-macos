@@ -1843,6 +1843,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         11    // sometimes s390 has a frame pointer in r11
 #  define SP_REG         15    // stack is always r15
 #  define RA_REG_DEFAULT 14    // the return address is in r14
+#elif defined(VGP_mips32_linux)
+#  define FP_REG         30
+#  define SP_REG         29
+#  define RA_REG_DEFAULT 31
 #else
 #  error "Unknown platform"
 #endif
@@ -1851,7 +1855,8 @@ void ML_(read_debuginfo_dwarf1) (
    arm-linux (320) seems ludicrously high, but the ARM IHI 0040A page
    7 (DWARF for the ARM Architecture) specifies that values up to 320
    might exist, for Neon/VFP-v3. */
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
+    || defined(VGP_mips32_linux)
 # define N_CFI_REGS 72
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
@@ -2155,7 +2160,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
       si->cfa_off = ctxs->cfa_off;
-#     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x)
+#     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
+         || defined(VGA_mips32)
       si->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R13REL;
@@ -2166,7 +2172,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
       si->cfa_off = ctxs->cfa_off;
-#     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x)
+#     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
+         || defined(VGA_mips32)
       si->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R12REL;
@@ -2367,6 +2374,50 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    return True;
 
 
+#  elif defined(VGA_mips32)
+ 
+   /* --- entire tail of this fn specialised for mips --- */
+ 
+   SUMMARISE_HOW(si->ra_how, si->ra_off,
+                             ctxs->reg[ctx->ra_reg] );
+   SUMMARISE_HOW(si->fp_how, si->fp_off,
+                             ctxs->reg[FP_REG] );
+   SUMMARISE_HOW(si->sp_how, si->sp_off,
+                             ctxs->reg[SP_REG] );
+      si->sp_how = CFIR_CFAREL;
+   si->sp_off = 0;
+
+   if (si->fp_how == CFIR_UNKNOWN)
+       si->fp_how = CFIR_SAME;
+   if (si->cfa_how == CFIR_UNKNOWN) {
+      si->cfa_how = CFIC_IA_SPREL;
+      si->cfa_off = 160;
+   }
+   if (si->ra_how == CFIR_UNKNOWN) {
+      if (!debuginfo->cfsi_exprs)
+         debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
+                                             "di.ccCt.2a",
+                                             ML_(dinfo_free),
+                                             sizeof(CfiExpr) );
+      si->ra_how = CFIR_EXPR;
+      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                        Creg_MIPS_RA);
+   }
+
+   if (si->ra_how == CFIR_SAME)
+      { why = 3; goto failed; }
+
+   if (loc_start >= ctx->loc) 
+      { why = 4; goto failed; }
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      { why = 5; goto failed; }
+
+   si->base = loc_start + ctx->initloc;
+   si->len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
+
+
 
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
@@ -2449,6 +2500,13 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
          if (dwreg == srcuc->ra_reg)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP ); /* correct? */
+#        elif defined(VGA_mips32)
+         if (dwreg == SP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );
+         if (dwreg == FP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
+         if (dwreg == srcuc->ra_reg)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP );
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #        else
 #           error "Unknown arch"

@@ -49,16 +49,19 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-posixtypes-x86-linux.h	 \
 	vki/vki-posixtypes-arm-linux.h	 \
 	vki/vki-posixtypes-s390x-linux.h \
+	vki/vki-posixtypes-mips32-linux.h \
 	vki/vki-amd64-linux.h		\
 	vki/vki-ppc32-linux.h		\
 	vki/vki-ppc64-linux.h		\
 	vki/vki-x86-linux.h		\
 	vki/vki-arm-linux.h		\
 	vki/vki-s390x-linux.h		\
+	vki/vki-mips32-linux.h		\
 	vki/vki-scnums-amd64-linux.h	\
 	vki/vki-scnums-ppc32-linux.h	\
 	vki/vki-scnums-ppc64-linux.h	\
 	vki/vki-scnums-x86-linux.h	\
 	vki/vki-scnums-arm-linux.h	\
 	vki/vki-scnums-s390x-linux.h	\
+	vki/vki-scnums-mips32-linux.h	\
 	vki/vki-scnums-darwin.h

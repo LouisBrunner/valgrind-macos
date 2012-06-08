@@ -4309,7 +4309,17 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
          curr = mkUifU32(mce, here, curr);
          toDo -= 2;
       }
-      tl_assert(toDo == 0); /* also need to handle 1-byte excess */
+      /* chew off the remaining 8-bit chunk, if any */
+      if (toDo == 1) {
+         here = mkPCastTo( 
+                   mce, Ity_I32,
+                   expr2vbits_Load ( mce, end, Ity_I8,
+                                     d->mAddr, d->mSize - toDo )
+                );
+         curr = mkUifU32(mce, here, curr);
+         toDo -= 1;
+      }
+      tl_assert(toDo == 0);
    }
 
    /* Whew!  So curr is a 32-bit V-value summarising pessimistically
@@ -4377,7 +4387,15 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
                           NULL/*guard*/ );
          toDo -= 2;
       }
-      tl_assert(toDo == 0); /* also need to handle 1-byte excess */
+      /* chew off the remaining 8-bit chunk, if any */
+      if (toDo == 1) {
+         do_shadow_Store( mce, end, d->mAddr, d->mSize - toDo,
+                          NULL, /* original data */
+                          mkPCastTo( mce, Ity_I8, curr ),
+                          NULL/*guard*/ );
+         toDo -= 1;
+      }
+      tl_assert(toDo == 0);
    }
 
 }
@@ -5894,7 +5912,13 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
          curr = gen_maxU32( mce, curr, here );
          toDo -= 2;
       }
-      tl_assert(toDo == 0); /* also need to handle 1-byte excess */
+      /* chew off the remaining 8-bit chunk, if any */
+      if (toDo == 1) {
+         here = gen_load_b( mce, 1, d->mAddr, d->mSize - toDo );
+         curr = gen_maxU32( mce, curr, here );
+         toDo -= 1;
+      }
+      tl_assert(toDo == 0);
    }
 
    /* Whew!  So curr is a 32-bit B-value which should give an origin
@@ -5959,7 +5983,13 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
                      NULL/*guard*/ );
          toDo -= 2;
       }
-      tl_assert(toDo == 0); /* also need to handle 1-byte excess */
+      /* chew off the remaining 8-bit chunk, if any */
+      if (toDo == 1) {
+         gen_store_b( mce, 1, d->mAddr, d->mSize - toDo, curr,
+                      NULL/*guard*/ );
+         toDo -= 1;
+      }
+      tl_assert(toDo == 0);
    }
 }
 

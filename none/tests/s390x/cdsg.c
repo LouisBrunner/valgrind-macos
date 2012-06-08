@@ -4,21 +4,26 @@
 typedef struct {
    uint64_t high;
    uint64_t low;
-} quad_word;
+} __attribute__((aligned(16))) quad_word;
 
-void 
+
+/* CDSG needs quad-word alignment */
+quad_word op1, op2, op3;
+
+void
 test(quad_word op1_init, quad_word op2_init, quad_word op3_init,
      int expected_cc)
 {
+   quad_word op1_before, op2_before, op3_before;
    int cc = 1 - expected_cc;
 
-   quad_word op1 = op1_init;
-   quad_word op2 = op2_init;
-   quad_word op3 = op3_init;
+   op1 = op1_init;
+   op2 = op2_init;
+   op3 = op3_init;
 
-   quad_word op1_before = op1;
-   quad_word op2_before = op2;
-   quad_word op3_before = op3;
+   op1_before = op1;
+   op2_before = op2;
+   op3_before = op3;
 
    printf("before op1 = (%#lx, %#lx)\n", op1.high, op1.low);
    printf("before op2 = (%#lx, %#lx)\n", op2.high, op2.low);

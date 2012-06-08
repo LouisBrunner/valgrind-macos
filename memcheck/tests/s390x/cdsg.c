@@ -4,15 +4,19 @@
 typedef struct {
    uint64_t high;
    uint64_t low;
-} quad_word;
+} __attribute__((aligned(16))) quad_word;
 
-void 
+
+/* CDSG needs quad-word alignment */
+quad_word op1, op2, op3;
+
+void
 test(quad_word op1_init, quad_word op2_init, quad_word op3_init)
 {
    int cc; // unused
-   quad_word op1 = op1_init;
-   quad_word op2 = op2_init;
-   quad_word op3 = op3_init;
+   op1 = op1_init;
+   op2 = op2_init;
+   op3 = op3_init;
 
    __asm__ volatile (
                      "lmg     %%r0,%%r1,%1\n\t"

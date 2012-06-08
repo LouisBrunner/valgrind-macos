@@ -29,6 +29,12 @@
    drd:ConflictingAccess
    fun:write
 }
+{
+   drd-libc-random
+   drd:ConflictingAccess
+   fun:random_r
+   fun:random
+}
 
 #
 # Suppression patterns for libstdc++, the implementation of the standard C++

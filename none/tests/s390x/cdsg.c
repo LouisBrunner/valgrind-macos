@@ -8,7 +8,7 @@ typedef struct {
 
 
 /* CDSG needs quad-word alignment */
-quad_word op1, op2, op3;
+quad_word _op1, _op2, _op3;
 
 void
 test(quad_word op1_init, quad_word op2_init, quad_word op3_init,
@@ -17,63 +17,63 @@ test(quad_word op1_init, quad_word op2_init, quad_word op3_init,
    quad_word op1_before, op2_before, op3_before;
    int cc = 1 - expected_cc;
 
-   op1 = op1_init;
-   op2 = op2_init;
-   op3 = op3_init;
+   _op1 = op1_init;
+   _op2 = op2_init;
+   _op3 = op3_init;
 
-   op1_before = op1;
-   op2_before = op2;
-   op3_before = op3;
+   op1_before = _op1;
+   op2_before = _op2;
+   op3_before = _op3;
 
-   printf("before op1 = (%#lx, %#lx)\n", op1.high, op1.low);
-   printf("before op2 = (%#lx, %#lx)\n", op2.high, op2.low);
-   printf("before op3 = (%#lx, %#lx)\n", op3.high, op3.low);
+   printf("before op1 = (%#lx, %#lx)\n", _op1.high, _op1.low);
+   printf("before op2 = (%#lx, %#lx)\n", _op2.high, _op2.low);
+   printf("before op3 = (%#lx, %#lx)\n", _op3.high, _op3.low);
 
    __asm__ volatile (
                      "lmg     %%r0,%%r1,%1\n\t"
                      "lmg     %%r2,%%r3,%3\n\t"
                      "cdsg    %%r0,%%r2,%2\n\t"  //  cdsg 1st,3rd,2nd
-                     "stmg    %%r0,%%r1,%1\n"    // store r0,r1 to op1
-                     "stmg    %%r2,%%r3,%3\n"    // store r2,r3 to op3
+                     "stmg    %%r0,%%r1,%1\n"    // store r0,r1 to _op1
+                     "stmg    %%r2,%%r3,%3\n"    // store r2,r3 to _op3
                      "ipm     %0\n\t"
                      "srl     %0,28\n\t"
-                     : "=d" (cc), "+QS" (op1), "+QS" (op2), "+QS" (op3)
+                     : "=d" (cc), "+QS" (_op1), "+QS" (_op2), "+QS" (_op3)
                      :
                      : "r0", "r1", "r2", "r3", "cc");
 
-   printf("after  op1 = (%#lx, %#lx)\n", op1.high, op1.low);
-   printf("after  op2 = (%#lx, %#lx)\n", op2.high, op2.low);
-   printf("after  op3 = (%#lx, %#lx)\n", op3.high, op3.low);
+   printf("after  op1 = (%#lx, %#lx)\n", _op1.high, _op1.low);
+   printf("after  op2 = (%#lx, %#lx)\n", _op2.high, _op2.low);
+   printf("after  op3 = (%#lx, %#lx)\n", _op3.high, _op3.low);
    printf("cc = %d\n", cc);
 
    if (cc != expected_cc) {
       printf("condition code is incorrect\n");
    }
 
-   // op3 never changes
-   if (op3.low != op3_before.low || op3.high != op3_before.high) {
+   // _op3 never changes
+   if (_op3.low != op3_before.low || _op3.high != op3_before.high) {
       printf("operand #3 modified\n");
    }
 
    if (expected_cc == 0) {
       // 3rd operand stored at 2nd operand location
 
-      // op1 did not change
-      if (op1.low != op1_before.low || op1.high != op1_before.high) {
+      // _op1 did not change
+      if (_op1.low != op1_before.low || _op1.high != op1_before.high) {
          printf("operand #1 modified\n");
       }
-      if (op2.high != op3.high || op2.low != op3.low) {
+      if (_op2.high != _op3.high || _op2.low != _op3.low) {
          printf("operand #2 incorrect\n");
       }
    } else {
       // 2nd operand stored at 1st operand location
 
-      // op2 did not change
-      if (op2.low != op2_before.low || op2.high != op2_before.high) {
+      // _op2 did not change
+      if (_op2.low != op2_before.low || _op2.high != op2_before.high) {
          printf("operand #2 modified\n");
       }
 
-      if (op1.high != op2.high || op1.low != op2.low) {
+      if (_op1.high != _op2.high || _op1.low != _op2.low) {
          printf("operand #1 incorrect\n");
       }
    }

@@ -30,11 +30,12 @@ void compare_never(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,NEVER,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_not_taken\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_taken\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -43,11 +44,12 @@ void compare_always(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,ALWAYS,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_not_taken\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_taken\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -56,11 +58,12 @@ void compare_le42(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,LE,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_gt\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_le\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -69,11 +72,12 @@ void compare_ge42(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,GE,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_lt\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_ge\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -82,11 +86,12 @@ void compare_gt42(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,GT,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_le\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_gt\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -95,11 +100,12 @@ void compare_lt42(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,LT,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_ge\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_lt\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -108,11 +114,12 @@ void compare_eq42(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,EQ,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_ne\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_eq\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -121,11 +128,12 @@ void compare_ne42(int32_t value)
    register int32_t val asm("r7") = value;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CIJ(7,NE,8,2a) "\n\t"    /* 0x2a == 42 */
                 "brasl 14,if_eq\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_ne\n\t"
-                "0: nopr 0\n\t" : : "d"(val) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t" : : "d"(val) : "15", BRASLCLOBBER);
    return;
 }
 

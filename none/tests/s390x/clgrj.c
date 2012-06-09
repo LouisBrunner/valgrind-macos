@@ -31,11 +31,13 @@ void compare_never(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,NEVER) "\n\t"
                 "brasl 14,if_not_taken\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_taken\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -45,11 +47,13 @@ void compare_always(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,ALWAYS) "\n\t"
                 "brasl 14,if_not_taken\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_taken\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -59,11 +63,13 @@ void compare_le(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,LE) "\n\t"
                 "brasl 14,if_gt\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_le\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -73,11 +79,13 @@ void compare_ge(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,GE) "\n\t"
                 "brasl 14,if_lt\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_ge\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -87,11 +95,13 @@ void compare_gt(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,GT) "\n\t"
                 "brasl 14,if_le\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_gt\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -101,11 +111,13 @@ void compare_lt(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,LT) "\n\t"
                 "brasl 14,if_ge\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_lt\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -115,11 +127,13 @@ void compare_eq(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,EQ) "\n\t"
                 "brasl 14,if_ne\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_eq\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 
@@ -129,11 +143,13 @@ void compare_ne(uint64_t value1, uint64_t value2)
    register uint64_t val2 asm("r8") = value2;
 
    asm volatile(
+                "aghi  15,-160\n\t"
                 CLGRJ(7,8,8,NE) "\n\t"
                 "brasl 14,if_eq\n\t"
                 "j     0f\n\t"
                 "brasl 14,if_ne\n\t"
-                "0: nopr 0\n\t" : : "d"(val1), "d"(val2) : BRASLCLOBBER);
+                "0: aghi 15,160\n\t"
+                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
    return;
 }
 

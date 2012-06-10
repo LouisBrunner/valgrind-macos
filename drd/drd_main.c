@@ -325,8 +325,21 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
                       a1, len, DRD_(running_thread_inside_pthread_create)()
                       ? " (inside pthread_create())" : "");
 
+#if 0
    if (!is_stack_mem && DRD_(g_free_is_write))
       DRD_(thread_stop_using_mem)(a1, a2);
+#else
+   /*
+    * Sometimes it happens that a client starts using a memory range that has
+    * been accessed before but for which drd_stop_using_mem() has not been
+    * called for the entire range. It is not yet clear whether this is an
+    * out-of-range access by the client, an issue in the Valgrind core or an
+    * issue in DRD. Avoid that this issue triggers false positive reports by
+    * always clearing accesses for newly allocated memory ranges. See also
+    * http://bugs.kde.org/show_bug.cgi?id=297147.
+    */
+   DRD_(thread_stop_using_mem)(a1, a2);
+#endif
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {

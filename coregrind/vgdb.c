@@ -343,7 +343,7 @@ int ptrace_read_memory (pid_t inferior_pid, CORE_ADDR memaddr,
    to inferior's memory at MEMADDR.
    On failure (cannot write the inferior)
    returns the value of errno.  */
-
+__attribute__((unused)) /* not used on all platforms */
 static
 int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr, 
                          const unsigned char *myaddr, int len)

@@ -15224,6 +15224,8 @@ DisResult disInstr_THUMB_WRK (
       UInt regList = INSN0(7,0);
       if (bitR) regList |= (1 << 14);
    
+      /* At least one register must be transferred, else result is
+         UNPREDICTABLE. */
       if (regList != 0) {
          /* Since we can't generate a guaranteed non-trapping IR
             sequence, (1) jump over the insn if it is gated false, and
@@ -15238,7 +15240,7 @@ DisResult disInstr_THUMB_WRK (
             if ((regList & (1 << i)) != 0)
                nRegs++;
          }
-         vassert(nRegs >= 1 && nRegs <= 8);
+         vassert(nRegs >= 1 && nRegs <= 9);
 
          /* Move SP down first of all, so we're "covered".  And don't
             mess with its alignment. */
@@ -15276,6 +15278,8 @@ DisResult disInstr_THUMB_WRK (
       UInt bitR    = INSN0(8,8);
       UInt regList = INSN0(7,0);
    
+      /* At least one register must be transferred, else result is
+         UNPREDICTABLE. */
       if (regList != 0 || bitR) {
          /* Since we can't generate a guaranteed non-trapping IR
             sequence, (1) jump over the insn if it is gated false, and
@@ -15290,7 +15294,7 @@ DisResult disInstr_THUMB_WRK (
             if ((regList & (1 << i)) != 0)
                nRegs++;
          }
-         vassert(nRegs >= 0 && nRegs <= 7);
+         vassert(nRegs >= 0 && nRegs <= 8);
          vassert(bitR == 0 || bitR == 1);
 
          IRTemp oldSP = newTemp(Ity_I32);

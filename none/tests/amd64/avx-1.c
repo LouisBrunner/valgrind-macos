@@ -671,6 +671,84 @@ GEN_test_RandM(VMOVUPD_EtoG_256,
                "vmovupd %%ymm6,  %%ymm9",
                "vmovupd (%%rax), %%ymm7")
 
+GEN_test_RandM(VMULPD_256,
+               "vmulpd %%ymm6,  %%ymm8, %%ymm7",
+               "vmulpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VMOVUPD_EtoG_128,
+               "vmovupd %%xmm6,  %%xmm9",
+               "vmovupd (%%rax), %%xmm7")
+
+GEN_test_RandM(VADDPD_256,
+               "vaddpd %%ymm6,  %%ymm8, %%ymm7",
+               "vaddpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VSUBPD_256,
+               "vsubpd %%ymm6,  %%ymm8, %%ymm7",
+               "vsubpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VDIVPD_256,
+               "vdivpd %%ymm6,  %%ymm8, %%ymm7",
+               "vdivpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VPCMPEQQ_128,
+               "vpcmpeqq %%xmm6,  %%xmm8, %%xmm7",
+               "vpcmpeqq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VSUBPD_128,
+               "vsubpd %%xmm6,  %%xmm8, %%xmm7",
+               "vsubpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VADDPD_128,
+               "vaddpd %%xmm6,  %%xmm8, %%xmm7",
+               "vaddpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VUNPCKLPD_128,
+               "vunpcklpd %%xmm6,  %%xmm8, %%xmm7",
+               "vunpcklpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VUNPCKHPD_128,
+               "vunpckhpd %%xmm6,  %%xmm8, %%xmm7",
+               "vunpckhpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VUNPCKHPS_128,
+               "vunpckhps %%xmm6,  %%xmm8, %%xmm7",
+               "vunpckhps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMOVUPS_EtoG_128,
+               "vmovups %%xmm6,  %%xmm8",
+               "vmovups (%%rax), %%xmm9")
+
+GEN_test_RandM(VADDPS_256,
+               "vaddps %%ymm6,  %%ymm8, %%ymm7",
+               "vaddps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VSUBPS_256,
+               "vsubps %%ymm6,  %%ymm8, %%ymm7",
+               "vsubps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VMULPS_256,
+               "vmulps %%ymm6,  %%ymm8, %%ymm7",
+               "vmulps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VDIVPS_256,
+               "vdivps %%ymm6,  %%ymm8, %%ymm7",
+               "vdivps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VPCMPGTQ_128,
+               "vpcmpgtq %%xmm6,  %%xmm8, %%xmm7",
+               "vpcmpgtq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPEXTRQ_128_0x0,
+               "vpextrq $0x0, %%xmm7, %%r14",
+               "vpextrq $0x0, %%xmm7, (%%rax)")
+
+GEN_test_RandM(VPEXTRQ_128_0x1,
+               "vpextrq $0x1, %%xmm7, %%r14",
+               "vpextrq $0x1, %%xmm7, (%%rax)")
+
+GEN_test_Ronly(VPSRLQ_0x05_128,
+               "vpsrlq $0x5, %%xmm9,  %%xmm7")
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -825,5 +903,25 @@ int main ( void )
    test_VPMINSD_128();
    test_VPMAXSD_128();
    test_VANDPD_128();
+   test_VMULPD_256();
+   test_VMOVUPD_EtoG_128();
+   test_VADDPD_256();
+   test_VSUBPD_256();
+   test_VDIVPD_256();
+   test_VPCMPEQQ_128();
+   test_VSUBPD_128();
+   test_VADDPD_128();
+   test_VUNPCKLPD_128();
+   test_VUNPCKHPD_128();
+   test_VUNPCKHPS_128();
+   test_VMOVUPS_EtoG_128();
+   test_VADDPS_256();
+   test_VSUBPS_256();
+   test_VMULPS_256();
+   test_VDIVPS_256();
+   test_VPCMPGTQ_128();
+   test_VPEXTRQ_128_0x0();
+   test_VPEXTRQ_128_0x1();
+   test_VPSRLQ_0x05_128();
    return 0;
 }

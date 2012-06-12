@@ -750,6 +750,145 @@ GEN_test_RandM(VPEXTRQ_128_0x1,
 GEN_test_Ronly(VPSRLQ_0x05_128,
                "vpsrlq $0x5, %%xmm9,  %%xmm7")
 
+GEN_test_RandM(VPMULUDQ_128,
+               "vpmuludq %%xmm6,  %%xmm8, %%xmm7",
+               "vpmuludq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Ronly(VPSLLQ_0x05_128,
+               "vpsllq $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_RandM(VPMAXUD_128,
+               "vpmaxud %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaxud (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMINUD_128,
+               "vpminud %%xmm6,  %%xmm8, %%xmm7",
+               "vpminud (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMULLD_128,
+               "vpmulld %%xmm6,  %%xmm8, %%xmm7",
+               "vpmulld (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMAXUW_128,
+               "vpmaxuw %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaxuw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Ronly(VPEXTRW_128_EregOnly_toG_0x0,
+               "vpextrw $0x0, %%xmm7, %%r14d")
+
+GEN_test_Ronly(VPEXTRW_128_EregOnly_toG_0x7,
+               "vpextrw $0x7, %%xmm7, %%r14d")
+
+GEN_test_RandM(VPMINUW_128,
+               "vpminuw %%xmm6,  %%xmm8, %%xmm7",
+               "vpminuw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHMINPOSUW_128,
+               "vphminposuw %%xmm6,  %%xmm8",
+               "vphminposuw (%%rax), %%xmm7")
+
+GEN_test_RandM(VPMAXSW_128,
+               "vpmaxsw %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaxsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMINSW_128,
+               "vpminsw %%xmm6,  %%xmm8, %%xmm7",
+               "vpminsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMAXUB_128,
+               "vpmaxub %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaxub (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0x0,
+               "vpextrb $0x0, %%xmm8, %%r14",
+               "vpextrb $0x0, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0x1,
+               "vpextrb $0x1, %%xmm8, %%r14",
+               "vpextrb $0x1, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0x2,
+               "vpextrb $0x2, %%xmm8, %%r14",
+               "vpextrb $0x2, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0x3,
+               "vpextrb $0x3, %%xmm8, %%r14",
+               "vpextrb $0x3, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0x4,
+               "vpextrb $0x4, %%xmm8, %%r14",
+               "vpextrb $0x4, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0x9,
+               "vpextrb $0x9, %%xmm8, %%r14",
+               "vpextrb $0x9, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0xE,
+               "vpextrb $0xE, %%xmm8, %%r14",
+               "vpextrb $0xE, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPEXTRB_GtoE_128_0xF,
+               "vpextrb $0xF, %%xmm8, %%r14",
+               "vpextrb $0xF, %%xmm8, (%%rax)")
+
+GEN_test_RandM(VPMINUB_128,
+               "vpminub %%xmm6,  %%xmm8, %%xmm7",
+               "vpminub (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMAXSB_128,
+               "vpmaxsb %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaxsb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMINSB_128,
+               "vpminsb %%xmm6,  %%xmm8, %%xmm7",
+               "vpminsb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPERM2F128_0x00,
+               "vperm2f128 $0x00, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x00, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0xFF,
+               "vperm2f128 $0xFF, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0xFF, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0x30,
+               "vperm2f128 $0x30, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x30, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0x21,
+               "vperm2f128 $0x21, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x21, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0x12,
+               "vperm2f128 $0x12, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x12, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0x03,
+               "vperm2f128 $0x03, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x03, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0x85,
+               "vperm2f128 $0x85, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x85, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VPERM2F128_0x5A,
+               "vperm2f128 $0x5A, %%ymm6,  %%ymm8, %%ymm7",
+               "vperm2f128 $0x5A, (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VPERMILPD_256_0x0,
+               "vpermilpd $0x0, %%ymm6,  %%ymm8",
+               "vpermilpd $0x1, (%%rax), %%ymm8")
+GEN_test_RandM(VPERMILPD_256_0xF,
+               "vpermilpd $0xF, %%ymm6,  %%ymm8",
+               "vpermilpd $0xE, (%%rax), %%ymm8")
+GEN_test_RandM(VPERMILPD_256_0xA,
+               "vpermilpd $0xA, %%ymm6,  %%ymm8",
+               "vpermilpd $0xB, (%%rax), %%ymm8")
+GEN_test_RandM(VPERMILPD_256_0x5,
+               "vpermilpd $0x5, %%ymm6,  %%ymm8",
+               "vpermilpd $0x4, (%%rax), %%ymm8")
+
+GEN_test_RandM(VPERMILPD_128_0x0,
+               "vpermilpd $0x0, %%xmm6,  %%xmm8",
+               "vpermilpd $0x1, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPD_128_0x3,
+               "vpermilpd $0x3, %%xmm6,  %%xmm8",
+               "vpermilpd $0x2, (%%rax), %%xmm8")
+
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -923,5 +1062,43 @@ int main ( void )
    test_VPEXTRQ_128_0x0();
    test_VPEXTRQ_128_0x1();
    test_VPSRLQ_0x05_128();
+   test_VPMULUDQ_128();
+   test_VPSLLQ_0x05_128();
+   test_VPMAXUD_128();
+   test_VPMINUD_128();
+   test_VPMULLD_128();
+   test_VPMAXUW_128();
+   test_VPEXTRW_128_EregOnly_toG_0x0();
+   test_VPEXTRW_128_EregOnly_toG_0x7();
+   test_VPMINUW_128();
+   test_VPHMINPOSUW_128();
+   test_VPMAXSW_128();
+   test_VPMINSW_128();
+   test_VPMAXUB_128();
+   test_VPEXTRB_GtoE_128_0x0();
+   test_VPEXTRB_GtoE_128_0x1();
+   test_VPEXTRB_GtoE_128_0x2();
+   test_VPEXTRB_GtoE_128_0x3();
+   test_VPEXTRB_GtoE_128_0x4();
+   test_VPEXTRB_GtoE_128_0x9();
+   test_VPEXTRB_GtoE_128_0xE();
+   test_VPEXTRB_GtoE_128_0xF();
+   test_VPMINUB_128();
+   test_VPMAXSB_128();
+   test_VPMINSB_128();
+   test_VPERM2F128_0x00();
+   test_VPERM2F128_0xFF();
+   test_VPERM2F128_0x30();
+   test_VPERM2F128_0x21();
+   test_VPERM2F128_0x12();
+   test_VPERM2F128_0x03();
+   test_VPERM2F128_0x85();
+   test_VPERM2F128_0x5A();
+   test_VPERMILPD_256_0x0();
+   test_VPERMILPD_256_0xF();
+   test_VPERMILPD_256_0xA();
+   test_VPERMILPD_256_0x5();
+   test_VPERMILPD_128_0x0();
+   test_VPERMILPD_128_0x3();
    return 0;
 }

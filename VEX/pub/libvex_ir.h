@@ -1428,8 +1428,18 @@ typedef
       Iop_V256to64_2,
       Iop_V256to64_3,  // V256 -> I64, extract most sigificant lane
 
-      Iop_64x4toV256   // (I64,I64,I64,I64)->V256
+      Iop_64x4toV256,  // (I64,I64,I64,I64)->V256
                        // first arg is most significant lane
+
+      /* ------------------ 256-bit SIMD FP. ------------------ */
+      Iop_Add64Fx4,
+      Iop_Sub64Fx4,
+      Iop_Mul64Fx4,
+      Iop_Div64Fx4,
+      Iop_Add32Fx8,
+      Iop_Sub32Fx8,
+      Iop_Mul32Fx8,
+      Iop_Div32Fx8
    }
    IROp;
 

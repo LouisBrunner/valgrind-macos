@@ -982,8 +982,16 @@ void ppIROp ( IROp op )
       case Iop_V256to64_2: vex_printf("V256to64_2"); return;
       case Iop_V256to64_3: vex_printf("V256to64_3"); return;
       case Iop_64x4toV256: vex_printf("64x4toV256"); return;
-      case Iop_DPBtoBCD: vex_printf("Iop_DPBtoBCD"); return;
-      case Iop_BCDtoDPB: vex_printf("Iop_BCDtoDPB"); return;
+      case Iop_DPBtoBCD: vex_printf("DPBtoBCD"); return;
+      case Iop_BCDtoDPB: vex_printf("BCDtoDPB"); return;
+      case Iop_Add64Fx4: vex_printf("Add64Fx4"); return;
+      case Iop_Sub64Fx4: vex_printf("Sub64Fx4"); return;
+      case Iop_Mul64Fx4: vex_printf("Mul64Fx4"); return;
+      case Iop_Div64Fx4: vex_printf("Div64Fx4"); return;
+      case Iop_Add32Fx8: vex_printf("Add32Fx8"); return;
+      case Iop_Sub32Fx8: vex_printf("Sub32Fx8"); return;
+      case Iop_Mul32Fx8: vex_printf("Mul32Fx8"); return;
+      case Iop_Div32Fx8: vex_printf("Div32Fx8"); return;
       default: vpanic("ppIROp(1)");
    }
 
@@ -2782,6 +2790,16 @@ void typeOfPrimop ( IROp op,
 
       case Iop_64x4toV256:
          QUATERNARY(Ity_I64, Ity_I64, Ity_I64, Ity_I64, Ity_V256);
+
+      case Iop_Add64Fx4:
+      case Iop_Sub64Fx4:
+      case Iop_Mul64Fx4:
+      case Iop_Div64Fx4:
+      case Iop_Add32Fx8:
+      case Iop_Sub32Fx8:
+      case Iop_Mul32Fx8:
+      case Iop_Div32Fx8:
+         BINARY(Ity_V256,Ity_V256, Ity_V256);
 
       default:
          ppIROp(op);

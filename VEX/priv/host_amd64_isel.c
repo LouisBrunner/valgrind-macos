@@ -3368,7 +3368,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 /*--- ISEL: SIMD (V256) expressions, into 2 XMM regs.    --*/
 /*---------------------------------------------------------*/
 
-static void iselDVecExpr ( /*OUT*/HReg* rHi, HReg* rLo, 
+static void iselDVecExpr ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo, 
                            ISelEnv* env, IRExpr* e )
 {
    iselDVecExpr_wrk( rHi, rLo, env, e );
@@ -3383,12 +3383,14 @@ static void iselDVecExpr ( /*OUT*/HReg* rHi, HReg* rLo,
 
 
 /* DO NOT CALL THIS DIRECTLY */
-static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, HReg* rLo, 
+static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo, 
                                ISelEnv* env, IRExpr* e )
 {
    vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_V256);
+
+   AMD64SseOp op = Asse_INVALID;
 
    /* read 256-bit IRTemp */
    if (e->tag == Iex_RdTmp) {
@@ -3421,6 +3423,54 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, HReg* rLo,
       *rLo = vLo;
       return;
    }
+
+   if (e->tag == Iex_Binop) {
+   switch (e->Iex.Binop.op) {
+
+      case Iop_Add64Fx4:   op = Asse_ADDF;   goto do_64Fx4;
+      case Iop_Sub64Fx4:   op = Asse_SUBF;   goto do_64Fx4;
+      case Iop_Mul64Fx4:   op = Asse_MULF;   goto do_64Fx4;
+      case Iop_Div64Fx4:   op = Asse_DIVF;   goto do_64Fx4;
+      do_64Fx4:
+      {
+         HReg argLhi, argLlo, argRhi, argRlo;
+         iselDVecExpr(&argLhi, &argLlo, env, e->Iex.Binop.arg1);
+         iselDVecExpr(&argRhi, &argRlo, env, e->Iex.Binop.arg2);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argLhi, dstHi));
+         addInstr(env, mk_vMOVsd_RR(argLlo, dstLo));
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argRhi, dstHi));
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argRlo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      case Iop_Add32Fx8:   op = Asse_ADDF;   goto do_32Fx8;
+      case Iop_Sub32Fx8:   op = Asse_SUBF;   goto do_32Fx8;
+      case Iop_Mul32Fx8:   op = Asse_MULF;   goto do_32Fx8;
+      case Iop_Div32Fx8:   op = Asse_DIVF;   goto do_32Fx8;
+      do_32Fx8:
+      {
+         HReg argLhi, argLlo, argRhi, argRlo;
+         iselDVecExpr(&argLhi, &argLlo, env, e->Iex.Binop.arg1);
+         iselDVecExpr(&argRhi, &argRlo, env, e->Iex.Binop.arg2);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argLhi, dstHi));
+         addInstr(env, mk_vMOVsd_RR(argLlo, dstLo));
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argRhi, dstHi));
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argRlo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      default:
+         break;
+   } /* switch (e->Iex.Binop.op) */
+   } /* if (e->tag == Iex_Binop) */
 
    if (e->tag == Iex_Qop && e->Iex.Qop.details->op == Iop_64x4toV256) {
       HReg        rsp     = hregAMD64_RSP();

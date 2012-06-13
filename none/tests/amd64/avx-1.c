@@ -888,6 +888,48 @@ GEN_test_RandM(VPERMILPD_128_0x3,
                "vpermilpd $0x3, %%xmm6,  %%xmm8",
                "vpermilpd $0x2, (%%rax), %%xmm8")
 
+GEN_test_RandM(VUNPCKLPD_256,
+               "vunpcklpd %%ymm6,  %%ymm8, %%ymm7",
+               "vunpcklpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VUNPCKHPD_256,
+               "vunpckhpd %%ymm6,  %%ymm8, %%ymm7",
+               "vunpckhpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VSHUFPS_0x39_256,
+               "vshufps $0x39, %%ymm9,  %%ymm8, %%ymm7",
+               "vshufps $0xC6, (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VUNPCKLPS_256,
+               "vunpcklps %%ymm6,  %%ymm8, %%ymm7",
+               "vunpcklps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VUNPCKHPS_256,
+               "vunpckhps %%ymm6,  %%ymm8, %%ymm7",
+               "vunpckhps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VXORPD_256,
+               "vxorpd %%ymm6,  %%ymm8, %%ymm7",
+               "vxorpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_Monly(VBROADCASTSD_256,
+               "vbroadcastsd (%%rax), %%ymm8")
+
+GEN_test_RandM(VCMPPD_128_0x4,
+               "vcmppd $4, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $4, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCVTDQ2PD_128,
+               "vcvtdq2pd %%xmm6,  %%xmm8",
+               "vcvtdq2pd (%%rax), %%xmm8")
+
+GEN_test_RandM(VDIVPD_128,
+               "vdivpd %%xmm6,  %%xmm8, %%xmm7",
+               "vdivpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VANDPD_256,
+               "vandpd %%ymm6,  %%ymm8, %%ymm7",
+               "vandpd (%%rax), %%ymm8, %%ymm7")
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -1100,5 +1142,16 @@ int main ( void )
    test_VPERMILPD_256_0x5();
    test_VPERMILPD_128_0x0();
    test_VPERMILPD_128_0x3();
+   test_VUNPCKLPD_256();
+   test_VUNPCKHPD_256();
+   test_VSHUFPS_0x39_256();
+   test_VUNPCKLPS_256();
+   test_VUNPCKHPS_256();
+   test_VXORPD_256();
+   test_VBROADCASTSD_256();
+   test_VCMPPD_128_0x4();
+   test_VCVTDQ2PD_128();
+   test_VDIVPD_128();
+   test_VANDPD_256();
    return 0;
 }

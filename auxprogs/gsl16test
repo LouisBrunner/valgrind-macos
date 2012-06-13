@@ -100,19 +100,19 @@ rm -f out-REF
 echo "  ... done"
 
 echo -n "   Collecting valgrinded results "
-rm -f out-V
-(cd gsl-1.6-patched && for f in $ALL_TESTS ; do eval $GSL_VV -v --trace-children=yes "$GSL_VFLAGS" ./$f ; done) &> out-V
+rm -f out-VAL
+(cd gsl-1.6-patched && for f in $ALL_TESTS ; do eval $GSL_VV -v --trace-children=yes "$GSL_VFLAGS" ./$f ; done) &> out-VAL
 echo "  ... done"
 
 echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)
 echo -n "   Native passes:   " && (grep PASS: out-REF | wc -l)
-echo -n "   Valgrind fails:  " && (grep FAIL: out-V | wc -l)
-echo -n "   Valgrind passes: " && (grep PASS: out-V | wc -l)
+echo -n "   Valgrind fails:  " && (grep FAIL: out-VAL | wc -l)
+echo -n "   Valgrind passes: " && (grep PASS: out-VAL | wc -l)
 
 (echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)) >> summary.txt
 (echo -n "   Native passes:   " && (grep PASS: out-REF | wc -l)) >> summary.txt
-(echo -n "   Valgrind fails:  " && (grep FAIL: out-V | wc -l)) >> summary.txt
-(echo -n "   Valgrind passes: " && (grep PASS: out-V | wc -l)) >> summary.txt
+(echo -n "   Valgrind fails:  " && (grep FAIL: out-VAL | wc -l)) >> summary.txt
+(echo -n "   Valgrind passes: " && (grep PASS: out-VAL | wc -l)) >> summary.txt
 echo >> summary.txt
 
 echo

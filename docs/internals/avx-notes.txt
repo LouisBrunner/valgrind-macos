@@ -2,4 +2,22 @@
 Cleanups
 ~~~~~~~~
 
-(none at present)
+* Important: iropt: Make sure XorV128 and XorV256 of identical
+  args gets folded to zero
+
+* add more iteration in test cases
+
+* math_UNPCKxPS_128: use xIsH ? InterleaveHI32x4 : InterleaveLO32x
+  I think this is safe w.r.t. the backend
+
+* math_UNPCKxPD_128: ditto
+
+* math_UNPCKxPD_256: split into 128 bit chunks and use math_UNPCKxPD_128
+
+
+Known limitations
+~~~~~~~~~~~~~~~~~
+
+* for many (all?) of the vector shift-by-imm cases (pre-existing as
+  well as AVX), out of range shifts are not handled properly and only
+  work I think because the host happens to have the same semantics.

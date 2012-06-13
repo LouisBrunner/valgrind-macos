@@ -1423,13 +1423,20 @@ typedef
       /* ------------------ 256-bit SIMD Integer. ------------------ */
 
       /* Pack/unpack */
-      Iop_V256to64_0,  // V256 -> I64, extract least sigificant lane
+      Iop_V256to64_0,  // V256 -> I64, extract least significant lane
       Iop_V256to64_1,
       Iop_V256to64_2,
-      Iop_V256to64_3,  // V256 -> I64, extract most sigificant lane
+      Iop_V256to64_3,  // V256 -> I64, extract most significant lane
 
       Iop_64x4toV256,  // (I64,I64,I64,I64)->V256
                        // first arg is most significant lane
+
+      Iop_V256toV128_0, // V256 -> V128, less significant lane
+      Iop_V256toV128_1, // V256 -> V128, more significant lane
+      Iop_V128HLtoV256, // (V128,V128)->V256, first arg is most signif
+
+      Iop_AndV256,
+      Iop_XorV256,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,

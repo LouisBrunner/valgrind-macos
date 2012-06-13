@@ -2994,6 +2994,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_V256toV128_0:
+      case Iop_V256toV128_1: {
+         HReg vHi, vLo;
+         iselDVecExpr(&vHi, &vLo, env, e->Iex.Unop.arg);
+         return (e->Iex.Unop.op == Iop_V256toV128_1) ? vHi : vLo;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Unop.op) */
@@ -3464,6 +3471,30 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          addInstr(env, AMD64Instr_Sse32Fx4(op, argRlo, dstLo));
          *rHi = dstHi;
          *rLo = dstLo;
+         return;
+      }
+
+      case Iop_AndV256:    op = Asse_AND;      goto do_SseReRg;
+      case Iop_XorV256:    op = Asse_XOR;      goto do_SseReRg;
+      do_SseReRg:
+      {
+         HReg argLhi, argLlo, argRhi, argRlo;
+         iselDVecExpr(&argLhi, &argLlo, env, e->Iex.Binop.arg1);
+         iselDVecExpr(&argRhi, &argRlo, env, e->Iex.Binop.arg2);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argLhi, dstHi));
+         addInstr(env, mk_vMOVsd_RR(argLlo, dstLo));
+         addInstr(env, AMD64Instr_SseReRg(op, argRhi, dstHi));
+         addInstr(env, AMD64Instr_SseReRg(op, argRlo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      case Iop_V128HLtoV256: {
+         *rHi = iselVecExpr(env, e->Iex.Binop.arg1);
+         *rLo = iselVecExpr(env, e->Iex.Binop.arg2);
          return;
       }
 

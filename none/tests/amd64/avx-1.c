@@ -970,6 +970,34 @@ GEN_test_RandM(VPMOVSXWD_128,
                "vpmovsxwd %%xmm6,  %%xmm8",
                "vpmovsxwd (%%rax), %%xmm8")
 
+GEN_test_RandM(VDIVPS_128,
+               "vdivps %%xmm9,  %%xmm8, %%xmm7",
+               "vdivps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VANDPS_256,
+               "vandps %%ymm6,  %%ymm8, %%ymm7",
+               "vandps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VXORPS_256,
+               "vxorps %%ymm6,  %%ymm8, %%ymm7",
+               "vxorps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VORPS_256,
+               "vorps %%ymm6,  %%ymm8, %%ymm7",
+               "vorps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VANDNPD_256,
+               "vandnpd %%ymm6,  %%ymm8, %%ymm7",
+               "vandnpd (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VANDNPS_256,
+               "vandnps %%ymm6,  %%ymm8, %%ymm7",
+               "vandnps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VORPD_256,
+               "vorpd %%ymm6,  %%ymm8, %%ymm7",
+               "vorpd (%%rax), %%ymm8, %%ymm7")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -1204,5 +1232,12 @@ int main ( void )
    test_VBROADCASTSS_128();
    test_VPMOVSXDQ_128();
    test_VPMOVSXWD_128();
+   test_VDIVPS_128();
+   test_VANDPS_256();
+   test_VXORPS_256();
+   test_VORPS_256();
+   test_VANDNPD_256();
+   test_VANDNPS_256();
+   test_VORPD_256();
    return 0;
 }

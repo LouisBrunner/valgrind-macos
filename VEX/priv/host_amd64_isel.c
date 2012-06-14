@@ -3431,6 +3431,22 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
       return;
    }
 
+   if (e->tag == Iex_Unop) {
+   switch (e->Iex.Unop.op) {
+
+      case Iop_NotV256: {
+         HReg argHi, argLo;
+         iselDVecExpr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         *rHi = do_sse_NotV128(env, argHi);
+         *rLo = do_sse_NotV128(env, argLo);
+         return;
+      }
+
+      default:
+         break;
+   } /* switch (e->Iex.Unop.op) */
+   } /* if (e->tag == Iex_Unop) */
+
    if (e->tag == Iex_Binop) {
    switch (e->Iex.Binop.op) {
 
@@ -3475,6 +3491,7 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
       }
 
       case Iop_AndV256:    op = Asse_AND;      goto do_SseReRg;
+      case Iop_OrV256:     op = Asse_OR;       goto do_SseReRg;
       case Iop_XorV256:    op = Asse_XOR;      goto do_SseReRg;
       do_SseReRg:
       {

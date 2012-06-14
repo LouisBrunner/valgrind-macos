@@ -1436,7 +1436,9 @@ typedef
       Iop_V128HLtoV256, // (V128,V128)->V256, first arg is most signif
 
       Iop_AndV256,
+      Iop_OrV256,
       Iop_XorV256,
+      Iop_NotV256,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,

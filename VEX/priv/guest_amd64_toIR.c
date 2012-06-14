@@ -19887,10 +19887,8 @@ Long dis_VEX_NDS_256_AnySimdPfx_0F_WIG (
    Int    alen  = 0;
    vassert(1==getVexL(pfx)/*256*/ && 0==getRexW(pfx)/*WIG?*/);
 
-   // Hmm. we don't actually have Iop_NotV256 (yet).  Hence kludge:
-   vassert(!invertLeftArg);
-   assign(tSL, /* invertLeftArg ? unop(Iop_NotV256, getYMMReg(rSL))
-                                : */ getYMMReg(rSL));
+   assign(tSL, invertLeftArg ? unop(Iop_NotV256, getYMMReg(rSL))
+                             : getYMMReg(rSL));
 
    if (epartIsReg(modrm)) {
       UInt rSR = eregOfRexRM(pfx, modrm);
@@ -20740,6 +20738,12 @@ Long dis_ESC_0F__VEX (
                     uses_vvvv, vbi, pfx, delta, "vandps", Iop_AndV128 );
          goto decode_success;
       }
+      /* VANDPS = VEX.NDS.256.0F.WIG 54 /r */
+      if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_AVX256_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vandps", Iop_AndV256 );
+         goto decode_success;
+      }
       break;
 
    case 0x55:
@@ -20751,10 +20755,24 @@ Long dis_ESC_0F__VEX (
                     NULL, True/*invertLeftArg*/, False/*swapArgs*/ );
          goto decode_success;
       }
+      /* VANDNPD = VEX.NDS.256.66.0F.WIG 55 /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_VEX_NDS_256_AnySimdPfx_0F_WIG(
+                    uses_vvvv, vbi, pfx, delta, "vandpd", Iop_AndV256,
+                    NULL, True/*invertLeftArg*/, False/*swapArgs*/ );
+         goto decode_success;
+      }
       /* VANDNPS = VEX.NDS.128.0F.WIG 55 /r */
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG(
                     uses_vvvv, vbi, pfx, delta, "vandps", Iop_AndV128,
+                    NULL, True/*invertLeftArg*/, False/*swapArgs*/ );
+         goto decode_success;
+      }
+      /* VANDNPS = VEX.NDS.256.0F.WIG 55 /r */
+      if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_VEX_NDS_256_AnySimdPfx_0F_WIG(
+                    uses_vvvv, vbi, pfx, delta, "vandps", Iop_AndV256,
                     NULL, True/*invertLeftArg*/, False/*swapArgs*/ );
          goto decode_success;
       }
@@ -20768,11 +20786,25 @@ Long dis_ESC_0F__VEX (
                     uses_vvvv, vbi, pfx, delta, "vorpd", Iop_OrV128 );
          goto decode_success;
       }
+      /* VORPD r/m, rV, r ::: r = rV | r/m */
+      /* VORPD = VEX.NDS.256.66.0F.WIG 56 /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_AVX256_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vorpd", Iop_OrV256 );
+         goto decode_success;
+      }
       /* VORPS r/m, rV, r ::: r = rV | r/m */
       /* VORPS = VEX.NDS.128.0F.WIG 56 /r */
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
                     uses_vvvv, vbi, pfx, delta, "vorps", Iop_OrV128 );
+         goto decode_success;
+      }
+      /* VORPS r/m, rV, r ::: r = rV | r/m */
+      /* VORPS = VEX.NDS.256.0F.WIG 56 /r */
+      if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_AVX256_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vorps", Iop_OrV256 );
          goto decode_success;
       }
       break;
@@ -20797,6 +20829,13 @@ Long dis_ESC_0F__VEX (
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_VEX_NDS_128_AnySimdPfx_0F_WIG_simple(
                     uses_vvvv, vbi, pfx, delta, "vxorps", Iop_XorV128 );
+         goto decode_success;
+      }
+      /* VXORPS r/m, rV, r ::: r = rV ^ r/m */
+      /* VXORPS = VEX.NDS.256.0F.WIG 57 /r */
+      if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_AVX256_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vxorps", Iop_XorV256 );
          goto decode_success;
       }
       break;
@@ -21033,6 +21072,12 @@ Long dis_ESC_0F__VEX (
       if (haveF3no66noF2(pfx)) {
          delta = dis_AVX128_E_V_to_G_lo32(
                     uses_vvvv, vbi, pfx, delta, "vdivss", Iop_Div32F0x4 );
+         goto decode_success;
+      }
+      /* VDIVPS xmm3/m128, xmm2, xmm1 = VEX.NDS.128.0F.WIG 5E /r */
+      if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_AVX128_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vdivps", Iop_Div32Fx4 );
          goto decode_success;
       }
       /* VDIVPS ymm3/m256, ymm2, ymm1 = VEX.NDS.256.0F.WIG 5E /r */

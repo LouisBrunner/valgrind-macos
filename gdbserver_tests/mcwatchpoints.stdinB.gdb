@@ -14,6 +14,9 @@ continue
 rwatch undefined[0]
 awatch undefined[4]
 watch  undefined[8]
+rwatch undefined[9]
+awatch undefined[9]
+watch  undefined[9]
 #
 # now we should encounter 4 break points
 continue

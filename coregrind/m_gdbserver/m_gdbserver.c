@@ -39,6 +39,7 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_tool_hashtable.h"
+#include "pub_tool_xarray.h"
 #include "pub_core_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_core_libcsignal.h"
@@ -139,6 +140,7 @@ static char* sym (Addr addr, Bool is_code)
    static int w = 0;
    PtrdiffT offset;
    if (w == 2) w = 0;
+   buf[w][0] = '\0';
    if (is_code) {
       VG_(describe_IP) (addr, buf[w], 200);
    } else {
@@ -151,6 +153,18 @@ static char* sym (Addr addr, Bool is_code)
    gdbserver_exited is incremented when gdbserver is asked to exit */
 static int gdbserver_called = 0;
 static int gdbserver_exited = 0;
+
+/* alloc and free functions for xarray and similar. */
+static void* gs_alloc (HChar* cc, SizeT sz)
+{
+   void* res = VG_(arena_malloc)(VG_AR_CORE, cc, sz);
+   vg_assert (res);
+   return res;
+}
+static void gs_free (void* ptr)
+{
+   VG_(arena_free)(VG_AR_CORE, ptr);
+}
 
 typedef
    enum {
@@ -221,21 +235,52 @@ char* VG_(ppPointKind) (PointKind kind)
    case write_watchpoint:    return "write_watchpoint";
    case read_watchpoint:     return "read_watchpoint";
    case access_watchpoint:   return "access_watchpoint";
-   default: vg_assert(0);
+   default:                  return "???wrong PointKind";
    }
 }
 
 typedef
    struct _GS_Watch {
-      struct _GS_Watch* next;
       Addr    addr;
       SizeT   len;
       PointKind kind;
    }
    GS_Watch;
 
-/* gs_watches contains a list of all addresses+len that are being watched. */
-static VgHashTable gs_watches = NULL;
+/* gs_watches contains a list of all addresses+len+kind that are being
+   watched. */
+static XArray* gs_watches = NULL;
+
+static inline GS_Watch* index_gs_watches(Word i)
+{
+   return *(GS_Watch **) VG_(indexXA) (gs_watches, i);
+}
+
+/* Returns the GS_Watch matching addr/len/kind and sets *g_ix to its
+   position in gs_watches.
+   If no matching GS_Watch is found, returns NULL and sets g_ix to -1. */
+static GS_Watch* lookup_gs_watch (Addr addr, SizeT len, PointKind kind,
+                                  Word* g_ix)
+{
+   const Word n_elems = VG_(sizeXA) (gs_watches);
+   Word i;
+   GS_Watch *g;
+
+   /* Linear search. If we have many watches, this might be optimised
+      by having the array sorted and using VG_(lookupXA) */
+   for (i = 0; i < n_elems; i++) {
+      g = index_gs_watches(i);
+      if (g->addr == addr && g->len == len && g->kind == kind) {
+         // Found.
+         *g_ix = i;
+         return g;
+      }
+   }
+
+   // Not found.
+   *g_ix = -1;
+   return NULL;
+}
 
 
 /* protocol spec tells the below must be idempotent. */
@@ -290,6 +335,7 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
 {
    Bool res;
    GS_Watch *g;
+   Word g_ix;
    Bool is_code = kind == software_breakpoint || kind == hardware_breakpoint;
 
    dlog(1, "%s %s at addr %p %s\n",
@@ -314,7 +360,10 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
    if (!res) 
       return False; /* error or unsupported */
 
-   g = VG_(HT_lookup) (gs_watches, (UWord)addr);
+   // Protocol says insert/remove must be idempotent.
+   // So, we just ignore double insert or (supposed) double delete.
+
+   g = lookup_gs_watch (addr, len, kind, &g_ix);
    if (insert) {
       if (g == NULL) {
          g = VG_(arena_malloc)(VG_AR_CORE, "gdbserver_point watchpoint",
@@ -322,26 +371,37 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
          g->addr = addr;
          g->len  = len;
          g->kind = kind;
-         VG_(HT_add_node)(gs_watches, g);
+         VG_(addToXA)(gs_watches, &g);
       } else {
-         g->kind = kind;
+         dlog(1, 
+              "VG_(gdbserver_point) addr %p len %d kind %s already inserted\n",
+               C2v(addr), len, VG_(ppPointKind) (kind));
       }
    } else {
-      vg_assert (g != NULL);
-      VG_(HT_remove) (gs_watches, g->addr);
-      VG_(arena_free) (VG_AR_CORE, g);
+      if (g != NULL) {
+         VG_(removeIndexXA) (gs_watches, g_ix);
+         VG_(arena_free) (VG_AR_CORE, g);
+      } else {
+         dlog(1, 
+              "VG_(gdbserver_point) addr %p len %d kind %s already deleted?\n",
+              C2v(addr), len, VG_(ppPointKind) (kind));
+      }
    }  
    return True;
 }
 
 Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
 {
+   Word n_elems;
    GS_Watch* g;
+   Word i;
    Bool watched = False;
    const ThreadId tid = VG_(running_tid);
 
    if (!gdbserver_called)
       return False;
+
+   n_elems = VG_(sizeXA) (gs_watches);
 
    Addr to = addr + szB; // semi-open interval [addr, to[
 
@@ -350,8 +410,9 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
               || kind == write_watchpoint);
    dlog(1, "tid %d VG_(is_watched) %s addr %p szB %d\n",
         tid, VG_(ppPointKind) (kind), C2v(addr), szB);
-   VG_(HT_ResetIter) (gs_watches);
-   while ((g = VG_(HT_Next) (gs_watches))) {
+
+   for (i = 0; i < n_elems; i++) {
+      g = index_gs_watches(i);
       switch (g->kind) {
       case software_breakpoint:
       case hardware_breakpoint:
@@ -473,26 +534,29 @@ static void clear_gdbserved_addresses(Bool clear_only_jumps)
    VG_(free) (ag);
 }
 
-// Clear watched addressed in gs_watches
+// Clear watched addressed in gs_watches, delete gs_watches.
 static void clear_watched_addresses(void)
 {
-   GS_Watch** ag;
-   UInt n_elems;
-   int i;
+   GS_Watch* g;
+   const Word n_elems = VG_(sizeXA) (gs_watches);
+   Word i;
 
    dlog(1,
-        "clear_watched_addresses: scanning hash table nodes %d\n", 
-        VG_(HT_count_nodes) (gs_watches));
-   ag = (GS_Watch**) VG_(HT_to_array) (gs_watches, &n_elems);
+        "clear_watched_addresses: %ld elements\n", 
+        n_elems);
+   
    for (i = 0; i < n_elems; i++) {
-      if (!VG_(gdbserver_point) (ag[i]->kind,
+      g = index_gs_watches(i);
+      if (!VG_(gdbserver_point) (g->kind,
                                  /* insert */ False,
-                                 ag[i]->addr,
-                                 ag[i]->len)) {
+                                 g->addr,
+                                 g->len)) {
          vg_assert (0);
       }
    }
-   VG_(free) (ag);
+
+   VG_(deleteXA) (gs_watches);
+   gs_watches = NULL;
 }
 
 static void invalidate_if_jump_not_yet_gdbserved (Addr addr, char* from)
@@ -546,8 +610,6 @@ static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
       VG_(HT_destruct) (gs_addresses, VG_(free));
       gs_addresses = NULL;
       clear_watched_addresses();
-      VG_(HT_destruct) (gs_watches, VG_(free));
-      gs_watches = NULL;
    } else {
       vg_assert (gs_addresses == NULL);
       vg_assert (gs_watches == NULL);
@@ -592,7 +654,10 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
       vg_assert (gs_addresses == NULL);
       vg_assert (gs_watches == NULL);
       gs_addresses = VG_(HT_construct)( "gdbserved_addresses" );
-      gs_watches = VG_(HT_construct)( "gdbserved_watches" );
+      gs_watches = VG_(newXA)(gs_alloc,
+                              "gdbserved_watches",
+                              gs_free,
+                              sizeof(GS_Watch*));
       VG_(atfork)(NULL, NULL, gdbserver_cleanup_in_child_after_fork);
    }
    vg_assert (gs_addresses != NULL);
@@ -1326,7 +1391,7 @@ void VG_(gdbserver_status_output)(void)
    const int nr_gdbserved_addresses 
       = (gs_addresses == NULL ? -1 : VG_(HT_count_nodes) (gs_addresses));
    const int nr_watchpoints
-      = (gs_watches == NULL ? -1 : VG_(HT_count_nodes) (gs_watches));
+      = (gs_watches == NULL ? -1 : (int) VG_(sizeXA) (gs_watches));
    remote_utils_output_status();
    VG_(umsg)
       ("nr of calls to gdbserver: %d\n"

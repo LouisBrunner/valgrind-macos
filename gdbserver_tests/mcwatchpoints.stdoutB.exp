@@ -5,6 +5,9 @@ Breakpoint 1, breakme (line=19) at watchpoints.c:7
 Hardware read watchpoint 2: undefined[0]
 Hardware access (read/write) watchpoint 3: undefined[4]
 Hardware watchpoint 4: undefined[8]
+Hardware read watchpoint 5: undefined[9]
+Hardware access (read/write) watchpoint 6: undefined[9]
+Hardware watchpoint 7: undefined[9]
 Continuing.
 Hardware read watchpoint 2: undefined[0]
 Value = 117 'u'

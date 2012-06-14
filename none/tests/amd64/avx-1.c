@@ -1,8 +1,4 @@
 
-/* The following tests appear not to be accepted by the assembler.
-      VCVTPD2PS_128 (memory form)
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -314,7 +310,7 @@ GEN_test_RandM(VPAND_128,
                "vpand %%xmm9,  %%xmm8, %%xmm7",
                "vpand (%%rax), %%xmm8, %%xmm7")
 
-GEN_test_Monly(VMOVHPD_128,
+GEN_test_Monly(VMOVHPD_128_StoreForm,
                "vmovhpd %%xmm8, (%%rax)")
 
 GEN_test_RandM(VPCMPEQB_128,
@@ -554,14 +550,10 @@ GEN_test_RandM(VCMPSS_128_0xE,
                "vcmpss $0xE, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xE, (%%rax), %%xmm8, %%xmm7")
 
-// AFAICS this is a E-to-G form insn, but the assembler on Ubuntu 11.10
-// refuses to accept the memory case.  Hence test only the register case.
-// "none/tests/amd64/avx-1.c:527: Error: unsupported syntax for `vcvtpd2ps'"
-//GEN_test_RandM(VCVTPD2PS_128,
-//               "vcvtpd2ps %%xmm8,  %%xmm7",
-//               "vcvtpd2ps (%%rax), %%xmm9")
-GEN_test_Ronly(VCVTPD2PS_128,
-               "vcvtpd2ps %%xmm8,  %%xmm7")
+// The x suffix denotes a 128 -> 64 operation
+GEN_test_RandM(VCVTPD2PS_128,
+               "vcvtpd2psx %%xmm8,  %%xmm7",
+               "vcvtpd2psx (%%rax), %%xmm9")
 
 GEN_test_RandM(VEXTRACTF128_0x0,
                "vextractf128 $0x0, %%ymm7, %%xmm9",
@@ -931,6 +923,53 @@ GEN_test_RandM(VANDPD_256,
                "vandpd %%ymm6,  %%ymm8, %%ymm7",
                "vandpd (%%rax), %%ymm8, %%ymm7")
 
+GEN_test_RandM(VPMOVSXBW_128,
+               "vpmovsxbw %%xmm6,  %%xmm8",
+               "vpmovsxbw (%%rax), %%xmm8")
+
+GEN_test_RandM(VPSUBUSW_128,
+               "vpsubusw %%xmm9,  %%xmm8, %%xmm7",
+               "vpsubusw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPCMPEQW_128,
+               "vpcmpeqw %%xmm6,  %%xmm8, %%xmm7",
+               "vpcmpeqw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPADDB_128,
+               "vpaddb %%xmm6,  %%xmm8, %%xmm7",
+               "vpaddb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMOVAPS_EtoG_256,
+               "vmovaps %%ymm6,  %%ymm8",
+               "vmovaps (%%rax), %%ymm9")
+
+GEN_test_RandM(VCVTDQ2PD_256,
+               "vcvtdq2pd %%xmm6,  %%ymm8",
+               "vcvtdq2pd (%%rax), %%ymm8")
+
+GEN_test_Monly(VMOVHPD_128_LoadForm,
+               "vmovhpd (%%rax), %%xmm8, %%xmm7")
+
+// The y suffix denotes a 256 -> 128 operation
+GEN_test_RandM(VCVTPD2PS_256,
+               "vcvtpd2psy %%ymm8,  %%xmm7",
+               "vcvtpd2psy (%%rax), %%xmm9")
+
+GEN_test_RandM(VPUNPCKHDQ_128,
+               "vpunpckhdq %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpckhdq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Monly(VBROADCASTSS_128,
+               "vbroadcastss (%%rax), %%xmm8")
+
+GEN_test_RandM(VPMOVSXDQ_128,
+               "vpmovsxdq %%xmm6,  %%xmm8",
+               "vpmovsxdq (%%rax), %%xmm8")
+
+GEN_test_RandM(VPMOVSXWD_128,
+               "vpmovsxwd %%xmm6,  %%xmm8",
+               "vpmovsxwd (%%rax), %%xmm8")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -1033,7 +1072,7 @@ int main ( void )
    test_VMINPS_128();
    test_VSHUFPS_0x39_128();
    test_VPCMPEQB_128();
-   test_VMOVHPD_128();
+   test_VMOVHPD_128_StoreForm();
    test_VPAND_128();
    test_VPMOVMSKB_128();
    test_VCVTTSS2SI_64();
@@ -1153,5 +1192,17 @@ int main ( void )
    test_VCVTDQ2PD_128();
    test_VDIVPD_128();
    test_VANDPD_256();
+   test_VPMOVSXBW_128();
+   test_VPSUBUSW_128();
+   test_VPCMPEQW_128();
+   test_VPADDB_128();
+   test_VMOVAPS_EtoG_256();
+   test_VCVTDQ2PD_256();
+   test_VMOVHPD_128_LoadForm();
+   test_VCVTPD2PS_256();
+   test_VPUNPCKHDQ_128();
+   test_VBROADCASTSS_128();
+   test_VPMOVSXDQ_128();
+   test_VPMOVSXWD_128();
    return 0;
 }

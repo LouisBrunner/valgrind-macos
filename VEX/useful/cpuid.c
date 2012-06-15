@@ -24,34 +24,24 @@ int main ( void )
   printf("\n");
   cpuid(&eax,&ebx,&ecx,&edx, 0,0);
   maxidx = eax;
-  for (i = 1; i <= maxidx +2; i++) {
+  for (i = 1; i <= maxidx +5; i++) {
+
+    UInt subleaf = 0;
+
+    if (i == 4) subleaf = 10;
+    if (i == 7) subleaf = 10;
+    if (i == 0xB) subleaf = 10;
+    if (i == 0xD) subleaf = 10;
+
+    if (subleaf > 0) printf("\n");
 
     cpuid(&eax,&ebx,&ecx,&edx, i,0);
 
-    if (i == 4) {
-      printf("\n");
-      for (ecx_in = 1; ecx_in < 10; ecx_in++) {
-         cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
-      }
-      printf("\n");
+    for (ecx_in = 1; ecx_in < subleaf; ecx_in++) {
+       cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
     }
 
-    if (i == 0xb) {
-      printf("\n");
-      for (ecx_in = 1; ecx_in < 10; ecx_in++) {
-         cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
-      }
-      printf("\n");
-    }
-
-    if (i == 0xd) {
-      printf("\n");
-      for (ecx_in = 1; ecx_in < 5; ecx_in++) {
-         cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
-      }
-      printf("\n");
-    }
-
+    if (subleaf > 0) printf("\n");
 
   }
 
@@ -59,7 +49,7 @@ int main ( void )
 
   cpuid(&eax,&ebx,&ecx,&edx, 0x80000000,0);
   maxextidx = eax;
-  for (i = 0x80000001; i <= maxextidx +2; i++) {
+  for (i = 0x80000001; i <= maxextidx +5; i++) {
      cpuid(&eax,&ebx,&ecx,&edx, i,0);
   }
 

@@ -1498,8 +1498,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-      if ((e->Iex.Binop.op == Iop_CmpF64) |
-          (e->Iex.Binop.op == Iop_CmpD64) |
+      if ((e->Iex.Binop.op == Iop_CmpF64) ||
+          (e->Iex.Binop.op == Iop_CmpD64) ||
           (e->Iex.Binop.op == Iop_CmpD128)) {
          HReg fr_srcL;
          HReg fr_srcL_lo;

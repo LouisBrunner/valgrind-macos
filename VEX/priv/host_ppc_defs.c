@@ -1092,7 +1092,7 @@ PPCInstr* PPCInstr_DfpRound128 ( HReg dst_hi, HReg dst_lo, HReg src_hi,
    i->Pin.DfpRound128.r_rmc  = r_rmc;
    return i;
 }
-PPCInstr* PPCInstr_DfpQuantize ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR,
+PPCInstr* PPCInstr_DfpQuantize ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR,
                                  PPCRI* rmc ) {
    PPCInstr* i             = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                  = Pin_DfpQuantize;
@@ -1103,7 +1103,7 @@ PPCInstr* PPCInstr_DfpQuantize ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR,
    i->Pin.DfpQuantize.rmc  = rmc;
    return i;
 }
-PPCInstr* PPCInstr_DfpQuantize128 ( PPCAvFpOp op, HReg dst_hi, HReg dst_lo, 
+PPCInstr* PPCInstr_DfpQuantize128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
                                     HReg src_hi, HReg src_lo, PPCRI* rmc ) {
    /* dst is used to pass left operand in and return result */
    PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
@@ -2758,6 +2758,7 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.DfpQuantize128.dst_lo);
       mapReg(m, &i->Pin.DfpQuantize128.src_hi);
       mapReg(m, &i->Pin.DfpQuantize128.src_lo);
+      return;
    case Pin_DfpD128toD64:
       mapReg(m, &i->Pin.DfpD128toD64.src_hi);
       mapReg(m, &i->Pin.DfpD128toD64.src_lo);

@@ -1036,9 +1036,9 @@ extern PPCInstr* PPCInstr_DfpI64StoD128  ( PPCFpOp op, HReg dst_hi,
 extern PPCInstr* PPCInstr_DfpRound       ( HReg dst, HReg src, PPCRI* r_rmc );
 extern PPCInstr* PPCInstr_DfpRound128    ( HReg dst_hi, HReg dst_lo, HReg src_hi,
                                            HReg src_lo, PPCRI* r_rmc );
-extern PPCInstr* PPCInstr_DfpQuantize    ( PPCAvFpOp op, HReg dst, HReg srcL,
+extern PPCInstr* PPCInstr_DfpQuantize    ( PPCFpOp op, HReg dst, HReg srcL,
                                            HReg srcR, PPCRI* rmc );
-extern PPCInstr* PPCInstr_DfpQuantize128 ( PPCAvFpOp op, HReg dst_hi,
+extern PPCInstr* PPCInstr_DfpQuantize128 ( PPCFpOp op, HReg dst_hi,
                                            HReg dst_lo,
                                            HReg src_hi,
                                            HReg src_lo, PPCRI* rmc );

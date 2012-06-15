@@ -70,6 +70,7 @@ https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
 197914  Building valgrind from svn now requires automake-1.10
+203877  increase to 16Mb maximum allowed alignment for memalign() and posix_memalign
 219156  Valgrind does not handle statically linked malloc or other malloc lib (e.g. tcmalloc) 
 247386  make perf does not run all performance tests
 270006  Valgrind scheduler unfair 
@@ -109,6 +110,7 @@ n-i-bz  Bypass gcc4.4/4.5 wrong code generation causing out of memory or asserts
 n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
 n-i-bz  Fix false positive in sys_clone on amd64 when optional args are not given (e.g. child_tidptr)
 n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
+301229  dup of 203877, see above.
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

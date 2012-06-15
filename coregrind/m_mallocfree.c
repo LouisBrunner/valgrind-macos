@@ -1920,10 +1920,11 @@ void* VG_(arena_memalign) ( ArenaId aid, HChar* cc,
    // this allocation; it isn't optional.
    vg_assert(cc);
 
+   // Check that the requested alignment has a plausible size.
    // Check that the requested alignment seems reasonable; that is, is
    // a power of 2.
    if (req_alignB < VG_MIN_MALLOC_SZB
-       || req_alignB > 1048576
+       || req_alignB > 16 * 1024 * 1024
        || VG_(log2)( req_alignB ) == -1 /* not a power of 2 */) {
       VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\n"
                   "bad alignment value %lu\n"

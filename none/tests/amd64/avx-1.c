@@ -998,6 +998,30 @@ GEN_test_RandM(VORPD_256,
                "vorpd %%ymm6,  %%ymm8, %%ymm7",
                "vorpd (%%rax), %%ymm8, %%ymm7")
 
+GEN_test_RandM(VPERMILPS_256_0x0F,
+               "vpermilps $0x0F, %%ymm6,  %%ymm8",
+               "vpermilps $0x1E, (%%rax), %%ymm8")
+GEN_test_RandM(VPERMILPS_256_0xFA,
+               "vpermilps $0xFA, %%ymm6,  %%ymm8",
+               "vpermilps $0xE5, (%%rax), %%ymm8")
+GEN_test_RandM(VPERMILPS_256_0xA3,
+               "vpermilps $0xA3, %%ymm6,  %%ymm8",
+               "vpermilps $0xB4, (%%rax), %%ymm8")
+GEN_test_RandM(VPERMILPS_256_0x5A,
+               "vpermilps $0x5A, %%ymm6,  %%ymm8",
+               "vpermilps $0x45, (%%rax), %%ymm8")
+
+GEN_test_RandM(VPMULHW_128,
+               "vpmulhw %%xmm9,  %%xmm8, %%xmm7",
+               "vpmulhw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPUNPCKHQDQ_128,
+               "vpunpckhqdq %%xmm6,  %%xmm8, %%xmm7",
+               "vpunpckhqdq (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Ronly(VPSRAW_0x05_128,
+               "vpsraw $0x5, %%xmm9,  %%xmm7")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -1239,5 +1263,12 @@ int main ( void )
    test_VANDNPD_256();
    test_VANDNPS_256();
    test_VORPD_256();
+   test_VPERMILPS_256_0x0F();
+   test_VPERMILPS_256_0xFA();
+   test_VPERMILPS_256_0xA3();
+   test_VPERMILPS_256_0x5A();
+   test_VPMULHW_128();
+   test_VPUNPCKHQDQ_128();
+   test_VPSRAW_0x05_128();
    return 0;
 }

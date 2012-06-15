@@ -575,6 +575,87 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #if defined(VGP_arm_linux)
 
+static Bool in_same_fn ( Addr a1, Addr a2 )
+{
+#  define M_VG_ERRTXT 500
+   UChar buf_a1[M_VG_ERRTXT], buf_a2[M_VG_ERRTXT];
+   /* The following conditional looks grossly inefficient and
+      surely could be majorly improved, with not much effort. */
+   if (VG_(get_fnname_raw) (a1, buf_a1, M_VG_ERRTXT))
+      if (VG_(get_fnname_raw) (a2, buf_a2, M_VG_ERRTXT))
+         if (VG_(strncmp)(buf_a1, buf_a2, M_VG_ERRTXT))
+            return True;
+#  undef M_VG_ERRTXT
+   return False;
+}
+
+static Bool in_same_page ( Addr a1, Addr a2 ) {
+   return (a1 & ~0xFFF) == (a2 & ~0xFFF);
+}
+
+static Addr abs_diff ( Addr a1, Addr a2 ) {
+   return (Addr)(a1 > a2 ? a1 - a2 : a2 - a1);
+}
+
+static Bool has_XT_perms ( Addr a )
+{
+   NSegment const* seg = VG_(am_find_nsegment)(a);
+   return seg && seg->hasX && seg->hasT;
+}
+
+static Bool looks_like_Thumb_call32 ( UShort w0, UShort w1 )
+{
+   if (0)
+      VG_(printf)("isT32call %04x %04x\n", (UInt)w0, (UInt)w1);
+   // BL  simm26 
+   if ((w0 & 0xF800) == 0xF000 && (w1 & 0xC000) == 0xC000) return True;
+   // BLX simm26
+   if ((w0 & 0xF800) == 0xF000 && (w1 & 0xC000) == 0xC000) return True;
+   return False;
+}
+
+static Bool looks_like_Thumb_call16 ( UShort w0 )
+{
+   return False;
+}
+
+static Bool looks_like_ARM_call ( UInt a0 )
+{
+   if (0)
+      VG_(printf)("isA32call %08x\n", a0);
+   // Leading E forces unconditional only -- fix
+   if ((a0 & 0xFF000000) == 0xEB000000) return True;
+   return False;
+}
+
+static Bool looks_like_RA ( Addr ra )
+{
+   /* 'ra' is a plausible return address if it points to
+       an instruction after a call insn. */
+   Bool isT = (ra & 1);
+   if (isT) {
+      // returning to Thumb code
+      ra &= ~1;
+      ra -= 4;
+      if (has_XT_perms(ra)) {
+         UShort w0 = *(UShort*)ra;
+         UShort w1 = in_same_page(ra, ra+2) ? *(UShort*)(ra+2) : 0;
+         if (looks_like_Thumb_call16(w1) || looks_like_Thumb_call32(w0,w1))
+            return True;
+      }
+   } else {
+      // ARM
+      ra &= ~3;
+      ra -= 4;
+      if (has_XT_perms(ra)) {
+         UInt a0 = *(UInt*)ra;
+         if (looks_like_ARM_call(a0))
+            return True;
+      }
+   }
+   return False;
+}
+
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
@@ -637,6 +718,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    i = 1;
 
    /* Loop unwinding the stack. */
+   Bool do_stack_scan = False;
 
    while (True) {
       if (debug) {
@@ -658,7 +740,46 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          continue;
       }
       /* No luck.  We have to give up. */
+      do_stack_scan = True;
       break;
+   }
+
+   if (0/*DISABLED BY DEFAULT*/ && do_stack_scan && i < max_n_ips && i <= 2) {
+      Int  nByStackScan = 0;
+      Addr lr = uregs.r14;
+      Addr sp = uregs.r13 & ~3;
+      Addr pc = uregs.r15;
+      // First see if LR contains
+      // something that could be a valid return address.
+      if (!in_same_fn(lr, pc) && looks_like_RA(lr)) {
+         // take it only if 'cand' isn't obviously a duplicate
+         // of the last found IP value
+         Addr cand = (lr & 0xFFFFFFFE) - 1;
+         if (abs_diff(cand, ips[i-1]) > 1) {
+            if (sps) sps[i] = 0;
+            if (fps) fps[i] = 0;
+            ips[i++] = cand;
+            nByStackScan++;
+         }
+      }
+      while (in_same_page(sp, uregs.r13)) {
+         if (i >= max_n_ips)
+            break;
+         // we're in the same page; fairly safe to keep going
+         UWord w = *(UWord*)(sp & ~0x3);
+         if (looks_like_RA(w)) {
+            Addr cand = (w & 0xFFFFFFFE) - 1;
+            // take it only if 'cand' isn't obviously a duplicate
+            // of the last found IP value
+            if (abs_diff(cand, ips[i-1]) > 1) {
+               if (sps) sps[i] = 0;
+               if (fps) fps[i] = 0;
+               ips[i++] = cand;
+               if (++nByStackScan >= 5) break;
+            }
+         }
+         sp += 4;
+      }
    }
 
    n_found = i;

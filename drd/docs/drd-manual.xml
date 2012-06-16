@@ -529,6 +529,18 @@ client program:
   </varlistentry>
   <varlistentry>
     <term>
+      <option><![CDATA[--ptrace-addr=<address> [default: none]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all load and store activity for the specified address and keep
+        doing that even after the memory at that address has been freed and
+        reallocated.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
       <option><![CDATA[--trace-alloc=<yes|no> [default: no]]]></option>
     </term>
     <listitem>
@@ -1002,6 +1014,14 @@ available macros and client requests are:
       race on a specified variable, and it's not immediately clear which
       source code statements triggered the conflicting accesses, it can be
       very helpful to trace all activity on the offending memory location.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>DRD_STOP_TRACING_VAR(x)</literal>. Stop tracing load
+      and store activity for the address range starting
+      at <literal>&amp;x</literal> and occupying <literal>sizeof(x)</literal>
+      bytes.
     </para>
   </listitem>
   <listitem>
@@ -1723,12 +1743,6 @@ example.
       a know <literal>libstdc++</literal> issue -- see also GCC bug
       <ulink url="http://gcc.gnu.org/bugzilla/show_bug.cgi?id=40518">40518</ulink>
       for more information.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      When address tracing is enabled, no information on atomic stores
-      will be displayed.
     </para>
   </listitem>
   <listitem>

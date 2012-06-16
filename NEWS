@@ -37,6 +37,14 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
     a program using statically linked malloc or using alternative
     malloc libraries (such as tcmalloc).
 
+* DRD:
+
+  - Fixed a subtle bug that could cause false positive data race reports.
+
+  - Added even more facilities that can help finding the cause of a data
+    race, namely the command-line option --ptrace-addr and the macro
+    DRD_STOP_TRACING_VAR(x). More information can be found in the manual.
+
 * ==================== OTHER CHANGES ====================
 
 * The C++ demangler has been updated so as to work well with C++ 
@@ -100,6 +108,7 @@ where XXXXXX is the bug number as listed below.
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
         and non reset of "C-ontinued" signal
+297147  drd false positives on newly allocated memory
 297991  Valgrind interferes with mmap()+ftell() 
 297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
 297993  Fix compilation of valgrind with gcc -g3.

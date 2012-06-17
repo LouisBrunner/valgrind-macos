@@ -110,20 +110,22 @@ AC_MSG_CHECKING([for a supported version of gcc])
 # OS/X 10.6: i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
 # OS/X 10.7: i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
 # Clang: clang version 2.9 (tags/RELEASE_29/final)
+# Apple clang: Apple clang version 3.1 (tags/Apple/clang-318.0.58) (based on LLVM 3.1svn)
+# FreeBSD clang: FreeBSD clang version 3.1 (branches/release_31 156863) 20120523
 #
 [
-  gcc_version=`${CC} -dumpversion 2>/dev/null`
-  if test "x$gcc_version" = x; then
-    gcc_version=`${CC} --version \
-               | $SED -n -e 's/[^ ]*gcc[^ ]* ([^)]*) \([0-9.]*\).*$/\1/p' \
-                         -e 's/[^ ]*clang version \([0-9.]*\).*$/\1/p'`
-  fi
-]
-
-is_clang="notclang"
-if test "x`${CC} --version | head -n 1 | $SED 's/\(clang\) version.*/\1/'`" = "xclang" ; then
-   is_clang="clang"
+if test "x`${CC} --version | $SED -n -e 's/.*\(clang\) version.*/\1/p'`" = "xclang" ; then
+    is_clang="clang"
+    # Don't use -dumpversion with clang: it will always produce "4.2.1".
+    gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
+else
+    is_clang="notclang"
+    gcc_version=`${CC} -dumpversion 2>/dev/null`
+    if test "x$gcc_version" = x; then
+	gcc_version=`${CC} --version | $SED -n -e 's/[^ ]*gcc[^ ]* ([^)]*) \([0-9.]*\).*$/\1/p'`
+    fi
 fi
+]
 
 case "${is_clang}-${gcc_version}" in
      notclang-3.*)
@@ -132,7 +134,7 @@ case "${is_clang}-${gcc_version}" in
      notclang-4.*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
-     clang-2.9)
+     clang-2.9|clang-3.*)
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
      *)

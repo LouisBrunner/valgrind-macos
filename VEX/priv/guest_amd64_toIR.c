@@ -22029,14 +22029,14 @@ Long dis_ESC_0F__VEX (
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx,modrm);
             assign( eV, getXMMReg(rE) );
-            imm8 = (Int)getUChar(delta+1) & 7;
+            imm8 = (Int)getUChar(delta+1);
             delta += 1+1;
             DIP("vshufpd $%d,%s,%s,%s\n",
                 imm8, nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
             assign( eV, loadLE(Ity_V128, mkexpr(addr)) );
-            imm8 = (Int)getUChar(delta+alen) & 7;
+            imm8 = (Int)getUChar(delta+alen);
             delta += 1+alen;
             DIP("vshufpd $%d,%s,%s,%s\n",
                 imm8, dis_buf, nameXMMReg(rV), nameXMMReg(rG));
@@ -22059,14 +22059,14 @@ Long dis_ESC_0F__VEX (
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx,modrm);
             assign( eV, getYMMReg(rE) );
-            imm8 = (Int)getUChar(delta+1) & 7;
+            imm8 = (Int)getUChar(delta+1);
             delta += 1+1;
             DIP("vshufpd $%d,%s,%s,%s\n",
                 imm8, nameYMMReg(rE), nameYMMReg(rV), nameYMMReg(rG));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
             assign( eV, loadLE(Ity_V256, mkexpr(addr)) );
-            imm8 = (Int)getUChar(delta+alen) & 7;
+            imm8 = (Int)getUChar(delta+alen);
             delta += 1+alen;
             DIP("vshufpd $%d,%s,%s,%s\n",
                 imm8, dis_buf, nameYMMReg(rV), nameYMMReg(rG));

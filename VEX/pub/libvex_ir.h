@@ -1439,6 +1439,9 @@ typedef
       Iop_OrV256,
       Iop_XorV256,
       Iop_NotV256,
+      Iop_Sqrt32Fx8,
+      Iop_Sqrt64Fx4,
+      Iop_RSqrt32Fx8,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,

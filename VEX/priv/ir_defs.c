@@ -627,6 +627,7 @@ void ppIROp ( IROp op )
 
       case Iop_RSqrt32Fx4:  vex_printf("RSqrt32Fx4"); return;
       case Iop_RSqrt32F0x4: vex_printf("RSqrt32F0x4"); return;
+      case Iop_RSqrt32Fx8:  vex_printf("RSqrt32Fx8"); return;
       case Iop_RSqrt64Fx2:  vex_printf("RSqrt64Fx2"); return;
       case Iop_RSqrt64F0x2: vex_printf("RSqrt64F0x2"); return;
 
@@ -634,7 +635,9 @@ void ppIROp ( IROp op )
       case Iop_Sqrt32F0x4: vex_printf("Sqrt32F0x4"); return;
       case Iop_Sqrt64Fx2:  vex_printf("Sqrt64Fx2"); return;
       case Iop_Sqrt64F0x2: vex_printf("Sqrt64F0x2"); return;
-
+      case Iop_Sqrt32Fx8:  vex_printf("Sqrt32Fx8"); return;
+      case Iop_Sqrt64Fx4:  vex_printf("Sqrt64Fx4"); return;
+ 
       case Iop_Sub32Fx4:  vex_printf("Sub32Fx4"); return;
       case Iop_Sub32Fx2:  vex_printf("Sub32Fx2"); return;
       case Iop_Sub32F0x4: vex_printf("Sub32F0x4"); return;
@@ -2813,6 +2816,9 @@ void typeOfPrimop ( IROp op,
          BINARY(Ity_V128,Ity_V128, Ity_V256);
 
       case Iop_NotV256:
+      case Iop_RSqrt32Fx8:
+      case Iop_Sqrt32Fx8:
+      case Iop_Sqrt64Fx4:
          UNARY(Ity_V256, Ity_V256);
 
       default:

@@ -3442,6 +3442,35 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          return;
       }
 
+      case Iop_Sqrt32Fx8:  op = Asse_SQRTF;  goto do_32Fx8_unary;
+      case Iop_RSqrt32Fx8: op = Asse_RSQRTF; goto do_32Fx8_unary;
+      do_32Fx8_unary:
+      {
+         HReg argHi, argLo;
+         iselDVecExpr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argHi, dstHi));
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argLo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      case Iop_Sqrt64Fx4:  op = Asse_SQRTF;  goto do_64Fx4_unary;
+      do_64Fx4_unary:
+      {
+         HReg argHi, argLo;
+         iselDVecExpr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argHi, dstHi));
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argLo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Unop.op) */

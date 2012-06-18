@@ -9138,6 +9138,65 @@ static IRExpr* dis_PALIGNR_XMM_helper ( IRTemp hi64,
       );
 }
 
+static IRTemp math_PALIGNR_XMM ( IRTemp sV, IRTemp dV, UInt imm8 ) 
+{
+   IRTemp res = newTemp(Ity_V128);
+   IRTemp sHi = newTemp(Ity_I64);
+   IRTemp sLo = newTemp(Ity_I64);
+   IRTemp dHi = newTemp(Ity_I64);
+   IRTemp dLo = newTemp(Ity_I64);
+   IRTemp rHi = newTemp(Ity_I64);
+   IRTemp rLo = newTemp(Ity_I64);
+
+   assign( dHi, unop(Iop_V128HIto64, mkexpr(dV)) );
+   assign( dLo, unop(Iop_V128to64,   mkexpr(dV)) );
+   assign( sHi, unop(Iop_V128HIto64, mkexpr(sV)) );
+   assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
+
+   if (imm8 == 0) {
+      assign( rHi, mkexpr(sHi) );
+      assign( rLo, mkexpr(sLo) );
+   }
+   else if (imm8 >= 1 && imm8 <= 7) {
+      assign( rHi, dis_PALIGNR_XMM_helper(dLo, sHi, imm8) );
+      assign( rLo, dis_PALIGNR_XMM_helper(sHi, sLo, imm8) );
+   }
+   else if (imm8 == 8) {
+      assign( rHi, mkexpr(dLo) );
+      assign( rLo, mkexpr(sHi) );
+   }
+   else if (imm8 >= 9 && imm8 <= 15) {
+      assign( rHi, dis_PALIGNR_XMM_helper(dHi, dLo, imm8-8) );
+      assign( rLo, dis_PALIGNR_XMM_helper(dLo, sHi, imm8-8) );
+   }
+   else if (imm8 == 16) {
+      assign( rHi, mkexpr(dHi) );
+      assign( rLo, mkexpr(dLo) );
+   }
+   else if (imm8 >= 17 && imm8 <= 23) {
+      assign( rHi, binop(Iop_Shr64, mkexpr(dHi), mkU8(8*(imm8-16))) );
+      assign( rLo, dis_PALIGNR_XMM_helper(dHi, dLo, imm8-16) );
+   }
+   else if (imm8 == 24) {
+      assign( rHi, mkU64(0) );
+      assign( rLo, mkexpr(dHi) );
+   }
+   else if (imm8 >= 25 && imm8 <= 31) {
+      assign( rHi, mkU64(0) );
+      assign( rLo, binop(Iop_Shr64, mkexpr(dHi), mkU8(8*(imm8-24))) );
+   }
+   else if (imm8 >= 32 && imm8 <= 255) {
+      assign( rHi, mkU64(0) );
+      assign( rLo, mkU64(0) );
+   }
+   else
+      vassert(0);
+
+   assign( res, binop(Iop_64HLtoV128, mkexpr(rHi), mkexpr(rLo)));
+   return res;
+}
+
+
 /* Generate a SIGSEGV followed by a restart of the current instruction
    if effective_addr is not 16-aligned.  This is required behaviour
    for some SSE3 instructions and all 128-bit SSSE3 instructions.
@@ -14289,12 +14348,6 @@ Long dis_ESC_0F3A__SupSSE3 ( Bool* decode_OK,
           && (sz == 2 || /*redundant REX.W*/ sz == 8)) {
          IRTemp sV  = newTemp(Ity_V128);
          IRTemp dV  = newTemp(Ity_V128);
-         IRTemp sHi = newTemp(Ity_I64);
-         IRTemp sLo = newTemp(Ity_I64);
-         IRTemp dHi = newTemp(Ity_I64);
-         IRTemp dLo = newTemp(Ity_I64);
-         IRTemp rHi = newTemp(Ity_I64);
-         IRTemp rLo = newTemp(Ity_I64);
 
          modrm = getUChar(delta);
          assign( dV, getXMMReg(gregOfRexRM(pfx,modrm)) );
@@ -14317,54 +14370,8 @@ Long dis_ESC_0F3A__SupSSE3 ( Bool* decode_OK,
                                        nameXMMReg(gregOfRexRM(pfx,modrm)));
          }
 
-         assign( dHi, unop(Iop_V128HIto64, mkexpr(dV)) );
-         assign( dLo, unop(Iop_V128to64,   mkexpr(dV)) );
-         assign( sHi, unop(Iop_V128HIto64, mkexpr(sV)) );
-         assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
-
-         if (d64 == 0) {
-            assign( rHi, mkexpr(sHi) );
-            assign( rLo, mkexpr(sLo) );
-         }
-         else if (d64 >= 1 && d64 <= 7) {
-            assign( rHi, dis_PALIGNR_XMM_helper(dLo, sHi, d64) );
-            assign( rLo, dis_PALIGNR_XMM_helper(sHi, sLo, d64) );
-         }
-         else if (d64 == 8) {
-            assign( rHi, mkexpr(dLo) );
-            assign( rLo, mkexpr(sHi) );
-         }
-         else if (d64 >= 9 && d64 <= 15) {
-            assign( rHi, dis_PALIGNR_XMM_helper(dHi, dLo, d64-8) );
-            assign( rLo, dis_PALIGNR_XMM_helper(dLo, sHi, d64-8) );
-         }
-         else if (d64 == 16) {
-            assign( rHi, mkexpr(dHi) );
-            assign( rLo, mkexpr(dLo) );
-         }
-         else if (d64 >= 17 && d64 <= 23) {
-            assign( rHi, binop(Iop_Shr64, mkexpr(dHi), mkU8(8*(d64-16))) );
-            assign( rLo, dis_PALIGNR_XMM_helper(dHi, dLo, d64-16) );
-         }
-         else if (d64 == 24) {
-            assign( rHi, mkU64(0) );
-            assign( rLo, mkexpr(dHi) );
-         }
-         else if (d64 >= 25 && d64 <= 31) {
-            assign( rHi, mkU64(0) );
-            assign( rLo, binop(Iop_Shr64, mkexpr(dHi), mkU8(8*(d64-24))) );
-         }
-         else if (d64 >= 32 && d64 <= 255) {
-            assign( rHi, mkU64(0) );
-            assign( rLo, mkU64(0) );
-         }
-         else
-            vassert(0);
-
-         putXMMReg(
-            gregOfRexRM(pfx,modrm),
-            binop(Iop_64HLtoV128, mkexpr(rHi), mkexpr(rLo))
-         );
+         IRTemp res = math_PALIGNR_XMM( sV, dV, d64 );
+         putXMMReg( gregOfRexRM(pfx,modrm), mkexpr(res) );
          goto decode_success;
       }
       /* 0F 3A 0F = PALIGNR -- Packed Align Right (MMX) */
@@ -22142,9 +22149,9 @@ Long dis_ESC_0F38__VEX (
       break;
 
    case 0x18:
-      /* VBROADCASTSS m32, xmm1 = VEX.128.66.0F38.W0 18 /r */
+      /* VBROADCASTSS m32, xmm1 = VEX.128.66.0F38.WIG 18 /r */
       if (have66noF2noF3(pfx)
-          && 0==getVexL(pfx)/*128*/ && 0==getRexW(pfx)/*W0*/
+          && 0==getVexL(pfx)/*128*/
           && !epartIsReg(getUChar(delta))) {
          UChar modrm = getUChar(delta);
          UInt  rG    = gregOfRexRM(pfx, modrm);
@@ -22159,12 +22166,30 @@ Long dis_ESC_0F38__VEX (
          putYMMRegLoAndZU(rG, res);
          goto decode_success;
      }
+      /* VBROADCASTSS m32, ymm1 = VEX.256.66.0F38.WIG 18 /r */
+      if (have66noF2noF3(pfx)
+          && 1==getVexL(pfx)/*256*/
+          && !epartIsReg(getUChar(delta))) {
+         UChar modrm = getUChar(delta);
+         UInt  rG    = gregOfRexRM(pfx, modrm);
+         addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         DIP("vbroadcastss %s,%s\n", dis_buf, nameYMMReg(rG));
+         IRTemp t32 = newTemp(Ity_I32);
+         assign(t32, loadLE(Ity_I32, mkexpr(addr)));
+         IRTemp t64 = newTemp(Ity_I64);
+         assign(t64, binop(Iop_32HLto64, mkexpr(t32), mkexpr(t32)));
+         IRExpr* res = IRExpr_Qop(Iop_64x4toV256, mkexpr(t64), mkexpr(t64),
+                                                  mkexpr(t64), mkexpr(t64));
+         putYMMReg(rG, res);
+         goto decode_success;
+     }
      break;
 
    case 0x19:
-      /* VBROADCASTSD m64, ymm1 = VEX.256.66.0F38.W0 19 /r */
+      /* VBROADCASTSD m64, ymm1 = VEX.256.66.0F38.WIG 19 /r */
       if (have66noF2noF3(pfx)
-          && 1==getVexL(pfx)/*256*/ && 0==getRexW(pfx)/*W0*/
+          && 1==getVexL(pfx)/*256*/
           && !epartIsReg(getUChar(delta))) {
          UChar modrm = getUChar(delta);
          UInt  rG    = gregOfRexRM(pfx, modrm);
@@ -22562,6 +22587,43 @@ Long dis_ESC_0F3A__VEX (
 #        undef SEL
          if (imm8 & (1<<3)) putYMMRegLane128(rG, 0, mkV128(0));
          if (imm8 & (1<<7)) putYMMRegLane128(rG, 1, mkV128(0));
+         *uses_vvvv = True;
+         goto decode_success;
+      }
+      break;
+
+   case 0x0F:
+      /* VPALIGNR imm8, xmm3/m128, xmm2, xmm1 */
+      /* VPALIGNR = VEX.NDS.128.66.0F3A.WIG 0F /r ib */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         UInt   rV    = getVexNvvvv(pfx);
+         IRTemp sV    = newTemp(Ity_V128);
+         IRTemp dV    = newTemp(Ity_V128);
+         UInt   imm8;
+
+         assign( dV, getXMMReg(rV) );
+
+         if ( epartIsReg( modrm ) ) {
+            UInt   rE = eregOfRexRM(pfx, modrm);
+            assign( sV, getXMMReg(rE) );
+            imm8 = getUChar(delta+1);
+            delta += 1+1;
+            DIP("vpalignr $%d,%s,%s,%s\n", imm8, nameXMMReg(rE),
+                                           nameXMMReg(rV), nameXMMReg(rG));
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            gen_SEGV_if_not_16_aligned( addr );
+            assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+            imm8 = getUChar(delta+alen);
+            delta += alen+1;
+            DIP("vpalignr $%d,%s,%s,%s\n", imm8, dis_buf,
+                                           nameXMMReg(rV), nameXMMReg(rG));
+         }
+
+         IRTemp res = math_PALIGNR_XMM( sV, dV, imm8 );
+         putYMMRegLoAndZU( rG, mkexpr(res) );
          *uses_vvvv = True;
          goto decode_success;
       }

@@ -1115,6 +1115,84 @@ GEN_test_RandM(VSHUFPD_256_2of2,
                "vshufpd $0x5A, %%ymm9,  %%ymm8, %%ymm7",
                "vshufpd $0xA5, (%%rax), %%ymm8, %%ymm7")
 
+GEN_test_RandM(VPERMILPS_128_0x00,
+               "vpermilps $0x00, %%xmm6,  %%xmm8",
+               "vpermilps $0x01, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0xFE,
+               "vpermilps $0xFE, %%xmm6,  %%xmm8",
+               "vpermilps $0xFF, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0x30,
+               "vpermilps $0x30, %%xmm6,  %%xmm8",
+               "vpermilps $0x03, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0x21,
+               "vpermilps $0x21, %%xmm6,  %%xmm8",
+               "vpermilps $0x12, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0xD7,
+               "vpermilps $0xD7, %%xmm6,  %%xmm8",
+               "vpermilps $0x6C, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0xB5,
+               "vpermilps $0xB5, %%xmm6,  %%xmm8",
+               "vpermilps $0x4A, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0x85,
+               "vpermilps $0x85, %%xmm6,  %%xmm8",
+               "vpermilps $0xDC, (%%rax), %%xmm8")
+GEN_test_RandM(VPERMILPS_128_0x29,
+               "vpermilps $0x29, %%xmm6,  %%xmm8",
+               "vpermilps $0x92, (%%rax), %%xmm8")
+
+GEN_test_RandM(VBLENDPS_128_1of3,
+               "vblendps $0, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendps $3, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VBLENDPS_128_2of3,
+               "vblendps $6, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendps $9, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VBLENDPS_128_3of3,
+               "vblendps $12, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendps $15, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VBLENDPD_128_1of2,
+               "vblendpd $0, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendpd $1, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VBLENDPD_128_2of2,
+               "vblendpd $2, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendpd $3, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VBLENDPD_256_1of3,
+               "vblendpd $0, %%ymm6,  %%ymm8, %%ymm7",
+               "vblendpd $3, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VBLENDPD_256_2of3,
+               "vblendpd $6, %%ymm6,  %%ymm8, %%ymm7",
+               "vblendpd $9, (%%rax), %%ymm8, %%ymm7")
+GEN_test_RandM(VBLENDPD_256_3of3,
+               "vblendpd $12, %%ymm6,  %%ymm8, %%ymm7",
+               "vblendpd $15, (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VPBLENDW_128_0x00,
+               "vpblendw $0x00, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0x01, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0xFE,
+               "vpblendw $0xFE, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0xFF, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0x30,
+               "vpblendw $0x30, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0x03, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0x21,
+               "vpblendw $0x21, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0x12, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0xD7,
+               "vpblendw $0xD7, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0x6C, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0xB5,
+               "vpblendw $0xB5, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0x4A, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0x85,
+               "vpblendw $0x85, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0xDC, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPBLENDW_128_0x29,
+               "vpblendw $0x29, %%xmm6,  %%xmm8, %%xmm7",
+               "vpblendw $0x92, (%%rax), %%xmm8, %%xmm7")
+
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -1391,5 +1469,29 @@ int main ( void )
    test_VSHUFPD_128_2of2();
    test_VSHUFPD_256_1of2();
    test_VSHUFPD_256_2of2();
+   test_VPERMILPS_128_0x00();
+   test_VPERMILPS_128_0xFE();
+   test_VPERMILPS_128_0x30();
+   test_VPERMILPS_128_0x21();
+   test_VPERMILPS_128_0xD7();
+   test_VPERMILPS_128_0xB5();
+   test_VPERMILPS_128_0x85();
+   test_VPERMILPS_128_0x29();
+   test_VBLENDPS_128_1of3();
+   test_VBLENDPS_128_2of3();
+   test_VBLENDPS_128_3of3();
+   test_VBLENDPD_128_1of2();
+   test_VBLENDPD_128_2of2();
+   test_VBLENDPD_256_1of3();
+   test_VBLENDPD_256_2of3();
+   test_VBLENDPD_256_3of3();
+   test_VPBLENDW_128_0x00();
+   test_VPBLENDW_128_0xFE();
+   test_VPBLENDW_128_0x30();
+   test_VPBLENDW_128_0x21();
+   test_VPBLENDW_128_0xD7();
+   test_VPBLENDW_128_0xB5();
+   test_VPBLENDW_128_0x85();
+   test_VPBLENDW_128_0x29();
    return 0;
 }

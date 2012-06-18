@@ -1192,6 +1192,82 @@ GEN_test_RandM(VPBLENDW_128_0x29,
                "vpblendw $0x29, %%xmm6,  %%xmm8, %%xmm7",
                "vpblendw $0x92, (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VMOVUPS_EtoG_256,
+               "vmovups %%ymm6,  %%ymm9",
+               "vmovups (%%rax), %%ymm7")
+
+GEN_test_RandM(VSQRTSS_128,
+               "vsqrtss %%xmm6,  %%xmm8, %%xmm7",
+               "vsqrtss (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VSQRTPS_128,
+               "vsqrtps %%xmm6,  %%xmm8",
+               "vsqrtps (%%rax), %%xmm8")
+
+GEN_test_RandM(VSQRTPS_256,
+               "vsqrtps %%ymm6,  %%ymm8",
+               "vsqrtps (%%rax), %%ymm8")
+
+GEN_test_RandM(VSQRTPD_128,
+               "vsqrtpd %%xmm6,  %%xmm8",
+               "vsqrtpd (%%rax), %%xmm8")
+
+GEN_test_RandM(VSQRTPD_256,
+               "vsqrtpd %%ymm6,  %%ymm8",
+               "vsqrtpd (%%rax), %%ymm8")
+
+GEN_test_RandM(VRSQRTSS_128,
+               "vrsqrtss %%xmm6,  %%xmm8, %%xmm7",
+               "vrsqrtss (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VRSQRTPS_128,
+               "vrsqrtps %%xmm6,  %%xmm8",
+               "vrsqrtps (%%rax), %%xmm8")
+
+GEN_test_RandM(VRSQRTPS_256,
+               "vrsqrtps %%ymm6,  %%ymm8",
+               "vrsqrtps (%%rax), %%ymm8")
+
+GEN_test_RandM(VMOVDQU_GtoE_256,
+               "vmovdqu %%ymm9,  %%ymm6",
+               "vmovdqu %%ymm7, (%%rax)")
+
+GEN_test_RandM(VCVTPS2PD_256,
+               "vcvtps2pd %%xmm9,  %%ymm6",
+               "vcvtps2pd (%%rax), %%ymm7")
+
+GEN_test_RandM(VCVTTPS2DQ_128,
+               "vcvttps2dq %%xmm9,  %%xmm6",
+               "vcvttps2dq (%%rax), %%xmm7")
+
+GEN_test_RandM(VCVTTPS2DQ_256,
+               "vcvttps2dq %%ymm9,  %%ymm6",
+               "vcvttps2dq (%%rax), %%ymm7")
+
+GEN_test_RandM(VCVTDQ2PS_128,
+               "vcvtdq2ps %%xmm9,  %%xmm6",
+               "vcvtdq2ps (%%rax), %%xmm7")
+
+GEN_test_RandM(VCVTDQ2PS_256,
+               "vcvtdq2ps %%ymm9,  %%ymm6",
+               "vcvtdq2ps (%%rax), %%ymm7")
+
+GEN_test_RandM(VCVTTPD2DQ_128,
+               "vcvttpd2dqx %%xmm9,  %%xmm6",
+               "vcvttpd2dqx (%%rax), %%xmm7")
+
+GEN_test_RandM(VCVTTPD2DQ_256,
+               "vcvttpd2dqy %%ymm9,  %%xmm6",
+               "vcvttpd2dqy (%%rax), %%xmm7")
+
+GEN_test_RandM(VCVTPD2DQ_128,
+               "vcvtpd2dqx %%xmm9,  %%xmm6",
+               "vcvtpd2dqx (%%rax), %%xmm7")
+
+GEN_test_RandM(VCVTPD2DQ_256,
+               "vcvtpd2dqy %%ymm9,  %%xmm6",
+               "vcvtpd2dqy (%%rax), %%xmm7")
+
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -1493,5 +1569,24 @@ int main ( void )
    test_VPBLENDW_128_0xB5();
    test_VPBLENDW_128_0x85();
    test_VPBLENDW_128_0x29();
+   test_VMOVUPS_EtoG_256();
+   test_VSQRTSS_128();
+   test_VSQRTPS_128();
+   test_VSQRTPS_256();
+   test_VSQRTPD_128();
+   test_VSQRTPD_256();
+   test_VRSQRTSS_128();
+   test_VRSQRTPS_128();
+   test_VRSQRTPS_256();
+   test_VMOVDQU_GtoE_256();
+   test_VCVTPS2PD_256();
+   test_VCVTTPS2DQ_128();
+   test_VCVTTPS2DQ_256();
+   test_VCVTDQ2PS_128();
+   test_VCVTDQ2PS_256();
+   test_VCVTTPD2DQ_128();
+   test_VCVTTPD2DQ_256();
+   test_VCVTPD2DQ_128();
+   test_VCVTPD2DQ_256();
    return 0;
 }

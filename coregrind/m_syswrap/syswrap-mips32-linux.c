@@ -415,6 +415,7 @@ DECL_TEMPLATE (mips_linux, sys_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_rt_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
+DECL_TEMPLATE (mips_linux, sys_pipe);
 
 PRE (sys_socketcall) 
 {
@@ -1389,6 +1390,33 @@ PRE (sys_cacheflush)
   SET_STATUS_Success (0);
 }
 
+PRE(sys_pipe)
+{
+   PRINT("sys_pipe ( %#lx )", ARG1);
+   PRE_REG_READ1(int, "pipe", int *, filedes);
+   PRE_MEM_WRITE( "pipe(filedes)", ARG1, 2*sizeof(int) );
+}
+
+POST(sys_pipe)
+{
+   Int p0, p1;
+   vg_assert(SUCCESS);
+   p0 = RES;
+   p1 = sr_ResEx(status->sres);
+
+   if (!ML_(fd_allowed)(p0, "pipe", tid, True) ||
+       !ML_(fd_allowed)(p1, "pipe", tid, True)) {
+      VG_(close)(p0);
+      VG_(close)(p1);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds)) {
+         ML_(record_fd_open_nameless)(tid, p0);
+         ML_(record_fd_open_nameless)(tid, p1);
+      }
+   }
+}
+
 #undef PRE
 #undef POST
 
@@ -1448,7 +1476,7 @@ static SyscallTableEntry syscall_main_table[] = {
   GENX_ (__NR_mkdir, sys_mkdir),	// 39
   GENX_ (__NR_rmdir, sys_rmdir),	// 40
   GENXY (__NR_dup, sys_dup),	// 41
-  LINXY (__NR_pipe, sys_pipe),	// 42
+  PLAXY (__NR_pipe, sys_pipe),	// 42
   GENXY (__NR_times, sys_times),	// 43
   //..    GENX_(__NR_prof,              sys_ni_syscall),   // 44
   //..

@@ -6354,14 +6354,14 @@ s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
 {
-   UChar r1, r1p1, r3, r3p1, b, old_high, old_low, scratch;
+   UChar r1, r1p1, r3, /*r3p1,*/ b, old_high, old_low, scratch;
    Int d;
    s390_amode *am;
 
    r1   = hregNumber(insn->variant.cdas.op1_high); /* expected value */
    r1p1 = hregNumber(insn->variant.cdas.op1_low);  /* expected value */
    r3   = hregNumber(insn->variant.cdas.op3_high);
-   r3p1 = hregNumber(insn->variant.cdas.op3_low);
+   /* r3p1 = hregNumber(insn->variant.cdas.op3_low); */ /* unused */
    old_high = hregNumber(insn->variant.cdas.old_mem_high);
    old_low  = hregNumber(insn->variant.cdas.old_mem_low);
    scratch  = hregNumber(insn->variant.cdas.scratch);

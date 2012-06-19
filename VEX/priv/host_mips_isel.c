@@ -655,8 +655,8 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
          addInstr(env, MIPSInstr_Load(toUChar(sizeofIRType(ty)),
                                       r_dst, am_addr, mode64));
          return r_dst;
-         break;
       }
+
       /* --------- BINARY OP --------- */
       case Iex_Binop: {
          MIPSAluOp aluOp;
@@ -1048,6 +1048,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return r_dst;
          }
       }
+      break;
 
       /* --------- UNARY OP --------- */
    case Iex_Unop: {
@@ -1405,6 +1406,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                                       mode64));
          return r_dst;
       }
+      break;
    }
 
       /* --------- MULTIPLEX --------- */
@@ -1436,6 +1438,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
          return r_dst;
       }
+      break;
    }
 
       /* --------- LITERAL --------- */

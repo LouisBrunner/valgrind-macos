@@ -383,6 +383,9 @@ GEN_test_Ronly(VPSLLD_0x05_128,
 GEN_test_Ronly(VPSRLD_0x05_128,
                "vpsrld $0x5, %%xmm9,  %%xmm7")
 
+GEN_test_Ronly(VPSRAD_0x05_128,
+               "vpsrad $0x5, %%xmm9,  %%xmm7")
+
 GEN_test_RandM(VPSUBUSB_128,
                "vpsubusb %%xmm9,  %%xmm8, %%xmm7",
                "vpsubusb (%%rax), %%xmm8, %%xmm7")
@@ -411,6 +414,9 @@ GEN_test_RandM(VPUNPCKLQDQ_128,
 
 GEN_test_Ronly(VPSRLW_0x05_128,
                "vpsrlw $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_Ronly(VPSLLW_0x05_128,
+               "vpsllw $0x5, %%xmm9,  %%xmm7")
 
 GEN_test_RandM(VPADDW_128,
                "vpaddw %%xmm6,  %%xmm8, %%xmm7",
@@ -1097,6 +1103,8 @@ GEN_test_RandM(VPALIGNR_128_3of3,
 
 GEN_test_Ronly(VMOVSD_REG_XMM, "vmovsd %%xmm9, %%xmm7, %%xmm8")
 
+GEN_test_Ronly(VMOVSS_REG_XMM, "vmovss %%xmm9, %%xmm7, %%xmm8")
+
 GEN_test_Monly(VMOVLPD_128_M64_XMM_XMM, "vmovlpd (%%rax), %%xmm8, %%xmm7")
 
 GEN_test_Monly(VMOVLPD_128_XMM_M64, "vmovlpd %%xmm7, (%%rax)")
@@ -1268,6 +1276,22 @@ GEN_test_RandM(VCVTPD2DQ_256,
                "vcvtpd2dqy %%ymm9,  %%xmm6",
                "vcvtpd2dqy (%%rax), %%xmm7")
 
+GEN_test_RandM(VMOVSLDUP_128,
+               "vmovsldup %%xmm9,  %%xmm6",
+               "vmovsldup (%%rax), %%xmm7")
+
+GEN_test_RandM(VMOVSLDUP_256,
+               "vmovsldup %%ymm9,  %%ymm6",
+               "vmovsldup (%%rax), %%ymm7")
+
+GEN_test_RandM(VMOVSHDUP_128,
+               "vmovshdup %%xmm9,  %%xmm6",
+               "vmovshdup (%%rax), %%xmm7")
+
+GEN_test_RandM(VMOVSHDUP_256,
+               "vmovshdup %%ymm9,  %%ymm6",
+               "vmovshdup (%%rax), %%ymm7")
+
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -1346,6 +1370,7 @@ int main ( void )
    test_VPACKSSDW_128();
    test_VPADDW_128();
    test_VPSRLW_0x05_128();
+   test_VPSLLW_0x05_128();
    test_VPUNPCKLQDQ_128();
    test_VPINSRD_128();
    test_VMOVD_XMM_to_MEM32();
@@ -1355,6 +1380,7 @@ int main ( void )
    test_VPSUBUSB_128();
    test_VPSLLD_0x05_128();
    test_VPSRLD_0x05_128();
+   test_VPSRAD_0x05_128();
    test_VPUNPCKLWD_128();
    test_VPUNPCKHWD_128();
    test_VPADDUSB_128();
@@ -1539,6 +1565,7 @@ int main ( void )
    test_VPALIGNR_128_2of3();
    test_VPALIGNR_128_3of3();
    test_VMOVSD_REG_XMM();
+   test_VMOVSS_REG_XMM();
    test_VMOVLPD_128_M64_XMM_XMM();
    test_VMOVLPD_128_XMM_M64();
    test_VSHUFPD_128_1of2();
@@ -1588,5 +1615,9 @@ int main ( void )
    test_VCVTTPD2DQ_256();
    test_VCVTPD2DQ_128();
    test_VCVTPD2DQ_256();
+   test_VMOVSLDUP_128();
+   test_VMOVSLDUP_256();
+   test_VMOVSHDUP_128();
+   test_VMOVSHDUP_256();
    return 0;
 }

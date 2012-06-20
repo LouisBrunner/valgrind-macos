@@ -1292,6 +1292,22 @@ GEN_test_RandM(VMOVSHDUP_256,
                "vmovshdup %%ymm9,  %%ymm6",
                "vmovshdup (%%rax), %%ymm7")
 
+GEN_test_RandM(VPERMILPS_VAR_128,
+               "vpermilps %%xmm6,  %%xmm8, %%xmm7",
+               "vpermilps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPERMILPD_VAR_128,
+               "vpermilpd %%xmm6,  %%xmm8, %%xmm7",
+               "vpermilpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPERMILPS_VAR_256,
+               "vpermilps %%ymm6,  %%ymm8, %%ymm7",
+               "vpermilps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VPERMILPD_VAR_256,
+               "vpermilpd %%ymm6,  %%ymm8, %%ymm7",
+               "vpermilpd (%%rax), %%ymm8, %%ymm7")
+
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -1619,5 +1635,9 @@ int main ( void )
    test_VMOVSLDUP_256();
    test_VMOVSHDUP_128();
    test_VMOVSHDUP_256();
+   test_VPERMILPS_VAR_128();
+   test_VPERMILPD_VAR_128();
+   test_VPERMILPS_VAR_256();
+   test_VPERMILPD_VAR_256();
    return 0;
 }

@@ -925,6 +925,7 @@ void ppIROp ( IROp op )
       case Iop_ExtractV128: vex_printf("ExtractV128"); return;
 
       case Iop_Perm8x16: vex_printf("Perm8x16"); return;
+      case Iop_Perm32x4: vex_printf("Perm32x4"); return;
       case Iop_Reverse16_8x16: vex_printf("Reverse16_8x16"); return;
       case Iop_Reverse32_8x16: vex_printf("Reverse32_8x16"); return;
       case Iop_Reverse32_16x8: vex_printf("Reverse32_16x8"); return;
@@ -2579,7 +2580,7 @@ void typeOfPrimop ( IROp op,
       case Iop_InterleaveOddLanes8x16: case Iop_InterleaveEvenLanes8x16:
       case Iop_InterleaveOddLanes16x8: case Iop_InterleaveEvenLanes16x8:
       case Iop_InterleaveOddLanes32x4: case Iop_InterleaveEvenLanes32x4:
-      case Iop_Perm8x16:
+      case Iop_Perm8x16: case Iop_Perm32x4:
       case Iop_Recps32Fx4:
       case Iop_Rsqrts32Fx4:
          BINARY(Ity_V128,Ity_V128, Ity_V128);

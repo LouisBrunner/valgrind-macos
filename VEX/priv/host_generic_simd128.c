@@ -358,6 +358,16 @@ void VEX_REGPARM(3)
    res->w16[7] = narrow32to16(argL->w32[3]);
 }
 
+void VEX_REGPARM(3)
+     h_generic_calc_Perm32x4 ( /*OUT*/V128* res,
+                               V128* argL, V128* argR )
+{
+   res->w32[0] = argL->w32[ argR->w32[0] & 3 ];
+   res->w32[1] = argL->w32[ argR->w32[1] & 3 ];
+   res->w32[2] = argL->w32[ argR->w32[2] & 3 ];
+   res->w32[3] = argL->w32[ argR->w32[3] & 3 ];
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                              host_generic_simd128.c ---*/

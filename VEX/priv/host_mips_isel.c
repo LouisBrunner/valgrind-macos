@@ -842,7 +842,6 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return dst;
 
             break;
-
          }
 
          if (e->Iex.Binop.op == Iop_Max32U) {
@@ -1047,8 +1046,32 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
             return r_dst;
          }
-      }
+
+         if (e->Iex.Binop.op == Iop_F64toI32S) {
+            HReg valD = iselDblExpr(env, e->Iex.Binop.arg2);
+            HReg valS = newVRegF(env);
+            HReg r_dst = newVRegI(env);
+            MIPSAMode *am_addr;
+
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTWD, valS, valD));
+            set_MIPS_rounding_default(env);
+
+            sub_from_sp(env, 16);   // Move SP down 16 bytes
+            am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+
+            // store as F32
+            addInstr(env, MIPSInstr_FpLdSt(False/*store */ , 4, valS, am_addr));
+            // load as I32                              
+            addInstr(env, MIPSInstr_Load(4, r_dst, am_addr, mode64));
+
+            add_to_sp(env, 16);  // Reset SP
+
+            return r_dst;
+         }
+
       break;
+   }
 
       /* --------- UNARY OP --------- */
    case Iex_Unop: {
@@ -1156,29 +1179,6 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_Load(8, r_dst, am_addr, mode64));
 
             add_to_sp(env, 16);  // Reset SP
-            return r_dst;
-         }
-   
-         case Iop_F64toI32S: {
-            HReg valD = iselDblExpr(env, e->Iex.Binop.arg2);
-            HReg valS = newVRegF(env);
-            HReg r_dst = newVRegI(env);
-            MIPSAMode *am_addr;
-
-            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
-            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTWD, valS, valD));
-            set_MIPS_rounding_default(env);
-
-            sub_from_sp(env, 16);   // Move SP down 16 bytes
-            am_addr = MIPSAMode_IR(0, StackPointer(mode64));
-
-            // store as F32
-            addInstr(env, MIPSInstr_FpLdSt(False/*store */ , 4, valS, am_addr));
-            // load as I32                              
-            addInstr(env, MIPSInstr_Load(4, r_dst, am_addr, mode64));
-
-            add_to_sp(env, 16);  // Reset SP
-
             return r_dst;
          }
 

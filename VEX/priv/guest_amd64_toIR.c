@@ -8986,6 +8986,22 @@ static void breakupV256toV128s ( IRTemp t256,
    assign(*t0, unop(Iop_V256toV128_0, mkexpr(t256)));
 }
 
+/* Break a V256-bit value up into eight 32-bit ints.  */
+
+static void breakupV256to32s ( IRTemp t256,
+                               /*OUTs*/
+                               IRTemp* t7, IRTemp* t6,
+                               IRTemp* t5, IRTemp* t4,
+                               IRTemp* t3, IRTemp* t2,
+                               IRTemp* t1, IRTemp* t0 )
+{
+   IRTemp t128_1 = IRTemp_INVALID;
+   IRTemp t128_0 = IRTemp_INVALID;
+   breakupV256toV128s( t256, &t128_1, &t128_0 );
+   breakupV128to32s( t128_1, t7, t6, t5, t4 );
+   breakupV128to32s( t128_0, t3, t2, t1, t0 );
+}
+
 /* Break a V128-bit value up into two 64-bit ints. */
 
 static void breakupV128to64s ( IRTemp t128,
@@ -9909,8 +9925,6 @@ static Long dis_CVTxPS2DQ_256 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    UChar  modrm = getUChar(delta);
    IRTemp argV  = newTemp(Ity_V256);
-   IRTemp argVhi = IRTemp_INVALID;
-   IRTemp argVlo = IRTemp_INVALID;
    IRTemp rmode = newTemp(Ity_I32);
    UInt   rG    = gregOfRexRM(pfx,modrm);
    IRTemp t0, t1, t2, t3, t4, t5, t6, t7;
@@ -9932,9 +9946,7 @@ static Long dis_CVTxPS2DQ_256 ( VexAbiInfo* vbi, Prefix pfx,
    assign( rmode, r2zero ? mkU32((UInt)Irrm_ZERO)
                          : get_sse_roundingmode() );
    t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = IRTemp_INVALID;
-   breakupV256toV128s( argV, &argVhi, &argVlo );
-   breakupV128to32s( argVhi, &t7, &t6, &t5, &t4 );
-   breakupV128to32s( argVlo, &t3, &t2, &t1, &t0 );
+   breakupV256to32s( argV, &t7, &t6, &t5, &t4, &t3, &t2, &t1, &t0 );
    /* This is less than ideal.  If it turns out to be a performance
       bottleneck it can be improved. */
 #  define CVT(_t)                             \
@@ -10122,8 +10134,6 @@ static Long dis_CVTDQ2PS_256 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    UChar  modrm  = getUChar(delta);
    IRTemp argV   = newTemp(Ity_V256);
-   IRTemp argVhi = IRTemp_INVALID;
-   IRTemp argVlo = IRTemp_INVALID;
    IRTemp rmode  = newTemp(Ity_I32);
    UInt   rG     = gregOfRexRM(pfx,modrm);
    IRTemp t0, t1, t2, t3, t4, t5, t6, t7;
@@ -10149,9 +10159,7 @@ static Long dis_CVTDQ2PS_256 ( VexAbiInfo* vbi, Prefix pfx,
    t5 = IRTemp_INVALID;
    t6 = IRTemp_INVALID;
    t7 = IRTemp_INVALID;
-   breakupV256toV128s( argV, &argVhi, &argVlo );
-   breakupV128to32s( argVhi, &t7, &t6, &t5, &t4 );
-   breakupV128to32s( argVlo, &t3, &t2, &t1, &t0 );
+   breakupV256to32s( argV, &t7, &t6, &t5, &t4, &t3, &t2, &t1, &t0 );
 
 #  define CVT(_t)  binop( Iop_F64toF32,                    \
                           mkexpr(rmode),                   \
@@ -13110,7 +13118,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
       break;
 
    case 0xD9:
-      /* 66 0F D9 = PSUBSW */
+      /* 66 0F D9 = PSUBUSW */
       if (have66noF2noF3(pfx) && sz == 2) {
          delta = dis_SSEint_E_to_G( vbi, pfx, delta,
                                     "psubusw", Iop_QSub16Ux8, False );
@@ -13808,8 +13816,6 @@ static Long dis_MOVSxDUP_256 ( VexAbiInfo* vbi, Prefix pfx,
    Int    alen  = 0;
    HChar  dis_buf[50];
    IRTemp sV    = newTemp(Ity_V256);
-   IRTemp sVhi  = IRTemp_INVALID;
-   IRTemp sVlo  = IRTemp_INVALID;
    UChar  modrm = getUChar(delta);
    UInt   rG    = gregOfRexRM(pfx,modrm);
    IRTemp s7, s6, s5, s4, s3, s2, s1, s0;
@@ -13827,9 +13833,7 @@ static Long dis_MOVSxDUP_256 ( VexAbiInfo* vbi, Prefix pfx,
           isL ? 'l' : 'h', dis_buf, nameYMMReg(rG));
       delta += alen;
    }
-   breakupV256toV128s( sV, &sVhi, &sVlo );
-   breakupV128to32s( sVhi, &s7, &s6, &s5, &s4 );
-   breakupV128to32s( sVlo, &s3, &s2, &s1, &s0 );
+   breakupV256to32s( sV, &s7, &s6, &s5, &s4, &s3, &s2, &s1, &s0 );
    putYMMRegLane128( rG, 1, isL ? mkV128from32s( s6, s6, s4, s4 )
                                 : mkV128from32s( s7, s7, s5, s5 ) );
    putYMMRegLane128( rG, 0, isL ? mkV128from32s( s2, s2, s0, s0 )
@@ -23224,6 +23228,24 @@ Long dis_ESC_0F__VEX (
       }
       break;
 
+   case 0xE8:
+      /* VPSUBSB xmm3/m128, xmm2, xmm1 = VEX.NDS.128.66.0F.WIG E8 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_AVX128_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vpsubsb", Iop_QSub8Sx16 );
+         goto decode_success;
+      }
+     break;
+
+   case 0xE9:
+      /* VPSUBSW xmm3/m128, xmm2, xmm1 = VEX.NDS.128.66.0F.WIG E9 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_AVX128_E_V_to_G(
+                    uses_vvvv, vbi, pfx, delta, "vpsubsw", Iop_QSub16Sx8 );
+         goto decode_success;
+      }
+      break;
+
    case 0xEA:
       /* VPMINSW r/m, rV, r ::: r = min-signed16s(rV, r/m) */
       /* VPMINSW = VEX.NDS.128.66.0F.WIG EA /r */
@@ -24121,6 +24143,262 @@ Long dis_ESC_0F3A__VEX (
 #        undef SEL
          if (imm8 & (1<<3)) putYMMRegLane128(rG, 0, mkV128(0));
          if (imm8 & (1<<7)) putYMMRegLane128(rG, 1, mkV128(0));
+         *uses_vvvv = True;
+         goto decode_success;
+      }
+      break;
+
+   case 0x08:
+      /* VROUNDPS imm8, xmm3/m128, xmm2, xmm1 */
+      /* VROUNDPS = VEX.NDS.128.66.0F3A.WIG 08 ib */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         IRTemp src   = newTemp(Ity_V128);
+         IRTemp s0    = IRTemp_INVALID;
+         IRTemp s1    = IRTemp_INVALID;
+         IRTemp s2    = IRTemp_INVALID;
+         IRTemp s3    = IRTemp_INVALID;
+         IRTemp rm    = newTemp(Ity_I32);
+         Int    imm   = 0;
+
+         modrm = getUChar(delta);
+
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx, modrm);
+            assign( src, getXMMReg( rE ) );
+            imm = getUChar(delta+1);
+            if (imm & ~15) break;
+            delta += 1+1;
+            DIP( "vroundps $%d,%s,%s\n", imm, nameXMMReg(rE), nameXMMReg(rG) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( src, loadLE(Ity_V128, mkexpr(addr) ) );
+            imm = getUChar(delta+alen);
+            if (imm & ~15) break;
+            delta += alen+1;
+            DIP( "vroundps $%d,%s,%s\n", imm, dis_buf, nameXMMReg(rG) );
+         }
+
+         /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+            that encoding is the same as the encoding for IRRoundingMode,
+            we can use that value directly in the IR as a rounding
+            mode. */
+         assign(rm, (imm & 4) ? get_sse_roundingmode() : mkU32(imm & 3));
+
+         breakupV128to32s( src, &s3, &s2, &s1, &s0 );
+         putYMMRegLane128( rG, 1, mkV128(0) );
+#        define CVT(s) binop(Iop_RoundF32toInt, mkexpr(rm), \
+                             unop(Iop_ReinterpI32asF32, mkexpr(s)))
+         putYMMRegLane32F( rG, 3, CVT(s3) );
+         putYMMRegLane32F( rG, 2, CVT(s2) );
+         putYMMRegLane32F( rG, 1, CVT(s1) );
+         putYMMRegLane32F( rG, 0, CVT(s0) );
+#        undef CVT
+         goto decode_success;
+      }
+      /* VROUNDPS imm8, ymm3/m256, ymm2, ymm1 */
+      /* VROUNDPS = VEX.NDS.256.66.0F3A.WIG 08 ib */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         IRTemp src   = newTemp(Ity_V256);
+         IRTemp s0    = IRTemp_INVALID;
+         IRTemp s1    = IRTemp_INVALID;
+         IRTemp s2    = IRTemp_INVALID;
+         IRTemp s3    = IRTemp_INVALID;
+         IRTemp s4    = IRTemp_INVALID;
+         IRTemp s5    = IRTemp_INVALID;
+         IRTemp s6    = IRTemp_INVALID;
+         IRTemp s7    = IRTemp_INVALID;
+         IRTemp rm    = newTemp(Ity_I32);
+         Int    imm   = 0;
+
+         modrm = getUChar(delta);
+
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx, modrm);
+            assign( src, getYMMReg( rE ) );
+            imm = getUChar(delta+1);
+            if (imm & ~15) break;
+            delta += 1+1;
+            DIP( "vroundps $%d,%s,%s\n", imm, nameYMMReg(rE), nameYMMReg(rG) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( src, loadLE(Ity_V256, mkexpr(addr) ) );
+            imm = getUChar(delta+alen);
+            if (imm & ~15) break;
+            delta += alen+1;
+            DIP( "vroundps $%d,%s,%s\n", imm, dis_buf, nameYMMReg(rG) );
+         }
+
+         /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+            that encoding is the same as the encoding for IRRoundingMode,
+            we can use that value directly in the IR as a rounding
+            mode. */
+         assign(rm, (imm & 4) ? get_sse_roundingmode() : mkU32(imm & 3));
+
+         breakupV256to32s( src, &s7, &s6, &s5, &s4, &s3, &s2, &s1, &s0 );
+#        define CVT(s) binop(Iop_RoundF32toInt, mkexpr(rm), \
+                             unop(Iop_ReinterpI32asF32, mkexpr(s)))
+         putYMMRegLane32F( rG, 7, CVT(s7) );
+         putYMMRegLane32F( rG, 6, CVT(s6) );
+         putYMMRegLane32F( rG, 5, CVT(s5) );
+         putYMMRegLane32F( rG, 4, CVT(s4) );
+         putYMMRegLane32F( rG, 3, CVT(s3) );
+         putYMMRegLane32F( rG, 2, CVT(s2) );
+         putYMMRegLane32F( rG, 1, CVT(s1) );
+         putYMMRegLane32F( rG, 0, CVT(s0) );
+#        undef CVT
+         goto decode_success;
+      }
+
+   case 0x09:
+      /* VROUNDPD imm8, xmm3/m128, xmm2, xmm1 */
+      /* VROUNDPD = VEX.NDS.128.66.0F3A.WIG 09 ib */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         IRTemp src   = newTemp(Ity_V128);
+         IRTemp s0    = IRTemp_INVALID;
+         IRTemp s1    = IRTemp_INVALID;
+         IRTemp rm    = newTemp(Ity_I32);
+         Int    imm   = 0;
+
+         modrm = getUChar(delta);
+
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx, modrm);
+            assign( src, getXMMReg( rE ) );
+            imm = getUChar(delta+1);
+            if (imm & ~15) break;
+            delta += 1+1;
+            DIP( "vroundpd $%d,%s,%s\n", imm, nameXMMReg(rE), nameXMMReg(rG) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( src, loadLE(Ity_V128, mkexpr(addr) ) );
+            imm = getUChar(delta+alen);
+            if (imm & ~15) break;
+            delta += alen+1;
+            DIP( "vroundpd $%d,%s,%s\n", imm, dis_buf, nameXMMReg(rG) );
+         }
+
+         /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+            that encoding is the same as the encoding for IRRoundingMode,
+            we can use that value directly in the IR as a rounding
+            mode. */
+         assign(rm, (imm & 4) ? get_sse_roundingmode() : mkU32(imm & 3));
+
+         breakupV128to64s( src, &s1, &s0 );
+         putYMMRegLane128( rG, 1, mkV128(0) );
+#        define CVT(s) binop(Iop_RoundF64toInt, mkexpr(rm), \
+                             unop(Iop_ReinterpI64asF64, mkexpr(s)))
+         putYMMRegLane64F( rG, 1, CVT(s1) );
+         putYMMRegLane64F( rG, 0, CVT(s0) );
+#        undef CVT
+         goto decode_success;
+      }
+      /* VROUNDPD imm8, ymm3/m256, ymm2, ymm1 */
+      /* VROUNDPD = VEX.NDS.256.66.0F3A.WIG 09 ib */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         IRTemp src   = newTemp(Ity_V256);
+         IRTemp s0    = IRTemp_INVALID;
+         IRTemp s1    = IRTemp_INVALID;
+         IRTemp s2    = IRTemp_INVALID;
+         IRTemp s3    = IRTemp_INVALID;
+         IRTemp rm    = newTemp(Ity_I32);
+         Int    imm   = 0;
+
+         modrm = getUChar(delta);
+
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx, modrm);
+            assign( src, getYMMReg( rE ) );
+            imm = getUChar(delta+1);
+            if (imm & ~15) break;
+            delta += 1+1;
+            DIP( "vroundpd $%d,%s,%s\n", imm, nameYMMReg(rE), nameYMMReg(rG) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( src, loadLE(Ity_V256, mkexpr(addr) ) );
+            imm = getUChar(delta+alen);
+            if (imm & ~15) break;
+            delta += alen+1;
+            DIP( "vroundps $%d,%s,%s\n", imm, dis_buf, nameYMMReg(rG) );
+         }
+
+         /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+            that encoding is the same as the encoding for IRRoundingMode,
+            we can use that value directly in the IR as a rounding
+            mode. */
+         assign(rm, (imm & 4) ? get_sse_roundingmode() : mkU32(imm & 3));
+
+         breakupV256to64s( src, &s3, &s2, &s1, &s0 );
+#        define CVT(s) binop(Iop_RoundF64toInt, mkexpr(rm), \
+                             unop(Iop_ReinterpI64asF64, mkexpr(s)))
+         putYMMRegLane64F( rG, 3, CVT(s3) );
+         putYMMRegLane64F( rG, 2, CVT(s2) );
+         putYMMRegLane64F( rG, 1, CVT(s1) );
+         putYMMRegLane64F( rG, 0, CVT(s0) );
+#        undef CVT
+         goto decode_success;
+      }
+
+   case 0x0A:
+   case 0x0B:
+      /* VROUNDSS imm8, xmm3/m32, xmm2, xmm1 */
+      /* VROUNDSS = VEX.NDS.128.66.0F3A.WIG 0A ib */
+      /* VROUNDSD imm8, xmm3/m64, xmm2, xmm1 */
+      /* VROUNDSD = VEX.NDS.128.66.0F3A.WIG 0B ib */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar  modrm = getUChar(delta);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         UInt   rV    = getVexNvvvv(pfx);
+         Bool   isD   = opc == 0x0B;
+         IRTemp src   = newTemp(isD ? Ity_F64 : Ity_F32);
+         IRTemp res   = newTemp(isD ? Ity_F64 : Ity_F32);
+         Int    imm   = 0;
+
+         if (epartIsReg(modrm)) {
+            UInt rE = eregOfRexRM(pfx, modrm);
+            assign( src, 
+                    isD ? getXMMRegLane64F(rE, 0) : getXMMRegLane32F(rE, 0) );
+            imm = getUChar(delta+1);
+            if (imm & ~15) break;
+            delta += 1+1;
+            DIP( "vrounds%c $%d,%s,%s,%s\n",
+                 isD ? 'd' : 's',
+                 imm, nameXMMReg( rE ), nameXMMReg( rV ), nameXMMReg( rG ) );
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            assign( src, loadLE( isD ? Ity_F64 : Ity_F32, mkexpr(addr) ));
+            imm = getUChar(delta+alen);
+            if (imm & ~15) break;
+            delta += alen+1;
+            DIP( "vrounds%c $%d,%s,%s,%s\n",
+                 isD ? 'd' : 's',
+                 imm, dis_buf, nameXMMReg( rV ), nameXMMReg( rG ) );
+         }
+
+         /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+            that encoding is the same as the encoding for IRRoundingMode,
+            we can use that value directly in the IR as a rounding
+            mode. */
+         assign(res, binop(isD ? Iop_RoundF64toInt : Iop_RoundF32toInt,
+                           (imm & 4) ? get_sse_roundingmode() 
+                                     : mkU32(imm & 3),
+                           mkexpr(src)) );
+
+         if (isD)
+            putXMMRegLane64F( rG, 0, mkexpr(res) );
+         else {
+            putXMMRegLane32F( rG, 0, mkexpr(res) );
+            putXMMRegLane32F( rG, 1, getXMMRegLane32F( rV, 1 ) );
+         }
+         putXMMRegLane64F( rG, 1, getXMMRegLane64F( rV, 1 ) );
+         putYMMRegLane128( rG, 1, mkV128(0) );
          *uses_vvvv = True;
          goto decode_success;
       }

@@ -23137,7 +23137,7 @@ Long dis_ESC_0F38__VEX (
                 nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
             assign(ctrlV, getXMMReg(rE));
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             DIP("vpermilps %s,%s,%s\n",
                 dis_buf, nameXMMReg(rV), nameXMMReg(rG));
@@ -23164,7 +23164,7 @@ Long dis_ESC_0F38__VEX (
                 nameYMMReg(rE), nameYMMReg(rV), nameYMMReg(rG));
             assign(ctrlV, getYMMReg(rE));
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             DIP("vpermilps %s,%s,%s\n",
                 dis_buf, nameYMMReg(rV), nameYMMReg(rG));
@@ -23194,7 +23194,7 @@ Long dis_ESC_0F38__VEX (
                 nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
             assign(ctrlV, getXMMReg(rE));
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             DIP("vpermilpd %s,%s,%s\n",
                 dis_buf, nameXMMReg(rV), nameXMMReg(rG));
@@ -23221,7 +23221,7 @@ Long dis_ESC_0F38__VEX (
                 nameYMMReg(rE), nameYMMReg(rV), nameYMMReg(rG));
             assign(ctrlV, getYMMReg(rE));
          } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             DIP("vpermilpd %s,%s,%s\n",
                 dis_buf, nameYMMReg(rV), nameYMMReg(rG));

@@ -386,7 +386,6 @@ DECL_TEMPLATE (mips_linux, sys_semget);
 DECL_TEMPLATE (mips_linux, sys_semop);
 DECL_TEMPLATE (mips_linux, sys_semctl);
 DECL_TEMPLATE (mips_linux, sys_semtimedop);
-DECL_TEMPLATE (mips_linux, wrap_sys_shmat);
 DECL_TEMPLATE (mips_linux, sys_shmget);
 DECL_TEMPLATE (mips_linux, sys_shmdt);
 DECL_TEMPLATE (mips_linux, sys_shmctl);
@@ -866,24 +865,6 @@ PRE (sys_shmget)
   PRINT ("sys_shmget ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
   PRE_REG_READ3 (long, "shmget", vki_key_t, key, vki_size_t, size, int,
                  shmflg);
-} 
-
-PRE (wrap_sys_shmat) 
-{
-  UWord arg2tmp;
-  PRINT ("wrap_sys_shmat ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
-  PRE_REG_READ3 (long, "shmat", int, shmid, const void *, shmaddr, int,
-                 shmflg);
-  arg2tmp = ML_ (generic_PRE_sys_shmat) (tid, ARG1, ARG2, ARG3);
-  if (arg2tmp == 0)
-    SET_STATUS_Failure (VKI_EINVAL);
-  else
-    ARG2 = arg2tmp;
-}
-
-POST (wrap_sys_shmat) 
-{
-  ML_ (generic_POST_sys_shmat) (tid, RES, ARG1, ARG2, ARG3);
 }
 
 PRE (sys_shmdt) 
@@ -1159,13 +1140,7 @@ PRE (sys_ipc)
         break;
       case VKI_SHMAT:
         {
-          UWord w;
           PRE_MEM_WRITE ("shmat(raddr)", ARG4, sizeof (Addr));
-          w = ML_ (generic_PRE_sys_shmat) (tid, ARG2, ARG5, ARG3);
-          if (w == 0)
-            SET_STATUS_Failure (VKI_EINVAL);
-          else
-            ARG5 = w;
           break;
         }
       case VKI_SHMDT:
@@ -1571,7 +1546,7 @@ static SyscallTableEntry syscall_main_table[] = {
   //..    LINXY(__NR_adjtimex,          sys_adjtimex),          // 124
   //..
   GENXY (__NR_mprotect, sys_mprotect),	// 125
-  //   LINXY(__NR_sigprocmask,       sys_sigprocmask),       // 126
+  LINXY (__NR_sigprocmask, sys_sigprocmask),    // 126
   //..    // Nb: create_module() was removed 2.4-->2.6
   //..    GENX_(__NR_create_module,     sys_ni_syscall),        // 127
   //..    GENX_(__NR_init_module,       sys_init_module),       // 128
@@ -1757,6 +1732,9 @@ static SyscallTableEntry syscall_main_table[] = {
   LINXY (__NR_epoll_pwait, sys_epoll_pwait),	// 313
   LINX_ (__NR_utimensat, sys_utimensat),	// 316
   LINX_ (__NR_fallocate, sys_fallocate),	// 320
+  LINXY (__NR_timerfd_create, sys_timerfd_create),    // 321
+  LINXY (__NR_timerfd_gettime, sys_timerfd_gettime),  // 322
+  LINXY (__NR_timerfd_settime, sys_timerfd_settime),  // 323
   LINXY (__NR_signalfd4, sys_signalfd4),	// 324
   LINX_ (__NR_eventfd2, sys_eventfd2),	// 325
   LINXY (__NR_pipe2, sys_pipe2),	// 328

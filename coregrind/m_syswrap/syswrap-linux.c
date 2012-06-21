@@ -2880,7 +2880,8 @@ POST(sys_sigpending)
 // This wrapper is only suitable for 32-bit architectures.
 // (XXX: so how is it that PRE(sys_sigpending) above doesn't need
 // conditional compilation like this?)
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_arm_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
+    || defined(VGP_arm_linux) || defined(VGP_mips32_linux)
 PRE(sys_sigprocmask)
 {
    vki_old_sigset_t* set;

@@ -15071,6 +15071,215 @@ static IRTemp math_PBLENDVB_128 ( IRTemp vecE, IRTemp vecG,
    return res;
 }
 
+static void finish_xTESTy ( IRTemp andV, IRTemp andnV, Int sign )
+{
+   /* Set Z=1 iff (vecE & vecG) == 0
+      Set C=1 iff (vecE & not vecG) == 0
+   */
+
+   /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
+
+   /* andV resp. andnV, reduced to 64-bit values, by or-ing the top
+      and bottom 64-bits together.  It relies on this trick:
+
+      InterleaveLO64x2([a,b],[c,d]) == [b,d]    hence
+
+      InterleaveLO64x2([a,b],[a,b]) == [b,b]    and similarly
+      InterleaveHI64x2([a,b],[a,b]) == [a,a] 
+
+      and so the OR of the above 2 exprs produces
+      [a OR b, a OR b], from which we simply take the lower half.
+   */
+   IRTemp and64  = newTemp(Ity_I64);
+   IRTemp andn64 = newTemp(Ity_I64);
+
+   assign(and64,
+          unop(Iop_V128to64,
+               binop(Iop_OrV128,
+                     binop(Iop_InterleaveLO64x2,
+                           mkexpr(andV), mkexpr(andV)),
+                     binop(Iop_InterleaveHI64x2,
+                           mkexpr(andV), mkexpr(andV)))));
+
+   assign(andn64,
+          unop(Iop_V128to64,
+               binop(Iop_OrV128,
+                     binop(Iop_InterleaveLO64x2,
+                           mkexpr(andnV), mkexpr(andnV)),
+                     binop(Iop_InterleaveHI64x2,
+                           mkexpr(andnV), mkexpr(andnV)))));
+
+   IRTemp z64 = newTemp(Ity_I64);
+   IRTemp c64 = newTemp(Ity_I64);
+   if (sign == 64) {
+      /* When only interested in the most significant bit, just shift
+         arithmetically right and negate.  */
+      assign(z64,
+             unop(Iop_Not64,
+                  binop(Iop_Sar64, mkexpr(and64), mkU8(63))));
+
+      assign(c64,
+             unop(Iop_Not64,
+                  binop(Iop_Sar64, mkexpr(andn64), mkU8(63))));
+   } else {
+      if (sign == 32) {
+         /* When interested in bit 31 and bit 63, mask those bits and
+            fallthrough into the PTEST handling.  */
+         IRTemp t0 = newTemp(Ity_I64);
+         IRTemp t1 = newTemp(Ity_I64);
+         IRTemp t2 = newTemp(Ity_I64);
+         assign(t0, mkU64(0x8000000080000000ULL));
+         assign(t1, binop(Iop_And64, mkexpr(and64), mkexpr(t0)));
+         assign(t2, binop(Iop_And64, mkexpr(andn64), mkexpr(t0)));
+         and64 = t1;
+         andn64 = t2;
+      }
+      /* Now convert and64, andn64 to all-zeroes or all-1s, so we can
+         slice out the Z and C bits conveniently.  We use the standard
+         trick all-zeroes -> all-zeroes, anything-else -> all-ones
+         done by "(x | -x) >>s (word-size - 1)".
+      */
+      assign(z64,
+             unop(Iop_Not64,
+                  binop(Iop_Sar64,
+                        binop(Iop_Or64,
+                              binop(Iop_Sub64, mkU64(0), mkexpr(and64)),
+                                    mkexpr(and64)), mkU8(63))));
+
+      assign(c64,
+             unop(Iop_Not64,
+                  binop(Iop_Sar64,
+                        binop(Iop_Or64,
+                              binop(Iop_Sub64, mkU64(0), mkexpr(andn64)),
+                                    mkexpr(andn64)), mkU8(63))));
+   }
+
+   /* And finally, slice out the Z and C flags and set the flags
+      thunk to COPY for them.  OSAP are set to zero. */
+   IRTemp newOSZACP = newTemp(Ity_I64);
+   assign(newOSZACP, 
+          binop(Iop_Or64,
+                binop(Iop_And64, mkexpr(z64), mkU64(AMD64G_CC_MASK_Z)),
+                binop(Iop_And64, mkexpr(c64), mkU64(AMD64G_CC_MASK_C))));
+
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(newOSZACP)));
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+}
+
+
+/* Handles 128 bit versions of PTEST, VTESTPS or VTESTPD.
+   sign is 0 for PTEST insn, 32 for VTESTPS and 64 for VTESTPD. */
+static Long dis_xTESTy_128 ( VexAbiInfo* vbi, Prefix pfx,
+                             Long delta, Bool isAvx, Int sign )
+{
+   IRTemp addr   = IRTemp_INVALID;
+   Int    alen   = 0;
+   HChar  dis_buf[50];
+   UChar  modrm  = getUChar(delta);
+   UInt   rG     = gregOfRexRM(pfx, modrm);
+   IRTemp vecE = newTemp(Ity_V128);
+   IRTemp vecG = newTemp(Ity_V128);
+
+   if ( epartIsReg(modrm) ) {
+      UInt rE = eregOfRexRM(pfx, modrm);
+      assign(vecE, getXMMReg(rE));
+      delta += 1;
+      DIP( "%s%stest%s %s,%s\n",
+           isAvx ? "v" : "", sign == 0 ? "p" : "",
+           sign == 0 ? "" : sign == 32 ? "ps" : "pd",
+           nameXMMReg(rE), nameXMMReg(rG) );
+   } else {
+      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+      if (!isAvx)
+         gen_SEGV_if_not_16_aligned( addr );
+      assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
+      delta += alen;
+      DIP( "%s%stest%s %s,%s\n",
+           isAvx ? "v" : "", sign == 0 ? "p" : "",
+           sign == 0 ? "" : sign == 32 ? "ps" : "pd",
+           dis_buf, nameXMMReg(rG) );
+   }
+
+   assign(vecG, getXMMReg(rG));
+
+   /* Set Z=1 iff (vecE & vecG) == 0
+      Set C=1 iff (vecE & not vecG) == 0
+   */
+
+   /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
+   IRTemp andV  = newTemp(Ity_V128);
+   IRTemp andnV = newTemp(Ity_V128);
+   assign(andV,  binop(Iop_AndV128, mkexpr(vecE), mkexpr(vecG)));
+   assign(andnV, binop(Iop_AndV128,
+                       mkexpr(vecE),
+                       binop(Iop_XorV128, mkexpr(vecG),
+                                          mkV128(0xFFFF))));
+
+   finish_xTESTy ( andV, andnV, sign );
+   return delta;
+}
+
+
+/* Handles 256 bit versions of PTEST, VTESTPS or VTESTPD.
+   sign is 0 for PTEST insn, 32 for VTESTPS and 64 for VTESTPD. */
+static Long dis_xTESTy_256 ( VexAbiInfo* vbi, Prefix pfx,
+                             Long delta, Int sign )
+{
+   IRTemp addr   = IRTemp_INVALID;
+   Int    alen   = 0;
+   HChar  dis_buf[50];
+   UChar  modrm  = getUChar(delta);
+   UInt   rG     = gregOfRexRM(pfx, modrm);
+   IRTemp vecE   = newTemp(Ity_V256);
+   IRTemp vecG   = newTemp(Ity_V256);
+
+   if ( epartIsReg(modrm) ) {
+      UInt rE = eregOfRexRM(pfx, modrm);
+      assign(vecE, getYMMReg(rE));
+      delta += 1;
+      DIP( "v%stest%s %s,%s\n", sign == 0 ? "p" : "",
+           sign == 0 ? "" : sign == 32 ? "ps" : "pd",
+           nameYMMReg(rE), nameYMMReg(rG) );
+   } else {
+      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+      assign(vecE, loadLE( Ity_V256, mkexpr(addr) ));
+      delta += alen;
+      DIP( "v%stest%s %s,%s\n", sign == 0 ? "p" : "",
+           sign == 0 ? "" : sign == 32 ? "ps" : "pd",
+           dis_buf, nameYMMReg(rG) );
+   }
+
+   assign(vecG, getYMMReg(rG));
+
+   /* Set Z=1 iff (vecE & vecG) == 0
+      Set C=1 iff (vecE & not vecG) == 0
+   */
+
+   /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
+   IRTemp andV  = newTemp(Ity_V256);
+   IRTemp andnV = newTemp(Ity_V256);
+   assign(andV,  binop(Iop_AndV256, mkexpr(vecE), mkexpr(vecG)));
+   assign(andnV, binop(Iop_AndV256,
+                       mkexpr(vecE), unop(Iop_NotV256, mkexpr(vecG))));
+
+   IRTemp andVhi  = IRTemp_INVALID;
+   IRTemp andVlo  = IRTemp_INVALID;
+   IRTemp andnVhi = IRTemp_INVALID;
+   IRTemp andnVlo = IRTemp_INVALID;
+   breakupV256toV128s( andV, &andVhi, &andVlo );
+   breakupV256toV128s( andnV, &andnVhi, &andnVlo );
+
+   IRTemp andV128  = newTemp(Ity_V128);
+   IRTemp andnV128 = newTemp(Ity_V128);
+   assign( andV128, binop( Iop_OrV128, mkexpr(andVhi), mkexpr(andVlo) ) );
+   assign( andnV128, binop( Iop_OrV128, mkexpr(andnVhi), mkexpr(andnVlo) ) );
+
+   finish_xTESTy ( andV128, andnV128, sign );
+   return delta;
+}
+
 
 /* Handles 128 bit versions of PMOVZXBW and PMOVSXBW. */
 static Long dis_PMOVxXBW_128 ( VexAbiInfo* vbi, Prefix pfx,
@@ -15363,116 +15572,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
          Logical compare (set ZF and CF from AND/ANDN of the operands) */
       if (have66noF2noF3(pfx)
           && (sz == 2 || /* ignore redundant REX.W */ sz == 8)) {
-         modrm = getUChar(delta);
-         IRTemp vecE = newTemp(Ity_V128);
-         IRTemp vecG = newTemp(Ity_V128);
-
-         if ( epartIsReg(modrm) ) {
-            assign(vecE, getXMMReg(eregOfRexRM(pfx, modrm)));
-            delta += 1;
-            DIP( "ptest %s,%s\n", 
-                 nameXMMReg( eregOfRexRM(pfx, modrm) ),
-                 nameXMMReg( gregOfRexRM(pfx, modrm) ) );
-         } else {
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SEGV_if_not_16_aligned( addr );
-            assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
-            delta += alen;
-            DIP( "ptest %s,%s\n",
-                 dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
-         }
-
-         assign(vecG, getXMMReg(gregOfRexRM(pfx, modrm)));
-
-         /* Set Z=1 iff (vecE & vecG) == 0
-            Set C=1 iff (vecE & not vecG) == 0
-         */
-
-         /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
-         IRTemp andV  = newTemp(Ity_V128);
-         IRTemp andnV = newTemp(Ity_V128);
-         assign(andV,  binop(Iop_AndV128, mkexpr(vecE), mkexpr(vecG)));
-         assign(andnV, binop(Iop_AndV128,
-                             mkexpr(vecE),
-                             binop(Iop_XorV128, mkexpr(vecG),
-                                                mkV128(0xFFFF))));
-
-         /* The same, but reduced to 64-bit values, by or-ing the top
-            and bottom 64-bits together.  It relies on this trick:
-
-             InterleaveLO64x2([a,b],[c,d]) == [b,d]    hence
-
-             InterleaveLO64x2([a,b],[a,b]) == [b,b]    and similarly
-             InterleaveHI64x2([a,b],[a,b]) == [a,a] 
-
-             and so the OR of the above 2 exprs produces
-             [a OR b, a OR b], from which we simply take the lower half.
-         */
-         IRTemp and64  = newTemp(Ity_I64);
-         IRTemp andn64 = newTemp(Ity_I64);
-   
-         assign(
-            and64,
-            unop(Iop_V128to64,
-                 binop(Iop_OrV128,
-                       binop(Iop_InterleaveLO64x2, mkexpr(andV), mkexpr(andV)),
-                       binop(Iop_InterleaveHI64x2, mkexpr(andV), mkexpr(andV))
-                 )
-            )
-         );
-
-         assign(
-            andn64,
-            unop(Iop_V128to64,
-                 binop(Iop_OrV128,
-                       binop(Iop_InterleaveLO64x2, mkexpr(andnV), mkexpr(andnV)),
-                       binop(Iop_InterleaveHI64x2, mkexpr(andnV), mkexpr(andnV))
-                 )
-             )
-          );
-
-         /* Now convert and64, andn64 to all-zeroes or all-1s, so we can
-            slice out the Z and C bits conveniently.  We use the standard
-            trick all-zeroes -> all-zeroes, anything-else -> all-ones
-            done by "(x | -x) >>s (word-size - 1)".
-         */
-         IRTemp z64 = newTemp(Ity_I64);
-         IRTemp c64 = newTemp(Ity_I64);
-         assign(z64,
-                unop(Iop_Not64,
-                     binop(Iop_Sar64,
-                           binop(Iop_Or64,
-                                 binop(Iop_Sub64, mkU64(0), mkexpr(and64)),
-                                 mkexpr(and64)
-                           ), 
-                           mkU8(63)))
-         );
-
-         assign(c64,
-                unop(Iop_Not64,
-                     binop(Iop_Sar64,
-                           binop(Iop_Or64,
-                                 binop(Iop_Sub64, mkU64(0), mkexpr(andn64)),
-                                 mkexpr(andn64)
-                           ),
-                           mkU8(63)))
-         );
-
-         /* And finally, slice out the Z and C flags and set the flags
-            thunk to COPY for them.  OSAP are set to zero. */
-         IRTemp newOSZACP = newTemp(Ity_I64);
-         assign(newOSZACP, 
-                binop(Iop_Or64,
-                      binop(Iop_And64, mkexpr(z64), mkU64(AMD64G_CC_MASK_Z)),
-                      binop(Iop_And64, mkexpr(c64), mkU64(AMD64G_CC_MASK_C))
-                )
-         );
-
-         stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(newOSZACP)));
-         stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
-         stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
-         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
-
+         delta = dis_xTESTy_128( vbi, pfx, delta, False/*!isAvx*/, 0 );
          goto decode_success;
       }
       break;
@@ -23232,6 +23332,45 @@ Long dis_ESC_0F38__VEX (
          IRTemp resV = math_PERMILPD_VAR_256(dataV, ctrlV);
          putYMMReg(rG, mkexpr(resV));
          *uses_vvvv = True;
+         goto decode_success;
+      }
+      break;
+
+   case 0x0E:
+      /* VTESTPS xmm2/m128, xmm1 = VEX.128.66.0F38.WIG 0E /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_xTESTy_128( vbi, pfx, delta, True/*isAvx*/, 32 );
+         goto decode_success;
+      }
+      /* VTESTPS ymm2/m256, ymm1 = VEX.256.66.0F38.WIG 0E /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_xTESTy_256( vbi, pfx, delta, 32 );
+         goto decode_success;
+      }
+      break;
+
+   case 0x0F:
+      /* VTESTPD xmm2/m128, xmm1 = VEX.128.66.0F38.WIG 0F /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_xTESTy_128( vbi, pfx, delta, True/*isAvx*/, 64 );
+         goto decode_success;
+      }
+      /* VTESTPD ymm2/m256, ymm1 = VEX.256.66.0F38.WIG 0F /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_xTESTy_256( vbi, pfx, delta, 64 );
+         goto decode_success;
+      }
+      break;
+
+   case 0x17:
+      /* VPTEST xmm2/m128, xmm1 = VEX.128.66.0F38.WIG 17 /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_xTESTy_128( vbi, pfx, delta, True/*isAvx*/, 0 );
+         goto decode_success;
+      }
+      /* VPTEST ymm2/m256, ymm1 = VEX.256.66.0F38.WIG 17 /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
+         delta = dis_xTESTy_256( vbi, pfx, delta, 0 );
          goto decode_success;
       }
       break;

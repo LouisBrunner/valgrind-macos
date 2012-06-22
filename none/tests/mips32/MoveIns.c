@@ -214,6 +214,7 @@ unsigned int mem[] = {
      "move $" #RT ", %3\n\t" \
      "move $t0, %2\n\t" \
      "lwc1 $" #FS ", "#offset"($t0)\n\t" \
+     "mtc1 $0, $" #FD "\n\t" \
      instruction "\n\t" \
      "mov.s %0, $" #FD"\n\t" \
      "mfc1 %1, $" #FD"\n\t" \
@@ -234,6 +235,8 @@ unsigned int mem[] = {
      "move $" #RT ", %3\n\t" \
      "move $t0, %2\n\t" \
      "ldc1 $" #FS ", "#offset"($t0)\n\t" \
+     "mtc1 $0, $" #FD "\n\t" \
+     "mtc1 $0, $" #FD + 1"\n\t" \
      instruction "\n\t" \
      "mov.d %0, $" #FD"\n\t" \
      "mfc1 %1, $" #FD"\n\t" \

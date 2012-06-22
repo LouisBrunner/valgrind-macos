@@ -9341,6 +9341,51 @@ static Bool decode_V6MEDIA_instruction (
      /* fall through */
    }
 
+   /* ----------------- uhadd16<c> <Rd>,<Rn>,<Rm> ------------------- */
+   {
+     UInt regD = 99, regN = 99, regM = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFA9 && (INSNT1(15,0) & 0xF0F0) == 0xF060) {
+           regN = INSNT0(3,0);
+           regD = INSNT1(11,8);
+           regM = INSNT1(3,0);
+           if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,0,0,1,1,1) &&
+            INSNA(11,8)  == BITS4(1,1,1,1)         &&
+            INSNA(7,4)   == BITS4(0,0,0,1)) {
+           regD = INSNA(15,12);
+           regN = INSNA(19,16);
+           regM = INSNA(3,0);
+           if (regD != 15 && regN != 15 && regM != 15)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp rNt   = newTemp(Ity_I32);
+        IRTemp rMt   = newTemp(Ity_I32);
+        IRTemp res_q = newTemp(Ity_I32);
+
+        assign( rNt, isT ? getIRegT(regN) : getIRegA(regN) );
+        assign( rMt, isT ? getIRegT(regM) : getIRegA(regM) );
+
+        assign(res_q, binop(Iop_HAdd16Ux2, mkexpr(rNt), mkexpr(rMt)));
+        if (isT)
+           putIRegT( regD, mkexpr(res_q), condT );
+        else
+           putIRegA( regD, mkexpr(res_q), condT, Ijk_Boring );
+
+        DIP("uhadd16%s r%u, r%u, r%u\n", nCC(conq),regD,regN,regM);
+        return True;
+     }
+     /* fall through */
+   }
+
    /* ----------------- shadd8<c> <Rd>,<Rn>,<Rm> ------------------- */
    {
      UInt regD = 99, regN = 99, regM = 99;

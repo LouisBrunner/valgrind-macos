@@ -1575,7 +1575,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                     getIReg(rt))));
 
                   assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                               mkexpr(t1), mkexpr(t2)));
+                                               mkexpr(t2), mkexpr(t1)));
 
                   putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                     mkexpr(t4)));
@@ -1589,7 +1589,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpNE32, mkU32(0),
                                                     getIReg(rt))));
                   putDReg(fd, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                                getDReg(fs), getDReg(fd)));
+                                                getDReg(fd), getDReg(fs)));
                   break;
                default:
                   goto decode_failure;
@@ -1611,7 +1611,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                     getIReg(rt))));
                   assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                               mkexpr(t1), mkexpr(t2)));
+                                               mkexpr(t2), mkexpr(t1)));
 
                   putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                     mkexpr(t4)));
@@ -1626,7 +1626,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                     getIReg(rt))));
                   putDReg(fd, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                                getDReg(fs), getDReg(fd)));
+                                                getDReg(fd), getDReg(fs)));
                   break;
                default:
                   goto decode_failure;

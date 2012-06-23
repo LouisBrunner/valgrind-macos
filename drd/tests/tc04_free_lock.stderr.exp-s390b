@@ -1,0 +1,26 @@
+
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (tc04_free_lock.c:24)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc04_free_lock.c:20)
+
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: bar (tc04_free_lock.c:40)
+   by 0x........: ???
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: bar (tc04_free_lock.c:38)
+   by 0x........: main (tc04_free_lock.c:26)
+
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: foo (tc04_free_lock.c:49)
+   by 0x........: ???
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: foo (tc04_free_lock.c:46)
+   by 0x........: main (tc04_free_lock.c:27)
+
+
+ERROR SUMMARY: 4 errors from 3 contexts (suppressed: 0 from 0)

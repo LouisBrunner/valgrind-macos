@@ -231,7 +231,8 @@ EXTRA_DIST =                                        \
 	tc03_re_excl.vgtest                         \
 	tc04_free_lock.stderr.exp-x86               \
 	tc04_free_lock.stderr.exp-ppc               \
-	tc04_free_lock.stderr.exp-s390              \
+	tc04_free_lock.stderr.exp-s390a             \
+	tc04_free_lock.stderr.exp-s390b             \
 	tc04_free_lock.vgtest                       \
 	tc05_simple_race.stderr.exp                 \
 	tc05_simple_race.vgtest                     \

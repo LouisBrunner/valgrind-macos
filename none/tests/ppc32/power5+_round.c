@@ -86,25 +86,11 @@ int main(int argc, char *argv[])
       double friz[] = { inf, 1.0, 1.0, 0, neg0, -1.0, -1.0, -inf, nan };
       double frip[] = { inf, 2.0, 2.0, 0, neg0, -1.0, -1.0, -inf, nan };
       double frim[] = { inf, 1.0, 1.0, 0, neg0, -2.0, -2.0, -inf, nan };
-      int fprf[] = { POS_INF, POS_NORMAL, POS_NORMAL, POS_ZERO, NEG_ZERO,
-         NEG_NORMAL, NEG_NORMAL, NEG_INF, NAN
-      };
       double set2[] = { 0.9, 0.1, -0.1, -0.9, 1e-40, -1e-40 };
       double frin2[] = { 1.0, 0.0, -0.0, -1.0, 0.0, -0.0 };
-      int frin2rf[] =
-          { POS_NORMAL, POS_ZERO, NEG_ZERO, NEG_NORMAL, POS_ZERO,
- NEG_ZERO };
       double friz2[] = { 0.0, 0.0, -0.0, -0.0, 0.0, -0.0 };
-      int friz2rf[] =
-          { POS_ZERO, POS_ZERO, NEG_ZERO, NEG_ZERO, POS_ZERO, NEG_ZERO };
       double frip2[] = { 1.0, 1.0, -0.0, -0.0, 1.0, -0.0 };
-      int frip2rf[] =
-          { POS_NORMAL, POS_NORMAL, NEG_ZERO, NEG_ZERO, POS_NORMAL,
- NEG_ZERO };
       double frim2[] = { 0.0, 0.0, -1.0, -1.0, 0.0, -1.0 };
-      int frim2rf[] =
-          { POS_ZERO, POS_ZERO, NEG_NORMAL, NEG_NORMAL, POS_ZERO,
- NEG_NORMAL };
       double ret;
       int i;
 
@@ -136,26 +122,15 @@ int main(int argc, char *argv[])
       double set1[] = { inf, 0.9, 0.1, 0, neg0, -0.1, -0.9, -inf, nan };
       double frsp1[] =
           { inf, 0.9f, 0.1f, 0, neg0, -0.1f, -0.9f, -inf, nan };
-      int fprf1[] =
-          { POS_INF, POS_NORMAL, POS_NORMAL, POS_ZERO, NEG_ZERO,
-   NEG_NORMAL,
-         NEG_NORMAL, NEG_INF, NAN
-      };
       double set2[] =
           { 1.2e-38, 1.1e-38, 1e-40, 8e-44, 9e-44, 8e-46, 7e-46 };
       double frsp2[] =
           { 1.2e-38f, 1.1e-38f, 1e-40f, 8e-44f, 9e-44f, 8e-46f, 0.0 };
-      int fprf2[] = { POS_NORMAL, POS_DENORMAL, POS_DENORMAL, POS_DENORMAL,
-         POS_DENORMAL, POS_DENORMAL, POS_ZERO
-      };
       double set3[] =
           { -1.2e-38, -1.1e-38, -1e-40, -8e-44, -9e-44, -8e-46, -7e-46 };
       double frsp3[] =
           { -1.2e-38f, -1.1e-38f, -1e-40f, -8e-44f, -9e-44f, -8e-46f,
 -0.0 };
-      int fprf3[] = { NEG_NORMAL, NEG_DENORMAL, NEG_DENORMAL, NEG_DENORMAL,
-         NEG_DENORMAL, NEG_DENORMAL, NEG_ZERO
-      };
       double ret;
       int i;
       DO_TEST(frsp, set1, frsp1, fprf1);

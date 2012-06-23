@@ -4624,12 +4624,17 @@ static void test_int_two_args (const char* name, test_func_t func,
 {
    volatile HWord_t res;
    volatile uint32_t flags, xer, xer_orig;
-   int i, j, is_div, zap_hi32;
+   int i, j, is_div;
+#ifdef __powerpc64__
+   int zap_hi32;
+#endif
 
    // catches div, divwu, divo, divwu, divwuo, and . variants
    is_div = strstr(name, "divw") != NULL;
 
+#ifdef __powerpc64__
    zap_hi32 = strstr(name, "mulhw") != NULL;
+#endif
    
    xer_orig = 0x00000000;
  redo:

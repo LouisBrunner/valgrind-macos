@@ -576,14 +576,12 @@ static void test_dfp_two_arg_ops(int unused)
 static void test_dcffix_dcffixq(int has_vsx)
 {
    test_func_t func;
-   unsigned long long u0, u0x;
+   unsigned long long u0;
    double res, d0, *d0p;
-   double d0x, *d0xp;
    int k = 0, round_mode;
 
-   u0x = 0;
    d0p = &d0;
-   d0xp = &d0x;
+
 
    while ((func = dfp_dcffix_dcffixq_tests[k].test_func)) {
       int i;

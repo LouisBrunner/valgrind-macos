@@ -138,7 +138,7 @@ static void _test_dtstsfq(unsigned int BF, unsigned int ref_sig, dfp_val_t valB)
 
 static dfp_val_t _test_ddedpd(unsigned int SP, dfp_val_t valB)
 {
-   _Decimal64 ret;
+   _Decimal64 ret = 0;
    dfp_val_t result;
    _Decimal64 f16 = valB.dec_val;
    switch (SP) {
@@ -165,7 +165,7 @@ static dfp_val_t _test_ddedpd(unsigned int SP, dfp_val_t valB)
 
 static dfp_val_t _test_ddedpdq(unsigned int SP, dfp_val_t valB)
 {
-   _Decimal128 ret;
+   _Decimal128 ret = 0;
    dfp_val_t result;
    _Decimal128 f16 = valB.dec_val128;
    switch (SP) {
@@ -191,7 +191,7 @@ static dfp_val_t _test_ddedpdq(unsigned int SP, dfp_val_t valB)
 
 static dfp_val_t _test_denbcd(unsigned int S, dfp_val_t valB)
 {
-   _Decimal64 ret;
+   _Decimal64 ret = 0;
    dfp_val_t result;
    _Decimal64 f16 = valB.dec_val;
    switch (S) {
@@ -212,7 +212,7 @@ static dfp_val_t _test_denbcd(unsigned int S, dfp_val_t valB)
 
 static dfp_val_t _test_denbcdq(unsigned int S, dfp_val_t valB)
 {
-   _Decimal128 ret;
+   _Decimal128 ret = 0;
    dfp_val_t result;
    _Decimal128 f16 = valB.dec_val128;
    switch (S) {
@@ -408,7 +408,7 @@ static void test_dfp_ddedpd_ops(void)
    int k = 0;
 
    while ((func = dfp_test_dfp_ddedpd_tests[k].test_func)) {
-      int i, j;
+      int i;
       dfp_one_arg_bcd_test_t test_def = dfp_test_dfp_ddedpd_tests[k];
 
       for (i = 0; i < NUM_DFP_VALS; i++) {
@@ -457,7 +457,7 @@ static void test_dfp_denbcd_ops(void)
    int k = 0;
 
    while ((func = dfp_test_dfp_denbcd_tests[k].test_func)) {
-      int i, j;
+      int i;
       dfp_one_arg_bcd_test_t test_def = dfp_test_dfp_denbcd_tests[k];
       if (test_def.precision == LONG_TEST)
          num_test_vals = sizeof(bcd64_vals)/sizeof(unsigned long long);

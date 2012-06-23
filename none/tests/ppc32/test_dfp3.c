@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #if defined(HAS_DFP)
 
@@ -868,7 +869,7 @@ static void test_dfp_qua_ops(void)
    unsigned long long u0, u0x, u1, u1x;
    double res, d0, d1, *d0p, *d1p;
    double d0x, d1x, *d0xp, *d1xp;
-   int k = 0, BF;
+   int k = 0;
    u0x = u1x = 0;
    d0p = &d0;
    d0xp = &d0x;
@@ -878,7 +879,6 @@ static void test_dfp_qua_ops(void)
    while ((func = dfp_qua_tests[k].test_func)) {
       int i, RMC;
       dfp_test_t test_def = dfp_qua_tests[k];
-      BF = 0;
 
       for (i = 0; i < test_def.num_tests; i++) {
          if (test_def.precision == LONG_TEST) {
@@ -945,7 +945,7 @@ static void test_dfp_rrnd_ops(void)
       dfp_one_arg_test_t test_def = dfp_rrnd_tests[k];
 
       for (i = 0; i < NUM_DFP_VALS; i++) {
-         int R, RMC;
+         int RMC;
 
          if (test_def.precision == LONG_TEST) {
             u0 = dfp64_vals[i];

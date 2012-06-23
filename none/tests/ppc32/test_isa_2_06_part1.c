@@ -1868,8 +1868,7 @@ do_store_test ( ldst_test_t storeTest )
 {
    test_func_t func;
    unsigned int *src, *dst;
-   int i, j, m, equality;
-   i = j = 0;
+   int m, equality;
 
    func = storeTest.test_func;
    r14 = (HWord_t) storeTest.base_addr;

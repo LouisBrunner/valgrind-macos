@@ -484,7 +484,7 @@ static void test_dfp_ClassAndGroupTest_ops(void)
    int k = 0;
 
    while ((func = dfp_ClassAndGroupTest_tests[k].test_func)) {
-      int i, j;
+      int i;
       dfp_one_arg_test_t test_def = dfp_ClassAndGroupTest_tests[k];
 
       for (i = 0; i < NUM_DFP_VALS; i++) {

@@ -66,7 +66,7 @@ void test_lfiwax()
 ** FPp+1= rightmost 64 bits stored at DS(RA)
 ** FPp must be an even float register
 */
-int test_double_pair_instrs()
+void test_double_pair_instrs()
 {
    typedef struct {
       double hi;
@@ -75,14 +75,6 @@ int test_double_pair_instrs()
 
    /* the following decls are for alignment */
    int i;
-   int j;
-   int k;
-   int l;
-#ifdef __powerpc64__
-   int m;
-   int n;
-   int o;
-#endif
    dbl_pair_t dbl_pair[3];      /* must be quad word aligned */
    unsigned long base;
    unsigned long offset;
@@ -130,11 +122,6 @@ int test_double_pair_instrs()
    __asm__ volatile ("stfdpx 10, 20, 21");
    printf("stfdpx (%f, %f) => F_hi=%f, F_lo=%f\n",
           FRT1, FRT2, dbl_pair[2].hi, dbl_pair[2].lo);
-#ifdef __powerpc64__
-   return i + j + k + l + m + n + o;
-#else
-   return i + j + k + l;
-#endif
 }
 
 
@@ -170,11 +157,10 @@ void test_fcpsgn()
 }
 
 /* b0 may be non-zero in lwarx/ldarx Power6 instrs */
-int test_reservation()
+void test_reservation()
 {
 
    int RT;
-   int i, j;
    unsigned long base;
    unsigned long offset;
    long arr[4] = { 0xdeadbeef, 0xbad0beef, 0xbeefdead, 0xbeef0bad };
@@ -193,7 +179,7 @@ int test_reservation()
    __asm__ volatile ("ldarx %0, 20, 21, 1":"=r" (RT));
    printf("ldarx => %x\n", RT);
 #endif
-   return i + j;
+
 }
 
 int main(void)

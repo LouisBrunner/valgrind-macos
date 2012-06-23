@@ -142,7 +142,6 @@ int check_dbl_to_flt_round(round_mode_t mode, double dbl, float *expected)
 	int status = 0;
 	flt_overlay R, E;
 	char *result;
-	char *eq_ne;
 
 	set_rounding_mode(mode);
 
@@ -153,11 +152,9 @@ int check_dbl_to_flt_round(round_mode_t mode, double dbl, float *expected)
 		(R.layout.exp != E.layout.exp) ||
 		(R.layout.frac != E.layout.frac)) {
 		result = "FAILED";
-		eq_ne = "!=";
 		status = 1;
 	} else {
 		result = "PASSED";
-		eq_ne = "==";
 		status = 0;
 	}
 	printf("%s:%s:(double)(%-20a) = %20a",

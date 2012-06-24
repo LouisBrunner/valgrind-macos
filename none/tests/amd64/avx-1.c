@@ -756,6 +756,10 @@ GEN_test_RandM(VPMULUDQ_128,
                "vpmuludq %%xmm6,  %%xmm8, %%xmm7",
                "vpmuludq (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VPMULDQ_128,
+               "vpmuldq %%xmm6,  %%xmm8, %%xmm7",
+               "vpmuldq (%%rax), %%xmm8, %%xmm7")
+
 GEN_test_Ronly(VPSLLQ_0x05_128,
                "vpsllq $0x5, %%xmm9,  %%xmm7")
 
@@ -921,6 +925,18 @@ GEN_test_RandM(VCMPPD_128_0x4,
                "vcmppd $4, %%xmm6,  %%xmm8, %%xmm7",
                "vcmppd $4, (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VCMPPD_256_0x4,
+               "vcmppd $4, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $4, (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPS_128_0x4,
+               "vcmpps $4, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $4, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VCMPPS_256_0x4,
+               "vcmpps $4, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $4, (%%rax), %%ymm8, %%ymm7")
+
 GEN_test_RandM(VCVTDQ2PD_128,
                "vcvtdq2pd %%xmm6,  %%xmm8",
                "vcvtdq2pd (%%rax), %%xmm8")
@@ -1035,6 +1051,14 @@ GEN_test_RandM(VPUNPCKHQDQ_128,
 
 GEN_test_Ronly(VPSRAW_0x05_128,
                "vpsraw $0x5, %%xmm9,  %%xmm7")
+
+GEN_test_RandM(VPCMPGTB_128,
+               "vpcmpgtb %%xmm6,  %%xmm8, %%xmm7",
+               "vpcmpgtb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPCMPGTW_128,
+               "vpcmpgtw %%xmm6,  %%xmm8, %%xmm7",
+               "vpcmpgtw (%%rax), %%xmm8, %%xmm7")
 
 GEN_test_RandM(VPCMPGTD_128,
                "vpcmpgtd %%xmm6,  %%xmm8, %%xmm7",
@@ -1436,6 +1460,25 @@ GEN_test_RandM(VROUNDPD_256_0x4,
                "vroundpd $0x4, %%ymm8,  %%ymm9",
                "vroundpd $0x4, (%%rax), %%ymm9")
 
+GEN_test_RandM(VPMADDWD_128,
+               "vpmaddwd %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaddwd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VADDSUBPS_128,
+               "vaddsubps %%xmm6,  %%xmm8, %%xmm7",
+               "vaddsubps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VADDSUBPS_256,
+               "vaddsubps %%ymm6,  %%ymm8, %%ymm7",
+               "vaddsubps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VADDSUBPD_128,
+               "vaddsubpd %%xmm6,  %%xmm8, %%xmm7",
+               "vaddsubpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VADDSUBPD_256,
+               "vaddsubpd %%ymm6,  %%ymm8, %%ymm7",
+               "vaddsubpd (%%rax), %%ymm8, %%ymm7")
 
 GEN_test_RandM(VROUNDSS_0x0,
                "vroundss $0x0, %%xmm8,  %%xmm6, %%xmm9",
@@ -2059,5 +2102,16 @@ int main ( void )
    DO_D( VBLENDVPS_256 );
    DO_D( VBLENDVPD_128 );
    DO_D( VBLENDVPD_256 );
+   DO_D( VPMULDQ_128 );
+   DO_D( VCMPPD_256_0x4 );
+   DO_D( VCMPPS_128_0x4 );
+   DO_D( VCMPPS_256_0x4 );
+   DO_D( VPCMPGTB_128 );
+   DO_D( VPCMPGTW_128 );
+   DO_D( VPMADDWD_128 );
+   DO_D( VADDSUBPS_128 );
+   DO_D( VADDSUBPS_256 );
+   DO_D( VADDSUBPD_128 );
+   DO_D( VADDSUBPD_256 );
    return 0;
 }

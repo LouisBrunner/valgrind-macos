@@ -1861,6 +1861,110 @@ GEN_test_Monly(VMOVNTPS_128,
 GEN_test_Monly(VMOVNTPS_256,
                "vmovntps %%ymm9, (%%rax)")
 
+GEN_test_RandM(VPACKSSWB_128,
+               "vpacksswb %%xmm6,  %%xmm8, %%xmm7",
+               "vpacksswb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPAVGB_128,
+               "vpavgb %%xmm6,  %%xmm8, %%xmm7",
+               "vpavgb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPAVGW_128,
+               "vpavgw %%xmm6,  %%xmm8, %%xmm7",
+               "vpavgw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPADDSB_128,
+               "vpaddsb %%xmm6,  %%xmm8, %%xmm7",
+               "vpaddsb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPADDSW_128,
+               "vpaddsw %%xmm6,  %%xmm8, %%xmm7",
+               "vpaddsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHADDW_128,
+               "vphaddw %%xmm6,  %%xmm8, %%xmm7",
+               "vphaddw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHADDD_128,
+               "vphaddd %%xmm6,  %%xmm8, %%xmm7",
+               "vphaddd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHADDSW_128,
+               "vphaddsw %%xmm6,  %%xmm8, %%xmm7",
+               "vphaddsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMADDUBSW_128,
+               "vpmaddubsw %%xmm6,  %%xmm8, %%xmm7",
+               "vpmaddubsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHSUBW_128,
+               "vphsubw %%xmm6,  %%xmm8, %%xmm7",
+               "vphsubw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHSUBD_128,
+               "vphsubd %%xmm6,  %%xmm8, %%xmm7",
+               "vphsubd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPHSUBSW_128,
+               "vphsubsw %%xmm6,  %%xmm8, %%xmm7",
+               "vphsubsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPABSB_128,
+               "vpabsb %%xmm6,  %%xmm7",
+               "vpabsb (%%rax), %%xmm7")
+
+GEN_test_RandM(VPABSW_128,
+               "vpabsw %%xmm6,  %%xmm7",
+               "vpabsw (%%rax), %%xmm7")
+
+GEN_test_RandM(VPMOVSXBQ_128,
+               "vpmovsxbq %%xmm6,  %%xmm8",
+               "vpmovsxbq (%%rax), %%xmm8")
+
+GEN_test_RandM(VPMOVSXWQ_128,
+               "vpmovsxwq %%xmm6,  %%xmm8",
+               "vpmovsxwq (%%rax), %%xmm8")
+
+GEN_test_RandM(VPACKUSDW_128,
+               "vpackusdw %%xmm6,  %%xmm8, %%xmm7",
+               "vpackusdw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMOVZXBQ_128,
+               "vpmovzxbq %%xmm6,  %%xmm8",
+               "vpmovzxbq (%%rax), %%xmm8")
+
+GEN_test_RandM(VPMOVZXWQ_128,
+               "vpmovzxwq %%xmm6,  %%xmm8",
+               "vpmovzxwq (%%rax), %%xmm8")
+
+GEN_test_RandM(VPMOVZXDQ_128,
+               "vpmovzxdq %%xmm6,  %%xmm8",
+               "vpmovzxdq (%%rax), %%xmm8")
+
+GEN_test_RandM(VMPSADBW_128_0x0,
+               "vmpsadbw $0, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $0, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x1,
+               "vmpsadbw $1, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $1, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x2,
+               "vmpsadbw $2, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $2, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x3,
+               "vmpsadbw $3, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $3, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x4,
+               "vmpsadbw $4, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $4, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x5,
+               "vmpsadbw $5, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $5, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x6,
+               "vmpsadbw $6, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $6, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VMPSADBW_128_0x7,
+               "vmpsadbw $7, %%xmm6,  %%xmm8, %%xmm7",
+               "vmpsadbw $7, (%%rax), %%xmm8, %%xmm7")
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -2320,5 +2424,33 @@ int main ( void )
    DO_D( VMOVNTPD_256 );
    DO_D( VMOVNTPS_128 );
    DO_D( VMOVNTPS_256 );
+   DO_D( VPACKSSWB_128 );
+   DO_D( VPAVGB_128 );
+   DO_D( VPAVGW_128 );
+   DO_D( VPADDSB_128 );
+   DO_D( VPADDSW_128 );
+   DO_D( VPHADDW_128 );
+   DO_D( VPHADDD_128 );
+   DO_D( VPHADDSW_128 );
+   DO_D( VPMADDUBSW_128 );
+   DO_D( VPHSUBW_128 );
+   DO_D( VPHSUBD_128 );
+   DO_D( VPHSUBSW_128 );
+   DO_D( VPABSB_128 );
+   DO_D( VPABSW_128 );
+   DO_D( VPMOVSXBQ_128 );
+   DO_D( VPMOVSXWQ_128 );
+   DO_D( VPACKUSDW_128 );
+   DO_D( VPMOVZXBQ_128 );
+   DO_D( VPMOVZXWQ_128 );
+   DO_D( VPMOVZXDQ_128 );
+   DO_D( VMPSADBW_128_0x0 );
+   DO_D( VMPSADBW_128_0x1 );
+   DO_D( VMPSADBW_128_0x2 );
+   DO_D( VMPSADBW_128_0x3 );
+   DO_D( VMPSADBW_128_0x4 );
+   DO_D( VMPSADBW_128_0x5 );
+   DO_D( VMPSADBW_128_0x6 );
+   DO_D( VMPSADBW_128_0x7 );
    return 0;
 }

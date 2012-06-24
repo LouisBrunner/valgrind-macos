@@ -1966,6 +1966,74 @@ GEN_test_RandM(VMPSADBW_128_0x7,
                "vmpsadbw $7, %%xmm6,  %%xmm8, %%xmm7",
                "vmpsadbw $7, (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VMOVDDUP_YMMorMEM256_to_YMM,
+               "vmovddup %%ymm8,  %%ymm7",
+               "vmovddup (%%rax), %%ymm9")
+
+GEN_test_Monly(VMOVLPS_128_M64_XMM_XMM, "vmovlps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Monly(VMOVLPS_128_XMM_M64, "vmovlps %%xmm7, (%%rax)")
+
+GEN_test_RandM(VRCPSS_128,
+               "vrcpss %%xmm6,  %%xmm8, %%xmm7",
+               "vrcpss (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VRCPPS_128,
+               "vrcpps %%xmm6,  %%xmm8",
+               "vrcpps (%%rax), %%xmm8")
+
+GEN_test_RandM(VRCPPS_256,
+               "vrcpps %%ymm6,  %%ymm8",
+               "vrcpps (%%rax), %%ymm8")
+
+GEN_test_RandM(VPSADBW_128,
+               "vpsadbw %%xmm6,  %%xmm8, %%xmm7",
+               "vpsadbw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPSIGNB_128,
+               "vpsignb %%xmm6,  %%xmm8, %%xmm7",
+               "vpsignb (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPSIGNW_128,
+               "vpsignw %%xmm6,  %%xmm8, %%xmm7",
+               "vpsignw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPSIGND_128,
+               "vpsignd %%xmm6,  %%xmm8, %%xmm7",
+               "vpsignd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VPMULHRSW_128,
+               "vpmulhrsw %%xmm6,  %%xmm8, %%xmm7",
+               "vpmulhrsw (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Monly(VBROADCASTF128,
+               "vbroadcastf128 (%%rax), %%ymm9")
+
+GEN_test_RandM(VPEXTRW_128_0x0,
+               "vpextrw $0x0, %%xmm7, %%r14d",
+               "vpextrw $0x0, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x1,
+               "vpextrw $0x1, %%xmm7, %%r14d",
+               "vpextrw $0x1, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x2,
+               "vpextrw $0x2, %%xmm7, %%r14d",
+               "vpextrw $0x2, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x3,
+               "vpextrw $0x3, %%xmm7, %%r14d",
+               "vpextrw $0x3, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x4,
+               "vpextrw $0x4, %%xmm7, %%r14d",
+               "vpextrw $0x4, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x5,
+               "vpextrw $0x5, %%xmm7, %%r14d",
+               "vpextrw $0x5, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x6,
+               "vpextrw $0x6, %%xmm7, %%r14d",
+               "vpextrw $0x6, %%xmm7, (%%rax)")
+GEN_test_RandM(VPEXTRW_128_0x7,
+               "vpextrw $0x7, %%xmm7, %%r14d",
+               "vpextrw $0x7, %%xmm7, (%%rax)")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -2452,5 +2520,25 @@ int main ( void )
    DO_D( VMPSADBW_128_0x5 );
    DO_D( VMPSADBW_128_0x6 );
    DO_D( VMPSADBW_128_0x7 );
+   DO_D( VMOVDDUP_YMMorMEM256_to_YMM );
+   DO_D( VMOVLPS_128_M64_XMM_XMM );
+   DO_D( VMOVLPS_128_XMM_M64 );
+   DO_D( VRCPSS_128 );
+   DO_D( VRCPPS_128 );
+   DO_D( VRCPPS_256 );
+   DO_D( VPSADBW_128 );
+   DO_D( VPSIGNB_128 );
+   DO_D( VPSIGNW_128 );
+   DO_D( VPSIGND_128 );
+   DO_D( VPMULHRSW_128 );
+   DO_D( VBROADCASTF128 );
+   DO_D( VPEXTRW_128_0x0 );
+   DO_D( VPEXTRW_128_0x1 );
+   DO_D( VPEXTRW_128_0x2 );
+   DO_D( VPEXTRW_128_0x3 );
+   DO_D( VPEXTRW_128_0x4 );
+   DO_D( VPEXTRW_128_0x5 );
+   DO_D( VPEXTRW_128_0x6 );
+   DO_D( VPEXTRW_128_0x7 );
    return 0;
 }

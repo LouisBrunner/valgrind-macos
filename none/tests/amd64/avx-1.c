@@ -390,6 +390,10 @@ GEN_test_RandM(VPSUBUSB_128,
                "vpsubusb %%xmm9,  %%xmm8, %%xmm7",
                "vpsubusb (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VPSUBSB_128,
+               "vpsubsb %%xmm9,  %%xmm8, %%xmm7",
+               "vpsubsb (%%rax), %%xmm8, %%xmm7")
+
 GEN_test_Ronly(VPSRLDQ_0x05_128,
                "vpsrldq $0x5, %%xmm9,  %%xmm7")
 
@@ -937,6 +941,10 @@ GEN_test_RandM(VPSUBUSW_128,
                "vpsubusw %%xmm9,  %%xmm8, %%xmm7",
                "vpsubusw (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VPSUBSW_128,
+               "vpsubsw %%xmm9,  %%xmm8, %%xmm7",
+               "vpsubsw (%%rax), %%xmm8, %%xmm7")
+
 GEN_test_RandM(VPCMPEQW_128,
                "vpcmpeqw %%xmm6,  %%xmm8, %%xmm7",
                "vpcmpeqw (%%rax), %%xmm8, %%xmm7")
@@ -1308,6 +1316,251 @@ GEN_test_RandM(VPERMILPD_VAR_256,
                "vpermilpd %%ymm6,  %%ymm8, %%ymm7",
                "vpermilpd (%%rax), %%ymm8, %%ymm7")
 
+GEN_test_RandM(VPSLLW_128,
+               "andl $15, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsllw %%xmm6,     %%xmm8, %%xmm9",
+               "andq $15, 128(%%rax);"
+               "vpsllw 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSRLW_128,
+               "andl $15, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsrlw %%xmm6,     %%xmm8, %%xmm9",
+               "andq $15, 128(%%rax);"
+               "vpsrlw 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSRAW_128,
+               "andl $31, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsraw %%xmm6,     %%xmm8, %%xmm9",
+               "andq $15, 128(%%rax);"
+               "vpsraw 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSLLD_128,
+               "andl $31, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpslld %%xmm6,     %%xmm8, %%xmm9",
+               "andq $31, 128(%%rax);"
+               "vpslld 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSRLD_128,
+               "andl $31, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsrld %%xmm6,     %%xmm8, %%xmm9",
+               "andq $31, 128(%%rax);"
+               "vpsrld 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSRAD_128,
+               "andl $31, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsrad %%xmm6,     %%xmm8, %%xmm9",
+               "andq $31, 128(%%rax);"
+               "vpsrad 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSLLQ_128,
+               "andl $63, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsllq %%xmm6,     %%xmm8, %%xmm9",
+               "andq $63, 128(%%rax);"
+               "vpsllq 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VPSRLQ_128,
+               "andl $63, %%r14d;"
+               "vmovd %%r14d, %%xmm6;"
+               "vpsrlq %%xmm6,     %%xmm8, %%xmm9",
+               "andq $63, 128(%%rax);"
+               "vpsrlq 128(%%rax), %%xmm8, %%xmm9")
+
+GEN_test_RandM(VROUNDPS_128_0x2,
+               "vroundps $0x2, %%xmm8,  %%xmm9",
+               "vroundps $0x2, (%%rax), %%xmm9")
+
+GEN_test_RandM(VROUNDPS_256_0x2,
+               "vroundps $0x2, %%ymm8,  %%ymm9",
+               "vroundps $0x2, (%%rax), %%ymm9")
+
+GEN_test_RandM(VROUNDPD_128_0x2,
+               "vroundpd $0x2, %%xmm8,  %%xmm9",
+               "vroundpd $0x2, (%%rax), %%xmm9")
+
+GEN_test_RandM(VROUNDPD_256_0x2,
+               "vroundpd $0x2, %%ymm8,  %%ymm9",
+               "vroundpd $0x2, (%%rax), %%ymm9")
+
+GEN_test_RandM(VROUNDSS_0x5,
+               "vroundss $0x5, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundss $0x5, (%%rax), %%xmm6, %%xmm9")
+
+GEN_test_RandM(VROUNDSD_0x3,
+               "vroundsd $0x3, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundsd $0x3, (%%rax), %%xmm6, %%xmm9")
+
+GEN_test_RandM(VPTEST_128_1,
+   "vptest %%xmm6,  %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vptest (%%rax), %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+/* Here we ignore the boilerplate-supplied data and try to do
+   x AND x   and   x AND NOT x.  Not a great test but better
+   than nothing. */
+GEN_test_RandM(VPTEST_128_2,
+   "vmovups %%xmm6, %%xmm8;"
+   "vptest %%xmm6,  %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vmovups (%%rax), %%xmm8;"
+   "vcmpeqpd %%xmm8,%%xmm8,%%xmm7;"
+   "vxorpd %%xmm8,%%xmm7,%%xmm8;"
+   "vptest (%%rax), %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VPTEST_256_1,
+   "vptest %%ymm6,  %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vptest (%%rax), %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+/* Here we ignore the boilerplate-supplied data and try to do
+   x AND x   and   x AND NOT x.  Not a great test but better
+   than nothing. */
+GEN_test_RandM(VPTEST_256_2,
+   "vmovups %%ymm6, %%ymm8;"
+   "vptest %%ymm6,  %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vmovups (%%rax), %%ymm8;"
+   "vcmpeqpd %%xmm8,%%xmm8,%%xmm7;"
+   "subq $1024, %%rsp;"
+   "vmovups %%xmm7,512(%%rsp);"
+   "vmovups %%xmm7,528(%%rsp);"
+   "vmovups 512(%%rsp), %%ymm7;"
+   "addq $1024, %%rsp;"
+   "vxorpd %%ymm8,%%ymm7,%%ymm8;"
+   "vptest (%%rax), %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+
+/* VTESTPS/VTESTPD: test once with all-0 operands, once with
+   one all-0s and one all 1s, and once with random data. */
+
+GEN_test_RandM(VTESTPS_128_1,
+   "vtestps %%xmm6,  %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vtestps (%%rax), %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+/* Here we ignore the boilerplate-supplied data and try to do
+   x AND x   and   x AND NOT x.  Not a great test but better
+   than nothing. */
+GEN_test_RandM(VTESTPS_128_2,
+   "vmovups %%xmm6, %%xmm8;"
+   "vtestps %%xmm6,  %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vmovups (%%rax), %%xmm8;"
+   "vcmpeqpd %%xmm8,%%xmm8,%%xmm7;"
+   "vxorpd %%xmm8,%%xmm7,%%xmm8;"
+   "vtestps (%%rax), %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VTESTPS_128_3,
+               "vtestps %%xmm8,  %%xmm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14",
+               "vtestps (%%rax), %%xmm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+
+
+
+GEN_test_RandM(VTESTPS_256_1,
+   "vtestps %%ymm6,  %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vtestps (%%rax), %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+/* Here we ignore the boilerplate-supplied data and try to do
+   x AND x   and   x AND NOT x.  Not a great test but better
+   than nothing. */
+GEN_test_RandM(VTESTPS_256_2,
+   "vmovups %%ymm6, %%ymm8;"
+   "vtestps %%ymm6,  %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vmovups (%%rax), %%ymm8;"
+   "vcmpeqpd %%xmm8,%%xmm8,%%xmm7;"
+   "subq $1024, %%rsp;"
+   "vmovups %%xmm7,512(%%rsp);"
+   "vmovups %%xmm7,528(%%rsp);"
+   "vmovups 512(%%rsp), %%ymm7;"
+   "addq $1024, %%rsp;"
+   "vxorpd %%ymm8,%%ymm7,%%ymm8;"
+   "vtestps (%%rax), %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VTESTPS_256_3,
+               "vtestps %%ymm8,  %%ymm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14",
+               "vtestps (%%rax), %%ymm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+
+
+GEN_test_RandM(VTESTPD_128_1,
+   "vtestpd %%xmm6,  %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vtestpd (%%rax), %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+/* Here we ignore the boilerplate-supplied data and try to do
+   x AND x   and   x AND NOT x.  Not a great test but better
+   than nothing. */
+GEN_test_RandM(VTESTPD_128_2,
+   "vmovups %%xmm6, %%xmm8;"
+   "vtestpd %%xmm6,  %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vmovups (%%rax), %%xmm8;"
+   "vcmpeqpd %%xmm8,%%xmm8,%%xmm7;"
+   "vxorpd %%xmm8,%%xmm7,%%xmm8;"
+   "vtestpd (%%rax), %%xmm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VTESTPD_128_3,
+               "vtestpd %%xmm8,  %%xmm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14",
+               "vtestpd (%%rax), %%xmm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+
+
+
+GEN_test_RandM(VTESTPD_256_1,
+   "vtestpd %%ymm6,  %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vtestpd (%%rax), %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+/* Here we ignore the boilerplate-supplied data and try to do
+   x AND x   and   x AND NOT x.  Not a great test but better
+   than nothing. */
+GEN_test_RandM(VTESTPD_256_2,
+   "vmovups %%ymm6, %%ymm8;"
+   "vtestpd %%ymm6,  %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14",
+   "vmovups (%%rax), %%ymm8;"
+   "vcmpeqpd %%xmm8,%%xmm8,%%xmm7;"
+   "subq $1024, %%rsp;"
+   "vmovups %%xmm7,512(%%rsp);"
+   "vmovups %%xmm7,528(%%rsp);"
+   "vmovups 512(%%rsp), %%ymm7;"
+   "addq $1024, %%rsp;"
+   "vxorpd %%ymm8,%%ymm7,%%ymm8;"
+   "vtestpd (%%rax), %%ymm8; "
+      "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VTESTPD_256_3,
+               "vtestpd %%ymm8,  %%ymm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14",
+               "vtestpd (%%rax), %%ymm9; "
+                  "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -1394,6 +1647,7 @@ int main ( void )
    test_VPSLLDQ_0x05_128();
    test_VPSRLDQ_0x05_128();
    test_VPSUBUSB_128();
+   test_VPSUBSB_128();
    test_VPSLLD_0x05_128();
    test_VPSRLD_0x05_128();
    test_VPSRAD_0x05_128();
@@ -1535,6 +1789,7 @@ int main ( void )
    test_VANDPD_256();
    test_VPMOVSXBW_128();
    test_VPSUBUSW_128();
+   test_VPSUBSW_128();
    test_VPCMPEQW_128();
    test_VPADDB_128();
    test_VMOVAPS_EtoG_256();
@@ -1639,5 +1894,35 @@ int main ( void )
    test_VPERMILPD_VAR_128();
    test_VPERMILPS_VAR_256();
    test_VPERMILPD_VAR_256();
+   test_VPSLLW_128();
+   test_VPSRLW_128();
+   test_VPSRAW_128();
+   test_VPSLLD_128();
+   test_VPSRLD_128();
+   test_VPSRAD_128();
+   test_VPSLLQ_128();
+   test_VPSRLQ_128();
+   test_VROUNDPS_128_0x2();
+   test_VROUNDPS_256_0x2();
+   test_VROUNDPD_128_0x2();
+   test_VROUNDPD_256_0x2();
+   test_VROUNDSS_0x5();
+   test_VROUNDSD_0x3();
+   test_VPTEST_128_1();
+   test_VPTEST_128_2();
+   test_VPTEST_256_1();
+   test_VPTEST_256_2();
+   test_VTESTPS_128_1();
+   test_VTESTPS_128_2();
+   test_VTESTPS_128_3(); // 10x
+   test_VTESTPS_256_1();
+   test_VTESTPS_256_2();
+   test_VTESTPS_256_3(); // 10x
+   test_VTESTPD_128_1();
+   test_VTESTPD_128_2();
+   test_VTESTPD_128_3(); // 10x
+   test_VTESTPD_256_1();
+   test_VTESTPD_256_2();
+   test_VTESTPD_256_3(); // 10x
    return 0;
 }

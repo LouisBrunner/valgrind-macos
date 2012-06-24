@@ -619,6 +619,7 @@ void ppIROp ( IROp op )
       case Iop_Recip32x2: vex_printf("Recip32x2"); return;
       case Iop_Recip32Fx2:  vex_printf("Recip32Fx2"); return;
       case Iop_Recip32Fx4:  vex_printf("Recip32Fx4"); return;
+      case Iop_Recip32Fx8:  vex_printf("Recip32Fx8"); return;
       case Iop_Recip32x4:  vex_printf("Recip32x4"); return;
       case Iop_Recip32F0x4: vex_printf("Recip32F0x4"); return;
       case Iop_Recip64Fx2:  vex_printf("Recip64Fx2"); return;
@@ -2826,6 +2827,7 @@ void typeOfPrimop ( IROp op,
       case Iop_RSqrt32Fx8:
       case Iop_Sqrt32Fx8:
       case Iop_Sqrt64Fx4:
+      case Iop_Recip32Fx8:
          UNARY(Ity_V256, Ity_V256);
 
       default:

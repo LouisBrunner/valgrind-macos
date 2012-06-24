@@ -3444,6 +3444,7 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          return;
       }
 
+      case Iop_Recip32Fx8: op = Asse_RCPF;   goto do_32Fx8_unary;
       case Iop_Sqrt32Fx8:  op = Asse_SQRTF;  goto do_32Fx8_unary;
       case Iop_RSqrt32Fx8: op = Asse_RSQRTF; goto do_32Fx8_unary;
       do_32Fx8_unary:

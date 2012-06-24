@@ -3546,38 +3546,42 @@ static void InvMixColumns (V128* v)
 /* For description, see definition in guest_amd64_defs.h */
 void amd64g_dirtyhelper_AES ( 
           VexGuestAMD64State* gst,
-          HWord opc4,
+          HWord opc4, HWord gstOffD,
           HWord gstOffL, HWord gstOffR
        )
 {
    // where the args are
+   V128* argD = (V128*)( ((UChar*)gst) + gstOffD );
    V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
    V128* argR = (V128*)( ((UChar*)gst) + gstOffR );
+   V128  r;
 
    switch (opc4) {
       case 0xDC: /* AESENC */
       case 0xDD: /* AESENCLAST */
-         ShiftRows (argR);
-         SubBytes  (argR);
+         r = *argR;
+         ShiftRows (&r);
+         SubBytes  (&r);
          if (opc4 == 0xDC)
-            MixColumns (argR);
-         argR->w64[0] = argR->w64[0] ^ argL->w64[0];
-         argR->w64[1] = argR->w64[1] ^ argL->w64[1];
+            MixColumns (&r);
+         argD->w64[0] = r.w64[0] ^ argL->w64[0];
+         argD->w64[1] = r.w64[1] ^ argL->w64[1];
          break;
 
       case 0xDE: /* AESDEC */
       case 0xDF: /* AESDECLAST */
-         InvShiftRows (argR);
-         InvSubBytes (argR);
+         r = *argR;
+         InvShiftRows (&r);
+         InvSubBytes (&r);
          if (opc4 == 0xDE)
-            InvMixColumns (argR);
-         argR->w64[0] = argR->w64[0] ^ argL->w64[0];
-         argR->w64[1] = argR->w64[1] ^ argL->w64[1];
+            InvMixColumns (&r);
+         argD->w64[0] = r.w64[0] ^ argL->w64[0];
+         argD->w64[1] = r.w64[1] ^ argL->w64[1];
          break;
 
       case 0xDB: /* AESIMC */
-         *argR = *argL;
-         InvMixColumns (argR);
+         *argD = *argL;
+         InvMixColumns (argD);
          break;
       default: vassert(0);
    }

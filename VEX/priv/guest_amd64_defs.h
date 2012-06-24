@@ -238,14 +238,14 @@ extern ULong amd64g_dirtyhelper_PCMPxSTRx (
    (will assert otherwise).
 
    gstOffL and gstOffR are the guest state offsets for the two XMM
-   register inputs and/or output.  We never have to deal with the memory
-   case since that is handled by pre-loading the relevant value into the fake
-   XMM16 register.
+   register inputs, gstOffD is the guest state offset for the XMM register
+   output.  We never have to deal with the memory case since that is handled
+   by pre-loading the relevant value into the fake XMM16 register.
 
 */
 extern void amd64g_dirtyhelper_AES ( 
           VexGuestAMD64State* gst,
-          HWord opc4,
+          HWord opc4, HWord gstOffD,
           HWord gstOffL, HWord gstOffR
        );
 

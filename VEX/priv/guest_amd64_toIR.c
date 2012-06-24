@@ -16008,6 +16008,167 @@ static Long dis_PHMINPOSUW_128 ( VexAbiInfo* vbi, Prefix pfx,
 }
 
 
+static Long dis_AESx ( VexAbiInfo* vbi, Prefix pfx,
+                       Long delta, Bool isAvx, UChar opc )
+{
+   IRTemp addr   = IRTemp_INVALID;
+   Int    alen   = 0;
+   HChar  dis_buf[50];
+   UChar  modrm  = getUChar(delta);
+   UInt   rG     = gregOfRexRM(pfx, modrm);
+   UInt   regNoL = 0;
+   UInt   regNoR = (isAvx && opc != 0xDB) ? getVexNvvvv(pfx) : rG;
+
+   /* This is a nasty kludge.  We need to pass 2 x V128 to the
+      helper.  Since we can't do that, use a dirty
+      helper to compute the results directly from the XMM regs in
+      the guest state.  That means for the memory case, we need to
+      move the left operand into a pseudo-register (XMM16, let's
+      call it). */
+   if (epartIsReg(modrm)) {
+      regNoL = eregOfRexRM(pfx, modrm);
+      delta += 1;
+   } else {
+      regNoL = 16; /* use XMM16 as an intermediary */
+      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
+      /* alignment check needed ???? */
+      stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
+      delta += alen;
+   }
+
+   void*  fn = &amd64g_dirtyhelper_AES;
+   HChar* nm = "amd64g_dirtyhelper_AES";
+
+   /* Round up the arguments.  Note that this is a kludge -- the
+      use of mkU64 rather than mkIRExpr_HWord implies the
+      assumption that the host's word size is 64-bit. */
+   UInt gstOffD = ymmGuestRegOffset(rG);
+   UInt gstOffL = regNoL == 16 ? OFFB_YMM16 : ymmGuestRegOffset(regNoL);
+   UInt gstOffR = ymmGuestRegOffset(regNoR);
+   IRExpr*  opc4         = mkU64(opc);
+   IRExpr*  gstOffDe     = mkU64(gstOffD);
+   IRExpr*  gstOffLe     = mkU64(gstOffL);
+   IRExpr*  gstOffRe     = mkU64(gstOffR);
+   IRExpr** args
+      = mkIRExprVec_4( opc4, gstOffDe, gstOffLe, gstOffRe );
+
+   IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
+   /* It's not really a dirty call, but we can't use the clean
+      helper mechanism here for the very lame reason that we can't
+      pass 2 x V128s by value to a helper, nor get one back.  Hence
+      this roundabout scheme. */
+   d->needsBBP = True;
+   d->nFxState = 2;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+   /* AES{ENC,ENCLAST,DEC,DECLAST} read both registers, and writes
+      the second for !isAvx or the third for isAvx.
+      AESIMC (0xDB) reads the first register, and writes the second. */
+   d->fxState[0].fx     = Ifx_Read;
+   d->fxState[0].offset = gstOffL;
+   d->fxState[0].size   = sizeof(U128);
+   d->fxState[1].offset = gstOffR;
+   d->fxState[1].size   = sizeof(U128);
+   if (opc == 0xDB)
+      d->fxState[1].fx   = Ifx_Write;
+   else if (!isAvx || rG == regNoR)
+      d->fxState[1].fx   = Ifx_Modify;
+   else {
+      d->fxState[1].fx     = Ifx_Read;
+      d->nFxState++;
+      d->fxState[2].fx     = Ifx_Write;
+      d->fxState[2].offset = gstOffD; 
+      d->fxState[2].size   = sizeof(U128);
+   }
+
+   stmt( IRStmt_Dirty(d) );
+   {
+      HChar* opsuf;
+      switch (opc) {
+         case 0xDC: opsuf = "enc"; break;
+         case 0XDD: opsuf = "enclast"; break;
+         case 0xDE: opsuf = "dec"; break;
+         case 0xDF: opsuf = "declast"; break;
+         case 0xDB: opsuf = "imc"; break;
+         default: vassert(0);
+      }
+      DIP("%saes%s %s,%s%s%s\n", isAvx ? "v" : "", opsuf, 
+          (regNoL == 16 ? dis_buf : nameXMMReg(regNoL)),
+          nameXMMReg(regNoR),
+          (isAvx && opc != 0xDB) ? "," : "",
+          (isAvx && opc != 0xDB) ? nameXMMReg(rG) : "");
+   }
+   if (isAvx)
+      putYMMRegLane128( rG, 1, mkV128(0) );
+   return delta;
+}
+
+static Long dis_AESKEYGENASSIST ( VexAbiInfo* vbi, Prefix pfx,
+                                  Long delta, Bool isAvx )
+{
+   IRTemp addr   = IRTemp_INVALID;
+   Int    alen   = 0;
+   HChar  dis_buf[50];
+   UChar  modrm  = getUChar(delta);
+   UInt   regNoL = 0;
+   UInt   regNoR = gregOfRexRM(pfx, modrm);
+   UChar  imm    = 0;
+
+   /* This is a nasty kludge.  See AESENC et al. instructions. */
+   modrm = getUChar(delta);
+   if (epartIsReg(modrm)) {
+      regNoL = eregOfRexRM(pfx, modrm);
+      imm = getUChar(delta+1);
+      delta += 1+1;
+   } else {
+      regNoL = 16; /* use XMM16 as an intermediary */
+      addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
+      /* alignment check ???? . */
+      stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
+      imm = getUChar(delta+alen);
+      delta += alen+1;
+   }
+
+   /* Who ya gonna call?  Presumably not Ghostbusters. */
+   void*  fn = &amd64g_dirtyhelper_AESKEYGENASSIST;
+   HChar* nm = "amd64g_dirtyhelper_AESKEYGENASSIST";
+
+   /* Round up the arguments.  Note that this is a kludge -- the
+      use of mkU64 rather than mkIRExpr_HWord implies the
+      assumption that the host's word size is 64-bit. */
+   UInt gstOffL = regNoL == 16 ? OFFB_YMM16 : ymmGuestRegOffset(regNoL);
+   UInt gstOffR = ymmGuestRegOffset(regNoR);
+
+   IRExpr*  imme          = mkU64(imm & 0xFF);
+   IRExpr*  gstOffLe     = mkU64(gstOffL);
+   IRExpr*  gstOffRe     = mkU64(gstOffR);
+   IRExpr** args
+      = mkIRExprVec_3( imme, gstOffLe, gstOffRe );
+
+   IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
+   /* It's not really a dirty call, but we can't use the clean
+      helper mechanism here for the very lame reason that we can't
+      pass 2 x V128s by value to a helper, nor get one back.  Hence
+      this roundabout scheme. */
+   d->needsBBP = True;
+   d->nFxState = 2;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+   d->fxState[0].fx     = Ifx_Read;
+   d->fxState[0].offset = gstOffL;
+   d->fxState[0].size   = sizeof(U128);
+   d->fxState[1].fx     = Ifx_Write;
+   d->fxState[1].offset = gstOffR;
+   d->fxState[1].size   = sizeof(U128);
+   stmt( IRStmt_Dirty(d) );
+
+   DIP("%saeskeygenassist $%x,%s,%s\n", isAvx ? "v" : "", (UInt)imm,
+       (regNoL == 16 ? dis_buf : nameXMMReg(regNoL)),
+       nameXMMReg(regNoR));
+   if (isAvx)
+      putYMMRegLane128( regNoR, 1, mkV128(0) );
+   return delta;
+}
+
+
 __attribute__((noinline))
 static
 Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
@@ -16429,76 +16590,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
 
                   DB /r = AESIMC xmm1, xmm2/m128 */
       if (have66noF2noF3(pfx) && sz == 2) {
-         UInt  regNoL = 0;
-         UInt  regNoR = 0;
-
-         /* This is a nasty kludge.  We need to pass 2 x V128 to the
-            helper.  Since we can't do that, use a dirty
-            helper to compute the results directly from the XMM regs in
-            the guest state.  That means for the memory case, we need to
-            move the left operand into a pseudo-register (XMM16, let's
-            call it). */
-         modrm = getUChar(delta);
-         if (epartIsReg(modrm)) {
-            regNoL = eregOfRexRM(pfx, modrm);
-            regNoR = gregOfRexRM(pfx, modrm);
-            delta += 1;
-         } else {
-            regNoL = 16; /* use XMM16 as an intermediary */
-            regNoR = gregOfRexRM(pfx, modrm);
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            /* alignment check needed ???? */
-            stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
-            delta += alen;
-         }
-
-         void*  fn = &amd64g_dirtyhelper_AES;
-         HChar* nm = "amd64g_dirtyhelper_AES";
-
-         /* Round up the arguments.  Note that this is a kludge -- the
-            use of mkU64 rather than mkIRExpr_HWord implies the
-            assumption that the host's word size is 64-bit. */
-         UInt gstOffL = regNoL == 16 ? OFFB_YMM16 : ymmGuestRegOffset(regNoL);
-         UInt gstOffR = ymmGuestRegOffset(regNoR);
-         IRExpr*  opc4         = mkU64(opc);
-         IRExpr*  gstOffLe     = mkU64(gstOffL);
-         IRExpr*  gstOffRe     = mkU64(gstOffR);
-         IRExpr** args
-            = mkIRExprVec_3( opc4, gstOffLe, gstOffRe );
-
-         IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
-         /* It's not really a dirty call, but we can't use the clean
-            helper mechanism here for the very lame reason that we can't
-            pass 2 x V128s by value to a helper, nor get one back.  Hence
-            this roundabout scheme. */
-         d->needsBBP = True;
-         d->nFxState = 2;
-         vex_bzero(&d->fxState, sizeof(d->fxState));
-         /* AES{ENC,ENCLAST,DEC,DECLAST} read both registers, and writes
-            the second.
-            AESIMC (0xDB) reads the first register, and writes the second. */
-         d->fxState[0].fx     = Ifx_Read;
-         d->fxState[0].offset = gstOffL;
-         d->fxState[0].size   = sizeof(U128);
-         d->fxState[1].fx     = (opc == 0xDB ? Ifx_Write : Ifx_Modify);
-         d->fxState[1].offset = gstOffR;
-         d->fxState[1].size   = sizeof(U128);
-
-         stmt( IRStmt_Dirty(d) );
-         {
-            HChar* opsuf;
-            switch (opc) {
-               case 0xDC: opsuf = "enc"; break;
-               case 0XDD: opsuf = "enclast"; break;
-               case 0xDE: opsuf = "dec"; break;
-               case 0xDF: opsuf = "declast"; break;
-               case 0xDB: opsuf = "imc"; break;
-               default: vassert(0);
-            }
-            DIP("aes%s %s,%s\n", opsuf, 
-                (regNoL == 16 ? dis_buf : nameXMMReg(regNoL)),
-                nameXMMReg(regNoR));
-         }
+         delta = dis_AESx( vbi, pfx, delta, False/*!isAvx*/, opc );
          goto decode_success;
       }
       break;
@@ -17196,6 +17288,33 @@ static Long dis_EXTRACTPS ( VexAbiInfo* vbi, Prefix pfx,
 }
 
 
+static IRTemp math_PCLMULQDQ( IRTemp dV, IRTemp sV, UInt imm8 )
+{
+   IRTemp t0 = newTemp(Ity_I64);
+   IRTemp t1 = newTemp(Ity_I64);
+   assign(t0, unop((imm8&1)? Iop_V128HIto64 : Iop_V128to64, 
+              mkexpr(dV)));
+   assign(t1, unop((imm8&16) ? Iop_V128HIto64 : Iop_V128to64,
+              mkexpr(sV)));
+
+   IRTemp t2 = newTemp(Ity_I64);
+   IRTemp t3 = newTemp(Ity_I64);
+
+   IRExpr** args;
+
+   args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(0));
+   assign(t2, mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul",
+                            &amd64g_calculate_pclmul, args));
+   args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(1));
+   assign(t3, mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul",
+                            &amd64g_calculate_pclmul, args));
+
+   IRTemp res     = newTemp(Ity_V128);
+   assign(res, binop(Iop_64HLtoV128, mkexpr(t3), mkexpr(t2)));
+   return res;
+}
+
+
 __attribute__((noinline))
 static
 Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
@@ -17203,10 +17322,6 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
                           Prefix pfx, Int sz, Long deltaIN )
 {
    IRTemp addr  = IRTemp_INVALID;
-   IRTemp t0    = IRTemp_INVALID;
-   IRTemp t1    = IRTemp_INVALID;
-   IRTemp t2    = IRTemp_INVALID;
-   IRTemp t3    = IRTemp_INVALID;
    UChar  modrm = 0;
    Int    alen  = 0;
    HChar  dis_buf[50];
@@ -17805,18 +17920,18 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          Int imm8;
          IRTemp svec = newTemp(Ity_V128);
          IRTemp dvec = newTemp(Ity_V128);
+         modrm       = getUChar(delta);
+         UInt   rG   = gregOfRexRM(pfx, modrm);
 
-         modrm = getUChar(delta);
-
-         assign( dvec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+         assign( dvec, getXMMReg(rG) );
   
          if ( epartIsReg( modrm ) ) {
+            UInt rE = eregOfRexRM(pfx, modrm);
             imm8 = (Int)getUChar(delta+1);
-            assign( svec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+            assign( svec, getXMMReg(rE) );
             delta += 1+1;
             DIP( "pclmulqdq $%d, %s,%s\n", imm8,
-                 nameXMMReg( eregOfRexRM(pfx, modrm) ),
-                 nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
+                 nameXMMReg(rE), nameXMMReg(rG) );    
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
@@ -17825,34 +17940,10 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
             DIP( "pclmulqdq $%d, %s,%s\n", 
-                 imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+                 imm8, dis_buf, nameXMMReg(rG) );
          }
 
-         t0 = newTemp(Ity_I64);
-         t1 = newTemp(Ity_I64);
-         assign(t0, unop((imm8&1)? Iop_V128HIto64 : Iop_V128to64, 
-                    mkexpr(dvec)));
-         assign(t1, unop((imm8&16) ? Iop_V128HIto64 : Iop_V128to64,
-                    mkexpr(svec)));
-
-         t2 = newTemp(Ity_I64);
-         t3 = newTemp(Ity_I64);
-
-         IRExpr** args;
-      
-         args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(0));
-         assign(t2,
-                 mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul",
-                                          &amd64g_calculate_pclmul, args));
-         args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(1));
-         assign(t3,
-                 mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul",
-                                          &amd64g_calculate_pclmul, args));
-
-         IRTemp res     = newTemp(Ity_V128);
-         assign(res, binop(Iop_64HLtoV128, mkexpr(t3), mkexpr(t2)));
-         putXMMReg( gregOfRexRM(pfx,modrm), mkexpr(res) );
-
+         putXMMReg( rG, mkexpr( math_PCLMULQDQ(dvec, svec, imm8) ) );
          goto decode_success;
       }
       break;
@@ -17879,63 +17970,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
    case 0xDF:
       /* 66 0F 3A DF /r ib = AESKEYGENASSIST imm8, xmm2/m128, xmm1 */
       if (have66noF2noF3(pfx) && sz == 2) {
-         UInt  regNoL = 0;
-         UInt  regNoR = 0;
-         UChar imm    = 0;
-
-         /* This is a nasty kludge.  See AESENC et al. instructions. */
-         modrm = getUChar(delta);
-         if (epartIsReg(modrm)) {
-            regNoL = eregOfRexRM(pfx, modrm);
-            regNoR = gregOfRexRM(pfx, modrm);
-            imm = getUChar(delta+1);
-            delta += 1+1;
-         } else {
-            regNoL = 16; /* use XMM16 as an intermediary */
-            regNoR = gregOfRexRM(pfx, modrm);
-            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
-            /* alignment check ???? . */
-            stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
-            imm = getUChar(delta+alen);
-            delta += alen+1;
-         }
-
-         /* Who ya gonna call?  Presumably not Ghostbusters. */
-         void*  fn = &amd64g_dirtyhelper_AESKEYGENASSIST;
-         HChar* nm = "amd64g_dirtyhelper_AESKEYGENASSIST";
-
-         /* Round up the arguments.  Note that this is a kludge -- the
-            use of mkU64 rather than mkIRExpr_HWord implies the
-            assumption that the host's word size is 64-bit. */
-         UInt gstOffL = regNoL == 16 ? OFFB_YMM16 : ymmGuestRegOffset(regNoL);
-         UInt gstOffR = ymmGuestRegOffset(regNoR);
-
-         IRExpr*  imme          = mkU64(imm & 0xFF);
-         IRExpr*  gstOffLe     = mkU64(gstOffL);
-         IRExpr*  gstOffRe     = mkU64(gstOffR);
-         IRExpr** args
-            = mkIRExprVec_3( imme, gstOffLe, gstOffRe );
-
-         IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
-         /* It's not really a dirty call, but we can't use the clean
-            helper mechanism here for the very lame reason that we can't
-            pass 2 x V128s by value to a helper, nor get one back.  Hence
-            this roundabout scheme. */
-         d->needsBBP = True;
-         d->nFxState = 2;
-         vex_bzero(&d->fxState, sizeof(d->fxState));
-         d->fxState[0].fx     = Ifx_Read;
-         d->fxState[0].offset = gstOffL;
-         d->fxState[0].size   = sizeof(U128);
-         d->fxState[1].fx     = Ifx_Write;
-         d->fxState[1].offset = gstOffR;
-         d->fxState[1].size   = sizeof(U128);
-         stmt( IRStmt_Dirty(d) );
-
-         DIP("aeskeygenassist $%x,%s,%s\n", (UInt)imm,
-             (regNoL == 16 ? dis_buf : nameXMMReg(regNoL)),
-             nameXMMReg(regNoR));
-
+         delta = dis_AESKEYGENASSIST( vbi, pfx, delta, False/*!isAvx*/ );
          goto decode_success;
       }
       break;
@@ -25052,6 +25087,23 @@ Long dis_ESC_0F38__VEX (
       } 
       break;
 
+   case 0xDB:
+   case 0xDC:
+   case 0xDD:
+   case 0xDE:
+   case 0xDF:
+      /* VAESIMC xmm2/m128, xmm1 = VEX.128.66.0F38.WIG DB /r */
+      /* VAESENC xmm3/m128, xmm2, xmm1 = VEX.128.66.0F38.WIG DC /r */
+      /* VAESENCLAST xmm3/m128, xmm2, xmm1 = VEX.128.66.0F38.WIG DD /r */
+      /* VAESDEC xmm3/m128, xmm2, xmm1 = VEX.128.66.0F38.WIG DE /r */
+      /* VAESDECLAST xmm3/m128, xmm2, xmm1 = VEX.128.66.0F38.WIG DF /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_AESx( vbi, pfx, delta, True/*!isAvx*/, opc );
+         if (opc != 0xDB) *uses_vvvv = True;
+         goto decode_success;
+      }
+      break;
+
    default:
       break;
 
@@ -26135,6 +26187,46 @@ Long dis_ESC_0F3A__VEX (
       }
       break;
 
+   case 0x44:
+      /* VPCLMULQDQ imm8, xmm3/m128,xmm2,xmm1 */
+      /* VPCLMULQDQ = VEX.NDS.128.66.0F3A.WIG 44 /r ib */
+      /* 66 0F 3A 44 /r ib = PCLMULQDQ xmm1, xmm2/m128, imm8
+       * Carry-less multiplication of selected XMM quadwords into XMM
+       * registers (a.k.a multiplication of polynomials over GF(2))
+       */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         UChar  modrm = getUChar(delta);
+         Int imm8;
+         IRTemp sV    = newTemp(Ity_V128);
+         IRTemp dV    = newTemp(Ity_V128);
+         UInt   rG    = gregOfRexRM(pfx, modrm);
+         UInt   rV    = getVexNvvvv(pfx);
+
+         assign( dV, getXMMReg(rV) );
+  
+         if ( epartIsReg( modrm ) ) {
+            UInt rE = eregOfRexRM(pfx, modrm);
+            imm8 = (Int)getUChar(delta+1);
+            assign( sV, getXMMReg(rE) );
+            delta += 1+1;
+            DIP( "vpclmulqdq $%d, %s,%s,%s\n", imm8,
+                 nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG) );    
+         } else {
+            addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
+                             1/* imm8 is 1 byte after the amode */ );
+            assign( sV, loadLE( Ity_V128, mkexpr(addr) ) );
+            imm8 = (Int)getUChar(delta+alen);
+            delta += alen+1;
+            DIP( "vpclmulqdq $%d, %s,%s,%s\n", 
+                 imm8, dis_buf, nameXMMReg(rV), nameXMMReg(rG) );
+         }
+
+         putYMMRegLoAndZU( rG, mkexpr( math_PCLMULQDQ(dV, sV, imm8) ) );
+         *uses_vvvv = True;
+         goto decode_success;
+      }
+      break;
+
    case 0x4A:
       /* VBLENDVPS xmmG, xmmE/memE, xmmV, xmmIS4
          ::: xmmG:V128 = PBLEND(xmmE, xmmV, xmmIS4) (RMVR) */
@@ -26205,6 +26297,14 @@ Long dis_ESC_0F3A__VEX (
          delta = dis_PCMPxSTRx( vbi, pfx, delta, True/*isAvx*/, opc );
          if (delta > delta0) goto decode_success;
          /* else fall though; dis_PCMPxSTRx failed to decode it */
+      }
+      break;
+
+   case 0xDF:
+      /* VAESKEYGENASSIST imm8, xmm2/m128, xmm1 = VEX.128.66.0F3A.WIG DF /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         delta = dis_AESKEYGENASSIST( vbi, pfx, delta, True/*!isAvx*/ );
+         goto decode_success;
       }
       break;
 

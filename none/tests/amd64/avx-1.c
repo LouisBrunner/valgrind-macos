@@ -2034,6 +2034,55 @@ GEN_test_RandM(VPEXTRW_128_0x7,
                "vpextrw $0x7, %%xmm7, %%r14d",
                "vpextrw $0x7, %%xmm7, (%%rax)")
 
+GEN_test_RandM(VAESENC,
+               "vaesenc %%xmm6,  %%xmm8, %%xmm7",
+               "vaesenc (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VAESENCLAST,
+               "vaesenclast %%xmm6,  %%xmm8, %%xmm7",
+               "vaesenclast (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VAESDEC,
+               "vaesdec %%xmm6,  %%xmm8, %%xmm7",
+               "vaesdec (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VAESDECLAST,
+               "vaesdeclast %%xmm6,  %%xmm8, %%xmm7",
+               "vaesdeclast (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VAESIMC,
+               "vaesimc %%xmm6,  %%xmm7",
+               "vaesimc (%%rax), %%xmm7")
+
+GEN_test_RandM(VAESKEYGENASSIST_0x00,
+               "vaeskeygenassist $0x00, %%xmm6,  %%xmm7",
+               "vaeskeygenassist $0x00, (%%rax), %%xmm7")
+GEN_test_RandM(VAESKEYGENASSIST_0x31,
+               "vaeskeygenassist $0x31, %%xmm6,  %%xmm7",
+               "vaeskeygenassist $0x31, (%%rax), %%xmm7")
+GEN_test_RandM(VAESKEYGENASSIST_0xB2,
+               "vaeskeygenassist $0xb2, %%xmm6,  %%xmm7",
+               "vaeskeygenassist $0xb2, (%%rax), %%xmm7")
+GEN_test_RandM(VAESKEYGENASSIST_0xFF,
+               "vaeskeygenassist $0xFF, %%xmm6,  %%xmm7",
+               "vaeskeygenassist $0xFF, (%%rax), %%xmm7")
+
+GEN_test_RandM(VPCLMULQDQ_0x00,
+               "vpclmulqdq $0x00, %%xmm6,  %%xmm8, %%xmm7",
+               "vpclmulqdq $0x00, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPCLMULQDQ_0x01,
+               "vpclmulqdq $0x01, %%xmm6,  %%xmm8, %%xmm7",
+               "vpclmulqdq $0x01, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPCLMULQDQ_0x10,
+               "vpclmulqdq $0x10, %%xmm6,  %%xmm8, %%xmm7",
+               "vpclmulqdq $0x10, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPCLMULQDQ_0x11,
+               "vpclmulqdq $0x11, %%xmm6,  %%xmm8, %%xmm7",
+               "vpclmulqdq $0x11, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VPCLMULQDQ_0xFF,
+               "vpclmulqdq $0xFF, %%xmm6,  %%xmm8, %%xmm7",
+               "vpclmulqdq $0xFF, (%%rax), %%xmm8, %%xmm7")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -2540,5 +2589,19 @@ int main ( void )
    DO_D( VPEXTRW_128_0x5 );
    DO_D( VPEXTRW_128_0x6 );
    DO_D( VPEXTRW_128_0x7 );
+   DO_D( VAESENC );
+   DO_D( VAESENCLAST );
+   DO_D( VAESDEC );
+   DO_D( VAESDECLAST );
+   DO_D( VAESIMC );
+   DO_D( VAESKEYGENASSIST_0x00 );
+   DO_D( VAESKEYGENASSIST_0x31 );
+   DO_D( VAESKEYGENASSIST_0xB2 );
+   DO_D( VAESKEYGENASSIST_0xFF );
+   DO_D( VPCLMULQDQ_0x00 );
+   DO_D( VPCLMULQDQ_0x01 );
+   DO_D( VPCLMULQDQ_0x10 );
+   DO_D( VPCLMULQDQ_0x11 );
+   DO_D( VPCLMULQDQ_0xFF );
    return 0;
 }

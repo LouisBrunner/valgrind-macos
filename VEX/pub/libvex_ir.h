@@ -1453,7 +1453,10 @@ typedef
 
       Iop_Sqrt32Fx8,
       Iop_Sqrt64Fx4,
-      Iop_RSqrt32Fx8
+      Iop_RSqrt32Fx8,
+
+      Iop_Max32Fx8, Iop_Min32Fx8,
+      Iop_Max64Fx4, Iop_Min64Fx4
    }
    IROp;
 

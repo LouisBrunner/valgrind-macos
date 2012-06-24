@@ -3485,6 +3485,8 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
       case Iop_Sub64Fx4:   op = Asse_SUBF;   goto do_64Fx4;
       case Iop_Mul64Fx4:   op = Asse_MULF;   goto do_64Fx4;
       case Iop_Div64Fx4:   op = Asse_DIVF;   goto do_64Fx4;
+      case Iop_Max64Fx4:   op = Asse_MAXF;   goto do_64Fx4;
+      case Iop_Min64Fx4:   op = Asse_MINF;   goto do_64Fx4;
       do_64Fx4:
       {
          HReg argLhi, argLlo, argRhi, argRlo;
@@ -3505,6 +3507,8 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
       case Iop_Sub32Fx8:   op = Asse_SUBF;   goto do_32Fx8;
       case Iop_Mul32Fx8:   op = Asse_MULF;   goto do_32Fx8;
       case Iop_Div32Fx8:   op = Asse_DIVF;   goto do_32Fx8;
+      case Iop_Max32Fx8:   op = Asse_MAXF;   goto do_32Fx8;
+      case Iop_Min32Fx8:   op = Asse_MINF;   goto do_32Fx8;
       do_32Fx8:
       {
          HReg argLhi, argLlo, argRhi, argRlo;

@@ -591,19 +591,23 @@ void ppIROp ( IROp op )
       case Iop_Div64Fx2:  vex_printf("Div64Fx2"); return;
       case Iop_Div64F0x2: vex_printf("Div64F0x2"); return;
 
+      case Iop_Max32Fx8:  vex_printf("Max32Fx8"); return;
       case Iop_Max32Fx4:  vex_printf("Max32Fx4"); return;
       case Iop_Max32Fx2:  vex_printf("Max32Fx2"); return;
       case Iop_PwMax32Fx4:  vex_printf("PwMax32Fx4"); return;
       case Iop_PwMax32Fx2:  vex_printf("PwMax32Fx2"); return;
       case Iop_Max32F0x4: vex_printf("Max32F0x4"); return;
+      case Iop_Max64Fx4:  vex_printf("Max64Fx4"); return;
       case Iop_Max64Fx2:  vex_printf("Max64Fx2"); return;
       case Iop_Max64F0x2: vex_printf("Max64F0x2"); return;
 
+      case Iop_Min32Fx8:  vex_printf("Min32Fx8"); return;
       case Iop_Min32Fx4:  vex_printf("Min32Fx4"); return;
       case Iop_Min32Fx2:  vex_printf("Min32Fx2"); return;
       case Iop_PwMin32Fx4:  vex_printf("PwMin32Fx4"); return;
       case Iop_PwMin32Fx2:  vex_printf("PwMin32Fx2"); return;
       case Iop_Min32F0x4: vex_printf("Min32F0x4"); return;
+      case Iop_Min64Fx4:  vex_printf("Min64Fx4"); return;
       case Iop_Min64Fx2:  vex_printf("Min64Fx2"); return;
       case Iop_Min64F0x2: vex_printf("Min64F0x2"); return;
 
@@ -2808,6 +2812,8 @@ void typeOfPrimop ( IROp op,
       case Iop_Mul32Fx8: case Iop_Div32Fx8:
       case Iop_AndV256:  case Iop_OrV256:
       case Iop_XorV256:
+      case Iop_Max32Fx8: case Iop_Min32Fx8:
+      case Iop_Max64Fx4: case Iop_Min64Fx4:
          BINARY(Ity_V256,Ity_V256, Ity_V256);
 
       case Iop_V256toV128_1: case Iop_V256toV128_0:

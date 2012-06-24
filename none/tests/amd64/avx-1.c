@@ -1372,29 +1372,108 @@ GEN_test_RandM(VPSRLQ_128,
                "andq $63, 128(%%rax);"
                "vpsrlq 128(%%rax), %%xmm8, %%xmm9")
 
+GEN_test_RandM(VROUNDPS_128_0x0,
+               "vroundps $0x0, %%xmm8,  %%xmm9",
+               "vroundps $0x0, (%%rax), %%xmm9")
+GEN_test_RandM(VROUNDPS_128_0x1,
+               "vroundps $0x1, %%xmm8,  %%xmm9",
+               "vroundps $0x1, (%%rax), %%xmm9")
 GEN_test_RandM(VROUNDPS_128_0x2,
                "vroundps $0x2, %%xmm8,  %%xmm9",
                "vroundps $0x2, (%%rax), %%xmm9")
+GEN_test_RandM(VROUNDPS_128_0x3,
+               "vroundps $0x3, %%xmm8,  %%xmm9",
+               "vroundps $0x3, (%%rax), %%xmm9")
+GEN_test_RandM(VROUNDPS_128_0x4,
+               "vroundps $0x4, %%xmm8,  %%xmm9",
+               "vroundps $0x4, (%%rax), %%xmm9")
 
+GEN_test_RandM(VROUNDPS_256_0x0,
+               "vroundps $0x0, %%ymm8,  %%ymm9",
+               "vroundps $0x0, (%%rax), %%ymm9")
+GEN_test_RandM(VROUNDPS_256_0x1,
+               "vroundps $0x1, %%ymm8,  %%ymm9",
+               "vroundps $0x1, (%%rax), %%ymm9")
 GEN_test_RandM(VROUNDPS_256_0x2,
                "vroundps $0x2, %%ymm8,  %%ymm9",
                "vroundps $0x2, (%%rax), %%ymm9")
+GEN_test_RandM(VROUNDPS_256_0x3,
+               "vroundps $0x3, %%ymm8,  %%ymm9",
+               "vroundps $0x3, (%%rax), %%ymm9")
+GEN_test_RandM(VROUNDPS_256_0x4,
+               "vroundps $0x4, %%ymm8,  %%ymm9",
+               "vroundps $0x4, (%%rax), %%ymm9")
 
+GEN_test_RandM(VROUNDPD_128_0x0,
+               "vroundpd $0x0, %%xmm8,  %%xmm9",
+               "vroundpd $0x0, (%%rax), %%xmm9")
+GEN_test_RandM(VROUNDPD_128_0x1,
+               "vroundpd $0x1, %%xmm8,  %%xmm9",
+               "vroundpd $0x1, (%%rax), %%xmm9")
 GEN_test_RandM(VROUNDPD_128_0x2,
                "vroundpd $0x2, %%xmm8,  %%xmm9",
                "vroundpd $0x2, (%%rax), %%xmm9")
+GEN_test_RandM(VROUNDPD_128_0x3,
+               "vroundpd $0x3, %%xmm8,  %%xmm9",
+               "vroundpd $0x3, (%%rax), %%xmm9")
+GEN_test_RandM(VROUNDPD_128_0x4,
+               "vroundpd $0x4, %%xmm8,  %%xmm9",
+               "vroundpd $0x4, (%%rax), %%xmm9")
 
+GEN_test_RandM(VROUNDPD_256_0x0,
+               "vroundpd $0x0, %%ymm8,  %%ymm9",
+               "vroundpd $0x0, (%%rax), %%ymm9")
+GEN_test_RandM(VROUNDPD_256_0x1,
+               "vroundpd $0x1, %%ymm8,  %%ymm9",
+               "vroundpd $0x1, (%%rax), %%ymm9")
 GEN_test_RandM(VROUNDPD_256_0x2,
                "vroundpd $0x2, %%ymm8,  %%ymm9",
                "vroundpd $0x2, (%%rax), %%ymm9")
+GEN_test_RandM(VROUNDPD_256_0x3,
+               "vroundpd $0x3, %%ymm8,  %%ymm9",
+               "vroundpd $0x3, (%%rax), %%ymm9")
+GEN_test_RandM(VROUNDPD_256_0x4,
+               "vroundpd $0x4, %%ymm8,  %%ymm9",
+               "vroundpd $0x4, (%%rax), %%ymm9")
 
+
+GEN_test_RandM(VROUNDSS_0x0,
+               "vroundss $0x0, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundss $0x0, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSS_0x1,
+               "vroundss $0x1, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundss $0x1, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSS_0x2,
+               "vroundss $0x2, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundss $0x2, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSS_0x3,
+               "vroundss $0x3, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundss $0x3, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSS_0x4,
+               "vroundss $0x4, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundss $0x4, (%%rax), %%xmm6, %%xmm9")
 GEN_test_RandM(VROUNDSS_0x5,
                "vroundss $0x5, %%xmm8,  %%xmm6, %%xmm9",
                "vroundss $0x5, (%%rax), %%xmm6, %%xmm9")
 
+GEN_test_RandM(VROUNDSD_0x0,
+               "vroundsd $0x0, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundsd $0x0, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSD_0x1,
+               "vroundsd $0x1, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundsd $0x1, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSD_0x2,
+               "vroundsd $0x2, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundsd $0x2, (%%rax), %%xmm6, %%xmm9")
 GEN_test_RandM(VROUNDSD_0x3,
                "vroundsd $0x3, %%xmm8,  %%xmm6, %%xmm9",
                "vroundsd $0x3, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSD_0x4,
+               "vroundsd $0x4, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundsd $0x4, (%%rax), %%xmm6, %%xmm9")
+GEN_test_RandM(VROUNDSD_0x5,
+               "vroundsd $0x5, %%xmm8,  %%xmm6, %%xmm9",
+               "vroundsd $0x5, (%%rax), %%xmm6, %%xmm9")
 
 GEN_test_RandM(VPTEST_128_1,
    "vptest %%xmm6,  %%xmm8; "
@@ -1560,6 +1639,22 @@ GEN_test_RandM(VTESTPD_256_3,
                   "pushfq; popq %%r14; andq $0x8D5, %%r14",
                "vtestpd (%%rax), %%ymm9; "
                   "pushfq; popq %%r14; andq $0x8D5, %%r14")
+
+GEN_test_RandM(VBLENDVPS_128,
+               "vblendvps %%xmm9, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendvps %%xmm9, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VBLENDVPS_256,
+               "vblendvps %%ymm9, %%ymm6,  %%ymm8, %%ymm7",
+               "vblendvps %%ymm9, (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VBLENDVPD_128,
+               "vblendvpd %%xmm9, %%xmm6,  %%xmm8, %%xmm7",
+               "vblendvpd %%xmm9, (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VBLENDVPD_256,
+               "vblendvpd %%ymm9, %%ymm6,  %%ymm8, %%ymm7",
+               "vblendvpd %%ymm9, (%%rax), %%ymm8, %%ymm7")
 
 
 /* Comment duplicated above, for convenient reference:
@@ -1912,12 +2007,38 @@ int main ( void )
    DO_D( VPSRAD_128 );
    DO_D( VPSLLQ_128 );
    DO_D( VPSRLQ_128 );
+   DO_D( VROUNDPS_128_0x0 );
+   DO_D( VROUNDPS_128_0x1 );
    DO_D( VROUNDPS_128_0x2 );
+   DO_D( VROUNDPS_128_0x3 );
+   DO_D( VROUNDPS_128_0x4 );
+   DO_D( VROUNDPS_256_0x0 );
+   DO_D( VROUNDPS_256_0x1 );
    DO_D( VROUNDPS_256_0x2 );
+   DO_D( VROUNDPS_256_0x3 );
+   DO_D( VROUNDPS_256_0x4 );
+   DO_D( VROUNDPD_128_0x0 );
+   DO_D( VROUNDPD_128_0x1 );
    DO_D( VROUNDPD_128_0x2 );
+   DO_D( VROUNDPD_128_0x3 );
+   DO_D( VROUNDPD_128_0x4 );
+   DO_D( VROUNDPD_256_0x0 );
+   DO_D( VROUNDPD_256_0x1 );
    DO_D( VROUNDPD_256_0x2 );
+   DO_D( VROUNDPD_256_0x3 );
+   DO_D( VROUNDPD_256_0x4 );
+   DO_D( VROUNDSS_0x0 );
+   DO_D( VROUNDSS_0x1 );
+   DO_D( VROUNDSS_0x2 );
+   DO_D( VROUNDSS_0x3 );
+   DO_D( VROUNDSS_0x4 );
    DO_D( VROUNDSS_0x5 );
+   DO_D( VROUNDSD_0x0 );
+   DO_D( VROUNDSD_0x1 );
+   DO_D( VROUNDSD_0x2 );
    DO_D( VROUNDSD_0x3 );
+   DO_D( VROUNDSD_0x4 );
+   DO_D( VROUNDSD_0x5 );
    DO_D( VPTEST_128_1 );
    DO_D( VPTEST_128_2 );
    DO_D( VPTEST_256_1 );
@@ -1934,5 +2055,9 @@ int main ( void )
    DO_D( VTESTPD_256_1 );
    DO_D( VTESTPD_256_2 );
    DO_N( 10, VTESTPD_256_3 );
+   DO_D( VBLENDVPS_128 );
+   DO_D( VBLENDVPS_256 );
+   DO_D( VBLENDVPD_128 );
+   DO_D( VBLENDVPD_256 );
    return 0;
 }

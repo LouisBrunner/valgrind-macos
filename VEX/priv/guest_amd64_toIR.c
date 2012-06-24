@@ -20770,8 +20770,8 @@ Long dis_AVX256_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
           opname, (Int)imm8, dis_buf, nameYMMReg(rV), nameYMMReg(rG));
    }
 
-   breakupV256toV128s( preSwap ? argL : argR, &argLhi, &argLlo );
-   breakupV256toV128s( preSwap ? argR : argL, &argRhi, &argRlo );
+   breakupV256toV128s( preSwap ? argR : argL, &argLhi, &argLlo );
+   breakupV256toV128s( preSwap ? argL : argR, &argRhi, &argRlo );
    assign(plain, binop( Iop_V128HLtoV256,
                         binop(op, mkexpr(argLhi), mkexpr(argRhi)),
                         binop(op, mkexpr(argLlo), mkexpr(argRlo)) ) );

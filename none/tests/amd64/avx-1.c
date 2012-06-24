@@ -283,6 +283,9 @@ GEN_test_Ronly(VMOVLHPS_128,
 GEN_test_Monly(VMOVNTDQ_128,
                "vmovntdq %%xmm8, (%%rax)")
 
+GEN_test_Monly(VMOVNTDQ_256,
+               "vmovntdq %%ymm8, (%%rax)")
+
 GEN_test_RandM(VMOVUPS_XMM_to_XMMorMEM,
                "vmovups %%xmm8, %%xmm7",
                "vmovups %%xmm9, (%%rax)")
@@ -329,6 +332,9 @@ GEN_test_RandM(VPAND_128,
 GEN_test_Monly(VMOVHPD_128_StoreForm,
                "vmovhpd %%xmm8, (%%rax)")
 
+GEN_test_Monly(VMOVHPS_128_StoreForm,
+               "vmovhps %%xmm8, (%%rax)")
+
 GEN_test_RandM(VPCMPEQB_128,
                "vpcmpeqb %%xmm9,  %%xmm8, %%xmm7",
                "vpcmpeqb (%%rax), %%xmm8, %%xmm7")
@@ -353,9 +359,33 @@ GEN_test_RandM(VMAXPS_128,
                "vmaxps %%xmm9,  %%xmm8, %%xmm7",
                "vmaxps (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VMAXPS_256,
+               "vmaxps %%ymm9,  %%ymm8, %%ymm7",
+               "vmaxps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VMAXPD_128,
+               "vmaxpd %%xmm9,  %%xmm8, %%xmm7",
+               "vmaxpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMAXPD_256,
+               "vmaxpd %%ymm9,  %%ymm8, %%ymm7",
+               "vmaxpd (%%rax), %%ymm8, %%ymm7")
+
 GEN_test_RandM(VMINPS_128,
                "vminps %%xmm9,  %%xmm8, %%xmm7",
                "vminps (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMINPS_256,
+               "vminps %%ymm9,  %%ymm8, %%ymm7",
+               "vminps (%%rax), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VMINPD_128,
+               "vminpd %%xmm9,  %%xmm8, %%xmm7",
+               "vminpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_RandM(VMINPD_256,
+               "vminpd %%ymm9,  %%ymm8, %%ymm7",
+               "vminpd (%%rax), %%ymm8, %%ymm7")
 
 GEN_test_RandM(VCVTPS2DQ_128,
                "vcvtps2dq %%xmm8, %%xmm7",
@@ -995,6 +1025,9 @@ GEN_test_RandM(VCVTDQ2PD_256,
 
 GEN_test_Monly(VMOVHPD_128_LoadForm,
                "vmovhpd (%%rax), %%xmm8, %%xmm7")
+
+GEN_test_Monly(VMOVHPS_128_LoadForm,
+               "vmovhps (%%rax), %%xmm8, %%xmm7")
 
 // The y suffix denotes a 256 -> 128 operation
 GEN_test_RandM(VCVTPD2PS_256,
@@ -1796,6 +1829,38 @@ GEN_test_Monly(VLDDQU_128,
 GEN_test_Monly(VLDDQU_256,
                "vlddqu 1(%%rax), %%ymm8")
 
+GEN_test_Monly(VMOVNTDQA_128,
+               "vmovntdqa (%%rax), %%xmm9")
+
+GEN_test_Monly(VMASKMOVDQU_128,
+               "xchgq %%rax, %%rdi;"
+               "vmaskmovdqu %%xmm8, %%xmm9;"
+               "xchgq %%rax, %%rdi")
+
+GEN_test_Ronly(VMOVMSKPD_128,
+               "vmovmskpd %%xmm9, %%r14d")
+
+GEN_test_Ronly(VMOVMSKPD_256,
+               "vmovmskpd %%ymm9, %%r14d")
+
+GEN_test_Ronly(VMOVMSKPS_128,
+               "vmovmskps %%xmm9, %%r14d")
+
+GEN_test_Ronly(VMOVMSKPS_256,
+               "vmovmskps %%ymm9, %%r14d")
+
+GEN_test_Monly(VMOVNTPD_128,
+               "vmovntpd %%xmm9, (%%rax)")
+
+GEN_test_Monly(VMOVNTPD_256,
+               "vmovntpd %%ymm9, (%%rax)")
+
+GEN_test_Monly(VMOVNTPS_128,
+               "vmovntps %%xmm9, (%%rax)")
+
+GEN_test_Monly(VMOVNTPS_256,
+               "vmovntps %%ymm9, (%%rax)")
+
 
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
@@ -2236,5 +2301,24 @@ int main ( void )
    DO_D( VEXTRACTPS_0x3 );
    DO_D( VLDDQU_128 );
    DO_D( VLDDQU_256 );
+   DO_D( VMAXPS_256 );
+   DO_D( VMAXPD_128 );
+   DO_D( VMAXPD_256 );
+   DO_D( VMINPS_256 );
+   DO_D( VMINPD_128 );
+   DO_D( VMINPD_256 );
+   DO_D( VMOVHPS_128_StoreForm );
+   DO_D( VMOVNTDQ_256 );
+   DO_D( VMOVHPS_128_LoadForm );
+   DO_D( VMOVNTDQA_128 );
+   DO_D( VMASKMOVDQU_128 );
+   DO_D( VMOVMSKPD_128 );
+   DO_D( VMOVMSKPD_256 );
+   DO_D( VMOVMSKPS_128 );
+   DO_D( VMOVMSKPS_256 );
+   DO_D( VMOVNTPD_128 );
+   DO_D( VMOVNTPD_256 );
+   DO_D( VMOVNTPS_128 );
+   DO_D( VMOVNTPS_256 );
    return 0;
 }

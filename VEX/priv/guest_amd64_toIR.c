@@ -24149,7 +24149,7 @@ Long dis_ESC_0F3A__VEX (
       break;
 
    case 0x08:
-      /* VROUNDPS imm8, xmm3/m128, xmm2, xmm1 */
+      /* VROUNDPS imm8, xmm2/m128, xmm1 */
       /* VROUNDPS = VEX.NDS.128.66.0F3A.WIG 08 ib */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          UChar  modrm = getUChar(delta);
@@ -24197,7 +24197,7 @@ Long dis_ESC_0F3A__VEX (
 #        undef CVT
          goto decode_success;
       }
-      /* VROUNDPS imm8, ymm3/m256, ymm2, ymm1 */
+      /* VROUNDPS imm8, ymm2/m256, ymm1 */
       /* VROUNDPS = VEX.NDS.256.66.0F3A.WIG 08 ib */
       if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
          UChar  modrm = getUChar(delta);
@@ -24254,7 +24254,7 @@ Long dis_ESC_0F3A__VEX (
       }
 
    case 0x09:
-      /* VROUNDPD imm8, xmm3/m128, xmm2, xmm1 */
+      /* VROUNDPD imm8, xmm2/m128, xmm1 */
       /* VROUNDPD = VEX.NDS.128.66.0F3A.WIG 09 ib */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          UChar  modrm = getUChar(delta);
@@ -24298,7 +24298,7 @@ Long dis_ESC_0F3A__VEX (
 #        undef CVT
          goto decode_success;
       }
-      /* VROUNDPD imm8, ymm3/m256, ymm2, ymm1 */
+      /* VROUNDPD imm8, ymm2/m256, ymm1 */
       /* VROUNDPD = VEX.NDS.256.66.0F3A.WIG 09 ib */
       if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
          UChar  modrm = getUChar(delta);

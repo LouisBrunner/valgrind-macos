@@ -19810,8 +19810,7 @@ Long dis_ESC_0F (
       HChar*   fName = NULL;
       void*    fAddr = NULL;
       if (haveF2orF3(pfx)) goto decode_failure;
-      if (0 && /* Can't enable this until AVX support is complete. */
-          archinfo->hwcaps == (VEX_HWCAPS_AMD64_SSE3
+      if (archinfo->hwcaps == (VEX_HWCAPS_AMD64_SSE3
                                |VEX_HWCAPS_AMD64_CX16 
                                |VEX_HWCAPS_AMD64_AVX)) {
          fName = "amd64g_dirtyhelper_CPUID_avx_and_cx16";

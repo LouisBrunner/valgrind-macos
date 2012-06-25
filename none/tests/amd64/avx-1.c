@@ -191,10 +191,51 @@ GEN_test_RandM(VPSHUFB_128,
 GEN_test_RandM(VCMPSD_128_0x0,
                "vcmpsd $0, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0, (%%rax), %%xmm8, %%xmm7")
-
+GEN_test_RandM(VCMPSD_128_0x1,
+               "vcmpsd $1, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $1, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x2,
+               "vcmpsd $2, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $2, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x3,
+               "vcmpsd $3, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $3, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x4,
+               "vcmpsd $4, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $4, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x5,
+               "vcmpsd $5, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $5, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x6,
+               "vcmpsd $6, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $6, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x7,
+               "vcmpsd $7, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $7, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0xA,
+               "vcmpsd $0xA, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0xA, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0xC,
+               "vcmpsd $0xC, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0xC, (%%rax), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSD_128_0xD,
-               "vcmpsd $0xd, %%xmm6,  %%xmm8, %%xmm7",
-               "vcmpsd $0xd, (%%rax), %%xmm8, %%xmm7")
+               "vcmpsd $0xD, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0xD, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0xE,
+               "vcmpsd $0xE, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0xE, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x11,
+               "vcmpsd $0x11, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0x11, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x12,
+               "vcmpsd $0x12, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0x12, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x16,
+               "vcmpsd $0x16, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0x16, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x1E,
+               "vcmpsd $0x1E, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0x1E, (%%rax), %%xmm8, %%xmm7")
 
 GEN_test_RandM(VSQRTSD_128,
                "vsqrtsd %%xmm6,  %%xmm8, %%xmm7",
@@ -561,50 +602,51 @@ GEN_test_RandM(VMOVDDUP_XMMorMEM64_to_XMM,
 GEN_test_RandM(VCMPSS_128_0x0,
                "vcmpss $0, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x1,
                "vcmpss $1, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $1, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x2,
                "vcmpss $2, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $2, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x3,
                "vcmpss $3, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $3, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x4,
                "vcmpss $4, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $4, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x5,
                "vcmpss $5, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $5, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x6,
                "vcmpss $6, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $6, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0x7,
                "vcmpss $7, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $7, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0xA,
                "vcmpss $0xA, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xA, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0xC,
                "vcmpss $0xC, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xC, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0xD,
                "vcmpss $0xD, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xD, (%%rax), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPSS_128_0xE,
                "vcmpss $0xE, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xE, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x11,
+               "vcmpss $0x11, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x11, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x12,
+               "vcmpss $0x12, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x12, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x16,
+               "vcmpss $0x16, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x16, (%%rax), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x1E,
+               "vcmpss $0x1E, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x1E, (%%rax), %%xmm8, %%xmm7")
 
 // The x suffix denotes a 128 -> 64 operation
 GEN_test_RandM(VCVTPD2PS_128,
@@ -2140,10 +2182,14 @@ int main ( void )
    DO_D( VCMPSS_128_0x6 );
    DO_D( VCMPSS_128_0x7 );
    DO_D( VCMPSS_128_0xA );
-   /* no 0xB case yet observed */
+   DO_D( VCMPSS_128_0xC );
    DO_D( VCMPSS_128_0xC );
    DO_D( VCMPSS_128_0xD );
    DO_D( VCMPSS_128_0xE );
+   DO_D( VCMPSS_128_0x11 );
+   DO_D( VCMPSS_128_0x12);
+   DO_D( VCMPSS_128_0x16 );
+   DO_D( VCMPSS_128_0x1E );
    DO_D( VMOVDDUP_XMMorMEM64_to_XMM );
    DO_D( VMOVD_IREGorMEM32_to_XMM );
    DO_D( VMOVQ_XMM_MEM64 );
@@ -2230,8 +2276,23 @@ int main ( void )
    DO_D( VANDNPS_128 );
    DO_D( VORPS_128 );
    DO_D( VSQRTSD_128 );
-   DO_D( VCMPSD_128_0xD );
+   /* Test all CMPSS variants; this code is tricky. */
    DO_D( VCMPSD_128_0x0 );
+   DO_D( VCMPSD_128_0x1 );
+   DO_D( VCMPSD_128_0x2 );
+   DO_D( VCMPSD_128_0x3 );
+   DO_D( VCMPSD_128_0x4 );
+   DO_D( VCMPSD_128_0x5 );
+   DO_D( VCMPSD_128_0x6 );
+   DO_D( VCMPSD_128_0x7 );
+   DO_D( VCMPSD_128_0xA );
+   DO_D( VCMPSD_128_0xC );
+   DO_D( VCMPSD_128_0xD );
+   DO_D( VCMPSD_128_0xE );
+   DO_D( VCMPSD_128_0x11 );
+   DO_D( VCMPSD_128_0x12 );
+   DO_D( VCMPSD_128_0x16 );
+   DO_D( VCMPSD_128_0x1E );
    DO_D( VPSHUFB_128 );
    DO_D( VCVTTSD2SI_32 );
    DO_D( VCVTTSD2SI_64 );
@@ -2605,3 +2666,4 @@ int main ( void )
    DO_D( VPCLMULQDQ_0xFF );
    return 0;
 }
+

@@ -1008,6 +1008,8 @@ void ppIROp ( IROp op )
       case Iop_OrV256:  vex_printf("OrV256"); return;
       case Iop_XorV256: vex_printf("XorV256"); return;
       case Iop_NotV256: vex_printf("NotV256"); return;
+      case Iop_CmpNEZ64x4: vex_printf("CmpNEZ64x4"); return;
+      case Iop_CmpNEZ32x8: vex_printf("CmpNEZ32x8"); return;
       default: vpanic("ppIROp(1)");
    }
 
@@ -2828,6 +2830,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Sqrt32Fx8:
       case Iop_Sqrt64Fx4:
       case Iop_Recip32Fx8:
+      case Iop_CmpNEZ64x4: case Iop_CmpNEZ32x8:
          UNARY(Ity_V256, Ity_V256);
 
       default:

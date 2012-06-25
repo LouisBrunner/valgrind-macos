@@ -3474,6 +3474,51 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          return;
       }
 
+      case Iop_CmpNEZ64x4: {
+         /* We can use SSE2 instructions for this. */
+         /* Same scheme as Iop_CmpNEZ64x2, except twice as wide
+            (obviously).  See comment on Iop_CmpNEZ64x2 for
+            explanation of what's going on here. */
+         HReg argHi, argLo;
+         iselDVecExpr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         HReg tmpHi  = generate_zeroes_V128(env);
+         HReg tmpLo  = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(tmpHi, tmpLo));
+         HReg dstHi  = newVRegV(env);
+         HReg dstLo  = newVRegV(env);
+         addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, argHi, tmpHi));
+         addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, argLo, tmpLo));
+         tmpHi = do_sse_NotV128(env, tmpHi);
+         tmpLo = do_sse_NotV128(env, tmpLo);
+         addInstr(env, AMD64Instr_SseShuf(0xB1, tmpHi, dstHi));
+         addInstr(env, AMD64Instr_SseShuf(0xB1, tmpLo, dstLo));
+         addInstr(env, AMD64Instr_SseReRg(Asse_OR, tmpHi, dstHi));
+         addInstr(env, AMD64Instr_SseReRg(Asse_OR, tmpLo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      case Iop_CmpNEZ32x8: op = Asse_CMPEQ32; goto do_CmpNEZ_vector;
+      do_CmpNEZ_vector:
+      {
+         HReg argHi, argLo;
+         iselDVecExpr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         HReg tmpHi = newVRegV(env);
+         HReg tmpLo = newVRegV(env);
+         HReg zero  = generate_zeroes_V128(env);
+         HReg dstHi, dstLo;
+         addInstr(env, mk_vMOVsd_RR(argHi, tmpHi));
+         addInstr(env, mk_vMOVsd_RR(argLo, tmpLo));
+         addInstr(env, AMD64Instr_SseReRg(op, zero, tmpHi));
+         addInstr(env, AMD64Instr_SseReRg(op, zero, tmpLo));
+         dstHi = do_sse_NotV128(env, tmpHi);
+         dstLo = do_sse_NotV128(env, tmpLo);
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Unop.op) */

@@ -1441,6 +1441,9 @@ typedef
       Iop_XorV256,
       Iop_NotV256,
 
+      /* MISC (vector integer cmp != 0) */
+      Iop_CmpNEZ32x8, Iop_CmpNEZ64x4,
+
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,
       Iop_Sub64Fx4,

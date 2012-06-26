@@ -1,0 +1,51 @@
+
+Supported platforms
+-------------------
+- MIPS32 and MIPS32r2 platforms are currently supported.
+- Both little-endian and big-endian cores are supported.
+
+
+Building V for MIPS
+-------------------
+- Native build is available for all supported platforms. The build system
+expects that native GCC is configured correctly and optimized for the platform.
+Yet, this may not be the case with some Debian distributions which configure
+GCC to compile to "mips1" by default. Depending on a target platform, using
+CFLAGS="-mips32r2" or CFLAGS="-mips32" will do the trick and compile Valgrind
+correctly.
+- Use of cross-toolchain is supported as well.
+- Example of configure line and additional configure options:
+
+   $ ./configure --host=mipsel-linux-gnu --prefix=<path_to_install_directory>
+        [--with-pagesize=<4|16|64>]
+
+ * --host=mips-linux-gnu is necessary only if Valgrind is built on platform
+   other then MIPS, tools for building MIPS application have to be in PATH.
+
+ * --with-pagesize option is used to set default PAGE SIZE. If option is not
+   used, PAGE SIZE is set to value default for platform on which Valgrind is
+   built on. Possible values are 4, 16 of 64 and represent size in kilobytes.
+
+ * --host=mips-linux-gnu is necessary if you compile it with cross toolchain
+   compiler for big endian platform.
+
+ * --host=mipsel-linux-gnu is necessary if you compile it with cross toolchain
+   compiler for little endian platform.
+
+ * --build=mips-linux is needed if you want to build it for MIPS32 on 64-bit
+   MIPS system.
+
+ * If you are compiling Valgrind with gcc version older then gcc (GCC) 4.5.1
+   you must specify CFLAGS="-mips32r2 -mplt", e.g.
+   ./configure --prefix=<path_to_install_directory>
+   CFLAGS="-mips32r2 -mplt"
+
+
+Limitations
+-----------
+- Currently, memcheck, massif, lackey, callgrind and none are supported.
+- Support for helgrind, drd and exp-ptrcheck is still incomplete.
+- Some Valgrind tests for MIPS expect mips32r2 architecture and will not
+compile when target is one of the older instruction sets.
+- Older GCC may have issues with some inline assembly blocks. Get a toolchain
+based on newer GCC versions, if possible.

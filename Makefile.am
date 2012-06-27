@@ -99,6 +99,7 @@ EXTRA_DIST = \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	README.s390 \
 	README.android \
+	README.mips \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec

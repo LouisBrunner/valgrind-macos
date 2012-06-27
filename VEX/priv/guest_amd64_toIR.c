@@ -8611,6 +8611,8 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       /* "Enhanced Comparison Predicate[s] for VEX-Encoded [insns] */
       case 0xA:  XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_US
       // 0xB  FALSE_OQ
+      // 0xC: this isn't really right because it returns all-1s when
+      // either operand is a NaN, and it should return all-0s.
       case 0xC:  XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OQ
       case 0xD:  XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OS
       case 0xE:  XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OS

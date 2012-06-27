@@ -660,22 +660,6 @@ struct vki_pollfd {
 	short revents;
 };
 //----------------------------------------------------------------------
-// From linux-2.6.35.5/include/asm-mips/elf.h
-//----------------------------------------------------------------------
-
-#define VKI_ELF_NGREG			45	/* includes nip, msr, lr, etc. */
-#define VKI_ELF_NFPREG			33	/* includes fpscr */
-
-typedef unsigned long vki_elf_greg_t;
-typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
-
-typedef double vki_elf_fpreg_t;
-typedef vki_elf_fpreg_t vki_elf_fpregset_t[VKI_ELF_NFPREG];
-
-typedef struct vki_user_fxsr_struct vki_elf_fpxregset_t;
-
-#define VKI_AT_SYSINFO		32
-//----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-mips/ucontext.h
 //----------------------------------------------------------------------
 
@@ -867,6 +851,22 @@ struct vki_pt_regs {
 #define VKI_PTRACE_SETREGS            13
 #define VKI_PTRACE_GETFPREGS          14
 #define VKI_PTRACE_SETFPREGS          15
+//----------------------------------------------------------------------
+// From linux-2.6.35.5/include/asm-mips/elf.h
+//----------------------------------------------------------------------
+typedef unsigned long vki_elf_greg_t;
+
+#define VKI_ELF_NGREG (sizeof (struct vki_user_regs_struct) / sizeof(vki_elf_greg_t))
+#define VKI_ELF_NFPREG			33	/* includes fpscr */
+
+typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
+
+typedef double vki_elf_fpreg_t;
+typedef vki_elf_fpreg_t vki_elf_fpregset_t[VKI_ELF_NFPREG];
+
+typedef struct vki_user_fxsr_struct vki_elf_fpxregset_t;
+
+#define VKI_AT_SYSINFO		32
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-generic/siginfo.h
 //----------------------------------------------------------------------

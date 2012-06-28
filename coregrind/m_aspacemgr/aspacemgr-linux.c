@@ -2603,7 +2603,7 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
                                                   fd, offset );
 }
 
-extern SysRes VG_(am_shared_mmap_file_float_valgrind)
+SysRes VG_(am_shared_mmap_file_float_valgrind)
    ( SizeT length, UInt prot, Int fd, Off64T offset )
 {
    return VG_(am_mmap_file_float_valgrind_flags) (length, prot,

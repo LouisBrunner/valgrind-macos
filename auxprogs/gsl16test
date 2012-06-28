@@ -92,7 +92,7 @@ runcmd "Configuring                   " \
        "(cd gsl-1.6-patched && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure)" && \
 \
 runcmd "Building                      " \
-       "(cd gsl-1.6-patched && make && make -k check)"
+       "(cd gsl-1.6-patched && make -j4 && make -k check)"
 
 echo -n "   Collecting reference results  "
 rm -f out-REF

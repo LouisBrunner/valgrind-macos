@@ -40,7 +40,7 @@ void test_parity_instrs()
 void test_lfiwax()
 {
    unsigned long base;
-   unsigned long offset;
+   //   unsigned long offset;
 
    typedef struct {
       unsigned int hi;
@@ -50,9 +50,8 @@ void test_lfiwax()
    int_pair_t *ip;
    foo = -1024.0;
    base = (unsigned long) &foo;
-   offset = 0;
-   __asm__ volatile ("lfiwax %0, %1, %2":"=f" (FRT1):"r"(base),
-                     "r"(offset));
+
+   __asm__ volatile ("lfiwax %0, 0, %1":"=f" (FRT1):"r"(base));
    ip = (int_pair_t *) & FRT1;
    printf("lfiwax (%f) => FRT=(%x, %x)\n", foo, ip->hi, ip->lo);
 

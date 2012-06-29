@@ -4125,6 +4125,7 @@ void do_shadow_Store ( MCEnv* mce,
    if (MC_(clo_mc_level) == 1) {
       switch (ty) {
          case Ity_V256: // V256 weirdness -- used four times
+                        c = IRConst_V256(V_BITS32_DEFINED); break;
          case Ity_V128: // V128 weirdness -- used twice
                         c = IRConst_V128(V_BITS16_DEFINED); break;
          case Ity_I64:  c = IRConst_U64 (V_BITS64_DEFINED); break;

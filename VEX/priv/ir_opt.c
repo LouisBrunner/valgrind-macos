@@ -1163,6 +1163,7 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
       case Iop_Or64:
          return IRExpr_Const(IRConst_U64(0xFFFFFFFFFFFFFFFFULL));
       case Iop_CmpEQ8x16:
+      case Iop_CmpEQ32x4:
          return IRExpr_Const(IRConst_V128(0xFFFF));
       default:
          ppIROp(op);
@@ -1502,6 +1503,18 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             if (0 == u64) {
                e2 = IRExpr_Const(IRConst_V128(0x0000));
+            } else {
+               goto unhandled;
+            }
+            break;
+         }
+
+         /* Even stupider (although still correct ..) */
+         case Iop_V256to64_0: case Iop_V256to64_1:
+         case Iop_V256to64_2: case Iop_V256to64_3: {
+            UInt v256 = e->Iex.Unop.arg->Iex.Const.con->Ico.V256;
+            if (v256 == 0x00000000) {
+               e2 = IRExpr_Const(IRConst_U64(0));
             } else {
                goto unhandled;
             }
@@ -2056,6 +2069,7 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ8x16:
+            case Iop_CmpEQ32x4:
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
                   break;

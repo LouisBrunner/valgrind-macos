@@ -1002,12 +1002,15 @@ static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 
       case Iex_Binop:
          return toBool( e1->Iex.Binop.op == e2->Iex.Binop.op
-                        && sameIRExprs_aux( env, e1->Iex.Binop.arg1, e2->Iex.Binop.arg1 )
-                        && sameIRExprs_aux( env, e1->Iex.Binop.arg2, e2->Iex.Binop.arg2 ));
+                        && sameIRExprs_aux( env, e1->Iex.Binop.arg1,
+                                                 e2->Iex.Binop.arg1 )
+                        && sameIRExprs_aux( env, e1->Iex.Binop.arg2,
+                                                 e2->Iex.Binop.arg2 ));
 
       case Iex_Unop:
          return toBool( e1->Iex.Unop.op == e2->Iex.Unop.op
-                        && sameIRExprs_aux( env, e1->Iex.Unop.arg, e2->Iex.Unop.arg ));
+                        && sameIRExprs_aux( env, e1->Iex.Unop.arg,
+                                                 e2->Iex.Unop.arg ));
 
       case Iex_Const: {
          IRConst *c1 = e1->Iex.Const.con;
@@ -1034,9 +1037,12 @@ static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
       }
 
       case Iex_Mux0X:
-         return toBool(    sameIRExprs_aux( env, e1->Iex.Mux0X.cond,  e2->Iex.Mux0X.cond )
-                        && sameIRExprs_aux( env, e1->Iex.Mux0X.expr0, e2->Iex.Mux0X.expr0 )
-                        && sameIRExprs_aux( env, e1->Iex.Mux0X.exprX, e2->Iex.Mux0X.exprX ));
+         return toBool(    sameIRExprs_aux( env, e1->Iex.Mux0X.cond,
+                                                 e2->Iex.Mux0X.cond )
+                        && sameIRExprs_aux( env, e1->Iex.Mux0X.expr0,
+                                                 e2->Iex.Mux0X.expr0 )
+                        && sameIRExprs_aux( env, e1->Iex.Mux0X.exprX,
+                                                 e2->Iex.Mux0X.exprX ));
 
       default:
          /* Not very likely to be "same". */
@@ -1982,8 +1988,9 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                /* Add32/Add64(t,t) ==> t << 1. Same rationale as for Add8. */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-                  e2 = IRExpr_Binop(e->Iex.Binop.op == Iop_Add32 ? Iop_Shl32 : Iop_Shl64,
-                                    e->Iex.Binop.arg1, IRExpr_Const(IRConst_U8(1)));
+                  e2 = IRExpr_Binop(
+                          e->Iex.Binop.op == Iop_Add32 ? Iop_Shl32 : Iop_Shl64,
+                          e->Iex.Binop.arg1, IRExpr_Const(IRConst_U8(1)));
                   break;
                }
                break;
@@ -2322,9 +2329,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          cas2 = mkIRCAS(
                    cas->oldHi, cas->oldLo, cas->end, 
                    fold_Expr(env, subst_Expr(env, cas->addr)),
-                   cas->expdHi ? fold_Expr(env, subst_Expr(env, cas->expdHi)) : NULL,
+                   cas->expdHi ? fold_Expr(env, subst_Expr(env, cas->expdHi))
+                               : NULL,
                    fold_Expr(env, subst_Expr(env, cas->expdLo)),
-                   cas->dataHi ? fold_Expr(env, subst_Expr(env, cas->dataHi)) : NULL,
+                   cas->dataHi ? fold_Expr(env, subst_Expr(env, cas->dataHi))
+                               : NULL,
                    fold_Expr(env, subst_Expr(env, cas->dataLo))
                 );
          return IRStmt_CAS(cas2);

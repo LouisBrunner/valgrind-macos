@@ -297,7 +297,7 @@ static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips ); /*fwds*/
 static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
                                            Bool first_ip_only )
 {
-   Addr ips[VG_DEEPEST_BACKTRACE];
+   Addr ips[VG_(clo_backtrace_size)];
    UInt n_ips;
 
    init_ExeContext_storage();
@@ -306,9 +306,6 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
    vg_assert(sizeof(void*) == sizeof(Addr));
 
    vg_assert(VG_(is_valid_tid)(tid));
-
-   vg_assert(VG_(clo_backtrace_size) >= 1 &&
-             VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 
    if (first_ip_only) {
       n_ips = 1;

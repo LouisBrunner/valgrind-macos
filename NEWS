@@ -64,6 +64,8 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
   rather than float values, as the shadow values are mostly
   used as bit patterns.
 
+* Increased limit for the --num-callers command line flag to 500.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

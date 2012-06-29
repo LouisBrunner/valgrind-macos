@@ -76,6 +76,7 @@ EXTRA_DIST = \
 	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
+	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	deep_templates.vgtest \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
 	describe-block.stderr.exp describe-block.vgtest \
@@ -240,6 +241,7 @@ check_PROGRAMS = \
 	clireq_nofill \
 	custom_alloc \
 	custom-overlap \
+	deep-backtrace \
 	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve1 execve2 erringfds \

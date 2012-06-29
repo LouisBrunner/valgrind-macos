@@ -1,0 +1,2 @@
+prog: deep-backtrace
+vgopts: -q --num-callers=500

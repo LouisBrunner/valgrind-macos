@@ -41,7 +41,7 @@
 #include "pub_tool_execontext.h"
 
 /* The maximum number of calls we're prepared to save in an ExeContext. */
-#define VG_DEEPEST_BACKTRACE 50
+#define VG_DEEPEST_BACKTRACE 500
 
 // Print stats (informational only).
 extern void VG_(print_ExeContext_stats) ( void );

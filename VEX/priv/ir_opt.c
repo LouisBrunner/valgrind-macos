@@ -1195,6 +1195,22 @@ static UInt fold_Clz32 ( UInt value )
    return 0;
 }
 
+/* V64 holds 8 summary-constant bits in V128/V256 style.  Convert to
+   the corresponding real constant. */
+//XXX re-check this before use
+//static ULong de_summarise_V64 ( UChar v64 )
+//{
+//   ULong r = 0;
+//   if (v64 & (1<<0)) r |= 0x00000000000000FFULL;
+//   if (v64 & (1<<1)) r |= 0x000000000000FF00ULL;
+//   if (v64 & (1<<2)) r |= 0x0000000000FF0000ULL;
+//   if (v64 & (1<<3)) r |= 0x00000000FF000000ULL;
+//   if (v64 & (1<<4)) r |= 0x000000FF00000000ULL;
+//   if (v64 & (1<<5)) r |= 0x0000FF0000000000ULL;
+//   if (v64 & (1<<6)) r |= 0x00FF000000000000ULL;
+//   if (v64 & (1<<7)) r |= 0xFF00000000000000ULL;
+//   return r;
+//}
 
 static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 {
@@ -1303,6 +1319,10 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                  )));
             break;
 
+         case Iop_NotV128:
+            e2 = IRExpr_Const(IRConst_V128(
+                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.V128)));
+            break;
          case Iop_Not64:
             e2 = IRExpr_Const(IRConst_U64(
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U64)));
@@ -1447,6 +1467,47 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             break;
          }
 
+         /* For these vector ones, can't fold all cases, but at least
+            do the most obvious one.  Could do better here using
+            summarise/desummarise of vector constants, but too
+            difficult to verify; hence just handle the zero cases. */
+         case Iop_32UtoV128: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            if (0 == u32) {
+               e2 = IRExpr_Const(IRConst_V128(0x0000));
+            } else {
+               goto unhandled;
+            }
+            break;
+         }
+         case Iop_V128to64: {
+            UShort v128 = e->Iex.Unop.arg->Iex.Const.con->Ico.V128;
+            if (0 == ((v128 >> 0) & 0xFF)) {
+               e2 = IRExpr_Const(IRConst_U64(0));
+            } else {
+               goto unhandled;
+            }
+            break;
+         }
+         case Iop_V128HIto64: {
+            UShort v128 = e->Iex.Unop.arg->Iex.Const.con->Ico.V128;
+            if (0 == ((v128 >> 8) & 0xFF)) {
+               e2 = IRExpr_Const(IRConst_U64(0));
+            } else {
+               goto unhandled;
+            }
+            break;
+         }
+         case Iop_64UtoV128: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            if (0 == u64) {
+               e2 = IRExpr_Const(IRConst_V128(0x0000));
+            } else {
+               goto unhandled;
+            }
+            break;
+         }
+
          default: 
             goto unhandled;
       }
@@ -1481,6 +1542,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         | e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
+            case Iop_OrV128:
+               e2 = IRExpr_Const(IRConst_V128(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.V128
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.V128)));
+               break;
 
             /* -- Xor -- */
             case Iop_Xor8:
@@ -1503,6 +1569,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
+            case Iop_XorV128:
+               e2 = IRExpr_Const(IRConst_V128(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.V128
+                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.V128)));
+               break;
 
             /* -- And -- */
             case Iop_And8:
@@ -1524,6 +1595,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                e2 = IRExpr_Const(IRConst_U64(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         & e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
+               break;
+            case Iop_AndV128:
+               e2 = IRExpr_Const(IRConst_V128(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.V128
+                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.V128)));
                break;
 
             /* -- Add -- */
@@ -1763,7 +1839,8 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             /* -- nHLto2n -- */
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(
-                       (((ULong)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)) << 32)
+                       (((ULong)(e->Iex.Binop.arg1
+                                  ->Iex.Const.con->Ico.U32)) << 32)
                        | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
                     ));
                break;
@@ -1773,6 +1850,35 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                   handle it, so as to stop getting blasted with
                   no-rule-for-this-primop messages. */
                break;
+            /* For this vector one, can't fold all cases, but at
+               least do the most obvious one.  Could do better here
+               using summarise/desummarise of vector constants, but
+               too difficult to verify; hence just handle the zero
+               cases. */
+            case Iop_64HLtoV128: {
+               ULong argHi = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               ULong argLo = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               if (0 == argHi && 0 == argLo) {
+                  e2 = IRExpr_Const(IRConst_V128(0));
+               } else {
+                  goto unhandled;
+               }
+               break;
+            }
+
+            /* -- V128 stuff -- */
+            case Iop_InterleaveLO8x16: {
+               /* This turns up a lot in Memcheck instrumentation of
+                  Icc generated code.  I don't know why. */
+               UShort arg1 =  e->Iex.Binop.arg1->Iex.Const.con->Ico.V128;
+               UShort arg2 =  e->Iex.Binop.arg2->Iex.Const.con->Ico.V128;
+               if (0 == arg1 && 0 == arg2) {
+                  e2 = IRExpr_Const(IRConst_V128(0));
+               } else {
+                  goto unhandled;
+               }
+               break;
+            }
 
             default:
                goto unhandled;
@@ -1908,7 +2014,10 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             case Iop_And8:
             case Iop_And16:
             case Iop_And64:
-               /* And8/And16/And64(t,t) ==> t, for some IRTemp t */
+            case Iop_AndV128:
+            case Iop_AndV256:
+               /* And8/And16/And64/AndV128/AndV256(t,t) 
+                  ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
@@ -1916,7 +2025,8 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                break;
 
             case Iop_OrV128:
-               /* V128(t,t) ==> t, for some IRTemp t */
+            case Iop_OrV256:
+               /* V128/V256(t,t) ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
@@ -1986,8 +2096,9 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
    /* Show cases where we've found but not folded 'op(t,t)'. */
    if (0 && e == e2 && e->tag == Iex_Binop 
        && sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-      vex_printf("IDENT: ");
-      ppIRExpr(e); vex_printf("\n");
+      vex_printf("vex iropt: fold_Expr: no ident rule for: ");
+      ppIRExpr(e);
+      vex_printf("\n");
    }
 
    /* Show the overall results of folding. */
@@ -2006,7 +2117,7 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
    vpanic("fold_Expr: no rule for the above");
 #  else
    if (vex_control.iropt_verbosity > 0) {
-      vex_printf("vex iropt: fold_Expr: no rule for: ");
+      vex_printf("vex iropt: fold_Expr: no const rule for: ");
       ppIRExpr(e);
       vex_printf("\n");
    }

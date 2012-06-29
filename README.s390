@@ -14,10 +14,10 @@ Limitations
 - Currently, only memcheck, massif, lackey, and none are supported
 - helgrind and drd seem to work on SLES10,11 and RHEL5,6 on z9,z10 and z196
   but might fail on other hardware/software combinations.
+- exp-sgcheck, cachegrind, and callgrind are currently not supported.
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect some
   debug messages. Valgrind will complain about 4 or 8 one-byte reads/writes
   instead of just 1 read/write.
-- exp-ptrcheck and callgrind are not supported.
 
 
 Recommendations

@@ -272,8 +272,10 @@ typedef
       Ico_F64,   /* 64-bit IEEE754 floating */
       Ico_F64i,  /* 64-bit unsigned int to be interpreted literally
                     as a IEEE754 double value. */
-      Ico_V128   /* 128-bit restricted vector constant, with 1 bit
+      Ico_V128,  /* 128-bit restricted vector constant, with 1 bit
                     (repeated 8 times) for each of the 16 x 1-byte lanes */
+      Ico_V256   /* 256-bit restricted vector constant, with 1 bit
+                    (repeated 8 times) for each of the 32 x 1-byte lanes */
    }
    IRConstTag;
 
@@ -295,6 +297,7 @@ typedef
          Double F64;
          ULong  F64i;
          UShort V128;   /* 16-bit value; see Ico_V128 comment above */
+         UInt   V256;   /* 32-bit value; see Ico_V256 comment above */
       } Ico;
    }
    IRConst;
@@ -310,6 +313,7 @@ extern IRConst* IRConst_F32i ( UInt );
 extern IRConst* IRConst_F64  ( Double );
 extern IRConst* IRConst_F64i ( ULong );
 extern IRConst* IRConst_V128 ( UShort );
+extern IRConst* IRConst_V256 ( UInt );
 
 /* Deep-copy an IRConst */
 extern IRConst* deepCopyIRConst ( IRConst* );

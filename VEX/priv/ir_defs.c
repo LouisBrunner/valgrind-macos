@@ -86,6 +86,7 @@ void ppIRConst ( IRConst* con )
                      break;
       case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
       case Ico_V128: vex_printf( "V128{0x%04x}", (UInt)(con->Ico.V128)); break;
+      case Ico_V256: vex_printf( "V256{0x%08x}", con->Ico.V256); break;
       default: vpanic("ppIRConst");
    }
 }
@@ -1441,6 +1442,13 @@ IRConst* IRConst_V128 ( UShort con )
    IRConst* c  = LibVEX_Alloc(sizeof(IRConst));
    c->tag      = Ico_V128;
    c->Ico.V128 = con;
+   return c;
+}
+IRConst* IRConst_V256 ( UInt con )
+{
+   IRConst* c  = LibVEX_Alloc(sizeof(IRConst));
+   c->tag      = Ico_V256;
+   c->Ico.V256 = con;
    return c;
 }
 
@@ -2920,6 +2928,7 @@ IRType typeOfIRConst ( IRConst* con )
       case Ico_F64:   return Ity_F64;
       case Ico_F64i:  return Ity_F64;
       case Ico_V128:  return Ity_V128;
+      case Ico_V256:  return Ity_V256;
       default: vpanic("typeOfIRConst");
    }
 }

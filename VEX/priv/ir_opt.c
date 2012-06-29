@@ -958,7 +958,10 @@ static UInt num_nodes_visited;
    Get's, GetI's or Load's, even when accessing the same location, will be
    assumed to compute different values. After all the accesses may happen
    at different times and the guest state / memory can have changed in
-   the meantime. */
+   the meantime.
+
+   XXX IMPORTANT XXX the two expressions must have the same IR type.
+   DO NOT CALL HERE WITH DIFFERENTLY-TYPED EXPRESSIONS. */
 
 /* JRS 20-Mar-2012: split sameIRExprs_aux into a fast inlineable
    wrapper that deals with the common tags-don't-match case, and a
@@ -1076,6 +1079,30 @@ static Bool sameIRExprs ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 }
 
 
+/* Debugging-only hack (not used in production runs): make a guess
+   whether sameIRExprs might assert due to the two args being of
+   different types.  If in doubt return False.  Is only used when
+   --vex-iropt-level > 0, that is, vex_control.iropt_verbosity > 0.
+   Bad because it duplicates functionality from typeOfIRExpr.  See
+   comment on the single use point below for rationale. */
+static
+Bool debug_only_hack_sameIRExprs_might_assert ( IRExpr* e1, IRExpr* e2 )
+{
+   if (e1->tag != e2->tag) return False;
+   switch (e1->tag) {
+      case Iex_Const: {
+         /* The only interesting case */
+         IRConst *c1 = e1->Iex.Const.con;
+         IRConst *c2 = e2->Iex.Const.con;
+         return c1->tag != c2->tag;
+      }
+      default:
+         break;
+   }
+   return False;
+}
+
+
 /* Is this literally IRExpr_Const(IRConst_U32(0)) ? */
 static Bool isZeroU32 ( IRExpr* e )
 {
@@ -1141,6 +1168,7 @@ static Bool notBool ( Bool b )
 static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 {
    switch (op) {
+      case Iop_CmpNE32: return IRExpr_Const(IRConst_U1(toBool(0)));
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
       case Iop_Sub32:
@@ -1157,6 +1185,7 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 static IRExpr* mkOnesOfPrimopResultType ( IROp op )
 {
    switch (op) {
+      case Iop_CmpEQ32:
       case Iop_CmpEQ64:
          return IRExpr_Const(IRConst_U1(toBool(1)));
       case Iop_Or8:
@@ -2066,13 +2095,15 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                break;
 
             case Iop_Sub32:
-               /* Sub32(t,t) ==> 0, for some IRTemp t */
+            case Iop_CmpNE32:
+               /* Sub32/CmpNE32(t,t) ==> 0, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
                break;
 
+            case Iop_CmpEQ32:
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ8x16:
@@ -2114,8 +2145,26 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
       break;
    }
 
-   /* Show cases where we've found but not folded 'op(t,t)'. */
-   if (0 && e == e2 && e->tag == Iex_Binop 
+   /* Show cases where we've found but not folded 'op(t,t)'.  Be
+      careful not to call sameIRExprs with values of different types,
+      though, else it will assert (and so it should!).  We can't
+      conveniently call typeOfIRExpr on the two args without a whole
+      bunch of extra plumbing to pass in a type env, so just use a
+      hacky test to check the arguments are not anything that might
+      sameIRExprs to assert.  This is only OK because this kludge is
+      only used for debug printing, not for "real" operation.  For
+      "real" operation (ie, all other calls to sameIRExprs), it is
+      essential that the to args have the same type.
+ 
+      The "right" solution is to plumb the containing block's
+      IRTypeEnv through to here and use typeOfIRExpr to be sure.  But
+      that's a bunch of extra parameter passing which will just slow
+      down the normal case, for no purpose. */
+   if (vex_control.iropt_verbosity > 0 
+       && e == e2 
+       && e->tag == Iex_Binop
+       && !debug_only_hack_sameIRExprs_might_assert(e->Iex.Binop.arg1,
+                                                    e->Iex.Binop.arg2)
        && sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
       vex_printf("vex iropt: fold_Expr: no ident rule for: ");
       ppIRExpr(e);

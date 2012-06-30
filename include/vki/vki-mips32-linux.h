@@ -95,16 +95,14 @@ typedef unsigned long long __vki_u64;
 #define VKI_SIG_SETMASK     3    /* for setting the signal mask */
 
 /* Type of a signal handler.  */
-typedef void (*__vki_signalfn_t)(int);
+typedef void __vki_signalfn_t(int);
 typedef __vki_signalfn_t __user *__vki_sighandler_t;
 
 typedef void __vki_restorefn_t(void);
 typedef __vki_restorefn_t __user *__vki_sigrestore_t;
 
-/* Fake signal functions */
-#define VKI_SIG_DFL	((__vki_signalfn_t)0)	/* default signal handling */
-#define VKI_SIG_IGN	((__vki_signalfn_t)1)	/* ignore signal */
-#define VKI_SIG_ERR	((__vki_signalfn_t)-1)	/* error return from signal */
+#define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
+#define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
 
 #define _VKI_NSIG		128
 #define _VKI_NSIG_BPW	32

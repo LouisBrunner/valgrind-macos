@@ -66,6 +66,8 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 
 * Increased limit for the --num-callers command line flag to 500.
 
+* Improved DWARF4 support (284124)
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -78,6 +80,30 @@ not entered into bugzilla tend to get forgotten about or ignored.
 To see details of a given bug, visit
 https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
+
+284864  vex amd64->IR: 0xC5 0xF9 0x57 0xC0 0xC5 0xFA 0x10 0x15
+285725  vex amd64->IR: 0xC5 0xF9 0x28 0xD0 0xC5 0xFB
+286497  amd64 + vex: unhandled vcvtsi2ss instruction
+286596  Lack of support for several SSE instructions
+287307  vex amd64->IR: 0xC5 0xF9 0x57 0xC0 0x48 0x89 0xC7 0xE8
+288995  vex amd64->IR: 0xC5 0xF8 0x57 0xC0 0xC5 0xFA 0x11
+289656  vex amd64->IR: 0xC5 0xF0 0x57 0xC9 0x66 0xF 0x2F 0xC8
+292300  unhandled instruction, vmovd in 32bit
+292493  Invalid Instruction in optimized glibc __mpn_construct_double
+292841  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x10 0x5 0xD0 0x7B
+  == 273475 (canonical avx)
+
+285662  Memcheck needs to replace memcpy/memmove (and most certainly others)
+        in VG_Z_LIBC_SONAME on Darwin
+        == OSX memcpy/memmove intercept problems (Gary Kwong), Moz #710438
+
+715750 (moz)
+  OSX: Large numbers of incorrect invalid-address errors near 0xFFFFxxxx
+
+286384  configure fails "checking for a supported version of gcc"
+        when compiler is called x86_64-pc-linux-gnu-gcc
+
+-- sorted (ish) after this point
 
 197914  Building valgrind from svn now requires automake-1.10
 203877  increase to 16Mb maximum allowed alignment for memalign() and posix_memalign
@@ -93,9 +119,14 @@ where XXXXXX is the bug number as listed below.
 282230  group allocator for small fixed size, use it for MC_Chunk/SEc vbit
 283413  Fix wrong sanity check
 283671  Robustize alignment computation in LibVEX_Alloc
+283961  Adding support for some HCI IOCTLs
+284124  parse_type_DIE: confused by: DWARF 4
+285219  Too-restrictive constraints for Thumb2 "SP plus/minus register"
+286261  [patch] add wrapper for linux I2C_RDWR ioctl
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
 287260  Incorrect conditional jump or move depends on uninitialised value(s)
+287301  vex amd64->IR: 0x66 0xF 0x38 0x41 0xC0 0xB8 0x0 0x0 (PHMINPOSUW)
 287858  VG_(strerror): unknown error 
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
 289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks

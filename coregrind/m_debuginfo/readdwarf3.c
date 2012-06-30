@@ -2588,8 +2588,14 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       if (is_decl && (!is_spec)) {
          /* It's a DW_AT_declaration.  We require the name but
             nothing else. */
+         /* JRS 2012-06-28: following discussion w/ tromey, if the the
+            type doesn't have name, just make one up, and accept it.
+            It might be referred to by other DIEs, so ignoring it
+            doesn't seem like a safe option. */
          if (typeE.Te.TyStOrUn.name == NULL)
-            goto bad_DIE;
+            typeE.Te.TyStOrUn.name
+               = ML_(dinfo_strdup)( "di.readdwarf3.ptD.struct_type.3",
+                                    "<anon_struct_type>" );
          typeE.Te.TyStOrUn.complete = False;
          /* JRS 2009 Aug 10: <possible kludge>? */
          /* Push this tyent on the stack, even though it's incomplete.

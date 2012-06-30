@@ -434,7 +434,7 @@ Int VG_(machine_arm_archlevel) = 4;
 /* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64) \
-    || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32)
+    || defined(VGA_arm) || defined(VGA_s390x)
 #include "pub_tool_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
 static void handler_unsup_insn ( Int x ) {

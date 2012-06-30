@@ -289,3 +289,50 @@ missing unwind info
 299053] New: [patch] Support DWARF4 DW_AT_high_pc constant form
 
 -- Sun 29 Apr 2012, near midnight.
+
+299104] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xF8 0x57 0xC0 0x48 0x89 0xE5 0x41
+299316] New: Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr' failed.
+299629] New: dup3() syscall (358) support is missing for ARM
+299694] New: POWER Processor decimal floating point instruction support missing, part 5
+299756] New: asymmetric --malloc-fill/--free-fill behavior with mempools
+299803] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xF1 0x57 0xC9 0xC5 0xF9 0x2E 0xC8
+99804] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x2A 0xC2 0xC5 0xFB 0x59 0x5
+299805] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xFA 0x10 0x5 0x6D 0xDD 0x0 0x0
+00102] New: memcheck tester
+300128] New: valgrind exits traced program writing to non-existent popen()
+300140] New: ARM - Missing (T2) SMMUL
+300195] New: read_elf_debug_info() should accept 'executable' .got sections
+300389] New: AMD Bulldozer system: vex: priv/main_main.c:315 (LibVEX_Translate): Assertion `are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps)' failed.
+300414] New: FCOM and FCOMP unimplemented for amd64 guest
+
+294260] vex: the 'impossible' happened:  disInstr_AMD64: disInstr miscalculated next %rip  -- IS FIXED?
+
+270777 -- the mips port, is fixed
+301011] New: vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xDE
+301204] New: infinite loop in canonicaliseSymtab with ifunc symbol
+301229] New: posix_memalign fails for 2MB alignment
+301265] New: add x86 support to Android build
+301269] New: optimize Memcheck to use light tracking for trusted code
+301280] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB 0x55 0x48 0x89 0xE5 0x41 0x56
+301281] New: valgrind hangs on OS X when the process calls system()
+301336] New: Valgrind vassert(0) in dis_neon_data_2reg_misc()
+301830] New: mtV : improve Valgrind so that it runs multiple threads in parallel
+301902] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB 0xF 0x1F 0x0 0x40 0x38 0xFE
+301922] New: gcc -O2 problem with SSE optimization?
+301967] New: unhandled instruction bytes 0xC5 0xF9 0x6E 0x40 in /lib32/ld-2.14.1.so
+301984] New: configure script doesn't detect certain versions of clang
+302205] New: Fix compiler warnings for POWER VEX code and POWER test cases
+302234] New: fesetround() function does not affect FPU calculations
+302271] New: Bug with Callgrind dump-instr and Trace-children
+302287] New: Unhandled movbe instruction on Atom processors
+302271] Bug with Callgrind dump-instr and Trace-children
+302370] New: The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate the result even when the result is QNAN or SNAN.
+302536] New: Fix for the POWER Valgrind regression test: memcheck-ISA2.0.
+302578] New: Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
+302630] New: Memcheck on ultithreaded program fails with Assertion 'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
+302656] New: Unhandled instruction (vcvtsi2ssq)
+302700] New: Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
+302709] New: valgrind for ARM needs extra tls support for android emulator under Linux
+302800] New: valgrind change the operator new's alloctor into system's
+
+-- Sat 30 June 2012, near midnight.

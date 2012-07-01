@@ -165,6 +165,7 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
         and non reset of "C-ontinued" signal
 297147  drd false positives on newly allocated memory
+297976  s390x: revisit EX implementation
 297991  Valgrind interferes with mmap()+ftell() 
 297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
 297993  Fix compilation of valgrind with gcc -g3.
@@ -178,6 +179,7 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 301229  dup of 203877, see above.
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
+
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

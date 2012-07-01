@@ -94,8 +94,6 @@ get fixed.
 290384  Valgrind does not show line numbers
   on 32 bit FC16
 
-293751  Unhandled instruction in Cocoa Apps ( Intel Core i7,  MacOS X 10.7.2 )
-
 290673  wine+valgrind: failed to start tool 'memcheck' for platform
         'x86-linux': No such  file or directory
   probably invalid; build config problem?
@@ -104,9 +102,6 @@ get fixed.
 
 291310  FXSAVE instruction marks memory as undefined on amd64
   x86 vs amd64 inconsistency?
-
-291865  s390x: Support Compare Double and Swap
-  in progress
 
 291924  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x38 0x31
   invalid (SSE4)
@@ -181,21 +176,17 @@ missing unwind info
 296578] New: vex amd64->IR: unhandled instruction bytes: 0x60 0x0 0x0 0x0 0x0 0x0 0x0 0x0
 296792] New: [PATCH] valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
 296947] New: vex amd64->IR: unhandled instruction bytes: 0x1F 0x7 0x0 0x0 0x0 0x0
-296983] New: build issues on x86_64
-297147] New: drd false positives on newly allocated memory
 297329] New: VEX should disallow decoding of IBM Power Decimal Floating Point instructions on machines that do not support it
 297407] New: Failed reading debug information for Fortran codes; invalid cuOff
 297497] New: POWER Processor decimal floating point instruction support missing
 297701] New: Another alias for strncasecmp_l in libc-2.13.so
 297911] New: valgrind does not report 'invalid write' when using APIs for custom memory allocators.
-297976] New: s390x: revisit EX implementation
 298080] New: POWER Processor decimal floating point instruction support missing, part 3
  298097] New: on ppc32 (e500mc core) target, valgrind report a app a mem error but the app is good to me.
 298227] New: valgrind unhandled instruction (vex amd64->IR: unhandled instruction bytes: 0xC5 0xF8 0x57 0xC0 0x48 0xC7 0x43 0x58)
 298281] New: wcslen causes false(?) uninitialised value warnings
 298335] New: Valgrind crashes after "vex amd64->IR: unhandled instruction bytes: 0xC5 0xF9 0x57 0xC0 0x48 0x8B 0x35 0x3"
 298354] New: Unhandled ARM Thumb instruction 0xEB0D 0x0585 (streq)
-298394] New: s390x: valgrind is not future proof
 298421] New: accept4() syscall (366) support is missing for ARM
 298546] New: wishlist: track virtual memory leaks due to mmap without munmap
 298718] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB1 0xCB 0x9C 0x8F 0x45

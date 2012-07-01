@@ -223,7 +223,6 @@ missing unwind info
 300414] New: FCOM and FCOMP unimplemented for amd64 guest
 
 
-270777 -- the mips port, is fixed
 301011] New: vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xDE
 301204] New: infinite loop in canonicaliseSymtab with ifunc symbol
 301265] New: add x86 support to Android build

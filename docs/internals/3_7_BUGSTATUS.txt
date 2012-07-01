@@ -135,7 +135,6 @@ get fixed.
 -- 16 Feb 2012
 
 294254] New: False "invalid read" errors for aligned SSE loads
-294260] New: vex: the 'impossible' happened:  disInstr_AMD64: disInstr miscalculated next %rip
 294285] New: --partial-loads-ok does not work for 16-byte SSE loads
 294454] New: delphi uses 16-bit addressing in the TEB (%fs)
 294523] New: --partial-loads-ok=yes causes false negatives
@@ -223,7 +222,6 @@ missing unwind info
 300389] New: AMD Bulldozer system: vex: priv/main_main.c:315 (LibVEX_Translate): Assertion `are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps)' failed.
 300414] New: FCOM and FCOMP unimplemented for amd64 guest
 
-294260] vex: the 'impossible' happened:  disInstr_AMD64: disInstr miscalculated next %rip  -- IS FIXED?
 
 270777 -- the mips port, is fixed
 301011] New: vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xDE

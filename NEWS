@@ -154,6 +154,7 @@ where XXXXXX is the bug number as listed below.
 294185  INT 0x44 (and others) not supported on x86 guest, but used by Jikes RVM
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
 294191  Guest amd64 lacks fnsave/frstor and 0x66 size prefixes on FP instructions
+294260  vex: the 'impossible' happened:  disInstr_AMD64: disInstr miscalculated next %rip
 294812  patch allowing to run (on x86 at least) helgrind/drd on tool.
 295089  can not annotate source for both helgrind and drd
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 

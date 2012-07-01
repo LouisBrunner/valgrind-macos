@@ -129,14 +129,35 @@ where XXXXXX is the bug number as listed below.
 287301  vex amd64->IR: 0x66 0xF 0x38 0x41 0xC0 0xB8 0x0 0x0 (PHMINPOSUW)
 287858  VG_(strerror): unknown error 
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
+289823  (duplicate of 293754) vex amd64->IR: 0x66 0xF 0x3A 0x60 0xCA 0x45 0x66 0xF
 289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks
 290655  Add support for AESKEYGENASSIST instruction 
+290719  valgrind-3.7.0 fails with automake-1.11.2 due to"pkglibdir" usage
 290974  vgdb must align pages to VKI_SHMLBA (16KB) on ARM 
+291253  ES register not initialised in valgrind simulation
+291568  Fix 3DNOW-related crashes with baseline x86_64 CPU (w patch)
 291865  s390x: Support the "Compare Double and Swap" family of instructions
+292430  3.8.0svn build encounters unrecognized instruction in __intel_get_new_mem_ops_cpuid
+292626  Missing fcntl F_SETOWN_EX and F_GETOWN_EX support
+292627  Missing support for some SCSI ioctls
+292628  none/tests/x86/bug125959-x86.c triggers undefined behavior
+292993  implement the getcpu syscall on amd64-linux
+292995  Implement the “cross memory attach” syscalls introduced in Linux 3.2
 293088  Add some VEX sanity checks for ppc64 unhandled instructions
+293751  duplicate of 290655
+293754  PCMPxSTRx not implemented for 16-bit characters
+293755  (duplicate of 293754) No tests for PCMPxSTRx on 16-bit characters
+293808  CLFLUSH not supported by latest VEX for amd64
+294047  valgrind does not correctly emulate prlimit64(..., RLIMIT_NOFILE, ...)
+294048  MPSADBW instruction not implemented
 294055  regtest none/tests/shell fails when locale is not set to C
+294185  INT 0x44 (and others) not supported on x86 guest, but used by Jikes RVM
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
+294191  Guest amd64 lacks fnsave/frstor and 0x66 size prefixes on FP instructions
+294812  patch allowing to run (on x86 at least) helgrind/drd on tool.
+295089  can not annotate source for both helgrind and drd
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
+296422  Add translation chaining support
 296983  Fix build issues on x86_64/ppc64 without 32-bit toolchains
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
@@ -153,6 +174,8 @@ n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
 n-i-bz  Fix false positive in sys_clone on amd64 when optional args are not given (e.g. child_tidptr)
 n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 301229  dup of 203877, see above.
+301984  configure script doesn't detect certain versions of clang
+302205  Fix compiler warnings for POWER VEX code and POWER test cases
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

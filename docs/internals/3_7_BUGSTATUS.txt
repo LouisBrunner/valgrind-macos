@@ -72,10 +72,6 @@ get fixed.
 289584  Unhandled instruction: 0xF 0x29 0xE5 (MOVAPS)
   movaps reg,reg (w/ patch)
 
-289699  vgdb connection erroneously closed due to buffer overrun
-        when vgdb reads a burst of packets in relay mode
-  **3.7.1 FIXED r12319
-
 289836  Unhanded instructions mfatbu and mfatbl
   ppc e500 insns
 
@@ -85,10 +81,6 @@ get fixed.
 
 289912  link_tool_exe_darwin should not use relative paths
   unsupported build configuration; low prio
-
-289939  wish: complete monitor cmd 'leak_check' with details
-        about leaked or reachable blocks.
-  in progress; but not suitable for 3.7.1
 
 290006  memcheck doesn't mark %xmm as initialized after "pcmpeqw %xmm %xmm"
   easy fix; w/ patch
@@ -103,29 +95,15 @@ get fixed.
   on 32 bit FC16
 
 293751  Unhandled instruction in Cocoa Apps ( Intel Core i7,  MacOS X 10.7.2 )
-  == 290655  Add support for AESKEYGENASSIST instruction
-  **3.7.1 FIXED r12384 r2247
 
 290673  wine+valgrind: failed to start tool 'memcheck' for platform
         'x86-linux': No such  file or directory
   probably invalid; build config problem?
 
-290719  valgrind-3.7.0 fails with automake-1.11.2 due to"pkglibdir" usage
-  seems like low prio
-
-290974  vgdb must align pages to VKI_SHMLBA (16KB) on ARM
-  **3.7.1 FIXED r12366
-
 (Sun 8 Jan 2012)
-
-291253  ES register not initialised in valgrind simulation
-  FIXED, r12394.
 
 291310  FXSAVE instruction marks memory as undefined on amd64
   x86 vs amd64 inconsistency?
-
-291568  Fix 3DNOW-related crashes with baseline x86_64 CPU (w patch)
-  FIXED, r2259
 
 291865  s390x: Support Compare Double and Swap
   in progress
@@ -136,73 +114,23 @@ get fixed.
 292281  Not supported LL cache size of AMD Opteron 6176
   hmm, more cache size kludgery required
 
-292430  3.8.0svn build encounters unrecognized instruction in
-        __intel_get_new_mem_ops_cpuid
-  FIXED, r2255
-
-292626  Missing fcntl F_SETOWN_EX and F_GETOWN_EX support
-  FIXED, r12373
-
-292627  Missing support for some SCSI ioctls
-  FIXED, r12375
-
-292628  none/tests/x86/bug125959-x86.c triggers undefined behavior
-  FIXED, r12358
-
 292958  ARM SVC instructions with non-zero immediates are not supported.
   invalid
-
-292993  implement the getcpu syscall on amd64-linux
-  FIXED, r12371
-
-292995  Implement the “cross memory attach” syscalls introduced in Linux 3.2
-  FIXED, r12374
 
 278313  Fedora 15/x64: err read debug info with --read-var-info=yes flag
   seems complex; is reopened
 
-293088  Add some VEX sanity checks for ppc64 unhandled instructions
-  FIXED, r2249, r12387
-
-289823  vex amd64->IR: 0x66 0xF 0x3A 0x60 0xCA 0x45 0x66 0xF
-  == 293754  PCMPxSTRx not implemented for 16-bit characters
-  FIXED, r2254, r12389.
-
-293755  No tests for PCMPxSTRx on 16-bit characters
-  subsumed by 293754
 
 --- 10 Feb 2012
 
-293808  CLFLUSH not supported by latest VEX for amd64
-  FIXED, r2252
-
 293855  vex amd64->IR: 0x2F 0x55 0x73 0x65 0x72 0x73 0x2F 0x6A
   some problem with interceptors on Helgrind/OSX 
-
-294047  valgrind does not correctly emulate prlimit64(..., RLIMIT_NOFILE, ...)
-  FIXED r12411.
-
-294048  MPSADBW instruction not implemented
-  FIXED r2260, r12395.
-
-294055  valgrind regtest none/tests/shell fails when locale is not set to C
-  FIXED r12386
 
 294065  valgrind running wine does not find pdb file because of wrong path to egrep
   w/ somewhat dodgy patch
 
 294147  Exception in thread "main" java
   probably invalid
-
-294185  INT 0x44 (and others) not supported on x86 guest, but used by Jikes RVM
-  FIXED r2251
-
-294190  --vgdb-error=xxx can be out of sync with errors shown by valgrind
-        to the user
-  FIXED r12388
-
-294191  Guest amd64 lacks fnsave/frstor and 0x66 size prefixes on FP instructions
-  FIXED r2253
 
 -- 16 Feb 2012
 
@@ -214,12 +142,10 @@ get fixed.
 294552] New: svn trunk compilation stuck in mig
 294617] New: vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A
 294736] New: Valgrind crashes with Unrecognised instruction 0x48 0xF 0xD7 0xD6 0x48 0x83
-294812] New: patch allowing to run (on x86 at least) helgrind/drd on tool.
 294861] New: ./configure fails to locate Boost (located in /usr/local)
  295053] New: Valgrind fails to load some x86_64 Mac OS Lion executables
 295077] New: Client app registered are showed incorrectly when doing "info reg" from attached GDB
 295084] New: Hard-coded /usr/include
-295089] New: can not annotate source for both helgrind and drd
 251569] rdtscp not supported: vex amd64->IR: unhandled instruction bytes: 0xF 0x1 0xF9 0x8B 0x4C 0x24
 295221] New: POWER Processor decimal floating point instruction support missing
 295403] New: Memory access below SP with some STRD instructions.
@@ -231,7 +157,6 @@ get fixed.
 295528] New: callgrind_control -z --zero not working
 295590] New: Helgrind: hg_main.c:2298 (evh__HG_PTHREAD_COND_WAIT_POST): Assertion 'cvi->nWaiters > 0' failed.
 295617] New: ARM - Add some missing syscalls
-295799] New: Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes
 295808] New: vex amd64->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xC0 0x48 0x1 0xD0 0x48
 
 -- 11 March 2012
@@ -249,7 +174,6 @@ missing unwind info
 296311] New: Wrong stack traces due to -fomit-frame-pointer (x86)
 
 296318] New: Debug info improvements (more than one rx/rw mapping)
-296422] New: Add translation chaining support
 296457] New: vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x3A
 0xDF 0xD1 0x1 0xE8 0x6A
 296472] New: valgrind reports 32-bit uninitialized reads as "Uninitialised value of size 8" on x86_64
@@ -259,7 +183,6 @@ missing unwind info
 296792] New: [PATCH] valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
 296947] New: vex amd64->IR: unhandled instruction bytes: 0x1F 0x7 0x0 0x0 0x0 0x0
 296983] New: build issues on x86_64
-297078] New: gdbserver signal handling problems caused by diff vki nr/gdb nr and non reset of "C-ontinued" signal
 297147] New: drd false positives on newly allocated memory
 297329] New: VEX should disallow decoding of IBM Power Decimal Floating Point instructions on machines that do not support it
 297407] New: Failed reading debug information for Fortran codes; invalid cuOff
@@ -267,9 +190,6 @@ missing unwind info
 297701] New: Another alias for strncasecmp_l in libc-2.13.so
 297911] New: valgrind does not report 'invalid write' when using APIs for custom memory allocators.
 297976] New: s390x: revisit EX implementation
-297991] New: Valgrind interferes with mmap()+ftell()
-297992] New: Support pre-2.6.10 Linux systems (i.e. lack of WIFCONTINUED)
-297993] New: Generation of libvex_guest_offsets.h fails with -g3
 298080] New: POWER Processor decimal floating point instruction support missing, part 3
  298097] New: on ppc32 (e500mc core) target, valgrind report a app a mem error but the app is good to me.
 298227] New: valgrind unhandled instruction (vex amd64->IR: unhandled instruction bytes: 0xC5 0xF8 0x57 0xC0 0x48 0xC7 0x43 0x58)
@@ -285,7 +205,6 @@ missing unwind info
 298864] New: DWARF reader mis-parses DW_FORM_ref_addr
 298870] New: No support for DW_TAG_partial_unit
 298905] New: argv / argc to be changed to non valgrind values.
-298943] New: massif asserts with --pages-as-heap=yes when brk is chaning by value different of page size
 299053] New: [patch] Support DWARF4 DW_AT_high_pc constant form
 
 -- Sun 29 Apr 2012, near midnight.
@@ -294,11 +213,10 @@ missing unwind info
 299316] New: Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr' failed.
 299629] New: dup3() syscall (358) support is missing for ARM
 299694] New: POWER Processor decimal floating point instruction support missing, part 5
-299756] New: asymmetric --malloc-fill/--free-fill behavior with mempools
 299803] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xF1 0x57 0xC9 0xC5 0xF9 0x2E 0xC8
 99804] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x2A 0xC2 0xC5 0xFB 0x59 0x5
 299805] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0xFA 0x10 0x5 0x6D 0xDD 0x0 0x0
-00102] New: memcheck tester
+300102] New: memcheck tester
 300128] New: valgrind exits traced program writing to non-existent popen()
 300140] New: ARM - Missing (T2) SMMUL
 300195] New: read_elf_debug_info() should accept 'executable' .got sections
@@ -310,7 +228,6 @@ missing unwind info
 270777 -- the mips port, is fixed
 301011] New: vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xDE
 301204] New: infinite loop in canonicaliseSymtab with ifunc symbol
-301229] New: posix_memalign fails for 2MB alignment
 301265] New: add x86 support to Android build
 301269] New: optimize Memcheck to use light tracking for trusted code
 301280] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB 0x55 0x48 0x89 0xE5 0x41 0x56
@@ -320,8 +237,6 @@ missing unwind info
 301902] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB 0xF 0x1F 0x0 0x40 0x38 0xFE
 301922] New: gcc -O2 problem with SSE optimization?
 301967] New: unhandled instruction bytes 0xC5 0xF9 0x6E 0x40 in /lib32/ld-2.14.1.so
-301984] New: configure script doesn't detect certain versions of clang
-302205] New: Fix compiler warnings for POWER VEX code and POWER test cases
 302234] New: fesetround() function does not affect FPU calculations
 302271] New: Bug with Callgrind dump-instr and Trace-children
 302287] New: Unhandled movbe instruction on Atom processors

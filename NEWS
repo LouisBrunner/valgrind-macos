@@ -156,8 +156,12 @@ where XXXXXX is the bug number as listed below.
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
 294191  Guest amd64 lacks fnsave/frstor and 0x66 size prefixes on FP instructions
 294260  vex: the 'impossible' happened:  disInstr_AMD64: disInstr miscalculated next %rip
+294617  vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A
+294736  Valgrind crashes with Unrecognised instruction 0x48 0xF 0xD7 0xD6 0x48 0x83
 294812  patch allowing to run (on x86 at least) helgrind/drd on tool.
 295089  can not annotate source for both helgrind and drd
+295221  POWER Processor decimal floating point instruction support missing
+295428  coregrind/m_main.c has incorrect x86 assembly for darwin
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
 296422  Add translation chaining support
 296983  Fix build issues on x86_64/ppc64 without 32-bit toolchains

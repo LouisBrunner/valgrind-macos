@@ -77,7 +77,7 @@ get fixed.
 
 289839  s390x:Provide support for unicode conversion instruction
         like cu21,cu12,cu42 etc.
-  s390
+  s390  This will not be ready for 3.8.0
 
 289912  link_tool_exe_darwin should not use relative paths
   unsupported build configuration; low prio
@@ -129,26 +129,18 @@ get fixed.
 
 -- 16 Feb 2012
 
-294254] New: False "invalid read" errors for aligned SSE loads
 294285] New: --partial-loads-ok does not work for 16-byte SSE loads
 294454] New: delphi uses 16-bit addressing in the TEB (%fs)
 294523] New: --partial-loads-ok=yes causes false negatives
 294552] New: svn trunk compilation stuck in mig
-294617] New: vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A
-294736] New: Valgrind crashes with Unrecognised instruction 0x48 0xF 0xD7 0xD6 0x48 0x83
 294861] New: ./configure fails to locate Boost (located in /usr/local)
  295053] New: Valgrind fails to load some x86_64 Mac OS Lion executables
-295077] New: Client app registered are showed incorrectly when doing "info reg" from attached GDB
 295084] New: Hard-coded /usr/include
 251569] rdtscp not supported: vex amd64->IR: unhandled instruction bytes: 0xF 0x1 0xF9 0x8B 0x4C 0x24
-295221] New: POWER Processor decimal floating point instruction support missing
 295403] New: Memory access below SP with some STRD instructions.
-295414] New: link to bugzilla is broken from web page
 295427] New: building i386 support with clang on darwin11 requires -new_linker linker option
-295428] New: coregrind/m_main.c has incorrect x86 assembly for darwin
 295472] New: "executable has wrong endian-ness" when target executable has correct endianess
 295514] New: unhandled instruction bytes : 0x66 0x9C (pushfw on x86_64)
-295528] New: callgrind_control -z --zero not working
 295590] New: Helgrind: hg_main.c:2298 (evh__HG_PTHREAD_COND_WAIT_POST): Assertion 'cvi->nWaiters > 0' failed.
 295617] New: ARM - Add some missing syscalls
 295808] New: vex amd64->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xC0 0x48 0x1 0xD0 0x48

@@ -130,8 +130,10 @@ extern Char* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 extern UChar VG_(clo_trace_flags);
 /* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_profile_flags);
-/* DEBUG: if tracing codegen, be quiet until after this bb ( 0 ) */
+/* DEBUG: if tracing codegen, be quiet until after this bb */
 extern Int   VG_(clo_trace_notbelow);
+/* DEBUG: if tracing codegen, be quiet after this bb  */
+extern Int   VG_(clo_trace_notabove);
 /* DEBUG: print system calls?  default: NO */
 extern Bool  VG_(clo_trace_syscalls);
 /* DEBUG: print signal details?  default: NO */

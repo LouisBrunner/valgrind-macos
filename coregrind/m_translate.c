@@ -1420,6 +1420,7 @@ Bool VG_(translate) ( ThreadId tid,
    }
    else
    if ( (VG_(clo_trace_flags) > 0
+        && VG_(get_bbs_translated)() <= VG_(clo_trace_notabove)
         && VG_(get_bbs_translated)() >= VG_(clo_trace_notbelow) )) {
       verbosity = VG_(clo_trace_flags);
    }

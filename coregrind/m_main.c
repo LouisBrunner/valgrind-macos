@@ -205,6 +205,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
 "    --trace-notbelow=<number> only show BBs above <number> [999999999]\n"
+"    --trace-notabove=<number> only show BBs below <number> [0]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
@@ -237,7 +238,7 @@ static void usage_NORETURN ( Bool debug_help )
 "       0000 0100   show selecting insns\n"
 "       0000 0010   show after reg-alloc\n"
 "       0000 0001   show final assembly\n"
-"      (Nb: you need --trace-notbelow with --trace-flags for full details)\n"
+"      (Nb: you need --trace-notbelow and/or --trace-notabove with --trace-flags for full details)\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
@@ -686,6 +687,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_INT_CLO (arg, "--trace-notbelow", VG_(clo_trace_notbelow)) {}
 
+      else if VG_INT_CLO (arg, "--trace-notabove", VG_(clo_trace_notabove)) {}
+
       else if VG_XACT_CLO(arg, "--gen-suppressions=no",
                                VG_(clo_gen_suppressions), 0) {}
       else if VG_XACT_CLO(arg, "--gen-suppressions=yes",
@@ -719,6 +722,24 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
+
+   if (VG_(clo_trace_notbelow) == -1) {
+     if (VG_(clo_trace_notabove) == -1) {
+       /* [] */
+       VG_(clo_trace_notbelow) = 2147483647;
+       VG_(clo_trace_notabove) = 0;
+     } else {
+       /* [0 .. notabove] */
+       VG_(clo_trace_notbelow) = 0;
+     }
+   } else {
+     if (VG_(clo_trace_notabove) == -1) {
+       /* [notbelow .. ]  */
+       VG_(clo_trace_notabove) = 2147483647;
+     } else {
+       /* [notbelow .. notabove]  */
+     }
+   }
 
    VG_(dyn_vgdb_error) = VG_(clo_vgdb_error);
 

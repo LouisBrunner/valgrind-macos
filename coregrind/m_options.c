@@ -81,7 +81,8 @@ Int    VG_(clo_n_fullpath_after) = 0;
 Char*  VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 UChar  VG_(clo_trace_flags)    = 0; // 00000000b
 UChar  VG_(clo_profile_flags)  = 0; // 00000000b
-Int    VG_(clo_trace_notbelow) = 999999999;
+Int    VG_(clo_trace_notbelow) = -1;  // unspecified
+Int    VG_(clo_trace_notabove) = -1;  // unspecified
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
 Bool   VG_(clo_trace_symtab)   = False;

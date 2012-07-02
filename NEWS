@@ -169,12 +169,23 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
         and non reset of "C-ontinued" signal
 297147  drd false positives on newly allocated memory
+297329  VEX should disallow decoding of IBM Power Decimal Floating Point 
+        instructions on machines that do not support it
+297497  POWER Processor decimal floating point instruction support missing
 297976  s390x: revisit EX implementation
 297991  Valgrind interferes with mmap()+ftell() 
 297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
 297993  Fix compilation of valgrind with gcc -g3.
+298080  POWER Processor decimal floating point instruction support missing, part 3
+298354  Unhandled ARM Thumb instruction 0xEB0D 0x0585 (streq)
 298394  s390x: Don't bail out on an unknown machine model. Assume it's a new model.
+298421  accept4() syscall (366) support is missing for ARM
+298718  vex amd64->IR: unhandled instruction bytes: 0xF 0xB1 0xCB 0x9C 0x8F 0x45
+298732  valgrind installation problem in ubuntu with kernel version 3.x
+298862  POWER Processor decimal floating point instruction support missing, part 4
+298864  DWARF reader mis-parses DW_FORM_ref_addr
 298943  massif asserts with --pages-as-heap=yes when brk is changing by value different of page size
+299053  Support DWARF4 DW_AT_high_pc constant form
 299756  For symmetry, --free-fill must be ignored for MEMPOOL_FREE and FREELIKE client requests
 n-i-bz  Bypass gcc4.4/4.5 wrong code generation causing out of memory or asserts
 n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32

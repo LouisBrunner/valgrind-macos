@@ -32,7 +32,7 @@ sed \
 -e "s/ (\([a-zA-Z_]*\.h\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.cpp\):[0-9]*)/ (\1:?)/" \
 -e "s/\( name [^ ]*\)-[0-9]*\( oflag \)/\1\2/" \
--e '/^    by 0x[0-9a-fA-F]*: process_dl_debug \(in \/lib.*\/ld-[0-9.]*\.so\)$/d' \
+-e '/^    by 0x[0-9a-fA-F.]*: process_dl_debug \(in \/lib.*\/ld-[0-9.]*\.so\)$/d' \
 -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" |
 
 # Remove the message that more than hundred errors have been detected

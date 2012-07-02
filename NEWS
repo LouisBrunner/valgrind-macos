@@ -186,14 +186,32 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
 298864  DWARF reader mis-parses DW_FORM_ref_addr
 298943  massif asserts with --pages-as-heap=yes when brk is changing by value different of page size
 299053  Support DWARF4 DW_AT_high_pc constant form
+299104  vex amd64->IR: unhandled instruction bytes: 0xC5 0xF8 0x57 0xC0 0x48 0x89 0xE5 0x41
+        == 273475 (canonical avx)
+299316  Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr' failed.
+299694  POWER Processor decimal floating point instruction support missing, part 5
 299756  For symmetry, --free-fill must be ignored for MEMPOOL_FREE and FREELIKE client requests
+299803  vex amd64->IR: unhandled instruction bytes: 0xC5 0xF1 0x57 0xC9 0xC5 0xF9 0x2E 0xC8
+        == 273475 (canonical avx)
+299804  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x2A 0xC2 0xC5 0xFB 0x59 0x5
+        == 273475 (canonical avx)
+299805  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFA 0x10 0x5 0x6D 0xDD 0x0 0x0
+        == 273475 (canonical avx)
 n-i-bz  Bypass gcc4.4/4.5 wrong code generation causing out of memory or asserts
 n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
 n-i-bz  Fix false positive in sys_clone on amd64 when optional args are not given (e.g. child_tidptr)
 n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
+300389  AMD Bulldozer system: vex: priv/main_main.c:315 (LibVEX_Translate):
+        Assertion `are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps)' failed.
+300414  FCOM and FCOMP unimplemented for amd64 guest
 301229  dup of 203877, see above.
+301967  unhandled instruction bytes 0xC5 0xF9 0x6E 0x40 in /lib32/ld-2.14.1.so
+        == 273475 (canonical avx)
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
+302536  Fix for the POWER Valgrind regression test: memcheck-ISA2.0.
+302656  Unhandled instruction (vcvtsi2ssq)
+        == 273475 (canonical avx)
 
 
 Release 3.7.0 (5 November 2011)

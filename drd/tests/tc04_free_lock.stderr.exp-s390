@@ -8,7 +8,6 @@ mutex 0x........ was first observed at:
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: bar (tc04_free_lock.c:40)
-   by 0x........: process_dl_debug (in /lib64/ld-2.3.4.so)
    by 0x........: ???
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
@@ -17,7 +16,6 @@ mutex 0x........ was first observed at:
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: foo (tc04_free_lock.c:49)
-   by 0x........: process_dl_debug (in /lib64/ld-2.3.4.so)
    by 0x........: ???
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)

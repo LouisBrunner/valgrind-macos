@@ -509,10 +509,10 @@ static inline UWord getERR ( SyscallStatus* st ) {
    in memory at the highest address.
 */
 #if (defined(VGP_mips32_linux) && defined (_MIPSEB))
- #define PSRAn_BE(n,s,t,a)                                         \
-    do {                                                           \
+ #define PSRAn_BE(n,s,t,a)                                        \
+    do {                                                          \
       Addr next = layout->s_arg##n + sizeof(UWord) +              \
-                  VG_(threads)[tid].arch.vex.guest_r29;           \
+                  VG_(get_SP)(tid);                               \
       vg_assert(sizeof(t) <= sizeof(UWord));                      \
       VG_(tdict).track_pre_mem_read(                              \
          Vg_CoreSysCallArgInMem, tid, s"("#a")",                  \

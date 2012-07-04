@@ -1,3 +1,4 @@
 prereq: ./supported_libpthread
 vgopts: --check-stack-var=yes
 prog: ../../helgrind/tests/tc04_free_lock
+stderr_filter: filter_stderr

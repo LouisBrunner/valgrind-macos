@@ -8,6 +8,8 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 * Support for intel AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
   AESDEC, AESDECLAST, AESIMC). Only supported for 64 bit architecture.
 
+* Support for Intel AVX instructions.
+
 * ==================== TOOL CHANGES ====================
 
 * Massif
@@ -164,6 +166,7 @@ where XXXXXX is the bug number as listed below.
 295428  coregrind/m_main.c has incorrect x86 assembly for darwin
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
 296422  Add translation chaining support
+296457  vex amd64->IR: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A (dup of AES)
 296983  Fix build issues on x86_64/ppc64 without 32-bit toolchains
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
@@ -205,8 +208,6 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
         Assertion `are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps)' failed.
 300414  FCOM and FCOMP unimplemented for amd64 guest
 301229  dup of 203877, see above.
-301967  unhandled instruction bytes 0xC5 0xF9 0x6E 0x40 in /lib32/ld-2.14.1.so
-        == 273475 (canonical avx)
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
 302536  Fix for the POWER Valgrind regression test: memcheck-ISA2.0.

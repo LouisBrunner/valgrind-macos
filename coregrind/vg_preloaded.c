@@ -89,6 +89,27 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
     return (void*)result;
 }
 
+#if defined(ANDROID_HARDWARE_emulator)
+/* When running on android emulator, we get the following error when doing
+     ./valgrind date
+
+   link_image[1921]:   494 could not load needed library
+   '/data/local/Inst/lib/valgrind/vgpreload_core-arm-linux.so' for 'date'
+   (reloc_library[1285]:   494 cannot locate '__cxa_finalize'...
+   )CANNOT LINK EXECUTABLE
+
+   This problem is bypassed by adding the below function.
+   Do not ask me to explain neither the problem nor the solution.
+*/
+extern void __cxa_finalize(void);
+void __cxa_finalize(void)
+{
+   // ??? what should we do here ? Silently do nothing looks not sane.
+   // So, try to crash:
+   *(volatile int *)0 = 'x';
+}
+#endif
+
 #elif defined(VGO_darwin)
 
 #include "config.h" /* VERSION */

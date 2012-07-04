@@ -5536,6 +5536,13 @@ POST(sys_ioctl)
    /* END Pandaboard specific ioctls */
 
 
+#  elif defined(ANDROID_HARDWARE_emulator)
+
+   /* BEGIN emulator specific ioctls */
+   /* currently none are known */
+   /* END emulator specific ioctls */
+
+
 #  else /* no ANDROID_HARDWARE_anything defined */
 
 #   warning ""

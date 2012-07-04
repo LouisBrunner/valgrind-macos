@@ -251,7 +251,6 @@ get fixed.
 302578] New: Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
 302630] New: Memcheck on ultithreaded program fails with Assertion 'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
 302700] New: Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
-302709] New: valgrind for ARM needs extra tls support for android emulator under Linux
 302800] New: valgrind change the operator new's alloctor into system's
 
 -- Sat 30 June 2012, near midnight.

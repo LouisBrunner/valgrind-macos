@@ -95,6 +95,16 @@
     </literallayout>
     </chapter>
 
+  <chapter id="dist.readme-android_emulator" 
+             xreflabel="Readme Android Emulator">
+    <title>README.android_emulator</title>
+    <literallayout>
+      <xi:include href="../../README.android_emulator" 
+          parse="text" 
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
   <chapter id="dist.readme-mips" 
              xreflabel="Readme MIPS">
     <title>README.mips</title>

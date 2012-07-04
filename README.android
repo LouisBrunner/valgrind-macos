@@ -2,15 +2,23 @@
 How to cross-compile for Android.  These notes were last updated on 
 17 Feb 2012, for Valgrind SVN revision 12390/2257.
 
-This is known to work at least for Android 4.0.3 running on a (rooted,
-AOSP build) Nexus S and also on the same on Motorola Xoom.  Android
-2.3.4 on Nexus S worked at some time in the past.  Other
-configurations and toolchains might work, but haven't been tested.
+This is known to work at least for :
+  Android 4.0.3 running on a (rooted, AOSP build) Nexus S.
+  Android 4.0.3 running on Motorola Xoom.
+  Android 4.0.3 running on android emulator.
+
+Android 2.3.4 on Nexus S worked at some time in the past.
+It is known not to work on Android 4.1  running on android emulator.
+
+Other configurations and toolchains might work, but haven't been tested.
 Feedback is welcome.
+
 
 You need the android-ndk-r6 native development kit.  r6b and r7
 give a non-completely-working build; see
 http://code.google.com/p/android/issues/detail?id=23203
+For the android emulator, the versions needed and how to
+install them are described in README.android_emulator.
 
 Install it somewhere.  Doesn't matter where.  Then do this:
 
@@ -33,6 +41,7 @@ export NDKROOT=/path/to/android-ndk-r6
 #
 export HWKIND=nexus_s         # Samsung Nexus S; also Xoom (for now)
 export HWKIND=pandaboard      # Pandaboard running Linaro Android
+export HWKIND=emulator        # Android emulator
 
 # Then cd to the root of your Valgrind source tree.
 #
@@ -63,7 +72,8 @@ CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm -DANDROID_HARDWARE_$HW
    ./configure --prefix=/data/local/Inst \
    --host=armv7-unknown-linux --target=armv7-unknown-linux \
    --with-tmpdir=/sdcard
-
+# note: on android emulator, android-14 platform was also tested and works.
+# It is not clear what this platform nr really is.
 
 # At the end of the configure run, a few lines of details
 # are printed.  Make sure that you see these two lines:

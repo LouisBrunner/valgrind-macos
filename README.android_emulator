@@ -1,0 +1,75 @@
+
+How to install and run an android emulator.
+
+mkdir android # or any other place you prefer
+cd android
+
+# download java JDK
+# http://www.oracle.com/technetwork/java/javase/downloads/index.html
+# download android SDK
+# http://developer.android.com/sdk/index.html
+# download android NDK
+# http://developer.android.com/sdk/ndk/index.html
+
+# versions I used:
+#  jdk-7u4-linux-i586.tar.gz
+#  android-ndk-r8-linux-x86.tar.bz2
+#  android-sdk_r18-linux.tgz
+
+# install jdk
+tar xzf jdk-7u4-linux-i586.tar.gz
+
+# install sdk
+tar xzf android-sdk_r18-linux.tgz
+
+# install ndk
+tar xjf android-ndk-r8-linux-x86.tar.bz2
+
+
+# setup PATH to use the installed software:
+export SDKROOT=$HOME/android/android-sdk-linux
+export PATH=$PATH:$SDKROOT/tools:$SDKROOT/platform-tools
+export NDKROOT=$HOME/android/android-ndk-r8
+
+# install android platforms you want by starting:
+android 
+# (from $SDKROOT/tools)
+
+# select the platforms you need
+# I selected and installed:
+#   Android 4.0.3 (API 15)
+# Upgraded then to the newer version available:
+#     Android sdk 20
+#     Android platform tools 12
+
+# Android 4.1 (API 16) does not work.
+
+# then define a virtual device:
+Tools -> Manage AVDs...
+# I define an AVD Name with 64 Mb SD Card, (4.0.3, api 15)
+# rest is default
+
+
+# compile and make install Valgrind, following README.android
+
+
+# Start your android emulator (it takes some time).
+# You can use adb shell to get a shell on the device
+# and see it is working. Note that I usually get
+# one or two time out from adb shell before it works
+adb shell
+
+# Once the emulator is ready, push your Valgrind to the emulator:
+adb push Inst /
+
+
+# if you need to debug:
+# You have on the android side a gdbserver
+# on the device side:
+gdbserver :1234 your_exe
+
+# on the host side:
+adb forward tcp:1234 tcp:1234
+$HOME/android/android-ndk-r8/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-gdb your_exe
+target remote :1234
+

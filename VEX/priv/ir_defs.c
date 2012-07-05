@@ -3672,11 +3672,18 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
                   goto bad_dirty;
             }
          }
-         /* check types, minimally */
+         /* check guard */
          if (d->guard == NULL) goto bad_dirty;
          tcExpr( bb, stmt, d->guard, gWordTy );
          if (typeOfIRExpr(tyenv, d->guard) != Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_I1");
+         /* A dirty helper that is executed conditionally (or not at all)
+            AND returns a value is not handled properly. */
+         if (d->tmp != IRTemp_INVALID &&
+            (d->guard->tag != Iex_Const || d->guard->Iex.Const.con->Ico.U1 == 0))
+            sanityCheckFail(bb,stmt,"IRStmt.Dirty with a return value"
+                            " is executed under a condition");
+         /* check types, minimally */
          if (d->tmp != IRTemp_INVALID
              && typeOfIRTemp(tyenv, d->tmp) == Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_I1");

@@ -95,6 +95,7 @@ EXTRA_DIST = \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
+	ifunc.stderr.exp ifunc.stdout.exp ifunc.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
@@ -227,6 +228,9 @@ if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += rlimit64_nofile 
 endif
 
+if BUILD_IFUNC_TESTS
+   check_PROGRAMS += ifunc
+endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

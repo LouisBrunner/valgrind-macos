@@ -1747,6 +1747,25 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_AVX_TESTS, test x$ac_have_as_avx = xyes)
 
 
+# Does the C compiler support the "ifunc" attribute
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if gcc supports the ifunc attribute])
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[]], [[
+  void bar(void) {}
+  void foo(void) __attribute__((ifunc("bar")));
+]])], [
+ac_have_ifunc_attr=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_ifunc_attr=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_IFUNC_TESTS, test x$ac_have_ifunc_attr = xyes)
+
+
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
 # when building the tool executables.  I think we should get rid of it.
 #

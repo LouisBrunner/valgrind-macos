@@ -13,6 +13,8 @@ get fixed.
 -- OSX 10.8 (alignment) and XCode 4.3 (build, link) problems
 -- add arm stack-scan hacks?
 -- add allocator-mismatch checking?
+-- 302709, minor tidying needed?
+-- reconsider https://bugs.kde.org/show_bug.cgi?id=253657 (AMD64 seg regs)
 
 284004  Application under test hangs after call to __posix_spawn (Darwin)
   open, not started
@@ -32,16 +34,16 @@ get fixed.
 
 286849  Interceptors for new/delete on Darwin were erroneously commented
         out in r12043
-  **potentially 3.8.0
+  **possible 3.8.0
 
 286864  strlen function redirection error
   **probably invalid
 
 286917  disInstr(arm): unhandled instruction: QADD
-  **potentially 3.8.0
+  **possible 3.8.0
 
 287175  ARM: scalar VFP fixed-point VCVT instructions not handled
-  **potentially 3.8.0
+  **possible 3.8.0   same as 301336 ?
 
 288099  valgrind should print arguments/return values of functions in stack
   wishlist
@@ -51,7 +53,7 @@ get fixed.
 
 288274  Aborts at illegal instruction 0x48 0xF 0x5A 0x7 0x48 0xF
   == 278744 REX.W CVTPS2PD
-  **potentially 3.8.0 (redundant REX prefix)
+  **possible 3.8.0 (redundant REX prefix)
 
 288298  unhandled syscall shm_unlink
   OSX.  uninvestigated.
@@ -67,7 +69,7 @@ get fixed.
   low prio; --read-var-info=yes problem; OP queried
 
 289470  Loading of large Mach-O thin binaries fails.
-  **potentially 3.8.0; w/ patch; apparently harmless; easy fix
+  **possible 3.8.0; w/ patch; apparently harmless; easy fix
 
 289578  Backtraces with unwind tables (=without debug symbols)
         using offline symbol resolving
@@ -75,7 +77,7 @@ get fixed.
 
 289584  Unhandled instruction: 0xF 0x29 0xE5 (MOVAPS)
   movaps reg,reg (w/ patch)
-  **potentially 3.8.0
+  **possible 3.8.0
 
 289836  Unhanded instructions mfatbu and mfatbl
   ppc e500 insns
@@ -89,7 +91,7 @@ get fixed.
 
 290006  memcheck doesn't mark %xmm as initialized after "pcmpeqw %xmm %xmm"
   easy fix; w/ patch
-   **potentially 3.8.0
+   **possible 3.8.0
 
 290061  pie elf always loaded at 0x108000
   w/ patch; looks OK; easy fix ?
@@ -139,9 +141,6 @@ get fixed.
 294454  delphi uses 16-bit addressing in the TEB (%fs)
   obscure (16 bit (0x67 ?) insns in 32 bit mode)
 
-294523  --partial-loads-ok=yes causes false negatives
-  **fixed I think -- should close
-
 294552  svn trunk compilation stuck in mig
   XCode 4.3 problem?
   no action so far
@@ -184,7 +183,7 @@ get fixed.
   **possible 3.8.0, needs landing
 
 295808  vex amd64->IR: 0xF3 0xF 0xBC 0xC0 0x48 0x1 0xD0 0x48 (TZCNT)
-  **possible 3.8.0 ?
+  **possible 3.8.0 ? see also 301011 (32 bit)
 
 295974  vex-x86 omits some SSE4.1 opcodes such as PEXTRD
   **check before 3.8.0; maybe some 64-bit insns missing?  OP queried
@@ -202,55 +201,129 @@ get fixed.
 296311  Wrong stack traces due to -fomit-frame-pointer (x86)
   **not sure what to do about this.  Is it serious?
 
-296318  Debug info improvements (more than one rx/rw mapping)
+296318  ELF Debug info improvements (more than one rx/rw mapping)
   **this is probably important for 3.8.0  
 
 296480  valgrind hangs early when run on Python
   OSX.  Not started.
 
---- JRS got this far, tidying up, 4 July 2012.
+296577  vex x86->IR: 0x66 0xF 0x3A 0x17
+  **wontfix (AES on 32-bit)
 
-296577] New: vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0x17
-296578] New: vex amd64->IR: unhandled instruction bytes: 0x60 0x0 0x0 0x0 0x0 0x0 0x0 0x0
-296792] New: [PATCH] valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
-296947] New: vex amd64->IR: unhandled instruction bytes: 0x1F 0x7 0x0 0x0 0x0 0x0
-297407] New: Failed reading debug information for Fortran codes; invalid cuOff
-297701] New: Another alias for strncasecmp_l in libc-2.13.so
-297911] New: valgrind does not report 'invalid write' when using APIs for custom memory allocators.
- 298097] New: on ppc32 (e500mc core) target, valgrind report a app a mem error but the app is good to me.
-298227] New: valgrind unhandled instruction (vex amd64->IR: unhandled instruction bytes: 0xC5 0xF8 0x57 0xC0 0x48 0xC7 0x43 0x58)
-298281] New: wcslen causes false(?) uninitialised value warnings
-298335] New: Valgrind crashes after "vex amd64->IR: unhandled instruction bytes: 0xC5 0xF9 0x57 0xC0 0x48 0x8B 0x35 0x3"
-298546] New: wishlist: track virtual memory leaks due to mmap without munmap
-298870] New: No support for DW_TAG_partial_unit
-298905] New: argv / argc to be changed to non valgrind values.
+296578  vex amd64->IR: 0x60 0x0 0x0 0x0 0x0 0x0 0x0 0x0
+  **no idea what this is
 
--- Sun 29 Apr 2012, near midnight.
+296792  [PATCH] valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
+  **3.8.0, needs checkin
 
-299629] New: dup3() syscall (358) support is missing for ARM
-300102] New: memcheck tester
-300140] New: ARM - Missing (T2) SMMUL
-300195] New: read_elf_debug_info() should accept 'executable' .got sections
+296947  vex amd64->IR: 0x1F 0x7 0x0 0x0 0x0 0x0
+  probably invalid
 
-301011] New: vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xBC 0xDE
-301204] New: infinite loop in canonicaliseSymtab with ifunc symbol
-301265] New: add x86 support to Android build
-301269] New: optimize Memcheck to use light tracking for trusted code
-301280] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB 0x55 0x48 0x89 0xE5 0x41 0x56
-301281] New: valgrind hangs on OS X when the process calls system()
-301336] New: Valgrind vassert(0) in dis_neon_data_2reg_misc()
-301830] New: mtV : improve Valgrind so that it runs multiple threads in parallel
-301902] New: vex amd64->IR: unhandled instruction bytes: 0xF 0xB 0xF 0x1F 0x0 0x40 0x38 0xFE
-301922] New: gcc -O2 problem with SSE optimization?
-301967  unhandled instruction bytes 0xC5 0xF9 0x6E 0x40 in /lib32/ld-2.14.1.so
-        == 273475 (canonical avx)
-302234] New: fesetround() function does not affect FPU calculations
-302271] New: Bug with Callgrind dump-instr and Trace-children
-302287] New: Unhandled movbe instruction on Atom processors
-302370] New: The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate the result even when the result is QNAN or SNAN.
-302578] New: Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
-302630] New: Memcheck on ultithreaded program fails with Assertion 'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
-302700] New: Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
-302800] New: valgrind change the operator new's alloctor into system's
+297407  Failed reading debug information for Fortran codes; invalid cuOff
+  Tromey made a patch for this.  Dunno if it should land.  Queried.
 
--- Sat 30 June 2012, near midnight.
+297701  Another alias for strncasecmp_l in libc-2.13.so
+  **possible 3.8.0, trivial fix
+
+297911  valgrind does not report 'invalid write' when using APIs for
+        custom memory allocators.
+  probably invalid
+
+298097  on ppc32 (e500mc core) target, valgrind report a app a
+        mem error but the app is good to me.
+  probably closable (may be dup of 296318)
+
+298281  wcslen causes false(?) uninitialised value warnings
+  **possible 3.8.0
+
+298546  wishlist: track virtual memory leaks due to mmap without munmap
+  wishlist
+
+298870  No support for DW_TAG_partial_unit
+  **how does this relate to 302901 ?
+
+298905  argv / argc to be changed to non valgrind values.
+  wishlist
+
+299629  dup3() syscall (358) support is missing for ARM
+  **possible 3.8.0, should be easy to fix
+
+300102  memcheck tester
+  unclear what status is
+
+300140  ARM - Missing (T2) SMMUL
+  **possible 3.8.0, has patch but needs testcase
+
+300195  read_elf_debug_info() should accept 'executable' .got sections
+  **possible 3.8.0, simple patch, needs checking over
+
+301011  vex x86->IR: 0xF3 0xF 0xBC 0xDE (TZCNT)
+  **possible 3.8.0; see also 295808 (64 bit)
+
+301204  infinite loop in canonicaliseSymtab with ifunc symbol
+  **possible 3.8.0; need someone who understands ifunc to look at it
+
+301265  add x86 support to Android build
+  no patch so far; + probably too big a change for 3.8.0
+
+301269  optimize Memcheck to use light tracking for trusted code
+  too big a change for 3.8.0; + in development still
+
+301280  vex amd64->IR: 0xF 0xB 0x55 0x48 0x89 0xE5 0x41 0x56
+  that's UD2; unclear if there is anything to fix here.
+
+301281  valgrind hangs on OS X when the process calls system()
+  OSX strangeness; **possible 3.8.0
+
+301336  Valgrind vassert(0) in dis_neon_data_2reg_misc()
+  **possible 3.8.0.  OP queried; is this the same as 287175 ?
+
+301830  mtV: improve Valgrind so that it runs multiple threads in parallel
+  not 3.8.0 (alas)
+
+301902  vex amd64->IR: 0xF 0xB (UD2)
+  **possible 3.8.0; should handle this properly
+
+301922  gcc -O2 problem with SSE optimization?
+  invalid (versioning problem) .. should close
+
+301967  vex x86->IR: 0xC5 0xF9 0x6E 0x40 (AVX in 32-bit mode)
+  probable wontfix
+
+302234  fesetround() function does not affect FPU calculations
+  x86 rounding; dup of 136779 (which has a patch!)
+
+302271  Bug with Callgrind dump-instr and Trace-children
+  unclear what status is; queried JosefW
+
+302287  Unhandled movbe instruction on Atom processors
+  **possible 3.8.0 (should fix this, really)
+
+302370  The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate
+        the result even when the result is QNAN or SNAN.
+  **possible 3.8.0 (needs land + test)
+
+302578  Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
+  **possible 3.8.0 (easy to fix)
+
+302630  Memcheck on multithreaded program fails with Assertion
+        'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
+  configuration error, very weird
+
+302700  Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
+  is in 3.6.0
+
+302800  valgrind change the operator new's alloctor into system's
+  not a bug (invalid, basically)
+
+302827  add wrapper for CDROM_GET_CAPABILITY
+  **possible 3.8.0, has patch
+
+302901  Valgrind crashes with dwz optimized debuginfo
+  **possible 3.8.0, has patch, should take
+
+302918  Enable testing of the vmaddfp and vnsubfp instructions in
+        the testsuite
+  **possible 3.8.0, has patch, should take.
+
+-- Thurs 5 July 2012, mid afternoon.

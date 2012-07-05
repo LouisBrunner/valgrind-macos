@@ -225,10 +225,6 @@ get fixed.
 297701  Another alias for strncasecmp_l in libc-2.13.so
   **possible 3.8.0, trivial fix
 
-297911  valgrind does not report 'invalid write' when using APIs for
-        custom memory allocators.
-  probably invalid
-
 298097  on ppc32 (e500mc core) target, valgrind report a app a
         mem error but the app is good to me.
   probably closable (may be dup of 296318)

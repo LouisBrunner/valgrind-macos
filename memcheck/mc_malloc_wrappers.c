@@ -767,6 +767,14 @@ void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT szB)
       if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
       MC_(new_block)(tid, addr, szB, /*ignored*/0, mp->is_zeroed,
                      MC_AllocCustom, mp->chunks);
+      if (mp->rzB > 0) {
+         // This is not needed if the user application has properly
+         // marked the superblock noaccess when defining the mempool.
+         // We however still mark the redzones noaccess to still catch
+         // some bugs if user forgot.
+         MC_(make_mem_noaccess) ( addr - mp->rzB, mp->rzB);
+         MC_(make_mem_noaccess) ( addr + szB, mp->rzB);
+      }
       if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
    }
 }

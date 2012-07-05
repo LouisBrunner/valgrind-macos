@@ -34,6 +34,10 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
   - If a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now
     will detect an invalid access of these redzones, by marking them
     noaccess.
+    Similarly, if a redzone size is given for a memory pool,
+    VALGRIND_MEMPOOL_ALLOC will mark the redzones no access.
+    This still allows to find some bugs if the user has forgotten
+    to mark the pool superblock noaccess.
 
   - Using the new option --soname-synonyms, Memcheck can now understand
     a program using statically linked malloc or using alternative
@@ -179,6 +183,7 @@ n-i-bz  s390x: Shadow registers can now be examined using vgdb
         instructions on machines that do not support it
 297497  POWER Processor decimal floating point instruction support missing
 297976  s390x: revisit EX implementation
+297911  valgrind does not report 'invalid write' when using APIs for custom memory allocators.
 297991  Valgrind interferes with mmap()+ftell() 
 297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
 297993  Fix compilation of valgrind with gcc -g3.

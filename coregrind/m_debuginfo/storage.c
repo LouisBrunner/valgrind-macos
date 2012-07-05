@@ -1369,8 +1369,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
          vg_assert(w < r);
          if (   di->symtab[w].addr      == di->symtab[r].addr
              && di->symtab[w].size      == di->symtab[r].size
-             && !!di->symtab[w].isText  == !!di->symtab[r].isText
-             && !!di->symtab[w].isIFunc == !!di->symtab[r].isIFunc) {
+             && !!di->symtab[w].isText  == !!di->symtab[r].isText) {
             /* merge the two into one */
             n_merged++;
             /* Add r names to w if r has secondary names 
@@ -1380,6 +1379,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
                                      di->symtab[w].pri_name))) {
                add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
             }
+            /* mark w as an IFunc if either w or r are */
+            di->symtab[w].isIFunc = di->symtab[w].isIFunc || di->symtab[r].isIFunc;
             /* and use ::pri_names to indicate this slot is no longer in use */
             di->symtab[r].pri_name = NULL;
             if (di->symtab[r].sec_names) {

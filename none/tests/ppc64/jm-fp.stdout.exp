@@ -719,8 +719,8 @@ PPC floating point arith insns with one arg:
      frsqrte 8000000000000000 => fff0000000000000
      frsqrte 7ff0000000000000 => 0000000000000000
      frsqrte fff0000000000000 => 7ff8000000000000
-     frsqrte 7ff7ffffffffffff => 7fff800000000000
-     frsqrte fff7ffffffffffff => ffff800000000000
+     frsqrte 7ff7ffffffffffff => 7fff000000000000
+     frsqrte fff7ffffffffffff => ffff000000000000
      frsqrte 7ff8000000000000 => 7ff8000000000000
      frsqrte fff8000000000000 => fff8000000000000
 
@@ -942,8 +942,8 @@ PPC floating point arith insns
     frsqrte. 8000000000000000 => fff0000000000000
     frsqrte. 7ff0000000000000 => 0000000000000000
     frsqrte. fff0000000000000 => 7ff8000000000000
-    frsqrte. 7ff7ffffffffffff => 7fff800000000000
-    frsqrte. fff7ffffffffffff => ffff800000000000
+    frsqrte. 7ff7ffffffffffff => 7fff000000000000
+    frsqrte. fff7ffffffffffff => ffff000000000000
     frsqrte. 7ff8000000000000 => 7ff8000000000000
     frsqrte. fff8000000000000 => fff8000000000000
 

@@ -2042,7 +2042,7 @@ static void test_fres_ (void)
 
 static void test_frsqrte_ (void)
 {
-    __asm__ __volatile__ ("frsqrte.     17, 14");
+     __asm__ __volatile__ ("frsqrte.     17, 14");
 }
 
 static void test_frsp_ (void)
@@ -5763,6 +5763,14 @@ static void test_float_one_arg (const char* name, test_func_t func,
        res = f17;
        ur = *(uint64_t *)(&res);
 
+       if (strstr(name, " frsqrte") !=  NULL)
+          /* The 32-bit frsqrte instruction is the Floatig Reciprical Square
+           * Root Estimate instruction.  The precision of the estimate will
+           * vary from Proceesor implementation.  The approximation varies in
+           * bottom two bytes of the 32-bit result.
+           */
+           ur &= 0xFFFF000000000000ULL;
+
       if (zap_hi_32bits)
          ur &= 0x00000000FFFFFFFFULL;
       if (zap_lo_44bits)
@@ -6888,12 +6896,12 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
 #endif
 
    /* if we're doing an estimation operation, arrange to zap the
-      bottom byte of the result as it's basically garbage, and differs
+      bottom 10-bits of the result as it's basically garbage, and differs
       between cpus */
    unsigned int mask
       = (strstr(name,"vrsqrtefp") != NULL ||
          strstr(name,    "vrefp") != NULL)
-           ? 0xFFFFFF00 : 0xFFFFFFFF;
+           ? 0xFFFFC000 : 0xFFFFFFFF;
 
    for (i=0; i<nb_vfargs; i++) {
       vec_in  = (vector float)vfargs[i];

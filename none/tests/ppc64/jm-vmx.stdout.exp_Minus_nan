@@ -2587,13 +2587,13 @@ Altivec floating point arith insns with one arg:
        vrfim:  => ffffffff ffffffff ffffffff ffffffff (00000000)
 
        vrefp: 02bfffff 02bfffff 02bfffff 02bfffff
-       vrefp:  => 7c2aa900 7c2aa900 7c2aa900 7c2aa900 (00000000)
+       vrefp:  => 7c2a8000 7c2a8000 7c2a8000 7c2a8000 (00000000)
        vrefp: 513fffff 513fffff 513fffff 513fffff
-       vrefp:  => 2daaa900 2daaa900 2daaa900 2daaa900 (00000000)
+       vrefp:  => 2daa8000 2daa8000 2daa8000 2daa8000 (00000000)
        vrefp: 82bfffff 82bfffff 82bfffff 82bfffff
-       vrefp:  => fc2aa900 fc2aa900 fc2aa900 fc2aa900 (00000000)
+       vrefp:  => fc2a8000 fc2a8000 fc2a8000 fc2a8000 (00000000)
        vrefp: d13fffff d13fffff d13fffff d13fffff
-       vrefp:  => adaaa900 adaaa900 adaaa900 adaaa900 (00000000)
+       vrefp:  => adaa8000 adaa8000 adaa8000 adaa8000 (00000000)
        vrefp: 00000000 00000000 00000000 00000000
        vrefp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
        vrefp: 80000000 80000000 80000000 80000000
@@ -2603,18 +2603,18 @@ Altivec floating point arith insns with one arg:
        vrefp: ff800000 ff800000 ff800000 ff800000
        vrefp:  => 80000000 80000000 80000000 80000000 (00000000)
        vrefp: 7fffffff 7fffffff 7fffffff 7fffffff
-       vrefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
+       vrefp:  => 7fffc000 7fffc000 7fffc000 7fffc000 (00000000)
        vrefp: ffffffff ffffffff ffffffff ffffffff
-       vrefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
+       vrefp:  => ffffc000 ffffc000 ffffc000 ffffc000 (00000000)
        vrefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
-       vrefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
+       vrefp:  => 7fffc000 7fffc000 7fffc000 7fffc000 (00000000)
        vrefp: ffbfffff ffbfffff ffbfffff ffbfffff
-       vrefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
+       vrefp:  => ffffc000 ffffc000 ffffc000 ffffc000 (00000000)
 
    vrsqrtefp: 02bfffff 02bfffff 02bfffff 02bfffff
-   vrsqrtefp:  => 5dd10300 5dd10300 5dd10300 5dd10300 (00000000)
+   vrsqrtefp:  => 5dd10000 5dd10000 5dd10000 5dd10000 (00000000)
    vrsqrtefp: 513fffff 513fffff 513fffff 513fffff
-   vrsqrtefp:  => 3693ca00 3693ca00 3693ca00 3693ca00 (00000000)
+   vrsqrtefp:  => 3693c000 3693c000 3693c000 3693c000 (00000000)
    vrsqrtefp: 82bfffff 82bfffff 82bfffff 82bfffff
    vrsqrtefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
    vrsqrtefp: d13fffff d13fffff d13fffff d13fffff
@@ -2628,13 +2628,13 @@ Altivec floating point arith insns with one arg:
    vrsqrtefp: ff800000 ff800000 ff800000 ff800000
    vrsqrtefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
    vrsqrtefp: 7fffffff 7fffffff 7fffffff 7fffffff
-   vrsqrtefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
+   vrsqrtefp:  => 7fffc000 7fffc000 7fffc000 7fffc000 (00000000)
    vrsqrtefp: ffffffff ffffffff ffffffff ffffffff
-   vrsqrtefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
+   vrsqrtefp:  => ffffc000 ffffc000 ffffc000 ffffc000 (00000000)
    vrsqrtefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
-   vrsqrtefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
+   vrsqrtefp:  => 7fffc000 7fffc000 7fffc000 7fffc000 (00000000)
    vrsqrtefp: ffbfffff ffbfffff ffbfffff ffbfffff
-   vrsqrtefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
+   vrsqrtefp:  => ffffc000 ffffc000 ffffc000 ffffc000 (00000000)
 
 Altivec floating point compare insns:
     vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff

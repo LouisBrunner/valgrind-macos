@@ -1752,7 +1752,7 @@ AM_CONDITIONAL(BUILD_AVX_TESTS, test x$ac_have_as_avx = xyes)
 # automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if gcc supports the ifunc attribute])
 
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[]], [[
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
   void bar(void) {}
   void foo(void) __attribute__((ifunc("bar")));
 ]])], [

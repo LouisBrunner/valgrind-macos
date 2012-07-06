@@ -360,6 +360,7 @@ enum test_flags {
     PPC_COMPARE    = 0x00000300,
     PPC_CROP       = 0x00000400,
     PPC_LDST       = 0x00000500,
+    PPC_POPCNT     = 0x00000600,
     PPC_TYPE       = 0x00000F00,
     /* Family */
     PPC_INTEGER    = 0x00010000,
@@ -1683,6 +1684,17 @@ static test_t tests_ist_ops_three[] = {
     { &test_stdx            , "        stdx", },
     { &test_stdux           , "       stdux", },
 #endif // #ifdef __powerpc64__
+    { NULL,                   NULL,           },
+};
+
+static void
+tests_popcnt_one(void)
+{
+   __asm__ __volatile__ ("popcntb      17, 14");
+}
+
+static test_t tests_popcnt_ops_one[] = {
+    { &tests_popcnt_one            , "        popcntb", },
     { NULL,                   NULL,           },
 };
 
@@ -3933,6 +3945,11 @@ static test_table_t all_tests[] = {
         tests_ist_ops_three   ,
         "PPC integer store insns with three register args",
         0x0001050b,
+    },
+    {
+        tests_popcnt_ops_one   ,
+        "PPC integer population count with one register args, no flags",
+        0x00010601,
     },
 #if !defined (NO_FLOAT)
     {
@@ -7344,7 +7361,8 @@ static void do_tests ( insn_sel_flags_t seln_flags,
       if ((type == PPC_ARITH   && !seln_flags.arith) ||
           (type == PPC_LOGICAL && !seln_flags.logical) ||
           (type == PPC_COMPARE && !seln_flags.compare) ||
-          (type == PPC_LDST && !seln_flags.ldst))
+          (type == PPC_LDST && !seln_flags.ldst) ||
+          (type == PPC_POPCNT && !seln_flags.arith))
          continue;
       /* Check instruction family */
       family = all_tests[i].flags & PPC_FAMILY;

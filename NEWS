@@ -224,6 +224,7 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
         == 273475 (canonical avx)
 302709  valgrind for ARM needs extra tls support for android emulator under Linux
 302918  Enable testing of the vmaddfp and vnsubfp instructions in the testsuite
+303116  Add support for the POWER instruction popcntb
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

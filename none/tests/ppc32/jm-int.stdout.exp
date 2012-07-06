@@ -1596,4 +1596,9 @@ PPC integer store insns with three register args:
        stwux 000f423f, 4 => 000f423f, 4 (00000000 00000000)
        stwux ffffffff, 8 => ffffffff, 8 (00000000 00000000)
 
-All done. Tested 154 different instructions
+PPC integer population count with one register args, no flags:
+        popcntb 00000000 => 00000000 (00000000 00000000)
+        popcntb 000f423f => 00040206 (00000000 00000000)
+        popcntb ffffffff => 08080808 (00000000 00000000)
+
+All done. Tested 155 different instructions

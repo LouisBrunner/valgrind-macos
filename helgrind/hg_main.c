@@ -2139,17 +2139,41 @@ static CVInfo* map_cond_to_CVInfo_lookup_or_alloc ( void* cond ) {
    }
 }
 
-static void map_cond_to_CVInfo_delete ( void* cond ) {
+static CVInfo* map_cond_to_CVInfo_lookup_NO_alloc ( void* cond ) {
+   UWord key, val;
+   map_cond_to_CVInfo_INIT();
+   if (VG_(lookupFM)( map_cond_to_CVInfo, &key, &val, (UWord)cond )) {
+      tl_assert(key == (UWord)cond);
+      return (CVInfo*)val;
+   } else {
+      return NULL;
+   }
+}
+
+static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
+   Thread*   thr;
    UWord keyW, valW;
+
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
    map_cond_to_CVInfo_INIT();
    if (VG_(delFromFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond )) {
       CVInfo* cvi = (CVInfo*)valW;
       tl_assert(keyW == (UWord)cond);
       tl_assert(cvi);
       tl_assert(cvi->so);
+      if (cvi->nWaiters > 0) {
+         HG_(record_error_Misc)(thr,
+                                "pthread_cond_destroy:"
+                                " destruction of condition variable being waited upon");
+      }
       libhb_so_dealloc(cvi->so);
       cvi->mx_ga = 0;
       HG_(free)(cvi);
+   } else {
+      HG_(record_error_Misc)(thr,
+                             "pthread_cond_destroy: destruction of unknown cond var");
    }
 }
 
@@ -2320,7 +2344,17 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
 
    // error-if: cond is also associated with a different mutex
 
-   cvi = map_cond_to_CVInfo_lookup_or_alloc( cond );
+   cvi = map_cond_to_CVInfo_lookup_NO_alloc( cond );
+   if (!cvi) {
+      /* This could be either a bug in helgrind or the guest application
+         that did an error (e.g. cond var was destroyed by another thread.
+         Let's assume helgrind is perfect ...
+         Note that this is similar to drd behaviour. */
+      HG_(record_error_Misc)(thr, "condition variable has been destroyed while"
+                             " being waited upon");
+      return;
+   }
+
    tl_assert(cvi);
    tl_assert(cvi->so);
    tl_assert(cvi->nWaiters > 0);
@@ -2351,7 +2385,7 @@ static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
                   "(ctid=%d, cond=%p)\n", 
                   (Int)tid, (void*)cond );
 
-   map_cond_to_CVInfo_delete( cond );
+   map_cond_to_CVInfo_delete( tid, cond );
 }
 
 

@@ -171,6 +171,7 @@ where XXXXXX is the bug number as listed below.
 295089  can not annotate source for both helgrind and drd
 295221  POWER Processor decimal floating point instruction support missing
 295428  coregrind/m_main.c has incorrect x86 assembly for darwin
+295590  Helgrind: Assertion 'cvi->nWaiters > 0' failed when cond var being waited upon destroyed
 295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
 296422  Add translation chaining support
 296457  vex amd64->IR: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A (dup of AES)

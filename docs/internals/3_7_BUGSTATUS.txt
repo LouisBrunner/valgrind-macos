@@ -175,10 +175,6 @@ get fixed.
   not high prio
   **possible 3.8.0 (easy to fix?)
 
-295590  Helgrind: hg_main.c:2298 (evh__HG_PTHREAD_COND_WAIT_POST):
-  Assertion 'cvi->nWaiters > 0' failed.
-  **possible 3.8.0
-
 295617  ARM - Add some missing syscalls
   **possible 3.8.0, needs landing
 

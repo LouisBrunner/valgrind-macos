@@ -40,6 +40,8 @@ EXTRA_DIST = \
 	pth_barrier1.vgtest pth_barrier1.stdout.exp pth_barrier1.stderr.exp \
 	pth_barrier2.vgtest pth_barrier2.stdout.exp pth_barrier2.stderr.exp \
 	pth_barrier3.vgtest pth_barrier3.stdout.exp pth_barrier3.stderr.exp \
+	pth_destroy_cond.vgtest \
+		pth_destroy_cond.stdout.exp pth_destroy_cond.stderr.exp \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
@@ -106,6 +108,7 @@ check_PROGRAMS = \
 	locked_vs_unlocked1 \
 	locked_vs_unlocked2 \
 	locked_vs_unlocked3 \
+	pth_destroy_cond \
 	t2t \
 	tc01_simple_race \
 	tc02_simple_tls \

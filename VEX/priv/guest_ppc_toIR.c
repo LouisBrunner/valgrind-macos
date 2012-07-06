@@ -1337,9 +1337,9 @@ static Int guestCR0offset ( UInt cr )
 /* Generate an IR sequence to do a popcount operation on the supplied
    IRTemp, and return a new IRTemp holding the result.  'ty' may be
    Ity_I32 or Ity_I64 only. */
-static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
+static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
 {
-   Int i, shift[6];
+   Int i, shift[6], max;
    IRTemp mask[6];
    IRTemp old = IRTemp_INVALID;
    IRTemp nyu = IRTemp_INVALID;
@@ -1347,6 +1347,14 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
    vassert(ty == Ity_I64 || ty == Ity_I32);
 
    if (ty == Ity_I32) {
+      if (byte_count)
+         /* Return the population count across each byte not across the entire
+          * 32-bit value.  Stop after third iteration.
+          */
+         max = 3;
+      else
+         max = 5;
+
       for (i = 0; i < 5; i++) {
          mask[i]  = newTemp(ty);
          shift[i] = 1 << i;
@@ -1357,7 +1365,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
       assign(mask[3], mkU32(0x00FF00FF));
       assign(mask[4], mkU32(0x0000FFFF));
       old = src;
-      for (i = 0; i < 5; i++) {
+      for (i = 0; i < max; i++) {
          nyu = newTemp(ty);
          assign(nyu,
                 binop(Iop_Add32,
@@ -1372,6 +1380,14 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
       return nyu;
    }
 // else, ty == Ity_I64
+   if (byte_count)
+      /* Return the population count across each byte not across the entire
+       * 64-bit value.  Stop after third iteration.
+       */
+      max = 3;
+   else
+      max = 6;
+
    for (i = 0; i < 6; i++) {
       mask[i] = newTemp( Ity_I64 );
       shift[i] = 1 << i;
@@ -1383,7 +1399,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
    assign( mask[4], mkU64( 0x0000FFFF0000FFFFULL ) );
    assign( mask[5], mkU64( 0x00000000FFFFFFFFULL ) );
    old = src;
-   for (i = 0; i < 6; i++) {
+   for (i = 0; i < max; i++) {
       nyu = newTemp( Ity_I64 );
       assign( nyu,
               binop( Iop_Add64,
@@ -3984,7 +4000,7 @@ static Bool dis_int_logic ( UInt theInstr )
       case 0x1FA: // popcntd (population count doubleword
       {
     	  DIP("popcntd r%u,r%u\n", rA_addr, rS_addr);
-        IRTemp result = gen_POPCOUNT(ty, rS);
+    	  IRTemp result = gen_POPCOUNT(ty, rS, False);
     	  putIReg( rA_addr, mkexpr(result) );
     	  return True;
       }
@@ -3997,11 +4013,31 @@ static Bool dis_int_logic ( UInt theInstr )
             IRTemp argHi = newTemp(Ity_I32);
             assign(argLo, unop(Iop_64to32, mkexpr(rS)));
             assign(argHi, unop(Iop_64HIto32, mkexpr(rS)));
-            resultLo = gen_POPCOUNT(Ity_I32, argLo);
-            resultHi = gen_POPCOUNT(Ity_I32, argHi);
+            resultLo = gen_POPCOUNT(Ity_I32, argLo, False);
+            resultHi = gen_POPCOUNT(Ity_I32, argHi, False);
             putIReg( rA_addr, binop(Iop_32HLto64, mkexpr(resultHi), mkexpr(resultLo)));
          } else {
-            IRTemp result = gen_POPCOUNT(ty, rS);
+            IRTemp result = gen_POPCOUNT(ty, rS, False);
+            putIReg( rA_addr, mkexpr(result) );
+         }
+         return True;
+      }
+      case 0x7A: // popcntb (Population Count Byte)
+      {
+         DIP("popcntb r%u,r%u\n", rA_addr, rS_addr);
+
+         if (mode64) {
+            IRTemp resultHi, resultLo;
+            IRTemp argLo = newTemp(Ity_I32);
+            IRTemp argHi = newTemp(Ity_I32);
+            assign(argLo, unop(Iop_64to32, mkexpr(rS)));
+            assign(argHi, unop(Iop_64HIto32, mkexpr(rS)));
+            resultLo = gen_POPCOUNT(Ity_I32, argLo, True);
+            resultHi = gen_POPCOUNT(Ity_I32, argHi, True);
+            putIReg( rA_addr, binop(Iop_32HLto64, mkexpr(resultHi),
+                                    mkexpr(resultLo)));
+         } else {
+            IRTemp result = gen_POPCOUNT(ty, rS, True);
             putIReg( rA_addr, mkexpr(result) );
          }
          return True;
@@ -17312,6 +17348,7 @@ DisResult disInstr_PPC_WRK (
       /* Miscellaneous ISA 2.06 instructions */
       case 0x1FA: // popcntd
       case 0x17A: // popcntw
+      case 0x7A:  // popcntb
     	  if (dis_int_logic( theInstr )) goto decode_success;
     	  goto decode_failure;
 

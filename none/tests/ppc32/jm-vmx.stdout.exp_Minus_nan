@@ -1517,7 +1517,6 @@ Altivec store insns with three register args:
        stvxl   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
        stvxl  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
 
-Altivec floating point arith insns with three args:
 Altivec floating point arith insns with two args:
       vaddfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 033fffff 033fffff 033fffff 033fffff (00000000)
@@ -1906,6 +1905,585 @@ Altivec floating point arith insns with two args:
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
+Altivec floating point arith insns with three args:
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => e30ffffe e30ffffe e30ffffe e30ffffe (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => e30ffffe e30ffffe e30ffffe e30ffffe (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 630ffffe 630ffffe 630ffffe 630ffffe (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 630ffffe 630ffffe 630ffffe 630ffffe (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+     vmaddfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
+     vmaddfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 00000000000000000000000000000000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+     vmaddfp: 00000000000000000000000000000000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
+     vmaddfp: 00000000000000000000000000000000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vmaddfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vmaddfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+     vmaddfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
+     vmaddfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 80000000800000008000000080000000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+     vmaddfp: 80000000800000008000000080000000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
+     vmaddfp: 80000000800000008000000080000000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vmaddfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vmaddfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vmaddfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+     vmaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 630ffffe 630ffffe 630ffffe 630ffffe (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 630ffffe 630ffffe 630ffffe 630ffffe (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 948ffffe 948ffffe 948ffffe 948ffffe (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 148ffffe 148ffffe 148ffffe 148ffffe (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => e30ffffe e30ffffe e30ffffe e30ffffe (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => e30ffffe e30ffffe e30ffffe e30ffffe (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+    vnmsubfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vnmsubfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 00000000000000000000000000000000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+    vnmsubfp: 00000000000000000000000000000000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vnmsubfp: 00000000000000000000000000000000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+    vnmsubfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+    vnmsubfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+    vnmsubfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vnmsubfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 80000000800000008000000080000000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 02bffffe 02bffffe 02bffffe 02bffffe (00000000)
+    vnmsubfp: 80000000800000008000000080000000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vnmsubfp: 80000000800000008000000080000000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+    vnmsubfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+    vnmsubfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, d13fffffd13fffffd13fffffd13fffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, d13fffffd13fffffd13fffffd13fffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff, 80000000800000008000000080000000
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vnmsubfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff, 7fbfffff7fbfffff7fbfffff7fbfffff
+    vnmsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
 
 Altivec floating point arith insns with one arg:
        vrfin: 02bfffff 02bfffff 02bfffff 02bfffff
@@ -3033,4 +3611,4 @@ Altivec float special insns:
       vctsxs: ffbfffff (         -nan), 18 => 00000000 ( 0.000000e+00) (00000000)
       vctsxs: ffbfffff (         -nan), 27 => 00000000 ( 0.000000e+00) (00000000)
 
-All done. Tested 163 different instructions
+All done. Tested 165 different instructions

@@ -318,8 +318,4 @@ get fixed.
 302901  Valgrind crashes with dwz optimized debuginfo
   **possible 3.8.0, has patch, should take
 
-302918  Enable testing of the vmaddfp and vnsubfp instructions in
-        the testsuite
-  **possible 3.8.0, has patch, should take.
-
 -- Thurs 5 July 2012, mid afternoon.

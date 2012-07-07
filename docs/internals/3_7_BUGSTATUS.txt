@@ -302,9 +302,6 @@ get fixed.
 302700  Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
   is in 3.6.0
 
-302800  valgrind change the operator new's alloctor into system's
-  not a bug (invalid, basically)
-
 302827  add wrapper for CDROM_GET_CAPABILITY
   **possible 3.8.0, has patch
 

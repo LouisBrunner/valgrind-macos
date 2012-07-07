@@ -252,9 +252,6 @@ get fixed.
 301011  vex x86->IR: 0xF3 0xF 0xBC 0xDE (TZCNT)
   **possible 3.8.0; see also 295808 (64 bit)
 
-301204  infinite loop in canonicaliseSymtab with ifunc symbol
-  **possible 3.8.0; need someone who understands ifunc to look at it
-
 301265  add x86 support to Android build
   no patch so far; + probably too big a change for 3.8.0
 

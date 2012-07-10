@@ -1942,7 +1942,12 @@ extern void ppIREffect ( IREffect );
 
 typedef
    struct _IRDirty {
-      /* What to call, and details of args/results */
+      /* What to call, and details of args/results.  .guard must be
+         non-NULL.  If .tmp is not IRTemp_INVALID (that is, the call
+         returns a result) then .guard must be demonstrably (at
+         JIT-time) always true, that is, the call must be
+         unconditional.  Conditional calls that assign .tmp are not
+         allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
       IRExpr**  args;   /* arg list, ends in NULL */

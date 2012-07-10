@@ -1198,6 +1198,7 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
       case Iop_Or64:
          return IRExpr_Const(IRConst_U64(0xFFFFFFFFFFFFFFFFULL));
       case Iop_CmpEQ8x16:
+      case Iop_CmpEQ16x8:
       case Iop_CmpEQ32x4:
          return IRExpr_Const(IRConst_V128(0xFFFF));
       default:
@@ -2107,6 +2108,7 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ8x16:
+            case Iop_CmpEQ16x8:
             case Iop_CmpEQ32x4:
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);

@@ -153,11 +153,14 @@ extern UInt h_generic_calc_QSub8Sx4 ( UInt, UInt );
 
 extern UInt h_generic_calc_Sad8Ux4  ( UInt, UInt );
 
+extern UInt h_generic_calc_QAdd32S  ( UInt, UInt );
+extern UInt h_generic_calc_QSub32S  ( UInt, UInt );
+
 extern UInt h_generic_calc_CmpNEZ16x2 ( UInt );
 extern UInt h_generic_calc_CmpNEZ8x4  ( UInt );
 
-extern ULong h_DPBtoBCD( ULong dpb );
-extern ULong h_BCDtoDPB( ULong bcd );
+extern ULong h_DPBtoBCD ( ULong dpb );
+extern ULong h_BCDtoDPB ( ULong bcd );
 
 ULong dpb_to_bcd(ULong chunk);  // helper for h_DPBtoBCD
 ULong bcd_to_dpb(ULong chunk);  // helper for h_BCDtoDPB

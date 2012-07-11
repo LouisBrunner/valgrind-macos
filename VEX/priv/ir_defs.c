@@ -334,6 +334,8 @@ void ppIROp ( IROp op )
       case Iop_TruncF64asF32: vex_printf("TruncF64asF32"); return;
       case Iop_CalcFPRF:      vex_printf("CalcFPRF"); return;
 
+      case Iop_QAdd32S: vex_printf("QAdd32S"); return;
+      case Iop_QSub32S: vex_printf("QSub32S"); return; 
       case Iop_Add16x2:   vex_printf("Add16x2"); return;
       case Iop_Sub16x2:   vex_printf("Sub16x2"); return;
       case Iop_QAdd16Sx2: vex_printf("QAdd16Sx2"); return;
@@ -2142,6 +2144,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Add32: case Iop_Sub32: case Iop_Mul32:
       case Iop_Or32:  case Iop_And32: case Iop_Xor32:
       case Iop_Max32U:
+      case Iop_QAdd32S: case Iop_QSub32S:
       case Iop_Add16x2: case Iop_Sub16x2:
       case Iop_QAdd16Sx2: case Iop_QAdd16Ux2:
       case Iop_QSub16Sx2: case Iop_QSub16Ux2:

@@ -1362,6 +1362,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = &h_generic_calc_QSub8Ux4; break;
          case Iop_Sad8Ux4:
             fn = &h_generic_calc_Sad8Ux4; break;
+         case Iop_QAdd32S:
+            fn = &h_generic_calc_QAdd32S; break;
+         case Iop_QSub32S:
+            fn = &h_generic_calc_QSub32S; break;
          default:
             break;
       }

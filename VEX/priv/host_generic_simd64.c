@@ -139,6 +139,16 @@ static inline UChar index8x8 ( ULong w64, UChar ix ) {
 
 /* Scalar helpers. */
 
+static inline Int qadd32S ( Int xx, Int yy ) 
+{
+   Long t = ((Long)xx) + ((Long)yy);
+   const Long loLim = -0x80000000LL;
+   const Long hiLim =  0x7FFFFFFFLL;
+   if (t < loLim) t = loLim;
+   if (t > hiLim) t = hiLim;
+   return (Int)t;
+}
+
 static inline Short qadd16S ( Short xx, Short yy ) 
 {
    Int t = ((Int)xx) + ((Int)yy);
@@ -167,6 +177,16 @@ static inline UChar qadd8U ( UChar xx, UChar yy )
    UInt t = ((UInt)xx) + ((UInt)yy);
    if (t > 0xFF) t = 0xFF;
    return (UChar)t;
+}
+
+static inline Int qsub32S ( Int xx, Int yy ) 
+{
+   Long t = ((Long)xx) - ((Long)yy);
+   const Long loLim = -0x80000000LL;
+   const Long hiLim =  0x7FFFFFFFLL;
+   if (t < loLim) t = loLim;
+   if (t > hiLim) t = hiLim;
+   return (Int)t;
 }
 
 static inline Short qsub16S ( Short xx, Short yy )
@@ -1378,6 +1398,17 @@ UInt h_generic_calc_Sad8Ux4 ( UInt xx, UInt yy )
           + absdiff8U( sel8x4_1(xx), sel8x4_1(yy) )
           + absdiff8U( sel8x4_0(xx), sel8x4_0(yy) );
 }
+
+UInt h_generic_calc_QAdd32S ( UInt xx, UInt yy )
+{
+   return qadd32S( xx, yy );
+}
+
+UInt h_generic_calc_QSub32S ( UInt xx, UInt yy )
+{
+   return qsub32S( xx, yy );
+}
+
 
 /*------------------------------------------------------------------*/
 /* Decimal Floating Point (DFP) externally visible helper functions */

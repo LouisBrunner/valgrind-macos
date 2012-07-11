@@ -746,6 +746,10 @@ typedef
 
       /* ------------------ 32-bit SIMD Integer ------------------ */
 
+      /* 32x1 saturating add/sub (ok, well, not really SIMD :) */
+      Iop_QAdd32S,
+      Iop_QSub32S,
+
       /* 16x2 add/sub, also signed/unsigned saturating variants */
       Iop_Add16x2, Iop_Sub16x2,
       Iop_QAdd16Sx2, Iop_QAdd16Ux2,

@@ -1885,7 +1885,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 355
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 356
    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 357
-
+   LINXY(__NR_dup3,              sys_dup3),             // 358
    LINXY(__NR_pipe2,             sys_pipe2),            // 359
    LINXY(__NR_inotify_init1,     sys_inotify_init1),    // 360
 

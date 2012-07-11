@@ -3333,6 +3333,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_DivU32:
       case Iop_DivU32E:
       case Iop_DivS32E:
+      case Iop_QAdd32S: /* could probably do better */
+      case Iop_QSub32S: /* could probably do better */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_DivS64:

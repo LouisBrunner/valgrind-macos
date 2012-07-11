@@ -17450,3 +17450,26 @@ uxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27189819, c:v-in 
 uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27189819, c:v-in 0, cpsr 0xc0000000 NZ  
 uxtah r0, r1, r2, ROR #8  :: rd 0x314171bf rm 0x31415927, rn 0x27189819, c:v-in 0, cpsr 0xc0000000 NZ  
 uxtah r0, r1, r2, ROR #0  :: rd 0x3141f140 rm 0x31415927, rn 0x27189819, c:v-in 0, cpsr 0xc0000000 NZ  
+------------ SMMUL ------------
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x0000ffff, rn 0x0000ffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x048e8c61 rm 0xe444dc25, rn 0xd5eef620, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0xfd764d51 rm 0x06ea9b2a, rn 0xa2108661, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0xffc528bc rm 0xf91d5f56, rn 0x088bc0f9, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000001 rm 0x0000ffff, rn 0x0000ffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x048e8c61 rm 0xe444dc25, rn 0xd5eef620, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0xfd764d52 rm 0x06ea9b2a, rn 0xa2108661, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0xffc528bd rm 0xf91d5f56, rn 0x088bc0f9, c:v-in 0, cpsr 0xc0000000 NZ  

@@ -799,3 +799,26 @@ nop
 nopeq
 nopne
 ------------ NOP (end) ------------
+------------ SMMUL ------------
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x7fffffff, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x0000ffff, rn 0x0000ffff, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x048e8c61 rm 0xe444dc25, rn 0xd5eef620, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0xfd764d51 rm 0x06ea9b2a, rn 0xa2108661, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, carryin 0, cpsr 0x00000000     
+smmul   r0, r1, r2 :: rd 0xffc528bc rm 0xf91d5f56, rn 0x088bc0f9, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x7fffffff, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x00000001 rm 0x0000ffff, rn 0x0000ffff, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x048e8c61 rm 0xe444dc25, rn 0xd5eef620, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0xfd764d52 rm 0x06ea9b2a, rn 0xa2108661, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, carryin 0, cpsr 0x00000000     
+smmulr  r0, r1, r2 :: rd 0xffc528bd rm 0xf91d5f56, rn 0x088bc0f9, carryin 0, cpsr 0x00000000     

@@ -914,5 +914,30 @@ int main(int argc, char **argv)
         __asm__ __volatile__("nopne" ::: "memory","cc");
 	printf("------------ NOP (end) ------------\n");
 
+	printf("------------ SMMUL ------------\n");
+        TESTINST3("smmul   r0, r1, r2", 0, 0, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0xffffffff, 0, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0, 0xffffffff, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0xffffffff, 0xffffffff, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0x7fffffff, 0x7fffffff, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0x0000ffff, 0x0000ffff, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0xe444dc25, 0xd5eef620, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0x06ea9b2a, 0xa2108661, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0x448f3a5f, 0x17aecf57, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0x4b0c2337, 0xffa63d6c, r0, r1, r2, 0);
+        TESTINST3("smmul   r0, r1, r2", 0xf91d5f56, 0x088bc0f9, r0, r1, r2, 0);
+
+        TESTINST3("smmulr  r0, r1, r2", 0, 0, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0xffffffff, 0, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0, 0xffffffff, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0xffffffff, 0xffffffff, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0x7fffffff, 0x7fffffff, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0x0000ffff, 0x0000ffff, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0xe444dc25, 0xd5eef620, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0x06ea9b2a, 0xa2108661, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0x448f3a5f, 0x17aecf57, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0x4b0c2337, 0xffa63d6c, r0, r1, r2, 0);
+        TESTINST3("smmulr  r0, r1, r2", 0xf91d5f56, 0x088bc0f9, r0, r1, r2, 0);
+
 	return 0;
 }

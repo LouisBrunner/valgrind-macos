@@ -168,9 +168,6 @@ get fixed.
   not high prio
   **possible 3.8.0 (easy to fix?)
 
-295617  ARM - Add some missing syscalls
-  **possible 3.8.0, needs landing
-
 295808  vex amd64->IR: 0xF3 0xF 0xBC 0xC0 0x48 0x1 0xD0 0x48 (TZCNT)
   **possible 3.8.0 ? see also 301011 (32 bit)
 
@@ -202,9 +199,6 @@ get fixed.
 296578  vex amd64->IR: 0x60 0x0 0x0 0x0 0x0 0x0 0x0 0x0
   **no idea what this is
 
-296792  [PATCH] valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
-  **3.8.0, needs checkin
-
 296947  vex amd64->IR: 0x1F 0x7 0x0 0x0 0x0 0x0
   probably invalid
 
@@ -229,9 +223,6 @@ get fixed.
 
 298905  argv / argc to be changed to non valgrind values.
   wishlist
-
-299629  dup3() syscall (358) support is missing for ARM
-  **possible 3.8.0, should be easy to fix
 
 300102  memcheck tester
   unclear what status is
@@ -294,9 +285,6 @@ get fixed.
 
 302700  Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
   is in 3.6.0
-
-302827  add wrapper for CDROM_GET_CAPABILITY
-  **possible 3.8.0, has patch
 
 302901  Valgrind crashes with dwz optimized debuginfo
   **possible 3.8.0, has patch, should take

@@ -1790,29 +1790,30 @@ struct vki_scsi_idlun {
 // From linux-2.6.8.1/include/linux/cdrom.h
 //----------------------------------------------------------------------
 
-#define VKI_CDROMPLAYMSF	0x5303 /* Play Audio MSF (struct cdrom_msf) */
-#define VKI_CDROMREADTOCHDR	0x5305 /* Read TOC header 
-                                           (struct cdrom_tochdr) */
-#define VKI_CDROMREADTOCENTRY	0x5306 /* Read TOC entry 
-                                           (struct cdrom_tocentry) */
-#define VKI_CDROMSUBCHNL	0x530b /* Read subchannel data 
-                                           (struct cdrom_subchnl) */
-#define VKI_CDROMREADMODE2	0x530c /* Read CDROM mode 2 data (2336 Bytes) 
-                                           (struct cdrom_read) */
-#define VKI_CDROMREADAUDIO	0x530e /* (struct cdrom_read_audio) */
-#define VKI_CDROMMULTISESSION	0x5310 /* Obtain the start-of-last-session 
-                                           address of multi session disks 
-                                           (struct cdrom_multisession) */
-#define VKI_CDROM_GET_MCN	0x5311 /* Obtain the "Universal Product Code" 
-                                           if available (struct cdrom_mcn) */
-#define VKI_CDROMVOLREAD	0x5313 /* Get the drive's volume setting
-                                          (struct cdrom_volctrl) */
-#define VKI_CDROMREADRAW	0x5314	/* read data in raw mode (2352 Bytes)
-                                           (struct cdrom_read) */
-#define VKI_CDROM_CLEAR_OPTIONS	0x5321  /* Clear behavior options */
-#define VKI_CDROM_DRIVE_STATUS	0x5326  /* Get tray position, etc. */
+#define VKI_CDROMPLAYMSF		0x5303 /* Play Audio MSF (struct cdrom_msf) */
+#define VKI_CDROMREADTOCHDR		0x5305 /* Read TOC header 
+                                	           (struct cdrom_tochdr) */
+#define VKI_CDROMREADTOCENTRY		0x5306 /* Read TOC entry 
+                                	           (struct cdrom_tocentry) */
+#define VKI_CDROMSUBCHNL		0x530b /* Read subchannel data 
+                                	           (struct cdrom_subchnl) */
+#define VKI_CDROMREADMODE2		0x530c /* Read CDROM mode 2 data (2336 Bytes) 
+                                	           (struct cdrom_read) */
+#define VKI_CDROMREADAUDIO		0x530e /* (struct cdrom_read_audio) */
+#define VKI_CDROMMULTISESSION		0x5310 /* Obtain the start-of-last-session 
+                                	           address of multi session disks 
+                                	           (struct cdrom_multisession) */
+#define VKI_CDROM_GET_MCN		0x5311 /* Obtain the "Universal Product Code" 
+                                	           if available (struct cdrom_mcn) */
+#define VKI_CDROMVOLREAD		0x5313 /* Get the drive's volume setting
+                                	          (struct cdrom_volctrl) */
+#define VKI_CDROMREADRAW		0x5314	/* read data in raw mode (2352 Bytes)
+                                	           (struct cdrom_read) */
+#define VKI_CDROM_CLEAR_OPTIONS		0x5321  /* Clear behavior options */
+#define VKI_CDROM_DRIVE_STATUS		0x5326  /* Get tray position, etc. */
+#define VKI_CDROM_GET_CAPABILITY	0x5331	/* get capabilities */
 
-#define VKI_CDROM_SEND_PACKET	0x5393	/* send a packet to the drive */
+#define VKI_CDROM_SEND_PACKET		0x5393	/* send a packet to the drive */
 
 struct vki_cdrom_msf0		
 {

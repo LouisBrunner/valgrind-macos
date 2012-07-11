@@ -4771,6 +4771,8 @@ PRE(sys_ioctl)
    case VKI_CDROM_DRIVE_STATUS: /* 0x5326 */
    case VKI_CDROM_CLEAR_OPTIONS: /* 0x5321 */
       break;
+   case VKI_CDROM_GET_CAPABILITY: /* 0x5331 */
+      break;
 
    case VKI_FIGETBSZ:
       PRE_MEM_WRITE( "ioctl(FIGETBSZ)", ARG3, sizeof(unsigned long));
@@ -5961,6 +5963,8 @@ POST(sys_ioctl)
 	 for readability).  JRS 20021117 */
    case VKI_CDROM_DRIVE_STATUS: /* 0x5326 */
    case VKI_CDROM_CLEAR_OPTIONS: /* 0x5321 */
+      break;
+   case VKI_CDROM_GET_CAPABILITY: /* 0x5331 */
       break;
 
    case VKI_FIGETBSZ:

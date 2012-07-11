@@ -1888,6 +1888,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_dup3,              sys_dup3),             // 358
    LINXY(__NR_pipe2,             sys_pipe2),            // 359
    LINXY(__NR_inotify_init1,     sys_inotify_init1),    // 360
+   LINXY(__NR_preadv,            sys_preadv),           // 361
+   LINX_(__NR_pwritev,           sys_pwritev),          // 362
+   LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 363
+   LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 364
 
    PLAXY(__NR_accept4,           sys_accept4)           // 366
 };

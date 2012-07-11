@@ -4489,6 +4489,13 @@ PRE(sys_ioctl)
                      (Addr)&((struct vki_ifreq *)ARG3)->ifr_map,
                      sizeof(((struct vki_ifreq *)ARG3)->ifr_map) );
       break;
+   case VKI_SIOCSHWTSTAMP:       /* Set hardware time stamping   */
+      PRE_MEM_RASCIIZ( "ioctl(SIOCSHWTSTAMP)",
+                     (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
+      PRE_MEM_READ( "ioctl(SIOCSHWTSTAMP)",
+                     (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_data,
+                     sizeof(struct vki_hwtstamp_config) );
+      break;
    case VKI_SIOCSIFTXQLEN:       /* Set the tx queue length      */
       PRE_MEM_RASCIIZ( "ioctl(SIOCSIFTXQLEN)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
@@ -5756,6 +5763,7 @@ POST(sys_ioctl)
                     
    case VKI_SIOCSIFFLAGS:        /* set flags                    */
    case VKI_SIOCSIFMAP:          /* Set device parameters        */
+   case VKI_SIOCSHWTSTAMP:       /* Set hardware time stamping   */
    case VKI_SIOCSIFTXQLEN:       /* Set the tx queue length      */
    case VKI_SIOCSIFDSTADDR:      /* set remote PA address        */
    case VKI_SIOCSIFBRDADDR:      /* set broadcast PA address     */

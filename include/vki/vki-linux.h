@@ -1622,6 +1622,8 @@ typedef struct {
 #define VKI_SIOCGIFMAP		0x8970	/* Get device parameters	*/
 #define VKI_SIOCSIFMAP		0x8971	/* Set device parameters	*/
 
+#define VKI_SIOCSHWTSTAMP	0x89B0	/* Set hardware time stamping */
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/ppdev.h
 //----------------------------------------------------------------------
@@ -2977,6 +2979,16 @@ struct vki_hci_inquiry_req {
 #define VKI_KVM_RUN                   _VKI_IO(KVMIO,   0x80)
 #define VKI_KVM_S390_INITIAL_RESET    _VKI_IO(KVMIO,   0x97)
 #define VKI_KVM_NMI                   _VKI_IO(KVMIO,   0x9a)
+
+//----------------------------------------------------------------------
+// From linux-2.6/include/linux/net_stamp.h
+//----------------------------------------------------------------------
+
+struct vki_hwtstamp_config {
+	int flags;
+	int tx_type;
+	int rx_filter;
+};
 
 #endif // __VKI_LINUX_H
 

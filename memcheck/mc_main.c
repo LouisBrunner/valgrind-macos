@@ -4644,8 +4644,7 @@ static Int mc_get_or_set_vbits_for_client (
 Bool MC_(is_within_valid_secondary) ( Addr a )
 {
    SecMap* sm = maybe_get_secmap_for ( a );
-   if (sm == NULL || sm == &sm_distinguished[SM_DIST_NOACCESS]
-       || MC_(in_ignored_range)(a)) {
+   if (sm == NULL || sm == &sm_distinguished[SM_DIST_NOACCESS]) {
       /* Definitely not in use. */
       return False;
    } else {

@@ -39,9 +39,6 @@ get fixed.
 286864  strlen function redirection error
   **probably invalid
 
-286917  disInstr(arm): unhandled instruction: QADD
-  **possible 3.8.0
-
 287175  ARM: scalar VFP fixed-point VCVT instructions not handled
   **possible 3.8.0   same as 301336 ?
 

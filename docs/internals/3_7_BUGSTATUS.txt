@@ -89,10 +89,6 @@ get fixed.
 289912  link_tool_exe_darwin should not use relative paths
   unsupported build configuration; low prio
 
-290006  memcheck doesn't mark %xmm as initialized after "pcmpeqw %xmm %xmm"
-  easy fix; w/ patch
-   **possible 3.8.0
-
 290061  pie elf always loaded at 0x108000
   w/ patch; looks OK; easy fix ?
   not sure this wouldn't break something else -- needs looking into

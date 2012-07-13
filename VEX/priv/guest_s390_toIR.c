@@ -6847,7 +6847,7 @@ s390_irgen_SLDA(UChar r1, IRTemp op2addr)
    IRTemp p2 = newTemp(Ity_I64);
    IRTemp op = newTemp(Ity_I64);
    IRTemp result = newTemp(Ity_I64);
-   Long sign_mask;
+   ULong sign_mask;
    IRTemp shift_amount = newTemp(Ity_I64);
 
    assign(p1, unop(Iop_32Uto64, get_gpr_w1(r1)));
@@ -6857,8 +6857,8 @@ s390_irgen_SLDA(UChar r1, IRTemp op2addr)
    sign_mask = 1ULL << 63;
    assign(shift_amount, binop(Iop_And64, mkexpr(op2addr), mkU64(63)));
    assign(result, binop(Iop_Or64, binop(Iop_And64, binop(Iop_Shl64, mkexpr(op),
-          unop(Iop_64to8, mkexpr(shift_amount))), mkU64((ULong)(~sign_mask))),
-          binop(Iop_And64, mkexpr(op), mkU64((ULong)sign_mask))));
+          unop(Iop_64to8, mkexpr(shift_amount))), mkU64(~sign_mask)),
+          binop(Iop_And64, mkexpr(op), mkU64(sign_mask))));
    put_gpr_w1(r1, unop(Iop_64HIto32, mkexpr(result)));
    put_gpr_w1(r1 + 1, unop(Iop_64to32, mkexpr(result)));
    s390_cc_thunk_putZZ(S390_CC_OP_SHIFT_LEFT_64, op, shift_amount);

@@ -487,7 +487,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       print("couldn't read load commands from executable\n");
       return -1;
    }
-   headers_end = headers + size;
+   headers_end = headers + len;
 
    
    // Map some segments into client memory:

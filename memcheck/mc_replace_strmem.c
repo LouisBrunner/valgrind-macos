@@ -678,6 +678,7 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI_strncasecmp_l)
+ STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI___strncasecmp_l)
 
 #elif defined(VGO_darwin)
  //STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)

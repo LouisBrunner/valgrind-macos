@@ -15,6 +15,7 @@ get fixed.
 -- add allocator-mismatch checking?
 -- 302709, minor tidying needed?
 -- reconsider https://bugs.kde.org/show_bug.cgi?id=253657 (AMD64 seg regs)
+-- make sure it works OK on Ubuntu 12.04 and Fedora latest
 
 284004  Application under test hangs after call to __posix_spawn (Darwin)
   open, not started
@@ -64,9 +65,6 @@ get fixed.
 
 289360  parse_type_DIE confused by DW_TAG_enumeration_type
   low prio; --read-var-info=yes problem; OP queried
-
-289470  Loading of large Mach-O thin binaries fails.
-  **possible 3.8.0; w/ patch; apparently harmless; easy fix
 
 289578  Backtraces with unwind tables (=without debug symbols)
         using offline symbol resolving
@@ -177,18 +175,12 @@ get fixed.
 296166  Add support for ARM in ptrcheck
   **no patch yet
 
-296229  Linux user input device ioctls missing wrappers
-  **possible 3.8.0, but wrong patch; OP queried
-
 296308  helgrind tests fail on Linux/x86 due to clone syscall
   missing unwind info
   **possible 3.8.0; has low risk patch
 
 296311  Wrong stack traces due to -fomit-frame-pointer (x86)
   **not sure what to do about this.  Is it serious?
-
-296318  ELF Debug info improvements (more than one rx/rw mapping)
-  **this is probably important for 3.8.0  
 
 296480  valgrind hangs early when run on Python
   OSX.  Not started.
@@ -204,9 +196,6 @@ get fixed.
 
 297407  Failed reading debug information for Fortran codes; invalid cuOff
   Tromey made a patch for this.  Dunno if it should land.  Queried.
-
-297701  Another alias for strncasecmp_l in libc-2.13.so
-  **possible 3.8.0, trivial fix
 
 298097  on ppc32 (e500mc core) target, valgrind report a app a
         mem error but the app is good to me.
@@ -226,12 +215,6 @@ get fixed.
 
 300102  memcheck tester
   unclear what status is
-
-300140  ARM - Missing (T2) SMMUL
-  **possible 3.8.0, has patch but needs testcase
-
-300195  read_elf_debug_info() should accept 'executable' .got sections
-  **possible 3.8.0, simple patch, needs checking over
 
 301011  vex x86->IR: 0xF3 0xF 0xBC 0xDE (TZCNT)
   **possible 3.8.0; see also 295808 (64 bit)
@@ -290,3 +273,19 @@ get fixed.
   **possible 3.8.0, has patch, should take
 
 -- Thurs 5 July 2012, mid afternoon.
+
+303116] New: Add support for the POWER instruction popcntb
+
+303127] New: Power test suite fixes for frsqrte, vrefp, and vrsqrtefp
+instructions.
+
+303250] New: "Assertion `instrs_in->arr_used <= 10000' failed" on
+OpenSSL with --track-origins=yes
+
+303460] New: Killed by fatal signal at doRegisterAllocation
+
+303466] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0x7A
+0x10 0x35 0x61 0x2D 0x20 0x0
+== generic avx
+
+-- Friday 13 July 2012  16:02 CEST

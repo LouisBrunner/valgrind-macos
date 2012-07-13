@@ -7383,10 +7383,12 @@ s390_insn_bfp128_convert_from_emit(UChar *buf, const s390_insn *insn)
       mode and no FPC modification is necessary. So we handle them
       upfront. */
    switch (insn->variant.bfp_unop.tag) {
-   case S390_BFP_F128_TO_I32: return s390_emit_CFXBR(buf, rounding_mode,
-                                                     r1, r2_hi);  break;
-   case S390_BFP_F128_TO_I64: return s390_emit_CGXBR(buf, rounding_mode,
-                                                     r1, r2_hi);  break;
+   case S390_BFP_F128_TO_I32:
+      return s390_emit_CFXBR(buf, rounding_mode, r1, r2_hi);
+
+   case S390_BFP_F128_TO_I64:
+      return s390_emit_CGXBR(buf, rounding_mode, r1, r2_hi);
+
    default: break;
    }
 

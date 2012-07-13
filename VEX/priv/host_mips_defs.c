@@ -2619,7 +2619,6 @@ static UChar* do_load_or_store_machine_word (
                   opc1 = 55;
                   vassert(mode64);
                   break;
-                  break;
                default:
                   vassert(0);
                   break;
@@ -3375,7 +3374,6 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                   opc = 55;
                   vassert(mode64);
                   break;
-                  break;
                default:
                   goto bad;
             }
@@ -3399,7 +3397,6 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                case 8:
                   opc = 55;
                   vassert(mode64);
-                  break;
                   break;
                default:
                   goto bad;

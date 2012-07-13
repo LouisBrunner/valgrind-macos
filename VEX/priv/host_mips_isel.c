@@ -840,8 +840,6 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
             addInstr(env, MIPSInstr_Cmp(syned, size32, dst, r1, r2, cc));
             return dst;
-
-            break;
          }
 
          if (e->Iex.Binop.op == Iop_Max32U) {

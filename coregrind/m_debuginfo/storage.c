@@ -634,6 +634,7 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R15: VG_(printf)("R15"); break;
       case Creg_ARM_R14: VG_(printf)("R14"); break;
       case Creg_MIPS_RA: VG_(printf)("RA"); break;
+      case Creg_S390_R14: VG_(printf)("R14"); break;
       default: vg_assert(0);
    }
 }

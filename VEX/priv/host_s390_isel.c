@@ -156,7 +156,7 @@ get_guest_reg(Int offset)
       /* counter is used both as 4-byte and as 8-byte entity */
    case S390X_GUEST_OFFSET(guest_counter)+1 ... S390X_GUEST_OFFSET(guest_counter)+3:
    case S390X_GUEST_OFFSET(guest_counter)+5 ... S390X_GUEST_OFFSET(guest_counter)+7:
-      vassert("partial update of this guest state register is not allowed");
+      vpanic("partial update of this guest state register is not allowed");
       break;
 
    default: break;

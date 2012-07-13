@@ -554,9 +554,8 @@ Bool get_elf_symbol_info (
          background. */
       Bool in_rx;
       vg_assert(di->fsm.have_rx_map);
-      in_rx = (!(*sym_avma_out + *sym_size_out <= di->fsm.rx_map_avma
-                 || *sym_avma_out >= di->fsm.rx_map_avma
-                                     + di->fsm.rx_map_size));
+      in_rx = (ML_(find_rx_mapping)(di, *sym_avma_out,
+                                    *sym_avma_out + *sym_size_out) != NULL);
       if (in_text)
          vg_assert(in_rx);
       if (!in_rx) {
@@ -1266,12 +1265,6 @@ Word file_offset_from_svma ( /*OUT*/Bool* ok,
    supplied DebugInfo.
 */
 
-/* Temporarily holds information copied out of PT_LOAD entries
-   in ML_(read_elf_debug_info. */
-typedef
-   struct { Addr svma_base; Addr svma_limit; PtrdiffT bias; }
-   RangeAndBias;
-
 Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 {
    /* This function is long and complex.  That, and the presence of
@@ -1283,7 +1276,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* TOPLEVEL */
    Bool          res, ok;
    SysRes        fd, sres;
-   Word          i;
+   Word          i, j;
    Bool          dynbss_present = False;
    Bool          sdynbss_present = False;
 
@@ -1312,19 +1305,19 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    UChar*      shdr_strtab_img = NULL;
 
    /* SVMAs covered by rx and rw segments and corresponding biases.
-      We keep separate lists of rx and rw areas.  Each can have up to
-      N_RX_RW_AREAS entries.  Normally each object would provide just
-      one rx and one rw area, but Mike Hommey's elfhack creates
-      objects with two rx PT_LOAD entries, hence the generality. */
-   const Int N_RX_RW_AREAS = 2;
+      Normally each object would provide just one rx and one rw area,
+      but various ELF mangling tools create objects with multiple
+      such entries, hence the generality. */
+   typedef
+      struct {
+         Addr     svma_base;
+         Addr     svma_limit;
+         PtrdiffT bias;
+         Bool     exec;
+      }
+      RangeAndBias;
 
-   RangeAndBias rx[N_RX_RW_AREAS];
-   RangeAndBias rw[N_RX_RW_AREAS];
-   Word n_rx = 0; /* 0 .. N_RX_RW_AREAS */
-   Word n_rw = 0; /* 0 .. N_RX_RW_AREAS */
-   /* Pointless paranoia: */
-   VG_(memset)( rx, 0, sizeof(rx) );
-   VG_(memset)( rw, 0, sizeof(rw) );
+   XArray* /* of RangeAndBias */ svma_ranges = NULL;
 
    /* Build ID */
    Char* buildid = NULL;
@@ -1332,8 +1325,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    vg_assert(di);
    vg_assert(di->fsm.have_rx_map == True);
    vg_assert(di->fsm.have_rw_map == True);
-   vg_assert(di->fsm.rx_map_size > 0);
-   vg_assert(di->fsm.rw_map_size > 0);
    vg_assert(di->have_dinfo == False);
    vg_assert(di->fsm.filename);
    vg_assert(!di->symtab);
@@ -1343,19 +1334,35 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    vg_assert(!di->strchunks);
    vg_assert(!di->soname);
 
-   /* If these don't hold true, it means that m_syswrap/m_aspacemgr
-      managed to do a mapping where the start isn't page aligned.
-      Which sounds pretty bogus to me. */
-   vg_assert(VG_IS_PAGE_ALIGNED(di->fsm.rx_map_avma));
-   vg_assert(VG_IS_PAGE_ALIGNED(di->fsm.rw_map_avma));
+   {
+      Bool has_nonempty_rx = False;
+      Bool has_nonempty_rw = False;
+      for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+         struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+         if (map->rx) {
+            if (map->size > 0)
+               has_nonempty_rx = True;
+         } else if (map->rw) {
+            if (map->size > 0)
+               has_nonempty_rw = True;
+         } else
+            continue;
+
+         /* If this doesn't hold true, it means that m_syswrap/m_aspacemgr
+            managed to do a mapping where the start isn't page aligned.
+            Which sounds pretty bogus to me. */
+         vg_assert(VG_IS_PAGE_ALIGNED(map->avma));
+      }
+      vg_assert(has_nonempty_rx);
+      vg_assert(has_nonempty_rw);
+   }
 
    /* ----------------------------------------------------------
       At this point, there is very little information in the
       DebugInfo.  We only know that something that looks like an ELF
-      file has been mapped rx-ishly as recorded with the di->*rx_map*
-      fields and has also been mapped rw-ishly as recorded with the
-      di->*rw_map* fields.  First we examine the file's ELF Program
-      Header, and, by comparing that against the di->*r{w,x}_map*
+      file has been mapped rx-ishly and rw-ishly as recorded in the
+      di->fsm.maps array items.  First we examine the file's ELF
+      Program Header, and, by comparing that against the di->fsm.maps
       info, try to figure out the AVMAs for the sections we care
       about, that should have been mapped: text, data, sdata, bss,
       got, plt, and toc.
@@ -1365,8 +1372,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
-      VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)\n",
-                                di->fsm.filename, di->fsm.rx_map_avma );
+      VG_(message)(Vg_DebugMsg, "Reading syms from %s\n",
+                                di->fsm.filename );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
@@ -1441,10 +1448,18 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                phdr_img, phdr_nent, phdr_ent_szB);
    TRACE_SYMTAB("shdr:    img %p nent %ld ent_szB %ld\n",
                shdr_img, shdr_nent, shdr_ent_szB);
-   TRACE_SYMTAB("rx_map:  avma %#lx  size %lu  foff %lu\n",
-                di->fsm.rx_map_avma, di->fsm.rx_map_size, di->fsm.rx_map_foff);
-   TRACE_SYMTAB("rw_map:  avma %#lx  size %lu  foff %lu\n",
-                di->fsm.rw_map_avma, di->fsm.rw_map_size, di->fsm.rw_map_foff);
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      if (map->rx)
+         TRACE_SYMTAB("rx_map:  avma %#lx   size %lu  foff %lu\n",
+                      map->avma, map->size, map->foff);
+   }
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      if (map->rw)
+         TRACE_SYMTAB("rw_map:  avma %#lx   size %lu  foff %lu\n",
+                      map->avma, map->size, map->foff);
+   }
 
    if (phdr_nent == 0
        || !contained_within(
@@ -1478,10 +1493,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    TRACE_SYMTAB("shdr:    string table at %p\n", shdr_strtab_img );
 
+   svma_ranges = VG_(newXA)(ML_(dinfo_zalloc), "di.relfdi.1",
+                            ML_(dinfo_free), sizeof(RangeAndBias));
+
    /* TOPLEVEL */
    /* Look through the program header table, and:
-      - copy information from suitable PT_LOAD entries into rx[] or
-        rw[]
+      - copy information from suitable PT_LOAD entries into svma_ranges
       - find (or fake up) the .soname for this object.
    */
    TRACE_SYMTAB("\n");
@@ -1496,10 +1513,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          /* Make sure the PT_LOADable entries are in order and
             non-overlapping.  This in turn means the address ranges
-            slurped into rx[] and rw[] are in order and
+            slurped into svma_ranges are in order and
             non-overlapping. */
-         vg_assert(n_rx >= 0 && n_rx <= N_RX_RW_AREAS);
-         vg_assert(n_rw >= 0 && n_rw <= N_RX_RW_AREAS);
 
          if (phdr->p_type == PT_LOAD) {
             TRACE_SYMTAB("PT_LOAD[%ld]: p_vaddr %#lx (prev %#lx)\n",
@@ -1516,42 +1531,41 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                goto out;
             }
             prev_svma = phdr->p_vaddr;
-            if (phdr->p_offset >= di->fsm.rx_map_foff
-                && phdr->p_offset < di->fsm.rx_map_foff + di->fsm.rx_map_size
-                && phdr->p_offset + phdr->p_filesz
-                   <= di->fsm.rx_map_foff + di->fsm.rx_map_size
-                && (phdr->p_flags & (PF_R | PF_W | PF_X)) == (PF_R | PF_X)) {
-               if (n_rx == N_RX_RW_AREAS) {
-                  ML_(symerr)(di, True,
-                              "N_RX_RW_AREAS is too low; "
-                              "increase and recompile.");
+            if (phdr->p_memsz > 0) {
+               Bool loaded = False;
+               for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
+                  struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
+                  if (   (map->rx || map->rw)
+                      && phdr->p_offset >= map->foff
+                      && phdr->p_offset <  map->foff + map->size
+                      && phdr->p_offset + phdr->p_filesz <= map->foff
+                                                            + map->size) {
+                     RangeAndBias item;
+                     item.svma_base  = phdr->p_vaddr;
+                     item.svma_limit = phdr->p_vaddr + phdr->p_memsz;
+                     item.bias       = map->avma - map->foff
+                                       + phdr->p_offset - phdr->p_vaddr;
+                     if (   map->rw
+                         && (phdr->p_flags & (PF_R | PF_W)) == (PF_R | PF_W)) {
+                        item.exec = False;
+                        VG_(addToXA)(svma_ranges, &item);
+                        TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rw\n", i);
+                        loaded = True;
+                     }
+                     if (   map->rx
+                         && (phdr->p_flags & (PF_R | PF_X)) == (PF_R | PF_X)) {
+                        item.exec = True;
+                        VG_(addToXA)(svma_ranges, &item);
+                        TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rx\n", i);
+                        loaded = True;
+                     }
+                  }
+               }
+               if (!loaded) {
+                  ML_(symerr)(di, False,
+                              "ELF section outside all mapped regions");
                   goto out;
                }
-               rx[n_rx].svma_base  = phdr->p_vaddr;
-               rx[n_rx].svma_limit = phdr->p_vaddr + phdr->p_memsz;
-               rx[n_rx].bias       = di->fsm.rx_map_avma - di->fsm.rx_map_foff
-                                     + phdr->p_offset - phdr->p_vaddr;
-               n_rx++;
-               TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rx\n", i);
-            }
-            else
-            if (phdr->p_offset >= di->fsm.rw_map_foff
-                && phdr->p_offset < di->fsm.rw_map_foff + di->fsm.rw_map_size
-                && phdr->p_offset + phdr->p_filesz 
-                   <= di->fsm.rw_map_foff + di->fsm.rw_map_size
-                && (phdr->p_flags & (PF_R | PF_W | PF_X)) == (PF_R | PF_W)) {
-               if (n_rw == N_RX_RW_AREAS) {
-                  ML_(symerr)(di, True,
-                              "N_RX_RW_AREAS is too low; "
-                              "increase and recompile.");
-                  goto out;
-               }
-               rw[n_rw].svma_base  = phdr->p_vaddr;
-               rw[n_rw].svma_limit = phdr->p_vaddr + phdr->p_memsz;
-               rw[n_rw].bias       = di->fsm.rw_map_avma - di->fsm.rw_map_foff
-                                     + phdr->p_offset - phdr->p_vaddr;
-               n_rw++;
-               TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rw\n", i);
             }
          }
 
@@ -1564,7 +1578,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                                + phdr->p_offset);
             Word   stroff = -1;
             UChar* strtab = NULL;
-            Word   j;
             for (j = 0; dyn_img[j].d_tag != DT_NULL; j++) {
                switch (dyn_img[j].d_tag) {
                   case DT_SONAME: {
@@ -1608,33 +1621,36 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       di->soname = ML_(dinfo_strdup)("di.redi.2", "NONE");
    }
 
-   vg_assert(n_rx >= 0 && n_rx <= N_RX_RW_AREAS);
-   vg_assert(n_rw >= 0 && n_rw <= N_RX_RW_AREAS);
-   for (i = 0; i < n_rx; i++) {
-      vg_assert(rx[i].svma_limit != 0);
-   }
-   for (i = 0; i < n_rw; i++) {
-      vg_assert(rw[i].svma_limit != 0);
-   }
+   vg_assert(VG_(sizeXA)(svma_ranges) != 0);
 
    /* Now read the section table. */
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ Examining the section headers ------\n");
-   TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
-                di->fsm.rx_map_avma,
-                di->fsm.rx_map_foff,
-                di->fsm.rx_map_foff + di->fsm.rx_map_size - 1 );
-   for (i = 0; i < n_rx; i++) {
-      TRACE_SYMTAB("rx[%ld]: contains svmas %#lx .. %#lx with bias %#lx\n",
-                   i, rx[i].svma_base, rx[i].svma_limit - 1, rx[i].bias );
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      if (map->rx)
+         TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
+                      map->avma, map->foff, map->foff + map->size - 1 );
    }
-   TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
-                di->fsm.rw_map_avma,
-                di->fsm.rw_map_foff, 
-                di->fsm.rw_map_foff + di->fsm.rw_map_size - 1 );
-   for (i = 0; i < n_rw; i++) {
-      TRACE_SYMTAB("rw[%ld]: contains svmas %#lx .. %#lx with bias %#lx\n",
-                   i, rw[i].svma_base, rw[i].svma_limit - 1, rw[i].bias );
+   TRACE_SYMTAB("rx: contains these svma regions:\n");
+   for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
+      RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
+      if (reg->exec)
+         TRACE_SYMTAB("  svmas %#lx .. %#lx with bias %#lx\n",
+                      reg->svma_base, reg->svma_limit - 1, reg->bias );
+   }
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      if (map->rw)
+         TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
+                      map->avma, map->foff, map->foff + map->size - 1 );
+   }
+   TRACE_SYMTAB("rw: contains these svma regions:\n");
+   for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
+      RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
+      if (!reg->exec)
+         TRACE_SYMTAB("  svmas %#lx .. %#lx with bias %#lx\n",
+                      reg->svma_base, reg->svma_limit - 1, reg->bias );
    }
 
    /* TOPLEVEL */
@@ -1653,19 +1669,17 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          leave the relevant pointer at NULL. */
       RangeAndBias* inrx = NULL;
       RangeAndBias* inrw = NULL;
-      { Word j;
-        for (j = 0; j < n_rx; j++) {
-           if (svma >= rx[j].svma_base && svma < rx[j].svma_limit) {
-             inrx = &rx[j];
-             break;
-           }
-        }
-        for (j = 0; j < n_rw; j++) {
-           if (svma >= rw[j].svma_base && svma < rw[j].svma_limit) {
-             inrw = &rw[j];
-             break;
-           }
-        }
+      for (j = 0; j < VG_(sizeXA)(svma_ranges); j++) {
+         RangeAndBias* rng = VG_(indexXA)(svma_ranges, j);
+         if (svma >= rng->svma_base && svma < rng->svma_limit) {
+            if (!inrx && rng->exec) {
+               inrx = rng;
+            } else if (!inrw && !rng->exec) {
+               inrw = rng;
+            }
+            if (inrx && inrw)
+               break;
+         }
       }
 
       TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6ld  "
@@ -2268,10 +2282,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          UChar*      shdr_strtab_dimg = NULL;
 
          /* SVMAs covered by rx and rw segments and corresponding bias. */
-         /* Addr     rx_dsvma_base = 0; */ /* UNUSED */
          Addr     rx_dsvma_limit = 0;
          PtrdiffT rx_dbias = 0;
-         /* Addr     rw_dsvma_base = 0; */ /* UNUSED */
          Addr     rw_dsvma_limit = 0;
          PtrdiffT rw_dbias = 0;
 
@@ -2324,28 +2336,24 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                = INDEX_BIS( (void*)(dimage + ehdr_dimg->e_phoff), 
                                        i, phdr_ent_szB );
             if (phdr->p_type == PT_LOAD) {
-               if (rx_dsvma_limit == 0
-                   && phdr->p_offset >= di->fsm.rx_map_foff
-                   && phdr->p_offset
-                      < di->fsm.rx_map_foff + di->fsm.rx_map_size
-                   && phdr->p_offset + phdr->p_filesz
-                      <= di->fsm.rx_map_foff + di->fsm.rx_map_size) {
-                  /* rx_dsvma_base = phdr->p_vaddr; */ /* UNUSED */
-                  rx_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
-                  rx_dbias = di->fsm.rx_map_avma - di->fsm.rx_map_foff 
-                             + phdr->p_offset - phdr->p_vaddr;
-               }
-               else
-               if (rw_dsvma_limit == 0
-                   && phdr->p_offset >= di->fsm.rw_map_foff
-                   && phdr->p_offset
-                      < di->fsm.rw_map_foff + di->fsm.rw_map_size
-                   && phdr->p_offset + phdr->p_filesz
-                      <= di->fsm.rw_map_foff + di->fsm.rw_map_size) {
-                  /* rw_dsvma_base = phdr->p_vaddr; */ /* UNUSED */
-                  rw_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
-                  rw_dbias = di->fsm.rw_map_avma - di->fsm.rw_map_foff
-                             + phdr->p_offset - phdr->p_vaddr;
+               for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
+                  struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
+                  if (   phdr->p_offset >= map->foff
+                      && phdr->p_offset <  map->foff + map->size
+                      && phdr->p_offset + phdr->p_filesz < map->foff
+                                                           + map->size) {
+                     if (map->rx && rx_dsvma_limit == 0) {
+                        rx_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
+                        rx_dbias = map->avma - map->foff + phdr->p_offset
+                                   - phdr->p_vaddr;
+                     }
+                     if (map->rw && rw_dsvma_limit == 0) {
+                        rw_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
+                        rw_dbias = map->avma - map->foff + phdr->p_offset
+                                   - phdr->p_vaddr;
+                     }
+                     break;
+                  }
                }
             }
          }
@@ -2562,7 +2570,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       exp-sgcheck.) */
    if (0 && (VG_(needs).var_info || VG_(clo_read_var_info))) {
       UWord nVars = 0;
-      Word  j;
       if (di->varinfo) {
          for (j = 0; j < VG_(sizeXA)(di->varinfo); j++) {
             OSet* /* of DiAddrRange */ scope
@@ -2596,6 +2603,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       }
       m_res = VG_(am_munmap_valgrind) ( oimage, n_oimage );
       vg_assert(!sr_isError(m_res));
+
+      if (svma_ranges)
+         VG_(deleteXA)(svma_ranges);
+
       return res;
    } /* out: */ 
 

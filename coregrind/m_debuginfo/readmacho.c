@@ -676,18 +676,34 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    ImageInfo ii;  /* main file */
    ImageInfo iid; /* auxiliary .dSYM file */
    Bool ok;
+   Word i;
+   struct _DebugInfoMapping* rx_map = NULL;
+   struct _DebugInfoMapping* rw_map = NULL;
 
    /* mmap the object file to look for di->soname and di->text_bias 
       and uuid and nlist and STABS */
-
-   if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg,
-                   "%s (%#lx)\n", di->fsm.filename, di->fsm.rx_map_avma );
 
    /* This should be ensured by our caller (that we're in the accept
       state). */
    vg_assert(di->fsm.have_rx_map);
    vg_assert(di->fsm.have_rw_map);
+
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      if (map->rx && !rx_map)
+         rx_map = map;
+      if (map->rw && !rw_map)
+         rw_map = map;
+      if (rx_map && rw_map)
+         break;
+   }
+   vg_assert(rx_map);
+   vg_assert(rw_map);
+
+   if (VG_(clo_verbosity) > 1)
+      VG_(message)(Vg_DebugMsg,
+                   "%s (rx at %#lx, rw at %#lx)\n", di->fsm.filename,
+                   rx_map->avma, rw_map->avma );
 
    VG_(memset)(&ii,   0, sizeof(ii));
    VG_(memset)(&iid,  0, sizeof(iid));
@@ -779,7 +795,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                 && seg->fileoff == 0 && seg->filesize != 0) {
                di->text_present = True;
                di->text_svma = (Addr)seg->vmaddr;
-               di->text_avma = di->fsm.rx_map_avma;
+               di->text_avma = rx_map->avma;
                di->text_size = seg->vmsize;
                di->text_bias = di->text_avma - di->text_svma;
                /* Make the _debug_ values be the same as the
@@ -796,7 +812,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                 /* && DDD:seg->fileoff == 0 */ && seg->filesize != 0) {
                di->data_present = True;
                di->data_svma = (Addr)seg->vmaddr;
-               di->data_avma = di->fsm.rw_map_avma;
+               di->data_avma = rw_map->avma;
                di->data_size = seg->vmsize;
                di->data_bias = di->data_avma - di->data_svma;
                di->data_debug_svma = di->data_svma;
@@ -829,7 +845,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       struct NLIST *syms;
       UChar *strs;
       XArray* /* DiSym */ candSyms = NULL;
-      Word i, nCandSyms;
+      Word nCandSyms;
 
       if (ii.macho_img_szB < symcmd->stroff + symcmd->strsize
           || ii.macho_img_szB < symcmd->symoff + symcmd->nsyms

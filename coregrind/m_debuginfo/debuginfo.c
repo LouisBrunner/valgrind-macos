@@ -178,6 +178,9 @@ DebugInfo* alloc_DebugInfo( const UChar* filename )
    di = ML_(dinfo_zalloc)("di.debuginfo.aDI.1", sizeof(DebugInfo));
    di->handle       = handle_counter++;
    di->fsm.filename = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
+   di->fsm.maps     = VG_(newXA)(
+                         ML_(dinfo_zalloc), "di.debuginfo.aDI.3",
+                         ML_(dinfo_free), sizeof(struct _DebugInfoMapping));
 
    /* Everything else -- pointers, sizes, arrays -- is zeroed by
       ML_(dinfo_zalloc).  Now set up the debugging-output flags. */
@@ -204,6 +207,7 @@ static void free_DebugInfo ( DebugInfo* di )
    GExpr* gexpr;
 
    vg_assert(di != NULL);
+   if (di->fsm.maps)     VG_(deleteXA)(di->fsm.maps);
    if (di->fsm.filename) ML_(dinfo_free)(di->fsm.filename);
    if (di->soname)       ML_(dinfo_free)(di->soname);
    if (di->loctab)       ML_(dinfo_free)(di->loctab);
@@ -385,32 +389,20 @@ static Bool ranges_overlap (Addr s1, SizeT len1, Addr s2, SizeT len2 )
 }
 
 
-/* Do the basic rx_ and rw_ mappings of the two DebugInfos overlap in
-   any way? */
+/* Do the basic mappings of the two DebugInfos overlap in any way? */
 static Bool do_DebugInfos_overlap ( DebugInfo* di1, DebugInfo* di2 )
 {
+   Word i, j;
    vg_assert(di1);
    vg_assert(di2);
-
-   if (di1->fsm.have_rx_map && di2->fsm.have_rx_map
-       && ranges_overlap(di1->fsm.rx_map_avma, di1->fsm.rx_map_size,
-                         di2->fsm.rx_map_avma, di2->fsm.rx_map_size))
-      return True;
-
-   if (di1->fsm.have_rx_map && di2->fsm.have_rw_map
-       && ranges_overlap(di1->fsm.rx_map_avma, di1->fsm.rx_map_size,
-                         di2->fsm.rw_map_avma, di2->fsm.rw_map_size))
-      return True;
-
-   if (di1->fsm.have_rw_map && di2->fsm.have_rx_map
-       && ranges_overlap(di1->fsm.rw_map_avma, di1->fsm.rw_map_size,
-                         di2->fsm.rx_map_avma, di2->fsm.rx_map_size))
-      return True;
-
-   if (di1->fsm.have_rw_map && di2->fsm.have_rw_map
-       && ranges_overlap(di1->fsm.rw_map_avma, di1->fsm.rw_map_size,
-                         di2->fsm.rw_map_avma, di2->fsm.rw_map_size))
-      return True;
+   for (i = 0; i < VG_(sizeXA)(di1->fsm.maps); i++) {
+      struct _DebugInfoMapping* map1 = VG_(indexXA)(di1->fsm.maps, i);
+      for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
+         struct _DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
+         if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size))
+            return True;
+      }
+   }
 
    return False;
 }
@@ -441,8 +433,7 @@ static void discard_marked_DebugInfos ( void )
 
 
 /* Discard any elements of debugInfo_list which overlap with diRef.
-   Clearly diRef must have its rx_ and rw_ mapping information set to
-   something sane. */
+   Clearly diRef must have its mapping information set to something sane. */
 static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
 {
    DebugInfo* di;
@@ -490,41 +481,67 @@ static DebugInfo* find_or_create_DebugInfo_for ( UChar* filename )
 static void check_CFSI_related_invariants ( DebugInfo* di )
 {
    DebugInfo* di2 = NULL;
+   Bool has_nonempty_rx = False;
+   Bool cfsi_fits = False;
+   Word i, j;
    vg_assert(di);
    /* This fn isn't called until after debuginfo for this object has
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
    vg_assert(di->fsm.have_rx_map);
    vg_assert(di->fsm.have_rw_map);
-   /* degenerate case: r-x section is empty */
-   if (di->fsm.rx_map_size == 0) {
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      /* We are interested in r-x mappings only */
+      if (!map->rx)
+         continue;
+
+      /* degenerate case: r-x section is empty */
+      if (map->size == 0)
+         continue;
+      has_nonempty_rx = True;
+        
+      /* normal case: r-x section is nonempty */
+      /* invariant (0) */
+      vg_assert(map->size > 0);
+
+      /* invariant (1) */
+      for (di2 = debugInfo_list; di2; di2 = di2->next) {
+         if (di2 == di)
+            continue;
+         for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
+            struct _DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
+            if (!map2->rx || map2->size == 0)
+               continue;
+            vg_assert(!ranges_overlap(map->avma,  map->size,
+                                      map2->avma, map2->size));
+         }
+      }
+      di2 = NULL;
+
+      /* invariant (2) */
+      if (di->cfsi) {
+         vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
+         /* Assume the csfi fits completely into one individual mapping
+            for now. This might need to be improved/reworked later. */
+         if (di->cfsi_minavma >= map->avma &&
+             di->cfsi_maxavma <  map->avma + map->size)
+            cfsi_fits = True;
+      }
+   }
+
+   /* degenerate case: all r-x sections are empty */
+   if (!has_nonempty_rx) {
       vg_assert(di->cfsi == NULL);
       return;
    }
-   /* normal case: r-x section is nonempty */
-   /* invariant (0) */
-   vg_assert(di->fsm.rx_map_size > 0);
-   /* invariant (1) */
-   for (di2 = debugInfo_list; di2; di2 = di2->next) {
-      if (di2 == di)
-         continue;
-      if (di2->fsm.rx_map_size == 0)
-         continue;
-      vg_assert(
-         di->fsm.rx_map_avma + di->fsm.rx_map_size <= di2->fsm.rx_map_avma
-         || di2->fsm.rx_map_avma + di2->fsm.rx_map_size <= di->fsm.rx_map_avma
-      );
-   }
-   di2 = NULL;
-   /* invariant (2) */
-   if (di->cfsi) {
-      vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
-      vg_assert(di->cfsi_minavma >= di->fsm.rx_map_avma);
-      vg_assert(di->cfsi_maxavma < di->fsm.rx_map_avma + di->fsm.rx_map_size);
-   }
+
+   /* invariant (2) - cont. */
+   if (di->cfsi)
+      vg_assert(cfsi_fits);
+
    /* invariants (3) and (4) */
    if (di->cfsi) {
-      Word i;
       vg_assert(di->cfsi_used > 0);
       vg_assert(di->cfsi_size > 0);
       for (i = 0; i < di->cfsi_used; i++) {
@@ -601,9 +618,9 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    TRACE_SYMTAB("\n");
 
    /* We're going to read symbols and debug info for the avma
-      ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
-      +rw_map_size).  First get rid of any other DebugInfos which
-      overlap either of those ranges (to avoid total confusion). */
+      ranges specified in the _DebugInfoFsm mapping array. First
+      get rid of any other DebugInfos which overlap any of those
+      ranges (to avoid total confusion). */
    discard_DebugInfos_which_overlap_with( di );
 
    /* .. and acquire new info. */
@@ -874,41 +891,20 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    di = find_or_create_DebugInfo_for( filename );
    vg_assert(di);
 
-   if (is_rx_map) {
-      /* We have a text-like mapping.  Note the details. */
-      if (!di->fsm.have_rx_map) {
-         di->fsm.have_rx_map = True;
-         di->fsm.rx_map_avma = a;
-         di->fsm.rx_map_size = seg->end + 1 - seg->start;
-         di->fsm.rx_map_foff = seg->offset;
-      } else {
-         /* FIXME: complain about a second text-like mapping */
-      }
-   }
+   /* Note the details about the mapping. */
+   struct _DebugInfoMapping map;
+   map.avma = a;
+   map.size = seg->end + 1 - seg->start;
+   map.foff = seg->offset;
+   map.rx   = is_rx_map;
+   map.rw   = is_rw_map;
+   map.ro   = is_ro_map;
+   VG_(addToXA)(di->fsm.maps, &map);
 
-   if (is_rw_map) {
-      /* We have a data-like mapping.  Note the details. */
-      if (!di->fsm.have_rw_map) {
-         di->fsm.have_rw_map = True;
-         di->fsm.rw_map_avma = a;
-         di->fsm.rw_map_size = seg->end + 1 - seg->start;
-         di->fsm.rw_map_foff = seg->offset;
-      } else {
-         /* FIXME: complain about a second data-like mapping */
-      }
-   }
-
-   if (is_ro_map) {
-      /* We have a r-- mapping.  Note the details (OSX 10.7, 32-bit only) */
-      if (!di->fsm.have_ro_map) {
-         di->fsm.have_ro_map = True;
-         di->fsm.ro_map_avma = a;
-         di->fsm.ro_map_size = seg->end + 1 - seg->start;
-         di->fsm.ro_map_foff = seg->offset;
-      } else {
-         /* FIXME: complain about a second r-- mapping */
-      }
-   }
+   /* Update flags about what kind of mappings we've already seen. */
+   di->fsm.have_rx_map |= is_rx_map;
+   di->fsm.have_rw_map |= is_rw_map;
+   di->fsm.have_ro_map |= is_ro_map;
 
    /* So, finally, are we in an accept state? */
    if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
@@ -977,6 +973,8 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
       is found, conclude we're in an accept state and read debuginfo
       accordingly. */
    DebugInfo* di;
+   struct _DebugInfoMapping *map = NULL;
+   Word i;
    for (di = debugInfo_list; di; di = di->next) {
       vg_assert(di->fsm.filename);
       if (di->have_dinfo)
@@ -987,36 +985,45 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
          continue; /* rx- mapping already exists */
       if (!di->fsm.have_rw_map)
          continue; /* need to have a rw- mapping */
-      if (di->fsm.ro_map_avma != a || di->fsm.ro_map_size != len)
-         continue; /* this isn't an upgrade of the r-- mapping */
+      /* Try to find a mapping matching the memory area. */
+      for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+         map = (struct _DebugInfoMapping*)VG_(indexXA)(di->fsm.maps, i);
+         if (map->ro && map->avma == a && map->size == len)
+            break;
+         map = NULL;
+      }
+      if (!map)
+         continue; /* this isn't an upgrade of an r-- mapping */
       /* looks like we're in luck! */
       break;
    }
    if (di == NULL)
       return; /* didn't find anything */
 
-   /* Do the upgrade.  Copy the RO map info into the RX map info and
-      pretend we never saw the RO map at all. */
-   vg_assert(di->fsm.have_rw_map);
+   /* Do the upgrade.  Simply update the flags of the mapping
+      and pretend we never saw the RO map at all. */
    vg_assert(di->fsm.have_ro_map);
-   vg_assert(!di->fsm.have_rx_map);
-
+   map->rx = True;
+   map->ro = False;
    di->fsm.have_rx_map = True;
-   di->fsm.rx_map_avma = di->fsm.ro_map_avma;
-   di->fsm.rx_map_size = di->fsm.ro_map_size;
-   di->fsm.rx_map_foff = di->fsm.ro_map_foff;
-
    di->fsm.have_ro_map = False;
-   di->fsm.ro_map_avma = 0;
-   di->fsm.ro_map_size = 0;
-   di->fsm.ro_map_foff = 0;
+   /* See if there are any more ro mappings */
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      map = (struct _DebugInfoMapping*)VG_(indexXA)(di->fsm.maps, i);
+      if (map->ro) {
+         di->fsm.have_ro_map = True;
+         break;
+      }
+   }
 
-   /* And since we're now in an accept state, read debuginfo.  Finally. */
-   ULong di_handle __attribute__((unused))
-      = di_notify_ACHIEVE_ACCEPT_STATE( di );
-   /* di_handle is ignored. That's not a problem per se -- it just
-      means nobody will ever be able to refer to this debuginfo by
-      handle since nobody will know what the handle value is. */
+   /* Check if we're now in an accept state and read debuginfo.  Finally. */
+   if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+      ULong di_handle __attribute__((unused))
+         = di_notify_ACHIEVE_ACCEPT_STATE( di );
+      /* di_handle is ignored. That's not a problem per se -- it just
+         means nobody will ever be able to refer to this debuginfo by
+         handle since nobody will know what the handle value is. */
+   }
 }
 
 
@@ -1273,6 +1280,31 @@ void VG_(di_discard_ALL_debuginfo)( void )
 }
 
 
+struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
+                                                 Addr lo, Addr hi )
+{
+   Word i;
+   vg_assert(lo <= hi); 
+
+   /* Optimization: Try to use the last matched rx mapping first */
+   if (   di->last_rx_map
+       && lo >= di->last_rx_map->avma
+       && hi <  di->last_rx_map->avma + di->last_rx_map->size)
+      return di->last_rx_map;
+
+   for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      if (   map->rx && map->size > 0
+          && lo >= map->avma && hi < map->avma + map->size) {
+         di->last_rx_map = map;
+         return map;
+      }
+   }
+
+   return NULL;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Use of symbol table & location info to create        ---*/
 /*--- plausible-looking stack dumps.                       ---*/
@@ -1300,9 +1332,7 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
             See Comment_Regarding_Text_Range_Checks in storage.c for
             details. */
          inRange = di->fsm.have_rx_map
-                   && di->fsm.rx_map_size > 0
-                   && di->fsm.rx_map_avma <= ptr
-                   && ptr < di->fsm.rx_map_avma + di->fsm.rx_map_size;
+                   && (ML_(find_rx_mapping)(di, ptr, ptr) != NULL);
       } else {
          inRange = (di->data_present
                     && di->data_size > 0

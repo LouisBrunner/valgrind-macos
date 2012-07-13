@@ -754,6 +754,7 @@ struct _DebugInfo {
    UWord     fpo_size;
    Addr      fpo_minavma;
    Addr      fpo_maxavma;
+   Addr      fpo_base_avma;
 
    /* Expandable arrays of characters -- the string table.  Pointers
       into this are stable (the arrays are not reallocated). */

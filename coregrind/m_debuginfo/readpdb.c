@@ -61,46 +61,23 @@
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-/* JRS 2009-Apr-13: Mostly this PDB reader is straightforward.  But
-   the biasing is incomprehensible, and I don't claim to understand it
-   at all.  There are four places where biasing is required:
+/* There are just two simple ways of biasing in use here.
 
-   - when reading symbol addresses (DEBUG_SnarfCodeView)
-   - when reading old-style line number tables (DEBUG_SnarfLinetab)
-   - when reading new-style line number tables (codeview_dump_linetab2)
-   - when reading FPO (stack-unwind) tables (pdb_dump)
+   The CodeView debug info entries contain virtual addresses
+   relative to segment (here it is one PE section), which in
+   turn specifies its start as a VA relative to "image base".
 
-   To complicate matters further, Wine supplies us, via the
-   VG_USERREQ__LOAD_PDB_DEBUGINFO client request that initiates PDB
-   reading, a value 'unknown_purpose__reloc' which, if you read
-   'virtual.c' in the Wine sources, looks a lot like a text bias
-   value.  Yet the code below ignores it.
+   The second type of debug info (FPOs) contain VAs relative
+   directly to the image base, without the segment indirection.
 
-   To make future experimentation with biasing easier, here are four
-   macros which give the bias to use in each of the four cases.  Be
-   warned, they can and do refer to local vars in the relevant
-   functions. */
+   The original/preferred image base is set in the PE header,
+   but it can change as long as the file contains relocation
+   data. So everything is biased using the current image base,
+   which is the base AVMA passed by Wine.
 
-/* The BIAS_FOR_{SYMBOLS,LINETAB,LINETAB2} are as in JohnR's original
-   patch.  BIAS_FOR_FPO was originally hardwired to zero, but that
-   doesn't make much sense.  Here, we use text_bias as empirically
-   producing the most ranges that fall inside the text segments for a
-   multi-dll program.  Of course, it could still be nonsense :-) */
-#define BIAS_FOR_SYMBOLS   (di->text_avma)
-#define BIAS_FOR_LINETAB   (di->text_avma)
-#define BIAS_FOR_LINETAB2  (di->text_bias)
-#define BIAS_FOR_FPO       (di->text_bias)
-/* Using di->text_bias for the FPOs causes 981 in range and 1 out of
-   range.  Using rx_map_avma gives 953 in range and 29 out of range,
-   so di->text_bias looks like a better bet.:
-   $ grep FPO spew-B-text_bias  | grep keep | wc
-       981    4905   57429
-   $ grep FPO spew-B-text_bias  | grep SKIP | wc
-         1       5      53
-   $ grep FPO spew-B-rx_map_avma  | grep keep | wc
-       953    4765   55945
-   $ grep FPO spew-B-rx_map_avma  | grep SKIP | wc
-        29     145    1537
+   The difference between the original image base and current
+   image base, which is what Wine sends here in the last
+   argument of VG_(di_notify_pdb_debuginfo), is not used.
 */
 
 /* This module leaks space; enable m_main's calling of
@@ -1223,6 +1200,7 @@ static void pdb_convert_symbols_header( PDB_SYMBOLS *symbols,
 
 static ULong DEBUG_SnarfCodeView(
                 DebugInfo* di,
+                PtrdiffT bias,
                 IMAGE_SECTION_HEADER* sectp,
                 void* root, /* FIXME: better name */
                 Int offset,
@@ -1235,7 +1213,6 @@ static ULong DEBUG_SnarfCodeView(
    Char   symname[4096 /*WIN32_PATH_MAX*/];
 
    Bool  debug = di->trace_symtab;
-   Addr  bias = BIAS_FOR_SYMBOLS;
    ULong n_syms_read = 0;
 
    if (debug)
@@ -1538,6 +1515,7 @@ struct startend
 
 static ULong DEBUG_SnarfLinetab(
           DebugInfo* di,
+          PtrdiffT bias,
           IMAGE_SECTION_HEADER* sectp,
           Char* linetab,
           Int size
@@ -1559,7 +1537,6 @@ static ULong DEBUG_SnarfLinetab(
    Int                this_seg;
 
    Bool  debug = di->trace_symtab;
-   Addr  bias = BIAS_FOR_LINETAB;
    ULong n_lines_read = 0;
 
    if (debug)
@@ -1708,6 +1685,8 @@ struct codeview_linetab2_block
 
 static ULong codeview_dump_linetab2(
                 DebugInfo* di,
+                Addr bias,
+                IMAGE_SECTION_HEADER* sectp,
                 Char* linetab,
                 DWORD size,
                 Char* strimage,
@@ -1721,7 +1700,6 @@ static ULong codeview_dump_linetab2(
    struct codeview_linetab2_file* fd;
 
    Bool  debug = di->trace_symtab;
-   Addr  bias = BIAS_FOR_LINETAB2;
    ULong n_line2s_read = 0;
 
    if (*(const DWORD*)linetab != 0x000000f4)
@@ -1780,8 +1758,10 @@ static ULong codeview_dump_linetab2(
 
       if (lbh->nlines > 1) {
          for (i = 0; i < lbh->nlines-1; i++) {
-            svma_s = lbh->start + lbh->l[i].offset;
-            svma_e = lbh->start + lbh->l[i+1].offset-1;
+            svma_s = sectp[lbh->seg - 1].VirtualAddress + lbh->start
+                     + lbh->l[i].offset;
+            svma_e = sectp[lbh->seg - 1].VirtualAddress + lbh->start
+                     + lbh->l[i+1].offset-1;
             if (debug)
                VG_(printf)("%s  line %d: %08lx to %08lx\n",
                            pfx, lbh->l[i].lineno ^ 0x80000000, svma_s, svma_e);
@@ -1791,8 +1771,10 @@ static ULong codeview_dump_linetab2(
                               lbh->l[i].lineno ^ 0x80000000, 0 );
             n_line2s_read++;
          }
-         svma_s = lbh->start + lbh->l[ lbh->nlines-1].offset;
-         svma_e = lbh->start + lbh->size - 1;
+         svma_s = sectp[lbh->seg - 1].VirtualAddress + lbh->start
+                  + lbh->l[ lbh->nlines-1].offset;
+         svma_e = sectp[lbh->seg - 1].VirtualAddress + lbh->start
+                  + lbh->size - 1;
          if (debug)
             VG_(printf)("%s  line %d: %08lx to %08lx\n",
                         pfx, lbh->l[ lbh->nlines-1  ].lineno ^ 0x80000000,
@@ -1835,8 +1817,8 @@ static Int cmp_FPO_DATA_for_canonicalisation ( void* f1V, void* f2V )
 /* JRS fixme: compare with version in current Wine sources */
 static void pdb_dump( struct pdb_reader* pdb,
                       DebugInfo* di,
-                      Addr pe_avma,
-                      Int  unknown_purpose__reloc,
+                      Addr       pe_avma,
+                      PtrdiffT   pe_bias,
                       IMAGE_SECTION_HEADER* sectp_avma )
 {
    Int header_size;
@@ -1848,7 +1830,6 @@ static void pdb_dump( struct pdb_reader* pdb,
    char *file; 
 
    Bool debug = di->trace_symtab;
-   Addr bias_for_fpo = BIAS_FOR_FPO;
 
    ULong n_fpos_read = 0, n_syms_read = 0,
          n_lines_read = 0, n_line2s_read = 0;
@@ -1875,26 +1856,6 @@ static void pdb_dump( struct pdb_reader* pdb,
       }
    }
 
-   if (VG_(clo_verbosity) > 1) {
-      VG_(message)(Vg_DebugMsg,
-                   "PDB_READER:\n");
-      VG_(message)(Vg_DebugMsg,
-                   "   BIAS_FOR_SYMBOLS  = %#08lx  %s\n",
-                   (PtrdiffT)BIAS_FOR_SYMBOLS, VG_STRINGIFY(BIAS_FOR_SYMBOLS));
-      VG_(message)(Vg_DebugMsg,
-                   "   BIAS_FOR_LINETAB  = %#08lx  %s\n",
-                   (PtrdiffT)BIAS_FOR_LINETAB, VG_STRINGIFY(BIAS_FOR_LINETAB));
-      VG_(message)(Vg_DebugMsg,
-                   "   BIAS_FOR_LINETAB2 = %#08lx  %s\n",
-                   (PtrdiffT)BIAS_FOR_LINETAB2, VG_STRINGIFY(BIAS_FOR_LINETAB2));
-      VG_(message)(Vg_DebugMsg,
-                   "   BIAS_FOR_FPO      = %#08lx  %s\n",
-                   (PtrdiffT)BIAS_FOR_FPO, VG_STRINGIFY(BIAS_FOR_FPO));
-      VG_(message)(Vg_DebugMsg,
-                   "   RELOC             = %#08lx\n",
-                   (PtrdiffT)unknown_purpose__reloc);
-   }
-
    /* Since we just use the FPO data without reformatting, at least
       do a basic sanity check on the struct layout. */
    vg_assert(sizeof(FPO_DATA) == 16);
@@ -1914,6 +1875,7 @@ static void pdb_dump( struct pdb_reader* pdb,
       di->fpo_size = sz;
       if (0) VG_(printf)("FPO: got fpo_size %lu\n", (UWord)sz);
       vg_assert(0 == (di->fpo_size % sizeof(FPO_DATA)));
+      di->fpo_base_avma = pe_avma;
    } else {
       vg_assert(di->fpo == NULL);
       vg_assert(di->fpo_size == 0);
@@ -1997,7 +1959,7 @@ static void pdb_dump( struct pdb_reader* pdb,
       /* Now bias the table.  This can't be done in the same pass as
          the sanity check, hence a second loop. */
       for (i = 0; i < di->fpo_size; i++) {
-         di->fpo[i].ulOffStart += bias_for_fpo;
+         di->fpo[i].ulOffStart += pe_avma;
          // make sure the biasing didn't royally screw up, by wrapping
          // the range around the end of the address space
          vg_assert(0xFFFFFFFF - di->fpo[i].ulOffStart /* "remaining space" */
@@ -2098,7 +2060,7 @@ static void pdb_dump( struct pdb_reader* pdb,
          VG_(umsg)("\n");
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_UserMsg, "Reading global symbols\n" );
-      DEBUG_SnarfCodeView( di, sectp_avma, modimage, 0, len_modimage );
+      DEBUG_SnarfCodeView( di, pe_avma, sectp_avma, modimage, 0, len_modimage );
       ML_(dinfo_free)( (void*)modimage );
    }
 
@@ -2141,7 +2103,7 @@ static void pdb_dump( struct pdb_reader* pdb,
                VG_(message)(Vg_UserMsg, "Reading symbols for %s\n",
                                         file_name );
             n_syms_read 
-               += DEBUG_SnarfCodeView( di, sectp_avma, modimage,
+               += DEBUG_SnarfCodeView( di, pe_avma, sectp_avma, modimage,
                                            sizeof(unsigned long),
                                            symbol_size );
          }
@@ -2152,7 +2114,7 @@ static void pdb_dump( struct pdb_reader* pdb,
             if (VG_(clo_verbosity) > 1)
                VG_(message)(Vg_UserMsg, "Reading lines for %s\n", file_name );
             n_lines_read
-               += DEBUG_SnarfLinetab( di, sectp_avma,
+               += DEBUG_SnarfLinetab( di, pe_avma, sectp_avma,
                                           modimage + symbol_size, lineno_size );
          }
 
@@ -2162,7 +2124,8 @@ static void pdb_dump( struct pdb_reader* pdb,
           */
          n_line2s_read
             += codeview_dump_linetab2(
-                  di, (char*)modimage + symbol_size + lineno_size,
+                  di, pe_avma, sectp_avma,
+                      (char*)modimage + symbol_size + lineno_size,
                       total_size - (symbol_size + lineno_size),
                   /* if filesimage is NULL, pass that directly onwards
                      to codeview_dump_linetab2, so it knows not to
@@ -2211,7 +2174,7 @@ static void pdb_dump( struct pdb_reader* pdb,
 Bool ML_(read_pdb_debug_info)(
         DebugInfo* di,
         Addr       obj_avma,
-        PtrdiffT   unknown_purpose__reloc,
+        PtrdiffT   obj_bias,
         void*      pdbimage,
         SizeT      n_pdbimage,
         Char*      pdbname,
@@ -2259,27 +2222,28 @@ Bool ML_(read_pdb_debug_info)(
         + OFFSET_OF(IMAGE_NT_HEADERS, OptionalHeader)
         + ntheaders_avma->FileHeader.SizeOfOptionalHeader;
 
-   /* Iterate over PE(?) headers.  Try to establish the text_bias,
-      that's all we really care about. */
+   /* Iterate over PE headers and fill our section mapping table. */
    for ( i = 0;
          i < ntheaders_avma->FileHeader.NumberOfSections;
          i++, pe_seg_avma += sizeof(IMAGE_SECTION_HEADER) ) {
       pe_sechdr_avma = (IMAGE_SECTION_HEADER *)pe_seg_avma;
 
-      if (VG_(clo_verbosity) > 1)
+      if (VG_(clo_verbosity) > 1) {
+         /* Copy name, it can be 8 chars and not NUL-terminated */
+         char name[9];
+         VG_(memcpy)(name, pe_sechdr_avma->Name, 8);
+         name[8] = '\0';
          VG_(message)(Vg_UserMsg,
-                      "  Scanning PE section %s at avma %p svma %#lx\n",
-                      pe_sechdr_avma->Name, pe_seg_avma,
+                      "  Scanning PE section %ps at avma %#lx svma %#lx\n",
+                      name, obj_avma + pe_sechdr_avma->VirtualAddress,
                       pe_sechdr_avma->VirtualAddress);
+      }
 
       if (pe_sechdr_avma->Characteristics & IMAGE_SCN_MEM_DISCARDABLE)
          continue;
 
       mapped_avma     = (Addr)obj_avma + pe_sechdr_avma->VirtualAddress;
       mapped_end_avma = mapped_avma + pe_sechdr_avma->Misc.VirtualSize;
-      if (VG_(clo_verbosity) > 1)
-         VG_(message)(Vg_DebugMsg,
-             "   ::: mapped_avma is %#lx\n", mapped_avma);
 
       struct _DebugInfoMapping map;
       map.avma = mapped_avma;
@@ -2345,11 +2309,7 @@ Bool ML_(read_pdb_debug_info)(
       TRACE_SYMTAB("\n");
    }
 
-   if (di->text_present) {
-      di->text_bias = di->text_avma - di->text_svma;
-   } else {
-      di->text_bias = 0;
-   }
+   di->text_bias = obj_bias;
 
    if (VG_(clo_verbosity) > 1) {
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
@@ -2393,7 +2353,7 @@ Bool ML_(read_pdb_debug_info)(
             pdbname, pdbmtime, root->version, root->TimeDateStamp );
          ML_(dinfo_free)( root );
       }
-      pdb_dump( &reader, di, obj_avma, unknown_purpose__reloc, sectp_avma );
+      pdb_dump( &reader, di, obj_avma, obj_bias, sectp_avma );
    }
    else
    if (0==VG_(strncmp)((char const *)&signature, "JG\0\0", 4)) {
@@ -2405,7 +2365,7 @@ Bool ML_(read_pdb_debug_info)(
             pdbname, pdbmtime, root->version, root->TimeDateStamp);
          ML_(dinfo_free)( root );
       }
-      pdb_dump( &reader, di, obj_avma, unknown_purpose__reloc, sectp_avma );
+      pdb_dump( &reader, di, obj_avma, obj_bias, sectp_avma );
    }
 
    if (1) {

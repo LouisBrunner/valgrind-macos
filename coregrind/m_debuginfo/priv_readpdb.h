@@ -41,7 +41,7 @@
 extern Bool ML_(read_pdb_debug_info)(
                DebugInfo* di,
                Addr       obj_avma,
-               PtrdiffT   unknown_purpose__reloc,
+               PtrdiffT   obj_bias,
                void*      pdbimage,
                SizeT      n_pdbimage,
                Char*      pdbname,

@@ -1858,7 +1858,7 @@ Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
 
 Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr )
 {
-   Addr const addr = ptr - di->text_avma;
+   Addr const addr = ptr - di->fpo_base_avma;
    Addr a_mid_lo, a_mid_hi;
    Word mid, size,
         lo = 0,

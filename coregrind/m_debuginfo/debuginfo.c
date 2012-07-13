@@ -1031,8 +1031,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
 
 /* this should really return ULong, as per VG_(di_notify_mmap). */
 void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
-                                   SizeT total_size,
-                                   PtrdiffT unknown_purpose__reloc )
+                                   SizeT total_size, PtrdiffT bias_obj )
 {
    Int    i, r, sz_exename;
    ULong  obj_mtime, pdb_mtime;
@@ -1048,8 +1047,8 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       VG_(message)(Vg_UserMsg, "\n");
       VG_(message)(Vg_UserMsg,
          "LOAD_PDB_DEBUGINFO: clreq:   fd=%d, avma=%#lx, total_size=%lu, "
-         "uu_reloc=%#lx\n", 
-         fd_obj, avma_obj, total_size, unknown_purpose__reloc
+         "bias=%#lx\n", 
+         fd_obj, avma_obj, total_size, bias_obj
       );
    }
 
@@ -1239,7 +1238,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
      /* don't set up any of the di-> fields; let
         ML_(read_pdb_debug_info) do it. */
-     ML_(read_pdb_debug_info)( di, avma_obj, unknown_purpose__reloc,
+     ML_(read_pdb_debug_info)( di, avma_obj, bias_obj,
                                pdbimage, n_pdbimage, pdbname, pdb_mtime );
      // JRS fixme: take notice of return value from read_pdb_debug_info,
      // and handle failure

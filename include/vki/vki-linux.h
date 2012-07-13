@@ -2990,6 +2990,25 @@ struct vki_hwtstamp_config {
 	int rx_filter;
 };
 
+//----------------------------------------------------------------------
+// From linux-2.6.12-rc2/include/linux/uinput.h
+//----------------------------------------------------------------------
+
+#define VKI_UINPUT_IOCTL_BASE       'U'
+#define VKI_UI_DEV_CREATE		_VKI_IO(VKI_UINPUT_IOCTL_BASE, 1)
+#define VKI_UI_DEV_DESTROY		_VKI_IO(VKI_UINPUT_IOCTL_BASE, 2)
+
+#define VKI_UI_SET_EVBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 100, int)
+#define VKI_UI_SET_KEYBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 101, int)
+#define VKI_UI_SET_RELBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 102, int)
+#define VKI_UI_SET_ABSBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 103, int)
+#define VKI_UI_SET_MSCBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 104, int)
+#define VKI_UI_SET_LEDBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 105, int)
+#define VKI_UI_SET_SNDBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 106, int)
+#define VKI_UI_SET_FFBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 107, int)
+#define VKI_UI_SET_SWBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 109, int)
+#define VKI_UI_SET_PROPBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 110, int)
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

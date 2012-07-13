@@ -4215,6 +4215,10 @@ PRE(sys_ioctl)
    /* KVM ioctls that dont check for a numeric value as parameter */
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_S390_INITIAL_RESET:
+
+   /* User input device creation */
+   case VKI_UI_DEV_CREATE:
+   case VKI_UI_DEV_DESTROY:
       PRINT("sys_ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
@@ -5348,6 +5352,20 @@ PRE(sys_ioctl)
                        (Addr)&((struct vki_iwreq *)ARG3)->u.ap_addr,
                        sizeof(struct vki_sockaddr));
       }
+      break;
+
+  /* User input device creation */
+  case VKI_UI_SET_EVBIT:
+  case VKI_UI_SET_KEYBIT:
+  case VKI_UI_SET_RELBIT:
+  case VKI_UI_SET_ABSBIT:
+  case VKI_UI_SET_MSCBIT:
+  case VKI_UI_SET_LEDBIT:
+  case VKI_UI_SET_SNDBIT:
+  case VKI_UI_SET_FFBIT:
+  case VKI_UI_SET_SWBIT:
+  case VKI_UI_SET_PROPBIT:
+      /* These just take an int by value */
       break;
 
 #  if defined(VGPV_arm_linux_android)

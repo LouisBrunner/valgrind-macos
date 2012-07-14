@@ -19653,6 +19653,13 @@ Long dis_ESC_0F (
       DIP("syscall\n");
       return delta;
 
+   case 0x0B: /* UD2 */
+      stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_curr_instr) ) );
+      jmp_lit(dres, Ijk_NoDecode, guest_RIP_curr_instr);
+      vassert(dres->whatNext == Dis_StopHere);
+      DIP("ud2\n");
+      return delta;
+
    case 0x1F:
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);

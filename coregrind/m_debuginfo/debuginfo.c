@@ -877,7 +877,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux)
-   if (!ML_(is_elf_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
+   if (!ML_(is_elf_object_file)( buf1k, (SizeT)sr_Res(preadres), False ))
       return 0;
 #  elif defined(VGO_darwin)
    if (!ML_(is_macho_object_file)( buf1k, (SizeT)sr_Res(preadres) ))

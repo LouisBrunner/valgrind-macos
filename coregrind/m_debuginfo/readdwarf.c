@@ -985,7 +985,8 @@ static
 void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                   UChar*    unitblock_img,
                                   UChar*    debugabbrev_img,
-                                  UChar*    debugstr_img )
+                                  UChar*    debugstr_img,
+                                  UChar*    debugstr_alt_img )
 {
    UInt   acode, abcode;
    ULong  atoffs, blklen;
@@ -1128,6 +1129,14 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x18: /* FORM_exprloc */   p += read_leb128U( &p ); break;
             case 0x19: /* FORM_flag_present */break;
             case 0x20: /* FORM_ref_sig8 */  p += 8; break;
+            case 0x1f20: /* FORM_GNU_ref_alt */ p += ui->dw64 ? 8 : 4; break;
+            case 0x1f21: /* FORM_GNU_strp_alt */
+                                            if (debugstr_alt_img && !ui->dw64)
+                                               sval = debugstr_alt_img + ML_(read_UInt)(p);
+                                            if (debugstr_alt_img && ui->dw64)
+                                               sval = debugstr_alt_img + ML_(read_ULong)(p);
+                                            p += ui->dw64 ? 8 : 4; 
+                                            break;
 
             default:
                VG_(printf)( "### unhandled dwarf2 abbrev form code 0x%x\n", form );
@@ -1169,7 +1178,8 @@ void ML_(read_debuginfo_dwarf3)
           UChar* debug_types_img, Word debug_types_sz, /* .debug_types */
           UChar* debug_abbv_img, Word debug_abbv_sz, /* .debug_abbrev */
           UChar* debug_line_img, Word debug_line_sz, /* .debug_line */
-          UChar* debug_str_img,  Word debug_str_sz ) /* .debug_str */
+          UChar* debug_str_img,  Word debug_str_sz, /* .debug_str */
+          UChar* debug_str_alt_img, Word debug_str_alt_sz ) /* .debug_str */
 {
    UnitInfo ui;
    UShort   ver;
@@ -1218,7 +1228,8 @@ void ML_(read_debuginfo_dwarf3)
          VG_(printf)( "Reading UnitInfo at 0x%lx.....\n",
                       block_img - debug_info_img + 0UL );
       read_unitinfo_dwarf2( &ui, block_img, 
-                                 debug_abbv_img, debug_str_img );
+                                 debug_abbv_img, debug_str_img,
+                                 debug_str_alt_img );
       if (0)
          VG_(printf)( "   => LINES=0x%llx    NAME=%s     DIR=%s\n", 
                       ui.stmt_list, ui.name, ui.compdir );

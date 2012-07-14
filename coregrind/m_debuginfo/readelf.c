@@ -111,7 +111,7 @@
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
 
-Bool ML_(is_elf_object_file)( void* image, SizeT n_image )
+Bool ML_(is_elf_object_file)( void* image, SizeT n_image, Bool rel_ok )
 {
    ElfXX_Ehdr* ehdr = (ElfXX_Ehdr*)image;
    Int ok = 1;
@@ -126,12 +126,14 @@ Bool ML_(is_elf_object_file)( void* image, SizeT n_image )
    ok &= (ehdr->e_ident[EI_CLASS] == VG_ELF_CLASS
           && ehdr->e_ident[EI_DATA] == VG_ELF_DATA2XXX
           && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
-   ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
+   ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN
+          || (rel_ok && ehdr->e_type == ET_REL));
    ok &= (ehdr->e_machine == VG_ELF_MACHINE);
    ok &= (ehdr->e_version == EV_CURRENT);
    ok &= (ehdr->e_shstrndx != SHN_UNDEF);
    ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
-   ok &= (ehdr->e_phoff != 0 && ehdr->e_phnum != 0);
+   ok &= ((ehdr->e_phoff != 0 && ehdr->e_phnum != 0)
+          || ehdr->e_type == ET_REL);
 
    if (ok)
       return True;
@@ -886,7 +888,7 @@ void read_elf_symtab__ppc64_linux(
  * http://fedoraproject.org/wiki/RolandMcGrath/BuildID
  */
 static
-Char *find_buildid(Addr image, UWord n_image)
+Char *find_buildid(Addr image, UWord n_image, Bool rel_ok)
 {
    Char* buildid = NULL;
    __attribute__((unused)) /* on Android, at least */
@@ -894,7 +896,7 @@ Char *find_buildid(Addr image, UWord n_image)
 
 #ifdef NT_GNU_BUILD_ID
    if (n_image >= sizeof(ElfXX_Ehdr) &&
-       ML_(is_elf_object_file)(ehdr, n_image)) {
+       ML_(is_elf_object_file)(ehdr, n_image, rel_ok)) {
       Word i;
 
       for (i = 0; i < ehdr->e_phnum; i++) {
@@ -926,7 +928,41 @@ Char *find_buildid(Addr image, UWord n_image)
                                + ((note->n_descsz + 3) & ~3);
             }            
          }
-      }    
+      }
+
+      if (buildid || !rel_ok)
+         return buildid;
+
+      for (i = 0; i < ehdr->e_shnum; i++) {
+         ElfXX_Shdr* shdr
+            = (ElfXX_Shdr*)(image + ehdr->e_shoff + i * ehdr->e_shentsize);
+
+         if (shdr->sh_type == SHT_NOTE) {
+            ElfXX_Off offset =  shdr->sh_offset;
+
+            while (offset < shdr->sh_offset + shdr->sh_size) {
+               ElfXX_Nhdr* note = (ElfXX_Nhdr*)(image + offset);
+               Char* name = (Char *)note + sizeof(ElfXX_Nhdr);
+               UChar *desc = (UChar *)name + ((note->n_namesz + 3) & ~3);
+               Word j;
+
+               if (VG_(strcmp)(name, ELF_NOTE_GNU) == 0 &&
+                   note->n_type == NT_GNU_BUILD_ID) {
+                  buildid = ML_(dinfo_zalloc)("di.fbi.1",
+                                              note->n_descsz * 2 + 1);
+                  
+                  for (j = 0; j < note->n_descsz; j++) {
+                     VG_(sprintf)(buildid + VG_(strlen)(buildid), 
+                                  "%02x", desc[j]);
+                  }
+               }
+
+               offset = offset + sizeof(ElfXX_Nhdr)
+                               + ((note->n_namesz + 3) & ~3)
+                               + ((note->n_descsz + 3) & ~3);
+            }            
+         }
+      }
    }
 #endif
 
@@ -1008,7 +1044,8 @@ calc_gnu_debuglink_crc32(UInt crc, const UChar *buf, Int len)
  * not match the value from the main object file.
  */
 static
-Addr open_debug_file( Char* name, Char* buildid, UInt crc, /*OUT*/UWord* size )
+Addr open_debug_file( Char* name, Char* buildid, UInt crc, Bool rel_ok,
+                      /*OUT*/UWord* size )
 {
    SysRes fd, sres;
    struct vg_stat stat_buf;
@@ -1037,7 +1074,7 @@ Addr open_debug_file( Char* name, Char* buildid, UInt crc, /*OUT*/UWord* size )
       return 0;
 
    if (buildid) {
-      Char* debug_buildid = find_buildid(sr_Res(sres), *size);
+      Char* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok);
       if (debug_buildid == NULL || VG_(strcmp)(buildid, debug_buildid) != 0) {
          SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
          vg_assert(!sr_isError(res));
@@ -1156,7 +1193,7 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
 static
 void find_debug_file( struct _DebugInfo* di,
                       Char* objpath, Char* buildid,
-                      Char* debugname, UInt crc,
+                      Char* debugname, UInt crc, Bool rel_ok,
                       /*OUT*/Addr*  dimage,
                       /*OUT*/SizeT* n_dimage )
 {
@@ -1174,13 +1211,14 @@ void find_debug_file( struct _DebugInfo* di,
       VG_(sprintf)(debugpath, "/usr/lib/debug/.build-id/%c%c/%s.debug",
                    buildid[0], buildid[1], buildid + 2);
 
-      if ((addr = open_debug_file(debugpath, buildid, 0, &size)) == 0) {
+      if ((addr = open_debug_file(debugpath, buildid, 0,
+                                  rel_ok, &size)) == 0) {
          ML_(dinfo_free)(debugpath);
          debugpath = NULL;
       }
    }
 
-   if (addr == 0 && debugname != NULL) {
+   if (addr == 0 && debugname != NULL && !rel_ok) {
       Char *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
       Char *objdirptr;
 
@@ -1193,11 +1231,11 @@ void find_debug_file( struct _DebugInfo* di,
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
 
-      if ((addr = open_debug_file(debugpath, NULL, crc, &size)) == 0) {
+      if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
          VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
-         if ((addr = open_debug_file(debugpath, NULL, crc, &size)) == 0) {
+         if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
             VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
-            addr = open_debug_file(debugpath, NULL, crc, &size);
+            addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
          }
       }
 
@@ -1287,6 +1325,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* Ditto for any ELF debuginfo file that we might happen to load. */
    Addr          dimage   = 0;
    UWord         n_dimage = 0;
+
+   /* Ditto for alternate ELF debuginfo file that we might happen to load. */
+   Addr          aimage   = 0;
+   UWord         n_aimage = 0;
 
    /* ELF header for the main file.  Should == oimage since is at
       start of file. */
@@ -1424,7 +1466,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    ehdr_img = (ElfXX_Ehdr*)oimage;
 
    if (ok)
-      ok &= ML_(is_elf_object_file)(ehdr_img, n_oimage);
+      ok &= ML_(is_elf_object_file)(ehdr_img, n_oimage, False);
 
    if (!ok) {
       ML_(symerr)(di, True, "Invalid ELF Header");
@@ -2083,6 +2125,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar*     dynstr_img       = NULL; /* .dynstr */
       ElfXX_Sym* dynsym_img       = NULL; /* .dynsym */
       UChar*     debuglink_img    = NULL; /* .gnu_debuglink */
+      UChar*     debugaltlink_img = NULL; /* .gnu_debugaltlink */
       UChar*     stab_img         = NULL; /* .stab         (stabs)  */
       UChar*     stabstr_img      = NULL; /* .stabstr      (stabs)  */
       UChar*     debug_line_img   = NULL; /* .debug_line   (dwarf2) */
@@ -2093,6 +2136,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar*     debug_ranges_img = NULL; /* .debug_ranges (dwarf2) */
       UChar*     debug_loc_img    = NULL; /* .debug_loc    (dwarf2) */
       UChar*     debug_frame_img  = NULL; /* .debug_frame  (dwarf2) */
+      UChar*     debug_line_alt_img = NULL; /* .debug_line (alternate) */
+      UChar*     debug_info_alt_img = NULL; /* .debug_info (alternate) */
+      UChar*     debug_abbv_alt_img = NULL; /* .debug_abbrev (alternate) */
+      UChar*     debug_str_alt_img = NULL; /* .debug_str   (alternate) */
       UChar*     dwarf1d_img      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l_img      = NULL; /* .line         (dwarf1) */
       UChar*     opd_img          = NULL; /* .opd (dwarf2,
@@ -2105,16 +2152,21 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       SizeT      dynstr_sz       = 0;
       SizeT      dynsym_sz       = 0;
       SizeT      debuglink_sz    = 0;
+      SizeT      debugaltlink_sz = 0;
       SizeT      stab_sz         = 0;
       SizeT      stabstr_sz      = 0;
       SizeT      debug_line_sz   = 0;
       SizeT      debug_info_sz   = 0;
-      SizeT      debug_types_sz   = 0;
+      SizeT      debug_types_sz  = 0;
       SizeT      debug_abbv_sz   = 0;
       SizeT      debug_str_sz    = 0;
       SizeT      debug_ranges_sz = 0;
       SizeT      debug_loc_sz    = 0;
       SizeT      debug_frame_sz  = 0;
+      SizeT      debug_line_alt_sz = 0;
+      SizeT      debug_info_alt_sz = 0;
+      SizeT      debug_abbv_alt_sz = 0;
+      SizeT      debug_str_alt_sz = 0;
       SizeT      dwarf1d_sz      = 0;
       SizeT      dwarf1l_sz      = 0;
       SizeT      opd_sz_unused   = 0;
@@ -2179,6 +2231,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          FIND(".strtab",        strtab_sz,       strtab_img)
 
          FIND(".gnu_debuglink", debuglink_sz,    debuglink_img)
+         FIND(".gnu_debugaltlink", debugaltlink_sz, debugaltlink_img)
 
          FIND(".stab",          stab_sz,         stab_img)
          FIND(".stabstr",       stabstr_sz,      stabstr_img)
@@ -2224,7 +2277,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       vg_assert(dimage == 0 && n_dimage == 0);
 
       /* Look for a build-id */
-      buildid = find_buildid(oimage, n_oimage);
+      buildid = find_buildid(oimage, n_oimage, False);
 
       /* Look for a debug image */
       if (buildid != NULL || debuglink_img != NULL) {
@@ -2240,11 +2293,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
             /* See if we can find a matching debug file */
             find_debug_file( di, di->fsm.filename, buildid,
-                             debuglink_img, crc, &dimage, &n_dimage );
+                             debuglink_img, crc, False, &dimage, &n_dimage );
          } else {
             /* See if we can find a matching debug file */
             find_debug_file( di, di->fsm.filename, buildid,
-                             NULL, 0, &dimage, &n_dimage );
+                             NULL, 0, False, &dimage, &n_dimage );
          }
       }
 
@@ -2267,7 +2320,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          SVMA/bias/size and image addresses out of it. */
       if (dimage != 0 
           && n_dimage >= sizeof(ElfXX_Ehdr)
-          && ML_(is_elf_object_file)((void*)dimage, n_dimage)) {
+          && ML_(is_elf_object_file)((void*)dimage, n_dimage, False)) {
 
          /* Pull out and validate program header and section header info */
          ElfXX_Ehdr* ehdr_dimg     = (ElfXX_Ehdr*)dimage;
@@ -2446,12 +2499,108 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             FIND(need_dwarf2, ".debug_loc",    debug_loc_sz,  debug_loc_img)
             FIND(need_dwarf2, ".debug_frame",  debug_frame_sz,
                                                             debug_frame_img)
+            FIND(need_dwarf2, ".gnu_debugaltlink", debugaltlink_sz,
+                                                            debugaltlink_img)
             FIND(need_dwarf1, ".debug",        dwarf1d_sz,    dwarf1d_img)
             FIND(need_dwarf1, ".line",         dwarf1l_sz,    dwarf1l_img)
 
 #           undef FIND
          } /* Find all interesting sections */
       } /* do we have a debug image? */
+
+      /* Look for alternate debug image */
+      if (debugaltlink_img != NULL) {
+         UInt buildid_offset = VG_(strlen)(debugaltlink_img)+1;
+
+         vg_assert(buildid_offset < debugaltlink_sz);
+
+         Char *altbuildid
+            = ML_(dinfo_zalloc)("di.fbi.4",
+                                (debugaltlink_sz - buildid_offset)
+                                * 2 + 1);
+
+         for (j = 0; j < debugaltlink_sz - buildid_offset; j++)
+            VG_(sprintf)(altbuildid + 2 * j, 
+                         "%02x", debugaltlink_img[buildid_offset + j]);
+
+         /* See if we can find a matching debug file */
+         find_debug_file( di, di->fsm.filename, altbuildid,
+                          NULL, 0, True, &aimage, &n_aimage );
+
+         ML_(dinfo_free)(altbuildid);
+      }
+
+      /* TOPLEVEL */
+      /* If we were successful in finding alternate debug image, pull various
+         size and image addresses out of it. */
+      if (aimage != 0 
+          && n_aimage >= sizeof(ElfXX_Ehdr)
+          && ML_(is_elf_object_file)((void*)aimage, n_aimage, True)) {
+
+         /* Pull out and validate program header and section header info */
+         ElfXX_Ehdr* ehdr_aimg     = (ElfXX_Ehdr*)aimage;
+         ElfXX_Shdr* shdr_aimg     = (ElfXX_Shdr*)( ((UChar*)ehdr_aimg)
+                                                       + ehdr_aimg->e_shoff );
+         UWord       shdr_dnent       = ehdr_aimg->e_shnum;
+         UWord       shdr_dent_szB    = ehdr_aimg->e_shentsize;
+         UChar*      shdr_strtab_aimg = NULL;
+
+         if (shdr_dnent == 0
+             || !contained_within(
+                    aimage, n_aimage,
+                    (Addr)shdr_aimg, shdr_dnent * shdr_dent_szB)) {
+            ML_(symerr)(di, True,
+                        "Missing or invalid ELF Section Header Table"
+                        " (alternate debuginfo file)");
+            goto out;
+         }
+
+         /* Also find the section header's string table, and validate. */
+         /* checked previously by is_elf_object_file: */
+         vg_assert( ehdr_aimg->e_shstrndx != SHN_UNDEF );
+
+         shdr_strtab_aimg
+            = (UChar*)( ((UChar*)ehdr_aimg)
+                        + shdr_aimg[ehdr_aimg->e_shstrndx].sh_offset);
+         if (!contained_within( 
+                 aimage, n_aimage,
+                 (Addr)shdr_strtab_aimg,
+                 1/*bogus, but we don't know the real size*/ )) {
+            ML_(symerr)(di, True, 
+                        "Invalid ELF Section Header String Table"
+                        " (alternate debuginfo file)");
+            goto out;
+         }
+
+         /* Find all interesting sections */
+         for (i = 0; i < ehdr_aimg->e_shnum; i++) {
+
+#           define FIND(sec_name, sec_size, sec_img) \
+            do { ElfXX_Shdr* shdr \
+                    = INDEX_BIS( shdr_aimg, i, shdr_dent_szB ); \
+               if (0 == VG_(strcmp)(sec_name, \
+                                    shdr_strtab_aimg + shdr->sh_name)) { \
+                  if (0 != sec_img) \
+                     VG_(core_panic)("repeated section!\n"); \
+                  sec_img  = (void*)(aimage + shdr->sh_offset); \
+                  sec_size = shdr->sh_size; \
+                  TRACE_SYMTAB( "%18s: aimg %p .. %p\n", \
+                                sec_name, \
+                                (UChar*)sec_img, \
+                                ((UChar*)sec_img) + sec_size - 1); \
+               } \
+            } while (0);
+
+            /*   NAME             SIZE           IMAGE addr */
+            FIND(".debug_line",   debug_line_alt_sz, debug_line_alt_img)
+            FIND(".debug_info",   debug_info_alt_sz, debug_info_alt_img)
+            FIND(".debug_abbrev", debug_abbv_alt_sz, debug_abbv_alt_img)
+            FIND(".debug_str",    debug_str_alt_sz,  debug_str_alt_img)
+
+#           undef FIND
+         } /* Find all interesting sections */
+      } /* do we have a debug image? */
+
 
       /* TOPLEVEL */
       /* Check some sizes */
@@ -2533,7 +2682,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                       debug_types_img, debug_types_sz,
                                       debug_abbv_img, debug_abbv_sz,
                                       debug_line_img, debug_line_sz,
-                                      debug_str_img,  debug_str_sz );
+                                      debug_str_img,  debug_str_sz,
+                                      debug_str_alt_img, debug_str_alt_sz );
 
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations.  But only if
@@ -2548,7 +2698,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                    debug_line_img,   debug_line_sz,
                    debug_str_img,    debug_str_sz,
                    debug_ranges_img, debug_ranges_sz,
-                   debug_loc_img,    debug_loc_sz
+                   debug_loc_img,    debug_loc_sz,
+                   debug_info_alt_img, debug_info_alt_sz,
+                   debug_abbv_alt_img, debug_abbv_alt_sz,
+                   debug_line_alt_img, debug_line_alt_sz,
+                   debug_str_alt_img,  debug_str_alt_sz
             );
          }
       }

@@ -419,6 +419,16 @@ typedef
       /* Where is .debug_types? */
       UChar* debug_types_img;
       UWord  debug_types_sz;
+      /* Where is alternate .debug_info? */
+      UChar* debug_info_alt_img;
+      UWord  debug_info_alt_sz;
+      /* Where is alternate .debug_str ? */
+      UChar* debug_str_alt_img;
+      UWord  debug_str_alt_sz;
+      /* How much to add to .debug_types resp. alternate .debug_info offsets
+         in cook_die*.  */
+      UWord  types_cuOff_bias;
+      UWord  alt_cuOff_bias;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
       /* --- a cache for set_abbv_Cursor --- */
@@ -439,40 +449,58 @@ typedef
       /* Signatured type hash; computed once and then shared by all
          CUs.  */
       VgHashTable signature_types;
+
+      /* True if this came from alternate .debug_info; otherwise
+         it came from normal .debug_info or .debug_types.  */
+      Bool is_alt_info;
    }
    CUConst;
 
 
 /* Return the cooked value of DIE depending on whether CC represents a
-   .debug_types unit.  To cook a DIE, we pretend that the .debug_info
-   and .debug_types sections form a contiguous whole, so that DIEs
-   coming from .debug_types are numbered starting at the end of
-   .debug_info.  */
+   .debug_types unit.  To cook a DIE, we pretend that the .debug_info,
+   .debug_types and optional alternate .debug_info sections form
+   a contiguous whole, so that DIEs coming from .debug_types are numbered
+   starting at the end of .debug_info and DIEs coming from alternate
+   .debug_info are numbered starting at the end of .debug_types.  */
 static UWord cook_die( CUConst* cc, UWord die )
 {
    if (cc->is_type_unit)
-      die += cc->debug_info_sz;
+      die += cc->types_cuOff_bias;
+   else if (cc->is_alt_info)
+      die += cc->alt_cuOff_bias;
    return die;
 }
 
 /* Like cook_die, but understand that DIEs coming from a
-   DW_FORM_ref_sig8 reference are already cooked.  */
+   DW_FORM_ref_sig8 reference are already cooked.  Also, handle
+   DW_FORM_GNU_ref_alt from within primary .debug_info or .debug_types
+   as reference to alternate .debug_info.  */
 static UWord cook_die_using_form( CUConst *cc, UWord die, DW_FORM form)
 {
    if (form == DW_FORM_ref_sig8)
       return die;
+   if (form == DW_FORM_GNU_ref_alt)
+      return die + cc->alt_cuOff_bias;
    return cook_die( cc, die );
 }
 
-/* Return the uncooked offset of DIE and set *FLAG to true if the DIE
-   came from the .debug_types section.  */
-static UWord uncook_die( CUConst *cc, UWord die, /*OUT*/Bool *flag )
+/* Return the uncooked offset of DIE and set *TYPE_FLAG to true if the DIE
+   came from the .debug_types section and *ALT_FLAG to true if the DIE
+   came from alternate .debug_info section.  */
+static UWord uncook_die( CUConst *cc, UWord die, /*OUT*/Bool *type_flag,
+                         Bool *alt_flag )
 {
+   *alt_flag = False;
+   *type_flag = False;
    if (die >= cc->debug_info_sz) {
-      *flag = True;
-      die -= cc->debug_info_sz;
-   } else {
-      *flag = False;
+      if (die >= cc->debug_info_sz + cc->debug_types_sz) {
+         *alt_flag = True;
+         die -= cc->debug_info_sz + cc->debug_types_sz;
+      } else {
+         *type_flag = True;
+         die -= cc->debug_info_sz;
+      }
    }
    return die;
 }
@@ -830,7 +858,8 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
                        Bool td3,
                        Cursor* c, 
                        UChar* debug_abbv_img, UWord debug_abbv_sz,
-		       Bool type_unit )
+		       Bool type_unit,
+                       Bool alt_info )
 {
    UChar  address_size;
    UWord  debug_abbrev_offset;
@@ -869,6 +898,7 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    TRACE_D3("   Pointer Size:  %d\n", (Int)address_size );
 
    cc->is_type_unit = type_unit;
+   cc->is_alt_info = alt_info;
 
    if (type_unit) {
       cc->type_signature = get_ULong( c );
@@ -1296,6 +1326,37 @@ void get_Form_contents ( /*OUT*/ULong* cts,
                             (DW_FORM)get_ULEB128(c));
          return;
 
+      case DW_FORM_GNU_ref_alt:
+         *cts = get_Dwarfish_UWord(c, cc->is_dw64);
+         *ctsSzB = cc->is_dw64 ? sizeof(ULong) : sizeof(UInt);
+         TRACE_D3("0x%lx", (UWord)*cts);
+         if (0) VG_(printf)("DW_FORM_GNU_ref_alt 0x%lx\n", (UWord)*cts);
+         if (/* the following 2 are surely impossible, but ... */
+             cc->debug_info_alt_img == NULL || cc->debug_info_alt_sz == 0
+             || *cts >= (ULong)cc->debug_info_alt_sz) {
+            /* Hmm.  Offset is nonsensical for this object's .debug_info
+               section.  Be safe and reject it. */
+            cc->barf("get_Form_contents: DW_FORM_ref_addr points "
+                     "outside alternate .debug_info");
+         }
+         break;
+
+      case DW_FORM_GNU_strp_alt: {
+         /* this is an offset into alternate .debug_str */
+         UChar* str;
+         UWord uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
+         if (cc->debug_str_alt_img == NULL || uw >= cc->debug_str_alt_sz)
+            cc->barf("get_Form_contents: DW_FORM_GNU_strp_alt "
+                     "points outside alternate .debug_str");
+         /* FIXME: check the entire string lies inside debug_str,
+            not just the first byte of it. */
+         str = (UChar*)cc->debug_str_alt_img + uw;
+         TRACE_D3("(indirect alt string, offset: 0x%lx): %s", uw, str);
+         *cts = (ULong)(UWord)str;
+         *ctsMemSzB = 1 + (ULong)VG_(strlen)(str);
+         break;
+      }
+
       default:
          VG_(printf)(
             "get_Form_contents: unhandled %d (%s) at <%lx>\n",
@@ -1586,10 +1647,13 @@ static void parse_var_DIE (
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
    UWord saved_abbv_c_offset = get_position_of_Cursor( c_abbv );
    Bool  debug_types_flag;
+   Bool  alt_flag;
 
    varstack_preen( parser, td3, level-1 );
 
-   if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_type_unit) {
+   if (dtag == DW_TAG_compile_unit
+       || dtag == DW_TAG_type_unit
+       || dtag == DW_TAG_partial_unit) {
       Bool have_lo    = False;
       Bool have_hi1   = False;
       Bool hiIsRelative = False;
@@ -2045,10 +2109,13 @@ static void parse_var_DIE (
    set_position_of_Cursor( c_die,  saved_die_c_offset );
    set_position_of_Cursor( c_abbv, saved_abbv_c_offset );
    VG_(printf)("\nparse_var_DIE: confused by:\n");
-   posn = uncook_die( cc, posn, &debug_types_flag );
+   posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
    if (debug_types_flag) {
       VG_(printf)(" (in .debug_types)");
+   }
+   else if (alt_flag) {
+      VG_(printf)(" (in alternate .debug_info)");
    }
    VG_(printf)("\n");
    while (True) {
@@ -2231,6 +2298,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    TyEnt fieldE;
    TyEnt boundE;
    Bool  debug_types_flag;
+   Bool  alt_flag;
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
    UWord saved_abbv_c_offset = get_position_of_Cursor( c_abbv );
@@ -2245,7 +2313,9 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       its children. */
    typestack_preen( parser, td3, level-1 );
 
-   if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_type_unit) {
+   if (dtag == DW_TAG_compile_unit
+       || dtag == DW_TAG_type_unit
+       || dtag == DW_TAG_partial_unit) {
       /* See if we can find DW_AT_language, since it is important for
          establishing array bounds (see DW_TAG_subrange_type below in
          this fn) */
@@ -2972,10 +3042,12 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    set_position_of_Cursor( c_die,  saved_die_c_offset );
    set_position_of_Cursor( c_abbv, saved_abbv_c_offset );
    VG_(printf)("\nparse_type_DIE: confused by:\n");
-   posn = uncook_die( cc, posn, &debug_types_flag );
+   posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
    if (debug_types_flag) {
       VG_(printf)(" (in .debug_types)");
+   } else if (alt_flag) {
+      VG_(printf)(" (in alternate .debug_info)");
    }
    VG_(printf)("\n");
    while (True) {
@@ -3453,7 +3525,11 @@ void new_dwarf3_reader_wrk (
    UChar* debug_line_img,   SizeT debug_line_sz,
    UChar* debug_str_img,    SizeT debug_str_sz,
    UChar* debug_ranges_img, SizeT debug_ranges_sz,
-   UChar* debug_loc_img,    SizeT debug_loc_sz
+   UChar* debug_loc_img,    SizeT debug_loc_sz,
+   UChar* debug_info_alt_img, SizeT debug_info_alt_sz,
+   UChar* debug_abbv_alt_img, SizeT debug_abbv_alt_sz,
+   UChar* debug_line_alt_img, SizeT debug_line_alt_sz,
+   UChar* debug_str_alt_img,  SizeT debug_str_alt_sz
 )
 {
    XArray* /* of TyEnt */     tyents;
@@ -3693,10 +3769,10 @@ void new_dwarf3_reader_wrk (
             (saC_cache) */
          parse_CU_Header( &cc, td3, &info,
                           (UChar*)debug_abbv_img, debug_abbv_sz,
-                          True );
+                          True, False );
 
          /* Needed by cook_die.  */
-         cc.debug_info_sz    = debug_info_sz;
+         cc.types_cuOff_bias = debug_info_sz;
 
          record_signatured_type( signature_types, cc.type_signature,
                                  cook_die( &cc, cc.type_offset ));
@@ -3714,15 +3790,29 @@ void new_dwarf3_reader_wrk (
       }
    }
 
-   /* Perform two DIE-reading passes.  The first pass reads DIEs from
-      .debug_info, and the second pass reads DIEs from .debug_types.
+   /* Perform three DIE-reading passes.  The first pass reads DIEs from
+      alternate .debug_info (if any), the second pass reads DIEs from
+      .debug_info, and the third pass reads DIEs from .debug_types.
       Moving the body of this loop into a separate function would
       require a large number of arguments to be passed in, so it is
       kept inline instead.  */
-   for (pass = 0; pass < 2; ++pass) {
+   for (pass = 0; pass < 3; ++pass) {
       UWord section_size;
 
       if (pass == 0) {
+         if (debug_info_alt_img == NULL)
+	    continue;
+         /* Now loop over the Compilation Units listed in the alternate
+            .debug_info section (see D3SPEC sec 7.5) paras 1 and 2.
+            Each compilation unit contains a Compilation Unit Header
+            followed by precisely one DW_TAG_compile_unit or
+            DW_TAG_partial_unit DIE. */
+         init_Cursor( &info, debug_info_alt_img, debug_info_alt_sz, 0, barf,
+                      "Overrun whilst reading alternate .debug_info section" );
+         section_size = debug_info_alt_sz;
+
+         TRACE_D3("\n------ Parsing alternate .debug_info section ------\n");
+      } else if (pass == 1) {
          /* Now loop over the Compilation Units listed in the .debug_info
             section (see D3SPEC sec 7.5) paras 1 and 2.  Each compilation
             unit contains a Compilation Unit Header followed by precisely
@@ -3794,21 +3884,32 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("  Compilation Unit @ offset 0x%lx:\n", cu_start_offset);
          /* parse_CU_header initialises the CU's set_abbv_Cursor cache
             (saC_cache) */
-         parse_CU_Header( &cc, td3, &info,
-                          (UChar*)debug_abbv_img, debug_abbv_sz,
-                          pass != 0 );
-         cc.debug_str_img    = debug_str_img;
-         cc.debug_str_sz     = debug_str_sz;
+         if (pass == 0)
+            parse_CU_Header( &cc, td3, &info,
+                             (UChar*)debug_abbv_alt_img, debug_abbv_alt_sz,
+                             False, True );
+         else
+            parse_CU_Header( &cc, td3, &info,
+                             (UChar*)debug_abbv_img, debug_abbv_sz,
+                             pass == 2, False );
+         cc.debug_str_img    = pass == 0 ? debug_str_alt_img : debug_str_img;
+         cc.debug_str_sz     = pass == 0 ? debug_str_alt_sz : debug_str_sz;
          cc.debug_ranges_img = debug_ranges_img;
          cc.debug_ranges_sz  = debug_ranges_sz;
          cc.debug_loc_img    = debug_loc_img;
          cc.debug_loc_sz     = debug_loc_sz;
-         cc.debug_line_img   = debug_line_img;
-         cc.debug_line_sz    = debug_line_sz;
-         cc.debug_info_img   = debug_info_img;
-         cc.debug_info_sz    = debug_info_sz;
+         cc.debug_line_img   = pass == 0 ? debug_line_alt_img : debug_line_img;
+         cc.debug_line_sz    = pass == 0 ? debug_line_alt_sz : debug_line_sz;
+         cc.debug_info_img   = pass == 0 ? debug_info_alt_img : debug_info_img;
+         cc.debug_info_sz    = pass == 0 ? debug_info_alt_sz : debug_info_sz;
          cc.debug_types_img  = debug_types_img;
          cc.debug_types_sz   = debug_types_sz;
+         cc.debug_info_alt_img = debug_info_alt_img;
+         cc.debug_info_alt_sz = debug_info_alt_sz;
+         cc.debug_str_alt_img = debug_str_alt_img;
+         cc.debug_str_alt_sz = debug_str_alt_sz;
+         cc.types_cuOff_bias = debug_info_sz;
+         cc.alt_cuOff_bias   = debug_info_sz + debug_types_sz;
          cc.cu_start_offset  = cu_start_offset;
          cc.di = di;
          /* The CU's svma can be deduced by looking at the AT_low_pc
@@ -3991,10 +4092,19 @@ void new_dwarf3_reader_wrk (
    vg_assert(dioff_lookup_tab);
 
    n = VG_(sizeXA)( tempvars );
+   Word first_primary_var;
+   for (first_primary_var = 0;
+        debug_info_alt_sz && first_primary_var < n;
+        first_primary_var++) {
+      varp = *(TempVar**)VG_(indexXA)( tempvars, first_primary_var );
+      if (varp->dioff < debug_info_sz + debug_types_sz)
+         break;
+   }
    for (i = 0; i < n; i++) {
-      varp = *(TempVar**)VG_(indexXA)( tempvars, i );
-      if (i > 0) {
-         varp2 = *(TempVar**)VG_(indexXA)( tempvars, i-1 );
+      varp = *(TempVar**)VG_(indexXA)( tempvars, (i + first_primary_var) % n );
+      if (i > first_primary_var) {
+         varp2 = *(TempVar**)VG_(indexXA)( tempvars,
+                                           (i + first_primary_var - 1) % n );
          /* why should this hold?  Only, I think, because we've
             constructed the array by reading .debug_info sequentially,
             and so the array .dioff fields should reflect that, and be
@@ -4248,7 +4358,11 @@ ML_(new_dwarf3_reader) (
    UChar* debug_line_img,   SizeT debug_line_sz,
    UChar* debug_str_img,    SizeT debug_str_sz,
    UChar* debug_ranges_img, SizeT debug_ranges_sz,
-   UChar* debug_loc_img,    SizeT debug_loc_sz
+   UChar* debug_loc_img,    SizeT debug_loc_sz,
+   UChar* debug_info_alt_img, SizeT debug_info_alt_sz,
+   UChar* debug_abbv_alt_img, SizeT debug_abbv_alt_sz,
+   UChar* debug_line_alt_img, SizeT debug_line_alt_sz,
+   UChar* debug_str_alt_img,  SizeT debug_str_alt_sz
 )
 {
    volatile Int  jumped;
@@ -4272,7 +4386,11 @@ ML_(new_dwarf3_reader) (
                              debug_line_img,   debug_line_sz,
                              debug_str_img,    debug_str_sz,
                              debug_ranges_img, debug_ranges_sz,
-                             debug_loc_img,    debug_loc_sz );
+                             debug_loc_img,    debug_loc_sz,
+                             debug_info_alt_img, debug_info_alt_sz,
+                             debug_abbv_alt_img, debug_abbv_alt_sz,
+                             debug_line_alt_img, debug_line_alt_sz,
+                             debug_str_alt_img,  debug_str_alt_sz);
       d3rd_jmpbuf_valid = False;
       TRACE_D3("\n------ .debug_info reading was successful ------\n");
    } else {

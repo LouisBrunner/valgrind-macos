@@ -180,6 +180,8 @@ HChar* ML_(pp_DW_FORM) ( DW_FORM form )
       case DW_FORM_exprloc:   return "DW_FORM_exprloc";
       case DW_FORM_flag_present:return "DW_FORM_flag_present";
       case DW_FORM_ref_sig8:  return "DW_FORM_ref_sig8";
+      case DW_FORM_GNU_ref_alt:return "DW_FORM_GNU_ref_alt";
+      case DW_FORM_GNU_strp_alt:return "DW_FORM_GNU_strp_alt";
    }
    return "DW_FORM_???";
 }

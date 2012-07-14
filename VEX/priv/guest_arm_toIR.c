@@ -14417,7 +14417,8 @@ DisResult disInstr_THUMB_WRK (
 #  define INSN0(_bMax,_bMin)  SLICE_UInt(((UInt)insn0), (_bMax), (_bMin))
 
    DisResult dres;
-   UShort    insn0; /* first 16 bits of the insn */
+   UShort    insn0; /*  first 16 bits of the insn */
+   UShort    insn1; /* second 16 bits of the insn */
    //Bool      allow_VFP = False;
    //UInt      hwcaps = archinfo->hwcaps;
    HChar     dis_buf[128];  // big enough to hold LDMIA etc text
@@ -14448,6 +14449,10 @@ DisResult disInstr_THUMB_WRK (
       unlikely, but ..) if the second 16 bits aren't actually
       necessary. */
    insn0 = getUShortLittleEndianly( guest_instr );
+   insn1 = 0; /* We'll get it later, once we know we need it. */
+
+   /* Similarly, will set this later. */
+   IRTemp old_itstate = IRTemp_INVALID;
 
    if (0) vex_printf("insn: 0x%x\n", insn0);
 
@@ -14627,9 +14632,10 @@ DisResult disInstr_THUMB_WRK (
       that through the full preamble (which completely disappears). */
 
    IRTemp condT              = IRTemp_INVALID;
-   IRTemp old_itstate        = IRTemp_INVALID;
-   IRTemp new_itstate        = IRTemp_INVALID;
    IRTemp cond_AND_notInIT_T = IRTemp_INVALID;
+
+   IRTemp new_itstate        = IRTemp_INVALID;
+   vassert(old_itstate == IRTemp_INVALID);
 
    if (guaranteedUnconditional) {
       /* BEGIN "partial eval { ITSTATE = 0; STANDARD_PREAMBLE; }" */
@@ -16118,7 +16124,8 @@ DisResult disInstr_THUMB_WRK (
 #  define INSN1(_bMax,_bMin)  SLICE_UInt(((UInt)insn1), (_bMax), (_bMin))
 
    /* second 16 bits of the instruction, if any */
-   UShort insn1 = getUShortLittleEndianly( guest_instr+2 );
+   vassert(insn1 == 0);
+   insn1 = getUShortLittleEndianly( guest_instr+2 );
 
    anOp   = Iop_INVALID; /* paranoia */
    anOpNm = NULL;        /* paranoia */
@@ -18401,7 +18408,9 @@ DisResult disInstr_THUMB_WRK (
    /* Back up ITSTATE to the initial value for this instruction.
       If we don't do that, any subsequent restart of the instruction
       will restart with the wrong value. */
-   put_ITSTATE(old_itstate);
+   if (old_itstate != IRTemp_INVALID)
+      put_ITSTATE(old_itstate);
+
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.
       R15 should be up-to-date since it made so at the start of each

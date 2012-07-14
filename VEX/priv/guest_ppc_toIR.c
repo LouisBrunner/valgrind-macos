@@ -6838,6 +6838,91 @@ static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode_DFP( void )
                         mkU32( 2 ) ) );
 }
 
+#define NANmaskSingle   0x7F800000
+#define NANmaskDouble   0x7FF00000
+
+static IRExpr * Check_NaN( IRExpr * value, IRExpr * Hi32Mask )
+{
+   IRTemp exp_zero  = newTemp(Ity_I8);
+   IRTemp frac_mask = newTemp(Ity_I32);
+   IRTemp frac_not_zero = newTemp(Ity_I8);
+
+   /* Check if the result is QNAN or SNAN and not +infinity or -infinity.
+    * The input value is always 64-bits, for single precision values, the
+    * lower 32 bits must be zero.
+    *
+    * Single Pricision 
+    *  [62:54] exponent field is equal to 0xFF for NAN and Infinity.
+    *  [53:32] fraction field is zero for Infinity and non-zero for NAN
+    *  [31:0]  unused for single precision representation
+    *
+    * Double Pricision 
+    *  [62:51] exponent field is equal to 0xFF for NAN and Infinity.
+    *  [50:0]  fraction field is zero for Infinity and non-zero for NAN
+    *
+    * Returned result is a U32 value of 0xFFFFFFFF for NaN and 0 otherwise.
+    */
+   assign( frac_mask, unop( Iop_Not32,
+                            binop( Iop_Or32,
+                                   mkU32( 0x80000000ULL ), Hi32Mask) ) );
+
+   assign( exp_zero,
+           unop( Iop_1Sto8,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_And32,
+                               unop( Iop_64HIto32,
+                                     unop( Iop_ReinterpF64asI64,
+                                           value ) ),
+                               Hi32Mask ),
+                        Hi32Mask ) ) );
+   assign( frac_not_zero,
+           binop( Iop_Or8,
+                  unop( Iop_1Sto8,
+                        binop( Iop_CmpNE32,
+                               binop( Iop_And32,
+                                      unop( Iop_64HIto32,
+                                            unop( Iop_ReinterpF64asI64,
+                                                  value ) ),
+                                      mkexpr( frac_mask ) ),
+                               mkU32( 0x0 ) ) ),
+                  unop( Iop_1Sto8,
+                        binop( Iop_CmpNE32,
+                               binop( Iop_And32,
+                                      unop( Iop_64to32,
+                                            unop( Iop_ReinterpF64asI64,
+                                                  value ) ),
+                                      mkU32( 0xFFFFFFFF ) ),
+                               mkU32( 0x0 ) ) ) ) );
+   return unop( Iop_8Sto32,
+                binop( Iop_And8,
+                       mkexpr( exp_zero ),
+                       mkexpr( frac_not_zero ) ) );
+}
+
+static IRExpr * Complement_non_NaN( IRExpr * value, IRExpr * nan_mask )
+{
+   /* This function will only complement the 64-bit floating point value if it
+    * is not Nan.  NaN is not a signed value.  Need to do computations using
+    * 32-bit operands to ensure it will run in 32-bit mode.
+    */
+   return  binop( Iop_32HLto64,
+                  binop( Iop_Or32,
+                         binop( Iop_And32,
+                                nan_mask,
+                                unop( Iop_64HIto32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            value ) ) ),
+                         binop( Iop_And32,
+                                unop( Iop_Not32,
+                                      nan_mask ),
+                                unop( Iop_64HIto32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            unop( Iop_NegF64,
+                                                  value ) ) ) ) ),
+                  unop( Iop_64to32,
+                        unop( Iop_ReinterpF64asI64, value ) ) );
+}
+
 /*------------------------------------------------------------*/
 /*--- Floating Point Instruction Translation               ---*/
 /*------------------------------------------------------------*/
@@ -7369,6 +7454,9 @@ static Bool dis_fp_multadd ( UInt theInstr )
    IRTemp  frB = newTemp(Ity_F64);
    IRTemp  frC = newTemp(Ity_F64);
    IRTemp  rmt = newTemp(Ity_I32);
+   IRTemp  tmp = newTemp(Ity_F64);
+   IRTemp  sign_tmp = newTemp(Ity_I64);
+   IRTemp  nan_mask = newTemp(Ity_I32);
    IRExpr* rm;
 
    /* By default, we will examine the results of the operation and set
@@ -7418,19 +7506,25 @@ static Bool dis_fp_multadd ( UInt theInstr )
          break;
 
       case 0x1E: // fnmsubs (Float Neg Mult-Subtr Single, PPC32 p420)
-         DIP("fnmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MSubF64r32, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
-         break;
-
       case 0x1F: // fnmadds (Floating Negative Multiply-Add Single, PPC32 p418)
-         DIP("fnmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MAddF64r32, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
+
+         if (opc2 == 0x1E) {
+            DIP("fnmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MSubF64r32, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ) );
+         } else {
+            DIP("fnmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MAddF64r32, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ) );
+         }
+
+         assign( nan_mask, Check_NaN( mkexpr( tmp ),
+                                      mkU32( NANmaskSingle ) ) );
+         assign( sign_tmp, Complement_non_NaN( mkexpr( tmp ),
+                                               mkexpr( nan_mask ) ) );
+         assign( frD, unop( Iop_ReinterpI64asF64, mkexpr( sign_tmp ) ) ); 
          break;
 
       default:
@@ -7456,19 +7550,25 @@ static Bool dis_fp_multadd ( UInt theInstr )
          break;
 
       case 0x1E: // fnmsub (Float Neg Mult-Subtr (Dbl Precision), PPC32 p419)
-         DIP("fnmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MSubF64, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
-         break;
-
       case 0x1F: // fnmadd (Float Neg Mult-Add (Dbl Precision), PPC32 p417)
-         DIP("fnmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MAddF64, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
+
+         if (opc2 == 0x1E) {
+            DIP("fnmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MSubF64, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ) );
+         } else {
+            DIP("fnmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MAddF64, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ));
+         }
+
+         assign( nan_mask, Check_NaN( mkexpr( tmp ),
+                                      mkU32( NANmaskDouble ) ) );
+         assign( sign_tmp, Complement_non_NaN( mkexpr( tmp ),
+                                               mkexpr( nan_mask ) ) );
+         assign( frD, unop( Iop_ReinterpI64asF64, mkexpr( sign_tmp ) ) ); 
          break;
 
       default:
@@ -13342,6 +13442,8 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
           * of fnmadd and use pretty much the same code. However, that code has a bug in the
           * way it blindly negates the signbit, even if the floating point result is a NaN.
           * So, the TODO is to fix fnmadd (which I'll do in a different patch).
+          * FIXED 7/1/2012: carll fnmadd and fnmsubs fixed to not negate sign
+          * bit for NaN result.
           */
          Bool mdp = opc2 == 0x2A4;
          IRTemp frT = newTemp(Ity_F64);

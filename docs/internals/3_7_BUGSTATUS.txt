@@ -255,10 +255,6 @@ get fixed.
 302287  Unhandled movbe instruction on Atom processors
   **possible 3.8.0 (should fix this, really)
 
-302370  The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate
-        the result even when the result is QNAN or SNAN.
-  **possible 3.8.0 (needs land + test)
-
 302578  Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
   **possible 3.8.0 (easy to fix)
 
@@ -266,26 +262,7 @@ get fixed.
         'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
   configuration error, very weird
 
-302700  Assertion 'srcix >= 0 && srcix < VG_(sizeXA)(srcxa)' failed.
-  is in 3.6.0
-
-302901  Valgrind crashes with dwz optimized debuginfo
-  **possible 3.8.0, has patch, should take
-
--- Thurs 5 July 2012, mid afternoon.
-
-303116] New: Add support for the POWER instruction popcntb
-
-303127] New: Power test suite fixes for frsqrte, vrefp, and vrsqrtefp
-instructions.
-
-303250] New: "Assertion `instrs_in->arr_used <= 10000' failed" on
-OpenSSL with --track-origins=yes
-
-303460] New: Killed by fatal signal at doRegisterAllocation
-
-303466] New: vex amd64->IR: unhandled instruction bytes: 0xC5 0x7A
-0x10 0x35 0x61 0x2D 0x20 0x0
-== generic avx
+303460  Killed by fatal signal at doRegisterAllocation
+  queried OP (gentoo weirdness)
 
 -- Friday 13 July 2012  16:02 CEST

@@ -99,6 +99,7 @@ where XXXXXX is the bug number as listed below.
 292841  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x10 0x5 0xD0 0x7B
 298227  vex amd64->IR: 0xC5 0xF8 0x57 0xC0 0x48 0xC7 0x43 0x58)
 298335  vex amd64->IR: 0xC5 0xF9 0x57 0xC0 0x48 0x8B 0x35 0x3"
+303466  vex amd64->IR: 0xC5 0x7A 0x10 0x35 0x61 0x2D 0x20 0x0
   == 273475 (canonical avx)
 
 285662  Memcheck needs to replace memcpy/memmove (and most certainly others)
@@ -232,14 +233,20 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 301229  dup of 203877, see above.
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
+302370  The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate
+        the result even when the result is QNAN or SNAN.
 302536  Fix for the POWER Valgrind regression test: memcheck-ISA2.0.
 302656  Unhandled instruction (vcvtsi2ssq)
         == 273475 (canonical avx)
 302709  valgrind for ARM needs extra tls support for android emulator under Linux
 302827  add wrapper for CDROM_GET_CAPABILITY
+302901  Valgrind crashes with dwz optimized debuginfo
 302918  Enable testing of the vmaddfp and vnsubfp instructions in the testsuite
 303116  Add support for the POWER instruction popcntb
 303127  Power test suite fixes for frsqrte, vrefp, and vrsqrtefp instructions.
+303250  "Assertion `instrs_in->arr_used <= 10000' failed" on
+        OpenSSL with --track-origins=yes
+
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

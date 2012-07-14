@@ -2125,6 +2125,10 @@ GEN_test_RandM(VPCLMULQDQ_0xFF,
                "vpclmulqdq $0xFF, %%xmm6,  %%xmm8, %%xmm7",
                "vpclmulqdq $0xFF, (%%rax), %%xmm8, %%xmm7")
 
+GEN_test_RandM(VCMPSS_128_0x9,
+               "vcmpss $0x9, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x9, (%%rax), %%xmm8, %%xmm7")
+
 /* Comment duplicated above, for convenient reference:
    Allowed operands in test insns:
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
@@ -2664,6 +2668,7 @@ int main ( void )
    DO_D( VPCLMULQDQ_0x10 );
    DO_D( VPCLMULQDQ_0x11 );
    DO_D( VPCLMULQDQ_0xFF );
+   DO_D( VCMPSS_128_0x9 );
    return 0;
 }
 

@@ -8597,7 +8597,14 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
    // If you add a case here, add a corresponding test for both VCMPSD_128
    // and VCMPSS_128 in avx-1.c.
    switch (imm8) {
-      // "O" = ordered, "Q" = non-signalling (quiet), "S" = signalling
+      // "O" = ordered, "U" = unordered
+      // "Q" = non-signalling (quiet), "S" = signalling
+      //
+      //             swap operands?
+      //             |
+      //             |      cmp op          invert after?
+      //             |      |               |
+      //             v      v               v
       case 0x0:  XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_OQ
       case 0x1:  XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OS
       case 0x2:  XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OS
@@ -8607,7 +8614,7 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       case 0x6:  XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_US
       case 0x7:  XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_Q
       // 0x8  EQ_UQ
-      // 0x9  NGE_US
+      case 0x9:  XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_US
       /* "Enhanced Comparison Predicate[s] for VEX-Encoded [insns] */
       case 0xA:  XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_US
       // 0xB  FALSE_OQ

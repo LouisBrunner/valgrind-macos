@@ -404,9 +404,9 @@ HInstrArray* doRegisterAllocation (
    vassert(0 == (N_SPILL64S % 4));
 
    /* The live range numbers are signed shorts, and so limiting the
-      number of insns to 10000 comfortably guards against them
+      number of insns to 15000 comfortably guards against them
       overflowing 32k. */
-   vassert(instrs_in->arr_used <= 10000);
+   vassert(instrs_in->arr_used <= 15000);
 
 #  define INVALID_INSTRNO (-2)
 

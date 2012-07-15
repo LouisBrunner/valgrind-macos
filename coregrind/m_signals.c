@@ -1638,6 +1638,26 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          obviously stupid place (not mapped readable) that would
          likely cause a segfault. */
       if (VG_(is_valid_tid)(tid)) {
+
+#if defined(VGO_linux)
+         /* Make sure that the address stored in the stack pointer is 
+            located in a mapped page. That is not necessarily so. E.g.
+            consider the scenario where the stack pointer was decreased
+            and now has a value that is just below the end of a page that has
+            not been mapped yet. In that case VG_(am_is_valid_for_client)
+            will consider the address of the stack pointer invalid and that 
+            would cause a back-trace of depth 1 to be printed, instead of a
+            full back-trace. */
+         if (tid == 1) {           // main thread
+            Addr esp  = VG_(get_SP)(tid);
+            Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
+            if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
+               if (VG_(clo_trace_signals))
+                  VG_(dmsg)("       -> extended stack base to %#lx\n",
+                            VG_PGROUNDDN(esp));
+            }
+         }
+#endif
          ExeContext* ec = VG_(am_is_valid_for_client)
                              (VG_(get_SP)(tid), sizeof(Addr), VKI_PROT_READ)
                         ? VG_(record_ExeContext)( tid, 0/*first_ip_delta*/ )

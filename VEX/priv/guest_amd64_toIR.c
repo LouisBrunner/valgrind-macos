@@ -19559,6 +19559,83 @@ Long dis_ESC_NONE (
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+static IRTemp math_BSWAP ( IRTemp t1, IRType ty )
+{
+   IRTemp t2 = newTemp(ty);
+   if (ty == Ity_I64) {
+      IRTemp m8  = newTemp(Ity_I64);
+      IRTemp s8  = newTemp(Ity_I64);
+      IRTemp m16 = newTemp(Ity_I64);
+      IRTemp s16 = newTemp(Ity_I64);
+      IRTemp m32 = newTemp(Ity_I64);
+      assign( m8, mkU64(0xFF00FF00FF00FF00ULL) );
+      assign( s8,
+              binop(Iop_Or64,
+                    binop(Iop_Shr64,
+                          binop(Iop_And64,mkexpr(t1),mkexpr(m8)),
+                          mkU8(8)),
+                    binop(Iop_And64,
+                          binop(Iop_Shl64,mkexpr(t1),mkU8(8)),
+                          mkexpr(m8))
+                   ) 
+            );
+
+      assign( m16, mkU64(0xFFFF0000FFFF0000ULL) );
+      assign( s16,
+              binop(Iop_Or64,
+                    binop(Iop_Shr64,
+                          binop(Iop_And64,mkexpr(s8),mkexpr(m16)),
+                          mkU8(16)),
+                    binop(Iop_And64,
+                          binop(Iop_Shl64,mkexpr(s8),mkU8(16)),
+                          mkexpr(m16))
+                   ) 
+            );
+
+      assign( m32, mkU64(0xFFFFFFFF00000000ULL) );
+      assign( t2,
+              binop(Iop_Or64,
+                    binop(Iop_Shr64,
+                          binop(Iop_And64,mkexpr(s16),mkexpr(m32)),
+                          mkU8(32)),
+                    binop(Iop_And64,
+                          binop(Iop_Shl64,mkexpr(s16),mkU8(32)),
+                          mkexpr(m32))
+                   ) 
+            );
+      return t2;
+   }
+   if (ty == Ity_I32) {
+      assign( t2,
+         binop(
+            Iop_Or32,
+            binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
+            binop(
+               Iop_Or32,
+               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)),
+                                mkU32(0x00FF0000)),
+               binop(Iop_Or32,
+                     binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
+                                      mkU32(0x0000FF00)),
+                     binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
+                                      mkU32(0x000000FF) )
+            )))
+      );
+      return t2;
+   }
+   if (ty == Ity_I16) {
+      assign(t2, 
+             binop(Iop_Or16,
+                   binop(Iop_Shl16, mkexpr(t1), mkU8(8)),
+                   binop(Iop_Shr16, mkexpr(t1), mkU8(8)) ));
+      return t2;
+   }
+   vassert(0);
+   /*NOTREACHED*/
+   return IRTemp_INVALID;
+}
+
+
 __attribute__((noinline))
 static
 Long dis_ESC_0F (
@@ -20162,71 +20239,17 @@ Long dis_ESC_0F (
          8. */
       if (sz == 4) {
          t1 = newTemp(Ity_I32);
-         t2 = newTemp(Ity_I32);
          assign( t1, getIRegRexB(4, pfx, opc-0xC8) );
-         assign( t2,
-            binop(Iop_Or32,
-               binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
-            binop(Iop_Or32,
-               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)),
-                                mkU32(0x00FF0000)),
-            binop(Iop_Or32,
-               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
-                                mkU32(0x0000FF00)),
-               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
-                                mkU32(0x000000FF) )
-            )))
-         );
+         t2 = math_BSWAP( t1, Ity_I32 );
          putIRegRexB(4, pfx, opc-0xC8, mkexpr(t2));
          DIP("bswapl %s\n", nameIRegRexB(4, pfx, opc-0xC8));
          return delta;
       }
       if (sz == 8) {
-         IRTemp m8  = newTemp(Ity_I64);
-         IRTemp s8  = newTemp(Ity_I64);
-         IRTemp m16 = newTemp(Ity_I64);
-         IRTemp s16 = newTemp(Ity_I64);
-         IRTemp m32 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I64);
          t2 = newTemp(Ity_I64);
          assign( t1, getIRegRexB(8, pfx, opc-0xC8) );
-
-         assign( m8, mkU64(0xFF00FF00FF00FF00ULL) );
-         assign( s8,
-                 binop(Iop_Or64,
-                       binop(Iop_Shr64,
-                             binop(Iop_And64,mkexpr(t1),mkexpr(m8)),
-                             mkU8(8)),
-                       binop(Iop_And64,
-                             binop(Iop_Shl64,mkexpr(t1),mkU8(8)),
-                             mkexpr(m8))
-                      ) 
-               );
-
-         assign( m16, mkU64(0xFFFF0000FFFF0000ULL) );
-         assign( s16,
-                 binop(Iop_Or64,
-                       binop(Iop_Shr64,
-                             binop(Iop_And64,mkexpr(s8),mkexpr(m16)),
-                             mkU8(16)),
-                       binop(Iop_And64,
-                             binop(Iop_Shl64,mkexpr(s8),mkU8(16)),
-                             mkexpr(m16))
-                      ) 
-               );
-
-         assign( m32, mkU64(0xFFFFFFFF00000000ULL) );
-         assign( t2,
-                 binop(Iop_Or64,
-                       binop(Iop_Shr64,
-                             binop(Iop_And64,mkexpr(s16),mkexpr(m32)),
-                             mkU8(32)),
-                       binop(Iop_And64,
-                             binop(Iop_Shl64,mkexpr(s16),mkU8(32)),
-                             mkexpr(m32))
-                      ) 
-               );
-
+         t2 = math_BSWAP( t1, Ity_I64 );
          putIRegRexB(8, pfx, opc-0xC8, mkexpr(t2));
          DIP("bswapq %s\n", nameIRegRexB(8, pfx, opc-0xC8));
          return delta;
@@ -20400,6 +20423,34 @@ Long dis_ESC_0F38 (
    delta++;
    switch (opc) {
 
+   case 0xF0:   /* MOVBE m16/32/64(E), r16/32/64(G) */
+   case 0xF1: { /* MOVBE r16/32/64(G), m16/32/64(E) */
+      IRTemp addr  = IRTemp_INVALID;
+      UChar  modrm = 0;
+      Int    alen  = 0;
+      HChar  dis_buf[50];
+      if (haveF2orF3(pfx) || haveVEX(pfx)) goto decode_failure;
+      if (sz != 2 && sz != 4 && sz != 8) goto decode_failure;
+      modrm = getUChar(delta);
+      if (epartIsReg(modrm)) break;
+      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+      delta += alen;
+      IRType ty = szToITy(sz);
+      IRTemp src = newTemp(ty);
+      if (opc == 0xF0) { /* LOAD */
+         assign(src, loadLE(ty, mkexpr(addr)));
+         IRTemp dst = math_BSWAP(src, ty);
+         putIRegG(sz, pfx, modrm, mkexpr(dst));
+         DIP("movbe %s,%s\n", dis_buf, nameIRegG(sz, pfx, modrm));
+      } else { /* STORE */
+         assign(src, getIRegG(sz, pfx, modrm));
+         IRTemp dst = math_BSWAP(src, ty);
+         storeLE(mkexpr(addr), mkexpr(dst));
+         DIP("movbe %s,%s\n", nameIRegG(sz, pfx, modrm), dis_buf);
+      }
+      return delta;
+   }
+
    default:
       break;
 
@@ -20425,7 +20476,7 @@ Long dis_ESC_0F38 (
          return delta;
    }
 
-  //decode_failure:
+  decode_failure:
    return deltaIN; /* fail */
 }
 

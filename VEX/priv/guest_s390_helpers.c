@@ -339,6 +339,54 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
 }
 #endif /* VGA_s390x */
 
+
+/*------------------------------------------------------------*/
+/*--- Clean helper for "convert to binary".                ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+UInt
+s390_do_cvb(ULong decimal)
+{
+   UInt binary;
+
+   __asm__ volatile (
+        "cvb %[result],%[input]\n\t"
+          : [result] "=d"(binary)
+          : [input] "m"(decimal)
+   );
+
+   return binary;
+}
+
+#else
+UInt s390_do_cvb(ULong decimal) { return 0; }
+#endif
+
+
+/*------------------------------------------------------------*/
+/*--- Clean helper for "convert to decimal".                ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+ULong
+s390_do_cvd(ULong binary_in)
+{
+   UInt binary = binary_in & 0xffffffffULL;
+   ULong decimal;
+
+   __asm__ volatile (
+        "cvd %[input],%[result]\n\t"
+          : [result] "=m"(decimal)
+          : [input] "d"(binary)
+   );
+
+   return decimal;
+}
+
+#else
+ULong s390_do_cvd(ULong binary) { return 0; }
+#endif
+
+
 /*------------------------------------------------------------*/
 /*--- Helper for condition code.                           ---*/
 /*------------------------------------------------------------*/

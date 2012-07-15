@@ -10670,24 +10670,6 @@ s390_irgen_CPSDR(UChar r3, UChar r1, UChar r2)
 }
 
 
-static UInt
-s390_do_cvb(ULong decimal)
-{
-#if defined(VGA_s390x)
-   UInt binary;
-
-   __asm__ volatile (
-        "cvb %[result],%[input]\n\t"
-          : [result] "=d"(binary)
-          : [input] "m"(decimal)
-   );
-
-   return binary;
-#else
-   return 0;
-#endif
-}
-
 static IRExpr *
 s390_call_cvb(IRExpr *in)
 {
@@ -10719,25 +10701,6 @@ s390_irgen_CVBY(UChar r1, IRTemp op2addr)
    return "cvby";
 }
 
-
-static ULong
-s390_do_cvd(ULong binary_in)
-{
-#if defined(VGA_s390x)
-   UInt binary = binary_in & 0xffffffffULL;
-   ULong decimal;
-
-   __asm__ volatile (
-        "cvd %[input],%[result]\n\t"
-          : [result] "=m"(decimal)
-          : [input] "d"(binary)
-   );
-
-   return decimal;
-#else
-   return 0;
-#endif
-}
 
 static IRExpr *
 s390_call_cvd(IRExpr *in)

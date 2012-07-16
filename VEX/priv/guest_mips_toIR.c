@@ -1325,7 +1325,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    switch (opcode) {
 
    case 0x03:     /* JAL */
-      DIP("jal");
+      DIP("jal 0x%x", instr_index);
       putIReg(31, mkU32(guest_PC_curr_instr + 8));
       t0 = newTemp(ty);
       assign(t0, mkU32((guest_PC_curr_instr & 0xF0000000) |
@@ -1333,7 +1333,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       lastn = mkexpr(t0);
       break;
    case 0x02:     /* J */
-      DIP("j");
+      DIP("j 0x%x", instr_index);
       t0 = newTemp(ty);
       assign(t0, mkU32((guest_PC_curr_instr & 0xF0000000) |
                        (instr_index << 2)));
@@ -1363,23 +1363,23 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   if (tf == 1 && nd == 0) {
                      //branch on true
-                     DIP("bc1t \n");
+                     DIP("bc1t %d, %d", bc1_cc, imm);
                      assign(t3, binop(Iop_CmpEQ32, mkU32(1), mkexpr(t2)));
                      dis_branch(False, mkexpr(t3), imm, &bstmt);
                      break;
                   } else if (tf == 0 && nd == 0) {
                      //branch on false
-                     DIP("bc1f \n");
+                     DIP("bc1f %d, %d", bc1_cc, imm);
                      assign(t3, binop(Iop_CmpEQ32, mkU32(0), mkexpr(t2)));
                      dis_branch(False, mkexpr(t3), imm, &bstmt);
                      break;
                   } else if (nd == 1 && tf == 0) {
-                     DIP("bc1fl \n");
+                     DIP("bc1fl %d, %d", bc1_cc, imm);
                      lastn = dis_branch_likely(binop(Iop_CmpNE32, mkexpr(t2),
                            mode64 ? mkU64(0x0) : mkU32(0x0)), imm);
                      break;
                   } else if (nd == 1 && tf == 1) {
-                     DIP("bc1tl \n");
+                     DIP("bc1tl %d, %d", bc1_cc, imm);
                      lastn = dis_branch_likely(binop(Iop_CmpEQ32, mkexpr(t2),
                                                mkU32(0x0)), imm);
                      break;
@@ -2148,7 +2148,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x33:     /* PREF */
-      DIP("pref)");
+      DIP("pref");
       break;
 
    case 0x35:
@@ -2194,25 +2194,25 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x20:     /* LB */
-      DIP("lb");
+      DIP("lb r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       putIReg(rt, unop(Iop_8Sto32, load(Ity_I8, mkexpr(t1))));
       break;
 
    case 0x24:     /* LBU */
-      DIP("lbu");
+      DIP("lbu r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       putIReg(rt, unop(Iop_8Uto32, load(Ity_I8, mkexpr(t1))));
       break;
 
    case 0x21:     /* LH */
-      DIP("lh");
+      DIP("lh r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       putIReg(rt, unop(Iop_16Sto32, load(Ity_I16, mkexpr(t1))));
       break;
 
    case 0x25:     /* LHU */
-      DIP("lhu");
+      DIP("lhu r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       putIReg(rt, unop(Iop_16Uto32, load(Ity_I16, mkexpr(t1))));
       break;
@@ -2396,7 +2396,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x22:     /* LWL */
 
-      DIP("lwl");
+      DIP("lwl r%d, %d(r%d)", rt, imm, rs);
       {
          /* t1 = addr */
          t1 = newTemp(Ity_I32);
@@ -2429,7 +2429,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x26:     /* LWR */
 
-      DIP("lwr");
+      DIP("lwr r%d, %d(r%d)", rt, imm, rs);
       {
          /* t1 = addr */
          t1 = newTemp(Ity_I32);
@@ -2467,20 +2467,20 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x28:     /* SB */
-      DIP("sb");
+      DIP("sb r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       store(mkexpr(t1), narrowTo(Ity_I8, getIReg(rt)));
       break;
 
    case 0x29:     /* SH */
-      DIP("sh\n");
+      DIP("sh r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       store(mkexpr(t1), narrowTo(Ity_I16, getIReg(rt)));
       break;
 
    case 0x2A:     /* SWL */
 
-      DIP("swl\n");
+      DIP("swl r%d, %d(r%d)", rt, imm, rs);
       {
          /* t1 = addr */
          t1 = newTemp(Ity_I32);
@@ -2521,7 +2521,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x2E:     /* SWR */
 
-      DIP("swr");
+      DIP("swr r%d, %d(r%d)", rt, imm, rs);
       {
          /* t1 = addr */
          t1 = newTemp(Ity_I32);
@@ -2554,13 +2554,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x1C:     /*Special2 */
       switch (function) {
       case 0x02: { /* MUL */
-         DIP("mul");
+         DIP("mul r%d, r%d, r%d", rd, rs, rt);
          putIReg(rd, binop(Iop_Mul32, getIReg(rs), getIReg(rt)));
          break;
       }
 
       case 0x00: { /* MADD */
-         DIP("madd");
+         DIP("madd r%d, r%d", rs, rt);
          t1 = newTemp(Ity_I32);
          t2 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I64);
@@ -2586,7 +2586,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x01: { /* MADDU */
-         DIP("maddu");
+         DIP("maddu r%d, r%d", rs, rt);
          t1 = newTemp(Ity_I32);
          t2 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I64);
@@ -2611,7 +2611,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x04: { /* MSUB */
-         DIP("msub");
+         DIP("msub r%d, r%d", rs, rt);
          t1 = newTemp(Ity_I32);
          t2 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I64);
@@ -2638,7 +2638,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x05: { /* MSUBU */
-         DIP("msubu");
+         DIP("msubu r%d, r%d", rs, rt);
          t1 = newTemp(Ity_I32);
          t2 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I64);
@@ -2771,19 +2771,18 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x20:
          /*BSHFL*/ switch (sa) {
-
          case 0x10:
-             /*SEB*/ DIP("seb");
+             /*SEB*/ DIP("seb r%d, r%d", rd, rt);
             putIReg(rd, unop(Iop_8Sto32, unop(Iop_32to8, getIReg(rt))));
             break;
 
          case 0x18:
-             /*SEH*/ DIP("seh");
+             /*SEH*/ DIP("seh r%d, r%d", rd, rt);
             putIReg(rd, unop(Iop_16Sto32, unop(Iop_32to16, getIReg(rt))));
             break;
 
          case 0x02:
-             /*WSBH*/ DIP("wsbh");
+             /*WSBH*/ DIP("wsbh r%d, r%d", rd, rt);
             t0 = newTemp(Ity_I32);
             t1 = newTemp(Ity_I32);
             t2 = newTemp(Ity_I32);
@@ -2852,8 +2851,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                putIReg(rd, mkexpr(t4));
             }
          } else if (tf == 1) {   /* MOVT */
-            DIP("movt r%d, r%d, %d", rd, rs,
-                mov_cc);
+            DIP("movt r%d, r%d, %d", rd, rs, mov_cc);
             {
                t1 = newTemp(Ity_I32);
                t2 = newTemp(Ity_I32);
@@ -2879,7 +2877,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
       case 0x0A: {
          /* MOVZ */
-         DIP("movz");
+         DIP("movz r%d, r%d, r%d", rd, rs, rt);
          t1 = newTemp(ty);
          t2 = newTemp(ty);
          {
@@ -2896,7 +2894,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x0B: {
          /* MOVN */
-         DIP("movn");
+         DIP("movn r%d, r%d, r%d", rd, rs, rt);
          t1 = newTemp(ty);
          t2 = newTemp(ty);
          {
@@ -2912,7 +2910,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x18:  /* MULT */
-         DIP("mult");
+         DIP("mult r%d, r%d", rs, rt);
          t2 = newTemp(Ity_I64);
 
          assign(t2, binop(Iop_MullS32, mkNarrowTo32(ty, getIReg(rs)),
@@ -2923,7 +2921,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x19:  /* MULTU */
-         DIP("multu");
+         DIP("multu r%d, r%d", rs, rt);
          t2 = newTemp(Ity_I64);
 
          assign(t2, binop(Iop_MullU32, mkNarrowTo32(ty, getIReg(rs)),
@@ -2934,7 +2932,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x20:  /* ADD */
-         DIP("add");
+         DIP("add r%d, r%d, r%d", rd, rs, rt);
          {
             t2 = newTemp(Ity_I32);
 
@@ -2944,7 +2942,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x1A:  /* DIV */
-         DIP("div");
+         DIP("div r%d, r%d", rs, rt);
          {
             t1 = newTemp(Ity_I64);
             t2 = newTemp(Ity_I64);
@@ -2958,7 +2956,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x1B:  /* DIVU */
-         DIP("divu");
+         DIP("divu r%d, r%d", rs, rt);
          {
             t1 = newTemp(Ity_I64);
             t2 = newTemp(Ity_I64);
@@ -2970,42 +2968,42 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x10:  /* MFHI */
-         DIP("mfhi");
+         DIP("mfhi r%d", rd);
          putIReg(rd, getHI());
          break;
 
       case 0x11:  /* MTHI */
-         DIP("mthi");
+         DIP("mthi r%d", rs);
          putHI(getIReg(rs));
          break;
 
       case 0x12:  /* MFLO */
-         DIP("mflo");
+         DIP("mflo r%d", rd);
          putIReg(rd, getLO());
          break;
 
       case 0x13:  /* MTLO */
-         DIP("mtlo");
+         DIP("mtlo r%d", rs);
          putLO(getIReg(rs));
          break;
 
       case 0x21:  /* ADDU */
-         DIP("addu");
+         DIP("addu r%d, r%d, r%d", rd, rs, rt);
          ALU_PATTERN(Iop_Add32);
          break;
 
       case 0x22:  /* SUB */
-         DIP("sub");
+         DIP("sub r%d, r%d, r%d", rd, rs, rt);
          ALU_PATTERN(Iop_Sub32);
          break;
 
       case 0x23:  /* SUBU */
-         DIP("subu");
+         DIP("subu r%d, r%d, r%d", rd, rs, rt);
          ALU_PATTERN(Iop_Sub32);
          break;
 
       case 0x24:  /* AND */
-         DIP("and");
+         DIP("and r%d, r%d, r%d", rd, rs, rt);
          ALU_PATTERN(Iop_And32);
          break;
 
@@ -3015,12 +3013,12 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x26:  /* XOR */
-         DIP("xor");
+         DIP("xor r%d, r%d, r%d", rd, rs, rt);
          ALU_PATTERN(Iop_Xor32);
          break;
 
       case 0x27:  /* NOR */
-         DIP("nor");
+         DIP("nor r%d, r%d, r%d", rd, rs, rt);
          putIReg(rd, unop(Iop_Not32, binop(Iop_Or32, getIReg(rs),getIReg(rt))));
          break;
 
@@ -3047,46 +3045,46 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x2A:  /* SLT */
-         DIP("slt");
+         DIP("slt r%d, r%d, r%d", rd, rs, rt);
          putIReg(rd, unop(Iop_1Uto32, binop(Iop_CmpLT32S, getIReg(rs),
                                       getIReg(rt))));
          break;
 
       case 0x2B:  /* SLTU */
-         DIP("sltu");
+         DIP("sltu r%d, r%d, r%d", rd, rs, rt);
          putIReg(rd, unop(Iop_1Uto32, binop(Iop_CmpLT32U, getIReg(rs),
                                       getIReg(rt))));
          break;
 
       case 0x00:
          /* SLL */
-         DIP("sll");
+         DIP("sll r%d, r%d, %d", rd, rt, sa);
          SXX_PATTERN(Iop_Shl32);
          break;
 
       case 0x04:  /* SLLV */
-         DIP("sllv");
+         DIP("sllv r%d, r%d, r%d", rd, rt, rs);
          SXXV_PATTERN(Iop_Shl32);
          break;
 
       case 0x03:  /* SRA */
-         DIP("sra");
+         DIP("sra r%d, r%d, %d", rd, rt, sa);
          SXX_PATTERN(Iop_Sar32);
          break;
 
       case 0x07:  /* SRAV */
-         DIP("srav");
+         DIP("srav r%d, r%d, r%d", rd, rt, rs);
          SXXV_PATTERN(Iop_Sar32);
          break;
 
       case 0x02: {  /* SRL */
          rot = get_rot(cins);
          if (rot) {
-            DIP("rotr");
+            DIP("rotr r%d, r%d, %d", rd, rt, sa);
             putIReg(rd, mkWidenFrom32(ty, genROR32(mkNarrowTo32(ty,
                         getIReg(rt)), sa), False));
          } else {
-            DIP("srl");
+            DIP("srl r%d, r%d, %d", rd, rt, sa);
             SXX_PATTERN(Iop_Shr32);
          }
       break;
@@ -3095,13 +3093,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x06: {
          rot = get_rotv(cins);
          if (rot) {
-            DIP("rotrv");
+            DIP("rotrv r%d, r%d, r%d", rd, rt, rs);
             putIReg(rd, mkWidenFrom32(ty, genRORV32(mkNarrowTo32(ty,
                         getIReg(rt)), mkNarrowTo32(ty, getIReg(rs))),False));
             break;
          } else {
             /* SRLV */
-            DIP("srlv");
+            DIP("srlv r%d, r%d, r%d", rd, rt, rs);
             SXXV_PATTERN(Iop_Shr32);
             break;
          }
@@ -3179,13 +3177,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       switch (rt) {
       case 0x01:  /* BGEZ */
-         DIP("bgez");
+         DIP("bgez r%d, %d", rs, imm);
          dis_branch(False, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
                            mkU32(0x80000000)), mkU32(0x0)), imm, &bstmt);
          break;
 
       case 0x03:  /* BGEZL */
-         DIP("bgezl");
+         DIP("bgezl r%d, %d", rs, imm);
          lastn = dis_branch_likely(binop(Iop_CmpNE32, binop(Iop_And32,
                                    getIReg(rs), mode64 ?
                                       mkU64(0x8000000000000000ULL)
@@ -3194,26 +3192,26 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x00:  /* BLTZ */
-         DIP("bltz");
+         DIP("bltz r%d, %d", rs, imm);
          dis_branch(False, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
                     mkU32(0x80000000)), mkU32(0x80000000)), imm, &bstmt);
          break;
 
       case 0x02:  /* BLTZL */
-         DIP("bltzl");
+         DIP("bltzl r%d, %d", rs, imm);
          lastn = dis_branch_likely(binop(Iop_CmpNE32, binop(Iop_And32,
                                    getIReg(rs), mkU32(0x80000000)),
                                    mkU32(0x80000000)), imm);
          break;
 
       case 0x10:  /* BLTZAL */
-         DIP("bltzal");
+         DIP("bltzal r%d, %d", rs, imm);
          dis_branch(True, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
                     mkU32(0x80000000)), mkU32(0x80000000)), imm, &bstmt);
          break;
 
       case 0x12:  /* BLTZALL */
-         DIP("bltzall");
+         DIP("bltzall r%d, %d", rs, imm);
          putIReg(31, mkU32(guest_PC_curr_instr + 8));
          lastn = dis_branch_likely(binop(Iop_CmpNE32, binop(Iop_And32,
                                    getIReg(rs), mkU32(0x80000000)),
@@ -3221,13 +3219,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x11:  /* BGEZAL */
-         DIP("bgezal");
+         DIP("bgezal r%d, %d", rs, imm);
          dis_branch(True, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
                     mkU32(0x80000000)), mkU32(0x0)), imm, &bstmt);
          break;
 
       case 0x13:  /* BGEZALL */
-         DIP("bgezall");
+         DIP("bgezall r%d, %d", rs, imm);
          putIReg(31, mkU32(guest_PC_curr_instr + 8));
          lastn = dis_branch_likely(binop(Iop_CmpNE32, binop(Iop_And32,
                                    getIReg(rs), mkU32(0x80000000)),
@@ -3287,49 +3285,49 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x04:
-      DIP("beq");
+      DIP("beq r%d, r%d, %d", rs, rt, imm);
       dis_branch(False, binop(Iop_CmpEQ32, getIReg(rs), getIReg(rt)),
                               imm, &bstmt);
       break;
 
    case 0x14:
-      DIP("beql");
+      DIP("beql r%d, r%d, %d", rs, rt, imm);
       lastn = dis_branch_likely(binop(Iop_CmpNE32, getIReg(rs), getIReg(rt)),
                                       imm);
       break;
 
    case 0x05:
-      DIP("bne");
+      DIP("bne r%d, r%d, %d", rs, rt, imm);
       dis_branch(False, binop(Iop_CmpNE32, getIReg(rs), getIReg(rt)),
                               imm, &bstmt);
       break;
 
    case 0x15:
-      DIP("bnel");
+      DIP("bnel r%d, r%d, %d", rs, rt, imm);
       lastn =
           dis_branch_likely(binop(Iop_CmpEQ32, getIReg(rs), getIReg(rt)), imm);
       break;
 
    case 0x07:     /* BGTZ */
-      DIP("bgtz");
+      DIP("bgtz r%d, %d", rs, imm);
       dis_branch(False, unop(Iop_Not1, binop(Iop_CmpLE32S, getIReg(rs),
                              mkU32(0x00))), imm, &bstmt);
       break;
 
    case 0x17:     /* BGTZL */
-      DIP("bgtzl");
+      DIP("bgtzl r%d, %d", rs, imm);
       lastn = dis_branch_likely(binop(Iop_CmpLE32S, getIReg(rs), mkU32(0x00)),
                                       imm);
       break;
 
    case 0x06:     /* BLEZ */
-      DIP("blez");
+      DIP("blez r%d, %d", rs, imm);
       dis_branch(False,binop(Iop_CmpLE32S, getIReg(rs), mkU32(0x0)), imm,
                              &bstmt);
       break;
 
    case 0x16:     /* BLEZL */
-      DIP("blezl");
+      DIP("blezl r%d, %d", rs, imm);
       lastn = dis_branch_likely(unop(Iop_Not1, (binop(Iop_CmpLE32S,
                                      getIReg(rs), mkU32(0x0)))), imm);
       break;
@@ -3345,28 +3343,28 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x0C:     /* ANDI */
-      DIP("andi");
+      DIP("andi r%d, r%d, %d", rt, rs, imm);
       ALUI_PATTERN(Iop_And32);
       break;
 
    case 0x0E:     /* XORI */
-      DIP("xori");
+      DIP("xori r%d, r%d, %d", rt, rs, imm);
       ALUI_PATTERN(Iop_Xor32);
       break;
 
    case 0x0D:     /* ORI */
-      DIP("ori");
+      DIP("ori r%d, r%d, %d", rt, rs, imm);
       ALUI_PATTERN(Iop_Or32);
       break;
 
    case 0x0A:     /* SLTI */
-      DIP("slti");
+      DIP("slti r%d, r%d, %d", rt, rs, imm);
       putIReg(rt, unop(Iop_1Uto32, binop(Iop_CmpLT32S, getIReg(rs),
                                          mkU32(extend_s_16to32(imm)))));
       break;
 
    case 0x0B:     /* SLTIU */
-      DIP("sltiu");
+      DIP("sltiu r%d, r%d, %d", rt, rs, imm);
       putIReg(rt, unop(Iop_1Uto32, binop(Iop_CmpLT32U, getIReg(rs),
                                          mkU32(extend_s_16to32(imm)))));
       break;
@@ -3386,7 +3384,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x38:     /* SC / SWC0 */
-      DIP("sc");
+      DIP("sc r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
 
       t2 = newTemp(Ity_I1);

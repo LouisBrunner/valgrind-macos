@@ -1738,7 +1738,8 @@ static SyscallTableEntry syscall_main_table[] = {
   LINXY (__NR_signalfd4, sys_signalfd4),	// 324
   LINX_ (__NR_eventfd2, sys_eventfd2),	// 325
   LINXY (__NR_pipe2, sys_pipe2),	// 328
-  LINXY (__NR_inotify_init1, sys_inotify_init1)	// 329
+  LINXY (__NR_inotify_init1, sys_inotify_init1),	// 329
+  LINXY (__NR_prlimit64, sys_prlimit64) // 338
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

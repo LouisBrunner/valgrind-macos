@@ -372,6 +372,14 @@
 #define __NR_rt_tgsigqueueinfo          (__NR_Linux + 332)
 #define __NR_perf_event_open            (__NR_Linux + 333)
 #define __NR_accept4                    (__NR_Linux + 334)
+#define __NR_recvmmsg                   (__NR_Linux + 335)
+#define __NR_fanotify_init              (__NR_Linux + 336)
+#define __NR_fanotify_mark              (__NR_Linux + 337)
+#define __NR_prlimit64                  (__NR_Linux + 338)
+#define __NR_name_to_handle_at          (__NR_Linux + 339)
+#define __NR_open_by_handle_at          (__NR_Linux + 340)
+#define __NR_clock_adjtime              (__NR_Linux + 341)
+#define __NR_syncfs                     (__NR_Linux + 342)
 
 /*
  * Offset of the last Linux o32 flavoured syscall

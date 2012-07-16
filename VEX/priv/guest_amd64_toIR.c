@@ -20423,32 +20423,36 @@ Long dis_ESC_0F38 (
    delta++;
    switch (opc) {
 
-   case 0xF0:   /* MOVBE m16/32/64(E), r16/32/64(G) */
-   case 0xF1: { /* MOVBE r16/32/64(G), m16/32/64(E) */
-      IRTemp addr  = IRTemp_INVALID;
-      UChar  modrm = 0;
-      Int    alen  = 0;
-      HChar  dis_buf[50];
-      if (haveF2orF3(pfx) || haveVEX(pfx)) goto decode_failure;
-      if (sz != 2 && sz != 4 && sz != 8) goto decode_failure;
-      modrm = getUChar(delta);
-      if (epartIsReg(modrm)) break;
-      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-      delta += alen;
-      IRType ty = szToITy(sz);
-      IRTemp src = newTemp(ty);
-      if (opc == 0xF0) { /* LOAD */
-         assign(src, loadLE(ty, mkexpr(addr)));
-         IRTemp dst = math_BSWAP(src, ty);
-         putIRegG(sz, pfx, modrm, mkexpr(dst));
-         DIP("movbe %s,%s\n", dis_buf, nameIRegG(sz, pfx, modrm));
-      } else { /* STORE */
-         assign(src, getIRegG(sz, pfx, modrm));
-         IRTemp dst = math_BSWAP(src, ty);
-         storeLE(mkexpr(addr), mkexpr(dst));
-         DIP("movbe %s,%s\n", nameIRegG(sz, pfx, modrm), dis_buf);
+   case 0xF0:   /* 0F 38 F0 = MOVBE m16/32/64(E), r16/32/64(G) */
+   case 0xF1: { /* 0F 38 F1 = MOVBE r16/32/64(G), m16/32/64(E) */
+      if (!haveF2orF3(pfx) && !haveVEX(pfx)
+          && (sz == 2 || sz == 4 || sz == 8)) {
+         IRTemp addr  = IRTemp_INVALID;
+         UChar  modrm = 0;
+         Int    alen  = 0;
+         HChar  dis_buf[50];
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) break;
+         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         IRType ty = szToITy(sz);
+         IRTemp src = newTemp(ty);
+         if (opc == 0xF0) { /* LOAD */
+            assign(src, loadLE(ty, mkexpr(addr)));
+            IRTemp dst = math_BSWAP(src, ty);
+            putIRegG(sz, pfx, modrm, mkexpr(dst));
+            DIP("movbe %s,%s\n", dis_buf, nameIRegG(sz, pfx, modrm));
+         } else { /* STORE */
+            assign(src, getIRegG(sz, pfx, modrm));
+            IRTemp dst = math_BSWAP(src, ty);
+            storeLE(mkexpr(addr), mkexpr(dst));
+            DIP("movbe %s,%s\n", nameIRegG(sz, pfx, modrm), dis_buf);
+         }
+         return delta;
       }
-      return delta;
+      /* else fall through; maybe one of the decoders below knows what
+         it is. */
+      break;
    }
 
    default:
@@ -20476,7 +20480,7 @@ Long dis_ESC_0F38 (
          return delta;
    }
 
-  decode_failure:
+  /*decode_failure:*/
    return deltaIN; /* fail */
 }
 

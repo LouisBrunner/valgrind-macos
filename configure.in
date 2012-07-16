@@ -1754,6 +1754,27 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_AVX_TESTS, test x$ac_have_as_avx = xyes)
 
 
+# does the x86/amd64 assembler understand MOVBE?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_MOVBE_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler knows the MOVBE insn])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x; 
+   __asm__ __volatile__(
+      "movbe (%%rsp), %%r15" : : : "r15" ); }
+  while (0)
+]])], [
+ac_have_as_movbe=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_movbe=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_MOVBE_TESTS, test x$ac_have_as_movbe = xyes)
+
+
 # Does the C compiler support the "ifunc" attribute
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's

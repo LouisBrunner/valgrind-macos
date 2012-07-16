@@ -52,6 +52,7 @@ EXTRA_DIST = \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
 	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
+	movbe.stderr.exp movbe.stdout.exp movbe.vgtest \
 	nan80and64.stderr.exp nan80and64.stdout.exp nan80and64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
@@ -105,6 +106,9 @@ if BUILD_SSE42_TESTS
 endif
 if BUILD_AVX_TESTS
  check_PROGRAMS += avx-1
+endif
+if BUILD_MOVBE_TESTS
+ check_PROGRAMS += movbe
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

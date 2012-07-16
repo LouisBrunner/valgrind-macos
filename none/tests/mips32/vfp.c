@@ -284,6 +284,7 @@ int main()
    TESTINSN5LOADw("lwc1 $f0, 64($t1)", 0, 64, f0);
    TESTINSN5LOADw("lwc1 $f0, 0($t1)", 0, 0, f0);
 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("LWXC1\n");
    TESTINSN6LOADw("lwxc1 $f0, $a3($v0)", 0, f0, a3, v0);
    TESTINSN6LOADw("lwxc1 $f0, $a3($v0)", 4, f0, a3, v0);
@@ -317,7 +318,7 @@ int main()
    TESTINSN6LOADw("lwxc1 $f0, $a3($v0)", 48, f0, a3, v0);
    TESTINSN6LOADw("lwxc1 $f0, $a3($v0)", 52, f0, a3, v0);
    TESTINSN6LOADw("lwxc1 $f0, $a3($v0)", 56, f0, a3, v0);
-   
+
    printf("LDXC1\n");
    TESTINSN6LOADd("ldxc1 $f0, $a3($v0)", 0, f0, a3, v0);
    TESTINSN6LOADd("ldxc1 $f0, $a3($v0)", 8, f0, a3, v0);
@@ -351,6 +352,7 @@ int main()
    TESTINSN6LOADd("ldxc1 $f0, $a3($v0)", 16, f0, a3, v0);
    TESTINSN6LOADd("ldxc1 $f0, $a3($v0)", 24, f0, a3, v0);
    TESTINSN6LOADd("ldxc1 $f0, $a3($v0)", 32, f0, a3, v0);
+#endif
 
    printf("SDC1\n");
    TESTINST1(0);
@@ -363,7 +365,8 @@ int main()
    TESTINST1(56);
    TESTINST1(64);
    ppMem(mem1, 16);
-   
+
+#if (__mips==32) && (__mips_isa_rev>=2) 
    printf("SDXC1\n");
    TESTINST1a(0);
    TESTINST1a(8);
@@ -375,6 +378,7 @@ int main()
    TESTINST1a(56);
    TESTINST1a(64);
    ppMem(mem1, 16);
+#endif
 
    printf("SWC1\n");
    TESTINST2(0);
@@ -387,7 +391,8 @@ int main()
    TESTINST2(56);
    TESTINST2(64);
    ppMemF(mem1f, 16);
-   
+
+#if (__mips==32) && (__mips_isa_rev>=2) 
    printf("SWXC1\n");
    TESTINST2a(0);
    TESTINST2a(8);
@@ -399,6 +404,8 @@ int main()
    TESTINST2a(56);
    TESTINST2a(64);
    ppMemF(mem1f, 16);
-   
+#endif
+
    return 0;
 }
+

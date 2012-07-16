@@ -249,6 +249,7 @@ int main(int argc, char **argv)
    TESTINST3a("divu  $t0, $t1", 0x2, 0x6, t0, t1);
    TESTINST3a("divu  $t0, $t1", 0x0, 0x2, t0, t1);
 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("EXT\n");
    TESTINST4("ext $t0, $t1, 2, 6", 0, 0xffffffff, t0, t1, 2, 6);
    TESTINST4("ext $t0, $t1, 2, 6", 0xffffffff, 0xffffffff, t0, t1, 2, 6);
@@ -270,6 +271,7 @@ int main(int argc, char **argv)
    TESTINST4("ins $t0, $t1, 2, 6", 0, 0xf0000000, t0, t1, 31, 0)
    TESTINST4("ins $t0, $t1, 2, 6", 0, 0xf0000000, t0, t1, 0, 31)
    TESTINST4("ins $t0, $t1, 2, 6", 0, 0x31415927, t0, t1, 3, 25)
+#endif
 
    printf("LB\n");
    TESTINSN5LOAD("lb $t0, 0($t1)", 0, 0, t0);
@@ -733,6 +735,7 @@ int main(int argc, char **argv)
    TESTINST1("nor $t0, $t1, $t2", 0x7fffffff, 0x7fffffff, t0, t1, t2);
    TESTINST1("nor $t0, $t1, $t2", 0x0000ffff, 0x0000ffff, t0, t1, t2);
 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("WSBH\n");
    TESTINST3("wsbh  $t0, $t1", 0x2, t0, t1);
    TESTINST3("wsbh  $t0, $t1", 0x28, t0, t1);
@@ -742,6 +745,7 @@ int main(int argc, char **argv)
    TESTINST3("wsbh  $t0, $t1", 0xffffffff, t0, t1);
    TESTINST3("wsbh  $t0, $t1", 0x16, t0, t1);
    TESTINST3("wsbh  $t0, $t1", -1, t0, t1);
+#endif
 
    printf("NOT\n");
    TESTINST3("not  $t0, $t1", 0x2, t0, t1);
@@ -827,6 +831,7 @@ int main(int argc, char **argv)
    TESTINST2("ori $t0, $t1, 0x7fff", 0x7fffffff, 0x7fff, t0, t1);
    TESTINST2("ori $t0, $t1, 0x0000", 0x0000ffff, 0x0000, t0, t1);
 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("ROTR\n");
    TESTINST2("rotr $t0, $t1, 0x00000000", 0x31415927, 0x00000000, t0, t1);
    TESTINST2("rotr $t0, $t1, 0x00000001", 0x31415927, 0x00000001, t0, t1);
@@ -844,7 +849,9 @@ int main(int argc, char **argv)
    TESTINST2("rotr $t0, $t1, 18", 0x00010000, 18, t0, t1);
    TESTINST2("rotr $t0, $t1, 0", 0, 0, t0, t1);
    TESTINST2("rotr $t0, $t1, 0xffff", 0xffff, 0xffff, t0, t1);
+#endif
 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("ROTRV\n");
    TESTINST1("rotrv $t0, $t1, $t2", 0x31415927, 0xffffffff, t0, t1, t2);
    TESTINST1("rotrv $t0, $t1, $t2", 0x31415927, 0xee00ee00, t0, t1, t2);
@@ -913,6 +920,7 @@ int main(int argc, char **argv)
    TESTINST3("seh  $t0, $t1", 0xffffffff, t0, t1);
    TESTINST3("seh  $t0, $t1", 0x16, t0, t1);
    TESTINST3("seh  $t0, $t1", -1, t0, t1);
+#endif
 
    printf("SLL\n");
    TESTINST2("sll $t0, $t1, 0x00000000", 0x31415927, 0x00000000, t0, t1);

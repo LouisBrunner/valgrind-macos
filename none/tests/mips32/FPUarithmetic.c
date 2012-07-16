@@ -149,20 +149,28 @@ int arithmeticOperations(flt_art_op_t op)
               printf("%s %lf %lf %lf\n", flt_art_op_names[op], fd_d, fs_d[i], ft_d[i]);
               break;
          case RECIPS:
+#if (__mips==32) && (__mips_isa_rev>=2)
               UNOPff("recip.s");
               printf("%s %f %f\n", flt_art_op_names[op], fd_f, fs_f[i]);
+#endif
               break;
          case RECIPD:
+#if (__mips==32) && (__mips_isa_rev>=2)
               UNOPdd("recip.d");
               printf("%s %lf %lf\n", flt_art_op_names[op], fd_d, fs_d[i]);
+#endif
               break;
          case RSQRTS:
+#if (__mips==32) && (__mips_isa_rev>=2)
               UNOPff("rsqrt.s");
               printf("%s %f %f\n", flt_art_op_names[op], fd_f, fs_f[i]);
+#endif
               break;
          case RSQRTD:
+#if (__mips==32) && (__mips_isa_rev>=2)
               UNOPdd("rsqrt.d");
               printf("%s %lf %lf\n", flt_art_op_names[op], fd_d, fs_d[i]);
+#endif
               break;
 		default:
 			printf("error\n");
@@ -184,3 +192,4 @@ int main()
 
    return 0;
 }
+

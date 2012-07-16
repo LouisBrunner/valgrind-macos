@@ -154,8 +154,6 @@ void set_rounding_mode(round_mode_t mode)
 }
 
 int directedRoundingMode(flt_dir_op_t op) {
-   double fd_d = 0;
-   float fd_f =0;
    int fd_w = 0;
    int i;
    for (i = 0; i < 24; i++) {
@@ -266,3 +264,4 @@ int main()
    }
    return 0;
 }
+

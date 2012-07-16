@@ -125,6 +125,7 @@ where XXXXXX is the bug number as listed below.
 273114  s390x: Support TR, TRE, TROO, TROT, TRTO, and TRTT instructions
 274078  improved configure logic for mpicc
 276993  fix mremap 'no thrash checks' 
+278313  Fedora 15/x64: err read debug info with --read-var-info=yes flag
 281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
 282230  group allocator for small fixed size, use it for MC_Chunk/SEc vbit
 283413  Fix wrong sanity check
@@ -233,9 +234,11 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 301229  dup of 203877, see above.
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
+302287  Unhandled movbe instruction on Atom processors
 302370  The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate
         the result even when the result is QNAN or SNAN.
 302536  Fix for the POWER Valgrind regression test: memcheck-ISA2.0.
+302578  Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
 302656  Unhandled instruction (vcvtsi2ssq)
         == 273475 (canonical avx)
 302709  valgrind for ARM needs extra tls support for android emulator under Linux

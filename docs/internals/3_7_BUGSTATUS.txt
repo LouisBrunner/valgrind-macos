@@ -15,7 +15,7 @@ get fixed.
 -- add allocator-mismatch checking?
 -- 302709, minor tidying needed?
 -- reconsider https://bugs.kde.org/show_bug.cgi?id=253657 (AMD64 seg regs)
--- make sure it works OK on Ubuntu 12.04 and Fedora latest
+-- make sure it works OK on Ubuntu 12.04 and Fedora latest (glibc 2.16)
 
 284004  Application under test hangs after call to __posix_spawn (Darwin)
   open, not started
@@ -111,10 +111,6 @@ get fixed.
   hmm, more cache size kludgery required
   **need access to the machine to fix
 
-278313  Fedora 15/x64: err read debug info with --read-var-info=yes flag
-  seems complex; is reopened
-  **queried OP
-
 293855  vex amd64->IR: 0x2F 0x55 0x73 0x65 0x72 0x73 0x2F 0x6A
   some problem with interceptors on Helgrind/OSX 
 
@@ -202,13 +198,11 @@ get fixed.
   probably closable (may be dup of 296318)
 
 298281  wcslen causes false(?) uninitialised value warnings
-  **possible 3.8.0
+  **possible 3.8.0.  glibc-2.16 maybe?
+  see 
 
 298546  wishlist: track virtual memory leaks due to mmap without munmap
   wishlist
-
-298870  No support for DW_TAG_partial_unit
-  **how does this relate to 302901 ?
 
 298905  argv / argc to be changed to non valgrind values.
   wishlist
@@ -252,12 +246,6 @@ get fixed.
 302271  Bug with Callgrind dump-instr and Trace-children
   unclear what status is; queried JosefW
 
-302287  Unhandled movbe instruction on Atom processors
-  **possible 3.8.0 (should fix this, really)
-
-302578  Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
-  **possible 3.8.0 (easy to fix)
-
 302630  Memcheck on multithreaded program fails with Assertion
         'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
   configuration error, very weird
@@ -266,3 +254,6 @@ get fixed.
   queried OP (gentoo weirdness)
 
 -- Friday 13 July 2012  16:02 CEST
+
+303518 - can't build with glibc 2.16
+  possibly fixed by r12743

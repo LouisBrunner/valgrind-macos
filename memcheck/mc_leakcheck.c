@@ -502,7 +502,10 @@ lc_is_a_chunk_ptr(Addr ptr, Int* pch_no, MC_Chunk** pch, LC_Extra** pex)
    MC_Chunk* ch;
    LC_Extra* ex;
 
-   // Quick filter.
+   // Quick filter. Note: implemented with am, not with get_vabits2
+   // as ptr might be random data pointing anywhere. On 64 bit
+   // platforms, getting va bits for random data can be quite costly
+   // due to the secondary map.
    if (!VG_(am_is_valid_for_client)(ptr, 1, VKI_PROT_READ)) {
       return False;
    } else {
@@ -705,6 +708,11 @@ static void
 lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite, Int clique, Int cur_clique,
                Addr searched, SizeT szB)
 {
+   /* memory scan is based on the assumption that valid pointers are aligned
+      on a multiple of sizeof(Addr). So, we can (and must) skip the begin and
+      end portions of the block if they are not aligned on sizeof(Addr):
+      These cannot be a valid pointer, and calls to MC_(is_valid_aligned_word)
+      will assert for a non aligned address. */
    Addr ptr = VG_ROUNDUP(start,     sizeof(Addr));
    Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
    vki_sigset_t sigmask;
@@ -715,57 +723,90 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite, Int clique, Int cu
    VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &sigmask);
    VG_(set_fault_catcher)(scan_all_valid_memory_catcher);
 
-   // We might be in the middle of a page.  Do a cheap check to see if
-   // it's valid;  if not, skip onto the next page.
-   if (!VG_(am_is_valid_for_client)(ptr, sizeof(Addr), VKI_PROT_READ))
+   /* Optimisation: the loop below will check for each begin
+      of SM chunk if the chunk is fully unaddressable. The idea is to
+      skip efficiently such fully unaddressable SM chunks.
+      So, we preferrably start the loop on a chunk boundary.
+      If the chunk is not fully unaddressable, we might be in
+      an unaddressable page. Again, the idea is to skip efficiently
+      such unaddressable page : this is the "else" part.
+      We use an "else" so that two consecutive fully unaddressable
+      SM chunks will be skipped efficiently: first one is skipped
+      by this piece of code. The next SM chunk will be skipped inside
+      the loop. */
+   if ( ! MC_(is_within_valid_secondary)(ptr) ) {
+      // Skip an invalid SM chunk till the beginning of the next SM Chunk.
+      ptr = VG_ROUNDUP(ptr+1, SM_SIZE);
+   } else if (!VG_(am_is_valid_for_client)(ptr, sizeof(Addr), VKI_PROT_READ)) {
+      // else we are in a (at least partially) valid SM chunk.
+      // We might be in the middle of an unreadable page.
+      // Do a cheap check to see if it's valid;
+      // if not, skip onto the next page.
       ptr = VG_PGROUNDUP(ptr+1);        // First page is bad - skip it.
+   }
+   /* This optimisation and below loop is based on some relationships between
+      VKI_PAGE_SIZE, SM_SIZE and sizeof(Addr) which are asserted in
+      MC_(detect_memory_leaks). */
 
    while (ptr < end) {
       Addr addr;
 
       // Skip invalid chunks.
-      if ( ! MC_(is_within_valid_secondary)(ptr) ) {
-         ptr = VG_ROUNDUP(ptr+1, SM_SIZE);
-         continue;
+      if (UNLIKELY((ptr % SM_SIZE) == 0)) {
+         if (! MC_(is_within_valid_secondary)(ptr) ) {
+            ptr = VG_ROUNDUP(ptr+1, SM_SIZE);
+            continue;
+         }
       }
 
       // Look to see if this page seems reasonable.
-      if ((ptr % VKI_PAGE_SIZE) == 0) {
+      if (UNLIKELY((ptr % VKI_PAGE_SIZE) == 0)) {
          if (!VG_(am_is_valid_for_client)(ptr, sizeof(Addr), VKI_PROT_READ)) {
+            ptr += VKI_PAGE_SIZE;      // Bad page - skip it.
+            continue;
+         }
+         // aspacemgr indicates the page is readable and belongs to client.
+         // We still probe the page explicitely in case aspacemgr is
+         // desynchronised with the real page mappings.
+         // Such a desynchronisation can happen due to an aspacemgr bug.
+         // Note that if the application is using mprotect(NONE), then
+         // a page can be unreadable but have addressable and defined
+         // VA bits (see mc_main.c function mc_new_mem_mprotect).
+         if (VG_MINIMAL_SETJMP(memscan_jmpbuf) == 0) {
+            // Try a read in the beginning of the page ...
+            Addr test = *(volatile Addr *)ptr;
+            __asm__ __volatile__("": :"r"(test) : "cc","memory");
+         } else {
+            // Catch read error ...
+            // We need to restore the signal mask, because we were
+            // longjmped out of a signal handler.
+            VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
             ptr += VKI_PAGE_SIZE;      // Bad page - skip it.
             continue;
          }
       }
 
-      if (VG_MINIMAL_SETJMP(memscan_jmpbuf) == 0) {
-         if ( MC_(is_valid_aligned_word)(ptr) ) {
-            lc_scanned_szB += sizeof(Addr);
-            addr = *(Addr *)ptr;
-            // If we get here, the scanned word is in valid memory.  Now
-            // let's see if its contents point to a chunk.
-            if (searched) {
-               if (addr >= searched && addr < searched + szB) {
-                  if (addr == searched)
-                     VG_(umsg)("*%#lx points at %#lx\n", ptr, searched);
-                  else
-                     VG_(umsg)("*%#lx interior points at %lu bytes inside %#lx\n",
-                               ptr, (long unsigned) addr - searched, searched);
-                  MC_(pp_describe_addr) (ptr);
-               }
-            } else {
-               lc_push_if_a_chunk_ptr(addr, clique, cur_clique, is_prior_definite);
+      if ( MC_(is_valid_aligned_word)(ptr) ) {
+         lc_scanned_szB += sizeof(Addr);
+         addr = *(Addr *)ptr;
+         // If we get here, the scanned word is in valid memory.  Now
+         // let's see if its contents point to a chunk.
+         if (UNLIKELY(searched)) {
+            if (addr >= searched && addr < searched + szB) {
+               if (addr == searched)
+                  VG_(umsg)("*%#lx points at %#lx\n", ptr, searched);
+               else
+                  VG_(umsg)("*%#lx interior points at %lu bytes inside %#lx\n",
+                            ptr, (long unsigned) addr - searched, searched);
+               MC_(pp_describe_addr) (ptr);
             }
-         } else if (0 && VG_DEBUG_LEAKCHECK) {
-            VG_(printf)("%#lx not valid\n", ptr);
+         } else {
+            lc_push_if_a_chunk_ptr(addr, clique, cur_clique, is_prior_definite);
          }
-         ptr += sizeof(Addr);
-      } else {
-         // We need to restore the signal mask, because we were
-         // longjmped out of a signal handler.
-         VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
-
-         ptr = VG_PGROUNDUP(ptr+1);     // Bad page - skip it.
+      } else if (0 && VG_DEBUG_LEAKCHECK) {
+         VG_(printf)("%#lx not valid\n", ptr);
       }
+      ptr += sizeof(Addr);
    }
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
@@ -1289,6 +1330,16 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
    Int i, j;
    
    tl_assert(lcp->mode != LC_Off);
+
+   // Verify some assertions which are used in lc_scan_memory.
+   tl_assert((VKI_PAGE_SIZE % sizeof(Addr)) == 0);
+   tl_assert((SM_SIZE % sizeof(Addr)) == 0);
+   // Above two assertions are critical, while below assertion
+   // ensures that the optimisation in the loop is done in the
+   // correct order : the loop checks for (big) SM chunk skipping
+   // before checking for (smaller) page skipping.
+   tl_assert((SM_SIZE % VKI_PAGE_SIZE) == 0);
+
 
    MC_(detect_memory_leaks_last_delta_mode) = lcp->deltamode;
 

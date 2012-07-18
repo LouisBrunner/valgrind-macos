@@ -4659,12 +4659,16 @@ Bool MC_(is_valid_aligned_word) ( Addr a )
 {
    tl_assert(sizeof(UWord) == 4 || sizeof(UWord) == 8);
    tl_assert(VG_IS_WORD_ALIGNED(a));
-   if (is_mem_defined( a, sizeof(UWord), NULL, NULL) == MC_Ok
-       && !MC_(in_ignored_range)(a)) {
-      return True;
-   } else {
+   if (get_vabits8_for_aligned_word32 (a) != VA_BITS8_DEFINED)
       return False;
+   if (sizeof(UWord) == 8) {
+      if (get_vabits8_for_aligned_word32 (a + 4) != VA_BITS8_DEFINED)
+         return False;
    }
+   if (UNLIKELY(MC_(in_ignored_range)(a)))
+      return False;
+   else
+      return True;
 }
 
 

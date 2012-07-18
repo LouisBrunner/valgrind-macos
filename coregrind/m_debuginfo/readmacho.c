@@ -1087,7 +1087,8 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 				      NULL,           0,
                                       debug_abbv_img, debug_abbv_sz,
                                       debug_line_img, debug_line_sz,
-                                      debug_str_img,  debug_str_sz );
+                                      debug_str_img,  debug_str_sz,
+                                      NULL, 0 /* ALT .debug_str */ );
 
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations.  But only if
@@ -1102,7 +1103,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                    debug_line_img,   debug_line_sz,
                    debug_str_img,    debug_str_sz,
                    debug_ranges_img, debug_ranges_sz,
-                   debug_loc_img,    debug_loc_sz
+                   debug_loc_img,    debug_loc_sz,
+                   NULL, 0, /* ALT .debug_info */
+                   NULL, 0, /* ALT .debug_abbv */
+                   NULL, 0, /* ALT .debug_line */
+                   NULL, 0  /* ALT .debug_str */
             );
          }
       }

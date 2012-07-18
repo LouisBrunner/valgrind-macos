@@ -6,9 +6,12 @@ This is known to work at least for :
   Android 4.0.3 running on a (rooted, AOSP build) Nexus S.
   Android 4.0.3 running on Motorola Xoom.
   Android 4.0.3 running on android emulator.
+  Android 4.1   running on android emulator.
 
 Android 2.3.4 on Nexus S worked at some time in the past.
-It is known not to work on Android 4.1  running on android emulator.
+
+On android, GDBserver might insert breaks at wrong addresses.
+Feedback on this welcome.
 
 Other configurations and toolchains might work, but haven't been tested.
 Feedback is welcome.

@@ -668,8 +668,13 @@ Addr setup_client_stack( void*  init_sp,
             /* When gdbserver sends the auxv to gdb, the AT_BASE has
                to be ignored, as otherwise gdb adds this offset
                to loaded shared libs, causing wrong address
-               relocation e.g. when inserting breaks. */
+               relocation e.g. when inserting breaks.
+               However, ignoring AT_BASE makes V crash on Android 4.1.
+               So, keep the AT_BASE on android for now.
+               ??? Need to dig in depth about AT_BASE/GDB interaction */
+#           if !defined(VGPV_arm_linux_android)
             auxv->a_type = AT_IGNORE;
+#           endif
             auxv->u.a_val = info->interp_base;
             break;
 

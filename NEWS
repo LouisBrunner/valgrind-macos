@@ -251,7 +251,7 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 303127  Power test suite fixes for frsqrte, vrefp, and vrsqrtefp instructions.
 303250  "Assertion `instrs_in->arr_used <= 10000' failed" on
         OpenSSL with --track-origins=yes
-
+303624  segmentation fault on Android 4.1 (e.g. on android emulator or Galaxy Nexus OMAP) 
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

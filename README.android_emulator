@@ -42,8 +42,6 @@ android
 #     Android sdk 20
 #     Android platform tools 12
 
-# Android 4.1 (API 16) does not work.
-
 # then define a virtual device:
 Tools -> Manage AVDs...
 # I define an AVD Name with 64 Mb SD Card, (4.0.3, api 15)

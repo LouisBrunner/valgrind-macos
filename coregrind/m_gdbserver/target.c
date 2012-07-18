@@ -393,10 +393,8 @@ void usr_store_inferior_registers (int regno)
                     delta);
                VG_TRACK( new_mem_stack_w_ECU, new_SP, -delta, 0 );
                VG_TRACK( new_mem_stack,       new_SP, -delta );
-               if (VG_(tdict).track_post_mem_write) {
-                  VG_(tdict).track_post_mem_write( Vg_CoreClientReq, tid, 
-                                                   new_SP, -delta);
-               }
+               VG_TRACK( post_mem_write, Vg_CoreClientReq, tid,
+                         new_SP, -delta);
             }
          }
       }

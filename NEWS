@@ -43,7 +43,7 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
     a program using statically linked malloc or using alternative
     malloc libraries (such as tcmalloc).
 
-  - Performance of leak check has been improved by 40%.
+  - Performance of leak check has been improved.
 
 * DRD:
 

@@ -10,6 +10,6 @@
 # architectures.
 
 case `uname -i` in
-  ppc*|arm*|s390x) exit 1;;
+  ppc*|arm*|s390x|mips*) exit 1;;
   *)         exit 0;;
 esac

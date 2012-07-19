@@ -215,7 +215,7 @@ static int go(char *feature, char *cpu)
    } else if (strcmp(feature, "s390x-exrl") == 0 ) {
      match = (facilities & (1ULL << 28));
    } else if (strcmp(feature, "s390x-etf3") == 0 ) {
-     match = (facilities & (1ULL << (63 - 30));
+     match = (facilities & (1ULL << (63 - 30)));
    } else {
      return 2;          // Unrecognised feature.
    }

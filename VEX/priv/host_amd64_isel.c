@@ -2088,6 +2088,15 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       return Acc_NZ;
    }
 
+   /* --- patterns rooted at: 32to1 --- */
+
+   /* 32to1 */
+   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_32to1) {
+      HReg reg = iselIntExpr_R(env, e->Iex.Unop.arg);
+      addInstr(env, AMD64Instr_Test64(1,reg));
+      return Acc_NZ;
+   }
+
    /* --- patterns rooted at: CmpNEZ8 --- */
 
    /* CmpNEZ8(x) */

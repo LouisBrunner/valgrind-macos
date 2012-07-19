@@ -51,6 +51,7 @@
             ".short 0x" #op1 #r1 #r2 "\n\t"  \
             ".long  0x" #i4 #m3 #u0 #op2 "\n\t"
 #define RRE_RR(op,u0,r1,r2)  ".long 0x" #op #u0 #r1 #r2 "\n\t"
+#define RRE_RERE(op,r1,r2)  ".long 0x" #op "00" #r1 #r2 "\n\t"
 #define SIL_RDU(op,b1,d1,i2)  \
             ".short 0x" #op "\n\t"  \
             ".long  0x" #b1 #d1 #i2 "\n\t"
@@ -92,6 +93,7 @@
 #define RIE_RRUUU(op1,r1,r2,i3,i4,i5,op2)  \
             ".short 0x" #op1 #r1 #r2 "\n\t"  \
             ".long  0x" #i3 #i4 #i5 #op2 "\n\t"
+#define RRF_M0RERE(op,m3,r1,r2)  ".long 0x" #op #m3 "0" #r1 #r2 "\n\t"
 
 #define AFI(r1,i2)                      RIL_RI(c2,r1,9,i2)
 #define AGFI(r1,i2)                     RIL_RI(c2,r1,8,i2)
@@ -170,6 +172,12 @@
 #define CRJ(r1,r2,i4,m3)                RIE_RRPU(ec,r1,r2,i4,m3,0,76)
 #define CRL(r1,i2)                      RIL_RP(c6,r1,d,i2)
 #define CSY(r1,r3,b2,dl2,dh2)           RSY_RRRD(eb,r1,r3,b2,dl2,dh2,14)
+#define CU12(m3,r1,r2)                  RRF_M0RERE(b2a7,m3,r1,r2)
+#define CU14(m3,r1,r2)                  RRF_M0RERE(b9b0,m3,r1,r2)
+#define CU21(m3,r1,r2)                  RRF_M0RERE(b2a6,m3,r1,r2)
+#define CU24(m3,r1,r2)                  RRF_M0RERE(b9b1,m3,r1,r2)
+#define CU41(r1,r2)                     RRE_RERE(b9b2,r1,r2)
+#define CU42(r1,r2)                     RRE_RERE(b9b3,r1,r2)
 #define CVBY(r1,x2,b2,dl2,dh2)          RXY_RRRD(e3,r1,x2,b2,dl2,dh2,06)
 #define CVDY(r1,x2,b2,dl2,dh2)          RXY_RRRD(e3,r1,x2,b2,dl2,dh2,26)
 #define CY(r1,x2,b2,dl2,dh2)            RXY_RRRD(e3,r1,x2,b2,dl2,dh2,59)

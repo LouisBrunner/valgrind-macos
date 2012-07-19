@@ -1624,10 +1624,10 @@ static void
 s390_format_RRF_M0RERE(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
                        UChar m3, UChar r1, UChar r2)
 {
-   irgen(m3, r1, r2);
+   HChar *mnm = irgen(m3, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      s390_disasm(ENC3(MNM, GPR, GPR), m3, r1, r2);
+      s390_disasm(ENC4(MNM, GPR, GPR, UINT), mnm, r1, r2, m3);
 }
 
 static void

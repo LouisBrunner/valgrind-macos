@@ -116,7 +116,6 @@ static model_info *get_host(void)
    model_info *model;
 
    /* Slurp contents of /proc/cpuinfo into FILE_BUF */
-   //fh = open("/proc/cpuinfo", O_RDONLY, S_IRUSR);
    fh = open("/proc/cpuinfo", O_RDONLY, S_IRUSR);
    if (fh < 0) return NULL;
 
@@ -215,6 +214,8 @@ static int go(char *feature, char *cpu)
      match = (facilities & (1ULL << 29));
    } else if (strcmp(feature, "s390x-exrl") == 0 ) {
      match = (facilities & (1ULL << 28));
+   } else if (strcmp(feature, "s390x-etf3") == 0 ) {
+     match = (facilities & (1ULL << (63 - 30));
    } else {
      return 2;          // Unrecognised feature.
    }

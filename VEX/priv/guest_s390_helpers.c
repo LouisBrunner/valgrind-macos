@@ -339,6 +339,121 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
 }
 #endif /* VGA_s390x */
 
+/*------------------------------------------------------------*/
+/*--- Dirty helper for the "convert unicode" insn family.  ---*/
+/*------------------------------------------------------------*/
+void
+s390x_dirtyhelper_CUxy(UChar *address, ULong data, ULong num_bytes)
+{
+   UInt i;
+
+   vassert(num_bytes >= 1 && num_bytes <= 4);
+
+   /* Store the least significant NUM_BYTES bytes in DATA left to right
+      at ADDRESS. */
+   for (i = 1; i <= num_bytes; ++i) {
+      address[num_bytes - i] = data & 0xff;
+      data >>= 8;
+   }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Clean helper for CU21.                               ---*/
+/*------------------------------------------------------------*/
+
+/* The function performs a CU21 operation. It returns three things
+   encoded in an ULong value:
+   - the converted bytes (at most 4)
+   - the number of converted bytes
+   - an indication whether LOW_SURROGATE, if any, is invalid
+
+   64      48                16           8                       0
+    +-------+-----------------+-----------+-----------------------+
+    |  0x0  | converted bytes | num_bytes | invalid_low_surrogate |
+    +-------+-----------------+-----------+-----------------------+
+*/
+ULong
+s390_do_cu21(UInt srcval, UInt low_surrogate)
+{
+   ULong retval = 0;   // shut up gcc
+   UInt b1, b2 , b3 , b4, num_bytes, invalid_low_surrogate = 0;
+
+   srcval &= 0xffff;
+
+   /* Determine the number of bytes in the converted value */
+   if (srcval <= 0x007f)
+      num_bytes = 1;
+   else if (srcval >= 0x0080 && srcval <= 0x07ff)
+      num_bytes = 2;
+   else if ((srcval >= 0x0800 && srcval <= 0xd7ff) ||
+            (srcval >= 0xdc00 && srcval <= 0xffff))
+      num_bytes = 3;
+   else
+      num_bytes = 4;
+
+   /* Determine UTF-8 bytes according to calculated num_bytes */
+   switch (num_bytes){
+   case 1:
+      retval = srcval;
+      break;
+
+   case 2:
+      /* order of bytes left to right: b1, b2 */
+      b1  = 0xc0;
+      b1 |= srcval >> 6;
+
+      b2  = 0x80;
+      b2 |= srcval & 0x3f;
+
+      retval = (b1 << 8) | b2;
+      break;
+
+   case 3:
+      /* order of bytes left to right: b1, b2, b3 */
+      b1  = 0xe0;
+      b1 |= srcval >> 12;
+
+      b2  = 0x80;
+      b2 |= (srcval >> 6) & 0x3f;
+
+      b3  = 0x80;
+      b3 |= srcval & 0x3f;
+
+      retval = (b1 << 16) | (b2 << 8) | b3;
+      break;
+
+   case 4: {
+      /* order of bytes left to right: b1, b2, b3, b4 */
+      UInt high_surrogate = srcval;
+      UInt uvwxy = ((high_surrogate >> 6) & 0xf) + 1;   // abcd + 1
+
+      b1  = 0xf0;
+      b1 |= uvwxy >> 2;     // uvw
+
+      b2  = 0x80;
+      b2 |= (uvwxy & 0x3) << 4;           // xy
+      b2 |= (high_surrogate >> 2) & 0xf;  // efgh
+
+      b3  = 0x80;
+      b3 |= (high_surrogate & 0x3) << 4;   // ij
+      b3 |= (low_surrogate >> 6) & 0xf;    // klmn
+
+      b4  = 0x80;
+      b4 |= low_surrogate & 0x3f;
+
+      retval = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+
+      invalid_low_surrogate = (low_surrogate & 0xfc00) != 0xdc00;
+      break;
+   }
+   }
+
+   /* At this point RETVAL contains the converted bytes.
+      Build up the final return value. */
+   return (retval << 16) | (num_bytes << 8) | invalid_low_surrogate;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Clean helper for "convert to binary".                ---*/

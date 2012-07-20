@@ -98,7 +98,8 @@ sub is_dota_or_doto($)
 die "Not enough arguments"
     if (($#ARGV + 1) < 5);
 
-my $ala = $ARGV[0];
+my $ala = $ARGV[0];  # the load address to use
+my $cc  = $ARGV[1];  # the C compiler in use
 
 # check for plausible-ish alt load address
 die "Bogus alt-load address (1)"
@@ -140,6 +141,14 @@ die "Can't find '-arch archstr' in command line"
 my $cmd = "/usr/bin/ld";
 
 $cmd = "$cmd -static";
+
+# If we're building with clang (viz, the C compiler as specified
+# by the 2nd arg ends in "clang"), we also need -new_linker.  See
+# https://bugs.kde.org/show_bug.cgi?id=295427
+if ("$cc" =~ /clang$/) {
+    $cmd = "$cmd -new_linker";
+}
+
 $cmd = "$cmd -arch $archstr";
 $cmd = "$cmd -macosx_version_min 10.5";
 $cmd = "$cmd -o $outname";

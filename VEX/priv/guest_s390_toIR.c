@@ -306,14 +306,13 @@ return_from_function(IRExpr *return_address)
 
    if (! condition) goto next_instruction;
    goto computed_target;
-
-   This inversion is being handled at code generation time. So we just
-   take the condition here as is.
 */
 static void
-if_not_condition_goto_computed(IRExpr *condition, IRExpr *target)
+if_condition_goto_computed(IRExpr *condition, IRExpr *target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
+
+   condition = unop(Iop_Not1, condition);
 
    stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr),
                     S390X_GUEST_OFFSET(guest_IA)));
@@ -3169,8 +3168,8 @@ s390_irgen_BCR(UChar r1, UChar r2)
          return_from_function(get_gpr_dw0(r2));
       } else {
          assign(cond, s390_call_calculate_cond(r1));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), get_gpr_dw0(r2));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    get_gpr_dw0(r2));
       }
    }
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
@@ -3190,8 +3189,8 @@ s390_irgen_BC(UChar r1, UChar x2, UChar b2, UShort d2, IRTemp op2addr)
          always_goto(mkexpr(op2addr));
       } else {
          assign(cond, s390_call_calculate_cond(r1));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op2addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op2addr));
       }
    }
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
@@ -3205,8 +3204,8 @@ s390_irgen_BCTR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, binop(Iop_Sub32, get_gpr_w1(r1), mkU32(1)));
    if (r2 != 0) {
-      if_not_condition_goto_computed(binop(Iop_CmpEQ32, get_gpr_w1(r1), mkU32(0)
-                                     ), get_gpr_dw0(r2));
+      if_condition_goto_computed(binop(Iop_CmpNE32, get_gpr_w1(r1), mkU32(0)),
+                                 get_gpr_dw0(r2));
    }
 
    return "bctr";
@@ -3217,8 +3216,8 @@ s390_irgen_BCTGR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, binop(Iop_Sub64, get_gpr_dw0(r1), mkU64(1)));
    if (r2 != 0) {
-      if_not_condition_goto_computed(binop(Iop_CmpEQ64, get_gpr_dw0(r1),
-                                     mkU64(0)), get_gpr_dw0(r2));
+      if_condition_goto_computed(binop(Iop_CmpNE64, get_gpr_dw0(r1), mkU64(0)),
+                                 get_gpr_dw0(r2));
    }
 
    return "bctgr";
@@ -3228,8 +3227,8 @@ static HChar *
 s390_irgen_BCT(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, binop(Iop_Sub32, get_gpr_w1(r1), mkU32(1)));
-   if_not_condition_goto_computed(binop(Iop_CmpEQ32, get_gpr_w1(r1), mkU32(0)),
-                                  mkexpr(op2addr));
+   if_condition_goto_computed(binop(Iop_CmpNE32, get_gpr_w1(r1), mkU32(0)),
+                              mkexpr(op2addr));
 
    return "bct";
 }
@@ -3238,8 +3237,8 @@ static HChar *
 s390_irgen_BCTG(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, binop(Iop_Sub64, get_gpr_dw0(r1), mkU64(1)));
-   if_not_condition_goto_computed(binop(Iop_CmpEQ64, get_gpr_dw0(r1), mkU64(0)),
-                                  mkexpr(op2addr));
+   if_condition_goto_computed(binop(Iop_CmpNE64, get_gpr_dw0(r1), mkU64(0)),
+                              mkexpr(op2addr));
 
    return "bctg";
 }
@@ -3251,8 +3250,8 @@ s390_irgen_BXH(UChar r1, UChar r3, IRTemp op2addr)
 
    assign(value, get_gpr_w1(r3 | 1));
    put_gpr_w1(r1, binop(Iop_Add32, get_gpr_w1(r1), get_gpr_w1(r3)));
-   if_not_condition_goto_computed(binop(Iop_CmpLE32S, get_gpr_w1(r1),
-                                  mkexpr(value)), mkexpr(op2addr));
+   if_condition_goto_computed(binop(Iop_CmpLT32S, mkexpr(value),
+                                    get_gpr_w1(r1)), mkexpr(op2addr));
 
    return "bxh";
 }
@@ -3264,8 +3263,8 @@ s390_irgen_BXHG(UChar r1, UChar r3, IRTemp op2addr)
 
    assign(value, get_gpr_dw0(r3 | 1));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), get_gpr_dw0(r3)));
-   if_not_condition_goto_computed(binop(Iop_CmpLE64S, get_gpr_dw0(r1),
-                                  mkexpr(value)), mkexpr(op2addr));
+   if_condition_goto_computed(binop(Iop_CmpLT64S, mkexpr(value),
+                                    get_gpr_dw0(r1)), mkexpr(op2addr));
 
    return "bxhg";
 }
@@ -3277,8 +3276,8 @@ s390_irgen_BXLE(UChar r1, UChar r3, IRTemp op2addr)
 
    assign(value, get_gpr_w1(r3 | 1));
    put_gpr_w1(r1, binop(Iop_Add32, get_gpr_w1(r1), get_gpr_w1(r3)));
-   if_not_condition_goto_computed(binop(Iop_CmpLT32S, mkexpr(value),
-                                  get_gpr_w1(r1)), mkexpr(op2addr));
+   if_condition_goto_computed(binop(Iop_CmpLE32S, get_gpr_w1(r1),
+                                    mkexpr(value)), mkexpr(op2addr));
 
    return "bxle";
 }
@@ -3290,8 +3289,8 @@ s390_irgen_BXLEG(UChar r1, UChar r3, IRTemp op2addr)
 
    assign(value, get_gpr_dw0(r3 | 1));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), get_gpr_dw0(r3)));
-   if_not_condition_goto_computed(binop(Iop_CmpLT64S, mkexpr(value),
-                                  get_gpr_dw0(r1)), mkexpr(op2addr));
+   if_condition_goto_computed(binop(Iop_CmpLE64S, get_gpr_dw0(r1),
+                                    mkexpr(value)), mkexpr(op2addr));
 
    return "bxleg";
 }
@@ -3607,8 +3606,8 @@ s390_irgen_CRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
          assign(op2, get_gpr_w1(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
                                               op1, op2));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond),
+                                          mkU32(0)), mkexpr(op4addr));
       }
    }
 
@@ -3631,8 +3630,8 @@ s390_irgen_CGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
          assign(op2, get_gpr_dw0(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
                                               op1, op2));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond),
+                                          mkU32(0)), mkexpr(op4addr));
       }
    }
 
@@ -3707,8 +3706,8 @@ s390_irgen_CIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
          op2 = (Int)(Char)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
                                               mktemp(Ity_I32, mkU32((UInt)op2))));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op4addr));
       }
    }
 
@@ -3731,8 +3730,8 @@ s390_irgen_CGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
          op2 = (Long)(Char)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
                                               mktemp(Ity_I64, mkU64((ULong)op2))));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op4addr));
       }
    }
 
@@ -4254,8 +4253,8 @@ s390_irgen_CLRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
          assign(op2, get_gpr_w1(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
                                               op1, op2));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op4addr));
       }
    }
 
@@ -4278,8 +4277,8 @@ s390_irgen_CLGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
          assign(op2, get_gpr_dw0(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
                                               op1, op2));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op4addr));
       }
    }
 
@@ -4352,8 +4351,8 @@ s390_irgen_CLIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
          op2 = (UInt)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
                                               mktemp(Ity_I32, mkU32(op2))));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op4addr));
       }
    }
 
@@ -4376,8 +4375,8 @@ s390_irgen_CLGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
          op2 = (ULong)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
                                               mktemp(Ity_I64, mkU64(op2))));
-         if_not_condition_goto_computed(binop(Iop_CmpEQ32, mkexpr(cond),
-                                        mkU32(0)), mkexpr(op4addr));
+         if_condition_goto_computed(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
+                                    mkexpr(op4addr));
       }
    }
 

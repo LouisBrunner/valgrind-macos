@@ -1,0 +1,116 @@
+
+------------- test1 ----------------
+UTF32:  <none>
+  cc = 0
+  dst len: 0
+  src len: 0
+
+------------- test2.1 ----------------
+UTF32:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 4000
+  src len: 1
+UTF32:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 4000
+  src address difference: 0  src len: 1
+UTF32:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 4000
+  src address difference: 0  src len: 1
+UTF32:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 4000
+  src address difference: 0  src len: 2
+UTF32:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 4000
+  src address difference: 0  src len: 3
+
+------------- test2.2 ----------------
+UTF32:  00
+  cc = 0
+  dst address difference: 4  dst len: 3996
+  src address difference: 2  src len: 1
+UTF32:  00 d7ff
+  cc = 0
+  dst address difference: 8  dst len: 3992
+  src address difference: 4  src len: 1
+UTF32:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 4000
+  src address difference: 0  src len: 2
+UTF32:  10000
+  cc = 0
+  dst address difference: 4  dst len: 3996
+  src address difference: 4  src len: 1
+UTF32:  10000
+  cc = 0
+  dst address difference: 4  dst len: 3996
+  src address difference: 4  src len: 3
+
+------------- test3.1 ----------------
+UTF32:  <none>
+  cc = 1
+  dst len: 0
+  src address difference: 0  src len: 18
+UTF32:  <none>
+  cc = 1
+  dst len: 1
+  src address difference: 0  src len: 18
+UTF32:  <none>
+  cc = 1
+  dst len: 2
+  src address difference: 0  src len: 18
+UTF32:  <none>
+  cc = 1
+  dst len: 3
+  src address difference: 0  src len: 18
+
+------------- test3.2 ----------------
+UTF32:  00
+  cc = 1
+  dst address difference: 4  dst len: 0
+  src address difference: 2  src len: 16
+UTF32:  00
+  cc = 1
+  dst address difference: 4  dst len: 1
+  src address difference: 2  src len: 16
+UTF32:  00
+  cc = 1
+  dst address difference: 4  dst len: 2
+  src address difference: 2  src len: 16
+UTF32:  00
+  cc = 1
+  dst address difference: 4  dst len: 3
+  src address difference: 2  src len: 16
+
+------------- test4 ----------------
+UTF32:  00
+  cc = 0
+  dst address difference: 4  dst len: 0
+  src address difference: 2  src len: 0
+UTF32:  00 d7ff
+  cc = 0
+  dst address difference: 8  dst len: 0
+  src address difference: 4  src len: 0
+
+------------- test5 ----------------
+UTF32:  <none>
+  cc = 2
+  dst address difference: 0  dst len: 4000
+  src address difference: 0  src len: 4
+UTF32:  <none>
+  cc = 2
+  dst address difference: 0  dst len: 0
+  src address difference: 0  src len: 4
+
+------------- test6 ----------------
+UTF32:  00 d7ff dc00 ffff 47 156 1245 a021 fffe
+  cc = 0
+  dst address difference: 36  dst len: 3964
+  src address difference: 18  src len: 0
+UTF32:  10000 10ffff c69dd deaf dcdc
+  cc = 0
+  dst address difference: 20  dst len: 3980
+  src address difference: 16  src len: 0

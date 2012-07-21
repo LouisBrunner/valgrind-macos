@@ -7,7 +7,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
-             cs csg cds cdsg cu21 cu21_1
+             cs csg cds cdsg cu21 cu21_1 cu24 cu24_1
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
@@ -34,3 +34,4 @@ allexec_CFLAGS   = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 ex_clone_LDFLAGS = -lpthread
 tcxb_CFLAGS      = $(AM_CFLAGS) -std=gnu99
 cu21_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
+cu24_1_CFLAGS    = $(AM_CFLAGS) -DM3=1

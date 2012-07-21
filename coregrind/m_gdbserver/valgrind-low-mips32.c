@@ -36,7 +36,7 @@
 
 #include "libvex_guest_mips32.h"
 
-struct reg regs[] = {
+static struct reg regs[] = {
   { "r0", 0, 32 },
   { "r1", 32, 32 },
   { "r2", 64, 32 },

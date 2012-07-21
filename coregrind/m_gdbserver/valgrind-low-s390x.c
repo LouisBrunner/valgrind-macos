@@ -36,7 +36,7 @@
 
 #include "libvex_guest_s390x.h"
 
-struct reg regs[] = {
+static struct reg regs[] = {
   { "pswm", 0, 64 },
   { "pswa", 64, 64 },
   { "r0", 128, 64 },

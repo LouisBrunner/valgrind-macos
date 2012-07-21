@@ -36,7 +36,7 @@
 
 #include "libvex_guest_ppc64.h"
 
-struct reg regs[] = {
+static struct reg regs[] = {
   { "r0", 0, 64 },
   { "r1", 64, 64 },
   { "r2", 128, 64 },

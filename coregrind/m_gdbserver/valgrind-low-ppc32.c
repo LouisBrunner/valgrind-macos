@@ -39,7 +39,7 @@
 /* this is only the basic set of registers.
    Need to look at what is the exact ppc32 model to support.
 */
-struct reg regs[] = {
+static struct reg regs[] = {
   { "r0", 0, 32 },
   { "r1", 32, 32 },
   { "r2", 64, 32 },

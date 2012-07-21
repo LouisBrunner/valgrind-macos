@@ -41,7 +41,7 @@
 
 /* below loosely inspired from file generated with gdb regdat.sh */
 
-struct reg regs[] = {
+static struct reg regs[] = {
   { "rax", 0, 64 },
   { "rbx", 64, 64 },
   { "rcx", 128, 64 },

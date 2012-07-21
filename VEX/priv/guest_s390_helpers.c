@@ -456,6 +456,49 @@ s390_do_cu21(UInt srcval, UInt low_surrogate)
 
 
 /*------------------------------------------------------------*/
+/*--- Clean helper for CU24.                               ---*/
+/*------------------------------------------------------------*/
+
+/* The function performs a CU24 operation. It returns two things
+   encoded in an ULong value:
+   - the 4 converted bytes
+   - an indication whether LOW_SURROGATE, if any, is invalid
+
+   64     40                 8                       0
+    +------------------------+-----------------------+
+    |  0x0 | converted bytes | invalid_low_surrogate |
+    +------------------------+-----------------------+
+*/
+ULong
+s390_do_cu24(UInt srcval, UInt low_surrogate)
+{
+   ULong retval;
+   UInt invalid_low_surrogate = 0;
+
+   srcval &= 0xffff;
+
+   if ((srcval >= 0x0000 && srcval <= 0xd7ff) ||
+       (srcval >= 0xdc00 && srcval <= 0xffff)) {
+      retval = srcval;
+   } else {
+      /* D800 - DBFF */
+      UInt high_surrogate = srcval;
+      UInt uvwxy  = ((high_surrogate >> 6) & 0xf) + 1;   // abcd + 1
+      UInt efghij = high_surrogate & 0x3f;
+      UInt klmnoprst = low_surrogate & 0x3ff;
+
+      retval = (uvwxy << 16) | (efghij << 10) | klmnoprst;
+
+      invalid_low_surrogate = (low_surrogate & 0xfc00) != 0xdc00;
+   }
+
+   /* At this point RETVAL contains the converted bytes.
+      Build up the final return value. */
+   return (retval << 8) | invalid_low_surrogate;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Clean helper for "convert to binary".                ---*/
 /*------------------------------------------------------------*/
 #if defined(VGA_s390x)

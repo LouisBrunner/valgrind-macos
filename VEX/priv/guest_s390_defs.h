@@ -83,6 +83,7 @@ ULong s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr);
 void  s390x_dirtyhelper_CUxy(UChar *addr, ULong data, ULong num_bytes);
 
 ULong s390_do_cu21(UInt srcvalue, UInt low_surrogate);
+ULong s390_do_cu24(UInt srcvalue, UInt low_surrogate);
 UInt  s390_do_cvb(ULong decimal);
 ULong s390_do_cvd(ULong binary);
 

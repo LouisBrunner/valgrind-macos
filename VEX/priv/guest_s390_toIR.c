@@ -11324,6 +11324,115 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
    return "cu21";
 }
 
+static IRExpr *
+s390_call_cu24(IRExpr *srcval, IRExpr *low_surrogate)
+{
+   IRExpr **args, *call;
+   args = mkIRExprVec_2(srcval, low_surrogate);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
+                       "s390_do_cu24", &s390_do_cu24, args);
+
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static HChar *
+s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp addr1 = newTemp(Ity_I64);
+   IRTemp addr2 = newTemp(Ity_I64);
+   IRTemp len1 = newTemp(Ity_I64);
+   IRTemp len2 = newTemp(Ity_I64);
+
+   assign(addr1, get_gpr_dw0(r1));
+   assign(addr2, get_gpr_dw0(r2));
+   assign(len1, get_gpr_dw0(r1 + 1));
+   assign(len2, get_gpr_dw0(r2 + 1));
+
+   /* We're processing the 2nd operand 2 bytes at a time. Therefore, if
+      there are less than 2 bytes left, then the 2nd operand is exhausted
+      and we're done here. cc = 0 */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(2)),
+                     guest_IA_next_instr);
+
+   /* There are at least two bytes there. Read them. */
+   IRTemp srcval = newTemp(Ity_I32);
+   assign(srcval, unop(Iop_16Uto32, load(Ity_I16, mkexpr(addr2))));
+
+   /* Find out whether this is a high surrogate. I.e. SRCVAL lies
+      inside the interval [0xd800 - 0xdbff] */
+   IRTemp  is_high_surrogate = newTemp(Ity_I32);
+   IRExpr *flag1 = mkite(binop(Iop_CmpLE32U, mkU32(0xd800), mkexpr(srcval)),
+                         mkU32(1), mkU32(0));
+   IRExpr *flag2 = mkite(binop(Iop_CmpLE32U, mkexpr(srcval), mkU32(0xdbff)),
+                         mkU32(1), mkU32(0));
+   assign(is_high_surrogate, binop(Iop_And32, flag1, flag2));
+
+   /* If SRCVAL is a high surrogate and there are less than 4 bytes left,
+      then the 2nd operand is exhausted and we're done here. cc = 0 */
+   IRExpr *not_enough_bytes =
+      mkite(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(4)), mkU32(1), mkU32(0));
+
+   if_condition_goto(binop(Iop_CmpEQ32,
+                           binop(Iop_And32, mkexpr(is_high_surrogate),
+                                 not_enough_bytes),
+                           mkU32(1)), guest_IA_next_instr);
+
+   /* The 2nd operand is not exhausted. If the first 2 bytes are a high
+      surrogate, read the next two bytes (low surrogate). */
+   IRTemp  low_surrogate = newTemp(Ity_I32);
+   IRExpr *low_surrogate_addr = binop(Iop_Add64, mkexpr(addr2), mkU64(2));
+
+   assign(low_surrogate,
+          mkite(binop(Iop_CmpEQ32, mkexpr(is_high_surrogate), mkU32(1)),
+                unop(Iop_16Uto32, load(Ity_I16, low_surrogate_addr)),
+                mkU32(0)));  // any value is fine; it will not be used
+
+   /* Call the helper */
+   IRTemp retval = newTemp(Ity_I64);
+   assign(retval, s390_call_cu24(mkexpr(srcval), mkexpr(low_surrogate)));
+
+   /* Before we can test whether the 1st operand is exhausted we need to
+      test for an invalid low surrogate. Because cc=2 outranks cc=1. */
+   if (s390_host_has_etf3 && (m3 & 0x1) == 1) {
+      IRExpr *invalid_low_surrogate =
+         binop(Iop_And64, mkexpr(retval), mkU64(0xff));
+
+      s390_cc_set(2);
+      if_condition_goto(binop(Iop_CmpEQ64, invalid_low_surrogate, mkU64(1)),
+                        guest_IA_next_instr);
+   }
+
+   /* Now test whether the 1st operand is exhausted */
+   s390_cc_set(1);
+   if_condition_goto(binop(Iop_CmpLT64U, mkexpr(len1), mkU64(4)),
+                     guest_IA_next_instr);
+
+   /* Extract the bytes to be stored at addr1 */
+   IRExpr *data = unop(Iop_64to32, binop(Iop_Shr64, mkexpr(retval), mkU8(8)));
+
+   store(mkexpr(addr1), data);
+
+   /* Update source address and length */
+   IRTemp num_src_bytes = newTemp(Ity_I64);
+   assign(num_src_bytes,
+          mkite(binop(Iop_CmpEQ32, mkexpr(is_high_surrogate), mkU32(1)),
+                mkU64(4), mkU64(2)));
+   put_gpr_dw0(r2,     binop(Iop_Add64, mkexpr(addr2), mkexpr(num_src_bytes)));
+   put_gpr_dw0(r2 + 1, binop(Iop_Sub64, mkexpr(len2),  mkexpr(num_src_bytes)));
+
+   /* Update destination address and length */
+   put_gpr_dw0(r1,     binop(Iop_Add64, mkexpr(addr1), mkU64(4)));
+   put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1),  mkU64(4)));
+
+   /* Iterate */
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "cu24";
+}
 
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
@@ -12160,7 +12269,9 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb9ae: /* RRBM */ goto unimplemented;
    case 0xb9af: /* PFMF */ goto unimplemented;
    case 0xb9b0: /* CU14 */ goto unimplemented;
-   case 0xb9b1: /* CU24 */ goto unimplemented;
+   case 0xb9b1: s390_format_RRF_M0RERE(s390_irgen_CU24, ovl.fmt.RRF3.r3,
+                                       ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
+      goto ok;
    case 0xb9b2: /* CU41 */ goto unimplemented;
    case 0xb9b3: /* CU42 */ goto unimplemented;
    case 0xb9bd: /* TRTRE */ goto unimplemented;

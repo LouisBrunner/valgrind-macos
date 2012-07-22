@@ -1695,7 +1695,7 @@ AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { 		 
-      __asm__ __volatile__("lzcnt %rax,%rax");
+      __asm__ __volatile__("lzcnt %%rax,%%rax" : : : "rax");
   } while (0)
 ]])], [
   ac_have_as_lzcnt=yes
@@ -1718,7 +1718,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
    __asm__ __volatile__(
       "crc32q %%r15,%%r15" : : : "r15" );
    __asm__ __volatile__(
-      "pblendvb (%rcx), %xmm11"); }
+      "pblendvb (%%rcx), %%xmm11" : : : "memory", "xmm11"); 
+   __asm__ __volatile__(
+      "aesdec %%xmm2, %%xmm1" : : : "xmm2", "xmm1"); }
   while (0)
 ]])], [
 ac_have_as_sse42=yes
@@ -1762,7 +1764,7 @@ AC_MSG_CHECKING([if x86/amd64 assembler knows the MOVBE insn])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { long long int x; 
    __asm__ __volatile__(
-      "movbe (%%rsp), %%r15" : : : "r15" ); }
+      "movbe (%%rsp), %%r15" : : : "memory", "r15" ); }
   while (0)
 ]])], [
 ac_have_as_movbe=yes

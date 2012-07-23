@@ -428,8 +428,9 @@ ExeContext* VG_(record_ExeContext)( ThreadId tid, Word first_ip_delta ) {
                                       False/*!first_ip_only*/ );
 }
 
-ExeContext* VG_(record_depth_1_ExeContext)( ThreadId tid ) {
-   return record_ExeContext_wrk( tid, 0/*first_ip_delta*/,
+ExeContext* VG_(record_depth_1_ExeContext)( ThreadId tid, Word first_ip_delta )
+{
+   return record_ExeContext_wrk( tid, first_ip_delta,
                                       True/*first_ip_only*/ );
 }
 

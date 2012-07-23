@@ -67,7 +67,7 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta );
 // might cause a segfault.  In this case we can at least safely
 // produce a one-element stack trace, which is better than nothing.
 extern
-ExeContext* VG_(record_depth_1_ExeContext)( ThreadId tid );
+ExeContext* VG_(record_depth_1_ExeContext)(ThreadId tid, Word first_ip_delta);
 
 // Apply a function to every element in the ExeContext.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless

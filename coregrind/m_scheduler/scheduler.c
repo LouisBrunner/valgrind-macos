@@ -1428,7 +1428,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          VG_(umsg)(
             "valgrind: Unrecognised instruction at address %#lx.\n",
             VG_(get_IP)(tid));
-         VG_(get_and_pp_StackTrace)(tid, 50);
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
 #define M(a) VG_(umsg)(a "\n");
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );

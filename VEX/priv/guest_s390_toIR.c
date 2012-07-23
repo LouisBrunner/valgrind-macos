@@ -2110,28 +2110,6 @@ s390_format_SIL_RDU(HChar *(*irgen)(UShort i2, IRTemp op1addr),
 /*------------------------------------------------------------*/
 
 static HChar *
-s390_irgen_00(UChar r1 __attribute__((unused)),
-              UChar r2 __attribute__((unused)))
-{
-   IRDirty *d;
-
-   d = unsafeIRDirty_0_N (0, "s390x_dirtyhelper_00", &s390x_dirtyhelper_00,
-                          mkIRExprVec_0());
-   d->needsBBP = 1;  /* Need to pass pointer to guest state to helper */
-
-   d->nFxState = 1;
-   vex_bzero(&d->fxState, sizeof(d->fxState));
-
-   d->fxState[0].fx     = Ifx_Modify;  /* read then write */
-   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_IA);
-   d->fxState[0].size   = sizeof(ULong);
-
-   stmt(IRStmt_Dirty(d));
-
-   return "00";
-}
-
-static HChar *
 s390_irgen_AR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -11509,8 +11487,6 @@ s390_decode_2byte_and_irgen(UChar *bytes)
    ((char *)(&ovl.value))[1] = bytes[1];
 
    switch (ovl.value & 0xffff) {
-   case 0x0000: /* invalid opcode */
-      s390_format_RR_RR(s390_irgen_00, 0, 0); goto ok;
    case 0x0101: /* PR */ goto unimplemented;
    case 0x0102: /* UPT */ goto unimplemented;
    case 0x0104: /* PTFF */ goto unimplemented;

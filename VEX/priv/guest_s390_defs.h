@@ -74,7 +74,6 @@ extern VexGuestLayout s390xGuest_layout;
 /*------------------------------------------------------------*/
 /*--- Helper functions.                                    ---*/
 /*------------------------------------------------------------*/
-void s390x_dirtyhelper_00(VexGuestS390XState *guest_state);
 void s390x_dirtyhelper_EX(ULong torun);
 ULong s390x_dirtyhelper_STCK(ULong *addr);
 ULong s390x_dirtyhelper_STCKF(ULong *addr);

@@ -231,23 +231,6 @@ VexGuestLayout s390xGuest_layout = {
 };
 
 /*------------------------------------------------------------*/
-/*--- Dirty helper for invalid opcode 00                   ---*/
-/*------------------------------------------------------------*/
-#if defined(VGA_s390x)
-void
-s390x_dirtyhelper_00(VexGuestS390XState *guest_state)
-{
-   /* Avoid infinite loop in case SIGILL is caught. See also
-      none/tests/s390x/op_exception.c */
-   guest_state->guest_IA += 2;
-
-   asm volatile(".hword 0\n");
-}
-#else
-void s390x_dirtyhelper_00(VexGuestS390XState *guest_state) { }
-#endif
-
-/*------------------------------------------------------------*/
 /*--- Dirty helper for EXecute                             ---*/
 /*------------------------------------------------------------*/
 void

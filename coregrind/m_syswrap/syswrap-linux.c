@@ -1008,9 +1008,20 @@ PRE(sys_futex)
                     struct timespec *, utime, vki_u32 *, uaddr2);
       break;
    case VKI_FUTEX_WAIT_BITSET:
-      PRE_REG_READ6(long, "futex", 
-                    vki_u32 *, futex, int, op, int, val,
-                    struct timespec *, utime, int, dummy, int, val3);
+      /* Check that the address at least begins in client-accessible area. */
+      if (!VG_(am_is_valid_for_client)( ARG1, 1, VKI_PROT_READ )) {
+            SET_STATUS_Failure( VKI_EFAULT );
+            return;
+      }
+      if (*(vki_u32 *)ARG1 != ARG3) {
+         PRE_REG_READ5(long, "futex",
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec *, utime, int, dummy);
+      } else {
+         PRE_REG_READ6(long, "futex",
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec *, utime, int, dummy, int, val3);
+      }
       break;
    case VKI_FUTEX_WAKE_BITSET:
       PRE_REG_READ6(long, "futex", 

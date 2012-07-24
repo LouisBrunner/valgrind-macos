@@ -43,6 +43,11 @@
 #
 # The prerequisite command, if present, must return 0 otherwise the test is
 # skipped.
+# Sometimes it is useful to run all the tests at a high sanity check
+# level or with arbitrary other flags.  To make this simple, extra 
+# options, applied to all tests run, are read from $EXTRA_REGTEST_OPTS,
+# and handed to valgrind prior to any other flags specified by the 
+# .vgperf file. Note: the env var is the same as vg_regtest.
 #----------------------------------------------------------------------------
 
 use warnings;
@@ -69,6 +74,7 @@ usage: vg_perf [options] [files or dirs]
 
   Any tools named in --tools must be present in all directories specified
   with --vg.  (This is not checked.)
+  Use EXTRA_REGTEST_OPTS to supply extra args for all tests
 END
 ;
 
@@ -285,6 +291,11 @@ sub do_one_test($$)
         }
     }
 
+    # Pull any extra options (for example, --sanity-level=4)
+    # from $EXTRA_REGTEST_OPTS.
+    my $maybe_extraopts = $ENV{"EXTRA_REGTEST_OPTS"};
+    my $extraopts = $maybe_extraopts ?  $maybe_extraopts  : "";
+
     foreach my $vgdir (@vgdirs) {
         # Benchmark name
         printf("%-8s ", $name);
@@ -323,7 +334,7 @@ sub do_one_test($$)
 
             my $vgsetup = "";
             my $vgcmd   = "$vgdir/coregrind/valgrind "
-                        . "--command-line-only=yes --tool=$tool -q "
+                        . "--command-line-only=yes --tool=$tool  $extraopts -q "
                         . "--memcheck:leak-check=no "
                         . "--trace-children=yes "
                         . "$vgopts ";
@@ -427,9 +438,21 @@ sub summarise_results
 #----------------------------------------------------------------------------
 # main()
 #----------------------------------------------------------------------------
+sub warn_about_EXTRA_REGTEST_OPTS()
+{
+    print "WARNING: \$EXTRA_REGTEST_OPTS is set.  You probably don't want\n";
+    print "to run the perf tests with it set, unless you are doing some\n";
+    print "strange experiment, and/or you really know what you are doing.\n";
+    print "\n";
+}
 
 # nuke VALGRIND_OPTS
 $ENV{"VALGRIND_OPTS"} = "";
+
+if ($ENV{"EXTRA_REGTEST_OPTS"}) {
+    print "\n";
+    warn_about_EXTRA_REGTEST_OPTS();
+}
 
 my @fs = process_command_line();
 foreach my $f (@fs) {
@@ -452,6 +475,10 @@ foreach my $f (@fs) {
     }
 }
 summarise_results();
+
+if ($ENV{"EXTRA_REGTEST_OPTS"}) {
+    warn_about_EXTRA_REGTEST_OPTS();
+}
 
 ##--------------------------------------------------------------------##
 ##--- end                                                          ---##

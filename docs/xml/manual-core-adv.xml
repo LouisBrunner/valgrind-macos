@@ -784,12 +784,24 @@ are however some limitations and peculiarities:</para>
    </listitem>
 
    <listitem>
-     <para>Registers values.</para>
-     <para>When Valgrind gdbserver stops on an error, registers values
-     might not be always up to date due to the optimisations done by
-     the Valgrind core. The
-     option <option>--vex-iropt-precise-memory-exns=yes</option>
-     ensures precise registers values by disabling some optimisations.
+     <para>Processor registers and flags values.</para>
+     <para>When Valgrind gdbserver stops on an error, on a breakpoint
+     or when single stepping, registers and flags values might not be always
+     up to date due to the optimisations done by the Valgrind core.
+     Disabling some optimisations using the following options will increase
+     the precision of registers and flags values.
+     An idea of the performance impact for memcheck is given for each option.
+       <itemizedlist>
+         <listitem>
+           <option>--vex-iropt-precise-memory-exns=yes</option> (10% performance impact).
+         </listitem>
+         <listitem>
+           <option>--vex-guest-max-insns=1</option> (200% performance impact).
+         </listitem>
+         <listitem>
+           <option>--vgdb=full</option> (250% performance impact).
+         </listitem>
+       </itemizedlist>
      </para>
    </listitem>
 

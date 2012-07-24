@@ -47,7 +47,7 @@ void run_test(void *tran_table, void *srcaddr, uint64_t len, uint8_t test)
    tre_regs regs;
    int i;
 
-   regs = tre(tran_table, buff, len, test);
+   regs = tre(tran_table, srcaddr, len, test);
 
    if ((uint64_t)tran_table != regs.tabaddr)
       printf("translation table address changed\n");

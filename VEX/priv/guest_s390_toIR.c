@@ -11165,7 +11165,7 @@ s390_irgen_TRE(UChar r1,UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
    put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
 
-   always_goto(mkU64(guest_IA_curr_instr));
+   always_goto_and_chase(guest_IA_curr_instr);
 
    return "tre";
 }

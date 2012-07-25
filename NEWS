@@ -183,6 +183,8 @@ where XXXXXX is the bug number as listed below.
 294812  patch allowing to run (on x86 at least) helgrind/drd on tool.
 295089  can not annotate source for both helgrind and drd
 295221  POWER Processor decimal floating point instruction support missing
+295427  building i386 support with clang on darwin11 requires
+        -new_linker linker option
 295428  coregrind/m_main.c has incorrect x86 assembly for darwin
 295590  Helgrind: Assertion 'cvi->nWaiters > 0' failed when cond var being waited upon destroyed
 295617  ARM - Add some missing syscalls

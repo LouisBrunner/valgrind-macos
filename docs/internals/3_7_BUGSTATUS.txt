@@ -128,17 +128,13 @@ get fixed.
 294454  delphi uses 16-bit addressing in the TEB (%fs)
   obscure (16 bit (0x67 ?) insns in 32 bit mode)
 
-294552  svn trunk compilation stuck in mig
-  XCode 4.3 problem?
-  no action so far
-  **possible OSX 10.8 issue
-
 294861  ./configure fails to locate Boost (located in /usr/local)
   low prio
 
 295053  Valgrind fails to load some x86_64 Mac OS Lion executables
   OSX
   **possible 3.8.0, med prio
+  address space collision with very large .bss, probably cantfix.
 
 295084  Hard-coded /usr/include
   OSX, XCode 4.3 problem
@@ -148,11 +144,6 @@ get fixed.
 
 295403  Memory access below SP with some STRD instructions.
   ARM, fiddly to fix/verify
-
-295427  building i386 support with clang on darwin11 requires
-        -new_linker linker option
-  OSX, XCode 4.3, 
-  **has plausible looking patch though (low risk)
 
 295472 "executable has wrong endian-ness" when target executable has
   correct endianess
@@ -253,7 +244,11 @@ get fixed.
 303460  Killed by fatal signal at doRegisterAllocation
   queried OP (gentoo weirdness)
 
--- Friday 13 July 2012  16:02 CEST
-
-303518 - can't build with glibc 2.16
+303518  can't build with glibc 2.16
   possibly fixed by r12743
+
+303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
+
+303624  Galaxy Nexus (OMAP) segmentation fault on Android 4.1.1.
+
+-- Tues 17 July 2012 11am

@@ -249,6 +249,4 @@ get fixed.
 
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
 
-303624  Galaxy Nexus (OMAP) segmentation fault on Android 4.1.1.
-
 -- Tues 17 July 2012 11am

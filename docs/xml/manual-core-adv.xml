@@ -776,9 +776,9 @@ are however some limitations and peculiarities:</para>
        "stop-at" commands will be obeyed precisely.  The
        downside is that this requires each instruction to be
        instrumented with an additional call to a gdbserver helper
-       function, which gives considerable overhead compared to
-       <option>--vgdb=no</option>.  Option <option>--vgdb=yes</option>
-       has neglectible overhead compared
+       function, which gives considerable overhead (+500% for memcheck)
+       compared to  <option>--vgdb=no</option>.
+       Option <option>--vgdb=yes</option> has neglectible overhead compared
        to <option>--vgdb=no</option>.
      </para>
    </listitem>
@@ -789,19 +789,20 @@ are however some limitations and peculiarities:</para>
      or when single stepping, registers and flags values might not be always
      up to date due to the optimisations done by the Valgrind core.
      Disabling some optimisations using the following options will increase
-     the precision of registers and flags values.
-     An idea of the performance impact for memcheck is given for each option.
+     the precision of registers and flags values (a typical performance 
+     impact for memcheck is given for each option).
        <itemizedlist>
          <listitem>
-           <option>--vex-iropt-precise-memory-exns=yes</option> (10% performance impact).
+           <option>--vex-iropt-precise-memory-exns=yes</option> (+5%) ensures
+           that all integer registers are up to date at each memory access.
          </listitem>
          <listitem>
-           <option>--vex-guest-max-insns=1</option> (200% performance impact).
-         </listitem>
-         <listitem>
-           <option>--vgdb=full</option> (250% performance impact).
+           <option>--vex-guest-max-insns=1</option> (+100%) ensures that
+           all registers and flags values are up to date at each instruction.
          </listitem>
        </itemizedlist>
+       Note that the above options can be combined with <option>--vgdb=full</option>
+       (+500%, see above Precision of "stop-at" commands).
      </para>
    </listitem>
 

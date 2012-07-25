@@ -895,9 +895,6 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
       for (hi = 0; hi < 16; hi++) {
-         if ((validL & (1 << hi)) == 0)
-            // run off the end of the haystack
-            break;
          UInt m = 1;
          for (ni = 0; ni < 16; ni++) {
             if ((validR & (1 << ni)) == 0) break;
@@ -906,6 +903,9 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
             if (argL[i] != argR[ni]) { m = 0; break; }
          }
          boolRes |= (m << hi);
+         if ((validL & (1 << hi)) == 0)
+            // run off the end of the haystack
+            break;
       }
 
       // boolRes is "pre-invalidated"
@@ -1105,9 +1105,6 @@ Bool compute_PCMPxSTRx_wide ( /*OUT*/V128* resV,
       UInt    validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt    validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
       for (hi = 0; hi < 8; hi++) {
-         if ((validL & (1 << hi)) == 0)
-            // run off the end of the haystack
-            break;
          UInt m = 1;
          for (ni = 0; ni < 8; ni++) {
             if ((validR & (1 << ni)) == 0) break;
@@ -1116,6 +1113,9 @@ Bool compute_PCMPxSTRx_wide ( /*OUT*/V128* resV,
             if (argL[i] != argR[ni]) { m = 0; break; }
          }
          boolRes |= (m << hi);
+         if ((validL & (1 << hi)) == 0)
+            // run off the end of the haystack
+            break;
       }
 
       // boolRes is "pre-invalidated"

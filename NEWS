@@ -260,6 +260,7 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 303250  "Assertion `instrs_in->arr_used <= 10000' failed" on
         OpenSSL with --track-origins=yes
 303624  segmentation fault on Android 4.1 (e.g. on android emulator or Galaxy Nexus OMAP) 
+303963  strstr() function produces wrong results under valgrind callgrind
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

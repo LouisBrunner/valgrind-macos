@@ -9495,16 +9495,6 @@ s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
                mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
                      mkU64(0), binop(Iop_Sub64, mkexpr(len3), mkU64(1))));
 
-   /* We should set CC=3 (faked by overflow add) and leave after
-      a maximum of ~4096 bytes have been processed. This is simpler:
-      we leave whenever (len1 % 4096) == 0 */
-   s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_ADD_64, mktemp(Ity_I64, mkU64(-1ULL)),
-                      mktemp(Ity_I64, mkU64(-1ULL)), False);
-   if_condition_goto(binop(Iop_CmpEQ64,
-                           binop(Iop_And64, mkexpr(len1), mkU64(0xfff)),
-                           mkU64(0)),
-                     guest_IA_next_instr);
-
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len3, False);
    if_condition_goto(binop(Iop_CmpNE64, mkexpr(len1), mkU64(1)),
                      guest_IA_curr_instr);

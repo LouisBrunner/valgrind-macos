@@ -305,9 +305,6 @@ Bool pcmpXstrX_WRK ( /*OUT*/V128* resV,
       UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
       for (hi = 0; hi < 16; hi++) {
-         if ((validL & (1 << hi)) == 0)
-            // run off the end of the haystack
-            break;
          UInt m = 1;
          for (ni = 0; ni < 16; ni++) {
             if ((validR & (1 << ni)) == 0) break;
@@ -316,6 +313,9 @@ Bool pcmpXstrX_WRK ( /*OUT*/V128* resV,
             if (argL[i] != argR[ni]) { m = 0; break; }
          }
          boolRes |= (m << hi);
+         if ((validL & (1 << hi)) == 0)
+            // run off the end of the haystack
+            break;
       }
 
       // boolRes is "pre-invalidated"
@@ -573,8 +573,8 @@ UInt h_pcmpistri_0C ( V128* argL, V128* argR )
    memcpy(&block[1], argR, sizeof(V128));
    ULong res = 0, flags = 0;
    __asm__ __volatile__(
-      "movdqa    0(%2),  %%xmm2"            "\n\t"
-      "movdqa    16(%2), %%xmm11"           "\n\t"
+      "movdqu    0(%2),  %%xmm2"            "\n\t"
+      "movdqu    16(%2), %%xmm11"           "\n\t"
       "pcmpistri $0x0C,  %%xmm2, %%xmm11"   "\n\t"
       //"pcmpistrm $0x0C,  %%xmm2, %%xmm11"   "\n\t"
       //"movd %%xmm0, %%ecx" "\n\t"
@@ -639,6 +639,11 @@ void istri_0C ( void )
    try_istri(wot,h,s, "1111111111111234", "1111111111111234"); 
    try_istri(wot,h,s, "a111111111111111", "000000000000000a"); 
    try_istri(wot,h,s, "b111111111111111", "000000000000000a"); 
+
+   try_istri(wot,h,s, "b111111111111111", "0000000000000000");
+   try_istri(wot,h,s, "0000000000000000", "0000000000000000");
+   try_istri(wot,h,s, "123456789abcdef1", "0000000000000000");
+   try_istri(wot,h,s, "0000000000000000", "123456789abcdef1");
 }
 
 

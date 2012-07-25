@@ -8693,16 +8693,6 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
                mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
                      mkU64(0), binop(Iop_Sub64, mkexpr(len3), mkU64(1))));
 
-   /* The architecture requires that we exit with CC3 after a machine specific
-      amount of bytes. We do that if len1+len3 % 4096 == 0 */
-   s390_cc_set(3);
-   if_condition_goto(binop(Iop_CmpEQ64,
-                           binop(Iop_And64,
-                                 binop(Iop_Add64, mkexpr(len1), mkexpr(len3)),
-                                 mkU64(0xfff)),
-                           mkU64(0)),
-                     guest_IA_next_instr);
-
    always_goto_and_chase(guest_IA_curr_instr);
 
    return "clcle";
@@ -9021,13 +9011,8 @@ s390_irgen_SRST(UChar r1, UChar r2)
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    put_gpr_dw0(r1, mkexpr(next));
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(address), mkU64(1)));
-   stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
-                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
-   // >= 256 bytes done CC=3
-   s390_cc_set(3);
-   put_counter_dw0(mkU64(0));
-   dummy_put_IA();
+
+   always_goto_and_chase(guest_IA_curr_instr);
 
    return "srst";
 }
@@ -9089,13 +9074,8 @@ s390_irgen_CLST(UChar r1, UChar r2)
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), mkU64(1)));
    put_gpr_dw0(r2, binop(Iop_Add64, get_gpr_dw0(r2), mkU64(1)));
-   stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
-                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
-   // >= 256 bytes done CC=3
-   s390_cc_set(3);
-   put_counter_dw0(mkU64(0));
-   dummy_put_IA();
+
+   always_goto_and_chase(guest_IA_curr_instr);
 
    return "clst";
 }

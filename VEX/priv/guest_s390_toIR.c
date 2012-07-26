@@ -143,15 +143,6 @@ put_IA(IRExpr *address)
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA), address));
 }
 
-/* Add a dummy put to the guest_IA to satisfy an assert in bb_to_IR
-   that wants the last statement in an IRSB to be a put to the guest_IA.
-   Mostly used for insns that use the "counter" pseudo guest reg. */
-static __inline__ void
-dummy_put_IA(void)
-{
-   put_IA(IRExpr_Get(S390X_GUEST_OFFSET(guest_IA), Ity_I64));
-}
-
 /* Create a temporary of the given type and assign the expression to it */
 static __inline__ IRTemp
 mktemp(IRType type, IRExpr *expr)
@@ -384,6 +375,54 @@ system_call(IRExpr *sysno)
       forces any TempRegs caching ArchRegs to be flushed. */
    dis_res->whatNext    = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_Sys_syscall;
+}
+
+/* A side exit that branches back to the current insn if CONDITION is
+   true. Does not set DisResult. */
+static void
+iterate_if(IRExpr *condition)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
+
+   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
+}
+
+/* A side exit that branches back to the current insn.
+   Does not set DisResult. */
+static __inline__ void
+iterate(void)
+{
+   iterate_if(IRExpr_Const(IRConst_U1(True)));
+}
+
+/* A side exit that branches back to the insn immediately following the
+   current insn if CONDITION is true. Does not set DisResult. */
+static void
+next_insn_if(IRExpr *condition)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
+
+   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
+}
+
+/* Convenience function to restart the current insn */
+static void
+restart_if(IRExpr *condition)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
+
+   stmt(IRStmt_Exit(condition, Ijk_TInval, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
+}
+
+/* Convenience function to yield to thread scheduler */
+static void
+yield_if(IRExpr *condition)
+{
+   stmt(IRStmt_Exit(condition, Ijk_Yield, IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 }
 
 /* Encode the s390 rounding mode as it appears in the m3/m4 fields of certain
@@ -1832,14 +1871,15 @@ s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
-   if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
+
    assign(d2, mkU64(((ULong)(Long)(Char)dh2 << 12) | ((ULong)dl2)));
    assign(op2addr, binop(Iop_Add64, mkexpr(d2), b2 != 0 ? get_gpr_dw0(b2) :
           mkU64(0)));
 
    irgen(r1, op2addr);
-   dummy_put_IA();
+
+   vassert(dis_res->whatNext == Dis_Continue);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, SDXB), xmnm_kind, m3, r1, dh2, dl2, 0, b2);
@@ -5814,10 +5854,8 @@ s390_irgen_LNGFR(UChar r1, UChar r2 __attribute__((unused)))
 static HChar *
 s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
 {
-   if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
    put_gpr_w1(r1, get_gpr_w1(r2));
-   dummy_put_IA();
 
    return "locr";
 }
@@ -5825,10 +5863,8 @@ s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
 static HChar *
 s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
 {
-   if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
    put_gpr_dw0(r1, get_gpr_dw0(r2));
-   dummy_put_IA();
 
    return "locgr";
 }
@@ -8535,7 +8571,6 @@ s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU64(length));
    s390_irgen_CLC_EX(len, start1, start2);
-   dummy_put_IA();
 
    return "clc";
 }
@@ -8565,9 +8600,8 @@ s390_irgen_CLCL(UChar r1, UChar r2)
 
    /* len1 == 0 and len2 == 0? Exit */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ32, binop(Iop_Or32, mkexpr(len1),
-                                              mkexpr(len2)), mkU32(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32, binop(Iop_Or32, mkexpr(len1),
+                                         mkexpr(len2)), mkU32(0)));
 
    /* Because mkite evaluates both the then-clause and the else-clause
       we cannot load directly from addr1 here. If len1 is 0, then adddr1
@@ -8590,8 +8624,7 @@ s390_irgen_CLCL(UChar r1, UChar r2)
 
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, single1, single2, False);
    /* Fields differ ? */
-   if_condition_goto(binop(Iop_CmpNE8, mkexpr(single1), mkexpr(single2)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpNE8, mkexpr(single1), mkexpr(single2)));
 
    /* Update len1 and addr1, unless len1 == 0. */
    put_gpr_dw0(r1,
@@ -8617,7 +8650,7 @@ s390_irgen_CLCL(UChar r1, UChar r2)
                     binop(Iop_And32, mkexpr(r2p1), mkU32(0xFF000000u)),
                     binop(Iop_Sub32, mkexpr(r2p1), mkU32(1))));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "clcl";
 }
@@ -8643,9 +8676,8 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
 
    /* len1 == 0 and len3 == 0? Exit */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ64,binop(Iop_Or64, mkexpr(len1),
-                                             mkexpr(len3)), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64,binop(Iop_Or64, mkexpr(len1),
+                                        mkexpr(len3)), mkU64(0)));
 
    /* A mux requires both ways to be possible. This is a way to prevent clcle
       from reading from addr1 if it should read from the pad. Since the pad
@@ -8671,8 +8703,7 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
 
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, single1, single3, False);
    /* Both fields differ ? */
-   if_condition_goto(binop(Iop_CmpNE8, mkexpr(single1), mkexpr(single3)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpNE8, mkexpr(single1), mkexpr(single3)));
 
    /* If a length in 0 we must not change this length and the address */
    put_gpr_dw0(r1,
@@ -8693,7 +8724,7 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
                mkite(binop(Iop_CmpEQ64, mkexpr(len3), mkU64(0)),
                      mkU64(0), binop(Iop_Sub64, mkexpr(len3), mkU64(1))));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "clcle";
 }
@@ -8738,13 +8769,11 @@ s390_irgen_CLC_EX(IRTemp length, IRTemp start1, IRTemp start2)
                       False);
 
    /* Both fields differ ? */
-   if_condition_goto(binop(Iop_CmpNE8, mkexpr(current1), mkexpr(current2)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpNE8, mkexpr(current1), mkexpr(current2)));
 
    /* Check for end of field */
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)));
    put_counter_dw0(mkU64(0));
 }
 
@@ -8760,8 +8789,7 @@ s390_irgen_MVC_EX(IRTemp length, IRTemp start1, IRTemp start2)
 
    /* Check for end of field */
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)));
    put_counter_dw0(mkU64(0));
 }
 
@@ -8783,15 +8811,15 @@ s390_irgen_TR_EX(IRTemp length, IRTemp start1, IRTemp start2)
    store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)), mkexpr(op1));
 
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)));
    put_counter_dw0(mkU64(0));
 }
 
 
 static void
 s390_irgen_EX_SS(UChar r, IRTemp addr2,
-void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
+                 void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2),
+                 int lensize)
 {
    struct SS {
       unsigned int op :  8;
@@ -8828,8 +8856,7 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
                    mkU64(guest_IA_curr_instr)));
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-   stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval, IRConst_U64(guest_IA_curr_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
+   restart_if(mkexpr(cond));
 
    ss.bytes = last_execute_target;
    assign(start1, binop(Iop_Add64, mkU64(ss.dec.d1),
@@ -8839,7 +8866,6 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    assign(len, unop(lensize == 64 ? Iop_8Uto64 : Iop_8Uto32, binop(Iop_Or8,
           r != 0 ? get_gpr_b7(r): mkU8(0), mkU8(ss.dec.l))));
    irgen(len, start1, start2);
-   dummy_put_IA();
 
    last_execute_target = 0;
 }
@@ -8861,9 +8887,8 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
                       mkU64(guest_IA_curr_instr)));
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-      stmt(IRStmt_Exit(IRExpr_Const(IRConst_U1(True)), Ijk_TInval,
-                       IRConst_U64(guest_IA_curr_instr),
-                       S390X_GUEST_OFFSET(guest_IA)));
+      restart_if(IRExpr_Const(IRConst_U1(True)));
+
       /* we know that this will be invalidated */
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
@@ -8935,9 +8960,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       /* and restart */
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
-      stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
-                       IRConst_U64(guest_IA_curr_instr),
-                       S390X_GUEST_OFFSET(guest_IA)));
+      restart_if(mkexpr(cond));
 
       /* Now comes the actual translation */
       bytes = (UChar *) &last_execute_target;
@@ -8947,7 +8970,6 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
          vex_printf("    which was executed by\n");
       /* dont make useless translations in the next execute */
       last_execute_target = 0;
-      dummy_put_IA();
    }
    }
    return "ex";
@@ -8995,8 +9017,7 @@ s390_irgen_SRST(UChar r1, UChar r2)
    // start = next?  CC=2 and out r1 and r2 unchanged
    s390_cc_set(2);
    put_gpr_dw0(r2, binop(Iop_Sub64, mkexpr(address), mkexpr(counter)));
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(address), mkexpr(next)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(address), mkexpr(next)));
 
    assign(byte, load(Ity_I8, mkexpr(address)));
    assign(delim, get_gpr_b7(0));
@@ -9004,15 +9025,14 @@ s390_irgen_SRST(UChar r1, UChar r2)
    // byte = delim? CC=1, R1=address
    s390_cc_set(1);
    put_gpr_dw0(r1,  mkexpr(address));
-   if_condition_goto(binop(Iop_CmpEQ8, mkexpr(delim), mkexpr(byte)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ8, mkexpr(delim), mkexpr(byte)));
 
    // else: all equal, no end yet, loop
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    put_gpr_dw0(r1, mkexpr(next));
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(address), mkU64(1)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "srst";
 }
@@ -9039,43 +9059,38 @@ s390_irgen_CLST(UChar r1, UChar r2)
    s390_cc_set(0);
    put_gpr_dw0(r1, binop(Iop_Sub64, mkexpr(address1), mkexpr(counter)));
    put_gpr_dw0(r2, binop(Iop_Sub64, mkexpr(address2), mkexpr(counter)));
-   if_condition_goto(binop(Iop_CmpEQ8, mkU8(0),
-                           binop(Iop_Or8,
-                                 binop(Iop_Xor8, mkexpr(byte1), mkexpr(end)),
-                                 binop(Iop_Xor8, mkexpr(byte2), mkexpr(end)))),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ8, mkU8(0),
+                      binop(Iop_Or8,
+                            binop(Iop_Xor8, mkexpr(byte1), mkexpr(end)),
+                            binop(Iop_Xor8, mkexpr(byte2), mkexpr(end)))));
 
    put_gpr_dw0(r1, mkexpr(address1));
    put_gpr_dw0(r2, mkexpr(address2));
 
    // End found in string1
    s390_cc_set(1);
-   if_condition_goto(binop(Iop_CmpEQ8, mkexpr(end), mkexpr(byte1)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ8, mkexpr(end), mkexpr(byte1)));
 
    // End found in string2
    s390_cc_set(2);
-   if_condition_goto(binop(Iop_CmpEQ8, mkexpr(end), mkexpr(byte2)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ8, mkexpr(end), mkexpr(byte2)));
 
    // string1 < string2
    s390_cc_set(1);
-   if_condition_goto(binop(Iop_CmpLT32U, unop(Iop_8Uto32, mkexpr(byte1)),
-                           unop(Iop_8Uto32, mkexpr(byte2))),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpLT32U, unop(Iop_8Uto32, mkexpr(byte1)),
+                      unop(Iop_8Uto32, mkexpr(byte2))));
 
    // string2 < string1
    s390_cc_set(2);
-   if_condition_goto(binop(Iop_CmpLT32U, unop(Iop_8Uto32, mkexpr(byte2)),
-                           unop(Iop_8Uto32, mkexpr(byte1))),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpLT32U, unop(Iop_8Uto32, mkexpr(byte2)),
+                      unop(Iop_8Uto32, mkexpr(byte1))));
 
    // else: all equal, no end yet, loop
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), mkU64(1)));
    put_gpr_dw0(r2, binop(Iop_Add64, get_gpr_dw0(r2), mkU64(1)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "clst";
 }
@@ -9265,8 +9280,7 @@ s390_irgen_xonc(IROp op, IRTemp length, IRTemp start1, IRTemp start2)
 
    /* Check for end of field */
    put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkexpr(length)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE32, mkexpr(counter), mkexpr(length)));
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
                       False);
    put_counter_dw0(mkU64(0));
@@ -9279,7 +9293,6 @@ s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU32(length));
    s390_irgen_xonc(Iop_Xor8, len, start1, start2);
-   dummy_put_IA();
 
    return "xc";
 }
@@ -9310,15 +9323,13 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 
      /* Check for end of field */
      put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-     if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)),
-                       guest_IA_curr_instr);
+     iterate_if(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)));
 
      /* Reset counter */
      put_counter_dw0(mkU64(0));
    }
 
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
-   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
@@ -9331,7 +9342,6 @@ s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU32(length));
    s390_irgen_xonc(Iop_And8, len, start1, start2);
-   dummy_put_IA();
 
    return "nc";
 }
@@ -9343,7 +9353,6 @@ s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU32(length));
    s390_irgen_xonc(Iop_Or8, len, start1, start2);
-   dummy_put_IA();
 
    return "oc";
 }
@@ -9356,7 +9365,6 @@ s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU64(length));
    s390_irgen_MVC_EX(len, start1, start2);
-   dummy_put_IA();
 
    return "mvc";
 }
@@ -9384,8 +9392,7 @@ s390_irgen_MVCL(UChar r1, UChar r2)
 
    /* len1 == 0 ? */
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len2, False);
-   if_condition_goto(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(len1), mkU32(0)));
 
    /* Check for destructive overlap:
       addr1 > addr2 && addr2 + len1 > addr1 && (addr2 + len2) > addr1 */
@@ -9405,12 +9412,11 @@ s390_irgen_MVCL(UChar r1, UChar r2)
                             binop(Iop_Add64, mkexpr(addr2),
                                   unop(Iop_32Uto64, mkexpr(len2))))));
 
-   if_condition_goto(binop(Iop_CmpEQ32,
-                           binop(Iop_And32,
-                                 binop(Iop_And32, mkexpr(cond1), mkexpr(cond2)),
-                                 mkexpr(cond3)),
-                           mkU32(1)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32,
+                      binop(Iop_And32,
+                            binop(Iop_And32, mkexpr(cond1), mkexpr(cond2)),
+                            mkexpr(cond3)),
+                      mkU32(1)));
 
    /* See s390_irgen_CLCL for explanation why we cannot load directly
       and need two steps. */
@@ -9440,8 +9446,7 @@ s390_irgen_MVCL(UChar r1, UChar r2)
                     binop(Iop_Sub32, mkexpr(r2p1), mkU32(1))));
 
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len2, False);
-   if_condition_goto(binop(Iop_CmpNE32, mkexpr(len1), mkU32(1)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE32, mkexpr(len1), mkU32(1)));
 
    return "mvcl";
 }
@@ -9466,8 +9471,7 @@ s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
 
    // len1 == 0 ?
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len3, False);
-   if_condition_goto(binop(Iop_CmpEQ64,mkexpr(len1), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64,mkexpr(len1), mkU64(0)));
 
    /* This is a hack to prevent mvcle from reading from addr3 if it
       should read from the pad. Since the pad has no address, just
@@ -9496,8 +9500,7 @@ s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
                      mkU64(0), binop(Iop_Sub64, mkexpr(len3), mkU64(1))));
 
    s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, len1, len3, False);
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(len1), mkU64(1)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE64, mkexpr(len1), mkU64(1)));
 
    return "mvcle";
 }
@@ -9520,14 +9523,12 @@ s390_irgen_MVST(UChar r1, UChar r2)
 
    // We use unlimited as cpu-determined number
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE8, mkexpr(end), mkexpr(byte)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE8, mkexpr(end), mkexpr(byte)));
 
    // and always set cc=1 at the end + update r1
    s390_cc_set(1);
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(addr1), mkexpr(counter)));
    put_counter_dw0(mkU64(0));
-   dummy_put_IA();
 
    return "mvst";
 }
@@ -9793,9 +9794,7 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
       Otherwise, store the old_value from memory in r1 and yield. */
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
-   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-                    IRConst_U64(guest_IA_next_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
+   yield_if(mkexpr(nequal));
 }
 
 static HChar *
@@ -9843,9 +9842,7 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
       Otherwise, store the old_value from memory in r1 and yield. */
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_dw0(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
-   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-                    IRConst_U64(guest_IA_next_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
+   yield_if(mkexpr(nequal));
 
    return "csg";
 }
@@ -9892,9 +9889,7 @@ s390_irgen_cdas_32(UChar r1, UChar r3, IRTemp op2addr)
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1,   mkite(mkexpr(nequal), mkexpr(old_mem_high), mkexpr(op1_high)));
    put_gpr_w1(r1+1, mkite(mkexpr(nequal), mkexpr(old_mem_low),  mkexpr(op1_low)));
-   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-                    IRConst_U64(guest_IA_next_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
+   yield_if(mkexpr(nequal));
 }
 
 static HChar *
@@ -9954,9 +9949,8 @@ s390_irgen_CDSG(UChar r1, UChar r3, IRTemp op2addr)
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_dw0(r1,   mkite(mkexpr(nequal), mkexpr(old_mem_high), mkexpr(op1_high)));
    put_gpr_dw0(r1+1, mkite(mkexpr(nequal), mkexpr(old_mem_low),  mkexpr(op1_low)));
-   stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-                    IRConst_U64(guest_IA_next_instr),
-                    S390X_GUEST_OFFSET(guest_IA)));
+   yield_if(mkexpr(nequal));
+
    return "cdsg";
 }
 
@@ -10841,8 +10835,7 @@ s390_irgen_CKSM(UChar r1,UChar r2)
    s390_cc_set(0);
 
    /* If length is zero, there is no need to calculate the checksum */
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(len), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(len), mkU64(0)));
 
    /* Assiging the increment variable to adjust address and length
       later on. */
@@ -10880,8 +10873,7 @@ s390_irgen_CKSM(UChar r1,UChar r2)
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(addr), mkexpr(inc)));
    put_gpr_dw0(r2+1, binop(Iop_Sub64, mkexpr(len), mkexpr(inc)));
 
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(len), mkU64(0)),
-                     guest_IA_curr_instr);
+   iterate_if(binop(Iop_CmpNE64, mkexpr(len), mkU64(0)));
 
    return "cksm";
 }
@@ -10908,8 +10900,7 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
 
    /* End of source string? We're done; proceed to next insn */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)));
 
    /* Load character from source string, index translation table and
       store translated character in op1. */
@@ -10921,8 +10912,7 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
 
    if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
       s390_cc_set(1);
-      if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)),
-                        guest_IA_next_instr);
+      next_insn_if(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)));
    }
    store(get_gpr_dw0(r1), mkexpr(op1));
 
@@ -10930,7 +10920,7 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
    put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "troo";
 }
@@ -10957,8 +10947,7 @@ s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
 
    /* End of source string? We're done; proceed to next insn */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)));
 
    /* Load character from source string, index translation table and
       store translated character in op1. */
@@ -10971,8 +10960,7 @@ s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
 
    if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
       s390_cc_set(1);
-      if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)),
-                        guest_IA_next_instr);
+      next_insn_if(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)));
    }
    store(get_gpr_dw0(r1), mkexpr(op1));
 
@@ -10980,7 +10968,7 @@ s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(1)));
    put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(2)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "trto";
 }
@@ -11007,8 +10995,7 @@ s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
 
    /* End of source string? We're done; proceed to next insn */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)));
 
    /* Load character from source string, index translation table and
       store translated character in op1. */
@@ -11020,8 +11007,7 @@ s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
 
    if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
       s390_cc_set(1);
-      if_condition_goto(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)),
-                        guest_IA_next_instr);
+      next_insn_if(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)));
    }
    store(get_gpr_dw0(r1), mkexpr(op1));
 
@@ -11029,7 +11015,7 @@ s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(2)));
    put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "trot";
 }
@@ -11056,8 +11042,7 @@ s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
 
    /* End of source string? We're done; proceed to next insn */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)));
 
    /* Load character from source string, index translation table and
       store translated character in op1. */
@@ -11069,8 +11054,7 @@ s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
 
    if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
       s390_cc_set(1);
-      if_condition_goto(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)),
-                        guest_IA_next_instr);
+      next_insn_if(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)));
    }
 
    store(get_gpr_dw0(r1), mkexpr(op1));
@@ -11079,7 +11063,7 @@ s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(2)));
    put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(2)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "trtt";
 }
@@ -11091,7 +11075,6 @@ s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
 
    assign(len, mkU64(length));
    s390_irgen_TR_EX(len, start1, start2);
-   dummy_put_IA();
 
    return "tr";
 }
@@ -11116,15 +11099,13 @@ s390_irgen_TRE(UChar r1,UChar r2)
 
    /* End of source string? We're done; proceed to next insn */   
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)));
 
    /* Load character from source string and compare with test byte */
    assign(op, load(Ity_I8, mkexpr(src_addr)));
    
    s390_cc_set(1);
-   if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op), mkexpr(test_byte)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ8, mkexpr(op), mkexpr(test_byte)));
 
    assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), 
 			mkexpr(tab_addr)));
@@ -11135,7 +11116,7 @@ s390_irgen_TRE(UChar r1,UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
    put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
 
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "tre";
 }
@@ -11171,8 +11152,7 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
       there are less than 2 bytes left, then the 2nd operand is exhausted
       and we're done here. cc = 0 */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(2)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(2)));
 
    /* There are at least two bytes there. Read them. */
    IRTemp srcval = newTemp(Ity_I32);
@@ -11192,10 +11172,9 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
    IRExpr *not_enough_bytes =
       mkite(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(4)), mkU32(1), mkU32(0));
 
-   if_condition_goto(binop(Iop_CmpEQ32,
-                           binop(Iop_And32, mkexpr(is_high_surrogate),
-                                 not_enough_bytes),
-                           mkU32(1)), guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32,
+                      binop(Iop_And32, mkexpr(is_high_surrogate),
+                            not_enough_bytes), mkU32(1)));
 
    /* The 2nd operand is not exhausted. If the first 2 bytes are a high
       surrogate, read the next two bytes (low surrogate). */
@@ -11218,8 +11197,7 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
          binop(Iop_And64, mkexpr(retval), mkU64(0xff));
 
       s390_cc_set(2);
-      if_condition_goto(binop(Iop_CmpEQ64, invalid_low_surrogate, mkU64(1)),
-                        guest_IA_next_instr);
+      next_insn_if(binop(Iop_CmpEQ64, invalid_low_surrogate, mkU64(1)));
    }
 
    /* Now test whether the 1st operand is exhausted */
@@ -11228,8 +11206,7 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
                            binop(Iop_Shr64, mkexpr(retval), mkU8(8)),
                            mkU64(0xff)));
    s390_cc_set(1);
-   if_condition_goto(binop(Iop_CmpLT64U, mkexpr(len1), mkexpr(num_bytes)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len1), mkexpr(num_bytes)));
 
    /* Extract the bytes to be stored at addr1 */
    IRTemp data = newTemp(Ity_I64);
@@ -11265,8 +11242,7 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r1,     binop(Iop_Add64, mkexpr(addr1), mkexpr(num_bytes)));
    put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1),  mkexpr(num_bytes)));
 
-   /* Iterate */
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "cu21";
 }
@@ -11302,8 +11278,7 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
       there are less than 2 bytes left, then the 2nd operand is exhausted
       and we're done here. cc = 0 */
    s390_cc_set(0);
-   if_condition_goto(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(2)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(2)));
 
    /* There are at least two bytes there. Read them. */
    IRTemp srcval = newTemp(Ity_I32);
@@ -11323,10 +11298,10 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
    IRExpr *not_enough_bytes =
       mkite(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(4)), mkU32(1), mkU32(0));
 
-   if_condition_goto(binop(Iop_CmpEQ32,
-                           binop(Iop_And32, mkexpr(is_high_surrogate),
-                                 not_enough_bytes),
-                           mkU32(1)), guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpEQ32,
+                      binop(Iop_And32, mkexpr(is_high_surrogate),
+                            not_enough_bytes),
+                      mkU32(1)));
 
    /* The 2nd operand is not exhausted. If the first 2 bytes are a high
       surrogate, read the next two bytes (low surrogate). */
@@ -11349,14 +11324,12 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
          binop(Iop_And64, mkexpr(retval), mkU64(0xff));
 
       s390_cc_set(2);
-      if_condition_goto(binop(Iop_CmpEQ64, invalid_low_surrogate, mkU64(1)),
-                        guest_IA_next_instr);
+      next_insn_if(binop(Iop_CmpEQ64, invalid_low_surrogate, mkU64(1)));
    }
 
    /* Now test whether the 1st operand is exhausted */
    s390_cc_set(1);
-   if_condition_goto(binop(Iop_CmpLT64U, mkexpr(len1), mkU64(4)),
-                     guest_IA_next_instr);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len1), mkU64(4)));
 
    /* Extract the bytes to be stored at addr1 */
    IRExpr *data = unop(Iop_64to32, binop(Iop_Shr64, mkexpr(retval), mkU8(8)));
@@ -11375,8 +11348,7 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r1,     binop(Iop_Add64, mkexpr(addr1), mkU64(4)));
    put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1),  mkU64(4)));
 
-   /* Iterate */
-   always_goto_and_chase(guest_IA_curr_instr);
+   iterate();
 
    return "cu24";
 }

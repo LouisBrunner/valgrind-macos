@@ -211,6 +211,8 @@ typedef
 typedef
    struct {
       SuppLocTy ty;
+      Bool      name_is_simple_str; /* True if name is a string without
+                                       '?' and '*' wildcard characters. */
       Char*     name; /* NULL for NoName and DotDotDot */
    }
    SuppLoc;
@@ -1103,6 +1105,18 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 }
 
 
+/* True if s contains no wildcard (?, *) characters. */
+static Bool is_simple_str (Char *s)
+{
+   int i;
+   while (*s) {
+      if (*s == '?' || *s == '*')
+         return False;
+      s++;
+   }
+   return True;
+}
+
 /* buf contains the raw name of a caller, supposedly either
        fun:some_function_name   or
        obj:some_object_name     or
@@ -1117,17 +1131,20 @@ static Bool setLocationTy ( SuppLoc* p, Char *buf )
    if (VG_(strncmp)(buf, "fun:", 4) == 0) {
       p->name = VG_(arena_strdup)(VG_AR_CORE,
                                   "errormgr.sLTy.1", buf+4);
+      p->name_is_simple_str = is_simple_str (p->name);
       p->ty = FunName;
       return True;
    }
    if (VG_(strncmp)(buf, "obj:", 4) == 0) {
       p->name = VG_(arena_strdup)(VG_AR_CORE,
                                   "errormgr.sLTy.2", buf+4);
+      p->name_is_simple_str = is_simple_str (p->name);
       p->ty = ObjName;
       return True;
    }
    if (VG_(strcmp)(buf, "...") == 0) {
       p->name = NULL;
+      p->name_is_simple_str = False;
       p->ty = DotDotDot;
       return True;
    }
@@ -1198,6 +1215,7 @@ static void load_one_suppressions_file ( Char* filename )
       // Initialise temporary reading-in buffer.
       for (i = 0; i < VG_MAX_SUPP_CALLERS; i++) {
          tmp_callers[i].ty   = NoName;
+         tmp_callers[i].name_is_simple_str = False;
          tmp_callers[i].name = NULL;
       }
 
@@ -1425,8 +1443,11 @@ static Bool supp_pattEQinp ( void* supplocV, void* addrV )
    /* So now we have the function or object name in caller_name, and
       the pattern (at the character level) to match against is in
       supploc->name.  Hence (and leading to a re-entrant call of
-      VG_(generic_match)): */
-   return VG_(string_match)(supploc->name, caller_name);
+      VG_(generic_match) if there is a wildcard character): */
+   if (supploc->name_is_simple_str)
+      return VG_(strcmp) (supploc->name, caller_name) == 0;
+   else
+      return VG_(string_match)(supploc->name, caller_name);
 }
 
 /////////////////////////////////////////////////////

@@ -13809,8 +13809,11 @@ disInstr_S390_WRK(UChar *insn)
       /* All decode failures end up here. The decoder has already issued an
          error message.
          Tell the dispatcher that this insn cannot be decoded, and so has
-         not been executed, and (is currently) the next to be executed. */
-      put_IA(mkaddr_expr(guest_IA_next_instr));
+         not been executed, and (is currently) the next to be executed.
+         The insn address in the guest state needs to be set to 
+         guest_IA_curr_instr, otherwise the complaint will report an
+         incorrect address. */
+      put_IA(mkaddr_expr(guest_IA_curr_instr));
 
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;

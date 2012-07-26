@@ -1,7 +1,7 @@
 
 vex s390->IR: unknown insn: 0000
 valgrind: Unrecognised instruction at address 0x.........
-   at 0x........: main (op00.c:5)
+   at 0x........: main (op00.c:3)
 Your program just tried to execute an instruction that Valgrind
 did not recognise.  There are two possible reasons for this.
 1. Your program has a bug and erroneously jumped to a non-code
@@ -15,5 +15,5 @@ probably kill your program.
 
 Process terminating with default action of signal 4 (SIGILL)
  Illegal opcode at address 0x........
-   at 0x........: main (op00.c:5)
+   at 0x........: main (op00.c:3)
 

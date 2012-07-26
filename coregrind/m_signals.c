@@ -1638,7 +1638,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          obviously stupid place (not mapped readable) that would
          likely cause a segfault. */
       if (VG_(is_valid_tid)(tid)) {
-
+         Word first_ip_delta = 0;
 #if defined(VGO_linux)
          /* Make sure that the address stored in the stack pointer is 
             located in a mapped page. That is not necessarily so. E.g.
@@ -1658,11 +1658,25 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
             }
          }
 #endif
+#if defined(VGA_s390x)
+         if (sigNo == VKI_SIGILL) {
+            /* The guest instruction address has been adjusted earlier to
+               point to the insn following the one that could not be decoded.
+               When printing the back-trace here we need to undo that
+               adjustment so the first line in the back-trace reports the
+               correct address. */
+            Addr  addr = (Addr)info->VKI_SIGINFO_si_addr;
+            UChar byte = ((UChar *)addr)[0];
+            Int   insn_length = ((((byte >> 6) + 1) >> 1) + 1) << 1;
+
+            first_ip_delta = -insn_length;
+         }
+#endif
          ExeContext* ec = VG_(am_is_valid_for_client)
                              (VG_(get_SP)(tid), sizeof(Addr), VKI_PROT_READ)
-                        ? VG_(record_ExeContext)( tid, 0/*first_ip_delta*/ )
+                        ? VG_(record_ExeContext)( tid, first_ip_delta )
                       : VG_(record_depth_1_ExeContext)( tid,
-                                                        0/*first_ip_delta*/ );
+                                                        first_ip_delta );
          vg_assert(ec);
          VG_(pp_ExeContext)( ec );
       }

@@ -1424,10 +1424,11 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          VG_(synth_sigbus)(tid);
          break;
 
-      case VEX_TRC_JMP_NODECODE:
+      case VEX_TRC_JMP_NODECODE: {
+         Addr addr = VG_(get_IP)(tid);
+
          VG_(umsg)(
-            "valgrind: Unrecognised instruction at address %#lx.\n",
-            VG_(get_IP)(tid));
+            "valgrind: Unrecognised instruction at address %#lx.\n", addr);
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
 #define M(a) VG_(umsg)(a "\n");
    M("Your program just tried to execute an instruction that Valgrind" );
@@ -1441,9 +1442,25 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    M("Either way, Valgrind will now raise a SIGILL signal which will"  );
    M("probably kill your program."                                     );
 #undef M
-         VG_(synth_sigill)(tid, VG_(get_IP)(tid));
-         break;
 
+#if defined(VGA_s390x)
+         /* Now that the complaint is out we need to adjust the guest_IA. The
+            reason is that -- after raising the exception -- execution will
+            continue with the insn that follows the invalid insn. As the first
+            2 bits of the invalid insn determine its length in the usual way,
+            we can compute the address of the next insn here and adjust the
+            guest_IA accordingly. This adjustment is essential and tested by
+            none/tests/s390x/op_exception.c (which would loop forever
+            otherwise) */
+         UChar byte = ((UChar *)addr)[0];
+         UInt  insn_length = ((((byte >> 6) + 1) >> 1) + 1) << 1;
+         Addr  next_insn_addr = addr + insn_length;
+
+         VG_(set_IP)(tid, next_insn_addr);
+#endif
+         VG_(synth_sigill)(tid, addr);
+         break;
+      }
       case VEX_TRC_JMP_TINVAL:
          VG_(discard_translations)(
             (Addr64)VG_(threads)[tid].arch.vex.guest_TISTART,

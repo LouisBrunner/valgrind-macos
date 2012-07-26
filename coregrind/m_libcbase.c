@@ -303,12 +303,11 @@ Char* VG_(strncpy) ( Char* dest, const Char* src, SizeT ndest )
 Int VG_(strcmp) ( const Char* s1, const Char* s2 )
 {
    while (True) {
-      if (*s1 == 0 && *s2 == 0) return 0;
-      if (*s1 == 0) return -1;
-      if (*s2 == 0) return 1;
-
       if (*(UChar*)s1 < *(UChar*)s2) return -1;
       if (*(UChar*)s1 > *(UChar*)s2) return 1;
+
+      /* *s1 == *s2 */
+      if (*s1 == 0) return 0;
 
       s1++; s2++;
    }
@@ -319,12 +318,11 @@ Int VG_(strcasecmp) ( const Char* s1, const Char* s2 )
    while (True) {
       UChar c1 = (UChar)VG_(tolower)(*s1);
       UChar c2 = (UChar)VG_(tolower)(*s2);
-      if (c1 == 0 && c2 == 0) return 0;
-      if (c1 == 0) return -1;
-      if (c2 == 0) return 1;
-
       if (c1 < c2) return -1;
       if (c1 > c2) return 1;
+      
+      /* c1 == c2 */
+      if (c1 == 0) return 0;
 
       s1++; s2++;
    }
@@ -335,12 +333,11 @@ Int VG_(strncmp) ( const Char* s1, const Char* s2, SizeT nmax )
    SizeT n = 0;
    while (True) {
       if (n >= nmax) return 0;
-      if (*s1 == 0 && *s2 == 0) return 0;
-      if (*s1 == 0) return -1;
-      if (*s2 == 0) return 1;
-
       if (*(UChar*)s1 < *(UChar*)s2) return -1;
       if (*(UChar*)s1 > *(UChar*)s2) return 1;
+      
+      /* *s1 == *s2 */
+      if (*s1 == 0) return 0;
 
       s1++; s2++; n++;
    }
@@ -355,12 +352,11 @@ Int VG_(strncasecmp) ( const Char* s1, const Char* s2, SizeT nmax )
       if (n >= nmax) return 0;
       c1 = (UChar)VG_(tolower)(*s1);
       c2 = (UChar)VG_(tolower)(*s2);
-      if (c1 == 0 && c2 == 0) return 0;
-      if (c1 == 0) return -1;
-      if (c2 == 0) return 1;
-
       if (c1 < c2) return -1;
       if (c1 > c2) return 1;
+
+      /* c1 == c2 */
+      if (c1 == 0) return 0;
 
       s1++; s2++; n++;
    }

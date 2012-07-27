@@ -244,7 +244,8 @@ s390x_dirtyhelper_EX(ULong torun)
 /*--- Dirty helper for Clock instructions                  ---*/
 /*------------------------------------------------------------*/
 #if defined(VGA_s390x)
-ULong s390x_dirtyhelper_STCK(ULong *addr)
+ULong
+s390x_dirtyhelper_STCK(ULong *addr)
 {
    int cc;
 
@@ -255,7 +256,8 @@ ULong s390x_dirtyhelper_STCK(ULong *addr)
    return cc;
 }
 
-ULong s390x_dirtyhelper_STCKE(ULong *addr)
+ULong
+s390x_dirtyhelper_STCKE(ULong *addr)
 {
    int cc;
 
@@ -287,7 +289,7 @@ ULong s390x_dirtyhelper_STCKE(ULong *addr) {return 3;}
 /*------------------------------------------------------------*/
 #if defined(VGA_s390x)
 ULong
-s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
+s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
 {
    ULong hoststfle[S390_NUM_FACILITY_DW], cc, num_dw, i;
    register ULong reg0 asm("0") = guest_state->guest_r0 & 0xF;  /* r0[56:63] */
@@ -308,7 +310,7 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
    guest_state->guest_r0 = reg0;
 
    for (i = 0; i < num_dw; ++i)
-      ((ULong *)addr)[i] = hoststfle[i];
+      addr[i] = hoststfle[i];
 
    return cc;
 }
@@ -316,7 +318,7 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
 #else
 
 ULong
-s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
+s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
 {
    return 3;
 }
@@ -360,7 +362,7 @@ ULong
 s390_do_cu21(UInt srcval, UInt low_surrogate)
 {
    ULong retval = 0;   // shut up gcc
-   UInt b1, b2 , b3 , b4, num_bytes, invalid_low_surrogate = 0;
+   UInt b1, b2, b3, b4, num_bytes, invalid_low_surrogate = 0;
 
    srcval &= 0xffff;
 
@@ -708,17 +710,17 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
    case S390_CC_OP_LOAD_POSITIVE_32:
       __asm__ volatile (
            "lpr  %[result],%[op]\n\t"
-           "ipm  %[psw]\n\t"            : [psw] "=d"(psw), [result] "=d"(cc_dep1)
-                                        : [op] "d"(cc_dep1)
-                                        : "cc");
+           "ipm  %[psw]\n\t"         : [psw] "=d"(psw), [result] "=d"(cc_dep1)
+                                     : [op] "d"(cc_dep1)
+                                     : "cc");
       return psw >> 28;   /* cc */
 
    case S390_CC_OP_LOAD_POSITIVE_64:
       __asm__ volatile (
            "lpgr %[result],%[op]\n\t"
-           "ipm  %[psw]\n\t"            : [psw] "=d"(psw), [result] "=d"(cc_dep1)
-                                        : [op] "d"(cc_dep1)
-                                        : "cc");
+           "ipm  %[psw]\n\t"         : [psw] "=d"(psw), [result] "=d"(cc_dep1)
+                                     : [op] "d"(cc_dep1)
+                                     : "cc");
       return psw >> 28;   /* cc */
 
    case S390_CC_OP_TEST_UNDER_MASK_8: {
@@ -766,7 +768,8 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
            "lr   2,%[high]\n\t"
            "lr   3,%[low]\n\t"
            "slda 2,0(%[amount])\n\t"
-           "ipm %[psw]\n\t"             : [psw] "=d"(psw), [high] "+d"(high), [low] "+d"(low)
+           "ipm %[psw]\n\t"             : [psw] "=d"(psw), [high] "+d"(high),
+                                          [low] "+d"(low)
                                         : [amount] "a"(cc_dep2)
                                         : "cc", "r2", "r3");
       return psw >> 28;   /* cc */

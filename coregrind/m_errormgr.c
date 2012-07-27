@@ -1108,7 +1108,6 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 /* True if s contains no wildcard (?, *) characters. */
 static Bool is_simple_str (Char *s)
 {
-   int i;
    while (*s) {
       if (*s == '?' || *s == '*')
          return False;

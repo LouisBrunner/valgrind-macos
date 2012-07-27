@@ -180,7 +180,8 @@ EXTRA_DIST = \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
-	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.vgtest \
+	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.stderr.exp-mips32 \
+	sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
 	static_malloc.stderr.exp static_malloc.vgtest \

@@ -95,18 +95,25 @@ int main()
    
    /* Read 2 bytes from input buffer. First byte is uninitialised */
    input = malloc(10);
-   input[0] = 0x0;
+   input[1] = 0x0;
    do_cu21(malloc(4), 4, (void *)input, 2);          // complaint
 
    /* Read 2 bytes from input buffer. Second byte is uninitialised */
    input = malloc(10);
-   input[1] = 0x0;
+   input[0] = 0x0;
    do_cu21(malloc(4), 4, (void *)input, 2);          // complaint
    
-   /* Read 2 bytes from input buffer. All bytes are uninitialised */
+   /* Read 2 bytes from input buffer. All bytes are initialised */
    input = malloc(10);
    input[0] = input[1] = 0x0;
    do_cu21(malloc(4), 4, (void *)input, 2);          // no complaint
+   
+   /* Read 4 bytes from input buffer. This iterates once. In the 1st
+      iteration all input bytes are initialised in the 2nd iteration all
+      input bytes are uninitialised. */
+   input = malloc(10);
+   input[0] = input[1] = 0x0;
+   do_cu21(malloc(4), 4, (void *)input, 4);          // complaint
    
    /* Write to NULL */
    //   do_cu21(NULL, 10, pattern1, sizeof pattern1);    // complaint

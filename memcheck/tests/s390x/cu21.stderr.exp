@@ -59,3 +59,7 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: do_cu21 (cu21.c:45)
    by 0x........: main (cu21.c:104)
 
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu21 (cu21.c:45)
+   by 0x........: main (cu21.c:116)
+

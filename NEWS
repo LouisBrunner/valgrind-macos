@@ -64,7 +64,7 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 * The C++ demangler has been updated so as to work well with C++ 
   compiled by up to at least g++ 4.6.
 
-* Tool developpers can make replacement/wrapping more flexible thanks
+* Tool developers can make replacement/wrapping more flexible thanks
   to the new option --soname-synonyms.
 
 * The new option --fair-sched allows to control the locking mechanism
@@ -72,7 +72,7 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
   and scheduling of multithreaded applications (in particular
   on multiprocessor/multicore systems).
 
-* For tool developpers: support to run Valgrind on Valgrind has been improved.
+* For tool developers: support to run Valgrind on Valgrind has been improved.
 
 * gdbserver now shows the float shadow registers as integer
   rather than float values, as the shadow values are mostly
@@ -3415,7 +3415,7 @@ Three months worth of bug fixes, roughly.  Most significant single
 change is improved SSE/SSE2 support, mostly thanks to Dirk Mueller.
 
 20031012 builds on Red Hat Fedora ("Severn") but doesn't really work
-(curiosly, mozilla runs OK, but a modest "ls -l" bombs).  I hope to
+(curiously, mozilla runs OK, but a modest "ls -l" bombs).  I hope to
 get a working version out soon.  It may or may not work ok on the
 forthcoming SuSE 9; I hear positive noises about it but haven't been
 able to verify this myself (not until I get hold of a copy of 9).

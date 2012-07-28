@@ -102,7 +102,7 @@ Two approaches have been looked at:
   V: use the 'vg_regtest' approach used by the rest of Valgrind tests
   G: use the gdb Dejagnu test framework.
 
-Advantages of V: much simpler that G, known by Valgrind developpers,
+Advantages of V: much simpler that G, known by Valgrind developers,
 no additional dependency for the Valgrind build and test.
 
 Disadvantages of V: not well suited to testing of interactive tools,

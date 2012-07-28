@@ -1,0 +1,52 @@
+Invalid write of size 2
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:47)
+ Address 0x........ is 0 bytes inside a block of size 1 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (cu42.c:47)
+
+Invalid write of size 4
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:53)
+ Address 0x........ is 0 bytes inside a block of size 1 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (cu42.c:53)
+
+Invalid write of size 4
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:56)
+ Address 0x........ is 0 bytes inside a block of size 2 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (cu42.c:56)
+
+Invalid write of size 4
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:59)
+ Address 0x........ is 0 bytes inside a block of size 3 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (cu42.c:59)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:72)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:77)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:82)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:92)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_cu42 (cu42.c:31)
+   by 0x........: main (cu42.c:104)
+

@@ -1,0 +1,146 @@
+
+------------- test1 ----------------
+UTF16:  <none>
+  cc = 0
+  dst len: 0
+  src len: 0
+
+------------- test2.1 ----------------
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src len: 0
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src len: 1
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src len: 2
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src len: 3
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src address difference: 0  src len: 0
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src address difference: 0  src len: 1
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src address difference: 0  src len: 2
+UTF16:  <none>
+  cc = 0
+  dst address difference: 0  dst len: 2000
+  src address difference: 0  src len: 3
+
+------------- test2.2 ----------------
+UTF16:  0000
+  cc = 0
+  dst address difference: 2  dst len: 1998
+  src address difference: 4  src len: 0
+UTF16:  0000 d7ff
+  cc = 0
+  dst address difference: 4  dst len: 1996
+  src address difference: 8  src len: 2
+UTF16:  d800 dc00
+  cc = 0
+  dst address difference: 4  dst len: 1996
+  src address difference: 4  src len: 1
+UTF16:  d800 dc00 dbff dfff
+  cc = 0
+  dst address difference: 8  dst len: 1992
+  src address difference: 8  src len: 3
+UTF16:  d800 dc00 dbff dfff d800 dd23 d84d dc56
+  cc = 0
+  dst address difference: 16  dst len: 1984
+  src address difference: 16  src len: 2
+
+------------- test3.1 ----------------
+UTF16:  <none>
+  cc = 1
+  dst len: 0
+  src address difference: 0  src len: 32
+UTF16:  <none>
+  cc = 1
+  dst len: 0
+  src address difference: 0  src len: 32
+UTF16:  <none>
+  cc = 1
+  dst len: 1
+  src address difference: 0  src len: 32
+UTF16:  <none>
+  cc = 1
+  dst len: 0
+  src address difference: 0  src len: 24
+UTF16:  <none>
+  cc = 1
+  dst len: 1
+  src address difference: 0  src len: 24
+UTF16:  <none>
+  cc = 1
+  dst len: 2
+  src address difference: 0  src len: 24
+UTF16:  <none>
+  cc = 1
+  dst len: 3
+  src address difference: 0  src len: 24
+
+------------- test4 ----------------
+UTF16:  0000 d7ff
+  cc = 0
+  dst address difference: 4  dst len: 0
+  src address difference: 8  src len: 0
+
+------------- test5 ----------------
+UTF16:  <none>
+  cc = 2
+  dst address difference: 0  dst len: 2000
+  src address difference: 0  src len: 44
+UTF16:  <none>
+  cc = 2
+  dst address difference: 0  dst len: 0
+  src address difference: 0  src len: 44
+UTF16:  <none>
+  cc = 2
+  dst address difference: 0  dst len: 100
+  src address difference: 0  src len: 44
+
+------------- test6 ----------------
+UTF16:  0000 d7ff dc00 ffff abba f00d d00f 1234
+  cc = 0
+  dst address difference: 16  dst len: 1984
+  src address difference: 32  src len: 0
+UTF16:  d800 dc00 dbff dfff d800 dd23 d84d dc56 d9a2 ddab dbc0 dc00
+  cc = 0
+  dst address difference: 24  dst len: 1976
+  src address difference: 24  src len: 0
+UTF16:  0078 d000 d88c df33 d8c1 dc04 abcd
+  cc = 0
+  dst address difference: 14  dst len: 1986
+  src address difference: 20  src len: 0
+
+------------- test7.1 ----------------
+UTF16:  ffff
+  cc = 0
+  dst address difference: 2  dst len: 1998
+  src address difference: 4  src len: 0
+UTF16:  ffff
+  cc = 0
+  dst address difference: 2  dst len: 1998
+  src address difference: 4  src len: 0
+
+------------- test7.2 ----------------
+UTF16:  dbc0 dc00
+  cc = 0
+  dst address difference: 4  dst len: 1996
+  src address difference: 4  src len: 0
+UTF16:  dbc0 dc00
+  cc = 0
+  dst address difference: 4  dst len: 1996
+  src address difference: 4  src len: 0

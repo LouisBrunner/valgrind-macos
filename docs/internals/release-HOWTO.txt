@@ -83,6 +83,11 @@ releases, bug-fix-only releases might not need one):
   * Run regression tests from gsl-1.6 on all platforms.  This is a good,
     thorough test of FP.  Easy, using the scripts auxprogs/gsl16test.
 
+  * s390x: Run regression tests on a z900 machine. That is the oldest
+    supported model and there is no nightly build for it.
+
+  * s390x: Ensure README.s390 is up-to-date and URLs therein are not stale.
+
 - Change release number in AC_INIT() in configure.in to "X.Y.Z-rcN", where
   'N' is the release candidate number.
 

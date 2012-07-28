@@ -254,7 +254,8 @@ write_and_check_aux(uint16_t *input, unsigned num_input_bytes,
    for (i = num_expected_output_bytes; i < sizeof buff; ++i)
       if (buff[i] != fill_byte) ++num_errors;
    if (num_errors)
-      fprintf(stderr, "*** wrote more than one byte\n");
+      fprintf(stderr, "*** wrote more than %u bytes\n",
+              num_expected_output_bytes);
 }
 
 void

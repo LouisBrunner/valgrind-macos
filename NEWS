@@ -64,15 +64,15 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 * The C++ demangler has been updated so as to work well with C++ 
   compiled by up to at least g++ 4.6.
 
-* Replacement/wrapping can be made more flexible thanks to the new option
-  --soname-synonyms.
+* Tool developpers can make replacement/wrapping more flexible thanks
+  to the new option --soname-synonyms.
 
 * The new option --fair-sched allows to control the locking mechanism
   used by Valgrind. The locking mechanism influences the performance
   and scheduling of multithreaded applications (in particular
   on multiprocessor/multicore systems).
 
-* Support to run Valgrind on Valgrind has been improved.
+* For tool developpers: support to run Valgrind on Valgrind has been improved.
 
 * gdbserver now shows the float shadow registers as integer
   rather than float values, as the shadow values are mostly

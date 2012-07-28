@@ -533,6 +533,28 @@ int pthread_detach_intercept(pthread_t pt_thread)
 PTH_FUNCS(int, pthreadZudetach, pthread_detach_intercept,
           (pthread_t thread), (thread));
 
+// Don't intercept pthread_cancel() because pthread_cancel_init() loads
+// libgcc.so. That library is loaded by calling _dl_open(). The function
+// dl_open_worker() looks up from which object the caller is calling in
+// GL(dn_ns)[]. Since the DRD intercepts are linked into vgpreload_drd-*.so
+// and since that object file is not loaded through glibc, glibc does not
+// have any information about that object. That results in the following
+// segmentation fault on at least Fedora 17 x86_64:
+//   Process terminating with default action of signal 11 (SIGSEGV)
+//    General Protection Fault
+//      at 0x4006B75: _dl_map_object_from_fd (dl-load.c:1580)
+//      by 0x4008312: _dl_map_object (dl-load.c:2355)
+//      by 0x4012FFB: dl_open_worker (dl-open.c:226)
+//      by 0x400ECB5: _dl_catch_error (dl-error.c:178)
+//      by 0x4012B2B: _dl_open (dl-open.c:652)
+//      by 0x5184511: do_dlopen (dl-libc.c:89)
+//      by 0x400ECB5: _dl_catch_error (dl-error.c:178)
+//      by 0x51845D1: __libc_dlopen_mode (dl-libc.c:48)
+//      by 0x4E4A703: pthread_cancel_init (unwind-forcedunwind.c:53)
+//      by 0x4E476F2: pthread_cancel (pthread_cancel.c:40)
+//      by 0x4C2C050: pthread_cancel (drd_pthread_intercepts.c:547)
+//      by 0x400B3A: main (bar_bad.c:83)
+#if 0
 // NOTE: be careful to intercept only pthread_cancel() and not
 // pthread_cancel_init() on Linux.
 
@@ -552,6 +574,7 @@ int pthread_cancel_intercept(pthread_t pt_thread)
 
 PTH_FUNCS(int, pthreadZucancel, pthread_cancel_intercept,
           (pthread_t thread), (thread))
+#endif
 
 static __always_inline
 int pthread_once_intercept(pthread_once_t *once_control,

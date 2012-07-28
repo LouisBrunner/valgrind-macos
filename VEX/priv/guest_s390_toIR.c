@@ -11353,6 +11353,100 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
    return "cu24";
 }
 
+static IRExpr *
+s390_call_cu42(IRExpr *srcval)
+{
+   IRExpr **args, *call;
+   args = mkIRExprVec_1(srcval);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
+                       "s390_do_cu42", &s390_do_cu42, args);
+
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static HChar *
+s390_irgen_CU42(UChar r1, UChar r2)
+{
+   IRTemp addr1 = newTemp(Ity_I64);
+   IRTemp addr2 = newTemp(Ity_I64);
+   IRTemp len1 = newTemp(Ity_I64);
+   IRTemp len2 = newTemp(Ity_I64);
+
+   assign(addr1, get_gpr_dw0(r1));
+   assign(addr2, get_gpr_dw0(r2));
+   assign(len1, get_gpr_dw0(r1 + 1));
+   assign(len2, get_gpr_dw0(r2 + 1));
+
+   /* We're processing the 2nd operand 4 bytes at a time. Therefore, if
+      there are less than 4 bytes left, then the 2nd operand is exhausted
+      and we're done here. cc = 0 */
+   s390_cc_set(0);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(4)));
+
+   /* Read the 2nd operand. */
+   IRTemp srcval = newTemp(Ity_I32);
+   assign(srcval, load(Ity_I32, mkexpr(addr2)));
+
+   /* Call the helper */
+   IRTemp retval = newTemp(Ity_I64);
+   assign(retval, s390_call_cu42(mkexpr(srcval)));
+
+   /* If the UTF-32 character was invalid, set cc=2 and we're done.
+      cc=2 outranks cc=1 (1st operand exhausted) */
+   IRExpr *invalid_character = binop(Iop_And64, mkexpr(retval), mkU64(0xff));
+
+   s390_cc_set(2);
+   next_insn_if(binop(Iop_CmpEQ64, invalid_character, mkU64(1)));
+
+   /* Now test whether the 1st operand is exhausted */
+   IRTemp num_bytes = newTemp(Ity_I64);
+   assign(num_bytes, binop(Iop_And64,
+                           binop(Iop_Shr64, mkexpr(retval), mkU8(8)),
+                           mkU64(0xff)));
+   s390_cc_set(1);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len1), mkexpr(num_bytes)));
+
+   /* Extract the bytes to be stored at addr1 */
+   IRTemp data = newTemp(Ity_I64);
+   assign(data, binop(Iop_Shr64, mkexpr(retval), mkU8(16)));
+
+   /* To store the bytes construct 2 dirty helper calls. The helper calls
+      are guarded (num_bytes == 2 and num_bytes == 4, respectively) such
+      that only one of them will be called at runtime. */
+
+   Int i;
+   for (i = 2; i <= 4; ++i) {
+      IRDirty *d;
+
+      if (i == 3) continue;  // skip this one
+
+      d = unsafeIRDirty_0_N(0 /* regparms */, "s390x_dirtyhelper_CUxy",
+                            &s390x_dirtyhelper_CUxy,
+                            mkIRExprVec_3(mkexpr(addr1), mkexpr(data),
+                                          mkexpr(num_bytes)));
+      d->guard = binop(Iop_CmpEQ64, mkexpr(num_bytes), mkU64(i));
+      d->mFx   = Ifx_Write;
+      d->mAddr = mkexpr(addr1);
+      d->mSize = i;
+      stmt(IRStmt_Dirty(d));
+   }
+
+   /* Update source address and length */
+   put_gpr_dw0(r2,     binop(Iop_Add64, mkexpr(addr2), mkU64(4)));
+   put_gpr_dw0(r2 + 1, binop(Iop_Sub64, mkexpr(len2),  mkU64(4)));
+
+   /* Update destination address and length */
+   put_gpr_dw0(r1,     binop(Iop_Add64, mkexpr(addr1), mkexpr(num_bytes)));
+   put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1),  mkexpr(num_bytes)));
+
+   iterate();
+
+   return "cu42";
+}
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -12190,7 +12284,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
                                        ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
       goto ok;
    case 0xb9b2: /* CU41 */ goto unimplemented;
-   case 0xb9b3: /* CU42 */ goto unimplemented;
+   case 0xb9b3: s390_format_RRE_RR(s390_irgen_CU42, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb9bd: /* TRTRE */ goto unimplemented;
    case 0xb9be: /* SRSTU */ goto unimplemented;
    case 0xb9bf: /* TRTE */ goto unimplemented;

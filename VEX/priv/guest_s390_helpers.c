@@ -484,6 +484,53 @@ s390_do_cu24(UInt srcval, UInt low_surrogate)
 
 
 /*------------------------------------------------------------*/
+/*--- Clean helper for CU42.                               ---*/
+/*------------------------------------------------------------*/
+
+/* The function performs a CU42 operation. It returns three things
+   encoded in an ULong value:
+   - the converted bytes (at most 4)
+   - the number of converted bytes (2 or 4; 0 if invalid character)
+   - an indication whether the UTF-32 character is invalid
+
+   64      48                16           8                   0
+    +-------+-----------------+-----------+-------------------+
+    |  0x0  | converted bytes | num_bytes | invalid_character |
+    +-------+-----------------+-----------+-------------------+
+*/
+ULong
+s390_do_cu42(UInt srcval)
+{
+   ULong retval;
+   UInt num_bytes, invalid_character = 0;
+
+   if ((srcval >= 0x0000 && srcval <= 0xd7ff) ||
+       (srcval >= 0xdc00 && srcval <= 0xffff)) {
+      retval = srcval;
+      num_bytes = 2;
+   } else if (srcval >= 0x00010000 && srcval <= 0x0010FFFF) {
+      UInt uvwxy  = srcval >> 16;
+      UInt abcd   = (uvwxy - 1) & 0xf;
+      UInt efghij = (srcval >> 10) & 0x3f;
+
+      UInt high_surrogate = (0xd8 << 8) | (abcd << 6) | efghij;
+      UInt low_surrogate  = (0xdc << 8) | (srcval & 0x3ff);
+
+      retval = (high_surrogate << 16) | low_surrogate;
+      num_bytes = 4;
+   } else {
+      /* D800 - DBFF or 00110000 - FFFFFFFF */
+      invalid_character = 1;
+      retval = num_bytes = 0;   /* does not matter; not used */
+   }
+
+   /* At this point RETVAL contains the converted bytes.
+      Build up the final return value. */
+   return (retval << 16) | (num_bytes << 8) | invalid_character;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Clean helper for "convert to binary".                ---*/
 /*------------------------------------------------------------*/
 #if defined(VGA_s390x)

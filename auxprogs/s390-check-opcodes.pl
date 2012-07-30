@@ -52,6 +52,12 @@ while (my $line = <OPC>) {
     next if ($mnemonic eq "jg");    # special case of brcl
     next if ($mnemonic eq "tmh");   # alternate mnemonic for tmlh
     next if ($mnemonic eq "tml");   # alternate mnemonic for tmll
+    next if ($mnemonic eq "lrdr");  # alternate mnemonic for ldxr
+    next if ($mnemonic eq "lrer");  # alternate mnemonic for ledr
+    next if ($mnemonic eq "me");    # alternate mnemonic for mde
+    next if ($mnemonic eq "mer");   # alternate mnemonic for mder
+    next if ($mnemonic eq "cuutf"); # alternate mnemonic for cu21
+    next if ($mnemonic eq "cutfu"); # alternate mnemonic for cu12
 
     $description =~ s/^[\s]+//g;    # remove leading blanks
     $description =~ s/[\s]+$//g;    # remove trailing blanks
@@ -113,7 +119,7 @@ open(TOIR, "$toir_file") || die "cannot open $toir_file\n";
 while (my $line = <TOIR>) {
     chomp $line;
     next if (! ($line =~ /^s390_irgen_[A-Z]/));
-    $line =~ /^s390_irgen_([A-Z]+)/;
+    $line =~ /^s390_irgen_([A-Z][A-Z0-9]*)/;
     my $op = $1;
     $op =~ tr/A-Z/a-z/;
     $toir_implemented{$op} = 1;
@@ -135,7 +141,7 @@ foreach my $opc (keys %csv_desc) {
 }
 
 #----------------------------------------------------
-# 2) Make sure opcodes descriptions are the same
+# 2) Make sure opcode descriptions are the same
 #----------------------------------------------------
 foreach my $opc (keys %opc_desc) {
     if ($opc_desc{$opc} ne $csv_desc{$opc}) {

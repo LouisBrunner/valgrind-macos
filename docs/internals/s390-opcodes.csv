@@ -104,9 +104,7 @@ lpsw,"load PSW",N/A,"privileged instruction"
 lr,load,implemented,
 lra,"load real address",N/A,"privileged instruction"
 ldxr,"load rounded (ext. to long)","not implemented",
-lrdr,"load rounded (ext. to long)","not implemented",
 ledr,"load rounded (long to short)","not implemented",
-lrer,"load rounded (long to short)","not implemented",
 ltdr,"load and test (long)","not implemented",
 lter,"load and test (short)","not implemented",
 ltr,"load and test",implemented,
@@ -116,9 +114,7 @@ mc,"monitor call","not implemented",
 md,"multiply (long)","not implemented",
 mdr,"multiply (long)","not implemented",
 mde,"multiply (short to long)","not implemented",
-me,"multiply (short to long)","not implemented",
 mder,"multiply short to long hfp","won't do","hfp instruction"
-mer,"multiply (short to long)","not implemented",
 mh,"multiply halfword",implemented,
 mp,"multiply decimal","not implemented",
 mr,multiply,implemented,
@@ -345,8 +341,6 @@ tcxb,"test data class extended bfp",implemented,
 tcdb,"test data class long bfp",implemented,
 tceb,"test data class short bfp",implemented,
 siga,"signal adapter","not implemented",
-cuutf,"convert unicode to utf-8","not implemented",
-cutfu,"convert utf-8 to unicode","not implemented",
 plo,"perform locked operation","not implemented",
 bsa,"branch and set authority",N/A,"privileged instruction"
 rp,"resume program",N/A,"privileged instruction"

@@ -1082,7 +1082,7 @@ static
 Bool addr_is_in_MC_Chunk_default_REDZONE_SZB(MC_Chunk* mc, Addr a)
 {
    return VG_(addr_is_in_block)( a, mc->data, mc->szB,
-                                 MC_MALLOC_REDZONE_SZB );
+                                 MC_(Malloc_Redzone_SzB) );
 }
 static
 Bool addr_is_in_MC_Chunk_with_REDZONE_SZB(MC_Chunk* mc, Addr a, SizeT rzB)

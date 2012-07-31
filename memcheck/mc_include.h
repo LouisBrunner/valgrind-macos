@@ -42,8 +42,12 @@
 /*--- Tracking the heap                                    ---*/
 /*------------------------------------------------------------*/
 
-/* We want at least a 16B redzone on client heap blocks for Memcheck */
-#define MC_MALLOC_REDZONE_SZB    16
+/* By default, we want at least a 16B redzone on client heap blocks
+   for Memcheck.
+   The default can be modified by --redzone-size. */
+#define MC_MALLOC_DEFAULT_REDZONE_SZB    16
+// effective redzone, as (possibly) modified by --redzone-size:
+extern SizeT MC_(Malloc_Redzone_SzB);
 
 /* For malloc()/new/new[] vs. free()/delete/delete[] mismatch checking. */
 typedef

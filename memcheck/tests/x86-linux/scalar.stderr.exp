@@ -2116,7 +2116,9 @@ Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
 Syscall param rt_sigaction(act->sa_mask) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:776)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 16 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:30)
 
 Syscall param rt_sigaction(act->sa_flags) points to unaddressable byte(s)
    ...

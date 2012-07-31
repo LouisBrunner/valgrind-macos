@@ -50,7 +50,9 @@ usage: valgrind [options] prog-and-args
                               [use current 'ulimit' value]
 
   user options for Valgrind tools that replace malloc:
-    --alignment=<number>      set minimum alignment of heap allocations [...]
+    --alignment=<number>      set minimum alignment of heap allocations [not used by this tool]
+    --redzone-size=<number>   set minimum size of redzones added before/after
+                              heap blocks (in bytes). [not used by this tool]
 
   uncommon user options for all Valgrind tools:
     --fullpath-after=         (with nothing after the '=')

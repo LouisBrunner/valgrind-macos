@@ -50,7 +50,9 @@ usage: valgrind [options] prog-and-args
                               [use current 'ulimit' value]
 
   user options for Valgrind tools that replace malloc:
-    --alignment=<number>      set minimum alignment of heap allocations [...]
+    --alignment=<number>      set minimum alignment of heap allocations [not used by this tool]
+    --redzone-size=<number>   set minimum size of redzones added before/after
+                              heap blocks (in bytes). [not used by this tool]
 
   uncommon user options for all Valgrind tools:
     --fullpath-after=         (with nothing after the '=')
@@ -106,6 +108,8 @@ usage: valgrind [options] prog-and-args
     --trace-redir=no|yes      show redirection details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
     --profile-heap=no|yes     profile Valgrind's own space use
+    --core-redzone=<number>   set minimum size of redzones added before/after
+                              heap blocks allocated for Valgrind internal use (in bytes) [4]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
     --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
     --command-line-only=no|yes  only use command line options [no]

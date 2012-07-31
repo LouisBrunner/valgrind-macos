@@ -102,7 +102,7 @@
 
 static void all__sanity_check ( Char* who ); /* fwds */
 
-#define HG_CLI__MALLOC_REDZONE_SZB 16 /* let's say */
+#define HG_CLI__DEFAULT_MALLOC_REDZONE_SZB 16 /* let's say */
 
 // 0 for none, 1 for dump at end of run
 #define SHOW_DATA_STRUCTURES 0
@@ -5159,7 +5159,7 @@ static void hg_pre_clo_init ( void )
                                    hg_cli____builtin_vec_delete,
                                    hg_cli__realloc,
                                    hg_cli_malloc_usable_size,
-                                   HG_CLI__MALLOC_REDZONE_SZB );
+                                   HG_CLI__DEFAULT_MALLOC_REDZONE_SZB );
 
    /* 21 Dec 08: disabled this; it mostly causes H to start more
       slowly and use significantly more memory, without very often

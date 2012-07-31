@@ -61,6 +61,12 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 
 * ==================== OTHER CHANGES ====================
 
+* For tools replacing the malloc library (e.g. Memcheck, Helgrind, ...),
+  the option --redzone-size=<number> allows to control the padding 
+  blocks (redzones) added before and after each client allocated block.
+  Smaller redzones decrease the memory needed by Valgrind. Bigger
+  redzones increase the chance to detect blocks overrun or underrun.
+
 * The C++ demangler has been updated so as to work well with C++ 
   compiled by up to at least g++ 4.6.
 

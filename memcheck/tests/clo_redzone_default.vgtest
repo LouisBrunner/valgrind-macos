@@ -1,0 +1,2 @@
+vgopts: --leak-check=no -q
+prog: clo_redzone

@@ -1411,8 +1411,8 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
 <!-- start of xi:include in the manpage -->
 <para id="malloc-related.opts.para">For tools that use their own version of
-<computeroutput>malloc</computeroutput> (e.g. Memcheck and
-Massif), the following options apply.</para>
+<computeroutput>malloc</computeroutput> (e.g. Memcheck,
+Massif, Helgrind, DRD), the following options apply.</para>
 
 <variablelist id="malloc-related.opts.list">
 
@@ -1428,6 +1428,26 @@ Massif), the following options apply.</para>
       specify a different alignment.  The supplied value must be greater
       than or equal to the default, less than or equal to 4096, and must be
       a power of two.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.redzone-size" xreflabel="--redzone-size">
+    <term>
+      <option><![CDATA[--redzone-size=<number> [default: depends on the tool] ]]></option>
+    </term>
+    <listitem>
+      <para> Valgrind's <function>malloc, realloc,</function> etc, add padding
+      blocks before and after each block allocated for the client. Such padding
+      blocks are called redzones.
+      The default value for the redzone size depends on the tool.
+      For example, Memcheck adds and protects a minimum of 16 bytes before and
+      after each block allocated by the client to detect block overrun or
+      underrun.
+      </para>
+      <para>Increasing the redzone size allows to detect more cases of
+      blocks overrun or underrun. Decreasing the redzone size will
+      reduce the memory needed by Valgrind but reduces the chance to
+      detect block overrun/underrun.</para>
     </listitem>
   </varlistentry>
 
@@ -2156,7 +2176,7 @@ plans to disable them.  If one of them breaks, please mail us!</para>
 <para>If you get an assertion failure
 in <filename>m_mallocfree.c</filename>, this may have happened because
 your program wrote off the end of a heap block, or before its
-beginning, thus corrupting head metadata.  Valgrind hopefully will have
+beginning, thus corrupting heap metadata.  Valgrind hopefully will have
 emitted a message to that effect before dying in this way.</para>
 
 <para>Read the <xref linkend="FAQ"/> for more advice about common problems, 

@@ -96,6 +96,10 @@ enum FairSchedType
        VG_(clo_fair_sched)     = disable_fair_sched;
 Bool   VG_(clo_trace_sched)    = False;
 Bool   VG_(clo_profile_heap)   = False;
+Int    VG_(clo_core_redzone_size) = CORE_REDZONE_DEFAULT_SZB;
+// A value != -1 overrides the tool-specific value
+// VG_(needs_malloc_replacement).tool_client_redzone_szB
+Int    VG_(clo_redzone_size)   = -1;
 Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 12;
 Char*  VG_(clo_sim_hints)      = NULL;

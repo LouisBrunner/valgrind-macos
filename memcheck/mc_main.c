@@ -6335,7 +6335,8 @@ static void mc_pre_clo_init(void)
                                    MC_(__builtin_vec_delete),
                                    MC_(realloc),
                                    MC_(malloc_usable_size), 
-                                   MC_MALLOC_REDZONE_SZB );
+                                   MC_MALLOC_DEFAULT_REDZONE_SZB );
+   MC_(Malloc_Redzone_SzB) = VG_(malloc_effective_client_redzone_size)();
 
    VG_(needs_xml_output)          ();
 

@@ -161,7 +161,9 @@ static void usage_NORETURN ( Bool debug_help )
 "                              [use current 'ulimit' value]\n"
 "\n"
 "  user options for Valgrind tools that replace malloc:\n"
-"    --alignment=<number>      set minimum alignment of heap allocations [%ld]\n"
+"    --alignment=<number>      set minimum alignment of heap allocations [%s]\n"
+"    --redzone-size=<number>   set minimum size of redzones added before/after\n"
+"                              heap blocks (in bytes). [%s]\n"
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
 "    --fullpath-after=         (with nothing after the '=')\n"
@@ -217,6 +219,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-redir=no|yes      show redirection details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --profile-heap=no|yes     profile Valgrind's own space use\n"
+"    --core-redzone=<number>   set minimum size of redzones added before/after\n"
+"                              heap blocks allocated for Valgrind internal use (in bytes) [4]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]\n"
 "    --command-line-only=no|yes  only use command line options [no]\n"
@@ -260,15 +264,29 @@ static void usage_NORETURN ( Bool debug_help )
 "\n";
 
    Char* gdb_path = GDB_PATH;
+   Char default_alignment[30];
+   Char default_redzone_size[30];
 
    // Ensure the message goes to stdout
    VG_(log_output_sink).fd = 1;
    VG_(log_output_sink).is_socket = False;
 
-   /* 'usage1' expects two int, two char* argument, and one SizeT argument. */
+   if (VG_(needs).malloc_replacement) {
+      VG_(sprintf)(default_alignment,    "%d",  VG_MIN_MALLOC_SZB);
+      VG_(sprintf)(default_redzone_size, "%lu", VG_(tdict).tool_client_redzone_szB);
+   } else {
+      VG_(strcpy)(default_alignment,    "not used by this tool");
+      VG_(strcpy)(default_redzone_size, "not used by this tool");
+   }
+   /* 'usage1' a type as described after each arg. */
    VG_(printf)(usage1, 
-               VG_(clo_vgdb_error), gdb_path, VG_MIN_MALLOC_SZB,
-               VG_(clo_vgdb_poll), VG_(vgdb_prefix_default)()); 
+               VG_(clo_vgdb_error)        /* int */,
+               gdb_path                   /* char* */,
+               default_alignment          /* char* */,
+               default_redzone_size       /* char* */,
+               VG_(clo_vgdb_poll)         /* int */,
+               VG_(vgdb_prefix_default)() /* char* */
+               ); 
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)
@@ -467,6 +485,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQN(16, arg, "--main-stacksize")     {}
       else if VG_STREQN(11, arg,  "--sim-hints")         {}
       else if VG_STREQN(14, arg, "--profile-heap")       {}
+      else if VG_STREQN(14, arg, "--core-redzone-size")  {}
+      else if VG_STREQN(14, arg, "--redzone-size")       {}
 
       // These options are new.
       else if (VG_STREQ(arg, "-v") ||
@@ -1523,14 +1543,18 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    /* Start the debugging-log system ASAP.  First find out how many 
       "-d"s were specified.  This is a pre-scan of the command line.  Also
-      get --profile-heap=yes which is needed by the time we start up dynamic
-      memory management.  */
+      get --profile-heap=yes, --core-redzone-size, --redzone-size which are
+      needed by the time we start up dynamic memory management.  */
    loglevel = 0;
    for (i = 1; i < argc; i++) {
       if (argv[i][0] != '-') break;
       if VG_STREQ(argv[i], "--") break;
       if VG_STREQ(argv[i], "-d") loglevel++;
       if VG_BOOL_CLO(argv[i], "--profile-heap", VG_(clo_profile_heap)) {}
+      if VG_BINT_CLO(argv[i], "--core-redzone-size", VG_(clo_core_redzone_size),
+                     0, MAX_CLO_REDZONE_SZB) {}
+      if VG_BINT_CLO(argv[i], "--redzone-size", VG_(clo_redzone_size),
+                     0, MAX_CLO_REDZONE_SZB) {}
    }
 
    /* ... and start the debug logger.  Now we can safely emit logging
@@ -1590,7 +1614,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    // Start up the dynamic memory manager
    //   p: address space management
-   //   p: getting --profile-heap
+   //   p: getting --profile-heap,--core-redzone-size,--redzone-size
    //   In fact m_mallocfree is self-initialising, so there's no
    //   initialisation call to do.  Instead, try a simple malloc/
    //   free pair right now to check that nothing is broken.

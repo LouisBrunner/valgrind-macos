@@ -159,6 +159,18 @@ extern enum FairSchedType VG_(clo_fair_sched);
 extern Bool  VG_(clo_trace_sched);
 /* DEBUG: do heap profiling?  default: NO */
 extern Bool  VG_(clo_profile_heap);
+#define MAX_REDZONE_SZB 128
+// Maximum for the default values for core arenas and for client
+// arena given by the tool.
+// 128 is no special figure, just something not too big
+#define MAX_CLO_REDZONE_SZB 4096
+// We allow the user to increase the redzone size to 4Kb :
+// This allows "off by one" in an array of pages to be detected.
+#define CORE_REDZONE_DEFAULT_SZB 4
+extern Int VG_(clo_core_redzone_size);
+// VG_(clo_redzone_size) has default value -1, indicating to keep
+// the tool provided value.
+extern Int VG_(clo_redzone_size);
 /* DEBUG: display gory details for the k'th most popular error.
    default: Infinity. */
 extern Int   VG_(clo_dump_error);

@@ -88,6 +88,15 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 
 * Improved DWARF4 support (284124)
 
+* Option --vex-iropt-precise-memory-exns has been removed.
+  It is replaced by --vex-iropt-register-updates which accepts
+  3 values : 'unwindregs-at-mem-access' (replacing
+  --vex-iropt-precise-memory-exns=no), 'allregs-at-mem-access'
+  (replacing --vex-iropt-precise-memory-exns=yes)
+  and a new value 'allregs-at-each-insn'.
+  'allregs-at-each-insn' allows the Valgrind gdbserver to always
+  show up to date values to GDB.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

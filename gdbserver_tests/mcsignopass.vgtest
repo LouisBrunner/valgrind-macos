@@ -6,7 +6,7 @@
 #      are eventually passed.
 prereq: test -e gdb
 prog: ../none/tests/faultstatus
-vgopts: --tool=memcheck --vgdb=full --vex-iropt-precise-memory-exns=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsignopass
+vgopts: --tool=memcheck --vgdb=full --vex-iropt-register-updates=allregs-at-mem-access --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsignopass
 stderr_filter: filter_memcheck_monitor
 stderr_filter_args: faultstatus.c
 progB: gdb

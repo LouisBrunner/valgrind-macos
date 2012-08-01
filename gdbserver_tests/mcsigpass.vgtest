@@ -1,7 +1,7 @@
 # test the signal handling, when signals are passed to the Valgrind guest.
 prereq: test -e gdb
 prog: ../none/tests/faultstatus
-vgopts: --tool=memcheck --vgdb=full --vex-iropt-precise-memory-exns=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsigpass
+vgopts: --tool=memcheck --vgdb=full --vex-iropt-register-updates=allregs-at-mem-access --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcsigpass
 stderr_filter: filter_memcheck_monitor
 stderr_filter_args: faultstatus.c
 progB: gdb

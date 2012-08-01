@@ -228,7 +228,9 @@ static void usage_NORETURN ( Bool debug_help )
 "  Vex options for all Valgrind tools:\n"
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"
-"    --vex-iropt-precise-memory-exns=no|yes [no]\n"
+"    --vex-iropt-register-updates=unwindregs-at-mem-access\n"
+"                                |allregs-at-mem-access\n"
+"                                |allregs-at-each-insn  [unwindregs-at-mem-access]\n"
 "    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
 "    --vex-guest-max-insns=<1..100>         [50]\n"
 "    --vex-guest-chase-thresh=<0..99>       [10]\n"
@@ -488,6 +490,21 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQN(14, arg, "--core-redzone-size")  {}
       else if VG_STREQN(14, arg, "--redzone-size")       {}
 
+      /* Obsolete options. Report an error and exit */
+      else if VG_STREQN(34, arg, "--vex-iropt-precise-memory-exns=no") {
+         VG_(fmsg_bad_option)
+            (arg,
+             "--vex-iropt-precise-memory-exns is obsolete\n"
+             "Use --vex-iropt-register-updates=unwindregs-at-mem-access instead\n");
+      }
+      else if VG_STREQN(35, arg, "--vex-iropt-precise-memory-exns=yes") {
+         VG_(fmsg_bad_option)
+            (arg,
+             "--vex-iropt-precise-memory-exns is obsolete\n"
+             "Use --vex-iropt-register-updates=allregs-at-mem-access instead\n"
+             " (or --vex-iropt-register-updates=allregs-at-each-insn)\n");
+      }
+
       // These options are new.
       else if (VG_STREQ(arg, "-v") ||
                VG_STREQ(arg, "--verbose"))
@@ -503,7 +520,12 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_XACT_CLO(arg, "--vgdb=no",        VG_(clo_vgdb), Vg_VgdbNo) {}
       else if VG_XACT_CLO(arg, "--vgdb=yes",       VG_(clo_vgdb), Vg_VgdbYes) {}
-      else if VG_XACT_CLO(arg, "--vgdb=full",      VG_(clo_vgdb), Vg_VgdbFull) {}
+      else if VG_XACT_CLO(arg, "--vgdb=full",      VG_(clo_vgdb), Vg_VgdbFull) {
+         /* automatically updates register values at each insn
+            with --vgdb=full */
+         VG_(clo_vex_control).iropt_register_updates 
+            = VexRegUpdAllregsAtEachInsn;
+      }
       else if VG_INT_CLO (arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
       else if VG_INT_CLO (arg, "--vgdb-error",     VG_(clo_vgdb_error)) {}
       else if VG_STR_CLO (arg, "--vgdb-prefix",    VG_(clo_vgdb_prefix)) {}
@@ -582,8 +604,18 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                        VG_(clo_vex_control).iropt_verbosity, 0, 10) {}
       else if VG_BINT_CLO(arg, "--vex-iropt-level",
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
-      else if VG_BOOL_CLO(arg, "--vex-iropt-precise-memory-exns",
-                       VG_(clo_vex_control).iropt_precise_memory_exns) {}
+      else if VG_XACT_CLO(arg, 
+                       "--vex-iropt-register-updates=unwindregs-at-mem-access",
+                       VG_(clo_vex_control).iropt_register_updates,
+                       VexRegUpdUnwindregsAtMemAccess);
+      else if VG_XACT_CLO(arg, 
+                       "--vex-iropt-register-updates=allregs-at-mem-access",
+                       VG_(clo_vex_control).iropt_register_updates,
+                       VexRegUpdAllregsAtMemAccess);
+      else if VG_XACT_CLO(arg, 
+                       "--vex-iropt-register-updates=allregs-at-each-insn",
+                       VG_(clo_vex_control).iropt_register_updates,
+                       VexRegUpdAllregsAtEachInsn);
       else if VG_BINT_CLO(arg, "--vex-iropt-unroll-thresh",
                        VG_(clo_vex_control).iropt_unroll_thresh, 0, 400) {}
       else if VG_BINT_CLO(arg, "--vex-guest-max-insns",

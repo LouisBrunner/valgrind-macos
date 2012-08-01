@@ -2074,7 +2074,8 @@ able to cope with any POSIX-compliant use of signals.</para>
 <para>If you're using signals in clever ways (for example, catching
 SIGSEGV, modifying page state and restarting the instruction), you're
 probably relying on precise exceptions.  In this case, you will need
-to use <option>--vex-iropt-precise-memory-exns=yes</option>.
+to use <option>--vex-iropt-register-updates=allregs-at-mem-access</option>
+or <option>--vex-iropt-register-updates=allregs-at-each-insn</option>.
 </para>
 
 <para>If your program dies as a result of a fatal core-dumping signal,

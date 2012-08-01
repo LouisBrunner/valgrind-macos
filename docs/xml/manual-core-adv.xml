@@ -788,21 +788,28 @@ are however some limitations and peculiarities:</para>
      <para>When Valgrind gdbserver stops on an error, on a breakpoint
      or when single stepping, registers and flags values might not be always
      up to date due to the optimisations done by the Valgrind core.
-     Disabling some optimisations using the following options will increase
+     The default value 
+     <option>--vex-iropt-register-updates=unwindregs-at-mem-access</option>
+     ensures that the registers needed to make a stack trace (typically
+     PC/SP/FP) are up to date at each memory access (i.e. memory exception
+     points).
+     Disabling some optimisations using the following values will increase
      the precision of registers and flags values (a typical performance 
      impact for memcheck is given for each option).
        <itemizedlist>
          <listitem>
-           <option>--vex-iropt-precise-memory-exns=yes</option> (+5%) ensures
-           that all integer registers are up to date at each memory access.
+           <option>--vex-iropt-register-updates=allregs-at-mem-access</option> (+10%)
+           ensures that all registers and flags are up to date at each memory
+           access.
          </listitem>
          <listitem>
-           <option>--vex-guest-max-insns=1</option> (+100%) ensures that
-           all registers and flags values are up to date at each instruction.
+           <option>--vex-iropt-register-updates=allregs-at-each-insn</option> (+25%)
+           ensures that all registers and flags are up to date at each instruction.
          </listitem>
        </itemizedlist>
-       Note that the above options can be combined with <option>--vgdb=full</option>
-       (+500%, see above Precision of "stop-at" commands).
+       Note that <option>--vgdb=full</option> (+500%, see above
+       Precision of "stop-at" commands) automatically
+       activates <option>--vex-iropt-register-updates=allregs-at-each-insn</option>.
      </para>
    </listitem>
 
@@ -898,7 +905,8 @@ Reading symbols from /lib/libc.so.6...(no debugging symbols found)...done.
      <para>On PPC32/PPC64, stack unwinding for leaf functions
      (functions that do not call any other functions) works properly
      only when you give the option
-     <option>--vex-iropt-precise-memory-exns=yes</option>.
+     <option>--vex-iropt-register-updates=allregs-at-mem-access</option>
+     or <option>--vex-iropt-register-updates=allregs-at-each-insn</option>.
      You must also pass this option in order to get a precise stack when
      a signal is trapped by GDB.
      </para>

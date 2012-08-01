@@ -307,6 +307,23 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
 /*--- Control of Vex's optimiser (iropt).             ---*/
 /*-------------------------------------------------------*/
 
+
+/* VexRegisterUpdates specifies when to ensure that the guest state is
+   up to date.
+
+   VexRegUpdUnwindregsAtMemAccess : registers needed to make a stack trace are
+   up to date at memory exception points.  Typically, these are PC/SP/FP. The
+   minimal registers are described by the arch specific functions
+   guest_<arch>_state_requires_precise_mem_exns.
+
+   VexRegUpdAllregsAtMemAccess : all registers up to date at memory exception
+   points.
+
+   VexRegUpdAllregsAtEachInsn : all registers up to date at each instruction. */
+typedef enum { VexRegUpdUnwindregsAtMemAccess,
+               VexRegUpdAllregsAtMemAccess,
+               VexRegUpdAllregsAtEachInsn } VexRegisterUpdates;
+
 /* Control of Vex's optimiser. */
 
 typedef
@@ -316,10 +333,8 @@ typedef
       /* Control aggressiveness of iropt.  0 = no opt, 1 = simple
          opts, 2 (default) = max optimisation. */
       Int iropt_level;
-      /* Ensure all integer registers are up to date at potential
-         memory exception points?  True(default)=yes, False=no, only
-         the guest's stack pointer. */
-      Bool iropt_precise_memory_exns;
+      /* Controls when registers are updated in guest state. */
+      VexRegisterUpdates iropt_register_updates;
       /* How aggressive should iropt be in unrolling loops?  Higher
          numbers make it more enthusiastic about loop unrolling.
          Default=120.  A setting of zero disables unrolling.  */

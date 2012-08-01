@@ -69,11 +69,19 @@
      not marked as being read or modified by the helper cannot be
      assumed to be up-to-date at the point where the helper is called.
 
-   * Immediately prior to any load or store, those parts of the guest
+   * If iropt_register_updates == VexRegUpdUnwindregsAtMemAccess :
+     Immediately prior to any load or store, those parts of the guest
      state marked as requiring precise exceptions will be up to date.
      Also, guest memory will be up to date.  Parts of the guest state
      not marked as requiring precise exceptions cannot be assumed to
      be up-to-date at the point of the load/store.
+
+     If iropt_register_updates == VexRegUpdAllregsAtMemAccess:
+     Same as minimal, but all the guest state is up to date at memory
+     exception points.
+
+     If iropt_register_updates == VexRegUpdAllregsAtEachInsn :
+     Guest state is up to date at each instruction.
 
    The relative order of loads and stores (including loads/stores of
    guest memory done by dirty helpers annotated as such) is not
@@ -774,20 +782,29 @@ static void handle_gets_Stmt (
          of the environment corresponding to guest state that may not
          be reordered with respect to memory references.  That means
          at least the stack pointer. */
-      for (j = 0; j < env->used; j++) {
-         if (!env->inuse[j])
-            continue;
-         if (vex_control.iropt_precise_memory_exns) {
-            /* Precise exceptions required.  Flush all guest state. */
-            env->inuse[j] = False;
-         } else {
-            /* Just flush the minimal amount required, as computed by
-               preciseMemExnsFn. */
-            HWord k_lo = (env->key[j] >> 16) & 0xFFFF;
-            HWord k_hi = env->key[j] & 0xFFFF;
-            if (preciseMemExnsFn( k_lo, k_hi ))
+      switch (vex_control.iropt_register_updates) {
+         case VexRegUpdAllregsAtMemAccess:
+            /* Precise exceptions required at mem access.
+               Flush all guest state. */
+            for (j = 0; j < env->used; j++)
                env->inuse[j] = False;
-         }
+            break;
+         case VexRegUpdUnwindregsAtMemAccess:
+            for (j = 0; j < env->used; j++) {
+               if (!env->inuse[j])
+                  continue;
+               /* Just flush the minimal amount required, as computed by
+                  preciseMemExnsFn. */
+               HWord k_lo = (env->key[j] >> 16) & 0xFFFF;
+               HWord k_hi = env->key[j] & 0xFFFF;
+               if (preciseMemExnsFn( k_lo, k_hi ))
+                  env->inuse[j] = False;
+            }
+            break;
+         default:
+            // VexRegUpdAllregsAtEachInsn cannot happen here.
+            // Neither any rubbish other value.
+            vassert(0);
       }
    } /* if (memRW) */
 
@@ -819,6 +836,10 @@ static void redundant_put_removal_BB (
    Bool    isPut;
    IRStmt* st;
    UInt    key = 0; /* keep gcc -O happy */
+
+   vassert
+      (vex_control.iropt_register_updates == VexRegUpdUnwindregsAtMemAccess
+       || vex_control.iropt_register_updates == VexRegUpdAllregsAtMemAccess);
 
    HashHW* env = newHHW();
 
@@ -3937,6 +3958,10 @@ void do_redundant_PutI_elimination ( IRSB* bb )
    Bool   delete;
    IRStmt *st, *stj;
 
+   vassert
+      (vex_control.iropt_register_updates == VexRegUpdUnwindregsAtMemAccess
+       || vex_control.iropt_register_updates == VexRegUpdAllregsAtMemAccess);
+
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
       if (st->tag != Ist_PutI)
@@ -5176,7 +5201,9 @@ IRSB* cheap_transformations (
       ppIRSB(bb);
    }
 
-   redundant_put_removal_BB ( bb, preciseMemExnsFn );
+   if (vex_control.iropt_register_updates != VexRegUpdAllregsAtEachInsn) {
+      redundant_put_removal_BB ( bb, preciseMemExnsFn );
+   }
    if (iropt_verbose) {
       vex_printf("\n========= REDUNDANT PUT\n\n" );
       ppIRSB(bb);
@@ -5214,7 +5241,9 @@ IRSB* expensive_transformations( IRSB* bb )
    (void)do_cse_BB( bb );
    collapse_AddSub_chains_BB( bb );
    do_redundant_GetI_elimination( bb );
-   do_redundant_PutI_elimination( bb );
+   if (vex_control.iropt_register_updates != VexRegUpdAllregsAtEachInsn) {
+      do_redundant_PutI_elimination( bb );
+   }
    do_deadcode_BB( bb );
    return bb;
 }
@@ -5363,7 +5392,9 @@ IRSB* do_iropt_BB(
          work extra hard to get rid of it. */
       bb = cprop_BB(bb);
       bb = spec_helpers_BB ( bb, specHelper );
-      redundant_put_removal_BB ( bb, preciseMemExnsFn );
+      if (vex_control.iropt_register_updates != VexRegUpdAllregsAtEachInsn) {
+         redundant_put_removal_BB ( bb, preciseMemExnsFn );
+      }
       do_cse_BB( bb );
       do_deadcode_BB( bb );
    }

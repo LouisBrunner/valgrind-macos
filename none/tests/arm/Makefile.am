@@ -9,6 +9,8 @@ EXTRA_DIST = \
 	v6intARM.stdout.exp v6intARM.stderr.exp v6intARM.vgtest \
 	v6intThumb.stdout.exp v6intThumb.stderr.exp v6intThumb.vgtest \
 	v6media.stdout.exp v6media.stderr.exp v6media.vgtest \
+	vcvt_fixed_float_VFP.stdout.exp vcvt_fixed_float_VFP.stderr.exp \
+		vcvt_fixed_float_VFP.vgtest \
 	vfp.stdout.exp vfp.stderr.exp vfp.vgtest
 
 check_PROGRAMS = \
@@ -18,6 +20,7 @@ check_PROGRAMS = \
 	v6intARM \
 	v6intThumb \
 	v6media \
+	vcvt_fixed_float_VFP \
 	vfp
 
 AM_CFLAGS    += @FLAG_M32@

@@ -1381,15 +1381,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       Bool has_nonempty_rw = False;
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
          struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
-         if (map->rx) {
-            if (map->size > 0)
-               has_nonempty_rx = True;
-         } else if (map->rw) {
-            if (map->size > 0)
-               has_nonempty_rw = True;
-         } else
+         if (!map->rx && !map->rw)
             continue;
-
+         if (map->rx && map->size > 0)
+            has_nonempty_rx = True;
+         if (map->rw && map->size > 0)
+            has_nonempty_rw = True;
          /* If this doesn't hold true, it means that m_syswrap/m_aspacemgr
             managed to do a mapping where the start isn't page aligned.
             Which sounds pretty bogus to me. */

@@ -8395,7 +8395,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 #  if DARWIN_VERS == DARWIN_10_8
    MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10), mach__10), 
 #  else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10), 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)), 
 #  endif
 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)), 

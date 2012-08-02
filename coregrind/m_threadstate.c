@@ -44,7 +44,7 @@
 
 ThreadId VG_(running_tid) = VG_INVALID_THREADID;
 
-ThreadState VG_(threads)[VG_N_THREADS] __attribute__((aligned(32)));
+ThreadState VG_(threads)[VG_N_THREADS] __attribute__((aligned(16)));
 
 /*------------------------------------------------------------*/
 /*--- Operations.                                          ---*/

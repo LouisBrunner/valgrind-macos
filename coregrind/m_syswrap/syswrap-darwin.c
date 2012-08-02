@@ -3547,43 +3547,11 @@ PRE(mmap)
 
 POST(mmap)
 {
-   vg_assert(SUCCESS);
-   /* JRS 2012 Mar 26: RES != -1 is surely not the right way to check
-      for success.  In any case I think syswrap-main.c won't let us
-      get here if the syscall failed, so the check is irrelevant.  See
-      VG_(post_syscall). */
-   if (RES == -1)
-      return;
-   vg_assert(VG_IS_PAGE_ALIGNED(RES));
-
-   /* begin KLUDGE */
-   Bool did_kludge = False;
-   if (ARG1 == 0 && !(ARG4 & MAP_FIXED) && RES == 0) {
-      /* An mmap-anonymous succeeded at address zero.  This is pretty
-         stupid (legit, but dangerous); so repeat the mmap call so as
-         to get a non-zero address.  Then unmap the area that the
-         original mmap created, and tidy up.  Failure to do this is
-         a causative factor in 
-         https://bugzilla.mozilla.org/show_bug.cgi?id=738034
-      */
-      SysRes more = VG_(am_do_mmap_NO_NOTIFY)(ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-      if (!sr_isError(more)) {
-         Bool need_discard = False;
-         VG_(am_munmap_client)(&need_discard, 0, ARG2);
-         vg_assert(!need_discard);
-         SET_STATUS_from_SysRes(more);
-         did_kludge = True;
-      }
-   }
-   /* end KLUDGE */
-
-   ML_(notify_core_and_tool_of_mmap)(RES, ARG2, ARG3, ARG4, ARG5, ARG6);
-   // Try to load symbols from the region
-   VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/,
-                        -1/*don't use_fd*/ );
-   if (did_kludge) {
-      /* Be paranoid if The Kludge happens. */
-      VG_(am_do_sync_check)("(MMAP_ANON_ZERO_ZERO_KLUDGE)",__FILE__,__LINE__);
+   if (RES != -1) {
+      ML_(notify_core_and_tool_of_mmap)(RES, ARG2, ARG3, ARG4, ARG5, ARG6);
+      // Try to load symbols from the region
+      VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/,
+                           -1/*don't use_fd*/ );
    }
 }
 

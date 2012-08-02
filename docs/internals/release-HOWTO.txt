@@ -40,6 +40,10 @@ First of all:
   this is not a very scientific or robust way to collect up all
   bugs fixed since last time.
 
+  Suggestion for next release: when a bug is fixed, update NEWS
+  directly => less chance to forget, and NEWS always up to date
+  in SVN.
+
 - Other files that might need updating:  README, README_DEVELOPERS,
   README_PACKAGERS.
 
@@ -56,6 +60,7 @@ releases, bug-fix-only releases might not need one):
 - Do pre-release testing:
 
   * Check it builds and regtests on a vanilla gcc-2.96 / RedHat 7.3 distro.
+  ??? is this really still up to date ???
 
   * Check standard build and regtest on the following cpus:
        x86, sse2 (P4)
@@ -65,8 +70,12 @@ releases, bug-fix-only releases might not need one):
        ppc32, altivec
        ppc32, no altivec (eg old iMac G3s)
 
-  * Check that the regression tests work with --sanity-level=4 on all
-    platforms.
+  * Check that the regression tests work on all platforms with more self checks:
+     export EXTRA_REGTEST_OPTS="--sanity-level=4 --helgrind:hg-sanity-flags=011111"
+     make regtest
+
+  * check there are no memleaks or similar bugs by running all regtests
+    in an outer/inner setup (see README_DEVELOPERS).
 
   * Check valgrind-listener works on all archs, also connecting to it
     from all archs.

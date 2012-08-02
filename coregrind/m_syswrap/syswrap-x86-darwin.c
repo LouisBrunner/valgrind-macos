@@ -409,7 +409,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
          idea why. */
 #     if DARWIN_VERS <= DARWIN_10_6
       UWord magic_delta = 0;
-#     elif DARWIN_VERS == DARWIN_10_7
+#     elif DARWIN_VERS >= DARWIN_10_7
       UWord magic_delta = 0x48;
 #     endif
 

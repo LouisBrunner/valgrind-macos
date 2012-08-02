@@ -1284,6 +1284,15 @@ static void print_preamble ( Bool logging_to_fd,
    else if (VG_(clo_verbosity) > 0)
       VG_(umsg)("\n");
 
+#  if defined(VGO_darwin) && DARWIN_VERS == DARWIN_10_8
+   /* Uh, this doesn't play nice with XML output. */
+   umsg_or_xml( "WARNING: Support on MacOS 10.8 is experimental and mostly broken.\n");
+   umsg_or_xml( "WARNING: Expect incorrect results, assertions and crashes.\n");
+   umsg_or_xml( "WARNING: In particular, Memcheck on 32-bit programs will fail to\n");
+   umsg_or_xml( "WARNING: detect any errors associated with heap-allocated data.\n");
+   umsg_or_xml( "\n" );
+#  endif
+
    if (VG_(clo_verbosity) > 1) {
       SysRes fd;
       VexArch vex_arch;
@@ -1602,7 +1611,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(debugLog)(1, "main", "Checking current stack is plausible\n");
    { HChar* limLo  = (HChar*)(&VG_(interim_stack).bytes[0]);
      HChar* limHi  = limLo + sizeof(VG_(interim_stack));
-     HChar* aLocal = (HChar*)&zero; /* any auto local will do */
+     HChar* aLocal = (HChar*)&limLo; /* any auto local will do */
+     /* "Apple clang version 4.0 (tags/Apple/clang-421.0.57) (based on
+         LLVM 3.1svn)" appears to miscompile the following check,
+         causing run to abort at this point (in 64-bit mode) even
+         though aLocal is within limLo .. limHi.  Try building with
+         gcc instead. */
      if (aLocal < limLo || aLocal >= limHi) {
         /* something's wrong.  Stop. */
         VG_(debugLog)(0, "main", "Root stack %p to %p, a local %p\n",

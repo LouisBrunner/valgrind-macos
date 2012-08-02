@@ -134,7 +134,7 @@ case "${is_clang}-${gcc_version}" in
      notclang-4.*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
-     clang-2.9|clang-3.*)
+     clang-2.9|clang-3.*|clang-4.*)
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
      *)
@@ -287,6 +287,7 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_5], 100500, [DARWIN_VERS value for Mac OS X 10.5])
         AC_DEFINE([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6])
         AC_DEFINE([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7])
+        AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8])
 
 	AC_MSG_CHECKING([for the kernel version])
 	kernel=`uname -r`
@@ -323,8 +324,13 @@ case "${host_os}" in
 	     11.*)
 		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X version])
-                  # FIXME: change these to xx11.supp
 		  DEFAULT_SUPP="darwin11.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+		  ;;
+	     12.*)
+		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
+		  AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X version])
+		  DEFAULT_SUPP="darwin12.supp ${DEFAULT_SUPP}"
 		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
              *) 

@@ -246,7 +246,7 @@
 #elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
 #  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
 
-#elif defined(VGO_darwin) && (DARWIN_VERS == DARWIN_10_7)
+#elif defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_10_7)
 #  define  VG_Z_LIBC_SONAME  libsystemZucZaZddylib   // libsystem_c*.dylib
 
 #else

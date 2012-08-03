@@ -531,6 +531,181 @@ s390_do_cu42(UInt srcval)
 
 
 /*------------------------------------------------------------*/
+/*--- Clean helpers for CU12.                              ---*/
+/*------------------------------------------------------------*/
+
+/* The function looks at the first byte of an UTF-8 character and returns
+   two things encoded in an ULong value:
+
+   - the number of bytes that need to be read
+   - an indication whether the UTF-8 character is invalid
+
+   64      16           8                   0
+    +-------------------+-------------------+
+    |  0x0  | num_bytes | invalid_character |
+    +-------+-----------+-------------------+
+*/
+ULong
+s390_do_cu12_helper1(UInt byte, UInt etf3_and_m3_is_1)
+{
+   vassert(byte <= 0xff);
+
+   /* Check whether the character is invalid */
+   if (byte >= 0x80 && byte <= 0xbf) return 1;
+   if (byte >= 0xf8) return 1;
+
+   if (etf3_and_m3_is_1) {
+      if (byte == 0xc0 || byte == 0xc1) return 1;
+      if (byte >= 0xf5 && byte <= 0xf7) return 1;
+   }
+
+   /* Character is valid */
+   if (byte <= 0x7f) return 1 << 8;   // 1 byte
+   if (byte <= 0xdf) return 2 << 8;   // 2 bytes
+   if (byte <= 0xef) return 3 << 8;   // 3 bytes
+
+   return 4 << 8;  // 4 bytes
+}
+
+/* The function performs a CU12 operation. BYTE1, BYTE2, etc are the
+   bytes as read from the input stream, left to right. BYTE1 is a valid
+   byte. The function returns three things encoded in an ULong value:
+
+   - the converted bytes
+   - the number of converted bytes (2 or 4; 0 if invalid character)
+   - an indication whether the UTF-16 character is invalid
+
+   64      48                16           8                   0
+    +-------+-----------------+-----------+-------------------+
+    |  0x0  | converted bytes | num_bytes | invalid_character |
+    +-------+-----------------+-----------+-------------------+
+*/
+ULong
+s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
+                     ULong stuff)
+{
+   UInt num_bytes = 0, invalid_character = 0;
+   ULong retval = 0;
+   UInt num_src_bytes = stuff >> 1, etf3_and_m3_is_1 = stuff & 0x1;
+
+   vassert(num_src_bytes <= 4);
+
+   switch (num_src_bytes) {
+   case 1:
+      num_bytes = 2;
+      retval = byte1;
+      break;
+
+   case 2: {
+      /* Test validity */
+      if (etf3_and_m3_is_1) {
+         if (byte2 < 0x80 || byte2 > 0xbf) {
+            invalid_character = 1;
+            break;
+         }
+      }
+
+      /* OK */
+      UInt fghij  = byte1 & 0x1f;
+      UInt klmnop = byte2 & 0x3f;
+
+      num_bytes = 2;
+      retval = (fghij << 6) | klmnop;
+      break;
+   }
+
+   case 3: {
+      /* Test validity */
+      if (etf3_and_m3_is_1) {
+         if (byte1 == 0xe0) {
+            if ((byte2 < 0xa0 || byte2 > 0xbf) ||
+                (byte3 < 0x80 || byte3 > 0xbf)) {
+               invalid_character = 1;
+               break;
+            }
+         }
+         if ((byte1 >= 0xe1 && byte1 <= 0xec) ||
+             byte1 == 0xee || byte1 == 0xef) {
+            if ((byte2 < 0x80 || byte2 > 0xbf) ||
+                (byte3 < 0x80 || byte3 > 0xbf)) {
+               invalid_character = 1;
+               break;
+            }
+         }
+         if (byte1 == 0xed) {
+            if ((byte2 < 0x80 || byte2 > 0x9f) ||
+                (byte3 < 0x80 || byte3 > 0xbf)) {
+               invalid_character = 1;
+               break;
+            }
+         }
+      }
+
+      /* OK */
+      UInt abcd   = byte1 & 0xf;
+      UInt efghij = byte2 & 0x3f;
+      UInt klmnop = byte3 & 0x3f;
+
+      num_bytes = 2;
+      retval = (abcd << 12) | (efghij << 6) | klmnop;
+      break;
+   }
+
+   case 4: {
+      /* Test validity */
+      if (etf3_and_m3_is_1) {
+         if (byte1 == 0xf0) {
+            if ((byte2 < 0x90 || byte2 > 0xbf) ||
+                (byte3 < 0x80 || byte3 > 0xbf) ||
+                (byte4 < 0x80 || byte4 > 0xbf)) {
+               invalid_character = 1;
+               break;
+            }
+         }
+         if (byte1 == 0xf1 || byte1 == 0xf2 || byte1 == 0xf3) {
+            if ((byte2 < 0x80 || byte2 > 0xbf) ||
+                (byte3 < 0x80 || byte3 > 0xbf) ||
+                (byte4 < 0x80 || byte4 > 0xbf)) {
+               invalid_character = 1;
+               break;
+            }
+         }
+         if (byte1 == 0xf4) {
+            if ((byte2 < 0x80 || byte2 > 0x8f) ||
+                (byte3 < 0x80 || byte3 > 0xbf) ||
+                (byte4 < 0x80 || byte4 > 0xbf)) {
+               invalid_character = 1;
+               break;
+            }
+         }
+      }
+
+      /* OK */
+      UInt uvw    = byte1 & 0x7;
+      UInt xy     = (byte2 >> 4) & 0x3;
+      UInt uvwxy  = (uvw << 2) | xy;
+      UInt abcd   = (uvwxy - 1) & 0xf;
+      UInt efgh   = byte2 & 0xf;
+      UInt ij     = (byte3 >> 4) & 0x3;
+      UInt klmn   = byte3 & 0xf;
+      UInt opqrst = byte4 & 0x3f;
+      
+      UInt high_surrogate = (0xd8 << 8) | (abcd << 6) | (efgh << 2) | ij;
+      UInt low_surrogate  = (0xdc << 8) | (klmn << 6) | opqrst;
+
+      num_bytes = 4;
+      retval = (high_surrogate << 16) | low_surrogate;
+      break;
+   }
+   }
+
+   /* At this point RETVAL contains the converted bytes.
+      Build up the final return value. */
+   return (retval << 16) | (num_bytes << 8) | invalid_character;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Clean helper for "convert to binary".                ---*/
 /*------------------------------------------------------------*/
 #if defined(VGA_s390x)

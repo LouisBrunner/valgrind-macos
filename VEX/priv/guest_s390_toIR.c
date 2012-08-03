@@ -11447,6 +11447,152 @@ s390_irgen_CU42(UChar r1, UChar r2)
    return "cu42";
 }
 
+static IRExpr *
+s390_call_cu12_helper1(IRExpr *byte1, IRExpr *etf3_and_m3_is_1)
+{
+   IRExpr **args, *call;
+   args = mkIRExprVec_2(byte1, etf3_and_m3_is_1);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
+                        "s390_do_cu12_helper1", &s390_do_cu12_helper1, args);
+
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static IRExpr *
+s390_call_cu12_helper2(IRExpr *byte1, IRExpr *byte2, IRExpr *byte3,
+                       IRExpr *byte4, IRExpr *stuff)
+{
+   IRExpr **args, *call;
+   args = mkIRExprVec_5(byte1, byte2, byte3, byte4, stuff);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
+                        "s390_do_cu12_helper2", &s390_do_cu12_helper2, args);
+
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static HChar *
+s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp addr1 = newTemp(Ity_I64);
+   IRTemp addr2 = newTemp(Ity_I64);
+   IRTemp len1 = newTemp(Ity_I64);
+   IRTemp len2 = newTemp(Ity_I64);
+
+   assign(addr1, get_gpr_dw0(r1));
+   assign(addr2, get_gpr_dw0(r2));
+   assign(len1, get_gpr_dw0(r1 + 1));
+   assign(len2, get_gpr_dw0(r2 + 1));
+
+   UInt extended_checking = s390_host_has_etf3 && (m3 & 0x1) == 1;
+
+   /* We're processing the 2nd operand 1 byte at a time. Therefore, if
+      there is less than 1 byte left, then the 2nd operand is exhausted
+      and we're done here. cc = 0 */
+   s390_cc_set(0);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(1)));
+
+   /* There is at least one byte there. Read it. */
+   IRTemp byte1 = newTemp(Ity_I32);
+   assign(byte1, unop(Iop_8Uto32, load(Ity_I8, mkexpr(addr2))));
+
+   /* Call the helper to get number of bytes and invalid byte indicator */
+   IRTemp retval1 = newTemp(Ity_I64);
+   assign(retval1, s390_call_cu12_helper1(mkexpr(byte1),
+                                          mkU32(extended_checking)));
+
+   /* Check for invalid 1st byte */
+   IRExpr *is_invalid = unop(Iop_64to1, mkexpr(retval1));
+   s390_cc_set(2);
+   next_insn_if(is_invalid);
+
+   /* How many bytes do we have to read? */
+   IRTemp num_src_bytes = newTemp(Ity_I64);
+   assign(num_src_bytes, binop(Iop_Shr64, mkexpr(retval1), mkU8(8)));
+
+   /* Now test whether the 2nd operand is exhausted */
+   s390_cc_set(0);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len2), mkexpr(num_src_bytes)));
+
+   /* Read the remaining bytes */
+   IRExpr *cond, *addr, *byte2, *byte3, *byte4;
+
+   cond  = binop(Iop_CmpLE64U, mkU64(2), mkexpr(num_src_bytes));
+   addr  = binop(Iop_Add64, mkexpr(addr2), mkU64(1));
+   byte2 = mkite(cond, unop(Iop_8Uto32, load(Ity_I8, addr)), mkU32(0));
+   cond  = binop(Iop_CmpLE64U, mkU64(3), mkexpr(num_src_bytes));
+   addr  = binop(Iop_Add64, mkexpr(addr2), mkU64(2));
+   byte3 = mkite(cond, unop(Iop_8Uto32, load(Ity_I8, addr)), mkU32(0));
+   cond  = binop(Iop_CmpLE64U, mkU64(4), mkexpr(num_src_bytes));
+   addr  = binop(Iop_Add64, mkexpr(addr2), mkU64(3));
+   byte4 = mkite(cond, unop(Iop_8Uto32, load(Ity_I8, addr)), mkU32(0));
+
+   /* Call the helper to get the converted value and invalid byte indicator.
+      We can pass at most 5 arguments; therefore some encoding is needed
+      here */
+   IRExpr *stuff = binop(Iop_Or64,
+                         binop(Iop_Shl64, mkexpr(num_src_bytes), mkU8(1)),
+                         mkU64(extended_checking));
+   IRTemp retval2 = newTemp(Ity_I64);
+   assign(retval2, s390_call_cu12_helper2(mkexpr(byte1), byte2, byte3, byte4,
+                                          stuff));
+
+   /* Check for invalid character */
+   s390_cc_set(2);
+   is_invalid = unop(Iop_64to1, mkexpr(retval2));
+   next_insn_if(is_invalid);
+
+   /* Now test whether the 1st operand is exhausted */
+   IRTemp num_bytes = newTemp(Ity_I64);
+   assign(num_bytes, binop(Iop_And64,
+                           binop(Iop_Shr64, mkexpr(retval2), mkU8(8)),
+                           mkU64(0xff)));
+   s390_cc_set(1);
+   next_insn_if(binop(Iop_CmpLT64U, mkexpr(len1), mkexpr(num_bytes)));
+
+   /* Extract the bytes to be stored at addr1 */
+   IRTemp data = newTemp(Ity_I64);
+   assign(data, binop(Iop_Shr64, mkexpr(retval2), mkU8(16)));
+
+   /* To store the bytes construct 2 dirty helper calls. The helper calls
+      are guarded (num_bytes == 2 and num_bytes == 4, respectively) such
+      that only one of them will be called at runtime. */
+
+   Int i;
+   for (i = 2; i <= 4; ++i) {
+      IRDirty *d;
+
+      if (i == 3) continue;  // skip this one
+
+      d = unsafeIRDirty_0_N(0 /* regparms */, "s390x_dirtyhelper_CUxy",
+                            &s390x_dirtyhelper_CUxy,
+                            mkIRExprVec_3(mkexpr(addr1), mkexpr(data),
+                                          mkexpr(num_bytes)));
+      d->guard = binop(Iop_CmpEQ64, mkexpr(num_bytes), mkU64(i));
+      d->mFx   = Ifx_Write;
+      d->mAddr = mkexpr(addr1);
+      d->mSize = i;
+      stmt(IRStmt_Dirty(d));
+   }
+
+   /* Update source address and length */
+   put_gpr_dw0(r2,     binop(Iop_Add64, mkexpr(addr2), mkexpr(num_src_bytes)));
+   put_gpr_dw0(r2 + 1, binop(Iop_Sub64, mkexpr(len2),  mkexpr(num_src_bytes)));
+
+   /* Update destination address and length */
+   put_gpr_dw0(r1,     binop(Iop_Add64, mkexpr(addr1), mkexpr(num_bytes)));
+   put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1),  mkexpr(num_bytes)));
+
+   iterate();
+
+   return "cu12";
+}
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -11889,7 +12035,9 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb2a6: s390_format_RRF_M0RERE(s390_irgen_CU21, ovl.fmt.RRF3.r3,
                                        ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
       goto ok;
-   case 0xb2a7: /* CU12 */ goto unimplemented;
+   case 0xb2a7: s390_format_RRF_M0RERE(s390_irgen_CU12, ovl.fmt.RRF3.r3,
+                                       ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
+      goto ok;
    case 0xb2b0: s390_format_S_RD(s390_irgen_STFLE, ovl.fmt.S.b2, ovl.fmt.S.d2);
                                  goto ok;
    case 0xb2b1: /* STFL */ goto unimplemented;

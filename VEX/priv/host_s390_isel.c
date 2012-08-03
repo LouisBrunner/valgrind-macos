@@ -2015,10 +2015,12 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
          /* Iop_32/64to1  select the LSB from their operand */
       case Iop_32to1:
       case Iop_64to1: {
-         HReg dst = s390_isel_int_expr(env, arg);
+         HReg dst = newVRegI(env);
+         HReg h1  = s390_isel_int_expr(env, arg);
 
          size = sizeofIRType(typeOfIRExpr(env->type_env, arg));
 
+         addInstr(env, s390_insn_move(size, dst, h1));
          addInstr(env, s390_insn_alu(size, S390_ALU_AND, dst, s390_opnd_imm(1)));
          addInstr(env, s390_insn_test(size, s390_opnd_reg(dst)));
          return S390_CC_NE;

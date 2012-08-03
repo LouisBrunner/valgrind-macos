@@ -35,7 +35,7 @@ uint32_t pattern4[] = {
 uint32_t invalid[] = {
    0x0000d800, 0x0000dbff,   /* corner cases */
    0x00110000, 0xffffffff,   /* corner cases */
-   0x0000daad, 0x0000d901, 0x0000dddd, /* misc */
+   0x0000daad, 0x0000d901, 0x0000d8ff, /* misc */
    0x00110011, 0x01000000, 0x10000000, 0xdeadbeef  /* misc */
 };
 
@@ -116,6 +116,8 @@ run_test(uint16_t *dst, uint64_t dst_len, uint32_t *src, uint64_t src_len)
 
 int main()
 {
+   int i;
+
    /* Length == 0, no memory should be read or written */
    printf("\n------------- test1 ----------------\n");
    run_test(NULL, 0, NULL, 0);
@@ -168,8 +170,15 @@ int main()
    run_test(buff, 4, pattern2, 8);
 
    /* Input contains invalid characters */
+
+   // As conversion stops upon encountering an invalid character, we
+   // need to test each invalid character separately, to make sure it
+   // is recognized as invalid.
+
    printf("\n------------- test5 ----------------\n");
-   run_test(buff, sizeof buff, invalid, sizeof invalid);
+   for (i = 0; i < sizeof invalid / 4; ++i) {
+      run_test(buff, sizeof buff, invalid + i, 4);
+   }
    run_test(buff, 0, invalid, sizeof invalid);  // cc = 2
    run_test(buff, 100, invalid, sizeof invalid);
 

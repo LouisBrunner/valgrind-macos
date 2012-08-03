@@ -1941,6 +1941,21 @@ POST(shm_open)
    }
 }
 
+PRE(shm_unlink)
+{
+   *flags |= SfMayBlock;
+   PRINT("shm_unlink ( %#lx(%s) )", ARG1,(char*)ARG1);
+   PRE_REG_READ1(long, "shm_unlink", const char *, pathname);
+   PRE_MEM_RASCIIZ( "shm_unlink(pathname)", ARG1 );
+}
+POST(shm_unlink)
+{
+   /* My reading of the man page suggests that a call may cause memory
+      mappings to change: "if no references exist at the time of the
+      call to shm_unlink(), the resources are reclaimed immediately".
+      So we need to resync here, sigh. */
+   ML_(sync_mappings)("after", "shm_unlink", 0);
+}
 
 PRE(stat_extended)
 {
@@ -8189,7 +8204,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_shmdt,       shmdt), 
    MACX_(__NR_shmget,      shmget), 
    MACXY(__NR_shm_open,    shm_open), 
-// _____(__NR_shm_unlink), 
+   MACXY(__NR_shm_unlink,  shm_unlink), 
    MACX_(__NR_sem_open,    sem_open), 
    MACX_(__NR_sem_close,   sem_close), 
    MACX_(__NR_sem_unlink,  sem_unlink), 

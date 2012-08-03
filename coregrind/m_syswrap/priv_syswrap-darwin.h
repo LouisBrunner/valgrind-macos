@@ -324,7 +324,7 @@ DECL_TEMPLATE(darwin, shmctl);                  // 263
 DECL_TEMPLATE(darwin, shmdt);                   // 264
 DECL_TEMPLATE(darwin, shmget);                  // 265
 DECL_TEMPLATE(darwin, shm_open);                // 266
-// NYI shm_unlink 267
+DECL_TEMPLATE(darwin, shm_unlink);              // 267
 DECL_TEMPLATE(darwin, sem_open);                // 268
 DECL_TEMPLATE(darwin, sem_close);               // 269
 DECL_TEMPLATE(darwin, sem_unlink);              // 270

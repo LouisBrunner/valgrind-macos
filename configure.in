@@ -1694,6 +1694,31 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_PCLMULQDQ_TESTS, test x$ac_have_as_pclmulqdq = xyes)
 
 
+# does the x86/amd64 assembler understand the VPCLMULQDQ instruction?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_VPCLMULQDQ_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler supports 'vpclmulqdq'])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+      /*
+       * Carry-less multiplication of xmm1 with xmm2 and store the result in
+       * xmm3. The immediate is used to determine which quadwords of xmm1 and
+       * xmm2 should be used.
+       */
+   __asm__ __volatile__(
+      "vpclmulqdq \$0,%%xmm1,%%xmm2,%%xmm3" : : : );
+  } while (0)
+]])], [
+ac_have_as_vpclmulqdq=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_vpclmulqdq=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_VPCLMULQDQ_TESTS, test x$ac_have_as_vpclmulqdq = xyes)
+
+
 # does the x86/amd64 assembler understand the LZCNT instruction?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_LZCNT_TESTS), used in test Makefile.am's

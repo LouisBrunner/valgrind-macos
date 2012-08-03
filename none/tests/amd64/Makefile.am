@@ -105,7 +105,7 @@ if BUILD_SSE42_TESTS
 	pcmpstr64w pcmpxstrx64w
 endif
 if BUILD_AVX_TESTS
-if BUILD_PCLMULQDQ_TESTS
+if BUILD_VPCLMULQDQ_TESTS
  check_PROGRAMS += avx-1
 endif
 endif

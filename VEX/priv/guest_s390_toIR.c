@@ -466,6 +466,30 @@ put_fpr_pair(UInt archreg, IRExpr *expr)
 
 
 /*------------------------------------------------------------*/
+/*--- IR Debugging aids.                                   ---*/
+/*------------------------------------------------------------*/
+#if 0
+
+static ULong
+s390_do_print(HChar *text, ULong value)
+{
+   vex_printf("%s %llu\n", text, value);
+   return 0;
+}
+
+static void
+s390_print(HChar *text, IRExpr *value)
+{
+   IRDirty *d;
+   
+   d = unsafeIRDirty_0_N(0 /* regparms */, "s390_do_print", &s390_do_print,
+                         mkIRExprVec_2(mkU64((ULong)text), value));
+   stmt(IRStmt_Dirty(d));
+}
+#endif
+
+
+/*------------------------------------------------------------*/
 /*--- Build the flags thunk.                               ---*/
 /*------------------------------------------------------------*/
 

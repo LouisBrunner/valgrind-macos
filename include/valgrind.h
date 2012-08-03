@@ -3346,8 +3346,10 @@ typedef
 #  define VALGRIND_CFI_EPILOGUE
 #endif
 
-
-
+/* Nb: On s390 the stack pointer is properly aligned *at all times*
+   according to the s390 GCC maintainer. (The ABI specification is not
+   precise in this regard.) Therefore, VALGRIND_ALIGN_STACK and
+   VALGRIND_RESTORE_STACK are not defined here. */
 
 /* These regs are trashed by the hidden call. Note that we overwrite
    r14 in s390_irgen_noredir (VEX/priv/guest_s390_irgen.c) to give the
@@ -3356,6 +3358,14 @@ typedef
 #define __CALLER_SAVED_REGS "0","1","2","3","4","5","14", \
                            "f0","f1","f2","f3","f4","f5","f6","f7"
 
+/* Nb: Although r11 is modified in the asm snippets below (inside 
+   VALGRIND_CFI_PROLOGUE) it is not listed in the clobber section, for
+   two reasons:
+   (1) r11 is restored in VALGRIND_CFI_EPILOGUE, so effectively it is not
+       modified
+   (2) GCC will complain that r11 cannot appear inside a clobber section,
+       when compiled with -O -fno-omit-frame-pointer
+ */
 
 #define CALL_FN_W_v(lval, orig)                                  \
    do {                                                          \

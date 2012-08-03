@@ -1,4 +1,19 @@
 {
+   nonmatching1
+   Memcheck:Addr4
+   fun:a123456789*
+   fun:nonmatching
+   fun:main
+}
+{
+   nonmatching2
+   Memcheck:Addr4
+   fun:a123456789*
+   fun:main
+   fun:nonmatching
+}
+
+{
    test
    Memcheck:Addr4
    fun:a123456789*

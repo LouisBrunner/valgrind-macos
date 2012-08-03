@@ -69,6 +69,12 @@
    equal.  Note that the pattern element is guaranteed to be neither
    (conceptually) '*' nor '?', so it must be a literal (in the sense
    that all the input sequence elements are literal).
+
+   input might be lazily constructed when pattEQinp is called.
+   For lazily constructing the input element, the two last arguments
+   of pattEQinp are the inputCompleter and the index of the input
+   element to complete.
+   inputCompleter can be NULL.
 */
 Bool VG_(generic_match) ( 
         Bool matchAll,
@@ -76,7 +82,8 @@ Bool VG_(generic_match) (
         void* input, SizeT szbInput, UWord nInput, UWord ixInput,
         Bool (*pIsStar)(void*),
         Bool (*pIsQuery)(void*),
-        Bool (*pattEQinp)(void*,void*)
+        Bool (*pattEQinp)(void*,void*,void*,UWord),
+        void* inputCompleter
      );
 
 /* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports

@@ -155,6 +155,7 @@ where XXXXXX is the bug number as listed below.
 283671  Robustize alignment computation in LibVEX_Alloc
 283961  Adding support for some HCI IOCTLs
 284124  parse_type_DIE: confused by: DWARF 4
+284540  Optimise matching logic between an error and the suppressions
 285219  Too-restrictive constraints for Thumb2 "SP plus/minus register"
 286261  [patch] add wrapper for linux I2C_RDWR ioctl
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings

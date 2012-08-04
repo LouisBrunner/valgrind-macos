@@ -989,13 +989,13 @@ UTF16:  dbc0 dc00
   cc = 0
   dst address difference: 4  dst len: 1996
   src address difference: 4  src len: 0
-UTF8:   ed 7f 80 00
-UTF16:  dfc0 0000
+UTF8:   f4 7f 80 80
+UTF16:  d8bc dc00
   cc = 0
   dst address difference: 4  dst len: 1996
   src address difference: 4  src len: 0
-UTF8:   ed 90 80 00
-UTF16:  d400 0000
+UTF8:   f4 90 80 80
+UTF16:  d800 dc00
   cc = 0
   dst address difference: 4  dst len: 1996
   src address difference: 4  src len: 0

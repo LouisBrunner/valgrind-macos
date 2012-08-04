@@ -444,9 +444,10 @@ convert_4_bytes(void)
    f0[1] = 0xc0;  // invalid  because outside [0x90 .. 0xbf]
    run_test(buff, sizeof buff, f0, sizeof f0);
 
-   f4[0] = 0xed;  // valid
+   f4[0] = 0xf4;  // valid
    f4[1] = 0x7f;  // invalid  because outside [0x80 .. 0x8f]
    f4[2] = 0x80;  // valid
+   f4[3] = 0x80;  // valid
    run_test(buff, sizeof buff, f4, sizeof f4);
    f4[1] = 0x90;  // invalid  because outside [0x80 .. 0x9f]
    run_test(buff, sizeof buff, f4, sizeof f4);

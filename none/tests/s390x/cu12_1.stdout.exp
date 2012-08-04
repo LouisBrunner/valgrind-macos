@@ -989,16 +989,16 @@ UTF16:  <none>
   cc = 2
   dst address difference: 0  dst len: 2000
   src address difference: 0  src len: 4
-UTF8:   ed 7f 80 00
+UTF8:   f4 7f 80 80
 UTF16:  <none>
   cc = 2
   dst address difference: 0  dst len: 2000
   src address difference: 0  src len: 4
-UTF8:   ed 90 80 00
-UTF16:  d400 0000
-  cc = 0
-  dst address difference: 4  dst len: 1996
-  src address difference: 4  src len: 0
+UTF8:   f4 90 80 80
+UTF16:  <none>
+  cc = 2
+  dst address difference: 0  dst len: 2000
+  src address difference: 0  src len: 4
 UTF8:   f1 7f 80 80
 UTF16:  <none>
   cc = 2

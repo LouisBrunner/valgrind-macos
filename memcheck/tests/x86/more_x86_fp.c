@@ -105,7 +105,7 @@ void test_fcvt(double a)
     for(i=0;i<4;i++) {
       int16_t tmp = (fpuc & ~0x0c00) | (i << 10);
         asm volatile ("fldcw %0" : : "m" (tmp));
-        asm volatile ("fist %0" : "=m" (wa) : "t" (a));
+        asm volatile ("fists %0" : "=m" (wa) : "t" (a));
         asm volatile ("fistl %0" : "=m" (ia) : "t" (a));
         asm volatile ("fistpll %0" : "=m" (lla) : "t" (a) : "st");
         asm volatile ("frndint ; fstl %0" : "=m" (ra) : "t" (a));

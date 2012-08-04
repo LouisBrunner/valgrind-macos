@@ -1144,8 +1144,15 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          switch (unop) {
          case Iop_1Uto8:
          case Iop_1Uto32:
+            /* Zero extend */
+            mask.variant.imm = 1;
+            addInstr(env, s390_insn_alu(4, S390_ALU_AND,  dst, mask));
+            break;
+
          case Iop_1Uto64:
-            /* Nothing to do */
+            /* Zero extend */
+            mask.variant.imm = 1;
+            addInstr(env, s390_insn_alu(8, S390_ALU_AND,  dst, mask));
             break;
 
          case Iop_1Sto8:

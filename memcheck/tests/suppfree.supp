@@ -1,0 +1,57 @@
+{
+   nonmatching1
+   Memcheck:Free
+   fun:free
+   fun:dd
+   fun:ccc
+   fun:bbb
+   fun:aaa
+   fun:main
+}
+
+{
+   nonmatching2
+   Memcheck:Free
+   fun:free
+   fun:ddd
+   fun:cc
+   fun:bbb
+   fun:aaa
+   fun:main
+}
+
+{
+   nonmatching3
+   Memcheck:Free
+   fun:free
+   fun:ddd
+   fun:ccc
+   fun:xxxxxxxx
+   fun:bbb
+   fun:aaa
+   fun:main
+}
+
+{
+   nonmatching4
+   Memcheck:Free
+   fun:free
+   fun:ddd
+   fun:ccc
+   ...
+   fun:bbb
+   fun:aaa
+   fun:main
+   fun:nonmatching
+}
+
+{
+   nonmatching5
+   Memcheck:Free
+   fun:free
+   fun:ddd
+   obj:nonmatching
+   fun:bbb
+   fun:aaa
+   fun:main
+}

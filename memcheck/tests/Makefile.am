@@ -196,7 +196,7 @@ EXTRA_DIST = \
 	supp1.stderr.exp supp1.vgtest \
 	supp2.stderr.exp supp2.vgtest \
 	supp.supp \
-	suppfree.stderr.exp suppfree.vgtest \
+	suppfree.stderr.exp suppfree.supp suppfree.vgtest \
 	test-plo-no.vgtest test-plo-no.stdout.exp \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \

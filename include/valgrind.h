@@ -2882,11 +2882,21 @@ typedef
    pointer aligned if it doesn't realise calls are being made
    to other functions. */
 
+/* This is a bit tricky.  We store the original stack pointer in r10
+   as it is callee-saves.  gcc doesn't allow the use of r11 for some
+   reason.  Also, we can't directly "bic" the stack pointer in thumb
+   mode since r13 isn't an allowed register number in that context.
+   So use r4 as a temporary, since that is about to get trashed
+   anyway, just after each use of this macro.  Side effect is we need
+   to be very careful about any future changes, since
+   VALGRIND_ALIGN_STACK simply assumes r4 is usable. */
 #define VALGRIND_ALIGN_STACK               \
-      "mov r11, sp\n\t"                    \
-      "bic sp, sp, #7\n\t"
+      "mov r10, sp\n\t"                    \
+      "mov r4,  sp\n\t"                    \
+      "bic r4,  r4, #7\n\t"                \
+      "mov sp,  r4\n\t"
 #define VALGRIND_RESTORE_STACK             \
-      "mov sp, r11\n\t"
+      "mov sp,  r10\n\t"
 
 /* These CALL_FN_ macros assume that on arm-linux, sizeof(unsigned
    long) == 4. */
@@ -2905,7 +2915,7 @@ typedef
          "mov %0, r0\n"                                           \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -2926,7 +2936,7 @@ typedef
          "mov %0, r0\n"                                           \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -2949,7 +2959,7 @@ typedef
          "mov %0, r0\n"                                           \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -2974,7 +2984,7 @@ typedef
          "mov %0, r0\n"                                           \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3001,7 +3011,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3032,7 +3042,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3064,7 +3074,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3100,7 +3110,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3137,7 +3147,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3177,7 +3187,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3219,7 +3229,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3265,7 +3275,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3312,7 +3322,7 @@ typedef
          "mov %0, r0"                                             \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r11"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)

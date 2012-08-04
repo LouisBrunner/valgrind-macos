@@ -10,7 +10,6 @@ get fixed.
 
 -- reenable amd64_toIR.c commented out insns
 -- amd64 toIR memcheck icc -O3 -mAVX probs?
--- OSX 10.8 (alignment) and XCode 4.3 (build, link) problems
 -- add arm stack-scan hacks?
 -- add allocator-mismatch checking?
 -- 302709, minor tidying needed?
@@ -19,6 +18,7 @@ get fixed.
 
 284004  Application under test hangs after call to __posix_spawn (Darwin)
   open, not started
+  QUERIED (need complete test case)
 
 284540  Memcheck shouldn't count suppressions matching
         still-reachable allocations
@@ -40,9 +40,6 @@ get fixed.
 286864  strlen function redirection error
   **probably invalid
 
-287175  ARM: scalar VFP fixed-point VCVT instructions not handled
-  **possible 3.8.0   same as 301336 ?
-
 288099  valgrind should print arguments/return values of functions in stack
   wishlist
 
@@ -53,12 +50,9 @@ get fixed.
   == 278744 REX.W CVTPS2PD
   **possible 3.8.0 (redundant REX prefix)
 
-288298  unhandled syscall shm_unlink
-  OSX.  uninvestigated.
-
 288363  valgrind: m_libcfile.c:73 (vgPlain_safe_fd): Assertion
         'newfd >= VG_(fd_hard_limit)' failed.
-  OSX weirdness; uninvestigated
+  OSX weirdness; QUERIED (maybe invalid)
 
 288756  add '-x' to strip when stripping dynamic libraries on OSX
   OSX.  low prio
@@ -135,6 +129,7 @@ get fixed.
   OSX
   **possible 3.8.0, med prio
   address space collision with very large .bss, probably cantfix.
+  Probable can'tfix, but Queried.
 
 295084  Hard-coded /usr/include
   OSX, XCode 4.3 problem
@@ -170,7 +165,7 @@ get fixed.
   **not sure what to do about this.  Is it serious?
 
 296480  valgrind hangs early when run on Python
-  OSX.  Not started.
+  OSX.  Not started.  Queried.
 
 296577  vex x86->IR: 0x66 0xF 0x3A 0x17
   **wontfix (AES on 32-bit)
@@ -215,6 +210,7 @@ get fixed.
 
 301281  valgrind hangs on OS X when the process calls system()
   OSX strangeness; **possible 3.8.0
+  QUERIED (can't repro)
 
 301336  Valgrind vassert(0) in dis_neon_data_2reg_misc()
   **possible 3.8.0.  OP queried; is this the same as 287175 ?

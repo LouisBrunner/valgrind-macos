@@ -161,9 +161,11 @@ where XXXXXX is the bug number as listed below.
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
 286917  disInstr(arm): unhandled instruction: QADD (also QSUB)
+287175  ARM: scalar VFP fixed-point VCVT instructions not handled
 287260  Incorrect conditional jump or move depends on uninitialised value(s)
 287301  vex amd64->IR: 0x66 0xF 0x38 0x41 0xC0 0xB8 0x0 0x0 (PHMINPOSUW)
 287858  VG_(strerror): unknown error 
+288298  (MacOSX) unhandled syscall shm_unlink
 289470  Loading of large Mach-O thin binaries fails.
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
 289823  (duplicate of 293754) vex amd64->IR: 0x66 0xF 0x3A 0x60 0xCA 0x45 0x66 0xF

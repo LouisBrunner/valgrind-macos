@@ -95,6 +95,7 @@
    20330 STRCSPN
    20340 STRSPN
    20350 STRCASESTR
+   20360 MEMRCHR
 */
 
 
@@ -747,6 +748,32 @@ static inline void my_exit ( int x )
 #elif defined(VGO_darwin)
  //MEMCHR(VG_Z_LIBC_SONAME, memchr)
  //MEMCHR(VG_Z_DYLD,        memchr)
+
+#endif
+
+
+/*---------------------- memrchr ----------------------*/
+
+#define MEMRCHR(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20360,soname,fnname) \
+            (const void *s, int c, SizeT n); \
+   void* VG_REPLACE_FUNCTION_EZU(20360,soname,fnname) \
+            (const void *s, int c, SizeT n) \
+   { \
+      SizeT i; \
+      UChar c0 = (UChar)c; \
+      UChar* p = (UChar*)s; \
+      for (i = 0; i < n; i++) \
+         if (p[n-1-i] == c0) return (void*)(&p[n-1-i]); \
+      return NULL; \
+   }
+
+#if defined(VGO_linux)
+ MEMRCHR(VG_Z_LIBC_SONAME, memrchr)
+
+#elif defined(VGO_darwin)
+ //MEMRCHR(VG_Z_LIBC_SONAME, memrchr)
+ //MEMRCHR(VG_Z_DYLD,        memrchr)
 
 #endif
 

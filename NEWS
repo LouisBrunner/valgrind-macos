@@ -53,11 +53,11 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 
 * DRD:
 
-  - Fixed a subtle bug that could cause false positive data race reports.
-
   - Added even more facilities that can help finding the cause of a data
     race, namely the command-line option --ptrace-addr and the macro
     DRD_STOP_TRACING_VAR(x). More information can be found in the manual.
+
+  - Fixed a subtle bug that could cause false positive data race reports.
 
 * ==================== OTHER CHANGES ====================
 

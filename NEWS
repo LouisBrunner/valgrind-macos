@@ -16,30 +16,36 @@ serious work at present.
 * Support for MIPS32 platforms running Linux.  Valgrind has been
   tested on MIPS32 and MIPS32r2 platforms running different Debian
   Squeeze and MeeGo distributions.  Both little-endian and big-endian
-  cores are supported.  Memcheck, Massif, Lackey, Callgrind and none
-  are tools that have been tested and are known to work well. See
-  README.mips for more details.
+  cores are supported.  The tools Memcheck, Massif and Lackey have
+  been tested and are known to work. See README.mips for more details.
+
+* Preliminary support for x86 platform running Android.
+
+* Preliminary (as-yet largely unusable) support for MacOSX 10.8.
 
 * Support for Intel AVX instructions and for AES instructions.  This
   support is available only for 64 bit code.
 
-* Preliminary support for x86 platform running Android.
-
--------------
-
-* Support for intel AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
-  AESDEC, AESDECLAST, AESIMC). Only supported for 64 bit architecture.
-
-* Support for Intel AVX instructions.
-
-
+* Support for POWER Decimal Floating Point instructions.
 
 * ==================== TOOL CHANGES ====================
 
-* Massif
-  - Using the new option --soname-synonyms, Massif can now understand
-    a program using statically linked malloc or using alternative
-    malloc libraries (such as tcmalloc).
+* Non-libc malloc implementations are now supported.  This is useful
+  for tools that replace malloc (Memcheck, Massif, DRD, Helgrind).
+  Using the new option --soname-synonyms, such tools can be informed
+  that the malloc implementation is either linked statically into the
+  executable, or is present in some other shared library different
+  from libc.so.  This makes it possible to process statically linked
+  programs, and programs using other malloc libraries, for example
+  TCMalloc or JEMalloc.
+
+* For tools that provide their own replacement for malloc et al, the
+  option --redzone-size=<number> allows users to specify the size of
+  the padding blocks (redzones) added before and after each client
+  allocated block.  Smaller redzones decrease the memory needed by
+  Valgrind.  Bigger redzones increase the chance to detect blocks
+  overrun or underrun.  Prior to this change, the redzone size was
+  hardwired to 16 bytes in Memcheck.
 
 * Memcheck:
 
@@ -55,19 +61,16 @@ serious work at present.
   - Addition of GDB server monitor command 'who_points_at' that lists
     the locations pointing at a block.
 
-  - If a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now
-    will detect an invalid access of these redzones, by marking them
-    noaccess.
-    Similarly, if a redzone size is given for a memory pool,
-    VALGRIND_MEMPOOL_ALLOC will mark the redzones no access.
-    This still allows to find some bugs if the user has forgotten
-    to mark the pool superblock noaccess.
+  - If a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now will
+    detect an invalid access of these redzones, by marking them
+    noaccess.  Similarly, if a redzone size is given for a memory
+    pool, VALGRIND_MEMPOOL_ALLOC will mark the redzones no access.
+    This still allows to find some bugs if the user has forgotten to
+    mark the pool superblock noaccess.
 
-  - Using the new option --soname-synonyms, Memcheck can now understand
-    a program using statically linked malloc or using alternative
-    malloc libraries (such as tcmalloc).
-
-  - Performance of leak check has been improved.
+  - Performance of memory leak check has been improved, especially in
+    cases where there are many leaked blocks and/or many suppression
+    rules used to suppress leak reports.
 
 * DRD:
 
@@ -79,24 +82,24 @@ serious work at present.
 
 * ==================== OTHER CHANGES ====================
 
-* For tools replacing the malloc library (e.g. Memcheck, Helgrind, ...),
-  the option --redzone-size=<number> allows to control the padding 
-  blocks (redzones) added before and after each client allocated block.
-  Smaller redzones decrease the memory needed by Valgrind. Bigger
-  redzones increase the chance to detect blocks overrun or underrun.
-
 * The C++ demangler has been updated so as to work well with C++ 
   compiled by up to at least g++ 4.6.
 
 * Tool developers can make replacement/wrapping more flexible thanks
-  to the new option --soname-synonyms.
+  to the new option --soname-synonyms.  This was reported above, but
+  in fact is very general and applies to all function
+  replacement/wrapping, not just to malloc-family functions.
 
-* The new option --fair-sched allows to control the locking mechanism
-  used by Valgrind. The locking mechanism influences the performance
-  and scheduling of multithreaded applications (in particular
-  on multiprocessor/multicore systems).
+* Round-robin scheduling of threads can be selected, using the new
+  option --fair-sched= yes.  Prior to this change, the pipe-based
+  thread serialisation mechanism (which is still the default) could
+  give very unfair scheduling.  --fair-sched=yes improves
+  responsiveness of interactive multithreaded applications, and
+  improves repeatability of results from the thread checkers Helgrind
+  and DRD.
 
-* For tool developers: support to run Valgrind on Valgrind has been improved.
+* For tool developers: support to run Valgrind on Valgrind has been
+  improved.  We can now routinely Valgrind on Helgrind or Memcheck.
 
 * gdbserver now shows the float shadow registers as integer
   rather than float values, as the shadow values are mostly
@@ -104,18 +107,20 @@ serious work at present.
 
 * Increased limit for the --num-callers command line flag to 500.
 
-* Error matching with many suppression entries has been optimised.
+* Performance improvments for error matching when there are many
+  suppression records in use.
 
-* Improved DWARF4 support (284124)
+* Improved support for DWARF4 debugging information (bug 284184).
 
-* Option --vex-iropt-precise-memory-exns has been removed.
-  It is replaced by --vex-iropt-register-updates which accepts
-  3 values : 'unwindregs-at-mem-access' (replacing
-  --vex-iropt-precise-memory-exns=no), 'allregs-at-mem-access'
-  (replacing --vex-iropt-precise-memory-exns=yes)
-  and a new value 'allregs-at-each-insn'.
-  'allregs-at-each-insn' allows the Valgrind gdbserver to always
-  show up to date values to GDB.
+* Improved control over the IR optimiser's handling of the tradeoff
+  between performance and precision of exceptions.  Specifically,
+  --vex-iropt-precise-memory-exns has been removed and replaced by
+  --vex-iropt-register-updates, with extended functionality.  This
+  allows the the Valgrind gdbserver to always show up to date register
+  values to GDB.
+
+* Modest performance gains through the use of translation chaining for
+  JIT-generated code.
 
 * ==================== FIXED BUGS ====================
 
@@ -278,6 +283,8 @@ n-i-bz  Bypass gcc4.4/4.5 code gen bugs causing out of memory or asserts
 n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 n-i-bz  Fix false positive in sys_clone on amd64 when optional args [..]
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
+
+(3.8.0-blah: 5  August 2012, vex r2459, valgrind r12841)
 
 
 

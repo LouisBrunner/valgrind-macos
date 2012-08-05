@@ -473,6 +473,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg4  = gst->guest_r7;    // a3
       canonical->arg5  = *((UInt*) (gst->guest_r29 + 16));    // 16(guest_SP/sp)
       canonical->arg6  = *((UInt*) (gst->guest_r29 + 20));    // 20(sp)
+      canonical->arg8 = 0;
    } else {
       // Fixme hack handle syscall()
       canonical->sysno = gst->guest_r4;    // a0
@@ -482,6 +483,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg4  = *((UInt*) (gst->guest_r29 + 16));    // 16(guest_SP/sp)
       canonical->arg5  = *((UInt*) (gst->guest_r29 + 20));    // 20(guest_SP/sp)
       canonical->arg6  = *((UInt*) (gst->guest_r29 + 24));    // 24(guest_SP/sp)
+      canonical->arg8 = __NR_syscall;
    }
 
 #elif defined(VGP_x86_darwin)
@@ -719,14 +721,25 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
 
 #elif defined(VGP_mips32_linux)
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
-   gst->guest_r2 = canonical->sysno;
-   gst->guest_r4 = canonical->arg1;
-   gst->guest_r5 = canonical->arg2;
-   gst->guest_r6 = canonical->arg3;
-   gst->guest_r7 = canonical->arg4;
-   *((UInt*) (gst->guest_r29 + 16)) = canonical->arg5;    // 16(guest_GPR29/sp)
-   *((UInt*) (gst->guest_r29 + 20)) = canonical->arg6;    // 20(sp)
-
+   if (canonical->arg8 != __NR_syscall) {
+      gst->guest_r2 = canonical->sysno;
+      gst->guest_r4 = canonical->arg1;
+      gst->guest_r5 = canonical->arg2;
+      gst->guest_r6 = canonical->arg3;
+      gst->guest_r7 = canonical->arg4;
+      *((UInt*) (gst->guest_r29 + 16)) = canonical->arg5;    // 16(guest_GPR29/sp)
+      *((UInt*) (gst->guest_r29 + 20)) = canonical->arg6;    // 20(sp)
+   } else {
+      canonical->arg8 = 0;
+      gst->guest_r2 = __NR_syscall;
+      gst->guest_r4 = canonical->sysno;
+      gst->guest_r5 = canonical->arg1;
+      gst->guest_r6 = canonical->arg2;
+      gst->guest_r7 = canonical->arg3;
+      *((UInt*) (gst->guest_r29 + 16)) = canonical->arg4;    // 16(guest_GPR29/sp)
+      *((UInt*) (gst->guest_r29 + 20)) = canonical->arg5;    // 20(sp)
+      *((UInt*) (gst->guest_r29 + 24)) = canonical->arg6;    // 24(sp)
+   }
 #else
 #  error "putSyscallArgsIntoGuestState: unknown arch"
 #endif

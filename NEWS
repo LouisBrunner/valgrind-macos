@@ -1,22 +1,38 @@
-Release 3.8.0 (????)
-~~~~~~~~~~~~~~~~~~~~
 
-xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
+Release 3.8.0 (XX August 2012)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.8.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM/Linux, PPC32/Linux,
+PPC64/Linux, S390X/Linux, MIPS/Linux, ARM/Android, X86/Android,
+X86/MacOSX 10.6/10.7 and AMD64/MacOSX 10.6/10.7.  Support for recent
+distros and toolchain components (glibc 2.16, gcc 4.7) has been added.
+There is initial support for MacOSX 10.8, but it is not usable for
+serious work at present.
 
 * ================== PLATFORM CHANGES =================
+
+* Support for MIPS32 platforms running Linux.  Valgrind has been
+  tested on MIPS32 and MIPS32r2 platforms running different Debian
+  Squeeze and MeeGo distributions.  Both little-endian and big-endian
+  cores are supported.  Memcheck, Massif, Lackey, Callgrind and none
+  are tools that have been tested and are known to work well. See
+  README.mips for more details.
+
+* Support for Intel AVX instructions and for AES instructions.  This
+  support is available only for 64 bit code.
+
+* Preliminary support for x86 platform running Android.
+
+-------------
 
 * Support for intel AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
   AESDEC, AESDECLAST, AESIMC). Only supported for 64 bit architecture.
 
 * Support for Intel AVX instructions.
 
-* Support for MIPS32 platforms running Linux. Valgrind has been tested on
-  MIPS32 and MIPS32r2 platforms running different Debian Squeeze and MeeGo
-  distributions. Both little-endian and big-endian cores are supported.
-  Memcheck, massif, lackey, callgrind and none are tools that have been
-  tested and are known to work well. See README.mips for more details.
 
-* Preliminary support for x86 platform running Android.
 
 * ==================== TOOL CHANGES ====================
 
@@ -106,73 +122,56 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us
 but never got a bugzilla entry.  We encourage you to file bugs in
-bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather than
-mailing the developers (or mailing lists) directly -- bugs that are
-not entered into bugzilla tend to get forgotten about or ignored.
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
 
 To see details of a given bug, visit
-https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
-284864  vex amd64->IR: 0xC5 0xF9 0x57 0xC0 0xC5 0xFA 0x10 0x15
-285725  vex amd64->IR: 0xC5 0xF9 0x28 0xD0 0xC5 0xFB
-286497  amd64 + vex: unhandled vcvtsi2ss instruction
-286596  Lack of support for several SSE instructions
-287307  vex amd64->IR: 0xC5 0xF9 0x57 0xC0 0x48 0x89 0xC7 0xE8
-288995  vex amd64->IR: 0xC5 0xF8 0x57 0xC0 0xC5 0xFA 0x11
-289656  vex amd64->IR: 0xC5 0xF0 0x57 0xC9 0x66 0xF 0x2F 0xC8
-292300  unhandled instruction, vmovd in 32bit
-292493  Invalid Instruction in optimized glibc __mpn_construct_double
-292841  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x10 0x5 0xD0 0x7B
-298227  vex amd64->IR: 0xC5 0xF8 0x57 0xC0 0x48 0xC7 0x43 0x58)
-298335  vex amd64->IR: 0xC5 0xF9 0x57 0xC0 0x48 0x8B 0x35 0x3"
-303466  vex amd64->IR: 0xC5 0x7A 0x10 0x35 0x61 0x2D 0x20 0x0
-  == 273475 (canonical avx)
-
-285662  Memcheck needs to replace memcpy/memmove (and most certainly others)
-        in VG_Z_LIBC_SONAME on Darwin
-        == OSX memcpy/memmove intercept problems (Gary Kwong), Moz #710438
-
-715750 (moz)
-  OSX: Large numbers of incorrect invalid-address errors near 0xFFFFxxxx
-
-286384  configure fails "checking for a supported version of gcc"
-        when compiler is called x86_64-pc-linux-gnu-gcc
-
--- sorted (ish) after this point
-
 197914  Building valgrind from svn now requires automake-1.10
-203877  increase to 16Mb maximum allowed alignment for memalign() and posix_memalign
-219156  Valgrind does not handle statically linked malloc or other malloc lib (e.g. tcmalloc) 
+203877  increase to 16Mb maximum allowed alignment for memalign et al
+219156  Handle statically linked malloc or other malloc lib (e.g. tcmalloc) 
 247386  make perf does not run all performance tests
 270006  Valgrind scheduler unfair 
 270777  Adding MIPS/Linux port to Valgrind
 270796  s390x: Removed broken support for the TS insn
 271438  Fix configure for proper SSE4.2 detection
 273114  s390x: Support TR, TRE, TROO, TROT, TRTO, and TRTT instructions
+273475  Add support for AVX instructions
 274078  improved configure logic for mpicc
 276993  fix mremap 'no thrash checks' 
 278313  Fedora 15/x64: err read debug info with --read-var-info=yes flag
-281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
+281482  memcheck incorrect byte allocation count in realloc() for silly argument
 282230  group allocator for small fixed size, use it for MC_Chunk/SEc vbit
 283413  Fix wrong sanity check
 283671  Robustize alignment computation in LibVEX_Alloc
 283961  Adding support for some HCI IOCTLs
 284124  parse_type_DIE: confused by: DWARF 4
+284864  == 273475 (Add support for AVX instructions)
 285219  Too-restrictive constraints for Thumb2 "SP plus/minus register"
-286261  [patch] add wrapper for linux I2C_RDWR ioctl
+285662  (MacOSX): Memcheck needs to replace memcpy/memmove
+285725  == 273475 (Add support for AVX instructions)
+286261  add wrapper for linux I2C_RDWR ioctl
 286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings
 286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
+286384  configure fails "checking for a supported version of gcc"
+286497  == 273475 (Add support for AVX instructions)
+286596  == 273475 (Add support for AVX instructions)
 286917  disInstr(arm): unhandled instruction: QADD (also QSUB)
 287175  ARM: scalar VFP fixed-point VCVT instructions not handled
 287260  Incorrect conditional jump or move depends on uninitialised value(s)
 287301  vex amd64->IR: 0x66 0xF 0x38 0x41 0xC0 0xB8 0x0 0x0 (PHMINPOSUW)
+287307  == 273475 (Add support for AVX instructions)
 287858  VG_(strerror): unknown error 
 288298  (MacOSX) unhandled syscall shm_unlink
+288995  == 273475 (Add support for AVX instructions)
 289470  Loading of large Mach-O thin binaries fails.
+289656  == 273475 (Add support for AVX instructions)
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
-289823  (duplicate of 293754) vex amd64->IR: 0x66 0xF 0x3A 0x60 0xCA 0x45 0x66 0xF
-289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks
+289823  ==  293754 (PCMPxSTRx not implemented for 16-bit characters)
+289939  monitor cmd 'leak_check' with details about leaked or reachable blocks
 290006  memcheck doesn't mark %xmm as initialized after "pcmpeqw %xmm %xmm"
 290655  Add support for AESKEYGENASSIST instruction 
 290719  valgrind-3.7.0 fails with automake-1.11.2 due to"pkglibdir" usage
@@ -180,110 +179,107 @@ where XXXXXX is the bug number as listed below.
 291253  ES register not initialised in valgrind simulation
 291568  Fix 3DNOW-related crashes with baseline x86_64 CPU (w patch)
 291865  s390x: Support the "Compare Double and Swap" family of instructions
-292430  3.8.0svn build encounters unrecognized instruction in __intel_get_new_mem_ops_cpuid
+292300  == 273475 (Add support for AVX instructions)
+292430  unrecognized instruction in __intel_get_new_mem_ops_cpuid
+292493  == 273475 (Add support for AVX instructions)
 292626  Missing fcntl F_SETOWN_EX and F_GETOWN_EX support
 292627  Missing support for some SCSI ioctls
 292628  none/tests/x86/bug125959-x86.c triggers undefined behavior
+292841  == 273475 (Add support for AVX instructions)
 292993  implement the getcpu syscall on amd64-linux
 292995  Implement the “cross memory attach” syscalls introduced in Linux 3.2
 293088  Add some VEX sanity checks for ppc64 unhandled instructions
-293751  duplicate of 290655
+293751  == 290655 (Add support for AESKEYGENASSIST instruction)
 293754  PCMPxSTRx not implemented for 16-bit characters
-293755  (duplicate of 293754) No tests for PCMPxSTRx on 16-bit characters
+293755  == 293754 (No tests for PCMPxSTRx on 16-bit characters)
 293808  CLFLUSH not supported by latest VEX for amd64
 294047  valgrind does not correctly emulate prlimit64(..., RLIMIT_NOFILE, ...)
 294048  MPSADBW instruction not implemented
 294055  regtest none/tests/shell fails when locale is not set to C
 294185  INT 0x44 (and others) not supported on x86 guest, but used by Jikes RVM
 294190  --vgdb-error=xxx can be out of sync with errors shown to the user
-294191  Guest amd64 lacks fnsave/frstor and 0x66 size prefixes on FP instructions
-294260  vex: the 'impossible' happened:  disInstr_AMD64: disInstr miscalculated next %rip
+294191  amd64: fnsave/frstor and 0x66 size prefixes on FP instructions
+294260  disInstr_AMD64: disInstr miscalculated next %rip
 294523  --partial-loads-ok=yes causes false negatives
-294617  vex amd64->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A
-294736  Valgrind crashes with Unrecognised instruction 0x48 0xF 0xD7 0xD6 0x48 0x83
+294617  vex amd64->IR: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A
+294736  vex amd64->IR: 0x48 0xF 0xD7 0xD6 0x48 0x83
 294812  patch allowing to run (on x86 at least) helgrind/drd on tool.
 295089  can not annotate source for both helgrind and drd
 295221  POWER Processor decimal floating point instruction support missing
-295427  building i386 support with clang on darwin11 requires
-        -new_linker linker option
+295427  building for i386 with clang on darwin11 requires "-new_linker linker"
 295428  coregrind/m_main.c has incorrect x86 assembly for darwin
-295590  Helgrind: Assertion 'cvi->nWaiters > 0' failed when cond var being waited upon destroyed
+295590  Helgrind: Assertion 'cvi->nWaiters > 0' failed
 295617  ARM - Add some missing syscalls
-295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
+295799  Missing \n with get_vbits in gdbserver when line is % 80 [...]
 296229  Linux user input device ioctls missing wrappers
 296318  ELF Debug info improvements (more than one rx/rw mapping)
 296422  Add translation chaining support
 296457  vex amd64->IR: 0x66 0xF 0x3A 0xDF 0xD1 0x1 0xE8 0x6A (dup of AES)
-296792  [PATCH] valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
+296792  valgrind 3.7.0: add SIOCSHWTSTAMP (0x89B0) ioctl wrapper
 296983  Fix build issues on x86_64/ppc64 without 32-bit toolchains
-n-i-bz  s390x: Shadow registers can now be examined using vgdb
-297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
-        and non reset of "C-ontinued" signal
+297078  gdbserver signal handling problems [..]
 297147  drd false positives on newly allocated memory
-297329  VEX should disallow decoding of IBM Power Decimal Floating Point 
-        instructions on machines that do not support it
+297329  disallow decoding of IBM Power DFP insns on some machines
 297497  POWER Processor decimal floating point instruction support missing
 297701  Another alias for strncasecmp_l in libc-2.13.so
+297911  'invalid write' not reported when using APIs for custom mem allocators.
 297976  s390x: revisit EX implementation
-297911  valgrind does not report 'invalid write' when using APIs for custom memory allocators.
 297991  Valgrind interferes with mmap()+ftell() 
 297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
 297993  Fix compilation of valgrind with gcc -g3.
-298080  POWER Processor decimal floating point instruction support missing, part 3
+298080  POWER Processor DFP support missing, part 3
+298227  == 273475 (Add support for AVX instructions)
+298335  == 273475 (Add support for AVX instructions)
 298354  Unhandled ARM Thumb instruction 0xEB0D 0x0585 (streq)
-298394  s390x: Don't bail out on an unknown machine model. Assume it's a new model.
+298394  s390x: Don't bail out on an unknown machine model.  [..]
 298421  accept4() syscall (366) support is missing for ARM
-298718  vex amd64->IR: unhandled instruction bytes: 0xF 0xB1 0xCB 0x9C 0x8F 0x45
+298718  vex amd64->IR: 0xF 0xB1 0xCB 0x9C 0x8F 0x45
 298732  valgrind installation problem in ubuntu with kernel version 3.x
-298862  POWER Processor decimal floating point instruction support missing, part 4
+298862  POWER Processor DFP instruction support missing, part 4
 298864  DWARF reader mis-parses DW_FORM_ref_addr
-298943  massif asserts with --pages-as-heap=yes when brk is changing by value different of page size
+298943  massif asserts with --pages-as-heap=yes when brk is changing [..]
 299053  Support DWARF4 DW_AT_high_pc constant form
-299104  vex amd64->IR: unhandled instruction bytes: 0xC5 0xF8 0x57 0xC0 0x48 0x89 0xE5 0x41
-        == 273475 (canonical avx)
-299629  dup3() syscall (358) support is missing for ARM
+299104  == 273475 (Add support for AVX instructions)
 299316  Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr' failed.
-299694  POWER Processor decimal floating point instruction support missing, part 5
-299756  For symmetry, --free-fill must be ignored for MEMPOOL_FREE and FREELIKE client requests
-299803  vex amd64->IR: unhandled instruction bytes: 0xC5 0xF1 0x57 0xC9 0xC5 0xF9 0x2E 0xC8
-        == 273475 (canonical avx)
-299804  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x2A 0xC2 0xC5 0xFB 0x59 0x5
-        == 273475 (canonical avx)
-299805  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFA 0x10 0x5 0x6D 0xDD 0x0 0x0
-        == 273475 (canonical avx)
-n-i-bz  Bypass gcc4.4/4.5 wrong code generation causing out of memory or asserts
-n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
-n-i-bz  Fix false positive in sys_clone on amd64 when optional args are not given (e.g. child_tidptr)
-n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
+299629  dup3() syscall (358) support is missing for ARM
+299694  POWER Processor DFP instruction support missing, part 5
+299756  Ignore --free-fill for MEMPOOL_FREE and FREELIKE client requests
+299803  == 273475 (Add support for AVX instructions)
+299804  == 273475 (Add support for AVX instructions)
+299805  == 273475 (Add support for AVX instructions)
 300140  ARM - Missing (T1) SMMUL
-300195  read_elf_debug_info() should accept 'executable' .got sections
-        == 296318
-300389  AMD Bulldozer system: vex: priv/main_main.c:315 (LibVEX_Translate):
-        Assertion `are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps)' failed.
+300195  == 296318 (ELF Debug info improvements (more than one rx/rw mapping))
+300389  Assertion `are_valid_hwcaps(VexArchAMD64, [..])' failed.
 300414  FCOM and FCOMP unimplemented for amd64 guest
 301204  infinite loop in canonicaliseSymtab with ifunc symbol
-301229  dup of 203877, see above.
+301229  == 203877 (increase to 16Mb maximum allowed alignment for memalign etc)
 301265  add x86 support to Android build 
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
 302287  Unhandled movbe instruction on Atom processors
-302370  The nmadd, fnmsub, fnmadds, fnmsubs instructions always negate
-        the result even when the result is QNAN or SNAN.
+302370  PPC: fnmadd, fnmsub, fnmadds, fnmsubs insns always negate the result
 302536  Fix for the POWER Valgrind regression test: memcheck-ISA2.0.
 302578  Unrecognized isntruction 0xc5 0x32 0xc2 0xca 0x09 vcmpngess
-302656  Unhandled instruction (vcvtsi2ssq)
-        == 273475 (canonical avx)
-302709  valgrind for ARM needs extra tls support for android emulator under Linux
+302656  == 273475 (Add support for AVX instructions)
+302709  valgrind for ARM needs extra tls support for android emulator [..]
 302827  add wrapper for CDROM_GET_CAPABILITY
 302901  Valgrind crashes with dwz optimized debuginfo
 302918  Enable testing of the vmaddfp and vnsubfp instructions in the testsuite
 303116  Add support for the POWER instruction popcntb
 303127  Power test suite fixes for frsqrte, vrefp, and vrsqrtefp instructions.
-303250  "Assertion `instrs_in->arr_used <= 10000' failed" on
-        OpenSSL with --track-origins=yes
-303624  segmentation fault on Android 4.1 (e.g. on android emulator or Galaxy Nexus OMAP) 
+303250  Assertion `instrs_in->arr_used <= 10000' failed w/ OpenSSL code
+303466  == 273475 (Add support for AVX instructions)
+303624  segmentation fault on Android 4.1 (e.g. on Galaxy Nexus OMAP) 
 303963  strstr() function produces wrong results under valgrind callgrind
 304054  CALL_FN_xx macros need to enforce stack alignment
+715750  (MacOSX): Incorrect nvalid-address errors near 0xFFFFxxxx (mozbug#)
+n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
+n-i-bz  Bypass gcc4.4/4.5 code gen bugs causing out of memory or asserts
+n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
+n-i-bz  Fix false positive in sys_clone on amd64 when optional args [..]
+n-i-bz  s390x: Shadow registers can now be examined using vgdb
+
+
 
 Release 3.7.0 (5 November 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

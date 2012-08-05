@@ -139,6 +139,15 @@ if it can't find this one:
 
 I haven't succeeded in building the print docs.
 
+
+Notes [Aug. 2012]
+-----------------
+On Ubuntu 10.04 there was a new capacity-related failure whilst
+building the print docs in the run up to the 3.8.0 release.  This was
+fixed by editing /etc/texmf/texmf.cnf and changing pool_size to
+2000000.
+
+
 Notes [Mar. 2007]
 -----------------
 For SuSE 10.1, I have to install the following packages to get a

@@ -74,6 +74,8 @@ port.
 Dragos Tatulea modified the arm-android port so it also works on
 x86-android.
 
+Jakub Jelinek helped out with the AVX support.
+
 Many, many people sent bug reports, patches, and helpful feedback.
 
 Development of Valgrind was supported in part by the Tri-Lab Partners

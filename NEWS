@@ -113,7 +113,7 @@ serious work at present.
 
 * Increased limit for the --num-callers command line flag to 500.
 
-* Performance improvments for error matching when there are many
+* Performance improvements for error matching when there are many
   suppression records in use.
 
 * Improved support for DWARF4 debugging information (bug 284184).
@@ -2245,7 +2245,7 @@ Lackey has been improved, and MPI support has been added.  In detail:
 
 - Memcheck has improved speed and reduced memory use.  Run times are
   typically reduced by 15-30%, averaging about 24% for SPEC CPU2000.
-  The other tools have smaller but noticeable speed improvments.  We
+  The other tools have smaller but noticeable speed improvements.  We
   are interested to hear what improvements users get.
 
   Memcheck uses less memory due to the introduction of a compressed

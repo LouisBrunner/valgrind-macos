@@ -94,7 +94,7 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 #undef PTRACEINVOKER
 #endif
 
-#if defined(VGPV_arm_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
 #undef PTRACEINVOKER
 #endif
 
@@ -1634,7 +1634,7 @@ void received_signal (int signum)
       sigpipe++;
    } else if (signum == SIGALRM) {
       sigalrm++;
-#if defined(VGPV_arm_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
       /* Android has no pthread_cancel. As it also does not have
          PTRACE_INVOKER, there is no need for cleanup action.
          So, we just do nothing. */

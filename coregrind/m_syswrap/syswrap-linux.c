@@ -223,13 +223,15 @@ static void run_a_thread_NORETURN ( Word tidW )
          assembler. */
 #if defined(VGP_x86_linux)
       asm volatile (
+         "pushl %%ebx\n"
          "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
          "movl	%2, %%eax\n"    /* set %eax = __NR_exit */
          "movl	%3, %%ebx\n"    /* set %ebx = tst->os_state.exitcode */
          "int	$0x80\n"	/* exit(tst->os_state.exitcode) */
+	 "popl %%ebx\n"
          : "=m" (tst->status)
          : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
-         : "eax", "ebx"
+         : "eax"
       );
 #elif defined(VGP_amd64_linux)
       asm volatile (
@@ -5379,7 +5381,7 @@ PRE(sys_ioctl)
       /* These just take an int by value */
       break;
 
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
    /* ashmem */
    case VKI_ASHMEM_GET_SIZE:
    case VKI_ASHMEM_SET_SIZE:
@@ -5445,7 +5447,7 @@ PRE(sys_ioctl)
            PRE_FIELD_WRITE("ioctl(BINDER_VERSION)", bv->protocol_version);
        }
        break;
-#  endif /* defined(VGPV_arm_linux_android) */
+#  endif /* defined(VGPV_*_linux_android) */
 
    case VKI_HCIINQUIRY:
       if (ARG3) {
@@ -5505,7 +5507,7 @@ POST(sys_ioctl)
 
    /* --- BEGIN special IOCTL handlers for specific Android hardware --- */
 
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
 
 #  if defined(ANDROID_HARDWARE_nexus_s)
 
@@ -5567,18 +5569,11 @@ POST(sys_ioctl)
    /* END Nexus S specific ioctls */
 
 
-#  elif defined(ANDROID_HARDWARE_pandaboard)
+#  elif defined(ANDROID_HARDWARE_generic) || defined(ANDROID_HARDWARE_emulator)
 
-   /* BEGIN Pandaboard specific ioctls */
+   /* BEGIN generic/emulator specific ioctls */
    /* currently none are known */
-   /* END Pandaboard specific ioctls */
-
-
-#  elif defined(ANDROID_HARDWARE_emulator)
-
-   /* BEGIN emulator specific ioctls */
-   /* currently none are known */
-   /* END emulator specific ioctls */
+   /* END generic/emulator specific ioctls */
 
 
 #  else /* no ANDROID_HARDWARE_anything defined */
@@ -5589,7 +5584,8 @@ POST(sys_ioctl)
 #   warning "building for.  Currently known values are"
 #   warning ""
 #   warning "   ANDROID_HARDWARE_nexus_s       Samsung Nexus S"
-#   warning "   ANDROID_HARDWARE_pandaboard    Pandaboard running Linaro Android"
+#   warning "   ANDROID_HARDWARE_generic       Generic device (eg, Pandaboard)"
+#   warning "   ANDROID_HARDWARE_emulator      x86 or arm emulator"
 #   warning ""
 #   warning "Make sure you exactly follow the steps in README.android."
 #   warning ""
@@ -5597,7 +5593,7 @@ POST(sys_ioctl)
 
 #  endif /* cases for ANDROID_HARDWARE_blah */
 
-#  endif /* defined(VGPV_arm_linux_android) */
+#  endif /* defined(VGPV_*_linux_android) */
 
    /* --- END special IOCTL handlers for specific Android hardware --- */
 
@@ -6408,7 +6404,7 @@ POST(sys_ioctl)
       }
       break;
 
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
    /* ashmem */
    case VKI_ASHMEM_GET_SIZE:
    case VKI_ASHMEM_SET_SIZE:
@@ -6449,7 +6445,7 @@ POST(sys_ioctl)
            POST_FIELD_WRITE(bv->protocol_version);
        }
        break;
-#  endif /* defined(VGPV_arm_linux_android) */
+#  endif /* defined(VGPV_*_linux_android) */
 
    case VKI_HCIINQUIRY:
       if (ARG3) {

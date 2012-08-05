@@ -944,10 +944,10 @@ DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
 
 # Normally the PLAT = (ARCH, OS) characterisation of the platform is enough.
 # But there are times where we need a bit more control.  The motivating
-# and currently only case is Android: this is almost identical to arm-linux,
-# but not quite.  So this introduces the concept of platform variant tags,
-# which get passed in the compile as -DVGPV_<arch>_<os>_<variant> along
-# with the main -DVGP_<arch>_<os> definition.
+# and currently only case is Android: this is almost identical to
+# {x86,arm}-linux, but not quite.  So this introduces the concept of platform
+# variant tags, which get passed in the compile as -DVGPV_<arch>_<os>_<variant>
+# along with the main -DVGP_<arch>_<os> definition.
 #
 # In almost all cases, the <variant> bit is "vanilla".  But for Android
 # it is "android" instead.
@@ -960,15 +960,14 @@ DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
 #
 #   -DVGP_arm_linux -DVGPV_arm_linux_android
 #
-# The setup of the platform variant is pushed relatively far down this
-# file in order that we can inspect any of the variables set above.
+# Same for x86. The setup of the platform variant is pushed relatively far
+# down this file in order that we can inspect any of the variables set above.
 
 # In the normal case ..
 VGCONF_PLATVARIANT="vanilla"
 
-# Android on ARM ?
-if test "$VGCONF_ARCH_PRI-$VGCONF_OS" = "arm-linux" \
-        -a "$GLIBC_VERSION" = "bionic";
+# Android ?
+if test "$GLIBC_VERSION" = "bionic";
 then
    VGCONF_PLATVARIANT="android"
 fi

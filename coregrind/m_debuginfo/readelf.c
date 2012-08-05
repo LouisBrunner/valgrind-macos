@@ -385,7 +385,7 @@ Bool get_elf_symbol_info (
       in /system/bin/linker:  __dl_strcmp __dl_strlen
    */
    if (sym->st_size == 0) {
-#     if defined(VGPV_arm_linux_android)
+#     if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
       *sym_size_out = 2048;
 #     else
       TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
@@ -1120,7 +1120,7 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
 {
    vg_assert(*dimage == 0 && *n_dimage == 0);
 
-#  if !defined(VGPV_arm_linux_android)
+#  if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
    return False; /* we don't know narfink */
 
 #  else /* android specific hacks; look away now. */
@@ -2659,7 +2659,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     if !defined(VGP_amd64_linux) \
          && !defined(VGP_s390x_linux) \
          && !defined(VGP_ppc64_linux) \
-         && !defined(VGPV_arm_linux_android)
+         && !defined(VGPV_arm_linux_android) \
+         && !defined(VGPV_x86_linux_android)
       if (stab_img && stabstr_img) {
          ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );

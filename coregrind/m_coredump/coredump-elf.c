@@ -136,7 +136,7 @@ static void fill_phdr(ESZ(Phdr) *phdr, const NSegment *seg, UInt off, Bool write
    phdr->p_align = VKI_PAGE_SIZE;
 }
 
-#if defined(VGPV_arm_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
 /* Android's libc doesn't provide a definition for this.  Hence: */
 typedef
    struct {
@@ -159,7 +159,7 @@ static UInt note_size(const struct note *n)
                             + VG_ROUNDUP(n->note.n_descsz, 4);
 }
 
-#if !defined(VGPV_arm_linux_android)
+#if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
 static void add_note(struct note **list, const Char *name, UInt type,
                      const void *data, UInt datasz)
 {
@@ -181,7 +181,7 @@ static void add_note(struct note **list, const Char *name, UInt type,
    VG_(memcpy)(n->name, name, namelen);
    VG_(memcpy)(n->name+VG_ROUNDUP(namelen,4), data, datasz);
 }
-#endif /* !defined(VGPV_arm_linux_android) */
+#endif /* !defined(VGPV_*_linux_android) */
 
 static void write_note(Int fd, const struct note *n)
 {
@@ -476,7 +476,7 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #endif
 }
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
 static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
    ThreadArchState* arch = (ThreadArchState*)&tst->arch;
@@ -589,26 +589,28 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 	 continue;
 
 #     if defined(VGP_x86_linux)
+#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
       {
          vki_elf_fpxregset_t xfpu;
          fill_xfpu(&VG_(threads)[i], &xfpu);
          add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
       }
 #     endif
+#     endif
 
       fill_fpu(&VG_(threads)[i], &fpu);
-#     if !defined(VGPV_arm_linux_android)
+#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
       add_note(&notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
 #     endif
 
       fill_prstatus(&VG_(threads)[i], &prstatus, si);
-#     if !defined(VGPV_arm_linux_android)
+#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
       add_note(&notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
 #     endif
    }
 
    fill_prpsinfo(&VG_(threads)[tid], &prpsinfo);
-#  if !defined(VGPV_arm_linux_android)
+#  if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
    add_note(&notelist, "CORE", NT_PRPSINFO, &prpsinfo, sizeof(prpsinfo));
 #  endif
 

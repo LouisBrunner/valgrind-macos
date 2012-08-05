@@ -3,12 +3,17 @@ How to cross-compile for Android.  These notes were last updated on
 17 Feb 2012, for Valgrind SVN revision 12390/2257.
 
 This is known to work at least for :
+ARM:
+####
   Android 4.0.3 running on a (rooted, AOSP build) Nexus S.
   Android 4.0.3 running on Motorola Xoom.
-  Android 4.0.3 running on android emulator.
+  Android 4.0.3 running on android arm emulator.
   Android 4.1   running on android emulator.
-
 Android 2.3.4 on Nexus S worked at some time in the past.
+
+x86:
+####
+  Android 4.0.3 running on android x86 emulator.
 
 On android, GDBserver might insert breaks at wrong addresses.
 Feedback on this welcome.
@@ -43,7 +48,7 @@ export NDKROOT=/path/to/android-ndk-r6
 # So choose one of the below:
 #
 export HWKIND=nexus_s         # Samsung Nexus S; also Xoom (for now)
-export HWKIND=pandaboard      # Pandaboard running Linaro Android
+export HWKIND=generic         # A generic Android device. eg, Pandaboard
 export HWKIND=emulator        # Android emulator
 
 # Then cd to the root of your Valgrind source tree.
@@ -57,9 +62,17 @@ cd /path/to/valgrind/source/tree
 
 # Set up toolchain paths.
 #
+For ARM
+#######
 export AR=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ar
 export LD=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ld
 export CC=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-gcc
+
+For x86
+#######
+export AR=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linux-ar
+export LD=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linux-ld
+export CC=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linux-gcc
 
 
 # Do configuration stuff.  Don't mess with the --prefix in the
@@ -70,6 +83,7 @@ export CC=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin
 
 ./autogen.sh
 
+# for ARM
 CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm -DANDROID_HARDWARE_$HWKIND" \
    CFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm" \
    ./configure --prefix=/data/local/Inst \
@@ -78,11 +92,21 @@ CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm -DANDROID_HARDWARE_$HW
 # note: on android emulator, android-14 platform was also tested and works.
 # It is not clear what this platform nr really is.
 
+# for x86
+CPPFLAGS="--sysroot=$NDKROOT/platforms/android-9/arch-x86 -DANDROID_HARDWARE_$HWKIND" \
+   CFLAGS="--sysroot=$NDKROOT/platforms/android-9/arch-x86 -fno-pic" \
+   ./configure --prefix=/data/local/Inst \
+   --host=i686-android-linux --target=i686-android-linux \
+   --with-tmpdir=/sdcard
+
 # At the end of the configure run, a few lines of details
 # are printed.  Make sure that you see these two lines:
-#
+# For ARM:
 #          Platform variant: android
 #     Primary -DVGPV string: -DVGPV_arm_linux_android=1
+# For x86:
+#          Platform variant: android
+#     Primary -DVGPV string: -DVGPV_x86_linux_android=1
 #
 # If you see anything else at this point, something is wrong, and
 # either the build will fail, or will succeed but you'll get something

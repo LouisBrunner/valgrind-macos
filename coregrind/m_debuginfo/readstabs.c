@@ -35,8 +35,9 @@
 */
 
 /* "on Linux (except android), or on Darwin" */
-#if (defined(VGO_linux) && !defined(VGPV_arm_linux_android)) \
-    || defined(VGO_darwin)
+#if (defined(VGO_linux) && \
+    !(defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)) \
+    || defined(VGO_darwin))
 
 #include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"
@@ -388,7 +389,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
    }
 }
 
-#endif /* (defined(VGO_linux) && !defined(VGPV_arm_linux_android)) \
+#endif /* (defined(VGO_linux) && !defined(VGPV_*_linux_android)) \
           || defined(VGO_darwin) */
 
 /*--------------------------------------------------------------------*/

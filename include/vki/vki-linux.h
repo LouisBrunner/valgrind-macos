@@ -2844,7 +2844,7 @@ struct vki_getcpu_cache {
 // From kernel/common/include/linux/ashmem.h
 //----------------------------------------------------------------------
 
-#if defined(VGPV_arm_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
 
 #define VKI_ASHMEM_NAME_LEN 256
 
@@ -2899,7 +2899,7 @@ struct vki_binder_version {
 #define VKI_BINDER_THREAD_EXIT _VKI_IOW('b', 8, int)
 #define VKI_BINDER_VERSION _VKI_IOWR('b', 9, struct vki_binder_version)
 
-#endif /* defined(VGPV_arm_linux_android) */
+#endif /* defined(VGPV_*_linux_android) */
 
 //----------------------------------------------------------------------
 // From linux-3.0.4/include/net/bluetooth/bluetooth.h

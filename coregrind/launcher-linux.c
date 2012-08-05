@@ -210,7 +210,7 @@ static const char *select_platform(const char *clientname)
                platform = "amd64-linux";
             }
          } else if (header[EI_DATA] == ELFDATA2MSB) {
-#           if !defined(VGPV_arm_linux_android)
+#           if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
             if (ehdr->e_machine == EM_PPC64 &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {

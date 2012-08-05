@@ -76,12 +76,14 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
    Int result;
 
    __asm__ volatile (
+      "pushl %%ebx\n"
       "movl  $"VG_STRINGIFY(__NR_write)", %%eax\n" /* %eax = __NR_write */
       "movl  $2, %%ebx\n"       /* %ebx = stderr */
       "int   $0x80\n"           /* write(stderr, buf, n) */
+      "popl %%ebx\n"
       : /*wr*/    "=a" (result)
       : /*rd*/    "c" (buf), "d" (n)
-      : /*trash*/ "ebx", "edi", "memory", "cc"
+      : /*trash*/ "edi", "memory", "cc"
    );
 
    return result >= 0 ? result : -1;

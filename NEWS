@@ -16,6 +16,8 @@ xxx Don't forget to update VALGRIND_MAJOR/MINOR before release
   Memcheck, massif, lackey, callgrind and none are tools that have been
   tested and are known to work well. See README.mips for more details.
 
+* Preliminary support for x86 platform running Android.
+
 * ==================== TOOL CHANGES ====================
 
 * Massif
@@ -261,6 +263,7 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 300414  FCOM and FCOMP unimplemented for amd64 guest
 301204  infinite loop in canonicaliseSymtab with ifunc symbol
 301229  dup of 203877, see above.
+301265  add x86 support to Android build 
 301984  configure script doesn't detect certain versions of clang
 302205  Fix compiler warnings for POWER VEX code and POWER test cases
 302287  Unhandled movbe instruction on Atom processors

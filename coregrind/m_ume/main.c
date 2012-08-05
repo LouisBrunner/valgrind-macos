@@ -199,7 +199,7 @@ static Bool is_binary_file(Char* f)
 // will refuse to (eg. scripts lacking a "#!" prefix).
 static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
 {
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
    Char*  default_interp_name = "/system/bin/sh";
 #  else
    Char*  default_interp_name = "/bin/sh";

@@ -2227,7 +2227,7 @@ subject to the following constraints:</para>
    instructions.  If the translator encounters these, Valgrind will
    generate a SIGILL when the instruction is executed.  Apart from
    that, on x86 and amd64, essentially all instructions are supported,
-   up to and including AVX abd AES in 64-bit mode and SSSE3 in 32-bit
+   up to and including AVX and AES in 64-bit mode and SSSE3 in 32-bit
    mode.  32-bit mode does in fact support the bare minimum SSE4
    instructions to needed to run programs on MacOSX 10.6 on 32-bit
    targets.

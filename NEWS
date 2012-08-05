@@ -122,7 +122,7 @@ serious work at present.
   between performance and precision of exceptions.  Specifically,
   --vex-iropt-precise-memory-exns has been removed and replaced by
   --vex-iropt-register-updates, with extended functionality.  This
-  allows the the Valgrind gdbserver to always show up to date register
+  allows the Valgrind gdbserver to always show up to date register
   values to GDB.
 
 * Modest performance gains through the use of translation chaining for

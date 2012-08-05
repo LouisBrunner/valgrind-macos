@@ -73,7 +73,7 @@ serious work at present.
     rules used to suppress leak reports.
 
   - Reduced noise (false positive) level on MacOSX 10.6/10.7, due to
-    via more precise analysis, which is important for LLVM/Clang
+    more precise analysis, which is important for LLVM/Clang
     generated code.  This is at the cost of somewhat reduced
     performance.  Note there is no change to analysis precision or
     costs on Linux targets.

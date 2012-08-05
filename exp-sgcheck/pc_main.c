@@ -9,7 +9,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2008-2011 OpenWorks Ltd
+   Copyright (C) 2008-2012 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -73,7 +73,7 @@ static void pc_pre_clo_init(void)
    VG_(details_description)     ("a stack and global array "
                                  "overrun detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2003-2011, and GNU GPL'd, by OpenWorks Ltd et al.");
+      "Copyright (C) 2003-2012, and GNU GPL'd, by OpenWorks Ltd et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 496 );
 

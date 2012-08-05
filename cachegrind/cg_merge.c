@@ -8,7 +8,7 @@
   This file is part of Cachegrind, a Valgrind tool for cache
   profiling programs.
 
-  Copyright (C) 2002-2011 Nicholas Nethercote
+  Copyright (C) 2002-2012 Nicholas Nethercote
      njn@valgrind.org
 
   AVL tree code derived from

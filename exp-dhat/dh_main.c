@@ -7,7 +7,7 @@
    This file is part of DHAT, a Valgrind tool for profiling the
    heap usage of programs.
 
-   Copyright (C) 2010-2011 Mozilla Inc
+   Copyright (C) 2010-2012 Mozilla Inc
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -1348,7 +1348,7 @@ static void dh_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a dynamic heap analysis tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2010-2011, and GNU GPL'd, by Mozilla Inc");
+      "Copyright (C) 2010-2012, and GNU GPL'd, by Mozilla Inc");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    // Basic functions.

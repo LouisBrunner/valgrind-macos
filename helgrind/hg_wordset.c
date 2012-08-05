@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2011 OpenWorks LLP
+   Copyright (C) 2007-2012 OpenWorks LLP
        info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or

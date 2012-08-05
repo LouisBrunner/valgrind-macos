@@ -11,12 +11,12 @@
 
    Initial version (Annelid):
 
-   Copyright (C) 2003-2011 Nicholas Nethercote
+   Copyright (C) 2003-2012 Nicholas Nethercote
       njn@valgrind.org
 
    Valgrind-3.X port:
 
-   Copyright (C) 2008-2011 OpenWorks Ltd
+   Copyright (C) 2008-2012 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or

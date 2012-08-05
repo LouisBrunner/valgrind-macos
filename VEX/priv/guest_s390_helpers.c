@@ -546,7 +546,7 @@ s390_do_cu42(UInt srcval)
     +-------+-----------+-------------------+
 */
 ULong
-s390_do_cu12_helper1(UInt byte, UInt etf3_and_m3_is_1)
+s390_do_cu12_cu14_helper1(UInt byte, UInt etf3_and_m3_is_1)
 {
    vassert(byte <= 0xff);
 
@@ -567,7 +567,7 @@ s390_do_cu12_helper1(UInt byte, UInt etf3_and_m3_is_1)
    return 4 << 8;  // 4 bytes
 }
 
-/* The function performs a CU12 operation. BYTE1, BYTE2, etc are the
+/* The function performs a CU12 or CU14 operation. BYTE1, BYTE2, etc are the
    bytes as read from the input stream, left to right. BYTE1 is a valid
    byte. The function returns three things encoded in an ULong value:
 
@@ -580,13 +580,13 @@ s390_do_cu12_helper1(UInt byte, UInt etf3_and_m3_is_1)
     |  0x0  | converted bytes | num_bytes | invalid_character |
     +-------+-----------------+-----------+-------------------+
 */
-ULong
-s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
-                     ULong stuff)
+static ULong
+s390_do_cu12_cu14_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
+                          ULong stuff, Bool is_cu12)
 {
+   UInt num_src_bytes = stuff >> 1, etf3_and_m3_is_1 = stuff & 0x1;
    UInt num_bytes = 0, invalid_character = 0;
    ULong retval = 0;
-   UInt num_src_bytes = stuff >> 1, etf3_and_m3_is_1 = stuff & 0x1;
 
    vassert(num_src_bytes <= 4);
 
@@ -684,24 +684,48 @@ s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
       UInt uvw    = byte1 & 0x7;
       UInt xy     = (byte2 >> 4) & 0x3;
       UInt uvwxy  = (uvw << 2) | xy;
-      UInt abcd   = (uvwxy - 1) & 0xf;
       UInt efgh   = byte2 & 0xf;
       UInt ij     = (byte3 >> 4) & 0x3;
       UInt klmn   = byte3 & 0xf;
       UInt opqrst = byte4 & 0x3f;
       
-      UInt high_surrogate = (0xd8 << 8) | (abcd << 6) | (efgh << 2) | ij;
-      UInt low_surrogate  = (0xdc << 8) | (klmn << 6) | opqrst;
+      if (is_cu12) {
+         UInt abcd = (uvwxy - 1) & 0xf;
+         UInt high_surrogate = (0xd8 << 8) | (abcd << 6) | (efgh << 2) | ij;
+         UInt low_surrogate  = (0xdc << 8) | (klmn << 6) | opqrst;
 
-      num_bytes = 4;
-      retval = (high_surrogate << 16) | low_surrogate;
+         num_bytes = 4;
+         retval = (high_surrogate << 16) | low_surrogate;
+      } else {
+         num_bytes = 4;
+         retval =
+            (uvwxy << 16) | (efgh << 12) | (ij << 10) | (klmn << 6) | opqrst;
+      }
       break;
    }
    }
 
+   if (! is_cu12) num_bytes = 4;   // for CU14, by definition
+
    /* At this point RETVAL contains the converted bytes.
       Build up the final return value. */
    return (retval << 16) | (num_bytes << 8) | invalid_character;
+}
+
+ULong
+s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
+                     ULong stuff)
+{
+   return s390_do_cu12_cu14_helper2(byte1, byte2, byte3, byte4, stuff,
+                                    /* is_cu12 = */ 1);
+}
+
+ULong
+s390_do_cu14_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
+                     ULong stuff)
+{
+   return s390_do_cu12_cu14_helper2(byte1, byte2, byte3, byte4, stuff,
+                                    /* is_cu12 = */ 0);
 }
 
 

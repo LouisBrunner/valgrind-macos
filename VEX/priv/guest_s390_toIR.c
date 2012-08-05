@@ -11472,12 +11472,12 @@ s390_irgen_CU42(UChar r1, UChar r2)
 }
 
 static IRExpr *
-s390_call_cu12_helper1(IRExpr *byte1, IRExpr *etf3_and_m3_is_1)
+s390_call_cu12_cu14_helper1(IRExpr *byte1, IRExpr *etf3_and_m3_is_1)
 {
    IRExpr **args, *call;
    args = mkIRExprVec_2(byte1, etf3_and_m3_is_1);
-   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
-                        "s390_do_cu12_helper1", &s390_do_cu12_helper1, args);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/, "s390_do_cu12_cu14_helper1",
+                        &s390_do_cu12_cu14_helper1, args);
 
    /* Nothing is excluded from definedness checking. */
    call->Iex.CCall.cee->mcx_mask = 0;
@@ -11500,8 +11500,23 @@ s390_call_cu12_helper2(IRExpr *byte1, IRExpr *byte2, IRExpr *byte3,
    return call;
 }
 
-static HChar *
-s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
+static IRExpr *
+s390_call_cu14_helper2(IRExpr *byte1, IRExpr *byte2, IRExpr *byte3,
+                       IRExpr *byte4, IRExpr *stuff)
+{
+   IRExpr **args, *call;
+   args = mkIRExprVec_5(byte1, byte2, byte3, byte4, stuff);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
+                        "s390_do_cu14_helper2", &s390_do_cu14_helper2, args);
+
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static void
+s390_irgen_cu12_cu14(UChar m3, UChar r1, UChar r2, Bool is_cu12)
 {
    IRTemp addr1 = newTemp(Ity_I64);
    IRTemp addr2 = newTemp(Ity_I64);
@@ -11527,8 +11542,8 @@ s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
 
    /* Call the helper to get number of bytes and invalid byte indicator */
    IRTemp retval1 = newTemp(Ity_I64);
-   assign(retval1, s390_call_cu12_helper1(mkexpr(byte1),
-                                          mkU32(extended_checking)));
+   assign(retval1, s390_call_cu12_cu14_helper1(mkexpr(byte1),
+                                               mkU32(extended_checking)));
 
    /* Check for invalid 1st byte */
    IRExpr *is_invalid = unop(Iop_64to1, mkexpr(retval1));
@@ -11563,8 +11578,14 @@ s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
                          binop(Iop_Shl64, mkexpr(num_src_bytes), mkU8(1)),
                          mkU64(extended_checking));
    IRTemp retval2 = newTemp(Ity_I64);
-   assign(retval2, s390_call_cu12_helper2(mkexpr(byte1), byte2, byte3, byte4,
-                                          stuff));
+
+   if (is_cu12) {
+      assign(retval2, s390_call_cu12_helper2(mkexpr(byte1), byte2, byte3,
+                                             byte4, stuff));
+   } else {
+      assign(retval2, s390_call_cu14_helper2(mkexpr(byte1), byte2, byte3,
+                                             byte4, stuff));
+   }
 
    /* Check for invalid character */
    s390_cc_set(2);
@@ -11583,25 +11604,30 @@ s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
    IRTemp data = newTemp(Ity_I64);
    assign(data, binop(Iop_Shr64, mkexpr(retval2), mkU8(16)));
 
-   /* To store the bytes construct 2 dirty helper calls. The helper calls
-      are guarded (num_bytes == 2 and num_bytes == 4, respectively) such
-      that only one of them will be called at runtime. */
+   if (is_cu12) {
+      /* To store the bytes construct 2 dirty helper calls. The helper calls
+         are guarded (num_bytes == 2 and num_bytes == 4, respectively) such
+         that only one of them will be called at runtime. */
 
-   Int i;
-   for (i = 2; i <= 4; ++i) {
-      IRDirty *d;
+      Int i;
+      for (i = 2; i <= 4; ++i) {
+         IRDirty *d;
 
-      if (i == 3) continue;  // skip this one
+         if (i == 3) continue;  // skip this one
 
-      d = unsafeIRDirty_0_N(0 /* regparms */, "s390x_dirtyhelper_CUxy",
-                            &s390x_dirtyhelper_CUxy,
-                            mkIRExprVec_3(mkexpr(addr1), mkexpr(data),
-                                          mkexpr(num_bytes)));
-      d->guard = binop(Iop_CmpEQ64, mkexpr(num_bytes), mkU64(i));
-      d->mFx   = Ifx_Write;
-      d->mAddr = mkexpr(addr1);
-      d->mSize = i;
-      stmt(IRStmt_Dirty(d));
+         d = unsafeIRDirty_0_N(0 /* regparms */, "s390x_dirtyhelper_CUxy",
+                               &s390x_dirtyhelper_CUxy,
+                               mkIRExprVec_3(mkexpr(addr1), mkexpr(data),
+                                             mkexpr(num_bytes)));
+         d->guard = binop(Iop_CmpEQ64, mkexpr(num_bytes), mkU64(i));
+         d->mFx   = Ifx_Write;
+         d->mAddr = mkexpr(addr1);
+         d->mSize = i;
+         stmt(IRStmt_Dirty(d));
+      }
+   } else {
+      // cu14
+      store(mkexpr(addr1), unop(Iop_64to32, mkexpr(data)));
    }
 
    /* Update source address and length */
@@ -11613,8 +11639,22 @@ s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
    put_gpr_dw0(r1 + 1, binop(Iop_Sub64, mkexpr(len1),  mkexpr(num_bytes)));
 
    iterate();
+}
+
+static HChar *
+s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
+{
+   s390_irgen_cu12_cu14(m3, r1, r2, /* is_cu12 = */ 1);
 
    return "cu12";
+}
+
+static HChar *
+s390_irgen_CU14(UChar m3, UChar r1, UChar r2)
+{
+   s390_irgen_cu12_cu14(m3, r1, r2, /* is_cu12 = */ 0);
+
+   return "cu14";
 }
 
 /*------------------------------------------------------------*/
@@ -12451,7 +12491,9 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb9aa: /* LPTEA */ goto unimplemented;
    case 0xb9ae: /* RRBM */ goto unimplemented;
    case 0xb9af: /* PFMF */ goto unimplemented;
-   case 0xb9b0: /* CU14 */ goto unimplemented;
+   case 0xb9b0: s390_format_RRF_M0RERE(s390_irgen_CU14, ovl.fmt.RRF3.r3,
+                                       ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
+      goto ok;
    case 0xb9b1: s390_format_RRF_M0RERE(s390_irgen_CU24, ovl.fmt.RRF3.r3,
                                        ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
       goto ok;

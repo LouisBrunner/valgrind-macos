@@ -93,11 +93,11 @@ below describes the features supported in addition to Cachegrind's
 features.</para>
 
 <para>Callgrind's ability to detect function calls and returns depends
-on the instruction set of the platform it is run on.  It works best
-on x86 and amd64, and unfortunately currently does not work so well
-on PowerPC code.  This is because there are no explicit call or return
-instructions in the PowerPC instruction set, so Callgrind has to rely
-on heuristics to detect calls and returns.</para>
+on the instruction set of the platform it is run on.  It works best on
+x86 and amd64, and unfortunately currently does not work so well on
+PowerPC, ARM, Thumb or MIPS code.  This is because there are no explicit
+call or return instructions in these instruction sets, so Callgrind
+has to rely on heuristics to detect calls and returns.</para>
 
   </sect2>
 

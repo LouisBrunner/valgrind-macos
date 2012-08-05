@@ -1436,18 +1436,19 @@ Massif, Helgrind, DRD), the following options apply.</para>
       <option><![CDATA[--redzone-size=<number> [default: depends on the tool] ]]></option>
     </term>
     <listitem>
-      <para> Valgrind's <function>malloc, realloc,</function> etc, add padding
-      blocks before and after each block allocated for the client. Such padding
-      blocks are called redzones.
-      The default value for the redzone size depends on the tool.
-      For example, Memcheck adds and protects a minimum of 16 bytes before and
-      after each block allocated by the client to detect block overrun or
-      underrun.
+      <para> Valgrind's <function>malloc, realloc,</function> etc, add
+      padding blocks before and after each heap block allocated by the
+      program being run. Such padding blocks are called redzones.  The
+      default value for the redzone size depends on the tool.  For
+      example, Memcheck adds and protects a minimum of 16 bytes before
+      and after each block allocated by the client.  This allows it to
+      detect block underruns or overruns of up to 16 bytes.
       </para>
-      <para>Increasing the redzone size allows to detect more cases of
-      blocks overrun or underrun. Decreasing the redzone size will
-      reduce the memory needed by Valgrind but reduces the chance to
-      detect block overrun/underrun.</para>
+      <para>Increasing the redzone size makes it possible to detect
+      overruns of larger distances, but increases the amount of memory
+      used by Valgrind.  Decreasing the redzone size will reduce the
+      memory needed by Valgrind but also reduces the chances of
+      detecting over/underruns, so is not recommended.</para>
     </listitem>
   </varlistentry>
 
@@ -1463,7 +1464,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
 <!-- start of xi:include in the manpage -->
 <para id="uncommon.opts.para">These options apply to all tools, as they
 affect certain obscure workings of the Valgrind core.  Most people won't
-need to use these.</para>
+need to use them.</para>
 
 <variablelist id="uncommon.opts.list">
 
@@ -1514,14 +1515,14 @@ need to use these.</para>
       takes advantage of this observation, limiting the overhead of
       checking to code which is likely to be JIT generated.</para>
 
-      <para>Some architectures (including ppc32, ppc64 and ARM) require
-      programs which create code at runtime to flush the instruction
-      cache in between code generation and first use.  Valgrind
-      observes and honours such instructions.  Hence, on ppc32/Linux,
-      ppc64/Linux and ARM/Linux, Valgrind always provides complete, transparent
-      support for self-modifying code.  It is only on platforms such as
-      x86/Linux, AMD64/Linux, x86/Darwin and AMD64/Darwin 
-      that you need to use this option.</para>
+      <para>Some architectures (including ppc32, ppc64, ARM and MIPS)
+      require programs which create code at runtime to flush the
+      instruction cache in between code generation and first use.
+      Valgrind observes and honours such instructions.  Hence, on
+      ppc32/Linux, ppc64/Linux and ARM/Linux, Valgrind always provides
+      complete, transparent support for self-modifying code.  It is
+      only on platforms such as x86/Linux, AMD64/Linux, x86/Darwin and
+      AMD64/Darwin that you need to use this option.</para>
     </listitem>
   </varlistentry>
 
@@ -1693,33 +1694,39 @@ need to use these.</para>
       <option><![CDATA[--fair-sched=<no|yes|try>    [default: no] ]]></option>
     </term>
 
-    <listitem> <para>The <option>--fair-sched</option> controls the
-      locking mechanism used by Valgrind to serialise thread
-      execution. The locking mechanism differs in the way the threads
-      are scheduled, giving a different trade-off between fairness and
-      performance. For more details about the Valgrind thread
-      serialisation principle and its impact on performance and thread
-      scheduling, see <xref linkend="manual-core.pthreads_perf_sched"/>.
+    <listitem> <para>The <option>--fair-sched</option> option controls
+      the locking mechanism used by Valgrind to serialise thread
+      execution.  The locking mechanism controls the way the threads
+      are scheduled, and different settings give different trade-offs
+      between fairness and performance. For more details about the
+      Valgrind thread serialisation scheme and its impact on
+      performance and thread scheduling, see
+      <xref linkend="manual-core.pthreads_perf_sched"/>.
 
       <itemizedlist>
         <listitem> <para>The value <option>--fair-sched=yes</option>
-          activates a fair scheduling. Basically, if multiple threads are
+          activates a fair scheduler.  In short, if multiple threads are
           ready to run, the threads will be scheduled in a round robin
           fashion.  This mechanism is not available on all platforms or
-          linux versions.  If not available,
+          Linux versions.  If not available,
           using <option>--fair-sched=yes</option> will cause Valgrind to
           terminate with an error.</para>
+        <para>You may find this setting improves overall
+          responsiveness if you are running an interactive
+          multithreaded program, for example a web browser, on
+          Valgrind.</para>
         </listitem>
         
         <listitem> <para>The value <option>--fair-sched=try</option>
-          activates the fair scheduling if available on the
-          platform. Otherwise, it will automatically fallback
+          activates fair scheduling if available on the
+          platform.  Otherwise, it will automatically fall back
           to <option>--fair-sched=no</option>.</para>
         </listitem>
         
         <listitem> <para>The value <option>--fair-sched=no</option> activates
-          a scheduling mechanism which does not guarantee fairness
-          between threads ready to run.</para>
+          a scheduler which does not guarantee fairness
+          between threads ready to run, but which in general gives the
+         highest performance.</para>
         </listitem>
       </itemizedlist>
     </para></listitem>
@@ -1813,10 +1820,10 @@ need to use these.</para>
       <option><![CDATA[--soname-synonyms=syn1=pattern1,syn2=pattern2,...]]></option>
     </term>
     <listitem>
-      <para>When a shared library is loaded, Valgrind examines if some
-      functions of this library must be replaced or wrapped.
-      For example, memcheck is replacing the malloc related
-      functions (malloc, free, calloc, ...).
+      <para>When a shared library is loaded, Valgrind checks for 
+      functions in the library that must be replaced or wrapped.
+      For example, Memcheck is replaces all malloc related
+      functions (malloc, free, calloc, ...) with its own versions.
       Such replacements are done by default only in shared libraries whose
       soname matches a predefined soname pattern (e.g.
       <varname>libc.so*</varname> on linux).
@@ -1826,7 +1833,7 @@ need to use these.</para>
       <option>--soname-synonyms</option> to specify one additional
       synonym pattern, giving flexibility in the replacement. </para>
 
-      <para> Currently, this flexibility is only allowed for the
+      <para>Currently, this flexibility is only allowed for the
       malloc related functions, using the
       synonym <varname>somalloc</varname>.  This synonym is usable for
       all tools doing standard replacement of malloc related functions
@@ -1859,6 +1866,14 @@ need to use these.</para>
           that a NONE pattern will match the main executable and any
           shared library having no soname. </para>
         </listitem>
+
+        <listitem>
+          <para>To run a "default" Firefox build for Linux, in which
+          JEMalloc is linked in to the main executable,
+          use <option>--soname-synonyms=somalloc=NONE</option>.
+          </para>
+        </listitem>
+
       </itemizedlist>
    </listitem>
   </varlistentry>
@@ -1985,79 +2000,89 @@ sharing will fail.
 <sect2 id="manual-core.pthreads_perf_sched" xreflabel="Scheduling and Multi-Thread Performance">
 <title>Scheduling and Multi-Thread Performance</title>
 
-<para>A thread executes some code only when it holds the lock.  After
-executing a certain nr of instructions, the running thread will release
-the lock. All threads ready to run will compete to acquire the lock.</para>
+<para>A thread executes code only when it holds the abovementioned
+lock.  After executing some number of instructions, the running thread
+will release the lock.  All threads ready to run will then compete to
+acquire the lock.</para>
 
-<para>The option <option>--fair-sched</option> controls the locking mechanism
-used to serialise the thread execution.</para>
+<para>The <option>--fair-sched</option> option controls the locking mechanism
+used to serialise thread execution.</para>
 
-<para> The default pipe based locking
-(<option>--fair-sched=no</option>) is available on all platforms. The
-pipe based locking does not guarantee fairness between threads : it is
-very well possible that the thread that has just released the lock
-gets it back directly. When using the pipe based locking, different
-execution of the same multithreaded application might give very different
-thread scheduling.</para>
+<para>The default pipe based locking mechanism
+(<option>--fair-sched=no</option>) is available on all
+platforms.  Pipe based locking does not guarantee fairness between
+threads: it is quite likely that a thread that has just released the
+lock reacquires it immediately, even though other threads are ready to
+run.  When using pipe based locking, different runs of the same
+multithreaded application might give very different thread
+scheduling.</para>
 
-<para> The futex based locking is available on some platforms.
-If available, it is activated by <option>--fair-sched=yes</option> or
-<option>--fair-sched=try</option>. The futex based locking ensures
-fairness between threads : if multiple threads are ready to run, the lock
-will be given to the thread which first requested the lock. Note that a thread
-which is blocked in a system call (e.g. in a blocking read system call) has
-not (yet) requested the lock: such a thread requests the lock only after the
-system call is finished.</para>
+<para>An alternative locking mechanism, based on futexes, is available
+on some platforms.  If available, it is activated
+by <option>--fair-sched=yes</option> or
+<option>--fair-sched=try</option>.  Futex based locking ensures
+fairness (round-robin scheduling) between threads: if multiple threads
+are ready to run, the lock will be given to the thread which first
+requested the lock.  Note that a thread which is blocked in a system
+call (e.g. in a blocking read system call) has not (yet) requested the
+lock: such a thread requests the lock only after the system call is
+finished.</para>
 
-<para> The fairness of the futex based locking ensures a better reproducibility
-of the thread scheduling for different executions of a multithreaded
-application. This fairness/better reproducibility is particularly
-interesting when using Helgrind or DRD.</para>
+<para> The fairness of the futex based locking produces better
+reproducibility of thread scheduling for different executions of a
+multithreaded application. This better reproducibility is particularly
+helpful when using Helgrind or DRD.</para>
 
-<para> The Valgrind thread serialisation implies that only one thread
-is running at a time. On a multiprocessor/multicore system, the
+<para>Valgrind's use of thread serialisation implies that only one
+thread at a time may run.  On a multiprocessor/multicore system, the
 running thread is assigned to one of the CPUs by the OS kernel
-scheduler. When a thread acquires the lock, sometimes the thread will
+scheduler.  When a thread acquires the lock, sometimes the thread will
 be assigned to the same CPU as the thread that just released the
-lock. Sometimes, the thread will be assigned to another CPU.  When
-using the pipe based locking, the thread that just acquired the lock
-will often be scheduled on the same CPU as the thread that just
-released the lock. With the futex based mechanism, the thread that
+lock.  Sometimes, the thread will be assigned to another CPU.  When
+using pipe based locking, the thread that just acquired the lock
+will usually be scheduled on the same CPU as the thread that just
+released the lock.  With the futex based mechanism, the thread that
 just acquired the lock will more often be scheduled on another
-CPU. </para>
+CPU.</para>
 
-<para>The Valgrind thread serialisation and CPU assignment by the OS
-kernel scheduler can badly interact with the CPU frequency scaling
-available on many modern CPUs : to decrease power consumption, the
+<para>Valgrind's thread serialisation and CPU assignment by the OS
+kernel scheduler can interact badly with the CPU frequency scaling
+available on many modern CPUs.  To decrease power consumption, the
 frequency of a CPU or core is automatically decreased if the CPU/core
 has not been used recently.  If the OS kernel often assigns the thread
-which just acquired the lock to another CPU/core, there is quite some
-chance that this CPU/core is currently at a low frequency. The
-frequency of this CPU will be increased after some time.  However,
-during this time, the (only) running thread will have run at a low
-frequency. Once this thread has run during some time, it will release
-the lock.  Another thread will acquire this lock, and might be
-scheduled again on another CPU whose clock frequency was decreased in
-the meantime.</para>
+which just acquired the lock to another CPU/core, it is quite likely
+that this CPU/core is currently at a low frequency.  The frequency of
+this CPU will be increased after some time.  However, during this
+time, the (only) running thread will have run at the low frequency.
+Once this thread has run for some time, it will release the lock.
+Another thread will acquire this lock, and might be scheduled again on
+another CPU whose clock frequency was decreased in the
+meantime.</para>
 
-<para>The futex based locking causes threads to more often switch of
-CPU/core.  So, if CPU frequency scaling is activated, the futex based
-locking might decrease significantly (up to 50% degradation has been
-observed) the performance of a multithreaded app running under
-Valgrind. The pipe based locking also somewhat interacts badly with
-CPU frequency scaling. Up to 10..20% performance degradation has been
-observed. </para>
+<para>The futex based locking causes threads to change CPUs/cores more
+often.  So, if CPU frequency scaling is activated, the futex based
+locking might decrease significantly the performance of a
+multithreaded app running under Valgrind.  Performance losses of up to
+50% degradation have been observed, as compared to running on a
+machine for which CPU frequency scaling has been disabled.  The pipe
+based locking locking scheme also interacts badly with CPU frequency
+scaling, with performance losses in the range 10..20% having been
+observed.</para>
 
-<para>To avoid this performance degradation, you can indicate to the
-kernel that all CPUs/cores should always run at maximum clock
-speed. Depending on your linux distribution, CPU frequency scaling
-might be controlled using a graphical interface or using command line
+<para>To avoid such performance degradation, you should indicate to
+the kernel that all CPUs/cores should always run at maximum clock
+speed.  Depending on your Linux distribution, CPU frequency scaling
+may be controlled using a graphical interface or using command line
 such as
 <computeroutput>cpufreq-selector</computeroutput> or
-<computeroutput>cpufreq-set</computeroutput>. You might also indicate to the
-OS scheduler to run a Valgrind process on a specific (fixed) CPU using the
-<computeroutput>taskset</computeroutput> command : running on a fixed
-CPU should ensure that this specific CPU keeps a high frequency clock speed.
+<computeroutput>cpufreq-set</computeroutput>.
+</para>
+
+<para>An alternative way to avoid these problems is to tell the
+OS scheduler to tie a Valgrind process to a specific (fixed) CPU using the
+<computeroutput>taskset</computeroutput> command.  This should ensure
+that the selected CPU does not fall below its maximum frequency
+setting so long as any thread of the program has work to do.
 </para>
 
 </sect2>
@@ -2202,11 +2227,10 @@ subject to the following constraints:</para>
    instructions.  If the translator encounters these, Valgrind will
    generate a SIGILL when the instruction is executed.  Apart from
    that, on x86 and amd64, essentially all instructions are supported,
-   up to and including SSE4.2 in 64-bit mode and SSSE3 in 32-bit mode.
-   Some exceptions: SSE4.2 AES instructions are not supported in
-   64-bit mode, and 32-bit mode does in fact support the bare minimum
-   SSE4 instructions to needed to run programs on MacOSX 10.6 on
-   32-bit targets.
+   up to and including AVX abd AES in 64-bit mode and SSSE3 in 32-bit
+   mode.  32-bit mode does in fact support the bare minimum SSE4
+   instructions to needed to run programs on MacOSX 10.6 on 32-bit
+   targets.
    </para>
   </listitem>
 
@@ -2262,7 +2286,7 @@ subject to the following constraints:</para>
    large amount of administrative information maintained behind the
    scenes.  Another cause is that Valgrind dynamically translates the
    original executable.  Translated, instrumented code is 12-18 times
-   larger than the original so you can easily end up with 100+ MB of
+   larger than the original so you can easily end up with 150+ MB of
    translations when running (eg) a web browser.</para>
   </listitem>
 

@@ -728,10 +728,10 @@ the lower part starts with an <computeroutput>x</computeroutput>,
 the upper part starts with an <computeroutput>y</computeroutput>
 and has an <computeroutput>h</computeroutput> before the shadow postfix.
 </para>
-<para>The special presentation of the AVX shadow registers is due
-to the fact that GDB retrieves independently the lower and upper half
-of the <computeroutput>ymm</computeroutput> registers. GDB however
-does not know that the shadow half registers have to be shown combined.
+<para>The special presentation of the AVX shadow registers is due to
+the fact that GDB independently retrieves the lower and upper half of
+the <computeroutput>ymm</computeroutput> registers.  GDB does not
+however know that the shadow half registers have to be shown combined.
 </para>
 </sect2>
 
@@ -1716,7 +1716,8 @@ functions and merely replaced functions
 <function>malloc</function> etc safely from within wrappers.
 </para>
 
-<para>The above comments are true for {x86,amd64,ppc32,arm}-linux.  On
+<para>The above comments are true for {x86,amd64,ppc32,arm,mips32,s390}-linux.
+On
 ppc64-linux function wrapping is more fragile due to the (arguably
 poorly designed) ppc64-linux ABI.  This mandates the use of a shadow
 stack which tracks entries/exits of both wrapper and replacement
@@ -1727,7 +1728,8 @@ finite size, recursion between wrapper/replacement functions is only
 possible to a limited depth, beyond which Valgrind has to abort the
 run.  This depth is currently 16 calls.</para>
 
-<para>For all platforms ({x86,amd64,ppc32,ppc64,arm}-linux) all the above
+<para>For all platforms ({x86,amd64,ppc32,ppc64,arm,mips32,s390}-linux)
+all the above
 comments apply on a per-thread basis.  In other words, wrapping is
 thread-safe: each thread must individually observe the above
 restrictions, but there is no need for any kind of inter-thread

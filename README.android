@@ -4,18 +4,16 @@ How to cross-compile for Android.  These notes were last updated on
 
 This is known to work at least for :
 ARM:
-####
   Android 4.0.3 running on a (rooted, AOSP build) Nexus S.
   Android 4.0.3 running on Motorola Xoom.
   Android 4.0.3 running on android arm emulator.
   Android 4.1   running on android emulator.
-Android 2.3.4 on Nexus S worked at some time in the past.
+  Android 2.3.4 on Nexus S worked at some time in the past.
 
 x86:
-####
   Android 4.0.3 running on android x86 emulator.
 
-On android, GDBserver might insert breaks at wrong addresses.
+On android-arm, GDBserver might insert breaks at wrong addresses.
 Feedback on this welcome.
 
 Other configurations and toolchains might work, but haven't been tested.
@@ -62,14 +60,12 @@ cd /path/to/valgrind/source/tree
 
 # Set up toolchain paths.
 #
-For ARM
-#######
+# For ARM
 export AR=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ar
 export LD=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ld
 export CC=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-gcc
 
-For x86
-#######
+# For x86
 export AR=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linux-ar
 export LD=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linux-ld
 export CC=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linux-gcc
@@ -101,9 +97,11 @@ CPPFLAGS="--sysroot=$NDKROOT/platforms/android-9/arch-x86 -DANDROID_HARDWARE_$HW
 
 # At the end of the configure run, a few lines of details
 # are printed.  Make sure that you see these two lines:
+#
 # For ARM:
 #          Platform variant: android
 #     Primary -DVGPV string: -DVGPV_arm_linux_android=1
+#
 # For x86:
 #          Platform variant: android
 #     Primary -DVGPV string: -DVGPV_x86_linux_android=1

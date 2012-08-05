@@ -1822,7 +1822,7 @@ need to use them.</para>
     <listitem>
       <para>When a shared library is loaded, Valgrind checks for 
       functions in the library that must be replaced or wrapped.
-      For example, Memcheck is replaces all malloc related
+      For example, Memcheck replaces all malloc related
       functions (malloc, free, calloc, ...) with its own versions.
       Such replacements are done by default only in shared libraries whose
       soname matches a predefined soname pattern (e.g.

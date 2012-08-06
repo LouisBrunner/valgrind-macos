@@ -182,6 +182,7 @@ where XXXXXX is the bug number as listed below.
 289656  == 273475 (Add support for AVX instructions)
 289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
 289823  ==  293754 (PCMPxSTRx not implemented for 16-bit characters)
+289839  s390x: Provide support for unicode conversion instructions
 289939  monitor cmd 'leak_check' with details about leaked or reachable blocks
 290006  memcheck doesn't mark %xmm as initialized after "pcmpeqw %xmm %xmm"
 290655  Add support for AESKEYGENASSIST instruction 

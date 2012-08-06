@@ -71,10 +71,6 @@ get fixed.
 289836  Unhanded instructions mfatbu and mfatbl
   ppc e500 insns
 
-289839  s390x:Provide support for unicode conversion instruction
-        like cu21,cu12,cu42 etc.
-  s390  This will not be ready for 3.8.0
-
 289912  link_tool_exe_darwin should not use relative paths
   unsupported build configuration; low prio
 

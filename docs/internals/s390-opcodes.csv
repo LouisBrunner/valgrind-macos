@@ -662,7 +662,7 @@ lptea,"load page-table-entry address",N/A,"privileged instruction"
 cu24,"convert utf-16 to utf-32",implemented
 cu21,"convert utf-16 to utf-8",implemented
 cu42,"convert utf-32 to utf-16",implemented
-cu41,"convert utf-32 to utf-8","not implemented","open bugzilla"
+cu41,"convert utf-32 to utf-8",implemented
 cu12,"convert utf-8 to utf-16",implemented
 cu14,"convert utf-8 to utf-32",implemented
 srstu,"search string unicode","not implemented",

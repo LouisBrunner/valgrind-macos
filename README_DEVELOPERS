@@ -111,9 +111,10 @@ without too much problem by following these steps:
 
     (gdb) b vgPlain_do_exec
 
-(5) Run the tool with required options:
+(5) Run the tool with required options (the --tool option is required
+    for correct setup), e.g.
 
-    (gdb) run pwd
+    (gdb) run --tool=lackey pwd
 
 Steps (1)--(3) can be put in a .gdbinit file, but any directory names must
 be fully expanded (ie. not an environment variable).

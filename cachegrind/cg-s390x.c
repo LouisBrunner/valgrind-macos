@@ -8,7 +8,7 @@
    This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
-   Copyright IBM Corp. 2010-2011
+   Copyright IBM Corp. 2010-2012
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

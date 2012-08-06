@@ -465,6 +465,25 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
       vpanic("doHelperCall: too many arguments");
    }
 
+   /* All arguments must have Ity_I64. For two reasons:
+      (1) We do not handle floating point arguments.
+      (2) The ABI requires that integer values are sign- or zero-extended
+           to 64 bit.
+   */
+   Int arg_errors = 0;
+   for (i = 0; i < n_args; ++i) {
+      IRType type = typeOfIRExpr(env->type_env, args[i]);
+      if (type != Ity_I64) {
+         ++arg_errors;
+         vex_printf("calling %s: argument #%d has type ", callee->name, i);
+         ppIRType(type);
+         vex_printf("; Ity_I64 is required\n");
+      }
+   }
+
+   if (arg_errors)
+      vpanic("cannot continue due to errors in argument passing");
+
    argreg = 0;
 
    /* If we need the guest state pointer put it in a temporary arg reg */

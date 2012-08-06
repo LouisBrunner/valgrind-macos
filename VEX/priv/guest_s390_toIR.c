@@ -10685,7 +10685,7 @@ s390_call_cvd(IRExpr *in)
 static HChar *
 s390_irgen_CVD(UChar r1, IRTemp op2addr)
 {
-   store(mkexpr(op2addr), s390_call_cvd(get_gpr_w1(r1)));
+   store(mkexpr(op2addr), s390_call_cvd(unop(Iop_32Uto64, get_gpr_w1(r1))));
 
    return "cvd";
 }
@@ -11212,7 +11212,8 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
 
    /* Call the helper */
    IRTemp retval = newTemp(Ity_I64);
-   assign(retval, s390_call_cu21(mkexpr(srcval), mkexpr(low_surrogate)));
+   assign(retval, s390_call_cu21(unop(Iop_32Uto64, mkexpr(srcval)),
+                                 unop(Iop_32Uto64, mkexpr(low_surrogate))));
 
    /* Before we can test whether the 1st operand is exhausted we need to
       test for an invalid low surrogate. Because cc=2 outranks cc=1. */
@@ -11339,7 +11340,8 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
 
    /* Call the helper */
    IRTemp retval = newTemp(Ity_I64);
-   assign(retval, s390_call_cu24(mkexpr(srcval), mkexpr(low_surrogate)));
+   assign(retval, s390_call_cu24(unop(Iop_32Uto64, mkexpr(srcval)),
+                                 unop(Iop_32Uto64, mkexpr(low_surrogate))));
 
    /* Before we can test whether the 1st operand is exhausted we need to
       test for an invalid low surrogate. Because cc=2 outranks cc=1. */
@@ -11416,7 +11418,7 @@ s390_irgen_CU42(UChar r1, UChar r2)
 
    /* Call the helper */
    IRTemp retval = newTemp(Ity_I64);
-   assign(retval, s390_call_cu42(mkexpr(srcval)));
+   assign(retval, s390_call_cu42(unop(Iop_32Uto64, mkexpr(srcval))));
 
    /* If the UTF-32 character was invalid, set cc=2 and we're done.
       cc=2 outranks cc=1 (1st operand exhausted) */
@@ -11510,7 +11512,7 @@ s390_irgen_CU41(UChar r1, UChar r2)
 
    /* Call the helper */
    IRTemp retval = newTemp(Ity_I64);
-   assign(retval, s390_call_cu41(mkexpr(srcval)));
+   assign(retval, s390_call_cu41(unop(Iop_32Uto64, mkexpr(srcval))));
 
    /* If the UTF-32 character was invalid, set cc=2 and we're done.
       cc=2 outranks cc=1 (1st operand exhausted) */
@@ -11628,13 +11630,13 @@ s390_irgen_cu12_cu14(UChar m3, UChar r1, UChar r2, Bool is_cu12)
    next_insn_if(binop(Iop_CmpLT64U, mkexpr(len2), mkU64(1)));
 
    /* There is at least one byte there. Read it. */
-   IRTemp byte1 = newTemp(Ity_I32);
-   assign(byte1, unop(Iop_8Uto32, load(Ity_I8, mkexpr(addr2))));
+   IRTemp byte1 = newTemp(Ity_I64);
+   assign(byte1, unop(Iop_8Uto64, load(Ity_I8, mkexpr(addr2))));
 
    /* Call the helper to get number of bytes and invalid byte indicator */
    IRTemp retval1 = newTemp(Ity_I64);
    assign(retval1, s390_call_cu12_cu14_helper1(mkexpr(byte1),
-                                               mkU32(extended_checking)));
+                                               mkU64(extended_checking)));
 
    /* Check for invalid 1st byte */
    IRExpr *is_invalid = unop(Iop_64to1, mkexpr(retval1));
@@ -11654,13 +11656,13 @@ s390_irgen_cu12_cu14(UChar m3, UChar r1, UChar r2, Bool is_cu12)
 
    cond  = binop(Iop_CmpLE64U, mkU64(2), mkexpr(num_src_bytes));
    addr  = binop(Iop_Add64, mkexpr(addr2), mkU64(1));
-   byte2 = mkite(cond, unop(Iop_8Uto32, load(Ity_I8, addr)), mkU32(0));
+   byte2 = mkite(cond, unop(Iop_8Uto64, load(Ity_I8, addr)), mkU64(0));
    cond  = binop(Iop_CmpLE64U, mkU64(3), mkexpr(num_src_bytes));
    addr  = binop(Iop_Add64, mkexpr(addr2), mkU64(2));
-   byte3 = mkite(cond, unop(Iop_8Uto32, load(Ity_I8, addr)), mkU32(0));
+   byte3 = mkite(cond, unop(Iop_8Uto64, load(Ity_I8, addr)), mkU64(0));
    cond  = binop(Iop_CmpLE64U, mkU64(4), mkexpr(num_src_bytes));
    addr  = binop(Iop_Add64, mkexpr(addr2), mkU64(3));
-   byte4 = mkite(cond, unop(Iop_8Uto32, load(Ity_I8, addr)), mkU32(0));
+   byte4 = mkite(cond, unop(Iop_8Uto64, load(Ity_I8, addr)), mkU64(0));
 
    /* Call the helper to get the converted value and invalid byte indicator.
       We can pass at most 5 arguments; therefore some encoding is needed

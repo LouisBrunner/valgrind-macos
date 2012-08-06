@@ -531,6 +531,76 @@ s390_do_cu42(UInt srcval)
 
 
 /*------------------------------------------------------------*/
+/*--- Clean helper for CU41.                               ---*/
+/*------------------------------------------------------------*/
+
+/* The function performs a CU41 operation. It returns three things
+   encoded in an ULong value:
+   - the converted bytes (at most 4)
+   - the number of converted bytes (1, 2, 3, or 4; 0 if invalid character)
+   - an indication whether the UTF-32 character is invalid
+
+   64      48                16           8                   0
+    +-------+-----------------+-----------+-------------------+
+    |  0x0  | converted bytes | num_bytes | invalid_character |
+    +-------+-----------------+-----------+-------------------+
+*/
+ULong
+s390_do_cu41(UInt srcval)
+{
+   ULong retval;
+   UInt num_bytes, invalid_character = 0;
+
+   if (srcval <= 0x7f) {
+      retval = srcval;
+      num_bytes = 1;
+   } else if (srcval >= 0x80 && srcval <= 0x7ff) {
+      UInt fghij  = srcval >> 6;
+      UInt klmnop = srcval & 0x3f;
+      UInt byte1  = (0xc0 | fghij);
+      UInt byte2  = (0x80 | klmnop);
+
+      retval = (byte1 << 8) | byte2;
+      num_bytes = 2;
+   } else if ((srcval >= 0x800  && srcval <= 0xd7ff) ||
+              (srcval >= 0xdc00 && srcval <= 0xffff)) {
+      UInt abcd   = srcval >> 12;
+      UInt efghij = (srcval >> 6) & 0x3f;
+      UInt klmnop = srcval & 0x3f;
+      UInt byte1  = 0xe0 | abcd;
+      UInt byte2  = 0x80 | efghij;
+      UInt byte3  = 0x80 | klmnop;
+
+      retval = (byte1 << 16) | (byte2 << 8) | byte3;
+      num_bytes = 3;
+   } else if (srcval >= 0x10000 && srcval <= 0x10ffff) {
+      UInt uvw    = (srcval >> 18) & 0x7;
+      UInt xy     = (srcval >> 16) & 0x3;
+      UInt efgh   = (srcval >> 12) & 0xf;
+      UInt ijklmn = (srcval >>  6) & 0x3f;
+      UInt opqrst = srcval & 0x3f;
+      UInt byte1  = 0xf0 | uvw;
+      UInt byte2  = 0x80 | (xy << 4) | efgh;
+      UInt byte3  = 0x80 | ijklmn;
+      UInt byte4  = 0x80 | opqrst;
+
+      retval = (byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4;
+      num_bytes = 4;
+   } else {
+      /* d800 ... dbff or 00110000 ... ffffffff */
+      invalid_character = 1;
+
+      retval = 0;
+      num_bytes = 0;
+   }
+
+   /* At this point RETVAL contains the converted bytes.
+      Build up the final return value. */
+   return (retval << 16) | (num_bytes << 8) | invalid_character;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Clean helpers for CU12.                              ---*/
 /*------------------------------------------------------------*/
 

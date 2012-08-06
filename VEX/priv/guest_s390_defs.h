@@ -88,6 +88,7 @@ ULong s390_do_cu14_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
                            ULong stuff);
 ULong s390_do_cu21(UInt srcvalue, UInt low_surrogate);
 ULong s390_do_cu24(UInt srcvalue, UInt low_surrogate);
+ULong s390_do_cu41(UInt srcvalue);
 ULong s390_do_cu42(UInt srcvalue);
 UInt  s390_do_cvb(ULong decimal);
 ULong s390_do_cvd(ULong binary);

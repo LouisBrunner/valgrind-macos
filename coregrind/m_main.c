@@ -194,8 +194,10 @@ static void usage_NORETURN ( Bool debug_help )
 "                              stated shared object doesn't have the stated\n"
 "                              text symbol.  Patterns can contain ? and *.\n"
 "    --soname-synonyms=syn1=pattern1,syn2=pattern2,... synonym soname\n"
-"                              patterns for some Valgrind wrapping\n"
-"                              or replacement (such as malloc replacement)\n"
+"              specify patterns for function wrapping or replacement.\n"
+"              To use a non-libc malloc library that is\n"
+"                  in the main exe:  --soname-synonyms=somalloc=NONE\n"
+"                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so\n"
 "\n";
 
    Char* usage2 = 

@@ -83,8 +83,10 @@ usage: valgrind [options] prog-and-args
                               stated shared object doesn't have the stated
                               text symbol.  Patterns can contain ? and *.
     --soname-synonyms=syn1=pattern1,syn2=pattern2,... synonym soname
-                              patterns for some Valgrind wrapping
-                              or replacement (such as malloc replacement)
+              specify patterns for function wrapping or replacement.
+              To use a non-libc malloc library that is
+                  in the main exe:  --soname-synonyms=somalloc=NONE
+                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so
 
   user options for Nulgrind:
     (none)

@@ -291,7 +291,7 @@ n-i-bz  Fix assert in gdbserver for watchpoints watching the same address
 n-i-bz  Fix false positive in sys_clone on amd64 when optional args [..]
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 
-(3.8.0-blah: 5  August 2012, vex r2459, valgrind r12841)
+(3.8.0-TEST1:  7 August 2012, vex r2463, valgrind r12857)
 
 
 

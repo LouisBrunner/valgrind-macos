@@ -1,8 +1,8 @@
 
 Release 3.8.0 (XX August 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.8.0 is a feature release with many significant improvements and the
-usual collection of bug fixes.
+3.8.0 is a feature release with many improvements and the usual
+collection of bug fixes.
 
 This release supports X86/Linux, AMD64/Linux, ARM/Linux, PPC32/Linux,
 PPC64/Linux, S390X/Linux, MIPS/Linux, ARM/Android, X86/Android,
@@ -19,7 +19,7 @@ serious work at present.
   cores are supported.  The tools Memcheck, Massif and Lackey have
   been tested and are known to work. See README.mips for more details.
 
-* Preliminary support for x86 platform running Android.
+* Preliminary support for Android running on x86.
 
 * Preliminary (as-yet largely unusable) support for MacOSX 10.8.
 
@@ -284,7 +284,7 @@ where XXXXXX is the bug number as listed below.
 303624  segmentation fault on Android 4.1 (e.g. on Galaxy Nexus OMAP) 
 303963  strstr() function produces wrong results under valgrind callgrind
 304054  CALL_FN_xx macros need to enforce stack alignment
-715750  (MacOSX): Incorrect nvalid-address errors near 0xFFFFxxxx (mozbug#)
+715750  (MacOSX): Incorrect invalid-address errors near 0xFFFFxxxx (mozbug#)
 n-i-bz  Add missing gdbserver xml files for shadow registers for ppc32
 n-i-bz  Bypass gcc4.4/4.5 code gen bugs causing out of memory or asserts
 n-i-bz  Fix assert in gdbserver for watchpoints watching the same address

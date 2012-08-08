@@ -2195,8 +2195,8 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_splice,            sys_splice),           // 313
    LINX_(__NR_sync_file_range,   sys_sync_file_range),  // 314
 
-//   LINX_(__NR_tee,               sys_ni_syscall),       // 315
-//   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 316
+   LINX_(__NR_tee,               sys_tee),              // 315
+   LINXY(__NR_vmsplice,          sys_vmsplice),         // 316
    LINXY(__NR_move_pages,        sys_move_pages),       // 317
    LINXY(__NR_getcpu,            sys_getcpu),           // 318
    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 319

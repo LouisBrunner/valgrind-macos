@@ -1400,9 +1400,9 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_get_robust_list,	 sys_get_robust_list),  // 274
 
    LINX_(__NR_splice,            sys_splice),           // 275
-//   LINX_(__NR_tee,               sys_ni_syscall),       // 276
+   LINX_(__NR_tee,               sys_tee),              // 276
    LINX_(__NR_sync_file_range,   sys_sync_file_range),  // 277
-//   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 278
+   LINXY(__NR_vmsplice,          sys_vmsplice),         // 278
    LINXY(__NR_move_pages,        sys_move_pages),       // 279
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 280

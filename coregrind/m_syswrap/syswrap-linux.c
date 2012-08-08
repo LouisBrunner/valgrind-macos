@@ -3940,7 +3940,7 @@ PRE(sys_splice)
    *flags |= SfMayBlock;
    PRINT("sys_splice ( %ld, %#lx, %ld, %#lx, %ld, %ld )",
          ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-   PRE_REG_READ6(int32_t, "splice",
+   PRE_REG_READ6(vki_ssize_t, "splice",
                  int, fd_in, vki_loff_t *, off_in,
                  int, fd_out, vki_loff_t *, off_out,
                  vki_size_t, len, unsigned int, flags);
@@ -3952,6 +3952,64 @@ PRE(sys_splice)
          PRE_MEM_READ( "splice(off_in)", ARG2, sizeof(vki_loff_t));
       if (ARG4 != 0)
          PRE_MEM_READ( "splice(off_out)", ARG4, sizeof(vki_loff_t));
+   }
+}
+
+PRE(sys_tee)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_tree ( %ld, %ld, %ld, %ld )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(vki_ssize_t, "tee",
+                 int, fd_in, int, fd_out,
+                 vki_size_t, len, unsigned int, flags);
+   if (!ML_(fd_allowed)(ARG1, "tee(fd_in)", tid, False) ||
+       !ML_(fd_allowed)(ARG2, "tee(fd_out)", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   }
+}
+
+PRE(sys_vmsplice)
+{
+   Int fdfl;
+   *flags |= SfMayBlock;
+   PRINT("sys_vmsplice ( %ld, %#lx, %ld, %ld )",
+         ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(vki_ssize_t, "splice",
+                 int, fd, struct vki_iovec *, iov,
+                 unsigned long, nr_segs, unsigned int, flags);
+   if (!ML_(fd_allowed)(ARG1, "vmsplice(fd)", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else if ((fdfl = VG_(fcntl)(ARG1, VKI_F_GETFL, 0)) < 0) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      const struct vki_iovec *iov;
+      PRE_MEM_READ( "vmsplice(iov)", ARG2, sizeof(struct vki_iovec) * ARG3 );
+      for (iov = (struct vki_iovec *)ARG2;
+           iov < (struct vki_iovec *)ARG2 + ARG3; iov++) 
+      {
+         if ((fdfl & (VKI_O_WRONLY|VKI_O_RDWR)) != 0)
+            PRE_MEM_READ( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
+         else if ((fdfl & VKI_O_RDONLY) != 0)
+            PRE_MEM_WRITE( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
+      }
+   }
+}
+
+POST(sys_vmsplice)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0) {
+      Int fdfl = VG_(fcntl)(ARG1, VKI_F_GETFL, 0);
+      vg_assert(fdfl >= 0);
+      if ((fdfl & VKI_O_RDONLY) != 0)
+      {
+         const struct vki_iovec *iov;
+         for (iov = (struct vki_iovec *)ARG2;
+              iov < (struct vki_iovec *)ARG2 + ARG3; iov++) 
+         {
+            POST_MEM_WRITE( (Addr)iov->iov_base, iov->iov_len );
+         }
+      }
    }
 }
 

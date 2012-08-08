@@ -35,7 +35,14 @@
       <xi:include href="../../NEWS" parse="text"  
           xmlns:xi="http://www.w3.org/2001/XInclude" />
     </literallayout>
-    </chapter>
+  </chapter>
+  <chapter id="dist.news.old" xreflabel="Old News">
+    <title>OLDER NEWS</title>
+    <literallayout>
+      <xi:include href="../../NEWS.old" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+  </chapter>
 
   <chapter id="dist.readme" xreflabel="Readme">
     <title>README</title>

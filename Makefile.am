@@ -100,6 +100,7 @@ EXTRA_DIST = \
 	README.s390 \
 	README.android \
 	README.mips \
+	NEWS.old \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec

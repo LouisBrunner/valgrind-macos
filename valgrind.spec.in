@@ -36,7 +36,7 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/valgrind/* docs.installed/
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING FAQ.txt NEWS README*
+%doc AUTHORS COPYING FAQ.txt NEWS NEWS.old README*
 %doc docs.installed/html/*.html docs.installed/html/images/*.png
 %{_bindir}/*
 %{_includedir}/valgrind

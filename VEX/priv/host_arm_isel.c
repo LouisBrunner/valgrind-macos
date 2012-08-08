@@ -6026,6 +6026,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_NoDecode:
          case Ijk_NoRedir:
          case Ijk_Sys_syscall:
+         case Ijk_TInval:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, ARMInstr_XAssisted(r, amR15T, cc,

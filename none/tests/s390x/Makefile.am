@@ -8,7 +8,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
-             ex_sig ex_clone cu14 cu14_1 cu41
+             ex_sig ex_clone cu14 cu14_1 cu41 fpconv
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \

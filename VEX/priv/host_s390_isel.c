@@ -2297,10 +2297,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          goto not_special;
       }
 
-      /* OK. Necessary conditions are satisfied. */
+      /* We can only handle Ity_I64, but the CC_DEPS field can have floats */
+      if (tyd != Ity_I64)
+         goto not_special;
 
-      /* Get the old value and update it */
-      vassert(tyd == Ity_I64);
+      /* OK. Necessary conditions are satisfied. */
 
       old_value = env->old_value[guest_reg];
       new_value = stmt->Ist.Put.data->Iex.Const.con->Ico.U64;

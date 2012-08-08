@@ -1,0 +1,672 @@
+"cefbr" 0.000000
+"cefbr" 1.000000
+"cefbr" -1.000000
+"cefbr" -2147483648.000000
+"cefbr" 2147483648.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cegbr" 0.000000
+"cegbr" 1.000000
+"cegbr" 4294967296.000000
+"cegbr" 2147483648.000000
+"cegbr" 2147483648.000000
+"cegbr" 4294967296.000000
+"cegbr" -1.000000
+"cegbr" -9223372036854775808.000000
+"cegbr" 9223372036854775808.000000
+"cdfbr" 0.000000
+"cdfbr" 1.000000
+"cdfbr" -1.000000
+"cdfbr" -2147483648.000000
+"cdfbr" 2147483647.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdgbr" 0.000000
+"cdgbr" 1.000000
+"cdgbr" 4294967295.000000
+"cdgbr" 2147483648.000000
+"cdgbr" 2147483647.000000
+"cdgbr" 4294967296.000000
+"cdgbr" -1.000000
+"cdgbr" -9223372036854775808.000000
+"cdgbr" 9223372036854775808.000000
+"cxfbr" 0.000000
+"cxfbr" 1.000000
+"cxfbr" -1.000000
+"cxfbr" -2147483648.000000
+"cxfbr" 2147483647.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxgbr" 0.000000
+"cxgbr" 1.000000
+"cxgbr" 4294967295.000000
+"cxgbr" 2147483648.000000
+"cxgbr" 2147483647.000000
+"cxgbr" 4294967296.000000
+"cxgbr" -1.000000
+"cxgbr" -9223372036854775808.000000
+"cxgbr" 9223372036854775807.000000
+"cfebr" 4294967295 cc=1
+"cfebr" 0 cc=0
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 2 cc=2
+"cfebr" 2 cc=2
+"cfebr" 16000 cc=2
+"cfebr" 160000000 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=2
+"cfebr" 0 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cgebr" -1 cc=1
+"cgebr" 0 cc=0
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 2 cc=2
+"cgebr" 2 cc=2
+"cgebr" 16000 cc=2
+"cgebr" 160000000 cc=2
+"cgebr" 1599999967232 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=2
+"cgebr" 0 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cfdbr" 4294967295 cc=1
+"cfdbr" 0 cc=0
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 2 cc=2
+"cfdbr" 2 cc=2
+"cfdbr" 16000 cc=2
+"cfdbr" 160000000 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=2
+"cfdbr" 0 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=0
+"cfdbr" 2147483647 cc=3
+"cgdbr" -1 cc=1
+"cgdbr" 0 cc=0
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 2 cc=2
+"cgdbr" 2 cc=2
+"cgdbr" 16000 cc=2
+"cgdbr" 160000000 cc=2
+"cgdbr" 1600000000000 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=2
+"cgdbr" 0 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=0
+"cgdbr" 9223372036854775807 cc=3
+"cfxbr" 4294967295 cc=1
+"cfxbr" 0 cc=0
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 2 cc=2
+"cfxbr" 2 cc=2
+"cfxbr" 16000 cc=2
+"cfxbr" 160000000 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cgxbr" -1 cc=1
+"cgxbr" 0 cc=0
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 2 cc=2
+"cgxbr" 2 cc=2
+"cgxbr" 16000 cc=2
+"cgxbr" 160000000 cc=2
+"cgxbr" 1600000000000 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cefbr" 0.000000
+"cefbr" 1.000000
+"cefbr" -1.000000
+"cefbr" -2147483648.000000
+"cefbr" 2147483648.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cegbr" 0.000000
+"cegbr" 1.000000
+"cegbr" 4294967296.000000
+"cegbr" 2147483648.000000
+"cegbr" 2147483648.000000
+"cegbr" 4294967296.000000
+"cegbr" -1.000000
+"cegbr" -9223372036854775808.000000
+"cegbr" 9223372036854775808.000000
+"cdfbr" 0.000000
+"cdfbr" 1.000000
+"cdfbr" -1.000000
+"cdfbr" -2147483648.000000
+"cdfbr" 2147483647.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdgbr" 0.000000
+"cdgbr" 1.000000
+"cdgbr" 4294967295.000000
+"cdgbr" 2147483648.000000
+"cdgbr" 2147483647.000000
+"cdgbr" 4294967296.000000
+"cdgbr" -1.000000
+"cdgbr" -9223372036854775808.000000
+"cdgbr" 9223372036854775808.000000
+"cxfbr" 0.000000
+"cxfbr" 1.000000
+"cxfbr" -1.000000
+"cxfbr" -2147483648.000000
+"cxfbr" 2147483647.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxgbr" 0.000000
+"cxgbr" 1.000000
+"cxgbr" 4294967295.000000
+"cxgbr" 2147483648.000000
+"cxgbr" 2147483647.000000
+"cxgbr" 4294967296.000000
+"cxgbr" -1.000000
+"cxgbr" -9223372036854775808.000000
+"cxgbr" 9223372036854775807.000000
+"cfebr" 4294967295 cc=1
+"cfebr" 0 cc=0
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 16000 cc=2
+"cfebr" 160000000 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=2
+"cfebr" 0 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cgebr" -1 cc=1
+"cgebr" 0 cc=0
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 16000 cc=2
+"cgebr" 160000000 cc=2
+"cgebr" 1599999967232 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=2
+"cgebr" 0 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cfdbr" 4294967295 cc=1
+"cfdbr" 0 cc=0
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 16000 cc=2
+"cfdbr" 160000000 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=2
+"cfdbr" 0 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=0
+"cfdbr" 2147483647 cc=3
+"cgdbr" -1 cc=1
+"cgdbr" 0 cc=0
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 16000 cc=2
+"cgdbr" 160000000 cc=2
+"cgdbr" 1600000000000 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=2
+"cgdbr" 0 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=0
+"cgdbr" 9223372036854775807 cc=3
+"cfxbr" 4294967295 cc=1
+"cfxbr" 0 cc=0
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 16000 cc=2
+"cfxbr" 160000000 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cgxbr" -1 cc=1
+"cgxbr" 0 cc=0
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 16000 cc=2
+"cgxbr" 160000000 cc=2
+"cgxbr" 1600000000000 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cefbr" 0.000000
+"cefbr" 1.000000
+"cefbr" -1.000000
+"cefbr" -2147483648.000000
+"cefbr" 2147483648.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cegbr" 0.000000
+"cegbr" 1.000000
+"cegbr" 4294967296.000000
+"cegbr" 2147483648.000000
+"cegbr" 2147483648.000000
+"cegbr" 4294967296.000000
+"cegbr" -1.000000
+"cegbr" -9223372036854775808.000000
+"cegbr" 9223372036854775808.000000
+"cdfbr" 0.000000
+"cdfbr" 1.000000
+"cdfbr" -1.000000
+"cdfbr" -2147483648.000000
+"cdfbr" 2147483647.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdgbr" 0.000000
+"cdgbr" 1.000000
+"cdgbr" 4294967295.000000
+"cdgbr" 2147483648.000000
+"cdgbr" 2147483647.000000
+"cdgbr" 4294967296.000000
+"cdgbr" -1.000000
+"cdgbr" -9223372036854775808.000000
+"cdgbr" 9223372036854775808.000000
+"cxfbr" 0.000000
+"cxfbr" 1.000000
+"cxfbr" -1.000000
+"cxfbr" -2147483648.000000
+"cxfbr" 2147483647.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxgbr" 0.000000
+"cxgbr" 1.000000
+"cxgbr" 4294967295.000000
+"cxgbr" 2147483648.000000
+"cxgbr" 2147483647.000000
+"cxgbr" 4294967296.000000
+"cxgbr" -1.000000
+"cxgbr" -9223372036854775808.000000
+"cxgbr" 9223372036854775807.000000
+"cfebr" 4294967295 cc=1
+"cfebr" 0 cc=0
+"cfebr" 1 cc=2
+"cfebr" 2 cc=2
+"cfebr" 2 cc=2
+"cfebr" 2 cc=2
+"cfebr" 16000 cc=2
+"cfebr" 160000000 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cgebr" -1 cc=1
+"cgebr" 0 cc=0
+"cgebr" 1 cc=2
+"cgebr" 2 cc=2
+"cgebr" 2 cc=2
+"cgebr" 2 cc=2
+"cgebr" 16000 cc=2
+"cgebr" 160000000 cc=2
+"cgebr" 1599999967232 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cfdbr" 4294967295 cc=1
+"cfdbr" 0 cc=0
+"cfdbr" 1 cc=2
+"cfdbr" 2 cc=2
+"cfdbr" 2 cc=2
+"cfdbr" 2 cc=2
+"cfdbr" 16000 cc=2
+"cfdbr" 160000000 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 1 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=0
+"cfdbr" 2147483647 cc=3
+"cgdbr" -1 cc=1
+"cgdbr" 0 cc=0
+"cgdbr" 1 cc=2
+"cgdbr" 2 cc=2
+"cgdbr" 2 cc=2
+"cgdbr" 2 cc=2
+"cgdbr" 16000 cc=2
+"cgdbr" 160000000 cc=2
+"cgdbr" 1600000000000 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 1 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=0
+"cgdbr" 9223372036854775807 cc=3
+"cfxbr" 4294967295 cc=1
+"cfxbr" 0 cc=0
+"cfxbr" 1 cc=2
+"cfxbr" 2 cc=2
+"cfxbr" 2 cc=2
+"cfxbr" 2 cc=2
+"cfxbr" 16000 cc=2
+"cfxbr" 160000000 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 1 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 1 cc=2
+"cfxbr" 2147483647 cc=3
+"cgxbr" -1 cc=1
+"cgxbr" 0 cc=0
+"cgxbr" 1 cc=2
+"cgxbr" 2 cc=2
+"cgxbr" 2 cc=2
+"cgxbr" 2 cc=2
+"cgxbr" 16000 cc=2
+"cgxbr" 160000000 cc=2
+"cgxbr" 1600000000000 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 1 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 1 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cefbr" 0.000000
+"cefbr" 1.000000
+"cefbr" -1.000000
+"cefbr" -2147483648.000000
+"cefbr" 2147483648.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cefbr" 0.000000
+"cefbr" -1.000000
+"cegbr" 0.000000
+"cegbr" 1.000000
+"cegbr" 4294967296.000000
+"cegbr" 2147483648.000000
+"cegbr" 2147483648.000000
+"cegbr" 4294967296.000000
+"cegbr" -1.000000
+"cegbr" -9223372036854775808.000000
+"cegbr" 9223372036854775808.000000
+"cdfbr" 0.000000
+"cdfbr" 1.000000
+"cdfbr" -1.000000
+"cdfbr" -2147483648.000000
+"cdfbr" 2147483647.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdfbr" 0.000000
+"cdfbr" -1.000000
+"cdgbr" 0.000000
+"cdgbr" 1.000000
+"cdgbr" 4294967295.000000
+"cdgbr" 2147483648.000000
+"cdgbr" 2147483647.000000
+"cdgbr" 4294967296.000000
+"cdgbr" -1.000000
+"cdgbr" -9223372036854775808.000000
+"cdgbr" 9223372036854775808.000000
+"cxfbr" 0.000000
+"cxfbr" 1.000000
+"cxfbr" -1.000000
+"cxfbr" -2147483648.000000
+"cxfbr" 2147483647.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxfbr" 0.000000
+"cxfbr" -1.000000
+"cxgbr" 0.000000
+"cxgbr" 1.000000
+"cxgbr" 4294967295.000000
+"cxgbr" 2147483648.000000
+"cxgbr" 2147483647.000000
+"cxgbr" 4294967296.000000
+"cxgbr" -1.000000
+"cxgbr" -9223372036854775808.000000
+"cxgbr" 9223372036854775807.000000
+"cfebr" 4294967294 cc=1
+"cfebr" 0 cc=0
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 1 cc=2
+"cfebr" 16000 cc=2
+"cfebr" 160000000 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=2
+"cfebr" 0 cc=2
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cfebr" 0 cc=0
+"cfebr" 2147483647 cc=3
+"cgebr" -2 cc=1
+"cgebr" 0 cc=0
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 1 cc=2
+"cgebr" 16000 cc=2
+"cgebr" 160000000 cc=2
+"cgebr" 1599999967232 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=2
+"cgebr" 0 cc=2
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cgebr" 0 cc=0
+"cgebr" 9223372036854775807 cc=3
+"cfdbr" 4294967294 cc=1
+"cfdbr" 0 cc=0
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 1 cc=2
+"cfdbr" 16000 cc=2
+"cfdbr" 160000000 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=2
+"cfdbr" 0 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=2
+"cfdbr" 2147483647 cc=3
+"cfdbr" 0 cc=0
+"cfdbr" 2147483647 cc=3
+"cgdbr" -2 cc=1
+"cgdbr" 0 cc=0
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 1 cc=2
+"cgdbr" 16000 cc=2
+"cgdbr" 160000000 cc=2
+"cgdbr" 1600000000000 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=2
+"cgdbr" 0 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=2
+"cgdbr" 9223372036854775807 cc=3
+"cgdbr" 0 cc=0
+"cgdbr" 9223372036854775807 cc=3
+"cfxbr" 4294967294 cc=1
+"cfxbr" 0 cc=0
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 1 cc=2
+"cfxbr" 16000 cc=2
+"cfxbr" 160000000 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cfxbr" 0 cc=2
+"cfxbr" 2147483647 cc=3
+"cgxbr" -2 cc=1
+"cgxbr" 0 cc=0
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 1 cc=2
+"cgxbr" 16000 cc=2
+"cgxbr" 160000000 cc=2
+"cgxbr" 1600000000000 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3
+"cgxbr" 0 cc=2
+"cgxbr" 9223372036854775807 cc=3

@@ -1184,11 +1184,13 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAS_VSX, test x$ac_have_vsx = xyes)
 
+
 AC_MSG_CHECKING([that assembler knows DFP])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   __asm__ __volatile__("dadd 1, 2, 3");
+  __asm__ __volatile__("dcffix 1, 2");
 ]])], [
 ac_asm_have_dfp=yes
 AC_MSG_RESULT([yes])
@@ -1197,12 +1199,14 @@ ac_asm_have_dfp=no
 AC_MSG_RESULT([no])
 ])
 
+
 AC_MSG_CHECKING([that compiler knows -mhard-dfp switch])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mhard-dfp"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   __asm__ __volatile__("dadd 1, 2, 3");
+  __asm__ __volatile__("dcffix 1, 2");
 ]])], [
 ac_gcc_have_dfp=yes
 AC_MSG_RESULT([yes])
@@ -1214,6 +1218,7 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes -a x$ac_gcc_have_dfp = xyes)
+
 
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])

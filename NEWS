@@ -1,5 +1,5 @@
 
-Release 3.8.0 (XX August 2012)
+Release 3.8.0 (10 August 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.8.0 is a feature release with many improvements and the usual
 collection of bug fixes.
@@ -295,6 +295,7 @@ n-i-bz  Fix false positive in sys_clone on amd64 when optional args [..]
 n-i-bz  s390x: Shadow registers can now be examined using vgdb
 
 (3.8.0-TEST3:  9 August 2012, vex r2465, valgrind r12865)
+(3.8.0:       10 August 2012, vex r2465, valgrind r12866)
 
 
 

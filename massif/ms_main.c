@@ -2586,6 +2586,9 @@ static void ms_pre_clo_init(void)
 
    VG_(details_avg_translation_sizeB) ( 330 );
 
+   VG_(clo_vex_control).iropt_register_updates
+      = VexRegUpdSpAtMemAccess; // overridable by the user.
+
    // Basic functions.
    VG_(basic_tool_funcs)          (ms_post_clo_init,
                                    ms_instrument,

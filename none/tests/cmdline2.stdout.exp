@@ -119,7 +119,8 @@ usage: valgrind [options] prog-and-args
   Vex options for all Valgrind tools:
     --vex-iropt-verbosity=<0..9>           [0]
     --vex-iropt-level=<0..2>               [2]
-    --vex-iropt-register-updates=unwindregs-at-mem-access
+    --vex-iropt-register-updates=sp-at-mem-access
+                                |unwindregs-at-mem-access
                                 |allregs-at-mem-access
                                 |allregs-at-each-insn  [unwindregs-at-mem-access]
     --vex-iropt-unroll-thresh=<0..400>     [120]

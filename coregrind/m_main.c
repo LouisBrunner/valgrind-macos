@@ -230,7 +230,8 @@ static void usage_NORETURN ( Bool debug_help )
 "  Vex options for all Valgrind tools:\n"
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"
-"    --vex-iropt-register-updates=unwindregs-at-mem-access\n"
+"    --vex-iropt-register-updates=sp-at-mem-access\n"
+"                                |unwindregs-at-mem-access\n"
 "                                |allregs-at-mem-access\n"
 "                                |allregs-at-each-insn  [unwindregs-at-mem-access]\n"
 "    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
@@ -606,6 +607,10 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                        VG_(clo_vex_control).iropt_verbosity, 0, 10) {}
       else if VG_BINT_CLO(arg, "--vex-iropt-level",
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
+      else if VG_XACT_CLO(arg, 
+                       "--vex-iropt-register-updates=sp-at-mem-access",
+                       VG_(clo_vex_control).iropt_register_updates,
+                       VexRegUpdSpAtMemAccess);
       else if VG_XACT_CLO(arg, 
                        "--vex-iropt-register-updates=unwindregs-at-mem-access",
                        VG_(clo_vex_control).iropt_register_updates,

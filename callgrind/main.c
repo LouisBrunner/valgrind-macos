@@ -1889,9 +1889,29 @@ static void clg_start_client_code_callback ( ThreadId tid, ULong blocks_done )
 static
 void CLG_(post_clo_init)(void)
 {
-   VG_(clo_vex_control).iropt_unroll_thresh = 0;
-   VG_(clo_vex_control).guest_chase_thresh = 0;
+   if (VG_(clo_vex_control).iropt_register_updates
+       != VexRegUpdSpAtMemAccess) {
+      CLG_DEBUG(1, " Using user specified value for "
+                "--vex-iropt-register-updates\n");
+   } else {
+      CLG_DEBUG(1, 
+                " Using default --vex-iropt-register-updates="
+                "sp-at-mem-access\n");
+   }
 
+   if (VG_(clo_vex_control).iropt_unroll_thresh != 0) {
+      VG_(message)(Vg_UserMsg, 
+                   "callgrind only works with --vex-iropt-unroll-thresh=0\n"
+                   "=> resetting it back to 0\n");
+      VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overriden.
+   }
+   if (VG_(clo_vex_control).guest_chase_thresh != 0) {
+      VG_(message)(Vg_UserMsg,
+                   "callgrind only works with --vex-guest-chase-thresh=0\n"
+                   "=> resetting it back to 0\n");
+      VG_(clo_vex_control).guest_chase_thresh = 0; // cannot be overriden.
+   }
+   
    CLG_DEBUG(1, "  dump threads: %s\n", CLG_(clo).separate_threads ? "Yes":"No");
    CLG_DEBUG(1, "  call sep. : %d\n", CLG_(clo).separate_callers);
    CLG_DEBUG(1, "  rec. sep. : %d\n", CLG_(clo).separate_recursions);
@@ -1935,6 +1955,11 @@ void CLG_(pre_clo_init)(void)
 				  "by Josef Weidendorfer et al.");
     VG_(details_bug_reports_to)  (VG_BUGS_TO);
     VG_(details_avg_translation_sizeB) ( 500 );
+
+    VG_(clo_vex_control).iropt_register_updates
+       = VexRegUpdSpAtMemAccess; // overridable by the user.
+    VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overriden.
+    VG_(clo_vex_control).guest_chase_thresh = 0;    // cannot be overriden.
 
     VG_(basic_tool_funcs)        (CLG_(post_clo_init),
                                   CLG_(instrument),

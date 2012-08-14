@@ -1695,6 +1695,8 @@ static void cg_pre_clo_init(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 500 );
 
+   VG_(clo_vex_control).iropt_register_updates
+      = VexRegUpdSpAtMemAccess; // overridable by the user.
    VG_(basic_tool_funcs)          (cg_post_clo_init,
                                    cg_instrument,
                                    cg_fini);

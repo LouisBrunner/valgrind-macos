@@ -38,6 +38,7 @@
 #include "libvex_s390x_common.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_s390_defs.h"
 
@@ -148,7 +149,7 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  */
+   True (but this generates significantly slower code).  */
 Bool
 guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
@@ -161,14 +162,16 @@ guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
    Int ia_min = S390X_GUEST_OFFSET(guest_IA);
    Int ia_max = ia_min + 8 - 1;
 
-   if (maxoff < lr_min || minoff > lr_max) {
-      /* No overlap with LR */
+   if (maxoff < sp_min || minoff > sp_max) {
+      /* No overlap with SP */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < sp_min || minoff > sp_max) {
-      /* No overlap with SP */
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* No overlap with LR */
    } else {
       return True;
    }

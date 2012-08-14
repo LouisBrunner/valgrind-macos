@@ -35,6 +35,7 @@
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_mips_defs.h"
 
@@ -160,9 +161,11 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
    We enforce precise exns for guest SP, PC.
+
+   Only SP is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
@@ -173,6 +176,8 @@ Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 
    if (maxoff < sp_min || minoff > sp_max) {
       /* no overlap with sp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }

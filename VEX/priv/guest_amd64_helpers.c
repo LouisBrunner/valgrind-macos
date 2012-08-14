@@ -40,6 +40,7 @@
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_amd64_defs.h"
 #include "guest_generic_x87.h"
@@ -3716,11 +3717,13 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
    By default we enforce precise exns for guest %RSP, %RBP and %RIP
    only.  These are the minimum needed to extract correct stack
    backtraces from amd64 code.
+
+   Only %RSP is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
                                                    Int maxoff)
@@ -3732,14 +3735,16 @@ Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
    Int rip_min = offsetof(VexGuestAMD64State, guest_RIP);
    Int rip_max = rip_min + 8 - 1;
 
-   if (maxoff < rbp_min || minoff > rbp_max) {
-      /* no overlap with rbp */
+   if (maxoff < rsp_min || minoff > rsp_max) {
+      /* no overlap with rsp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < rsp_min || minoff > rsp_max) {
-      /* no overlap with rsp */
+   if (maxoff < rbp_min || minoff > rbp_max) {
+      /* no overlap with rbp */
    } else {
       return True;
    }

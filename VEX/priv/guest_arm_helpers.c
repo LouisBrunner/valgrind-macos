@@ -35,6 +35,7 @@
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_arm_defs.h"
 
@@ -1043,9 +1044,12 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
-   We enforce precise exns for guest R13(sp), R15T(pc).
+   We enforce precise exns for guest R13(sp), R15T(pc), R7, R11.
+
+
+   Only R13(sp) is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_arm_state_requires_precise_mem_exns ( Int minoff, 
                                                  Int maxoff)
@@ -1057,6 +1061,8 @@ Bool guest_arm_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < sp_min || minoff > sp_max) {
       /* no overlap with sp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }

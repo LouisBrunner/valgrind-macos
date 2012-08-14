@@ -40,6 +40,7 @@
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
 #include "guest_generic_x87.h"
@@ -2739,11 +2740,13 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
    By default we enforce precise exns for guest %ESP, %EBP and %EIP
    only.  These are the minimum needed to extract correct stack
    backtraces from x86 code.
+
+   Only %ESP is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_x86_state_requires_precise_mem_exns ( Int minoff, 
                                                  Int maxoff)
@@ -2755,14 +2758,16 @@ Bool guest_x86_state_requires_precise_mem_exns ( Int minoff,
    Int eip_min = offsetof(VexGuestX86State, guest_EIP);
    Int eip_max = eip_min + 4 - 1;
 
-   if (maxoff < ebp_min || minoff > ebp_max) {
-      /* no overlap with ebp */
+   if (maxoff < esp_min || minoff > esp_max) {
+      /* no overlap with esp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < esp_min || minoff > esp_max) {
-      /* no overlap with esp */
+   if (maxoff < ebp_min || minoff > ebp_max) {
+      /* no overlap with ebp */
    } else {
       return True;
    }

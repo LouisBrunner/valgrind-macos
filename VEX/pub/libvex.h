@@ -311,6 +311,10 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
 /* VexRegisterUpdates specifies when to ensure that the guest state is
    up to date.
 
+   VexRegUpdSpAtMemAccess : all registers are updated at superblock
+   exits, SP is up to date at memory exception points. The SP is described
+   by the arch specific functions guest_<arch>_state_requires_precise_mem_exns.
+
    VexRegUpdUnwindregsAtMemAccess : registers needed to make a stack trace are
    up to date at memory exception points.  Typically, these are PC/SP/FP. The
    minimal registers are described by the arch specific functions
@@ -320,7 +324,8 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
    points.
 
    VexRegUpdAllregsAtEachInsn : all registers up to date at each instruction. */
-typedef enum { VexRegUpdUnwindregsAtMemAccess,
+typedef enum { VexRegUpdSpAtMemAccess,
+               VexRegUpdUnwindregsAtMemAccess,
                VexRegUpdAllregsAtMemAccess,
                VexRegUpdAllregsAtEachInsn } VexRegisterUpdates;
 

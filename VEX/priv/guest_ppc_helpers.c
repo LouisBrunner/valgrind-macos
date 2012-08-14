@@ -41,6 +41,7 @@
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_ppc_defs.h"
 
@@ -696,6 +697,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    minimum needed to extract correct stack backtraces from ppc
    code. [[NB: not sure if keeping LR up to date is actually
    necessary.]]
+
+   Only R1 is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff, 
                                                    Int maxoff )
@@ -707,14 +710,16 @@ Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff,
    Int cia_min = offsetof(VexGuestPPC32State, guest_CIA);
    Int cia_max = cia_min + 4 - 1;
 
-   if (maxoff < lr_min || minoff > lr_max) {
-      /* no overlap with LR */
+   if (maxoff < r1_min || minoff > r1_max) {
+      /* no overlap with R1 */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < r1_min || minoff > r1_max) {
-      /* no overlap with R1 */
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* no overlap with LR */
    } else {
       return True;
    }
@@ -744,14 +749,16 @@ Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff,
    Int cia_min = offsetof(VexGuestPPC64State, guest_CIA);
    Int cia_max = cia_min + 8 - 1;
 
-   if (maxoff < lr_min || minoff > lr_max) {
-      /* no overlap with LR */
+   if (maxoff < r1_min || minoff > r1_max) {
+      /* no overlap with R1 */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < r1_min || minoff > r1_max) {
-      /* no overlap with R1 */
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* no overlap with LR */
    } else {
       return True;
    }

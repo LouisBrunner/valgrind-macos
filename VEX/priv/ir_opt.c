@@ -69,6 +69,13 @@
      not marked as being read or modified by the helper cannot be
      assumed to be up-to-date at the point where the helper is called.
 
+   * If iropt_register_updates == VexRegUpdSpAtMemAccess :
+     The guest state is only up to date only as explained above
+     (i.e. at SB exits and as specified by dirty helper call).
+     Also, the stack pointer register is up to date at memory
+     exception points (as this is needed for the stack extension
+     logic in m_signals.c).
+
    * If iropt_register_updates == VexRegUpdUnwindregsAtMemAccess :
      Immediately prior to any load or store, those parts of the guest
      state marked as requiring precise exceptions will be up to date.
@@ -76,11 +83,11 @@
      not marked as requiring precise exceptions cannot be assumed to
      be up-to-date at the point of the load/store.
 
-     If iropt_register_updates == VexRegUpdAllregsAtMemAccess:
+   * If iropt_register_updates == VexRegUpdAllregsAtMemAccess:
      Same as minimal, but all the guest state is up to date at memory
      exception points.
 
-     If iropt_register_updates == VexRegUpdAllregsAtEachInsn :
+   * If iropt_register_updates == VexRegUpdAllregsAtEachInsn :
      Guest state is up to date at each instruction.
 
    The relative order of loads and stores (including loads/stores of
@@ -778,7 +785,7 @@ static void handle_gets_Stmt (
    }
 
    if (memRW) {
-      /* This statement accesses memory.  So we need to dump all parts
+      /* This statement accesses memory.  So we might need to dump all parts
          of the environment corresponding to guest state that may not
          be reordered with respect to memory references.  That means
          at least the stack pointer. */
@@ -789,6 +796,12 @@ static void handle_gets_Stmt (
             for (j = 0; j < env->used; j++)
                env->inuse[j] = False;
             break;
+         case VexRegUpdSpAtMemAccess:
+            /* We need to dump the stack pointer
+               (needed for stack extension in m_signals.c).
+               preciseMemExnsFn will use vex_control.iropt_register_updates
+               to verify only the sp is to be checked. */
+            /* fallthrough */
          case VexRegUpdUnwindregsAtMemAccess:
             for (j = 0; j < env->used; j++) {
                if (!env->inuse[j])
@@ -837,9 +850,7 @@ static void redundant_put_removal_BB (
    IRStmt* st;
    UInt    key = 0; /* keep gcc -O happy */
 
-   vassert
-      (vex_control.iropt_register_updates == VexRegUpdUnwindregsAtMemAccess
-       || vex_control.iropt_register_updates == VexRegUpdAllregsAtMemAccess);
+   vassert(vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn);
 
    HashHW* env = newHHW();
 
@@ -3958,9 +3969,7 @@ void do_redundant_PutI_elimination ( IRSB* bb )
    Bool   delete;
    IRStmt *st, *stj;
 
-   vassert
-      (vex_control.iropt_register_updates == VexRegUpdUnwindregsAtMemAccess
-       || vex_control.iropt_register_updates == VexRegUpdAllregsAtMemAccess);
+   vassert(vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn);
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
@@ -5201,7 +5210,7 @@ IRSB* cheap_transformations (
       ppIRSB(bb);
    }
 
-   if (vex_control.iropt_register_updates != VexRegUpdAllregsAtEachInsn) {
+   if (vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn) {
       redundant_put_removal_BB ( bb, preciseMemExnsFn );
    }
    if (iropt_verbose) {
@@ -5241,7 +5250,7 @@ IRSB* expensive_transformations( IRSB* bb )
    (void)do_cse_BB( bb );
    collapse_AddSub_chains_BB( bb );
    do_redundant_GetI_elimination( bb );
-   if (vex_control.iropt_register_updates != VexRegUpdAllregsAtEachInsn) {
+   if (vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn) {
       do_redundant_PutI_elimination( bb );
    }
    do_deadcode_BB( bb );
@@ -5392,7 +5401,7 @@ IRSB* do_iropt_BB(
          work extra hard to get rid of it. */
       bb = cprop_BB(bb);
       bb = spec_helpers_BB ( bb, specHelper );
-      if (vex_control.iropt_register_updates != VexRegUpdAllregsAtEachInsn) {
+      if (vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn) {
          redundant_put_removal_BB ( bb, preciseMemExnsFn );
       }
       do_cse_BB( bb );

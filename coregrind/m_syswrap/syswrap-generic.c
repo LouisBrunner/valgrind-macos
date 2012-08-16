@@ -1700,7 +1700,7 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 /* ------ */
 
 static
-UInt get_shm_size ( Int shmid )
+SizeT get_shm_size ( Int shmid )
 {
 #ifdef __NR_shmctl
 #  ifdef VKI_IPC_64
@@ -1725,7 +1725,7 @@ UInt get_shm_size ( Int shmid )
    if (sr_isError(__res))
       return 0;
  
-   return buf.shm_segsz;
+   return (SizeT) buf.shm_segsz;
 }
 
 UWord
@@ -1733,7 +1733,7 @@ ML_(generic_PRE_sys_shmat) ( ThreadId tid,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
    /* void *shmat(int shmid, const void *shmaddr, int shmflg); */
-   UInt  segmentSize = get_shm_size ( arg0 );
+   SizeT  segmentSize = get_shm_size ( arg0 );
    UWord tmp;
    Bool  ok;
    if (arg1 == 0) {
@@ -1768,7 +1768,7 @@ ML_(generic_POST_sys_shmat) ( ThreadId tid,
                               UWord res,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
-   UInt segmentSize = VG_PGROUNDUP(get_shm_size(arg0));
+   SizeT segmentSize = VG_PGROUNDUP(get_shm_size(arg0));
    if ( segmentSize > 0 ) {
       UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
       Bool d;

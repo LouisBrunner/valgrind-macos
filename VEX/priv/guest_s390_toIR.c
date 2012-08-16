@@ -9630,7 +9630,7 @@ s390_irgen_DLR(UChar r1, UChar r2)
 
    s390_irgen_divide_64to32(Iop_DivModU64to32, r1, op2);
 
-   return "dr";
+   return "dlr";
 }
 
 static HChar *

@@ -18,10 +18,6 @@ get fixed.
 -- carll 2.11 Limitations, what insn sets does ppc now support
 -- ditto 2.11 Limitations for MIPS
 
-284004  Application under test hangs after call to __posix_spawn (Darwin)
-  open, not started
-  QUERIED (need complete test case)
-
 284540  Memcheck shouldn't count suppressions matching
         still-reachable allocations
   wishlist, w/patch, unclear if important
@@ -66,10 +62,6 @@ get fixed.
         using offline symbol resolving
   wishlist
 
-289584  Unhandled instruction: 0xF 0x29 0xE5 (MOVAPS)
-  movaps reg,reg (w/ patch)
-  **possible 3.8.0
-
 289836  Unhanded instructions mfatbu and mfatbl
   ppc e500 insns
 
@@ -91,10 +83,6 @@ get fixed.
 290673  wine+valgrind: failed to start tool 'memcheck' for platform
         'x86-linux': No such  file or directory
   **probably invalid; build config problem?
-
-291310  FXSAVE instruction marks memory as undefined on amd64
-  x86 vs amd64 inconsistency?
-  **probably easy to fix; low prio
 
 291924  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x38 0x31
   invalid (SSE4) (WONTFIX)
@@ -122,12 +110,6 @@ get fixed.
 
 294861  ./configure fails to locate Boost (located in /usr/local)
   low prio
-
-295053  Valgrind fails to load some x86_64 Mac OS Lion executables
-  OSX
-  **possible 3.8.0, med prio
-  address space collision with very large .bss, probably cantfix.
-  Probable can'tfix, but Queried.
 
 295084  Hard-coded /usr/include
   OSX, XCode 4.3 problem
@@ -164,6 +146,7 @@ get fixed.
 
 296480  valgrind hangs early when run on Python
   OSX.  Not started.  Queried.
+  (might be == 301281, 284004, but not sure)
 
 296577  vex x86->IR: 0x66 0xF 0x3A 0x17
   **wontfix (AES on 32-bit)
@@ -181,10 +164,6 @@ get fixed.
         mem error but the app is good to me.
   probably closable (may be dup of 296318)
 
-298281  wcslen causes false(?) uninitialised value warnings
-  **possible 3.8.0.  glibc-2.16 maybe?
-  see 
-
 298546  wishlist: track virtual memory leaks due to mmap without munmap
   wishlist
 
@@ -197,27 +176,14 @@ get fixed.
 301011  vex x86->IR: 0xF3 0xF 0xBC 0xDE (TZCNT)
   **possible 3.8.0; see also 295808 (64 bit)
 
-301265  add x86 support to Android build
-  no patch so far; + probably too big a change for 3.8.0
-
 301269  optimize Memcheck to use light tracking for trusted code
   too big a change for 3.8.0; + in development still
-
-301280  vex amd64->IR: 0xF 0xB 0x55 0x48 0x89 0xE5 0x41 0x56
-  that's UD2; unclear if there is anything to fix here.
-
-301281  valgrind hangs on OS X when the process calls system()
-  OSX strangeness; **possible 3.8.0
-  QUERIED (can't repro)
 
 301336  Valgrind vassert(0) in dis_neon_data_2reg_misc()
   **possible 3.8.0.  OP queried; is this the same as 287175 ?
 
 301830  mtV: improve Valgrind so that it runs multiple threads in parallel
   not 3.8.0 (alas)
-
-301902  vex amd64->IR: 0xF 0xB (UD2)
-  **possible 3.8.0; should handle this properly
 
 301922  gcc -O2 problem with SSE optimization?
   invalid (versioning problem) .. should close
@@ -238,9 +204,6 @@ get fixed.
 303460  Killed by fatal signal at doRegisterAllocation
   queried OP (gentoo weirdness)
 
-303518  can't build with glibc 2.16
-  possibly fixed by r12743
-
-303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
-
 -- Tues 17 July 2012 11am
+
+(transitioned to 3_8_BUGSTATUS after this point)

@@ -1,0 +1,119 @@
+
+Bugs reported after the release of 3.8.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This file lists bugs that were reported after 3.8.0 was released, both
+in 3.8.0 and trunk, and that have not been closed.  Bugs that have
+been closed as "fixed" are listed in the top level NEWS file instead.
+In other words they get listed here first and moved to NEWS if they
+get fixed.
+
+This file also tracks commits & fixes that should be pushed to the 3.8
+branch.
+
+-- PUSH TO 3_8_BRANCH
+
+2469   Fix a mixup ..
+12874  Fix n-i-bz shmat of a segment > 4Gb does not work
+
+
+-------- Bugs brought forward from 3_7_BUGSTATUS.txt --------
+
+301281  valgrind hangs on OS X when the process calls system()
+  OSX strangeness; **possible 3.8.1
+  QUERIED (can't repro)
+== (probably)
+284004  Application under test hangs after call to __posix_spawn (Darwin)
+  open, not started
+  QUERIED (need complete test case)
+
+289584  Unhandled instruction: 0xF 0x29 0xE5 (MOVAPS)
+  movaps reg,reg (w/ patch)
+  **possible 3.8.0
+== (something reported after release)
+
+291310  FXSAVE instruction marks memory as undefined on amd64
+  x86 vs amd64 inconsistency?
+  **is fixed in 3.8.0, but was not marked as such
+  ** no it's not; v38BRANCH shows error, vTRUNK doesn't -- investigate
+
+301280  vex amd64->IR: 0xF 0xB 0x55 0x48 0x89 0xE5 0x41 0x56
+  that's UD2; unclear if there is anything to fix here.
+301902  vex amd64->IR: 0xF 0xB (UD2)
+  == 254088
+  **is fixed in 3.8.0, but was not marked as such
+
+298281  wcslen causes false(?) uninitialised value warnings
+  **possible 3.8.0.  glibc-2.16 maybe?
+  I have a patch
+
+295808  vex amd64->IR: 0xF3 0xF 0xBC 0xC0 (TZCNT)
+  REOP: JJ says LZCNT misimplemented
+
+303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
+  we should fix this
+
+304346  valgrind::memcheck doesn't seem to work with ptmalloc3
+  **fixed in 3.8.0 as a dup of 219156 but was not marked as such
+
+304754  NEWS blows TeX's little mind
+  **fixed in 3.8.0 but was not marked as such
+
+-------- Unfixed in 3.8.0
+
+n-i-bz  shmat of a segment > 4Gb does not work
+  Fixed r12874
+  **3.8.1
+
+303741  sockaddr* parameter of recvfrom not handled correctly
+        (corruption not detected later on)
+  QUERIED -- need test case, looks easy to fix
+
+303877  valgrind doesn't support compressed debuginfo sections.
+
+304035  disInstr(arm): unhandled instruction 0xE1023053
+  UQSUB16 QADD QSUB QDADD SHADD16 UHSUB16
+  (but based on 3.6.1; unclear which are still problematic)
+
+304259  support Darwin 12 (Mac OS 10.8, Mountain Lion)
+  Canonical OSX 10.8
+
+304321  m_signals.c:2314 (sync_signalhandler_from_kernel): Assertion 'tid != 0' failed
+  Probably invalid (way too old)
+
+304450  time logging tools ?
+  wishlist
+
+304675  make install-strip fails when cross-compiling
+  w/ patch; but needs checking (should be more general?  assumes auto*
+  version?)
+
+304676  regtest hangs on mac OS X (mchelp, coolo_sigaction, system)
+  probably related to 301281 et al
+
+304744  valgrind hangs on munmap()
+  probably invalid
+
+304832  ppc32: build failure
+  probably invalid
+
+304867  implement MOVBE instruction in x86 mode
+  yeah, need to do this.  ** 3.8.1  Has patch.
+
+304980  Assertion 'lo <= hi' failed in vgModuleLocal_find_rx_mapping (debuginfo.c)
+  ****3.8.0 regression; w/ patch but needs testing
+  **3.8.1
+
+305042  amd64: implement 0f 7f encoding of movq between two registers
+  **3.8.1 possibly
+
+305170  linux: add FIOCLEX and FIONCLEX ioctls
+  w/ patch, looks pretty harmless
+
+305199  ARM: implement QDADD and QDSUB
+  w/ patch + testcases, looks ready to go (provided V == HW)
+
+n-i-bz  Fixes for more MPI false postives
+  **3.8.1
+
+-- Fri 17 Aug 2012 11am

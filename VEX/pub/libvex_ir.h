@@ -627,7 +627,6 @@ typedef
 
       Iop_F64toI32U, /* IRRoundingMode(I32) x F64 -> unsigned I32 */
 
-      Iop_I16StoF64, /*                       signed I16 -> F64 */
       Iop_I32StoF64, /*                       signed I32 -> F64 */
       Iop_I64StoF64, /* IRRoundingMode(I32) x signed I64 -> F64 */
       Iop_I64UtoF64, /* IRRoundingMode(I32) x unsigned I64 -> F64 */
@@ -635,11 +634,9 @@ typedef
 
       Iop_I32UtoF64, /*                       unsigned I32 -> F64 */
 
-      Iop_F32toI16S, /* IRRoundingMode(I32) x F32 -> signed I16 */
       Iop_F32toI32S, /* IRRoundingMode(I32) x F32 -> signed I32 */
       Iop_F32toI64S, /* IRRoundingMode(I32) x F32 -> signed I64 */
 
-      Iop_I16StoF32, /*                       signed I16 -> F32 */
       Iop_I32StoF32, /* IRRoundingMode(I32) x signed I32 -> F32 */
       Iop_I64StoF32, /* IRRoundingMode(I32) x signed I64 -> F32 */
 

@@ -3665,7 +3665,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_V256to64_2: case Iop_V256to64_3:
          return assignNew('V', mce, Ity_I64, unop(op, vatom));
 
-      case Iop_I16StoF32:
       case Iop_64to32:
       case Iop_64HIto32:
       case Iop_1Uto32:

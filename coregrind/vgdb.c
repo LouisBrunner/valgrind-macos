@@ -925,7 +925,7 @@ Bool invoke_gdbserver (int pid)
 #elif defined(VGA_s390x)
    sp = user_mod.regs.gprs[15];
 #elif defined(VGA_mips32)
-   sp = user_mod.regs[29];
+   sp = user_mod.regs[29*2];
 #else
    I_die_here : (sp) architecture missing in vgdb.c
 #endif
@@ -999,11 +999,18 @@ Bool invoke_gdbserver (int pid)
 #elif defined(VGA_s390x)
       XERROR(0, "(fn32) s390x has no 32bits implementation");
 #elif defined(VGA_mips32)
-      /* put check arg in register 0 */
-      user_mod.regs[4] = check;
+      /* put check arg in register 4 */
+      user_mod.regs[4*2] = check;
+      user_mod.regs[4*2+1] = 0xffffffff; // sign extend $a0
+      /* This sign extension is needed when vgdb 32 bits runs
+         on a 64 bits OS. */
       /* put NULL return address in ra */
-      user_mod.regs[31] = bad_return;
-      user_mod.regs[25] = shared32->invoke_gdbserver;
+      user_mod.regs[31*2] = bad_return;
+      user_mod.regs[31*2+1] = 0;
+      user_mod.regs[34*2] = shared32->invoke_gdbserver;
+      user_mod.regs[34*2+1] = 0;
+      user_mod.regs[25*2] = shared32->invoke_gdbserver;
+      user_mod.regs[25*2+1] = 0;
 #else
       I_die_here : architecture missing in vgdb.c
 #endif

@@ -22,6 +22,7 @@ where XXXXXX is the bug number as listed below.
 
 n-i-bz shmat of a segment > 4Gb does not work 
 n-i-bz gdbserver_tests/simulate_control_c test script wrong USR1 sig nr on mips
+n-i-bz vgdb ptrace calls wrong on mips, causing blocked syscalls to fail 
 
 Release 3.8.0 (10 August 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

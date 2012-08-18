@@ -2840,7 +2840,7 @@ PRE(posix_spawn)
       // to cleanup the gdbserver resources (e.g. the FIFO files).
       // If child will be traced, we also terminate gdbserver: the new 
       // Valgrind will start a fresh gdbserver after exec.
-      VG_(gdbserver) (tid);
+      VG_(gdbserver) (0);
    }
 
    // Set up the child's exe path.

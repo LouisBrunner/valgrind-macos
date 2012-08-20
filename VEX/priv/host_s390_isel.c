@@ -1105,7 +1105,28 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       h1   = s390_isel_int_expr(env, arg1);       /* Process 1st operand */
       op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
       res  = newVRegI(env);
-      addInstr(env, s390_insn_move(size, res, h1));
+
+      /* As right shifts of one/two byte opreands are implemented using a
+         4-byte shift op, we first need to zero/sign-extend the shiftee. */
+      switch (expr->Iex.Binop.op) {
+      case Iop_Shr8:
+         insn = s390_insn_unop(4, S390_ZERO_EXTEND_8, res, s390_opnd_reg(h1));
+         break;
+      case Iop_Shr16:
+         insn = s390_insn_unop(4, S390_ZERO_EXTEND_16, res, s390_opnd_reg(h1));
+         break;
+      case Iop_Sar8:
+         insn = s390_insn_unop(4, S390_SIGN_EXTEND_8, res, s390_opnd_reg(h1));
+         break;
+      case Iop_Sar16:
+         insn = s390_insn_unop(4, S390_SIGN_EXTEND_16, res, s390_opnd_reg(h1));
+         break;
+      default:
+         insn = s390_insn_move(size, res, h1);
+         break;
+      }
+      addInstr(env, insn);
+
       insn = s390_insn_alu(size, opkind, res, op2);
 
       addInstr(env, insn);

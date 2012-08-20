@@ -2955,7 +2955,9 @@ PRE(posix_spawn)
 POST(posix_spawn)
 {
    vg_assert(SUCCESS);
-   //POST_MEM_WRITE( ARG1, sizeof(vki_pid_t) );
+   if (ARG1 != 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_pid_t) );
+   }
 }
 
 

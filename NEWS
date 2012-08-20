@@ -20,6 +20,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+301281 valgrind hangs on OS X when the process calls system()
 n-i-bz shmat of a segment > 4Gb does not work 
 n-i-bz gdbserver_tests/simulate_control_c test script wrong USR1 sig nr on mips
 n-i-bz vgdb ptrace calls wrong on mips, causing blocked syscalls to fail 

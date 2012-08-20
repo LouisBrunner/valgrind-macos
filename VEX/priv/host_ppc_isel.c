@@ -1850,6 +1850,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       case Iop_Left8:
+      case Iop_Left16:
       case Iop_Left32: 
       case Iop_Left64: {
          HReg r_src, r_dst;

@@ -561,7 +561,7 @@ typedef
 
       /* Unary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 -> F64 */
-      Iop_SqrtF64, Iop_SqrtF64r32,
+      Iop_SqrtF64,
 
       /* :: IRRoundingMode(I32) x F32 -> F32 */
       Iop_SqrtF32,
@@ -736,10 +736,6 @@ typedef
       Iop_RoundF64toF32, /* round F64 to nearest F32 value (still as F64) */
       /* NB: pretty much the same as Iop_F64toF32, except no change 
          of type. */
-
-      /* :: F64 -> I32 */
-      Iop_CalcFPRF, /* Calc 5 fpscr[FPRF] bits (Class, <, =, >, Unord)
-                       from FP result */
 
       /* ------------------ 32-bit SIMD Integer ------------------ */
 

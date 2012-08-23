@@ -1,0 +1,3 @@
+prereq: test -e movbe
+prog: movbe
+vgopts: -q

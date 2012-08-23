@@ -413,7 +413,9 @@ static __inline__ Bool count_from_Status( /*OUT*/int* recv_count,
                                       MPI_Status* status)
 {
    int n;
+   if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    int err = PMPI_Get_count(status, datatype, &n);
+   if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS) {
       *recv_count = n;
       return True;
@@ -1107,6 +1109,7 @@ int WRAPPER_FOR(PMPI_Recv)(void *buf, int count, MPI_Datatype datatype,
    if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,status);
    if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
+   make_mem_defined_if_addressable_if_success_untyped(err, status, sizeof(*status));
    if (err == MPI_SUCCESS && count_from_Status(&recv_count,datatype,status)) {
       make_mem_defined_if_addressable(buf, recv_count, datatype);
    }
@@ -1724,6 +1727,7 @@ int WRAPPER_FOR(PMPI_Sendrecv)(
                           recvbuf,recvcount,recvtype,source,recvtag,
                           comm,status);
    if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
+   make_mem_defined_if_addressable_if_success_untyped(err, status, sizeof(*status));
    if (err == MPI_SUCCESS 
        && count_from_Status(&recvcount_actual,recvtype,status)) {
       make_mem_defined_if_addressable(recvbuf, recvcount_actual, recvtype);

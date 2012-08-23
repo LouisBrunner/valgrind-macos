@@ -20,6 +20,18 @@ Limitations
   instead of just 1 read/write.
 
 
+Hardware facilities
+-------------------
+Valgrind does not require that the host machine has the same hardware
+facilities as the machine for which the client program was compiled.
+This is convenient. The JIT compiler will translate the client instructions
+according to the facilities available on the host.
+This means, though, that probing for hardware facilities by issuing
+instructions from that facility and observing whether SIGILL is thrown
+may not work. As a consequence, programs that attempt to do so may
+behave differently. It is believed that this is a rare use case.
+
+
 Recommendations
 ---------------
 Applications should be compiled with -fno-builtin to avoid

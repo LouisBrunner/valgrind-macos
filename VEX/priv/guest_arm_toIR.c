@@ -10321,6 +10321,65 @@ static Bool decode_V6MEDIA_instruction (
      /* fall through */
    }
 
+   /* ------------------ qdadd<c> <Rd>,<Rm>,<Rn> ------------------- */
+   {
+     UInt regD = 99, regN = 99, regM = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFA8 && (INSNT1(15,0) & 0xF0F0) == 0xF090) {
+           regN = INSNT0(3,0);
+           regD = INSNT1(11,8);
+           regM = INSNT1(3,0);
+           if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,0,0,1,0,1,0,0) &&
+            INSNA(11,8)  == BITS4(0,0,0,0)         &&
+            INSNA(7,4)   == BITS4(0,1,0,1)) {
+           regD = INSNA(15,12);
+           regN = INSNA(19,16);
+           regM = INSNA(3,0);
+           if (regD != 15 && regN != 15 && regM != 15)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp rNt   = newTemp(Ity_I32);
+        IRTemp rMt   = newTemp(Ity_I32);
+        IRTemp rN_d  = newTemp(Ity_I32);
+        IRTemp res_q = newTemp(Ity_I32);
+
+        assign( rNt, isT ? getIRegT(regN) : getIRegA(regN) );
+        assign( rMt, isT ? getIRegT(regM) : getIRegA(regM) );
+
+        or_into_QFLAG32(
+           signed_overflow_after_Add32(
+              binop(Iop_Add32, mkexpr(rNt), mkexpr(rNt)), rNt, rNt),
+           condT
+        );
+
+        assign(rN_d,  binop(Iop_QAdd32S, mkexpr(rNt), mkexpr(rNt)));
+        assign(res_q, binop(Iop_QAdd32S, mkexpr(rMt), mkexpr(rN_d)));
+        if (isT)
+           putIRegT( regD, mkexpr(res_q), condT );
+        else
+           putIRegA( regD, mkexpr(res_q), condT, Ijk_Boring );
+
+        or_into_QFLAG32(
+           signed_overflow_after_Add32(
+              binop(Iop_Add32, mkexpr(rMt), mkexpr(rN_d)), rMt, rN_d),
+           condT
+        );
+
+        DIP("qdadd%s r%u, r%u, r%u\n", nCC(conq),regD,regM,regN);
+        return True;
+     }
+     /* fall through */
+   }
+
    /* ------------------ qsub<c> <Rd>,<Rn>,<Rm> ------------------- */
    {
      UInt regD = 99, regN = 99, regM = 99;
@@ -10367,6 +10426,65 @@ static Bool decode_V6MEDIA_instruction (
         );
 
         DIP("qsub%s r%u, r%u, r%u\n", nCC(conq),regD,regM,regN);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* ------------------ qdsub<c> <Rd>,<Rm>,<Rn> ------------------- */
+   {
+     UInt regD = 99, regN = 99, regM = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFA8 && (INSNT1(15,0) & 0xF0F0) == 0xF0B0) {
+           regN = INSNT0(3,0);
+           regD = INSNT1(11,8);
+           regM = INSNT1(3,0);
+           if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,0,0,1,0,1,1,0) &&
+            INSNA(11,8)  == BITS4(0,0,0,0)         &&
+            INSNA(7,4)   == BITS4(0,1,0,1)) {
+           regD = INSNA(15,12);
+           regN = INSNA(19,16);
+           regM = INSNA(3,0);
+           if (regD != 15 && regN != 15 && regM != 15)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp rNt   = newTemp(Ity_I32);
+        IRTemp rMt   = newTemp(Ity_I32);
+        IRTemp rN_d  = newTemp(Ity_I32);
+        IRTemp res_q = newTemp(Ity_I32);
+
+        assign( rNt, isT ? getIRegT(regN) : getIRegA(regN) );
+        assign( rMt, isT ? getIRegT(regM) : getIRegA(regM) );
+
+        or_into_QFLAG32(
+           signed_overflow_after_Add32(
+              binop(Iop_Add32, mkexpr(rNt), mkexpr(rNt)), rNt, rNt),
+           condT
+        );
+
+        assign(rN_d,  binop(Iop_QAdd32S, mkexpr(rNt), mkexpr(rNt)));
+        assign(res_q, binop(Iop_QSub32S, mkexpr(rMt), mkexpr(rN_d)));
+        if (isT)
+           putIRegT( regD, mkexpr(res_q), condT );
+        else
+           putIRegA( regD, mkexpr(res_q), condT, Ijk_Boring );
+
+        or_into_QFLAG32(
+           signed_overflow_after_Sub32(
+              binop(Iop_Sub32, mkexpr(rMt), mkexpr(rN_d)), rMt, rN_d),
+           condT
+        );
+
+        DIP("qdsub%s r%u, r%u, r%u\n", nCC(conq),regD,regM,regN);
         return True;
      }
      /* fall through */

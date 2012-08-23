@@ -20084,13 +20084,16 @@ Long dis_ESC_0F (
       return delta;
 
    case 0xBC: /* BSF Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF2(pfx)) goto decode_failure;
       delta = dis_bs_E_G ( vbi, pfx, sz, delta, True );
       return delta;
 
    case 0xBD: /* BSR Gv,Ev */
-      if (!haveF2orF3(pfx)) {
-         /* no-F2 no-F3 0F BD = BSR */
+      if (!haveF2orF3(pfx)
+          || (haveF3noF2(pfx)
+              && 0 == (archinfo->hwcaps & VEX_HWCAPS_AMD64_LZCNT))) {
+         /* no-F2 no-F3 0F BD = BSR
+                  or F3 0F BD = REP; BSR on older CPUs.  */
          delta = dis_bs_E_G ( vbi, pfx, sz, delta, False );
          return delta;
       }

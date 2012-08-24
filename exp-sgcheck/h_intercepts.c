@@ -229,44 +229,72 @@ MEMCHR(VG_Z_DYLD,        memchr)
 
 #define MEMCPY(soname, fnname) \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-            ( void *dst, const void *src, SizeT sz ); \
+            ( void *dst, const void *src, SizeT len ); \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-            ( void *dest, const void *src, SizeT sz ) \
+            ( void *dst, const void *src, SizeT len ) \
    { \
-   const UChar*  s  = (const UChar*)src; \
-         UChar*  d  =       (UChar*)dest; \
-   const UWord*  sW = (const UWord*)src; \
-         UWord*  dW =       (UWord*)dest; \
-   const UWord   al = sizeof(UWord)-1; \
-   \
-   if (0 == (((UWord)dW) & al) && 0 == (((UWord)sW) & al)) { \
-      while (sz >= 4 * sizeof(UWord)) { \
-         dW[0] = sW[0]; \
-         dW[1] = sW[1]; \
-         dW[2] = sW[2]; \
-         dW[3] = sW[3]; \
-         sz -= 4 * sizeof(UWord); \
-         dW += 4; \
-         sW += 4; \
+      const Addr WS = sizeof(UWord); /* 8 or 4 */ \
+      const Addr WM = WS - 1;        /* 7 or 3 */ \
+      \
+      if (len > 0) { \
+         if (dst < src) { \
+         \
+            /* Copying backwards. */ \
+            SizeT n = len; \
+            Addr  d = (Addr)dst; \
+            Addr  s = (Addr)src; \
+            \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Pull up to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { *(UShort*)d = *(UShort*)s; s += 2; d += 2; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
+               { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+         \
+         } else if (dst > src) { \
+         \
+            SizeT n = len; \
+            Addr  d = ((Addr)dst) + n; \
+            Addr  s = ((Addr)src) + n; \
+            \
+            /* Copying forwards. */ \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Back down to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { s -= 2; d -= 2; *(UShort*)d = *(UShort*)s; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
+               { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+            \
+         } \
       } \
-      if (sz == 0) \
-         return dest; \
-      while (sz >= 1 * sizeof(UWord)) { \
-         dW[0] = sW[0]; \
-         sz -= 1 * sizeof(UWord); \
-         dW += 1; \
-         sW += 1; \
-      } \
-      if (sz == 0) \
-         return dest; \
-      s = (const UChar*)sW; \
-      d = (UChar*)dW; \
-   } \
-   \
-   while (sz--) \
-      *d++ = *s++; \
-   \
-   return dest; \
+      \
+      return dst; \
    }
 
 MEMCPY(VG_Z_LIBC_SONAME, memcpy)

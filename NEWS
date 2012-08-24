@@ -20,10 +20,25 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
-301281 valgrind hangs on OS X when the process calls system()
-n-i-bz shmat of a segment > 4Gb does not work 
-n-i-bz gdbserver_tests/simulate_control_c test script wrong USR1 sig nr on mips
-n-i-bz vgdb ptrace calls wrong on mips, causing blocked syscalls to fail 
+219156  [380] handle statically linked malloc and/or other malloc libs
+254088  [380] Valgrind should know about UD2 instruction
+284004  [381] == 301281
+289584  [381] Unhandled instruction: 0xF 0x29 0xE5 (MOVAPS)
+295808  [381] amd64->IR: 0xF3 0xF 0xBC 0xC0 (TZCNT)
+301280  [380] == 254088
+301281  [381] valgrind hangs on OS X when the process calls system()
+301902  [380] == 254088
+304346  [380] == 219156
+304754  [380] NEWS blows TeX's little mind
+304867  [381] implement MOVBE instruction in x86 mode
+305042  [381] amd64: implement 0F 7F encoding of movq between two registers
+305199  [381] ARM: implement QDADD and QDSUB
+305321  [381] amd64->IR: 0xF 0xD 0xC (prefetchw)
+n-i-bz  [381] shmat of a segment > 4Gb does not work 
+n-i-bz  [381] gdbserver_tests/simulate_control_c script wrong USR1 sig# on mips
+n-i-bz  [381] vgdb ptrace calls wrong on mips, causing blocked syscalls to fail 
+n-i-bz  [381] Fixes for more MPI false positives
+
 
 Release 3.8.0 (10 August 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

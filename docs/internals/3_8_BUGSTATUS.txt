@@ -33,6 +33,11 @@ branch.
 2479  (305199)  also testcase 12888 ?
 2480  (304867)
 
+12891 (304980) (provided it doesn't break anything else)
+12892 (305513)
+12893 (298281)
+12894 (n-i-bz, exp-sgcheck memcpy)
+
 
 -------- Bugs brought forward from 3_7_BUGSTATUS.txt --------
 
@@ -40,10 +45,6 @@ branch.
   x86 vs amd64 inconsistency?
   **is fixed in 3.8.0, but was not marked as such
   ** no it's not; v38BRANCH shows error, vTRUNK doesn't -- investigate
-
-298281  wcslen causes false(?) uninitialised value warnings
-  **possible 3.8.0.  glibc-2.16 maybe?
-  I have a patch
 
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
   we should fix this
@@ -82,15 +83,11 @@ branch.
 304832  ppc32: build failure
   probably invalid
 
-304980  Assertion 'lo <= hi' failed in vgModuleLocal_find_rx_mapping (debuginfo.c)
-  ****3.8.0 regression; w/ patch but needs testing
-  **3.8.1
-
 305170  linux: add FIOCLEX and FIONCLEX ioctls
   w/ patch, looks pretty harmless
 
 305431  Use find_buildid shdr fallback for separate .debug files
 
-305513  killed by fatal signal: SIGSEGV
+n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
 -- Thu 23 Aug 2012 1pm

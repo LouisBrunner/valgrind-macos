@@ -39,6 +39,12 @@ n-i-bz  [381] gdbserver_tests/simulate_control_c script wrong USR1 sig# on mips
 n-i-bz  [381] vgdb ptrace calls wrong on mips, causing blocked syscalls to fail 
 n-i-bz  [381] Fixes for more MPI false positives
 
+305513  [381] killed by fatal signal: SIGSEGV
+304980  [381] Assertion 'lo <= hi' failed in vgModuleLocal_find_rx_mapping
+298281  [381] wcslen causes false(?) uninitialised value warnings
+n-i-bz  [381] exp-sgcheck's memcpy causes programs to segfault
+
+
 
 Release 3.8.0 (10 August 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

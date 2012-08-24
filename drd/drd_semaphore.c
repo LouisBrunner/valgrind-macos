@@ -339,8 +339,7 @@ void DRD_(semaphore_pre_wait)(const Addr semaphore)
 
 /**
  * Called after sem_wait() finished.
- * @note Do not rely on the value of 'waited' -- some glibc versions do
- *       not set it correctly.
+ * @note Some C libraries do not set the 'waited' value correctly.
  */
 void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
                                const Bool waited)
@@ -354,10 +353,10 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
                       DRD_(thread_get_running_tid)(), semaphore,
                       p ? p->value : 0, p ? p->value - 1 : 0);
 
-   if (p)
-   {
+   if (p) {
       p->waiters--;
-      p->value--;
+      if (waited)
+         p->value--;
    }
 
    /*
@@ -377,6 +376,9 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
                               &sei);
       return;
    }
+
+   if (!waited)
+      return;
 
    if (p->waits_to_skip > 0)
       p->waits_to_skip--;

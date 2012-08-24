@@ -11597,7 +11597,6 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
           && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
-            /* fall through; awaiting test case */
             putXMMReg( eregOfRexRM(pfx,modrm),
                        getXMMReg( gregOfRexRM(pfx,modrm) ));
             DIP("movaps %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),

@@ -32,7 +32,7 @@
 #define __LIBVEX_PUB_GUEST_MIPS32_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
+#include "libvex_emnote.h"
 
 
 /*---------------------------------------------------------------*/

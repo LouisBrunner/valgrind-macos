@@ -32,7 +32,7 @@
 #define __LIBVEX_PUB_GUEST_S390X_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
+#include "libvex_emnote.h"
 
 /*------------------------------------------------------------*/
 /*--- Vex's representation of the s390 CPU state.          ---*/

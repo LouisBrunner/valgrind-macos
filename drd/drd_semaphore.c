@@ -347,16 +347,17 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
    struct semaphore_info* p;
    Segment* sg;
 
+   tl_assert(waited == 0 || waited == 1);
    p = semaphore_get(semaphore);
    if (s_trace_semaphore)
-      DRD_(trace_msg)("[%d] sem_wait      0x%lx value %u -> %u",
+      DRD_(trace_msg)("[%d] sem_wait      0x%lx value %u -> %u%s",
                       DRD_(thread_get_running_tid)(), semaphore,
-                      p ? p->value : 0, p ? p->value - 1 : 0);
+                      p ? p->value : 0, p ? p->value - waited : 0,
+		      waited ? "" : " (did not wait)");
 
    if (p) {
       p->waiters--;
-      if (waited)
-         p->value--;
+      p->value -= waited;
    }
 
    /*

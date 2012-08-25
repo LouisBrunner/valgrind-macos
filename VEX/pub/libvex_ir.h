@@ -1857,7 +1857,7 @@ typedef
       Ijk_Yield,          /* client is yielding to thread scheduler */
       Ijk_EmWarn,         /* report emulation warning before continuing */
       Ijk_EmFail,         /* emulation critical (FATAL) error; give up */
-      Ijk_NoDecode,       /* next instruction cannot be decoded */
+      Ijk_NoDecode,       /* current instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
       Ijk_TInval,         /* Invalidate translations before continuing. */
       Ijk_NoRedir,        /* Jump to un-redirected guest addr */

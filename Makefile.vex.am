@@ -17,7 +17,7 @@ EXTRA_DIST = \
 pkginclude_HEADERS = \
 	pub/libvex.h \
 	pub/libvex_basictypes.h \
-	pub/libvex_emwarn.h \
+	pub/libvex_emnote.h \
 	pub/libvex_guest_offsets.h \
 	pub/libvex_guest_x86.h \
 	pub/libvex_guest_amd64.h \

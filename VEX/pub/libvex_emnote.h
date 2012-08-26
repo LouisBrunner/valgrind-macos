@@ -85,6 +85,9 @@ typedef
       EmWarn_PPC64_redir_overflow,
       EmWarn_PPC64_redir_underflow,
 
+      /* stfle insn is not supported on this host */
+      EmFail_S390X_stfle,
+
       EmNote_NUMBER
    }
    VexEmNote;

@@ -10810,6 +10810,15 @@ s390_irgen_STCKE(IRTemp op2addr)
 static HChar *
 s390_irgen_STFLE(IRTemp op2addr)
 {
+   if (! s390_host_has_stfle) {
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE),
+           mkU32(EmFail_S390X_stfle)));
+      put_IA(mkaddr_expr(guest_IA_next_instr));
+      dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_EmFail;
+      return "stfle";
+   }
+
    IRDirty *d;
    IRTemp cc = newTemp(Ity_I64);
 

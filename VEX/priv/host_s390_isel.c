@@ -2596,6 +2596,7 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
+      case Ijk_EmFail:
       case Ijk_NoDecode:
       case Ijk_TInval:
       case Ijk_Sys_syscall:
@@ -2709,6 +2710,7 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, int offsIP)
 
    /* Case: some other kind of transfer to any address */
    switch (jk) {
+   case Ijk_EmFail:
    case Ijk_NoDecode:
    case Ijk_TInval:
    case Ijk_Sys_syscall:

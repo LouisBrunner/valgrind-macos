@@ -1026,6 +1026,8 @@ HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "PPC64 function redirection stack overflow";
      case EmWarn_PPC64_redir_underflow:
         return "PPC64 function redirection stack underflow";
+   case EmFail_S390X_stfle:
+        return "Instruction stfle is not supported on this host";
      default: 
         vpanic("LibVEX_EmNote_string: unknown warning");
    }

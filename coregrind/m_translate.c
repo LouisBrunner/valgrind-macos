@@ -912,7 +912,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC64State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
@@ -926,7 +926,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    stack_size       = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC32State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
@@ -960,11 +960,11 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    /* Bomb out if t1 >=s stack_size, that is, (stack_size-1)-t1 <s 0.
       The destination (0) is a bit bogus but it doesn't matter since
       this is an unrecoverable error and will lead to Valgrind
-      shutting down.  _EMWARN is set regardless - that's harmless
+      shutting down.  _EMNOTE is set regardless - that's harmless
       since is only has a meaning if the exit is taken. */
    addStmtToIRSB(
       bb,
-      IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_overflow))
+      IRStmt_Put(offB_EMNOTE, mkU32(EmWarn_PPC64_redir_overflow))
    );
    addStmtToIRSB(
       bb,
@@ -1006,7 +1006,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC64State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
@@ -1018,7 +1018,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    stack_size       = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC32State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
@@ -1046,7 +1046,7 @@ static IRTemp gen_POP ( IRSB* bb )
    /* Bomb out if t1 < 0.  Same comments as gen_PUSH apply. */
    addStmtToIRSB(
       bb,
-      IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_underflow))
+      IRStmt_Put(offB_EMNOTE, mkU32(EmWarn_PPC64_redir_underflow))
    );
    addStmtToIRSB(
       bb,

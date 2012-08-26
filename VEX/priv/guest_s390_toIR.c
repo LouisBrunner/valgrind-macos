@@ -10774,18 +10774,25 @@ s390_irgen_STCK(IRTemp op2addr)
 static HChar *
 s390_irgen_STCKF(IRTemp op2addr)
 {
-   IRDirty *d;
-   IRTemp cc = newTemp(Ity_I64);
+   if (! s390_host_has_stckf) {
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE),
+           mkU32(EmFail_S390X_stckf)));
+      put_IA(mkaddr_expr(guest_IA_next_instr));
+      dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_EmFail;
+   } else {
+      IRTemp cc = newTemp(Ity_I64);
 
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCKF",
-                         &s390x_dirtyhelper_STCKF,
-                         mkIRExprVec_1(mkexpr(op2addr)));
-   d->mFx   = Ifx_Write;
-   d->mAddr = mkexpr(op2addr);
-   d->mSize = 8;
-   stmt(IRStmt_Dirty(d));
-   s390_cc_thunk_fill(mkU64(S390_CC_OP_SET),
-                      mkexpr(cc), mkU64(0), mkU64(0));
+      IRDirty *d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCKF",
+                                     &s390x_dirtyhelper_STCKF,
+                                     mkIRExprVec_1(mkexpr(op2addr)));
+      d->mFx   = Ifx_Write;
+      d->mAddr = mkexpr(op2addr);
+      d->mSize = 8;
+      stmt(IRStmt_Dirty(d));
+      s390_cc_thunk_fill(mkU64(S390_CC_OP_SET),
+                         mkexpr(cc), mkU64(0), mkU64(0));
+   }
    return "stckf";
 }
 

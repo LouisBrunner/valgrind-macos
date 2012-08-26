@@ -848,6 +848,24 @@ s390_do_cvd(ULong binary_in)
 ULong s390_do_cvd(ULong binary) { return 0; }
 #endif
 
+/*------------------------------------------------------------*/
+/*--- Clean helper for "Extract cache attribute".          ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+ULong
+s390_do_ecag(ULong op2addr)
+{
+   ULong result;
+
+   __asm__ volatile(".insn rsy,0xEB000000004C,%[out],0,0(%[in])\n\t"
+                    : [out] "=d"(result)
+                    : [in] "d"(op2addr));
+   return result;
+}
+
+#else
+ULong s390_do_ecag(ULong op2addr) { return 0; }
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Helper for condition code.                           ---*/

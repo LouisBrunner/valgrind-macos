@@ -11766,6 +11766,38 @@ s390_irgen_CU14(UChar m3, UChar r1, UChar r2)
    return "cu14";
 }
 
+static IRExpr *
+s390_call_ecag(IRExpr *op2addr)
+{
+   IRExpr **args, *call;
+
+   args = mkIRExprVec_1(op2addr);
+   call = mkIRExprCCall(Ity_I64, 0 /*regparm*/,
+                        "s390_do_ecag", &s390_do_ecag, args);
+
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static HChar *
+s390_irgen_ECAG(UChar r1, UChar r3, IRTemp op2addr)
+{
+   if (! s390_host_has_gie) {
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE),
+           mkU32(EmFail_S390X_ecag)));
+      put_IA(mkaddr_expr(guest_IA_next_instr));
+      dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_EmFail;
+   } else {
+      put_gpr_dw0(r1, s390_call_ecag(mkexpr(op2addr)));
+   }
+
+   return "ecag";
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -13488,7 +13520,10 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RSY.r1, ovl.fmt.RSY.r3,
                                                 ovl.fmt.RSY.b2, ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
-   case 0xeb000000004cULL: /* ECAG */ goto unimplemented;
+   case 0xeb000000004cULL: s390_format_RSY_RRRD(s390_irgen_ECAG, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2, 
+                                                ovl.fmt.RSY.dh2);  goto ok;
    case 0xeb0000000051ULL: s390_format_SIY_URD(s390_irgen_TMY, ovl.fmt.SIY.i2,
                                                ovl.fmt.SIY.b1, ovl.fmt.SIY.dl1,
                                                ovl.fmt.SIY.dh1);  goto ok;

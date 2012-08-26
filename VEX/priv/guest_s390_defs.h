@@ -92,6 +92,7 @@ ULong s390_do_cu41(UInt srcvalue);
 ULong s390_do_cu42(UInt srcvalue);
 UInt  s390_do_cvb(ULong decimal);
 ULong s390_do_cvd(ULong binary);
+ULong s390_do_ecag(ULong op2addr);
 
 /* The various ways to compute the condition code. */
 enum {

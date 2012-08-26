@@ -1030,6 +1030,8 @@ HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Instruction stfle is not supported on this host";
    case EmFail_S390X_stckf:
         return "Instruction stckf is not supported on this host";
+   case EmFail_S390X_ecag:
+        return "Instruction ecag is not supported on this host";
      default: 
         vpanic("LibVEX_EmNote_string: unknown warning");
    }

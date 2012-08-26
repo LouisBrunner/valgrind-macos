@@ -130,6 +130,7 @@ typedef
 #define VEX_HWCAPS_S390X_ETF2  (1<<11)  /* ETF2-enhancement facility */
 #define VEX_HWCAPS_S390X_STFLE (1<<12)  /* STFLE facility */
 #define VEX_HWCAPS_S390X_ETF3  (1<<13)  /* ETF3-enhancement facility */
+#define VEX_HWCAPS_S390X_STCKF (1<<14)  /* STCKF facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -138,6 +139,7 @@ typedef
                                 VEX_HWCAPS_S390X_DFP   | \
                                 VEX_HWCAPS_S390X_FGX   | \
                                 VEX_HWCAPS_S390X_STFLE | \
+                                VEX_HWCAPS_S390X_STCKF | \
                                 VEX_HWCAPS_S390X_ETF3  | \
                                 VEX_HWCAPS_S390X_ETF2)
 

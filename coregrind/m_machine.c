@@ -1117,7 +1117,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_toK_t     tmp_sigill_act;
 
      volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
-     volatile Bool have_STFLE, have_ETF2, have_ETF3;
+     volatile Bool have_STFLE, have_ETF2, have_ETF3, have_STCKF;
      Int r, model;
 
      /* Unblock SIGILL and stash away the old action for that signal */
@@ -1185,12 +1185,14 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xb3cd0000" : : : "r0");  /* lgdr r0,f0 */
      }
 
-     /* Detect presence of the ETF2-enhancement facility using the
-        STFLE insn. Note, that STFLE and ETF2 were introduced at the same
-        time, so the absence of STLFE implies the absence of ETF2. */
+     /* Detect presence of certain facilities using the STFLE insn.
+        Note, that these facilities were introduced at the same time or later
+        as STFLE, so the absence of STLFE implies the absence of the facility
+        we're trying to detect. */
      have_STFLE = True;
      have_ETF2 = False;
      have_ETF3 = False;
+     have_STCKF = False;
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_STFLE = False;
      } else {
@@ -1204,6 +1206,8 @@ Bool VG_(machine_get_hwcaps)( void )
              have_ETF2 = True;
          if (hoststfle[0] & (1ULL << (63 - 30)))
              have_ETF3 = True;
+         if (hoststfle[0] & (1ULL << (63 - 25)))
+             have_STCKF = True;
      }
 
      /* Restore signals */
@@ -1220,8 +1224,9 @@ Bool VG_(machine_get_hwcaps)( void )
         identification yet. Keeping fingers crossed. */
 
      VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
-                   "FGX %d STFLE %d ETF2 %d ETF3 %d\n", model, have_LDISP, have_EIMM,
-                   have_GIE, have_DFP, have_FGX, have_STFLE, have_ETF2, have_ETF3);
+                   "FGX %d STFLE %d ETF2 %d ETF3 %d STCKF %d\n",
+                   model, have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX,
+                   have_STFLE, have_ETF2, have_ETF3, have_STCKF);
 
      vai.hwcaps = model;
      if (have_LDISP) {
@@ -1237,6 +1242,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_ETF2)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF2;
      if (have_ETF3)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF3;
      if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
+     if (have_STCKF) vai.hwcaps |= VEX_HWCAPS_S390X_STCKF;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 

@@ -790,7 +790,7 @@ clrt,"compare logical and trap (32)","not implemented",
 clgrt,"compare logical and trap (64)","not implemented",
 clfit,"compare logical and trap (32<16)","not implemented",
 clgit,"compare logical and trap (64<16)","not implemented",
-ecag,"extract cache attribute","not implemented","open bugzilla"
+ecag,"extract cache attribute",implemented,
 lrl,"load relative long (32)",implemented,
 lgrl,"load relative long (64)",implemented,
 lgfrl,"load relative long (64<32)",implemented,

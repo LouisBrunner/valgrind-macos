@@ -277,6 +277,7 @@
 #define SHHLR(r3,r1,r2)                 RRF_R0RR2(b9d9,r3,0,r1,r2)
 #define SHY(r1,x2,b2,dl2,dh2)           RXY_RRRD(e3,r1,x2,b2,dl2,dh2,7b)
 #define SLAK(r1,r3,b2,dl2,dh2)          RSY_RRRD(eb,r1,r3,b2,dl2,dh2,dd)
+#define ECAG(r1,r3,b2,dl2,dh2)          RSY_RRRD(eb,r1,r3,b2,dl2,dh2,4c)
 #define SLFI(r1,i2)                     RIL_RU(c2,r1,5,i2)
 #define SLGFI(r1,i2)                    RIL_RU(c2,r1,4,i2)
 #define SLGRK(r3,r1,r2)                 RRF_R0RR2(b9eb,r3,0,r1,r2)

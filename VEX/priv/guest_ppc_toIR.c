@@ -225,7 +225,7 @@ static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 #define OFFB_DFPROUND    offsetofPPCGuestState(guest_DFPROUND)
 #define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
 #define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
-#define OFFB_EMWARN      offsetofPPCGuestState(guest_EMWARN)
+#define OFFB_EMNOTE      offsetofPPCGuestState(guest_EMNOTE)
 #define OFFB_TISTART     offsetofPPCGuestState(guest_TISTART)
 #define OFFB_TILEN       offsetofPPCGuestState(guest_TILEN)
 #define OFFB_NRADDR      offsetofPPCGuestState(guest_NRADDR)
@@ -2653,7 +2653,7 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       
    case PPC_GST_EMWARN:
       vassert( ty_src == Ity_I32 );
-      stmt( IRStmt_Put( OFFB_EMWARN,src) );
+      stmt( IRStmt_Put( OFFB_EMNOTE,src) );
       break;
       
    case PPC_GST_TISTART: 
@@ -2699,12 +2699,12 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
                                                  >> 32 ) ) ) ) );
       }
 
-      /* Give EmWarn for attempted writes to:
+      /* Give EmNote for attempted writes to:
          - Exception Controls
          - Non-IEEE Mode
       */
       if (mask & 0xFC) {  // Exception Control, Non-IEE mode
-         VexEmWarn ew = EmWarn_PPCexns;
+         VexEmNote ew = EmWarn_PPCexns;
 
          /* If any of the src::exception_control bits are actually set,
             side-exit to the next insn, reporting the warning,
@@ -2712,7 +2712,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
          putGST( PPC_GST_EMWARN, mkU32(ew) );
          stmt( 
             IRStmt_Exit(
-               binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
+               binop(Iop_CmpNE32, mkU32(ew), mkU32(EmNote_NONE)),
                Ijk_EmWarn,
                mkSzConst( ty, nextInsnAddr()), OFFB_CIA ));
       }

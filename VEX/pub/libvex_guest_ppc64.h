@@ -246,8 +246,8 @@ typedef
       /* Vector Status and Control Register */
       /* 1332 */ UInt guest_VSCR;
 
-      /* Emulation warnings */
-      /* 1336 */ UInt guest_EMWARN;
+      /* Emulation notes */
+      /* 1336 */ UInt guest_EMNOTE;
 
       /* gcc adds 4 bytes padding here: pre-empt it. */
       /* 1340 */ UInt  padding;

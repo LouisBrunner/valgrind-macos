@@ -134,8 +134,8 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
    vex_state->guest_ULR = 0; /* TLS */
 
    /* Various pseudo-regs mandated by Vex or Valgrind. */
-   /* Emulation warnings */
-   vex_state->guest_EMWARN = 0;
+   /* Emulation notes */
+   vex_state->guest_EMNOTE = 0;
 
    /* For clflush: record start and length of area to invalidate */
    vex_state->guest_TISTART = 0;
@@ -221,7 +221,7 @@ VexGuestLayout mips32Guest_layout = {
    .alwaysDefd = {
              /* 0 */ ALWAYSDEFD32(guest_r0),
              /* 1 */ ALWAYSDEFD32(guest_r1),
-             /* 2 */ ALWAYSDEFD32(guest_EMWARN),
+             /* 2 */ ALWAYSDEFD32(guest_EMNOTE),
              /* 3 */ ALWAYSDEFD32(guest_TISTART),
              /* 4 */ ALWAYSDEFD32(guest_TILEN),
              /* 5 */ ALWAYSDEFD32(guest_r29),

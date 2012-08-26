@@ -1473,7 +1473,7 @@ ULong x86g_check_fldcw ( UInt fpucw )
    UInt rmode = (fpucw >> 10) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((fpucw & 0x3F) != 0x3F) {
       /* unmasked exceptions! */
@@ -1510,7 +1510,7 @@ ULong x86g_check_ldmxcsr ( UInt mxcsr )
    UInt rmode = (mxcsr >> 13) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((mxcsr & 0x1F80) != 0x1F80) {
       /* unmasked exceptions! */
@@ -1561,7 +1561,7 @@ void x86g_dirtyhelper_FINIT ( VexGuestX86State* gst )
    appears to differ from the former only in that the 8 FP registers
    themselves are not transferred into the guest state. */
 static
-VexEmWarn do_put_x87 ( Bool moveRegs,
+VexEmNote do_put_x87 ( Bool moveRegs,
                        /*IN*/UChar* x87_state,
                        /*OUT*/VexGuestX86State* vex_state )
 {
@@ -1574,7 +1574,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
    UInt       tagw    = x87->env[FP_ENV_TAG];
    UInt       fpucw   = x87->env[FP_ENV_CTRL];
    UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
-   VexEmWarn  ew;
+   VexEmNote  ew;
    UInt       fpround;
    ULong      pair;
 
@@ -1610,7 +1610,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
       emulation warnings. */
    pair    = x86g_check_fldcw ( (UInt)fpucw );
    fpround = (UInt)pair;
-   ew      = (VexEmWarn)(pair >> 32);
+   ew      = (VexEmNote)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
 
@@ -1755,11 +1755,11 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
+VexEmNote x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
 {
    Fpu_State tmp;
-   VexEmWarn warnX87 = EmWarn_NONE;
-   VexEmWarn warnXMM = EmWarn_NONE;
+   VexEmNote warnX87 = EmNote_NONE;
+   VexEmNote warnXMM = EmNote_NONE;
    UShort*   addrS   = (UShort*)addr;
    UChar*    addrC   = (UChar*)addr;
    U128*     xmm     = (U128*)(addr + 160);
@@ -1833,13 +1833,13 @@ VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
                 | ((((UInt)addrS[13]) & 0xFFFF) << 16);
      ULong w64 = x86g_check_ldmxcsr( w32 );
 
-     warnXMM = (VexEmWarn)(w64 >> 32);
+     warnXMM = (VexEmNote)(w64 >> 32);
 
      gst->guest_SSEROUND = (UInt)w64;
    }
 
    /* Prefer an X87 emwarn over an XMM one, if both exist. */
-   if (warnX87 != EmWarn_NONE)
+   if (warnX87 != EmNote_NONE)
       return warnX87;
    else
       return warnXMM;
@@ -1855,7 +1855,7 @@ void x86g_dirtyhelper_FSAVE ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
+VexEmNote x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
 {
    return do_put_x87( True/*regs too*/, (UChar*)addr, gst );
 }
@@ -1875,7 +1875,7 @@ void x86g_dirtyhelper_FSTENV ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn x86g_dirtyhelper_FLDENV ( VexGuestX86State* gst, HWord addr )
+VexEmNote x86g_dirtyhelper_FLDENV ( VexGuestX86State* gst, HWord addr )
 {
    return do_put_x87( False/*don't move regs*/, (UChar*)addr, gst);
 }
@@ -2720,7 +2720,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_LDT = 0;
    vex_state->guest_GDT = 0;
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    /* SSE2 has a 'clflush' cache-line-invalidator which uses these. */
    vex_state->guest_TISTART = 0;
@@ -2830,7 +2830,7 @@ VexGuestLayout
                  /* 15 */ ALWAYSDEFD(guest_SS),
                  /* 16 */ ALWAYSDEFD(guest_LDT),
                  /* 17 */ ALWAYSDEFD(guest_GDT),
-                 /* 18 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 18 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 19 */ ALWAYSDEFD(guest_SSEROUND),
                  /* 20 */ ALWAYSDEFD(guest_TISTART),
                  /* 21 */ ALWAYSDEFD(guest_TILEN),

@@ -1003,10 +1003,10 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
 
 /* --------- Emulation warnings. --------- */
 
-HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
+HChar* LibVEX_EmNote_string ( VexEmNote ew )
 {
    switch (ew) {
-     case EmWarn_NONE: 
+     case EmNote_NONE: 
         return "none";
      case EmWarn_X86_x87exns:
         return "Unmasking x87 FP exceptions";
@@ -1027,7 +1027,7 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
      case EmWarn_PPC64_redir_underflow:
         return "PPC64 function redirection stack underflow";
      default: 
-        vpanic("LibVEX_EmWarn_string: unknown warning");
+        vpanic("LibVEX_EmNote_string: unknown warning");
    }
 }
 

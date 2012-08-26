@@ -129,8 +129,8 @@ typedef
       */
       /*   288 */ UInt guest_ULR;
 
-      /* Emulation warnings */
-          UInt   guest_EMWARN;  /* 292 */
+      /* Emulation notes */
+          UInt   guest_EMNOTE;  /* 292 */
 
       /* For clflush: record start and length of area to invalidate */
         UInt guest_TISTART;     /* 296 */

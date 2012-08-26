@@ -141,8 +141,8 @@ typedef struct {
       libvex_ir.h */
    /*  408 */  ULong guest_IP_AT_SYSCALL;
 
-   /* Emulation warnings; see comments in libvex_emwarn.h */
-   /*  416 */  UInt guest_EMWARN;
+   /* Emulation notes; see comments in libvex_emnote.h */
+   /*  416 */  UInt guest_EMNOTE;
 
    /* For translation chaining */
    /*  420 */  UInt  host_EvC_COUNTER;

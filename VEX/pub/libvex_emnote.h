@@ -1,6 +1,6 @@
 
 /*---------------------------------------------------------------*/
-/*--- begin                                   libvex_emwarn.h ---*/
+/*--- begin                                   libvex_emnote.h ---*/
 /*---------------------------------------------------------------*/
 
 /*
@@ -33,30 +33,32 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_EMWARN_H
-#define __LIBVEX_EMWARN_H
+#ifndef __LIBVEX_EMNOTE_H
+#define __LIBVEX_EMNOTE_H
 
 
 /* VEX can sometimes generate code which returns to the dispatcher
-   with the guest state pointer set to VEX_TRC_JMP_EMWARN.  This means
-   that VEX is trying to warn Valgrind that it is doing imprecise
-   emulation in some sense.  The guest's pseudo-register
-   "guest_EMWARN" will hold a value of type VexEmWarn, which describes
+   with the guest state pointer set to VEX_TRC_JMP_EMWARN or 
+   VEX_TRC_JMP_EMFAIL.  This means that VEX is trying to tell Valgrind
+   something noteworthy about emulation progress. For example, that Valgrind
+   is doing imprecise emulation in some sense.  The guest's pseudo-register
+   "guest_EMNOTE" will hold a value of type VexEmNote, which describes
    the nature of the warning.  Currently the limitations that are
    warned about apply primarily to floating point support.
 
-   All guest states should have a 32-bit (UInt) guest_EMWARN pseudo-
+   All guest states must have a 32-bit (UInt) guest_EMNOTE pseudo-
    register, that emulation warnings can be written in to.
 
-   Note that guest_EMWARN only carries a valid value at the jump
-   marked as VEX_TRC_JMP_EMWARN.  You can't assume it will continue to
-   carry a valid value from any amount of time after the jump.
+   Note that guest_EMNOTE only carries a valid value at the jump
+   marked as VEX_TRC_JMP_EMWARN / VEX_TRC_JMP_EMFAIL.  You can't assume
+   it will continue to carry a valid value from any amount of time after
+   the jump.
 */
 
 typedef
    enum {
-      /* no warning indicated */
-      EmWarn_NONE=0,
+      /* no note indicated */
+      EmNote_NONE=0,
 
       /* unmasking x87 FP exceptions is not supported */
       EmWarn_X86_x87exns,
@@ -83,17 +85,17 @@ typedef
       EmWarn_PPC64_redir_overflow,
       EmWarn_PPC64_redir_underflow,
 
-      EmWarn_NUMBER
+      EmNote_NUMBER
    }
-   VexEmWarn;
+   VexEmNote;
 
 
 /* Produces a short string describing the warning. */
-extern HChar* LibVEX_EmWarn_string ( VexEmWarn );
+extern HChar* LibVEX_EmNote_string ( VexEmNote );
 
 
-#endif /* ndef __LIBVEX_EMWARN_H */
+#endif /* ndef __LIBVEX_EMNOTE_H */
 
 /*---------------------------------------------------------------*/
-/*---                                         libvex_emwarn.h ---*/
+/*---                                         libvex_emnote.h ---*/
 /*---------------------------------------------------------------*/

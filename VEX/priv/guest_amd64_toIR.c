@@ -436,7 +436,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_YMM15     offsetof(VexGuestAMD64State,guest_YMM15)
 #define OFFB_YMM16     offsetof(VexGuestAMD64State,guest_YMM16)
 
-#define OFFB_EMWARN    offsetof(VexGuestAMD64State,guest_EMWARN)
+#define OFFB_EMNOTE    offsetof(VexGuestAMD64State,guest_EMNOTE)
 #define OFFB_TISTART   offsetof(VexGuestAMD64State,guest_TISTART)
 #define OFFB_TILEN     offsetof(VexGuestAMD64State,guest_TILEN)
 
@@ -4680,7 +4680,7 @@ static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
 static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
 {
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
-   stmt( IRStmt_Put( OFFB_EMWARN, e ) );
+   stmt( IRStmt_Put( OFFB_EMNOTE, e ) );
 }
 
 /* --- Produce an IRExpr* denoting a 64-bit QNaN. --- */
@@ -5200,7 +5200,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 4: { /* FLDENV m28 */
                /* Uses dirty helper: 
-                     VexEmWarn amd64g_do_FLDENV ( VexGuestX86State*, HWord ) */
+                     VexEmNote amd64g_do_FLDENV ( VexGuestX86State*, HWord ) */
                IRTemp    ew = newTemp(Ity_I32);
                IRTemp   w64 = newTemp(Ity_I64);
                IRDirty*   d = unsafeIRDirty_0_N ( 
@@ -6166,7 +6166,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                IRDirty*  d;
                if ( have66(pfx) ) {
                   /* Uses dirty helper: 
-                     VexEmWarn amd64g_dirtyhelper_FRSTORS
+                     VexEmNote amd64g_dirtyhelper_FRSTORS
                                   ( VexGuestAMD64State*, HWord ) */
                   d = unsafeIRDirty_0_N ( 
                          0/*regparms*/, 
@@ -6177,7 +6177,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                   d->mSize = 94;
                } else {
                   /* Uses dirty helper: 
-                     VexEmWarn amd64g_dirtyhelper_FRSTOR 
+                     VexEmNote amd64g_dirtyhelper_FRSTOR 
                                   ( VexGuestAMD64State*, HWord ) */
                   d = unsafeIRDirty_0_N ( 
                          0/*regparms*/, 
@@ -13038,9 +13038,9 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          DIP("%sfxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
          /* Uses dirty helper: 
-               VexEmWarn amd64g_do_FXRSTOR ( VexGuestAMD64State*, ULong )
+               VexEmNote amd64g_do_FXRSTOR ( VexGuestAMD64State*, ULong )
             NOTE:
-               the VexEmWarn value is simply ignored
+               the VexEmNote value is simply ignored
          */
          d = unsafeIRDirty_0_N ( 
                 0/*regparms*/, 

@@ -197,8 +197,8 @@ typedef
       HWord  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
       HWord  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
 
-      /* Emulation warnings */
-      UInt   guest_EMWARN;
+      /* Emulation notes */
+      UInt   guest_EMNOTE;
 
       /* For clflush: record start and length of area to invalidate */
       UInt guest_TISTART;

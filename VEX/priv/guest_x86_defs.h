@@ -159,13 +159,13 @@ extern void x86g_dirtyhelper_OUT ( UInt portno, UInt data,
 extern void x86g_dirtyhelper_SxDT ( void* address,
                                     UInt op /* 0 or 1 */ );
 
-extern VexEmWarn
+extern VexEmNote
             x86g_dirtyhelper_FXRSTOR ( VexGuestX86State*, HWord );
 
-extern VexEmWarn
+extern VexEmNote
             x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
 
-extern VexEmWarn 
+extern VexEmNote 
             x86g_dirtyhelper_FLDENV ( VexGuestX86State*, HWord );
 
 

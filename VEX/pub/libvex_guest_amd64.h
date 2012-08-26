@@ -129,8 +129,8 @@ typedef
       ULong guest_FPROUND;
       ULong guest_FC3210;
 
-      /* Emulation warnings */
-      UInt  guest_EMWARN;
+      /* Emulation notes */
+      UInt  guest_EMNOTE;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to

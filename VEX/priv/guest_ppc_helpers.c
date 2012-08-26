@@ -496,7 +496,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_VSCR = 0x0;  // Non-Java mode = 0
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
@@ -660,7 +660,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_VSCR = 0x0;  // Non-Java mode = 0
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    vex_state->padding = 0;
 
@@ -807,7 +807,7 @@ VexGuestLayout
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
-	      /*  1 */ ALWAYSDEFD32(guest_EMWARN),
+	      /*  1 */ ALWAYSDEFD32(guest_EMNOTE),
 	      /*  2 */ ALWAYSDEFD32(guest_TISTART),
 	      /*  3 */ ALWAYSDEFD32(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
@@ -848,7 +848,7 @@ VexGuestLayout
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
-	      /*  1 */ ALWAYSDEFD64(guest_EMWARN),
+	      /*  1 */ ALWAYSDEFD64(guest_EMNOTE),
 	      /*  2 */ ALWAYSDEFD64(guest_TISTART),
 	      /*  3 */ ALWAYSDEFD64(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD64(guest_VSCR),

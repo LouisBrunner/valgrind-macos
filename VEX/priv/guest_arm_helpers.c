@@ -980,7 +980,7 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_GEFLAG2 = 0;
    vex_state->guest_GEFLAG3 = 0;
 
-   vex_state->guest_EMWARN  = 0;
+   vex_state->guest_EMNOTE  = EmNote_NONE;
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
    vex_state->guest_NRADDR  = 0;
@@ -1129,7 +1129,7 @@ VexGuestLayout
              = { /* 0 */ ALWAYSDEFD(guest_R15T),
                  /* 1 */ ALWAYSDEFD(guest_CC_OP),
                  /* 2 */ ALWAYSDEFD(guest_CC_NDEP),
-                 /* 3 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 3 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 4 */ ALWAYSDEFD(guest_TISTART),
                  /* 5 */ ALWAYSDEFD(guest_TILEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),

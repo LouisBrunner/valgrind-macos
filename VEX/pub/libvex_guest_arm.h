@@ -92,8 +92,8 @@ typedef
       UInt guest_GEFLAG3;
 
       /* Various pseudo-regs mandated by Vex or Valgrind. */
-      /* Emulation warnings */
-      UInt guest_EMWARN;
+      /* Emulation notes */
+      UInt guest_EMNOTE;
 
       /* For clflush: record start and length of area to invalidate */
       UInt guest_TISTART;

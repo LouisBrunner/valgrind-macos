@@ -276,7 +276,7 @@ static IRSB* irsb;
 #define OFFB_XMM6      offsetof(VexGuestX86State,guest_XMM6)
 #define OFFB_XMM7      offsetof(VexGuestX86State,guest_XMM7)
 
-#define OFFB_EMWARN    offsetof(VexGuestX86State,guest_EMWARN)
+#define OFFB_EMNOTE    offsetof(VexGuestX86State,guest_EMNOTE)
 
 #define OFFB_TISTART   offsetof(VexGuestX86State,guest_TISTART)
 #define OFFB_TILEN     offsetof(VexGuestX86State,guest_TILEN)
@@ -3445,7 +3445,7 @@ static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
 static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
 {
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
-   stmt( IRStmt_Put( OFFB_EMWARN, e ) );
+   stmt( IRStmt_Put( OFFB_EMNOTE, e ) );
 }
 
 /* --- Produce an IRExpr* denoting a 64-bit QNaN. --- */
@@ -3937,7 +3937,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
             case 4: { /* FLDENV m28 */
                /* Uses dirty helper: 
-                     VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, HWord ) */
+                     VexEmNote x86g_do_FLDENV ( VexGuestX86State*, HWord ) */
                IRTemp   ew = newTemp(Ity_I32);
                IRDirty* d  = unsafeIRDirty_0_N ( 
                                 0/*regparms*/, 
@@ -4928,7 +4928,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
             case 4: { /* FRSTOR m108 */
                /* Uses dirty helper: 
-                     VexEmWarn x86g_do_FRSTOR ( VexGuestX86State*, Addr32 ) */
+                     VexEmNote x86g_do_FRSTOR ( VexGuestX86State*, Addr32 ) */
                IRTemp   ew = newTemp(Ity_I32);
                IRDirty* d  = unsafeIRDirty_0_N ( 
                                 0/*regparms*/, 
@@ -8235,9 +8235,9 @@ DisResult disInstr_X86_WRK (
       DIP("fxrstor %s\n", dis_buf);
 
       /* Uses dirty helper: 
-            VexEmWarn x86g_do_FXRSTOR ( VexGuestX86State*, UInt )
+            VexEmNote x86g_do_FXRSTOR ( VexGuestX86State*, UInt )
          NOTE:
-            the VexEmWarn value is simply ignored (unlike for FRSTOR)
+            the VexEmNote value is simply ignored (unlike for FRSTOR)
       */
       d = unsafeIRDirty_0_N ( 
              0/*regparms*/, 

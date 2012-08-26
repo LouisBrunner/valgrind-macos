@@ -207,8 +207,8 @@ typedef
       /* Vector Status and Control Register */
       /* 1192 */ UInt guest_VSCR;
 
-      /* Emulation warnings */
-      /* 1196 */ UInt guest_EMWARN;
+      /* Emulation notes */
+      /* 1196 */ UInt guest_EMNOTE;
 
       /* For icbi: record start and length of area to invalidate */
       /* 1200 */ UInt guest_TISTART;

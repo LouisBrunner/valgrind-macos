@@ -117,9 +117,9 @@ extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
 
 extern ULong amd64g_create_mxcsr ( ULong sseround );
 
-extern VexEmWarn amd64g_dirtyhelper_FLDENV  ( VexGuestAMD64State*, HWord );
-extern VexEmWarn amd64g_dirtyhelper_FRSTOR  ( VexGuestAMD64State*, HWord );
-extern VexEmWarn amd64g_dirtyhelper_FRSTORS ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FLDENV  ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FRSTOR  ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FRSTORS ( VexGuestAMD64State*, HWord );
 
 extern void amd64g_dirtyhelper_FSTENV  ( VexGuestAMD64State*, HWord );
 extern void amd64g_dirtyhelper_FNSAVE  ( VexGuestAMD64State*, HWord );
@@ -165,7 +165,7 @@ extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
 extern void      amd64g_dirtyhelper_FXSAVE  ( VexGuestAMD64State*, HWord );
-extern VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State*, HWord );
 
 extern ULong amd64g_dirtyhelper_RDTSC ( void );
 
@@ -277,12 +277,12 @@ extern void amd64g_dirtyhelper_AESKEYGENASSIST (
 
 //extern void  amd64g_dirtyhelper_FSAVE ( VexGuestAMD64State*, HWord );
 
-//extern VexEmWarn
+//extern VexEmNote
 //            amd64g_dirtyhelper_FRSTOR ( VexGuestAMD64State*, HWord );
 
 //extern void amd64g_dirtyhelper_FSTENV ( VexGuestAMD64State*, HWord );
 
-//extern VexEmWarn 
+//extern VexEmNote
 //            amd64g_dirtyhelper_FLDENV ( VexGuestAMD64State*, HWord );
 
 

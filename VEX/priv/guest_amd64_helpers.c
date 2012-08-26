@@ -1531,7 +1531,7 @@ ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl )
    appears to differ from the former only in that the 8 FP registers
    themselves are not transferred into the guest state. */
 static
-VexEmWarn do_put_x87 ( Bool moveRegs,
+VexEmNote do_put_x87 ( Bool moveRegs,
                        /*IN*/UChar* x87_state,
                        /*OUT*/VexGuestAMD64State* vex_state )
 {
@@ -1544,7 +1544,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
    UInt       tagw    = x87->env[FP_ENV_TAG];
    UInt       fpucw   = x87->env[FP_ENV_CTRL];
    UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
-   VexEmWarn  ew;
+   VexEmNote  ew;
    UInt       fpround;
    ULong      pair;
 
@@ -1580,7 +1580,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
       emulation warnings. */
    pair    = amd64g_check_fldcw ( (ULong)fpucw );
    fpround = (UInt)pair & 0xFFFFFFFFULL;
-   ew      = (VexEmWarn)(pair >> 32);
+   ew      = (VexEmNote)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
 
@@ -1747,11 +1747,11 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
+VexEmNote amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
 {
    Fpu_State tmp;
-   VexEmWarn warnX87 = EmWarn_NONE;
-   VexEmWarn warnXMM = EmWarn_NONE;
+   VexEmNote warnX87 = EmNote_NONE;
+   VexEmNote warnXMM = EmNote_NONE;
    UShort*   addrS   = (UShort*)addr;
    UChar*    addrC   = (UChar*)addr;
    U128*     xmm     = (U128*)(addr + 160);
@@ -1820,13 +1820,13 @@ VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
                 | ((((UInt)addrS[13]) & 0xFFFF) << 16);
      ULong w64 = amd64g_check_ldmxcsr( (ULong)w32 );
 
-     warnXMM = (VexEmWarn)(w64 >> 32);
+     warnXMM = (VexEmNote)(w64 >> 32);
 
      gst->guest_SSEROUND = w64 & 0xFFFFFFFFULL;
    }
 
    /* Prefer an X87 emwarn over an XMM one, if both exist. */
-   if (warnX87 != EmWarn_NONE)
+   if (warnX87 != EmNote_NONE)
       return warnX87;
    else
       return warnXMM;
@@ -1878,7 +1878,7 @@ ULong amd64g_check_ldmxcsr ( ULong mxcsr )
    ULong rmode = (mxcsr >> 13) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((mxcsr & 0x1F80) != 0x1F80) {
       /* unmasked exceptions! */
@@ -1922,7 +1922,7 @@ ULong amd64g_check_fldcw ( ULong fpucw )
    ULong rmode = (fpucw >> 10) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((fpucw & 0x3F) != 0x3F) {
       /* unmasked exceptions! */
@@ -1952,7 +1952,7 @@ ULong amd64g_create_fpucw ( ULong fpround )
    Reads 28 bytes at x87_state[0 .. 27]. */
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER */
-VexEmWarn amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
+VexEmNote amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
    return do_put_x87( False, (UChar*)x87_state, vex_state );
@@ -2058,7 +2058,7 @@ void amd64g_dirtyhelper_FNSAVES ( /*IN*/VexGuestAMD64State* vex_state,
    Reads 108 bytes at x87_state[0 .. 107]. */
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER */
-VexEmWarn amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
+VexEmNote amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
    return do_put_x87( True, (UChar*)x87_state, vex_state );
@@ -2069,7 +2069,7 @@ VexEmWarn amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
    Reads 94 bytes at x87_state[0 .. 93]. */
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER */
-VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
+VexEmNote amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
                                        /*IN*/HWord x87_state)
 {
    Int           stno, preg;
@@ -2081,7 +2081,7 @@ VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
    UInt          tagw    = x87->env[FPS_ENV_TAG];
    UInt          fpucw   = x87->env[FPS_ENV_CTRL];
    UInt          c3210   = x87->env[FPS_ENV_STAT] & 0x4700;
-   VexEmWarn     ew;
+   VexEmNote     ew;
    UInt          fpround;
    ULong         pair;
 
@@ -2115,7 +2115,7 @@ VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
       emulation warnings. */
    pair    = amd64g_check_fldcw ( (ULong)fpucw );
    fpround = (UInt)pair & 0xFFFFFFFFULL;
-   ew      = (VexEmWarn)(pair >> 32);
+   ew      = (VexEmNote)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
 
@@ -3699,7 +3699,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
 #  undef AVXZERO
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    /* These should not ever be either read or written, but we
       initialise them anyway. */
@@ -3807,7 +3807,7 @@ VexGuestLayout
                  // /* */ ALWAYSDEFD(guest_SS),
                  // /* */ ALWAYSDEFD(guest_LDT),
                  // /* */ ALWAYSDEFD(guest_GDT),
-                 /* 10 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 10 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 11 */ ALWAYSDEFD(guest_SSEROUND),
                  /* 12 */ ALWAYSDEFD(guest_TISTART),
                  /* 13 */ ALWAYSDEFD(guest_TILEN),

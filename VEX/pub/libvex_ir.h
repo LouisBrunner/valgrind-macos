@@ -1833,9 +1833,9 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
    a jump of kind Ijk_TInval.
 
    Re Ijk_EmWarn and Ijk_EmFail: the guest state must have a
-   pseudo-register guest_EMWARN, which is 32-bits regardless of the
-   host or guest word size.  That register should be made to hold an
-   EmWarn_* value to indicate the reason for the exit.
+   pseudo-register guest_EMNOTE, which is 32-bits regardless of the
+   host or guest word size.  That register should be made to hold a
+   VexEmNote value to indicate the reason for the exit.
 
    In the case of Ijk_EmFail, the exit is fatal (Vex-generated code
    cannot continue) and so the jump destination can be anything.

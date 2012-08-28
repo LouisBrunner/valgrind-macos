@@ -282,6 +282,15 @@ typedef
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* call-noredir *%EAX */                     \
                      "xchgl %%edx,%%edx\n\t"
+
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
+                     "xchgl %%edi,%%edi\n\t"                     \
+                     : : : "cc", "memory"                        \
+                    );                                           \
+ } while (0)
+
 #endif /* PLAT_x86_linux || PLAT_x86_darwin || (PLAT_x86_win32 && __GNUC__) */
 
 /* ------------------------- x86-Win32 ------------------------- */
@@ -344,6 +353,13 @@ valgrind_do_client_request_expr(uintptr_t _zzq_default, uintptr_t _zzq_request,
 
 #define VALGRIND_CALL_NOREDIR_EAX ERROR
 
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm { __SPECIAL_INSTRUCTION_PREAMBLE                       \
+            __asm xchg edi,edi                                   \
+    }                                                            \
+ } while (0)
+
 #else
 #error Unsupported compiler.
 #endif
@@ -403,6 +419,15 @@ typedef
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* call-noredir *%RAX */                     \
                      "xchgq %%rdx,%%rdx\n\t"
+
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
+                     "xchgq %%rdi,%%rdi\n\t"                     \
+                     : : : "cc", "memory"                        \
+                    );                                           \
+ } while (0)
+
 #endif /* PLAT_amd64_linux || PLAT_amd64_darwin */
 
 /* ------------------------ ppc32-linux ------------------------ */
@@ -536,6 +561,13 @@ typedef
                      /* branch-and-link-to-noredir *%R11 */       \
                      "or 3,3,3\n\t"
 
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
+                     "or 5,5,5\n\t"                              \
+                    );                                           \
+ } while (0)
+
 #endif /* PLAT_ppc64_linux */
 
 /* ------------------------- arm-linux ------------------------- */
@@ -596,6 +628,14 @@ typedef
                      /* branch-and-link-to-noredir *%R4 */        \
                      "orr r12, r12, r12\n\t"
 
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
+                     "orr r13, r13, r13\n\t"                     \
+                     : : : "cc", "memory"                        \
+                    );                                           \
+ } while (0)
+
 #endif /* PLAT_arm_linux */
 
 /* ------------------------ s390x-linux ------------------------ */
@@ -621,6 +661,7 @@ typedef
 #define __CLIENT_REQUEST_CODE "lr 2,2\n\t"
 #define __GET_NR_CONTEXT_CODE "lr 3,3\n\t"
 #define __CALL_NO_REDIR_CODE  "lr 4,4\n\t"
+#define __VEX_INJECT_IR_CODE  "lr 5,5\n\t"
 
 #define VALGRIND_DO_CLIENT_REQUEST_EXPR(                         \
        _zzq_default, _zzq_request,                               \
@@ -665,6 +706,12 @@ typedef
 #define VALGRIND_CALL_NOREDIR_R1                                 \
                     __SPECIAL_INSTRUCTION_PREAMBLE               \
                     __CALL_NO_REDIR_CODE
+
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
+                     __VEX_INJECT_IR_CODE);                      \
+ } while (0)
 
 #endif /* PLAT_s390x_linux */
 
@@ -729,7 +776,16 @@ typedef
 #define VALGRIND_CALL_NOREDIR_T9                                 \
                      __SPECIAL_INSTRUCTION_PREAMBLE              \
                      /* call-noredir *%t9 */                     \
-                     "or $15, $15, $15\n\t"                                             
+                     "or $15, $15, $15\n\t"
+
+#define VALGRIND_VEX_INJECT_IR()                                 \
+ do {                                                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
+                     "or $11, $11, $11\n\t"                      \
+                    );                                           \
+ } while (0)
+
+
 #endif /* PLAT_mips32_linux */
 
 /* Insert assembly code for other platforms here... */
@@ -4448,7 +4504,10 @@ typedef
              disablement indicator.  Hence 1 disables or further
              disables errors, and -1 moves back towards enablement.
              Other values are not allowed. */
-          VG_USERREQ__CHANGE_ERR_DISABLEMENT = 0x1801
+          VG_USERREQ__CHANGE_ERR_DISABLEMENT = 0x1801,
+
+          /* Initialise IR injection */
+          VG_USERREQ__VEX_INIT_FOR_IRI = 0x1901
    } Vg_ClientRequest;
 
 #if !defined(__GNUC__)

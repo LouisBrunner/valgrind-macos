@@ -1,0 +1,102 @@
+vbit-test
+
+The program tests the effect of an undefined input bit to an IROp on the
+definedness of the result of that operation. It also checks that only those
+bits in the result are undefined that we expect to be undefined. That way
+we can detect false positives (there are bits in the result that are
+undefined but shouldn't) and false negatives (there are defined bits in
+the result that should be undefined).
+
+By design, the tester will always be in-synch with the list of IROps
+in libvex_ir.h. Addition / removel of IROps will cause a compile or
+runtime error of the tester and thusly will not go unnoticed.
+
+
+How it works
+------------
+The underlying idea is to
+(1) use VALGRIND_SET_VBITS to set the V-bits of the operands of an IROp
+(2) execute that IROp
+(3) use VALGRIND_GET_VBITS to obtain the V-bits of the result
+(4) compare the result against our expectation
+Do that for all IROps and for all input bits of their operands.
+For all this to work, the tester must run under the auspices of memcheck.
+
+The key step here is #2. To "execute an IROp" we need to inject some
+IR into the the superblock. This is accomplished by adding a new "special
+instruction" that is supported by all frontends. During the decoding step
+that instruction will be recognised and a suitable piece of IR will be
+inserted (function vex_inject_ir does just that). What is "suitable" depends
+on the IROp at hand and its operands. We need to know the addresses of
+those operands, their types and, trivially, which IROp we want to execute.
+This information is collected in the IR Injection Control Block (IRICB).
+To get the IRICB to VEX we use the new client request 
+VG_USERREQ__VEX_INIT_FOR_IRI.
+
+
+Invocation
+----------
+Use   vbit-test --help   to obtain list of supported command line flags.
+
+
+Source code overview
+--------------------
+main.c
+Contains the main loop that iterates over all IROps in libvex_ir.h.
+Depending on the number of operands one of the functions test_unary,
+test_binary, etc. will be invoked to run all tests for that opreator.
+
+irops.c
+List of IROps. For each operator it defines how undefined input bits
+influence the output (result) and whether the operator is supported on a
+given architecture.
+
+util.c
+Miscellaneous convenience functions. It also includes sizeof_irtype and
+typeof_primop which were imported from VEX/priv/ir_defs.c.
+
+unary.c
+The function test_unary_op is the work horse. It iterates over all input
+bits of the single operand. For each such bit, the corresponding V-bit will
+be set to undefined, the IROps is executed and the resulting V-bits will
+be compared against the expected result.
+The function check_result_for_unary will check the V-bits for correctness.
+
+binary.c, ternary.c, qernary.c
+Like unary.c...
+
+valgrind.c
+The main function there is valgrind_execute_test. It will 
+(1) set the V-bits of the operands using the VALGRIND_SET_VBITS mechanism,
+(2) inject IR into the current IRSB to exacute a single IROp, and
+(3) obtain the V-bits of the result using the VALGRIND_GET_VBITS mechanism.
+The addresses of the operands and the result, as well as they V-bit vectors
+are stored in the test_data_t structure.
+
+<valgrind>/VEX/priv/ir_inject.c
+The file provides the function vex_inject_ir which will inject a piece of
+IR into the current IRSB based on the information provided in the IRICB.
+That code snippet will perform a single IR operation
+
+<valgrind>/include/valgrind.h
+Defines the macro VALGRIND_VEX_INJECT_IR for all architectures.
+Also defines a new client request VG_USERREQ__VEX_INIT_FOR_IRI.
+
+
+Adding a new IROp
+-----------------
+The following steps are needed
+(1) Add the operator to irops.c
+(2) If the operator propagates undefinedness from input to output in a new
+    way:
+    (a) Add a new enumerator to undef_t and document it there.
+    (b) Add a new case in function check_result_for_XYZ depending on the
+        arity of the operator. The code snippet there is supposed to check
+        that the result matches what we expect.
+
+
+Status
+------
+vbit-test has been tested on x86-64, ppc64, s390x, and mips32.
+There is support for other architectures in valgrind.h and guest_ARCH_toIR.c
+but it has not been tested. 

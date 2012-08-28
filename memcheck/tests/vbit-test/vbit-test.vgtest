@@ -1,0 +1,2 @@
+prog: vbit-test
+vgopts: -q

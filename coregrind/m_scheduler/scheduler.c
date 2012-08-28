@@ -1873,6 +1873,10 @@ void do_client_request ( ThreadId tid )
             goto my_default;
          }
 
+      case VG_USERREQ__VEX_INIT_FOR_IRI:
+         LibVEX_InitIRI ( (IRICB *)arg[1] );
+         break;
+
       default:
        my_default:
 	 if (os_client_request(tid, arg)) {

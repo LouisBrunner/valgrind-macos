@@ -1292,6 +1292,25 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             dres.jk_StopHere = Ijk_NoRedir;
             dres.whatNext    = Dis_StopHere;
             goto decode_success;
+         } else if (getUInt(code + 16) == 0x016b5825/* or t3,t3,t3 */ ) {
+           /* IR injection */
+            DIP("IR injection\n");
+#if defined (_MIPSEL)
+            vex_inject_ir(irsb, Iend_LE);
+#elif defined (_MIPSEB)
+            vex_inject_ir(irsb, Iend_BE);
+#endif
+            stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_TISTART),
+                            mkU32(guest_PC_curr_instr)));
+            stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_TILEN),
+                            mkU32(20)));
+
+            putPC(mkU32(guest_PC_curr_instr + 20));
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
+            dres.len = 20;
+            delta += 20;
+            goto decode_success;
          }
 
          /* We don't know what it is.  Set opc1/opc2 so decode_failure

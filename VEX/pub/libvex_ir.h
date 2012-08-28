@@ -1461,7 +1461,8 @@ typedef
       Iop_Recip32Fx8,
 
       Iop_Max32Fx8, Iop_Min32Fx8,
-      Iop_Max64Fx4, Iop_Min64Fx4
+      Iop_Max64Fx4, Iop_Min64Fx4,
+      Iop_LAST      /* must be the last enumerator */
    }
    IROp;
 
@@ -2495,6 +2496,13 @@ extern Bool isFlatIRStmt ( IRStmt* );
 
 /* Is this any value actually in the enumeration 'IRType' ? */
 extern Bool isPlausibleIRType ( IRType ty );
+
+
+/*---------------------------------------------------------------*/
+/*--- IR injection                                            ---*/
+/*---------------------------------------------------------------*/
+void vex_inject_ir(IRSB *, IREndness);
+
 
 #endif /* ndef __LIBVEX_IR_H */
 

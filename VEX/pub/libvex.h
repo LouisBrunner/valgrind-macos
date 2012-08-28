@@ -750,6 +750,33 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
 
 extern void LibVEX_ShowStats ( void );
 
+/*-------------------------------------------------------*/
+/*-- IR injection                                      --*/
+/*-------------------------------------------------------*/
+
+/* IR Injection Control Block */
+
+#define NO_ROUNDING_MODE (~0u)
+
+typedef 
+   struct {
+      IROp  op;        // the operation to perform
+      HWord result;    // address of the result
+      HWord opnd1;     // address of 1st operand
+      HWord opnd2;     // address of 2nd operand
+      HWord opnd3;     // address of 3rd operand
+      HWord opnd4;     // address of 4th operand
+      IRType t_result; // type of result
+      IRType t_opnd1;  // type of 1st operand
+      IRType t_opnd2;  // type of 2nd operand
+      IRType t_opnd3;  // type of 3rd operand
+      IRType t_opnd4;  // type of 4th operand
+      UInt  rounding_mode;
+      UInt  num_operands; // excluding rounding mode, if any
+   }
+   IRICB;
+
+extern void LibVEX_InitIRI ( const IRICB * );
 
 /*-------------------------------------------------------*/
 /*--- Notes                                           ---*/

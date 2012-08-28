@@ -148,6 +148,7 @@
       87DB (xchgl %ebx,%ebx)   %EDX = client_request ( %EAX )
       87C9 (xchgl %ecx,%ecx)   %EAX = guest_NRADDR
       87D2 (xchgl %edx,%edx)   call-noredir *%EAX
+      87FF (xchgl %edi,%edi)   IR injection
 
    Any other bytes following the 12-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -8015,6 +8016,26 @@ DisResult disInstr_X86_WRK (
             storeLE( mkexpr(t2), mkU32(guest_EIP_bbstart+delta));
             jmp_treg(&dres, Ijk_NoRedir, t1);
             vassert(dres.whatNext == Dis_StopHere);
+            goto decode_success;
+         }
+         else
+         if (code[12] == 0x87 && code[13] == 0xFF /* xchgl %edi,%edi */) {
+            /* IR injection */
+            DIP("IR injection\n");
+            vex_inject_ir(irsb, Iend_LE);
+
+            // Invalidate the current insn. The reason is that the IRop we're
+            // injecting here can change. In which case the translation has to
+            // be redone. For ease of handling, we simply invalidate all the
+            // time.
+            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_EIP_curr_instr)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(14)));
+   
+            delta += 14;
+
+            stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_bbstart + delta) ) );
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
             goto decode_success;
          }
          /* We don't know what it is. */

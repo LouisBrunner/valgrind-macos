@@ -117,6 +117,7 @@
       4887DB (xchgq %rbx,%rbx)   %RDX = client_request ( %RAX )
       4887C9 (xchgq %rcx,%rcx)   %RAX = guest_NRADDR
       4887D2 (xchgq %rdx,%rdx)   call-noredir *%RAX
+      4887F6 (xchgq %rdi,%rdi)   IR injection
 
    Any other bytes following the 16-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -26546,6 +26547,27 @@ DisResult disInstr_AMD64_WRK (
             storeLE( mkexpr(t2), mkU64(guest_RIP_bbstart+delta));
             jmp_treg(&dres, Ijk_NoRedir, t1);
             vassert(dres.whatNext == Dis_StopHere);
+            goto decode_success;
+         }
+         else
+         if (code[16] == 0x48 && code[17] == 0x87
+                              && code[18] == 0xff /* xchgq %rdi,%rdi */) {
+           /* IR injection */
+            DIP("IR injection\n");
+            vex_inject_ir(irsb, Iend_LE);
+
+            // Invalidate the current insn. The reason is that the IRop we're
+            // injecting here can change. In which case the translation has to
+            // be redone. For ease of handling, we simply invalidate all the
+            // time.
+            stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_RIP_curr_instr)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkU64(19)));
+   
+            delta += 19;
+
+            stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_bbstart + delta) ) );
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
             goto decode_success;
          }
          /* We don't know what it is. */

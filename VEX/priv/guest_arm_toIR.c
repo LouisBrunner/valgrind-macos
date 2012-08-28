@@ -91,6 +91,7 @@
       E18AA00A (orr r10,r10,r10)   R3 = client_request ( R4 )
       E18BB00B (orr r11,r11,r11)   R3 = guest_NRADDR
       E18CC00C (orr r12,r12,r12)   branch-and-link-to-noredir R4
+      E18DD00D (orr r13,r13,r13)   IR injection
 
    Any other bytes following the 16-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -12475,6 +12476,30 @@ DisResult disInstr_ARM_WRK (
             dres.jk_StopHere = Ijk_NoRedir;
             dres.whatNext    = Dis_StopHere;
             goto decode_success;
+         }
+         else
+         if (getUIntLittleEndianly(code+16) == 0xE18DD00D
+                                               /* orr r13,r13,r13 */) {
+            /* IR injection */
+            DIP("IR injection\n");
+
+            vex_inject_ir(irsb, Iend_LE);
+
+            // Invalidate the current insn. The reason is that the IRop we're
+            // injecting here can change. In which case the translation has to
+            // be redone. For ease of handling, we simply invalidate all the
+            // time.
+#if 0
+            // FIXME: needs to be fixed
+            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
+   
+            llPutIReg(15, mkU32( guest_R15_curr_instr_notENC + 20 ));
+
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
+            goto decode_success;
+#endif
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
             can print the insn following the Special-insn preamble. */

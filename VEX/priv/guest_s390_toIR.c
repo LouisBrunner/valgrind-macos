@@ -14129,6 +14129,23 @@ s390_decode_special_and_irgen(UChar *bytes)
       s390_irgen_guest_NRADDR();
    } else if (bytes[0] == 0x18 && bytes[1] == 0x44 /* lr %r4, %r4 */) {
       s390_irgen_call_noredir();
+   } else if (bytes[0] == 0x18 && bytes[1] == 0x55 /* lr %r5, %r5 */) {
+      vex_inject_ir(irsb, Iend_BE);
+
+      /* Invalidate the current insn. The reason is that the IRop we're
+         injecting here can change. In which case the translation has to
+         be redone. For ease of handling, we simply invalidate all the
+         time. */
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+                      mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN),
+                      mkU64(guest_IA_next_instr - guest_IA_curr_instr)));
+      vassert(guest_IA_next_instr - guest_IA_curr_instr ==
+              S390_SPECIAL_OP_PREAMBLE_SIZE + S390_SPECIAL_OP_SIZE);
+
+      put_IA(mkaddr_expr(guest_IA_next_instr));
+      dis_res->whatNext    = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_TInval;
    } else {
       /* We don't know what it is. */
       return S390_DECODE_UNKNOWN_SPECIAL_INSN;

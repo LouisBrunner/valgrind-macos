@@ -81,9 +81,9 @@ static const irop_t irops[] = {
   { DEFOP(Iop_Ctz64,      UNDEF_ALL),  .s390x = 0, .amd64 = 1, .ppc64 = 0, .mips32 = 0 },
   { DEFOP(Iop_Ctz32,      UNDEF_ALL),  .s390x = 0, .amd64 = 0, .ppc64 = 0, .mips32 = 0 },
   { DEFOP(Iop_CmpLT32S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 1 },
-  { DEFOP(Iop_CmpLT64S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 0 }, // mips asserts
+  { DEFOP(Iop_CmpLT64S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 0, .mips32 = 0 }, // ppc, mips assert
   { DEFOP(Iop_CmpLE32S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 1 },
-  { DEFOP(Iop_CmpLE64S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 0 }, // mips asserts
+  { DEFOP(Iop_CmpLE64S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 0, .mips32 = 0 }, // ppc, mips assert
   { DEFOP(Iop_CmpLT32U,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 1 },
   { DEFOP(Iop_CmpLT64U,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 0 }, // mips asserts
   { DEFOP(Iop_CmpLE32U,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .ppc64 = 1, .mips32 = 0 },
@@ -99,10 +99,10 @@ static const irop_t irops[] = {
   { DEFOP(Iop_Left32,     UNDEF_UNKNOWN), },  // not supported by mc_translate
   { DEFOP(Iop_Left64,     UNDEF_UNKNOWN), },  // not supported by mc_translate
   { DEFOP(Iop_Max32U,     UNDEF_UNKNOWN), },  // not supported by mc_translate
-  { DEFOP(Iop_CmpORD32U,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
-  { DEFOP(Iop_CmpORD64U,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
-  { DEFOP(Iop_CmpORD32S,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
-  { DEFOP(Iop_CmpORD64S,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
+  { DEFOP(Iop_CmpORD32U,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
+  { DEFOP(Iop_CmpORD64U,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
+  { DEFOP(Iop_CmpORD32S,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
+  { DEFOP(Iop_CmpORD64S,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .ppc64 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
   { DEFOP(Iop_DivU32,     UNDEF_ALL), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
   { DEFOP(Iop_DivS32,     UNDEF_ALL), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
   { DEFOP(Iop_DivU64,     UNDEF_ALL), .s390x = 0, .amd64 = 0, .ppc64 = 1, .mips32 = 0 },
@@ -472,10 +472,10 @@ static const irop_t irops[] = {
   { DEFOP(Iop_SubD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1 },
   { DEFOP(Iop_MulD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1 },
   { DEFOP(Iop_DivD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1 },
-  { DEFOP(Iop_ShlD64,                UNDEF_SHL),  .s390x = 0, .ppc64 = 0 }, // ppc asserts
-  { DEFOP(Iop_ShrD64,                UNDEF_SHR),  .s390x = 0, .ppc64 = 0 }, // ditto
-  { DEFOP(Iop_ShlD128,               UNDEF_SHL),  .s390x = 0, .ppc64 = 0 }, // ditto
-  { DEFOP(Iop_ShrD128,               UNDEF_SHR),  .s390x = 0, .ppc64 = 0 }, // ditto
+  { DEFOP(Iop_ShlD64,                UNDEF_SHL),  .s390x = 0, .ppc64 = 0 }, // BZ #305948
+  { DEFOP(Iop_ShrD64,                UNDEF_SHR),  .s390x = 0, .ppc64 = 0 }, // BZ #305948
+  { DEFOP(Iop_ShlD128,               UNDEF_SHL),  .s390x = 0, .ppc64 = 0 }, // BZ #305948
+  { DEFOP(Iop_ShrD128,               UNDEF_SHR),  .s390x = 0, .ppc64 = 0 }, // BZ #305948
   { DEFOP(Iop_D32toD64,              UNDEF_ALL),  .s390x = 0, .ppc64 = 1 },
   { DEFOP(Iop_D64toD128,             UNDEF_ALL),  .s390x = 0, .ppc64 = 1 },
   { DEFOP(Iop_I64StoD128,            UNDEF_ALL),  .s390x = 0, .ppc64 = 1 },

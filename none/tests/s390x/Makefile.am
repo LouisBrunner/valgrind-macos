@@ -18,6 +18,7 @@ EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
 	mul.h  or.h  sub.h  test.h  xor.h table.h

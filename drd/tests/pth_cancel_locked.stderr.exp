@@ -6,6 +6,10 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_cancel_locked.c:?)
 
+pthread_cancel(): invalid thread ID 0x........
+   at 0x........: pthread_cancel (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cancel_locked.c:?)
+
 Test finished.
 
-ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

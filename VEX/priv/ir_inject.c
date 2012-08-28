@@ -242,9 +242,8 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
          ppIRStmt(irsb->stmts[irsb->stmts_used - 2]);
          vex_printf("\n");
          ppIRStmt(irsb->stmts[irsb->stmts_used - 1]);
-         vex_printf("\n");
       }
-      vex_printf("END inject\n");
+      vex_printf("\nEND inject\n");
    }
 }
 

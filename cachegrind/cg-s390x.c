@@ -39,7 +39,7 @@
 
 #include "cg_arch.h"
 
-void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* LLc,
                            Bool all_caches_clo_defined)
 {
    // z900
@@ -105,7 +105,7 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
    // fixs390: have a table for all available models and check /proc/cpuinfo
    *I1c = (cache_t) {   65536,  4, 256 };
    *D1c = (cache_t) {  131072,  8, 256 };
-   *L2c = (cache_t) { 3145728, 12, 256 };
+   *LLc = (cache_t) {50331648, 24, 256 };
 
    // Warn if config not completely specified from cmd line.  Note that
    // this message is slightly different from the one we give on x86/AMD64
@@ -118,8 +118,8 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
    // cachegrind/tests/filter_stderr!
    //
    if (!all_caches_clo_defined) {
-      VG_(dmsg)("Warning: Cannot auto-detect cache config on s390x, using one "
-                "or more defaults \n");
+      VG_(dmsg)("Warning: Cannot auto-detect cache config, "
+                "assuming z10-EC cache configuration\n");
    }
 }
 

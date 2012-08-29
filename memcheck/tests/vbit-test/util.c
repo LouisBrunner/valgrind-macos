@@ -4,6 +4,7 @@
 #include <stdlib.h>    // exit
 #include <assert.h>    // assert
 #include <endian.h>
+#include <inttypes.h>
 #include "vtest.h"
 
 
@@ -47,27 +48,27 @@ print_value(FILE *fp, value_t val, unsigned num_bits)
    case 8:  fprintf(fp, "%02x",   val.u8);  break;
    case 16: fprintf(fp, "%04x",   val.u16); break;
    case 32: fprintf(fp, "%08x",   val.u32); break;
-   case 64: fprintf(fp, "%016lx", val.u64); break;
+   case 64: fprintf(fp, "%016"PRIx64, val.u64); break;
    case 128:
       if (__BYTE_ORDER == __LITTLE_ENDIAN) {
-         fprintf(fp, "%016lx", val.u128[1]);
-         fprintf(fp, "%016lx", val.u128[0]);
+         fprintf(fp, "%016"PRIx64, val.u128[1]);
+         fprintf(fp, "%016"PRIx64, val.u128[0]);
       } else {
-         fprintf(fp, "%016lx", val.u128[0]);
-         fprintf(fp, "%016lx", val.u128[1]);
+         fprintf(fp, "%016"PRIx64, val.u128[0]);
+         fprintf(fp, "%016"PRIx64, val.u128[1]);
       }
       break;
    case 256:
       if (__BYTE_ORDER == __LITTLE_ENDIAN) {
-         fprintf(fp, "%016lx", val.u256[3]);
-         fprintf(fp, "%016lx", val.u256[2]);
-         fprintf(fp, "%016lx", val.u256[1]);
-         fprintf(fp, "%016lx", val.u256[0]);
+         fprintf(fp, "%016"PRIx64, val.u256[3]);
+         fprintf(fp, "%016"PRIx64, val.u256[2]);
+         fprintf(fp, "%016"PRIx64, val.u256[1]);
+         fprintf(fp, "%016"PRIx64, val.u256[0]);
       } else {
-         fprintf(fp, "%016lx", val.u256[0]);
-         fprintf(fp, "%016lx", val.u256[1]);
-         fprintf(fp, "%016lx", val.u256[2]);
-         fprintf(fp, "%016lx", val.u256[3]);
+         fprintf(fp, "%016"PRIx64, val.u256[0]);
+         fprintf(fp, "%016"PRIx64, val.u256[1]);
+         fprintf(fp, "%016"PRIx64, val.u256[2]);
+         fprintf(fp, "%016"PRIx64, val.u256[3]);
       }
       break;
   default:

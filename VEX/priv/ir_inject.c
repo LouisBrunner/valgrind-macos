@@ -83,12 +83,14 @@ load(IREndness endian, IRType type, HWord haddr)
    IROp concat;
    IRExpr *addr, *next_addr;
 
+   vassert(type == Ity_I1 || sizeofIRType(type) <= 16);
+
    if (VEX_HOST_WORDSIZE == 8) {
       addr = mkU64(haddr);
       next_addr = binop(Iop_Add64, addr, mkU64(8));
    } else if (VEX_HOST_WORDSIZE == 4) {
       addr = mkU32(haddr);
-      next_addr = binop(Iop_Add32, addr, mkU32(4));
+      next_addr = binop(Iop_Add32, addr, mkU32(8));
    } else {
       vpanic("invalid #bytes for address");
    }
@@ -149,12 +151,16 @@ store(IRSB *irsb, IREndness endian, HWord haddr, IRExpr *data)
       next_addr = binop(Iop_Add64, addr, mkU64(8));
    } else if (VEX_HOST_WORDSIZE == 4) {
       addr = mkU32(haddr);
-      next_addr = binop(Iop_Add32, addr, mkU32(4));
+      next_addr = binop(Iop_Add32, addr, mkU32(8));
    } else {
       vpanic("invalid #bytes for address");
    }
 
-   switch (typeOfIRExpr(irsb->tyenv, data)) {
+   IRType type = typeOfIRExpr(irsb->tyenv, data);
+
+   vassert(type == Ity_I1 || sizeofIRType(type) <= 16);
+
+   switch (type) {
    case Ity_I128: high = Iop_128HIto64;   low = Iop_128to64;     goto store128;
    case Ity_F128: high = Iop_F128HItoF64; low = Iop_F128LOtoF64; goto store128;
    case Ity_D128: high = Iop_D128HItoD64; low = Iop_D128LOtoD64; goto store128;

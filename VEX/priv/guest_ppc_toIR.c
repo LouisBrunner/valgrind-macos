@@ -16603,8 +16603,9 @@ DisResult disInstr_PPC_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_CIA_curr_instr)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU64(20)));
+
+            stmt(IRStmt_Put(OFFB_TISTART, mkSzImm(ty, guest_CIA_curr_instr)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkSzImm(ty, 20)));
    
             putGST( PPC_GST_CIA, mkSzImm( ty, guest_CIA_bbstart + delta ));
             dres.whatNext    = Dis_StopHere;

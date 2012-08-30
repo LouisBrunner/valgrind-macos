@@ -222,6 +222,8 @@ static int go(char *feature, char *cpu)
       match = facilities & FAC_BIT(35);
    } else if (strcmp(feature, "s390x-etf3") == 0 ) {
       match = facilities & FAC_BIT(30);
+   } else if (strcmp(feature, "s390x-fpext") == 0 ) {
+      match = facilities & FAC_BIT(37);
    } else {
       return 2;          // Unrecognised feature.
    }

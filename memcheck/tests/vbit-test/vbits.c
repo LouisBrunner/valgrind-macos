@@ -2,7 +2,13 @@
 
 #include <stdio.h>   // fprintf
 #include <assert.h>  // assert
-#include <endian.h>  // __BYTE_ORDER
+#if defined(__APPLE__)
+#include <machine/endian.h>
+#define __BYTE_ORDER    BYTE_ORDER
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
+#else
+#include <endian.h>
+#endif
 #include <inttypes.h>
 #include "vbits.h"
 #include "vtest.h"

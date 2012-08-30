@@ -1252,6 +1252,7 @@ static HChar* show_hwcaps_s390x ( UInt hwcaps )
      { "etf2" },
      { "etf3" },
      { "stckf" },
+     { "fpext" },
    };
    static HChar buf[sizeof facilities + sizeof prefix + 1];
    static HChar *p;
@@ -1279,6 +1280,8 @@ static HChar* show_hwcaps_s390x ( UInt hwcaps )
      p = p + vex_sprintf(p, "-%s", facilities[7]);
    if (hwcaps & VEX_HWCAPS_S390X_STCKF)
      p = p + vex_sprintf(p, "-%s", facilities[8]);
+   if (hwcaps & VEX_HWCAPS_S390X_FPEXT)
+     p = p + vex_sprintf(p, "-%s", facilities[9]);
 
    /* If there are no facilities, add "zarch" */
    if (hwcaps == 0)

@@ -190,6 +190,11 @@ static model_info *get_host(void)
    return model;
 }
 
+
+/* Convenience macro that maps the facility bit number as given in the
+   Principles of Ops "facility indications" section to a bit mask */
+#define FAC_BIT(x)   (1ULL << (63 - (x)))
+
 static int go(char *feature, char *cpu)
 {
    unsigned long long facilities;
@@ -200,25 +205,25 @@ static int go(char *feature, char *cpu)
    facilities = stfle();
 
    if        (strcmp(feature, "s390x-zarch") == 0 ) {
-     match = (facilities & (1ULL << 62) && (facilities & (1ULL << 61)));
+      match = (facilities & FAC_BIT(1)) && (facilities & FAC_BIT(2));
    } else if (strcmp(feature, "s390x-n3") == 0 ) {
-     match = (facilities & (1ULL << 63));
+      match = facilities & FAC_BIT(0);
    } else if (strcmp(feature, "s390x-stfle") == 0 ) {
-     match = (facilities & (1ULL << 56));
+      match = facilities & FAC_BIT(7);
    } else if (strcmp(feature, "s390x-ldisp") == 0 ) {
-     match = (facilities & (1ULL << 45) && (facilities & (1ULL << 44)));
+      match = (facilities & FAC_BIT(18)) && (facilities & FAC_BIT(19));
    } else if (strcmp(feature, "s390x-eimm") == 0 ) {
-     match = (facilities & (1ULL << 42));
+      match = facilities & FAC_BIT(21);
    } else if (strcmp(feature, "s390x-stckf") == 0 ) {
-     match = (facilities & (1ULL << 38));
+      match = facilities & FAC_BIT(25);
    } else if (strcmp(feature, "s390x-genins") == 0 ) {
-     match = (facilities & (1ULL << 29));
+      match = facilities & FAC_BIT(34);
    } else if (strcmp(feature, "s390x-exrl") == 0 ) {
-     match = (facilities & (1ULL << 28));
+      match = facilities & FAC_BIT(35);
    } else if (strcmp(feature, "s390x-etf3") == 0 ) {
-     match = (facilities & (1ULL << (63 - 30)));
+      match = facilities & FAC_BIT(30);
    } else {
-     return 2;          // Unrecognised feature.
+      return 2;          // Unrecognised feature.
    }
 
    if (match == 0) return 1;   // facility not provided

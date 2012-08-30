@@ -174,10 +174,10 @@ enum {
    | S390_CC_OP_BFP_RESULT_128      | F result hi 64 bits   | F result low 64 bits |             |
    | S390_CC_OP_BFP_32_TO_INT_32    | F source              |                      |             |
    | S390_CC_OP_BFP_64_TO_INT_32    | F source              |                      |             |
-   | S390_CC_OP_BFP_128_TO_INT_32   | F source hi 64 bits   |                      |             |
+   | S390_CC_OP_BFP_128_TO_INT_32   | F source hi 64 bits   | F source low 64 bits |             |
    | S390_CC_OP_BFP_32_TO_INT_64    | F source              |                      |             |
    | S390_CC_OP_BFP_64_TO_INT_64    | F source              |                      |             |
-   | S390_CC_OP_BFP_128_TO_INT_64   | F source hi 64 bits   |                      |             |
+   | S390_CC_OP_BFP_128_TO_INT_64   | F source hi 64 bits   | F source low 64 bits |             |
    | S390_CC_OP_BFP_TDC_32          | F value               | Z class              |             |
    | S390_CC_OP_BFP_TDC_64          | F value               | Z class              |             |
    | S390_CC_OP_BFP_TDC_128         | F value hi 64 bits    | F value low 64 bits  | Z class     |

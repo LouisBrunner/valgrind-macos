@@ -1703,6 +1703,27 @@ s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
 }
 
 static void
+s390_format_RRF_UUFR(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
+                     UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   HChar *mnm = irgen(m3, m4, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), mnm, r1, m3, r2, m4);
+}
+
+static void
+s390_format_RRF_UURF(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
+                     UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   HChar *mnm = irgen(m3, m4, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), mnm, r1, m3, r2, m4);
+}
+
+
+static void
 s390_format_RRF_U0RR(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
                      UChar m3, UChar r1, UChar r2, Int xmnm_kind)
 {
@@ -8251,6 +8272,121 @@ s390_irgen_CDGBR(UChar r1, UChar r2)
 }
 
 static HChar *
+s390_irgen_CELFBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op2 = newTemp(Ity_I32);
+
+   assign(op2, get_gpr_w1(r2));
+   put_fpr_w0(r1, binop(Iop_I32UtoF32, mkU32(encode_rounding_mode(m3)),
+                                       mkexpr(op2)));
+
+   return "celfbr";
+}
+
+static HChar *
+s390_irgen_CDLFBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op2 = newTemp(Ity_I32);
+
+   assign(op2, get_gpr_w1(r2));
+   put_fpr_dw0(r1, unop(Iop_I32UtoF64, mkexpr(op2)));
+
+   return "cdlfbr";
+}
+
+static HChar *
+s390_irgen_CELGBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op2 = newTemp(Ity_I64);
+
+   assign(op2, get_gpr_dw0(r2));
+   put_fpr_w0(r1, binop(Iop_I64UtoF32, mkU32(encode_rounding_mode(m3)),
+                                       mkexpr(op2)));
+
+   return "celgbr";
+}
+
+static HChar *
+s390_irgen_CDLGBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op2 = newTemp(Ity_I64);
+
+   assign(op2, get_gpr_dw0(r2));
+   put_fpr_dw0(r1, binop(Iop_I64UtoF64, mkU32(encode_rounding_mode(m3)),
+                                        mkexpr(op2)));
+
+   return "cdlgbr";
+}
+
+static HChar *
+s390_irgen_CLFEBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op = newTemp(Ity_F32);
+   IRTemp result = newTemp(Ity_I32);
+
+   assign(op, get_fpr_w0(r2));
+   assign(result, binop(Iop_F32toI32U, mkU32(encode_rounding_mode(m3)),
+          mkexpr(op)));
+   put_gpr_w1(r1, mkexpr(result));
+   s390_cc_thunk_putF(S390_CC_OP_BFP_32_TO_UINT_32, op);
+
+   return "clfebr";
+}
+
+static HChar *
+s390_irgen_CLFDBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op = newTemp(Ity_F64);
+   IRTemp result = newTemp(Ity_I32);
+
+   assign(op, get_fpr_dw0(r2));
+   assign(result, binop(Iop_F64toI32U, mkU32(encode_rounding_mode(m3)),
+          mkexpr(op)));
+   put_gpr_w1(r1, mkexpr(result));
+   s390_cc_thunk_putF(S390_CC_OP_BFP_64_TO_UINT_32, op);
+
+   return "clfdbr";
+}
+
+static HChar *
+s390_irgen_CLGEBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op = newTemp(Ity_F32);
+   IRTemp result = newTemp(Ity_I64);
+
+   assign(op, get_fpr_w0(r2));
+   assign(result, binop(Iop_F32toI64U, mkU32(encode_rounding_mode(m3)),
+          mkexpr(op)));
+   put_gpr_dw0(r1, mkexpr(result));
+   s390_cc_thunk_putF(S390_CC_OP_BFP_32_TO_UINT_64, op);
+
+   return "clgebr";
+}
+
+static HChar *
+s390_irgen_CLGDBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op = newTemp(Ity_F64);
+   IRTemp result = newTemp(Ity_I64);
+
+   assign(op, get_fpr_dw0(r2));
+   assign(result, binop(Iop_F64toI64U, mkU32(encode_rounding_mode(m3)),
+          mkexpr(op)));
+   put_gpr_dw0(r1, mkexpr(result));
+   s390_cc_thunk_putF(S390_CC_OP_BFP_64_TO_UINT_64, op);
+
+   return "clgdbr";
+}
+
+static HChar *
 s390_irgen_CFEBR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F32);
@@ -10146,6 +10282,19 @@ s390_irgen_CXFBR(UChar r1, UChar r2)
 }
 
 static HChar *
+s390_irgen_CXLFBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op2 = newTemp(Ity_I32);
+
+   assign(op2, get_gpr_w1(r2));
+   put_fpr_pair(r1, unop(Iop_I32UtoF128, mkexpr(op2)));
+
+   return "cxlfbr";
+}
+
+
+static HChar *
 s390_irgen_CXGBR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10154,6 +10303,18 @@ s390_irgen_CXGBR(UChar r1, UChar r2)
    put_fpr_pair(r1, unop(Iop_I64StoF128, mkexpr(op2)));
 
    return "cxgbr";
+}
+
+static HChar *
+s390_irgen_CXLGBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op2 = newTemp(Ity_I64);
+
+   assign(op2, get_gpr_dw0(r2));
+   put_fpr_pair(r1, unop(Iop_I64UtoF128, mkexpr(op2)));
+
+   return "cxlgbr";
 }
 
 static HChar *
@@ -10172,6 +10333,23 @@ s390_irgen_CFXBR(UChar r3, UChar r1, UChar r2)
 }
 
 static HChar *
+s390_irgen_CLFXBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op = newTemp(Ity_F128);
+   IRTemp result = newTemp(Ity_I32);
+
+   assign(op, get_fpr_pair(r2));
+   assign(result, binop(Iop_F128toI32U, mkU32(encode_rounding_mode(m3)),
+                        mkexpr(op)));
+   put_gpr_w1(r1, mkexpr(result));
+   s390_cc_thunk_put1f128(S390_CC_OP_BFP_128_TO_UINT_32, op);
+
+   return "clfxbr";
+}
+
+
+static HChar *
 s390_irgen_CGXBR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F128);
@@ -10184,6 +10362,22 @@ s390_irgen_CGXBR(UChar r3, UChar r1, UChar r2)
    s390_cc_thunk_put1f128(S390_CC_OP_BFP_128_TO_INT_64, op);
 
    return "cgxbr";
+}
+
+static HChar *
+s390_irgen_CLGXBR(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
+{
+   IRTemp op = newTemp(Ity_F128);
+   IRTemp result = newTemp(Ity_I64);
+
+   assign(op, get_fpr_pair(r2));
+   assign(result, binop(Iop_F128toI64U, mkU32(encode_rounding_mode(m3)),
+                        mkexpr(op)));
+   put_gpr_dw0(r1, mkexpr(result));
+   s390_cc_thunk_put1f128(S390_CC_OP_BFP_128_TO_UINT_64, op);
+
+   return "clgxbr";
 }
 
 static HChar *
@@ -12004,7 +12198,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
       } RRF;
       struct {
          unsigned int op : 16;
-         unsigned int r3 :  4;
+         unsigned int m3 :  4;
          unsigned int m4 :  4;
          unsigned int r1 :  4;
          unsigned int r2 :  4;
@@ -12386,9 +12580,15 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb384: s390_format_RRE_R0(s390_irgen_SFPC, ovl.fmt.RRE.r1);  goto ok;
    case 0xb385: /* SFASR */ goto unimplemented;
    case 0xb38c: s390_format_RRE_R0(s390_irgen_EFPC, ovl.fmt.RRE.r1);  goto ok;
-   case 0xb390: /* CELFBR */ goto unimplemented;
-   case 0xb391: /* CDLFBR */ goto unimplemented;
-   case 0xb392: /* CXLFBR */ goto unimplemented;
+   case 0xb390: s390_format_RRF_UUFR(s390_irgen_CELFBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb391: s390_format_RRF_UUFR(s390_irgen_CDLFBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb392: s390_format_RRF_UUFR(s390_irgen_CXLFBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
    case 0xb394: s390_format_RRE_FR(s390_irgen_CEFBR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb395: s390_format_RRE_FR(s390_irgen_CDFBR, ovl.fmt.RRE.r1,
@@ -12404,9 +12604,24 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb39a: s390_format_RRF_U0RF(s390_irgen_CFXBR, ovl.fmt.RRF3.r3,
                                      ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
                                      goto ok;
-   case 0xb3a0: /* CELGBR */ goto unimplemented;
-   case 0xb3a1: /* CDLGBR */ goto unimplemented;
-   case 0xb3a2: /* CXLGBR */ goto unimplemented;
+   case 0xb39c: s390_format_RRF_UURF(s390_irgen_CLFEBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb39d: s390_format_RRF_UURF(s390_irgen_CLFDBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb39e: s390_format_RRF_UURF(s390_irgen_CLFXBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a0: s390_format_RRF_UUFR(s390_irgen_CELGBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a1: s390_format_RRF_UUFR(s390_irgen_CDLGBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a2: s390_format_RRF_UUFR(s390_irgen_CXLGBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
    case 0xb3a4: s390_format_RRE_FR(s390_irgen_CEGBR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb3a5: s390_format_RRE_FR(s390_irgen_CDGBR, ovl.fmt.RRE.r1,
@@ -12422,6 +12637,15 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb3aa: s390_format_RRF_U0RF(s390_irgen_CGXBR, ovl.fmt.RRF3.r3,
                                      ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
                                      goto ok;
+   case 0xb3ac: s390_format_RRF_UURF(s390_irgen_CLGEBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3ad: s390_format_RRF_UURF(s390_irgen_CLGDBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3ae: s390_format_RRF_UURF(s390_irgen_CLGXBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
    case 0xb3b4: /* CEFR */ goto unimplemented;
    case 0xb3b5: /* CDFR */ goto unimplemented;
    case 0xb3b6: /* CXFR */ goto unimplemented;

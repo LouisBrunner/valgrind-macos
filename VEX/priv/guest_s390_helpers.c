@@ -944,12 +944,34 @@ ULong s390_do_ecag(ULong op2addr) { return 0; }
    psw >> 28;   /* cc */ \
 })
 
+#define S390_CC_FOR_BFP_UCONVERT(opcode,cc_dep1) \
+({ \
+   __asm__ volatile ( \
+        opcode ",0,%[op],0,0\n\t" \
+        "ipm %[psw]\n\t"           : [psw] "=d"(psw) \
+                                   : [op]  "f"(cc_dep1) \
+                                   : "cc", "r0");\
+   psw >> 28;   /* cc */ \
+})
+
 #define S390_CC_FOR_BFP128_CONVERT(opcode,hi,lo) \
 ({ \
    __asm__ volatile ( \
         "ldr   4,%[high]\n\t" \
         "ldr   6,%[low]\n\t" \
         opcode " 0,0,4\n\t" \
+        "ipm %[psw]\n\t"           : [psw] "=d"(psw) \
+                                   : [high] "f"(hi), [low] "f"(lo) \
+                                   : "cc", "r0", "f4", "f6");\
+   psw >> 28;   /* cc */ \
+})
+
+#define S390_CC_FOR_BFP128_UCONVERT(opcode,hi,lo) \
+({ \
+   __asm__ volatile ( \
+        "ldr   4,%[high]\n\t" \
+        "ldr   6,%[low]\n\t" \
+        opcode ",0,4,0,0\n\t" \
         "ipm %[psw]\n\t"           : [psw] "=d"(psw) \
                                    : [high] "f"(hi), [low] "f"(lo) \
                                    : "cc", "r0", "f4", "f6");\
@@ -1178,6 +1200,25 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
 
    case S390_CC_OP_SET:
       return cc_dep1;
+
+   case S390_CC_OP_BFP_32_TO_UINT_32:
+      return S390_CC_FOR_BFP_UCONVERT(".insn rrf,0xb39c0000", cc_dep1);
+
+   case S390_CC_OP_BFP_64_TO_UINT_32:
+      return S390_CC_FOR_BFP_UCONVERT(".insn rrf,0xb39d0000", cc_dep1);
+
+   case S390_CC_OP_BFP_128_TO_UINT_32:
+      return S390_CC_FOR_BFP128_UCONVERT(".insn rrf,0xb39e0000", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_BFP_32_TO_UINT_64:
+      return S390_CC_FOR_BFP_UCONVERT(".insn rrf,0xb3ac0000", cc_dep1);
+
+   case S390_CC_OP_BFP_64_TO_UINT_64:
+      return S390_CC_FOR_BFP_UCONVERT(".insn rrf,0xb3ad0000", cc_dep1);
+
+   case S390_CC_OP_BFP_128_TO_UINT_64:
+      return S390_CC_FOR_BFP128_UCONVERT(".insn rrf,0xb3ae0000", cc_dep1, cc_dep2);
+
 
    default:
       break;

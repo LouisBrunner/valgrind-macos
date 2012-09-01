@@ -288,8 +288,12 @@ void ppIROp ( IROp op )
       case Iop_F128LOtoF64: vex_printf("F128LOtoF64"); return;
       case Iop_I32StoF128: vex_printf("I32StoF128"); return;
       case Iop_I64StoF128: vex_printf("I64StoF128"); return;
+      case Iop_I32UtoF128: vex_printf("I32UtoF128"); return;
+      case Iop_I64UtoF128: vex_printf("I64UtoF128"); return;
       case Iop_F128toI32S: vex_printf("F128toI32S"); return;
       case Iop_F128toI64S: vex_printf("F128toI64S"); return;
+      case Iop_F128toI32U: vex_printf("F128toI32U"); return;
+      case Iop_F128toI64U: vex_printf("F128toI64U"); return;
       case Iop_F32toF128:  vex_printf("F32toF128");  return;
       case Iop_F64toF128:  vex_printf("F64toF128");  return;
       case Iop_F128toF64:  vex_printf("F128toF64");  return;
@@ -365,12 +369,15 @@ void ppIROp ( IROp op )
       case Iop_F64toI32S: vex_printf("F64toI32S"); return;
       case Iop_F64toI64S: vex_printf("F64toI64S"); return;
       case Iop_F64toI64U: vex_printf("F64toI64U"); return;
+      case Iop_F32toI32U: vex_printf("F32toI32U");  return;
+      case Iop_F32toI64U: vex_printf("F32toI64U");  return;
 
       case Iop_F64toI32U: vex_printf("F64toI32U"); return;
 
       case Iop_I32StoF64: vex_printf("I32StoF64"); return;
       case Iop_I64StoF64: vex_printf("I64StoF64"); return;
       case Iop_I64UtoF64: vex_printf("I64UtoF64"); return;
+      case Iop_I32UtoF32: vex_printf("I32UtoF32"); return;
       case Iop_I64UtoF32: vex_printf("I64UtoF32"); return;
 
       case Iop_I32UtoF64: vex_printf("I32UtoF64"); return;
@@ -2418,7 +2425,10 @@ void typeOfPrimop ( IROp op,
 
       case Iop_F32toI32S: BINARY(ity_RMode,Ity_F32, Ity_I32);
       case Iop_F32toI64S: BINARY(ity_RMode,Ity_F32, Ity_I64);
+      case Iop_F32toI32U: BINARY(ity_RMode,Ity_F32, Ity_I32);
+      case Iop_F32toI64U: BINARY(ity_RMode,Ity_F32, Ity_I64);
 
+      case Iop_I32UtoF32: BINARY(ity_RMode,Ity_I32, Ity_F32);
       case Iop_I32StoF32: BINARY(ity_RMode,Ity_I32, Ity_F32);
       case Iop_I64StoF32: BINARY(ity_RMode,Ity_I64, Ity_F32);
 
@@ -2705,8 +2715,14 @@ void typeOfPrimop ( IROp op,
       case Iop_I32StoF128: UNARY(Ity_I32, Ity_F128);
       case Iop_I64StoF128: UNARY(Ity_I64, Ity_F128);
 
+      case Iop_I32UtoF128: UNARY(Ity_I32, Ity_F128);
+      case Iop_I64UtoF128: UNARY(Ity_I64, Ity_F128);
+
       case Iop_F128toI32S: BINARY(ity_RMode,Ity_F128, Ity_I32);
       case Iop_F128toI64S: BINARY(ity_RMode,Ity_F128, Ity_I64);
+
+      case Iop_F128toI32U: BINARY(ity_RMode,Ity_F128, Ity_I32);
+      case Iop_F128toI64U: BINARY(ity_RMode,Ity_F128, Ity_I64);
 
       case Iop_F32toF128: UNARY(Ity_F32, Ity_F128);
       case Iop_F64toF128: UNARY(Ity_F64, Ity_F128);

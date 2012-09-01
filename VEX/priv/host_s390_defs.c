@@ -1096,6 +1096,20 @@ emit_RRF(UChar *p, UInt op, UChar r1, UChar r3, UChar r2)
 
 
 static UChar *
+emit_RRF2(UChar *p, UInt op, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)m3) << 12;
+   the_insn |= ((ULong)m4) << 8;
+   the_insn |= ((ULong)r1) << 4;
+   the_insn |= ((ULong)r2) << 0;
+
+   return emit_4bytes(p, the_insn);
+}
+
+
+static UChar *
 emit_RRF3(UChar *p, UInt op, UChar r3, UChar r1, UChar r2)
 {
    ULong the_insn = op;
@@ -3226,6 +3240,126 @@ s390_emit_CXGBR(UChar *p, UChar r1, UChar r2)
 
 
 static UChar *
+s390_emit_CELFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "celfbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3900000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CDLFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdlfbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3910000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CXLFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxlfbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3920000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CELGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "celgbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3a00000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CDLGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdlgbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3a10000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CXLGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxlgbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3a20000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLFEBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfebr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb39c0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLFDBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfdbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb39d0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLFXBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfxbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb39e0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLGEBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgebr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3ac0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLGDBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgdbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3ad0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLGXBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgxbr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb3ae0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
 s390_emit_CFEBR(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -5091,12 +5225,24 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_I64_TO_F32:
       case S390_BFP_I64_TO_F64:
       case S390_BFP_I64_TO_F128: op = "v-i2f"; break;
+      case S390_BFP_U32_TO_F32:
+      case S390_BFP_U32_TO_F64:
+      case S390_BFP_U32_TO_F128:
+      case S390_BFP_U64_TO_F32:
+      case S390_BFP_U64_TO_F64:
+      case S390_BFP_U64_TO_F128: op = "v-u2f"; break;
       case S390_BFP_F32_TO_I32:
       case S390_BFP_F32_TO_I64:
       case S390_BFP_F64_TO_I32:
       case S390_BFP_F64_TO_I64:
       case S390_BFP_F128_TO_I32:
       case S390_BFP_F128_TO_I64: op = "v-f2i"; break;
+      case S390_BFP_F32_TO_U32:
+      case S390_BFP_F32_TO_U64:
+      case S390_BFP_F64_TO_U32:
+      case S390_BFP_F64_TO_U64:
+      case S390_BFP_F128_TO_U32:
+      case S390_BFP_F128_TO_U64: op = "v-f2u"; break;
       case S390_BFP_F32_TO_F64:
       case S390_BFP_F32_TO_F128:
       case S390_BFP_F64_TO_F32:
@@ -5140,8 +5286,12 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_SQRT:        op = "v-fsqrt"; break;
       case S390_BFP_I32_TO_F128:
       case S390_BFP_I64_TO_F128: op = "v-i2f";   break;
+      case S390_BFP_U32_TO_F128:
+      case S390_BFP_U64_TO_F128: op = "v-u2f";   break;
       case S390_BFP_F128_TO_I32:
       case S390_BFP_F128_TO_I64: op = "v-f2i";   break;
+      case S390_BFP_F128_TO_U32:
+      case S390_BFP_F128_TO_U64: op = "v-f2u";   break;
       case S390_BFP_F32_TO_F128:
       case S390_BFP_F64_TO_F128:
       case S390_BFP_F128_TO_F32:
@@ -5241,19 +5391,31 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_I32_TO_F32:
       case S390_BFP_I32_TO_F64:
       case S390_BFP_I32_TO_F128:
+      case S390_BFP_U32_TO_F32:
+      case S390_BFP_U32_TO_F64:
+      case S390_BFP_U32_TO_F128:
       case S390_BFP_F32_TO_I32:
       case S390_BFP_F32_TO_I64:
+      case S390_BFP_F32_TO_U32:
+      case S390_BFP_F32_TO_U64:
       case S390_BFP_F32_TO_F64:
       case S390_BFP_F32_TO_F128: p += vex_sprintf(p, "4 -> "); goto common;
       case S390_BFP_I64_TO_F32:
       case S390_BFP_I64_TO_F64:
       case S390_BFP_I64_TO_F128:
+      case S390_BFP_U64_TO_F32:
+      case S390_BFP_U64_TO_F64:
+      case S390_BFP_U64_TO_F128:
       case S390_BFP_F64_TO_I32:
       case S390_BFP_F64_TO_I64:
+      case S390_BFP_F64_TO_U32:
+      case S390_BFP_F64_TO_U64:
       case S390_BFP_F64_TO_F32:
       case S390_BFP_F64_TO_F128: p += vex_sprintf(p, "8 -> "); goto common;
       case S390_BFP_F128_TO_I32:
       case S390_BFP_F128_TO_I64:
+      case S390_BFP_F128_TO_U32:
+      case S390_BFP_F128_TO_U64:
       case S390_BFP_F128_TO_F32:
       case S390_BFP_F128_TO_F64: p += vex_sprintf(p, "16 -> "); goto common;
       default:
@@ -5265,11 +5427,15 @@ s390_insn_as_string(const s390_insn *insn)
    case S390_INSN_BFP128_CONVERT_FROM:
       switch (insn->variant.bfp128_unop.tag) {
       case S390_BFP_I32_TO_F128:
+      case S390_BFP_U32_TO_F128:
       case S390_BFP_F32_TO_F128: p += vex_sprintf(p, "4 -> "); goto common;
       case S390_BFP_I64_TO_F128:
+      case S390_BFP_U64_TO_F128:
       case S390_BFP_F64_TO_F128: p += vex_sprintf(p, "8 -> "); goto common;
       case S390_BFP_F128_TO_I32:
       case S390_BFP_F128_TO_I64:
+      case S390_BFP_F128_TO_U32:
+      case S390_BFP_F128_TO_U64:
       case S390_BFP_F128_TO_F32:
       case S390_BFP_F128_TO_F64: p += vex_sprintf(p, "16 -> "); goto common;
       default:
@@ -7134,6 +7300,13 @@ s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
    case S390_BFP_F64_TO_I32:  return s390_emit_CFDBR(buf, m3, r1, r2);
    case S390_BFP_F32_TO_I64:  return s390_emit_CGEBR(buf, m3, r1, r2);
    case S390_BFP_F64_TO_I64:  return s390_emit_CGDBR(buf, m3, r1, r2);
+
+   /* We leave m4 as 0 - as gcc */
+   case S390_BFP_F32_TO_U32:  return s390_emit_CLFEBR(buf, m3, 0, r1, r2);
+   case S390_BFP_F64_TO_U32:  return s390_emit_CLFDBR(buf, m3, 0, r1, r2);
+   case S390_BFP_F32_TO_U64:  return s390_emit_CLGEBR(buf, m3, 0, r1, r2);
+   case S390_BFP_F64_TO_U64:  return s390_emit_CLGDBR(buf, m3, 0, r1, r2);
+
    default: break;
    }
 
@@ -7186,6 +7359,14 @@ s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
    case S390_BFP_I64_TO_F32:  buf = s390_emit_CEGBR(buf, r1, r2); break;
    case S390_BFP_I64_TO_F64:  buf = s390_emit_CDGBR(buf, r1, r2); break;
    case S390_BFP_I64_TO_F128: buf = s390_emit_CXGBR(buf, r1, r2); break;
+
+   /* We leave m4 as 0 - as gcc */
+   case S390_BFP_U32_TO_F32:  buf = s390_emit_CELFBR(buf, m3, 0, r1, r2); break;
+   case S390_BFP_U32_TO_F64:  buf = s390_emit_CDLFBR(buf, m3, 0, r1, r2); break;
+   case S390_BFP_U32_TO_F128: buf = s390_emit_CXLFBR(buf, m3, 0, r1, r2); break;
+   case S390_BFP_U64_TO_F32:  buf = s390_emit_CELGBR(buf, m3, 0, r1, r2); break;
+   case S390_BFP_U64_TO_F64:  buf = s390_emit_CDLGBR(buf, m3, 0, r1, r2); break;
+   case S390_BFP_U64_TO_F128: buf = s390_emit_CXLGBR(buf, m3, 0, r1, r2); break;
 
    case S390_BFP_F32_TO_F64:  buf = s390_emit_LDEBR(buf, r1, r2); break;
    case S390_BFP_F32_TO_F128: buf = s390_emit_LXEBR(buf, r1, r2); break;
@@ -7354,6 +7535,11 @@ s390_insn_bfp128_convert_to_emit(UChar *buf, const s390_insn *insn)
    switch (insn->variant.bfp128_unop.tag) {
    case S390_BFP_I32_TO_F128: buf = s390_emit_CXFBR(buf, r1_hi, r2); break;
    case S390_BFP_I64_TO_F128: buf = s390_emit_CXGBR(buf, r1_hi, r2); break;
+   /* Rounding makes no sense -> m3 == 0. m4 is also 0 */
+   case S390_BFP_U32_TO_F128: buf = s390_emit_CXLFBR(buf, 0, 0, r1_hi, r2);
+                              break;
+   case S390_BFP_U64_TO_F128: buf = s390_emit_CXLGBR(buf, 0, 0, r1_hi, r2);
+                              break;
    case S390_BFP_F32_TO_F128: buf = s390_emit_LXEBR(buf, r1_hi, r2); break;
    case S390_BFP_F64_TO_F128: buf = s390_emit_LXDBR(buf, r1_hi, r2); break;
    default:  goto fail;
@@ -7388,6 +7574,12 @@ s390_insn_bfp128_convert_from_emit(UChar *buf, const s390_insn *insn)
 
    case S390_BFP_F128_TO_I64:
       return s390_emit_CGXBR(buf, rounding_mode, r1, r2_hi);
+
+   case S390_BFP_F128_TO_U32:
+      return s390_emit_CLFXBR(buf, rounding_mode, 0, r1, r2_hi);
+
+   case S390_BFP_F128_TO_U64:
+      return s390_emit_CLGXBR(buf, rounding_mode, 0, r1, r2_hi);
 
    default: break;
    }

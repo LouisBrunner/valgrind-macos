@@ -236,10 +236,21 @@ Bool get_elf_symbol_info (
    *sym_name_out   = sym_name;
    *sym_avma_out   = sym_svma; /* we will bias this shortly */
    *is_text_out    = True;
-   *sym_size_out   = (Int)sym->st_size;
    *sym_tocptr_out = 0; /* unknown/inapplicable */
    *from_opd_out   = False;
    *is_ifunc       = False;
+   /* Get the symbol size, but restrict it to fit in a signed 32 bit
+      int.  Also, deal with the stupid case of negative size by making
+      the size be 1.  Note that sym->st_size has type UWord,
+      effectively. */
+   { Word size_tmp = (Word)sym->st_size;
+     Word max_Int  = (1LL << 31) - 1;
+     if (size_tmp < 0)       size_tmp = 1;
+     if (size_tmp > max_Int) size_tmp = max_Int;
+     *sym_size_out = (Int)size_tmp;
+   }
+   /* After this point refer only to *sym_size_out and not to
+      sym->st_size. */
 
    /* Figure out if we're interested in the symbol.  Firstly, is it of
       the right flavour?  */
@@ -251,9 +262,9 @@ Bool get_elf_symbol_info (
         &&
         (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC 
          || ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT
-#ifdef STT_GNU_IFUNC
+#        ifdef STT_GNU_IFUNC
          || ELFXX_ST_TYPE(sym->st_info) == STT_GNU_IFUNC
-#endif
+#        endif
         );
 
    /* Work out the svma and bias for each section as it will appear in
@@ -351,7 +362,7 @@ Bool get_elf_symbol_info (
    if (!plausible
        && *is_text_out
        && ELFXX_ST_TYPE(sym->st_info) == STT_NOTYPE
-       && sym->st_size > 0
+       && *sym_size_out > 0
        && di->opd_present
        && di->opd_size > 0
        && *sym_avma_out >= di->opd_avma
@@ -384,7 +395,7 @@ Bool get_elf_symbol_info (
       in /system/lib/libc.so: strlen strcmp strcpy memcmp memcpy
       in /system/bin/linker:  __dl_strcmp __dl_strlen
    */
-   if (sym->st_size == 0) {
+   if (*sym_size_out == 0) {
 #     if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
       *sym_size_out = 2048;
 #     else
@@ -556,6 +567,9 @@ Bool get_elf_symbol_info (
          background. */
       Bool in_rx;
       vg_assert(di->fsm.have_rx_map);
+      /* This could actually wrap around and cause
+         ML_(find_rx_mapping) to assert.  But that seems so unlikely,
+         let's wait for it to happen before fixing it. */
       in_rx = (ML_(find_rx_mapping)(di, *sym_avma_out,
                                     *sym_avma_out + *sym_size_out) != NULL);
       if (in_text)

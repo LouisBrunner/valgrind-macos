@@ -872,8 +872,10 @@ extern Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr );
    if not found.  Binary search.  */
 extern Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr );
 
-/* Helper function for the most often needed searching for an rx mapping
-   containing the specified address range. */
+/* Helper function for the most often needed searching for an rx
+   mapping containing the specified address range.  The range must
+   fall entirely within the mapping to be considered to be within it.
+   Asserts if lo > hi; caller must ensure this doesn't happen. */
 extern struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
                                                         Addr lo, Addr hi );
 

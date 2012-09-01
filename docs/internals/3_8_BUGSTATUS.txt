@@ -38,6 +38,13 @@ branch.
 12893 (298281)
 12894 (n-i-bz, exp-sgcheck memcpy)
 
+merge r12897 and r12898 to the 3.8.1 branch. (305690)
+
+- volatile in stack check, re clang (dev@, Andrew Morrow)
+- 305926 Invalid alignment checks for some AVX instructions
+
+12923 (304980 more)
+
 
 -------- Bugs brought forward from 3_7_BUGSTATUS.txt --------
 
@@ -76,6 +83,7 @@ branch.
 
 304676  regtest hangs on mac OS X (mchelp, coolo_sigaction, system)
   probably related to 301281 et al
+  QUERIED
 
 304744  valgrind hangs on munmap()
   probably invalid
@@ -90,4 +98,21 @@ branch.
 
 n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
--- Thu 23 Aug 2012 1pm
+305728  Add support for AVX2 instructions
+
+305926  Invalid alignment checks for some AVX instructions
+
+305948  ppc64: code generation for ShlD64 / ShrD64 asserts
+
+305957  m_debuginfo/d3basics.c:965 (vgModuleLocal_evaluate_GX):
+        Assertion 'aMin == (Addr)0' failed.
+
+306004  Wishlist: port valgrind to sparc
+
+306035  s390x: Fix IR generation for LAAG and friends
+
+306054  s390x: condition code computation for certain bfp insns
+
+306098  s390x: alternate opcode form for convert to/from fixed
+
+-- Sat 1 Sept 2012 10pm

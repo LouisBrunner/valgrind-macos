@@ -518,7 +518,10 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
 
       case Iop_F32toI32S: BINARY(ity_RMode,Ity_F32, Ity_I32);
       case Iop_F32toI64S: BINARY(ity_RMode,Ity_F32, Ity_I64);
-
+      case Iop_F32toI32U: BINARY(ity_RMode,Ity_F32, Ity_I32);
+      case Iop_F32toI64U: BINARY(ity_RMode,Ity_F32, Ity_I64);
+ 
+      case Iop_I32UtoF32: BINARY(ity_RMode,Ity_I32, Ity_F32);
       case Iop_I32StoF32: BINARY(ity_RMode,Ity_I32, Ity_F32);
       case Iop_I64StoF32: BINARY(ity_RMode,Ity_I64, Ity_F32);
 
@@ -805,8 +808,14 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_I32StoF128: UNARY(Ity_I32, Ity_F128);
       case Iop_I64StoF128: UNARY(Ity_I64, Ity_F128);
 
+      case Iop_I32UtoF128: UNARY(Ity_I32, Ity_F128);
+      case Iop_I64UtoF128: UNARY(Ity_I64, Ity_F128);
+
       case Iop_F128toI32S: BINARY(ity_RMode,Ity_F128, Ity_I32);
       case Iop_F128toI64S: BINARY(ity_RMode,Ity_F128, Ity_I64);
+
+      case Iop_F128toI32U: BINARY(ity_RMode,Ity_F128, Ity_I32);
+      case Iop_F128toI64U: BINARY(ity_RMode,Ity_F128, Ity_I64);
 
       case Iop_F32toF128: UNARY(Ity_F32, Ity_F128);
       case Iop_F64toF128: UNARY(Ity_F64, Ity_F128);

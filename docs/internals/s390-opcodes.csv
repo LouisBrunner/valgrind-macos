@@ -911,24 +911,24 @@ cxfbra,"convert from 32 bit fixed to extended bfp with rounding mode","not imple
 cegbra,"convert from 64 bit fixed to short bfp with rounding mode","not implemented","new to z196"
 cdgbra,"convert from 64 bit fixed to long bfp with rounding mode","not implemented","new to z196"
 cxgbra,"convert from 64 bit fixed to extended bfp with rounding mode","not implemented","new to z196"
-celfbr,"convert from 32 bit logical fixed to short bfp with rounding mode","not implemented","open bugzilla"
-cdlfbr,"convert from 32 bit logical fixed to long bfp with rounding mode","not implemented","open bugzilla"
-cxlfbr,"convert from 32 bit logical fixed to extended bfp with rounding mode","not implemented","open bugzilla"
-celgbr,"convert from 64 bit logical fixed to short bfp with rounding mode","not implemented","open bugzilla"
-cdlgbr,"convert from 64 bit logical fixed to long bfp with rounding mode","not implemented","open bugzilla"
-cxlgbr,"convert from 64 bit logical fixed to extended bfp with rounding mode","not implemented","open bugzilla"
+celfbr,"convert from 32 bit logical fixed to short bfp with rounding mode",implemented,
+cdlfbr,"convert from 32 bit logical fixed to long bfp with rounding mode",implemented,
+cxlfbr,"convert from 32 bit logical fixed to extended bfp with rounding mode",implemented,
+celgbr,"convert from 64 bit logical fixed to short bfp with rounding mode",implemented,
+cdlgbr,"convert from 64 bit logical fixed to long bfp with rounding mode",implemented,
+cxlgbr,"convert from 64 bit logical fixed to extended bfp with rounding mode",implemented,
 cfebra,"convert to 32 bit fixed from short bfp with rounding mode","not implemented","new to z196"
 cfdbra,"convert to 32 bit fixed from long bfp with rounding mode","not implemented","new to z196"
 cfxbra,"convert to 32 bit fixed from extended bfp with rounding mode","not implemented","new to z196"
 cgebra,"convert to 64 bit fixed from short bfp with rounding mode","not implemented","new to z196"
 cgdbra,"convert to 64 bit fixed from long bfp with rounding mode","not implemented","new to z196"
 cgxbra,"convert to 64 bit fixed from extended bfp with rounding mode","not implemented","new to z196"
-clfebr,"convert to 32 bit fixed logical from short bfp with rounding mode","not implemented","open bugzilla"
-clfdbr,"convert to 32 bit fixed logical from long bfp with rounding mode","not implemented","open bugzilla"
-clfxbr,"convert to 32 bit fixed logical from extended bfp with rounding mode","not implemented","open bugzilla"
-clgebr,"convert to 64 bit fixed logical from short bfp with rounding mode","not implemented","open bugzilla"
-clgdbr,"convert to 64 bit fixed logical from long bfp with rounding mode","not implemented","open bugzilla"
-clgxbr,"convert to 64 bit fixed logical from extended bfp with rounding mode","not implemented","open bugzilla"
+clfebr,"convert to 32 bit fixed logical from short bfp with rounding mode",implemented,
+clfdbr,"convert to 32 bit fixed logical from long bfp with rounding mode",implemented
+clfxbr,"convert to 32 bit fixed logical from extended bfp with rounding mode",implemented
+clgebr,"convert to 64 bit fixed logical from short bfp with rounding mode",implemented
+clgdbr,"convert to 64 bit fixed logical from long bfp with rounding mode",implemented
+clgxbr,"convert to 64 bit fixed logical from extended bfp with rounding mode",implemented
 fiebra,"load fp integer short bfp with rounding mode","not implemented","new to z196"
 fidbra,"load fp integer long bfp with rounding mode","not implemented","new to z196"
 fixbra,"load fp integer extended bfp with rounding mode","not implemented","new to z196"

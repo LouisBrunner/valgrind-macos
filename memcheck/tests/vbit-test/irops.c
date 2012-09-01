@@ -179,15 +179,18 @@ static const irop_t irops[] = {
   { DEFOP(Iop_F64toI16S, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 1, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F64toI32S, UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // mips asserts
   { DEFOP(Iop_F64toI64S, UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
-  { DEFOP(Iop_F64toI64U, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
-  { DEFOP(Iop_F64toI32U, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
+  { DEFOP(Iop_F64toI64U, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
+  { DEFOP(Iop_F64toI32U, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
   { DEFOP(Iop_I32StoF64, UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 }, // mips asserts
   { DEFOP(Iop_I64StoF64, UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
-  { DEFOP(Iop_I64UtoF64, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // mips asserts
-  { DEFOP(Iop_I64UtoF32, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
-  { DEFOP(Iop_I32UtoF64, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_I64UtoF64, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // mips asserts
+  { DEFOP(Iop_I64UtoF32, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
+  { DEFOP(Iop_I32UtoF32, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_I32UtoF64, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F32toI32S, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F32toI64S, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_F32toI32U, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_F32toI64U, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_I32StoF32, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 1 },
   { DEFOP(Iop_I64StoF32, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F32toF64,  UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // mips asserts
@@ -210,10 +213,14 @@ static const irop_t irops[] = {
   { DEFOP(Iop_SqrtF128,      UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_I32StoF128,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_I64StoF128,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_I32UtoF128,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_I64UtoF128,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F32toF128,     UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F64toF128,     UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F128toI32S,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F128toI64S,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_F128toI32U,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_F128toI64U,    UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F128toF64,     UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_F128toF32,     UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_AtanF64,       UNDEF_ALL), .s390x = 0, .amd64 = 1, .x86 = 1, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
@@ -861,6 +868,28 @@ get_irop(IROp op)
       const irop_t *p = irops + i;
       if (p->op == op) {
 #ifdef __s390x__
+#define S390X_FEATURES "../../../tests/s390x_features"
+         switch (op) {
+         case Iop_I32UtoF32:
+         case Iop_I32UtoF64:
+         case Iop_I32UtoF128:
+         case Iop_I64UtoF32:
+         case Iop_I64UtoF64:
+         case Iop_I64UtoF128:
+         case Iop_F32toI32U:
+         case Iop_F32toI64U:
+         case Iop_F64toI32U:
+         case Iop_F64toI64U:
+         case Iop_F128toI32U:
+         case Iop_F128toI64U: {
+            int rc;
+            /* These IROps require the floating point extension facility */
+            rc = system(S390X_FEATURES " s390x-fpext");
+            // s390x_features returns 1 if features exists
+            rc /= 256;
+            if (rc != 0) return NULL;
+         }
+         }
          return p->s390x ? p : NULL;
 #endif
 #ifdef __x86_64__

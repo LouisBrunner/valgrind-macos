@@ -1,0 +1,8 @@
+
+Emulation fatal error -- Valgrind cannot continue:
+  Encountered an instruction that requires the floating point extension facility.
+  That facility is not available on this host
+   at 0x........: main (fpext.c:134)
+
+Valgrind has to exit now.  Sorry.
+

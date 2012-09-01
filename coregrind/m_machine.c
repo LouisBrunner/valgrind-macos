@@ -1194,6 +1194,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_ETF2 = False;
      have_ETF3 = False;
      have_STCKF = False;
+     have_FPEXT = False;
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_STFLE = False;
      } else {

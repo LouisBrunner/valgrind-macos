@@ -1026,12 +1026,16 @@ HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "PPC64 function redirection stack overflow";
      case EmWarn_PPC64_redir_underflow:
         return "PPC64 function redirection stack underflow";
-   case EmFail_S390X_stfle:
+     case EmFail_S390X_stfle:
         return "Instruction stfle is not supported on this host";
-   case EmFail_S390X_stckf:
+     case EmFail_S390X_stckf:
         return "Instruction stckf is not supported on this host";
-   case EmFail_S390X_ecag:
+     case EmFail_S390X_ecag:
         return "Instruction ecag is not supported on this host";
+     case EmFail_S390X_fpext:
+        return "Encountered an instruction that requires the floating "
+               "point extension facility.\n"
+               "  That facility is not available on this host";
      default: 
         vpanic("LibVEX_EmNote_string: unknown warning");
    }

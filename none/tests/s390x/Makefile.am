@@ -8,7 +8,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
-             ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext fpext_fail
+             ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
@@ -20,6 +20,7 @@ EXTRA_DIST = \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
+	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
 	mul.h  or.h  sub.h  test.h  xor.h table.h
 

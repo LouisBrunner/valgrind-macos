@@ -8297,8 +8297,8 @@ s390_irgen_CELFBR(UChar m3, UChar m4 __attribute__((unused)),
 }
 
 static HChar *
-s390_irgen_CDLFBR(UChar m3, UChar m4 __attribute__((unused)),
-                  UChar r1, UChar r2)
+s390_irgen_CDLFBR(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext) {
       emulation_failure(EmFail_S390X_fpext);
@@ -10315,8 +10315,8 @@ s390_irgen_CXFBR(UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_CXLFBR(UChar m3, UChar m4 __attribute__((unused)),
-                  UChar r1, UChar r2)
+s390_irgen_CXLFBR(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext) {
       emulation_failure(EmFail_S390X_fpext);
@@ -10342,8 +10342,8 @@ s390_irgen_CXGBR(UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_CXLGBR(UChar m3, UChar m4 __attribute__((unused)),
-                  UChar r1, UChar r2)
+s390_irgen_CXLGBR(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext) {
       emulation_failure(EmFail_S390X_fpext);
@@ -12013,7 +12013,7 @@ s390_call_ecag(IRExpr *op2addr)
 }
 
 static HChar *
-s390_irgen_ECAG(UChar r1, UChar r3, IRTemp op2addr)
+s390_irgen_ECAG(UChar r1, UChar r3 __attribute__((unused)), IRTemp op2addr)
 {
    if (! s390_host_has_gie) {
       emulation_failure(EmFail_S390X_ecag);

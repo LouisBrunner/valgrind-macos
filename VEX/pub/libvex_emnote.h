@@ -85,6 +85,11 @@ typedef
       EmWarn_PPC64_redir_overflow,
       EmWarn_PPC64_redir_underflow,
 
+      /* insn specifies a rounding mode other than "according to FPC"
+         which requires the floating point extension facility. But that
+         facility is not available on this host */
+      EmWarn_S390X_fpext_rounding,
+
       /* stfle insn is not supported on this host */
       EmFail_S390X_stfle,
 

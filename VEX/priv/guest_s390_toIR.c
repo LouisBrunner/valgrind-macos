@@ -431,6 +431,7 @@ static IRRoundingMode
 encode_rounding_mode(UChar mode)
 {
    switch (mode) {
+   default: return Irrm_NEAREST;  // fixs390: for now
    case S390_ROUND_NEAREST_EVEN:  return Irrm_NEAREST;
    case S390_ROUND_ZERO:          return Irrm_ZERO;
    case S390_ROUND_POSINF:        return Irrm_PosINF;
@@ -469,9 +470,17 @@ static void
 emulation_failure(VexEmNote fail_kind)
 {
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkU32(fail_kind)));
-   put_IA(mkaddr_expr(guest_IA_next_instr));
    dis_res->whatNext = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_EmFail;
+}
+
+/* Terminate the current IRSB with an emulation warning. */
+static void
+emulation_warning(VexEmNote warn_kind)
+{
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkU32(warn_kind)));
+   dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_EmWarn;
 }
 
 /*------------------------------------------------------------*/
@@ -1712,6 +1721,16 @@ s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
 }
 
 static void
+s390_format_RRF_UUFF(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
+                     UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   HChar *mnm = irgen(m3, m4, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT), mnm, r1, m3, r2, m4);
+}
+
+static void
 s390_format_RRF_UUFR(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
                      UChar m3, UChar m4, UChar r1, UChar r2)
 {
@@ -1740,16 +1759,6 @@ s390_format_RRF_U0RR(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, GPR), xmnm_kind, m3, r1, r2);
-}
-
-static void
-s390_format_RRF_U0RF(HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
-                     UChar r3, UChar r1, UChar r2)
-{
-   HChar *mnm = irgen(r3, r1, r2);
-
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      s390_disasm(ENC4(MNM, GPR, UINT, FPR), mnm, r1, r3, r2);
 }
 
 static void
@@ -8237,18 +8246,25 @@ s390_irgen_ADB(UChar r1, IRTemp op2addr)
 }
 
 static HChar *
-s390_irgen_CEFBR(UChar r1, UChar r2)
+s390_irgen_CEFBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op2, get_gpr_w1(r2));
-   put_fpr_w0(r1, binop(Iop_I32StoF32, mkU32(Irrm_NEAREST), mkexpr(op2)));
+   put_fpr_w0(r1, binop(Iop_I32StoF32, mkU32(encode_rounding_mode(m3)),
+                        mkexpr(op2)));
 
    return "cefbr";
 }
 
 static HChar *
-s390_irgen_CDFBR(UChar r1, UChar r2)
+s390_irgen_CDFBR(UChar m3 __attribute__((unused)),
+                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
 
@@ -8259,23 +8275,35 @@ s390_irgen_CDFBR(UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_CEGBR(UChar r1, UChar r2)
+s390_irgen_CEGBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op2, get_gpr_dw0(r2));
-   put_fpr_w0(r1, binop(Iop_I64StoF32, mkU32(Irrm_NEAREST), mkexpr(op2)));
+   put_fpr_w0(r1, binop(Iop_I64StoF32, mkU32(encode_rounding_mode(m3)),
+                        mkexpr(op2)));
 
    return "cegbr";
 }
 
 static HChar *
-s390_irgen_CDGBR(UChar r1, UChar r2)
+s390_irgen_CDGBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op2, get_gpr_dw0(r2));
-   put_fpr_dw0(r1, binop(Iop_I64StoF64, mkU32(Irrm_NEAREST), mkexpr(op2)));
+   put_fpr_dw0(r1, binop(Iop_I64StoF64, mkU32(encode_rounding_mode(m3)),
+                         mkexpr(op2)));
 
    return "cdgbr";
 }
@@ -8420,13 +8448,18 @@ s390_irgen_CLGDBR(UChar m3, UChar m4 __attribute__((unused)),
 }
 
 static HChar *
-s390_irgen_CFEBR(UChar r3, UChar r1, UChar r2)
+s390_irgen_CFEBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_I32);
 
    assign(op, get_fpr_w0(r2));
-   assign(result, binop(Iop_F32toI32S, mkU32(encode_rounding_mode(r3)),
+   assign(result, binop(Iop_F32toI32S, mkU32(encode_rounding_mode(m3)),
           mkexpr(op)));
    put_gpr_w1(r1, mkexpr(result));
    s390_cc_thunk_putF(S390_CC_OP_BFP_32_TO_INT_32, op);
@@ -8435,13 +8468,18 @@ s390_irgen_CFEBR(UChar r3, UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_CFDBR(UChar r3, UChar r1, UChar r2)
+s390_irgen_CFDBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_I32);
 
    assign(op, get_fpr_dw0(r2));
-   assign(result, binop(Iop_F64toI32S, mkU32(encode_rounding_mode(r3)),
+   assign(result, binop(Iop_F64toI32S, mkU32(encode_rounding_mode(m3)),
           mkexpr(op)));
    put_gpr_w1(r1, mkexpr(result));
    s390_cc_thunk_putF(S390_CC_OP_BFP_64_TO_INT_32, op);
@@ -8450,13 +8488,18 @@ s390_irgen_CFDBR(UChar r3, UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_CGEBR(UChar r3, UChar r1, UChar r2)
+s390_irgen_CGEBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_I64);
 
    assign(op, get_fpr_w0(r2));
-   assign(result, binop(Iop_F32toI64S, mkU32(encode_rounding_mode(r3)),
+   assign(result, binop(Iop_F32toI64S, mkU32(encode_rounding_mode(m3)),
           mkexpr(op)));
    put_gpr_dw0(r1, mkexpr(result));
    s390_cc_thunk_putF(S390_CC_OP_BFP_32_TO_INT_64, op);
@@ -8465,13 +8508,18 @@ s390_irgen_CGEBR(UChar r3, UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_CGDBR(UChar r3, UChar r1, UChar r2)
+s390_irgen_CGDBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_I64);
 
    assign(op, get_fpr_dw0(r2));
-   assign(result, binop(Iop_F64toI64S, mkU32(encode_rounding_mode(r3)),
+   assign(result, binop(Iop_F64toI64S, mkU32(encode_rounding_mode(m3)),
           mkexpr(op)));
    put_gpr_dw0(r1, mkexpr(result));
    s390_cc_thunk_putF(S390_CC_OP_BFP_64_TO_INT_64, op);
@@ -8614,12 +8662,14 @@ s390_irgen_LDEB(UChar r1, IRTemp op2addr)
 }
 
 static HChar *
-s390_irgen_LEDBR(UChar r1, UChar r2)
+s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F64);
 
    assign(op, get_fpr_dw0(r2));
-   put_fpr_w0(r1, binop(Iop_F64toF32, mkU32(Irrm_NEAREST), mkexpr(op)));
+   put_fpr_w0(r1, binop(Iop_F64toF32, mkU32(encode_rounding_mode(m3)),
+                        mkexpr(op)));
 
    return "ledbr";
 }
@@ -10304,7 +10354,8 @@ s390_irgen_CDB(UChar r1, IRTemp op2addr)
 }
 
 static HChar *
-s390_irgen_CXFBR(UChar r1, UChar r2)
+s390_irgen_CXFBR(UChar m3 __attribute__((unused)),
+                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
 
@@ -10331,7 +10382,8 @@ s390_irgen_CXLFBR(UChar m3 __attribute__((unused)),
 
 
 static HChar *
-s390_irgen_CXGBR(UChar r1, UChar r2)
+s390_irgen_CXGBR(UChar m3 __attribute__((unused)),
+                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
 
@@ -10357,13 +10409,18 @@ s390_irgen_CXLGBR(UChar m3 __attribute__((unused)),
 }
 
 static HChar *
-s390_irgen_CFXBR(UChar r3, UChar r1, UChar r2)
+s390_irgen_CFXBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_I32);
 
    assign(op, get_fpr_pair(r2));
-   assign(result, binop(Iop_F128toI32S, mkU32(encode_rounding_mode(r3)),
+   assign(result, binop(Iop_F128toI32S, mkU32(encode_rounding_mode(m3)),
                         mkexpr(op)));
    put_gpr_w1(r1, mkexpr(result));
    s390_cc_thunk_put1f128(S390_CC_OP_BFP_128_TO_INT_32, op);
@@ -10392,13 +10449,18 @@ s390_irgen_CLFXBR(UChar m3, UChar m4 __attribute__((unused)),
 
 
 static HChar *
-s390_irgen_CGXBR(UChar r3, UChar r1, UChar r2)
+s390_irgen_CGXBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != 0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = 0;
+   }
    IRTemp op = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_I64);
 
    assign(op, get_fpr_pair(r2));
-   assign(result, binop(Iop_F128toI64S, mkU32(encode_rounding_mode(r3)),
+   assign(result, binop(Iop_F128toI64S, mkU32(encode_rounding_mode(m3)),
                         mkexpr(op)));
    put_gpr_dw0(r1, mkexpr(result));
    s390_cc_thunk_put1f128(S390_CC_OP_BFP_128_TO_INT_64, op);
@@ -10582,22 +10644,26 @@ s390_irgen_LPXBR(UChar r1, UChar r2)
 }
 
 static HChar *
-s390_irgen_LDXBR(UChar r1, UChar r2)
+s390_irgen_LDXBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
 
-   assign(result, binop(Iop_F128toF64, mkU32(Irrm_NEAREST), get_fpr_pair(r2)));
+   assign(result, binop(Iop_F128toF64, mkU32(encode_rounding_mode(m3)),
+                        get_fpr_pair(r2)));
    put_fpr_dw0(r1, mkexpr(result));
 
    return "ldxbr";
 }
 
 static HChar *
-s390_irgen_LEXBR(UChar r1, UChar r2)
+s390_irgen_LEXBR(UChar m3, UChar m4 __attribute__((unused)),
+                 UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
 
-   assign(result, binop(Iop_F128toF32, mkU32(Irrm_NEAREST), get_fpr_pair(r2)));
+   assign(result, binop(Iop_F128toF32, mkU32(encode_rounding_mode(m3)),
+                        get_fpr_pair(r2)));
    put_fpr_w0(r1, mkexpr(result));
 
    return "lexbr";
@@ -12561,12 +12627,15 @@ s390_decode_4byte_and_irgen(UChar *bytes)
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb343: s390_format_RRE_FF(s390_irgen_LCXBR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
-   case 0xb344: s390_format_RRE_FF(s390_irgen_LEDBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb345: s390_format_RRE_FF(s390_irgen_LDXBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb346: s390_format_RRE_FF(s390_irgen_LEXBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
+   case 0xb344: s390_format_RRF_UUFF(s390_irgen_LEDBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb345: s390_format_RRF_UUFF(s390_irgen_LDXBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb346: s390_format_RRF_UUFF(s390_irgen_LEXBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
    case 0xb347: /* FIXBR */ goto unimplemented;
    case 0xb348: /* KXBR */ goto unimplemented;
    case 0xb349: s390_format_RRE_FF(s390_irgen_CXBR, ovl.fmt.RRE.r1,
@@ -12622,21 +12691,24 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb392: s390_format_RRF_UUFR(s390_irgen_CXLFBR, ovl.fmt.RRF2.m3,
                                      ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
                                      ovl.fmt.RRF2.r2);  goto ok;
-   case 0xb394: s390_format_RRE_FR(s390_irgen_CEFBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb395: s390_format_RRE_FR(s390_irgen_CDFBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb396: s390_format_RRE_FR(s390_irgen_CXFBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb398: s390_format_RRF_U0RF(s390_irgen_CFEBR, ovl.fmt.RRF3.r3,
-                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
-                                     goto ok;
-   case 0xb399: s390_format_RRF_U0RF(s390_irgen_CFDBR, ovl.fmt.RRF3.r3,
-                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
-                                     goto ok;
-   case 0xb39a: s390_format_RRF_U0RF(s390_irgen_CFXBR, ovl.fmt.RRF3.r3,
-                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
-                                     goto ok;
+   case 0xb394: s390_format_RRF_UUFR(s390_irgen_CEFBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb395: s390_format_RRF_UUFR(s390_irgen_CDFBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb396: s390_format_RRF_UUFR(s390_irgen_CXFBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb398: s390_format_RRF_UURF(s390_irgen_CFEBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb399: s390_format_RRF_UURF(s390_irgen_CFDBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb39a: s390_format_RRF_UURF(s390_irgen_CFXBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
    case 0xb39c: s390_format_RRF_UURF(s390_irgen_CLFEBR, ovl.fmt.RRF2.m3,
                                      ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
                                      ovl.fmt.RRF2.r2);  goto ok;
@@ -12655,21 +12727,24 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb3a2: s390_format_RRF_UUFR(s390_irgen_CXLGBR, ovl.fmt.RRF2.m3,
                                      ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
                                      ovl.fmt.RRF2.r2);  goto ok;
-   case 0xb3a4: s390_format_RRE_FR(s390_irgen_CEGBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb3a5: s390_format_RRE_FR(s390_irgen_CDGBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb3a6: s390_format_RRE_FR(s390_irgen_CXGBR, ovl.fmt.RRE.r1,
-                                   ovl.fmt.RRE.r2);  goto ok;
-   case 0xb3a8: s390_format_RRF_U0RF(s390_irgen_CGEBR, ovl.fmt.RRF3.r3,
-                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
-                                     goto ok;
-   case 0xb3a9: s390_format_RRF_U0RF(s390_irgen_CGDBR, ovl.fmt.RRF3.r3,
-                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
-                                     goto ok;
-   case 0xb3aa: s390_format_RRF_U0RF(s390_irgen_CGXBR, ovl.fmt.RRF3.r3,
-                                     ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);
-                                     goto ok;
+   case 0xb3a4: s390_format_RRF_UUFR(s390_irgen_CEGBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a5: s390_format_RRF_UUFR(s390_irgen_CDGBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a6: s390_format_RRF_UUFR(s390_irgen_CXGBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a8: s390_format_RRF_UURF(s390_irgen_CGEBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3a9: s390_format_RRF_UURF(s390_irgen_CGDBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
+   case 0xb3aa: s390_format_RRF_UURF(s390_irgen_CGXBR, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
+                                     ovl.fmt.RRF2.r2);  goto ok;
    case 0xb3ac: s390_format_RRF_UURF(s390_irgen_CLGEBR, ovl.fmt.RRF2.m3,
                                      ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
                                      ovl.fmt.RRF2.r2);  goto ok;
@@ -14558,6 +14633,13 @@ disInstr_S390_WRK(UChar *insn)
          put_IA(mkaddr_expr(dres.continueAt));
          break;
       case Dis_StopHere:
+         if (dres.jk_StopHere == Ijk_EmWarn ||
+             dres.jk_StopHere == Ijk_EmFail) {
+            /* We assume here, that emulation warnings are not given for
+               insns that transfer control. There is no good way to
+               do that. */
+            put_IA(mkaddr_expr(guest_IA_next_instr));
+         }
          break;
       default:
          vassert(0);

@@ -96,6 +96,7 @@
    20340 STRSPN
    20350 STRCASESTR
    20360 MEMRCHR
+   20370 WCSLEN
 */
 
 
@@ -1537,6 +1538,32 @@ static inline void my_exit ( int x )
 # if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
   STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
 # endif
+
+#elif defined(VGO_darwin)
+
+#endif
+
+
+/*---------------------- wcslen ----------------------*/
+
+// This is a wchar_t equivalent to strlen.  Unfortunately
+// we don't have wchar_t available here, but it looks like
+// a 32 bit int on Linux.  I don't know if that is also
+// valid on MacOSX.
+
+#define WCSLEN(soname, fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20370,soname,fnname) \
+      ( const UInt* str ); \
+   SizeT VG_REPLACE_FUNCTION_EZU(20370,soname,fnname) \
+      ( const UInt* str )  \
+   { \
+      SizeT i = 0; \
+      while (str[i] != 0) i++; \
+      return i; \
+   }
+
+#if defined(VGO_linux)
+ WCSLEN(VG_Z_LIBC_SONAME,          wcslen)
 
 #elif defined(VGO_darwin)
 

@@ -1613,12 +1613,24 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(debugLog)(1, "main", "Checking current stack is plausible\n");
    { HChar* limLo  = (HChar*)(&VG_(interim_stack).bytes[0]);
      HChar* limHi  = limLo + sizeof(VG_(interim_stack));
-     HChar* aLocal = (HChar*)&limLo; /* any auto local will do */
-     /* "Apple clang version 4.0 (tags/Apple/clang-421.0.57) (based on
-         LLVM 3.1svn)" appears to miscompile the following check,
-         causing run to abort at this point (in 64-bit mode) even
-         though aLocal is within limLo .. limHi.  Try building with
-         gcc instead. */
+     HChar* volatile 
+            aLocal = (HChar*)&limLo; /* any auto local will do */
+     /* Re "volatile": Apple clang version 4.0
+        (tags/Apple/clang-421.0.57) (based on LLVM 3.1svn)" appeared
+        to miscompile the following check, causing run to abort at
+        this point (in 64-bit mode) even though aLocal is within limLo
+        .. limHi.  But in fact clang is within its rights to do
+        strange things here.  "The reason is that the comparisons
+        aLocal < limLo and aLocal >= limHi cause undefined behaviour
+        (according to c99 6.5.8) because they compare pointers that do
+        not point into the same aggregate."  Adding "volatile" appears
+        to fix it because "The compiler would have to prove that there
+        is undefined behavior in order to exploit it.  But as a
+        volatile variable can change its value in ways invisible to
+        the compiler, the compiler must make the conservative
+        assumption that it points into the same aggregate as the other
+        pointer its compared against.  I.e. the behaviour is possibly
+        defined." (Analysis by Florian Krohm). */
      if (aLocal < limLo || aLocal >= limHi) {
         /* something's wrong.  Stop. */
         VG_(debugLog)(0, "main", "Root stack %p to %p, a local %p\n",

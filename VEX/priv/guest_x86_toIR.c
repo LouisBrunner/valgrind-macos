@@ -14021,12 +14021,28 @@ DisResult disInstr_X86_WRK (
       for the rest, it means REP) */
    case 0xF3: { 
       Addr32 eip_orig = guest_EIP_bbstart + delta_start;
-      if (sorb != 0) goto decode_failure;
       abyte = getIByte(delta); delta++;
 
       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
 
+      if (sorb != 0 && abyte != 0x0F) goto decode_failure;
+
       switch (abyte) {
+      case 0x0F:
+         switch (getIByte(delta)) {
+         /* On older CPUs, TZCNT behaves the same as BSF.  */
+         case 0xBC: /* REP BSF Gv,Ev */
+            delta = dis_bs_E_G ( sorb, sz, delta + 1, True );
+            break;
+         /* On older CPUs, LZCNT behaves the same as BSR.  */
+         case 0xBD: /* REP BSR Gv,Ev */
+            delta = dis_bs_E_G ( sorb, sz, delta + 1, False );
+            break;
+         default:
+            goto decode_failure;
+         }
+         break;
+
       case 0xA4: sz = 1;   /* REP MOVS<sz> */
       case 0xA5:
          dis_REP_op ( &dres, X86CondAlways, dis_MOVS, sz, eip_orig, 

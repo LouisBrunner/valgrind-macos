@@ -571,7 +571,12 @@ void CLG_(setup_bbcc)(BB* bb)
    */
   tid = VG_(get_running_tid)();
 #if 1
-  CLG_(switch_thread)(tid);
+  /* CLG_(switch_thread) is a no-op when tid is equal to CLG_(current_tid).
+   * As this is on the hot path, we only call CLG_(switch_thread)(tid)
+   * if tid differs from the CLG_(current_tid).
+   */
+  if (UNLIKELY(tid != CLG_(current_tid)))
+     CLG_(switch_thread)(tid);
 #else
   CLG_ASSERT(VG_(get_running_tid)() == CLG_(current_tid));
 #endif

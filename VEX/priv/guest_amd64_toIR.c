@@ -7104,9 +7104,11 @@ ULong dis_MMX ( Bool* decode_ok,
             goto mmx_decode_failure;
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
-            /* Fall through.  The assembler doesn't appear to generate
-               these. */
-            goto mmx_decode_failure;
+            delta++;
+            putMMXReg( eregLO3ofRM(modrm), getMMXReg(gregLO3ofRM(modrm)) );
+            DIP("movq %s, %s\n",
+                nameMMXReg(gregLO3ofRM(modrm)),
+                nameMMXReg(eregLO3ofRM(modrm)));
          } else {
             IRTemp addr = disAMode( &len, vbi, pfx, delta, dis_buf, 0 );
             delta += len;

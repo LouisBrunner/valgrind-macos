@@ -7871,6 +7871,38 @@ static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
    return False;
 }
 
+static IRTemp math_BSWAP ( IRTemp t1, IRType ty )
+{
+   IRTemp t2 = newTemp(ty);
+   if (ty == Ity_I32) {
+      assign( t2,
+         binop(
+            Iop_Or32,
+            binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
+            binop(
+               Iop_Or32,
+               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)),
+                                mkU32(0x00FF0000)),
+               binop(Iop_Or32,
+                     binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
+                                      mkU32(0x0000FF00)),
+                     binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
+                                      mkU32(0x000000FF) )
+            )))
+      );
+      return t2;
+   }
+   if (ty == Ity_I16) {
+      assign(t2, 
+             binop(Iop_Or16,
+                   binop(Iop_Shl16, mkexpr(t1), mkU8(8)),
+                   binop(Iop_Shr16, mkexpr(t1), mkU8(8)) ));
+      return t2;
+   }
+   vassert(0);
+   /*NOTREACHED*/
+   return IRTemp_INVALID;
+}
 
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
@@ -12623,6 +12655,33 @@ DisResult disInstr_X86_WRK (
       );
       goto decode_success;
    }
+   
+   /* 0F 38 F0 = MOVBE m16/32(E), r16/32(G) */
+   /* 0F 38 F1 = MOVBE r16/32(G), m16/32(E) */
+   if ((sz == 2 || sz == 4)
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0xF0 || insn[2] == 0xF1)
+       && !epartIsReg(insn[3])) {
+
+      modrm = insn[3];
+      addr = disAMode(&alen, sorb, delta + 3, dis_buf);
+      delta += 3 + alen;
+      ty = szToITy(sz);
+      IRTemp src = newTemp(ty);
+
+      if (insn[2] == 0xF0) { /* LOAD */
+         assign(src, loadLE(ty, mkexpr(addr)));
+         IRTemp dst = math_BSWAP(src, ty);
+         putIReg(sz, gregOfRM(modrm), mkexpr(dst));
+         DIP("movbe %s,%s\n", dis_buf, nameIReg(sz, gregOfRM(modrm)));
+      } else { /* STORE */
+         assign(src, getIReg(sz, gregOfRM(modrm)));
+         IRTemp dst = math_BSWAP(src, ty);
+         storeLE(mkexpr(addr), mkexpr(dst));
+         DIP("movbe %s,%s\n", nameIReg(sz, gregOfRM(modrm)), dis_buf);
+      }
+      goto decode_success;
+   }
 
    /* ---------------------------------------------------- */
    /* --- end of the SSSE3 decoder.                    --- */
@@ -14437,24 +14496,11 @@ DisResult disInstr_X86_WRK (
       case 0xCE:
       case 0xCF: /* BSWAP %edi */
          /* AFAICS from the Intel docs, this only exists at size 4. */
-         vassert(sz == 4);
+         if (sz != 4) goto decode_failure;
+         
          t1 = newTemp(Ity_I32);
-         t2 = newTemp(Ity_I32);
          assign( t1, getIReg(4, opc-0xC8) );
-
-         assign( t2,
-            binop(Iop_Or32,
-               binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
-            binop(Iop_Or32,
-               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)), 
-                                mkU32(0x00FF0000)),
-            binop(Iop_Or32,
-               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
-                                mkU32(0x0000FF00)),
-               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
-                                mkU32(0x000000FF) )
-            )))
-         );
+         t2 = math_BSWAP(t1, Ity_I32);
 
          putIReg(4, opc-0xC8, mkexpr(t2));
          DIP("bswapl %s\n", nameIReg(4, opc-0xC8));

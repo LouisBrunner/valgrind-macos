@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <ctype.h>     // isspace
 #include <fcntl.h>     // open
 #include <unistd.h>    // lseek
@@ -296,14 +297,28 @@ static int go(char *feature, char *cpu)
 //---------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-   int rc;
+   int rc, inverted = 0;
 
    if (argc < 2 || argc > 3) {
       fprintf( stderr, "usage: s390x_features <feature> [<machine-model>]\n" );
       exit(3);                // Usage error.
    }
 
+   if (argv[1][0] == '!') {
+      assert(argv[2] == NULL);   // not allowed
+      inverted = 1;
+      ++argv[1];
+   }
+
    rc = go(argv[1], argv[2]);
+   
+   if (inverted) {
+      switch (rc) {
+      case 0: rc = 1; break;
+      case 1: rc = 0; break;
+      case 2: rc = 2; break;
+      }
+   }
 
    //   printf("rc = %d\n", rc);
 

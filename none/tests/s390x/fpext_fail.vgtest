@@ -1,2 +1,2 @@
 prog: fpext
-prereq: test ! `../../../tests/s390x_features s390x-fpext`
+prereq: ../../../tests/s390x_features '!s390x-fpext'

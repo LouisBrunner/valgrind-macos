@@ -1115,7 +1115,9 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x01: /* FORM_addr */      p += addr_size; break;
             case 0x03: /* FORM_block2 */    p += ML_(read_UShort)(p) + 2; break;
             case 0x04: /* FORM_block4 */    p += ML_(read_UInt)(p) + 4; break;
-            case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;
+            case 0x09: /* FORM_block */     /* fallthrough */
+            case 0x18: /* FORM_exprloc */   { ULong block_len = read_leb128U( &p );
+                                              p += block_len; break; }
             case 0x0a: /* FORM_block1 */    p += *p + 1; break;
             case 0x0c: /* FORM_flag */      p++; break;
             case 0x0d: /* FORM_sdata */     read_leb128S( &p ); break;
@@ -1126,7 +1128,6 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x13: /* FORM_ref4 */      p += 4; break;
             case 0x14: /* FORM_ref8 */      p += 8; break;
             case 0x15: /* FORM_ref_udata */ read_leb128U( &p ); break;
-            case 0x18: /* FORM_exprloc */   p += read_leb128U( &p ); break;
             case 0x19: /* FORM_flag_present */break;
             case 0x20: /* FORM_ref_sig8 */  p += 8; break;
             case 0x1f20: /* FORM_GNU_ref_alt */ p += ui->dw64 ? 8 : 4; break;

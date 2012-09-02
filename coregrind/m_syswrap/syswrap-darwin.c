@@ -41,7 +41,6 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_debuginfo.h"    // VG_(di_notify_*)
 #include "pub_core_transtab.h"     // VG_(discard_translations)
-#include "pub_tool_gdbserver.h"    // VG_(gdbserver)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
@@ -2834,14 +2833,11 @@ PRE(posix_spawn)
    /* Ok.  So let's give it a try. */
    VG_(debugLog)(1, "syswrap", "Posix_spawn of %s\n", (Char*)ARG2);
 
-   // Terminate gdbserver if it is active.
-   if (VG_(clo_vgdb)  != Vg_VgdbNo) {
-      // If the child will not be traced, we need to terminate gdbserver
-      // to cleanup the gdbserver resources (e.g. the FIFO files).
-      // If child will be traced, we also terminate gdbserver: the new 
-      // Valgrind will start a fresh gdbserver after exec.
-      VG_(gdbserver) (tid);
-   }
+   /* posix_spawn on Darwin is combining the fork and exec in one syscall.
+      So, we should not terminate gdbserver : this is still the parent
+      running, which will terminate its gdbserver when exiting.
+      If the child process is traced, it will start a fresh gdbserver
+      after posix_spawn. */
 
    // Set up the child's exe path.
    //
@@ -2959,7 +2955,9 @@ PRE(posix_spawn)
 POST(posix_spawn)
 {
    vg_assert(SUCCESS);
-   //POST_MEM_WRITE( ARG1, sizeof(vki_pid_t) );
+   if (ARG1 != 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_pid_t) );
+   }
 }
 
 

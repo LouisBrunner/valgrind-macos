@@ -19744,6 +19744,22 @@ Long dis_ESC_0F (
       DIP("ud2\n");
       return delta;
 
+   case 0x0D: /* 0F 0D /0 -- prefetch mem8 */
+              /* 0F 0D /1 -- prefetchw mem8 */
+      if (have66orF2orF3(pfx)) goto decode_failure;
+      modrm = getUChar(delta);
+      if (epartIsReg(modrm)) goto decode_failure;
+      if (gregLO3ofRM(modrm) != 0 && gregLO3ofRM(modrm) != 1)
+         goto decode_failure;
+      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+      delta += alen;
+      switch (gregLO3ofRM(modrm)) {
+         case 0: DIP("prefetch %s\n", dis_buf); break;
+         case 1: DIP("prefetchw %s\n", dis_buf); break;
+         default: vassert(0); /*NOTREACHED*/
+      }
+      return delta;
+
    case 0x1F:
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
@@ -26941,23 +26957,6 @@ DisResult disInstr_AMD64_WRK (
       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
 
       /* =-=-=-=-=-=-=-=-=- PREFETCH =-=-=-=-=-=-=-=-=-= */
-      case 0x0D: /* 0F 0D /0 -- prefetch mem8 */
-                 /* 0F 0D /1 -- prefetchw mem8 */
-         if (have66orF2orF3(pfx)) goto decode_failure;
-         modrm = getUChar(delta);
-         if (epartIsReg(modrm)) goto decode_failure;
-         if (gregLO3ofRM(modrm) != 0 && gregLO3ofRM(modrm) != 1)
-            goto decode_failure;
-
-         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-         delta += alen;
-
-         switch (gregLO3ofRM(modrm)) {
-            case 0: DIP("prefetch %s\n", dis_buf); break;
-            case 1: DIP("prefetchw %s\n", dis_buf); break;
-            default: vassert(0); /*NOTREACHED*/
-         }
-         break;
 
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
 

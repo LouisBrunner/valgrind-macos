@@ -47,6 +47,8 @@ n-i-bz  [381] Fixes for more MPI false positives
 n-i-bz  [381] exp-sgcheck's memcpy causes programs to segfault
 305690  [381] DRD reporting invalid semaphore when sem_trywait returns
               EAGAIN or sem_timedwait returns ETIMEDOUT
+305926  [381] Invalid alignment checks for some AVX instructions
+
 
 
 Release 3.8.0 (10 August 2012)

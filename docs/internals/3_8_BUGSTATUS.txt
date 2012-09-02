@@ -13,37 +13,28 @@ branch.
 
 -- PUSH TO 3_8_BRANCH
 
-2469   Fix a mixup ..
-12873  ?? Use -s USR1 instead of -10 to send SIGUSR1 signal
-12874  Fix n-i-bz shmat of a segment > 4Gb does not work
-12878  ?? On Darwin, use __NR_poll_nocancel rather than __NR_poll
-
-12879 + 12882 + 12883 (301281)
-
-12881 ptrace mips stuff
-12885 (op_DPBtoBCD and Iop_BCDtoDPB fix)
-
-2475  (289584)
-2476  (305042)
-
-12887  (n-i-bz libmpiwrap.c fixes)
-
-2477  (305321)
-2478  (295617)
-2479  (305199)  also testcase 12888 ?
-2480  (304867)
-
-12891 (304980) (provided it doesn't break anything else)
-12892 (305513)
-12893 (298281)
-12894 (n-i-bz, exp-sgcheck memcpy)
-
-merge r12897 and r12898 to the 3.8.1 branch. (305690)
-
-- volatile in stack check, re clang (dev@, Andrew Morrow)
-- 305926 Invalid alignment checks for some AVX instructions
-
-12923 (304980 more)
+(B38=2500)  2469   Fix a mixup ..
+(B38=12930) 12873  n-i-bz: Use -s USR1 instead of -10 to send SIGUSR1 signal
+(B38=12931) 12874  n-i-bz: shmat of a segment > 4Gb does not work
+(B38=12933) 12878  n-i-bz: On Darwin, use __NR_poll_nocancel rather than __NR_poll
+(B38=12934) 12879 + 12882 + 12883 (301281, OSX hang on "system")
+(B38=12936) 12881  ptrace mips stuff
+(B38=12938) 12885  (Iop_DPBtoBCD and Iop_BCDtoDPB fix)
+(B38=2502)  2475   (289584: Handle a reg-reg encoding of MOVAPS)
+(B38=2503)  2476   (305042: Implement 0F 7F encoding of movq reg-reg)
+(B38=12940) 12887  (n-i-bz libmpiwrap.c fixes)
+(B38=2504)  2477   (305321: Re-enable 'prefetch m8' and 'prefetchw m8')
+(B38=2505)  2478   (295617: Fix LZCNT and TZCNT properly)
+(B38=2506)  2479   (305199: Implement QDADD and QDSUB)
+(B38=2507)  2480   (304867: Implement MOVBE in 32 bit mode)
+(B38=12941) 12891  (304980: Fix up range checking in ML_(addLineInfo))
+(B38=12942) 12892  (305513: Fix skipping of block forms)
+(B38=12943) 12893  (298281: Implement a wrapper for wcslen on Linux)
+(B38=12944) 12894  (n-i-bz, exp-sgcheck memcpy)
+(B38=12945) 12897/8 (305690: andle non-zero sem_*wait() return values correctly)
+(B38=2508)  2499   (305926: Invalid alignment checks for some AVX instructions)
+(B38=12946) 12923  (304980: Guard against negative symbol sizes)
+(B38=12948) 12947 (n-i-bz: volatile in stack check, re clang)
 
 
 -------- Bugs brought forward from 3_7_BUGSTATUS.txt --------
@@ -99,8 +90,6 @@ merge r12897 and r12898 to the 3.8.1 branch. (305690)
 n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
 305728  Add support for AVX2 instructions
-
-305926  Invalid alignment checks for some AVX instructions
 
 305948  ppc64: code generation for ShlD64 / ShrD64 asserts
 

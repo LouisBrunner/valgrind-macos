@@ -347,7 +347,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
 {
    static const Bool debug = False;
    DiLoc loc;
-   Int size = next - this;
+   UWord size = next - this;
 
    /* Ignore zero-sized locs */
    if (this == next) return;
@@ -377,22 +377,30 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (0)
        VG_(message)(Vg_DebugMsg, 
                     "warning: line info address range too large "
-                    "at entry %d: %d\n", entry, size);
+                    "at entry %d: %lu\n", entry, size);
        size = 1;
    }
+
+   /* At this point, we know that the original value for |size|, viz
+      |next - this|, will only still be used in the case where
+      |this| <u |next|, so it can't have underflowed.  Considering
+      that and the three checks that follow it, the following must
+      hold. */
+   vg_assert(size >= 1);
+   vg_assert(size <= MAX_LOC_SIZE);
 
    /* Rule out ones which are completely outside the r-x mapped area.
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
-   if (ML_(find_rx_mapping)(di, this, next - 1) == NULL) {
+   if (ML_(find_rx_mapping)(di, this, this + size - 1) == NULL) {
        if (0)
           VG_(message)(Vg_DebugMsg, 
                        "warning: ignoring line info entry falling "
                        "outside current DebugInfo: %#lx %#lx %#lx %#lx\n",
                        di->text_avma, 
                        di->text_avma + di->text_size, 
-                       this, next-1);
+                       this, this + size - 1);
        return;
    }
 
@@ -420,7 +428,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    loc.dirname   = dirname;
 
    if (0) VG_(message)(Vg_DebugMsg, 
-		       "addLoc: addr %#lx, size %d, line %d, file %s\n",
+		       "addLoc: addr %#lx, size %lu, line %d, file %s\n",
 		       this,size,lineno,filename);
 
    addLoc ( di, &loc );

@@ -1,0 +1,3 @@
+prog: fpext_warn
+prereq: ../../../tests/s390x_features '!s390x-fpext'
+vgopts: --show-emwarns=yes

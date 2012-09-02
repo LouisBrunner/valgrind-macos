@@ -456,10 +456,16 @@ Bool VG_(get_startup_wd) ( Char* buf, SizeT size )
    return True;
 }
 
-Int    VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
+Int VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
 {
    SysRes res;
+#  if defined(VGO_linux)
    res = VG_(do_syscall3)(__NR_poll, (UWord)fds, nfds, timeout);
+#  elif defined(VGO_darwin)
+   res = VG_(do_syscall3)(__NR_poll_nocancel, (UWord)fds, nfds, timeout);
+#  else
+#    error "Unknown OS"
+#  endif
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 

@@ -24,4 +24,4 @@ fi
    sleep 1
  done
  sleep $SLEEP
- kill -10 $VGDBPID) &
+ kill -s USR1 $VGDBPID) &

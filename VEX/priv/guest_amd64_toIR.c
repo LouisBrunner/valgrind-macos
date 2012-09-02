@@ -11596,6 +11596,11 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
             /* fall through; awaiting test case */
+            putXMMReg( eregOfRexRM(pfx,modrm),
+                       getXMMReg( gregOfRexRM(pfx,modrm) ));
+            DIP("movaps %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
+                                  nameXMMReg(eregOfRexRM(pfx,modrm)));
+            delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
             gen_SEGV_if_not_16_aligned( addr );
@@ -11603,8 +11608,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             DIP("movaps %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
                                   dis_buf );
             delta += alen;
-            goto decode_success;
          }
+         goto decode_success;
       }
       /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
       if (have66noF2noF3(pfx)

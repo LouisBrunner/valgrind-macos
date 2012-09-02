@@ -3459,7 +3459,7 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
       }
       case Iex_Unop:
          tcExpr(bb,stmt, expr->Iex.Unop.arg, gWordTy );
-         typeOfPrimop(expr->Iex.Binop.op, 
+         typeOfPrimop(expr->Iex.Unop.op, 
                       &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          if (t_arg1 == Ity_INVALID || t_arg2 != Ity_INVALID
              || t_arg3 != Ity_INVALID || t_arg4 != Ity_INVALID)

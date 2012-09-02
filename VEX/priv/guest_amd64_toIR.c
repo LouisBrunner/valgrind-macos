@@ -16028,7 +16028,8 @@ static Long dis_PHMINPOSUW_128 ( VexAbiInfo* vbi, Prefix pfx,
       DIP("%sphminposuw %s,%s\n", mbV, nameXMMReg(rE), nameXMMReg(rG));
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-      gen_SEGV_if_not_16_aligned(addr);
+      if (!isAvx)
+         gen_SEGV_if_not_16_aligned(addr);
       assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
       delta += alen;
       DIP("%sphminposuw %s,%s\n", mbV, dis_buf, nameXMMReg(rG));
@@ -25898,7 +25899,6 @@ Long dis_ESC_0F3A__VEX (
                                            nameXMMReg(rV), nameXMMReg(rG));
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
-            gen_SEGV_if_not_16_aligned( addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             imm8 = getUChar(delta+alen);
             delta += alen+1;
@@ -26291,7 +26291,6 @@ Long dis_ESC_0F3A__VEX (
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SEGV_if_not_16_aligned( addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;

@@ -16,5 +16,5 @@ Emulation warning: unsupported action:
   feature requires the floating point extension facility.
   which is not available on this host. Continuing using
   the rounding mode from FPC. Results may differ!
-   at 0x........: main (fpext_warn.c:16)
+   at 0x........: main (fpext_warn.c:10)
 

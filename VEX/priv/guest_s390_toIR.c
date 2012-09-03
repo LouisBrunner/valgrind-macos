@@ -8451,10 +8451,6 @@ static HChar *
 s390_irgen_CFEBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
-      emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
-   }
    IRTemp op = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_I32);
 
@@ -8471,10 +8467,6 @@ static HChar *
 s390_irgen_CFDBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
-      emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
-   }
    IRTemp op = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_I32);
 
@@ -8491,10 +8483,6 @@ static HChar *
 s390_irgen_CGEBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
-      emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
-   }
    IRTemp op = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_I64);
 
@@ -8511,10 +8499,6 @@ static HChar *
 s390_irgen_CGDBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
-      emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
-   }
    IRTemp op = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_I64);
 
@@ -10412,10 +10396,6 @@ static HChar *
 s390_irgen_CFXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
-      emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
-   }
    IRTemp op = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_I32);
 
@@ -10452,10 +10432,6 @@ static HChar *
 s390_irgen_CGXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
-      emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
-   }
    IRTemp op = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_I64);
 

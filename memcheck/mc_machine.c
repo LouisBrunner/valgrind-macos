@@ -800,7 +800,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    /* access registers are accessed 4 bytes at once */
    if (sz == 4 && o >= GOF(a0) && o <= GOF(a15))
-         return o;
+      return o;
 
    /* we access the guest counter either fully or one of the 4byte words */
    if (o == GOF(counter) && (sz == 8 || sz ==4))
@@ -808,18 +808,20 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(counter) + 4 && sz == 4)
       return o;
 
-   if (o == GOF(CC_OP)) return -1;
-   if (o == GOF(CC_DEP1)) return o;
-   if (o == GOF(CC_DEP2)) return o;
-   if (o == GOF(CC_NDEP)) return -1;
-   if (o == GOF(TISTART)) return -1;
-   if (o == GOF(TILEN)) return -1;
-   if (o == GOF(NRADDR)) return -1;
-   if (o == GOF(IP_AT_SYSCALL)) return -1;
-   if (o == GOF(fpc)) return -1;
-   if (o == GOF(IA)) return -1;
-   if (o == GOF(IA) + 4) return -1;
-   if (o == GOF(SYSNO)) return -1;
+   if (o == GOF(EMNOTE) && sz == 4) return -1;
+
+   if (o == GOF(CC_OP)    && sz == 8) return -1;
+   if (o == GOF(CC_DEP1)  && sz == 8) return o;
+   if (o == GOF(CC_DEP2)  && sz == 8) return o;
+   if (o == GOF(CC_NDEP)  && sz == 8) return -1;
+   if (o == GOF(TISTART)  && sz == 8) return -1;
+   if (o == GOF(TILEN)    && sz == 8) return -1;
+   if (o == GOF(NRADDR)   && sz == 8) return -1;
+   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
+   if (o == GOF(fpc)      && sz == 8) return -1;
+   if (o == GOF(IA)       && sz == 8) return -1;
+   if (o == (GOF(IA) + 4) && sz == 4) return -1;
+   if (o == GOF(SYSNO)    && sz == 8) return -1;
    VG_(printf)("MC_(get_otrack_shadow_offset)(s390x)(off=%d,sz=%d)\n",
                offset,szB);
    tl_assert(0);

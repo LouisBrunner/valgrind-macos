@@ -6117,6 +6117,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoDecode:
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
+      case Ijk_TInval:
       {
          HReg       r      = iselIntExpr_R(env, next);
          ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);

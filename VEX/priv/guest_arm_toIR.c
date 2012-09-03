@@ -91,7 +91,7 @@
       E18AA00A (orr r10,r10,r10)   R3 = client_request ( R4 )
       E18BB00B (orr r11,r11,r11)   R3 = guest_NRADDR
       E18CC00C (orr r12,r12,r12)   branch-and-link-to-noredir R4
-      E18DD00D (orr r13,r13,r13)   IR injection
+      E1899009 (orr r9,r9,r9)      IR injection
 
    Any other bytes following the 16-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -439,6 +439,9 @@ static IRExpr* align4if ( IRExpr* e, Bool b )
 #define OFFB_GEFLAG1  offsetof(VexGuestARMState,guest_GEFLAG1)
 #define OFFB_GEFLAG2  offsetof(VexGuestARMState,guest_GEFLAG2)
 #define OFFB_GEFLAG3  offsetof(VexGuestARMState,guest_GEFLAG3)
+
+#define OFFB_TISTART  offsetof(VexGuestARMState,guest_TISTART)
+#define OFFB_TILEN    offsetof(VexGuestARMState,guest_TILEN)
 
 
 /* ---------------- Integer registers ---------------- */
@@ -12478,28 +12481,21 @@ DisResult disInstr_ARM_WRK (
             goto decode_success;
          }
          else
-         if (getUIntLittleEndianly(code+16) == 0xE18DD00D
-                                               /* orr r13,r13,r13 */) {
+         if (getUIntLittleEndianly(code+16) == 0xE1899009
+                                               /* orr r9,r9,r9 */) {
             /* IR injection */
             DIP("IR injection\n");
-
             vex_inject_ir(irsb, Iend_LE);
-
             // Invalidate the current insn. The reason is that the IRop we're
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-#if 0
-            // FIXME: needs to be fixed
             stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
             stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
-   
             llPutIReg(15, mkU32( guest_R15_curr_instr_notENC + 20 ));
-
             dres.whatNext    = Dis_StopHere;
             dres.jk_StopHere = Ijk_TInval;
             goto decode_success;
-#endif
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
             can print the insn following the Special-insn preamble. */
@@ -14708,6 +14704,24 @@ DisResult disInstr_THUMB_WRK (
             llPutIReg(15, getIRegT(4));
             dres.jk_StopHere = Ijk_NoRedir;
             dres.whatNext    = Dis_StopHere;
+            goto decode_success;
+         }
+         else
+         // 0x 09 09 EA 49
+         if (getUIntLittleEndianly(code+16) == 0x0909EA49
+                                               /* orr r9,r9,r9 */) {
+            /* IR injection */
+            DIP("IR injection\n");
+            vex_inject_ir(irsb, Iend_LE);
+            // Invalidate the current insn. The reason is that the IRop we're
+            // injecting here can change. In which case the translation has to
+            // be redone. For ease of handling, we simply invalidate all the
+            // time.
+            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
+            llPutIReg(15, mkU32( (guest_R15_curr_instr_notENC + 20) | 1 ));
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
             goto decode_success;
          }
          /* We don't know what it is.  Set insn0 so decode_failure

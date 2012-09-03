@@ -659,12 +659,12 @@ stfle,"store facility list extended",implemented,
 stckf,"store clock fast",implemented,
 mvcos,"move with optional specifications",N/A,"privileged instruction"
 lptea,"load page-table-entry address",N/A,"privileged instruction"
-cu24,"convert utf-16 to utf-32",implemented
-cu21,"convert utf-16 to utf-8",implemented
-cu42,"convert utf-32 to utf-16",implemented
-cu41,"convert utf-32 to utf-8",implemented
-cu12,"convert utf-8 to utf-16",implemented
-cu14,"convert utf-8 to utf-32",implemented
+cu24,"convert utf-16 to utf-32",implemented,
+cu21,"convert utf-16 to utf-8",implemented,
+cu42,"convert utf-32 to utf-16",implemented,
+cu41,"convert utf-32 to utf-8",implemented,
+cu12,"convert utf-8 to utf-16",implemented,
+cu14,"convert utf-8 to utf-32",implemented,
 srstu,"search string unicode","not implemented",
 trtr,"tranlate and test reverse","not implemented",
 myr,"multiply unnormalized long hfp","won't do","hfp instruction"
@@ -863,16 +863,16 @@ shhhr,"subtract high high",implemented,
 shhlr,"subtract high low",implemented,
 slhhhr,"subtract logical high high",implemented,
 slhhlr,"subtract logical high low",implemented,
-laa,"load and add 32 bit",implemented,
-laag,"load and add 64 bit",implemented,
-laal,"load and add logical 32 bit",implemented,
-laalg,"load and add logical 64 bit",implemented,
-lan,"load and and 32 bit",implemented,
-lang,"load and and 64 bit",implemented,
-lax,"load and exclusive or 32 bit",implemented,
-laxg,"load and exclusive or 64 bit",implemented,
-lao,"load and or 32 bit",implemented,
-laog,"load and or 64 bit",implemented,
+laa,"load and add 32 bit",semi-implemented,"bugzilla #306035"
+laag,"load and add 64 bit",semi-implemented,"bugzilla #306035"
+laal,"load and add logical 32 bit",semi-implemented,"bugzilla #306035"
+laalg,"load and add logical 64 bit",semi-implemented,"bugzilla #306035"
+lan,"load and and 32 bit",semi-implemented,"bugzilla #306035"
+lang,"load and and 64 bit",semi-implemented,"bugzilla #306035"
+lax,"load and exclusive or 32 bit",semi-implemented,"bugzilla #306035"
+laxg,"load and exclusive or 64 bit",semi-implemented,"bugzilla #306035"
+lao,"load and or 32 bit",semi-implemented,"bugzilla #306035"
+laog,"load and or 64 bit",semi-implemented,"bugzilla #306035"
 lpd,"load pair disjoint 32 bit","not implemented",
 lpdg,"load pair disjoint 64 bit","not implemented",
 locr,"load on condition 32 bit",implemented,
@@ -922,19 +922,19 @@ cfdbra,"convert to 32 bit fixed from long bfp with rounding mode",implemented,
 cfxbra,"convert to 32 bit fixed from extended bfp with rounding mode",implemented,
 cgebra,"convert to 64 bit fixed from short bfp with rounding mode",implemented,
 cgdbra,"convert to 64 bit fixed from long bfp with rounding mode",implemented,
-cgxbra,"convert to 64 bit fixed from extended bfp with rounding mode",implemented
+cgxbra,"convert to 64 bit fixed from extended bfp with rounding mode",implemented,
 clfebr,"convert to 32 bit fixed logical from short bfp with rounding mode",implemented,
-clfdbr,"convert to 32 bit fixed logical from long bfp with rounding mode",implemented
-clfxbr,"convert to 32 bit fixed logical from extended bfp with rounding mode",implemented
-clgebr,"convert to 64 bit fixed logical from short bfp with rounding mode",implemented
-clgdbr,"convert to 64 bit fixed logical from long bfp with rounding mode",implemented
-clgxbr,"convert to 64 bit fixed logical from extended bfp with rounding mode",implemented
+clfdbr,"convert to 32 bit fixed logical from long bfp with rounding mode",implemented,
+clfxbr,"convert to 32 bit fixed logical from extended bfp with rounding mode",implemented,
+clgebr,"convert to 64 bit fixed logical from short bfp with rounding mode",implemented,
+clgdbr,"convert to 64 bit fixed logical from long bfp with rounding mode",implemented,
+clgxbr,"convert to 64 bit fixed logical from extended bfp with rounding mode",implemented,
 fiebra,"load fp integer short bfp with rounding mode","not implemented","new to z196"
 fidbra,"load fp integer long bfp with rounding mode","not implemented","new to z196"
 fixbra,"load fp integer extended bfp with rounding mode","not implemented","new to z196"
 ledbra,"load rounded short/long bfp to short/long bfp with rounding mode",implemented,
-ldxbra,"load rounded long/extended bfp to long/extended bfp with rounding mode",implemented
-lexbra,"load rounded short/extended bfp to short/extended bfp with rounding mode",implemented
+ldxbra,"load rounded long/extended bfp to long/extended bfp with rounding mode",implemented,
+lexbra,"load rounded short/extended bfp to short/extended bfp with rounding mode",implemented,
 adtra,"add long dfp with rounding mode","not implemented","new to z196"
 axtra,"add extended dfp with rounding mode","not implemented","new to z196"
 cdgtra,"convert from fixed long dfp with rounding mode","not implemented","new to z196"

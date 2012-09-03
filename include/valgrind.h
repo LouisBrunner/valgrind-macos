@@ -639,7 +639,7 @@ typedef
 #define VALGRIND_VEX_INJECT_IR()                                 \
  do {                                                            \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE              \
-                     "orr r13, r13, r13\n\t"                     \
+                     "orr r9, r9, r9\n\t"                        \
                      : : : "cc", "memory"                        \
                     );                                           \
  } while (0)

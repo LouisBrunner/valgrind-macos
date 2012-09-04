@@ -2173,36 +2173,14 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x35:
       /* Load Doubleword to Floating Point - LDC1 (MIPS32) */
       LOAD_STORE_PATTERN;
-
-      t2 = newTemp(Ity_I32);
-      assign(t2, binop(Iop_Add32, getIReg(rs),
-                       mkU32(extend_s_16to32(imm + 4))));
-
-#if defined (_MIPSEL)
-      putFReg(ft, load(Ity_F32, mkexpr(t1)));
-      putFReg(ft + 1, load(Ity_F32, mkexpr(t2)));
-#elif defined (_MIPSEB)
-      putFReg(ft + 1, load(Ity_F32, mkexpr(t1)));
-      putFReg(ft, load(Ity_F32, mkexpr(t2)));
-#endif
+      putDReg(ft, load(Ity_F64, mkexpr(t1)));
       DIP("ldc1 f%d, %d(%d) \n", rt, imm, rs);
       break;
 
    case 0x3D:
       /* Store Doubleword from Floating Point - SDC1 */
       LOAD_STORE_PATTERN;
-
-      t2 = newTemp(Ity_I32);
-      assign(t2, binop(Iop_Add32, getIReg(rs),
-                       mkU32(extend_s_16to32(imm + 4))));
-
-#if defined (_MIPSEL)
-      store(mkexpr(t1), getFReg(ft));
-      store(mkexpr(t2), getFReg(ft + 1));
-#elif defined (_MIPSEB)
-      store(mkexpr(t1), getFReg(ft + 1));
-      store(mkexpr(t2), getFReg(ft));
-#endif
+      store(mkexpr(t1), getDReg(ft));
       DIP("sdc1 f%d, %d(%d)", ft, imm, rs);
       break;
 
@@ -2310,7 +2288,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          store(mkexpr(t1), getFReg(fs));
 #endif
 
-         DIP("sdc1 f%d, %d(%d)", ft, imm, rs);
+         DIP("sdxc1 f%d, %d(%d)", ft, imm, rs);
          break;
       }
       case 0x0F: {

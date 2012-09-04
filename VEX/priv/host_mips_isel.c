@@ -344,7 +344,7 @@ static HReg mk_LoadRR32toFPR(ISelEnv * env, HReg r_srcHi, HReg r_srcLo)
 
    sub_from_sp(env, 16);   // Move SP down 16 bytes
    am_addr0 = MIPSAMode_IR(0, StackPointer(mode64));
-   am_addr1 = MIPSAMode_IR(8, StackPointer(mode64));
+   am_addr1 = MIPSAMode_IR(4, StackPointer(mode64));
 
    // store hi,lo as Ity_I32's
    addInstr(env, MIPSInstr_Store(4, am_addr0, r_srcLo, mode64));
@@ -445,15 +445,21 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
          vassert(argreg < MIPS_N_REGPARMS);
          vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32
                  || typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32) {
+         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32 || mode64) {
             argiregs |= (1 << (argreg + 4));
             addInstr(env, mk_iMOVds_RR(argregs[argreg], iselWordExpr_R(env,
                      args[i])));
          } else { // Ity_I64
-            vassert(mode64);
+            if (argreg & 1) {
+               argreg++;
+               argiregs |= (1 << (argreg + 4));
+            }
+            HReg rHi, rLo;
+            iselInt64Expr(&rHi, &rLo, env, args[i]);
             argiregs |= (1 << (argreg + 4));
-            addInstr(env, mk_iMOVds_RR(argregs[argreg], iselWordExpr_R(env,
-                     args[i])));
+            addInstr(env, mk_iMOVds_RR( argregs[argreg++], rHi ));
+            argiregs |= (1 << (argreg + 4));
+            addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
          }
          argreg++;
       }
@@ -474,11 +480,18 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
          vassert(argreg < MIPS_N_REGPARMS);
          vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32
                  || typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32) {
+         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32 || mode64) {
             tmpregs[argreg] = iselWordExpr_R(env, args[i]);
          } else { // Ity_I64
-            vassert(mode64);
-            tmpregs[argreg] = iselWordExpr_R(env, args[i]);
+            if (argreg & 1)
+               argreg++;
+            if (argreg + 1 >= MIPS_N_REGPARMS)
+               vassert(0);  /* out of argregs */
+            HReg raHi, raLo;
+            iselInt64Expr(&raHi, &raLo, env, args[i]);
+            tmpregs[argreg] = raLo;
+            argreg++;
+            tmpregs[argreg] = raHi;             
          }
          argreg++;
       }
@@ -2249,10 +2262,10 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             sub_from_sp(env, 16);   // Move SP down 16 bytes
             am_addr = MIPSAMode_IR(0, StackPointer(mode64));
 
-            // store as I32                                 
+            // store as I64                                 
             addInstr(env, MIPSInstr_Store(8, am_addr, fr_src, mode64));
 
-            // load as Ity_F32
+            // load as Ity_F64
             addInstr(env, MIPSInstr_FpLdSt(True /*load */ , 8, r_dst, am_addr));
 
             add_to_sp(env, 16);  // Reset SP
@@ -2783,6 +2796,13 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
             return;
          }
 
+         if (!mode64 && (tyd == Ity_F64)) {
+            HReg fr_src = iselDblExpr(env, stmt->Ist.Store.data);
+            addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, fr_src,
+                                           am_addr));
+            return;
+         }
+
          break;
       }
 
@@ -2893,8 +2913,14 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
 
          retty = typeOfIRTemp(env->type_env, d->tmp);
          if (retty == Ity_I64 && !mode64) {
-            vex_printf
-                ("Dirty! Return 64 bits. Not implemented (yet!)\n");
+            HReg rHi = newVRegI(env);
+            HReg rLo = newVRegI(env);
+            HReg dstHi, dstLo;
+            addInstr(env, mk_iMOVds_RR(rLo, hregMIPS_GPR2(mode64)));
+            addInstr(env, mk_iMOVds_RR(rHi, hregMIPS_GPR3(mode64)));
+            lookupIRTemp64(&dstHi, &dstLo, env, d->tmp);
+            addInstr(env, mk_iMOVds_RR(dstHi, rHi));
+            addInstr(env, mk_iMOVds_RR(dstLo, rLo));
             return;
          }
          if (retty == Ity_I8 || retty == Ity_I16 || retty == Ity_I32

@@ -860,7 +860,7 @@ MIPSAMode *nextMIPSAModeFloat(MIPSAMode * am)
    MIPSAMode* ret;
    switch (am->tag) {
       case Mam_IR:
-         ret = MIPSAMode_IR(am->Mam.IR.index + 8, am->Mam.IR.base);
+         ret = MIPSAMode_IR(am->Mam.IR.index + 4, am->Mam.IR.base);
          break;
       case Mam_RR:
          ret = MIPSAMode_RR(am->Mam.RR.index + 1, am->Mam.RR.base);
@@ -1736,18 +1736,12 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
             }
          } else if (i->Min.FpLdSt.sz == 8) {
             if (i->Min.FpLdSt.isLoad) {
-               if (mode64)
-                  vex_printf("ldc1 ");
-               else
-                  vex_printf("lwc1 ");
+               vex_printf("ldc1 ");
                ppHRegMIPS(i->Min.FpLdSt.reg, mode64);
                vex_printf(",");
                ppMIPSAMode(i->Min.FpLdSt.addr, mode64);
             } else {
-               if (mode64)
-                  vex_printf("sdc1 ");
-               else
-                  vex_printf("swc1 ");
+               vex_printf("sdc1 ");
                ppHRegMIPS(i->Min.FpLdSt.reg, mode64);
                vex_printf(",");
                ppMIPSAMode(i->Min.FpLdSt.addr, mode64);
@@ -1952,16 +1946,9 @@ void getRegUsage_MIPSInstr(HRegUsage * u, MIPSInstr * i, Bool mode64)
             addRegUsage_MIPSAMode(u, i->Min.FpLdSt.addr);
             return;
          } else if (i->Min.FpLdSt.sz == 8) {
-            if (mode64) {
-               addHRegUse(u, (i->Min.FpLdSt.isLoad ? HRmWrite : HRmRead),
-                              i->Min.FpLdSt.reg);
-               addRegUsage_MIPSAMode(u, i->Min.FpLdSt.addr);
-            } else {
-               addHRegUse(u, (i->Min.FpLdSt.isLoad ? HRmWrite : HRmRead),
-                              i->Min.FpLdSt.reg);
-               addRegUsage_MIPSAMode(u, i->Min.FpLdSt.addr);
-               addRegUsage_MIPSAMode(u, nextMIPSAModeFloat(i->Min.FpLdSt.addr));
-            }
+            addHRegUse(u, (i->Min.FpLdSt.isLoad ? HRmWrite : HRmRead),
+                           i->Min.FpLdSt.reg);
+            addRegUsage_MIPSAMode(u, i->Min.FpLdSt.addr);
             return;
          }
          break;
@@ -2107,14 +2094,8 @@ void mapRegs_MIPSInstr(HRegRemap * m, MIPSInstr * i, Bool mode64)
             mapRegs_MIPSAMode(m, i->Min.FpLdSt.addr);
             return;
          } else if (i->Min.FpLdSt.sz == 8) {
-            if (mode64) {
-               mapReg(m, &i->Min.FpLdSt.reg);
-               mapRegs_MIPSAMode(m, i->Min.FpLdSt.addr);
-            } else {
-               mapReg(m, &i->Min.FpLdSt.reg);
-               mapRegs_MIPSAMode(m, i->Min.FpLdSt.addr);
-               mapRegs_MIPSAMode(m, nextMIPSAModeFloat(i->Min.FpLdSt.addr));
-            }
+            mapReg(m, &i->Min.FpLdSt.reg);
+            mapRegs_MIPSAMode(m, i->Min.FpLdSt.addr);
             return;
          }
          break;
@@ -3515,39 +3496,15 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             UInt f_reg = dregNo(i->Min.FpLdSt.reg);
             if (i->Min.FpLdSt.isLoad) {
                if (am_addr->tag == Mam_IR) {
-                  if (mode64) {
-                     p = doAMode_IR(p, 0x35, f_reg, am_addr, mode64);
-                  } else {
-                     p = doAMode_IR(p, 0x31, f_reg, am_addr, mode64);
-                     p = doAMode_IR(p, 0x31, f_reg + 1,
-                                   nextMIPSAModeFloat(am_addr), mode64);
-                  }
+                  p = doAMode_IR(p, 0x35, f_reg, am_addr, mode64);
                } else if (am_addr->tag == Mam_RR) {
-                  if (mode64) {
-                     p = doAMode_RR(p, 0x35, f_reg, am_addr, mode64);
-                  } else {
-                     p = doAMode_RR(p, 0x31, f_reg, am_addr, mode64);
-                     p = doAMode_RR(p, 0x31, f_reg + 1,
-                                    nextMIPSAModeFloat(am_addr), mode64);
-                  }
+                  p = doAMode_RR(p, 0x35, f_reg, am_addr, mode64);
                }
             } else {
                if (am_addr->tag == Mam_IR) {
-                  if (mode64) {
-                     p = doAMode_IR(p, 0x3d, f_reg, am_addr, mode64);
-                  } else {
-                     p = doAMode_IR(p, 0x39, f_reg, am_addr, mode64);
-                     p = doAMode_IR(p, 0x39, f_reg + 1,
-                                    nextMIPSAModeFloat(am_addr), mode64);
-                  }
+                  p = doAMode_IR(p, 0x3d, f_reg, am_addr, mode64);
                } else if (am_addr->tag == Mam_RR) {
-                  if (mode64) {
-                     p = doAMode_RR(p, 0x3d, f_reg, am_addr, mode64);
-                  } else {
-                     p = doAMode_RR(p, 0x39, f_reg, am_addr, mode64);
-                     p = doAMode_RR(p, 0x39, f_reg + 1,
-                                    nextMIPSAModeFloat(am_addr), mode64);
-                  }
+                  p = doAMode_RR(p, 0x3d, f_reg, am_addr, mode64);
                }
             }
          }

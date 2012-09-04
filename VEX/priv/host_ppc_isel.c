@@ -3963,7 +3963,7 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       }
 
       switch (e->Iex.Binop.op) {
-      /* shift instructions F64, I32 -> F64 */
+      /* shift instructions D64, I32 -> D64 */
       case Iop_ShlD64: fpop = Pfp_DSCLI; break;
       case Iop_ShrD64: fpop = Pfp_DSCRI; break;
       default: break;
@@ -3971,6 +3971,9 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       if (fpop != Pfp_INVALID) {
          HReg fr_src = iselDfp64Expr(env, e->Iex.Binop.arg1);
          PPCRI* shift = iselWordExpr_RI(env, e->Iex.Binop.arg2);
+
+         /* shift value must be an immediate value */
+         vassert(shift->tag == Pri_Imm);
 
          addInstr(env, PPCInstr_DfpShift(fpop, fr_dst, fr_src, shift));
          return fr_dst;

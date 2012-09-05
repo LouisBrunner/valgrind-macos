@@ -425,13 +425,18 @@ yield_if(IRExpr *condition)
                     S390X_GUEST_OFFSET(guest_IA)));
 }
 
-/* Encode the s390 rounding mode as it appears in the m3/m4 fields of certain
-   instructions to VEX's IRRoundingMode. */
+/* Encode the s390 rounding mode as it appears in the m3 field of certain
+   instructions to VEX's IRRoundingMode. Rounding modes that cannot be
+   represented in VEX are converted to Irrm_NEAREST. The rationale is, that
+   Irrm_NEAREST refers to IEEE 754's roundTiesToEven which the standard
+   considers the default rounding mode (4.3.3). */
 static IRRoundingMode
 encode_rounding_mode(UChar mode)
 {
    switch (mode) {
-   default: return Irrm_NEAREST;  // fixs390: for now
+   case S390_ROUND_PER_FPC:       /* not supported */
+   case S390_ROUND_NEAREST_AWAY:  /* not supported */
+   case S390_ROUND_PREPARE_SHORT: /* not supported */
    case S390_ROUND_NEAREST_EVEN:  return Irrm_NEAREST;
    case S390_ROUND_ZERO:          return Irrm_ZERO;
    case S390_ROUND_POSINF:        return Irrm_PosINF;
@@ -8183,10 +8188,11 @@ s390_irgen_AEBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, get_fpr_w0(r2));
-   assign(result, triop(Iop_AddF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_AddF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_32, result);
    put_fpr_w0(r1, mkexpr(result));
@@ -8200,10 +8206,11 @@ s390_irgen_ADBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, get_fpr_dw0(r2));
-   assign(result, triop(Iop_AddF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_AddF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_64, result);
    put_fpr_dw0(r1, mkexpr(result));
@@ -8217,10 +8224,11 @@ s390_irgen_AEB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, load(Ity_F32, mkexpr(op2addr)));
-   assign(result, triop(Iop_AddF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_AddF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_32, result);
    put_fpr_w0(r1, mkexpr(result));
@@ -8234,10 +8242,11 @@ s390_irgen_ADB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, load(Ity_F64, mkexpr(op2addr)));
-   assign(result, triop(Iop_AddF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_AddF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_64, result);
    put_fpr_dw0(r1, mkexpr(result));
@@ -8249,9 +8258,9 @@ static HChar *
 s390_irgen_CEFBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
+   if (! s390_host_has_fpext && m3 != S390_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
+      m3 = S390_ROUND_PER_FPC;
    }
    IRTemp op2 = newTemp(Ity_I32);
 
@@ -8278,9 +8287,9 @@ static HChar *
 s390_irgen_CEGBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
+   if (! s390_host_has_fpext && m3 != S390_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
+      m3 = S390_ROUND_PER_FPC;
    }
    IRTemp op2 = newTemp(Ity_I64);
 
@@ -8295,9 +8304,9 @@ static HChar *
 s390_irgen_CDGBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
-   if (! s390_host_has_fpext && m3 != 0) {
+   if (! s390_host_has_fpext && m3 != S390_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
-      m3 = 0;
+      m3 = S390_ROUND_PER_FPC;
    }
    IRTemp op2 = newTemp(Ity_I64);
 
@@ -8517,10 +8526,11 @@ s390_irgen_DEBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, get_fpr_w0(r2));
-   assign(result, triop(Iop_DivF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_DivF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_w0(r1, mkexpr(result));
 
@@ -8533,10 +8543,11 @@ s390_irgen_DDBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, get_fpr_dw0(r2));
-   assign(result, triop(Iop_DivF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_DivF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_dw0(r1, mkexpr(result));
 
@@ -8549,10 +8560,11 @@ s390_irgen_DEB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, load(Ity_F32, mkexpr(op2addr)));
-   assign(result, triop(Iop_DivF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_DivF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_w0(r1, mkexpr(result));
 
@@ -8565,10 +8577,11 @@ s390_irgen_DDB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, load(Ity_F64, mkexpr(op2addr)));
-   assign(result, triop(Iop_DivF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_DivF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_dw0(r1, mkexpr(result));
 
@@ -8664,10 +8677,11 @@ s390_irgen_MEEBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, get_fpr_w0(r2));
-   assign(result, triop(Iop_MulF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_MulF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_w0(r1, mkexpr(result));
 
@@ -8680,10 +8694,11 @@ s390_irgen_MDBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, get_fpr_dw0(r2));
-   assign(result, triop(Iop_MulF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_MulF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_dw0(r1, mkexpr(result));
 
@@ -8696,10 +8711,11 @@ s390_irgen_MEEB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, load(Ity_F32, mkexpr(op2addr)));
-   assign(result, triop(Iop_MulF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_MulF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_w0(r1, mkexpr(result));
 
@@ -8712,10 +8728,11 @@ s390_irgen_MDB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, load(Ity_F64, mkexpr(op2addr)));
-   assign(result, triop(Iop_MulF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_MulF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    put_fpr_dw0(r1, mkexpr(result));
 
@@ -8728,10 +8745,11 @@ s390_irgen_SEBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, get_fpr_w0(r2));
-   assign(result, triop(Iop_SubF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_SubF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_32, result);
    put_fpr_w0(r1, mkexpr(result));
@@ -8745,10 +8763,11 @@ s390_irgen_SDBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, get_fpr_dw0(r2));
-   assign(result, triop(Iop_SubF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_SubF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_64, result);
    put_fpr_dw0(r1, mkexpr(result));
@@ -8762,10 +8781,11 @@ s390_irgen_SEB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F32);
    IRTemp op2 = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_w0(r1));
    assign(op2, load(Ity_F32, mkexpr(op2addr)));
-   assign(result, triop(Iop_SubF32, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_SubF32, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_32, result);
    put_fpr_w0(r1, mkexpr(result));
@@ -8779,10 +8799,11 @@ s390_irgen_SDB(UChar r1, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_F64);
    IRTemp op2 = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_dw0(r1));
    assign(op2, load(Ity_F64, mkexpr(op2addr)));
-   assign(result, triop(Iop_SubF64, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_SubF64, mkU32(rounding_mode), mkexpr(op1),
           mkexpr(op2)));
    s390_cc_thunk_putF(S390_CC_OP_BFP_RESULT_64, result);
    put_fpr_dw0(r1, mkexpr(result));
@@ -10190,10 +10211,11 @@ s390_irgen_AXBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F128);
    IRTemp op2 = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_F128);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_pair(r1));
    assign(op2, get_fpr_pair(r2));
-   assign(result, triop(Iop_AddF128, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_AddF128, mkU32(rounding_mode), mkexpr(op1),
                         mkexpr(op2)));
    put_fpr_pair(r1, mkexpr(result));
 
@@ -10469,10 +10491,11 @@ s390_irgen_DXBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F128);
    IRTemp op2 = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_F128);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_pair(r1));
    assign(op2, get_fpr_pair(r2));
-   assign(result, triop(Iop_DivF128, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_DivF128, mkU32(rounding_mode), mkexpr(op1),
                         mkexpr(op2)));
    put_fpr_pair(r1, mkexpr(result));
 
@@ -10651,10 +10674,11 @@ s390_irgen_MXBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F128);
    IRTemp op2 = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_F128);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_pair(r1));
    assign(op2, get_fpr_pair(r2));
-   assign(result, triop(Iop_MulF128, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_MulF128, mkU32(rounding_mode), mkexpr(op1),
                         mkexpr(op2)));
    put_fpr_pair(r1, mkexpr(result));
 
@@ -10664,7 +10688,9 @@ s390_irgen_MXBR(UChar r1, UChar r2)
 static HChar *
 s390_irgen_MAEBR(UChar r1, UChar r3, UChar r2)
 {
-   put_fpr_w0(r1, qop(Iop_MAddF32, mkU32(Irrm_NEAREST),
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
+
+   put_fpr_w0(r1, qop(Iop_MAddF32, mkU32(rounding_mode),
                       get_fpr_w0(r1), get_fpr_w0(r2), get_fpr_w0(r3)));
 
    return "maebr";
@@ -10673,7 +10699,9 @@ s390_irgen_MAEBR(UChar r1, UChar r3, UChar r2)
 static HChar *
 s390_irgen_MADBR(UChar r1, UChar r3, UChar r2)
 {
-   put_fpr_dw0(r1, qop(Iop_MAddF64, mkU32(Irrm_NEAREST),
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
+
+   put_fpr_dw0(r1, qop(Iop_MAddF64, mkU32(rounding_mode),
                        get_fpr_dw0(r1), get_fpr_dw0(r2), get_fpr_dw0(r3)));
 
    return "madbr";
@@ -10683,8 +10711,9 @@ static HChar *
 s390_irgen_MAEB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F32, mkexpr(op2addr));
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   put_fpr_w0(r1, qop(Iop_MAddF32, mkU32(Irrm_NEAREST),
+   put_fpr_w0(r1, qop(Iop_MAddF32, mkU32(rounding_mode),
                       get_fpr_w0(r1), op2, get_fpr_w0(r3)));
 
    return "maeb";
@@ -10694,8 +10723,9 @@ static HChar *
 s390_irgen_MADB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F64, mkexpr(op2addr));
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   put_fpr_dw0(r1, qop(Iop_MAddF64, mkU32(Irrm_NEAREST),
+   put_fpr_dw0(r1, qop(Iop_MAddF64, mkU32(rounding_mode),
                        get_fpr_dw0(r1), op2, get_fpr_dw0(r3)));
 
    return "madb";
@@ -10704,7 +10734,9 @@ s390_irgen_MADB(UChar r3, IRTemp op2addr, UChar r1)
 static HChar *
 s390_irgen_MSEBR(UChar r1, UChar r3, UChar r2)
 {
-   put_fpr_w0(r1, qop(Iop_MSubF32, mkU32(Irrm_NEAREST),
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
+
+   put_fpr_w0(r1, qop(Iop_MSubF32, mkU32(rounding_mode),
                       get_fpr_w0(r1), get_fpr_w0(r2), get_fpr_w0(r3)));
 
    return "msebr";
@@ -10713,7 +10745,9 @@ s390_irgen_MSEBR(UChar r1, UChar r3, UChar r2)
 static HChar *
 s390_irgen_MSDBR(UChar r1, UChar r3, UChar r2)
 {
-   put_fpr_dw0(r1, qop(Iop_MSubF64, mkU32(Irrm_NEAREST),
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
+
+   put_fpr_dw0(r1, qop(Iop_MSubF64, mkU32(rounding_mode),
                        get_fpr_dw0(r1), get_fpr_dw0(r2), get_fpr_dw0(r3)));
 
    return "msdbr";
@@ -10723,8 +10757,9 @@ static HChar *
 s390_irgen_MSEB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F32, mkexpr(op2addr));
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   put_fpr_w0(r1, qop(Iop_MSubF32, mkU32(Irrm_NEAREST),
+   put_fpr_w0(r1, qop(Iop_MSubF32, mkU32(rounding_mode),
                       get_fpr_w0(r1), op2, get_fpr_w0(r3)));
 
    return "mseb";
@@ -10734,8 +10769,9 @@ static HChar *
 s390_irgen_MSDB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F64, mkexpr(op2addr));
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   put_fpr_dw0(r1, qop(Iop_MSubF64, mkU32(Irrm_NEAREST),
+   put_fpr_dw0(r1, qop(Iop_MSubF64, mkU32(rounding_mode),
                        get_fpr_dw0(r1), op2, get_fpr_dw0(r3)));
 
    return "msdb";
@@ -10745,8 +10781,9 @@ static HChar *
 s390_irgen_SQEBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   assign(result, binop(Iop_SqrtF32, mkU32(Irrm_NEAREST), get_fpr_w0(r2)));
+   assign(result, binop(Iop_SqrtF32, mkU32(rounding_mode), get_fpr_w0(r2)));
    put_fpr_w0(r1, mkexpr(result));
 
    return "sqebr";
@@ -10756,8 +10793,9 @@ static HChar *
 s390_irgen_SQDBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   assign(result, binop(Iop_SqrtF64, mkU32(Irrm_NEAREST), get_fpr_dw0(r2)));
+   assign(result, binop(Iop_SqrtF64, mkU32(rounding_mode), get_fpr_dw0(r2)));
    put_fpr_dw0(r1, mkexpr(result));
 
    return "sqdbr";
@@ -10767,8 +10805,9 @@ static HChar *
 s390_irgen_SQXBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F128);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
-   assign(result, binop(Iop_SqrtF128, mkU32(Irrm_NEAREST), get_fpr_pair(r2)));
+   assign(result, binop(Iop_SqrtF128, mkU32(rounding_mode), get_fpr_pair(r2)));
    put_fpr_pair(r1, mkexpr(result));
 
    return "sqxbr";
@@ -10778,9 +10817,10 @@ static HChar *
 s390_irgen_SQEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F32);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op, load(Ity_F32, mkexpr(op2addr)));
-   put_fpr_w0(r1, binop(Iop_SqrtF32, mkU32(Irrm_NEAREST), mkexpr(op)));
+   put_fpr_w0(r1, binop(Iop_SqrtF32, mkU32(rounding_mode), mkexpr(op)));
 
    return "sqeb";
 }
@@ -10789,9 +10829,10 @@ static HChar *
 s390_irgen_SQDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F64);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op, load(Ity_F64, mkexpr(op2addr)));
-   put_fpr_dw0(r1, binop(Iop_SqrtF64, mkU32(Irrm_NEAREST), mkexpr(op)));
+   put_fpr_dw0(r1, binop(Iop_SqrtF64, mkU32(rounding_mode), mkexpr(op)));
 
    return "sqdb";
 }
@@ -10802,10 +10843,11 @@ s390_irgen_SXBR(UChar r1, UChar r2)
    IRTemp op1 = newTemp(Ity_F128);
    IRTemp op2 = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_F128);
+   IRRoundingMode rounding_mode = encode_rounding_mode(S390_ROUND_PER_FPC);
 
    assign(op1, get_fpr_pair(r1));
    assign(op2, get_fpr_pair(r2));
-   assign(result, triop(Iop_SubF128, mkU32(Irrm_NEAREST), mkexpr(op1),
+   assign(result, triop(Iop_SubF128, mkU32(rounding_mode), mkexpr(op1),
                         mkexpr(op2)));
    put_fpr_pair(r1, mkexpr(result));
    s390_cc_thunk_put1f128(S390_CC_OP_BFP_RESULT_128, result);

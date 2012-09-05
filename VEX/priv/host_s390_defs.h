@@ -255,14 +255,17 @@ typedef enum {
 } s390_cc_t;
 
 
-/* Rounding mode as it is encoded in the m3/m4 fields of certain
+/* Rounding mode as it is encoded in the m3 field of certain
    instructions (e.g. CFEBR) */
 typedef enum {
-/* S390_ROUND_NEAREST_AWAY = 1, not supported */
-   S390_ROUND_NEAREST_EVEN = 4,
-   S390_ROUND_ZERO         = 5,
-   S390_ROUND_POSINF       = 6,
-   S390_ROUND_NEGINF       = 7
+   S390_ROUND_PER_FPC       = 0,
+   S390_ROUND_NEAREST_AWAY  = 1,
+   /* 2 is not allowed */
+   S390_ROUND_PREPARE_SHORT = 3,
+   S390_ROUND_NEAREST_EVEN  = 4,
+   S390_ROUND_ZERO          = 5,
+   S390_ROUND_POSINF        = 6,
+   S390_ROUND_NEGINF        = 7
 } s390_round_t;
 
 

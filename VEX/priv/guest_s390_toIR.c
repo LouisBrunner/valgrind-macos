@@ -8668,6 +8668,10 @@ static HChar *
 s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != S390_ROUND_PER_FPC) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = S390_ROUND_PER_FPC;
+   }
    IRTemp op = newTemp(Ity_F64);
 
    assign(op, get_fpr_dw0(r2));
@@ -10652,6 +10656,10 @@ static HChar *
 s390_irgen_LDXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != S390_ROUND_PER_FPC) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = S390_ROUND_PER_FPC;
+   }
    IRTemp result = newTemp(Ity_F64);
 
    assign(result, binop(Iop_F128toF64, mkexpr(encode_bfp_rounding_mode(m3)),
@@ -10665,6 +10673,10 @@ static HChar *
 s390_irgen_LEXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
+   if (! s390_host_has_fpext && m3 != S390_ROUND_PER_FPC) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m3 = S390_ROUND_PER_FPC;
+   }
    IRTemp result = newTemp(Ity_F32);
 
    assign(result, binop(Iop_F128toF32, mkexpr(encode_bfp_rounding_mode(m3)),

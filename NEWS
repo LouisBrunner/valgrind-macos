@@ -45,6 +45,7 @@ m = merged into 3_8_BRANCH
 305690 m  [381] DRD reporting invalid semaphore when sem_trywait returns
                 EAGAIN or sem_timedwait returns ETIMEDOUT
 305926 m  [381] Invalid alignment checks for some AVX instructions
+306054    [390] s390x: Condition code computation for convert-to-int/logical
 n-i-bz m  [381] shmat of a segment > 4Gb does not work 
 n-i-bz m  [381] simulate_control_c script wrong USR1 sig# on mips
 n-i-bz m  [381] vgdb ptrace calls wrong on mips [...]

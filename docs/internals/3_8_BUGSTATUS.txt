@@ -100,8 +100,6 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
 306035  s390x: Fix IR generation for LAAG and friends
 
-306054  s390x: condition code computation for certain bfp insns
-
 306098  s390x: alternate opcode form for convert to/from fixed
 
 -- Sat 1 Sept 2012 10pm

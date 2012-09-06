@@ -412,7 +412,7 @@ void DRD_(clean_memory)(const Addr a1, const SizeT len)
 static const Bool trace_sectsuppr = False;
 
 /**
- * Suppress data race reports on all addresses contained in .plt and
+ * Suppress data race reports on all addresses contained in .plt, .got and
  * .got.plt sections inside the address range [ a, a + len [. The data in
  * these sections is modified by _dl_relocate_object() every time a function
  * in a shared library is called for the first time. Since the first call
@@ -420,6 +420,7 @@ static const Bool trace_sectsuppr = False;
  * such calls can cause conflicting accesses. See also Ulrich Drepper's
  * paper "How to Write Shared Libraries" for more information about relocation
  * (http://people.redhat.com/drepper/dsohowto.pdf).
+ * Note: the contents of the .got section is only modified by the MIPS resolver.
  */
 static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 {
@@ -454,6 +455,16 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 	    VG_(dmsg)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
          DRD_(start_suppression)(avma, avma + size, ".gotplt");
+      }
+
+      avma = VG_(DebugInfo_get_got_avma)(di);
+      size = VG_(DebugInfo_get_got_size)(di);
+      tl_assert((avma && size) || (avma == 0 && size == 0));
+      if (size > 0) {
+	 if (trace_sectsuppr)
+	    VG_(dmsg)("Suppressing .got @ 0x%lx size %ld\n", avma, size);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOT);
+         DRD_(start_suppression)(avma, avma + size, ".got");
       }
    }
 }

@@ -188,6 +188,8 @@ Addr          VG_(DebugInfo_get_plt_avma)    ( const DebugInfo *di );
 SizeT         VG_(DebugInfo_get_plt_size)    ( const DebugInfo *di );
 Addr          VG_(DebugInfo_get_gotplt_avma) ( const DebugInfo *di );
 SizeT         VG_(DebugInfo_get_gotplt_size) ( const DebugInfo *di );
+Addr          VG_(DebugInfo_get_got_avma)    ( const DebugInfo *di );
+SizeT         VG_(DebugInfo_get_got_size)    ( const DebugInfo *di );
 const UChar*  VG_(DebugInfo_get_soname)      ( const DebugInfo *di );
 const UChar*  VG_(DebugInfo_get_filename)    ( const DebugInfo *di );
 PtrdiffT      VG_(DebugInfo_get_text_bias)   ( const DebugInfo *di );

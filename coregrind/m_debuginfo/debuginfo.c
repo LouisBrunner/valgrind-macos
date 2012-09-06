@@ -3788,6 +3788,16 @@ SizeT VG_(DebugInfo_get_gotplt_size)(const DebugInfo* di)
    return di->gotplt_present ? di->gotplt_size : 0; 
 }
 
+Addr VG_(DebugInfo_get_got_avma)(const DebugInfo* di)
+{
+   return di->got_present ? di->got_avma : 0; 
+}
+
+SizeT VG_(DebugInfo_get_got_size)(const DebugInfo* di)
+{
+   return di->got_present ? di->got_size : 0; 
+}
+
 const UChar* VG_(DebugInfo_get_soname)(const DebugInfo* di)
 {
    return di->soname;

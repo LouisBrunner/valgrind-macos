@@ -925,16 +925,19 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (i >= max_n_ips)
          break;
 
+      D3UnwindRegs uregs_copy = uregs;
       if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
          if (debug)
             VG_(printf)("USING CFI: pc: 0x%lx, sp: 0x%lx, ra: 0x%lx\n",
                         uregs.pc, uregs.sp, uregs.ra);
-         if (0 == uregs.pc || 1 == uregs.pc) break;
-         if (sps) sps[i] = uregs.sp;
-         if (fps) fps[i] = uregs.fp;
-         ips[i++] = uregs.pc - 4;
-         uregs.pc = uregs.pc - 4;
-         continue;
+         if (0 != uregs.pc && 1 != uregs.pc) {
+            if (sps) sps[i] = uregs.sp;
+            if (fps) fps[i] = uregs.fp;
+            ips[i++] = uregs.pc - 4;
+            uregs.pc = uregs.pc - 4;
+            continue;
+         } else
+            uregs = uregs_copy;
       }
 
       int seen_sp_adjust = 0;

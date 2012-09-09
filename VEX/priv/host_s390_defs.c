@@ -3242,6 +3242,9 @@ s390_emit_CXGBR(UChar *p, UChar r1, UChar r2)
 static UChar *
 s390_emit_CELFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "celfbr", r1, m3, r2, m4);
 
@@ -3252,6 +3255,9 @@ s390_emit_CELFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CDLFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdlfbr", r1, m3, r2, m4);
 
@@ -3262,6 +3268,9 @@ s390_emit_CDLFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CXLFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxlfbr", r1, m3, r2, m4);
 
@@ -3272,6 +3281,9 @@ s390_emit_CXLFBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CELGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "celgbr", r1, m3, r2, m4);
 
@@ -3282,6 +3294,9 @@ s390_emit_CELGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CDLGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdlgbr", r1, m3, r2, m4);
 
@@ -3292,6 +3307,9 @@ s390_emit_CDLGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CXLGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxlgbr", r1, m3, r2, m4);
 
@@ -3302,6 +3320,9 @@ s390_emit_CXLGBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CLFEBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfebr", r1, m3, r2, m4);
 
@@ -3312,6 +3333,9 @@ s390_emit_CLFEBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CLFDBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfdbr", r1, m3, r2, m4);
 
@@ -3322,6 +3346,9 @@ s390_emit_CLFDBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CLFXBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfxbr", r1, m3, r2, m4);
 
@@ -3332,6 +3359,9 @@ s390_emit_CLFXBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CLGEBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgebr", r1, m3, r2, m4);
 
@@ -3342,6 +3372,9 @@ s390_emit_CLGEBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CLGDBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgdbr", r1, m3, r2, m4);
 
@@ -3352,6 +3385,9 @@ s390_emit_CLGDBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_CLGXBR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgxbr", r1, m3, r2, m4);
 

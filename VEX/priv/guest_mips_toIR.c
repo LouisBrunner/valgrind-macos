@@ -889,8 +889,13 @@ static IRExpr *getDReg(UInt dregNo)
    IRTemp t4 = newTemp(Ity_I32);
    IRTemp t5 = newTemp(Ity_I64);
 
+#if defined (_MIPSEL)
    assign(t0, getFReg(dregNo));
    assign(t1, getFReg(dregNo + 1));
+#elif defined (_MIPSEB)
+   assign(t0, getFReg(dregNo + 1));
+   assign(t1, getFReg(dregNo));
+#endif
 
    assign(t3, unop(Iop_ReinterpF32asI32, mkexpr(t0)));
    assign(t4, unop(Iop_ReinterpF32asI32, mkexpr(t1)));
@@ -920,8 +925,13 @@ static void putDReg(UInt dregNo, IRExpr * e)
    assign(t6, unop(Iop_ReinterpF64asI64, mkexpr(t1)));
    assign(t4, unop(Iop_64HIto32, mkexpr(t6)));  // hi
    assign(t5, unop(Iop_64to32, mkexpr(t6))); //lo
+#if defined (_MIPSEL)
    putFReg(dregNo, unop(Iop_ReinterpI32asF32, mkexpr(t5)));
    putFReg(dregNo + 1, unop(Iop_ReinterpI32asF32, mkexpr(t4)));
+#elif defined (_MIPSEB)
+   putFReg(dregNo + 1, unop(Iop_ReinterpI32asF32, mkexpr(t5)));
+   putFReg(dregNo, unop(Iop_ReinterpI32asF32, mkexpr(t4)));
+#endif
 }
 
 static void setFPUCondCode(IRExpr * e, UInt cc)
@@ -1567,9 +1577,15 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   {  //D
                      DIP("recip.d f%d, f%d\n", fd, fs);
                      IRExpr *rm = get_IR_roundingmode();
+#if defined (_MIPSEL)
                      putDReg(fd, triop(Iop_DivF64, rm, 
                                  unop(Iop_ReinterpI64asF64,
                                  mkU64(0x3FF0000000000000ULL)), getDReg(fs)));
+#elif defined (_MIPSEB)
+                     putDReg(fd, triop(Iop_DivF64, rm,
+                                 unop(Iop_ReinterpI64asF64,
+                                 mkU64(0x000000003FF00000ULL)), getDReg(fs)));
+#endif
                      break;
                   }
                default:

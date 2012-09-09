@@ -2463,7 +2463,7 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
    }
 
    /* --------- LOAD --------- */
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
+   if (e->tag == Iex_Load) {
       HReg r_dst = newVRegD(env);
       MIPSAMode *am_addr;
       vassert(e->Iex.Load.ty == Ity_F64);

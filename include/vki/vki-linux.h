@@ -3009,6 +3009,50 @@ struct vki_hwtstamp_config {
 #define VKI_UI_SET_SWBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 109, int)
 #define VKI_UI_SET_PROPBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 110, int)
 
+//----------------------------------------------------------------------
+// Xen privcmd IOCTL
+//----------------------------------------------------------------------
+
+typedef unsigned long __vki_xen_pfn_t;
+
+struct vki_xen_privcmd_hypercall {
+       __vki_u64 op;
+       __vki_u64 arg[5];
+};
+
+struct vki_xen_privcmd_mmap_entry {
+        __vki_u64 va;
+        __vki_u64 mfn;
+        __vki_u64 npages;
+};
+
+struct vki_xen_privcmd_mmap {
+        int num;
+        __vki_u16 dom; /* target domain */
+        struct vki_xen_privcmd_mmap_entry *entry;
+};
+
+struct vki_xen_privcmd_mmapbatch {
+        int num;     /* number of pages to populate */
+        __vki_u16 dom; /* target domain */
+        __vki_u64 addr;  /* virtual address */
+        __vki_xen_pfn_t *arr; /* array of mfns - top nibble set on err */
+};
+
+struct vki_xen_privcmd_mmapbatch_v2 {
+        unsigned int num; /* number of pages to populate */
+        __vki_u16 dom;      /* target domain */
+        __vki_u64 addr;       /* virtual address */
+        const __vki_xen_pfn_t *arr; /* array of mfns */
+        int __user *err;  /* array of error codes */
+};
+
+#define VKI_XEN_IOCTL_PRIVCMD_HYPERCALL    _VKI_IOC(_VKI_IOC_NONE, 'P', 0, sizeof(struct vki_xen_privcmd_hypercall))
+#define VKI_XEN_IOCTL_PRIVCMD_MMAP         _VKI_IOC(_VKI_IOC_NONE, 'P', 2, sizeof(struct vki_xen_privcmd_mmap))
+
+#define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH    _VKI_IOC(_VKI_IOC_NONE, 'P', 3, sizeof(struct vki_xen_privcmd_mmapbatch))
+#define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2 _VKI_IOC(_VKI_IOC_NONE, 'P', 4, sizeof(struct vki_xen_privcmd_mmapbatch_v2))
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

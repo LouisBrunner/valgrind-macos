@@ -64,4 +64,5 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-scnums-arm-linux.h	\
 	vki/vki-scnums-s390x-linux.h	\
 	vki/vki-scnums-mips32-linux.h	\
-	vki/vki-scnums-darwin.h
+       vki/vki-scnums-darwin.h         \
+       vki/vki-xen.h

@@ -63,7 +63,7 @@
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
 #include "priv_syswrap-linux.h"
-
+#include "priv_syswrap-xen.h"
 
 // Run a thread from beginning to end and return the thread's
 // scheduler-return-code.
@@ -5527,6 +5527,73 @@ PRE(sys_ioctl)
    case VKI_KVM_RUN:
       break;
 
+#ifdef ENABLE_XEN
+   case VKI_XEN_IOCTL_PRIVCMD_HYPERCALL: {
+      SyscallArgs harrghs;
+      struct vki_xen_privcmd_hypercall *args =
+         (struct vki_xen_privcmd_hypercall *)(ARG3);
+
+      if (!args)
+         break;
+
+      VG_(memset)(&harrghs, 0, sizeof(harrghs));
+      harrghs.sysno = args->op;
+      harrghs.arg1 = args->arg[0];
+      harrghs.arg2 = args->arg[1];
+      harrghs.arg3 = args->arg[2];
+      harrghs.arg4 = args->arg[3];
+      harrghs.arg5 = args->arg[4];
+      harrghs.arg6 = harrghs.arg7 = harrghs.arg8 = 0;
+
+      WRAPPER_PRE_NAME(xen, hypercall) (tid, layout, &harrghs, status, flags);
+
+      /* HACK. arg8 is used to return the number of hypercall
+       * arguments actually consumed! */
+      PRE_MEM_READ("hypercall", ARG3, sizeof(args->op) +
+                   ( sizeof(args->arg[0]) * harrghs.arg8 ) );
+
+      break;
+   }
+
+   case VKI_XEN_IOCTL_PRIVCMD_MMAP: {
+       struct vki_xen_privcmd_mmap *args =
+           (struct vki_xen_privcmd_mmap *)(ARG3);
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP",
+                    (Addr)&args->num, sizeof(args->num));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP",
+                    (Addr)&args->dom, sizeof(args->dom));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP",
+                    (Addr)args->entry, sizeof(*(args->entry)) * args->num);
+      break;
+   }
+   case VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH: {
+       struct vki_xen_privcmd_mmapbatch *args =
+           (struct vki_xen_privcmd_mmapbatch *)(ARG3);
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+                    (Addr)&args->num, sizeof(args->num));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+                    (Addr)&args->dom, sizeof(args->dom));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+                    (Addr)&args->addr, sizeof(args->addr));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+                    (Addr)args->arr, sizeof(*(args->arr)) * args->num);
+      break;
+   }
+   case VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2: {
+       struct vki_xen_privcmd_mmapbatch_v2 *args =
+           (struct vki_xen_privcmd_mmapbatch_v2 *)(ARG3);
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+                    (Addr)&args->num, sizeof(args->num));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+                    (Addr)&args->dom, sizeof(args->dom));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+                    (Addr)&args->addr, sizeof(args->addr));
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+                    (Addr)args->arr, sizeof(*(args->arr)) * args->num);
+      break;
+   }
+#endif
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -6523,6 +6590,44 @@ POST(sys_ioctl)
    case VKI_KVM_RUN:
    case VKI_KVM_S390_INITIAL_RESET:
       break;
+
+#ifdef ENABLE_XEN
+   case VKI_XEN_IOCTL_PRIVCMD_HYPERCALL: {
+      SyscallArgs harrghs;
+      struct vki_xen_privcmd_hypercall *args =
+         (struct vki_xen_privcmd_hypercall *)(ARG3);
+
+      if (!args)
+         break;
+
+      VG_(memset)(&harrghs, 0, sizeof(harrghs));
+      harrghs.sysno = args->op;
+      harrghs.arg1 = args->arg[0];
+      harrghs.arg2 = args->arg[1];
+      harrghs.arg3 = args->arg[2];
+      harrghs.arg4 = args->arg[3];
+      harrghs.arg5 = args->arg[4];
+      harrghs.arg6 = harrghs.arg7 = harrghs.arg8 = 0;
+
+      WRAPPER_POST_NAME(xen, hypercall) (tid, &harrghs, status);
+      break;
+   };
+
+   case VKI_XEN_IOCTL_PRIVCMD_MMAP:
+      break;
+   case VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH: {
+       struct vki_xen_privcmd_mmapbatch *args =
+           (struct vki_xen_privcmd_mmapbatch *)(ARG3);
+       POST_MEM_WRITE((Addr)args->arr, sizeof(*(args->arr)) * args->num);
+      }
+      break;
+   case VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2: {
+       struct vki_xen_privcmd_mmapbatch_v2 *args =
+           (struct vki_xen_privcmd_mmapbatch_v2 *)(ARG3);
+       POST_MEM_WRITE((Addr)args->err, sizeof(*(args->err)) * args->num);
+      }
+      break;
+#endif
 
    default:
       /* EVIOC* are variable length and return size written on success */

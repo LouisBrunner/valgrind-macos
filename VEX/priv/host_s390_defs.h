@@ -133,15 +133,11 @@ typedef enum {
    S390_INSN_HELPER_CALL,
    S390_INSN_CAS,    /* compare and swap */
    S390_INSN_CDAS,   /* compare double and swap */
-   S390_INSN_BFP_BINOP, /* Binary floating point 32-bit / 64-bit */
+   S390_INSN_BFP_BINOP, /* Binary floating point */
    S390_INSN_BFP_UNOP,
    S390_INSN_BFP_TRIOP,
    S390_INSN_BFP_COMPARE,
    S390_INSN_BFP_CONVERT,
-   S390_INSN_BFP128_BINOP, /* Binary floating point 128-bit */
-   S390_INSN_BFP128_UNOP,
-   S390_INSN_BFP128_COMPARE,
-   S390_INSN_BFP128_CONVERT,
    S390_INSN_MFENCE,
    S390_INSN_GZERO,   /* Assign zero to a guest register */
    S390_INSN_GADD,    /* Add a value to a guest register */
@@ -282,7 +278,11 @@ s390_cc_invert(s390_cc_t cond)
 
 typedef struct {
    s390_insn_tag tag;
-   UChar size;            /* size of the result in bytes */
+   /* Usually, this is the size of the result of an operation.
+      Exceptions are:
+      - for comparisons it is the size of the operand
+   */
+   UChar size;
    union {
       struct {
          HReg        dst;
@@ -380,52 +380,52 @@ typedef struct {
          HReg      dst;       /* if not INVALID_HREG, put return value here */
          HChar    *name;      /* callee's name (for debugging) */
       } helper_call;
+
+      /* Floating point instructions (including conversion to/from floating
+         point
+
+         128-bit floating point requires register pairs. As the registers
+         in a register pair cannot be chosen independently it would suffice
+         to store only one register of the pair in order to represent it.
+         We chose not to do that as being explicit about all registers
+         helps with debugging and does not require special handling in 
+         e.g. s390_insn_get_reg_usage, It'd be all to easy to forget about
+         the "other" register in a pair if it is implicit.
+
+         The convention for all fp s390_insn is that the _hi register will
+         be used to store the result / operand of a 32/64-bit operation.
+         The _hi register holds the  8 bytes of HIgher significance of a
+         128-bit value (hence the suffix). However, it is the lower numbered
+         register of a register pair. POP says that the lower numbered
+         register is used to identify the pair in an insn encoding. So,
+         when an insn is emitted, only the _hi registers need to be looked
+         at. Nothing special is needed for 128-bit BFP which is nice.
+      */
+
+      /* There are currently no ternary 128-bit BFP operations. */
       struct {
          s390_bfp_triop_t tag;
          s390_round_t     rounding_mode;
-         HReg             dst; /* first operand */
-         HReg             op2; /* second operand */
-         HReg             op3; /* third operand */
+         HReg         dst;
+         HReg         op2;
+         HReg         op3;
       } bfp_triop;
       struct {
          s390_bfp_binop_t tag;
          s390_round_t     rounding_mode;
-         HReg             dst; /* left operand */
-         HReg             op2; /* right operand */
+         HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op2_hi; /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op2_lo; /* 128-bit operand low part */
       } bfp_binop;
-      struct {
-         s390_bfp_unop_t tag;
-         s390_round_t    rounding_mode;
-         HReg            dst;  /* result */
-         HReg            op;   /* operand */
-      } bfp_unop;
-      struct {
-         s390_conv_t     tag;
-         s390_round_t    rounding_mode;
-         HReg            dst;  /* result */
-         HReg            op;   /* operand */
-      } bfp_convert;
-      struct {
-         HReg            dst;  /* condition code in s390 encoding */
-         HReg            op1;
-         HReg            op2;
-      } bfp_compare;
-      struct {
-         s390_bfp_binop_t tag;
-         s390_round_t     rounding_mode;
-         HReg             dst_hi; /* left operand; high part */
-         HReg             dst_lo; /* left operand; low part */
-         HReg             op2_hi; /* right operand; high part */
-         HReg             op2_lo; /* right operand; low part */
-      } bfp128_binop;
       struct {
          s390_bfp_unop_t  tag;
          s390_round_t     rounding_mode;
-         HReg             dst_hi; /* result; high part */
-         HReg             dst_lo; /* result; low part */
-         HReg             op_hi;  /* operand; high part */
-         HReg             op_lo;  /* operand; low part */
-      } bfp128_unop;
+         HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op_lo;  /* 128-bit operand low part */
+      } bfp_unop;
       struct {
          s390_conv_t  tag;
          s390_round_t rounding_mode;
@@ -433,14 +433,16 @@ typedef struct {
          HReg         dst_lo; /* 128-bit result low part */
          HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
          HReg         op_lo;  /* 128-bit operand low part */
-      } bfp128_convert;
+      } bfp_convert;
       struct {
-         HReg             dst;    /* condition code in s390 encoding */
-         HReg             op1_hi; /* left operand; high part */
-         HReg             op1_lo; /* left operand; low part */
-         HReg             op2_hi; /* right operand; high part */
-         HReg             op2_lo; /* right operand; low part */
-      } bfp128_compare;
+         HReg         dst;     /* condition code in s390 encoding */
+         HReg         op1_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op1_lo;  /* 128-bit operand low part */
+         HReg         op2_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op2_lo;  /* 128-bit operand low part */
+      } bfp_compare;
+
+      /* Miscellaneous */
       struct {
          UInt             offset;
       } gzero;

@@ -1935,7 +1935,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
          dst = newVRegF(env);
-         addInstr(env, s390_insn_bfp128_convert_from(16, conv, dst, f13, f15,
+         addInstr(env, s390_insn_bfp128_convert_from(size, conv, dst, f13, f15,
                                                      rounding_mode));
          return dst;
       }

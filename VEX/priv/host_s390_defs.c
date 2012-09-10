@@ -664,58 +664,42 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       break;
 
    case S390_INSN_BFP_BINOP:
-      addHRegUse(u, HRmWrite, insn->variant.bfp_binop.dst);
-      addHRegUse(u, HRmRead,  insn->variant.bfp_binop.dst);  /* left */
-      addHRegUse(u, HRmRead,  insn->variant.bfp_binop.op2);  /* right */
+      addHRegUse(u, HRmWrite, insn->variant.bfp_binop.dst_hi);
+      addHRegUse(u, HRmRead,  insn->variant.bfp_binop.dst_hi);  /* left */
+      addHRegUse(u, HRmRead,  insn->variant.bfp_binop.op2_hi);  /* right */
+      if (insn->size == 16) {
+         addHRegUse(u, HRmWrite, insn->variant.bfp_binop.dst_lo);
+         addHRegUse(u, HRmRead,  insn->variant.bfp_binop.dst_lo);  /* left */
+         addHRegUse(u, HRmRead,  insn->variant.bfp_binop.op2_lo);  /* right */
+      }
       break;
 
    case S390_INSN_BFP_UNOP:
-      addHRegUse(u, HRmWrite, insn->variant.bfp_unop.dst);
-      addHRegUse(u, HRmRead,  insn->variant.bfp_unop.op);  /* operand */
+      addHRegUse(u, HRmWrite, insn->variant.bfp_unop.dst_hi);
+      addHRegUse(u, HRmRead,  insn->variant.bfp_unop.op_hi);  /* operand */
+      if (insn->size == 16) {
+         addHRegUse(u, HRmWrite, insn->variant.bfp_unop.dst_lo);
+         addHRegUse(u, HRmRead,  insn->variant.bfp_unop.op_lo);  /* operand */
+      }
       break;
 
    case S390_INSN_BFP_COMPARE:
       addHRegUse(u, HRmWrite, insn->variant.bfp_compare.dst);
-      addHRegUse(u, HRmRead,  insn->variant.bfp_compare.op1);  /* left */
-      addHRegUse(u, HRmRead,  insn->variant.bfp_compare.op2);  /* right */
+      addHRegUse(u, HRmRead,  insn->variant.bfp_compare.op1_hi);  /* left */
+      addHRegUse(u, HRmRead,  insn->variant.bfp_compare.op2_hi);  /* right */
+      if (insn->size == 16) {
+         addHRegUse(u, HRmRead,  insn->variant.bfp_compare.op1_lo);  /* left */
+         addHRegUse(u, HRmRead,  insn->variant.bfp_compare.op2_lo);  /* right */
+      }
       break;
 
    case S390_INSN_BFP_CONVERT:
-      addHRegUse(u, HRmWrite, insn->variant.bfp_convert.dst);
-      addHRegUse(u, HRmRead,  insn->variant.bfp_convert.op);  /* operand */
-      break;
-
-   case S390_INSN_BFP128_BINOP:
-      addHRegUse(u, HRmWrite, insn->variant.bfp128_binop.dst_hi);
-      addHRegUse(u, HRmWrite, insn->variant.bfp128_binop.dst_lo);
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_binop.dst_hi);  /* left */
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_binop.dst_lo);  /* left */
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_binop.op2_hi);  /* right */
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_binop.op2_lo);  /* right */
-      break;
-
-   case S390_INSN_BFP128_COMPARE:
-      addHRegUse(u, HRmWrite, insn->variant.bfp128_compare.dst);
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_compare.op1_hi);  /* left */
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_compare.op1_lo);  /* left */
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_compare.op2_hi);  /* right */
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_compare.op2_lo);  /* right */
-      break;
-
-   case S390_INSN_BFP128_UNOP:
-      addHRegUse(u, HRmWrite, insn->variant.bfp128_unop.dst_hi);
-      addHRegUse(u, HRmWrite, insn->variant.bfp128_unop.dst_lo);
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_unop.op_hi);
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_unop.op_lo);
-      break;
-
-   case S390_INSN_BFP128_CONVERT:
-      addHRegUse(u, HRmWrite, insn->variant.bfp128_convert.dst_hi);
-      if (insn->variant.bfp128_convert.dst_lo != INVALID_HREG)
-         addHRegUse(u, HRmWrite, insn->variant.bfp128_convert.dst_lo);
-      addHRegUse(u, HRmRead,  insn->variant.bfp128_convert.op_hi);
-      if (insn->variant.bfp128_convert.op_lo != INVALID_HREG)
-         addHRegUse(u, HRmRead, insn->variant.bfp128_convert.op_lo);
+      addHRegUse(u, HRmWrite, insn->variant.bfp_convert.dst_hi);
+      if (insn->variant.bfp_convert.dst_lo != INVALID_HREG)
+         addHRegUse(u, HRmWrite, insn->variant.bfp_convert.dst_lo);
+      addHRegUse(u, HRmRead,  insn->variant.bfp_convert.op_hi);
+      if (insn->variant.bfp_convert.op_lo != INVALID_HREG)
+         addHRegUse(u, HRmRead, insn->variant.bfp_convert.op_lo);
       break;
 
    case S390_INSN_MFENCE:
@@ -880,80 +864,66 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       break;
 
    case S390_INSN_BFP_TRIOP:
-      insn->variant.bfp_triop.dst = lookupHRegRemap(m, insn->variant.bfp_triop.dst);
-      insn->variant.bfp_triop.op2 = lookupHRegRemap(m, insn->variant.bfp_triop.op2);
-      insn->variant.bfp_triop.op3 = lookupHRegRemap(m, insn->variant.bfp_triop.op3);
+      insn->variant.bfp_triop.dst =
+         lookupHRegRemap(m, insn->variant.bfp_triop.dst);
+      insn->variant.bfp_triop.op2 =
+         lookupHRegRemap(m, insn->variant.bfp_triop.op2);
+      insn->variant.bfp_triop.op3 =
+         lookupHRegRemap(m, insn->variant.bfp_triop.op3);
       break;
 
    case S390_INSN_BFP_BINOP:
-      insn->variant.bfp_binop.dst = lookupHRegRemap(m, insn->variant.bfp_binop.dst);
-      insn->variant.bfp_binop.op2 = lookupHRegRemap(m, insn->variant.bfp_binop.op2);
+      insn->variant.bfp_binop.dst_hi =
+         lookupHRegRemap(m, insn->variant.bfp_binop.dst_hi);
+      insn->variant.bfp_binop.op2_hi =
+         lookupHRegRemap(m, insn->variant.bfp_binop.op2_hi);
+      if (insn->size == 16) {
+         insn->variant.bfp_unop.dst_lo =
+            lookupHRegRemap(m, insn->variant.bfp_binop.dst_lo);
+         insn->variant.bfp_unop.op_lo  =
+            lookupHRegRemap(m, insn->variant.bfp_binop.op2_lo);
+      }
       break;
 
    case S390_INSN_BFP_UNOP:
-      insn->variant.bfp_unop.dst = lookupHRegRemap(m, insn->variant.bfp_unop.dst);
-      insn->variant.bfp_unop.op  = lookupHRegRemap(m, insn->variant.bfp_unop.op);
+      insn->variant.bfp_unop.dst_hi =
+         lookupHRegRemap(m, insn->variant.bfp_unop.dst_hi);
+      insn->variant.bfp_unop.op_hi  =
+         lookupHRegRemap(m, insn->variant.bfp_unop.op_hi);
+      if (insn->size == 16) {
+         insn->variant.bfp_unop.dst_lo =
+            lookupHRegRemap(m, insn->variant.bfp_unop.dst_lo);
+         insn->variant.bfp_unop.op_lo  =
+            lookupHRegRemap(m, insn->variant.bfp_unop.op_lo);
+      }
       break;
 
    case S390_INSN_BFP_COMPARE:
-      insn->variant.bfp_compare.dst = lookupHRegRemap(m, insn->variant.bfp_compare.dst);
-      insn->variant.bfp_compare.op1 = lookupHRegRemap(m, insn->variant.bfp_compare.op1);
-      insn->variant.bfp_compare.op2 = lookupHRegRemap(m, insn->variant.bfp_compare.op2);
+      insn->variant.bfp_compare.dst =
+         lookupHRegRemap(m, insn->variant.bfp_compare.dst);
+      insn->variant.bfp_compare.op1_hi =
+         lookupHRegRemap(m, insn->variant.bfp_compare.op1_hi);
+      insn->variant.bfp_compare.op2_hi =
+         lookupHRegRemap(m, insn->variant.bfp_compare.op2_hi);
+      if (insn->size == 16) {
+         insn->variant.bfp_compare.op1_lo =
+            lookupHRegRemap(m, insn->variant.bfp_compare.op1_lo);
+         insn->variant.bfp_compare.op2_lo =
+            lookupHRegRemap(m, insn->variant.bfp_compare.op2_lo);
+      }
       break;
 
    case S390_INSN_BFP_CONVERT:
-      insn->variant.bfp_convert.dst =
-         lookupHRegRemap(m, insn->variant.bfp_convert.dst);
-      insn->variant.bfp_convert.op  =
-         lookupHRegRemap(m, insn->variant.bfp_convert.op);
-      break;
-
-   case S390_INSN_BFP128_BINOP:
-      insn->variant.bfp128_binop.dst_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_binop.dst_hi);
-      insn->variant.bfp128_binop.dst_lo =
-         lookupHRegRemap(m, insn->variant.bfp128_binop.dst_lo);
-      insn->variant.bfp128_binop.op2_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_binop.op2_hi);
-      insn->variant.bfp128_binop.op2_lo =
-         lookupHRegRemap(m, insn->variant.bfp128_binop.op2_lo);
-      break;
-
-   case S390_INSN_BFP128_COMPARE:
-      insn->variant.bfp128_compare.dst =
-         lookupHRegRemap(m, insn->variant.bfp128_compare.dst);
-      insn->variant.bfp128_compare.op1_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_compare.op1_hi);
-      insn->variant.bfp128_compare.op1_lo =
-         lookupHRegRemap(m, insn->variant.bfp128_compare.op1_lo);
-      insn->variant.bfp128_compare.op2_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_compare.op2_hi);
-      insn->variant.bfp128_compare.op2_lo =
-         lookupHRegRemap(m, insn->variant.bfp128_compare.op2_lo);
-      break;
-
-   case S390_INSN_BFP128_UNOP:
-      insn->variant.bfp128_unop.dst_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_unop.dst_hi);
-      insn->variant.bfp128_unop.dst_lo =
-         lookupHRegRemap(m, insn->variant.bfp128_unop.dst_lo);
-      insn->variant.bfp128_unop.op_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_unop.op_hi);
-      insn->variant.bfp128_unop.op_lo =
-         lookupHRegRemap(m, insn->variant.bfp128_unop.op_lo);
-      break;
-
-   case S390_INSN_BFP128_CONVERT:
-      insn->variant.bfp128_convert.dst_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_convert.dst_hi);
-      if (insn->variant.bfp128_convert.dst_lo != INVALID_HREG)
-         insn->variant.bfp128_convert.dst_lo =
-            lookupHRegRemap(m, insn->variant.bfp128_convert.dst_lo);
-      insn->variant.bfp128_convert.op_hi =
-         lookupHRegRemap(m, insn->variant.bfp128_convert.op_hi);
-      if (insn->variant.bfp128_convert.op_lo != INVALID_HREG)
-         insn->variant.bfp128_convert.op_lo =
-            lookupHRegRemap(m, insn->variant.bfp128_convert.op_lo);
+      insn->variant.bfp_convert.dst_hi =
+         lookupHRegRemap(m, insn->variant.bfp_convert.dst_hi);
+      if (insn->variant.bfp_convert.dst_lo != INVALID_HREG)
+         insn->variant.bfp_convert.dst_lo =
+            lookupHRegRemap(m, insn->variant.bfp_convert.dst_lo);
+      insn->variant.bfp_convert.op_hi =
+         lookupHRegRemap(m, insn->variant.bfp_convert.op_hi);
+      if (insn->variant.bfp_convert.op_lo != INVALID_HREG)
+         insn->variant.bfp_convert.op_lo =
+            lookupHRegRemap(m, insn->variant.bfp_convert.op_lo);
       break;
 
    case S390_INSN_MFENCE:
@@ -4686,6 +4656,8 @@ s390_insn_bfp_triop(UChar size, s390_bfp_triop_t tag, HReg dst, HReg op2,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
+   vassert(size == 4 || size == 8);
+
    insn->tag  = S390_INSN_BFP_TRIOP;
    insn->size = size;
    insn->variant.bfp_triop.tag = tag;
@@ -4704,11 +4676,15 @@ s390_insn_bfp_binop(UChar size, s390_bfp_binop_t tag, HReg dst, HReg op2,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
+   vassert(size == 4 || size == 8);
+
    insn->tag  = S390_INSN_BFP_BINOP;
    insn->size = size;
    insn->variant.bfp_binop.tag = tag;
-   insn->variant.bfp_binop.dst = dst;
-   insn->variant.bfp_binop.op2 = op2;
+   insn->variant.bfp_binop.dst_hi = dst;
+   insn->variant.bfp_binop.op2_hi = op2;
+   insn->variant.bfp_binop.dst_lo = INVALID_HREG;
+   insn->variant.bfp_binop.op2_lo = INVALID_HREG;
    insn->variant.bfp_binop.rounding_mode = rounding_mode;
 
    return insn;
@@ -4721,11 +4697,15 @@ s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst, HReg op,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
+   vassert(size == 4 || size == 8);
+
    insn->tag  = S390_INSN_BFP_UNOP;
    insn->size = size;
    insn->variant.bfp_unop.tag = tag;
-   insn->variant.bfp_unop.dst = dst;
-   insn->variant.bfp_unop.op  = op;
+   insn->variant.bfp_unop.dst_hi = dst;
+   insn->variant.bfp_unop.op_hi  = op;
+   insn->variant.bfp_unop.dst_lo = INVALID_HREG;
+   insn->variant.bfp_unop.op_lo  = INVALID_HREG;
    insn->variant.bfp_unop.rounding_mode = rounding_mode;
 
    return insn;
@@ -4742,8 +4722,10 @@ s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2)
    insn->tag  = S390_INSN_BFP_COMPARE;
    insn->size = size;
    insn->variant.bfp_compare.dst = dst;
-   insn->variant.bfp_compare.op1 = op1;
-   insn->variant.bfp_compare.op2 = op2;
+   insn->variant.bfp_compare.op1_hi = op1;
+   insn->variant.bfp_compare.op2_hi = op2;
+   insn->variant.bfp_compare.op1_lo = INVALID_HREG;
+   insn->variant.bfp_compare.op2_lo = INVALID_HREG;
 
    return insn;
 }
@@ -4755,16 +4737,35 @@ s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst, HReg op,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
+   vassert(size == 4 || size == 8);
+
    insn->tag  = S390_INSN_BFP_CONVERT;
    insn->size = size;
    insn->variant.bfp_convert.tag = tag;
-   insn->variant.bfp_convert.dst = dst;
-   insn->variant.bfp_convert.op  = op;
+   insn->variant.bfp_convert.dst_hi = dst;
+   insn->variant.bfp_convert.op_hi  = op;
+   insn->variant.bfp_convert.dst_lo = INVALID_HREG;
+   insn->variant.bfp_convert.op_lo  = INVALID_HREG;
    insn->variant.bfp_convert.rounding_mode = rounding_mode;
 
    return insn;
 }
 
+
+/* Check validity of a register pair for 128-bit BFP. Valid register
+   pairs are (0,2), (1,3), (4, 6), (5, 7), (8, 10), (9, 11), (12, 14),
+   and (13, 15). */
+static Bool
+is_valid_bfp128_regpair(HReg hi, HReg lo)
+{
+   UInt hi_regno = hregNumber(hi);
+   UInt lo_regno = hregNumber(lo);
+
+   if (lo_regno != hi_regno + 2) return False;
+   if ((hi_regno & 0x2) != 0) return False;
+
+   return True;
+}
 
 s390_insn *
 s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
@@ -4773,14 +4774,18 @@ s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_BFP128_BINOP;
+   vassert(size == 16);
+   vassert(is_valid_bfp128_regpair(dst_hi, dst_lo));
+   vassert(is_valid_bfp128_regpair(op2_hi, op2_lo));
+
+   insn->tag  = S390_INSN_BFP_BINOP;
    insn->size = size;
-   insn->variant.bfp128_binop.tag = tag;
-   insn->variant.bfp128_binop.dst_hi = dst_hi;
-   insn->variant.bfp128_binop.dst_lo = dst_lo;
-   insn->variant.bfp128_binop.op2_hi = op2_hi;
-   insn->variant.bfp128_binop.op2_lo = op2_lo;
-   insn->variant.bfp128_binop.rounding_mode = rounding_mode;
+   insn->variant.bfp_binop.tag = tag;
+   insn->variant.bfp_binop.dst_hi = dst_hi;
+   insn->variant.bfp_binop.dst_lo = dst_lo;
+   insn->variant.bfp_binop.op2_hi = op2_hi;
+   insn->variant.bfp_binop.op2_lo = op2_lo;
+   insn->variant.bfp_binop.rounding_mode = rounding_mode;
 
    return insn;
 }
@@ -4793,14 +4798,18 @@ s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t tag, HReg dst_hi,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_BFP128_UNOP;
+   vassert(size == 16);
+   vassert(is_valid_bfp128_regpair(dst_hi, dst_lo));
+   vassert(is_valid_bfp128_regpair(op_hi, op_lo));
+
+   insn->tag  = S390_INSN_BFP_UNOP;
    insn->size = size;
-   insn->variant.bfp128_unop.tag = tag;
-   insn->variant.bfp128_unop.dst_hi = dst_hi;
-   insn->variant.bfp128_unop.dst_lo = dst_lo;
-   insn->variant.bfp128_unop.op_hi = op_hi;
-   insn->variant.bfp128_unop.op_lo = op_lo;
-   insn->variant.bfp128_unop.rounding_mode = rounding_mode;
+   insn->variant.bfp_unop.tag = tag;
+   insn->variant.bfp_unop.dst_hi = dst_hi;
+   insn->variant.bfp_unop.dst_lo = dst_lo;
+   insn->variant.bfp_unop.op_hi = op_hi;
+   insn->variant.bfp_unop.op_lo = op_lo;
+   insn->variant.bfp_unop.rounding_mode = rounding_mode;
 
    return insn;
 }
@@ -4812,13 +4821,17 @@ s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi, HReg op1_lo,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_BFP128_COMPARE;
+   vassert(size == 16);
+   vassert(is_valid_bfp128_regpair(op1_hi, op1_lo));
+   vassert(is_valid_bfp128_regpair(op2_hi, op2_lo));
+
+   insn->tag  = S390_INSN_BFP_COMPARE;
    insn->size = size;
-   insn->variant.bfp128_compare.dst = dst;
-   insn->variant.bfp128_compare.op1_hi = op1_hi;
-   insn->variant.bfp128_compare.op1_lo = op1_lo;
-   insn->variant.bfp128_compare.op2_hi = op2_hi;
-   insn->variant.bfp128_compare.op2_lo = op2_lo;
+   insn->variant.bfp_compare.dst = dst;
+   insn->variant.bfp_compare.op1_hi = op1_hi;
+   insn->variant.bfp_compare.op1_lo = op1_lo;
+   insn->variant.bfp_compare.op2_hi = op2_hi;
+   insn->variant.bfp_compare.op2_lo = op2_lo;
 
    return insn;
 }
@@ -4831,14 +4844,24 @@ s390_insn_bfp128_convert(UChar size, s390_conv_t tag, HReg dst_hi,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_BFP128_CONVERT;
+   if (size == 16) {
+      /* From smaller size to 16 bytes */
+      vassert(is_valid_bfp128_regpair(dst_hi, dst_lo));
+      vassert(op_lo == INVALID_HREG);
+   } else {
+      /* From 16 bytes to smaller size */
+      vassert(is_valid_bfp128_regpair(op_hi, op_lo));
+      vassert(dst_lo == INVALID_HREG);
+   }
+
+   insn->tag  = S390_INSN_BFP_CONVERT;
    insn->size = size;
-   insn->variant.bfp128_convert.tag = tag;
-   insn->variant.bfp128_convert.dst_hi = dst_hi;
-   insn->variant.bfp128_convert.dst_lo = dst_lo;
-   insn->variant.bfp128_convert.op_hi = op_hi;
-   insn->variant.bfp128_convert.op_lo = op_lo;
-   insn->variant.bfp128_convert.rounding_mode = rounding_mode;
+   insn->variant.bfp_convert.tag = tag;
+   insn->variant.bfp_convert.dst_hi = dst_hi;
+   insn->variant.bfp_convert.dst_lo = dst_lo;
+   insn->variant.bfp_convert.op_hi = op_hi;
+   insn->variant.bfp_convert.op_lo = op_lo;
+   insn->variant.bfp_convert.rounding_mode = rounding_mode;
 
    return insn;
 }
@@ -5337,13 +5360,14 @@ s390_insn_as_string(const s390_insn *insn)
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R,%R", op,
-                   insn->variant.bfp_binop.dst  /* op1 same as dst */,
-                   insn->variant.bfp_binop.op2);
+                   insn->variant.bfp_binop.dst_hi  /* op1 same as dst */,
+                   insn->variant.bfp_binop.op2_hi);
       break;
 
    case S390_INSN_BFP_COMPARE:
       s390_sprintf(buf, "%M %R,%R,%R", "v-fcmp", insn->variant.bfp_compare.dst,
-                   insn->variant.bfp_compare.op1, insn->variant.bfp_compare.op2);
+                   insn->variant.bfp_compare.op1_hi,
+                   insn->variant.bfp_compare.op2_hi);
       break;
 
    case S390_INSN_BFP_UNOP:
@@ -5354,8 +5378,8 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_SQRT:        op = "v-fsqrt"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp_unop.dst,
-                   insn->variant.bfp_unop.op);
+      s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp_unop.dst_hi,
+                   insn->variant.bfp_unop.op_hi);
       break;
 
    case S390_INSN_BFP_CONVERT:
@@ -5392,63 +5416,8 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_F128_TO_F64: op = "v-f2f"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp_convert.dst,
-                   insn->variant.bfp_convert.op);
-      break;
-
-   case S390_INSN_BFP128_BINOP:
-      switch (insn->variant.bfp128_binop.tag) {
-      case S390_BFP_ADD:      op = "v-fadd";  break;
-      case S390_BFP_SUB:      op = "v-fsub";  break;
-      case S390_BFP_MUL:      op = "v-fmul";  break;
-      case S390_BFP_DIV:      op = "v-fdiv";  break;
-      default: goto fail;
-      }
-      /* Only write the register that identifies the register pair */
-      s390_sprintf(buf, "%M %R,%R", op,
-                   insn->variant.bfp128_binop.dst_hi  /* op1 same as dst */,
-                   insn->variant.bfp128_binop.op2_hi);
-      break;
-
-   case S390_INSN_BFP128_COMPARE:
-      /* Only write the register that identifies the register pair */
-      s390_sprintf(buf, "%M %R,%R,%R", "v-fcmp", insn->variant.bfp128_compare.dst,
-                   insn->variant.bfp128_compare.op1_hi,
-                   insn->variant.bfp128_compare.op2_hi);
-      break;
-
-   case S390_INSN_BFP128_UNOP:
-      switch (insn->variant.bfp128_unop.tag) {
-      case S390_BFP_ABS:         op = "v-fabs";  break;
-      case S390_BFP_NABS:        op = "v-fnabs"; break;
-      case S390_BFP_NEG:         op = "v-fneg";  break;
-      case S390_BFP_SQRT:        op = "v-fsqrt"; break;
-      default: goto fail;
-      }
-      /* Only write the register that identifies the register pair */
-      s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp128_unop.dst_hi,
-                   insn->variant.bfp128_unop.op_hi);
-      break;
-
-   case S390_INSN_BFP128_CONVERT:
-      switch (insn->variant.bfp128_convert.tag) {
-      case S390_BFP_I32_TO_F128:
-      case S390_BFP_I64_TO_F128: op = "v-i2f";   break;
-      case S390_BFP_U32_TO_F128:
-      case S390_BFP_U64_TO_F128: op = "v-u2f";   break;
-      case S390_BFP_F128_TO_I32:
-      case S390_BFP_F128_TO_I64: op = "v-f2i";   break;
-      case S390_BFP_F128_TO_U32:
-      case S390_BFP_F128_TO_U64: op = "v-f2u";   break;
-      case S390_BFP_F32_TO_F128:
-      case S390_BFP_F64_TO_F128:
-      case S390_BFP_F128_TO_F32:
-      case S390_BFP_F128_TO_F64: op = "v-f2f";   break;
-      default: goto fail;
-      }
-      /* Only write the register that identifies the register pair */
-      s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp128_convert.dst_hi,
-                   insn->variant.bfp128_convert.op_hi);
+      s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp_convert.dst_hi,
+                   insn->variant.bfp_convert.op_hi);
       break;
 
    case S390_INSN_MFENCE:
@@ -5534,8 +5503,8 @@ s390_insn_as_string(const s390_insn *insn)
          goto common;
       }
 
-   case S390_INSN_BFP_UNOP:
-      switch (insn->variant.bfp_unop.tag) {
+   case S390_INSN_BFP_CONVERT:
+      switch (insn->variant.bfp_convert.tag) {
       case S390_BFP_I32_TO_F32:
       case S390_BFP_I32_TO_F64:
       case S390_BFP_I32_TO_F128:
@@ -5559,27 +5528,6 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_F64_TO_U32:
       case S390_BFP_F64_TO_U64:
       case S390_BFP_F64_TO_F32:
-      case S390_BFP_F64_TO_F128: p += vex_sprintf(p, "8 -> "); goto common;
-      case S390_BFP_F128_TO_I32:
-      case S390_BFP_F128_TO_I64:
-      case S390_BFP_F128_TO_U32:
-      case S390_BFP_F128_TO_U64:
-      case S390_BFP_F128_TO_F32:
-      case S390_BFP_F128_TO_F64: p += vex_sprintf(p, "16 -> "); goto common;
-      default:
-         goto common;
-      }
-
-   case S390_INSN_BFP128_UNOP:
-      goto common;
-
-   case S390_INSN_BFP128_CONVERT:
-      switch (insn->variant.bfp128_convert.tag) {
-      case S390_BFP_I32_TO_F128:
-      case S390_BFP_U32_TO_F128:
-      case S390_BFP_F32_TO_F128: p += vex_sprintf(p, "4 -> "); goto common;
-      case S390_BFP_I64_TO_F128:
-      case S390_BFP_U64_TO_F128:
       case S390_BFP_F64_TO_F128: p += vex_sprintf(p, "8 -> "); goto common;
       case S390_BFP_F128_TO_I32:
       case S390_BFP_F128_TO_I64:
@@ -7389,8 +7337,8 @@ s390_insn_bfp_triop_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_bfp_binop_emit(UChar *buf, const s390_insn *insn)
 {
-   UInt r1 = hregNumber(insn->variant.bfp_binop.dst);
-   UInt r2 = hregNumber(insn->variant.bfp_binop.op2);
+   UInt r1 = hregNumber(insn->variant.bfp_binop.dst_hi);
+   UInt r2 = hregNumber(insn->variant.bfp_binop.op2_hi);
    s390_round_t rounding_mode = insn->variant.bfp_binop.rounding_mode;
 
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
@@ -7418,6 +7366,16 @@ s390_insn_bfp_binop_emit(UChar *buf, const s390_insn *insn)
       }
       break;
 
+   case 16:
+      switch (insn->variant.bfp_binop.tag) {
+      case S390_BFP_ADD:     buf = s390_emit_AXBR(buf, r1, r2); break;
+      case S390_BFP_SUB:     buf = s390_emit_SXBR(buf, r1, r2); break;
+      case S390_BFP_MUL:     buf = s390_emit_MXBR(buf, r1, r2); break;
+      case S390_BFP_DIV:     buf = s390_emit_DXBR(buf, r1, r2); break;
+      default:  goto fail;
+      }
+      break;
+
    default:  goto fail;
    }
 
@@ -7436,8 +7394,8 @@ s390_insn_bfp_binop_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
 {
-   UInt  r1 = hregNumber(insn->variant.bfp_unop.dst);
-   UInt  r2 = hregNumber(insn->variant.bfp_unop.op);
+   UInt  r1 = hregNumber(insn->variant.bfp_unop.dst_hi);
+   UInt  r2 = hregNumber(insn->variant.bfp_unop.op_hi);
    s390_round_t rounding_mode = insn->variant.bfp_unop.rounding_mode;
 
    /* For all other insns if a special rounding mode is requested,
@@ -7501,26 +7459,36 @@ s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_bfp_convert_emit(UChar *buf, const s390_insn *insn)
 {
-   UInt  r1 = hregNumber(insn->variant.bfp_convert.dst);
-   UInt  r2 = hregNumber(insn->variant.bfp_convert.op);
+   UInt  r1 = hregNumber(insn->variant.bfp_convert.dst_hi);
+   UInt  r2 = hregNumber(insn->variant.bfp_convert.op_hi);
    s390_round_t rounding_mode = insn->variant.bfp_convert.rounding_mode;
    s390_round_t m3 = rounding_mode;
 
-   /* The "convert to fixed" instructions have a field for the rounding
-      mode and no FPC modification is necessary. So we handle them
-      upfront. */
    switch (insn->variant.bfp_convert.tag) {
+      /* Convert to fixed */
    case S390_BFP_F32_TO_I32:  return s390_emit_CFEBR(buf, m3, r1, r2);
    case S390_BFP_F64_TO_I32:  return s390_emit_CFDBR(buf, m3, r1, r2);
+   case S390_BFP_F128_TO_I32: return s390_emit_CFXBR(buf, m3, r1, r2);
    case S390_BFP_F32_TO_I64:  return s390_emit_CGEBR(buf, m3, r1, r2);
    case S390_BFP_F64_TO_I64:  return s390_emit_CGDBR(buf, m3, r1, r2);
+   case S390_BFP_F128_TO_I64: return s390_emit_CGXBR(buf, m3, r1, r2);
 
-   /* We leave m4 as 0 - as gcc */
+      /* Convert to logical */
+      /* We leave m4 as 0 - as gcc */
    case S390_BFP_F32_TO_U32:  return s390_emit_CLFEBR(buf, m3, 0, r1, r2);
    case S390_BFP_F64_TO_U32:  return s390_emit_CLFDBR(buf, m3, 0, r1, r2);
+   case S390_BFP_F128_TO_U32: return s390_emit_CLFXBR(buf, m3, 0, r1, r2);
    case S390_BFP_F32_TO_U64:  return s390_emit_CLGEBR(buf, m3, 0, r1, r2);
    case S390_BFP_F64_TO_U64:  return s390_emit_CLGDBR(buf, m3, 0, r1, r2);
+   case S390_BFP_F128_TO_U64: return s390_emit_CLGXBR(buf, m3, 0, r1, r2);
 
+      /* Conversion to 128-bit never requires a rounding mode */
+   case S390_BFP_I32_TO_F128: return s390_emit_CXFBRA(buf, 0, 0, r1, r2);
+   case S390_BFP_I64_TO_F128: return s390_emit_CXGBRA(buf, 0, 0, r1, r2);
+   case S390_BFP_U32_TO_F128: return s390_emit_CXLFBR(buf, 0, 0, r1, r2);
+   case S390_BFP_U64_TO_F128: return s390_emit_CXLGBR(buf, 0, 0, r1, r2);
+   case S390_BFP_F32_TO_F128: return s390_emit_LXEBR(buf, r1, r2);
+   case S390_BFP_F64_TO_F128: return s390_emit_LXDBR(buf, r1, r2);
    default: break;
    }
 
@@ -7551,6 +7519,9 @@ s390_insn_bfp_convert_emit(UChar *buf, const s390_insn *insn)
    case S390_BFP_F64_TO_F32:  buf = s390_emit_LEDBRA(buf, 0, 0, r1, r2); break;
    case S390_BFP_F64_TO_F128: buf = s390_emit_LXDBR(buf, r1, r2); break;
 
+   case S390_BFP_F128_TO_F32: buf = s390_emit_LEXBRA(buf, 0, 0, r1, r2); break;
+   case S390_BFP_F128_TO_F64: buf = s390_emit_LDXBRA(buf, 0, 0, r1, r2); break;
+
    default: goto fail;
    }
 
@@ -7570,18 +7541,13 @@ static UChar *
 s390_insn_bfp_compare_emit(UChar *buf, const s390_insn *insn)
 {
    UInt dst = hregNumber(insn->variant.bfp_compare.dst);
-   UInt r1  = hregNumber(insn->variant.bfp_compare.op1);
-   UInt r2  = hregNumber(insn->variant.bfp_compare.op2);
+   UInt r1  = hregNumber(insn->variant.bfp_compare.op1_hi);
+   UInt r2  = hregNumber(insn->variant.bfp_compare.op2_hi);
 
    switch (insn->size) {
-   case 4:
-      buf = s390_emit_CEBR(buf, r1, r2);
-      break;
-
-   case 8:
-      buf = s390_emit_CDBR(buf, r1, r2);
-      break;
-
+   case 4:  buf = s390_emit_CEBR(buf, r1, r2); break;
+   case 8:  buf = s390_emit_CDBR(buf, r1, r2); break;
+   case 16: buf = s390_emit_CXBR(buf, r1, r2); break;
    default:  goto fail;
    }
 
@@ -7589,178 +7555,6 @@ s390_insn_bfp_compare_emit(UChar *buf, const s390_insn *insn)
 
  fail:
    vpanic("s390_insn_bfp_compare_emit");
-}
-
-
-static UChar *
-s390_insn_bfp128_binop_emit(UChar *buf, const s390_insn *insn)
-{
-   UInt r1_hi = hregNumber(insn->variant.bfp128_binop.dst_hi);
-   UInt r1_lo = hregNumber(insn->variant.bfp128_binop.dst_lo);
-   UInt r2_hi = hregNumber(insn->variant.bfp128_binop.op2_hi);
-   UInt r2_lo = hregNumber(insn->variant.bfp128_binop.op2_lo);
-   s390_round_t rounding_mode = insn->variant.bfp_binop.rounding_mode;
-
-   /* Paranoia */
-   vassert(insn->size == 16);
-   vassert(r1_lo == r1_hi + 2);
-   vassert(r2_lo == r2_hi + 2);
-   vassert((r1_hi & 0x2) == 0);
-   vassert((r2_hi & 0x2) == 0);
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-   }
-
-   switch (insn->variant.bfp128_binop.tag) {
-   case S390_BFP_ADD:     buf = s390_emit_AXBR(buf, r1_hi, r2_hi); break;
-   case S390_BFP_SUB:     buf = s390_emit_SXBR(buf, r1_hi, r2_hi); break;
-   case S390_BFP_MUL:     buf = s390_emit_MXBR(buf, r1_hi, r2_hi); break;
-   case S390_BFP_DIV:     buf = s390_emit_DXBR(buf, r1_hi, r2_hi); break;
-   default:  goto fail;
-   }
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      /* Restore FPC register from guest state */
-      buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-   }
-   return buf;
-
- fail:
-   vpanic("s390_insn_bfp128_binop_emit");
-}
-
-
-static UChar *
-s390_insn_bfp128_compare_emit(UChar *buf, const s390_insn *insn)
-{
-   UInt dst   = hregNumber(insn->variant.bfp128_compare.dst);
-   UInt r1_hi = hregNumber(insn->variant.bfp128_compare.op1_hi);
-   UInt r1_lo = hregNumber(insn->variant.bfp128_compare.op1_lo);
-   UInt r2_hi = hregNumber(insn->variant.bfp128_compare.op2_hi);
-   UInt r2_lo = hregNumber(insn->variant.bfp128_compare.op2_lo);
-
-   /* Paranoia */
-   vassert(insn->size == 16);
-   vassert(r1_lo == r1_hi + 2);
-   vassert(r2_lo == r2_hi + 2);
-   vassert((r1_hi & 0x2) == 0);
-   vassert((r2_hi & 0x2) == 0);
-
-   buf = s390_emit_CXBR(buf, r1_hi, r2_hi);
-
-   /* Load condition code into DST */
-   return s390_emit_load_cc(buf, dst);
-}
-
-
-static UChar *
-s390_insn_bfp128_unop_emit(UChar *buf, const s390_insn *insn)
-{
-   UInt r1_hi = hregNumber(insn->variant.bfp128_unop.dst_hi);
-   UInt r1_lo = hregNumber(insn->variant.bfp128_unop.dst_lo);
-   UInt r2_hi = hregNumber(insn->variant.bfp128_unop.op_hi);
-   UInt r2_lo = hregNumber(insn->variant.bfp128_unop.op_lo);
-   s390_round_t rounding_mode = insn->variant.bfp_binop.rounding_mode;
-
-   /* Paranoia */
-   vassert(insn->size == 16);
-   vassert(r1_lo == r1_hi + 2);
-   vassert(r2_lo == r2_hi + 2);
-   vassert((r1_hi & 0x2) == 0);
-   vassert((r2_hi & 0x2) == 0);
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-   }
-
-   switch (insn->variant.bfp128_unop.tag) {
-   case S390_BFP_ABS:         buf = s390_emit_LPXBR(buf, r1_hi, r2_hi); break;
-   case S390_BFP_NABS:        buf = s390_emit_LNXBR(buf, r1_hi, r2_hi); break;
-   case S390_BFP_NEG:         buf = s390_emit_LCXBR(buf, r1_hi, r2_hi); break;
-   case S390_BFP_SQRT:        buf = s390_emit_SQXBR(buf, r1_hi, r2_hi); break;
-   default:  goto fail;
-   }
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      /* Restore FPC register from guest state */
-      buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-   }
-   return buf;
-
- fail:
-   vpanic("s390_insn_bfp128_unop_emit");
-}
-
-
-static UChar *
-s390_insn_bfp128_convert_emit(UChar *buf, const s390_insn *insn)
-{
-   UInt r1_hi = hregNumber(insn->variant.bfp128_convert.dst_hi);
-   UInt r1_lo = hregNumber(insn->variant.bfp128_convert.dst_lo);
-   UInt r2_hi = hregNumber(insn->variant.bfp128_convert.op_hi);
-   UInt r2_lo = hregNumber(insn->variant.bfp128_convert.op_lo);
-   s390_round_t rounding_mode = insn->variant.bfp128_convert.rounding_mode;
-
-   /* Paranoia */
-   vassert(r1_lo == hregNumber(INVALID_HREG) || r1_lo == r1_hi + 2);
-   vassert(r2_lo == hregNumber(INVALID_HREG) || r2_lo == r2_hi + 2);
-   vassert(r1_lo == hregNumber(INVALID_HREG) || (r1_hi & 0x2) == 0);
-   vassert(r2_lo == hregNumber(INVALID_HREG) || (r2_hi & 0x2) == 0);
-
-   switch (insn->variant.bfp128_convert.tag) {
-      /* Conversion to 128-bit never requires a rounding mode */
-   case S390_BFP_I32_TO_F128: return s390_emit_CXFBRA(buf, 0, 0, r1_hi, r2_hi);
-   case S390_BFP_I64_TO_F128: return s390_emit_CXGBRA(buf, 0, 0, r1_hi, r2_hi);
-   case S390_BFP_U32_TO_F128: return s390_emit_CXLFBR(buf, 0, 0, r1_hi, r2_hi);
-   case S390_BFP_U64_TO_F128: return s390_emit_CXLGBR(buf, 0, 0, r1_hi, r2_hi);
-   case S390_BFP_F32_TO_F128: return s390_emit_LXEBR(buf, r1_hi, r2_hi);
-   case S390_BFP_F64_TO_F128: return s390_emit_LXDBR(buf, r1_hi, r2_hi);
-
-      /* Conversion from 128-bit requires a rounding mode */
-   case S390_BFP_F128_TO_I32:
-      return s390_emit_CFXBR(buf, rounding_mode, r1_hi, r2_hi);
-
-   case S390_BFP_F128_TO_I64:
-      return s390_emit_CGXBR(buf, rounding_mode, r1_hi, r2_hi);
-
-   case S390_BFP_F128_TO_U32:
-      return s390_emit_CLFXBR(buf, rounding_mode, 0, r1_hi, r2_hi);
-
-   case S390_BFP_F128_TO_U64:
-      return s390_emit_CLGXBR(buf, rounding_mode, 0, r1_hi, r2_hi);
-
-   case S390_BFP_F128_TO_F32:
-      if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-         buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-      }
-      buf = s390_emit_LEXBRA(buf, 0, 0, r1_hi, r2_hi);
-      if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-         /* Restore FPC register from guest state */
-         buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                              S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-      }
-      return buf;
-
-   case S390_BFP_F128_TO_F64:
-      if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-         buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-      }
-      buf = s390_emit_LDXBRA(buf, 0, 0, r1_hi, r2_hi);
-      if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-         /* Restore FPC register from guest state */
-         buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                              S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-      }
-      return buf;
-
-   default:  goto fail;
-   }
-
- fail:
-   vpanic("s390_insn_bfp128_convert_emit");
 }
 
 
@@ -8315,22 +8109,6 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_BFP_CONVERT:
       end = s390_insn_bfp_convert_emit(buf, insn);
-      break;
-
-   case S390_INSN_BFP128_BINOP:
-      end = s390_insn_bfp128_binop_emit(buf, insn);
-      break;
-
-   case S390_INSN_BFP128_COMPARE:
-      end = s390_insn_bfp128_compare_emit(buf, insn);
-      break;
-
-   case S390_INSN_BFP128_UNOP:
-      end = s390_insn_bfp128_unop_emit(buf, insn);
-      break;
-
-   case S390_INSN_BFP128_CONVERT:
-      end = s390_insn_bfp128_convert_emit(buf, insn);
       break;
 
    case S390_INSN_MFENCE:

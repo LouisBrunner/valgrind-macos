@@ -137,11 +137,11 @@ typedef enum {
    S390_INSN_BFP_UNOP,
    S390_INSN_BFP_TRIOP,
    S390_INSN_BFP_COMPARE,
+   S390_INSN_BFP_CONVERT,
    S390_INSN_BFP128_BINOP, /* Binary floating point 128-bit */
    S390_INSN_BFP128_UNOP,
    S390_INSN_BFP128_COMPARE,
-   S390_INSN_BFP128_CONVERT_TO,
-   S390_INSN_BFP128_CONVERT_FROM,
+   S390_INSN_BFP128_CONVERT,
    S390_INSN_MFENCE,
    S390_INSN_GZERO,   /* Assign zero to a guest register */
    S390_INSN_GADD,    /* Add a value to a guest register */
@@ -193,13 +193,16 @@ typedef enum {
    S390_BFP_DIV
 } s390_bfp_binop_t;
 
-
 /* The kind of unary BFP operations */
 typedef enum {
    S390_BFP_ABS,
    S390_BFP_NABS,
    S390_BFP_NEG,
-   S390_BFP_SQRT,
+   S390_BFP_SQRT
+} s390_bfp_unop_t;
+
+/* Type conversion operations: to and/or from floating point */
+typedef enum {
    S390_BFP_I32_TO_F32,
    S390_BFP_I32_TO_F64,
    S390_BFP_I32_TO_F128,
@@ -230,7 +233,7 @@ typedef enum {
    S390_BFP_F128_TO_U64,
    S390_BFP_F128_TO_F32,
    S390_BFP_F128_TO_F64
-} s390_bfp_unop_t;
+} s390_conv_t;
 
 
 /* Condition code. The encoding of the enumerators matches the value of
@@ -341,11 +344,6 @@ typedef struct {
          s390_opnd_RMI src2;
       } compare;
       struct {
-         HReg          dst;  /* condition code in s390 encoding */
-         HReg          op1;
-         HReg          op2;
-      } bfp_compare;
-      struct {
          s390_opnd_RMI src;
       } test;
       /* Convert the condition code to a boolean value. */
@@ -402,6 +400,17 @@ typedef struct {
          HReg            op;   /* operand */
       } bfp_unop;
       struct {
+         s390_conv_t     tag;
+         s390_round_t    rounding_mode;
+         HReg            dst;  /* result */
+         HReg            op;   /* operand */
+      } bfp_convert;
+      struct {
+         HReg            dst;  /* condition code in s390 encoding */
+         HReg            op1;
+         HReg            op2;
+      } bfp_compare;
+      struct {
          s390_bfp_binop_t tag;
          s390_round_t     rounding_mode;
          HReg             dst_hi; /* left operand; high part */
@@ -409,8 +418,6 @@ typedef struct {
          HReg             op2_hi; /* right operand; high part */
          HReg             op2_lo; /* right operand; low part */
       } bfp128_binop;
-      /* This variant is also used by the BFP128_CONVERT_TO and
-         BFP128_CONVERT_FROM insns. */
       struct {
          s390_bfp_unop_t  tag;
          s390_round_t     rounding_mode;
@@ -419,6 +426,14 @@ typedef struct {
          HReg             op_hi;  /* operand; high part */
          HReg             op_lo;  /* operand; low part */
       } bfp128_unop;
+      struct {
+         s390_conv_t  tag;
+         s390_round_t rounding_mode;
+         HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op_lo;  /* 128-bit operand low part */
+      } bfp128_convert;
       struct {
          HReg             dst;    /* condition code in s390 encoding */
          HReg             op1_hi; /* left operand; high part */
@@ -510,6 +525,8 @@ s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst, HReg op2,
 s390_insn *s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst,
                               HReg op, s390_round_t);
 s390_insn *s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2);
+s390_insn *s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst,
+                                 HReg op, s390_round_t);
 s390_insn *s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t, HReg dst_hi,
                                   HReg dst_lo, HReg op2_hi, HReg op2_lo,
                                   s390_round_t);
@@ -518,9 +535,9 @@ s390_insn *s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t, HReg dst_hi,
                                  s390_round_t);
 s390_insn *s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi,
                                     HReg op1_lo, HReg op2_hi, HReg op2_lo);
-s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_bfp_unop_t,
+s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
-s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t,
+s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_conv_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_round_t);
 s390_insn *s390_insn_mfence(void);

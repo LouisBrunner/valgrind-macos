@@ -785,7 +785,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 {
    IRType ty = typeOfIRExpr(env->type_env, expr);
    UChar size;
-   s390_bfp_unop_t bfpop;
+   s390_conv_t conv;
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 || ty == Ity_I64);
 
@@ -911,18 +911,18 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             return res;
          }
 
-      case Iop_F32toI32S:  bfpop = S390_BFP_F32_TO_I32;  goto do_convert;
-      case Iop_F32toI64S:  bfpop = S390_BFP_F32_TO_I64;  goto do_convert;
-      case Iop_F32toI32U:  bfpop = S390_BFP_F32_TO_U32;  goto do_convert;
-      case Iop_F32toI64U:  bfpop = S390_BFP_F32_TO_U64;  goto do_convert;
-      case Iop_F64toI32S:  bfpop = S390_BFP_F64_TO_I32;  goto do_convert;
-      case Iop_F64toI64S:  bfpop = S390_BFP_F64_TO_I64;  goto do_convert;
-      case Iop_F64toI32U:  bfpop = S390_BFP_F64_TO_U32;  goto do_convert;
-      case Iop_F64toI64U:  bfpop = S390_BFP_F64_TO_U64;  goto do_convert;
-      case Iop_F128toI32S: bfpop = S390_BFP_F128_TO_I32; goto do_convert_128;
-      case Iop_F128toI64S: bfpop = S390_BFP_F128_TO_I64; goto do_convert_128;
-      case Iop_F128toI32U: bfpop = S390_BFP_F128_TO_U32; goto do_convert_128;
-      case Iop_F128toI64U: bfpop = S390_BFP_F128_TO_U64; goto do_convert_128;
+      case Iop_F32toI32S:  conv = S390_BFP_F32_TO_I32;  goto do_convert;
+      case Iop_F32toI64S:  conv = S390_BFP_F32_TO_I64;  goto do_convert;
+      case Iop_F32toI32U:  conv = S390_BFP_F32_TO_U32;  goto do_convert;
+      case Iop_F32toI64U:  conv = S390_BFP_F32_TO_U64;  goto do_convert;
+      case Iop_F64toI32S:  conv = S390_BFP_F64_TO_I32;  goto do_convert;
+      case Iop_F64toI64S:  conv = S390_BFP_F64_TO_I64;  goto do_convert;
+      case Iop_F64toI32U:  conv = S390_BFP_F64_TO_U32;  goto do_convert;
+      case Iop_F64toI64U:  conv = S390_BFP_F64_TO_U64;  goto do_convert;
+      case Iop_F128toI32S: conv = S390_BFP_F128_TO_I32; goto do_convert_128;
+      case Iop_F128toI64S: conv = S390_BFP_F128_TO_I64; goto do_convert_128;
+      case Iop_F128toI32U: conv = S390_BFP_F128_TO_U32; goto do_convert_128;
+      case Iop_F128toI64U: conv = S390_BFP_F128_TO_U64; goto do_convert_128;
 
       do_convert: {
          s390_round_t rounding_mode;
@@ -931,7 +931,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          h1   = s390_isel_float_expr(env, arg2);   /* Process operand */
 
          rounding_mode = decode_rounding_mode(arg1);
-         addInstr(env, s390_insn_bfp_unop(size, bfpop, res, h1, rounding_mode));
+         addInstr(env, s390_insn_bfp_convert(size, conv, res, h1, rounding_mode));
          return res;
       }
 
@@ -951,7 +951,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
          rounding_mode = decode_rounding_mode(arg1);
-         addInstr(env, s390_insn_bfp128_convert_from(size, bfpop, res, f13, f15,
+         addInstr(env, s390_insn_bfp128_convert_from(size, conv, res, f13, f15,
                                                      rounding_mode));
          return res;
       }
@@ -1665,6 +1665,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
       s390_round_t rounding_mode;
+      s390_conv_t conv;
       HReg op_hi, op_lo, op, f12, f13, f14, f15;
 
       /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
@@ -1674,14 +1675,14 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       f15 = make_fpr(15);
 
       switch (expr->Iex.Unop.op) {
-      case Iop_NegF128:       bfpop = S390_BFP_NEG;          goto float128_opnd;
-      case Iop_AbsF128:       bfpop = S390_BFP_ABS;          goto float128_opnd;
-      case Iop_I32StoF128:    bfpop = S390_BFP_I32_TO_F128;  goto convert_int;
-      case Iop_I64StoF128:    bfpop = S390_BFP_I64_TO_F128;  goto convert_int;
-      case Iop_I32UtoF128:    bfpop = S390_BFP_U32_TO_F128;  goto convert_int;
-      case Iop_I64UtoF128:    bfpop = S390_BFP_U64_TO_F128;  goto convert_int;
-      case Iop_F32toF128:     bfpop = S390_BFP_F32_TO_F128;  goto convert_float;
-      case Iop_F64toF128:     bfpop = S390_BFP_F64_TO_F128;  goto convert_float;
+      case Iop_NegF128:     bfpop = S390_BFP_NEG;         goto float128_opnd;
+      case Iop_AbsF128:     bfpop = S390_BFP_ABS;         goto float128_opnd;
+      case Iop_I32StoF128:  conv = S390_BFP_I32_TO_F128;  goto convert_int;
+      case Iop_I64StoF128:  conv = S390_BFP_I64_TO_F128;  goto convert_int;
+      case Iop_I32UtoF128:  conv = S390_BFP_U32_TO_F128;  goto convert_int;
+      case Iop_I64UtoF128:  conv = S390_BFP_U64_TO_F128;  goto convert_int;
+      case Iop_F32toF128:   conv = S390_BFP_F32_TO_F128;  goto convert_float;
+      case Iop_F64toF128:   conv = S390_BFP_F64_TO_F128;  goto convert_float;
       default:
          goto irreducible;
       }
@@ -1700,14 +1701,12 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
    convert_float:
       op  = s390_isel_float_expr(env, left);
-      addInstr(env, s390_insn_bfp128_convert_to(16, bfpop, f12, f14,
-                                                op));
+      addInstr(env, s390_insn_bfp128_convert_to(16, conv, f12, f14, op));
       goto move_dst;
 
    convert_int:
       op  = s390_isel_int_expr(env, left);
-      addInstr(env, s390_insn_bfp128_convert_to(16, bfpop, f12, f14,
-                                                op));
+      addInstr(env, s390_insn_bfp128_convert_to(16, conv, f12, f14, op));
       goto move_dst;
 
    move_dst:
@@ -1874,51 +1873,61 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
       IROp    op   = expr->Iex.Binop.op;
+      IRExpr *irrm = expr->Iex.Binop.arg1;
       IRExpr *left = expr->Iex.Binop.arg2;
       HReg h1, dst;
-      s390_bfp_unop_t bfpop;
       s390_round_t rounding_mode;
-      Int integer_operand;
-
-      integer_operand = 1;
+      s390_conv_t  conv;
 
       switch (op) {
       case Iop_SqrtF32:
       case Iop_SqrtF64:
-         bfpop = S390_BFP_SQRT;
-         integer_operand = 0;
-         break;
+         h1  = s390_isel_float_expr(env, left);
+         dst = newVRegF(env);
+         rounding_mode = decode_rounding_mode(irrm);
+         addInstr(env, s390_insn_bfp_unop(size, S390_BFP_SQRT, dst, h1,
+                                          rounding_mode));
+         return dst;
 
-      case Iop_F64toF32:
-         bfpop = S390_BFP_F64_TO_F32;
-         integer_operand = 0;
-         break;
+      case Iop_F64toF32:  conv = S390_BFP_F64_TO_F32; goto convert_float;
+      case Iop_I32StoF32: conv = S390_BFP_I32_TO_F32; goto convert_int;
+      case Iop_I32UtoF32: conv = S390_BFP_U32_TO_F32; goto convert_int;
+      case Iop_I64StoF32: conv = S390_BFP_I64_TO_F32; goto convert_int;
+      case Iop_I64StoF64: conv = S390_BFP_I64_TO_F64; goto convert_int;
+      case Iop_I64UtoF32: conv = S390_BFP_U64_TO_F32; goto convert_int;
+      case Iop_I64UtoF64: conv = S390_BFP_U64_TO_F64; goto convert_int;
 
-      case Iop_I32StoF32: bfpop = S390_BFP_I32_TO_F32; break;
-      case Iop_I32UtoF32: bfpop = S390_BFP_U32_TO_F32; break;
-      case Iop_I64StoF32: bfpop = S390_BFP_I64_TO_F32; break;
-      case Iop_I64StoF64: bfpop = S390_BFP_I64_TO_F64; break;
-      case Iop_I64UtoF32: bfpop = S390_BFP_U64_TO_F32; break;
-      case Iop_I64UtoF64: bfpop = S390_BFP_U64_TO_F64; break;
+      convert_float:
+         h1 = s390_isel_float_expr(env, left);
+         goto convert;
 
+      convert_int:
+         h1 = s390_isel_int_expr(env, left);
+         goto convert;
+
+      convert:
+         dst = newVRegF(env);
+         rounding_mode = decode_rounding_mode(irrm);
+         addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
+                                             rounding_mode));
+         return dst;
+         
       default:
          goto irreducible;
 
       case Iop_F128toF64:
       case Iop_F128toF32: {
-         HReg op_hi, op_lo, f12, f13, f14, f15;
+         HReg op_hi, op_lo, f13, f15;
 
-         bfpop = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
-            : S390_BFP_F128_TO_F64;
+         conv = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
+                                    : S390_BFP_F128_TO_F64;
 
-         rounding_mode = decode_rounding_mode(expr->Iex.Binop.arg1);
+         rounding_mode = decode_rounding_mode(irrm);
 
-         s390_isel_float128_expr(&op_hi, &op_lo, env, expr->Iex.Binop.arg2);
+         s390_isel_float128_expr(&op_hi, &op_lo, env, left);
 
-         /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
-         f12 = make_fpr(12);
+         /* We use non-virtual registers as pairs (f13, f15) */
          f13 = make_fpr(13);
-         f14 = make_fpr(14);
          f15 = make_fpr(15);
 
          /* operand --> (f13, f15) */
@@ -1926,26 +1935,11 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
          dst = newVRegF(env);
-         addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15,
-                                             rounding_mode));
-
-         /* Move result to virtual destination registers */
-         addInstr(env, s390_insn_move(8, dst, f12));
+         addInstr(env, s390_insn_bfp128_convert_from(16, conv, dst, f13, f15,
+                                                     rounding_mode));
          return dst;
       }
       }
-
-      /* Process operand */
-      if (integer_operand) {
-         h1  = s390_isel_int_expr(env, left);
-      } else {
-         h1  = s390_isel_float_expr(env, left);
-      }
-
-      dst = newVRegF(env);
-      rounding_mode = decode_rounding_mode(expr->Iex.Binop.arg1);
-      addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1, rounding_mode));
-      return dst;
    }
 
       /* --------- UNARY OP --------- */
@@ -1953,7 +1947,10 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IROp    op   = expr->Iex.Unop.op;
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
+      /* No rounding mode is needed for these conversions. Provide the
+         default rounding mode. It will not be used. */
+      s390_round_t rounding_mode = S390_ROUND_NEAREST_EVEN;
+      s390_conv_t conv;
       HReg h1, dst;
 
       if (op == Iop_F128HItoF64 || op == Iop_F128LOtoF64) {
@@ -1982,24 +1979,34 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          break;
 
       case Iop_AbsF32:
-      case Iop_AbsF64:        bfpop = S390_BFP_ABS;  break;
-      case Iop_I32StoF64:     bfpop = S390_BFP_I32_TO_F64;  break;
-      case Iop_I32UtoF64:     bfpop = S390_BFP_U32_TO_F64;  break;
-      case Iop_F32toF64:      bfpop = S390_BFP_F32_TO_F64;  break;
+      case Iop_AbsF64:
+         bfpop = S390_BFP_ABS;
+         break;
+
+      case Iop_I32StoF64:  conv = S390_BFP_I32_TO_F64;  goto convert_int1;
+      case Iop_I32UtoF64:  conv = S390_BFP_U32_TO_F64;  goto convert_int1;
+      case Iop_F32toF64:   conv = S390_BFP_F32_TO_F64;  goto convert_float1;
+
+      convert_float1:
+         h1 = s390_isel_float_expr(env, left);
+         goto convert1;
+
+      convert_int1:
+         h1 = s390_isel_int_expr(env, left);
+         goto convert1;
+
+      convert1:
+         dst = newVRegF(env);
+         addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1, rounding_mode));
+         return dst;
+
       default:
          goto irreducible;
       }
 
       /* Process operand */
-      if (op == Iop_I32StoF64 || op == Iop_I32UtoF64)
-         h1 = s390_isel_int_expr(env, left);
-      else if (bfpop == S390_BFP_NABS)
-         h1 = s390_isel_float_expr(env, left->Iex.Unop.arg);
-      else
-         h1 = s390_isel_float_expr(env, left);
-
+      h1  = s390_isel_float_expr(env, left);
       dst = newVRegF(env);
-      rounding_mode = S390_ROUND_NEAREST_EVEN;  /* will not be used later on */
       addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1, rounding_mode));
       return dst;
    }

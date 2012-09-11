@@ -818,7 +818,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(TILEN)    && sz == 8) return -1;
    if (o == GOF(NRADDR)   && sz == 8) return -1;
    if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
-   if (o == GOF(fpc)      && sz == 8) return -1;
+   if (o == GOF(fpc)      && sz == 4) return -1;
    if (o == GOF(IA)       && sz == 8) return -1;
    if (o == (GOF(IA) + 4) && sz == 4) return -1;
    if (o == GOF(SYSNO)    && sz == 8) return -1;

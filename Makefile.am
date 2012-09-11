@@ -100,6 +100,7 @@ EXTRA_DIST = \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	README.s390 \
 	README.android \
+	README.android_emulator \
 	README.mips \
 	NEWS.old \
 	valgrind.pc.in \

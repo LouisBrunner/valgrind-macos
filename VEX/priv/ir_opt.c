@@ -3044,7 +3044,9 @@ static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, GetIt, CCall } tag;
+      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, Mtct, Mttc, Mtcc, GetIt,
+             CCall
+      } tag;
       union {
          /* unop(tmp) */
          struct {
@@ -3079,6 +3081,24 @@ typedef
             IRTemp e0;
             IRTemp eX;
          } Mttt;
+         /* Mux0X(tmp,const,tmp) */
+         struct {
+            IRTemp  co;
+            IRConst con0;
+            IRTemp  eX;
+         } Mtct;
+         /* Mux0X(tmp,tmp,const) */
+         struct {
+            IRTemp  co;
+            IRTemp  e0;
+            IRConst conX;
+         } Mttc;
+         /* Mux0X(tmp,const,const) */
+         struct {
+            IRTemp  co;
+            IRConst con0;
+            IRConst conX;
+         } Mtcc;
          /* GetI(descr,tmp,bias)*/
          struct {
             IRRegArray* descr;
@@ -3126,6 +3146,18 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
          return toBool(a1->u.Mttt.co == a2->u.Mttt.co
                        && a1->u.Mttt.e0 == a2->u.Mttt.e0
                        && a1->u.Mttt.eX == a2->u.Mttt.eX);
+      case Mtct:
+         return toBool(a1->u.Mtct.co == a2->u.Mtct.co
+                       && eqIRConst(&a1->u.Mtct.con0, &a2->u.Mtct.con0)
+                       && a1->u.Mtct.eX == a2->u.Mtct.eX);
+      case Mttc:
+         return toBool(a1->u.Mttc.co == a2->u.Mttc.co
+                       && a1->u.Mttc.e0 == a2->u.Mttc.e0
+                       && eqIRConst(&a1->u.Mttc.conX, &a2->u.Mttc.conX));
+      case Mtcc:
+         return toBool(a1->u.Mtcc.co == a2->u.Mtcc.co
+                       && eqIRConst(&a1->u.Mtcc.con0, &a2->u.Mtcc.con0)
+                       && eqIRConst(&a1->u.Mtcc.conX, &a2->u.Mtcc.conX));
       case GetIt:
          return toBool(eqIRRegArray(a1->u.GetIt.descr, a2->u.GetIt.descr) 
                        && a1->u.GetIt.ix == a2->u.GetIt.ix
@@ -3153,7 +3185,7 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
 
 static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae ) 
 {
-   IRConst* con;
+   IRConst *con, *con0, *conX;
    switch (ae->tag) {
       case Ut:
          return IRExpr_Unop( ae->u.Ut.op, IRExpr_RdTmp(ae->u.Ut.arg) );
@@ -3179,6 +3211,26 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
          return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mttt.co), 
                              IRExpr_RdTmp(ae->u.Mttt.e0), 
                              IRExpr_RdTmp(ae->u.Mttt.eX));
+      case Mtct:
+         con0 = LibVEX_Alloc(sizeof(IRConst));
+         *con0 = ae->u.Mtct.con0;
+         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mtct.co), 
+                             IRExpr_Const(con0),
+                             IRExpr_RdTmp(ae->u.Mtct.eX));
+      case Mttc:
+         conX = LibVEX_Alloc(sizeof(IRConst));
+         *conX = ae->u.Mttc.conX;
+         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mttc.co), 
+                             IRExpr_RdTmp(ae->u.Mttc.e0), 
+                             IRExpr_Const(conX));
+      case Mtcc:
+         con0 = LibVEX_Alloc(sizeof(IRConst));
+         conX = LibVEX_Alloc(sizeof(IRConst));
+         *con0 = ae->u.Mtcc.con0;
+         *conX = ae->u.Mtcc.conX;
+         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mtcc.co), 
+                             IRExpr_Const(con0),
+                             IRExpr_Const(conX));
       case GetIt:
          return IRExpr_GetI(ae->u.GetIt.descr,
                             IRExpr_RdTmp(ae->u.GetIt.ix),
@@ -3241,6 +3293,17 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
          ae->u.Mttt.co = subst_AvailExpr_Temp( env, ae->u.Mttt.co );
          ae->u.Mttt.e0 = subst_AvailExpr_Temp( env, ae->u.Mttt.e0 );
          ae->u.Mttt.eX = subst_AvailExpr_Temp( env, ae->u.Mttt.eX );
+         break;
+      case Mtct:
+         ae->u.Mtct.co = subst_AvailExpr_Temp( env, ae->u.Mtct.co );
+         ae->u.Mtct.eX = subst_AvailExpr_Temp( env, ae->u.Mtct.eX );
+         break;
+      case Mttc:
+         ae->u.Mttc.co = subst_AvailExpr_Temp( env, ae->u.Mttc.co );
+         ae->u.Mttc.e0 = subst_AvailExpr_Temp( env, ae->u.Mttc.e0 );
+         break;
+      case Mtcc:
+         ae->u.Mtcc.co = subst_AvailExpr_Temp( env, ae->u.Mtcc.co );
          break;
       case GetIt:
          ae->u.GetIt.ix = subst_AvailExpr_Temp( env, ae->u.GetIt.ix );
@@ -3323,6 +3386,42 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       ae->u.Mttt.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
       ae->u.Mttt.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
       ae->u.Mttt.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_Mux0X
+       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
+       && e->Iex.Mux0X.expr0->tag == Iex_Const
+       && e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag       = Mtct;
+      ae->u.Mtct.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+      ae->u.Mtct.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
+      ae->u.Mtct.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_Mux0X
+       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
+       && e->Iex.Mux0X.expr0->tag == Iex_RdTmp
+       && e->Iex.Mux0X.exprX->tag == Iex_Const) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag       = Mttc;
+      ae->u.Mttc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+      ae->u.Mttc.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
+      ae->u.Mttc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
+      return ae;
+   }
+
+   if (e->tag == Iex_Mux0X
+       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
+       && e->Iex.Mux0X.expr0->tag == Iex_Const
+       && e->Iex.Mux0X.exprX->tag == Iex_Const) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag       = Mtcc;
+      ae->u.Mtcc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+      ae->u.Mtcc.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
+      ae->u.Mtcc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
       return ae;
    }
 

@@ -9,6 +9,7 @@
    framework.
 
    Copyright IBM Corp. 2010-2012
+   Copyright (C) 2012-2012  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -707,6 +708,10 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
    case S390_INSN_GADD:
       break;
 
+   case S390_INSN_SET_FPCRM:
+      addHRegUse(u, HRmRead,  insn->variant.set_fpcrm.mode);
+      break;
+
    case S390_INSN_EVCHECK:
       s390_amode_get_reg_usage(u, insn->variant.evcheck.counter);
       s390_amode_get_reg_usage(u, insn->variant.evcheck.fail_addr);
@@ -929,6 +934,11 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    case S390_INSN_MFENCE:
    case S390_INSN_GZERO:
    case S390_INSN_GADD:
+      break;
+
+   case S390_INSN_SET_FPCRM:
+      insn->variant.set_fpcrm.mode =
+         lookupHRegRemap(m, insn->variant.set_fpcrm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -4652,7 +4662,7 @@ s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
 
 s390_insn *
 s390_insn_bfp_triop(UChar size, s390_bfp_triop_t tag, HReg dst, HReg op2,
-                    HReg op3, s390_round_t rounding_mode)
+                    HReg op3)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4664,15 +4674,13 @@ s390_insn_bfp_triop(UChar size, s390_bfp_triop_t tag, HReg dst, HReg op2,
    insn->variant.bfp_triop.dst = dst;
    insn->variant.bfp_triop.op2 = op2;
    insn->variant.bfp_triop.op3 = op3;
-   insn->variant.bfp_triop.rounding_mode = rounding_mode;
 
    return insn;
 }
 
 
 s390_insn *
-s390_insn_bfp_binop(UChar size, s390_bfp_binop_t tag, HReg dst, HReg op2,
-                    s390_round_t rounding_mode)
+s390_insn_bfp_binop(UChar size, s390_bfp_binop_t tag, HReg dst, HReg op2)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4685,15 +4693,13 @@ s390_insn_bfp_binop(UChar size, s390_bfp_binop_t tag, HReg dst, HReg op2,
    insn->variant.bfp_binop.op2_hi = op2;
    insn->variant.bfp_binop.dst_lo = INVALID_HREG;
    insn->variant.bfp_binop.op2_lo = INVALID_HREG;
-   insn->variant.bfp_binop.rounding_mode = rounding_mode;
 
    return insn;
 }
 
 
 s390_insn *
-s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst, HReg op,
-                   s390_round_t rounding_mode)
+s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst, HReg op)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4706,7 +4712,6 @@ s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst, HReg op,
    insn->variant.bfp_unop.op_hi  = op;
    insn->variant.bfp_unop.dst_lo = INVALID_HREG;
    insn->variant.bfp_unop.op_lo  = INVALID_HREG;
-   insn->variant.bfp_unop.rounding_mode = rounding_mode;
 
    return insn;
 }
@@ -4769,8 +4774,7 @@ is_valid_bfp128_regpair(HReg hi, HReg lo)
 
 s390_insn *
 s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
-                       HReg dst_lo, HReg op2_hi, HReg op2_lo,
-                       s390_round_t rounding_mode)
+                       HReg dst_lo, HReg op2_hi, HReg op2_lo)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4785,7 +4789,6 @@ s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
    insn->variant.bfp_binop.dst_lo = dst_lo;
    insn->variant.bfp_binop.op2_hi = op2_hi;
    insn->variant.bfp_binop.op2_lo = op2_lo;
-   insn->variant.bfp_binop.rounding_mode = rounding_mode;
 
    return insn;
 }
@@ -4793,8 +4796,7 @@ s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t tag, HReg dst_hi,
 
 s390_insn *
 s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t tag, HReg dst_hi,
-                      HReg dst_lo, HReg op_hi, HReg op_lo,
-                      s390_round_t rounding_mode)
+                      HReg dst_lo, HReg op_hi, HReg op_lo)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4809,7 +4811,6 @@ s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t tag, HReg dst_hi,
    insn->variant.bfp_unop.dst_lo = dst_lo;
    insn->variant.bfp_unop.op_hi = op_hi;
    insn->variant.bfp_unop.op_lo = op_lo;
-   insn->variant.bfp_unop.rounding_mode = rounding_mode;
 
    return insn;
 }
@@ -4925,6 +4926,21 @@ s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value)
    insn->variant.gadd.offset = offset;
    insn->variant.gadd.delta = delta;
    insn->variant.gadd.value = value;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_set_fpcrm(UChar size, HReg mode)
+{
+   vassert(size == 4);
+
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_SET_FPCRM;
+   insn->size = size;
+   insn->variant.set_fpcrm.mode = mode;
 
    return insn;
 }
@@ -5433,6 +5449,10 @@ s390_insn_as_string(const s390_insn *insn)
                    insn->variant.gadd.offset,
                    (Long)(Char)insn->variant.gadd.delta,
                    insn->variant.gadd.value);
+      break;
+
+   case S390_INSN_SET_FPCRM:
+      s390_sprintf(buf, "%M %R", "v-set-fpcrm", insn->variant.set_fpcrm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -7262,72 +7282,32 @@ s390_insn_cond_move_emit(UChar *buf, const s390_insn *insn)
 }
 
 
-/* Little helper function to the rounding mode in the real FPC
-   register */
-static UChar *
-s390_set_fpc_rounding_mode(UChar *buf, s390_round_t rounding_mode)
-{
-   UChar bits;
-
-   /* Determine BFP rounding bits */
-   switch (rounding_mode) {
-   case S390_ROUND_NEAREST_EVEN: bits = 0; break;
-   case S390_ROUND_ZERO:         bits = 1; break;
-   case S390_ROUND_POSINF:       bits = 2; break;
-   case S390_ROUND_NEGINF:       bits = 3; break;
-   default: vpanic("invalid rounding mode\n");
-   }
-
-   /* Copy FPC from guest state to R0 and OR in the new rounding mode */
-   buf = s390_emit_L(buf, R0, 0, S390_REGNO_GUEST_STATE_POINTER,
-                     S390X_GUEST_OFFSET(guest_fpc));   // r0 = guest_fpc
-
-   buf = s390_emit_NILL(buf, R0, 0xFFFC); /* Clear out right-most 2 bits */
-   buf = s390_emit_OILL(buf, R0, bits);   /* OR in the new rounding mode */
-   buf = s390_emit_SFPC(buf, R0, 0);      /* Load FPC register from R0 */
-
-   return buf;
-}
-
-
 static UChar *
 s390_insn_bfp_triop_emit(UChar *buf, const s390_insn *insn)
 {
    UInt r1 = hregNumber(insn->variant.bfp_triop.dst);
    UInt r2 = hregNumber(insn->variant.bfp_triop.op2);
    UInt r3 = hregNumber(insn->variant.bfp_triop.op3);
-   s390_round_t rounding_mode = insn->variant.bfp_triop.rounding_mode;
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-   }
 
    switch (insn->size) {
    case 4:
       switch (insn->variant.bfp_triop.tag) {
-      case S390_BFP_MADD:  buf = s390_emit_MAEBR(buf, r1, r3, r2); break;
-      case S390_BFP_MSUB:  buf = s390_emit_MSEBR(buf, r1, r3, r2); break;
+      case S390_BFP_MADD:  return s390_emit_MAEBR(buf, r1, r3, r2);
+      case S390_BFP_MSUB:  return s390_emit_MSEBR(buf, r1, r3, r2);
       default:  goto fail;
       }
       break;
 
    case 8:
       switch (insn->variant.bfp_triop.tag) {
-      case S390_BFP_MADD:  buf = s390_emit_MADBR(buf, r1, r3, r2); break;
-      case S390_BFP_MSUB:  buf = s390_emit_MSDBR(buf, r1, r3, r2); break;
+      case S390_BFP_MADD:  return s390_emit_MADBR(buf, r1, r3, r2);
+      case S390_BFP_MSUB:  return s390_emit_MSDBR(buf, r1, r3, r2);
       default:  goto fail;
       }
       break;
 
    default:  goto fail;
    }
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      /* Restore FPC register from guest state */
-      buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-   }
-   return buf;
 
  fail:
    vpanic("s390_insn_bfp_triop_emit");
@@ -7339,52 +7319,40 @@ s390_insn_bfp_binop_emit(UChar *buf, const s390_insn *insn)
 {
    UInt r1 = hregNumber(insn->variant.bfp_binop.dst_hi);
    UInt r2 = hregNumber(insn->variant.bfp_binop.op2_hi);
-   s390_round_t rounding_mode = insn->variant.bfp_binop.rounding_mode;
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-   }
 
    switch (insn->size) {
    case 4:
       switch (insn->variant.bfp_binop.tag) {
-      case S390_BFP_ADD:     buf = s390_emit_AEBR(buf, r1, r2);  break;
-      case S390_BFP_SUB:     buf = s390_emit_SEBR(buf, r1, r2);  break;
-      case S390_BFP_MUL:     buf = s390_emit_MEEBR(buf, r1, r2); break;
-      case S390_BFP_DIV:     buf = s390_emit_DEBR(buf, r1, r2);  break;
+      case S390_BFP_ADD:     return s390_emit_AEBR(buf, r1, r2);
+      case S390_BFP_SUB:     return s390_emit_SEBR(buf, r1, r2);
+      case S390_BFP_MUL:     return s390_emit_MEEBR(buf, r1, r2);
+      case S390_BFP_DIV:     return s390_emit_DEBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    case 8:
       switch (insn->variant.bfp_binop.tag) {
-      case S390_BFP_ADD:     buf = s390_emit_ADBR(buf, r1, r2); break;
-      case S390_BFP_SUB:     buf = s390_emit_SDBR(buf, r1, r2); break;
-      case S390_BFP_MUL:     buf = s390_emit_MDBR(buf, r1, r2); break;
-      case S390_BFP_DIV:     buf = s390_emit_DDBR(buf, r1, r2); break;
+      case S390_BFP_ADD:     return s390_emit_ADBR(buf, r1, r2);
+      case S390_BFP_SUB:     return s390_emit_SDBR(buf, r1, r2);
+      case S390_BFP_MUL:     return s390_emit_MDBR(buf, r1, r2);
+      case S390_BFP_DIV:     return s390_emit_DDBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    case 16:
       switch (insn->variant.bfp_binop.tag) {
-      case S390_BFP_ADD:     buf = s390_emit_AXBR(buf, r1, r2); break;
-      case S390_BFP_SUB:     buf = s390_emit_SXBR(buf, r1, r2); break;
-      case S390_BFP_MUL:     buf = s390_emit_MXBR(buf, r1, r2); break;
-      case S390_BFP_DIV:     buf = s390_emit_DXBR(buf, r1, r2); break;
+      case S390_BFP_ADD:     return s390_emit_AXBR(buf, r1, r2);
+      case S390_BFP_SUB:     return s390_emit_SXBR(buf, r1, r2);
+      case S390_BFP_MUL:     return s390_emit_MXBR(buf, r1, r2);
+      case S390_BFP_DIV:     return s390_emit_DXBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    default:  goto fail;
    }
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      /* Restore FPC register from guest state */
-      buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           S390X_GUEST_OFFSET(guest_fpc));
-   }
-   return buf;
 
  fail:
    vpanic("s390_insn_bfp_binop_emit");
@@ -7396,60 +7364,46 @@ s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
 {
    UInt  r1 = hregNumber(insn->variant.bfp_unop.dst_hi);
    UInt  r2 = hregNumber(insn->variant.bfp_unop.op_hi);
-   s390_round_t rounding_mode = insn->variant.bfp_unop.rounding_mode;
-
-   /* For all other insns if a special rounding mode is requested,
-      we need to set the FPC first and restore it later. */
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-   }
 
    switch (insn->variant.bfp_unop.tag) {
    case S390_BFP_ABS:
       switch (insn->size) {
-      case 4:   buf = s390_emit_LPEBR(buf, r1, r2); break;
-      case 8:   buf = s390_emit_LPDBR(buf, r1, r2); break;
-      case 16:  buf = s390_emit_LPXBR(buf, r1, r2); break;
+      case 4:   return s390_emit_LPEBR(buf, r1, r2);
+      case 8:   return s390_emit_LPDBR(buf, r1, r2);
+      case 16:  return s390_emit_LPXBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    case S390_BFP_NABS:
       switch (insn->size) {
-      case 4:   buf = s390_emit_LNEBR(buf, r1, r2); break;
-      case 8:   buf = s390_emit_LNDBR(buf, r1, r2); break;
-      case 16:  buf = s390_emit_LNXBR(buf, r1, r2); break;
+      case 4:   return s390_emit_LNEBR(buf, r1, r2);
+      case 8:   return s390_emit_LNDBR(buf, r1, r2);
+      case 16:  return s390_emit_LNXBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    case S390_BFP_NEG:
       switch (insn->size) {
-      case 4:   buf = s390_emit_LCEBR(buf, r1, r2); break;
-      case 8:   buf = s390_emit_LCDBR(buf, r1, r2); break;
-      case 16:  buf = s390_emit_LCXBR(buf, r1, r2); break;
+      case 4:   return s390_emit_LCEBR(buf, r1, r2);
+      case 8:   return s390_emit_LCDBR(buf, r1, r2);
+      case 16:  return s390_emit_LCXBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    case S390_BFP_SQRT:
       switch (insn->size) {
-      case 4:   buf = s390_emit_SQEBR(buf, r1, r2); break;
-      case 8:   buf = s390_emit_SQDBR(buf, r1, r2); break;
-      case 16:  buf = s390_emit_SQXBR(buf, r1, r2); break;
+      case 4:   return s390_emit_SQEBR(buf, r1, r2);
+      case 8:   return s390_emit_SQDBR(buf, r1, r2);
+      case 16:  return s390_emit_SQXBR(buf, r1, r2);
       default:  goto fail;
       }
       break;
 
    default: goto fail;
    }
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      /* Restore FPC register from guest state */
-      buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-   }
-   return buf;
 
  fail:
    vpanic("s390_insn_bfp_unop_emit");
@@ -7461,8 +7415,10 @@ s390_insn_bfp_convert_emit(UChar *buf, const s390_insn *insn)
 {
    UInt  r1 = hregNumber(insn->variant.bfp_convert.dst_hi);
    UInt  r2 = hregNumber(insn->variant.bfp_convert.op_hi);
-   s390_round_t rounding_mode = insn->variant.bfp_convert.rounding_mode;
-   s390_round_t m3 = rounding_mode;
+   s390_round_t m3 = insn->variant.bfp_convert.rounding_mode;
+   /* The IEEE-inexact-exception control is not modelled. So the
+      m4 field is 0 (which is what GCC does, too) */
+   const UInt m4 = 0;
 
    switch (insn->variant.bfp_convert.tag) {
       /* Convert to fixed */
@@ -7474,63 +7430,41 @@ s390_insn_bfp_convert_emit(UChar *buf, const s390_insn *insn)
    case S390_BFP_F128_TO_I64: return s390_emit_CGXBR(buf, m3, r1, r2);
 
       /* Convert to logical */
-      /* We leave m4 as 0 - as gcc */
-   case S390_BFP_F32_TO_U32:  return s390_emit_CLFEBR(buf, m3, 0, r1, r2);
-   case S390_BFP_F64_TO_U32:  return s390_emit_CLFDBR(buf, m3, 0, r1, r2);
-   case S390_BFP_F128_TO_U32: return s390_emit_CLFXBR(buf, m3, 0, r1, r2);
-   case S390_BFP_F32_TO_U64:  return s390_emit_CLGEBR(buf, m3, 0, r1, r2);
-   case S390_BFP_F64_TO_U64:  return s390_emit_CLGDBR(buf, m3, 0, r1, r2);
-   case S390_BFP_F128_TO_U64: return s390_emit_CLGXBR(buf, m3, 0, r1, r2);
+   case S390_BFP_F32_TO_U32:  return s390_emit_CLFEBR(buf, m3, m4, r1, r2);
+   case S390_BFP_F64_TO_U32:  return s390_emit_CLFDBR(buf, m3, m4, r1, r2);
+   case S390_BFP_F128_TO_U32: return s390_emit_CLFXBR(buf, m3, m4, r1, r2);
+   case S390_BFP_F32_TO_U64:  return s390_emit_CLGEBR(buf, m3, m4, r1, r2);
+   case S390_BFP_F64_TO_U64:  return s390_emit_CLGDBR(buf, m3, m4, r1, r2);
+   case S390_BFP_F128_TO_U64: return s390_emit_CLGXBR(buf, m3, m4, r1, r2);
 
-      /* Conversion to 128-bit never requires a rounding mode */
-   case S390_BFP_I32_TO_F128: return s390_emit_CXFBRA(buf, 0, 0, r1, r2);
-   case S390_BFP_I64_TO_F128: return s390_emit_CXGBRA(buf, 0, 0, r1, r2);
-   case S390_BFP_U32_TO_F128: return s390_emit_CXLFBR(buf, 0, 0, r1, r2);
-   case S390_BFP_U64_TO_F128: return s390_emit_CXLGBR(buf, 0, 0, r1, r2);
+      /* Convert from fixed */
+   case S390_BFP_I32_TO_F32:  return s390_emit_CEFBRA(buf, m3, m4, r1, r2);
+   case S390_BFP_I32_TO_F64:  return s390_emit_CDFBRA(buf,  0, m4, r1, r2);
+   case S390_BFP_I32_TO_F128: return s390_emit_CXFBRA(buf,  0, m4, r1, r2);
+   case S390_BFP_I64_TO_F32:  return s390_emit_CEGBRA(buf, m3, m4, r1, r2);
+   case S390_BFP_I64_TO_F64:  return s390_emit_CDGBRA(buf, m3, m4, r1, r2);
+   case S390_BFP_I64_TO_F128: return s390_emit_CXGBRA(buf,  0, m4, r1, r2);
+
+      /* Convert from logical */
+   case S390_BFP_U32_TO_F32:  return s390_emit_CELFBR(buf, m3, m4, r1, r2);
+   case S390_BFP_U32_TO_F64:  return s390_emit_CDLFBR(buf, m3, m4, r1, r2);
+   case S390_BFP_U32_TO_F128: return s390_emit_CXLFBR(buf, m3, m4, r1, r2);
+   case S390_BFP_U64_TO_F32:  return s390_emit_CELGBR(buf, m3, m4, r1, r2);
+   case S390_BFP_U64_TO_F64:  return s390_emit_CDLGBR(buf, m3, m4, r1, r2);
+   case S390_BFP_U64_TO_F128: return s390_emit_CXLGBR(buf, m3, m4, r1, r2);
+
+      /* Load lengthened */
+   case S390_BFP_F32_TO_F64:  return s390_emit_LDEBR(buf, r1, r2);
    case S390_BFP_F32_TO_F128: return s390_emit_LXEBR(buf, r1, r2);
    case S390_BFP_F64_TO_F128: return s390_emit_LXDBR(buf, r1, r2);
-   default: break;
-   }
 
-   /* For all other insns if a special rounding mode is requested,
-      we need to set the FPC first and restore it later. */
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      buf = s390_set_fpc_rounding_mode(buf, rounding_mode);
-   }
-
-   switch (insn->variant.bfp_convert.tag) {
-   case S390_BFP_I32_TO_F32:  buf = s390_emit_CEFBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_I32_TO_F64:  buf = s390_emit_CDFBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_I32_TO_F128: buf = s390_emit_CXFBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_I64_TO_F32:  buf = s390_emit_CEGBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_I64_TO_F64:  buf = s390_emit_CDGBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_I64_TO_F128: buf = s390_emit_CXGBRA(buf, 0, 0, r1, r2); break;
-
-   /* We leave m4 as 0 - as gcc */
-   case S390_BFP_U32_TO_F32:  buf = s390_emit_CELFBR(buf, m3, 0, r1, r2); break;
-   case S390_BFP_U32_TO_F64:  buf = s390_emit_CDLFBR(buf, m3, 0, r1, r2); break;
-   case S390_BFP_U32_TO_F128: buf = s390_emit_CXLFBR(buf, m3, 0, r1, r2); break;
-   case S390_BFP_U64_TO_F32:  buf = s390_emit_CELGBR(buf, m3, 0, r1, r2); break;
-   case S390_BFP_U64_TO_F64:  buf = s390_emit_CDLGBR(buf, m3, 0, r1, r2); break;
-   case S390_BFP_U64_TO_F128: buf = s390_emit_CXLGBR(buf, m3, 0, r1, r2); break;
-
-   case S390_BFP_F32_TO_F64:  buf = s390_emit_LDEBR(buf, r1, r2); break;
-   case S390_BFP_F32_TO_F128: buf = s390_emit_LXEBR(buf, r1, r2); break;
-   case S390_BFP_F64_TO_F32:  buf = s390_emit_LEDBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_F64_TO_F128: buf = s390_emit_LXDBR(buf, r1, r2); break;
-
-   case S390_BFP_F128_TO_F32: buf = s390_emit_LEXBRA(buf, 0, 0, r1, r2); break;
-   case S390_BFP_F128_TO_F64: buf = s390_emit_LDXBRA(buf, 0, 0, r1, r2); break;
+      /* Load rounded */
+   case S390_BFP_F64_TO_F32:  return s390_emit_LEDBRA(buf, m3, m4, r1, r2);
+   case S390_BFP_F128_TO_F32: return s390_emit_LEXBRA(buf, m3, m4, r1, r2);
+   case S390_BFP_F128_TO_F64: return s390_emit_LDXBRA(buf, m3, m4, r1, r2);
 
    default: goto fail;
    }
-
-   if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
-      /* Restore FPC register from guest state */
-      buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
-   }
-   return buf;
 
  fail:
    vpanic("s390_insn_bfp_convert_emit");
@@ -7580,6 +7514,23 @@ s390_insn_gadd_emit(UChar *buf, const s390_insn *insn)
    return s390_emit_AGSI(buf, insn->variant.gadd.delta,
                          S390_REGNO_GUEST_STATE_POINTER,
                          DISP20(insn->variant.gadd.offset));
+}
+
+
+static UChar *
+s390_insn_set_fpcrm_emit(UChar *buf, const s390_insn *insn)
+{
+   UInt mode = hregNumber(insn->variant.set_fpcrm.mode);
+
+   /* Copy FPC from guest state to R0 and OR in the new rounding mode */
+   buf = s390_emit_L(buf, R0, 0, S390_REGNO_GUEST_STATE_POINTER,
+                     S390X_GUEST_OFFSET(guest_fpc));   // r0 = guest_fpc
+
+   buf = s390_emit_NILL(buf, R0, 0xFFF8); /* Clear out right-most 3 bits */
+   buf = s390_emit_OR(buf, R0, mode);     /* OR in the new rounding mode */
+   buf = s390_emit_SFPC(buf, R0, 0);      /* Load FPC register from R0 */
+
+   return buf;
 }
 
 
@@ -8121,6 +8072,10 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_GADD:
       end = s390_insn_gadd_emit(buf, insn);
+      break;
+
+   case S390_INSN_SET_FPCRM:
+      end = s390_insn_set_fpcrm_emit(buf, insn);
       break;
 
    case S390_INSN_PROFINC:

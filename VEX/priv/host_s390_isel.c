@@ -9,6 +9,7 @@
    framework.
 
    Copyright IBM Corp. 2010-2012
+   Copyright (C) 2012-2012  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -111,6 +112,8 @@ typedef struct {
    UInt         n_vregmap;
    UInt         vreg_ctr;
    UInt         hwcaps;
+
+   IRExpr      *previous_bfp_rounding_mode;
 
    ULong        old_value[NUM_TRACKED_REGS];
 
@@ -530,24 +533,77 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
 }
 
 
-/* Given an expression representing a rounding mode using IRRoundingMode
-   encoding convert it to an s390_round_t value.  */
-static s390_round_t
-decode_rounding_mode(IRExpr *rounding_expr)
+/*---------------------------------------------------------*/
+/*--- BFP helper functions                              ---*/
+/*---------------------------------------------------------*/
+
+/* Set the BFP rounding mode in the FPC. This function is called for
+   all non-conversion BFP instructions as those will always get the
+   rounding mode from the FPC. */
+static void 
+set_bfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
 {
-   if (rounding_expr->tag == Iex_Const &&
-       rounding_expr->Iex.Const.con->tag == Ico_U32) {
-      IRRoundingMode mode = rounding_expr->Iex.Const.con->Ico.U32;
+   vassert(typeOfIRExpr(env->type_env, irrm) == Ity_I32);
+
+   /* Do we need to do anything? */
+   if (env->previous_bfp_rounding_mode &&
+       env->previous_bfp_rounding_mode->tag == Iex_RdTmp &&
+       irrm->tag == Iex_RdTmp &&
+       env->previous_bfp_rounding_mode->Iex.RdTmp.tmp == irrm->Iex.RdTmp.tmp) {
+      /* No - new mode is identical to previous mode.  */
+      return;
+   }
+
+   /* No luck - we better set it, and remember what we set it to. */
+   env->previous_bfp_rounding_mode = irrm;
+
+   /* The incoming rounding mode is in VEX IR encoding. Need to change
+      to s390.
+
+      rounding mode | s390 | IR
+      -------------------------
+      to nearest    |  00  | 00
+      to zero       |  01  | 11
+      to +infinity  |  10  | 10
+      to -infinity  |  11  | 01
+
+      So: s390 = (4 - IR) & 3
+   */
+   HReg ir = s390_isel_int_expr(env, irrm);
+
+   HReg mode = newVRegI(env);
+
+   addInstr(env, s390_insn_load_immediate(4, mode, 4));
+   addInstr(env, s390_insn_alu(4, S390_ALU_SUB, mode, s390_opnd_reg(ir)));
+   addInstr(env, s390_insn_alu(4, S390_ALU_AND, mode, s390_opnd_imm(3)));
+
+   addInstr(env, s390_insn_set_fpcrm(4, mode));
+}
+
+
+/* This function is invoked for insns that support a specification of
+   a rounding mode in the insn itself. In that case there is no need to
+   stick the rounding mode into the FPC -- a good thing. However, the
+   rounding mode must be known. */
+static s390_round_t
+get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
+{
+   if (irrm->tag == Iex_Const) {          /* rounding mode is known */
+      vassert(irrm->Iex.Const.con->tag == Ico_U32);
+      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
-      case Irrm_NEAREST:       return S390_ROUND_NEAREST_EVEN;
-      case Irrm_ZERO:          return S390_ROUND_ZERO;
-      case Irrm_PosINF:        return S390_ROUND_POSINF;
-      case Irrm_NegINF:        return S390_ROUND_NEGINF;
+      case Irrm_NEAREST:  return S390_ROUND_NEAREST_EVEN;
+      case Irrm_ZERO:     return S390_ROUND_ZERO;
+      case Irrm_PosINF:   return S390_ROUND_POSINF;
+      case Irrm_NegINF:   return S390_ROUND_NEGINF;
+      default:
+         vpanic("get_bfp_rounding_mode");
       }
    }
 
-   vpanic("decode_rounding_mode");
+   set_bfp_rounding_mode_in_fpc(env, irrm);
+   return S390_ROUND_PER_FPC;
 }
 
 
@@ -930,8 +986,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          res  = newVRegI(env);
          h1   = s390_isel_float_expr(env, arg2);   /* Process operand */
 
-         rounding_mode = decode_rounding_mode(arg1);
-         addInstr(env, s390_insn_bfp_convert(size, conv, res, h1, rounding_mode));
+         rounding_mode = get_bfp_rounding_mode(env, arg1);
+         addInstr(env, s390_insn_bfp_convert(size, conv, res, h1,
+                                             rounding_mode));
          return res;
       }
 
@@ -950,7 +1007,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         rounding_mode = decode_rounding_mode(arg1);
+         rounding_mode = get_bfp_rounding_mode(env, arg1);
          addInstr(env, s390_insn_bfp128_convert_from(size, conv, res, f13, f15,
                                                      rounding_mode));
          return res;
@@ -1575,7 +1632,6 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       IRExpr *left   = triop->arg2;
       IRExpr *right  = triop->arg3;
       s390_bfp_binop_t bfpop;
-      s390_round_t rounding_mode;
       HReg op1_hi, op1_lo, op2_hi, op2_lo, f12, f13, f14, f15;
 
       s390_isel_float128_expr(&op1_hi, &op1_lo, env, left);  /* 1st operand */
@@ -1604,9 +1660,8 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(triop->arg1);
-      addInstr(env, s390_insn_bfp128_binop(16, bfpop, f12, f14, f13,
-                                           f15, rounding_mode));
+      set_bfp_rounding_mode_in_fpc(env, triop->arg1);
+      addInstr(env, s390_insn_bfp128_binop(16, bfpop, f12, f14, f13, f15));
 
       /* Move result to virtual destination register */
       *dst_hi = newVRegF(env);
@@ -1620,8 +1675,6 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
       HReg op_hi, op_lo, f12, f13, f14, f15;
-      s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
 
       /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
       f12 = make_fpr(12);
@@ -1637,11 +1690,9 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         bfpop = S390_BFP_SQRT;
-         rounding_mode = decode_rounding_mode(expr->Iex.Binop.arg1);
-
-         addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15,
-                                             rounding_mode));
+         set_bfp_rounding_mode_in_fpc(env, expr->Iex.Binop.arg1);
+         addInstr(env, s390_insn_bfp128_unop(16, S390_BFP_SQRT, f12, f14,
+                                             f13, f15));
 
          /* Move result to virtual destination registers */
          *dst_hi = newVRegF(env);
@@ -1664,7 +1715,6 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
    case Iex_Unop: {
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
       s390_conv_t conv;
       HReg op_hi, op_lo, op, f12, f13, f14, f15;
 
@@ -1694,9 +1744,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       addInstr(env, s390_insn_move(8, f13, op_hi));
       addInstr(env, s390_insn_move(8, f15, op_lo));
 
-      rounding_mode = S390_ROUND_NEAREST_EVEN;  /* will not be used later on */
-      addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15,
-                                          rounding_mode));
+      addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15));
       goto move_dst;
 
    convert_float:
@@ -1813,7 +1861,6 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
    case Iex_Qop: {
       HReg op1, op2, op3, dst;
       s390_bfp_triop_t bfpop;
-      s390_round_t rounding_mode;
 
       op1 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg2);
       op2 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg3);
@@ -1831,9 +1878,8 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Qop.details->arg1);
-      addInstr(env, s390_insn_bfp_triop(size, bfpop, dst, op2, op3,
-                                        rounding_mode));
+      set_bfp_rounding_mode_in_fpc(env, expr->Iex.Qop.details->arg1);
+      addInstr(env, s390_insn_bfp_triop(size, bfpop, dst, op2, op3));
       return dst;
    }
 
@@ -1844,7 +1890,6 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IRExpr *left   = triop->arg2;
       IRExpr *right  = triop->arg3;
       s390_bfp_binop_t bfpop;
-      s390_round_t rounding_mode;
       HReg h1, op2, dst;
 
       h1   = s390_isel_float_expr(env, left);  /* Process 1st operand */
@@ -1865,8 +1910,8 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(triop->arg1);
-      addInstr(env, s390_insn_bfp_binop(size, bfpop, dst, op2, rounding_mode));
+      set_bfp_rounding_mode_in_fpc(env, triop->arg1);
+      addInstr(env, s390_insn_bfp_binop(size, bfpop, dst, op2));
       return dst;
    }
 
@@ -1876,7 +1921,6 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IRExpr *irrm = expr->Iex.Binop.arg1;
       IRExpr *left = expr->Iex.Binop.arg2;
       HReg h1, dst;
-      s390_round_t rounding_mode;
       s390_conv_t  conv;
 
       switch (op) {
@@ -1884,9 +1928,8 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_SqrtF64:
          h1  = s390_isel_float_expr(env, left);
          dst = newVRegF(env);
-         rounding_mode = decode_rounding_mode(irrm);
-         addInstr(env, s390_insn_bfp_unop(size, S390_BFP_SQRT, dst, h1,
-                                          rounding_mode));
+         set_bfp_rounding_mode_in_fpc(env, irrm);
+         addInstr(env, s390_insn_bfp_unop(size, S390_BFP_SQRT, dst, h1));
          return dst;
 
       case Iop_F64toF32:  conv = S390_BFP_F64_TO_F32; goto convert_float;
@@ -1905,12 +1948,21 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          h1 = s390_isel_int_expr(env, left);
          goto convert;
 
-      convert:
+      convert: {
+         s390_round_t rounding_mode;
+         /* convert-from-fixed and load-rounded have a rounding mode field
+            when the floating point extension facility is installed. */
          dst = newVRegF(env);
-         rounding_mode = decode_rounding_mode(irrm);
+         if (s390_host_has_fpext) {
+            rounding_mode = get_bfp_rounding_mode(env, irrm);
+         } else {
+            set_bfp_rounding_mode_in_fpc(env, irrm);
+            rounding_mode = S390_ROUND_PER_FPC;
+         }
          addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
                                              rounding_mode));
          return dst;
+      }
          
       default:
          goto irreducible;
@@ -1918,11 +1970,10 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_F128toF64:
       case Iop_F128toF32: {
          HReg op_hi, op_lo, f13, f15;
+         s390_round_t rounding_mode;
 
          conv = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
                                     : S390_BFP_F128_TO_F64;
-
-         rounding_mode = decode_rounding_mode(irrm);
 
          s390_isel_float128_expr(&op_hi, &op_lo, env, left);
 
@@ -1935,6 +1986,14 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
          dst = newVRegF(env);
+         /* load-rounded has a rounding mode field when the floating point
+            extension facility is installed. */
+         if (s390_host_has_fpext) {
+            rounding_mode = get_bfp_rounding_mode(env, irrm);
+         } else {
+            set_bfp_rounding_mode_in_fpc(env, irrm);
+            rounding_mode = S390_ROUND_PER_FPC;
+         }
          addInstr(env, s390_insn_bfp128_convert_from(size, conv, dst, f13, f15,
                                                      rounding_mode));
          return dst;
@@ -1947,9 +2006,6 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IROp    op   = expr->Iex.Unop.op;
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      /* No rounding mode is needed for these conversions. Provide the
-         default rounding mode. It will not be used. */
-      s390_round_t rounding_mode = S390_ROUND_NEAREST_EVEN;
       s390_conv_t conv;
       HReg h1, dst;
 
@@ -1997,7 +2053,10 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       convert1:
          dst = newVRegF(env);
-         addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1, rounding_mode));
+         /* No rounding mode is needed for these conversions. Just stick
+            one in. It won't be used later on. */
+         addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
+                                             S390_ROUND_NEAREST_EVEN));
          return dst;
 
       default:
@@ -2007,7 +2066,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       /* Process operand */
       h1  = s390_isel_float_expr(env, left);
       dst = newVRegF(env);
-      addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1, rounding_mode));
+      addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1));
       return dst;
    }
 
@@ -2803,6 +2862,8 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    env->n_vregmap = bb->tyenv->types_used;
    env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+
+   env->previous_bfp_rounding_mode = NULL;
 
    /* and finally ... */
    env->hwcaps    = hwcaps_host;

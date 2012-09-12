@@ -1,0 +1,54 @@
+setting FPC rounding mode to [-> near]
+cefbr:  2147483647 -> 2147483648.000000
+setting FPC rounding mode to [-> zero]
+cefbr:  2147483647 -> 2147483520.000000
+setting FPC rounding mode to [-> +inf]
+cefbr:  2147483647 -> 2147483648.000000
+setting FPC rounding mode to [-> -inf]
+cefbr:  2147483647 -> 2147483520.000000
+
+setting FPC rounding mode to [-> near]
+cefbr:  -2147483648 -> -2147483648.000000
+setting FPC rounding mode to [-> zero]
+cefbr:  -2147483648 -> -2147483648.000000
+setting FPC rounding mode to [-> +inf]
+cefbr:  -2147483648 -> -2147483648.000000
+setting FPC rounding mode to [-> -inf]
+cefbr:  -2147483648 -> -2147483648.000000
+
+setting FPC rounding mode to [-> near]
+cegbr:  9223372036854775807 -> 9223372036854775808.000000
+setting FPC rounding mode to [-> zero]
+cegbr:  9223372036854775807 -> 9223371487098961920.000000
+setting FPC rounding mode to [-> +inf]
+cegbr:  9223372036854775807 -> 9223372036854775808.000000
+setting FPC rounding mode to [-> -inf]
+cegbr:  9223372036854775807 -> 9223371487098961920.000000
+
+setting FPC rounding mode to [-> near]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+setting FPC rounding mode to [-> zero]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+setting FPC rounding mode to [-> +inf]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+setting FPC rounding mode to [-> -inf]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+
+setting FPC rounding mode to [-> near]
+cegbr:  9223372036854775807 -> 9223372036854775808.000000
+setting FPC rounding mode to [-> zero]
+cegbr:  9223372036854775807 -> 9223372036854774784.000000
+setting FPC rounding mode to [-> +inf]
+cegbr:  9223372036854775807 -> 9223372036854775808.000000
+setting FPC rounding mode to [-> -inf]
+cegbr:  9223372036854775807 -> 9223372036854774784.000000
+
+setting FPC rounding mode to [-> near]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+setting FPC rounding mode to [-> zero]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+setting FPC rounding mode to [-> +inf]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+setting FPC rounding mode to [-> -inf]
+cegbr:  -9223372036854775808 -> -9223372036854775808.000000
+

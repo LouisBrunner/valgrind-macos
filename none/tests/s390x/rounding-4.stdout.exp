@@ -1,0 +1,19 @@
+setting FPC rounding mode to [-> near]
+load rounded  d = 1.2345678987654319598e+28    f = 1.234567915439125133e+28
+setting FPC rounding mode to [-> zero]
+load rounded  d = 1.2345678987654319598e+28    f = 1.2345677973799630613e+28
+setting FPC rounding mode to [-> +inf]
+load rounded  d = 1.2345678987654319598e+28    f = 1.234567915439125133e+28
+setting FPC rounding mode to [-> -inf]
+load rounded  d = 1.2345678987654319598e+28    f = 1.2345677973799630613e+28
+
+setting FPC rounding mode to [-> near]
+load rounded  d = -1.2345678987654319598e+28    f = -1.234567915439125133e+28
+setting FPC rounding mode to [-> zero]
+load rounded  d = -1.2345678987654319598e+28    f = -1.2345677973799630613e+28
+setting FPC rounding mode to [-> +inf]
+load rounded  d = -1.2345678987654319598e+28    f = -1.2345677973799630613e+28
+setting FPC rounding mode to [-> -inf]
+load rounded  d = -1.2345678987654319598e+28    f = -1.234567915439125133e+28
+
+load lengthened  d = -1.234567915439125133e+28    f = -1.234567915439125133e+28

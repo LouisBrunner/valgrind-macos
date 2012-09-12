@@ -52,6 +52,7 @@
             ".long  0x" #i4 #m3 #u0 #op2 "\n\t"
 #define RRE_RR(op,u0,r1,r2)  ".long 0x" #op #u0 #r1 #r2 "\n\t"
 #define RRE_RERE(op,r1,r2)  ".long 0x" #op "00" #r1 #r2 "\n\t"
+#define RRE_R0(op,r1)       ".long 0x" #op "00" #r1 "0" "\n\t"
 #define SIL_RDU(op,b1,d1,i2)  \
             ".short 0x" #op "\n\t"  \
             ".long  0x" #b1 #d1 #i2 "\n\t"
@@ -299,6 +300,7 @@
 #define RNSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,54)
 #define ROSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,56)
 #define RXSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,57)
+#define SFPC(r1)                        RRE_R0(b384,r1)
 #define SGRK(r3,r1,r2)                  RRF_R0RR2(b9e9,r3,0,r1,r2)
 #define SHHHR(r3,r1,r2)                 RRF_R0RR2(b9c9,r3,0,r1,r2)
 #define SHHLR(r3,r1,r2)                 RRF_R0RR2(b9d9,r3,0,r1,r2)

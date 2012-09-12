@@ -3040,12 +3040,12 @@ s390_emit_LZDR(UChar *p, UChar r1, UChar r2)
 
 
 static UChar *
-s390_emit_SFPC(UChar *p, UChar r1, UChar r2)
+s390_emit_SFPC(UChar *p, UChar r1)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC2(MNM, GPR), "sfpc", r1);
 
-   return emit_RRE(p, 0xb3840000, r1, r2);
+   return emit_RRE(p, 0xb3840000, r1, 0);
 }
 
 
@@ -7528,7 +7528,7 @@ s390_insn_set_fpcrm_emit(UChar *buf, const s390_insn *insn)
 
    buf = s390_emit_NILL(buf, R0, 0xFFF8); /* Clear out right-most 3 bits */
    buf = s390_emit_OR(buf, R0, mode);     /* OR in the new rounding mode */
-   buf = s390_emit_SFPC(buf, R0, 0);      /* Load FPC register from R0 */
+   buf = s390_emit_SFPC(buf, R0);         /* Load FPC register from R0 */
 
    return buf;
 }

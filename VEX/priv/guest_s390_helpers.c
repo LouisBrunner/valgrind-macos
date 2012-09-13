@@ -873,6 +873,7 @@ ULong s390_do_ecag(ULong op2addr) { return 0; }
 /*------------------------------------------------------------*/
 
 /* Convert an IRRoundingMode value to s390_round_t */
+#if defined(VGA_s390x)
 static s390_round_t
 decode_bfp_rounding_mode(UInt irrm)
 {
@@ -884,6 +885,7 @@ decode_bfp_rounding_mode(UInt irrm)
    }
    vpanic("decode_bfp_rounding_mode");
 }
+#endif
 
 
 #define S390_CC_FOR_BINARY(opcode,cc_dep1,cc_dep2) \

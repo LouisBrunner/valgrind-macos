@@ -36,10 +36,8 @@
 #include "main_globals.h"     // vex_traceflags
 #include "host_s390_disasm.h"
 
-/* The format that is used to write out a mnemonic.
-   These should be declared as 'const HChar' but vex_printf needs
-   to be changed for that first */
-static HChar s390_mnm_fmt[] = "%-8s";
+/* The format that is used to write out a mnemonic. */
+static const HChar s390_mnm_fmt[] = "%-8s";
 
 
 /* Return the name of a general purpose register for dis-assembly purposes. */

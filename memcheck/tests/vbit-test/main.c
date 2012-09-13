@@ -50,6 +50,20 @@ new_test_data(const irop_t *op)
 
 int verbose = 0;
 
+
+/* Certain IROps require special handling. */
+static void
+fixup_irops(void)
+{
+#ifdef __powerpc__
+   get_irop(Iop_ShlD64)->shift_amount_is_immediate = 1;
+   get_irop(Iop_ShrD64)->shift_amount_is_immediate = 1;
+   get_irop(Iop_ShlD128)->shift_amount_is_immediate = 1;
+   get_irop(Iop_ShrD128)->shift_amount_is_immediate = 1;
+#endif
+}
+
+
 int 
 main(int argc, char *argv[])
 {
@@ -74,6 +88,8 @@ main(int argc, char *argv[])
    }
 
    setbuf(stdout, NULL);  // make stdout unbuffered
+
+   fixup_irops();         // determine need for special handling
 
    // Iterate over all primops
    IROp first = Iop_INVALID + 1;

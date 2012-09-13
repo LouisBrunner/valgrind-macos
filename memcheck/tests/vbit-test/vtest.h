@@ -63,6 +63,7 @@ typedef struct {
    IROp op;
    const char *name;
    undef_t     undef_kind;
+   int         shift_amount_is_immediate;
    // Indicate whether IROp can be tested on a particular architecture
    unsigned    s390x  : 1;
    unsigned    amd64  : 1;
@@ -95,7 +96,7 @@ typedef struct {
 
 
 /* Function prototypes */
-const irop_t *get_irop(IROp);
+irop_t *get_irop(IROp);
 int  is_floating_point_op_with_rounding_mode(IROp);
 int  get_num_operands(IROp);
 

@@ -27,6 +27,8 @@ new_iricb(const irop_t *op, test_data_t *data)
 
    cb.num_operands = get_num_operands(op->op);
 
+   cb.shift_amount_is_immediate = op->shift_amount_is_immediate;
+
    return cb;
 }
 

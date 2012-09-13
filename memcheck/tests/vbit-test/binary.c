@@ -189,6 +189,10 @@ test_shift(const irop_t *op, test_data_t *data)
    }
 
    // 2nd (right) operand
+
+   /* If the operand is an immediate value, there are no v-bits to set. */
+   if (op->shift_amount_is_immediate) return;
+
    num_input_bits = bitsof_irtype(opnds[1].type);
 
    for (i = 0; i < num_input_bits; ++i) {
@@ -410,6 +414,11 @@ test_binary_op(const irop_t *op, test_data_t *data)
       that propagates to the output. Do this for all bits in each
       operand. */
    for (i = 0; i < 2; ++i) {
+
+      /* If this is a shift op that requires an immediate shift amount,
+         do not iterate the v-bits of the 2nd operand */
+      if (i == 1 && op->shift_amount_is_immediate) break;
+
       num_input_bits = bitsof_irtype(opnds[i].type);
       opnds[0].vbits = defined_vbits(bitsof_irtype(opnds[0].type));
       opnds[1].vbits = defined_vbits(bitsof_irtype(opnds[1].type));
@@ -417,6 +426,11 @@ test_binary_op(const irop_t *op, test_data_t *data)
       /* Set the value of the 2nd operand to something != 0. So division
          won't crash. */
       memset(&opnds[1].value, 0xff, sizeof opnds[1].value);
+
+      /* For immediate shift amounts choose a value of '1'. That should
+         not cause a problem. */
+      if (op->shift_amount_is_immediate)
+         opnds[1].value.u8 = 1;
 
       for (bitpos = 0; bitpos < num_input_bits; ++bitpos) {
          opnds[i].vbits = onehot_vbits(bitpos, bitsof_irtype(opnds[i].type));

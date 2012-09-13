@@ -9,7 +9,7 @@
 /* The opcodes appear in the same order here as in libvex_ir.h
    That is not necessary but helpful when supporting a new architecture.
 */
-static const irop_t irops[] = {
+static irop_t irops[] = {
   { DEFOP(Iop_Add8,    UNDEF_LEFT), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
   { DEFOP(Iop_Add16,   UNDEF_LEFT), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
   { DEFOP(Iop_Add32,   UNDEF_LEFT), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 1, .ppc64 = 1, .ppc32 = 1, .mips32 = 1 },
@@ -479,10 +479,10 @@ static const irop_t irops[] = {
   { DEFOP(Iop_SubD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_MulD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_DivD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
-  { DEFOP(Iop_ShlD64,                UNDEF_SHL),  .s390x = 0, .ppc64 = 0, .ppc32 = 0 }, // BZ #305948
-  { DEFOP(Iop_ShrD64,                UNDEF_SHR),  .s390x = 0, .ppc64 = 0, .ppc32 = 0 }, // BZ #305948
-  { DEFOP(Iop_ShlD128,               UNDEF_SHL),  .s390x = 0, .ppc64 = 0, .ppc32 = 0 }, // BZ #305948
-  { DEFOP(Iop_ShrD128,               UNDEF_SHR),  .s390x = 0, .ppc64 = 0, .ppc32 = 0 }, // BZ #305948
+  { DEFOP(Iop_ShlD64,                UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ShrD64,                UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ShlD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ShrD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_D32toD64,              UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_D64toD128,             UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_I64StoD128,            UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
@@ -859,13 +859,13 @@ static const irop_t irops[] = {
 
 /* Return a descriptor for OP, iff it exists and it is implemented
    for the current architecture. */
-const irop_t *
+irop_t *
 get_irop(IROp op)
 {
    unsigned i;
 
    for (i = 0; i < sizeof irops / sizeof *irops; ++i) {
-      const irop_t *p = irops + i;
+      irop_t *p = irops + i;
       if (p->op == op) {
 #ifdef __s390x__
 #define S390X_FEATURES "../../../tests/s390x_features"

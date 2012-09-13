@@ -1725,7 +1725,14 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       f15 = make_fpr(15);
 
       switch (expr->Iex.Unop.op) {
-      case Iop_NegF128:     bfpop = S390_BFP_NEG;         goto float128_opnd;
+      case Iop_NegF128:
+         if (left->tag == Iex_Unop &&
+             (left->Iex.Unop.op == Iop_AbsF32 ||
+              left->Iex.Unop.op == Iop_AbsF64))
+            bfpop = S390_BFP_NABS;
+         else
+            bfpop = S390_BFP_NEG;
+         goto float128_opnd;
       case Iop_AbsF128:     bfpop = S390_BFP_ABS;         goto float128_opnd;
       case Iop_I32StoF128:  conv = S390_BFP_I32_TO_F128;  goto convert_int;
       case Iop_I64StoF128:  conv = S390_BFP_I64_TO_F128;  goto convert_int;
@@ -2028,7 +2035,8 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_NegF32:
       case Iop_NegF64:
          if (left->tag == Iex_Unop &&
-             (left->Iex.Unop.op == Iop_AbsF32 || left->Iex.Unop.op == Iop_AbsF64))
+             (left->Iex.Unop.op == Iop_AbsF32 ||
+              left->Iex.Unop.op == Iop_AbsF64))
             bfpop = S390_BFP_NABS;
          else
             bfpop = S390_BFP_NEG;

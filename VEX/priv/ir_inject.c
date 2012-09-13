@@ -35,6 +35,7 @@
 #include "main_util.h"
 
 /* Convenience macros for readibility */
+#define mkU8(v)   IRExpr_Const(IRConst_U8(v))
 #define mkU32(v)  IRExpr_Const(IRConst_U32(v))
 #define mkU64(v)  IRExpr_Const(IRConst_U64(v))
 #define unop(kind, a)  IRExpr_Unop(kind, a)
@@ -208,7 +209,15 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
 
    case 2:
       opnd1 = load(endian, iricb.t_opnd1, iricb.opnd1);
-      opnd2 = load(endian, iricb.t_opnd2, iricb.opnd2);
+
+      if (iricb.shift_amount_is_immediate) {
+         // This implies that the IROp is a shift op
+         vassert(iricb.t_opnd2 == Ity_I8);
+         opnd2 = mkU8(*((Char *)iricb.opnd2));
+      } else {
+         opnd2 = load(endian, iricb.t_opnd2, iricb.opnd2);
+      }
+
       if (rounding_mode)
          data = triop(iricb.op, rounding_mode, opnd1, opnd2);
       else

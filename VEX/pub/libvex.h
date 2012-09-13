@@ -775,6 +775,7 @@ typedef
       IRType t_opnd4;  // type of 4th operand
       UInt  rounding_mode;
       UInt  num_operands; // excluding rounding mode, if any
+      Bool  shift_amount_is_immediate;
    }
    IRICB;
 

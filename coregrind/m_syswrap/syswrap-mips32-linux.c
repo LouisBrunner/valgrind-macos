@@ -1606,6 +1606,7 @@ static SyscallTableEntry syscall_main_table[] = {
   PLAX_ (__NR_sendmsg, sys_sendmsg),	// 179
   PLAX_ (__NR_sendto, sys_sendto),	// 180
   PLAX_ (__NR_setsockopt, sys_setsockopt),	// 181
+  PLAX_ (__NR_shutdown, sys_shutdown),  // 182
   PLAXY (__NR_socket, sys_socket),	// 183
   PLAXY (__NR_socketpair, sys_socketpair),	// 184
   LINX_ (__NR_setresuid, sys_setresuid),	// 185

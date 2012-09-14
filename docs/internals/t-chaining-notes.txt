@@ -22,7 +22,7 @@ host_arm_isel.c and host_arm_defs.c: get rid of global var arm_hwcaps.
 
 host_x86_defs.c, host_amd64_defs.c: return proper VexInvalRange
 records from the patchers, instead of {0,0}, so that transparent
-self hosting works properly.  Ditto for s390 ?
+self hosting works properly.
 
 host_ppc_defs.h: is RdWrLR still needed?  If not delete.
 

@@ -1,0 +1,2 @@
+prereq: test ! `../../tests/os_test darwin` && ! `../../tests/arch_test mips32` && ! `../../tests/arch_test ppc64`
+prog: leak-segv-jmp

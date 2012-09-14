@@ -35,7 +35,7 @@ branch.
 (B38=2508)  2499   (305926: Invalid alignment checks for some AVX instructions)
 (B38=12946) 12923  (304980: Guard against negative symbol sizes)
 (B38=12948) 12947 (n-i-bz: volatile in stack check, re clang)
-
+(B38=?????) 12964  (306310  3.8.0 release tarball missing some files)
 
 -------- Bugs brought forward from 3_7_BUGSTATUS.txt --------
 

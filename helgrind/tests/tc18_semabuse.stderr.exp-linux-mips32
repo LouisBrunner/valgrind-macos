@@ -1,0 +1,22 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x's call to sem_init failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: sem_init_WRK (hg_intercepts.c:...)
+   by 0x........: sem_init@* (hg_intercepts.c:...)
+   by 0x........: main (tc18_semabuse.c:23)
+
+----------------------------------------------------------------
+
+Thread #x: Bug in libpthread: sem_wait succeeded on semaphore without prior sem_post
+   at 0x........: sem_wait_WRK (hg_intercepts.c:...)
+   by 0x........: sem_wait (hg_intercepts.c:...)
+   by 0x........: main (tc18_semabuse.c:34)
+
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

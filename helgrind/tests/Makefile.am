@@ -80,6 +80,7 @@ EXTRA_DIST = \
 		tc17_sembar.stderr.exp \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
 		tc18_semabuse.stderr.exp \
+		tc18_semabuse.stderr.exp-linux-mips32 \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \

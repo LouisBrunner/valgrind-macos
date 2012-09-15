@@ -45,6 +45,11 @@
 # 
 #   pass the specified command to the linker as-is, except, add
 #   "-static" and "-Ttext=<argv[1]>" to it.
+#   Previously we did this by adding these options after the first
+#   word of the rest of the arguments, which works in the common case
+#   when it's something like "gcc". But the linker invocation itself
+#   might be multiple words, say if it's "ccache gcc". So we now put
+#   the new options at the end instead.
 #
 
 use warnings;
@@ -55,42 +60,33 @@ die "Not enough arguments"
     if (($#ARGV + 1) < 5);
 
 my $ala = $ARGV[0];
+shift; # Remove $ala from @ARGV
 
 # check for plausible-ish alt load address
 die "Bogus alt-load address"
     if (length($ala) < 3 || index($ala, "0x") != 0);
 
-# The cc invokation to do the final link
-my $cc = $ARGV[1];
-
-# and the 'restargs' are argv[2 ..]
-
-# so, build up the complete command here:
-# 'cc' -static -Ttext='ala' 'restargs'
-
 # For mips we need to use "--section-start=.reginfo=$ala" because
 # "--section-start=.reginfo=$ala" will put all the sections to the 
 # specificed address ($ala)
-my $x=`$cc -v 2>&1 | grep Target | sed 's/Target: //g'`;
+my $orig_cmd = join(" ", @ARGV);
+my $x=`$orig_cmd -v 2>&1 | grep Target | sed 's/Target: //g'`;
 my $arch=substr($x, 0, index($x, '-'));
-my $cmd;
 
+my $extra_args;
 if (($arch eq 'mips') || ($arch eq 'mipsel')) {
-   $cmd = "$cc -static -Wl,--section-start=.reginfo=$ala";
+   $extra_args = "-static -Wl,--section-start=.reginfo=$ala";
 } else {
-   $cmd = "$cc -static -Wl,-Ttext=$ala";
+   $extra_args = "-static -Wl,-Ttext=$ala";
 }
 
-# Add the rest of the parameters
-foreach my $n (2 .. $#ARGV) {
-   $cmd = "$cmd $ARGV[$n]";
-}
+my $cmd = join(" ", @ARGV, $extra_args);
 
 #print "link_tool_exe_linux: $cmd\n";
 
 
 # Execute the command:
-my $r = system("$cmd");
+my $r = system($cmd);
 
 if ($r == 0) {
     exit 0;

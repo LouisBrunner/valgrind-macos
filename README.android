@@ -79,7 +79,6 @@ export CC=$NDKROOT/toolchains/x86-4.4.3/prebuilt/linux-x86/bin/i686-android-linu
 
 # The below re-generates configure, Makefiles, ...
 # This is not needed if you start from a release tarball.
-# (in any case, the release tarball does not contain the autogen.sh file).
 ./autogen.sh
 
 # for ARM

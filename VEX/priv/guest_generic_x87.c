@@ -798,6 +798,7 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       case 0x00:
       case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
       case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
+      case 0x46:
          break;
       default:
          return False;
@@ -931,6 +932,46 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       UInt   ri, si;
       UChar* argL    = (UChar*)argLV;
       UChar* argR    = (UChar*)argRV;
+      UInt   boolRes = 0;
+      UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
+      UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
+      for (si = 0; si < 16; si++) {
+         if ((validL & (1 << si)) == 0)
+            // run off the end of the string
+            break;
+         UInt m = 0;
+         for (ri = 0; ri < 16; ri += 2) {
+            if ((validR & (3 << ri)) != (3 << ri)) break;
+            if (argR[ri] <= argL[si] && argL[si] <= argR[ri+1]) { 
+               m = 1; break;
+            }
+         }
+         boolRes |= (m << si);
+      }
+
+      // boolRes is "pre-invalidated"
+      UInt intRes1 = boolRes & 0xFFFF;
+
+      // generate I-format output
+      compute_PCMPxSTRx_gen_output(
+         resV, resOSZACP,
+         intRes1, zmaskL, zmaskR, validL, pol, idx, isxSTRM
+      );
+
+      return True;
+   }
+
+   /*----------------------------------------*/
+   /*-- ranges, signed byte data           --*/
+   /*----------------------------------------*/
+
+   if (agg == 1/*ranges*/
+       && fmt == 2/*sb*/) {
+
+      /* argL: string,  argR: range-pairs */
+      UInt   ri, si;
+      Char*  argL    = (Char*)argLV;
+      Char*  argR    = (Char*)argRV;
       UInt   boolRes = 0;
       UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))

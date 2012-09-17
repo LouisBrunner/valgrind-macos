@@ -105,7 +105,8 @@ EXTRA_DIST = \
 	NEWS.old \
 	valgrind.pc.in \
 	valgrind.spec.in \
-	valgrind.spec
+	valgrind.spec \
+	autogen.sh
 
 dist_noinst_SCRIPTS = \
 	vg-in-place

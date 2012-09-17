@@ -37,6 +37,9 @@ branch.
 (B38=12948) 12947 (n-i-bz: volatile in stack check, re clang)
 (B38=?????) 12964  (306310  3.8.0 release tarball missing some files)
 
+VEX r2517, 2518
+#306310 (12964)
+
 -------- Bugs brought forward from 3_7_BUGSTATUS.txt --------
 
 291310  FXSAVE instruction marks memory as undefined on amd64
@@ -101,3 +104,36 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 306098  s390x: alternate opcode form for convert to/from fixed
 
 -- Sat 1 Sept 2012 10pm
+
+306171  Boost.Context appears to cause Valgrind to crash
+
+306235  unhandled syscall: 429 (freebsd)
+
+306297  disInstr(thumb): unhandled instruction 0xE883 0x000C
+
+306299  Internal error when running a winelib application
+
+306310  3.8.0 release tarball missing some files
+
+306340  parse_var_DIE confused by DWARF from clang-3.1
+
+306360  vex x86->IR: 0x66 0xF 0x3A 0x1
+
+306535  massif: force dump result every X minutes
+
+306587  data cache line size is 128 and instruction cache line size is 32
+306588  data cache line size is 128 and instruction cache line size is 32
+
+306590  not support e500v2 spe  0x216 command
+
+306612  RHEL 6 glibc-2.X default suppressions need /lib*/libc-*patterns
+
+   286864 strlen function redirection error
+
+306664  vex amd64->IR: 0x66 0xF 0x3A 0x62 0xD1 0x46 0x66 0xF
+
+306721  vex amd64->IR: 0xC5 0xFB 0x10 0x5 0x1B 0xE8 0x1 0x0
+
+306783  Mips unhandled syscall :  4025  /  4079  / 4182
+
+-- Mon 17 Sept 2012, 10 am

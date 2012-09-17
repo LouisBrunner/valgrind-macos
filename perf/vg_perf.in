@@ -252,6 +252,12 @@ sub time_prog($$)
             die "\n*** missing usertime in perf.stderr\n";
         $tmin = $1 if ($1 < $tmin);
     }
+
+    # Successful run; cleanup
+    unlink("perf.cmd");
+    unlink("perf.stderr");
+    unlink("perf.stdout");
+
     # Avoid divisions by zero!
     return (0 == $tmin ? 0.01 : $tmin);
 }

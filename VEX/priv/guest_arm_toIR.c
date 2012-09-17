@@ -16438,15 +16438,6 @@ DisResult disInstr_THUMB_WRK (
          if (rN == 15)                       valid = False;
          if (popcount32(regList) < 2)        valid = False;
          if (bW == 1 && (regList & (1<<rN))) valid = False;
-         if (regList & (1<<rN)) {
-            UInt i;
-            /* if Rn is in the list, then it must be the
-               lowest numbered entry */
-            for (i = 0; i < rN; i++) {
-               if (regList & (1<<i))
-                  valid = False;
-            }
-         }
       }
 
       if (valid) {

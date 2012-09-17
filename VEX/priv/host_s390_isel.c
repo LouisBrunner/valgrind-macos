@@ -1635,7 +1635,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       /* --------- UNARY OP --------- */
    case Iex_Unop: {
-      IRExpr *left = expr->Iex.Binop.arg1;
+      IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
       s390_round_t rounding_mode;
       HReg op_hi, op_lo, op, f12, f13, f14, f15;
@@ -1646,7 +1646,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       f14 = make_fpr(14);
       f15 = make_fpr(15);
 
-      switch (expr->Iex.Binop.op) {
+      switch (expr->Iex.Unop.op) {
       case Iop_NegF128:       bfpop = S390_BFP_NEG;          goto float128_opnd;
       case Iop_AbsF128:       bfpop = S390_BFP_ABS;          goto float128_opnd;
       case Iop_I32StoF128:    bfpop = S390_BFP_I32_TO_F128;  goto convert_int;

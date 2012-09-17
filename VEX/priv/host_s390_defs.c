@@ -7372,7 +7372,7 @@ s390_insn_bfp128_convert_from_emit(UChar *buf, const s390_insn *insn)
    UInt r1    = hregNumber(insn->variant.bfp128_unop.dst_hi);
    UInt r2_hi = hregNumber(insn->variant.bfp128_unop.op_hi);
    UInt r2_lo = hregNumber(insn->variant.bfp128_unop.op_lo);
-   s390_round_t rounding_mode = insn->variant.bfp_binop.rounding_mode;
+   s390_round_t rounding_mode = insn->variant.bfp128_unop.rounding_mode;
 
    /* Paranoia */
    vassert(insn->size != 16);

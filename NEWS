@@ -56,6 +56,11 @@ n-i-bz m  [381] Fixes for more MPI false positives
 n-i-bz m  [381] exp-sgcheck's memcpy causes programs to segfault
 n-i-bz m  [381] volatile in stack check, re clang
 n-i-bz m  [381] Incorrect undef'dness prop for Iop_DPBtoBCD and Iop_BCDtoDPB
+306297    [381] disInstr(thumb): unhandled instruction 0xE883 0x000C
+306664    [381] vex amd64->IR: 0x66 0xF 0x3A 0x62 0xD1 0x46 0x66 0xF
+304035    [381] disInstr(arm): unhandled instruction 0xE1023053
+306612    [381] RHEL 6 glibc-2.X default suppressions need /lib*/libc-*patterns
+
 
 
 Release 3.8.0 (10 August 2012)

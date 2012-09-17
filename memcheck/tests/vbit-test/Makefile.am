@@ -9,7 +9,7 @@ dist_noinst_SCRIPTS = filter_stderr
 #----------------------------------------------------------------------------
 
 pkginclude_HEADERS = 
-noinst_HEADERS =
+noinst_HEADERS = vtest.h vbits.h
 
 #----------------------------------------------------------------------------
 # vbit_test

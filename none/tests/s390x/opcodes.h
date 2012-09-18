@@ -98,6 +98,7 @@
             ".short 0x" #op1 #r1 #r2 "\n\t"  \
             ".long  0x" #i3 #i4 #i5 #op2 "\n\t"
 #define RRF_M0RERE(op,m3,r1,r2)  ".long 0x" #op #m3 "0" #r1 #r2 "\n\t"
+#define S_RD(op,b2,d2) ".long 0x" #op #b2 #d2 "\n\t"
 
 #define AFI(r1,i2)                      RIL_RI(c2,r1,9,i2)
 #define AGFI(r1,i2)                     RIL_RI(c2,r1,8,i2)
@@ -318,6 +319,7 @@
 #define SRAK(r1,r3,b2,dl2,dh2)          RSY_RRRD(eb,r1,r3,b2,dl2,dh2,dc)
 #define SRK(r3,r1,r2)                   RRF_R0RR2(b9f9,r3,0,r1,r2)
 #define SRLK(r1,r3,b2,dl2,dh2)          RSY_RRRD(eb,r1,r3,b2,dl2,dh2,de)
+#define SRNMB(b2,d2)                    S_RD(b2b8,b2,d2)
 #define STAMY(r1,r3,b2,dl2,dh2)         RSY_AARD(eb,r1,r3,b2,dl2,dh2,9b)
 #define STCH(r1,x2,b2,dl2,dh2)          RXY_RRRD(e3,r1,x2,b2,dl2,dh2,c3)
 #define STCMY(r1,r3,b2,dl2,dh2)         RSY_RURD(eb,r1,r3,b2,dl2,dh2,2d)

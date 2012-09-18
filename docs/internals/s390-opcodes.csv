@@ -959,4 +959,4 @@ mdtra,"multiply long dfp with rounding mode","not implemented","new to z196"
 mxtra,"multiply extended dfp with rounding mode","not implemented","new to z196"
 sdtra,"subtract long dfp with rounding mode","not implemented","new to z196"
 sxtra,"subtract extended dfp with rounding mode","not implemented","new to z196"
-srnmb,"set 3 bit bfp rounding mode","not implemented",
+srnmb,"set 3 bit bfp rounding mode",implemented,

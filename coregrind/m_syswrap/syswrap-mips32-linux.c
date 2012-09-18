@@ -1424,7 +1424,7 @@ static SyscallTableEntry syscall_main_table[] = {
   GENX_ (__NR_unlink, sys_unlink),	// 10
   GENX_ (__NR_execve, sys_execve),	// 11
   GENX_ (__NR_chdir, sys_chdir),	// 12
-  GENXY (__NR_time, sys_time),	// 13
+  GENXY (__NR_time, sys_time),		// 13
   GENX_ (__NR_mknod, sys_mknod),	// 14
   GENX_ (__NR_chmod, sys_chmod),	// 15
   GENX_ (__NR_lchown, sys_lchown),	// 16
@@ -1434,7 +1434,7 @@ static SyscallTableEntry syscall_main_table[] = {
   LINX_ (__NR_umount, sys_oldumount),	// 22
   GENX_ (__NR_setuid, sys_setuid),	// 23 ## P
   GENX_ (__NR_getuid, sys_getuid),	// 24 ## P
-  //..    //   (__NR_stime,             sys_stime),
+  LINX_ (__NR_stime, sys_stime),	// 25
   //..    PLAXY(__NR_ptrace,            sys_ptrace),            // 26
   GENX_ (__NR_alarm, sys_alarm),	// 27
   //..    //   (__NR_oldfstat,          sys_fstat), 
@@ -1491,7 +1491,7 @@ static SyscallTableEntry syscall_main_table[] = {
   //..    GENXY(__NR_getrlimit,         sys_old_getrlimit),     // 76
   GENXY (__NR_getrusage, sys_getrusage),	// 77
   GENXY (__NR_gettimeofday, sys_gettimeofday),	// 78
-  //..    GENX_(__NR_settimeofday,      sys_settimeofday),      // 79
+  GENX_ (__NR_settimeofday, sys_settimeofday),  // 79
   //..
   GENXY (__NR_getgroups, sys_getgroups),	// 80
   GENX_ (__NR_setgroups, sys_setgroups),	// 81

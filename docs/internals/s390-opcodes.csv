@@ -1,18 +1,18 @@
 a,add,implemented,
-ad,"add normalized (long)","not implemented",
-adr,"add normalized (long)","not implemented",
-ae,"add normalized (short)","not implemented",
-aer,"add normalized (short)","not implemented",
+ad,"add normalized (long)","won't do","hfp instruction"
+adr,"add normalized (long)","won't do","hfp instruction"
+ae,"add normalized (short)","won't do","hfp instruction"
+aer,"add normalized (short)","won't do","hfp instruction"
 ah,"add halfword",implemented,
 al,"add logical",implemented,
 alr,"add logical",implemented,
 ap,"add decimal","not implemented",
 ar,add,implemented,
-au,"add unnormalized (short)","not implemented",
-aur,"add unnormalized (short)","not implemented",
-aw,"add unnormalized (long)","not implemented",
-awr,"add unnormalized (long)","not implemented",
-axr,"add normalized","not implemented",
+au,"add unnormalized (short)","won't do","hfp instruction"
+aur,"add unnormalized (short)","won't do","hfp instruction"
+aw,"add unnormalized (long)","won't do","hfp instruction"
+awr,"add unnormalized (long)","won't do","hfp instruction"
+axr,"add normalized","won't do","hfp instruction"
 bakr,"branch and stack","not implemented",
 bal,"branch and link","not implemented",
 balr,"branch and link","not implemented",
@@ -28,11 +28,11 @@ bsm,"branch and set mode","not implemented",
 bxh,"branch on index high",implemented,
 bxle,"branch on index low or equal",implemented,
 c,compare,implemented,
-cd,"compare (long)","not implemented",
-cdr,"compare (long)","not implemented",
+cd,"compare (long)","won't do","hfp instruction"
+cdr,"compare (long)","won't do","hfp instruction"
 cds,"compare double and swap",implemented,
-ce,"compare (short)","not implemented",
-cer,"compare (short)","not implemented",
+ce,"compare (short)","won't do","hfp instruction"
+cer,"compare (short)","won't do","hfp instruction"
 cfc,"compare and form codeword","not implemented",
 ch,"compare halfword",implemented,
 cl,"compare logical",implemented,
@@ -51,15 +51,16 @@ cuse,"compare until substring equal","not implemented",
 csp,"compare and swap and purge",N/A,"privileged instruction"
 cvb,"convert to binary",implemented,
 cvd,"convert to decimal",implemented,
+cxr,"compare extended hfp","won't do","hfp instruction"
 d,divide,implemented,
-dd,"divide (long)","not implemented",
-ddr,"divide (long)","not implemented",
-de,"divide (short)","not implemented",
-der,"divide (short)","not implemented",
+dd,"divide (long)","won't do","hfp instruction"
+ddr,"divide (long)","won't do","hfp instruction"
+de,"divide (short)","won't do","hfp instruction"
+der,"divide (short)","won't do","hfp instruction"
 diag,diagnose,N/A,"privileged instruction"
 dp,"divide decimal","not implemented",
 dr,divide,implemented,
-dxr,"divide (ext.)","not implemented",
+dxr,"divide (ext.)","won't do","hfp instruction"
 ear,"extract access",implemented,
 ed,edit,"not implemented",
 edmk,"edit and mark","not implemented",
@@ -68,8 +69,8 @@ ereg,"extract stacked registers","not implemented",
 esar,"extract secondary ASN",N/A,"privileged instruction"
 esta,"extract stacked state","not implemented",
 ex,execute,implemented,
-hdr,"halve (long)","not implemented",
-her,"halve (short)","not implemented",
+hdr,"halve (long)","won't do","hfp instruction"
+her,"halve (short)","won't do","hfp instruction"
 hsch,"halt subchannel",N/A,"privileged instruction"
 iac,"insert address space control","not implemented",
 ic,"insert character",implemented,
@@ -84,8 +85,8 @@ la,"load address",implemented,
 lae,"load address extended",implemented,
 lam,"load access multiple",implemented,
 lasp,"load address space parameters",N/A,"privileged instruction"
-lcdr,"load complement (long)","not implemented",
-lcer,"load complement (short)","not implemented",
+lcdr,"load complement (long)","won't do","hfp instruction"
+lcer,"load complement (short)","won't do","hfp instruction"
 lcr,"load complement",implemented,
 lctl,"load control",N/A,"privileged instruction"
 ld,"load (long)",implemented,
@@ -94,26 +95,26 @@ le,"load (short)",implemented,
 ler,"load (short)",implemented,
 lh,"load halfword",implemented,
 lm,"load multiple",implemented,
-lndr,"load negative (long)","not implemented",
-lner,"load negative (short)","not implemented",
+lndr,"load negative (long)","won't do","hfp instruction"
+lner,"load negative (short)","won't do","hfp instruction"
 lnr,"load negative",implemented,
-lpdr,"load positive (long)","not implemented",
-lper,"load positive (short)","not implemented",
+lpdr,"load positive (long)","won't do","hfp instruction"
+lper,"load positive (short)","won't do","hfp instruction"
 lpr,"load positive",implemented,
 lpsw,"load PSW",N/A,"privileged instruction"
 lr,load,implemented,
 lra,"load real address",N/A,"privileged instruction"
-ldxr,"load rounded (ext. to long)","not implemented",
-ledr,"load rounded (long to short)","not implemented",
-ltdr,"load and test (long)","not implemented",
-lter,"load and test (short)","not implemented",
+ldxr,"load rounded (ext. to long)","won't do","hfp instruction"
+ledr,"load rounded (long to short)","won't do","hfp instruction"
+ltdr,"load and test (long)","won't do","hfp instruction"
+lter,"load and test (short)","won't do","hfp instruction"
 ltr,"load and test",implemented,
 lura,"load using real address",N/A,"privileged instruction"
 m,multiply,implemented,
 mc,"monitor call","not implemented",
-md,"multiply (long)","not implemented",
-mdr,"multiply (long)","not implemented",
-mde,"multiply (short to long)","not implemented",
+md,"multiply (long)","won't do","hfp instruction"
+mdr,"multiply (long)","won't do","hfp instruction"
+mde,"multiply (short to long)","won't do","hfp instruction"
 mder,"multiply short to long hfp","won't do","hfp instruction"
 mh,"multiply halfword",implemented,
 mp,"multiply decimal","not implemented",
@@ -134,9 +135,9 @@ mvo,"move with offset","not implemented",
 mvpg,"move page",N/A,"privileged instruction"
 mvst,"move string",implemented,
 mvz,"move zones","not implemented",
-mxd,"multiply (long to ext.)","not implemented",
-mxdr,"multiply (long to ext.)","not implemented",
-mxr,"multiply (ext.)","not implemented",
+mxd,"multiply (long to ext.)","won't do","hfp instruction"
+mxdr,"multiply (long to ext.)","won't do","hfp instruction"
+mxr,"multiply (ext.)","won't do","hfp instruction"
 n,AND,implemented,
 nc,AND,implemented,
 ni,AND,implemented,
@@ -162,10 +163,10 @@ sar,"set access",implemented,
 schm,"set channel monitor",N/A,"privileged instruction"
 sck,"set clock",N/A,"privileged instruction"
 sckc,"set clock comparator",N/A,"privileged instruction"
-sd,"subtract normalized (long)","not implemented",
-sdr,"subtract normalized (long)","not implemented",
-se,"subtract normalized (short)","not implemented",
-ser,"subtract normalized (short)","not implemented",
+sd,"subtract normalized (long)","won't do","hfp instruction"
+sdr,"subtract normalized (long)","won't do","hfp instruction"
+se,"subtract normalized (short)","won't do","hfp instruction"
+ser,"subtract normalized (short)","won't do","hfp instruction"
 sh,"subtract halfword",implemented,
 sie,"start interpretive execution","not implemented",
 sigp,"signal processor",N/A,"privileged instruction"
@@ -180,8 +181,8 @@ spka,"set PSW key from address",N/A,"privileged instruction"
 spm,"set program mask","not implemented",
 spt,"set CPU timer",N/A,"privileged instruction"
 spx,"set prefix",N/A,"privileged instruction"
-sqdr,"square root (long)","not implemented",
-sqer,"square root (short)","not implemented",
+sqdr,"square root (long)","won't do","hfp instruction"
+sqer,"square root (short)","won't do","hfp instruction"
 sr,subtract,implemented,
 sra,"shift right single",implemented,
 srda,"shift right double (long)",implemented,
@@ -214,12 +215,12 @@ stpt,"store CPU timer",N/A,"privileged instruction"
 stpx,"store prefix",N/A,"privileged instruction"
 stsch,"store subchannel",N/A,"privileged instruction"
 stura,"store using real address",N/A,"privileged instruction"
-su,"subtract unnormalized (short)","not implemented",
-sur,"subtract unnormalized (short)","not implemented",
+su,"subtract unnormalized (short)","won't do","hfp instruction"
+sur,"subtract unnormalized (short)","won't do","hfp instruction"
 svc,"supervisor call",implemented,
-sw,"subtract unnormalized (long)","not implemented",
-swr,"subtract unnormalized (long)","not implemented",
-sxr,"subtract normalized (ext.)","not implemented",
+sw,"subtract unnormalized (long)","won't do","hfp instruction"
+swr,"subtract unnormalized (long)","won't do","hfp instruction"
+sxr,"subtract normalized (ext.)","won't do","hfp instruction"
 tar,"test access","not implemented",
 tb,"test block",N/A,"privileged instruction"
 tm,"test under mask",implemented,
@@ -528,7 +529,6 @@ llgc,"load logical character",implemented,
 llgh,"load logical halfword",implemented,
 rllg,"rotate left single logical 64",implemented,
 rll,"rotate left single logical 32",implemented,
-cxr,"compare extended hfp","won't do","hfp instruction"
 cxfr,"convert from fixed 32 to extended hfp","won't do","hfp instruction"
 cdfr,"convert from fixed 32 to long hfp","won't do","hfp instruction"
 cefr,"convert from fixed 32 to short hfp","won't do","hfp instruction"

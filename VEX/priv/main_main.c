@@ -1031,6 +1031,9 @@ HChar* LibVEX_EmNote_string ( VexEmNote ew )
                "  feature requires the floating point extension facility.\n"
                "  which is not available on this host. Continuing using\n"
                "  the rounding mode from FPC. Results may differ!";
+     case EmWarn_S390X_invalid_rounding:
+        return "The specified rounding mode is invalid.\n"
+               "  Continuing using 'round to nearest'. Results may differ!";
      case EmFail_S390X_stfle:
         return "Instruction stfle is not supported on this host";
      case EmFail_S390X_stckf:

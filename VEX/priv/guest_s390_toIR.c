@@ -8174,15 +8174,50 @@ s390_irgen_LZXR(UChar r1)
 static HChar *
 s390_irgen_SRNM(IRTemp op2addr)
 {
-   UInt mask;
+   UInt input_mask, fpc_mask;
 
-   mask = 3;
-   put_fpc_w0(binop(Iop_Or32, binop(Iop_And32, get_fpc_w0(), mkU32(~mask)),
-              binop(Iop_And32, unop(Iop_64to32, mkexpr(op2addr)), mkU32(mask)))
-              );
+   input_mask = 3;
+   fpc_mask = s390_host_has_fpext ? 7 : 3;
 
+   put_fpc_w0(binop(Iop_Or32,
+                    binop(Iop_And32, get_fpc_w0(), mkU32(~fpc_mask)),
+                    binop(Iop_And32, unop(Iop_64to32, mkexpr(op2addr)),
+                          mkU32(input_mask))));
    return "srnm";
 }
+
+static HChar *
+s390_irgen_SRNMB(IRTemp op2addr)
+{
+   UInt input_mask, fpc_mask;
+
+   input_mask = 7;
+   fpc_mask = 7;
+
+   put_fpc_w0(binop(Iop_Or32,
+                    binop(Iop_And32, get_fpc_w0(), mkU32(~fpc_mask)),
+                    binop(Iop_And32, unop(Iop_64to32, mkexpr(op2addr)),
+                          mkU32(input_mask))));
+   return "srnmb";
+}
+
+ void
+s390_irgen_srnmb_wrapper(UChar b2, UShort d2)
+{
+   if (b2 == 0) {  /* This is the typical case */
+      if (d2 > 3) {
+         if (s390_host_has_fpext && d2 == 7) {
+            /* ok */
+         } else {
+            emulation_warning(EmWarn_S390X_invalid_rounding);
+            d2 = S390_FPC_ROUND_NEAREST_EVEN;
+         }
+      }
+   }
+
+   s390_format_S_RD(s390_irgen_SRNMB, b2, d2);
+}
+
 
 static HChar *
 s390_irgen_SFPC(UChar r1)
@@ -12635,7 +12670,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
                                  goto ok;
    case 0xb2b1: /* STFL */ goto unimplemented;
    case 0xb2b2: /* LPSWE */ goto unimplemented;
-   case 0xb2b8: /* SRNMB */ goto unimplemented;
+   case 0xb2b8: s390_irgen_srnmb_wrapper(ovl.fmt.S.b2, ovl.fmt.S.d2);
+      goto ok;
    case 0xb2b9: /* SRNMT */ goto unimplemented;
    case 0xb2bd: /* LFAS */ goto unimplemented;
    case 0xb2ff: /* TRAP4 */ goto unimplemented;

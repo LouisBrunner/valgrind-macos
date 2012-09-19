@@ -883,9 +883,9 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       insn->variant.bfp_binop.op2_hi =
          lookupHRegRemap(m, insn->variant.bfp_binop.op2_hi);
       if (insn->size == 16) {
-         insn->variant.bfp_unop.dst_lo =
+         insn->variant.bfp_binop.dst_lo =
             lookupHRegRemap(m, insn->variant.bfp_binop.dst_lo);
-         insn->variant.bfp_unop.op_lo  =
+         insn->variant.bfp_binop.op2_lo  =
             lookupHRegRemap(m, insn->variant.bfp_binop.op2_lo);
       }
       break;

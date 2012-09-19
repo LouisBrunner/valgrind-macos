@@ -1,0 +1,64 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with invalid mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:69)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with un-held mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:72)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait: cond is associated with a different mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:72)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_cond_wait failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:72)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with mutex of type pthread_rwlock_t*
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:75)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait: cond is associated with a different mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:75)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with mutex held by a different thread
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:78)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait: cond is associated with a different mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:78)
+
+
+ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0)

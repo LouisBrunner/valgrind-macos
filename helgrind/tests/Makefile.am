@@ -91,6 +91,7 @@ EXTRA_DIST = \
 		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
+		tc23_bogus_condwait.stderr.exp-mips32 \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
 		tc24_nonzero_sem.stderr.exp
 

@@ -3327,128 +3327,123 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
 {
    AvailExpr* ae;
 
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.arg->tag == Iex_RdTmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag      = Ut;
-      ae->u.Ut.op  = e->Iex.Unop.op;
-      ae->u.Ut.arg = e->Iex.Unop.arg->Iex.RdTmp.tmp;
-      return ae;
-   }
+   switch (e->tag) {
+      case Iex_Unop:
+         if (e->Iex.Unop.arg->tag == Iex_RdTmp) {
+            ae = LibVEX_Alloc(sizeof(AvailExpr));
+            ae->tag      = Ut;
+            ae->u.Ut.op  = e->Iex.Unop.op;
+            ae->u.Ut.arg = e->Iex.Unop.arg->Iex.RdTmp.tmp;
+            return ae;
+         }
+         break;
 
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.arg1->tag == Iex_RdTmp
-       && e->Iex.Binop.arg2->tag == Iex_RdTmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag        = Btt;
-      ae->u.Btt.op   = e->Iex.Binop.op;
-      ae->u.Btt.arg1 = e->Iex.Binop.arg1->Iex.RdTmp.tmp;
-      ae->u.Btt.arg2 = e->Iex.Binop.arg2->Iex.RdTmp.tmp;
-      return ae;
-   }
+      case Iex_Binop:
+         if (e->Iex.Binop.arg1->tag == Iex_RdTmp) {
+            if (e->Iex.Binop.arg2->tag == Iex_RdTmp) {
+               ae = LibVEX_Alloc(sizeof(AvailExpr));
+               ae->tag        = Btt;
+               ae->u.Btt.op   = e->Iex.Binop.op;
+               ae->u.Btt.arg1 = e->Iex.Binop.arg1->Iex.RdTmp.tmp;
+               ae->u.Btt.arg2 = e->Iex.Binop.arg2->Iex.RdTmp.tmp;
+               return ae;
+            }
+            if (e->Iex.Binop.arg2->tag == Iex_Const) {
+               ae = LibVEX_Alloc(sizeof(AvailExpr));
+               ae->tag        = Btc;
+               ae->u.Btc.op   = e->Iex.Binop.op;
+               ae->u.Btc.arg1 = e->Iex.Binop.arg1->Iex.RdTmp.tmp;
+               ae->u.Btc.con2 = *(e->Iex.Binop.arg2->Iex.Const.con);
+               return ae;
+            }
+         } else if (e->Iex.Binop.arg1->tag == Iex_Const
+                    && e->Iex.Binop.arg2->tag == Iex_RdTmp) {
+            ae = LibVEX_Alloc(sizeof(AvailExpr));
+            ae->tag        = Bct;
+            ae->u.Bct.op   = e->Iex.Binop.op;
+            ae->u.Bct.arg2 = e->Iex.Binop.arg2->Iex.RdTmp.tmp;
+            ae->u.Bct.con1 = *(e->Iex.Binop.arg1->Iex.Const.con);
+            return ae;
+         }
+         break;
 
-   if (e->tag == Iex_Binop
-      && e->Iex.Binop.arg1->tag == Iex_RdTmp
-      && e->Iex.Binop.arg2->tag == Iex_Const) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag        = Btc;
-      ae->u.Btc.op   = e->Iex.Binop.op;
-      ae->u.Btc.arg1 = e->Iex.Binop.arg1->Iex.RdTmp.tmp;
-      ae->u.Btc.con2 = *(e->Iex.Binop.arg2->Iex.Const.con);
-      return ae;
-   }
+      case Iex_Const:
+         if (e->Iex.Const.con->tag == Ico_F64i) {
+            ae = LibVEX_Alloc(sizeof(AvailExpr));
+            ae->tag          = Cf64i;
+            ae->u.Cf64i.f64i = e->Iex.Const.con->Ico.F64i;
+            return ae;
+         }
+         break;
 
-   if (e->tag == Iex_Binop
-      && e->Iex.Binop.arg1->tag == Iex_Const
-      && e->Iex.Binop.arg2->tag == Iex_RdTmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag        = Bct;
-      ae->u.Bct.op   = e->Iex.Binop.op;
-      ae->u.Bct.arg2 = e->Iex.Binop.arg2->Iex.RdTmp.tmp;
-      ae->u.Bct.con1 = *(e->Iex.Binop.arg1->Iex.Const.con);
-      return ae;
-   }
+      case Iex_Mux0X:
+         if (e->Iex.Mux0X.cond->tag == Iex_RdTmp) {
+            if (e->Iex.Mux0X.expr0->tag == Iex_RdTmp) {
+               if (e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
+                  ae = LibVEX_Alloc(sizeof(AvailExpr));
+                  ae->tag       = Mttt;
+                  ae->u.Mttt.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+                  ae->u.Mttt.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
+                  ae->u.Mttt.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
+                  return ae;
+               }
+               if (e->Iex.Mux0X.exprX->tag == Iex_Const) {
+                  ae = LibVEX_Alloc(sizeof(AvailExpr));
+                  ae->tag       = Mttc;
+                  ae->u.Mttc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+                  ae->u.Mttc.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
+                  ae->u.Mttc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
+                  return ae;
+               }
+            } else if (e->Iex.Mux0X.expr0->tag == Iex_Const) {
+               if (e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
+                  ae = LibVEX_Alloc(sizeof(AvailExpr));
+                  ae->tag       = Mtct;
+                  ae->u.Mtct.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+                  ae->u.Mtct.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
+                  ae->u.Mtct.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
+                  return ae;
+               }
+               if (e->Iex.Mux0X.exprX->tag == Iex_Const) {
+                  ae = LibVEX_Alloc(sizeof(AvailExpr));
+                  ae->tag       = Mtcc;
+                  ae->u.Mtcc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
+                  ae->u.Mtcc.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
+                  ae->u.Mtcc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
+                  return ae;
+               }
+            }
+         }
+         break;
 
-   if (e->tag == Iex_Const
-       && e->Iex.Const.con->tag == Ico_F64i) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag          = Cf64i;
-      ae->u.Cf64i.f64i = e->Iex.Const.con->Ico.F64i;
-      return ae;
-   }
+      case Iex_GetI:
+         if (e->Iex.GetI.ix->tag == Iex_RdTmp) {
+            ae = LibVEX_Alloc(sizeof(AvailExpr));
+            ae->tag           = GetIt;
+            ae->u.GetIt.descr = e->Iex.GetI.descr;
+            ae->u.GetIt.ix    = e->Iex.GetI.ix->Iex.RdTmp.tmp;
+            ae->u.GetIt.bias  = e->Iex.GetI.bias;
+            return ae;
+         }
+         break;
 
-   if (e->tag == Iex_Mux0X
-       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
-       && e->Iex.Mux0X.expr0->tag == Iex_RdTmp
-       && e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag       = Mttt;
-      ae->u.Mttt.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-      ae->u.Mttt.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
-      ae->u.Mttt.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
-      return ae;
-   }
+      case Iex_CCall:
+         ae = LibVEX_Alloc(sizeof(AvailExpr));
+         ae->tag = CCall;
+         /* Ok to share only the cee, since it is immutable. */
+         ae->u.CCall.cee   = e->Iex.CCall.cee;
+         ae->u.CCall.retty = e->Iex.CCall.retty;
+         /* irExprVec_to_TmpOrConsts will assert if the args are
+            neither tmps nor constants, but that's ok .. that's all they
+            should be. */
+         irExprVec_to_TmpOrConsts(
+                                  &ae->u.CCall.args, &ae->u.CCall.nArgs,
+                                  e->Iex.CCall.args
+                                 );
+         return ae;
 
-   if (e->tag == Iex_Mux0X
-       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
-       && e->Iex.Mux0X.expr0->tag == Iex_Const
-       && e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag       = Mtct;
-      ae->u.Mtct.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-      ae->u.Mtct.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
-      ae->u.Mtct.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
-      return ae;
-   }
-
-   if (e->tag == Iex_Mux0X
-       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
-       && e->Iex.Mux0X.expr0->tag == Iex_RdTmp
-       && e->Iex.Mux0X.exprX->tag == Iex_Const) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag       = Mttc;
-      ae->u.Mttc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-      ae->u.Mttc.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
-      ae->u.Mttc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
-      return ae;
-   }
-
-   if (e->tag == Iex_Mux0X
-       && e->Iex.Mux0X.cond->tag == Iex_RdTmp
-       && e->Iex.Mux0X.expr0->tag == Iex_Const
-       && e->Iex.Mux0X.exprX->tag == Iex_Const) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag       = Mtcc;
-      ae->u.Mtcc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-      ae->u.Mtcc.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
-      ae->u.Mtcc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
-      return ae;
-   }
-
-   if (e->tag == Iex_GetI
-       && e->Iex.GetI.ix->tag == Iex_RdTmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag           = GetIt;
-      ae->u.GetIt.descr = e->Iex.GetI.descr;
-      ae->u.GetIt.ix    = e->Iex.GetI.ix->Iex.RdTmp.tmp;
-      ae->u.GetIt.bias  = e->Iex.GetI.bias;
-      return ae;
-   }
-
-   if (e->tag == Iex_CCall) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag = CCall;
-      /* Ok to share only the cee, since it is immutable. */
-      ae->u.CCall.cee   = e->Iex.CCall.cee;
-      ae->u.CCall.retty = e->Iex.CCall.retty;
-      /* irExprVec_to_TmpOrConsts will assert if the args are
-         neither tmps nor constants, but that's ok .. that's all they
-         should be. */
-      irExprVec_to_TmpOrConsts(
-         &ae->u.CCall.args, &ae->u.CCall.nArgs,
-         e->Iex.CCall.args
-      );
-      return ae;
+      default:
+         break;
    }
 
    return NULL;

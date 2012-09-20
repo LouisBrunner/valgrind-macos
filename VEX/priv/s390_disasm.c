@@ -1,7 +1,7 @@
 /* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*---------------------------------------------------------------*/
-/*--- begin                                host_s390_disasm.c ---*/
+/*--- begin                                     s390_disasm.c ---*/
 /*---------------------------------------------------------------*/
 
 /*
@@ -34,7 +34,7 @@
 #include "libvex_basictypes.h"
 #include "main_util.h"        // vassert
 #include "main_globals.h"     // vex_traceflags
-#include "host_s390_disasm.h"
+#include "s390_disasm.h"
 
 /* The format that is used to write out a mnemonic. */
 static const HChar s390_mnm_fmt[] = "%-8s";
@@ -457,5 +457,5 @@ s390_disasm(UInt command, ...)
 }
 
 /*---------------------------------------------------------------*/
-/*--- end                                  host_s390_disasm.c ---*/
+/*--- end                                       s390_disasm.c ---*/
 /*---------------------------------------------------------------*/

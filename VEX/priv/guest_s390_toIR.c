@@ -40,7 +40,7 @@
 #include "main_globals.h"            /* vex_traceflags */
 #include "guest_generic_bb_to_IR.h"  /* DisResult */
 #include "guest_s390_defs.h"         /* prototypes for this file's functions */
-#include "host_s390_disasm.h"
+#include "s390_disasm.h"
 #include "host_s390_defs.h"          /* S390_ROUND_xyzzy */
 
 

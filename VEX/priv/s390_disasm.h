@@ -1,7 +1,7 @@
 /* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*---------------------------------------------------------------*/
-/*--- begin                                host_s390_disasm.h ---*/
+/*--- begin                                     s390_disasm.h ---*/
 /*---------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VEX_HOST_S390_DISASM_H
-#define __VEX_HOST_S390_DISASM_H
+#ifndef __VEX_S390_DISASM_H
+#define __VEX_S390_DISASM_H
 
 #include "libvex_basictypes.h"
 
@@ -87,7 +87,7 @@ enum {
 void s390_disasm(UInt command, ...);
 
 /*---------------------------------------------------------------*/
-/*--- end                                  host_s390_disasm.h ---*/
+/*--- end                                       s390_disasm.h ---*/
 /*---------------------------------------------------------------*/
 
-#endif /* __VEX_HOST_S390_DISASM_H */
+#endif /* __VEX_S390_DISASM_H */

@@ -40,7 +40,7 @@
 #include "main_globals.h"
 #include "host_generic_regs.h"
 #include "host_s390_defs.h"
-#include "host_s390_disasm.h"
+#include "s390_disasm.h"
 #include "guest_s390_defs.h"    /* S390X_GUEST_OFFSET */
 #include <stdarg.h>
 

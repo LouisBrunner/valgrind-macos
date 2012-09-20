@@ -8201,7 +8201,7 @@ s390_irgen_SRNMB(IRTemp op2addr)
    return "srnmb";
 }
 
- void
+static void
 s390_irgen_srnmb_wrapper(UChar b2, UShort d2)
 {
    if (b2 == 0) {  /* This is the typical case */

@@ -51,7 +51,7 @@ noinst_HEADERS = \
 	priv/host_ppc_defs.h \
 	priv/host_arm_defs.h \
 	priv/host_s390_defs.h \
-	priv/host_s390_disasm.h \
+	priv/s390_disasm.h \
 	priv/host_mips_defs.h
 
 BUILT_SOURCES = pub/libvex_guest_offsets.h
@@ -127,7 +127,7 @@ LIBVEX_SOURCES_COMMON = \
 	priv/host_arm_isel.c \
 	priv/host_s390_defs.c \
 	priv/host_s390_isel.c \
-	priv/host_s390_disasm.c \
+	priv/s390_disasm.c \
 	priv/host_mips_defs.c \
 	priv/host_mips_isel.c
 

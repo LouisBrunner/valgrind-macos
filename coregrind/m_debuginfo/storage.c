@@ -585,6 +585,15 @@ Int ML_(CfiExpr_Const)( XArray* dst, UWord con )
    e.Cex.Const.con = con;
    return (Int)VG_(addToXA)( dst, &e );
 }
+Int ML_(CfiExpr_Unop)( XArray* dst, CfiUnop op, Int ix )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_Unop;
+   e.Cex.Unop.op  = op;
+   e.Cex.Unop.ix = ix;
+   return (Int)VG_(addToXA)( dst, &e );
+}
 Int ML_(CfiExpr_Binop)( XArray* dst, CfiBinop op, Int ixL, Int ixR )
 {
    CfiExpr e;
@@ -610,6 +619,16 @@ Int ML_(CfiExpr_DwReg)( XArray* dst, Int reg )
    e.tag = Cex_DwReg;
    e.Cex.DwReg.reg = reg;
    return (Int)VG_(addToXA)( dst, &e );
+}
+
+static void ppCfiUnop ( CfiUnop op ) 
+{
+   switch (op) {
+      case Cunop_Abs: VG_(printf)("abs"); break;
+      case Cunop_Neg: VG_(printf)("-"); break;
+      case Cunop_Not: VG_(printf)("~"); break;
+      default:        vg_assert(0);
+   }
 }
 
 static void ppCfiBinop ( CfiBinop op ) 
@@ -663,6 +682,12 @@ void ML_(ppCfiExpr)( XArray* src, Int ix )
          break;
       case Cex_Const: 
          VG_(printf)("0x%lx", e->Cex.Const.con); 
+         break;
+      case Cex_Unop: 
+         ppCfiUnop(e->Cex.Unop.op);
+         VG_(printf)("(");
+         ML_(ppCfiExpr)(src, e->Cex.Unop.ix);
+         VG_(printf)(")");
          break;
       case Cex_Binop: 
          VG_(printf)("(");

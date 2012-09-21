@@ -279,6 +279,14 @@ typedef
 
 typedef
    enum {
+      Cunop_Abs=0x231,
+      Cunop_Neg,
+      Cunop_Not
+   }
+   CfiUnop;
+
+typedef
+   enum {
       Cbinop_Add=0x321,
       Cbinop_Sub,
       Cbinop_And,
@@ -313,6 +321,7 @@ typedef
       Cex_Undef=0x123,
       Cex_Deref,
       Cex_Const,
+      Cex_Unop,
       Cex_Binop,
       Cex_CfiReg,
       Cex_DwReg
@@ -332,6 +341,10 @@ typedef
             UWord con;
          } Const;
          struct {
+            CfiUnop op;
+            Int ix;
+         } Unop;
+         struct {
             CfiBinop op;
             Int ixL;
             Int ixR;
@@ -350,6 +363,7 @@ typedef
 extern Int ML_(CfiExpr_Undef) ( XArray* dst );
 extern Int ML_(CfiExpr_Deref) ( XArray* dst, Int ixAddr );
 extern Int ML_(CfiExpr_Const) ( XArray* dst, UWord con );
+extern Int ML_(CfiExpr_Unop)  ( XArray* dst, CfiUnop op, Int ix );
 extern Int ML_(CfiExpr_Binop) ( XArray* dst, CfiBinop op, Int ixL, Int ixR );
 extern Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg );
 extern Int ML_(CfiExpr_DwReg) ( XArray* dst, Int reg );

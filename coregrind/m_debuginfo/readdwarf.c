@@ -2732,6 +2732,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
    UChar    opcode;
    Word     sw;
    UWord    uw;
+   CfiUnop  uop;
    CfiBinop bop;
    HChar*   opname;
 
@@ -2778,7 +2779,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
            break;
       }
 
-      bop = 0; opname = NULL; /* excessively conservative */
+      uop = 0; bop = 0; opname = NULL; /* excessively conservative */
 
       opcode = *expr++;
       switch (opcode) {
@@ -2836,6 +2837,15 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
                VG_(printf)("DW_OP_const4s: %ld", sw);
             break;
 
+         case DW_OP_const2s:
+            /* push: 16-bit signed immediate */
+            sw = read_le_s_encoded_literal( expr, 2 );
+            expr += 2;
+            PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const2s: %ld", sw);
+            break;
+
          case DW_OP_const1s:
             /* push: 8-bit signed immediate */
             sw = read_le_s_encoded_literal( expr, 1 );
@@ -2843,6 +2853,46 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_const1s: %ld", sw);
+            break;
+
+         case DW_OP_const1u:
+            /* push: 8-bit unsigned immediate */
+            uw = read_le_u_encoded_literal( expr, 1 );
+            expr += 1;
+            PUSH( ML_(CfiExpr_Const)( dst, uw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const1: %lu", uw);
+            break;
+
+         case DW_OP_const2u:
+            /* push: 16-bit unsigned immediate */
+            uw = read_le_u_encoded_literal( expr, 2 );
+            expr += 2;
+            PUSH( ML_(CfiExpr_Const)( dst, uw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const2: %lu", uw);
+            break;
+
+         case DW_OP_const4u:
+            /* push: 32-bit unsigned immediate */
+            uw = read_le_u_encoded_literal( expr, 4 );
+            expr += 4;
+            PUSH( ML_(CfiExpr_Const)( dst, uw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const4: %lu", uw);
+            break;
+
+         case DW_OP_abs:
+            uop = Cunop_Abs; opname = "abs"; goto unop;
+         case DW_OP_neg:
+            uop = Cunop_Neg; opname = "neg"; goto unop;
+         case DW_OP_not:
+            uop = Cunop_Not; opname = "not"; goto unop;
+         unop:
+            POP( ix );
+            PUSH( ML_(CfiExpr_Unop)( dst, uop, ix ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_%s", opname);
             break;
 
          case DW_OP_minus:

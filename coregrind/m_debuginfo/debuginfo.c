@@ -2051,12 +2051,22 @@ static
 UWord evalCfiExpr ( XArray* exprs, Int ix, 
                     CfiExprEvalContext* eec, Bool* ok )
 {
-   UWord wL, wR;
+   UWord w, wL, wR;
    Addr  a;
    CfiExpr* e;
    vg_assert(sizeof(Addr) == sizeof(UWord));
    e = VG_(indexXA)( exprs, ix );
    switch (e->tag) {
+      case Cex_Unop:
+         w = evalCfiExpr( exprs, e->Cex.Unop.ix, eec, ok );
+         if (!(*ok)) return 0;
+         switch (e->Cex.Unop.op) {
+            case Cunop_Abs: return (Word) w < 0 ? - w : w;
+            case Cunop_Neg: return - (Word) w;
+            case Cunop_Not: return ~ w;
+            default: goto unhandled;
+         }
+         /*NOTREACHED*/
       case Cex_Binop:
          wL = evalCfiExpr( exprs, e->Cex.Binop.ixL, eec, ok );
          if (!(*ok)) return 0;

@@ -2822,7 +2822,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             PUSH( ML_(CfiExpr_Const)( dst, uw ) );
             POP( ix );
             POP( ix2 );
-            PUSH( ML_(CfiExpr_Binop)( dst, op, ix2, ix ) );
+            PUSH( ML_(CfiExpr_Binop)( dst, Cop_Add, ix2, ix ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_plus_uconst: %lu", uw);
             break;

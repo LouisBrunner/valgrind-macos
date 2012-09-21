@@ -585,7 +585,7 @@ Int ML_(CfiExpr_Const)( XArray* dst, UWord con )
    e.Cex.Const.con = con;
    return (Int)VG_(addToXA)( dst, &e );
 }
-Int ML_(CfiExpr_Binop)( XArray* dst, CfiOp op, Int ixL, Int ixR )
+Int ML_(CfiExpr_Binop)( XArray* dst, CfiBinop op, Int ixL, Int ixR )
 {
    CfiExpr e;
    VG_(memset)( &e, 0, sizeof(e) );
@@ -612,22 +612,22 @@ Int ML_(CfiExpr_DwReg)( XArray* dst, Int reg )
    return (Int)VG_(addToXA)( dst, &e );
 }
 
-static void ppCfiOp ( CfiOp op ) 
+static void ppCfiBinop ( CfiBinop op ) 
 {
    switch (op) {
-      case Cop_Add: VG_(printf)("+"); break;
-      case Cop_Sub: VG_(printf)("-"); break;
-      case Cop_And: VG_(printf)("&"); break;
-      case Cop_Mul: VG_(printf)("*"); break;
-      case Cop_Shl: VG_(printf)("<<"); break;
-      case Cop_Shr: VG_(printf)(">>"); break;
-      case Cop_Eq: VG_(printf)("=="); break;
-      case Cop_Ge: VG_(printf)(">="); break;
-      case Cop_Gt: VG_(printf)(">"); break;
-      case Cop_Le: VG_(printf)("<="); break;
-      case Cop_Lt: VG_(printf)("<"); break;
-      case Cop_Ne: VG_(printf)("!="); break;
-      default:      vg_assert(0);
+      case Cbinop_Add: VG_(printf)("+"); break;
+      case Cbinop_Sub: VG_(printf)("-"); break;
+      case Cbinop_And: VG_(printf)("&"); break;
+      case Cbinop_Mul: VG_(printf)("*"); break;
+      case Cbinop_Shl: VG_(printf)("<<"); break;
+      case Cbinop_Shr: VG_(printf)(">>"); break;
+      case Cbinop_Eq:  VG_(printf)("=="); break;
+      case Cbinop_Ge:  VG_(printf)(">="); break;
+      case Cbinop_Gt:  VG_(printf)(">"); break;
+      case Cbinop_Le:  VG_(printf)("<="); break;
+      case Cbinop_Lt:  VG_(printf)("<"); break;
+      case Cbinop_Ne:  VG_(printf)("!="); break;
+      default:         vg_assert(0);
    }
 }
 
@@ -668,7 +668,7 @@ void ML_(ppCfiExpr)( XArray* src, Int ix )
          VG_(printf)("(");
          ML_(ppCfiExpr)(src, e->Cex.Binop.ixL);
          VG_(printf)(")");
-         ppCfiOp(e->Cex.Binop.op);
+         ppCfiBinop(e->Cex.Binop.op);
          VG_(printf)("(");
          ML_(ppCfiExpr)(src, e->Cex.Binop.ixR);
          VG_(printf)(")");

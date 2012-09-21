@@ -2063,18 +2063,18 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
          wR = evalCfiExpr( exprs, e->Cex.Binop.ixR, eec, ok );
          if (!(*ok)) return 0;
          switch (e->Cex.Binop.op) {
-            case Cop_Add: return wL + wR;
-            case Cop_Sub: return wL - wR;
-            case Cop_And: return wL & wR;
-            case Cop_Mul: return wL * wR;
-            case Cop_Shl: return wL << wR;
-            case Cop_Shr: return wL >> wR;
-            case Cop_Eq: return wL == wR ? 1 : 0;
-            case Cop_Ge: return (Word) wL >= (Word) wR ? 1 : 0;
-            case Cop_Gt: return (Word) wL > (Word) wR ? 1 : 0;
-            case Cop_Le: return (Word) wL <= (Word) wR ? 1 : 0;
-            case Cop_Lt: return (Word) wL < (Word) wR ? 1 : 0;
-            case Cop_Ne: return wL != wR ? 1 : 0;
+            case Cbinop_Add: return wL + wR;
+            case Cbinop_Sub: return wL - wR;
+            case Cbinop_And: return wL & wR;
+            case Cbinop_Mul: return wL * wR;
+            case Cbinop_Shl: return wL << wR;
+            case Cbinop_Shr: return wL >> wR;
+            case Cbinop_Eq: return wL == wR ? 1 : 0;
+            case Cbinop_Ge: return (Word) wL >= (Word) wR ? 1 : 0;
+            case Cbinop_Gt: return (Word) wL > (Word) wR ? 1 : 0;
+            case Cbinop_Le: return (Word) wL <= (Word) wR ? 1 : 0;
+            case Cbinop_Lt: return (Word) wL < (Word) wR ? 1 : 0;
+            case Cbinop_Ne: return wL != wR ? 1 : 0;
             default: goto unhandled;
          }
          /*NOTREACHED*/

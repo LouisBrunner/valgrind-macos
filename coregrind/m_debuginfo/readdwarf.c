@@ -2728,12 +2728,12 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
          sp--;                                     \
       } while (0)
 
-   Int    ix, ix2, reg;
-   UChar  opcode;
-   Word   sw;
-   UWord  uw;
-   CfiOp  op;
-   HChar* opname;
+   Int      ix, ix2, reg;
+   UChar    opcode;
+   Word     sw;
+   UWord    uw;
+   CfiBinop bop;
+   HChar*   opname;
 
    Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
@@ -2752,7 +2752,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
       if (ctxs->cfa_is_regoff) {
          /* cfa is reg +/- offset */
          ix = ML_(CfiExpr_Binop)( dst,
-                 Cop_Add,
+                 Cbinop_Add,
                  ML_(CfiExpr_DwReg)( dst, ctxs->cfa_reg ),
                  ML_(CfiExpr_Const)( dst, (UWord)(Word)ctxs->cfa_off )
               );
@@ -2778,7 +2778,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
            break;
       }
 
-      op = 0; opname = NULL; /* excessively conservative */
+      bop = 0; opname = NULL; /* excessively conservative */
 
       opcode = *expr++;
       switch (opcode) {
@@ -2798,7 +2798,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             vg_assert(reg >= 0 && reg <= 31);
             sw = read_leb128S( &expr );
             ix = ML_(CfiExpr_Binop)( dst,
-                    Cop_Add,
+                    Cbinop_Add,
                     ML_(CfiExpr_DwReg)( dst, reg ),
                     ML_(CfiExpr_Const)( dst, (UWord)sw )
                  );
@@ -2822,7 +2822,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             PUSH( ML_(CfiExpr_Const)( dst, uw ) );
             POP( ix );
             POP( ix2 );
-            PUSH( ML_(CfiExpr_Binop)( dst, Cop_Add, ix2, ix ) );
+            PUSH( ML_(CfiExpr_Binop)( dst, Cbinop_Add, ix2, ix ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_plus_uconst: %lu", uw);
             break;
@@ -2846,33 +2846,33 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             break;
 
          case DW_OP_minus:
-            op = Cop_Sub; opname = "minus"; goto binop;
+            bop = Cbinop_Sub; opname = "minus"; goto binop;
          case DW_OP_plus:
-            op = Cop_Add; opname = "plus"; goto binop;
+            bop = Cbinop_Add; opname = "plus"; goto binop;
          case DW_OP_and:
-            op = Cop_And; opname = "and"; goto binop;
+            bop = Cbinop_And; opname = "and"; goto binop;
          case DW_OP_mul:
-            op = Cop_Mul; opname = "mul"; goto binop;
+            bop = Cbinop_Mul; opname = "mul"; goto binop;
          case DW_OP_shl:
-            op = Cop_Shl; opname = "shl"; goto binop;
+            bop = Cbinop_Shl; opname = "shl"; goto binop;
          case DW_OP_shr:
-            op = Cop_Shr; opname = "shr"; goto binop;
+            bop = Cbinop_Shr; opname = "shr"; goto binop;
          case DW_OP_eq:
-            op = Cop_Eq; opname = "eq"; goto binop;
+            bop = Cbinop_Eq; opname = "eq"; goto binop;
          case DW_OP_ge:
-            op = Cop_Ge; opname = "ge"; goto binop;
+            bop = Cbinop_Ge; opname = "ge"; goto binop;
          case DW_OP_gt:
-            op = Cop_Gt; opname = "gt"; goto binop;
+            bop = Cbinop_Gt; opname = "gt"; goto binop;
          case DW_OP_le:
-            op = Cop_Le; opname = "le"; goto binop;
+            bop = Cbinop_Le; opname = "le"; goto binop;
          case DW_OP_lt:
-            op = Cop_Lt; opname = "lt"; goto binop;
+            bop = Cbinop_Lt; opname = "lt"; goto binop;
          case DW_OP_ne:
-            op = Cop_Ne; opname = "ne"; goto binop;
+            bop = Cbinop_Ne; opname = "ne"; goto binop;
          binop:
             POP( ix );
             POP( ix2 );
-            PUSH( ML_(CfiExpr_Binop)( dst, op, ix2, ix ) );
+            PUSH( ML_(CfiExpr_Binop)( dst, bop, ix2, ix ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_%s", opname);
             break;

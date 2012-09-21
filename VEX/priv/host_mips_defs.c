@@ -551,10 +551,15 @@ HReg hregMIPS_COND(void)
 
 void getAllocableRegs_MIPS(Int * nregs, HReg ** arr, Bool mode64)
 {
+  /*
+   * The list of allocable registers is shorten to fit MIPS32 mode on Loongson.
+   * More precisely, we workaround Loongson MIPS32 issues by avoiding usage of
+   * odd single precision FP registers.
+   */
    if (mode64)
-      *nregs = 27;
+      *nregs = 24;
    else
-      *nregs = 34;
+      *nregs = 29;
    UInt i = 0;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
 
@@ -595,16 +600,13 @@ void getAllocableRegs_MIPS(Int * nregs, HReg ** arr, Bool mode64)
    // FP = frame pointer
    // RA = link register
    // + PC, HI and LO
+   (*arr)[i++] = hregMIPS_F16(mode64);
+   (*arr)[i++] = hregMIPS_F18(mode64);
    (*arr)[i++] = hregMIPS_F20(mode64);
-   (*arr)[i++] = hregMIPS_F21(mode64);
    (*arr)[i++] = hregMIPS_F22(mode64);
-   (*arr)[i++] = hregMIPS_F23(mode64);
    (*arr)[i++] = hregMIPS_F24(mode64);
-   (*arr)[i++] = hregMIPS_F25(mode64);
    (*arr)[i++] = hregMIPS_F26(mode64);
-   (*arr)[i++] = hregMIPS_F27(mode64);
    (*arr)[i++] = hregMIPS_F28(mode64);
-   (*arr)[i++] = hregMIPS_F29(mode64);
    (*arr)[i++] = hregMIPS_F30(mode64);
    if (!mode64) {
       /* Fake double floating point */
@@ -616,8 +618,6 @@ void getAllocableRegs_MIPS(Int * nregs, HReg ** arr, Bool mode64)
       (*arr)[i++] = hregMIPS_D5();
       (*arr)[i++] = hregMIPS_D6();
       (*arr)[i++] = hregMIPS_D7();
-      (*arr)[i++] = hregMIPS_D8();
-      (*arr)[i++] = hregMIPS_D9();
    }
    vassert(i == *nregs);
 

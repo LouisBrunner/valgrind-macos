@@ -1,0 +1,63 @@
+--------------------------------------------------------------------------------
+Command:            ./overloaded-new
+Massif arguments:   --stacks=no --time-unit=B --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+ms_print arguments: massif.out
+--------------------------------------------------------------------------------
+
+
+    KB
+11.75^                                    ###########                         
+     |                                    #                                   
+     |                                    #                                   
+     |                                    #                                   
+     |                             :::::::#                                   
+     |                             :      #                                   
+     |                             :      #                                   
+     |                       :::::::      #          ::::::::::::             
+     |                       :     :      #          :                        
+     |                       :     :      #          :                        
+     |                       :     :      #          :                        
+     |                       :     :      #          :                        
+     |                       :     :      #          :                        
+     |                       :     :      #          :                        
+     |           :::::::::::::     :      #          :           ::::::       
+     |           :           :     :      #          :           :            
+     |           :           :     :      #          :           :            
+     |           :           :     :      #          :           :     :::::: 
+     |           :           :     :      #          :           :     :      
+     |           :           :     :      #          :           :     :      
+   0 +----------------------------------------------------------------------->KB
+     0                                                                   23.50
+
+Number of snapshots: 10
+ Detailed snapshots: [5 (peak)]
+
+--------------------------------------------------------------------------------
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  0              0                0                0             0            0
+  1          4,008            4,008            4,000             8            0
+  2          8,016            8,016            8,000            16            0
+  3         10,024           10,024           10,000            24            0
+  4         12,032           12,032           12,000            32            0
+  5         12,032           12,032           12,000            32            0
+99.73% (12,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->33.24% (4,000B) 0x........: operator new(unsigned int) (overloaded-new.cpp:19)
+| ->33.24% (4,000B) 0x........: main (overloaded-new.cpp:49)
+|   
+->33.24% (4,000B) 0x........: operator new(unsigned int, std::nothrow_t const&) (overloaded-new.cpp:24)
+| ->33.24% (4,000B) 0x........: main (overloaded-new.cpp:50)
+|   
+->16.62% (2,000B) 0x........: operator new[](unsigned int) (overloaded-new.cpp:29)
+| ->16.62% (2,000B) 0x........: main (overloaded-new.cpp:51)
+|   
+->16.62% (2,000B) 0x........: operator new[](unsigned int, std::nothrow_t const&) (overloaded-new.cpp:34)
+  ->16.62% (2,000B) 0x........: main (overloaded-new.cpp:52)
+    
+--------------------------------------------------------------------------------
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  6         16,040            8,024            8,000            24            0
+  7         20,048            4,016            4,000            16            0
+  8         22,056            2,008            2,000             8            0
+  9         24,064                0                0             0            0

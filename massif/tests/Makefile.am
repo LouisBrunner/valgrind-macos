@@ -27,7 +27,8 @@ EXTRA_DIST = \
 	no-stack-no-heap.post.exp no-stack-no-heap.stderr.exp no-stack-no-heap.vgtest \
 	null.post.exp null.stderr.exp null.vgtest \
 	one.post.exp one.post.exp2 one.stderr.exp one.vgtest \
-	overloaded-new.post.exp overloaded-new.stderr.exp overloaded-new.vgtest \
+	overloaded-new.post.exp overloaded-new.post.exp-mips32 \
+	overloaded-new.stderr.exp overloaded-new.vgtest \
 	pages_as_heap.stderr.exp pages_as_heap.vgtest \
 	peak.post.exp peak.stderr.exp peak.vgtest \
 	peak2.post.exp peak2.stderr.exp peak2.vgtest \

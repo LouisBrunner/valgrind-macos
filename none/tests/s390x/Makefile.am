@@ -10,7 +10,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
              ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext fpext_warn \
              rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
-             bfp-2 bfp-3 bfp-4 srnm srnmb
+             bfp-2 bfp-3 bfp-4 srnm srnmb comp-1 comp-2
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \

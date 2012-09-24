@@ -136,6 +136,10 @@ UWord do_syscall_WRK (
 }
 
 #else
+// Ensure the file compiles even if the syscall nr is not defined.
+#ifndef __NR_mprotect
+#define __NR_mprotect 0
+#endif
 UWord do_syscall_WRK (UWord syscall_no, 
                       UWord a1, UWord a2, UWord a3,
                       UWord a4, UWord a5, UWord a6

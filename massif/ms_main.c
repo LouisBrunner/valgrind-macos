@@ -2392,9 +2392,17 @@ static void handle_snapshot_monitor_command (Char *filename, Bool detailed)
 {
    Snapshot snapshot;
 
+   if (!clo_pages_as_heap && !have_started_executing_code) {
+      // See comments of variable have_started_executing_code.
+      VG_(gdb_printf) 
+         ("error: cannot take snapshot before execution has started\n");
+      return;
+   }
+
    clear_snapshot(&snapshot, /* do_sanity_check */ False);
    take_snapshot(&snapshot, Normal, get_time(), detailed);
-   write_snapshots_to_file ((filename == NULL) ? (Char*) "massif.vgdb.out" : filename,
+   write_snapshots_to_file ((filename == NULL) ? 
+                            (Char*) "massif.vgdb.out" : filename,
                             &snapshot,
                             1);
    delete_snapshot(&snapshot);

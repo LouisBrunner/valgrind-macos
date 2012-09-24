@@ -31,7 +31,7 @@ m = merged into 3_8_BRANCH
 275800    [390] s390x: Add support for the ecag instruction (part 1)
 305948    [390] ppc64: code generation for ShlD64 / ShrD64 asserts
 306054    [390] s390x: Condition code computation for convert-to-int/logical
-
+307155    [390] filter_gdb should filter out syscall-template.S T_PSEUDO
 
 
 Release 3.8.1 (19 September 2012)

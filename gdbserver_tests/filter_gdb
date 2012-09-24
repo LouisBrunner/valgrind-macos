@@ -85,6 +85,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \
     -e '/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d'                                 \
     -e '/^[1-9][0-9]*[ 	]in *\.\.\/sysdeps\/unix\/syscall-template\.S/d'                              \
+    -e '/^[1-9][0-9]*[ 	]T_PSEUDO (SYSCALL_SYMBOL, SYSCALL_NAME, SYSCALL_NARGS)/d'                    \
     -e 's/\(Could not write register \)".*"/\1 "xxx"/'                                                \
     -e 's/\(ERROR changing register \).*$/\1 xxx regno y/'                                            \
     -e 's/0x........ in \(main (argc=1, argv=0x........) at watchpoints.c:[24][3689]\)/\1/'           \

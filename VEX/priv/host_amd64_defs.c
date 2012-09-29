@@ -3595,7 +3595,7 @@ VexInvalRange chainXDirect_AMD64 ( void* place_to_chain,
       *(ULong*)(&p[2]) = Ptr_to_ULong(place_to_jump_to);
       p[12] = 0xE3;
    }
-   VexInvalRange vir = {0, 0};
+   VexInvalRange vir = { (HWord)place_to_chain, 13 };
    return vir;
 }
 
@@ -3659,7 +3659,7 @@ VexInvalRange unchainXDirect_AMD64 ( void* place_to_unchain,
    p[10] = 0x41;
    p[11] = 0xFF;
    p[12] = 0xD3;
-   VexInvalRange vir = {0, 0};
+   VexInvalRange vir = { (HWord)place_to_unchain, 13 };
    return vir;
 }
 
@@ -3693,7 +3693,7 @@ VexInvalRange patchProfInc_AMD64 ( void*  place_to_patch,
    p[7] = imm64 & 0xFF; imm64 >>= 8;
    p[8] = imm64 & 0xFF; imm64 >>= 8;
    p[9] = imm64 & 0xFF; imm64 >>= 8;
-   VexInvalRange vir = {0, 0};
+   VexInvalRange vir = { (HWord)place_to_patch, 13 };
    return vir;
 }
 

@@ -699,14 +699,12 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* );
 /*--- Patch existing translations                     ---*/
 /*-------------------------------------------------------*/
 
-/* Indicates a host address range for which callers to the functions
-   below must request I-D cache syncing after the call.  ::len == 0 is
-   ambiguous -- it could mean either zero bytes or the entire address
-   space, so we mean the former. */
+/* A host address range that was modified by the functions below. 
+   Callers must request I-cache syncing after the call as appropriate. */
 typedef
    struct {
       HWord start;
-      HWord len;
+      HWord len;     /* always > 0 */
    }
    VexInvalRange;
 

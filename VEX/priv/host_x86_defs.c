@@ -3349,7 +3349,7 @@ VexInvalRange chainXDirect_X86 ( void* place_to_chain,
    /* sanity check on the delta -- top 32 are all 0 or all 1 */
    delta >>= 32;
    vassert(delta == 0LL || delta == -1LL);
-   VexInvalRange vir = {0, 0};
+   VexInvalRange vir = { (HWord)place_to_chain, 7 };
    return vir;
 }
 
@@ -3392,7 +3392,7 @@ VexInvalRange unchainXDirect_X86 ( void* place_to_unchain,
    *(UInt*)(&p[1]) = (UInt)Ptr_to_ULong(disp_cp_chain_me);
    p[5] = 0xFF;
    p[6] = 0xD2;
-   VexInvalRange vir = {0, 0};
+   VexInvalRange vir = { (HWord)place_to_unchain, 7 };
    return vir;
 }
 
@@ -3428,7 +3428,7 @@ VexInvalRange patchProfInc_X86 ( void*  place_to_patch,
    p[10] = imm32 & 0xFF; imm32 >>= 8;
    p[11] = imm32 & 0xFF; imm32 >>= 8;
    p[12] = imm32 & 0xFF; imm32 >>= 8;
-   VexInvalRange vir = {0, 0};
+   VexInvalRange vir = { (HWord)place_to_patch, 14 };
    return vir;
 }
 

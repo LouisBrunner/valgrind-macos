@@ -39,6 +39,10 @@
 #ifndef __VEX_GUEST_PPC_DEFS_H
 #define __VEX_GUEST_PPC_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex_guest_ppc32.h"         // VexGuestPPC32State
+#include "libvex_guest_ppc64.h"         // VexGuestPPC64State
+#include "guest_generic_bb_to_IR.h"     // DisResult
 
 /*---------------------------------------------------------*/
 /*--- ppc to IR conversion                              ---*/

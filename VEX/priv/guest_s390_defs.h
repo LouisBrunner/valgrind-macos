@@ -34,8 +34,6 @@
 #define __VEX_GUEST_S390_DEFS_H
 
 #include "libvex_basictypes.h"        // offsetof
-#include "libvex_ir.h"                // IRSB  (needed by bb_to_IR.h)
-#include "libvex.h"                   // VexArch  (needed by bb_to_IR.h)
 #include "guest_generic_bb_to_IR.h"   // DisResult
 #include "libvex_guest_s390x.h"       // VexGuestS390XState
 

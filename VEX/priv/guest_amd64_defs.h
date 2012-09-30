@@ -38,6 +38,10 @@
 #ifndef __VEX_GUEST_AMD64_DEFS_H
 #define __VEX_GUEST_AMD64_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex_emnote.h"              // VexEmNote
+#include "libvex_guest_amd64.h"         // VexGuestAMD64State
+#include "guest_generic_bb_to_IR.h"     // DisResult
 
 /*---------------------------------------------------------*/
 /*--- amd64 to IR conversion                            ---*/

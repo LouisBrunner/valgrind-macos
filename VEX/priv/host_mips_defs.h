@@ -31,6 +31,10 @@
 #ifndef __VEX_HOST_MIPS_DEFS_H
 #define __VEX_HOST_MIPS_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex.h"                      // VexArch
+#include "host_generic_regs.h"           // HReg
+
 /* Num registers used for function calls */
 #define MIPS_N_REGPARMS 4
 

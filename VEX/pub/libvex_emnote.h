@@ -36,6 +36,7 @@
 #ifndef __LIBVEX_EMNOTE_H
 #define __LIBVEX_EMNOTE_H
 
+#include "libvex_basictypes.h"
 
 /* VEX can sometimes generate code which returns to the dispatcher
    with the guest state pointer set to VEX_TRC_JMP_EMWARN or 

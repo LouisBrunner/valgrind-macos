@@ -37,7 +37,6 @@
 #define __LIBVEX_PUB_GUEST_PPC64_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emnote.h"
 
 /*
     volatile ==  caller-saved (not preserved across function calls)

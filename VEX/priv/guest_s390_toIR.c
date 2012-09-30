@@ -34,7 +34,7 @@
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
-#include "libvex.h"                  /* needed for bb_to_IR.h */
+#include "libvex_emnote.h"
 #include "libvex_s390x_common.h"
 #include "main_util.h"               /* vassert */
 #include "main_globals.h"            /* vex_traceflags */

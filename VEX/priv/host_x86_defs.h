@@ -36,6 +36,9 @@
 #ifndef __VEX_HOST_X86_DEFS_H
 #define __VEX_HOST_X86_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex.h"                      // VexArch
+#include "host_generic_regs.h"           // HReg
 
 /* --------- Registers. --------- */
 

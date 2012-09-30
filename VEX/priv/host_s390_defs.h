@@ -35,7 +35,6 @@
 
 #include "libvex_basictypes.h"            /* Bool */
 #include "libvex.h"                       /* VexArchInfo */
-#include "main_util.h"                    /* needed for host_generic_regs.h */
 #include "host_generic_regs.h"            /* HReg */
 
 /* --------- Registers --------- */

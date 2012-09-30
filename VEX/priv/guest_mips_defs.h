@@ -33,6 +33,9 @@
 #ifndef __VEX_GUEST_MIPS_DEFS_H
 #define __VEX_GUEST_MIPS_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "guest_generic_bb_to_IR.h"     // DisResult
+
 /*---------------------------------------------------------*/
 /*--- mips to IR conversion                             ---*/
 /*---------------------------------------------------------*/

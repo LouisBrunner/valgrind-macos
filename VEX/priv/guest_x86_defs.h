@@ -38,6 +38,10 @@
 #ifndef __VEX_GUEST_X86_DEFS_H
 #define __VEX_GUEST_X86_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex_guest_x86.h"           // VexGuestX86State
+#include "libvex_emnote.h"              // VexEmNote
+#include "guest_generic_bb_to_IR.h"     // DisResult
 
 /*---------------------------------------------------------*/
 /*--- x86 to IR conversion                              ---*/

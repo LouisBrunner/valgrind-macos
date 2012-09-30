@@ -93,6 +93,7 @@
 #include "priv_sched-lock.h"
 #include "pub_core_scheduler.h"     // self
 #include "pub_core_redir.h"
+#include "libvex_emnote.h"          // VexEmNote
 
 
 /* ---------------------------------------------------------------------

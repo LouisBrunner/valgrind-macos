@@ -61,6 +61,8 @@
 
 #include "pub_core_gdbserver.h"   // VG_(tool_instrument_then_gdbserver_if_needed)
 
+#include "libvex_emnote.h"        // For PPC, EmWarn_PPC64_redir_underflow
+
 /*------------------------------------------------------------*/
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/

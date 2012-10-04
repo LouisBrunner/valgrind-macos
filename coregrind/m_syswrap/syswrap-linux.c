@@ -3332,6 +3332,22 @@ PRE(sys_openat)
       return;
    }
 
+   /* Do the same for /proc/self/auxv or /proc/<pid>/auxv case. */
+
+   VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)ARG2, 1 )
+       && (VG_(strcmp)((Char *)ARG2, name) == 0 
+           || VG_(strcmp)((Char *)ARG2, "/proc/self/auxv") == 0)) {
+      sres = VG_(dup)( VG_(cl_auxv_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
 }

@@ -3633,6 +3633,31 @@ PRE(sys_open)
          return;
       }
    }
+
+   /* Handle the case where the open is of /proc/self/auxv or
+      /proc/<pid>/auxv, and just give it a copy of the fd for the
+      fake file we cooked up at startup (in m_main).  Also, seek the
+      cloned fd back to the start. */
+   {
+      HChar  name[30];
+      Char*  arg1s = (Char*) ARG1;
+      SysRes sres;
+
+      VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
+      if (ML_(safe_to_deref)( arg1s, 1 ) &&
+          (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/auxv"))
+         )
+      {
+         sres = VG_(dup)( VG_(cl_auxv_fd) );
+         SET_STATUS_from_SysRes( sres );
+         if (!sr_isError(sres)) {
+            OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+            if (off < 0)
+               SET_STATUS_Failure( VKI_EMFILE );
+         }
+         return;
+      }
+   }
 #endif // defined(VGO_linux)
 
    /* Otherwise handle normally */

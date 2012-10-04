@@ -15,7 +15,8 @@ EXTRA_DIST = \
 	syscalls-2007.vgtest syscalls-2007.stderr.exp \
 	syslog-syscall.vgtest syslog-syscall.stderr.exp \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
-	with-space.stderr.exp with-space.stdout.exp with-space.vgtest
+	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
+	proc-auxv.vgtest proc-auxv.stderr.exp
 
 check_PROGRAMS = \
 	brk \
@@ -27,7 +28,8 @@ check_PROGRAMS = \
 	stack_switch \
 	syscalls-2007 \
 	syslog-syscall \
-	timerfd-syscall
+	timerfd-syscall \
+	proc-auxv
 
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

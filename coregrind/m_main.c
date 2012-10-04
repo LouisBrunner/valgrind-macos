@@ -1871,14 +1871,17 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    setup_file_descriptors();
 
    //--------------------------------------------------------------
-   // create the fake /proc/<pid>/cmdline file and then unlink it,
-   // but hold onto the fd, so we can hand it out to the client
-   // when it tries to open /proc/<pid>/cmdline for itself.
+   // create fake /proc/<pid>/cmdline and /proc/<pid>/auxv files
+   // and then unlink them, but hold onto the fds, so we can handr
+   // them out to the client when it tries to open
+   // /proc/<pid>/cmdline or /proc/<pid>/auxv for itself.
    //   p: setup file descriptors
+   //   p: ii_create_image for VG_(client_auxv) setup.
    //--------------------------------------------------------------
 #if !defined(VGO_linux)
    // client shouldn't be using /proc!
    VG_(cl_cmdline_fd) = -1;
+   VG_(cl_auxv_fd) = -1;
 #else
    if (!need_help) {
       HChar  buf[50], buf2[50+64];
@@ -1915,6 +1918,35 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          VG_(err_config_error)("Can't delete client cmdline file in %s\n", buf2);
 
       VG_(cl_cmdline_fd) = fd;
+
+      VG_(debugLog)(1, "main", "Create fake /proc/<pid>/auxv\n");
+
+      VG_(sprintf)(buf, "proc_%d_auxv", VG_(getpid)());
+      fd = VG_(mkstemp)( buf, buf2 );
+      if (fd == -1)
+         VG_(err_config_error)("Can't create client auxv file in %s\n", buf2);
+
+      UWord *client_auxv = VG_(client_auxv);
+      unsigned int client_auxv_len = 0;
+      while (*client_auxv != 0) {
+         client_auxv++;
+         client_auxv++;
+         client_auxv_len += 2 * sizeof(UWord);
+      }
+      client_auxv_len += 2 * sizeof(UWord);
+
+      VG_(write)(fd, VG_(client_auxv), client_auxv_len);
+
+      /* Don't bother to seek the file back to the start; instead do
+	 it every time a copy of it is given out (by PRE(sys_open)). 
+	 That is probably more robust across fork() etc. */
+
+      /* Now delete it, but hang on to the fd. */
+      r = VG_(unlink)( buf2 );
+      if (r)
+         VG_(err_config_error)("Can't delete client auxv file in %s\n", buf2);
+
+      VG_(cl_auxv_fd) = fd;
    }
 #endif
 

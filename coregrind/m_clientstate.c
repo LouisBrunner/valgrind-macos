@@ -64,6 +64,9 @@ Int VG_(cl_exec_fd) = -1;
 /* A fd which refers to the fake /proc/<pid>/cmdline in /tmp. */
 Int VG_(cl_cmdline_fd) = -1;
 
+/* A fd which refers to the fake /proc/<pid>/auxv in /tmp. */
+Int VG_(cl_auxv_fd) = -1;
+
 // Command line pieces, after they have been extracted from argv in
 // m_main.main().  The payload vectors are allocated in VG_AR_TOOL
 // (the default arena).  They are never freed.

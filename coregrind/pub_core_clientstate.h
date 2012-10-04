@@ -67,6 +67,9 @@ extern Int VG_(cl_exec_fd);
    the file contents alive exactly until the process exits. */
 extern Int VG_(cl_cmdline_fd);
 
+/* Same as above, but for /proc/<pid>/auxv. */
+extern Int VG_(cl_auxv_fd);
+
 // Client's original rlimit data and rlimit stack
 extern struct vki_rlimit VG_(client_rlimit_data);
 extern struct vki_rlimit VG_(client_rlimit_stack);

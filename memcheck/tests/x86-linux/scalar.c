@@ -813,7 +813,7 @@ int main(void)
 
    // __NR_capget 184
    GO(__NR_capget, "2s 2m");
-   SY(__NR_capget, x0, x0); FAIL;
+   SY(__NR_capget, x0, x0+1); FAIL;
 
    // __NR_capset 185
    GO(__NR_capset, "2s 2m");

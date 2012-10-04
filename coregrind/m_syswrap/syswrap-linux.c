@@ -2212,8 +2212,9 @@ PRE(sys_capget)
                  vki_cap_user_header_t, header, vki_cap_user_data_t, data);
    PRE_MEM_READ( "capget(header)", ARG1, 
                   sizeof(struct __vki_user_cap_header_struct) );
-   PRE_MEM_WRITE( "capget(data)", ARG2, 
-                  sizeof(struct __vki_user_cap_data_struct) );
+   if (ARG2 != (Addr)NULL)
+      PRE_MEM_WRITE( "capget(data)", ARG2, 
+                     sizeof(struct __vki_user_cap_data_struct) );
 }
 POST(sys_capget)
 {

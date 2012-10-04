@@ -1,0 +1,5 @@
+#! /bin/sh
+
+# mc_replace_strmem.c intercepts various memcpy glibc versions.
+./filter_stderr "$@" |
+perl -p -e "s/: memcpy\@\@?GLIBC_[.1-9]+ \(mc_replace_strmem.c:...\)/: memcpy \(mc_replace_strmem.c:...\)/"

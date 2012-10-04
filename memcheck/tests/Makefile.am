@@ -44,7 +44,8 @@ dist_noinst_SCRIPTS = \
 	filter_leak_cases_possible \
 	filter_stderr filter_xml \
 	filter_varinfo3 \
-	filter_memcheck
+	filter_memcheck \
+	filter_memcpy
 
 noinst_HEADERS = leak.h
 

@@ -1752,9 +1752,7 @@ static void cg_post_clo_init(void)
       VG_(exit)(1);
    }
 
-   cachesim_I1_initcache(I1c);
-   cachesim_D1_initcache(D1c);
-   cachesim_LL_initcache(LLc);
+   cachesim_initcaches(I1c, D1c, LLc);
 }
 
 VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)

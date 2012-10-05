@@ -79,118 +79,107 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
       c->tags[i] = 0;
 }
 
-/* This is done as a macro rather than by passing in the cache_t2 as an 
- * arg because it slows things down by a small amount (3-5%) due to all 
- * that extra indirection. */
+/* This attribute forces GCC to inline the function, getting rid of a
+ * lot of indirection around the cache_t2 pointer, if it is known to be
+ * constant in the caller (the caller is inlined itself).
+ * Without inlining of simulator functions, cachegrind can get 40% slower.
+ */
+__attribute__((always_inline))
+static Bool cachesim_setref_is_miss(cache_t2* c, UInt set_no, UWord tag)
+{
+   int i, j;
+   UWord *set;
 
-#define CACHESIM(L, MISS_TREATMENT)                                         \
-/* The cache and associated bits and pieces. */                             \
-static cache_t2 L;                                                          \
-                                                                            \
-static void cachesim_##L##_initcache(cache_t config)                        \
-{                                                                           \
-    cachesim_initcache(config, &L);                                         \
-}                                                                           \
-                                                                            \
-/* This attribute forces GCC to inline this function, even though it's */   \
-/* bigger than its usual limit.  Inlining gains around 5--10% speedup. */   \
-__attribute__((always_inline))                                              \
-static __inline__                                                           \
-void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *mL)         \
-{                                                                           \
-   UInt  set1 = ( a         >> L.line_size_bits) & (L.sets_min_1);          \
-   UInt  set2 = ((a+size-1) >> L.line_size_bits) & (L.sets_min_1);          \
-   UWord tag  = a >> L.tag_shift;                                           \
-   UWord tag2;                                                              \
-   Int i, j;                                                                \
-   Bool is_miss = False;                                                    \
-   UWord* set;                                                              \
-                                                                            \
-   /* First case: word entirely within line. */                             \
-   if (set1 == set2) {                                                      \
-                                                                            \
-      set = &(L.tags[set1 * L.assoc]);                                      \
-                                                                            \
-      /* This loop is unrolled for just the first case, which is the most */\
-      /* common.  We can't unroll any further because it would screw up   */\
-      /* if we have a direct-mapped (1-way) cache.                        */\
-      if (tag == set[0]) {                                                  \
-         return;                                                            \
-      }                                                                     \
-      /* If the tag is one other than the MRU, move it into the MRU spot  */\
-      /* and shuffle the rest down.                                       */\
-      for (i = 1; i < L.assoc; i++) {                                       \
-         if (tag == set[i]) {                                               \
-            for (j = i; j > 0; j--) {                                       \
-               set[j] = set[j - 1];                                         \
-            }                                                               \
-            set[0] = tag;                                                   \
-            return;                                                         \
-         }                                                                  \
-      }                                                                     \
-                                                                            \
-      /* A miss;  install this tag as MRU, shuffle rest down. */            \
-      for (j = L.assoc - 1; j > 0; j--) {                                   \
-         set[j] = set[j - 1];                                               \
-      }                                                                     \
-      set[0] = tag;                                                         \
-      MISS_TREATMENT;                                                       \
-      return;                                                               \
-                                                                            \
-   /* Second case: word straddles two lines. */                             \
-   /* Nb: this is a fast way of doing ((set1+1) % L.sets) */                \
-   } else if (((set1 + 1) & (L.sets_min_1)) == set2) {                      \
-      set = &(L.tags[set1 * L.assoc]);                                      \
-      if (tag == set[0]) {                                                  \
-         goto block2;                                                       \
-      }                                                                     \
-      for (i = 1; i < L.assoc; i++) {                                       \
-         if (tag == set[i]) {                                               \
-            for (j = i; j > 0; j--) {                                       \
-               set[j] = set[j - 1];                                         \
-            }                                                               \
-            set[0] = tag;                                                   \
-            goto block2;                                                    \
-         }                                                                  \
-      }                                                                     \
-      for (j = L.assoc - 1; j > 0; j--) {                                   \
-         set[j] = set[j - 1];                                               \
-      }                                                                     \
-      set[0] = tag;                                                         \
-      is_miss = True;                                                       \
-block2:                                                                     \
-      set = &(L.tags[set2 * L.assoc]);                                      \
-      tag2 = (a+size-1) >> L.tag_shift;                                     \
-      if (tag2 == set[0]) {                                                 \
-         goto miss_treatment;                                               \
-      }                                                                     \
-      for (i = 1; i < L.assoc; i++) {                                       \
-         if (tag2 == set[i]) {                                              \
-            for (j = i; j > 0; j--) {                                       \
-               set[j] = set[j - 1];                                         \
-            }                                                               \
-            set[0] = tag2;                                                  \
-            goto miss_treatment;                                            \
-         }                                                                  \
-      }                                                                     \
-      for (j = L.assoc - 1; j > 0; j--) {                                   \
-         set[j] = set[j - 1];                                               \
-      }                                                                     \
-      set[0] = tag2;                                                        \
-      is_miss = True;                                                       \
-miss_treatment:                                                             \
-      if (is_miss) { MISS_TREATMENT; }                                      \
-                                                                            \
-   } else {                                                                 \
-       VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);\
-       VG_(tool_panic)("item straddles more than two cache sets");          \
-   }                                                                        \
-   return;                                                                  \
+   set = &(c->tags[set_no * c->assoc]);
+
+   /* This loop is unrolled for just the first case, which is the most */
+   /* common.  We can't unroll any further because it would screw up   */
+   /* if we have a direct-mapped (1-way) cache.                        */
+   if (tag == set[0])
+      return False;
+
+   /* If the tag is one other than the MRU, move it into the MRU spot  */
+   /* and shuffle the rest down.                                       */
+   for (i = 1; i < c->assoc; i++) {
+      if (tag == set[i]) {
+         for (j = i; j > 0; j--) {
+            set[j] = set[j - 1];
+         }
+         set[0] = tag;
+
+         return False;
+      }
+   }
+
+   /* A miss;  install this tag as MRU, shuffle rest down. */
+   for (j = c->assoc - 1; j > 0; j--) {
+      set[j] = set[j - 1];
+   }
+   set[0] = tag;
+
+   return True;
 }
 
-CACHESIM(LL, (*mL)++ );
-CACHESIM(I1, { (*m1)++; cachesim_LL_doref(a, size, m1, mL); } );
-CACHESIM(D1, { (*m1)++; cachesim_LL_doref(a, size, m1, mL); } );
+__attribute__((always_inline))
+static Bool cachesim_ref_is_miss(cache_t2* c, Addr a, UChar size)
+{
+   UInt  set1 = ( a         >> c->line_size_bits) & (c->sets_min_1);
+   UInt  set2 = ((a+size-1) >> c->line_size_bits) & (c->sets_min_1);
+   UWord tag  = a >> c->tag_shift;
+
+   /* Access entirely within line. */
+   if (set1 == set2)
+      return cachesim_setref_is_miss(c, set1, tag);
+
+   /* Access straddles two lines. */
+   /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
+   else if (((set1 + 1) & (c->sets_min_1)) == set2) {
+      UWord tag2  = (a+size-1) >> c->tag_shift;
+
+      /* always do both, as state is updated as side effect */
+      if (cachesim_setref_is_miss(c, set1, tag)) {
+         cachesim_setref_is_miss(c, set2, tag2);
+         return True;
+      }
+      return cachesim_setref_is_miss(c, set2, tag2);
+   }
+   VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);
+   VG_(tool_panic)("item straddles more than two cache sets");
+   /* not reached */
+   return True;
+}
+
+
+static cache_t2 LL;
+static cache_t2 I1;
+static cache_t2 D1;
+
+static void cachesim_initcaches(cache_t I1c, cache_t D1c, cache_t LLc)
+{
+   cachesim_initcache(I1c, &I1);
+   cachesim_initcache(D1c, &D1);
+   cachesim_initcache(LLc, &LL);
+}
+
+__attribute__((always_inline))
+static void cachesim_I1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
+{
+   if (cachesim_ref_is_miss(&I1, a, size)) {
+      (*m1)++;
+      if (cachesim_ref_is_miss(&LL, a, size))
+         (*mL)++;
+   }
+}
+
+__attribute__((always_inline))
+static void cachesim_D1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
+{
+   if (cachesim_ref_is_miss(&D1, a, size)) {
+      (*m1)++;
+      if (cachesim_ref_is_miss(&LL, a, size))
+         (*mL)++;
+   }
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                 cg_sim.c ---*/

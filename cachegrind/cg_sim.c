@@ -123,27 +123,38 @@ static Bool cachesim_setref_is_miss(cache_t2* c, UInt set_no, UWord tag)
 __attribute__((always_inline))
 static Bool cachesim_ref_is_miss(cache_t2* c, Addr a, UChar size)
 {
-   UInt  set1 = ( a         >> c->line_size_bits) & (c->sets_min_1);
-   UInt  set2 = ((a+size-1) >> c->line_size_bits) & (c->sets_min_1);
-   UWord tag  = a >> c->tag_shift;
+   /* A memory block has the size of a cache line */
+   UWord block1 =  a         >> c->line_size_bits;
+   UWord block2 = (a+size-1) >> c->line_size_bits;
+   UInt  set1   = block1 & c->sets_min_1;
+
+   /* Tags used in real caches are minimal to save space.
+    * As the last bits of the block number of addresses mapping
+    * into one cache set are the same, real caches use as tag
+    *   tag = block >> log2(#sets)
+    * But using the memory block as more specific tag is fine,
+    * and saves instructions.
+    */
+   UWord tag1   = block1;
 
    /* Access entirely within line. */
-   if (set1 == set2)
-      return cachesim_setref_is_miss(c, set1, tag);
+   if (block1 == block2)
+      return cachesim_setref_is_miss(c, set1, tag1);
 
    /* Access straddles two lines. */
-   /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
-   else if (((set1 + 1) & (c->sets_min_1)) == set2) {
-      UWord tag2  = (a+size-1) >> c->tag_shift;
+   else if (block1 + 1 == block2) {
+      UInt  set2 = block2 & c->sets_min_1;
+      UWord tag2 = block2;
 
       /* always do both, as state is updated as side effect */
-      if (cachesim_setref_is_miss(c, set1, tag)) {
+      if (cachesim_setref_is_miss(c, set1, tag1)) {
          cachesim_setref_is_miss(c, set2, tag2);
          return True;
       }
       return cachesim_setref_is_miss(c, set2, tag2);
    }
-   VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);
+   VG_(printf)("addr: %lx  size: %u  blocks: %ld %ld",
+               a, size, block1, block2);
    VG_(tool_panic)("item straddles more than two cache sets");
    /* not reached */
    return True;

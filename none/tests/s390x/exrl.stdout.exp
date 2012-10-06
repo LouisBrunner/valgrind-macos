@@ -1,0 +1,13 @@
+------- Copy 10+1 bytes from buffer to target
+------- EXRL to OR in the length
+before: buffer = |0123456789abcdef|
+before: target = |XXXXXXXXXXXXXXXX|
+after:  buffer = |0123456789abcdef|
+after:  target = |0123456789aXXXXX|
+
+------- EXRL 0,... has no effect (writes out target)
+        target = |0123456789aXXXXX|
+
+------- EXRL to OR in the syscall number (writes out target)
+        target = |0123456789aXXXXX|
+

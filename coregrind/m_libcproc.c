@@ -724,15 +724,21 @@ void VG_(do_atfork_child)(ThreadId tid)
 
 void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 {
+   if (nbytes == 0) return;    // nothing to do
+
+   // Get cache info
+   VexArchInfo vai;
+   VG_(machine_get_VexArchInfo)(NULL, &vai);
+
+   // If I-caches are coherent, nothing needs to be done here
+   if (vai.hwcache_info.icaches_maintain_coherence) return;
+
 #  if defined(VGA_ppc32) || defined(VGA_ppc64)
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
    Addr cls;
    Addr addr;
    VexArchInfo vai;
-
-   if (nbytes == 0) return;
-   vg_assert(nbytes > 0);
 
    VG_(machine_get_VexArchInfo)( NULL, &vai );
    cls = vai.ppc_cache_line_szB;
@@ -750,15 +756,6 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    }
    __asm__ __volatile__("sync; isync");
 
-#  elif defined(VGA_x86)
-   /* no need to do anything, hardware provides coherence */
-
-#  elif defined(VGA_amd64)
-   /* no need to do anything, hardware provides coherence */
-
-#  elif defined(VGA_s390x)
-   /* no need to do anything, hardware provides coherence */
-
 #  elif defined(VGP_arm_linux)
    /* ARM cache flushes are privileged, so we must defer to the kernel. */
    Addr startaddr = (Addr) ptr;
@@ -770,8 +767,6 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
                                  (UWord) nbytes, (UWord) 3);
    vg_assert( sres._isError == 0 );
 
-#  else
-#    error "Unknown ARCH"
 #  endif
 }
 

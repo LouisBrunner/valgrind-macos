@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_MACHINE_H
 #define __PUB_TOOL_MACHINE_H
 
+#include "libvex.h"                    // VexArchInfo
+
 #if defined(VGP_x86_linux)
 #  define VG_MIN_INSTR_SZB          1  // min length of native instruction
 #  define VG_MAX_INSTR_SZB         16  // max length of native instruction
@@ -163,6 +165,10 @@ extern void* VG_(fnptr_to_fnentry)( void* );
    and on the specific capabilities we are simulating for that guest
    (eg, AVX or non-AVX ?, for amd64). */
 extern Int VG_(machine_get_size_of_largest_guest_register) ( void );
+
+/* Return host cpu info. */
+extern void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch*,
+                                          /*OUT*/VexArchInfo* );
 
 #endif   // __PUB_TOOL_MACHINE_H
 

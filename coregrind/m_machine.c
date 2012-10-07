@@ -674,7 +674,8 @@ static UInt VG_(get_machine_model)(void)
 
 /* Determine what insn set and insn set variant the host has, and
    record it.  To be called once at system startup.  Returns False if
-   this a CPU incapable of running Valgrind. */
+   this a CPU incapable of running Valgrind.
+   Also determine information about the caches on this host. */
 
 Bool VG_(machine_get_hwcaps)( void )
 {
@@ -731,26 +732,23 @@ Bool VG_(machine_get_hwcaps)( void )
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 
+     va = VexArchX86;
      if (have_sse2 && have_sse1) {
-        va          = VexArchX86;
         vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
         if (have_lzcnt)
            vai.hwcaps |= VEX_HWCAPS_X86_LZCNT;
         VG_(machine_x86_have_mxcsr) = 1;
-        return True;
-     }
-
-     if (have_sse1) {
-        va          = VexArchX86;
+     } else if (have_sse1) {
         vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
         VG_(machine_x86_have_mxcsr) = 1;
-        return True;
+     } else {
+       vai.hwcaps = 0; /*baseline - no sse at all*/
+       VG_(machine_x86_have_mxcsr) = 0;
      }
 
-     va         = VexArchX86;
-     vai.hwcaps = 0; /*baseline - no sse at all*/
-     VG_(machine_x86_have_mxcsr) = 0;
+     VG_(machine_get_cache_info)(&vai);
+
      return True;
    }
 
@@ -836,6 +834,9 @@ Bool VG_(machine_get_hwcaps)( void )
                 | (have_cx16  ? VEX_HWCAPS_AMD64_CX16  : 0)
                 | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0)
                 | (have_avx   ? VEX_HWCAPS_AMD64_AVX   : 0);
+
+     VG_(machine_get_cache_info)(&vai);
+
      return True;
    }
 
@@ -980,6 +981,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC32_VX;
      if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC32_DFP;
 
+     VG_(machine_get_cache_info)(&vai);
 
      /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
         called before we're ready to go. */
@@ -1104,6 +1106,8 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC64_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC64_VX;
      if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC64_DFP;
+
+     VG_(machine_get_cache_info)(&vai);
 
      /* But we're not done yet: VG_(machine_ppc64_set_clszB) must be
         called before we're ready to go. */
@@ -1251,6 +1255,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 
+     VG_(machine_get_cache_info)(&vai);
+
      return True;
    }
 
@@ -1360,6 +1366,8 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_VFP)  vai.hwcaps |= VEX_HWCAPS_ARM_VFP;
      if (have_NEON) vai.hwcaps |= VEX_HWCAPS_ARM_NEON;
 
+     VG_(machine_get_cache_info)(&vai);
+
      return True;
    }
 
@@ -1371,6 +1379,9 @@ Bool VG_(machine_get_hwcaps)( void )
          return False;
 
      vai.hwcaps = model;
+
+     VG_(machine_get_cache_info)(&vai);
+
      return True;
    }
 

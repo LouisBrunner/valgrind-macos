@@ -36,7 +36,13 @@
 // CPUID instruction.
 //--------------------------------------------------------------------
 
-#include "pub_tool_cpuid.h"
+#if defined(VGA_x86) || defined(VGA_amd64)
+extern Bool VG_(has_cpuid) ( void );
+
+extern void VG_(cpuid) ( UInt eax, UInt ecx,
+                         UInt* eax_ret, UInt* ebx_ret,
+                         UInt* ecx_ret, UInt* edx_ret );
+#endif
 
 #endif   // __PUB_CORE_CPUID_H
 

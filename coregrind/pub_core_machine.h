@@ -199,9 +199,9 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
    this a CPU incapable of running Valgrind. */
 extern Bool VG_(machine_get_hwcaps)( void );
 
-/* Fetch host cpu info, as per above comment. */
-extern void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch*,
-                                          /*OUT*/VexArchInfo* );
+/* Determine information about the cache system this host has and
+   record it. Returns False, if cache information cannot be auto-detected. */
+extern Bool VG_(machine_get_cache_info)( VexArchInfo * );
 
 /* Notify host cpu cache line size, as per above comment. */
 #if defined(VGA_ppc32)

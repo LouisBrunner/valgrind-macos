@@ -240,6 +240,7 @@ pkglib_LIBRARIES += libcoregrind-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
 
 COREGRIND_SOURCES_COMMON = \
+	m_cache.c \
 	m_commandline.c \
 	m_clientstate.c \
 	m_cpuid.S \

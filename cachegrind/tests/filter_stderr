@@ -17,8 +17,6 @@ perl -p -e 's/((I1|D1|LL|LLi|LLd) *(misses|miss rate):)[ 0-9,()+rdw%\.]*$/\1/' |
 sed "/warning: Pentium 4 with 12 KB micro-op instruction trace cache/d" |
 sed "/Simulating a 16 KB I-cache with 32 B lines/d"   |
 sed "/warning: L3 cache found, using its data for the LL simulation./d" |
-sed "/Warning: Cannot auto-detect cache config on PPC.., using one or more defaults/d" |
-sed "/Warning: Cannot auto-detect cache config on ARM, using one or more defaults/d" |
-sed "/Warning: Cannot auto-detect cache config, assuming z10-EC cache configuration/d" |
-sed "/Warning: Cannot auto-detect cache config on MIPS.., using one or more defaults/d" |
+sed "/Warning: Cannot auto-detect cache config, using defaults./d" |
+sed "/Run with -v to see./d" |
 sed "/warning: pretending that LL cache has associativity .*$/d"

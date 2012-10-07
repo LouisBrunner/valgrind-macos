@@ -738,7 +738,6 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    Addr cls;
    Addr addr;
-   VexArchInfo vai;
 
    VG_(machine_get_VexArchInfo)( NULL, &vai );
    cls = vai.ppc_cache_line_szB;

@@ -679,6 +679,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       irsb = vta->instrument1(vta->callback_opaque,
                               irsb, guest_layout, 
                               vta->guest_extents,
+                              &vta->archinfo_host,
                               guest_word_type, host_word_type);
    vexAllocSanityCheck();
 
@@ -686,6 +687,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       irsb = vta->instrument2(vta->callback_opaque,
                               irsb, guest_layout,
                               vta->guest_extents,
+                              &vta->archinfo_host,
                               guest_word_type, host_word_type);
       
    if (vex_traceflags & VEX_TRACE_INST) {

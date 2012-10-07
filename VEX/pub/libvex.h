@@ -636,11 +636,13 @@ typedef
                                IRSB*, 
                                VexGuestLayout*, 
                                VexGuestExtents*,
+                               VexArchInfo*,
                                IRType gWordTy, IRType hWordTy );
       IRSB*   (*instrument2) ( /*callback_opaque*/void*, 
                                IRSB*, 
                                VexGuestLayout*, 
                                VexGuestExtents*,
+                               VexArchInfo*,
                                IRType gWordTy, IRType hWordTy );
 
       IRSB* (*finaltidy) ( IRSB* );

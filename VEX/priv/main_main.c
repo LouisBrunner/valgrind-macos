@@ -1081,6 +1081,10 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
    vai->ppc_dcbz_szB       = 0;
    vai->ppc_dcbzl_szB      = 0;
 
+   vai->hwcache_info.num_levels = 0;
+   vai->hwcache_info.num_caches = 0;
+   vai->hwcache_info.caches = NULL;
+   vai->hwcache_info.icaches_maintain_coherence = True;  // whatever
 }
 
 /* Write default settings info *vbi. */

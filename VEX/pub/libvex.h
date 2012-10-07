@@ -181,15 +181,52 @@ typedef
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
 extern const HChar* LibVEX_ppVexHwCaps  ( VexArch, UInt );
 
+/* The various kinds of caches */
+typedef enum {
+   DATA_CACHE,
+   INSN_CACHE,
+   UNIFIED_CACHE
+} VexCacheKind;
+
+/* Information about a particular cache */
+typedef struct {
+   VexCacheKind kind;
+   UInt level;         /* level this cache is at, e.g. 1 for L1 cache */
+   UInt sizeB;         /* size of this cache in bytes */
+   UInt line_sizeB;    /* cache line size in bytes */
+   UInt assoc;         /* set associativity */
+} VexCache;
+
+/* Convenience macro to initialise a VexCache */
+#define VEX_CACHE_INIT(_kind, _level, _size, _line_size, _assoc)         \
+         ({ (VexCache) { .kind = _kind, .level = _level, .sizeB = _size, \
+                         .line_sizeB = _line_size, .assoc = _assoc }; })
+
+/* Information about the cache system as a whole */
+typedef struct {
+   UInt num_levels;
+   UInt num_caches;
+   /* Unordered array of caches for this host. NULL if there are
+      no caches. Users can assume that the array contains at most one
+      cache of a given kind per cache level. Additionally, if there exists
+      a unified cache at a particular level then no other cache exists
+      at that level. */
+   VexCache *caches;
+   Bool icaches_maintain_coherence;
+} VexCacheInfo;
+
 
 /* This struct is a bit of a hack, but is needed to carry misc
    important bits of info about an arch.  Fields which are meaningless
-   or ignored for the platform in question should be set to zero. */
+   or ignored for the platform in question should be set to zero.
+   Nb: if you add fields to the struct make sure to update function
+   LibVEX_default_VexArchInfo. */
 
 typedef
    struct {
-      /* This is the only mandatory field. */
+      /* The following two fields are mandatory. */
       UInt hwcaps;
+      VexCacheInfo hwcache_info;
       /* PPC32/PPC64 only: size of cache line */
       Int ppc_cache_line_szB;
       /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions

@@ -2117,6 +2117,7 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
                       IRSB* sbIn,
                       VexGuestLayout* layout,
                       VexGuestExtents* vge,
+                      VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    if (! have_started_executing_code) {

@@ -40,6 +40,7 @@ IRSB* nl_instrument ( VgCallbackClosure* closure,
                       IRSB* bb,
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
+                      VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
     return bb;

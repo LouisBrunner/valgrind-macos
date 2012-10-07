@@ -222,6 +222,7 @@ IRSB* tool_instrument_then_gdbserver_if_needed ( VgCallbackClosure* closureV,
                                                  IRSB*              sb_in, 
                                                  VexGuestLayout*    layout, 
                                                  VexGuestExtents*   vge,
+                                                 VexArchInfo*       vai,
                                                  IRType             gWordTy, 
                                                  IRType             hWordTy )
 {
@@ -230,6 +231,7 @@ IRSB* tool_instrument_then_gdbserver_if_needed ( VgCallbackClosure* closureV,
                                    sb_in,
                                    layout,
                                    vge,
+                                   vai,
                                    gWordTy,
                                    hWordTy),
        layout,
@@ -261,6 +263,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
                           IRSB*             sb_in, 
                           VexGuestLayout*   layout, 
                           VexGuestExtents*  vge,
+                          VexArchInfo*      vai,
                           IRType            gWordTy, 
                           IRType            hWordTy )
 {
@@ -1505,15 +1508,16 @@ Bool VG_(translate) ( ThreadId tid,
         They are entirely legal but longwinded so as to maximise the
         chance of the C typechecker picking up any type snafus. */
      IRSB*(*f)(VgCallbackClosure*,
-               IRSB*,VexGuestLayout*,VexGuestExtents*,
+               IRSB*,VexGuestLayout*,VexGuestExtents*, VexArchInfo*,
                IRType,IRType)
         = VG_(clo_vgdb) != Vg_VgdbNo
              ? tool_instrument_then_gdbserver_if_needed
              : VG_(tdict).tool_instrument;
      IRSB*(*g)(void*,
-               IRSB*,VexGuestLayout*,VexGuestExtents*,
+               IRSB*,VexGuestLayout*,VexGuestExtents*,VexArchInfo*,
                IRType,IRType)
-       = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
+       = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,
+                   VexArchInfo*,IRType,IRType))f;
      vta.instrument1     = g;
    }
    /* No need for type kludgery here. */

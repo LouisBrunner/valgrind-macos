@@ -109,7 +109,7 @@ typedef struct {
    IRSB* (*tool_instrument)   (VgCallbackClosure*,
                                IRSB*, 
                                VexGuestLayout*, VexGuestExtents*, 
-                               IRType, IRType);
+                               VexArchInfo*, IRType, IRType);
    void  (*tool_fini)         (Int);
 
    // VG_(needs).core_errors

@@ -566,6 +566,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRSB* bb_in, 
                         VexGuestLayout* layout, 
                         VexGuestExtents* vge,
+                        VexArchInfo* archinfo_host,
                         IRType gWordTy, IRType hWordTy );
 
 IRSB* MC_(final_tidy) ( IRSB* );

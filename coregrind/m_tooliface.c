@@ -41,7 +41,8 @@ VgToolInterface VG_(tdict);
 void VG_(basic_tool_funcs)(
    void(*post_clo_init)(void),
    IRSB*(*instrument)(VgCallbackClosure*, IRSB*, 
-                      VexGuestLayout*, VexGuestExtents*, IRType, IRType),
+                      VexGuestLayout*, VexGuestExtents*, VexArchInfo*,
+                      IRType, IRType),
    void(*fini)(Int)
 )
 {

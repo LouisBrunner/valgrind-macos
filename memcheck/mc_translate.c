@@ -5302,6 +5302,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRSB* sb_in, 
                         VexGuestLayout* layout, 
                         VexGuestExtents* vge,
+                        VexArchInfo* archinfo_host,
                         IRType gWordTy, IRType hWordTy )
 {
    Bool    verboze = 0||False;

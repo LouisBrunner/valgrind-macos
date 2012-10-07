@@ -609,6 +609,7 @@ IRSB* h_instrument ( VgCallbackClosure* closure,
                      IRSB* sbIn,
                      VexGuestLayout* layout,
                      VexGuestExtents* vge,
+                     VexArchInfo* archinfo_host,
                      IRType gWordTy, IRType hWordTy )
 {
    Bool  verboze = 0||False;

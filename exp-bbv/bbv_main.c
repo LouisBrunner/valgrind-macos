@@ -347,6 +347,7 @@ static Int get_inst_type(Int len, Addr addr)
 static IRSB* bbv_instrument ( VgCallbackClosure* closure,
                              IRSB* sbIn, VexGuestLayout* layout,
                              VexGuestExtents* vge,
+                             VexArchInfo* archinfo_host,
                              IRType gWordTy, IRType hWordTy )
 {
    Int      i,n_instrs=1;

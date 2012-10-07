@@ -581,6 +581,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                        IRSB* const bb_in,
                        VexGuestLayout* const layout,
                        VexGuestExtents* const vge,
+                       VexArchInfo* archinfo_host,
                        IRType const gWordTy,
                        IRType const hWordTy)
 {

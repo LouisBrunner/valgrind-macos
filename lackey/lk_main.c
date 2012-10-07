@@ -605,6 +605,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                       IRSB* sbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
+                      VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    IRDirty*   di;

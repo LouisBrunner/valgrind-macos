@@ -4326,6 +4326,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                       IRSB* bbIn,
                       VexGuestLayout* layout,
                       VexGuestExtents* vge,
+                      VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    Int     i;

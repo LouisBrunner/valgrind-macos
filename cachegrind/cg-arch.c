@@ -302,8 +302,6 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    // Extract what we need
    i1 = locate_cache(ci, INSN_CACHE, 1);
    d1 = locate_cache(ci, DATA_CACHE, 1);
-   // FIXME: needs clarification for num_levels > 3 see also warning below
-   // FIXME: whether it needs adjustment
    ll = locate_cache(ci, UNIFIED_CACHE, ci->num_levels);
 
    if (ll && ci->num_levels > 2) {

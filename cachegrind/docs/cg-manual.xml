@@ -20,10 +20,10 @@ independent first-level instruction and data caches (I1 and D1), backed by a
 unified second-level cache (L2).  This exactly matches the configuration of
 many modern machines.</para>
 
-<para>However, some modern machines have three levels of cache.  For these
+<para>However, some modern machines have three or four levels of cache.  For these
 machines (in the cases where Cachegrind can auto-detect the cache
-configuration) Cachegrind simulates the first-level and third-level caches.
-The reason for this choice is that the L3 cache has the most influence on
+configuration) Cachegrind simulates the first-level and last-level caches.
+The reason for this choice is that the last-level cache has the most influence on
 runtime, as it masks accesses to main memory.  Furthermore, the L1 caches
 often have low associativity, so simulating them can detect cases where the
 code interacts badly with this cache (eg. traversing a matrix column-wise

@@ -708,8 +708,8 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
    case S390_INSN_GADD:
       break;
 
-   case S390_INSN_SET_FPCRM:
-      addHRegUse(u, HRmRead,  insn->variant.set_fpcrm.mode);
+   case S390_INSN_SET_FPC_BFPRM:
+      addHRegUse(u, HRmRead,  insn->variant.set_fpc_bfprm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -936,9 +936,9 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    case S390_INSN_GADD:
       break;
 
-   case S390_INSN_SET_FPCRM:
-      insn->variant.set_fpcrm.mode =
-         lookupHRegRemap(m, insn->variant.set_fpcrm.mode);
+   case S390_INSN_SET_FPC_BFPRM:
+      insn->variant.set_fpc_bfprm.mode =
+         lookupHRegRemap(m, insn->variant.set_fpc_bfprm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -4738,7 +4738,7 @@ s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2)
 
 s390_insn *
 s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst, HReg op,
-                      s390_round_t rounding_mode)
+                      s390_bfp_round_t rounding_mode)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4841,7 +4841,7 @@ s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi, HReg op1_lo,
 static s390_insn *
 s390_insn_bfp128_convert(UChar size, s390_conv_t tag, HReg dst_hi,
                          HReg dst_lo, HReg op_hi, HReg op_lo,
-                         s390_round_t rounding_mode)
+                         s390_bfp_round_t rounding_mode)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -4874,7 +4874,7 @@ s390_insn_bfp128_convert_to(UChar size, s390_conv_t tag, HReg dst_hi,
 {
    /* Conversion to bfp128 never requires a rounding mode. Provide default
       rounding mode. It will not be used when emitting insns. */
-   s390_round_t rounding_mode = S390_ROUND_NEAREST_EVEN;
+   s390_bfp_round_t rounding_mode = S390_BFP_ROUND_NEAREST_EVEN;
 
    return s390_insn_bfp128_convert(size, tag, dst_hi, dst_lo, op,
                                    INVALID_HREG, rounding_mode);
@@ -4884,7 +4884,7 @@ s390_insn_bfp128_convert_to(UChar size, s390_conv_t tag, HReg dst_hi,
 s390_insn *
 s390_insn_bfp128_convert_from(UChar size, s390_conv_t tag, HReg dst,
                               HReg op_hi, HReg op_lo,
-                              s390_round_t rounding_mode)
+                              s390_bfp_round_t rounding_mode)
 {
    return s390_insn_bfp128_convert(size, tag, dst, INVALID_HREG, op_hi, op_lo,
                                    rounding_mode);
@@ -4932,15 +4932,15 @@ s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value)
 
 
 s390_insn *
-s390_insn_set_fpcrm(UChar size, HReg mode)
+s390_insn_set_fpc_bfprm(UChar size, HReg mode)
 {
    vassert(size == 4);
 
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_SET_FPCRM;
+   insn->tag  = S390_INSN_SET_FPC_BFPRM;
    insn->size = size;
-   insn->variant.set_fpcrm.mode = mode;
+   insn->variant.set_fpc_bfprm.mode = mode;
 
    return insn;
 }
@@ -5451,8 +5451,9 @@ s390_insn_as_string(const s390_insn *insn)
                    insn->variant.gadd.value);
       break;
 
-   case S390_INSN_SET_FPCRM:
-      s390_sprintf(buf, "%M %R", "v-set-fpcrm", insn->variant.set_fpcrm.mode);
+   case S390_INSN_SET_FPC_BFPRM:
+      s390_sprintf(buf, "%M %R", "v-set-fpc-bfprm",
+                   insn->variant.set_fpc_bfprm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -7415,7 +7416,7 @@ s390_insn_bfp_convert_emit(UChar *buf, const s390_insn *insn)
 {
    UInt  r1 = hregNumber(insn->variant.bfp_convert.dst_hi);
    UInt  r2 = hregNumber(insn->variant.bfp_convert.op_hi);
-   s390_round_t m3 = insn->variant.bfp_convert.rounding_mode;
+   s390_bfp_round_t m3 = insn->variant.bfp_convert.rounding_mode;
    /* The IEEE-inexact-exception control is not modelled. So the
       m4 field is 0 (which is what GCC does, too) */
    const UInt m4 = 0;
@@ -7518,9 +7519,9 @@ s390_insn_gadd_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
-s390_insn_set_fpcrm_emit(UChar *buf, const s390_insn *insn)
+s390_insn_set_fpc_bfprm_emit(UChar *buf, const s390_insn *insn)
 {
-   UInt mode = hregNumber(insn->variant.set_fpcrm.mode);
+   UInt mode = hregNumber(insn->variant.set_fpc_bfprm.mode);
 
    /* Copy FPC from guest state to R0 and OR in the new rounding mode */
    buf = s390_emit_L(buf, R0, 0, S390_REGNO_GUEST_STATE_POINTER,
@@ -8074,8 +8075,8 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
       end = s390_insn_gadd_emit(buf, insn);
       break;
 
-   case S390_INSN_SET_FPCRM:
-      end = s390_insn_set_fpcrm_emit(buf, insn);
+   case S390_INSN_SET_FPC_BFPRM:
+      end = s390_insn_set_fpc_bfprm_emit(buf, insn);
       break;
 
    case S390_INSN_PROFINC:

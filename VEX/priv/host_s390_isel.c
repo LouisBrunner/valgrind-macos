@@ -577,7 +577,7 @@ set_bfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    addInstr(env, s390_insn_alu(4, S390_ALU_SUB, mode, s390_opnd_reg(ir)));
    addInstr(env, s390_insn_alu(4, S390_ALU_AND, mode, s390_opnd_imm(3)));
 
-   addInstr(env, s390_insn_set_fpcrm(4, mode));
+   addInstr(env, s390_insn_set_fpc_bfprm(4, mode));
 }
 
 
@@ -585,7 +585,7 @@ set_bfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    a rounding mode in the insn itself. In that case there is no need to
    stick the rounding mode into the FPC -- a good thing. However, the
    rounding mode must be known. */
-static s390_round_t
+static s390_bfp_round_t
 get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
 {
    if (irrm->tag == Iex_Const) {          /* rounding mode is known */
@@ -593,17 +593,17 @@ get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
       IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
-      case Irrm_NEAREST:  return S390_ROUND_NEAREST_EVEN;
-      case Irrm_ZERO:     return S390_ROUND_ZERO;
-      case Irrm_PosINF:   return S390_ROUND_POSINF;
-      case Irrm_NegINF:   return S390_ROUND_NEGINF;
+      case Irrm_NEAREST:  return S390_BFP_ROUND_NEAREST_EVEN;
+      case Irrm_ZERO:     return S390_BFP_ROUND_ZERO;
+      case Irrm_PosINF:   return S390_BFP_ROUND_POSINF;
+      case Irrm_NegINF:   return S390_BFP_ROUND_NEGINF;
       default:
          vpanic("get_bfp_rounding_mode");
       }
    }
 
    set_bfp_rounding_mode_in_fpc(env, irrm);
-   return S390_ROUND_PER_FPC;
+   return S390_BFP_ROUND_PER_FPC;
 }
 
 
@@ -981,7 +981,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_F128toI64U: conv = S390_BFP_F128_TO_U64; goto do_convert_128;
 
       do_convert: {
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
 
          res  = newVRegI(env);
          h1   = s390_isel_float_expr(env, arg2);   /* Process operand */
@@ -993,7 +993,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       }
 
       do_convert_128: {
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
          HReg op_hi, op_lo, f13, f15;
 
          res = newVRegI(env);
@@ -1956,7 +1956,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto convert;
 
       convert: {
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
          /* convert-from-fixed and load-rounded have a rounding mode field
             when the floating point extension facility is installed. */
          dst = newVRegF(env);
@@ -1964,7 +1964,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
             rounding_mode = get_bfp_rounding_mode(env, irrm);
          } else {
             set_bfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_ROUND_PER_FPC;
+            rounding_mode = S390_BFP_ROUND_PER_FPC;
          }
          addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
                                              rounding_mode));
@@ -1977,7 +1977,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_F128toF64:
       case Iop_F128toF32: {
          HReg op_hi, op_lo, f13, f15;
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
 
          conv = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
                                     : S390_BFP_F128_TO_F64;
@@ -1999,7 +1999,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
             rounding_mode = get_bfp_rounding_mode(env, irrm);
          } else {
             set_bfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_ROUND_PER_FPC;
+            rounding_mode = S390_BFP_ROUND_PER_FPC;
          }
          addInstr(env, s390_insn_bfp128_convert_from(size, conv, dst, f13, f15,
                                                      rounding_mode));
@@ -2064,7 +2064,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          /* No rounding mode is needed for these conversions. Just stick
             one in. It won't be used later on. */
          addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
-                                             S390_ROUND_NEAREST_EVEN));
+                                             S390_BFP_ROUND_NEAREST_EVEN));
          return dst;
 
       default:

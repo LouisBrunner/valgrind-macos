@@ -874,14 +874,14 @@ ULong s390_do_ecag(ULong op2addr) { return 0; }
 
 /* Convert an IRRoundingMode value to s390_round_t */
 #if defined(VGA_s390x)
-static s390_round_t
+static s390_bfp_round_t
 decode_bfp_rounding_mode(UInt irrm)
 {
    switch (irrm) {
-   case Irrm_NEAREST: return S390_ROUND_NEAREST_EVEN;
-   case Irrm_NegINF:  return S390_ROUND_NEGINF;
-   case Irrm_PosINF:  return S390_ROUND_POSINF;
-   case Irrm_ZERO:    return S390_ROUND_ZERO;
+   case Irrm_NEAREST: return S390_BFP_ROUND_NEAREST_EVEN;
+   case Irrm_NegINF:  return S390_BFP_ROUND_NEGINF;
+   case Irrm_PosINF:  return S390_BFP_ROUND_POSINF;
+   case Irrm_ZERO:    return S390_BFP_ROUND_ZERO;
    }
    vpanic("decode_bfp_rounding_mode");
 }
@@ -965,20 +965,20 @@ decode_bfp_rounding_mode(UInt irrm)
 ({                                                        \
    UInt cc;                                               \
    switch (decode_bfp_rounding_mode(cc_dep2)) {           \
-   case S390_ROUND_NEAREST_EVEN:                          \
+   case S390_BFP_ROUND_NEAREST_EVEN:                      \
       cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,4); \
       break;                                              \
-   case S390_ROUND_ZERO:                                  \
+   case S390_BFP_ROUND_ZERO:                              \
       cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,5); \
       break;                                              \
-   case S390_ROUND_POSINF:                                \
+   case S390_BFP_ROUND_POSINF:                            \
       cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,6); \
       break;                                              \
-   case S390_ROUND_NEGINF:                                \
+   case S390_BFP_ROUND_NEGINF:                            \
       cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,7); \
       break;                                              \
    default:                                               \
-      vpanic("unexpected rounding mode");                 \
+      vpanic("unexpected bfp rounding mode");             \
    }                                                      \
    cc;                                                    \
 })
@@ -997,20 +997,20 @@ decode_bfp_rounding_mode(UInt irrm)
 ({                                                         \
    UInt cc;                                                \
    switch (decode_bfp_rounding_mode(cc_dep2)) {            \
-   case S390_ROUND_NEAREST_EVEN:                           \
+   case S390_BFP_ROUND_NEAREST_EVEN:                       \
       cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,4); \
       break;                                               \
-   case S390_ROUND_ZERO:                                   \
+   case S390_BFP_ROUND_ZERO:                               \
       cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,5); \
       break;                                               \
-   case S390_ROUND_POSINF:                                 \
+   case S390_BFP_ROUND_POSINF:                             \
       cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,6); \
       break;                                               \
-   case S390_ROUND_NEGINF:                                 \
+   case S390_BFP_ROUND_NEGINF:                             \
       cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,7); \
       break;                                               \
    default:                                                \
-      vpanic("unexpected rounding mode");                  \
+      vpanic("unexpected bfp rounding mode");              \
    }                                                       \
    cc;                                                     \
 })
@@ -1034,20 +1034,20 @@ decode_bfp_rounding_mode(UInt irrm)
       s390_cc_thunk_put3 for rationale. */                           \
    cc_dep2 = cc_dep2 ^ cc_ndep;                                      \
    switch (decode_bfp_rounding_mode(cc_ndep)) {                      \
-   case S390_ROUND_NEAREST_EVEN:                                     \
+   case S390_BFP_ROUND_NEAREST_EVEN:                                 \
       cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
       break;                                                         \
-   case S390_ROUND_ZERO:                                             \
+   case S390_BFP_ROUND_ZERO:                                         \
       cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,5); \
       break;                                                         \
-   case S390_ROUND_POSINF:                                           \
+   case S390_BFP_ROUND_POSINF:                                       \
       cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,6); \
       break;                                                         \
-   case S390_ROUND_NEGINF:                                           \
+   case S390_BFP_ROUND_NEGINF:                                       \
       cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,7); \
       break;                                                         \
    default:                                                          \
-      vpanic("unexpected rounding mode");                            \
+      vpanic("unexpected bfp rounding mode");                        \
    }                                                                 \
    cc;                                                               \
 })
@@ -1071,20 +1071,20 @@ decode_bfp_rounding_mode(UInt irrm)
       s390_cc_thunk_put3 for rationale. */                            \
    cc_dep2 = cc_dep2 ^ cc_ndep;                                       \
    switch (decode_bfp_rounding_mode(cc_ndep)) {                       \
-   case S390_ROUND_NEAREST_EVEN:                                      \
+   case S390_BFP_ROUND_NEAREST_EVEN:                                  \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
       break;                                                          \
-   case S390_ROUND_ZERO:                                              \
+   case S390_BFP_ROUND_ZERO:                                          \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,5); \
       break;                                                          \
-   case S390_ROUND_POSINF:                                            \
+   case S390_BFP_ROUND_POSINF:                                        \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,6); \
       break;                                                          \
-   case S390_ROUND_NEGINF:                                            \
+   case S390_BFP_ROUND_NEGINF:                                        \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,7); \
       break;                                                          \
    default:                                                           \
-      vpanic("unexpected rounding mode");                             \
+      vpanic("unexpected bfp rounding mode");                         \
    }                                                                  \
    cc;                                                                \
 })

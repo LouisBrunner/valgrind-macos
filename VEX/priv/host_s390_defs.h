@@ -140,7 +140,7 @@ typedef enum {
    S390_INSN_MFENCE,
    S390_INSN_GZERO,   /* Assign zero to a guest register */
    S390_INSN_GADD,    /* Add a value to a guest register */
-   S390_INSN_SET_FPCRM, /* Set the rounding mode in the FPC */
+   S390_INSN_SET_FPC_BFPRM, /* Set the bfp rounding mode in the FPC */
    /* The following 5 insns are mandated by translation chaining */
    S390_INSN_XDIRECT,     /* direct transfer to guest address */
    S390_INSN_XINDIR,      /* indirect transfer to guest address */
@@ -257,28 +257,28 @@ typedef enum {
 /* Rounding mode as it is encoded in the m3 field of certain
    instructions (e.g. CFEBR) */
 typedef enum {
-   S390_ROUND_PER_FPC       = 0,
-   S390_ROUND_NEAREST_AWAY  = 1,
+   S390_BFP_ROUND_PER_FPC       = 0,
+   S390_BFP_ROUND_NEAREST_AWAY  = 1,
    /* 2 is not allowed */
-   S390_ROUND_PREPARE_SHORT = 3,
-   S390_ROUND_NEAREST_EVEN  = 4,
-   S390_ROUND_ZERO          = 5,
-   S390_ROUND_POSINF        = 6,
-   S390_ROUND_NEGINF        = 7
-} s390_round_t;
+   S390_BFP_ROUND_PREPARE_SHORT = 3,
+   S390_BFP_ROUND_NEAREST_EVEN  = 4,
+   S390_BFP_ROUND_ZERO          = 5,
+   S390_BFP_ROUND_POSINF        = 6,
+   S390_BFP_ROUND_NEGINF        = 7
+} s390_bfp_round_t;
 
 
 /* Rounding mode as it is encoded in bits [29:31] of the FPC register.
    Only rounding modes 0..3 are universally supported. Others require
    additional hardware facilities. */
 typedef enum {
-   S390_FPC_ROUND_NEAREST_EVEN  = 0,
-   S390_FPC_ROUND_ZERO          = 1,
-   S390_FPC_ROUND_POSINF        = 2,
-   S390_FPC_ROUND_NEGINF        = 3,
+   S390_FPC_BFP_ROUND_NEAREST_EVEN  = 0,
+   S390_FPC_BFP_ROUND_ZERO          = 1,
+   S390_FPC_BFP_ROUND_POSINF        = 2,
+   S390_FPC_BFP_ROUND_NEGINF        = 3,
    /* 4,5,6 are not allowed */
-   S390_FPC_ROUND_PREPARE_SHORT = 7
-} s390_fpc_round_t;
+   S390_FPC_BFP_ROUND_PREPARE_SHORT = 7
+} s390_fpc_bfp_round_t;
 
 
 /* Invert the condition code */
@@ -438,7 +438,7 @@ typedef struct {
       } bfp_unop;
       struct {
          s390_conv_t  tag;
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
          HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
          HReg         dst_lo; /* 128-bit result low part */
          HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
@@ -463,7 +463,7 @@ typedef struct {
       } gadd;
       struct {
          HReg             mode;
-      } set_fpcrm;
+      } set_fpc_bfprm;
 
       /* The next 5 entries are generic to support translation chaining */
 
@@ -541,7 +541,7 @@ s390_insn *s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst,
                               HReg op);
 s390_insn *s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2);
 s390_insn *s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst,
-                                 HReg op, s390_round_t);
+                                 HReg op, s390_bfp_round_t);
 s390_insn *s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t, HReg dst_hi,
                                   HReg dst_lo, HReg op2_hi, HReg op2_lo);
 s390_insn *s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t, HReg dst_hi,
@@ -552,11 +552,11 @@ s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
 s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_conv_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
-                                         s390_round_t);
+                                         s390_bfp_round_t);
 s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_gzero(UChar size, UInt offset);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
-s390_insn *s390_insn_set_fpcrm(UChar size, HReg mode);
+s390_insn *s390_insn_set_fpc_bfprm(UChar size, HReg mode);
 
 /* Five for translation chaining */
 s390_insn *s390_insn_xdirect(s390_cc_t cond, Addr64 dst, s390_amode *guest_IA,

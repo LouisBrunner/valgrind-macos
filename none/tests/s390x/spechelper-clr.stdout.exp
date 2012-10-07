@@ -1,0 +1,6 @@
+Test #1  op1 == op2
+OK
+Test #2  op1 > op2
+OK
+Test #3  op1 < op2
+OK

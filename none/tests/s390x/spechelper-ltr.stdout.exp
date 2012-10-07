@@ -1,0 +1,6 @@
+Test #1  value = 0
+OK
+Test #2  value > 0
+OK
+Test #3  value < 0
+OK

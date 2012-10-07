@@ -1,0 +1,9 @@
+Got signal 14
+si_signo: 14
+si_errno: 0
+si_code: 0
+One!
+Got signal 10
+floating point is now: 1.000000 1.000000 1.000000 1.000000 1.000000
+fpc= 1
+Good Bye!

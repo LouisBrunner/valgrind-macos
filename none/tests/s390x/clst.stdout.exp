@@ -1,0 +1,30 @@
+comparing: lower123 with lowerabc   sentinel = 0
+str1 = 123
+str2 = abc
+cc = 1
+
+comparing: higher234 with higher123   sentinel = 0
+str1 = 234
+str2 = 123
+cc = 2
+
+comparing: equal with equal   sentinel = 0
+str1 = equal
+str2 = equal
+cc = 0
+
+comparing: equal with equallong   sentinel = 0
+str1 = 
+str2 = long
+cc = 1
+
+comparing: equallong with equal   sentinel = 0
+str1 = long
+str2 = 
+cc = 2
+
+comparing: lower1 with lower2   sentinel = 119 (w)
+str1 = lower1
+str2 = lower2
+cc = 0
+

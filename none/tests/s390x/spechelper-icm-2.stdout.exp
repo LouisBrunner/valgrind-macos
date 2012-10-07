@@ -1,0 +1,20 @@
+Test #1  mask == 0, value == 0xFFFFFFFF  --> cc == 0
+OK
+Test #2  mask == 0xF, value == 0  --> cc == 0
+OK
+Test #3  load one byte, msb set  --> cc == 1
+OK
+Test #4  load two bytes, msb set  --> cc == 1
+OK
+Test #5  load three bytes, msb set  --> cc == 1
+OK
+Test #6  load four bytes, msb set  --> cc == 1
+OK
+Test #7  load one byte, msb not set  --> cc == 2
+OK
+Test #8  load two bytes, msb not set  --> cc == 2
+OK
+Test #9  load three bytes, msb not set  --> cc == 2
+OK
+Test #10  load four bytes, msb not set  --> cc == 2
+OK

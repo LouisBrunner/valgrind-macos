@@ -1,0 +1,12 @@
+Test #1  mask == 0, value == ~0  --> cc == 0
+OK
+Test #2  mask == 0xFF, value == 0  --> cc == 0
+OK
+Test #3  mask == 0xFF, value == 0xFF  --> cc == 3
+OK
+Test #4  mask == 0x80, value == 0x80  --> cc == 3
+OK
+Test #5  mask == 0xF0, value == 0x90  --> cc == 1
+OK
+Test #6  mask == 0xF0, value == 0x30  --> cc == 1
+OK

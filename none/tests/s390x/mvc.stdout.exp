@@ -1,0 +1,17 @@
+------- Copy 17 bytes from BUFFER to TARGET
+before: buffer = |0123456789abcdefXXXXX|
+before: target = |---------------------|
+after:  buffer = |0123456789abcdefXXXXX|
+after:  target = |0123456789abcdefX----|
+
+------- Destructive overlap #1
+before: |012345678901234567890|
+after:  |000000000000000000890|
+------- Destructive overlap #2
+before: target = |---------------------|
+after:  target = |-xxx-----------------|
+------- Destructive overlap #3 (max length)
+
+------- Non-destructive overlap  buf[0:4] = buf[10:14]
+before: buf = |0123456789abcde|
+after:  buf = |abcde56789abcde|

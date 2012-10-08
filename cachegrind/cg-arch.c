@@ -342,63 +342,29 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    *LLc = (cache_t) { 262144, 8, 64 };
 
 #elif defined(VGA_s390x)
-   // z900
    //
-   // Source:
-   // The microarchitecture of the IBM eServer z900 processor
-   // IBM Journal of Research and Development
-   // Volume 46, Number 4/5, pp 381-395, July/September 2002
+   // Here is the cache data from older machine models:
    //
-   // Split L1 I/D cache
-   // Size: 256 kB each
-   // Line size: 256 bytes
-   // 4-way set associative
-   // L2 cache: 16 MB x 2 (16 MB per 10 CPs)  (Charles Webb)
-
-   // z800
+   //           I1            D1      I/D L2
+   // z900  256k/256/4    256k/256/4   16MB
+   // z800  256k/256/4    256k/256/4    8MB
+   // z990  256k/256/4    256k/256/4   32MB
+   // z890  256k/256/4    256k/256/4   32MB
+   // z9    256k/256/4    256k/256/4   40MB
    //
-   // Source:  Charles Webb from IBM
+   // Sources:
+   // (1) IBM System z9 109 Technical Introduction
+   //     www.redbooks.ibm.com/redbooks/pdfs/sg246669.pdf
+   // (2) The microarchitecture of the IBM eServer z900 processor
+   //     IBM Journal of Research and Development
+   //     Volume 46, Number 4/5, pp 381-395, July/September 2002
+   // (3) The IBM eServer z990 microprocessor
+   //     IBM Journal of Research and Development
+   //     Volume 48, Number 3/4, pp 295-309, May/July 2004 
+   // (4) Charles Webb, IBM
    //
-   // Split L1 I/D cache
-   // Size: 256 kB each
-   // Line size: 256 bytes
-   // 4-way set associative
-   // L2 cache: 16 MB  (or half that size)
-
-   // z990
-   //
-   // The IBM eServer z990 microprocessor
-   // IBM Journal of Research and Development
-   // Volume 48, Number 3/4, pp 295-309, May/July 2004 
-   //
-   // Split L1 I/D cache
-   // Size: 256 kB each
-   // Line size: 256 bytes
-   // 4-way set associative
-   // L2 cache: 32 MB x 4 (32 MB per book/node)  (Charles Webb)
-
-   // z890
-   //
-   // Source:  Charles Webb from IBM
-   //
-   // Split L1 I/D cache
-   // Size: 256 kB each
-   // Line size: 256 bytes
-   // 4-way set associative
-   // L2 cache: 32 MB  (or half that size)
-
-   // z9
-   //
-   // Source:  Charles Webb from IBM
-   //
-   // Split L1 I/D cache
-   // Size: 256 kB each
-   // Line size: 256 bytes
-   // 4-way set associative
-   // L2 cache: 40 MB x 4 (40 MB per book/node)
-
-   // fixs390: have a table for all models we support and check
-   // fixs390: VEX_S390X_MODEL(hwcaps)
+   // L2 data is unfortunately incomplete. Otherwise, we could support
+   // machines without the ECAG insn by looking at VEX_S390X_MODEL(hwcaps).
 
    // Default cache configuration is z10-EC  (Source: ECAG insn)
    *I1c = (cache_t) {    65536,  4, 256 };

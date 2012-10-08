@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <sys/syscall.h>
 #include <linux/wait.h>
 #include <sched.h>

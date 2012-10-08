@@ -123,7 +123,7 @@ asm(
             long   flags         in r3
             int*   parent_tid    in r4
             int*   child_tid     in r5
-            int*   child_tid     in r6
+            int*   tls address   in r6
             Word   (*fn)(void *) 160(r15)
             void   *arg          168(r15)
 
@@ -143,8 +143,8 @@ asm(
 extern
 ULong do_syscall_clone_s390x_linux ( void  *stack,
                                      ULong flags,
-                                     Int   *child_tid,
                                      Int   *parent_tid,
+                                     Int   *child_tid,
                                      Addr  tlsaddr,
                                      Word (*fn)(void *),
                                      void  *arg);
@@ -304,7 +304,7 @@ static SysRes do_clone ( ThreadId ptid,
 
    /* Create the new thread */
    r2 = do_syscall_clone_s390x_linux(
-            stack, flags, child_tidptr, parent_tidptr, tlsaddr,
+            stack, flags, parent_tidptr, child_tidptr, tlsaddr,
             ML_(start_thread_NORETURN), &VG_(threads)[ctid]);
 
    res = VG_(mk_SysRes_s390x_linux)( r2 );

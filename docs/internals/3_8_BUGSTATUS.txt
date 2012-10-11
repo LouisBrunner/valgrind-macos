@@ -124,3 +124,96 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 306783  Mips unhandled syscall :  4025  /  4079  / 4182
 
 -- Mon 17 Sept 2012, 10 am
+
+valgrind.spec diff at https://bugzilla.mozilla.org/show_bug.cgi?id=750856#c20
+r13008 to 382 ?  check
+change of leak-check-counting?  307465
+gkw extra suppression?
+
+https://bugzilla.redhat.com/show_bug.cgi?id=730303
+https://bugs.kde.org/show_bug.cgi?id=164485
+
+* patch to allow fair-sched on android
+* mjws patches: 253519, 307285, 307103, 307101, 307290.
+
+306947] New: s390x: BFP rounding mode improvements
+
+306949] New: s390x: BFP condition code improvements
+
+307038] New: DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8
+(DW_OP_const1u and friends)
+
+307082] New: HG false positive: pthread_cond_destroy: destruction of
+unknown cond var
+
+211352] helgrind races in helgrind's own mythread_wrapper
+
+307101] New: sys_capget second argument can be NULL
+
+263034] Crash when loading some PPC64 binaries
+
+307103] New: sys_openat If pathname is absolute, then dirfd is ignore
+
+307106] New: unhandled instruction bytes: f0 0f c0 02 (lock xadd)
+
+307113] New: s390x: DFP support
+
+307141] New: valgrind does't work in mips-linux system
+
+307155] New: gdbserver_tests/filter_gdb should filter out
+syscall-template.S T_PSEUDO source code
+
+307285] New: x86_amd64 feature test for avx in test suite is wrong
+
+307290] New: memcheck overlap testcase needs memcpy version filter
+
+307367] New: valgrind crash with error "vex amd64->IR: unhandled
+instruction bytes: 0xF2 0x48 0xF 0x5F 0x3E 0xF2 0x48 0xF"
+
+307399] New: unhandled instruction bytes: 0xC4 0x62 0x55 0x2E 0x18
+0x44 0x39 0x87 (vmaskmovps %ymm11,%ymm5,(%rax))
+
+307415] New: 3.8.1 build error - OSX Lion 10.7.4 duplicate symbol
+_mach_make_memory_entry
+
+307463] New: Please add "&limit=0" to the "all open bugs" link
+
+307465] New: --show-possibly-lost=no should bring down the error count
+/ exit code
+
+307500] New: Valgrind docs have two <title> tags
+
+307555] New: The impossible happened!
+
+307557] New: Leaks on Mac OS X 10.7.5 libraries at
+ImageLoader::recursiveInitialization
+
+307612] New: SIGILL while profiling a program compiled using g++ 4.6.3
+and march=native flag on Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz
+
+307729] New: pkgconfig support broken valgrind.pc
+valt_load_address=@VALT_LOAD_ADDRESS@
+
+307742] New: memory returned by calloc flagged as unintialized
+
+307828] New: SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
+uninitialised value and/or invalid read warnings
+
+253519] Memcheck reports auxv pointer accesses as invalid reads.
+
+164485] VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
+
+307955] New: Building valgrind 3.7.0-r4 fails in Gentoo AMD64 when
+using clang instead of gcc
+
+308027] New: Warning: negative range in .debug_loc section
+
+308089] New: Unhandled syscall on ppc64: prctl
+
+308135] New: PPC32 MPC8xx has 16 bytes cache size
+
+79362] Debug info is lost for .so files when they are dlclose'd
+
+308158] New: running with --leack-check=full makes valgri
+
+------ Thu Oct 11 18:51:26 CEST 2012

@@ -129,6 +129,7 @@ valgrind.spec diff at https://bugzilla.mozilla.org/show_bug.cgi?id=750856#c20
 r13008 to 382 ?  check
 change of leak-check-counting?  307465
 gkw extra suppression?
+gcp libnss3.so debuginfo read hang
 
 https://bugzilla.redhat.com/show_bug.cgi?id=730303
 https://bugs.kde.org/show_bug.cgi?id=164485
@@ -136,84 +137,116 @@ https://bugs.kde.org/show_bug.cgi?id=164485
 * patch to allow fair-sched on android
 * mjws patches: 253519, 307285, 307103, 307101, 307290.
 
-306947] New: s390x: BFP rounding mode improvements
+306947  s390x: BFP rounding mode improvements
+        Proposal
 
-306949] New: s390x: BFP condition code improvements
+306949  s390x: BFP condition code improvements
+        Proposal
 
-307038] New: DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8
-(DW_OP_const1u and friends)
+307038  DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8 (DW_OP_const1u et al)
+        FIXED.  Suitable for 3.8.2?
 
-307082] New: HG false positive: pthread_cond_destroy: destruction of
-unknown cond var
+307082  HG false positive: pthread_cond_destroy: destruction of
+        unknown cond var
+        Probably easy fix
 
-211352] helgrind races in helgrind's own mythread_wrapper
+211352  helgrind races in helgrind's own mythread_wrapper
+        Not sure if still valid
 
-307101] New: sys_capget second argument can be NULL
+307101  sys_capget second argument can be NULL
+        FIXED; 3.8.2 ?
 
-263034] Crash when loading some PPC64 binaries
+263034  Crash when loading some PPC64 binaries
+        Not sure what to do about this.  Has fix for fedora, but
+        unclear if that breaks other targets.
 
-307103] New: sys_openat If pathname is absolute, then dirfd is ignore
+307103  sys_openat If pathname is absolute, then dirfd is ignore
+        has patch; is in fedora
 
-307106] New: unhandled instruction bytes: f0 0f c0 02 (lock xadd)
+307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
+        Probably easy fix.
 
-307113] New: s390x: DFP support
+307113  s390x: DFP support
+        For 3.9; in progress
 
-307141] New: valgrind does't work in mips-linux system
+307141  valgrind does't work in mips-linux system
+        --> Petar
 
-307155] New: gdbserver_tests/filter_gdb should filter out
-syscall-template.S T_PSEUDO source code
+307155  gdbserver_tests/filter_gdb should filter out
+        syscall-template.S T_PSEUDO source code
+        FIXED
 
-307285] New: x86_amd64 feature test for avx in test suite is wrong
+307285  x86_amd64 feature test for avx in test suite is wrong
+        This should get landed.  Safe for 3.8.2.
 
-307290] New: memcheck overlap testcase needs memcpy version filter
+307290  memcheck overlap testcase needs memcpy version filter
+        FIXED
 
-307367] New: valgrind crash with error "vex amd64->IR: unhandled
-instruction bytes: 0xF2 0x48 0xF 0x5F 0x3E 0xF2 0x48 0xF"
+307367  amd64->IR: 0xF2 0x48 0xF 0x5F 0x3E 0xF2 0x48 0xF
+        probably invalid (reported against 3.7.0)
 
-307399] New: unhandled instruction bytes: 0xC4 0x62 0x55 0x2E 0x18
-0x44 0x39 0x87 (vmaskmovps %ymm11,%ymm5,(%rax))
+307399  amd64->IR: 0xC4 0x62 0x55 0x2E 0x18 0x44 0x39 0x87
+        (vmaskmovps %ymm11,%ymm5,(%rax))
+        Requires conditional loads?
 
-307415] New: 3.8.1 build error - OSX Lion 10.7.4 duplicate symbol
-_mach_make_memory_entry
+307415  3.8.1 build error - OSX Lion 10.7.4 duplicate symbol
+        _mach_make_memory_entry
+        XCode 4.5 ???
 
-307463] New: Please add "&limit=0" to the "all open bugs" link
+307463  Please add "&limit=0" to the "all open bugs" link
+        FIXED
 
-307465] New: --show-possibly-lost=no should bring down the error count
-/ exit code
+307465  --show-possibly-lost=no should bring down the error count
+        / exit code
+        Has patch, but needs thinking through
 
-307500] New: Valgrind docs have two <title> tags
+307500  Valgrind docs have two <title> tags
+        Should fix -- easy
 
-307555] New: The impossible happened!
+307555  The impossible happened! (OSX 10.8.1 V segfault)
 
-307557] New: Leaks on Mac OS X 10.7.5 libraries at
-ImageLoader::recursiveInitialization
+307557  Leaks on Mac OS X 10.7.5 libraries at 
+        ImageLoader::recursiveInitialization
+        simple extra supp
 
-307612] New: SIGILL while profiling a program compiled using g++ 4.6.3
-and march=native flag on Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz
+307612  SIGILL while profiling a program compiled using g++ 4.6.3
+        and march=native flag on Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz
+        INVALID (AVX on 3.7.0)
 
-307729] New: pkgconfig support broken valgrind.pc
-valt_load_address=@VALT_LOAD_ADDRESS@
+307729  pkgconfig support broken valgrind.pc
+        valt_load_address=@VALT_LOAD_ADDRESS@
+        Simple fix.
 
-307742] New: memory returned by calloc flagged as unintialized
+307742  memory returned by calloc flagged as unintialized
+        INVALID
 
-307828] New: SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
-uninitialised value and/or invalid read warnings
+307828  SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
+        uninitialised value and/or invalid read warnings
+        has fix; +is 3.8.2 fodder
 
-253519] Memcheck reports auxv pointer accesses as invalid reads.
+253519  Memcheck reports auxv pointer accesses as invalid reads.
+        FIXED
 
-164485] VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
+164485  VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
+        need to do something about this; low risk
 
-307955] New: Building valgrind 3.7.0-r4 fails in Gentoo AMD64 when
-using clang instead of gcc
+307955  Building valgrind 3.7.0-r4 fails in Gentoo AMD64 when
+        using clang instead of gcc
+        FIXED (long since)
 
-308027] New: Warning: negative range in .debug_loc section
+308027  Warning: negative range in .debug_loc section
+        not started; possibly simple fix
 
-308089] New: Unhandled syscall on ppc64: prctl
+308089  Unhandled syscall on ppc64: prctl
+        has fix, but not yet landed
 
-308135] New: PPC32 MPC8xx has 16 bytes cache size
+308135  PPC32 MPC8xx has 16 bytes cache size
+        should take this
 
-79362] Debug info is lost for .so files when they are dlclose'd
+79362   Debug info is lost for .so files when they are dlclose'd
+        Still alive!
 
-308158] New: running with --leack-check=full makes valgri
+308158  running with --leack-check=full makes valgri
+        Freebsd bug
 
 ------ Thu Oct 11 18:51:26 CEST 2012

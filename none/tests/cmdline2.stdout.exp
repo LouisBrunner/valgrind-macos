@@ -110,7 +110,7 @@ usage: valgrind [options] prog-and-args
     --trace-redir=no|yes      show redirection details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
     --profile-heap=no|yes     profile Valgrind's own space use
-    --core-redzone=<number>   set minimum size of redzones added before/after
+    --core-redzone-size=<number>  set minimum size of redzones added before/after
                               heap blocks allocated for Valgrind internal use (in bytes) [4]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
     --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]

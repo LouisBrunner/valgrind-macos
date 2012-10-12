@@ -221,7 +221,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-redir=no|yes      show redirection details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --profile-heap=no|yes     profile Valgrind's own space use\n"
-"    --core-redzone=<number>   set minimum size of redzones added before/after\n"
+"    --core-redzone-size=<number>  set minimum size of redzones added before/after\n"
 "                              heap blocks allocated for Valgrind internal use (in bytes) [4]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]\n"
@@ -486,12 +486,12 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQN(20, arg, "--command-line-only=") {}
       else if VG_STREQ(     arg, "--")                   {}
       else if VG_STREQ(     arg, "-d")                   {}
-      else if VG_STREQN(16, arg, "--max-stackframe")     {}
-      else if VG_STREQN(16, arg, "--main-stacksize")     {}
-      else if VG_STREQN(11, arg,  "--sim-hints")         {}
-      else if VG_STREQN(14, arg, "--profile-heap")       {}
-      else if VG_STREQN(14, arg, "--core-redzone-size")  {}
-      else if VG_STREQN(14, arg, "--redzone-size")       {}
+      else if VG_STREQN(17, arg, "--max-stackframe=")    {}
+      else if VG_STREQN(17, arg, "--main-stacksize=")    {}
+      else if VG_STREQN(12, arg,  "--sim-hints=")        {}
+      else if VG_STREQN(15, arg, "--profile-heap=")      {}
+      else if VG_STREQN(20, arg, "--core-redzone-size=") {}
+      else if VG_STREQN(15, arg, "--redzone-size=")      {}
 
       /* Obsolete options. Report an error and exit */
       else if VG_STREQN(34, arg, "--vex-iropt-precise-memory-exns=no") {

@@ -1624,7 +1624,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_Load: {
       Bool idxd = toBool(i->Pin.Load.src->tag == Pam_RR);
       UChar sz = i->Pin.Load.sz;
-      UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
+      HChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
       vex_printf("l%c%s%s ", c_sz, sz==8 ? "" : "z", idxd ? "x" : "" );
       ppHRegPPC(i->Pin.Load.dst);
       vex_printf(",");
@@ -1640,7 +1640,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
       Bool idxd = toBool(i->Pin.Store.dst->tag == Pam_RR);
-      UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : /*8*/ 'd';
+      HChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : /*8*/ 'd';
       vex_printf("st%c%s ", c_sz, idxd ? "x" : "" );
       ppHRegPPC(i->Pin.Store.src);
       vex_printf(",");
@@ -1927,7 +1927,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
 
    case Pin_AvSplat: {
       UChar sz = i->Pin.AvSplat.sz;
-      UChar ch_sz = toUChar( (sz == 8) ? 'b' : (sz == 16) ? 'h' : 'w' );
+      HChar ch_sz = toUChar( (sz == 8) ? 'b' : (sz == 16) ? 'h' : 'w' );
       vex_printf("vsplt%s%c ",
                  i->Pin.AvSplat.src->tag == Pvi_Imm ? "is" : "", ch_sz);
       ppHRegPPC(i->Pin.AvSplat.dst);

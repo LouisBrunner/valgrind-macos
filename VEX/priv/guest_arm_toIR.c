@@ -2383,7 +2383,7 @@ IRExpr* mk_EA_reg_plusminus_imm12 ( UInt rN, UInt bU, UInt imm12,
    vassert(rN < 16);
    vassert(bU < 2);
    vassert(imm12 < 0x1000);
-   UChar opChar = bU == 1 ? '+' : '-';
+   HChar opChar = bU == 1 ? '+' : '-';
    DIS(buf, "[r%u, #%c%u]", rN, opChar, imm12);
    return
       binop( (bU == 1 ? Iop_Add32 : Iop_Sub32),
@@ -2405,7 +2405,7 @@ IRExpr* mk_EA_reg_plusminus_shifted_reg ( UInt rN, UInt bU, UInt rM,
    vassert(rM < 16);
    vassert(sh2 < 4);
    vassert(imm5 < 32);
-   UChar   opChar = bU == 1 ? '+' : '-';
+   HChar   opChar = bU == 1 ? '+' : '-';
    IRExpr* index  = NULL;
    switch (sh2) {
       case 0: /* LSL */
@@ -2472,7 +2472,7 @@ IRExpr* mk_EA_reg_plusminus_imm8 ( UInt rN, UInt bU, UInt imm8,
    vassert(rN < 16);
    vassert(bU < 2);
    vassert(imm8 < 0x100);
-   UChar opChar = bU == 1 ? '+' : '-';
+   HChar opChar = bU == 1 ? '+' : '-';
    DIS(buf, "[r%u, #%c%u]", rN, opChar, imm8);
    return
       binop( (bU == 1 ? Iop_Add32 : Iop_Sub32),
@@ -2489,7 +2489,7 @@ IRExpr* mk_EA_reg_plusminus_reg ( UInt rN, UInt bU, UInt rM,
    vassert(rN < 16);
    vassert(bU < 2);
    vassert(rM < 16);
-   UChar   opChar = bU == 1 ? '+' : '-';
+   HChar   opChar = bU == 1 ? '+' : '-';
    IRExpr* index  = getIRegA(rM);
    DIS(buf, "[r%u, %c r%u]", rN, opChar, rM); 
    return binop(bU == 1 ? Iop_Add32 : Iop_Sub32,
@@ -2644,9 +2644,9 @@ static UInt thumbExpandImm_from_I0_I1 ( Bool* updatesC,
    block are tagged with a 1 bit.
 */
 static Bool compute_ITSTATE ( /*OUT*/UInt*  itstate,
-                              /*OUT*/UChar* ch1,
-                              /*OUT*/UChar* ch2,
-                              /*OUT*/UChar* ch3,
+                              /*OUT*/HChar* ch1,
+                              /*OUT*/HChar* ch2,
+                              /*OUT*/HChar* ch3,
                               UInt firstcond, UInt mask )
 {
    vassert(firstcond <= 0xF);
@@ -3061,7 +3061,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
             IROp addOp;
             IROp andOp;
             IROp shOp;
-            char regType = Q ? 'q' : 'd';
+            HChar regType = Q ? 'q' : 'd';
 
             if (size == 3)
                return False;
@@ -3130,7 +3130,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
             /* VQADD */
             IROp op, op2;
             IRTemp tmp;
-            char reg_t = Q ? 'q' : 'd';
+            HChar reg_t = Q ? 'q' : 'd';
             if (Q) {
                switch (size) {
                   case 0:
@@ -15715,9 +15715,9 @@ DisResult disInstr_THUMB_WRK (
       UInt newITSTATE = 0;
       /* This is the ITSTATE represented as described in
          libvex_guest_arm.h.  It is not the ARM ARM representation. */
-      UChar c1 = '.';
-      UChar c2 = '.';
-      UChar c3 = '.';
+      HChar c1 = '.';
+      HChar c2 = '.';
+      HChar c3 = '.';
       Bool valid = compute_ITSTATE( &newITSTATE, &c1, &c2, &c3,
                                     firstcond, mask );
       if (valid && firstcond != 0xF/*NV*/) {

@@ -514,7 +514,7 @@ static UInt n_calc_cond = 0;
 static void showCounts ( void )
 {
    Int op, co;
-   Char ch;
+   HChar ch;
    vex_printf("\nTotal calls: calc_all=%u   calc_cond=%u   calc_c=%u\n",
               n_calc_all, n_calc_cond, n_calc_c);
 

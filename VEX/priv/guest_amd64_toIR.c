@@ -10773,7 +10773,7 @@ static Long dis_CVTDQ2PD_128 ( VexAbiInfo* vbi, Prefix pfx,
    UChar  modrm = getUChar(delta);
    IRTemp arg64 = newTemp(Ity_I64);
    UInt   rG    = gregOfRexRM(pfx,modrm);
-   UChar* mbV   = isAvx ? "v" : "";
+   HChar* mbV   = isAvx ? "v" : "";
    if (epartIsReg(modrm)) {
       UInt rE = eregOfRexRM(pfx,modrm);
       assign( arg64, getXMMRegLane64(rE, 0) );
@@ -15704,8 +15704,8 @@ static Long dis_PMOVxXBW_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcVec = newTemp(Ity_V128);
    UChar  modrm  = getUChar(delta);
-   UChar* mbV    = isAvx ? "v" : "";
-   UChar  how    = xIsZ ? 'z' : 's';
+   HChar* mbV    = isAvx ? "v" : "";
+   HChar  how    = xIsZ ? 'z' : 's';
    UInt   rG     = gregOfRexRM(pfx, modrm);
    if ( epartIsReg(modrm) ) {
       UInt rE = eregOfRexRM(pfx, modrm);
@@ -15746,8 +15746,8 @@ static Long dis_PMOVxXWD_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcVec = newTemp(Ity_V128);
    UChar  modrm  = getUChar(delta);
-   UChar* mbV    = isAvx ? "v" : "";
-   UChar  how    = xIsZ ? 'z' : 's';
+   HChar* mbV    = isAvx ? "v" : "";
+   HChar  how    = xIsZ ? 'z' : 's';
    UInt   rG     = gregOfRexRM(pfx, modrm);
 
    if ( epartIsReg(modrm) ) {
@@ -15785,7 +15785,7 @@ static Long dis_PMOVSXWQ_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcBytes = newTemp(Ity_I32);
    UChar  modrm    = getUChar(delta);
-   UChar* mbV      = isAvx ? "v" : "";
+   HChar* mbV      = isAvx ? "v" : "";
    UInt   rG       = gregOfRexRM(pfx, modrm);
 
    if ( epartIsReg( modrm ) ) {
@@ -15818,7 +15818,7 @@ static Long dis_PMOVZXWQ_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcVec = newTemp(Ity_V128);
    UChar  modrm    = getUChar(delta);
-   UChar* mbV      = isAvx ? "v" : "";
+   HChar* mbV      = isAvx ? "v" : "";
    UInt   rG       = gregOfRexRM(pfx, modrm);
 
    if ( epartIsReg( modrm ) ) {
@@ -15856,8 +15856,8 @@ static Long dis_PMOVxXDQ_128 ( VexAbiInfo* vbi, Prefix pfx,
    IRTemp srcI64 = newTemp(Ity_I64);
    IRTemp srcVec = newTemp(Ity_V128);
    UChar  modrm  = getUChar(delta);
-   UChar* mbV    = isAvx ? "v" : "";
-   UChar  how    = xIsZ ? 'z' : 's';
+   HChar* mbV    = isAvx ? "v" : "";
+   HChar  how    = xIsZ ? 'z' : 's';
    UInt   rG     = gregOfRexRM(pfx, modrm);
    /* Compute both srcI64 -- the value to expand -- and srcVec -- same
       thing in a V128, with arbitrary junk in the top 64 bits.  Use
@@ -15902,8 +15902,8 @@ static Long dis_PMOVxXBD_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcVec = newTemp(Ity_V128);
    UChar  modrm  = getUChar(delta);
-   UChar* mbV    = isAvx ? "v" : "";
-   UChar  how    = xIsZ ? 'z' : 's';
+   HChar* mbV    = isAvx ? "v" : "";
+   HChar  how    = xIsZ ? 'z' : 's';
    UInt   rG     = gregOfRexRM(pfx, modrm);
    if ( epartIsReg(modrm) ) {
       UInt rE = eregOfRexRM(pfx, modrm);
@@ -15945,7 +15945,7 @@ static Long dis_PMOVSXBQ_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcBytes = newTemp(Ity_I16);
    UChar  modrm    = getUChar(delta);
-   UChar* mbV      = isAvx ? "v" : "";
+   HChar* mbV      = isAvx ? "v" : "";
    UInt   rG       = gregOfRexRM(pfx, modrm);
    if ( epartIsReg(modrm) ) {
       UInt rE = eregOfRexRM(pfx, modrm);
@@ -15978,7 +15978,7 @@ static Long dis_PMOVZXBQ_128 ( VexAbiInfo* vbi, Prefix pfx,
    HChar  dis_buf[50];
    IRTemp srcVec   = newTemp(Ity_V128);
    UChar  modrm    = getUChar(delta);
-   UChar* mbV      = isAvx ? "v" : "";
+   HChar* mbV      = isAvx ? "v" : "";
    UInt   rG       = gregOfRexRM(pfx, modrm);
    if ( epartIsReg(modrm) ) {
       UInt rE = eregOfRexRM(pfx, modrm);
@@ -16015,7 +16015,7 @@ static Long dis_PHMINPOSUW_128 ( VexAbiInfo* vbi, Prefix pfx,
    Int    alen   = 0;
    HChar  dis_buf[50];
    UChar  modrm  = getUChar(delta);
-   UChar* mbV    = isAvx ? "v" : "";
+   HChar* mbV    = isAvx ? "v" : "";
    IRTemp sV     = newTemp(Ity_V128);
    IRTemp sHi    = newTemp(Ity_I64);
    IRTemp sLo    = newTemp(Ity_I64);
@@ -17120,7 +17120,7 @@ static Long dis_PEXTRB_128_GtoE ( VexAbiInfo* vbi, Prefix pfx,
    IRTemp xmm_vec  = newTemp(Ity_V128);
    IRTemp sel_lane = newTemp(Ity_I32);
    IRTemp shr_lane = newTemp(Ity_I32);
-   UChar* mbV      = isAvx ? "v" : "";
+   HChar* mbV      = isAvx ? "v" : "";
    UChar  modrm    = getUChar(delta);
    IRTemp t3, t2, t1, t0;
    Int    imm8;
@@ -23164,7 +23164,7 @@ Long dis_ESC_0F__VEX (
          UInt   rD    = gregOfRexRM(pfx, modrm);
          IRTemp tD    = newTemp(Ity_V256);
          Bool   isA   = have66noF2noF3(pfx);
-         UChar  ch    = isA ? 'a' : 'u';
+         HChar  ch    = isA ? 'a' : 'u';
          if (epartIsReg(modrm)) {
             UInt rS = eregOfRexRM(pfx, modrm);
             delta += 1;
@@ -23189,7 +23189,7 @@ Long dis_ESC_0F__VEX (
          UInt   rD    = gregOfRexRM(pfx, modrm);
          IRTemp tD    = newTemp(Ity_V128);
          Bool   isA   = have66noF2noF3(pfx);
-         UChar  ch    = isA ? 'a' : 'u';
+         HChar  ch    = isA ? 'a' : 'u';
          if (epartIsReg(modrm)) {
             UInt rS = eregOfRexRM(pfx, modrm);
             delta += 1;
@@ -23590,7 +23590,7 @@ Long dis_ESC_0F__VEX (
          UInt   rS    = gregOfRexRM(pfx, modrm);
          IRTemp tS    = newTemp(Ity_V256);
          Bool   isA   = have66noF2noF3(pfx);
-         UChar  ch    = isA ? 'a' : 'u';
+         HChar  ch    = isA ? 'a' : 'u';
          assign(tS, getYMMReg(rS));
          if (epartIsReg(modrm)) {
             UInt rD = eregOfRexRM(pfx, modrm);
@@ -23615,7 +23615,7 @@ Long dis_ESC_0F__VEX (
          UInt   rS    = gregOfRexRM(pfx, modrm);
          IRTemp tS    = newTemp(Ity_V128);
          Bool   isA   = have66noF2noF3(pfx);
-         UChar  ch    = isA ? 'a' : 'u';
+         HChar  ch    = isA ? 'a' : 'u';
          assign(tS, getXMMReg(rS));
          if (epartIsReg(modrm)) {
             UInt rD = eregOfRexRM(pfx, modrm);
@@ -24597,7 +24597,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp dV      = newTemp(Ity_V128);
          IRTemp sHi, sLo, dHi, dLo;
          sHi = sLo = dHi = dLo = IRTemp_INVALID;
-         UChar  ch      = '?';
+         HChar  ch      = '?';
          Int    laneszB = 0;
          UChar  modrm   = getUChar(delta);
          UInt   rG      = gregOfRexRM(pfx,modrm);

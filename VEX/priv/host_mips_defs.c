@@ -1648,7 +1648,7 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
       case Min_Load: {
          Bool idxd = toBool(i->Min.Load.src->tag == Mam_RR);
          UChar sz = i->Min.Load.sz;
-         UChar c_sz = sz == 1 ? 'b' : sz == 2 ? 'h' : sz == 4 ? 'w' : 'd';
+         HChar c_sz = sz == 1 ? 'b' : sz == 2 ? 'h' : sz == 4 ? 'w' : 'd';
          vex_printf("l%c%s ", c_sz, idxd ? "x" : "");
          ppHRegMIPS(i->Min.Load.dst, mode64);
          vex_printf(",");
@@ -1658,7 +1658,7 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
       case Min_Store: {
          UChar sz = i->Min.Store.sz;
          Bool idxd = toBool(i->Min.Store.dst->tag == Mam_RR);
-         UChar c_sz = sz == 1 ? 'b' : sz == 2 ? 'h' : sz == 4 ? 'w' : 'd';
+         HChar c_sz = sz == 1 ? 'b' : sz == 2 ? 'h' : sz == 4 ? 'w' : 'd';
          vex_printf("s%c%s ", c_sz, idxd ? "x" : "");
          ppHRegMIPS(i->Min.Store.src, mode64);
          vex_printf(",");

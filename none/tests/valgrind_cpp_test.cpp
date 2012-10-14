@@ -40,8 +40,8 @@ int main(int argc, char** argv)
   return 0;
 }
 
-void VG_(assert_fail)(Bool isCore, const Char* expr, const Char* file,
-                      Int line, const Char* fn, const HChar* format, ... )
+void VG_(assert_fail)(Bool isCore, const HChar* expr, const HChar* file,
+                      Int line, const HChar* fn, const HChar* format, ... )
 {
   abort();
 }

@@ -28,8 +28,8 @@ void* VG_(malloc)(HChar* cc, SizeT nbytes)
 { return malloc(nbytes); }
 void  VG_(free)(void* p)
 { return free(p); }
-void  VG_(assert_fail)(Bool isCore, const Char* assertion, const Char* file,
-                       Int line, const Char* function, const HChar* format,
+void  VG_(assert_fail)(Bool isCore, const HChar* assertion, const HChar* file,
+                       Int line, const HChar* function, const HChar* format,
                        ...)
 {
   fprintf(stderr,

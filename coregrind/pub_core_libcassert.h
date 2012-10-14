@@ -61,13 +61,13 @@
                               0)))
 
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic)      ( Char* str );
+extern void  VG_(core_panic)      ( const HChar* str );
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( Char* str, UnwindStartRegs* );
+extern void  VG_(core_panic_at)   ( const HChar* str, UnwindStartRegs* );
 
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
-extern void VG_(unimplemented) ( Char* msg )
+extern void VG_(unimplemented) ( const HChar* msg )
             __attribute__((__noreturn__));
 
 /* Show the state of all threads.  Mostly for debugging V. */

@@ -62,7 +62,7 @@ extern void VG_(err_missing_prog) ( void );
 /* Similarly - complain and stop if there is some kind of config
    error. */
 __attribute__((noreturn))
-extern void VG_(err_config_error) ( Char* format, ... );
+extern void VG_(err_config_error) ( const HChar* format, ... );
 
 #endif   // __PUB_CORE_LIBCPRINT_H
 

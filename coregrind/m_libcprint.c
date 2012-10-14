@@ -522,7 +522,7 @@ UInt VG_(fmsg) ( const HChar* format, ... )
    return count;
 }
 
-void VG_(fmsg_bad_option) ( HChar* opt, const HChar* format, ... )
+void VG_(fmsg_bad_option) ( const HChar* opt, const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs,format);
@@ -573,7 +573,7 @@ void VG_(err_missing_prog) ( void  )
 }
 
 __attribute__((noreturn))
-void VG_(err_config_error) ( Char* format, ... )
+void VG_(err_config_error) ( const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs,format);

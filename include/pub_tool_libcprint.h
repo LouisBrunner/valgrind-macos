@@ -116,7 +116,7 @@ extern UInt VG_(fmsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
 // an option was given an inappropriate argument.  This function prints an
 // error message, then shuts down the entire system.
 __attribute__((noreturn))
-extern void VG_(fmsg_bad_option) ( HChar* opt, const HChar* format, ... )
+extern void VG_(fmsg_bad_option) ( const HChar* opt, const HChar* format, ... )
    PRINTF_CHECK(2, 3);
 
 // This is used for messages that are interesting to the user:  info about

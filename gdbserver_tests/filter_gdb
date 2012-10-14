@@ -12,6 +12,8 @@ $dir/../tests/filter_addresses                                      |
 # memcheck stuff
 $dir/filter_memcheck_monitor "$@"                                   |
 
+# memcheck filter might leave some "..." lines, we are not interested
+sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 
 # Anonymise or remove :
 #       delete the initial lines between the launch of vgdb and the

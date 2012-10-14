@@ -63,11 +63,11 @@
 
 typedef
    struct {
-      Char* name;
-      Char* version;
-      Char* description;
-      Char* copyright_author;
-      Char* bug_reports_to;
+      const HChar* name;
+      const HChar* version;
+      const HChar* description;
+      const HChar* copyright_author;
+      const HChar* bug_reports_to;
       UInt  avg_translation_sizeB;
    }
    VgDetails;
@@ -240,7 +240,7 @@ extern VgToolInterface VG_(tdict);
    Miscellaneous functions
    ------------------------------------------------------------------ */
 
-Bool VG_(sanity_check_needs) ( Char** failmsg );
+Bool VG_(sanity_check_needs) ( const HChar** failmsg );
 
 #endif   // __PUB_CORE_TOOLIFACE_H
 

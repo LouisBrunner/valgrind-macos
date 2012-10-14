@@ -72,11 +72,11 @@ VgDetails VG_(details) = {
       VG_(details).detail = detail;                 \
    }
 
-DETAILS(Char*, name)
-DETAILS(Char*, version)
-DETAILS(Char*, description)
-DETAILS(Char*, copyright_author)
-DETAILS(Char*, bug_reports_to)
+DETAILS(const HChar*, name)
+DETAILS(const HChar*, version)
+DETAILS(const HChar*, description)
+DETAILS(const HChar*, copyright_author)
+DETAILS(const HChar*, bug_reports_to)
 DETAILS(UInt,  avg_translation_sizeB)
 
 
@@ -99,7 +99,7 @@ VgNeeds VG_(needs) = {
 };
 
 /* static */
-Bool VG_(sanity_check_needs)(Char** failmsg)
+Bool VG_(sanity_check_needs)(const HChar** failmsg)
 {
    Bool any_new_mem_stack_N, any_new_mem_stack_N_w_ECU;
    Bool any_new_mem_stack_w_conflicting_otags;

@@ -243,10 +243,10 @@ extern void VG_(basic_tool_funcs)(
    tools distributed with Valgrind that share a version number with
    Valgrind.  Other tools not distributed as part of Valgrind should
    probably have their own version number.  */
-extern void VG_(details_name)                  ( Char* name );
-extern void VG_(details_version)               ( Char* version );
-extern void VG_(details_description)           ( Char* description );
-extern void VG_(details_copyright_author)      ( Char* copyright_author );
+extern void VG_(details_name)                  ( const HChar* name );
+extern void VG_(details_version)               ( const HChar* version );
+extern void VG_(details_description)           ( const HChar* description );
+extern void VG_(details_copyright_author)      ( const HChar* copyright_author );
 
 /* Average size of a translation, in bytes, so that the translation
    storage machinery can allocate memory appropriately.  Not critical,
@@ -255,7 +255,7 @@ extern void VG_(details_avg_translation_sizeB) ( UInt size );
 
 /* String printed if an `tl_assert' assertion fails or VG_(tool_panic)
    is called.  Should probably be an email address. */
-extern void VG_(details_bug_reports_to)   ( Char* bug_reports_to );
+extern void VG_(details_bug_reports_to)   ( const HChar* bug_reports_to );
 
 /* ------------------------------------------------------------------ */
 /* Needs */

@@ -2010,7 +2010,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       /* The tool's "needs" will by now be finalised, since it has no
          further opportunity to specify them.  So now sanity check
          them. */
-      Char* s;
+      HChar* s;
       Bool  ok;
       ok = VG_(sanity_check_needs)( &s );
       if (!ok) {

@@ -62,7 +62,7 @@ extern void VG_(show_last_error)          ( void );
 
 extern void VG_(show_error_counts_as_XML) ( void );
 
-extern Bool VG_(is_action_requested)      ( Char* action, Bool* clo );
+extern Bool VG_(is_action_requested)      ( const HChar* action, Bool* clo );
 
 extern Bool VG_(showing_core_errors)      ( void );
 

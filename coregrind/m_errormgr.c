@@ -445,7 +445,7 @@ static void gen_suppression(Error* err)
 /* Figure out if we want to perform a given action for this error,
    possibly by asking the user.
 */
-Bool VG_(is_action_requested) ( Char* action, Bool* clo )
+Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
 {
    Char ch, ch2;
    Int res;
@@ -1154,7 +1154,7 @@ static Bool setLocationTy ( SuppLoc* p, Char *buf )
 
 
 /* Look for "tool" in a string like "tool1,tool2,tool3" */
-static Bool tool_name_present(Char *name, Char *names)
+static Bool tool_name_present(const HChar *name, Char *names)
 {
    Bool  found;
    Char *s = NULL;   /* Shut gcc up */
@@ -1181,7 +1181,7 @@ static void load_one_suppressions_file ( Char* filename )
    Char*  buf = VG_(malloc)("errormgr.losf.1", nBuf);
    Char*  tool_names;
    Char*  supp_name;
-   Char*  err_str = NULL;
+   const HChar* err_str = NULL;
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
    // Check it's not a directory.

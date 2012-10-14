@@ -1334,9 +1334,9 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
 }
 
 
-const Char *VG_(signame)(Int sigNo)
+const HChar *VG_(signame)(Int sigNo)
 {
-   static Char buf[20];
+   static HChar buf[20];
 
    switch(sigNo) {
       case VKI_SIGHUP:    return "SIGHUP";
@@ -1562,7 +1562,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 
       /* Be helpful - decode some more details about this fault */
       if (is_signal_from_kernel(tid, sigNo, info->si_code)) {
-	 const Char *event = NULL;
+	 const HChar *event = NULL;
 	 Bool haveaddr = True;
 
 	 switch(sigNo) {

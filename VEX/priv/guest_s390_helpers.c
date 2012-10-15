@@ -1522,7 +1522,11 @@ guest_s390x_spechelper(HChar *function_name, IRExpr **args,
             return unop(Iop_1Uto32, binop(Iop_CmpLT64S, mkU64(0), cc_dep1));
          }
          if (cond == 8 + 2 || cond == 8 + 2 + 1) {
-            return unop(Iop_1Uto32, binop(Iop_CmpLE64S, mkU64(0), cc_dep1));
+            /* special case =0 || >0 to handle some gcc magic that only checks
+             * the first bit. Fixes 308427
+             */
+            return unop(Iop_64to32, binop(Iop_Xor64, binop(Iop_Shr64,cc_dep1,mkU8(63)),
+                      mkU64(1)));
          }
          if (cond == 8 + 4 + 2 || cond == 8 + 4 + 2 + 1) {
             return mkU32(1);

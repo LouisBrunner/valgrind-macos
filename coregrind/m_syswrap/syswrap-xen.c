@@ -103,8 +103,7 @@ PRE(memory_op)
 
    switch (ARG1) {
    case XENMEM_set_memory_map: {
-      xen_foreign_memory_map_t *arg =
-         (xen_foreign_memory_map_t *)(unsigned int)ARG2;
+      xen_foreign_memory_map_t *arg =(xen_foreign_memory_map_t *)ARG2;
       PRE_MEM_READ("XENMEM_set_memory_map",
                    (Addr)&arg->domid, sizeof(arg->domid));
       PRE_MEM_READ("XENMEM_set_memory_map",
@@ -115,7 +114,7 @@ PRE(memory_op)
    case XENMEM_decrease_reservation:
    case XENMEM_populate_physmap: {
       struct xen_memory_reservation *memory_reservation =
-         (struct xen_memory_reservation *)(unsigned int)ARG2;
+         (struct xen_memory_reservation *)ARG2;
       char *which;
 
       switch (ARG1) {
@@ -166,7 +165,7 @@ PRE(memory_op)
 
 PRE(mmuext_op)
 {
-   mmuext_op_t *ops = (void *)(unsigned int)ARG1;
+   mmuext_op_t *ops = (mmuext_op_t *)ARG1;
    unsigned int i, nr = ARG2;
 
 
@@ -286,12 +285,12 @@ static void pre_evtchn_op(ThreadId tid,
 PRE(evtchn_op)
 {
    pre_evtchn_op(tid, layout, arrghs, status, flags,
-                 ARG1, (void *)(unsigned int)ARG2, 0);
+                 ARG1, (void *)ARG2, 0);
 }
 
 PRE(evtchn_op_compat)
 {
-   struct evtchn_op *evtchn = (struct evtchn_op *)(unsigned int)ARG1;
+   struct evtchn_op *evtchn = (struct evtchn_op *)ARG1;
    PRE_MEM_READ("__HYPERVISOR_event_channel_op_compat",
                 ARG1, sizeof(*evtchn));
 
@@ -343,7 +342,7 @@ PRE(grant_table_op)
 }
 
 PRE(sysctl) {
-   struct xen_sysctl *sysctl = (struct xen_sysctl *)(unsigned int)ARG1;
+   struct xen_sysctl *sysctl = (struct xen_sysctl *)ARG1;
 
    PRINT("__HYPERVISOR_sysctl ( %d )", sysctl->cmd);
 
@@ -444,7 +443,7 @@ PRE(sysctl) {
 
 PRE(domctl)
 {
-   struct xen_domctl *domctl = (struct xen_domctl *)(unsigned int)ARG1;
+   struct xen_domctl *domctl = (struct xen_domctl *)ARG1;
 
    PRINT("__HYPERVISOR_domctl ( %d ) on dom%d", domctl->cmd, domctl->domain);
 
@@ -636,7 +635,7 @@ POST(memory_op)
    case XENMEM_increase_reservation:
    case XENMEM_populate_physmap: {
       struct xen_memory_reservation *memory_reservation =
-         (struct xen_memory_reservation *)(unsigned int)ARG2;
+         (struct xen_memory_reservation *)ARG2;
 
       POST_MEM_WRITE((Addr)memory_reservation->extent_start.p,
                      sizeof(xen_pfn_t) * memory_reservation->nr_extents);
@@ -647,7 +646,7 @@ POST(memory_op)
 
 POST(mmuext_op)
 {
-   unsigned int *pdone = (void *)(unsigned int)ARG3;
+   unsigned int *pdone = (unsigned int *)ARG3;
    /* simplistic */
    POST_MEM_WRITE((Addr)pdone, sizeof(*pdone));
 }
@@ -665,12 +664,12 @@ static void post_evtchn_op(ThreadId tid, __vki_u32 cmd, void *arg, int compat)
 
 POST(evtchn_op)
 {
-   post_evtchn_op(tid, ARG1, (void *)(unsigned int)ARG2, 0);
+   post_evtchn_op(tid, ARG1, (void *)ARG2, 0);
 }
 
 POST(evtchn_op_compat)
 {
-   struct evtchn_op *evtchn = (struct evtchn_op *)(unsigned int)ARG1;
+   struct evtchn_op *evtchn = (struct evtchn_op *)ARG1;
    post_evtchn_op(tid, evtchn->cmd, &evtchn->u, 1);
 }
 
@@ -727,7 +726,7 @@ POST(grant_table_op)
 
 POST(sysctl)
 {
-   struct xen_sysctl *sysctl = (struct xen_sysctl *)(unsigned int)ARG1;
+   struct xen_sysctl *sysctl = (struct xen_sysctl *)ARG1;
 
    if (!sysctl || sysctl->interface_version != XEN_SYSCTL_INTERFACE_VERSION)
       return;
@@ -801,7 +800,7 @@ POST(sysctl)
 }
 
 POST(domctl){
-   struct xen_domctl *domctl = (struct xen_domctl *)(unsigned int)ARG1;
+   struct xen_domctl *domctl = (struct xen_domctl *)ARG1;
 
    if (!domctl || domctl->interface_version != XEN_DOMCTL_INTERFACE_VERSION)
       return;

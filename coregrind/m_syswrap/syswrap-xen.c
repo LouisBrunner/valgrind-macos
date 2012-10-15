@@ -127,6 +127,7 @@ PRE(memory_op)
          PRE_MEM_READ(which,
                       (Addr)memory_reservation->extent_start.p,
                       sizeof(xen_pfn_t) * memory_reservation->nr_extents);
+	 break;
       case XENMEM_populate_physmap:
          which = "XENMEM_populate_physmap";
          PRE_MEM_READ(which,

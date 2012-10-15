@@ -104,9 +104,9 @@ PRE(memory_op)
    switch (ARG1) {
    case XENMEM_set_memory_map: {
       xen_foreign_memory_map_t *arg =(xen_foreign_memory_map_t *)ARG2;
-      PRE_MEM_READ("XENMEM_set_memory_map",
+      PRE_MEM_READ("XENMEM_set_memory_map domid",
                    (Addr)&arg->domid, sizeof(arg->domid));
-      PRE_MEM_READ("XENMEM_set_memory_map",
+      PRE_MEM_READ("XENMEM_set_memory_map map",
                    (Addr)&arg->map, sizeof(arg->map));
       break;
    }
@@ -171,7 +171,7 @@ PRE(mmuext_op)
 
    for (i=0; i<nr; i++) {
       mmuext_op_t *op = ops + i;
-      PRE_MEM_READ("__HYPERVISOR_MMUEXT_OP",
+      PRE_MEM_READ("__HYPERVISOR_MMUEXT_OP cmd",
                    (Addr)&op->cmd, sizeof(op->cmd));
       switch(op->cmd) {
       case MMUEXT_PIN_L1_TABLE:
@@ -264,9 +264,9 @@ static void pre_evtchn_op(ThreadId tid,
    switch (cmd) {
    case EVTCHNOP_alloc_unbound: {
       struct evtchn_alloc_unbound *alloc_unbound = arg;
-      PRE_MEM_READ("EVTCHNOP_alloc_unbound",
+      PRE_MEM_READ("EVTCHNOP_alloc_unbound dom",
                    (Addr)&alloc_unbound->dom, sizeof(alloc_unbound->dom));
-      PRE_MEM_READ("EVTCHNOP_alloc_unbound",
+      PRE_MEM_READ("EVTCHNOP_alloc_unbound remote_dom",
                    (Addr)&alloc_unbound->remote_dom,
                    sizeof(alloc_unbound->remote_dom));
       break;
@@ -329,8 +329,9 @@ PRE(grant_table_op)
    switch (ARG1) {
    case GNTTABOP_setup_table: {
       struct gnttab_setup_table *gst = (void *)(intptr_t)ARG2;
-      PRE_MEM_READ("GNTTABOP_setup_table", (Addr)&gst->dom, sizeof(gst->dom));
-      PRE_MEM_READ("GNTTABOP_setup_table",
+      PRE_MEM_READ("GNTTABOP_setup_table dom",
+		   (Addr)&gst->dom, sizeof(gst->dom));
+      PRE_MEM_READ("GNTTABOP_setup_table nr_frames",
                    (Addr)&gst->nr_frames, sizeof(gst->nr_frames));
       break;
    }
@@ -375,9 +376,9 @@ PRE(sysctl) {
       return;
    }
 
-#define __PRE_XEN_SYSCTL_READ(_sysctl, _union, _field)  \
-      PRE_MEM_READ("XEN_SYSCTL_" # _sysctl,             \
-                   (Addr)&sysctl->u._union._field,      \
+#define __PRE_XEN_SYSCTL_READ(_sysctl, _union, _field)			\
+      PRE_MEM_READ("XEN_SYSCTL_" #_sysctl " u." #_union "." #_field,	\
+                   (Addr)&sysctl->u._union._field,			\
                    sizeof(sysctl->u._union._field))
 #define PRE_XEN_SYSCTL_READ(_sysctl, _field) \
       __PRE_XEN_SYSCTL_READ(_sysctl, _sysctl, _field)
@@ -477,9 +478,9 @@ PRE(domctl)
       return;
    }
 
-#define __PRE_XEN_DOMCTL_READ(_domctl, _union, _field)  \
-      PRE_MEM_READ("XEN_DOMCTL_" # _domctl,             \
-                   (Addr)&domctl->u._union._field,      \
+#define __PRE_XEN_DOMCTL_READ(_domctl, _union, _field)			\
+      PRE_MEM_READ("XEN_DOMCTL_" #_domctl " u." #_union "." #_field,	\
+                   (Addr)&domctl->u._union._field,			\
                    sizeof(domctl->u._union._field))
 #define PRE_XEN_DOMCTL_READ(_domctl, _field) \
       __PRE_XEN_DOMCTL_READ(_domctl, _domctl, _field)
@@ -555,7 +556,7 @@ PRE(domctl)
 
    case XEN_DOMCTL_setvcpuaffinity:
       __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity, vcpu);
-      PRE_MEM_READ("XEN_DOMCTL_setvcpuaffinity",
+      PRE_MEM_READ("XEN_DOMCTL_setvcpuaffinity u.vcpuaffinity.cpumap.bitmap",
                    (Addr)domctl->u.vcpuaffinity.cpumap.bitmap.p,
                    domctl->u.vcpuaffinity.cpumap.nr_cpus / 8);
       break;
@@ -570,7 +571,7 @@ PRE(domctl)
       break;
 
    case XEN_DOMCTL_set_cpuid:
-      PRE_MEM_READ("XEN_DOMCTL_set_cpuid",
+      PRE_MEM_READ("XEN_DOMCTL_set_cpuid u.cpuid",
                    (Addr)&domctl->u.cpuid, sizeof(domctl->u.cpuid));
       break;
 
@@ -598,7 +599,7 @@ PRE(hvm_op)
    PRINT("__HYPERVISOR_hvm_op ( %ld, %p )", op, arg);
 
 #define __PRE_XEN_HVMOP_READ(_hvm_op, _type, _field)    \
-   PRE_MEM_READ("XEN_HVMOP_" # _hvm_op,                 \
+   PRE_MEM_READ("XEN_HVMOP_" # _hvm_op " " #_field,     \
                 (Addr)&((_type*)arg)->_field,           \
                 sizeof(((_type*)arg)->_field))
 #define PRE_XEN_HVMOP_READ(_hvm_op, _field)                             \

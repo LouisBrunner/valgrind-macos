@@ -59,6 +59,7 @@
 #include "priv_syswrap-xen.h"
 
 #include <stdint.h>
+#include <inttypes.h>
 
 #define __XEN_TOOLS__
 
@@ -353,9 +354,26 @@ PRE(sysctl) {
    PRE_MEM_READ("__HYPERVISOR_sysctl", ARG1,
                 sizeof(uint32_t) + sizeof(uint32_t));
 
-   if (!sysctl || sysctl->interface_version != XEN_SYSCTL_INTERFACE_VERSION)
-      /* BUG ? */
+   if (!sysctl)
       return;
+
+   if (sysctl->interface_version != XEN_SYSCTL_INTERFACE_VERSION) {
+      VG_(dmsg)("WARNING: sysctl version %"PRIx32" not supported, "
+                "built for %"PRIx32"\n",
+                sysctl->interface_version,
+                XEN_SYSCTL_INTERFACE_VERSION);
+      if (VG_(clo_verbosity) > 1) {
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+      }
+      VG_(dmsg)("You may be able to write your own handler.\n");
+      VG_(dmsg)("Read the file README_MISSING_SYSCALL_OR_IOCTL.\n");
+      VG_(dmsg)("Nevertheless we consider this a bug.  Please report\n");
+      VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html &\n");
+      VG_(dmsg)("http://wiki.xen.org/wiki/Reporting_Bugs_against_Xen.\n");
+
+      SET_STATUS_Failure(VKI_EINVAL);
+      return;
+   }
 
 #define __PRE_XEN_SYSCTL_READ(_sysctl, _union, _field)  \
       PRE_MEM_READ("XEN_SYSCTL_" # _sysctl,             \
@@ -438,9 +456,26 @@ PRE(domctl)
    PRE_MEM_READ("__HYPERVISOR_domctl", ARG1,
                 sizeof(uint32_t) + sizeof(uint32_t) + sizeof(domid_t));
 
-   if (!domctl || domctl->interface_version != XEN_DOMCTL_INTERFACE_VERSION)
-      /* BUG ? */
+   if (!domctl)
       return;
+
+   if (domctl->interface_version != XEN_DOMCTL_INTERFACE_VERSION) {
+      VG_(dmsg)("WARNING: domctl version %"PRIx32" not supported, "
+                "built for %"PRIx32"\n",
+                domctl->interface_version,
+                XEN_DOMCTL_INTERFACE_VERSION);
+      if (VG_(clo_verbosity) > 1) {
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+      }
+      VG_(dmsg)("You may be able to write your own handler.\n");
+      VG_(dmsg)("Read the file README_MISSING_SYSCALL_OR_IOCTL.\n");
+      VG_(dmsg)("Nevertheless we consider this a bug.  Please report\n");
+      VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html &\n");
+      VG_(dmsg)("http://wiki.xen.org/wiki/Reporting_Bugs_against_Xen.\n");
+
+      SET_STATUS_Failure(VKI_EINVAL);
+      return;
+   }
 
 #define __PRE_XEN_DOMCTL_READ(_domctl, _union, _field)  \
       PRE_MEM_READ("XEN_DOMCTL_" # _domctl,             \
@@ -740,11 +775,14 @@ POST(sysctl)
 
    case XEN_SYSCTL_topologyinfo:
       POST_XEN_SYSCTL_WRITE(topologyinfo, max_cpu_index);
-      POST_MEM_WRITE((Addr)sysctl->u.topologyinfo.cpu_to_core.p,
+      if (sysctl->u.topologyinfo.cpu_to_core.p)
+         POST_MEM_WRITE((Addr)sysctl->u.topologyinfo.cpu_to_core.p,
                      sizeof(uint32_t) * sysctl->u.topologyinfo.max_cpu_index);
-      POST_MEM_WRITE((Addr)sysctl->u.topologyinfo.cpu_to_socket.p,
+      if (sysctl->u.topologyinfo.cpu_to_socket.p)
+         POST_MEM_WRITE((Addr)sysctl->u.topologyinfo.cpu_to_socket.p,
                      sizeof(uint32_t) * sysctl->u.topologyinfo.max_cpu_index);
-      POST_MEM_WRITE((Addr)sysctl->u.topologyinfo.cpu_to_node.p,
+      if (sysctl->u.topologyinfo.cpu_to_node.p)
+         POST_MEM_WRITE((Addr)sysctl->u.topologyinfo.cpu_to_node.p,
                      sizeof(uint32_t) * sysctl->u.topologyinfo.max_cpu_index);
       break;
 

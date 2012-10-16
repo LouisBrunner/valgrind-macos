@@ -1869,9 +1869,9 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       HReg op1, op2, op3, dst;
       s390_bfp_triop_t bfpop;
 
-      op1 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg2);
+      op3 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg2);
       op2 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg3);
-      op3 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg4);
+      op1 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg4);
       dst = newVRegF(env);
       addInstr(env, s390_insn_move(size, dst, op1));
 

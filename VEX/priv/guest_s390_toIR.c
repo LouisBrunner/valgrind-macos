@@ -10805,7 +10805,7 @@ s390_irgen_MAEBR(UChar r1, UChar r3, UChar r2)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_w0(r1, qop(Iop_MAddF32, mkexpr(rounding_mode),
-                      get_fpr_w0(r1), get_fpr_w0(r2), get_fpr_w0(r3)));
+                      get_fpr_w0(r3), get_fpr_w0(r2), get_fpr_w0(r1)));
 
    return "maebr";
 }
@@ -10816,7 +10816,7 @@ s390_irgen_MADBR(UChar r1, UChar r3, UChar r2)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_dw0(r1, qop(Iop_MAddF64, mkexpr(rounding_mode),
-                       get_fpr_dw0(r1), get_fpr_dw0(r2), get_fpr_dw0(r3)));
+                       get_fpr_dw0(r3), get_fpr_dw0(r2), get_fpr_dw0(r1)));
 
    return "madbr";
 }
@@ -10828,7 +10828,7 @@ s390_irgen_MAEB(UChar r3, IRTemp op2addr, UChar r1)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_w0(r1, qop(Iop_MAddF32, mkexpr(rounding_mode),
-                      get_fpr_w0(r1), op2, get_fpr_w0(r3)));
+                      get_fpr_w0(r3), op2, get_fpr_w0(r1)));
 
    return "maeb";
 }
@@ -10840,7 +10840,7 @@ s390_irgen_MADB(UChar r3, IRTemp op2addr, UChar r1)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_dw0(r1, qop(Iop_MAddF64, mkexpr(rounding_mode),
-                       get_fpr_dw0(r1), op2, get_fpr_dw0(r3)));
+                       get_fpr_dw0(r3), op2, get_fpr_dw0(r1)));
 
    return "madb";
 }
@@ -10851,7 +10851,7 @@ s390_irgen_MSEBR(UChar r1, UChar r3, UChar r2)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_w0(r1, qop(Iop_MSubF32, mkexpr(rounding_mode),
-                      get_fpr_w0(r1), get_fpr_w0(r2), get_fpr_w0(r3)));
+                      get_fpr_w0(r3), get_fpr_w0(r2), get_fpr_w0(r1)));
 
    return "msebr";
 }
@@ -10862,7 +10862,7 @@ s390_irgen_MSDBR(UChar r1, UChar r3, UChar r2)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_dw0(r1, qop(Iop_MSubF64, mkexpr(rounding_mode),
-                       get_fpr_dw0(r1), get_fpr_dw0(r2), get_fpr_dw0(r3)));
+                       get_fpr_dw0(r3), get_fpr_dw0(r2), get_fpr_dw0(r1)));
 
    return "msdbr";
 }
@@ -10874,7 +10874,7 @@ s390_irgen_MSEB(UChar r3, IRTemp op2addr, UChar r1)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_w0(r1, qop(Iop_MSubF32, mkexpr(rounding_mode),
-                      get_fpr_w0(r1), op2, get_fpr_w0(r3)));
+                      get_fpr_w0(r3), op2, get_fpr_w0(r1)));
 
    return "mseb";
 }
@@ -10886,7 +10886,7 @@ s390_irgen_MSDB(UChar r3, IRTemp op2addr, UChar r1)
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
 
    put_fpr_dw0(r1, qop(Iop_MSubF64, mkexpr(rounding_mode),
-                       get_fpr_dw0(r1), op2, get_fpr_dw0(r3)));
+                       get_fpr_dw0(r3), op2, get_fpr_dw0(r1)));
 
    return "msdb";
 }

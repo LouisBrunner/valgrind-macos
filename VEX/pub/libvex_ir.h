@@ -711,7 +711,7 @@ typedef
 
       /* Fused multiply-add/sub */
       /* :: IRRoundingMode(I32) x F32 x F32 x F32 -> F32
-            (computes op3 * op2 +/- op1 */
+            (computes arg2 * arg3 +/- arg4) */ 
       Iop_MAddF32, Iop_MSubF32,
 
       /* --- guest ppc32/64 specifics, not mandated by 754. --- */

@@ -48,6 +48,11 @@ void VG_(gdbserver_prerun_action) (ThreadId tid);
 // to handle this incoming vgdb request.                                
 extern Bool VG_(gdbserver_activity) (ThreadId tid);
 
+// If connected to GDB, VG_(gdbserver_exit) reports to GDB that the process
+// is about to exit.
+// gdbserver is then stopped (using VG_(gdbserver) (0))
+void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode);
+
 
 /* Called by low level to insert or remove a break or watch point.
    Break or watch point implementation is done using help from the tool.
@@ -76,8 +81,8 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
    that the call has been properly pushed by vgdb. */
 extern void VG_(invoke_gdbserver) ( int check );
 
-// To be called before delivering a signal.
-// Returns True if gdb user asks to pass the signal to the client.
+// To be called by core (m_signals.c) before delivering a signal.
+// Returns True unless gdb user asks to not pass the signal to the client.
 // Note that if the below returns True, the signal might
 // still be ignored if this is the action desired by the
 // guest program.

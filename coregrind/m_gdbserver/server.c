@@ -765,6 +765,13 @@ void server_main (void)
          putpkt (own_buf);
       }
 
+      /* If we our status is terminal (exit or fatal signal) get out
+         as quickly as we can. We won't be able to handle any request
+         anymore.  */
+      if (status == 'W' || status == 'X') {
+         return;
+      }
+
       packet_len = getpkt (own_buf);
       if (packet_len <= 0)
          break;

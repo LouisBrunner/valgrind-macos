@@ -2,7 +2,7 @@
    needed for interfacing the Valgrind gdbserver with the Valgrind
    guest.
 
-   Copyright (C) 2011
+   Copyright (C) 2011, 2012
    Free Software Foundation, Inc.
 
    This file has been inspired from a file that is part of GDB.

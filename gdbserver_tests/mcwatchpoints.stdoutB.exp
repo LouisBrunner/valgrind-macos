@@ -32,3 +32,4 @@ main (argc=1, argv=0x........) at watchpoints.c:49
 49	   fprintf(stderr, "after writing 8\n");
 Delete all breakpoints? (y or n) [answered Y; input not from terminal]
 Continuing.
+Program exited normally.

@@ -51,6 +51,8 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #         a.o. produced by gdb 7.2 on arm (same with standard gdbserver)
 #       delete empty lines (the last line (only made of prompts) sometimes
 #           finishes with a new line, sometimes not ???).
+#       'exited with code' and 'exited normally' are printed slightly
+#       differently between gdb versions, normalize to "Program exited...".
 sed -e '/Remote debugging using/,/vgdb launched process attached/d'                                   \
     -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
     -e '/^Missing separate debuginfo/d'                                                               \
@@ -66,6 +68,8 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^Loaded symbols for .*$/d'                                                                   \
     -e '/^Current language.*/d'                                                                       \
     -e '/^The current source language is.*/d'                                                         \
+    -e 's/^.*\( exited with code [0-9]\+\).$/Program\1\./g'                              \
+    -e 's/^.*\( exited normally\).$/Program\1\./g'                              \
     -e 's/(gdb) //g'                                                                                  \
     -e 's/^>[> ]*//'                                                                                  \
     -e '/^done\.$/d'                                                                                  \

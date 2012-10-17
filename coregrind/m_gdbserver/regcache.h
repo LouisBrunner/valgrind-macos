@@ -1,5 +1,5 @@
 /* Register support routines for the remote server for GDB.
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2012 Free Software Foundation, Inc.
 
    This file is part of GDB.
    It has been modified to integrate it in valgrind

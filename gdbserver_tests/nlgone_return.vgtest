@@ -1,0 +1,12 @@
+# test that a normal (successful) return is properly passed on to gdb.
+
+prog: gone
+args: return
+vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlgone-return
+stderr_filter: filter_stderr
+prereq: test -e gdb
+progB: gdb
+argsB: --quiet -l 60 --nx ./gone
+stdinB: nlgone_return.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_gdb

@@ -165,6 +165,15 @@ Bool gdbserver_deliver_signal (Int vki_sigNo)
    return vki_sigNo == vki_signal_to_deliver;
 }
 
+static unsigned char exit_status_to_report;
+static int exit_code_to_report;
+void gdbserver_process_exit_encountered (unsigned char status, Int code)
+{
+   vg_assert (status == 'W' || status == 'X');
+   exit_status_to_report = status;
+   exit_code_to_report = code;
+}
+
 static
 char* sym (Addr addr)
 {
@@ -248,12 +257,33 @@ unsigned char valgrind_wait (char *ourstatus)
    unsigned long wptid;
    ThreadState *tst;
    enum target_signal sig;
+   int code;
 
    pid = VG_(getpid) ();
    dlog(1, "enter valgrind_wait pid %d\n", pid);
 
    regcache_invalidate();
    valgrind_update_threads(pid);
+
+   /* First see if we are done with this process. */
+   if (exit_status_to_report != 0) {
+      *ourstatus = exit_status_to_report;
+      exit_status_to_report = 0;
+
+      if (*ourstatus == 'W') {
+         code = exit_code_to_report;
+         exit_code_to_report = 0;
+         dlog(1, "exit valgrind_wait status W exit code %d\n", code);
+         return code;
+      }
+
+      if (*ourstatus == 'X') {
+         sig = target_signal_from_host(exit_code_to_report);
+         exit_code_to_report = 0;
+         dlog(1, "exit valgrind_wait status X signal %d\n", sig);
+         return sig;
+      }
+   }
 
    /* in valgrind, we consider that a wait always succeeds with STOPPED 'T' 
       and with a signal TRAP (i.e. a breakpoint), unless there is
@@ -279,7 +309,7 @@ unsigned char valgrind_wait (char *ourstatus)
    stop_pc = (*the_low_target.get_pc) ();
    
    dlog(1,
-        "exit valgrind_wait returns ptid %s stop_pc %s signal %d\n", 
+        "exit valgrind_wait status T ptid %s stop_pc %s signal %d\n", 
         image_ptid (wptid), sym (stop_pc), sig);
    return sig;
 }

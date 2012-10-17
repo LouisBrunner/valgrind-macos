@@ -2543,7 +2543,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    /* terminate gdbserver if ever it was started. We terminate it here so that it get
       the output above if output was redirected to gdb */
-   VG_(gdbserver) (0);
+   VG_(gdbserver_exit) (tid, tids_schedretcode);
 
    /* Ok, finally exit in the os-specific way, according to the scheduler's
       return code.  In short, if the (last) thread exited by calling

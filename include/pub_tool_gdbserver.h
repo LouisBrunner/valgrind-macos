@@ -51,8 +51,8 @@
 // Calling VG_(gdbserver) with tid > 0 means to let a debugger attach
 // to the valgrind process. gdbserver will report to gdb that the
 // process stopped in thread tid.
-// tid == 0 indicates to stop gdbserver and report to gdb
-// that the valgrind-ified process has exited.
+// Calling VG_(gdbserver) with tid == 0 indicates to close
+// the connection with GDB (if still open) and stop gdbserver.
 //--------------------------------------------------------------------
 extern void VG_(gdbserver) ( ThreadId tid );
 

@@ -1,0 +1,12 @@
+# test that a fatal SIGABRT signal is properly passed on to gdb.
+
+prog: gone
+args: abort
+vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlgone-abrt
+stderr_filter: filter_stderr
+prereq: test -e gdb
+progB: gdb
+argsB: --quiet -l 60 --nx ./gone
+stdinB: nlgone_abrt.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_gdb

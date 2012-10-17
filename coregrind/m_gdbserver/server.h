@@ -1,6 +1,6 @@
 /* Common definitions for remote server for GDB.
    Copyright (C) 1993, 1995, 1997, 1998, 1999, 2000, 2002, 2003, 2004, 2005,
-   2006
+   2006, 2012
    Free Software Foundation, Inc.
 
    This file is part of GDB.
@@ -40,9 +40,9 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_options.h"
-#include "pub_core_gdbserver.h"
 #include "pub_tool_libcsetjmp.h"
 #include "pub_core_threadstate.h"
+#include "pub_core_gdbserver.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_tool_vki.h"
 #include "valgrind.h"
@@ -198,15 +198,23 @@ struct thread_info;
 #include "gdb/signals.h"
 
 /* signal handling with gdbserver: before delivering a signal,
-   call gdbserver_signal_encountered then give control to
-   gdbserver by calling call_gdbserver.
-   On return, call gdbserver_deliver_signal to effectively
-   deliver the signal or not. */
+   call gdbserver_signal_encountered. This will set
+   the signal to report in the next resume reply sent to GDB.
+   A call to call_gdbserver is needed to send the resume reply to GDB.
+   After this call, gdbserver_deliver_signal indicates if the signal
+   is effectively to be delivered to the guest process. */
 extern void gdbserver_signal_encountered (Int vki_sigNo);
 /* between these two calls, call call_gdbserver */
 /* If gdbserver_deliver_signal True, then gdb did not ask
    to ignore the signal, so signal can be delivered to the guest. */
 extern Bool gdbserver_deliver_signal (Int vki_sigNo);
+
+/* Called when a process is about to go with reason ('W' or 'X') and code.
+   This sets global variables that will be used to return the process
+   exit status to GDB in the next resume_reply.
+   Similarly to gdbserver_signal_encountered, a call to call_gdbserver
+   is needed to send the resume reply. */
+extern void gdbserver_process_exit_encountered (unsigned char status, Int code);
 
 /* To optimise signal handling, gdb can instruct gdbserver to
    not stop on some signals. In the below, a 1 indicates the gdb_nr signal

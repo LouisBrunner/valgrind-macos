@@ -33,6 +33,8 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+#include "pub_tool_libcsetjmp.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
 #include "pub_core_options.h"
 #include "pub_core_libcsetjmp.h"
@@ -68,7 +70,8 @@ typedef
       core_reason,    // gdbserver invocation by core (e.g. error encountered)
       break_reason,   // break encountered
       watch_reason,   // watchpoint detected by tool
-      signal_reason}  // signal encountered
+      signal_reason,  // signal encountered
+      exit_reason}    // process terminated
     CallReason;
 
 static char* ppCallReason(CallReason reason)
@@ -80,6 +83,7 @@ static char* ppCallReason(CallReason reason)
    case break_reason:   return "break_reason";
    case watch_reason:   return "watch_reason";
    case signal_reason:  return "signal_reason";
+   case exit_reason:    return "exit_reason";
    default: vg_assert (0);
    }
 }
@@ -641,6 +645,14 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
         VG_(getpid) (), tid, VG_(name_of_ThreadStatus)(tst->status),
         tst->sched_jmpbuf_valid);
 
+   /* If we are about to die, then just run server_main() once to get
+      the resume reply out and return immediately because most of the state
+      of this tid and process is about to be torn down. */
+   if (reason == exit_reason) {
+      server_main();
+      return;
+   }
+
    vg_assert(VG_(is_valid_tid)(tid));
    saved_pc = VG_(get_IP) (tid);
 
@@ -931,6 +943,34 @@ Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
       dlog(1, "gdbserver ignore signal\n");
       return False;
    }
+}
+
+void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode)
+{
+   dlog(1, "VG core calling VG_(gdbserver_exit) tid %d will exit\n", tid);
+   if (remote_connected()) {
+      /* Make sure vgdb knows we are about to die and why. */
+      switch(tids_schedretcode) {
+      case VgSrc_None:
+         vg_assert (0);
+      case VgSrc_ExitThread:
+      case VgSrc_ExitProcess:
+         gdbserver_process_exit_encountered ('W', VG_(threads)[tid].os_state.exitcode);
+         call_gdbserver (tid, exit_reason);
+         break;
+      case VgSrc_FatalSig:
+         gdbserver_process_exit_encountered ('X', VG_(threads)[tid].os_state.fatalsig);
+         call_gdbserver (tid, exit_reason);
+         break;
+      default:
+         vg_assert(0);
+      }
+   } else {
+      dlog(1, "not connected\n");
+   }
+
+   /* Tear down the connection if it still exists. */
+   VG_(gdbserver) (0);
 }
 
 // Check if single_stepping or if there is a break requested at iaddr. 

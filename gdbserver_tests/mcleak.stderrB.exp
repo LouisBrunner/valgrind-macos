@@ -95,4 +95,3 @@ vgdb-error value changed from 0 to 999999
    by 0x........: f (leak-delta.c:28)
    by 0x........: main (leak-delta.c:60)
 
-Remote connection closed

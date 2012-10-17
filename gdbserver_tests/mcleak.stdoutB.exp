@@ -45,3 +45,4 @@ Breakpoint 1, breakme () at leak-delta.c:9
 #1  0x........ in f () at leak-delta.c:48
 48	   fprintf(stderr, "expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable\n"); fflush(stderr); breakme();
 Continuing.
+Program exited normally.

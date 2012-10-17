@@ -6,3 +6,4 @@ $1 = void
 $2 = (int (*)(int, char **)) 0x........ <main>
 $3 = (void (*)(char *)) 0x........ <another_func>
 Continuing.
+Program exited normally.

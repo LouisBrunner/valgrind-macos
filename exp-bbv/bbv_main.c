@@ -55,8 +55,8 @@
 static Int interval_size=DEFAULT_GRAIN_SIZE;
 
    /* filenames */
-static UChar *clo_bb_out_file="bb.out.%p";
-static UChar *clo_pc_out_file="pc.out.%p";
+static HChar *clo_bb_out_file="bb.out.%p";
+static HChar *clo_pc_out_file="pc.out.%p";
 static UChar *pc_out_file=NULL;
 static UChar *bb_out_file=NULL;
 

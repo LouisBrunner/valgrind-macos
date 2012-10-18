@@ -195,22 +195,26 @@ typedef struct {
    UInt sizeB;         /* size of this cache in bytes */
    UInt line_sizeB;    /* cache line size in bytes */
    UInt assoc;         /* set associativity */
+   Bool is_trace_cache;  /* False, except for certain Pentium 4 models */
 } VexCache;
 
 /* Convenience macro to initialise a VexCache */
 #define VEX_CACHE_INIT(_kind, _level, _size, _line_size, _assoc)         \
          ({ (VexCache) { .kind = _kind, .level = _level, .sizeB = _size, \
-                         .line_sizeB = _line_size, .assoc = _assoc }; })
+               .line_sizeB = _line_size, .assoc = _assoc, \
+               .is_trace_cache = False }; })
 
 /* Information about the cache system as a whole */
 typedef struct {
    UInt num_levels;
    UInt num_caches;
    /* Unordered array of caches for this host. NULL if there are
-      no caches. Users can assume that the array contains at most one
-      cache of a given kind per cache level. Additionally, if there exists
-      a unified cache at a particular level then no other cache exists
-      at that level. */
+      no caches. The following can always be assumed:
+      (1) There is at most one cache of a given kind per cache level.
+      (2) If there exists a unified cache at a particular level then
+          no other cache exists at that level.
+      (3) The existence of a cache at level N > 1 implies the existence of
+          at least one cache at level N-1. */
    VexCache *caches;
    Bool icaches_maintain_coherence;
 } VexCacheInfo;

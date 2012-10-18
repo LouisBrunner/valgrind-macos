@@ -55,7 +55,7 @@ Bool pc_is_recognised_suppression ( Char* name, Supp *su );
 Bool pc_read_extra_suppression_info ( Int fd, Char** bufpp, 
                                       SizeT* nBufp, Supp* su );
 Bool pc_error_matches_suppression (Error* err, Supp* su);
-Char* pc_get_error_name ( Error* err );
+HChar* pc_get_error_name ( Error* err );
 Bool pc_get_extra_suppression_info ( Error* err,
                                      /*OUT*/Char* buf, Int nBuf );
 

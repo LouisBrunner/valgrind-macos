@@ -293,7 +293,7 @@ static void emiN ( HChar* format, ... ) /* With NO FORMAT CHECK */
 }
 
 
-static Char* readwrite(SSizeT sszB)
+static HChar* readwrite(SSizeT sszB)
 {
    return ( sszB < 0 ? "write" : "read" );
 }
@@ -348,7 +348,7 @@ void pc_pp_Error ( Error* err )
 
    //----------------------------------------------------------
    case XE_Heap: {
-      Char *place, *legit, *how_invalid;
+      HChar *place, *legit, *how_invalid;
       Addr a    = xe->XE.Heap.addr;
       Seg* vseg = xe->XE.Heap.vseg;
 
@@ -468,7 +468,7 @@ void pc_pp_Error ( Error* err )
    case XE_Arith: {
       Seg*   seg1   = xe->XE.Arith.seg1;
       Seg*   seg2   = xe->XE.Arith.seg2;
-      Char*  which;
+      HChar*  which;
 
       tl_assert(BOTTOM != seg1);
       tl_assert(BOTTOM != seg2 && UNKNOWN != seg2);
@@ -545,7 +545,7 @@ void pc_pp_Error ( Error* err )
       Seg*  seglo = xe->XE.SysParam.seglo;
       Seg*  seghi = xe->XE.SysParam.seghi;
       Char* s     = VG_(get_error_string) (err);
-      Char* what;
+      HChar* what;
 
       tl_assert(BOTTOM != seglo && BOTTOM != seghi);
 
@@ -764,7 +764,7 @@ Bool pc_error_matches_suppression (Error* err, Supp* su)
    }
 }
 
-Char* pc_get_error_name ( Error* err )
+HChar* pc_get_error_name ( Error* err )
 {
    XError *xe = (XError*)VG_(get_error_extra)(err);
    tl_assert(xe);

@@ -112,8 +112,8 @@ add_cache(VexCacheInfo *ci, VexCache cache)
 static Int
 Intel_cache_info(Int level, VexCacheInfo *ci)
 {
-   Int cpuid1_eax;
-   Int cpuid1_ignore;
+   UInt cpuid1_eax;
+   UInt cpuid1_ignore;
    Int family;
    Int model;
    UChar info[16];
@@ -131,8 +131,8 @@ Intel_cache_info(Int level, VexCacheInfo *ci)
    family = (((cpuid1_eax >> 20) & 0xff) << 4) + ((cpuid1_eax >> 8) & 0xf);
    model =  (((cpuid1_eax >> 16) & 0xf) << 4) + ((cpuid1_eax >> 4) & 0xf);
 
-   VG_(cpuid)(2, 0, (Int*)&info[0], (Int*)&info[4],
-                    (Int*)&info[8], (Int*)&info[12]);
+   VG_(cpuid)(2, 0, (UInt*)&info[0], (UInt*)&info[4],
+                    (UInt*)&info[8], (UInt*)&info[12]);
    trials  = info[0] - 1;   /* AL register - bits 0..7 of %eax */
    info[0] = 0x0;           /* reset AL */
 
@@ -288,8 +288,8 @@ Intel_cache_info(Int level, VexCacheInfo *ci)
 
       case 0xff:
          j = 0;
-         VG_(cpuid)(4, j++, (Int*)&info[0], (Int*)&info[4],
-                            (Int*)&info[8], (Int*)&info[12]);
+         VG_(cpuid)(4, j++, (UInt*)&info[0], (UInt*)&info[4],
+                            (UInt*)&info[8], (UInt*)&info[12]);
 
          while ((info[0] & 0x1f) != 0) {
             UInt assoc = ((*(UInt *)&info[4] >> 22) & 0x3ff) + 1;
@@ -343,8 +343,8 @@ Intel_cache_info(Int level, VexCacheInfo *ci)
                break;
             }
 
-            VG_(cpuid)(4, j++, (Int*)&info[0], (Int*)&info[4],
-                               (Int*)&info[8], (Int*)&info[12]);
+            VG_(cpuid)(4, j++, (UInt*)&info[0], (UInt*)&info[4],
+                               (UInt*)&info[8], (UInt*)&info[12]);
          }
          break;
 
@@ -483,13 +483,14 @@ AMD_cache_info(VexCacheInfo *ci)
 static Int
 get_caches_from_CPUID(VexCacheInfo *ci)
 {
-   Int  level, ret, i;
+   Int  ret, i;
+   UInt level;
    Char vendor_id[13];
 
    vg_assert(VG_(has_cpuid)());
 
-   VG_(cpuid)(0, 0, &level, (int*)&vendor_id[0],
-	      (int*)&vendor_id[8], (int*)&vendor_id[4]);
+   VG_(cpuid)(0, 0, &level, (UInt*)&vendor_id[0],
+	      (UInt*)&vendor_id[8], (UInt*)&vendor_id[4]);
    vendor_id[12] = '\0';
 
    if (0 == level) {    // CPUID level is 0, early Pentium?
@@ -655,6 +656,8 @@ Bool
 VG_(machine_get_cache_info)(VexArchInfo *vai)
 {
    Bool ok = get_cache_info(vai);
+
+   if (ok) ok = cache_info_is_sensible(&vai->hwcache_info);
 
    if (! ok) {
       VexCacheInfo *ci = &vai->hwcache_info;

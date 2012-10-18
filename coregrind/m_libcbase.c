@@ -362,7 +362,7 @@ Int VG_(strncasecmp) ( const Char* s1, const Char* s2, SizeT nmax )
    }
 }
 
-Char* VG_(strstr) ( const Char* haystack, Char* needle )
+Char* VG_(strstr) ( const Char* haystack, const Char* needle )
 {
    SizeT n; 
    if (haystack == NULL)
@@ -377,7 +377,7 @@ Char* VG_(strstr) ( const Char* haystack, Char* needle )
    }
 }
 
-Char* VG_(strcasestr) ( const Char* haystack, Char* needle )
+Char* VG_(strcasestr) ( const Char* haystack, const Char* needle )
 {
    Int n; 
    if (haystack == NULL)
@@ -508,7 +508,7 @@ SizeT VG_(strspn) ( const Char* s, const Char* accpt )
    return count;
 }
 
-SizeT VG_(strcspn) ( const Char* s, const char* reject )
+SizeT VG_(strcspn) ( const Char* s, const Char* reject )
 {
    SizeT count = 0;
    while (*s != '\0') {

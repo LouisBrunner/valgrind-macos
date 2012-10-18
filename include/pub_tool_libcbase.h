@@ -92,12 +92,12 @@ extern Int   VG_(strcmp)         ( const Char* s1, const Char* s2 );
 extern Int   VG_(strcasecmp)     ( const Char* s1, const Char* s2 );
 extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, SizeT nmax );
 extern Int   VG_(strncasecmp)    ( const Char* s1, const Char* s2, SizeT nmax );
-extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
-extern Char* VG_(strcasestr)     ( const Char* haystack, Char* needle );
+extern Char* VG_(strstr)         ( const Char* haystack, const Char* needle );
+extern Char* VG_(strcasestr)     ( const Char* haystack, const Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strrchr)        ( const Char* s, Char c );
 extern SizeT VG_(strspn)         ( const Char* s, const Char* accpt );
-extern SizeT VG_(strcspn)        ( const Char* s, const char* reject );
+extern SizeT VG_(strcspn)        ( const Char* s, const Char* reject );
 
 /* strtok* functions and some parsing utilities. */
 extern Char* VG_(strtok_r)       (Char* s, const Char* delim, Char** saveptr);

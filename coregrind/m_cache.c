@@ -35,6 +35,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
+#include "pub_core_debuglog.h"
 #include "libvex.h"
 
 #if defined(VGA_x86) || defined(VGA_amd64)
@@ -45,24 +46,60 @@
 // Probably only works for Intel and AMD chips, and probably only for some of
 // them.
 
-static void 
-micro_ops_warn(Int actual_size, Int used_size, Int line_size)
+static void
+add_cache(VexCacheInfo *ci, VexCache cache)
 {
-   VG_(dmsg)("warning: Pentium 4 with %d KB micro-op instruction trace cache\n",
-             actual_size);
-   VG_(dmsg)("         Simulating a %d KB I-cache with %d B lines\n",
-             used_size, line_size);
+   static UInt num_allocated = 0;
+
+   if (ci->num_caches == num_allocated) {
+      num_allocated += 6;
+      ci->caches = VG_(realloc)("m_cache", ci->caches,
+                                num_allocated * sizeof *ci->caches);
+   }
+
+   if (ci->num_levels < cache.level) ci->num_levels = cache.level;
+   ci->caches[ci->num_caches++] = cache;
 }
 
-/* FIXME: Temporarily introduce cachegrind's cache_t structure here to
-   get Intel_cache_info to work. This function needs to be rewritten to
-   properly fill in VexCacheInfo. Absolutely no warnings about ignored
-   caches and such are appropriate here! */
-typedef struct {
-   Int size;       // bytes
-   Int assoc;
-   Int line_size;  // bytes
-} cache_t;
+/* Convenience macros */
+#define add_icache(level, size, assoc, linesize) \
+   do { \
+      add_cache(ci, \
+                VEX_CACHE_INIT(INSN_CACHE, level, size, linesize, assoc)); \
+   } while (0)
+
+#define add_dcache(level, size, assoc, linesize) \
+   do { \
+      add_cache(ci, \
+                VEX_CACHE_INIT(DATA_CACHE, level, size, linesize, assoc)); \
+   } while (0)
+
+#define add_ucache(level, size, assoc, linesize) \
+   do { \
+      add_cache(ci, \
+                VEX_CACHE_INIT(UNIFIED_CACHE, level, size, linesize, assoc)); \
+   } while (0)
+
+#define add_itcache(level, size, assoc) \
+   do { \
+      VexCache c = \
+          VEX_CACHE_INIT(INSN_CACHE, level, size, 0, assoc); \
+      c.is_trace_cache = True; \
+      add_cache(ci, c); \
+   } while (0)
+
+#define add_I1(size, assoc, linesize) add_icache(1, size, assoc, linesize)
+#define add_D1(size, assoc, linesize) add_dcache(1, size, assoc, linesize)
+#define add_U1(size, assoc, linesize) add_ucache(1, size, assoc, linesize)
+#define add_I2(size, assoc, linesize) add_icache(2, size, assoc, linesize)
+#define add_D2(size, assoc, linesize) add_dcache(2, size, assoc, linesize)
+#define add_U2(size, assoc, linesize) add_ucache(2, size, assoc, linesize)
+#define add_I3(size, assoc, linesize) add_icache(3, size, assoc, linesize)
+#define add_D3(size, assoc, linesize) add_dcache(3, size, assoc, linesize)
+#define add_U3(size, assoc, linesize) add_ucache(3, size, assoc, linesize)
+
+#define add_I1T(size, assoc) \
+   add_itcache(1, size, assoc)
 
 /* Intel method is truly wretched.  We have to do an insane indexing into an
  * array of pre-defined configurations for various parts of the memory
@@ -73,7 +110,7 @@ typedef struct {
  * is returned via *LLc.
  */
 static Int
-Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
+Intel_cache_info(Int level, VexCacheInfo *ci)
 {
    Int cpuid1_eax;
    Int cpuid1_ignore;
@@ -81,18 +118,10 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
    Int model;
    UChar info[16];
    Int   i, j, trials;
-   Bool  L2_found = False;
-   /* If we see L3 cache info, copy it into L3c.  Then, at the end,
-      copy it into *LLc.  Hence if a L3 cache is specified, *LLc will
-      eventually contain a description of it rather than the L2 cache.
-      The use of the L3c intermediary makes this process independent
-      of the order in which the cache specifications appear in
-      info[]. */
-   Bool  L3_found = False;
-   cache_t L3c = { 0, 0, 0 };
 
    if (level < 2) {
-      VG_(dmsg)("warning: CPUID level < 2 for Intel processor (%d)\n", level);
+      VG_(debugLog)(1, "cache", "warning: CPUID level < 2 for Intel "
+                    "processor (%d)\n", level);
       return -1;
    }
 
@@ -108,10 +137,15 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
    info[0] = 0x0;           /* reset AL */
 
    if (0 != trials) {
-      VG_(dmsg)("warning: non-zero CPUID trials for Intel processor (%d)\n",
-                trials);
+      VG_(debugLog)(1, "cache", "warning: non-zero CPUID trials for Intel "
+                    "processor (%d)\n", trials);
       return -1;
    }
+
+   ci->num_levels = 0;
+   ci->num_caches = 0;
+   ci->icaches_maintain_coherence = True;
+   ci->caches = NULL;
 
    for (i = 0; i < 16; i++) {
 
@@ -132,16 +166,16 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
       case 0xca:
           break;
 
-      case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
-      case 0x08: *I1c = (cache_t) { 16, 4, 32 }; break;
-      case 0x09: *I1c = (cache_t) { 32, 4, 64 }; break;
-      case 0x30: *I1c = (cache_t) { 32, 8, 64 }; break;
+      case 0x06: add_I1( 8, 4, 32); break;
+      case 0x08: add_I1(16, 4, 32); break;
+      case 0x09: add_I1(32, 4, 64); break;
+      case 0x30: add_I1(32, 8, 64); break;
 
-      case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
-      case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
-      case 0x0d: *D1c = (cache_t) { 16, 4, 64 }; break;
-      case 0x0e: *D1c = (cache_t) { 24, 6, 64 }; break;
-      case 0x2c: *D1c = (cache_t) { 32, 8, 64 }; break;
+      case 0x0a: add_D1( 8, 2, 32); break;
+      case 0x0c: add_D1(16, 4, 32); break;
+      case 0x0d: add_D1(16, 4, 64); break;
+      case 0x0e: add_D1(24, 6, 64); break;
+      case 0x2c: add_D1(32, 8, 64); break;
 
       /* IA-64 info -- panic! */
       case 0x10: case 0x15: case 0x1a:
@@ -150,38 +184,39 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
          VG_(core_panic)("IA-64 cache detected?!");
 
       /* L3 cache info. */
-      case 0x22: L3c = (cache_t) { 512,    4, 64 }; L3_found = True; break;
-      case 0x23: L3c = (cache_t) { 1024,   8, 64 }; L3_found = True; break;
-      case 0x25: L3c = (cache_t) { 2048,   8, 64 }; L3_found = True; break;
-      case 0x29: L3c = (cache_t) { 4096,   8, 64 }; L3_found = True; break;
-      case 0x46: L3c = (cache_t) { 4096,   4, 64 }; L3_found = True; break;
-      case 0x47: L3c = (cache_t) { 8192,   8, 64 }; L3_found = True; break;
-      case 0x4a: L3c = (cache_t) { 6144,  12, 64 }; L3_found = True; break;
-      case 0x4b: L3c = (cache_t) { 8192,  16, 64 }; L3_found = True; break;
-      case 0x4c: L3c = (cache_t) { 12288, 12, 64 }; L3_found = True; break;
-      case 0x4d: L3c = (cache_t) { 16384, 16, 64 }; L3_found = True; break;
-      case 0xd0: L3c = (cache_t) { 512,    4, 64 }; L3_found = True; break;
-      case 0xd1: L3c = (cache_t) { 1024,   4, 64 }; L3_found = True; break;
-      case 0xd2: L3c = (cache_t) { 2048,   4, 64 }; L3_found = True; break;
-      case 0xd6: L3c = (cache_t) { 1024,   8, 64 }; L3_found = True; break;
-      case 0xd7: L3c = (cache_t) { 2048,   8, 64 }; L3_found = True; break;
-      case 0xd8: L3c = (cache_t) { 4096,   8, 64 }; L3_found = True; break;
-      case 0xdc: L3c = (cache_t) { 1536,  12, 64 }; L3_found = True; break;
-      case 0xdd: L3c = (cache_t) { 3072,  12, 64 }; L3_found = True; break;
-      case 0xde: L3c = (cache_t) { 6144,  12, 64 }; L3_found = True; break;
-      case 0xe2: L3c = (cache_t) { 2048,  16, 64 }; L3_found = True; break;
-      case 0xe3: L3c = (cache_t) { 4096,  16, 64 }; L3_found = True; break;
-      case 0xe4: L3c = (cache_t) { 8192,  16, 64 }; L3_found = True; break;
-      case 0xea: L3c = (cache_t) { 12288, 24, 64 }; L3_found = True; break;
-      case 0xeb: L3c = (cache_t) { 18432, 24, 64 }; L3_found = True; break;
-      case 0xec: L3c = (cache_t) { 24576, 24, 64 }; L3_found = True; break;
+      case 0x22: add_U3(512,    4, 64); break;
+      case 0x23: add_U3(1024,   8, 64); break;
+      case 0x25: add_U3(2048,   8, 64); break;
+      case 0x29: add_U3(4096,   8, 64); break;
+      case 0x46: add_U3(4096,   4, 64); break;
+      case 0x47: add_U3(8192,   8, 64); break;
+      case 0x4a: add_U3(6144,  12, 64); break;
+      case 0x4b: add_U3(8192,  16, 64); break;
+      case 0x4c: add_U3(12288, 12, 64); break;
+      case 0x4d: add_U3(16384, 16, 64); break;
+      case 0xd0: add_U3(512,    4, 64); break;
+      case 0xd1: add_U3(1024,   4, 64); break;
+      case 0xd2: add_U3(2048,   4, 64); break;
+      case 0xd6: add_U3(1024,   8, 64); break;
+      case 0xd7: add_U3(2048,   8, 64); break;
+      case 0xd8: add_U3(4096,   8, 64); break;
+      case 0xdc: add_U3(1536,  12, 64); break;
+      case 0xdd: add_U3(3072,  12, 64); break;
+      case 0xde: add_U3(6144,  12, 64); break;
+      case 0xe2: add_U3(2048,  16, 64); break;
+      case 0xe3: add_U3(4096,  16, 64); break;
+      case 0xe4: add_U3(8192,  16, 64); break;
+      case 0xea: add_U3(12288, 24, 64); break;
+      case 0xeb: add_U3(18432, 24, 64); break;
+      case 0xec: add_U3(24576, 24, 64); break;
 
       /* Described as "MLC" in Intel documentation */
-      case 0x21: *LLc = (cache_t) {  256, 8, 64 }; L2_found = True; break;
+      case 0x21: add_U2(256, 8, 64); break;
 
       /* These are sectored, whatever that means */
-      case 0x39: *LLc = (cache_t) {  128, 4, 64 }; L2_found = True; break;
-      case 0x3c: *LLc = (cache_t) {  256, 4, 64 }; L2_found = True; break;
+         // FIXME: I did not find these in the Intel docs
+      case 0x39: add_U2(128, 4, 64); break;
+      case 0x3c: add_U2(256, 4, 64); break;
 
       /* If a P6 core, this means "no L2 cache".
          If a P4 core, this means "no L3 cache".
@@ -190,27 +225,27 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
       case 0x40:
           break;
 
-      case 0x41: *LLc = (cache_t) {  128,  4, 32 }; L2_found = True; break;
-      case 0x42: *LLc = (cache_t) {  256,  4, 32 }; L2_found = True; break;
-      case 0x43: *LLc = (cache_t) {  512,  4, 32 }; L2_found = True; break;
-      case 0x44: *LLc = (cache_t) { 1024,  4, 32 }; L2_found = True; break;
-      case 0x45: *LLc = (cache_t) { 2048,  4, 32 }; L2_found = True; break;
-      case 0x48: *LLc = (cache_t) { 3072, 12, 64 }; L2_found = True; break;
-      case 0x4e: *LLc = (cache_t) { 6144, 24, 64 }; L2_found = True; break;
+      case 0x41: add_U2(  128,  4, 32); break;
+      case 0x42: add_U2(  256,  4, 32); break;
+      case 0x43: add_U2(  512,  4, 32); break;
+      case 0x44: add_U2( 1024,  4, 32); break;
+      case 0x45: add_U2( 2048,  4, 32); break;
+      case 0x48: add_U2( 3072, 12, 64); break;
+      case 0x4e: add_U2( 6144, 24, 64); break;
       case 0x49:
          if (family == 15 && model == 6) {
             /* On Xeon MP (family F, model 6), this is for L3 */
-            L3c = (cache_t) { 4096, 16, 64 }; L3_found = True;
+            add_U3(4096, 16, 64);
          } else {
-	    *LLc = (cache_t) { 4096, 16, 64 }; L2_found = True;
+	    add_U2(4096, 16, 64);
          }
          break;
 
       /* These are sectored, whatever that means */
-      case 0x60: *D1c = (cache_t) { 16, 8, 64 };  break;      /* sectored */
-      case 0x66: *D1c = (cache_t) {  8, 4, 64 };  break;      /* sectored */
-      case 0x67: *D1c = (cache_t) { 16, 4, 64 };  break;      /* sectored */
-      case 0x68: *D1c = (cache_t) { 32, 4, 64 };  break;      /* sectored */
+      case 0x60: add_D1(16, 8, 64);  break;      /* sectored */
+      case 0x66: add_D1( 8, 4, 64);  break;      /* sectored */
+      case 0x67: add_D1(16, 4, 64);  break;      /* sectored */
+      case 0x68: add_D1(32, 4, 64);  break;      /* sectored */
 
       /* HACK ALERT: Instruction trace cache -- capacity is micro-ops based.
        * conversion to byte size is a total guess;  treat the 12K and 16K
@@ -218,37 +253,34 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
        * everything to work!.  Also guessing 32 bytes for the line size...
        */
       case 0x70:    /* 12K micro-ops, 8-way */
-         *I1c = (cache_t) { 16, 8, 32 };
-         micro_ops_warn(12, 16, 32);
+         add_I1T(12, 8);
          break;
       case 0x71:    /* 16K micro-ops, 8-way */
-         *I1c = (cache_t) { 16, 8, 32 };
-         micro_ops_warn(16, 16, 32);
+         add_I1T(16, 8);
          break;
       case 0x72:    /* 32K micro-ops, 8-way */
-         *I1c = (cache_t) { 32, 8, 32 };
-         micro_ops_warn(32, 32, 32);
+         add_I1T(32, 8);
          break;
 
       /* not sectored, whatever that might mean */
-      case 0x78: *LLc = (cache_t) { 1024, 4,  64 }; L2_found = True;  break;
+      case 0x78: add_U2(1024, 4,  64);  break;
 
       /* These are sectored, whatever that means */
-      case 0x79: *LLc = (cache_t) {  128, 8,  64 }; L2_found = True;  break;
-      case 0x7a: *LLc = (cache_t) {  256, 8,  64 }; L2_found = True;  break;
-      case 0x7b: *LLc = (cache_t) {  512, 8,  64 }; L2_found = True;  break;
-      case 0x7c: *LLc = (cache_t) { 1024, 8,  64 }; L2_found = True;  break;
-      case 0x7d: *LLc = (cache_t) { 2048, 8,  64 }; L2_found = True;  break;
-      case 0x7e: *LLc = (cache_t) {  256, 8, 128 }; L2_found = True;  break;
-      case 0x7f: *LLc = (cache_t) {  512, 2,  64 }; L2_found = True;  break;
-      case 0x80: *LLc = (cache_t) {  512, 8,  64 }; L2_found = True;  break;
-      case 0x81: *LLc = (cache_t) {  128, 8,  32 }; L2_found = True;  break;
-      case 0x82: *LLc = (cache_t) {  256, 8,  32 }; L2_found = True;  break;
-      case 0x83: *LLc = (cache_t) {  512, 8,  32 }; L2_found = True;  break;
-      case 0x84: *LLc = (cache_t) { 1024, 8,  32 }; L2_found = True;  break;
-      case 0x85: *LLc = (cache_t) { 2048, 8,  32 }; L2_found = True;  break;
-      case 0x86: *LLc = (cache_t) {  512, 4,  64 }; L2_found = True;  break;
-      case 0x87: *LLc = (cache_t) { 1024, 8,  64 }; L2_found = True;  break;
+      case 0x79: add_U2( 128, 8,  64);  break;
+      case 0x7a: add_U2( 256, 8,  64);  break;
+      case 0x7b: add_U2( 512, 8,  64);  break;
+      case 0x7c: add_U2(1024, 8,  64);  break;
+      case 0x7d: add_U2(2048, 8,  64);  break;
+      case 0x7e: add_U2( 256, 8, 128);  break;
+      case 0x7f: add_U2( 512, 2,  64);  break;
+      case 0x80: add_U2( 512, 8,  64);  break;
+      case 0x81: add_U2( 128, 8,  32);  break;
+      case 0x82: add_U2( 256, 8,  32);  break;
+      case 0x83: add_U2( 512, 8,  32);  break;
+      case 0x84: add_U2(1024, 8,  32);  break;
+      case 0x85: add_U2(2048, 8,  32);  break;
+      case 0x86: add_U2( 512, 4,  64);  break;
+      case 0x87: add_U2(1024, 8,  64);  break;
 
       /* Ignore prefetch information */
       case 0xf0: case 0xf1:
@@ -264,51 +296,50 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
             UInt parts = ((*(UInt *)&info[4] >> 12) & 0x3ff) + 1;
             UInt line_size = (*(UInt *)&info[4] & 0x7ff) + 1;
             UInt sets = *(UInt *)&info[8] + 1;
-            cache_t c;
 
-            c.size = assoc * parts * line_size * sets / 1024;
-            c.assoc = assoc;
-            c.line_size = line_size;
+            UInt size = assoc * parts * line_size * sets / 1024;
 
             switch ((info[0] & 0xe0) >> 5)
             {
             case 1:
                switch (info[0] & 0x1f)
                {
-               case 1: *D1c = c; break;
-               case 2: *I1c = c; break;
-               case 3: VG_(dmsg)("warning: L1 unified cache ignored\n"); break;
+               case 1: add_D1(size, assoc, line_size); break;
+               case 2: add_I1(size, assoc, line_size); break;
+               case 3: add_U1(size, assoc, line_size); break;
                default:
-                  VG_(dmsg)("warning: L1 cache of unknown type ignored\n");
+                  VG_(debugLog)(1, "cache",
+                                "warning: L1 cache of unknown type ignored\n");
                   break;
                }
                break;
             case 2:
                switch (info[0] & 0x1f)
                {
-               case 1: VG_(dmsg)("warning: L2 data cache ignored\n"); break;
-               case 2: VG_(dmsg)("warning: L2 instruction cache ignored\n");
-                  break;
-               case 3: *LLc = c; L2_found = True; break;
+               case 1: add_D2(size, assoc, line_size); break;
+               case 2: add_I2(size, assoc, line_size); break;
+               case 3: add_U2(size, assoc, line_size); break;
                default:
-                  VG_(dmsg)("warning: L2 cache of unknown type ignored\n");
+                  VG_(debugLog)(1, "cache",
+                                "warning: L2 cache of unknown type ignored\n");
                   break;
                }
                break;
             case 3:
                switch (info[0] & 0x1f)
                {
-               case 1: VG_(dmsg)("warning: L3 data cache ignored\n"); break;
-               case 2: VG_(dmsg)("warning: L3 instruction cache ignored\n");
-                  break;
-               case 3: L3c = c; L3_found = True; break;
+               case 1: add_D3(size, assoc, line_size); break;
+               case 2: add_I3(size, assoc, line_size); break;
+               case 3: add_U3(size, assoc, line_size); break;
                default:
-                  VG_(dmsg)("warning: L3 cache of unknown type ignored\n");
+                  VG_(debugLog)(1, "cache",
+                                "warning: L3 cache of unknown type ignored\n");
                   break;
                }
                break;
             default:
-               VG_(dmsg)("warning: L%u cache ignored\n", (info[0] & 0xe0) >> 5);
+               VG_(debugLog)(1, "cache", "warning: L%u cache ignored\n",
+                             (info[0] & 0xe0) >> 5);
                break;
             }
 
@@ -318,55 +349,14 @@ Intel_cache_info_aux(Int level, cache_t* I1c, cache_t* D1c, cache_t* LLc)
          break;
 
       default:
-         VG_(dmsg)("warning: Unknown Intel cache config value (0x%x), "
-                   "ignoring\n", info[i]);
+         VG_(debugLog)(1, "cache",
+                       "warning: Unknown Intel cache config value (0x%x), "
+                       "ignoring\n", info[i]);
          break;
       }
    }
 
-   /* If we found a L3 cache, throw away the L2 data and use the L3's
-      instead. */
-   if (L3_found) {
-      /* Can't warn here: as we're not necessarily in cachegrind */
-#if 0
-      VG_(dmsg)("warning: L3 cache found, using its data for the "
-                "LL simulation.\n");
-#endif
-      *LLc = L3c;
-      L2_found = True;
-   }
-
-   if (!L2_found)
-      VG_(dmsg)("warning: L2 cache not installed, ignore LL results.\n");
-
    return 0;
-}
-
-static Int
-Intel_cache_info(Int level, VexCacheInfo *ci)
-{
-   cache_t I1c, D1c, LLc;
-   Int ret;
-
-   ret = Intel_cache_info_aux(level, &I1c, &D1c, &LLc);
-
-   /* Map results to VexCacheInfo. This is lossy as we simply assume
-      there is an L2 here (where in fact it could have been an L3). It
-      is irrelevant for current usages but needs to be fixed! */
-   if (ret == 0) {
-      ci->num_levels = 2;
-      ci->num_caches = 3;
-      ci->icaches_maintain_coherence = True;
-      ci->caches = VG_(malloc)("m_cache", ci->num_caches * sizeof *ci->caches);
-
-      ci->caches[0] = VEX_CACHE_INIT(DATA_CACHE, 1, D1c.size, D1c.line_size,
-                                     D1c.assoc);
-      ci->caches[1] = VEX_CACHE_INIT(INSN_CACHE, 1, I1c.size, I1c.line_size,
-                                     I1c.assoc);
-      ci->caches[2] = VEX_CACHE_INIT(UNIFIED_CACHE, 2, LLc.size, LLc.line_size,
-                                     LLc.assoc);
-   }
-   return ret;
 }
 
 /* AMD method is straightforward, just extract appropriate bits from the
@@ -428,8 +418,8 @@ AMD_cache_info(VexCacheInfo *ci)
    VG_(cpuid)(0x80000000, 0, &ext_level, &dummy, &dummy, &dummy);
 
    if (0 == (ext_level & 0x80000000) || ext_level < 0x80000006) {
-      VG_(dmsg)("warning: ext_level < 0x80000006 for AMD processor (0x%x)\n",
-                ext_level);
+      VG_(debugLog)(1, "cache", "warning: ext_level < 0x80000006 for AMD "
+                    "processor (0x%x)\n", ext_level);
       return -1;
    }
 
@@ -440,8 +430,8 @@ AMD_cache_info(VexCacheInfo *ci)
 
    /* Check for Duron bug */
    if (model == 0x630) {
-      VG_(dmsg)("warning: Buggy Duron stepping A0. "
-                "Assuming L2 size=65536 bytes\n");
+      VG_(debugLog)(1, "cache", "warning: Buggy Duron stepping A0. "
+                    "Assuming L2 size=65536 bytes\n");
       L2i = (64 << 16) | (L2i & 0xffff);
    }
 
@@ -473,7 +463,7 @@ AMD_cache_info(VexCacheInfo *ci)
    size      = (L2i >> 16) & 0xffff;
    assoc     = decode_AMD_cache_L2_L3_assoc((L2i >> 12) & 0xf);
    line_size = (L2i >>  0) & 0xff;
-   ci->caches[2] = VEX_CACHE_INIT(INSN_CACHE, 2, size, line_size, assoc);
+   ci->caches[2] = VEX_CACHE_INIT(UNIFIED_CACHE, 2, size, line_size, assoc);
 
    // L3, if any
    if (((L3i >> 18) & 0x3fff) > 0) {
@@ -484,7 +474,7 @@ AMD_cache_info(VexCacheInfo *ci)
       size      = ((L3i >> 18) & 0x3fff) * 512;
       assoc     = decode_AMD_cache_L2_L3_assoc((L3i >> 12) & 0xf);
       line_size = (L3i >>  0) & 0xff;
-      ci->caches[3] = VEX_CACHE_INIT(INSN_CACHE, 3, size, line_size, assoc);
+      ci->caches[3] = VEX_CACHE_INIT(UNIFIED_CACHE, 3, size, line_size, assoc);
    }
 
    return 0;
@@ -496,17 +486,13 @@ get_caches_from_CPUID(VexCacheInfo *ci)
    Int  level, ret, i;
    Char vendor_id[13];
 
-   if (!VG_(has_cpuid)()) {
-      VG_(dmsg)("CPUID instruction not supported\n");
-      return -1;
-   }
+   vg_assert(VG_(has_cpuid)());
 
    VG_(cpuid)(0, 0, &level, (int*)&vendor_id[0],
 	      (int*)&vendor_id[8], (int*)&vendor_id[4]);
    vendor_id[12] = '\0';
 
-   if (0 == level) {
-      VG_(dmsg)("CPUID level is 0, early Pentium?\n");
+   if (0 == level) {    // CPUID level is 0, early Pentium?
       return -1;
    }
 
@@ -530,7 +516,8 @@ get_caches_from_CPUID(VexCacheInfo *ci)
       ret = 0;
 
    } else {
-      VG_(dmsg)("CPU vendor ID not recognised (%s)\n", vendor_id);
+      VG_(debugLog)(1, "cache", "CPU vendor ID not recognised (%s)\n",
+                    vendor_id);
       return -1;
    }
 
@@ -542,8 +529,8 @@ get_caches_from_CPUID(VexCacheInfo *ci)
    return ret;
 }
 
-Bool
-VG_(machine_get_cache_info)(VexArchInfo *vai)
+static Bool
+get_cache_info(VexArchInfo *vai)
 {
    Int ret = get_caches_from_CPUID(&vai->hwcache_info); 
 
@@ -553,8 +540,8 @@ VG_(machine_get_cache_info)(VexArchInfo *vai)
 #elif defined(VGA_arm) || defined(VGA_ppc32) || defined(VGA_ppc64) || \
       defined(VGA_mips32)
 
-Bool
-VG_(machine_get_cache_info)(VexArchInfo *vai)
+static Bool
+get_cache_info(VexArchInfo *vai)
 {
    vai->hwcache_info.icaches_maintain_coherence = False;
 
@@ -563,8 +550,8 @@ VG_(machine_get_cache_info)(VexArchInfo *vai)
 
 #elif defined(VGA_s390x)
 
-Bool
-VG_(machine_get_cache_info)(VexArchInfo *vai)
+static Bool
+get_cache_info(VexArchInfo *vai)
 {
    vai->hwcache_info.icaches_maintain_coherence = True;
 
@@ -576,6 +563,116 @@ VG_(machine_get_cache_info)(VexArchInfo *vai)
 #error "Unknown arch"
 
 #endif
+
+/* Debug information */
+static void
+write_cache_info(const VexCacheInfo *ci)
+{
+   UInt i;
+
+   VG_(debugLog)(1, "cache", "Cache info:\n");
+   VG_(debugLog)(1, "cache", "  #levels = %u\n", ci->num_levels);
+   VG_(debugLog)(1, "cache", "  #caches = %u\n", ci->num_caches);
+   for (i = 0; i < ci->num_caches; ++i) {
+      VexCache *c = ci->caches + i;
+      const HChar *kind;
+      VG_(debugLog)(1, "cache", "     cache #%u:\n", i);
+      switch (c->kind) {
+      case INSN_CACHE:    kind = "insn";    break;
+      case DATA_CACHE:    kind = "data";    break;
+      case UNIFIED_CACHE: kind = "unified"; break;
+      default: kind = "unknown"; break;
+      }
+      VG_(debugLog)(1, "cache", "        kind = %s\n", kind);
+      VG_(debugLog)(1, "cache", "        level = %u\n", c->level);
+      VG_(debugLog)(1, "cache", "        size = %u bytes\n", c->sizeB);
+      VG_(debugLog)(1, "cache", "        linesize = %u bytes\n", c->line_sizeB);
+      VG_(debugLog)(1, "cache", "        assoc = %u\n", c->assoc);
+   }
+}
+
+static Bool
+cache_info_is_sensible(const VexCacheInfo *ci)
+{
+   UInt level, i;
+   Bool sensible = True;
+
+   /* There must be at most one cache of a given kind at the same level.
+      If there is a unified cache at a given level, no other cache may
+      exist at that level. */
+   for (level = 1; level <= ci->num_levels; ++level) {
+      UInt num_icache, num_dcache, num_ucache;
+
+      num_icache = num_dcache = num_ucache = 0;
+      for (i = 0; i < ci->num_caches; ++i) {
+         if (ci->caches[i].level == level) {
+            switch (ci->caches[i].kind) {
+            case INSN_CACHE:    ++num_icache; break;
+            case DATA_CACHE:    ++num_dcache; break;
+            case UNIFIED_CACHE: ++num_ucache; break;
+            }
+         }
+      }
+      if (num_icache == 0 && num_dcache == 0 && num_ucache == 0) {
+         VG_(debugLog)(1, "cache", "warning: No caches at level %u\n", level);
+         sensible = False;
+      }
+      if (num_icache > 1 || num_dcache > 1 || num_ucache > 1) {
+         VG_(debugLog)(1, "cache", "warning: More than one cache of a given "
+                       "kind at level %u\n", level);
+         sensible = False;
+      }
+      if (num_ucache != 0 && (num_icache > 0 || num_dcache > 0)) {
+         VG_(debugLog)(1, "cache", "warning: Unified cache and I/D cache "
+                       "at level %u\n", level);
+         sensible = False;
+      }
+   }
+
+   /* If there is a cache at level N > 1 there must be a cache at level N-1 */
+   for (level = 2; level <= ci->num_levels; ++level) {
+      Bool found = False;
+      for (i = 0; i < ci->num_caches; ++i) {
+         if (ci->caches[i].level == level - 1) {
+            found = True;
+            break;
+         }
+      }
+      if (! found) {
+         VG_(debugLog)(1, "cache", "warning: Cache at level %u but no cache "
+                       "at level %u\n", level, level - 1);
+         sensible = False;
+      }
+   }
+
+   return sensible;
+}
+
+
+/* Autodetect the cache information for this host and stuff it into
+   VexArchInfo::hwcache_info. Return True if successful. */
+Bool
+VG_(machine_get_cache_info)(VexArchInfo *vai)
+{
+   Bool ok = get_cache_info(vai);
+
+   if (! ok) {
+      VexCacheInfo *ci = &vai->hwcache_info;
+
+      VG_(debugLog)(1, "cache", "Autodetected cache info is not sensible\n");
+      write_cache_info(ci);  /* write out for debugging */
+
+      /* Reset cache info */
+      ci->num_levels = 0;
+      ci->num_caches = 0;
+      VG_(free)(ci->caches);
+      ci->caches = NULL;
+   } else {
+      VG_(debugLog)(1, "cache", "Autodetected cache info is sensible\n");
+   }
+
+   return ok;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

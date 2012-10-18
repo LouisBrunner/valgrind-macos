@@ -304,13 +304,38 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    d1 = locate_cache(ci, DATA_CACHE, 1);
    ll = locate_cache(ci, UNIFIED_CACHE, ci->num_levels);
 
+   if (ll == NULL) {
+      VG_(dmsg)("warning: L2 cache not installed, ignore LL results.\n");
+   }
+
    if (ll && ci->num_levels > 2) {
       VG_(dmsg)("warning: L%u cache found, using its data for the "
                 "LL simulation.\n", ci->num_levels);
    }
 
    if (i1 && d1 && ll) {
-      *I1c = (cache_t) { i1->sizeB, i1->assoc, i1->line_sizeB };
+      if (i1->is_trace_cache) {
+         /* HACK ALERT: Instruction trace cache -- capacity is micro-ops based.
+          * conversion to byte size is a total guess;  treat the 12K and 16K
+          * cases the same since the cache byte size must be a power of two for
+          * everything to work!.  Also guessing 32 bytes for the line size...
+          */
+         UInt adjusted_size, guessed_line_size = 32;
+
+         if (i1->sizeB == 12 * 1024 || i1->sizeB == 16 * 1024) {
+            adjusted_size = 16 * 1024;
+         } else {
+            adjusted_size = 32 * 1024;
+         }
+         VG_(dmsg)("warning: %u KB micro-op instruction trace cache\n",
+                   i1->sizeB / 1024);
+         VG_(dmsg)("         Simulating a %d KB I-cache with %d B lines\n",
+                   adjusted_size, guessed_line_size);
+
+         *I1c = (cache_t) { adjusted_size, i1->assoc, guessed_line_size };
+      } else {
+         *I1c = (cache_t) { i1->sizeB, i1->assoc, i1->line_sizeB };
+      }
       *D1c = (cache_t) { d1->sizeB, d1->assoc, d1->line_sizeB };
       *LLc = (cache_t) { ll->sizeB, ll->assoc, ll->line_sizeB };
 

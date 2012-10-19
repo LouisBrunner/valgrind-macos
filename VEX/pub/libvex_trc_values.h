@@ -62,6 +62,12 @@
                                       continuing */
 #define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
 
+#define VEX_TRC_JMP_SIGFPE_INTDIV     97  /* deliver SIGFPE (integer divide
+                                             by zero) before continuing */
+
+#define VEX_TRC_JMP_SIGFPE_INTOVF     99  /* deliver SIGFPE (integer overflow)
+                                             before continuing */
+
 #define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
                                       continuing */
 #define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */

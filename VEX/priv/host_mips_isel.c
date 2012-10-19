@@ -3049,6 +3049,8 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
          case Ijk_NoRedir:
          case Ijk_SigBUS:
          case Ijk_SigTRAP:
+         case Ijk_SigFPE_IntDiv:
+         case Ijk_SigFPE_IntOvf:
          case Ijk_Sys_syscall:
          case Ijk_TInval:
          {
@@ -3150,6 +3152,8 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoRedir:
       case Ijk_SigBUS:
       case Ijk_SigTRAP:
+      case Ijk_SigFPE_IntDiv:
+      case Ijk_SigFPE_IntOvf:
       case Ijk_Sys_syscall:
       case Ijk_TInval: {
          HReg      r     = iselWordExpr_R(env, next);

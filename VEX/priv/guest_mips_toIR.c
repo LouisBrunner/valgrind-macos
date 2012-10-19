@@ -2944,14 +2944,40 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
          break;
 
-      case 0x20:  /* ADD */
+      case 0x20: /* ADD */
          DIP("add r%d, r%d, r%d", rd, rs, rt);
-         {
-            t2 = newTemp(Ity_I32);
+         t0 = newTemp(Ity_I32);
+         t1 = newTemp(Ity_I32);
+         t2 = newTemp(Ity_I32);
+         t3 = newTemp(Ity_I32);
+         t4 = newTemp(Ity_I32);
+         /* dst = src0 + src1
+         * if(sign(src0 ) != sign(src1 ))
+         * goto no overflow;
+         * if(sign(dst) == sign(src0 ))
+         * goto no overflow;
+         * # we have overflow! */
 
-            assign(t2, binop(Iop_Add32, getIReg(rs), getIReg(rt)));
-            putIReg(rd, mkexpr(t2));
-         }
+         assign(t0, binop(Iop_Add32, getIReg(rs), getIReg(rt)));
+         assign(t1, binop(Iop_Xor32, getIReg(rs), getIReg(rt)));
+         assign(t2, unop(Iop_1Uto32,
+                         binop(Iop_CmpEQ32,
+                               binop(Iop_And32, mkexpr(t1), mkU32(0x80000000)),
+                               mkU32(0x80000000))));
+
+         assign(t3, binop(Iop_Xor32, mkexpr(t0), getIReg(rs)));
+         assign(t4, unop(Iop_1Uto32,
+                         binop(Iop_CmpNE32,
+                               binop(Iop_And32, mkexpr(t3), mkU32(0x80000000)),
+                               mkU32(0x80000000))));
+         
+         stmt(IRStmt_Exit(binop(Iop_CmpEQ32,
+                                binop(Iop_Or32, mkexpr(t2), mkexpr(t4)),
+                                mkU32(0)),
+                          Ijk_SigFPE_IntOvf,
+                          IRConst_U32(guest_PC_curr_instr + 4), OFFB_PC));
+
+         putIReg(rd, mkexpr(t0));
          break;
 
       case 0x1A:  /* DIV */
@@ -3007,7 +3033,40 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x22:  /* SUB */
          DIP("sub r%d, r%d, r%d", rd, rs, rt);
-         ALU_PATTERN(Iop_Sub32);
+         t0 = newTemp(Ity_I32);
+         t1 = newTemp(Ity_I32);
+         t2 = newTemp(Ity_I32);
+         t3 = newTemp(Ity_I32);
+         t4 = newTemp(Ity_I32);
+         t5 = newTemp(Ity_I32);
+         /* dst = src0 + (-1 * src1)
+         * if(sign(src0 ) != sign((-1 * src1) ))
+         * goto no overflow;
+         * if(sign(dst) == sign(src0 ))
+         * goto no overflow;
+         * # we have overflow! */
+
+         assign(t5, binop(Iop_Mul32, getIReg(rt), mkU32(-1)));
+         assign(t0, binop(Iop_Add32, getIReg(rs), mkexpr(t5)));
+         assign(t1, binop(Iop_Xor32, getIReg(rs), mkexpr(t5)));
+         assign(t2, unop(Iop_1Sto32,
+                         binop(Iop_CmpEQ32,
+                               binop(Iop_And32, mkexpr(t1), mkU32(0x80000000)),
+                               mkU32(0x80000000))));
+
+         assign(t3, binop(Iop_Xor32, mkexpr(t0), getIReg(rs)));
+         assign(t4, unop(Iop_1Sto32,
+                         binop(Iop_CmpNE32,
+                               binop(Iop_And32, mkexpr(t3), mkU32(0x80000000)),
+                               mkU32(0x80000000))));
+
+         stmt(IRStmt_Exit(binop(Iop_CmpEQ32,
+                                binop(Iop_Or32, mkexpr(t2), mkexpr(t4)),
+                                mkU32(0)),
+                          Ijk_SigFPE_IntOvf,
+                          IRConst_U32(guest_PC_curr_instr + 4), OFFB_PC));
+
+         putIReg(rd, mkexpr(t0));
          break;
 
       case 0x23:  /* SUBU */
@@ -3126,43 +3185,97 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x30: { /* TGE */
          /*tge */ DIP("tge r%d, r%d %d", rs, rt, trap_code);
-         stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rt), getIReg (rs)),
-                            Ijk_SigTRAP,
-                            IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         if (trap_code == 7)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rt), getIReg (rs)),
+                               Ijk_SigFPE_IntDiv,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else if (trap_code == 6)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rt), getIReg (rs)),
+                               Ijk_SigFPE_IntOvf,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rt), getIReg (rs)),
+                               Ijk_SigTRAP,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
          break;
       }
       case 0x31: { /* TGEU */
          /*tgeu */ DIP("tgeu r%d, r%d %d", rs, rt, trap_code);
-         stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rt), getIReg (rs)),
-                            Ijk_SigTRAP,
-                            IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         if (trap_code == 7)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rt), getIReg (rs)),
+                               Ijk_SigFPE_IntDiv,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else if (trap_code == 6)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rt), getIReg (rs)),
+                               Ijk_SigFPE_IntOvf,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rt), getIReg (rs)),
+                               Ijk_SigTRAP,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
          break;
       }
       case 0x32: { /* TLT */
          /*tlt */ DIP("tlt r%d, r%d %d", rs, rt, trap_code);
-         stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rs), getIReg (rt)),
-                            Ijk_SigTRAP,
-                            IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         if (trap_code == 7)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntDiv,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else if (trap_code == 6)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntOvf,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32S, getIReg (rs), getIReg (rt)),
+                               Ijk_SigTRAP,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
          break;
       }
       case 0x33: { /* TLTU */
          /*tltu */ DIP("tltu r%d, r%d %d", rs, rt, trap_code);
-         stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rs), getIReg (rt)),
-                            Ijk_SigTRAP,
-                            IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         if (trap_code == 7)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntDiv,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else if (trap_code == 6)
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntOvf,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else
+            stmt (IRStmt_Exit (binop (Iop_CmpLT32U, getIReg (rs), getIReg (rt)),
+                               Ijk_SigTRAP,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
          break;
       }
       case 0x34: { /* TEQ */
          /*teq */ DIP("teq r%d, r%d %d", rs, rt, trap_code);
-         stmt (IRStmt_Exit(binop (Iop_CmpEQ32, getIReg (rs), getIReg (rt)),
-               Ijk_SigTRAP, IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         if (trap_code == 7)
+            stmt (IRStmt_Exit (binop (Iop_CmpEQ32, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntDiv,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else if (trap_code == 6)
+            stmt (IRStmt_Exit(binop (Iop_CmpEQ32, getIReg (rs), getIReg (rt)),
+                              Ijk_SigFPE_IntOvf,
+                              IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else
+            stmt (IRStmt_Exit(binop (Iop_CmpEQ32, getIReg (rs), getIReg (rt)),
+                  Ijk_SigTRAP, IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
          break;
       }
       case 0x36: { /* TNE */
          /*tne */ DIP("tne r%d, r%d %d", rs, rt, trap_code);
-         stmt (IRStmt_Exit (binop (Iop_CmpNE32, getIReg (rs), getIReg (rt)),
-                            Ijk_SigTRAP,
-                            IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         if (trap_code == 7)
+            stmt (IRStmt_Exit (binop (Iop_CmpNE32, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntDiv,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else if (trap_code == 6)
+            stmt (IRStmt_Exit (binop (Iop_CmpNE32, getIReg (rs), getIReg (rt)),
+                               Ijk_SigFPE_IntOvf,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
+         else
+            stmt (IRStmt_Exit (binop (Iop_CmpNE32, getIReg (rs), getIReg (rt)),
+                               Ijk_SigTRAP,
+                               IRConst_U32 (guest_PC_curr_instr + 4), OFFB_PC));
          break;
       }
       case 0x0F: {
@@ -3345,9 +3458,40 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                      getIReg(rs), mkU32(0x0)))), imm);
       break;
 
-   case 0x08:     /* ADDI TODO: Check this */
+   case 0x08:     /* ADDI */
       DIP("addi r%d, r%d, %d", rt, rs, imm);
-      putIReg(rt, binop(Iop_Add32, getIReg(rs), mkU32(extend_s_16to32(imm))));
+      t0 = newTemp(Ity_I32);
+      t1 = newTemp(Ity_I32);
+      t2 = newTemp(Ity_I32);
+      t3 = newTemp(Ity_I32);
+      t4 = newTemp(Ity_I32);
+      /* dst = src0 + sign(imm)
+      * if(sign(src0 ) != sign(imm ))
+      * goto no overflow;
+      * if(sign(dst) == sign(src0 ))
+      * goto no overflow;
+      * # we have overflow! */
+
+      assign(t0, binop(Iop_Add32, getIReg(rs), mkU32(extend_s_16to32(imm))));
+      assign(t1, binop(Iop_Xor32, getIReg(rs), mkU32(extend_s_16to32(imm))));
+      assign(t2, unop(Iop_1Sto32,
+                      binop(Iop_CmpEQ32,
+                            binop(Iop_And32, mkexpr(t1), mkU32(0x80000000)),
+                            mkU32(0x80000000))));
+
+      assign(t3, binop(Iop_Xor32, mkexpr(t0), getIReg(rs)));
+      assign(t4, unop(Iop_1Sto32,
+                      binop(Iop_CmpNE32,
+                            binop(Iop_And32, mkexpr(t3), mkU32(0x80000000)),
+                            mkU32(0x80000000))));
+
+      stmt(IRStmt_Exit(binop(Iop_CmpEQ32,
+                             binop(Iop_Or32, mkexpr(t2), mkexpr(t4)),
+                             mkU32(0)),
+                       Ijk_SigFPE_IntOvf,
+                       IRConst_U32(guest_PC_curr_instr + 4), OFFB_PC));
+
+      putIReg(rt, mkexpr(t0));
       break;
 
    case 0x09:     /* ADDIU */

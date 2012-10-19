@@ -1217,27 +1217,29 @@ void ppIRPutI ( IRPutI* puti )
 void ppIRJumpKind ( IRJumpKind kind )
 {
    switch (kind) {
-      case Ijk_Boring:       vex_printf("Boring"); break;
-      case Ijk_Call:         vex_printf("Call"); break;
-      case Ijk_Ret:          vex_printf("Return"); break;
-      case Ijk_ClientReq:    vex_printf("ClientReq"); break;
-      case Ijk_Yield:        vex_printf("Yield"); break;
-      case Ijk_EmWarn:       vex_printf("EmWarn"); break;
-      case Ijk_EmFail:       vex_printf("EmFail"); break;
-      case Ijk_NoDecode:     vex_printf("NoDecode"); break;
-      case Ijk_MapFail:      vex_printf("MapFail"); break;
-      case Ijk_TInval:       vex_printf("Invalidate"); break;
-      case Ijk_NoRedir:      vex_printf("NoRedir"); break;
-      case Ijk_SigTRAP:      vex_printf("SigTRAP"); break;
-      case Ijk_SigSEGV:      vex_printf("SigSEGV"); break;
-      case Ijk_SigBUS:       vex_printf("SigBUS"); break;
-      case Ijk_Sys_syscall:  vex_printf("Sys_syscall"); break;
-      case Ijk_Sys_int32:    vex_printf("Sys_int32"); break;
-      case Ijk_Sys_int128:   vex_printf("Sys_int128"); break;
-      case Ijk_Sys_int129:   vex_printf("Sys_int129"); break;
-      case Ijk_Sys_int130:   vex_printf("Sys_int130"); break;
-      case Ijk_Sys_sysenter: vex_printf("Sys_sysenter"); break;
-      default:               vpanic("ppIRJumpKind");
+      case Ijk_Boring:        vex_printf("Boring"); break;
+      case Ijk_Call:          vex_printf("Call"); break;
+      case Ijk_Ret:           vex_printf("Return"); break;
+      case Ijk_ClientReq:     vex_printf("ClientReq"); break;
+      case Ijk_Yield:         vex_printf("Yield"); break;
+      case Ijk_EmWarn:        vex_printf("EmWarn"); break;
+      case Ijk_EmFail:        vex_printf("EmFail"); break;
+      case Ijk_NoDecode:      vex_printf("NoDecode"); break;
+      case Ijk_MapFail:       vex_printf("MapFail"); break;
+      case Ijk_TInval:        vex_printf("Invalidate"); break;
+      case Ijk_NoRedir:       vex_printf("NoRedir"); break;
+      case Ijk_SigTRAP:       vex_printf("SigTRAP"); break;
+      case Ijk_SigSEGV:       vex_printf("SigSEGV"); break;
+      case Ijk_SigBUS:        vex_printf("SigBUS"); break;
+      case Ijk_SigFPE_IntDiv: vex_printf("SigFPE_IntDiv"); break;
+      case Ijk_SigFPE_IntOvf: vex_printf("SigFPE_IntOvf"); break;
+      case Ijk_Sys_syscall:   vex_printf("Sys_syscall"); break;
+      case Ijk_Sys_int32:     vex_printf("Sys_int32"); break;
+      case Ijk_Sys_int128:    vex_printf("Sys_int128"); break;
+      case Ijk_Sys_int129:    vex_printf("Sys_int129"); break;
+      case Ijk_Sys_int130:    vex_printf("Sys_int130"); break;
+      case Ijk_Sys_sysenter:  vex_printf("Sys_sysenter"); break;
+      default:                vpanic("ppIRJumpKind");
    }
 }
 

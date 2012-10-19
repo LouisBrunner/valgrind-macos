@@ -1872,6 +1872,8 @@ typedef
       Ijk_SigTRAP,        /* current instruction synths SIGTRAP */
       Ijk_SigSEGV,        /* current instruction synths SIGSEGV */
       Ijk_SigBUS,         /* current instruction synths SIGBUS */
+      Ijk_SigFPE_IntDiv,  /* current instruction synths SIGFPE - IntDiv */
+      Ijk_SigFPE_IntOvf,  /* current instruction synths SIGFPE - IntOvf */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
       Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc', arm 'svc #0' */

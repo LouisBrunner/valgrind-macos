@@ -304,7 +304,7 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    d1 = locate_cache(ci, DATA_CACHE, 1);
    ll = locate_cache(ci, UNIFIED_CACHE, ci->num_levels);
 
-   if (ll == NULL) {
+   if (ci->num_caches > 0 && ll == NULL) {
       VG_(dmsg)("warning: L2 cache not installed, ignore LL results.\n");
    }
 

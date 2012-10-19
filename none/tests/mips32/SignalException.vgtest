@@ -1,0 +1,2 @@
+prog: SignalException
+vgopts: -q

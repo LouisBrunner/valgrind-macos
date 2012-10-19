@@ -1919,27 +1919,6 @@ void VG_(synth_sigtrap)(ThreadId tid)
    info.si_signo = VKI_SIGTRAP;
    info.si_code = VKI_TRAP_BRKPT; /* tjh: only ever called for a brkpt ins */
 
-#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
-   /* This is for teq on mips. Teq on mips for ins: 0xXXX1f4 
-    * cases VKI_SIGFPE not VKI_SIGTRAP 
-   */
-   // JRS 2012-Jun-06: commented out until we know we need it
-   // This isn't a clean solution; need something that avoids looking
-   // at the guest code.
-   //UInt *ins = (void*)(vgPlain_threads[tid].arch.vex.guest_PC-4);
-   //UInt tcode = (((*ins) >> 6) & ((1 << 10) - 1));
-   //if (tcode == VKI_BRK_OVERFLOW || tcode == VKI_BRK_DIVZERO) {
-   //   if (tcode == VKI_BRK_DIVZERO)
-   //      info.si_code = VKI_FPE_INTDIV;
-   //   else
-   //      info.si_code = VKI_FPE_INTOVF;
-   //   info.si_signo = VKI_SIGFPE;
-   //   info.si_errno = 0;
-   //   info.VKI_SIGINFO_si_addr 
-   //      = (void*)(vgPlain_threads[tid].arch.vex.guest_PC-4);
-   //}
-#  endif
-
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
    uc.uc_mcontext.trapno = 3;     /* tjh: this is the x86 trap number
                                           for a breakpoint trap... */
@@ -1960,6 +1939,32 @@ void VG_(synth_sigtrap)(ThreadId tid)
    }
    else
       resume_scheduler(tid);
+}
+
+// Synthesise a SIGFPE.
+void VG_(synth_sigfpe)(ThreadId tid, UInt code)
+{
+// Only tested on mips32
+#if !defined(VGA_mips32)
+   vg_assert(0);
+#else
+   vki_siginfo_t info;
+   struct vki_ucontext uc;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   VG_(memset)(&info, 0, sizeof(info));
+   VG_(memset)(&uc,   0, sizeof(uc));
+   info.si_signo = VKI_SIGFPE;
+   info.si_code = code;
+
+   if (VG_(gdbserver_report_signal) (VKI_SIGFPE, tid)) {
+      resume_scheduler(tid);
+      deliver_signal(tid, &info, &uc);
+   }
+   else
+      resume_scheduler(tid);
+#endif
 }
 
 /* Make a signal pending for a thread, for later delivery.

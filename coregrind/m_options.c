@@ -211,6 +211,8 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
                   } else if ('}' == format[i]) {
                      // Temporarily replace the '}' with NUL to extract var
                      // name.
+                     // FIXME: this is not safe as FORMAT is sometimes a
+                     // string literal which may reside in read-only memory
                      format[i] = 0;
                      qual = VG_(getenv)(qualname);
                      if (NULL == qual) {

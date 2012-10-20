@@ -1031,7 +1031,7 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
 // FORWARDS
 static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
                               /*OUT*/Bool* increasingP,
-                              Char* metric_name );
+                              HChar* metric_name );
 
 static Int    clo_show_top_n = 10;
 static HChar* clo_sort_by    = "max-bytes-live";
@@ -1184,7 +1184,7 @@ static ULong get_metric__max_blocks_live ( APInfo* api ) {
    string could not be identified.*/
 static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
                               /*OUT*/Bool* increasingP,
-                              Char* metric_name )
+                              HChar* metric_name )
 {
    if (0 == VG_(strcmp)(metric_name, "max-bytes-live")) {
       *get_metricP = get_metric__max_bytes_live;

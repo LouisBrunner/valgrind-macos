@@ -311,7 +311,7 @@ static void init_alloc_fns(void)
    // Create the list, and add the default elements.
    alloc_fns = VG_(newXA)(VG_(malloc), "ms.main.iaf.1",
                                        VG_(free), sizeof(Char*));
-   #define DO(x)  { Char* s = x; VG_(addToXA)(alloc_fns, &s); }
+   #define DO(x)  { HChar* s = x; VG_(addToXA)(alloc_fns, &s); }
 
    // Ordered roughly according to (presumed) frequency.
    // Nb: The C++ "operator new*" ones are overloadable.  We include them
@@ -387,7 +387,7 @@ static Bool is_member_fn(XArray* fns, Char* fnname)
 
 typedef enum { TimeI, TimeMS, TimeB } TimeUnit;
 
-static Char* TimeUnit_to_string(TimeUnit time_unit)
+static const HChar* TimeUnit_to_string(TimeUnit time_unit)
 {
    switch (time_unit) {
    case TimeI:  return "i";
@@ -411,7 +411,7 @@ static double clo_peak_inaccuracy = 1.0;  // percentage
 static Int    clo_time_unit       = TimeI;
 static Int    clo_detailed_freq   = 10;
 static Int    clo_max_snapshots   = 100;
-static Char*  clo_massif_out_file = "massif.out.%p";
+static HChar* clo_massif_out_file = "massif.out.%p";
 
 static XArray* args_for_massif;
 
@@ -1143,10 +1143,10 @@ static void delete_snapshot(Snapshot* snapshot)
    }
 }
 
-static void VERB_snapshot(Int verbosity, Char* prefix, Int i)
+static void VERB_snapshot(Int verbosity, const HChar* prefix, Int i)
 {
    Snapshot* snapshot = &snapshots[i];
-   Char* suffix;
+   const HChar* suffix;
    switch (snapshot->kind) {
    case Peak:   suffix = "p";                                            break;
    case Normal: suffix = ( is_detailed_snapshot(snapshot) ? "d" : "." ); break;
@@ -1227,7 +1227,7 @@ static UInt cull_snapshots(void)
       tl_assert(-1 != min_j);    // Check we found a minimum.
       min_snapshot = & snapshots[ min_j ];
       if (VG_(clo_verbosity) > 1) {
-         Char buf[64];
+         HChar buf[64];
          VG_(snprintf)(buf, 64, " %3d (t-span = %lld)", i, min_timespan);
          VERB_snapshot(2, buf, min_j);
       }
@@ -1374,7 +1374,7 @@ take_snapshot(Snapshot* snapshot, SnapshotKind kind, Time my_time,
 
 // Take a snapshot, if it's time, or if we've hit a peak.
 static void
-maybe_take_snapshot(SnapshotKind kind, Char* what)
+maybe_take_snapshot(SnapshotKind kind, const HChar* what)
 {
    // 'min_time_interval' is the minimum time interval between snapshots.
    // If we try to take a snapshot and less than this much time has passed,
@@ -1938,7 +1938,7 @@ static void update_stack_stats(SSizeT stack_szB_delta)
    update_alloc_stats(stack_szB_delta);
 }
 
-static INLINE void new_mem_stack_2(SizeT len, Char* what)
+static INLINE void new_mem_stack_2(SizeT len, const HChar* what)
 {
    if (have_started_executing_code) {
       VERB(3, "<<< new_mem_stack (%ld)\n", len);
@@ -1949,7 +1949,7 @@ static INLINE void new_mem_stack_2(SizeT len, Char* what)
    }
 }
 
-static INLINE void die_mem_stack_2(SizeT len, Char* what)
+static INLINE void die_mem_stack_2(SizeT len, const HChar* what)
 {
    if (have_started_executing_code) {
       VERB(3, "<<< die_mem_stack (%ld)\n", -len);
@@ -2171,8 +2171,8 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
    // Used for printing function names.  Is made static to keep it out
    // of the stack frame -- this function is recursive.  Obviously this
    // now means its contents are trashed across the recursive call.
-   static Char ip_desc_array[BUF_LEN];
-   Char* ip_desc = ip_desc_array;
+   static HChar ip_desc_array[BUF_LEN];
+   HChar* ip_desc = ip_desc_array;
 
    switch (sxpt->tag) {
     case SigSXPt:
@@ -2277,7 +2277,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
       break;
 
     case InsigSXPt: {
-      Char* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
+      const HChar* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
       FP("%sn0: %lu in %d place%s below massif's threshold (%s)\n",
          depth_str, sxpt->szB, sxpt->Insig.n_xpts, s,
          make_perc(clo_threshold));

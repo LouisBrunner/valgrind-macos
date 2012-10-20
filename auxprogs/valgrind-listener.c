@@ -64,7 +64,7 @@
 /*---------------------------------------------------------------*/
 
 __attribute__ ((noreturn))
-static void panic ( Char* str )
+static void panic ( const char* str )
 {
    fprintf(stderr,
            "\nvalgrind-listener: the "
@@ -75,7 +75,7 @@ static void panic ( Char* str )
 }
 
 __attribute__ ((noreturn))
-static void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* fn )
+static void my_assert_fail ( const char* expr, const char* file, int line, const char* fn )
 {
    fprintf(stderr,
            "\nvalgrind-listener: %s:%d (%s): Assertion '%s' failed.\n",
@@ -168,7 +168,7 @@ static void snooze ( void )
 
 
 /* returns 0 if invalid, else port # */
-static int atoi_portno ( char* str )
+static int atoi_portno ( const char* str )
 {
    int n = 0;
    while (1) {
@@ -210,7 +210,7 @@ static void usage ( void )
 }
 
 
-static void banner ( char* str )
+static void banner ( const char* str )
 {
    time_t t;
    t = time(NULL);

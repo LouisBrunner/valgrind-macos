@@ -192,7 +192,7 @@ static Bool clo_trace_sbs       = False;
 /* The name of the function of which the number of calls (under
  * --basic-counts=yes) is to be counted, with default. Override with command
  * line option --fnname. */
-static Char* clo_fnname = "main";
+static HChar* clo_fnname = "main";
 
 static Bool lk_process_cmd_line_option(Char* arg)
 {
@@ -467,7 +467,7 @@ static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
 static void flushEvents(IRSB* sb)
 {
    Int        i;
-   Char*      helperName;
+   HChar*     helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRDirty*   di;

@@ -143,6 +143,8 @@ main(int argc, char *argv[])
       default:
          panic("operator not handled");
       }
+
+      free(data);
    }
 
    return 0;

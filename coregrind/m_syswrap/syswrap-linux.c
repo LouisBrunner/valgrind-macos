@@ -3307,7 +3307,7 @@ PRE(sys_ipc)
    // XXX: this is simplistic -- some args are not used in all circumstances.
    PRE_REG_READ6(int, "ipc",
                  vki_uint, call, int, first, int, second, int, third,
-                 void *, ptr, long, fifth)
+                 void *, ptr, long, fifth);
 
    switch (ARG1 /* call */) {
    case VKI_SEMOP:
@@ -3387,13 +3387,8 @@ POST(sys_ipc)
    switch (ARG1 /* call */) {
    case VKI_SEMOP:
    case VKI_SEMGET:
-      break;
    case VKI_SEMCTL:
-   {
-      UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-      ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
       break;
-   }
    case VKI_SEMTIMEDOP:
    case VKI_MSGSND:
       break;

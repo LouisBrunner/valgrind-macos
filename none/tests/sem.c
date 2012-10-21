@@ -7,6 +7,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <time.h>
+#include <unistd.h>
 int main(int argc, char **argv)
 {
    int semid;
@@ -28,6 +29,20 @@ int main(int argc, char **argv)
    if (semop(semid, &sop, 1) < 0)
    {
       perror("semop");
+      semctl(semid, 0, IPC_RMID);
+      exit(1);
+   }
+
+   if (semctl(semid, 0, GETVAL) != 1)
+   {
+      perror("semctl GETVAL");
+      semctl(semid, 0, IPC_RMID);
+      exit(1);
+   }
+
+   if (semctl(semid, 0, GETPID) != getpid())
+   {
+      perror("semctl GETPID");
       semctl(semid, 0, IPC_RMID);
       exit(1);
    }

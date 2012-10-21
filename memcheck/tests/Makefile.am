@@ -180,6 +180,7 @@ EXTRA_DIST = \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
+	sem.stderr.exp sem.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \

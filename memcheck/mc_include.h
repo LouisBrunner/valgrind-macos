@@ -382,7 +382,7 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 Bool MC_(get_extra_suppression_info) ( Error* err,
                                        /*OUT*/Char* buf, Int nBuf );
 
-Char* MC_(get_error_name) ( Error* err );
+HChar* MC_(get_error_name) ( Error* err );
 
 /* Recording of errors */
 void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,
@@ -429,7 +429,7 @@ typedef
       Addr        start;
       SizeT       size;
       ExeContext* where;
-      Char*       desc;
+      HChar*      desc;
    } 
    CGenBlock;
 

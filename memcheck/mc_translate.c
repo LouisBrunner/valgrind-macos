@@ -3843,7 +3843,7 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
                               IRAtom* addr, UInt bias )
 {
    void*    helper;
-   Char*    hname;
+   const HChar* hname;
    IRDirty* di;
    IRTemp   datavbits;
    IRAtom*  addrAct;
@@ -4155,7 +4155,7 @@ void do_shadow_Store ( MCEnv* mce,
    IROp     mkAdd;
    IRType   ty, tyAddr;
    void*    helper = NULL;
-   Char*    hname = NULL;
+   const HChar* hname = NULL;
    IRConst* c;
 
    tyAddr = mce->hWordTy;

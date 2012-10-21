@@ -99,7 +99,7 @@ struct _AddrInfo {
       // blocks.
       struct {
          BlockKind   block_kind;
-         Char*       block_desc;    // "block", "mempool" or user-defined
+         const HChar* block_desc;    // "block", "mempool" or user-defined
          SizeT       block_szB;
          PtrdiffT    rwoffset;
          ExeContext* lastchange;
@@ -322,7 +322,7 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
          SizeT    block_szB = ai->Addr.Block.block_szB;
          PtrdiffT rwoffset  = ai->Addr.Block.rwoffset;
          SizeT    delta;
-         const    Char* relative;
+         const    HChar* relative;
 
          if (rwoffset < 0) {
             delta    = (SizeT)(-rwoffset);
@@ -412,7 +412,7 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
 
 static void mc_pp_origin ( ExeContext* ec, UInt okind )
 {
-   HChar* src = NULL;
+   const HChar* src = NULL;
    tl_assert(ec);
 
    switch (okind) {
@@ -1518,7 +1518,7 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-Char* MC_(get_error_name) ( Error* err )
+HChar* MC_(get_error_name) ( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
    case Err_RegParam:       return "Param";

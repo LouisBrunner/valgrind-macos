@@ -1373,7 +1373,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
 
    if (lenT > 256 * 1024 * 1024) {
       if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
-         Char* s = "unknown???";
+         const HChar* s = "unknown???";
          if (vabits16 == VA_BITS16_NOACCESS ) s = "noaccess";
          if (vabits16 == VA_BITS16_UNDEFINED) s = "undefined";
          if (vabits16 == VA_BITS16_DEFINED  ) s = "defined";
@@ -5481,7 +5481,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             /* VG_(printf)("allocated %d %p\n", i, cgbs); */
             cgbs[i].start = arg[1];
             cgbs[i].size  = arg[2];
-            cgbs[i].desc  = VG_(strdup)("mc.mhcr.1", (Char *)arg[3]);
+            cgbs[i].desc  = (HChar *)VG_(strdup)("mc.mhcr.1", (Char *)arg[3]);
             cgbs[i].where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
             *ret = i;
          } else

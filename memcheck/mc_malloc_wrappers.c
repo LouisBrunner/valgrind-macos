@@ -222,7 +222,7 @@ void delete_MC_Chunk (MC_Chunk* mc)
 /*------------------------------------------------------------*/
 
 // XXX: should make this a proper error (bug #79311).
-static Bool complain_about_silly_args(SizeT sizeB, Char* fn)
+static Bool complain_about_silly_args(SizeT sizeB, const HChar* fn)
 {
    // Cast to a signed type to catch any unexpectedly negative args.  We're
    // assuming here that the size asked for is not greater than 2^31 bytes

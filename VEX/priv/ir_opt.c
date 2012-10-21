@@ -2811,7 +2811,7 @@ static Bool isOneU1 ( IRExpr* e )
 static 
 IRSB* spec_helpers_BB(
          IRSB* bb,
-         IRExpr* (*specHelper) (HChar*, IRExpr**, IRStmt**, Int)
+         IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int)
       )
 {
    Int     i;
@@ -5294,7 +5294,7 @@ static Bool iropt_verbose = False; /* True; */
 static 
 IRSB* cheap_transformations ( 
          IRSB* bb,
-         IRExpr* (*specHelper) (HChar*, IRExpr**, IRStmt**, Int),
+         IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
          Bool (*preciseMemExnsFn)(Int,Int)
       )
 {
@@ -5455,7 +5455,7 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
 
 IRSB* do_iropt_BB(
          IRSB* bb0,
-         IRExpr* (*specHelper) (HChar*, IRExpr**, IRStmt**, Int),
+         IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
          Bool (*preciseMemExnsFn)(Int,Int),
          Addr64 guest_addr,
          VexArch guest_arch

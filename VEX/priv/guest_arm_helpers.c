@@ -551,7 +551,7 @@ static Bool isU32 ( IRExpr* e, UInt n )
               && e->Iex.Const.con->Ico.U32 == n );
 }
 
-IRExpr* guest_arm_spechelper ( HChar*   function_name,
+IRExpr* guest_arm_spechelper ( const HChar* function_name,
                                IRExpr** args,
                                IRStmt** precedingStmts,
                                Int      n_precedingStmts )

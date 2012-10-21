@@ -387,11 +387,11 @@ typedef struct {
          i.e. in registers r2, r3, r4, r5, and r6, with argument #0 being
          passed in r2 and so forth. */
       struct {
-         s390_cc_t cond;
-         Addr64    target;
-         UInt      num_args;
-         HReg      dst;       /* if not INVALID_HREG, put return value here */
-         HChar    *name;      /* callee's name (for debugging) */
+         s390_cc_t    cond;
+         Addr64       target;
+         UInt         num_args;
+         HReg         dst;       /* if not INVALID_HREG, put return value here */
+         const HChar *name;      /* callee's name (for debugging) */
       } helper_call;
 
       /* Floating point instructions (including conversion to/from floating
@@ -532,7 +532,7 @@ s390_insn *s390_insn_test(UChar size, s390_opnd_RMI src);
 s390_insn *s390_insn_compare(UChar size, HReg dst, s390_opnd_RMI opnd,
                              Bool signed_comparison);
 s390_insn *s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                                 HChar *name, HReg dst);
+                                 const HChar *name, HReg dst);
 s390_insn *s390_insn_bfp_triop(UChar size, s390_bfp_triop_t, HReg dst,
                                HReg op2, HReg op3);
 s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst,

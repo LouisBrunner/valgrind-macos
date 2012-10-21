@@ -203,7 +203,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    Int          (*emit)         ( /*MB_MOD*/Bool*,
                                   UChar*, Int, HInstr*, Bool,
                                   void*, void*, void*, void* );
-   IRExpr*      (*specHelper)   ( HChar*, IRExpr**, IRStmt**, Int );
+   IRExpr*      (*specHelper)   ( const HChar*, IRExpr**, IRStmt**, Int );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
    DisOneInstrFn disInstrFn;
@@ -1005,7 +1005,7 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
 
 /* --------- Emulation warnings. --------- */
 
-HChar* LibVEX_EmNote_string ( VexEmNote ew )
+const HChar* LibVEX_EmNote_string ( VexEmNote ew )
 {
    switch (ew) {
      case EmNote_NONE: 

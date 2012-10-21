@@ -47,7 +47,7 @@
     { offsetof(VexGuestMIPS32State, field),            \
       (sizeof ((VexGuestMIPS32State*)0)->field) }
 
-IRExpr *guest_mips32_spechelper(HChar * function_name, IRExpr ** args,
+IRExpr *guest_mips32_spechelper(const HChar * function_name, IRExpr ** args,
                                 IRStmt ** precedingStmts, Int n_precedingStmts)
 {
    return NULL;

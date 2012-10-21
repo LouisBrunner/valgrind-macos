@@ -4644,7 +4644,7 @@ s390_insn_compare(UChar size, HReg src1, s390_opnd_RMI src2,
 
 s390_insn *
 s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                      HChar *name, HReg dst)
+                      const HChar *name, HReg dst)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 

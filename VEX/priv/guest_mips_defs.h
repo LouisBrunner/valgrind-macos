@@ -55,7 +55,7 @@ extern DisResult disInstr_MIPS ( IRSB*        irbb,
                                  Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */
-extern IRExpr *guest_mips32_spechelper(HChar * function_name, IRExpr ** args,
+extern IRExpr *guest_mips32_spechelper(const HChar * function_name, IRExpr ** args,
                                        IRStmt ** precedingStmts,
                                        Int n_precedingStmts);
 

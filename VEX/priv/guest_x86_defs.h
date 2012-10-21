@@ -64,7 +64,7 @@ DisResult disInstr_X86 ( IRSB*        irbb,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_x86_spechelper ( HChar*   function_name,
+IRExpr* guest_x86_spechelper ( const HChar* function_name,
                                IRExpr** args,
                                IRStmt** precedingStmts,
                                Int      n_precedingStmts );

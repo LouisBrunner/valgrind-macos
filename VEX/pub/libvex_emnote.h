@@ -113,7 +113,7 @@ typedef
 
 
 /* Produces a short string describing the warning. */
-extern HChar* LibVEX_EmNote_string ( VexEmNote );
+extern const HChar* LibVEX_EmNote_string ( VexEmNote );
 
 
 #endif /* ndef __LIBVEX_EMNOTE_H */

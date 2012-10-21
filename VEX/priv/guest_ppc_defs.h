@@ -65,13 +65,13 @@ DisResult disInstr_PPC ( IRSB*        irbb,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_ppc32_spechelper ( HChar*   function_name,
+IRExpr* guest_ppc32_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts );
 
 extern
-IRExpr* guest_ppc64_spechelper ( HChar*   function_name,
+IRExpr* guest_ppc64_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts );

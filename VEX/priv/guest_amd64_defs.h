@@ -64,7 +64,7 @@ DisResult disInstr_AMD64 ( IRSB*        irbb,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_amd64_spechelper ( HChar*   function_name,
+IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts );

@@ -118,7 +118,7 @@ void ppIRTemp ( IRTemp tmp )
 
 void ppIROp ( IROp op )
 {
-   HChar* str = NULL; 
+   const HChar* str = NULL; 
    IROp   base;
    switch (op) {
       case Iop_Add8 ... Iop_Add64:
@@ -1461,7 +1461,7 @@ IRConst* IRConst_V256 ( UInt con )
 
 /* Constructors -- IRCallee */
 
-IRCallee* mkIRCallee ( Int regparms, HChar* name, void* addr )
+IRCallee* mkIRCallee ( Int regparms, const HChar* name, void* addr )
 {
    IRCallee* ce = LibVEX_Alloc(sizeof(IRCallee));
    ce->regparms = regparms;
@@ -3138,7 +3138,7 @@ static inline Int countArgs ( IRExpr** args )
 
 static
 __attribute((noreturn))
-void sanityCheckFail ( IRSB* bb, IRStmt* stmt, HChar* what )
+void sanityCheckFail ( IRSB* bb, IRStmt* stmt, const HChar* what )
 {
    vex_printf("\nIR SANITY CHECK FAILURE\n\n");
    ppIRSB(bb);
@@ -3738,7 +3738,7 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
    }
 }
 
-void sanityCheckIRSB ( IRSB* bb,          HChar* caller,
+void sanityCheckIRSB ( IRSB* bb,          const HChar* caller,
                        Bool require_flat, IRType guest_word_size )
 {
    Int     i;
@@ -3927,7 +3927,7 @@ IRExpr* mkIRExpr_HWord ( HWord hw )
    vpanic("mkIRExpr_HWord");
 }
 
-IRDirty* unsafeIRDirty_0_N ( Int regparms, HChar* name, void* addr, 
+IRDirty* unsafeIRDirty_0_N ( Int regparms, const HChar* name, void* addr, 
                              IRExpr** args ) 
 {
    IRDirty* d = emptyIRDirty();
@@ -3938,7 +3938,7 @@ IRDirty* unsafeIRDirty_0_N ( Int regparms, HChar* name, void* addr,
 }
 
 IRDirty* unsafeIRDirty_1_N ( IRTemp dst, 
-                             Int regparms, HChar* name, void* addr, 
+                             Int regparms, const HChar* name, void* addr, 
                              IRExpr** args ) 
 {
    IRDirty* d = emptyIRDirty();
@@ -3950,7 +3950,7 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 }
 
 IRExpr* mkIRExprCCall ( IRType retty,
-                        Int regparms, HChar* name, void* addr, 
+                        Int regparms, const HChar* name, void* addr, 
                         IRExpr** args )
 {
    return IRExpr_CCall ( mkIRCallee ( regparms, name, addr ), 

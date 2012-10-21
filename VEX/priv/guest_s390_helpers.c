@@ -1375,7 +1375,7 @@ isC64(IRExpr *expr)
    case the helper function will be called. Otherwise, the expression has
    type Ity_I32 and a Boolean value. */
 IRExpr *
-guest_s390x_spechelper(HChar *function_name, IRExpr **args,
+guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
                        IRStmt **precedingStmts, Int n_precedingStmts)
 {
    UInt i, arity = 0;

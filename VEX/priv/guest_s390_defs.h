@@ -53,7 +53,7 @@ DisResult disInstr_S390 ( IRSB*        irbb,
                           Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */
-IRExpr* guest_s390x_spechelper ( HChar   *function_name,
+IRExpr* guest_s390x_spechelper ( const HChar *function_name,
                                  IRExpr **args,
                                  IRStmt **precedingStmts,
                                  Int n_precedingStmts);

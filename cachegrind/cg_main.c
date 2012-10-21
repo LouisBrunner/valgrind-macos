@@ -67,7 +67,7 @@
 
 static Bool  clo_cache_sim  = True;  /* do cache simulation? */
 static Bool  clo_branch_sim = False; /* do branch simulation? */
-static Char* clo_cachegrind_out_file = "cachegrind.out.%p";
+static HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
 
 /*------------------------------------------------------------*/
 /*--- Cachesim configuration                               ---*/
@@ -667,7 +667,7 @@ InstrInfo* setup_InstrInfo ( CgState* cgs, Addr instr_addr, UInt instr_len )
 static void flushEvents ( CgState* cgs )
 {
    Int        i, regparms;
-   Char*      helperName;
+   const HChar* helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRExpr*    i_node_expr;
@@ -1464,7 +1464,8 @@ static UInt ULong_width(ULong n)
 
 static void cg_fini(Int exitcode)
 {
-   static Char buf1[128], buf2[128], buf3[128], buf4[123], fmt[128];
+   static Char buf1[128], buf2[128], buf3[128], buf4[123];
+   static HChar fmt[128];
 
    CacheCC  D_total;
    BranchCC B_total;

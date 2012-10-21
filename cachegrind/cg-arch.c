@@ -41,7 +41,7 @@ static void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* LLc,
 
 // Checks cache config is ok.  Returns NULL if ok, or a pointer to an error
 // string otherwise.
-static Char* check_cache(cache_t* cache)
+static const HChar* check_cache(cache_t* cache)
 {
    // Simulator requires set count to be a power of two.
    if ((cache->size % (cache->line_size * cache->assoc) != 0) ||
@@ -80,7 +80,7 @@ static void parse_cache_opt ( cache_t* cache, Char* opt, Char* optval )
 {
    Long i1, i2, i3;
    Char* endptr;
-   Char* checkRes;
+   const HChar* checkRes;
 
    // Option argument looks like "65536,2,64".  Extract them.
    i1 = VG_(strtoll10)(optval,   &endptr); if (*endptr != ',')  goto bad;
@@ -133,7 +133,7 @@ Bool VG_(str_clo_cache_opt)(Char *arg,
       return False;
 }
 
-static void umsg_cache_img(Char* desc, cache_t* c)
+static void umsg_cache_img(const HChar* desc, cache_t* c)
 {
    VG_(umsg)("  %s: %'d B, %d-way, %d B lines\n", desc,
              c->size, c->assoc, c->line_size);
@@ -141,9 +141,9 @@ static void umsg_cache_img(Char* desc, cache_t* c)
 
 // Verifies if c is a valid cache.
 // An invalid value causes an assert, unless clo_redefined is True.
-static void check_cache_or_override(Char* desc, cache_t* c, Bool clo_redefined)
+static void check_cache_or_override(const HChar* desc, cache_t* c, Bool clo_redefined)
 {
-   Char* checkRes;
+   const HChar* checkRes;
 
    checkRes = check_cache(c);
    if (checkRes) {
@@ -416,7 +416,7 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
 #endif
 
    if (!all_caches_clo_defined) {
-      const char warning[] =
+      const HChar warning[] =
         "Warning: Cannot auto-detect cache config, using defaults.\n"
         "         Run with -v to see.\n";
       VG_(dmsg)("%s", warning);

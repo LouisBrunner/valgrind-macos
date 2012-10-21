@@ -52,9 +52,9 @@ inline Bool HG_(is_sane_Thread) ( Thread* thr ) {
 static Bool is_sane_Bag_of_Threads ( WordBag* bag )
 {
    Thread* thr;
-   Word    count;
+   UWord   count;
    VG_(initIterBag)( bag );
-   while (VG_(nextIterBag)( bag, (Word*)&thr, &count )) {
+   while (VG_(nextIterBag)( bag, (UWord*)&thr, &count )) {
       if (count < 1) return False;
       if (!HG_(is_sane_Thread)(thr)) return False;
    }

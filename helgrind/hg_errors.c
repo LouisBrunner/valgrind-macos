@@ -77,7 +77,7 @@ static HChar* string_table_strdup ( HChar* str ) {
       tl_assert(string_table);
    }
    if (VG_(lookupFM)( string_table,
-                      NULL, (Word*)&copy, (Word)str )) {
+                      NULL, (UWord*)&copy, (UWord)str )) {
       tl_assert(copy);
       if (0) VG_(printf)("string_table_strdup: %p -> %p\n", str, copy );
       return copy;
@@ -165,7 +165,7 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
                                    HG_(free), lock_unique_cmp );
       tl_assert(map_LockN_to_P);
    }
-   if (!VG_(lookupFM)( map_LockN_to_P, NULL, (Word*)&lkp, (Word)lkn)) {
+   if (!VG_(lookupFM)( map_LockN_to_P, NULL, (UWord*)&lkp, (UWord)lkn)) {
       lkp = HG_(zalloc)( "hg.mLPfLN.2", sizeof(Lock) );
       *lkp = *lkn;
       lkp->admin_next = NULL;
@@ -178,7 +178,7 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
       lkp->heldBy = NULL;
       lkp->acquired_at = NULL;
       lkp->hbso = NULL;
-      VG_(addToFM)( map_LockN_to_P, (Word)lkp, (Word)lkp );
+      VG_(addToFM)( map_LockN_to_P, (UWord)lkp, (UWord)lkp );
    }
    tl_assert( HG_(is_sane_LockP)(lkp) );
    return lkp;
@@ -739,7 +739,7 @@ Bool HG_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
 /* Do a printf-style operation on either the XML or normal output
    channel, depending on the setting of VG_(clo_xml).
 */
-static void emit_WRK ( HChar* format, va_list vargs )
+static void emit_WRK ( const HChar* format, va_list vargs )
 {
    if (VG_(clo_xml)) {
       VG_(vprintf_xml)(format, vargs);
@@ -747,8 +747,8 @@ static void emit_WRK ( HChar* format, va_list vargs )
       VG_(vmessage)(Vg_UserMsg, format, vargs);
    }
 }
-static void emit ( HChar* format, ... ) PRINTF_CHECK(1, 2);
-static void emit ( HChar* format, ... )
+static void emit ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void emit ( const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs, format);
@@ -1182,7 +1182,7 @@ void HG_(pp_Error) ( Error* err )
 
    case XE_Race: {
       Addr      err_ga;
-      HChar*    what;
+      const HChar* what;
       Int       szB;
       what      = xe->XE.Race.isWrite ? "write" : "read";
       szB       = xe->XE.Race.szB;
@@ -1333,7 +1333,7 @@ void HG_(pp_Error) ( Error* err )
    } /* switch (VG_(get_error_kind)(err)) */
 }
 
-Char* HG_(get_error_name) ( Error* err )
+HChar* HG_(get_error_name) ( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
       case XE_Race:           return "Race";

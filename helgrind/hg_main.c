@@ -100,7 +100,7 @@
 #define SHOW_EVENTS 0
 
 
-static void all__sanity_check ( Char* who ); /* fwds */
+static void all__sanity_check ( const HChar* who ); /* fwds */
 
 #define HG_CLI__DEFAULT_MALLOC_REDZONE_SZB 16 /* let's say */
 
@@ -260,7 +260,7 @@ static void lockN_acquire_writer ( Lock* lk, Thread* thr )
          tl_assert(!lk->heldW);
          lk->heldW  = True;
          lk->heldBy = VG_(newBag)( HG_(zalloc), "hg.lNaw.1", HG_(free) );
-         VG_(addToBag)( lk->heldBy, (Word)thr );
+         VG_(addToBag)( lk->heldBy, (UWord)thr );
          break;
       case LK_mbRec:
          if (lk->heldBy == NULL)
@@ -270,9 +270,9 @@ static void lockN_acquire_writer ( Lock* lk, Thread* thr )
          /* assert: lk is only held by one thread .. */
          tl_assert(VG_(sizeUniqueBag(lk->heldBy)) == 1);
          /* assert: .. and that thread is 'thr'. */
-         tl_assert(VG_(elemBag)(lk->heldBy, (Word)thr)
+         tl_assert(VG_(elemBag)(lk->heldBy, (UWord)thr)
                    == VG_(sizeTotalBag)(lk->heldBy));
-         VG_(addToBag)(lk->heldBy, (Word)thr);
+         VG_(addToBag)(lk->heldBy, (UWord)thr);
          break;
       case LK_rdwr:
          tl_assert(lk->heldBy == NULL && !lk->heldW); /* must be unheld */
@@ -310,11 +310,11 @@ static void lockN_acquire_reader ( Lock* lk, Thread* thr )
    /* end EXPOSITION only */
 
    if (lk->heldBy) {
-      VG_(addToBag)(lk->heldBy, (Word)thr);
+      VG_(addToBag)(lk->heldBy, (UWord)thr);
    } else {
       lk->heldW  = False;
       lk->heldBy = VG_(newBag)( HG_(zalloc), "hg.lNar.1", HG_(free) );
-      VG_(addToBag)( lk->heldBy, (Word)thr );
+      VG_(addToBag)( lk->heldBy, (UWord)thr );
    }
    tl_assert(!lk->heldW);
    tl_assert(HG_(is_sane_LockN)(lk));
@@ -333,7 +333,7 @@ static void lockN_release ( Lock* lk, Thread* thr )
    tl_assert(lk->heldBy);
    stats__lockN_releases++;
    /* Remove it from the holder set */
-   b = VG_(delFromBag)(lk->heldBy, (Word)thr);
+   b = VG_(delFromBag)(lk->heldBy, (UWord)thr);
    /* thr must actually have been a holder of lk */
    tl_assert(b);
    /* normalise */
@@ -356,18 +356,18 @@ static void remove_Lock_from_locksets_of_all_owning_Threads( Lock* lk )
    }
    /* for each thread that holds this lock do ... */
    VG_(initIterBag)( lk->heldBy );
-   while (VG_(nextIterBag)( lk->heldBy, (Word*)&thr, NULL )) {
+   while (VG_(nextIterBag)( lk->heldBy, (UWord*)&thr, NULL )) {
       tl_assert(HG_(is_sane_Thread)(thr));
       tl_assert(HG_(elemWS)( univ_lsets,
-                             thr->locksetA, (Word)lk ));
+                             thr->locksetA, (UWord)lk ));
       thr->locksetA
-         = HG_(delFromWS)( univ_lsets, thr->locksetA, (Word)lk );
+         = HG_(delFromWS)( univ_lsets, thr->locksetA, (UWord)lk );
 
       if (lk->heldW) {
          tl_assert(HG_(elemWS)( univ_lsets,
-                                thr->locksetW, (Word)lk ));
+                                thr->locksetW, (UWord)lk ));
          thr->locksetW
-            = HG_(delFromWS)( univ_lsets, thr->locksetW, (Word)lk );
+            = HG_(delFromWS)( univ_lsets, thr->locksetW, (UWord)lk );
       }
    }
    VG_(doneIterBag)( lk->heldBy );
@@ -388,7 +388,7 @@ static const Int sHOW_ADMIN = 0;
 static void space ( Int n )
 {
    Int  i;
-   Char spaces[128+1];
+   HChar spaces[128+1];
    tl_assert(n >= 0 && n < 128);
    if (n == 0)
       return;
@@ -470,10 +470,10 @@ static void pp_Lock ( Int d, Lock* lk )
    space(d+3); VG_(printf)("heldBy %p", lk->heldBy);
    if (lk->heldBy) {
       Thread* thr;
-      Word    count;
+      UWord   count;
       VG_(printf)(" { ");
       VG_(initIterBag)( lk->heldBy );
-      while (VG_(nextIterBag)( lk->heldBy, (Word*)&thr, &count ))
+      while (VG_(nextIterBag)( lk->heldBy, (UWord*)&thr, &count ))
          VG_(printf)("%lu:%p ", count, thr);
       VG_(doneIterBag)( lk->heldBy );
       VG_(printf)("}");
@@ -507,8 +507,8 @@ static void pp_map_locks ( Int d )
    space(d); VG_(printf)("map_locks (%d entries) {\n",
                          (Int)VG_(sizeFM)( map_locks ));
    VG_(initIterFM)( map_locks );
-   while (VG_(nextIterFM)( map_locks, (Word*)&gla,
-                                      (Word*)&lk )) {
+   while (VG_(nextIterFM)( map_locks, (UWord*)&gla,
+                                      (UWord*)&lk )) {
       space(d+3);
       VG_(printf)("guest %p -> Lock %p\n", gla, lk);
    }
@@ -516,7 +516,7 @@ static void pp_map_locks ( Int d )
    space(d); VG_(printf)("}\n");
 }
 
-static void pp_everything ( Int flags, Char* caller )
+static void pp_everything ( Int flags, const HChar* caller )
 {
    Int d = 0;
    VG_(printf)("\n");
@@ -555,13 +555,11 @@ static void initialise_data_structures ( Thr* hbthr_root )
    tl_assert(admin_threads == NULL);
    tl_assert(admin_locks == NULL);
 
-   tl_assert(sizeof(Addr) == sizeof(Word));
-
    tl_assert(map_threads == NULL);
    map_threads = HG_(zalloc)( "hg.ids.1", VG_N_THREADS * sizeof(Thread*) );
    tl_assert(map_threads != NULL);
 
-   tl_assert(sizeof(Addr) == sizeof(Word));
+   tl_assert(sizeof(Addr) == sizeof(UWord));
    tl_assert(map_locks == NULL);
    map_locks = VG_(newFM)( HG_(zalloc), "hg.ids.2", HG_(free), 
                            NULL/*unboxed Word cmp*/);
@@ -679,12 +677,12 @@ Lock* map_locks_lookup_or_create ( LockKind lkk, Addr ga, ThreadId tid )
    Lock* oldlock = NULL;
    tl_assert(HG_(is_sane_ThreadId)(tid));
    found = VG_(lookupFM)( map_locks, 
-                          NULL, (Word*)&oldlock, (Word)ga );
+                          NULL, (UWord*)&oldlock, (UWord)ga );
    if (!found) {
       Lock* lock = mk_LockN(lkk, ga);
       lock->appeared_at = VG_(record_ExeContext)( tid, 0 );
       tl_assert(HG_(is_sane_LockN)(lock));
-      VG_(addToFM)( map_locks, (Word)ga, (Word)lock );
+      VG_(addToFM)( map_locks, (UWord)ga, (UWord)lock );
       tl_assert(oldlock == NULL);
       return lock;
    } else {
@@ -699,7 +697,7 @@ static Lock* map_locks_maybe_lookup ( Addr ga )
 {
    Bool  found;
    Lock* lk = NULL;
-   found = VG_(lookupFM)( map_locks, NULL, (Word*)&lk, (Word)ga );
+   found = VG_(lookupFM)( map_locks, NULL, (UWord*)&lk, (UWord)ga );
    tl_assert(found  ?  lk != NULL  :  lk == NULL);
    return lk;
 }
@@ -709,7 +707,7 @@ static void map_locks_delete ( Addr ga )
    Addr  ga2 = 0;
    Lock* lk  = NULL;
    VG_(delFromFM)( map_locks,
-                   (Word*)&ga2, (Word*)&lk, (Word)ga );
+                   (UWord*)&ga2, (UWord*)&lk, (UWord)ga );
    /* delFromFM produces the val which is being deleted, if it is
       found.  So assert it is non-null; that in effect asserts that we
       are deleting a (ga, Lock) pair which actually exists. */
@@ -725,7 +723,7 @@ static void map_locks_delete ( Addr ga )
 
 static UWord stats__sanity_checks = 0;
 
-static void laog__sanity_check ( Char* who ); /* fwds */
+static void laog__sanity_check ( const HChar* who ); /* fwds */
 
 /* REQUIRED INVARIANTS:
 
@@ -801,21 +799,21 @@ static void laog__sanity_check ( Char* who ); /* fwds */
 static Bool thread_is_a_holder_of_Lock ( Thread* thr, Lock* lk )
 {
    if (lk->heldBy)
-      return VG_(elemBag)( lk->heldBy, (Word)thr ) > 0;
+      return VG_(elemBag)( lk->heldBy, (UWord)thr ) > 0;
    else
       return False;
 }
 
 /* Sanity check Threads, as far as possible */
 __attribute__((noinline))
-static void threads__sanity_check ( Char* who )
+static void threads__sanity_check ( const HChar* who )
 {
 #define BAD(_str) do { how = (_str); goto bad; } while (0)
-   Char*     how = "no error";
+   const HChar* how = "no error";
    Thread*   thr;
    WordSetID wsA, wsW;
    UWord*    ls_words;
-   Word      ls_size, i;
+   UWord     ls_size, i;
    Lock*     lk;
    for (thr = admin_threads; thr; thr = thr->admin) {
       if (!HG_(is_sane_Thread)(thr)) BAD("1");
@@ -843,10 +841,10 @@ static void threads__sanity_check ( Char* who )
 
 /* Sanity check Locks, as far as possible */
 __attribute__((noinline))
-static void locks__sanity_check ( Char* who )
+static void locks__sanity_check ( const HChar* who )
 {
 #define BAD(_str) do { how = (_str); goto bad; } while (0)
-   Char*     how = "no error";
+   const HChar* how = "no error";
    Addr      gla;
    Lock*     lk;
    Int       i;
@@ -858,7 +856,7 @@ static void locks__sanity_check ( Char* who )
    //      gla == lk->guest_addr
    VG_(initIterFM)( map_locks );
    while (VG_(nextIterFM)( map_locks,
-                           (Word*)&gla, (Word*)&lk )) {
+                           (UWord*)&gla, (UWord*)&lk )) {
       if (lk->guestaddr != gla) BAD("2");
    }
    VG_(doneIterFM)( map_locks );
@@ -873,21 +871,21 @@ static void locks__sanity_check ( Char* who )
       // this lock is mentioned in their locksets.
       if (lk->heldBy) {
          Thread* thr;
-         Word    count;
+         UWord   count;
          VG_(initIterBag)( lk->heldBy );
          while (VG_(nextIterBag)( lk->heldBy, 
-                                  (Word*)&thr, &count )) {
+                                  (UWord*)&thr, &count )) {
             // HG_(is_sane_LockN) above ensures these
             tl_assert(count >= 1);
             tl_assert(HG_(is_sane_Thread)(thr));
-            if (!HG_(elemWS)(univ_lsets, thr->locksetA, (Word)lk)) 
+            if (!HG_(elemWS)(univ_lsets, thr->locksetA, (UWord)lk)) 
                BAD("6");
             // also check the w-only lockset
             if (lk->heldW 
-                && !HG_(elemWS)(univ_lsets, thr->locksetW, (Word)lk)) 
+                && !HG_(elemWS)(univ_lsets, thr->locksetW, (UWord)lk)) 
                BAD("7");
             if ((!lk->heldW)
-                && HG_(elemWS)(univ_lsets, thr->locksetW, (Word)lk)) 
+                && HG_(elemWS)(univ_lsets, thr->locksetW, (UWord)lk)) 
                BAD("8");
          }
          VG_(doneIterBag)( lk->heldBy );
@@ -907,14 +905,14 @@ static void locks__sanity_check ( Char* who )
 }
 
 
-static void all_except_Locks__sanity_check ( Char* who ) {
+static void all_except_Locks__sanity_check ( const HChar* who ) {
    stats__sanity_checks++;
    if (0) VG_(printf)("all_except_Locks__sanity_check(%s)\n", who);
    threads__sanity_check(who);
    if (HG_(clo_track_lockorders))
       laog__sanity_check(who);
 }
-static void all__sanity_check ( Char* who ) {
+static void all__sanity_check ( const HChar* who ) {
    all_except_Locks__sanity_check(who);
    locks__sanity_check(who);
 }
@@ -1103,8 +1101,8 @@ void evhH__post_thread_w_acquires_lock ( Thread* thr,
       laog__pre_thread_acquires_lock( thr, lk );
    }
    /* update the thread's held-locks set */
-   thr->locksetA = HG_(addToWS)( univ_lsets, thr->locksetA, (Word)lk );
-   thr->locksetW = HG_(addToWS)( univ_lsets, thr->locksetW, (Word)lk );
+   thr->locksetA = HG_(addToWS)( univ_lsets, thr->locksetA, (UWord)lk );
+   thr->locksetW = HG_(addToWS)( univ_lsets, thr->locksetW, (UWord)lk );
    /* fall through */
 
   error:
@@ -1178,7 +1176,7 @@ void evhH__post_thread_r_acquires_lock ( Thread* thr,
       laog__pre_thread_acquires_lock( thr, lk );
    }
    /* update the thread's held-locks set */
-   thr->locksetA = HG_(addToWS)( univ_lsets, thr->locksetA, (Word)lk );
+   thr->locksetA = HG_(addToWS)( univ_lsets, thr->locksetA, (UWord)lk );
    /* but don't update thr->locksetW, since lk is only rd-held */
    /* fall through */
 
@@ -1234,8 +1232,8 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
          client. */
       tl_assert(!lock->heldW);
       HG_(record_error_UnlockUnlocked)( thr, lock );
-      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetA, (Word)lock ));
-      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (Word)lock ));
+      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetA, (UWord)lock ));
+      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (UWord)lock ));
       goto error;
    }
 
@@ -1245,7 +1243,7 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
 
    /* The lock is held.  Is this thread one of the holders?  If not,
       report a bug in the client. */
-   n = VG_(elemBag)( lock->heldBy, (Word)thr );
+   n = VG_(elemBag)( lock->heldBy, (UWord)thr );
    tl_assert(n >= 0);
    if (n == 0) {
       /* We are not a current holder of the lock.  This is a bug in
@@ -1255,8 +1253,8 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
       Thread* realOwner = (Thread*)VG_(anyElementOfBag)( lock->heldBy );
       tl_assert(HG_(is_sane_Thread)(realOwner));
       tl_assert(realOwner != thr);
-      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetA, (Word)lock ));
-      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (Word)lock ));
+      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetA, (UWord)lock ));
+      tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (UWord)lock ));
       HG_(record_error_UnlockForeign)( thr, realOwner, lock );
       goto error;
    }
@@ -1271,16 +1269,16 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
 
    if (n > 0) {
       tl_assert(lock->heldBy);
-      tl_assert(n == VG_(elemBag)( lock->heldBy, (Word)thr )); 
+      tl_assert(n == VG_(elemBag)( lock->heldBy, (UWord)thr )); 
       /* We still hold the lock.  So either it's a recursive lock 
          or a rwlock which is currently r-held. */
       tl_assert(lock->kind == LK_mbRec
                 || (lock->kind == LK_rdwr && !lock->heldW));
-      tl_assert(HG_(elemWS)( univ_lsets, thr->locksetA, (Word)lock ));
+      tl_assert(HG_(elemWS)( univ_lsets, thr->locksetA, (UWord)lock ));
       if (lock->heldW)
-         tl_assert(HG_(elemWS)( univ_lsets, thr->locksetW, (Word)lock ));
+         tl_assert(HG_(elemWS)( univ_lsets, thr->locksetW, (UWord)lock ));
       else
-         tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (Word)lock ));
+         tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (UWord)lock ));
    } else {
       /* n is zero.  This means we don't hold the lock any more.  But
          if it's a rwlock held in r-mode, someone else could still
@@ -1306,13 +1304,13 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
          tl_assert(lock->heldW == False);
       }
       //if (lock->heldBy) {
-      //   tl_assert(0 == VG_(elemBag)( lock->heldBy, (Word)thr ));
+      //   tl_assert(0 == VG_(elemBag)( lock->heldBy, (UWord)thr ));
       //}
       /* update this thread's lockset accordingly. */
       thr->locksetA
-         = HG_(delFromWS)( univ_lsets, thr->locksetA, (Word)lock );
+         = HG_(delFromWS)( univ_lsets, thr->locksetA, (UWord)lock );
       thr->locksetW
-         = HG_(delFromWS)( univ_lsets, thr->locksetW, (Word)lock );
+         = HG_(delFromWS)( univ_lsets, thr->locksetW, (UWord)lock );
       /* push our VC into the lock */
       tl_assert(thr->hbthr);
       tl_assert(lock->hbso);
@@ -1948,7 +1946,7 @@ static void evh__HG_PTHREAD_MUTEX_LOCK_PRE ( ThreadId tid,
         && (lk->kind == LK_nonRec || lk->kind == LK_rdwr)
         && lk->heldBy
         && lk->heldW
-        && VG_(elemBag)( lk->heldBy, (Word)thr ) > 0 ) {
+        && VG_(elemBag)( lk->heldBy, (UWord)thr ) > 0 ) {
       /* uh, it's a non-recursive lock and we already w-hold it, and
          this is a real lock operation (not a speculative "tryLock"
          kind of thing).  Duh.  Deadlock coming up; but at least
@@ -2236,7 +2234,7 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
                "pthread_cond_{signal,broadcast}: dubious: "
                "associated lock is not held by any thread");
          }
-         if (lk->heldBy != NULL && 0 == VG_(elemBag)(lk->heldBy, (Word)thr)) {
+         if (lk->heldBy != NULL && 0 == VG_(elemBag)(lk->heldBy, (UWord)thr)) {
             HG_(record_error_Misc)(thr,
                "pthread_cond_{signal,broadcast}: "
                "associated lock is not held by calling thread");
@@ -2298,7 +2296,7 @@ static Bool evh__HG_PTHREAD_COND_WAIT_PRE ( ThreadId tid,
             thr, "pthread_cond_{timed}wait called with un-held mutex");
       } else
       if (lk->heldBy != NULL
-          && VG_(elemBag)( lk->heldBy, (Word)thr ) == 0) {
+          && VG_(elemBag)( lk->heldBy, (UWord)thr ) == 0) {
          lk_valid = False;
          HG_(record_error_Misc)(
             thr, "pthread_cond_{timed}wait called with mutex "
@@ -2590,7 +2588,7 @@ static void push_SO_for_sem ( void* sem, SO* so ) {
    } else {
      xa = VG_(newXA)( HG_(zalloc), "hg.pSfs.1", HG_(free), sizeof(SO*) );
       VG_(addToXA)( xa, &so );
-      VG_(addToFM)( map_sem_to_SO_stack, (Word)sem, (Word)xa );
+      VG_(addToFM)( map_sem_to_SO_stack, (UWord)sem, (UWord)xa );
    }
 }
 
@@ -3310,8 +3308,8 @@ static void laog__init ( void )
    tl_assert(laog_exposition);
 }
 
-static void laog__show ( Char* who ) {
-   Word i, ws_size;
+static void laog__show ( const HChar* who ) {
+   UWord i, ws_size;
    UWord* ws_words;
    Lock* me;
    LAOGLinks* links;
@@ -3319,8 +3317,8 @@ static void laog__show ( Char* who ) {
    VG_(initIterFM)( laog );
    me = NULL;
    links = NULL;
-   while (VG_(nextIterFM)( laog, (Word*)&me,
-                                 (Word*)&links )) {
+   while (VG_(nextIterFM)( laog, (UWord*)&me,
+                                 (UWord*)&links )) {
       tl_assert(me);
       tl_assert(links);
       VG_(printf)("   node %p:\n", me);
@@ -3418,7 +3416,7 @@ static void univ_laog_do_GC ( void ) {
 
 __attribute__((noinline))
 static void laog__add_edge ( Lock* src, Lock* dst ) {
-   Word       keyW;
+   UWord      keyW;
    LAOGLinks* links;
    Bool       presentF, presentR;
    if (0) VG_(printf)("laog__add_edge %p %p\n", src, dst);
@@ -3436,34 +3434,34 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
    /* Update the out edges for src */
    keyW  = 0;
    links = NULL;
-   if (VG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)src )) {
+   if (VG_(lookupFM)( laog, &keyW, (UWord*)&links, (UWord)src )) {
       WordSetID outs_new;
       tl_assert(links);
-      tl_assert(keyW == (Word)src);
-      outs_new = HG_(addToWS)( univ_laog, links->outs, (Word)dst );
+      tl_assert(keyW == (UWord)src);
+      outs_new = HG_(addToWS)( univ_laog, links->outs, (UWord)dst );
       presentF = outs_new == links->outs;
       links->outs = outs_new;
    } else {
       links = HG_(zalloc)("hg.lae.1", sizeof(LAOGLinks));
       links->inns = HG_(emptyWS)( univ_laog );
-      links->outs = HG_(singletonWS)( univ_laog, (Word)dst );
-      VG_(addToFM)( laog, (Word)src, (Word)links );
+      links->outs = HG_(singletonWS)( univ_laog, (UWord)dst );
+      VG_(addToFM)( laog, (UWord)src, (UWord)links );
    }
    /* Update the in edges for dst */
    keyW  = 0;
    links = NULL;
-   if (VG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)dst )) {
+   if (VG_(lookupFM)( laog, &keyW, (UWord*)&links, (UWord)dst )) {
       WordSetID inns_new;
       tl_assert(links);
-      tl_assert(keyW == (Word)dst);
-      inns_new = HG_(addToWS)( univ_laog, links->inns, (Word)src );
+      tl_assert(keyW == (UWord)dst);
+      inns_new = HG_(addToWS)( univ_laog, links->inns, (UWord)src );
       presentR = inns_new == links->inns;
       links->inns = inns_new;
    } else {
       links = HG_(zalloc)("hg.lae.2", sizeof(LAOGLinks));
-      links->inns = HG_(singletonWS)( univ_laog, (Word)src );
+      links->inns = HG_(singletonWS)( univ_laog, (UWord)src );
       links->outs = HG_(emptyWS)( univ_laog );
-      VG_(addToFM)( laog, (Word)dst, (Word)links );
+      VG_(addToFM)( laog, (UWord)dst, (UWord)links );
    }
 
    tl_assert( (presentF && presentR) || (!presentF && !presentR) );
@@ -3482,7 +3480,7 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
       expo.src_ec = NULL;
       expo.dst_ec = NULL;
       tl_assert(laog_exposition);
-      if (VG_(lookupFM)( laog_exposition, NULL, NULL, (Word)&expo )) {
+      if (VG_(lookupFM)( laog_exposition, NULL, NULL, (UWord)&expo )) {
          /* we already have it; do nothing */
       } else {
          LAOGLinkExposition* expo2 = HG_(zalloc)("hg.lae.3", 
@@ -3491,7 +3489,7 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
          expo2->dst_ga = dst->guestaddr;
          expo2->src_ec = src->acquired_at;
          expo2->dst_ec = dst->acquired_at;
-         VG_(addToFM)( laog_exposition, (Word)expo2, (Word)NULL );
+         VG_(addToFM)( laog_exposition, (UWord)expo2, (UWord)NULL );
       }
    }
 
@@ -3501,24 +3499,24 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
 
 __attribute__((noinline))
 static void laog__del_edge ( Lock* src, Lock* dst ) {
-   Word       keyW;
+   UWord      keyW;
    LAOGLinks* links;
    if (0) VG_(printf)("laog__del_edge enter %p %p\n", src, dst);
    /* Update the out edges for src */
    keyW  = 0;
    links = NULL;
-   if (VG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)src )) {
+   if (VG_(lookupFM)( laog, &keyW, (UWord*)&links, (UWord)src )) {
       tl_assert(links);
-      tl_assert(keyW == (Word)src);
-      links->outs = HG_(delFromWS)( univ_laog, links->outs, (Word)dst );
+      tl_assert(keyW == (UWord)src);
+      links->outs = HG_(delFromWS)( univ_laog, links->outs, (UWord)dst );
    }
    /* Update the in edges for dst */
    keyW  = 0;
    links = NULL;
-   if (VG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)dst )) {
+   if (VG_(lookupFM)( laog, &keyW, (UWord*)&links, (UWord)dst )) {
       tl_assert(links);
-      tl_assert(keyW == (Word)dst);
-      links->inns = HG_(delFromWS)( univ_laog, links->inns, (Word)src );
+      tl_assert(keyW == (UWord)dst);
+      links->inns = HG_(delFromWS)( univ_laog, links->inns, (UWord)src );
    }
 
    /* Remove the exposition of src,dst (if present) */
@@ -3545,13 +3543,13 @@ static void laog__del_edge ( Lock* src, Lock* dst ) {
 
 __attribute__((noinline))
 static WordSetID /* in univ_laog */ laog__succs ( Lock* lk ) {
-   Word       keyW;
+   UWord      keyW;
    LAOGLinks* links;
    keyW  = 0;
    links = NULL;
-   if (VG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)lk )) {
+   if (VG_(lookupFM)( laog, &keyW, (UWord*)&links, (UWord)lk )) {
       tl_assert(links);
-      tl_assert(keyW == (Word)lk);
+      tl_assert(keyW == (UWord)lk);
       return links->outs;
    } else {
       return HG_(emptyWS)( univ_laog );
@@ -3560,13 +3558,13 @@ static WordSetID /* in univ_laog */ laog__succs ( Lock* lk ) {
 
 __attribute__((noinline))
 static WordSetID /* in univ_laog */ laog__preds ( Lock* lk ) {
-   Word       keyW;
+   UWord      keyW;
    LAOGLinks* links;
    keyW  = 0;
    links = NULL;
-   if (VG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)lk )) {
+   if (VG_(lookupFM)( laog, &keyW, (UWord*)&links, (UWord)lk )) {
       tl_assert(links);
-      tl_assert(keyW == (Word)lk);
+      tl_assert(keyW == (UWord)lk);
       return links->inns;
    } else {
       return HG_(emptyWS)( univ_laog );
@@ -3574,8 +3572,8 @@ static WordSetID /* in univ_laog */ laog__preds ( Lock* lk ) {
 }
 
 __attribute__((noinline))
-static void laog__sanity_check ( Char* who ) {
-   Word i, ws_size;
+static void laog__sanity_check ( const HChar* who ) {
+   UWord i, ws_size;
    UWord* ws_words;
    Lock* me;
    LAOGLinks* links;
@@ -3583,22 +3581,22 @@ static void laog__sanity_check ( Char* who ) {
    me = NULL;
    links = NULL;
    if (0) VG_(printf)("laog sanity check\n");
-   while (VG_(nextIterFM)( laog, (Word*)&me,
-                                 (Word*)&links )) {
+   while (VG_(nextIterFM)( laog, (UWord*)&me,
+                                 (UWord*)&links )) {
       tl_assert(me);
       tl_assert(links);
       HG_(getPayloadWS)( &ws_words, &ws_size, univ_laog, links->inns );
       for (i = 0; i < ws_size; i++) {
          if ( ! HG_(elemWS)( univ_laog, 
                              laog__succs( (Lock*)ws_words[i] ), 
-                             (Word)me ))
+                             (UWord)me ))
             goto bad;
       }
       HG_(getPayloadWS)( &ws_words, &ws_size, univ_laog, links->outs );
       for (i = 0; i < ws_size; i++) {
          if ( ! HG_(elemWS)( univ_laog, 
                              laog__preds( (Lock*)ws_words[i] ), 
-                             (Word)me ))
+                             (UWord)me ))
             goto bad;
       }
       me = NULL;
@@ -3622,12 +3620,12 @@ static
 Lock* laog__do_dfs_from_to ( Lock* src, WordSetID dsts /* univ_lsets */ )
 {
    Lock*     ret;
-   Word      i, ssz;
+   Word      ssz;
    XArray*   stack;   /* of Lock* */
    WordFM*   visited; /* Lock* -> void, iow, Set(Lock*) */
    Lock*     here;
    WordSetID succs;
-   Word      succs_size;
+   UWord     succs_size, i;
    UWord*    succs_words;
    //laog__sanity_check();
 
@@ -3651,12 +3649,12 @@ Lock* laog__do_dfs_from_to ( Lock* src, WordSetID dsts /* univ_lsets */ )
       here = *(Lock**) VG_(indexXA)( stack, ssz-1 );
       VG_(dropTailXA)( stack, 1 );
 
-      if (HG_(elemWS)( univ_lsets, dsts, (Word)here )) { ret = here; break; }
+      if (HG_(elemWS)( univ_lsets, dsts, (UWord)here )) { ret = here; break; }
 
-      if (VG_(lookupFM)( visited, NULL, NULL, (Word)here ))
+      if (VG_(lookupFM)( visited, NULL, NULL, (UWord)here ))
          continue;
 
-      VG_(addToFM)( visited, (Word)here, 0 );
+      VG_(addToFM)( visited, (UWord)here, 0 );
 
       succs = laog__succs( here );
       HG_(getPayloadWS)( &succs_words, &succs_size, univ_laog, succs );
@@ -3681,13 +3679,13 @@ static void laog__pre_thread_acquires_lock (
             )
 {
    UWord*   ls_words;
-   Word     ls_size, i;
+   UWord    ls_size, i;
    Lock*    other;
 
    /* It may be that 'thr' already holds 'lk' and is recursively
       relocking in.  In this case we just ignore the call. */
    /* NB: univ_lsets really is correct here */
-   if (HG_(elemWS)( univ_lsets, thr->locksetA, (Word)lk ))
+   if (HG_(elemWS)( univ_lsets, thr->locksetA, (UWord)lk ))
       return;
 
    /* First, the check.  Complain if there is any path in laog from lk
@@ -3712,7 +3710,7 @@ static void laog__pre_thread_acquires_lock (
       key.dst_ec = NULL;
       found = NULL;
       if (VG_(lookupFM)( laog_exposition,
-                         (Word*)&found, NULL, (Word)&key )) {
+                         (UWord*)&found, NULL, (UWord)&key )) {
          tl_assert(found != &key);
          tl_assert(found->src_ga == key.src_ga);
          tl_assert(found->dst_ga == key.dst_ga);
@@ -3773,7 +3771,7 @@ __attribute__((noinline))
 static void laog__handle_one_lock_deletion ( Lock* lk )
 {
    WordSetID preds, succs;
-   Word preds_size, succs_size, i, j;
+   UWord preds_size, succs_size, i, j;
    UWord *preds_words, *succs_words;
 
    preds = laog__preds( lk );
@@ -4142,7 +4140,7 @@ static void instrument_mem_access ( IRSB*   sbOut,
                                     Int     goff_sp )
 {
    IRType   tyAddr   = Ity_INVALID;
-   HChar*   hName    = NULL;
+   const HChar* hName    = NULL;
    void*    hAddr    = NULL;
    Int      regparms = 0;
    IRExpr** argv     = NULL;
@@ -4649,7 +4647,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          if (0)
          VG_(printf)("XXXX: bind pthread_t %p to Thread* %p\n",
                      (void*)args[1], (void*)my_thr );
-         VG_(addToFM)( map_pthread_t_to_Thread, (Word)args[1], (Word)my_thr );
+         VG_(addToFM)( map_pthread_t_to_Thread, (UWord)args[1], (UWord)my_thr );
          break;
       }
 
@@ -4659,7 +4657,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          my_thr = map_threads_maybe_lookup( tid );
          tl_assert(my_thr); /* See justification above in SET_MY_PTHREAD_T */
          HG_(record_error_PthAPIerror)(
-            my_thr, (HChar*)args[1], (Word)args[2], (HChar*)args[3] );
+            my_thr, (HChar*)args[1], (UWord)args[2], (HChar*)args[3] );
          break;
       }
 
@@ -4673,7 +4671,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
                      (void*)args[1]);
          map_pthread_t_to_Thread_INIT();
          found = VG_(lookupFM)( map_pthread_t_to_Thread, 
-                                NULL, (Word*)&thr_q, (Word)args[1] );
+                                NULL, (UWord*)&thr_q, (UWord)args[1] );
           /* Can this fail?  It would mean that our pthread_join
              wrapper observed a successful join on args[1] yet that
              thread never existed (or at least, it never lodged an

@@ -1796,7 +1796,7 @@ __attribute__((noreturn))
 static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
 {
    if (due_to_nThrs) {
-      HChar* s =
+      const HChar* s =
          "\n"
          "Helgrind: cannot continue, run aborted: too many threads.\n"
          "Sorry.  Helgrind can only handle programs that create\n"
@@ -1804,7 +1804,7 @@ static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
          "\n";
       VG_(umsg)(s, (ULong)(ThrID_MAX_VALID - 1024));
    } else {
-      HChar* s =
+      const HChar* s =
          "\n"
          "Helgrind: cannot continue, run aborted: too many\n"
          "synchronisation events.  Sorry. Helgrind can only handle\n"
@@ -6491,7 +6491,8 @@ static inline Bool TRACEME(Addr a, SizeT szB) {
    if (XXX2 && a <= XXX2 && XXX2 <= a+szB) return True;
    return False;
 }
-static void trace ( Thr* thr, Addr a, SizeT szB, HChar* s ) {
+static void trace ( Thr* thr, Addr a, SizeT szB, const HChar* s ) 
+{
   SVal sv = zsm_sread08(a);
   VG_(printf)("thr %p (%#lx,%lu) %s: 0x%016llx ", thr,a,szB,s,sv);
   show_thread_state("", thr);

@@ -43,7 +43,7 @@ Bool  HG_(recognised_suppression) ( Char* name, Supp *su );
 Bool  HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
                                          Supp* su );
 Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
-Char* HG_(get_error_name) ( Error* err );
+HChar* HG_(get_error_name) ( Error* err );
 Bool  HG_(get_extra_suppression_info) ( Error* err,
                                         /*OUT*/Char* buf, Int nBuf );
 

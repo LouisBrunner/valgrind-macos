@@ -262,7 +262,7 @@ static void DRD_(print_debug_usage)(void)
 
 static void drd_pre_mem_read(const CorePart part,
                              const ThreadId tid,
-                             Char* const s,
+                             const HChar* const s,
                              const Addr a,
                              const SizeT size)
 {
@@ -274,7 +274,7 @@ static void drd_pre_mem_read(const CorePart part,
 
 static void drd_pre_mem_read_asciiz(const CorePart part,
                                     const ThreadId tid,
-                                    Char* const s,
+                                    const HChar* const s,
                                     const Addr a)
 {
    const char* p = (void*)a;

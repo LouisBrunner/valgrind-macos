@@ -72,7 +72,7 @@
    client or is free or a reservation. */
 
 Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
-                                   const Char *syscallname)
+                                   const HChar *syscallname)
 {
    Bool ret;
 
@@ -592,7 +592,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
 void ML_(record_fd_open_named)(ThreadId tid, Int fd)
 {
    static HChar buf[VKI_PATH_MAX];
-   Char* name;
+   HChar* name;
    if (VG_(resolve_filename)(fd, buf, VKI_PATH_MAX))
       name = buf;
    else
@@ -608,7 +608,7 @@ void ML_(record_fd_open_nameless)(ThreadId tid, Int fd)
 }
 
 static
-Char *unix2name(struct vki_sockaddr_un *sa, UInt len, Char *name)
+HChar *unix2name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
 {
    if (sa == NULL || len == 0 || sa->sun_path[0] == '\0') {
       VG_(sprintf)(name, "<unknown>");
@@ -620,7 +620,7 @@ Char *unix2name(struct vki_sockaddr_un *sa, UInt len, Char *name)
 }
 
 static
-Char *inet2name(struct vki_sockaddr_in *sa, UInt len, Char *name)
+HChar *inet2name(struct vki_sockaddr_in *sa, UInt len, HChar *name)
 {
    if (sa == NULL || len == 0) {
       VG_(sprintf)(name, "<unknown>");
@@ -691,7 +691,7 @@ getsockdetails(Int fd)
 
 
 /* Dump out a summary, and a more detailed list, of open file descriptors. */
-void VG_(show_open_fds) (HChar* when)
+void VG_(show_open_fds) (const HChar* when)
 {
    OpenFd *i = allocated_fds;
 
@@ -802,10 +802,11 @@ void VG_(init_preopened_fds)(void)
 }
 
 static
-Char *strdupcat ( HChar* cc, const Char *s1, const Char *s2, ArenaId aid )
+HChar *strdupcat ( const HChar* cc, const HChar *s1, const HChar *s2,
+                   ArenaId aid )
 {
    UInt len = VG_(strlen) ( s1 ) + VG_(strlen) ( s2 ) + 1;
-   Char *result = VG_(arena_malloc) ( aid, cc, len );
+   HChar *result = VG_(arena_malloc) ( aid, cc, len );
    VG_(strcpy) ( result, s1 );
    VG_(strcat) ( result, s2 );
    return result;
@@ -813,20 +814,20 @@ Char *strdupcat ( HChar* cc, const Char *s1, const Char *s2, ArenaId aid )
 
 static 
 void pre_mem_read_sendmsg ( ThreadId tid, Bool read,
-                            Char *msg, Addr base, SizeT size )
+                            const HChar *msg, Addr base, SizeT size )
 {
-   Char *outmsg = strdupcat ( "di.syswrap.pmrs.1",
-                              "sendmsg", msg, VG_AR_CORE );
+   HChar *outmsg = strdupcat ( "di.syswrap.pmrs.1",
+                               "sendmsg", msg, VG_AR_CORE );
    PRE_MEM_READ( outmsg, base, size );
    VG_(arena_free) ( VG_AR_CORE, outmsg );
 }
 
 static 
 void pre_mem_write_recvmsg ( ThreadId tid, Bool read,
-                             Char *msg, Addr base, SizeT size )
+                             const HChar *msg, Addr base, SizeT size )
 {
-   Char *outmsg = strdupcat ( "di.syswrap.pmwr.1",
-                              "recvmsg", msg, VG_AR_CORE );
+   HChar *outmsg = strdupcat ( "di.syswrap.pmwr.1",
+                               "recvmsg", msg, VG_AR_CORE );
    if ( read )
       PRE_MEM_READ( outmsg, base, size );
    else
@@ -836,7 +837,7 @@ void pre_mem_write_recvmsg ( ThreadId tid, Bool read,
 
 static
 void post_mem_write_recvmsg ( ThreadId tid, Bool read,
-                              Char *fieldName, Addr base, SizeT size )
+                              const HChar *fieldName, Addr base, SizeT size )
 {
    if ( !read )
       POST_MEM_WRITE( base, size );
@@ -845,13 +846,13 @@ void post_mem_write_recvmsg ( ThreadId tid, Bool read,
 static
 void msghdr_foreachfield ( 
         ThreadId tid,
-        Char *name,
+        const HChar *name,
         struct vki_msghdr *msg,
         UInt length,
-        void (*foreach_func)( ThreadId, Bool, Char *, Addr, SizeT ) 
+        void (*foreach_func)( ThreadId, Bool, const HChar *, Addr, SizeT ) 
      )
 {
-   Char *fieldName;
+   HChar *fieldName;
 
    if ( !msg )
       return;
@@ -928,10 +929,10 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
 /* GrP kernel ignores sa_len (at least on Darwin); this checks the rest */
 static
 void pre_mem_read_sockaddr ( ThreadId tid,
-                             Char *description,
+                             const HChar *description,
                              struct vki_sockaddr *sa, UInt salen )
 {
-   Char *outmsg;
+   HChar *outmsg;
    struct vki_sockaddr_un*  sun  = (struct vki_sockaddr_un *)sa;
    struct vki_sockaddr_in*  sin  = (struct vki_sockaddr_in *)sa;
    struct vki_sockaddr_in6* sin6 = (struct vki_sockaddr_in6 *)sa;
@@ -985,7 +986,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
 }
 
 /* Dereference a pointer to a UInt. */
-static UInt deref_UInt ( ThreadId tid, Addr a, Char* s )
+static UInt deref_UInt ( ThreadId tid, Addr a, const HChar* s )
 {
    UInt* a_p = (UInt*)a;
    PRE_MEM_READ( s, (Addr)a_p, sizeof(UInt) );
@@ -996,7 +997,7 @@ static UInt deref_UInt ( ThreadId tid, Addr a, Char* s )
 }
 
 void ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
-                                  Char* buf_s, Char* buflen_s )
+                                  const HChar* buf_s, const HChar* buflen_s )
 {
    if (VG_(tdict).track_pre_mem_write) {
       UInt buflen_in = deref_UInt( tid, buflen_p, buflen_s);
@@ -1008,7 +1009,7 @@ void ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
 }
 
 void ML_(buf_and_len_post_check) ( ThreadId tid, SysRes res,
-                                   Addr buf_p, Addr buflen_p, Char* s )
+                                   Addr buf_p, Addr buflen_p, const HChar* s )
 {
    if (!sr_isError(res) && VG_(tdict).track_post_mem_write) {
       UInt buflen_out = deref_UInt( tid, buflen_p, s);
@@ -1156,7 +1157,8 @@ descriptors can be created above the new soft limit.
 */
 
 /* Return true if we're allowed to use or create this fd */
-Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFd)
+Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
+                     Bool isNewFd)
 {
    Bool allowed = True;
 
@@ -1507,7 +1509,8 @@ ML_(generic_POST_sys_getpeername) ( ThreadId tid,
 /* ------ */
 
 void 
-ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
+ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, const HChar *name,
+                               struct vki_msghdr *msg )
 {
    msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_read_sendmsg );
 }
@@ -1515,13 +1518,15 @@ ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg 
 /* ------ */
 
 void
-ML_(generic_PRE_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg )
+ML_(generic_PRE_sys_recvmsg) ( ThreadId tid, const HChar *name,
+                               struct vki_msghdr *msg )
 {
    msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_write_recvmsg );
 }
 
 void 
-ML_(generic_POST_sys_recvmsg) ( ThreadId tid, Char *name, struct vki_msghdr *msg, UInt length )
+ML_(generic_POST_sys_recvmsg) ( ThreadId tid, const HChar *name,
+                                struct vki_msghdr *msg, UInt length )
 {
    msghdr_foreachfield( tid, name, msg, length, post_mem_write_recvmsg );
    check_cmsg_for_fds( tid, msg );
@@ -2482,7 +2487,7 @@ PRE(sys_flock)
 }
 
 // Pre_read a char** argument.
-static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
+static void pre_argv_envp(Addr a, ThreadId tid, const HChar* s1, const HChar* s2)
 {
    while (True) {
       Addr a_deref;
@@ -2582,7 +2587,7 @@ PRE(sys_execve)
    // ok, etc.  We allow setuid executables to run only in the case when
    // we are not simulating them, that is, they to be run natively.
    setuid_allowed = trace_this_child  ? False  : True;
-   res = VG_(pre_exec_check)((const Char*)ARG1, NULL, setuid_allowed);
+   res = VG_(pre_exec_check)((const HChar *)ARG1, NULL, setuid_allowed);
    if (sr_isError(res)) {
       SET_STATUS_Failure( sr_Err(res) );
       return;
@@ -4217,4 +4222,3 @@ POST(sys_sigaltstack)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

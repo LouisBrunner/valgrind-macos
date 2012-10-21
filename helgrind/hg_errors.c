@@ -1333,7 +1333,7 @@ void HG_(pp_Error) ( Error* err )
    } /* switch (VG_(get_error_kind)(err)) */
 }
 
-HChar* HG_(get_error_name) ( Error* err )
+const HChar* HG_(get_error_name) ( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
       case XE_Race:           return "Race";

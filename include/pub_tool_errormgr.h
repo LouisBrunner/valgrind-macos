@@ -56,11 +56,11 @@ typedef
 
 /* Useful in VG_(tdict).tool_error_matches_suppression(),
  * VG_(tdict).tool_pp_Error(), etc */
-ExeContext* VG_(get_error_where)   ( Error* err );
-ErrorKind   VG_(get_error_kind)    ( Error* err );
-Addr        VG_(get_error_address) ( Error* err );
-Char*       VG_(get_error_string)  ( Error* err );
-void*       VG_(get_error_extra)   ( Error* err );
+ExeContext*  VG_(get_error_where)   ( Error* err );
+ErrorKind    VG_(get_error_kind)    ( Error* err );
+Addr         VG_(get_error_address) ( Error* err );
+const HChar* VG_(get_error_string)  ( Error* err );
+void*        VG_(get_error_extra)   ( Error* err );
 
 /* Call this when an error occurs.  It will be recorded if it hasn't been
    seen before.  If it has, the existing error record will have its count
@@ -73,7 +73,7 @@ void*       VG_(get_error_extra)   ( Error* err );
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
    NULL for them.  */
 extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
-                                      Addr a, Char* s, void* extra );
+                                      Addr a, const HChar* s, void* extra );
 
 /* Similar to VG_(maybe_record_error)(), except this one doesn't record the
    error -- useful for errors that can only happen once.  The errors can be
@@ -83,7 +83,7 @@ extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
    be suppressed without possibly printing it.  'count_error' dictates
    whether to add the error in the error total count (another mild hack). */
 extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
-                                Addr a, Char* s, void* extra,
+                                Addr a, const HChar* s, void* extra,
                                 ExeContext* where, Bool print_error,
                                 Bool allow_GDB_attach, Bool count_error );
 

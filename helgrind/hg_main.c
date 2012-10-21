@@ -1701,7 +1701,7 @@ void evh__HG_PTHREAD_JOIN_POST ( ThreadId stay_tid, Thread* quit_thr )
 }
 
 static
-void evh__pre_mem_read ( CorePart part, ThreadId tid, Char* s, 
+void evh__pre_mem_read ( CorePart part, ThreadId tid, const HChar* s, 
                          Addr a, SizeT size) {
    if (SHOW_EVENTS >= 2
        || (SHOW_EVENTS >= 1 && size != 1))
@@ -1714,7 +1714,7 @@ void evh__pre_mem_read ( CorePart part, ThreadId tid, Char* s,
 
 static
 void evh__pre_mem_read_asciiz ( CorePart part, ThreadId tid,
-                                Char* s, Addr a ) {
+                                const HChar* s, Addr a ) {
    Int len;
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__pre_mem_asciiz(ctid=%d, \"%s\", %p)\n", 
@@ -1732,7 +1732,7 @@ void evh__pre_mem_read_asciiz ( CorePart part, ThreadId tid,
 }
 
 static
-void evh__pre_mem_write ( CorePart part, ThreadId tid, Char* s,
+void evh__pre_mem_write ( CorePart part, ThreadId tid, const HChar* s,
                           Addr a, SizeT size ) {
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__pre_mem_write(ctid=%d, \"%s\", %p, %lu)\n", 

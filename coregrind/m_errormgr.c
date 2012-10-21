@@ -139,7 +139,7 @@ struct _Error {
    ExeContext* where;      // Initialised by core
    ErrorKind ekind;        // Used by ALL.  Must be in the range (0..)
    Addr addr;              // Used frequently
-   Char* string;           // Used frequently
+   const HChar* string;    // Used frequently
    void* extra;            // For any tool-specific extras
 };
 
@@ -159,7 +159,7 @@ Addr VG_(get_error_address) ( Error* err )
    return err->addr;
 }
 
-Char* VG_(get_error_string) ( Error* err )
+const HChar* VG_(get_error_string) ( Error* err )
 {
    return err->string;
 }
@@ -618,7 +618,7 @@ static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
 /* Construct an error */
 static
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
-                       Char* s, void* extra, ExeContext* where )
+                       const HChar* s, void* extra, ExeContext* where )
 {
    /* DO NOT MAKE unique_counter NON-STATIC */
    static UInt unique_counter = 0;
@@ -652,7 +652,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
 void VG_(maybe_record_error) ( ThreadId tid, 
-                               ErrorKind ekind, Addr a, Char* s, void* extra )
+                               ErrorKind ekind, Addr a, const HChar* s, void* extra )
 {
           Error  err;
           Error* p;
@@ -824,7 +824,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    suppressed.  Bool 'print_error' dictates whether to print the error. 
    Bool 'count_error' dictates whether to count the error in n_errs_found.
 */
-Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
+Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
                          void* extra, ExeContext* where, Bool print_error,
                          Bool allow_db_attach, Bool count_error )
 {

@@ -3684,7 +3684,7 @@ PRE(sys_process_vm_writev)
 PRE(sys_sendmmsg)
 {
    struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-   Char name[32];
+   HChar name[32];
    UInt i;
    *flags |= SfMayBlock;
    PRINT("sys_sendmmsg ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
@@ -3712,7 +3712,7 @@ POST(sys_sendmmsg)
 PRE(sys_recvmmsg)
 {
    struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-   Char name[32];
+   HChar name[32];
    UInt i;
    *flags |= SfMayBlock;
    PRINT("sys_recvmmsg ( %ld, %#lx, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
@@ -3733,7 +3733,7 @@ POST(sys_recvmmsg)
 {
    if (RES > 0) {
       struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-      Char name[32];
+      HChar name[32];
       UInt i;
       for (i = 0; i < RES; i++) {
          VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);

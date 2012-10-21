@@ -3723,7 +3723,7 @@ static Bool mc_is_defined_asciiz ( Addr a, Addr* bad_addr, UInt* otag )
 /*------------------------------------------------------------*/
 
 static
-void check_mem_is_addressable ( CorePart part, ThreadId tid, Char* s,
+void check_mem_is_addressable ( CorePart part, ThreadId tid, const HChar* s,
                                 Addr base, SizeT size )
 {
    Addr bad_addr;
@@ -3747,7 +3747,7 @@ void check_mem_is_addressable ( CorePart part, ThreadId tid, Char* s,
 }
 
 static
-void check_mem_is_defined ( CorePart part, ThreadId tid, Char* s,
+void check_mem_is_defined ( CorePart part, ThreadId tid, const HChar* s,
                             Addr base, SizeT size )
 {     
    UInt otag = 0;
@@ -3781,7 +3781,7 @@ void check_mem_is_defined ( CorePart part, ThreadId tid, Char* s,
 
 static
 void check_mem_is_defined_asciiz ( CorePart part, ThreadId tid,
-                                   Char* s, Addr str )
+                                   const HChar* s, Addr str )
 {
    MC_ReadResult res;
    Addr bad_addr = 0;   // shut GCC up
@@ -3962,7 +3962,7 @@ void mc_post_reg_write_clientcall ( ThreadId tid,
    [offset, offset+len).  If any part of that is undefined, record 
    a parameter error.
 */
-static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s, 
+static void mc_pre_reg_read ( CorePart part, ThreadId tid, const HChar* s, 
                               PtrdiffT offset, SizeT size)
 {
    Int   i;

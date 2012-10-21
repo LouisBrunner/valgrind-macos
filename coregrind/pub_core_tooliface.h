@@ -124,7 +124,7 @@ typedef struct {
    Bool  (*tool_recognised_suppression)      (Char*, Supp*);
    Bool  (*tool_read_extra_suppression_info) (Int, Char**, SizeT*, Supp*);
    Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
-   Char* (*tool_get_error_name)              (Error*);
+   const HChar* (*tool_get_error_name)       (Error*);
    Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/Char*,Int);
 
    // VG_(needs).superblock_discards
@@ -212,13 +212,13 @@ typedef struct {
 
    void (*track_ban_mem_stack)(Addr, SizeT);
 
-   void (*track_pre_mem_read)       (CorePart, ThreadId, Char*, Addr, SizeT);
-   void (*track_pre_mem_read_asciiz)(CorePart, ThreadId, Char*, Addr);
-   void (*track_pre_mem_write)      (CorePart, ThreadId, Char*, Addr, SizeT);
+   void (*track_pre_mem_read)       (CorePart, ThreadId, const HChar*, Addr, SizeT);
+   void (*track_pre_mem_read_asciiz)(CorePart, ThreadId, const HChar*, Addr);
+   void (*track_pre_mem_write)      (CorePart, ThreadId, const HChar*, Addr, SizeT);
    void (*track_post_mem_write)     (CorePart, ThreadId, Addr, SizeT);
 
-   void (*track_pre_reg_read)  (CorePart, ThreadId, Char*, PtrdiffT, SizeT);
-   void (*track_post_reg_write)(CorePart, ThreadId,        PtrdiffT, SizeT);
+   void (*track_pre_reg_read)  (CorePart, ThreadId, const HChar*, PtrdiffT, SizeT);
+   void (*track_post_reg_write)(CorePart, ThreadId,               PtrdiffT, SizeT);
    void (*track_post_reg_write_clientcall_return)(ThreadId, PtrdiffT, SizeT,
                                                   Addr);
 

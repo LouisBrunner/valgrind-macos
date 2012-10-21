@@ -233,7 +233,7 @@ void VG_(needs_tool_errors)(
    Bool (*recog)      (Char*, Supp*),
    Bool (*read_extra) (Int, Char**, SizeT*, Supp*),
    Bool (*matches)    (Error*, Supp*),
-   Char* (*name)      (Error*),
+   const HChar* (*name) (Error*),
    Bool (*get_xtra_si)(Error*,/*OUT*/Char*,Int)
 )
 {
@@ -395,13 +395,13 @@ DEF0(track_die_mem_stack,         Addr, SizeT)
 
 DEF0(track_ban_mem_stack,         Addr, SizeT)
 
-DEF0(track_pre_mem_read,          CorePart, ThreadId, Char*, Addr, SizeT)
-DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, Char*, Addr)
-DEF0(track_pre_mem_write,         CorePart, ThreadId, Char*, Addr, SizeT)
+DEF0(track_pre_mem_read,          CorePart, ThreadId, const HChar*, Addr, SizeT)
+DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, const HChar*, Addr)
+DEF0(track_pre_mem_write,         CorePart, ThreadId, const HChar*, Addr, SizeT)
 DEF0(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
 
-DEF0(track_pre_reg_read,          CorePart, ThreadId, Char*, PtrdiffT, SizeT)
-DEF0(track_post_reg_write,        CorePart, ThreadId,        PtrdiffT, SizeT)
+DEF0(track_pre_reg_read,          CorePart, ThreadId, const HChar*, PtrdiffT, SizeT)
+DEF0(track_post_reg_write,        CorePart, ThreadId,               PtrdiffT, SizeT)
 
 DEF0(track_post_reg_write_clientcall_return, ThreadId, PtrdiffT, SizeT, Addr)
 

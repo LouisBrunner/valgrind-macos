@@ -331,7 +331,7 @@ extern void VG_(needs_tool_errors) (
    // This should return the suppression name, for --gen-suppressions, or NULL
    // if that error type cannot be suppressed.  This is the inverse of
    // VG_(tdict).tool_recognised_suppression().
-   Char* (*get_error_name)(Error* err),
+   const HChar* (*get_error_name)(Error* err),
 
    // This should print into buf[0..nBuf-1] any extra info for the
    // error, for --gen-suppressions, but not including any leading
@@ -585,18 +585,18 @@ void VG_(track_ban_mem_stack)      (void(*f)(Addr a, SizeT len));
 
 /* These ones occur around syscalls, signal handling, etc */
 void VG_(track_pre_mem_read)       (void(*f)(CorePart part, ThreadId tid,
-                                             Char* s, Addr a, SizeT size));
+                                             const HChar* s, Addr a, SizeT size));
 void VG_(track_pre_mem_read_asciiz)(void(*f)(CorePart part, ThreadId tid,
-                                             Char* s, Addr a));
+                                             const HChar* s, Addr a));
 void VG_(track_pre_mem_write)      (void(*f)(CorePart part, ThreadId tid,
-                                             Char* s, Addr a, SizeT size));
+                                             const HChar* s, Addr a, SizeT size));
 void VG_(track_post_mem_write)     (void(*f)(CorePart part, ThreadId tid,
                                              Addr a, SizeT size));
 
 /* Register events.  Use VG_(set_shadow_state_area)() to set the shadow regs
    for these events.  */
 void VG_(track_pre_reg_read)  (void(*f)(CorePart part, ThreadId tid,
-                                        Char* s, PtrdiffT guest_state_offset,
+                                        const HChar* s, PtrdiffT guest_state_offset,
                                         SizeT size));
 void VG_(track_post_reg_write)(void(*f)(CorePart part, ThreadId tid,
                                         PtrdiffT guest_state_offset,

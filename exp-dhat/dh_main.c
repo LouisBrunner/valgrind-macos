@@ -727,7 +727,7 @@ void dh_handle_read ( Addr addr, UWord szB )
 // boundary and so we can treat it just as one giant
 // read or write.
 static
-void dh_handle_noninsn_read ( CorePart part, ThreadId tid, Char* s,
+void dh_handle_noninsn_read ( CorePart part, ThreadId tid, const HChar* s,
                               Addr base, SizeT size )
 {
    switch (part) {

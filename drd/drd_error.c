@@ -43,7 +43,7 @@
 
 /* Local function declarations. */
 
-static Char* drd_get_error_name(Error* e);
+static const HChar* drd_get_error_name(Error* e);
 
 
 /* Local variables. */
@@ -569,7 +569,7 @@ static Bool drd_error_matches_suppression(Error* const e, Supp* const supp)
    return VG_(get_supp_kind)(supp) == VG_(get_error_kind)(e);
 }
 
-static Char* drd_get_error_name(Error* e)
+static const HChar* drd_get_error_name(Error* e)
 {
    switch (VG_(get_error_kind)(e))
    {

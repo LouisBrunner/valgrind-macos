@@ -544,7 +544,7 @@ void pc_pp_Error ( Error* err )
       Addr  hi    = xe->XE.SysParam.hi;
       Seg*  seglo = xe->XE.SysParam.seglo;
       Seg*  seghi = xe->XE.SysParam.seghi;
-      Char* s     = VG_(get_error_string) (err);
+      const HChar* s = VG_(get_error_string) (err);
       HChar* what;
 
       tl_assert(BOTTOM != seglo && BOTTOM != seghi);
@@ -764,7 +764,7 @@ Bool pc_error_matches_suppression (Error* err, Supp* su)
    }
 }
 
-HChar* pc_get_error_name ( Error* err )
+const HChar* pc_get_error_name ( Error* err )
 {
    XError *xe = (XError*)VG_(get_error_extra)(err);
    tl_assert(xe);
@@ -784,7 +784,7 @@ Bool pc_get_extra_suppression_info ( Error* err,
    tl_assert(buf);
    tl_assert(nBuf >= 16); // stay sane
    if (XE_SysParam == ekind) {
-      Char* errstr = VG_(get_error_string)(err);
+      const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
       VG_(snprintf)(buf, nBuf-1, "%s", errstr);
       return True;

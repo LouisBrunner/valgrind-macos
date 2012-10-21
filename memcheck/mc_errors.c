@@ -890,12 +890,12 @@ void MC_(record_cond_error) ( ThreadId tid, UInt otag )
 /* --- Called from non-generated code --- */
 
 /* This is for memory errors in signal-related memory. */
-void MC_(record_core_mem_error) ( ThreadId tid, Char* msg )
+void MC_(record_core_mem_error) ( ThreadId tid, const HChar* msg )
 {
    VG_(maybe_record_error)( tid, Err_CoreMem, /*addr*/0, msg, /*extra*/NULL );
 }
 
-void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag )
+void MC_(record_regparam_error) ( ThreadId tid, const HChar* msg, UInt otag )
 {
    MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
@@ -907,7 +907,7 @@ void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag )
 }
 
 void MC_(record_memparam_error) ( ThreadId tid, Addr a, 
-                                  Bool isAddrErr, Char* msg, UInt otag )
+                                  Bool isAddrErr, const HChar* msg, UInt otag )
 {
    MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
@@ -963,7 +963,7 @@ void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a )
    VG_(maybe_record_error)( tid, Err_IllegalMempool, a, /*s*/NULL, &extra );
 }
 
-void MC_(record_overlap_error) ( ThreadId tid, Char* function,
+void MC_(record_overlap_error) ( ThreadId tid, const HChar* function,
                                  Addr src, Addr dst, SizeT szB )
 {
    MC_Error extra;
@@ -1025,7 +1025,7 @@ Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
    
    switch (VG_(get_error_kind)(e1)) {
       case Err_CoreMem: {
-         Char *e1s, *e2s;
+         const HChar *e1s, *e2s;
          e1s = VG_(get_error_string)(e1);
          e2s = VG_(get_error_string)(e2);
          if (e1s == e2s)                   return True;
@@ -1518,7 +1518,7 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-HChar* MC_(get_error_name) ( Error* err )
+const HChar* MC_(get_error_name) ( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
    case Err_RegParam:       return "Param";
@@ -1565,7 +1565,7 @@ Bool MC_(get_extra_suppression_info) ( Error* err,
    tl_assert(buf);
    tl_assert(nBuf >= 16); // stay sane
    if (Err_RegParam == ekind || Err_MemParam == ekind) {
-      Char* errstr = VG_(get_error_string)(err);
+      const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
       VG_(snprintf)(buf, nBuf-1, "%s", errstr);
       return True;

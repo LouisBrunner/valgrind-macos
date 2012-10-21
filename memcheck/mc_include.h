@@ -382,7 +382,7 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 Bool MC_(get_extra_suppression_info) ( Error* err,
                                        /*OUT*/Char* buf, Int nBuf );
 
-HChar* MC_(get_error_name) ( Error* err );
+const HChar* MC_(get_error_name) ( Error* err );
 
 /* Recording of errors */
 void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,
@@ -395,12 +395,12 @@ void MC_(record_free_error)            ( ThreadId tid, Addr a );
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
 void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
 
-void MC_(record_overlap_error)  ( ThreadId tid, Char* function,
+void MC_(record_overlap_error)  ( ThreadId tid, const HChar* function,
                                   Addr src, Addr dst, SizeT szB );
-void MC_(record_core_mem_error) ( ThreadId tid, Char* msg );
-void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag );
+void MC_(record_core_mem_error) ( ThreadId tid, const HChar* msg );
+void MC_(record_regparam_error) ( ThreadId tid, const HChar* msg, UInt otag );
 void MC_(record_memparam_error) ( ThreadId tid, Addr a, 
-                                  Bool isAddrErr, Char* msg, UInt otag );
+                                  Bool isAddrErr, const HChar* msg, UInt otag );
 void MC_(record_user_error)     ( ThreadId tid, Addr a,
                                   Bool isAddrErr, UInt otag );
 

@@ -108,7 +108,7 @@ static void usage_NORETURN ( Bool debug_help )
       - for the name of the GDB executable
       - for the name of vgdb's path prefix
       which must be supplied when they are VG_(printf)'d. */
-   const HChar* usage1 = 
+   const HChar usage1[] = 
 "usage: valgrind [options] prog-and-args\n"
 "\n"
 "  tool-selection option, with default in [ ]:\n"
@@ -200,7 +200,7 @@ static void usage_NORETURN ( Bool debug_help )
 "                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so\n"
 "\n";
 
-   const HChar* usage2 = 
+   const HChar usage2[] = 
 "\n"
 "  debugging options for all Valgrind tools:\n"
 "    -d                        show verbose debugging output\n"
@@ -257,7 +257,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-malloc=no|yes     show client malloc details? [no]\n"
 "\n";
 
-   const HChar* usage3 =
+   const HChar usage3[] =
 "\n"
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"

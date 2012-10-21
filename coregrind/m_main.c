@@ -108,7 +108,7 @@ static void usage_NORETURN ( Bool debug_help )
       - for the name of the GDB executable
       - for the name of vgdb's path prefix
       which must be supplied when they are VG_(printf)'d. */
-   Char* usage1 = 
+   const HChar* usage1 = 
 "usage: valgrind [options] prog-and-args\n"
 "\n"
 "  tool-selection option, with default in [ ]:\n"
@@ -200,7 +200,7 @@ static void usage_NORETURN ( Bool debug_help )
 "                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so\n"
 "\n";
 
-   Char* usage2 = 
+   const HChar* usage2 = 
 "\n"
 "  debugging options for all Valgrind tools:\n"
 "    -d                        show verbose debugging output\n"
@@ -257,7 +257,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-malloc=no|yes     show client malloc details? [no]\n"
 "\n";
 
-   Char* usage3 =
+   const HChar* usage3 =
 "\n"
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
@@ -268,7 +268,7 @@ static void usage_NORETURN ( Bool debug_help )
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";
 
-   Char* gdb_path = GDB_PATH;
+   const HChar* gdb_path = GDB_PATH;
    Char default_alignment[30];
    Char default_redzone_size[30];
 
@@ -1073,7 +1073,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
        (VG_(needs).core_errors || VG_(needs).tool_errors)) {
       /* If we haven't reached the max number of suppressions, load
          the default one. */
-      static const Char default_supp[] = "default.supp";
+      static const HChar default_supp[] = "default.supp";
       Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(default_supp);
       Char *buf = VG_(arena_malloc)(VG_AR_CORE, "main.mpclo.3", len);
       VG_(sprintf)(buf, "%s/%s", VG_(libdir), default_supp);
@@ -1136,7 +1136,7 @@ static void print_file_vars(Char* format)
 static void umsg_arg(const Char* arg)
 {
    SizeT len = VG_(strlen)(arg);
-   Char* special = " \\<>";
+   const HChar* special = " \\<>";
    Int i;
    for (i = 0; i < len; i++) {
       if (VG_(strchr)(special, arg[i])) {
@@ -1194,7 +1194,7 @@ static void print_preamble ( Bool logging_to_fd,
                    VG_(details).name, 
                    NULL == VG_(details).version ? "" : "-",
                    NULL == VG_(details).version 
-                      ? (Char*)"" : VG_(details).version,
+                      ? "" : VG_(details).version,
                    VG_(details).description,
                    xpost );
 
@@ -2010,7 +2010,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       /* The tool's "needs" will by now be finalised, since it has no
          further opportunity to specify them.  So now sanity check
          them. */
-      HChar* s;
+      const HChar* s;
       Bool  ok;
       ok = VG_(sanity_check_needs)( &s );
       if (!ok) {

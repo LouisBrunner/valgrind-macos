@@ -773,10 +773,11 @@ in most cases.  We group the available options by rough categories.</para>
     </term>
     <listitem>
       <para>When enabled, Valgrind will print out a list of open file
-      descriptors on exit.  Along with each file descriptor is printed a
-      stack backtrace of where the file was opened and any details
-      relating to the file descriptor such as the file name or socket
-      details.</para>
+      descriptors on exit or on request, via the gdbserver monitor
+      command <varname>v.info open_fds</varname>.  Along with each
+      file descriptor is printed a stack backtrace of where the file
+      was opened and any details relating to the file descriptor such
+      as the file name or socket details.</para>
     </listitem>
   </varlistentry>
 

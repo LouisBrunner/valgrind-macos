@@ -2491,7 +2491,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    /* Print out file descriptor summary and stats. */
    if (VG_(clo_track_fds))
-      VG_(show_open_fds)();
+      VG_(show_open_fds)("at exit");
 
    /* Call the tool's finalisation function.  This makes Memcheck's
       leak checker run, and possibly chuck a bunch of leak errors into

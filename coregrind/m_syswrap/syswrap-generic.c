@@ -691,11 +691,11 @@ getsockdetails(Int fd)
 
 
 /* Dump out a summary, and a more detailed list, of open file descriptors. */
-void VG_(show_open_fds) (void)
+void VG_(show_open_fds) (HChar* when)
 {
    OpenFd *i = allocated_fds;
 
-   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open at exit.\n", fd_count);
+   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open %s.\n", fd_count, when);
 
    while (i) {
       if (i->pathname) {

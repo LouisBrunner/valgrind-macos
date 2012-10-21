@@ -1274,6 +1274,13 @@ command (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>). </par
   </listitem>
 
   <listitem>
+    <para><varname>v.info open_fds</varname> shows the list of open file
+    descriptors and details related to the file descriptor.
+    This only works if <option>--track-fds=yes</option>
+    was given at Valgrind startup.</para>
+  </listitem>
+
+  <listitem>
     <para><varname>v.set {gdb_output | log_output |
     mixed_output}</varname> allows redirection of the Valgrind output
     (e.g. the errors detected by the tool).  The default setting is

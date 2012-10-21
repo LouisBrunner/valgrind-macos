@@ -63,7 +63,7 @@ extern void VG_(cleanup_thread) ( ThreadArchState* );
 
 /* fd leakage calls. */
 extern void VG_(init_preopened_fds) ( void );
-extern void VG_(show_open_fds) ( void );
+extern void VG_(show_open_fds) ( HChar* when );
 
 // When the final thread is done, where shall I call to shutdown the
 // system cleanly?  Is set once at startup (in m_main) and never

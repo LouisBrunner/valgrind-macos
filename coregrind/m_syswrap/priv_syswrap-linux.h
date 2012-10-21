@@ -294,6 +294,10 @@ extern void ML_(linux_POST_sys_getsockopt) ( TId, SR, UW, UW, UW, UW, UW );
 #undef UW
 #undef SR
 
+/* sys_ipc is a multiplexor which implements several syscalls.
+   Used e.g. by x86, ppc32, ppc64, ... */
+DECL_TEMPLATE(linux, sys_ipc);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

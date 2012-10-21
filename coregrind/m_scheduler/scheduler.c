@@ -1373,7 +1373,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          static Int  counts[EmNote_NUMBER];
          static Bool counts_initted = False;
          VexEmNote ew;
-         HChar*    what;
+         const HChar* what;
          Bool      show;
          Int       q;
          if (!counts_initted) {
@@ -1399,7 +1399,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_EMFAIL: {
          VexEmNote ew;
-         HChar*    what;
+         const HChar* what;
          ew   = (VexEmNote)VG_(threads)[tid].arch.vex.guest_EMNOTE;
          what = (ew < 0 || ew >= EmNote_NUMBER)
                    ? "unknown (?!)"

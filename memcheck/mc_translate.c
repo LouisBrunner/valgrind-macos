@@ -5691,7 +5691,7 @@ Bool check_or_add ( XArray* /*of Pair*/ pairs, IRExpr* guard, void* entry )
    return False;
 }
 
-static Bool is_helperc_value_checkN_fail ( HChar* name )
+static Bool is_helperc_value_checkN_fail ( const HChar* name )
 {
    return
       0==VG_(strcmp)(name, "MC_(helperc_value_check0_fail_no_o)")

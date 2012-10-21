@@ -38,6 +38,7 @@ m = merged into 3_8_BRANCH
 308321    [390] testsuite memcheck filter interferes with gdb_filter 
 308341    [390] vgdb should report process exit (or fatal signal)
 308644    [390] vgdb command for having the info for the track-fds option
+308711    [390] give more info about aspacemgr and arenas in out_of_memory
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 

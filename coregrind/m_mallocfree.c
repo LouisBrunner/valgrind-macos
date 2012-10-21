@@ -704,7 +704,12 @@ void ensure_mm_init ( ArenaId aid )
 __attribute__((noreturn))
 void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
 {
-   static Bool alreadyCrashing = False;
+   static Int outputTrial = 0;
+   // We try once to output the full memory state followed by the below message.
+   // If that fails (due to out of memory during first trial), we try to just
+   // output the below message.
+   // And then we abandon.
+   
    ULong tot_alloc = VG_(am_get_anonsize_total)();
    Char* s1 = 
       "\n"
@@ -729,8 +734,15 @@ void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
       "    3GB per process.\n\n"
       "    Whatever the reason, Valgrind cannot continue.  Sorry.\n";
 
-   if (!alreadyCrashing) {
-      alreadyCrashing = True;
+   if (outputTrial <= 1) {
+      if (outputTrial == 0) {
+         outputTrial++;
+         VG_(am_show_nsegments) (0, "out_of_memory");
+         VG_(print_all_arena_stats) ();
+         if (VG_(clo_profile_heap))
+            VG_(print_arena_cc_analysis) ();
+      }
+      outputTrial++;
       VG_(message)(Vg_UserMsg, s1, who, (ULong)szB, tot_alloc);
    } else {
       VG_(debugLog)(0,"mallocfree", s1, who, (ULong)szB, tot_alloc);

@@ -56,8 +56,8 @@ typedef struct _CommandLineOptions CommandLineOptions;
 struct _CommandLineOptions {
 
   /* Dump format options */
-  Char* out_format;      /* Format string for callgrind output file name */
-  Bool combine_dumps;    /* Dump trace parts into same file? */
+  const HChar* out_format;  /* Format string for callgrind output file name */
+  Bool combine_dumps;       /* Dump trace parts into same file? */
   Bool compress_strings;
   Bool compress_events;
   Bool compress_pos;
@@ -468,7 +468,7 @@ struct _file_node {
  * zero when object is unmapped (possible at dump time).
  */
 struct _obj_node {
-   Char*      name;
+   const HChar* name;
    UInt       last_slash_pos;
 
    Addr       start;  /* Start address of text segment mapping */
@@ -676,9 +676,9 @@ struct cachesim_if
     void (*log_0I1Dw)(InstrInfo*, Addr, Word) VG_REGPARM(3);
 
     // function names of helpers (for debugging generated code)
-    Char *log_1I0D_name, *log_2I0D_name, *log_3I0D_name;
-    Char *log_1I1Dr_name, *log_1I1Dw_name;
-    Char *log_0I1Dr_name, *log_0I1Dw_name;
+    const HChar *log_1I0D_name, *log_2I0D_name, *log_3I0D_name;
+    const HChar *log_1I1Dr_name, *log_1I1Dw_name;
+    const HChar *log_0I1Dr_name, *log_0I1Dw_name;
 };
 
 // set by setup_bbcc at start of every BB, and needed by log_* helpers
@@ -724,8 +724,8 @@ void CLG_(init_eventsets)(void);
 Bool CLG_(get_debug_info)(Addr, Char filename[FILENAME_LEN],
 			 Char fn_name[FN_NAME_LEN], UInt*, DebugInfo**);
 void CLG_(collectBlockInfo)(IRSB* bbIn, UInt*, UInt*, Bool*);
-void CLG_(set_instrument_state)(Char*,Bool);
-void CLG_(dump_profile)(Char* trigger,Bool only_current_thread);
+void CLG_(set_instrument_state)(const HChar*,Bool);
+void CLG_(dump_profile)(const HChar* trigger,Bool only_current_thread);
 void CLG_(zero_all_cost)(Bool only_current_thread);
 Int CLG_(get_dump_counter)(void);
 void CLG_(fini)(Int exitcode);

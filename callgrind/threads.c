@@ -179,7 +179,7 @@ void CLG_(run_thread)(ThreadId tid)
 {
     /* check for dumps needed */
     static ULong bbs_done = 0;
-    static Char buf[512];
+    static HChar buf[512];
 
     if (CLG_(clo).dump_every_bb >0) {
        if (CLG_(stat).bb_executions - bbs_done > CLG_(clo).dump_every_bb) {
@@ -453,4 +453,3 @@ exec_state* exec_state_restore(void)
 
   return es;
 }
-

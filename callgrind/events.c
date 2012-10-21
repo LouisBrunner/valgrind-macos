@@ -68,7 +68,7 @@ EventGroup* new_event_group(int id, int n)
     return eg;
 }
 
-EventGroup* CLG_(register_event_group) (int id, Char* n1)
+EventGroup* CLG_(register_event_group) (int id, const HChar* n1)
 {
     EventGroup* eg = new_event_group(id, 1);
     eg->name[0] = n1;
@@ -76,7 +76,8 @@ EventGroup* CLG_(register_event_group) (int id, Char* n1)
     return eg;
 }
 
-EventGroup* CLG_(register_event_group2)(int id, Char* n1, Char* n2)
+EventGroup* CLG_(register_event_group2)(int id, const HChar* n1,
+                                        const HChar* n2)
 {
     EventGroup* eg = new_event_group(id, 2);
     eg->name[0] = n1;
@@ -85,7 +86,8 @@ EventGroup* CLG_(register_event_group2)(int id, Char* n1, Char* n2)
     return eg;
 }
 
-EventGroup* CLG_(register_event_group3)(int id, Char* n1, Char* n2, Char* n3)
+EventGroup* CLG_(register_event_group3)(int id, const HChar* n1,
+                                        const HChar* n2, const HChar* n3)
 {
     EventGroup* eg = new_event_group(id, 3);
     eg->name[0] = n1;
@@ -95,8 +97,9 @@ EventGroup* CLG_(register_event_group3)(int id, Char* n1, Char* n2, Char* n3)
     return eg;
 }
 
-EventGroup* CLG_(register_event_group4)(int id,
-					Char* n1, Char* n2, Char* n3, Char* n4)
+EventGroup* CLG_(register_event_group4)(int id, const HChar* n1,
+                                        const HChar* n2, const HChar* n3,
+                                        const HChar* n4)
 {
     EventGroup* eg = new_event_group(id, 4);
     eg->name[0] = n1;
@@ -487,7 +490,7 @@ EventMapping* CLG_(get_eventmapping)(EventSet* es)
     return em;
 }
 
-void CLG_(append_event)(EventMapping* em, Char* n)
+void CLG_(append_event)(EventMapping* em, const HChar* n)
 {
     Int i, j, offset = 0;
     UInt mask;

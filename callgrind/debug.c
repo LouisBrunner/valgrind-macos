@@ -377,7 +377,7 @@ void CLG_(print_addr)(Addr addr)
     Char fn_buf[FN_NAME_LEN];
     const UChar* obj_name;
     DebugInfo* di;
-    int ln, i=0, opos=0;
+    UInt ln, i=0, opos=0;
 	
     if (addr == 0) {
 	VG_(printf)("%08lx", addr);

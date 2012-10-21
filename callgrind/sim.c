@@ -1034,7 +1034,7 @@ void inc_costs(CacheModelResult r, ULong* c1, ULong* c2)
 }
 
 static
-Char* cacheRes(CacheModelResult r)
+const HChar* cacheRes(CacheModelResult r)
 {
     switch(r) {
     case L1_Hit:    return "L1 Hit ";

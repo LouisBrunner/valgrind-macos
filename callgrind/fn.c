@@ -223,7 +223,7 @@ static UInt str_hash(const Char *s, UInt table_size)
 }
 
 
-static Char* anonymous_obj = "???";
+static const HChar* anonymous_obj = "???";
 
 static __inline__ 
 obj_node* new_obj_node(DebugInfo* di, obj_node* next)
@@ -232,7 +232,7 @@ obj_node* new_obj_node(DebugInfo* di, obj_node* next)
    obj_node* obj;
 
    obj = (obj_node*) CLG_MALLOC("cl.fn.non.1", sizeof(obj_node));
-   obj->name  = di ? VG_(strdup)( "cl.fn.non.2",
+   obj->name  = di ? (HChar *)VG_(strdup)( "cl.fn.non.2",
                                   VG_(DebugInfo_get_filename)(di) )
                    : anonymous_obj;
    for (i = 0; i < N_FILE_ENTRIES; i++) {
@@ -265,9 +265,9 @@ obj_node* CLG_(get_obj_node)(DebugInfo* di)
 {
     obj_node*    curr_obj_node;
     UInt         objname_hash;
-    const UChar* obj_name;
+    const HChar* obj_name;
     
-    obj_name = di ? (Char*) VG_(DebugInfo_get_filename)(di) : anonymous_obj;
+    obj_name = di ? (HChar*) VG_(DebugInfo_get_filename)(di) : anonymous_obj;
 
     /* lookup in obj hash */
     objname_hash = str_hash(obj_name, N_OBJ_ENTRIES);

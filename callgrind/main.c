@@ -377,7 +377,7 @@ static void showEvent ( Event* ev )
 static void flushEvents ( ClgState* clgs )
 {
    Int        i, regparms, inew;
-   Char*      helperName;
+   const HChar* helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRExpr*    i_node_expr;
@@ -1377,7 +1377,7 @@ void zero_state_cost(thread_info* t)
 /* Ups, this can go very wrong... */
 extern void VG_(discard_translations) ( Addr64 start, ULong range, HChar* who );
 
-void CLG_(set_instrument_state)(Char* reason, Bool state)
+void CLG_(set_instrument_state)(const HChar* reason, Bool state)
 {
   if (CLG_(instrument_state) == state) {
     CLG_DEBUG(2, "%s: instrumentation already %s\n",
@@ -1581,7 +1581,7 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 
    case VG_USERREQ__DUMP_STATS_AT:
      {
-       Char buf[512];
+       HChar buf[512];
        VG_(sprintf)(buf,"Client Request: %s", (Char*)args[1]);
        CLG_(dump_profile)(buf, True);
        *ret = 0;                 /* meaningless */
@@ -1700,7 +1700,8 @@ static UInt ULong_width(ULong n)
 static
 void branchsim_printstat(int l1, int l2, int l3)
 {
-    static Char buf1[128], buf2[128], buf3[128], fmt[128];
+    static Char buf1[128], buf2[128], buf3[128];
+    static HChar fmt[128];
     FullCost total;
     ULong Bc_total_b, Bc_total_mp, Bi_total_b, Bi_total_mp;
     ULong B_total_b, B_total_mp;
@@ -1738,7 +1739,8 @@ void branchsim_printstat(int l1, int l2, int l3)
 static
 void finish(void)
 {
-  Char buf[32+COSTS_LEN], fmt[128];
+  Char buf[32+COSTS_LEN];
+  HChar fmt[128];
   Int l1, l2, l3;
   FullCost total;
 

@@ -231,7 +231,7 @@ static void print_file(Char* buf, file_node* file)
 /*
  * tag can be "fn", "cfn", "jfn"
  */
-static void print_fn(Int fd, Char* buf, Char* tag, fn_node* fn)
+static void print_fn(Int fd, Char* buf, const HChar* tag, fn_node* fn)
 {
     int p;
     p = VG_(sprintf)(buf, "%s=",tag);
@@ -251,7 +251,7 @@ static void print_fn(Int fd, Char* buf, Char* tag, fn_node* fn)
     my_fwrite(fd, buf, p);
 }
 
-static void print_mangled_fn(Int fd, Char* buf, Char* tag, 
+static void print_mangled_fn(Int fd, Char* buf, const HChar* tag, 
 			     Context* cxt, int rec_index)
 {
     int p, i;
@@ -1251,7 +1251,7 @@ BBCC** prepare_dump(void)
 
 
 
-static void fprint_cost_ln(int fd, Char* prefix,
+static void fprint_cost_ln(int fd, const HChar* prefix,
 			   EventMapping* em, ULong* cost)
 {
     int p;
@@ -1283,7 +1283,7 @@ void file_err(void)
  *
  * Returns the file descriptor, and -1 on error (no write permission)
  */
-static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
+static int new_dumpfile(Char buf[BUF_LEN], int tid, const HChar* trigger)
 {
     Bool appending = False;
     int i, fd;
@@ -1390,7 +1390,7 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
 
     my_fwrite(fd, (void*)buf, VG_(strlen)(buf));
     VG_(sprintf)(buf, "desc: Trigger: %s\n",
-		 trigger ? trigger : (Char*)"Program termination");
+		 trigger ? trigger : "Program termination");
     my_fwrite(fd, (void*)buf, VG_(strlen)(buf));
 
 #if 0
@@ -1503,7 +1503,7 @@ static void close_dumpfile(int fd)
 /* Helper for print_bbccs */
 
 static Int   print_fd;
-static Char* print_trigger;
+static const HChar* print_trigger;
 static Char  print_buf[BUF_LEN];
 
 static void print_bbccs_of_thread(thread_info* ti)
@@ -1590,7 +1590,7 @@ static void print_bbccs_of_thread(thread_info* ti)
 }
 
 
-static void print_bbccs(Char* trigger, Bool only_current_thread)
+static void print_bbccs(const HChar* trigger, Bool only_current_thread)
 {
   init_dump_array();
   init_debug_cache();
@@ -1615,17 +1615,17 @@ static void print_bbccs(Char* trigger, Bool only_current_thread)
 }
 
 
-void CLG_(dump_profile)(Char* trigger, Bool only_current_thread)
+void CLG_(dump_profile)(const HChar* trigger, Bool only_current_thread)
 {
    CLG_DEBUG(2, "+ dump_profile(Trigger '%s')\n",
-	    trigger ? trigger : (Char*)"Prg.Term.");
+	    trigger ? trigger : "Prg.Term.");
 
    CLG_(init_dumps)();
 
    if (VG_(clo_verbosity) > 1)
        VG_(message)(Vg_DebugMsg, "Start dumping at BB %llu (%s)...\n",
 		    CLG_(stat).bb_executions,
-		    trigger ? trigger : (Char*)"Prg.Term.");
+		    trigger ? trigger : "Prg.Term.");
 
    out_counter++;
 

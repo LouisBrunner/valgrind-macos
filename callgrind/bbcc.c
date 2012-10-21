@@ -338,9 +338,9 @@ void insert_bbcc_into_hash(BBCC* bbcc)
 	     current_bbccs.entries);
 }
 
-static Char* mangled_cxt(Context* cxt, int rec_index)
+static const HChar* mangled_cxt(Context* cxt, int rec_index)
 {
-    static Char mangled[FN_NAME_LEN];
+    static HChar mangled[FN_NAME_LEN];
     int i, p;
 
     if (!cxt) return "(no context)";
@@ -413,6 +413,8 @@ static BBCC* clone_bbcc(BBCC* orig, Context* cxt, Int rec_index)
     CLG_DEBUGIF(3)
       CLG_(print_bbcc)(-2, bbcc);
 
+    // FIXME: mangled_cxt returns a pointer to a static buffer that
+    // gets overwritten with each invocation. 
     CLG_DEBUG(2,"- clone_BBCC(%p, %d) for BB %#lx\n"
 		"   orig %s\n"
 		"   new  %s\n",

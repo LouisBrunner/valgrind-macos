@@ -48,14 +48,16 @@
 typedef struct _EventGroup EventGroup;
 struct _EventGroup {
     Int size;
-    Char* name[0];
+    const HChar* name[0];
 };
 
 /* return 0 if event group can not be registered */
-EventGroup* CLG_(register_event_group) (int id, Char*);
-EventGroup* CLG_(register_event_group2)(int id, Char*, Char*);
-EventGroup* CLG_(register_event_group3)(int id, Char*, Char*, Char*);
-EventGroup* CLG_(register_event_group4)(int id, Char*, Char*, Char*, Char*);
+EventGroup* CLG_(register_event_group) (int id, const HChar*);
+EventGroup* CLG_(register_event_group2)(int id, const HChar*, const HChar*);
+EventGroup* CLG_(register_event_group3)(int id, const HChar*, const HChar*,
+                                        const HChar*);
+EventGroup* CLG_(register_event_group4)(int id, const HChar*, const HChar*,
+                                        const HChar*, const HChar*);
 EventGroup* CLG_(get_event_group)(int id);
 
 /* Event sets are defined by event groups they consist of. */
@@ -124,7 +126,7 @@ struct _EventMapping {
 
 /* Allocate space for an event mapping */
 EventMapping* CLG_(get_eventmapping)(EventSet*);
-void CLG_(append_event)(EventMapping*, Char*);
+void CLG_(append_event)(EventMapping*, const HChar*);
 /* Returns number of characters written */
 Int CLG_(sprint_eventmapping)(Char* buf, EventMapping*);
 /* Returns number of characters written */

@@ -3303,7 +3303,8 @@ static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
 
 PRE(sys_ipc)
 {
-   PRINT("sys_ipc ( %ld, %ld, %ld, %ld, %#lx, %ld )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRINT("sys_ipc ( %ld, %ld, %ld, %ld, %#lx, %ld )",
+         ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
    // XXX: this is simplistic -- some args are not used in all circumstances.
    PRE_REG_READ6(int, "ipc",
                  vki_uint, call, int, first, int, second, int, third,
@@ -3387,8 +3388,13 @@ POST(sys_ipc)
    switch (ARG1 /* call */) {
    case VKI_SEMOP:
    case VKI_SEMGET:
-   case VKI_SEMCTL:
       break;
+   case VKI_SEMCTL:
+   {
+      UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+      ML_(generic_POST_sys_semctl)( tid, RES, ARG2, ARG3, ARG4, arg );
+      break;
+   }
    case VKI_SEMTIMEDOP:
    case VKI_MSGSND:
       break;

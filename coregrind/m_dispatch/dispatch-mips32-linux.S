@@ -64,31 +64,28 @@ VG_(disp_run_translations):
     /* a2 ($6) holds host_addr   */
 
     /* New stack frame.  Stack must remain 8 aligned (at least) */
-    addiu $29, -56
+    addiu $29, -64
 
     /* Save ra */
-    sw  $31, 0($29)
-
-    /* ... and orig guest state*/
-    sw $5, 4($29)
+    sw  $31, 16($29)
 
     /* ... and s0 - s7 */
-    sw $16, 8($29)
-    sw $17, 12($29)
-    sw $18, 16($29)
-    sw $19, 20($29)
-    sw $20, 24($29)
-    sw $21, 28($29)
-    sw $22, 32($29)
-    sw $23, 36($29)
+    sw $16, 20($29)
+    sw $17, 24($29)
+    sw $18, 28($29)
+    sw $19, 32($29)
+    sw $20, 36($29)
+    sw $21, 40($29)
+    sw $22, 44($29)
+    sw $23, 48($29)
 
     /* ... and gp, fp/s8 */
-    sw $28, 40($29)
-    sw $30, 44($29)
+    sw $28, 52($29)
+    sw $30, 56($29)
 
     /* Save a0 ($4) on stack. In postamble it will be restored such that the
        return values can be written */
-    sw $4, 48($29)
+    sw $4, 60($29)
 
     /* Load address of guest state into guest state register (r10) */
     move $10, $5
@@ -113,31 +110,30 @@ postamble:
            address of the place to patch.) */
 
     /* Restore $4 from stack; holds address of two_words */
-    lw $4, 48($29)
+    lw $4, 60($29)
     sw  $2, 0($4)         /* Store $2 to two_words[0] */
     sw  $3, 4($4)         /* Store $3 to two_words[1] */
 
     /* Restore callee-saved registers... */
 
     /* Restore ra */
-    lw $31, 0($29)
+    lw $31, 16($29)
 
     /* ... and s0 - s7 */
-    lw $16, 8($29)
-    lw $17, 12($29)
-    lw $18, 16($29)
-    lw $19, 20($29)
-    lw $20, 24($29)
-    lw $21, 28($29)
-    lw $22, 32($29)
-    lw $23, 36($29)
+    lw $16, 20($29)
+    lw $17, 24($29)
+    lw $18, 28($29)
+    lw $19, 32($29)
+    lw $20, 36($29)
+    lw $21, 40($29)
+    lw $22, 44($29)
+    lw $23, 48($29)
 
     /* ... and gp, fp/s8 */
-    lw $28, 40($29)
-    lw $30, 44($29)
+    lw $28, 52($29)
+    lw $30, 56($29)
 
-
-    addiu $29, 56   /* stack_size */
+    addiu $29, 64   /* stack_size */
     jr $31
     nop
 

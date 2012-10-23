@@ -224,11 +224,13 @@ typedef unsigned int	        vki_uint;
 //----------------------------------------------------------------------
 
 typedef		__vki_s32	vki_int32_t;
+typedef		__vki_s16	vki_int16_t;
 typedef		__vki_s64	vki_int64_t;
 
 typedef		__vki_u8	vki_uint8_t;
 typedef		__vki_u16	vki_uint16_t;
 typedef		__vki_u32	vki_uint32_t;
+typedef		__vki_u64	vki_uint64_t;
 
 typedef		__vki_u16	__vki_le16;
 

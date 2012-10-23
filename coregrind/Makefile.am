@@ -368,15 +368,11 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-mips32-linux.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
+	m_syswrap/syswrap-xen.c \
 	m_ume/elf.c \
 	m_ume/macho.c \
 	m_ume/main.c \
 	m_ume/script.c
-
-if ENABLE_XEN
-COREGRIND_SOURCES_COMMON += m_syswrap/syswrap-xen.c
-CFLAGS += @XEN_CFLAGS@
-endif
 
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
     $(COREGRIND_SOURCES_COMMON)
@@ -385,7 +381,7 @@ nodist_libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
     $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
-    $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) @XEN_CFLAGS@
+    $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CCASFLAGS = \
     $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 if ENABLE_LINUX_TICKET_LOCK_PRIMARY

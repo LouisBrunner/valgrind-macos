@@ -47,12 +47,16 @@
 
 #if defined(VGO_linux)
 #  include "vki/vki-linux.h"
-#  include "vki/vki-xen.h"
 #elif defined(VGO_darwin)
 #  include "vki/vki-darwin.h"
 #else
 #  error Unknown Plat/OS
 #endif
+
+#if defined(VGP_amd64_linux) || defined(VGP_x86_linux)
+#  include "vki/vki-xen.h"
+#endif
+
 
 #endif // __PUB_TOOL_VKI_H
 

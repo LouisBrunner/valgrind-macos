@@ -2012,25 +2012,6 @@ AC_ARG_WITH(mpicc,
 )
 AC_SUBST(MPI_CC)
 
-#----------------------------------------------------------------------------
-# Xen checks
-#----------------------------------------------------------------------------
-AC_ARG_ENABLE(xen,
-      [  --enable-xen            Enable support for Xen hypervisor],
-      [vg_cv_xen=$enableval],
-      [vg_cv_xen=no])
-
-AC_ARG_WITH(xen,
-   [  --with-xen=             Specify location of Xen headers],
-   XEN_CFLAGS=-I$withval
-)
-AC_SUBST(XEN_CFLAGS)
-
-AM_CONDITIONAL([ENABLE_XEN], [test x$vg_cv_xen = xyes])
-if test x"$vg_cv_xen" = xyes; then
-    AC_DEFINE([ENABLE_XEN], 1, [configured to support Xen])
-fi
-
 ## We AM_COND_IF here instead of automake "if" in mpi/Makefile.am so that we can
 ## use these values in the check for a functioning mpicc.
 ##

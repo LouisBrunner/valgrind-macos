@@ -29,6 +29,7 @@ m = merged into 3_8_BRANCH
 [381] = fixed in trunk and in 3_8_BRANCH, for 3.8.1
 [382] = fixed in trunk and needs to be made available for 3.8.2 too
 
+123837    [390] semctl system call: 4rth argument is optional, depending on cmd
 252955    [390] Impossible to compile with ccache
 274695    [390] s390x: Support "compare to/from logical" instructions (z196)
 275800    [390] s390x: Add support for the ecag instruction (part 1)

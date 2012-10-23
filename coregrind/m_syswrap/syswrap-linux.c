@@ -3301,6 +3301,23 @@ static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
    return *a_p;
 }
 
+Bool semctl_cmd_has_4args (UWord cmd)
+{
+   switch (cmd & ~VKI_IPC_64)
+   {
+   case VKI_IPC_INFO:
+   case VKI_SEM_INFO:
+   case VKI_IPC_STAT:
+   case VKI_SEM_STAT:
+   case VKI_IPC_SET:
+   case VKI_GETALL:
+   case VKI_SETALL:
+      return True;
+   default:
+      return False;
+   }
+}
+
 PRE(sys_ipc)
 {
    PRINT("sys_ipc ( %ld, %ld, %ld, %ld, %#lx, %ld )",
@@ -3319,7 +3336,11 @@ PRE(sys_ipc)
       break;
    case VKI_SEMCTL:
    {
-      UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+      UWord arg;
+      if (semctl_cmd_has_4args(ARG4))
+         arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+      else
+         arg = 0;
       ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
       break;
    }
@@ -3391,7 +3412,11 @@ POST(sys_ipc)
       break;
    case VKI_SEMCTL:
    {
-      UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+      UWord arg;
+      if (semctl_cmd_has_4args(ARG4))
+         arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+      else
+         arg = 0;
       ML_(generic_POST_sys_semctl)( tid, RES, ARG2, ARG3, ARG4, arg );
       break;
    }

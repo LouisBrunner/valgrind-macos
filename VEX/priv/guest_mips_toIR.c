@@ -1576,12 +1576,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                case 0x11:
                   {  //D
                      DIP("recip.d f%d, f%d\n", fd, fs);
-                     IRExpr *rm = get_IR_roundingmode();
 #if defined (_MIPSEL)
+                     IRExpr *rm = get_IR_roundingmode();
                      putDReg(fd, triop(Iop_DivF64, rm, 
                                  unop(Iop_ReinterpI64asF64,
                                  mkU64(0x3FF0000000000000ULL)), getDReg(fs)));
 #elif defined (_MIPSEB)
+                     IRExpr *rm = get_IR_roundingmode();
                      putDReg(fd, triop(Iop_DivF64, rm,
                                  unop(Iop_ReinterpI64asF64,
                                  mkU64(0x000000003FF00000ULL)), getDReg(fs)));

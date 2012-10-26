@@ -3322,20 +3322,24 @@ PRE(sys_ipc)
 {
    PRINT("sys_ipc ( %ld, %ld, %ld, %ld, %#lx, %ld )",
          ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-   // XXX: this is simplistic -- some args are not used in all circumstances.
-   PRE_REG_READ6(int, "ipc",
-                 vki_uint, call, int, first, int, second, int, third,
-                 void *, ptr, long, fifth);
 
    switch (ARG1 /* call */) {
    case VKI_SEMOP:
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       ML_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
       *flags |= SfMayBlock;
       break;
    case VKI_SEMGET:
+      PRE_REG_READ4(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third);
       break;
    case VKI_SEMCTL:
    {
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       UWord arg;
       if (semctl_cmd_has_4args(ARG4))
          arg = deref_Addr( tid, ARG5, "semctl(arg)" );
@@ -3345,25 +3349,33 @@ PRE(sys_ipc)
       break;
    }
    case VKI_SEMTIMEDOP:
+      PRE_REG_READ6(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr, long, fifth);
       ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
       *flags |= SfMayBlock;
       break;
    case VKI_MSGSND:
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       ML_(linux_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
       if ((ARG4 & VKI_IPC_NOWAIT) == 0)
          *flags |= SfMayBlock;
       break;
    case VKI_MSGRCV:
    {
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       Addr msgp;
       Word msgtyp;
  
-      msgp = deref_Addr( tid,
-			 (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
-			 "msgrcv(msgp)" );
-      msgtyp = deref_Addr( tid,
-			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
-			   "msgrcv(msgp)" );
+      msgp = deref_Addr( tid, (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
+                         "msgrcv(msgp)" );
+      msgtyp = deref_Addr( tid, 
+                           (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
+                           "msgrcv(msgp)" );
 
       ML_(linux_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
 
@@ -3372,12 +3384,19 @@ PRE(sys_ipc)
       break;
    }
    case VKI_MSGGET:
+      PRE_REG_READ3(int, "ipc", vki_uint, call, int, first, int, second);
       break;
    case VKI_MSGCTL:
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       ML_(linux_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
       break;
    case VKI_SHMAT:
    {
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       UWord w;
       PRE_MEM_WRITE( "shmat(raddr)", ARG4, sizeof(Addr) );
       w = ML_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
@@ -3388,19 +3407,27 @@ PRE(sys_ipc)
       break;
    }
    case VKI_SHMDT:
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       if (!ML_(generic_PRE_sys_shmdt)(tid, ARG5))
 	 SET_STATUS_Failure( VKI_EINVAL );
       break;
    case VKI_SHMGET:
+      PRE_REG_READ4(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third);
       break;
    case VKI_SHMCTL: /* IPCOP_shmctl */
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, int, third,
+                    void *, ptr);
       ML_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
       break;
    default:
       VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %ld\n", ARG1 );
       VG_(core_panic)("... bye!\n");
       break; /*NOTREACHED*/
-   }   
+   }
 }
 
 POST(sys_ipc)

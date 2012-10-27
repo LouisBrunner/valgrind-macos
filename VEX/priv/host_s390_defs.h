@@ -141,6 +141,7 @@ typedef enum {
    S390_INSN_GZERO,   /* Assign zero to a guest register */
    S390_INSN_GADD,    /* Add a value to a guest register */
    S390_INSN_SET_FPC_BFPRM, /* Set the bfp rounding mode in the FPC */
+   S390_INSN_SET_FPC_DFPRM, /* Set the dfp rounding mode in the FPC */
    /* The following 5 insns are mandated by translation chaining */
    S390_INSN_XDIRECT,     /* direct transfer to guest address */
    S390_INSN_XINDIR,      /* indirect transfer to guest address */
@@ -254,7 +255,7 @@ typedef enum {
 } s390_cc_t;
 
 
-/* Rounding mode as it is encoded in the m3 field of certain
+/* BFP Rounding mode as it is encoded in the m3 field of certain
    instructions (e.g. CFEBR) */
 typedef enum {
    S390_BFP_ROUND_PER_FPC       = 0,
@@ -268,7 +269,7 @@ typedef enum {
 } s390_bfp_round_t;
 
 
-/* Rounding mode as it is encoded in bits [29:31] of the FPC register.
+/* BFP Rounding mode as it is encoded in bits [29:31] of the FPC register.
    Only rounding modes 0..3 are universally supported. Others require
    additional hardware facilities. */
 typedef enum {
@@ -279,6 +280,41 @@ typedef enum {
    /* 4,5,6 are not allowed */
    S390_FPC_BFP_ROUND_PREPARE_SHORT = 7
 } s390_fpc_bfp_round_t;
+
+
+/* DFP Rounding mode as it is encoded in the m3 field of certain
+   instructions (e.g. CGDTR) */
+typedef enum {
+   S390_DFP_ROUND_PER_FPC_0             = 0,
+   S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1  = 1,
+   S390_DFP_ROUND_PER_FPC_2             = 2,
+   S390_DFP_ROUND_PREPARE_SHORT_3       = 3,
+   S390_DFP_ROUND_NEAREST_EVEN_4        = 4,
+   S390_DFP_ROUND_ZERO_5                = 5,
+   S390_DFP_ROUND_POSINF_6              = 6,
+   S390_DFP_ROUND_NEGINF_7              = 7,
+   S390_DFP_ROUND_NEAREST_EVEN_8        = 8,
+   S390_DFP_ROUND_ZERO_9                = 9,
+   S390_DFP_ROUND_POSINF_10             = 10,
+   S390_DFP_ROUND_NEGINF_11             = 11,
+   S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12 = 12,
+   S390_DFP_ROUND_NEAREST_TIE_TOWARD_0  = 13,
+   S390_DFP_ROUND_AWAY_0                = 14,
+   S390_DFP_ROUND_PREPARE_SHORT_15      = 15
+} s390_dfp_round_t;
+
+
+/* DFP Rounding mode as it is encoded in bits [25:27] of the FPC register. */
+typedef enum {
+   S390_FPC_DFP_ROUND_NEAREST_EVEN     = 0,
+   S390_FPC_DFP_ROUND_ZERO             = 1,
+   S390_FPC_DFP_ROUND_POSINF           = 2,
+   S390_FPC_DFP_ROUND_NEGINF           = 3,
+   S390_FPC_DFP_ROUND_NEAREST_AWAY_0   = 4,
+   S390_FPC_DFP_ROUND_NEAREST_TOWARD_0 = 5,
+   S390_FPC_DFP_ROUND_AWAY_ZERO        = 6,
+   S390_FPC_DFP_ROUND_PREPARE_SHORT    = 7
+} s390_fpc_dfp_round_t;
 
 
 /* Invert the condition code */
@@ -464,6 +500,9 @@ typedef struct {
       struct {
          HReg             mode;
       } set_fpc_bfprm;
+      struct {
+         HReg             mode;
+      } set_fpc_dfprm;
 
       /* The next 5 entries are generic to support translation chaining */
 
@@ -557,6 +596,7 @@ s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_gzero(UChar size, UInt offset);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
 s390_insn *s390_insn_set_fpc_bfprm(UChar size, HReg mode);
+s390_insn *s390_insn_set_fpc_dfprm(UChar size, HReg mode);
 
 /* Five for translation chaining */
 s390_insn *s390_insn_xdirect(s390_cc_t cond, Addr64 dst, s390_amode *guest_IA,

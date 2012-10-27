@@ -114,6 +114,7 @@ typedef struct {
    UInt         hwcaps;
 
    IRExpr      *previous_bfp_rounding_mode;
+   IRExpr      *previous_dfp_rounding_mode;
 
    ULong        old_value[NUM_TRACKED_REGS];
 
@@ -606,6 +607,125 @@ get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
    return S390_BFP_ROUND_PER_FPC;
 }
 
+
+/*---------------------------------------------------------*/
+/*--- DFP helper functions                              ---*/
+/*---------------------------------------------------------*/
+
+/* Set the DFP rounding mode in the FPC. This function is called for
+   all non-conversion DFP instructions as those will always get the
+   rounding mode from the FPC. */
+#if 0  // fixs390: avoid compiler warnings about unused function
+static void
+set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
+{
+   vassert(typeOfIRExpr(env->type_env, irrm) == Ity_I32);
+
+   /* Do we need to do anything? */
+   if (env->previous_dfp_rounding_mode &&
+       env->previous_dfp_rounding_mode->tag == Iex_RdTmp &&
+       irrm->tag == Iex_RdTmp &&
+       env->previous_dfp_rounding_mode->Iex.RdTmp.tmp == irrm->Iex.RdTmp.tmp) {
+      /* No - new mode is identical to previous mode.  */
+      return;
+   }
+
+   /* No luck - we better set it, and remember what we set it to. */
+   env->previous_dfp_rounding_mode = irrm;
+
+   /* The incoming rounding mode is in VEX IR encoding. Need to change
+      to s390.
+
+      rounding mode                     | S390 |  IR
+      -----------------------------------------------
+      to nearest, ties to even          | 000  | 000
+      to zero                           | 001  | 011
+      to +infinity                      | 010  | 010
+      to -infinity                      | 011  | 001
+      to nearest, ties away from 0      | 100  | 100
+      to nearest, ties toward 0         | 101  | 111
+      to away from 0                    | 110  | 110
+      to prepare for shorter precision  | 111  | 101
+
+      So: s390 = (IR ^ ((IR << 1) & 2))
+   */
+   HReg ir = s390_isel_int_expr(env, irrm);
+
+   HReg mode = newVRegI(env);
+
+   addInstr(env, s390_insn_move(4, mode, ir));
+   addInstr(env, s390_insn_alu(4, S390_ALU_LSH, mode, s390_opnd_imm(1)));
+   addInstr(env, s390_insn_alu(4, S390_ALU_AND, mode, s390_opnd_imm(2)));
+   addInstr(env, s390_insn_alu(4, S390_ALU_XOR, mode, s390_opnd_reg(ir)));
+
+   addInstr(env, s390_insn_set_fpc_dfprm(4, mode));
+}
+
+
+/* This function is invoked for insns that support a specification of
+   a rounding mode in the insn itself. In that case there is no need to
+   stick the rounding mode into the FPC -- a good thing. However, the
+   rounding mode must be known.
+   The IR to s390 encoding is chosen in the range 0:7 except
+   S390_DFP_ROUND_NEAREST_TIE_TOWARD_0 and
+   S390_DFP_ROUND_AWAY_0 which have no choice within the range.
+   Since the s390 dfp rounding mode encoding in 8:15 is not used, the
+   quantum excpetion is not suppressed and this is fine as valgrind does
+   not model this exception.
+
+   Translation table of
+   s390 DFP rounding mode to IRRoundingMode to s390 DFP rounding mode
+
+   s390(S390_DFP_ROUND_)  |  IR(Irrm_DFP_)       |  s390(S390_DFP_ROUND_)
+   --------------------------------------------------------------------
+   NEAREST_TIE_AWAY_0_1   |  NEAREST_TIE_AWAY_0  |  NEAREST_TIE_AWAY_0_1
+   NEAREST_TIE_AWAY_0_12  |     "                |     "
+   PREPARE_SHORT_3        |  PREPARE_SHORTER     |  PREPARE_SHORT_3
+   PREPARE_SHORT_15       |     "                |     "
+   NEAREST_EVEN_4         |  NEAREST             |  NEAREST_EVEN_4
+   NEAREST_EVEN_8         |     "                |     "
+   ZERO_5                 |  ZERO                |  ZERO_5
+   ZERO_9                 |     "                |     "
+   POSINF_6               |  PosINF              |  POSINF_6
+   POSINF_10              |     "                |     "
+   NEGINF_7               |  NegINF              |  NEGINF_7
+   NEGINF_11              |     "                |     "
+   NEAREST_TIE_TOWARD_0   |  NEAREST_TIE_TOWARD_0|  NEAREST_TIE_TOWARD_0
+   AWAY_0                 |  AWAY_FROM_ZERO      |  AWAY_0
+*/
+static s390_dfp_round_t
+get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
+{
+   if (irrm->tag == Iex_Const) {          /* rounding mode is known */
+      vassert(irrm->Iex.Const.con->tag == Ico_U32);
+      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
+
+      switch (mode) {
+      case Irrm_DFP_NEAREST:
+         return S390_DFP_ROUND_NEAREST_EVEN_4;
+      case Irrm_DFP_NegINF:
+         return S390_DFP_ROUND_NEGINF_7;
+      case Irrm_DFP_PosINF:
+         return S390_DFP_ROUND_POSINF_6;
+      case Irrm_DFP_ZERO:
+         return S390_DFP_ROUND_ZERO_5;
+      case Irrm_DFP_NEAREST_TIE_AWAY_0:
+         return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1;
+      case Irrm_DFP_PREPARE_SHORTER:
+          return S390_DFP_ROUND_PREPARE_SHORT_3;
+      case Irrm_DFP_AWAY_FROM_ZERO:
+         return S390_DFP_ROUND_AWAY_0;
+      case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+         return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
+      default:
+         vpanic("get_dfp_rounding_mode");
+      }
+   }
+
+   set_dfp_rounding_mode_in_fpc(env, irrm);
+   return S390_DFP_ROUND_PER_FPC_0;
+}
+#endif
 
 /* CC_S390 holds the condition code in s390 encoding. Convert it to
    VEX encoding
@@ -2872,6 +2992,7 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
    env->previous_bfp_rounding_mode = NULL;
+   env->previous_dfp_rounding_mode = NULL;
 
    /* and finally ... */
    env->hwcaps    = hwcaps_host;

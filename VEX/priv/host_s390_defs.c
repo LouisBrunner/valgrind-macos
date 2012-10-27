@@ -712,6 +712,10 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       addHRegUse(u, HRmRead,  insn->variant.set_fpc_bfprm.mode);
       break;
 
+   case S390_INSN_SET_FPC_DFPRM:
+      addHRegUse(u, HRmRead,  insn->variant.set_fpc_dfprm.mode);
+      break;
+
    case S390_INSN_EVCHECK:
       s390_amode_get_reg_usage(u, insn->variant.evcheck.counter);
       s390_amode_get_reg_usage(u, insn->variant.evcheck.fail_addr);
@@ -939,6 +943,11 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    case S390_INSN_SET_FPC_BFPRM:
       insn->variant.set_fpc_bfprm.mode =
          lookupHRegRemap(m, insn->variant.set_fpc_bfprm.mode);
+      break;
+
+   case S390_INSN_SET_FPC_DFPRM:
+      insn->variant.set_fpc_dfprm.mode =
+         lookupHRegRemap(m, insn->variant.set_fpc_dfprm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -4947,6 +4956,21 @@ s390_insn_set_fpc_bfprm(UChar size, HReg mode)
 
 
 s390_insn *
+s390_insn_set_fpc_dfprm(UChar size, HReg mode)
+{
+   vassert(size == 4);
+
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_SET_FPC_DFPRM;
+   insn->size = size;
+   insn->variant.set_fpc_dfprm.mode = mode;
+
+   return insn;
+}
+
+
+s390_insn *
 s390_insn_xdirect(s390_cc_t cond, Addr64 dst, s390_amode *guest_IA,
                   Bool to_fast_entry)
 {
@@ -5454,6 +5478,11 @@ s390_insn_as_string(const s390_insn *insn)
    case S390_INSN_SET_FPC_BFPRM:
       s390_sprintf(buf, "%M %R", "v-set-fpc-bfprm",
                    insn->variant.set_fpc_bfprm.mode);
+      break;
+
+   case S390_INSN_SET_FPC_DFPRM:
+      s390_sprintf(buf, "%M %R", "v-set-fpc-dfprm",
+                   insn->variant.set_fpc_dfprm.mode);
       break;
 
    case S390_INSN_EVCHECK:
@@ -7535,6 +7564,25 @@ s390_insn_set_fpc_bfprm_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+static UChar *
+s390_insn_set_fpc_dfprm_emit(UChar *buf, const s390_insn *insn)
+{
+   UInt mode = hregNumber(insn->variant.set_fpc_dfprm.mode);
+
+   /* Copy FPC from guest state to R0 and OR in the new rounding mode */
+   buf = s390_emit_L(buf, R0, 0, S390_REGNO_GUEST_STATE_POINTER,
+                     S390X_GUEST_OFFSET(guest_fpc));   // r0 = guest_fpc
+
+   /* DFP rounding mode is set at bit position 25:27 in FPC register */
+   buf = s390_emit_NILL(buf, R0, 0xFF8F); /* Clear out 25:27 bits */
+   buf = s390_emit_SLL(buf, mode, 0, 4);  /* bring mode to 25:27 bits */
+   buf = s390_emit_OR(buf, R0, mode);     /* OR in the new rounding mode */
+   buf = s390_emit_SFPC(buf, R0);         /* Load FPC register from R0 */
+
+   return buf;
+}
+
+
 /* Define convenience functions needed for translation chaining.
    Any changes need to be applied to the functions in concert. */
 
@@ -8077,6 +8125,10 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_SET_FPC_BFPRM:
       end = s390_insn_set_fpc_bfprm_emit(buf, insn);
+      break;
+
+   case S390_INSN_SET_FPC_DFPRM:
+      end = s390_insn_set_fpc_dfprm_emit(buf, insn);
       break;
 
    case S390_INSN_PROFINC:

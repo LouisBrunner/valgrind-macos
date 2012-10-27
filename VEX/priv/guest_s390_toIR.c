@@ -1465,6 +1465,84 @@ encode_bfp_rounding_mode(UChar mode)
    return mktemp(Ity_I32, rm);
 }
 
+/* Extract the DFP rounding mode from the guest FPC reg and encode it as an
+   IRRoundingMode:
+
+   rounding mode                     | s390  | IR
+   ------------------------------------------------
+   to nearest, ties to even          |  000  | 000
+   to zero                           |  001  | 011
+   to +infinity                      |  010  | 010
+   to -infinity                      |  011  | 001
+   to nearest, ties away from 0      |  100  | 100
+   to nearest, ties toward 0         |  101  | 111
+   to away from 0                    |  110  | 110
+   to prepare for shorter precision  |  111  | 101
+
+   So:  IR = (s390 ^ ((s390 << 1) & 2))
+*/
+#if 0  // fixs390: avoid compiler warnings about unused function
+static IRExpr *
+get_dfp_rounding_mode_from_fpc(void)
+{
+   IRTemp fpc_bits = newTemp(Ity_I32);
+
+   /* The dfp rounding mode is stored in bits [25:27].
+      extract the bits at 25:27 and right shift 4 times. */
+   assign(fpc_bits, binop(Iop_Shr32,
+                          binop(Iop_And32, get_fpc_w0(), mkU32(0x70)),
+                          mkU8(4)));
+
+   IRExpr *rm_s390 = mkexpr(fpc_bits);
+   // rm_IR = (rm_s390 ^ ((rm_s390 << 1) & 2));
+
+   return binop(Iop_Xor32, rm_s390,
+                binop( Iop_And32,
+                       binop(Iop_Shl32, rm_s390, mkU8(1)),
+                       mkU32(2)));
+}
+
+/* Encode the s390 rounding mode as it appears in the m3 field of certain
+   instructions to VEX's IRRoundingMode. */
+static IRTemp
+encode_dfp_rounding_mode(UChar mode)
+{
+   IRExpr *rm;
+
+   switch (mode) {
+   case S390_DFP_ROUND_PER_FPC_0:
+   case S390_DFP_ROUND_PER_FPC_2:
+      rm = get_dfp_rounding_mode_from_fpc(); break;
+   case S390_DFP_ROUND_NEAREST_EVEN_4:
+   case S390_DFP_ROUND_NEAREST_EVEN_8:
+      rm = mkU32(Irrm_DFP_NEAREST); break;
+   case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1:
+   case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12:
+      rm = mkU32(Irrm_DFP_NEAREST_TIE_AWAY_0); break;
+   case S390_DFP_ROUND_PREPARE_SHORT_3:
+   case S390_DFP_ROUND_PREPARE_SHORT_15:
+      rm = mkU32(Irrm_DFP_PREPARE_SHORTER); break;
+   case S390_DFP_ROUND_ZERO_5:
+   case S390_DFP_ROUND_ZERO_9:
+      rm = mkU32(Irrm_DFP_ZERO ); break;
+   case S390_DFP_ROUND_POSINF_6:
+   case S390_DFP_ROUND_POSINF_10:
+      rm = mkU32(Irrm_DFP_PosINF); break;
+   case S390_DFP_ROUND_NEGINF_7:
+   case S390_DFP_ROUND_NEGINF_11:
+      rm = mkU32(Irrm_DFP_NegINF); break;
+   case S390_DFP_ROUND_NEAREST_TIE_TOWARD_0:
+      rm = mkU32(Irrm_DFP_NEAREST_TIE_TOWARD_0); break;
+   case S390_DFP_ROUND_AWAY_0:
+      rm = mkU32(Irrm_DFP_AWAY_FROM_ZERO); break;
+   default:
+      vpanic("encode_dfp_rounding_mode");
+   }
+
+   return mktemp(Ity_I32, rm);
+}
+#endif
+
 /*------------------------------------------------------------*/
 /*--- Build IR for formats                                 ---*/
 /*------------------------------------------------------------*/

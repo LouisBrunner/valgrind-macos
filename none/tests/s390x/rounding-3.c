@@ -7,9 +7,6 @@
 
 /* Test "convert to fixed"  with "per fpc" rounding.
    Covers all generally available rounding modes.
-
-   Note, that "convert to fixed" with rounding mode specified as
-   part of the insn is already tested in fpconv.c
 */
 
 void

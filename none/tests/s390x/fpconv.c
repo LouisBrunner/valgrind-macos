@@ -1,147 +1,119 @@
-/* basic float <-> signed int conversions available since z900 */
 #include <float.h>
 #include <stdio.h>
-#include "opcodes.h"
+#include <stdint.h>
+#include <inttypes.h>
+#include <limits.h>
 
-#define I2F(insn,  initial, target,round)                                \
-({                                                                       \
-   register unsigned long source asm("2") =  initial;                    \
-   register typeof(target) _t asm("f0");                                 \
-   asm volatile(insn " 0,2\n\t" :"=f" (_t):"d"(source));                 \
-   _t;                                                                   \
-})
+/* The following opcodes are tested:
 
-#define F2L(insn, initial, type, round, cc)                              \
-({                                                                       \
-   register type source asm("f0") =  initial;                            \
-   register unsigned long target asm ("2") = 0;                          \
-   asm volatile(insn " 2," #round ",0\n\t"                               \
-                "ipm %1\n\t"                                             \
-                "srl %1,28\n\t"                                          \
- 		:"=d" (target), "=d" (cc) :"f"(source):"cc");            \
-   target;                                                               \
-})
+   Convert to fixed:    cfebr, cgebr, cfdbr, cgdbr
+   Convert from fixed:  cefbr, cdfbr, cegbr, cdgbr
+
+   We do not test rounding here. Just making sure the insn selector
+   picks the correct insn.
+*/
+
+#define I2F(insn, initial, target_type)                         \
+do {                                                            \
+   int64_t source = initial;                                    \
+   target_type target;                                          \
+   asm volatile(insn " %0,%1\n\t" :"=f" (target) :"d"(source)); \
+   printf(insn " %"PRId64" -> %f\n", source, target);           \
+} while (0)
+
+#define DO_INSN_I32_TO_F(insn, target_type)        \
+do {                                               \
+   printf("\n----- int32_t -> " #target_type "\n");\
+   I2F(insn,   0, target_type);                    \
+   I2F(insn,   1, target_type);                    \
+   I2F(insn,  -1, target_type);                    \
+   I2F(insn,  42, target_type);                    \
+   I2F(insn, SHRT_MAX, target_type);               \
+   I2F(insn, SHRT_MIN, target_type);               \
+   I2F(insn, INT_MAX, target_type);                \
+   I2F(insn, INT_MIN, target_type);                \
+} while (0)
+
+#define DO_INSN_I64_TO_F(insn, target_type)        \
+do {                                               \
+   printf("\n----- int64_t -> " #target_type "\n");\
+   I2F(insn,   0, target_type);                    \
+   I2F(insn,   1, target_type);                    \
+   I2F(insn,  -1, target_type);                    \
+   I2F(insn,  42, target_type);                    \
+   I2F(insn, SHRT_MAX, target_type);               \
+   I2F(insn, SHRT_MIN, target_type);               \
+   I2F(insn, INT_MAX, target_type);                \
+   I2F(insn, INT_MIN, target_type);                \
+   I2F(insn, LONG_MAX, target_type);               \
+   I2F(insn, LONG_MIN, target_type);               \
+} while (0)
+
+#define DO_I2F()                        \
+do {                                    \
+   DO_INSN_I32_TO_F("cefbr", float);    \
+   DO_INSN_I32_TO_F("cdfbr", double);   \
+   DO_INSN_I64_TO_F("cegbr", float);    \
+   DO_INSN_I64_TO_F("cdgbr", double);   \
+} while (0)
 
 
-#define DO_INSN_I2F32(insn, round)                                       \
-({                                                                       \
-   float f32;                                                            \
-   printf(#insn " %f\n", I2F(insn, 0, f32, round));                      \
-   printf(#insn " %f\n", I2F(insn, 1, f32, round));                      \
-   printf(#insn " %f\n", I2F(insn, 0xffffffffUL, f32, round));           \
-   printf(#insn " %f\n", I2F(insn, 0x80000000UL, f32, round));           \
-   printf(#insn " %f\n", I2F(insn, 0x7fffffffUL, f32, round));           \
-   printf(#insn " %f\n", I2F(insn, 0x100000000UL, f32, round));          \
-   printf(#insn " %f\n", I2F(insn, 0xffffffffffffffffUL, f32, round));   \
-   printf(#insn " %f\n", I2F(insn, 0x8000000000000000UL, f32, round));   \
-   printf(#insn " %f\n", I2F(insn, 0x7fffffffffffffffUL, f32, round));   \
-})
+#define F2I(insn, initial, source_type, target_type)               \
+do {                                                               \
+   int cc;                                                         \
+   source_type source = initial;                                   \
+   target_type target = 0;                                         \
+   asm volatile(insn " %0,0,%2\n\t"                                \
+                "ipm %1\n\t"                                       \
+                "srl %1,28\n\t"                                    \
+ 		: "=d" (target), "=d" (cc) : "f"(source) : "cc");  \
+   printf(insn " %f -> %ld   cc = %d\n", source, (long)target, cc); \
+} while (0)
 
-#define DO_INSN_I2F64(insn, round)                                       \
-({                                                                       \
-   double f64;                                                           \
-   printf(#insn " %f\n", I2F(insn, 0, f64, round));                      \
-   printf(#insn " %f\n", I2F(insn, 1, f64, round));                      \
-   printf(#insn " %f\n", I2F(insn, 0xffffffffUL, f64, round));           \
-   printf(#insn " %f\n", I2F(insn, 0x80000000UL, f64, round));           \
-   printf(#insn " %f\n", I2F(insn, 0x7fffffffUL, f64, round));           \
-   printf(#insn " %f\n", I2F(insn, 0x100000000UL, f64, round));          \
-   printf(#insn " %f\n", I2F(insn, 0xffffffffffffffffUL, f64, round));   \
-   printf(#insn " %f\n", I2F(insn, 0x8000000000000000UL, f64, round));   \
-   printf(#insn " %f\n", I2F(insn, 0x7fffffffffffffffUL, f64, round));   \
-})
+#define DO_INSN_F32_TO_I(insn, type)          \
+do {                                          \
+   printf("\n----- float -> " #type "\n");    \
+   F2I(insn, -1.0f, float, type);             \
+   F2I(insn,  0.0f, float, type);             \
+   F2I(insn,  1.0f, float, type);             \
+   F2I(insn, 1.4f, float, type);              \
+   F2I(insn, 1.5f, float, type);              \
+   F2I(insn, 1.6f, float, type);              \
+   F2I(insn, 1.6E+4f, float, type);           \
+   F2I(insn, 1.6E+8f, float, type);           \
+   F2I(insn, 1.6E-4f, float, type);           \
+   F2I(insn, FLT_MAX, float, type);           \
+} while (0)
 
-#define DO_INSN_I2F128(insn, round)                                      \
-({                                                                       \
-   long double f128;                                                     \
-   printf(#insn " %Lf\n", I2F(insn, 0, f128, round));                    \
-   printf(#insn " %Lf\n", I2F(insn, 1, f128, round));                    \
-   printf(#insn " %Lf\n", I2F(insn, 0xffffffffUL, f128, round));         \
-   printf(#insn " %Lf\n", I2F(insn, 0x80000000UL, f128, round));         \
-   printf(#insn " %Lf\n", I2F(insn, 0x7fffffffUL, f128, round));         \
-   printf(#insn " %Lf\n", I2F(insn, 0x100000000UL, f128, round));        \
-   printf(#insn " %Lf\n", I2F(insn, 0xffffffffffffffffUL, f128, round)); \
-   printf(#insn " %Lf\n", I2F(insn, 0x8000000000000000UL, f128, round)); \
-   printf(#insn " %Lf\n", I2F(insn, 0x7fffffffffffffffUL, f128, round)); \
-})
+#define DO_INSN_F64_TO_I(insn, type)          \
+do {                                          \
+   printf("\n----- double -> " #type "\n");   \
+   F2I(insn, -1.0, double, type);             \
+   F2I(insn,  0.0, double, type);             \
+   F2I(insn,  1.0, double, type);             \
+   F2I(insn, 1.4, double, type);              \
+   F2I(insn, 1.5, double, type);              \
+   F2I(insn, 1.6, double, type);              \
+   F2I(insn, 1.6E+4, double, type);           \
+   F2I(insn, 1.6E+8, double, type);           \
+   F2I(insn, 1.6E-4, double, type);           \
+   F2I(insn, FLT_MAX, double, type);          \
+   F2I(insn, DBL_MAX, double, type);          \
+} while (0)
 
-#define DO_INSN_F2L(insn, round, type)                                   \
-({                                                                       \
-   int cc;                                                               \
-   printf(#insn " %ld ", F2L(insn, -1.1, type, round, cc));              \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 0, type, round, cc));                 \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1, type, round, cc));                 \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.4, type, round, cc));               \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.5, type, round, cc));               \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6, type, round, cc));               \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E+4, type, round, cc));            \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E+8, type, round, cc));            \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E+12, type, round, cc));           \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E+20, type, round, cc));           \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E+200, type, round, cc));          \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E+2000L, type, round, cc));        \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, 1.6E-4, type, round, cc));            \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, FLT_MIN, type, round, cc));           \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, FLT_MAX, type, round, cc));           \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, DBL_MIN, type, round, cc));           \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, DBL_MAX, type, round, cc));           \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, LDBL_MIN, type, round, cc));          \
-   printf("cc=%d\n", cc);                                                \
-   printf(#insn " %ld ", F2L(insn, LDBL_MAX, type, round, cc));          \
-   printf("cc=%d\n", cc);                                                \
-})
-
-#define DO_I2F(round)                                                    \
-({                                                                       \
-   DO_INSN_I2F32("cefbr", round);                                        \
-   DO_INSN_I2F32("cegbr", round);                                        \
-   DO_INSN_I2F64("cdfbr", round);                                        \
-   DO_INSN_I2F64("cdgbr", round);                                        \
-   DO_INSN_I2F128("cxfbr", round);                                       \
-   DO_INSN_I2F128("cxgbr", round);                                       \
-})
-
-#define DO_F2L(round)                                                    \
-({                                                                       \
-   DO_INSN_F2L("cfebr", round, float);                                   \
-   DO_INSN_F2L("cgebr", round, float);                                   \
-   DO_INSN_F2L("cfdbr", round, double);                                  \
-   DO_INSN_F2L("cgdbr", round, double);                                  \
-   DO_INSN_F2L("cfxbr", round, long double);                             \
-   DO_INSN_F2L("cgxbr", round, long double);                             \
-})
+#define DO_F2I()                        \
+do {                                    \
+   DO_INSN_F32_TO_I("cfebr", int32_t);  \
+   DO_INSN_F32_TO_I("cgebr", int64_t);  \
+   DO_INSN_F64_TO_I("cfdbr", int32_t);  \
+   DO_INSN_F64_TO_I("cgdbr", int64_t);  \
+} while (0)
 
 
 int main()
 {
-   DO_I2F(4);
-   DO_F2L(4);
-
-   DO_I2F(5);
-   DO_F2L(5);
-
-   DO_I2F(6);
-   DO_F2L(6);
-
-   DO_I2F(7);
-   DO_F2L(7);
+   DO_I2F();
+   DO_F2I();
 
    return 0;
 }

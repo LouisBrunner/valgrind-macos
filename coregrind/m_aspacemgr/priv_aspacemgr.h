@@ -65,14 +65,14 @@
 
 __attribute__ ((noreturn))
 extern void   ML_(am_exit) ( Int status );
-extern void   ML_(am_barf) ( HChar* what );
-extern void   ML_(am_barf_toolow) ( HChar* what );
+extern void   ML_(am_barf) ( const HChar* what );
+extern void   ML_(am_barf_toolow) ( const HChar* what );
 
 __attribute__ ((noreturn))
 extern void   ML_(am_assert_fail) ( const HChar* expr,
-                                    const Char* file,
+                                    const HChar* file,
                                     Int line, 
-                                    const Char* fn );
+                                    const HChar* fn );
 
 #define aspacem_assert(expr)                              \
   ((void) ((expr) ? 0 :                                   \
@@ -105,7 +105,7 @@ extern SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
 /* There is also VG_(do_mmap_NO_NOTIFY), but that's not declared
    here (obviously). */
 
-extern SysRes ML_(am_open)  ( const Char* pathname, Int flags, Int mode );
+extern SysRes ML_(am_open)  ( const HChar* pathname, Int flags, Int mode );
 extern void   ML_(am_close) ( Int fd );
 extern Int    ML_(am_read)  ( Int fd, void* buf, Int count);
 extern Int    ML_(am_readlink) ( HChar* path, HChar* buf, UInt bufsiz );

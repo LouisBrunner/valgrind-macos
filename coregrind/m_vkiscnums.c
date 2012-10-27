@@ -46,13 +46,13 @@
 #if defined(VGO_linux)
 //---------------------------------------------------------------------------
 
-Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
+HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
 {
    VG_(snprintf)(buf, n_buf, "%3ld", sysnum);
    return buf;
 }
 
-Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf)
+HChar* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, HChar* buf)
 {
    return VG_(sysnum_string)(sysnum, n_buf, buf);
 }
@@ -61,9 +61,9 @@ Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf)
 #elif defined(VGO_darwin)
 //---------------------------------------------------------------------------
 
-Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
+HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
 {
-   Char* classname = NULL;
+   const HChar* classname = NULL;
    switch (VG_DARWIN_SYSNO_CLASS(sysnum)) {
       case VG_DARWIN_SYSCALL_CLASS_MACH: classname = "mach"; break;
       case VG_DARWIN_SYSCALL_CLASS_UNIX: classname = "unix"; break;
@@ -76,7 +76,7 @@ Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
    return buf;
 }
 
-Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf)
+HChar* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, HChar* buf)
 {
    return VG_(sysnum_string)(sysnum, n_buf, buf);
 }

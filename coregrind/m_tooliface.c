@@ -234,7 +234,7 @@ void VG_(needs_tool_errors)(
    Bool (*read_extra) (Int, Char**, SizeT*, Supp*),
    Bool (*matches)    (Error*, Supp*),
    const HChar* (*name) (Error*),
-   Bool (*get_xtra_si)(Error*,/*OUT*/Char*,Int)
+   Bool (*get_xtra_si)(Error*,/*OUT*/HChar*,Int)
 )
 {
    VG_(needs).tool_errors = True;

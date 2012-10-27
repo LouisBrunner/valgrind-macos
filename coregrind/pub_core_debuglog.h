@@ -56,7 +56,7 @@
 
 /* Module startup. */
 extern 
-void VG_(debugLog_startup) ( Int level, HChar* who );
+void VG_(debugLog_startup) ( Int level, const HChar* who );
 
 
 /* Whether %ps should escape XML metacharacters. */

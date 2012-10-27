@@ -342,9 +342,9 @@ void MC_(who_points_at) ( Addr address, SizeT szB);
 
 // if delta_mode == LCD_Any, prints in buf an empty string
 // otherwise prints a delta in the layout  " (+%'lu)" or " (-%'lu)" 
-extern char * MC_(snprintf_delta) (char * buf, Int size, 
-                                   SizeT current_val, SizeT old_val, 
-                                   LeakCheckDeltaMode delta_mode);
+extern HChar * MC_(snprintf_delta) (HChar * buf, Int size, 
+                                    SizeT current_val, SizeT old_val, 
+                                    LeakCheckDeltaMode delta_mode);
 
 
 Bool MC_(is_valid_aligned_word)     ( Addr a );
@@ -380,7 +380,7 @@ Bool MC_(read_extra_suppression_info) ( Int fd, Char** buf,
 Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 
 Bool MC_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/Char* buf, Int nBuf );
+                                       /*OUT*/HChar* buf, Int nBuf );
 
 const HChar* MC_(get_error_name) ( Error* err );
 

@@ -488,7 +488,7 @@ static BB* exit_bb = 0;
  */
 fn_node* CLG_(get_fn_node)(BB* bb)
 {
-    Char       filename[FILENAME_LEN], fnname[FN_NAME_LEN];
+    HChar      filename[FILENAME_LEN], fnname[FN_NAME_LEN];
     DebugInfo* di;
     UInt       line_num;
     fn_node*   fn;

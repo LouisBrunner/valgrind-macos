@@ -379,11 +379,11 @@ void VG_(start_debugger) ( ThreadId tid )
           VG_(kill)(pid, VKI_SIGSTOP) == 0 &&
           VG_(ptrace)(VKI_PTRACE_DETACH, pid, NULL, 0) == 0)
       {
-         Char pidbuf[15];
-         Char file[50];
-         Char buf[N_BUF];
-         Char *bufptr;
-         Char *cmdptr;
+         HChar pidbuf[15];
+         HChar file[50];
+         HChar buf[N_BUF];
+         HChar *bufptr;
+         HChar *cmdptr;
          
          VG_(sprintf)(pidbuf, "%d", pid);
          VG_(sprintf)(file, "/proc/%d/fd/%d", pid, VG_(cl_exec_fd));

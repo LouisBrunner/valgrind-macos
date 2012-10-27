@@ -40,7 +40,7 @@ Int VG_(memcmp)(const void* s1, const void* s2, SizeT n)
 { return memcmp(s1, s2, n); }
 UInt VG_(printf)(const HChar *format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vprintf(format, vargs); va_end(vargs); return ret; }
-UInt VG_(snprintf)(Char* buf, Int size, const HChar *format, ...)
+UInt VG_(snprintf)(HChar* buf, Int size, const HChar *format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vsnprintf(buf, size, format, vargs); va_end(vargs); return ret; }
 SizeT VG_(strlen)(const Char* str) { return strlen(str); }
 UInt VG_(message)(VgMsgKind kind, const HChar* format, ...)

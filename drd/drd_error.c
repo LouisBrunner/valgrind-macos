@@ -602,7 +602,7 @@ static const HChar* drd_get_error_name(Error* e)
  */
 static
 Bool drd_get_extra_suppression_info(Error* e,
-                                    /*OUT*/Char* buf, Int nBuf)
+                                    /*OUT*/HChar* buf, Int nBuf)
 {
    return False;
 }

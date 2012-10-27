@@ -343,7 +343,7 @@ extern void VG_(needs_tool_errors) (
    // do nothing, and return False.  This function is the inverse of
    // VG_(tdict).tool_read_extra_suppression_info().
    Bool (*print_extra_suppression_info)(Error* err,
-                                        /*OUT*/Char* buf, Int nBuf)
+                                        /*OUT*/HChar* buf, Int nBuf)
 );
 
 /* Is information kept by the tool about specific instructions or

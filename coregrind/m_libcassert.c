@@ -271,7 +271,7 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
                         Int line, const HChar* fn, const HChar* format, ... )
 {
    va_list vargs;
-   Char buf[256];
+   HChar buf[256];
    const HChar* component;
    const HChar* bugs_to;
 

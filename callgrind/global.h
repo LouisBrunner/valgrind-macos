@@ -660,7 +660,7 @@ struct cachesim_if
     Bool (*parse_opt)(Char* arg);
     void (*post_clo_init)(void);
     void (*clear)(void);
-    void (*getdesc)(Char* buf);
+    void (*getdesc)(HChar* buf);
     void (*printstat)(Int,Int,Int);
     void (*add_icost)(SimCost, BBCC*, InstrInfo*, ULong);
     void (*finish)(void);

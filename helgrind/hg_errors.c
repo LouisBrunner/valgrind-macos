@@ -1390,7 +1390,7 @@ Bool HG_(error_matches_suppression) ( Error* err, Supp* su )
 }
 
 Bool HG_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/Char* buf, Int nBuf )
+                                       /*OUT*/HChar* buf, Int nBuf )
 {
    /* Do nothing */
    return False;

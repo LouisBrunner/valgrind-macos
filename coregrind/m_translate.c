@@ -73,7 +73,7 @@ static UInt n_SP_updates_generic_unknown = 0;
 
 void VG_(print_translation_stats) ( void )
 {
-   Char buf[7];
+   HChar buf[7];
    UInt n_SP_updates = n_SP_updates_fast + n_SP_updates_generic_known
                                          + n_SP_updates_generic_unknown;
    VG_(percentify)(n_SP_updates_fast, n_SP_updates, 1, 6, buf);

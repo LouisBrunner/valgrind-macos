@@ -172,7 +172,7 @@ static struct sched_lock *the_BigLock;
    ------------------------------------------------------------------ */
 
 static
-void print_sched_event ( ThreadId tid, Char* what )
+void print_sched_event ( ThreadId tid, const HChar* what )
 {
    VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s\n", tid, what );
 }
@@ -253,7 +253,7 @@ ThreadId VG_(alloc_ThreadState) ( void )
 
    When this returns, we'll actually be running.
  */
-void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
+void VG_(acquire_BigLock)(ThreadId tid, const HChar* who)
 {
    ThreadState *tst;
 
@@ -301,7 +301,8 @@ void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
    but it may mean that we remain in a Runnable state and we're just
    yielding the CPU to another thread).
  */
-void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
+void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate,
+                          const HChar* who)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
@@ -316,7 +317,7 @@ void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
    VG_(running_tid) = VG_INVALID_THREADID;
 
    if (VG_(clo_trace_sched)) {
-      Char buf[200];
+      HChar buf[200];
       vg_assert(VG_(strlen)(who) <= 200-100);
       VG_(sprintf)(buf, "releasing lock (%s) -> %s",
                         who, VG_(name_of_ThreadStatus)(sleepstate));
@@ -341,13 +342,13 @@ static void deinit_BigLock(void)
 }
 
 /* See pub_core_scheduler.h for description */
-void VG_(acquire_BigLock_LL) ( HChar* who )
+void VG_(acquire_BigLock_LL) ( const HChar* who )
 {
    ML_(acquire_sched_lock)(the_BigLock);
 }
 
 /* See pub_core_scheduler.h for description */
-void VG_(release_BigLock_LL) ( HChar* who )
+void VG_(release_BigLock_LL) ( const HChar* who )
 {
    ML_(release_sched_lock)(the_BigLock);
 }
@@ -1830,7 +1831,7 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__MAP_IP_TO_SRCLOC: {
          Addr   ip    = arg[1];
-         UChar* buf64 = (UChar*)arg[2];
+         HChar* buf64 = (HChar*)arg[2];
 
          VG_(memset)(buf64, 0, 64);
          UInt linenum = 0;
@@ -1907,8 +1908,8 @@ void do_client_request ( ThreadId tid )
 	    if (!whined && VG_(clo_verbosity) > 2) {
                // Allow for requests in core, but defined by tools, which
                // have 0 and 0 in their two high bytes.
-               Char c1 = (arg[0] >> 24) & 0xff;
-               Char c2 = (arg[0] >> 16) & 0xff;
+               HChar c1 = (arg[0] >> 24) & 0xff;
+               HChar c2 = (arg[0] >> 16) & 0xff;
                if (c1 == 0) c1 = '_';
                if (c2 == 0) c2 = '_';
 	       VG_(message)(Vg_UserMsg, "Warning:\n"

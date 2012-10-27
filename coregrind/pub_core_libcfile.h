@@ -65,7 +65,7 @@ extern UShort VG_(ntohs) ( UShort x );
 
 extern Int VG_(socket) ( Int domain, Int type, Int protocol );
 
-extern Int VG_(write_socket)( Int sd, void *msg, Int count );
+extern Int VG_(write_socket)( Int sd, const void *msg, Int count );
 extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, 

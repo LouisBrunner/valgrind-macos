@@ -2139,7 +2139,7 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 //--- Writing snapshots                                    ---//
 //------------------------------------------------------------//
 
-Char FP_buf[BUF_LEN];
+HChar FP_buf[BUF_LEN];
 
 // XXX: implement f{,n}printf in m_libcprint.c eventually, and use it here.
 // Then change Cachegrind to use it too.
@@ -2150,9 +2150,9 @@ Char FP_buf[BUF_LEN];
 })
 
 // Nb: uses a static buffer, each call trashes the last string returned.
-static Char* make_perc(double x)
+static HChar* make_perc(double x)
 {
-   static Char mbuf[32];
+   static HChar mbuf[32];
 
    VG_(percentify)((ULong)(x * 100), 10000, 2, 6, mbuf);
    // XXX: this is bogus if the denominator was zero -- resulting string is

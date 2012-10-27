@@ -919,7 +919,7 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen )
 #  endif
 }
 
-Int VG_(write_socket)( Int sd, void *msg, Int count )
+Int VG_(write_socket)( Int sd, const void *msg, Int count )
 {
    /* This is actually send(). */
 

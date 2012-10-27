@@ -66,7 +66,7 @@ typedef struct {
 
 /* Cache state */
 typedef struct {
-   char*        name;
+   const HChar* name;
    int          size;                   /* bytes */
    int          assoc;
    int          line_size;              /* bytes */
@@ -76,7 +76,7 @@ typedef struct {
    int          line_size_bits;
    int          tag_shift;
    UWord        tag_mask;
-   char         desc_line[128];
+   HChar        desc_line[128];
    UWord*       tags;
 
   /* for cache use */
@@ -1418,7 +1418,7 @@ void cachesim_clear(void)
 }
 
 
-static void cachesim_getdesc(Char* buf)
+static void cachesim_getdesc(HChar* buf)
 {
   Int p;
   p = VG_(sprintf)(buf, "\ndesc: I1 cache: %s\n", I1.desc_line);
@@ -1472,7 +1472,7 @@ static Bool cachesim_parse_opt(Char* arg)
 /* Adds commas to ULong, right justifying in a field field_width wide, returns
  * the string in buf. */
 static
-Int commify(ULong n, int field_width, char* buf)
+Int commify(ULong n, int field_width, HChar* buf)
 {
    int len, n_commas, i, j, new_len, space;
 
@@ -1502,7 +1502,7 @@ Int commify(ULong n, int field_width, char* buf)
 }
 
 static
-void percentify(Int n, Int ex, Int field_width, char buf[]) 
+void percentify(Int n, Int ex, Int field_width, HChar buf[]) 
 {
    int i, len, space;
     
@@ -1796,4 +1796,3 @@ struct cachesim_if CLG_(cachesim) = {
 /*--------------------------------------------------------------------*/
 /*--- end                                                 ct_sim.c ---*/
 /*--------------------------------------------------------------------*/
-

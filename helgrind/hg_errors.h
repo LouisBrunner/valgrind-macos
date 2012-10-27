@@ -45,7 +45,7 @@ Bool  HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
 Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
 const HChar* HG_(get_error_name) ( Error* err );
 Bool  HG_(get_extra_suppression_info) ( Error* err,
-                                        /*OUT*/Char* buf, Int nBuf );
+                                        /*OUT*/HChar* buf, Int nBuf );
 
 /* Functions for recording various kinds of errors. */
 void HG_(record_error_Race) ( Thread* thr, 

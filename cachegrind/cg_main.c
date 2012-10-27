@@ -1259,7 +1259,8 @@ static void fprint_CC_table_and_calc_totals(void)
 {
    Int     i, fd;
    SysRes  sres;
-   Char    buf[512], *currFile = NULL, *currFn = NULL;
+   HChar    buf[512];
+   Char    *currFile = NULL, *currFn = NULL;
    LineCC* lineCC;
 
    // Setup output filename.  Nb: it's important to do this now, ie. as late
@@ -1464,7 +1465,7 @@ static UInt ULong_width(ULong n)
 
 static void cg_fini(Int exitcode)
 {
-   static Char buf1[128], buf2[128], buf3[128], buf4[123];
+   static HChar buf1[128], buf2[128], buf3[128], buf4[123];
    static HChar fmt[128];
 
    CacheCC  D_total;

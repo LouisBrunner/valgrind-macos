@@ -125,7 +125,7 @@ typedef struct {
    Bool  (*tool_read_extra_suppression_info) (Int, Char**, SizeT*, Supp*);
    Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
    const HChar* (*tool_get_error_name)       (Error*);
-   Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/Char*,Int);
+   Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
 
    // VG_(needs).superblock_discards
    void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);

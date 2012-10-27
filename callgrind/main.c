@@ -1403,7 +1403,7 @@ void CLG_(set_instrument_state)(const HChar* reason, Bool state)
 /* helper for dump_state_togdb */
 static void dump_state_of_thread_togdb(thread_info* ti)
 {
-    static Char buf[512];
+    static HChar buf[512];
     static FullCost sum = 0, tmp = 0;
     Int t, p, i;
     BBCC *from, *to;
@@ -1449,7 +1449,7 @@ static void dump_state_of_thread_togdb(thread_info* ti)
 /* Dump current state */
 static void dump_state_togdb(void)
 {
-    static Char buf[512];
+    static HChar buf[512];
     thread_info** th;
     int t, p;
     Int orig_tid = CLG_(current_tid);
@@ -1700,7 +1700,7 @@ static UInt ULong_width(ULong n)
 static
 void branchsim_printstat(int l1, int l2, int l3)
 {
-    static Char buf1[128], buf2[128], buf3[128];
+    static HChar buf1[128], buf2[128], buf3[128];
     static HChar fmt[128];
     FullCost total;
     ULong Bc_total_b, Bc_total_mp, Bi_total_b, Bi_total_mp;

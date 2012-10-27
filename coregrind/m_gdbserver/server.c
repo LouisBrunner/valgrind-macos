@@ -27,6 +27,7 @@
 #include "pub_core_translate.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_initimg.h"
+#include "pub_core_syswrap.h"      // VG_(show_open_fds)
 
 unsigned long cont_thread;
 unsigned long general_thread;

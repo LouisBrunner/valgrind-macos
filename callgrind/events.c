@@ -192,7 +192,7 @@ EventSet* CLG_(add_event_set)(EventSet* es1, EventSet* es2)
     return eventset_from_mask(es1->mask | es2->mask);
 }
 
-Int CLG_(sprint_eventset)(Char* buf, EventSet* es)
+Int CLG_(sprint_eventset)(HChar* buf, EventSet* es)
 {
     Int i, j, pos;
     UInt mask;
@@ -446,7 +446,7 @@ Bool CLG_(add_diff_cost_lz)(EventSet* es, ULong** pdst, ULong* old, ULong* new_c
 
 
 /* Returns number of characters written */
-Int CLG_(sprint_cost)(Char* buf, EventSet* es, ULong* c)
+Int CLG_(sprint_cost)(HChar* buf, EventSet* es, ULong* c)
 {
     Int i, pos, skipped = 0;
 
@@ -518,7 +518,7 @@ void CLG_(append_event)(EventMapping* em, const HChar* n)
 
 
 /* Returns number of characters written */
-Int CLG_(sprint_eventmapping)(Char* buf, EventMapping* em)
+Int CLG_(sprint_eventmapping)(HChar* buf, EventMapping* em)
 {
     Int i, pos = 0;
     EventGroup* eg;
@@ -537,7 +537,7 @@ Int CLG_(sprint_eventmapping)(Char* buf, EventMapping* em)
 }
 
 /* Returns number of characters written */
-Int CLG_(sprint_mappingcost)(Char* buf, EventMapping* em, ULong* c)
+Int CLG_(sprint_mappingcost)(HChar* buf, EventMapping* em, ULong* c)
 {
     Int i, pos, skipped = 0;
 

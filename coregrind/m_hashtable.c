@@ -47,7 +47,7 @@ struct _VgHashTable {
    UInt         iterChain;  // next chain to be traversed by the iterator
    VgHashNode** chains;     // expanding array of hash chains
    Bool         iterOK;     // table safe to iterate over?
-   HChar*       name;       // name of table (for debugging only)
+   const HChar* name;       // name of table (for debugging only)
 };
 
 #define N_HASH_PRIMES 20
@@ -64,7 +64,7 @@ static SizeT primes[N_HASH_PRIMES] = {
 /*--- Functions                                                    ---*/
 /*--------------------------------------------------------------------*/
 
-VgHashTable VG_(HT_construct) ( HChar* name )
+VgHashTable VG_(HT_construct) ( const HChar* name )
 {
    /* Initialises to zero, ie. all entries NULL */
    SizeT       n_chains = primes[0];

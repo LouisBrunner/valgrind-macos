@@ -348,7 +348,7 @@ static void gen_suppression(Error* err)
 {
    Char        xtra[256]; /* assumed big enough (is overrun-safe) */
    Bool        anyXtra;
-   Char*       name;
+   const HChar* name;
    ExeContext* ec;
    XArray* /* HChar */ text;
 

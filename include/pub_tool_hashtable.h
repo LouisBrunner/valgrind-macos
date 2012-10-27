@@ -53,7 +53,7 @@ typedef struct _VgHashTable * VgHashTable;
    be freed with VG_(free)().  The table starts small but will
    periodically be expanded.  This is transparent to the users of this
    module. */
-extern VgHashTable VG_(HT_construct) ( HChar* name );
+extern VgHashTable VG_(HT_construct) ( const HChar* name );
 
 /* Count the number of nodes in a table. */
 extern Int VG_(HT_count_nodes) ( VgHashTable table );

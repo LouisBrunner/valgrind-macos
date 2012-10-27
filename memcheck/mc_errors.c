@@ -270,7 +270,7 @@ void MC_(before_pp_Error) ( Error* err ) {
 /* Do a printf-style operation on either the XML or normal output
    channel, depending on the setting of VG_(clo_xml).
 */
-static void emit_WRK ( HChar* format, va_list vargs )
+static void emit_WRK ( const HChar* format, va_list vargs )
 {
    if (VG_(clo_xml)) {
       VG_(vprintf_xml)(format, vargs);
@@ -278,15 +278,15 @@ static void emit_WRK ( HChar* format, va_list vargs )
       VG_(vmessage)(Vg_UserMsg, format, vargs);
    }
 }
-static void emit ( HChar* format, ... ) PRINTF_CHECK(1, 2);
-static void emit ( HChar* format, ... )
+static void emit ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void emit ( const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs, format);
    emit_WRK(format, vargs);
    va_end(vargs);
 }
-static void emiN ( HChar* format, ... ) /* NO FORMAT CHECK */
+static void emiN ( const HChar* format, ... ) /* NO FORMAT CHECK */
 {
    va_list vargs;
    va_start(vargs, format);
@@ -433,9 +433,9 @@ static void mc_pp_origin ( ExeContext* ec, UInt okind )
    }
 }
 
-char * MC_(snprintf_delta) (char * buf, Int size, 
-                            SizeT current_val, SizeT old_val, 
-                            LeakCheckDeltaMode delta_mode)
+HChar * MC_(snprintf_delta) (HChar * buf, Int size, 
+                             SizeT current_val, SizeT old_val, 
+                             LeakCheckDeltaMode delta_mode)
 {
    if (delta_mode == LCD_Any)
       buf[0] = '\0';
@@ -452,10 +452,10 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
 {
    // char arrays to produce the indication of increase/decrease in case
    // of delta_mode != LCD_Any
-   char        d_bytes[20];
-   char        d_direct_bytes[20];
-   char        d_indirect_bytes[20];
-   char        d_num_blocks[20];
+   HChar d_bytes[20];
+   HChar d_direct_bytes[20];
+   HChar d_indirect_bytes[20];
+   HChar d_num_blocks[20];
 
    MC_(snprintf_delta) (d_bytes, 20, 
                         lr->szB + lr->indirect_szB, 
@@ -1559,7 +1559,7 @@ const HChar* MC_(get_error_name) ( Error* err )
 }
 
 Bool MC_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/Char* buf, Int nBuf )
+                                       /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
    tl_assert(buf);

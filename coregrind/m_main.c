@@ -1415,7 +1415,7 @@ static
 void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
 {
    ULong score_cumul,   score_here;
-   Char  buf_cumul[10], buf_here[10];
+   HChar buf_cumul[10], buf_here[10];
    Char  name[64];
    Int   r;
 

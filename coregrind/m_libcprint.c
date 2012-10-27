@@ -57,7 +57,7 @@ OutputSink VG_(xml_output_sink) = { -1, False }; /* disabled */
  
 /* Do the low-level send of a message to the logging sink. */
 static
-void send_bytes_to_logging_sink ( OutputSink* sink, Char* msg, Int nbytes )
+void send_bytes_to_logging_sink ( OutputSink* sink, const HChar* msg, Int nbytes )
 {
    if (sink->is_socket) {
       Int rc = VG_(write_socket)( sink->fd, msg, nbytes );
@@ -179,7 +179,7 @@ static void add_to__sprintf_buf ( HChar c, void *p )
    *(*b)++ = c;
 }
 
-UInt VG_(vsprintf) ( Char* buf, const HChar *format, va_list vargs )
+UInt VG_(vsprintf) ( HChar* buf, const HChar *format, va_list vargs )
 {
    Int ret;
    HChar* sprintf_ptr = buf;
@@ -193,7 +193,7 @@ UInt VG_(vsprintf) ( Char* buf, const HChar *format, va_list vargs )
    return ret;
 }
 
-UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
+UInt VG_(sprintf) ( HChar* buf, const HChar *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -226,7 +226,7 @@ static void add_to__snprintf_buf ( HChar c, void* p )
    } 
 }
 
-UInt VG_(vsnprintf) ( Char* buf, Int size, const HChar *format, va_list vargs )
+UInt VG_(vsnprintf) ( HChar* buf, Int size, const HChar *format, va_list vargs )
 {
    snprintf_buf_t b;
    b.buf      = buf;
@@ -239,7 +239,7 @@ UInt VG_(vsnprintf) ( Char* buf, Int size, const HChar *format, va_list vargs )
    return b.buf_used;
 }
 
-UInt VG_(snprintf) ( Char* buf, Int size, const HChar *format, ... )
+UInt VG_(snprintf) ( HChar* buf, Int size, const HChar *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -267,11 +267,11 @@ void VG_(vcbprintf)( void(*char_sink)(HChar, void* opaque),
 
 // Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
 // Right justifies in 'buf'.
-void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[]) 
+void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[]) 
 {
    Int i, len, space;
    ULong p1;
-   Char fmt[32];
+   HChar fmt[32];
 
    if (m == 0) {
       // Have to generate the format string in order to be flexible about

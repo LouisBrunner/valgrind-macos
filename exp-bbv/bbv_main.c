@@ -66,7 +66,7 @@ static Bool instr_count_only=False;
 static Bool generate_pc_file=False;
 
    /* write buffer */
-static UChar buf[1024];
+static HChar buf[1024];
 
    /* Global values */
 static OSet* instr_info_table;  /* table that holds the basic block info */
@@ -137,7 +137,7 @@ static void dumpPcFile(void)
 static Int open_tracefile(Int thread_num)
 {
    SysRes  sres;
-   UChar temp_string[2048];
+   HChar temp_string[2048];
 
       /* For thread 1, don't append any thread number  */
       /* This lets the single-thread case not have any */

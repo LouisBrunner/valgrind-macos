@@ -334,7 +334,7 @@ static Int  find_nsegment_idx ( Addr a );
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset, 
-                              const UChar* filename ),
+                              const HChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    );
 
@@ -419,7 +419,7 @@ static Int allocate_segname ( const HChar* name )
 /*---                                                           ---*/
 /*-----------------------------------------------------------------*/
 
-static HChar* show_SegKind ( SegKind sk )
+static const HChar* show_SegKind ( SegKind sk )
 {
    switch (sk) {
       case SkFree:  return "    ";
@@ -433,7 +433,7 @@ static HChar* show_SegKind ( SegKind sk )
    }
 }
 
-static HChar* show_ShrinkMode ( ShrinkMode sm )
+static const HChar* show_ShrinkMode ( ShrinkMode sm )
 {
    switch (sm) {
       case SmLower: return "SmLower";
@@ -445,7 +445,7 @@ static HChar* show_ShrinkMode ( ShrinkMode sm )
 
 static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
 {
-   HChar* fmt;
+   const HChar* fmt;
    ULong len = ((ULong)end) - ((ULong)start) + 1;
 
    if (len < 10*1000*1000ULL) {
@@ -477,7 +477,7 @@ static void __attribute__ ((unused))
             show_nsegment_full ( Int logLevel, Int segNo, NSegment* seg )
 {
    HChar len_buf[20];
-   HChar* name = "(none)";
+   const HChar* name = "(none)";
 
    if (seg->fnIdx >= 0 && seg->fnIdx < segnames_used
                        && segnames[seg->fnIdx].inUse
@@ -570,7 +570,7 @@ static void show_nsegment ( Int logLevel, Int segNo, NSegment* seg )
 }
 
 /* Print out the segment array (debugging only!). */
-void VG_(am_show_nsegments) ( Int logLevel, HChar* who )
+void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
 {
    Int i;
    VG_(debugLog)(logLevel, "aspacem",
@@ -862,7 +862,7 @@ static Bool sync_check_ok = False;
 
 static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
                                           ULong dev, ULong ino, Off64T offset, 
-                                          const UChar* filename )
+                                          const HChar* filename )
 {
    Int  iLo, iHi, i;
    Bool sloppyXcheck;
@@ -990,7 +990,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
             prot & VKI_PROT_READ  ? 'r' : '-',
             prot & VKI_PROT_WRITE ? 'w' : '-',
             prot & VKI_PROT_EXEC  ? 'x' : '-',
-            dev, ino, offset, filename ? (HChar*)filename : "(none)" );
+            dev, ino, offset, filename ? filename : "(none)" );
 
          return;
       }
@@ -1535,7 +1535,7 @@ static void init_resvn ( /*OUT*/NSegment* seg, Addr start, Addr end )
 
 static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
                                  ULong dev, ULong ino, Off64T offset, 
-                                 const UChar* filename )
+                                 const HChar* filename )
 {
    NSegment seg;
    init_nsegment( &seg );
@@ -3098,14 +3098,14 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 #define M_PROCMAP_BUF 100000
 
 /* static ... to keep it out of the stack frame. */
-static Char procmap_buf[M_PROCMAP_BUF];
+static HChar procmap_buf[M_PROCMAP_BUF];
 
 /* Records length of /proc/self/maps read into procmap_buf. */
 static Int  buf_n_tot;
 
 /* Helper fns. */
 
-static Int hexdigit ( Char c )
+static Int hexdigit ( HChar c )
 {
    if (c >= '0' && c <= '9') return (Int)(c - '0');
    if (c >= 'a' && c <= 'f') return 10 + (Int)(c - 'a');
@@ -3113,20 +3113,20 @@ static Int hexdigit ( Char c )
    return -1;
 }
 
-static Int decdigit ( Char c )
+static Int decdigit ( HChar c )
 {
    if (c >= '0' && c <= '9') return (Int)(c - '0');
    return -1;
 }
 
-static Int readchar ( const Char* buf, Char* ch )
+static Int readchar ( const HChar* buf, HChar* ch )
 {
    if (*buf == 0) return 0;
    *ch = *buf;
    return 1;
 }
 
-static Int readhex ( const Char* buf, UWord* val )
+static Int readhex ( const HChar* buf, UWord* val )
 {
    /* Read a word-sized hex number. */
    Int n = 0;
@@ -3138,7 +3138,7 @@ static Int readhex ( const Char* buf, UWord* val )
    return n;
 }
 
-static Int readhex64 ( const Char* buf, ULong* val )
+static Int readhex64 ( const HChar* buf, ULong* val )
 {
    /* Read a potentially 64-bit hex number. */
    Int n = 0;
@@ -3150,7 +3150,7 @@ static Int readhex64 ( const Char* buf, ULong* val )
    return n;
 }
 
-static Int readdec64 ( const Char* buf, ULong* val )
+static Int readdec64 ( const HChar* buf, ULong* val )
 {
    Int n = 0;
    *val = 0;
@@ -3219,14 +3219,14 @@ static void read_procselfmaps_into_buf ( void )
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset, 
-                              const UChar* filename ),
+                              const HChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    )
 {
    Int    i, j, i_eol;
    Addr   start, endPlusOne, gapStart;
-   UChar* filename;
-   UChar  rr, ww, xx, pp, ch, tmp;
+   HChar* filename;
+   HChar  rr, ww, xx, pp, ch, tmp;
    UInt	  prot;
    UWord  maj, min;
    ULong  foffset, dev, ino;
@@ -3428,7 +3428,7 @@ static UInt stats_machcalls = 0;
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset, 
-                              const UChar* filename ),
+                              const HChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    )
 {
@@ -3486,7 +3486,7 @@ static Addr Addr__min ( Addr a, Addr b ) { return a < b ? a : b; }
 
 static void add_mapping_callback(Addr addr, SizeT len, UInt prot, 
                                  ULong dev, ULong ino, Off64T offset, 
-                                 const UChar *filename)
+                                 const HChar *filename)
 {
    // derived from sync_check_mapping_callback()
 

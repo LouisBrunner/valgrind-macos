@@ -268,7 +268,7 @@ void pc_before_pp_Error ( Error* err ) {
 /* Do a printf-style operation on either the XML or normal output
    channel, depending on the setting of VG_(clo_xml).
 */
-static void emit_WRK ( HChar* format, va_list vargs )
+static void emit_WRK ( const HChar* format, va_list vargs )
 {
    if (VG_(clo_xml)) {
       VG_(vprintf_xml)(format, vargs);
@@ -276,15 +276,15 @@ static void emit_WRK ( HChar* format, va_list vargs )
       VG_(vmessage)(Vg_UserMsg, format, vargs);
    }
 }
-static void emit ( HChar* format, ... ) PRINTF_CHECK(1, 2);
-static void emit ( HChar* format, ... )
+static void emit ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void emit ( const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs, format);
    emit_WRK(format, vargs);
    va_end(vargs);
 }
-static void emiN ( HChar* format, ... ) /* With NO FORMAT CHECK */
+static void emiN ( const HChar* format, ... ) /* With NO FORMAT CHECK */
 {
    va_list vargs;
    va_start(vargs, format);
@@ -293,7 +293,7 @@ static void emiN ( HChar* format, ... ) /* With NO FORMAT CHECK */
 }
 
 
-static HChar* readwrite(SSizeT sszB)
+static const HChar* readwrite(SSizeT sszB)
 {
    return ( sszB < 0 ? "write" : "read" );
 }
@@ -348,7 +348,7 @@ void pc_pp_Error ( Error* err )
 
    //----------------------------------------------------------
    case XE_Heap: {
-      HChar *place, *legit, *how_invalid;
+      const HChar *place, *legit, *how_invalid;
       Addr a    = xe->XE.Heap.addr;
       Seg* vseg = xe->XE.Heap.vseg;
 
@@ -468,7 +468,7 @@ void pc_pp_Error ( Error* err )
    case XE_Arith: {
       Seg*   seg1   = xe->XE.Arith.seg1;
       Seg*   seg2   = xe->XE.Arith.seg2;
-      HChar*  which;
+      const HChar*  which;
 
       tl_assert(BOTTOM != seg1);
       tl_assert(BOTTOM != seg2 && UNKNOWN != seg2);
@@ -545,7 +545,7 @@ void pc_pp_Error ( Error* err )
       Seg*  seglo = xe->XE.SysParam.seglo;
       Seg*  seghi = xe->XE.SysParam.seghi;
       const HChar* s = VG_(get_error_string) (err);
-      HChar* what;
+      const HChar* what;
 
       tl_assert(BOTTOM != seglo && BOTTOM != seghi);
 
@@ -778,7 +778,7 @@ const HChar* pc_get_error_name ( Error* err )
 }
 
 Bool pc_get_extra_suppression_info ( Error* err,
-                                     /*OUT*/Char* buf, Int nBuf )
+                                     /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
    tl_assert(buf);

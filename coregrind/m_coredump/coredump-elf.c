@@ -150,7 +150,7 @@ typedef
 struct note {
    struct note *next;
    ESZ(Nhdr) note;
-   Char name[0];
+   HChar name[0];
 };
 
 static UInt note_size(const struct note *n)
@@ -160,7 +160,7 @@ static UInt note_size(const struct note *n)
 }
 
 #if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
-static void add_note(struct note **list, const Char *name, UInt type,
+static void add_note(struct note **list, const HChar *name, UInt type,
                      const void *data, UInt datasz)
 {
    Int namelen = VG_(strlen)(name)+1;
@@ -191,7 +191,7 @@ static void write_note(Int fd, const struct note *n)
 static void fill_prpsinfo(const ThreadState *tst,
                           struct vki_elf_prpsinfo *prpsinfo)
 {
-   static Char name[VKI_PATH_MAX];
+   static HChar name[VKI_PATH_MAX];
 
    VG_(memset)(prpsinfo, 0, sizeof(*prpsinfo));
 
@@ -219,7 +219,7 @@ static void fill_prpsinfo(const ThreadState *tst,
    prpsinfo->pr_gid = 0;
    
    if (VG_(resolve_filename)(VG_(cl_exec_fd), name, VKI_PATH_MAX)) {
-      Char *n = name+VG_(strlen)(name)-1;
+      HChar *n = name+VG_(strlen)(name)-1;
 
       while (n > name && *n != '/')
 	 n--;
@@ -395,7 +395,7 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    ThreadArchState* arch = (ThreadArchState*)&tst->arch;
 
 #if defined(VGP_x86_linux)
-//:: static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
+//:: static void fill_fpu(vki_elf_fpregset_t *fpu, const HChar *from)
 //:: {
 //::    if (VG_(have_ssestate)) {
 //::       UShort *to;
@@ -413,7 +413,7 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 //::       VG_(memcpy)(fpu, from, sizeof(*fpu));
 //:: }
 
-//::    fill_fpu(fpu, (const Char *)&arch->m_sse);
+//::    fill_fpu(fpu, (const HChar *)&arch->m_sse);
 
 #elif defined(VGP_amd64_linux)
 //::    fpu->cwd = ?;
@@ -504,9 +504,9 @@ static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 static
 void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 {
-   Char* buf = NULL;
-   Char *basename = "vgcore";
-   Char *coreext = "";
+   HChar* buf = NULL;
+   const HChar *basename = "vgcore";
+   const HChar *coreext = "";
    Int seq = 0;
    Int core_fd;
    NSegment const * seg;

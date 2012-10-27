@@ -1044,7 +1044,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 {
    Int    i, r, sz_exename;
    ULong  obj_mtime, pdb_mtime;
-   Char   exename[VKI_PATH_MAX];
+   HChar  exename[VKI_PATH_MAX];
    Char*  pdbname = NULL;
    Char*  dot;
    SysRes sres;

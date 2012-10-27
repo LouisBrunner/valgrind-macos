@@ -37,11 +37,11 @@
 // will abort if they can't allocate the memory).
 // The 'cc' is a string that identifies the allocation point.  It's used when
 // --profile-heap=yes is specified.
-extern void* VG_(malloc)         ( HChar* cc, SizeT nbytes );
+extern void* VG_(malloc)         ( const HChar* cc, SizeT nbytes );
 extern void  VG_(free)           ( void* p );
-extern void* VG_(calloc)         ( HChar* cc, SizeT n, SizeT bytes_per_elem );
-extern void* VG_(realloc)        ( HChar* cc, void* p, SizeT size );
-extern Char* VG_(strdup)         ( HChar* cc, const Char* s );
+extern void* VG_(calloc)         ( const HChar* cc, SizeT n, SizeT bytes_per_elem );
+extern void* VG_(realloc)        ( const HChar* cc, void* p, SizeT size );
+extern Char* VG_(strdup)         ( const HChar* cc, const Char* s );
 
 // Returns the usable size of a heap-block.  It's the asked-for size plus
 // possibly some more due to rounding up.
@@ -58,7 +58,7 @@ extern SizeT VG_(malloc_effective_client_redzone_size)(void);
 // TODO: move somewhere else
 // Call here to bomb the system when out of memory (mmap anon fails)
 __attribute__((noreturn))
-extern void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB );
+extern void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB );
 
 #endif   // __PUB_TOOL_MALLOCFREE_H
 

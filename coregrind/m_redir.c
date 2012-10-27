@@ -302,13 +302,13 @@ static Addr iFuncWrapper;
 
 static void maybe_add_active ( Active /*by value; callee copies*/ );
 
-static void*  dinfo_zalloc(HChar* ec, SizeT);
+static void*  dinfo_zalloc(const HChar* ec, SizeT);
 static void   dinfo_free(void*);
-static HChar* dinfo_strdup(HChar* ec, HChar*);
+static HChar* dinfo_strdup(const HChar* ec, const HChar*);
 static Bool   is_plausible_guest_addr(Addr);
 
-static void   show_redir_state ( HChar* who );
-static void   show_active ( HChar* left, Active* act );
+static void   show_redir_state ( const HChar* who );
+static void   show_active ( const HChar* left, Active* act );
 
 static void   handle_maybe_load_notifier( const UChar* soname, 
                                                 HChar* symbol, Addr addr );
@@ -447,7 +447,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             pointing to files inside the valgrind build directories. */
          struct vg_stat newdi_stat;
          SysRes newdi_res;
-         Char in_vglib_filename[VKI_PATH_MAX];
+         HChar in_vglib_filename[VKI_PATH_MAX];
          struct vg_stat in_vglib_stat;
          SysRes in_vglib_res;
 
@@ -1382,7 +1382,7 @@ void VG_(redir_initialise) ( void )
 /*--- MISC HELPERS                                         ---*/
 /*------------------------------------------------------------*/
 
-static void* dinfo_zalloc(HChar* ec, SizeT n) {
+static void* dinfo_zalloc(const HChar* ec, SizeT n) {
    void* p;
    vg_assert(n > 0);
    p = VG_(arena_malloc)(VG_AR_DINFO, ec, n);
@@ -1396,7 +1396,7 @@ static void dinfo_free(void* p) {
    return VG_(arena_free)(VG_AR_DINFO, p);
 }
 
-static HChar* dinfo_strdup(HChar* ec, HChar* str)
+static HChar* dinfo_strdup(const HChar* ec, const HChar* str)
 {
    return VG_(arena_strdup)(VG_AR_DINFO, ec, str);
 }
@@ -1574,7 +1574,7 @@ static void handle_require_text_symbols ( DebugInfo* di )
 /*--- SANITY/DEBUG                                         ---*/
 /*------------------------------------------------------------*/
 
-static void show_spec ( HChar* left, Spec* spec )
+static void show_spec ( const HChar* left, Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
                  "%s%25s %30s %s-> (%04d.%d) 0x%08llx\n",
@@ -1585,7 +1585,7 @@ static void show_spec ( HChar* left, Spec* spec )
                  (ULong)spec->to_addr );
 }
 
-static void show_active ( HChar* left, Active* act )
+static void show_active ( const HChar* left, Active* act )
 {
    Bool ok;
    HChar name1[64] = "";
@@ -1604,7 +1604,7 @@ static void show_active ( HChar* left, Active* act )
                              (ULong)act->to_addr, name2 );
 }
 
-static void show_redir_state ( HChar* who )
+static void show_redir_state ( const HChar* who )
 {
    TopSpec* ts;
    Spec*    sp;

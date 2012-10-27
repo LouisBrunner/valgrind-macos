@@ -49,8 +49,8 @@ typedef  struct _XArray  XArray;
 /* Create new XArray, using given allocation and free function, and
    for elements of the specified size.  Alloc fn must not fail (that
    is, if it returns it must have succeeded.) */
-extern XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT), 
-                            HChar* cc,
+extern XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT), 
+                            const HChar* cc,
                             void(*free_fn)(void*),
                             Word elemSzB );
 
@@ -129,7 +129,7 @@ extern void VG_(removeIndexXA)( XArray*, Word );
    space (but did return NULL rather than merely abort.)  Space for
    the clone (and all additions to it) is billed to 'cc' unless that
    is NULL, in which case the parent's cost-center is used. */
-extern XArray* VG_(cloneXA)( HChar* cc, XArray* xa );
+extern XArray* VG_(cloneXA)( const HChar* cc, XArray* xa );
 
 /* Get the raw array and size so callers can index it really fast.
    This is dangerous in the sense that there's no range or

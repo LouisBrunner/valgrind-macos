@@ -36,8 +36,8 @@ struct _PoolAlloc {
    UWord   nrRef;         /* nr reference to this pool allocator */
    UWord   elemSzB;       /* element size */
    UWord   nPerPool;      /* # elems per pool */
-   void*   (*alloc)(HChar*, SizeT); /* pool allocator */
-   HChar*  cc; /* pool allocator's cc */
+   void*   (*alloc)(const HChar*, SizeT); /* pool allocator */
+   const HChar*  cc; /* pool allocator's cc */
    void    (*free)(void*); /* pool allocator's free-er */
    /* XArray of void* (pointers to pools).  The pools themselves.
       Each element is a pointer to a block of size (elemSzB *
@@ -50,8 +50,8 @@ struct _PoolAlloc {
 
 PoolAlloc* VG_(newPA) ( UWord  elemSzB,
                         UWord  nPerPool,
-                        void*  (*alloc)(HChar*, SizeT),
-                        HChar* cc,
+                        void*  (*alloc)(const HChar*, SizeT),
+                        const  HChar* cc,
                         void   (*free_fn)(void*) )
 {
    PoolAlloc* pa;

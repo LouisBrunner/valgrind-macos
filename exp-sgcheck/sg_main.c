@@ -69,7 +69,7 @@ static inline Bool is_sane_TId ( ThreadId tid )
           && tid != VG_INVALID_THREADID;
 }
 
-static void* sg_malloc ( HChar* cc, SizeT n ) {
+static void* sg_malloc ( const HChar* cc, SizeT n ) {
    void* p;
    tl_assert(n > 0);
    p = VG_(malloc)( cc, n );
@@ -477,7 +477,7 @@ typedef
    }
    StackTreeNode;
 
-static void pp_StackTree ( WordFM* sitree, HChar* who )
+static void pp_StackTree ( WordFM* sitree, const HChar* who )
 {
    UWord keyW, valW;
    VG_(printf)("<<< BEGIN pp_StackTree %s\n", who );
@@ -637,7 +637,7 @@ static void GlobalTreeNode__pp ( GlobalTreeNode* nd ) {
 }
 
 static void GlobalTree__pp ( WordFM* /* of (GlobalTreeNode,void) */ gitree,
-                             HChar* who )
+                             const HChar* who )
 {
    UWord keyW, valW;
    GlobalTreeNode* nd;
@@ -1016,7 +1016,7 @@ static void QCache__invalidate ( QCache* qc ) {
    qc->nInUse = 0;
 }
 
-static void QCache__pp ( QCache* qc, HChar* who )
+static void QCache__pp ( QCache* qc, const HChar* who )
 {
    Word i;
    VG_(printf)("<<< QCache with %ld elements (%s)\n", qc->nInUse, who);

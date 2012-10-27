@@ -42,7 +42,7 @@
 /*--- Very basic stuff                                         ---*/
 /*----------------------------------------------------------------*/
 
-void* HG_(zalloc) ( HChar* cc, SizeT n )
+void* HG_(zalloc) ( const HChar* cc, SizeT n )
 {
    void* p;
    tl_assert(n > 0);
@@ -58,7 +58,7 @@ void HG_(free) ( void* p )
    VG_(free)(p);
 }
 
-Char* HG_(strdup) ( HChar* cc, const Char* s )
+Char* HG_(strdup) ( const HChar* cc, const Char* s )
 {
    return VG_(strdup)( cc, s );
 }

@@ -191,7 +191,7 @@ typedef
 // elastic, in that it can be bigger than asked-for to ensure alignment.
 typedef
    struct {
-      Char*        name;
+      const HChar* name;
       Bool         clientmem;        // Allocates in the client address space?
       SizeT        rz_szB;           // Red zone size in bytes
       SizeT        min_sblock_szB;   // Minimum superblock size in bytes
@@ -424,18 +424,18 @@ Block* get_next_b ( Block* b )
 
 // Set and get the cost-center field of a block.
 static __inline__
-void set_cc ( Block* b, HChar* cc )
+void set_cc ( Block* b, const HChar* cc )
 { 
    UByte* b2 = (UByte*)b;
    vg_assert( VG_(clo_profile_heap) );
-   *(HChar**)&b2[0] = cc;
+   *(const HChar**)&b2[0] = cc;
 }
 static __inline__
-HChar* get_cc ( Block* b )
+const HChar* get_cc ( Block* b )
 {
    UByte* b2 = (UByte*)b;
    vg_assert( VG_(clo_profile_heap) );
-   return *(HChar**)&b2[0];
+   return *(const HChar**)&b2[0];
 }
 
 //---------------------------------------------------------------------------
@@ -509,7 +509,7 @@ SizeT VG_(malloc_effective_client_redzone_size)(void)
 // It might be overriden by VG_(clo_redzone_size) or VG_(clo_core_redzone_size).
 // it might be made bigger to ensure that VG_MIN_MALLOC_SZB is observed.
 static
-void arena_init ( ArenaId aid, Char* name, SizeT rz_szB,
+void arena_init ( ArenaId aid, const HChar* name, SizeT rz_szB,
                   SizeT min_sblock_szB, SizeT min_unsplittable_sblock_szB )
 {
    SizeT  i;
@@ -702,7 +702,7 @@ void ensure_mm_init ( ArenaId aid )
 /*------------------------------------------------------------*/
 
 __attribute__((noreturn))
-void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
+void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
 {
    static Int outputTrial = 0;
    // We try once to output the full memory state followed by the below message.
@@ -711,7 +711,7 @@ void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
    // And then we abandon.
    
    ULong tot_alloc = VG_(am_get_anonsize_total)();
-   Char* s1 = 
+   const HChar* s1 = 
       "\n"
       "    Valgrind's memory management: out of memory:\n"
       "       %s's request for %llu bytes failed.\n"
@@ -1272,7 +1272,11 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 
 #define N_AN_CCS 1000
 
-typedef struct { ULong nBytes; ULong nBlocks; HChar* cc; } AnCC;
+typedef struct {
+   ULong nBytes;
+   ULong nBlocks;
+   const HChar* cc;
+} AnCC;
 
 static AnCC anCCs[N_AN_CCS];
 
@@ -1292,7 +1296,7 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
    Bool        thisFree, lastWasFree;
    SizeT       b_bszB;
 
-   HChar* cc;
+   const HChar* cc;
    UInt n_ccs = 0;
    //return;
    a = arenaId_to_ArenaP(aid);
@@ -1480,7 +1484,7 @@ SizeT align_req_pszB ( SizeT req_pszB )
    return ((req_pszB + n) & (~n));
 }
 
-void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
+void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
 {
    SizeT       req_bszB, frag_bszB, b_bszB;
    UInt        lno, i;
@@ -1953,7 +1957,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    .    .               .   .   .               .   .
 
 */
-void* VG_(arena_memalign) ( ArenaId aid, HChar* cc, 
+void* VG_(arena_memalign) ( ArenaId aid, const HChar* cc, 
                             SizeT req_alignB, SizeT req_pszB )
 {
    SizeT  base_pszB_req, base_pszB_act, frag_bszB;
@@ -2148,11 +2152,11 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(arena_calloc) ( ArenaId aid, HChar* cc,
+void* VG_(arena_calloc) ( ArenaId aid, const HChar* cc,
                           SizeT nmemb, SizeT bytes_per_memb )
 {
    SizeT  size;
-   UChar* p;
+   void*  p;
 
    size = nmemb * bytes_per_memb;
    vg_assert(size >= nmemb && size >= bytes_per_memb);// check against overflow
@@ -2165,12 +2169,12 @@ void* VG_(arena_calloc) ( ArenaId aid, HChar* cc,
 }
 
 
-void* VG_(arena_realloc) ( ArenaId aid, HChar* cc, 
+void* VG_(arena_realloc) ( ArenaId aid, const HChar* cc, 
                            void* ptr, SizeT req_pszB )
 {
    Arena* a;
    SizeT  old_pszB;
-   UChar  *p_new;
+   void*  p_new;
    Block* b;
 
    ensure_mm_init(aid);
@@ -2208,7 +2212,7 @@ void* VG_(arena_realloc) ( ArenaId aid, HChar* cc,
 
 
 /* Inline just for the wrapper VG_(strdup) below */
-__inline__ Char* VG_(arena_strdup) ( ArenaId aid, HChar* cc, 
+__inline__ Char* VG_(arena_strdup) ( ArenaId aid, const HChar* cc, 
                                      const Char* s )
 {
    Int   i;
@@ -2233,7 +2237,7 @@ __inline__ Char* VG_(arena_strdup) ( ArenaId aid, HChar* cc,
 
 // All just wrappers to avoid exposing arenas to tools.
 
-void* VG_(malloc) ( HChar* cc, SizeT nbytes )
+void* VG_(malloc) ( const HChar* cc, SizeT nbytes )
 {
    return VG_(arena_malloc) ( VG_AR_TOOL, cc, nbytes );
 }
@@ -2243,17 +2247,17 @@ void  VG_(free) ( void* ptr )
    VG_(arena_free) ( VG_AR_TOOL, ptr );
 }
 
-void* VG_(calloc) ( HChar* cc, SizeT nmemb, SizeT bytes_per_memb )
+void* VG_(calloc) ( const HChar* cc, SizeT nmemb, SizeT bytes_per_memb )
 {
    return VG_(arena_calloc) ( VG_AR_TOOL, cc, nmemb, bytes_per_memb );
 }
 
-void* VG_(realloc) ( HChar* cc, void* ptr, SizeT size )
+void* VG_(realloc) ( const HChar* cc, void* ptr, SizeT size )
 {
    return VG_(arena_realloc) ( VG_AR_TOOL, cc, ptr, size );
 }
 
-Char* VG_(strdup) ( HChar* cc, const Char* s )
+Char* VG_(strdup) ( const HChar* cc, const Char* s )
 {
    return VG_(arena_strdup) ( VG_AR_TOOL, cc, s ); 
 }

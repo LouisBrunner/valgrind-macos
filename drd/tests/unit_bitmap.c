@@ -24,7 +24,7 @@
 
 /* Replacements for Valgrind core functionality. */
 
-void* VG_(malloc)(HChar* cc, SizeT nbytes)
+void* VG_(malloc)(const HChar* cc, SizeT nbytes)
 { return malloc(nbytes); }
 void  VG_(free)(void* p)
 { return free(p); }

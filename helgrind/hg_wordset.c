@@ -148,8 +148,8 @@ typedef
    vec2ix. The entry of the dead WVs in ix2vec are used to maintain a
    linked list of free (to be re-used) ix2vec entries. */
 struct _WordSetU {
-      void*     (*alloc)(HChar*,SizeT);
-      HChar*    cc;
+      void*     (*alloc)(const HChar*,SizeT);
+      const HChar* cc;
       void      (*dealloc)(void*);
       WordFM*   vec2ix; /* WordVec-to-WordSet mapping tree */
       WordVec** ix2vec; /* WordSet-to-WordVec mapping array */
@@ -319,8 +319,8 @@ static WordSet add_or_dealloc_WordVec( WordSetU* wsu, WordVec* wv_new )
       causes failures on a 64-bit platform. */
    tl_assert(wv_new->owner == wsu);
    have = VG_(lookupFM)( wsu->vec2ix, 
-                         (Word*)&wv_old, (Word*)&ix_old,
-                         (Word)wv_new );
+                         (UWord*)&wv_old, (UWord*)&ix_old,
+                         (UWord)wv_new );
    if (have) {
       tl_assert(wv_old != wv_new);
       tl_assert(wv_old);
@@ -336,7 +336,7 @@ static WordSet add_or_dealloc_WordVec( WordSetU* wsu, WordVec* wv_new )
       tl_assert(wsu->ix2vec[ws] == NULL || is_dead(wsu,wsu->ix2vec[ws]));
       wsu->ix2vec_free = (WordVec **) wsu->ix2vec[ws];
       wsu->ix2vec[ws] = wv_new;
-      VG_(addToFM)( wsu->vec2ix, (Word)wv_new, ws );
+      VG_(addToFM)( wsu->vec2ix, (UWord)wv_new, ws );
       if (HG_DEBUG) VG_(printf)("aodW %s re-use free %d %p\n", wsu->cc, (Int)ws, wv_new );
       return ws;
    } else {
@@ -353,8 +353,8 @@ static WordSet add_or_dealloc_WordVec( WordSetU* wsu, WordVec* wv_new )
 }
 
 
-WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( HChar*, SizeT ),
-                             HChar* cc,
+WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( const HChar*, SizeT ),
+                             const HChar* cc,
                              void  (*dealloc)(void*),
                              Word  cacheSize )
 {
@@ -477,8 +477,8 @@ void HG_(dieWS) ( WordSetU* wsu, WordSet ws )
    wsu->ix2vec_free = &wsu->ix2vec[ws];
 
    VG_(delFromFM) ( wsu->vec2ix, 
-                    (Word*)&wv_in_vec2ix, (Word*)&wv_ix,
-                    (Word)wv );
+                    (UWord*)&wv_in_vec2ix, (UWord*)&wv_ix,
+                    (UWord)wv );
 
    if (HG_DEBUG) VG_(printf)("dieWS wv_ix %d\n", (Int)wv_ix);
    tl_assert (wv_ix);
@@ -580,7 +580,7 @@ void HG_(ppWS) ( WordSetU* wsu, WordSet ws )
    VG_(printf)("}");
 }
 
-void HG_(ppWSUstats) ( WordSetU* wsu, HChar* name )
+void HG_(ppWSUstats) ( WordSetU* wsu, const HChar* name )
 {
    VG_(printf)("   WordSet \"%s\":\n", name);
    VG_(printf)("      addTo        %10lu (%lu uncached)\n",

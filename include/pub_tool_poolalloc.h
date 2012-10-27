@@ -53,8 +53,8 @@ typedef  struct _PoolAlloc  PoolAlloc;
    is, if it returns it must have succeeded.) */
 PoolAlloc* VG_(newPA) ( UWord  elemSzB,
                         UWord  nPerPool,
-                        void*  (*alloc)(HChar*, SizeT),
-                        HChar* cc,
+                        void*  (*alloc)(const HChar*, SizeT),
+                        const  HChar* cc,
                         void   (*free_fn)(void*) );
 
 

@@ -159,7 +159,7 @@ static int gdbserver_called = 0;
 static int gdbserver_exited = 0;
 
 /* alloc and free functions for xarray and similar. */
-static void* gs_alloc (HChar* cc, SizeT sz)
+static void* gs_alloc (const HChar* cc, SizeT sz)
 {
    void* res = VG_(arena_malloc)(VG_AR_CORE, cc, sz);
    vg_assert (res);

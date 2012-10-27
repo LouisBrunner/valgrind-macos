@@ -327,7 +327,7 @@ Int find_chunk_for ( Addr       ptr,
 
 
 static MC_Chunk**
-find_active_chunks(UInt* pn_chunks)
+find_active_chunks(Int* pn_chunks)
 {
    // Our goal is to construct a set of chunks that includes every
    // mempool chunk, and every malloc region that *doesn't* contain a

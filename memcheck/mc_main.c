@@ -2190,7 +2190,7 @@ static void zeroise_OCacheLine ( OCacheLine* line, Addr tag ) {
 
 static OSet* ocacheL2 = NULL;
 
-static void* ocacheL2_malloc ( HChar* cc, SizeT szB ) {
+static void* ocacheL2_malloc ( const HChar* cc, SizeT szB ) {
    return VG_(malloc)(cc, szB);
 }
 static void ocacheL2_free ( void* v ) {

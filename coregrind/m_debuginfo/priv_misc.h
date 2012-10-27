@@ -38,10 +38,10 @@
 
 
 /* Allocate(zeroed), free, strdup, memdup, all in VG_AR_DINFO. */
-void*  ML_(dinfo_zalloc)( HChar* cc, SizeT szB );
+void*  ML_(dinfo_zalloc)( const HChar* cc, SizeT szB );
 void   ML_(dinfo_free)( void* v );
-UChar* ML_(dinfo_strdup)( HChar* cc, const UChar* str );
-UChar* ML_(dinfo_memdup)( HChar* cc, UChar* str, SizeT nStr );
+UChar* ML_(dinfo_strdup)( const HChar* cc, const UChar* str );
+UChar* ML_(dinfo_memdup)( const HChar* cc, UChar* str, SizeT nStr );
 
 /* Extract (possibly unaligned) data of various sizes from a buffer. */
 Short ML_(read_Short)( UChar* data );

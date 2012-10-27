@@ -422,7 +422,7 @@ static ULong n_disc_osize = 0;
 /*--- Misc                                                  ---*/
 /*-------------------------------------------------------------*/
 
-static void* ttaux_malloc ( HChar* tag, SizeT n )
+static void* ttaux_malloc ( const HChar* tag, SizeT n )
 {
    return VG_(arena_malloc)(VG_AR_TTAUX, tag, n);
 }

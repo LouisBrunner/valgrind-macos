@@ -38,8 +38,8 @@
 /* See pub_tool_xarray.h for details of what this is all about. */
 
 struct _XArray {
-   void* (*alloc) ( HChar*, SizeT ); /* alloc fn (nofail) */
-   HChar* cc;                       /* cost centre for alloc */
+   void* (*alloc) ( const HChar*, SizeT ); /* alloc fn (nofail) */
+   const HChar* cc;                 /* cost centre for alloc */
    void  (*free) ( void* );         /* free fn */
    Int   (*cmpFn) ( void*, void* ); /* cmp fn (may be NULL) */
    Word  elemSzB;   /* element size in bytes */
@@ -50,8 +50,8 @@ struct _XArray {
 };
 
 
-XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT), 
-                     HChar* cc,
+XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT), 
+                     const HChar* cc,
                      void(*free_fn)(void*),
                      Word elemSzB )
 {
@@ -79,11 +79,11 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT),
    return xa;
 }
 
-XArray* VG_(cloneXA)( HChar* cc, XArray* xao )
+XArray* VG_(cloneXA)( const HChar* cc, XArray* xao )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    struct _XArray* nyu;
-   HChar* nyu_cc;
+   const HChar* nyu_cc;
    vg_assert(xa);
    vg_assert(xa->alloc);
    vg_assert(xa->free);

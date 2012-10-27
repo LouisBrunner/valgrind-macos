@@ -103,15 +103,15 @@ struct vg_mallinfo {
    int keepcost; /* top-most, releasable (via malloc_trim) space */
 };
 
-extern void* VG_(arena_malloc)  ( ArenaId arena, HChar* cc, SizeT nbytes );
+extern void* VG_(arena_malloc)  ( ArenaId arena, const HChar* cc, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
-extern void* VG_(arena_calloc)  ( ArenaId arena, HChar* cc,
+extern void* VG_(arena_calloc)  ( ArenaId arena, const HChar* cc,
                                   SizeT nmemb, SizeT bytes_per_memb );
-extern void* VG_(arena_realloc) ( ArenaId arena, HChar* cc,
+extern void* VG_(arena_realloc) ( ArenaId arena, const HChar* cc,
                                   void* ptr, SizeT size );
-extern void* VG_(arena_memalign)( ArenaId aid, HChar* cc,
+extern void* VG_(arena_memalign)( ArenaId aid, const HChar* cc,
                                   SizeT req_alignB, SizeT req_pszB );
-extern Char* VG_(arena_strdup)  ( ArenaId aid, HChar* cc, 
+extern Char* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
                                   const Char* s);
 
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );

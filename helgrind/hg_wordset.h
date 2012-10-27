@@ -47,8 +47,8 @@ typedef  struct _WordSetU  WordSetU;  /* opaque */
 typedef  UInt              WordSet;   /* opaque, small int index */
 
 /* Allocate and initialise a WordSetU */
-WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( HChar*, SizeT ),
-                             HChar* cc,
+WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( const HChar*, SizeT ),
+                             const HChar* cc,
                              void  (*dealloc)(void*),
                              Word  cacheSize );
 
@@ -60,7 +60,7 @@ void HG_(deleteWordSetU) ( WordSetU* );
 UWord HG_(cardinalityWSU) ( WordSetU* );
 
 /* Show performance stats for this WordSetU. */
-void HG_(ppWSUstats) ( WordSetU* wsu, HChar* name );
+void HG_(ppWSUstats) ( WordSetU* wsu, const HChar* name );
 
 
 /* Element-level operations on WordSets.  Note that the WordSet

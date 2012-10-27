@@ -54,7 +54,7 @@ static UInt myrandom( void )
   return seed;
 }
 
-static void* allocate_node(HChar* cc, SizeT szB)
+static void* allocate_node(const HChar* cc, SizeT szB)
 { return malloc(szB); }
 
 static void free_node(void* p)
@@ -62,7 +62,7 @@ static void free_node(void* p)
 
 
 //---------------------------------------------------------------------------
-// Word example
+// UWord example
 //---------------------------------------------------------------------------
 
 // This example shows that an element can be a single value (in this
@@ -85,9 +85,9 @@ static Word wordCmp(void* vkey, void* velem)
 void example1singleset(OSet* oset, char *descr)
 {
    Int  i, n;
-   Word v, prev;
-   Word* vs[NN];
-   Word *pv;
+   UWord v, prev;
+   UWord* vs[NN];
+   UWord *pv;
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
@@ -104,9 +104,9 @@ void example1singleset(OSet* oset, char *descr)
    }
    seed = 0;
    for (i = 0; i < NN; i++) {
-      Word r1  = myrandom() % NN;
-      Word r2  = myrandom() % NN;
-      Word* tmp= vs[r1];
+      UWord r1  = myrandom() % NN;
+      UWord r2  = myrandom() % NN;
+      UWord* tmp= vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
    }
@@ -229,7 +229,7 @@ void example1(void)
                                         NULL,
                                         allocate_node, "oset_test.1",
                                         free_node,
-                                        101, sizeof(Word));
+                                        101, sizeof(UWord));
    example1singleset(oset, "single oset, pool allocator");
 
    // Destroy the OSet
@@ -241,7 +241,7 @@ void example1(void)
       (0,
        NULL,
        allocate_node, "oset_test.1", free_node,
-       101, sizeof(Word));
+       101, sizeof(UWord));
    oset_empty_clone = VG_(OSetGen_EmptyClone) (oset);
    example1singleset(oset, "oset, shared pool");
    example1singleset(oset_empty_clone, "cloned oset, shared pool");
@@ -255,8 +255,8 @@ void example1(void)
 void example1b(void)
 {
    Int  i, n;
-   Word v = 0, prev;
-   Word vs[NN];
+   UWord v = 0, prev;
+   UWord vs[NN];
 
    // Create a static OSet of Ints.  This one uses fast (built-in)
    // comparisons.
@@ -275,9 +275,9 @@ void example1b(void)
    }
    seed = 0;
    for (i = 0; i < NN; i++) {
-      Word r1  = myrandom() % NN;
-      Word r2  = myrandom() % NN;
-      Word tmp = vs[r1];
+      UWord r1  = myrandom() % NN;
+      UWord r2  = myrandom() % NN;
+      UWord tmp = vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
    }
@@ -317,7 +317,7 @@ void example1b(void)
    prev = -1;
    VG_(OSetWord_ResetIter)(oset);
    while ( VG_(OSetWord_Next)(oset, &v) ) {
-      Word curr = v;
+      UWord curr = v;
       assert(prev < curr); 
       prev = curr;
       n++;

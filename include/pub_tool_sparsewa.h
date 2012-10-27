@@ -49,8 +49,8 @@
 typedef  struct _SparseWA  SparseWA; /* opaque */
 
 // Create a new one, using the specified allocator/deallocator
-SparseWA* VG_(newSWA) ( void*(*alloc_nofail)(HChar* cc, SizeT), 
-                        HChar* cc,
+SparseWA* VG_(newSWA) ( void*(*alloc_nofail)(const HChar* cc, SizeT), 
+                        const HChar* cc,
                         void(*dealloc)(void*) );
 
 // Delete one, and free all associated storage

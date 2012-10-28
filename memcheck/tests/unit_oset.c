@@ -62,16 +62,16 @@ static void free_node(void* p)
 
 
 //---------------------------------------------------------------------------
-// UWord example
+// Word example
 //---------------------------------------------------------------------------
 
 // This example shows that an element can be a single value (in this
 // case a Word), in which case the element is also the key.
 
 __attribute__((unused))
-static Char *wordToStr(void *p)
+static HChar *wordToStr(void *p)
 {
-   static char buf[32];
+   static HChar buf[32];
    sprintf(buf, "%ld", *(Word*)p);
    return buf;
 }
@@ -85,9 +85,9 @@ static Word wordCmp(void* vkey, void* velem)
 void example1singleset(OSet* oset, char *descr)
 {
    Int  i, n;
-   UWord v, prev;
-   UWord* vs[NN];
-   UWord *pv;
+   Word v, prev;
+   Word* vs[NN];
+   Word *pv;
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
@@ -104,9 +104,9 @@ void example1singleset(OSet* oset, char *descr)
    }
    seed = 0;
    for (i = 0; i < NN; i++) {
-      UWord r1  = myrandom() % NN;
-      UWord r2  = myrandom() % NN;
-      UWord* tmp= vs[r1];
+      Word r1  = myrandom() % NN;
+      Word r2  = myrandom() % NN;
+      Word* tmp= vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
    }
@@ -229,7 +229,7 @@ void example1(void)
                                         NULL,
                                         allocate_node, "oset_test.1",
                                         free_node,
-                                        101, sizeof(UWord));
+                                        101, sizeof(Word));
    example1singleset(oset, "single oset, pool allocator");
 
    // Destroy the OSet
@@ -241,7 +241,7 @@ void example1(void)
       (0,
        NULL,
        allocate_node, "oset_test.1", free_node,
-       101, sizeof(UWord));
+       101, sizeof(Word));
    oset_empty_clone = VG_(OSetGen_EmptyClone) (oset);
    example1singleset(oset, "oset, shared pool");
    example1singleset(oset_empty_clone, "cloned oset, shared pool");
@@ -255,8 +255,8 @@ void example1(void)
 void example1b(void)
 {
    Int  i, n;
-   UWord v = 0, prev;
-   UWord vs[NN];
+   Word v = 0, prev;
+   Word vs[NN];
 
    // Create a static OSet of Ints.  This one uses fast (built-in)
    // comparisons.
@@ -265,7 +265,7 @@ void example1b(void)
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetWord_Contains)(oset, v) );
    vg_assert( ! VG_(OSetWord_Remove)(oset, v) );
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
    vg_assert( 0 == VG_(OSetWord_Size)(oset) );
 
    // Create some elements, with gaps (they're all even) but no dups,
@@ -275,9 +275,9 @@ void example1b(void)
    }
    seed = 0;
    for (i = 0; i < NN; i++) {
-      UWord r1  = myrandom() % NN;
-      UWord r2  = myrandom() % NN;
-      UWord tmp = vs[r1];
+      Word r1  = myrandom() % NN;
+      Word r2  = myrandom() % NN;
+      Word tmp = vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
    }
@@ -316,15 +316,15 @@ void example1b(void)
    n = 0;
    prev = -1;
    VG_(OSetWord_ResetIter)(oset);
-   while ( VG_(OSetWord_Next)(oset, &v) ) {
-      UWord curr = v;
+   while ( VG_(OSetWord_Next)(oset, (UWord *)&v) ) {
+      Word curr = v;
       assert(prev < curr); 
       prev = curr;
       n++;
    }
    assert(NN == n);
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
 
    // Check that we can remove half of the elements.
    for (i = 0; i < NN; i += 2) {
@@ -352,7 +352,7 @@ void example1b(void)
    // Try some more operations on the empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetWord_Contains)(oset, v) );
    vg_assert( ! VG_(OSetWord_Remove)(oset, v) );
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
    vg_assert( 0 == VG_(OSetWord_Size)(oset) );
 
    // Re-insert remaining elements, to give OSetWord_Destroy something to
@@ -387,9 +387,9 @@ typedef struct {
 Block;
 
 __attribute__((unused))
-static Char *blockToStr(void *p)
+static HChar *blockToStr(void *p)
 {
-   static char buf[32];
+   static HChar buf[32];
    Block* b = (Block*)p;
    sprintf(buf, "<(%d) %lu..%lu (%d)>", b->b1, b->first, b->last, b->b2);
    return buf;

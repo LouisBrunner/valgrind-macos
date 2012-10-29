@@ -283,26 +283,30 @@ __attribute__((always_inline))
 static __inline__
 CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
 {
-    UInt  set1 = ( a         >> c->line_size_bits) & (c->sets_min_1);
-    UInt  set2 = ((a+size-1) >> c->line_size_bits) & (c->sets_min_1);
-    UWord tag  = a >> c->tag_shift;
+    UWord block1 =  a         >> c->line_size_bits;
+    UWord block2 = (a+size-1) >> c->line_size_bits;
+    UInt  set1   = block1 & c->sets_min_1;
+    /* the tag does not need to include bits specifying the set,
+     * but it can, and this saves instructions */
+    UWord tag1   = block1;
 
     /* Access entirely within line. */
-    if (set1 == set2) 
-	return cachesim_setref(c, set1, tag);
+    if (block1 == block2)
+	return cachesim_setref(c, set1, tag1);
 
     /* Access straddles two lines. */
-    /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
-    else if (((set1 + 1) & (c->sets_min_1)) == set2) {
-	UWord tag2  = (a+size-1) >> c->tag_shift;
+    else if (block1 + 1 == block2) {
+        UInt  set2 = block2 & c->sets_min_1;
+        UWord tag2 = block2;
 
 	/* the call updates cache structures as side effect */
-	CacheResult res1 =  cachesim_setref(c, set1, tag);
+	CacheResult res1 =  cachesim_setref(c, set1, tag1);
 	CacheResult res2 =  cachesim_setref(c, set2, tag2);
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
 
    } else {
-       VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);
+       VG_(printf)("addr: %lx  size: %u  blocks: %ld %ld",
+		   a, size, block1, block2);
        VG_(tool_panic)("item straddles more than two cache sets");
    }
    return Hit;

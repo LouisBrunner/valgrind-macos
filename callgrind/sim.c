@@ -227,18 +227,23 @@ static void print_cache(cache_t2* c)
 
 
 /*------------------------------------------------------------*/
-/*--- Write Through Cache Simulation                       ---*/
+/*--- Simple Cache Simulation                              ---*/
 /*------------------------------------------------------------*/
 
 /*
- * Simple model: L1 & LL Write Through
- * Does not distinguish among read and write references
+ * Model: single inclusive, 2-level cache hierarchy (L1/LL)
+ *        with write-allocate
+ *
+ * For simple cache hit/miss counts, we do not have to
+ * maintain the dirty state of lines (no need to distinguish
+ * read/write references), and the resulting counts are the
+ * same for write-through and write-back caches.
  *
  * Simulator functions:
  *  CacheModelResult cachesim_I1_ref(Addr a, UChar size)
  *  CacheModelResult cachesim_D1_ref(Addr a, UChar size)
  */
-
+__attribute__((always_inline))
 static __inline__
 CacheResult cachesim_setref(cache_t2* c, UInt set_no, UWord tag)
 {
@@ -274,7 +279,9 @@ CacheResult cachesim_setref(cache_t2* c, UInt set_no, UWord tag)
     return Miss;
 }
 
-static CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
+__attribute__((always_inline))
+static __inline__
+CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
 {
     UInt  set1 = ( a         >> c->line_size_bits) & (c->sets_min_1);
     UInt  set2 = ((a+size-1) >> c->line_size_bits) & (c->sets_min_1);
@@ -338,6 +345,7 @@ CacheModelResult cachesim_D1_ref(Addr a, UChar size)
  * this cache line (CACHELINE_DIRTY = 1). By OR'ing the reference
  * type (Read/Write), the line gets dirty on a write.
  */
+__attribute__((always_inline))
 static __inline__
 CacheResult cachesim_setref_wb(cache_t2* c, RefType ref, UInt set_no, UWord tag)
 {
@@ -376,7 +384,7 @@ CacheResult cachesim_setref_wb(cache_t2* c, RefType ref, UInt set_no, UWord tag)
     return (tmp_tag & CACHELINE_DIRTY) ? MissDirty : Miss;
 }
 
-
+__attribute__((always_inline))
 static __inline__
 CacheResult cachesim_ref_wb(cache_t2* c, RefType ref, Addr a, UChar size)
 {

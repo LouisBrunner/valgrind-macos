@@ -16653,6 +16653,7 @@ DisResult disInstr_PPC_WRK (
 
    /* 64bit Integer Rotate Instructions */
    case 0x1E: // rldcl, rldcr, rldic, rldicl, rldicr, rldimi
+      if (!mode64) goto decode_failure;
       if (dis_int_rot( theInstr )) goto decode_success;
       goto decode_failure;
 
@@ -16687,7 +16688,12 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* Trap Instructions */
-   case 0x02: case 0x03: // tdi, twi
+   case 0x02:    // tdi
+      if (!mode64) goto decode_failure;
+      if (dis_trapi(theInstr, &dres)) goto decode_success;
+      goto decode_failure;
+
+   case 0x03:   // twi
       if (dis_trapi(theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
@@ -17288,7 +17294,12 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
          /* 64bit Integer Parity Instructions */
-      case 0xba: case 0x9a: // prtyd, prtyw
+      case 0xba: // prtyd
+         if (!mode64) goto decode_failure;
+         if (dis_int_parity( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x9a: // prtyw
          if (dis_int_parity( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -17333,9 +17344,13 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       /* Integer Load and Store with Byte Reverse Instructions */
-      case 0x316: case 0x216: case 0x396: // lhbrx, lwbrx, sthbrx
-      case 0x296: case 0x214:             // stwbrx, ldbrx
-      case 0x294:                         // stdbrx
+      case 0x214: case 0x294: // ldbrx, stdbrx
+         if (!mode64) goto decode_failure;
+         if (dis_int_ldst_rev( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x216: case 0x316: case 0x296:    // lwbrx, lhbrx, stwbrx
+      case 0x396:                            // sthbrx
          if (dis_int_ldst_rev( theInstr )) goto decode_success;
          goto decode_failure;
          
@@ -17385,7 +17400,12 @@ DisResult disInstr_PPC_WRK (
 //zz          goto decode_failure;
 
       /* Trap Instructions */
-      case 0x004: case 0x044:             // tw,   td
+      case 0x004:             // tw
+         if (dis_trap(theInstr, &dres)) goto decode_success;
+         goto decode_failure;
+
+      case 0x044:             // td
+         if (!mode64) goto decode_failure;
          if (dis_trap(theInstr, &dres)) goto decode_success;
          goto decode_failure;
 
@@ -17479,6 +17499,7 @@ DisResult disInstr_PPC_WRK (
     	  goto decode_failure;
 
       case 0x0FC: // bpermd
+         if (!mode64) goto decode_failure;
          if (dis_int_logic( theInstr )) goto decode_success;
          goto decode_failure;
 

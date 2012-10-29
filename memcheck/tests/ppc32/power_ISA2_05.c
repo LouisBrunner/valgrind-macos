@@ -29,9 +29,11 @@ void test_parity_instrs()
 
    for (i = 0; i < 50; i++) {
       word = base256(i);
+#ifdef __powerpc64__
       long_word = word;
       __asm__ volatile ("prtyd %0, %1":"=r" (parity):"r"(long_word));
       printf("prtyd (%x) => parity=%x\n", i, parity);
+#endif
       __asm__ volatile ("prtyw %0, %1":"=r" (parity):"r"(word));
       printf("prtyw (%x) => parity=%x\n", i, parity);
    }

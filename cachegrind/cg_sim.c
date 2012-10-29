@@ -85,7 +85,8 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
  * Without inlining of simulator functions, cachegrind can get 40% slower.
  */
 __attribute__((always_inline))
-static Bool cachesim_setref_is_miss(cache_t2* c, UInt set_no, UWord tag)
+static __inline__
+Bool cachesim_setref_is_miss(cache_t2* c, UInt set_no, UWord tag)
 {
    int i, j;
    UWord *set;
@@ -121,7 +122,8 @@ static Bool cachesim_setref_is_miss(cache_t2* c, UInt set_no, UWord tag)
 }
 
 __attribute__((always_inline))
-static Bool cachesim_ref_is_miss(cache_t2* c, Addr a, UChar size)
+static __inline__
+Bool cachesim_ref_is_miss(cache_t2* c, Addr a, UChar size)
 {
    /* A memory block has the size of a cache line */
    UWord block1 =  a         >> c->line_size_bits;
@@ -173,7 +175,8 @@ static void cachesim_initcaches(cache_t I1c, cache_t D1c, cache_t LLc)
 }
 
 __attribute__((always_inline))
-static void cachesim_I1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
+static __inline__
+void cachesim_I1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
 {
    if (cachesim_ref_is_miss(&I1, a, size)) {
       (*m1)++;
@@ -183,7 +186,8 @@ static void cachesim_I1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
 }
 
 __attribute__((always_inline))
-static void cachesim_D1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
+static __inline__
+void cachesim_D1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
 {
    if (cachesim_ref_is_miss(&D1, a, size)) {
       (*m1)++;

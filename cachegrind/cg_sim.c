@@ -176,11 +176,29 @@ static void cachesim_initcaches(cache_t I1c, cache_t D1c, cache_t LLc)
 
 __attribute__((always_inline))
 static __inline__
-void cachesim_I1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
+void cachesim_I1_doref_Gen(Addr a, UChar size, ULong* m1, ULong *mL)
 {
    if (cachesim_ref_is_miss(&I1, a, size)) {
       (*m1)++;
       if (cachesim_ref_is_miss(&LL, a, size))
+         (*mL)++;
+   }
+}
+
+// common special case IrNoX
+__attribute__((always_inline))
+static __inline__
+void cachesim_I1_doref_NoX(Addr a, UChar size, ULong* m1, ULong *mL)
+{
+   UWord block  = a >> I1.line_size_bits;
+   UInt  I1_set = block & I1.sets_min_1;
+
+   // use block as tag
+   if (cachesim_setref_is_miss(&I1, I1_set, block)) {
+      UInt  LL_set = block & LL.sets_min_1;
+      (*m1)++;
+      // can use block as tag as L1I and LL cache line sizes are equal
+      if (cachesim_setref_is_miss(&LL, LL_set, block))
          (*mL)++;
    }
 }
@@ -194,6 +212,25 @@ void cachesim_D1_doref(Addr a, UChar size, ULong* m1, ULong *mL)
       if (cachesim_ref_is_miss(&LL, a, size))
          (*mL)++;
    }
+}
+
+/* Check for special case IrNoX. Called at instrumentation time.
+ *
+ * Does this Ir only touch one cache line, and are L1I/LL cache
+ * line sizes the same? This allows to get rid of a runtime check.
+ *
+ * Returning false is always fine, as this calls the generic case
+ */
+static Bool cachesim_is_IrNoX(Addr a, UChar size)
+{
+   UWord block1, block2;
+
+   if (I1.line_size_bits != LL.line_size_bits) return False;
+   block1 =  a         >> I1.line_size_bits;
+   block2 = (a+size-1) >> I1.line_size_bits;
+   if (block1 != block2) return False;
+
+   return True;
 }
 
 /*--------------------------------------------------------------------*/

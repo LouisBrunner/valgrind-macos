@@ -1343,7 +1343,8 @@ Bool write_buf(int fd, char* buf, int size, char* desc, Bool notify)
 {
    int nrwritten;
    int nrw;
-   DEBUG(2, "writing %s len %d %s notify: %d\n", desc, size, buf, notify);
+   DEBUG(2, "writing %s len %d %.*s notify: %d\n", desc, size,
+         size, buf, notify);
    nrwritten = 0;
    while (nrwritten < size) {
       nrw = write (fd, buf+nrwritten, size - nrwritten);

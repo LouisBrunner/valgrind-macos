@@ -576,9 +576,9 @@ void VG_(print_all_arena_stats) ( void )
    for (i = 0; i < VG_N_ARENAS; i++) {
       Arena* a = arenaId_to_ArenaP(i);
       VG_(message)(Vg_DebugMsg,
-                   "%8s: %8ld/%8ld  max/curr mmap'd, "
+                   "%8s: %8lu/%8lu  max/curr mmap'd, "
                    "%llu/%llu unsplit/split sb unmmap'd,  "
-                   "%8ld/%8ld max/curr,  "
+                   "%8lu/%8lu max/curr,  "
                    "%10llu/%10llu totalloc-blocks/bytes,"
                    "  %10llu searches %lu rzB\n",
                    a->name,

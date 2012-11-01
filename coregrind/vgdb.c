@@ -305,12 +305,12 @@ void valgrind_dying(void)
 #ifdef PTRACEINVOKER
 /* ptrace_(read|write)_memory are modified extracts of linux-low.c
    from gdb 6.6. Copyrighted FSF */
-/* Copy LEN bytes from inferior's memory starting at MEMADDR
-   to debugger memory starting at MYADDR.  */
+/* Copy LEN bytes from valgrind memory starting at MEMADDR
+   to vgdb memory starting at MYADDR.  */
 
 static
 int ptrace_read_memory (pid_t inferior_pid, CORE_ADDR memaddr,
-                        unsigned char *myaddr, int len)
+                        void *myaddr, int len)
 {
    register int i;
    /* Round starting address down to longword boundary.  */
@@ -339,14 +339,14 @@ int ptrace_read_memory (pid_t inferior_pid, CORE_ADDR memaddr,
    return 0;
 }
 
-/* Copy LEN bytes of data from debugger memory at MYADDR
-   to inferior's memory at MEMADDR.
-   On failure (cannot write the inferior)
+/* Copy LEN bytes of data from vgdb memory at MYADDR
+   to valgrind memory at MEMADDR.
+   On failure (cannot write the valgrind memory)
    returns the value of errno.  */
 __attribute__((unused)) /* not used on all platforms */
 static
 int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr, 
-                         const unsigned char *myaddr, int len)
+                         const void *myaddr, int len)
 {
    register int i;
    /* Round starting address down to longword boundary.  */
@@ -362,7 +362,7 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
    if (debuglevel >= 1) {
       DEBUG (1, "Writing ");
       for (i = 0; i < len; i++)
-         PDEBUG (1, "%02x", (unsigned)myaddr[i]);
+         PDEBUG (1, "%02x", ((unsigned char*)myaddr)[i]);
       PDEBUG(1, " to %p\n", (void *) memaddr);
    }
    
@@ -584,7 +584,7 @@ Bool acquire_and_suspend_threads(int pid)
    for (i = 1; i < VG_N_THREADS; i++) {
       vgt += sz_tst;
       rw = ptrace_read_memory(pid, vgt+off_status,
-                              (unsigned char *)&(vgdb_threads[i].status),
+                              &(vgdb_threads[i].status),
                               sizeof(ThreadStatus));
       if (rw != 0) {
          ERROR(rw, "status ptrace_read_memory\n");
@@ -592,7 +592,7 @@ Bool acquire_and_suspend_threads(int pid)
       }
       
       rw = ptrace_read_memory(pid, vgt+off_lwpid,
-                              (unsigned char *)&(vgdb_threads[i].lwpid),
+                              &(vgdb_threads[i].lwpid),
                               sizeof(Int));
       if (rw != 0) {
          ERROR(rw, "lwpid ptrace_read_memory\n");
@@ -943,7 +943,7 @@ Bool invoke_gdbserver (int pid)
       DEBUG(1, "push check arg ptrace_write_memory\n");
       assert(regsize == sizeof(check));
       rw = ptrace_write_memory(pid, sp, 
-                               (unsigned char *) &check, 
+                               &check, 
                                regsize);
       if (rw != 0) {
          ERROR(rw, "push check arg ptrace_write_memory");
@@ -956,7 +956,7 @@ Bool invoke_gdbserver (int pid)
       // Note that for a 64 bits vgdb, only 4 bytes of NULL bad_return
       // are written.
       rw = ptrace_write_memory(pid, sp, 
-                               (unsigned char *) &bad_return,
+                               &bad_return,
                                regsize);
       if (rw != 0) {
          ERROR(rw, "push bad_return return address ptrace_write_memory");
@@ -1031,7 +1031,7 @@ Bool invoke_gdbserver (int pid)
       sp = sp - regsize;
       DEBUG(1, "push bad_return return address ptrace_write_memory\n");
       rw = ptrace_write_memory(pid, sp, 
-                               (unsigned char *) &bad_return,
+                               &bad_return,
                                sizeof(bad_return));
       if (rw != 0) {
          ERROR(rw, "push bad_return return address ptrace_write_memory");
@@ -1054,7 +1054,7 @@ Bool invoke_gdbserver (int pid)
       Addr64 toc_addr;
       int rw;
       rw = ptrace_read_memory(pid, shared64->invoke_gdbserver,
-                              (unsigned char *)&func_addr,
+                              &func_addr,
                               sizeof(Addr64));
       if (rw != 0) {
          ERROR(rw, "ppc64 read func_addr\n");
@@ -1062,7 +1062,7 @@ Bool invoke_gdbserver (int pid)
          return False;
       }
       rw = ptrace_read_memory(pid, shared64->invoke_gdbserver+8,
-                              (unsigned char *)&toc_addr,
+                              &toc_addr,
                               sizeof(Addr64));
       if (rw != 0) {
          ERROR(rw, "ppc64 read toc_addr\n");
@@ -1516,9 +1516,10 @@ fromhex (int a)
 static int
 readchar (int fd)
 {
-  static unsigned char buf[PBUFSIZ+1]; // +1 for trailing \0
+  static char buf[PBUFSIZ+1]; // +1 for trailing \0
   static int bufcnt = 0;
-  static unsigned char *bufp;
+  static unsigned char *bufp; 
+  // unsigned bufp to e.g. avoid having 255 converted to int -1
 
   if (bufcnt-- > 0)
      return *bufp++;
@@ -1535,7 +1536,7 @@ readchar (int fd)
      }
   }
 
-  bufp = buf;
+  bufp = (unsigned char *)buf;
   bufcnt--;
   return *bufp++;
 }
@@ -1894,10 +1895,10 @@ void standalone_send_commands(int pid,
 
    int i;
    int hi;
-   unsigned char hex[3];
+   char hex[3];
    unsigned char cksum;
-   unsigned char *hexcommand;
-   unsigned char buf[PBUFSIZ+1]; // +1 for trailing \0
+   char *hexcommand;
+   char buf[PBUFSIZ+1]; // +1 for trailing \0
    int buflen;
    int nc;
 
@@ -1927,7 +1928,8 @@ void standalone_send_commands(int pid,
       hexcommand[0] = 0;
       strcat (hexcommand, "$qRcmd,");
       for (i = 0; i < strlen(commands[nc]); i++) {
-         sprintf(hex, "%02x", commands[nc][i]);
+         sprintf(hex, "%02x", (unsigned char) commands[nc][i]);
+         // Need to use unsigned char, to avoid sign extension.
          strcat (hexcommand, hex);
       }
       /* checksum (but without the $) */

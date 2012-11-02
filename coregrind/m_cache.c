@@ -657,21 +657,29 @@ VG_(machine_get_cache_info)(VexArchInfo *vai)
 {
    Bool ok = get_cache_info(vai);
 
-   if (ok) ok = cache_info_is_sensible(&vai->hwcache_info);
+   VexCacheInfo *ci = &vai->hwcache_info;
 
    if (! ok) {
-      VexCacheInfo *ci = &vai->hwcache_info;
+      VG_(debugLog)(1, "cache", "Could not autodetect cache info\n");
+   } else {
+      ok = cache_info_is_sensible(ci);
 
-      VG_(debugLog)(1, "cache", "Autodetected cache info is not sensible\n");
+      if (! ok) {
+         VG_(debugLog)(1, "cache",
+                       "Autodetected cache info is not sensible\n");
+      } else {
+         VG_(debugLog)(1, "cache",
+                       "Autodetected cache info is sensible\n");
+      }
       write_cache_info(ci);  /* write out for debugging */
+   }
 
+   if (! ok ) {
       /* Reset cache info */
       ci->num_levels = 0;
       ci->num_caches = 0;
       VG_(free)(ci->caches);
       ci->caches = NULL;
-   } else {
-      VG_(debugLog)(1, "cache", "Autodetected cache info is sensible\n");
    }
 
    return ok;

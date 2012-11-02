@@ -11,10 +11,12 @@ Limitations
 - 31-bit client programs are not supported.
 - Hexadecimal floating point is not supported.
 - Decimal floating point is not supported yet.
-- Currently, only memcheck, massif, lackey, and none are supported
+- memcheck, massif, lackey, and none are supported.
+- cachegrind is supported on z10 and newer models. On older models,
+  a z10 cache architecture will be assumed.
+- callgrind and all experimental tools are currently not supported.
 - helgrind and drd seem to work on SLES10,11 and RHEL5,6 on z9,z10 and z196
   but might fail on other hardware/software combinations.
-- exp-sgcheck, cachegrind, and callgrind are currently not supported.
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect some
   debug messages. Valgrind will complain about 4 or 8 one-byte reads/writes
   instead of just 1 read/write.

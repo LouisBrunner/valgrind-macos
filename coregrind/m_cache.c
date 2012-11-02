@@ -551,12 +551,114 @@ get_cache_info(VexArchInfo *vai)
 
 #elif defined(VGA_s390x)
 
+static ULong
+ecag(UInt ai, UInt li, UInt ti)
+{
+   register ULong result asm("2") = 0;
+   register ULong input  asm("3") = (ai << 4) | (li << 1) | ti;
+
+   asm volatile(".short 0xeb20\n\t"
+                ".long  0x3000004c\n\t"
+                 : "=d" (result) : "d" (input));
+
+   return result;
+}
+
+static UInt
+get_cache_info_for_level(ULong topology, UInt level)
+{
+   return (topology >> (56 - level * 8)) & 0xff;
+}
+
+static ULong
+get_line_size(UInt level, Bool is_insn_cache)
+{
+   return ecag(1, level, is_insn_cache);
+}
+
+static ULong
+get_total_size(UInt level, Bool is_insn_cache)
+{
+   return ecag(2, level, is_insn_cache);
+}
+
+static ULong
+get_associativity(UInt level, Bool is_insn_cache)
+{
+   return ecag(3, level, is_insn_cache);
+}
+
+static VexCache
+get_cache(UInt level, VexCacheKind kind)
+{
+   Bool is_insn_cache = kind == INSN_CACHE;
+   UInt size = get_total_size(level, is_insn_cache);
+   UInt line_size = get_line_size(level, is_insn_cache);
+   UInt assoc = get_associativity(level, is_insn_cache);
+
+   return VEX_CACHE_INIT(kind, level + 1, size, line_size, assoc);
+}
+
 static Bool
 get_cache_info(VexArchInfo *vai)
 {
-   vai->hwcache_info.icaches_maintain_coherence = True;
+   VexCacheInfo *ci = &vai->hwcache_info;
 
-   return False;   // not yet
+   ci->icaches_maintain_coherence = True;
+
+   if (! vai->hwcaps & VEX_HWCAPS_S390X_GIE) {
+      // ECAG is not available
+      return False;
+   }
+
+   UInt level, cache_kind, info, i;
+   ULong topology = ecag(0, 0, 0);   // get summary
+
+   /* ECAG supports at most 8 levels of cache. Find out how many levels
+      of cache and how many caches there are. */
+   ci->num_levels = 0;
+   ci->num_caches = 0;
+   for (level = 0; level < 8; level++) {
+      info = get_cache_info_for_level(topology, level);
+
+      if ((info & 0xc) == 0) break;  // cache does not exist at this level
+      ++ci->num_levels;
+
+      cache_kind = info & 0x3;
+      switch (cache_kind) {
+      case 0:  ci->num_caches += 2; break; /* separate data and insn cache */
+      case 1:  ci->num_caches += 1; break; /* only insn cache */
+      case 2:  ci->num_caches += 1; break; /* only data cache */
+      case 3:  ci->num_caches += 1; break; /* unified data and insn cache */
+      }
+   }
+
+   ci->caches = VG_(malloc)("m_cache", ci->num_caches * sizeof *ci->caches);
+
+   i = 0;
+   for (level = 0; level < ci->num_levels; level++) {
+      info = get_cache_info_for_level(topology, level);
+      cache_kind = info & 0x3;
+      switch (cache_kind) {
+      case 0:   /* separate data and insn cache */
+         ci->caches[i++] = get_cache(level, INSN_CACHE);
+         ci->caches[i++] = get_cache(level, DATA_CACHE);
+         break;
+
+      case 1:   /* only insn cache */
+         ci->caches[i++] = get_cache(level, INSN_CACHE);
+         break;
+
+      case 2:   /* only data cache */
+         ci->caches[i++] = get_cache(level, DATA_CACHE);
+         break;
+
+      case 3:   /* unified data and insn cache */
+         ci->caches[i++] = get_cache(level, UNIFIED_CACHE);
+         break;
+      }
+   }
+   return True;
 }
 
 #else

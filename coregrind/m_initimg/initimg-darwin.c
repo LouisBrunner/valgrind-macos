@@ -62,7 +62,7 @@
 static void load_client ( /*OUT*/ExeInfo* info, 
                           /*OUT*/Addr*    client_ip)
 {
-   HChar* exe_name;
+   const HChar* exe_name;
    Int    ret;
    SysRes res;
 
@@ -116,11 +116,11 @@ static void load_client ( /*OUT*/ExeInfo* info,
 */
 static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 {
-   HChar* preload_core    = "vgpreload_core";
-   HChar* ld_preload      = "DYLD_INSERT_LIBRARIES=";
-   HChar* dyld_cache      = "DYLD_SHARED_REGION=";
-   HChar* dyld_cache_value= "avoid";
-   HChar* v_launcher      = VALGRIND_LAUNCHER "=";
+   const HChar* preload_core    = "vgpreload_core";
+   const HChar* ld_preload      = "DYLD_INSERT_LIBRARIES=";
+   const HChar* dyld_cache      = "DYLD_SHARED_REGION=";
+   const HChar* dyld_cache_value= "avoid";
+   const HChar* v_launcher      = VALGRIND_LAUNCHER "=";
    Int    ld_preload_len  = VG_(strlen)( ld_preload );
    Int    dyld_cache_len  = VG_(strlen)( dyld_cache );
    Int    v_launcher_len  = VG_(strlen)( v_launcher );
@@ -259,10 +259,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 /*====================================================================*/
 
 /* Add a string onto the string table, and return its address */
-static char *copy_str(char **tab, const char *str)
+static HChar *copy_str(HChar **tab, const HChar *str)
 {
-   char *cp = *tab;
-   char *orig = cp;
+   HChar *cp = *tab;
+   HChar *orig = cp;
 
    while(*str)
       *cp++ = *str++;
@@ -316,14 +316,14 @@ static char *copy_str(char **tab, const char *str)
 
 static 
 Addr setup_client_stack( void*  init_sp,
-                         char** orig_envp, 
+                         HChar** orig_envp, 
                          const ExeInfo* info,
                          Addr   clstack_end,
                          SizeT  clstack_max_size )
 {
-   char **cpp;
-   char *strtab;		/* string table */
-   char *stringbase;
+   HChar **cpp;
+   HChar *strtab;		/* string table */
+   HChar *stringbase;
    Addr *ptr;
    unsigned stringsize;		/* total size of strings in bytes */
    unsigned auxsize;		/* total size of auxv in bytes */
@@ -387,11 +387,11 @@ Addr setup_client_stack( void*  init_sp,
    /* OK, now we know how big the client stack is */
    stacksize =
       sizeof(Word) +                          /* argc */
-      (have_exename ? sizeof(char **) : 0) +  /* argc[0] == exename */
-      sizeof(char **)*argc +                  /* argv */
-      sizeof(char **) +	                      /* terminal NULL */
-      sizeof(char **)*envc +                  /* envp */
-      sizeof(char **) +	                      /* terminal NULL */
+      (have_exename ? sizeof(HChar **) : 0) + /* argc[0] == exename */
+      sizeof(HChar **)*argc +                 /* argv */
+      sizeof(HChar **) +                      /* terminal NULL */
+      sizeof(HChar **)*envc +                 /* envp */
+      sizeof(HChar **) +                      /* terminal NULL */
       auxsize +                               /* auxv */
       VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
@@ -402,7 +402,7 @@ Addr setup_client_stack( void*  init_sp,
    client_SP = VG_ROUNDDN(client_SP, 32); /* make stack 32 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (char *)clstack_end 
+   stringbase = strtab = (HChar *)clstack_end 
                          - VG_ROUNDUP(stringsize, sizeof(int));
 
    /* The max stack size */

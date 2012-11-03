@@ -61,9 +61,9 @@
    This routine will return True if (*func) returns True and False if
    it reaches the end of the list without that happening.
 */
-static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
+static Bool scan_colsep(HChar *colsep, Bool (*func)(const HChar *))
 {
-   char *cp, *entry;
+   HChar *cp, *entry;
    int end;
 
    if (colsep == NULL ||
@@ -76,7 +76,7 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
       end = (*cp == '\0');
 
       if (*cp == ':' || *cp == '\0') {
-	 char save = *cp;
+	 HChar save = *cp;
 
 	 *cp = '\0';
 	 if ((*func)(entry)) {
@@ -96,7 +96,7 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
 static HChar executable_name_in [VKI_PATH_MAX];
 static HChar executable_name_out[VKI_PATH_MAX];
 
-static Bool match_executable(const char *entry) 
+static Bool match_executable(const HChar *entry) 
 {
    HChar buf[VG_(strlen)(entry) + VG_(strlen)(executable_name_in) + 3];
 
@@ -129,7 +129,7 @@ static Bool match_executable(const char *entry)
 }
 
 // Returns NULL if it wasn't found.
-HChar* ML_(find_executable) ( const HChar* exec )
+const HChar* ML_(find_executable) ( const HChar* exec )
 {
    vg_assert(NULL != exec);
    if (VG_(strchr)(exec, '/')) {

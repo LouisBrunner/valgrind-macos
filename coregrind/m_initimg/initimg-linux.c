@@ -71,7 +71,7 @@ static void load_client ( /*OUT*/ExeInfo* info,
                           /*OUT*/Addr*    client_ip,
 			  /*OUT*/Addr*    client_toc)
 {
-   HChar* exe_name;
+   const HChar* exe_name;
    Int    ret;
    SysRes res;
 
@@ -126,9 +126,9 @@ static void load_client ( /*OUT*/ExeInfo* info,
 */
 static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 {
-   HChar* preload_core    = "vgpreload_core";
-   HChar* ld_preload      = "LD_PRELOAD=";
-   HChar* v_launcher      = VALGRIND_LAUNCHER "=";
+   const HChar* preload_core    = "vgpreload_core";
+   const HChar* ld_preload      = "LD_PRELOAD=";
+   const HChar* v_launcher      = VALGRIND_LAUNCHER "=";
    Int    ld_preload_len  = VG_(strlen)( ld_preload );
    Int    v_launcher_len  = VG_(strlen)( v_launcher );
    Bool   ld_preload_done = False;
@@ -288,10 +288,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 #endif	/* AT_SECURE */
 
 /* Add a string onto the string table, and return its address */
-static char *copy_str(char **tab, const char *str)
+static HChar *copy_str(HChar **tab, const HChar *str)
 {
-   char *cp = *tab;
-   char *orig = cp;
+   HChar *cp = *tab;
+   HChar *orig = cp;
 
    while(*str)
       *cp++ = *str++;
@@ -382,16 +382,16 @@ struct auxv *find_auxv(UWord* sp)
 
 static 
 Addr setup_client_stack( void*  init_sp,
-                         char** orig_envp, 
+                         HChar** orig_envp, 
                          const ExeInfo* info,
                          UInt** client_auxv,
                          Addr   clstack_end,
                          SizeT  clstack_max_size )
 {
    SysRes res;
-   char **cpp;
-   char *strtab;		/* string table */
-   char *stringbase;
+   HChar **cpp;
+   HChar *strtab;		/* string table */
+   HChar *stringbase;
    Addr *ptr;
    struct auxv *auxv;
    const struct auxv *orig_auxv;
@@ -468,11 +468,11 @@ Addr setup_client_stack( void*  init_sp,
    /* OK, now we know how big the client stack is */
    stacksize =
       sizeof(Word) +                          /* argc */
-      (have_exename ? sizeof(char **) : 0) +  /* argc[0] == exename */
-      sizeof(char **)*argc +                  /* argv */
-      sizeof(char **) +	                      /* terminal NULL */
-      sizeof(char **)*envc +                  /* envp */
-      sizeof(char **) +	                      /* terminal NULL */
+      (have_exename ? sizeof(HChar **) : 0) + /* argc[0] == exename */
+      sizeof(HChar **)*argc +                 /* argv */
+      sizeof(HChar **) +                      /* terminal NULL */
+      sizeof(HChar **)*envc +                 /* envp */
+      sizeof(HChar **) +                      /* terminal NULL */
       auxsize +                               /* auxv */
       VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
@@ -483,7 +483,7 @@ Addr setup_client_stack( void*  init_sp,
    client_SP = VG_ROUNDDN(client_SP, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (char *)clstack_end 
+   stringbase = strtab = (HChar *)clstack_end 
                          - VG_ROUNDUP(stringsize, sizeof(int));
 
    clstack_start = VG_PGROUNDDN(client_SP);
@@ -1079,9 +1079,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    VG_(memset)(&arch->vex_shadow1, 0xFF, sizeof(VexGuestS390XState));
    VG_(memset)(&arch->vex_shadow2, 0x00, sizeof(VexGuestS390XState));
    /* ... except SP, FPC, and IA */
-   VG_(memset)((UChar *)&arch->vex_shadow1 + VG_O_STACK_PTR, 0x00, 8);
-   VG_(memset)((UChar *)&arch->vex_shadow1 + VG_O_FPC_REG,   0x00, 4);
-   VG_(memset)((UChar *)&arch->vex_shadow1 + VG_O_INSTR_PTR, 0x00, 8);
+   VG_(memset)(&arch->vex_shadow1 + VG_O_STACK_PTR, 0x00, 8);
+   VG_(memset)(&arch->vex_shadow1 + VG_O_FPC_REG,   0x00, 4);
+   VG_(memset)(&arch->vex_shadow1 + VG_O_INSTR_PTR, 0x00, 8);
 
    /* Put essential stuff into the new state. */
    arch->vex.guest_SP = iifii.initial_client_SP;

@@ -68,7 +68,7 @@
 #endif
 
 
-static void print(const char *str)
+static void print(const HChar *str)
 {
    VG_(printf)("%s", str);
 }
@@ -95,19 +95,19 @@ static void check_mmap_float(SysRes res, SizeT len, HChar* who)
 
 static int 
 load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-               const char *filename, 
+               const HChar *filename, 
                vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
                vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry);
 
 static int 
 load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-              const char *filename, 
+              const HChar *filename, 
               vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
               vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry);
 
 static int 
 load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-               const char *filename, 
+               const HChar *filename, 
                vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
                vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry);
 
@@ -118,7 +118,7 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    The dylinker's entry point is returned in *out_linker_entry.
  */
 static int 
-open_dylinker(const char *filename, vki_uint8_t **out_linker_entry)
+open_dylinker(const HChar *filename, vki_uint8_t **out_linker_entry)
 {
    struct vg_stat sb;
    vki_size_t filesize;
@@ -429,14 +429,14 @@ handle_lcmain ( vki_uint8_t **out_stack_start,
 static int 
 load_dylinker(vki_uint8_t **linker_entry, struct dylinker_command *dycmd)
 {
-   const char *name;
+   const HChar *name;
 
    if (dycmd->name.offset >= dycmd->cmdsize) {
       print("bad executable (invalid dylinker command)\n");
       return -1;
    }
 
-   name = dycmd->name.offset + (char *)dycmd;
+   name = dycmd->name.offset + (HChar *)dycmd;
     
    // GrP fixme assumes name is terminated somewhere
    return open_dylinker(name, linker_entry);
@@ -478,7 +478,7 @@ load_thread(vki_uint8_t **out_entry, struct thread_command *threadcmd)
 */
 static int 
 load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-               const char *filename, 
+               const HChar *filename, 
                vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
                vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry)
 {
@@ -687,7 +687,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 */
 static int 
 load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-             const char *filename, 
+             const HChar *filename, 
              vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
              vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry)
 {
@@ -766,7 +766,7 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 */
 static int 
 load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-              const char *filename, 
+              const HChar *filename, 
               vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
               vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry)
 {
@@ -801,9 +801,9 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 }
 
 
-Bool VG_(match_macho)(Char *hdr, Int len)
+Bool VG_(match_macho)(const void *hdr, Int len)
 {
-   vki_uint32_t *magic = (vki_uint32_t *)hdr;
+   const vki_uint32_t *magic = hdr;
 
    // GrP fixme check more carefully for matching fat arch?
 

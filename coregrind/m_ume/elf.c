@@ -89,7 +89,7 @@ static void check_mmap(SysRes res, Addr base, SizeT len)
 /*------------------------------------------------------------*/
 
 static 
-struct elfinfo *readelf(Int fd, const char *filename)
+struct elfinfo *readelf(Int fd, const HChar *filename)
 {
    SysRes sres;
    struct elfinfo *e = VG_(malloc)("ume.re.1", sizeof(*e));
@@ -238,7 +238,7 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
          // The 'prot' condition allows for a read-only bss
          if ((prot & VKI_PROT_WRITE) && (bytes > 0)) {
             bytes = VKI_PAGE_SIZE - bytes;
-            VG_(memset)((char *)bss, 0, bytes);
+            VG_(memset)((void *)bss, 0, bytes);
          }
       }
    }
@@ -246,9 +246,9 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
    return elfbrk;
 }
 
-Bool VG_(match_ELF)(Char *hdr, Int len)
+Bool VG_(match_ELF)(const void *hdr, Int len)
 {
-   ESZ(Ehdr) *e = (ESZ(Ehdr) *)hdr;
+   const ESZ(Ehdr) *e = hdr;
    return (len > sizeof(*e)) && VG_(memcmp)(&e->e_ident[0], ELFMAG, SELFMAG) == 0;
 }
 

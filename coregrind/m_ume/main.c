@@ -46,7 +46,7 @@
 
 
 typedef struct {
-   Bool (*match_fn)(Char *hdr, Int len);
+   Bool (*match_fn)(const void *hdr, Int len);
    Int  (*load_fn)(Int fd, const HChar *name, ExeInfo *info);
 } ExeHandler;
 
@@ -81,7 +81,7 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
    fd = sr_Res(res);
 
    // Check we have execute permissions
-   ret = VG_(check_executable)(&is_setuid, (HChar*)exe_name, allow_setuid);
+   ret = VG_(check_executable)(&is_setuid, exe_name, allow_setuid);
    if (0 != ret) {
       VG_(close)(fd);
       if (is_setuid && !VG_(clo_xml)) {
@@ -155,11 +155,11 @@ Int VG_(do_exec_inner)(const HChar* exe, ExeInfo* info)
 }
 
 
-static Bool is_hash_bang_file(Char* f)
+static Bool is_hash_bang_file(const HChar* f)
 {
    SysRes res = VG_(open)(f, VKI_O_RDONLY, 0);
    if (!sr_isError(res)) {
-      Char buf[3] = {0,0,0};
+      HChar buf[3] = {0,0,0};
       Int fd = sr_Res(res);
       Int n  = VG_(read)(fd, buf, 2); 
       if (n == 2 && VG_STREQ("#!", buf))
@@ -171,7 +171,7 @@ static Bool is_hash_bang_file(Char* f)
 // Look at the first 80 chars, and if any are greater than 127, it's binary.
 // This is crude, but should be good enough.  Note that it fails on a
 // zero-length file, as we want.
-static Bool is_binary_file(Char* f)
+static Bool is_binary_file(const HChar* f)
 {
    SysRes res = VG_(open)(f, VKI_O_RDONLY, 0);
    if (!sr_isError(res)) {
@@ -197,12 +197,12 @@ static Bool is_binary_file(Char* f)
 // bash as a guide).  It's worth noting that the shell can execute some
 // things that VG_(do_exec)() (which subsitutes for the kernel's exec())
 // will refuse to (eg. scripts lacking a "#!" prefix).
-static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
+static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
 {
 #  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
-   Char*  default_interp_name = "/system/bin/sh";
+   const HChar*  default_interp_name = "/system/bin/sh";
 #  else
-   Char*  default_interp_name = "/bin/sh";
+   const HChar*  default_interp_name = "/bin/sh";
 #  endif
 
    SysRes res;
@@ -224,7 +224,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
       info->interp_name = VG_(strdup)("ume.desf.1", default_interp_name);
       info->interp_args = NULL;
       if (info->argv && info->argv[0] != NULL)
-         info->argv[0] = (char *)exe_name;
+         info->argv[0] = (HChar *)exe_name;  // FIXME: can argv be const qualified ?
 
       ret = VG_(do_exec_inner)(info->interp_name, info);
 
@@ -280,8 +280,7 @@ Int VG_(do_exec)(const HChar* exe_name, ExeInfo* info)
    ret = VG_(do_exec_inner)(exe_name, info);
 
    if (0 != ret) {
-      Char* exe_name_casted = (Char*)exe_name;
-      ret = do_exec_shell_followup(ret, exe_name_casted, info);
+      ret = do_exec_shell_followup(ret, exe_name, info);
    }
    return ret;
 }

@@ -42,10 +42,11 @@
 
 #include "priv_ume.h"
 
-Bool VG_(match_script)(Char *hdr, Int len)
+Bool VG_(match_script)(const void *hdr, Int len)
 {
-   Char* end    = hdr + len;
-   Char* interp = hdr + 2;
+   const HChar* script = hdr;
+   const HChar* end    = script + len;
+   const HChar* interp = script + 2;
 
    // len < 4: need '#', '!', plus at least a '/' and one more char
    if (len < 4) return False;    
@@ -78,13 +79,13 @@ Bool VG_(match_script)(Char *hdr, Int len)
 /* returns: 0 = success, non-0 is failure */
 Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
 {
-   Char  hdr[4096];
-   Int   len = 4096;
-   Int   eol;
-   Char* interp;
-   Char* end;
-   Char* cp;
-   Char* arg = NULL;
+   HChar  hdr[4096];
+   Int    len = 4096;
+   Int    eol;
+   HChar* interp;
+   HChar* end;
+   HChar* cp;
+   HChar* arg = NULL;
    SysRes res;
 
    // Read the first part of the file.
@@ -133,7 +134,7 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
    }
 
    if (info->argv && info->argv[0] != NULL)
-      info->argv[0] = (char *)name;
+     info->argv[0] = (HChar *)name;   // FIXME: can argv be const qualified?
 
    VG_(args_the_exename) = name;
 

@@ -49,12 +49,12 @@
    it easier to make sense of strace/truss output - makes it possible
    to see more clearly the change of ownership of the lock.  Need to
    be careful to reinitialise it at fork() time. */
-static Char sema_char = '!'; /* will cause assertion failures if used
-                                before sema_init */
+static HChar sema_char = '!'; /* will cause assertion failures if used
+                                 before sema_init */
 
 void ML_(sema_init)(vg_sema_t *sema)
 {
-   Char buf[2];
+   HChar buf[2];
    Int res, r;
    r = VG_(pipe)(sema->pipe);
    vg_assert(r == 0);
@@ -97,7 +97,7 @@ void ML_(sema_deinit)(vg_sema_t *sema)
 /* get a token */
 void ML_(sema_down)( vg_sema_t *sema, Bool as_LL )
 {
-   Char buf[2];
+   HChar buf[2];
    Int ret;
    Int lwpid = VG_(gettid)();
 
@@ -130,7 +130,7 @@ void ML_(sema_down)( vg_sema_t *sema, Bool as_LL )
 void ML_(sema_up)( vg_sema_t *sema, Bool as_LL )
 {
    Int ret;
-   Char buf[2];
+   HChar buf[2];
    vg_assert(as_LL == sema->held_as_LL);
    buf[0] = sema_char; 
    buf[1] = 0;

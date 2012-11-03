@@ -33,7 +33,7 @@
 #define __PRIV_SCHED_LOCK_IMPL_H
 
 struct sched_lock_ops {
-   const Char *(*get_sched_lock_name)(void);
+   const HChar *(*get_sched_lock_name)(void);
    struct sched_lock *(*create_sched_lock)(void);
    void (*destroy_sched_lock)(struct sched_lock *p);
    int (*get_sched_lock_owner)(struct sched_lock *p);

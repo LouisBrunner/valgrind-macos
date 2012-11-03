@@ -37,7 +37,7 @@ struct sched_lock;
 enum SchedLockType { sched_lock_generic, sched_lock_ticket };
 
 Bool ML_(set_sched_lock_impl)(const enum SchedLockType t);
-const Char *ML_(get_sched_lock_name)(void);
+const HChar *ML_(get_sched_lock_name)(void);
 struct sched_lock *ML_(create_sched_lock)(void);
 void ML_(destroy_sched_lock)(struct sched_lock *p);
 int ML_(get_sched_lock_owner)(struct sched_lock *p);

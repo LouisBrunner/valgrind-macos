@@ -41,7 +41,7 @@ struct sched_lock {
    vg_sema_t sema;
 };
 
-static const Char *get_sched_lock_name(void)
+static const HChar *get_sched_lock_name(void)
 {
    return "generic";
 }

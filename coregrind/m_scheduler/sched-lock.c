@@ -65,7 +65,7 @@ Bool ML_(set_sched_lock_impl)(const enum SchedLockType t)
    return !!p;
 }
 
-const Char *ML_(get_sched_lock_name)(void)
+const HChar *ML_(get_sched_lock_name)(void)
 {
    return (sched_lock_ops->get_sched_lock_name)();
 }

@@ -193,7 +193,7 @@ void maybe_show_sb_counts ( void )
 }
 
 static
-HChar* name_of_sched_event ( UInt event )
+const HChar* name_of_sched_event ( UInt event )
 {
    switch (event) {
       case VEX_TRC_JMP_TINVAL:         return "TINVAL";
@@ -1711,7 +1711,7 @@ void do_client_request ( ThreadId tid )
          } u;
          u.uw = (unsigned long)arg[2];
          Int count = 
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], u.vargs );
+            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], u.vargs );
          VG_(message_flush)();
          SET_CLREQ_RETVAL( tid, count );
          break;
@@ -1728,7 +1728,7 @@ void do_client_request ( ThreadId tid )
          } u;
          u.uw = (unsigned long)arg[2];
          Int count =
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], u.vargs );
+            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], u.vargs );
          VG_(message_flush)();
          VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
          SET_CLREQ_RETVAL( tid, count );
@@ -1738,7 +1738,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__PRINTF_VALIST_BY_REF: {
          va_list* vargsp = (va_list*)arg[2];
          Int count = 
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], *vargsp );
+            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], *vargsp );
          VG_(message_flush)();
          SET_CLREQ_RETVAL( tid, count );
          break;
@@ -1747,7 +1747,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF: {
          va_list* vargsp = (va_list*)arg[2];
          Int count =
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], *vargsp );
+            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], *vargsp );
          VG_(message_flush)();
          VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
          SET_CLREQ_RETVAL( tid, count );
@@ -1757,7 +1757,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__INTERNAL_PRINTF_VALIST_BY_REF: {
          va_list* vargsp = (va_list*)arg[2];
          Int count = 
-            VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], *vargsp );
+            VG_(vmessage)( Vg_DebugMsg, (HChar *)arg[1], *vargsp );
          VG_(message_flush)();
          SET_CLREQ_RETVAL( tid, count );
          break;

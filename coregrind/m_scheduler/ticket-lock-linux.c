@@ -68,7 +68,7 @@ static Bool s_debug;
 static Bool s_debug = True;
 #endif
 
-static const Char *get_sched_lock_name(void)
+static const HChar *get_sched_lock_name(void)
 {
    return "ticket lock";
 }

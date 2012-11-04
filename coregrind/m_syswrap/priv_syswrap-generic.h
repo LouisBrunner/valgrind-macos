@@ -191,7 +191,6 @@ DECL_TEMPLATE(generic, sys_old_getrlimit);         // SVr4, 4.3BSD L?
 DECL_TEMPLATE(generic, sys_statfs);                // * L?
 DECL_TEMPLATE(generic, sys_fstatfs);               // * L?
 DECL_TEMPLATE(generic, sys_iopl);                  // (x86/amd64) L
-DECL_TEMPLATE(generic, sys_ipc);                   // (x86) L
 DECL_TEMPLATE(generic, sys_newuname);              // * P
 DECL_TEMPLATE(generic, sys_pread64);               // * (Unix98?)
 DECL_TEMPLATE(generic, sys_pwrite64);              // * (Unix98?)
@@ -210,7 +209,7 @@ DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)
 
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
-   procedures because x86-linux hides them inside multiplexors
+   procedures because some platforms hides them inside multiplexors
    (sys_socketcall and sys_ipc).
    ------------------------------------------------------------------ */
 

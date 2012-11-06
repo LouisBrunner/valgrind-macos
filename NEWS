@@ -43,6 +43,7 @@ m = merged into 3_8_BRANCH
 308711    [390] give more info about aspacemgr and arenas in out_of_memory
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
+n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

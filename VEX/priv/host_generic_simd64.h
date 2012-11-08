@@ -123,6 +123,8 @@ extern ULong h_generic_calc_Max8Ux8  ( ULong, ULong );
 extern ULong h_generic_calc_Min16Sx4 ( ULong, ULong );
 extern ULong h_generic_calc_Min8Ux8  ( ULong, ULong );
 
+extern UInt  h_generic_calc_GetMSBs8x8 ( ULong );
+
 /* 32-bit SIMD HELPERS */
 
 extern UInt h_generic_calc_Add16x2   ( UInt, UInt );

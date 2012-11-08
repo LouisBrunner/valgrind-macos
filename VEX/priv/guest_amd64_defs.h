@@ -141,8 +141,6 @@ extern void amd64g_dirtyhelper_FNSAVES ( VexGuestAMD64State*, HWord );
 
 extern ULong amd64g_calculate_mmx_pmaddwd  ( ULong, ULong );
 extern ULong amd64g_calculate_mmx_psadbw   ( ULong, ULong );
-extern ULong amd64g_calculate_mmx_pmovmskb ( ULong );
-extern ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 extern ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi );
 

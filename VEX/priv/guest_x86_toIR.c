@@ -716,6 +716,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
            || op8 == Iop_CasCmpNE8
+           || op8 == Iop_ExpCmpNE8
            || op8 == Iop_Not8);
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    return adj + op8;
@@ -6385,10 +6386,14 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
        ( isReg ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ), 
        nameIReg(sz, gregOfRM(modrm)));
 
-   /* Generate an 8-bit expression which is zero iff the 
-      original is zero, and nonzero otherwise */
+   /* Generate an 8-bit expression which is zero iff the original is
+      zero, and nonzero otherwise.  Ask for a CmpNE version which, if
+      instrumented by Memcheck, is instrumented expensively, since
+      this may be used on the output of a preceding movmskb insn,
+      which has been known to be partially defined, and in need of
+      careful handling. */
    assign( src8,
-           unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_CmpNE8),
+           unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_ExpCmpNE8),
                            mkexpr(src), mkU(ty,0))) );
 
    /* Flags: Z is 1 iff source value is zero.  All others 
@@ -9051,7 +9056,7 @@ DisResult disInstr_X86_WRK (
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
-      mmx(G), turn them into a byte, and put zero-extend of it in
+      mmx(E), turn them into a byte, and put zero-extend of it in
       ireg(G). */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xD7) {
       modrm = insn[2];
@@ -9060,11 +9065,7 @@ DisResult disInstr_X86_WRK (
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I32);
          assign(t0, getMMXReg(eregOfRM(modrm)));
-         assign(t1, mkIRExprCCall(
-                       Ity_I32, 0/*regparms*/, 
-                       "x86g_calculate_mmx_pmovmskb",
-                       &x86g_calculate_mmx_pmovmskb,
-                       mkIRExprVec_1(mkexpr(t0))));
+         assign(t1, unop(Iop_8Uto32, unop(Iop_GetMSBs8x8, mkexpr(t0))));
          putIReg(4, gregOfRM(modrm), mkexpr(t1));
          DIP("pmovmskb %s,%s\n", nameMMXReg(eregOfRM(modrm)),
                                  nameIReg(4,gregOfRM(modrm)));
@@ -10903,11 +10904,9 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
-   /* 66 0F D7 = PMOVMSKB -- extract sign bits from each of 16 lanes in
-      xmm(G), turn them into a byte, and put zero-extend of it in
-      ireg(G).  Doing this directly is just too cumbersome; give up
-      therefore and call a helper. */
-   /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
+   /* 66 0F D7 = PMOVMSKB -- extract sign bits from each of 16 lanes
+      in xmm(E), turn them into a byte, and put zero-extend of it in
+      ireg(G). */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD7) {
       modrm = insn[2];
       if (epartIsReg(modrm)) {
@@ -10916,11 +10915,11 @@ DisResult disInstr_X86_WRK (
          assign(t0, getXMMRegLane64(eregOfRM(modrm), 0));
          assign(t1, getXMMRegLane64(eregOfRM(modrm), 1));
          t5 = newTemp(Ity_I32);
-         assign(t5, mkIRExprCCall(
-                       Ity_I32, 0/*regparms*/, 
-                       "x86g_calculate_sse_pmovmskb",
-                       &x86g_calculate_sse_pmovmskb,
-                       mkIRExprVec_2( mkexpr(t1), mkexpr(t0) )));
+         assign(t5,
+                unop(Iop_16Uto32,
+                     binop(Iop_8HLto16,
+                           unop(Iop_GetMSBs8x8, mkexpr(t1)),
+                           unop(Iop_GetMSBs8x8, mkexpr(t0)))));
          putIReg(4, gregOfRM(modrm), mkexpr(t5));
          DIP("pmovmskb %s,%s\n", nameXMMReg(eregOfRM(modrm)),
                                  nameIReg(4,gregOfRM(modrm)));

@@ -7789,11 +7789,15 @@ ULong dis_bs_E_G ( VexAbiInfo* vbi,
    /* First, widen src to 64 bits if it is not already. */
    assign( src64, widenUto64(mkexpr(src)) );
 
-   /* Generate an 8-bit expression which is zero iff the 
-      original is zero, and nonzero otherwise */
+   /* Generate an 8-bit expression which is zero iff the original is
+      zero, and nonzero otherwise.  Ask for a CmpNE version which, if
+      instrumented by Memcheck, is instrumented expensively, since
+      this may be used on the output of a preceding movmskb insn,
+      which has been known to be partially defined, and in need of
+      careful handling. */
    assign( src8,
            unop(Iop_1Uto8, 
-                binop(Iop_CmpNE64,
+                binop(Iop_ExpCmpNE64,
                       mkexpr(src64), mkU64(0))) );
 
    /* Flags: Z is 1 iff source value is zero.  All others 
@@ -10277,14 +10281,15 @@ static Long dis_PMOVMSKB_128 ( VexAbiInfo* vbi, Prefix pfx,
    UInt   rG = gregOfRexRM(pfx,modrm);
    IRTemp t0 = newTemp(Ity_I64);
    IRTemp t1 = newTemp(Ity_I64);
-   IRTemp t5 = newTemp(Ity_I64);
+   IRTemp t5 = newTemp(Ity_I32);
    assign(t0, getXMMRegLane64(rE, 0));
    assign(t1, getXMMRegLane64(rE, 1));
-   assign(t5, mkIRExprCCall( Ity_I64, 0/*regparms*/, 
-                             "amd64g_calculate_sse_pmovmskb",
-                             &amd64g_calculate_sse_pmovmskb,
-                             mkIRExprVec_2( mkexpr(t1), mkexpr(t0) )));
-   putIReg32(rG, unop(Iop_64to32,mkexpr(t5)));
+   assign(t5,
+          unop(Iop_16Uto32,
+               binop(Iop_8HLto16,
+                     unop(Iop_GetMSBs8x8, mkexpr(t1)),
+                     unop(Iop_GetMSBs8x8, mkexpr(t0)))));
+   putIReg32(rG, mkexpr(t5));
    DIP("%spmovmskb %s,%s\n", isAvx ? "v" : "", nameXMMReg(rE),
        nameIReg32(rG));
    delta += 1;
@@ -13443,7 +13448,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
       }
       /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
       /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
-         mmx(G), turn them into a byte, and put zero-extend of it in
+         mmx(E), turn them into a byte, and put zero-extend of it in
          ireg(G). */
       if (haveNo66noF2noF3(pfx)
           && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
@@ -13451,14 +13456,10 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          if (epartIsReg(modrm)) {
             do_MMX_preamble();
             t0 = newTemp(Ity_I64);
-            t1 = newTemp(Ity_I64);
+            t1 = newTemp(Ity_I32);
             assign(t0, getMMXReg(eregLO3ofRM(modrm)));
-            assign(t1, mkIRExprCCall(
-                          Ity_I64, 0/*regparms*/, 
-                          "amd64g_calculate_mmx_pmovmskb",
-                          &amd64g_calculate_mmx_pmovmskb,
-                          mkIRExprVec_1(mkexpr(t0))));
-            putIReg32(gregOfRexRM(pfx,modrm), unop(Iop_64to32,mkexpr(t1)));
+            assign(t1, unop(Iop_8Uto32, unop(Iop_GetMSBs8x8, mkexpr(t0))));
+            putIReg32(gregOfRexRM(pfx,modrm), mkexpr(t1));
             DIP("pmovmskb %s,%s\n", nameMMXReg(eregLO3ofRM(modrm)),
                                     nameIReg32(gregOfRexRM(pfx,modrm)));
             delta += 1;

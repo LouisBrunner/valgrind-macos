@@ -134,8 +134,6 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
 
 extern ULong x86g_calculate_mmx_pmaddwd  ( ULong, ULong );
 extern ULong x86g_calculate_mmx_psadbw   ( ULong, ULong );
-extern UInt  x86g_calculate_mmx_pmovmskb ( ULong );
-extern UInt  x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 
 /* --- DIRTY HELPERS --- */

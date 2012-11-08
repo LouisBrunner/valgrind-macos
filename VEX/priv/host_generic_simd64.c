@@ -1169,6 +1169,20 @@ ULong h_generic_calc_Min8Ux8 ( ULong xx, ULong yy )
           );
 }
 
+UInt h_generic_calc_GetMSBs8x8 ( ULong xx )
+{
+   UInt r = 0;
+   if (xx & (1ULL << (64-1))) r |= (1<<7);
+   if (xx & (1ULL << (56-1))) r |= (1<<6);
+   if (xx & (1ULL << (48-1))) r |= (1<<5);
+   if (xx & (1ULL << (40-1))) r |= (1<<4);
+   if (xx & (1ULL << (32-1))) r |= (1<<3);
+   if (xx & (1ULL << (24-1))) r |= (1<<2);
+   if (xx & (1ULL << (16-1))) r |= (1<<1);
+   if (xx & (1ULL << ( 8-1))) r |= (1<<0);
+   return r;
+}
+
 /* ------------ SOME 32-bit SIMD HELPERS TOO ------------ */
 
 /* Tuple/select functions for 16x2 vectors. */

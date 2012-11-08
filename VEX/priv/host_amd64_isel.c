@@ -791,7 +791,7 @@ static ULong bitmask8_to_bytemask64 ( UShort w8 )
 
    This should handle expressions of 64, 32, 16 and 8-bit type.  All
    results are returned in a 64-bit register.  For 32-, 16- and 8-bit
-   expressions, the upper 32/16/24 bits are arbitrary, so you should
+   expressions, the upper 32/48/56 bits are arbitrary, so you should
    mask or sign extend partial values if necessary.
 */
 
@@ -1586,6 +1586,25 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             /* These are no-ops. */
             return iselIntExpr_R(env, e->Iex.Unop.arg);
 
+         case Iop_GetMSBs8x8: {
+            /* Note: the following assumes the helper is of
+               signature
+                  UInt fn ( ULong ), and is not a regparm fn.
+            */
+            HReg dst = newVRegI(env);
+            HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
+            fn = (HWord)h_generic_calc_GetMSBs8x8;
+            addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
+            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1 ));
+            /* MovxLQ is not exactly the right thing here.  We just
+               need to get the bottom 8 bits of RAX into dst, and zero
+               out everything else.  Assuming that the helper returns
+               a UInt with the top 24 bits zeroed out, it'll do,
+               though. */
+            addInstr(env, AMD64Instr_MovxLQ(False, hregAMD64_RAX(), dst));
+            return dst;
+         }
+
          default: 
             break;
       }
@@ -2223,13 +2242,15 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLE64S
            || e->Iex.Binop.op == Iop_CmpLE64U
            || e->Iex.Binop.op == Iop_CasCmpEQ64
-           || e->Iex.Binop.op == Iop_CasCmpNE64)) {
+           || e->Iex.Binop.op == Iop_CasCmpNE64
+           || e->Iex.Binop.op == Iop_ExpCmpNE64)) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,rmi2,r1));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ64: case Iop_CasCmpEQ64: return Acc_Z;
-         case Iop_CmpNE64: case Iop_CasCmpNE64: return Acc_NZ;
+         case Iop_CmpNE64:
+         case Iop_CasCmpNE64: case Iop_ExpCmpNE64: return Acc_NZ;
 	 case Iop_CmpLT64S: return Acc_L;
 	 case Iop_CmpLT64U: return Acc_B;
 	 case Iop_CmpLE64S: return Acc_LE;

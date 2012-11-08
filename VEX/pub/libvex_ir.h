@@ -437,6 +437,10 @@ typedef
       Iop_CasCmpEQ8, Iop_CasCmpEQ16, Iop_CasCmpEQ32, Iop_CasCmpEQ64,
       Iop_CasCmpNE8, Iop_CasCmpNE16, Iop_CasCmpNE32, Iop_CasCmpNE64,
 
+      /* Exactly like CmpNE8/16/32/64, but carrying the additional
+         hint that these needs expensive definedness tracking. */
+      Iop_ExpCmpNE8, Iop_ExpCmpNE16, Iop_ExpCmpNE32, Iop_ExpCmpNE64,
+
       /* -- Ordering not important after here. -- */
 
       /* Widening multiplies */
@@ -990,6 +994,10 @@ typedef
          argR[i] values may only be in the range 0 .. 7, else behaviour
          is undefined. */
       Iop_Perm8x8,
+
+      /* MISC CONVERSION -- get high bits of each byte lane, a la
+         x86/amd64 pmovmskb */
+      Iop_GetMSBs8x8, /* I64 -> I8 */
 
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equiwalents for details. */

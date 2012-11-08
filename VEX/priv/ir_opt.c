@@ -1836,16 +1836,22 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 
             /* -- CmpNE -- */
             case Iop_CmpNE8:
+            case Iop_CasCmpNE8:
+            case Iop_ExpCmpNE8:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
                         != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))));
                break;
             case Iop_CmpNE32:
+            case Iop_CasCmpNE32:
+            case Iop_ExpCmpNE32:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
             case Iop_CmpNE64:
+            case Iop_CasCmpNE64:
+            case Iop_ExpCmpNE64:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U64))));

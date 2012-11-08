@@ -2998,21 +2998,6 @@ ULong amd64g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong amd64g_calculate_mmx_pmovmskb ( ULong xx )
-{
-   ULong r = 0;
-   if (xx & (1ULL << (64-1))) r |= (1<<7);
-   if (xx & (1ULL << (56-1))) r |= (1<<6);
-   if (xx & (1ULL << (48-1))) r |= (1<<5);
-   if (xx & (1ULL << (40-1))) r |= (1<<4);
-   if (xx & (1ULL << (32-1))) r |= (1<<3);
-   if (xx & (1ULL << (24-1))) r |= (1<<2);
-   if (xx & (1ULL << (16-1))) r |= (1<<1);
-   if (xx & (1ULL << ( 8-1))) r |= (1<<0);
-   return r;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
 {
    UInt t = 0;
@@ -3026,14 +3011,6 @@ ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
    t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
    t &= 0xFFFF;
    return (ULong)t;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
-{
-   ULong rHi8 = amd64g_calculate_mmx_pmovmskb ( w64hi );
-   ULong rLo8 = amd64g_calculate_mmx_pmovmskb ( w64lo );
-   return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */

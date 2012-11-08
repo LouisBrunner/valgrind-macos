@@ -1713,7 +1713,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar* name = shdr_strtab_img + shdr->sh_name;
       Addr   svma = shdr->sh_addr;
       OffT   foff = shdr->sh_offset;
-      UWord  size = shdr->sh_size;
+      UWord  size = shdr->sh_size; /* Do not change this to be signed. */
       UInt   alyn = shdr->sh_addralign;
       Bool   bits = !(shdr->sh_type == SHT_NOBITS);
       /* Look through our collection of info obtained from the PT_LOAD
@@ -1754,6 +1754,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          goto out;
       }
 
+      /* Ignore zero sized sections. */
+      if (size == 0) {
+         TRACE_SYMTAB("zero sized section \"%s\", ignoring\n", name);
+         continue;
+      }
+
 #     define BAD(_secname)                                 \
          do { ML_(symerr)(di, True,                        \
                           "Can't make sense of " _secname  \
@@ -1770,7 +1776,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .text where mapped as rx (code), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".text")) {
-         if (inrx && size >= 0 && !di->text_present) {
+         if (inrx && !di->text_present) {
             di->text_present = True;
             di->text_svma = svma;
             di->text_avma = svma + inrx->bias;
@@ -1792,7 +1798,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .data where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".data")) {
-         if (inrw && size >= 0 && !di->data_present) {
+         if (inrw && !di->data_present) {
             di->data_present = True;
             di->data_svma = svma;
             di->data_avma = svma + inrw->bias;
@@ -1814,7 +1820,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .sdata where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".sdata")) {
-         if (inrw && size > 0 && !di->sdata_present) {
+         if (inrw && !di->sdata_present) {
             di->sdata_present = True;
             di->sdata_svma = svma;
             di->sdata_avma = svma + inrw->bias;
@@ -1836,7 +1842,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .rodata where mapped as rx (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".rodata")) {
-         if (inrx && size >= 0 && !di->rodata_present) {
+         if (inrx && !di->rodata_present) {
             di->rodata_present = True;
             di->rodata_svma = svma;
             di->rodata_avma = svma + inrx->bias;
@@ -1858,7 +1864,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       }
 
       if (0 == VG_(strcmp)(name, ".dynbss")) {
-         if (inrw && size > 0 && !di->bss_present) {
+         if (inrw && !di->bss_present) {
             dynbss_present = True;
             di->bss_present = True;
             di->bss_svma = svma;
@@ -1879,7 +1885,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .bss where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".bss")) {
-         if (inrw && size > 0 && dynbss_present) {
+         if (inrw && dynbss_present) {
             vg_assert(di->bss_present);
             dynbss_present = False;
             vg_assert(di->bss_svma + di->bss_size == svma);
@@ -1891,7 +1897,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .bss bias = %#lx\n", di->bss_bias);
          } else
 
-         if (inrw && size >= 0 && !di->bss_present) {
+         if (inrw && !di->bss_present) {
             di->bss_present = True;
             di->bss_svma = svma;
             di->bss_avma = svma + inrw->bias;
@@ -1909,7 +1915,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          } else
 
          /* Now one from the wtf?! department ... */
-         if (inrx && (!inrw) && size >= 0 && !di->bss_present) {
+         if (inrx && (!inrw) && !di->bss_present) {
             /* File contains a .bss, but it got mapped as rx only.
                This is very strange.  For now, just pretend we didn't
                see it :-) */
@@ -1930,7 +1936,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             }
          } else
 
-         if ((!inrw) && (!inrx) && size >= 0 && !di->bss_present) {
+         if ((!inrw) && (!inrx) && !di->bss_present) {
             /* File contains a .bss, but it didn't get mapped.  Ignore. */
             di->bss_present = False;
             di->bss_svma = 0;
@@ -1943,7 +1949,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       }
 
       if (0 == VG_(strcmp)(name, ".sdynbss")) {
-         if (inrw && size >= 0 && !di->sbss_present) {
+         if (inrw && !di->sbss_present) {
             sdynbss_present = True;
             di->sbss_present = True;
             di->sbss_svma = svma;
@@ -1964,7 +1970,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .sbss where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".sbss")) {
-         if (inrw && size > 0 && sdynbss_present) {
+         if (inrw && sdynbss_present) {
             vg_assert(di->sbss_present);
             sdynbss_present = False;
             vg_assert(di->sbss_svma + di->sbss_size == svma);
@@ -1976,7 +1982,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", di->sbss_bias);
          } else
 
-         if (inrw && size > 0 && !di->sbss_present) {
+         if (inrw && !di->sbss_present) {
             di->sbss_present = True;
             di->sbss_svma = svma;
             di->sbss_avma = svma + inrw->bias;
@@ -1998,7 +2004,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .got where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".got")) {
-         if (inrw && size > 0 && !di->got_present) {
+         if (inrw && !di->got_present) {
             di->got_present = True;
             di->got_avma = svma + inrw->bias;
             di->got_size = size;
@@ -2010,7 +2016,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .got.plt where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".got.plt")) {
-         if (inrw && size > 0 && !di->gotplt_present) {
+         if (inrw && !di->gotplt_present) {
             di->gotplt_present = True;
             di->gotplt_avma = svma + inrw->bias;
             di->gotplt_size = size;
@@ -2026,7 +2032,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          || defined(VGP_mips32_linux)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
-         if (inrx && size > 0 && !di->plt_present) {
+         if (inrx && !di->plt_present) {
             di->plt_present = True;
             di->plt_avma = svma + inrx->bias;
             di->plt_size = size;
@@ -2038,7 +2044,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     elif defined(VGP_ppc32_linux)
       /* Accept .plt where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".plt")) {
-         if (inrw && size > 0 && !di->plt_present) {
+         if (inrw && !di->plt_present) {
             di->plt_present = True;
             di->plt_avma = svma + inrw->bias;
             di->plt_size = size;
@@ -2050,7 +2056,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     elif defined(VGP_ppc64_linux)
       /* Accept .plt where mapped as rw (data), or unmapped */
       if (0 == VG_(strcmp)(name, ".plt")) {
-         if (inrw && size > 0 && !di->plt_present) {
+         if (inrw && !di->plt_present) {
             di->plt_present = True;
             di->plt_avma = svma + inrw->bias;
             di->plt_size = size;
@@ -2073,7 +2079,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .opd where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".opd")) {
-         if (inrw && size > 0 && !di->opd_present) {
+         if (inrw && !di->opd_present) {
             di->opd_present = True;
             di->opd_avma = svma + inrw->bias;
             di->opd_size = size;
@@ -2088,14 +2094,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          rw (data) instead.  We can handle up to N_EHFRAME_SECTS per
          ELF object. */
       if (0 == VG_(strcmp)(name, ".eh_frame")) {
-         if (inrx && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
+         if (inrx && di->n_ehframe < N_EHFRAME_SECTS) {
             di->ehframe_avma[di->n_ehframe] = svma + inrx->bias;
             di->ehframe_size[di->n_ehframe] = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
                          di->ehframe_avma[di->n_ehframe]);
             di->n_ehframe++;
          } else
-         if (inrw && size > 0 && di->n_ehframe < N_EHFRAME_SECTS) {
+         if (inrw && di->n_ehframe < N_EHFRAME_SECTS) {
             di->ehframe_avma[di->n_ehframe] = svma + inrw->bias;
             di->ehframe_size[di->n_ehframe] = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",

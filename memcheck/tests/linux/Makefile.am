@@ -16,11 +16,13 @@ EXTRA_DIST = \
 	syslog-syscall.vgtest syslog-syscall.stderr.exp \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
-	proc-auxv.vgtest proc-auxv.stderr.exp
+	proc-auxv.vgtest proc-auxv.stderr.exp getregset.vgtest \
+	getregset.stderr.exp getregset.stdout.exp
 
 check_PROGRAMS = \
 	brk \
 	capget \
+	getregset \
 	lsframe1 \
 	lsframe2 \
 	sigqueue \

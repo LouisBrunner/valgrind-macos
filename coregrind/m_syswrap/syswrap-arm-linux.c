@@ -1110,6 +1110,12 @@ PRE(sys_ptrace)
    case VKI_PTRACE_SETSIGINFO:
       PRE_MEM_READ( "ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
       break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+      break;
+   case VKI_PTRACE_SETREGSET:
+      ML_(linux_PRE_setregset)(tid, ARG3, ARG4);
+      break;
    default:
       break;
    }
@@ -1148,6 +1154,9 @@ POST(sys_ptrace)
        * siginfo_t are valid depending on the type of signal.
        */
       POST_MEM_WRITE( ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_POST_getregset)(tid, ARG3, ARG4);
       break;
    default:
       break;

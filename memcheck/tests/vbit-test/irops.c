@@ -62,10 +62,15 @@ static irop_t irops[] = {
   { DEFOP(Iop_CasCmpEQ16, UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_CasCmpEQ32, UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_CasCmpEQ64, UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+
   { DEFOP(Iop_CasCmpNE8,  UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_CasCmpNE16, UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_CasCmpNE32, UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_CasCmpNE64, UNDEF_NONE), .s390x = 1, .amd64 = 1, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
+  { DEFOP(Iop_ExpCmpNE8,  UNDEF_UNKNOWN), }, // exact (expensive) equality
+  { DEFOP(Iop_ExpCmpNE16, UNDEF_UNKNOWN), }, // exact (expensive) equality
+  { DEFOP(Iop_ExpCmpNE32, UNDEF_UNKNOWN), }, // exact (expensive) equality
+  { DEFOP(Iop_ExpCmpNE64, UNDEF_UNKNOWN), }, // exact (expensive) equality
   { DEFOP(Iop_MullS8,     UNDEF_LEFT), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_MullS16,    UNDEF_LEFT), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 },
   { DEFOP(Iop_MullS32,    UNDEF_LEFT), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 1, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // mips asserts
@@ -468,6 +473,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_Reverse64_16x4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Reverse64_32x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Perm8x8, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_GetMSBs8x8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Recip32x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Rsqrte32x2, UNDEF_UNKNOWN), },
   /* ------------------ Decimal Floating Point ------------------ */

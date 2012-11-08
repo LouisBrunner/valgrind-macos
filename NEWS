@@ -41,6 +41,7 @@ m = merged into 3_8_BRANCH
 308341    [390] vgdb should report process exit (or fatal signal)
 308644    [390] vgdb command for having the info for the track-fds option
 308711    [390] give more info about aspacemgr and arenas in out_of_memory
+308886    [390] Missing support for PTRACE_SET/GETREGSET 
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android

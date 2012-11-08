@@ -24,7 +24,7 @@ static int
 non_empty(const char *buf, size_t len)
 {
    size_t i;
-   int c;
+   int c = 0;
    volatile const char *p = buf;
 
    for (i = 0; i != len; i++)

@@ -345,10 +345,13 @@ DECL_TEMPLATE(s390x_linux, sys_sigreturn);
 DECL_TEMPLATE(s390x_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(s390x_linux, sys_fadvise64);
 
-// PEEK TEXT,DATA and USER are common to all architectures
-// PEEKUSR_AREA and POKEUSR_AREA are special, having a memory area
-// containing the real addr, data, and len field pointed to by ARG3
-// instead of ARG4
+/* PEEK TEXT,DATA and USER are common to all architectures.
+   PEEKUSR_AREA and POKEUSR_AREA are special, having a memory area
+   containing the real addr, data, and len field pointed to by ARG3
+   instead of ARG4.
+   GETREGSET and SETREGSET use a struct iovec (pointed to by ARG4) for
+   the address and size of the user buffer. */
+
 PRE(sys_ptrace)
 {
    PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
@@ -404,6 +407,12 @@ PRE(sys_ptrace)
                        pa->vki_process_addr, pa->vki_len);
          break;
       }
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+      break;
+   case VKI_PTRACE_SETREGSET:
+      ML_(linux_PRE_setregset)(tid, ARG3, ARG4);
+      break;
    default:
       break;
    }
@@ -432,7 +441,11 @@ POST(sys_ptrace)
 
 	 pa = (vki_ptrace_area *) ARG3;
          POST_MEM_WRITE(pa->vki_process_addr, pa->vki_len);
+	 break;
       }
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_POST_getregset)(tid, ARG3, ARG4);
+      break;
    default:
       break;
    }

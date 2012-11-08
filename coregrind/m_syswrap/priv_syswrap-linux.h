@@ -290,6 +290,11 @@ extern void ML_(linux_POST_sys_msgctl)     ( TId, UW, UW, UW, UW );
 extern void ML_(linux_PRE_sys_getsockopt)  ( TId, UW, UW, UW, UW, UW );
 extern void ML_(linux_POST_sys_getsockopt) ( TId, SR, UW, UW, UW, UW, UW );
 
+// Linux-specific (but non-arch-specific) ptrace wrapper helpers
+extern void ML_(linux_PRE_getregset) ( ThreadId, long, long );
+extern void ML_(linux_PRE_setregset) ( ThreadId, long, long );
+extern void ML_(linux_POST_getregset)( ThreadId, long, long );
+
 #undef TId
 #undef UW
 #undef SR

@@ -7230,6 +7230,46 @@ ML_(linux_POST_sys_getsockopt) ( ThreadId tid,
    }
 }
 
+/* ---------------------------------------------------------------------
+   ptrace wrapper helpers
+   ------------------------------------------------------------------ */
+
+void
+ML_(linux_PRE_getregset) ( ThreadId tid, long arg3, long arg4 )
+{
+   struct vki_iovec *iov = (struct vki_iovec *) arg4;
+
+   PRE_MEM_READ("ptrace(getregset iovec->iov_base)",
+		(unsigned long) &iov->iov_base, sizeof(iov->iov_base));
+   PRE_MEM_READ("ptrace(getregset iovec->iov_len)",
+		(unsigned long) &iov->iov_len, sizeof(iov->iov_len));
+   PRE_MEM_WRITE("ptrace(getregset *(iovec->iov_base))",
+		 (unsigned long) iov->iov_base, iov->iov_len);
+}
+
+void
+ML_(linux_PRE_setregset) ( ThreadId tid, long arg3, long arg4 )
+{
+   struct vki_iovec *iov = (struct vki_iovec *) arg4;
+
+   PRE_MEM_READ("ptrace(setregset iovec->iov_base)",
+		(unsigned long) &iov->iov_base, sizeof(iov->iov_base));
+   PRE_MEM_READ("ptrace(setregset iovec->iov_len)",
+		(unsigned long) &iov->iov_len, sizeof(iov->iov_len));
+   PRE_MEM_READ("ptrace(setregset *(iovec->iov_base))",
+		(unsigned long) iov->iov_base, iov->iov_len);
+}
+
+void
+ML_(linux_POST_getregset) ( ThreadId tid, long arg3, long arg4 )
+{
+   struct vki_iovec *iov = (struct vki_iovec *) arg4;
+
+   /* XXX: The actual amount of data written by the kernel might be
+      less than iov_len, depending on the regset (arg3). */
+   POST_MEM_WRITE((unsigned long) iov->iov_base, iov->iov_len);
+}
+
 #undef PRE
 #undef POST
 

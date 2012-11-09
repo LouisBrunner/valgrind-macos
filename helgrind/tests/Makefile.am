@@ -85,6 +85,7 @@ EXTRA_DIST = \
 		tc19_shadowmem.stderr.exp tc19_shadowmem.stderr.exp-mips32 \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
 		tc20_verifywrap.stderr.exp tc20_verifywrap.stderr.exp-mips32 \
+		tc20_verifywrap.stderr.exp-s390x \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
 		tc22_exit_w_lock.stderr.exp \

@@ -76,10 +76,11 @@ static const HChar* check_cache(cache_t* cache)
 }
 
 
-static void parse_cache_opt ( cache_t* cache, Char* opt, Char* optval )
+static void parse_cache_opt ( cache_t* cache, const HChar* opt,
+                              const HChar* optval )
 {
    Long i1, i2, i3;
-   Char* endptr;
+   HChar* endptr;
    const HChar* checkRes;
 
    // Option argument looks like "65536,2,64".  Extract them.
@@ -112,12 +113,12 @@ static void parse_cache_opt ( cache_t* cache, Char* opt, Char* optval )
 }
 
 
-Bool VG_(str_clo_cache_opt)(Char *arg,
+Bool VG_(str_clo_cache_opt)(const HChar *arg,
                             cache_t* clo_I1c,
                             cache_t* clo_D1c,
                             cache_t* clo_LLc)
 {
-   Char* tmp_str;
+   const HChar* tmp_str;
 
    if      VG_STR_CLO(arg, "--I1", tmp_str) {
       parse_cache_opt(clo_I1c, arg, tmp_str);

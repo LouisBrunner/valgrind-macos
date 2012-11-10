@@ -36,26 +36,26 @@
    ------------------------------------------------------------------ */
 
 /* Client environment. */
-extern Char** VG_(client_envp);
+extern HChar** VG_(client_envp);
 
 /* Looks up VG_(client_envp) */
-extern Char* VG_(getenv) ( Char* name );
+extern HChar* VG_(getenv) ( const HChar* name );
 
 /* Path to all our library/aux files */
-extern const Char *VG_(libdir);
+extern const HChar *VG_(libdir);
 
 // The name of the LD_PRELOAD-equivalent variable.  It varies across
 // platforms.
-extern const Char* VG_(LD_PRELOAD_var_name);
+extern const HChar* VG_(LD_PRELOAD_var_name);
 
 /* ---------------------------------------------------------------------
    Important syscalls
    ------------------------------------------------------------------ */
 
 extern Int  VG_(waitpid)( Int pid, Int *status, Int options );
-extern Int  VG_(system) ( Char* cmd );
+extern Int  VG_(system) ( const HChar* cmd );
 extern Int  VG_(fork)   ( void);
-extern void VG_(execv)  ( Char* filename, Char** argv );
+extern void VG_(execv)  ( const HChar* filename, HChar** argv );
 
 /* ---------------------------------------------------------------------
    Resource limits and capabilities

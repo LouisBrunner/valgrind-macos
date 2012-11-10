@@ -165,7 +165,7 @@ DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t);
 Bool DRD_(clientobj_remove)(const Addr addr, const ObjType t);
 void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2);
 void DRD_(clientobj_delete_thread)(const DrdThreadId tid);
-const char* DRD_(clientobj_type_name)(const ObjType t);
+const HChar* DRD_(clientobj_type_name)(const ObjType t);
 
 
 #endif /* __DRD_CLIENTOBJ_H */

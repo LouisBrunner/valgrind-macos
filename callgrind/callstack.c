@@ -273,7 +273,8 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
     CLG_DEBUGIF(0) {
 	if (CLG_(clo).verbose<2) {
 	  if (jcc && jcc->to && jcc->to->bb) {
-	    char spaces[][41] = { "   .   .   .   .   .   .   .   .   .   .",
+	    const HChar spaces[][41] = {
+                                  "   .   .   .   .   .   .   .   .   .   .",
 				  "  .   .   .   .   .   .   .   .   .   . ",
 				  " .   .   .   .   .   .   .   .   .   .  ",
 				  ".   .   .   .   .   .   .   .   .   .   " };

@@ -65,7 +65,7 @@ static Bool s_trace_alloc;
 /**
  * Implement the needs_command_line_options for drd.
  */
-static Bool DRD_(process_cmd_line_option)(Char* arg)
+static Bool DRD_(process_cmd_line_option)(const HChar* arg)
 {
    int check_stack_accesses   = -1;
    int join_list_vol          = -1;
@@ -89,8 +89,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    int trace_segment          = -1;
    int trace_semaphore        = -1;
    int trace_suppression      = -1;
-   Char* trace_address        = 0;
-   Char* ptrace_address       = 0;
+   const HChar* trace_address = 0;
+   const HChar* ptrace_address= 0;
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_INT_CLO (arg, "--join-list-vol",       join_list_vol) {}
@@ -277,7 +277,7 @@ static void drd_pre_mem_read_asciiz(const CorePart part,
                                     const HChar* const s,
                                     const Addr a)
 {
-   const char* p = (void*)a;
+   const HChar* p = (void*)a;
    SizeT size = 0;
 
    // Don't segfault if the string starts in an obviously stupid
@@ -862,7 +862,7 @@ void drd_pre_clo_init(void)
    DRD_(thread_init)();
 
    {
-      Char* const smi = VG_(getenv)("DRD_SEGMENT_MERGING_INTERVAL");
+      HChar* const smi = VG_(getenv)("DRD_SEGMENT_MERGING_INTERVAL");
       if (smi)
          DRD_(thread_set_segment_merge_interval)(VG_(strtoll10)(smi, NULL));
    }

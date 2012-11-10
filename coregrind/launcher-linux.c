@@ -113,7 +113,7 @@ static const char *find_client(const char *clientname)
 static const char *select_platform(const char *clientname)
 {
    int fd;
-   uint8_t header[4096];
+   char header[4096];
    ssize_t n_bytes;
    const char *platform = NULL;
 

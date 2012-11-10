@@ -410,7 +410,7 @@ static void init_auxmap_L1_L2 ( void )
    non-distinguished secondary maps referred to from the auxiliary
    primary maps. */
 
-static HChar* check_auxmap_L1_L2_sanity ( Word* n_secmaps_found )
+static const HChar* check_auxmap_L1_L2_sanity ( Word* n_secmaps_found )
 {
    Word i, j;
    /* On a 32-bit platform, the L2 and L1 tables should
@@ -1082,7 +1082,7 @@ INLINE Bool MC_(in_ignored_range) ( Addr a )
 
 /* Parse two Addr separated by a dash, or fail. */
 
-static Bool parse_range ( UChar** ppc, Addr* result1, Addr* result2 )
+static Bool parse_range ( const HChar** ppc, Addr* result1, Addr* result2 )
 {
    Bool ok = VG_(parse_Addr) (ppc, result1);
    if (!ok)
@@ -1099,12 +1099,12 @@ static Bool parse_range ( UChar** ppc, Addr* result1, Addr* result2 )
 /* Parse a set of ranges separated by commas into 'ignoreRanges', or
    fail. */
 
-static Bool parse_ignore_ranges ( UChar* str0 )
+static Bool parse_ignore_ranges ( const HChar* str0 )
 {
    Addr start, end;
    Bool ok;
-   UChar*  str = str0;
-   UChar** ppc = &str;
+   const HChar*  str = str0;
+   const HChar** ppc = &str;
    ignoreRanges.used = 0;
    while (1) {
       ok = parse_range(ppc, &start, &end);
@@ -4733,7 +4733,7 @@ static Bool mc_expensive_sanity_check ( void )
    Int     i;
    Word    n_secmaps_found;
    SecMap* sm;
-   HChar*  errmsg;
+   const HChar*  errmsg;
    Bool    bad = False;
 
    if (0) VG_(printf)("expensive sanity check\n");
@@ -4837,9 +4837,9 @@ Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
 Int           MC_(clo_mc_level)               = 2;
 
-static Bool mc_process_cmd_line_options(Char* arg)
+static Bool mc_process_cmd_line_options(const HChar* arg)
 {
-   Char* tmp_str;
+   const HChar* tmp_str;
 
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 
@@ -5098,11 +5098,11 @@ static void print_monitor_help ( void )
 }
 
 /* return True if request recognised, False otherwise */
-static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
+static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
-   Char* wcmd;
-   Char s[VG_(strlen(req))]; /* copy for strtok_r */
-   Char *ssaveptr;
+   HChar* wcmd;
+   HChar s[VG_(strlen(req))]; /* copy for strtok_r */
+   HChar *ssaveptr;
 
    VG_(strcpy) (s, req);
 
@@ -5160,7 +5160,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  2: { /* leak_check */
       Int err = 0;
       LeakCheckParams lcp;
-      Char* kw;
+      HChar* kw;
       
       lcp.mode               = LC_Full;
       lcp.show_reachable     = False;
@@ -5202,15 +5202,15 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
          case  8: /* unlimited */
             lcp.max_loss_records_output = 999999999; break;
          case  9: { /* limited */
-            int int_value;
-            char* endptr;
+            Int int_value;
+            HChar* endptr;
 
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
             if (wcmd == NULL) {
                int_value = 0;
                endptr = "empty"; /* to report an error below */
             } else {
-               int_value = VG_(strtoll10) (wcmd, (Char **)&endptr);
+               int_value = VG_(strtoll10) (wcmd, &endptr);
             }
             if (*endptr != '\0')
                VG_(gdb_printf) ("missing or malformed integer value\n");
@@ -5233,7 +5233,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  3: { /* make_memory */
       Addr address;
       SizeT szB = 1;
-      int kwdid = VG_(keyword_id) 
+      Int kwdid = VG_(keyword_id) 
          ("noaccess undefined defined Definedifaddressable",
           VG_(strtok_r) (NULL, " ", &ssaveptr), kwd_report_all);
       VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
@@ -5256,13 +5256,13 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       SizeT szB = 1;
       Addr bad_addr;
       UInt okind;
-      char* src;
+      HChar* src;
       UInt otag;
       UInt ecu;
       ExeContext* origin_ec;
       MC_ReadResult res;
 
-      int kwdid = VG_(keyword_id) 
+      Int kwdid = VG_(keyword_id) 
          ("addressable defined",
           VG_(strtok_r) (NULL, " ", &ssaveptr), kwd_report_all);
       VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
@@ -5319,8 +5319,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    }
 
    case  5: { /* block_list */
-      Char* wl;
-      Char *endptr;
+      HChar* wl;
+      HChar *endptr;
       UInt lr_nr = 0;
       wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
       lr_nr = VG_(strtoull10) (wl, &endptr);
@@ -5481,7 +5481,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             /* VG_(printf)("allocated %d %p\n", i, cgbs); */
             cgbs[i].start = arg[1];
             cgbs[i].size  = arg[2];
-            cgbs[i].desc  = (HChar *)VG_(strdup)("mc.mhcr.1", (Char *)arg[3]);
+            cgbs[i].desc  = VG_(strdup)("mc.mhcr.1", (HChar *)arg[3]);
             cgbs[i].where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
             *ret = i;
          } else
@@ -5578,7 +5578,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       case _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR: {
-         Char* s   = (Char*)arg[1];
+         HChar* s  = (HChar*)arg[1];
          Addr  dst = (Addr) arg[2];
          Addr  src = (Addr) arg[3];
          SizeT len = (SizeT)arg[4];
@@ -5654,7 +5654,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       case VG_USERREQ__GDB_MONITOR_COMMAND: {
-         Bool handled = handle_gdb_monitor_command (tid, (Char*)arg[1]);
+         Bool handled = handle_gdb_monitor_command (tid, (HChar*)arg[1]);
          if (handled)
             *ret = 1;
          else
@@ -6131,7 +6131,7 @@ static void mc_post_clo_init ( void )
       VG_(track_pre_reg_read) ( mc_pre_reg_read );
 }
 
-static void print_SM_info(char* type, int n_SMs)
+static void print_SM_info(const HChar* type, Int n_SMs)
 {
    VG_(message)(Vg_DebugMsg,
       " memcheck: SMs: %s = %d (%ldk, %ldM)\n",

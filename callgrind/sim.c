@@ -1457,7 +1457,7 @@ void cachesim_print_opts(void)
  *
  * Called from CLG_(process_cmd_line_option)() in clo.c
  */
-static Bool cachesim_parse_opt(Char* arg)
+static Bool cachesim_parse_opt(const HChar* arg)
 {
    if      VG_BOOL_CLO(arg, "--simulate-wb",      clo_simulate_writeback) {}
    else if VG_BOOL_CLO(arg, "--simulate-hwpref",  clo_simulate_hwpref)    {}
@@ -1535,7 +1535,7 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
   FullCost total = CLG_(total_cost), D_total = 0;
   ULong LL_total_m, LL_total_mr, LL_total_mw,
     LL_total, LL_total_r, LL_total_w;
-  char buf1[RESULTS_BUF_LEN], 
+  HChar buf1[RESULTS_BUF_LEN], 
     buf2[RESULTS_BUF_LEN], 
     buf3[RESULTS_BUF_LEN];
   Int p;

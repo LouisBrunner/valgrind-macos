@@ -445,14 +445,14 @@ void DRD_(spinlock_init_or_unlock)(const Addr spinlock)
    }
 }
 
-const char* DRD_(mutex_get_typename)(struct mutex_info* const p)
+const HChar* DRD_(mutex_get_typename)(struct mutex_info* const p)
 {
    tl_assert(p);
 
    return DRD_(mutex_type_name)(p->mutex_type);
 }
 
-const char* DRD_(mutex_type_name)(const MutexT mt)
+const HChar* DRD_(mutex_type_name)(const MutexT mt)
 {
    switch (mt)
    {

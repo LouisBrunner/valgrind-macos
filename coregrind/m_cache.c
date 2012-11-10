@@ -485,7 +485,7 @@ get_caches_from_CPUID(VexCacheInfo *ci)
 {
    Int  ret, i;
    UInt level;
-   Char vendor_id[13];
+   HChar vendor_id[13];
 
    vg_assert(VG_(has_cpuid)());
 

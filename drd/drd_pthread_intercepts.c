@@ -367,7 +367,7 @@ static int DRD_(detected_linuxthreads)(void)
 #if defined(linux)
 #if defined(_CS_GNU_LIBPTHREAD_VERSION)
    /* Linux with a recent glibc. */
-   char buffer[256];
+   HChar buffer[256];
    unsigned len;
    len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
    assert(len <= sizeof(buffer));

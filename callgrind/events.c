@@ -46,7 +46,7 @@ void initialize_event_sets(void)
 	eventGroup[i] = 0;
 
     for(i=0; i< MAX_EVENTSET_COUNT; i++)
-	eventSetTable[i] = 0;
+	eventSetTable[i] = 0; 
 
     eventSets_initialized = 1;
  }
@@ -62,7 +62,7 @@ EventGroup* new_event_group(int id, int n)
     CLG_ASSERT(eventGroup[id]==0);
 
     eg = (EventGroup*) CLG_MALLOC("cl.events.group.1",
-				  sizeof(EventGroup) + n * sizeof(Char*));
+				  sizeof(EventGroup) + n * sizeof(HChar*));
     eg->size = n;
     eventGroup[id] = eg;
     return eg;

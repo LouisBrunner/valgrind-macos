@@ -63,7 +63,7 @@ Bool h_clo_partial_loads_ok  = True;   /* user visible */
 /* Bool h_clo_lossage_check     = False; */ /* dev flag only */
 Bool sg_clo_enable_sg_checks = True;   /* user visible */
 
-Bool pc_process_cmd_line_options(Char* arg)
+Bool pc_process_cmd_line_options(const HChar* arg)
 {
         if VG_BOOL_CLO(arg, "--partial-loads-ok", h_clo_partial_loads_ok) {}
    /* else if VG_BOOL_CLO(arg, "--lossage-check",    h_clo_lossage_check) {} */
@@ -134,7 +134,7 @@ typedef
             Seg*     vseg;
             XArray*  descr1; /* XArray* of HChar */
             XArray*  descr2; /* XArray* of HChar */
-            Char     datasym[96];
+            HChar    datasym[96];
             PtrdiffT datasymoff;
          } Heap;
          struct {
@@ -200,7 +200,7 @@ void h_record_arith_error( Seg* seg1, Seg* seg2, HChar* opname )
                             /*a*/0, /*str*/NULL, /*extra*/(void*)&xe);
 }
 
-void h_record_sysparam_error( ThreadId tid, CorePart part, Char* s,
+void h_record_sysparam_error( ThreadId tid, CorePart part, const HChar* s,
                               Addr lo, Addr hi, Seg* seglo, Seg* seghi )
 {
    XError xe;
@@ -720,7 +720,7 @@ UInt pc_update_Error_extra ( Error* err )
    return sizeof(XError);
 }
 
-Bool pc_is_recognised_suppression ( Char* name, Supp *su )
+Bool pc_is_recognised_suppression ( const HChar* name, Supp *su )
 {
    SuppKind skind;
 
@@ -735,7 +735,7 @@ Bool pc_is_recognised_suppression ( Char* name, Supp *su )
    return True;
 }
 
-Bool pc_read_extra_suppression_info ( Int fd, Char** bufpp, 
+Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp, 
                                       SizeT* nBufp, Supp* su )
 {
    Bool eof;

@@ -170,7 +170,7 @@ extern Int VG_(keyword_id) (Char* keywords, Char* input_word,
    user problems via VG_(gdb_printf).  */
 extern void VG_(strtok_get_address_and_size) (Addr* address, 
                                               SizeT* szB, 
-                                              Char **ssaveptr);
+                                              HChar **ssaveptr);
 
 #endif   // __PUB_TOOL_GDBSERVER_H
 

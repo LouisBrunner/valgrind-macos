@@ -219,7 +219,7 @@ void safe_mknod (char *nod)
    will be created if not existing yet. They will be removed when
    the gdbserver connection is closed or the process exits */
 
-void remote_open (char *name)
+void remote_open (const HChar *name)
 {
    const HChar *user, *host;
    int save_fcntl_flags, len;

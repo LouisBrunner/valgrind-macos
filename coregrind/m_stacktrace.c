@@ -1096,7 +1096,7 @@ static void printIpDesc(UInt n, Addr ip, void* uu_opaque)
 {
    #define BUF_LEN   4096
    
-   static UChar buf[BUF_LEN];
+   static HChar buf[BUF_LEN];
 
    VG_(describe_IP)(ip, buf, BUF_LEN);
 

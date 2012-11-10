@@ -89,7 +89,7 @@ Bool VG_(generic_match) (
 /* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports
    meta-symbols '*' and '?'.  There is no way to escape meta-symbols
    in the pattern. */
-Bool VG_(string_match) ( const Char* pat, const Char* str );
+Bool VG_(string_match) ( const HChar* pat, const HChar* str );
 
 #endif   // __PUB_TOOL_SEQMATCH_H
 

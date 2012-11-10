@@ -230,8 +230,8 @@ void VG_(needs_tool_errors)(
    void (*pp)         (Error*),
    Bool show_TIDs,
    UInt (*update)     (Error*),
-   Bool (*recog)      (Char*, Supp*),
-   Bool (*read_extra) (Int, Char**, SizeT*, Supp*),
+   Bool (*recog)      (const HChar*, Supp*),
+   Bool (*read_extra) (Int, HChar**, SizeT*, Supp*),
    Bool (*matches)    (Error*, Supp*),
    const HChar* (*name) (Error*),
    Bool (*get_xtra_si)(Error*,/*OUT*/HChar*,Int)
@@ -251,7 +251,7 @@ void VG_(needs_tool_errors)(
 }
 
 void VG_(needs_command_line_options)(
-   Bool (*process)(Char*),
+   Bool (*process)(const HChar*),
    void (*usage)(void),
    void (*debug_usage)(void)
 )

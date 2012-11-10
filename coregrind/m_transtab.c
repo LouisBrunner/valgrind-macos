@@ -805,7 +805,7 @@ static void unchain_one ( VexArch vex_arch,
    TTEntry* tte
       = index_tte(ie->from_sNo, ie->from_tteNo);
    UChar* place_to_patch
-      = ((HChar*)tte->tcptr) + ie->from_offs;
+      = ((UChar*)tte->tcptr) + ie->from_offs;
    UChar* disp_cp_chain_me
       = VG_(fnptr_to_fnentry)(
            ie->to_fastEP ? &VG_(disp_cp_chain_me_to_fastEP)

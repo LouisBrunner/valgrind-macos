@@ -12,7 +12,7 @@ extern Bool DRD_(g_any_address_traced);
 void DRD_(suppression_set_trace)(const Bool trace_suppression);
 void DRD_(suppression_init)(void);
 void DRD_(start_suppression)(const Addr a1, const Addr a2,
-                             const char* const reason);
+                             const HChar* const reason);
 void DRD_(finish_suppression)(const Addr a1, const Addr a2);
 Bool DRD_(is_suppressed)(const Addr a1, const Addr a2);
 Bool DRD_(is_any_suppressed)(const Addr a1, const Addr a2);

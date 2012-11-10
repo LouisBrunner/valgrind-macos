@@ -134,27 +134,27 @@ extern ThreadId vgdb_interrupted_tid;
 #define VKI_POLLNVAL          0x0020
 
 /* a bunch of macros to avoid libc usage in valgrind-ified gdbserver */ 
-#define strcmp(s1,s2)         VG_(strcmp) ((Char *)(s1),(Char *)(s2))
-#define strncmp(s1,s2,nmax)   VG_(strncmp) ((Char *)(s1),(Char *)(s2),nmax)
-#define strcat(s1,s2)         VG_(strcat) ((Char *)(s1),(Char *)(s2))
-#define strcpy(s1,s2)         VG_(strcpy) ((Char *)(s1),(Char *)(s2))
-#define strncpy(s1,s2,nmax)   VG_(strncpy) ((Char *)(s1),(Char *)(s2),nmax)
-#define strlen(s)             VG_(strlen) ((Char *)(s))
-#define strtok(p,s)           (char *) VG_(strtok) ((Char *)(p),(Char *)(s))
-#define strtok_r(p,s,ss)      (char *) VG_(strtok_r) ((Char *)(p),(Char *)(s),(Char **)(ss))
-#define strchr(s,c)           (char *) VG_(strchr) ((Char *)(s),c)
+#define strcmp(s1,s2)         VG_(strcmp) ((s1),(s2))
+#define strncmp(s1,s2,nmax)   VG_(strncmp) ((s1),(s2),nmax)
+#define strcat(s1,s2)         VG_(strcat) ((s1),(s2))
+#define strcpy(s1,s2)         VG_(strcpy) ((s1),(s2))
+#define strncpy(s1,s2,nmax)   VG_(strncpy) ((s1),(s2),nmax)
+#define strlen(s)             VG_(strlen) ((s))
+#define strtok(p,s)           VG_(strtok) ((p),(s))
+#define strtok_r(p,s,ss)      VG_(strtok_r) ((p),(s),(ss))
+#define strchr(s,c)           VG_(strchr) ((s),c)
 /* strtol and strtoul supports base 16 or else assumes it is base 10 */
 #define strtol(s,r,b)         ((b) == 16 ? \
-                               VG_(strtoll16) ((Char *)(s),(Char **)(r)) \
-                               : VG_(strtoll10) ((Char *)(s),(Char **)(r)))
+                               VG_(strtoll16) ((s),(r)) \
+                               : VG_(strtoll10) ((s),(r)))
 #define strtoul(s,r,b)        ((b) == 16 ? \
-                               VG_(strtoull16) ((Char *)(s),(Char **)(r)) \
-                               : VG_(strtoull10) ((Char *)(s),(Char **)(r)))
+                               VG_(strtoull16) ((s),(r)) \
+                               : VG_(strtoull10) ((s),(r)))
 
 #define malloc(sz)            VG_(arena_malloc)  (VG_AR_CORE, "gdbsrv", sz)
 #define calloc(n,sz)          VG_(arena_calloc)  (VG_AR_CORE, "gdbsrv", n, sz)
 #define realloc(p,size)       VG_(arena_realloc) (VG_AR_CORE, "gdbsrv", p, size)
-#define strdup(s)             (char *) VG_(arena_strdup)  (VG_AR_CORE, "gdbsrv", (Char *)(s))
+#define strdup(s)             VG_(arena_strdup)  (VG_AR_CORE, "gdbsrv", (s))
 #define free(b)               VG_(arena_free)    (VG_AR_CORE, b)
 
 #ifndef ATTR_NORETURN
@@ -276,7 +276,7 @@ extern Bool noack_mode;
 int putpkt (char *buf);
 int putpkt_binary (char *buf, int len);
 int getpkt (char *buf);
-void remote_open (char *name);
+void remote_open (const HChar *name);
 void remote_close (void);
 
 void sync_gdb_connection (void);

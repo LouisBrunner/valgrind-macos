@@ -35,9 +35,9 @@
    Char functions.
    ------------------------------------------------------------------ */
 
-extern Bool VG_(isspace) ( Char c );
-extern Bool VG_(isdigit) ( Char c );
-extern Char VG_(tolower) ( Char c );
+extern Bool  VG_(isspace) ( HChar c );
+extern Bool  VG_(isdigit) ( HChar c );
+extern HChar VG_(tolower) ( HChar c );
 
 /* ---------------------------------------------------------------------
    Converting strings to numbers
@@ -61,16 +61,16 @@ extern Char VG_(tolower) ( Char c );
 // useless because they don't do any error checking and so accept malformed
 // numbers and non-numbers -- eg. "123xyz" gives 123, and "foo" gives 0!
 // If you really want that behaviour, you can use "VG_(strtoll10)(str, NULL)".
-extern Long  VG_(strtoll10) ( Char* str, Char** endptr );
-extern Long  VG_(strtoll16) ( Char* str, Char** endptr );
-extern ULong  VG_(strtoull10) ( Char* str, Char** endptr );
-extern ULong  VG_(strtoull16) ( Char* str, Char** endptr );
+extern Long  VG_(strtoll10) ( const HChar* str, HChar** endptr );
+extern Long  VG_(strtoll16) ( const HChar* str, HChar** endptr );
+extern ULong  VG_(strtoull10) ( const HChar* str, HChar** endptr );
+extern ULong  VG_(strtoull16) ( const HChar* str, HChar** endptr );
 
 // Convert a string to a double.  After leading whitespace is ignored, a
 // '+' or '-' is allowed, and then it accepts a non-empty sequence of
 // decimal digits possibly containing a '.'.  Hexadecimal floats are not
 // accepted, nor are "fancy" floats (eg. "3.4e-5", "NAN").
-extern double VG_(strtod)  ( Char* str, Char** endptr );
+extern double VG_(strtod)  ( const HChar* str, HChar** endptr );
 
 /* ---------------------------------------------------------------------
    String functions and macros
@@ -82,36 +82,36 @@ extern double VG_(strtod)  ( Char* str, Char** endptr );
 #define VG_STREQN(n,s1,s2) ( (s1 != NULL && s2 != NULL \
                              && VG_(strncmp)((s1),(s2),(n))==0) ? True : False )
 
-extern SizeT VG_(strlen)         ( const Char* str );
-extern Char* VG_(strcat)         ( Char* dest, const Char* src );
-extern Char* VG_(strncat)        ( Char* dest, const Char* src, SizeT n );
-extern Char* VG_(strpbrk)        ( const Char* s, const Char* accpt );
-extern Char* VG_(strcpy)         ( Char* dest, const Char* src );
-extern Char* VG_(strncpy)        ( Char* dest, const Char* src, SizeT ndest );
-extern Int   VG_(strcmp)         ( const Char* s1, const Char* s2 );
-extern Int   VG_(strcasecmp)     ( const Char* s1, const Char* s2 );
-extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, SizeT nmax );
-extern Int   VG_(strncasecmp)    ( const Char* s1, const Char* s2, SizeT nmax );
-extern Char* VG_(strstr)         ( const Char* haystack, const Char* needle );
-extern Char* VG_(strcasestr)     ( const Char* haystack, const Char* needle );
-extern Char* VG_(strchr)         ( const Char* s, Char c );
-extern Char* VG_(strrchr)        ( const Char* s, Char c );
-extern SizeT VG_(strspn)         ( const Char* s, const Char* accpt );
-extern SizeT VG_(strcspn)        ( const Char* s, const Char* reject );
+extern SizeT  VG_(strlen)         ( const HChar* str );
+extern HChar* VG_(strcat)         ( HChar* dest, const HChar* src );
+extern HChar* VG_(strncat)        ( HChar* dest, const HChar* src, SizeT n );
+extern HChar* VG_(strpbrk)        ( const HChar* s, const HChar* accpt );
+extern HChar* VG_(strcpy)         ( HChar* dest, const HChar* src );
+extern HChar* VG_(strncpy)        ( HChar* dest, const HChar* src, SizeT ndest );
+extern Int    VG_(strcmp)         ( const HChar* s1, const HChar* s2 );
+extern Int    VG_(strcasecmp)     ( const HChar* s1, const HChar* s2 );
+extern Int    VG_(strncmp)        ( const HChar* s1, const HChar* s2, SizeT nmax );
+extern Int    VG_(strncasecmp)    ( const HChar* s1, const HChar* s2, SizeT nmax );
+extern HChar* VG_(strstr)         ( const HChar* haystack, const HChar* needle );
+extern HChar* VG_(strcasestr)     ( const HChar* haystack, const HChar* needle );
+extern HChar* VG_(strchr)         ( const HChar* s, HChar c );
+extern HChar* VG_(strrchr)        ( const HChar* s, HChar c );
+extern SizeT  VG_(strspn)         ( const HChar* s, const HChar* accpt );
+extern SizeT  VG_(strcspn)        ( const HChar* s, const HChar* reject );
 
 /* strtok* functions and some parsing utilities. */
-extern Char* VG_(strtok_r)       (Char* s, const Char* delim, Char** saveptr);
-extern Char* VG_(strtok)         (Char* s, const Char* delim);
+extern HChar* VG_(strtok_r)       (HChar* s, const HChar* delim, HChar** saveptr);
+extern HChar* VG_(strtok)         (HChar* s, const HChar* delim);
 
 /* Parse a 32- or 64-bit hex number, including leading 0x, from string
    starting at *ppc, putting result in *result, and return True.  Or
    fail, in which case *ppc and *result are undefined, and return
    False. */
-extern Bool VG_(parse_Addr) ( UChar** ppc, Addr* result );
+extern Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result );
 
 /* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
    last character. */
-extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest );
+extern void  VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest );
 
 /* ---------------------------------------------------------------------
    mem* functions

@@ -39,7 +39,7 @@
 static void print_indent(int s)
 {
     /* max of 40 spaces */
-    char sp[] = "                                        ";
+    const HChar sp[] = "                                        ";
     if (s>40) s=40;
     VG_(printf)("%s", sp+40-s);
 }
@@ -72,7 +72,7 @@ void print_mangled_cxt(Context* cxt, int rec_index)
 
 
 
-void CLG_(print_cxt)(int s, Context* cxt, int rec_index)
+void CLG_(print_cxt)(Int s, Context* cxt, int rec_index)
 {
   if (s<0) {
     s = -s;
@@ -373,9 +373,9 @@ void CLG_(print_bbcc_cost)(int s, BBCC* bbcc)
 /* dump out an address with source info if available */
 void CLG_(print_addr)(Addr addr)
 {
-    Char fl_buf[FILENAME_LEN];
-    Char fn_buf[FN_NAME_LEN];
-    const UChar* obj_name;
+    HChar fl_buf[FILENAME_LEN];
+    HChar fn_buf[FN_NAME_LEN];
+    const HChar* obj_name;
     DebugInfo* di;
     UInt ln, i=0, opos=0;
 	
@@ -435,7 +435,7 @@ void CLG_(print_context)(void)
   VG_(printf)("\n");
 }
 
-void* CLG_(malloc)(HChar* cc, UWord s, char* f)
+void* CLG_(malloc)(const HChar* cc, UWord s, const HChar* f)
 {
     CLG_DEBUG(3, "Malloc(%lu) in %s.\n", s, f);
     return VG_(malloc)(cc,s);

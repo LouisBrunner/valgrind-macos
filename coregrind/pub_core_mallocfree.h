@@ -111,8 +111,8 @@ extern void* VG_(arena_realloc) ( ArenaId arena, const HChar* cc,
                                   void* ptr, SizeT size );
 extern void* VG_(arena_memalign)( ArenaId aid, const HChar* cc,
                                   SizeT req_alignB, SizeT req_pszB );
-extern Char* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
-                                  const Char* s);
+extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
+                                   const HChar* s);
 
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 

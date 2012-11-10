@@ -67,7 +67,7 @@
 
 static Bool  clo_cache_sim  = True;  /* do cache simulation? */
 static Bool  clo_branch_sim = False; /* do branch simulation? */
-static HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
+static const HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
 
 /*------------------------------------------------------------*/
 /*--- Cachesim configuration                               ---*/
@@ -102,9 +102,9 @@ typedef
 // - Traversed for dumping stats at end in file/func/line hierarchy.
 
 typedef struct {
-   Char* file;
-   Char* fn;
-   Int   line;
+   HChar* file;
+   HChar* fn;
+   Int    line;
 }
 CodeLoc;
 
@@ -191,18 +191,18 @@ static Int  no_debugs           = 0;
 
 static Word stringCmp( const void* key, const void* elem )
 {
-   return VG_(strcmp)(*(Char**)key, *(Char**)elem);
+   return VG_(strcmp)(*(HChar**)key, *(HChar**)elem);
 }
 
 // Get a permanent string;  either pull it out of the string table if it's
 // been encountered before, or dup it and put it into the string table.
-static Char* get_perm_string(Char* s)
+static HChar* get_perm_string(HChar* s)
 {
-   Char** s_ptr = VG_(OSetGen_Lookup)(stringTable, &s);
+   HChar** s_ptr = VG_(OSetGen_Lookup)(stringTable, &s);
    if (s_ptr) {
       return *s_ptr;
    } else {
-      Char** s_node = VG_(OSetGen_AllocNode)(stringTable, sizeof(Char*));
+      HChar** s_node = VG_(OSetGen_AllocNode)(stringTable, sizeof(HChar*));
       *s_node = VG_(strdup)("cg.main.gps.1", s);
       VG_(OSetGen_Insert)(stringTable, s_node);
       return *s_node;
@@ -213,10 +213,10 @@ static Char* get_perm_string(Char* s)
 /*--- CC table operations                                  ---*/
 /*------------------------------------------------------------*/
 
-static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
-                           Char fn[FN_LEN], Int* line)
+static void get_debug_info(Addr instr_addr, HChar file[FILE_LEN],
+                           HChar fn[FN_LEN], UInt* line)
 {
-   Char dir[FILE_LEN];
+   HChar dir[FILE_LEN];
    Bool found_dirname;
    Bool found_file_line = VG_(get_filename_linenum)(
                              instr_addr, 
@@ -255,8 +255,8 @@ static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
 // Returns a pointer to the line CC, creates a new one if necessary.
 static LineCC* get_lineCC(Addr origAddr)
 {
-   Char    file[FILE_LEN], fn[FN_LEN];
-   Int     line;
+   HChar   file[FILE_LEN], fn[FN_LEN];
+   UInt    line;
    CodeLoc loc;
    LineCC* lineCC;
 
@@ -1308,7 +1308,7 @@ static void fprint_CC_table_and_calc_totals(void)
    Int     i, fd;
    SysRes  sres;
    HChar    buf[512];
-   Char    *currFile = NULL, *currFn = NULL;
+   HChar   *currFile = NULL, *currFn = NULL;
    LineCC* lineCC;
 
    // Setup output filename.  Nb: it's important to do this now, ie. as late
@@ -1316,7 +1316,7 @@ static void fprint_CC_table_and_calc_totals(void)
    // output file format string contains a %p (pid) specifier, both the
    // parent and child will incorrectly write to the same file;  this
    // happened in 3.3.0.
-   Char* cachegrind_out_file =
+   HChar* cachegrind_out_file =
       VG_(expand_file_name)("--cachegrind-out-file", clo_cachegrind_out_file);
 
    sres = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
@@ -1698,7 +1698,7 @@ void cg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
 /*--- Command line processing                                      ---*/
 /*--------------------------------------------------------------------*/
 
-static Bool cg_process_cmd_line_option(Char* arg)
+static Bool cg_process_cmd_line_option(const HChar* arg)
 {
    if (VG_(str_clo_cache_opt)(arg,
                               &clo_I1_cache,

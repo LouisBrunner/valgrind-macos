@@ -51,7 +51,7 @@
 #define VG_BOOL_CLO(qq_arg, qq_option, qq_var) \
    (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
     ({ \
-      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
       if      VG_STREQ(val, "yes") (qq_var) = True; \
       else if VG_STREQ(val, "no")  (qq_var) = False; \
       else VG_(fmsg_bad_option)(qq_arg, "Invalid boolean value '%s'" \
@@ -64,7 +64,7 @@
 #define VG_STR_CLO(qq_arg, qq_option, qq_var) \
    (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
     ({ \
-      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
       (qq_var) = val; \
       True; \
     }) \
@@ -74,8 +74,8 @@
 #define VG_INT_CLO(qq_arg, qq_option, qq_var) \
    (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
     ({ \
-      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
-      Char* s; \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      HChar* s; \
       Long n = VG_(strtoll10)( val, &s ); \
       (qq_var) = n; \
       /* Check for non-numeralness, or overflow. */ \
@@ -89,8 +89,8 @@
 #define VG_BINTN_CLO(qq_base, qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
     ({ \
-      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
-      Char* s; \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      HChar* s; \
       Long n = VG_(strtoll##qq_base)( val, &s ); \
       (qq_var) = n; \
       /* MMM: separate the two cases, and explain the problem;  likewise */ \
@@ -122,8 +122,8 @@
 #define VG_DBL_CLO(qq_arg, qq_option, qq_var) \
    (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
     ({ \
-      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
-      Char* s; \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      HChar* s; \
       double n = VG_(strtod)( val, &s ); \
       (qq_var) = n; \
       /* Check for non-numeralness */ \
@@ -161,7 +161,7 @@ extern Bool VG_(clo_xml);
 
 /* An arbitrary user-supplied string which is copied into the
    XML output, in between <usercomment> tags. */
-extern HChar* VG_(clo_xml_user_comment);
+extern const HChar* VG_(clo_xml_user_comment);
 
 /* Vex iropt control.  Tool-visible so tools can make Vex optimise
    less aggressively if that is needed (callgrind needs this). */
@@ -192,7 +192,8 @@ extern Bool VG_(clo_show_below_main);
    merely used in printing error messages, if an error message needs
    to be printed due to malformedness of the "format" argument.
 */
-extern Char* VG_(expand_file_name)(Char* option_name, Char* format);
+extern HChar* VG_(expand_file_name)(const HChar* option_name,
+                                    const HChar* format);
 
 #endif   // __PUB_TOOL_OPTIONS_H
 

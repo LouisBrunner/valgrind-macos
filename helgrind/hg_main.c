@@ -1725,7 +1725,7 @@ void evh__pre_mem_read_asciiz ( CorePart part, ThreadId tid,
    // checking the first byte is better than nothing.  See #255009.
    if (!VG_(am_is_valid_for_client) (a, 1, VKI_PROT_READ))
       return;
-   len = VG_(strlen)( (Char*) a );
+   len = VG_(strlen)( (HChar*) a );
    shadow_mem_cread_range( map_threads_lookup(tid), a, len+1 );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read_asciiz-post");
@@ -4295,7 +4295,7 @@ static void instrument_mem_access ( IRSB*   sbOut,
 static Bool is_in_dynamic_linker_shared_object( Addr64 ga )
 {
    DebugInfo* dinfo;
-   const UChar* soname;
+   const HChar* soname;
    if (0) return False;
 
    dinfo = VG_(find_DebugInfo)( (Addr)ga );
@@ -4838,7 +4838,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_CLIENTREQ_UNIMP: {
-         /* char* who */
+         /* HChar* who */
          HChar*  who = (HChar*)args[1];
          HChar   buf[50 + 50];
          Thread* thr = map_threads_maybe_lookup( tid );
@@ -4880,9 +4880,9 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 /*--- Setup                                                    ---*/
 /*----------------------------------------------------------------*/
 
-static Bool hg_process_cmd_line_option ( Char* arg )
+static Bool hg_process_cmd_line_option ( const HChar* arg )
 {
-   Char* tmp_str;
+   const HChar* tmp_str;
 
    if      VG_BOOL_CLO(arg, "--track-lockorders",
                             HG_(clo_track_lockorders)) {}

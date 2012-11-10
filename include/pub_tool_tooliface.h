@@ -313,14 +313,14 @@ extern void VG_(needs_tool_errors) (
 
    // Return value indicates recognition.  If recognised, must set skind using
    // VG_(set_supp_kind)().
-   Bool (*recognised_suppression)(Char* name, Supp* su),
+   Bool (*recognised_suppression)(const HChar* name, Supp* su),
 
    // Read any extra info for this suppression kind.  Most likely for filling
    // in the `extra' and `string' parts (with VG_(set_supp_{extra, string})())
    // of a suppression if necessary.  Should return False if a syntax error
    // occurred, True otherwise.  bufpp and nBufp are the same as for
    // VG_(get_line).
-   Bool (*read_extra_suppression_info)(Int fd, Char** bufpp, SizeT* nBufp,
+   Bool (*read_extra_suppression_info)(Int fd, HChar** bufpp, SizeT* nBufp,
                                        Supp* su),
 
    // This should just check the kinds match and maybe some stuff in the
@@ -386,7 +386,7 @@ extern void VG_(needs_command_line_options) (
    // if possible rather than in post_clo_init(), and if they are bad then
    // VG_(fmsg_bad_option)() should be called.  This ensures that the
    // messaging is consistent with command line option errors from the core.
-   Bool (*process_cmd_line_option)(Char* argv),
+   Bool (*process_cmd_line_option)(const HChar* argv),
 
    // Print out command line usage for options for normal tool operation.
    void (*print_usage)(void),

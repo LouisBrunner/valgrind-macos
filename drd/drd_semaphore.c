@@ -245,7 +245,7 @@ void DRD_(semaphore_destroy)(const Addr semaphore)
 
 /** Called after sem_open(). */
 struct semaphore_info* DRD_(semaphore_open)(const Addr semaphore,
-                                            const Char* name, const Word oflag,
+                                            const HChar* name, const Word oflag,
                                             const Word mode, const UInt value)
 {
    struct semaphore_info* p;

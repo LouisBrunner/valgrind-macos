@@ -383,7 +383,7 @@ void VG_(start_debugger) ( ThreadId tid )
          HChar file[50];
          HChar buf[N_BUF];
          HChar *bufptr;
-         HChar *cmdptr;
+         const HChar *cmdptr;
          
          VG_(sprintf)(pidbuf, "%d", pid);
          VG_(sprintf)(file, "/proc/%d/fd/%d", pid, VG_(cl_exec_fd));

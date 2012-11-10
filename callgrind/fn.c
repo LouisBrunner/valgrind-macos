@@ -39,7 +39,7 @@ static int  runtime_resolve_length = 0;
 struct chunk_t { int start, len; };
 struct pattern
 {
-    const char* name;
+    const HChar* name;
     int len;
     struct chunk_t chunk[];
 };
@@ -49,7 +49,7 @@ struct pattern
  */
 __attribute__((unused))    // Possibly;  depends on the platform.
 static Bool check_code(obj_node* obj,
-		       unsigned char code[], struct pattern* pat)
+                       UChar code[], struct pattern* pat)
 {
     Bool found;
     Addr addr, end;
@@ -122,7 +122,7 @@ static Bool check_code(obj_node* obj,
 static Bool search_runtime_resolve(obj_node* obj)
 {
 #if defined(VGP_x86_linux)
-    static unsigned char code[] = {
+    static UChar code[] = {
 	/* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
 	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
 	/*16*/ 0x5a, 0x59, 0x87, 0x04, 0x24, 0xc2, 0x08, 0x00 };
@@ -131,7 +131,7 @@ static Bool search_runtime_resolve(obj_node* obj)
 	"x86-def", 24, {{ 0,12 }, { 16,8 }, { 24,0}} };
 
     /* Pattern for glibc-2.8 on OpenSuse11.0 */
-    static unsigned char code_28[] = {
+    static UChar code_28[] = {
 	/* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
 	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
 	/*16*/ 0x5a, 0x8b, 0x0c, 0x24, 0x89, 0x04, 0x24, 0x8b,
@@ -146,7 +146,7 @@ static Bool search_runtime_resolve(obj_node* obj)
 #endif
 
 #if defined(VGP_ppc32_linux)
-    static unsigned char code[] = {
+    static UChar code[] = {
 	/* 0*/ 0x94, 0x21, 0xff, 0xc0, 0x90, 0x01, 0x00, 0x0c,
 	/* 8*/ 0x90, 0x61, 0x00, 0x10, 0x90, 0x81, 0x00, 0x14,
 	/*16*/ 0x7d, 0x83, 0x63, 0x78, 0x90, 0xa1, 0x00, 0x18,
@@ -172,7 +172,7 @@ static Bool search_runtime_resolve(obj_node* obj)
 #endif
 
 #if defined(VGP_amd64_linux)
-    static unsigned char code[] = {
+    static UChar code[] = {
 	/* 0*/ 0x48, 0x83, 0xec, 0x38, 0x48, 0x89, 0x04, 0x24,
 	/* 8*/ 0x48, 0x89, 0x4c, 0x24, 0x08, 0x48, 0x89, 0x54, 0x24, 0x10,
 	/*18*/ 0x48, 0x89, 0x74, 0x24, 0x18, 0x48, 0x89, 0x7c, 0x24, 0x20,
@@ -214,7 +214,7 @@ void CLG_(init_obj_table)()
 
 #define HASH_CONSTANT   256
 
-static UInt str_hash(const Char *s, UInt table_size)
+static UInt str_hash(const HChar *s, UInt table_size)
 {
     int hash_value = 0;
     for ( ; *s; s++)
@@ -232,7 +232,7 @@ obj_node* new_obj_node(DebugInfo* di, obj_node* next)
    obj_node* obj;
 
    obj = (obj_node*) CLG_MALLOC("cl.fn.non.1", sizeof(obj_node));
-   obj->name  = di ? (HChar *)VG_(strdup)( "cl.fn.non.2",
+   obj->name  = di ? VG_(strdup)( "cl.fn.non.2",
                                   VG_(DebugInfo_get_filename)(di) )
                    : anonymous_obj;
    for (i = 0; i < N_FILE_ENTRIES; i++) {
@@ -286,7 +286,7 @@ obj_node* CLG_(get_obj_node)(DebugInfo* di)
 
 
 static __inline__ 
-file_node* new_file_node(Char filename[FILENAME_LEN],
+file_node* new_file_node(HChar filename[FILENAME_LEN],
 			 obj_node* obj, file_node* next)
 {
   Int i;
@@ -305,7 +305,7 @@ file_node* new_file_node(Char filename[FILENAME_LEN],
 
  
 file_node* CLG_(get_file_node)(obj_node* curr_obj_node,
-			      Char filename[FILENAME_LEN])
+                               HChar filename[FILENAME_LEN])
 {
     file_node* curr_file_node;
     UInt       filename_hash;
@@ -330,7 +330,7 @@ file_node* CLG_(get_file_node)(obj_node* curr_obj_node,
 static void resize_fn_array(void);
 
 static __inline__ 
-fn_node* new_fn_node(Char fnname[FILENAME_LEN],
+fn_node* new_fn_node(HChar fnname[FILENAME_LEN],
 		     file_node* file, fn_node* next)
 {
     fn_node* fn = (fn_node*) CLG_MALLOC("cl.fn.nfnnd.1",
@@ -374,7 +374,7 @@ fn_node* new_fn_node(Char fnname[FILENAME_LEN],
  */
 static
 fn_node* get_fn_node_infile(file_node* curr_file_node,
-			    Char fnname[FN_NAME_LEN])
+			    HChar fnname[FN_NAME_LEN])
 {
     fn_node* curr_fn_node;
     UInt     fnname_hash;
@@ -403,8 +403,8 @@ fn_node* get_fn_node_infile(file_node* curr_file_node,
  */
 static __inline__
 fn_node* get_fn_node_inseg(DebugInfo* di,
-			   Char filename[FILENAME_LEN],
-			   Char fnname[FN_NAME_LEN])
+			   HChar filename[FILENAME_LEN],
+			   HChar fnname[FN_NAME_LEN])
 {
   obj_node  *obj  = CLG_(get_obj_node)(di);
   file_node *file = CLG_(get_file_node)(obj, filename);
@@ -415,12 +415,12 @@ fn_node* get_fn_node_inseg(DebugInfo* di,
 
 
 Bool CLG_(get_debug_info)(Addr instr_addr,
-			 Char file[FILENAME_LEN],
-			 Char fn_name[FN_NAME_LEN], UInt* line_num,
+			 HChar file[FILENAME_LEN],
+			 HChar fn_name[FN_NAME_LEN], UInt* line_num,
 			 DebugInfo** pDebugInfo)
 {
   Bool found_file_line, found_fn, found_dirname, result = True;
-  Char dir[FILENAME_LEN];
+  HChar dir[FILENAME_LEN];
   UInt line;
   
   CLG_DEBUG(6, "  + get_debug_info(%#lx)\n", instr_addr);
@@ -471,9 +471,9 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
 
    CLG_DEBUG(6, "  - get_debug_info(%#lx): seg '%s', fn %s\n",
 	    instr_addr,
-	    !pDebugInfo   ? (const UChar*)"-" :
+	    !pDebugInfo   ? "-" :
 	    (*pDebugInfo) ? VG_(DebugInfo_get_filename)(*pDebugInfo) :
-	    (const UChar*)"(None)",
+	    "(None)",
 	    fn_name);
 
   return result;

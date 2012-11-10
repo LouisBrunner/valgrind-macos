@@ -814,8 +814,8 @@ VG_(debugLog_vprintf) (
          }
 
 //         case 'y': { /* %y - print symbol */
-//            Char buf[100];
-//            Char *cp = buf;
+//            HChar buf[100];
+//            HChar *cp = buf;
 //            Addr a = va_arg(vargs, Addr);
 //
 //            if (flags & VG_MSG_PAREN)

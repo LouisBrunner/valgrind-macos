@@ -47,7 +47,7 @@ typedef struct {
 // If arg is a command line option configuring I1 or D1 or LL cache,
 // then parses arg to set the relevant cache_t elements.
 // Returns True if arg is a cache command line option, False otherwise.
-Bool VG_(str_clo_cache_opt)(Char *arg,
+Bool VG_(str_clo_cache_opt)(const HChar *arg,
                             cache_t* clo_I1c,
                             cache_t* clo_D1c,
                             cache_t* clo_LLc);

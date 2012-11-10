@@ -39,8 +39,8 @@ Bool  HG_(eq_Error)        ( VgRes not_used, Error* e1, Error* e2 );
 void  HG_(before_pp_Error) ( Error* err );
 void  HG_(pp_Error)        ( Error* err );
 UInt  HG_(update_extra)    ( Error* err );
-Bool  HG_(recognised_suppression) ( Char* name, Supp *su );
-Bool  HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
+Bool  HG_(recognised_suppression) ( const HChar* name, Supp *su );
+Bool  HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
                                          Supp* su );
 Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
 const HChar* HG_(get_error_name) ( Error* err );

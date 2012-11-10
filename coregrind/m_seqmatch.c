@@ -78,8 +78,8 @@ Bool VG_(generic_match) (
    /* No specific need to set NULL when !have{Patt,Input}, but guards
       against inadvertantly dereferencing an out of range pointer to
       the pattern or input arrays. */
-   currPatt  = havePatt  ? ((Char*)patt) + szbPatt * ixPatt    : NULL;
-   currInput = haveInput ? ((Char*)input) + szbInput * ixInput : NULL;
+   currPatt  = havePatt  ? ((HChar*)patt) + szbPatt * ixPatt    : NULL;
+   currInput = haveInput ? ((HChar*)input) + szbInput * ixInput : NULL;
 
    // Deal with the complex case first: wildcards.  Do frugal
    // matching.  When encountering a '*', first skip no characters
@@ -163,21 +163,21 @@ Bool VG_(generic_match) (
 /* And a parameterization of the above, to make it do
    string matching.
 */
-static Bool charIsStar  ( void* pV ) { return *(Char*)pV == '*'; }
-static Bool charIsQuery ( void* pV ) { return *(Char*)pV == '?'; }
+static Bool charIsStar  ( void* pV ) { return *(HChar*)pV == '*'; }
+static Bool charIsQuery ( void* pV ) { return *(HChar*)pV == '?'; }
 static Bool char_p_EQ_i ( void* pV, void* cV,
                           void* null_completer, UWord ixcV ) {
-   Char p = *(Char*)pV;
-   Char c = *(Char*)cV;
+   HChar p = *(HChar*)pV;
+   HChar c = *(HChar*)cV;
    vg_assert(p != '*' && p != '?');
    return p == c;
 }
-Bool VG_(string_match) ( const Char* patt, const Char* input )
+Bool VG_(string_match) ( const HChar* patt, const HChar* input )
 {
    return VG_(generic_match)(
              True/* match-all */,
-             (void*)patt,  sizeof(UChar), VG_(strlen)(patt), 0,
-             (void*)input, sizeof(UChar), VG_(strlen)(input), 0,
+             (void*)patt,  sizeof(HChar), VG_(strlen)(patt), 0,
+             (void*)input, sizeof(HChar), VG_(strlen)(input), 0,
              charIsStar, charIsQuery, char_p_EQ_i,
              NULL
           );

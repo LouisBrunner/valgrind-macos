@@ -36,8 +36,8 @@
 /* Dump Part Counter */
 static Int out_counter = 0;
 
-static Char* out_file = 0;
-static Char* out_directory = 0;
+static HChar* out_file = 0;
+static HChar* out_directory = 0;
 static Bool dumps_initialized = False;
 
 /* Command */
@@ -62,13 +62,13 @@ Int CLG_(get_dump_counter)(void)
   return out_counter;
 }
 
-Char* CLG_(get_out_file)()
+HChar* CLG_(get_out_file)()
 {
     CLG_(init_dumps)();
     return out_file;
 }
 
-Char* CLG_(get_out_directory)()
+HChar* CLG_(get_out_directory)()
 {
     CLG_(init_dumps)();
     return out_directory;
@@ -440,8 +440,8 @@ void init_debug_cache(void)
 static /* __inline__ */
 Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 {
-    Char file[FILENAME_LEN];
-    Char dir[FILENAME_LEN];
+    HChar file[FILENAME_LEN];
+    HChar dir[FILENAME_LEN];
     Bool found_file_line, found_dirname;
 
     int cachepos = addr % DEBUG_CACHE_SIZE;
@@ -1715,12 +1715,12 @@ void CLG_(init_dumps)()
        i++;
    }
    i = lastSlash;
-   out_directory = (Char*) CLG_MALLOC("cl.dump.init_dumps.1", i+1);
+   out_directory = (HChar*) CLG_MALLOC("cl.dump.init_dumps.1", i+1);
    VG_(strncpy)(out_directory, out_file, i);
    out_directory[i] = 0;
 
    /* allocate space big enough for final filenames */
-   filename = (Char*) CLG_MALLOC("cl.dump.init_dumps.2",
+   filename = (HChar*) CLG_MALLOC("cl.dump.init_dumps.2",
                                  VG_(strlen)(out_file)+32);
    CLG_ASSERT(filename != 0);
        

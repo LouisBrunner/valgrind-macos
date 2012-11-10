@@ -510,7 +510,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
 typedef struct OpenFd
 {
    Int fd;                        /* The file descriptor */
-   Char *pathname;                /* NULL if not a regular file or unknown */
+   HChar *pathname;               /* NULL if not a regular file or unknown */
    ExeContext *where;             /* NULL if inherited from parent */
    struct OpenFd *next, *prev;
 } OpenFd;
@@ -774,7 +774,7 @@ void VG_(init_preopened_fds)(void)
          goto out;
 
       if (VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
-         Char* s;
+         HChar* s;
          Int fno = VG_(strtoll10)(d.d_name, &s);
          if (*s == '\0') {
             if (fno != sr_Res(f))
@@ -2522,11 +2522,11 @@ void VG_(reap_threads)(ThreadId self)
 // but it seems to work nonetheless...
 PRE(sys_execve)
 {
-   Char*        path = NULL;       /* path to executable */
-   Char**       envp = NULL;
-   Char**       argv = NULL;
-   Char**       arg2copy;
-   Char*        launcher_basename = NULL;
+   HChar*       path = NULL;       /* path to executable */
+   HChar**      envp = NULL;
+   HChar**      argv = NULL;
+   HChar**      arg2copy;
+   HChar*       launcher_basename = NULL;
    ThreadState* tst;
    Int          i, j, tot_args;
    SysRes       res;
@@ -2603,7 +2603,7 @@ PRE(sys_execve)
    }
 
    /* After this point, we can't recover if the execve fails. */
-   VG_(debugLog)(1, "syswrap", "Exec of %s\n", (Char*)ARG1);
+   VG_(debugLog)(1, "syswrap", "Exec of %s\n", (HChar*)ARG1);
 
    
    // Terminate gdbserver if it is active.
@@ -2639,7 +2639,7 @@ PRE(sys_execve)
       }
 
    } else {
-      path = (Char*)ARG1;
+      path = (HChar*)ARG1;
    }
 
    // Set up the child's environment.
@@ -2656,7 +2656,7 @@ PRE(sys_execve)
    if (ARG3 == 0) {
       envp = NULL;
    } else {
-      envp = VG_(env_clone)( (Char**)ARG3 );
+      envp = VG_(env_clone)( (HChar**)ARG3 );
       if (envp == NULL) goto hosed;
       VG_(env_remove_valgrind_env_stuff)( envp );
    }
@@ -2675,7 +2675,7 @@ PRE(sys_execve)
    // are omitted.
    //
    if (!trace_this_child) {
-      argv = (Char**)ARG2;
+      argv = (HChar**)ARG2;
    } else {
       vg_assert( VG_(args_for_valgrind) );
       vg_assert( VG_(args_for_valgrind_noexecpass) >= 0 );
@@ -2690,7 +2690,7 @@ PRE(sys_execve)
       // name of client exe
       tot_args++;
       // args for client exe, skipping [0]
-      arg2copy = (Char**)ARG2;
+      arg2copy = (HChar**)ARG2;
       if (arg2copy && arg2copy[0]) {
          for (i = 1; arg2copy[i]; i++)
             tot_args++;
@@ -2707,7 +2707,7 @@ PRE(sys_execve)
             continue;
          argv[j++] = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       }
-      argv[j++] = (Char*)ARG1;
+      argv[j++] = (HChar*)ARG1;
       if (arg2copy && arg2copy[0])
          for (i = 1; arg2copy[i]; i++)
             argv[j++] = arg2copy[i];
@@ -2765,7 +2765,7 @@ PRE(sys_execve)
    }
 
    if (0) {
-      Char **cpp;
+      HChar **cpp;
       VG_(printf)("exec: %s\n", path);
       for (cpp = argv; cpp && *cpp; cpp++)
          VG_(printf)("argv: %s\n", *cpp);
@@ -3619,7 +3619,7 @@ PRE(sys_open)
       cloned fd back to the start. */
    {
       HChar  name[30];
-      Char*  arg1s = (Char*) ARG1;
+      HChar* arg1s = (HChar*) ARG1;
       SysRes sres;
 
       VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
@@ -3644,7 +3644,7 @@ PRE(sys_open)
       cloned fd back to the start. */
    {
       HChar  name[30];
-      Char*  arg1s = (Char*) ARG1;
+      HChar* arg1s = (HChar*) ARG1;
       SysRes sres;
 
       VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
@@ -3676,7 +3676,7 @@ POST(sys_open)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG1);
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG1);
    }
 }
 
@@ -3734,7 +3734,7 @@ POST(sys_creat)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG1);
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG1);
    }
 }
 
@@ -3792,7 +3792,7 @@ PRE(sys_readlink)
        * /proc/<pid>/exe.
        */
       HChar name[25];
-      Char* arg1s = (Char*) ARG1;
+      HChar* arg1s = (HChar*) ARG1;
       VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
       if (ML_(safe_to_deref)(arg1s, 1) &&
           (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/exe"))

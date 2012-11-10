@@ -87,7 +87,7 @@
 /* This is the main, standard demangler entry point. */
 
 void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
-                     Char* orig, Char* result, Int result_size )
+                     HChar* orig, HChar* result, Int result_size )
 {
 #  define N_ZBUF 4096
    HChar* demangled = NULL;

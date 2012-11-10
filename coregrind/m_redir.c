@@ -310,7 +310,7 @@ static Bool   is_plausible_guest_addr(Addr);
 static void   show_redir_state ( const HChar* who );
 static void   show_active ( const HChar* left, Active* act );
 
-static void   handle_maybe_load_notifier( const UChar* soname, 
+static void   handle_maybe_load_notifier( const HChar* soname, 
                                                 HChar* symbol, Addr addr );
 
 static void   handle_require_text_symbols ( DebugInfo* );
@@ -334,8 +334,8 @@ void generate_and_add_actives (
    NULL terminated array, for easy iteration.  Caller must pass also
    the address of a 2-entry array which can be used in the common case
    to avoid dynamic allocation. */
-static UChar** alloc_symname_array ( UChar* pri_name, UChar** sec_names,
-                                     UChar** twoslots )
+static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
+                                     HChar** twoslots )
 {
    /* Special-case the common case: only one name.  We expect the
       caller to supply a stack-allocated 2-entry array for this. */
@@ -346,10 +346,10 @@ static UChar** alloc_symname_array ( UChar* pri_name, UChar** sec_names,
    }
    /* Else must use dynamic allocation.  Figure out size .. */
    Word    n_req = 1;
-   UChar** pp    = sec_names;
+   HChar** pp    = sec_names;
    while (*pp) { n_req++; pp++; }
    /* .. allocate and copy in. */
-   UChar** arr = dinfo_zalloc( "redir.asa.1", (n_req+1) * sizeof(UChar*) );
+   HChar** arr = dinfo_zalloc( "redir.asa.1", (n_req+1) * sizeof(HChar*) );
    Word    i   = 0;
    arr[i++] = pri_name;
    pp = sec_names;
@@ -361,7 +361,7 @@ static UChar** alloc_symname_array ( UChar* pri_name, UChar** sec_names,
 
 
 /* Free the array allocated by alloc_symname_array, if any. */
-static void free_symname_array ( UChar** names, UChar** twoslots )
+static void free_symname_array ( HChar** names, HChar** twoslots )
 {
    if (names != twoslots)
       dinfo_free(names);
@@ -395,14 +395,14 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    Spec*        spec;
    TopSpec*     ts;
    TopSpec*     newts;
-   UChar*       sym_name_pri;
-   UChar**      sym_names_sec;
+   HChar*       sym_name_pri;
+   HChar**      sym_names_sec;
    Addr         sym_addr, sym_toc;
    HChar        demangled_sopatt[N_DEMANGLED];
    HChar        demangled_fnpatt[N_DEMANGLED];
    Bool         check_ppcTOCs = False;
    Bool         isText;
-   const UChar* newdi_soname;
+   const HChar* newdi_soname;
 
 #  if defined(VG_PLAT_USES_PPCTOC)
    check_ppcTOCs = True;
@@ -437,8 +437,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          is a kludge. An alternate solution would be to change
          the _vgr prefix according to outer/inner/client.
       */
-      const UChar* newdi_filename = VG_(DebugInfo_get_filename)(newdi);
-      const UChar* newdi_basename = VG_(basename) (newdi_filename);
+      const HChar* newdi_filename = VG_(DebugInfo_get_filename)(newdi);
+      const HChar* newdi_basename = VG_(basename) (newdi_filename);
       if (VG_(strncmp) (newdi_basename, "vgpreload_", 10) == 0) {
          /* This looks like a vgpreload file => check if this file
             is from the inner VALGRIND_LIB.
@@ -503,10 +503,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, NULL );
       /* Set up to conveniently iterate over all names for this symbol. */
-      UChar*  twoslots[2];
-      UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+      HChar*  twoslots[2];
+      HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
                                                &twoslots[0]);
-      UChar** names;
+      HChar** names;
       for (names = names_init; *names; names++) {
          ok = VG_(maybe_Z_demangle)( *names,
                                      demangled_sopatt, N_DEMANGLED,
@@ -595,10 +595,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
-         UChar*  twoslots[2];
-         UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+         HChar*  twoslots[2];
+         HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
                                                   &twoslots[0]);
-         UChar** names;
+         HChar** names;
          for (names = names_init; *names; names++) {
             ok = isText
                  && VG_(maybe_Z_demangle)( 
@@ -733,8 +733,8 @@ void generate_and_add_actives (
    Active  act;
    Int     nsyms, i;
    Addr    sym_addr;
-   UChar*  sym_name_pri;
-   UChar** sym_names_sec;
+   HChar*  sym_name_pri;
+   HChar** sym_names_sec;
 
    /* First figure out which of the specs match the seginfo's soname.
       Also clear the 'done' bits, so that after the main loop below
@@ -758,10 +758,10 @@ void generate_and_add_actives (
       VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, &isIFunc );
-      UChar*  twoslots[2];
-      UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+      HChar*  twoslots[2];
+      HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
                                                &twoslots[0]);
-      UChar** names;
+      HChar** names;
       for (names = names_init; *names; names++) {
 
          /* ignore data symbols */
@@ -1417,7 +1417,7 @@ static Bool is_plausible_guest_addr(Addr a)
 /*------------------------------------------------------------*/
 
 static 
-void handle_maybe_load_notifier( const UChar* soname, 
+void handle_maybe_load_notifier( const HChar* soname, 
                                        HChar* symbol, Addr addr )
 {
 #  if defined(VGP_x86_linux)
@@ -1478,10 +1478,10 @@ static void handle_require_text_symbols ( DebugInfo* di )
    vg_assert(VG_(clo_n_req_tsyms) >= 0);
    vg_assert(VG_(clo_n_req_tsyms) <= VG_CLO_MAX_REQ_TSYMS);
    for (i = 0; i < VG_(clo_n_req_tsyms); i++) {
-      HChar* spec = VG_(clo_req_tsyms)[i];
-      vg_assert(spec && VG_(strlen)(spec) >= 4);
+      const HChar* clo_spec = VG_(clo_req_tsyms)[i];
+      vg_assert(clo_spec && VG_(strlen)(clo_spec) >= 4);
       // clone the spec, so we can stick a zero at the end of the sopatt
-      spec = VG_(strdup)("m_redir.hrts.1", spec);
+      HChar *spec = VG_(strdup)("m_redir.hrts.1", clo_spec);
       HChar sep = spec[0];
       HChar* sopatt = &spec[1];
       HChar* fnpatt = VG_(strchr)(sopatt, sep);
@@ -1518,15 +1518,15 @@ static void handle_require_text_symbols ( DebugInfo* di )
       Int    nsyms  = VG_(DebugInfo_syms_howmany)(di);
       for (j = 0; j < nsyms; j++) {
          Bool    isText        = False;
-         UChar*  sym_name_pri  = NULL;
-         UChar** sym_names_sec = NULL;
+         HChar*  sym_name_pri  = NULL;
+         HChar** sym_names_sec = NULL;
          VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
-         UChar*  twoslots[2];
-         UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+         HChar*  twoslots[2];
+         HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
                                                   &twoslots[0]);
-         UChar** names;
+         HChar** names;
          for (names = names_init; *names; names++) {
             /* ignore data symbols */
             if (0) VG_(printf)("QQQ %s\n", *names);

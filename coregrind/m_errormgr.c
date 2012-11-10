@@ -213,7 +213,7 @@ typedef
       SuppLocTy ty;
       Bool      name_is_simple_str; /* True if name is a string without
                                        '?' and '*' wildcard characters. */
-      Char*     name; /* NULL for NoName and DotDotDot */
+      HChar*    name; /* NULL for NoName and DotDotDot */
    }
    SuppLoc;
 
@@ -224,7 +224,7 @@ typedef
 struct _Supp {
    struct _Supp* next;
    Int count;     // The number of times this error has been suppressed.
-   Char* sname;   // The name by which the suppression is referred to.
+   HChar* sname;  // The name by which the suppression is referred to.
 
    // Length of 'callers'
    Int n_callers;
@@ -234,7 +234,7 @@ struct _Supp {
 
    /* The tool-specific part */
    SuppKind skind;   // What kind of suppression.  Must use the range (0..).
-   Char* string;     // String -- use is optional.  NULL by default.
+   HChar* string;    // String -- use is optional.  NULL by default.
    void* extra;      // Anything else -- use is optional.  NULL by default.
 };
 
@@ -243,7 +243,7 @@ SuppKind VG_(get_supp_kind) ( Supp* su )
    return su->skind;
 }
 
-Char* VG_(get_supp_string) ( Supp* su )
+HChar* VG_(get_supp_string) ( Supp* su )
 {
    return su->string;
 }
@@ -259,7 +259,7 @@ void VG_(set_supp_kind)   ( Supp* su, SuppKind skind )
    su->skind = skind;
 }
 
-void VG_(set_supp_string) ( Supp* su, Char* string )
+void VG_(set_supp_string) ( Supp* su, HChar* string )
 {
    su->string = string;
 }
@@ -317,7 +317,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 
 static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 {
-   static UChar buf[ERRTXT_LEN];
+   static HChar buf[ERRTXT_LEN];
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
       VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
    } else
@@ -330,7 +330,7 @@ static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 
 static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
 {
-   static UChar buf[ERRTXT_LEN];
+   static HChar buf[ERRTXT_LEN];
    XArray* /* of HChar */ text = (XArray*)textV;
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
       VG_(xaprintf)(text, "   fun:%s\n", buf);
@@ -447,7 +447,7 @@ static void gen_suppression(Error* err)
 */
 Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
 {
-   Char ch, ch2;
+   HChar ch, ch2;
    Int res;
 
    /* First off, we shouldn't be asking the user anything if
@@ -1034,10 +1034,10 @@ void VG_(show_error_counts_as_XML) ( void )
 /* Get the next char from fd into *out_buf.  Returns 1 if success,
    0 if eof or < 0 if error. */
 
-static Int get_char ( Int fd, Char* out_buf )
+static Int get_char ( Int fd, HChar* out_buf )
 {
    Int r;
-   static Char buf[256];
+   static HChar buf[256];
    static Int buf_size = 0;
    static Int buf_used = 0;
    vg_assert(buf_size >= 0 && buf_size <= 256);
@@ -1058,11 +1058,11 @@ static Int get_char ( Int fd, Char* out_buf )
    return 1;
 }
 
-Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
+Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
 {
-   Char* buf  = *bufpp;
+   HChar* buf  = *bufpp;
    SizeT nBuf = *nBufp;
-   Char  ch;
+   HChar  ch;
    Int   n, i;
    while (True) {
       /* First, read until a non-blank char appears. */
@@ -1106,7 +1106,7 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 
 
 /* True if s contains no wildcard (?, *) characters. */
-static Bool is_simple_str (Char *s)
+static Bool is_simple_str (const HChar *s)
 {
    while (*s) {
       if (*s == '?' || *s == '*')
@@ -1125,7 +1125,7 @@ static Bool is_simple_str (Char *s)
    after the descriptor (fun: or obj:) part.
    Returns False if failed.
 */
-static Bool setLocationTy ( SuppLoc* p, Char *buf )
+static Bool setLocationTy ( SuppLoc* p, HChar *buf )
 {
    if (VG_(strncmp)(buf, "fun:", 4) == 0) {
       p->name = VG_(arena_strdup)(VG_AR_CORE,
@@ -1154,10 +1154,10 @@ static Bool setLocationTy ( SuppLoc* p, Char *buf )
 
 
 /* Look for "tool" in a string like "tool1,tool2,tool3" */
-static Bool tool_name_present(const HChar *name, Char *names)
+static Bool tool_name_present(const HChar *name, HChar *names)
 {
    Bool  found;
-   Char *s = NULL;   /* Shut gcc up */
+   HChar *s = NULL;   /* Shut gcc up */
    Int   len = VG_(strlen)(name);
 
    found = (NULL != (s = VG_(strstr)(names, name)) &&
@@ -1172,15 +1172,15 @@ static Bool tool_name_present(const HChar *name, Char *names)
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
 */
-static void load_one_suppressions_file ( Char* filename )
+static void load_one_suppressions_file ( const HChar* filename )
 {
    SysRes sres;
    Int    fd, i, j, lineno = 0;
    Bool   eof;
    SizeT  nBuf = 200;
-   Char*  buf = VG_(malloc)("errormgr.losf.1", nBuf);
-   Char*  tool_names;
-   Char*  supp_name;
+   HChar* buf = VG_(malloc)("errormgr.losf.1", nBuf);
+   HChar* tool_names;
+   HChar* supp_name;
    const HChar* err_str = NULL;
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
@@ -1424,9 +1424,9 @@ typedef
 
       // All function names and object names will be concatenated
       // in names. names is reallocated on demand.
-      Char *names;
+      HChar *names;
       Int   names_szB;  // size of names.
-      Int   names_free; // offset first free Char in names.
+      Int   names_free; // offset first free HChar in names.
    }
    IPtoFunOrObjCompleter;
 
@@ -1445,8 +1445,8 @@ static void clearIPtoFunOrObjCompleter
    The function name or object name will be computed and added in
    names if not yet done.
    IP must be equal to focompl->ipc[ixIP]. */
-static Char* foComplete(IPtoFunOrObjCompleter* ip2fo,
-                        Addr IP, Int ixIP, Bool needFun)
+static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
+                         Addr IP, Int ixIP, Bool needFun)
 {
    vg_assert (ixIP < ip2fo->n_ips);
    vg_assert (IP == ip2fo->ips[ixIP]);
@@ -1480,7 +1480,7 @@ static Char* foComplete(IPtoFunOrObjCompleter* ip2fo,
                            ip2fo->names_szB + ERRTXT_LEN);
          ip2fo->names_szB += ERRTXT_LEN;
       }
-      Char* caller_name = ip2fo->names + ip2fo->names_free;
+      HChar* caller_name = ip2fo->names + ip2fo->names_free;
       (*offsets)[ixIP] = ip2fo->names_free;
       if (needFun) {
          /* Get the function name into 'caller_name', or "???"
@@ -1511,7 +1511,7 @@ static Bool supp_pattEQinp ( void* supplocV, void* addrV,
    Addr     ip      = *(Addr*)addrV; /* INPUT */
    IPtoFunOrObjCompleter* ip2fo 
       = (IPtoFunOrObjCompleter*)inputCompleter;
-   Char* funobj_name; // Fun or Obj name.
+   HChar* funobj_name; // Fun or Obj name.
 
    /* So, does this IP address match this suppression-line? */
    switch (supploc->ty) {

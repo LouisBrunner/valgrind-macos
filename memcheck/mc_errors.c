@@ -108,7 +108,7 @@ struct _AddrInfo {
       // In a global .data symbol.  This holds the first 127 chars of
       // the variable's name (zero terminated), plus a (memory) offset.
       struct {
-         Char     name[128];
+         HChar    name[128];
          PtrdiffT offset;
       } DataSym;
 
@@ -121,7 +121,7 @@ struct _AddrInfo {
       // Could only narrow it down to be the PLT/GOT/etc of a given
       // object.  Better than nothing, perhaps.
       struct {
-         Char       objname[128];
+         HChar      objname[128];
          VgSectKind kind;
       } SectKind;
 
@@ -1411,7 +1411,7 @@ typedef
    } 
    MC_SuppKind;
 
-Bool MC_(is_recognised_suppression) ( Char* name, Supp* su )
+Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
 {
    SuppKind skind;
 
@@ -1442,7 +1442,7 @@ Bool MC_(is_recognised_suppression) ( Char* name, Supp* su )
    return True;
 }
 
-Bool MC_(read_extra_suppression_info) ( Int fd, Char** bufpp,
+Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
                                         SizeT* nBufp, Supp *su )
 {
    Bool eof;

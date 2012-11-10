@@ -69,11 +69,11 @@
 
 
 // Environment manipulations
-extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
-                                  const Char *val );
-extern void   VG_(env_unsetenv) ( Char **env, const Char *varname );
-extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env ); 
-extern Char **VG_(env_clone)    ( Char **env_clone );
+extern HChar **VG_(env_setenv)   ( HChar ***envp, const HChar* varname,
+                                   const HChar *val );
+extern void    VG_(env_unsetenv) ( HChar **env, const HChar *varname );
+extern void    VG_(env_remove_valgrind_env_stuff) ( HChar** env ); 
+extern HChar **VG_(env_clone)    ( HChar **env_clone );
 
 // misc
 extern Int  VG_(getgroups)( Int size, UInt* list );

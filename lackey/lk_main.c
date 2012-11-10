@@ -192,9 +192,9 @@ static Bool clo_trace_sbs       = False;
 /* The name of the function of which the number of calls (under
  * --basic-counts=yes) is to be counted, with default. Override with command
  * line option --fnname. */
-static HChar* clo_fnname = "main";
+static const HChar* clo_fnname = "main";
 
-static Bool lk_process_cmd_line_option(Char* arg)
+static Bool lk_process_cmd_line_option(const HChar* arg)
 {
    if VG_STR_CLO(arg, "--fnname", clo_fnname) {}
    else if VG_BOOL_CLO(arg, "--basic-counts",      clo_basic_counts) {}
@@ -321,7 +321,7 @@ static Int type2index ( IRType ty )
    }
 }
 
-static HChar* nameOfTypeIndex ( Int i )
+static const HChar* nameOfTypeIndex ( Int i )
 {
    switch (i) {
       case 0: return "I1";   break;
@@ -467,7 +467,7 @@ static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
 static void flushEvents(IRSB* sb)
 {
    Int        i;
-   HChar*     helperName;
+   const HChar* helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRDirty*   di;
@@ -611,7 +611,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
    IRDirty*   di;
    Int        i;
    IRSB*      sbOut;
-   Char       fnname[100];
+   HChar      fnname[100];
    IRType     type;
    IRTypeEnv* tyenv = sbIn->tyenv;
    Addr       iaddr = 0, dst;
@@ -911,7 +911,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
 static void lk_fini(Int exitcode)
 {
-   char percentify_buf[5]; /* Two digits, '%' and 0. */
+   HChar percentify_buf[5]; /* Two digits, '%' and 0. */
    const int percentify_size = sizeof(percentify_buf) - 1;
    const int percentify_decs = 0;
    

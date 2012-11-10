@@ -142,7 +142,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__DRD_SET_THREAD_NAME:
-      DRD_(thread_set_name)(drd_tid, (const char*)arg[1]);
+      DRD_(thread_set_name)(drd_tid, (const HChar*)arg[1]);
       break;
 
    case VG_USERREQ__DRD_START_SUPPRESSION:
@@ -440,7 +440,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__POST_SEM_OPEN:
       if (DRD_(thread_leave_synchr)(drd_tid) == 0)
-         DRD_(semaphore_open)(arg[1], (Char*)arg[2], arg[3], arg[4], arg[5]);
+         DRD_(semaphore_open)(arg[1], (HChar*)arg[2], arg[3], arg[4], arg[5]);
       break;
 
    case VG_USERREQ__PRE_SEM_CLOSE:
@@ -548,7 +548,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
           * freed, e.g. because it points to static data.
           */
          UnimpClReqInfo UICR =
-            { DRD_(thread_get_running_tid)(), (Char*)arg[1] };
+            { DRD_(thread_get_running_tid)(), (HChar*)arg[1] };
          VG_(maybe_record_error)(vg_tid,
                                  UnimpHgClReq,
                                  VG_(get_IP)(vg_tid),
@@ -563,7 +563,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
           * freed, e.g. because it points to static data.
           */
          UnimpClReqInfo UICR =
-            { DRD_(thread_get_running_tid)(), (Char*)arg[1] };
+            { DRD_(thread_get_running_tid)(), (HChar*)arg[1] };
          VG_(maybe_record_error)(vg_tid,
                                  UnimpDrdClReq,
                                  VG_(get_IP)(vg_tid),

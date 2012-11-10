@@ -55,8 +55,8 @@ struct barrier_thread_info
 static void barrier_cleanup(struct barrier_info* p);
 static void barrier_delete_thread(struct barrier_info* const p,
                                   const DrdThreadId tid);
-static const char* barrier_get_typename(struct barrier_info* const p);
-static const char* barrier_type_name(const BarrierT bt);
+static const HChar* barrier_get_typename(struct barrier_info* const p);
+static const HChar* barrier_type_name(const BarrierT bt);
 static
 void barrier_report_wait_delete_race(const struct barrier_info* const p,
                                      const struct barrier_thread_info* const q);
@@ -540,14 +540,14 @@ void barrier_report_wait_delete_race(const struct barrier_info* const p,
    }
 }
 
-static const char* barrier_get_typename(struct barrier_info* const p)
+static const HChar* barrier_get_typename(struct barrier_info* const p)
 {
    tl_assert(p);
 
    return barrier_type_name(p->barrier_type);
 }
 
-static const char* barrier_type_name(const BarrierT bt)
+static const HChar* barrier_type_name(const BarrierT bt)
 {
    switch (bt)
    {

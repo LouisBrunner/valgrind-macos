@@ -32,16 +32,16 @@
 #include "pub_core_libcbase.h"
 
 /* ---------------------------------------------------------------------
-   Char functions.
+   HChar functions.
    ------------------------------------------------------------------ */
 
-Bool VG_(isspace) ( Char c )
+Bool VG_(isspace) ( HChar c )
 {
    return (c == ' '  || c == '\n' || c == '\t' || 
            c == '\f' || c == '\v' || c == '\r');
 }
 
-Bool VG_(isdigit) ( Char c )
+Bool VG_(isdigit) ( HChar c )
 {
    return (c >= '0' && c <= '9');
 }
@@ -50,13 +50,13 @@ Bool VG_(isdigit) ( Char c )
    Converting strings to numbers
    ------------------------------------------------------------------ */
 
-static Bool is_dec_digit(Char c, Long* digit)
+static Bool is_dec_digit(HChar c, Long* digit)
 {
    if (c >= '0' && c <= '9') { *digit = (Long)(c - '0'); return True; }
    return False;
 }
 
-static Bool is_hex_digit(Char c, Long* digit)
+static Bool is_hex_digit(HChar c, Long* digit)
 {
    if (c >= '0' && c <= '9') { *digit = (Long)(c - '0');        return True; }
    if (c >= 'A' && c <= 'F') { *digit = (Long)((c - 'A') + 10); return True; }
@@ -64,11 +64,11 @@ static Bool is_hex_digit(Char c, Long* digit)
    return False;
 }
 
-Long VG_(strtoll10) ( Char* str, Char** endptr )
+Long VG_(strtoll10) ( const HChar* str, HChar** endptr )
 {
    Bool neg = False, converted = False;
    Long n = 0, digit = 0;
-   Char* str0 = str;
+   const HChar* str0 = str;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -85,16 +85,16 @@ Long VG_(strtoll10) ( Char* str, Char** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    if (neg) n = -n;              //   the start of the string.
-   if (endptr) *endptr = str;    // Record first failing character.
+   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
    return n;
 }
 
-ULong VG_(strtoull10) ( Char* str, Char** endptr )
+ULong VG_(strtoull10) ( const HChar* str, HChar** endptr )
 {
    Bool converted = False;
    ULong n = 0;
    Long digit = 0;
-   Char* str0 = str;
+   const HChar* str0 = str;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -110,15 +110,15 @@ ULong VG_(strtoull10) ( Char* str, Char** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    //   the start of the string.
-   if (endptr) *endptr = str;    // Record first failing character.
+   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
    return n;
 }
 
-Long VG_(strtoll16) ( Char* str, Char** endptr )
+Long VG_(strtoll16) ( const HChar* str, HChar** endptr )
 {
    Bool neg = False, converted = False;
    Long n = 0, digit = 0;
-   Char* str0 = str;
+   const HChar* str0 = str;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -143,16 +143,16 @@ Long VG_(strtoll16) ( Char* str, Char** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    if (neg) n = -n;              //   the start of the string.
-   if (endptr) *endptr = str;    // Record first failing character.
+   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
    return n;
 }
 
-ULong VG_(strtoull16) ( Char* str, Char** endptr )
+ULong VG_(strtoull16) ( const HChar* str, HChar** endptr )
 {
    Bool converted = False;
    ULong n = 0;
    Long digit = 0;
-   Char* str0 = str;
+   const HChar* str0 = str;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -176,11 +176,11 @@ ULong VG_(strtoull16) ( Char* str, Char** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    //   the start of the string.
-   if (endptr) *endptr = str;    // Record first failing character.
+   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
    return n;
 }
 
-double VG_(strtod) ( Char* str, Char** endptr )
+double VG_(strtod) ( const HChar* str, HChar** endptr )
 {
    Bool neg = False;
    Long digit;
@@ -209,11 +209,11 @@ double VG_(strtod) ( Char* str, Char** endptr )
 
    n += frac;
    if (neg) n = -n;
-   if (endptr) *endptr = str;    // Record first failing character.
+   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
    return n;
 }
 
-Char VG_(tolower) ( Char c )
+HChar VG_(tolower) ( HChar c )
 {
    if ( c >= 'A'  &&  c <= 'Z' ) {
       return c - 'A' + 'a';
@@ -226,47 +226,47 @@ Char VG_(tolower) ( Char c )
    String functions
    ------------------------------------------------------------------ */
 
-SizeT VG_(strlen) ( const Char* str )
+SizeT VG_(strlen) ( const HChar* str )
 {
    SizeT i = 0;
    while (str[i] != 0) i++;
    return i;
 }
 
-Char* VG_(strcat) ( Char* dest, const Char* src )
+HChar* VG_(strcat) ( HChar* dest, const HChar* src )
 {
-   Char* dest_orig = dest;
+   HChar* dest_orig = dest;
    while (*dest) dest++;
    while (*src) *dest++ = *src++;
    *dest = 0;
    return dest_orig;
 }
 
-Char* VG_(strncat) ( Char* dest, const Char* src, SizeT n )
+HChar* VG_(strncat) ( HChar* dest, const HChar* src, SizeT n )
 {
-   Char* dest_orig = dest;
+   HChar* dest_orig = dest;
    while (*dest) dest++;
    while (*src && n > 0) { *dest++ = *src++; n--; }
    *dest = 0;
    return dest_orig;
 }
 
-Char* VG_(strpbrk) ( const Char* s, const Char* accpt )
+HChar* VG_(strpbrk) ( const HChar* s, const HChar* accpt )
 {
-   const Char* a;
+   const HChar* a;
    while (*s) {
       a = accpt;
       while (*a)
          if (*a++ == *s)
-            return (Char *) s;
+           return (HChar *)s;
       s++;
    }
    return NULL;
 }
 
-Char* VG_(strcpy) ( Char* dest, const Char* src )
+HChar* VG_(strcpy) ( HChar* dest, const HChar* src )
 {
-   Char* dest_orig = dest;
+   HChar* dest_orig = dest;
    while (*src) *dest++ = *src++;
    *dest = 0;
    return dest_orig;
@@ -274,7 +274,7 @@ Char* VG_(strcpy) ( Char* dest, const Char* src )
 
 /* Copy bytes, not overrunning the end of dest and always ensuring
    zero termination. */
-void VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest )
+void VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest )
 {
    SizeT i = 0;
    while (True) {
@@ -286,7 +286,7 @@ void VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest )
    }
 }
 
-Char* VG_(strncpy) ( Char* dest, const Char* src, SizeT ndest )
+HChar* VG_(strncpy) ( HChar* dest, const HChar* src, SizeT ndest )
 {
    SizeT i = 0;
    while (True) {
@@ -300,7 +300,7 @@ Char* VG_(strncpy) ( Char* dest, const Char* src, SizeT ndest )
    }
 }
 
-Int VG_(strcmp) ( const Char* s1, const Char* s2 )
+Int VG_(strcmp) ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
       if (*(UChar*)s1 < *(UChar*)s2) return -1;
@@ -313,7 +313,7 @@ Int VG_(strcmp) ( const Char* s1, const Char* s2 )
    }
 }
 
-Int VG_(strcasecmp) ( const Char* s1, const Char* s2 )
+Int VG_(strcasecmp) ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
       UChar c1 = (UChar)VG_(tolower)(*s1);
@@ -328,7 +328,7 @@ Int VG_(strcasecmp) ( const Char* s1, const Char* s2 )
    }
 }
 
-Int VG_(strncmp) ( const Char* s1, const Char* s2, SizeT nmax )
+Int VG_(strncmp) ( const HChar* s1, const HChar* s2, SizeT nmax )
 {
    SizeT n = 0;
    while (True) {
@@ -343,7 +343,7 @@ Int VG_(strncmp) ( const Char* s1, const Char* s2, SizeT nmax )
    }
 }
 
-Int VG_(strncasecmp) ( const Char* s1, const Char* s2, SizeT nmax )
+Int VG_(strncasecmp) ( const HChar* s1, const HChar* s2, SizeT nmax )
 {
    Int n = 0;
    while (True) {
@@ -362,7 +362,7 @@ Int VG_(strncasecmp) ( const Char* s1, const Char* s2, SizeT nmax )
    }
 }
 
-Char* VG_(strstr) ( const Char* haystack, const Char* needle )
+HChar* VG_(strstr) ( const HChar* haystack, const HChar* needle )
 {
    SizeT n; 
    if (haystack == NULL)
@@ -372,12 +372,12 @@ Char* VG_(strstr) ( const Char* haystack, const Char* needle )
       if (haystack[0] == 0) 
          return NULL;
       if (VG_(strncmp)(haystack, needle, n) == 0) 
-         return (Char*)haystack;
+         return (HChar*)haystack;
       haystack++;
    }
 }
 
-Char* VG_(strcasestr) ( const Char* haystack, const Char* needle )
+HChar* VG_(strcasestr) ( const HChar* haystack, const HChar* needle )
 {
    Int n; 
    if (haystack == NULL)
@@ -387,41 +387,41 @@ Char* VG_(strcasestr) ( const Char* haystack, const Char* needle )
       if (haystack[0] == 0) 
          return NULL;
       if (VG_(strncasecmp)(haystack, needle, n) == 0) 
-         return (Char*)haystack;
+         return (HChar*)haystack;
       haystack++;
    }
 }
 
-Char* VG_(strchr) ( const Char* s, Char c )
+HChar* VG_(strchr) ( const HChar* s, HChar c )
 {
    while (True) {
-      if (*s == c) return (Char*)s;
+     if (*s == c) return (HChar *)s;
       if (*s == 0) return NULL;
       s++;
    }
 }
 
-Char* VG_(strrchr) ( const Char* s, Char c )
+HChar* VG_(strrchr) ( const HChar* s, HChar c )
 {
    Int n = VG_(strlen)(s);
    while (--n > 0) {
-      if (s[n] == c) return (Char*)s + n;
+     if (s[n] == c) return (HChar *)s + n;
    }
    return NULL;
 }
 
 /* (code copied from glib then updated to valgrind types) */
-static Char *olds;
-Char *
-VG_(strtok) (Char *s, const Char *delim)
+static HChar *olds;
+HChar *
+VG_(strtok) (HChar *s, const HChar *delim)
 {
    return VG_(strtok_r) (s, delim, &olds);
 }
 
-Char *
-VG_(strtok_r) (Char* s, const Char* delim, Char** saveptr)
+HChar *
+VG_(strtok_r) (HChar* s, const HChar* delim, HChar** saveptr)
 {
-   Char *token;
+   HChar *token;
 
    if (s == NULL)
       s = *saveptr;
@@ -449,14 +449,14 @@ VG_(strtok_r) (Char* s, const Char* delim, Char** saveptr)
    return token;
 }
 
-static Bool isHex ( UChar c )
+static Bool isHex ( HChar c )
 {
   return ((c >= '0' && c <= '9') ||
 	  (c >= 'a' && c <= 'f') ||
 	  (c >= 'A' && c <= 'F'));
 }
 
-static UInt fromHex ( UChar c )
+static UInt fromHex ( HChar c )
 {
    if (c >= '0' && c <= '9')
       return (UInt)c - (UInt)'0';
@@ -469,7 +469,7 @@ static UInt fromHex ( UChar c )
    return 0;
 }
 
-Bool VG_(parse_Addr) ( UChar** ppc, Addr* result )
+Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result )
 {
    Int used, limit = 2 * sizeof(Addr);
    if (**ppc != '0')
@@ -492,9 +492,9 @@ Bool VG_(parse_Addr) ( UChar** ppc, Addr* result )
    return True;
 }
 
-SizeT VG_(strspn) ( const Char* s, const Char* accpt )
+SizeT VG_(strspn) ( const HChar* s, const HChar* accpt )
 {
-   const Char *p, *a;
+   const HChar *p, *a;
    SizeT count = 0;
    for (p = s; *p != '\0'; ++p) {
       for (a = accpt; *a != '\0'; ++a)
@@ -508,7 +508,7 @@ SizeT VG_(strspn) ( const Char* s, const Char* accpt )
    return count;
 }
 
-SizeT VG_(strcspn) ( const Char* s, const Char* reject )
+SizeT VG_(strcspn) ( const HChar* s, const HChar* reject )
 {
    SizeT count = 0;
    while (*s != '\0') {
@@ -583,7 +583,7 @@ void* VG_(memmove)(void *dest, const void *src, SizeT sz)
 void* VG_(memset) ( void *destV, Int c, SizeT sz )
 {
    Int   c4;
-   Char* d = (Char*)destV;
+   HChar* d = (HChar*)destV;
    while ((!VG_IS_4_ALIGNED(d)) && sz >= 1) {
       d[0] = c;
       d++;

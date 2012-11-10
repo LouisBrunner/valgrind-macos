@@ -216,8 +216,8 @@ void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di,
                                    /*OUT*/Addr*    avma,
                                    /*OUT*/Addr*    tocptr,
                                    /*OUT*/UInt*    size,
-                                   /*OUT*/UChar**  pri_name,
-                                   /*OUT*/UChar*** sec_names,
+                                   /*OUT*/HChar**  pri_name,
+                                   /*OUT*/HChar*** sec_names,
                                    /*OUT*/Bool*    isText,
                                    /*OUT*/Bool*    isIFunc );
 

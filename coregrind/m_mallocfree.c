@@ -2212,12 +2212,12 @@ void* VG_(arena_realloc) ( ArenaId aid, const HChar* cc,
 
 
 /* Inline just for the wrapper VG_(strdup) below */
-__inline__ Char* VG_(arena_strdup) ( ArenaId aid, const HChar* cc, 
-                                     const Char* s )
+__inline__ HChar* VG_(arena_strdup) ( ArenaId aid, const HChar* cc, 
+                                      const HChar* s )
 {
    Int   i;
    Int   len;
-   Char* res;
+   HChar* res;
 
    if (s == NULL)
       return NULL;
@@ -2257,7 +2257,7 @@ void* VG_(realloc) ( const HChar* cc, void* ptr, SizeT size )
    return VG_(arena_realloc) ( VG_AR_TOOL, cc, ptr, size );
 }
 
-Char* VG_(strdup) ( const HChar* cc, const Char* s )
+HChar* VG_(strdup) ( const HChar* cc, const HChar* s )
 {
    return VG_(arena_strdup) ( VG_AR_TOOL, cc, s ); 
 }

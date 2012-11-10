@@ -243,7 +243,7 @@ void DRD_(clientobj_delete_thread)(const DrdThreadId tid)
    }
 }
 
-const char* DRD_(clientobj_type_name)(const ObjType t)
+const HChar* DRD_(clientobj_type_name)(const ObjType t)
 {
    switch (t)
    {

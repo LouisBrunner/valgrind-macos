@@ -40,8 +40,8 @@
 extern void* VG_(malloc)         ( const HChar* cc, SizeT nbytes );
 extern void  VG_(free)           ( void* p );
 extern void* VG_(calloc)         ( const HChar* cc, SizeT n, SizeT bytes_per_elem );
-extern void* VG_(realloc)        ( const HChar* cc, void* p, SizeT size );
-extern Char* VG_(strdup)         ( const HChar* cc, const Char* s );
+extern void*  VG_(realloc)       ( const HChar* cc, void* p, SizeT size );
+extern HChar* VG_(strdup)        ( const HChar* cc, const HChar* s );
 
 // Returns the usable size of a heap-block.  It's the asked-for size plus
 // possibly some more due to rounding up.

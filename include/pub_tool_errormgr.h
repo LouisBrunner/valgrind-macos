@@ -94,7 +94,7 @@ extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
    the process).  (It will bomb out if the size gets ridiculous).  Skips
    leading spaces on the line.  Increments lineno with the number of lines
    read if lineno is non-NULL. Returns True if EOF was hit.  */
-extern Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno );
+extern Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno );
 
 
 /* ------------------------------------------------------------------ */
@@ -119,13 +119,13 @@ typedef
 
 /* Useful in VG_(tdict).tool_error_matches_suppression() */
 SuppKind VG_(get_supp_kind)   ( Supp* su );
-Char*    VG_(get_supp_string) ( Supp* su );
+HChar*   VG_(get_supp_string) ( Supp* su );
 void*    VG_(get_supp_extra)  ( Supp* su );
 
 /* Must be used in VG_(recognised_suppression)() */
 void VG_(set_supp_kind)   ( Supp* su, SuppKind suppkind );
 /* May be used in VG_(read_extra_suppression_info)() */
-void VG_(set_supp_string) ( Supp* su, Char* string );
+void VG_(set_supp_string) ( Supp* su, HChar* string );
 void VG_(set_supp_extra)  ( Supp* su, void* extra );
 
 

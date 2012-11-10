@@ -1116,8 +1116,8 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
-      char d_bytes[20];
-      char d_blocks[20];
+      HChar d_bytes[20];
+      HChar d_blocks[20];
 
       VG_(umsg)("LEAK SUMMARY:\n");
       VG_(umsg)("   definitely lost: %'lu%s bytes in %'lu%s blocks\n",

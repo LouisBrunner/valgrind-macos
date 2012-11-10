@@ -69,7 +69,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo );
 
 struct _IICreateImageInfo {
    /* ------ Mandatory fields ------ */
-   HChar*  toolname;
+   const HChar*  toolname;
    Addr    sp_at_startup;
    Addr    clstack_top;
    /* ------ Per-OS fields ------ */

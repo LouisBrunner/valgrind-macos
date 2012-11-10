@@ -756,7 +756,7 @@ Bool VG_(machine_get_hwcaps)( void )
    { Bool have_sse3, have_cx8, have_cx16;
      Bool have_lzcnt, have_avx /*, have_fma*/;
      UInt eax, ebx, ecx, edx, max_extended;
-     UChar vstr[13];
+     HChar vstr[13];
      vstr[0] = 0;
 
      if (!VG_(has_cpuid)())

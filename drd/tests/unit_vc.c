@@ -42,7 +42,7 @@ UInt VG_(printf)(const HChar *format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vprintf(format, vargs); va_end(vargs); return ret; }
 UInt VG_(snprintf)(HChar* buf, Int size, const HChar *format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vsnprintf(buf, size, format, vargs); va_end(vargs); return ret; }
-SizeT VG_(strlen)(const Char* str) { return strlen(str); }
+SizeT VG_(strlen)(const HChar* str) { return strlen(str); }
 UInt VG_(message)(VgMsgKind kind, const HChar* format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vprintf(format, vargs); va_end(vargs); printf("\n"); return ret; }
 Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)

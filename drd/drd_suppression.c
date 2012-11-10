@@ -60,7 +60,7 @@ void DRD_(suppression_init)(void)
 }
 
 void DRD_(start_suppression)(const Addr a1, const Addr a2,
-                             const char* const reason)
+                             const HChar* const reason)
 {
    if (s_trace_suppression)
       VG_(message)(Vg_DebugMsg, "start suppression of 0x%lx sz %ld (%s)\n",

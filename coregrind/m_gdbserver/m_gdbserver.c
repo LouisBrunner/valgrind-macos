@@ -1272,9 +1272,9 @@ UInt VG_(gdb_printf) ( const HChar *format, ... )
 Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
 {
    const Int il = (input_word == NULL ? 0 : VG_(strlen) (input_word));
-   Char  iw[il+1];
-   Char  kwds[VG_(strlen)(keywords)+1];
-   Char  *kwdssaveptr;
+   HChar  iw[il+1];
+   HChar  kwds[VG_(strlen)(keywords)+1];
+   HChar  *kwdssaveptr;
 
    Char* kw; /* current keyword, its length, its position */
    Int   kwl;
@@ -1377,12 +1377,12 @@ static Bool is_zero_b (Char *s)
 
 void VG_(strtok_get_address_and_size) (Addr* address, 
                                        SizeT* szB, 
-                                       Char **ssaveptr)
+                                       HChar **ssaveptr)
 {
-   Char* wa;
-   Char* ws;
-   Char* endptr;
-   UChar *ppc;
+   HChar* wa;
+   HChar* ws;
+   HChar* endptr;
+   const HChar *ppc;
 
    wa = VG_(strtok_r) (NULL, " ", ssaveptr);
    ppc = wa;

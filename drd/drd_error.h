@@ -90,8 +90,8 @@ struct {                      // Used by:
    ExeContext* lastchange;    //   Mallocd
    DrdThreadId stack_tid;     //   Stack
    DebugInfo*  debuginfo;     //   Segment
-   Char        name[256];     //   Segment
-   Char        descr[256];    //   Segment
+   HChar       name[256];     //   Segment
+   HChar       descr[256];    //   Segment
 } AddrInfo;
 
 /*
@@ -174,13 +174,13 @@ typedef struct {
 
 typedef struct {
    DrdThreadId tid;
-   Char*       descr;
+   HChar*      descr;
 } UnimpClReqInfo;
 
 void DRD_(set_show_conflicting_segments)(const Bool scs);
 void DRD_(register_error_handlers)(void);
-void DRD_(trace_msg)(const char* format, ...) PRINTF_CHECK(1, 2);
-void DRD_(trace_msg_w_bt)(const char* format, ...) PRINTF_CHECK(1, 2);
+void DRD_(trace_msg)(const HChar* format, ...) PRINTF_CHECK(1, 2);
+void DRD_(trace_msg_w_bt)(const HChar* format, ...) PRINTF_CHECK(1, 2);
 
 
 #endif /* __DRD_ERROR_H */

@@ -126,7 +126,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    UWord ret = 0;
    char s[strlen(mon)+1]; /* copy for strtok_r */
    char* wcmd;
-   Char* ssaveptr;
+   HChar* ssaveptr;
    char* endptr;
    int   kwdid;
    int int_value;

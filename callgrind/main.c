@@ -1501,11 +1501,11 @@ static void print_monitor_help ( void )
 }
 
 /* return True if request recognised, False otherwise */
-static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
+static Bool handle_gdb_monitor_command (ThreadId tid, const HChar *req)
 {
-   Char* wcmd;
-   Char s[VG_(strlen(req))]; /* copy for strtok_r */
-   Char *ssaveptr;
+   HChar* wcmd;
+   HChar s[VG_(strlen(req))]; /* copy for strtok_r */
+   HChar *ssaveptr;
 
    VG_(strcpy) (s, req);
 
@@ -1529,7 +1529,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    }
 
    case 3: { /* status */
-     Char* arg = VG_(strtok_r) (0, " ", &ssaveptr);
+     HChar* arg = VG_(strtok_r) (0, " ", &ssaveptr);
      if (arg && (VG_(strcmp)(arg, "internal") == 0)) {
        /* internal interface to callgrind_control */
        dump_state_togdb();
@@ -1550,7 +1550,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    }
 
    case 4: { /* instrumentation */
-     Char* arg = VG_(strtok_r) (0, " ", &ssaveptr);
+     HChar* arg = VG_(strtok_r) (0, " ", &ssaveptr);
      if (!arg) {
        VG_(gdb_printf)("instrumentation: %s\n",
 		       CLG_(instrument_state) ? "on":"off");
@@ -1582,7 +1582,7 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
    case VG_USERREQ__DUMP_STATS_AT:
      {
        HChar buf[512];
-       VG_(sprintf)(buf,"Client Request: %s", (Char*)args[1]);
+       VG_(sprintf)(buf,"Client Request: %s", (HChar*)args[1]);
        CLG_(dump_profile)(buf, True);
        *ret = 0;                 /* meaningless */
      }
@@ -1611,7 +1611,7 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
      break;
 
    case VG_USERREQ__GDB_MONITOR_COMMAND: {
-      Bool handled = handle_gdb_monitor_command (tid, (Char*)args[1]);
+      Bool handled = handle_gdb_monitor_command (tid, (HChar*)args[1]);
       if (handled)
          *ret = 1;
       else
@@ -1739,7 +1739,7 @@ void branchsim_printstat(int l1, int l2, int l3)
 static
 void finish(void)
 {
-  Char buf[32+COSTS_LEN];
+  HChar buf[32+COSTS_LEN];
   HChar fmt[128];
   Int l1, l2, l3;
   FullCost total;

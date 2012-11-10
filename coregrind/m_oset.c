@@ -935,7 +935,7 @@ Word VG_(OSetWord_Size)(AvlTree* t)
 }
 
 static void OSet_Print2( AvlTree* t, AvlNode* n,
-                         Char*(*strElem)(void *), Int p )
+                         HChar*(*strElem)(void *), Int p )
 {
    // This is a recursive in-order traversal.
    Int q = p;
@@ -947,7 +947,8 @@ static void OSet_Print2( AvlTree* t, AvlNode* n,
 }
 
 __attribute__((unused))
-static void OSet_Print( AvlTree* t, const HChar *where, Char*(*strElem)(void *) )
+static void OSet_Print( AvlTree* t, const HChar *where,
+                        HChar*(*strElem)(void *) )
 {
    VG_(printf)("-- start %s ----------------\n", where);
    OSet_Print2(t, t->root, strElem, 0);

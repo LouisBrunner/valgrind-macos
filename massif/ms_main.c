@@ -310,7 +310,7 @@ static void init_alloc_fns(void)
 {
    // Create the list, and add the default elements.
    alloc_fns = VG_(newXA)(VG_(malloc), "ms.main.iaf.1",
-                                       VG_(free), sizeof(Char*));
+                                       VG_(free), sizeof(HChar*));
    #define DO(x)  { HChar* s = x; VG_(addToXA)(alloc_fns, &s); }
 
    // Ordered roughly according to (presumed) frequency.
@@ -357,13 +357,13 @@ static void init_ignore_fns(void)
 {
    // Create the (empty) list.
    ignore_fns = VG_(newXA)(VG_(malloc), "ms.main.iif.1",
-                                        VG_(free), sizeof(Char*));
+                                        VG_(free), sizeof(HChar*));
 }
 
 // Determines if the named function is a member of the XArray.
-static Bool is_member_fn(XArray* fns, Char* fnname)
+static Bool is_member_fn(XArray* fns, HChar* fnname)
 {
-   Char** fn_ptr;
+   HChar** fn_ptr;
    Int i;
  
    // Nb: It's a linear search through the list, because we're comparing
@@ -411,13 +411,13 @@ static double clo_peak_inaccuracy = 1.0;  // percentage
 static Int    clo_time_unit       = TimeI;
 static Int    clo_detailed_freq   = 10;
 static Int    clo_max_snapshots   = 100;
-static HChar* clo_massif_out_file = "massif.out.%p";
+static const HChar* clo_massif_out_file = "massif.out.%p";
 
 static XArray* args_for_massif;
 
-static Bool ms_process_cmd_line_option(Char* arg)
+static Bool ms_process_cmd_line_option(const HChar* arg)
 {
-   Char* tmp_str;
+   const HChar* tmp_str;
 
    // Remember the arg for later use.
    VG_(addToXA)(args_for_massif, &arg);
@@ -845,7 +845,7 @@ static void sanity_check_SXTree(SXPt* sxpt)
 // Determine if the given IP belongs to a function that should be ignored.
 static Bool fn_should_be_ignored(Addr ip)
 {
-   static Char buf[BUF_LEN];
+   static HChar buf[BUF_LEN];
    return
       ( VG_(get_fnname)(ip, buf, BUF_LEN) && is_member_fn(ignore_fns, buf)
       ? True : False );
@@ -860,7 +860,7 @@ static Bool fn_should_be_ignored(Addr ip)
 static
 Int get_IPs( ThreadId tid, Bool exclude_first_entry, Addr ips[])
 {
-   static Char buf[BUF_LEN];
+   static HChar buf[BUF_LEN];
    Int n_ips, i, n_alloc_fns_removed;
    Int overestimate;
    Bool redo;
@@ -2001,7 +2001,7 @@ static void print_monitor_help ( void )
 
 /* Forward declaration.
    return True if request recognised, False otherwise */
-static Bool handle_gdb_monitor_command (ThreadId tid, Char *req);
+static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req);
 static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
 {
    switch (argv[0]) {
@@ -2029,7 +2029,7 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
       return True;
    }
    case VG_USERREQ__GDB_MONITOR_COMMAND: {
-     Bool handled = handle_gdb_monitor_command (tid, (Char*)argv[1]);
+     Bool handled = handle_gdb_monitor_command (tid, (HChar*)argv[1]);
      if (handled)
        *ret = 1;
      else
@@ -2150,7 +2150,7 @@ HChar FP_buf[BUF_LEN];
 })
 
 // Nb: uses a static buffer, each call trashes the last string returned.
-static HChar* make_perc(double x)
+static const HChar* make_perc(double x)
 {
    static HChar mbuf[32];
 
@@ -2161,7 +2161,7 @@ static HChar* make_perc(double x)
    return mbuf;
 }
 
-static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
+static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
                             Int depth_str_len,
                             SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
 {
@@ -2304,8 +2304,8 @@ static void pp_snapshot(Int fd, Snapshot* snapshot, Int snapshot_n)
    if (is_detailed_snapshot(snapshot)) {
       // Detailed snapshot -- print heap tree.
       Int   depth_str_len = clo_depth + 3;
-      Char* depth_str = VG_(malloc)("ms.main.pps.1", 
-                                    sizeof(Char) * depth_str_len);
+      HChar* depth_str = VG_(malloc)("ms.main.pps.1", 
+                                     sizeof(HChar) * depth_str_len);
       SizeT snapshot_total_szB =
          snapshot->heap_szB + snapshot->heap_extra_szB + snapshot->stacks_szB;
       depth_str[0] = '\0';   // Initialise depth_str to "".
@@ -2322,7 +2322,7 @@ static void pp_snapshot(Int fd, Snapshot* snapshot, Int snapshot_n)
    }
 }
 
-static void write_snapshots_to_file(Char* massif_out_file, 
+static void write_snapshots_to_file(const HChar* massif_out_file, 
                                     Snapshot snapshots_array[], 
                                     Int nr_elements)
 {
@@ -2347,7 +2347,7 @@ static void write_snapshots_to_file(Char* massif_out_file,
    // implied genericity of "desc:" is bogus.
    FP("desc:");
    for (i = 0; i < VG_(sizeXA)(args_for_massif); i++) {
-      Char* arg = *(Char**)VG_(indexXA)(args_for_massif, i);
+      HChar* arg = *(HChar**)VG_(indexXA)(args_for_massif, i);
       FP(" %s", arg);
    }
    if (0 == i) FP(" (none)");
@@ -2383,13 +2383,14 @@ static void write_snapshots_array_to_file(void)
    // output file format string contains a %p (pid) specifier, both the
    // parent and child will incorrectly write to the same file;  this
    // happened in 3.3.0.
-   Char* massif_out_file =
+   HChar* massif_out_file =
       VG_(expand_file_name)("--massif-out-file", clo_massif_out_file);
    write_snapshots_to_file (massif_out_file, snapshots, next_snapshot_i);
    VG_(free)(massif_out_file);
 }
 
-static void handle_snapshot_monitor_command (Char *filename, Bool detailed)
+static void handle_snapshot_monitor_command (const HChar *filename,
+                                             Bool detailed)
 {
    Snapshot snapshot;
 
@@ -2403,17 +2404,17 @@ static void handle_snapshot_monitor_command (Char *filename, Bool detailed)
    clear_snapshot(&snapshot, /* do_sanity_check */ False);
    take_snapshot(&snapshot, Normal, get_time(), detailed);
    write_snapshots_to_file ((filename == NULL) ? 
-                            (Char*) "massif.vgdb.out" : filename,
+                            "massif.vgdb.out" : filename,
                             &snapshot,
                             1);
    delete_snapshot(&snapshot);
 }
 
-static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
+static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
-   Char* wcmd;
-   Char s[VG_(strlen(req))]; /* copy for strtok_r */
-   Char *ssaveptr;
+   HChar* wcmd;
+   HChar s[VG_(strlen(req))]; /* copy for strtok_r */
+   HChar *ssaveptr;
 
    VG_(strcpy) (s, req);
 
@@ -2428,13 +2429,13 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       print_monitor_help();
       return True;
    case  1: { /* snapshot */
-      Char* filename;
+      HChar* filename;
       filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
       handle_snapshot_monitor_command (filename, False /* detailed */);
       return True;
    }
    case  2: { /* detailed_snapshot */
-      Char* filename;
+      HChar* filename;
       filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
       handle_snapshot_monitor_command (filename, True /* detailed */);
       return True;
@@ -2488,9 +2489,9 @@ static void ms_fini(Int exit_status)
 static void ms_post_clo_init(void)
 {
    Int i;
-   Char* LD_PRELOAD_val;
-   Char* s;
-   Char* s2;
+   HChar* LD_PRELOAD_val;
+   HChar* s;
+   HChar* s2;
 
    // Check options.
    if (clo_pages_as_heap) {
@@ -2512,7 +2513,7 @@ static void ms_post_clo_init(void)
    if (clo_pages_as_heap) {
       clo_heap_admin = 0;     // No heap admin on pages.
 
-      LD_PRELOAD_val = VG_(getenv)( (Char*)VG_(LD_PRELOAD_var_name) );
+      LD_PRELOAD_val = VG_(getenv)( VG_(LD_PRELOAD_var_name) );
       tl_assert(LD_PRELOAD_val);
 
       // Make sure the vgpreload_core-$PLATFORM entry is there, for sanity.
@@ -2540,7 +2541,7 @@ static void ms_post_clo_init(void)
    if (VG_(clo_verbosity) > 1) {
       VERB(1, "alloc-fns:\n");
       for (i = 0; i < VG_(sizeXA)(alloc_fns); i++) {
-         Char** fn_ptr = VG_(indexXA)(alloc_fns, i);
+         HChar** fn_ptr = VG_(indexXA)(alloc_fns, i);
          VERB(1, "  %s\n", *fn_ptr);
       }
 
@@ -2549,7 +2550,7 @@ static void ms_post_clo_init(void)
          VERB(1, "  <empty>\n");
       }
       for (i = 0; i < VG_(sizeXA)(ignore_fns); i++) {
-         Char** fn_ptr = VG_(indexXA)(ignore_fns, i);
+         HChar** fn_ptr = VG_(indexXA)(ignore_fns, i);
          VERB(1, "  %d: %s\n", i, *fn_ptr);
       }
    }

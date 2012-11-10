@@ -66,7 +66,7 @@ static Word string_table_cmp ( UWord s1, UWord s2 ) {
    return (Word)VG_(strcmp)( (HChar*)s1, (HChar*)s2 );
 }
 
-static HChar* string_table_strdup ( HChar* str ) {
+static HChar* string_table_strdup ( const HChar* str ) {
    HChar* copy = NULL;
    HG_(stats__string_table_queries)++;
    if (!str)
@@ -84,7 +84,7 @@ static HChar* string_table_strdup ( HChar* str ) {
    } else {
       copy = HG_(strdup)("hg.sts.2", str);
       tl_assert(copy);
-      VG_(addToFM)( string_table, (Word)copy, (Word)copy );
+      VG_(addToFM)( string_table, (UWord)copy, (UWord)copy );
       return copy;
    }
 }
@@ -1347,7 +1347,7 @@ const HChar* HG_(get_error_name) ( Error* err )
    }
 }
 
-Bool HG_(recognised_suppression) ( Char* name, Supp *su )
+Bool HG_(recognised_suppression) ( const HChar* name, Supp *su )
 {
 #  define TRY(_name,_xskind)                   \
       if (0 == VG_(strcmp)(name, (_name))) {   \
@@ -1366,7 +1366,7 @@ Bool HG_(recognised_suppression) ( Char* name, Supp *su )
 #  undef TRY
 }
 
-Bool HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
+Bool HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
                                         Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to

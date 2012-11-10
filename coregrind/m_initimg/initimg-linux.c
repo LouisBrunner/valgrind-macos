@@ -603,7 +603,7 @@ Addr setup_client_stack( void*  init_sp,
    *ptr++ = 0;
 
    /* --- envp --- */
-   VG_(client_envp) = (Char **)ptr;
+   VG_(client_envp) = (HChar **)ptr;
    for (cpp = orig_envp; cpp && *cpp; ptr++, cpp++)
       *ptr = (Addr)copy_str(&strtab, *cpp);
    *ptr++ = 0;

@@ -165,7 +165,7 @@ static void add_SP_alias(IRTemp temp, Long delta)
    if (N_ALIASES == next_SP_alias_slot) next_SP_alias_slot = 0;
 }
 
-static Bool get_SP_delta(IRTemp temp, ULong* delta)
+static Bool get_SP_delta(IRTemp temp, Long* delta)
 {
    Int i;      // i must be signed!
    vg_assert(IRTemp_INVALID != temp);
@@ -1349,8 +1349,8 @@ Bool VG_(translate) ( ThreadId tid,
    if ((kind == T_Redir_Wrap || kind == T_Redir_Replace)
        && (VG_(clo_verbosity) >= 2 || VG_(clo_trace_redir))) {
       Bool ok;
-      Char name1[512] = "";
-      Char name2[512] = "";
+      HChar name1[512] = "";
+      HChar name2[512] = "";
       name1[0] = name2[0] = 0;
       ok = VG_(get_fnname_w_offset)(nraddr, name1, 512);
       if (!ok) VG_(strcpy)(name1, "???");
@@ -1368,9 +1368,9 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
-      Char fnname[512] = "UNKNOWN_FUNCTION";
+      HChar fnname[512] = "UNKNOWN_FUNCTION";
       VG_(get_fnname_w_offset)(addr, fnname, 512);
-      const UChar* objname = "UNKNOWN_OBJECT";
+      const HChar* objname = "UNKNOWN_OBJECT";
       OffT         objoff  = 0;
       DebugInfo*   di      = VG_(find_DebugInfo)( addr );
       if (di) {

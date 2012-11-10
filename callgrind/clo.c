@@ -89,7 +89,7 @@ struct _config_node {
   config_node* wild_star;
   config_node* wild_char;
 
-  Char name[1];
+  HChar name[1];
 };
 
 /* root of trie */
@@ -119,7 +119,7 @@ fn_config* new_fnc(void)
 }
 
 
-static config_node* new_config(Char* name, int length)
+static config_node* new_config(const HChar* name, int length)
 {
     int i;
     config_node* node = (config_node*) CLG_MALLOC("cl.clo.nc.1",
@@ -145,7 +145,7 @@ static config_node* new_config(Char* name, int length)
 }
 
 static __inline__
-Bool is_wild(Char n)
+Bool is_wild(HChar n)
 {
   return (n == '*') || (n == '?');
 }
@@ -158,7 +158,7 @@ Bool is_wild(Char n)
  * tree root is stored into <*pnode>, and the created
  * leaf (fn_config) for the given pattern is returned.
  */
-static fn_config* get_fnc2(config_node* node, Char* name)
+static fn_config* get_fnc2(config_node* node, const HChar* name)
 {
   config_node *new_sub, *n, *nprev;
   int offset, len;
@@ -276,7 +276,7 @@ static void print_config_node(int depth, int hash, config_node* node)
   int i;
 
   if (node != fn_configs) {
-    char sp[] = "                                        ";
+    const HChar sp[] = "                                        ";
 
     if (depth>40) depth=40;
     VG_(printf)("%s", sp+40-depth);
@@ -297,7 +297,7 @@ static void print_config_node(int depth, int hash, config_node* node)
 }
 
 /* get a function config for a name pattern (from command line) */
-static fn_config* get_fnc(Char* name)
+static fn_config* get_fnc(const HChar* name)
 {
   fn_config* fnc;
 
@@ -354,7 +354,8 @@ static void update_fn_config1(fn_node* fn, fn_config* fnc)
  * looking for a match to <name>. For every matching leaf,
  * <fn> is updated with the pattern config.
  */
-static void update_fn_config2(fn_node* fn, Char* name, config_node* node)
+static void update_fn_config2(fn_node* fn, const HChar* name,
+                              config_node* node)
 {
     config_node* n;
 
@@ -405,9 +406,9 @@ void CLG_(update_fn_config)(fn_node* fn)
 /*--- Command line processing                                      ---*/
 /*--------------------------------------------------------------------*/
 
-Bool CLG_(process_cmd_line_option)(Char* arg)
+Bool CLG_(process_cmd_line_option)(const HChar* arg)
 {
-   Char* tmp_str;
+   const HChar* tmp_str;
 
    if      VG_BOOL_CLO(arg, "--skip-plt", CLG_(clo).skip_plt) {}
 
@@ -469,7 +470,7 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
 
    else if VG_STREQN(12, arg, "--ct-verbose") {
        fn_config* fnc;
-       Char* s;
+       HChar* s;
        UInt n = VG_(strtoll10)(arg+12, &s);
        if ((n <= 0) || *s != '=') return False;
        fnc = get_fnc(s+1);
@@ -484,7 +485,7 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
 
    else if VG_STREQN(10, arg, "--fn-group") {
        fn_config* fnc;
-       Char* s;
+       HChar* s;
        UInt n = VG_(strtoll10)(arg+10, &s);
        if ((n <= 0) || *s != '=') return False;
        fnc = get_fnc(s+1);
@@ -493,7 +494,7 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
 
    else if VG_STREQN(18, arg, "--separate-callers") {
        fn_config* fnc;
-       Char* s;
+       HChar* s;
        UInt n = VG_(strtoll10)(arg+18, &s);
        if ((n <= 0) || *s != '=') return False;
        fnc = get_fnc(s+1);
@@ -502,7 +503,7 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
 
    else if VG_STREQN(15, arg, "--separate-recs") {
        fn_config* fnc;
-       Char* s;
+       HChar* s;
        UInt n = VG_(strtoll10)(arg+15, &s);
        if ((n <= 0) || *s != '=') return False;
        fnc = get_fnc(s+1);

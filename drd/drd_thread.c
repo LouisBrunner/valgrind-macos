@@ -377,7 +377,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
    {
       const ThreadId joiner = DRD_(DrdThreadIdToVgThreadId)(drd_joiner);
       const unsigned msg_size = 256;
-      char* msg;
+      HChar* msg;
 
       msg = VG_(malloc)("drd.main.dptj.1", msg_size);
       tl_assert(msg);
@@ -386,7 +386,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                     drd_joiner, drd_joinee);
       if (joiner)
       {
-         char* vc;
+         HChar* vc;
 
          vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(drd_joiner));
          VG_(snprintf)(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
@@ -636,7 +636,7 @@ void DRD_(thread_left_pthread_create)(const DrdThreadId tid)
 }
 
 /** Obtain the thread number and the user-assigned thread name. */
-const char* DRD_(thread_get_name)(const DrdThreadId tid)
+const HChar* DRD_(thread_get_name)(const DrdThreadId tid)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
@@ -645,7 +645,7 @@ const char* DRD_(thread_get_name)(const DrdThreadId tid)
 }
 
 /** Set the name of the specified thread. */
-void DRD_(thread_set_name)(const DrdThreadId tid, const char* const name)
+void DRD_(thread_set_name)(const DrdThreadId tid, const HChar* const name)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
@@ -893,7 +893,7 @@ static void thread_discard_ordered_segments(void)
    DRD_(thread_compute_minimum_vc)(&thread_vc_min);
    if (DRD_(sg_get_trace)())
    {
-      char *vc_min, *vc_max;
+      HChar *vc_min, *vc_max;
       VectorClock thread_vc_max;
 
       DRD_(vc_init)(&thread_vc_max, 0, 0);
@@ -1087,7 +1087,7 @@ void DRD_(thread_combine_vc_join)(DrdThreadId joiner, DrdThreadId joinee)
 
    if (DRD_(sg_get_trace)())
    {
-      char *str1, *str2;
+      HChar *str1, *str2;
       str1 = DRD_(vc_aprint)(DRD_(thread_get_vc)(joiner));
       str2 = DRD_(vc_aprint)(DRD_(thread_get_vc)(joinee));
       VG_(message)(Vg_DebugMsg, "Before join: joiner %s, joinee %s\n",
@@ -1112,7 +1112,7 @@ void DRD_(thread_combine_vc_join)(DrdThreadId joiner, DrdThreadId joinee)
    thread_discard_ordered_segments();
 
    if (DRD_(sg_get_trace)()) {
-      char* str;
+      HChar* str;
 
       str = DRD_(vc_aprint)(DRD_(thread_get_vc)(joiner));
       VG_(message)(Vg_DebugMsg, "After join: %s\n", str);
@@ -1141,7 +1141,7 @@ static void thread_combine_vc_sync(DrdThreadId tid, const Segment* sg)
       DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
       DRD_(vc_combine)(DRD_(thread_get_vc)(tid), vc);
       if (DRD_(sg_get_trace)()) {
-         char *str1, *str2;
+         HChar *str1, *str2;
          str1 = DRD_(vc_aprint)(&old_vc);
          str2 = DRD_(vc_aprint)(DRD_(thread_get_vc)(tid));
          VG_(message)(Vg_DebugMsg, "thread %d: vc %s -> %s\n", tid, str1, str2);
@@ -1400,7 +1400,7 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
    }
 
    if (s_trace_conflict_set) {
-      char* str;
+      HChar* str;
 
       str = DRD_(vc_aprint)(DRD_(thread_get_vc)(tid));
       VG_(message)(Vg_DebugMsg,
@@ -1414,7 +1414,7 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
       unsigned j;
 
       if (s_trace_conflict_set) {
-         char* vc;
+         HChar* vc;
 
          vc = DRD_(vc_aprint)(&p->vc);
          VG_(message)(Vg_DebugMsg, "conflict set: thread [%d] at vc %s\n",
@@ -1430,7 +1430,7 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
                if (!DRD_(vc_lte)(&q->vc, &p->vc)
                    && !DRD_(vc_lte)(&p->vc, &q->vc)) {
                   if (s_trace_conflict_set) {
-                     char* str;
+                     HChar* str;
 
                      str = DRD_(vc_aprint)(&q->vc);
                      VG_(message)(Vg_DebugMsg,
@@ -1441,7 +1441,7 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
                   DRD_(bm_merge2)(*conflict_set, DRD_(sg_bm)(q));
                } else {
                   if (s_trace_conflict_set) {
-                     char* str;
+                     HChar* str;
 
                      str = DRD_(vc_aprint)(&q->vc);
                      VG_(message)(Vg_DebugMsg,
@@ -1486,7 +1486,7 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
    tl_assert(DRD_(g_conflict_set));
 
    if (s_trace_conflict_set) {
-      char* str;
+      HChar* str;
 
       str = DRD_(vc_aprint)(DRD_(thread_get_vc)(tid));
       VG_(message)(Vg_DebugMsg,
@@ -1516,7 +1516,7 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
             = !DRD_(vc_lte)(new_vc, &q->vc);
 
          if (UNLIKELY(s_trace_conflict_set)) {
-            char* str;
+            HChar* str;
 
             str = DRD_(vc_aprint)(&q->vc);
             VG_(message)(Vg_DebugMsg,
@@ -1538,7 +1538,7 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
             && !DRD_(vc_lte)(new_vc, &q->vc);
 
          if (UNLIKELY(s_trace_conflict_set)) {
-            char* str;
+            HChar* str;
 
             str = DRD_(vc_aprint)(&q->vc);
             VG_(message)(Vg_DebugMsg,

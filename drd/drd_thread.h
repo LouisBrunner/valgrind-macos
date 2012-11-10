@@ -75,7 +75,7 @@ typedef struct
    Addr      stack_startup; /**<Stack pointer after pthread_create() finished.*/
    Addr      stack_max;     /**< Top of stack. */
    SizeT     stack_size;    /**< Maximum size of stack. */
-   char      name[64];      /**< User-assigned thread name. */
+   HChar     name[64];      /**< User-assigned thread name. */
    Bool      on_alt_stack;
    /** Whether this structure contains valid information. */
    Bool      valid;
@@ -158,8 +158,8 @@ Bool DRD_(thread_get_joinable)(const DrdThreadId tid);
 void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable);
 void DRD_(thread_entering_pthread_create)(const DrdThreadId tid);
 void DRD_(thread_left_pthread_create)(const DrdThreadId tid);
-const char* DRD_(thread_get_name)(const DrdThreadId tid);
-void DRD_(thread_set_name)(const DrdThreadId tid, const char* const name);
+const HChar* DRD_(thread_get_name)(const DrdThreadId tid);
+void DRD_(thread_set_name)(const DrdThreadId tid, const HChar* const name);
 void DRD_(thread_set_vg_running_tid)(const ThreadId vg_tid);
 void DRD_(thread_set_running_tid)(const ThreadId vg_tid,
                                   const DrdThreadId drd_tid);

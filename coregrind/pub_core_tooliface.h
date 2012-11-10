@@ -121,8 +121,8 @@ typedef struct {
    void  (*tool_pp_Error)                    (Error*);
    Bool  tool_show_ThreadIDs_for_errors;
    UInt  (*tool_update_extra)                (Error*);
-   Bool  (*tool_recognised_suppression)      (Char*, Supp*);
-   Bool  (*tool_read_extra_suppression_info) (Int, Char**, SizeT*, Supp*);
+   Bool  (*tool_recognised_suppression)      (const HChar*, Supp*);
+   Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Supp*);
    Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
    const HChar* (*tool_get_error_name)       (Error*);
    Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
@@ -131,7 +131,7 @@ typedef struct {
    void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);
 
    // VG_(needs).command_line_options
-   Bool (*tool_process_cmd_line_option)(Char*);
+   Bool (*tool_process_cmd_line_option)(const HChar*);
    void (*tool_print_usage)            (void);
    void (*tool_print_debug_usage)      (void);
 

@@ -236,7 +236,7 @@ void DRD_(vc_combine)(VectorClock* const result, const VectorClock* const rhs)
 /** Print the contents of vector clock 'vc'. */
 void DRD_(vc_print)(const VectorClock* const vc)
 {
-   char* str;
+   HChar* str;
 
    if ((str = DRD_(vc_aprint)(vc)) != NULL)
    {
@@ -249,12 +249,12 @@ void DRD_(vc_print)(const VectorClock* const vc)
  * Print the contents of vector clock 'vc' to a newly allocated string.
  * The caller must call VG_(free)() on the return value of this function.
  */
-char* DRD_(vc_aprint)(const VectorClock* const vc)
+HChar* DRD_(vc_aprint)(const VectorClock* const vc)
 {
    unsigned i;
    unsigned reserved;
    unsigned size;
-   char* str = 0;
+   HChar* str = 0;
 
    tl_assert(vc);
    reserved = 64;

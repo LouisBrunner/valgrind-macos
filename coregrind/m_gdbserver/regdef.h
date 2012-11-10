@@ -25,7 +25,7 @@
 struct reg
 {
   /* The name of this register - NULL for pad entries.  */
-  const char *name;
+  char *name;
 
   /* At the moment, both of the following bit counts must be divisible
      by eight (to match the representation as two hex digits) and divisible

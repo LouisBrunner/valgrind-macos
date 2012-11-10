@@ -94,7 +94,7 @@ static void sg_init(Segment* const sg,
 
    if (s_trace_segment)
    {
-      char* vc;
+      HChar* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
       VG_(message)(Vg_DebugMsg, "New segment for thread %d with vc %s\n",
@@ -138,7 +138,7 @@ static void DRD_(sg_delete)(Segment* const sg)
 {
    if (DRD_(sg_get_trace)())
    {
-      char* vc;
+      HChar* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
       VG_(message)(Vg_DebugMsg, "Discarding the segment with vector clock %s\n",
@@ -179,7 +179,7 @@ void DRD_(sg_put)(Segment* const sg)
 
    if (s_trace_segment)
    {
-      char* vc;
+      HChar* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
       VG_(message)(Vg_DebugMsg,
@@ -206,7 +206,7 @@ void DRD_(sg_merge)(Segment* const sg1, Segment* const sg2)
 
    if (s_trace_segment)
    {
-      char *vc1, *vc2;
+      HChar *vc1, *vc2;
 
       vc1 = DRD_(vc_aprint)(&sg1->vc);
       vc2 = DRD_(vc_aprint)(&sg2->vc);

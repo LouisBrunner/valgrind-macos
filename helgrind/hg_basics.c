@@ -58,7 +58,7 @@ void HG_(free) ( void* p )
    VG_(free)(p);
 }
 
-Char* HG_(strdup) ( const HChar* cc, const Char* s )
+HChar* HG_(strdup) ( const HChar* cc, const HChar* s )
 {
    return VG_(strdup)( cc, s );
 }

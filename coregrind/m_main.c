@@ -269,8 +269,8 @@ static void usage_NORETURN ( Bool debug_help )
 "\n";
 
    const HChar* gdb_path = GDB_PATH;
-   Char default_alignment[30];
-   Char default_redzone_size[30];
+   HChar default_alignment[30];
+   HChar default_redzone_size[30];
 
    // Ensure the message goes to stdout
    VG_(log_output_sink).fd = 1;
@@ -333,7 +333,7 @@ static void usage_NORETURN ( Bool debug_help )
    have handled here.
 */
 static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
-                                             /*OUT*/HChar** tool )
+                                             /*OUT*/const HChar** tool )
 {
    UInt   i;
    HChar* str;
@@ -400,7 +400,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
 */
 static
 void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
-                                     /*OUT*/Char** xml_fname_unexpanded,
+                                     /*OUT*/HChar** xml_fname_unexpanded,
                                      const HChar* toolname )
 {
    // VG_(clo_log_fd) is used by all the messaging.  It starts as 2 (stderr)
@@ -409,7 +409,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
    SysRes sres;
    Int    i, tmp_log_fd, tmp_xml_fd;
    Int    toolname_len = VG_(strlen)(toolname);
-   Char*  tmp_str;         // Used in a couple of places.
+   const HChar* tmp_str;         // Used in a couple of places.
    enum {
       VgLogTo_Fd,
       VgLogTo_File,
@@ -420,8 +420,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
    /* Temporarily holds the string STR specified with
       --{log,xml}-{name,socket}=STR.  'fs' stands for
       file-or-socket. */
-   Char* log_fsname_unexpanded = NULL;
-   Char* xml_fsname_unexpanded = NULL;
+   const HChar* log_fsname_unexpanded = NULL;
+   const HChar* xml_fsname_unexpanded = NULL;
 
    /* Log to stderr by default, but usage message goes to stdout.  XML
       output is initially disabled. */
@@ -690,7 +690,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
             and the fnpatt just by looking for the second occurrence
             of C, without hardwiring any assumption about what C
             is. */
-         Char patt[7];
+         HChar patt[7];
          Bool ok = True;
          ok = tmp_str && VG_(strlen)(tmp_str) > 0;
          if (ok) {
@@ -898,7 +898,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          break;
 
       case VgLogTo_File: {
-         Char* logfilename;
+         HChar* logfilename;
 
          vg_assert(log_fsname_unexpanded != NULL);
          vg_assert(VG_(strlen)(log_fsname_unexpanded) <= 900); /* paranoia */
@@ -957,7 +957,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          break;
 
       case VgLogTo_File: {
-         Char* xmlfilename;
+         HChar* xmlfilename;
 
          vg_assert(xml_fsname_unexpanded != NULL);
          vg_assert(VG_(strlen)(xml_fsname_unexpanded) <= 900); /* paranoia */
@@ -1075,7 +1075,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          the default one. */
       static const HChar default_supp[] = "default.supp";
       Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(default_supp);
-      Char *buf = VG_(arena_malloc)(VG_AR_CORE, "main.mpclo.3", len);
+      HChar *buf = VG_(arena_malloc)(VG_AR_CORE, "main.mpclo.3", len);
       VG_(sprintf)(buf, "%s/%s", VG_(libdir), default_supp);
       VG_(clo_suppressions)[VG_(clo_n_suppressions)] = buf;
       VG_(clo_n_suppressions)++;
@@ -1085,7 +1085,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 }
 
 // Write the name and value of log file qualifiers to the xml file.
-static void print_file_vars(Char* format)
+static void print_file_vars(HChar* format)
 {
    Int i = 0;
    
@@ -1097,8 +1097,8 @@ static void print_file_vars(Char* format)
             i++;
             if ('{' == format[i]) {
 	       // Get the env var name, print its contents.
-	       Char* qualname;
-               Char* qual;
+	       HChar* qualname;
+               HChar* qual;
                i++;
                qualname = &format[i];
                while (True) {
@@ -1133,7 +1133,7 @@ static void print_file_vars(Char* format)
 /*====================================================================*/
 
 // Print the argument, escaping any chars that require it.
-static void umsg_arg(const Char* arg)
+static void umsg_arg(const HChar* arg)
 {
    SizeT len = VG_(strlen)(arg);
    const HChar* special = " \\<>";
@@ -1147,7 +1147,7 @@ static void umsg_arg(const Char* arg)
 }
 
 // Send output to the XML-stream and escape any XML meta-characters.
-static void xml_arg(const Char* arg)
+static void xml_arg(const HChar* arg)
 {
    VG_(printf_xml)("%pS", arg);
 }
@@ -1157,7 +1157,7 @@ static void xml_arg(const Char* arg)
    command line args, to help people trying to interpret the
    results of a run which encompasses multiple processes. */
 static void print_preamble ( Bool logging_to_fd, 
-                             Char* xml_fname_unexpanded,
+                             HChar* xml_fname_unexpanded,
                              const HChar* toolname )
 {
    Int    i;
@@ -1166,7 +1166,7 @@ static void print_preamble ( Bool logging_to_fd,
    UInt (*umsg_or_xml)( const HChar*, ... )
       = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
 
-   void (*umsg_or_xml_arg)( const Char* )
+   void (*umsg_or_xml_arg)( const HChar* )
       = VG_(clo_xml) ? xml_arg : umsg_arg;
 
    vg_assert( VG_(args_for_client) );
@@ -1319,7 +1319,7 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(message)(Vg_DebugMsg, "  can't open /proc/version\n");
       } else {
 #        define BUF_LEN    256
-         Char version_buf[BUF_LEN];
+         HChar version_buf[BUF_LEN];
          Int n = VG_(read) ( sr_Res(fd), version_buf, BUF_LEN );
          vg_assert(n <= BUF_LEN);
          if (n > 0) {
@@ -1416,7 +1416,7 @@ void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
 {
    ULong score_cumul,   score_here;
    HChar buf_cumul[10], buf_here[10];
-   Char  name[64];
+   HChar name[64];
    Int   r;
 
    VG_(printf)("\n");
@@ -1541,11 +1541,11 @@ void shutdown_actions_NORETURN( ThreadId tid,
 static
 Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 {
-   HChar*  toolname           = "memcheck";    // default to Memcheck
+   const HChar* toolname      = "memcheck";    // default to Memcheck
    Int     need_help          = 0; // 0 = no, 1 = --help, 2 = --help-debug
    ThreadId tid_main          = VG_INVALID_THREADID;
    Bool    logging_to_fd      = False;
-   Char* xml_fname_unexpanded = NULL;
+   HChar* xml_fname_unexpanded = NULL;
    Int     loglevel, i;
    struct vki_rlimit zero = { 0, 0 };
    XArray* addr2dihandle = NULL;
@@ -1575,7 +1575,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //============================================================
    
    /* This is needed to make VG_(getenv) usable early. */
-   VG_(client_envp) = (Char**)envp;
+   VG_(client_envp) = (HChar**)envp;
 
    //--------------------------------------------------------------
    // Start up Mach kernel interface, if any
@@ -1769,7 +1769,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         VG_(err_config_error)( "Can't establish current working "
                                "directory at startup\n");
    }
-   { Char buf[VKI_PATH_MAX+1];
+   { HChar buf[VKI_PATH_MAX+1];
      Bool ok = VG_(get_startup_wd)( buf, sizeof(buf) );
      vg_assert(ok);
      buf[VKI_PATH_MAX] = 0;

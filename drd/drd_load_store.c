@@ -93,7 +93,7 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 {
    if (DRD_(is_any_traced)(addr, addr + size))
    {
-      char* vc;
+      HChar* vc;
 
       vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
       if (access_type == eStore && size <= sizeof(HWord)) {

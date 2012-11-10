@@ -42,7 +42,7 @@ struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
                                             const UInt value);
 void DRD_(semaphore_destroy)(const Addr semaphore);
 struct semaphore_info* DRD_(semaphore_open)(const Addr semaphore,
-                                            const Char* name, const Word oflag,
+                                            const HChar* name, const Word oflag,
                                             const Word mode, const UInt value);
 void DRD_(semaphore_close)(const Addr semaphore);
 void DRD_(semaphore_pre_wait)(const Addr semaphore);

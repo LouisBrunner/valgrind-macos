@@ -1985,7 +1985,7 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
             // If user supplied --fullpath-after=foo, this will remove 
             // a leading string which matches '.*foo' (not greedy).
             for (i = 0; i < VG_(clo_n_fullpath_after); i++) {
-               UChar* prefix = VG_(clo_fullpath_after)[i];
+              UChar* prefix = (UChar *)VG_(clo_fullpath_after)[i]; // FIXME
                UChar* str    = VG_(strstr)(dirname, prefix);
                if (str) {
                   dirname = str + VG_(strlen)(prefix);
@@ -3842,8 +3842,8 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
                                   /*OUT*/Addr*    avma,
                                   /*OUT*/Addr*    tocptr,
                                   /*OUT*/UInt*    size,
-                                  /*OUT*/UChar**  pri_name,
-                                  /*OUT*/UChar*** sec_names,
+                                  /*OUT*/HChar**  pri_name,
+                                  /*OUT*/HChar*** sec_names,
                                   /*OUT*/Bool*    isText,
                                   /*OUT*/Bool*    isIFunc )
 {
@@ -3852,7 +3852,7 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
    if (tocptr)    *tocptr    = si->symtab[idx].tocptr;
    if (size)      *size      = si->symtab[idx].size;
    if (pri_name)  *pri_name  = si->symtab[idx].pri_name;
-   if (sec_names) *sec_names = si->symtab[idx].sec_names;
+   if (sec_names) *sec_names = (HChar **)si->symtab[idx].sec_names; // FIXME
    if (isText)    *isText    = si->symtab[idx].isText;
    if (isIFunc)   *isIFunc   = si->symtab[idx].isIFunc;
 }

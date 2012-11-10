@@ -55,10 +55,10 @@
 static Int interval_size=DEFAULT_GRAIN_SIZE;
 
    /* filenames */
-static HChar *clo_bb_out_file="bb.out.%p";
-static HChar *clo_pc_out_file="pc.out.%p";
-static UChar *pc_out_file=NULL;
-static UChar *bb_out_file=NULL;
+static const HChar *clo_bb_out_file="bb.out.%p";
+static const HChar *clo_pc_out_file="pc.out.%p";
+static HChar *pc_out_file=NULL;
+static HChar *bb_out_file=NULL;
 
 
    /* output parameters */
@@ -95,7 +95,7 @@ struct BB_info {
    Int        block_num;         /* unique block identifier              */
    Int        *inst_counter;     /* times entered * num_instructions     */
    Bool       is_entry;          /* is this block a function entry point */
-   UChar      fn_name[FUNCTION_NAME_LENGTH];  /* Function block is in    */
+   HChar      fn_name[FUNCTION_NAME_LENGTH];  /* Function block is in    */
 };
 
 
@@ -275,8 +275,8 @@ static Int get_inst_type(Int len, Addr addr)
 
 #if defined(VGA_x86) || defined(VGA_amd64)
 
-   unsigned char *inst_pointer;
-   unsigned char inst_byte;
+   UChar *inst_pointer;
+   UChar  inst_byte;
    int i,possible_rep;
 
    /* rep prefixed instructions are counted as one instruction on */
@@ -286,7 +286,7 @@ static Int get_inst_type(Int len, Addr addr)
    /*     SSE instructions.  So we need to specifically check for */
    /*     the following: movs, cmps, scas, lods, stos, ins, outs  */
 
-   inst_pointer=(unsigned char *)addr;
+   inst_pointer=(UChar *)addr;
    i=0;
    inst_byte=0;
    possible_rep=0;
@@ -322,7 +322,7 @@ static Int get_inst_type(Int len, Addr addr)
    /*     performance counters on pentium 4 processors so it is   */
    /*     useful to have that count when doing validation work.   */
 
-   inst_pointer=(unsigned char *)addr;
+   inst_pointer=(UChar *)addr;
    if (len>1) {
          /* FLDCW detection */
          /* opcode is 0xd9/5, ie 1101 1001 oo10 1mmm */
@@ -531,7 +531,7 @@ static void bbv_post_clo_init(void)
 }
 
    /* Parse the command line options */
-static Bool bbv_process_cmd_line_option(Char* arg)
+static Bool bbv_process_cmd_line_option(const HChar* arg)
 {
    if VG_INT_CLO       (arg, "--interval-size",    interval_size) {}
    else if VG_STR_CLO  (arg, "--bb-out-file",      clo_bb_out_file) {}

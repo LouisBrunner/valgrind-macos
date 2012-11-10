@@ -427,6 +427,8 @@ yield_if(IRExpr *condition)
 
 static __inline__ IRExpr *get_fpr_dw0(UInt);
 static __inline__ void    put_fpr_dw0(UInt, IRExpr *);
+static __inline__ IRExpr *get_dpr_dw0(UInt);
+static __inline__ void    put_dpr_dw0(UInt, IRExpr *);
 
 /* Read a floating point register pair and combine their contents into a
    128-bit value */
@@ -907,6 +909,21 @@ get_fpr_dw0(UInt archreg)
    return IRExpr_Get(fpr_dw0_offset(archreg), Ity_F64);
 }
 
+/* Write double word #0 of a fpr containg DFP value to the guest state. */
+static __inline__ void
+put_dpr_dw0(UInt archreg, IRExpr *expr)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, expr) == Ity_D64);
+
+   stmt(IRStmt_Put(fpr_dw0_offset(archreg), expr));
+}
+
+/* Read double word #0 of a fpr register containing DFP value. */
+static __inline__ IRExpr *
+get_dpr_dw0(UInt archreg)
+{
+   return IRExpr_Get(fpr_dw0_offset(archreg), Ity_D64);
+}
 
 /*------------------------------------------------------------*/
 /*--- gpr registers                                        ---*/
@@ -1481,7 +1498,6 @@ encode_bfp_rounding_mode(UChar mode)
 
    So:  IR = (s390 ^ ((s390 << 1) & 2))
 */
-#if 0  // fixs390: avoid compiler warnings about unused function
 static IRExpr *
 get_dfp_rounding_mode_from_fpc(void)
 {
@@ -1541,7 +1557,7 @@ encode_dfp_rounding_mode(UChar mode)
 
    return mktemp(Ity_I32, rm);
 }
-#endif
+
 
 /*------------------------------------------------------------*/
 /*--- Build IR for formats                                 ---*/
@@ -1904,6 +1920,16 @@ s390_format_RRF_F0FF2(HChar *(*irgen)(UChar, UChar, UChar),
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, FPR, FPR, FPR), mnm, r1, r3, r2);
+}
+
+static void
+s390_format_RRF_FUFF2(HChar *(*irgen)(UChar, UChar, UChar, UChar),
+                      UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   HChar *mnm = irgen(r3, m4, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC5(MNM, FPR, FPR, FPR, UINT), mnm, r1, r2, r3, m4);
 }
 
 static void
@@ -8850,6 +8876,18 @@ s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
 }
 
 static HChar *
+s390_irgen_LTDTR(UChar r1, UChar r2)
+{
+   IRTemp result = newTemp(Ity_D64);
+
+   assign(result, get_dpr_dw0(r2));
+   put_dpr_dw0(r1, mkexpr(result));
+   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
+
+   return "ltdtr";
+}
+
+static HChar *
 s390_irgen_MEEBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8988,6 +9026,98 @@ s390_irgen_SDB(UChar r1, IRTemp op2addr)
    put_fpr_dw0(r1, mkexpr(result));
 
    return "sdb";
+}
+
+static HChar *
+s390_irgen_ADTRA(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRTemp op1 = newTemp(Ity_D64);
+   IRTemp op2 = newTemp(Ity_D64);
+   IRTemp result = newTemp(Ity_D64);
+   IRTemp rounding_mode;
+
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0 || s390_host_has_fpext);
+   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
+      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+   rounding_mode = encode_dfp_rounding_mode(m4);
+   assign(op1, get_dpr_dw0(r2));
+   assign(op2, get_dpr_dw0(r3));
+   assign(result, triop(Iop_AddD64, mkexpr(rounding_mode), mkexpr(op1),
+                        mkexpr(op2)));
+   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
+   put_dpr_dw0(r1, mkexpr(result));
+
+   return (m4 == 0) ? "adtr" : "adtra";
+}
+
+static HChar *
+s390_irgen_DDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRTemp op1 = newTemp(Ity_D64);
+   IRTemp op2 = newTemp(Ity_D64);
+   IRTemp result = newTemp(Ity_D64);
+   IRTemp rounding_mode;
+
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0 || s390_host_has_fpext);
+   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
+      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+   rounding_mode = encode_dfp_rounding_mode(m4);
+   assign(op1, get_dpr_dw0(r2));
+   assign(op2, get_dpr_dw0(r3));
+   assign(result, triop(Iop_DivD64, mkexpr(rounding_mode), mkexpr(op1),
+                        mkexpr(op2)));
+   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
+   put_dpr_dw0(r1, mkexpr(result));
+
+   return (m4 == 0) ? "ddtr" : "ddtra";
+}
+
+static HChar *
+s390_irgen_MDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRTemp op1 = newTemp(Ity_D64);
+   IRTemp op2 = newTemp(Ity_D64);
+   IRTemp result = newTemp(Ity_D64);
+   IRTemp rounding_mode;
+
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0 || s390_host_has_fpext);
+   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
+      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+   rounding_mode = encode_dfp_rounding_mode(m4);
+   assign(op1, get_dpr_dw0(r2));
+   assign(op2, get_dpr_dw0(r3));
+   assign(result, triop(Iop_MulD64, mkexpr(rounding_mode), mkexpr(op1),
+                        mkexpr(op2)));
+   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
+   put_dpr_dw0(r1, mkexpr(result));
+
+   return (m4 == 0) ? "mdtr" : "mdtra";
+}
+
+static HChar *
+s390_irgen_SDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRTemp op1 = newTemp(Ity_D64);
+   IRTemp op2 = newTemp(Ity_D64);
+   IRTemp result = newTemp(Ity_D64);
+   IRTemp rounding_mode;
+
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0 || s390_host_has_fpext);
+   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
+      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+   rounding_mode = encode_dfp_rounding_mode(m4);
+   assign(op1, get_dpr_dw0(r2));
+   assign(op2, get_dpr_dw0(r3));
+   assign(result, triop(Iop_SubD64, mkexpr(rounding_mode), mkexpr(op1),
+                        mkexpr(op2)));
+   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
+   put_dpr_dw0(r1, mkexpr(result));
+
+   return (m4 == 0) ? "sdtr" : "sdtra";
 }
 
 
@@ -12530,7 +12660,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
       struct {
          unsigned int op : 16;
          unsigned int r3 :  4;
-         unsigned int    :  4;
+         unsigned int m4 :  4;
          unsigned int r1 :  4;
          unsigned int r2 :  4;
       } RRF4;
@@ -12982,13 +13112,22 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb3ca: /* CGXR */ goto unimplemented;
    case 0xb3cd: s390_format_RRE_RF(s390_irgen_LGDR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
-   case 0xb3d0: /* MDTR */ goto unimplemented;
-   case 0xb3d1: /* DDTR */ goto unimplemented;
-   case 0xb3d2: /* ADTR */ goto unimplemented;
-   case 0xb3d3: /* SDTR */ goto unimplemented;
+   case 0xb3d0: s390_format_RRF_FUFF2(s390_irgen_MDTRA, ovl.fmt.RRF4.r3,
+                                      ovl.fmt.RRF4.m4, ovl.fmt.RRF4.r1,
+                                      ovl.fmt.RRF4.r2); goto ok;
+   case 0xb3d1: s390_format_RRF_FUFF2(s390_irgen_DDTRA, ovl.fmt.RRF4.r3,
+                                      ovl.fmt.RRF4.m4, ovl.fmt.RRF4.r1,
+                                      ovl.fmt.RRF4.r2); goto ok;
+   case 0xb3d2: s390_format_RRF_FUFF2(s390_irgen_ADTRA, ovl.fmt.RRF4.r3,
+                                      ovl.fmt.RRF4.m4, ovl.fmt.RRF4.r1,
+                                      ovl.fmt.RRF4.r2); goto ok;
+   case 0xb3d3: s390_format_RRF_FUFF2(s390_irgen_SDTRA, ovl.fmt.RRF4.r3,
+                                      ovl.fmt.RRF4.m4, ovl.fmt.RRF4.r1,
+                                      ovl.fmt.RRF4.r2); goto ok;
    case 0xb3d4: /* LDETR */ goto unimplemented;
    case 0xb3d5: /* LEDTR */ goto unimplemented;
-   case 0xb3d6: /* LTDTR */ goto unimplemented;
+   case 0xb3d6: s390_format_RRE_FF(s390_irgen_LTDTR, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb3d7: /* FIDTR */ goto unimplemented;
    case 0xb3d8: /* MXTR */ goto unimplemented;
    case 0xb3d9: /* DXTR */ goto unimplemented;

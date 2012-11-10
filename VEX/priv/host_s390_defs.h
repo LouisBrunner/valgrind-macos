@@ -137,6 +137,7 @@ typedef enum {
    S390_INSN_BFP_TRIOP,
    S390_INSN_BFP_COMPARE,
    S390_INSN_BFP_CONVERT,
+   S390_INSN_DFP_BINOP, /* Decimal floating point */
    S390_INSN_MFENCE,
    S390_INSN_GZERO,   /* Assign zero to a guest register */
    S390_INSN_GADD,    /* Add a value to a guest register */
@@ -231,6 +232,15 @@ typedef enum {
    S390_BFP_F128_TO_F32,
    S390_BFP_F128_TO_F64
 } s390_conv_t;
+
+
+/* The kind of binary DFP operations */
+typedef enum {
+   S390_DFP_ADD,
+   S390_DFP_SUB,
+   S390_DFP_MUL,
+   S390_DFP_DIV
+} s390_dfp_binop_t;
 
 
 /* Condition code. The encoding of the enumerators matches the value of
@@ -487,6 +497,16 @@ typedef struct {
          HReg         op2_hi;  /* 128-bit operand high part; 32/64-bit opnd */
          HReg         op2_lo;  /* 128-bit operand low part */
       } bfp_compare;
+      struct {
+         s390_dfp_binop_t tag;
+         HReg         dst_hi; /* 128-bit result high part; 64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op2_hi; /* 128-bit operand high part; 64-bit opnd 1 */
+         HReg         op2_lo; /* 128-bit operand low part */
+         HReg         op3_hi; /* 128-bit operand high part; 64-bit opnd 2 */
+         HReg         op3_lo; /* 128-bit operand low part */
+         s390_dfp_round_t rounding_mode;
+      } dfp_binop;
 
       /* Miscellaneous */
       struct {
@@ -592,6 +612,9 @@ s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_conv_t,
 s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_conv_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_bfp_round_t);
+s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
+                               HReg op2, HReg op3,
+                               s390_dfp_round_t rounding_mode);
 s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_gzero(UChar size, UInt offset);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);

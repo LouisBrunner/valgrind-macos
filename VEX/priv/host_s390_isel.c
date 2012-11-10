@@ -135,6 +135,7 @@ static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
 static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 static HReg          s390_isel_float_expr(ISelEnv *, IRExpr *);
 static void          s390_isel_float128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
+static HReg          s390_isel_dfp_expr(ISelEnv *, IRExpr *);
 
 
 static Int
@@ -615,7 +616,6 @@ get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
 /* Set the DFP rounding mode in the FPC. This function is called for
    all non-conversion DFP instructions as those will always get the
    rounding mode from the FPC. */
-#if 0  // fixs390: avoid compiler warnings about unused function
 static void
 set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
 {
@@ -725,7 +725,6 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
    set_dfp_rounding_mode_in_fpc(env, irrm);
    return S390_DFP_ROUND_PER_FPC_0;
 }
-#endif
 
 /* CC_S390 holds the condition code in s390 encoding. Convert it to
    VEX encoding
@@ -2223,6 +2222,107 @@ s390_isel_float_expr(ISelEnv *env, IRExpr *expr)
 
 
 /*---------------------------------------------------------*/
+/*--- ISEL: Decimal point expressions (64 bit)          ---*/
+/*---------------------------------------------------------*/
+
+static HReg
+s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
+{
+   IRType ty = typeOfIRExpr(env->type_env, expr);
+   UChar size;
+
+   vassert(ty == Ity_D64);
+
+   size = sizeofIRType(ty);
+
+   switch (expr->tag) {
+   case Iex_RdTmp:
+      /* Return the virtual register that holds the temporary. */
+      return lookupIRTemp(env, expr->Iex.RdTmp.tmp);
+
+      /* --------- LOAD --------- */
+   case Iex_Load: {
+      HReg        dst = newVRegF(env);
+      s390_amode *am  = s390_isel_amode(env, expr->Iex.Load.addr);
+
+      if (expr->Iex.Load.end != Iend_BE)
+         goto irreducible;
+
+      addInstr(env, s390_insn_load(size, dst, am));
+
+      return dst;
+   }
+
+      /* --------- GET --------- */
+   case Iex_Get: {
+      HReg dst = newVRegF(env);
+      s390_amode *am = s390_amode_for_guest_state(expr->Iex.Get.offset);
+
+      addInstr(env, s390_insn_load(size, dst, am));
+
+      return dst;
+   }
+
+      /* --------- TERNARY OP --------- */
+   case Iex_Triop: {
+      IRTriop *triop = expr->Iex.Triop.details;
+      IROp    op     = triop->op;
+      IRExpr *irrm   = triop->arg1;
+      IRExpr *left   = triop->arg2;
+      IRExpr *right  = triop->arg3;
+      s390_dfp_round_t rounding_mode;
+      s390_dfp_binop_t dfpop;
+      HReg op2, op3, dst;
+
+      op2  = s390_isel_dfp_expr(env, left);  /* Process 1st operand */
+      op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
+      dst  = newVRegF(env);
+      switch (op) {
+      case Iop_AddD64:  dfpop = S390_DFP_ADD; break;
+      case Iop_SubD64:  dfpop = S390_DFP_SUB; break;
+      case Iop_MulD64:  dfpop = S390_DFP_MUL; break;
+      case Iop_DivD64:  dfpop = S390_DFP_DIV; break;
+      default:
+         goto irreducible;
+      }
+      /* DFP binary ops have insns with rounding mode field
+         when the floating point extension facility is installed. */
+      if (s390_host_has_fpext) {
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
+      } else {
+         set_dfp_rounding_mode_in_fpc(env, irrm);
+         rounding_mode = S390_DFP_ROUND_PER_FPC_0;
+      }
+
+      addInstr(env,
+               s390_insn_dfp_binop(size, dfpop, dst, op2, op3, rounding_mode));
+      return dst;
+   }
+
+   default:
+      goto irreducible;
+   }
+
+   /* We get here if no pattern matched. */
+ irreducible:
+   ppIRExpr(expr);
+   vpanic("s390_isel_dfp_expr: cannot reduce tree");
+}
+
+static HReg
+s390_isel_dfp_expr(ISelEnv *env, IRExpr *expr)
+{
+   HReg dst = s390_isel_dfp_expr_wrk(env, expr);
+
+   /* Sanity checks ... */
+   vassert(hregClass(dst) == HRcFlt64);
+   vassert(hregIsVirtual(dst));
+
+   return dst;
+}
+
+
+/*---------------------------------------------------------*/
 /*--- ISEL: Condition Code                              ---*/
 /*---------------------------------------------------------*/
 
@@ -2601,6 +2701,10 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          /* Does not occur. See function put_fpr_pair. */
          vpanic("Ist_Put with F128 data");
 
+      case Ity_D64:
+         src = s390_isel_dfp_expr(env, stmt->Ist.Put.data);
+         break;
+
       default:
          goto stmt_fail;
       }
@@ -2658,6 +2762,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          addInstr(env, s390_insn_move(8, dst_lo, res_lo));
          return;
       }
+
+      case Ity_D64:
+         src = s390_isel_dfp_expr(env, stmt->Ist.WrTmp.data);
+         dst = lookupIRTemp(env, tmp);
+         break;
 
       default:
          goto stmt_fail;
@@ -3024,6 +3133,7 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
 
       case Ity_F32:
       case Ity_F64:
+      case Ity_D64:
          hreg = mkHReg(j++, HRcFlt64, True);
          break;
 

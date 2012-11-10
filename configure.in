@@ -1220,6 +1220,21 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes -a x$ac_gcc_have_dfp = xyes)
 
 
+AC_MSG_CHECKING([that compiler knows DFP datatypes])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  _Decimal64 x = 0.0DD;
+]])], [
+ac_gcc_have_dfp_type=yes
+AC_MSG_RESULT([yes])
+], [
+ac_gcc_have_dfp_type=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_DFP_TESTS, test x$ac_gcc_have_dfp_type = xyes)
+
+
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])
 

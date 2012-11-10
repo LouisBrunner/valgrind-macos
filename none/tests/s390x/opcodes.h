@@ -69,6 +69,7 @@
             ".short 0x" #op1 #r1 #r3 "\n\t"  \
             ".long  0x" #b2 #dl2 #dh2 #op2 "\n\t"
 #define RRF_F0FF2(op,r3,u0,r1,r2)  ".long 0x" #op #r3 #u0 #r1 #r2 "\n\t"
+#define RRF_FUFF2(op,r3,m4,r1,r2) ".long 0x" #op #r3 #m4 #r1 #r2 "\n\t"
 #define RRF_UUFR(op,m3,m4,r1,r2)  ".long 0x" #op #m3 #m4 #r1 #r2 "\n\t"
 #define RRF_UURF(op,m3,m4,r1,r2)  ".long 0x" #op #m3 #m4 #r1 #r2 "\n\t"
 
@@ -100,6 +101,7 @@
 #define RRF_M0RERE(op,m3,r1,r2)  ".long 0x" #op #m3 "0" #r1 #r2 "\n\t"
 #define S_RD(op,b2,d2) ".long 0x" #op #b2 #d2 "\n\t"
 
+#define ADTRA(r3,m4,r1,r2)              RRF_FUFF2(b3d2,r3,m4,r1,r2)
 #define AFI(r1,i2)                      RIL_RI(c2,r1,9,i2)
 #define AGFI(r1,i2)                     RIL_RI(c2,r1,8,i2)
 #define AGHIK(r1,r3,i2)                 RIE_RRI0(ec,r1,r3,i2,00,d9)
@@ -210,6 +212,7 @@
 #define CXLFBR(m3,m4,r1,r2)             RRF_UUFR(b392,m3,m4,r1,r2)
 #define CXLGBR(m3,m4,r1,r2)             RRF_UUFR(b3a2,m3,m4,r1,r2)
 #define CY(r1,x2,b2,dl2,dh2)            RXY_RRRD(e3,r1,x2,b2,dl2,dh2,59)
+#define DDTRA(r3,m4,r1,r2)              RRF_FUFF2(b3d1,r3,m4,r1,r2)
 #define EXRL(r1,i2)                     RIL_RP(c6,r1,0,i2)
 #define FLOGR(r1,r2)                    RRE_RR(b983,00,r1,r2)
 #define ICMY(r1,r3,b2,dl2,dh2)          RSY_RURD(eb,r1,r3,b2,dl2,dh2,81)
@@ -274,6 +277,7 @@
 #define LTG(r1,x2,b2,dl2,dh2)           RXY_RRRD(e3,r1,x2,b2,dl2,dh2,02)
 #define LTGF(r1,x2,b2,dl2,dh2)          RXY_RRRD(e3,r1,x2,b2,dl2,dh2,32)
 #define LY(r1,x2,b2,dl2,dh2)            RXY_RRRD(e3,r1,x2,b2,dl2,dh2,58)
+#define MDTRA(r3,m4,r1,r2)              RRF_FUFF2(b3d0,r3,m4,r1,r2)
 #define MFY(r1,x2,b2,dl2,dh2)           RXY_RRRD(e3,r1,x2,b2,dl2,dh2,5c)
 #define MHY(r1,x2,b2,dl2,dh2)           RXY_RRRD(e3,r1,x2,b2,dl2,dh2,7c)
 #define MSFI(r1,i2)                     RIL_RI(c2,r1,1,i2)
@@ -308,6 +312,7 @@
 #define SHY(r1,x2,b2,dl2,dh2)           RXY_RRRD(e3,r1,x2,b2,dl2,dh2,7b)
 #define SLAK(r1,r3,b2,dl2,dh2)          RSY_RRRD(eb,r1,r3,b2,dl2,dh2,dd)
 #define ECAG(r1,r3,b2,dl2,dh2)          RSY_RRRD(eb,r1,r3,b2,dl2,dh2,4c)
+#define SDTRA(r3,m4,r1,r2)              RRF_FUFF2(b3d3,r3,m4,r1,r2)
 #define SLFI(r1,i2)                     RIL_RU(c2,r1,5,i2)
 #define SLGFI(r1,i2)                    RIL_RU(c2,r1,4,i2)
 #define SLGRK(r3,r1,r2)                 RRF_R0RR2(b9eb,r3,0,r1,r2)

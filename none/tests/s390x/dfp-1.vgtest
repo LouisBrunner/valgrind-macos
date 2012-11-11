@@ -1,0 +1,2 @@
+prog: dfp-1
+prereq: test -e dfp-1 && ../../../tests/s390x_features s390x-dfp

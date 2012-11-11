@@ -1,0 +1,9 @@
+Decimal floating point 64-bit arithmetic
+dfp64_add: 2220ff3fcff3fcff
+dfp64_add: 6e24ff3fcff3fcff
+dfp64_sub: ee20ff3fcff3fcff
+dfp64_sub: ee24ff3fcff3fcff
+dfp64_mul: 6e208c0000000000
+dfp64_mul: 6e248c0000000000
+dfp64_div: 6a206ec7ff7fab55
+dfp64_div: 2a3dec7b1ec7b1ed

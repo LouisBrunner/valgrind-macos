@@ -599,7 +599,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          }
          VG_(lseek) (fd, ofs, VKI_SEEK_SET);
          len_read = VG_(read) (fd, toread, len);
-         *new_packet_len_p = write_qxfer_response (arg_own_buf, toread,
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, (unsigned char *)toread,
                                                    len_read, ofs + len_read < doc_len);
          VG_(close) (fd);
          return;

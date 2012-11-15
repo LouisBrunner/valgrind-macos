@@ -102,12 +102,12 @@ void ML_(pp_TyEnt)( TyEnt* te )
          if (te->Te.Field.nLoc == -1)
             VG_(printf)("Te_Field(ty=0x%05lx,pos.offset=%ld,\"%s\")",
                         te->Te.Field.typeR, te->Te.Field.pos.offset,
-                        te->Te.Field.name ? te->Te.Field.name : (UChar*)"");
+                        te->Te.Field.name ? te->Te.Field.name : "");
          else
             VG_(printf)("Te_Field(ty=0x%05lx,nLoc=%lu,pos.loc=%p,\"%s\")",
                         te->Te.Field.typeR, te->Te.Field.nLoc,
                         te->Te.Field.pos.loc,
-                        te->Te.Field.name ? te->Te.Field.name : (UChar*)"");
+                        te->Te.Field.name ? te->Te.Field.name : "");
          break;
       case Te_Bound:
          VG_(printf)("Te_Bound[");
@@ -126,7 +126,7 @@ void ML_(pp_TyEnt)( TyEnt* te )
          VG_(printf)("Te_TyBase(%d,%c,\"%s\")",
                      te->Te.TyBase.szB, te->Te.TyBase.enc,
                      te->Te.TyBase.name ? te->Te.TyBase.name
-                                        : (UChar*)"(null)" );
+                                        : "(null)" );
          break;
       case Te_TyPtr:
          VG_(printf)("Te_TyPtr(%d,0x%05lx)", te->Te.TyPorR.szB,
@@ -148,7 +148,7 @@ void ML_(pp_TyEnt)( TyEnt* te )
          VG_(printf)("Te_TyTyDef(0x%05lx,\"%s\")",
                      te->Te.TyTyDef.typeR,
                      te->Te.TyTyDef.name ? te->Te.TyTyDef.name
-                                         : (UChar*)"" );
+                                         : "" );
          break;
       case Te_TyStOrUn:
          if (te->Te.TyStOrUn.complete) {
@@ -157,7 +157,7 @@ void ML_(pp_TyEnt)( TyEnt* te )
                         te->Te.TyStOrUn.isStruct ? 'S' : 'U',
                         te->Te.TyStOrUn.fieldRs,
                         te->Te.TyStOrUn.name ? te->Te.TyStOrUn.name
-                                             : (UChar*)"" );
+                                             : "" );
             if (te->Te.TyStOrUn.fieldRs)
                pp_XArray_of_cuOffs( te->Te.TyStOrUn.fieldRs );
          } else {
@@ -169,7 +169,7 @@ void ML_(pp_TyEnt)( TyEnt* te )
          VG_(printf)("Te_TyEnum(%d,%p,\"%s\")",
                      te->Te.TyEnum.szB, te->Te.TyEnum.atomRs,
                      te->Te.TyEnum.name ? te->Te.TyEnum.name
-                                        : (UChar*)"" );
+                                        : "" );
          if (te->Te.TyEnum.atomRs)
             pp_XArray_of_cuOffs( te->Te.TyEnum.atomRs );
          break;
@@ -272,7 +272,7 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          VG_(printf)("%s %s",
                      ent->Te.TyStOrUn.isStruct ? "struct" : "union",
                      ent->Te.TyStOrUn.name ? ent->Te.TyStOrUn.name
-                                           : (UChar*)"<anonymous>" );
+                                           : "<anonymous>" );
          break;
       case Te_TyArray:
          ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyArray.typeR);
@@ -469,7 +469,7 @@ static Word Bytevector__cmp ( UChar* a, UChar* b, Word n ) {
    }
    return 0;
 }
-static Word Asciiz__cmp ( UChar* a, UChar* b ) {
+static Word Asciiz__cmp ( const HChar* a, const HChar* b ) {
    /* A wrapper around strcmp that handles NULL strings safely. */
    if (a == NULL && b == NULL) return 0;
    if (a == NULL && b != NULL) return -1;
@@ -736,15 +736,15 @@ MaybeULong ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
 /* Describe where in the type 'offset' falls.  Caller must
    deallocate the resulting XArray. */
 
-static void copy_UWord_into_XA ( XArray* /* of UChar */ xa,
+static void copy_UWord_into_XA ( XArray* /* of HChar */ xa,
                                  UWord uw ) {
-   UChar buf[32];
+   HChar buf[32];
    VG_(memset)(buf, 0, sizeof(buf));
    VG_(sprintf)(buf, "%lu", uw);
    VG_(addBytesToXA)( xa, buf, VG_(strlen)(buf));
 }
 
-XArray* /*UChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
+XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
                                       XArray* /* of TyEnt */ tyents,
                                       UWord ty_cuOff, 
                                       PtrdiffT offset )
@@ -752,7 +752,7 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
    TyEnt*  ty;
    XArray* xa = VG_(newXA)( ML_(dinfo_zalloc), "di.tytypes.dt.1",
                             ML_(dinfo_free),
-                            sizeof(UChar) );
+                            sizeof(HChar) );
    vg_assert(xa);
 
    ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL, ty_cuOff);

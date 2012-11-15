@@ -217,7 +217,7 @@ static /*signed*/Word get_remaining_length_Cursor ( Cursor* c ) {
    return c->region_szB - c->region_next;
 }
 
-static UChar* get_address_of_Cursor ( Cursor* c ) {
+static void* get_address_of_Cursor ( Cursor* c ) {
    vg_assert(is_sane_Cursor(c));
    return &c->region_start_img[ c->region_next ];
 }
@@ -309,9 +309,9 @@ static Long get_SLEB128 ( Cursor* c ) {
    the string with ML_(addStr), since (w.r.t. image overruns) the
    process of advancing past the terminating zero will already have
    "vetted" the string. */
-static UChar* get_AsciiZ ( Cursor* c ) {
+static HChar* get_AsciiZ ( Cursor* c ) {
    UChar  uc;
-   UChar* res = get_address_of_Cursor(c);
+   HChar* res = get_address_of_Cursor(c);
    do { uc = get_UChar(c); } while (uc != 0);
    return res;
 }
@@ -402,7 +402,7 @@ typedef
       /* Upper bound on size thereof (an overestimate, in general) */
       UWord  debug_abbv_maxszB;
       /* Where is .debug_str ? */
-      UChar* debug_str_img;
+      HChar* debug_str_img;
       UWord  debug_str_sz;
       /* Where is .debug_ranges ? */
       UChar* debug_ranges_img;
@@ -423,7 +423,7 @@ typedef
       UChar* debug_info_alt_img;
       UWord  debug_info_alt_sz;
       /* Where is alternate .debug_str ? */
-      UChar* debug_str_alt_img;
+      HChar* debug_str_alt_img;
       UWord  debug_str_alt_sz;
       /* How much to add to .debug_types resp. alternate .debug_info offsets
          in cook_die*.  */
@@ -1176,21 +1176,21 @@ void get_Form_contents ( /*OUT*/ULong* cts,
 
       case DW_FORM_strp: {
          /* this is an offset into .debug_str */
-         UChar* str;
+         HChar* str;
          UWord uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
          if (cc->debug_str_img == NULL || uw >= cc->debug_str_sz)
             cc->barf("get_Form_contents: DW_FORM_strp "
                      "points outside .debug_str");
          /* FIXME: check the entire string lies inside debug_str,
             not just the first byte of it. */
-         str = (UChar*)cc->debug_str_img + uw;
+         str = cc->debug_str_img + uw;
          TRACE_D3("(indirect string, offset: 0x%lx): %s", uw, str);
          *cts = (ULong)(UWord)str;
          *ctsMemSzB = 1 + (ULong)VG_(strlen)(str);
          break;
       }
       case DW_FORM_string: {
-         UChar* str = get_AsciiZ(c);
+         HChar* str = get_AsciiZ(c);
          TRACE_D3("%s", str);
          *cts = (ULong)(UWord)str;
          /* strlen is safe because get_AsciiZ already 'vetted' the
@@ -1343,14 +1343,14 @@ void get_Form_contents ( /*OUT*/ULong* cts,
 
       case DW_FORM_GNU_strp_alt: {
          /* this is an offset into alternate .debug_str */
-         UChar* str;
+         HChar* str;
          UWord uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
          if (cc->debug_str_alt_img == NULL || uw >= cc->debug_str_alt_sz)
             cc->barf("get_Form_contents: DW_FORM_GNU_strp_alt "
                      "points outside alternate .debug_str");
          /* FIXME: check the entire string lies inside debug_str,
             not just the first byte of it. */
-         str = (UChar*)cc->debug_str_alt_img + uw;
+         str = cc->debug_str_alt_img + uw;
          TRACE_D3("(indirect alt string, offset: 0x%lx): %s", uw, str);
          *cts = (ULong)(UWord)str;
          *ctsMemSzB = 1 + (ULong)VG_(strlen)(str);
@@ -1374,7 +1374,7 @@ void get_Form_contents ( /*OUT*/ULong* cts,
 
 typedef
    struct _TempVar {
-      UChar*  name; /* in DebugInfo's .strchunks */
+      HChar*  name; /* in DebugInfo's .strchunks */
       /* Represent ranges economically.  nRanges is the number of
          ranges.  Cases:
          0: .rngOneMin .rngOneMax .manyRanges are all zero
@@ -1397,7 +1397,7 @@ typedef
       GExpr*  gexpr; /* for this variable */
       GExpr*  fbGX;  /* to find the frame base of the enclosing fn, if
                         any */
-      UChar*  fName; /* declaring file name, or NULL */
+      HChar*  fName; /* declaring file name, or NULL */
       Int     fLine; /* declaring file line number, or zero */
       /* offset in .debug_info, so that abstract instances can be
          found to satisfy references from concrete instances. */
@@ -1568,7 +1568,7 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
    Word   i;
    UShort version;
    UChar  opcode_base;
-   UChar* str;
+   HChar* str;
 
    vg_assert(parser && cc && cc->barf);
    if ((!cc->debug_line_img) 
@@ -1851,14 +1851,14 @@ static void parse_var_DIE (
    }
 
    if (dtag == DW_TAG_variable || dtag == DW_TAG_formal_parameter) {
-      UChar* name        = NULL;
+      HChar* name        = NULL;
       UWord  typeR       = D3_INVALID_CUOFF;
       Bool   external    = False;
       GExpr* gexpr       = NULL;
       Int    n_attrs     = 0;
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
       Int    lineNo      = 0;
-      UChar* fileName    = NULL;
+      HChar* fileName    = NULL;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -1867,7 +1867,7 @@ static void parse_var_DIE (
                             cc, c_die, False/*td3*/, form );
          n_attrs++;
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            name = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            name = ML_(addStr)( cc->di, (HChar*)(UWord)cts, -1 );
          }
          if (attr == DW_AT_location
              && ((ctsMemSzB > 0 && ctsSzB == 0)
@@ -1895,7 +1895,7 @@ static void parse_var_DIE (
             Int ftabIx = (Int)cts;
             if (ftabIx >= 1
                 && ftabIx < VG_(sizeXA)( parser->filenameTable )) {
-               fileName = *(UChar**)
+               fileName = *(HChar**)
                           VG_(indexXA)( parser->filenameTable, ftabIx );
                vg_assert(fileName);
             }
@@ -2367,7 +2367,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_name && ctsMemSzB > 0) {
             typeE.Te.TyBase.name
                = ML_(dinfo_strdup)( "di.readdwarf3.ptD.base_type.1",
-                                    (UChar*)(UWord)cts );
+                                    (HChar*)(UWord)cts );
          }
          if (attr == DW_AT_byte_size && ctsSzB > 0) {
             typeE.Te.TyBase.szB = cts;
@@ -2506,7 +2506,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_name && ctsMemSzB > 0) {
             typeE.Te.TyEnum.name
               = ML_(dinfo_strdup)( "di.readdwarf3.pTD.enum_type.2",
-                                   (UChar*)(UWord)cts );
+                                   (HChar*)(UWord)cts );
          }
          if (attr == DW_AT_byte_size && ctsSzB > 0) {
             typeE.Te.TyEnum.szB = cts;
@@ -2588,7 +2588,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_name && ctsMemSzB > 0) {
             atomE.Te.Atom.name 
               = ML_(dinfo_strdup)( "di.readdwarf3.pTD.enumerator.1",
-                                   (UChar*)(UWord)cts );
+                                   (HChar*)(UWord)cts );
          }
          if (attr == DW_AT_const_value && ctsSzB > 0) {
             atomE.Te.Atom.value = cts;
@@ -2641,7 +2641,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_name && ctsMemSzB > 0) {
             typeE.Te.TyStOrUn.name
                = ML_(dinfo_strdup)( "di.readdwarf3.ptD.struct_type.2",
-                                    (UChar*)(UWord)cts );
+                                    (HChar*)(UWord)cts );
          }
          if (attr == DW_AT_byte_size && ctsSzB >= 0) {
             typeE.Te.TyStOrUn.szB = cts;
@@ -2711,7 +2711,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_name && ctsMemSzB > 0) {
             fieldE.Te.Field.name
                = ML_(dinfo_strdup)( "di.readdwarf3.ptD.member.1",
-                                    (UChar*)(UWord)cts );
+                                    (HChar*)(UWord)cts );
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
             fieldE.Te.Field.typeR = cook_die_using_form( cc, (UWord)cts, form );
@@ -2915,7 +2915,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_name && ctsMemSzB > 0) {
             typeE.Te.TyTyDef.name
                = ML_(dinfo_strdup)( "di.readdwarf3.ptD.typedef.1",
-                                    (UChar*)(UWord)cts );
+                                    (HChar*)(UWord)cts );
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
             typeE.Te.TyTyDef.typeR = cook_die_using_form( cc, (UWord)cts,
@@ -3523,13 +3523,13 @@ void new_dwarf3_reader_wrk (
    UChar* debug_types_img,  SizeT debug_types_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
    UChar* debug_line_img,   SizeT debug_line_sz,
-   UChar* debug_str_img,    SizeT debug_str_sz,
+   HChar* debug_str_img,    SizeT debug_str_sz,
    UChar* debug_ranges_img, SizeT debug_ranges_sz,
    UChar* debug_loc_img,    SizeT debug_loc_sz,
    UChar* debug_info_alt_img, SizeT debug_info_alt_sz,
    UChar* debug_abbv_alt_img, SizeT debug_abbv_alt_sz,
    UChar* debug_line_alt_img, SizeT debug_line_alt_sz,
-   UChar* debug_str_alt_img,  SizeT debug_str_alt_sz
+   HChar* debug_str_alt_img,  SizeT debug_str_alt_sz
 )
 {
    XArray* /* of TyEnt */     tyents;
@@ -4128,7 +4128,7 @@ void new_dwarf3_reader_wrk (
          VG_(printf)("<%lx> addVar: level %d: %s :: ",
                      varp->dioff,
                      varp->level,
-                     varp->name ? varp->name : (UChar*)"<anon_var>" );
+                     varp->name ? varp->name : "<anon_var>" );
          if (varp->typeR) {
             ML_(pp_TyEnt_C_ishly)( tyents_to_keep, varp->typeR );
          } else {
@@ -4149,7 +4149,7 @@ void new_dwarf3_reader_wrk (
             VG_(printf)("  FrB=none\n");
          }
          VG_(printf)("  declared at: %s:%d\n",
-                     varp->fName ? varp->fName : (UChar*)"NULL",
+                     varp->fName ? varp->fName : "NULL",
                      varp->fLine );
          if (varp->absOri != (UWord)D3_INVALID_CUOFF)
             VG_(printf)("  abstract origin: <%lx>\n", varp->absOri);
@@ -4356,13 +4356,13 @@ ML_(new_dwarf3_reader) (
    UChar* debug_types_img,  SizeT debug_types_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
    UChar* debug_line_img,   SizeT debug_line_sz,
-   UChar* debug_str_img,    SizeT debug_str_sz,
+   HChar* debug_str_img,    SizeT debug_str_sz,
    UChar* debug_ranges_img, SizeT debug_ranges_sz,
    UChar* debug_loc_img,    SizeT debug_loc_sz,
    UChar* debug_info_alt_img, SizeT debug_info_alt_sz,
    UChar* debug_abbv_alt_img, SizeT debug_abbv_alt_sz,
    UChar* debug_line_alt_img, SizeT debug_line_alt_sz,
-   UChar* debug_str_alt_img,  SizeT debug_str_alt_sz
+   HChar* debug_str_alt_img,  SizeT debug_str_alt_sz
 )
 {
    volatile Int  jumped;

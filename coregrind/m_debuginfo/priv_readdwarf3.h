@@ -46,13 +46,13 @@ ML_(new_dwarf3_reader) (
    UChar* debug_types_img,  SizeT debug_types_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
    UChar* debug_line_img,   SizeT debug_line_sz,
-   UChar* debug_str_img,    SizeT debug_str_sz,
+   HChar* debug_str_img,    SizeT debug_str_sz,
    UChar* debug_ranges_img, SizeT debug_ranges_sz,
    UChar* debug_loc_img,    SizeT debug_loc_sz,
    UChar* debug_info_alt_img, SizeT debug_info_alt_sz,
    UChar* debug_abbv_alt_img, SizeT debug_abbv_alt_sz,
    UChar* debug_line_alt_img, SizeT debug_line_alt_sz,
-   UChar* debug_str_alt_img,  SizeT debug_str_alt_sz
+   HChar* debug_str_alt_img,  SizeT debug_str_alt_sz
 );
 
 #endif /* ndef __PRIV_READDWARF3_H */

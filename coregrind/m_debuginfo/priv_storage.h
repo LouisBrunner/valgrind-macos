@@ -66,8 +66,8 @@ typedef
    struct { 
       Addr    addr;    /* lowest address of entity */
       Addr    tocptr;  /* ppc64-linux only: value that R2 should have */
-      UChar*  pri_name;  /* primary name, never NULL */
-      UChar** sec_names; /* NULL, or a NULL term'd array of other names */
+      HChar*  pri_name;  /* primary name, never NULL */
+      HChar** sec_names; /* NULL, or a NULL term'd array of other names */
       // XXX: this could be shrunk (on 32-bit platforms) by using 30
       // bits for the size and 1 bit each for isText and isIFunc.  If you
       // do this, make sure that all assignments to the latter two use
@@ -107,9 +107,9 @@ typedef
       UShort size:LOC_SIZE_BITS; /* # bytes; we catch overflows of this */
       UInt   lineno:LINENO_BITS; /* source line number, or zero */
       /* Word 3 */
-      UChar*  filename;          /* source filename */
+      const HChar* filename;     /* source filename */
       /* Word 4 */
-      UChar*  dirname;           /* source directory name */
+      const HChar* dirname;      /* source directory name */
    }
    DiLoc;
 
@@ -405,11 +405,11 @@ typedef
 
 typedef
    struct {
-      UChar* name;  /* in DebugInfo.strchunks */
+      HChar* name;  /* in DebugInfo.strchunks */
       UWord  typeR; /* a cuOff */
       GExpr* gexpr; /* on DebugInfo.gexprs list */
       GExpr* fbGX;  /* SHARED. */
-      UChar* fileName; /* where declared; may be NULL. in
+      HChar* fileName; /* where declared; may be NULL. in
                           DebugInfo.strchunks */
       Int    lineNo;   /* where declared; may be zero. */
    }
@@ -465,7 +465,7 @@ struct _DebugInfoMapping
 
 struct _DebugInfoFSM
 {
-   UChar*  filename;  /* in mallocville (VG_AR_DINFO)               */
+   HChar*  filename;  /* in mallocville (VG_AR_DINFO)               */
    XArray* maps;      /* XArray of _DebugInfoMapping structs        */
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
    Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
@@ -536,7 +536,7 @@ struct _DebugInfo {
       is, at the point where .have_dinfo is set to True). */
 
    /* The file's soname. */
-   UChar* soname;
+   HChar* soname;
 
    /* Description of some important mapped segments.  The presence or
       absence of the mapping is denoted by the _present field, since
@@ -775,7 +775,7 @@ struct _DebugInfo {
    struct strchunk {
       UInt   strtab_used;
       struct strchunk* next;
-      UChar  strtab[SEGINFO_STRCHUNKSIZE];
+      HChar  strtab[SEGINFO_STRCHUNKSIZE];
    } *strchunks;
 
    /* Variable scope information, as harvested from Dwarf3 files.
@@ -834,8 +834,8 @@ extern void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym );
 /* Add a line-number record to a DebugInfo. */
 extern
 void ML_(addLineInfo) ( struct _DebugInfo* di, 
-                        UChar*   filename, 
-                        UChar*   dirname,  /* NULL is allowable */
+                        const HChar* filename, 
+                        const HChar* dirname,  /* NULL is allowable */
                         Addr this, Addr next, Int lineno, Int entry);
 
 /* Add a CFI summary record.  The supplied DiCfSI is copied. */
@@ -843,17 +843,17 @@ extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );
 
 /* Add a string to the string table of a DebugInfo.  If len==-1,
    ML_(addStr) will itself measure the length of the string. */
-extern UChar* ML_(addStr) ( struct _DebugInfo* di, UChar* str, Int len );
+extern HChar* ML_(addStr) ( struct _DebugInfo* di, HChar* str, Int len );
 
 extern void ML_(addVar)( struct _DebugInfo* di,
                          Int    level,
                          Addr   aMin,
                          Addr   aMax,
-                         UChar* name,
+                         HChar* name,
                          UWord  typeR, /* a cuOff */
                          GExpr* gexpr,
                          GExpr* fbGX, /* SHARED. */
-                         UChar* fileName, /* where decl'd - may be NULL */
+                         HChar* fileName, /* where decl'd - may be NULL */
                          Int    lineNo, /* where decl'd - may be zero */
                          Bool   show );
 

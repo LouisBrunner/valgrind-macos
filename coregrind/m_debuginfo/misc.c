@@ -55,12 +55,12 @@ void ML_(dinfo_free) ( void* v ) {
    VG_(arena_free)( VG_AR_DINFO, v );
 }
 
-UChar* ML_(dinfo_strdup) ( const HChar* cc, const UChar* str ) {
+HChar* ML_(dinfo_strdup) ( const HChar* cc, const HChar* str ) {
    return VG_(arena_strdup)( VG_AR_DINFO, cc, str );
 }
 
-UChar* ML_(dinfo_memdup) ( const HChar* cc, UChar* str, SizeT nStr ) {
-   UChar* dst = VG_(arena_malloc)( VG_AR_DINFO, cc, nStr );
+void* ML_(dinfo_memdup) ( const HChar* cc, void* str, SizeT nStr ) {
+   void* dst = VG_(arena_malloc)( VG_AR_DINFO, cc, nStr );
    tl_assert(dst);
    VG_(memcpy)(dst, str, nStr);
    return dst;

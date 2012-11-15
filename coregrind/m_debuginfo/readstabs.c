@@ -98,14 +98,14 @@ typedef enum { N_UNDEF = 0,	/* undefined symbol, new stringtab  */
 */
 void ML_(read_debuginfo_stabs) ( DebugInfo* di,
                                  UChar* stabC,   Int stab_sz, 
-                                 UChar* stabstr, Int stabstr_sz )
+                                 HChar* stabstr, Int stabstr_sz )
 {
    const Bool debug     = False;
    const Bool contdebug = False;
    Int    i;
    Int    n_stab_entries;
    struct nlist* stab = (struct nlist*)stabC;
-   UChar *next_stabstr = NULL;
+   HChar *next_stabstr = NULL;
    /* state for various things */
    struct {
       Addr     start;         /* start address */
@@ -113,7 +113,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
       Int      line;          /* first line */
    } func = { 0, 0, -1 };
    struct {
-      Char     *name;
+      HChar   *name;
       Bool     same;
    } file = { NULL, True };
    struct {
@@ -143,7 +143,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
    for (i = 0; i < n_stab_entries; i++) {
       const struct nlist *st = &stab[i];
-      Char *string;
+      HChar *string;
 
       if (di->trace_symtab) {
          VG_(printf) ( "%2d  type=%d   othr=%d   desc=%d   "
@@ -158,7 +158,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
       {
          Int   qbuflen = 0;
          Int   qidx = 0;
-         Char* qbuf = NULL;
+         HChar* qbuf = NULL;
          Int   qlen;
          Bool  qcontinuing = False;
          UInt  qstringidx;
@@ -189,7 +189,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
             /* XXX this is silly.  The si->strtab should have a way of
                appending to the last added string... */
             if ((qidx + qlen) >= qbuflen) {
-               Char *n;
+               HChar *n;
                
                if (qbuflen == 0)
                   qbuflen = 16;
@@ -266,7 +266,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
             /* FALLTHROUGH */
 
          case N_SO: {                /* new source file */
-            UChar *nm = string;
+            HChar *nm = string;
             UInt len = VG_(strlen)(nm);
             Addr addr = func.start + st->n_value;
 

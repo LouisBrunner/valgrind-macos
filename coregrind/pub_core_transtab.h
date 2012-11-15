@@ -78,7 +78,7 @@ extern Bool VG_(search_transtab) ( /*OUT*/AddrH* res_hcode,
                                    Bool          upd_cache );
 
 extern void VG_(discard_translations) ( Addr64 start, ULong range,
-                                        HChar* who );
+                                        const HChar* who );
 
 extern void VG_(print_tt_tc_stats) ( void );
 

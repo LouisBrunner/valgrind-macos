@@ -168,7 +168,7 @@ static ULong handle_counter = 1;
 
 /* Allocate and zero out a new DebugInfo record. */
 static 
-DebugInfo* alloc_DebugInfo( const UChar* filename )
+DebugInfo* alloc_DebugInfo( const HChar* filename )
 {
    Bool       traceme;
    DebugInfo* di;
@@ -313,7 +313,7 @@ static void discard_DebugInfo ( DebugInfo* di )
                          di->text_avma, 
                          di->text_avma + di->text_size,
                          curr->fsm.filename ? curr->fsm.filename
-                                            : (UChar*)"???",
+                                            : "???",
                          reason);
          vg_assert(*prev_next_ptr == curr);
          *prev_next_ptr = curr->next;
@@ -455,7 +455,7 @@ static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
 /* Find the existing DebugInfo for |filename| or if not found, create
    one.  In the latter case |filename| is strdup'd into VG_AR_DINFO,
    and the new DebugInfo is added to debugInfo_list. */
-static DebugInfo* find_or_create_DebugInfo_for ( UChar* filename )
+static DebugInfo* find_or_create_DebugInfo_for ( HChar* filename )
 {
    DebugInfo* di;
    vg_assert(filename);
@@ -1045,8 +1045,8 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    Int    i, r, sz_exename;
    ULong  obj_mtime, pdb_mtime;
    HChar  exename[VKI_PATH_MAX];
-   Char*  pdbname = NULL;
-   Char*  dot;
+   HChar* pdbname = NULL;
+   HChar* dot;
    SysRes sres;
    Int    fd_pdbimage;
    SizeT  n_pdbimage;
@@ -1418,7 +1418,7 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
 static
 Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
                     Bool do_below_main_renaming,
-                    Addr a, Char* buf, Int nbuf,
+                    Addr a, HChar* buf, Int nbuf,
                     Bool match_anywhere_in_sym, Bool show_offset,
                     Bool findText, /*OUT*/PtrdiffT* offsetP )
 {
@@ -1448,9 +1448,9 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    if (offsetP) *offsetP = offset;
 
    if (show_offset && offset != 0) {
-      Char     buf2[12];
-      Char*    symend = buf + VG_(strlen)(buf);
-      Char*    end = buf + nbuf;
+      HChar    buf2[12];
+      HChar*   symend = buf + VG_(strlen)(buf);
+      HChar*   end = buf + nbuf;
       Int      len;
 
       len = VG_(sprintf)(buf2, "%c%ld",
@@ -1459,7 +1459,7 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
       vg_assert(len < (Int)sizeof(buf2));
 
       if (len < (end - symend)) {
-	 Char *cp = buf2;
+	 HChar *cp = buf2;
 	 VG_(memcpy)(symend, cp, len+1);
       }
    }
@@ -1488,7 +1488,7 @@ Addr VG_(get_tocptr) ( Addr guest_code_addr )
 
 /* This is available to tools... always demangle C++ names,
    match anywhere in function, but don't show offsets. */
-Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
+Bool VG_(get_fnname) ( Addr a, HChar* buf, Int nbuf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
@@ -1501,7 +1501,7 @@ Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
 
 /* This is available to tools... always demangle C++ names,
    match anywhere in function, and show offset if nonzero. */
-Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
+Bool VG_(get_fnname_w_offset) ( Addr a, HChar* buf, Int nbuf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
@@ -1515,7 +1515,7 @@ Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
 /* This is available to tools... always demangle C++ names,
    only succeed if 'a' matches first instruction of function,
    and don't show offsets. */
-Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )
+Bool VG_(get_fnname_if_entry) ( Addr a, HChar* buf, Int nbuf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
@@ -1529,7 +1529,7 @@ Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )
 /* This is only available to core... don't C++-demangle, don't Z-demangle,
    don't rename below-main, match anywhere in function, and don't show
    offsets. */
-Bool VG_(get_fnname_raw) ( Addr a, Char* buf, Int nbuf )
+Bool VG_(get_fnname_raw) ( Addr a, HChar* buf, Int nbuf )
 {
    return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
                          /*below-main-renaming*/False,
@@ -1543,7 +1543,7 @@ Bool VG_(get_fnname_raw) ( Addr a, Char* buf, Int nbuf )
 /* This is only available to core... don't demangle C++ names, but do
    do Z-demangling and below-main-renaming, match anywhere in function, and
    don't show offsets. */
-Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, Char* buf, Int nbuf )
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf )
 {
    return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
@@ -1560,7 +1560,7 @@ Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, Char* buf, Int nbuf )
 Bool VG_(get_inst_offset_in_function)( Addr a,
                                        /*OUT*/PtrdiffT* offset )
 {
-   Char fnname[64];
+   HChar fnname[64];
    return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
                          /*below-main-renaming*/False,
                          a, fnname, 64,
@@ -1570,7 +1570,7 @@ Bool VG_(get_inst_offset_in_function)( Addr a,
                          offset );
 }
 
-Vg_FnNameKind VG_(get_fnname_kind) ( Char* name )
+Vg_FnNameKind VG_(get_fnname_kind) ( HChar* name )
 {
    if (VG_STREQ("main", name)) {
       return Vg_FnNameMain;
@@ -1597,7 +1597,7 @@ Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
 {
    // We don't need a big buffer;  all the special names are small.
    #define BUFLEN 50
-   Char buf[50];
+   HChar buf[50];
 
    // We don't demangle, because it's faster not to, and the special names
    // we're looking for won't be demangled.
@@ -1614,7 +1614,7 @@ Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
    which is guaranteed to be zero terminated.  Also data_addr's offset
    from the symbol start is put into *offset. */
 Bool VG_(get_datasym_and_offset)( Addr data_addr,
-                                  /*OUT*/Char* dname, Int n_dname,
+                                  /*OUT*/HChar* dname, Int n_dname,
                                   /*OUT*/PtrdiffT* offset )
 {
    Bool ok;
@@ -1635,7 +1635,7 @@ Bool VG_(get_datasym_and_offset)( Addr data_addr,
 /* Map a code address to the name of a shared object file or the
    executable.  Returns False if no idea; otherwise True.  Doesn't
    require debug info.  Caller supplies buf and nbuf. */
-Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
+Bool VG_(get_objname) ( Addr a, HChar* buf, Int nbuf )
 {
    DebugInfo* di;
    const NSegment *seg;
@@ -1687,7 +1687,7 @@ DebugInfo* VG_(find_DebugInfo) ( Addr a )
 }
 
 /* Map a code address to a filename.  Returns True if successful.  */
-Bool VG_(get_filename)( Addr a, Char* filename, Int n_filename )
+Bool VG_(get_filename)( Addr a, HChar* filename, Int n_filename )
 {
    DebugInfo* si;
    Word       locno;
@@ -1715,8 +1715,8 @@ Bool VG_(get_linenum)( Addr a, UInt* lineno )
    See prototype for detailed description of behaviour.
 */
 Bool VG_(get_filename_linenum) ( Addr a, 
-                                 /*OUT*/Char* filename, Int n_filename,
-                                 /*OUT*/Char* dirname,  Int n_dirname,
+                                 /*OUT*/HChar* filename, Int n_filename,
+                                 /*OUT*/HChar* dirname,  Int n_dirname,
                                  /*OUT*/Bool* dirname_available,
                                  /*OUT*/UInt* lineno )
 {
@@ -1765,7 +1765,7 @@ Bool VG_(get_filename_linenum) ( Addr a,
    Therefore specify "*" to search all the objects.  On TOC-afflicted
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
-Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name, 
+Bool VG_(lookup_symbol_SLOW)(HChar* sopatt, HChar* name, 
                              Addr* pEnt, Addr* pToc)
 {
    Bool     require_pToc = False;
@@ -1784,7 +1784,7 @@ Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name,
          continue;
       }
       for (i = 0; i < si->symtab_used; i++) {
-         UChar* pri_name = si->symtab[i].pri_name;
+         HChar* pri_name = si->symtab[i].pri_name;
          tl_assert(pri_name);
          if (0==VG_(strcmp)(name, pri_name)
              && (require_pToc ? si->symtab[i].tocptr : True)) {
@@ -1792,7 +1792,7 @@ Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name,
             *pToc = si->symtab[i].tocptr;
             return True;
          }
-         UChar** sec_names = si->symtab[i].sec_names;
+         HChar** sec_names = si->symtab[i].sec_names;
          if (sec_names) {
             tl_assert(sec_names[0]);
             while (*sec_names) {
@@ -1817,7 +1817,7 @@ Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name,
 /* Copy str into buf starting at n, but not going past buf[n_buf-1]
    and always ensuring that buf is zero-terminated. */
 
-static Int putStr ( Int n, Int n_buf, Char* buf, Char* str ) 
+static Int putStr ( Int n, Int n_buf, HChar* buf, const HChar* str ) 
 {
    vg_assert(n_buf > 0);
    vg_assert(n >= 0 && n < n_buf);
@@ -1831,9 +1831,9 @@ static Int putStr ( Int n, Int n_buf, Char* buf, Char* str )
 /* Same as putStr, but escaping chars for XML output, and
    also not adding more than count chars to n_buf. */
 
-static Int putStrEsc ( Int n, Int n_buf, Int count, Char* buf, Char* str ) 
+static Int putStrEsc ( Int n, Int n_buf, Int count, HChar* buf, HChar* str ) 
 {
-   Char alt[2];
+   HChar alt[2];
    vg_assert(n_buf > 0);
    vg_assert(count >= 0 && count < n_buf);
    vg_assert(n >= 0 && n < n_buf);
@@ -1872,7 +1872,7 @@ static Int putStrEsc ( Int n, Int n_buf, Int count, Char* buf, Char* str )
    return n;
 }
 
-Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
+HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf)
 {
 #  define APPEND(_str) \
       n = putStr(n, n_buf, buf, _str)
@@ -1881,13 +1881,13 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 #  define BUF_LEN    4096
 
    UInt  lineno; 
-   UChar ibuf[50];
+   HChar ibuf[50];
    Int   n = 0;
 
-   static UChar buf_fn[BUF_LEN];
-   static UChar buf_obj[BUF_LEN];
-   static UChar buf_srcloc[BUF_LEN];
-   static UChar buf_dirname[BUF_LEN];
+   static HChar buf_fn[BUF_LEN];
+   static HChar buf_obj[BUF_LEN];
+   static HChar buf_srcloc[BUF_LEN];
+   static HChar buf_dirname[BUF_LEN];
    buf_fn[0] = buf_obj[0] = buf_srcloc[0] = buf_dirname[0] = 0;
 
    Bool  know_dirinfo = False;
@@ -1977,7 +1977,7 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
       if (know_srcloc) {
          APPEND(" (");
          // Get the directory name, if any, possibly pruned, into dirname.
-         UChar* dirname = NULL;
+         HChar* dirname = NULL;
          if (VG_(clo_n_fullpath_after) > 0) {
             Int i;
             dirname = buf_dirname;
@@ -1985,8 +1985,8 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
             // If user supplied --fullpath-after=foo, this will remove 
             // a leading string which matches '.*foo' (not greedy).
             for (i = 0; i < VG_(clo_n_fullpath_after); i++) {
-              UChar* prefix = (UChar *)VG_(clo_fullpath_after)[i]; // FIXME
-               UChar* str    = VG_(strstr)(dirname, prefix);
+               const HChar* prefix = VG_(clo_fullpath_after)[i];
+               HChar* str    = VG_(strstr)(dirname, prefix);
                if (str) {
                   dirname = str + VG_(strlen)(prefix);
                   break;
@@ -2767,10 +2767,10 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
 {
    Bool   have_descr, have_srcloc;
    Bool   xml       = VG_(clo_xml);
-   UChar* vo_plural = var_offset == 1 ? "" : "s";
-   UChar* ro_plural = residual_offset == 1 ? "" : "s";
-   UChar* basetag   = "auxwhat"; /* a constant */
-   UChar tagL[32], tagR[32], xagL[32], xagR[32];
+   const HChar* vo_plural = var_offset == 1 ? "" : "s";
+   const HChar* ro_plural = residual_offset == 1 ? "" : "s";
+   const HChar* basetag   = "auxwhat"; /* a constant */
+   HChar tagL[32], tagR[32], xagL[32], xagR[32];
 
    if (frameNo < -1) {
       vg_assert(0); /* Not allowed */
@@ -3817,12 +3817,12 @@ SizeT VG_(DebugInfo_get_got_size)(const DebugInfo* di)
    return di->got_present ? di->got_size : 0; 
 }
 
-const UChar* VG_(DebugInfo_get_soname)(const DebugInfo* di)
+const HChar* VG_(DebugInfo_get_soname)(const DebugInfo* di)
 {
    return di->soname;
 }
 
-const UChar* VG_(DebugInfo_get_filename)(const DebugInfo* di)
+const HChar* VG_(DebugInfo_get_filename)(const DebugInfo* di)
 {
    return di->fsm.filename;
 }
@@ -3884,7 +3884,7 @@ const HChar* VG_(pp_SectKind)( VgSectKind kind )
    characters of the object's name is put in name[0 .. n_name-2], and
    name[n_name-1] is set to zero (guaranteed zero terminated). */
 
-VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name, 
+VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/HChar* name, SizeT n_name, 
                                      Addr a)
 {
    DebugInfo* di;

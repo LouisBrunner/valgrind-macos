@@ -75,7 +75,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
          VG_(message)(Vg_DebugMsg, 
                       "When reading debug info from %s:\n",
                       (di && di->fsm.filename) ? di->fsm.filename
-                                               : (UChar*)"???");
+                                               : "???");
       }
       VG_(message)(Vg_DebugMsg, "%s\n", msg);
 
@@ -91,7 +91,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
 /* Print a symbol. */
 void ML_(ppSym) ( Int idx, DiSym* sym )
 {
-   UChar** sec_names = sym->sec_names;
+   HChar** sec_names = sym->sec_names;
    vg_assert(sym->pri_name);
    if (sec_names)
       vg_assert(sec_names);
@@ -215,11 +215,11 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    a chunking memory allocator rather than reallocating, so the
    pointers are stable.
 */
-UChar* ML_(addStr) ( struct _DebugInfo* di, UChar* str, Int len )
+HChar* ML_(addStr) ( struct _DebugInfo* di, HChar* str, Int len )
 {
    struct strchunk *chunk;
    Int    space_needed;
-   UChar* p;
+   HChar* p;
 
    if (len == -1) {
       len = VG_(strlen)(str);
@@ -337,8 +337,8 @@ static void shrinkLocTab ( struct _DebugInfo* di )
 /* Top-level place to call to add a source-location mapping entry.
 */
 void ML_(addLineInfo) ( struct _DebugInfo* di,
-                        UChar*   filename,
-                        UChar*   dirname, /* NULL == directory is unknown */
+                        const HChar* filename,
+                        const HChar* dirname, /* NULL == directory is unknown */
                         Addr     this,
                         Addr     next,
                         Int      lineno,
@@ -354,7 +354,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
 
    if (debug)
       VG_(printf)( "  src %s %s line %d %#lx-%#lx\n",
-                   dirname ? dirname : (UChar*)"(unknown)",
+                   dirname ? dirname : "(unknown)",
                    filename, lineno, this, next );
 
    /* Maximum sanity checking.  Some versions of GNU as do a shabby
@@ -896,11 +896,11 @@ void ML_(addVar)( struct _DebugInfo* di,
                   Int    level,
                   Addr   aMin,
                   Addr   aMax,
-                  UChar* name, /* in di's .strchunks */
+                  HChar* name, /* in di's .strchunks */
                   UWord  typeR, /* a cuOff */
                   GExpr* gexpr,
                   GExpr* fbGX,
-                  UChar* fileName, /* where decl'd - may be NULL.
+                  HChar* fileName, /* where decl'd - may be NULL.
                                       in di's .strchunks */
                   Int    lineNo, /* where decl'd - may be zero */
                   Bool   show )
@@ -1174,12 +1174,12 @@ static Int compare_DiSym ( void* va, void* vb )
  */
 static
 Bool preferName ( struct _DebugInfo* di,
-                  UChar* a_name, UChar* b_name,
+                  HChar* a_name, HChar* b_name,
                   Addr sym_avma/*exposition only*/ )
 {
    Word cmp;
    Word vlena, vlenb;		/* length without version */
-   const UChar *vpa, *vpb;
+   const HChar *vpa, *vpb;
 
    Bool preferA = False;
    Bool preferB = False;
@@ -1233,7 +1233,7 @@ Bool preferName ( struct _DebugInfo* di,
    {
       Bool blankA = True;
       Bool blankB = True;
-      Char *s;
+      HChar *s;
       s = a_name;
       while (*s) {
          if (!VG_(isspace)(*s++)) {
@@ -1317,8 +1317,8 @@ void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
    vg_assert(from->pri_name);
    /* Figure out how many names there will be in the new combined
       secondary vector. */
-   UChar** to_sec   = to->sec_names;
-   UChar** from_sec = from->sec_names;
+   HChar** to_sec   = to->sec_names;
+   HChar** from_sec = from->sec_names;
    Word n_new_sec = 1;
    if (from_sec) {
       while (*from_sec) {
@@ -1336,8 +1336,8 @@ void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
       TRACE_SYMTAB("merge: -> %ld\n", n_new_sec);
    /* Create the new sec and copy stuff into it, putting the new
       entries at the end. */
-   UChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
-                                        (n_new_sec+1) * sizeof(UChar*) );
+   HChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
+                                        (n_new_sec+1) * sizeof(HChar*) );
    from_sec = from->sec_names;
    to_sec   = to->sec_names;
    Word i = 0;
@@ -1368,7 +1368,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 {
    Word  i, j, n_truncated;
    Addr  sta1, sta2, end1, end2, toc1, toc2;
-   UChar *pri1, *pri2, **sec1, **sec2;
+   HChar *pri1, *pri2, **sec1, **sec2;
    Bool  ist1, ist2, isf1, isf2;
 
 #  define SWAP(ty,aa,bb) \
@@ -1492,7 +1492,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
          if (end1 > end2) { 
             sta1 = end2 + 1;
             SWAP(Addr,sta1,sta2); SWAP(Addr,end1,end2); SWAP(Addr,toc1,toc2);
-            SWAP(UChar*,pri1,pri2); SWAP(UChar**,sec1,sec2);
+            SWAP(HChar*,pri1,pri2); SWAP(HChar**,sec1,sec2);
             SWAP(Bool,ist1,ist2); SWAP(Bool,isf1,isf2);
          } else 
          if (end1 < end2) {
@@ -1561,7 +1561,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       show the user. */
    for (i = 0; i < ((Word)di->symtab_used)-1; i++) {
       DiSym*  sym = &di->symtab[i];
-      UChar** sec = sym->sec_names;
+      HChar** sec = sym->sec_names;
       if (!sec)
          continue;
       /* Slow but simple.  Copy all the cands into a temp array,
@@ -1569,8 +1569,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       Word n_tmp = 1;
       while (*sec) { n_tmp++; sec++; }
       j = 0;
-      UChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
-                                       (n_tmp+1) * sizeof(UChar*) );
+      HChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
+                                       (n_tmp+1) * sizeof(HChar*) );
       tmp[j++] = sym->pri_name;
       sec = sym->sec_names;
       while (*sec) { tmp[j++] = *sec; sec++; }
@@ -1588,7 +1588,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       vg_assert(best >= 0 && best < n_tmp);
       /* Copy back */
       sym->pri_name = tmp[best];
-      UChar** cursor = sym->sec_names;
+      HChar** cursor = sym->sec_names;
       for (j = 0; j < n_tmp; j++) {
          if (j == best)
             continue;

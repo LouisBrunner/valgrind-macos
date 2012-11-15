@@ -650,7 +650,7 @@ getsockdetails(Int fd)
       struct vki_sockaddr_in in;
       struct vki_sockaddr_un un;
    } laddr;
-   UInt llen;
+   Int llen;
 
    llen = sizeof(laddr);
    VG_(memset)(&laddr, 0, llen);
@@ -661,7 +661,7 @@ getsockdetails(Int fd)
          static char lname[32];
          static char pname[32];
          struct vki_sockaddr_in paddr;
-         UInt plen = sizeof(struct vki_sockaddr_in);
+         Int plen = sizeof(struct vki_sockaddr_in);
 
          if (VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
             VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> %s\n", fd,
@@ -703,7 +703,7 @@ void VG_(show_open_fds) (const HChar* when)
                       i->pathname);
       } else {
          Int val;
-         UInt len = sizeof(val);
+         Int len = sizeof(val);
 
          if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len)
              == -1) {

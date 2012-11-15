@@ -94,7 +94,7 @@ typedef
       write_watchpoint,
       read_watchpoint,
       access_watchpoint } PointKind;
-extern char* VG_(ppPointKind) (PointKind kind);
+extern const HChar* VG_(ppPointKind) (PointKind kind);
 
 
 /* watchpoint support --------------------------------------*/
@@ -160,7 +160,7 @@ typedef
       kwd_report_none,
       kwd_report_all,
       kwd_report_duplicated_matches } kwd_report_error;
-extern Int VG_(keyword_id) (Char* keywords, Char* input_word, 
+extern Int VG_(keyword_id) (HChar* keywords, HChar* input_word, 
                             kwd_report_error report);
 
 /* Extract an address and (optionally) a size from the string

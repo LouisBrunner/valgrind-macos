@@ -1815,7 +1815,7 @@ Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
 
 
 void VG_(discard_translations) ( Addr64 guest_start, ULong range,
-                                 HChar* who )
+                                 const HChar* who )
 {
    Sector* sec;
    Int     sno, ec;

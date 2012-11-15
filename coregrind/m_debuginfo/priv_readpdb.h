@@ -44,7 +44,7 @@ extern Bool ML_(read_pdb_debug_info)(
                PtrdiffT   obj_bias,
                void*      pdbimage,
                SizeT      n_pdbimage,
-               Char*      pdbname,
+               HChar*     pdbname,
                ULong      pdbmtime
             );
 

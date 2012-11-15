@@ -146,7 +146,7 @@ Bool ML_(is_elf_object_file)( void* image, SizeT n_image, Bool rel_ok )
 
 static
 void show_raw_elf_symbol ( Int i, 
-                           ElfXX_Sym* sym, Char* sym_name, Addr sym_svma,
+                           ElfXX_Sym* sym, const HChar* sym_name, Addr sym_svma,
                            Bool ppc64_linux_format )
 {
    HChar* space = ppc64_linux_format ? "                  " : "";
@@ -171,7 +171,7 @@ void show_raw_elf_symbol ( Int i,
    }
    VG_(printf)(": svma %#010lx, %ssz %4ld  %s\n",
                sym_svma, space, sym->st_size + 0UL,
-               ( sym->st_name ? sym_name : (Char*)"NONAME" ) ); 
+               ( sym->st_name ? sym_name : "NONAME" ) ); 
 }               
 
 
@@ -207,13 +207,13 @@ Bool get_elf_symbol_info (
         /* INPUTS */
         struct _DebugInfo* di, /* containing DebugInfo */
         ElfXX_Sym* sym,        /* ELF symbol */
-        Char*      sym_name,   /* name */
+        HChar*     sym_name,   /* name */
         Addr       sym_svma,   /* address as stated in the object file */
         Bool       symtab_in_debug, /* symbol table is in the debug file */
         UChar*     opd_img,    /* oimage of .opd sec (ppc64-linux only) */
         PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
-        Char** sym_name_out,   /* name we should record */
+        HChar** sym_name_out,  /* name we should record */
         Addr*  sym_avma_out,   /* addr we should record */
         Int*   sym_size_out,   /* symbol size */
         Addr*  sym_tocptr_out, /* ppc64-linux only: R2 value to be
@@ -613,16 +613,16 @@ Bool get_elf_symbol_info (
 static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__normal( 
-        struct _DebugInfo* di, UChar* tab_name,
+        struct _DebugInfo* di, const HChar* tab_name,
         ElfXX_Sym* symtab_img, SizeT symtab_szB,
-        UChar*     strtab_img, SizeT strtab_szB,
+        HChar*     strtab_img, SizeT strtab_szB,
         Bool       symtab_in_debug,
         UChar*     opd_img /* ppc64-linux only */ 
      )
 {
    Word       i;
    Addr       sym_svma, sym_avma_really;
-   Char      *sym_name, *sym_name_really;
+   HChar     *sym_name, *sym_name_really;
    Int        sym_size;
    Addr       sym_tocptr;
    Bool       from_opd, is_text, is_ifunc;
@@ -630,7 +630,7 @@ void read_elf_symtab__normal(
    ElfXX_Sym *sym;
 
    if (strtab_img == NULL || symtab_img == NULL) {
-      Char buf[80];
+      HChar buf[80];
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
       ML_(symerr)(di, False, buf);
@@ -644,7 +644,7 @@ void read_elf_symtab__normal(
       0 always denotes 'unknown symbol'. */
    for (i = 1; i < (Word)(symtab_szB/sizeof(ElfXX_Sym)); i++) {
       sym      = & symtab_img[i];
-      sym_name = (UChar*)(strtab_img + sym->st_name);
+      sym_name = strtab_img + sym->st_name;
       sym_svma = sym->st_value;
 
       if (di->trace_symtab)
@@ -692,7 +692,7 @@ void read_elf_symtab__normal(
 typedef
    struct { 
       Addr   addr; 
-      UChar* name; 
+      HChar* name; 
    }
    TempSymKey;
 
@@ -716,9 +716,9 @@ static Word cmp_TempSymKey ( TempSymKey* key1, TempSym* elem2 ) {
 static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__ppc64_linux( 
-        struct _DebugInfo* di, UChar* tab_name,
+        struct _DebugInfo* di, const HChar* tab_name,
         ElfXX_Sym* symtab_img, SizeT symtab_szB,
-        UChar*     strtab_img, SizeT strtab_szB,
+        HChar*     strtab_img, SizeT strtab_szB,
         Bool       symtab_in_debug,
         UChar*     opd_img /* ppc64-linux only */ 
      )
@@ -726,7 +726,7 @@ void read_elf_symtab__ppc64_linux(
    Word        i;
    Int         old_size;
    Addr        sym_svma, sym_avma_really;
-   Char       *sym_name, *sym_name_really;
+   HChar      *sym_name, *sym_name_really;
    Int         sym_size;
    Addr        sym_tocptr;
    Bool        from_opd, modify_size, modify_tocptr, is_text, is_ifunc;
@@ -738,7 +738,7 @@ void read_elf_symtab__ppc64_linux(
    TempSym    *prev;
 
    if (strtab_img == NULL || symtab_img == NULL) {
-      Char buf[80];
+      HChar buf[80];
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
       ML_(symerr)(di, False, buf);
@@ -758,7 +758,7 @@ void read_elf_symtab__ppc64_linux(
       0 always denotes 'unknown symbol'. */
    for (i = 1; i < (Word)(symtab_szB/sizeof(ElfXX_Sym)); i++) {
       sym      = & symtab_img[i];
-      sym_name = (Char*)(strtab_img + sym->st_name);
+      sym_name = strtab_img + sym->st_name;
       sym_svma = sym->st_value;
 
       if (di->trace_symtab)
@@ -902,9 +902,9 @@ void read_elf_symtab__ppc64_linux(
  * http://fedoraproject.org/wiki/RolandMcGrath/BuildID
  */
 static
-Char *find_buildid(Addr image, UWord n_image, Bool rel_ok)
+HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok)
 {
-   Char* buildid = NULL;
+   HChar* buildid = NULL;
    __attribute__((unused)) /* on Android, at least */
    ElfXX_Ehdr* ehdr = (ElfXX_Ehdr*)image;
 
@@ -922,7 +922,7 @@ Char *find_buildid(Addr image, UWord n_image, Bool rel_ok)
 
             while (offset < phdr->p_offset + phdr->p_filesz) {
                ElfXX_Nhdr* note = (ElfXX_Nhdr*)(image + offset);
-               Char* name = (Char *)note + sizeof(ElfXX_Nhdr);
+               HChar *name = (HChar *)note + sizeof(ElfXX_Nhdr);
                UChar *desc = (UChar *)name + ((note->n_namesz + 3) & ~3);
                Word j;
 
@@ -956,7 +956,7 @@ Char *find_buildid(Addr image, UWord n_image, Bool rel_ok)
 
             while (offset < shdr->sh_offset + shdr->sh_size) {
                ElfXX_Nhdr* note = (ElfXX_Nhdr*)(image + offset);
-               Char* name = (Char *)note + sizeof(ElfXX_Nhdr);
+               HChar *name = (HChar *)note + sizeof(ElfXX_Nhdr);
                UChar *desc = (UChar *)name + ((note->n_namesz + 3) & ~3);
                Word j;
 
@@ -1058,8 +1058,8 @@ calc_gnu_debuglink_crc32(UInt crc, const UChar *buf, Int len)
  * not match the value from the main object file.
  */
 static
-Addr open_debug_file( Char* name, Char* buildid, UInt crc, Bool rel_ok,
-                      /*OUT*/UWord* size )
+Addr open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
+                      Bool rel_ok, /*OUT*/UWord* size )
 {
    SysRes fd, sres;
    struct vg_stat stat_buf;
@@ -1088,7 +1088,7 @@ Addr open_debug_file( Char* name, Char* buildid, UInt crc, Bool rel_ok,
       return 0;
 
    if (buildid) {
-      Char* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok);
+      HChar* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok);
       if (debug_buildid == NULL || VG_(strcmp)(buildid, debug_buildid) != 0) {
          SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
          vg_assert(!sr_isError(res));
@@ -1128,7 +1128,7 @@ Addr open_debug_file( Char* name, Char* buildid, UInt crc, Bool rel_ok,
    Android; does nothing on any other platform. */
 static
 Bool find_ad_hoc_debug_image( struct _DebugInfo* di, 
-                              Char* filename,
+                              HChar* filename,
                               /*OUT*/Addr* dimage,
                               /*OUT*/SizeT* n_dimage )
 {
@@ -1206,12 +1206,12 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
    unchanged.  The caller should set them to zero before the call. */
 static
 void find_debug_file( struct _DebugInfo* di,
-                      Char* objpath, Char* buildid,
-                      Char* debugname, UInt crc, Bool rel_ok,
+                      const HChar* objpath, const HChar* buildid,
+                      const HChar* debugname, UInt crc, Bool rel_ok,
                       /*OUT*/Addr*  dimage,
                       /*OUT*/SizeT* n_dimage )
 {
-   Char* debugpath = NULL;
+   HChar* debugpath = NULL;
    Addr  addr = 0;
    UWord size = 0;
 
@@ -1233,8 +1233,8 @@ void find_debug_file( struct _DebugInfo* di,
    }
 
    if (addr == 0 && debugname != NULL && !rel_ok) {
-      Char *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
-      Char *objdirptr;
+      HChar *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
+      HChar *objdirptr;
 
       if ((objdirptr = VG_(strrchr)(objdir, '/')) != NULL)
          *objdirptr = '\0';
@@ -1358,7 +1358,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    ElfXX_Shdr* shdr_img        = NULL;
    UWord       shdr_nent       = 0;
    UWord       shdr_ent_szB    = 0;
-   UChar*      shdr_strtab_img = NULL;
+   HChar*      shdr_strtab_img = NULL;
 
    /* SVMAs covered by rx and rw segments and corresponding biases.
       Normally each object would provide just one rx and one rw area,
@@ -1376,7 +1376,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    XArray* /* of RangeAndBias */ svma_ranges = NULL;
 
    /* Build ID */
-   Char* buildid = NULL;
+   HChar* buildid = NULL;
 
    vg_assert(di);
    vg_assert(di->fsm.have_rx_map == True);
@@ -1535,8 +1535,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    vg_assert( ehdr_img->e_shstrndx != SHN_UNDEF );
 
    shdr_strtab_img
-      = (UChar*)( ((UChar*)ehdr_img)
-                  + shdr_img[ehdr_img->e_shstrndx].sh_offset);
+      = ((HChar*)ehdr_img)
+                  + shdr_img[ehdr_img->e_shstrndx].sh_offset;
    if (!contained_within( oimage, n_oimage,
                           (Addr)shdr_strtab_img,
                           1/*bogus, but we don't know the real size*/ )) {
@@ -1630,7 +1630,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             ElfXX_Dyn* dyn_img = (ElfXX_Dyn*)( ((UChar*)ehdr_img)
                                                + phdr->p_offset);
             Word   stroff = -1;
-            UChar* strtab = NULL;
+            HChar* strtab = NULL;
             for (j = 0; dyn_img[j].d_tag != DT_NULL; j++) {
                switch (dyn_img[j].d_tag) {
                   case DT_SONAME: {
@@ -1647,7 +1647,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                    );
                      if (ok2 && strtab == NULL) {
                         vg_assert(offset >= 0 && offset <= n_oimage);
-                        strtab = ((UChar*)ehdr_img) + offset;
+                        strtab = ((HChar*)ehdr_img) + offset;
                      }
                      break;
                   }
@@ -1710,7 +1710,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* Iterate over section headers */
    for (i = 0; i < shdr_nent; i++) {
       ElfXX_Shdr* shdr = INDEX_BIS( shdr_img, i, shdr_ent_szB );
-      UChar* name = shdr_strtab_img + shdr->sh_name;
+      HChar* name = shdr_strtab_img + shdr->sh_name;
       Addr   svma = shdr->sh_addr;
       OffT   foff = shdr->sh_offset;
       UWord  size = shdr->sh_size; /* Do not change this to be signed. */
@@ -1932,7 +1932,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                             "mapped r-x only - ignoring .bss syms\n");
                VG_(message)(Vg_UserMsg,   " %s\n", di->fsm.filename 
                                                       ? di->fsm.filename
-                                                      : (UChar*)"(null?!)" );
+                                                      : "(null?!)" );
             }
          } else
 
@@ -2137,26 +2137,26 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          transiently loaded oimage, not in the fragments of the file
          mapped in by the guest's dynamic linker. */
       /* TOPLEVEL */
-      UChar*     strtab_img       = NULL; /* .strtab */
+      HChar*     strtab_img       = NULL; /* .strtab */
       ElfXX_Sym* symtab_img       = NULL; /* .symtab */
-      UChar*     dynstr_img       = NULL; /* .dynstr */
+      HChar*     dynstr_img       = NULL; /* .dynstr */
       ElfXX_Sym* dynsym_img       = NULL; /* .dynsym */
-      UChar*     debuglink_img    = NULL; /* .gnu_debuglink */
+      HChar*     debuglink_img    = NULL; /* .gnu_debuglink */
       UChar*     debugaltlink_img = NULL; /* .gnu_debugaltlink */
       UChar*     stab_img         = NULL; /* .stab         (stabs)  */
-      UChar*     stabstr_img      = NULL; /* .stabstr      (stabs)  */
+      HChar*     stabstr_img      = NULL; /* .stabstr      (stabs)  */
       UChar*     debug_line_img   = NULL; /* .debug_line   (dwarf2) */
       UChar*     debug_info_img   = NULL; /* .debug_info   (dwarf2) */
       UChar*     debug_types_img  = NULL; /* .debug_types  (dwarf4) */
       UChar*     debug_abbv_img   = NULL; /* .debug_abbrev (dwarf2) */
-      UChar*     debug_str_img    = NULL; /* .debug_str    (dwarf2) */
+      HChar*     debug_str_img    = NULL; /* .debug_str    (dwarf2) */
       UChar*     debug_ranges_img = NULL; /* .debug_ranges (dwarf2) */
       UChar*     debug_loc_img    = NULL; /* .debug_loc    (dwarf2) */
       UChar*     debug_frame_img  = NULL; /* .debug_frame  (dwarf2) */
       UChar*     debug_line_alt_img = NULL; /* .debug_line (alternate) */
       UChar*     debug_info_alt_img = NULL; /* .debug_info (alternate) */
       UChar*     debug_abbv_alt_img = NULL; /* .debug_abbrev (alternate) */
-      UChar*     debug_str_alt_img = NULL; /* .debug_str   (alternate) */
+      HChar*     debug_str_alt_img = NULL; /* .debug_str   (alternate) */
       UChar*     dwarf1d_img      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l_img      = NULL; /* .line         (dwarf1) */
       UChar*     opd_img          = NULL; /* .opd (dwarf2,
@@ -2217,8 +2217,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #        define FINDX(_sec_name, _sec_size, _sec_img, _post_fx)     \
          do { ElfXX_Shdr* shdr \
                  = INDEX_BIS( shdr_img, i, shdr_ent_szB ); \
-            if (0 == VG_(strcmp)(_sec_name, shdr_strtab_img \
-                                            + shdr->sh_name)) { \
+           if (0 == VG_(strcmp)(_sec_name, (HChar *)(shdr_strtab_img    \
+                                                     + shdr->sh_name))) { \
                Bool nobits; \
                _sec_img  = (void*)(oimage + shdr->sh_offset); \
                _sec_size = shdr->sh_size; \
@@ -2306,7 +2306,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             vg_assert(crc_offset + sizeof(UInt) <= debuglink_sz);
 
             /* Extract the CRC from the debuglink section */
-            crc = ML_(read_UInt)(debuglink_img + crc_offset);
+            crc = ML_(read_UInt)((UChar *)debuglink_img + crc_offset);
 
             /* See if we can find a matching debug file */
             find_debug_file( di, di->fsm.filename, buildid,
@@ -2439,7 +2439,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                     = INDEX_BIS( shdr_dimg, i, shdr_dent_szB ); \
                if (di->sec##_present \
                    && 0 == VG_(strcmp)("." #sec, \
-                                       shdr_strtab_dimg + shdr->sh_name)) { \
+                                       (HChar *)(shdr_strtab_dimg + shdr->sh_name))) { \
                   vg_assert(di->sec##_size == shdr->sh_size); \
                   vg_assert(di->sec##_avma +  shdr->sh_addr + seg##_dbias); \
                   /* Assume we have a correct value for the main */ \
@@ -2479,7 +2479,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                     = INDEX_BIS( shdr_dimg, i, shdr_dent_szB ); \
                if (condition \
                    && 0 == VG_(strcmp)(sec_name, \
-                                       shdr_strtab_dimg + shdr->sh_name)) { \
+                                       (HChar *)(shdr_strtab_dimg + shdr->sh_name))) { \
                   Bool nobits; \
                   if (0 != sec_img) \
                      VG_(core_panic)("repeated section!\n"); \
@@ -2527,11 +2527,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Look for alternate debug image */
       if (debugaltlink_img != NULL) {
-         UInt buildid_offset = VG_(strlen)(debugaltlink_img)+1;
+         UInt buildid_offset = VG_(strlen)((HChar *)debugaltlink_img)+1;
 
          vg_assert(buildid_offset < debugaltlink_sz);
 
-         Char *altbuildid
+         HChar *altbuildid
             = ML_(dinfo_zalloc)("di.fbi.4",
                                 (debugaltlink_sz - buildid_offset)
                                 * 2 + 1);
@@ -2596,7 +2596,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             do { ElfXX_Shdr* shdr \
                     = INDEX_BIS( shdr_aimg, i, shdr_dent_szB ); \
                if (0 == VG_(strcmp)(sec_name, \
-                                    shdr_strtab_aimg + shdr->sh_name)) { \
+                                    (HChar *)(shdr_strtab_aimg + shdr->sh_name))) { \
                   if (0 != sec_img) \
                      VG_(core_panic)("repeated section!\n"); \
                   sec_img  = (void*)(aimage + shdr->sh_offset); \
@@ -2626,9 +2626,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Read symbols */
       {
-         void (*read_elf_symtab)(struct _DebugInfo*,UChar*,
+         void (*read_elf_symtab)(struct _DebugInfo*, const HChar*,
                                  ElfXX_Sym*,SizeT,
-                                 UChar*,SizeT,
+                                 HChar*,SizeT,
                                  Bool,UChar*);
          Bool symtab_in_debug;
 #        if defined(VGP_ppc64_linux)

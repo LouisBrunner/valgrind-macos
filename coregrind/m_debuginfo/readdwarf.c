@@ -152,8 +152,8 @@ DebugLineInfo;
 typedef struct
 {
   /* Feel free to add more members here if you need ! */
-  Char* compdir;   /* Compilation directory - points to .debug_info */
-  Char* name;      /* Main file name - points to .debug_info */
+  HChar* compdir;  /* Compilation directory - points to .debug_info */
+  HChar* name;     /* Main file name - points to .debug_info */
   ULong stmt_list; /* Offset in .debug_line */
   Bool  dw64;      /* 64-bit Dwarf? */
 } 
@@ -308,9 +308,9 @@ void reset_state_machine ( Int is_stmt )
 
 /* Look up a directory name, or return NULL if unknown. */
 static
-Char* lookupDir ( Int filename_index,
-                  WordArray* fnidx2dir,
-                  WordArray* dirnames )
+HChar* lookupDir ( Int filename_index,
+                   WordArray* fnidx2dir,
+                   WordArray* dirnames )
 {
    Bool inRange;
    Word diridx, dirname;
@@ -321,7 +321,7 @@ Char* lookupDir ( Int filename_index,
    dirname = index_WordArray( &inRange, dirnames, (Int)diridx );
    if (!inRange) goto bad;
 
-   return (Char*)dirname;
+   return (HChar*)dirname;
   bad:
    return NULL;
 }
@@ -341,7 +341,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
    UChar  op_code;
    Int    bytes_read;
    UInt   len;
-   UChar* name;
+   HChar* name;
    Addr   adr;
 
    len = read_leb128 (data, & bytes_read, 0);
@@ -370,9 +370,9 @@ Word process_extended_line_op( struct _DebugInfo* di,
          if (state_machine_regs.is_stmt) {
             if (state_machine_regs.last_address) {
                Bool inRange = False;
-               Char* filename
-                  = (Char*)index_WordArray( &inRange, filenames, 
-                                            state_machine_regs.last_file);
+               HChar* filename
+                  = (HChar*)index_WordArray( &inRange, filenames, 
+                                             state_machine_regs.last_file);
                if (!inRange || !filename)
                   filename = "???";
                ML_(addLineInfo) (
@@ -401,7 +401,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
          break;
 
       case DW_LNE_define_file:
-         name = data;
+         name = (HChar *)data;
          addto_WordArray( filenames, (Word)ML_(addStr)(di,name,-1) );
          data += VG_(strlen) ((char *) data) + 1;
          read_leb128 (data, & bytes_read, 0);
@@ -636,7 +636,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    while (* data != 0) {
 
 #     define NBUF 4096
-      static Char buf[NBUF];
+      static HChar buf[NBUF];
 
       if (di->ddump_line)
          VG_(printf)("  %s\n", data);
@@ -649,23 +649,23 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
           /* not an absolute path */
           && ui->compdir != NULL
           /* actually got something sensible for compdir */
-          && VG_(strlen)(ui->compdir) + VG_(strlen)(data) + 5/*paranoia*/ < NBUF
+          && VG_(strlen)(ui->compdir) + VG_(strlen)((HChar *)data) + 5/*paranoia*/ < NBUF
           /* it's short enough to concatenate */) 
       {
          buf[0] = 0;
          VG_(strcat)(buf, ui->compdir);
          VG_(strcat)(buf, "/");
-         VG_(strcat)(buf, data);
+         VG_(strcat)(buf, (HChar *)data);
          vg_assert(VG_(strlen)(buf) < NBUF);
          addto_WordArray( &dirnames, (Word)ML_(addStr)(di,buf,-1) );
          if (0) VG_(printf)("rel path  %s\n", buf);
       } else {
          /* just use 'data'. */
-         addto_WordArray( &dirnames, (Word)ML_(addStr)(di,data,-1) );
+        addto_WordArray( &dirnames, (Word)ML_(addStr)(di,(HChar *)data,-1) );
          if (0) VG_(printf)("abs path  %s\n", data);
       }
 
-      data += VG_(strlen)(data) + 1;
+      data += VG_(strlen)((HChar *)data) + 1;
 
 #     undef NBUF
    }
@@ -690,11 +690,11 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
    i = 1;
    while (* data != 0) {
-      UChar* name;
+      HChar* name;
       Int    bytes_read, diridx;
       Int    uu_time, uu_size; /* unused, and a guess */
-      name = data;
-      data += VG_(strlen) ((Char *) data) + 1;
+      name = (HChar *)data;
+      data += VG_(strlen) (name) + 1;
 
       diridx = read_leb128 (data, & bytes_read, 0);
       data += bytes_read;
@@ -762,9 +762,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             /* only add a statement if there was a previous boundary */
             if (state_machine_regs.last_address) {
                Bool inRange = False;
-               Char* filename
-                  = (Char*)index_WordArray( &inRange, &filenames, 
-                                            state_machine_regs.last_file);
+               const HChar* filename
+                  = (HChar*)index_WordArray( &inRange, &filenames, 
+                                             state_machine_regs.last_file);
                if (!inRange || !filename)
                   filename = "???";
                ML_(addLineInfo)(
@@ -801,9 +801,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) {
                   Bool inRange = False;
-                  Char* filename
-                     = (Char*)index_WordArray( &inRange, &filenames,
-                                               state_machine_regs.last_file );
+                  const HChar* filename
+                     = (HChar*)index_WordArray( &inRange, &filenames,
+                                                state_machine_regs.last_file );
                   if (!inRange || !filename)
                      filename = "???";
                   ML_(addLineInfo)(
@@ -985,8 +985,8 @@ static
 void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                   UChar*    unitblock_img,
                                   UChar*    debugabbrev_img,
-                                  UChar*    debugstr_img,
-                                  UChar*    debugstr_alt_img )
+                                  HChar*    debugstr_img,
+                                  HChar*    debugstr_alt_img )
 {
    UInt   acode, abcode;
    ULong  atoffs, blklen;
@@ -1060,7 +1060,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
          /* Read entry definition */
          UInt  name, form;
          ULong cval = -1LL;  /* Constant value read */
-         Char  *sval = NULL; /* String value read */
+         HChar *sval = NULL; /* String value read */
          name = read_leb128U( &abbrev_img );
          form = read_leb128U( &abbrev_img );
          if ( name == 0 )
@@ -1097,8 +1097,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                                sval = debugstr_img + ML_(read_ULong)(p); 
                                             p += ui->dw64 ? 8 : 4; 
                                             break;
-            case 0x08: /* FORM_string */    sval = (Char*)p; 
-                                            p += VG_(strlen)((Char*)p) + 1; break;
+            case 0x08: /* FORM_string */    sval = (HChar*)p; 
+                                            p += VG_(strlen)(sval) + 1; break;
             case 0x0b: /* FORM_data1 */     cval = *p; p++; break;
             case 0x17: /* FORM_sec_offset */if (ui->dw64) {
                                                cval = ML_(read_ULong)(p); p += 8;
@@ -1179,8 +1179,8 @@ void ML_(read_debuginfo_dwarf3)
           UChar* debug_types_img, Word debug_types_sz, /* .debug_types */
           UChar* debug_abbv_img, Word debug_abbv_sz, /* .debug_abbrev */
           UChar* debug_line_img, Word debug_line_sz, /* .debug_line */
-          UChar* debug_str_img,  Word debug_str_sz, /* .debug_str */
-          UChar* debug_str_alt_img, Word debug_str_alt_sz ) /* .debug_str */
+          HChar* debug_str_img,  Word debug_str_sz, /* .debug_str */
+          HChar* debug_str_alt_img, Word debug_str_alt_sz ) /* .debug_str */
 {
    UnitInfo ui;
    UShort   ver;
@@ -1415,7 +1415,7 @@ void ML_(read_debuginfo_dwarf1) (
    Int    die_offset, die_szb, at_offset;
    UShort die_kind, at_kind;
    UChar* at_base;
-   UChar* src_filename;
+   HChar* src_filename;
 
    if (0) 
       VG_(printf)("read_debuginfo_dwarf1 ( %p, %d, %p, %d )\n",
@@ -1478,7 +1478,7 @@ void ML_(read_debuginfo_dwarf1) (
             case AT_comp_dir:
                /* Zero terminated string, step over it. */
                if (at_kind == AT_name)
-                  src_filename = at_base + at_offset;
+                 src_filename = (HChar *)(at_base + at_offset);
                while (at_offset < die_szb-6 && at_base[at_offset] != 0)
                   at_offset++;
                at_offset++;
@@ -1507,7 +1507,7 @@ void ML_(read_debuginfo_dwarf1) (
 	 */
          Addr   base;
 	 Int    len;
-         Char*  curr_filenm;
+         HChar* curr_filenm;
          UChar* ptr;
          UInt   prev_line, prev_delta;
 
@@ -3862,7 +3862,7 @@ void ML_(read_callframe_info_dwarf3)
 
          Int    this_CIE;
          UChar  cie_version;
-         UChar* cie_augmentation;
+         HChar* cie_augmentation;
 
          /* --------- CIE --------- */
 	 if (di->trace_cfi) 
@@ -3900,7 +3900,7 @@ void ML_(read_callframe_info_dwarf3)
             goto bad;
          }
 
-         cie_augmentation = data;
+         cie_augmentation = (HChar *)data;
          data += 1 + VG_(strlen)(cie_augmentation);
          if (di->trace_cfi) 
             VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);

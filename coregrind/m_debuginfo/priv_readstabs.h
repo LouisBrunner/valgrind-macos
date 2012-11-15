@@ -43,7 +43,7 @@
 extern
 void ML_(read_debuginfo_stabs) ( struct _DebugInfo* di,
                                  UChar* stabC,   Int stab_sz,
-                                 UChar* stabstr, Int stabstr_sz );
+                                 HChar* stabstr, Int stabstr_sz );
 
 #endif /* ndef __PRIV_READSTABS_H */
 

@@ -60,7 +60,7 @@ VG_REGPARM(1)
 void VG_(helperc_CallDebugger) ( HWord iaddr );
 VG_REGPARM(1)
 void VG_(helperc_invalidate_if_not_gdbserved) ( Addr addr );
-static void invalidate_current_ip (ThreadId tid, char *who);
+static void invalidate_current_ip (ThreadId tid, const HChar *who);
 
 /* reasons of call to call_gdbserver. */
 typedef
@@ -74,7 +74,7 @@ typedef
       exit_reason}    // process terminated
     CallReason;
 
-static char* ppCallReason(CallReason reason)
+static const HChar* ppCallReason(CallReason reason)
 {
    switch (reason) {
    case init_reason:    return "init_reason";
@@ -138,9 +138,9 @@ static void call_gdbserver ( ThreadId tid , CallReason reason);
 /* Describes the address addr (for debugging/printing purposes).
    Last two results are kept. A third call will replace the
    oldest result. */
-static char* sym (Addr addr, Bool is_code)
+static HChar* sym (Addr addr, Bool is_code)
 {
-   static char buf[2][200];
+   static HChar buf[2][200];
    static int w = 0;
    PtrdiffT offset;
    if (w == 2) w = 0;
@@ -209,7 +209,7 @@ static Addr HT_addr ( Addr addr )
 #endif
 }
 
-static void add_gs_address (Addr addr, GS_Kind kind, char* from)
+static void add_gs_address (Addr addr, GS_Kind kind, const HChar* from)
 {
    GS_Address *p;
 
@@ -223,7 +223,7 @@ static void add_gs_address (Addr addr, GS_Kind kind, char* from)
    VG_(discard_translations) (addr, 2, from);
 }
 
-static void remove_gs_address (GS_Address* g, char* from)
+static void remove_gs_address (GS_Address* g, const HChar* from)
 {
    VG_(HT_remove) (gs_addresses, g->addr);
    // See add_gs_address for the explanation for the range 2 below.
@@ -231,7 +231,7 @@ static void remove_gs_address (GS_Address* g, char* from)
    VG_(arena_free) (VG_AR_CORE, g);
 }
 
-char* VG_(ppPointKind) (PointKind kind)
+const HChar* VG_(ppPointKind) (PointKind kind)
 {
    switch(kind) {
    case software_breakpoint: return "software_breakpoint";
@@ -563,14 +563,14 @@ static void clear_watched_addresses(void)
    gs_watches = NULL;
 }
 
-static void invalidate_if_jump_not_yet_gdbserved (Addr addr, char* from)
+static void invalidate_if_jump_not_yet_gdbserved (Addr addr, const HChar* from)
 {
    if (VG_(HT_lookup) (gs_addresses, (UWord)HT_addr(addr)))
       return;
    add_gs_address (addr, GS_jump, from);
 }
 
-static void invalidate_current_ip (ThreadId tid, char *who)
+static void invalidate_current_ip (ThreadId tid, const HChar *who)
 {
    invalidate_if_jump_not_yet_gdbserved (VG_(get_IP) (tid), who);
 }
@@ -1045,7 +1045,7 @@ static void VG_(add_stmt_call_invalidate_if_not_gdbserved)
 {
    
    void*    fn;
-   HChar*   nm;
+   const HChar*   nm;
    IRExpr** args;
    Int      nargs;
    IRDirty* di;
@@ -1084,7 +1084,7 @@ static void VG_(add_stmt_call_gdbserver)
       IRSB* irsb)                 /* irsb block to which call is added */
 {
    void*    fn;
-   HChar*   nm;
+   const HChar*   nm;
    IRExpr** args;
    Int      nargs;
    IRDirty* di;
@@ -1233,7 +1233,7 @@ IRSB* VG_(instrument_for_gdbserver_if_needed)
 }
 
 struct mon_out_buf {
-   char buf[DATASIZ+1];
+   HChar buf[DATASIZ+1];
    int next;
    UInt ret;
 };
@@ -1269,14 +1269,14 @@ UInt VG_(gdb_printf) ( const HChar *format, ... )
    return b.ret;
 }
 
-Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
+Int VG_(keyword_id) (HChar* keywords, HChar* input_word, kwd_report_error report)
 {
    const Int il = (input_word == NULL ? 0 : VG_(strlen) (input_word));
    HChar  iw[il+1];
    HChar  kwds[VG_(strlen)(keywords)+1];
    HChar  *kwdssaveptr;
 
-   Char* kw; /* current keyword, its length, its position */
+   HChar* kw; /* current keyword, its length, its position */
    Int   kwl;
    Int   kpos = -1;
 
@@ -1299,7 +1299,7 @@ Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
       VG_(strcpy) (kwds, keywords);
       if (pass == 1)
          VG_(gdb_printf) ("%s can match", 
-                          (il == 0 ? "<empty string>" : (char *) iw));
+                          (il == 0 ? "<empty string>" : iw));
       for (kw = VG_(strtok_r) (kwds, " ", &kwdssaveptr); 
            kw != NULL; 
            kw = VG_(strtok_r) (NULL, " ", &kwdssaveptr)) {
@@ -1358,7 +1358,7 @@ Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
 }
 
 /* True if string can be a 0x number */
-static Bool is_zero_x (Char *s)
+static Bool is_zero_x (const HChar *s)
 {
    if (strlen (s) >= 3 && s[0] == '0' && s[1] == 'x')
       return True;
@@ -1367,7 +1367,7 @@ static Bool is_zero_x (Char *s)
 }
 
 /* True if string can be a 0b number */
-static Bool is_zero_b (Char *s)
+static Bool is_zero_b (const HChar *s)
 {
    if (strlen (s) >= 3 && s[0] == '0' && s[1] == 'b')
       return True;
@@ -1399,7 +1399,7 @@ void VG_(strtok_get_address_and_size) (Addr* address,
       *szB = VG_(strtoull16) (ws, &endptr);
    } else if (is_zero_b (ws)) {
       Int j;
-      Char *parsews = ws;
+      HChar *parsews = ws;
       Int n_bits = VG_(strlen) (ws) - 2;
       *szB = 0;
       ws = NULL; // assume the below loop gives a correct nr.

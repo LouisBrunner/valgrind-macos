@@ -74,12 +74,12 @@ typedef
          struct {
          } UNKNOWN;
          struct {
-            UChar* name; /* in mallocville */
+            HChar* name; /* in mallocville */
             Bool   valueKnown; /* atoms w/ unknown value are possible */
             Long   value;
          } Atom;
          struct {
-            UChar* name;  /* in mallocville */
+            HChar* name;  /* in mallocville */
             UWord  typeR; /* should be Te_TyXXXX */
             union {
                UChar* loc;   /* location expr, in mallocville */
@@ -97,7 +97,7 @@ typedef
             Long boundU;
          } Bound;
          struct {
-            UChar* name; /* in mallocville */
+            HChar* name; /* in mallocville */
             Int    szB;
             UChar  enc; /* S:signed U:unsigned F:floating C:complex float */
          } TyBase;
@@ -106,18 +106,18 @@ typedef
             UWord typeR;
          } TyPorR;
          struct {
-            UChar* name;  /* in mallocville */
+            HChar* name;  /* in mallocville */
             UWord  typeR; /* MAY BE D3_INVALID_CUOFF, denoting unknown */
          } TyTyDef;
          struct {
-            UChar*  name; /* in mallocville */
+            HChar*  name; /* in mallocville */
             UWord   szB;
             XArray* /* of UWord */ fieldRs;
             Bool    complete;
             Bool    isStruct;
          } TyStOrUn;
          struct {
-            UChar*  name; /* in mallocville */
+            HChar*  name; /* in mallocville */
             Int     szB;
             XArray* /* of UWord */ atomRs;
          } TyEnum;

@@ -1011,18 +1011,19 @@ static void* pdb_jg_read( struct pdb_reader* pdb,
 }
 
 
-static void* find_pdb_header( UChar* pdbimage,
+static void* find_pdb_header( void* pdbimage,
                               unsigned* signature )
 {
-   static char pdbtxt[]= "Microsoft C/C++";
-   UChar* txteof = (UChar*)VG_(strchr)(pdbimage, '\032');
+   static const HChar pdbtxt[]= "Microsoft C/C++";
+   HChar* txteof = VG_(strchr)(pdbimage, '\032');
    if (! txteof)
       return NULL;
    if (0!=VG_(strncmp)(pdbimage, pdbtxt, -1+ sizeof(pdbtxt)))
       return NULL;
 
    *signature = *(unsigned*)(1+ txteof);
-   return (void*)((~3& (3+ (4+ 1+ (txteof - pdbimage)))) + pdbimage);
+   HChar *img_addr = pdbimage;    // so we can do address arithmetic
+   return ((~3& (3+ (4+ 1+ (txteof - img_addr)))) + img_addr);
 }
 
 
@@ -1094,7 +1095,7 @@ static void pdb_ds_init( struct pdb_reader * reader,
 
 
 static void pdb_jg_init( struct pdb_reader* reader,
-                         char* pdbimage,
+                         void* pdbimage,
                          unsigned n_pdbimage )
 {
    reader->read_file     = pdb_jg_read_file;
@@ -1109,7 +1110,7 @@ static void pdb_jg_init( struct pdb_reader* reader,
 
 
 static 
-void pdb_check_root_version_and_timestamp( char* pdbname,
+void pdb_check_root_version_and_timestamp( HChar* pdbname,
                                            ULong  pdbmtime,
                                            unsigned  version,
                                            UInt TimeDateStamp )
@@ -1209,8 +1210,8 @@ static ULong DEBUG_SnarfCodeView(
 {
    Int    i, length;
    DiSym  vsym;
-   UChar* nmstr;
-   Char   symname[4096 /*WIN32_PATH_MAX*/];
+   HChar* nmstr;
+   HChar  symname[4096 /*WIN32_PATH_MAX*/];
 
    Bool  debug = di->trace_symtab;
    ULong n_syms_read = 0;
@@ -1517,13 +1518,13 @@ static ULong DEBUG_SnarfLinetab(
           DebugInfo* di,
           PtrdiffT bias,
           IMAGE_SECTION_HEADER* sectp,
-          Char* linetab,
+          void* linetab,
           Int size
        )
 {
    //VG_(printf)("DEBUG_SnarfLinetab %p %p %p %d\n", di, sectp, linetab, size);
    Int                file_segcount;
-   Char               filename[WIN32_PATH_MAX];
+   HChar              filename[WIN32_PATH_MAX];
    UInt               * filetab;
    UChar              * fn;
    Int                i;
@@ -1558,19 +1559,19 @@ static ULong DEBUG_SnarfLinetab(
     */
    nseg = 0;
    for (i = 0; i < nfile; i++) {
-      pnt2.c = linetab + filetab[i];
+     pnt2.c = (HChar *)linetab + filetab[i];
       nseg += *pnt2.s;
    }
 
    this_seg = 0;
    for (i = 0; i < nfile; i++) {
-      UChar *fnmstr;
-      UChar *dirstr;
+      HChar *fnmstr;
+      HChar *dirstr;
 
       /*
        * Get the pointer into the segment information.
        */
-      pnt2.c = linetab + filetab[i];
+      pnt2.c = (HChar *)linetab + filetab[i];
       file_segcount = *pnt2.s;
 
       pnt2.ui++;
@@ -1602,7 +1603,7 @@ static ULong DEBUG_SnarfLinetab(
          Int linecount;
          Int segno;
 
-         pnt2.c = linetab + lt_ptr[k];
+         pnt2.c = (HChar *)linetab + lt_ptr[k];
 
          segno = *pnt2.s++;
          linecount = *pnt2.s++;
@@ -1687,11 +1688,11 @@ static ULong codeview_dump_linetab2(
                 DebugInfo* di,
                 Addr bias,
                 IMAGE_SECTION_HEADER* sectp,
-                Char* linetab,
+                HChar* linetab,
                 DWORD size,
-                Char* strimage,
+                HChar* strimage,
                 DWORD strsize,
-                Char* pfx
+                const HChar* pfx
              )
 {
    DWORD       offset;
@@ -1707,7 +1708,7 @@ static ULong codeview_dump_linetab2(
    offset = *((DWORD*)linetab + 1);
    lbh = (struct codeview_linetab2_block*)(linetab + 8 + offset);
 
-   while ((Char*)lbh < linetab + size) {
+   while ((HChar*)lbh < linetab + size) {
 
       HChar *filename, *dirname;
       Addr svma_s, svma_e;
@@ -2125,7 +2126,7 @@ static void pdb_dump( struct pdb_reader* pdb,
          n_line2s_read
             += codeview_dump_linetab2(
                   di, pe_avma, sectp_avma,
-                      (char*)modimage + symbol_size + lineno_size,
+                      (HChar*)modimage + symbol_size + lineno_size,
                       total_size - (symbol_size + lineno_size),
                   /* if filesimage is NULL, pass that directly onwards
                      to codeview_dump_linetab2, so it knows not to
@@ -2177,7 +2178,7 @@ Bool ML_(read_pdb_debug_info)(
         PtrdiffT   obj_bias,
         void*      pdbimage,
         SizeT      n_pdbimage,
-        Char*      pdbname,
+        HChar*     pdbname,
         ULong      pdbmtime
      )
 {

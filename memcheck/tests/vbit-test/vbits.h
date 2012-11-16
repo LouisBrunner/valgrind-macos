@@ -53,5 +53,6 @@ vbits_t shl_vbits(vbits_t, unsigned amount);
 vbits_t shr_vbits(vbits_t, unsigned amount);
 vbits_t sar_vbits(vbits_t, unsigned amount);
 int     completely_defined_vbits(vbits_t);
+vbits_t cmpord_vbits(unsigned v1_num_bits, unsigned v2_num_bits);
 
 #endif // VBITS_H

@@ -740,3 +740,31 @@ sar_vbits(vbits_t v, unsigned shift_amount)
       new = left_vbits(new, new.num_bits);
    return new;
 }
+
+/* Return a value for the POWER Iop_CmpORD class iops */
+vbits_t
+cmpord_vbits(unsigned v1_num_bits, unsigned v2_num_bits)
+{
+   vbits_t new = { .num_bits = v1_num_bits };
+
+   /* Size of values being compared must be the same */
+   assert( v1_num_bits == v2_num_bits);
+
+   /* Comparison only produces 32-bit or 64-bit value where
+    * the lower 3 bits are set to indicate, less than, equal and greater then.
+    */
+   switch (v1_num_bits) {
+   case 32:
+      new.bits.u32 = 0xE;
+      break;
+
+   case 64:
+      new.bits.u64 = 0xE;
+      break;
+
+   default:
+      panic(__func__);
+   }
+
+   return new;
+}

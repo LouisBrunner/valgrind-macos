@@ -104,10 +104,10 @@ static irop_t irops[] = {
   { DEFOP(Iop_Left32,     UNDEF_UNKNOWN), },  // not supported by mc_translate
   { DEFOP(Iop_Left64,     UNDEF_UNKNOWN), },  // not supported by mc_translate
   { DEFOP(Iop_Max32U,     UNDEF_UNKNOWN), },  // not supported by mc_translate
-  { DEFOP(Iop_CmpORD32U,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
-  { DEFOP(Iop_CmpORD64U,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
-  { DEFOP(Iop_CmpORD32S,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
-  { DEFOP(Iop_CmpORD64S,  UNDEF_UNKNOWN), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0 }, // FIXME: add support in vbit-test
+  { DEFOP(Iop_CmpORD32U,  UNDEF_ORD), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // support added in vbit-test
+  { DEFOP(Iop_CmpORD64U,  UNDEF_ORD), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 0, .mips32 = 0 }, // support added in vbit-test
+  { DEFOP(Iop_CmpORD32S,  UNDEF_ORD), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 }, // support added in vbit-test
+  { DEFOP(Iop_CmpORD64S,  UNDEF_ORD), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 0, .mips32 = 0 }, // support added in vbit-test
   { DEFOP(Iop_DivU32,     UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
   { DEFOP(Iop_DivS32,     UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0 },
   { DEFOP(Iop_DivU64,     UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 0, .mips32 = 0 }, // ppc32 asserts

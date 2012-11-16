@@ -44,7 +44,6 @@ and_combine(vbits_t v1, vbits_t v2, value_t val2, int invert_val2)
    return new;
 }
 
-
 /* Check the result of a binary operation. */
 static void
 check_result_for_binary(const irop_t *op, const test_data_t *data)
@@ -154,6 +153,15 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
       expected_vbits = or_vbits(term1, or_vbits(term2, term3));
       break;
    }
+
+   case UNDEF_ORD:
+      /* Set expected_vbits for the Iop_CmpORD category of iops.
+       * If any of the input bits is undefined the least significant
+       * three bits in the result will be set, i.e. 0xe.
+       */
+      expected_vbits = cmpord_vbits(opnd1->vbits.num_bits,
+                                    opnd2->vbits.num_bits);
+      break;
 
    default:
       panic(__func__);

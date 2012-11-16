@@ -53,6 +53,8 @@ typedef enum {
    UNDEF_OR,      // bitwise OR operation
    UNDEF_AND,     // bitwise AND operation
 
+   UNDEF_ORD,     // Iop_CmpORD compare 
+
    // For IROps I don't know anything about
    UNDEF_UNKNOWN
 } undef_t;

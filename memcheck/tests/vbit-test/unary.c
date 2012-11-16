@@ -53,10 +53,11 @@ check_result_for_unary(const irop_t *op, const test_data_t *data)
 }
 
 
-void
+int
 test_unary_op(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, bitpos;
+   int tests_done = 0;
 
    num_input_bits = bitsof_irtype(data->opnds[0].type);
 
@@ -66,5 +67,7 @@ test_unary_op(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
 
       check_result_for_unary(op, data);
+      tests_done++;
    }
+   return tests_done;
 }

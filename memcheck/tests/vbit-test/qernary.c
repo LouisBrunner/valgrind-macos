@@ -36,11 +36,12 @@ check_result_for_qernary(const irop_t *op, const test_data_t *data)
 }
 
 
-void
+int
 test_qernary_op(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, i, bitpos;
    opnd_t *opnds = data->opnds;
+   int tests_done = 0;
 
    /* For each operand, set a single bit to undefined and observe how
       that propagates to the output. Do this for all bits in each
@@ -59,6 +60,9 @@ test_qernary_op(const irop_t *op, test_data_t *data)
          valgrind_execute_test(op, data);
 
          check_result_for_qernary(op, data);
+
+         tests_done++;
       }
    }
+   return tests_done;
 }

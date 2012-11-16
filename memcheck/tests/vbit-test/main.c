@@ -68,13 +68,16 @@ int
 main(int argc, char *argv[])
 {
    assert(sizeof(long long) == 8);
+   int num_unary_tests = 0, num_binary_tests = 0;
+   int num_ternary_tests = 0, num_qernary_tests = 0;
 
    for (int i = 1; i < argc; ++i) {
       if (strcmp(argv[i], "-v") == 0) ++verbose;
       else if (strcmp(argv[i], "--help") == 0) {
         printf("\nvbit-test [ -v | --help ]\n");
-        printf("\n\t-v     verbose mode; shows IROps being tested\n");
-        printf("\n\t-v -v  verbose mode, extreme edition\n\n");
+        printf("\n\t-v       verbose mode; show number of 1, 2, 3 and 4 operand tests\n");
+        printf("\n\t-v -v    verbose mode; shows IROps being tested\n");
+        printf("\n\t-v -v -v verbose mode, extreme edition\n\n");
         return 0;
       } else {
         printf("%s ?  Nothing happens.\n", argv[i]);
@@ -117,7 +120,7 @@ main(int argc, char *argv[])
          continue;
       }
 
-      if (verbose) printf("Testing operator %s\n", op->name);
+      if (verbose > 1) printf("Testing operator %s\n", op->name);
 
       IRICB iricb = new_iricb(op, data);
 
@@ -125,19 +128,19 @@ main(int argc, char *argv[])
 
       switch (iricb.num_operands) {
       case 1:
-         test_unary_op(op, data);
+         num_unary_tests += test_unary_op(op, data);
          break;
 
       case 2:
-         test_binary_op(op, data);
+         num_binary_tests += test_binary_op(op, data);
          break;
 
       case 3:
-         test_ternary_op(op, data);
+         num_ternary_tests += test_ternary_op(op, data);
          break;
 
       case 4:
-         test_qernary_op(op, data);
+         num_qernary_tests += test_qernary_op(op, data);
          break;
 
       default:
@@ -147,5 +150,9 @@ main(int argc, char *argv[])
       free(data);
    }
 
+   if (verbose) 
+      printf("\nvbit-test ran  %d unary, %d binary, %d ternary and %d qernary tests.\n",
+	  num_unary_tests, num_binary_tests, num_ternary_tests,
+	  num_qernary_tests);
    return 0;
 }

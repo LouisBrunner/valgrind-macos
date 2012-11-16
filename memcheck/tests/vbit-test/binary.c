@@ -172,11 +172,12 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
 }
 
 
-static void
+static int 
 test_shift(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, i;
    opnd_t *opnds = data->opnds;
+   int tests_done = 0;
 
    /* When testing the 1st operand's undefinedness propagation,
       do so with all possible shift amnounts */
@@ -193,13 +194,14 @@ test_shift(const irop_t *op, test_data_t *data)
          valgrind_execute_test(op, data);
          
          check_result_for_binary(op, data);
+         tests_done++;
       }
    }
 
    // 2nd (right) operand
 
    /* If the operand is an immediate value, there are no v-bits to set. */
-   if (op->shift_amount_is_immediate) return;
+   if (op->shift_amount_is_immediate) return tests_done;
 
    num_input_bits = bitsof_irtype(opnds[1].type);
 
@@ -210,7 +212,10 @@ test_shift(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
 
       check_result_for_binary(op, data);
+
+      tests_done++;
    }
+   return tests_done;
 }
 
 
@@ -248,11 +253,12 @@ all_bits_one_value(unsigned num_bits)
 }
 
 
-static void
+static int
 test_and(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, bitpos;
    opnd_t *opnds = data->opnds;
+   int tests_done = 0;
 
    /* Undefinedness does not propagate if the other operand is 0.
       Use an all-bits-zero operand and test the other operand in
@@ -269,6 +275,7 @@ test_and(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
    
    // 2nd (right) operand variable, 1st operand all-bits-zero
@@ -282,6 +289,7 @@ test_and(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
 
    /* Undefinedness propagates if the other operand is 1.
@@ -299,6 +307,7 @@ test_and(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
    
    // 2nd (right) operand variable, 1st operand all-bits-one
@@ -312,15 +321,18 @@ test_and(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
+   return tests_done;
 }
 
 
-static void
+static int
 test_or(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, bitpos;
    opnd_t *opnds = data->opnds;
+   int tests_done = 0;
 
    /* Undefinedness does not propagate if the other operand is 1.
       Use an all-bits-one operand and test the other operand in
@@ -339,6 +351,7 @@ test_or(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
    
    // 2nd (right) operand variable, 1st operand all-bits-one
@@ -354,6 +367,7 @@ test_or(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
 
    /* Undefinedness propagates if the other operand is 0.
@@ -373,6 +387,7 @@ test_or(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
    
    // 2nd (right) operand variable, 1st operand all-bits-zero
@@ -388,31 +403,31 @@ test_or(const irop_t *op, test_data_t *data)
       valgrind_execute_test(op, data);
          
       check_result_for_binary(op, data);
+      tests_done++;
    }
+   return tests_done;
 }
 
 
-void
+int
 test_binary_op(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, i, bitpos;
    opnd_t *opnds = data->opnds;
+   int tests_done = 0;
 
    /* Handle special cases upfront */
    switch (op->undef_kind) {
    case UNDEF_SHL:
    case UNDEF_SHR:
    case UNDEF_SAR:
-      test_shift(op, data);
-      return;
+      return test_shift(op, data);
 
    case UNDEF_AND:
-      test_and(op, data);
-      return;
+      return test_and(op, data);
 
    case UNDEF_OR:
-      test_or(op, data);
-      return;
+      return test_or(op, data);
 
    default:
       break;
@@ -446,6 +461,9 @@ test_binary_op(const irop_t *op, test_data_t *data)
          valgrind_execute_test(op, data);
 
          check_result_for_binary(op, data);
+
+         tests_done++;
       }
    }
+   return tests_done;
 }

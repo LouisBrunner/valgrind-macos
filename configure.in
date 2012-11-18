@@ -1397,6 +1397,26 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 
+# does this compiler support -Wno-pointer-sign ?
+AC_MSG_CHECKING([if gcc accepts -Wno-pointer-sign])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-pointer-sign"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+no_pointer_sign=yes
+AC_MSG_RESULT([yes])
+], [
+no_pointer_sign=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL(HAS_POINTER_SIGN_WARNING, test x$no_pointer_sign = xyes)
+
+
 # does this compiler support -Wno-empty-body ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])

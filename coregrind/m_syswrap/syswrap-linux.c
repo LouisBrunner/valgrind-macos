@@ -3294,7 +3294,7 @@ ML_(linux_POST_sys_msgctl) ( ThreadId tid,
    are either direct system calls, or are all implemented via sys_ipc.
    ------------------------------------------------------------------ */
 #ifdef __NR_ipc
-static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
+static Addr deref_Addr ( ThreadId tid, Addr a, const HChar* s )
 {
    Addr* a_p = (Addr*)a;
    PRE_MEM_READ( s, (Addr)a_p, sizeof(Addr) );

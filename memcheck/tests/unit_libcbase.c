@@ -302,9 +302,9 @@ void test_strtoll_and_strtod(void)
 {
    // For VG_(strtoll*)()
    typedef struct {
-      Char* str;        // The string to convert.
-      Long  res;        // The result.
-      Char  endptr_val; // The char one past the end of the converted text.
+      HChar* str;        // The string to convert.
+      Long   res;        // The result.
+      HChar  endptr_val; // The char one past the end of the converted text.
    } StrtollInputs;
 
    // VG_(strtoll10)()

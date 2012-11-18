@@ -30,4 +30,4 @@ bz2_CFLAGS	= $(AM_CFLAGS) -Wno-inline
 fbench_CFLAGS   = $(AM_CFLAGS) -O2
 ffbench_LDADD	= -lm
 
-tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-inline
+tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-inline -Wno-pointer-sign

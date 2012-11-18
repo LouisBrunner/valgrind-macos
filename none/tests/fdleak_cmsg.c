@@ -52,7 +52,7 @@ void server (void)
 
    {
       int x;
-      int baddrsize = 0;
+      unsigned baddrsize = 0;
       struct sockaddr_un baddr;
       struct msghdr msg = {NULL, 0, NULL, 0, 0, 0, 0};
       struct cmsghdr *cmsg;

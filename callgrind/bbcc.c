@@ -484,7 +484,8 @@ static void handleUnderflow(BB* bb)
   BB* source_bb;
   Bool seen_before;
   fn_node* caller;
-  int fn_number, *pactive;
+  int fn_number;
+  unsigned *pactive;
   call_entry* call_entry_up;
 
   CLG_DEBUG(1,"  Callstack underflow !\n");

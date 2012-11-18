@@ -406,7 +406,7 @@ int main ( void )
 {
    UInt   n, op;
    ULong  carrydep, c, res;
-   UChar* block;
+   char*  block;
    ULong  reg;
    Word   bitoff;
 

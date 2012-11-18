@@ -137,7 +137,7 @@
    do {                                                  \
       char* _fnname = (char*)(_fnnameF);                 \
       long  _err    = (long)(int)(_errF);                \
-      char* _errstr = lame_strerror(_err);               \
+      const char* _errstr = lame_strerror(_err);         \
       DO_CREQ_v_WWW(_VG_USERREQ__HG_PTH_API_ERROR,       \
                     char*,_fnname,                       \
                     long,_err, char*,_errstr);           \
@@ -159,7 +159,7 @@
    strerror_r, since using the latter just generates endless more
    threading errors (glibc goes off and does tons of crap w.r.t.
    locales etc) */
-static char* lame_strerror ( long err )
+static const HChar* lame_strerror ( long err )
 {   switch (err) {
       case EPERM:       return "EPERM: Operation not permitted";
       case ENOENT:      return "ENOENT: No such file or directory";
@@ -2302,10 +2302,10 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ); \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ) \
    { \
-      UChar  ch = (UChar)((UInt)c); \
-      UChar* p  = (UChar*)s; \
+      HChar  ch = (HChar)c ; \
+      const HChar* p  = s;   \
       while (True) { \
-         if (*p == ch) return p; \
+         if (*p == ch) return (HChar *)p; \
          if (*p == 0) return NULL; \
          p++; \
       } \
@@ -2351,12 +2351,12 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ); \
    char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ) \
    { \
-      const Char* dst_orig = dst; \
+      HChar* dst_orig = dst; \
       \
       while (*src) *dst++ = *src++; \
       *dst = 0; \
       \
-      return (char*)dst_orig; \
+      return dst_orig; \
    }
 
 #if defined(VGO_linux)
@@ -2372,17 +2372,17 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
           ( const char* s1, const char* s2 ) \
    { \
-      register unsigned char c1; \
-      register unsigned char c2; \
+      register UChar c1; \
+      register UChar c2; \
       while (True) { \
-         c1 = *(unsigned char *)s1; \
-         c2 = *(unsigned char *)s2; \
+         c1 = *(UChar *)s1; \
+         c2 = *(UChar *)s2; \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
       } \
-      if ((unsigned char)c1 < (unsigned char)c2) return -1; \
-      if ((unsigned char)c1 > (unsigned char)c2) return 1; \
+      if ((UChar)c1 < (UChar)c2) return -1; \
+      if ((UChar)c1 > (UChar)c2) return 1; \
       return 0; \
    }
 

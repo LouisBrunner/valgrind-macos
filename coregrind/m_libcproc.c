@@ -354,9 +354,9 @@ Int VG_(system) ( const HChar* cmd )
    if (pid == 0) {
       /* child */
       const HChar* argv[4] = { "/bin/sh", "-c", cmd, 0 };
-      VG_(execv)(argv[0], argv);
+      VG_(execv)(argv[0], (HChar **)argv);
 
-      /* If we're still alive here, execve failed. */
+      /* If we're still alive here, execv failed. */
       VG_(exit)(1);
    } else {
       /* parent */

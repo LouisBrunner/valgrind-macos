@@ -6,7 +6,7 @@ int main(void)
 {
    struct sockaddr name;
    int res1, res2, res3;
-   int len = 10;
+   unsigned len = 10;
 
    res1 = socket(PF_UNIX, SOCK_STREAM, 0);
    if (res1 == 0) {

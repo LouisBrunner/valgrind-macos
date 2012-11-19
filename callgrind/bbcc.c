@@ -594,11 +594,8 @@ void CLG_(setup_bbcc)(BB* bb)
       jmpkind = last_bb->jmp[passed].jmpkind;
       isConditionalJump = (passed < last_bb->cjmp_count);
 
-      /* if we are in a function which is skipped in the call graph, we
-       * do not increment the exe counter to produce cost (if simulation off),
-       * which would lead to dumping this BB to be skipped
-       */
-      if (CLG_(current_state).collect && !CLG_(current_state).nonskipped) {
+      if (CLG_(current_state).collect) {
+	if (!CLG_(current_state).nonskipped) {
 	  last_bbcc->ecounter_sum++;
 	  last_bbcc->jmp[passed].ecounter++;
 	  if (!CLG_(clo).simulate_cache) {
@@ -606,6 +603,18 @@ void CLG_(setup_bbcc)(BB* bb)
               UInt instr_count = last_bb->jmp[passed].instr+1;
               CLG_(current_state).cost[ fullOffset(EG_IR) ] += instr_count;
 	  }
+	}
+	else {
+	  /* do not increment exe counter of BBs in skipped functions, as it
+	   * would fool dumping code */
+	  if (!CLG_(clo).simulate_cache) {
+	      /* update Ir cost */
+              UInt instr_count = last_bb->jmp[passed].instr+1;
+              CLG_(current_state).cost[ fullOffset(EG_IR) ] += instr_count;
+              CLG_(current_state).nonskipped->skipped[ fullOffset(EG_IR) ]
+		+= instr_count;
+	  }
+	}
       }
 
       CLG_DEBUGIF(4) {

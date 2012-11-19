@@ -698,7 +698,7 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
 {
    if (irrm->tag == Iex_Const) {          /* rounding mode is known */
       vassert(irrm->Iex.Const.con->tag == Ico_U32);
-      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
+      IRRoundingModeDFP mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
       case Irrm_DFP_NEAREST:

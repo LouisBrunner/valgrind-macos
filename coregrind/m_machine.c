@@ -689,7 +689,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #if defined(VGA_x86)
    { Bool have_sse1, have_sse2, have_cx8, have_lzcnt;
      UInt eax, ebx, ecx, edx, max_extended;
-     UChar vstr[13];
+     HChar vstr[13];
      vstr[0] = 0;
 
      if (!VG_(has_cpuid)())

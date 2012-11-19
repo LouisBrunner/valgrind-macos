@@ -549,7 +549,7 @@ SysRes read_ldt ( ThreadId tid, UChar* ptr, UInt bytecount )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   ldt = (Char*)(VG_(threads)[tid].arch.vex.guest_LDT);
+   ldt = (UChar*)(VG_(threads)[tid].arch.vex.guest_LDT);
    res = VG_(mk_SysRes_Success)( 0 );
    if (ldt == NULL)
       /* LDT not allocated, meaning all entries are null */

@@ -212,7 +212,6 @@ struct _Statistics {
 typedef struct _Context     Context;
 typedef struct _CC          CC;
 typedef struct _BB          BB;
-typedef struct _Skipped     Skipped;
 typedef struct _BBCC        BBCC;
 typedef struct _jCC         jCC;
 typedef struct _fCC         fCC;

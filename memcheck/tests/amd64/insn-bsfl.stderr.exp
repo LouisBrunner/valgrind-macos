@@ -1,0 +1,40 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:65)
+
+0x........: Invalid value is 32
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:66)
+
+0x........: Invalid value is 0
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:69)
+
+0x........: Invalid value is 6
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:73)
+
+0x........: Invalid value is 9
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:76)
+
+0x........: Invalid value is 17
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:79)
+
+0x........: Invalid value is 0
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:81)
+
+0x........: Invalid value is 1
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-bsfl.c:47)
+   by 0x........: main (insn-bsfl.c:82)
+
+0x........: Invalid value is 1

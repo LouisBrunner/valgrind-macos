@@ -25,6 +25,7 @@ check_PROGRAMS = \
 	bug279698 \
 	fxsave-amd64 \
 	insn-bsfl \
+	insn-pcmpistri \
 	insn-pmovmskb \
 	more_x87_fp \
 	sse_memory \

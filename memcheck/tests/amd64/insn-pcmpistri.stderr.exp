@@ -1,0 +1,319 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:79)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:79)
+
+strlen("")=false
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:80)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:80)
+
+strlen("a")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:81)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:81)
+
+strlen("ab")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:82)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:82)
+
+strlen("abc")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:83)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:83)
+
+strlen("abcd")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:84)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:84)
+
+strlen("abcde")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:85)
+
+strlen("abcdef")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:86)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:86)
+
+strlen("abcdefg")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:88)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:88)
+
+strlen("abcdefgh")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:89)
+
+strlen("abcdefghi")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:90)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:90)
+
+strlen("abcdefghij")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:91)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:91)
+
+strlen("abcdefghijk")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:92)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:92)
+
+strlen("abcdefghijkl")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:93)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:93)
+
+strlen("abcdefghijklm")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:94)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:94)
+
+strlen("abcdefghijklmn")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:95)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:95)
+
+strlen("abcdefghijklmno")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:97)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:97)
+
+strlen("abcdefghijklmnop")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:98)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:98)
+
+strlen("abcdefghijklmnopq")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:99)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:99)
+
+strlen("abcdefghijklmnopqr")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:100)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:100)
+
+strlen("abcdefghijklmnopqrs")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:101)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:101)
+
+strlen("abcdefghijklmnopqrst")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:102)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:102)
+
+strlen("abcdefghijklmnopqrstu")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:103)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:103)
+
+strlen("abcdefghijklmnopqrstuv")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:104)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:104)
+
+strlen("abcdefghijklmnopqrstuvw")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:105)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:105)
+
+strlen("abcdefghijklmnopqrstuwvx")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:106)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:106)
+
+strlen("abcdefghijklmnopqrstuwvxy")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:107)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:107)
+
+strlen("abcdefghijklmnopqrstuwvxyz")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:109)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:109)
+
+strlen("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")=true
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: aligned_strlen (insn-pcmpistri.c:21)
+   by 0x........: test_strlen (insn-pcmpistri.c:62)
+   by 0x........: doit (insn-pcmpistri.c:74)
+   by 0x........: main (insn-pcmpistri.c:114)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: doit (insn-pcmpistri.c:73)
+   by 0x........: main (insn-pcmpistri.c:114)
+
+strlen("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")=true

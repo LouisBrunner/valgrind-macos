@@ -1484,6 +1484,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.Binop.op == Iop_32HLto64) {
          HReg   r_Hi  = iselWordExpr_R(env, e->Iex.Binop.arg1);
          HReg   r_Lo  = iselWordExpr_R(env, e->Iex.Binop.arg2);
+         HReg   r_Tmp = newVRegI(env);
          HReg   r_dst = newVRegI(env);
          HReg   msk   = newVRegI(env);
          vassert(mode64);
@@ -1491,10 +1492,10 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64bit shift*/,
                                      r_dst, r_Hi, PPCRH_Imm(False,32)));
          addInstr(env, PPCInstr_LI(msk, 0xFFFFFFFF, mode64));
-         addInstr(env, PPCInstr_Alu( Palu_AND, r_Lo, r_Lo,
+         addInstr(env, PPCInstr_Alu( Palu_AND, r_Tmp, r_Lo,
                                      PPCRH_Reg(msk) ));
          addInstr(env, PPCInstr_Alu( Palu_OR, r_dst, r_dst,
-                                     PPCRH_Reg(r_Lo) ));
+                                     PPCRH_Reg(r_Tmp) ));
          return r_dst;
       }
 

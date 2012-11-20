@@ -16875,6 +16875,151 @@ static Long dis_PEXTRQ ( VexAbiInfo* vbi, Prefix pfx,
    return delta;
 }
 
+/* Returns Ity_I32 */
+static IRExpr *IRExpr_getMSBs16x8(IRExpr *exp)
+{
+   IRTemp lo = newTemp(Ity_I64);
+   IRTemp hi = newTemp(Ity_I64);
+   assign(lo, unop(Iop_V128to64, exp));
+   assign(hi, unop(Iop_V128HIto64, exp));
+   return unop(Iop_16Uto32,
+               binop(Iop_8HLto16,
+                     unop(Iop_GetMSBs8x8, mkexpr(hi)),
+                     unop(Iop_GetMSBs8x8, mkexpr(lo))));
+}
+
+static IRExpr *IRExpr_ctz32(IRExpr *exp)
+{
+   /* Iop_Ctz32 appears to be broken, so use Iop_Ctz64. */
+   return unop(Iop_64to32, unop(Iop_Ctz64, unop(Iop_32Uto64, exp)));
+}
+
+/* For expression representing x, return !!x */
+static IRExpr* IRExpr_notnot(IRExpr *exp)
+{
+   /* Iop_ExpCmpNE32 appears broken, so use Iop_ExpCmpNE64. */
+   return unop(Iop_1Uto32, binop(Iop_ExpCmpNE64, unop(Iop_32Uto64, exp),
+                                 mkU64(0)));
+}
+
+static Long dis_PCMPISTRI_3A ( UChar modrm, UInt regNoL, UInt regNoR,
+                               Long delta, UChar opc, UChar imm,
+                               HChar dis_buf[])
+{
+   /* We only handle PCMPISTRI for now */
+   vassert((opc & 0x03) == 0x03);
+   /* And only an immediate byte of 0x38 or 0x3A */
+   vassert((imm & ~0x02) == 0x38);
+
+   /* FIXME: Is this correct when RegNoL == 16 ? */
+   IRTemp argL = newTemp(Ity_V128);
+   assign(argL, getXMMReg(regNoL));
+   IRTemp argR = newTemp(Ity_V128);
+   assign(argR, getXMMReg(regNoR));
+
+   IRTemp zmaskL = newTemp(Ity_I32);
+   assign(zmaskL, IRExpr_getMSBs16x8(binop(Iop_CmpEQ8x16, mkexpr(argL),
+                                           mkV128(0))));
+   IRTemp zmaskR = newTemp(Ity_I32);
+   assign(zmaskR, IRExpr_getMSBs16x8(binop(Iop_CmpEQ8x16, mkexpr(argR),
+                                           mkV128(0))));
+
+   /* We want validL = ~(zmaskL | -zmaskL)
+
+      But this formulation kills memcheck's validity tracking when any
+      bits above the first "1" are invalid.  So reformulate as:
+
+      validL = (zmaskL ? (1 << ctz(zmaskL)) : 0) - 1
+   */
+
+   IRExpr *ctzL = unop(Iop_32to8, IRExpr_ctz32(mkexpr(zmaskL)));
+
+   /* Generate an 8-bit expression which is zero iff the original is
+      zero.  Do this carefully so memcheck can propagate validity bits
+      correctly.
+    */
+   IRTemp zmaskL_zero = newTemp(Ity_I32);
+   assign(zmaskL_zero, IRExpr_notnot(mkexpr(zmaskL)));
+
+   IRTemp validL = newTemp(Ity_I32);
+   assign(validL, binop(Iop_Sub32,
+                        IRExpr_Mux0X(unop(Iop_32to8, mkexpr(zmaskL_zero)),
+                                     mkU32(0),
+                                     binop(Iop_Shl32, mkU32(1), ctzL)),
+                        mkU32(1)));
+
+   /* And similarly for validR. */
+   IRExpr *ctzR = unop(Iop_32to8, IRExpr_ctz32(mkexpr(zmaskR)));
+   IRTemp zmaskR_zero = newTemp(Ity_I32);
+   assign(zmaskR_zero, IRExpr_notnot(mkexpr(zmaskR)));
+   IRTemp validR = newTemp(Ity_I32);
+   assign(validR, binop(Iop_Sub32,
+                        IRExpr_Mux0X(unop(Iop_32to8, mkexpr(zmaskR_zero)),
+                                     mkU32(0),
+                                     binop(Iop_Shl32, mkU32(1), ctzR)),
+                        mkU32(1)));
+
+   /* Do the actual comparison. */
+   IRExpr *boolResII = IRExpr_getMSBs16x8(binop(Iop_CmpEQ8x16,
+                                                mkexpr(argL),
+                                                mkexpr(argR)));
+
+   /* Compute boolresII & validL & validR (i.e., if both valid, use
+      comparison result) */
+   IRExpr *intRes1_a = binop(Iop_And32, boolResII,
+                             binop(Iop_And32,
+                                   mkexpr(validL), mkexpr(validR)));
+
+   /* Compute ~(validL | validR); i.e., if both invalid, force 1. */
+   IRExpr *intRes1_b = unop(Iop_Not32, binop(Iop_Or32,
+                                             mkexpr(validL), mkexpr(validR)));
+   /* Otherwise, zero. */
+   IRExpr *intRes1 = binop(Iop_And32, mkU32(0xFFFF),
+                           binop(Iop_Or32, intRes1_a, intRes1_b));
+
+   /* The "0x30" in imm=0x3A means "polarity=3" means XOR validL with
+      result. */
+   IRTemp intRes2 = newTemp(Ity_I32);
+   assign(intRes2, binop(Iop_And32, mkU32(0xFFFF),
+                         binop(Iop_Xor32, intRes1, mkexpr(validL))));
+
+   /* If the 0x40 bit were set in imm=0x3A, we would return the index
+      of the msb.  Since it is clear, we return the index of the
+      lsb. */
+   IRExpr *newECX = IRExpr_ctz32(binop(Iop_Or32,
+                                       mkexpr(intRes2), mkU32(0x10000)));
+
+   /* And thats our rcx. */
+   putIReg32(R_RCX, newECX);
+
+   /* Now for the condition codes... */
+
+   /* C == 0 iff intRes2 == 0 */
+   IRExpr *c_bit = binop(Iop_Shl32, IRExpr_notnot(mkexpr(intRes2)),
+                         mkU8(AMD64G_CC_SHIFT_C));
+   /* Z == 1 iff any in argL is 0 */
+   IRExpr *z_bit = binop(Iop_Shl32, mkexpr(zmaskL_zero),
+                         mkU8(AMD64G_CC_SHIFT_Z));
+   /* S == 1 iff any in argR is 0 */
+   IRExpr *s_bit = binop(Iop_Shl32, mkexpr(zmaskR_zero),
+                         mkU8(AMD64G_CC_SHIFT_S));
+   /* O == IntRes2[0] */
+   IRExpr *o_bit = binop(Iop_Shl32, binop(Iop_And32, mkexpr(intRes2),
+                                          mkU32(0x01)),
+                         mkU8(AMD64G_CC_SHIFT_O));
+
+   /* Put them all together */
+   IRTemp cc = newTemp(Ity_I64);
+   assign(cc, widenUto64(binop(Iop_Or32,
+                               binop(Iop_Or32, c_bit, z_bit),
+                               binop(Iop_Or32, s_bit, o_bit))));
+   stmt(IRStmt_Put(OFFB_CC_OP, mkU64(AMD64G_CC_OP_COPY)));
+   stmt(IRStmt_Put(OFFB_CC_DEP1, mkexpr(cc)));
+   stmt(IRStmt_Put(OFFB_CC_DEP2, mkU64(0)));
+   stmt(IRStmt_Put(OFFB_CC_NDEP, mkU64(0)));
+
+   return delta;
+}
 
 /* This can fail, in which case it returns the original (unchanged)
    delta. */
@@ -16911,6 +17056,11 @@ static Long dis_PCMPxSTRx ( VexAbiInfo* vbi, Prefix pfx,
       stmt( IRStmt_Put( OFFB_YMM16, loadLE(Ity_V128, mkexpr(addr)) ));
       imm = getUChar(delta+alen);
       delta += alen+1;
+   }
+
+   if (imm == 0x3A && isISTRx && !isxSTRM) {
+      return dis_PCMPISTRI_3A ( modrm, regNoL, regNoR, delta,
+                                opc, imm, dis_buf);
    }
 
    /* Now we know the XMM reg numbers for the operands, and the

@@ -186,7 +186,7 @@ typedef
    }
    PPCCondCode;
 
-extern HChar* showPPCCondCode ( PPCCondCode );
+extern const HChar* showPPCCondCode ( PPCCondCode );
 
 /* constructor */
 extern PPCCondCode mk_PPCCondCode ( PPCCondTest, PPCCondFlag );
@@ -326,7 +326,7 @@ typedef
    }
    PPCUnaryOp;
 
-extern HChar* showPPCUnaryOp ( PPCUnaryOp );
+extern const HChar* showPPCUnaryOp ( PPCUnaryOp );
 
 
 /* --------- */
@@ -339,8 +339,8 @@ typedef
    PPCAluOp;
 
 extern 
-HChar* showPPCAluOp ( PPCAluOp, 
-                      Bool /* is the 2nd operand an immediate? */);
+const HChar* showPPCAluOp ( PPCAluOp, 
+                            Bool /* is the 2nd operand an immediate? */);
 
 
 /* --------- */
@@ -352,9 +352,9 @@ typedef
    PPCShftOp;
 
 extern 
-HChar* showPPCShftOp ( PPCShftOp, 
-                       Bool /* is the 2nd operand an immediate? */,
-                       Bool /* is this a 32bit or 64bit op? */ );
+const HChar* showPPCShftOp ( PPCShftOp, 
+                             Bool /* is the 2nd operand an immediate? */,
+                             Bool /* is this a 32bit or 64bit op? */ );
 
 
 /* --------- */
@@ -386,7 +386,7 @@ typedef
    }
    PPCFpOp;
 
-extern HChar* showPPCFpOp ( PPCFpOp );
+extern const HChar* showPPCFpOp ( PPCFpOp );
 
 
 /* --------- */
@@ -425,7 +425,7 @@ typedef
    }
    PPCAvOp;
 
-extern HChar* showPPCAvOp ( PPCAvOp );
+extern const HChar* showPPCAvOp ( PPCAvOp );
 
 
 /* --------- */
@@ -445,7 +445,7 @@ typedef
    }
    PPCAvFpOp;
 
-extern HChar* showPPCAvFpOp ( PPCAvFpOp );
+extern const HChar* showPPCAvFpOp ( PPCAvFpOp );
 
 
 /* --------- */

@@ -47,7 +47,7 @@
 void ppHRegAMD64 ( HReg reg ) 
 {
    Int r;
-   static HChar* ireg64_names[16] 
+   static const HChar* ireg64_names[16] 
      = { "%rax", "%rcx", "%rdx", "%rbx", "%rsp", "%rbp", "%rsi", "%rdi",
          "%r8",  "%r9",  "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
    /* Be generic for all virtual regs. */
@@ -80,7 +80,7 @@ void ppHRegAMD64 ( HReg reg )
 static void ppHRegAMD64_lo32 ( HReg reg ) 
 {
    Int r;
-   static HChar* ireg32_names[16] 
+   static const HChar* ireg32_names[16] 
      = { "%eax",  "%ecx",  "%edx",  "%ebx",  "%esp",  "%ebp",  "%esi",  "%edi",
          "%r8d",  "%r9d",  "%r10d", "%r11d", "%r12d", "%r13d", "%r14d", "%r15d" };
    /* Be generic for all virtual regs. */
@@ -175,7 +175,7 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
 
 /* --------- Condition codes, Intel encoding. --------- */
 
-HChar* showAMD64CondCode ( AMD64CondCode cond )
+const HChar* showAMD64CondCode ( AMD64CondCode cond )
 {
    switch (cond) {
       case Acc_O:      return "o";
@@ -471,7 +471,7 @@ static void mapRegs_AMD64RM ( HRegRemap* m, AMD64RM* op )
 
 /* --------- Instructions. --------- */
 
-static HChar* showAMD64ScalarSz ( Int sz ) {
+static const HChar* showAMD64ScalarSz ( Int sz ) {
    switch (sz) {
       case 2: return "w";
       case 4: return "l";
@@ -480,7 +480,7 @@ static HChar* showAMD64ScalarSz ( Int sz ) {
    }
 }
  
-HChar* showAMD64UnaryOp ( AMD64UnaryOp op ) {
+const HChar* showAMD64UnaryOp ( AMD64UnaryOp op ) {
    switch (op) {
       case Aun_NOT: return "not";
       case Aun_NEG: return "neg";
@@ -488,7 +488,7 @@ HChar* showAMD64UnaryOp ( AMD64UnaryOp op ) {
    }
 }
 
-HChar* showAMD64AluOp ( AMD64AluOp op ) {
+const HChar* showAMD64AluOp ( AMD64AluOp op ) {
    switch (op) {
       case Aalu_MOV:  return "mov";
       case Aalu_CMP:  return "cmp";
@@ -504,7 +504,7 @@ HChar* showAMD64AluOp ( AMD64AluOp op ) {
    }
 }
 
-HChar* showAMD64ShiftOp ( AMD64ShiftOp op ) {
+const HChar* showAMD64ShiftOp ( AMD64ShiftOp op ) {
    switch (op) {
       case Ash_SHL: return "shl";
       case Ash_SHR: return "shr";
@@ -513,7 +513,7 @@ HChar* showAMD64ShiftOp ( AMD64ShiftOp op ) {
    }
 }
 
-HChar* showA87FpOp ( A87FpOp op ) {
+const HChar* showA87FpOp ( A87FpOp op ) {
    switch (op) {
       case Afp_SCALE:  return "scale";
       case Afp_ATAN:   return "atan";
@@ -531,7 +531,7 @@ HChar* showA87FpOp ( A87FpOp op ) {
    }
 }
 
-HChar* showAMD64SseOp ( AMD64SseOp op ) {
+const HChar* showAMD64SseOp ( AMD64SseOp op ) {
    switch (op) {
       case Asse_MOV:      return "movups";
       case Asse_ADDF:     return "add";

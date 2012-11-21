@@ -41,7 +41,7 @@
 void ppHRegMIPS(HReg reg, Bool mode64)
 {
    Int r;
-   static HChar *ireg32_names[35]
+   static const HChar *ireg32_names[35]
        = { "$0", "$1", "$2", "$3", "$4", "$5", "$6", "$7",
       "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15",
       "$16", "$17", "$18", "$19", "$20", "$21", "$22", "$23",
@@ -49,14 +49,14 @@ void ppHRegMIPS(HReg reg, Bool mode64)
       "%32", "%33", "%34",
    };
 
-   static HChar *freg32_names[32]
+   static const HChar *freg32_names[32]
        = { "$f0", "$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7",
       "$f8", "$f9", "$f10", "$f11", "$f12", "$f13", "$f14", "$f15",
       "$f16", "$f17", "$f18", "$f19", "$f20", "$f21", "$f22", "$f23",
       "$f24", "$f25", "$f26", "$f27", "$f28", "$f29", "f30", "$f31"
    };
 
-   static HChar *freg64_names[32]
+   static const HChar *freg64_names[32]
        = { "$d0", "$d1", "$d2", "$d3", "$d4", "$d5", "$d6", "$d7",
       "$d8", "$d9", "$d10", "$d11", "$d12", "$d13", "$d14", "$d15",
    };
@@ -625,9 +625,9 @@ void getAllocableRegs_MIPS(Int * nregs, HReg ** arr, Bool mode64)
 
 /*----------------- Condition Codes ----------------------*/
 
-HChar *showMIPSCondCode(MIPSCondCode cond)
+const HChar *showMIPSCondCode(MIPSCondCode cond)
 {
-   HChar* ret;
+   const HChar* ret;
    switch (cond) {
       case MIPScc_EQ:
          ret = "EQ"; /* equal */
@@ -684,9 +684,9 @@ HChar *showMIPSCondCode(MIPSCondCode cond)
    return ret;
 }
 
-HChar *showMIPSFpOp(MIPSFpOp op)
+const HChar *showMIPSFpOp(MIPSFpOp op)
 {
-   HChar *ret;
+   const HChar *ret;
    switch (op) {
       case Mfp_ADDD:
          ret = "ADD.D";
@@ -1019,9 +1019,9 @@ static void mapRegs_MIPSRH(HRegRemap * m, MIPSRH * op)
 
 /* --------- Instructions. --------- */
 
-HChar *showMIPSUnaryOp(MIPSUnaryOp op)
+const HChar *showMIPSUnaryOp(MIPSUnaryOp op)
 {
-   HChar* ret;
+   const HChar* ret;
    switch (op) {
       case Mun_CLO:
          ret = "clo";
@@ -1039,9 +1039,9 @@ HChar *showMIPSUnaryOp(MIPSUnaryOp op)
    return ret;
 }
 
-HChar *showMIPSAluOp(MIPSAluOp op, Bool immR)
+const HChar *showMIPSAluOp(MIPSAluOp op, Bool immR)
 {
-   HChar* ret;
+   const HChar* ret;
    switch (op) {
       case Malu_ADD:
          ret = immR ? "addiu" : "addu";
@@ -1069,9 +1069,9 @@ HChar *showMIPSAluOp(MIPSAluOp op, Bool immR)
    return ret;
 }
 
-HChar *showMIPSShftOp(MIPSShftOp op, Bool immR, Bool sz32)
+const HChar *showMIPSShftOp(MIPSShftOp op, Bool immR, Bool sz32)
 {
-   HChar *ret;
+   const HChar *ret;
    switch (op) {
       case Mshft_SRA:
          ret = immR ? (sz32 ? "sar" : "dsar") : (sz32 ? "sarv" : "dsrav");
@@ -1089,9 +1089,9 @@ HChar *showMIPSShftOp(MIPSShftOp op, Bool immR, Bool sz32)
    return ret;
 }
 
-HChar *showMIPSMaccOp(MIPSMaccOp op, Bool variable)
+const HChar *showMIPSMaccOp(MIPSMaccOp op, Bool variable)
 {
-   HChar *ret;
+   const HChar *ret;
    switch (op) {
       case Macc_ADD:
          ret = variable ? "madd" : "maddu";

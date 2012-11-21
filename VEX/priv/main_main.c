@@ -71,7 +71,7 @@
 /* --------- fwds ... --------- */
 
 static Bool   are_valid_hwcaps ( VexArch arch, UInt hwcaps );
-static HChar* show_hwcaps ( VexArch arch, UInt hwcaps );
+static const HChar* show_hwcaps ( VexArch arch, UInt hwcaps );
 
 
 /* --------- Initialise the library. --------- */
@@ -1070,7 +1070,7 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
 
 const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 {
-   HChar* str = show_hwcaps(arch,hwcaps);
+   const HChar* str = show_hwcaps(arch,hwcaps);
    return str ? str : "INVALID";
 }
 
@@ -1107,7 +1107,7 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
    be NULL for invalid combinations of flags, so these functions also
    serve as a way to validate hwcaps values. */
 
-static HChar* show_hwcaps_x86 ( UInt hwcaps ) 
+static const HChar* show_hwcaps_x86 ( UInt hwcaps ) 
 {
    /* Monotonic, SSE3 > SSE2 > SSE1 > baseline. */
    switch (hwcaps) {
@@ -1131,7 +1131,7 @@ static HChar* show_hwcaps_x86 ( UInt hwcaps )
    }
 }
 
-static HChar* show_hwcaps_amd64 ( UInt hwcaps )
+static const HChar* show_hwcaps_amd64 ( UInt hwcaps )
 {
    /* SSE3 and CX16 are orthogonal and > baseline, although we really
       don't expect to come across anything which can do SSE3 but can't
@@ -1169,7 +1169,7 @@ static HChar* show_hwcaps_amd64 ( UInt hwcaps )
    }
 }
 
-static HChar* show_hwcaps_ppc32 ( UInt hwcaps )
+static const HChar* show_hwcaps_ppc32 ( UInt hwcaps )
 {
    /* Monotonic with complications.  Basically V > F > baseline,
       but once you have F then you can have FX or GX too. */
@@ -1194,7 +1194,7 @@ static HChar* show_hwcaps_ppc32 ( UInt hwcaps )
    return NULL;
 }
 
-static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
+static const HChar* show_hwcaps_ppc64 ( UInt hwcaps )
 {
    /* Monotonic with complications.  Basically V > baseline(==F),
       but once you have F then you can have FX or GX too. */
@@ -1217,7 +1217,7 @@ static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
    return NULL;
 }
 
-static HChar* show_hwcaps_arm ( UInt hwcaps )
+static const HChar* show_hwcaps_arm ( UInt hwcaps )
 {
    Bool N = ((hwcaps & VEX_HWCAPS_ARM_NEON) != 0);
    Bool vfp = ((hwcaps & (VEX_HWCAPS_ARM_VFP |
@@ -1257,7 +1257,7 @@ static HChar* show_hwcaps_arm ( UInt hwcaps )
    return NULL;
 }
 
-static HChar* show_hwcaps_s390x ( UInt hwcaps )
+static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 {
    static const HChar prefix[] = "s390x";
    static const HChar facilities[][6] = {
@@ -1308,7 +1308,7 @@ static HChar* show_hwcaps_s390x ( UInt hwcaps )
    return buf;
 }
 
-static HChar* show_hwcaps_mips32 ( UInt hwcaps )
+static const HChar* show_hwcaps_mips32 ( UInt hwcaps )
 {
    if (hwcaps == 0x00010000) return "MIPS-baseline";
    if (hwcaps == 0x00020000) return "Broadcom-baseline";
@@ -1316,7 +1316,7 @@ static HChar* show_hwcaps_mips32 ( UInt hwcaps )
 }
 
 /* ---- */
-static HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
+static const HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
 {
    switch (arch) {
       case VexArchX86:    return show_hwcaps_x86(hwcaps);

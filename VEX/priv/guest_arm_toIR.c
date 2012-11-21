@@ -1054,7 +1054,7 @@ static IRTemp /* :: Ity_I32 */ mk_get_IR_rounding_mode ( void )
 /*--- Helpers for flag handling and conditional insns      ---*/
 /*------------------------------------------------------------*/
 
-static HChar* name_ARMCondcode ( ARMCondcode cond )
+static const HChar* name_ARMCondcode ( ARMCondcode cond )
 {
    switch (cond) {
       case ARMCondEQ:  return "{eq}";
@@ -1077,7 +1077,7 @@ static HChar* name_ARMCondcode ( ARMCondcode cond )
    }
 }
 /* and a handy shorthand for it */
-static HChar* nCC ( ARMCondcode cond ) {
+static const HChar* nCC ( ARMCondcode cond ) {
    return name_ARMCondcode(cond);
 }
 
@@ -11051,7 +11051,7 @@ static Bool decode_CP10_CP11_instruction (
             putIRegA(rN, mkexpr(rnTnew), IRTemp_INVALID, Ijk_Boring);
       }
 
-      HChar* nm = bL==1 ? "ld" : "st";
+      const HChar* nm = bL==1 ? "ld" : "st";
       switch (summary) {
          case 1:  DIP("f%smx%s r%u, {d%u-d%u}\n", 
                       nm, nCC(conq), rN, dD, dD + nRegs - 1);
@@ -11188,7 +11188,7 @@ static Bool decode_CP10_CP11_instruction (
             putIRegA(rN, mkexpr(rnTnew), IRTemp_INVALID, Ijk_Boring);
       }
 
-      HChar* nm = bL==1 ? "ld" : "st";
+      const HChar* nm = bL==1 ? "ld" : "st";
       switch (summary) {
          case 1:  DIP("f%smd%s r%u, {d%u-d%u}\n", 
                       nm, nCC(conq), rN, dD, dD + nRegs - 1);
@@ -11937,7 +11937,7 @@ static Bool decode_CP10_CP11_instruction (
             putIRegA(rN, mkexpr(rnTnew), IRTemp_INVALID, Ijk_Boring);
       }
 
-      HChar* nm = bL==1 ? "ld" : "st";
+      const HChar* nm = bL==1 ? "ld" : "st";
       switch (summary) {
          case 1:  DIP("f%sms%s r%u, {s%u-s%u}\n", 
                       nm, nCC(conq), rN, fD, fD + nRegs - 1);
@@ -12735,7 +12735,7 @@ DisResult disInstr_ARM_WRK (
       IRTemp  res  = IRTemp_INVALID;
       IRTemp  oldV = IRTemp_INVALID;
       IRTemp  oldC = IRTemp_INVALID;
-      HChar*  name = NULL;
+      const HChar*  name = NULL;
       IROp    op   = Iop_INVALID;
       Bool    ok;
 
@@ -13369,7 +13369,7 @@ DisResult disInstr_ARM_WRK (
         shalf load      H 1  L 1  S 1
         sbyte load      H 0  L 1  S 1
      */
-     HChar* name = NULL;
+     const HChar* name = NULL;
      /* generate the transfer */
      /**/ if (bH == 1 && bL == 0 && bS == 0) { // halfword store
         storeLE( mkexpr(taT), unop(Iop_32to16, getIRegA(rD)) );
@@ -13520,7 +13520,7 @@ DisResult disInstr_ARM_WRK (
          DIP("b%s 0x%x\n", link ? "l" : "", dst);
       } else {
          /* conditional transfer to 'dst' */
-         HChar* comment = "";
+         const HChar* comment = "";
 
          /* First see if we can do some speculative chasing into one
             arm or the other.  Be conservative and only chase if
@@ -13976,7 +13976,7 @@ DisResult disInstr_ARM_WRK (
       UInt   rN    = INSN(19,16);
       IRType ty    = Ity_INVALID;
       IROp   widen = Iop_INVALID;
-      HChar* nm    = NULL;
+      const HChar* nm = NULL;
       Bool   valid = True;
       switch (INSN(22,21)) {
          case 0: nm = "";  ty = Ity_I32; break;
@@ -14031,7 +14031,7 @@ DisResult disInstr_ARM_WRK (
       UInt   rD     = INSN(15,12);
       IRType ty     = Ity_INVALID;
       IROp   narrow = Iop_INVALID;
-      HChar* nm     = NULL;
+      const HChar* nm = NULL;
       Bool   valid  = True;
       switch (INSN(22,21)) {
          case 0: nm = "";  ty = Ity_I32; break;
@@ -14131,7 +14131,7 @@ DisResult disInstr_ARM_WRK (
          IRTemp srcT = newTemp(Ity_I32);
          IRTemp rotT = newTemp(Ity_I32);
          IRTemp dstT = newTemp(Ity_I32);
-         HChar* nm   = "???";
+         const HChar* nm = "???";
          assign(srcT, getIRegA(rM));
          assign(rotT, genROR32(srcT, 8 * rot)); /* 0, 8, 16 or 24 only */
          switch (subopc) {
@@ -14398,7 +14398,7 @@ DisResult disInstr_ARM_WRK (
      /* doubleword store  S 1
         doubleword load   S 0
      */
-     HChar* name = NULL;
+     const HChar* name = NULL;
      /* generate the transfers */
      if (bS == 1) { // doubleword store
         storeLE( binop(Iop_Add32, mkexpr(taT), mkU32(0)), getIRegA(rD+0) );
@@ -15221,7 +15221,7 @@ DisResult disInstr_THUMB_WRK (
       test for this case for every condition code update. */
 
    IROp   anOp   = Iop_INVALID;
-   HChar* anOpNm = NULL;
+   const HChar* anOpNm = NULL;
 
    /* ================ 16-bit 15:6 cases ================ */
 
@@ -15457,7 +15457,7 @@ DisResult disInstr_THUMB_WRK (
       IRTemp rSt  = newTemp(Ity_I32);
       IRTemp res  = newTemp(Ity_I32);
       IRTemp resC = newTemp(Ity_I32);
-      HChar* wot  = "???";
+      const HChar* wot  = "???";
       assign(rSt, getIRegT(rS));
       assign(rDt, getIRegT(rD));
       assign(oldV, mk_armg_calculate_flag_v());
@@ -16403,7 +16403,7 @@ DisResult disInstr_THUMB_WRK (
       IRTemp resC = newTemp(Ity_I32);
       IRTemp rMt  = newTemp(Ity_I32);
       IRTemp oldV = newTemp(Ity_I32);
-      HChar* wot  = "???";
+      const HChar* wot  = "???";
       assign(rMt, getIRegT(rM));
       assign(oldV, mk_armg_calculate_flag_v());
       /* Looks like INSN0(12,11) are the standard 'how' encoding.
@@ -16838,7 +16838,7 @@ DisResult disInstr_THUMB_WRK (
          assign(argL, getIRegT(rN));
          assign(argR, mkU32(imm32));
          assign(oldC, mk_armg_calculate_flag_c() );
-         HChar* nm  = "???";
+         const HChar* nm  = "???";
          switch (INSN0(9,5)) {
             case BITS5(0,1,0,1,0): // ADC
                nm = "adc";
@@ -16888,7 +16888,7 @@ DisResult disInstr_THUMB_WRK (
       if (!isBadRegT(rN) && !isBadRegT(rD)) {
          Bool   notArgR = False;
          IROp   op      = Iop_INVALID;
-         HChar* nm      = "???";
+         const HChar* nm = "???";
          switch (INSN0(9,5)) {
             case BITS5(0,0,0,1,0): op = Iop_Or32;  nm = "orr"; break;
             case BITS5(0,0,0,0,0): op = Iop_And32; nm = "and"; break;
@@ -16955,7 +16955,7 @@ DisResult disInstr_THUMB_WRK (
       if (valid) {
          Bool   swap = False;
          IROp   op   = Iop_INVALID;
-         HChar* nm   = "???";
+         const HChar* nm = "???";
          switch (INSN0(8,5)) {
             case BITS4(1,0,0,0): op = Iop_Add32; nm = "add"; break;
             case BITS4(1,1,0,1): op = Iop_Sub32; nm = "sub"; break;
@@ -17033,7 +17033,7 @@ DisResult disInstr_THUMB_WRK (
             dis_buf, &argR, NULL, rMt, how, imm5, rM
          );
 
-         HChar* nm  = "???";
+         const HChar* nm  = "???";
          IRTemp res = newTemp(Ity_I32);
          switch (INSN0(8,5)) {
             case BITS4(1,0,1,0): // ADC
@@ -17086,7 +17086,7 @@ DisResult disInstr_THUMB_WRK (
       if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM)) {
          Bool notArgR = False;
          IROp op      = Iop_INVALID;
-         HChar* nm  = "???";
+         const HChar* nm  = "???";
          switch (INSN0(8,5)) {
             case BITS4(0,0,0,0): op = Iop_And32; nm = "and"; break;
             case BITS4(0,0,1,0): op = Iop_Or32;  nm = "orr"; break;
@@ -17156,8 +17156,8 @@ DisResult disInstr_THUMB_WRK (
          IRTemp res    = newTemp(Ity_I32);
          IRTemp oldC   = bS ? newTemp(Ity_I32) : IRTemp_INVALID;
          IRTemp oldV   = bS ? newTemp(Ity_I32) : IRTemp_INVALID;
-         HChar* nms[4] = { "lsl", "lsr", "asr", "ror" };
-         HChar* nm     = nms[how];
+         const HChar* nms[4] = { "lsl", "lsr", "asr", "ror" };
+         const HChar* nm     = nms[how];
          assign(rNt, getIRegT(rN));
          assign(rMt, getIRegT(rM));
          compute_result_and_C_after_shift_by_reg(
@@ -17367,7 +17367,7 @@ DisResult disInstr_THUMB_WRK (
       Bool   syned  = False;
       Bool   isST   = False;
       IRType ty     = Ity_I8;
-      HChar* nm     = "???";
+      const HChar* nm = "???";
 
       switch (INSN0(8,4)) {
          case BITS5(0,0,0,0,0):   // strb
@@ -17551,7 +17551,7 @@ DisResult disInstr_THUMB_WRK (
       Bool   syned  = False;
       Bool   isST   = False;
       IRType ty     = Ity_I8;
-      HChar* nm     = "???";
+      const HChar* nm = "???";
 
       switch (INSN0(8,4)) {
          case BITS5(0,0,0,0,0):   // strb
@@ -17688,7 +17688,7 @@ DisResult disInstr_THUMB_WRK (
       Bool   syned  = False;
       Bool   isST   = False;
       IRType ty     = Ity_I8;
-      HChar* nm     = "???";
+      const HChar* nm = "???";
 
       switch (INSN0(8,4)) {
          case BITS5(0,1,0,0,0):   // strb
@@ -17875,7 +17875,7 @@ DisResult disInstr_THUMB_WRK (
             putIRegT(rN, mkexpr(postAddr), IRTemp_INVALID);
          }
 
-         HChar* nm = bL ? "ldrd" : "strd";
+         const HChar* nm = bL ? "ldrd" : "strd";
 
          if (bP == 1 && bW == 0) {
             DIP("%s.w r%u, r%u, [r%u, #%c%u]\n",
@@ -18075,7 +18075,7 @@ DisResult disInstr_THUMB_WRK (
       UInt rM = INSN1(3,0);
       UInt rot = INSN1(5,4);
       if (!isBadRegT(rD) && !isBadRegT(rM)) {
-         HChar* nm = "???";
+         const HChar* nm = "???";
          IRTemp srcT = newTemp(Ity_I32);
          IRTemp rotT = newTemp(Ity_I32);
          IRTemp dstT = newTemp(Ity_I32);

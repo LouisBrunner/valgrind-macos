@@ -114,7 +114,7 @@ typedef
    }
    ARMCondCode;
 
-extern HChar* showARMCondCode ( ARMCondCode );
+extern const HChar* showARMCondCode ( ARMCondCode );
 
 
 
@@ -358,7 +358,7 @@ typedef
    }
    ARMAluOp;
 
-extern HChar* showARMAluOp ( ARMAluOp op );
+extern const HChar* showARMAluOp ( ARMAluOp op );
 
 
 typedef
@@ -369,7 +369,7 @@ typedef
    }
    ARMShiftOp;
 
-extern HChar* showARMShiftOp ( ARMShiftOp op );
+extern const HChar* showARMShiftOp ( ARMShiftOp op );
 
 
 typedef
@@ -380,7 +380,7 @@ typedef
    }
    ARMUnaryOp;
 
-extern HChar* showARMUnaryOp ( ARMUnaryOp op );
+extern const HChar* showARMUnaryOp ( ARMUnaryOp op );
 
 
 typedef
@@ -391,7 +391,7 @@ typedef
    }
    ARMMulOp;
 
-extern HChar* showARMMulOp ( ARMMulOp op );
+extern const HChar* showARMMulOp ( ARMMulOp op );
 
 
 typedef
@@ -403,7 +403,7 @@ typedef
    }
    ARMVfpOp;
 
-extern HChar* showARMVfpOp ( ARMVfpOp op );
+extern const HChar* showARMVfpOp ( ARMVfpOp op );
 
 
 typedef
@@ -415,7 +415,7 @@ typedef
    }
    ARMVfpUnaryOp;
 
-extern HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op );
+extern const HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op );
 
 typedef
    enum {
@@ -544,16 +544,16 @@ typedef
    }
    ARMNeonDualOp;
 
-extern HChar* showARMNeonBinOp ( ARMNeonBinOp op );
-extern HChar* showARMNeonUnOp ( ARMNeonUnOp op );
-extern HChar* showARMNeonUnOpS ( ARMNeonUnOpS op );
-extern HChar* showARMNeonShiftOp ( ARMNeonShiftOp op );
-extern HChar* showARMNeonDualOp ( ARMNeonDualOp op );
-extern HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op );
-extern HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op );
-extern HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op );
-extern HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op );
-extern HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op );
+extern const HChar* showARMNeonBinOp ( ARMNeonBinOp op );
+extern const HChar* showARMNeonUnOp ( ARMNeonUnOp op );
+extern const HChar* showARMNeonUnOpS ( ARMNeonUnOpS op );
+extern const HChar* showARMNeonShiftOp ( ARMNeonShiftOp op );
+extern const HChar* showARMNeonDualOp ( ARMNeonDualOp op );
+extern const HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op );
+extern const HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op );
+extern const HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op );
+extern const HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op );
+extern const HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op );
 
 typedef
    enum {

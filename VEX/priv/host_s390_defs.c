@@ -5237,7 +5237,7 @@ s390_jump_kind_as_string(IRJumpKind kind)
 
 /* Helper function for writing out a V insn */
 static void
-s390_sprintf(HChar *buf, HChar *fmt, ...)
+s390_sprintf(HChar *buf, const HChar *fmt, ...)
 {
    HChar *p;
    ULong value;

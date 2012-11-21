@@ -1553,7 +1553,7 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
    the address of the next instruction to be executed.
 */
 static void make_redzone_AbiHint ( VexAbiInfo* vbi, 
-                                   IRTemp nia, HChar* who )
+                                   IRTemp nia, const HChar* who )
 {
    Int szB = vbi->guest_stack_redzone_size;
    if (0) vex_printf("AbiHint: %s\n", who);
@@ -12089,7 +12089,7 @@ dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
       case 0x1A0: // xvsubdp (VSX Vector Subtract Double-Precision)
       {
          IROp mOp;
-         HChar * oper_name;
+         const HChar * oper_name;
          switch (opc2) {
             case 0x1E0:
                mOp = Iop_DivF64;
@@ -12158,7 +12158,7 @@ dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
           */
          Bool negate;
          IROp mOp = Iop_INVALID;
-         HChar * oper_name = NULL;
+         const HChar * oper_name = NULL;
          Bool mdp = False;
 
          switch (opc2) {
@@ -12420,7 +12420,7 @@ dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
          IRTemp t3, t2, t1, t0;
          Bool msp = False;
          Bool negate;
-         HChar * oper_name = NULL;
+         const HChar * oper_name = NULL;
          IROp mOp = Iop_INVALID;
          switch (opc2) {
             case 0x104: case 0x124:
@@ -12811,7 +12811,8 @@ static IRExpr * get_max_min_fp(IRTemp frA_I64, IRTemp frB_I64, Bool isMin)
 /*
  * Helper function for vector/scalar double precision fp round to integer instructions.
  */
-static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2, HChar * insn_suffix)
+static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2,
+                                      const HChar * insn_suffix)
 {
 
    /* The same rules apply for x{s|v}rdpi{m|p|c|z} as for floating point round operations (fri{m|n|p|z}). */
@@ -13271,7 +13272,7 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
          IRTemp frBLo_I64 = newTemp(Ity_I64);
          IRExpr * frD_fp_roundHi = NULL;
          IRExpr * frD_fp_roundLo = NULL;
-         HChar * insn_suffix = NULL;
+         const HChar * insn_suffix = NULL;
 
          assign( frBHi_I64, unop( Iop_V128HIto64, getVSReg( XB ) ) );
          frD_fp_roundHi = _do_vsx_fp_roundToInt(frBHi_I64, opc2, insn_suffix);
@@ -13291,7 +13292,7 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
       case 0x152: // xvrspip (VSX Vector Round to SinglePrecision Integer using round toward +Infinity)
       case 0x132: // xvrspiz (VSX Vector Round to SinglePrecision Integer using round toward Zero)
       {
-         HChar * insn_suffix = NULL;
+         const HChar * insn_suffix = NULL;
          IROp op;
          if (opc2 != 0x156) {
             // Use pre-defined IRop's for vrfi{m|n|p|z}
@@ -13880,7 +13881,7 @@ dis_vxs_misc( UInt theInstr, UInt opc2 )
       {
          IRTemp frB_I64 = newTemp(Ity_I64);
          IRExpr * frD_fp_round = NULL;
-         HChar * insn_suffix = NULL;
+         const HChar * insn_suffix = NULL;
 
          assign(frB_I64, unop(Iop_V128HIto64, mkexpr( vB )));
          frD_fp_round = _do_vsx_fp_roundToInt(frB_I64, opc2, insn_suffix);
@@ -14218,7 +14219,7 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
       case 0x48: // xxmrghw (VSX Merge High Word)
       case 0xc8: // xxmrglw (VSX Merge Low Word)
       {
-         HChar type = (opc2 == 0x48) ? 'h' : 'l';
+         const HChar type = (opc2 == 0x48) ? 'h' : 'l';
          IROp word_op = (opc2 == 0x48) ? Iop_V128HIto64 : Iop_V128to64;
          IRTemp a64 = newTemp(Ity_I64);
          IRTemp ahi32 = newTemp(Ity_I32);
@@ -16273,7 +16274,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
 struct vsx_insn {
    UInt opcode;
-   HChar * name;
+   const HChar * name;
 };
 
 //  ATTENTION:  Keep this array sorted on the opcocde!!!

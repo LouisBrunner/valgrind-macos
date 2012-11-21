@@ -47,7 +47,7 @@
 void ppHRegX86 ( HReg reg ) 
 {
    Int r;
-   static HChar* ireg32_names[8] 
+   static const HChar* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", "%esp", "%ebp", "%esi", "%edi" };
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
@@ -131,7 +131,7 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 
 /* --------- Condition codes, Intel encoding. --------- */
 
-HChar* showX86CondCode ( X86CondCode cond )
+const HChar* showX86CondCode ( X86CondCode cond )
 {
    switch (cond) {
       case Xcc_O:      return "o";
@@ -430,7 +430,7 @@ static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
 
 /* --------- Instructions. --------- */
 
-HChar* showX86UnaryOp ( X86UnaryOp op ) {
+const HChar* showX86UnaryOp ( X86UnaryOp op ) {
    switch (op) {
       case Xun_NOT: return "not";
       case Xun_NEG: return "neg";
@@ -438,7 +438,7 @@ HChar* showX86UnaryOp ( X86UnaryOp op ) {
    }
 }
 
-HChar* showX86AluOp ( X86AluOp op ) {
+const HChar* showX86AluOp ( X86AluOp op ) {
    switch (op) {
       case Xalu_MOV:  return "mov";
       case Xalu_CMP:  return "cmp";
@@ -454,7 +454,7 @@ HChar* showX86AluOp ( X86AluOp op ) {
    }
 }
 
-HChar* showX86ShiftOp ( X86ShiftOp op ) {
+const HChar* showX86ShiftOp ( X86ShiftOp op ) {
    switch (op) {
       case Xsh_SHL: return "shl";
       case Xsh_SHR: return "shr";
@@ -463,7 +463,7 @@ HChar* showX86ShiftOp ( X86ShiftOp op ) {
    }
 }
 
-HChar* showX86FpOp ( X86FpOp op ) {
+const HChar* showX86FpOp ( X86FpOp op ) {
    switch (op) {
       case Xfp_ADD:    return "add";
       case Xfp_SUB:    return "sub";
@@ -488,7 +488,7 @@ HChar* showX86FpOp ( X86FpOp op ) {
    }
 }
 
-HChar* showX86SseOp ( X86SseOp op ) {
+const HChar* showX86SseOp ( X86SseOp op ) {
    switch (op) {
       case Xsse_MOV:      return "mov(?!)";
       case Xsse_ADDF:     return "add";

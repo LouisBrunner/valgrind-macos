@@ -180,7 +180,7 @@ typedef enum {
    MIPScc_NV = 15    /* never (unconditional): */
 } MIPSCondCode;
 
-extern HChar *showMIPSCondCode(MIPSCondCode);
+extern const HChar *showMIPSCondCode(MIPSCondCode);
 
 /* --------- Memory address expressions (amodes). --------- */
 typedef enum {
@@ -307,7 +307,7 @@ typedef enum {
    Mun_NOP,
 } MIPSUnaryOp;
 
-extern HChar *showMIPSUnaryOp(MIPSUnaryOp);
+extern const HChar *showMIPSUnaryOp(MIPSUnaryOp);
 /* --------- */
 
 /* --------- */
@@ -318,7 +318,7 @@ typedef enum {
    Malu_AND, Malu_OR, Malu_NOR, Malu_XOR,
 } MIPSAluOp;
 
-extern HChar *showMIPSAluOp(MIPSAluOp,
+extern const HChar *showMIPSAluOp(MIPSAluOp,
                             Bool /* is the 2nd operand an immediate? */ );
 
 /* --------- */
@@ -328,7 +328,7 @@ typedef enum {
    Mshft_SRA
 } MIPSShftOp;
 
-extern HChar *showMIPSShftOp(MIPSShftOp,
+extern const HChar *showMIPSShftOp(MIPSShftOp,
                              Bool /* is the 2nd operand an immediate? */ ,
                              Bool /* is this a 32bit or 64bit op? */ );
 
@@ -338,7 +338,7 @@ typedef enum {
    Macc_SUB
 } MIPSMaccOp;
 
-extern HChar *showMIPSMaccOp(MIPSMaccOp, Bool);
+extern const HChar *showMIPSMaccOp(MIPSMaccOp, Bool);
 /* --------- */
 
 /* ----- Instruction tags ----- */
@@ -410,7 +410,7 @@ typedef enum {
    Mfp_RES, Mfp_RSQRTE, Mfp_FRIN, Mfp_FRIM, Mfp_FRIP, Mfp_FRIZ, Mfp_CVTD
 } MIPSFpOp;
 
-extern HChar *showMIPSFpOp(MIPSFpOp);
+extern const HChar *showMIPSFpOp(MIPSFpOp);
 
 /*--------- Structure for instructions ----------*/
 /* Destinations are on the LEFT (first operand) */

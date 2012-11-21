@@ -1563,78 +1563,78 @@ encode_dfp_rounding_mode(UChar mode)
 /*--- Build IR for formats                                 ---*/
 /*------------------------------------------------------------*/
 static void
-s390_format_I(HChar *(*irgen)(UChar i),
+s390_format_I(const HChar *(*irgen)(UChar i),
               UChar i)
 {
-   HChar *mnm = irgen(i);
+   const HChar *mnm = irgen(i);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, UINT), mnm, i);
 }
 
 static void
-s390_format_RI(HChar *(*irgen)(UChar r1, UShort i2),
+s390_format_RI(const HChar *(*irgen)(UChar r1, UShort i2),
                UChar r1, UShort i2)
 {
    irgen(r1, i2);
 }
 
 static void
-s390_format_RI_RU(HChar *(*irgen)(UChar r1, UShort i2),
+s390_format_RI_RU(const HChar *(*irgen)(UChar r1, UShort i2),
                   UChar r1, UShort i2)
 {
-   HChar *mnm = irgen(r1, i2);
+   const HChar *mnm = irgen(r1, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, UINT), mnm, r1, i2);
 }
 
 static void
-s390_format_RI_RI(HChar *(*irgen)(UChar r1, UShort i2),
+s390_format_RI_RI(const HChar *(*irgen)(UChar r1, UShort i2),
                   UChar r1, UShort i2)
 {
-   HChar *mnm = irgen(r1, i2);
+   const HChar *mnm = irgen(r1, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, INT), mnm, r1, (Int)(Short)i2);
 }
 
 static void
-s390_format_RI_RP(HChar *(*irgen)(UChar r1, UShort i2),
+s390_format_RI_RP(const HChar *(*irgen)(UChar r1, UShort i2),
                   UChar r1, UShort i2)
 {
-   HChar *mnm = irgen(r1, i2);
+   const HChar *mnm = irgen(r1, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, PCREL), mnm, r1, (Int)(Short)i2);
 }
 
 static void
-s390_format_RIE_RRP(HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
+s390_format_RIE_RRP(const HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
                     UChar r1, UChar r3, UShort i2)
 {
-   HChar *mnm = irgen(r1, r3, i2);
+   const HChar *mnm = irgen(r1, r3, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, PCREL), mnm, r1, r3, (Int)(Short)i2);
 }
 
 static void
-s390_format_RIE_RRI0(HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
+s390_format_RIE_RRI0(const HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
                      UChar r1, UChar r3, UShort i2)
 {
-   HChar *mnm = irgen(r1, r3, i2);
+   const HChar *mnm = irgen(r1, r3, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, INT), mnm, r1, r3, (Int)(Short)i2);
 }
 
 static void
-s390_format_RIE_RRUUU(HChar *(*irgen)(UChar r1, UChar r2, UChar i3, UChar i4,
-                      UChar i5),
+s390_format_RIE_RRUUU(const HChar *(*irgen)(UChar r1, UChar r2, UChar i3,
+                                            UChar i4, UChar i5),
                       UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
 {
-   HChar *mnm = irgen(r1, r2, i3, i4, i5);
+   const HChar *mnm = irgen(r1, r2, i3, i4, i5);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC6(MNM, GPR, GPR, UINT, UINT, UINT), mnm, r1, r2, i3, i4,
@@ -1642,10 +1642,11 @@ s390_format_RIE_RRUUU(HChar *(*irgen)(UChar r1, UChar r2, UChar i3, UChar i4,
 }
 
 static void
-s390_format_RIE_RRPU(HChar *(*irgen)(UChar r1, UChar r2, UShort i4, UChar m3),
+s390_format_RIE_RRPU(const HChar *(*irgen)(UChar r1, UChar r2, UShort i4,
+                                           UChar m3),
                      UChar r1, UChar r2, UShort i4, UChar m3)
 {
-   HChar *mnm = irgen(r1, r2, i4, m3);
+   const HChar *mnm = irgen(r1, r2, i4, m3);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, GPR, CABM, PCREL), S390_XMNM_CAB, mnm, m3, r1,
@@ -1653,10 +1654,11 @@ s390_format_RIE_RRPU(HChar *(*irgen)(UChar r1, UChar r2, UShort i4, UChar m3),
 }
 
 static void
-s390_format_RIE_RUPU(HChar *(*irgen)(UChar r1, UChar m3, UShort i4, UChar i2),
+s390_format_RIE_RUPU(const HChar *(*irgen)(UChar r1, UChar m3, UShort i4,
+                                           UChar i2),
                      UChar r1, UChar m3, UShort i4, UChar i2)
 {
-   HChar *mnm = irgen(r1, m3, i4, i2);
+   const HChar *mnm = irgen(r1, m3, i4, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, UINT, CABM, PCREL), S390_XMNM_CAB, mnm, m3,
@@ -1664,10 +1666,11 @@ s390_format_RIE_RUPU(HChar *(*irgen)(UChar r1, UChar m3, UShort i4, UChar i2),
 }
 
 static void
-s390_format_RIE_RUPI(HChar *(*irgen)(UChar r1, UChar m3, UShort i4, UChar i2),
+s390_format_RIE_RUPI(const HChar *(*irgen)(UChar r1, UChar m3, UShort i4,
+                                           UChar i2),
                      UChar r1, UChar m3, UShort i4, UChar i2)
 {
-   HChar *mnm = irgen(r1, m3, i4, i2);
+   const HChar *mnm = irgen(r1, m3, i4, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(XMNM, GPR, INT, CABM, PCREL), S390_XMNM_CAB, mnm, m3, r1,
@@ -1675,58 +1678,58 @@ s390_format_RIE_RUPI(HChar *(*irgen)(UChar r1, UChar m3, UShort i4, UChar i2),
 }
 
 static void
-s390_format_RIL(HChar *(*irgen)(UChar r1, UInt i2),
+s390_format_RIL(const HChar *(*irgen)(UChar r1, UInt i2),
                 UChar r1, UInt i2)
 {
    irgen(r1, i2);
 }
 
 static void
-s390_format_RIL_RU(HChar *(*irgen)(UChar r1, UInt i2),
+s390_format_RIL_RU(const HChar *(*irgen)(UChar r1, UInt i2),
                    UChar r1, UInt i2)
 {
-   HChar *mnm = irgen(r1, i2);
+   const HChar *mnm = irgen(r1, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, UINT), mnm, r1, i2);
 }
 
 static void
-s390_format_RIL_RI(HChar *(*irgen)(UChar r1, UInt i2),
+s390_format_RIL_RI(const HChar *(*irgen)(UChar r1, UInt i2),
                    UChar r1, UInt i2)
 {
-   HChar *mnm = irgen(r1, i2);
+   const HChar *mnm = irgen(r1, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, INT), mnm, r1, i2);
 }
 
 static void
-s390_format_RIL_RP(HChar *(*irgen)(UChar r1, UInt i2),
+s390_format_RIL_RP(const HChar *(*irgen)(UChar r1, UInt i2),
                    UChar r1, UInt i2)
 {
-   HChar *mnm = irgen(r1, i2);
+   const HChar *mnm = irgen(r1, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, PCREL), mnm, r1, i2);
 }
 
 static void
-s390_format_RIL_UP(HChar *(*irgen)(void),
+s390_format_RIL_UP(const HChar *(*irgen)(void),
                    UChar r1, UInt i2)
 {
-   HChar *mnm = irgen();
+   const HChar *mnm = irgen();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UINT, PCREL), mnm, r1, i2);
 }
 
 static void
-s390_format_RIS_RURDI(HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
+s390_format_RIS_RURDI(const HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
                       IRTemp op4addr),
                       UChar r1, UChar m3, UChar b4, UShort d4, UChar i2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op4addr = newTemp(Ity_I64);
 
    assign(op4addr, binop(Iop_Add64, mkU64(d4), b4 != 0 ? get_gpr_dw0(b4) :
@@ -1740,11 +1743,11 @@ s390_format_RIS_RURDI(HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
 }
 
 static void
-s390_format_RIS_RURDU(HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
+s390_format_RIS_RURDU(const HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
                       IRTemp op4addr),
                       UChar r1, UChar m3, UChar b4, UShort d4, UChar i2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op4addr = newTemp(Ity_I64);
 
    assign(op4addr, binop(Iop_Add64, mkU64(d4), b4 != 0 ? get_gpr_dw0(b4) :
@@ -1758,144 +1761,147 @@ s390_format_RIS_RURDU(HChar *(*irgen)(UChar r1, UChar m3, UChar i2,
 }
 
 static void
-s390_format_RR(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RR(const HChar *(*irgen)(UChar r1, UChar r2),
                UChar r1, UChar r2)
 {
    irgen(r1, r2);
 }
 
 static void
-s390_format_RR_RR(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RR_RR(const HChar *(*irgen)(UChar r1, UChar r2),
                   UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r1, r2);
+   const HChar *mnm = irgen(r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, GPR), mnm, r1, r2);
 }
 
 static void
-s390_format_RR_FF(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RR_FF(const HChar *(*irgen)(UChar r1, UChar r2),
                   UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r1, r2);
+   const HChar *mnm = irgen(r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, FPR), mnm, r1, r2);
 }
 
 static void
-s390_format_RRE(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RRE(const HChar *(*irgen)(UChar r1, UChar r2),
                 UChar r1, UChar r2)
 {
    irgen(r1, r2);
 }
 
 static void
-s390_format_RRE_RR(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RRE_RR(const HChar *(*irgen)(UChar r1, UChar r2),
                    UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r1, r2);
+   const HChar *mnm = irgen(r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, GPR), mnm, r1, r2);
 }
 
 static void
-s390_format_RRE_FF(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RRE_FF(const HChar *(*irgen)(UChar r1, UChar r2),
                    UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r1, r2);
+   const HChar *mnm = irgen(r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, FPR), mnm, r1, r2);
 }
 
 static void
-s390_format_RRE_RF(HChar *(*irgen)(UChar, UChar),
+s390_format_RRE_RF(const HChar *(*irgen)(UChar, UChar),
                    UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r1, r2);
+   const HChar *mnm = irgen(r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, GPR, FPR), mnm, r1, r2);
 }
 
 static void
-s390_format_RRE_FR(HChar *(*irgen)(UChar r1, UChar r2),
+s390_format_RRE_FR(const HChar *(*irgen)(UChar r1, UChar r2),
                    UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r1, r2);
+   const HChar *mnm = irgen(r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, FPR, GPR), mnm, r1, r2);
 }
 
 static void
-s390_format_RRE_R0(HChar *(*irgen)(UChar r1),
+s390_format_RRE_R0(const HChar *(*irgen)(UChar r1),
                    UChar r1)
 {
-   HChar *mnm = irgen(r1);
+   const HChar *mnm = irgen(r1);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, GPR), mnm, r1);
 }
 
 static void
-s390_format_RRE_F0(HChar *(*irgen)(UChar r1),
+s390_format_RRE_F0(const HChar *(*irgen)(UChar r1),
                    UChar r1)
 {
-   HChar *mnm = irgen(r1);
+   const HChar *mnm = irgen(r1);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC2(MNM, FPR), mnm, r1);
 }
 
 static void
-s390_format_RRF_M0RERE(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
+s390_format_RRF_M0RERE(const HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
                        UChar m3, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(m3, r1, r2);
+   const HChar *mnm = irgen(m3, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, UINT), mnm, r1, r2, m3);
 }
 
 static void
-s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
+s390_format_RRF_F0FF(const HChar *(*irgen)(UChar, UChar, UChar),
                      UChar r1, UChar r3, UChar r2)
 {
-   HChar *mnm = irgen(r1, r3, r2);
+   const HChar *mnm = irgen(r1, r3, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, FPR, FPR, FPR), mnm, r1, r3, r2);
 }
 
 static void
-s390_format_RRF_UUFF(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
+s390_format_RRF_UUFF(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
+                                           UChar r2),
                      UChar m3, UChar m4, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(m3, m4, r1, r2);
+   const HChar *mnm = irgen(m3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT), mnm, r1, m3, r2, m4);
 }
 
 static void
-s390_format_RRF_UUFR(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
+s390_format_RRF_UUFR(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
+                                           UChar r2),
                      UChar m3, UChar m4, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(m3, m4, r1, r2);
+   const HChar *mnm = irgen(m3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), mnm, r1, m3, r2, m4);
 }
 
 static void
-s390_format_RRF_UURF(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
+s390_format_RRF_UURF(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
+                                           UChar r2),
                      UChar m3, UChar m4, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(m3, m4, r1, r2);
+   const HChar *mnm = irgen(m3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), mnm, r1, m3, r2, m4);
@@ -1903,7 +1909,7 @@ s390_format_RRF_UURF(HChar *(*irgen)(UChar m3, UChar m4, UChar r1, UChar r2),
 
 
 static void
-s390_format_RRF_U0RR(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
+s390_format_RRF_U0RR(const HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
                      UChar m3, UChar r1, UChar r2, Int xmnm_kind)
 {
    irgen(m3, r1, r2);
@@ -1913,40 +1919,41 @@ s390_format_RRF_U0RR(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
 }
 
 static void
-s390_format_RRF_F0FF2(HChar *(*irgen)(UChar, UChar, UChar),
+s390_format_RRF_F0FF2(const HChar *(*irgen)(UChar, UChar, UChar),
                       UChar r3, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r3, r1, r2);
+   const HChar *mnm = irgen(r3, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, FPR, FPR, FPR), mnm, r1, r3, r2);
 }
 
 static void
-s390_format_RRF_FUFF2(HChar *(*irgen)(UChar, UChar, UChar, UChar),
+s390_format_RRF_FUFF2(const HChar *(*irgen)(UChar, UChar, UChar, UChar),
                       UChar r3, UChar m4, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r3, m4, r1, r2);
+   const HChar *mnm = irgen(r3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC5(MNM, FPR, FPR, FPR, UINT), mnm, r1, r2, r3, m4);
 }
 
 static void
-s390_format_RRF_R0RR2(HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
+s390_format_RRF_R0RR2(const HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
                       UChar r3, UChar r1, UChar r2)
 {
-   HChar *mnm = irgen(r3, r1, r2);
+   const HChar *mnm = irgen(r3, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, GPR), mnm, r1, r2, r3);
 }
 
 static void
-s390_format_RRS(HChar *(*irgen)(UChar r1, UChar r2, UChar m3, IRTemp op4addr),
+s390_format_RRS(const HChar *(*irgen)(UChar r1, UChar r2, UChar m3,
+                                      IRTemp op4addr),
                 UChar r1, UChar r2, UChar b4, UShort d4, UChar m3)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op4addr = newTemp(Ity_I64);
 
    assign(op4addr, binop(Iop_Add64, mkU64(d4), b4 != 0 ? get_gpr_dw0(b4) :
@@ -1960,10 +1967,10 @@ s390_format_RRS(HChar *(*irgen)(UChar r1, UChar r2, UChar m3, IRTemp op4addr),
 }
 
 static void
-s390_format_RS_R0RD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RS_R0RD(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                     UChar r1, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
@@ -1976,10 +1983,10 @@ s390_format_RS_R0RD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RS_RRRD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
+s390_format_RS_RRRD(const HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
                     UChar r1, UChar r3, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
@@ -1992,10 +1999,10 @@ s390_format_RS_RRRD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 }
 
 static void
-s390_format_RS_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
+s390_format_RS_RURD(const HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
                     UChar r1, UChar r3, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
@@ -2008,10 +2015,10 @@ s390_format_RS_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 }
 
 static void
-s390_format_RS_AARD(HChar *(*irgen)(UChar, UChar, IRTemp),
+s390_format_RS_AARD(const HChar *(*irgen)(UChar, UChar, IRTemp),
                     UChar r1, UChar r3, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
@@ -2024,20 +2031,20 @@ s390_format_RS_AARD(HChar *(*irgen)(UChar, UChar, IRTemp),
 }
 
 static void
-s390_format_RSI_RRP(HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
+s390_format_RSI_RRP(const HChar *(*irgen)(UChar r1, UChar r3, UShort i2),
                     UChar r1, UChar r3, UShort i2)
 {
-   HChar *mnm = irgen(r1, r3, i2);
+   const HChar *mnm = irgen(r1, r3, i2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, GPR, PCREL), mnm, r1, r3, (Int)(Short)i2);
 }
 
 static void
-s390_format_RSY_RRRD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
+s390_format_RSY_RRRD(const HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
                      UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
@@ -2052,10 +2059,10 @@ s390_format_RSY_RRRD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 }
 
 static void
-s390_format_RSY_AARD(HChar *(*irgen)(UChar, UChar, IRTemp),
+s390_format_RSY_AARD(const HChar *(*irgen)(UChar, UChar, IRTemp),
                      UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
@@ -2070,10 +2077,10 @@ s390_format_RSY_AARD(HChar *(*irgen)(UChar, UChar, IRTemp),
 }
 
 static void
-s390_format_RSY_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
+s390_format_RSY_RURD(const HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
                      UChar r1, UChar r3, UChar b2, UShort dl2, UChar dh2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
@@ -2088,7 +2095,7 @@ s390_format_RSY_RURD(HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 }
 
 static void
-s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RSY_RDRM(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                      UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2,
                      Int xmnm_kind)
 {
@@ -2110,7 +2117,7 @@ s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RX(HChar *(*irgen)(UChar r1, UChar x2, UChar b2, UShort d2,
+s390_format_RX(const HChar *(*irgen)(UChar r1, UChar x2, UChar b2, UShort d2,
                IRTemp op2addr),
                UChar r1, UChar x2, UChar b2, UShort d2)
 {
@@ -2124,10 +2131,10 @@ s390_format_RX(HChar *(*irgen)(UChar r1, UChar x2, UChar b2, UShort d2,
 }
 
 static void
-s390_format_RX_RRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RX_RRRD(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                     UChar r1, UChar x2, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, binop(Iop_Add64, mkU64(d2),
@@ -2141,10 +2148,10 @@ s390_format_RX_RRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RX_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RX_FRRD(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                     UChar r1, UChar x2, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, binop(Iop_Add64, mkU64(d2),
@@ -2158,10 +2165,10 @@ s390_format_RX_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RXE_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RXE_FRRD(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                      UChar r1, UChar x2, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, binop(Iop_Add64, mkU64(d2),
@@ -2175,10 +2182,10 @@ s390_format_RXE_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RXF_FRRDF(HChar *(*irgen)(UChar, IRTemp, UChar),
+s390_format_RXF_FRRDF(const HChar *(*irgen)(UChar, IRTemp, UChar),
                       UChar r3, UChar x2, UChar b2, UShort d2, UChar r1)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, binop(Iop_Add64, mkU64(d2),
@@ -2192,10 +2199,10 @@ s390_format_RXF_FRRDF(HChar *(*irgen)(UChar, IRTemp, UChar),
 }
 
 static void
-s390_format_RXY_RRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RXY_RRRD(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                      UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
@@ -2211,10 +2218,10 @@ s390_format_RXY_RRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RXY_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
+s390_format_RXY_FRRD(const HChar *(*irgen)(UChar r1, IRTemp op2addr),
                      UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
@@ -2230,10 +2237,10 @@ s390_format_RXY_FRRD(HChar *(*irgen)(UChar r1, IRTemp op2addr),
 }
 
 static void
-s390_format_RXY_URRD(HChar *(*irgen)(void),
+s390_format_RXY_URRD(const HChar *(*irgen)(void),
                      UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
    IRTemp d2 = newTemp(Ity_I64);
 
@@ -2249,10 +2256,10 @@ s390_format_RXY_URRD(HChar *(*irgen)(void),
 }
 
 static void
-s390_format_S_RD(HChar *(*irgen)(IRTemp op2addr),
+s390_format_S_RD(const HChar *(*irgen)(IRTemp op2addr),
                  UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
 
    assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
@@ -2265,10 +2272,10 @@ s390_format_S_RD(HChar *(*irgen)(IRTemp op2addr),
 }
 
 static void
-s390_format_SI_URD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
+s390_format_SI_URD(const HChar *(*irgen)(UChar i2, IRTemp op1addr),
                    UChar i2, UChar b1, UShort d1)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op1addr = newTemp(Ity_I64);
 
    assign(op1addr, binop(Iop_Add64, mkU64(d1), b1 != 0 ? get_gpr_dw0(b1) :
@@ -2281,10 +2288,10 @@ s390_format_SI_URD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
 }
 
 static void
-s390_format_SIY_URD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
+s390_format_SIY_URD(const HChar *(*irgen)(UChar i2, IRTemp op1addr),
                     UChar i2, UChar b1, UShort dl1, UChar dh1)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op1addr = newTemp(Ity_I64);
    IRTemp d1 = newTemp(Ity_I64);
 
@@ -2299,10 +2306,10 @@ s390_format_SIY_URD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
 }
 
 static void
-s390_format_SIY_IRD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
+s390_format_SIY_IRD(const HChar *(*irgen)(UChar i2, IRTemp op1addr),
                     UChar i2, UChar b1, UShort dl1, UChar dh1)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op1addr = newTemp(Ity_I64);
    IRTemp d1 = newTemp(Ity_I64);
 
@@ -2317,10 +2324,10 @@ s390_format_SIY_IRD(HChar *(*irgen)(UChar i2, IRTemp op1addr),
 }
 
 static void
-s390_format_SS_L0RDRD(HChar *(*irgen)(UChar, IRTemp, IRTemp),
+s390_format_SS_L0RDRD(const HChar *(*irgen)(UChar, IRTemp, IRTemp),
                       UChar l, UChar b1, UShort d1, UChar b2, UShort d2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op1addr = newTemp(Ity_I64);
    IRTemp op2addr = newTemp(Ity_I64);
 
@@ -2336,10 +2343,10 @@ s390_format_SS_L0RDRD(HChar *(*irgen)(UChar, IRTemp, IRTemp),
 }
 
 static void
-s390_format_SIL_RDI(HChar *(*irgen)(UShort i2, IRTemp op1addr),
+s390_format_SIL_RDI(const HChar *(*irgen)(UShort i2, IRTemp op1addr),
                     UChar b1, UShort d1, UShort i2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op1addr = newTemp(Ity_I64);
 
    assign(op1addr, binop(Iop_Add64, mkU64(d1), b1 != 0 ? get_gpr_dw0(b1) :
@@ -2352,10 +2359,10 @@ s390_format_SIL_RDI(HChar *(*irgen)(UShort i2, IRTemp op1addr),
 }
 
 static void
-s390_format_SIL_RDU(HChar *(*irgen)(UShort i2, IRTemp op1addr),
+s390_format_SIL_RDU(const HChar *(*irgen)(UShort i2, IRTemp op1addr),
                     UChar b1, UShort d1, UShort i2)
 {
-   HChar *mnm;
+   const HChar *mnm;
    IRTemp op1addr = newTemp(Ity_I64);
 
    assign(op1addr, binop(Iop_Add64, mkU64(d1), b1 != 0 ? get_gpr_dw0(b1) :
@@ -2373,7 +2380,7 @@ s390_format_SIL_RDU(HChar *(*irgen)(UShort i2, IRTemp op1addr),
 /*--- Build IR for opcodes                                 ---*/
 /*------------------------------------------------------------*/
 
-static HChar *
+static const HChar *
 s390_irgen_AR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2389,7 +2396,7 @@ s390_irgen_AR(UChar r1, UChar r2)
    return "ar";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2405,7 +2412,7 @@ s390_irgen_AGR(UChar r1, UChar r2)
    return "agr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2421,7 +2428,7 @@ s390_irgen_AGFR(UChar r1, UChar r2)
    return "agfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ARK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -2437,7 +2444,7 @@ s390_irgen_ARK(UChar r3, UChar r1, UChar r2)
    return "ark";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -2453,7 +2460,7 @@ s390_irgen_AGRK(UChar r3, UChar r1, UChar r2)
    return "agrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_A(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2469,7 +2476,7 @@ s390_irgen_A(UChar r1, IRTemp op2addr)
    return "a";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2485,7 +2492,7 @@ s390_irgen_AY(UChar r1, IRTemp op2addr)
    return "ay";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2501,7 +2508,7 @@ s390_irgen_AG(UChar r1, IRTemp op2addr)
    return "ag";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2517,7 +2524,7 @@ s390_irgen_AGF(UChar r1, IRTemp op2addr)
    return "agf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2534,7 +2541,7 @@ s390_irgen_AFI(UChar r1, UInt i2)
    return "afi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2551,7 +2558,7 @@ s390_irgen_AGFI(UChar r1, UInt i2)
    return "agfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AHIK(UChar r1, UChar r3, UShort i2)
 {
    Int op2;
@@ -2568,7 +2575,7 @@ s390_irgen_AHIK(UChar r1, UChar r3, UShort i2)
    return "ahik";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGHIK(UChar r1, UChar r3, UShort i2)
 {
    Long op2;
@@ -2585,7 +2592,7 @@ s390_irgen_AGHIK(UChar r1, UChar r3, UShort i2)
    return "aghik";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ASI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2602,7 +2609,7 @@ s390_irgen_ASI(UChar i2, IRTemp op1addr)
    return "asi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGSI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2619,7 +2626,7 @@ s390_irgen_AGSI(UChar i2, IRTemp op1addr)
    return "agsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AH(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2635,7 +2642,7 @@ s390_irgen_AH(UChar r1, IRTemp op2addr)
    return "ah";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AHY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2651,7 +2658,7 @@ s390_irgen_AHY(UChar r1, IRTemp op2addr)
    return "ahy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AHI(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2668,7 +2675,7 @@ s390_irgen_AHI(UChar r1, UShort i2)
    return "ahi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AGHI(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2685,7 +2692,7 @@ s390_irgen_AGHI(UChar r1, UShort i2)
    return "aghi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AHHHR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -2701,7 +2708,7 @@ s390_irgen_AHHHR(UChar r3, UChar r1, UChar r2)
    return "ahhhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AHHLR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -2717,7 +2724,7 @@ s390_irgen_AHHLR(UChar r3, UChar r1, UChar r2)
    return "ahhlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AIH(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2734,7 +2741,7 @@ s390_irgen_AIH(UChar r1, UInt i2)
    return "aih";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2750,7 +2757,7 @@ s390_irgen_ALR(UChar r1, UChar r2)
    return "alr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2766,7 +2773,7 @@ s390_irgen_ALGR(UChar r1, UChar r2)
    return "algr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2782,7 +2789,7 @@ s390_irgen_ALGFR(UChar r1, UChar r2)
    return "algfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -2798,7 +2805,7 @@ s390_irgen_ALRK(UChar r3, UChar r1, UChar r2)
    return "alrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -2814,7 +2821,7 @@ s390_irgen_ALGRK(UChar r3, UChar r1, UChar r2)
    return "algrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AL(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2830,7 +2837,7 @@ s390_irgen_AL(UChar r1, IRTemp op2addr)
    return "al";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2846,7 +2853,7 @@ s390_irgen_ALY(UChar r1, IRTemp op2addr)
    return "aly";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2862,7 +2869,7 @@ s390_irgen_ALG(UChar r1, IRTemp op2addr)
    return "alg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2878,7 +2885,7 @@ s390_irgen_ALGF(UChar r1, IRTemp op2addr)
    return "algf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2895,7 +2902,7 @@ s390_irgen_ALFI(UChar r1, UInt i2)
    return "alfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2912,7 +2919,7 @@ s390_irgen_ALGFI(UChar r1, UInt i2)
    return "algfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALHHHR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -2928,7 +2935,7 @@ s390_irgen_ALHHHR(UChar r3, UChar r1, UChar r2)
    return "alhhhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALHHLR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -2944,7 +2951,7 @@ s390_irgen_ALHHLR(UChar r3, UChar r1, UChar r2)
    return "alhhlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALCR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -2963,7 +2970,7 @@ s390_irgen_ALCR(UChar r1, UChar r2)
    return "alcr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALCGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -2983,7 +2990,7 @@ s390_irgen_ALCGR(UChar r1, UChar r2)
    return "alcgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALC(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3002,7 +3009,7 @@ s390_irgen_ALC(UChar r1, IRTemp op2addr)
    return "alc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALCG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3022,7 +3029,7 @@ s390_irgen_ALCG(UChar r1, IRTemp op2addr)
    return "alcg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALSI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3039,7 +3046,7 @@ s390_irgen_ALSI(UChar i2, IRTemp op1addr)
    return "alsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGSI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3056,7 +3063,7 @@ s390_irgen_ALGSI(UChar i2, IRTemp op1addr)
    return "algsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALHSIK(UChar r1, UChar r3, UShort i2)
 {
    UInt op2;
@@ -3073,7 +3080,7 @@ s390_irgen_ALHSIK(UChar r1, UChar r3, UShort i2)
    return "alhsik";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALGHSIK(UChar r1, UChar r3, UShort i2)
 {
    ULong op2;
@@ -3090,7 +3097,7 @@ s390_irgen_ALGHSIK(UChar r1, UChar r3, UShort i2)
    return "alghsik";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALSIH(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3107,7 +3114,7 @@ s390_irgen_ALSIH(UChar r1, UInt i2)
    return "alsih";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ALSIHN(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3122,7 +3129,7 @@ s390_irgen_ALSIHN(UChar r1, UInt i2)
    return "alsihn";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3138,7 +3145,7 @@ s390_irgen_NR(UChar r1, UChar r2)
    return "nr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3154,7 +3161,7 @@ s390_irgen_NGR(UChar r1, UChar r2)
    return "ngr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -3170,7 +3177,7 @@ s390_irgen_NRK(UChar r3, UChar r1, UChar r2)
    return "nrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -3186,7 +3193,7 @@ s390_irgen_NGRK(UChar r3, UChar r1, UChar r2)
    return "ngrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_N(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3202,7 +3209,7 @@ s390_irgen_N(UChar r1, IRTemp op2addr)
    return "n";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3218,7 +3225,7 @@ s390_irgen_NY(UChar r1, IRTemp op2addr)
    return "ny";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3234,7 +3241,7 @@ s390_irgen_NG(UChar r1, IRTemp op2addr)
    return "ng";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -3250,7 +3257,7 @@ s390_irgen_NI(UChar i2, IRTemp op1addr)
    return "ni";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NIY(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -3266,7 +3273,7 @@ s390_irgen_NIY(UChar i2, IRTemp op1addr)
    return "niy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NIHF(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3282,7 +3289,7 @@ s390_irgen_NIHF(UChar r1, UInt i2)
    return "nihf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NIHH(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -3298,7 +3305,7 @@ s390_irgen_NIHH(UChar r1, UShort i2)
    return "nihh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NIHL(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -3314,7 +3321,7 @@ s390_irgen_NIHL(UChar r1, UShort i2)
    return "nihl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NILF(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3330,7 +3337,7 @@ s390_irgen_NILF(UChar r1, UInt i2)
    return "nilf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NILH(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -3346,7 +3353,7 @@ s390_irgen_NILH(UChar r1, UShort i2)
    return "nilh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NILL(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -3362,7 +3369,7 @@ s390_irgen_NILL(UChar r1, UShort i2)
    return "nill";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BASR(UChar r1, UChar r2)
 {
    IRTemp target = newTemp(Ity_I64);
@@ -3383,7 +3390,7 @@ s390_irgen_BASR(UChar r1, UChar r2)
    return "basr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BAS(UChar r1, IRTemp op2addr)
 {
    IRTemp target = newTemp(Ity_I64);
@@ -3395,7 +3402,7 @@ s390_irgen_BAS(UChar r1, IRTemp op2addr)
    return "bas";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BCR(UChar r1, UChar r2)
 {
    IRTemp cond = newTemp(Ity_I32);
@@ -3420,7 +3427,7 @@ s390_irgen_BCR(UChar r1, UChar r2)
    return "bcr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BC(UChar r1, UChar x2, UChar b2, UShort d2, IRTemp op2addr)
 {
    IRTemp cond = newTemp(Ity_I32);
@@ -3441,7 +3448,7 @@ s390_irgen_BC(UChar r1, UChar x2, UChar b2, UShort d2, IRTemp op2addr)
    return "bc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BCTR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, binop(Iop_Sub32, get_gpr_w1(r1), mkU32(1)));
@@ -3453,7 +3460,7 @@ s390_irgen_BCTR(UChar r1, UChar r2)
    return "bctr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BCTGR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, binop(Iop_Sub64, get_gpr_dw0(r1), mkU64(1)));
@@ -3465,7 +3472,7 @@ s390_irgen_BCTGR(UChar r1, UChar r2)
    return "bctgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BCT(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, binop(Iop_Sub32, get_gpr_w1(r1), mkU32(1)));
@@ -3475,7 +3482,7 @@ s390_irgen_BCT(UChar r1, IRTemp op2addr)
    return "bct";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BCTG(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, binop(Iop_Sub64, get_gpr_dw0(r1), mkU64(1)));
@@ -3485,7 +3492,7 @@ s390_irgen_BCTG(UChar r1, IRTemp op2addr)
    return "bctg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BXH(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_I32);
@@ -3498,7 +3505,7 @@ s390_irgen_BXH(UChar r1, UChar r3, IRTemp op2addr)
    return "bxh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BXHG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_I64);
@@ -3511,7 +3518,7 @@ s390_irgen_BXHG(UChar r1, UChar r3, IRTemp op2addr)
    return "bxhg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BXLE(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_I32);
@@ -3524,7 +3531,7 @@ s390_irgen_BXLE(UChar r1, UChar r3, IRTemp op2addr)
    return "bxle";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BXLEG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_I64);
@@ -3537,7 +3544,7 @@ s390_irgen_BXLEG(UChar r1, UChar r3, IRTemp op2addr)
    return "bxleg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRAS(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 4ULL));
@@ -3546,7 +3553,7 @@ s390_irgen_BRAS(UChar r1, UShort i2)
    return "bras";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRASL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 6ULL));
@@ -3555,7 +3562,7 @@ s390_irgen_BRASL(UChar r1, UInt i2)
    return "brasl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRC(UChar r1, UShort i2)
 {
    IRTemp cond = newTemp(Ity_I32);
@@ -3578,7 +3585,7 @@ s390_irgen_BRC(UChar r1, UShort i2)
    return "brc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRCL(UChar r1, UInt i2)
 {
    IRTemp cond = newTemp(Ity_I32);
@@ -3599,7 +3606,7 @@ s390_irgen_BRCL(UChar r1, UInt i2)
    return "brcl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRCT(UChar r1, UShort i2)
 {
    put_gpr_w1(r1, binop(Iop_Sub32, get_gpr_w1(r1), mkU32(1)));
@@ -3609,7 +3616,7 @@ s390_irgen_BRCT(UChar r1, UShort i2)
    return "brct";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRCTG(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, binop(Iop_Sub64, get_gpr_dw0(r1), mkU64(1)));
@@ -3619,7 +3626,7 @@ s390_irgen_BRCTG(UChar r1, UShort i2)
    return "brctg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRXH(UChar r1, UChar r3, UShort i2)
 {
    IRTemp value = newTemp(Ity_I32);
@@ -3632,7 +3639,7 @@ s390_irgen_BRXH(UChar r1, UChar r3, UShort i2)
    return "brxh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRXHG(UChar r1, UChar r3, UShort i2)
 {
    IRTemp value = newTemp(Ity_I64);
@@ -3645,7 +3652,7 @@ s390_irgen_BRXHG(UChar r1, UChar r3, UShort i2)
    return "brxhg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRXLE(UChar r1, UChar r3, UShort i2)
 {
    IRTemp value = newTemp(Ity_I32);
@@ -3658,7 +3665,7 @@ s390_irgen_BRXLE(UChar r1, UChar r3, UShort i2)
    return "brxle";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_BRXLG(UChar r1, UChar r3, UShort i2)
 {
    IRTemp value = newTemp(Ity_I64);
@@ -3671,7 +3678,7 @@ s390_irgen_BRXLG(UChar r1, UChar r3, UShort i2)
    return "brxlg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3684,7 +3691,7 @@ s390_irgen_CR(UChar r1, UChar r2)
    return "cr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3697,7 +3704,7 @@ s390_irgen_CGR(UChar r1, UChar r2)
    return "cgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3710,7 +3717,7 @@ s390_irgen_CGFR(UChar r1, UChar r2)
    return "cgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_C(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3723,7 +3730,7 @@ s390_irgen_C(UChar r1, IRTemp op2addr)
    return "c";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3736,7 +3743,7 @@ s390_irgen_CY(UChar r1, IRTemp op2addr)
    return "cy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3749,7 +3756,7 @@ s390_irgen_CG(UChar r1, IRTemp op2addr)
    return "cg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3762,7 +3769,7 @@ s390_irgen_CGF(UChar r1, IRTemp op2addr)
    return "cgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3776,7 +3783,7 @@ s390_irgen_CFI(UChar r1, UInt i2)
    return "cfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3790,7 +3797,7 @@ s390_irgen_CGFI(UChar r1, UInt i2)
    return "cgfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3804,7 +3811,7 @@ s390_irgen_CRL(UChar r1, UInt i2)
    return "crl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3818,7 +3825,7 @@ s390_irgen_CGRL(UChar r1, UInt i2)
    return "cgrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGFRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3832,7 +3839,7 @@ s390_irgen_CGFRL(UChar r1, UInt i2)
    return "cgfrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3856,7 +3863,7 @@ s390_irgen_CRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
    return "crb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3880,7 +3887,7 @@ s390_irgen_CGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
    return "cgrb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3906,7 +3913,7 @@ s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    return "crj";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3932,7 +3939,7 @@ s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    return "cgrj";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -3956,7 +3963,7 @@ s390_irgen_CIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
    return "cib";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -3980,7 +3987,7 @@ s390_irgen_CGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
    return "cgib";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4005,7 +4012,7 @@ s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    return "cij";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4030,7 +4037,7 @@ s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    return "cgij";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CH(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4043,7 +4050,7 @@ s390_irgen_CH(UChar r1, IRTemp op2addr)
    return "ch";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4056,7 +4063,7 @@ s390_irgen_CHY(UChar r1, IRTemp op2addr)
    return "chy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGH(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4069,7 +4076,7 @@ s390_irgen_CGH(UChar r1, IRTemp op2addr)
    return "cgh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHI(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4083,7 +4090,7 @@ s390_irgen_CHI(UChar r1, UShort i2)
    return "chi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGHI(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4097,7 +4104,7 @@ s390_irgen_CGHI(UChar r1, UShort i2)
    return "cghi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHHSI(UShort i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -4111,7 +4118,7 @@ s390_irgen_CHHSI(UShort i2, IRTemp op1addr)
    return "chhsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHSI(UShort i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4125,7 +4132,7 @@ s390_irgen_CHSI(UShort i2, IRTemp op1addr)
    return "chsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGHSI(UShort i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4139,7 +4146,7 @@ s390_irgen_CGHSI(UShort i2, IRTemp op1addr)
    return "cghsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4153,7 +4160,7 @@ s390_irgen_CHRL(UChar r1, UInt i2)
    return "chrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGHRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4167,7 +4174,7 @@ s390_irgen_CGHRL(UChar r1, UInt i2)
    return "cghrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHHR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4180,7 +4187,7 @@ s390_irgen_CHHR(UChar r1, UChar r2)
    return "chhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHLR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4193,7 +4200,7 @@ s390_irgen_CHLR(UChar r1, UChar r2)
    return "chlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CHF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4206,7 +4213,7 @@ s390_irgen_CHF(UChar r1, IRTemp op2addr)
    return "chf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CIH(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4220,7 +4227,7 @@ s390_irgen_CIH(UChar r1, UInt i2)
    return "cih";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4233,7 +4240,7 @@ s390_irgen_CLR(UChar r1, UChar r2)
    return "clr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4246,7 +4253,7 @@ s390_irgen_CLGR(UChar r1, UChar r2)
    return "clgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4259,7 +4266,7 @@ s390_irgen_CLGFR(UChar r1, UChar r2)
    return "clgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CL(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4272,7 +4279,7 @@ s390_irgen_CL(UChar r1, IRTemp op2addr)
    return "cl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4285,7 +4292,7 @@ s390_irgen_CLY(UChar r1, IRTemp op2addr)
    return "cly";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4298,7 +4305,7 @@ s390_irgen_CLG(UChar r1, IRTemp op2addr)
    return "clg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4311,7 +4318,7 @@ s390_irgen_CLGF(UChar r1, IRTemp op2addr)
    return "clgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4325,7 +4332,7 @@ s390_irgen_CLFI(UChar r1, UInt i2)
    return "clfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4339,7 +4346,7 @@ s390_irgen_CLGFI(UChar r1, UInt i2)
    return "clgfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -4353,7 +4360,7 @@ s390_irgen_CLI(UChar i2, IRTemp op1addr)
    return "cli";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLIY(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -4367,7 +4374,7 @@ s390_irgen_CLIY(UChar i2, IRTemp op1addr)
    return "cliy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLFHSI(UShort i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4381,7 +4388,7 @@ s390_irgen_CLFHSI(UShort i2, IRTemp op1addr)
    return "clfhsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGHSI(UShort i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4395,7 +4402,7 @@ s390_irgen_CLGHSI(UShort i2, IRTemp op1addr)
    return "clghsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLHHSI(UShort i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -4409,7 +4416,7 @@ s390_irgen_CLHHSI(UShort i2, IRTemp op1addr)
    return "clhhsi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4423,7 +4430,7 @@ s390_irgen_CLRL(UChar r1, UInt i2)
    return "clrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4437,7 +4444,7 @@ s390_irgen_CLGRL(UChar r1, UInt i2)
    return "clgrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGFRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4451,7 +4458,7 @@ s390_irgen_CLGFRL(UChar r1, UInt i2)
    return "clgfrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLHRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4465,7 +4472,7 @@ s390_irgen_CLHRL(UChar r1, UInt i2)
    return "clhrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGHRL(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4479,7 +4486,7 @@ s390_irgen_CLGHRL(UChar r1, UInt i2)
    return "clghrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4503,7 +4510,7 @@ s390_irgen_CLRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
    return "clrb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4527,7 +4534,7 @@ s390_irgen_CLGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
    return "clgrb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4552,7 +4559,7 @@ s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    return "clrj";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4577,7 +4584,7 @@ s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    return "clgrj";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4601,7 +4608,7 @@ s390_irgen_CLIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
    return "clib";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4625,7 +4632,7 @@ s390_irgen_CLGIB(UChar r1, UChar m3, UChar i2, IRTemp op4addr)
    return "clgib";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4650,7 +4657,7 @@ s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    return "clij";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4675,7 +4682,7 @@ s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    return "clgij";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLM(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4737,7 +4744,7 @@ s390_irgen_CLM(UChar r1, UChar r3, IRTemp op2addr)
    return "clm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4799,7 +4806,7 @@ s390_irgen_CLMY(UChar r1, UChar r3, IRTemp op2addr)
    return "clmy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLMH(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4861,7 +4868,7 @@ s390_irgen_CLMH(UChar r1, UChar r3, IRTemp op2addr)
    return "clmh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLHHR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4874,7 +4881,7 @@ s390_irgen_CLHHR(UChar r1, UChar r2)
    return "clhhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLHLR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4887,7 +4894,7 @@ s390_irgen_CLHLR(UChar r1, UChar r2)
    return "clhlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLHF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4900,7 +4907,7 @@ s390_irgen_CLHF(UChar r1, IRTemp op2addr)
    return "clhf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLIH(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4914,7 +4921,7 @@ s390_irgen_CLIH(UChar r1, UInt i2)
    return "clih";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CPYA(UChar r1, UChar r2)
 {
    put_ar_w0(r1, get_ar_w0(r2));
@@ -4924,7 +4931,7 @@ s390_irgen_CPYA(UChar r1, UChar r2)
    return "cpya";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -4944,7 +4951,7 @@ s390_irgen_XR(UChar r1, UChar r2)
    return "xr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -4964,7 +4971,7 @@ s390_irgen_XGR(UChar r1, UChar r2)
    return "xgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -4980,7 +4987,7 @@ s390_irgen_XRK(UChar r3, UChar r1, UChar r2)
    return "xrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -4996,7 +5003,7 @@ s390_irgen_XGRK(UChar r3, UChar r1, UChar r2)
    return "xgrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_X(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -5012,7 +5019,7 @@ s390_irgen_X(UChar r1, IRTemp op2addr)
    return "x";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -5028,7 +5035,7 @@ s390_irgen_XY(UChar r1, IRTemp op2addr)
    return "xy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -5044,7 +5051,7 @@ s390_irgen_XG(UChar r1, IRTemp op2addr)
    return "xg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -5060,7 +5067,7 @@ s390_irgen_XI(UChar i2, IRTemp op1addr)
    return "xi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XIY(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -5076,7 +5083,7 @@ s390_irgen_XIY(UChar i2, IRTemp op1addr)
    return "xiy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XIHF(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -5092,7 +5099,7 @@ s390_irgen_XIHF(UChar r1, UInt i2)
    return "xihf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XILF(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -5108,7 +5115,7 @@ s390_irgen_XILF(UChar r1, UInt i2)
    return "xilf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_EAR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, get_ar_w0(r2));
@@ -5118,7 +5125,7 @@ s390_irgen_EAR(UChar r1, UChar r2)
    return "ear";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IC(UChar r1, IRTemp op2addr)
 {
    put_gpr_b7(r1, load(Ity_I8, mkexpr(op2addr)));
@@ -5126,7 +5133,7 @@ s390_irgen_IC(UChar r1, IRTemp op2addr)
    return "ic";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ICY(UChar r1, IRTemp op2addr)
 {
    put_gpr_b7(r1, load(Ity_I8, mkexpr(op2addr)));
@@ -5134,7 +5141,7 @@ s390_irgen_ICY(UChar r1, IRTemp op2addr)
    return "icy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ICM(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar n;
@@ -5169,7 +5176,7 @@ s390_irgen_ICM(UChar r1, UChar r3, IRTemp op2addr)
    return "icm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ICMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar n;
@@ -5204,7 +5211,7 @@ s390_irgen_ICMY(UChar r1, UChar r3, IRTemp op2addr)
    return "icmy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ICMH(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar n;
@@ -5239,7 +5246,7 @@ s390_irgen_ICMH(UChar r1, UChar r3, IRTemp op2addr)
    return "icmh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IIHF(UChar r1, UInt i2)
 {
    put_gpr_w0(r1, mkU32(i2));
@@ -5247,7 +5254,7 @@ s390_irgen_IIHF(UChar r1, UInt i2)
    return "iihf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IIHH(UChar r1, UShort i2)
 {
    put_gpr_hw0(r1, mkU16(i2));
@@ -5255,7 +5262,7 @@ s390_irgen_IIHH(UChar r1, UShort i2)
    return "iihh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IIHL(UChar r1, UShort i2)
 {
    put_gpr_hw1(r1, mkU16(i2));
@@ -5263,7 +5270,7 @@ s390_irgen_IIHL(UChar r1, UShort i2)
    return "iihl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IILF(UChar r1, UInt i2)
 {
    put_gpr_w1(r1, mkU32(i2));
@@ -5271,7 +5278,7 @@ s390_irgen_IILF(UChar r1, UInt i2)
    return "iilf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IILH(UChar r1, UShort i2)
 {
    put_gpr_hw2(r1, mkU16(i2));
@@ -5279,7 +5286,7 @@ s390_irgen_IILH(UChar r1, UShort i2)
    return "iilh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IILL(UChar r1, UShort i2)
 {
    put_gpr_hw3(r1, mkU16(i2));
@@ -5287,7 +5294,7 @@ s390_irgen_IILL(UChar r1, UShort i2)
    return "iill";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, get_gpr_w1(r2));
@@ -5295,7 +5302,7 @@ s390_irgen_LR(UChar r1, UChar r2)
    return "lr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, get_gpr_dw0(r2));
@@ -5303,7 +5310,7 @@ s390_irgen_LGR(UChar r1, UChar r2)
    return "lgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGFR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_32Sto64, get_gpr_w1(r2)));
@@ -5311,7 +5318,7 @@ s390_irgen_LGFR(UChar r1, UChar r2)
    return "lgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_L(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, load(Ity_I32, mkexpr(op2addr)));
@@ -5319,7 +5326,7 @@ s390_irgen_L(UChar r1, IRTemp op2addr)
    return "l";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LY(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, load(Ity_I32, mkexpr(op2addr)));
@@ -5327,7 +5334,7 @@ s390_irgen_LY(UChar r1, IRTemp op2addr)
    return "ly";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LG(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, load(Ity_I64, mkexpr(op2addr)));
@@ -5335,7 +5342,7 @@ s390_irgen_LG(UChar r1, IRTemp op2addr)
    return "lg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGF(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_32Sto64, load(Ity_I32, mkexpr(op2addr))));
@@ -5343,7 +5350,7 @@ s390_irgen_LGF(UChar r1, IRTemp op2addr)
    return "lgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGFI(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64((ULong)(Long)(Int)i2));
@@ -5351,7 +5358,7 @@ s390_irgen_LGFI(UChar r1, UInt i2)
    return "lgfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LRL(UChar r1, UInt i2)
 {
    put_gpr_w1(r1, load(Ity_I32, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
@@ -5360,7 +5367,7 @@ s390_irgen_LRL(UChar r1, UInt i2)
    return "lrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGRL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, load(Ity_I64, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
@@ -5369,7 +5376,7 @@ s390_irgen_LGRL(UChar r1, UInt i2)
    return "lgrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGFRL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, unop(Iop_32Sto64, load(Ity_I32, mkU64(guest_IA_curr_instr +
@@ -5378,7 +5385,7 @@ s390_irgen_LGFRL(UChar r1, UInt i2)
    return "lgfrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LA(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, mkexpr(op2addr));
@@ -5386,7 +5393,7 @@ s390_irgen_LA(UChar r1, IRTemp op2addr)
    return "la";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAY(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, mkexpr(op2addr));
@@ -5394,7 +5401,7 @@ s390_irgen_LAY(UChar r1, IRTemp op2addr)
    return "lay";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAE(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, mkexpr(op2addr));
@@ -5402,7 +5409,7 @@ s390_irgen_LAE(UChar r1, IRTemp op2addr)
    return "lae";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAEY(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, mkexpr(op2addr));
@@ -5410,7 +5417,7 @@ s390_irgen_LAEY(UChar r1, IRTemp op2addr)
    return "laey";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LARL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)));
@@ -5418,7 +5425,7 @@ s390_irgen_LARL(UChar r1, UInt i2)
    return "larl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5435,7 +5442,7 @@ s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
    return "laa";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAAG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5452,7 +5459,7 @@ s390_irgen_LAAG(UChar r1, UChar r3, IRTemp op2addr)
    return "laag";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAAL(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5469,7 +5476,7 @@ s390_irgen_LAAL(UChar r1, UChar r3, IRTemp op2addr)
    return "laal";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAALG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5486,7 +5493,7 @@ s390_irgen_LAALG(UChar r1, UChar r3, IRTemp op2addr)
    return "laalg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAN(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5503,7 +5510,7 @@ s390_irgen_LAN(UChar r1, UChar r3, IRTemp op2addr)
    return "lan";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LANG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5520,7 +5527,7 @@ s390_irgen_LANG(UChar r1, UChar r3, IRTemp op2addr)
    return "lang";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAX(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5537,7 +5544,7 @@ s390_irgen_LAX(UChar r1, UChar r3, IRTemp op2addr)
    return "lax";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAXG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5554,7 +5561,7 @@ s390_irgen_LAXG(UChar r1, UChar r3, IRTemp op2addr)
    return "laxg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAO(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5571,7 +5578,7 @@ s390_irgen_LAO(UChar r1, UChar r3, IRTemp op2addr)
    return "lao";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAOG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5588,7 +5595,7 @@ s390_irgen_LAOG(UChar r1, UChar r3, IRTemp op2addr)
    return "laog";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5600,7 +5607,7 @@ s390_irgen_LTR(UChar r1, UChar r2)
    return "ltr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTGR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5612,7 +5619,7 @@ s390_irgen_LTGR(UChar r1, UChar r2)
    return "ltgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTGFR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5624,7 +5631,7 @@ s390_irgen_LTGFR(UChar r1, UChar r2)
    return "ltgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LT(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -5636,7 +5643,7 @@ s390_irgen_LT(UChar r1, IRTemp op2addr)
    return "lt";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTG(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5648,7 +5655,7 @@ s390_irgen_LTG(UChar r1, IRTemp op2addr)
    return "ltg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -5660,7 +5667,7 @@ s390_irgen_LTGF(UChar r1, IRTemp op2addr)
    return "ltgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LBR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, unop(Iop_8Sto32, get_gpr_b7(r2)));
@@ -5668,7 +5675,7 @@ s390_irgen_LBR(UChar r1, UChar r2)
    return "lbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGBR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_8Sto64, get_gpr_b7(r2)));
@@ -5676,7 +5683,7 @@ s390_irgen_LGBR(UChar r1, UChar r2)
    return "lgbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LB(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, unop(Iop_8Sto32, load(Ity_I8, mkexpr(op2addr))));
@@ -5684,7 +5691,7 @@ s390_irgen_LB(UChar r1, IRTemp op2addr)
    return "lb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGB(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_8Sto64, load(Ity_I8, mkexpr(op2addr))));
@@ -5692,7 +5699,7 @@ s390_irgen_LGB(UChar r1, IRTemp op2addr)
    return "lgb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LBH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w0(r1, unop(Iop_8Sto32, load(Ity_I8, mkexpr(op2addr))));
@@ -5700,7 +5707,7 @@ s390_irgen_LBH(UChar r1, IRTemp op2addr)
    return "lbh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCR(UChar r1, UChar r2)
 {
    Int op1;
@@ -5717,7 +5724,7 @@ s390_irgen_LCR(UChar r1, UChar r2)
    return "lcr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCGR(UChar r1, UChar r2)
 {
    Long op1;
@@ -5734,7 +5741,7 @@ s390_irgen_LCGR(UChar r1, UChar r2)
    return "lcgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCGFR(UChar r1, UChar r2)
 {
    Long op1;
@@ -5751,7 +5758,7 @@ s390_irgen_LCGFR(UChar r1, UChar r2)
    return "lcgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LHR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, unop(Iop_16Sto32, get_gpr_hw3(r2)));
@@ -5759,7 +5766,7 @@ s390_irgen_LHR(UChar r1, UChar r2)
    return "lhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGHR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_16Sto64, get_gpr_hw3(r2)));
@@ -5767,7 +5774,7 @@ s390_irgen_LGHR(UChar r1, UChar r2)
    return "lghr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, unop(Iop_16Sto32, load(Ity_I16, mkexpr(op2addr))));
@@ -5775,7 +5782,7 @@ s390_irgen_LH(UChar r1, IRTemp op2addr)
    return "lh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LHY(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, unop(Iop_16Sto32, load(Ity_I16, mkexpr(op2addr))));
@@ -5783,7 +5790,7 @@ s390_irgen_LHY(UChar r1, IRTemp op2addr)
    return "lhy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGH(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_16Sto64, load(Ity_I16, mkexpr(op2addr))));
@@ -5791,7 +5798,7 @@ s390_irgen_LGH(UChar r1, IRTemp op2addr)
    return "lgh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LHI(UChar r1, UShort i2)
 {
    put_gpr_w1(r1, mkU32((UInt)(Int)(Short)i2));
@@ -5799,7 +5806,7 @@ s390_irgen_LHI(UChar r1, UShort i2)
    return "lhi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGHI(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64((ULong)(Long)(Short)i2));
@@ -5807,7 +5814,7 @@ s390_irgen_LGHI(UChar r1, UShort i2)
    return "lghi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LHRL(UChar r1, UInt i2)
 {
    put_gpr_w1(r1, unop(Iop_16Sto32, load(Ity_I16, mkU64(guest_IA_curr_instr +
@@ -5816,7 +5823,7 @@ s390_irgen_LHRL(UChar r1, UInt i2)
    return "lhrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGHRL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, unop(Iop_16Sto64, load(Ity_I16, mkU64(guest_IA_curr_instr +
@@ -5825,7 +5832,7 @@ s390_irgen_LGHRL(UChar r1, UInt i2)
    return "lghrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LHH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w0(r1, unop(Iop_16Sto32, load(Ity_I16, mkexpr(op2addr))));
@@ -5833,7 +5840,7 @@ s390_irgen_LHH(UChar r1, IRTemp op2addr)
    return "lhh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LFH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w0(r1, load(Ity_I32, mkexpr(op2addr)));
@@ -5841,7 +5848,7 @@ s390_irgen_LFH(UChar r1, IRTemp op2addr)
    return "lfh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGFR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_32Uto64, get_gpr_w1(r2)));
@@ -5849,7 +5856,7 @@ s390_irgen_LLGFR(UChar r1, UChar r2)
    return "llgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGF(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_32Uto64, load(Ity_I32, mkexpr(op2addr))));
@@ -5857,7 +5864,7 @@ s390_irgen_LLGF(UChar r1, IRTemp op2addr)
    return "llgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGFRL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, unop(Iop_32Uto64, load(Ity_I32, mkU64(guest_IA_curr_instr +
@@ -5866,7 +5873,7 @@ s390_irgen_LLGFRL(UChar r1, UInt i2)
    return "llgfrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLCR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, unop(Iop_8Uto32, get_gpr_b7(r2)));
@@ -5874,7 +5881,7 @@ s390_irgen_LLCR(UChar r1, UChar r2)
    return "llcr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGCR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_8Uto64, get_gpr_b7(r2)));
@@ -5882,7 +5889,7 @@ s390_irgen_LLGCR(UChar r1, UChar r2)
    return "llgcr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLC(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, unop(Iop_8Uto32, load(Ity_I8, mkexpr(op2addr))));
@@ -5890,7 +5897,7 @@ s390_irgen_LLC(UChar r1, IRTemp op2addr)
    return "llc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGC(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_8Uto64, load(Ity_I8, mkexpr(op2addr))));
@@ -5898,7 +5905,7 @@ s390_irgen_LLGC(UChar r1, IRTemp op2addr)
    return "llgc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLCH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w0(r1, unop(Iop_8Uto32, load(Ity_I8, mkexpr(op2addr))));
@@ -5906,7 +5913,7 @@ s390_irgen_LLCH(UChar r1, IRTemp op2addr)
    return "llch";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLHR(UChar r1, UChar r2)
 {
    put_gpr_w1(r1, unop(Iop_16Uto32, get_gpr_hw3(r2)));
@@ -5914,7 +5921,7 @@ s390_irgen_LLHR(UChar r1, UChar r2)
    return "llhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGHR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_16Uto64, get_gpr_hw3(r2)));
@@ -5922,7 +5929,7 @@ s390_irgen_LLGHR(UChar r1, UChar r2)
    return "llghr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, unop(Iop_16Uto32, load(Ity_I16, mkexpr(op2addr))));
@@ -5930,7 +5937,7 @@ s390_irgen_LLH(UChar r1, IRTemp op2addr)
    return "llh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGH(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_16Uto64, load(Ity_I16, mkexpr(op2addr))));
@@ -5938,7 +5945,7 @@ s390_irgen_LLGH(UChar r1, IRTemp op2addr)
    return "llgh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLHRL(UChar r1, UInt i2)
 {
    put_gpr_w1(r1, unop(Iop_16Uto32, load(Ity_I16, mkU64(guest_IA_curr_instr +
@@ -5947,7 +5954,7 @@ s390_irgen_LLHRL(UChar r1, UInt i2)
    return "llhrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGHRL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, unop(Iop_16Uto64, load(Ity_I16, mkU64(guest_IA_curr_instr +
@@ -5956,7 +5963,7 @@ s390_irgen_LLGHRL(UChar r1, UInt i2)
    return "llghrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLHH(UChar r1, IRTemp op2addr)
 {
    put_gpr_w0(r1, unop(Iop_16Uto32, load(Ity_I16, mkexpr(op2addr))));
@@ -5964,7 +5971,7 @@ s390_irgen_LLHH(UChar r1, IRTemp op2addr)
    return "llhh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLIHF(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(((ULong)i2) << 32));
@@ -5972,7 +5979,7 @@ s390_irgen_LLIHF(UChar r1, UInt i2)
    return "llihf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLIHH(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(((ULong)i2) << 48));
@@ -5980,7 +5987,7 @@ s390_irgen_LLIHH(UChar r1, UShort i2)
    return "llihh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLIHL(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(((ULong)i2) << 32));
@@ -5988,7 +5995,7 @@ s390_irgen_LLIHL(UChar r1, UShort i2)
    return "llihl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLILF(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(i2));
@@ -5996,7 +6003,7 @@ s390_irgen_LLILF(UChar r1, UInt i2)
    return "llilf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLILH(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(((ULong)i2) << 16));
@@ -6004,7 +6011,7 @@ s390_irgen_LLILH(UChar r1, UShort i2)
    return "llilh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLILL(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(i2));
@@ -6012,7 +6019,7 @@ s390_irgen_LLILL(UChar r1, UShort i2)
    return "llill";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGTR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_32Uto64, binop(Iop_And32, get_gpr_w1(r2),
@@ -6021,7 +6028,7 @@ s390_irgen_LLGTR(UChar r1, UChar r2)
    return "llgtr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LLGT(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, unop(Iop_32Uto64, binop(Iop_And32, load(Ity_I32,
@@ -6030,7 +6037,7 @@ s390_irgen_LLGT(UChar r1, IRTemp op2addr)
    return "llgt";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -6045,7 +6052,7 @@ s390_irgen_LNR(UChar r1, UChar r2)
    return "lnr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNGR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -6060,7 +6067,7 @@ s390_irgen_LNGR(UChar r1, UChar r2)
    return "lngr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNGFR(UChar r1, UChar r2 __attribute__((unused)))
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -6075,7 +6082,7 @@ s390_irgen_LNGFR(UChar r1, UChar r2 __attribute__((unused)))
    return "lngfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
 {
    next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
@@ -6084,7 +6091,7 @@ s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
    return "locr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
 {
    next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
@@ -6093,7 +6100,7 @@ s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
    return "locgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LOC(UChar r1, IRTemp op2addr)
 {
    /* condition is checked in format handler */
@@ -6102,7 +6109,7 @@ s390_irgen_LOC(UChar r1, IRTemp op2addr)
    return "loc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LOCG(UChar r1, IRTemp op2addr)
 {
    /* condition is checked in format handler */
@@ -6111,7 +6118,7 @@ s390_irgen_LOCG(UChar r1, IRTemp op2addr)
    return "locg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPQ(UChar r1, IRTemp op2addr)
 {
    put_gpr_dw0(r1, load(Ity_I64, mkexpr(op2addr)));
@@ -6121,7 +6128,7 @@ s390_irgen_LPQ(UChar r1, IRTemp op2addr)
    return "lpq";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -6136,7 +6143,7 @@ s390_irgen_LPR(UChar r1, UChar r2)
    return "lpr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPGR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -6151,7 +6158,7 @@ s390_irgen_LPGR(UChar r1, UChar r2)
    return "lpgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPGFR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -6166,7 +6173,7 @@ s390_irgen_LPGFR(UChar r1, UChar r2)
    return "lpgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LRVR(UChar r1, UChar r2)
 {
    IRTemp b0 = newTemp(Ity_I8);
@@ -6186,7 +6193,7 @@ s390_irgen_LRVR(UChar r1, UChar r2)
    return "lrvr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LRVGR(UChar r1, UChar r2)
 {
    IRTemp b0 = newTemp(Ity_I8);
@@ -6218,7 +6225,7 @@ s390_irgen_LRVGR(UChar r1, UChar r2)
    return "lrvgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LRVH(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I16);
@@ -6230,7 +6237,7 @@ s390_irgen_LRVH(UChar r1, IRTemp op2addr)
    return "lrvh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LRV(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -6247,7 +6254,7 @@ s390_irgen_LRV(UChar r1, IRTemp op2addr)
    return "lrv";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LRVG(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -6272,7 +6279,7 @@ s390_irgen_LRVG(UChar r1, IRTemp op2addr)
    return "lrvg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVHHI(UShort i2, IRTemp op1addr)
 {
    store(mkexpr(op1addr), mkU16(i2));
@@ -6280,7 +6287,7 @@ s390_irgen_MVHHI(UShort i2, IRTemp op1addr)
    return "mvhhi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVHI(UShort i2, IRTemp op1addr)
 {
    store(mkexpr(op1addr), mkU32((UInt)(Int)(Short)i2));
@@ -6288,7 +6295,7 @@ s390_irgen_MVHI(UShort i2, IRTemp op1addr)
    return "mvhi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVGHI(UShort i2, IRTemp op1addr)
 {
    store(mkexpr(op1addr), mkU64((ULong)(Long)(Short)i2));
@@ -6296,7 +6303,7 @@ s390_irgen_MVGHI(UShort i2, IRTemp op1addr)
    return "mvghi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVI(UChar i2, IRTemp op1addr)
 {
    store(mkexpr(op1addr), mkU8(i2));
@@ -6304,7 +6311,7 @@ s390_irgen_MVI(UChar i2, IRTemp op1addr)
    return "mvi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVIY(UChar i2, IRTemp op1addr)
 {
    store(mkexpr(op1addr), mkU8(i2));
@@ -6312,7 +6319,7 @@ s390_irgen_MVIY(UChar i2, IRTemp op1addr)
    return "mviy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6328,7 +6335,7 @@ s390_irgen_MR(UChar r1, UChar r2)
    return "mr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_M(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6344,7 +6351,7 @@ s390_irgen_M(UChar r1, IRTemp op2addr)
    return "m";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MFY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6360,7 +6367,7 @@ s390_irgen_MFY(UChar r1, IRTemp op2addr)
    return "mfy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MH(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6376,7 +6383,7 @@ s390_irgen_MH(UChar r1, IRTemp op2addr)
    return "mh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MHY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6392,7 +6399,7 @@ s390_irgen_MHY(UChar r1, IRTemp op2addr)
    return "mhy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MHI(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6408,7 +6415,7 @@ s390_irgen_MHI(UChar r1, UShort i2)
    return "mhi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MGHI(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6424,7 +6431,7 @@ s390_irgen_MGHI(UChar r1, UShort i2)
    return "mghi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MLR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6440,7 +6447,7 @@ s390_irgen_MLR(UChar r1, UChar r2)
    return "mlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MLGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6456,7 +6463,7 @@ s390_irgen_MLGR(UChar r1, UChar r2)
    return "mlgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ML(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6472,7 +6479,7 @@ s390_irgen_ML(UChar r1, IRTemp op2addr)
    return "ml";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MLG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6488,7 +6495,7 @@ s390_irgen_MLG(UChar r1, IRTemp op2addr)
    return "mlg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6503,7 +6510,7 @@ s390_irgen_MSR(UChar r1, UChar r2)
    return "msr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6518,7 +6525,7 @@ s390_irgen_MSGR(UChar r1, UChar r2)
    return "msgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6534,7 +6541,7 @@ s390_irgen_MSGFR(UChar r1, UChar r2)
    return "msgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MS(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6549,7 +6556,7 @@ s390_irgen_MS(UChar r1, IRTemp op2addr)
    return "ms";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6564,7 +6571,7 @@ s390_irgen_MSY(UChar r1, IRTemp op2addr)
    return "msy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6579,7 +6586,7 @@ s390_irgen_MSG(UChar r1, IRTemp op2addr)
    return "msg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6595,7 +6602,7 @@ s390_irgen_MSGF(UChar r1, IRTemp op2addr)
    return "msgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6610,7 +6617,7 @@ s390_irgen_MSFI(UChar r1, UInt i2)
    return "msfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSGFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6626,7 +6633,7 @@ s390_irgen_MSGFI(UChar r1, UInt i2)
    return "msgfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6642,7 +6649,7 @@ s390_irgen_OR(UChar r1, UChar r2)
    return "or";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6658,7 +6665,7 @@ s390_irgen_OGR(UChar r1, UChar r2)
    return "ogr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ORK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -6674,7 +6681,7 @@ s390_irgen_ORK(UChar r3, UChar r1, UChar r2)
    return "ork";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -6690,7 +6697,7 @@ s390_irgen_OGRK(UChar r3, UChar r1, UChar r2)
    return "ogrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_O(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6706,7 +6713,7 @@ s390_irgen_O(UChar r1, IRTemp op2addr)
    return "o";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6722,7 +6729,7 @@ s390_irgen_OY(UChar r1, IRTemp op2addr)
    return "oy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -6738,7 +6745,7 @@ s390_irgen_OG(UChar r1, IRTemp op2addr)
    return "og";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OI(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -6754,7 +6761,7 @@ s390_irgen_OI(UChar i2, IRTemp op1addr)
    return "oi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OIY(UChar i2, IRTemp op1addr)
 {
    IRTemp op1 = newTemp(Ity_I8);
@@ -6770,7 +6777,7 @@ s390_irgen_OIY(UChar i2, IRTemp op1addr)
    return "oiy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OIHF(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6786,7 +6793,7 @@ s390_irgen_OIHF(UChar r1, UInt i2)
    return "oihf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OIHH(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -6802,7 +6809,7 @@ s390_irgen_OIHH(UChar r1, UShort i2)
    return "oihh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OIHL(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -6818,7 +6825,7 @@ s390_irgen_OIHL(UChar r1, UShort i2)
    return "oihl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OILF(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -6834,7 +6841,7 @@ s390_irgen_OILF(UChar r1, UInt i2)
    return "oilf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OILH(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -6850,7 +6857,7 @@ s390_irgen_OILH(UChar r1, UShort i2)
    return "oilh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OILL(UChar r1, UShort i2)
 {
    IRTemp op1 = newTemp(Ity_I16);
@@ -6866,21 +6873,21 @@ s390_irgen_OILL(UChar r1, UShort i2)
    return "oill";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_PFD(void)
 {
 
    return "pfd";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_PFDRL(void)
 {
 
    return "pfdrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_RLL(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp amount = newTemp(Ity_I64);
@@ -6895,7 +6902,7 @@ s390_irgen_RLL(UChar r1, UChar r3, IRTemp op2addr)
    return "rll";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_RLLG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp amount = newTemp(Ity_I64);
@@ -6910,7 +6917,7 @@ s390_irgen_RLLG(UChar r1, UChar r3, IRTemp op2addr)
    return "rllg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_RNSBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
 {
    UChar from;
@@ -6949,7 +6956,7 @@ s390_irgen_RNSBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
    return "rnsbg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_RXSBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
 {
    UChar from;
@@ -6988,7 +6995,7 @@ s390_irgen_RXSBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
    return "rxsbg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ROSBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
 {
    UChar from;
@@ -7027,7 +7034,7 @@ s390_irgen_ROSBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
    return "rosbg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_RISBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
 {
    UChar from;
@@ -7067,7 +7074,7 @@ s390_irgen_RISBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
    return "risbg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SAR(UChar r1, UChar r2)
 {
    put_ar_w0(r1, get_gpr_w1(r2));
@@ -7077,7 +7084,7 @@ s390_irgen_SAR(UChar r1, UChar r2)
    return "sar";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLDA(UChar r1, IRTemp op2addr)
 {
    IRTemp p1 = newTemp(Ity_I64);
@@ -7103,7 +7110,7 @@ s390_irgen_SLDA(UChar r1, IRTemp op2addr)
    return "slda";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLDL(UChar r1, IRTemp op2addr)
 {
    IRTemp p1 = newTemp(Ity_I64);
@@ -7121,7 +7128,7 @@ s390_irgen_SLDL(UChar r1, IRTemp op2addr)
    return "sldl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLA(UChar r1, IRTemp op2addr)
 {
    IRTemp uop = newTemp(Ity_I32);
@@ -7143,7 +7150,7 @@ s390_irgen_SLA(UChar r1, IRTemp op2addr)
    return "sla";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLAK(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp uop = newTemp(Ity_I32);
@@ -7165,7 +7172,7 @@ s390_irgen_SLAK(UChar r1, UChar r3, IRTemp op2addr)
    return "slak";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLAG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp uop = newTemp(Ity_I64);
@@ -7187,7 +7194,7 @@ s390_irgen_SLAG(UChar r1, UChar r3, IRTemp op2addr)
    return "slag";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLL(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, binop(Iop_Shl32, get_gpr_w1(r1), unop(Iop_64to8,
@@ -7196,7 +7203,7 @@ s390_irgen_SLL(UChar r1, IRTemp op2addr)
    return "sll";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLLK(UChar r1, UChar r3, IRTemp op2addr)
 {
    put_gpr_w1(r1, binop(Iop_Shl32, get_gpr_w1(r3), unop(Iop_64to8,
@@ -7205,7 +7212,7 @@ s390_irgen_SLLK(UChar r1, UChar r3, IRTemp op2addr)
    return "sllk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLLG(UChar r1, UChar r3, IRTemp op2addr)
 {
    put_gpr_dw0(r1, binop(Iop_Shl64, get_gpr_dw0(r3), unop(Iop_64to8,
@@ -7214,7 +7221,7 @@ s390_irgen_SLLG(UChar r1, UChar r3, IRTemp op2addr)
    return "sllg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRDA(UChar r1, IRTemp op2addr)
 {
    IRTemp p1 = newTemp(Ity_I64);
@@ -7233,7 +7240,7 @@ s390_irgen_SRDA(UChar r1, IRTemp op2addr)
    return "srda";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRDL(UChar r1, IRTemp op2addr)
 {
    IRTemp p1 = newTemp(Ity_I64);
@@ -7251,7 +7258,7 @@ s390_irgen_SRDL(UChar r1, IRTemp op2addr)
    return "srdl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRA(UChar r1, IRTemp op2addr)
 {
    IRTemp result = newTemp(Ity_I32);
@@ -7266,7 +7273,7 @@ s390_irgen_SRA(UChar r1, IRTemp op2addr)
    return "sra";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRAK(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp result = newTemp(Ity_I32);
@@ -7281,7 +7288,7 @@ s390_irgen_SRAK(UChar r1, UChar r3, IRTemp op2addr)
    return "srak";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRAG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp result = newTemp(Ity_I64);
@@ -7296,7 +7303,7 @@ s390_irgen_SRAG(UChar r1, UChar r3, IRTemp op2addr)
    return "srag";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRL(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_I32);
@@ -7308,7 +7315,7 @@ s390_irgen_SRL(UChar r1, IRTemp op2addr)
    return "srl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRLK(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_I32);
@@ -7320,7 +7327,7 @@ s390_irgen_SRLK(UChar r1, UChar r3, IRTemp op2addr)
    return "srlk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRLG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_I64);
@@ -7332,7 +7339,7 @@ s390_irgen_SRLG(UChar r1, UChar r3, IRTemp op2addr)
    return "srlg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ST(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_w1(r1));
@@ -7340,7 +7347,7 @@ s390_irgen_ST(UChar r1, IRTemp op2addr)
    return "st";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STY(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_w1(r1));
@@ -7348,7 +7355,7 @@ s390_irgen_STY(UChar r1, IRTemp op2addr)
    return "sty";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STG(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_dw0(r1));
@@ -7356,7 +7363,7 @@ s390_irgen_STG(UChar r1, IRTemp op2addr)
    return "stg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STRL(UChar r1, UInt i2)
 {
    store(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)),
@@ -7365,7 +7372,7 @@ s390_irgen_STRL(UChar r1, UInt i2)
    return "strl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STGRL(UChar r1, UInt i2)
 {
    store(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)),
@@ -7374,7 +7381,7 @@ s390_irgen_STGRL(UChar r1, UInt i2)
    return "stgrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STC(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_b7(r1));
@@ -7382,7 +7389,7 @@ s390_irgen_STC(UChar r1, IRTemp op2addr)
    return "stc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCY(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_b7(r1));
@@ -7390,7 +7397,7 @@ s390_irgen_STCY(UChar r1, IRTemp op2addr)
    return "stcy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCH(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_b3(r1));
@@ -7398,7 +7405,7 @@ s390_irgen_STCH(UChar r1, IRTemp op2addr)
    return "stch";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCM(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar mask;
@@ -7425,7 +7432,7 @@ s390_irgen_STCM(UChar r1, UChar r3, IRTemp op2addr)
    return "stcm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar mask;
@@ -7452,7 +7459,7 @@ s390_irgen_STCMY(UChar r1, UChar r3, IRTemp op2addr)
    return "stcmy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCMH(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar mask;
@@ -7479,7 +7486,7 @@ s390_irgen_STCMH(UChar r1, UChar r3, IRTemp op2addr)
    return "stcmh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STH(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_hw3(r1));
@@ -7487,7 +7494,7 @@ s390_irgen_STH(UChar r1, IRTemp op2addr)
    return "sth";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STHY(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_hw3(r1));
@@ -7495,7 +7502,7 @@ s390_irgen_STHY(UChar r1, IRTemp op2addr)
    return "sthy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STHRL(UChar r1, UInt i2)
 {
    store(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)),
@@ -7504,7 +7511,7 @@ s390_irgen_STHRL(UChar r1, UInt i2)
    return "sthrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STHH(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_hw1(r1));
@@ -7512,7 +7519,7 @@ s390_irgen_STHH(UChar r1, IRTemp op2addr)
    return "sthh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STFH(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_w0(r1));
@@ -7520,7 +7527,7 @@ s390_irgen_STFH(UChar r1, IRTemp op2addr)
    return "stfh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STOC(UChar r1, IRTemp op2addr)
 {
    /* condition is checked in format handler */
@@ -7529,7 +7536,7 @@ s390_irgen_STOC(UChar r1, IRTemp op2addr)
    return "stoc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STOCG(UChar r1, IRTemp op2addr)
 {
    /* condition is checked in format handler */
@@ -7538,7 +7545,7 @@ s390_irgen_STOCG(UChar r1, IRTemp op2addr)
    return "stocg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STPQ(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_dw0(r1));
@@ -7547,7 +7554,7 @@ s390_irgen_STPQ(UChar r1, IRTemp op2addr)
    return "stpq";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STRVH(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_b7(r1));
@@ -7556,7 +7563,7 @@ s390_irgen_STRVH(UChar r1, IRTemp op2addr)
    return "strvh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STRV(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_b7(r1));
@@ -7567,7 +7574,7 @@ s390_irgen_STRV(UChar r1, IRTemp op2addr)
    return "strv";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STRVG(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_gpr_b7(r1));
@@ -7582,7 +7589,7 @@ s390_irgen_STRVG(UChar r1, IRTemp op2addr)
    return "strvg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7598,7 +7605,7 @@ s390_irgen_SR(UChar r1, UChar r2)
    return "sr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7614,7 +7621,7 @@ s390_irgen_SGR(UChar r1, UChar r2)
    return "sgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7630,7 +7637,7 @@ s390_irgen_SGFR(UChar r1, UChar r2)
    return "sgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -7646,7 +7653,7 @@ s390_irgen_SRK(UChar r3, UChar r1, UChar r2)
    return "srk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -7662,7 +7669,7 @@ s390_irgen_SGRK(UChar r3, UChar r1, UChar r2)
    return "sgrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_S(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7678,7 +7685,7 @@ s390_irgen_S(UChar r1, IRTemp op2addr)
    return "s";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7694,7 +7701,7 @@ s390_irgen_SY(UChar r1, IRTemp op2addr)
    return "sy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7710,7 +7717,7 @@ s390_irgen_SG(UChar r1, IRTemp op2addr)
    return "sg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7726,7 +7733,7 @@ s390_irgen_SGF(UChar r1, IRTemp op2addr)
    return "sgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SH(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7742,7 +7749,7 @@ s390_irgen_SH(UChar r1, IRTemp op2addr)
    return "sh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SHY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7758,7 +7765,7 @@ s390_irgen_SHY(UChar r1, IRTemp op2addr)
    return "shy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -7774,7 +7781,7 @@ s390_irgen_SHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
    return "shhhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SHHLR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -7790,7 +7797,7 @@ s390_irgen_SHHLR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
    return "shhlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7806,7 +7813,7 @@ s390_irgen_SLR(UChar r1, UChar r2)
    return "slr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7822,7 +7829,7 @@ s390_irgen_SLGR(UChar r1, UChar r2)
    return "slgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLGFR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7838,7 +7845,7 @@ s390_irgen_SLGFR(UChar r1, UChar r2)
    return "slgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -7854,7 +7861,7 @@ s390_irgen_SLRK(UChar r3, UChar r1, UChar r2)
    return "slrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLGRK(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -7870,7 +7877,7 @@ s390_irgen_SLGRK(UChar r3, UChar r1, UChar r2)
    return "slgrk";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SL(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7886,7 +7893,7 @@ s390_irgen_SL(UChar r1, IRTemp op2addr)
    return "sl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLY(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7902,7 +7909,7 @@ s390_irgen_SLY(UChar r1, IRTemp op2addr)
    return "sly";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7918,7 +7925,7 @@ s390_irgen_SLG(UChar r1, IRTemp op2addr)
    return "slg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7934,7 +7941,7 @@ s390_irgen_SLGF(UChar r1, IRTemp op2addr)
    return "slgf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -7951,7 +7958,7 @@ s390_irgen_SLFI(UChar r1, UInt i2)
    return "slfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLGFI(UChar r1, UInt i2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -7968,7 +7975,7 @@ s390_irgen_SLGFI(UChar r1, UInt i2)
    return "slgfi";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -7984,7 +7991,7 @@ s390_irgen_SLHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
    return "slhhhr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLHHLR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -8000,7 +8007,7 @@ s390_irgen_SLHHLR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
    return "slhhlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -8020,7 +8027,7 @@ s390_irgen_SLBR(UChar r1, UChar r2)
    return "slbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLBGR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -8040,7 +8047,7 @@ s390_irgen_SLBGR(UChar r1, UChar r2)
    return "slbgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
@@ -8060,7 +8067,7 @@ s390_irgen_SLB(UChar r1, IRTemp op2addr)
    return "slb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SLBG(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
@@ -8080,7 +8087,7 @@ s390_irgen_SLBG(UChar r1, IRTemp op2addr)
    return "slbg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SVC(UChar i)
 {
    IRTemp sysno = newTemp(Ity_I64);
@@ -8095,7 +8102,7 @@ s390_irgen_SVC(UChar i)
    return "svc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TM(UChar i2, IRTemp op1addr)
 {
    UChar mask;
@@ -8109,7 +8116,7 @@ s390_irgen_TM(UChar i2, IRTemp op1addr)
    return "tm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TMY(UChar i2, IRTemp op1addr)
 {
    UChar mask;
@@ -8123,7 +8130,7 @@ s390_irgen_TMY(UChar i2, IRTemp op1addr)
    return "tmy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TMHH(UChar r1, UShort i2)
 {
    UShort mask;
@@ -8137,7 +8144,7 @@ s390_irgen_TMHH(UChar r1, UShort i2)
    return "tmhh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TMHL(UChar r1, UShort i2)
 {
    UShort mask;
@@ -8151,7 +8158,7 @@ s390_irgen_TMHL(UChar r1, UShort i2)
    return "tmhl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TMLH(UChar r1, UShort i2)
 {
    UShort mask;
@@ -8165,7 +8172,7 @@ s390_irgen_TMLH(UChar r1, UShort i2)
    return "tmlh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TMLL(UChar r1, UShort i2)
 {
    UShort mask;
@@ -8179,7 +8186,7 @@ s390_irgen_TMLL(UChar r1, UShort i2)
    return "tmll";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_EFPC(UChar r1)
 {
    put_gpr_w1(r1, get_fpc_w0());
@@ -8187,7 +8194,7 @@ s390_irgen_EFPC(UChar r1)
    return "efpc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LER(UChar r1, UChar r2)
 {
    put_fpr_w0(r1, get_fpr_w0(r2));
@@ -8195,7 +8202,7 @@ s390_irgen_LER(UChar r1, UChar r2)
    return "ler";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LDR(UChar r1, UChar r2)
 {
    put_fpr_dw0(r1, get_fpr_dw0(r2));
@@ -8203,7 +8210,7 @@ s390_irgen_LDR(UChar r1, UChar r2)
    return "ldr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LXR(UChar r1, UChar r2)
 {
    put_fpr_dw0(r1, get_fpr_dw0(r2));
@@ -8212,7 +8219,7 @@ s390_irgen_LXR(UChar r1, UChar r2)
    return "lxr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LE(UChar r1, IRTemp op2addr)
 {
    put_fpr_w0(r1, load(Ity_F32, mkexpr(op2addr)));
@@ -8220,7 +8227,7 @@ s390_irgen_LE(UChar r1, IRTemp op2addr)
    return "le";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LD(UChar r1, IRTemp op2addr)
 {
    put_fpr_dw0(r1, load(Ity_F64, mkexpr(op2addr)));
@@ -8228,7 +8235,7 @@ s390_irgen_LD(UChar r1, IRTemp op2addr)
    return "ld";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LEY(UChar r1, IRTemp op2addr)
 {
    put_fpr_w0(r1, load(Ity_F32, mkexpr(op2addr)));
@@ -8236,7 +8243,7 @@ s390_irgen_LEY(UChar r1, IRTemp op2addr)
    return "ley";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LDY(UChar r1, IRTemp op2addr)
 {
    put_fpr_dw0(r1, load(Ity_F64, mkexpr(op2addr)));
@@ -8244,7 +8251,7 @@ s390_irgen_LDY(UChar r1, IRTemp op2addr)
    return "ldy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LFPC(IRTemp op2addr)
 {
    put_fpc_w0(load(Ity_I32, mkexpr(op2addr)));
@@ -8252,7 +8259,7 @@ s390_irgen_LFPC(IRTemp op2addr)
    return "lfpc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LZER(UChar r1)
 {
    put_fpr_w0(r1, mkF32i(0x0));
@@ -8260,7 +8267,7 @@ s390_irgen_LZER(UChar r1)
    return "lzer";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LZDR(UChar r1)
 {
    put_fpr_dw0(r1, mkF64i(0x0));
@@ -8268,7 +8275,7 @@ s390_irgen_LZDR(UChar r1)
    return "lzdr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LZXR(UChar r1)
 {
    put_fpr_dw0(r1, mkF64i(0x0));
@@ -8277,7 +8284,7 @@ s390_irgen_LZXR(UChar r1)
    return "lzxr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRNM(IRTemp op2addr)
 {
    UInt input_mask, fpc_mask;
@@ -8292,7 +8299,7 @@ s390_irgen_SRNM(IRTemp op2addr)
    return "srnm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SRNMB(IRTemp op2addr)
 {
    UInt input_mask, fpc_mask;
@@ -8325,7 +8332,7 @@ s390_irgen_srnmb_wrapper(UChar b2, UShort d2)
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_SFPC(UChar r1)
 {
    put_fpc_w0(get_gpr_w1(r1));
@@ -8333,7 +8340,7 @@ s390_irgen_SFPC(UChar r1)
    return "sfpc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STE(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_fpr_w0(r1));
@@ -8341,7 +8348,7 @@ s390_irgen_STE(UChar r1, IRTemp op2addr)
    return "ste";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STD(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_fpr_dw0(r1));
@@ -8349,7 +8356,7 @@ s390_irgen_STD(UChar r1, IRTemp op2addr)
    return "std";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STEY(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_fpr_w0(r1));
@@ -8357,7 +8364,7 @@ s390_irgen_STEY(UChar r1, IRTemp op2addr)
    return "stey";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STDY(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_fpr_dw0(r1));
@@ -8365,7 +8372,7 @@ s390_irgen_STDY(UChar r1, IRTemp op2addr)
    return "stdy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STFPC(IRTemp op2addr)
 {
    store(mkexpr(op2addr), get_fpc_w0());
@@ -8373,7 +8380,7 @@ s390_irgen_STFPC(IRTemp op2addr)
    return "stfpc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AEBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8391,7 +8398,7 @@ s390_irgen_AEBR(UChar r1, UChar r2)
    return "aebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ADBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8409,7 +8416,7 @@ s390_irgen_ADBR(UChar r1, UChar r2)
    return "adbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_AEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8427,7 +8434,7 @@ s390_irgen_AEB(UChar r1, IRTemp op2addr)
    return "aeb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ADB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8445,7 +8452,7 @@ s390_irgen_ADB(UChar r1, IRTemp op2addr)
    return "adb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CEFBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8462,7 +8469,7 @@ s390_irgen_CEFBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cefbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDFBR(UChar m3 __attribute__((unused)),
                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
@@ -8474,7 +8481,7 @@ s390_irgen_CDFBR(UChar m3 __attribute__((unused)),
    return "cdfbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CEGBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8491,7 +8498,7 @@ s390_irgen_CEGBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cegbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDGBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8508,7 +8515,7 @@ s390_irgen_CDGBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cdgbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CELFBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8524,7 +8531,7 @@ s390_irgen_CELFBR(UChar m3, UChar m4 __attribute__((unused)),
    return "celfbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDLFBR(UChar m3 __attribute__((unused)),
                   UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
@@ -8539,7 +8546,7 @@ s390_irgen_CDLFBR(UChar m3 __attribute__((unused)),
    return "cdlfbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CELGBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8555,7 +8562,7 @@ s390_irgen_CELGBR(UChar m3, UChar m4 __attribute__((unused)),
    return "celgbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDLGBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8572,7 +8579,7 @@ s390_irgen_CDLGBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cdlgbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLFEBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8592,7 +8599,7 @@ s390_irgen_CLFEBR(UChar m3, UChar m4 __attribute__((unused)),
    return "clfebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLFDBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8612,7 +8619,7 @@ s390_irgen_CLFDBR(UChar m3, UChar m4 __attribute__((unused)),
    return "clfdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGEBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8632,7 +8639,7 @@ s390_irgen_CLGEBR(UChar m3, UChar m4 __attribute__((unused)),
    return "clgebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGDBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -8652,7 +8659,7 @@ s390_irgen_CLGDBR(UChar m3, UChar m4 __attribute__((unused)),
    return "clgdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CFEBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8669,7 +8676,7 @@ s390_irgen_CFEBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cfebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CFDBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8686,7 +8693,7 @@ s390_irgen_CFDBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cfdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGEBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8703,7 +8710,7 @@ s390_irgen_CGEBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cgebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CGDBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8720,7 +8727,7 @@ s390_irgen_CGDBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cgdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DEBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8737,7 +8744,7 @@ s390_irgen_DEBR(UChar r1, UChar r2)
    return "debr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DDBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8754,7 +8761,7 @@ s390_irgen_DDBR(UChar r1, UChar r2)
    return "ddbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8771,7 +8778,7 @@ s390_irgen_DEB(UChar r1, IRTemp op2addr)
    return "deb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8788,7 +8795,7 @@ s390_irgen_DDB(UChar r1, IRTemp op2addr)
    return "ddb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTEBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
@@ -8800,7 +8807,7 @@ s390_irgen_LTEBR(UChar r1, UChar r2)
    return "ltebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTDBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -8812,7 +8819,7 @@ s390_irgen_LTDBR(UChar r1, UChar r2)
    return "ltdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCEBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
@@ -8824,7 +8831,7 @@ s390_irgen_LCEBR(UChar r1, UChar r2)
    return "lcebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCDBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -8836,7 +8843,7 @@ s390_irgen_LCDBR(UChar r1, UChar r2)
    return "lcdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LDEBR(UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F32);
@@ -8847,7 +8854,7 @@ s390_irgen_LDEBR(UChar r1, UChar r2)
    return "ldebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LDEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F32);
@@ -8858,7 +8865,7 @@ s390_irgen_LDEB(UChar r1, IRTemp op2addr)
    return "ldeb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -8875,7 +8882,7 @@ s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
    return "ledbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTDTR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_D64);
@@ -8887,7 +8894,7 @@ s390_irgen_LTDTR(UChar r1, UChar r2)
    return "ltdtr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MEEBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8905,7 +8912,7 @@ s390_irgen_MEEBR(UChar r1, UChar r2)
    return "meebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MDBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8922,7 +8929,7 @@ s390_irgen_MDBR(UChar r1, UChar r2)
    return "mdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MEEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8939,7 +8946,7 @@ s390_irgen_MEEB(UChar r1, IRTemp op2addr)
    return "meeb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8956,7 +8963,7 @@ s390_irgen_MDB(UChar r1, IRTemp op2addr)
    return "mdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SEBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -8974,7 +8981,7 @@ s390_irgen_SEBR(UChar r1, UChar r2)
    return "sebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SDBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -8992,7 +8999,7 @@ s390_irgen_SDBR(UChar r1, UChar r2)
    return "sdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -9010,7 +9017,7 @@ s390_irgen_SEB(UChar r1, IRTemp op2addr)
    return "seb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -9028,7 +9035,7 @@ s390_irgen_SDB(UChar r1, IRTemp op2addr)
    return "sdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ADTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_D64);
@@ -9051,7 +9058,7 @@ s390_irgen_ADTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    return (m4 == 0) ? "adtr" : "adtra";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_D64);
@@ -9074,7 +9081,7 @@ s390_irgen_DDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    return (m4 == 0) ? "ddtr" : "ddtra";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_D64);
@@ -9097,7 +9104,7 @@ s390_irgen_MDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    return (m4 == 0) ? "mdtr" : "mdtra";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_D64);
@@ -9121,7 +9128,7 @@ s390_irgen_SDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp len = newTemp(Ity_I64);
@@ -9132,7 +9139,7 @@ s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
    return "clc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLCL(UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -9212,7 +9219,7 @@ s390_irgen_CLCL(UChar r1, UChar r2)
    return "clcl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
 {
    IRTemp addr1, addr3, addr1_load, addr3_load, len1, len3, single1, single3;
@@ -9427,7 +9434,7 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2,
    last_execute_target = 0;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_EX(UChar r1, IRTemp addr2)
 {
    switch(last_execute_target & 0xff00000000000000ULL) {
@@ -9532,7 +9539,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
    return "ex";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_EXRL(UChar r1, UInt offset)
 {
    IRTemp addr = newTemp(Ity_I64);
@@ -9545,7 +9552,7 @@ s390_irgen_EXRL(UChar r1, UInt offset)
    return "exrl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_IPM(UChar r1)
 {
    // As long as we dont support SPM, lets just assume 0 as program mask
@@ -9556,7 +9563,7 @@ s390_irgen_IPM(UChar r1)
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_SRST(UChar r1, UChar r2)
 {
    IRTemp address = newTemp(Ity_I64);
@@ -9594,7 +9601,7 @@ s390_irgen_SRST(UChar r1, UChar r2)
    return "srst";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLST(UChar r1, UChar r2)
 {
    IRTemp address1 = newTemp(Ity_I64);
@@ -9671,7 +9678,7 @@ s390_irgen_load_multiple_32bit(UChar r1, UChar r3, IRTemp op2addr)
    } while (reg != (r3 + 1));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LM(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_load_multiple_32bit(r1, r3, op2addr);
@@ -9679,7 +9686,7 @@ s390_irgen_LM(UChar r1, UChar r3, IRTemp op2addr)
    return "lm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_load_multiple_32bit(r1, r3, op2addr);
@@ -9687,7 +9694,7 @@ s390_irgen_LMY(UChar r1, UChar r3, IRTemp op2addr)
    return "lmy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LMH(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar reg;
@@ -9708,7 +9715,7 @@ s390_irgen_LMH(UChar r1, UChar r3, IRTemp op2addr)
    return "lmh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LMG(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar reg;
@@ -9748,7 +9755,7 @@ s390_irgen_store_multiple_32bit(UChar r1, UChar r3, IRTemp op2addr)
    } while( reg != (r3 + 1));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STM(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_store_multiple_32bit(r1, r3, op2addr);
@@ -9756,7 +9763,7 @@ s390_irgen_STM(UChar r1, UChar r3, IRTemp op2addr)
    return "stm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_store_multiple_32bit(r1, r3, op2addr);
@@ -9764,7 +9771,7 @@ s390_irgen_STMY(UChar r1, UChar r3, IRTemp op2addr)
    return "stmy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STMH(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar reg;
@@ -9785,7 +9792,7 @@ s390_irgen_STMH(UChar r1, UChar r3, IRTemp op2addr)
    return "stmh";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STMG(UChar r1, UChar r3, IRTemp op2addr)
 {
    UChar reg;
@@ -9843,7 +9850,7 @@ s390_irgen_xonc(IROp op, IRTemp length, IRTemp start1, IRTemp start2)
    put_counter_dw0(mkU64(0));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp len = newTemp(Ity_I32);
@@ -9892,7 +9899,7 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
 }
 
-static HChar *
+static const HChar *
 s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp len = newTemp(Ity_I32);
@@ -9903,7 +9910,7 @@ s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
    return "nc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp len = newTemp(Ity_I32);
@@ -9915,7 +9922,7 @@ s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp len = newTemp(Ity_I64);
@@ -9926,7 +9933,7 @@ s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
    return "mvc";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVCL(UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -10009,7 +10016,7 @@ s390_irgen_MVCL(UChar r1, UChar r2)
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
 {
    IRTemp addr1, addr3, addr3_load, len1, len3, single;
@@ -10062,7 +10069,7 @@ s390_irgen_MVCLE(UChar r1, UChar r3, IRTemp pad2)
    return "mvcle";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MVST(UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -10130,7 +10137,7 @@ s390_irgen_divide_64to64(IROp op, UChar r1, IRTemp op2)
    put_gpr_dw0(r1 + 1, unop(Iop_128to64, mkexpr(result))); // quotient
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -10142,7 +10149,7 @@ s390_irgen_DR(UChar r1, UChar r2)
    return "dr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_D(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -10154,7 +10161,7 @@ s390_irgen_D(UChar r1, IRTemp op2addr)
    return "d";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DLR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -10166,7 +10173,7 @@ s390_irgen_DLR(UChar r1, UChar r2)
    return "dlr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DL(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I32);
@@ -10178,7 +10185,7 @@ s390_irgen_DL(UChar r1, IRTemp op2addr)
    return "dl";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DLG(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10190,7 +10197,7 @@ s390_irgen_DLG(UChar r1, IRTemp op2addr)
    return "dlg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DLGR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10202,7 +10209,7 @@ s390_irgen_DLGR(UChar r1, UChar r2)
    return "dlgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DSGR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10214,7 +10221,7 @@ s390_irgen_DSGR(UChar r1, UChar r2)
    return "dsgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DSG(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10226,7 +10233,7 @@ s390_irgen_DSG(UChar r1, IRTemp op2addr)
    return "dsg";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DSGFR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10238,7 +10245,7 @@ s390_irgen_DSGFR(UChar r1, UChar r2)
    return "dsgfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DSGF(UChar r1, IRTemp op2addr)
 {
    IRTemp op2 = newTemp(Ity_I64);
@@ -10269,7 +10276,7 @@ s390_irgen_load_ar_multiple(UChar r1, UChar r3, IRTemp op2addr)
    } while (reg != (r3 + 1));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAM(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_load_ar_multiple(r1, r3, op2addr);
@@ -10277,7 +10284,7 @@ s390_irgen_LAM(UChar r1, UChar r3, IRTemp op2addr)
    return "lam";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LAMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_load_ar_multiple(r1, r3, op2addr);
@@ -10304,7 +10311,7 @@ s390_irgen_store_ar_multiple(UChar r1, UChar r3, IRTemp op2addr)
    } while (reg != (r3 + 1));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STAM(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_store_ar_multiple(r1, r3, op2addr);
@@ -10312,7 +10319,7 @@ s390_irgen_STAM(UChar r1, UChar r3, IRTemp op2addr)
    return "stam";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STAMY(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_store_ar_multiple(r1, r3, op2addr);
@@ -10354,7 +10361,7 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
    yield_if(mkexpr(nequal));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CS(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_cas_32(r1, r3, op2addr);
@@ -10362,7 +10369,7 @@ s390_irgen_CS(UChar r1, UChar r3, IRTemp op2addr)
    return "cs";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CSY(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_cas_32(r1, r3, op2addr);
@@ -10370,7 +10377,7 @@ s390_irgen_CSY(UChar r1, UChar r3, IRTemp op2addr)
    return "csy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRCAS *cas;
@@ -10449,7 +10456,7 @@ s390_irgen_cdas_32(UChar r1, UChar r3, IRTemp op2addr)
    yield_if(mkexpr(nequal));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDS(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_cdas_32(r1, r3, op2addr);
@@ -10457,7 +10464,7 @@ s390_irgen_CDS(UChar r1, UChar r3, IRTemp op2addr)
    return "cds";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDSY(UChar r1, UChar r3, IRTemp op2addr)
 {
    s390_irgen_cdas_32(r1, r3, op2addr);
@@ -10465,7 +10472,7 @@ s390_irgen_CDSY(UChar r1, UChar r3, IRTemp op2addr)
    return "cdsy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDSG(UChar r1, UChar r3, IRTemp op2addr)
 {
    IRCAS *cas;
@@ -10514,7 +10521,7 @@ s390_irgen_CDSG(UChar r1, UChar r3, IRTemp op2addr)
 
 /* Binary floating point */
 
-static HChar *
+static const HChar *
 s390_irgen_AXBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F128);
@@ -10578,7 +10585,7 @@ convert_vex_fpcc_to_s390(IRTemp vex_cc)
    return binop(Iop_Or32, mkexpr(cc0), binop(Iop_Shl32, mkexpr(cc1), mkU8(1)));
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CEBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -10596,7 +10603,7 @@ s390_irgen_CEBR(UChar r1, UChar r2)
    return "cebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -10614,7 +10621,7 @@ s390_irgen_CDBR(UChar r1, UChar r2)
    return "cdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CXBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F128);
@@ -10632,7 +10639,7 @@ s390_irgen_CXBR(UChar r1, UChar r2)
    return "cxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F32);
@@ -10650,7 +10657,7 @@ s390_irgen_CEB(UChar r1, IRTemp op2addr)
    return "ceb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_F64);
@@ -10668,7 +10675,7 @@ s390_irgen_CDB(UChar r1, IRTemp op2addr)
    return "cdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CXFBR(UChar m3 __attribute__((unused)),
                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
@@ -10680,7 +10687,7 @@ s390_irgen_CXFBR(UChar m3 __attribute__((unused)),
    return "cxfbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CXLFBR(UChar m3 __attribute__((unused)),
                   UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
@@ -10696,7 +10703,7 @@ s390_irgen_CXLFBR(UChar m3 __attribute__((unused)),
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_CXGBR(UChar m3 __attribute__((unused)),
                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
@@ -10708,7 +10715,7 @@ s390_irgen_CXGBR(UChar m3 __attribute__((unused)),
    return "cxgbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CXLGBR(UChar m3 __attribute__((unused)),
                   UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
@@ -10723,7 +10730,7 @@ s390_irgen_CXLGBR(UChar m3 __attribute__((unused)),
    return "cxlgbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CFXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -10740,7 +10747,7 @@ s390_irgen_CFXBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cfxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLFXBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -10761,7 +10768,7 @@ s390_irgen_CLFXBR(UChar m3, UChar m4 __attribute__((unused)),
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_CGXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -10778,7 +10785,7 @@ s390_irgen_CGXBR(UChar m3, UChar m4 __attribute__((unused)),
    return "cgxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CLGXBR(UChar m3, UChar m4 __attribute__((unused)),
                   UChar r1, UChar r2)
 {
@@ -10799,7 +10806,7 @@ s390_irgen_CLGXBR(UChar m3, UChar m4 __attribute__((unused)),
    return "clgxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_DXBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F128);
@@ -10816,7 +10823,7 @@ s390_irgen_DXBR(UChar r1, UChar r2)
    return "dxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LTXBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F128);
@@ -10828,7 +10835,7 @@ s390_irgen_LTXBR(UChar r1, UChar r2)
    return "ltxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCXBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F128);
@@ -10840,7 +10847,7 @@ s390_irgen_LCXBR(UChar r1, UChar r2)
    return "lcxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LXDBR(UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F64);
@@ -10851,7 +10858,7 @@ s390_irgen_LXDBR(UChar r1, UChar r2)
    return "lxdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LXEBR(UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F32);
@@ -10862,7 +10869,7 @@ s390_irgen_LXEBR(UChar r1, UChar r2)
    return "lxebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LXDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F64);
@@ -10873,7 +10880,7 @@ s390_irgen_LXDB(UChar r1, IRTemp op2addr)
    return "lxdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LXEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F32);
@@ -10884,7 +10891,7 @@ s390_irgen_LXEB(UChar r1, IRTemp op2addr)
    return "lxeb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNEBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
@@ -10896,7 +10903,7 @@ s390_irgen_LNEBR(UChar r1, UChar r2)
    return "lnebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNDBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -10908,7 +10915,7 @@ s390_irgen_LNDBR(UChar r1, UChar r2)
    return "lndbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNXBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F128);
@@ -10920,7 +10927,7 @@ s390_irgen_LNXBR(UChar r1, UChar r2)
    return "lnxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPEBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
@@ -10932,7 +10939,7 @@ s390_irgen_LPEBR(UChar r1, UChar r2)
    return "lpebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPDBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -10944,7 +10951,7 @@ s390_irgen_LPDBR(UChar r1, UChar r2)
    return "lpdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPXBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F128);
@@ -10956,7 +10963,7 @@ s390_irgen_LPXBR(UChar r1, UChar r2)
    return "lpxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LDXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -10973,7 +10980,7 @@ s390_irgen_LDXBR(UChar m3, UChar m4 __attribute__((unused)),
    return "ldxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LEXBR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
@@ -10990,7 +10997,7 @@ s390_irgen_LEXBR(UChar m3, UChar m4 __attribute__((unused)),
    return "lexbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MXBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F128);
@@ -11007,7 +11014,7 @@ s390_irgen_MXBR(UChar r1, UChar r2)
    return "mxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MAEBR(UChar r1, UChar r3, UChar r2)
 {
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
@@ -11018,7 +11025,7 @@ s390_irgen_MAEBR(UChar r1, UChar r3, UChar r2)
    return "maebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MADBR(UChar r1, UChar r3, UChar r2)
 {
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
@@ -11029,7 +11036,7 @@ s390_irgen_MADBR(UChar r1, UChar r3, UChar r2)
    return "madbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MAEB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F32, mkexpr(op2addr));
@@ -11041,7 +11048,7 @@ s390_irgen_MAEB(UChar r3, IRTemp op2addr, UChar r1)
    return "maeb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MADB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F64, mkexpr(op2addr));
@@ -11053,7 +11060,7 @@ s390_irgen_MADB(UChar r3, IRTemp op2addr, UChar r1)
    return "madb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSEBR(UChar r1, UChar r3, UChar r2)
 {
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
@@ -11064,7 +11071,7 @@ s390_irgen_MSEBR(UChar r1, UChar r3, UChar r2)
    return "msebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSDBR(UChar r1, UChar r3, UChar r2)
 {
    IRTemp rounding_mode = encode_bfp_rounding_mode(S390_BFP_ROUND_PER_FPC);
@@ -11075,7 +11082,7 @@ s390_irgen_MSDBR(UChar r1, UChar r3, UChar r2)
    return "msdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSEB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F32, mkexpr(op2addr));
@@ -11087,7 +11094,7 @@ s390_irgen_MSEB(UChar r3, IRTemp op2addr, UChar r1)
    return "mseb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_MSDB(UChar r3, IRTemp op2addr, UChar r1)
 {
    IRExpr *op2 = load(Ity_F64, mkexpr(op2addr));
@@ -11099,7 +11106,7 @@ s390_irgen_MSDB(UChar r3, IRTemp op2addr, UChar r1)
    return "msdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SQEBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F32);
@@ -11111,7 +11118,7 @@ s390_irgen_SQEBR(UChar r1, UChar r2)
    return "sqebr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SQDBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -11123,7 +11130,7 @@ s390_irgen_SQDBR(UChar r1, UChar r2)
    return "sqdbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SQXBR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F128);
@@ -11136,7 +11143,7 @@ s390_irgen_SQXBR(UChar r1, UChar r2)
    return "sqxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SQEB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F32);
@@ -11148,7 +11155,7 @@ s390_irgen_SQEB(UChar r1, IRTemp op2addr)
    return "sqeb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SQDB(UChar r1, IRTemp op2addr)
 {
    IRTemp op = newTemp(Ity_F64);
@@ -11160,7 +11167,7 @@ s390_irgen_SQDB(UChar r1, IRTemp op2addr)
    return "sqdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_SXBR(UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_F128);
@@ -11178,7 +11185,7 @@ s390_irgen_SXBR(UChar r1, UChar r2)
    return "sxbr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TCEB(UChar r1, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_F32);
@@ -11190,7 +11197,7 @@ s390_irgen_TCEB(UChar r1, IRTemp op2addr)
    return "tceb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TCDB(UChar r1, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_F64);
@@ -11202,7 +11209,7 @@ s390_irgen_TCDB(UChar r1, IRTemp op2addr)
    return "tcdb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TCXB(UChar r1, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_F128);
@@ -11214,7 +11221,7 @@ s390_irgen_TCXB(UChar r1, IRTemp op2addr)
    return "tcxb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LCDFR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -11225,7 +11232,7 @@ s390_irgen_LCDFR(UChar r1, UChar r2)
    return "lcdfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LNDFR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -11236,7 +11243,7 @@ s390_irgen_LNDFR(UChar r1, UChar r2)
    return "lndfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LPDFR(UChar r1, UChar r2)
 {
    IRTemp result = newTemp(Ity_F64);
@@ -11247,7 +11254,7 @@ s390_irgen_LPDFR(UChar r1, UChar r2)
    return "lpdfr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LDGR(UChar r1, UChar r2)
 {
    put_fpr_dw0(r1, unop(Iop_ReinterpI64asF64, get_gpr_dw0(r2)));
@@ -11255,7 +11262,7 @@ s390_irgen_LDGR(UChar r1, UChar r2)
    return "ldgr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_LGDR(UChar r1, UChar r2)
 {
    put_gpr_dw0(r1, unop(Iop_ReinterpF64asI64, get_fpr_dw0(r2)));
@@ -11264,7 +11271,7 @@ s390_irgen_LGDR(UChar r1, UChar r2)
 }
 
 
-static HChar *
+static const HChar *
 s390_irgen_CPSDR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp sign  = newTemp(Ity_I64);
@@ -11296,7 +11303,7 @@ s390_call_cvb(IRExpr *in)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CVB(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, s390_call_cvb(load(Ity_I64, mkexpr(op2addr))));
@@ -11304,7 +11311,7 @@ s390_irgen_CVB(UChar r1, IRTemp op2addr)
    return "cvb";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CVBY(UChar r1, IRTemp op2addr)
 {
    put_gpr_w1(r1, s390_call_cvb(load(Ity_I64, mkexpr(op2addr))));
@@ -11328,7 +11335,7 @@ s390_call_cvd(IRExpr *in)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CVD(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), s390_call_cvd(unop(Iop_32Uto64, get_gpr_w1(r1))));
@@ -11336,7 +11343,7 @@ s390_irgen_CVD(UChar r1, IRTemp op2addr)
    return "cvd";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CVDY(UChar r1, IRTemp op2addr)
 {
    store(mkexpr(op2addr), s390_call_cvd(get_gpr_w1(r1)));
@@ -11344,7 +11351,7 @@ s390_irgen_CVDY(UChar r1, IRTemp op2addr)
    return "cvdy";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_FLOGR(UChar r1, UChar r2)
 {
    IRTemp input    = newTemp(Ity_I64);
@@ -11399,7 +11406,7 @@ s390_irgen_FLOGR(UChar r1, UChar r2)
    return "flogr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCK(IRTemp op2addr)
 {
    IRDirty *d;
@@ -11417,7 +11424,7 @@ s390_irgen_STCK(IRTemp op2addr)
    return "stck";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCKF(IRTemp op2addr)
 {
    if (! s390_host_has_stckf) {
@@ -11438,7 +11445,7 @@ s390_irgen_STCKF(IRTemp op2addr)
    return "stckf";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STCKE(IRTemp op2addr)
 {
    IRDirty *d;
@@ -11456,7 +11463,7 @@ s390_irgen_STCKE(IRTemp op2addr)
    return "stcke";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_STFLE(IRTemp op2addr)
 {
    if (! s390_host_has_stfle) {
@@ -11492,7 +11499,7 @@ s390_irgen_STFLE(IRTemp op2addr)
    return "stfle";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CKSM(UChar r1,UChar r2)
 {
    IRTemp addr = newTemp(Ity_I64);
@@ -11556,7 +11563,7 @@ s390_irgen_CKSM(UChar r1,UChar r2)
    return "cksm";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
 {
    IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
@@ -11603,7 +11610,7 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
    return "troo";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
 {
    IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
@@ -11651,7 +11658,7 @@ s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
    return "trto";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
 {
    IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
@@ -11698,7 +11705,7 @@ s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
    return "trot";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
 {
    IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
@@ -11746,7 +11753,7 @@ s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
    return "trtt";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
 {
    IRTemp len = newTemp(Ity_I64);
@@ -11757,7 +11764,7 @@ s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
    return "tr";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_TRE(UChar r1,UChar r2)
 {
    IRTemp src_addr, tab_addr, src_len, test_byte;
@@ -11813,7 +11820,7 @@ s390_call_cu21(IRExpr *srcval, IRExpr *low_surrogate)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -11940,7 +11947,7 @@ s390_call_cu24(IRExpr *srcval, IRExpr *low_surrogate)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -12047,7 +12054,7 @@ s390_call_cu42(IRExpr *srcval)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CU42(UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -12141,7 +12148,7 @@ s390_call_cu41(IRExpr *srcval)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CU41(UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -12388,7 +12395,7 @@ s390_irgen_cu12_cu14(UChar m3, UChar r1, UChar r2, Bool is_cu12)
    iterate();
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
 {
    s390_irgen_cu12_cu14(m3, r1, r2, /* is_cu12 = */ 1);
@@ -12396,7 +12403,7 @@ s390_irgen_CU12(UChar m3, UChar r1, UChar r2)
    return "cu12";
 }
 
-static HChar *
+static const HChar *
 s390_irgen_CU14(UChar m3, UChar r1, UChar r2)
 {
    s390_irgen_cu12_cu14(m3, r1, r2, /* is_cu12 = */ 0);
@@ -12419,7 +12426,7 @@ s390_call_ecag(IRExpr *op2addr)
    return call;
 }
 
-static HChar *
+static const HChar *
 s390_irgen_ECAG(UChar r1, UChar r3 __attribute__((unused)), IRTemp op2addr)
 {
    if (! s390_host_has_gie) {

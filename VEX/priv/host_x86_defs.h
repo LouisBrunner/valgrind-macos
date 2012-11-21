@@ -106,7 +106,7 @@ typedef
    }
    X86CondCode;
 
-extern HChar* showX86CondCode ( X86CondCode );
+extern const HChar* showX86CondCode ( X86CondCode );
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -249,7 +249,7 @@ typedef
    }
    X86UnaryOp;
 
-extern HChar* showX86UnaryOp ( X86UnaryOp );
+extern const HChar* showX86UnaryOp ( X86UnaryOp );
 
 
 /* --------- */
@@ -264,7 +264,7 @@ typedef
    }
    X86AluOp;
 
-extern HChar* showX86AluOp ( X86AluOp );
+extern const HChar* showX86AluOp ( X86AluOp );
 
 
 /* --------- */
@@ -275,7 +275,7 @@ typedef
    }
    X86ShiftOp;
 
-extern HChar* showX86ShiftOp ( X86ShiftOp );
+extern const HChar* showX86ShiftOp ( X86ShiftOp );
 
 
 /* --------- */
@@ -291,7 +291,7 @@ typedef
    }
    X86FpOp;
 
-extern HChar* showX86FpOp ( X86FpOp );
+extern const HChar* showX86FpOp ( X86FpOp );
 
 
 /* --------- */
@@ -334,7 +334,7 @@ typedef
    }
    X86SseOp;
 
-extern HChar* showX86SseOp ( X86SseOp );
+extern const HChar* showX86SseOp ( X86SseOp );
 
 
 /* --------- */

@@ -102,7 +102,7 @@ cab_operand(const HChar *base, UInt mask)
 
    static HChar buf[10];   /* Maximum is 6 + 2 */
 
-   static HChar *suffix[] = {
+   static const HChar *suffix[] = {
       "", "h", "l", "ne", "e", "nl", "nh", ""
    };
 
@@ -205,7 +205,7 @@ brcl_operand(UInt m1)
 static const HChar *
 cls_operand(Int kind, UInt mask)
 {
-   HChar *prefix;
+   const HChar *prefix;
 
    switch (kind) {
    case S390_XMNM_LOCR:   prefix = "locr";  break;

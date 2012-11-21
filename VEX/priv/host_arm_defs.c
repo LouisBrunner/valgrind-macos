@@ -191,7 +191,7 @@ void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
 
 /* --------- Condition codes, ARM encoding. --------- */
 
-HChar* showARMCondCode ( ARMCondCode cond ) {
+const HChar* showARMCondCode ( ARMCondCode cond ) {
    switch (cond) {
        case ARMcc_EQ:  return "eq";
        case ARMcc_NE:  return "ne";
@@ -674,7 +674,7 @@ void ppARMNRS(ARMNRS *p)
 
 /* --------- Instructions. --------- */
 
-HChar* showARMAluOp ( ARMAluOp op ) {
+const HChar* showARMAluOp ( ARMAluOp op ) {
    switch (op) {
       case ARMalu_ADD:  return "add";
       case ARMalu_ADDS: return "adds";
@@ -690,7 +690,7 @@ HChar* showARMAluOp ( ARMAluOp op ) {
    }
 }
 
-HChar* showARMShiftOp ( ARMShiftOp op ) {
+const HChar* showARMShiftOp ( ARMShiftOp op ) {
    switch (op) {
       case ARMsh_SHL: return "shl";
       case ARMsh_SHR: return "shr";
@@ -699,7 +699,7 @@ HChar* showARMShiftOp ( ARMShiftOp op ) {
    }
 }
 
-HChar* showARMUnaryOp ( ARMUnaryOp op ) {
+const HChar* showARMUnaryOp ( ARMUnaryOp op ) {
    switch (op) {
       case ARMun_NEG: return "neg";
       case ARMun_NOT: return "not";
@@ -708,7 +708,7 @@ HChar* showARMUnaryOp ( ARMUnaryOp op ) {
    }
 }
 
-HChar* showARMMulOp ( ARMMulOp op ) {
+const HChar* showARMMulOp ( ARMMulOp op ) {
    switch (op) {
       case ARMmul_PLAIN: return "mul";
       case ARMmul_ZX:    return "umull";
@@ -717,7 +717,7 @@ HChar* showARMMulOp ( ARMMulOp op ) {
    }
 }
 
-HChar* showARMVfpOp ( ARMVfpOp op ) {
+const HChar* showARMVfpOp ( ARMVfpOp op ) {
    switch (op) {
       case ARMvfp_ADD: return "add";
       case ARMvfp_SUB: return "sub";
@@ -727,7 +727,7 @@ HChar* showARMVfpOp ( ARMVfpOp op ) {
    }
 }
 
-HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op ) {
+const HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op ) {
    switch (op) {
       case ARMvfpu_COPY: return "cpy";
       case ARMvfpu_NEG:  return "neg";
@@ -737,7 +737,7 @@ HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op ) {
    }
 }
 
-HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
+const HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
    switch (op) {
       case ARMneon_VAND: return "vand";
       case ARMneon_VORR: return "vorr";
@@ -793,7 +793,7 @@ HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
    }
 }
 
-HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
+const HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
    switch (op) {
       case ARMneon_VAND:
       case ARMneon_VORR:
@@ -855,7 +855,7 @@ HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
    }
 }
 
-HChar* showARMNeonUnOp ( ARMNeonUnOp op ) {
+const HChar* showARMNeonUnOp ( ARMNeonUnOp op ) {
    switch (op) {
       case ARMneon_COPY: return "vmov";
       case ARMneon_COPYLS: return "vmov";
@@ -900,7 +900,7 @@ HChar* showARMNeonUnOp ( ARMNeonUnOp op ) {
    }
 }
 
-HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op ) {
+const HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op ) {
    switch (op) {
       case ARMneon_COPY:
       case ARMneon_NOT:
@@ -950,7 +950,7 @@ HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op ) {
    }
 }
 
-HChar* showARMNeonUnOpS ( ARMNeonUnOpS op ) {
+const HChar* showARMNeonUnOpS ( ARMNeonUnOpS op ) {
    switch (op) {
       case ARMneon_SETELEM: return "vmov";
       case ARMneon_GETELEMU: return "vmov";
@@ -961,7 +961,7 @@ HChar* showARMNeonUnOpS ( ARMNeonUnOpS op ) {
    }
 }
 
-HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op ) {
+const HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op ) {
    switch (op) {
       case ARMneon_SETELEM:
       case ARMneon_VDUP:
@@ -975,7 +975,7 @@ HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op ) {
    }
 }
 
-HChar* showARMNeonShiftOp ( ARMNeonShiftOp op ) {
+const HChar* showARMNeonShiftOp ( ARMNeonShiftOp op ) {
    switch (op) {
       case ARMneon_VSHL: return "vshl";
       case ARMneon_VSAL: return "vshl";
@@ -986,7 +986,7 @@ HChar* showARMNeonShiftOp ( ARMNeonShiftOp op ) {
    }
 }
 
-HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op ) {
+const HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op ) {
    switch (op) {
       case ARMneon_VSHL:
       case ARMneon_VQSHL:
@@ -999,7 +999,7 @@ HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op ) {
    }
 }
 
-HChar* showARMNeonDualOp ( ARMNeonDualOp op ) {
+const HChar* showARMNeonDualOp ( ARMNeonDualOp op ) {
    switch (op) {
       case ARMneon_TRN: return "vtrn";
       case ARMneon_ZIP: return "vzip";
@@ -1009,7 +1009,7 @@ HChar* showARMNeonDualOp ( ARMNeonDualOp op ) {
    }
 }
 
-HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op ) {
+const HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op ) {
    switch (op) {
       case ARMneon_TRN:
       case ARMneon_ZIP:
@@ -1020,7 +1020,7 @@ HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op ) {
    }
 }
 
-static HChar* showARMNeonDataSize_wrk ( UInt size )
+static const HChar* showARMNeonDataSize_wrk ( UInt size )
 {
    switch (size) {
       case 0: return "8";
@@ -1031,7 +1031,7 @@ static HChar* showARMNeonDataSize_wrk ( UInt size )
    }
 }
 
-static HChar* showARMNeonDataSize ( ARMInstr* i )
+static const HChar* showARMNeonDataSize ( ARMInstr* i )
 {
    switch (i->tag) {
       case ARMin_NBinary:
@@ -1663,7 +1663,7 @@ void ppARMInstr ( ARMInstr* i ) {
          }
          return;
       case ARMin_LdrEX: {
-         HChar* sz = "";
+         const HChar* sz = "";
          switch (i->ARMin.LdrEX.szB) {
             case 1: sz = "b"; break; case 2: sz = "h"; break;
             case 8: sz = "d"; break; case 4: break;
@@ -1674,7 +1674,7 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       }
       case ARMin_StrEX: {
-         HChar* sz = "";
+         const HChar* sz = "";
          switch (i->ARMin.StrEX.szB) {
             case 1: sz = "b"; break; case 2: sz = "h"; break;
             case 8: sz = "d"; break; case 4: break;
@@ -1792,7 +1792,7 @@ void ppARMInstr ( ARMInstr* i ) {
          }
          return;
       case ARMin_VCvtID: {
-         HChar* nm = "?";
+         const HChar* nm = "?";
          if (i->ARMin.VCvtID.iToD) {
             nm = i->ARMin.VCvtID.syned ? "fsitod" : "fuitod";
          } else {

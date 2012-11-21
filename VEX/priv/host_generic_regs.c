@@ -56,7 +56,7 @@ void ppHRegClass ( HRegClass hrc )
 /* Generic printing for registers. */
 void ppHReg ( HReg r ) 
 {
-   HChar* maybe_v = hregIsVirtual(r) ? "v" : "";
+   const HChar* maybe_v = hregIsVirtual(r) ? "v" : "";
    Int    regNo   = hregNumber(r);
    switch (hregClass(r)) {
       case HRcInt32:   vex_printf("%%%sr%d", maybe_v, regNo); return;
@@ -77,7 +77,7 @@ void ppHReg ( HReg r )
 void ppHRegUsage ( HRegUsage* tab )
 {
    Int    i;
-   HChar* str;
+   const HChar* str;
    vex_printf("HRegUsage {\n");
    for (i = 0; i < tab->n_used; i++) {
       switch (tab->mode[i]) {

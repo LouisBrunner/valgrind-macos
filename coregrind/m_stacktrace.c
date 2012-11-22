@@ -578,7 +578,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 static Bool in_same_fn ( Addr a1, Addr a2 )
 {
 #  define M_VG_ERRTXT 500
-   UChar buf_a1[M_VG_ERRTXT], buf_a2[M_VG_ERRTXT];
+   HChar buf_a1[M_VG_ERRTXT], buf_a2[M_VG_ERRTXT];
    /* The following conditional looks grossly inefficient and
       surely could be majorly improved, with not much effort. */
    if (VG_(get_fnname_raw) (a1, buf_a1, M_VG_ERRTXT))

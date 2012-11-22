@@ -480,7 +480,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    lr_is_first_RA = False;
    {
 #     define M_VG_ERRTXT 1000
-      UChar buf_lr[M_VG_ERRTXT], buf_ip[M_VG_ERRTXT];
+      HChar buf_lr[M_VG_ERRTXT], buf_ip[M_VG_ERRTXT];
       /* The following conditional looks grossly inefficient and
          surely could be majorly improved, with not much effort. */
       if (VG_(get_fnname_raw) (lr, buf_lr, M_VG_ERRTXT))

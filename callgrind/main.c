@@ -1073,6 +1073,8 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
                dataTy = typeOfIRTemp(sbIn->tyenv, st->Ist.LLSC.result);
                addEvent_Dr( &clgs, curr_inode,
                             sizeofIRType(dataTy), st->Ist.LLSC.addr );
+               /* flush events before LL, should help SC to succeed */
+               flushEvents( &clgs );
             } else {
                /* SC */
                dataTy = typeOfIRExpr(sbIn->tyenv, st->Ist.LLSC.storedata);

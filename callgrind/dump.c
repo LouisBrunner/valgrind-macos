@@ -145,7 +145,7 @@ void init_fpos(FnPos* p)
 
 #if 0
 static __inline__
-static void my_fwrite(Int fd, HChar* buf, Int len)
+static void my_fwrite(Int fd, const HChar* buf, Int len)
 {
 	VG_(write)(fd, buf, len);
 }
@@ -165,7 +165,7 @@ void fwrite_flush(void)
     fwrite_pos = 0;
 }
 
-static void my_fwrite(Int fd, HChar* buf, Int len)
+static void my_fwrite(Int fd, const HChar* buf, Int len)
 {
     if (fwrite_fd != fd) {
 	fwrite_flush();

@@ -1054,7 +1054,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 }
 
 
-HChar *VG_(basename)(const HChar *path)
+const HChar *VG_(basename)(const HChar *path)
 {
    static HChar buf[VKI_PATH_MAX];
    
@@ -1090,7 +1090,7 @@ HChar *VG_(basename)(const HChar *path)
 }
 
 
-HChar *VG_(dirname)(const HChar *path)
+const HChar *VG_(dirname)(const HChar *path)
 {
    static HChar buf[VKI_PATH_MAX];
     

@@ -91,8 +91,8 @@ extern Int    VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
 extern Int    VG_(readlink)( const HChar* path, HChar* buf, UInt bufsize );
 extern Int    VG_(getdents)( Int fd, struct vki_dirent *dirp, UInt count );
 
-extern HChar* VG_(basename)( const HChar* path );
-extern HChar* VG_(dirname) ( const HChar* path );
+extern const HChar* VG_(basename)( const HChar* path );
+extern const HChar* VG_(dirname) ( const HChar* path );
 
 /* Return the name of a directory for temporary files. */
 extern const HChar* VG_(tmpdir)(void);

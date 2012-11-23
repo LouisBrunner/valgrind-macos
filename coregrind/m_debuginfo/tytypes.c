@@ -198,7 +198,7 @@ void ML_(pp_TyEnt)( TyEnt* te )
 
 /* Print a whole XArray of TyEnts, debug-style */
 
-void ML_(pp_TyEnts)( XArray* tyents, HChar* who )
+void ML_(pp_TyEnts)( XArray* tyents, const HChar* who )
 {
    Word i, n;
    VG_(printf)("------ %s ------\n", who);
@@ -410,7 +410,7 @@ TyEnt* ML_(TyEnts__index_by_cuOff) ( XArray* /* of TyEnt */ ents,
 /* Generates a total ordering on TyEnts based only on their .cuOff
    fields. */
 
-Word ML_(TyEnt__cmp_by_cuOff_only) ( TyEnt* te1, TyEnt* te2 )
+Word ML_(TyEnt__cmp_by_cuOff_only) ( const TyEnt* te1, const TyEnt* te2 )
 {
    if (te1->cuOff < te2->cuOff) return -1;
    if (te1->cuOff > te2->cuOff) return 1;
@@ -477,7 +477,7 @@ static Word Asciiz__cmp ( const HChar* a, const HChar* b ) {
    return VG_(strcmp)(a, b);
 }
 
-Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 )
+Word ML_(TyEnt__cmp_by_all_except_cuOff) ( const TyEnt* te1, const TyEnt* te2 )
 {
    Word r;
    if (te1->tag < te2->tag) return -1;

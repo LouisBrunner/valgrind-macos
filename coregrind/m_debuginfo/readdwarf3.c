@@ -169,8 +169,8 @@ typedef
       UChar* region_start_img;
       UWord  region_szB;
       UWord  region_next;
-      void (*barf)( HChar* ) __attribute__((noreturn));
-      HChar* barfstr;
+      void (*barf)( const HChar* ) __attribute__((noreturn));
+      const HChar* barfstr;
    }
    Cursor;
 
@@ -185,8 +185,8 @@ static void init_Cursor ( Cursor* c,
                           UChar*  region_start_img,
                           UWord   region_szB,
                           UWord   region_next,
-                          __attribute__((noreturn)) void (*barf)( HChar* ),
-                          HChar*  barfstr )
+                          __attribute__((noreturn)) void (*barf)( const HChar* ),
+                          const HChar* barfstr )
 {
    vg_assert(c);
    VG_(memset)(c, 0, sizeof(*c));
@@ -343,7 +343,7 @@ static UWord get_UWord ( Cursor* c ) {
 /* Read a DWARF3 'Initial Length' field */
 static ULong get_Initial_Length ( /*OUT*/Bool* is64,
                                   Cursor* c, 
-                                  HChar* barfMsg )
+                                  const HChar* barfMsg )
 {
    ULong w64;
    UInt  w32;
@@ -377,7 +377,7 @@ static ULong get_Initial_Length ( /*OUT*/Bool* is64,
 typedef
    struct {
       /* Call here if anything goes wrong */
-      void (*barf)( HChar* ) __attribute__((noreturn));
+      void (*barf)( const HChar* ) __attribute__((noreturn));
       /* Is this 64-bit DWARF ? */
       Bool   is_dw64;
       /* Which DWARF version ?  (2, 3 or 4) */
@@ -1045,7 +1045,7 @@ static void record_signatured_type ( VgHashTable tab,
    BARF.  */
 static UWord lookup_signatured_type ( VgHashTable tab,
                                       ULong type_signature,
-                                      void (*barf)( HChar* ) __attribute__((noreturn)) )
+                                      void (*barf)( const HChar* ) __attribute__((noreturn)) )
 {
    D3SignatureType *dstype = VG_(HT_lookup) ( tab, (UWord) type_signature );
    /* This may be unwarranted chumminess with the hash table
@@ -1439,7 +1439,7 @@ typedef
    }
    D3VarParser;
 
-static void varstack_show ( D3VarParser* parser, HChar* str ) {
+static void varstack_show ( D3VarParser* parser, const HChar* str ) {
    Word i, j;
    VG_(printf)("  varstack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
@@ -2164,7 +2164,7 @@ typedef
    }
    D3TypeParser;
 
-static void typestack_show ( D3TypeParser* parser, HChar* str ) {
+static void typestack_show ( D3TypeParser* parser, const HChar* str ) {
    Word i;
    VG_(printf)("  typestack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
@@ -3292,10 +3292,7 @@ void dedup_types ( Bool td3,
 
    /* First we must sort .ents by its .cuOff fields, so we
       can index into it. */
-   VG_(setCmpFnXA)(
-      ents,
-      (Int(*)(void*,void*)) ML_(TyEnt__cmp_by_cuOff_only)
-   );
+   VG_(setCmpFnXA)( ents, (XACmpFn_t) ML_(TyEnt__cmp_by_cuOff_only) );
    VG_(sortXA)( ents );
 
    /* Now repeatedly do commoning and substitution passes over
@@ -3344,7 +3341,7 @@ void dedup_types ( Bool td3,
 
 __attribute__((noinline))
 static void resolve_variable_types (
-               void (*barf)( HChar* ) __attribute__((noreturn)),
+               void (*barf)( const HChar* ) __attribute__((noreturn)),
                /*R-O*/XArray* /* of TyEnt */ ents,
                /*MOD*/TyEntIndexCache* ents_cache,
                /*MOD*/XArray* /* of TempVar* */ vars
@@ -3396,9 +3393,9 @@ static void resolve_variable_types (
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Int cmp_TempVar_by_dioff ( void* v1, void* v2 ) {
-   TempVar* t1 = *(TempVar**)v1;
-   TempVar* t2 = *(TempVar**)v2;
+static Int cmp_TempVar_by_dioff ( const void* v1, const void* v2 ) {
+   const TempVar* t1 = *(const TempVar**)v1;
+   const TempVar* t2 = *(const TempVar**)v2;
    if (t1->dioff < t2->dioff) return -1;
    if (t1->dioff > t2->dioff) return 1;
    return 0;
@@ -3518,7 +3515,7 @@ static void read_DIE (
 static
 void new_dwarf3_reader_wrk ( 
    struct _DebugInfo* di,
-   __attribute__((noreturn)) void (*barf)( HChar* ),
+   __attribute__((noreturn)) void (*barf)( const HChar* ),
    UChar* debug_info_img,   SizeT debug_info_sz,
    UChar* debug_types_img,  SizeT debug_types_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
@@ -4048,10 +4045,7 @@ void new_dwarf3_reader_wrk (
       minor) waste of time, since tyents itself is sorted, but
       necessary since VG_(lookupXA) refuses to cooperate if we
       don't. */
-   VG_(setCmpFnXA)(
-      tyents_to_keep,
-      (Int(*)(void*,void*)) ML_(TyEnt__cmp_by_cuOff_only)
-   );
+   VG_(setCmpFnXA)( tyents_to_keep, (XACmpFn_t) ML_(TyEnt__cmp_by_cuOff_only) );
    VG_(sortXA)( tyents_to_keep );
 
    /* Enable cacheing on tyents_to_keep */
@@ -4337,10 +4331,10 @@ void new_dwarf3_reader_wrk (
 /*------------------------------------------------------------*/
 
 static Bool               d3rd_jmpbuf_valid  = False;
-static HChar*             d3rd_jmpbuf_reason = NULL;
+static const HChar*       d3rd_jmpbuf_reason = NULL;
 static VG_MINIMAL_JMP_BUF(d3rd_jmpbuf);
 
-static __attribute__((noreturn)) void barf ( HChar* reason ) {
+static __attribute__((noreturn)) void barf ( const HChar* reason ) {
    vg_assert(d3rd_jmpbuf_valid);
    d3rd_jmpbuf_reason = reason;
    VG_MINIMAL_LONGJMP(d3rd_jmpbuf);

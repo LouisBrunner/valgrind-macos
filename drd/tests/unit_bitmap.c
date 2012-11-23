@@ -63,7 +63,7 @@ void VG_(vcbprintf)(void(*char_sink)(HChar, void* opaque),
                     const HChar* format, va_list vargs)
 { assert(0); }
 void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
-                 Int (*compar)(void*, void*) )
+                 Int (*compar)(const void*, const void*) )
 { assert(0); }
 
 /* Actual unit test */

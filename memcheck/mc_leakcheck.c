@@ -244,10 +244,10 @@
 /*------------------------------------------------------------*/
 
 // Compare the MC_Chunks by 'data' (i.e. the address of the block).
-static Int compare_MC_Chunks(void* n1, void* n2)
+static Int compare_MC_Chunks(const void* n1, const void* n2)
 {
-   MC_Chunk* mc1 = *(MC_Chunk**)n1;
-   MC_Chunk* mc2 = *(MC_Chunk**)n2;
+   const MC_Chunk* mc1 = *(const MC_Chunk**)n1;
+   const MC_Chunk* mc2 = *(const MC_Chunk**)n2;
    if (mc1->data < mc2->data) return -1;
    if (mc1->data > mc2->data) return  1;
    return 0;
@@ -604,7 +604,7 @@ lc_push_without_clique_if_a_chunk_ptr(Addr ptr, Bool is_prior_definite)
 }
 
 static void
-lc_push_if_a_chunk_ptr_register(ThreadId tid, HChar* regname, Addr ptr)
+lc_push_if_a_chunk_ptr_register(ThreadId tid, const HChar* regname, Addr ptr)
 {
    lc_push_without_clique_if_a_chunk_ptr(ptr, /*is_prior_definite*/True);
 }
@@ -850,10 +850,10 @@ static Word cmp_LossRecordKey_LossRecord(const void* key, const void* elem)
    VG_(tool_panic)("bad LossRecord comparison");
 }
 
-static Int cmp_LossRecords(void* va, void* vb)
+static Int cmp_LossRecords(const void* va, const void* vb)
 {
-   LossRecord* lr_a = *(LossRecord**)va;
-   LossRecord* lr_b = *(LossRecord**)vb;
+   const LossRecord* lr_a = *(const LossRecord**)va;
+   const LossRecord* lr_b = *(const LossRecord**)vb;
    SizeT total_szB_a = lr_a->szB + lr_a->indirect_szB;
    SizeT total_szB_b = lr_b->szB + lr_b->indirect_szB;
 
@@ -1522,7 +1522,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
 static Addr searched_wpa;
 static SizeT searched_szB;
 static void
-search_address_in_GP_reg(ThreadId tid, HChar* regname, Addr addr_in_reg)
+search_address_in_GP_reg(ThreadId tid, const HChar* regname, Addr addr_in_reg)
 {
    if (addr_in_reg >= searched_wpa 
        && addr_in_reg < searched_wpa + searched_szB) {

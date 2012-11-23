@@ -641,8 +641,8 @@ void HG_(record_error_LockOrder)(
                             XE_LockOrder, 0, NULL, &xe );
 }
 
-void HG_(record_error_PthAPIerror) ( Thread* thr, HChar* fnname, 
-                                     Word err, HChar* errstr )
+void HG_(record_error_PthAPIerror) ( Thread* thr, const HChar* fnname, 
+                                     Word err, const HChar* errstr )
 {
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
@@ -661,8 +661,8 @@ void HG_(record_error_PthAPIerror) ( Thread* thr, HChar* fnname,
                             XE_PthAPIerror, 0, NULL, &xe );
 }
 
-void HG_(record_error_Misc_w_aux) ( Thread* thr, HChar* errstr,
-                                    HChar* auxstr, ExeContext* auxctx )
+void HG_(record_error_Misc_w_aux) ( Thread* thr, const HChar* errstr,
+                                    const HChar* auxstr, ExeContext* auxctx )
 {
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
@@ -680,7 +680,7 @@ void HG_(record_error_Misc_w_aux) ( Thread* thr, HChar* errstr,
                             XE_Misc, 0, NULL, &xe );
 }
 
-void HG_(record_error_Misc) ( Thread* thr, HChar* errstr )
+void HG_(record_error_Misc) ( Thread* thr, const HChar* errstr )
 {
    HG_(record_error_Misc_w_aux)(thr, errstr, NULL, NULL);
 }
@@ -848,7 +848,7 @@ static void announce_combined_LockP_vecs ( Lock** lockvec,
 }
 
 
-static void show_LockP_summary_textmode ( Lock** locks, HChar* pre )
+static void show_LockP_summary_textmode ( Lock** locks, const HChar* pre )
 {
    tl_assert(locks);
    UWord i;

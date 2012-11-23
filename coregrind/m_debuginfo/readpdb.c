@@ -1800,13 +1800,14 @@ static ULong codeview_dump_linetab2(
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Int cmp_FPO_DATA_for_canonicalisation ( void* f1V, void* f2V )
+static Int cmp_FPO_DATA_for_canonicalisation ( const void* f1V,
+                                               const void* f2V )
 {
    /* Cause FPO data to be sorted first in ascending order of range
       starts, and for entries with the same range start, with the
       shorter range (length) first. */
-   FPO_DATA* f1 = (FPO_DATA*)f1V;
-   FPO_DATA* f2 = (FPO_DATA*)f2V;
+   const FPO_DATA* f1 = f1V;
+   const FPO_DATA* f2 = f2V;
    if (f1->ulOffStart < f2->ulOffStart) return -1;
    if (f1->ulOffStart > f2->ulOffStart) return  1;
    if (f1->cbProcSize < f2->cbProcSize) return -1;
@@ -2428,9 +2429,9 @@ HChar* ML_(find_name_of_pdb_file)( HChar* pename )
    /* Make up the command to run, essentially:
       sh -c "strings (pename) | egrep '\.pdb|\.PDB' > (tmpname)"
    */
-   HChar* sh      = "/bin/sh";
-   HChar* strings = "/usr/bin/strings";
-   HChar* egrep   = "/usr/bin/egrep";
+   const HChar* sh      = "/bin/sh";
+   const HChar* strings = "/usr/bin/strings";
+   const HChar* egrep   = "/usr/bin/egrep";
 
    /* (sh) -c "(strings) (pename) | (egrep) 'pdb' > (tmpname) */
    Int cmdlen = VG_(strlen)(strings) + VG_(strlen)(pename)

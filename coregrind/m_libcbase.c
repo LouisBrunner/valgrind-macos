@@ -672,7 +672,7 @@ Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
       pv = (Char*)&v, v = *(Word*)pm
 
 static Char* bm_med3 ( Char* a, Char* b, Char* c, 
-                       Int (*cmp)(void*,void*) ) {
+                       Int (*cmp)(const void*, const void*) ) {
    return cmp(a, b) < 0
           ? (cmp(b, c) < 0 ? b : cmp(a, c) < 0 ? c : a)
           : (cmp(b, c) > 0 ? b : cmp(a, c) > 0 ? c : a);
@@ -693,7 +693,7 @@ static void bm_swapfunc ( Char* a, Char* b, SizeT n, Int swaptype )
 }
 
 static void bm_qsort ( Char* a, SizeT n, SizeT es,
-                       Int (*cmp)(void*,void*) )
+                       Int (*cmp)(const void*, const void*) )
 {
    Char  *pa, *pb, *pc, *pd, *pl, *pm, *pn, *pv;
    Int   r, swaptype;
@@ -802,7 +802,7 @@ Int VG_(log2_64) ( ULong x )
 
 // Generic quick sort.
 void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
-                 Int (*compar)(void*, void*) )
+                 Int (*compar)(const void*, const void*) )
 {
    bm_qsort(base,nmemb,size,compar);
 }

@@ -843,7 +843,7 @@ extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );
 
 /* Add a string to the string table of a DebugInfo.  If len==-1,
    ML_(addStr) will itself measure the length of the string. */
-extern HChar* ML_(addStr) ( struct _DebugInfo* di, HChar* str, Int len );
+extern HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len );
 
 extern void ML_(addVar)( struct _DebugInfo* di,
                          Int    level,
@@ -899,7 +899,7 @@ extern struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
    terminal.  'serious' errors are always shown, not 'serious' ones
    are shown only at verbosity level 2 and above. */
 extern 
-void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg );
+void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg );
 
 /* Print a symbol. */
 extern void ML_(ppSym) ( Int idx, DiSym* sym );

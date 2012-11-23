@@ -48,7 +48,7 @@
 #include "priv_d3basics.h"      /* self */
 #include "priv_storage.h"
 
-HChar* ML_(pp_DW_children) ( DW_children hashch )
+const HChar* ML_(pp_DW_children) ( DW_children hashch )
 {
    switch (hashch) {
       case DW_children_no:  return "no children";
@@ -57,7 +57,7 @@ HChar* ML_(pp_DW_children) ( DW_children hashch )
    return "DW_children_???";
 }
 
-HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
+const HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
 {
    switch (tag) {
       case DW_TAG_padding:            return "DW_TAG_padding";
@@ -152,7 +152,7 @@ HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
    return "DW_TAG_???";
 }
 
-HChar* ML_(pp_DW_FORM) ( DW_FORM form )
+const HChar* ML_(pp_DW_FORM) ( DW_FORM form )
 {
    switch (form) {
       case DW_FORM_addr:      return "DW_FORM_addr";
@@ -186,7 +186,7 @@ HChar* ML_(pp_DW_FORM) ( DW_FORM form )
    return "DW_FORM_???";
 }
 
-HChar* ML_(pp_DW_AT) ( DW_AT attr )
+const HChar* ML_(pp_DW_AT) ( DW_AT attr )
 {
    switch (attr) {
       case DW_AT_sibling:             return "DW_AT_sibling";
@@ -1013,7 +1013,7 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
    Word       i, nGuards;
    MaybeULong *mul, *mul2;
 
-   HChar*  badness = NULL;
+   const HChar*  badness = NULL;
    UChar*  p       = &gx->payload[0]; /* must remain unsigned */
    XArray* results = VG_(newXA)( ML_(dinfo_zalloc), "di.d3basics.etG.1",
                                  ML_(dinfo_free),

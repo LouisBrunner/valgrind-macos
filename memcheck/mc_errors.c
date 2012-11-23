@@ -297,8 +297,8 @@ static void emiN ( const HChar* format, ... ) /* NO FORMAT CHECK */
 
 static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
 {
-   HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
-   HChar* xpost = VG_(clo_xml) ? "</auxwhat>"  : "";
+   const HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
+   const HChar* xpost = VG_(clo_xml) ? "</auxwhat>"  : "";
 
    switch (ai->tag) {
       case Addr_Unknown:

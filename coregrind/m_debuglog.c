@@ -762,14 +762,14 @@ VG_(debugLog_vprintf) (
                i++;
                /* %pS, like %s but escaping chars for XML safety */
                /* Note: simplistic; ignores field width and flags */
-               HChar *str = va_arg (vargs, HChar *);
+               const HChar *str = va_arg (vargs, HChar *);
                if (str == NULL)
                   str = "(null)";
                ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
             } else if (format[i+1] == 's') {
                i++;
                /* %ps, synonym for %s with --xml=no / %pS with --xml=yes */
-               HChar *str = va_arg (vargs, HChar *);
+               const HChar *str = va_arg (vargs, HChar *);
                if (str == NULL)
                   str = "(null)";
                if (clo_xml)
@@ -806,7 +806,7 @@ VG_(debugLog_vprintf) (
             send(va_arg (vargs, int), send_arg2);
             break;
          case 's': case 'S': { /* %s */
-            HChar *str = va_arg (vargs, HChar *);
+            const HChar *str = va_arg (vargs, HChar *);
             if (str == NULL) str = "(null)";
             ret += myvprintf_str(send, send_arg2, 
                                  flags, width, str, format[i]=='S');

@@ -1376,8 +1376,9 @@ void zero_state_cost(thread_info* t)
     CLG_(zero_cost)( CLG_(sets).full, CLG_(current_state).cost );
 }
 
-/* Ups, this can go very wrong... */
-extern void VG_(discard_translations) ( Addr64 start, ULong range, HChar* who );
+/* Ups, this can go very wrong...
+   FIXME: We should export this function or provide other means to get a handle */
+extern void VG_(discard_translations) ( Addr64 start, ULong range, const HChar* who );
 
 void CLG_(set_instrument_state)(const HChar* reason, Bool state)
 {

@@ -146,7 +146,7 @@ static Addr Addr__max ( Addr a1, Addr a2 ) {
    vectors describe the same set of variables but are not structurally
    identical. */
 
-static inline Bool StackBlock__sane ( StackBlock* fb )
+static inline Bool StackBlock__sane ( const StackBlock* fb )
 {
    if (fb->name[ sizeof(fb->name)-1 ] != 0)
       return False;
@@ -158,7 +158,7 @@ static inline Bool StackBlock__sane ( StackBlock* fb )
 }
 
 /* Generate an arbitrary total ordering on StackBlocks. */
-static Word StackBlock__cmp ( StackBlock* fb1, StackBlock* fb2 )
+static Word StackBlock__cmp ( const StackBlock* fb1, const StackBlock* fb2 )
 {
    Word r;
    tl_assert(StackBlock__sane(fb1));
@@ -261,7 +261,7 @@ static XArray* /* of StackBlock */
    UWord key, val;
 
    /* First, normalise, as per comments above. */
-   VG_(setCmpFnXA)( orig, (Int(*)(void*,void*))StackBlock__cmp );
+   VG_(setCmpFnXA)( orig, (XACmpFn_t)StackBlock__cmp );
    VG_(sortXA)( orig );
 
    /* Now get rid of any exact duplicates. */
@@ -944,7 +944,7 @@ static void gen_delta_str ( /*OUT*/HChar* buf,
    messages. */
 static void show_Invar( HChar* buf, Word nBuf, Invar* inv, Word depth )
 {
-   HChar* str;
+   const HChar* str;
    tl_assert(nBuf >= 128);
    buf[0] = 0;
    switch (inv->tag) {

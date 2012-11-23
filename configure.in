@@ -1417,6 +1417,29 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL(HAS_POINTER_SIGN_WARNING, test x$no_pointer_sign = xyes)
 
 
+# does this compiler support -Wno-write-strings ?
+AC_MSG_CHECKING([if gcc accepts -Wwrite-strings])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wwrite-strings"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+no_write_strings=yes
+AC_MSG_RESULT([yes])
+], [
+no_write_strings=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+if test x$no_write_strings = xyes; then
+  CFLAGS="$CFLAGS -Wwrite-strings"
+fi
+
+AM_CONDITIONAL(HAS_WRITE_STRINGS_WARNING, test x$no_write_strings = xyes)
+
 # does this compiler support -Wno-empty-body ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])

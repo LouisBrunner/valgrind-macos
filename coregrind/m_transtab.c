@@ -623,10 +623,10 @@ void OutEdgeArr__add ( OutEdgeArr* oea, OutEdge* oe )
 }
 
 static
-Int HostExtent__cmpOrd ( void* v1, void* v2 )
+Int HostExtent__cmpOrd ( const void* v1, const void* v2 )
 {
-   HostExtent* hx1 = (HostExtent*)v1;
-   HostExtent* hx2 = (HostExtent*)v2;
+   const HostExtent* hx1 = v1;
+   const HostExtent* hx2 = v2;
    if (hx1->start + hx1->len <= hx2->start) return -1;
    if (hx2->start + hx2->len <= hx1->start) return 1;
    return 0; /* partial overlap */
@@ -656,8 +656,7 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
       Word firstW = -1, lastW = -1;
       Bool found  = VG_(lookupXA_UNSAFE)(
                        host_extents, &key, &firstW, &lastW,
-                       (Int(*)(void*,void*))HostExtent__cmpOrd
-                    );
+                       HostExtent__cmpOrd );
       vg_assert(firstW == lastW); // always true, even if not found
       if (found) {
          HostExtent* hx = VG_(indexXA)(host_extents, firstW);
@@ -1044,7 +1043,7 @@ static Bool sanity_check_eclasses_in_sector ( Sector* sec )
 {
 #  define BAD(_str) do { whassup = (_str); goto bad; } while (0)
 
-   HChar*   whassup = NULL;
+   const HChar* whassup = NULL;
    Int      i, j, k, n, ec_num, ec_idx;
    TTEntry* tte;
    UShort   tteno;

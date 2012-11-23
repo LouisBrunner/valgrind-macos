@@ -1832,9 +1832,9 @@ static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
 static XArray* /* of ThrID */ verydead_thread_table = NULL;
 
 /* Arbitrary total ordering on ThrIDs. */
-static Int cmp__ThrID ( void* v1, void* v2 ) {
-   ThrID id1 = *(ThrID*)v1;
-   ThrID id2 = *(ThrID*)v2;
+static Int cmp__ThrID ( const void* v1, const void* v2 ) {
+   ThrID id1 = *(const ThrID*)v1;
+   ThrID id2 = *(const ThrID*)v2;
    if (id1 < id2) return -1;
    if (id1 > id2) return 1;
    return 0;
@@ -1866,17 +1866,17 @@ typedef
    VTS;
 
 /* Allocate a VTS capable of storing 'sizeTS' entries. */
-static VTS* VTS__new ( HChar* who, UInt sizeTS );
+static VTS* VTS__new ( const HChar* who, UInt sizeTS );
 
 /* Make a clone of 'vts', sizing the new array to exactly match the
    number of ScalarTSs present. */
-static VTS* VTS__clone ( HChar* who, VTS* vts );
+static VTS* VTS__clone ( const HChar* who, VTS* vts );
 
 /* Make a clone of 'vts' with the thrids in 'thrids' removed.  The new
    array is sized exactly to hold the number of required elements.
    'thridsToDel' is an array of ThrIDs to be omitted in the clone, and
    must be in strictly increasing order. */
-static VTS* VTS__subtract ( HChar* who, VTS* vts, XArray* thridsToDel );
+static VTS* VTS__subtract ( const HChar* who, VTS* vts, XArray* thridsToDel );
 
 /* Delete this VTS in its entirety. */
 static void VTS__delete ( VTS* vts );
@@ -1960,7 +1960,7 @@ static Bool is_sane_VTS ( VTS* vts )
 
 /* Create a new, empty VTS.
 */
-static VTS* VTS__new ( HChar* who, UInt sizeTS )
+static VTS* VTS__new ( const HChar* who, UInt sizeTS )
 {
    VTS* vts = HG_(zalloc)(who, sizeof(VTS) + (sizeTS+1) * sizeof(ScalarTS));
    tl_assert(vts->usedTS == 0);
@@ -1971,7 +1971,7 @@ static VTS* VTS__new ( HChar* who, UInt sizeTS )
 
 /* Clone this VTS.
 */
-static VTS* VTS__clone ( HChar* who, VTS* vts )
+static VTS* VTS__clone ( const HChar* who, VTS* vts )
 {
    tl_assert(vts);
    tl_assert( *(ULong*)(&vts->ts[vts->sizeTS]) == 0x0ddC0ffeeBadF00dULL);
@@ -1993,7 +1993,7 @@ static VTS* VTS__clone ( HChar* who, VTS* vts )
    must be in strictly increasing order.  We could obviously do this
    much more efficiently (in linear time) if necessary.
 */
-static VTS* VTS__subtract ( HChar* who, VTS* vts, XArray* thridsToDel )
+static VTS* VTS__subtract ( const HChar* who, VTS* vts, XArray* thridsToDel )
 {
    UInt i, j;
    tl_assert(vts);
@@ -2672,7 +2672,7 @@ static VtsID vts_tab__find__or__clone_and_add ( VTS* cand )
 }
 
 
-static void show_vts_stats ( HChar* caller )
+static void show_vts_stats ( const HChar* caller )
 {
    UWord nSet, nTab, nLive;
    ULong totrc;
@@ -3333,7 +3333,7 @@ static Thr* VtsID__findFirst_notLEQ ( VtsID vi1, VtsID vi2 )
    fast way to do this is simply to stuff in tags which we know are
    not going to match anything, since they're not aligned to the start
    of a line. */
-static void Filter__clear ( Filter* fi, HChar* who )
+static void Filter__clear ( Filter* fi, const HChar* who )
 {
    UWord i;
    if (0) VG_(printf)("  Filter__clear(%p, %s)\n", fi, who);
@@ -3745,7 +3745,8 @@ static void note_local_Kw_n_stack_for ( Thr* thr )
       VG_(pp_ExeContext)(pair.ec);
 }
 
-static Int cmp__ULong_n_EC__by_ULong ( ULong_n_EC* pair1, ULong_n_EC* pair2 )
+static Int cmp__ULong_n_EC__by_ULong ( const ULong_n_EC* pair1,
+                                       const ULong_n_EC* pair2 )
 {
    if (pair1->ull < pair2->ull) return -1;
    if (pair1->ull > pair2->ull) return 1;
@@ -4897,7 +4898,7 @@ static void record_race_info ( Thr* acc_thr,
       found = VG_(lookupXA_UNSAFE)(
                  confThr->local_Kws_n_stacks,
                  &key, &firstIx, &lastIx,
-                 (Int(*)(void*,void*))cmp__ULong_n_EC__by_ULong
+                 (XACmpFn_t)cmp__ULong_n_EC__by_ULong
               );
       if (0) VG_(printf)("record_race_info %u %u %u  confThr %p "
                          "confTym %llu found %d (%lu,%lu)\n", 
@@ -6047,7 +6048,7 @@ static void SO__Dealloc ( SO* so )
 //                                                     //
 /////////////////////////////////////////////////////////
 
-static void show_thread_state ( HChar* str, Thr* t ) 
+static void show_thread_state ( const HChar* str, Thr* t ) 
 {
    if (1) return;
    if (t->viR == t->viW) {
@@ -6491,7 +6492,7 @@ static inline Bool TRACEME(Addr a, SizeT szB) {
    if (XXX2 && a <= XXX2 && XXX2 <= a+szB) return True;
    return False;
 }
-static void trace ( Thr* thr, Addr a, SizeT szB, const HChar* s ) 
+static void trace ( Thr* thr, Addr a, SizeT szB, const const HChar* s ) 
 {
   SVal sv = zsm_sread08(a);
   VG_(printf)("thr %p (%#lx,%lu) %s: 0x%016llx ", thr,a,szB,s,sv);

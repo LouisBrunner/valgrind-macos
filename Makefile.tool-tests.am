@@ -27,6 +27,10 @@ if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(check_PROGRAMS)
 endif
 
+if HAS_WRITE_STRINGS_WARNING
+CFLAGS += -Wno-write-strings
+endif
+
 check-local: build-noinst_DSYMS
 
 clean-local: clean-noinst_DSYMS

@@ -5203,14 +5203,16 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             lcp.max_loss_records_output = 999999999; break;
          case  9: { /* limited */
             Int int_value;
-            HChar* endptr;
+            const HChar* endptr;
 
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
             if (wcmd == NULL) {
                int_value = 0;
                endptr = "empty"; /* to report an error below */
             } else {
-               int_value = VG_(strtoll10) (wcmd, &endptr);
+               HChar *the_end;
+               int_value = VG_(strtoll10) (wcmd, &the_end);
+               endptr = the_end;
             }
             if (*endptr != '\0')
                VG_(gdb_printf) ("missing or malformed integer value\n");
@@ -5256,7 +5258,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       SizeT szB = 1;
       Addr bad_addr;
       UInt okind;
-      HChar* src;
+      const HChar* src;
       UInt otag;
       UInt ecu;
       ExeContext* origin_ec;

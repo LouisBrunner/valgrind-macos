@@ -243,7 +243,7 @@ typedef
 
 #define SIZE_T_0x1      ((SizeT)0x1)
 
-static char* probably_your_fault =
+static const char* probably_your_fault =
    "This is probably caused by your program erroneously writing past the\n"
    "end of a heap block and corrupting heap metadata.  If you fix any\n"
    "invalid writes reported by Memcheck, this assertion failure will\n"
@@ -1280,7 +1280,7 @@ typedef struct {
 
 static AnCC anCCs[N_AN_CCS];
 
-static Int cmp_AnCC_by_vol ( void* v1, void* v2 ) {
+static Int cmp_AnCC_by_vol ( const void* v1, const void* v2 ) {
    AnCC* ancc1 = (AnCC*)v1;
    AnCC* ancc2 = (AnCC*)v2;
    if (ancc1->nBytes < ancc2->nBytes) return -1;

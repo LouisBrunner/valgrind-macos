@@ -41,7 +41,7 @@ struct _XArray {
    void* (*alloc) ( const HChar*, SizeT ); /* alloc fn (nofail) */
    const HChar* cc;                 /* cost centre for alloc */
    void  (*free) ( void* );         /* free fn */
-   Int   (*cmpFn) ( void*, void* ); /* cmp fn (may be NULL) */
+   Int   (*cmpFn) ( const void*, const void* ); /* cmp fn (may be NULL) */
    Word  elemSzB;   /* element size in bytes */
    void* arr;       /* pointer to elements */
    Word  usedsizeE; /* # used elements in arr */
@@ -125,7 +125,7 @@ void VG_(deleteXA) ( XArray* xao )
    xa->free(xa);
 }
 
-void VG_(setCmpFnXA) ( XArray* xao, Int (*compar)(void*,void*) )
+void VG_(setCmpFnXA) ( XArray* xao, XACmpFn_t compar )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
@@ -178,7 +178,7 @@ static inline void ensureSpaceXA ( struct _XArray* xa )
    }
 }
 
-Word VG_(addToXA) ( XArray* xao, void* elem )
+Word VG_(addToXA) ( XArray* xao, const void* elem )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
@@ -195,7 +195,7 @@ Word VG_(addToXA) ( XArray* xao, void* elem )
    return xa->usedsizeE-1;
 }
 
-Word VG_(addBytesToXA) ( XArray* xao, void* bytesV, Word nbytes )
+Word VG_(addBytesToXA) ( XArray* xao, const void* bytesV, Word nbytes )
 {
    Word r, i;
    struct _XArray* xa = (struct _XArray*)xao;
@@ -225,9 +225,9 @@ void VG_(sortXA) ( XArray* xao )
    xa->sorted = True;
 }
 
-Bool VG_(lookupXA_UNSAFE) ( XArray* xao, void* key,
+Bool VG_(lookupXA_UNSAFE) ( XArray* xao, const void* key,
                             /*OUT*/Word* first, /*OUT*/Word* last,
-                            Int(*cmpFn)(void*,void*) )
+                            Int(*cmpFn)(const void*, const void*) )
 {
    Word  lo, mid, hi, cres;
    void* midv;
@@ -264,7 +264,7 @@ Bool VG_(lookupXA_UNSAFE) ( XArray* xao, void* key,
    }
 }
 
-Bool VG_(lookupXA) ( XArray* xao, void* key,
+Bool VG_(lookupXA) ( XArray* xao, const void* key,
                      /*OUT*/Word* first, /*OUT*/Word* last )
 {
    struct _XArray* xa = (struct _XArray*)xao;

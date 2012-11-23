@@ -160,7 +160,7 @@ typedef
       kwd_report_none,
       kwd_report_all,
       kwd_report_duplicated_matches } kwd_report_error;
-extern Int VG_(keyword_id) (HChar* keywords, HChar* input_word, 
+extern Int VG_(keyword_id) (const HChar* keywords, const HChar* input_word, 
                             kwd_report_error report);
 
 /* Extract an address and (optionally) a size from the string

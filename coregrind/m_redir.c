@@ -801,7 +801,7 @@ void generate_and_add_actives (
    }
    if (sp) {
       const HChar** strp;
-      HChar* v = "valgrind:  ";
+      const HChar* v = "valgrind:  ";
       vg_assert(sp->mark);
       vg_assert(!sp->done);
       vg_assert(sp->mandatory);
@@ -846,7 +846,7 @@ void generate_and_add_actives (
    conflicting bindings. */
 static void maybe_add_active ( Active act )
 {
-   HChar*  what    = NULL;
+   const HChar*  what = NULL;
    Active* old     = NULL;
    Bool    add_act = False;
 
@@ -1129,9 +1129,9 @@ static void add_hardwired_active ( Addr from, Addr to )
    entry that holds these initial specs. */
 
 __attribute__((unused)) /* not used on all platforms */
-static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt, 
-                                 Addr   to_addr,
-                                 const HChar** mandatory )
+static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt, 
+                                Addr   to_addr,
+                                const HChar** mandatory )
 {
    Spec* spec = dinfo_zalloc("redir.ahs.1", sizeof(Spec));
    vg_assert(spec);
@@ -1146,8 +1146,8 @@ static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt,
    vg_assert(topSpecs->next == NULL);
    vg_assert(topSpecs->seginfo == NULL);
    /* FIXED PARTS */
-   spec->from_sopatt = sopatt;
-   spec->from_fnpatt = fnpatt;
+   spec->from_sopatt = (HChar *)sopatt;
+   spec->from_fnpatt = (HChar *)fnpatt;
    spec->to_addr     = to_addr;
    spec->isWrap      = False;
    spec->mandatory   = mandatory;
@@ -1544,7 +1544,7 @@ static void handle_require_text_symbols ( DebugInfo* di )
       }
 
       if (!found) {
-         HChar* v = "valgrind:  ";
+         const HChar* v = "valgrind:  ";
          VG_(printf)("\n");
          VG_(printf)(
          "%sFatal error at when loading library with soname\n", v);

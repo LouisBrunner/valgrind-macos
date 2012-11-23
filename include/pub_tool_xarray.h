@@ -46,6 +46,8 @@
 /* It's an abstract type.  Bwaha. */
 typedef  struct _XArray  XArray;
 
+typedef Int (*XACmpFn_t)(const void *, const void *);
+
 /* Create new XArray, using given allocation and free function, and
    for elements of the specified size.  Alloc fn must not fail (that
    is, if it returns it must have succeeded.) */
@@ -60,17 +62,17 @@ extern void VG_(deleteXA) ( XArray* );
 /* Set the comparison function for this XArray.  This clears an
    internal 'array is sorted' flag, which means you must call sortXA
    before making further queries with lookupXA. */
-extern void VG_(setCmpFnXA) ( XArray*, Int (*compar)(void*,void*) );
+extern void VG_(setCmpFnXA) ( XArray*, XACmpFn_t);
 
 /* Add an element to an XArray.  Element is copied into the XArray.
    Index at which it was added is returned.  Note this will be
    invalidated if the array is later sortXA'd. */
-extern Word VG_(addToXA) ( XArray*, void* elem );
+extern Word VG_(addToXA) ( XArray*, const void* elem );
 
 /* Add a sequence of bytes to an XArray of bytes.  Asserts if nbytes
    is negative or the array's element size is not 1.  Returns the
    index at which the first byte was added. */
-extern Word VG_(addBytesToXA) ( XArray* xao, void* bytesV, Word nbytes );
+extern Word VG_(addBytesToXA) ( XArray* xao, const void* bytesV, Word nbytes );
 
 /* Sort an XArray using its comparison function, if set; else bomb.
    Probably not a stable sort w.r.t. equal elements module cmpFn. */
@@ -81,7 +83,7 @@ extern void VG_(sortXA) ( XArray* );
    value found.  If any values are found, return True, else return
    False, and don't change *first or *last.  first and/or last may be
    NULL.  Bomb if the array is not sorted. */
-extern Bool VG_(lookupXA) ( XArray*, void* key, 
+extern Bool VG_(lookupXA) ( XArray*, const void* key, 
                             /*OUT*/Word* first, /*OUT*/Word* last );
 
 /* A version of VG_(lookupXA) in which you can specify your own
@@ -92,9 +94,9 @@ extern Bool VG_(lookupXA) ( XArray*, void* key,
    VG_(lookupXA), which refuses to do anything (asserts) unless the
    array has first been sorted using the same comparison function as
    is being used for the lookup. */
-extern Bool VG_(lookupXA_UNSAFE) ( XArray* xao, void* key,
+extern Bool VG_(lookupXA_UNSAFE) ( XArray* xao, const void* key,
                                    /*OUT*/Word* first, /*OUT*/Word* last,
-                                   Int(*cmpFn)(void*,void*) );
+                                   XACmpFn_t cmpFn );
 
 /* How elements are there in this XArray now? */
 extern Word VG_(sizeXA) ( XArray* );

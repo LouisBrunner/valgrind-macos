@@ -179,7 +179,7 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
 /* Like qsort().  The name VG_(ssort) is for historical reasons -- it used
  * to be a shell sort, but is now a quicksort. */
 extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
-                        Int (*compar)(void*, void*) );
+                        Int (*compar)(const void*, const void*) );
 
 /* Returns the base-2 logarithm of a 32 bit unsigned number.  Returns
  -1 if it is not a power of two.  Nb: VG_(log2)(1) == 0. */

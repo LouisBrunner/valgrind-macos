@@ -316,7 +316,7 @@ Bool have_avx(void)
    return (vai.hwcaps & VEX_HWCAPS_AMD64_AVX ? True : False);
 }
 static
-char* target_xml (Bool shadow_mode)
+const char* target_xml (Bool shadow_mode)
 {
    if (shadow_mode) {
 #if defined(VGO_linux)

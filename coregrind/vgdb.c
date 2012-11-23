@@ -459,7 +459,7 @@ char *status_image (int status)
    If pid is reported as being dead/exited, waitstopped will return False.
 */
 static
-Bool waitstopped (int pid, int signal_expected, char *msg)
+Bool waitstopped (int pid, int signal_expected, const char *msg)
 {
    pid_t p;
    int status = 0;
@@ -505,7 +505,7 @@ Bool waitstopped (int pid, int signal_expected, char *msg)
    Returns True if succesful, False otherwise.
    msg is used in tracing and error reporting. */
 static
-Bool stop (int pid, char *msg)
+Bool stop (int pid, const char *msg)
 {
    long res;
 
@@ -524,7 +524,7 @@ Bool stop (int pid, char *msg)
    Returns True if succesful, False otherwise.
    msg is used in tracing and error reporting. */
 static
-Bool attach (int pid, char *msg)
+Bool attach (int pid, const char *msg)
 {
    long res;
    static Bool output_error = True;
@@ -1267,7 +1267,7 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
 }
 
 static
-int open_fifo (char* name, int flags, char* desc)
+int open_fifo (const char* name, int flags, const char* desc)
 {
    int fd;
    DEBUG(1, "opening %s %s\n", name, desc);
@@ -1319,7 +1319,7 @@ void acquire_lock (int fd, int valgrind_pid)
    Returns the nr of characters read, -1 if error.
    desc is a string used in tracing */
 static
-int read_buf (int fd, char* buf, char* desc)
+int read_buf (int fd, char* buf, const char* desc)
 {
    int nrread;
    DEBUG(2, "reading %s\n", desc);
@@ -1339,7 +1339,7 @@ int read_buf (int fd, char* buf, char* desc)
    valgrind process that there is new data.
    Returns True if write is ok, False if there was a problem. */
 static
-Bool write_buf(int fd, char* buf, int size, char* desc, Bool notify)
+Bool write_buf(int fd, char* buf, int size, const char* desc, Bool notify)
 {
    int nrwritten;
    int nrw;
@@ -1366,7 +1366,7 @@ typedef enum {
    TO_PID } ConnectionKind;
 static const int NumConnectionKind = TO_PID+1;
 static 
-char *ppConnectionKind (ConnectionKind con)
+const char *ppConnectionKind (ConnectionKind con)
 {
    switch (con) {
    case FROM_GDB: return "FROM_GDB";
@@ -2033,7 +2033,7 @@ static
 void ptrace_restrictions_msg(void)
 {
 #  ifdef PR_SET_PTRACER
-   char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
+   const char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
    int fd = -1;
    char ptrace_scope = 'X';
    fd = open (ptrace_scope_setting_file, O_RDONLY, 0);
@@ -2279,7 +2279,7 @@ Bool numeric_val(char* arg, int *value)
 
 /* true if arg matches the provided option */
 static
-Bool is_opt(char* arg, char *option)
+Bool is_opt(char* arg, const char *option)
 {
    int option_len = strlen(option);
    if (option[option_len-1] == '=')

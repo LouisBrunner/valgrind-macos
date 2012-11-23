@@ -311,7 +311,7 @@ static void init_alloc_fns(void)
    // Create the list, and add the default elements.
    alloc_fns = VG_(newXA)(VG_(malloc), "ms.main.iaf.1",
                                        VG_(free), sizeof(HChar*));
-   #define DO(x)  { HChar* s = x; VG_(addToXA)(alloc_fns, &s); }
+   #define DO(x)  { const HChar* s = x; VG_(addToXA)(alloc_fns, &s); }
 
    // Ordered roughly according to (presumed) frequency.
    // Nb: The C++ "operator new*" ones are overloadable.  We include them
@@ -361,7 +361,7 @@ static void init_ignore_fns(void)
 }
 
 // Determines if the named function is a member of the XArray.
-static Bool is_member_fn(XArray* fns, HChar* fnname)
+static Bool is_member_fn(XArray* fns, const HChar* fnname)
 {
    HChar** fn_ptr;
    Int i;
@@ -660,10 +660,10 @@ static void add_child_xpt(XPt* parent, XPt* child)
 }
 
 // Reverse comparison for a reverse sort -- biggest to smallest.
-static Int SXPt_revcmp_szB(void* n1, void* n2)
+static Int SXPt_revcmp_szB(const void* n1, const void* n2)
 {
-   SXPt* sxpt1 = *(SXPt**)n1;
-   SXPt* sxpt2 = *(SXPt**)n2;
+   const SXPt* sxpt1 = *(const SXPt**)n1;
+   const SXPt* sxpt2 = *(const SXPt**)n2;
    return ( sxpt1->szB < sxpt2->szB ?  1
           : sxpt1->szB > sxpt2->szB ? -1
           :                            0);
@@ -2172,7 +2172,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
    // of the stack frame -- this function is recursive.  Obviously this
    // now means its contents are trashed across the recursive call.
    static HChar ip_desc_array[BUF_LEN];
-   HChar* ip_desc = ip_desc_array;
+   const HChar* ip_desc = ip_desc_array;
 
    switch (sxpt->tag) {
     case SigSXPt:
@@ -2186,6 +2186,10 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
                );
          } else {
             // XXX: --alloc-fns?
+
+            // Nick thinks this case cannot happen. ip_desc_array would be
+            // conceptually uninitialised here. Therefore:
+            tl_assert2(0, "pp_snapshot_SXPt: unexpected");
          }
       } else {
          // If it's main-or-below-main, we (if appropriate) ignore everything
@@ -2198,7 +2202,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
          }
 
          // We need the -1 to get the line number right, But I'm not sure why.
-         ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc, BUF_LEN);
+         ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc_array, BUF_LEN);
       }
       
       // Do the non-ip_desc part first...

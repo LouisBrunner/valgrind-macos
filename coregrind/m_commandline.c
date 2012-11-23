@@ -53,7 +53,7 @@ static void add_string ( XArray* /* of HChar* */xa, HChar* str )
 // Note that we deliberately don't free the malloc'd memory.  See
 // comment at call site.
 
-static HChar* read_dot_valgrindrc ( HChar* dir )
+static HChar* read_dot_valgrindrc ( const HChar* dir )
 {
    Int    n;
    SysRes fd;

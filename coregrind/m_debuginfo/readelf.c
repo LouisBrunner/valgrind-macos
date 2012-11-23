@@ -149,7 +149,7 @@ void show_raw_elf_symbol ( Int i,
                            ElfXX_Sym* sym, const HChar* sym_name, Addr sym_svma,
                            Bool ppc64_linux_format )
 {
-   HChar* space = ppc64_linux_format ? "                  " : "";
+   const HChar* space = ppc64_linux_format ? "                  " : "";
    VG_(printf)("raw symbol [%4d]: ", i);
    switch (ELFXX_ST_BIND(sym->st_info)) {
       case STB_LOCAL:  VG_(printf)("LOC "); break;

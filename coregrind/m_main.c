@@ -1161,8 +1161,8 @@ static void print_preamble ( Bool logging_to_fd,
                              const HChar* toolname )
 {
    Int    i;
-   HChar* xpre  = VG_(clo_xml) ? "  <line>" : "";
-   HChar* xpost = VG_(clo_xml) ? "</line>" : "";
+   const HChar* xpre  = VG_(clo_xml) ? "  <line>" : "";
+   const HChar* xpost = VG_(clo_xml) ? "</line>" : "";
    UInt (*umsg_or_xml)( const HChar*, ... )
       = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
 

@@ -59,7 +59,7 @@ static char *to_gdb = NULL;
 static char *shared_mem = NULL;
 
 static
-int open_fifo (char *side, char *path, int flags)
+int open_fifo (const char *side, const char *path, int flags)
 {
   SysRes o;
   int fd;
@@ -91,7 +91,7 @@ void remote_utils_output_status(void)
 /* Returns 0 if vgdb and connection state looks good,
    otherwise returns an int value telling which check failed. */
 static
-int vgdb_state_looks_bad(char* where)
+int vgdb_state_looks_bad(const char* where)
 {
    if (VG_(kill)(shared->vgdb_pid, 0) != 0)
       return 1; // vgdb process does not exist anymore.
@@ -114,7 +114,7 @@ void set_ptracer(void)
 {
 #ifdef PR_SET_PTRACER
    SysRes o;
-   char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
+   const char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
    int fd;
    char ptrace_scope;
    int ret;
@@ -362,7 +362,7 @@ void sync_gdb_connection(void)
 }
 
 static
-char * ppFinishReason (FinishReason reason)
+const char * ppFinishReason (FinishReason reason)
 {
    switch (reason) {
    case orderly_finish:    return "orderly_finish";
@@ -438,7 +438,7 @@ void error_poll_cond(void)
    gives a small value to --vgdb-poll. So, the function avoids
    doing repetitively system calls by rather looking at the
    counter values maintained in shared memory by vgdb. */
-int remote_desc_activity(char *msg)
+int remote_desc_activity(const char *msg)
 {
    int ret;
    const int looking_at = shared->written_by_vgdb;

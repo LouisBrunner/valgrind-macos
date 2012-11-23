@@ -298,7 +298,7 @@ static void free_DebugInfo ( DebugInfo* di )
 */
 static void discard_DebugInfo ( DebugInfo* di )
 {
-   HChar* reason = "munmap";
+   const HChar* reason = "munmap";
 
    DebugInfo** prev_next_ptr = &debugInfo_list;
    DebugInfo*  curr          =  debugInfo_list;
@@ -1765,7 +1765,7 @@ Bool VG_(get_filename_linenum) ( Addr a,
    Therefore specify "*" to search all the objects.  On TOC-afflicted
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
-Bool VG_(lookup_symbol_SLOW)(HChar* sopatt, HChar* name, 
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, 
                              Addr* pEnt, Addr* pToc)
 {
    Bool     require_pToc = False;
@@ -1909,8 +1909,8 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf)
    if (VG_(clo_xml)) {
 
       Bool   human_readable = True;
-      HChar* maybe_newline  = human_readable ? "\n      " : "";
-      HChar* maybe_newline2 = human_readable ? "\n    "   : "";
+      const HChar* maybe_newline  = human_readable ? "\n      " : "";
+      const HChar* maybe_newline2 = human_readable ? "\n    "   : "";
 
       /* Print in XML format, dumping in as much info as we know.
          Ensure all tags are balanced even if the individual strings

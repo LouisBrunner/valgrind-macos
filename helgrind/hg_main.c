@@ -1951,9 +1951,9 @@ static void evh__HG_PTHREAD_MUTEX_LOCK_PRE ( ThreadId tid,
          this is a real lock operation (not a speculative "tryLock"
          kind of thing).  Duh.  Deadlock coming up; but at least
          produce an error message. */
-      HChar* errstr = "Attempt to re-lock a "
-                      "non-recursive lock I already hold";
-      HChar* auxstr = "Lock was previously acquired";
+      const HChar* errstr = "Attempt to re-lock a "
+                            "non-recursive lock I already hold";
+      const HChar* auxstr = "Lock was previously acquired";
       if (lk->acquired_at) {
          HG_(record_error_Misc_w_aux)( thr, errstr, auxstr, lk->acquired_at );
       } else {

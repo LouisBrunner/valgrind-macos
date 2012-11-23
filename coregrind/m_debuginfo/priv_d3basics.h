@@ -562,10 +562,10 @@ typedef enum
   }
   DW_OP;
 
-HChar* ML_(pp_DW_children) ( DW_children hashch );
-HChar* ML_(pp_DW_TAG)      ( DW_TAG tag );
-HChar* ML_(pp_DW_FORM)     ( DW_FORM form );
-HChar* ML_(pp_DW_AT)       ( DW_AT attr );
+const HChar* ML_(pp_DW_children) ( DW_children hashch );
+const HChar* ML_(pp_DW_TAG)      ( DW_TAG tag );
+const HChar* ML_(pp_DW_FORM)     ( DW_FORM form );
+const HChar* ML_(pp_DW_AT)       ( DW_AT attr );
 
 
 /* --- To do with evaluation of Dwarf expressions --- */

@@ -370,7 +370,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
          if (state_machine_regs.is_stmt) {
             if (state_machine_regs.last_address) {
                Bool inRange = False;
-               HChar* filename
+               const HChar* filename
                   = (HChar*)index_WordArray( &inRange, filenames, 
                                              state_machine_regs.last_file);
                if (!inRange || !filename)
@@ -2734,7 +2734,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
    UWord    uw;
    CfiUnop  uop;
    CfiBinop bop;
-   HChar*   opname;
+   const HChar* opname;
 
    Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
@@ -3737,7 +3737,7 @@ void ML_(read_callframe_info_dwarf3)
           Bool is_ehframe )
 {
    Int    nbytes;
-   HChar* how = NULL;
+   const HChar* how = NULL;
    Int    n_CIEs = 0;
    UChar* data = frame_image;
    UWord  cfsi_used_orig;

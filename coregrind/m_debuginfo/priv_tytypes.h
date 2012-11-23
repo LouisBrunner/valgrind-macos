@@ -146,7 +146,7 @@ Bool ML_(TyEnt__is_type)( TyEnt* );
 void ML_(pp_TyEnt)( TyEnt* );
 
 /* Print a whole XArray of TyEnts, debug-style */
-void ML_(pp_TyEnts)( XArray* tyents, HChar* who );
+void ML_(pp_TyEnts)( XArray* tyents, const HChar* who );
 
 /* Print a TyEnt, C style, chasing stuff as necessary. */
 void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
@@ -154,11 +154,11 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
 
 /* Generates a total ordering on TyEnts based only on their .cuOff
    fields. */
-Word ML_(TyEnt__cmp_by_cuOff_only) ( TyEnt* te1, TyEnt* te2 );
+Word ML_(TyEnt__cmp_by_cuOff_only) ( const TyEnt* te1, const TyEnt* te2 );
 
 /* Generates a total ordering on TyEnts based on everything except
    their .cuOff fields. */
-Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 );
+Word ML_(TyEnt__cmp_by_all_except_cuOff) ( const TyEnt* te1, const TyEnt* te2 );
 
 /* Free up all directly or indirectly heap-allocated stuff attached to
    this TyEnt, and set its tag to Te_EMPTY.  The .cuOff field is

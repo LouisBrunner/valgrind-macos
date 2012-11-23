@@ -1269,7 +1269,8 @@ UInt VG_(gdb_printf) ( const HChar *format, ... )
    return b.ret;
 }
 
-Int VG_(keyword_id) (HChar* keywords, HChar* input_word, kwd_report_error report)
+Int VG_(keyword_id) (const HChar* keywords, const HChar* input_word,
+                     kwd_report_error report)
 {
    const Int il = (input_word == NULL ? 0 : VG_(strlen) (input_word));
    HChar  iw[il+1];

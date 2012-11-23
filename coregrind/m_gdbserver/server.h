@@ -76,7 +76,7 @@ extern void monitor_output (char *s);
    returns 2 if remote_desc_activity detected the connection has been
              lost and should be reopened.
    msg is used for debug logging.*/
-extern int remote_desc_activity(char *msg);
+extern int remote_desc_activity(const char *msg);
 
 /* output some status of gdbserver communication */
 extern void remote_utils_output_status(void);
@@ -92,7 +92,7 @@ extern void remote_finish(FinishReason reason);
 /* If Valgrind sink was changed by gdbserver:
       Resets the valgrind sink to before the changes done by gdbserver,
       and does VG_(umsg). If info != NULL, info added in VG_(usmg). */
-extern void reset_valgrind_sink(char* info);
+extern void reset_valgrind_sink(const char* info);
 
 /* For ARM usage.
    Guesses if pc is a thumb pc.
@@ -312,14 +312,14 @@ int remote_escape_output (const gdb_byte *buffer, int len,
 enum target_signal target_signal_from_host (int hostsig);
 int target_signal_to_host_p (enum target_signal oursig);
 int target_signal_to_host (enum target_signal oursig);
-char *target_signal_to_name (enum target_signal);
+const char *target_signal_to_name (enum target_signal);
 
 /* Functions from utils.c */
 
 /* error is like VG_(umsg), then VG_MINIMAL_LONGJMP to gdbserver toplevel. */
 void error (const char *string,...) ATTR_NORETURN ATTR_FORMAT (printf, 1, 2);
 /* first output a description of the error inside sr, then like VG_(umsg). */
-void sr_perror (SysRes sr,char *string,...) ATTR_FORMAT (printf, 2, 3);
+void sr_perror (SysRes sr,const char *string,...) ATTR_FORMAT (printf, 2, 3);
 /* fatal is like VG_(umsg), then exit(1). */
 void fatal (const char *string,...) ATTR_NORETURN ATTR_FORMAT (printf, 1, 2);
 /* warning is like VG_(umsg). */

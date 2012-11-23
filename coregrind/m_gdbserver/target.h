@@ -63,7 +63,7 @@ extern void initialize_shadow_low (Bool shadow_mode);
    with the shadow registers
    else returns the xml target description only for
    the normal registers. */
-extern char* valgrind_target_xml (Bool shadow_mode);
+extern const char* valgrind_target_xml (Bool shadow_mode);
 
 
 /* -------------------------------------------------------------------------- */

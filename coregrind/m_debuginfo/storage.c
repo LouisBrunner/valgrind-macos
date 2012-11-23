@@ -59,7 +59,7 @@
 /* Show a non-fatal debug info reading error.  Use vg_panic if
    terminal.  'serious' errors are shown regardless of the
    verbosity setting. */
-void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
+void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg )
 {
    /* XML mode hides everything :-( */
    if (VG_(clo_xml))
@@ -215,7 +215,7 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    a chunking memory allocator rather than reallocating, so the
    pointers are stable.
 */
-HChar* ML_(addStr) ( struct _DebugInfo* di, HChar* str, Int len )
+HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
 {
    struct strchunk *chunk;
    Int    space_needed;
@@ -725,7 +725,7 @@ Word ML_(cmp_for_DiAddrRange_range) ( const void* keyV,
 }
 
 static
-void show_scope ( OSet* /* of DiAddrRange */ scope, HChar* who )
+void show_scope ( OSet* /* of DiAddrRange */ scope, const HChar* who )
 {
    DiAddrRange* range;
    VG_(printf)("Scope \"%s\" = {\n", who);
@@ -910,7 +910,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    Bool       all;
    TyEnt*     ent;
    MaybeULong mul;
-   HChar*     badness;
+   const HChar* badness;
 
    tl_assert(di && di->admin_tyents);
 
@@ -1131,10 +1131,10 @@ static void canonicaliseVarInfo ( struct _DebugInfo* di )
    facilitates using binary search to map addresses to symbols when we
    come to query the table.
 */
-static Int compare_DiSym ( void* va, void* vb ) 
+static Int compare_DiSym ( const void* va, const void* vb ) 
 {
-   DiSym* a = (DiSym*)va;
-   DiSym* b = (DiSym*)vb;
+   const DiSym* a = va;
+   const DiSym* b = vb;
    if (a->addr < b->addr) return -1;
    if (a->addr > b->addr) return  1;
    return 0;
@@ -1608,10 +1608,10 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    ranges do not overlap.  This facilitates using binary search to map
    addresses to locations when we come to query the table.
 */
-static Int compare_DiLoc ( void* va, void* vb ) 
+static Int compare_DiLoc ( const void* va, const void* vb ) 
 {
-   DiLoc* a = (DiLoc*)va;
-   DiLoc* b = (DiLoc*)vb;
+   const DiLoc* a = va;
+   const DiLoc* b = vb;
    if (a->addr < b->addr) return -1;
    if (a->addr > b->addr) return  1;
    return 0;
@@ -1694,10 +1694,10 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    as to facilitate rapidly skipping this SegInfo when looking for an
    address which falls outside that range.
 */
-static Int compare_DiCfSI ( void* va, void* vb )
+static Int compare_DiCfSI ( const void* va, const void* vb )
 {
-   DiCfSI* a = (DiCfSI*)va;
-   DiCfSI* b = (DiCfSI*)vb;
+   const DiCfSI* a = va;
+   const DiCfSI* b = vb;
    if (a->base < b->base) return -1;
    if (a->base > b->base) return  1;
    return 0;

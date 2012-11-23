@@ -71,7 +71,7 @@ static void bad_subop ( ThreadId              tid,
                         /*MOD*/SyscallArgs*   args,
                         /*OUT*/SyscallStatus* status,
                         /*OUT*/UWord*         flags,
-                        const char*           hypercall,
+                        const HChar*           hypercall,
                         UWord                 subop)
 {
    VG_(dmsg)("WARNING: unhandled %s subop: %ld\n",
@@ -107,7 +107,7 @@ PRE(memory_op)
    case VKI_XENMEM_populate_physmap: {
       struct xen_memory_reservation *memory_reservation =
          (struct xen_memory_reservation *)ARG2;
-      char *which;
+      const HChar *which;
 
       switch (ARG1) {
       case VKI_XENMEM_increase_reservation:

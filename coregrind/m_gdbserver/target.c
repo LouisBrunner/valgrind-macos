@@ -102,16 +102,17 @@ void valgrind_update_threads (int pid)
 static
 struct reg* build_shadow_arch (struct reg *reg_defs, int n) {
    int i, r;
-   static char *postfix[3] = { "", "s1", "s2" };
+   static const char *postfix[3] = { "", "s1", "s2" };
    struct reg *new_regs = malloc(3 * n * sizeof(reg_defs[0]));
    int reg_set_len = reg_defs[n-1].offset + reg_defs[n-1].size;
 
    for (i = 0; i < 3; i++) {
       for (r = 0; r < n; r++) {
-         new_regs[i*n + r].name = malloc(strlen(reg_defs[r].name) 
-                                         + strlen (postfix[i]) + 1);
-         strcpy (new_regs[i*n + r].name, reg_defs[r].name);
-         strcat (new_regs[i*n + r].name, postfix[i]);
+         char *regname = malloc(strlen(reg_defs[r].name) 
+                                + strlen (postfix[i]) + 1);
+         strcpy (regname, reg_defs[r].name);
+         strcat (regname, postfix[i]);
+         new_regs[i*n + r].name = regname;
          new_regs[i*n + r].offset = i*reg_set_len + reg_defs[r].offset;
          new_regs[i*n + r].size = reg_defs[r].size;
          dlog(1,
@@ -519,7 +520,7 @@ int valgrind_point (Bool insert, char type, CORE_ADDR addr, int len)
       return 1; /* error or unsupported */
 }
 
-char* valgrind_target_xml (Bool shadow_mode)
+const char* valgrind_target_xml (Bool shadow_mode)
 {
    return (*the_low_target.target_xml) (shadow_mode);
 }

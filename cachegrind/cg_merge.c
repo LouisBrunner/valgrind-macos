@@ -111,7 +111,7 @@ WordFM* dopyFM ( WordFM* fm, Word(*dopyK)(Word), Word(*dopyV)(Word) );
 //------------------------------------------------------------------//
 
 
-static char* argv0 = "cg_merge";
+static const char* argv0 = "cg_merge";
 
 /* Keep track of source filename/line no so as to be able to
    print decent error messages. */
@@ -129,7 +129,7 @@ static void printSrcLoc ( SOURCE* s )
 }
 
 __attribute__((noreturn))
-static void mallocFail ( SOURCE* s, char* who )
+static void mallocFail ( SOURCE* s, const char* who )
 {
    fprintf(stderr, "%s: out of memory in %s\n", argv0, who );
    printSrcLoc( s );
@@ -137,7 +137,7 @@ static void mallocFail ( SOURCE* s, char* who )
 }
 
 __attribute__((noreturn))
-static void parseError ( SOURCE* s, char* msg )
+static void parseError ( SOURCE* s, const char* msg )
 {
    fprintf(stderr, "%s: parse error: %s\n", argv0, msg );
    printSrcLoc( s );
@@ -145,7 +145,7 @@ static void parseError ( SOURCE* s, char* msg )
 }
 
 __attribute__((noreturn))
-static void barf ( SOURCE* s, char* msg )
+static void barf ( SOURCE* s, const char* msg )
 {
    fprintf(stderr, "%s: %s\n", argv0, msg );
    printSrcLoc( s );
@@ -186,12 +186,12 @@ static Bool readline ( SOURCE* s )
    return line[0] != 0;
 }
 
-static Bool streqn ( char* s1, char* s2, size_t n )
+static Bool streqn ( const char* s1, const char* s2, size_t n )
 {
    return 0 == strncmp(s1, s2, n);
 }
 
-static Bool streq ( char* s1, char* s2 )
+static Bool streq ( const char* s1, const char* s2 )
 {
    return 0 == strcmp(s1, s2 );
 }
@@ -534,7 +534,7 @@ static Bool addCountsToMap ( SOURCE* s,
 static
 void handle_counts ( SOURCE* s,
                      CacheProfFile* cpf, 
-                     char* fi, char* fn, char* newCountsStr )
+                     const char* fi, const char* fn, char* newCountsStr )
 {
    WordFM* countsMap;
    Bool    freeNewCounts;
@@ -604,10 +604,8 @@ static CacheProfFile* parse_CacheProfFile ( SOURCE* s )
    int            n_tmp_desclines = 0;
    CacheProfFile* cpf;
    Counts*        summaryRead; 
-   char*          curr_fn_init = "???";
-   char*          curr_fl_init = "???";
-   char*          curr_fn      = curr_fn_init;
-   char*          curr_fl      = curr_fl_init;
+   char*          curr_fn = strdup("???");
+   char*          curr_fl = strdup("???");
 
    cpf = new_CacheProfFile( NULL, NULL, NULL, 0, NULL, NULL, NULL );
    if (cpf == NULL)
@@ -686,15 +684,13 @@ static CacheProfFile* parse_CacheProfFile ( SOURCE* s )
       }
       else
       if (streqn(line, "fn=", 3)) {
-         if (curr_fn != curr_fn_init)
-            free(curr_fn);
+         free(curr_fn);
          curr_fn = strdup(line+3);
          continue;
       }
       else
       if (streqn(line, "fl=", 3)) {
-         if (curr_fl != curr_fl_init)
-            free(curr_fl);
+         free(curr_fl);
          curr_fl = strdup(line+3);
          continue;
       }
@@ -742,10 +738,8 @@ static CacheProfFile* parse_CacheProfFile ( SOURCE* s )
       cpf->summary_line = NULL;
    }
 
-   if (curr_fn != curr_fn_init)
-      free(curr_fn);
-   if (curr_fl != curr_fl_init)
-      free(curr_fl);
+   free(curr_fn);
+   free(curr_fl);
 
    // All looks OK
    return cpf;

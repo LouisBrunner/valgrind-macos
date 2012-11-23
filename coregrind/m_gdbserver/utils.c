@@ -26,7 +26,7 @@
 
 /* Print the system error message for sr.
    Then print the rest of the args. */
-void sr_perror (SysRes sr,char *string,...)
+void sr_perror (SysRes sr, const char *string,...)
 {
    va_list args;
    if (sr_isError (sr))

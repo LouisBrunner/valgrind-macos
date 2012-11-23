@@ -53,7 +53,7 @@ VG_MINIMAL_JMP_BUF(toplevel);
    or -1 otherwise.  */
 
 static
-int decode_xfer_read (char *buf, char **annex, CORE_ADDR *ofs, unsigned int *len)
+int decode_xfer_read (char *buf, const char **annex, CORE_ADDR *ofs, unsigned int *len)
 {
    /* Extract and NUL-terminate the annex.  */
    *annex = buf;
@@ -95,7 +95,7 @@ static OutputSink initial_valgrind_sink;
 static Bool command_output_to_log = False;
 /* True <=> command output goes to log instead of gdb */
 
-void reset_valgrind_sink(char *info)
+void reset_valgrind_sink(const char *info)
 {
    if (VG_(log_output_sink).fd != initial_valgrind_sink.fd
        && initial_valgrind_sink_saved) {
@@ -106,7 +106,7 @@ void reset_valgrind_sink(char *info)
 }
 
 static
-void kill_request (char *msg)
+void kill_request (const char *msg)
 {
    VG_(umsg) ("%s", msg);
    remote_close();
@@ -127,7 +127,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    char s[strlen(mon)+1]; /* copy for strtok_r */
    char* wcmd;
    HChar* ssaveptr;
-   char* endptr;
+   const char* endptr;
    int   kwdid;
    int int_value;
 
@@ -200,7 +200,9 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
             int_value = 0;
             endptr = "empty"; /* to report an error below */
          } else {
-            int_value = strtol (wcmd, &endptr, 10);
+            HChar *the_end;
+            int_value = strtol (wcmd, &the_end, 10);
+            endptr = the_end;
          }
          if (*endptr != '\0') {
             VG_(gdb_printf) ("missing or malformed integer value\n");
@@ -301,7 +303,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    case  3: /* v.wait */
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       if (wcmd != NULL) {
-         int_value = strtol (wcmd, &endptr, 10);
+         int_value = strtol (wcmd, NULL, 10);
          VG_(gdb_printf) ("gdbserver: continuing in %d ms ...\n", int_value);
          VG_(poll)(NULL, 0, int_value);
       }
@@ -547,7 +549,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
         && strncmp ("qXfer:features:read:", arg_own_buf, 20) == 0) {
       CORE_ADDR ofs;
       unsigned int len, doc_len;
-      char *annex = NULL;
+      const char *annex = NULL;
       // First, the annex is extracted from the packet received.
       // Then, it is replaced by the corresponding file name.
       int fd;
@@ -611,7 +613,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       int n;
       CORE_ADDR ofs;
       unsigned int len;
-      char *annex;
+      const char *annex;
 
       /* Reject any annex; grab the offset and length.  */
       if (decode_xfer_read (arg_own_buf + 16, &annex, &ofs, &len) < 0

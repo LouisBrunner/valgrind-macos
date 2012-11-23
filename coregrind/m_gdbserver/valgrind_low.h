@@ -63,7 +63,7 @@ struct valgrind_target_ops
       including the two shadow registers sets.
       This is mandatory to use the option --vgdb-shadow-registers=yes. 
       Returns NULL if there is no target xml file*/
-   char* (*target_xml) (Bool shadow_mode);
+   const char* (*target_xml) (Bool shadow_mode);
 
 };
 

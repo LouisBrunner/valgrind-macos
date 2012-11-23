@@ -1109,7 +1109,7 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
    IRAtom*  cond;
    IRAtom*  origin;
    void*    fn;
-   HChar*   nm;
+   const HChar* nm;
    IRExpr** args;
    Int      nargs;
 
@@ -5859,7 +5859,7 @@ static IRAtom* gen_load_b ( MCEnv* mce, Int szB,
                             IRAtom* baseaddr, Int offset )
 {
    void*    hFun;
-   HChar*   hName;
+   const HChar* hName;
    IRTemp   bTmp;
    IRDirty* di;
    IRType   aTy   = typeOfIRExpr( mce->sb->tyenv, baseaddr );
@@ -5937,7 +5937,7 @@ static void gen_store_b ( MCEnv* mce, Int szB,
                           IRAtom* guard )
 {
    void*    hFun;
-   HChar*   hName;
+   const HChar* hName;
    IRDirty* di;
    IRType   aTy   = typeOfIRExpr( mce->sb->tyenv, baseaddr );
    IROp     opAdd = aTy == Ity_I32 ? Iop_Add32 : Iop_Add64;

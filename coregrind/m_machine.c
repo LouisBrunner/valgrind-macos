@@ -198,7 +198,8 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
 }
 
 
-static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
+static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
+                                                        const HChar*, Addr))
 {
    VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
 #if defined(VGA_x86)
@@ -333,7 +334,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
 }
 
 
-void VG_(apply_to_GP_regs)(void (*f)(ThreadId, HChar*, UWord))
+void VG_(apply_to_GP_regs)(void (*f)(ThreadId, const HChar*, UWord))
 {
    ThreadId tid;
 

@@ -323,7 +323,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
 }
 
 static
-char* target_xml (Bool shadow_mode)
+const char* target_xml (Bool shadow_mode)
 {
    if (shadow_mode) {
       return "powerpc-altivec32l-valgrind.xml";

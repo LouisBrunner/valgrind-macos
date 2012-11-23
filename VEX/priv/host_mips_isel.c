@@ -2954,10 +2954,10 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
 
             HReg r_dst = lookupIRTemp(env, res);
             if (tyRes == Ity_I32) {
-               addInstr(env, MIPSInstr_Load(4, r_dst, r_addr, mode64));
+               addInstr(env, MIPSInstr_LoadL(4, r_dst, r_addr, mode64));
                return;
             } else if (tyRes == Ity_I64 && mode64) {
-               addInstr(env, MIPSInstr_Load(8, r_dst, r_addr, mode64));
+               addInstr(env, MIPSInstr_LoadL(8, r_dst, r_addr, mode64));
                return;
             }
             /* fallthru */ ;
@@ -2971,12 +2971,12 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
                                          stmt->Ist.LLSC.storedata);
 
             if (tyData == Ity_I32) {
-               addInstr(env, MIPSInstr_Store(4, r_addr, r_src, mode64));
-               addInstr(env, MIPSInstr_LI(r_dst, 0x1));
+               addInstr(env, mk_iMOVds_RR(r_dst, r_src));
+               addInstr(env, MIPSInstr_StoreC(4, r_addr, r_dst, mode64));
                return;
             } else if (tyData == Ity_I64 && mode64) {
-               addInstr(env, MIPSInstr_Store(8, r_addr, r_src, mode64));
-               addInstr(env, MIPSInstr_LI(r_dst, 0x1));
+               addInstr(env, mk_iMOVds_RR(r_dst, r_src));
+               addInstr(env, MIPSInstr_StoreC(8, r_addr, r_dst, mode64));
                return;
             }
             /* fallthru */

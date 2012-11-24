@@ -121,8 +121,8 @@ typedef struct {
 static Word cmp_CodeLoc_LineCC(const void *vloc, const void *vcc)
 {
    Word res;
-   CodeLoc* a = (CodeLoc*)vloc;
-   CodeLoc* b = &(((LineCC*)vcc)->loc);
+   const CodeLoc* a = (const CodeLoc*)vloc;
+   const CodeLoc* b = &(((const LineCC*)vcc)->loc);
 
    res = VG_(strcmp)(a->file, b->file);
    if (0 != res)
@@ -191,7 +191,7 @@ static Int  no_debugs           = 0;
 
 static Word stringCmp( const void* key, const void* elem )
 {
-   return VG_(strcmp)(*(HChar**)key, *(HChar**)elem);
+   return VG_(strcmp)(*(const HChar *const *)key, *(const HChar *const *)elem);
 }
 
 // Get a permanent string;  either pull it out of the string table if it's

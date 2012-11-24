@@ -303,8 +303,8 @@ HChar* VG_(strncpy) ( HChar* dest, const HChar* src, SizeT ndest )
 Int VG_(strcmp) ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
-      if (*(UChar*)s1 < *(UChar*)s2) return -1;
-      if (*(UChar*)s1 > *(UChar*)s2) return 1;
+      if (*(const UChar*)s1 < *(const UChar*)s2) return -1;
+      if (*(const UChar*)s1 > *(const UChar*)s2) return 1;
 
       /* *s1 == *s2 */
       if (*s1 == 0) return 0;
@@ -333,8 +333,8 @@ Int VG_(strncmp) ( const HChar* s1, const HChar* s2, SizeT nmax )
    SizeT n = 0;
    while (True) {
       if (n >= nmax) return 0;
-      if (*(UChar*)s1 < *(UChar*)s2) return -1;
-      if (*(UChar*)s1 > *(UChar*)s2) return 1;
+      if (*(const UChar*)s1 < *(const UChar*)s2) return -1;
+      if (*(const UChar*)s1 > *(const UChar*)s2) return 1;
       
       /* *s1 == *s2 */
       if (*s1 == 0) return 0;
@@ -569,12 +569,12 @@ void* VG_(memmove)(void *dest, const void *src, SizeT sz)
       return dest;
    if (dest < src) {
       for (i = 0; i < sz; i++) {
-         ((UChar*)dest)[i] = ((UChar*)src)[i];
+         ((UChar*)dest)[i] = ((const UChar*)src)[i];
       }
    }
    else if (dest > src) {
       for (i = 0; i < sz; i++) {
-         ((UChar*)dest)[sz-i-1] = ((UChar*)src)[sz-i-1];
+         ((UChar*)dest)[sz-i-1] = ((const UChar*)src)[sz-i-1];
       }
    }
    return dest;

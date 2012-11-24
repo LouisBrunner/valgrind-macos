@@ -134,7 +134,7 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
    }
 
    if (info->argv && info->argv[0] != NULL)
-     info->argv[0] = (HChar *)name;   // FIXME: can argv be const qualified?
+     info->argv[0] = name;
 
    VG_(args_the_exename) = name;
 

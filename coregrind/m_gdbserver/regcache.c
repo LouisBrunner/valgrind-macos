@@ -164,7 +164,7 @@ void registers_to_string (char *buf)
    convert_int_to_ascii (registers, buf, register_bytes);
 }
 
-void registers_from_string (char *buf)
+void registers_from_string (const char *buf)
 {
    int len = strlen (buf);
    unsigned char *registers = get_regcache (current_inferior, 1)->registers;
@@ -235,7 +235,7 @@ void supply_register_from_string (int n, const char *buf, Bool *mod)
 {
    Bool new;
    unsigned char bytes_register[register_size (n)];
-   convert_ascii_to_int ((char *) buf, bytes_register, register_size (n));
+   convert_ascii_to_int (buf, bytes_register, register_size (n));
    VG_(dmemcpy) (register_data_for_supply (n, 0, &new), 
                  bytes_register, register_size (n), mod);
    if (new)

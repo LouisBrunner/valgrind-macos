@@ -362,7 +362,7 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
    if (debuglevel >= 1) {
       DEBUG (1, "Writing ");
       for (i = 0; i < len; i++)
-         PDEBUG (1, "%02x", ((unsigned char*)myaddr)[i]);
+         PDEBUG (1, "%02x", ((const unsigned char*)myaddr)[i]);
       PDEBUG(1, " to %p\n", (void *) memaddr);
    }
    

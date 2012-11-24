@@ -78,11 +78,11 @@
 */
 Bool VG_(generic_match) ( 
         Bool matchAll,
-        void* patt,  SizeT szbPatt,  UWord nPatt,  UWord ixPatt,
-        void* input, SizeT szbInput, UWord nInput, UWord ixInput,
-        Bool (*pIsStar)(void*),
-        Bool (*pIsQuery)(void*),
-        Bool (*pattEQinp)(void*,void*,void*,UWord),
+        const void* patt,  SizeT szbPatt,  UWord nPatt,  UWord ixPatt,
+        const void* input, SizeT szbInput, UWord nInput, UWord ixInput,
+        Bool (*pIsStar)(const void*),
+        Bool (*pIsQuery)(const void*),
+        Bool (*pattEQinp)(const void*,const void*,void*,UWord),
         void* inputCompleter
      );
 

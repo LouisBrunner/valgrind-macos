@@ -44,7 +44,7 @@
 // inputs/outputs of do_exec().
 typedef
    struct {
-      HChar** argv;       // IN: the original argv
+      const HChar** argv;   // IN: the original argv
 
       Addr exe_base;     // INOUT: lowest (allowed) address of exe
       Addr exe_end;      // INOUT: highest (allowed) address

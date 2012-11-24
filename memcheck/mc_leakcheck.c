@@ -246,8 +246,8 @@
 // Compare the MC_Chunks by 'data' (i.e. the address of the block).
 static Int compare_MC_Chunks(const void* n1, const void* n2)
 {
-   const MC_Chunk* mc1 = *(const MC_Chunk**)n1;
-   const MC_Chunk* mc2 = *(const MC_Chunk**)n2;
+   const MC_Chunk* mc1 = *(const MC_Chunk *const *)n1;
+   const MC_Chunk* mc2 = *(const MC_Chunk *const *)n2;
    if (mc1->data < mc2->data) return -1;
    if (mc1->data > mc2->data) return  1;
    return 0;
@@ -834,8 +834,8 @@ static void lc_process_markstack(Int clique)
 
 static Word cmp_LossRecordKey_LossRecord(const void* key, const void* elem)
 {
-   LossRecordKey* a = (LossRecordKey*)key;
-   LossRecordKey* b = &(((LossRecord*)elem)->key);
+   const LossRecordKey* a = key;
+   const LossRecordKey* b = &(((const LossRecord*)elem)->key);
 
    // Compare on states first because that's fast.
    if (a->state < b->state) return -1;
@@ -852,8 +852,8 @@ static Word cmp_LossRecordKey_LossRecord(const void* key, const void* elem)
 
 static Int cmp_LossRecords(const void* va, const void* vb)
 {
-   const LossRecord* lr_a = *(const LossRecord**)va;
-   const LossRecord* lr_b = *(const LossRecord**)vb;
+   const LossRecord* lr_a = *(const LossRecord *const *)va;
+   const LossRecord* lr_b = *(const LossRecord *const *)vb;
    SizeT total_szB_a = lr_a->szB + lr_a->indirect_szB;
    SizeT total_szB_b = lr_b->szB + lr_b->indirect_szB;
 
@@ -1294,7 +1294,7 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
       // memory by explicitly mapping /dev/zero.
       if (seg->kind == SkFileC 
           && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
-         HChar* dev_name = VG_(am_get_filename)( (NSegment*)seg );
+         HChar* dev_name = VG_(am_get_filename)( seg );
          if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
             // Don't skip /dev/zero.
          } else {

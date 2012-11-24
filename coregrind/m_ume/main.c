@@ -224,7 +224,7 @@ static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
       info->interp_name = VG_(strdup)("ume.desf.1", default_interp_name);
       info->interp_args = NULL;
       if (info->argv && info->argv[0] != NULL)
-         info->argv[0] = (HChar *)exe_name;  // FIXME: can argv be const qualified ?
+         info->argv[0] = exe_name;
 
       ret = VG_(do_exec_inner)(info->interp_name, info);
 

@@ -929,7 +929,7 @@ void write_enn (char *buf)
    buf[3] = '\0';
 }
 
-void convert_int_to_ascii (unsigned char *from, char *to, int n)
+void convert_int_to_ascii (const unsigned char *from, char *to, int n)
 {
    int nib;
    int ch;
@@ -944,7 +944,7 @@ void convert_int_to_ascii (unsigned char *from, char *to, int n)
 }
 
 
-void convert_ascii_to_int (char *from, unsigned char *to, int n)
+void convert_ascii_to_int (const char *from, unsigned char *to, int n)
 {
    int nib1, nib2;
    while (n--) {

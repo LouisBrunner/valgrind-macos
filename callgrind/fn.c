@@ -267,7 +267,7 @@ obj_node* CLG_(get_obj_node)(DebugInfo* di)
     UInt         objname_hash;
     const HChar* obj_name;
     
-    obj_name = di ? (HChar*) VG_(DebugInfo_get_filename)(di) : anonymous_obj;
+    obj_name = di ? VG_(DebugInfo_get_filename)(di) : anonymous_obj;
 
     /* lookup in obj hash */
     objname_hash = str_hash(obj_name, N_OBJ_ENTRIES);

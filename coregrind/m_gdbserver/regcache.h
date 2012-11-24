@@ -44,7 +44,7 @@ void registers_to_string (char *buf);
 
 /* Convert a string to register values and fill our register cache.  */
 
-void registers_from_string (char *buf);
+void registers_from_string (const char *buf);
 
 /* Return the size in bytes of a string-encoded register packet.  */
 

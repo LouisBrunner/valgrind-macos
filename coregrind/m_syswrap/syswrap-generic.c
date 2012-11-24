@@ -407,7 +407,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       ok = VG_(am_covered_by_single_free_segment) ( needA, needL );
    }
    if (ok && advised == needA) {
-      ok = VG_(am_extend_map_client)( &d, (NSegment*)old_seg, needL );
+      ok = VG_(am_extend_map_client)( &d, old_seg, needL );
       if (ok) {
          VG_TRACK( new_mem_mmap, needA, needL, 
                                  old_seg->hasR, 
@@ -463,7 +463,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    }
    if (!ok || advised != needA)
       goto eNOMEM;
-   ok = VG_(am_extend_map_client)( &d, (NSegment*)old_seg, needL );
+   ok = VG_(am_extend_map_client)( &d, old_seg, needL );
    if (!ok)
       goto eNOMEM;
    VG_TRACK( new_mem_mmap, needA, needL, 
@@ -1093,7 +1093,7 @@ static Addr do_brk ( Addr newbrk )
       aseg = VG_(am_find_nsegment)( VG_(brk_limit)-1 );
    else
       aseg = VG_(am_find_nsegment)( VG_(brk_limit) );
-   rseg = VG_(am_next_nsegment)( (NSegment*)aseg, True/*forwards*/ );
+   rseg = VG_(am_next_nsegment)( aseg, True/*forwards*/ );
 
    /* These should be assured by setup_client_dataseg in m_main. */
    vg_assert(aseg);
@@ -1121,7 +1121,7 @@ static Addr do_brk ( Addr newbrk )
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));
    
-   ok = VG_(am_extend_into_adjacent_reservation_client)( (NSegment*)aseg, delta );
+   ok = VG_(am_extend_into_adjacent_reservation_client)( aseg, delta );
    if (!ok) goto bad;
 
    VG_(brk_limit) = newbrk;
@@ -3508,7 +3508,7 @@ PRE(sys_mprotect)
       vg_assert(aseg);
 
       if (grows == VKI_PROT_GROWSDOWN) {
-         rseg = VG_(am_next_nsegment)( (NSegment*)aseg, False/*backwards*/ );
+         rseg = VG_(am_next_nsegment)( aseg, False/*backwards*/ );
          if (rseg &&
              rseg->kind == SkResvn &&
              rseg->smode == SmUpper &&
@@ -3521,7 +3521,7 @@ PRE(sys_mprotect)
             SET_STATUS_Failure( VKI_EINVAL );
          }
       } else if (grows == VKI_PROT_GROWSUP) {
-         rseg = VG_(am_next_nsegment)( (NSegment*)aseg, True/*forwards*/ );
+         rseg = VG_(am_next_nsegment)( aseg, True/*forwards*/ );
          if (rseg &&
              rseg->kind == SkResvn &&
              rseg->smode == SmLower &&

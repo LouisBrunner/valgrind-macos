@@ -669,8 +669,8 @@ void MC_(destroy_mempool)(Addr pool)
 static Int 
 mp_compar(const void* n1, const void* n2)
 {
-   const MC_Chunk* mc1 = *(const MC_Chunk**)n1;
-   const MC_Chunk* mc2 = *(const MC_Chunk**)n2;
+   const MC_Chunk* mc1 = *(const MC_Chunk *const *)n1;
+   const MC_Chunk* mc2 = *(const MC_Chunk *const *)n2;
    if (mc1->data < mc2->data) return -1;
    if (mc1->data > mc2->data) return  1;
    return 0;

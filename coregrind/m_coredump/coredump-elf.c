@@ -235,7 +235,7 @@ static void fill_prstatus(const ThreadState *tst,
 			  const vki_siginfo_t *si)
 {
    struct vki_user_regs_struct *regs;
-   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+   const ThreadArchState* arch = &tst->arch;
 
    VG_(memset)(prs, 0, sizeof(*prs));
 
@@ -280,7 +280,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs->gs     = arch->vex.guest_GS;
 
 #elif defined(VGP_amd64_linux)
-   regs->eflags = LibVEX_GuestAMD64_get_rflags( &((ThreadArchState*)arch)->vex );
+   regs->eflags = LibVEX_GuestAMD64_get_rflags( &arch->vex );
    regs->rsp    = arch->vex.guest_RSP;
    regs->rip    = arch->vex.guest_RIP;
 
@@ -317,8 +317,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs->orig_gpr3 = arch->vex.guest_GPR3;
    regs->ctr = arch->vex.guest_CTR;
    regs->link = arch->vex.guest_LR;
-   regs->xer = LibVEX_GuestPPC32_get_XER( &((ThreadArchState*)arch)->vex );
-   regs->ccr = LibVEX_GuestPPC32_get_CR( &((ThreadArchState*)arch)->vex );
+   regs->xer = LibVEX_GuestPPC32_get_XER( &arch->vex );
+   regs->ccr = LibVEX_GuestPPC32_get_CR( &arch->vex );
    regs->mq = 0;
    regs->trap = 0;
    regs->dar = 0; /* should be fault address? */
@@ -338,8 +338,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs->orig_gpr3 = arch->vex.guest_GPR3;
    regs->ctr = arch->vex.guest_CTR;
    regs->link = arch->vex.guest_LR;
-   regs->xer = LibVEX_GuestPPC64_get_XER( &((ThreadArchState*)arch)->vex );
-   regs->ccr = LibVEX_GuestPPC64_get_CR( &((ThreadArchState*)arch)->vex );
+   regs->xer = LibVEX_GuestPPC64_get_XER( &arch->vex );
+   regs->ccr = LibVEX_GuestPPC64_get_CR( &arch->vex );
    /* regs->mq = 0; */
    regs->trap = 0;
    regs->dar = 0; /* should be fault address? */
@@ -363,7 +363,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs->ARM_sp   = arch->vex.guest_R13;
    regs->ARM_lr   = arch->vex.guest_R14;
    regs->ARM_pc   = arch->vex.guest_R15T;
-   regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &((ThreadArchState*)arch)->vex );
+   regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &arch->vex );
 
 #elif defined(VGP_s390x_linux)
 #  define DO(n)  regs->gprs[n] = arch->vex.guest_r##n
@@ -392,7 +392,7 @@ static void fill_prstatus(const ThreadState *tst,
 static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 {
    __attribute__((unused))
-   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+   const ThreadArchState* arch = &tst->arch;
 
 #if defined(VGP_x86_linux)
 //:: static void fill_fpu(vki_elf_fpregset_t *fpu, const HChar *from)
@@ -479,7 +479,7 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
 static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
-   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+   const ThreadArchState* arch = &tst->arch;
 
 //::    xfpu->cwd = ?;
 //::    xfpu->swd = ?;

@@ -2186,7 +2186,7 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
    NSegment const* seg
       = VG_(am_find_nsegment)(addr);
    NSegment const* seg_next 
-      = seg ? VG_(am_next_nsegment)( (NSegment*)seg, True/*fwds*/ )
+      = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
             : NULL;
 
    if (seg && seg->kind == SkAnonC)
@@ -2209,7 +2209,7 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
                     "extending a stack base 0x%llx down by %lld\n",
                     (ULong)seg_next->start, (ULong)udelta);
    if (! VG_(am_extend_into_adjacent_reservation_client)
-            ( (NSegment*)seg_next, -(SSizeT)udelta )) {
+            ( seg_next, -(SSizeT)udelta )) {
       VG_(debugLog)(1, "signals", "extending a stack base: FAILED\n");
       return False;
    }
@@ -2340,7 +2340,7 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
    fault    = (Addr)info->VKI_SIGINFO_si_addr;
    esp      = VG_(get_SP)(tid);
    seg      = VG_(am_find_nsegment)(fault);
-   seg_next = seg ? VG_(am_next_nsegment)( (NSegment*)seg, True/*fwds*/ )
+   seg_next = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
                   : NULL;
 
    if (VG_(clo_trace_signals)) {

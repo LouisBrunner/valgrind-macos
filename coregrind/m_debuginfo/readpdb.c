@@ -1525,16 +1525,16 @@ static ULong DEBUG_SnarfLinetab(
    //VG_(printf)("DEBUG_SnarfLinetab %p %p %p %d\n", di, sectp, linetab, size);
    Int                file_segcount;
    HChar              filename[WIN32_PATH_MAX];
-   UInt               * filetab;
-   UChar              * fn;
+   const UInt         * filetab;
+   const UChar        * fn;
    Int                i;
    Int                k;
-   UInt               * lt_ptr;
+   const UInt         * lt_ptr;
    Int                nfile;
    Int                nseg;
    union any_size     pnt;
    union any_size     pnt2;
-   struct startend    * start;
+   const struct startend * start;
    Int                this_seg;
 
    Bool  debug = di->trace_symtab;
@@ -1552,14 +1552,14 @@ static ULong DEBUG_SnarfLinetab(
    nfile = *pnt.s++;
    nseg  = *pnt.s++;
 
-   filetab = (unsigned int *) pnt.c;
+   filetab = pnt.ui;
 
    /*
     * Now count up the number of segments in the file.
     */
    nseg = 0;
    for (i = 0; i < nfile; i++) {
-     pnt2.c = (HChar *)linetab + filetab[i];
+      pnt2.c = (HChar *)linetab + filetab[i];
       nseg += *pnt2.s;
    }
 
@@ -1575,13 +1575,13 @@ static ULong DEBUG_SnarfLinetab(
       file_segcount = *pnt2.s;
 
       pnt2.ui++;
-      lt_ptr = (unsigned int *) pnt2.c;
-      start = (struct startend *) (lt_ptr + file_segcount);
+      lt_ptr = pnt2.ui;
+      start = (const struct startend *) (lt_ptr + file_segcount);
 
       /*
        * Now snarf the filename for all of the segments for this file.
        */
-      fn = (UChar*) (start + file_segcount);
+      fn = (const UChar*) (start + file_segcount);
       /* fn now points at a Pascal-style string, that is, the first
          byte is the length, and the remaining up to 255 (presumably)
          are the contents. */
@@ -1626,11 +1626,11 @@ static ULong DEBUG_SnarfLinetab(
                if (debug)
                   VG_(message)(Vg_UserMsg,
                      "  Adding line %d addr=%#lx end=%#lx\n", 
-                        ((unsigned short *)(pnt2.ui + linecount))[j],
+                        ((const unsigned short *)(pnt2.ui + linecount))[j],
                         startaddr, endaddr );
                   ML_(addLineInfo)(
                      di, fnmstr, dirstr, startaddr, endaddr,
-                     ((unsigned short *)(pnt2.ui + linecount))[j], j );
+                     ((const unsigned short *)(pnt2.ui + linecount))[j], j );
                   n_lines_read++;
                }
             }

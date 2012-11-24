@@ -179,8 +179,8 @@ void* fast_key_of_node(AvlNode* n)
 // Compare the first word of each element.  Inlining is *crucial*.
 static inline Word fast_cmp(const void* k, const AvlNode* n)
 {
-   UWord w1 = *(UWord*)k;
-   UWord w2 = *(UWord*)elem_of_node(n);
+   UWord w1 = *(const UWord*)k;
+   UWord w2 = *(const UWord*)elem_of_node(n);
    // In previous versions, we tried to do this faster by doing
    // "return w1 - w2".  But it didn't work reliably, because the
    // complete result of subtracting two N-bit numbers is an N+1-bit
@@ -593,7 +593,7 @@ static AvlNode* avl_lookup(const AvlTree* t, const void* k)
       // elem_of_node because it saves about 10% on lookup time.  This
       // shouldn't be very dangerous because each node will have been
       // checked on insertion.
-      UWord w1 = *(UWord*)k;
+      UWord w1 = *(const UWord*)k;
       UWord w2;
       while (True) {
          if (curr == NULL) return NULL;

@@ -3394,8 +3394,8 @@ static void resolve_variable_types (
 /*------------------------------------------------------------*/
 
 static Int cmp_TempVar_by_dioff ( const void* v1, const void* v2 ) {
-   const TempVar* t1 = *(const TempVar**)v1;
-   const TempVar* t2 = *(const TempVar**)v2;
+   const TempVar* t1 = *(const TempVar *const *)v1;
+   const TempVar* t2 = *(const TempVar *const *)v2;
    if (t1->dioff < t2->dioff) return -1;
    if (t1->dioff > t2->dioff) return 1;
    return 0;

@@ -209,7 +209,7 @@ Word VG_(addBytesToXA) ( XArray* xao, const void* bytesV, Word nbytes )
       ensureSpaceXA( xa );
       vg_assert(xa->usedsizeE < xa->totsizeE);
       vg_assert(xa->arr);
-      * (((UChar*)xa->arr) + xa->usedsizeE) = ((UChar*)bytesV)[i];
+      * (((UChar*)xa->arr) + xa->usedsizeE) = ((const UChar*)bytesV)[i];
       xa->usedsizeE++;
    }
    xa->sorted = False;

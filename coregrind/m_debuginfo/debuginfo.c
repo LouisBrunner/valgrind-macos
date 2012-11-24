@@ -725,7 +725,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
 
    /* If the file doesn't have a name, we're hosed.  Give up. */
-   filename = VG_(am_get_filename)( (NSegment*)seg );
+   filename = VG_(am_get_filename)( seg );
    if (!filename)
       return 0;
 

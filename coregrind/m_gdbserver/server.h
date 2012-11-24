@@ -282,8 +282,8 @@ void remote_close (void);
 void sync_gdb_connection (void);
 void write_ok (char *buf);
 void write_enn (char *buf);
-void convert_ascii_to_int (char *from, unsigned char *to, int n);
-void convert_int_to_ascii (unsigned char *from, char *to, int n);
+void convert_ascii_to_int (const char *from, unsigned char *to, int n);
+void convert_int_to_ascii (const unsigned char *from, char *to, int n);
 void prepare_resume_reply (char *buf, char status, unsigned char sig);
 
 void decode_address (CORE_ADDR *addrp, const char *start, int len);

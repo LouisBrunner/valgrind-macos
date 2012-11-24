@@ -166,8 +166,8 @@ STRCPY(VG_Z_DYLD,        strcpy)
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (*(unsigned char*)s1 < *(unsigned char*)s2) return -1; \
-         if (*(unsigned char*)s1 > *(unsigned char*)s2) return 1; \
+         if (*(const unsigned char*)s1 < *(const unsigned char*)s2) return -1; \
+         if (*(const unsigned char*)s1 > *(const unsigned char*)s2) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -190,8 +190,8 @@ STRNCMP(VG_Z_DYLD,        strncmp)
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = *(UChar *)s1; \
-         c2 = *(UChar *)s2; \
+         c1 = *(const UChar *)s1; \
+         c2 = *(const UChar *)s2; \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -215,7 +215,7 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
    { \
       SizeT i; \
       UChar c0 = (UChar)c; \
-      UChar* p = (UChar*)s; \
+      const UChar* p = (const UChar*)s; \
       for (i = 0; i < n; i++) \
          if (p[i] == c0) return (void*)(&p[i]); \
       return NULL; \

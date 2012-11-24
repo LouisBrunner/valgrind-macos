@@ -536,8 +536,8 @@ static inline void my_exit ( int x )
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (*(UChar*)s1 < *(UChar*)s2) return -1; \
-         if (*(UChar*)s1 > *(UChar*)s2) return 1; \
+         if (*(const UChar*)s1 < *(const UChar*)s2) return -1; \
+         if (*(const UChar*)s1 > *(const UChar*)s2) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -567,8 +567,8 @@ static inline void my_exit ( int x )
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = tolower(*(UChar *)s1); \
-         c2 = tolower(*(UChar *)s2); \
+         c1 = tolower(*(const UChar *)s1); \
+         c2 = tolower(*(const UChar *)s2); \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -606,10 +606,10 @@ static inline void my_exit ( int x )
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (tolower(*(UChar *)s1) \
-             < tolower(*(UChar*)s2)) return -1; \
-         if (tolower(*(UChar *)s1) \
-             > tolower(*(UChar *)s2)) return 1; \
+         if (tolower(*(const UChar *)s1) \
+             < tolower(*(const UChar*)s2)) return -1; \
+         if (tolower(*(const UChar *)s1) \
+             > tolower(*(const UChar *)s2)) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -640,8 +640,8 @@ static inline void my_exit ( int x )
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = tolower_l(*(UChar *)s1, locale); \
-         c2 = tolower_l(*(UChar *)s2, locale); \
+         c1 = tolower_l(*(const UChar *)s1, locale); \
+         c2 = tolower_l(*(const UChar *)s2, locale); \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -678,10 +678,10 @@ static inline void my_exit ( int x )
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (tolower_l(*(UChar *)s1, locale) \
-             < tolower_l(*(UChar *)s2, locale)) return -1; \
-         if (tolower_l(*(UChar *)s1, locale) \
-             > tolower_l(*(UChar *)s2, locale)) return 1; \
+         if (tolower_l(*(const UChar *)s1, locale) \
+             < tolower_l(*(const UChar *)s2, locale)) return -1; \
+         if (tolower_l(*(const UChar *)s1, locale) \
+             > tolower_l(*(const UChar *)s2, locale)) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -710,8 +710,8 @@ static inline void my_exit ( int x )
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = *(UChar *)s1; \
-         c2 = *(UChar *)s2; \
+         c1 = *(const UChar *)s1; \
+         c2 = *(const UChar *)s2; \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -909,8 +909,8 @@ static inline void my_exit ( int x )
       int res; \
       UChar a0; \
       UChar b0; \
-      UChar* s1 = (UChar*)s1V; \
-      UChar* s2 = (UChar*)s2V; \
+      const UChar* s1 = s1V; \
+      const UChar* s2 = s2V; \
       \
       while (n != 0) { \
          a0 = s1[0]; \
@@ -1459,8 +1459,8 @@ static inline void my_exit ( int x )
    SizeT VG_REPLACE_FUNCTION_EZU(20340,soname,fnname) \
          (const char* sV, const char* acceptV) \
    { \
-      UChar* s = (UChar*)sV; \
-      UChar* accept = (UChar*)acceptV; \
+      const UChar* s = (const UChar *)sV;        \
+      const UChar* accept = (const UChar *)acceptV;     \
       \
       /* find the length of 'accept', not including terminating zero */ \
       UWord nacc = 0; \

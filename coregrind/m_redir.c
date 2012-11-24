@@ -1615,8 +1615,8 @@ static void show_redir_state ( const HChar* who )
       if (ts->seginfo)
          VG_(message)(Vg_DebugMsg, 
                       "   TOPSPECS of soname %s filename %s\n",
-                      (HChar*)VG_(DebugInfo_get_soname)(ts->seginfo),
-                      (HChar*)VG_(DebugInfo_get_filename)(ts->seginfo));
+                      VG_(DebugInfo_get_soname)(ts->seginfo),
+                      VG_(DebugInfo_get_filename)(ts->seginfo));
       else
          VG_(message)(Vg_DebugMsg, 
                       "   TOPSPECS of soname (hardwired)\n");

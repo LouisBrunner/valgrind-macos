@@ -662,8 +662,8 @@ static void add_child_xpt(XPt* parent, XPt* child)
 // Reverse comparison for a reverse sort -- biggest to smallest.
 static Int SXPt_revcmp_szB(const void* n1, const void* n2)
 {
-   const SXPt* sxpt1 = *(const SXPt**)n1;
-   const SXPt* sxpt2 = *(const SXPt**)n2;
+   const SXPt* sxpt1 = *(const SXPt *const *)n1;
+   const SXPt* sxpt2 = *(const SXPt *const *)n2;
    return ( sxpt1->szB < sxpt2->szB ?  1
           : sxpt1->szB > sxpt2->szB ? -1
           :                            0);

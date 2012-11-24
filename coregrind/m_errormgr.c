@@ -1390,13 +1390,13 @@ void VG_(load_suppressions) ( void )
    matching a sequence of Addrs against a pattern composed of a
    sequence of SuppLocs.
 */
-static Bool supploc_IsStar ( void* supplocV )
+static Bool supploc_IsStar ( const void* supplocV )
 {
-   SuppLoc* supploc = (SuppLoc*)supplocV;
+   const SuppLoc* supploc = supplocV;
    return supploc->ty == DotDotDot;
 }
 
-static Bool supploc_IsQuery ( void* supplocV )
+static Bool supploc_IsQuery ( const void* supplocV )
 {
    return False; /* there's no '?' equivalent in the supp syntax */
 }
@@ -1504,13 +1504,12 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
    return ip2fo->names + (*offsets)[ixIP];
 }
 
-static Bool supp_pattEQinp ( void* supplocV, void* addrV,
+static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
                              void* inputCompleter, UWord ixAddrV )
 {
-   SuppLoc* supploc = (SuppLoc*)supplocV; /* PATTERN */
-   Addr     ip      = *(Addr*)addrV; /* INPUT */
-   IPtoFunOrObjCompleter* ip2fo 
-      = (IPtoFunOrObjCompleter*)inputCompleter;
+   const SuppLoc* supploc = supplocV; /* PATTERN */
+   Addr     ip      = *(const Addr*)addrV; /* INPUT */
+   IPtoFunOrObjCompleter* ip2fo = inputCompleter;
    HChar* funobj_name; // Fun or Obj name.
 
    /* So, does this IP address match this suppression-line? */

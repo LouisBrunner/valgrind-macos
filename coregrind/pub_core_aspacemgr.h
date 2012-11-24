@@ -73,7 +73,8 @@ extern Addr VG_(am_startup) ( Addr sp_at_startup );
 
 /* Find the next segment along from 'here', if it is a file/anon/resvn
    segment. */
-extern NSegment const* VG_(am_next_nsegment) ( NSegment* here, Bool fwds );
+extern NSegment const* VG_(am_next_nsegment) ( const NSegment* here,
+                                               Bool fwds );
 
 /* Is the area [start .. start+len-1] validly accessible by the 
    client with at least the permissions 'prot' ?  To find out
@@ -281,12 +282,12 @@ extern Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len );
    (is-client-heap) flag for that area.  Otherwise do nothing.
    (Bizarre interface so that the same code works for both Linux and
    AIX and does not impose inefficiencies on the Linux version.) */
-extern void VG_(am_set_segment_isCH_if_SkAnonC)( NSegment* seg );
+extern void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg );
 
 /* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
    segment's hasT bit (has-cached-code) if this is SkFileC or SkAnonC
    segment. */
-extern void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( NSegment* );
+extern void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( const NSegment* );
 
 /* --- --- --- reservations --- --- --- */
 
@@ -312,7 +313,7 @@ extern Bool VG_(am_create_reservation)
    the reservation segment after the operation must be at least one
    page long. */
 extern Bool VG_(am_extend_into_adjacent_reservation_client) 
-   ( NSegment* seg, SSizeT delta );
+   ( const NSegment* seg, SSizeT delta );
 
 /* --- --- --- resizing/move a mapping --- --- --- */
 
@@ -324,7 +325,7 @@ extern Bool VG_(am_extend_into_adjacent_reservation_client)
    *need_discard is True after a successful return, the caller should
    immediately discard translations from the new area. */
 extern Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
-                                       NSegment* seg, SizeT delta );
+                                       const NSegment* seg, SizeT delta );
 
 /* Remap the old address range to the new address range.  Fails if any
    parameter is not page aligned, if the either size is zero, if any

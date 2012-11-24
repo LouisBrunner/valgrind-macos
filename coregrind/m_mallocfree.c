@@ -810,9 +810,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       // Mark this segment as containing client heap.  The leak
       // checker needs to be able to identify such segments so as not
       // to use them as sources of roots during leak checks.
-      VG_(am_set_segment_isCH_if_SkAnonC)( 
-         (NSegment*) VG_(am_find_nsegment)( (Addr)sb )
-      );
+      VG_(am_set_segment_isCH_if_SkAnonC)( VG_(am_find_nsegment)( (Addr)sb ) );
    } else {
       // non-client allocation -- abort if it fails
       if (unsplittable)
@@ -1281,8 +1279,8 @@ typedef struct {
 static AnCC anCCs[N_AN_CCS];
 
 static Int cmp_AnCC_by_vol ( const void* v1, const void* v2 ) {
-   AnCC* ancc1 = (AnCC*)v1;
-   AnCC* ancc2 = (AnCC*)v2;
+   const AnCC* ancc1 = v1;
+   const AnCC* ancc2 = v2;
    if (ancc1->nBytes < ancc2->nBytes) return -1;
    if (ancc1->nBytes > ancc2->nBytes) return 1;
    return 0;

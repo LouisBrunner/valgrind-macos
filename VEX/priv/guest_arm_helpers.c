@@ -910,7 +910,7 @@ void LibVEX_GuestARM_put_flags ( UInt flags_native,
 #endif
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestARM_get_cpsr ( /*IN*/VexGuestARMState* vex_state )
+UInt LibVEX_GuestARM_get_cpsr ( /*IN*/const VexGuestARMState* vex_state )
 {
    UInt cpsr = 0;
    // NZCV

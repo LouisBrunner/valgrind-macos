@@ -277,7 +277,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
 /* Extract from the supplied VexGuestX86State structure the
    corresponding native %eflags value. */
 extern 
-UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state );
+UInt LibVEX_GuestX86_get_eflags ( /*IN*/const VexGuestX86State* vex_state );
 
 /* Set the carry flag in the given state to 'new_carry_flag', which
    should be zero or one. */

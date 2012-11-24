@@ -811,7 +811,7 @@ ULong amd64g_calculate_condition ( ULong/*AMD64Condcode*/ cond,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
+ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/const VexGuestAMD64State* vex_state )
 {
    ULong rflags = amd64g_calculate_rflags_all_WRK(
                      vex_state->guest_CC_OP,

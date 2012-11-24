@@ -309,7 +309,7 @@ void LibVEX_GuestPPC64_put_CR ( UInt cr_native,
    corresponding native %CR value.  Note, %CR is 32-bits even for
    ppc64. */
 extern
-UInt LibVEX_GuestPPC64_get_CR ( /*IN*/VexGuestPPC64State* vex_state );
+UInt LibVEX_GuestPPC64_get_CR ( /*IN*/const VexGuestPPC64State* vex_state );
 
 
 /* Write the given native %XER value to the supplied
@@ -323,7 +323,7 @@ void LibVEX_GuestPPC64_put_XER ( UInt xer_native,
    corresponding native %XER value.  Note, %CR is 32-bits even for
    ppc64. */
 extern
-UInt LibVEX_GuestPPC64_get_XER ( /*IN*/VexGuestPPC64State* vex_state );
+UInt LibVEX_GuestPPC64_get_XER ( /*IN*/const VexGuestPPC64State* vex_state );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_PPC64_H */
 

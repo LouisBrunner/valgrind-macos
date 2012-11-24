@@ -713,7 +713,7 @@ UInt x86g_calculate_condition ( UInt/*X86Condcode*/ cond,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
+UInt LibVEX_GuestX86_get_eflags ( /*IN*/const VexGuestX86State* vex_state )
 {
    UInt eflags = x86g_calculate_eflags_all_WRK(
                     vex_state->guest_CC_OP,

@@ -186,7 +186,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state );
 /* Extract from the supplied VexGuestAMD64State structure the
    corresponding native %rflags value. */
 extern 
-ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state );
+ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/const VexGuestAMD64State* vex_state );
 
 /* Set the carry flag in the given state to 'new_carry_flag', which
    should be zero or one. */
@@ -208,7 +208,7 @@ void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
 /* Extract from the supplied VexGuestX86State structure, an x87 FPU
    image. */
 extern 
-void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state, 
+void LibVEX_GuestX86_get_x87 ( /*IN*/const VexGuestX86State* vex_state, 
                                /*OUT*/UChar* x87_state );
 
 

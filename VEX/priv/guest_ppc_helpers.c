@@ -210,7 +210,7 @@ IRExpr* guest_ppc64_spechelper ( const HChar* function_name,
 /*----------------------------------------------*/
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestPPC32_get_CR ( /*IN*/VexGuestPPC32State* vex_state )
+UInt LibVEX_GuestPPC32_get_CR ( /*IN*/const VexGuestPPC32State* vex_state )
 {
 #  define FIELD(_n)                                    \
       ( ( (UInt)                                       \
@@ -231,7 +231,7 @@ UInt LibVEX_GuestPPC32_get_CR ( /*IN*/VexGuestPPC32State* vex_state )
 
 /* VISIBLE TO LIBVEX CLIENT */
 /* Note: %CR is 32 bits even for ppc64 */
-UInt LibVEX_GuestPPC64_get_CR ( /*IN*/VexGuestPPC64State* vex_state )
+UInt LibVEX_GuestPPC64_get_CR ( /*IN*/const VexGuestPPC64State* vex_state )
 {
 #  define FIELD(_n)                                    \
       ( ( (UInt)                                       \
@@ -304,7 +304,7 @@ void LibVEX_GuestPPC64_put_CR ( UInt cr_native,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestPPC32_get_XER ( /*IN*/VexGuestPPC32State* vex_state )
+UInt LibVEX_GuestPPC32_get_XER ( /*IN*/const VexGuestPPC32State* vex_state )
 {
    UInt w = 0;
    w |= ( ((UInt)vex_state->guest_XER_BC) & 0xFF );
@@ -317,7 +317,7 @@ UInt LibVEX_GuestPPC32_get_XER ( /*IN*/VexGuestPPC32State* vex_state )
 
 /* VISIBLE TO LIBVEX CLIENT */
 /* Note: %XER is 32 bits even for ppc64 */
-UInt LibVEX_GuestPPC64_get_XER ( /*IN*/VexGuestPPC64State* vex_state )
+UInt LibVEX_GuestPPC64_get_XER ( /*IN*/const VexGuestPPC64State* vex_state )
 {
    UInt w = 0;
    w |= ( ((UInt)vex_state->guest_XER_BC) & 0xFF );

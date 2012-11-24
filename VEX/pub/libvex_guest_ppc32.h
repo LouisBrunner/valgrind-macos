@@ -265,7 +265,7 @@ void LibVEX_GuestPPC32_put_CR ( UInt cr_native,
 /* Extract from the supplied VexGuestPPC32State structure the
    corresponding native %CR value. */
 extern
-UInt LibVEX_GuestPPC32_get_CR ( /*IN*/VexGuestPPC32State* vex_state );
+UInt LibVEX_GuestPPC32_get_CR ( /*IN*/const VexGuestPPC32State* vex_state );
 
 
 /* Write the given native %XER value to the supplied VexGuestPPC32State
@@ -277,7 +277,7 @@ void LibVEX_GuestPPC32_put_XER ( UInt xer_native,
 /* Extract from the supplied VexGuestPPC32State structure the
    corresponding native %XER value. */
 extern
-UInt LibVEX_GuestPPC32_get_XER ( /*IN*/VexGuestPPC32State* vex_state );
+UInt LibVEX_GuestPPC32_get_XER ( /*IN*/const VexGuestPPC32State* vex_state );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_PPC32_H */
 

@@ -329,6 +329,49 @@ static void storeLE ( IRExpr* addr, IRExpr* data )
    stmt( IRStmt_Store(Iend_LE, addr, data) );
 }
 
+static void storeGuardedLE ( IRExpr* addr, IRExpr* data, IRTemp guardT )
+{
+   if (guardT == IRTemp_INVALID) {
+      /* unconditional */
+      storeLE(addr, data);
+   } else {
+      stmt( IRStmt_StoreG(Iend_LE, addr, data,
+                          binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0))) );
+   }
+}
+
+static void loadGuardedLE ( IRTemp dst, IRLoadGOp cvt,
+                            IRExpr* addr, IRExpr* alt, 
+                            IRTemp guardT /* :: Ity_I32, 0 or 1 */ )
+{
+   if (guardT == IRTemp_INVALID) {
+      /* unconditional */
+      IRExpr* loaded = NULL;
+      switch (cvt) {
+         case ILGop_Ident32:
+            loaded = loadLE(Ity_I32, addr); break;
+         case ILGop_8Uto32:
+            loaded = unop(Iop_8Uto32, loadLE(Ity_I8, addr)); break;
+         case ILGop_8Sto32:
+            loaded = unop(Iop_8Sto32, loadLE(Ity_I8, addr)); break;
+         case ILGop_16Uto32:
+            loaded = unop(Iop_16Uto32, loadLE(Ity_I16, addr)); break;
+         case ILGop_16Sto32:
+            loaded = unop(Iop_16Sto32, loadLE(Ity_I16, addr)); break;
+         default:
+            vassert(0);
+      }
+      vassert(loaded != NULL);
+      assign(dst, loaded);
+   } else {
+      /* Generate a guarded load into 'dst', but apply 'cvt' to the
+         loaded data before putting the data in 'dst'.  If the load
+         does not take place, 'alt' is placed directly in 'dst'. */
+      stmt( IRStmt_LoadG(Iend_LE, cvt, dst, addr, alt,
+                         binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0))) );
+   }
+}
+
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
@@ -17521,16 +17564,16 @@ DisResult disInstr_THUMB_WRK (
          }
 
          if (bP == 1 && bW == 0) {
-            DIP("%s.w r%u, [r%u, #%c%u]\n",
+            DIP("%s.wQQQ1 r%u, [r%u, #%c%u]\n",
                 nm, rT, rN, bU ? '+' : '-', imm8);
          }
          else if (bP == 1 && bW == 1) {
-            DIP("%s.w r%u, [r%u, #%c%u]!\n",
+            DIP("%s.wQQQ2 r%u, [r%u, #%c%u]!\n",
                 nm, rT, rN, bU ? '+' : '-', imm8);
          }
          else {
             vassert(bP == 0 && bW == 1);
-            DIP("%s.w r%u, [r%u], #%c%u\n",
+            DIP("%s.wQQQ3 r%u, [r%u], #%c%u\n",
                 nm, rT, rN, bU ? '+' : '-', imm8);
          }
 
@@ -17740,12 +17783,15 @@ DisResult disInstr_THUMB_WRK (
 
       if (valid) {
          // if it's a branch, it can't happen in the middle of an IT block
-         if (loadsPC)
+         // Also, if it is a branch, make it unconditional at this point.
+         // Doing conditional branches in-line is too complex (for now)
+         if (loadsPC) {
             gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
-         // go uncond
-         mk_skip_over_T32_if_cond_is_false(condT);
-         condT = IRTemp_INVALID;
-         // now uncond
+            // go uncond
+            mk_skip_over_T32_if_cond_is_false(condT);
+            condT = IRTemp_INVALID;
+            // now uncond
+         }
 
          IRTemp rNt = newTemp(Ity_I32);
          if (rN == 15) {
@@ -17759,53 +17805,52 @@ DisResult disInstr_THUMB_WRK (
          assign(transAddr,
                 binop( Iop_Add32, mkexpr(rNt), mkU32(imm12) ));
 
+         IRTemp oldRt = newTemp(Ity_I32);
+         assign(oldRt, getIRegT(rT));
+
          if (isST) {
-            IRTemp oldRt = newTemp(Ity_I32);
-            assign(oldRt, getIRegT(rT));
+            IRExpr* data = NULL;
             switch (ty) {
                case Ity_I8:
-                  storeLE(mkexpr(transAddr),
-                                 unop(Iop_32to8, mkexpr(oldRt)));
+                  data = unop(Iop_32to8, mkexpr(oldRt));
                   break;
                case Ity_I16:
-                  storeLE(mkexpr(transAddr),
-                          unop(Iop_32to16, mkexpr(oldRt)));
+                  data = unop(Iop_32to16, mkexpr(oldRt));
                   break;
               case Ity_I32:
-                  storeLE(mkexpr(transAddr), mkexpr(oldRt));
+                  data = mkexpr(oldRt);
                   break;
               default:
                  vassert(0);
             }
+            storeGuardedLE(mkexpr(transAddr), data, condT);
          } else {
-            IRTemp newRt = newTemp(Ity_I32);
-            IROp   widen = Iop_INVALID;
+            IRTemp    newRt = newTemp(Ity_I32);
+            IRLoadGOp widen = ILGop_INVALID;
             switch (ty) {
                case Ity_I8:
-                  widen = syned ? Iop_8Sto32 : Iop_8Uto32; break;
+                  widen = syned ? ILGop_8Sto32 : ILGop_8Uto32; break;
                case Ity_I16:
-                  widen = syned ? Iop_16Sto32 : Iop_16Uto32; break;
+                  widen = syned ? ILGop_16Sto32 : ILGop_16Uto32; break;
                case Ity_I32:
-                  break;
+                  widen = ILGop_Ident32; break;
                default:
                   vassert(0);
             }
-            if (widen == Iop_INVALID) {
-               assign(newRt, loadLE(ty, mkexpr(transAddr)));
-            } else {
-               assign(newRt, unop(widen, loadLE(ty, mkexpr(transAddr))));
-            }
-            putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+            loadGuardedLE(newRt, widen,
+                          mkexpr(transAddr), mkexpr(oldRt), condT);
+            putIRegT(rT, mkexpr(newRt), condT);
 
             if (loadsPC) {
                /* Presumably this is an interworking branch. */
+               vassert(condT == IRTemp_INVALID); /* due to check above */
                irsb->next = mkexpr(newRt);
                irsb->jumpkind = Ijk_Boring;  /* or _Ret ? */
                dres.whatNext  = Dis_StopHere;
             }
          }
 
-         DIP("%s.w r%u, [r%u, +#%u]\n", nm, rT, rN, imm12);
+         DIP("%s.wQQQ9 r%u, [r%u, +#%u]\n", nm, rT, rN, imm12);
 
          goto decode_success;
       }

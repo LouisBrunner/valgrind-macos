@@ -659,29 +659,33 @@ typedef
             HReg dst;
             UInt imm32;
          } Imm32;
-         /* 32-bit load or store */
+         /* 32-bit load or store, may be conditional */
          struct {
-            Bool       isLoad;
-            HReg       rD;
-            ARMAMode1* amode;
+            ARMCondCode cc; /* ARMcc_NV is not allowed */
+            Bool        isLoad;
+            HReg        rD;
+            ARMAMode1*  amode;
          } LdSt32;
-         /* 16-bit load or store */
+         /* 16-bit load or store, may be conditional */
          struct {
-            Bool       isLoad;
-            Bool       signedLoad;
-            HReg       rD;
-            ARMAMode2* amode;
+            ARMCondCode cc; /* ARMcc_NV is not allowed */
+            Bool        isLoad;
+            Bool        signedLoad;
+            HReg        rD;
+            ARMAMode2*  amode;
          } LdSt16;
-         /* 8-bit (unsigned) load or store */
+         /* 8-bit (unsigned) load or store, may be conditional */
          struct {
-            Bool       isLoad;
-            HReg       rD;
-            ARMAMode1* amode;
+            ARMCondCode cc; /* ARMcc_NV is not allowed */
+            Bool        isLoad;
+            HReg        rD;
+            ARMAMode1*  amode;
          } LdSt8U;
-         /* 8-bit signed load */
+         /* 8-bit signed load, may be conditional */
          struct {
-            HReg       rD;
-            ARMAMode2* amode;
+            ARMCondCode cc; /* ARMcc_NV is not allowed */
+            HReg        rD;
+            ARMAMode2*  amode;
          } Ld8S;
          /* Update the guest R15T value, then exit requesting to chain
             to it.  May be conditional.  Urr, use of Addr32 implicitly
@@ -720,6 +724,7 @@ typedef
             ARMCondCode cond;
             HWord       target;
             Int         nArgRegs; /* # regs carrying args: 0 .. 4 */
+            RetLoc      rloc;     /* where the return value will be */
          } Call;
          /* (PLAIN) 32 *  32 -> 32:  r0    = r2 * r3
             (ZX)    32 *u 32 -> 64:  r1:r0 = r2 *u r3
@@ -949,11 +954,14 @@ extern ARMInstr* ARMInstr_Unary    ( ARMUnaryOp, HReg, HReg );
 extern ARMInstr* ARMInstr_CmpOrTst ( Bool isCmp, HReg, ARMRI84* );
 extern ARMInstr* ARMInstr_Mov      ( HReg, ARMRI84* );
 extern ARMInstr* ARMInstr_Imm32    ( HReg, UInt );
-extern ARMInstr* ARMInstr_LdSt32   ( Bool isLoad, HReg, ARMAMode1* );
-extern ARMInstr* ARMInstr_LdSt16   ( Bool isLoad, Bool signedLoad,
+extern ARMInstr* ARMInstr_LdSt32   ( ARMCondCode,
+                                     Bool isLoad, HReg, ARMAMode1* );
+extern ARMInstr* ARMInstr_LdSt16   ( ARMCondCode,
+                                     Bool isLoad, Bool signedLoad,
                                      HReg, ARMAMode2* );
-extern ARMInstr* ARMInstr_LdSt8U   ( Bool isLoad, HReg, ARMAMode1* );
-extern ARMInstr* ARMInstr_Ld8S     ( HReg, ARMAMode2* );
+extern ARMInstr* ARMInstr_LdSt8U   ( ARMCondCode,
+                                     Bool isLoad, HReg, ARMAMode1* );
+extern ARMInstr* ARMInstr_Ld8S     ( ARMCondCode, HReg, ARMAMode2* );
 extern ARMInstr* ARMInstr_XDirect  ( Addr32 dstGA, ARMAMode1* amR15T,
                                      ARMCondCode cond, Bool toFastEP );
 extern ARMInstr* ARMInstr_XIndir   ( HReg dstGA, ARMAMode1* amR15T,
@@ -961,7 +969,8 @@ extern ARMInstr* ARMInstr_XIndir   ( HReg dstGA, ARMAMode1* amR15T,
 extern ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
                                       ARMCondCode cond, IRJumpKind jk );
 extern ARMInstr* ARMInstr_CMov     ( ARMCondCode, HReg dst, ARMRI84* src );
-extern ARMInstr* ARMInstr_Call     ( ARMCondCode, HWord, Int nArgRegs );
+extern ARMInstr* ARMInstr_Call     ( ARMCondCode, HWord, Int nArgRegs,
+                                     RetLoc rloc );
 extern ARMInstr* ARMInstr_Mul      ( ARMMulOp op );
 extern ARMInstr* ARMInstr_LdrEX    ( Int szB );
 extern ARMInstr* ARMInstr_StrEX    ( Int szB );

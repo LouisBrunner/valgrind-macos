@@ -218,6 +218,22 @@ void addHInstr ( HInstrArray* ha, HInstr* instr )
 }
 
 
+/*---------------------------------------------------------*/
+/*--- C-Call return-location actions                    ---*/
+/*---------------------------------------------------------*/
+
+void ppRetLoc ( RetLoc ska )
+{
+   switch (ska) {
+      case RetLocINVALID: vex_printf("RetLocINVALID"); return;
+      case RetLocNone:    vex_printf("RetLocNone");    return;
+      case RetLocInt:     vex_printf("RetLocInt");     return;
+      case RetLoc2Int:    vex_printf("RetLoc2Int");    return;
+      default:            vpanic("ppRetLoc");
+   }
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                                 host_generic_regs.c ---*/
 /*---------------------------------------------------------------*/

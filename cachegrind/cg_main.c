@@ -1154,6 +1154,8 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                dataTy = typeOfIRTemp(tyenv, st->Ist.LLSC.result);
                addEvent_Dr( &cgs, curr_inode,
                             sizeofIRType(dataTy), st->Ist.LLSC.addr );
+               /* flush events before LL, should help SC to succeed */
+               flushEvents( &cgs );
             } else {
                /* SC */
                dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);

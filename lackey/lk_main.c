@@ -428,7 +428,8 @@ typedef
    At various points the list will need to be flushed, that is, IR
    generated from it.  That must happen before any possible exit from
    the block (the end, or an IRStmt_Exit).  Flushing also takes place
-   when there is no space to add a new event.
+   when there is no space to add a new event, and before entering a
+   RMW (read-modify-write) section on processors supporting LL/SC.
 
    If we require the simulation statistics to be up to date with
    respect to possible memory exceptions, then the list would have to
@@ -825,9 +826,12 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
             if (st->Ist.LLSC.storedata == NULL) {
                /* LL */
                dataTy = typeOfIRTemp(tyenv, st->Ist.LLSC.result);
-               if (clo_trace_mem)
+               if (clo_trace_mem) {
                   addEvent_Dr( sbOut, st->Ist.LLSC.addr,
                                       sizeofIRType(dataTy) );
+                  /* flush events before LL, helps SC to succeed */
+                  flushEvents(sbOut);
+	       }
                if (clo_detailed_counts)
                   instrument_detail( sbOut, OpLoad, dataTy );
             } else {

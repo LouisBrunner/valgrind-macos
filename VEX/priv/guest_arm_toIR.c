@@ -13142,6 +13142,7 @@ DisResult disInstr_ARM_WRK (
         likely will generate an exception.  So we have to take a side
         exit at this point if the condition is false. */
      if (condT != IRTemp_INVALID) {
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 01\n");
         mk_skip_over_A32_if_cond_is_false( condT );
         condT = IRTemp_INVALID;
      }
@@ -13375,6 +13376,7 @@ DisResult disInstr_ARM_WRK (
         likely will generate an exception.  So we have to take a side
         exit at this point if the condition is false. */
      if (condT != IRTemp_INVALID) {
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 02\n");
         mk_skip_over_A32_if_cond_is_false( condT );
         condT = IRTemp_INVALID;
      }
@@ -14402,6 +14404,7 @@ DisResult disInstr_ARM_WRK (
         likely will generate an exception.  So we have to take a side
         exit at this point if the condition is false. */
      if (condT != IRTemp_INVALID) {
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 03\n");
         mk_skip_over_A32_if_cond_is_false( condT );
         condT = IRTemp_INVALID;
      }
@@ -16010,6 +16013,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    rM   = INSN0(8,6);
       UInt    isLD = INSN0(11,11);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 04\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16037,6 +16041,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    rM   = INSN0(8,6);
       UInt    isLD = INSN0(11,11);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 05\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16062,6 +16067,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    rN = INSN0(5,3);
       UInt    rM = INSN0(8,6);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 06\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16083,6 +16089,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    rN = INSN0(5,3);
       UInt    rM = INSN0(8,6);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 07\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16107,6 +16114,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    rM   = INSN0(8,6);
       UInt    isLD = INSN0(11,11);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 08\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16216,16 +16224,13 @@ DisResult disInstr_THUMB_WRK (
       UInt   imm8 = INSN0(7,0);
       IRTemp ea   = newTemp(Ity_I32);
 
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       assign(ea, binop(Iop_Add32, 
                        binop(Iop_And32, getIRegT(15), mkU32(~3U)),
                        mkU32(imm8 * 4)));
       put_ITSTATE(old_itstate); // backout
-      putIRegT(rD, loadLE(Ity_I32, mkexpr(ea)),
-                   IRTemp_INVALID);
+      IRTemp tD = newTemp(Ity_I32);
+      loadGuardedLE( tD, ILGop_Ident32, mkexpr(ea), getIRegT(rD), condT );
+      putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       put_ITSTATE(new_itstate); // restore
 
       DIP("ldr r%u, [pc, #%u]\n", rD, imm8 * 4);
@@ -16242,16 +16247,14 @@ DisResult disInstr_THUMB_WRK (
       UInt    imm5 = INSN0(10,6);
       UInt    isLD = INSN0(11,11);
 
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm5 * 4));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, loadLE(Ity_I32, ea), IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE( tD, ILGop_Ident32, ea, getIRegT(rD), condT );
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE( ea, getIRegT(rD) );
+         storeGuardedLE( ea, getIRegT(rD), condT );
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -16269,6 +16272,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    imm5 = INSN0(10,6);
       UInt    isLD = INSN0(11,11);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 11\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16297,6 +16301,7 @@ DisResult disInstr_THUMB_WRK (
       UInt    imm5 = INSN0(10,6);
       UInt    isLD = INSN0(11,11);
 
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 12\n");
       mk_skip_over_T16_if_cond_is_false(condT);
       condT = IRTemp_INVALID;
       // now uncond
@@ -16324,16 +16329,14 @@ DisResult disInstr_THUMB_WRK (
       UInt imm8  = INSN0(7,0);
       UInt isLD  = INSN0(11,11);
 
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(13), mkU32(imm8 * 4));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, loadLE(Ity_I32, ea), IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE( tD, ILGop_Ident32, ea, getIRegT(rD), condT );
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE(ea, getIRegT(rD));
+         storeGuardedLE(ea, getIRegT(rD), condT);
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -17467,6 +17470,7 @@ DisResult disInstr_THUMB_WRK (
          if (loadsPC)
             gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
          // go uncond
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 14\n");
          mk_skip_over_T32_if_cond_is_false(condT);
          condT = IRTemp_INVALID;
          // now uncond
@@ -17646,6 +17650,7 @@ DisResult disInstr_THUMB_WRK (
          if (loadsPC)
             gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
          // go uncond
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
          mk_skip_over_T32_if_cond_is_false(condT);
          condT = IRTemp_INVALID;
          // now uncond
@@ -17881,6 +17886,7 @@ DisResult disInstr_THUMB_WRK (
 
       if (valid) {
          // go uncond
+if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 16\n");
          mk_skip_over_T32_if_cond_is_false(condT);
          condT = IRTemp_INVALID;
          // now uncond

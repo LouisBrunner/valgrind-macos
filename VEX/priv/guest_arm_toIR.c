@@ -13138,16 +13138,6 @@ DisResult disInstr_ARM_WRK (
            vassert(0);
      }
 
-     /* Now, we can't do a conditional load or store, since that very
-        likely will generate an exception.  So we have to take a side
-        exit at this point if the condition is false. */
-     if (condT != IRTemp_INVALID) {
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 01\n");
-        mk_skip_over_A32_if_cond_is_false( condT );
-        condT = IRTemp_INVALID;
-     }
-     /* Ok, now we're unconditional.  Do the load or store. */
-
      /* compute the effective address.  Bind it to a tmp since we
         may need to use it twice. */
      IRExpr* eaE = NULL;
@@ -13193,16 +13183,16 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 01\n");
         /* Update Rn if necessary. */
         switch (summary & 0x0F) {
            case 2: case 3:
-              putIRegA( rN, mkexpr(eaT), IRTemp_INVALID, Ijk_Boring );
+              putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
               break;
         }
 
         /* generate the transfer */
         if (bB == 0) { // word store
-           storeLE( mkexpr(taT), mkexpr(rDt) );
+           storeGuardedLE( mkexpr(taT), mkexpr(rDt), condT );
         } else { // byte store
            vassert(bB == 1);
-           storeLE( mkexpr(taT), unop(Iop_32to8, mkexpr(rDt)) );
+           storeGuardedLE( mkexpr(taT), unop(Iop_32to8, mkexpr(rDt)), condT );
         }
 
      } else {
@@ -13221,12 +13211,27 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 01\n");
            if (rN == 13 && summary == (3 | 16) && bB == 0) {
               jk = Ijk_Ret;
            }
-           putIRegA( rD, loadLE(Ity_I32, mkexpr(taT)),
-                     IRTemp_INVALID, jk );
+           IRTemp tD = newTemp(Ity_I32);
+           loadGuardedLE( tD, ILGop_Ident32,
+                          mkexpr(taT), llGetIReg(rD), condT );
+           /* "rD == 15 ? condT : IRTemp_INVALID": simply
+              IRTemp_INVALID would be correct in all cases here, and
+              for the non-r15 case it generates better code, by
+              avoiding two tests of the cond (since it is already
+              tested by loadGuardedLE).  However, the logic at the end
+              of this function, that deals with writes to r15, has an
+              optimisation which depends on seeing whether or not the
+              write is conditional.  Hence in this particular case we
+              let it "see" the guard condition. */
+           putIRegA( rD, mkexpr(tD),
+                     rD == 15 ? condT : IRTemp_INVALID, jk );
         } else { // byte load
            vassert(bB == 1);
-           putIRegA( rD, unop(Iop_8Uto32, loadLE(Ity_I8, mkexpr(taT))),
-                     IRTemp_INVALID, Ijk_Boring );
+           IRTemp tD = newTemp(Ity_I32);
+           loadGuardedLE( tD, ILGop_8Uto32, mkexpr(taT), llGetIReg(rD), condT );
+           /* No point in similar 3rd arg complexity here, since we
+              can't sanely write anything to r15 like this. */
+           putIRegA( rD, mkexpr(tD), IRTemp_INVALID, Ijk_Boring );
         }
 
         /* Update Rn if necessary. */
@@ -13235,7 +13240,7 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 01\n");
               // should be assured by logic above:
               if (bL == 1)
                  vassert(rD != rN); /* since we just wrote rD */
-              putIRegA( rN, mkexpr(eaT), IRTemp_INVALID, Ijk_Boring );
+              putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
               break;
         }
      }
@@ -16013,17 +16018,14 @@ DisResult disInstr_THUMB_WRK (
       UInt    rM   = INSN0(8,6);
       UInt    isLD = INSN0(11,11);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 04\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), getIRegT(rM));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, loadLE(Ity_I32, ea), IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE( tD, ILGop_Ident32, ea, llGetIReg(rD), condT );
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE(ea, getIRegT(rD));
+         storeGuardedLE(ea, getIRegT(rD), condT);
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -16229,7 +16231,7 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 08\n");
                        mkU32(imm8 * 4)));
       put_ITSTATE(old_itstate); // backout
       IRTemp tD = newTemp(Ity_I32);
-      loadGuardedLE( tD, ILGop_Ident32, mkexpr(ea), getIRegT(rD), condT );
+      loadGuardedLE( tD, ILGop_Ident32, mkexpr(ea), llGetIReg(rD), condT );
       putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       put_ITSTATE(new_itstate); // restore
 
@@ -16251,7 +16253,7 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 08\n");
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
          IRTemp tD = newTemp(Ity_I32);
-         loadGuardedLE( tD, ILGop_Ident32, ea, getIRegT(rD), condT );
+         loadGuardedLE( tD, ILGop_Ident32, ea, llGetIReg(rD), condT );
          putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
          storeGuardedLE( ea, getIRegT(rD), condT );
@@ -16333,7 +16335,7 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 12\n");
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
          IRTemp tD = newTemp(Ity_I32);
-         loadGuardedLE( tD, ILGop_Ident32, ea, getIRegT(rD), condT );
+         loadGuardedLE( tD, ILGop_Ident32, ea, llGetIReg(rD), condT );
          putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
          storeGuardedLE(ea, getIRegT(rD), condT);
@@ -17813,6 +17815,9 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
          IRTemp oldRt = newTemp(Ity_I32);
          assign(oldRt, getIRegT(rT));
 
+         IRTemp llOldRt = newTemp(Ity_I32);
+         assign(llOldRt, llGetIReg(rT));
+
          if (isST) {
             IRExpr* data = NULL;
             switch (ty) {
@@ -17843,7 +17848,7 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
                   vassert(0);
             }
             loadGuardedLE(newRt, widen,
-                          mkexpr(transAddr), mkexpr(oldRt), condT);
+                          mkexpr(transAddr), mkexpr(llOldRt), condT);
             putIRegT(rT, mkexpr(newRt), condT);
 
             if (loadsPC) {

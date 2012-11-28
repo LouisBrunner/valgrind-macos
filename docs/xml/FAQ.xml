@@ -436,14 +436,25 @@ valgrind-listener 12345
     the manual for more details.</para>
 
     <para>Second, if your program is statically linked, most Valgrind
-    tools won't work as well, because they won't be able to replace
-    certain functions, such as <function>malloc</function>, with their own
-    versions.  A key indicator of this is if Memcheck says:
+    tools will only work well if they are able to replace certain
+    functions, such as <function>malloc</function>, with their own
+    versions.  By default, statically linked <function>malloc
+    functions</function> are not replaced. A key indicator of this is
+    if Memcheck says:
 <programlisting>
 All heap blocks were freed -- no leaks are possible
 </programlisting>
     when you know your program calls <function>malloc</function>.  The
-    workaround is to avoid statically linking your program.</para>
+    workaround is to use the option 
+    <option>--soname-synonyms=somalloc=NONE</option>
+    or to avoid statically linking your program.</para>
+
+    <para>There will also be no replacement if you use an alternative 
+    <function>malloc library</function> such as tcmalloc, jemalloc,
+    ...  In such a case, the
+    option <option>--soname-synonyms=somalloc=zzzz</option> (where
+    zzzz is the soname of the alternative malloc library) will allow
+    Valgrind to replace the functions.</para>
   </answer>
 </qandaentry>
 

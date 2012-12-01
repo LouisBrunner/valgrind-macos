@@ -6861,7 +6861,7 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
    }
 
  fail:
-   vpanic("s390_insn_cas_emit");
+   vpanic("s390_insn_cdas_emit");
 }
 
 

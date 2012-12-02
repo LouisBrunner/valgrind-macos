@@ -5430,8 +5430,8 @@ s390_irgen_LARL(UChar r1, UInt i2)
    constructed which will iterate until the CAS succeeds. As a consequence,
    instrumenters may see more memory accesses than happen natively. See also
    discussion here: https://bugs.kde.org/show_bug.cgi?id=306035 */
-static const HChar *
-s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
+static void
+s390_irgen_load_and_add32(UChar r1, UChar r3, IRTemp op2addr, Bool is_signed)
 {
    IRCAS *cas;
    IRTemp old_mem = newTemp(Ity_I32);
@@ -5451,13 +5451,117 @@ s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
                  NULL, mkexpr(result)  /* new value */);
    stmt(IRStmt_CAS(cas));
 
-   /* Set CC according to 32-bit signed addition */
-   s390_cc_thunk_putSS(S390_CC_OP_SIGNED_ADD_32, op2, op3);
+   /* Set CC according to 32-bit addition */
+   if (is_signed) {
+      s390_cc_thunk_putSS(S390_CC_OP_SIGNED_ADD_32, op2, op3);
+   } else {
+      s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_ADD_32, op2, op3);
+   }
 
    /* If old_mem contains the expected value, then the CAS succeeded.
       Otherwise, it did not */
    yield_if(binop(Iop_CmpNE32, mkexpr(old_mem), mkexpr(op2)));
    put_gpr_w1(r1, mkexpr(old_mem));
+}
+
+static void
+s390_irgen_load_and_add64(UChar r1, UChar r3, IRTemp op2addr, Bool is_signed)
+{
+   IRCAS *cas;
+   IRTemp old_mem = newTemp(Ity_I64);
+   IRTemp op2 = newTemp(Ity_I64);
+   IRTemp op3 = newTemp(Ity_I64);
+   IRTemp result = newTemp(Ity_I64);
+
+   assign(op2, load(Ity_I64, mkexpr(op2addr)));
+   assign(op3, get_gpr_dw0(r3));
+   assign(result, binop(Iop_Add64, mkexpr(op2), mkexpr(op3)));
+
+   /* Place the addition of second operand and third operand at the
+      second-operand location everytime */
+   cas = mkIRCAS(IRTemp_INVALID, old_mem,
+                 Iend_BE, mkexpr(op2addr),
+                 NULL, mkexpr(op2), /* expected value */
+                 NULL, mkexpr(result)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* Set CC according to 64-bit addition */
+   if (is_signed) {
+      s390_cc_thunk_putSS(S390_CC_OP_SIGNED_ADD_64, op2, op3);
+   } else {
+      s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_ADD_64, op2, op3);
+   }
+
+   /* If old_mem contains the expected value, then the CAS succeeded.
+      Otherwise, it did not */
+   yield_if(binop(Iop_CmpNE64, mkexpr(old_mem), mkexpr(op2)));
+   put_gpr_dw0(r1, mkexpr(old_mem));
+}
+
+static void
+s390_irgen_load_and_bitwise32(UChar r1, UChar r3, IRTemp op2addr, IROp op)
+{
+   IRCAS *cas;
+   IRTemp old_mem = newTemp(Ity_I32);
+   IRTemp op2 = newTemp(Ity_I32);
+   IRTemp op3 = newTemp(Ity_I32);
+   IRTemp result = newTemp(Ity_I32);
+
+   assign(op2, load(Ity_I32, mkexpr(op2addr)));
+   assign(op3, get_gpr_w1(r3));
+   assign(result, binop(op, mkexpr(op2), mkexpr(op3)));
+
+   /* Place the addition of second operand and third operand at the
+      second-operand location everytime */
+   cas = mkIRCAS(IRTemp_INVALID, old_mem,
+                 Iend_BE, mkexpr(op2addr),
+                 NULL, mkexpr(op2), /* expected value */
+                 NULL, mkexpr(result)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* Set CC according to bitwise operation */
+   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
+
+   /* If old_mem contains the expected value, then the CAS succeeded.
+      Otherwise, it did not */
+   yield_if(binop(Iop_CmpNE32, mkexpr(old_mem), mkexpr(op2)));
+   put_gpr_w1(r1, mkexpr(old_mem));
+}
+
+static void
+s390_irgen_load_and_bitwise64(UChar r1, UChar r3, IRTemp op2addr, IROp op)
+{
+   IRCAS *cas;
+   IRTemp old_mem = newTemp(Ity_I64);
+   IRTemp op2 = newTemp(Ity_I64);
+   IRTemp op3 = newTemp(Ity_I64);
+   IRTemp result = newTemp(Ity_I64);
+
+   assign(op2, load(Ity_I64, mkexpr(op2addr)));
+   assign(op3, get_gpr_dw0(r3));
+   assign(result, binop(op, mkexpr(op2), mkexpr(op3)));
+
+   /* Place the addition of second operand and third operand at the
+      second-operand location everytime */
+   cas = mkIRCAS(IRTemp_INVALID, old_mem,
+                 Iend_BE, mkexpr(op2addr),
+                 NULL, mkexpr(op2), /* expected value */
+                 NULL, mkexpr(result)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* Set CC according to bitwise operation */
+   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
+
+   /* If old_mem contains the expected value, then the CAS succeeded.
+      Otherwise, it did not */
+   yield_if(binop(Iop_CmpNE64, mkexpr(old_mem), mkexpr(op2)));
+   put_gpr_dw0(r1, mkexpr(old_mem));
+}
+
+static const HChar *
+s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
+{
+   s390_irgen_load_and_add32(r1, r3, op2addr, True /* is_signed */);
 
    return "laa";
 }
@@ -5465,16 +5569,7 @@ s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAAG(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_Add64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putSS(S390_CC_OP_SIGNED_ADD_64, op2, op3);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_dw0(r1, mkexpr(op2));
+   s390_irgen_load_and_add64(r1, r3, op2addr, True /* is_signed */);
 
    return "laag";
 }
@@ -5482,16 +5577,7 @@ s390_irgen_LAAG(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAAL(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
-
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_Add32, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_ADD_32, op2, op3);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_w1(r1, mkexpr(op2));
+   s390_irgen_load_and_add32(r1, r3, op2addr, False /* is_signed */);
 
    return "laal";
 }
@@ -5499,16 +5585,7 @@ s390_irgen_LAAL(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAALG(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_Add64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_ADD_64, op2, op3);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_dw0(r1, mkexpr(op2));
+   s390_irgen_load_and_add64(r1, r3, op2addr, False /* is_signed */);
 
    return "laalg";
 }
@@ -5516,16 +5593,7 @@ s390_irgen_LAALG(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAN(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
-
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_And32, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_w1(r1, mkexpr(op2));
+   s390_irgen_load_and_bitwise32(r1, r3, op2addr, Iop_And32);
 
    return "lan";
 }
@@ -5533,16 +5601,7 @@ s390_irgen_LAN(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LANG(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_And64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_dw0(r1, mkexpr(op2));
+   s390_irgen_load_and_bitwise64(r1, r3, op2addr, Iop_And64);
 
    return "lang";
 }
@@ -5550,16 +5609,7 @@ s390_irgen_LANG(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAX(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
-
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_Xor32, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_w1(r1, mkexpr(op2));
+   s390_irgen_load_and_bitwise32(r1, r3, op2addr, Iop_Xor32);
 
    return "lax";
 }
@@ -5567,16 +5617,7 @@ s390_irgen_LAX(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAXG(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_Xor64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_dw0(r1, mkexpr(op2));
+   s390_irgen_load_and_bitwise64(r1, r3, op2addr, Iop_Xor64);
 
    return "laxg";
 }
@@ -5584,16 +5625,7 @@ s390_irgen_LAXG(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAO(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
-
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_Or32, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_w1(r1, mkexpr(op2));
+   s390_irgen_load_and_bitwise32(r1, r3, op2addr, Iop_Or32);
 
    return "lao";
 }
@@ -5601,16 +5633,7 @@ s390_irgen_LAO(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_LAOG(UChar r1, UChar r3, IRTemp op2addr)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_Or64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_dw0(r1, mkexpr(op2));
+   s390_irgen_load_and_bitwise64(r1, r3, op2addr, Iop_Or64);
 
    return "laog";
 }

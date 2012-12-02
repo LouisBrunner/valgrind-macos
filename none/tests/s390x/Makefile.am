@@ -17,7 +17,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
 	     spechelper-cr  spechelper-clr  \
 	     spechelper-ltr spechelper-or   \
 	     spechelper-icm-1  spechelper-icm-2 spechelper-tmll \
-	     spechelper-tm
+	     spechelper-tm laa
 if BUILD_DFP_TESTS
   INSN_TESTS += dfp-1
 endif

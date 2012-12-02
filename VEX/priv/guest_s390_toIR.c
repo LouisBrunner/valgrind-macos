@@ -5425,9 +5425,16 @@ s390_irgen_LARL(UChar r1, UInt i2)
    return "larl";
 }
 
+/* The IR representation of LAA and friends is an approximation of what 
+   happens natively. Essentially a loop containing a compare-and-swap is
+   constructed which will iterate until the CAS succeeds. As a consequence,
+   instrumenters may see more memory accesses than happen natively. See also
+   discussion here: https://bugs.kde.org/show_bug.cgi?id=306035 */
 static const HChar *
 s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
 {
+   IRCAS *cas;
+   IRTemp old_mem = newTemp(Ity_I32);
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
    IRTemp result = newTemp(Ity_I32);
@@ -5435,9 +5442,22 @@ s390_irgen_LAA(UChar r1, UChar r3, IRTemp op2addr)
    assign(op2, load(Ity_I32, mkexpr(op2addr)));
    assign(op3, get_gpr_w1(r3));
    assign(result, binop(Iop_Add32, mkexpr(op2), mkexpr(op3)));
+
+   /* Place the addition of second operand and third operand at the
+      second-operand location everytime */
+   cas = mkIRCAS(IRTemp_INVALID, old_mem,
+                 Iend_BE, mkexpr(op2addr),
+                 NULL, mkexpr(op2), /* expected value */
+                 NULL, mkexpr(result)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* Set CC according to 32-bit signed addition */
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_ADD_32, op2, op3);
-   store(mkexpr(op2addr), mkexpr(result));
-   put_gpr_w1(r1, mkexpr(op2));
+
+   /* If old_mem contains the expected value, then the CAS succeeded.
+      Otherwise, it did not */
+   yield_if(binop(Iop_CmpNE32, mkexpr(old_mem), mkexpr(op2)));
+   put_gpr_w1(r1, mkexpr(old_mem));
 
    return "laa";
 }

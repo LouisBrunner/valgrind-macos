@@ -863,16 +863,16 @@ shhhr,"subtract high high",implemented,
 shhlr,"subtract high low",implemented,
 slhhhr,"subtract logical high high",implemented,
 slhhlr,"subtract logical high low",implemented,
-laa,"load and add 32 bit",semi-implemented,"bugzilla #306035"
-laag,"load and add 64 bit",semi-implemented,"bugzilla #306035"
-laal,"load and add logical 32 bit",semi-implemented,"bugzilla #306035"
-laalg,"load and add logical 64 bit",semi-implemented,"bugzilla #306035"
-lan,"load and and 32 bit",semi-implemented,"bugzilla #306035"
-lang,"load and and 64 bit",semi-implemented,"bugzilla #306035"
-lax,"load and exclusive or 32 bit",semi-implemented,"bugzilla #306035"
-laxg,"load and exclusive or 64 bit",semi-implemented,"bugzilla #306035"
-lao,"load and or 32 bit",semi-implemented,"bugzilla #306035"
-laog,"load and or 64 bit",semi-implemented,"bugzilla #306035"
+laa,"load and add 32 bit",implemented,
+laag,"load and add 64 bit",implemented,
+laal,"load and add logical 32 bit",implemented,
+laalg,"load and add logical 64 bit",implemented,
+lan,"load and and 32 bit",implemented,
+lang,"load and and 64 bit",implemented,
+lax,"load and exclusive or 32 bit",implemented,
+laxg,"load and exclusive or 64 bit",implemented,
+lao,"load and or 32 bit",implemented,
+laog,"load and or 64 bit",implemented,
 lpd,"load pair disjoint 32 bit","not implemented",
 lpdg,"load pair disjoint 64 bit","not implemented",
 locr,"load on condition 32 bit",implemented,

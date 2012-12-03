@@ -1124,6 +1124,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
      volatile Bool have_STFLE, have_ETF2, have_ETF3, have_STCKF, have_FPEXT;
+     volatile Bool have_LSCOND;
      Int r, model;
 
      /* Unblock SIGILL and stash away the old action for that signal */
@@ -1200,6 +1201,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_ETF3 = False;
      have_STCKF = False;
      have_FPEXT = False;
+     have_LSCOND = False;
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_STFLE = False;
      } else {
@@ -1217,6 +1219,8 @@ Bool VG_(machine_get_hwcaps)( void )
              have_STCKF = True;
          if (hoststfle[0] & (1ULL << (63 - 37)))
              have_FPEXT = True;
+         if (hoststfle[0] & (1ULL << (63 - 45)))
+             have_LSCOND = True;
      }
 
      /* Restore signals */
@@ -1233,9 +1237,10 @@ Bool VG_(machine_get_hwcaps)( void )
         identification yet. Keeping fingers crossed. */
 
      VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
-                   "FGX %d STFLE %d ETF2 %d ETF3 %d STCKF %d\n",
+                   "FGX %d STFLE %d ETF2 %d ETF3 %d STCKF %d FPEXT %d LSCOND %d\n",
                    model, have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX,
-                   have_STFLE, have_ETF2, have_ETF3, have_STCKF);
+                   have_STFLE, have_ETF2, have_ETF3, have_STCKF, have_FPEXT,
+                   have_LSCOND);
 
      vai.hwcaps = model;
      if (have_LDISP) {
@@ -1253,6 +1258,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
      if (have_STCKF) vai.hwcaps |= VEX_HWCAPS_S390X_STCKF;
      if (have_FPEXT) vai.hwcaps |= VEX_HWCAPS_S390X_FPEXT;
+     if (have_LSCOND)vai.hwcaps |= VEX_HWCAPS_S390X_LSCOND;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 

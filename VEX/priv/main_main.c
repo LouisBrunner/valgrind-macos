@@ -1260,7 +1260,7 @@ static const HChar* show_hwcaps_arm ( UInt hwcaps )
 static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 {
    static const HChar prefix[] = "s390x";
-   static const HChar facilities[][6] = {
+   static const HChar facilities[][7] = {
      { "ldisp" },
      { "eimm" },
      { "gie" },
@@ -1271,6 +1271,7 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
      { "etf3" },
      { "stckf" },
      { "fpext" },
+     { "lscond" },
    };
    static HChar buf[sizeof facilities + sizeof prefix + 1];
    static HChar *p;
@@ -1300,6 +1301,8 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
      p = p + vex_sprintf(p, "-%s", facilities[8]);
    if (hwcaps & VEX_HWCAPS_S390X_FPEXT)
      p = p + vex_sprintf(p, "-%s", facilities[9]);
+   if (hwcaps & VEX_HWCAPS_S390X_LSCOND)
+     p = p + vex_sprintf(p, "-%s", facilities[10]);
 
    /* If there are no facilities, add "zarch" */
    if (hwcaps == 0)

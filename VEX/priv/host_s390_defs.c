@@ -3935,6 +3935,43 @@ s390_emit_SDTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
    return emit_RRF4(p, 0xb3d30000, r3, m4, r1, r2);
 }
 
+
+static UChar *
+s390_emit_LOCGR(UChar *p, UChar m3, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_lscond);
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, GPR, GPR, UINT), "locgr", r1, r2, m3);
+   }
+
+   return emit_RRF3(p, 0xb9e20000, m3, r1, r2);
+}
+
+
+static UChar *
+s390_emit_LOC(UChar *p, UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2)
+{
+   vassert(s390_host_has_ldisp || dh2 == 0);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, UINT, SDXB), "loc", r1, m3, dh2, dl2, 0, b2);
+
+   return emit_RSY(p, 0xeb00000000f2ULL, r1, m3, b2, dl2, dh2);
+}
+
+
+static UChar *
+s390_emit_LOCG(UChar *p, UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2)
+{
+   vassert(s390_host_has_ldisp || dh2 == 0);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, UINT, SDXB), "locg", r1, m3, dh2, dl2, 0, b2);
+
+   return emit_RSY(p, 0xeb00000000e2ULL, r1, m3, b2, dl2, dh2);
+}
+
+
 /* Provide a symbolic name for register "R0" */
 #define R0 0
 
@@ -7394,8 +7431,61 @@ s390_insn_cond_move_emit(UChar *buf, const s390_insn *insn)
    dst  = insn->variant.cond_move.dst;
    src  = insn->variant.cond_move.src;
 
+   if (cond == S390_CC_NEVER) return buf;
+
    p = buf;
 
+   if (s390_host_has_lscond) {
+      /* LOCx is not the preferred way to implement an unconditional load. */
+      if (cond != S390_CC_ALWAYS) goto use_branch_insn;
+
+      switch (src.tag) {
+      case S390_OPND_REG:
+         return s390_emit_LOCGR(p, cond, hregNumber(dst),
+                                hregNumber(src.variant.reg));
+
+      case S390_OPND_AMODE: {
+         const s390_amode *am = src.variant.am;
+
+         /* We cannot use LOCx for loads less than 4 bytes. In that case
+            load into R0 and then use LOCGR. Do the same if the amode uses
+            an index register. */
+         if (insn->size < 4 ||
+             am->tag == S390_AMODE_BX12 || am->tag == S390_AMODE_BX20) {
+            p = s390_emit_load_mem(p, insn->size, R0, am);
+            p = s390_emit_LOCGR(p, cond, hregNumber(dst), R0);
+            return p;
+         }
+
+         vassert(am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20);
+         vassert(insn->size == 4 || insn->size == 8);
+
+         UInt b = hregNumber(am->b);
+         UInt d = am->d;
+
+         if (insn->size == 4) {
+            return s390_emit_LOC(p, hregNumber(dst), cond, b, DISP20(d));
+         }
+         return s390_emit_LOCG(p, hregNumber(dst), cond, b, DISP20(d));
+      }
+
+      case S390_OPND_IMMEDIATE: {
+         ULong value = src.variant.imm;
+
+         /* Load value into R0, then use LOCGR */
+         if (insn->size <= 4) {
+            p = s390_emit_load_32imm(p, R0, value);
+            return s390_emit_LOCGR(p, cond, hregNumber(dst), R0);
+         }
+
+         vassert(insn->size == 8);
+         p = s390_emit_load_64imm(p, R0, value);
+         return s390_emit_LOCGR(p, cond, hregNumber(dst), R0);
+      }
+      }
+   }
+
+use_branch_insn:
    /* Branch (if cond fails) over move instrs */
    if (cond != S390_CC_ALWAYS) {
       /* Don't know how many bytes to jump over yet.

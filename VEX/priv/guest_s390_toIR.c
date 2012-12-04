@@ -12482,6 +12482,11 @@ s390_irgen_ECAG(UChar r1, UChar r3 __attribute__((unused)), IRTemp op2addr)
 }
 
 
+/* New insns are added here.
+   If an insn is contingent on a facility being installed also
+   check whether the list of supported facilities in function
+   s390x_dirtyhelper_STFLE needs updating */
+
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
 /*------------------------------------------------------------*/

@@ -52,5 +52,11 @@ int main()
   else
     printf("The z/Architecture architectural mode is not installed\n");
 
+  /* Test #4: Message security assist */
+  if (stfle(dw, 17)) {
+     printf("MSA facility is present\n");
+  } else {
+     printf("No MSA facility available\n");
+  }
   return 0;
 }

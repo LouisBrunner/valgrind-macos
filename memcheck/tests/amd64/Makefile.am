@@ -14,6 +14,9 @@ EXTRA_DIST = \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
 	bug279698.vgtest bug279698.stderr.exp bug279698.stdout.exp \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
+	insn-bsfl.vgtest insn-bsfl.stdout.exp insn-bsfl.stderr.exp \
+	insn-pcmpistri.vgtest insn-pcmpistri.stdout.exp insn-pcmpistri.stderr.exp \
+	insn-pmovmskb.vgtest insn-pmovmskb.stdout.exp insn-pmovmskb.stderr.exp \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \

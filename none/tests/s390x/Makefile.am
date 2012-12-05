@@ -34,7 +34,8 @@ EXTRA_DIST = \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
-	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h
+	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
+	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

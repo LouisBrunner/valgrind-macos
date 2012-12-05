@@ -12940,6 +12940,11 @@ s390_decode_4byte_and_irgen(UChar *bytes)
       goto ok;
    case 0xb2b9: /* SRNMT */ goto unimplemented;
    case 0xb2bd: /* LFAS */ goto unimplemented;
+   case 0xb2e8: /* PPA */ goto unimplemented;
+   case 0xb2ec: /* ETND */ goto unimplemented;
+   case 0xb2f8: /* TEND */ goto unimplemented;
+   case 0xb2fa: /* NIAI */ goto unimplemented;
+   case 0xb2fc: /* TABORT */ goto unimplemented;
    case 0xb2ff: /* TRAP4 */ goto unimplemented;
    case 0xb300: s390_format_RRE_FF(s390_irgen_LPEBR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
@@ -13341,6 +13346,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb98a: /* CSPG */ goto unimplemented;
    case 0xb98d: /* EPSW */ goto unimplemented;
    case 0xb98e: /* IDTE */ goto unimplemented;
+   case 0xb98f: /* CRDTE */ goto unimplemented;
    case 0xb990: s390_format_RRF_M0RERE(s390_irgen_TRTT, ovl.fmt.RRF3.r3,
                                    ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
    case 0xb991: s390_format_RRF_M0RERE(s390_irgen_TRTO, ovl.fmt.RRF3.r3,
@@ -13930,6 +13936,7 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
+   case 0xe30000000025ULL: /* NTSTG */ goto unimplemented;
    case 0xe30000000026ULL: s390_format_RXY_RRRD(s390_irgen_CVDY, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -14083,6 +14090,7 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
+   case 0xe30000000085ULL: /* LGAT */ goto unimplemented;
    case 0xe30000000086ULL: s390_format_RXY_RRRD(s390_irgen_MLG, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -14139,6 +14147,9 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
+   case 0xe3000000009cULL: /* LLGTAT */ goto unimplemented;
+   case 0xe3000000009dULL: /* LLGFAT */ goto unimplemented;
+   case 0xe3000000009fULL: /* LAT */ goto unimplemented;
    case 0xe300000000c0ULL: s390_format_RXY_RRRD(s390_irgen_LBH, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -14163,6 +14174,7 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
+   case 0xe300000000c8ULL: /* LFHAT */ goto unimplemented;
    case 0xe300000000caULL: s390_format_RXY_RRRD(s390_irgen_LFH, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -14220,6 +14232,7 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
+   case 0xeb0000000023ULL: /* CLT */ goto unimplemented;
    case 0xeb0000000024ULL: s390_format_RSY_RRRD(s390_irgen_STMG, ovl.fmt.RSY.r1,
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
@@ -14229,6 +14242,7 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
+   case 0xeb000000002bULL: /* CLGT */ goto unimplemented;
    case 0xeb000000002cULL: s390_format_RSY_RURD(s390_irgen_STCMH,
                                                 ovl.fmt.RSY.r1, ovl.fmt.RSY.r3,
                                                 ovl.fmt.RSY.b2, ovl.fmt.RSY.dl2,
@@ -14434,6 +14448,7 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                  ovl.fmt.RIE_RRUUU.i4,
                                                  ovl.fmt.RIE_RRUUU.i5);
                                                  goto ok;
+   case 0xec0000000059ULL: /* RISBGN */ goto unimplemented;
    case 0xec000000005dULL: /* RISBHG */ goto unimplemented;
    case 0xec0000000064ULL: s390_format_RIE_RRPU(s390_irgen_CGRJ,
                                                 ovl.fmt.RIE_RRPU.r1,
@@ -14639,6 +14654,10 @@ s390_decode_6byte_and_irgen(UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
+   case 0xed00000000a8ULL: /* CZDT */ goto unimplemented;
+   case 0xed00000000a9ULL: /* CZXT */ goto unimplemented;
+   case 0xed00000000aaULL: /* CDZT */ goto unimplemented;
+   case 0xed00000000abULL: /* CXZT */ goto unimplemented;
    }
 
    switch (((ovl.value >> 16) & 0xff0f00000000ULL) >> 32) {
@@ -14759,6 +14778,8 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    }
 
    switch (((ovl.value >> 16) & 0xff0000000000ULL) >> 40) {
+   case 0xc5ULL: /* BPRP */ goto unimplemented;
+   case 0xc7ULL: /* BPP */ goto unimplemented;
    case 0xd0ULL: /* TRTR */ goto unimplemented;
    case 0xd1ULL: /* MVN */ goto unimplemented;
    case 0xd2ULL: s390_format_SS_L0RDRD(s390_irgen_MVC, ovl.fmt.SS.l,
@@ -14843,6 +14864,8 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    case 0xe55dULL: s390_format_SIL_RDU(s390_irgen_CLFHSI, ovl.fmt.SIL.b1,
                                        ovl.fmt.SIL.d1, ovl.fmt.SIL.i2);
                                        goto ok;
+   case 0xe560ULL: /* TBEGIN */ goto unimplemented;
+   case 0xe561ULL: /* TBEGINC */ goto unimplemented;
    }
 
    return S390_DECODE_UNKNOWN_INSN;

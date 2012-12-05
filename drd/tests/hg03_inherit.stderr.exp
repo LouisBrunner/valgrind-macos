@@ -4,13 +4,13 @@ Conflicting store by thread 3 at 0x........ size 4
    at 0x........: t2 (hg03_inherit.c:28)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 Location 0x........ is 0 bytes inside shared[1],
-declared at hg03_inherit.c:11, in frame #? of thread 3
+a global variable declared at hg03_inherit.c:11
 
 Conflicting store by thread 3 at 0x........ size 4
    at 0x........: t2 (hg03_inherit.c:29)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 Location 0x........ is 0 bytes inside shared[1],
-declared at hg03_inherit.c:11, in frame #? of thread 3
+a global variable declared at hg03_inherit.c:11
 
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

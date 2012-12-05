@@ -1853,7 +1853,7 @@ static void parse_var_DIE (
    if (dtag == DW_TAG_variable || dtag == DW_TAG_formal_parameter) {
       HChar* name        = NULL;
       UWord  typeR       = D3_INVALID_CUOFF;
-      Bool   external    = False;
+      Bool   global      = False;
       GExpr* gexpr       = NULL;
       Int    n_attrs     = 0;
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
@@ -1880,7 +1880,7 @@ static void parse_var_DIE (
             typeR = cook_die_using_form( cc, (UWord)cts, form );
          }
          if (attr == DW_AT_external && ctsSzB > 0 && cts > 0) {
-            external = True;
+            global = True;
          }
          if (attr == DW_AT_abstract_origin && ctsSzB > 0) {
             abs_ori = (UWord)cts;
@@ -1902,6 +1902,14 @@ static void parse_var_DIE (
             if (0) VG_(printf)("XXX filename = %s\n", fileName);
          }
       }
+      if (!global && dtag == DW_TAG_variable && level == 1) {
+         /* Case of a static variable. It is better to declare
+            it global as the variable is not really related to
+            a PC range, as its address can be used by program
+            counters outside of the ranges where it is visible . */
+         global = True;
+      }
+
       /* We'll collect it under if one of the following three
          conditions holds:
          (1) has location and type    -> completed
@@ -1927,7 +1935,7 @@ static void parse_var_DIE (
             this CU. */
          vg_assert(parser->sp >= 0);
 
-         /* If this is a local variable (non-external), try to find
+         /* If this is a local variable (non-global), try to find
             the GExpr for the DW_AT_frame_base of the containing
             function.  It should have been pushed on the stack at the
             time we encountered its DW_TAG_subprogram DIE, so the way
@@ -1939,7 +1947,7 @@ static void parse_var_DIE (
             if the containing DT_TAG_subprogram didn't supply a
             DW_AT_frame_base -- that's OK, but there must actually be
             a containing DW_TAG_subprogram. */
-         if (!external) {
+         if (!global) {
             Bool found = False;
             for (i = parser->sp; i >= 0; i--) {
                if (parser->isFunc[i]) {
@@ -1951,7 +1959,7 @@ static void parse_var_DIE (
             if (!found) {
                if (0 && VG_(clo_verbosity) >= 0) {
                   VG_(message)(Vg_DebugMsg, 
-                     "warning: parse_var_DIE: non-external variable "
+                     "warning: parse_var_DIE: non-global variable "
                      "outside DW_TAG_subprogram\n");
                }
                /* goto bad_DIE; */
@@ -1964,18 +1972,18 @@ static void parse_var_DIE (
             }
          }
 
-         /* re "external ? 0 : parser->sp" (twice), if the var is
-            marked 'external' then we must put it at the global scope,
+         /* re "global ? 0 : parser->sp" (twice), if the var is
+            marked 'global' then we must put it at the global scope,
             as only the global scope (level 0) covers the entire PC
             address space.  It is asserted elsewhere that level 0 
             always covers the entire address space. */
-         xa = parser->ranges[external ? 0 : parser->sp];
+         xa = parser->ranges[global ? 0 : parser->sp];
          nRanges = VG_(sizeXA)(xa);
          vg_assert(nRanges >= 0);
 
          tv = ML_(dinfo_zalloc)( "di.readdwarf3.pvD.1", sizeof(TempVar) );
          tv->name   = name;
-         tv->level  = external ? 0 : parser->sp;
+         tv->level  = global ? 0 : parser->sp;
          tv->typeR  = typeR;
          tv->gexpr  = gexpr;
          tv->fbGX   = fbGX;

@@ -3282,28 +3282,6 @@ Bool VG_(get_data_description)(
       in the stacks of all the threads.  First try to figure out which
       thread's stack data_addr is in. */
 
-   /* --- KLUDGE --- Try examining the top frame of all thread stacks.
-      This finds variables which are not stack allocated but are not
-      globally visible either; specifically it appears to pick up
-      variables which are visible only within a compilation unit.
-      These will have the address range of the compilation unit and
-      tend to live at Scope level 1. */
-   VG_(thread_stack_reset_iter)(&tid);
-   while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
-      if (stack_min >= stack_max)
-         continue; /* ignore obviously stupid cases */
-      if (consider_vars_in_frame( dname1, dname2,
-                                  data_addr,
-                                  VG_(get_IP)(tid),
-                                  VG_(get_SP)(tid), 
-                                  VG_(get_FP)(tid), tid, 0 )) {
-         zterm_XA( dname1 );
-         zterm_XA( dname2 );
-         return True;
-      }
-   }
-   /* --- end KLUDGE --- */
-
    /* Perhaps it's on a thread's stack? */
    found = False;
    VG_(thread_stack_reset_iter)(&tid);
@@ -3328,9 +3306,6 @@ Bool VG_(get_data_description)(
    n_frames = VG_(get_StackTrace)( tid, ips, N_FRAMES,
                                    sps, fps, 0/*first_ip_delta*/ );
 
-   /* As a result of KLUDGE above, starting the loop at j = 0
-      duplicates examination of the top frame and so isn't necessary.
-      Oh well. */
    vg_assert(n_frames >= 0 && n_frames <= N_FRAMES);
    for (j = 0; j < n_frames; j++) {
       if (consider_vars_in_frame( dname1, dname2,

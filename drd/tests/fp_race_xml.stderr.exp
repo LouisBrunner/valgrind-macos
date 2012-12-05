@@ -48,8 +48,8 @@
       <line>...</line>
     </frame>
   </stack>
-  <auxwhat>Location 0x........ is 0 bytes inside local var "s_d3"</auxwhat>
-  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread x</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "s_d3"</auxwhat>
+  <xauxwhat><text>declared at fp_race.c:24</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
   <other_segment_start>
   </other_segment_start>
   <other_segment_end>
@@ -71,8 +71,8 @@
       <line>...</line>
     </frame>
   </stack>
-  <auxwhat>Location 0x........ is 0 bytes inside local var "s_d3"</auxwhat>
-  <xauxwhat><text>declared at fp_race.c:24, in frame #? of thread x</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "s_d3"</auxwhat>
+  <xauxwhat><text>declared at fp_race.c:24</text> <file>fp_race.c</file> <line>...</line> </xauxwhat>
   <other_segment_start>
   </other_segment_start>
   <other_segment_end>

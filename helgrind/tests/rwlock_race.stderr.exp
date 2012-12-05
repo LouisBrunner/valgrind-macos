@@ -29,8 +29,8 @@ Locks held: none
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:18, in frame #x of thread x
+Location 0x........ is 0 bytes inside global var "s_racy"
+declared at rwlock_race.c:18
 
 Result: 2
 

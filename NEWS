@@ -43,6 +43,7 @@ m = merged into 3_8_BRANCH
 308644    [390] vgdb command for having the info for the track-fds option
 308711    [390] give more info about aspacemgr and arenas in out_of_memory
 308886    [390] Missing support for PTRACE_SET/GETREGSET 
+310424    [390] --read-var-info does not properly describe static variables 
 310931    [390] s390x: Message-security assist (MSA) instruction extension not implemented
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored

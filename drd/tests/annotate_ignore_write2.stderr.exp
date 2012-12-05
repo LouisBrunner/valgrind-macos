@@ -1,23 +1,23 @@
 
 Conflicting load by thread 1 at 0x........ size 1
    at 0x........: main (annotate_ignore_write.c:?)
-Location 0x........ is 0 bytes inside local var "s_b"
-declared at annotate_ignore_write.c:11, in frame #? of thread 1
+Location 0x........ is 0 bytes inside global var "s_b"
+declared at annotate_ignore_write.c:11
 
 Conflicting store by thread 1 at 0x........ size 1
    at 0x........: main (annotate_ignore_write.c:?)
-Location 0x........ is 0 bytes inside local var "s_a"
-declared at annotate_ignore_write.c:10, in frame #? of thread 1
+Location 0x........ is 0 bytes inside global var "s_a"
+declared at annotate_ignore_write.c:10
 
 Conflicting load by thread 1 at 0x........ size 1
    at 0x........: main (annotate_ignore_write.c:?)
-Location 0x........ is 0 bytes inside local var "s_c"
-declared at annotate_ignore_write.c:12, in frame #? of thread 1
+Location 0x........ is 0 bytes inside global var "s_c"
+declared at annotate_ignore_write.c:12
 
 Conflicting store by thread 1 at 0x........ size 1
    at 0x........: main (annotate_ignore_write.c:?)
-Location 0x........ is 0 bytes inside local var "s_a"
-declared at annotate_ignore_write.c:10, in frame #? of thread 1
+Location 0x........ is 0 bytes inside global var "s_a"
+declared at annotate_ignore_write.c:10
 
 Finished.
 

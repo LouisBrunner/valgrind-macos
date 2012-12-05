@@ -83,7 +83,7 @@ Uninitialised byte(s) found during client check request
    by 0x........: varinfo5_main (varinfo5so.c:156)
    by 0x........: main (varinfo5.c:5)
  Location 0x........ is 0 bytes inside static_global_def[1],
- declared at varinfo5so.c:87, in frame #0 of thread 1
+ a global variable declared at varinfo5so.c:87
 
 Uninitialised byte(s) found during client check request
    at 0x........: croak (varinfo5so.c:30)
@@ -101,7 +101,7 @@ Uninitialised byte(s) found during client check request
    by 0x........: varinfo5_main (varinfo5so.c:156)
    by 0x........: main (varinfo5.c:5)
  Location 0x........ is 0 bytes inside static_global_undef[3],
- declared at varinfo5so.c:89, in frame #0 of thread 1
+ a global variable declared at varinfo5so.c:89
 
 Uninitialised byte(s) found during client check request
    at 0x........: croak (varinfo5so.c:30)

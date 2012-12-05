@@ -29,8 +29,8 @@ Locks held: none
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Location 0x........ is 0 bytes inside local var "shared"
-declared at hg04_race.c:6, in frame #x of thread x
+Location 0x........ is 0 bytes inside global var "shared"
+declared at hg04_race.c:6
 
 ----------------------------------------------------------------
 
@@ -46,8 +46,8 @@ Locks held: none
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Location 0x........ is 0 bytes inside local var "shared"
-declared at hg04_race.c:6, in frame #x of thread x
+Location 0x........ is 0 bytes inside global var "shared"
+declared at hg04_race.c:6
 
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

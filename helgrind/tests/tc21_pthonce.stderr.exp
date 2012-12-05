@@ -29,8 +29,8 @@ Locks held: none
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Location 0x........ is 0 bytes inside local var "unprotected2"
-declared at tc21_pthonce.c:51, in frame #x of thread x
+Location 0x........ is 0 bytes inside global var "unprotected2"
+declared at tc21_pthonce.c:51
 
 ----------------------------------------------------------------
 
@@ -46,8 +46,8 @@ Locks held: none
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
-Location 0x........ is 0 bytes inside local var "unprotected2"
-declared at tc21_pthonce.c:51, in frame #x of thread x
+Location 0x........ is 0 bytes inside global var "unprotected2"
+declared at tc21_pthonce.c:51
 
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

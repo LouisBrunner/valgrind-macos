@@ -251,53 +251,53 @@ https://bugs.kde.org/show_bug.cgi?id=164485
 
 ------ Thu Oct 11 18:51:26 CEST 2012
 
-289578] Backtraces with ARM unwind tables (=without debug symbols) and
-support for offline symbol resolving
+289578  Backtraces with ARM unwind tables (=without debug symbols) and
+        support for offline symbol resolving
 
-308321] New: testsuite memcheck filter interferes with gdb_filter
+308321  testsuite memcheck filter interferes with gdb_filter
 
-308333] New: Valgrind doesn't handle GCC's __sync_fetch_and_add
+308333  Valgrind doesn't handle GCC's __sync_fetch_and_add
 (unhandled 
 
-308341] New: vgdb should report process exit (or fatal signal)
+308341  vgdb should report process exit (or fatal signal)
 
-308353] New: use of uninitialised value reported, but get_vbits claims
+308353  use of uninitialised value reported, but get_vbits claims
 all 0's for this memory
 
 197915] 80-bit floats are not supported on x86 and x86-64
 
-308427] New: s390 memcheck reports  tsearch conditional jump or move
+308427  s390 memcheck reports  tsearch conditional jump or move
 depends on uninitialized value
 
-308495] New: Remove build dependency on installed Xen headers
+308495  Remove build dependency on installed Xen headers
 
 299316] Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr'
 failed.
 
-308573] New: Internal Valgrind error on 64-bit instruction executed in
+308573  Internal Valgrind error on 64-bit instruction executed in
 32-bit mode
 
-308582] New: massif: wrong stack usage at exit of threaded program
+308582  massif: wrong stack usage at exit of threaded program
 
-308626] New: bsfl validity bit propagation is imprecise
+308626  bsfl validity bit propagation is imprecise
 
-308627] New: pmovmskb validity bit propagation is imprecise
+308627  pmovmskb validity bit propagation is imprecise
 
-308644] New: vgdb command for having the info for the track-fds option
+308644  vgdb command for having the info for the track-fds option
 
-308668] New: pthread rwlock_rdlock doesn't understand modifications in
+308668  pthread rwlock_rdlock doesn't understand modifications in
 some cases
 
-308711] New: give more info about aspacemgr and arenas in
+308711  give more info about aspacemgr and arenas in
 out_of_memory
 
-308717] New: ARM: implement fixed-point VCVT.F64.[SU]32
+308717  ARM: implement fixed-point VCVT.F64.[SU]32
 (patch, but no test case)
 
-308718] New: ARM implement SMLALBB family of instructions
+308718  ARM implement SMLALBB family of instructions
 (patch, but no test case)
 
-308729] New: vex x86->IR: unhandled instruction bytes 0xf 0x5
+308729  vex x86->IR: unhandled instruction bytes 0xf 0x5
 
 212419] false positive "lock order violated" (A+B vs A)
 dfaure wants this fixed
@@ -305,13 +305,78 @@ related: 243232] Inconsistent Lock Orderings report with trylock
 
 237920] valgrind segfault on fork failure
 
-308816] New: valgrind GPF in signal handler context 3.8.1 (allignment 
+308816  valgrind GPF in signal handler context 3.8.1 (allignment 
 
-308886] New: Missing support for PTRACE_SET/GETREGSET
+308886  Missing support for PTRACE_SET/GETREGSET
 
-308930] New: syscall name_to_handle_at (303 on amd64) not handled
+308930  syscall name_to_handle_at (303 on amd64) not handled
 
-308977] New: specify Install Directory for my target platform.
+308977  specify Install Directory for my target platform.
 
--- Fri Oct 26 12:14:40 CEST 2012
+309100  s390x: Testcases for extended BFP
 
+309229  V-bit tester does not report number of tests generated
+
+309323  print unrecognized instuction on MIPS
+
+309425  Provide a --sigill-diagnostics flag to suppress illegal
+instruction reporting
+
+309427  SSE optimized stpncpy trigger uninitialised value and/or
+invalid read warnings
+
+309430  Self hosting ppc64 encounters a vassert error on operand
+type
+
+309554  Unhandled syscall remap_file_pages (216)
+
+309600  valgrind is a bit confused about 0-sized sections
+
+309604  disInstr(arm): unhandled instruction: 0xECECA102
+
+309721  add client request returning current value of a statistic
+(e.g. Ir)
+
+309783  Valgrind does not support separate source and build
+directories
+
+309823  Generate errors for still reachable blocks
+
+309827  add support for nvidia (nvmem) ioctls
+
+309831  3.8.1: disInstr(arm): unhandled instruction: 0xECECA102
+(stcl, gdb disassembles to stfp)
+
+309879  gnat gcc generates tag_member without type info, cannot
+be read by Valgrind
+
+309884  "make check" fails on Suse Linux Enterprise 10
+
+309921  PCMPISTRI validity bit propagation is imprecise
+
+309922  none/tests/ppc64/test_dfp5 sometimes fails
+
+310169  The Iop_CmpORD class of Iops is currently not supported
+by the vbit checker.
+
+310188  need better diagnostic when mmap() fails with EINVAL
+
+310199  valgrind: the 'impossible' happened: SIGSEGV
+
+310424  --read-var-info does not properly describe static
+variables
+
+310692  [coregrind] Thread scheduling regression?
+
+310792  [PATCH v2] search additional path for debug symbols
+
+310931  s390 message-security assist (MSA) instruction extension
+not implemented
+
+311093  massif and memcheck fail to redirect malloc calls on
+statically linked application
+
+311100  PPC DFP implementation of the integer operands is not
+consistent with the Iop definitions
+
+-- Wed Dec  5 23:41:20 CET 2012

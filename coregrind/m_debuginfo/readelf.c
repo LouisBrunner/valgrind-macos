@@ -1212,6 +1212,7 @@ void find_debug_file( struct _DebugInfo* di,
                       /*OUT*/SizeT* n_dimage )
 {
    HChar* debugpath = NULL;
+   HChar* extrapath = VG_(clo_extra_debuginfo_path);
    Addr  addr = 0;
    UWord size = 0;
 
@@ -1241,7 +1242,8 @@ void find_debug_file( struct _DebugInfo* di,
 
       debugpath = ML_(dinfo_zalloc)(
                      "di.fdf.3",
-                     VG_(strlen)(objdir) + VG_(strlen)(debugname) + 32);
+                     VG_(strlen)(objdir) + VG_(strlen)(debugname) + 32 +
+                     (extrapath ? VG_(strlen)(extrapath) : 0));
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
 
@@ -1250,6 +1252,13 @@ void find_debug_file( struct _DebugInfo* di,
          if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
             VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
             addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
+            if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
+               if (extrapath) {
+                  VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
+                              objdir, debugname);
+                  addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
+               }
+            }
          }
       }
 

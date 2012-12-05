@@ -172,6 +172,9 @@ static void usage_NORETURN ( Bool debug_help )
 "                              part of the path after 'string'.  Allows removal\n"
 "                              of path prefixes.  Use this flag multiple times\n"
 "                              to specify a set of prefixes to remove.\n"
+"    --extra-debuginfo-path=path    absolute path to search for additional\n"
+"                              debug symbols, in addition to existing default\n"
+"                              well known search paths.\n"
 "    --smc-check=none|stack|all|all-non-file [stack]\n"
 "                              checks for self-modifying code: none, only for\n"
 "                              code found in stacks, for all code, or for all\n"
@@ -677,6 +680,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          VG_(clo_fullpath_after)[VG_(clo_n_fullpath_after)] = tmp_str;
          VG_(clo_n_fullpath_after)++;
       }
+
+      else if VG_STR_CLO (arg, "--extra-debuginfo-path",
+                      VG_(clo_extra_debuginfo_path)) {}
 
       else if VG_STR_CLO(arg, "--require-text-symbol", tmp_str) {
          if (VG_(clo_n_req_tsyms) >= VG_CLO_MAX_REQ_TSYMS) {

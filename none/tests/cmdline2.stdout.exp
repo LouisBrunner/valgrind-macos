@@ -61,6 +61,9 @@ usage: valgrind [options] prog-and-args
                               part of the path after 'string'.  Allows removal
                               of path prefixes.  Use this flag multiple times
                               to specify a set of prefixes to remove.
+    --extra-debuginfo-path=path    absolute path to search for additional
+                              debug symbols, in addition to existing default
+                              well known search paths.
     --smc-check=none|stack|all|all-non-file [stack]
                               checks for self-modifying code: none, only for
                               code found in stacks, for all code, or for all

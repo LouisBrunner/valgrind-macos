@@ -3794,10 +3794,15 @@ PRE(sys_openat)
                     int, dfd, const char *, filename, int, flags);
    }
 
-   if (ARG1 != VKI_AT_FDCWD && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+   PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  */
+   if (ML_(safe_to_deref)( (void*)ARG2, 1 )
+       && *(Char *)ARG2 != '/'
+       && ARG1 != VKI_AT_FDCWD
+       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
-   else
-      PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
 
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the

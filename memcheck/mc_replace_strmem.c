@@ -101,6 +101,7 @@
    20390 WCSCPY
    20400 WCSCHR
    20410 WCSRCHR
+   20420 STPNCPY
 */
 
 
@@ -980,6 +981,34 @@ static inline void my_exit ( int x )
  //STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
  //STPCPY(VG_Z_DYLD,                 stpcpy)
 
+#endif
+
+
+/*---------------------- stpncpy ----------------------*/
+
+#define STPNCPY(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20420,soname,fnname) \
+            ( char* dst, const char* src, SizeT n ); \
+   char* VG_REPLACE_FUNCTION_EZU(20420,soname,fnname) \
+            ( char* dst, const char* src, SizeT n ) \
+   { \
+      const HChar* src_orig = src; \
+            HChar* dst_str  = dst; \
+      SizeT m = 0; \
+      \
+      while (m   < n && *src) { m++; *dst++ = *src++; } \
+      /* Check for overlap after copying; all n bytes of dst are relevant, */ \
+      /* but only m+1 bytes of src if terminator was found */ \
+      if (is_overlap(dst_str, src_orig, n, (m < n) ? m+1 : n)) \
+         RECORD_OVERLAP_ERROR("stpncpy", dst, src, n); \
+      dst_str = dst; \
+      while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */ \
+      \
+      return dst_str; \
+   }
+
+#if defined(VGO_linux)
+ STPNCPY(VG_Z_LIBC_SONAME, stpncpy)
 #endif
 
 

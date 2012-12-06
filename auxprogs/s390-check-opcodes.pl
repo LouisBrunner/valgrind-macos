@@ -35,6 +35,7 @@ open(OPC, "$opc_file") || die "cannot open $opc_file\n";
 while (my $line = <OPC>) {
     chomp $line;
     next if ($line =~ "^[ ]*#");   # comments
+    next if ($line =~ /^\s*$/);    # blank line
     my $description = (split /"/,$line)[1];
     my ($encoding,$mnemonic,$format) = split /\s+/,$line;
 
@@ -144,8 +145,12 @@ foreach my $opc (keys %csv_desc) {
 # 2) Make sure opcode descriptions are the same
 #----------------------------------------------------
 foreach my $opc (keys %opc_desc) {
-    if ($opc_desc{$opc} ne $csv_desc{$opc}) {
-        print "*** opcode $opc differs: $opc_desc{$opc}\n";
+    if (defined $csv_desc{$opc}) {
+        if ($opc_desc{$opc} ne $csv_desc{$opc}) {
+            print "*** opcode $opc differs:\n";
+        print "    binutils:    $opc_desc{$opc}\n";
+            print "    opcodes.csv: $csv_desc{$opc}\n";
+        }
     }
 }
 

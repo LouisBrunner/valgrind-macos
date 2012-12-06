@@ -26616,7 +26616,8 @@ DisResult disInstr_AMD64_WRK (
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo,
-             VexAbiInfo*  vbi
+             VexAbiInfo*  vbi,
+             Bool         sigill_diag
           )
 {
    IRTemp    t1, t2, t3, t4, t5, t6;
@@ -27167,29 +27168,31 @@ DisResult disInstr_AMD64_WRK (
      //default:
   decode_failure:
    /* All decode failures end up here. */
-   vex_printf("vex amd64->IR: unhandled instruction bytes: "
-              "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-              (Int)getUChar(delta_start+0),
-              (Int)getUChar(delta_start+1),
-              (Int)getUChar(delta_start+2),
-              (Int)getUChar(delta_start+3),
-              (Int)getUChar(delta_start+4),
-              (Int)getUChar(delta_start+5),
-              (Int)getUChar(delta_start+6),
-              (Int)getUChar(delta_start+7) );
-   vex_printf("vex amd64->IR:   REX=%d REX.W=%d REX.R=%d REX.X=%d REX.B=%d\n",
-              haveREX(pfx) ? 1 : 0, getRexW(pfx), getRexR(pfx),
-              getRexX(pfx), getRexB(pfx));
-   vex_printf("vex amd64->IR:   VEX=%d VEX.L=%d VEX.nVVVV=0x%x ESC=%s\n",
-              haveVEX(pfx) ? 1 : 0, getVexL(pfx),
-              getVexNvvvv(pfx),
-              esc==ESC_NONE ? "NONE" :
-                esc==ESC_0F ? "0F" :
-                esc==ESC_0F38 ? "0F38" :
-                esc==ESC_0F3A ? "0F3A" : "???");
-   vex_printf("vex amd64->IR:   PFX.66=%d PFX.F2=%d PFX.F3=%d\n",
-              have66(pfx) ? 1 : 0, haveF2(pfx) ? 1 : 0,
-              haveF3(pfx) ? 1 : 0);
+   if (sigill_diag) {
+      vex_printf("vex amd64->IR: unhandled instruction bytes: "
+                 "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+                 (Int)getUChar(delta_start+0),
+                 (Int)getUChar(delta_start+1),
+                 (Int)getUChar(delta_start+2),
+                 (Int)getUChar(delta_start+3),
+                 (Int)getUChar(delta_start+4),
+                 (Int)getUChar(delta_start+5),
+                 (Int)getUChar(delta_start+6),
+                 (Int)getUChar(delta_start+7) );
+      vex_printf("vex amd64->IR:   REX=%d REX.W=%d REX.R=%d REX.X=%d REX.B=%d\n",
+                 haveREX(pfx) ? 1 : 0, getRexW(pfx), getRexR(pfx),
+                 getRexX(pfx), getRexB(pfx));
+      vex_printf("vex amd64->IR:   VEX=%d VEX.L=%d VEX.nVVVV=0x%x ESC=%s\n",
+                 haveVEX(pfx) ? 1 : 0, getVexL(pfx),
+                 getVexNvvvv(pfx),
+                 esc==ESC_NONE ? "NONE" :
+                   esc==ESC_0F ? "0F" :
+                   esc==ESC_0F38 ? "0F38" :
+                   esc==ESC_0F3A ? "0F3A" : "???");
+      vex_printf("vex amd64->IR:   PFX.66=%d PFX.F2=%d PFX.F3=%d\n",
+                 have66(pfx) ? 1 : 0, haveF2(pfx) ? 1 : 0,
+                 haveF3(pfx) ? 1 : 0);
+   }
 
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.
@@ -27252,7 +27255,8 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
                            VexArch      guest_arch,
                            VexArchInfo* archinfo,
                            VexAbiInfo*  abiinfo,
-                           Bool         host_bigendian_IN )
+                           Bool         host_bigendian_IN,
+                           Bool         sigill_diag_IN )
 {
    Int       i, x1, x2;
    Bool      expect_CAS, has_CAS;
@@ -27275,7 +27279,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
    dres = disInstr_AMD64_WRK ( &expect_CAS, resteerOkFn,
                                resteerCisOk,
                                callback_opaque,
-                               delta, archinfo, abiinfo );
+                               delta, archinfo, abiinfo, sigill_diag_IN );
    x2 = irsb_IN->stmts_used;
    vassert(x2 >= x1);
 
@@ -27308,7 +27312,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
       dres = disInstr_AMD64_WRK ( &expect_CAS, resteerOkFn,
                                   resteerCisOk,
                                   callback_opaque,
-                                  delta, archinfo, abiinfo );
+                                  delta, archinfo, abiinfo, sigill_diag_IN );
       for (i = x1; i < x2; i++) {
          vex_printf("\t\t");
          ppIRStmt(irsb_IN->stmts[i]);

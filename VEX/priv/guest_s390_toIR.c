@@ -73,6 +73,9 @@ static DisResult *dis_res;
 static Bool (*resteer_fn)(void *, Addr64);
 static void *resteer_data;
 
+/* Whether to print diagnostics for illegal instructions. */
+static Bool sigill_diag;
+
 /* The last seen execute target instruction */
 ULong last_execute_target;
 
@@ -14972,34 +14975,36 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
    if (status == S390_DECODE_OK) return insn_length;  /* OK */
 
    /* Decoding failed somehow */
-   vex_printf("vex s390->IR: ");
-   switch (status) {
-   case S390_DECODE_UNKNOWN_INSN:
-      vex_printf("unknown insn: ");
-      break;
+   if (sigill_diag) {
+      vex_printf("vex s390->IR: ");
+      switch (status) {
+      case S390_DECODE_UNKNOWN_INSN:
+         vex_printf("unknown insn: ");
+         break;
 
-   case S390_DECODE_UNIMPLEMENTED_INSN:
-      vex_printf("unimplemented insn: ");
-      break;
+      case S390_DECODE_UNIMPLEMENTED_INSN:
+         vex_printf("unimplemented insn: ");
+         break;
 
-   case S390_DECODE_UNKNOWN_SPECIAL_INSN:
-      vex_printf("unimplemented special insn: ");
-      break;
+      case S390_DECODE_UNKNOWN_SPECIAL_INSN:
+         vex_printf("unimplemented special insn: ");
+         break;
 
-   default:
-   case S390_DECODE_ERROR:
-      vex_printf("decoding error: ");
-      break;
+      default:
+      case S390_DECODE_ERROR:
+         vex_printf("decoding error: ");
+         break;
+      }
+
+      vex_printf("%02x%02x", bytes[0], bytes[1]);
+      if (insn_length > 2) {
+         vex_printf(" %02x%02x", bytes[2], bytes[3]);
+      }
+      if (insn_length > 4) {
+         vex_printf(" %02x%02x", bytes[4], bytes[5]);
+      }
+      vex_printf("\n");
    }
-
-   vex_printf("%02x%02x", bytes[0], bytes[1]);
-   if (insn_length > 2) {
-      vex_printf(" %02x%02x", bytes[2], bytes[3]);
-   }
-   if (insn_length > 4) {
-      vex_printf(" %02x%02x", bytes[4], bytes[5]);
-   }
-   vex_printf("\n");
 
    return 0;  /* Failed */
 }
@@ -15097,7 +15102,8 @@ disInstr_S390(IRSB        *irsb_IN,
               VexArch      guest_arch,
               VexArchInfo *archinfo,
               VexAbiInfo  *abiinfo,
-              Bool         host_bigendian)
+              Bool         host_bigendian,
+              Bool         sigill_diag_IN)
 {
    vassert(guest_arch == VexArchS390X);
 
@@ -15109,6 +15115,7 @@ disInstr_S390(IRSB        *irsb_IN,
    irsb = irsb_IN;
    resteer_fn = resteerOkFn;
    resteer_data = callback_opaque;
+   sigill_diag = sigill_diag_IN;
 
    return disInstr_S390_WRK(guest_code + delta);
 }

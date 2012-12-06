@@ -50,7 +50,8 @@ DisResult disInstr_S390 ( IRSB*        irbb,
                           VexArch      guest_arch,
                           VexArchInfo* archinfo,
                           VexAbiInfo*  abiinfo,
-                          Bool         host_bigendian );
+                          Bool         host_bigendian,
+                          Bool         sigill_diag );
 
 /* Used by the optimiser to specialise calls to helpers. */
 IRExpr* guest_s390x_spechelper ( const HChar *function_name,

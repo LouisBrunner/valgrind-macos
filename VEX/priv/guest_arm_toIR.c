@@ -12568,7 +12568,8 @@ DisResult disInstr_ARM_WRK (
              void*        callback_opaque,
              UChar*       guest_instr,
              VexArchInfo* archinfo,
-             VexAbiInfo*  abiinfo
+             VexAbiInfo*  abiinfo,
+             Bool         sigill_diag
           )
 {
    // A macro to fish bits out of 'insn'.
@@ -14664,15 +14665,17 @@ DisResult disInstr_ARM_WRK (
 
   decode_failure:
    /* All decode failures end up here. */
-   vex_printf("disInstr(arm): unhandled instruction: "
-              "0x%x\n", insn);
-   vex_printf("                 cond=%d(0x%x) 27:20=%u(0x%02x) "
-                                "4:4=%d "
-                                "3:0=%u(0x%x)\n",
-              (Int)INSN_COND, (UInt)INSN_COND,
-              (Int)INSN(27,20), (UInt)INSN(27,20),
-              (Int)INSN(4,4),
-              (Int)INSN(3,0), (UInt)INSN(3,0) );
+   if (sigill_diag) {
+      vex_printf("disInstr(arm): unhandled instruction: "
+                 "0x%x\n", insn);
+      vex_printf("                 cond=%d(0x%x) 27:20=%u(0x%02x) "
+                                   "4:4=%d "
+                                   "3:0=%u(0x%x)\n",
+                 (Int)INSN_COND, (UInt)INSN_COND,
+                 (Int)INSN(27,20), (UInt)INSN(27,20),
+                 (Int)INSN(4,4),
+                 (Int)INSN(3,0), (UInt)INSN(3,0) );
+   }
 
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.
@@ -14781,7 +14784,8 @@ DisResult disInstr_THUMB_WRK (
              void*        callback_opaque,
              UChar*       guest_instr,
              VexArchInfo* archinfo,
-             VexAbiInfo*  abiinfo
+             VexAbiInfo*  abiinfo,
+             Bool         sigill_diag
           )
 {
    /* A macro to fish bits out of insn0.  There's also INSN1, to fish
@@ -18785,8 +18789,9 @@ DisResult disInstr_THUMB_WRK (
 
   decode_failure:
    /* All decode failures end up here. */
-   vex_printf("disInstr(thumb): unhandled instruction: "
-              "0x%04x 0x%04x\n", (UInt)insn0, (UInt)insn1);
+   if (sigill_diag)
+      vex_printf("disInstr(thumb): unhandled instruction: "
+                 "0x%04x 0x%04x\n", (UInt)insn0, (UInt)insn1);
 
    /* Back up ITSTATE to the initial value for this instruction.
       If we don't do that, any subsequent restart of the instruction
@@ -18931,7 +18936,8 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN )
+                         Bool         host_bigendian_IN,
+                         Bool         sigill_diag_IN )
 {
    DisResult dres;
    Bool isThumb = (Bool)(guest_IP_ENCODED & 1);
@@ -18953,12 +18959,12 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
       dres = disInstr_THUMB_WRK ( resteerOkFn,
                                   resteerCisOk, callback_opaque,
                                   &guest_code_IN[delta_ENCODED - 1],
-                                  archinfo, abiinfo );
+                                  archinfo, abiinfo, sigill_diag_IN );
    } else {
       dres = disInstr_ARM_WRK ( resteerOkFn,
                                 resteerCisOk, callback_opaque,
                                 &guest_code_IN[delta_ENCODED],
-                                archinfo, abiinfo );
+                                archinfo, abiinfo, sigill_diag_IN );
    }
 
    return dres;

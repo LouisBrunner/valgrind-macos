@@ -16478,7 +16478,8 @@ DisResult disInstr_PPC_WRK (
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo,
-             VexAbiInfo*  abiinfo
+             VexAbiInfo*  abiinfo,
+             Bool         sigill_diag
           )
 {
    UChar     opc1;
@@ -17713,10 +17714,12 @@ DisResult disInstr_PPC_WRK (
    decode_failure:
    /* All decode failures end up here. */
    opc2 = (theInstr) & 0x7FF;
-   vex_printf("disInstr(ppc): unhandled instruction: "
-              "0x%x\n", theInstr);
-   vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n", 
-              opc1, opc1, opc2, opc2);
+   if (sigill_diag) {
+      vex_printf("disInstr(ppc): unhandled instruction: "
+                 "0x%x\n", theInstr);
+      vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n", 
+                 opc1, opc1, opc2, opc2);
+   }
 
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.
@@ -17777,7 +17780,8 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN )
+                         Bool         host_bigendian_IN,
+                         Bool         sigill_diag_IN )
 {
    IRType     ty;
    DisResult  dres;
@@ -17813,7 +17817,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
    dres = disInstr_PPC_WRK ( resteerOkFn, resteerCisOk, callback_opaque,
-                             delta, archinfo, abiinfo );
+                             delta, archinfo, abiinfo, sigill_diag_IN );
 
    return dres;
 }

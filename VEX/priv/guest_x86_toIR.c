@@ -7933,7 +7933,8 @@ DisResult disInstr_X86_WRK (
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo,
-             VexAbiInfo*  vbi
+             VexAbiInfo*  vbi,
+             Bool         sigill_diag
           )
 {
    IRType    ty;
@@ -15177,12 +15178,14 @@ DisResult disInstr_X86_WRK (
   default:
   decode_failure:
    /* All decode failures end up here. */
-   vex_printf("vex x86->IR: unhandled instruction bytes: "
-              "0x%x 0x%x 0x%x 0x%x\n",
-              (Int)getIByte(delta_start+0),
-              (Int)getIByte(delta_start+1),
-              (Int)getIByte(delta_start+2),
-              (Int)getIByte(delta_start+3) );
+   if (sigill_diag) {
+      vex_printf("vex x86->IR: unhandled instruction bytes: "
+                 "0x%x 0x%x 0x%x 0x%x\n",
+                 (Int)getIByte(delta_start+0),
+                 (Int)getIByte(delta_start+1),
+                 (Int)getIByte(delta_start+2),
+                 (Int)getIByte(delta_start+3) );
+   }
 
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.
@@ -15245,7 +15248,8 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN )
+                         Bool         host_bigendian_IN,
+                         Bool         sigill_diag_IN )
 {
    Int       i, x1, x2;
    Bool      expect_CAS, has_CAS;
@@ -15264,7 +15268,7 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
    dres = disInstr_X86_WRK ( &expect_CAS, resteerOkFn,
                              resteerCisOk,
                              callback_opaque,
-                             delta, archinfo, abiinfo );
+                             delta, archinfo, abiinfo, sigill_diag_IN );
    x2 = irsb_IN->stmts_used;
    vassert(x2 >= x1);
 
@@ -15284,7 +15288,7 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
       dres = disInstr_X86_WRK ( &expect_CAS, resteerOkFn,
                                 resteerCisOk,
                                 callback_opaque,
-                                delta, archinfo, abiinfo );
+                                delta, archinfo, abiinfo, sigill_diag_IN );
       for (i = x1; i < x2; i++) {
          vex_printf("\t\t");
          ppIRStmt(irsb_IN->stmts[i]);

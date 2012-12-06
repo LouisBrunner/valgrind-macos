@@ -52,7 +52,8 @@ extern DisResult disInstr_MIPS ( IRSB*        irbb,
                                  VexArch      guest_arch,
                                  VexArchInfo* archinfo,
                                  VexAbiInfo*  abiinfo,
-                                 Bool         host_bigendian );
+                                 Bool         host_bigendian,
+                                 Bool         sigill_diag );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern IRExpr *guest_mips32_spechelper(const HChar * function_name, IRExpr ** args,

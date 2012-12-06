@@ -1205,7 +1205,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                      void*        callback_opaque,
                                      Long         delta64,
                                      VexArchInfo* archinfo,
-                                     VexAbiInfo*  abiinfo )
+                                     VexAbiInfo*  abiinfo,
+                                     Bool         sigill_diag )
 {
    IRTemp t0, t1, t2, t3, t4, t5, t6, t7, t8;
    UInt opcode, cins, rs, rt, rd, sa, ft, fs, fd, fmt, tf, nd, function,
@@ -3557,12 +3558,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
  decode_failure:
       /* All decode failures end up here. */
-      DIP("vex mips->IR: unhandled instruction bytes: "
-          "0x%x 0x%x 0x%x 0x%x\n",
-          (Int) getIByte(delta_start + 0),
-          (Int) getIByte(delta_start + 1),
-          (Int) getIByte(delta_start + 2),
-          (Int) getIByte(delta_start + 3));
+      if (sigill_diag)
+         vex_printf("vex mips->IR: unhandled instruction bytes: "
+                    "0x%x 0x%x 0x%x 0x%x\n",
+                    (Int) getIByte(delta_start + 0),
+                    (Int) getIByte(delta_start + 1),
+                    (Int) getIByte(delta_start + 2),
+                    (Int) getIByte(delta_start + 3));
 
       /* Tell the dispatcher that this insn cannot be decoded, and so has
          not been executed, and (is currently) the next to be executed.
@@ -3652,7 +3654,8 @@ disInstr_MIPS(IRSB*        irsb_IN,
               VexArch      guest_arch,
               VexArchInfo* archinfo,
               VexAbiInfo*  abiinfo,
-              Bool         host_bigendian_IN)
+              Bool         host_bigendian_IN,
+              Bool         sigill_diag_IN)
 {
    DisResult dres;
 
@@ -3668,7 +3671,7 @@ disInstr_MIPS(IRSB*        irsb_IN,
    guest_PC_bbstart = (Addr32) toUInt(guest_IP - delta);
 
    dres = disInstr_MIPS_WRK(resteerOkFn, resteerCisOk, callback_opaque,
-                            delta, archinfo, abiinfo);
+                            delta, archinfo, abiinfo, sigill_diag_IN);
 
    return dres;
 }

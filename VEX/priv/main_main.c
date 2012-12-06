@@ -605,6 +605,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                      vta->guest_bytes_addr,
                      vta->chase_into_ok,
                      host_is_bigendian,
+                     vta->sigill_diag,
                      vta->arch_guest,
                      &vta->archinfo_guest,
                      &vta->abiinfo_both,

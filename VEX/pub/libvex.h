@@ -675,6 +675,9 @@ typedef
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;
 
+      /* IN: debug: print diagnostics when an illegal instr is detected */
+      Bool    sigill_diag;
+
       /* IN: profiling: add a 64 bit profiler counter increment to the
          translation? */
       Bool    addProfInc;

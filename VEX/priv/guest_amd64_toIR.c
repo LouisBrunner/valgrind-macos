@@ -20268,6 +20268,14 @@ Long dis_ESC_0F (
       delta = dis_movx_E_G ( vbi, pfx, delta, 2, sz, True );
       return delta;
 
+   case 0xC0: { /* XADD Gb,Eb */ 
+      Bool decode_OK = False;
+      delta = dis_xadd_G_E ( &decode_OK, vbi, pfx, 1, delta );
+      if (!decode_OK)
+         goto decode_failure;
+      return delta;
+   }
+
    case 0xC1: { /* XADD Gv,Ev */ 
       Bool decode_OK = False;
       delta = dis_xadd_G_E ( &decode_OK, vbi, pfx, sz, delta );
@@ -27142,14 +27150,6 @@ DisResult disInstr_AMD64_WRK (
       /* =-=-=-=-=-=-=-=-=- SYSCALL -=-=-=-=-=-=-=-=-=-= */
 
       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
-
-      case 0xC0: { /* XADD Gb,Eb */ 
-         Bool decode_OK = False;
-         delta = dis_xadd_G_E ( &decode_OK, vbi, pfx, 1, delta );
-         if (!decode_OK)
-            goto decode_failure;
-         break;
-      }
 
       /* =-=-=-=-=-=-=-=-=- SGDT and SIDT =-=-=-=-=-=-=-=-=-=-= */
 

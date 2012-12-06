@@ -1,0 +1,3 @@
+wcslen: 53
+wcscmp equal: 0
+wcsrchr == wcschr: 1

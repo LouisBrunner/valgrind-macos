@@ -97,6 +97,10 @@
    20350 STRCASESTR
    20360 MEMRCHR
    20370 WCSLEN
+   20380 WCSCMP
+   20390 WCSCPY
+   20400 WCSCHR
+   20410 WCSRCHR
 */
 
 
@@ -1570,6 +1574,114 @@ static inline void my_exit ( int x )
 
 #endif
 
+/*---------------------- wcscmp ----------------------*/
+
+// This is a wchar_t equivalent to strcmp.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide and wcscmp uses signed
+// comparison, not unsigned as in strcmp function.
+
+#define WCSCMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20380,soname,fnname) \
+          ( const Int* s1, const Int* s2 ); \
+   int VG_REPLACE_FUNCTION_EZU(20380,soname,fnname) \
+          ( const Int* s1, const Int* s2 ) \
+   { \
+      register Int c1; \
+      register Int c2; \
+      while (True) { \
+         c1 = *s1; \
+         c2 = *s2; \
+         if (c1 != c2) break; \
+         if (c1 == 0) break; \
+         s1++; s2++; \
+      } \
+      if (c1 < c2) return -1; \
+      if (c1 > c2) return 1; \
+      return 0; \
+   }
+
+#if defined(VGO_linux)
+ WCSCMP(VG_Z_LIBC_SONAME,          wcscmp)
+#endif
+
+/*---------------------- wcscpy ----------------------*/
+
+// This is a wchar_t equivalent to strcpy.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WCSCPY(soname, fnname) \
+   Int* VG_REPLACE_FUNCTION_EZU(20390,soname,fnname) \
+      ( Int* dst, const Int* src ); \
+   Int* VG_REPLACE_FUNCTION_EZU(20390,soname,fnname) \
+      ( Int* dst, const Int* src ) \
+   { \
+      const Int* src_orig = src; \
+            Int* dst_orig = dst; \
+      \
+      while (*src) *dst++ = *src++; \
+      *dst = 0; \
+      \
+      /* This checks for overlap after copying, unavoidable without */ \
+      /* pre-counting length... should be ok */ \
+      if (is_overlap(dst_orig,  \
+                     src_orig,  \
+                     (Addr)dst-(Addr)dst_orig+1, \
+                     (Addr)src-(Addr)src_orig+1)) \
+         RECORD_OVERLAP_ERROR("wcscpy", dst_orig, src_orig, 0); \
+      \
+      return dst_orig; \
+   }
+
+#if defined(VGO_linux)
+ WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
+#endif
+
+
+/*---------------------- wcschr ----------------------*/
+
+// This is a wchar_t equivalent to strchr.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WCSCHR(soname, fnname) \
+   Int* VG_REPLACE_FUNCTION_EZU(20400,soname,fnname) ( const Int* s, Int c ); \
+   Int* VG_REPLACE_FUNCTION_EZU(20400,soname,fnname) ( const Int* s, Int c ) \
+   { \
+      Int* p  = (Int*)s; \
+      while (True) { \
+         if (*p == c) return p; \
+         if (*p == 0) return NULL; \
+         p++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+ WCSCHR(VG_Z_LIBC_SONAME,          wcschr)
+#endif
+/*---------------------- wcsrchr ----------------------*/
+
+// This is a wchar_t equivalent to strrchr.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WCSRCHR(soname, fnname) \
+   Int* VG_REPLACE_FUNCTION_EZU(20410,soname,fnname)( const Int* s, Int c ); \
+   Int* VG_REPLACE_FUNCTION_EZU(20410,soname,fnname)( const Int* s, Int c ) \
+   { \
+      Int* p    = (Int*) s; \
+      Int* last = NULL; \
+      while (True) { \
+         if (*p == c) last = p; \
+         if (*p == 0) return last; \
+         p++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+ WCSRCHR(VG_Z_LIBC_SONAME, wcsrchr)
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/

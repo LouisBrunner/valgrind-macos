@@ -127,7 +127,7 @@ extern Int   VG_(clo_n_fullpath_after);
 extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 
 /* Full path to additional path to search for debug symbols */
-extern HChar* VG_(clo_extra_debuginfo_path);
+extern const HChar* VG_(clo_extra_debuginfo_path);
 
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);

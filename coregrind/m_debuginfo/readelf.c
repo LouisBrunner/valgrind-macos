@@ -1216,7 +1216,7 @@ void find_debug_file( struct _DebugInfo* di,
                       /*OUT*/SizeT* n_dimage )
 {
    HChar* debugpath = NULL;
-   HChar* extrapath = VG_(clo_extra_debuginfo_path);
+   const HChar* extrapath = VG_(clo_extra_debuginfo_path);
    Addr  addr = 0;
    UWord size = 0;
 

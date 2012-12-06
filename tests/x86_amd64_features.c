@@ -123,7 +123,7 @@ static Bool go(char* cpu)
      cmask = 1 << 20;
    } else if ( strcmp( cpu, "amd64-avx" ) == 0 ) {
      level = 1;
-     cmask = (1 << 20) | (1 << 28);
+     cmask = (1 << 27) | (1 << 28);
      require_xgetbv = True;
 #endif
    } else {

@@ -25,7 +25,7 @@ static void set_vbits(V128 *addr, V128 vbits)
 {
    int i;
    for (i=0 ; i<2 ; ++i) {
-      VALGRIND_SET_VBITS(&addr->w64[i], &vbits.w64[i], sizeof(vbits.w64[i]));
+      (void)VALGRIND_SET_VBITS(&addr->w64[i], &vbits.w64[i], sizeof(vbits.w64[i]));
    }
 }
 

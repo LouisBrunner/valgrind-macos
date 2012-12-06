@@ -21,7 +21,7 @@ static int ctz(UInt x)
    "defined"; 1 means "undefined". */
 static void set_vbits(UInt *addr, UInt vbits)
 {
-   VALGRIND_SET_VBITS(addr, &vbits, sizeof(unsigned));
+   (void)VALGRIND_SET_VBITS(addr, &vbits, sizeof(unsigned));
 }
 
 static void doit(unsigned vbits, unsigned val)

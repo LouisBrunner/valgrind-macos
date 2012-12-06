@@ -51,12 +51,12 @@ int test_strlen(const char *const s, int valid)
       /* Mark all bytes beyond the null as invalid. */
       size_t i;
       for (i=len ; i < roundup ; ++i)
-         VALGRIND_SET_VBITS(&s_copy[i], &ff, 1);
+         (void)VALGRIND_SET_VBITS(&s_copy[i], &ff, 1);
    }
    else {
       /* Mark the null byte itself as invalid. */
       assert(len > 0);
-      VALGRIND_SET_VBITS(&s_copy[len-1], &ff, 1);
+      (void)VALGRIND_SET_VBITS(&s_copy[len-1], &ff, 1);
    }
 
    result = aligned_strlen(s_copy);

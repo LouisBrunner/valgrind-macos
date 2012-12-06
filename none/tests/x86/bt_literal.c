@@ -52,7 +52,7 @@ UInt mash_reg_L ( UInt orig )
 
 
 
-UInt mash_mem_L ( UInt* origp )
+UInt mash_mem_L ( int* origp )
 {
   UInt reconstructed, mashed;
   __asm__ __volatile__ (

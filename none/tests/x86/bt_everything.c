@@ -4,7 +4,7 @@
 #include <assert.h>
 
 
-unsigned int btsl_mem ( char* base, int bitno )
+unsigned int btsl_mem ( unsigned char* base, int bitno )
 {
    unsigned char res;
    __asm__ 
@@ -18,7 +18,7 @@ unsigned int btsl_mem ( char* base, int bitno )
    return res;
 }
 
-unsigned int btrl_mem ( char* base, int bitno )
+unsigned int btrl_mem ( unsigned char* base, int bitno )
 {
    unsigned char res;
    __asm__ 
@@ -29,7 +29,7 @@ unsigned int btrl_mem ( char* base, int bitno )
    return res;
 }
 
-unsigned int btcl_mem ( char* base, int bitno )
+unsigned int btcl_mem ( unsigned char* base, int bitno )
 {
    unsigned char res;
    __asm__ 
@@ -40,7 +40,7 @@ unsigned int btcl_mem ( char* base, int bitno )
    return res;
 }
 
-unsigned int btl_mem ( char* base, int bitno )
+unsigned int btl_mem ( unsigned char* base, int bitno )
 {
    unsigned char res;
    __asm__ 

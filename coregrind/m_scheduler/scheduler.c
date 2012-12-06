@@ -1439,9 +1439,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       case VEX_TRC_JMP_NODECODE: {
          Addr addr = VG_(get_IP)(tid);
 
-         VG_(umsg)(
-            "valgrind: Unrecognised instruction at address %#lx.\n", addr);
-         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+         if (VG_(clo_sigill_diag)) {
+            VG_(umsg)(
+               "valgrind: Unrecognised instruction at address %#lx.\n", addr);
+            VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
 #define M(a) VG_(umsg)(a "\n");
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );
@@ -1454,6 +1455,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    M("Either way, Valgrind will now raise a SIGILL signal which will"  );
    M("probably kill your program."                                     );
 #undef M
+         }
 
 #if defined(VGA_s390x)
          /* Now that the complaint is out we need to adjust the guest_IA. The

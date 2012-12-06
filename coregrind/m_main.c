@@ -201,6 +201,7 @@ static void usage_NORETURN ( Bool debug_help )
 "              To use a non-libc malloc library that is\n"
 "                  in the main exe:  --soname-synonyms=somalloc=NONE\n"
 "                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so\n"
+"    --sigill-diagnostics=yes|no  warn about illegal instructions? [yes]\n"
 "\n";
 
    const HChar usage2[] = 
@@ -426,6 +427,10 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
    const HChar* log_fsname_unexpanded = NULL;
    const HChar* xml_fsname_unexpanded = NULL;
 
+   /* Whether the user has explicitly provided --sigill-diagnostics.
+      If not explicitly given depends on general verbosity setting. */
+   Bool sigill_diag_set = False;
+
    /* Log to stderr by default, but usage message goes to stdout.  XML
       output is initially disabled. */
    tmp_log_fd = 2; 
@@ -519,6 +524,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if (VG_STREQ(arg, "-q") ||
                VG_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
+
+      else if VG_BOOL_CLO(arg, "--sigill-diagnostics", VG_(clo_sigill_diag))
+         sigill_diag_set = True;
 
       else if VG_BOOL_CLO(arg, "--stats",          VG_(clo_stats)) {}
       else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml))
@@ -787,6 +795,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
+
+   if (!sigill_diag_set)
+      VG_(clo_sigill_diag) = (VG_(clo_verbosity) > 0);
 
    if (VG_(clo_trace_notbelow) == -1) {
      if (VG_(clo_trace_notabove) == -1) {

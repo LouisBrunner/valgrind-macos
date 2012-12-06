@@ -1037,6 +1037,26 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.sigill-diagnostics" xreflabel="--sigill-diagnostics">
+    <term>
+      <option><![CDATA[--sigill-diagnostics=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Enable/disable printing of illegal instruction diagnostics.
+      Enabled by default, but defaults to disabled when
+      <option>--quiet</option> is given. The default can always be explicitly
+      overridden by giving this option.</para>
+
+      <para>When enabled a warning message will be printed with some
+      diagnostics whenever some instruction is encountered that valgrind
+      cannot decode or translate before the program is given a SIGILL signal.
+      Often an illegal instruction indicates a bug in the program or missing
+      support for the particular instruction in Valgrind. But some programs
+      do deliberately try to execute an instruction that might be missing
+      and trap the SIGILL signal to detect processor features.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.stack-traces" xreflabel="--show-below-main">
     <term>
       <option><![CDATA[--show-below-main=<yes|no> [default: no] ]]></option>

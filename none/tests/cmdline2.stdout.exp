@@ -90,6 +90,7 @@ usage: valgrind [options] prog-and-args
               To use a non-libc malloc library that is
                   in the main exe:  --soname-synonyms=somalloc=NONE
                   in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so
+    --sigill-diagnostics=yes|no  warn about illegal instructions? [yes]
 
   user options for Nulgrind:
     (none)

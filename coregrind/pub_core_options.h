@@ -278,6 +278,11 @@ extern Bool VG_(clo_dsymutil);
 extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
                                               HChar** child_argv );
 
+/* Whether illegal instructions should be reported/diagnosed.
+   Can be explicitly set through --sigill-diagnostics otherwise
+   depends on verbosity (False if -q). */
+extern Bool VG_(clo_sigill_diag);
+
 #endif   // __PUB_CORE_OPTIONS_H
 
 /*--------------------------------------------------------------------*/

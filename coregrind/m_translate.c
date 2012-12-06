@@ -1530,6 +1530,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.needs_self_check  = needs_self_check;
    vta.preamble_function = preamble_fn;
    vta.traceflags        = verbosity;
+   vta.sigill_diag       = VG_(clo_sigill_diag);
    vta.addProfInc        = VG_(clo_profile_flags) > 0
                            && kind != T_NoRedir;
 

@@ -119,7 +119,7 @@ Bool   VG_(clo_wait_for_gdb)   = False;
 VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
 const HChar* VG_(clo_kernel_variant) = NULL;
 Bool   VG_(clo_dsymutil)       = False;
-
+Bool   VG_(clo_sigill_diag)    = True;
 
 /*====================================================================*/
 /*=== File expansion                                               ===*/

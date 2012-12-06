@@ -64,15 +64,17 @@ dxr,"divide (ext.)","won't do","hfp instruction"
 ear,"extract access",implemented,
 ed,edit,"not implemented",
 edmk,"edit and mark","not implemented",
-epar,"extract primary ASN","not implemented",
+epar,"extract primary ASN",N/A,"privileged instruction"
+epair,"extract primary ASN and instance",N/A,"privileged instruction"
 ereg,"extract stacked registers","not implemented",
-esar,"extract secondary ASN",N/A,"privileged instruction"
+esar,"extract secondary ASN",N/A,"privileged instruction",
+esair,"extract secondary ASN and instance,N/A,"privileged instruction",
 esta,"extract stacked state","not implemented",
 ex,execute,implemented,
 hdr,"halve (long)","won't do","hfp instruction"
 her,"halve (short)","won't do","hfp instruction"
 hsch,"halt subchannel",N/A,"privileged instruction"
-iac,"insert address space control","not implemented",
+iac,"insert address space control",N/A,"privileged instruction"
 ic,"insert character",implemented,
 icm,"insert characters under mask",implemented,
 ipk,"insert PSW key",N/A,"privileged instruction"
@@ -148,9 +150,10 @@ oi,OR,implemented,
 or,OR,implemented,
 pack,pack,"not implemented",
 palb,"purge ALB",N/A,"privileged instruction"
-pc,"program call","not implemented",
+pc,"program call",N/A,"privileged instruction"
 pr,"program return","not implemented",
-pt,"program transfer","not implemented",
+pt,"program transfer",N/A,"privileged instruction",
+pti,"program transfer with instance",N/A,"privileged instruction",
 ptlb,"purge TLB",N/A,"privileged instruction"
 rchp,"reset channel path",N/A,"privileged instruction"
 rrbe,"reset reference bit extended",N/A,"privileged instruction"
@@ -191,6 +194,7 @@ srl,"shift right single logical",implemented,
 srp,"shift and round decimal","not implemented",
 srst,"search string",implemented,
 ssar,"set secondary ASN","not implemented",
+ssair,"set secondary ASN with instance","not implemented",
 ssch,"start subchannel",N/A,"privileged instruction"
 sske,"set storage key extended",N/A,"privileged instruction"
 ssm,"set system mask",N/A,"privileged instruction"
@@ -617,6 +621,10 @@ mser,"mutliply and subtract short hfp","won't do","hfp instruction"
 mse,"multiply and subttract short hfp","won't do","hfp instruction"
 km,"cipher message","not implemented",
 kmc,"cipher message with chaining","not implemented",
+kmf,"cipher message with CFB","not implemented",
+kmo,"cipher message with OFB","not implemented",
+kmctr,"cipher message with counter","not implemented",
+pcc,"perform cryptographic computation","not implemented",
 kimd,"compute intermediate message digest","not implemented",
 klmd,"compute last message digest","not implemented",
 kmac,"compute message authentication code","not implemented",
@@ -717,7 +725,7 @@ ltdtr,"load and test long dfp","not implemented",
 ltxtr,"load and test extended dfp","not implemented",
 fidtr,"load fp integer long dfp","not implemented",
 fixtr,"load fp integer extended dfp","not implemented",
-lfas,"load fpd and signal","not implemented",
+lfas,"load fpc and signal","not implemented",
 ldetr,"load lengthened long dfp","not implemented",
 lxdtr,"load lengthened extended dfp","not implemented",
 ledtr,"load rounded long dfp","not implemented",
@@ -818,7 +826,7 @@ strl,"store relative long (32)",implemented,
 stgrl,"store relative long (64)",implemented,
 sthrl,"store halfword relative long",implemented,
 exrl,"execute relative long",implemented,
-ptf,"perform topology function","not implemented",
+ptf,"perform topology function",N/A,"privileged instruction"
 pfmf,"perform frame management function",N/A,"privileged instruction"
 trte,"translate and test extended","not implemented",
 trtre,"translate and test reverse extended","not implemented",
@@ -833,6 +841,7 @@ qsi,"query sampling information",N/A,"privileged instruction"
 scctr,"set cpu counter",N/A,"privileged instruction"
 spctr,"set peripheral counter",N/A,"privileged instruction"
 lpp,"load program parameter",N/A,"privileged instruction"
+pckmo,"perform cryptographic key management operation",N/A,"privileged instruction"
 ahhhr,"add high high",implemented,
 ahhlr,"add high low",implemented,
 aih,"add immediate high",implemented,

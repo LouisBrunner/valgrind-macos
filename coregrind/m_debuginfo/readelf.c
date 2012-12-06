@@ -902,7 +902,7 @@ void read_elf_symtab__ppc64_linux(
  * http://fedoraproject.org/wiki/RolandMcGrath/BuildID
  */
 static
-HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok)
+HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok, Bool search_shdrs)
 {
    HChar* buildid = NULL;
    __attribute__((unused)) /* on Android, at least */
@@ -944,7 +944,11 @@ HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok)
          }
       }
 
-      if (buildid || !rel_ok)
+      /* Normally we would only search shdrs for ET_REL files, but when
+         we search for a separate .debug file phdrs might not be there
+         (they are never loaded) or have been corrupted, so try again
+         against shdrs. */
+      if (buildid || (!rel_ok && !search_shdrs))
          return buildid;
 
       for (i = 0; i < ehdr->e_shnum; i++) {
@@ -1088,7 +1092,7 @@ Addr open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
       return 0;
 
    if (buildid) {
-      HChar* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok);
+      HChar* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok, True);
       if (debug_buildid == NULL || VG_(strcmp)(buildid, debug_buildid) != 0) {
          SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
          vg_assert(!sr_isError(res));
@@ -2303,7 +2307,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       vg_assert(dimage == 0 && n_dimage == 0);
 
       /* Look for a build-id */
-      buildid = find_buildid(oimage, n_oimage, False);
+      buildid = find_buildid(oimage, n_oimage, False, False);
 
       /* Look for a debug image */
       if (buildid != NULL || debuglink_img != NULL) {

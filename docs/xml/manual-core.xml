@@ -1130,6 +1130,39 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.extra-debuginfo-path" xreflabel="--extra-debuginfo-path">
+    <term>
+      <option><![CDATA[--extra-debuginfo-path=<path> [default: undefined and unused] ]]></option>
+    </term>
+    <listitem>
+      <para>By default Valgrind searches in several well-known paths
+      for debug objects, such
+      as <computeroutput>/usr/lib/debug/</computeroutput>.</para>
+
+      <para>However, there may be scenarios where you may wish to put
+      debug objects at an arbitrary location, such as external storage
+      when running Valgrind on a mobile device with limited local
+      storage.  Another example might be a situation where you do not
+      have permission to install debug object packages on the system
+      where you are running Valgrind.</para>
+
+      <para>In these scenarios, you may provide an absolute path as an extra,
+      final place for Valgrind to search for debug objects by specifying
+      <option>--extra-debuginfo-path=/path/to/debug/objects</option>.
+      The given path will be prepended to the absolute path name of
+      the searched-for object.  For example, if Valgrind is looking
+      for the debuginfo
+      for <computeroutput>/w/x/y/zz.so</computeroutput>
+      and <option>--extra-debuginfo-path=/a/b/c</option> is specified,
+      it will look for a debug object at
+      <computeroutput>/a/b/c/w/x/y/zz.so</computeroutput>.</para>
+
+      <para>This flag should only be specified once.  If it is
+      specified multiple times, only the last instance is
+      honoured.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.suppressions" xreflabel="--suppressions">
     <term>
       <option><![CDATA[--suppressions=<filename> [default: $PREFIX/lib/valgrind/default.supp] ]]></option>

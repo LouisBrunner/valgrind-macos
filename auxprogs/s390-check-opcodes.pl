@@ -26,6 +26,7 @@ my %opc_desc = ();
 my %csv_desc = ();
 my %csv_implemented = ();
 my %toir_implemented = ();
+my %toir_decoded = ();
 
 
 #----------------------------------------------------
@@ -59,6 +60,33 @@ while (my $line = <OPC>) {
     next if ($mnemonic eq "mer");   # alternate mnemonic for mder
     next if ($mnemonic eq "cuutf"); # alternate mnemonic for cu21
     next if ($mnemonic eq "cutfu"); # alternate mnemonic for cu12
+
+    next if ($mnemonic eq "cfdbra"); # indistinguishable from cfdbr
+    next if ($mnemonic eq "cfebra"); # indistinguishable from cfebr
+    next if ($mnemonic eq "cfxbra"); # indistinguishable from cfxbr
+    next if ($mnemonic eq "cgdbra"); # indistinguishable from cgdbr
+    next if ($mnemonic eq "cgebra"); # indistinguishable from cgebr
+    next if ($mnemonic eq "cgxbra"); # indistinguishable from cgxbr
+    next if ($mnemonic eq "cdfbra"); # indistinguishable from cdfbr
+    next if ($mnemonic eq "cefbra"); # indistinguishable from cefbr
+    next if ($mnemonic eq "cxfbra"); # indistinguishable from cxfbr
+    next if ($mnemonic eq "cdgbra"); # indistinguishable from cdgbr
+    next if ($mnemonic eq "cegbra"); # indistinguishable from cegbr
+    next if ($mnemonic eq "cxgbra"); # indistinguishable from cxgbr
+    next if ($mnemonic eq "ldxbra"); # indistinguishable from ldxbr
+    next if ($mnemonic eq "lexbra"); # indistinguishable from lexbr
+    next if ($mnemonic eq "ledbra"); # indistinguishable from ledbr
+    next if ($mnemonic eq "cdgtra"); # indistinguishable from cdgtr
+    next if ($mnemonic eq "cxgtra"); # indistinguishable from cxgtr
+    next if ($mnemonic eq "cgdtra"); # indistinguishable from cgdtr
+    next if ($mnemonic eq "cgxtra"); # indistinguishable from cgxtr
+    next if ($mnemonic eq "fidbra"); # indistinguishable from fidbr
+    next if ($mnemonic eq "fiebra"); # indistinguishable from fiebr
+    next if ($mnemonic eq "fixbra"); # indistinguishable from fixbr
+    next if ($mnemonic eq "adtr");  # indistinguishable from adtra
+    next if ($mnemonic eq "sdtr");  # indistinguishable from sdtra
+    next if ($mnemonic eq "ddtr");  # indistinguishable from ddtra
+    next if ($mnemonic eq "mdtr");  # indistinguishable from mdtra
 
     $description =~ s/^[\s]+//g;    # remove leading blanks
     $description =~ s/[\s]+$//g;    # remove trailing blanks
@@ -95,6 +123,34 @@ while (my $line = <CSV>) {
     $mnemonic    =~ s/"//g;
     $description =~ s/"//g;
 
+    next if ($mnemonic eq "cfdbra"); # indistinguishable from cfdbr
+    next if ($mnemonic eq "cfebra"); # indistinguishable from cfebr
+    next if ($mnemonic eq "cfxbra"); # indistinguishable from cfxbr
+    next if ($mnemonic eq "cgdbra"); # indistinguishable from cgdbr
+    next if ($mnemonic eq "cgebra"); # indistinguishable from cgebr
+    next if ($mnemonic eq "cgxbra"); # indistinguishable from cgxbr
+    next if ($mnemonic eq "cdfbra"); # indistinguishable from cdfbr
+    next if ($mnemonic eq "cefbra"); # indistinguishable from cefbr
+    next if ($mnemonic eq "cxfbra"); # indistinguishable from cxfbr
+    next if ($mnemonic eq "cegbra"); # indistinguishable from cegbr
+    next if ($mnemonic eq "cdgbra"); # indistinguishable from cdgbr
+    next if ($mnemonic eq "cegbra"); # indistinguishable from cegbr
+    next if ($mnemonic eq "cxgbra"); # indistinguishable from cxgbr
+    next if ($mnemonic eq "ldxbra"); # indistinguishable from ldxbr
+    next if ($mnemonic eq "lexbra"); # indistinguishable from lexbr
+    next if ($mnemonic eq "ledbra"); # indistinguishable from ledbr
+    next if ($mnemonic eq "cdgtra"); # indistinguishable from cdgtr
+    next if ($mnemonic eq "cxgtra"); # indistinguishable from cxgtr
+    next if ($mnemonic eq "cgdtra"); # indistinguishable from cgdtr
+    next if ($mnemonic eq "cgxtra"); # indistinguishable from cgxtr
+    next if ($mnemonic eq "fidbra"); # indistinguishable from fidbr
+    next if ($mnemonic eq "fiebra"); # indistinguishable from fiebr
+    next if ($mnemonic eq "fixbra"); # indistinguishable from fixbr
+    next if ($mnemonic eq "adtr");   # indistinguishable from adtra
+    next if ($mnemonic eq "sdtr");   # indistinguishable from sdtra
+    next if ($mnemonic eq "ddtr");   # indistinguishable from ddtra
+    next if ($mnemonic eq "mdtr");   # indistinguishable from mdtra
+
 # Complain about duplicate entries. We don't want them.
     if ($csv_desc{$mnemonic}) {
         print "$mnemonic: duplicate entry\n";
@@ -119,6 +175,15 @@ close(CSV);
 open(TOIR, "$toir_file") || die "cannot open $toir_file\n";
 while (my $line = <TOIR>) {
     chomp $line;
+    if ($line =~ /goto\s+unimplemented/) {
+        # Assume this is in the decoder
+        if ($line =~ /\/\*\s([A-Z][A-Z0-9]+)\s\*\//) {
+            my $mnemonic = $1;
+            $mnemonic =~ tr/A-Z/a-z/;
+            $toir_decoded{$mnemonic} = 1;
+#            print "DECODED: $mnemonic\n";
+        }
+    }
     next if (! ($line =~ /^s390_irgen_[A-Z]/));
     $line =~ /^s390_irgen_([A-Z][A-Z0-9]*)/;
     my $op = $1;
@@ -166,6 +231,18 @@ foreach my $opc (keys %toir_implemented) {
 foreach my $opc (keys %csv_implemented) {
     if (! $toir_implemented{$opc}) {
         print "*** opcode $opc is not implemented but CSV file says so\n";
+    }
+}
+
+#----------------------------------------------------
+# 4) Make sure all opcodes are handled by the decoder
+#----------------------------------------------------
+
+# We only have to check those for which we don't generate IR.
+
+foreach my $opc (keys %opc_desc) {
+    if (! $toir_implemented{$opc} && ! $toir_decoded{$opc}) {
+        print "*** opcode $opc is not handled by the decoder\n";
     }
 }
 

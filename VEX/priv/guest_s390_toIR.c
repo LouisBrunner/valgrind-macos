@@ -12922,6 +12922,12 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb279: /* SACF */ goto unimplemented;
    case 0xb27c: s390_format_S_RD(s390_irgen_STCKF, ovl.fmt.S.b2, ovl.fmt.S.d2);goto ok;
    case 0xb27d: /* STSI */ goto unimplemented;
+   case 0xb280: /* LPP */ goto unimplemented;
+   case 0xb284: /* LCCTL */ goto unimplemented;
+   case 0xb285: /* LPCTL */ goto unimplemented;
+   case 0xb286: /* QSI */ goto unimplemented;
+   case 0xb287: /* LSCTL */ goto unimplemented;
+   case 0xb28e: /* QCTRI */ goto unimplemented;
    case 0xb299: s390_format_S_RD(s390_irgen_SRNM, ovl.fmt.S.b2, ovl.fmt.S.d2);
                                  goto ok;
    case 0xb29c: s390_format_S_RD(s390_irgen_STFPC, ovl.fmt.S.b2, ovl.fmt.S.d2);
@@ -12943,8 +12949,13 @@ s390_decode_4byte_and_irgen(UChar *bytes)
       goto ok;
    case 0xb2b9: /* SRNMT */ goto unimplemented;
    case 0xb2bd: /* LFAS */ goto unimplemented;
+   case 0xb2e0: /* SCCTR */ goto unimplemented;
+   case 0xb2e1: /* SPCTR */ goto unimplemented;
+   case 0xb2e4: /* ECCTR */ goto unimplemented;
+   case 0xb2e5: /* EPCTR */ goto unimplemented;
    case 0xb2e8: /* PPA */ goto unimplemented;
    case 0xb2ec: /* ETND */ goto unimplemented;
+   case 0xb2ed: /* ECPGA */ goto unimplemented;
    case 0xb2f8: /* TEND */ goto unimplemented;
    case 0xb2fa: /* NIAI */ goto unimplemented;
    case 0xb2fc: /* TABORT */ goto unimplemented;
@@ -13297,6 +13308,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb927: s390_format_RRE_RR(s390_irgen_LHR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb928: /* PCKMO */ goto unimplemented;
+   case 0xb92a: /* KMF */ goto unimplemented;
    case 0xb92b: /* KMO */ goto unimplemented;
    case 0xb92c: /* PCC */ goto unimplemented;
    case 0xb92d: /* KMCTR */ goto unimplemented;

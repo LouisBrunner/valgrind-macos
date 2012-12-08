@@ -31,10 +31,12 @@ check_PROGRAMS = \
 	stack_switch \
 	syscalls-2007 \
 	syslog-syscall \
-	sys-openat \
 	timerfd-syscall \
 	proc-auxv
 
+if HAVE_AT_FDCWD
+check_PROGRAMS += sys-openat
+endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

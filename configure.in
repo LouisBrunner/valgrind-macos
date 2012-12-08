@@ -997,6 +997,27 @@ AM_CONDITIONAL(VGCONF_PLATVARIANT_IS_ANDROID,
 # Checking for various library functions and other definitions
 #----------------------------------------------------------------------------
 
+# Check for AT_FDCWD
+
+AC_MSG_CHECKING([for AT_FDCWD])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE
+#include <fcntl.h>
+#include <unistd.h>
+]], [[
+  int a = AT_FDCWD;
+]])], [
+ac_have_at_fdcwd=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_at_fdcwd=no
+ac_gcc_have_dfp_type=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([HAVE_AT_FDCWD], [test x$ac_have_at_fdcwd = xyes])
+
+
 # Check for CLOCK_MONOTONIC
 
 AC_MSG_CHECKING([for CLOCK_MONOTONIC])

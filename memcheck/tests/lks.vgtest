@@ -1,0 +1,4 @@
+# verify leak-kind-set in arguments and suppressions
+prog: leak-cases
+vgopts: --leak-check=full --show-leak-kinds=definite,possible,indirect --errors-for-leak-kinds=definite,possible --suppressions=lks.supp
+stderr_filter_args: leak-cases.c

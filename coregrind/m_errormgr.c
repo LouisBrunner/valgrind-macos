@@ -1058,13 +1058,16 @@ static Int get_char ( Int fd, HChar* out_buf )
    return 1;
 }
 
-Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
+// Get a non blank non comment line.
+// Returns True if eof.
+static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
 {
    HChar* buf  = *bufpp;
    SizeT nBuf = *nBufp;
    HChar  ch;
    Int   n, i;
    while (True) {
+      buf[0] = 0;
       /* First, read until a non-blank char appears. */
       while (True) {
          n = get_char(fd, &ch);
@@ -1104,6 +1107,26 @@ Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
    }
 }
 
+// True if buf starts with fun: or obj: or is ...
+static Bool is_location_line (HChar* buf)
+{
+   return VG_(strncmp)(buf, "fun:", 4) == 0
+      || VG_(strncmp)(buf, "obj:", 4) == 0
+      || VG_(strcmp)(buf, "...") == 0;
+}
+
+Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
+{
+   Bool eof = get_nbnc_line (fd, bufpp, nBufp, lineno);
+
+   if (eof)
+      return True;
+
+   if (is_location_line(*bufpp))
+      return True; // Not a extra suppr line
+   else
+      return False; // An suppression extra line
+}
 
 /* True if s contains no wildcard (?, *) characters. */
 static Bool is_simple_str (const HChar *s)
@@ -1176,6 +1199,7 @@ static void load_one_suppressions_file ( const HChar* filename )
 {
    SysRes sres;
    Int    fd, i, j, lineno = 0;
+   Bool   got_a_location_line_read_by_tool;
    Bool   eof;
    SizeT  nBuf = 200;
    HChar* buf = VG_(malloc)("errormgr.losf.1", nBuf);
@@ -1220,7 +1244,7 @@ static void load_one_suppressions_file ( const HChar* filename )
 
       supp->string = supp->extra = NULL;
 
-      eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
+      eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
       if (eof) {
          VG_(arena_free)(VG_AR_CORE, supp);
          break;
@@ -1228,15 +1252,15 @@ static void load_one_suppressions_file ( const HChar* filename )
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
-      eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
+      eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
 
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
 
-      eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
+      eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
 
-      if (eof) BOMB("unexpected end-of-file");
+      if (eof) BOMB("unexpected end-of-file (expecting tool:suppr)");
 
       /* Check it has the "tool1,tool2,...:supp" form (look for ':') */
       i = 0;
@@ -1272,8 +1296,8 @@ static void load_one_suppressions_file ( const HChar* filename )
       else {
          // Ignore rest of suppression
          while (True) {
-            eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
-            if (eof) BOMB("unexpected end-of-file");
+            eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
+            if (eof) BOMB("unexpected end-of-file (when skipping suppression)");
             if (VG_STREQ(buf, "}"))
                break;
          }
@@ -1282,6 +1306,9 @@ static void load_one_suppressions_file ( const HChar* filename )
          continue;
       }
 
+      buf[0] = 0;
+      // tool_read_extra_suppression_info might read lines
+      // from fd till a location line. 
       if (VG_(needs).tool_errors && 
           !VG_TDICT_CALL(tool_read_extra_suppression_info,
                          fd, &buf, &nBuf, supp))
@@ -1289,12 +1316,19 @@ static void load_one_suppressions_file ( const HChar* filename )
          BOMB("bad or missing extra suppression info");
       }
 
+      got_a_location_line_read_by_tool = buf[0] != 0 && is_location_line(buf);
+
       /* the main frame-descriptor reading loop */
       i = 0;
       while (True) {
-         eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
+         if (got_a_location_line_read_by_tool) {
+            got_a_location_line_read_by_tool = False;
+            eof = False;
+         } else {
+            eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
+         }
          if (eof)
-            BOMB("unexpected end-of-file");
+            BOMB("unexpected end-of-file (when reading stack trace)");
          if (VG_STREQ(buf, "}")) {
             if (i > 0) {
                break;
@@ -1316,7 +1350,7 @@ static void load_one_suppressions_file ( const HChar* filename )
       // lines and grab the '}'.
       if (!VG_STREQ(buf, "}")) {
          do {
-            eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
+            eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
          } while (!eof && !VG_STREQ(buf, "}"));
       }
 

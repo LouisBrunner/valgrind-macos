@@ -120,6 +120,7 @@
 // Also, --show-reachable is a bad name because it also turns on the showing
 // of indirectly leaked blocks(!)  It would be better named --show-all or
 // --show-all-heap-blocks, because that's the end result.
+// We now have the option --show-leak-kinds=... which allows to specify =all.
 //
 // ----
 //
@@ -167,7 +168,8 @@
 // 
 // ==20397== 16 bytes in 1 blocks are definitely lost in loss record 14
 // of 15 (and 16 bytes in 1 block are indirectly lost as a result;  they
-// are mentioned elsewhere (if --show-reachable=yes is given!))
+// are mentioned elsewhere (if --show-reachable=yes or indirect is given
+// in --show-leak-kinds=... !))
 // ==20397==    at 0x4C2694E: malloc (vg_replace_malloc.c:177)
 // ==20397==    by 0x400521: mk (leak-cases.c:49)
 // ==20397==    by 0x400580: main (leak-cases.c:72)
@@ -906,14 +908,8 @@ static void get_printing_rules(LeakCheckParams* lcp,
    // Rules for printing:
    // - We don't show suppressed loss records ever (and that's controlled
    //   within the error manager).
-   // - We show non-suppressed loss records that are not "reachable" if 
-   //   --leak-check=yes.
-   // - We show all non-suppressed loss records if --leak-check=yes and
-   //   --show-reachable=yes.
-   //
-   // Nb: here "reachable" means Reachable *or* IndirectLeak;  note that
-   // this is different to "still reachable" used elsewhere because it
-   // includes indirectly lost blocks!
+   // - We show non-suppressed loss records that are specified in
+   //   --show-leak-kinds=... if --leak-check=yes.
 
    Bool delta_considered;
 
@@ -936,20 +932,14 @@ static void get_printing_rules(LeakCheckParams* lcp,
       tl_assert(0);
    }
 
-   *print_record = lcp->mode == LC_Full && delta_considered &&
-      ( lcp->show_reachable ||
-        Unreached == lr->key.state || 
-        ( lcp->show_possibly_lost && 
-          Possible  == lr->key.state ) );
+   *print_record = lcp->mode == LC_Full && delta_considered 
+      && RiS(lr->key.state,lcp->show_leak_kinds);
    // We don't count a leaks as errors with lcp->mode==LC_Summary.
    // Otherwise you can get high error counts with few or no error
-   // messages, which can be confusing.  Also, you could argue that
-   // indirect leaks should be counted as errors, but it seems better to
-   // make the counting criteria similar to the printing criteria.  So we
-   // don't count them.
-   *count_as_error = lcp->mode == LC_Full && delta_considered &&
-      ( Unreached == lr->key.state || 
-        Possible  == lr->key.state );
+   // messages, which can be confusing.  Otherwise, we count as errors
+   // the leak kinds requested by --errors-for-leak-kinds=...
+   *count_as_error = lcp->mode == LC_Full && delta_considered 
+      && RiS(lr->key.state,lcp->errors_for_leak_kinds);
 }
 
 static void print_results(ThreadId tid, LeakCheckParams* lcp)
@@ -1155,7 +1145,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                       "of leaked memory\n");
       }
       if (lcp->mode == LC_Full &&
-          MC_(blocks_reachable) > 0 && !lcp->show_reachable)
+          MC_(blocks_reachable) > 0 && !RiS(Reachable,lcp->show_leak_kinds))
       {
          VG_(umsg)("Reachable blocks (those to which a pointer "
                    "was found) are not shown.\n");
@@ -1163,7 +1153,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
             VG_(umsg)("To see them, add 'reachable any' args to leak_check\n");
          else
             VG_(umsg)("To see them, rerun with: --leak-check=full "
-                      "--show-reachable=yes\n");
+                      "--show-leak-kinds=all\n");
       }
       VG_(umsg)("\n");
    }

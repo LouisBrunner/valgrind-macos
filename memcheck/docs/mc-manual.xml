@@ -428,8 +428,8 @@ three ways we know of that an interior-pointer can occur:</para>
 following figure.</para>
 
 <programlisting><![CDATA[
-     Pointer chain            AAA Category    BBB Category
-     -------------            ------------    ------------
+     Pointer chain            AAA Leak Case   BBB Leak Case
+     -------------            -------------   -------------
 (1)  RRR ------------> BBB                    DR
 (2)  RRR ---> AAA ---> BBB    DR              IR
 (3)  RRR               BBB                    DL
@@ -446,7 +446,7 @@ Pointer chain legend:
 - --->: a start-pointer
 - -?->: an interior-pointer
 
-Category legend:
+Leak Case legend:
 - DR: Directly reachable
 - IR: Indirectly reachable
 - DL: Directly lost
@@ -458,7 +458,7 @@ Category legend:
 
 <para>Every possible case can be reduced to one of the above nine.  Memcheck
 merges some of these cases in its output, resulting in the following four
-categories.</para>
+leak kinds.</para>
 
 
 <itemizedlist>
@@ -467,10 +467,9 @@ categories.</para>
     <para>"Still reachable". This covers cases 1 and 2 (for the BBB blocks)
     above.  A start-pointer or chain of start-pointers to the block is
     found.  Since the block is still pointed at, the programmer could, at
-    least in principle, have freed it before program exit.  Because these
-    are very common and arguably not a problem, Memcheck won't report such
-    blocks individually unless <option>--show-reachable=yes</option> is
-    specified.</para>
+    least in principle, have freed it before program exit.  "Still reachable"
+    blocks are very common and arguably not a problem. So, by default,
+    Memcheck won't report such blocks individually.</para>
   </listitem>
 
   <listitem>
@@ -490,7 +489,7 @@ categories.</para>
     node is lost, all its children nodes will be indirectly lost.  Because
     the problem will disappear if the definitely lost block that caused the
     indirect leak is fixed, Memcheck won't report such blocks individually
-    unless <option>--show-reachable=yes</option> is specified.</para>
+    by default.</para>
   </listitem>
 
   <listitem>
@@ -504,13 +503,13 @@ categories.</para>
 
 </itemizedlist>
 
-<para>(Note: This mapping of the nine possible cases onto four categories is
+<para>(Note: This mapping of the nine possible cases onto four leak kinds is
 not necessarily the best way that leaks could be reported;  in particular,
 interior-pointers are treated inconsistently.  It is possible the
 categorisation may be improved in the future.)</para>
 
 <para>Furthermore, if suppressions exists for a block, it will be reported
-as "suppressed" no matter what which of the above four categories it belongs
+as "suppressed" no matter what which of the above four kinds it belongs
 to.</para>
 
 
@@ -528,7 +527,7 @@ LEAK SUMMARY:
 <para>If <option>--leak-check=full</option> is specified,
 Memcheck will give details for each definitely lost or possibly lost block,
 including where it was allocated.  (Actually, it merges results for all
-blocks that have the same category and sufficiently similar stack traces
+blocks that have the same leak kind and sufficiently similar stack traces
 into a single "loss record".  The
 <option>--leak-resolution</option> lets you control the
 meaning of "sufficiently similar".)  It cannot tell you when or how or why
@@ -554,10 +553,40 @@ that has been definitely lost.  The second case mentions another 8 byte
 block that has been definitely lost;  the difference is that a further 80
 bytes in other blocks are indirectly lost because of this lost block.
 The loss records are not presented in any notable order, so the loss record
-numbers aren't particularly meaningful.</para>
+numbers aren't particularly meaningful. The loss record numbers can be used
+in the Valgrind gdbserver to list the addresses of the leaked blocks and/or give
+more details about how a block is still reachable.</para>
 
-<para>If you specify <option>--show-reachable=yes</option>,
-reachable and indirectly lost blocks will also be shown, as the following
+<para>The option <option>--show-leak-kinds=&lt;set&gt;</option>
+controls the set of leak kinds to show
+if <option>--leak-check=full</option> is specified. </para>
+
+<para>The <option>&lt;set&gt;</option> of leak kinds is specified by
+using one of the following forms:
+
+<itemizedlist>
+  <listitem>a comma separated list of one or more of
+    <option>definite indirect possible reachable</option>.
+  </listitem>
+
+  <listitem><option>all</option> to specify the complete set (all leak kinds).
+  </listitem>
+
+  <listitem><option>none</option> is the empty set.
+  </listitem>
+</itemizedlist>
+
+</para>
+
+<para> The default value for the leak kinds to show is
+  <option>--show-leak-kinds=definite,possible</option>.
+</para>
+
+<para>To also show the reachable and indirectly lost blocks in addition to the definitely
+and possibly lost blocks, you can use <option>--show-leak-kinds=all</option>.
+To only show the reachable and indirectly lost blocks, use
+<option>--show-leak-kinds=indirect,reachable</option>.
+The reachable and indirectly lost blocks will then be presented as the following
 two examples show.</para>
 
 <programlisting><![CDATA[
@@ -572,31 +601,20 @@ two examples show.</para>
    by 0x........: main (leak-cases.c:80)
 ]]></programlisting>
 
-<para>Because there are different kinds of leaks with different severities, an
-interesting question is this: which leaks should be counted as true "errors"
-and which should not?  The answer to this question affects the numbers printed
-in the <computeroutput>ERROR SUMMARY</computeroutput> line, and also the effect
-of the <option>--error-exitcode</option> option.  Memcheck uses the following
-criteria:</para>
+<para>Because there are different kinds of leaks with different
+severities, an interesting question is this: which leaks should be
+counted as true "errors" and which should not?
+</para>
 
-<itemizedlist>
-  <listitem>
-    <para>First, a leak is only counted as a true "error" if
-    <option>--leak-check=full</option> is specified.  In other words, an
-    unprinted leak is not considered a true "error".  If this were not the
-    case, it would be possible to get a high error count but not have any
-    errors printed, which would be confusing.</para>
-  </listitem>
-
-  <listitem>
-    <para>After that, definitely lost and possibly lost blocks are counted as
-    true "errors".  Indirectly lost and still reachable blocks are not counted
-    as true "errors", even if <option>--show-reachable=yes</option> is
-    specified and they are printed;  this is because such blocks don't need
-    direct fixing by the programmer.
-    </para>
-  </listitem>
-</itemizedlist>
+<para> The answer to this question affects the numbers printed in
+the <computeroutput>ERROR SUMMARY</computeroutput> line, and also the
+effect of the <option>--error-exitcode</option> option.  First, a leak
+is only counted as a true "error"
+if <option>--leak-check=full</option> is specified.  Then, the
+option <option>--errors-for-leak-kinds=&lt;set&gt;</option> controls
+the set of leak kinds to consider as errors.  The default value
+is <option>--errors-for-leak-kinds=definite,possible</option>
+</para>
 
 </sect2>
 
@@ -624,16 +642,6 @@ criteria:</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.show-possibly-lost" xreflabel="--show-possibly-lost">
-    <term>
-      <option><![CDATA[--show-possibly-lost=<yes|no> [default: yes] ]]></option>
-    </term>
-    <listitem>
-      <para>When disabled, the memory leak detector will not show "possibly lost" blocks.  
-      </para>
-    </listitem>
-  </varlistentry>
-
   <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
     <term>
       <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>
@@ -658,20 +666,74 @@ criteria:</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
+  <varlistentry id="opt.show-leak-kinds" xreflabel="--show-leak-kinds">
     <term>
-      <option><![CDATA[--show-reachable=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--show-leak-kinds=<set> [default: definite,possible] ]]></option>
     </term>
     <listitem>
-      <para>When disabled, the memory leak detector only shows "definitely
-      lost" and "possibly lost" blocks.  When enabled, the leak detector also
-      shows "reachable" and "indirectly lost" blocks.  (In other words, it
-      shows all blocks, except suppressed ones, so
-      <option>--show-all</option> would be a better name for
-      it.)</para>
+      <para>Specifies the leak kinds to show in a full leak search by
+        using one of the following forms:
+
+        <itemizedlist>
+          <listitem>a comma separated list of one or more of
+            <option>definite indirect possible reachable</option>.
+          </listitem>
+          
+          <listitem><option>all</option> to specify the complete set (all leak kinds).
+            It is equivalent to
+            <option>--show-leak-kinds=definite,indirect,possible,reachable</option>.
+          </listitem>
+          
+          <listitem><option>none</option> is the empty set.
+          </listitem>
+        </itemizedlist>
+      </para>
     </listitem>
   </varlistentry>
 
+
+  <varlistentry id="opt.errors-for-leak-kinds" xreflabel="--errors-for-leak-kinds">
+    <term>
+      <option><![CDATA[--errors-for-leak-kinds=<set> [default: definite,possible] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies the leak kinds to count as errors in a full leak search. The
+        <option><![CDATA[<set>]]></option> is specified similarly to
+        <option>--show-leak-kinds</option>
+      </para>
+    </listitem>
+  </varlistentry>
+
+
+  <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
+    <term>
+      <option><![CDATA[--show-reachable=<yes|no> ]]></option>
+    </term>
+    <term>
+      <option><![CDATA[--show-possibly-lost=<yes|no> ]]></option>
+    </term>
+    <listitem>
+      <para>These options provide an alternative way to specify the leak kinds to show:
+        <itemizedlist>
+          <listitem>
+            <option>--show-reachable=no --show-possibly-lost=yes</option> is equivalent to
+            <option>--show-leak-kinds=definite,possible</option>.
+          </listitem>
+          <listitem>
+            <option>--show-reachable=no --show-possibly-lost=no</option> is equivalent to
+            <option>--show-leak-kinds=definite</option>.
+          </listitem>
+          <listitem>
+            <option>--show-reachable=yes</option> is equivalent to
+            <option>--show-leak-kinds=all</option>.
+            Note that  <option>--show-possibly-lost=no</option> has no effect
+            if <option>--show-reachable=yes</option> is specified.
+          </listitem>
+        </itemizedlist>
+      </para>
+    </listitem>
+  </varlistentry>
+  
   <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
     <term>
       <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
@@ -955,10 +1017,25 @@ Memcheck:suppression_type]]></programlisting>
 
 </itemizedlist>
 
-<para><computeroutput>Param</computeroutput> errors have an extra
+<para><computeroutput>Param</computeroutput> errors have a mandatory extra
 information line at this point, which is the name of the offending
-system call parameter.  No other error kinds have this extra
-line.</para>
+system call parameter. </para>
+
+<para>
+<computeroutput>Leak</computeroutput> errors have an optional extra
+information line. This optional extra information line has the
+following format:</para>
+<programlisting><![CDATA[
+match-leak-kinds:<set>]]></programlisting>
+<para>where <computeroutput>&lt;set&gt;</computeroutput> specifies which
+leak kinds are matched by this suppression entry. 
+<computeroutput>&lt;set&gt;</computeroutput> is specified similarly
+to the option <option>--show-leak-kinds</option>.
+If this optional extra line is not present, the suppression entry will match
+all leak kinds.
+</para>
+
+<para>The other memcheck error kinds do not have extra lines.</para>
 
 <para>The first line of the calling context: for <varname>ValueN</varname>
 and <varname>AddrN</varname> errors, it is either the name of the function
@@ -1391,7 +1468,7 @@ Address 0x8049E28 len 1 defined
 
   <listitem>
     <para><varname>leak_check [full*|summary]
-                              [reachable|possibleleak*|definiteleak]
+                              [kinds &lt;set&gt;|reachable|possibleleak*|definiteleak]
                               [increased*|changed|any]
                               [unlimited*|limited &lt;max_loss_records_output&gt;]
           </varname>
@@ -1414,14 +1491,17 @@ Address 0x8049E28 len 1 defined
     </para>
 
     <para>The second argument controls what kind of blocks are shown for
-    a <varname>full</varname> leak search.  The
-    value <varname>definiteleak</varname> specifies that only
-    definitely leaked blocks should be shown.  The
-    value <varname>possibleleak</varname> will also show possibly
-    leaked blocks (those for which only an interior pointer was
-    found).  The value
-    <varname>reachable</varname> will show all block categories
-    (reachable, possibly leaked, definitely leaked).
+    a <varname>full</varname> leak search.  The set of leak kinds to show
+    can be specified using a <varname>&lt;set&gt;</varname> similarly
+    to the command line option <option>--show-leak-kinds</option>.
+    Alternatively, the  value <varname>definiteleak</varname> 
+    is equivalent to <varname>kinds definite</varname>, the
+    value <varname>possibleleak</varname> is equivalent to
+    <varname>kinds definite,possible</varname> : it will also show
+    possibly leaked blocks, .i.e those for which only an interior
+    pointer was found.  The value <varname>reachable</varname> will
+    show all block categories (i.e. is equivalent to <varname>kinds
+    all</varname>).
     </para>
 
     <para>The third argument controls what kinds of changes are shown

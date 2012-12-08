@@ -260,6 +260,13 @@ typedef
   }
   Reachedness;
 
+// Build mask to check or set Reachedness r membership
+#define R2S(r) (1 << (r))
+// Reachedness r is member of the Set s ?
+#define RiS(r,s) ((s) & R2S(r))
+// A set with all Reachedness:
+#define RallS \
+   (R2S(Reachable) | R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached))
 
 /* For VALGRIND_COUNT_LEAKS client request */
 extern SizeT MC_(bytes_leaked);
@@ -318,8 +325,8 @@ typedef
 typedef
    struct _LeakCheckParams {
       LeakCheckMode mode;
-      Bool show_reachable;
-      Bool show_possibly_lost;
+      UInt show_leak_kinds;
+      UInt errors_for_leak_kinds;
       LeakCheckDeltaMode deltamode;
       UInt max_loss_records_output;       // limit on the nr of loss records output.
       Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
@@ -411,6 +418,12 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
                                   Bool print_record,
                                   Bool count_error );
 
+/* Parses a set of leak kinds (separated by ,).
+   and give the resulting set in *lks.
+   If parsing is succesful, returns True and *lks contains the resulting set.
+   else return False. */
+extern Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks );
+
 /* prints a description of address a */
 void MC_(pp_describe_addr) (Addr a);
 
@@ -458,11 +471,13 @@ extern LeakCheckMode MC_(clo_leak_check);
 /* How closely should we compare ExeContexts in leak records? default: 2 */
 extern VgRes MC_(clo_leak_resolution);
 
-/* In leak check, show reachable-but-not-freed blocks?  default: NO */
-extern Bool MC_(clo_show_reachable);
+/* In leak check, show loss records if their R2S(reachedness) is set.
+   Default : R2S(Possible) | R2S(Unreached). */
+extern UInt MC_(clo_show_leak_kinds);
 
-/* In leak check, show possibly-lost blocks?  default: YES */
-extern Bool MC_(clo_show_possibly_lost);
+/* In leak check, a loss record is an error if its R2S(reachedness) is set.
+   Default : R2S(Possible) | R2S(Unreached). */
+extern UInt MC_(clo_errors_for_leak_kinds);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO */

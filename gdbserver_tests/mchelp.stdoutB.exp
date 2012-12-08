@@ -22,12 +22,15 @@ memcheck monitor commands:
   check_memory [addressable|defined] <addr> [<len>]
         check that <len> (or 1) bytes at <addr> have the given accessibility
             and outputs a description of <addr>
-  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]
+  leak_check [full*|summary]
+                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
+        where kind is one of definite indirect possible reachable all none
         Examples: leak_check
                   leak_check summary any
+                  leak_check full kinds indirect,possible
                   leak_check full reachable any limited 100
   block_list <loss_record_nr>
         after a leak search, shows the list of blocks of <loss_record_nr>
@@ -69,12 +72,15 @@ memcheck monitor commands:
   check_memory [addressable|defined] <addr> [<len>]
         check that <len> (or 1) bytes at <addr> have the given accessibility
             and outputs a description of <addr>
-  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]
+  leak_check [full*|summary]
+                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
+        where kind is one of definite indirect possible reachable all none
         Examples: leak_check
                   leak_check summary any
+                  leak_check full kinds indirect,possible
                   leak_check full reachable any limited 100
   block_list <loss_record_nr>
         after a leak search, shows the list of blocks of <loss_record_nr>

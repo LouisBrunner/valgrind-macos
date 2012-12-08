@@ -4825,13 +4825,14 @@ static Bool mc_expensive_sanity_check ( void )
 /*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
 
+
 Bool          MC_(clo_partial_loads_ok)       = False;
 Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
 Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
-Bool          MC_(clo_show_reachable)         = False;
-Bool          MC_(clo_show_possibly_lost)     = True;
+UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
+UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
@@ -4840,6 +4841,7 @@ Int           MC_(clo_mc_level)               = 2;
 static Bool mc_process_cmd_line_options(const HChar* arg)
 {
    const HChar* tmp_str;
+   Int   tmp_show;
 
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 
@@ -4879,10 +4881,29 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       }
    }
 
-	if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
-   else if VG_BOOL_CLO(arg, "--show-reachable",   MC_(clo_show_reachable))   {}
-   else if VG_BOOL_CLO(arg, "--show-possibly-lost",
-                                            MC_(clo_show_possibly_lost))     {}
+        if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
+   else if VG_STR_CLO(arg, "--errors-for-leak-kinds" , tmp_str) {
+      if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_error_for_leak_kinds)))
+         return False;
+   }
+   else if VG_STR_CLO(arg, "--show-leak-kinds", tmp_str) {
+      if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_show_leak_kinds)))
+         return False;
+   }
+   else if (VG_BOOL_CLO(arg, "--show-reachable", tmp_show)) {
+      if (tmp_show) {
+         MC_(clo_show_leak_kinds) = RallS;
+      } else {
+         MC_(clo_show_leak_kinds) &= ~R2S(Reachable);
+      }
+   }
+   else if VG_BOOL_CLO(arg, "--show-possibly-lost", tmp_show) {
+      if (tmp_show) {
+         MC_(clo_show_leak_kinds) |= R2S(Possible);
+      } else {
+         MC_(clo_show_leak_kinds) &= ~R2S(Possible);
+      }
+   }
    else if VG_BOOL_CLO(arg, "--workaround-gcc296-bugs",
                                             MC_(clo_workaround_gcc296_bugs)) {}
 
@@ -4956,14 +4977,21 @@ static void mc_print_usage(void)
    VG_(printf)(
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
 "    --leak-resolution=low|med|high   differentiation of leak stack traces [high]\n"
-"    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
-"    --show-possibly-lost=no|yes      show possibly lost blocks in leak check?\n"
-"                                     [yes]\n"
+"    --show-leak-kinds=kind1,kind2,.. which leak kinds to show?\n"
+"                                            [definite,possible]\n"
+"    --errors-for-leak-kinds=kind1,kind2,..  which leak kinds are errors?\n"
+"                                            [definite,possible]\n"
+"        where kind is one of definite indirect possible reachable all none\n"
+"    --show-reachable=yes             same as --show-leak-kinds=all\n"
+"    --show-reachable=no --show-possibly-lost=yes\n"
+"                                     same as --show-leak-kinds=definite,possible\n"
+"    --show-reachable=no --show-possibly-lost=no\n"
+"                                     same as --show-leak-kinds=definite\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
-"    --freelist-vol=<number>          volume of freed blocks queue      [20000000]\n"
-"    --freelist-big-blocks=<number>   releases first blocks with size >= [1000000]\n"
+"    --freelist-vol=<number>          volume of freed blocks queue     [20000000]\n"
+"    --freelist-big-blocks=<number>   releases first blocks with size>= [1000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
@@ -5081,12 +5109,15 @@ static void print_monitor_help ( void )
 "  check_memory [addressable|defined] <addr> [<len>]\n"
 "        check that <len> (or 1) bytes at <addr> have the given accessibility\n"
 "            and outputs a description of <addr>\n"
-"  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]\n"
+"  leak_check [full*|summary]\n"
+"                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]\n"
 "                [increased*|changed|any]\n"
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
+"        where kind is one of definite indirect possible reachable all none\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
+"                  leak_check full kinds indirect,possible\n"
 "                  leak_check full reachable any limited 100\n"
 "  block_list <loss_record_nr>\n"
 "        after a leak search, shows the list of blocks of <loss_record_nr>\n"
@@ -5163,8 +5194,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       HChar* kw;
       
       lcp.mode               = LC_Full;
-      lcp.show_reachable     = False;
-      lcp.show_possibly_lost = True;
+      lcp.show_leak_kinds    = R2S(Possible) | R2S(Unreached);
+      lcp.errors_for_leak_kinds = 0; /* no errors for interactive leak search. */
       lcp.deltamode          = LCD_Increased;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;
@@ -5174,7 +5205,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
            kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
          switch (VG_(keyword_id) 
                  ("full summary "
-                  "reachable possibleleak definiteleak "
+                  "kinds reachable possibleleak definiteleak "
                   "increased changed any "
                   "unlimited limited ",
                   kw, kwd_report_all)) {
@@ -5184,24 +5215,34 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             lcp.mode = LC_Full; break;
          case  1: /* summary */
             lcp.mode = LC_Summary; break;
-         case  2: /* reachable */
-            lcp.show_reachable = True; 
-            lcp.show_possibly_lost = True; break;
-         case  3: /* possibleleak */
-            lcp.show_reachable = False;
-            lcp.show_possibly_lost = True; break;
-         case  4: /* definiteleak */
-            lcp.show_reachable = False;
-            lcp.show_possibly_lost = False; break;
-         case  5: /* increased */
+         case  2: { /* kinds */
+            wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wcmd == NULL || !MC_(parse_leak_kinds)(wcmd,
+                                                       &lcp.show_leak_kinds)) {
+               VG_(gdb_printf) ("missing or malformed leak kinds set\n");
+               err++;
+            }
+            break;
+         }
+         case  3: /* reachable */
+            lcp.show_leak_kinds = RallS;
+            break;
+         case  4: /* possibleleak */
+            lcp.show_leak_kinds 
+               = R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached);
+            break;
+         case  5: /* definiteleak */
+            lcp.show_leak_kinds = R2S(Unreached);
+            break;
+         case  6: /* increased */
             lcp.deltamode = LCD_Increased; break;
-         case  6: /* changed */
+         case  7: /* changed */
             lcp.deltamode = LCD_Changed; break;
-         case  7: /* any */
+         case  8: /* any */
             lcp.deltamode = LCD_Any; break;
-         case  8: /* unlimited */
+         case  9: /* unlimited */
             lcp.max_loss_records_output = 999999999; break;
-         case  9: { /* limited */
+         case 10: { /* limited */
             Int int_value;
             const HChar* endptr;
 
@@ -5433,8 +5474,8 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             lcp.mode = LC_Full;
          }
           
-         lcp.show_reachable = MC_(clo_show_reachable);
-         lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+         lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
+         lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
 
          if (arg[2] == 0)
             lcp.deltamode = LCD_Any;
@@ -6074,7 +6115,6 @@ static void mc_post_clo_init ( void )
       options so as to constrain the output somewhat. */
    if (VG_(clo_xml)) {
       /* Extract as much info as possible from the leak checker. */
-      /* MC_(clo_show_reachable) = True; */
       MC_(clo_leak_check) = LC_Full;
    }
 
@@ -6150,8 +6190,8 @@ static void mc_fini ( Int exitcode )
    if (MC_(clo_leak_check) != LC_Off) {
       LeakCheckParams lcp;
       lcp.mode = MC_(clo_leak_check);
-      lcp.show_reachable = MC_(clo_show_reachable);
-      lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+      lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
+      lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
       lcp.deltamode = LCD_Any;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = False;

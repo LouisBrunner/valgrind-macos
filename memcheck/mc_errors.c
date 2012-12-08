@@ -410,6 +410,65 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
    return loss;
 }
 
+Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks )
+{
+   HChar  tok_str0[VG_(strlen)(str0)+1];
+   HChar* saveptr;
+   HChar* token;
+
+   Bool seen_all_kw = False;
+   Bool seen_none_kw = False;
+
+   VG_(strcpy) (tok_str0, str0);
+   *lks = 0;
+
+   for (token = VG_(strtok_r)(tok_str0, ",", &saveptr);
+        token;
+        token = VG_(strtok_r)(NULL, ",", &saveptr)) {
+      if      (0 == VG_(strcmp)(token, "reachable"))
+         *lks |= R2S(Reachable);
+      else if (0 == VG_(strcmp)(token, "possible"))
+         *lks |= R2S(Possible);
+      else if (0 == VG_(strcmp)(token, "indirect"))
+         *lks |= R2S(IndirectLeak);
+      else if (0 == VG_(strcmp)(token, "definite"))
+         *lks |= R2S(Unreached);
+      else if (0 == VG_(strcmp)(token, "all"))
+         seen_all_kw = True;
+      else if (0 == VG_(strcmp)(token, "none"))
+         seen_none_kw = True;
+      else
+         return False;
+   }
+
+   if (seen_all_kw) {
+      if (seen_none_kw || *lks)
+         return False; // mixing all with either none or a specific value.
+      *lks = RallS;
+   } else if (seen_none_kw) {
+      if (seen_all_kw || *lks)
+         return False; // mixing none with either all or a specific value.
+      *lks = 0;
+   } else {
+      // seen neither all or none, we must see at least one value
+      if (*lks == 0)
+         return False;
+   }
+
+   return True;
+}
+
+static const HChar* pp_Reachedness_for_leak_kinds(Reachedness r)
+{
+   switch(r) {
+   case Reachable:    return "reachable";
+   case Possible:     return "possible";
+   case IndirectLeak: return "indirect";
+   case Unreached:    return "definite";
+   default:           tl_assert(0);
+   }
+}
+
 static void mc_pp_origin ( ExeContext* ec, UInt okind )
 {
    const HChar* src = NULL;
@@ -1442,15 +1501,40 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    return True;
 }
 
+typedef struct _MC_LeakSuppExtra MC_LeakSuppExtra;
+
+struct _MC_LeakSuppExtra {
+   UInt match_leak_kinds;
+};
+
 Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
                                         SizeT* nBufp, Supp *su )
 {
    Bool eof;
+   Int i;
 
    if (VG_(get_supp_kind)(su) == ParamSupp) {
       eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
       if (eof) return False;
       VG_(set_supp_string)(su, VG_(strdup)("mc.resi.1", *bufpp));
+   } else if (VG_(get_supp_kind)(su) == LeakSupp) {
+      // We might have the optional match-leak-kinds line
+      MC_LeakSuppExtra* lse;
+      lse = VG_(malloc)("mc.resi.2", sizeof(MC_LeakSuppExtra));
+      lse->match_leak_kinds = RallS;
+      VG_(set_supp_extra)(su, lse); // By default, all kinds will match.
+      eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
+      if (eof) return True; // old LeakSupp style, no match-leak-kinds line.
+      if (0 == VG_(strncmp)(*bufpp, "match-leak-kinds:", 17)) {
+         i = 17;
+         while ((*bufpp)[i] && VG_(isspace((*bufpp)[i])))
+            i++;
+         if (!MC_(parse_leak_kinds)((*bufpp)+i, &lse->match_leak_kinds)) {
+            return False;
+         }
+      } else {
+         return False; // unknown extra line.
+      }
    }
    return True;
 }
@@ -1504,7 +1588,11 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
          return (ekind == Err_Overlap);
 
       case LeakSupp:
-         return (ekind == Err_Leak);
+         if (ekind == Err_Leak) {
+            MC_LeakSuppExtra* lse = (MC_LeakSuppExtra*) VG_(get_supp_extra)(su);
+            return RiS(extra->Err.Leak.lr->key.state, lse->match_leak_kinds);
+         } else
+            return False;
 
       case MempoolSupp:
          return (ekind == Err_IllegalMempool);
@@ -1568,6 +1656,12 @@ Bool MC_(get_extra_suppression_info) ( Error* err,
       const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
       VG_(snprintf)(buf, nBuf-1, "%s", errstr);
+      return True;
+   } else if (Err_Leak == ekind) {
+      MC_Error* extra = VG_(get_error_extra)(err);
+      VG_(snprintf)
+         (buf, nBuf-1, "match-leak-kinds: %s",
+          pp_Reachedness_for_leak_kinds(extra->Err.Leak.lr->key.state));
       return True;
    } else {
       return False;

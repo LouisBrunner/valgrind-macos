@@ -9,7 +9,7 @@ LEAK SUMMARY:
    still reachable: 41,000 bytes in 2 blocks
         suppressed: 0 bytes in 0 blocks
 Reachable blocks (those to which a pointer was found) are not shown.
-To see them, rerun with: --leak-check=full --show-reachable=yes
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
 expecting a leak
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
@@ -24,7 +24,7 @@ LEAK SUMMARY:
    still reachable: 40,000 bytes in 1 blocks
         suppressed: 0 bytes in 0 blocks
 Reachable blocks (those to which a pointer was found) are not shown.
-To see them, rerun with: --leak-check=full --show-reachable=yes
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
 mprotect result 0
 expecting a leak again
@@ -40,7 +40,7 @@ LEAK SUMMARY:
    still reachable: 40,000 bytes in 1 blocks
         suppressed: 0 bytes in 0 blocks
 Reachable blocks (those to which a pointer was found) are not shown.
-To see them, rerun with: --leak-check=full --show-reachable=yes
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
 finished
 LEAK SUMMARY:

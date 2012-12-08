@@ -4,6 +4,16 @@ Release 3.9.0 (?? ?????? 201?)
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ====================
+* Memcheck:
+
+  - Using the options --show-leak-kinds=kind1,kind2,.. and
+    --errors-for-leak-kinds=kind1,kind2,.., each leak kind (definite, indirect,
+    possible, reachable) can now be individually reported and/or counted as
+    an error.
+    In a leak suppression entry, an optional line 'match-leak-kinds:'
+    controls which leak kinds are suppressed by this entry.
+    This is a.o. useful to avoid definite leaks being "catched"
+    by a suppression entry aimed at suppressing possibly lost blocks.
 
 * ==================== OTHER CHANGES ====================
 
@@ -34,10 +44,12 @@ m = merged into 3_8_BRANCH
 274695    [390] s390x: Support "compare to/from logical" instructions (z196)
 275800    [390] s390x: Add support for the ecag instruction (part 1)
 275800    [390] s390x: Autodetect cache info (part 2)
+284540    [390] Memcheck shouldn't count suppressions matching still-reachable allocations
 305948    [390] ppc64: code generation for ShlD64 / ShrD64 asserts
 306035    [390] s390x: Fix IR generation for LAAG and friends
 306054    [390] s390x: Condition code computation for convert-to-int/logical
 307155    [390] filter_gdb should filter out syscall-template.S T_PSEUDO
+307465    [390] --show-possibly-lost=no should bring down the error count / exit code
 308321    [390] testsuite memcheck filter interferes with gdb_filter 
 308341    [390] vgdb should report process exit (or fatal signal)
 308644    [390] vgdb command for having the info for the track-fds option

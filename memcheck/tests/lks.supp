@@ -1,0 +1,9 @@
+{
+   lks_suppress_only_possible
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:mk
+   fun:f
+   fun:main
+}

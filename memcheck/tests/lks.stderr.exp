@@ -1,0 +1,61 @@
+
+All heap blocks were freed -- no leaks are possible
+
+LEAK SUMMARY:
+   definitely lost: 48 bytes in 3 blocks
+   indirectly lost: 32 bytes in 2 blocks
+     possibly lost: 0 bytes in 0 blocks
+   still reachable: 64 bytes in 4 blocks
+        suppressed: 96 bytes in 6 blocks
+Rerun with --leak-check=full to see details of leaked memory
+
+leaked:      80 bytes in  5 blocks
+dubious:      0 bytes in  0 blocks
+reachable:   64 bytes in  4 blocks
+suppressed:  96 bytes in  6 blocks
+
+HEAP SUMMARY:
+    in use at exit: 240 bytes in 15 blocks
+  total heap usage: 15 allocs, 0 frees, 240 bytes allocated
+
+16 bytes in 1 blocks are indirectly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: f (leak-cases.c:76)
+   by 0x........: main (leak-cases.c:107)
+
+16 bytes in 1 blocks are indirectly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: f (leak-cases.c:91)
+   by 0x........: main (leak-cases.c:107)
+
+16 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: f (leak-cases.c:74)
+   by 0x........: main (leak-cases.c:107)
+
+32 (16 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: f (leak-cases.c:76)
+   by 0x........: main (leak-cases.c:107)
+
+32 (16 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: f (leak-cases.c:91)
+   by 0x........: main (leak-cases.c:107)
+
+LEAK SUMMARY:
+   definitely lost: 48 bytes in 3 blocks
+   indirectly lost: 32 bytes in 2 blocks
+     possibly lost: 0 bytes in 0 blocks
+   still reachable: 64 bytes in 4 blocks
+        suppressed: 96 bytes in 6 blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

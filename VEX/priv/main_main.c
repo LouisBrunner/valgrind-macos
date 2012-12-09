@@ -1261,49 +1261,38 @@ static const HChar* show_hwcaps_arm ( UInt hwcaps )
 static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 {
    static const HChar prefix[] = "s390x";
-   static const HChar facilities[][7] = {
-     { "ldisp" },
-     { "eimm" },
-     { "gie" },
-     { "dfp" },
-     { "fgx" },
-     { "stfle" },
-     { "etf2" },
-     { "etf3" },
-     { "stckf" },
-     { "fpext" },
-     { "lscond" },
+   static const struct {
+      UInt  hwcaps_bit;
+      HChar name[6];
+   } hwcaps_list[] = {
+      { VEX_HWCAPS_S390X_LDISP, "ldisp" },
+      { VEX_HWCAPS_S390X_EIMM,  "eimm" },
+      { VEX_HWCAPS_S390X_GIE,   "gie" },
+      { VEX_HWCAPS_S390X_DFP,   "dfp" },
+      { VEX_HWCAPS_S390X_FGX,   "fgx" },
+      { VEX_HWCAPS_S390X_STFLE, "stfle" },
+      { VEX_HWCAPS_S390X_ETF2,  "etf2" },
+      { VEX_HWCAPS_S390X_ETF3,  "etf3" },
+      { VEX_HWCAPS_S390X_STCKF, "stckf" },
+      { VEX_HWCAPS_S390X_FPEXT, "fpext" },
+      { VEX_HWCAPS_S390X_LSC,   "lsc" },
    };
-   static HChar buf[sizeof facilities + sizeof prefix + 1];
-   static HChar *p;
+#define NUM_HWCAPS (sizeof hwcaps_list / sizeof hwcaps_list[0])
+   static HChar buf[sizeof prefix + 
+                    NUM_HWCAPS * (sizeof hwcaps_list[0].name + 1) +
+                    1];  // '\0'
+   HChar *p;
+   UInt i;
 
    if (buf[0] != '\0') return buf;  /* already constructed */
 
    hwcaps = VEX_HWCAPS_S390X(hwcaps);
 
    p = buf + vex_sprintf(buf, "%s", prefix);
-   if (hwcaps & VEX_HWCAPS_S390X_LDISP)
-     p = p + vex_sprintf(p, "-%s", facilities[0]);
-   if (hwcaps & VEX_HWCAPS_S390X_EIMM)
-     p = p + vex_sprintf(p, "-%s", facilities[1]);
-   if (hwcaps & VEX_HWCAPS_S390X_GIE)
-     p = p + vex_sprintf(p, "-%s", facilities[2]);
-   if (hwcaps & VEX_HWCAPS_S390X_DFP)
-     p = p + vex_sprintf(p, "-%s", facilities[3]);
-   if (hwcaps & VEX_HWCAPS_S390X_FGX)
-     p = p + vex_sprintf(p, "-%s", facilities[4]);
-   if (hwcaps & VEX_HWCAPS_S390X_STFLE)
-     p = p + vex_sprintf(p, "-%s", facilities[5]);
-   if (hwcaps & VEX_HWCAPS_S390X_ETF2)
-     p = p + vex_sprintf(p, "-%s", facilities[6]);
-   if (hwcaps & VEX_HWCAPS_S390X_ETF3)
-     p = p + vex_sprintf(p, "-%s", facilities[7]);
-   if (hwcaps & VEX_HWCAPS_S390X_STCKF)
-     p = p + vex_sprintf(p, "-%s", facilities[8]);
-   if (hwcaps & VEX_HWCAPS_S390X_FPEXT)
-     p = p + vex_sprintf(p, "-%s", facilities[9]);
-   if (hwcaps & VEX_HWCAPS_S390X_LSC)
-     p = p + vex_sprintf(p, "-%s", facilities[10]);
+   for (i = 0 ; i < NUM_HWCAPS; ++i) {
+      if (hwcaps & hwcaps_list[i].hwcaps_bit)
+         p = p + vex_sprintf(p, "-%s", hwcaps_list[i].name);
+   }
 
    /* If there are no facilities, add "zarch" */
    if (hwcaps == 0)

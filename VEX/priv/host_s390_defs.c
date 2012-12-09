@@ -3939,7 +3939,7 @@ s390_emit_SDTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
 static UChar *
 s390_emit_LOCGR(UChar *p, UChar m3, UChar r1, UChar r2)
 {
-   vassert(s390_host_has_lscond);
+   vassert(s390_host_has_lsc);
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
       s390_disasm(ENC4(MNM, GPR, GPR, UINT), "locgr", r1, r2, m3);
    }
@@ -7435,7 +7435,7 @@ s390_insn_cond_move_emit(UChar *buf, const s390_insn *insn)
 
    p = buf;
 
-   if (s390_host_has_lscond) {
+   if (s390_host_has_lsc) {
       /* LOCx is not the preferred way to implement an unconditional load. */
       if (cond != S390_CC_ALWAYS) goto use_branch_insn;
 

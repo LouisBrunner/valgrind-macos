@@ -333,30 +333,6 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
    for (i = 0; i < num_dw; ++i)
       addr[i] = hoststfle[i];
 
-   /* Enumerators for interesting facilities. The value of the enumerator
-      is the number of the facility bit as per POP. */
-   enum {
-      S390_FAC_MSA    = 17,  // message-security-assist
-      S390_FAC_LDISP  = 18,  // long displacement
-      S390_FAC_HFPMAS = 20,  // HFP multiply-and-add-subtract
-      S390_FAC_EIMM   = 21,  // extended immediate
-      S390_FAC_HFPUNX = 23,  // HFP unnormalized extension
-      S390_FAC_ETF2   = 24,  // ETF2-enhancement
-      S390_FAC_PENH   = 26,  // parsing-enhancement
-      S390_FAC_ETF3   = 30,  // ETF3-enhancement
-      S390_FAC_XCPUT  = 31,  // extract-CPU-time
-      S390_FAC_GIE    = 34,  // general insn extension
-      S390_FAC_EXEXT  = 35,  // execute extension
-      S390_FAC_DFP    = 42,  // decimal floating point
-      S390_FAC_PFPO   = 44,  // perform floating point operation insn
-      S390_FAC_HIGHW  = 45,  // high-word extension
-      S390_FAC_DFPZC  = 48,  // DFP zoned-conversion
-      S390_FAC_MISC   = 49,  // miscellaneous insn
-      S390_FAC_CTREXE = 50,  // constrained transactional execution
-      S390_FAC_TREXE  = 73,  // transactional execution
-      S390_FAC_MSA4   = 77   // message-security-assist 4
-   };
-
    /* Now adjust the VM facilities according to what the VM supports */
    s390_set_facility_bit(addr, S390_FAC_LDISP,  1);
    s390_set_facility_bit(addr, S390_FAC_EIMM,   1);

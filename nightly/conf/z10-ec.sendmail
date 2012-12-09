@@ -6,8 +6,9 @@ MAILFILE=/opt/tobesent
 rm -f $MAILFILE
 touch $MAILFILE
 echo "Subject: $subject" >> $MAILFILE
-echo "To: valgrind-developers@lists.sourceforge.net" >> $MAILFILE
-echo "Cc: britzel@acm.org" >> $MAILFILE
+#echo "To: valgrind-developers@lists.sourceforge.net" >> $MAILFILE
+#echo "Cc: britzel@acm.org" >> $MAILFILE
+echo "To: britzel@acm.org" >> $MAILFILE
 echo "  " >> $MAILFILE
 cat "$summary"  >> $MAILFILE
 echo "  " >> $MAILFILE

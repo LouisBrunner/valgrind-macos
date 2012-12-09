@@ -34,6 +34,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcfile.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_cpuid.h"
@@ -1116,16 +1117,22 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_s390x)
+
+#include "libvex_s390x_common.h"
+
    {
      /* Instruction set detection code borrowed from ppc above. */
      vki_sigset_t          saved_set, tmp_set;
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
 
-     volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
-     volatile Bool have_STFLE, have_ETF2, have_ETF3, have_STCKF, have_FPEXT;
-     volatile Bool have_LSCOND;
-     Int r, model;
+     volatile Bool have_LDISP, have_STFLE;
+     Int i, r, model;
+
+     /* If the model is "unknown" don't treat this as an error. Assume
+        this is a brand-new machine model for which we don't have the 
+        identification yet. Keeping fingers crossed. */
+     model = VG_(get_machine_model)();
 
      /* Unblock SIGILL and stash away the old action for that signal */
      VG_(sigemptyset)(&tmp_set);
@@ -1161,66 +1168,22 @@ Bool VG_(machine_get_hwcaps)( void )
                              ".short 0x0057" : : : "r0", "r1", "cc", "memory");
      }
 
-     have_EIMM = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_EIMM = False;
-     } else {
-        __asm__ __volatile__(".long  0xc0090000\n\t"  /* iilf r0,0 */
-                             ".short 0x0000" : : : "r0", "memory");
-     }
+     /* Check availability og STFLE. If available store facility bits
+        in hoststfle. */
+     ULong hoststfle[S390_NUM_FACILITY_DW];
 
-     have_GIE = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_GIE = False;
-     } else {
-        __asm__ __volatile__(".long  0xc2010000\n\t"  /* msfi r0,0 */
-                             ".short 0x0000" : : : "r0", "memory");
-     }
+     for (i = 0; i < S390_NUM_FACILITY_DW; ++i)
+        hoststfle[i] = 0;
 
-     have_DFP = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_DFP = False;
-     } else {
-        __asm__ __volatile__(".long 0xb3d20000"
-                               : : : "r0", "cc", "memory");  /* adtr r0,r0,r0 */
-     }
-
-     have_FGX = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_FGX = False;
-     } else {
-        __asm__ __volatile__(".long 0xb3cd0000" : : : "r0");  /* lgdr r0,f0 */
-     }
-
-     /* Detect presence of certain facilities using the STFLE insn.
-        Note, that these facilities were introduced at the same time or later
-        as STFLE, so the absence of STLFE implies the absence of the facility
-        we're trying to detect. */
      have_STFLE = True;
-     have_ETF2 = False;
-     have_ETF3 = False;
-     have_STCKF = False;
-     have_FPEXT = False;
-     have_LSCOND = False;
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_STFLE = False;
      } else {
-         ULong hoststfle[1];
-         register ULong reg0 asm("0") = 0; /* one double word available */
+         register ULong reg0 asm("0") = S390_NUM_FACILITY_DW - 1;
 
          __asm__ __volatile__(" .insn s,0xb2b00000,%0\n"   /* stfle */
                               : "=m" (hoststfle), "+d"(reg0)
                               : : "cc", "memory");
-         if (hoststfle[0] & (1ULL << (63 - 24)))
-             have_ETF2 = True;
-         if (hoststfle[0] & (1ULL << (63 - 30)))
-             have_ETF3 = True;
-         if (hoststfle[0] & (1ULL << (63 - 25)))
-             have_STCKF = True;
-         if (hoststfle[0] & (1ULL << (63 - 37)))
-             have_FPEXT = True;
-         if (hoststfle[0] & (1ULL << (63 - 45)))
-             have_LSCOND = True;
      }
 
      /* Restore signals */
@@ -1230,36 +1193,59 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      va = VexArchS390X;
 
-     model = VG_(get_machine_model)();
-
-     /* If the model is "unknown" don't treat this as an error. Assume
-        this is a brand-new machine model for which we don't have the 
-        identification yet. Keeping fingers crossed. */
-
-     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
-                   "FGX %d STFLE %d ETF2 %d ETF3 %d STCKF %d FPEXT %d LSCOND %d\n",
-                   model, have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX,
-                   have_STFLE, have_ETF2, have_ETF3, have_STCKF, have_FPEXT,
-                   have_LSCOND);
-
      vai.hwcaps = model;
+     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
      if (have_LDISP) {
-        /* Use long displacement only on machines >= z990. For all other machines
-           it is millicoded and therefore slow. */
+        /* Use long displacement only on machines >= z990. For all other
+           machines it is millicoded and therefore slow. */
         if (model >= VEX_S390X_MODEL_Z990)
            vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
      }
-     if (have_EIMM)  vai.hwcaps |= VEX_HWCAPS_S390X_EIMM;
-     if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
-     if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
-     if (have_FGX)   vai.hwcaps |= VEX_HWCAPS_S390X_FGX;
-     if (have_ETF2)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF2;
-     if (have_ETF3)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF3;
-     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
-     if (have_STCKF) vai.hwcaps |= VEX_HWCAPS_S390X_STCKF;
-     if (have_FPEXT) vai.hwcaps |= VEX_HWCAPS_S390X_FPEXT;
-     if (have_LSCOND)vai.hwcaps |= VEX_HWCAPS_S390X_LSCOND;
 
+     /* Detect presence of certain facilities using the STFLE insn.
+        Note, that these facilities were introduced at the same time or later
+        as STFLE, so the absence of STLFE implies the absence of the facility
+        we're trying to detect. */
+     struct fac_hwcaps_map {
+        UInt installed;
+        UInt facility_bit;
+        UInt hwcaps_bit;
+        const HChar name[6];   // may need adjustment for new facility names
+     } fac_hwcaps[] = {
+        { False, S390_FAC_EIMM,  VEX_HWCAPS_S390X_EIMM,  "EIMM"  },
+        { False, S390_FAC_GIE,   VEX_HWCAPS_S390X_GIE,   "GIE"   },
+        { False, S390_FAC_DFP,   VEX_HWCAPS_S390X_DFP,   "DFP"   },
+        { False, S390_FAC_FPSE,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
+        { False, S390_FAC_ETF2,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
+        { False, S390_FAC_ETF3,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
+        { False, S390_FAC_STCKF, VEX_HWCAPS_S390X_STCKF, "STCKF" },
+        { False, S390_FAC_FPEXT, VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
+        { False, S390_FAC_LSC,   VEX_HWCAPS_S390X_LSC,   "LSC"   },
+     };
+
+     /* Set hwcaps according to the detected facilities */
+     for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
+        vg_assert(fac_hwcaps[i].facility_bit <= 63);  // for now
+        if (hoststfle[0] & (1ULL << (63 - fac_hwcaps[i].facility_bit))) {
+           fac_hwcaps[i].installed = True;
+           vai.hwcaps |= fac_hwcaps[i].hwcaps_bit;
+        }
+     }
+
+     /* Build up a string showing the probed-for facilities */
+     HChar fac_str[(sizeof fac_hwcaps / sizeof fac_hwcaps[0]) *
+                   (sizeof fac_hwcaps[0].name + 3) + //  %s %d
+                   7 + 1 + 4 + 2  // machine %4d
+                   + 1];  // \0
+     HChar *p = fac_str;
+     p += VG_(sprintf)(p, "machine %4d  ", model);
+     for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
+        p += VG_(sprintf)(p, " %s %1d", fac_hwcaps[i].name,
+                          fac_hwcaps[i].installed);
+     }
+     *p++ = '\0';
+
+     VG_(debugLog)(1, "machine", "%s\n", fac_str);
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 
      VG_(machine_get_cache_info)(&vai);

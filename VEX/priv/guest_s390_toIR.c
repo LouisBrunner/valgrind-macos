@@ -41,7 +41,7 @@
 #include "guest_generic_bb_to_IR.h"  /* DisResult */
 #include "guest_s390_defs.h"         /* prototypes for this file's functions */
 #include "s390_disasm.h"
-#include "host_s390_defs.h"          /* S390_ROUND_xyzzy */
+#include "host_s390_defs.h"          /* S390_BFP_ROUND_xyzzy */
 
 
 /*------------------------------------------------------------*/
@@ -9429,7 +9429,7 @@ s390_irgen_TR_EX(IRTemp length, IRTemp start1, IRTemp start2)
 static void
 s390_irgen_EX_SS(UChar r, IRTemp addr2,
                  void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2),
-                 int lensize)
+                 UInt lensize)
 {
    struct SS {
       unsigned int op :  8;
@@ -11947,7 +11947,7 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
    /* To store the bytes construct 4 dirty helper calls. The helper calls
       are guarded (num_bytes == 1, num_bytes == 2, etc) such that only
       one of them will be called at runtime. */
-   int i;
+   UInt i;
    for (i = 1; i <= 4; ++i) {
       IRDirty *d;
 
@@ -12243,7 +12243,7 @@ s390_irgen_CU41(UChar r1, UChar r2)
    /* To store the bytes construct 4 dirty helper calls. The helper calls
       are guarded (num_bytes == 1, num_bytes == 2, etc) such that only
       one of them will be called at runtime. */
-   int i;
+   UInt i;
    for (i = 1; i <= 4; ++i) {
       IRDirty *d;
 
@@ -12562,8 +12562,8 @@ s390_decode_2byte_and_irgen(UChar *bytes)
 
    vassert(sizeof(formats) == 2);
 
-   ((char *)(&ovl.value))[0] = bytes[0];
-   ((char *)(&ovl.value))[1] = bytes[1];
+   ((UChar *)(&ovl.value))[0] = bytes[0];
+   ((UChar *)(&ovl.value))[1] = bytes[1];
 
    switch (ovl.value & 0xffff) {
    case 0x0101: /* PR */ goto unimplemented;
@@ -12761,10 +12761,10 @@ s390_decode_4byte_and_irgen(UChar *bytes)
 
    vassert(sizeof(formats) == 4);
 
-   ((char *)(&ovl.value))[0] = bytes[0];
-   ((char *)(&ovl.value))[1] = bytes[1];
-   ((char *)(&ovl.value))[2] = bytes[2];
-   ((char *)(&ovl.value))[3] = bytes[3];
+   ((UChar *)(&ovl.value))[0] = bytes[0];
+   ((UChar *)(&ovl.value))[1] = bytes[1];
+   ((UChar *)(&ovl.value))[2] = bytes[2];
+   ((UChar *)(&ovl.value))[3] = bytes[3];
 
    switch ((ovl.value & 0xff0f0000) >> 16) {
    case 0xa500: s390_format_RI_RU(s390_irgen_IIHH, ovl.fmt.RI.r1,
@@ -13834,14 +13834,14 @@ s390_decode_6byte_and_irgen(UChar *bytes)
 
    vassert(sizeof(formats) == 6);
 
-   ((char *)(&ovl.value))[0] = bytes[0];
-   ((char *)(&ovl.value))[1] = bytes[1];
-   ((char *)(&ovl.value))[2] = bytes[2];
-   ((char *)(&ovl.value))[3] = bytes[3];
-   ((char *)(&ovl.value))[4] = bytes[4];
-   ((char *)(&ovl.value))[5] = bytes[5];
-   ((char *)(&ovl.value))[6] = 0x0;
-   ((char *)(&ovl.value))[7] = 0x0;
+   ((UChar *)(&ovl.value))[0] = bytes[0];
+   ((UChar *)(&ovl.value))[1] = bytes[1];
+   ((UChar *)(&ovl.value))[2] = bytes[2];
+   ((UChar *)(&ovl.value))[3] = bytes[3];
+   ((UChar *)(&ovl.value))[4] = bytes[4];
+   ((UChar *)(&ovl.value))[5] = bytes[5];
+   ((UChar *)(&ovl.value))[6] = 0x0;
+   ((UChar *)(&ovl.value))[7] = 0x0;
 
    switch ((ovl.value >> 16) & 0xff00000000ffULL) {
    case 0xe30000000002ULL: s390_format_RXY_RRRD(s390_irgen_LTG, ovl.fmt.RXY.r1,

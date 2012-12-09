@@ -279,7 +279,7 @@ void
 s390_disasm(UInt command, ...)
 {
    va_list  args;
-   unsigned argkind;
+   UInt argkind;
    HChar buf[128];  /* holds the disassembled insn */
    HChar *p;
    HChar separator;

@@ -41,7 +41,7 @@
 #include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_s390_defs.h"
-#include "host_s390_defs.h"          /* S390_ROUND_xyzzy */
+#include "host_s390_defs.h"          /* S390_BFP_ROUND_xyzzy */
 
 void
 LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
@@ -251,7 +251,7 @@ s390x_dirtyhelper_EX(ULong torun)
 ULong
 s390x_dirtyhelper_STCK(ULong *addr)
 {
-   int cc;
+   UInt cc;
 
    asm volatile("stck %0\n"
                 "ipm %1\n"
@@ -263,7 +263,7 @@ s390x_dirtyhelper_STCK(ULong *addr)
 ULong
 s390x_dirtyhelper_STCKE(ULong *addr)
 {
-   int cc;
+   UInt cc;
 
    asm volatile("stcke %0\n"
                 "ipm %1\n"
@@ -274,7 +274,7 @@ s390x_dirtyhelper_STCKE(ULong *addr)
 
 ULong s390x_dirtyhelper_STCKF(ULong *addr)
 {
-   int cc;
+   UInt cc;
 
    asm volatile(".insn s,0xb27c0000,%0\n"
                 "ipm %1\n"

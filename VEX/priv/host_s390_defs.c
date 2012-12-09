@@ -3986,7 +3986,7 @@ s390_emit_LOCG(UChar *p, UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2)
 static __inline__ Bool
 uint_fits_signed_16bit(UInt val)
 {
-   int v = val & 0xFFFFu;
+   Int v = val & 0xFFFFu;
 
    /* sign extend */
    v = (v << 16) >> 16;

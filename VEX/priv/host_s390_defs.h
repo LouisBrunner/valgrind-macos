@@ -47,8 +47,8 @@ HReg s390_hreg_guest_state_pointer(void);
 /* Given the index of a function argument, return the number of the
    general purpose register in which it is being passed. Arguments are
    counted 0, 1, 2, ... and they are being passed in r2, r3, r4, ... */
-static __inline__ unsigned
-s390_gprno_from_arg_index(unsigned ix)
+static __inline__ UInt
+s390_gprno_from_arg_index(UInt ix)
 {
    return ix + 2;
 }

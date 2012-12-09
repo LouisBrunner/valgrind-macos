@@ -405,8 +405,8 @@ s390_opnd_imm(ULong value)
 }
 
 
-/* Return 1, if EXPR represents the cosntant 0 */
-static int
+/* Return 1, if EXPR represents the constant 0 */
+static Bool
 s390_expr_is_const_zero(IRExpr *expr)
 {
    ULong value;
@@ -2968,7 +2968,7 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 /*---------------------------------------------------------*/
 
 static void
-iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, int offsIP)
+iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, Int offsIP)
 {
    if (vex_traceflags & VEX_TRACE_VCODE) {
       vex_printf("\n-- PUT(%d) = ", offsIP);

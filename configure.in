@@ -1011,7 +1011,6 @@ ac_have_at_fdcwd=yes
 AC_MSG_RESULT([yes])
 ], [
 ac_have_at_fdcwd=no
-ac_gcc_have_dfp_type=no
 AC_MSG_RESULT([no])
 ])
 

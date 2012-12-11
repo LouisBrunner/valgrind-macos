@@ -2564,6 +2564,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       case Ity_I16:
       case Ity_I32:
       case Ity_I64:
+         if (am->tag == S390_AMODE_B12 &&
+             s390_expr_is_const_zero(stmt->Ist.Store.data)) {
+            addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
+            return;
+         }
          src = s390_isel_int_expr(env, stmt->Ist.Store.data);
          break;
 
@@ -2649,7 +2654,8 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       /* guest register = 0 */
       if (new_value == 0) {
-         addInstr(env, s390_insn_gzero(sizeofIRType(tyd), offset));
+         am = s390_amode_for_guest_state(offset);
+         addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
          return;
       }
 
@@ -2689,6 +2695,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       case Ity_I16:
       case Ity_I32:
       case Ity_I64:
+         if (am->tag == S390_AMODE_B12 &&
+             s390_expr_is_const_zero(stmt->Ist.Put.data)) {
+            addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
+            return;
+         }
          src = s390_isel_int_expr(env, stmt->Ist.Put.data);
          break;
 

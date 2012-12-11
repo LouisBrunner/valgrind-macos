@@ -139,7 +139,7 @@ typedef enum {
    S390_INSN_BFP_CONVERT,
    S390_INSN_DFP_BINOP, /* Decimal floating point */
    S390_INSN_MFENCE,
-   S390_INSN_GZERO,   /* Assign zero to a guest register */
+   S390_INSN_MZERO,   /* Assign zero to a memory location */
    S390_INSN_GADD,    /* Add a value to a guest register */
    S390_INSN_SET_FPC_BFPRM, /* Set the bfp rounding mode in the FPC */
    S390_INSN_SET_FPC_DFPRM, /* Set the dfp rounding mode in the FPC */
@@ -510,8 +510,8 @@ typedef struct {
 
       /* Miscellaneous */
       struct {
-         UInt             offset;
-      } gzero;
+         s390_amode      *dst;
+      } mzero;
       struct {
          UInt             offset;
          UChar            delta;
@@ -616,7 +616,7 @@ s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
                                HReg op2, HReg op3,
                                s390_dfp_round_t rounding_mode);
 s390_insn *s390_insn_mfence(void);
-s390_insn *s390_insn_gzero(UChar size, UInt offset);
+s390_insn *s390_insn_mzero(UChar size, s390_amode *dst);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
 s390_insn *s390_insn_set_fpc_bfprm(UChar size, HReg mode);
 s390_insn *s390_insn_set_fpc_dfprm(UChar size, HReg mode);

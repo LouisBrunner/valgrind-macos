@@ -714,8 +714,11 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       }
       break;
 
+   case S390_INSN_MZERO:
+      s390_amode_get_reg_usage(u, insn->variant.mzero.dst);
+      break;
+
    case S390_INSN_MFENCE:
-   case S390_INSN_GZERO:
    case S390_INSN_GADD:
       break;
 
@@ -963,8 +966,11 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       }
       break;
 
+   case S390_INSN_MZERO:
+      s390_amode_map_regs(m, insn->variant.mzero.dst);
+      break;
+
    case S390_INSN_MFENCE:
-   case S390_INSN_GZERO:
    case S390_INSN_GADD:
       break;
 
@@ -5078,13 +5084,17 @@ s390_insn_mfence(void)
 
 
 s390_insn *
-s390_insn_gzero(UChar size, UInt offset)
+s390_insn_mzero(UChar size, s390_amode *dst)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_GZERO;
+   /* This insn will be mapped to an XC so we can only allow base register
+      plus 12-bit displacement */
+   vassert(dst->tag == S390_AMODE_B12);
+
+   insn->tag  = S390_INSN_MZERO;
    insn->size = size;
-   insn->variant.gzero.offset = offset;
+   insn->variant.mzero.dst = dst;
 
    return insn;
 }
@@ -5643,8 +5653,8 @@ s390_insn_as_string(const s390_insn *insn)
       s390_sprintf(buf, "%M", "v-mfence");
       return buf;   /* avoid printing "size = ..." which is meaningless */
 
-   case S390_INSN_GZERO:
-      s390_sprintf(buf, "%M %G", "v-gzero", insn->variant.gzero.offset);
+   case S390_INSN_MZERO:
+      s390_sprintf(buf, "%M %A", "v-mzero", insn->variant.mzero.dst);
       break;
 
    case S390_INSN_GADD:
@@ -7788,11 +7798,11 @@ s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
-s390_insn_gzero_emit(UChar *buf, const s390_insn *insn)
+s390_insn_mzero_emit(UChar *buf, const s390_insn *insn)
 {
-   return s390_emit_XC(buf, insn->size - 1,
-                       S390_REGNO_GUEST_STATE_POINTER, insn->variant.gzero.offset,
-                       S390_REGNO_GUEST_STATE_POINTER, insn->variant.gzero.offset);
+   s390_amode *am = insn->variant.mzero.dst;
+
+   return s390_emit_XC(buf, insn->size - 1, am->b, am->d, am->b, am->d);
 }
 
 
@@ -8377,8 +8387,8 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
       end = s390_insn_mfence_emit(buf, insn);
       break;
 
-   case S390_INSN_GZERO:
-      end = s390_insn_gzero_emit(buf, insn);
+   case S390_INSN_MZERO:
+      end = s390_insn_mzero_emit(buf, insn);
       break;
 
    case S390_INSN_GADD:

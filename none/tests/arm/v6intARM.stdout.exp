@@ -822,3 +822,15 @@ smmulr  r0, r1, r2 :: rd 0xfd764d52 rm 0x06ea9b2a, rn 0xa2108661, carryin 0, cps
 smmulr  r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, carryin 0, cpsr 0x00000000     
 smmulr  r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, carryin 0, cpsr 0x00000000     
 smmulr  r0, r1, r2 :: rd 0xffc528bd rm 0xf91d5f56, rn 0x088bc0f9, carryin 0, cpsr 0x00000000     
+------------ UMAAL ------------
+umaal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000002 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000001, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0xfffffffe, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x718fb0c9 rd2 0x01d6d5a9, rm 0x14141356 rs 0x1773250a, carryin 0, cpsr 0x00000000     
+umaal  r0, r1, r2, r3 :: rd 0x5b8b1d39 rd2 0x39145db7, rm 0x5773250a rs 0xa7182846, carryin 1, cpsr 0x20000000   C 

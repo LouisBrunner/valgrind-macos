@@ -5894,5 +5894,21 @@ int main ( void )
         TESTINST3("smmulr  r0, r1, r2", 0x4b0c2337, 0xffa63d6c, r0, r1, r2, 0);
         TESTINST3("smmulr  r0, r1, r2", 0xf91d5f56, 0x088bc0f9, r0, r1, r2, 0);
 
+	printf("------------ UMAAL ------------\n");
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0, 0, 0, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 1, 0, 0, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 1, 1, 0, 0, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0xffffffff, 1, 1, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0, 0, 1, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0, 1, 0, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0, 1, 1, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0, 0xffff, 0xffff, r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0, 0, 0xffffffff, 0xffffffff, r0, r1, r2, r3, 0);
+
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0x27182846, 0x31415927, 0x14141356, 0x1773250A, 
+                       r0, r1, r2, r3, 0);
+	TESTINST4_2OUT("umaal  r0, r1, r2, r3", 0x01415927, 0x74141356, 0x5773250A, 0xA7182846,
+                       r0, r1, r2, r3, 1);
+
    return 0;
 }

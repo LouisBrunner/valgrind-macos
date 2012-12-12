@@ -16043,18 +16043,14 @@ DisResult disInstr_THUMB_WRK (
       UInt    rM   = INSN0(8,6);
       UInt    isLD = INSN0(11,11);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 05\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), getIRegT(rM));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, unop(Iop_16Uto32, loadLE(Ity_I16, ea)),
-                      IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE(tD, ILGop_16Uto32, ea, llGetIReg(rD), condT);
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE( ea, unop(Iop_32to16, getIRegT(rD)) );
+         storeGuardedLE( ea, unop(Iop_32to16, getIRegT(rD)), condT );
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -16069,15 +16065,11 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 05\n");
       UInt    rN = INSN0(5,3);
       UInt    rM = INSN0(8,6);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 06\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), getIRegT(rM));
       put_ITSTATE(old_itstate); // backout
-      putIRegT(rD, unop(Iop_16Sto32, loadLE(Ity_I16, ea)),
-                   IRTemp_INVALID);
+      IRTemp tD = newTemp(Ity_I32);
+      loadGuardedLE(tD, ILGop_16Sto32, ea, llGetIReg(rD), condT);
+      putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       put_ITSTATE(new_itstate); // restore
 
       DIP("ldrsh r%u, [r%u, r%u]\n", rD, rN, rM);
@@ -16091,15 +16083,11 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 06\n");
       UInt    rN = INSN0(5,3);
       UInt    rM = INSN0(8,6);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 07\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), getIRegT(rM));
       put_ITSTATE(old_itstate); // backout
-      putIRegT(rD, unop(Iop_8Sto32, loadLE(Ity_I8, ea)),
-                   IRTemp_INVALID);
+      IRTemp tD = newTemp(Ity_I32);
+      loadGuardedLE(tD, ILGop_8Sto32, ea, llGetIReg(rD), condT);
+      putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       put_ITSTATE(new_itstate); // restore
 
       DIP("ldrsb r%u, [r%u, r%u]\n", rD, rN, rM);
@@ -16116,18 +16104,14 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 07\n");
       UInt    rM   = INSN0(8,6);
       UInt    isLD = INSN0(11,11);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 08\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), getIRegT(rM));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, unop(Iop_8Uto32, loadLE(Ity_I8, ea)),
-                  IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE(tD, ILGop_8Uto32, ea, llGetIReg(rD), condT);
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE( ea, unop(Iop_32to8, getIRegT(rD)) );
+         storeGuardedLE( ea, unop(Iop_32to8, getIRegT(rD)), condT );
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -16274,18 +16258,14 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 08\n");
       UInt    imm5 = INSN0(10,6);
       UInt    isLD = INSN0(11,11);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 11\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm5 * 2));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, unop(Iop_16Uto32, loadLE(Ity_I16, ea)),
-                  IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE( tD, ILGop_16Uto32, ea, llGetIReg(rD), condT );
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE( ea, unop(Iop_32to16, getIRegT(rD)) );
+         storeGuardedLE( ea, unop(Iop_32to16, getIRegT(rD)), condT );
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -16303,18 +16283,14 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 11\n");
       UInt    imm5 = INSN0(10,6);
       UInt    isLD = INSN0(11,11);
 
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 12\n");
-      mk_skip_over_T16_if_cond_is_false(condT);
-      condT = IRTemp_INVALID;
-      // now uncond
-
       IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm5));
       put_ITSTATE(old_itstate); // backout
       if (isLD) {
-         putIRegT(rD, unop(Iop_8Uto32, loadLE(Ity_I8, ea)),
-                  IRTemp_INVALID);
+         IRTemp tD = newTemp(Ity_I32);
+         loadGuardedLE( tD, ILGop_8Uto32, ea, llGetIReg(rD), condT );
+         putIRegT(rD, mkexpr(tD), IRTemp_INVALID);
       } else {
-         storeLE( ea, unop(Iop_32to8, getIRegT(rD)) );
+         storeGuardedLE( ea, unop(Iop_32to8, getIRegT(rD)), condT );
       }
       put_ITSTATE(new_itstate); // restore
 
@@ -17469,13 +17445,15 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 12\n");
 
       if (valid) {
          // if it's a branch, it can't happen in the middle of an IT block
-         if (loadsPC)
+         // Also, if it is a branch, make it unconditional at this point.
+         // Doing conditional branches in-line is too complex (for now)
+         if (loadsPC) {
             gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
-         // go uncond
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 14\n");
-         mk_skip_over_T32_if_cond_is_false(condT);
-         condT = IRTemp_INVALID;
-         // now uncond
+            // go uncond
+            mk_skip_over_T32_if_cond_is_false(condT);
+            condT = IRTemp_INVALID;
+            // now uncond
+         }
 
          IRTemp preAddr = newTemp(Ity_I32);
          assign(preAddr, getIRegT(rN));
@@ -17488,15 +17466,15 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 14\n");
 
          if (isST) {
 
-             /* Store.  If necessary, update the base register before
-                the store itself, so that the common idiom of "str rX,
-                [sp, #-4]!" (store rX at sp-4, then do new sp = sp-4,
-                a.k.a "push rX") doesn't cause Memcheck to complain
-                that the access is below the stack pointer.  Also, not
-                updating sp before the store confuses Valgrind's
-                dynamic stack-extending logic.  So do it before the
-                store.  Hence we need to snarf the store data before
-                doing the basereg update. */
+            /* Store.  If necessary, update the base register before
+               the store itself, so that the common idiom of "str rX,
+               [sp, #-4]!" (store rX at sp-4, then do new sp = sp-4,
+               a.k.a "push rX") doesn't cause Memcheck to complain
+               that the access is below the stack pointer.  Also, not
+               updating sp before the store confuses Valgrind's
+               dynamic stack-extending logic.  So do it before the
+               store.  Hence we need to snarf the store data before
+               doing the basereg update. */
 
             /* get hold of the data to be stored */
             IRTemp oldRt = newTemp(Ity_I32);
@@ -17505,64 +17483,69 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 14\n");
             /* Update Rn if necessary. */
             if (bW == 1) {
                vassert(rN != rT); // assured by validity check above
-               putIRegT(rN, mkexpr(postAddr), IRTemp_INVALID);
+               putIRegT(rN, mkexpr(postAddr), condT);
             }
 
             /* generate the transfer */
+            IRExpr* data = NULL;
             switch (ty) {
                case Ity_I8:
-                  storeLE(mkexpr(transAddr),
-                                 unop(Iop_32to8, mkexpr(oldRt)));
+                  data = unop(Iop_32to8, mkexpr(oldRt));
                   break;
                case Ity_I16:
-                  storeLE(mkexpr(transAddr),
-                          unop(Iop_32to16, mkexpr(oldRt)));
+                  data = unop(Iop_32to16, mkexpr(oldRt));
                   break;
-              case Ity_I32:
-                  storeLE(mkexpr(transAddr), mkexpr(oldRt));
-                  break;
-              default:
-                 vassert(0);
-            }
-
-         } else {
-
-            /* Load. */
-
-            /* generate the transfer */
-            IRTemp newRt = newTemp(Ity_I32);
-            IROp   widen = Iop_INVALID;
-            switch (ty) {
-               case Ity_I8:
-                  widen = syned ? Iop_8Sto32 : Iop_8Uto32; break;
-               case Ity_I16:
-                  widen = syned ? Iop_16Sto32 : Iop_16Uto32; break;
                case Ity_I32:
+                  data = mkexpr(oldRt);
                   break;
                default:
                   vassert(0);
             }
-            if (widen == Iop_INVALID) {
-               assign(newRt, loadLE(ty, mkexpr(transAddr)));
-            } else {
-               assign(newRt, unop(widen, loadLE(ty, mkexpr(transAddr))));
+            storeGuardedLE(mkexpr(transAddr), data, condT);
+
+         } else {
+
+            /* Load. */
+            IRTemp llOldRt = newTemp(Ity_I32);
+            assign(llOldRt, llGetIReg(rT));
+
+            /* generate the transfer */
+            IRTemp    newRt = newTemp(Ity_I32);
+            IRLoadGOp widen = ILGop_INVALID;
+            switch (ty) {
+               case Ity_I8:
+                  widen = syned ? ILGop_8Sto32 : ILGop_8Uto32; break;
+               case Ity_I16:
+                  widen = syned ? ILGop_16Sto32 : ILGop_16Uto32; break;
+               case Ity_I32:
+                  widen = ILGop_Ident32; break;
+               default:
+                  vassert(0);
             }
-            if (loadsPC) {
-               vassert(rT == 15);
-               llPutIReg(rT, mkexpr(newRt));
+            loadGuardedLE(newRt, widen,
+                          mkexpr(transAddr), mkexpr(llOldRt), condT);
+            if (rT == 15) {
+               vassert(loadsPC);
+               /* We'll do the write to the PC just below */
             } else {
+               vassert(!loadsPC);
+               /* IRTemp_INVALID is OK here because in the case where
+                  condT is false at run time, we're just putting the
+                  old rT value back. */
                putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
             }
 
             /* Update Rn if necessary. */
             if (bW == 1) {
                vassert(rN != rT); // assured by validity check above
-               putIRegT(rN, mkexpr(postAddr), IRTemp_INVALID);
+               putIRegT(rN, mkexpr(postAddr), condT);
             }
 
             if (loadsPC) {
                /* Presumably this is an interworking branch. */
                vassert(rN != 15); // assured by validity check above
+               vassert(rT == 15);
+               vassert(condT == IRTemp_INVALID); /* due to check above */
                llPutIReg(15, mkexpr(newRt));
                dres.jk_StopHere = Ijk_Boring;  /* or _Ret ? */
                dres.whatNext    = Dis_StopHere;
@@ -17649,13 +17632,15 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 14\n");
 
       if (valid) {
          // if it's a branch, it can't happen in the middle of an IT block
-         if (loadsPC)
+         // Also, if it is a branch, make it unconditional at this point.
+         // Doing conditional branches in-line is too complex (for now)
+         if (loadsPC) {
             gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
-         // go uncond
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
-         mk_skip_over_T32_if_cond_is_false(condT);
-         condT = IRTemp_INVALID;
-         // now uncond
+            // go uncond
+            mk_skip_over_T32_if_cond_is_false(condT);
+            condT = IRTemp_INVALID;
+            // now uncond
+         }
 
          IRTemp transAddr = newTemp(Ity_I32);
          assign(transAddr,
@@ -17664,55 +17649,66 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
                        binop(Iop_Shl32, getIRegT(rM), mkU8(imm2)) ));
 
          if (isST) {
+
+            /* get hold of the data to be stored */
             IRTemp oldRt = newTemp(Ity_I32);
             assign(oldRt, getIRegT(rT));
+
+            /* generate the transfer */
+            IRExpr* data = NULL;
             switch (ty) {
                case Ity_I8:
-                  storeLE(mkexpr(transAddr),
-                                 unop(Iop_32to8, mkexpr(oldRt)));
+                  data = unop(Iop_32to8, mkexpr(oldRt));
                   break;
                case Ity_I16:
-                  storeLE(mkexpr(transAddr),
-                          unop(Iop_32to16, mkexpr(oldRt)));
+                  data = unop(Iop_32to16, mkexpr(oldRt));
                   break;
               case Ity_I32:
-                  storeLE(mkexpr(transAddr), mkexpr(oldRt));
+                  data = mkexpr(oldRt);
                   break;
               default:
                  vassert(0);
             }
+            storeGuardedLE(mkexpr(transAddr), data, condT);
+
          } else {
-            IRTemp newRt = newTemp(Ity_I32);
-            IROp   widen = Iop_INVALID;
+
+            /* Load. */
+            IRTemp llOldRt = newTemp(Ity_I32);
+            assign(llOldRt, llGetIReg(rT));
+
+            /* generate the transfer */
+            IRTemp    newRt = newTemp(Ity_I32);
+            IRLoadGOp widen = ILGop_INVALID;
             switch (ty) {
                case Ity_I8:
-                  widen = syned ? Iop_8Sto32 : Iop_8Uto32; break;
+                  widen = syned ? ILGop_8Sto32 : ILGop_8Uto32; break;
                case Ity_I16:
-                  widen = syned ? Iop_16Sto32 : Iop_16Uto32; break;
+                  widen = syned ? ILGop_16Sto32 : ILGop_16Uto32; break;
                case Ity_I32:
-                  break;
+                  widen = ILGop_Ident32; break;
                default:
                   vassert(0);
             }
-            if (widen == Iop_INVALID) {
-               assign(newRt, loadLE(ty, mkexpr(transAddr)));
-            } else {
-               assign(newRt, unop(widen, loadLE(ty, mkexpr(transAddr))));
-            }
+            loadGuardedLE(newRt, widen,
+                          mkexpr(transAddr), mkexpr(llOldRt), condT);
 
-            /* If we're loading the PC, putIRegT will assert.  So go
-               direct via llPutIReg.  In all other cases use putIRegT
-               as it is safer (although could simply use llPutIReg for
-               _all_ cases here.) */
-            if (loadsPC) {
-               vassert(rT == 15);
-               llPutIReg(rT, mkexpr(newRt));
+            if (rT == 15) {
+               vassert(loadsPC);
+               /* We'll do the write to the PC just below */
             } else {
+               vassert(!loadsPC);
+               /* IRTemp_INVALID is OK here because in the case where
+                  condT is false at run time, we're just putting the
+                  old rT value back. */
                putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
             }
 
             if (loadsPC) {
                /* Presumably this is an interworking branch. */
+               vassert(rN != 15); // assured by validity check above
+               vassert(rT == 15);
+               vassert(condT == IRTemp_INVALID); /* due to check above */
                llPutIReg(15, mkexpr(newRt));
                dres.jk_StopHere = Ijk_Boring;  /* or _Ret ? */
                dres.whatNext    = Dis_StopHere;
@@ -17849,11 +17845,22 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
             }
             loadGuardedLE(newRt, widen,
                           mkexpr(transAddr), mkexpr(llOldRt), condT);
-            putIRegT(rT, mkexpr(newRt), condT);
+            if (rT == 15) {
+               vassert(loadsPC);
+               /* We'll do the write to the PC just below */
+            } else {
+               vassert(!loadsPC);
+               /* IRTemp_INVALID is OK here because in the case where
+                  condT is false at run time, we're just putting the
+                  old rT value back. */
+               putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+            }
 
             if (loadsPC) {
                /* Presumably this is an interworking branch. */
+               vassert(rT == 15);
                vassert(condT == IRTemp_INVALID); /* due to check above */
+               llPutIReg(15, mkexpr(newRt));
                irsb->next = mkexpr(newRt);
                irsb->jumpkind = Ijk_Boring;  /* or _Ret ? */
                dres.whatNext  = Dis_StopHere;
@@ -17890,12 +17897,6 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 15\n");
       if (bL == 1 && rT == rT2)               valid = False;
 
       if (valid) {
-         // go uncond
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 16\n");
-         mk_skip_over_T32_if_cond_is_false(condT);
-         condT = IRTemp_INVALID;
-         // now uncond
-
          IRTemp preAddr = newTemp(Ity_I32);
          assign(preAddr, getIRegT(rN));
 
@@ -17910,25 +17911,31 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 16\n");
             IRTemp oldRt2 = newTemp(Ity_I32);
             assign(oldRt,  getIRegT(rT));
             assign(oldRt2, getIRegT(rT2));
-            storeLE(mkexpr(transAddr),
-                    mkexpr(oldRt));
-            storeLE(binop(Iop_Add32, mkexpr(transAddr), mkU32(4)),
-                    mkexpr(oldRt2));
+            storeGuardedLE( mkexpr(transAddr),
+                            mkexpr(oldRt), condT );
+            storeGuardedLE( binop(Iop_Add32, mkexpr(transAddr), mkU32(4)),
+                            mkexpr(oldRt2), condT );
          } else {
+            IRTemp oldRt  = newTemp(Ity_I32);
+            IRTemp oldRt2 = newTemp(Ity_I32);
             IRTemp newRt  = newTemp(Ity_I32);
             IRTemp newRt2 = newTemp(Ity_I32);
-            assign(newRt,
-                   loadLE(Ity_I32,
-                          mkexpr(transAddr)));
-            assign(newRt2,
-                   loadLE(Ity_I32,
-                          binop(Iop_Add32, mkexpr(transAddr), mkU32(4))));
-            putIRegT(rT,  mkexpr(newRt), IRTemp_INVALID);
+            assign(oldRt,  llGetIReg(rT));
+            assign(oldRt2, llGetIReg(rT2));
+            loadGuardedLE( newRt, ILGop_Ident32,
+                           mkexpr(transAddr),
+                           mkexpr(oldRt), condT );
+            loadGuardedLE( newRt2, ILGop_Ident32,
+                           binop(Iop_Add32, mkexpr(transAddr), mkU32(4)),
+                           mkexpr(oldRt2), condT );
+            /* Put unconditionally, since we already switched on the condT
+               in the guarded loads. */ 
+            putIRegT(rT,  mkexpr(newRt),  IRTemp_INVALID);
             putIRegT(rT2, mkexpr(newRt2), IRTemp_INVALID);
          }
 
          if (bW == 1) {
-            putIRegT(rN, mkexpr(postAddr), IRTemp_INVALID);
+            putIRegT(rN, mkexpr(postAddr), condT);
          }
 
          const HChar* nm = bL ? "ldrd" : "strd";

@@ -3085,6 +3085,16 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
 
+         /* 32Uto64 */
+         case Iop_32Uto64: {
+            HReg rLo = iselIntExpr_R(env, e->Iex.Unop.arg);
+            HReg rHi = newVRegI(env);
+            HReg res = newVRegD(env);
+            addInstr(env, ARMInstr_Imm32(rHi, 0));
+            addInstr(env, ARMInstr_VXferD(True/*toD*/, res, rHi, rLo));
+            return res;
+         }
+
          /* ReinterpF64asI64 */
          case Iop_ReinterpF64asI64:
          /* Left64(e) */

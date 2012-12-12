@@ -13841,6 +13841,44 @@ DisResult disInstr_ARM_WRK (
       /* fall through */
    }
 
+   // UMAAL
+   if (BITS8(0,0,0,0,0,1,0,0) == INSN(27,20) && INSN(7,4) == BITS4(1,0,0,1)) {
+      UInt rDhi = INSN(19,16);
+      UInt rDlo = INSN(15,12);
+      UInt rM   = INSN(11,8);
+      UInt rN   = INSN(3,0);
+      if (rDlo == 15 || rDhi == 15 || rN == 15 || rM == 15 || rDhi == rDlo)  {
+         /* Unpredictable; don't decode; fall through */
+      } else {
+         IRTemp argN   = newTemp(Ity_I32);
+         IRTemp argM   = newTemp(Ity_I32);
+         IRTemp argDhi = newTemp(Ity_I32);
+         IRTemp argDlo = newTemp(Ity_I32);
+         IRTemp res    = newTemp(Ity_I64);
+         IRTemp resHi  = newTemp(Ity_I32);
+         IRTemp resLo  = newTemp(Ity_I32);
+         assign( argN,   getIRegA(rN) );
+         assign( argM,   getIRegA(rM) );
+         assign( argDhi, getIRegA(rDhi) );
+         assign( argDlo, getIRegA(rDlo) );
+         assign( res, 
+                 binop(Iop_Add64,
+                       binop(Iop_Add64,
+                             binop(Iop_MullU32, mkexpr(argN), mkexpr(argM)),
+                             unop(Iop_32Uto64, mkexpr(argDhi))),
+                       unop(Iop_32Uto64, mkexpr(argDlo))) );
+         assign( resHi, unop(Iop_64HIto32, mkexpr(res)) );
+         assign( resLo, unop(Iop_64to32, mkexpr(res)) );
+         // now update guest state
+         putIRegA( rDhi, mkexpr(resHi), condT, Ijk_Boring );
+         putIRegA( rDlo, mkexpr(resLo), condT, Ijk_Boring );
+         DIP("umaal %s r%u, r%u, r%u, r%u\n",
+             nCC(INSN_COND), rDlo, rDhi, rN, rM);
+         goto decode_success;
+      }
+      /* fall through */
+   }
+
    /* --------------------- Msr etc --------------------- */
 
    // MSR apsr, #imm
@@ -18247,6 +18285,40 @@ DisResult disInstr_THUMB_WRK (
          putIRegT( rDlo, mkexpr(resLo), condT );
          DIP("%cmlal r%u, r%u, r%u, r%u\n",
              isS ? 's' : 'u', rDlo, rDhi, rN, rM);
+         goto decode_success;
+      }
+   }
+
+   /* ------------------ (T1) UMAAL ------------------ */
+   if (INSN0(15,4) == 0xFBE && INSN1(7,4) == BITS4(0,1,1,0)) {
+      UInt rN   = INSN0(3,0);
+      UInt rDlo = INSN1(15,12);
+      UInt rDhi = INSN1(11,8);
+      UInt rM   = INSN1(3,0);
+      if (!isBadRegT(rDlo) && !isBadRegT(rDhi) && !isBadRegT(rN)
+          && !isBadRegT(rM) && rDhi != rDlo) {
+         IRTemp argN   = newTemp(Ity_I32);
+         IRTemp argM   = newTemp(Ity_I32);
+         IRTemp argDhi = newTemp(Ity_I32);
+         IRTemp argDlo = newTemp(Ity_I32);
+         IRTemp res    = newTemp(Ity_I64);
+         IRTemp resHi  = newTemp(Ity_I32);
+         IRTemp resLo  = newTemp(Ity_I32);
+         assign( argN,   getIRegT(rN) );
+         assign( argM,   getIRegT(rM) );
+         assign( argDhi, getIRegT(rDhi) );
+         assign( argDlo, getIRegT(rDlo) );
+         assign( res, 
+                 binop(Iop_Add64,
+                       binop(Iop_Add64,
+                             binop(Iop_MullU32, mkexpr(argN), mkexpr(argM)),
+                             unop(Iop_32Uto64, mkexpr(argDhi))),
+                       unop(Iop_32Uto64, mkexpr(argDlo))) );
+         assign( resHi, unop(Iop_64HIto32, mkexpr(res)) );
+         assign( resLo, unop(Iop_64to32, mkexpr(res)) );
+         putIRegT( rDhi, mkexpr(resHi), condT );
+         putIRegT( rDlo, mkexpr(resLo), condT );
+         DIP("umaal r%u, r%u, r%u, r%u\n", rDlo, rDhi, rN, rM);
          goto decode_success;
       }
    }

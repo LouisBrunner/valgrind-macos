@@ -940,6 +940,9 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
       if (o >= GOF(D30) && o+sz <= GOF(D30)+2*SZB(D30)) return GOF(D30); // Q15
    }
 
+   if (o == GOF(TISTART) && sz == 4) return -1;
+   if (o == GOF(TILEN)   && sz == 4) return -1;
+
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm)(off=%d,sz=%d)\n",
                offset,szB);
    tl_assert(0);

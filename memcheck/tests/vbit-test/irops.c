@@ -826,6 +826,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_Reverse64_32x4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Perm8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Perm32x4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_GetMSBs8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Recip32x4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Rsqrte32x4, UNDEF_UNKNOWN), },
   /* ------------------ 256-bit SIMD Integer. ------------------ */

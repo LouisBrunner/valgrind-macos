@@ -3772,6 +3772,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_32to16:
       case Iop_32HIto16:
       case Iop_64to16:
+      case Iop_GetMSBs8x16:
          return assignNew('V', mce, Ity_I16, unop(op, vatom));
 
       case Iop_1Uto8:

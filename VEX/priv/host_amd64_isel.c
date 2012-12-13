@@ -1605,6 +1605,37 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 
+         case Iop_GetMSBs8x16: {
+            /* Note: the following assumes the helper is of signature
+                  UInt fn ( ULong w64hi, ULong w64Lo ),
+               and is not a regparm fn. */
+            HReg dst = newVRegI(env);
+            HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
+            HReg rsp = hregAMD64_RSP();
+            fn = (HWord)h_generic_calc_GetMSBs8x16;
+            AMD64AMode* m8_rsp  = AMD64AMode_IR( -8, rsp);
+            AMD64AMode* m16_rsp = AMD64AMode_IR(-16, rsp);
+            addInstr(env, AMD64Instr_SseLdSt(False/*store*/,
+                                             16, vec, m16_rsp));
+            /* hi 64 bits into RDI -- the first arg */
+            addInstr(env, AMD64Instr_Alu64R( Aalu_MOV, 
+                                             AMD64RMI_Mem(m8_rsp),
+                                             hregAMD64_RDI() )); /* 1st arg */
+            /* lo 64 bits into RSI -- the 2nd arg */
+            addInstr(env, AMD64Instr_Alu64R( Aalu_MOV, 
+                                             AMD64RMI_Mem(m16_rsp),
+                                             hregAMD64_RSI() )); /* 2nd arg */
+            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2 ));
+            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1 ));
+            /* MovxLQ is not exactly the right thing here.  We just
+               need to get the bottom 8 bits of RAX into dst, and zero
+               out everything else.  Assuming that the helper returns
+               a UInt with the top 24 bits zeroed out, it'll do,
+               though. */
+            addInstr(env, AMD64Instr_MovxLQ(False, hregAMD64_RAX(), dst));
+            return dst;
+         }
+
          default: 
             break;
       }

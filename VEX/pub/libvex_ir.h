@@ -1179,7 +1179,6 @@ typedef
          of arbitrary sign the result of the operation is 1.5. */
       Iop_Rsqrts32Fx4,
 
-
       /* --- Int to/from FP conversion --- */
       /* Unlike the standard fp conversions, these irops take no
          rounding mode argument. Instead the irop trailers _R{M,P,N,Z}
@@ -1432,6 +1431,10 @@ typedef
          is undefined. */
       Iop_Perm8x16,
       Iop_Perm32x4, /* ditto, except argR values are restricted to 0 .. 3 */
+
+      /* MISC CONVERSION -- get high bits of each byte lane, a la
+         x86/amd64 pmovmskb */
+      Iop_GetMSBs8x16, /* V64 -> I16 */
 
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equiwalents for details. */

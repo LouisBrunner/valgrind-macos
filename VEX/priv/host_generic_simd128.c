@@ -368,6 +368,28 @@ void VEX_REGPARM(3)
    res->w32[3] = argL->w32[ argR->w32[3] & 3 ];
 }
 
+UInt /*not-regparm*/
+     h_generic_calc_GetMSBs8x16 ( ULong w64hi, ULong w64lo )
+{
+   UInt r = 0;
+   if (w64hi & (1ULL << (64-1))) r |= (1<<15);
+   if (w64hi & (1ULL << (56-1))) r |= (1<<14);
+   if (w64hi & (1ULL << (48-1))) r |= (1<<13);
+   if (w64hi & (1ULL << (40-1))) r |= (1<<12);
+   if (w64hi & (1ULL << (32-1))) r |= (1<<11);
+   if (w64hi & (1ULL << (24-1))) r |= (1<<10);
+   if (w64hi & (1ULL << (16-1))) r |= (1<<9);
+   if (w64hi & (1ULL << ( 8-1))) r |= (1<<8);
+   if (w64lo & (1ULL << (64-1))) r |= (1<<7);
+   if (w64lo & (1ULL << (56-1))) r |= (1<<6);
+   if (w64lo & (1ULL << (48-1))) r |= (1<<5);
+   if (w64lo & (1ULL << (40-1))) r |= (1<<4);
+   if (w64lo & (1ULL << (32-1))) r |= (1<<3);
+   if (w64lo & (1ULL << (24-1))) r |= (1<<2);
+   if (w64lo & (1ULL << (16-1))) r |= (1<<1);
+   if (w64lo & (1ULL << ( 8-1))) r |= (1<<0);
+   return r;
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                              host_generic_simd128.c ---*/

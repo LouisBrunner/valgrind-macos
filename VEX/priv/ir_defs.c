@@ -584,6 +584,7 @@ void ppIROp ( IROp op )
       case Iop_Reverse64_32x2: vex_printf("Reverse64_32x2"); return;
       case Iop_Abs32Fx2: vex_printf("Abs32Fx2"); return;
       case Iop_GetMSBs8x8: vex_printf("GetMSBs8x8"); return;
+      case Iop_GetMSBs8x16: vex_printf("GetMSBs8x16"); return;
 
       case Iop_CmpNEZ32x2: vex_printf("CmpNEZ32x2"); return;
       case Iop_CmpNEZ16x4: vex_printf("CmpNEZ16x4"); return;
@@ -2299,7 +2300,9 @@ void typeOfPrimop ( IROp op,
       case Iop_Left16: UNARY(Ity_I16,Ity_I16);
       case Iop_CmpwNEZ32: case Iop_Left32: UNARY(Ity_I32,Ity_I32);
       case Iop_CmpwNEZ64: case Iop_Left64: UNARY(Ity_I64,Ity_I64);
-      case Iop_GetMSBs8x8: UNARY(Ity_I64, Ity_I8);
+
+      case Iop_GetMSBs8x8:  UNARY(Ity_I64, Ity_I8);
+      case Iop_GetMSBs8x16: UNARY(Ity_V128, Ity_I16);
 
       case Iop_MullU8: case Iop_MullS8:
          BINARY(Ity_I8,Ity_I8, Ity_I16);

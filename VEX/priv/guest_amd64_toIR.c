@@ -10274,22 +10274,15 @@ static Long dis_CVTDQ2PS_256 ( VexAbiInfo* vbi, Prefix pfx,
 static Long dis_PMOVMSKB_128 ( VexAbiInfo* vbi, Prefix pfx,
                                Long delta, Bool isAvx )
 {
-   /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
    UChar modrm = getUChar(delta);
    vassert(epartIsReg(modrm)); /* ensured by caller */
    UInt   rE = eregOfRexRM(pfx,modrm);
    UInt   rG = gregOfRexRM(pfx,modrm);
-   IRTemp t0 = newTemp(Ity_I64);
-   IRTemp t1 = newTemp(Ity_I64);
-   IRTemp t5 = newTemp(Ity_I32);
-   assign(t0, getXMMRegLane64(rE, 0));
-   assign(t1, getXMMRegLane64(rE, 1));
-   assign(t5,
-          unop(Iop_16Uto32,
-               binop(Iop_8HLto16,
-                     unop(Iop_GetMSBs8x8, mkexpr(t1)),
-                     unop(Iop_GetMSBs8x8, mkexpr(t0)))));
-   putIReg32(rG, mkexpr(t5));
+   IRTemp t0 = newTemp(Ity_V128);
+   IRTemp t1 = newTemp(Ity_I32);
+   assign(t0, getXMMReg(rE));
+   assign(t1, unop(Iop_16Uto32, unop(Iop_GetMSBs8x16, mkexpr(t0))));
+   putIReg32(rG, mkexpr(t1));
    DIP("%spmovmskb %s,%s\n", isAvx ? "v" : "", nameXMMReg(rE),
        nameIReg32(rG));
    delta += 1;

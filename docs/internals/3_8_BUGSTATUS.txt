@@ -86,6 +86,7 @@ branch.
   w/ patch, looks pretty harmless
 
 305431  Use find_buildid shdr fallback for separate .debug files
+        FIXED r13160
 
 n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
@@ -135,7 +136,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=730303
 https://bugs.kde.org/show_bug.cgi?id=164485
 
 * patch to allow fair-sched on android
-* mjws patches: 253519, 307285, 307103, 307101, 307290.
+* mjws patches: 253519, 307101, 307290.
 
 306947  s390x: BFP rounding mode improvements
         Proposal
@@ -149,6 +150,9 @@ https://bugs.kde.org/show_bug.cgi?id=164485
 307082  HG false positive: pthread_cond_destroy: destruction of
         unknown cond var
         Probably easy fix
+
+307103  sys_openat: If pathname is absolute, then dirfd is ignored.
+        FIXED r13159
 
 211352  helgrind races in helgrind's own mythread_wrapper
         Not sure if still valid
@@ -164,7 +168,7 @@ https://bugs.kde.org/show_bug.cgi?id=164485
         has patch; is in fedora
 
 307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
-        Probably easy fix.
+        FIXED r2581
 
 307113  s390x: DFP support
         For 3.9; in progress
@@ -177,7 +181,7 @@ https://bugs.kde.org/show_bug.cgi?id=164485
         FIXED
 
 307285  x86_amd64 feature test for avx in test suite is wrong
-        This should get landed.  Safe for 3.8.2.
+        FIXED, r13161
 
 307290  memcheck overlap testcase needs memcpy version filter
         FIXED
@@ -222,7 +226,7 @@ https://bugs.kde.org/show_bug.cgi?id=164485
 
 307828  SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
         uninitialised value and/or invalid read warnings
-        has fix; +is 3.8.2 fodder
+        FIXED r13162
 
 253519  Memcheck reports auxv pointer accesses as invalid reads.
         FIXED
@@ -303,7 +307,7 @@ out_of_memory
 dfaure wants this fixed
 related: 243232] Inconsistent Lock Orderings report with trylock
 
-237920] valgrind segfault on fork failure
+237920  valgrind segfault on fork failure
 
 308816  valgrind GPF in signal handler context 3.8.1 (allignment 
 
@@ -323,10 +327,11 @@ related: 243232] Inconsistent Lock Orderings report with trylock
 instruction reporting
 
 309427  SSE optimized stpncpy trigger uninitialised value and/or
-invalid read warnings
+        invalid read warnings
+        FIXED, r13163
 
 309430  Self hosting ppc64 encounters a vassert error on operand
-type
+        type
 
 309554  Unhandled syscall remap_file_pages (216)
 

@@ -288,7 +288,6 @@ check_PROGRAMS = \
 	sbfragment \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask static_malloc sigkill \
-	stpncpy \
 	strchr \
 	str_tester \
 	supp_unknown supp1 supp2 suppfree \
@@ -305,6 +304,10 @@ check_PROGRAMS = \
 
 if DWARF4
 check_PROGRAMS += dw4
+endif
+
+if HAVE_GNU_STPNCPY
+check_PROGRAMS += stpncpy
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

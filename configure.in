@@ -1016,6 +1016,29 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL([HAVE_AT_FDCWD], [test x$ac_have_at_fdcwd = xyes])
 
+# Check for stpncpy function definition in string.h
+# This explicitly checks with _GNU_SOURCE defined since that is also
+# used in the test case (some systems might define it without anyway
+# since stpncpy is part of The Open Group Base Specifications Issue 7
+# IEEE Std 1003.1-2008.
+AC_MSG_CHECKING([for stpncpy])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE
+#include <string.h>
+]], [[
+  char *d;
+  char *s;
+  size_t n = 0;
+  char *r = stpncpy(d, s, n);
+]])], [
+ac_have_gnu_stpncpy=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gnu_stpncpy=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([HAVE_GNU_STPNCPY], [test x$ac_have_gnu_stpncpy = xyes])
 
 # Check for CLOCK_MONOTONIC
 

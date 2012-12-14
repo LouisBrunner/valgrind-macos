@@ -1,2 +1,3 @@
 prog: stpncpy
+prereq: test -e ./stpncpy
 vgopts: -q

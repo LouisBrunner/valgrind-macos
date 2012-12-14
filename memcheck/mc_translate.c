@@ -43,6 +43,56 @@
 #include "mc_include.h"
 
 
+/* Comments re guarded loads and stores, and conditional dirty calls
+   that access memory, JRS 2012-Dec-14, for branches/COMEM, r13180.
+
+   Currently Memcheck generates code that checks the definedness of
+   addresses in such cases, regardless of the what the guard value is
+   (at runtime).  This could potentially lead to false positives if we
+   ever construct IR in which a guarded memory access happens, and the
+   address is undefined when the guard is false.  However, at the
+   moment I am not aware of any situations where such IR is generated.
+
+   The obvious thing to do is generate conditionalised checking code
+   in such cases.  However:
+
+   * it's more complex to verify
+
+   * it is cheaper to always do the check -- basically a check if
+     the shadow value is nonzero, and conditional call to report
+     an error if so -- than it is to conditionalise the check.
+
+   * currently the implementation is incomplete.  complainIfUndefined
+     can correctly conditionalise the check and complaint as per its
+     third argument.  However, the part of it that then sets the
+     shadow to 'defined' (see comments at the top of said fn) ignores
+     the guard.
+
+   Therefore, removing this functionality in r13181 until we know we
+   need it.  To reinstate, do the following:
+
+   * back out r13181 (which also adds this comment)
+
+   * undo (== reinstate the non-NULL 3rd args) in the following two
+     chunks, which were removed in r13142.  These are the only two
+     places where complainIfUndefined is actually used with a guard.
+
+     // First, emit a definedness test for the address.  This also sets
+     // the address (shadow) to 'defined' following the test.
+     -   complainIfUndefined( mce, addr, guard );
+     +   complainIfUndefined( mce, addr, NULL );
+
+     and
+
+     IRType tyAddr;
+     tl_assert(d->mAddr);
+     -   complainIfUndefined(mce, d->mAddr, d->guard);
+     +   complainIfUndefined(mce, d->mAddr, NULL);
+
+   * fix complainIfUndefined to conditionalise setting the shadow temp
+     to 'defined', as described above.
+*/
+
 /* FIXMEs JRS 2011-June-16.
 
    Check the interpretation for vector narrowing and widening ops,
@@ -1103,7 +1153,7 @@ static void setHelperAnns ( MCEnv* mce, IRDirty* di ) {
    conditionally, as defined by |guard|.  If |guard| is NULL then it
    is assumed to be always-true.
 */
-static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
+static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
 {
    IRAtom*  vatom;
    IRType   ty;
@@ -1236,15 +1286,6 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
                            VG_(fnptr_to_fnentry)( fn ), args );
    di->guard = cond;
 
-   /* If the complaint is to be issued under a guard condition, AND
-      that into the guard condition for the helper call. */
-   if (guard) {
-      IRAtom *g1 = assignNew('V', mce, Ity_I32, unop(Iop_1Uto32, di->guard));
-      IRAtom *g2 = assignNew('V', mce, Ity_I32, unop(Iop_1Uto32, guard));
-      IRAtom *e  = assignNew('V', mce, Ity_I32, binop(Iop_And32, g1, g2));
-      di->guard = assignNew('V', mce, Ity_I1, unop(Iop_32to1, e));
-   }
-
    setHelperAnns( mce, di );
    stmt( 'V', mce, IRStmt_Dirty(di));
 
@@ -1376,7 +1417,7 @@ void do_shadow_PUTI ( MCEnv* mce, IRPutI *puti)
    arrSize = descr->nElems * sizeofIRType(ty);
    tl_assert(ty != Ity_I1);
    tl_assert(isOriginalAtom(mce,ix));
-   complainIfUndefined(mce, ix, NULL);
+   complainIfUndefined(mce, ix);
    if (isAlwaysDefd(mce, descr->base, arrSize)) {
       /* later: no ... */
       /* emit code to emit a complaint if any of the vbits are 1. */
@@ -1425,7 +1466,7 @@ IRExpr* shadow_GETI ( MCEnv* mce,
    Int arrSize = descr->nElems * sizeofIRType(ty);
    tl_assert(ty != Ity_I1);
    tl_assert(isOriginalAtom(mce,ix));
-   complainIfUndefined(mce, ix, NULL);
+   complainIfUndefined(mce, ix);
    if (isAlwaysDefd(mce, descr->base, arrSize)) {
       /* Always defined, return all zeroes of the relevant type */
       return definedOfType(tyS);
@@ -2571,15 +2612,15 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
          /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
          return mkLazy3(mce, Ity_I128, vatom1, vatom2, vatom3);
       case Iop_ExtractV128:
-         complainIfUndefined(mce, atom3, NULL);
+         complainIfUndefined(mce, atom3);
          return assignNew('V', mce, Ity_V128, triop(op, vatom1, vatom2, atom3));
       case Iop_Extract64:
-         complainIfUndefined(mce, atom3, NULL);
+         complainIfUndefined(mce, atom3);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, vatom2, atom3));
       case Iop_SetElem8x8:
       case Iop_SetElem16x4:
       case Iop_SetElem32x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, atom2, vatom3));
       default:
          ppIROp(op);
@@ -2646,7 +2687,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_ShlN32x2:
       case Iop_ShlN8x8:
          /* Same scheme as with all other shifts. */
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, atom2));
 
       case Iop_QNarrowBin32Sto16Sx4:
@@ -2729,25 +2770,25 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QShlN8Sx8:
       case Iop_QShlN8x8:
       case Iop_QSalN8x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast8x8(mce, vatom1);
 
       case Iop_QShlN16Sx4:
       case Iop_QShlN16x4:
       case Iop_QSalN16x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast16x4(mce, vatom1);
 
       case Iop_QShlN32Sx2:
       case Iop_QShlN32x2:
       case Iop_QSalN32x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x2(mce, vatom1);
 
       case Iop_QShlN64Sx1:
       case Iop_QShlN64x1:
       case Iop_QSalN64x1:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x2(mce, vatom1);
 
       case Iop_PwMax32Sx2:
@@ -2844,13 +2885,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, vatom2));
 
       case Iop_GetElem8x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I8, binop(op, vatom1, atom2));
       case Iop_GetElem16x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I16, binop(op, vatom1, atom2));
       case Iop_GetElem32x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I32, binop(op, vatom1, atom2));
 
       /* Perm8x8: rearrange values in left arg using steering values
@@ -2880,7 +2921,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* Same scheme as with all other shifts.  Note: 22 Oct 05:
             this is wrong now, scalar shifts are done properly lazily.
             Vector shifts should be fixed too. */
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
 
       /* V x V shifts/rotates are done using the standard lazy scheme. */
@@ -2927,14 +2968,14 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F32ToFixed32Sx4_RZ:
       case Iop_Fixed32UToF32x4_RN:
       case Iop_Fixed32SToF32x4_RN:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x4(mce, vatom1);
 
       case Iop_F32ToFixed32Ux2_RZ:
       case Iop_F32ToFixed32Sx2_RZ:
       case Iop_Fixed32UToF32x2_RN:
       case Iop_Fixed32SToF32x2_RN:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x2(mce, vatom1);
 
       case Iop_QSub8Ux16:
@@ -3091,25 +3132,25 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QShlN8Sx16:
       case Iop_QShlN8x16:
       case Iop_QSalN8x16:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast8x16(mce, vatom1);
 
       case Iop_QShlN16Sx8:
       case Iop_QShlN16x8:
       case Iop_QSalN16x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast16x8(mce, vatom1);
 
       case Iop_QShlN32Sx4:
       case Iop_QShlN32x4:
       case Iop_QSalN32x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x4(mce, vatom1);
 
       case Iop_QShlN64Sx2:
       case Iop_QShlN64x2:
       case Iop_QSalN64x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x4(mce, vatom1);
 
       case Iop_Mull32Sx2:
@@ -3172,16 +3213,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, vatom2));
 
       case Iop_GetElem8x16:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I8, binop(op, vatom1, atom2));
       case Iop_GetElem16x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I16, binop(op, vatom1, atom2));
       case Iop_GetElem32x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I32, binop(op, vatom1, atom2));
       case Iop_GetElem64x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, atom2));
 
      /* Perm8x16: rearrange values in left arg using steering values
@@ -3240,7 +3281,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* Same scheme as with all other shifts.  Note: 10 Nov 05:
             this is wrong now, scalar shifts are done properly lazily.
             Vector shifts should be fixed too. */
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
 
       /* I128-bit data-steering */
@@ -3940,7 +3981,7 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
 
    /* First, emit a definedness test for the address.  This also sets
       the address (shadow) to 'defined' following the test. */
-   complainIfUndefined( mce, addr, NULL );
+   complainIfUndefined( mce, addr );
 
    /* Now cook up a call to the relevant helper function, to read the
       data V bits from shadow memory. */
@@ -4366,7 +4407,7 @@ void do_shadow_Store ( MCEnv* mce,
 
    /* First, emit a definedness test for the address.  This also sets
       the address (shadow) to 'defined' following the test. */
-   complainIfUndefined( mce, addr, NULL );
+   complainIfUndefined( mce, addr );
 
    /* Now decide which helper function to call to write the data V
       bits into shadow memory. */
@@ -4593,7 +4634,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 #  endif
 
    /* First check the guard. */
-   complainIfUndefined(mce, d->guard, NULL);
+   complainIfUndefined(mce, d->guard);
 
    /* Now round up all inputs and PCast over them. */
    curr = definedOfType(Ity_I32);
@@ -4667,7 +4708,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
          should remove all but this test. */
       IRType tyAddr;
       tl_assert(d->mAddr);
-      complainIfUndefined(mce, d->mAddr, NULL);
+      complainIfUndefined(mce, d->mAddr);
 
       tyAddr = typeOfIRExpr(mce->sb->tyenv, d->mAddr);
       tl_assert(tyAddr == Ity_I32 || tyAddr == Ity_I64);
@@ -5340,7 +5381,7 @@ static void do_shadow_LLSC ( MCEnv*    mce,
 static void do_shadow_StoreG ( MCEnv* mce, IRStoreG* sg )
 {
    if (0) VG_(printf)("XXXX StoreG\n");
-   complainIfUndefined(mce, sg->guard, NULL);
+   complainIfUndefined(mce, sg->guard);
    /* do_shadow_Store will check the definedness of sg->addr. */
    do_shadow_Store( mce, sg->end,
                     sg->addr, 0/* addr bias */,
@@ -5352,7 +5393,7 @@ static void do_shadow_StoreG ( MCEnv* mce, IRStoreG* sg )
 static void do_shadow_LoadG ( MCEnv* mce, IRLoadG* lg )
 {
    if (0) VG_(printf)("XXXX LoadG\n");
-   complainIfUndefined(mce, lg->guard, NULL);
+   complainIfUndefined(mce, lg->guard);
    /* expr2vbits_Load_guarded_General will check the definedness of
       lg->addr. */
 
@@ -5745,7 +5786,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
             break;
 
          case Ist_Exit:
-            complainIfUndefined( &mce, st->Ist.Exit.guard, NULL );
+            complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
          case Ist_IMark:
@@ -5816,7 +5857,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       VG_(printf)("\n\n");
    }
 
-   complainIfUndefined( &mce, sb_in->next, NULL );
+   complainIfUndefined( &mce, sb_in->next );
 
    if (0 && verboze) {
       for (j = first_stmt; j < sb_out->stmts_used; j++) {

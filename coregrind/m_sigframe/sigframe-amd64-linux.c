@@ -452,7 +452,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    UWord err;
 
    rsp -= sizeof(*frame);
-   rsp = VG_ROUNDDN(rsp, 16);
+   rsp = VG_ROUNDDN(rsp, 16) - 8;
    frame = (struct rt_sigframe *)rsp;
 
    if (!extend(tst, rsp, sizeof(*frame)))

@@ -366,9 +366,14 @@ UInt vprintf_wrk ( void(*sink)(HChar),
          format++;
          padchar = '0';
       }
-      while (*format >= '0' && *format <= '9') {
-         fwidth = fwidth * 10 + (*format - '0');
+      if (*format == '*') {
+         fwidth = va_arg(ap, Int);
          format++;
+      } else {
+         while (*format >= '0' && *format <= '9') {
+            fwidth = fwidth * 10 + (*format - '0');
+            format++;
+         }
       }
       if (*format == 'l') {
          format++;

@@ -9509,32 +9509,32 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
    case 0xd200000000000000ULL:
       /* special case MVC */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_MVC_EX, 64);
-      return "mvc via ex";
+      return "ex@mvc";
 
    case 0xd500000000000000ULL:
       /* special case CLC */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_CLC_EX, 64);
-      return "clc via ex";
+      return "ex@clc";
 
    case 0xd700000000000000ULL:
       /* special case XC */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_XC_EX, 32);
-      return "xc via ex";
+      return "ex@xc";
 
    case 0xd600000000000000ULL:
       /* special case OC */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_OC_EX, 32);
-      return "oc via ex";
+      return "ex@oc";
 
    case 0xd400000000000000ULL:
       /* special case NC */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_NC_EX, 32);
-      return "nc via ex";
+      return "ex@nc";
 
    case 0xdc00000000000000ULL:
       /* special case TR */
       s390_irgen_EX_SS(r1, addr2, s390_irgen_TR_EX, 64);
-      return "tr via ex";
+      return "ex@tr";
 
    default:
    {

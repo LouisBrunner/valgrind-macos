@@ -4112,7 +4112,7 @@ IRAtom* expr2vbits_Load ( MCEnv* mce,
 
 /* The most general handler for guarded loads.  Assumes the
    definedness of GUARD and ADDR have already been checked by the
-   caller.  A GUARD of NULL it is assumed to mean "always True".
+   caller.  A GUARD of NULL is assumed to mean "always True".
 
    Generate IR to do a shadow load from ADDR and return the V bits.
    The loaded type is TY.  The loaded data is then (shadow) widened by
@@ -6055,8 +6055,18 @@ static IRAtom* gen_maxU32 ( MCEnv* mce, IRAtom* b1, IRAtom* b2 )
    return assignNew( 'B', mce, Ity_I32, binop(Iop_Max32U, b1, b2) );
 }
 
-static IRAtom* gen_load_b ( MCEnv* mce, Int szB, 
-                            IRAtom* baseaddr, Int offset )
+
+/* Make a guarded origin load, with no special handling in the
+   didn't-happen case.  A GUARD of NULL is assumed to mean "always
+   True".
+
+   Generate IR to do a shadow origins load from BASEADDR+OFFSET and
+   return the otag.  The loaded size is SZB.  If GUARD evaluates to
+   False at run time then the returned otag is zero.
+*/
+static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB, 
+                                    IRAtom* baseaddr, 
+                                    Int offset, IRExpr* guard )
 {
    void*    hFun;
    const HChar* hName;
@@ -6099,6 +6109,7 @@ static IRAtom* gen_load_b ( MCEnv* mce, Int szB,
            bTmp, 1/*regparms*/, hName, VG_(fnptr_to_fnentry)( hFun ),
            mkIRExprVec_1( ea )
         );
+   if (guard) di->guard = guard;
    /* no need to mess with any annotations.  This call accesses
       neither guest state nor guest memory. */
    stmt( 'B', mce, IRStmt_Dirty(di) );
@@ -6113,25 +6124,56 @@ static IRAtom* gen_load_b ( MCEnv* mce, Int szB,
    }
 }
 
-static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB, IRAtom* baseaddr,
-                                    Int offset, IRAtom* guard )
+
+/* Generate IR to do a shadow origins load from BASEADDR+OFFSET.  The
+   loaded size is SZB.  The load is regarded as unconditional (always
+   happens).
+*/
+static IRAtom* gen_load_b ( MCEnv* mce, Int szB, IRAtom* baseaddr,
+                            Int offset )
 {
-  if (guard) {
-     IRAtom *cond, *iffalse, *iftrue;
-
-     cond    = assignNew('B', mce, Ity_I8, unop(Iop_1Uto8, guard));
-     iftrue  = assignNew('B', mce, Ity_I32,
-                         gen_load_b(mce, szB, baseaddr, offset));
-     iffalse = mkU32(0);
-
-     return assignNew('B', mce, Ity_I32, IRExpr_Mux0X(cond, iffalse, iftrue));
-  }
-
-  return gen_load_b(mce, szB, baseaddr, offset);
+   return gen_guarded_load_b(mce, szB, baseaddr, offset, NULL/*guard*/);
 }
 
-/* Generate a shadow store.  guard :: Ity_I1 controls whether the
-   store really happens; NULL means it unconditionally does. */
+
+/* The most general handler for guarded origin loads.  A GUARD of NULL
+   is assumed to mean "always True".
+
+   Generate IR to do a shadow origin load from ADDR+BIAS and return
+   the B bits.  The loaded type is TY.  If GUARD evaluates to False at
+   run time then the returned B bits are simply BALT instead.
+*/
+static
+IRAtom* expr2ori_Load_guarded_General ( MCEnv* mce,
+                                        IRType ty,
+                                        IRAtom* addr, UInt bias,
+                                        IRAtom* guard, IRAtom* balt )
+{
+   /* If the guard evaluates to True, this will hold the loaded
+      origin.  If the guard evaluates to False, this will be zero,
+      meaning "unknown origin", in which case we will have to replace
+      it using a Mux0X below. */
+   IRAtom* iftrue
+      = assignNew('B', mce, Ity_I32,
+                  gen_guarded_load_b(mce, sizeofIRType(ty),
+                                     addr, bias, guard));
+   /* These are the bits we will return if the load doesn't take
+      place. */
+   IRAtom* iffalse 
+      = balt;
+   /* Prepare the cond for the Mux0X.  Convert a NULL cond into
+      something that iropt knows how to fold out later. */
+   IRAtom* cond
+      = guard == NULL
+           ? mkU8(1)
+           : assignNew('B', mce, Ity_I8, unop(Iop_1Uto8, guard));
+   /* And assemble the final result. */
+   return assignNew('B', mce, Ity_I32, IRExpr_Mux0X(cond, iffalse, iftrue));
+}
+
+
+/* Generate a shadow origins store.  guard :: Ity_I1 controls whether
+   the store really happens; NULL means it unconditionally does. */
 static void gen_store_b ( MCEnv* mce, Int szB,
                           IRAtom* baseaddr, Int offset, IRAtom* dataB,
                           IRAtom* guard )
@@ -6528,8 +6570,8 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
       }
       /* handle possible 16-bit excess */
       while (toDo >= 2) {
-        gen_store_b( mce, 2, d->mAddr, d->mSize - toDo, curr,
-                     d->guard );
+         gen_store_b( mce, 2, d->mAddr, d->mSize - toDo, curr,
+                      d->guard );
          toDo -= 2;
       }
       /* chew off the remaining 8-bit chunk, if any */
@@ -6543,10 +6585,12 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
 }
 
 
-static void do_origins_Store ( MCEnv* mce,
-                               IREndness stEnd,
-                               IRExpr* stAddr,
-                               IRExpr* stData )
+/* Generate IR for origin shadowing for a general guarded store. */
+static void do_origins_Store_guarded ( MCEnv* mce,
+                                       IREndness stEnd,
+                                       IRExpr* stAddr,
+                                       IRExpr* stData,
+                                       IRExpr* guard )
 {
    Int     dszB;
    IRAtom* dataB;
@@ -6557,8 +6601,48 @@ static void do_origins_Store ( MCEnv* mce,
    tl_assert(isIRAtom(stData));
    dszB  = sizeofIRType( typeOfIRExpr(mce->sb->tyenv, stData ) );
    dataB = schemeE( mce, stData );
-   gen_store_b( mce, dszB, stAddr, 0/*offset*/, dataB,
-                     NULL/*guard*/ );
+   gen_store_b( mce, dszB, stAddr, 0/*offset*/, dataB, guard );
+}
+
+
+/* Generate IR for origin shadowing for a plain store. */
+static void do_origins_Store_plain ( MCEnv* mce,
+                                     IREndness stEnd,
+                                     IRExpr* stAddr,
+                                     IRExpr* stData )
+{
+   do_origins_Store_guarded ( mce, stEnd, stAddr, stData,
+                              NULL/*guard*/ );
+}
+
+
+/* ---- Dealing with LoadG/StoreG (not entirely simple) ---- */
+
+static void do_origins_StoreG ( MCEnv* mce, IRStoreG* sg )
+{
+   do_origins_Store_guarded( mce, sg->end, sg->addr,
+                             sg->data, sg->guard );
+}
+
+static void do_origins_LoadG ( MCEnv* mce, IRLoadG* lg )
+{
+   IRType loadedTy = Ity_INVALID;
+   switch (lg->cvt) {
+      case ILGop_Ident32: loadedTy = Ity_I32; break;
+      case ILGop_16Uto32: loadedTy = Ity_I16; break;
+      case ILGop_16Sto32: loadedTy = Ity_I16; break;
+      case ILGop_8Uto32:  loadedTy = Ity_I8;  break;
+      case ILGop_8Sto32:  loadedTy = Ity_I8;  break;
+      default: VG_(tool_panic)("schemeS.IRLoadG");
+   }
+   IRAtom* ori_alt
+      = schemeE( mce,lg->alt );
+   IRAtom* ori_final
+      = expr2ori_Load_guarded_General(mce, loadedTy,
+                                      lg->addr, 0/*addr bias*/,
+                                      lg->guard, ori_alt );
+   /* And finally, bind the origin to the destination temporary. */
+   assign( 'B', mce, findShadowTmpB(mce, lg->dst), ori_final );
 }
 
 
@@ -6609,9 +6693,17 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
          break;
 
       case Ist_Store:
-         do_origins_Store( mce, st->Ist.Store.end,
-                                st->Ist.Store.addr,
-                                st->Ist.Store.data );
+         do_origins_Store_plain( mce, st->Ist.Store.end,
+                                      st->Ist.Store.addr,
+                                      st->Ist.Store.data );
+         break;
+
+      case Ist_StoreG:
+         do_origins_StoreG( mce, st->Ist.StoreG.details );
+         break;
+
+      case Ist_LoadG:
+         do_origins_LoadG( mce, st->Ist.LoadG.details );
          break;
 
       case Ist_LLSC: {
@@ -6631,9 +6723,9 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
                               schemeE(mce, vanillaLoad));
          } else {
             /* Store conditional */
-            do_origins_Store( mce, st->Ist.LLSC.end,
-                                   st->Ist.LLSC.addr,
-                                   st->Ist.LLSC.storedata );
+            do_origins_Store_plain( mce, st->Ist.LLSC.end,
+                                    st->Ist.LLSC.addr,
+                                    st->Ist.LLSC.storedata );
             /* For the rationale behind this, see comments at the
                place where the V-shadow for .result is constructed, in
                do_shadow_LLSC.  In short, we regard .result as

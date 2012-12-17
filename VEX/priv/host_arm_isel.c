@@ -379,7 +379,7 @@ static
 Bool doHelperCall ( ISelEnv* env,
                     Bool passBBP,
                     IRExpr* guard, IRCallee* cee, IRExpr** args,
-                    RetLoc rloc )
+                    RetLoc rloc, IRDefault dflt )
 {
    ARMCondCode cc;
    HReg        argregs[ARM_N_ARGREGS];
@@ -616,7 +616,7 @@ Bool doHelperCall ( ISelEnv* env,
       values.  But that's too much hassle. */
 
    /* Finally, the call itself. */
-   addInstr(env, ARMInstr_Call( cc, target, nextArgReg, rloc ));
+   addInstr(env, ARMInstr_Call( cc, target, nextArgReg, rloc, dflt ));
 
    return True; /* success */
 }
@@ -1371,7 +1371,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVds_RR(hregARM_R0(), regL));
          addInstr(env, mk_iMOVds_RR(hregARM_R1(), regR));
          addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn),
-                                      2, RetLocInt ));
+                                      2, RetLocInt, Idflt_None ));
          addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
          return res;
       }
@@ -1659,7 +1659,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg res = newVRegI(env);
          addInstr(env, mk_iMOVds_RR(hregARM_R0(), arg));
          addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn),
-                                      1, RetLocInt ));
+                                      1, RetLocInt, Idflt_None ));
          addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
          return res;
       }
@@ -1722,7 +1722,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* Marshal args, do the call, clear stack. */
       Bool ok = doHelperCall( env, False,
                               NULL, e->Iex.CCall.cee, e->Iex.CCall.args,
-                              RetLocInt );
+                              RetLocInt, Idflt_None );
       if (ok) {
          addInstr(env, mk_iMOVds_RR(dst, hregARM_R0()));
          return dst;
@@ -5929,7 +5929,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (rloc == RetLocINVALID)
          break; /* will go to stmt_fail: */
 
-      Bool ok = doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
+      Bool ok = doHelperCall( env, passBBP, d->guard, d->cee, d->args,
+                              rloc, d->dflt );
       if (!ok)
          break; /* will go to stmt_fail: */
 

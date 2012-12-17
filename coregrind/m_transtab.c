@@ -1318,6 +1318,8 @@ static void initialiseSector ( Int sno )
       vg_assert(sec->host_extents == NULL);
 
       VG_(debugLog)(1,"transtab", "allocate sector %d\n", sno);
+      if (VG_(clo_stats))
+         VG_(dmsg)("transtab: " "allocate sector %d\n", sno);
 
       sres = VG_(am_mmap_anon_float_valgrind)( 8 * tc_sector_szQ );
       if (sr_isError(sres)) {
@@ -1362,6 +1364,9 @@ static void initialiseSector ( Int sno )
 
       /* Sector has been used before.  Dump the old contents. */
       VG_(debugLog)(1,"transtab", "recycle sector %d\n", sno);
+      if (VG_(clo_stats))
+         VG_(dmsg)("transtab: " "recycle sector %d\n", sno);
+
       vg_assert(sec->tt != NULL);
       vg_assert(sec->tc_next != NULL);
       n_dump_count += sec->tt_n_inuse;
@@ -1494,14 +1499,20 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
          now, or it has been used before, in which case it is set to be
          empty, hence throwing out the oldest sector. */
       vg_assert(tc_sector_szQ > 0);
+      Int tt_loading_pct = (100 * sectors[y].tt_n_inuse) 
+                           / N_TTES_PER_SECTOR;
+      Int tc_loading_pct = (100 * (tc_sector_szQ - tcAvailQ)) 
+                           / tc_sector_szQ;
       VG_(debugLog)(1,"transtab", 
                       "declare sector %d full "
                       "(TT loading %2d%%, TC loading %2d%%)\n",
-                      y,
-                      (100 * sectors[y].tt_n_inuse) 
-                         / N_TTES_PER_SECTOR,
-                      (100 * (tc_sector_szQ - tcAvailQ)) 
-                         / tc_sector_szQ);
+                      y, tt_loading_pct, tc_loading_pct);
+      if (VG_(clo_stats)) {
+         VG_(dmsg)("transtab: "
+                   "declare sector %d full "
+                   "(TT loading %2d%%, TC loading %2d%%)\n",
+                   y, tt_loading_pct, tc_loading_pct);
+      }
       youngest_sector++;
       if (youngest_sector >= N_SECTORS)
          youngest_sector = 0;
@@ -2157,7 +2168,7 @@ void VG_(init_tt_tc) ( void )
    /* and the unredir tt/tc */
    init_unredir_tt_tc();
 
-   if (VG_(clo_verbosity) > 2) {
+   if (VG_(clo_verbosity) > 2 || VG_(clo_stats)) {
       VG_(message)(Vg_DebugMsg,
          "TT/TC: cache: %d sectors of %d bytes each = %d total\n", 
           N_SECTORS, 8 * tc_sector_szQ,

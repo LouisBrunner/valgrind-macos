@@ -3964,7 +3964,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
 
 /* Worker function; do not call directly.  See comments on
-   expr2vbits_Load for the meaning of 'guard'. */
+   expr2vbits_Load for the meaning of 'guard'.  If 'guard' evaluates
+   to False at run time, the returned value is all-ones. */
 static
 IRAtom* expr2vbits_Load_WRK ( MCEnv* mce, 
                               IREndness end, IRType ty, 
@@ -4044,8 +4045,10 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
                            hname, VG_(fnptr_to_fnentry)( helper ), 
                            mkIRExprVec_1( addrAct ));
    setHelperAnns( mce, di );
-   if (guard)
+   if (guard) {
       di->guard = guard;
+      di->dflt  = Idflt_Ones;
+   }
    stmt( 'V', mce, IRStmt_Dirty(di) );
 
    return mkexpr(datavbits);
@@ -4056,10 +4059,11 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
    the validity of the address and return the V bits for that address.
    This can optionally be controlled by a guard, which is assumed to
    be True if NULL.  In the case where the guard is False at runtime,
-   the helper will return the didn't-do-the-call value of all-ones, as
-   specified by the IRDirty semantics.  Since all ones means
-   "completely undefined result", the caller of this function will
-   need to fix up the result somehow in that case.  */
+   the helper will return the didn't-do-the-call value of all-ones.
+   Since all ones means "completely undefined result", the caller of
+   this function will need to fix up the result somehow in that
+   case.
+*/
 static
 IRAtom* expr2vbits_Load ( MCEnv* mce, 
                           IREndness end, IRType ty, 
@@ -6109,7 +6113,10 @@ static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB,
            bTmp, 1/*regparms*/, hName, VG_(fnptr_to_fnentry)( hFun ),
            mkIRExprVec_1( ea )
         );
-   if (guard) di->guard = guard;
+   if (guard) {
+      di->guard = guard;
+      di->dflt  = Idflt_Zeroes;
+   }
    /* no need to mess with any annotations.  This call accesses
       neither guest state nor guest memory. */
    stmt( 'B', mce, IRStmt_Dirty(di) );

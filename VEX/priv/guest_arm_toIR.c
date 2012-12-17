@@ -17553,16 +17553,16 @@ DisResult disInstr_THUMB_WRK (
          }
 
          if (bP == 1 && bW == 0) {
-            DIP("%s.wQQQ1 r%u, [r%u, #%c%u]\n",
+            DIP("%s.w r%u, [r%u, #%c%u]\n",
                 nm, rT, rN, bU ? '+' : '-', imm8);
          }
          else if (bP == 1 && bW == 1) {
-            DIP("%s.wQQQ2 r%u, [r%u, #%c%u]!\n",
+            DIP("%s.w r%u, [r%u, #%c%u]!\n",
                 nm, rT, rN, bU ? '+' : '-', imm8);
          }
          else {
             vassert(bP == 0 && bW == 1);
-            DIP("%s.wQQQ3 r%u, [r%u], #%c%u\n",
+            DIP("%s.w r%u, [r%u], #%c%u\n",
                 nm, rT, rN, bU ? '+' : '-', imm8);
          }
 
@@ -17867,7 +17867,7 @@ DisResult disInstr_THUMB_WRK (
             }
          }
 
-         DIP("%s.wQQQ9 r%u, [r%u, +#%u]\n", nm, rT, rN, imm12);
+         DIP("%s.w r%u, [r%u, +#%u]\n", nm, rT, rN, imm12);
 
          goto decode_success;
       }

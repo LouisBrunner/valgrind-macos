@@ -606,7 +606,7 @@ get_cache_info(VexArchInfo *vai)
 
    ci->icaches_maintain_coherence = True;
 
-   if (! vai->hwcaps & VEX_HWCAPS_S390X_GIE) {
+   if (! (vai->hwcaps & VEX_HWCAPS_S390X_GIE)) {
       // ECAG is not available
       return False;
    }

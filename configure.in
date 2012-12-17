@@ -1972,6 +1972,8 @@ AC_CHECK_HEADERS([       \
 # Verify whether the <linux/futex.h> header is usable.
 AC_MSG_CHECKING([if <linux/futex.h> is usable])
 
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -D__user="
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <linux/futex.h>
 ]], [[
@@ -1985,6 +1987,8 @@ AC_MSG_RESULT([yes])
 ac_have_usable_linux_futex_h=no
 AC_MSG_RESULT([no])
 ])
+CFLAGS="$save_CFLAGS"
+
 
 #----------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.

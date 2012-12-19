@@ -13377,15 +13377,17 @@ DisResult disInstr_ARM_WRK (
            vassert(0);
      }
 
-     /* Now, we can't do a conditional load or store, since that very
-        likely will generate an exception.  So we have to take a side
-        exit at this point if the condition is false. */
-     if (condT != IRTemp_INVALID) {
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 02\n");
+     /* If this is a branch, make it unconditional at this point.
+        Doing conditional branches in-line is too complex (for now).
+        Note that you'd have to be insane to use any of these loads to
+        do a branch, since they only load 16 bits at most, but we
+        handle it just in case. */
+     if (bL == 1 && rD == 15 && condT != IRTemp_INVALID) {
+        // go uncond
         mk_skip_over_A32_if_cond_is_false( condT );
         condT = IRTemp_INVALID;
+        // now uncond
      }
-     /* Ok, now we're unconditional.  Do the load or store. */
 
      /* compute the effective address.  Bind it to a tmp since we
         may need to use it twice. */
@@ -13414,6 +13416,10 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 02\n");
      }
      vassert(taT != IRTemp_INVALID);
 
+     /* ll previous value of rD, for dealing with conditional loads */
+     IRTemp llOldRd = newTemp(Ity_I32);
+     assign(llOldRd, llGetIReg(rD));
+
      /* halfword store  H 1  L 0  S 0
         uhalf load      H 1  L 1  S 0
         shalf load      H 1  L 1  S 1
@@ -13422,22 +13428,29 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 02\n");
      const HChar* name = NULL;
      /* generate the transfer */
      /**/ if (bH == 1 && bL == 0 && bS == 0) { // halfword store
-        storeLE( mkexpr(taT), unop(Iop_32to16, getIRegA(rD)) );
+        storeGuardedLE( mkexpr(taT),
+                        unop(Iop_32to16, getIRegA(rD)), condT );
         name = "strh";
      }
      else if (bH == 1 && bL == 1 && bS == 0) { // uhalf load
-        putIRegA( rD, unop(Iop_16Uto32, loadLE(Ity_I16, mkexpr(taT))),
-                  IRTemp_INVALID, Ijk_Boring );
+        IRTemp newRd = newTemp(Ity_I32);
+        loadGuardedLE( newRd, ILGop_16Uto32, 
+                       mkexpr(taT), mkexpr(llOldRd), condT );
+        putIRegA( rD, mkexpr(newRd), IRTemp_INVALID, Ijk_Boring );
         name = "ldrh";
      }
      else if (bH == 1 && bL == 1 && bS == 1) { // shalf load
-        putIRegA( rD, unop(Iop_16Sto32, loadLE(Ity_I16, mkexpr(taT))),
-                  IRTemp_INVALID, Ijk_Boring );
+        IRTemp newRd = newTemp(Ity_I32);
+        loadGuardedLE( newRd, ILGop_16Sto32, 
+                       mkexpr(taT), mkexpr(llOldRd), condT );
+        putIRegA( rD, mkexpr(newRd), IRTemp_INVALID, Ijk_Boring );
         name = "ldrsh";
      }
      else if (bH == 0 && bL == 1 && bS == 1) { // sbyte load
-        putIRegA( rD, unop(Iop_8Sto32, loadLE(Ity_I8, mkexpr(taT))),
-                  IRTemp_INVALID, Ijk_Boring );
+        IRTemp newRd = newTemp(Ity_I32);
+        loadGuardedLE( newRd, ILGop_8Sto32, 
+                       mkexpr(taT), mkexpr(llOldRd), condT );
+        putIRegA( rD, mkexpr(newRd), IRTemp_INVALID, Ijk_Boring );
         name = "ldrsb";
      }
      else
@@ -13449,7 +13462,7 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 02\n");
            // should be assured by logic above:
            if (bL == 1)
               vassert(rD != rN); /* since we just wrote rD */
-           putIRegA( rN, mkexpr(eaT), IRTemp_INVALID, Ijk_Boring );
+           putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
            break;
      }
 
@@ -14405,15 +14418,16 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 02\n");
            vassert(0);
      }
 
-     /* Now, we can't do a conditional load or store, since that very
-        likely will generate an exception.  So we have to take a side
-        exit at this point if the condition is false. */
-     if (condT != IRTemp_INVALID) {
-if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 03\n");
+     /* If this is a branch, make it unconditional at this point.
+        Doing conditional branches in-line is too complex (for
+        now). */
+     vassert((rD & 1) == 0); /* from tests above */
+     if (bS == 0 && rD+1 == 15 && condT != IRTemp_INVALID) {
+        // go uncond
         mk_skip_over_A32_if_cond_is_false( condT );
         condT = IRTemp_INVALID;
+        // now uncond
      }
-     /* Ok, now we're unconditional.  Do the load or store. */
 
      /* compute the effective address.  Bind it to a tmp since we
         may need to use it twice. */
@@ -14452,16 +14466,26 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 03\n");
      const HChar* name = NULL;
      /* generate the transfers */
      if (bS == 1) { // doubleword store
-        storeLE( binop(Iop_Add32, mkexpr(taT), mkU32(0)), getIRegA(rD+0) );
-        storeLE( binop(Iop_Add32, mkexpr(taT), mkU32(4)), getIRegA(rD+1) );
+        storeGuardedLE( binop(Iop_Add32, mkexpr(taT), mkU32(0)),
+                        getIRegA(rD+0), condT );
+        storeGuardedLE( binop(Iop_Add32, mkexpr(taT), mkU32(4)),
+                        getIRegA(rD+1), condT );
         name = "strd";
      } else { // doubleword load
-        putIRegA( rD+0,
-                  loadLE(Ity_I32, binop(Iop_Add32, mkexpr(taT), mkU32(0))),
-                  IRTemp_INVALID, Ijk_Boring );
-        putIRegA( rD+1,
-                  loadLE(Ity_I32, binop(Iop_Add32, mkexpr(taT), mkU32(4))),
-                  IRTemp_INVALID, Ijk_Boring );
+        IRTemp oldRd0 = newTemp(Ity_I32);
+        IRTemp oldRd1 = newTemp(Ity_I32);
+        assign(oldRd0, llGetIReg(rD+0));
+        assign(oldRd1, llGetIReg(rD+1));
+        IRTemp newRd0 = newTemp(Ity_I32);
+        IRTemp newRd1 = newTemp(Ity_I32);
+        loadGuardedLE( newRd0, ILGop_Ident32,
+                       binop(Iop_Add32, mkexpr(taT), mkU32(0)),
+                       mkexpr(oldRd0), condT );
+        putIRegA( rD+0, mkexpr(newRd0), IRTemp_INVALID, Ijk_Boring );
+        loadGuardedLE( newRd1, ILGop_Ident32,
+                       binop(Iop_Add32, mkexpr(taT), mkU32(4)),
+                       mkexpr(oldRd1), condT );
+        putIRegA( rD+1, mkexpr(newRd1), IRTemp_INVALID, Ijk_Boring );
         name = "ldrd";
      }
 
@@ -14469,11 +14493,12 @@ if (condT != IRTemp_INVALID) vex_printf("XXXX uncond 03\n");
      switch (summary & 0x0F) {
         case 2: case 3:
            // should be assured by logic above:
+           vassert(rN != 15); /* from checks above */
            if (bS == 0) {
               vassert(rD+0 != rN); /* since we just wrote rD+0 */
               vassert(rD+1 != rN); /* since we just wrote rD+1 */
            }
-           putIRegA( rN, mkexpr(eaT), IRTemp_INVALID, Ijk_Boring );
+           putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
            break;
      }
 

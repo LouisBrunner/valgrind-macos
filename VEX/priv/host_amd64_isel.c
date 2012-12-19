@@ -1626,11 +1626,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                              AMD64RMI_Mem(m16_rsp),
                                              hregAMD64_RSI() )); /* 2nd arg */
             addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2 ));
-            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1 ));
             /* MovxLQ is not exactly the right thing here.  We just
-               need to get the bottom 8 bits of RAX into dst, and zero
+               need to get the bottom 16 bits of RAX into dst, and zero
                out everything else.  Assuming that the helper returns
-               a UInt with the top 24 bits zeroed out, it'll do,
+               a UInt with the top 16 bits zeroed out, it'll do,
                though. */
             addInstr(env, AMD64Instr_MovxLQ(False, hregAMD64_RAX(), dst));
             return dst;

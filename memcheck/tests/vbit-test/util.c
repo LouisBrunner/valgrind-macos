@@ -824,6 +824,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_F128toF64: BINARY(ity_RMode,Ity_F128, Ity_F64);
 
       case Iop_D32toD64:
+         UNARY(Ity_D32, Ity_D64);
+
       case Iop_ExtractExpD64:
          UNARY(Ity_D64, Ity_D64);
 
@@ -873,6 +875,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
          BINARY(Ity_D64, Ity_I8, Ity_D64 );
 
       case Iop_D64toD32:  
+         BINARY(ity_RMode, Ity_D64, Ity_D32);
+
       case Iop_D64toI64S:
          BINARY(ity_RMode, Ity_D64, Ity_D64);
 

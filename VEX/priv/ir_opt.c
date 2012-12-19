@@ -2063,13 +2063,14 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_Sub32:
             case Iop_Sub64:
-               /* Sub64(x,0) ==> x */
-               if (isZeroU64(e->Iex.Binop.arg2)) {
+               /* Sub32/Sub64(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* Sub64(t,t) ==> 0, for some IRTemp t */
+               /* Sub32/Sub64(t,t) ==> 0, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
@@ -2133,9 +2134,8 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                break;
 
-            case Iop_Sub32:
             case Iop_CmpNE32:
-               /* Sub32/CmpNE32(t,t) ==> 0, for some IRTemp t */
+               /* CmpNE32(t,t) ==> 0, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;

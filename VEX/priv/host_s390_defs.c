@@ -3887,7 +3887,7 @@ s390_emit_ADTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
       if (m4 == 0)
          s390_disasm(ENC4(MNM, FPR, FPR, FPR), "adtr", r1, r2, r3);
       else
-         s390_disasm(ENC5(MNM, FPR, UINT, FPR, FPR), "adtra", r1, m4, r2, r3);
+         s390_disasm(ENC5(MNM, FPR, FPR, FPR, UINT), "adtra", r1, r2, r3, m4);
    }
 
    return emit_RRF4(p, 0xb3d20000, r3, m4, r1, r2);
@@ -3903,7 +3903,7 @@ s390_emit_DDTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
       if (m4 == 0)
          s390_disasm(ENC4(MNM, FPR, FPR, FPR), "ddtr", r1, r2, r3);
       else
-         s390_disasm(ENC5(MNM, FPR, UINT, FPR, FPR), "ddtra", r1, m4, r2, r3);
+         s390_disasm(ENC5(MNM, FPR, FPR, FPR, UINT), "ddtra", r1, r2, r3, m4);
    }
 
    return emit_RRF4(p, 0xb3d10000, r3, m4, r1, r2);
@@ -3919,7 +3919,7 @@ s390_emit_MDTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
       if (m4 == 0)
          s390_disasm(ENC4(MNM, FPR, FPR, FPR), "mdtr", r1, r2, r3);
       else
-         s390_disasm(ENC5(MNM, FPR, UINT, FPR, FPR), "mdtra", r1, m4, r2, r3);
+         s390_disasm(ENC5(MNM, FPR, FPR, FPR, UINT), "mdtra", r1, r2, r3, m4);
    }
 
    return emit_RRF4(p, 0xb3d00000, r3, m4, r1, r2);
@@ -3935,7 +3935,7 @@ s390_emit_SDTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
       if (m4 == 0)
          s390_disasm(ENC4(MNM, FPR, FPR, FPR), "sdtr", r1, r2, r3);
       else
-         s390_disasm(ENC5(MNM, FPR, UINT, FPR, FPR), "sdtra", r1, m4, r2, r3);
+         s390_disasm(ENC5(MNM, FPR, FPR, FPR, UINT), "sdtra", r1, r2, r3, m4);
    }
 
    return emit_RRF4(p, 0xb3d30000, r3, m4, r1, r2);

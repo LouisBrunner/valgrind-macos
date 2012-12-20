@@ -803,7 +803,8 @@ int pthread_cond_broadcast_intercept(pthread_cond_t* cond)
 PTH_FUNCS(int, pthreadZucondZubroadcast, pthread_cond_broadcast_intercept,
           (pthread_cond_t* cond), (cond));
 
-#if defined(HAVE_PTHREAD_SPIN_LOCK)
+#if defined(HAVE_PTHREAD_SPIN_LOCK) \
+    && !defined(DISABLE_PTHREAD_SPINLOCK_INTERCEPT)
 static __always_inline
 int pthread_spin_init_intercept(pthread_spinlock_t *spinlock, int pshared)
 {

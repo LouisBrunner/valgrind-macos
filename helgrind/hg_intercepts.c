@@ -1095,7 +1095,8 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
 /*--- pthread_spinlock_t functions                             ---*/
 /*----------------------------------------------------------------*/
 
-#if defined(HAVE_PTHREAD_SPIN_LOCK)
+#if defined(HAVE_PTHREAD_SPIN_LOCK) \
+    && !defined(DISABLE_PTHREAD_SPINLOCK_INTERCEPT)
 
 /* Handled:   pthread_spin_init pthread_spin_destroy
               pthread_spin_lock pthread_spin_trylock

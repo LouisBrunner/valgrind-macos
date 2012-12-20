@@ -1899,7 +1899,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
    /* We get here if no pattern matched. */
  irreducible:
    ppIRExpr(expr);
-   vpanic("s390_isel_int_expr: cannot reduce tree");
+   vpanic("s390_isel_float128_expr: cannot reduce tree");
 }
 
 /* Compute a 128-bit value into two 64-bit registers. These may be either
@@ -3156,7 +3156,7 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
       case Ity_V128: /* fall through */
       default:
          ppIRType(bb->tyenv->types[i]);
-         vpanic("s390_isel_sb: IRTemp type");
+         vpanic("iselSB_S390: IRTemp type");
       }
 
       env->vregmap[i]   = hreg;

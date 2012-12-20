@@ -148,6 +148,7 @@ enum {
    Z -- value is zero extended to 32 / 64 bit
    S -- value is sign extended to 32 / 64 bit
    F -- a binary floating point value
+   D -- a decimal floating point value
 
    +--------------------------------+-----------------------+----------------------+-----------------+
    | op                             |   cc_dep1             |   cc_dep2            |   cc_ndep       |
@@ -194,6 +195,7 @@ enum {
    | S390_CC_OP_BFP_32_TO_UINT_64   | F source              | Z rounding mode      |                 |
    | S390_CC_OP_BFP_64_TO_UINT_64   | F source              | Z rounding mode      |                 |
    | S390_CC_OP_BFP_128_TO_UINT_64  | F source hi 64 bits   | F source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_RESULT_64       | D result              |                      |                 |
    +--------------------------------+-----------------------+----------------------+-----------------+
 */
 

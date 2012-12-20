@@ -21,7 +21,7 @@ int main(int argc, char** argv)
   pthread_detach(thread);
 
   /* Invoke pthread_detach() with an invalid thread ID. */
-  pthread_detach(thread + 1);
+  pthread_detach(thread + 8);
 
   fprintf(stderr, "Finished.\n");
 

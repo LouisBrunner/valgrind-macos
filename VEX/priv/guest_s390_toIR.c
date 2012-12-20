@@ -9121,7 +9121,6 @@ s390_irgen_DDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    assign(op2, get_dpr_dw0(r3));
    assign(result, triop(Iop_DivD64, mkexpr(rounding_mode), mkexpr(op1),
                         mkexpr(op2)));
-   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
    put_dpr_dw0(r1, mkexpr(result));
 
    return (m4 == 0) ? "ddtr" : "ddtra";
@@ -9144,7 +9143,6 @@ s390_irgen_MDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    assign(op2, get_dpr_dw0(r3));
    assign(result, triop(Iop_MulD64, mkexpr(rounding_mode), mkexpr(op1),
                         mkexpr(op2)));
-   s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
    put_dpr_dw0(r1, mkexpr(result));
 
    return (m4 == 0) ? "mdtr" : "mdtra";

@@ -975,7 +975,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 {
    IRType ty = typeOfIRExpr(env->type_env, expr);
    UChar size;
-   s390_conv_t conv;
+   s390_bfp_conv_t conv;
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 || ty == Ity_I64);
 
@@ -1891,7 +1891,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
    case Iex_Unop: {
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      s390_conv_t conv;
+      s390_bfp_conv_t conv;
       HReg op_hi, op_lo, op, f12, f13, f14, f15;
 
       /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
@@ -2104,7 +2104,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IRExpr *irrm = expr->Iex.Binop.arg1;
       IRExpr *left = expr->Iex.Binop.arg2;
       HReg h1, dst;
-      s390_conv_t  conv;
+      s390_bfp_conv_t  conv;
 
       switch (op) {
       case Iop_SqrtF32:
@@ -2189,7 +2189,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IROp    op   = expr->Iex.Unop.op;
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      s390_conv_t conv;
+      s390_bfp_conv_t conv;
       HReg h1, dst;
 
       if (op == Iop_F128HItoF64 || op == Iop_F128LOtoF64) {

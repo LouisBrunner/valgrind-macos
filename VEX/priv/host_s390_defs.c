@@ -5094,7 +5094,7 @@ s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2)
 
 
 s390_insn *
-s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst, HReg op,
+s390_insn_bfp_convert(UChar size, s390_bfp_conv_t tag, HReg dst, HReg op,
                       s390_bfp_round_t rounding_mode)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
@@ -5196,7 +5196,7 @@ s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi, HReg op1_lo,
 
 
 static s390_insn *
-s390_insn_bfp128_convert(UChar size, s390_conv_t tag, HReg dst_hi,
+s390_insn_bfp128_convert(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
                          HReg dst_lo, HReg op_hi, HReg op_lo,
                          s390_bfp_round_t rounding_mode)
 {
@@ -5226,7 +5226,7 @@ s390_insn_bfp128_convert(UChar size, s390_conv_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_bfp128_convert_to(UChar size, s390_conv_t tag, HReg dst_hi,
+s390_insn_bfp128_convert_to(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
                             HReg dst_lo, HReg op)
 {
    /* Conversion to bfp128 never requires a rounding mode. Provide default
@@ -5239,7 +5239,7 @@ s390_insn_bfp128_convert_to(UChar size, s390_conv_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_bfp128_convert_from(UChar size, s390_conv_t tag, HReg dst,
+s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t tag, HReg dst,
                               HReg op_hi, HReg op_lo,
                               s390_bfp_round_t rounding_mode)
 {

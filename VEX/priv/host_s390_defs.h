@@ -233,7 +233,7 @@ typedef enum {
    S390_BFP_F128_TO_U64,
    S390_BFP_F128_TO_F32,
    S390_BFP_F128_TO_F64
-} s390_conv_t;
+} s390_bfp_conv_t;
 
 /* Type conversion operations: to and/or from decimal floating point */
 typedef enum {
@@ -492,7 +492,7 @@ typedef struct {
          HReg         op_lo;  /* 128-bit operand low part */
       } bfp_unop;
       struct {
-         s390_conv_t  tag;
+         s390_bfp_conv_t  tag;
          s390_bfp_round_t rounding_mode;
          HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
          HReg         dst_lo; /* 128-bit result low part */
@@ -623,7 +623,7 @@ s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst,
 s390_insn *s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst,
                               HReg op);
 s390_insn *s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2);
-s390_insn *s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst,
+s390_insn *s390_insn_bfp_convert(UChar size, s390_bfp_conv_t tag, HReg dst,
                                  HReg op, s390_bfp_round_t);
 s390_insn *s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t, HReg dst_hi,
                                   HReg dst_lo, HReg op2_hi, HReg op2_lo);
@@ -631,9 +631,9 @@ s390_insn *s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t, HReg dst_hi,
                                  HReg dst_lo, HReg op_hi, HReg op_lo);
 s390_insn *s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi,
                                     HReg op1_lo, HReg op2_hi, HReg op2_lo);
-s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_conv_t,
+s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_bfp_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
-s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_conv_t,
+s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_bfp_round_t);
 s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,

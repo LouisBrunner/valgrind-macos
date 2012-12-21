@@ -2911,6 +2911,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          src = s390_isel_float_expr(env, stmt->Ist.Store.data);
          break;
 
+      case Ity_D32:
+      case Ity_D64:
+         src = s390_isel_dfp_expr(env, stmt->Ist.Store.data);
+         break;
+
       case Ity_F128:
       case Ity_D128:
          /* Cannot occur. No such instruction */

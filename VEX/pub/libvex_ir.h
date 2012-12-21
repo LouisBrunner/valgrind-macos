@@ -1070,7 +1070,7 @@ typedef
        * D64 x D64 -> IRCmpD64Result(I32) */
       Iop_CmpD64,
 
-      /* D128 x D128 -> IRCmpD64Result(I32) */
+      /* D128 x D128 -> IRCmpD128Result(I32) */
       Iop_CmpD128,
 
       /* QUANTIZE AND ROUND INSTRUCTIONS
@@ -1522,7 +1522,7 @@ typedef
    }
    IRRoundingModeDFP;
 
-/* Floating point comparison result values, as created by Iop_CmpF64.
+/* Binary floating point comparison result values.
    This is also derived from what IA32 does. */
 typedef
    enum {
@@ -1531,10 +1531,16 @@ typedef
       Ircr_GT = 0x00,
       Ircr_EQ = 0x40
    }
-   IRCmpF64Result;
+   IRCmpFResult;
 
-typedef IRCmpF64Result IRCmpF32Result;
-typedef IRCmpF64Result IRCmpF128Result;
+typedef IRCmpFResult IRCmpF32Result;
+typedef IRCmpFResult IRCmpF64Result;
+typedef IRCmpFResult IRCmpF128Result;
+
+/* Decimal floating point result values. */
+typedef IRCmpFResult IRCmpDResult;
+typedef IRCmpDResult IRCmpD64Result;
+typedef IRCmpDResult IRCmpD128Result;
 
 /* ------------------ Expressions ------------------ */
 

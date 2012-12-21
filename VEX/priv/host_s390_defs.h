@@ -138,6 +138,8 @@ typedef enum {
    S390_INSN_BFP_COMPARE,
    S390_INSN_BFP_CONVERT,
    S390_INSN_DFP_BINOP, /* Decimal floating point */
+   S390_INSN_DFP_COMPARE,
+   S390_INSN_DFP_CONVERT,
    S390_INSN_MFENCE,
    S390_INSN_MZERO,   /* Assign zero to a memory location */
    S390_INSN_GADD,    /* Add a value to a guest register */
@@ -199,7 +201,7 @@ typedef enum {
    S390_BFP_SQRT
 } s390_bfp_unop_t;
 
-/* Type conversion operations: to and/or from floating point */
+/* Type conversion operations: to and/or from binary floating point */
 typedef enum {
    S390_BFP_I32_TO_F32,
    S390_BFP_I32_TO_F64,
@@ -233,6 +235,13 @@ typedef enum {
    S390_BFP_F128_TO_F64
 } s390_conv_t;
 
+/* Type conversion operations: to and/or from decimal floating point */
+typedef enum {
+   S390_DFP_D32_TO_D64,
+   S390_DFP_D64_TO_D32,
+   S390_DFP_D64_TO_D128,
+   S390_DFP_D128_TO_D64
+} s390_dfp_conv_t;
 
 /* The kind of binary DFP operations */
 typedef enum {
@@ -507,6 +516,21 @@ typedef struct {
          HReg         op3_lo; /* 128-bit operand low part */
          s390_dfp_round_t rounding_mode;
       } dfp_binop;
+      struct {
+         s390_dfp_conv_t  tag;
+         s390_dfp_round_t rounding_mode;
+         HReg         dst_hi; /* 128-bit result high part; 64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op_hi;  /* 128-bit operand high part; 64-bit opnd */
+         HReg         op_lo;  /* 128-bit operand low part */
+      } dfp_convert;
+      struct {
+         HReg         dst;     /* condition code in s390 encoding */
+         HReg         op1_hi;  /* 128-bit operand high part; 64-bit opnd 1 */
+         HReg         op1_lo;  /* 128-bit operand low part */
+         HReg         op2_hi;  /* 128-bit operand high part; 64-bit opnd 2 */
+         HReg         op2_lo;  /* 128-bit operand low part */
+      } dfp_compare;
 
       /* Miscellaneous */
       struct {
@@ -615,6 +639,20 @@ s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_conv_t,
 s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
                                HReg op2, HReg op3,
                                s390_dfp_round_t rounding_mode);
+s390_insn *s390_insn_dfp_compare(UChar size, HReg dst, HReg op1, HReg op2);
+s390_insn *s390_insn_dfp_convert(UChar size, s390_dfp_conv_t tag, HReg dst,
+                                 HReg op, s390_dfp_round_t);
+s390_insn *s390_insn_dfp128_binop(UChar size, s390_dfp_binop_t, HReg dst_hi,
+                                  HReg dst_lo, HReg op2_hi, HReg op2_lo,
+                                  HReg op3_hi, HReg op3_lo,
+                                  s390_dfp_round_t rounding_mode);
+s390_insn *s390_insn_dfp128_compare(UChar size, HReg dst, HReg op1_hi,
+                                    HReg op1_lo, HReg op2_hi, HReg op2_lo);
+s390_insn *s390_insn_dfp128_convert_to(UChar size, s390_dfp_conv_t,
+                                       HReg dst_hi, HReg dst_lo, HReg op);
+s390_insn *s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t,
+                                         HReg dst, HReg op_hi, HReg op_lo,
+                                         s390_dfp_round_t);
 s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_mzero(UChar size, s390_amode *dst);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);

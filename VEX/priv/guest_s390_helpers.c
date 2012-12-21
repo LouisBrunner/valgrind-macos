@@ -1165,6 +1165,18 @@ decode_bfp_rounding_mode(UInt irrm)
    psw >> 28;   /* cc */ \
 })
 
+#define S390_CC_FOR_DFP128_RESULT(hi,lo) \
+({ \
+   __asm__ volatile ( \
+                     "ldr   4,%[high]\n\t"                 \
+                     "ldr   6,%[low]\n\t"                  \
+                     ".insn rre, 0xb3de0000,0,4\n\t"    /* LTXTR */     \
+                     "ipm %[psw]\n\t"           : [psw] "=d"(psw)       \
+                     : [high] "f"(hi), [low] "f"(lo)                    \
+                     : "cc", "f0", "f2", "f4", "f6");                   \
+   psw >> 28;   /* cc */                                                \
+})
+
 
 /* Return the value of the condition code from the supplied thunk parameters.
    This is not the value of the PSW. It is the value of the 2 CC bits within
@@ -1383,6 +1395,9 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
 
    case S390_CC_OP_DFP_RESULT_64:
       return S390_CC_FOR_DFP_RESULT(cc_dep1);
+
+   case S390_CC_OP_DFP_RESULT_128:
+      return S390_CC_FOR_DFP128_RESULT(cc_dep1, cc_dep2);
 
    default:
       break;

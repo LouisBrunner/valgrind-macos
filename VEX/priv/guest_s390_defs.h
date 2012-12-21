@@ -137,7 +137,8 @@ enum {
    S390_CC_OP_BFP_32_TO_UINT_64 = 39,
    S390_CC_OP_BFP_64_TO_UINT_64 = 40,
    S390_CC_OP_BFP_128_TO_UINT_64 = 41,
-   S390_CC_OP_DFP_RESULT_64 = 42
+   S390_CC_OP_DFP_RESULT_64 = 42,
+   S390_CC_OP_DFP_RESULT_128 = 43
 };
 
 /*------------------------------------------------------------*/
@@ -196,6 +197,7 @@ enum {
    | S390_CC_OP_BFP_64_TO_UINT_64   | F source              | Z rounding mode      |                 |
    | S390_CC_OP_BFP_128_TO_UINT_64  | F source hi 64 bits   | F source low 64 bits | Z rounding mode |
    | S390_CC_OP_DFP_RESULT_64       | D result              |                      |                 |
+   | S390_CC_OP_DFP_RESULT_128      | D result hi 64 bits   | D result low 64 bits |                 |
    +--------------------------------+-----------------------+----------------------+-----------------+
 */
 

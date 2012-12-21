@@ -1700,12 +1700,6 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
    vassert(ty == Ity_F128);
 
-   /* Read 128-bit IRTemp */
-   if (expr->tag == Iex_RdTmp) {
-      lookupIRTemp128(dst_hi, dst_lo, env, expr->Iex.RdTmp.tmp);
-      return;
-   }
-
    switch (expr->tag) {
    case Iex_RdTmp:
       /* Return the virtual registers that hold the temporary. */

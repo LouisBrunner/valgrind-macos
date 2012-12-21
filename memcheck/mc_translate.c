@@ -3306,7 +3306,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_D64toI64S:
       case Iop_I64StoD64:
-         /* I64(DFP rm) x I64 -> D64 */
+         /* I32(DFP rm) x I64 -> D64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_RoundF32toInt:
@@ -3350,8 +3350,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_D64toD32:
-         /* First arg is I64 (DFProunding mode), second is D64 (data). */
-         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+         /* First arg is I32 (DFP rounding mode), second is D64 (data). */
+         return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_F64toI16S:
          /* First arg is I32 (rounding mode), second is F64 (data). */

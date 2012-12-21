@@ -19,7 +19,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
 	     spechelper-icm-1  spechelper-icm-2 spechelper-tmll \
 	     spechelper-tm laa
 if BUILD_DFP_TESTS
-  INSN_TESTS += dfp-1
+  INSN_TESTS += dfp-1 dfp-2
 endif
 
 check_PROGRAMS = $(INSN_TESTS) \
@@ -35,7 +35,8 @@ EXTRA_DIST = \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
 	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
-	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest
+	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest \
+	dfp-2.stderr.exp dfp-2.stdout.exp dfp-2.vgtest
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

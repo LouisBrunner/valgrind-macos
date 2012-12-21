@@ -50,7 +50,6 @@
 static UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
 static void s390_irgen_xonc(IROp, IRTemp, IRTemp, IRTemp);
 static void s390_irgen_CLC_EX(IRTemp, IRTemp, IRTemp);
-static IRExpr *convert_vex_fpcc_to_s390(IRTemp);
 
 
 /*------------------------------------------------------------*/
@@ -1615,6 +1614,70 @@ encode_dfp_rounding_mode(UChar mode)
    }
 
    return mktemp(Ity_I32, rm);
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Condition code helpers                               ---*/
+/*------------------------------------------------------------*/
+
+/* The result of a Iop_CmpFxx operation is a condition code. It is
+   encoded using the values defined in type IRCmpFxxResult.
+   Before we can store the condition code into the guest state (or do
+   anything else with it for that matter) we need to convert it to
+   the encoding that s390 uses. This is what this function does.
+
+   s390     VEX                b6 b2 b0   cc.1  cc.0
+   0      0x40 EQ             1  0  0     0     0
+   1      0x01 LT             0  0  1     0     1
+   2      0x00 GT             0  0  0     1     0
+   3      0x45 Unordered      1  1  1     1     1
+
+   The following bits from the VEX encoding are interesting:
+   b0, b2, b6  with b0 being the LSB. We observe:
+
+   cc.0 = b0;
+   cc.1 = b2 | (~b0 & ~b6)
+
+   with cc being the s390 condition code.
+*/
+static IRExpr *
+convert_vex_bfpcc_to_s390(IRTemp vex_cc)
+{
+   IRTemp cc0  = newTemp(Ity_I32);
+   IRTemp cc1  = newTemp(Ity_I32);
+   IRTemp b0   = newTemp(Ity_I32);
+   IRTemp b2   = newTemp(Ity_I32);
+   IRTemp b6   = newTemp(Ity_I32);
+
+   assign(b0, binop(Iop_And32, mkexpr(vex_cc), mkU32(1)));
+   assign(b2, binop(Iop_And32, binop(Iop_Shr32, mkexpr(vex_cc), mkU8(2)),
+                    mkU32(1)));
+   assign(b6, binop(Iop_And32, binop(Iop_Shr32, mkexpr(vex_cc), mkU8(6)),
+                    mkU32(1)));
+
+   assign(cc0, mkexpr(b0));
+   assign(cc1, binop(Iop_Or32, mkexpr(b2),
+                     binop(Iop_And32,
+                           binop(Iop_Sub32, mkU32(1), mkexpr(b0)), /* ~b0 */
+                           binop(Iop_Sub32, mkU32(1), mkexpr(b6))  /* ~b6 */
+                           )));
+
+   return binop(Iop_Or32, mkexpr(cc0), binop(Iop_Shl32, mkexpr(cc1), mkU8(1)));
+}
+
+
+/* The result of a Iop_CmpDxx operation is a condition code. It is
+   encoded using the values defined in type IRCmpDxxResult.
+   Before we can store the condition code into the guest state (or do
+   anything else with it for that matter) we need to convert it to
+   the encoding that s390 uses. This is what this function does. */
+static IRExpr *
+convert_vex_dfpcc_to_s390(IRTemp vex_cc)
+{
+   /* The VEX encodings for IRCmpDxxResult and IRCmpFxxResult are the
+      same. currently. */
+   return convert_vex_dfpcc_to_s390(vex_cc);
 }
 
 
@@ -9194,7 +9257,7 @@ s390_irgen_CDTR(UChar r1, UChar r2)
    assign(op2, get_dpr_dw0(r2));
    assign(cc_vex, binop(Iop_CmpD64, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_dfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "cdtr";
@@ -9212,7 +9275,7 @@ s390_irgen_CXTR(UChar r1, UChar r2)
    assign(op2, get_dpr_pair(r2));
    assign(cc_vex, binop(Iop_CmpD128, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_dfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "cxtr";
@@ -10849,51 +10912,6 @@ s390_irgen_AXBR(UChar r1, UChar r2)
    return "axbr";
 }
 
-/* The result of a Iop_CmdFxx operation is a condition code. It is
-   encoded using the values defined in type IRCmpFxxResult.
-   Before we can store the condition code into the guest state (or do
-   anything else with it for that matter) we need to convert it to
-   the encoding that s390 uses. This is what this function does.
-
-   s390     VEX                b6 b2 b0   cc.1  cc.0
-   0      0x40 EQ             1  0  0     0     0
-   1      0x01 LT             0  0  1     0     1
-   2      0x00 GT             0  0  0     1     0
-   3      0x45 Unordered      1  1  1     1     1
-
-   The following bits from the VEX encoding are interesting:
-   b0, b2, b6  with b0 being the LSB. We observe:
-
-   cc.0 = b0;
-   cc.1 = b2 | (~b0 & ~b6)
-
-   with cc being the s390 condition code.
-*/
-static IRExpr *
-convert_vex_fpcc_to_s390(IRTemp vex_cc)
-{
-   IRTemp cc0  = newTemp(Ity_I32);
-   IRTemp cc1  = newTemp(Ity_I32);
-   IRTemp b0   = newTemp(Ity_I32);
-   IRTemp b2   = newTemp(Ity_I32);
-   IRTemp b6   = newTemp(Ity_I32);
-
-   assign(b0, binop(Iop_And32, mkexpr(vex_cc), mkU32(1)));
-   assign(b2, binop(Iop_And32, binop(Iop_Shr32, mkexpr(vex_cc), mkU8(2)),
-                    mkU32(1)));
-   assign(b6, binop(Iop_And32, binop(Iop_Shr32, mkexpr(vex_cc), mkU8(6)),
-                    mkU32(1)));
-
-   assign(cc0, mkexpr(b0));
-   assign(cc1, binop(Iop_Or32, mkexpr(b2),
-                     binop(Iop_And32,
-                           binop(Iop_Sub32, mkU32(1), mkexpr(b0)), /* ~b0 */
-                           binop(Iop_Sub32, mkU32(1), mkexpr(b6))  /* ~b6 */
-                           )));
-
-   return binop(Iop_Or32, mkexpr(cc0), binop(Iop_Shl32, mkexpr(cc1), mkU8(1)));
-}
-
 static const HChar *
 s390_irgen_CEBR(UChar r1, UChar r2)
 {
@@ -10906,7 +10924,7 @@ s390_irgen_CEBR(UChar r1, UChar r2)
    assign(op2, get_fpr_w0(r2));
    assign(cc_vex, binop(Iop_CmpF32, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "cebr";
@@ -10924,7 +10942,7 @@ s390_irgen_CDBR(UChar r1, UChar r2)
    assign(op2, get_fpr_dw0(r2));
    assign(cc_vex, binop(Iop_CmpF64, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "cdbr";
@@ -10942,7 +10960,7 @@ s390_irgen_CXBR(UChar r1, UChar r2)
    assign(op2, get_fpr_pair(r2));
    assign(cc_vex, binop(Iop_CmpF128, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "cxbr";
@@ -10960,7 +10978,7 @@ s390_irgen_CEB(UChar r1, IRTemp op2addr)
    assign(op2, load(Ity_F32, mkexpr(op2addr)));
    assign(cc_vex,  binop(Iop_CmpF32, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "ceb";
@@ -10978,7 +10996,7 @@ s390_irgen_CDB(UChar r1, IRTemp op2addr)
    assign(op2, load(Ity_F64, mkexpr(op2addr)));
    assign(cc_vex, binop(Iop_CmpF64, mkexpr(op1), mkexpr(op2)));
 
-   assign(cc_s390, convert_vex_fpcc_to_s390(cc_vex));
+   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
 
    return "cdb";

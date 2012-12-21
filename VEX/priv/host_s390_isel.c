@@ -727,8 +727,13 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
    return S390_DFP_ROUND_PER_FPC_0;
 }
 
+
+/*---------------------------------------------------------*/
+/*--- Condition code helper functions                   ---*/
+/*---------------------------------------------------------*/
+
 /* CC_S390 holds the condition code in s390 encoding. Convert it to
-   VEX encoding
+   VEX encoding (IRCmpFResult)
 
    s390     VEX              b6 b2 b0   cc.1  cc.0
    0      0x40 EQ             1  0  0     0     0
@@ -743,7 +748,7 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
    VEX = b0 | (b2 << 2) | (b6 << 6);
 */
 static HReg
-convert_s390_fpcc_to_vex(ISelEnv *env, HReg cc_s390)
+convert_s390_to_vex_bfpcc(ISelEnv *env, HReg cc_s390)
 {
    HReg cc0, cc1, b2, b6, cc_vex;
 
@@ -773,6 +778,15 @@ convert_s390_fpcc_to_vex(ISelEnv *env, HReg cc_s390)
    addInstr(env, s390_insn_alu(4, S390_ALU_OR, cc_vex, s390_opnd_reg(b6)));
 
    return cc_vex;
+}
+
+/* CC_S390 holds the condition code in s390 encoding. Convert it to
+   VEX encoding (IRCmpDResult) */
+static HReg
+convert_s390_to_vex_dfpcc(ISelEnv *env, HReg cc_s390)
+{
+   /* The encodings for IRCmpFResult and IRCmpDResult are the same/ */
+   return convert_s390_to_vex_bfpcc(env, cc_s390);
 }
 
 
@@ -1177,7 +1191,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          addInstr(env, s390_insn_bfp_compare(size, cc_s390, h1, h2));
 
-         return convert_s390_fpcc_to_vex(env, cc_s390);
+         return convert_s390_to_vex_bfpcc(env, cc_s390);
       }
 
       case Iop_CmpF128: {
@@ -1204,7 +1218,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          res = newVRegI(env);
          addInstr(env, s390_insn_bfp128_compare(16, cc_s390, f12, f14, f13, f15));
 
-         return convert_s390_fpcc_to_vex(env, cc_s390);
+         return convert_s390_to_vex_bfpcc(env, cc_s390);
       }
 
       case Iop_CmpD64: {
@@ -1217,7 +1231,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          addInstr(env, s390_insn_dfp_compare(size, cc_s390, h1, h2));
 
-         return convert_s390_fpcc_to_vex(env, cc_s390);
+         return convert_s390_to_vex_dfpcc(env, cc_s390);
       }
 
       case Iop_CmpD128: {
@@ -1244,7 +1258,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          res = newVRegI(env);
          addInstr(env, s390_insn_dfp128_compare(16, cc_s390, f12, f14, f13, f15));
 
-         return convert_s390_fpcc_to_vex(env, cc_s390);
+         return convert_s390_to_vex_dfpcc(env, cc_s390);
       }
 
       case Iop_Add8:

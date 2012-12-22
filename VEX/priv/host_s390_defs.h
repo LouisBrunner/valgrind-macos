@@ -121,8 +121,10 @@ typedef enum {
    S390_INSN_COND_MOVE, /* conditonal "move" to register */
    S390_INSN_LOAD_IMMEDIATE,
    S390_INSN_ALU,
-   S390_INSN_MUL,    /* n-bit operands; 2n-bit result */
-   S390_INSN_DIV,    /* 2n-bit dividend; n-bit divisor; n-bit quot/rem */
+   S390_INSN_SMUL,   /*   signed multiply; n-bit operands; 2n-bit result */
+   S390_INSN_UMUL,   /* unsigned multiply; n-bit operands; 2n-bit result */
+   S390_INSN_SDIV,   /*   signed division; 2n-bit / n-bit -> n-bit quot/rem */
+   S390_INSN_UDIV,   /* unsigned division; 2n-bit / n-bit -> n-bit quot/rem */
    S390_INSN_DIVS,   /* n-bit dividend; n-bit divisor; n-bit quot/rem */
    S390_INSN_CLZ,    /* count left-most zeroes */
    S390_INSN_UNOP,
@@ -344,6 +346,32 @@ s390_cc_invert(s390_cc_t cond)
 }
 
 
+/* The details of a CDAS insn. Carved out to keep the size of
+   s390_insn low */
+typedef struct {
+   HReg        op1_high;
+   HReg        op1_low;
+   s390_amode *op2;
+   HReg        op3_high;
+   HReg        op3_low;
+   HReg        old_mem_high;
+   HReg        old_mem_low;
+   HReg        scratch;
+} s390_cdas;
+
+/* The details of a binary DFP insn. Carved out to keep the size of
+   s390_insn low */
+typedef struct {
+   s390_dfp_binop_t tag;
+   s390_dfp_round_t rounding_mode;
+   HReg         dst_hi; /* 128-bit result high part; 64-bit result */
+   HReg         dst_lo; /* 128-bit result low part */
+   HReg         op2_hi; /* 128-bit operand high part; 64-bit opnd 1 */
+   HReg         op2_lo; /* 128-bit operand low part */
+   HReg         op3_hi; /* 128-bit operand high part; 64-bit opnd 2 */
+   HReg         op3_lo; /* 128-bit operand low part */
+} s390_dfp_binop;
+
 typedef struct {
    s390_insn_tag tag;
    /* Usually, this is the size of the result of an operation.
@@ -380,13 +408,11 @@ typedef struct {
          s390_opnd_RMI op2;
       } alu;
       struct {
-         Bool          signed_multiply;
          HReg          dst_hi;  /*           r10 */
          HReg          dst_lo;  /* also op1  r11 */
          s390_opnd_RMI op2;
       } mul;
       struct {
-         Bool          signed_divide;
          HReg          op1_hi;  /* also remainder   r10 */
          HReg          op1_lo;  /* also quotient    r11 */
          s390_opnd_RMI op2;
@@ -426,14 +452,7 @@ typedef struct {
          HReg        old_mem;
       } cas;
       struct {
-         HReg        op1_high;
-         HReg        op1_low;
-         s390_amode *op2;
-         HReg        op3_high;
-         HReg        op3_low;
-         HReg        old_mem_high;
-         HReg        old_mem_low;
-         HReg        scratch;
+         s390_cdas *details;
       } cdas;
       /* Pseudo-insn for representing a helper call.
          TARGET is the absolute address of the helper function
@@ -442,10 +461,10 @@ typedef struct {
          i.e. in registers r2, r3, r4, r5, and r6, with argument #0 being
          passed in r2 and so forth. */
       struct {
-         s390_cc_t    cond;
+         s390_cc_t    cond     : 16;
+         UInt         num_args : 16;
+         HReg         dst;   /* if not INVALID_HREG, put return value here */
          Addr64       target;
-         UInt         num_args;
-         HReg         dst;       /* if not INVALID_HREG, put return value here */
          const HChar *name;      /* callee's name (for debugging) */
       } helper_call;
 
@@ -507,14 +526,7 @@ typedef struct {
          HReg         op2_lo;  /* 128-bit operand low part */
       } bfp_compare;
       struct {
-         s390_dfp_binop_t tag;
-         HReg         dst_hi; /* 128-bit result high part; 64-bit result */
-         HReg         dst_lo; /* 128-bit result low part */
-         HReg         op2_hi; /* 128-bit operand high part; 64-bit opnd 1 */
-         HReg         op2_lo; /* 128-bit operand low part */
-         HReg         op3_hi; /* 128-bit operand high part; 64-bit opnd 2 */
-         HReg         op3_lo; /* 128-bit operand low part */
-         s390_dfp_round_t rounding_mode;
+         s390_dfp_binop *details;
       } dfp_binop;
       struct {
          s390_dfp_conv_t  tag;

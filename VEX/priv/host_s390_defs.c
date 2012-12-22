@@ -737,8 +737,11 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       s390_amode_get_reg_usage(u, insn->variant.mzero.dst);
       break;
 
+   case S390_INSN_MADD:
+      s390_amode_get_reg_usage(u, insn->variant.madd.dst);
+      break;
+
    case S390_INSN_MFENCE:
-   case S390_INSN_GADD:
       break;
 
    case S390_INSN_SET_FPC_BFPRM:
@@ -1017,8 +1020,11 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       s390_amode_map_regs(m, insn->variant.mzero.dst);
       break;
 
+   case S390_INSN_MADD:
+      s390_amode_map_regs(m, insn->variant.madd.dst);
+      break;
+
    case S390_INSN_MFENCE:
-   case S390_INSN_GADD:
       break;
 
    case S390_INSN_SET_FPC_BFPRM:
@@ -5444,15 +5450,21 @@ s390_insn_mzero(UChar size, s390_amode *dst)
 
 
 s390_insn *
-s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value)
+s390_insn_madd(UChar size, s390_amode *dst, UChar delta, ULong value)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   insn->tag  = S390_INSN_GADD;
+   vassert(size == 4 || size == 8);
+
+   /* This insn will be mapped to an ASI or AGSI so we can only allow base
+      register plus 12-bit / 20-bit displacement. */
+   vassert(dst->tag == S390_AMODE_B12 || dst->tag == S390_AMODE_B20);
+
+   insn->tag  = S390_INSN_MADD;
    insn->size = size;
-   insn->variant.gadd.offset = offset;
-   insn->variant.gadd.delta = delta;
-   insn->variant.gadd.value = value;
+   insn->variant.madd.dst   = dst;
+   insn->variant.madd.delta = delta;
+   insn->variant.madd.value = value;
 
    return insn;
 }
@@ -6018,11 +6030,11 @@ s390_insn_as_string(const s390_insn *insn)
       s390_sprintf(buf, "%M %A", "v-mzero", insn->variant.mzero.dst);
       break;
 
-   case S390_INSN_GADD:
-      s390_sprintf(buf, "%M %G += %I  (= %I)", "v-gadd",
-                   insn->variant.gadd.offset,
-                   (Long)(Char)insn->variant.gadd.delta,
-                   insn->variant.gadd.value);
+   case S390_INSN_MADD:
+      s390_sprintf(buf, "%M %A += %I  (= %I)", "v-madd",
+                   insn->variant.madd.dst,
+                   (Long)(Char)insn->variant.madd.delta,
+                   insn->variant.madd.value);
       break;
 
    case S390_INSN_SET_FPC_BFPRM:
@@ -8237,11 +8249,16 @@ s390_insn_mzero_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
-s390_insn_gadd_emit(UChar *buf, const s390_insn *insn)
+s390_insn_madd_emit(UChar *buf, const s390_insn *insn)
 {
-   return s390_emit_AGSI(buf, insn->variant.gadd.delta,
-                         S390_REGNO_GUEST_STATE_POINTER,
-                         DISP20(insn->variant.gadd.offset));
+   s390_amode *am = insn->variant.madd.dst;
+
+   if (insn->size == 4) {
+      return s390_emit_ASI(buf, insn->variant.madd.delta, am->b,
+                           DISP20(am->d));
+   }
+
+   return s390_emit_AGSI(buf, insn->variant.madd.delta, am->b, DISP20(am->d));
 }
 
 
@@ -8829,8 +8846,8 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
       end = s390_insn_mzero_emit(buf, insn);
       break;
 
-   case S390_INSN_GADD:
-      end = s390_insn_gadd_emit(buf, insn);
+   case S390_INSN_MADD:
+      end = s390_insn_madd_emit(buf, insn);
       break;
 
    case S390_INSN_SET_FPC_BFPRM:

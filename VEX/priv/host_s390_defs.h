@@ -142,7 +142,7 @@ typedef enum {
    S390_INSN_DFP_CONVERT,
    S390_INSN_MFENCE,
    S390_INSN_MZERO,   /* Assign zero to a memory location */
-   S390_INSN_GADD,    /* Add a value to a guest register */
+   S390_INSN_MADD,    /* Add a value to a memory location */
    S390_INSN_SET_FPC_BFPRM, /* Set the bfp rounding mode in the FPC */
    S390_INSN_SET_FPC_DFPRM, /* Set the dfp rounding mode in the FPC */
    /* The following 5 insns are mandated by translation chaining */
@@ -537,10 +537,10 @@ typedef struct {
          s390_amode      *dst;
       } mzero;
       struct {
-         UInt             offset;
+         s390_amode      *dst;
          UChar            delta;
          ULong            value;  /* for debugging only */
-      } gadd;
+      } madd;
       struct {
          HReg             mode;
       } set_fpc_bfprm;
@@ -655,7 +655,8 @@ s390_insn *s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t,
                                          s390_dfp_round_t);
 s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_mzero(UChar size, s390_amode *dst);
-s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
+s390_insn *s390_insn_madd(UChar size, s390_amode *dst, UChar delta,
+                          ULong value);
 s390_insn *s390_insn_set_fpc_bfprm(UChar size, HReg mode);
 s390_insn *s390_insn_set_fpc_dfprm(UChar size, HReg mode);
 

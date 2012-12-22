@@ -2912,6 +2912,7 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       case Ity_I16:
       case Ity_I32:
       case Ity_I64:
+         /* fixs390: We could check for INSN_MADD here. */
          if (am->tag == S390_AMODE_B12 &&
              s390_expr_is_const_zero(stmt->Ist.Store.data)) {
             addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
@@ -3020,7 +3021,8 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       difference = new_value - old_value;
 
       if (s390_host_has_gie && ulong_fits_signed_8bit(difference)) {
-         addInstr(env, s390_insn_gadd(sizeofIRType(tyd), offset,
+         am = s390_amode_for_guest_state(offset);
+         addInstr(env, s390_insn_madd(sizeofIRType(tyd), am,
                                       (difference & 0xFF), new_value));
          return;
       }
@@ -3029,13 +3031,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          Use R0 as a scratch reg. */
       if ((old_value >> 32) == (new_value >> 32)) {
          HReg r0  = make_gpr(0);
-         HReg gsp = make_gpr(S390_REGNO_GUEST_STATE_POINTER);
-         s390_amode *gam;
 
-         gam = s390_amode_b12(offset + 4, gsp);
+         am = s390_amode_for_guest_state(offset + 4);
          addInstr(env, s390_insn_load_immediate(4, r0,
                                                 new_value & 0xFFFFFFFF));
-         addInstr(env, s390_insn_store(4, gam, r0));
+         addInstr(env, s390_insn_store(4, am, r0));
          return;
       }
 

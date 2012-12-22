@@ -5296,7 +5296,7 @@ s390_insn_dfp_convert(UChar size, s390_dfp_conv_t tag, HReg dst, HReg op,
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   vassert(size == 8);
+   vassert(size == 4 || size == 8);
 
    insn->tag  = S390_INSN_DFP_CONVERT;
    insn->size = size;

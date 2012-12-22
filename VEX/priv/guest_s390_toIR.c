@@ -1677,7 +1677,7 @@ convert_vex_dfpcc_to_s390(IRTemp vex_cc)
 {
    /* The VEX encodings for IRCmpDxxResult and IRCmpFxxResult are the
       same. currently. */
-   return convert_vex_dfpcc_to_s390(vex_cc);
+   return convert_vex_bfpcc_to_s390(vex_cc);
 }
 
 

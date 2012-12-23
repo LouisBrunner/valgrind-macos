@@ -38,7 +38,7 @@
 
 #include "main_util.h"
 #include "main_globals.h"
-#include "guest_s390_defs.h"   /* guest_s390x_state_requires_precise_mem_exns */
+#include "guest_s390_defs.h"   /* S390X_GUEST_OFFSET */
 #include "host_generic_regs.h"
 #include "host_s390_defs.h"
 
@@ -82,8 +82,6 @@
      point of the destination, thereby avoiding the destination's
      event check.
 
-    - A flag to indicate whether the guest IA has been assigned to.
-
     - Values of certain guest registers which are often assigned constants.
 */
 
@@ -122,7 +120,6 @@ typedef struct {
    Addr64       max_ga;
    Bool         chaining_allowed;
 
-   Bool         first_IA_assignment;
    Bool         old_value_valid[NUM_TRACKED_REGS];
 } ISelEnv;
 
@@ -2965,20 +2962,6 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       if (guest_reg == GUEST_UNKNOWN) goto not_special;
 
-      if (guest_reg == GUEST_IA) {
-         /* If this is the first assignment to the IA reg, don't special case
-            it. We need to do a full 8-byte assignment here. The reason is 
-            that in case of a redirected translation the guest IA does not 
-            contain the redirected-to address. Instead it contains the 
-            redirected-from address and those can be far apart. So in order to
-            do incremnetal updates if the IA in the future we need to get the
-            initial address of the super block correct. */
-         if (env->first_IA_assignment) {
-            env->first_IA_assignment = False;
-            goto not_special;
-         }
-      }
-
       if (stmt->Ist.Put.data->tag != Iex_Const) {
          /* Invalidate guest register contents */
          env->old_value_valid[guest_reg] = False;
@@ -2999,12 +2982,9 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       env->old_value_valid[guest_reg] = True;
 
       /* If the register already contains the new value, there is nothing
-         to do here. Unless the guest register requires precise memory
-         exceptions. */
+         to do here. */
       if (old_value_is_valid && new_value == old_value) {
-         if (! guest_s390x_state_requires_precise_mem_exns(offset, offset + 8)) {
-            return;
-         }
+         return;
       }
 
       /* guest register = 0 */
@@ -3463,7 +3443,6 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    env->type_env = bb->tyenv;
 
    /* Set up data structures for tracking guest register values. */
-   env->first_IA_assignment = True;
    for (i = 0; i < NUM_TRACKED_REGS; ++i) {
       env->old_value[i] = 0;  /* just something to have a defined value */
       env->old_value_valid[i] = False;

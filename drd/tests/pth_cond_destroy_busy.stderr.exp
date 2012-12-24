@@ -1,0 +1,12 @@
+
+destruction of condition variable being waited upon: cond 0x........
+   at 0x........: pthread_cond_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+
+First pthread_cond_destroy() call returned EBUSY
+Second pthread_cond_destroy() call returned success
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

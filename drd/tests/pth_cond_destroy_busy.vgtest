@@ -1,0 +1,2 @@
+prereq: ./supported_libpthread
+prog: pth_cond_destroy_busy

@@ -156,6 +156,8 @@ EXTRA_DIST =                                        \
 	pth_cancel_locked.vgtest		    \
 	pth_cleanup_handler.stderr.exp		    \
 	pth_cleanup_handler.vgtest		    \
+	pth_cond_destroy_busy.stderr.exp            \
+	pth_cond_destroy_busy.vgtest                \
 	pth_cond_race.stderr.exp                    \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
@@ -315,6 +317,7 @@ check_PROGRAMS =      \
   pth_broadcast       \
   pth_cancel_locked   \
   pth_cleanup_handler \
+  pth_cond_destroy_busy \
   pth_cond_race       \
   pth_create_chain    \
   pth_detached        \

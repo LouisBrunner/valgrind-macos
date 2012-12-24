@@ -34,10 +34,8 @@
 #include "libvex_basictypes.h"
 #include "main_util.h"        // vassert
 #include "main_globals.h"     // vex_traceflags
+#include "s390_defs.h"        // S390_MAX_MNEMONIC_LEN
 #include "s390_disasm.h"
-
-/* The length of the longest mnemonic: locgrnhe */
-#define S390_MAX_MNEMONIC_LEN  8
 
 
 /* Return the mnemonic padded with blanks to its right */

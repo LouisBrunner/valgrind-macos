@@ -41,7 +41,8 @@
 #include "guest_generic_bb_to_IR.h"  /* DisResult */
 #include "guest_s390_defs.h"         /* prototypes for this file's functions */
 #include "s390_disasm.h"
-#include "host_s390_defs.h"          /* S390_BFP_ROUND_xyzzy */
+#include "s390_defs.h"               /* S390_BFP_ROUND_xyzzy */
+#include "host_s390_defs.h"          /* s390_host_has_xyzzy */
 
 
 /*------------------------------------------------------------*/

@@ -41,7 +41,7 @@
 #include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_s390_defs.h"
-#include "host_s390_defs.h"          /* S390_BFP_ROUND_xyzzy */
+#include "s390_defs.h"               /* S390_BFP_ROUND_xyzzy */
 
 void
 LibVEX_GuestS390X_initialise(VexGuestS390XState *state)

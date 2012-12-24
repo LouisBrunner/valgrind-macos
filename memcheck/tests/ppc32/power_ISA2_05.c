@@ -23,14 +23,13 @@ int base256(int val)
 
 void test_parity_instrs()
 {
-   unsigned long long_word;
    unsigned int word;
    int i, parity;
 
    for (i = 0; i < 50; i++) {
       word = base256(i);
 #ifdef __powerpc64__
-      long_word = word;
+      unsigned long long_word = word;
       __asm__ volatile ("prtyd %0, %1":"=r" (parity):"r"(long_word));
       printf("prtyd (%x) => parity=%x\n", i, parity);
 #endif

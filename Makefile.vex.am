@@ -52,6 +52,7 @@ noinst_HEADERS = \
 	priv/host_arm_defs.h \
 	priv/host_s390_defs.h \
 	priv/s390_disasm.h \
+	priv/s390_defs.h \
 	priv/host_mips_defs.h
 
 BUILT_SOURCES = pub/libvex_guest_offsets.h

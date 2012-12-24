@@ -47,7 +47,7 @@ void DRD_(cond_set_report_signal_unlocked)(const Bool r);
 void DRD_(cond_set_trace)(const Bool trace_cond);
 struct cond_info* DRD_(cond_get)(const Addr cond);
 void DRD_(cond_pre_init)(const Addr cond);
-void DRD_(cond_post_destroy)(const Addr cond);
+void DRD_(cond_post_destroy)(const Addr cond, const Bool destroy_succeeded);
 void DRD_(cond_pre_wait)(const Addr cond, const Addr mutex);
 void DRD_(cond_post_wait)(const Addr cond);
 void DRD_(cond_pre_signal)(const Addr cond);

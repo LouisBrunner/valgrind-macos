@@ -373,7 +373,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__POST_COND_DESTROY:
       if (DRD_(thread_leave_synchr)(drd_tid) == 0)
-         DRD_(cond_post_destroy)(arg[1]);
+         DRD_(cond_post_destroy)(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__PRE_COND_WAIT:

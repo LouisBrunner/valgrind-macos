@@ -166,7 +166,7 @@ void DRD_(cond_pre_init)(const Addr cond)
 }
 
 /** Called after pthread_cond_destroy(). */
-void DRD_(cond_post_destroy)(const Addr cond)
+void DRD_(cond_post_destroy)(const Addr cond, const Bool destroy_succeeded)
 {
    struct cond_info* p;
 
@@ -197,7 +197,8 @@ void DRD_(cond_post_destroy)(const Addr cond)
                               &cei);
    }
 
-   DRD_(clientobj_remove)(p->a1, ClientCondvar);
+   if (destroy_succeeded)
+      DRD_(clientobj_remove)(p->a1, ClientCondvar);
 }
 
 /**

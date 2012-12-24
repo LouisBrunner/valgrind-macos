@@ -717,7 +717,7 @@ int pthread_cond_destroy_intercept(pthread_cond_t* cond)
                                    cond, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, cond);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_COND_DESTROY,
-                                   cond, 0, 0, 0, 0);
+                                   cond, ret==0, 0, 0, 0);
    return ret;
 }
 

@@ -3,7 +3,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_ir.h				\
 		pub/libvex.h				\
 		pub/libvex_trc_values.h			\
-		pub/libvex_emwarn.h			\
+		pub/libvex_emnote.h			\
 		pub/libvex_guest_x86.h			\
 		pub/libvex_guest_amd64.h		\
 		pub/libvex_guest_arm.h			\
@@ -11,7 +11,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_ppc64.h		\
 		pub/libvex_guest_s390x.h		\
 		pub/libvex_s390x_common.h		\
-		pub/libvex_guest_mips.h			\
+		pub/libvex_guest_mips32.h		\
 		pub/libvex_guest_offsets.h
 
 PRIV_HEADERS = 	priv/host_x86_defs.h			\
@@ -19,7 +19,6 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/host_arm_defs.h			\
 		priv/host_ppc_defs.h			\
 		priv/host_s390_defs.h			\
-		priv/host_s390_disasm.h		        \
 		priv/host_mips_defs.h			\
 		priv/host_generic_regs.h	        \
 		priv/host_generic_simd64.h	        \
@@ -33,15 +32,19 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/guest_arm_defs.h			\
 		priv/guest_ppc_defs.h			\
 		priv/guest_mips_defs.h			\
+		priv/s390_disasm.h		        \
+		priv/s390_defs.h		        \
 		priv/ir_match.h			        \
 		priv/ir_opt.h
 
 LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/ir_match.o			        \
 		priv/ir_opt.o				\
+		priv/ir_inject.o			\
 		priv/main_main.o			\
 		priv/main_globals.o			\
 		priv/main_util.o			\
+		priv/s390_disasm.o			\
 		priv/host_x86_defs.o			\
 		priv/host_amd64_defs.o			\
 		priv/host_arm_defs.o			\
@@ -53,7 +56,6 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_arm_isel.o			\
 		priv/host_ppc_isel.o			\
 		priv/host_s390_isel.o			\
-                priv/host_s390_disasm.o			\
 		priv/host_mips_isel.o			\
 		priv/host_generic_regs.o	        \
 		priv/host_generic_simd64.o	        \
@@ -231,6 +233,10 @@ priv/ir_defs.o: $(ALL_HEADERS) priv/ir_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir_defs.o \
 					 -c priv/ir_defs.c
 
+priv/ir_inject.o: $(ALL_HEADERS) priv/ir_inject.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir_inject.o \
+					 -c priv/ir_inject.c
+
 priv/ir_match.o: $(ALL_HEADERS) priv/ir_match.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir_match.o \
 					 -c priv/ir_match.c
@@ -363,9 +369,9 @@ priv/guest_s390_toIR.o: $(ALL_HEADERS) priv/guest_s390_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_s390_toIR.o \
 					 -c priv/guest_s390_toIR.c
 
-priv/host_s390_disasm.o: $(ALL_HEADERS) priv/host_s390_disasm.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_s390_disasm.o \
-					 -c priv/host_s390_disasm.c
+priv/s390_disasm.o: $(ALL_HEADERS) priv/s390_disasm.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/s390_disasm.o \
+					 -c priv/s390_disasm.c
 
 priv/guest_mips_helpers.o: $(ALL_HEADERS) priv/guest_mips_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_mips_helpers.o \

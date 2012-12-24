@@ -1187,7 +1187,7 @@ void do_shadow_PUTI ( MCEnv* mce,
       IRRegArray* new_descr 
          = mkIRRegArray( descr->base + mce->layout->total_sizeB, 
                       tyS, descr->nElems);
-      stmt( mce->bb, IRStmt_PutI( new_descr, ix, bias, vatom ));
+      stmt( mce->bb, IRStmt_PutI( mkIRPutI( new_descr, ix, bias, vatom ) ));
    }
 }
 
@@ -2641,10 +2641,10 @@ IRSB* mc_instrument ( void* closureV,
 
          case Ist_PutI:
             do_shadow_PUTI( &mce, 
-                            st->Ist.PutI.descr,
-                            st->Ist.PutI.ix,
-                            st->Ist.PutI.bias,
-                            st->Ist.PutI.data );
+                            st->Ist.PutI.details->descr,
+                            st->Ist.PutI.details->ix,
+                            st->Ist.PutI.details->bias,
+                            st->Ist.PutI.details->data );
             break;
 
          case Ist_Store:

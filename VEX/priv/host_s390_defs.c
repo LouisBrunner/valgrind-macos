@@ -4009,6 +4009,26 @@ s390_emit_CXTR(UChar *p, UChar r1, UChar r2)
 
 
 static UChar *
+s390_emit_CEDTR(UChar *p, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, FPR, FPR), "cedtr", r1, r2);
+
+   return emit_RRE(p, 0xb3f40000, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CEXTR(UChar *p, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, FPR, FPR), "cextr", r1, r2);
+
+   return emit_RRE(p, 0xb3fc0000, r1, r2);
+}
+
+
+static UChar *
 s390_emit_DDTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
@@ -5292,7 +5312,8 @@ s390_insn_dfp_binop(UChar size, s390_dfp_binop_t tag, HReg dst, HReg op2,
 
 
 s390_insn *
-s390_insn_dfp_compare(UChar size, HReg dst, HReg op1, HReg op2)
+s390_insn_dfp_compare(UChar size, s390_dfp_cmp_t tag, HReg dst,
+                      HReg op1, HReg op2)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -5300,6 +5321,7 @@ s390_insn_dfp_compare(UChar size, HReg dst, HReg op1, HReg op2)
 
    insn->tag  = S390_INSN_DFP_COMPARE;
    insn->size = size;
+   insn->variant.dfp_compare.tag = tag;
    insn->variant.dfp_compare.dst = dst;
    insn->variant.dfp_compare.op1_hi = op1;
    insn->variant.dfp_compare.op2_hi = op2;
@@ -5362,8 +5384,8 @@ s390_insn_dfp128_binop(UChar size, s390_dfp_binop_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_dfp128_compare(UChar size, HReg dst, HReg op1_hi, HReg op1_lo,
-                         HReg op2_hi, HReg op2_lo)
+s390_insn_dfp128_compare(UChar size, s390_dfp_cmp_t tag, HReg dst, HReg op1_hi,
+                         HReg op1_lo, HReg op2_hi, HReg op2_lo)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
@@ -5373,6 +5395,7 @@ s390_insn_dfp128_compare(UChar size, HReg dst, HReg op1_hi, HReg op1_lo,
 
    insn->tag  = S390_INSN_DFP_COMPARE;
    insn->size = size;
+   insn->variant.dfp_compare.tag = tag;
    insn->variant.dfp_compare.dst = dst;
    insn->variant.dfp_compare.op1_hi = op1_hi;
    insn->variant.dfp_compare.op1_lo = op1_lo;
@@ -6025,7 +6048,12 @@ s390_insn_as_string(const s390_insn *insn)
    }
 
    case S390_INSN_DFP_COMPARE:
-      s390_sprintf(buf, "%M %R,%R,%R", "v-dcmp", insn->variant.dfp_compare.dst,
+      switch (insn->variant.dfp_compare.tag) {
+      case S390_DFP_COMPARE:     op = "v-dcmp"; break;
+      case S390_DFP_COMPARE_EXP: op = "v-dcmpexp"; break;
+      default: goto fail;
+      }
+      s390_sprintf(buf, "%M %R,%R,%R", op, insn->variant.dfp_compare.dst,
                    insn->variant.dfp_compare.op1_hi,
                    insn->variant.dfp_compare.op2_hi);
       break;
@@ -8215,8 +8243,22 @@ s390_insn_dfp_compare_emit(UChar *buf, const s390_insn *insn)
    UInt r2  = hregNumber(insn->variant.dfp_compare.op2_hi);
 
    switch (insn->size) {
-   case 8:  buf = s390_emit_CDTR(buf, r1, r2); break;
-   case 16: buf = s390_emit_CXTR(buf, r1, r2); break;
+   case 8:
+      switch(insn->variant.dfp_compare.tag) {
+      case S390_DFP_COMPARE:     buf = s390_emit_CDTR(buf, r1, r2); break;
+      case S390_DFP_COMPARE_EXP: buf = s390_emit_CEDTR(buf, r1, r2); break;
+      default: goto fail;
+      }
+      break;
+
+   case 16:
+      switch(insn->variant.dfp_compare.tag) {
+      case S390_DFP_COMPARE:     buf = s390_emit_CXTR(buf, r1, r2); break;
+      case S390_DFP_COMPARE_EXP: buf = s390_emit_CEXTR(buf, r1, r2); break;
+      default: goto fail;
+      }
+      break;
+
    default:  goto fail;
    }
 

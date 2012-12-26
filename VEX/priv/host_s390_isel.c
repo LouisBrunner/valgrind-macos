@@ -1218,21 +1218,29 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return convert_s390_to_vex_bfpcc(env, cc_s390);
       }
 
-      case Iop_CmpD64: {
+      case Iop_CmpD64:
+      case Iop_CmpExpD64: {
          HReg cc_s390, h2;
+         s390_dfp_cmp_t cmp;
 
          h1 = s390_isel_dfp_expr(env, arg1);
          h2 = s390_isel_dfp_expr(env, arg2);
          cc_s390 = newVRegI(env);
-         size = 8;
 
-         addInstr(env, s390_insn_dfp_compare(size, cc_s390, h1, h2));
+         switch(expr->Iex.Binop.op) {
+         case Iop_CmpD64:    cmp = S390_DFP_COMPARE; break;
+         case Iop_CmpExpD64: cmp = S390_DFP_COMPARE_EXP; break;
+         default: goto irreducible;
+         }
+         addInstr(env, s390_insn_dfp_compare(8, cmp, cc_s390, h1, h2));
 
          return convert_s390_to_vex_dfpcc(env, cc_s390);
       }
 
-      case Iop_CmpD128: {
+      case Iop_CmpD128:
+      case Iop_CmpExpD128: {
          HReg op1_hi, op1_lo, op2_hi, op2_lo, f12, f13, f14, f15, cc_s390;
+         s390_dfp_cmp_t cmp;
 
          s390_isel_dfp128_expr(&op1_hi, &op1_lo, env, arg1); /* 1st operand */
          s390_isel_dfp128_expr(&op2_hi, &op2_lo, env, arg2); /* 2nd operand */
@@ -1252,8 +1260,13 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f13, op2_hi));
          addInstr(env, s390_insn_move(8, f15, op2_lo));
 
-         res = newVRegI(env);
-         addInstr(env, s390_insn_dfp128_compare(16, cc_s390, f12, f14, f13, f15));
+         switch(expr->Iex.Binop.op) {
+         case Iop_CmpD128:    cmp = S390_DFP_COMPARE; break;
+         case Iop_CmpExpD128: cmp = S390_DFP_COMPARE_EXP; break;
+         default: goto irreducible;
+         }
+         addInstr(env, s390_insn_dfp128_compare(16, cmp, cc_s390, f12, f14,
+                                                f13, f15));
 
          return convert_s390_to_vex_dfpcc(env, cc_s390);
       }

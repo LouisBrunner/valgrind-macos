@@ -9283,6 +9283,44 @@ s390_irgen_CXTR(UChar r1, UChar r2)
 }
 
 static const HChar *
+s390_irgen_CEDTR(UChar r1, UChar r2)
+{
+   IRTemp op1 = newTemp(Ity_D64);
+   IRTemp op2 = newTemp(Ity_D64);
+   IRTemp cc_vex  = newTemp(Ity_I32);
+   IRTemp cc_s390 = newTemp(Ity_I32);
+
+   vassert(s390_host_has_dfp);
+   assign(op1, get_dpr_dw0(r1));
+   assign(op2, get_dpr_dw0(r2));
+   assign(cc_vex, binop(Iop_CmpExpD64, mkexpr(op1), mkexpr(op2)));
+
+   assign(cc_s390, convert_vex_dfpcc_to_s390(cc_vex));
+   s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
+
+   return "cedtr";
+}
+
+static const HChar *
+s390_irgen_CEXTR(UChar r1, UChar r2)
+{
+   IRTemp op1 = newTemp(Ity_D128);
+   IRTemp op2 = newTemp(Ity_D128);
+   IRTemp cc_vex  = newTemp(Ity_I32);
+   IRTemp cc_s390 = newTemp(Ity_I32);
+
+   vassert(s390_host_has_dfp);
+   assign(op1, get_dpr_pair(r1));
+   assign(op2, get_dpr_pair(r2));
+   assign(cc_vex, binop(Iop_CmpExpD128, mkexpr(op1), mkexpr(op2)));
+
+   assign(cc_s390, convert_vex_dfpcc_to_s390(cc_vex));
+   s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
+
+   return "cextr";
+}
+
+static const HChar *
 s390_irgen_DDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 {
    IRTemp op1 = newTemp(Ity_D64);
@@ -13534,14 +13572,16 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb3f1: /* CDGTR */ goto unimplemented;
    case 0xb3f2: /* CDUTR */ goto unimplemented;
    case 0xb3f3: /* CDSTR */ goto unimplemented;
-   case 0xb3f4: /* CEDTR */ goto unimplemented;
+   case 0xb3f4: s390_format_RRE_FF(s390_irgen_CEDTR, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb3f5: /* QADTR */ goto unimplemented;
    case 0xb3f6: /* IEDTR */ goto unimplemented;
    case 0xb3f7: /* RRDTR */ goto unimplemented;
    case 0xb3f9: /* CXGTR */ goto unimplemented;
    case 0xb3fa: /* CXUTR */ goto unimplemented;
    case 0xb3fb: /* CXSTR */ goto unimplemented;
-   case 0xb3fc: /* CEXTR */ goto unimplemented;
+   case 0xb3fc: s390_format_RRE_FF(s390_irgen_CEXTR, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb3fd: /* QAXTR */ goto unimplemented;
    case 0xb3fe: /* IEXTR */ goto unimplemented;
    case 0xb3ff: /* RRXTR */ goto unimplemented;

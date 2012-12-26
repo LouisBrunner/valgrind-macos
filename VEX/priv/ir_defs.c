@@ -985,11 +985,13 @@ void ppIROp ( IROp op )
       case Iop_ExtractExpD128: vex_printf("Iop_ExtractExpD128"); return;
       case Iop_InsertExpD64:   vex_printf("Iop_InsertExpD64");   return;
       case Iop_InsertExpD128:  vex_printf("Iop_InsertExpD128");  return;
-      case Iop_CmpD64:         vex_printf("CmpD64");    return;
-      case Iop_CmpD128:        vex_printf("CmpD128");   return;
-      case Iop_D64HLtoD128: vex_printf("D64HLtoD128");  return;
-      case Iop_D128HItoD64: vex_printf("D128HItoD64");  return;
-      case Iop_D128LOtoD64: vex_printf("D128LOtoD64");  return;
+      case Iop_CmpD64:         vex_printf("CmpD64");     return;
+      case Iop_CmpD128:        vex_printf("CmpD128");    return;
+      case Iop_CmpExpD64:      vex_printf("CmpExpD64");  return;
+      case Iop_CmpExpD128:     vex_printf("CmpExpD128"); return;
+      case Iop_D64HLtoD128: vex_printf("D64HLtoD128");   return;
+      case Iop_D128HItoD64: vex_printf("D128HItoD64");   return;
+      case Iop_D128LOtoD64: vex_printf("D128LOtoD64");   return;
       case Iop_SignificanceRoundD64: vex_printf("Iop_SignificanceRoundD64");
          return;
       case Iop_SignificanceRoundD128: vex_printf("Iop_SignificanceRoundD128");
@@ -2800,9 +2802,11 @@ void typeOfPrimop ( IROp op,
          BINARY(ity_RMode, Ity_D64, Ity_D64);
 
       case Iop_CmpD64:
+      case Iop_CmpExpD64:
          BINARY(Ity_D64,Ity_D64, Ity_I32);
 
       case Iop_CmpD128:
+      case Iop_CmpExpD128:
          BINARY(Ity_D128,Ity_D128, Ity_I32);
 
       case Iop_QuantizeD64:

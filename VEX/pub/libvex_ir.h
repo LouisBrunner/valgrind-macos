@@ -1073,6 +1073,13 @@ typedef
       /* D128 x D128 -> IRCmpD128Result(I32) */
       Iop_CmpD128,
 
+      /* COMPARE BIASED EXPONENET INSTRUCTIONS
+       * D64 x D64 -> IRCmpD64Result(I32) */
+      Iop_CmpExpD64,
+
+      /* D128 x D128 -> IRCmpD128Result(I32) */
+      Iop_CmpExpD128,
+
       /* QUANTIZE AND ROUND INSTRUCTIONS
        * The source operand is converted and rounded to the form with the 
        * immediate exponent specified by the rounding and exponent parameter.

@@ -3370,6 +3370,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpF128:
       case Iop_CmpD64:
       case Iop_CmpD128:
+      case Iop_CmpExpD64:
+      case Iop_CmpExpD128:
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       /* non-FP after here */

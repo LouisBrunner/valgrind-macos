@@ -884,9 +884,11 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
          BINARY(ity_RMode, Ity_D64, Ity_D64);
 
       case Iop_CmpD64:
+      case Iop_CmpExpD64:
          BINARY(Ity_D64,Ity_D64, Ity_I32);
 
       case Iop_CmpD128:
+      case Iop_CmpExpD128:
          BINARY(Ity_D128,Ity_D128, Ity_I32);
 
       case Iop_QuantizeD64:

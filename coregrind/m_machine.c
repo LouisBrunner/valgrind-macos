@@ -431,7 +431,6 @@ ULong VG_(machine_ppc64_has_VMX) = 0;
 Int VG_(machine_arm_archlevel) = 4;
 #endif
 
-/* fixs390: anything for s390x here ? */
 
 /* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */

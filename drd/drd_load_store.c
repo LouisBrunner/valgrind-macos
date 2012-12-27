@@ -312,7 +312,7 @@ static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
    if (addr_expr->tag == Iex_RdTmp)
    {
       int i;
-      for (i = 0; i < bb->stmts_size; i++)
+      for (i = 0; i < bb->stmts_used; i++)
       {
          if (bb->stmts[i]
              && bb->stmts[i]->tag == Ist_WrTmp

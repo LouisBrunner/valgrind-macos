@@ -42,7 +42,6 @@
 static const HChar *
 mnemonic(const HChar *mnm)
 {
-   vex_printf("MNEMONIC = |%s|\n", mnm);
    vassert(vex_strlen(mnm) <= S390_MAX_MNEMONIC_LEN);
 
    static HChar buf[S390_MAX_MNEMONIC_LEN + 1];

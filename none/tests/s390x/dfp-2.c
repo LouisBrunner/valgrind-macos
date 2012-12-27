@@ -6,7 +6,6 @@
    - load and test 64/128 bit
 */
 
-#if 0 //fixs390: enable it when Iop_ExtractSigD64/D128 is available
 void esdtr(_Decimal64 in)
 {
   long out;
@@ -26,7 +25,6 @@ void esxtr(_Decimal128 in)
   DFP_VAL_PRINT(in, _Decimal128);
   printf(" -> %ld\n", out);
 }
-#endif
 
 void ltdtr(_Decimal64 in)
 {
@@ -60,14 +58,13 @@ int main() {
   _Decimal64 d64 = 50.0005DD;
   _Decimal128 d128 = 50.0005DL;
 
-#if 0 //fixs390: enable it when Iop_ExtractSigD64/D128 is available
   esdtr(d64);
   esdtr(-d64);
   esdtr(0.DD);
   esxtr(d128);
   esxtr(-d128);
   esxtr(0.DL);
-#endif
+
   ltdtr(d64);
   ltdtr(-d64);
   ltdtr(0.0DD);

@@ -1448,6 +1448,32 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
+      if (unop == Iop_ExtractSigD64) {
+         dst = newVRegI(env);
+         h1  = s390_isel_dfp_expr(env, arg);     /* Process the operand */
+         addInstr(env,
+                  s390_insn_dfp_unop(size, S390_DFP_EXTRACT_SIG_D64, dst, h1));
+         return dst;
+      }
+
+      if (unop == Iop_ExtractSigD128) {
+         HReg op_hi, op_lo, f13, f15;
+         dst = newVRegI(env);
+         s390_isel_dfp128_expr(&op_hi, &op_lo, env, arg); /* Process operand */
+
+         /* We use non-virtual registers r13 and r15 as pair */
+         f13 = make_fpr(13);
+         f15 = make_fpr(15);
+
+         /* operand --> (f13, f15) */
+         addInstr(env, s390_insn_move(8, f13, op_hi));
+         addInstr(env, s390_insn_move(8, f15, op_lo));
+
+         addInstr(env, s390_insn_dfp128_unop(size, S390_DFP_EXTRACT_SIG_D128,
+                                             dst, f13, f15));
+         return dst;
+      }
+
       /* Expressions whose argument is 1-bit wide */
       if (typeOfIRExpr(env->type_env, arg) == Ity_I1) {
          s390_cc_t cond = s390_isel_cc(env, arg);

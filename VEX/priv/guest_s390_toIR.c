@@ -707,6 +707,24 @@ s390_cc_thunk_put1d128(UInt opc, IRTemp d1)
 }
 
 
+/* Write a 128-bit decimal floating point value and an integer into the flags
+   thunk. The integer value is zero-extended first. */
+static void
+s390_cc_thunk_put1d128Z(UInt opc, IRTemp d1, IRTemp nd)
+{
+   IRExpr *op, *hi, *lo, *lox, *ndep;
+
+   op   = mkU64(opc);
+   hi   = unop(Iop_D128HItoD64, mkexpr(d1));
+   lo   = unop(Iop_ReinterpD64asI64, unop(Iop_D128LOtoD64, mkexpr(d1)));
+   ndep = s390_cc_widen(nd, False);
+
+   lox = binop(Iop_Xor64, lo, ndep);  /* convey dependency */
+
+   s390_cc_thunk_fill(op, hi, lox, ndep);
+}
+
+
 static void
 s390_cc_set(UInt val)
 {
@@ -9365,6 +9383,22 @@ s390_irgen_DXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 }
 
 static const HChar *
+s390_irgen_ESDTR(UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   put_gpr_dw0(r1, unop(Iop_ExtractSigD64, get_dpr_dw0(r2)));
+   return "esdtr";
+}
+
+static const HChar *
+s390_irgen_ESXTR(UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   put_gpr_dw0(r1, unop(Iop_ExtractSigD128, get_dpr_pair(r2)));
+   return "esxtr";
+}
+
+static const HChar *
 s390_irgen_LDETR(UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_D32);
@@ -9537,6 +9571,84 @@ s390_irgen_SXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    s390_cc_thunk_put1d128(S390_CC_OP_DFP_RESULT_128, result);
 
    return (m4 == 0) ? "sxtr" : "sxtra";
+}
+
+static const HChar *
+s390_irgen_TDCET(UChar r1, IRTemp op2addr)
+{
+   IRTemp value = newTemp(Ity_D32);
+
+   vassert(s390_host_has_dfp);
+   assign(value, get_dpr_w0(r1));
+
+   s390_cc_thunk_putFZ(S390_CC_OP_DFP_TDC_32, value, op2addr);
+
+   return "tdcet";
+}
+
+static const HChar *
+s390_irgen_TDCDT(UChar r1, IRTemp op2addr)
+{
+   IRTemp value = newTemp(Ity_D64);
+
+   vassert(s390_host_has_dfp);
+   assign(value, get_dpr_dw0(r1));
+
+   s390_cc_thunk_putFZ(S390_CC_OP_DFP_TDC_64, value, op2addr);
+
+   return "tdcdt";
+}
+
+static const HChar *
+s390_irgen_TDCXT(UChar r1, IRTemp op2addr)
+{
+   IRTemp value = newTemp(Ity_D128);
+
+   vassert(s390_host_has_dfp);
+   assign(value, get_dpr_pair(r1));
+
+   s390_cc_thunk_put1d128Z(S390_CC_OP_DFP_TDC_128, value, op2addr);
+
+   return "tdcxt";
+}
+
+static const HChar *
+s390_irgen_TDGET(UChar r1, IRTemp op2addr)
+{
+   IRTemp value = newTemp(Ity_D32);
+
+   vassert(s390_host_has_dfp);
+   assign(value, get_dpr_w0(r1));
+
+   s390_cc_thunk_putFZ(S390_CC_OP_DFP_TDG_32, value, op2addr);
+
+   return "tdget";
+}
+
+static const HChar *
+s390_irgen_TDGDT(UChar r1, IRTemp op2addr)
+{
+   IRTemp value = newTemp(Ity_D64);
+
+   vassert(s390_host_has_dfp);
+   assign(value, get_dpr_dw0(r1));
+
+   s390_cc_thunk_putFZ(S390_CC_OP_DFP_TDG_64, value, op2addr);
+
+   return "tdgdt";
+}
+
+static const HChar *
+s390_irgen_TDGXT(UChar r1, IRTemp op2addr)
+{
+   IRTemp value = newTemp(Ity_D128);
+
+   vassert(s390_host_has_dfp);
+   assign(value, get_dpr_pair(r1));
+
+   s390_cc_thunk_put1d128Z(S390_CC_OP_DFP_TDG_128, value, op2addr);
+
+   return "tdgxt";
 }
 
 static const HChar *
@@ -13560,7 +13672,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb3e4: s390_format_RRE_FF(s390_irgen_CDTR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb3e5: /* EEDTR */ goto unimplemented;
-   case 0xb3e7: /* ESDTR */ goto unimplemented;
+   case 0xb3e7: s390_format_RRE_RF(s390_irgen_ESDTR, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb3e8: /* KXTR */ goto unimplemented;
    case 0xb3e9: /* CGXTR */ goto unimplemented;
    case 0xb3ea: /* CUXTR */ goto unimplemented;
@@ -13568,7 +13681,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb3ec: s390_format_RRE_FF(s390_irgen_CXTR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb3ed: /* EEXTR */ goto unimplemented;
-   case 0xb3ef: /* ESXTR */ goto unimplemented;
+   case 0xb3ef: s390_format_RRE_RF(s390_irgen_ESXTR, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb3f1: /* CDGTR */ goto unimplemented;
    case 0xb3f2: /* CDUTR */ goto unimplemented;
    case 0xb3f3: /* CDSTR */ goto unimplemented;
@@ -14993,12 +15107,24 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    case 0xed0000000041ULL: /* SRDT */ goto unimplemented;
    case 0xed0000000048ULL: /* SLXT */ goto unimplemented;
    case 0xed0000000049ULL: /* SRXT */ goto unimplemented;
-   case 0xed0000000050ULL: /* TDCET */ goto unimplemented;
-   case 0xed0000000051ULL: /* TDGET */ goto unimplemented;
-   case 0xed0000000054ULL: /* TDCDT */ goto unimplemented;
-   case 0xed0000000055ULL: /* TDGDT */ goto unimplemented;
-   case 0xed0000000058ULL: /* TDCXT */ goto unimplemented;
-   case 0xed0000000059ULL: /* TDGXT */ goto unimplemented;
+   case 0xed0000000050ULL: s390_format_RXE_FRRD(s390_irgen_TDCET, ovl.fmt.RXE.r1,
+                                                ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
+                                                ovl.fmt.RXE.d2);  goto ok;
+   case 0xed0000000051ULL: s390_format_RXE_FRRD(s390_irgen_TDGET, ovl.fmt.RXE.r1,
+                                                ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
+                                                ovl.fmt.RXE.d2);  goto ok;
+   case 0xed0000000054ULL: s390_format_RXE_FRRD(s390_irgen_TDCDT, ovl.fmt.RXE.r1,
+                                                ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
+                                                ovl.fmt.RXE.d2);  goto ok;
+   case 0xed0000000055ULL: s390_format_RXE_FRRD(s390_irgen_TDGDT, ovl.fmt.RXE.r1,
+                                                ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
+                                                ovl.fmt.RXE.d2);  goto ok;
+   case 0xed0000000058ULL: s390_format_RXE_FRRD(s390_irgen_TDCXT, ovl.fmt.RXE.r1,
+                                                ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
+                                                ovl.fmt.RXE.d2);  goto ok;
+   case 0xed0000000059ULL: s390_format_RXE_FRRD(s390_irgen_TDGXT, ovl.fmt.RXE.r1,
+                                                ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
+                                                ovl.fmt.RXE.d2);  goto ok;
    case 0xed0000000064ULL: s390_format_RXY_FRRD(s390_irgen_LEY, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,

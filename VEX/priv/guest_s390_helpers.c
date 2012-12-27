@@ -1177,6 +1177,33 @@ decode_bfp_rounding_mode(UInt irrm)
    psw >> 28;   /* cc */                                                \
 })
 
+#define S390_CC_FOR_DFP_TD(opcode,cc_dep1,cc_dep2)                      \
+({                                                                      \
+   __asm__ volatile (                                                   \
+        opcode ",%[value],0(%[class])\n\t"                              \
+        "ipm %[psw]\n\t"           : [psw] "=d"(psw)                    \
+                                   : [value] "f"(cc_dep1),              \
+                                     [class] "a"(cc_dep2)               \
+                                   : "cc");                             \
+   psw >> 28;   /* cc */                                                \
+})
+
+#define S390_CC_FOR_DFP128_TD(opcode,cc_dep1,cc_dep2,cc_ndep)           \
+({                                                                      \
+   /* Recover the original DEP2 value. See comment near                 \
+      s390_cc_thunk_put1d128Z for rationale. */                         \
+   cc_dep2 = cc_dep2 ^ cc_ndep;                                         \
+   __asm__ volatile (                                                   \
+        "ldr  4,%[high]\n\t"                                            \
+        "ldr  6,%[low]\n\t"                                             \
+        opcode ",4,0(%[class])\n\t"                                     \
+        "ipm  %[psw]\n\t"          : [psw] "=d"(psw)                    \
+                                   : [high] "f"(cc_dep1), [low] "f"(cc_dep2), \
+                                     [class] "a"(cc_ndep)               \
+                                   : "cc", "f4", "f6");                 \
+   psw >> 28;   /* cc */                                                \
+})
+
 
 /* Return the value of the condition code from the supplied thunk parameters.
    This is not the value of the PSW. It is the value of the 2 CC bits within
@@ -1398,6 +1425,26 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
 
    case S390_CC_OP_DFP_RESULT_128:
       return S390_CC_FOR_DFP128_RESULT(cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_TDC_32:  /* TDCET */
+      return S390_CC_FOR_DFP_TD(".insn rxe, 0xed0000000050", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_TDC_64:  /* TDCDT */
+      return S390_CC_FOR_DFP_TD(".insn rxe, 0xed0000000054", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_TDC_128: /* TDCXT */
+      return S390_CC_FOR_DFP128_TD(".insn rxe, 0xed0000000058", cc_dep1,
+                                   cc_dep2, cc_ndep);
+
+   case S390_CC_OP_DFP_TDG_32:  /* TDGET */
+      return S390_CC_FOR_DFP_TD(".insn rxe, 0xed0000000051", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_TDG_64:  /* TDGDT */
+      return S390_CC_FOR_DFP_TD(".insn rxe, 0xed0000000055", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_TDG_128: /* TDGXT */
+      return S390_CC_FOR_DFP128_TD(".insn rxe, 0xed0000000059", cc_dep1,
+                                   cc_dep2, cc_ndep);
 
    default:
       break;

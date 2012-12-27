@@ -141,6 +141,7 @@ typedef enum {
    S390_INSN_BFP_COMPARE,
    S390_INSN_BFP_CONVERT,
    S390_INSN_DFP_BINOP, /* Decimal floating point */
+   S390_INSN_DFP_UNOP,
    S390_INSN_DFP_COMPARE,
    S390_INSN_DFP_CONVERT,
    S390_INSN_MFENCE,
@@ -253,6 +254,12 @@ typedef enum {
    S390_DFP_MUL,
    S390_DFP_DIV
 } s390_dfp_binop_t;
+
+/* The kind of unary DFP operations */
+typedef enum {
+   S390_DFP_EXTRACT_SIG_D64,
+   S390_DFP_EXTRACT_SIG_D128,
+} s390_dfp_unop_t;
 
 /* The kind of DFP compare operations */
 typedef enum {
@@ -444,6 +451,13 @@ typedef struct {
          s390_dfp_binop *details;
       } dfp_binop;
       struct {
+         s390_dfp_unop_t tag;
+         HReg         dst_hi; /* 128-bit result high part; 64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op_hi;  /* 128-bit operand high part; 64-bit opnd */
+         HReg         op_lo;  /* 128-bit operand low part */
+      } dfp_unop;
+      struct {
          s390_dfp_conv_t  tag;
          s390_dfp_round_t rounding_mode;
          HReg         dst_hi; /* 128-bit result high part; 64-bit result */
@@ -568,6 +582,7 @@ s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t,
 s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
                                HReg op2, HReg op3,
                                s390_dfp_round_t rounding_mode);
+s390_insn *s390_insn_dfp_unop(UChar size, s390_dfp_unop_t, HReg dst, HReg op);
 s390_insn *s390_insn_dfp_compare(UChar size, s390_dfp_cmp_t, HReg dst,
                                  HReg op1, HReg op2);
 s390_insn *s390_insn_dfp_convert(UChar size, s390_dfp_conv_t tag, HReg dst,
@@ -576,6 +591,8 @@ s390_insn *s390_insn_dfp128_binop(UChar size, s390_dfp_binop_t, HReg dst_hi,
                                   HReg dst_lo, HReg op2_hi, HReg op2_lo,
                                   HReg op3_hi, HReg op3_lo,
                                   s390_dfp_round_t rounding_mode);
+s390_insn *s390_insn_dfp128_unop(UChar size, s390_dfp_unop_t, HReg dst,
+                                 HReg op_hi, HReg op_lo);
 s390_insn *s390_insn_dfp128_compare(UChar size, s390_dfp_cmp_t, HReg dst,
                                     HReg op1_hi, HReg op1_lo, HReg op2_hi,
                                     HReg op2_lo);

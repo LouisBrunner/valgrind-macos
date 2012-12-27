@@ -1189,6 +1189,9 @@ static void log_1I1Dr(InstrInfo* ii, Addr data_addr, Word data_size)
 }
 
 
+/* Note that addEvent_D_guarded assumes that log_0I1Dr and log_0I1Dw
+   have exactly the same prototype.  If you change them, you must
+   change addEvent_D_guarded too. */
 VG_REGPARM(3)
 static void log_0I1Dr(InstrInfo* ii, Addr data_addr, Word data_size)
 {
@@ -1248,6 +1251,7 @@ static void log_1I1Dw(InstrInfo* ii, Addr data_addr, Word data_size)
     }
 }
 
+/* See comment on log_0I1Dr. */
 VG_REGPARM(3)
 static void log_0I1Dw(InstrInfo* ii, Addr data_addr, Word data_size)
 {

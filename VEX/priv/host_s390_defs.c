@@ -741,8 +741,8 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
          addHRegUse(u, HRmRead, insn->variant.dfp_convert.op_lo); /* operand */
       break;
 
-   case S390_INSN_MZERO:
-      s390_amode_get_reg_usage(u, insn->variant.mzero.dst);
+   case S390_INSN_MIMM:
+      s390_amode_get_reg_usage(u, insn->variant.mimm.dst);
       break;
 
    case S390_INSN_MADD:
@@ -1026,8 +1026,8 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
             lookupHRegRemap(m, insn->variant.dfp_convert.op_lo);
       break;
 
-   case S390_INSN_MZERO:
-      s390_amode_map_regs(m, insn->variant.mzero.dst);
+   case S390_INSN_MIMM:
+      s390_amode_map_regs(m, insn->variant.mimm.dst);
       break;
 
    case S390_INSN_MADD:
@@ -1306,6 +1306,32 @@ emit_S(UChar *p, UInt op, UChar b2, UShort d2)
    the_insn |= ((ULong)d2) << 0;
 
    return emit_4bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_SI(UChar *p, UInt op, UChar i2, UChar b1, UShort d1)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)i2) << 16;
+   the_insn |= ((ULong)b1) << 12;
+   the_insn |= ((ULong)d1) << 0;
+
+   return emit_4bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_SIL(UChar *p, ULong op, UChar b1, UShort d1, UShort i2)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)b1) << 28;
+   the_insn |= ((ULong)d1) << 16;
+   the_insn |= ((ULong)i2) << 0;
+
+   return emit_6bytes(p, the_insn);
 }
 
 
@@ -2731,6 +2757,46 @@ s390_emit_MSGFI(UChar *p, UChar r1, UInt i2)
       s390_disasm(ENC3(MNM, GPR, INT), "msgfi", r1, i2);
 
    return emit_RIL(p, 0xc20000000000ULL, r1, i2);
+}
+
+
+static UChar *
+s390_emit_MVI(UChar *p, UChar i2, UChar b1, UShort d1)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvi", b1, 0, d1, i2);
+
+   return emit_SI(p, 0x92000000, i2, b1, d1);
+}
+
+
+static UChar *
+s390_emit_MVHHI(UChar *p, UChar b1, UShort d1, UShort i2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvhhi", b1, 0, d1, i2);
+
+   return emit_SIL(p, 0xe54400000000ULL, b1, d1, i2);
+}
+
+
+static UChar *
+s390_emit_MVHI(UChar *p, UChar b1, UShort d1, UShort i2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvhi", b1, 0, d1, i2);
+
+   return emit_SIL(p, 0xe54c00000000ULL, b1, d1, i2);
+}
+
+
+static UChar *
+s390_emit_MVGHI(UChar *p, UChar b1, UShort d1, UShort i2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvghi", b1, 0, d1, i2);
+
+   return emit_SIL(p, 0xe54800000000ULL, b1, d1, i2);
 }
 
 
@@ -5472,17 +5538,18 @@ s390_insn_mfence(void)
 
 
 s390_insn *
-s390_insn_mzero(UChar size, s390_amode *dst)
+s390_insn_mimm(UChar size, s390_amode *dst, ULong value)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
-   /* This insn will be mapped to an XC so we can only allow base register
+   /* This insn will be mapped to insns that require base register
       plus 12-bit displacement */
    vassert(dst->tag == S390_AMODE_B12);
 
-   insn->tag  = S390_INSN_MZERO;
+   insn->tag  = S390_INSN_MIMM;
    insn->size = size;
-   insn->variant.mzero.dst = dst;
+   insn->variant.mimm.dst = dst;
+   insn->variant.mimm.value = value;
 
    return insn;
 }
@@ -6074,8 +6141,9 @@ s390_insn_as_string(const s390_insn *insn)
       s390_sprintf(buf, "%M", "v-mfence");
       return buf;   /* avoid printing "size = ..." which is meaningless */
 
-   case S390_INSN_MZERO:
-      s390_sprintf(buf, "%M %A", "v-mzero", insn->variant.mzero.dst);
+   case S390_INSN_MIMM:
+      s390_sprintf(buf, "%M %A,%I", "v-mimm", insn->variant.mimm.dst,
+                   insn->variant.mimm.value);
       break;
 
    case S390_INSN_MADD:
@@ -8305,11 +8373,42 @@ s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
-s390_insn_mzero_emit(UChar *buf, const s390_insn *insn)
+s390_insn_mimm_emit(UChar *buf, const s390_insn *insn)
 {
-   s390_amode *am = insn->variant.mzero.dst;
+   s390_amode *am = insn->variant.mimm.dst;
+   ULong value = insn->variant.mimm.value;
 
-   return s390_emit_XC(buf, insn->size - 1, am->b, am->d, am->b, am->d);
+   if (value == 0) {
+      return s390_emit_XC(buf, insn->size - 1, am->b, am->d, am->b, am->d);
+   }
+
+   if (insn->size == 1) {
+      return s390_emit_MVI(buf, value & 0xFF, am->b, am->d);
+   }
+
+   if (s390_host_has_gie && ulong_fits_signed_16bit(value)) {
+      value &= 0xFFFF;
+      switch (insn->size) {
+      case 2: return s390_emit_MVHHI(buf, am->b, am->d, value);
+      case 4: return s390_emit_MVHI(buf,  am->b, am->d, value);
+      case 8: return s390_emit_MVGHI(buf, am->b, am->d, value);
+      }
+   } else {
+      // Load value to R0, then store.
+      switch (insn->size) {
+      case 2:
+         buf = s390_emit_LHI(buf, R0, value & 0xFFFF);
+         return s390_emit_STH(buf, R0, 0, am->b, am->d);
+      case 4:
+         buf = s390_emit_load_32imm(buf, R0, value);
+         return s390_emit_ST(buf, R0, 0, am->b, am->d);
+      case 8:
+         buf = s390_emit_load_64imm(buf, R0, value);
+         return s390_emit_STG(buf, R0, 0, am->b, DISP20(am->d));
+      }
+   }
+   
+   vpanic("s390_insn_mimm_emit");
 }
 
 
@@ -8912,8 +9011,8 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
       end = s390_insn_mfence_emit(buf, insn);
       break;
 
-   case S390_INSN_MZERO:
-      end = s390_insn_mzero_emit(buf, insn);
+   case S390_INSN_MIMM:
+      end = s390_insn_mimm_emit(buf, insn);
       break;
 
    case S390_INSN_MADD:

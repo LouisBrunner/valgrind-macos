@@ -426,6 +426,24 @@ s390_expr_is_const_zero(IRExpr *expr)
 }
 
 
+/* Return the value of CON as a sign-exteded ULong value */
+static ULong
+get_const_value_as_ulong(const IRConst *con)
+{
+   Long value;
+
+   switch (con->tag) {
+   case Ico_U1:  value = con->Ico.U1;  return (ULong) ((value << 63) >> 63);
+   case Ico_U8:  value = con->Ico.U8;  return (ULong) ((value << 56) >> 56);
+   case Ico_U16: value = con->Ico.U16; return (ULong) ((value << 48) >> 48);
+   case Ico_U32: value = con->Ico.U32; return (ULong) ((value << 32) >> 32);
+   case Ico_U64: return con->Ico.U64;
+   default:
+      vpanic("get_const_value_as_ulong");
+   }
+}
+
+
 /* Call a helper (clean or dirty)
    Arguments must satisfy the following conditions:
 
@@ -2924,8 +2942,10 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       case Ity_I64:
          /* fixs390: We could check for INSN_MADD here. */
          if (am->tag == S390_AMODE_B12 &&
-             s390_expr_is_const_zero(stmt->Ist.Store.data)) {
-            addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
+             stmt->Ist.Store.data->tag == Iex_Const) {
+            ULong value =
+               get_const_value_as_ulong(stmt->Ist.Store.data->Iex.Const.con);
+            addInstr(env, s390_insn_mimm(sizeofIRType(tyd), am, value));
             return;
          }
          src = s390_isel_int_expr(env, stmt->Ist.Store.data);
@@ -3000,13 +3020,6 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          return;
       }
 
-      /* guest register = 0 */
-      if (new_value == 0) {
-         am = s390_amode_for_guest_state(offset);
-         addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
-         return;
-      }
-
       if (old_value_is_valid == False) goto not_special;
 
       /* If the new value is in the neighbourhood of the old value
@@ -3020,22 +3033,17 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          return;
       }
 
-      /* If the high word is the same it is sufficient to load the low word.
-         Use R0 as a scratch reg. */
+      /* If the high word is the same it is sufficient to load the low word. */
       if ((old_value >> 32) == (new_value >> 32)) {
-         HReg r0  = make_gpr(0);
-
          am = s390_amode_for_guest_state(offset + 4);
-         addInstr(env, s390_insn_load_immediate(4, r0,
-                                                new_value & 0xFFFFFFFF));
-         addInstr(env, s390_insn_store(4, am, r0));
+         addInstr(env, s390_insn_mimm(4, am, new_value & 0xFFFFFFFF));
          return;
       }
 
       /* No special case applies... fall through */
 
    not_special:
-      am = s390_amode_for_guest_state(stmt->Ist.Put.offset);
+      am = s390_amode_for_guest_state(offset);
 
       switch (tyd) {
       case Ity_I8:
@@ -3043,8 +3051,10 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       case Ity_I32:
       case Ity_I64:
          if (am->tag == S390_AMODE_B12 &&
-             s390_expr_is_const_zero(stmt->Ist.Put.data)) {
-            addInstr(env, s390_insn_mzero(sizeofIRType(tyd), am));
+             stmt->Ist.Put.data->tag == Iex_Const) {
+            ULong value =
+               get_const_value_as_ulong(stmt->Ist.Put.data->Iex.Const.con);
+            addInstr(env, s390_insn_mimm(sizeofIRType(tyd), am, value));
             return;
          }
          src = s390_isel_int_expr(env, stmt->Ist.Put.data);

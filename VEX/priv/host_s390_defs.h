@@ -144,7 +144,7 @@ typedef enum {
    S390_INSN_DFP_COMPARE,
    S390_INSN_DFP_CONVERT,
    S390_INSN_MFENCE,
-   S390_INSN_MZERO,   /* Assign zero to a memory location */
+   S390_INSN_MIMM,    /* Assign an immediate constant to a memory location */
    S390_INSN_MADD,    /* Add a value to a memory location */
    S390_INSN_SET_FPC_BFPRM, /* Set the bfp rounding mode in the FPC */
    S390_INSN_SET_FPC_DFPRM, /* Set the dfp rounding mode in the FPC */
@@ -463,7 +463,8 @@ typedef struct {
       /* Miscellaneous */
       struct {
          s390_amode      *dst;
-      } mzero;
+         ULong            value;  /* sign extended */
+      } mimm;
       struct {
          s390_amode      *dst;
          UChar            delta;
@@ -584,7 +585,7 @@ s390_insn *s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
                                          s390_dfp_round_t);
 s390_insn *s390_insn_mfence(void);
-s390_insn *s390_insn_mzero(UChar size, s390_amode *dst);
+s390_insn *s390_insn_mimm(UChar size, s390_amode *dst, ULong value);
 s390_insn *s390_insn_madd(UChar size, s390_amode *dst, UChar delta,
                           ULong value);
 s390_insn *s390_insn_set_fpc_bfprm(UChar size, HReg mode);

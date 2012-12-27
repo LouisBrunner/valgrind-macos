@@ -983,6 +983,8 @@ void ppIROp ( IROp op )
       case Iop_QuantizeD128:   vex_printf("Iop_QuantizeD128");   return;
       case Iop_ExtractExpD64:  vex_printf("Iop_ExtractExpD64");  return;
       case Iop_ExtractExpD128: vex_printf("Iop_ExtractExpD128"); return;
+      case Iop_ExtractSigD64:  vex_printf("Iop_ExtractSigD64");  return;
+      case Iop_ExtractSigD128: vex_printf("Iop_ExtractSigD128"); return;
       case Iop_InsertExpD64:   vex_printf("Iop_InsertExpD64");   return;
       case Iop_InsertExpD128:  vex_printf("Iop_InsertExpD128");  return;
       case Iop_CmpD64:         vex_printf("CmpD64");     return;
@@ -2747,11 +2749,17 @@ void typeOfPrimop ( IROp op,
       case Iop_ExtractExpD64:
          UNARY(Ity_D64, Ity_D64);
 
+      case Iop_ExtractSigD64:
+         UNARY(Ity_D64, Ity_I64);
+
       case Iop_InsertExpD64:
          BINARY(Ity_D64,Ity_D64, Ity_D64);
 
       case Iop_ExtractExpD128:
          UNARY(Ity_D128, Ity_D64);
+
+     case Iop_ExtractSigD128:
+        UNARY(Ity_D128, Ity_I64);
 
       case Iop_InsertExpD128:
          BINARY(Ity_D64,Ity_D128, Ity_D128);

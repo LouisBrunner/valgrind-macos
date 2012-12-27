@@ -1114,6 +1114,15 @@ typedef
       /* D128 -> I64 */
       Iop_ExtractExpD128,
 
+      /* D64 -> I64
+       * The number of significand digits of the D64 operand is extracted.
+       * The number is stored as a 64-bit signed binary integer.
+       */
+      Iop_ExtractSigD64,
+
+      /* D128 -> I64 */
+      Iop_ExtractSigD128,
+
       /* I64 x I64  -> D64 
        *    The exponent is specified by the first I64 operand the signed
        *    significand is given by the second I64 value.  The result is a D64

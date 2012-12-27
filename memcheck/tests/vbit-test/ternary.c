@@ -62,4 +62,5 @@ test_ternary_op(const irop_t *op, test_data_t *data)
 	 tests_done++;
       }
    }
+   return tests_done;
 }

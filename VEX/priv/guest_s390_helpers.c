@@ -1141,8 +1141,8 @@ decode_bfp_rounding_mode(UInt irrm)
 
 #define S390_CC_FOR_BFP128_TDC(cc_dep1,cc_dep2,cc_ndep) \
 ({ \
-   /* Recover the original DEP2 value. See comment near s390_cc_thunk_put1f128Z \
-      for rationale. */ \
+   /* Recover the original DEP2 value. See comment near \
+      s390_cc_thunk_put1f128Z for rationale. */ \
    cc_dep2 = cc_dep2 ^ cc_ndep; \
    __asm__ volatile ( \
         "ldr  4,%[high]\n\t" \
@@ -1168,12 +1168,12 @@ decode_bfp_rounding_mode(UInt irrm)
 #define S390_CC_FOR_DFP128_RESULT(hi,lo) \
 ({ \
    __asm__ volatile ( \
-                     "ldr   4,%[high]\n\t"                 \
-                     "ldr   6,%[low]\n\t"                  \
-                     ".insn rre, 0xb3de0000,0,4\n\t"    /* LTXTR */     \
-                     "ipm %[psw]\n\t"           : [psw] "=d"(psw)       \
-                     : [high] "f"(hi), [low] "f"(lo)                    \
-                     : "cc", "f0", "f2", "f4", "f6");                   \
+        "ldr   4,%[high]\n\t"                                           \
+        "ldr   6,%[low]\n\t"                                            \
+        ".insn rre, 0xb3de0000,0,4\n\t"    /* LTXTR */                  \
+        "ipm %[psw]\n\t"           : [psw] "=d"(psw)                    \
+                                   : [high] "f"(hi), [low] "f"(lo)      \
+                                   : "cc", "f0", "f2", "f4", "f6");     \
    psw >> 28;   /* cc */                                                \
 })
 

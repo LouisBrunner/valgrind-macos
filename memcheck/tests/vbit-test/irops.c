@@ -509,6 +509,8 @@ static irop_t irops[] = {
   { DEFOP(Iop_SignificanceRoundD128, UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_ExtractExpD64,         UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_ExtractExpD128,        UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ExtractSigD64,         UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_ExtractSigD128,        UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_InsertExpD64,          UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_InsertExpD128,         UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_D64HLtoD128,           UNDEF_CONCAT), .s390x = 1, .ppc64 = 1, .ppc32 = 1 },

@@ -3716,6 +3716,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_D32toD64:
       case Iop_ExtractExpD64:    /* D64  -> I64 */
       case Iop_ExtractExpD128:   /* D128 -> I64 */
+      case Iop_ExtractSigD64:    /* D64  -> I64 */
+      case Iop_ExtractSigD128:   /* D128 -> I64 */
       case Iop_DPBtoBCD:
       case Iop_BCDtoDPB:
          return mkPCastTo(mce, Ity_I64, vatom);

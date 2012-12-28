@@ -864,6 +864,16 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
    vexSetAllocModeTEMP_and_clear();
 
+   if (vex_traceflags) {
+      /* Print the expansion ratio for this SB. */
+      j = 0; /* total guest bytes */
+      for (i = 0; i < vta->guest_extents->n_used; i++) {
+         j += vta->guest_extents->len[i];
+      }
+      if (1) vex_printf("VexExpansionRatio %d %d   %d :10\n\n",
+                        j, out_used, (10 * out_used) / (j == 0 ? 1 : j));
+   }
+
    vex_traceflags = 0;
    res.status = VexTransOK;
    return res;

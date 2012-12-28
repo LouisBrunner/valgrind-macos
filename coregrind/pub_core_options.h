@@ -131,8 +131,20 @@ extern const HChar* VG_(clo_extra_debuginfo_path);
 
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
-/* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
-extern UChar VG_(clo_profile_flags);
+
+/* DEBUG: do SB profiling? default: False (== NO).  NOTE: does not
+   have an associated command line flag.  Is set to True whenever
+   --profile-flags= is specified. */
+extern Bool  VG_(clo_profyle_sbs);
+/* DEBUG: if doing SB profiling, provides bits for which JIT stages
+   are shown.  Same meaning as for clo_trace_flags.  default: zero (==
+   show block counts only) */
+extern UChar VG_(clo_profyle_flags);
+/* DEBUG: if doing SB profiling, dump blocks and zero counters after
+   this-many back edges (event checks).  default: zero (== show
+   profiling results only at the end of the run. */
+extern ULong VG_(clo_profyle_interval);
+
 /* DEBUG: if tracing codegen, be quiet until after this bb */
 extern Int   VG_(clo_trace_notbelow);
 /* DEBUG: if tracing codegen, be quiet after this bb  */

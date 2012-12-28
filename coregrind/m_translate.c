@@ -1531,8 +1531,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.preamble_function = preamble_fn;
    vta.traceflags        = verbosity;
    vta.sigill_diag       = VG_(clo_sigill_diag);
-   vta.addProfInc        = VG_(clo_profile_flags) > 0
-                           && kind != T_NoRedir;
+   vta.addProfInc        = VG_(clo_profyle_sbs) && kind != T_NoRedir;
 
    /* Set up the dispatch continuation-point info.  If this is a
       no-redir translation then it cannot be chained, and the chain-me

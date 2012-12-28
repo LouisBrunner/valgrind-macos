@@ -49,6 +49,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_sbprofile.h"
 #include "pub_core_syscall.h"       // VG_(strerror)
 #include "pub_core_mach.h"
 #include "pub_core_machine.h"
@@ -212,6 +213,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
+"    --profile-interval=<number> show profile every <number> event checks\n"
+"                                [0, meaning only at the end of the run]\n"
 "    --trace-notbelow=<number> only show BBs above <number> [999999999]\n"
 "    --trace-notabove=<number> only show BBs below <number> [0]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
@@ -251,7 +254,9 @@ static void usage_NORETURN ( Bool debug_help )
 "       0000 0100   show selecting insns\n"
 "       0000 0010   show after reg-alloc\n"
 "       0000 0001   show final assembly\n"
-"      (Nb: you need --trace-notbelow and/or --trace-notabove with --trace-flags for full details)\n"
+"       0000 0000   show summary profile only\n"
+"      (Nb: you need --trace-notbelow and/or --trace-notabove "
+"           with --trace-flags for full details)\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
@@ -725,7 +730,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       /* "stuvwxyz" --> stuvwxyz (binary) */
       else if VG_STR_CLO(arg, "--trace-flags", tmp_str) {
          Int j;
-   
          if (8 != VG_(strlen)(tmp_str)) {
             VG_(fmsg_bad_option)(arg,
                "--trace-flags argument must have 8 digits\n");
@@ -740,27 +744,30 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          }
       }
 
+      else if VG_INT_CLO (arg, "--trace-notbelow", VG_(clo_trace_notbelow)) {}
+
+      else if VG_INT_CLO (arg, "--trace-notabove", VG_(clo_trace_notabove)) {}
+
       /* "stuvwxyz" --> stuvwxyz (binary) */
       else if VG_STR_CLO(arg, "--profile-flags", tmp_str) {
          Int j;
-   
          if (8 != VG_(strlen)(tmp_str)) {
             VG_(fmsg_bad_option)(arg, 
                "--profile-flags argument must have 8 digits\n");
          }
          for (j = 0; j < 8; j++) {
             if      ('0' == tmp_str[j]) { /* do nothing */ }
-            else if ('1' == tmp_str[j]) VG_(clo_profile_flags) |= (1 << (7-j));
+            else if ('1' == tmp_str[j]) VG_(clo_profyle_flags) |= (1 << (7-j));
             else {
                VG_(fmsg_bad_option)(arg,
                   "--profile-flags argument can only contain 0s and 1s\n");
             }
          }
+         VG_(clo_profyle_sbs) = True;
       }
 
-      else if VG_INT_CLO (arg, "--trace-notbelow", VG_(clo_trace_notbelow)) {}
-
-      else if VG_INT_CLO (arg, "--trace-notabove", VG_(clo_trace_notabove)) {}
+      else if VG_INT_CLO (arg, "--profile-interval",
+                          VG_(clo_profyle_interval)) {}
 
       else if VG_XACT_CLO(arg, "--gen-suppressions=no",
                                VG_(clo_gen_suppressions), 0) {}
@@ -1421,82 +1428,6 @@ static void setup_file_descriptors(void)
 
    if (VG_(cl_exec_fd) != -1)
       VG_(cl_exec_fd) = VG_(safe_fd)( VG_(cl_exec_fd) );
-}
-
-
-/*====================================================================*/
-/*=== BB profiling                                                 ===*/
-/*====================================================================*/
-
-static 
-void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
-{
-   ULong score_cumul,   score_here;
-   HChar buf_cumul[10], buf_here[10];
-   HChar name[64];
-   Int   r;
-
-   VG_(printf)("\n");
-   VG_(printf)("-----------------------------------------------------------\n");
-   VG_(printf)("--- BEGIN BB Profile (summary of scores)                ---\n");
-   VG_(printf)("-----------------------------------------------------------\n");
-   VG_(printf)("\n");
-
-   VG_(printf)("Total score = %lld\n\n", score_total);
-
-   score_cumul = 0;
-   for (r = 0; r < n_tops; r++) {
-      if (tops[r].addr == 0)
-         continue;
-      name[0] = 0;
-      VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
-      name[63] = 0;
-      score_here = tops[r].score;
-      score_cumul += score_here;
-      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
-      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
-                  r,
-                  score_cumul, buf_cumul,
-                  score_here,  buf_here, tops[r].addr, name );
-   }
-
-   VG_(printf)("\n");
-   VG_(printf)("-----------------------------------------------------------\n");
-   VG_(printf)("--- BB Profile (BB details)                             ---\n");
-   VG_(printf)("-----------------------------------------------------------\n");
-   VG_(printf)("\n");
-
-   score_cumul = 0;
-   for (r = 0; r < n_tops; r++) {
-      if (tops[r].addr == 0)
-         continue;
-      name[0] = 0;
-      VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
-      name[63] = 0;
-      score_here = tops[r].score;
-      score_cumul += score_here;
-      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
-      VG_(printf)("\n");
-      VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-= begin BB rank %d "
-                  "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
-      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
-                  r,
-                  score_cumul, buf_cumul,
-                  score_here,  buf_here, tops[r].addr, name );
-      VG_(printf)("\n");
-      VG_(discard_translations)(tops[r].addr, 1, "bb profile");
-      VG_(translate)(0, tops[r].addr, True, VG_(clo_profile_flags), 0, True);
-      VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-=  end BB rank %d  "
-                  "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
-   }
-
-   VG_(printf)("\n");
-   VG_(printf)("-----------------------------------------------------------\n");
-   VG_(printf)("--- END BB Profile                                      ---\n");
-   VG_(printf)("-----------------------------------------------------------\n");
-   VG_(printf)("\n");
 }
 
 
@@ -2544,11 +2475,11 @@ void shutdown_actions_NORETURN( ThreadId tid,
       VG_(print_arena_cc_analysis)();
    }
 
-   if (VG_(clo_profile_flags) > 0) {
-      #define N_MAX 200
-      BBProfEntry tops[N_MAX];
-      ULong score_total = VG_(get_BB_profile) (tops, N_MAX);
-      show_BB_profile(tops, N_MAX, score_total);
+   /* If profiling has been requested, but with zero interval, it
+      means "profile at the end of the run only".  In which case we
+      need to dump the profile now. */
+   if (VG_(clo_profyle_sbs) && VG_(clo_profyle_interval) == 0) {
+      VG_(get_and_show_SB_profile)(0/*denoting end-of-run*/);
    }
 
    /* Print Vex storage stats */
@@ -2558,8 +2489,9 @@ void shutdown_actions_NORETURN( ThreadId tid,
    /* Flush any output cached by previous calls to VG_(message). */
    VG_(message_flush)();
 
-   /* terminate gdbserver if ever it was started. We terminate it here so that it get
-      the output above if output was redirected to gdb */
+   /* terminate gdbserver if ever it was started. We terminate it here
+      so that it get the output above if output was redirected to
+      gdb */
    VG_(gdbserver_exit) (tid, tids_schedretcode);
 
    /* Ok, finally exit in the os-specific way, according to the scheduler's

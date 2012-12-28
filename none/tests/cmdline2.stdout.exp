@@ -101,6 +101,8 @@ usage: valgrind [options] prog-and-args
     --sanity-level=<number>   level of sanity checking to do [1]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
+    --profile-interval=<number> show profile every <number> event checks
+                                [0, meaning only at the end of the run]
     --trace-notbelow=<number> only show BBs above <number> [999999999]
     --trace-notabove=<number> only show BBs below <number> [0]
     --trace-syscalls=no|yes   show all system calls? [no]
@@ -140,7 +142,8 @@ usage: valgrind [options] prog-and-args
        0000 0100   show selecting insns
        0000 0010   show after reg-alloc
        0000 0001   show final assembly
-      (Nb: you need --trace-notbelow and/or --trace-notabove with --trace-flags for full details)
+       0000 0000   show summary profile only
+      (Nb: you need --trace-notbelow and/or --trace-notabove            with --trace-flags for full details)
 
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated

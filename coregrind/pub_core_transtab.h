@@ -96,14 +96,14 @@ extern
 Bool VG_(search_unredir_transtab) ( /*OUT*/AddrH* result,
                                     Addr64        guest_addr );
 
-// BB profiling stuff
+// SB profiling stuff
 
-typedef struct _BBProfEntry {
+typedef struct _SBProfEntry {
    Addr64 addr;
    ULong  score;
-} BBProfEntry;
+} SBProfEntry;
 
-extern ULong VG_(get_BB_profile) ( BBProfEntry tops[], UInt n_tops );
+extern ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops );
 
 #endif   // __PUB_CORE_TRANSTAB_H
 

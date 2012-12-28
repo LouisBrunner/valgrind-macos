@@ -169,6 +169,7 @@ noinst_HEADERS = \
 	pub_core_oset.h		\
 	pub_core_redir.h	\
 	pub_core_replacemalloc.h\
+	pub_core_sbprofile.h	\
 	pub_core_scheduler.h	\
 	pub_core_seqmatch.h	\
 	pub_core_sigframe.h	\
@@ -263,6 +264,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_options.c \
 	m_oset.c \
 	m_redir.c \
+	m_sbprofile.c \
 	m_seqmatch.c \
 	m_signals.c \
 	m_sparsewa.c \

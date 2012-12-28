@@ -81,7 +81,9 @@ Int    VG_(clo_n_fullpath_after) = 0;
 const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 const HChar* VG_(clo_extra_debuginfo_path) = NULL;
 UChar  VG_(clo_trace_flags)    = 0; // 00000000b
-UChar  VG_(clo_profile_flags)  = 0; // 00000000b
+Bool   VG_(clo_profyle_sbs)    = False;
+UChar  VG_(clo_profyle_flags)  = 0; // 00000000b
+ULong  VG_(clo_profyle_interval) = 0;
 Int    VG_(clo_trace_notbelow) = -1;  // unspecified
 Int    VG_(clo_trace_notabove) = -1;  // unspecified
 Bool   VG_(clo_trace_syscalls) = False;

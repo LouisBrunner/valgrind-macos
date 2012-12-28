@@ -81,6 +81,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_replacemalloc.h"
+#include "pub_core_sbprofile.h"
 #include "pub_core_signals.h"
 #include "pub_core_stacks.h"
 #include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
@@ -177,18 +178,19 @@ void print_sched_event ( ThreadId tid, const HChar* what )
    VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s\n", tid, what );
 }
 
-/* For showing SB counts, if the user asks to see them. */
-#define SHOW_SBCOUNT_EVERY (20ULL * 1000 * 1000)
-static ULong bbs_done_lastcheck = 0;
-
+/* For showing SB profiles, if the user asks to see them. */
 static
-void maybe_show_sb_counts ( void )
+void maybe_show_sb_profile ( void )
 {
-   Long delta = bbs_done - bbs_done_lastcheck;
+   /* DO NOT MAKE NON-STATIC */
+   static ULong bbs_done_lastcheck = 0;
+   /* */
+   vg_assert(VG_(clo_profyle_interval) > 0);
+   Long delta = (Long)(bbs_done - bbs_done_lastcheck);
    vg_assert(delta >= 0);
-   if (UNLIKELY(delta >= SHOW_SBCOUNT_EVERY)) {
-      VG_(umsg)("%'lld superblocks executed\n", bbs_done);
+   if ((ULong)delta >= VG_(clo_profyle_interval)) {
       bbs_done_lastcheck = bbs_done;
+      VG_(get_and_show_SB_profile)(bbs_done);
    }
 }
 
@@ -1533,8 +1535,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       } /* switch (trc) */
 
-      if (0)
-         maybe_show_sb_counts();
+      if (UNLIKELY(VG_(clo_profyle_sbs)) && VG_(clo_profyle_interval) > 0)
+         maybe_show_sb_profile();
    }
 
    if (VG_(clo_trace_sched))

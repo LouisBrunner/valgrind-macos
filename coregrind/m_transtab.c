@@ -2249,7 +2249,7 @@ static ULong score ( TTEntry* tte )
    return ((ULong)tte->weight) * ((ULong)tte->count);
 }
 
-ULong VG_(get_BB_profile) ( BBProfEntry tops[], UInt n_tops )
+ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
 {
    Int   sno, i, r, s;
    ULong score_total;
@@ -2296,6 +2296,19 @@ ULong VG_(get_BB_profile) ( BBProfEntry tops[], UInt n_tops )
             tops[r].addr  = sectors[sno].tt[i].entry;
             tops[r].score = score( &sectors[sno].tt[i] );
          }
+      }
+   }
+
+   /* Now zero out all the counter fields, so that we can make
+      multiple calls here and just get the values since the last call,
+      each time, rather than values accumulated for the whole run. */
+   for (sno = 0; sno < N_SECTORS; sno++) {
+      if (sectors[sno].tc == NULL)
+         continue;
+      for (i = 0; i < N_TTES_PER_SECTOR; i++) {
+         if (sectors[sno].tt[i].status != InUse)
+            continue;
+         sectors[sno].tt[i].count = 0;
       }
    }
 

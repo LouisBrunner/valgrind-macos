@@ -5068,6 +5068,30 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
    }
 }
 
+inline
+static Bool dirty_helper_stores ( const IRDirty *d )
+{
+   return d->mFx == Ifx_Write || d->mFx == Ifx_Modify;
+}
+
+inline
+static Bool dirty_helper_puts ( const IRDirty *d )
+{
+   Int i;
+
+   /* Passing the guest state pointer opens the door to modifying the
+      guest state under the covers. It's not allowed, but let's be
+      extra conservative and assume the worst. */
+   if (d->needsBBP) return True;
+
+   /* Check the side effects on the guest state */
+   for (i = 0; i < d->nFxState; ++i) {
+      if (d->fxState[i].fx != Ifx_Read) return True;
+   }
+
+   return False;
+}
+
 /* notstatic */ Addr64 ado_treebuild_BB ( IRSB* bb )
 {
    Int      i, j, k, m;
@@ -5207,7 +5231,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       stmtPuts
          = toBool( st->tag == Ist_Put
                    || st->tag == Ist_PutI 
-                   || st->tag == Ist_Dirty );
+                   || (st->tag == Ist_Dirty
+                       && dirty_helper_puts(st->Ist.Dirty.details)));
 
       /* be True if this stmt writes memory or might do (==> we don't
          want to reorder other loads or stores relative to it).  Also,
@@ -5216,7 +5241,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          memory transactions relative to them. */
       stmtStores
          = toBool( st->tag == Ist_Store
-                   || st->tag == Ist_Dirty
+                   || (st->tag == Ist_Dirty
+                       && dirty_helper_stores(st->Ist.Dirty.details))
                    || st->tag == Ist_LLSC
                    || st->tag == Ist_CAS );
 

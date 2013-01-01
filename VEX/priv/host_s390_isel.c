@@ -2443,11 +2443,49 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
+
       switch (expr->Iex.Binop.op) {
       case Iop_D64HLtoD128:
          *dst_hi = s390_isel_dfp_expr(env, expr->Iex.Binop.arg1);
          *dst_lo = s390_isel_dfp_expr(env, expr->Iex.Binop.arg2);
          return;
+
+      case Iop_ShlD128:
+      case Iop_ShrD128: {
+         HReg op1_hi, op1_lo, op2, f9, f11, f13, f15;
+         s390_dfp_intop_t intop;
+         IRExpr *left   = expr->Iex.Binop.arg1;
+         IRExpr *right  = expr->Iex.Binop.arg2;
+
+         switch (expr->Iex.Binop.op) {
+         case Iop_ShlD128: intop = S390_DFP_SHIFT_LEFT;  break;
+         case Iop_ShrD128: intop = S390_DFP_SHIFT_RIGHT; break;
+         default: goto irreducible;
+         }
+
+         /* We use non-virtual registers as pairs (f9, f11) and (f13, f15)) */
+         f9  = make_fpr(9); /* 128 bit dfp operand */
+         f11 = make_fpr(11);
+
+         f13 = make_fpr(13); /* 128 bit dfp destination */
+         f15 = make_fpr(15);
+
+         s390_isel_dfp128_expr(&op1_hi, &op1_lo, env, left);  /* dfp operand */
+         addInstr(env, s390_insn_move(8, f9,  op1_hi));
+         addInstr(env, s390_insn_move(8, f11, op1_lo));
+
+         op2 = s390_isel_int_expr(env, right);  /* int operand */
+
+         addInstr(env,
+                  s390_insn_dfp128_intop(16, intop, f13, f15, op2, f9, f11));
+
+         /* Move result to virtual destination register */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f13));
+         addInstr(env, s390_insn_move(8, *dst_lo, f15));
+         return;
+      }
 
       default:
          goto irreducible;
@@ -2587,8 +2625,6 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
                                                 rounding_mode));
             return dst;
          }
-      default:
-         goto irreducible;
 
       case Iop_D128toD64: {
          HReg op_hi, op_lo, f13, f15;
@@ -2620,6 +2656,30 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
+      case Iop_ShlD64:
+      case Iop_ShrD64: {
+         HReg op2;
+         HReg op3;
+         s390_dfp_intop_t intop;
+         IRExpr *op1   = expr->Iex.Binop.arg1;
+         IRExpr *shift = expr->Iex.Binop.arg2;
+
+         switch (expr->Iex.Binop.op) {
+         case Iop_ShlD64: intop = S390_DFP_SHIFT_LEFT;  break;
+         case Iop_ShrD64: intop = S390_DFP_SHIFT_RIGHT; break;
+         default: goto irreducible;
+         }
+
+         op2 = s390_isel_int_expr(env, shift);
+         op3 = s390_isel_dfp_expr(env, op1);
+         dst = newVRegF(env);
+
+         addInstr(env, s390_insn_dfp_intop(size, intop, dst, op2, op3));
+         return dst;
+      }
+
+      default:
+         goto irreducible;
       }
    }
 

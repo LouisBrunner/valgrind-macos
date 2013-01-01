@@ -9574,6 +9574,62 @@ s390_irgen_SXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
 }
 
 static const HChar *
+s390_irgen_SLDT(UChar r3, IRTemp op2addr, UChar r1)
+{
+   IRTemp op = newTemp(Ity_D64);
+
+   vassert(s390_host_has_dfp);
+
+   assign(op, get_dpr_dw0(r3));
+   put_dpr_dw0(r1, binop(Iop_ShlD64, mkexpr(op), unop(Iop_64to8,
+               binop(Iop_And64, mkexpr(op2addr), mkU64(63)))));
+
+   return "sldt";
+}
+
+static const HChar *
+s390_irgen_SLXT(UChar r3, IRTemp op2addr, UChar r1)
+{
+   IRTemp op = newTemp(Ity_D128);
+
+   vassert(s390_host_has_dfp);
+
+   assign(op, get_dpr_pair(r3));
+   put_dpr_pair(r1, binop(Iop_ShlD128, mkexpr(op), unop(Iop_64to8,
+                binop(Iop_And64, mkexpr(op2addr), mkU64(63)))));
+
+   return "slxt";
+}
+
+static const HChar *
+s390_irgen_SRDT(UChar r3, IRTemp op2addr, UChar r1)
+{
+   IRTemp op = newTemp(Ity_D64);
+
+   vassert(s390_host_has_dfp);
+
+   assign(op, get_dpr_dw0(r3));
+   put_dpr_dw0(r1, binop(Iop_ShrD64, mkexpr(op), unop(Iop_64to8,
+               binop(Iop_And64, mkexpr(op2addr), mkU64(63)))));
+
+   return "srdt";
+}
+
+static const HChar *
+s390_irgen_SRXT(UChar r3, IRTemp op2addr, UChar r1)
+{
+   IRTemp op = newTemp(Ity_D128);
+
+   vassert(s390_host_has_dfp);
+
+   assign(op, get_dpr_pair(r3));
+   put_dpr_pair(r1, binop(Iop_ShrD128, mkexpr(op), unop(Iop_64to8,
+                binop(Iop_And64, mkexpr(op2addr), mkU64(63)))));
+
+   return "srxt";
+}
+
+static const HChar *
 s390_irgen_TDCET(UChar r1, IRTemp op2addr)
 {
    IRTemp value = newTemp(Ity_D32);
@@ -15103,10 +15159,22 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    case 0xed000000003dULL: /* MYH */ goto unimplemented;
    case 0xed000000003eULL: /* MAD */ goto unimplemented;
    case 0xed000000003fULL: /* MSD */ goto unimplemented;
-   case 0xed0000000040ULL: /* SLDT */ goto unimplemented;
-   case 0xed0000000041ULL: /* SRDT */ goto unimplemented;
-   case 0xed0000000048ULL: /* SLXT */ goto unimplemented;
-   case 0xed0000000049ULL: /* SRXT */ goto unimplemented;
+   case 0xed0000000040ULL: s390_format_RXF_FRRDF(s390_irgen_SLDT,
+                                                 ovl.fmt.RXF.r3, ovl.fmt.RXF.x2,
+                                                 ovl.fmt.RXF.b2, ovl.fmt.RXF.d2,
+                                                 ovl.fmt.RXF.r1);  goto ok;
+   case 0xed0000000041ULL: s390_format_RXF_FRRDF(s390_irgen_SRDT,
+                                                 ovl.fmt.RXF.r3, ovl.fmt.RXF.x2,
+                                                 ovl.fmt.RXF.b2, ovl.fmt.RXF.d2,
+                                                 ovl.fmt.RXF.r1);  goto ok;
+   case 0xed0000000048ULL: s390_format_RXF_FRRDF(s390_irgen_SLXT,
+                                                 ovl.fmt.RXF.r3, ovl.fmt.RXF.x2,
+                                                 ovl.fmt.RXF.b2, ovl.fmt.RXF.d2,
+                                                 ovl.fmt.RXF.r1);  goto ok;
+   case 0xed0000000049ULL: s390_format_RXF_FRRDF(s390_irgen_SRXT,
+                                                 ovl.fmt.RXF.r3, ovl.fmt.RXF.x2,
+                                                 ovl.fmt.RXF.b2, ovl.fmt.RXF.d2,
+                                                 ovl.fmt.RXF.r1);  goto ok;
    case 0xed0000000050ULL: s390_format_RXE_FRRD(s390_irgen_TDCET, ovl.fmt.RXE.r1,
                                                 ovl.fmt.RXE.x2, ovl.fmt.RXE.b2,
                                                 ovl.fmt.RXE.d2);  goto ok;

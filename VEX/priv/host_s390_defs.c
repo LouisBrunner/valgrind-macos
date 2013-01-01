@@ -731,6 +731,16 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       }
       break;
 
+   case S390_INSN_DFP_INTOP:
+      addHRegUse(u, HRmWrite, insn->variant.dfp_intop.dst_hi);
+      addHRegUse(u, HRmRead,  insn->variant.dfp_intop.op2);
+      addHRegUse(u, HRmRead,  insn->variant.dfp_intop.op3_hi);
+      if (insn->size == 16) {
+         addHRegUse(u, HRmWrite, insn->variant.dfp_intop.dst_lo);
+         addHRegUse(u, HRmRead,  insn->variant.dfp_intop.op3_lo);
+      }
+      break;
+
    case S390_INSN_DFP_COMPARE:
       addHRegUse(u, HRmWrite, insn->variant.dfp_compare.dst);
       addHRegUse(u, HRmRead,  insn->variant.dfp_compare.op1_hi);  /* left */
@@ -1020,6 +1030,21 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       }
       break;
 
+   case S390_INSN_DFP_INTOP:
+      insn->variant.dfp_intop.dst_hi =
+         lookupHRegRemap(m, insn->variant.dfp_intop.dst_hi);
+      insn->variant.dfp_intop.op2    =
+         lookupHRegRemap(m, insn->variant.dfp_intop.op2);
+      insn->variant.dfp_intop.op3_hi =
+         lookupHRegRemap(m, insn->variant.dfp_intop.op3_hi);
+      if (insn->size == 16) {
+         insn->variant.dfp_intop.dst_lo =
+            lookupHRegRemap(m, insn->variant.dfp_intop.dst_lo);
+         insn->variant.dfp_intop.op3_lo =
+            lookupHRegRemap(m, insn->variant.dfp_intop.op3_lo);
+      }
+      break;
+
    case S390_INSN_DFP_COMPARE:
       insn->variant.dfp_compare.dst =
          lookupHRegRemap(m, insn->variant.dfp_compare.dst);
@@ -1301,6 +1326,21 @@ emit_RX(UChar *p, UInt op, UChar r1, UChar x2, UChar b2, UShort d2)
    the_insn |= ((ULong)d2) << 0;
 
    return emit_4bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_RXF(UChar *p, ULong op, UChar r3, UChar x2, UChar b2, UShort d2, UChar r1)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)r3) << 36;
+   the_insn |= ((ULong)x2) << 32;
+   the_insn |= ((ULong)b2) << 28;
+   the_insn |= ((ULong)d2) << 16;
+   the_insn |= ((ULong)r1) << 12;
+
+   return emit_6bytes(p, the_insn);
 }
 
 
@@ -4287,6 +4327,54 @@ s390_emit_SXTRA(UChar *p, UChar r3, UChar m4, UChar r1, UChar r2)
 
 
 static UChar *
+s390_emit_SLDT(UChar *p, UChar r3, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "sldt", r1, r3, 0, 0, r2);
+   }
+
+   return emit_RXF(p, 0xED0000000040, r3, 0, r2, 0, r1);
+}
+
+
+static UChar *
+s390_emit_SLXT(UChar *p, UChar r3, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "slxt", r1, r3, 0, 0, r2);
+   }
+
+   return emit_RXF(p, 0xED0000000048, r3, 0, r2, 0, r1);
+}
+
+
+static UChar *
+s390_emit_SRDT(UChar *p, UChar r3, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "srdt", r1, r3, 0, 0, r2);
+   }
+
+   return emit_RXF(p, 0xED0000000041, r3, 0, r2, 0, r1);
+}
+
+
+static UChar *
+s390_emit_SRXT(UChar *p, UChar r3, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "srxt", r1, r3, 0, 0, r2);
+   }
+
+   return emit_RXF(p, 0xED0000000049, r3, 0, r2, 0, r1);
+}
+
+
+static UChar *
 s390_emit_LOCGR(UChar *p, UChar m3, UChar r1, UChar r2)
 {
    vassert(s390_host_has_lsc);
@@ -5439,6 +5527,27 @@ s390_insn_dfp_unop(UChar size, s390_dfp_unop_t tag, HReg dst, HReg op)
 
 
 s390_insn *
+s390_insn_dfp_intop(UChar size, s390_dfp_intop_t tag, HReg dst, HReg op2,
+                    HReg op3)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   vassert(size == 8);
+
+   insn->tag  = S390_INSN_DFP_INTOP;
+   insn->size = size;
+   insn->variant.dfp_intop.tag = tag;
+   insn->variant.dfp_intop.dst_hi = dst;
+   insn->variant.dfp_intop.op2    = op2;
+   insn->variant.dfp_intop.op3_hi = op3;
+   insn->variant.dfp_intop.dst_lo = INVALID_HREG;
+   insn->variant.dfp_intop.op3_lo = INVALID_HREG;
+
+   return insn;
+}
+
+
+s390_insn *
 s390_insn_dfp_compare(UChar size, s390_dfp_cmp_t tag, HReg dst,
                       HReg op1, HReg op2)
 {
@@ -5527,6 +5636,29 @@ s390_insn_dfp128_unop(UChar size, s390_dfp_unop_t tag, HReg dst,
    insn->variant.dfp_unop.dst_lo = INVALID_HREG;
    insn->variant.dfp_unop.op_hi = op_hi;
    insn->variant.dfp_unop.op_lo = op_lo;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_dfp128_intop(UChar size, s390_dfp_intop_t tag, HReg dst_hi,
+                       HReg dst_lo, HReg op2, HReg op3_hi, HReg op3_lo)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   vassert(size == 16);
+   vassert(is_valid_fp128_regpair(dst_hi, dst_lo));
+   vassert(is_valid_fp128_regpair(op3_hi, op3_lo));
+
+   insn->tag  = S390_INSN_DFP_INTOP;
+   insn->size = size;
+   insn->variant.dfp_intop.tag = tag;
+   insn->variant.dfp_intop.dst_hi = dst_hi;
+   insn->variant.dfp_intop.dst_lo = dst_lo;
+   insn->variant.dfp_intop.op2    = op2;
+   insn->variant.dfp_intop.op3_hi = op3_hi;
+   insn->variant.dfp_intop.op3_lo = op3_lo;
 
    return insn;
 }
@@ -6205,6 +6337,17 @@ s390_insn_as_string(const s390_insn *insn)
       }
       s390_sprintf(buf, "%M %R,%R", op, insn->variant.dfp_unop.dst_hi,
                    insn->variant.dfp_unop.op_hi);
+      break;
+
+   case S390_INSN_DFP_INTOP:
+      switch (insn->variant.dfp_intop.tag) {
+      case S390_DFP_SHIFT_LEFT:  op = "v-dshl"; break;
+      case S390_DFP_SHIFT_RIGHT: op = "v-dshr"; break;
+      default: goto fail;
+      }
+      s390_sprintf(buf, "%M %R,%R,%R", op, insn->variant.dfp_intop.dst_hi,
+                   insn->variant.dfp_intop.op2,
+                   insn->variant.dfp_intop.op3_hi);
       break;
 
    case S390_INSN_DFP_COMPARE:
@@ -8413,6 +8556,38 @@ s390_insn_dfp_unop_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
+s390_insn_dfp_intop_emit(UChar *buf, const s390_insn *insn)
+{
+   UInt r1 = hregNumber(insn->variant.dfp_intop.dst_hi);
+   UInt r2 = hregNumber(insn->variant.dfp_intop.op2);
+   UInt r3 = hregNumber(insn->variant.dfp_intop.op3_hi);
+
+   switch (insn->size) {
+   case 8:
+      switch (insn->variant.dfp_intop.tag) {
+      case S390_DFP_SHIFT_LEFT:  return s390_emit_SLDT(buf, r3, r1, r2);
+      case S390_DFP_SHIFT_RIGHT: return s390_emit_SRDT(buf, r3, r1, r2);
+      default:  goto fail;
+      }
+      break;
+
+   case 16:
+      switch (insn->variant.dfp_intop.tag) {
+      case S390_DFP_SHIFT_LEFT:  return s390_emit_SLXT(buf, r3, r1, r2);
+      case S390_DFP_SHIFT_RIGHT: return s390_emit_SRXT(buf, r3, r1, r2);
+      default:  goto fail;
+      }
+      break;
+
+   default: goto fail;
+   }
+
+ fail:
+   vpanic("s390_insn_dfp_intop_emit");
+}
+
+
+static UChar *
 s390_insn_dfp_compare_emit(UChar *buf, const s390_insn *insn)
 {
    UInt dst = hregNumber(insn->variant.dfp_compare.dst);
@@ -9110,6 +9285,10 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_DFP_UNOP:
       end = s390_insn_dfp_unop_emit(buf, insn);
+      break;
+
+   case S390_INSN_DFP_INTOP:
+      end = s390_insn_dfp_intop_emit(buf, insn);
       break;
 
    case S390_INSN_DFP_COMPARE:

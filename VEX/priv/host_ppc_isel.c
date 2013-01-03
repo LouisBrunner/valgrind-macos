@@ -4109,7 +4109,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          PPCFpOp fpop = Pfp_DRDPQ;
          HReg fr_dst  = newVRegF(env);
 
-         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1 );
          iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg2);
          addInstr(env, PPCInstr_DfpD128toD64(fpop, fr_dst, r_srcHi, r_srcLo));
 
@@ -4203,7 +4203,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          /* dst will be used to pass in the left operand and get the result. */
          iselDfp128Expr( &r_dstHi, &r_dstLo, env, triop->arg2 );
          iselDfp128Expr( &r_srcRHi, &r_srcRLo, env, triop->arg3 );
-         set_FPU_rounding_mode( env, triop->arg1 );
+         set_FPU_DFP_rounding_mode( env, triop->arg1 );
          addInstr( env,
                    PPCInstr_Dfp128Binary( fpop, r_dstHi, r_dstLo,
                                           r_srcRHi, r_srcRLo ) );

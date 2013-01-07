@@ -1151,14 +1151,6 @@ static Bool isOnesU32 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U32 == 0xFFFFFFFF );
 }
 
-/* Is this literally IRExpr_Const(IRConst_U64(0)) ? */
-static Bool isZeroU64 ( IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const 
-                  && e->Iex.Const.con->tag == Ico_U64
-                  && e->Iex.Const.con->Ico.U64 == 0);
-}
-
 /* Is this an integer constant with value 0 ? */
 static Bool isZeroU ( IRExpr* e )
 {

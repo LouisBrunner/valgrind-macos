@@ -1161,8 +1161,6 @@ void VG_(apply_StackTrace)(
 
       i++;
    } while (i < n_ips && !main_done);
-
-   #undef MYBUF_LEN
 }
 
 

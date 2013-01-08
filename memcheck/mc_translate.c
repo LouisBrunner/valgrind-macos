@@ -4047,7 +4047,11 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
    setHelperAnns( mce, di );
    if (guard) {
       di->guard = guard;
-      di->dflt  = Idflt_Ones;
+      /* Ideally the didn't-happen return value here would be all-ones
+         (all-undefined), so it'd be obvious if it got used
+         inadvertantly.  We can get by with the IR-mandated default
+         value (0b01 repeating, 0x55 etc) as that'll still look pretty
+         undefined if it ever leaks out. */
    }
    stmt( 'V', mce, IRStmt_Dirty(di) );
 
@@ -6115,7 +6119,12 @@ static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB,
         );
    if (guard) {
       di->guard = guard;
-      di->dflt  = Idflt_Zeroes;
+      /* Ideally the didn't-happen return value here would be
+         all-zeroes (unknown-origin), so it'd be harmless if it got
+         used inadvertantly.  We slum it out with the IR-mandated
+         default value (0b01 repeating, 0x55 etc) as that'll probably
+         trump all legitimate otags via Max32, and it's pretty
+         obviously bogus. */
    }
    /* no need to mess with any annotations.  This call accesses
       neither guest state nor guest memory. */

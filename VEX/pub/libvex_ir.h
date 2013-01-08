@@ -1958,31 +1958,18 @@ typedef
 /* Pretty-print an IREffect */
 extern void ppIREffect ( IREffect );
 
-/* Default values for guarded dirty calls which return a result. */
-typedef
-   enum {
-      Idflt_None=0x1B80,  /* default unspecified */
-      Idflt_Zeroes,       /* all zeroes */
-      Idflt_Ones          /* all ones */
-   }
-   IRDefault;
-
-/* Pretty-print an IRDefault */
-extern void ppIRDefault ( IRDefault );
-
 typedef
    struct _IRDirty {
       /* What to call, and details of args/results.  .guard must be
          non-NULL.  If .tmp is not IRTemp_INVALID, then the call
          returns a result which is placed in .tmp.  If at runtime the
-         guard evaluates to false, .tmp has an all-zeroes or all-ones
-         bit pattern written to it, as specified by .dflt.  Hence
-         conditional calls that assign .tmp are allowed. */
+         guard evaluates to false, .tmp has an 0x555..555 bit pattern
+         written to it.  Hence conditional calls that assign .tmp are
+         allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
       IRExpr**  args;   /* arg list, ends in NULL */
       IRTemp    tmp;    /* to assign result to, or IRTemp_INVALID if none */
-      IRDefault dflt;   /* for result, if guarded and tmp != INVALID */
 
       /* Mem effects; we allow only one R/W/M region to be stated */
       IREffect  mFx;    /* indicates memory effects, if any */

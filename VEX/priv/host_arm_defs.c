@@ -1227,14 +1227,13 @@ ARMInstr* ARMInstr_CMov ( ARMCondCode cond, HReg dst, ARMRI84* src ) {
    return i;
 }
 ARMInstr* ARMInstr_Call ( ARMCondCode cond, HWord target, Int nArgRegs,
-                          RetLoc rloc, IRDefault dflt ) {
+                          RetLoc rloc ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                 = ARMin_Call;
    i->ARMin.Call.cond     = cond;
    i->ARMin.Call.target   = target;
    i->ARMin.Call.nArgRegs = nArgRegs;
    i->ARMin.Call.rloc     = rloc;
-   i->ARMin.Call.dflt     = dflt;
    vassert(rloc != RetLocINVALID);
    return i;
 }
@@ -1690,10 +1689,6 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf("0x%lx [nArgRegs=%d, ",
                     i->ARMin.Call.target, i->ARMin.Call.nArgRegs);
          ppRetLoc(i->ARMin.Call.rloc);
-         if (i->ARMin.Call.dflt != Idflt_None) {
-            vex_printf(", ");
-            ppIRDefault(i->ARMin.Call.dflt);
-         }
          vex_printf("]");
          return;
       case ARMin_Mul:
@@ -3393,15 +3388,9 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             // preElse:
             //   b after:
             // else:
-            //   {mov,mvn} r0, #0  // possibly
-            //   {mov,mvn} r1, #0  // possibly
+            //   mov r0, #0x55555555  // possibly
+            //   mov r1, r0           // possibly
             // after:
-
-            /* Since we're generating default-return code in the else:
-               clause, there had better be a sane default-value
-               specification. */
-            vassert(i->ARMin.Call.dflt == Idflt_Zeroes
-                    || i->ARMin.Call.dflt == Idflt_Ones);
 
             // before:
             UInt* pBefore = p;
@@ -3432,33 +3421,17 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
                = XX______(1 ^ i->ARMin.Call.cond, X1010) | (delta & 0xFFFFFF);
 
             /* Do the 'else' actions */
-            /* Useful:
-               e3a00000 mov r0, #0
-               e3a01000 mov r1, #0
-               e3e00000 mvn r0, #0
-               e3e01000 mvn r1, #0
-            */
             switch (i->ARMin.Call.rloc) {
-               case RetLocInt: {
-                  switch (i->ARMin.Call.dflt) {
-                     case Idflt_Ones:   *p++ = 0xE3E00000; break; // mvn r0, #0
-                     case Idflt_Zeroes: *p++ = 0xE3A00000; break; // mov r0, #0
-                     default: goto elsefail;
-                  }
+               case RetLocInt:
+                  p = imm32_to_iregNo_EXACTLY2(p, /*r*/0, 0x55555555);
                   break;
-               }
-               case RetLoc2Int: {
-                  if (i->ARMin.Call.dflt == Idflt_Ones) {
-                     // mvn r0, #0 ;  mvn r1, #0
-                     vassert(0); //ATC
-                     *p++ = 0xE3E00000; *p++ = 0xE3E01000; break;
-                  }
-                  goto elsefail;
-               }
-               case RetLocNone:
-               case RetLocINVALID:
-               default:
-               elsefail:
+               case RetLoc2Int:
+                  vassert(0); //ATC
+                  p = imm32_to_iregNo_EXACTLY2(p, /*r*/0, 0x55555555);
+                  /* mov r1, r0 */
+                  *p++ = 0xE1A01000;
+                  break;
+               case RetLocNone: case RetLocINVALID: default:
                   vassert(0);
             }
 
@@ -3470,6 +3443,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
 
          goto done;
       }
+
       case ARMin_Mul: {
          /* E0000392   mul     r0, r2, r3
             E0810392   umull   r0(LO), r1(HI), r2, r3

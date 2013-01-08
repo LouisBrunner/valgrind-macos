@@ -725,7 +725,6 @@ typedef
             HWord       target;
             Int         nArgRegs; /* # regs carrying args: 0 .. 4 */
             RetLoc      rloc;     /* where the return value will be */
-            IRDefault   dflt;     /* default return, if conditional */
          } Call;
          /* (PLAIN) 32 *  32 -> 32:  r0    = r2 * r3
             (ZX)    32 *u 32 -> 64:  r1:r0 = r2 *u r3
@@ -971,7 +970,7 @@ extern ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
                                       ARMCondCode cond, IRJumpKind jk );
 extern ARMInstr* ARMInstr_CMov     ( ARMCondCode, HReg dst, ARMRI84* src );
 extern ARMInstr* ARMInstr_Call     ( ARMCondCode, HWord, Int nArgRegs,
-                                     RetLoc rloc, IRDefault dflt );
+                                     RetLoc rloc );
 extern ARMInstr* ARMInstr_Mul      ( ARMMulOp op );
 extern ARMInstr* ARMInstr_LdrEX    ( Int szB );
 extern ARMInstr* ARMInstr_StrEX    ( Int szB );

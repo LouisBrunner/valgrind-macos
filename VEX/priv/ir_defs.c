@@ -1140,27 +1140,12 @@ void ppIREffect ( IREffect fx )
    }
 }
 
-void ppIRDefault ( IRDefault dflt )
-{
-   switch (dflt) {
-      case Idflt_None:   vex_printf("Dflt-None"); return;
-      case Idflt_Zeroes: vex_printf("Dflt-Zero"); return;
-      case Idflt_Ones:   vex_printf("Dflt-One");  return;
-      default: vpanic("ppIRDefault");
-   }
-}
-
 void ppIRDirty ( IRDirty* d )
 {
    Int i;
    if (d->tmp != IRTemp_INVALID) {
       ppIRTemp(d->tmp);
       vex_printf(" = ");
-   }
-   if (d->dflt != Idflt_None) {
-      vex_printf("(");
-      ppIRDefault(d->dflt);
-      vex_printf(") ");
    }
    vex_printf("DIRTY ");
    ppIRExpr(d->guard);
@@ -1753,7 +1738,6 @@ IRDirty* emptyIRDirty ( void ) {
    d->guard    = NULL;
    d->args     = NULL;
    d->tmp      = IRTemp_INVALID;
-   d->dflt     = Idflt_None;
    d->mFx      = Ifx_None;
    d->mAddr    = NULL;
    d->mSize    = 0;
@@ -2090,7 +2074,6 @@ IRDirty* deepCopyIRDirty ( IRDirty* d )
    d2->guard = deepCopyIRExpr(d->guard);
    d2->args  = deepCopyIRExprVec(d->args);
    d2->tmp   = d->tmp;
-   d2->dflt  = d->dflt;
    d2->mFx   = d->mFx;
    d2->mAddr = d->mAddr==NULL ? NULL : deepCopyIRExpr(d->mAddr);
    d2->mSize = d->mSize;
@@ -3890,21 +3873,6 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
                sanityCheckFail(bb,stmt,"IRStmt.Dirty: > 32 args");
             if (typeOfIRExpr(tyenv, d->args[i]) == Ity_I1)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_I1");
-         }
-         /* if the call returns a value and isn't obviously
-            unconditional, check there's a reasonable default-spec for
-            the return value. */
-         if (d->tmp != IRTemp_INVALID) {
-            IRExpr* guard = d->guard;
-            Bool obviouslyUncond = False;
-            if (guard->tag == Iex_Const
-                && guard->Iex.Const.con->tag == Ico_U1
-                && guard->Iex.Const.con->Ico.U1 == True) {
-               obviouslyUncond = True;
-            }
-            if (!obviouslyUncond
-                && d->dflt != Idflt_Ones && d->dflt != Idflt_Zeroes)
-               goto bad_dirty;
          }
          break;
          bad_dirty:

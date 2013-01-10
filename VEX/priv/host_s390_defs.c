@@ -8508,7 +8508,7 @@ s390_insn_dfp_binop_emit(UChar *buf, const s390_insn *insn)
    UInt r1 = hregNumber(dfp_binop->dst_hi);
    UInt r2 = hregNumber(dfp_binop->op2_hi);
    UInt r3 = hregNumber(dfp_binop->op3_hi);
-   UInt m4 = hregNumber(dfp_binop->rounding_mode);
+   s390_dfp_round_t m4 = dfp_binop->rounding_mode;
 
    switch (insn->size) {
    case 8:

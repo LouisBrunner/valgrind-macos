@@ -20,6 +20,11 @@ Release 3.9.0 (?? ?????? 201?)
   - Addition of GDB server monitor command 'v.info open_fds' that gives the
     list of open file descriptors and additional details.
 
+  - Addition of GDB server monitor command 'v.info execontext' that shows
+    information about the stack traces recorded by Valgrind.
+    This can be used to analyse one possible cause of Valgrind high
+    memory usage for some programs.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

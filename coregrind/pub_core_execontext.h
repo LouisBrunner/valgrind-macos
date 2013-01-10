@@ -44,7 +44,8 @@
 #define VG_DEEPEST_BACKTRACE 500
 
 // Print stats (informational only).
-extern void VG_(print_ExeContext_stats) ( void );
+// If with_stacktraces, outputs all the recorded stacktraces.
+extern void VG_(print_ExeContext_stats) ( Bool with_stacktraces );
 
 // Extract the StackTrace from an ExeContext.
 // (Minor hack: we use Addr* as the return type instead of StackTrace so

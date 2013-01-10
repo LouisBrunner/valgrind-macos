@@ -146,9 +146,26 @@ static void init_ExeContext_storage ( void )
 
 
 /* Print stats. */
-void VG_(print_ExeContext_stats) ( void )
+void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
 {
    init_ExeContext_storage();
+
+   if (with_stacktraces) {
+      Int i;
+      ExeContext* ec;
+      VG_(message)(Vg_DebugMsg, "   exectx: Printing contexts stacktraces\n");
+      for (i = 0; i < ec_htab_size; i++) {
+         for (ec = ec_htab[i]; ec; ec = ec->chain) {
+            VG_(message)(Vg_DebugMsg, "   exectx: stacktrace ecu %u\n",
+                         ec->ecu);
+            VG_(pp_StackTrace)( ec->ips, ec->n_ips );
+         }
+      }
+      VG_(message)(Vg_DebugMsg, 
+                   "   exectx: Printed %'llu contexts stacktraces\n",
+                   ec_totstored);
+   }
+
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %'lu lists, %'llu contexts (avg %'llu per list)\n",
       ec_htab_size, ec_totstored, ec_totstored / (ULong)ec_htab_size

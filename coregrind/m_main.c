@@ -81,7 +81,7 @@ static void print_all_stats ( void )
    VG_(print_translation_stats)();
    VG_(print_tt_tc_stats)();
    VG_(print_scheduler_stats)();
-   VG_(print_ExeContext_stats)();
+   VG_(print_ExeContext_stats)( False /* with_stacktraces */ );
    VG_(print_errormgr_stats)();
 
    // Memory stats

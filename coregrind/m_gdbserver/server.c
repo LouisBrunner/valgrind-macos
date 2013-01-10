@@ -27,6 +27,7 @@
 #include "pub_core_translate.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_initimg.h"
+#include "pub_core_execontext.h"
 #include "pub_core_syswrap.h"      // VG_(show_open_fds)
 
 unsigned long cont_thread;
@@ -177,6 +178,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
 "  v.info gdbserver_status : show gdbserver status\n"
 "  v.info memory [aspacemgr] : show valgrind heap memory stats\n"
 "     (with aspacemgr arg, also shows valgrind segments on log ouput)\n"
+"  v.info exectxt          : show stacktraces and stats of all execontexts\n"
 "  v.info scheduler        : show valgrind thread state and stacktrace\n"
 "  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
 "  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
@@ -243,7 +245,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("all_errors n_errs_found last_error gdbserver_status memory"
-               " scheduler open_fds",
+               " scheduler open_fds exectxt",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
@@ -293,6 +295,10 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
             VG_(gdb_printf)
                ("Valgrind must be started with --track-fds=yes"
                 " to show open fds\n");
+         ret = 1;
+         break;
+      case  7: /* exectxt */
+         VG_(print_ExeContext_stats) (True /* with_stacktraces */);
          ret = 1;
          break;
       default:

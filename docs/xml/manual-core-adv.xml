@@ -1363,6 +1363,19 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
+    <para><varname>v.info exectxt</varname> shows informations about
+    the "executable contexts" (i.e. the stack traces) recorded by
+    Valgrind.  For some programs, Valgrind can record a very high
+    number of such stack traces, causing a high memory usage.  This
+    monitor command shows all the recorded stack traces, followed by
+    some statistics. This can be used to analyse the reason for having
+    a big number of stack traces. Typically, you will use this command
+    if <varname>v.info memory</varname> has shown significant memory
+    usage by the "exectxt" arena.
+    </para>
+  </listitem>
+
+  <listitem>
     <para><varname>v.info scheduler</varname> shows the state and
     stack trace for all threads, as known by Valgrind.  This allows to
     compare the stack traces produced by the Valgrind unwinder with

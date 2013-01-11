@@ -156,8 +156,8 @@ void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
       VG_(message)(Vg_DebugMsg, "   exectx: Printing contexts stacktraces\n");
       for (i = 0; i < ec_htab_size; i++) {
          for (ec = ec_htab[i]; ec; ec = ec->chain) {
-            VG_(message)(Vg_DebugMsg, "   exectx: stacktrace ecu %u\n",
-                         ec->ecu);
+            VG_(message)(Vg_DebugMsg, "   exectx: stacktrace ecu %u n_ips %u\n",
+                         ec->ecu, ec->n_ips);
             VG_(pp_StackTrace)( ec->ips, ec->n_ips );
          }
       }

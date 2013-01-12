@@ -1039,8 +1039,17 @@ typedef
       /*   D64 -> D128 */
       Iop_D64toD128, 
 
+      /*   I32S -> D128 */
+      Iop_I32StoD128,
+
+      /*   I32U -> D128 */
+      Iop_I32UtoD128,
+
       /*   I64S -> D128 */
       Iop_I64StoD128, 
+
+      /*   I64U -> D128 */
+      Iop_I64UtoD128,
 
       /*   IRRoundingModeDFP(I32) x D64 -> D32 */
       Iop_D64toD32,
@@ -1048,14 +1057,41 @@ typedef
       /*   IRRoundingModeDFP(I32) x D128 -> D64 */
       Iop_D128toD64,
 
+      /*   I32S -> D64 */
+      Iop_I32StoD64,
+
+      /*   I32U -> D64 */
+      Iop_I32UtoD64,
+
       /*   IRRoundingModeDFP(I32) x I64 -> D64 */
       Iop_I64StoD64,
+
+      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      Iop_I64UtoD64,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      Iop_D64toI32S,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      Iop_D64toI32U,
 
       /*   IRRoundingModeDFP(I32) x D64 -> I64 */
       Iop_D64toI64S,
 
+      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      Iop_D64toI64U,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      Iop_D128toI32S,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      Iop_D128toI32U,
+
       /*   IRRoundingModeDFP(I32) x D128 -> I64 */
       Iop_D128toI64S,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      Iop_D128toI64U,
 
       /* ROUNDING INSTRUCTIONS
        * IRRoundingMode(I32) x D64 -> D64

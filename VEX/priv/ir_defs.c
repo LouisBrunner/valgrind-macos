@@ -965,12 +965,24 @@ void ppIROp ( IROp op )
       case Iop_DivD64:  vex_printf("DivD64");   return;
       case Iop_ShlD64:  vex_printf("ShlD64"); return;
       case Iop_ShrD64:  vex_printf("ShrD64"); return;
+      case Iop_D64toI32S:  vex_printf("D64toI32S");  return;
+      case Iop_D64toI32U:  vex_printf("D64toI32U");  return;
       case Iop_D64toI64S:  vex_printf("D64toI64S");  return;
+      case Iop_D64toI64U:  vex_printf("D64toI64U");  return;
+      case Iop_I32StoD64:  vex_printf("I32StoD64");  return;
+      case Iop_I32UtoD64:  vex_printf("I32UtoD64");  return;
       case Iop_I64StoD64:  vex_printf("I64StoD64");  return;
+      case Iop_I64UtoD64:  vex_printf("I64UtoD64");  return;
+      case Iop_I32StoD128: vex_printf("I32StoD128"); return;
+      case Iop_I32UtoD128: vex_printf("I32UtoD128"); return;
       case Iop_I64StoD128: vex_printf("I64StoD128"); return;
+      case Iop_I64UtoD128: vex_printf("I64UtoD128"); return;
       case Iop_D64toD128:  vex_printf("D64toD128");  return;
       case Iop_D128toD64:  vex_printf("D128toD64");  return;
+      case Iop_D128toI32S: vex_printf("D128toI32S"); return;
+      case Iop_D128toI32U: vex_printf("D128toI32U"); return;
       case Iop_D128toI64S: vex_printf("D128toI64S"); return;
+      case Iop_D128toI64U: vex_printf("D128toI64U"); return;
       case Iop_AddD128: vex_printf("AddD128");  return;
       case Iop_SubD128: vex_printf("SubD128");  return;
       case Iop_MulD128: vex_printf("MulD128");  return;
@@ -2779,8 +2791,15 @@ void typeOfPrimop ( IROp op,
       case Iop_RoundD128toInt:
          BINARY(ity_RMode,Ity_D128, Ity_D128);
 
+      case Iop_I32StoD128:
+      case Iop_I32UtoD128:
+         UNARY(Ity_I32, Ity_D128);
+
       case Iop_I64StoD128:    /* I64 bit pattern stored in Float register */
          UNARY(Ity_D64, Ity_D128);
+
+      case Iop_I64UtoD128:
+         UNARY(Ity_I64, Ity_D128);
 
       case Iop_DPBtoBCD:
       case Iop_BCDtoDPB:
@@ -2793,6 +2812,13 @@ void typeOfPrimop ( IROp op,
       case Iop_D128toI64S:
          BINARY(ity_RMode, Ity_D128, Ity_D64);
 
+      case Iop_D128toI64U:
+         BINARY(ity_RMode, Ity_D128, Ity_I64);
+
+      case Iop_D128toI32S:
+      case Iop_D128toI32U:
+         BINARY(ity_RMode, Ity_D128, Ity_I32);
+
       case Iop_D64HLtoD128:
          BINARY(Ity_D64, Ity_D64, Ity_D128);
 
@@ -2803,11 +2829,25 @@ void typeOfPrimop ( IROp op,
       case Iop_D64toD32:
          BINARY(ity_RMode, Ity_D64, Ity_D32);
 
+      case Iop_D64toI32S:
+      case Iop_D64toI32U:
+         BINARY(ity_RMode, Ity_D64, Ity_I32);
+
       case Iop_D64toI64S:
          BINARY(ity_RMode, Ity_D64, Ity_D64);
 
+      case Iop_D64toI64U:
+         BINARY(ity_RMode, Ity_D64, Ity_I64);
+
+      case Iop_I32StoD64:
+      case Iop_I32UtoD64:
+         UNARY(Ity_I32, Ity_D64);
+
       case Iop_I64StoD64:  /* I64 bit pattern stored in Float register */
          BINARY(ity_RMode, Ity_D64, Ity_D64);
+
+      case Iop_I64UtoD64:
+         BINARY(ity_RMode, Ity_I64, Ity_D64);
 
       case Iop_CmpD64:
       case Iop_CmpExpD64:

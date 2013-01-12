@@ -1001,7 +1001,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       LossRecord*   old_lr;
       LossRecordKey lrkey;
       lrkey.state        = ex->state;
-      lrkey.allocated_at = ch->where;
+      lrkey.allocated_at = MC_(allocated_at)(ch);
 
       old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
       if (old_lr) {
@@ -1175,7 +1175,7 @@ static void print_clique (Int clique, UInt level)
          LossRecordKey ind_lrkey;
          Int lr_i;
          ind_lrkey.state = ind_ex->state;
-         ind_lrkey.allocated_at = ind_ch->where;
+         ind_lrkey.allocated_at = MC_(allocated_at)(ind_ch);
          ind_lr = VG_(OSetGen_Lookup)(lr_table, &ind_lrkey);
          for (lr_i = 0; lr_i < n_lossrecords; lr_i++)
             if (ind_lr == lr_array[lr_i])
@@ -1227,7 +1227,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
       LossRecord*   old_lr;
       LossRecordKey lrkey;
       lrkey.state        = ex->state;
-      lrkey.allocated_at = ch->where;
+      lrkey.allocated_at = MC_(allocated_at)(ch);
 
       old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
       if (old_lr) {
@@ -1420,9 +1420,9 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx\n",
                    start1, end1, start2, end2);
          VG_(umsg)("Blocks allocation contexts:\n"),
-         VG_(pp_ExeContext)( ch1->where);
+         VG_(pp_ExeContext)( MC_(allocated_at)(ch1));
          VG_(umsg)("\n"),
-         VG_(pp_ExeContext)( ch2->where);
+         VG_(pp_ExeContext)(  MC_(allocated_at)(ch2));
          VG_(umsg)("This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK");
          VG_(umsg)("in an inappropriate way.\n");
          tl_assert (0);

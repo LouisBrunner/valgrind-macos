@@ -125,6 +125,10 @@ EXTRA_DIST = \
 	malloc_free_fill.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
+	malloc1_ks_none.stderr.exp malloc1_ks_none.vgtest \
+	malloc1_ks_alloc.stderr.exp malloc1_ks_alloc.vgtest \
+	malloc1_ks_free.stderr.exp malloc1_ks_free.vgtest \
+	malloc1_ks_alloc_and_free.stderr.exp malloc1_ks_alloc_and_free.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \

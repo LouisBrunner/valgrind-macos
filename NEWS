@@ -15,6 +15,11 @@ Release 3.9.0 (?? ?????? 201?)
     This is a.o. useful to avoid definite leaks being "catched"
     by a suppression entry aimed at suppressing possibly lost blocks.
 
+  - The option --keep-stacktraces controls which stack trace(s) to keep for
+    malloc'd and/or free'd blocks. This can be used to obtain more information
+    for 'use after free' errors or to decrease Valgrind memory and/or cpu usage
+    by recording less information for heap blocks.
+
 * ==================== OTHER CHANGES ====================
 
   - Addition of GDB server monitor command 'v.info open_fds' that gives the
@@ -62,6 +67,7 @@ m = merged into 3_8_BRANCH
 308886    [390] Missing support for PTRACE_SET/GETREGSET 
 310424    [390] --read-var-info does not properly describe static variables 
 310931    [390] s390x: Message-security assist (MSA) instruction extension not implemented
+312913    [390] Dangling pointers error should also report the alloc stack trace
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android

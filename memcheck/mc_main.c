@@ -4836,6 +4836,7 @@ UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
+KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
 
 static Bool mc_process_cmd_line_options(const HChar* arg)
@@ -4961,6 +4962,17 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    else if VG_BHEX_CLO(arg, "--malloc-fill", MC_(clo_malloc_fill), 0x00,0xFF) {}
    else if VG_BHEX_CLO(arg, "--free-fill",   MC_(clo_free_fill),   0x00,0xFF) {}
 
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=alloc",
+                       MC_(clo_keep_stacktraces), KS_alloc) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=free",
+                       MC_(clo_keep_stacktraces), KS_free) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=alloc-and-free",
+                       MC_(clo_keep_stacktraces), KS_alloc_and_free) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=alloc-then-free",
+                       MC_(clo_keep_stacktraces), KS_alloc_then_free) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=none",
+                       MC_(clo_keep_stacktraces), KS_none) {}
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -4996,6 +5008,8 @@ static void mc_print_usage(void)
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
+"    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
+"        stack trace(s) to keep for malloc'd/free'd areas       [alloc-then-free]\n"
    );
 }
 
@@ -6168,6 +6182,13 @@ static void mc_post_clo_init ( void )
       tl_assert(ocacheL2 == NULL);
    }
 
+   MC_(chunk_poolalloc) = VG_(newPA)
+      (sizeof(MC_Chunk) + MC_(n_where_pointers)() * sizeof(ExeContext*),
+       1000,
+       VG_(malloc),
+       "mc.cMC.1 (MC_Chunk pools)",
+       VG_(free));
+
    /* Do not check definedness of guest state if --undef-value-errors=no */
    if (MC_(clo_mc_level) >= 2)
       VG_(track_pre_reg_read) ( mc_pre_reg_read );
@@ -6478,11 +6499,8 @@ static void mc_pre_clo_init(void)
    VG_(needs_watchpoint)          ( mc_mark_unaddressable_for_watchpoint );
 
    init_shadow_memory();
-   MC_(chunk_poolalloc) = VG_(newPA) (sizeof(MC_Chunk),
-                                      1000,
-                                      VG_(malloc),
-                                      "mc.cMC.1 (MC_Chunk pools)",
-                                      VG_(free));
+   // MC_(chunk_poolalloc) must be allocated in post_clo_init
+   tl_assert(MC_(chunk_poolalloc) == NULL);
    MC_(malloc_list)  = VG_(HT_construct)( "MC_(malloc_list)" );
    MC_(mempool_list) = VG_(HT_construct)( "MC_(mempool_list)" );
    init_prof_mem();

@@ -75,7 +75,7 @@ VgHashTable MC_(mempool_list) = NULL;
 /* Pool allocator for MC_Chunk. */   
 PoolAlloc *MC_(chunk_poolalloc) = NULL;
 static
-MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
+MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
                             MC_AllocKind kind);
 static inline
 void delete_MC_Chunk (MC_Chunk* mc);
@@ -187,14 +187,20 @@ MC_Chunk* MC_(get_freed_block_bracketting) (Addr a)
 /* Allocate a shadow chunk, put it on the appropriate list.
    If needed, release oldest blocks from freed list. */
 static
-MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
+MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
                             MC_AllocKind kind)
 {
    MC_Chunk* mc  = VG_(allocEltPA)(MC_(chunk_poolalloc));
    mc->data      = p;
    mc->szB       = szB;
    mc->allockind = kind;
-   mc->where     = ec;
+   switch ( MC_(n_where_pointers)() ) {
+      case 2: mc->where[1] = 0; // fallback to 1
+      case 1: mc->where[0] = 0; // fallback to 0
+      case 0: break;
+      default: tl_assert(0);
+   }
+   MC_(set_allocated_at) (tid, mc);
 
    /* Each time a new MC_Chunk is created, release oldest blocks
       if the free list volume is exceeded. */
@@ -215,6 +221,114 @@ static inline
 void delete_MC_Chunk (MC_Chunk* mc)
 {
    VG_(freeEltPA) (MC_(chunk_poolalloc), mc);
+}
+
+// True if mc is in the given block list.
+static Bool in_block_list (VgHashTable block_list, MC_Chunk* mc)
+{
+   MC_Chunk* found_mc = VG_(HT_lookup) ( block_list, (UWord)mc->data );
+   if (found_mc) {
+      tl_assert (found_mc->data == mc->data);
+      /* If a user builds a pool from a malloc-ed superblock
+         and uses VALGRIND_MALLOCLIKE_BLOCK to "mark"
+         an address at the beginning of this superblock, then
+         this address will be twice in the block_list.
+         We handle this case by checking size and allockind.
+         Note: I suspect that having the same block
+         twice in MC_(malloc_list) is a recipe for bugs.
+         We might maybe better create a "standard" mempool to
+         handle all this more cleanly. */
+      if (found_mc->szB != mc->szB
+          || found_mc->allockind != mc->allockind)
+         return False;
+      tl_assert (found_mc == mc);
+      return True;
+   } else
+      return False;
+}
+
+// True if mc is a live block (not yet freed).
+static Bool live_block (MC_Chunk* mc)
+{
+   if (mc->allockind == MC_AllocCustom) {
+      MC_Mempool* mp;
+      VG_(HT_ResetIter)(MC_(mempool_list));
+      while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
+         if ( in_block_list (mp->chunks, mc) )
+            return True;
+      }
+   }
+   /* Note: we fallback here for a not found MC_AllocCustom
+      as such a block can be inserted in MC_(malloc_list)
+      by VALGRIND_MALLOCLIKE_BLOCK. */
+   return in_block_list ( MC_(malloc_list), mc );
+}
+
+ExeContext* MC_(allocated_at) (MC_Chunk* mc)
+{
+   switch (MC_(clo_keep_stacktraces)) {
+      case KS_none:            return VG_(null_ExeContext) ();
+      case KS_alloc:           return mc->where[0];
+      case KS_free:            return VG_(null_ExeContext) ();
+      case KS_alloc_then_free: return (live_block(mc) ?
+                                       mc->where[0] : VG_(null_ExeContext) ());
+      case KS_alloc_and_free:  return mc->where[0];
+      default: tl_assert (0);
+   }
+}
+
+ExeContext* MC_(freed_at) (MC_Chunk* mc)
+{
+   switch (MC_(clo_keep_stacktraces)) {
+      case KS_none:            return VG_(null_ExeContext) ();
+      case KS_alloc:           return VG_(null_ExeContext) ();
+      case KS_free:            return (mc->where[0] ?
+                                       mc->where[0] : VG_(null_ExeContext) ());
+      case KS_alloc_then_free: return (live_block(mc) ?
+                                       VG_(null_ExeContext) () : mc->where[0]);
+      case KS_alloc_and_free:  return (mc->where[1] ?
+                                       mc->where[1] : VG_(null_ExeContext) ());
+      default: tl_assert (0);
+   }
+}
+
+void  MC_(set_allocated_at) (ThreadId tid, MC_Chunk* mc)
+{
+   switch (MC_(clo_keep_stacktraces)) {
+      case KS_none:            return;
+      case KS_alloc:           break;
+      case KS_free:            return;
+      case KS_alloc_then_free: break;
+      case KS_alloc_and_free:  break;
+      default: tl_assert (0);
+   }
+   mc->where[0] = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+}
+
+void  MC_(set_freed_at) (ThreadId tid, MC_Chunk* mc)
+{
+   UInt pos;
+   switch (MC_(clo_keep_stacktraces)) {
+      case KS_none:            return;
+      case KS_alloc:           return;
+      case KS_free:            pos = 0; break;
+      case KS_alloc_then_free: pos = 0; break;
+      case KS_alloc_and_free:  pos = 1; break;
+      default: tl_assert (0);
+   }
+   mc->where[pos] = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+}
+
+UInt MC_(n_where_pointers) (void)
+{
+   switch (MC_(clo_keep_stacktraces)) {
+      case KS_none:            return 0;
+      case KS_alloc:
+      case KS_free:
+      case KS_alloc_then_free: return 1;
+      case KS_alloc_and_free:  return 2;
+      default: tl_assert (0);
+   }
 }
 
 /*------------------------------------------------------------*/
@@ -253,7 +367,7 @@ void* MC_(new_block) ( ThreadId tid,
                        Addr p, SizeT szB, SizeT alignB,
                        Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
 {
-   ExeContext* ec;
+   MC_Chunk* mc;
 
    // Allocate and zero if necessary
    if (p) {
@@ -276,16 +390,13 @@ void* MC_(new_block) ( ThreadId tid,
    // Only update stats if allocation succeeded.
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += (ULong)szB;
-
-   ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
-   tl_assert(ec);
-
-   VG_(HT_add_node)( table, create_MC_Chunk(ec, p, szB, kind) );
+   mc = create_MC_Chunk (tid, p, szB, kind);
+   VG_(HT_add_node)( table, mc );
 
    if (is_zeroed)
       MC_(make_mem_defined)( p, szB );
    else {
-      UInt ecu = VG_(get_ECU_from_ExeContext)(ec);
+      UInt ecu = VG_(get_ECU_from_ExeContext)(MC_(allocated_at)(mc));
       tl_assert(VG_(is_plausible_ECU)(ecu));
       MC_(make_mem_undefined_w_otag)( p, szB, ecu | MC_OKIND_HEAP );
    }
@@ -358,13 +469,29 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
    MC_(make_mem_noaccess)( mc->data-rzB, mc->szB + 2*rzB );
 
    /* Record where freed */
-   mc->where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+   MC_(set_freed_at) (tid, mc);
    /* Put it out of harm's way for a while */
    add_to_freed_queue ( mc );
    /* If the free list volume is bigger than MC_(clo_freelist_vol),
       we wait till the next block allocation to release blocks.
       This increase the chance to discover dangling pointer usage,
       even for big blocks being freed by the client. */
+}
+
+
+static
+void record_freemismatch_error (ThreadId tid, MC_Chunk* mc)
+{
+   /* MC_(record_freemismatch_error) reports errors for still
+      allocated blocks but we are in the middle of freeing it.  To
+      report the error correctly, we re-insert the chunk (making it
+      again a "clean allocated block", report the error, and then
+      re-remove the chunk.  This avoids to do a VG_(HT_lookup)
+      followed by a VG_(HT_remove) in all "non-erroneous cases". */
+   VG_(HT_add_node)( MC_(malloc_list), mc );
+   MC_(record_freemismatch_error) ( tid, mc );
+   if ((mc != VG_(HT_remove) ( MC_(malloc_list), (UWord)mc->data )))
+      tl_assert(0);
 }
 
 void MC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MC_AllocKind kind )
@@ -380,7 +507,7 @@ void MC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MC_AllocKind kind )
       /* check if it is a matching free() / delete / delete [] */
       if (kind != mc->allockind) {
          tl_assert(p == mc->data);
-         MC_(record_freemismatch_error) ( tid, mc );
+         record_freemismatch_error ( tid, mc );
       }
       die_and_free_mem ( tid, mc, rzB );
    }
@@ -406,8 +533,9 @@ void MC_(__builtin_vec_delete) ( ThreadId tid, void* p )
 
 void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
 {
-   MC_Chunk* mc;
-   void*     p_new;
+   MC_Chunk* old_mc;
+   MC_Chunk* new_mc;
+   Addr      a_new; 
    SizeT     old_szB;
 
    if (complain_about_silly_args(new_szB, "realloc")) 
@@ -418,93 +546,70 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
    cmalloc_bs_mallocd += (ULong)new_szB;
 
    /* Remove the old block */
-   mc = VG_(HT_remove) ( MC_(malloc_list), (UWord)p_old );
-   if (mc == NULL) {
+   old_mc = VG_(HT_remove) ( MC_(malloc_list), (UWord)p_old );
+   if (old_mc == NULL) {
       MC_(record_free_error) ( tid, (Addr)p_old );
       /* We return to the program regardless. */
       return NULL;
    }
 
    /* check if its a matching free() / delete / delete [] */
-   if (MC_AllocMalloc != mc->allockind) {
+   if (MC_AllocMalloc != old_mc->allockind) {
       /* can not realloc a range that was allocated with new or new [] */
-      tl_assert((Addr)p_old == mc->data);
-      MC_(record_freemismatch_error) ( tid, mc );
+      tl_assert((Addr)p_old == old_mc->data);
+      record_freemismatch_error ( tid, old_mc );
       /* but keep going anyway */
    }
 
-   old_szB = mc->szB;
+   old_szB = old_mc->szB;
 
-   /* In all cases, even when the new size is smaller or unchanged, we
-      reallocate and copy the contents, and make the old block
-      inaccessible.  This is so as to guarantee to catch all cases of
-      accesses via the old address after reallocation, regardless of
-      the change in size.  (Of course the ability to detect accesses
-      to the old block also depends on the size of the freed blocks
-      queue). */
+   /* Get new memory */
+   a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
 
-   if (new_szB <= old_szB) {
-      /* new size is smaller or the same */
-      Addr a_new; 
-      /* Get new memory */
-      a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
+   if (a_new) {
+      /* In all cases, even when the new size is smaller or unchanged, we
+         reallocate and copy the contents, and make the old block
+         inaccessible.  This is so as to guarantee to catch all cases of
+         accesses via the old address after reallocation, regardless of
+         the change in size.  (Of course the ability to detect accesses
+         to the old block also depends on the size of the freed blocks
+         queue). */
 
-      if (a_new) {
-         ExeContext* ec;
+      // Allocate a new chunk.
+      new_mc = create_MC_Chunk( tid, a_new, new_szB, MC_AllocMalloc );
 
-         ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
-         tl_assert(ec);
+      // Now insert the new mc (with a new 'data' field) into malloc_list.
+      VG_(HT_add_node)( MC_(malloc_list), new_mc );
 
-         /* Retained part is copied, red zones set as normal */
-         MC_(make_mem_noaccess)( a_new-MC_(Malloc_Redzone_SzB), 
-                                 MC_(Malloc_Redzone_SzB) );
+      /* Retained part is copied, red zones set as normal */
+
+      /* Redzone at the front */
+      MC_(make_mem_noaccess)( a_new-MC_(Malloc_Redzone_SzB), 
+                              MC_(Malloc_Redzone_SzB) );
+
+      /* payload */
+      if (old_szB >= new_szB) {
+         /* new size is smaller or the same */
+
+         /* Copy address range state and value from old to new */
          MC_(copy_address_range_state) ( (Addr)p_old, a_new, new_szB );
-         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_(Malloc_Redzone_SzB));
-
-         /* Copy from old to new */
          VG_(memcpy)((void*)a_new, p_old, new_szB);
-
-         /* Possibly fill freed area with specified junk. */
-         if (MC_(clo_free_fill) != -1) {
-            tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
-            VG_(memset)((void*)p_old, MC_(clo_free_fill), old_szB);
-         }
-
-         /* Free old memory */
-         /* Nb: we have to allocate a new MC_Chunk for the new memory rather
-            than recycling the old one, so that any erroneous accesses to the
-            old memory are reported. */
-         die_and_free_mem ( tid, mc, MC_(Malloc_Redzone_SzB) );
-
-         // Allocate a new chunk.
-         mc = create_MC_Chunk( ec, a_new, new_szB, MC_AllocMalloc );
-      }
-
-      p_new = (void*)a_new;
-
-   } else {
-      /* new size is bigger */
-      Addr a_new; 
-      tl_assert(old_szB < new_szB);
-      /* Get new memory */
-      a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
-
-      if (a_new) {
+      } else {
+         /* new size is bigger */
          UInt        ecu;
-         ExeContext* ec;
 
-         ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
-         tl_assert(ec);
-         ecu = VG_(get_ECU_from_ExeContext)(ec);
+         /* Copy address range state and value from old to new */
+         MC_(copy_address_range_state) ( (Addr)p_old, a_new, old_szB );
+         VG_(memcpy)((void*)a_new, p_old, old_szB);
+
+         // If the block has grown, we mark the grown area as undefined.
+         // We have to do that after VG_(HT_add_node) to ensure the ecu
+         // execontext is for a fully allocated block.
+         ecu = VG_(get_ECU_from_ExeContext)(MC_(allocated_at)(new_mc));
          tl_assert(VG_(is_plausible_ECU)(ecu));
-
-         /* First half kept and copied, second half new, red zones as normal */
-         MC_(make_mem_noaccess)( a_new-MC_(Malloc_Redzone_SzB), 
-                                 MC_(Malloc_Redzone_SzB) );
-         MC_(copy_address_range_state) ( (Addr)p_old, a_new, mc->szB );
-         MC_(make_mem_undefined_w_otag)( a_new+mc->szB, new_szB-mc->szB,
-                                                        ecu | MC_OKIND_HEAP );
-         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_(Malloc_Redzone_SzB) );
+         MC_(make_mem_undefined_w_otag)( a_new+old_szB,
+                                         new_szB-old_szB,
+                                         ecu | MC_OKIND_HEAP );
 
          /* Possibly fill new area with specified junk */
          if (MC_(clo_malloc_fill) != -1) {
@@ -513,37 +618,31 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
             VG_(memset)((void*)(a_new+old_szB), MC_(clo_malloc_fill), 
                                                 new_szB-old_szB);
          }
-
-         /* Copy from old to new */
-         VG_(memcpy)((void*)a_new, p_old, mc->szB);
-
-         /* Possibly fill freed area with specified junk. */
-         if (MC_(clo_free_fill) != -1) {
-            tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
-            VG_(memset)((void*)p_old, MC_(clo_free_fill), old_szB);
-         }
-
-         /* Free old memory */
-         /* Nb: we have to allocate a new MC_Chunk for the new memory rather
-            than recycling the old one, so that any erroneous accesses to the
-            old memory are reported. */
-         die_and_free_mem ( tid, mc, MC_(Malloc_Redzone_SzB) );
-
-         // Allocate a new chunk.
-         mc = create_MC_Chunk( ec, a_new, new_szB, MC_AllocMalloc );
       }
 
-      p_new = (void*)a_new;
-   }  
+      /* Redzone at the back. */
+      MC_(make_mem_noaccess)        ( a_new+new_szB, MC_(Malloc_Redzone_SzB));
 
-   // Now insert the new mc (with a possibly new 'data' field) into
-   // malloc_list.  If this realloc() did not increase the memory size, we
-   // will have removed and then re-added mc unnecessarily.  But that's ok
-   // because shrinking a block with realloc() is (presumably) much rarer
-   // than growing it, and this way simplifies the growing case.
-   VG_(HT_add_node)( MC_(malloc_list), mc );
+      /* Possibly fill freed area with specified junk. */
+      if (MC_(clo_free_fill) != -1) {
+         tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
+         VG_(memset)((void*)p_old, MC_(clo_free_fill), old_szB);
+      }
 
-   return p_new;
+      /* Free old memory */
+      /* Nb: we have to allocate a new MC_Chunk for the new memory rather
+         than recycling the old one, so that any erroneous accesses to the
+         old memory are reported. */
+      die_and_free_mem ( tid, old_mc, MC_(Malloc_Redzone_SzB) );
+
+   } else {
+      /* Could not allocate new client memory.
+         Re-insert the old_mc (with the old ptr) in the HT, as old_mc was
+         unconditionally removed at the beginning of the function. */
+      VG_(HT_add_node)( MC_(malloc_list), old_mc );
+   }
+
+   return (void*)a_new;
 }
 
 SizeT MC_(malloc_usable_size) ( ThreadId tid, void* p )
@@ -746,7 +845,7 @@ check_mempool_sane(MC_Mempool* mp)
                          chunks[i]->data, 
                          chunks[i]->data + chunks[i]->szB);
 
-            VG_(pp_ExeContext)(chunks[i]->where);
+            VG_(pp_ExeContext)(MC_(allocated_at)(chunks[i]));
          }
    }
    VG_(free)(chunks);

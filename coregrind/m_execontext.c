@@ -98,6 +98,7 @@ static SizeT        ec_htab_size_idx; /* 0 .. N_EC_PRIMES-1 */
 /* ECU serial number */
 static UInt ec_next_ecu = 4; /* We must never issue zero */
 
+static ExeContext* null_ExeContext;
 
 /* Stats only: the number of times the system was searched to locate a
    context. */
@@ -119,6 +120,7 @@ static ULong ec_cmpAlls;
 /*--- Exported functions.                                  ---*/
 /*------------------------------------------------------------*/
 
+static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips ); /*fwds*/
 
 /* Initialise this subsystem. */
 static void init_ExeContext_storage ( void )
@@ -140,6 +142,13 @@ static void init_ExeContext_storage ( void )
                                sizeof(ExeContext*) * ec_htab_size);
    for (i = 0; i < ec_htab_size; i++)
       ec_htab[i] = NULL;
+
+   {
+      Addr ips[1];
+      ips[0] = 0;
+      null_ExeContext = record_ExeContext_wrk2(ips, 1);
+      vg_assert(null_ExeContext->ecu == 4); // null execontext must be the first one.
+   }
 
    init_done = True;
 }
@@ -310,7 +319,6 @@ static void resize_ec_htab ( void )
 /* Do the first part of getting a stack trace: actually unwind the
    stack, and hand the results off to the duplicate-trace-finder
    (_wrk2). */
-static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips ); /*fwds*/
 static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
                                            Bool first_ip_only )
 {
@@ -487,7 +495,14 @@ ExeContext* VG_(get_ExeContext_from_ECU)( UInt ecu )
 
 ExeContext* VG_(make_ExeContext_from_StackTrace)( Addr* ips, UInt n_ips )
 {
+   init_ExeContext_storage();
    return record_ExeContext_wrk2(ips, n_ips);
+}
+
+ExeContext* VG_(null_ExeContext) (void)
+{
+   init_ExeContext_storage();
+   return null_ExeContext;
 }
 
 /*--------------------------------------------------------------------*/

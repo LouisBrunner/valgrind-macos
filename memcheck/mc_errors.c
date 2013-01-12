@@ -60,7 +60,6 @@ Bool MC_(any_value_errors) = False;
 typedef enum {
    Block_Mallocd = 111,
    Block_Freed,
-   Block_Mempool,
    Block_MempoolChunk,
    Block_UserG
 } BlockKind;
@@ -102,7 +101,8 @@ struct _AddrInfo {
          const HChar* block_desc;    // "block", "mempool" or user-defined
          SizeT       block_szB;
          PtrdiffT    rwoffset;
-         ExeContext* lastchange;
+         ExeContext* allocated_at;  // might be null_ExeContext.
+         ExeContext* freed_at;      // might be null_ExeContext.
       } Block;
 
       // In a global .data symbol.  This holds the first 127 chars of
@@ -344,7 +344,29 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
                                                      : "client-defined",
             xpost
          );
-         VG_(pp_ExeContext)(ai->Addr.Block.lastchange);
+         if (ai->Addr.Block.block_kind==Block_Mallocd) {
+            VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
+            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+         }
+         else if (ai->Addr.Block.block_kind==Block_Freed) {
+            VG_(pp_ExeContext)(ai->Addr.Block.freed_at);
+            if (ai->Addr.Block.allocated_at != VG_(null_ExeContext)()) {
+               emit(
+                  "%s block was alloc'd at%s\n",
+                  xpre,
+                  xpost
+               );
+               VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
+            }
+         }
+         else {
+            // client-defined
+            VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
+            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            /* Nb: cannot have a freed_at, as a freed client-defined block
+               has a Block_Freed block_kind. */
+         }
+         
          break;
       }
 
@@ -1009,7 +1031,8 @@ void MC_(record_freemismatch_error) ( ThreadId tid, MC_Chunk* mc )
    ai->Addr.Block.block_desc = "block";
    ai->Addr.Block.block_szB  = mc->szB;
    ai->Addr.Block.rwoffset   = 0;
-   ai->Addr.Block.lastchange = mc->where;
+   ai->Addr.Block.allocated_at = MC_(allocated_at) (mc);
+   ai->Addr.Block.freed_at = MC_(freed_at) (mc);
    VG_(maybe_record_error)( tid, Err_FreeMismatch, mc->data, /*s*/NULL,
                             &extra );
 }
@@ -1194,7 +1217,8 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
             ai->Addr.Block.block_desc = "block";
          ai->Addr.Block.block_szB  = mc->szB;
          ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
-         ai->Addr.Block.lastchange = mc->where;
+         ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
+         ai->Addr.Block.freed_at = MC_(freed_at)(mc);
          return;
       }
    }
@@ -1206,7 +1230,8 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
       ai->Addr.Block.block_desc = "block";
       ai->Addr.Block.block_szB  = mc->szB;
       ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
-      ai->Addr.Block.lastchange = mc->where;
+      ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
+      ai->Addr.Block.freed_at = MC_(freed_at)(mc);
       return;
    }
    /* -- Perhaps the variable type/location data describes it? -- */
@@ -1407,7 +1432,8 @@ static Bool client_block_maybe_describe( Addr a,
          ai->Addr.Block.block_desc = cgbs[i].desc;
          ai->Addr.Block.block_szB  = cgbs[i].size;
          ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(cgbs[i].start);
-         ai->Addr.Block.lastchange = cgbs[i].where;
+         ai->Addr.Block.allocated_at = cgbs[i].where;
+         ai->Addr.Block.freed_at = VG_(null_ExeContext)();;
          return True;
       }
    }
@@ -1433,7 +1459,8 @@ static Bool mempool_block_maybe_describe( Addr a,
                ai->Addr.Block.block_desc = "block";
                ai->Addr.Block.block_szB  = mc->szB;
                ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
-               ai->Addr.Block.lastchange = mc->where;
+               ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
+               ai->Addr.Block.freed_at = MC_(freed_at)(mc);
                return True;
             }
          }

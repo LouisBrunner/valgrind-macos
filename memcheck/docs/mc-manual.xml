@@ -827,6 +827,61 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.keep-stacktraces" xreflabel="--keep-stacktraces">
+    <term>
+      <option><![CDATA[--keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none [default: alloc-then-free] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls which stack trace(s) to keep for malloc'd and/or
+      free'd blocks.
+      </para>
+
+      <para>With <varname>alloc-then-free</varname>, the malloc stack
+      trace is recorded at allocation time. The block contains a
+      reference to this allocation stack trace. When the block is
+      freed, the block will then reference the free stack trace.  So,
+      a 'use after free' error will only report the free stack trace.
+      </para>
+
+      <para>With <varname>alloc-and-free</varname>, both the malloc
+      and the free stack trace (for freed block) are recorded and
+      referenced by the block. A 'use after free' error will report
+      the free stack trace, followed by the stack trace where this
+      block was allocated.  Compared
+      to <varname>alloc-then-free</varname>, this value very slightly
+      increases Valgrind memory use as the block contains two references
+      instead of one.
+      </para>
+
+      <para>With <varname>alloc</varname>, only the malloc stack trace
+      is recorded (and reported). With <varname>free</varname>, only
+      the free stack trace is recorded (and reported). These values
+      somewhat decrease Valgrind memory and cpu usage. They can be
+      useful depending on the error types you are searching for and
+      the level of details you need to analyse them. For example, if
+      you are only interested in memory leak errors, it is sufficient
+      to record the allocation stack traces.
+      </para>
+
+      <para>With <varname>none</varname>, no stack traces are recorded
+      for malloc and free operations. If your program allocates a lot
+      of blocks and/or from many different stack traces, this can
+      significantly decrease cpu and/or memory. Of course, very little
+      details will be reported for errors related to heap blocks.
+      </para>
+
+      <para> Note that once a stack trace is recorded, Valgrind keeps
+      the stack trace in memory even if not referenced anymore by
+      any block. Some programs (for example, recursive algorithms)
+      can generate a huge number of stack traces. If Valgrind uses too
+      much memory in such circumstances, you can reduce the memory
+      usage with the options <varname>--keep-stacktraces</varname>
+      and/or by using a smaller value for the
+      option <varname>--num-callers</varname>.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.freelist-vol" xreflabel="--freelist-vol">
     <term>
       <option><![CDATA[--freelist-vol=<number> [default: 20000000] ]]></option>

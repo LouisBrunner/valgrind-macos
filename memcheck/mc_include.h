@@ -67,9 +67,24 @@ typedef
       Addr         data;            // Address of the actual block.
       SizeT        szB : (sizeof(SizeT)*8)-2; // Size requested; 30 or 62 bits.
       MC_AllocKind allockind : 2;   // Which operation did the allocation.
-      ExeContext*  where;           // Where it was allocated.
+      ExeContext*  where[0];
+      /* Variable-length array. The size depends on MC_(clo_keep_stacktraces).
+         This array optionally stores the alloc and/or free stack trace. */
    }
    MC_Chunk;
+
+/* Returns the execontext where the MC_Chunk was allocated/freed.
+   Returns VG_(null_ExeContext)() if the execontext has not been recorded (due
+   to MC_(clo_keep_stacktraces) and/or because block not yet freed). */
+ExeContext* MC_(allocated_at) (MC_Chunk*);
+ExeContext* MC_(freed_at) (MC_Chunk*);
+
+/* Records and sets execontext according to MC_(clo_keep_stacktraces) */
+void  MC_(set_allocated_at) (ThreadId, MC_Chunk*);
+void  MC_(set_freed_at) (ThreadId, MC_Chunk*);
+
+/* number of pointers needed according to MC_(clo_keep_stacktraces). */
+UInt MC_(n_where_pointers) (void);
 
 /* Memory pool.  Nb: first two fields must match core's VgHashNode. */
 typedef
@@ -491,6 +506,20 @@ extern Bool MC_(clo_workaround_gcc296_bugs);
    causes them to contain the specified values. */
 extern Int MC_(clo_malloc_fill);
 extern Int MC_(clo_free_fill);
+
+/* Which stack trace(s) to keep for malloc'd/free'd client blocks?
+   For each client block, the stack traces where it was allocated
+   and/or freed are optionally kept depending on MC_(clo_keep_stacktraces). */
+typedef
+   enum {                 // keep alloc stack trace ?  keep free stack trace ?
+      KS_none,            // never                     never
+      KS_alloc,           // always                    never
+      KS_free,            // never                     always
+      KS_alloc_then_free, // when still malloc'd       when free'd
+      KS_alloc_and_free,  // always                    always
+   }
+   KeepStacktraces;
+extern KeepStacktraces MC_(clo_keep_stacktraces);
 
 /* Indicates the level of instrumentation/checking done by Memcheck.
 

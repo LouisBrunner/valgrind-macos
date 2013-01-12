@@ -3305,8 +3305,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
       case Iop_D64toI64S:
+      case Iop_D64toI64U:
       case Iop_I64StoD64:
-         /* I32(DFP rm) x I64 -> D64 */
+      case Iop_I64UtoD64:
+         /* I32(DFP rm) x I64/D64 -> D64/I64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_RoundF32toInt:
@@ -3328,6 +3330,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F128toI32S: /* IRRoundingMode(I32) x F128 -> signed I32  */
       case Iop_F128toI32U: /* IRRoundingMode(I32) x F128 -> unsigned I32  */
       case Iop_F128toF32:  /* IRRoundingMode(I32) x F128 -> F32         */
+      case Iop_D128toI32S: /* IRRoundingModeDFP(I32) x D128 -> signed I32  */
+      case Iop_D128toI32U: /* IRRoundingModeDFP(I32) x D128 -> unsigned I32  */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_F128toI64S: /* IRRoundingMode(I32) x F128 -> signed I64  */
@@ -3335,6 +3339,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F128toF64:  /* IRRoundingMode(I32) x F128 -> F64         */
       case Iop_D128toD64:  /* IRRoundingModeDFP(I64) x D128 -> D64 */
       case Iop_D128toI64S: /* IRRoundingModeDFP(I64) x D128 -> signed I64  */
+      case Iop_D128toI64U: /* IRRoundingModeDFP(I32) x D128 -> unsigned I64  */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_F64HLtoF128:
@@ -3346,7 +3351,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F64toI32S:
       case Iop_F64toF32:
       case Iop_I64UtoF32:
-         /* First arg is I32 (rounding mode), second is F64 (data). */
+      case Iop_D64toI32U:
+      case Iop_D64toI32S:
+         /* First arg is I32 (rounding mode), second is F64/D64 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_D64toD32:
@@ -3699,7 +3706,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_I64UtoF128: /* unsigned I64 -> F128 */
       case Iop_F32toF128:  /* F32 -> F128 */
       case Iop_F64toF128:  /* F64 -> F128 */
+      case Iop_I32StoD128: /* signed I64 -> D128 */
       case Iop_I64StoD128: /* signed I64 -> D128 */
+      case Iop_I32UtoD128: /* unsigned I32 -> D128 */
+      case Iop_I64UtoD128: /* unsigned I64 -> D128 */
          return mkPCastTo(mce, Ity_I128, vatom);
 
       case Iop_F32toF64: 
@@ -3714,6 +3724,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_RoundF64toF64_ZERO:
       case Iop_Clz64:
       case Iop_D32toD64:
+      case Iop_I32StoD64:
+      case Iop_I32UtoD64:
       case Iop_ExtractExpD64:    /* D64  -> I64 */
       case Iop_ExtractExpD128:   /* D128 -> I64 */
       case Iop_ExtractSigD64:    /* D64  -> I64 */

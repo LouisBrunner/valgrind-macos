@@ -491,12 +491,24 @@ static irop_t irops[] = {
   { DEFOP(Iop_ShrD128,               UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_D32toD64,              UNDEF_ALL),  .s390x = 1, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_D64toD128,             UNDEF_ALL),  .s390x = 1, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I32StoD128,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_I32UtoD128,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_I64StoD128,            UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I64UtoD128,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_D64toD32,              UNDEF_ALL),  .s390x = 1, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_D128toD64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I32StoD64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_I32UtoD64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_I64StoD64,             UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I64UtoD64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D64toI32S,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D64toI32U,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_D64toI64S,             UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_D64toI64U,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_D128toI64S,            UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_D128toI64U,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D128toI32S,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D128toI32U,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_RoundD64toInt,         UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_RoundD128toInt,        UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_CmpD64,                UNDEF_ALL),  .s390x = 1, .ppc64 = 1, .ppc32 = 1 },
@@ -881,6 +893,18 @@ get_irop(IROp op)
 #ifdef __s390x__
 #define S390X_FEATURES "../../../tests/s390x_features"
          switch (op) {
+         case Iop_I32StoD64:    // CDFTR
+         case Iop_I32StoD128:   // CXFTR
+         case Iop_I32UtoD64:    // CDLFTR
+         case Iop_I32UtoD128:   // CXLFTR
+         case Iop_I64UtoD64:    // CDLGTR
+         case Iop_I64UtoD128:   // CXLGTR
+         case Iop_D64toI32S:    // CFDTR
+         case Iop_D128toI32S:   // CFXTR
+         case Iop_D64toI64U:    // CLGDTR
+         case Iop_D64toI32U:    // CLFDTR
+         case Iop_D128toI64U:   // CLGXTR
+         case Iop_D128toI32U:   // CLFXTR
          case Iop_I32UtoF32:
          case Iop_I32UtoF64:
          case Iop_I32UtoF128:

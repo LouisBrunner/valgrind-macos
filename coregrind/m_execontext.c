@@ -45,9 +45,10 @@
 /*--- Low-level ExeContext storage.                        ---*/
 /*------------------------------------------------------------*/
 
-/* The first 4 IP values are used in comparisons to remove duplicate
-   errors, and for comparing against suppression specifications.  The
-   rest are purely informational (but often important).
+/* Depending on VgRes, the first 2, 4 or all IP values are used in
+   comparisons to remove duplicate errors, and for comparing against
+   suppression specifications.  If not used in comparison, the rest
+   are purely informational (but often important).
 
    The contexts are stored in a traditional chained hash table, so as
    to allow quick determination of whether a new context already
@@ -147,7 +148,8 @@ static void init_ExeContext_storage ( void )
       Addr ips[1];
       ips[0] = 0;
       null_ExeContext = record_ExeContext_wrk2(ips, 1);
-      vg_assert(null_ExeContext->ecu == 4); // null execontext must be the first one.
+      // null execontext must be the first one created and get ecu 4.
+      vg_assert(null_ExeContext->ecu == 4);
    }
 
    init_done = True;

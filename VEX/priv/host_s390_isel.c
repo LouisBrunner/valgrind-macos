@@ -1128,6 +1128,12 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_F128toI64S: conv = S390_BFP_F128_TO_I64; goto do_convert_128;
       case Iop_F128toI32U: conv = S390_BFP_F128_TO_U32; goto do_convert_128;
       case Iop_F128toI64U: conv = S390_BFP_F128_TO_U64; goto do_convert_128;
+      case Iop_D64toI32S:  conv = S390_DFP_D64_TO_I32;  goto do_convert_dfp;
+      case Iop_D64toI32U:  conv = S390_DFP_D64_TO_U32;  goto do_convert_dfp;
+      case Iop_D64toI64U:  conv = S390_DFP_D64_TO_U64;  goto do_convert_dfp;
+      case Iop_D128toI32S: conv = S390_DFP_D128_TO_I32; goto do_convert_dfp128;
+      case Iop_D128toI32U: conv = S390_DFP_D128_TO_U32; goto do_convert_dfp128;
+      case Iop_D128toI64U: conv = S390_DFP_D128_TO_U64; goto do_convert_dfp128;
 
       do_convert: {
          s390_bfp_round_t rounding_mode;
@@ -1161,6 +1167,39 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
                                                      rounding_mode));
          return res;
       }
+
+      do_convert_dfp: {
+            s390_dfp_round_t rounding_mode;
+
+            res  = newVRegI(env);
+            h1   = s390_isel_dfp_expr(env, arg2);   /* Process operand */
+
+            rounding_mode = get_dfp_rounding_mode(env, arg1);
+            addInstr(env, s390_insn_dfp_convert(size, conv, res, h1,
+                                                rounding_mode));
+            return res;
+         }
+
+      do_convert_dfp128: {
+            s390_dfp_round_t rounding_mode;
+            HReg op_hi, op_lo, f13, f15;
+
+            res = newVRegI(env);
+            s390_isel_dfp128_expr(&op_hi, &op_lo, env, arg2); /* operand */
+
+            /* We use non-virtual registers r13 and r15 as pair */
+            f13 = make_fpr(13);
+            f15 = make_fpr(15);
+
+            /* operand --> (f13, f15) */
+            addInstr(env, s390_insn_move(8, f13, op_hi));
+            addInstr(env, s390_insn_move(8, f15, op_lo));
+
+            rounding_mode = get_dfp_rounding_mode(env, arg1);
+            addInstr(env, s390_insn_dfp128_convert_from(size, conv, res, f13,
+                                                        f15, rounding_mode));
+            return res;
+         }
 
       case Iop_8HLto16:
       case Iop_16HLto32:
@@ -2507,12 +2546,20 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       switch (expr->Iex.Unop.op) {
       case Iop_D64toD128:   conv = S390_DFP_D64_TO_D128;  goto convert_dfp;
+      case Iop_I32StoD128:  conv = S390_DFP_I32_TO_D128;  goto convert_int;
+      case Iop_I32UtoD128:  conv = S390_DFP_U32_TO_D128;  goto convert_int;
+      case Iop_I64UtoD128:  conv = S390_DFP_U64_TO_D128;  goto convert_int;
       default:
          goto irreducible;
       }
 
    convert_dfp:
       op  = s390_isel_dfp_expr(env, left);
+      addInstr(env, s390_insn_dfp128_convert_to(16, conv, f12, f14, op));
+      goto move_dst;
+
+   convert_int:
+      op  = s390_isel_int_expr(env, left);
       addInstr(env, s390_insn_dfp128_convert_to(16, conv, f12, f14, op));
       goto move_dst;
 
@@ -2605,9 +2652,14 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       switch (op) {
       case Iop_D64toD32:  conv = S390_DFP_D64_TO_D32; goto convert_dfp;
+      case Iop_I64UtoD64: conv = S390_DFP_U64_TO_D64; goto convert_int;
 
       convert_dfp:
          h1 = s390_isel_dfp_expr(env, left);
+         goto convert;
+
+      convert_int:
+         h1 = s390_isel_int_expr(env, left);
          goto convert;
 
       convert: {
@@ -2707,9 +2759,15 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       switch (op) {
       case Iop_D32toD64:  conv = S390_DFP_D32_TO_D64;  goto convert_dfp1;
+      case Iop_I32StoD64: conv = S390_DFP_I32_TO_D64;  goto convert_int1;
+      case Iop_I32UtoD64: conv = S390_DFP_U32_TO_D64;  goto convert_int1;
 
       convert_dfp1:
          h1 = s390_isel_dfp_expr(env, left);
+         goto convert1;
+
+      convert_int1:
+         h1 = s390_isel_int_expr(env, left);
          goto convert1;
 
       convert1:

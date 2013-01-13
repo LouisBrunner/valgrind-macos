@@ -4137,6 +4137,92 @@ s390_emit_CXTR(UChar *p, UChar r1, UChar r2)
 
 
 static UChar *
+s390_emit_CDFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdftr", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb9510000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CXFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxftr", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb9590000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CDLFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdlftr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb9530000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CXLFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxlftr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb95b0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CDLGTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdlgtr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb9520000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CXLGTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxlgtr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb95a0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
 s390_emit_CEDTR(UChar *p, UChar r1, UChar r2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -4153,6 +4239,92 @@ s390_emit_CEXTR(UChar *p, UChar r1, UChar r2)
       s390_disasm(ENC3(MNM, FPR, FPR), "cextr", r1, r2);
 
    return emit_RRE(p, 0xb3fc0000, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CFDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "cfdtr", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb9410000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CFXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "cfxtr", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb9490000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLFDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfdtr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb9430000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLFXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clfxtr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb94b0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLGDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgdtr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb9420000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CLGXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m4 == 0);
+   vassert(s390_host_has_dfp);
+   vassert(s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "clgxtr", r1, m3, r2, m4);
+
+   return emit_RRF2(p, 0xb94a0000, m3, m4, r1, r2);
 }
 
 
@@ -6367,6 +6539,18 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_DFP_D64_TO_D32:
       case S390_DFP_D64_TO_D128:
       case S390_DFP_D128_TO_D64: op = "v-d2d"; break;
+      case S390_DFP_I32_TO_D64:
+      case S390_DFP_I32_TO_D128: op = "v-i2d"; break;
+      case S390_DFP_U32_TO_D64:
+      case S390_DFP_U32_TO_D128:
+      case S390_DFP_U64_TO_D64:
+      case S390_DFP_U64_TO_D128: op = "v-u2d"; break;
+      case S390_DFP_D64_TO_I32:
+      case S390_DFP_D128_TO_I32: op = "v-d2i"; break;
+      case S390_DFP_D64_TO_U32:
+      case S390_DFP_D64_TO_U64:
+      case S390_DFP_D128_TO_U32:
+      case S390_DFP_D128_TO_U64: op = "v-d2u"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R,%R", op, insn->variant.dfp_convert.dst_hi,
@@ -6505,10 +6689,22 @@ s390_insn_as_string(const s390_insn *insn)
 
    case S390_INSN_DFP_CONVERT:
       switch (insn->variant.dfp_convert.tag) {
-      case S390_DFP_D32_TO_D64: p += vex_sprintf(p, "4 -> "); goto common;
+      case S390_DFP_D32_TO_D64:
+      case S390_DFP_I32_TO_D64:
+      case S390_DFP_I32_TO_D128:
+      case S390_DFP_U32_TO_D64:
+      case S390_DFP_U32_TO_D128: p += vex_sprintf(p, "4 -> "); goto common;
       case S390_DFP_D64_TO_D32:
-      case S390_DFP_D64_TO_D128:p += vex_sprintf(p, "8 -> "); goto common;
-      case S390_DFP_D128_TO_D64:p += vex_sprintf(p, "16 -> "); goto common;
+      case S390_DFP_D64_TO_D128:
+      case S390_DFP_U64_TO_D64:
+      case S390_DFP_U64_TO_D128:
+      case S390_DFP_D64_TO_I32:
+      case S390_DFP_D64_TO_U32:
+      case S390_DFP_D64_TO_U64:  p += vex_sprintf(p, "8 -> "); goto common;
+      case S390_DFP_D128_TO_D64:
+      case S390_DFP_D128_TO_I32:
+      case S390_DFP_D128_TO_U32:
+      case S390_DFP_D128_TO_U64: p += vex_sprintf(p, "16 -> "); goto common;
       default:
          goto common;
       }
@@ -8632,6 +8828,26 @@ s390_insn_dfp_convert_emit(UChar *buf, const s390_insn *insn)
    const UInt m4 = 0;
 
    switch (insn->variant.dfp_convert.tag) {
+
+      /* Convert to fixed */
+   case S390_DFP_D64_TO_I32:  return s390_emit_CFDTR(buf, m3, m4, r1, r2);
+   case S390_DFP_D128_TO_I32: return s390_emit_CFXTR(buf, m3, m4, r1, r2);
+
+      /* Convert to logical */
+   case S390_DFP_D64_TO_U32:  return s390_emit_CLFDTR(buf, m3, m4, r1, r2);
+   case S390_DFP_D128_TO_U32: return s390_emit_CLFXTR(buf, m3, m4, r1, r2);
+   case S390_DFP_D64_TO_U64:  return s390_emit_CLGDTR(buf, m3, m4, r1, r2);
+   case S390_DFP_D128_TO_U64: return s390_emit_CLGXTR(buf, m3, m4, r1, r2);
+
+      /* Convert from fixed */
+   case S390_DFP_I32_TO_D64:  return s390_emit_CDFTR(buf, 0, m4, r1, r2);
+   case S390_DFP_I32_TO_D128: return s390_emit_CXFTR(buf, 0, m4, r1, r2);
+
+      /* Convert from logical */
+   case S390_DFP_U32_TO_D64:  return s390_emit_CDLFTR(buf, m3, m4, r1, r2);
+   case S390_DFP_U64_TO_D64:  return s390_emit_CDLGTR(buf, m3, m4, r1, r2);
+   case S390_DFP_U32_TO_D128: return s390_emit_CXLFTR(buf, m3, m4, r1, r2);
+   case S390_DFP_U64_TO_D128: return s390_emit_CXLGTR(buf, m3, m4, r1, r2);
 
       /* Load lengthened */
    case S390_DFP_D32_TO_D64:   return s390_emit_LDETR(buf, m4, r1, r2);

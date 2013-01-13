@@ -144,7 +144,13 @@ enum {
    S390_CC_OP_DFP_TDC_128 = 46,
    S390_CC_OP_DFP_TDG_32 = 47,
    S390_CC_OP_DFP_TDG_64 = 48,
-   S390_CC_OP_DFP_TDG_128 = 49
+   S390_CC_OP_DFP_TDG_128 = 49,
+   S390_CC_OP_DFP_64_TO_UINT_32 = 50,
+   S390_CC_OP_DFP_128_TO_UINT_32 = 51,
+   S390_CC_OP_DFP_64_TO_UINT_64 = 52,
+   S390_CC_OP_DFP_128_TO_UINT_64 = 53,
+   S390_CC_OP_DFP_64_TO_INT_32 = 54,
+   S390_CC_OP_DFP_128_TO_INT_32 = 55
 };
 
 /*------------------------------------------------------------*/
@@ -210,6 +216,12 @@ enum {
    | S390_CC_OP_DFP_TDG_32          | D value               | Z group              |                 |
    | S390_CC_OP_DFP_TDG_64          | D value               | Z group              |                 |
    | S390_CC_OP_DFP_TDG_128         | D value hi 64 bits    | D value low 64 bits  | Z group         |
+   | S390_CC_OP_DFP_64_TO_UINT_32   | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_UINT_32  | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_64_TO_UINT_64   | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_UINT_64  | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_64_TO_INT_64    | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_INT_64   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
    +--------------------------------+-----------------------+----------------------+-----------------+
 */
 

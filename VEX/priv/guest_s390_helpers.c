@@ -1155,6 +1155,33 @@ decode_bfp_rounding_mode(UInt irrm)
    psw >> 28;   /* cc */ \
 })
 
+/* Convert an IRRoundingModeDFP value to s390_dfp_round_t */
+#if defined(VGA_s390x)
+static s390_dfp_round_t
+decode_dfp_rounding_mode(UInt irrm)
+{
+   switch (irrm) {
+   case Irrm_DFP_NEAREST:
+      return S390_DFP_ROUND_NEAREST_EVEN_4;
+   case Irrm_DFP_NegINF:
+      return S390_DFP_ROUND_NEGINF_7;
+   case Irrm_DFP_PosINF:
+      return S390_DFP_ROUND_POSINF_6;
+   case Irrm_DFP_ZERO:
+      return S390_DFP_ROUND_ZERO_5;
+   case Irrm_DFP_NEAREST_TIE_AWAY_0:
+      return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1;
+   case Irrm_DFP_PREPARE_SHORTER:
+      return S390_DFP_ROUND_PREPARE_SHORT_3;
+   case Irrm_DFP_AWAY_FROM_ZERO:
+      return S390_DFP_ROUND_AWAY_0;
+   case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+      return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
+   }
+   vpanic("decode_dfp_rounding_mode");
+}
+#endif
+
 #define S390_CC_FOR_DFP_RESULT(cc_dep1) \
 ({ \
    __asm__ volatile ( \
@@ -1203,6 +1230,216 @@ decode_bfp_rounding_mode(UInt irrm)
                                    : "cc", "f4", "f6");                 \
    psw >> 28;   /* cc */                                                \
 })
+
+#define S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,rounding_mode)       \
+   ({                                                                   \
+      __asm__ volatile (                                                \
+                        opcode ",0,%[op]," #rounding_mode ",0\n\t"      \
+                        "ipm %[psw]\n\t"           : [psw] "=d"(psw)    \
+                        : [op] "f"(cc_dep1)                             \
+                        : "cc", "r0");                                  \
+      psw >> 28;   /* cc */                                             \
+   })
+
+#define S390_CC_FOR_DFP_CONVERT(opcode,cc_dep1,cc_dep2)                 \
+   ({                                                                   \
+      UInt cc;                                                          \
+      switch (decode_dfp_rounding_mode(cc_dep2)) {                      \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1:                         \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12:                        \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,1);            \
+         break;                                                         \
+      case S390_DFP_ROUND_PREPARE_SHORT_3:                              \
+      case S390_DFP_ROUND_PREPARE_SHORT_15:                             \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,3);            \
+         break;                                                         \
+      case S390_DFP_ROUND_NEAREST_EVEN_4:                               \
+      case S390_DFP_ROUND_NEAREST_EVEN_8:                               \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,4);            \
+         break;                                                         \
+      case S390_DFP_ROUND_ZERO_5:                                       \
+      case S390_DFP_ROUND_ZERO_9:                                       \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,5);            \
+         break;                                                         \
+      case S390_DFP_ROUND_POSINF_6:                                     \
+      case S390_DFP_ROUND_POSINF_10:                                    \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,6);            \
+         break;                                                         \
+      case S390_DFP_ROUND_NEGINF_7:                                     \
+      case S390_DFP_ROUND_NEGINF_11:                                    \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,7);            \
+         break;                                                         \
+      case S390_DFP_ROUND_NEAREST_TIE_TOWARD_0:                         \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,13);           \
+         break;                                                         \
+      case S390_DFP_ROUND_AWAY_0:                                       \
+         cc = S390_CC_FOR_DFP_CONVERT_AUX(opcode,cc_dep1,14);           \
+         break;                                                         \
+      default:                                                          \
+         vpanic("unexpected dfp rounding mode");                        \
+      }                                                                 \
+      cc;                                                               \
+   })
+
+#define S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,rounding_mode)      \
+   ({                                                                   \
+      __asm__ volatile (                                                \
+                        opcode ",0,%[op]," #rounding_mode ",0\n\t"      \
+                        "ipm %[psw]\n\t"           : [psw] "=d"(psw)    \
+                        : [op] "f"(cc_dep1)                             \
+                        : "cc", "r0");                                  \
+      psw >> 28;   /* cc */                                             \
+   })
+
+#define S390_CC_FOR_DFP_UCONVERT(opcode,cc_dep1,cc_dep2)                \
+   ({                                                                   \
+      UInt cc;                                                          \
+      switch (decode_dfp_rounding_mode(cc_dep2)) {                      \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1:                         \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12:                        \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,1);           \
+         break;                                                         \
+      case S390_DFP_ROUND_PREPARE_SHORT_3:                              \
+      case S390_DFP_ROUND_PREPARE_SHORT_15:                             \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,3);           \
+         break;                                                         \
+      case S390_DFP_ROUND_NEAREST_EVEN_4:                               \
+      case S390_DFP_ROUND_NEAREST_EVEN_8:                               \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,4);           \
+         break;                                                         \
+      case S390_DFP_ROUND_ZERO_5:                                       \
+      case S390_DFP_ROUND_ZERO_9:                                       \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,5);           \
+         break;                                                         \
+      case S390_DFP_ROUND_POSINF_6:                                     \
+      case S390_DFP_ROUND_POSINF_10:                                    \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,6);           \
+         break;                                                         \
+      case S390_DFP_ROUND_NEGINF_7:                                     \
+      case S390_DFP_ROUND_NEGINF_11:                                    \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,7);           \
+         break;                                                         \
+      case S390_DFP_ROUND_NEAREST_TIE_TOWARD_0:                         \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,13);          \
+         break;                                                         \
+      case S390_DFP_ROUND_AWAY_0:                                       \
+         cc = S390_CC_FOR_DFP_UCONVERT_AUX(opcode,cc_dep1,14);          \
+         break;                                                         \
+      default:                                                          \
+         vpanic("unexpected dfp rounding mode");                        \
+      }                                                                 \
+      cc;                                                               \
+   })
+
+#define S390_CC_FOR_DFP128_CONVERT_AUX(opcode,hi,lo,rounding_mode)      \
+   ({                                                                   \
+      __asm__ volatile (                                                \
+                        "ldr   4,%[high]\n\t"                           \
+                        "ldr   6,%[low]\n\t"                            \
+                        opcode ",0,4," #rounding_mode ",0\n\t"          \
+                        "ipm %[psw]\n\t"           : [psw] "=d"(psw)    \
+                        : [high] "f"(hi), [low] "f"(lo)                 \
+                        : "cc", "r0", "f4", "f6");                      \
+      psw >> 28;   /* cc */                                             \
+   })
+
+#define S390_CC_FOR_DFP128_CONVERT(opcode,cc_dep1,cc_dep2,cc_ndep)       \
+   ({                                                                    \
+      UInt cc;                                                           \
+      /* Recover the original DEP2 value. See comment near               \
+         s390_cc_thunk_put3 for rationale. */                            \
+      cc_dep2 = cc_dep2 ^ cc_ndep;                                       \
+      switch (decode_dfp_rounding_mode(cc_ndep)) {                       \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1:                          \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12:                         \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,1);  \
+         break;                                                          \
+      case S390_DFP_ROUND_PREPARE_SHORT_3:                               \
+      case S390_DFP_ROUND_PREPARE_SHORT_15:                              \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,3);  \
+         break;                                                          \
+      case S390_DFP_ROUND_NEAREST_EVEN_4:                                \
+      case S390_DFP_ROUND_NEAREST_EVEN_8:                                \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,4);  \
+         break;                                                          \
+      case S390_DFP_ROUND_ZERO_5:                                        \
+      case S390_DFP_ROUND_ZERO_9:                                        \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,5);  \
+         break;                                                          \
+      case S390_DFP_ROUND_POSINF_6:                                      \
+      case S390_DFP_ROUND_POSINF_10:                                     \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,6);  \
+         break;                                                          \
+      case S390_DFP_ROUND_NEGINF_7:                                      \
+      case S390_DFP_ROUND_NEGINF_11:                                     \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,7);  \
+         break;                                                          \
+      case S390_DFP_ROUND_NEAREST_TIE_TOWARD_0:                          \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,13); \
+         break;                                                          \
+      case S390_DFP_ROUND_AWAY_0:                                        \
+         cc = S390_CC_FOR_DFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,14); \
+         break;                                                          \
+      default:                                                           \
+         vpanic("unexpected dfp rounding mode");                         \
+      }                                                                  \
+      cc;                                                                \
+   })
+
+#define S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,hi,lo,rounding_mode)      \
+   ({                                                                    \
+      __asm__ volatile (                                                 \
+                        "ldr   4,%[high]\n\t"                            \
+                        "ldr   6,%[low]\n\t"                             \
+                        opcode ",0,4," #rounding_mode ",0\n\t"           \
+                        "ipm %[psw]\n\t"           : [psw] "=d"(psw)     \
+                        : [high] "f"(hi), [low] "f"(lo)                  \
+                        : "cc", "r0", "f4", "f6");                       \
+      psw >> 28;   /* cc */                                              \
+   })
+
+#define S390_CC_FOR_DFP128_UCONVERT(opcode,cc_dep1,cc_dep2,cc_ndep)       \
+   ({                                                                     \
+      UInt cc;                                                            \
+      /* Recover the original DEP2 value. See comment near                \
+         s390_cc_thunk_put3 for rationale. */                             \
+      cc_dep2 = cc_dep2 ^ cc_ndep;                                        \
+      switch (decode_dfp_rounding_mode(cc_ndep)) {                        \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1:                           \
+      case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12:                          \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,1);  \
+         break;                                                           \
+      case S390_DFP_ROUND_PREPARE_SHORT_3:                                \
+      case S390_DFP_ROUND_PREPARE_SHORT_15:                               \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,3);  \
+         break;                                                           \
+      case S390_DFP_ROUND_NEAREST_EVEN_4:                                 \
+      case S390_DFP_ROUND_NEAREST_EVEN_8:                                 \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,4);  \
+         break;                                                           \
+      case S390_DFP_ROUND_ZERO_5:                                         \
+      case S390_DFP_ROUND_ZERO_9:                                         \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,5);  \
+         break;                                                           \
+      case S390_DFP_ROUND_POSINF_6:                                       \
+      case S390_DFP_ROUND_POSINF_10:                                      \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,6);  \
+         break;                                                           \
+      case S390_DFP_ROUND_NEGINF_7:                                       \
+      case S390_DFP_ROUND_NEGINF_11:                                      \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,7);  \
+         break;                                                           \
+      case S390_DFP_ROUND_NEAREST_TIE_TOWARD_0:                           \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,13); \
+         break;                                                           \
+      case S390_DFP_ROUND_AWAY_0:                                         \
+         cc = S390_CC_FOR_DFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,14); \
+         break;                                                           \
+      default:                                                            \
+         vpanic("unexpected dfp rounding mode");                          \
+      }                                                                   \
+      cc;                                                                 \
+   })
 
 
 /* Return the value of the condition code from the supplied thunk parameters.
@@ -1445,6 +1682,27 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
    case S390_CC_OP_DFP_TDG_128: /* TDGXT */
       return S390_CC_FOR_DFP128_TD(".insn rxe, 0xed0000000059", cc_dep1,
                                    cc_dep2, cc_ndep);
+
+   case S390_CC_OP_DFP_64_TO_INT_32: /* CFDTR */
+      return S390_CC_FOR_DFP_CONVERT(".insn rrf,0xb9410000", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_128_TO_INT_32: /* CFXTR */
+      return S390_CC_FOR_DFP128_CONVERT(".insn rrf,0xb9490000", cc_dep1,
+                                        cc_dep2, cc_ndep);
+
+   case S390_CC_OP_DFP_64_TO_UINT_32: /* CLFDTR */
+      return S390_CC_FOR_DFP_UCONVERT(".insn rrf,0xb9430000", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_128_TO_UINT_32: /* CLFXTR */
+      return S390_CC_FOR_DFP128_UCONVERT(".insn rrf,0xb94b0000", cc_dep1,
+                                         cc_dep2, cc_ndep);
+
+   case S390_CC_OP_DFP_64_TO_UINT_64: /* CLGDTR */
+      return S390_CC_FOR_DFP_UCONVERT(".insn rrf,0xb9420000", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_128_TO_UINT_64: /* CLGXTR */
+      return S390_CC_FOR_DFP128_UCONVERT(".insn rrf,0xb94a0000", cc_dep1,
+                                         cc_dep2, cc_ndep);
 
    default:
       break;

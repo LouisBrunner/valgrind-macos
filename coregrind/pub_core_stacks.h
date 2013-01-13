@@ -42,7 +42,10 @@ extern void  VG_(change_stack)     ( UWord id, Addr start, Addr end );
 extern void  VG_(stack_limits)     ( Addr SP, Addr *start, Addr *end );
 
 extern VG_REGPARM(3)
-       void VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP, UInt otag );
+       void VG_(unknown_SP_update_w_ECU)
+                                   ( Addr old_SP, Addr new_SP, UInt ecu );
+extern VG_REGPARM(2)
+       void VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP );
 
 #endif   // __PUB_CORE_STACKS_H
 

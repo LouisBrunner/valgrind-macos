@@ -45,7 +45,7 @@
 #include "pub_core_redir.h"      // VG_(redir_do_lookup)
 
 #include "pub_core_signals.h"    // VG_(synth_fault_{perms,mapping}
-#include "pub_core_stacks.h"     // VG_(unknown_SP_update)()
+#include "pub_core_stacks.h"     // VG_(unknown_SP_update*)()
 #include "pub_core_tooliface.h"  // VG_(tdict)
 
 #include "pub_core_translate.h"
@@ -524,16 +524,25 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          /* Now we know what the old value of SP is.  But knowing the new
             value is a bit tricky if there is a partial write. */
          if (first_Put == first_SP && last_Put == last_SP) {
-           /* The common case, an exact write to SP.  So st->Ist.Put.data
-              does hold the new value; simple. */
+            /* The common case, an exact write to SP.  So st->Ist.Put.data
+               does hold the new value; simple. */
             vg_assert(curr_IP_known);
-            dcall = unsafeIRDirty_0_N( 
-                       3/*regparms*/, 
-                       "VG_(unknown_SP_update)", 
-                       VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update) ),
-                       mkIRExprVec_3( IRExpr_RdTmp(old_SP), st->Ist.Put.data,
-                                      mk_ecu_Expr(curr_IP) ) 
-                    );
+            if (NULL != VG_(tdict).track_new_mem_stack_w_ECU)
+               dcall = unsafeIRDirty_0_N( 
+                          3/*regparms*/, 
+                          "VG_(unknown_SP_update_w_ECU)", 
+                          VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update_w_ECU) ),
+                          mkIRExprVec_3( IRExpr_RdTmp(old_SP), st->Ist.Put.data,
+                                         mk_ecu_Expr(curr_IP) ) 
+                       );
+            else
+               dcall = unsafeIRDirty_0_N( 
+                          2/*regparms*/, 
+                          "VG_(unknown_SP_update)", 
+                          VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update) ),
+                          mkIRExprVec_2( IRExpr_RdTmp(old_SP), st->Ist.Put.data )
+                       );
+
             addStmtToIRSB( bb, IRStmt_Dirty(dcall) );
             /* don't forget the original assignment */
             addStmtToIRSB( bb, st );
@@ -562,14 +571,23 @@ IRSB* vg_SP_update_pass ( void*             closureV,
             addStmtToIRSB( bb, IRStmt_Put(offset_SP, IRExpr_RdTmp(old_SP) ));
             /* 4 */
             vg_assert(curr_IP_known);
-            dcall = unsafeIRDirty_0_N( 
-                       3/*regparms*/, 
-                       "VG_(unknown_SP_update)", 
-                       VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update) ),
-                       mkIRExprVec_3( IRExpr_RdTmp(old_SP),
-                                      IRExpr_RdTmp(new_SP), 
-                                      mk_ecu_Expr(curr_IP) )
-                    );
+            if (NULL != VG_(tdict).track_new_mem_stack_w_ECU)
+               dcall = unsafeIRDirty_0_N( 
+                          3/*regparms*/, 
+                          "VG_(unknown_SP_update_w_ECU)", 
+                          VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update_w_ECU) ),
+                          mkIRExprVec_3( IRExpr_RdTmp(old_SP),
+                                         IRExpr_RdTmp(new_SP), 
+                                         mk_ecu_Expr(curr_IP) )
+                       );
+            else
+               dcall = unsafeIRDirty_0_N( 
+                          2/*regparms*/, 
+                          "VG_(unknown_SP_update)", 
+                          VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update) ),
+                          mkIRExprVec_2( IRExpr_RdTmp(old_SP),
+                                         IRExpr_RdTmp(new_SP) )
+                       );
             addStmtToIRSB( bb, IRStmt_Dirty(dcall) );
             /* 5 */
             addStmtToIRSB( bb, IRStmt_Put(offset_SP, IRExpr_RdTmp(new_SP) ));

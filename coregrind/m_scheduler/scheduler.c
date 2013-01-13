@@ -285,7 +285,10 @@ void VG_(acquire_BigLock)(ThreadId tid, const HChar* who)
    VG_(running_tid) = tid;
 
    { Addr gsp = VG_(get_SP)(tid);
-     VG_(unknown_SP_update)(gsp, gsp, 0/*unknown origin*/);
+      if (NULL != VG_(tdict).track_new_mem_stack_w_ECU)
+         VG_(unknown_SP_update_w_ECU)(gsp, gsp, 0/*unknown origin*/);
+      else
+         VG_(unknown_SP_update)(gsp, gsp);
    }
 
    if (VG_(clo_trace_sched)) {

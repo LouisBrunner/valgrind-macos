@@ -268,59 +268,97 @@ void VG_(stack_limits)(Addr SP, Addr *start, Addr *end )
    }
 }
 
-/* This function gets called if new_mem_stack and/or die_mem_stack are
+
+/* complaints_stack_switch reports that SP has changed by more than some
+   threshold amount (by default, 2MB).  We take this to mean that the
+   application is switching to a new stack, for whatever reason.
+   
+   JRS 20021001: following discussions with John Regehr, if a stack
+   switch happens, it seems best not to mess at all with memory
+   permissions.  Seems to work well with Netscape 4.X.  Really the
+   only remaining difficulty is knowing exactly when a stack switch is
+   happening. */
+__attribute__((noinline))
+static void complaints_stack_switch (Addr old_SP, Addr new_SP)
+{
+   static Int complaints = 3;
+   if (VG_(clo_verbosity) > 0 && complaints > 0 && !VG_(clo_xml)) {
+      Word delta  = (Word)new_SP - (Word)old_SP;
+      complaints--;
+      VG_(message)(Vg_UserMsg,
+                   "Warning: client switching stacks?  "
+                   "SP change: 0x%lx --> 0x%lx\n", old_SP, new_SP);
+      VG_(message)(Vg_UserMsg,
+                   "         to suppress, use: --max-stackframe=%ld "
+                   "or greater\n",
+                   (delta < 0 ? -delta : delta));
+      if (complaints == 0)
+         VG_(message)(Vg_UserMsg,
+                      "         further instances of this message "
+                      "will not be shown.\n");
+   }
+}
+
+/* The functions VG_(unknown_SP_update) and VG_(unknown_SP_update_w_ECU)
+   get called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases
    (eg. new_mem_stack_4) isn't used in preference.  
-*/
+
+   These functions are performance critical, so are built with macros. */
+
+// preamble + check if stack has switched.
+#define IF_STACK_SWITCH_SET_current_task_AND_RETURN                     \
+   Word delta  = (Word)new_SP - (Word)old_SP;                           \
+                                                                        \
+   /* Check if the stack pointer is still in the same stack as before. */ \
+   if (UNLIKELY(current_stack == NULL ||                                \
+      new_SP < current_stack->start || new_SP > current_stack->end)) {  \
+      Stack* new_stack = find_stack_by_addr(new_SP);                    \
+      if (new_stack                                                     \
+          && (current_stack == NULL || new_stack->id != current_stack->id)) { \
+         /* The stack pointer is now in another stack.  Update the current */ \
+         /* stack information and return without doing anything else. */ \
+         current_stack = new_stack;                                     \
+         return;                                                        \
+      }                                                                 \
+   }
+
+#define IF_BIG_DELTA_complaints_AND_RETURN                              \
+   if (UNLIKELY(delta < -VG_(clo_max_stackframe)                        \
+                || VG_(clo_max_stackframe) < delta)) {                  \
+      complaints_stack_switch(old_SP, new_SP);                          \
+      return;                                                           \
+   }
+
+#define IF_SMALLER_STACK_die_mem_stack_AND_RETURN                       \
+   if (delta > 0) {                                                     \
+      VG_TRACK( die_mem_stack, old_SP,  delta );                        \
+      return;                                                           \
+   }
+
+  
 VG_REGPARM(3)
-void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP, UInt ecu )
-{
-   static Int moans = 3;
-   Word delta  = (Word)new_SP - (Word)old_SP;
-
-   /* Check if the stack pointer is still in the same stack as before. */
-   if (current_stack == NULL ||
-       new_SP < current_stack->start || new_SP > current_stack->end) {
-      Stack* new_stack = find_stack_by_addr(new_SP);
-      if (new_stack 
-          && (current_stack == NULL || new_stack->id != current_stack->id)) { 
-         /* The stack pointer is now in another stack.  Update the current
-            stack information and return without doing anything else. */
-         current_stack = new_stack;
-         return;
-      }
-   }
-
-   if (delta < -VG_(clo_max_stackframe) || VG_(clo_max_stackframe) < delta) {
-      /* SP has changed by more than some threshold amount (by
-         default, 2MB).  We take this to mean that the application is
-         switching to a new stack, for whatever reason.
-       
-         JRS 20021001: following discussions with John Regehr, if a stack
-         switch happens, it seems best not to mess at all with memory
-         permissions.  Seems to work well with Netscape 4.X.  Really the
-         only remaining difficulty is knowing exactly when a stack switch is
-         happening. */
-      if (VG_(clo_verbosity) > 0 && moans > 0 && !VG_(clo_xml)) {
-         moans--;
-         VG_(message)(Vg_UserMsg,
-            "Warning: client switching stacks?  "
-            "SP change: 0x%lx --> 0x%lx\n", old_SP, new_SP);
-         VG_(message)(Vg_UserMsg,
-            "         to suppress, use: --max-stackframe=%ld or greater\n",
-            (delta < 0 ? -delta : delta));
-         if (moans == 0)
-            VG_(message)(Vg_UserMsg,
-                "         further instances of this message "
-                "will not be shown.\n");
-      }
-   } else if (delta < 0) {
+void VG_(unknown_SP_update_w_ECU)( Addr old_SP, Addr new_SP, UInt ecu ) {
+   IF_STACK_SWITCH_SET_current_task_AND_RETURN;
+   IF_BIG_DELTA_complaints_AND_RETURN;
+   IF_SMALLER_STACK_die_mem_stack_AND_RETURN;
+   if (delta < 0) { // IF_BIGGER_STACK
       VG_TRACK( new_mem_stack_w_ECU, new_SP, -delta, ecu );
-      VG_TRACK( new_mem_stack,       new_SP, -delta );
-
-   } else if (delta > 0) {
-      VG_TRACK( die_mem_stack, old_SP,  delta );
+      return;
    }
+   // SAME_STACK. nothing to do.
+}
+
+VG_REGPARM(2)
+void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP ) {
+   IF_STACK_SWITCH_SET_current_task_AND_RETURN;
+   IF_BIG_DELTA_complaints_AND_RETURN;
+   IF_SMALLER_STACK_die_mem_stack_AND_RETURN;
+   if (delta < 0) { // IF_BIGGER_STACK
+      VG_TRACK( new_mem_stack,      new_SP, -delta );
+      return;
+   }
+   // SAME_STACK. nothing to do.
 }
 
 /*--------------------------------------------------------------------*/

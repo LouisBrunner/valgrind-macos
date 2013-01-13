@@ -85,7 +85,7 @@ typedef enum {
    S390_FPC_BFP_ROUND_POSINF        = 2,
    S390_FPC_BFP_ROUND_NEGINF        = 3,
    /* 4,5,6 are not allowed */
-   S390_FPC_BFP_ROUND_PREPARE_SHORT = 7
+   S390_FPC_BFP_ROUND_PREPARE_SHORT = 7 /* floating point extension facility */
 } s390_fpc_bfp_round_t;
 
 

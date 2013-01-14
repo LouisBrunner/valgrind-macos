@@ -360,6 +360,7 @@ struct vki_sigcontext {
 // From linux-2.6.13/include/asm-ppc64/fcntl.h
 //----------------------------------------------------------------------
 
+#define VKI_O_ACCMODE	         03
 #define VKI_O_RDONLY             00
 #define VKI_O_WRONLY             01
 #define VKI_O_RDWR               02

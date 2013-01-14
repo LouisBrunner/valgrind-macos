@@ -4494,10 +4494,10 @@ PRE(sys_vmsplice)
       for (iov = (struct vki_iovec *)ARG2;
            iov < (struct vki_iovec *)ARG2 + ARG3; iov++) 
       {
-         if ((fdfl & (VKI_O_WRONLY|VKI_O_RDWR)) != 0)
-            PRE_MEM_READ( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
-         else if ((fdfl & VKI_O_RDONLY) != 0)
+         if ((fdfl & VKI_O_ACCMODE) == VKI_O_RDONLY)
             PRE_MEM_WRITE( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
+         else
+            PRE_MEM_READ( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
       }
    }
 }
@@ -4508,7 +4508,7 @@ POST(sys_vmsplice)
    if (RES > 0) {
       Int fdfl = VG_(fcntl)(ARG1, VKI_F_GETFL, 0);
       vg_assert(fdfl >= 0);
-      if ((fdfl & VKI_O_RDONLY) != 0)
+      if ((fdfl & VKI_O_ACCMODE) == VKI_O_RDONLY)
       {
          const struct vki_iovec *iov;
          for (iov = (struct vki_iovec *)ARG2;

@@ -309,6 +309,7 @@ struct vki_sigcontext {
 // From linux-2.6.35.5/include/asm-mips/fcntl.h
 //----------------------------------------------------------------------
 
+#define VKI_O_ACCMODE		   03
 #define VKI_O_RDONLY		   00
 #define VKI_O_WRONLY		   01
 #define VKI_O_RDWR		   02

@@ -2152,7 +2152,7 @@ static const HChar* nameMMXGran ( Int gran )
    }
 }
 
-static const HChar nameISize ( Int size )
+static HChar nameISize ( Int size )
 {
    switch (size) {
       case 8: return 'q';

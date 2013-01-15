@@ -5911,10 +5911,10 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          retty = typeOfIRTemp(env->type_env, d->tmp);
 
       /* Marshal args, do the call, clear stack, set the return value
-         to all-ones if this is a conditional call that returns a
+         to 0x555..555 if this is a conditional call that returns a
          value and the call is skipped.  We need to set the ret-loc
          correctly in order to implement the IRDirty semantics that
-         the return value is all-ones if the call doesn't happen. */
+         the return value is 0x555..555 if the call doesn't happen. */
       RetLoc rloc = RetLocINVALID;
       switch (retty) {
          case Ity_INVALID: /* function doesn't return anything */

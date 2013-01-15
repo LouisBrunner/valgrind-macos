@@ -240,7 +240,7 @@ extern void         addHInstr ( HInstrArray*, HInstr* );
 /* This is common to all back ends.  It describes where the return
    value from a C call is located.  This is important in the case that
    the call is conditional, since the return locations will need to be
-   set to all-ones in the case that the call does not happen. */
+   set to 0x555..555 in the case that the call does not happen. */
 
 typedef
    enum {

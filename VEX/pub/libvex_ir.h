@@ -2256,7 +2256,7 @@ typedef
       Ist_CAS,
       Ist_LLSC,
       Ist_Dirty,
-      Ist_MBE,       /* META (maybe) */
+      Ist_MBE,
       Ist_Exit
    } 
    IRStmtTag;

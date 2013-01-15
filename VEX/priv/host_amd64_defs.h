@@ -473,6 +473,7 @@ typedef
             AMD64CondCode cond;
             Addr64        target;
             Int           regparms; /* 0 .. 6 */
+            RetLoc        rloc;     /* where the return value will be */
          } Call;
          /* Update the guest RIP value, then exit requesting to chain
             to it.  May be conditional. */
@@ -701,7 +702,7 @@ extern AMD64Instr* AMD64Instr_Test64     ( UInt imm32, HReg dst );
 extern AMD64Instr* AMD64Instr_MulL       ( Bool syned, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Div        ( Bool syned, Int sz, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Push       ( AMD64RMI* );
-extern AMD64Instr* AMD64Instr_Call       ( AMD64CondCode, Addr64, Int );
+extern AMD64Instr* AMD64Instr_Call       ( AMD64CondCode, Addr64, Int, RetLoc );
 extern AMD64Instr* AMD64Instr_XDirect    ( Addr64 dstGA, AMD64AMode* amRIP,
                                            AMD64CondCode cond, Bool toFastEP );
 extern AMD64Instr* AMD64Instr_XIndir     ( HReg dstGA, AMD64AMode* amRIP,

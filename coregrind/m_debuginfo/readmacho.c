@@ -395,10 +395,10 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
 
 /* Compare DiSyms by their start address, and for equal addresses, use
    the primary name as a secondary sort key. */
-static Int cmp_DiSym_by_start_then_name ( void* v1, void* v2 )
+static Int cmp_DiSym_by_start_then_name ( const void* v1, const void* v2 )
 {
-   DiSym* s1 = (DiSym*)v1;
-   DiSym* s2 = (DiSym*)v2;
+   const DiSym* s1 = (DiSym*)v1;
+   const DiSym* s2 = (DiSym*)v2;
    if (s1->addr < s2->addr) return -1;
    if (s1->addr > s2->addr) return 1;
    return VG_(strcmp)(s1->pri_name, s2->pri_name);
@@ -509,7 +509,7 @@ static Bool file_exists_p(const Char *path)
 static Char *
 find_separate_debug_file (const Char *executable_name)
 {
-   Char *basename_str;
+   const Char *basename_str;
    Char *dot_ptr;
    Char *slash_ptr;
    Char *dsymfile;
@@ -594,7 +594,7 @@ find_separate_debug_file (const Char *executable_name)
 
 
 static UChar *getsectdata(UChar* base, SizeT size, 
-                          Char *segname, Char *sectname,
+                          const Char *segname, const Char *sectname,
                           /*OUT*/Word *sect_size)
 {
    struct MACH_HEADER *mh = (struct MACH_HEADER *)base;
@@ -972,7 +972,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* Run dsymutil */
 
    { Int r;
-     HChar* dsymutil = "/usr/bin/dsymutil ";
+     const HChar* dsymutil = "/usr/bin/dsymutil ";
      HChar* cmd = ML_(dinfo_zalloc)( "di.readmacho.tmp1", 
                                      VG_(strlen)(dsymutil)
                                      + VG_(strlen)(di->fsm.filename)

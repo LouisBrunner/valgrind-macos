@@ -100,7 +100,7 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
 
 /* This string will be inserted into crash logs, so crashes while 
    running under Valgrind can be distinguished from other crashes. */
-__private_extern__ char *__crashreporter_info__ = "Instrumented by Valgrind " VERSION;
+__private_extern__ const char *__crashreporter_info__ = "Instrumented by Valgrind " VERSION;
 
 /* ---------------------------------------------------------------------
    Darwin environment cleanup

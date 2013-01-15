@@ -652,7 +652,7 @@ void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    // Now add/remove them.
    for (i = 0; i < css_used; i++) {
       ChangedSeg* cs = &css[i];
-      Char* action;
+      const Char* action;
       if (cs->is_added) {
          ML_(notify_core_and_tool_of_mmap)(
                cs->start, cs->end - cs->start + 1,
@@ -2715,7 +2715,7 @@ PRE(initgroups)
 /* Largely copied from PRE(sys_execve) in syswrap-generic.c, and from
    the simpler AIX equivalent (syswrap-aix5.c). */
 // Pre_read a char** argument.
-static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
+static void pre_argv_envp(Addr a, ThreadId tid, const Char* s1, const Char* s2)
 {
    while (True) {
       Addr a_deref;
@@ -2757,9 +2757,9 @@ static SysRes simple_pre_exec_check ( const HChar* exe_name,
 PRE(posix_spawn)
 {
    Char*        path = NULL;       /* path to executable */
-   Char**       envp = NULL;
-   Char**       argv = NULL;
-   Char**       arg2copy;
+   HChar**      envp = NULL;
+   HChar**      argv = NULL;
+   HChar**      arg2copy;
    Char*        launcher_basename = NULL;
    Int          i, j, tot_args;
    SysRes       res;
@@ -2870,7 +2870,7 @@ PRE(posix_spawn)
    if (ARG5 == 0) {
       envp = NULL;
    } else {
-      envp = VG_(env_clone)( (Char**)ARG5 );
+      envp = VG_(env_clone)( (HChar**)ARG5 );
       vg_assert(envp);
       VG_(env_remove_valgrind_env_stuff)( envp );
    }
@@ -2889,7 +2889,7 @@ PRE(posix_spawn)
    // are omitted.
    //
    if (!trace_this_child) {
-      argv = (Char**)ARG4;
+      argv = (HChar**)ARG4;
    } else {
       vg_assert( VG_(args_for_valgrind) );
       vg_assert( VG_(args_for_valgrind_noexecpass) >= 0 );
@@ -2904,7 +2904,7 @@ PRE(posix_spawn)
       // name of client exe
       tot_args++;
       // args for client exe, skipping [0]
-      arg2copy = (Char**)ARG4;
+      arg2copy = (HChar**)ARG4;
       if (arg2copy && arg2copy[0]) {
          for (i = 1; arg2copy[i]; i++)
             tot_args++;
@@ -2934,7 +2934,7 @@ PRE(posix_spawn)
       state does the child inherit from the parent?  */
 
    if (0) {
-      Char **cpp;
+      HChar **cpp;
       VG_(printf)("posix_spawn: %s\n", path);
       for (cpp = argv; cpp && *cpp; cpp++)
          VG_(printf)("argv: %s\n", *cpp);

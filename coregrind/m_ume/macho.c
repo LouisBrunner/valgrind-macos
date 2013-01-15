@@ -73,7 +73,7 @@ static void print(const HChar *str)
    VG_(printf)("%s", str);
 }
 
-static void check_mmap(SysRes res, Addr base, SizeT len, HChar* who)
+static void check_mmap(SysRes res, Addr base, SizeT len, const HChar* who)
 {
    if (sr_isError(res)) {
       VG_(printf)("valgrind: mmap-FIXED(0x%llx, %lld) failed in UME (%s).\n", 
@@ -83,7 +83,7 @@ static void check_mmap(SysRes res, Addr base, SizeT len, HChar* who)
 }
 
 #if DARWIN_VERS == DARWIN_10_8
-static void check_mmap_float(SysRes res, SizeT len, HChar* who)
+static void check_mmap_float(SysRes res, SizeT len, const HChar* who)
 {
    if (sr_isError(res)) {
       VG_(printf)("valgrind: mmap-FLOAT(size=%lld) failed in UME (%s).\n", 

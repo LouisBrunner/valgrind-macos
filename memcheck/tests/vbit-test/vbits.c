@@ -182,8 +182,6 @@ truncate_vbits(vbits_t v, unsigned num_bits)
       case 16:  new.bits.u16 = bits & 0xffff; break;
       case 32:  new.bits.u32 = bits & ~0u;    break;
       case 64:  new.bits.u64 = bits & ~0ll;   break;
-      case 128:
-      case 256: /* cannot occur */
       default:
          panic(__func__);
       }

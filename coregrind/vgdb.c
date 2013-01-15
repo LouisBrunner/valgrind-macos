@@ -2014,13 +2014,19 @@ void report_pid (int pid, Bool on_stdout)
    if (fd == -1) {
       DEBUG(1, "error opening cmdline file %s %s\n", 
             cmdline_file, strerror(errno));
-      sprintf(cmdline, "(could not obtain process command line)");
+      sprintf(cmdline, "(could not open process command line)");
    } else {
       sz = read(fd, cmdline, 1000);
       for (i = 0; i < sz; i++)
          if (cmdline[i] == 0)
             cmdline[i] = ' ';
-      cmdline[sz] = 0;
+      if (sz >= 0)
+         cmdline[sz] = 0;
+      else {
+         DEBUG(1, "error reading cmdline file %s %s\n", 
+               cmdline_file, strerror(errno));
+         sprintf(cmdline, "(could not read process command line)");
+      }
       close (fd);
    }  
    fprintf((on_stdout ? stdout : stderr), "use --pid=%d for %s\n", pid, cmdline);

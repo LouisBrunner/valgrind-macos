@@ -277,8 +277,10 @@ static Counts* new_Counts ( Int n_counts, /*COPIED*/ULong* counts )
 
    assert(n_counts >= 0);
    cts->counts = malloc(n_counts * sizeof(ULong));
-   if (cts->counts == NULL)
+   if (cts->counts == NULL) {
+      free(cts);
       return NULL;
+   }
 
    cts->n_counts = n_counts;
    for (i = 0; i < n_counts; i++)
@@ -296,8 +298,10 @@ static Counts* new_Counts_Zeroed ( Int n_counts )
 
    assert(n_counts >= 0);
    cts->counts = malloc(n_counts * sizeof(ULong));
-   if (cts->counts == NULL)
+   if (cts->counts == NULL) {
+      free(cts);
       return NULL;
+   }
 
    cts->n_counts = n_counts;
    for (i = 0; i < n_counts; i++)

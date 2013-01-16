@@ -3968,10 +3968,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg dst = lookupIRTemp(env, d->tmp);
          addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(),dst) );
          return;
-      } else {
-         vassert(0);
       }
-
       break;
    }
 

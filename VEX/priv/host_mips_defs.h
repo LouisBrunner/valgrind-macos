@@ -493,6 +493,7 @@ typedef struct {
          Addr32 target;
          UInt argiregs;
          HReg src;
+         RetLoc rloc;     /* where the return value will be */
       } Call;
       /* Update the guest EIP value, then exit requesting to chain
          to it.  May be conditional.  Urr, use of Addr32 implicitly
@@ -654,8 +655,8 @@ extern MIPSInstr *MIPSInstr_LoadL(UChar sz, HReg dst, MIPSAMode * src,
 extern MIPSInstr *MIPSInstr_StoreC(UChar sz, MIPSAMode * dst, HReg src,
                                    Bool mode64);
 
-extern MIPSInstr *MIPSInstr_Call(MIPSCondCode, Addr32, UInt, HReg);
-extern MIPSInstr *MIPSInstr_CallAlways(MIPSCondCode, Addr32, UInt);
+extern MIPSInstr *MIPSInstr_Call(MIPSCondCode, Addr32, UInt, HReg, RetLoc);
+extern MIPSInstr *MIPSInstr_CallAlways(MIPSCondCode, Addr32, UInt, RetLoc);
 
 extern MIPSInstr *MIPSInstr_XDirect(Addr32 dstGA, MIPSAMode* amPC,
                                      MIPSCondCode cond, Bool toFastEP);

@@ -1,5 +1,4 @@
 
-
 /*---------------------------------------------------------------*/
 /*--- begin                                   host_ppc_isel.c ---*/
 /*---------------------------------------------------------------*/
@@ -672,7 +671,8 @@ Bool mightRequireFixedRegs ( IRExpr* e )
 static
 void doHelperCall ( ISelEnv* env, 
                     Bool passBBP, 
-                    IRExpr* guard, IRCallee* cee, IRExpr** args )
+                    IRExpr* guard, IRCallee* cee, IRExpr** args,
+                    RetLoc rloc )
 {
    PPCCondCode cc;
    HReg        argregs[PPC_N_REGPARMS];
@@ -902,7 +902,7 @@ void doHelperCall ( ISelEnv* env,
                      toUInt(Ptr_to_ULong(cee->addr));
 
    /* Finally, the call itself. */
-   addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs ));
+   addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs, rloc ));
 }
 
 
@@ -2008,6 +2008,9 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          break;
 
       case Iop_BCDtoDPB: {
+         /* the following is only valid in 64 bit mode */
+         if (!mode64) break;
+
          PPCCondCode cc;
          UInt        argiregs;
          HReg        argregs[1];
@@ -2026,13 +2029,17 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
          fdescr = (HWord*)h_BCDtoDPB;
-         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]), argiregs ) );
+         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]),
+                                      argiregs, RetLocInt) );
 
          addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
          return r_dst;
       }
 
       case Iop_DPBtoBCD: {
+         /* the following is only valid in 64 bit mode */
+         if (!mode64) break;
+
          PPCCondCode cc;
          UInt        argiregs;
          HReg        argregs[1];
@@ -2051,7 +2058,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
          fdescr = (HWord*)h_DPBtoBCD;
-         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]), argiregs ) );
+         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]),
+                                      argiregs, RetLocInt ) );
 
          addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
          return r_dst;
@@ -2100,14 +2108,15 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       HReg    r_dst = newVRegI(env);
       vassert(ty == Ity_I32);
 
-      /* be very restrictive for now.  Only 32/64-bit ints allowed
-         for args, and 32 bits for return type. */
+      /* be very restrictive for now.  Only 32/64-bit ints allowed for
+         args, and 32 bits for return type.  Don't forget to change +
+         the RetLoc if more return types are allowed in future. */
       if (e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
       
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, False, NULL,
-                    e->Iex.CCall.cee, e->Iex.CCall.args );
+                    e->Iex.CCall.cee, e->Iex.CCall.args, RetLocInt );
 
       /* GPR3 now holds the destination address from Pin_Goto */
       addInstr(env, mk_iMOVds_RR(r_dst, hregPPC_GPR3(mode64)));
@@ -3262,7 +3271,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
          target = toUInt( Ptr_to_ULong(h_BCDtoDPB ) );
 
-         addInstr( env, PPCInstr_Call( cc, (Addr64)target, argiregs ) );
+         addInstr( env, PPCInstr_Call( cc, (Addr64)target,
+                                       argiregs, RetLoc2Int ) );
          addInstr( env, mk_iMOVds_RR( tHi, argregs[argreg-1] ) );
          addInstr( env, mk_iMOVds_RR( tLo, argregs[argreg] ) );
 
@@ -3301,7 +3311,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
 
          target = toUInt( Ptr_to_ULong( h_DPBtoBCD ) );
 
-         addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs ) );
+         addInstr(env, PPCInstr_Call( cc, (Addr64)target,
+                                      argiregs, RetLoc2Int ) );
          addInstr(env, mk_iMOVds_RR(tHi, argregs[argreg-1]));
          addInstr(env, mk_iMOVds_RR(tLo, argregs[argreg]));
 
@@ -4973,7 +4984,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Call to DIRTY helper --------- */
    case Ist_Dirty: {
-      IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP = False;
 
@@ -4981,15 +4991,38 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          vassert(!d->needsBBP);
       passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
+      /* Figure out the return type, if any. */
+      IRType retty = Ity_INVALID;
+      if (d->tmp != IRTemp_INVALID)
+         retty = typeOfIRTemp(env->type_env, d->tmp);
+
+      /* Marshal args, do the call, clear stack, set the return value
+         to 0x555..555 if this is a conditional call that returns a
+         value and the call is skipped.  We need to set the ret-loc
+         correctly in order to implement the IRDirty semantics that
+         the return value is 0x555..555 if the call doesn't happen. */
+      RetLoc rloc = RetLocINVALID;
+      switch (retty) {
+      case Ity_INVALID: /* function doesn't return anything */
+         rloc = RetLocNone; break;
+      case Ity_I64:
+         rloc = mode64 ? RetLocInt : RetLoc2Int; break;
+      case Ity_I32: case Ity_I16: case Ity_I8:
+         rloc = RetLocInt; break;
+      default:
+         break;
+      }
+      if (rloc == RetLocINVALID)
+         break; /* will go to stmt_fail: */
+
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, passBBP, d->guard, d->cee, d->args );
+      doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == IRTemp_INVALID)
          /* No return value.  Nothing to do. */
          return;
 
-      retty = typeOfIRTemp(env->type_env, d->tmp);
       if (!mode64 && retty == Ity_I64) {
          HReg r_dstHi, r_dstLo;
          /* The returned value is in %r3:%r4.  Park it in the
@@ -4997,6 +5030,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          lookupIRTempPair( &r_dstHi, &r_dstLo, env, d->tmp);
          addInstr(env, mk_iMOVds_RR(r_dstHi, hregPPC_GPR3(mode64)));
          addInstr(env, mk_iMOVds_RR(r_dstLo, hregPPC_GPR4(mode64)));
+         vassert(rloc == RetLoc2Int);
          return;
       }
       if (retty == Ity_I8  || retty == Ity_I16 ||
@@ -5005,6 +5039,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             associated with tmp. */
          HReg r_dst = lookupIRTemp(env, d->tmp);
          addInstr(env, mk_iMOVds_RR(r_dst, hregPPC_GPR3(mode64)));
+         vassert(rloc == RetLocInt);
          return;
       }
       break;

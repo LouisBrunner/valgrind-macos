@@ -96,7 +96,7 @@ extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
                                          /*OUT*/PtrdiffT* offset );
 
 /* Try to form some description of DATA_ADDR by looking at the DWARF3
-   debug info we have.  This considers all global variables, and all
+   debug info we have.  This considers all global variables, and 8
    frames in the stacks of all threads.  Result is written at the ends
    of DNAME{1,2}V, which are XArray*s of HChar, that have been
    initialised by the caller, and True is returned.  If no description

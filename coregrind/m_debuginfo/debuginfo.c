@@ -2245,7 +2245,8 @@ static void find_DiCfSI ( /*OUT*/DebugInfo** diP,
    records are added all at once, when the debuginfo for an object is
    read, and is not changed ever thereafter. */
 
-#define N_CFSI_CACHE 511
+// Prime number, giving about 3K cache on 32 bits, 6K cache on 64 bits.
+#define N_CFSI_CACHE 509
 
 typedef
    struct { Addr ip; DebugInfo* di; Word ix; }

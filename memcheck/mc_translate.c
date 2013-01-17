@@ -43,6 +43,56 @@
 #include "mc_include.h"
 
 
+/* Comments re guarded loads and stores, and conditional dirty calls
+   that access memory, JRS 2012-Dec-14, for branches/COMEM, r13180.
+
+   Currently Memcheck generates code that checks the definedness of
+   addresses in such cases, regardless of the what the guard value is
+   (at runtime).  This could potentially lead to false positives if we
+   ever construct IR in which a guarded memory access happens, and the
+   address is undefined when the guard is false.  However, at the
+   moment I am not aware of any situations where such IR is generated.
+
+   The obvious thing to do is generate conditionalised checking code
+   in such cases.  However:
+
+   * it's more complex to verify
+
+   * it is cheaper to always do the check -- basically a check if
+     the shadow value is nonzero, and conditional call to report
+     an error if so -- than it is to conditionalise the check.
+
+   * currently the implementation is incomplete.  complainIfUndefined
+     can correctly conditionalise the check and complaint as per its
+     third argument.  However, the part of it that then sets the
+     shadow to 'defined' (see comments at the top of said fn) ignores
+     the guard.
+
+   Therefore, removing this functionality in r13181 until we know we
+   need it.  To reinstate, do the following:
+
+   * back out r13181 (which also adds this comment)
+
+   * undo (== reinstate the non-NULL 3rd args) in the following two
+     chunks, which were removed in r13142.  These are the only two
+     places where complainIfUndefined is actually used with a guard.
+
+     // First, emit a definedness test for the address.  This also sets
+     // the address (shadow) to 'defined' following the test.
+     -   complainIfUndefined( mce, addr, guard );
+     +   complainIfUndefined( mce, addr, NULL );
+
+     and
+
+     IRType tyAddr;
+     tl_assert(d->mAddr);
+     -   complainIfUndefined(mce, d->mAddr, d->guard);
+     +   complainIfUndefined(mce, d->mAddr, NULL);
+
+   * fix complainIfUndefined to conditionalise setting the shadow temp
+     to 'defined', as described above.
+*/
+
 /* FIXMEs JRS 2011-June-16.
 
    Check the interpretation for vector narrowing and widening ops,
@@ -1090,17 +1140,20 @@ static void setHelperAnns ( MCEnv* mce, IRDirty* di ) {
 }
 
 
-/* Check the supplied **original** atom for undefinedness, and emit a
+/* Check the supplied *original* |atom| for undefinedness, and emit a
    complaint if so.  Once that happens, mark it as defined.  This is
    possible because the atom is either a tmp or literal.  If it's a
    tmp, it will be shadowed by a tmp, and so we can set the shadow to
    be defined.  In fact as mentioned above, we will have to allocate a
    new tmp to carry the new 'defined' shadow value, and update the
    original->tmp mapping accordingly; we cannot simply assign a new
-   value to an existing shadow tmp as this breaks SSAness -- resulting
-   in the post-instrumentation sanity checker spluttering in disapproval. 
+   value to an existing shadow tmp as this breaks SSAness.
+
+   It may be that any resulting complaint should only be emitted
+   conditionally, as defined by |guard|.  If |guard| is NULL then it
+   is assumed to be always-true.
 */
-static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
+static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
 {
    IRAtom*  vatom;
    IRType   ty;
@@ -1233,16 +1286,6 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
                            VG_(fnptr_to_fnentry)( fn ), args );
    di->guard = cond;
 
-   /* If the complaint is to be issued under a guard condition, AND that
-      guard condition. */
-   if (guard) {
-     IRAtom *g1 = assignNew('V', mce, Ity_I32, unop(Iop_1Uto32, di->guard));
-     IRAtom *g2 = assignNew('V', mce, Ity_I32, unop(Iop_1Uto32, guard));
-     IRAtom *e  = assignNew('V', mce, Ity_I32, binop(Iop_And32, g1, g2));
-
-     di->guard = assignNew('V', mce, Ity_I1, unop(Iop_32to1, e));
-   }
-
    setHelperAnns( mce, di );
    stmt( 'V', mce, IRStmt_Dirty(di));
 
@@ -1374,7 +1417,7 @@ void do_shadow_PUTI ( MCEnv* mce, IRPutI *puti)
    arrSize = descr->nElems * sizeofIRType(ty);
    tl_assert(ty != Ity_I1);
    tl_assert(isOriginalAtom(mce,ix));
-   complainIfUndefined(mce, ix, NULL);
+   complainIfUndefined(mce, ix);
    if (isAlwaysDefd(mce, descr->base, arrSize)) {
       /* later: no ... */
       /* emit code to emit a complaint if any of the vbits are 1. */
@@ -1423,7 +1466,7 @@ IRExpr* shadow_GETI ( MCEnv* mce,
    Int arrSize = descr->nElems * sizeofIRType(ty);
    tl_assert(ty != Ity_I1);
    tl_assert(isOriginalAtom(mce,ix));
-   complainIfUndefined(mce, ix, NULL);
+   complainIfUndefined(mce, ix);
    if (isAlwaysDefd(mce, descr->base, arrSize)) {
       /* Always defined, return all zeroes of the relevant type */
       return definedOfType(tyS);
@@ -2569,15 +2612,15 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
          /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
          return mkLazy3(mce, Ity_I128, vatom1, vatom2, vatom3);
       case Iop_ExtractV128:
-         complainIfUndefined(mce, atom3, NULL);
+         complainIfUndefined(mce, atom3);
          return assignNew('V', mce, Ity_V128, triop(op, vatom1, vatom2, atom3));
       case Iop_Extract64:
-         complainIfUndefined(mce, atom3, NULL);
+         complainIfUndefined(mce, atom3);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, vatom2, atom3));
       case Iop_SetElem8x8:
       case Iop_SetElem16x4:
       case Iop_SetElem32x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, atom2, vatom3));
       default:
          ppIROp(op);
@@ -2644,7 +2687,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_ShlN32x2:
       case Iop_ShlN8x8:
          /* Same scheme as with all other shifts. */
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, atom2));
 
       case Iop_QNarrowBin32Sto16Sx4:
@@ -2727,25 +2770,25 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QShlN8Sx8:
       case Iop_QShlN8x8:
       case Iop_QSalN8x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast8x8(mce, vatom1);
 
       case Iop_QShlN16Sx4:
       case Iop_QShlN16x4:
       case Iop_QSalN16x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast16x4(mce, vatom1);
 
       case Iop_QShlN32Sx2:
       case Iop_QShlN32x2:
       case Iop_QSalN32x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x2(mce, vatom1);
 
       case Iop_QShlN64Sx1:
       case Iop_QShlN64x1:
       case Iop_QSalN64x1:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x2(mce, vatom1);
 
       case Iop_PwMax32Sx2:
@@ -2842,13 +2885,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, vatom2));
 
       case Iop_GetElem8x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I8, binop(op, vatom1, atom2));
       case Iop_GetElem16x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I16, binop(op, vatom1, atom2));
       case Iop_GetElem32x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I32, binop(op, vatom1, atom2));
 
       /* Perm8x8: rearrange values in left arg using steering values
@@ -2878,7 +2921,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* Same scheme as with all other shifts.  Note: 22 Oct 05:
             this is wrong now, scalar shifts are done properly lazily.
             Vector shifts should be fixed too. */
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
 
       /* V x V shifts/rotates are done using the standard lazy scheme. */
@@ -2925,14 +2968,14 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F32ToFixed32Sx4_RZ:
       case Iop_Fixed32UToF32x4_RN:
       case Iop_Fixed32SToF32x4_RN:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x4(mce, vatom1);
 
       case Iop_F32ToFixed32Ux2_RZ:
       case Iop_F32ToFixed32Sx2_RZ:
       case Iop_Fixed32UToF32x2_RN:
       case Iop_Fixed32SToF32x2_RN:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x2(mce, vatom1);
 
       case Iop_QSub8Ux16:
@@ -3089,25 +3132,25 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QShlN8Sx16:
       case Iop_QShlN8x16:
       case Iop_QSalN8x16:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast8x16(mce, vatom1);
 
       case Iop_QShlN16Sx8:
       case Iop_QShlN16x8:
       case Iop_QSalN16x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast16x8(mce, vatom1);
 
       case Iop_QShlN32Sx4:
       case Iop_QShlN32x4:
       case Iop_QSalN32x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x4(mce, vatom1);
 
       case Iop_QShlN64Sx2:
       case Iop_QShlN64x2:
       case Iop_QSalN64x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return mkPCast32x4(mce, vatom1);
 
       case Iop_Mull32Sx2:
@@ -3170,16 +3213,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, vatom2));
 
       case Iop_GetElem8x16:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I8, binop(op, vatom1, atom2));
       case Iop_GetElem16x8:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I16, binop(op, vatom1, atom2));
       case Iop_GetElem32x4:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I32, binop(op, vatom1, atom2));
       case Iop_GetElem64x2:
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, atom2));
 
      /* Perm8x16: rearrange values in left arg using steering values
@@ -3238,7 +3281,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* Same scheme as with all other shifts.  Note: 10 Nov 05:
             this is wrong now, scalar shifts are done properly lazily.
             Vector shifts should be fixed too. */
-         complainIfUndefined(mce, atom2, NULL);
+         complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
 
       /* I128-bit data-steering */
@@ -3626,6 +3669,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 static 
 IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 {
+   /* For the widening operations {8,16,32}{U,S}to{16,32,64}, the
+      selection of shadow operation implicitly duplicates the logic in
+      do_shadow_LoadG and should be kept in sync (in the very unlikely
+      event that the interpretation of such widening ops changes in
+      future).  See comment in do_shadow_LoadG. */
    IRAtom* vatom = expr2vbits( mce, atom );
    tl_assert(isOriginalAtom(mce,atom));
    switch (op) {
@@ -3932,11 +3980,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 }
 
 
-/* Worker function; do not call directly. */
+/* Worker function; do not call directly.  See comments on
+   expr2vbits_Load for the meaning of 'guard'.  If 'guard' evaluates
+   to False at run time, the returned value is all-ones. */
 static
 IRAtom* expr2vbits_Load_WRK ( MCEnv* mce, 
                               IREndness end, IRType ty, 
-                              IRAtom* addr, UInt bias )
+                              IRAtom* addr, UInt bias, IRAtom* guard )
 {
    void*    helper;
    const HChar* hname;
@@ -3949,7 +3999,7 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
 
    /* First, emit a definedness test for the address.  This also sets
       the address (shadow) to 'defined' following the test. */
-   complainIfUndefined( mce, addr, NULL );
+   complainIfUndefined( mce, addr );
 
    /* Now cook up a call to the relevant helper function, to read the
       data V bits from shadow memory. */
@@ -4012,16 +4062,34 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
                            hname, VG_(fnptr_to_fnentry)( helper ), 
                            mkIRExprVec_1( addrAct ));
    setHelperAnns( mce, di );
+   if (guard) {
+      di->guard = guard;
+      /* Ideally the didn't-happen return value here would be all-ones
+         (all-undefined), so it'd be obvious if it got used
+         inadvertantly.  We can get by with the IR-mandated default
+         value (0b01 repeating, 0x55 etc) as that'll still look pretty
+         undefined if it ever leaks out. */
+   }
    stmt( 'V', mce, IRStmt_Dirty(di) );
 
    return mkexpr(datavbits);
 }
 
 
+/* Generate IR to do a shadow load.  The helper is expected to check
+   the validity of the address and return the V bits for that address.
+   This can optionally be controlled by a guard, which is assumed to
+   be True if NULL.  In the case where the guard is False at runtime,
+   the helper will return the didn't-do-the-call value of all-ones.
+   Since all ones means "completely undefined result", the caller of
+   this function will need to fix up the result somehow in that
+   case.
+*/
 static
 IRAtom* expr2vbits_Load ( MCEnv* mce, 
                           IREndness end, IRType ty, 
-                          IRAtom* addr, UInt bias )
+                          IRAtom* addr, UInt bias,
+                          IRAtom* guard )
 {
    tl_assert(end == Iend_LE || end == Iend_BE);
    switch (shadowTypeV(ty)) {
@@ -4029,15 +4097,15 @@ IRAtom* expr2vbits_Load ( MCEnv* mce,
       case Ity_I16: 
       case Ity_I32: 
       case Ity_I64:
-         return expr2vbits_Load_WRK(mce, end, ty, addr, bias);
+         return expr2vbits_Load_WRK(mce, end, ty, addr, bias, guard);
       case Ity_V128: {
          IRAtom *v64hi, *v64lo;
          if (end == Iend_LE) {
-            v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0);
-            v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8);
+            v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0, guard);
+            v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8, guard);
          } else {
-            v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0);
-            v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8);
+            v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0, guard);
+            v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8, guard);
          }
          return assignNew( 'V', mce, 
                            Ity_V128, 
@@ -4047,10 +4115,14 @@ IRAtom* expr2vbits_Load ( MCEnv* mce,
          /* V256-bit case -- phrased in terms of 64 bit units (Qs),
             with Q3 being the most significant lane. */
          if (end == Iend_BE) goto unhandled;
-         IRAtom* v64Q0 = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0);
-         IRAtom* v64Q1 = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8);
-         IRAtom* v64Q2 = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+16);
-         IRAtom* v64Q3 = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+24);
+         IRAtom* v64Q0
+            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0,  guard);
+         IRAtom* v64Q1
+            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8,  guard);
+         IRAtom* v64Q2
+            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+16, guard);
+         IRAtom* v64Q3
+            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+24, guard);
          return assignNew( 'V', mce,
                            Ity_V256,
                            IRExpr_Qop(Iop_64x4toV256,
@@ -4063,29 +4135,86 @@ IRAtom* expr2vbits_Load ( MCEnv* mce,
 }
 
 
-/* If there is no guard expression or the guard is always TRUE this function
-   behaves like expr2vbits_Load. If the guard is not true at runtime, an
-   all-bits-defined bit pattern will be returned.
-   It is assumed that definedness of GUARD has already been checked at the call
-   site. */
+/* The most general handler for guarded loads.  Assumes the
+   definedness of GUARD and ADDR have already been checked by the
+   caller.  A GUARD of NULL is assumed to mean "always True".
+
+   Generate IR to do a shadow load from ADDR and return the V bits.
+   The loaded type is TY.  The loaded data is then (shadow) widened by
+   using VWIDEN, which can be Iop_INVALID to denote a no-op.  If GUARD
+   evaluates to False at run time then the returned Vbits are simply
+   VALT instead.  Note therefore that the argument type of VWIDEN must
+   be TY and the result type of VWIDEN must equal the type of VALT.
+*/
 static
-IRAtom* expr2vbits_guarded_Load ( MCEnv* mce, 
-                                  IREndness end, IRType ty, 
-                                  IRAtom* addr, UInt bias, IRAtom *guard )
+IRAtom* expr2vbits_Load_guarded_General ( MCEnv* mce,
+                                          IREndness end, IRType ty,
+                                          IRAtom* addr, UInt bias,
+                                          IRAtom* guard,
+                                          IROp vwiden, IRAtom* valt )
 {
-   if (guard) {
-      IRAtom *cond, *iffalse, *iftrue;
-
-      cond    = assignNew('V', mce, Ity_I8, unop(Iop_1Uto8, guard));
-      iftrue  = assignNew('V', mce, ty,
-                          expr2vbits_Load(mce, end, ty, addr, bias));
-      iffalse = assignNew('V', mce, ty, definedOfType(ty));
-
-      return assignNew('V', mce, ty, IRExpr_Mux0X(cond, iffalse, iftrue));
+   /* Sanity check the conversion operation, and also set TYWIDE. */
+   IRType tyWide = Ity_INVALID;
+   switch (vwiden) {
+      case Iop_INVALID:
+         tyWide = ty;
+         break;
+      case Iop_16Uto32: case Iop_16Sto32: case Iop_8Uto32: case Iop_8Sto32:
+         tyWide = Ity_I32; 
+         break;
+      default:
+         VG_(tool_panic)("memcheck:expr2vbits_Load_guarded_General");
    }
 
-   /* No guard expression or unconditional load */
-   return expr2vbits_Load(mce, end, ty, addr, bias);
+   /* If the guard evaluates to True, this will hold the loaded V bits
+      at TY.  If the guard evaluates to False, this will be all
+      ones, meaning "all undefined", in which case we will have to
+      replace it using a Mux0X below. */
+   IRAtom* iftrue1
+      = assignNew('V', mce, ty,
+                  expr2vbits_Load(mce, end, ty, addr, bias, guard));
+   /* Now (shadow-) widen the loaded V bits to the desired width.  In
+      the guard-is-False case, the allowable widening operators will
+      in the worst case (unsigned widening) at least leave the
+      pre-widened part as being marked all-undefined, and in the best
+      case (signed widening) mark the whole widened result as
+      undefined.  Anyway, it doesn't matter really, since in this case
+      we will replace said value with the default value |valt| using a
+      Mux0X. */
+   IRAtom* iftrue2
+      = vwiden == Iop_INVALID
+           ? iftrue1
+           : assignNew('V', mce, tyWide, unop(vwiden, iftrue1));
+   /* These are the V bits we will return if the load doesn't take
+      place. */
+   IRAtom* iffalse 
+      = valt;
+   /* Prepare the cond for the Mux0X.  Convert a NULL cond into
+      something that iropt knows how to fold out later. */
+   IRAtom* cond
+      = guard == NULL
+           ? mkU8(1)
+           : assignNew('V', mce, Ity_I8, unop(Iop_1Uto8, guard));
+   /* And assemble the final result. */
+   return assignNew('V', mce, tyWide, IRExpr_Mux0X(cond, iffalse, iftrue2));
+}
+
+
+/* A simpler handler for guarded loads, in which there is no
+   conversion operation, and the default V bit return (when the guard
+   evaluates to False at runtime) is "all defined".  If there is no
+   guard expression or the guard is always TRUE this function behaves
+   like expr2vbits_Load.  It is assumed that definedness of GUARD and
+   ADDR has already been checked at the call site. */
+static
+IRAtom* expr2vbits_Load_guarded_Simple ( MCEnv* mce, 
+                                         IREndness end, IRType ty, 
+                                         IRAtom* addr, UInt bias,
+                                         IRAtom *guard )
+{
+   return expr2vbits_Load_guarded_General(
+             mce, end, ty, addr, bias, guard, Iop_INVALID, definedOfType(ty)
+          );
 }
 
 
@@ -4164,7 +4293,8 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
       case Iex_Load:
          return expr2vbits_Load( mce, e->Iex.Load.end,
                                       e->Iex.Load.ty, 
-                                      e->Iex.Load.addr, 0/*addr bias*/ );
+                                      e->Iex.Load.addr, 0/*addr bias*/, 
+                                      NULL/* guard == "always True"*/ );
 
       case Iex_CCall:
          return mkLazyN( mce, e->Iex.CCall.args, 
@@ -4234,13 +4364,17 @@ IRExpr* zwidenToHostWord ( MCEnv* mce, IRAtom* vatom )
 }
 
 
-/* Generate a shadow store.  addr is always the original address atom.
-   You can pass in either originals or V-bits for the data atom, but
-   obviously not both.  guard :: Ity_I1 controls whether the store
-   really happens; NULL means it unconditionally does.  Note that
-   guard itself is not checked for definedness; the caller of this
-   function must do that if necessary. */
+/* Generate a shadow store.  |addr| is always the original address
+   atom.  You can pass in either originals or V-bits for the data
+   atom, but obviously not both.  This function generates a check for
+   the definedness of |addr|.  That check is performed regardless of
+   whether |guard| is true or not.
 
+   |guard| :: Ity_I1 controls whether the store really happens; NULL
+   means it unconditionally does.  Note that |guard| itself is not
+   checked for definedness; the caller of this function must do that
+   if necessary.
+*/
 static 
 void do_shadow_Store ( MCEnv* mce, 
                        IREndness end,
@@ -4298,7 +4432,7 @@ void do_shadow_Store ( MCEnv* mce,
 
    /* First, emit a definedness test for the address.  This also sets
       the address (shadow) to 'defined' following the test. */
-   complainIfUndefined( mce, addr, guard );
+   complainIfUndefined( mce, addr );
 
    /* Now decide which helper function to call to write the data V
       bits into shadow memory. */
@@ -4525,7 +4659,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 #  endif
 
    /* First check the guard. */
-   complainIfUndefined(mce, d->guard, NULL);
+   complainIfUndefined(mce, d->guard);
 
    /* Now round up all inputs and PCast over them. */
    curr = definedOfType(Ity_I32);
@@ -4599,7 +4733,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
          should remove all but this test. */
       IRType tyAddr;
       tl_assert(d->mAddr);
-      complainIfUndefined(mce, d->mAddr, d->guard);
+      complainIfUndefined(mce, d->mAddr);
 
       tyAddr = typeOfIRExpr(mce->sb->tyenv, d->mAddr);
       tl_assert(tyAddr == Ity_I32 || tyAddr == Ity_I64);
@@ -4616,8 +4750,8 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       while (toDo >= 4) {
          here = mkPCastTo( 
                    mce, Ity_I32,
-                   expr2vbits_guarded_Load ( mce, end, Ity_I32, d->mAddr,
-                                             d->mSize - toDo, d->guard )
+                   expr2vbits_Load_guarded_Simple(
+                      mce, end, Ity_I32, d->mAddr, d->mSize - toDo, d->guard )
                 );
          curr = mkUifU32(mce, here, curr);
          toDo -= 4;
@@ -4626,8 +4760,8 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       while (toDo >= 2) {
          here = mkPCastTo( 
                    mce, Ity_I32,
-                   expr2vbits_guarded_Load ( mce, end, Ity_I16, d->mAddr,
-                                             d->mSize - toDo, d->guard )
+                   expr2vbits_Load_guarded_Simple(
+                      mce, end, Ity_I16, d->mAddr, d->mSize - toDo, d->guard )
                 );
          curr = mkUifU32(mce, here, curr);
          toDo -= 2;
@@ -4636,8 +4770,8 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       if (toDo == 1) {
          here = mkPCastTo( 
                    mce, Ity_I32,
-                   expr2vbits_guarded_Load ( mce, end, Ity_I8, d->mAddr,
-                                             d->mSize - toDo, d->guard )
+                   expr2vbits_Load_guarded_Simple(
+                      mce, end, Ity_I8, d->mAddr, d->mSize - toDo, d->guard )
                 );
          curr = mkUifU32(mce, here, curr);
          toDo -= 1;
@@ -5007,7 +5141,8 @@ static void do_shadow_CAS_single ( MCEnv* mce, IRCAS* cas )
            'V', mce, elemTy,
            expr2vbits_Load( 
               mce,
-              cas->end, elemTy, cas->addr, 0/*Addr bias*/
+              cas->end, elemTy, cas->addr, 0/*Addr bias*/,
+              NULL/*always happens*/
         ));
    bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldLo), voldLo);
    if (otrak) {
@@ -5135,14 +5270,16 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
            'V', mce, elemTy,
            expr2vbits_Load( 
               mce,
-              cas->end, elemTy, cas->addr, memOffsHi/*Addr bias*/
+              cas->end, elemTy, cas->addr, memOffsHi/*Addr bias*/,
+              NULL/*always happens*/
         ));
    voldLo
       = assignNew(
            'V', mce, elemTy,
            expr2vbits_Load( 
               mce,
-              cas->end, elemTy, cas->addr, memOffsLo/*Addr bias*/
+              cas->end, elemTy, cas->addr, memOffsLo/*Addr bias*/,
+              NULL/*always happens*/
         ));
    bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldHi), voldHi);
    bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldLo), voldLo);
@@ -5229,7 +5366,8 @@ static void do_shadow_LLSC ( MCEnv*    mce,
                 || resTy == Ity_I16 || resTy == Ity_I8);
       assign( 'V', mce, resTmp,
                    expr2vbits_Load(
-                      mce, stEnd, resTy, stAddr, 0/*addr bias*/));
+                      mce, stEnd, resTy, stAddr, 0/*addr bias*/,
+                      NULL/*always happens*/) );
    } else {
       /* Store Conditional */
       /* Stay sane */
@@ -5260,6 +5398,58 @@ static void do_shadow_LLSC ( MCEnv*    mce,
       tl_assert(resTy == Ity_I1);
       assign( 'V', mce, resTmp, definedOfType(resTy) );
    }
+}
+
+
+/* ---- Dealing with LoadG/StoreG (not entirely simple) ---- */
+
+static void do_shadow_StoreG ( MCEnv* mce, IRStoreG* sg )
+{
+   if (0) VG_(printf)("XXXX StoreG\n");
+   complainIfUndefined(mce, sg->guard);
+   /* do_shadow_Store will check the definedness of sg->addr. */
+   do_shadow_Store( mce, sg->end,
+                    sg->addr, 0/* addr bias */,
+                    sg->data,
+                    NULL /* shadow data */,
+                    sg->guard );
+}
+
+static void do_shadow_LoadG ( MCEnv* mce, IRLoadG* lg )
+{
+   if (0) VG_(printf)("XXXX LoadG\n");
+   complainIfUndefined(mce, lg->guard);
+   /* expr2vbits_Load_guarded_General will check the definedness of
+      lg->addr. */
+
+   /* Look at the LoadG's built-in conversion operation, to determine
+      the source (actual loaded data) type, and the equivalent IROp.
+      NOTE that implicitly we are taking a widening operation to be
+      applied to original atoms and producing one that applies to V
+      bits.  Since signed and unsigned widening are self-shadowing,
+      this is a straight copy of the op (modulo swapping from the
+      IRLoadGOp form to the IROp form).  Note also therefore that this
+      implicitly duplicates the logic to do with said widening ops in
+      expr2vbits_Unop.  See comment at the start of expr2vbits_Unop. */
+   IROp   vwiden   = Iop_INVALID;
+   IRType loadedTy = Ity_INVALID;
+   switch (lg->cvt) {
+      case ILGop_Ident32: loadedTy = Ity_I32; vwiden = Iop_INVALID; break;
+      case ILGop_16Uto32: loadedTy = Ity_I16; vwiden = Iop_16Uto32; break;
+      case ILGop_16Sto32: loadedTy = Ity_I16; vwiden = Iop_16Sto32; break;
+      case ILGop_8Uto32:  loadedTy = Ity_I8;  vwiden = Iop_8Uto32;  break;
+      case ILGop_8Sto32:  loadedTy = Ity_I8;  vwiden = Iop_8Sto32;  break;
+      default: VG_(tool_panic)("do_shadow_LoadG");
+   }
+
+   IRAtom* vbits_alt
+      = expr2vbits( mce, lg->alt );
+   IRAtom* vbits_final
+      = expr2vbits_Load_guarded_General(mce, lg->end, loadedTy,
+                                        lg->addr, 0/*addr bias*/,
+                                        lg->guard, vwiden, vbits_alt );
+   /* And finally, bind the V bits to the destination temporary. */
+   assign( 'V', mce, findShadowTmpV(mce, lg->dst), vbits_final );
 }
 
 
@@ -5365,6 +5555,16 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
       case Ist_Store:
          return isBogusAtom(st->Ist.Store.addr) 
                 || isBogusAtom(st->Ist.Store.data);
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         return isBogusAtom(sg->addr) || isBogusAtom(sg->data)
+                || isBogusAtom(sg->guard);
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         return isBogusAtom(lg->addr) || isBogusAtom(lg->alt)
+                || isBogusAtom(lg->guard);
+      }
       case Ist_Exit:
          return isBogusAtom(st->Ist.Exit.guard);
       case Ist_AbiHint:
@@ -5602,8 +5802,16 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                                    NULL/*guard*/ );
             break;
 
+         case Ist_StoreG:
+            do_shadow_StoreG( &mce, st->Ist.StoreG.details );
+            break;
+
+         case Ist_LoadG:
+            do_shadow_LoadG( &mce, st->Ist.LoadG.details );
+            break;
+
          case Ist_Exit:
-            complainIfUndefined( &mce, st->Ist.Exit.guard, NULL );
+            complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
          case Ist_IMark:
@@ -5674,7 +5882,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       VG_(printf)("\n\n");
    }
 
-   complainIfUndefined( &mce, sb_in->next, NULL );
+   complainIfUndefined( &mce, sb_in->next );
 
    if (0 && verboze) {
       for (j = first_stmt; j < sb_out->stmts_used; j++) {
@@ -5872,8 +6080,18 @@ static IRAtom* gen_maxU32 ( MCEnv* mce, IRAtom* b1, IRAtom* b2 )
    return assignNew( 'B', mce, Ity_I32, binop(Iop_Max32U, b1, b2) );
 }
 
-static IRAtom* gen_load_b ( MCEnv* mce, Int szB, 
-                            IRAtom* baseaddr, Int offset )
+
+/* Make a guarded origin load, with no special handling in the
+   didn't-happen case.  A GUARD of NULL is assumed to mean "always
+   True".
+
+   Generate IR to do a shadow origins load from BASEADDR+OFFSET and
+   return the otag.  The loaded size is SZB.  If GUARD evaluates to
+   False at run time then the returned otag is zero.
+*/
+static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB, 
+                                    IRAtom* baseaddr, 
+                                    Int offset, IRExpr* guard )
 {
    void*    hFun;
    const HChar* hName;
@@ -5916,6 +6134,15 @@ static IRAtom* gen_load_b ( MCEnv* mce, Int szB,
            bTmp, 1/*regparms*/, hName, VG_(fnptr_to_fnentry)( hFun ),
            mkIRExprVec_1( ea )
         );
+   if (guard) {
+      di->guard = guard;
+      /* Ideally the didn't-happen return value here would be
+         all-zeroes (unknown-origin), so it'd be harmless if it got
+         used inadvertantly.  We slum it out with the IR-mandated
+         default value (0b01 repeating, 0x55 etc) as that'll probably
+         trump all legitimate otags via Max32, and it's pretty
+         obviously bogus. */
+   }
    /* no need to mess with any annotations.  This call accesses
       neither guest state nor guest memory. */
    stmt( 'B', mce, IRStmt_Dirty(di) );
@@ -5930,25 +6157,56 @@ static IRAtom* gen_load_b ( MCEnv* mce, Int szB,
    }
 }
 
-static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB, IRAtom* baseaddr,
-                                    Int offset, IRAtom* guard )
+
+/* Generate IR to do a shadow origins load from BASEADDR+OFFSET.  The
+   loaded size is SZB.  The load is regarded as unconditional (always
+   happens).
+*/
+static IRAtom* gen_load_b ( MCEnv* mce, Int szB, IRAtom* baseaddr,
+                            Int offset )
 {
-  if (guard) {
-     IRAtom *cond, *iffalse, *iftrue;
-
-     cond    = assignNew('B', mce, Ity_I8, unop(Iop_1Uto8, guard));
-     iftrue  = assignNew('B', mce, Ity_I32,
-                         gen_load_b(mce, szB, baseaddr, offset));
-     iffalse = mkU32(0);
-
-     return assignNew('B', mce, Ity_I32, IRExpr_Mux0X(cond, iffalse, iftrue));
-  }
-
-  return gen_load_b(mce, szB, baseaddr, offset);
+   return gen_guarded_load_b(mce, szB, baseaddr, offset, NULL/*guard*/);
 }
 
-/* Generate a shadow store.  guard :: Ity_I1 controls whether the
-   store really happens; NULL means it unconditionally does. */
+
+/* The most general handler for guarded origin loads.  A GUARD of NULL
+   is assumed to mean "always True".
+
+   Generate IR to do a shadow origin load from ADDR+BIAS and return
+   the B bits.  The loaded type is TY.  If GUARD evaluates to False at
+   run time then the returned B bits are simply BALT instead.
+*/
+static
+IRAtom* expr2ori_Load_guarded_General ( MCEnv* mce,
+                                        IRType ty,
+                                        IRAtom* addr, UInt bias,
+                                        IRAtom* guard, IRAtom* balt )
+{
+   /* If the guard evaluates to True, this will hold the loaded
+      origin.  If the guard evaluates to False, this will be zero,
+      meaning "unknown origin", in which case we will have to replace
+      it using a Mux0X below. */
+   IRAtom* iftrue
+      = assignNew('B', mce, Ity_I32,
+                  gen_guarded_load_b(mce, sizeofIRType(ty),
+                                     addr, bias, guard));
+   /* These are the bits we will return if the load doesn't take
+      place. */
+   IRAtom* iffalse 
+      = balt;
+   /* Prepare the cond for the Mux0X.  Convert a NULL cond into
+      something that iropt knows how to fold out later. */
+   IRAtom* cond
+      = guard == NULL
+           ? mkU8(1)
+           : assignNew('B', mce, Ity_I8, unop(Iop_1Uto8, guard));
+   /* And assemble the final result. */
+   return assignNew('B', mce, Ity_I32, IRExpr_Mux0X(cond, iffalse, iftrue));
+}
+
+
+/* Generate a shadow origins store.  guard :: Ity_I1 controls whether
+   the store really happens; NULL means it unconditionally does. */
 static void gen_store_b ( MCEnv* mce, Int szB,
                           IRAtom* baseaddr, Int offset, IRAtom* dataB,
                           IRAtom* guard )
@@ -6345,8 +6603,8 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
       }
       /* handle possible 16-bit excess */
       while (toDo >= 2) {
-        gen_store_b( mce, 2, d->mAddr, d->mSize - toDo, curr,
-                     d->guard );
+         gen_store_b( mce, 2, d->mAddr, d->mSize - toDo, curr,
+                      d->guard );
          toDo -= 2;
       }
       /* chew off the remaining 8-bit chunk, if any */
@@ -6360,10 +6618,12 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
 }
 
 
-static void do_origins_Store ( MCEnv* mce,
-                               IREndness stEnd,
-                               IRExpr* stAddr,
-                               IRExpr* stData )
+/* Generate IR for origin shadowing for a general guarded store. */
+static void do_origins_Store_guarded ( MCEnv* mce,
+                                       IREndness stEnd,
+                                       IRExpr* stAddr,
+                                       IRExpr* stData,
+                                       IRExpr* guard )
 {
    Int     dszB;
    IRAtom* dataB;
@@ -6374,8 +6634,48 @@ static void do_origins_Store ( MCEnv* mce,
    tl_assert(isIRAtom(stData));
    dszB  = sizeofIRType( typeOfIRExpr(mce->sb->tyenv, stData ) );
    dataB = schemeE( mce, stData );
-   gen_store_b( mce, dszB, stAddr, 0/*offset*/, dataB,
-                     NULL/*guard*/ );
+   gen_store_b( mce, dszB, stAddr, 0/*offset*/, dataB, guard );
+}
+
+
+/* Generate IR for origin shadowing for a plain store. */
+static void do_origins_Store_plain ( MCEnv* mce,
+                                     IREndness stEnd,
+                                     IRExpr* stAddr,
+                                     IRExpr* stData )
+{
+   do_origins_Store_guarded ( mce, stEnd, stAddr, stData,
+                              NULL/*guard*/ );
+}
+
+
+/* ---- Dealing with LoadG/StoreG (not entirely simple) ---- */
+
+static void do_origins_StoreG ( MCEnv* mce, IRStoreG* sg )
+{
+   do_origins_Store_guarded( mce, sg->end, sg->addr,
+                             sg->data, sg->guard );
+}
+
+static void do_origins_LoadG ( MCEnv* mce, IRLoadG* lg )
+{
+   IRType loadedTy = Ity_INVALID;
+   switch (lg->cvt) {
+      case ILGop_Ident32: loadedTy = Ity_I32; break;
+      case ILGop_16Uto32: loadedTy = Ity_I16; break;
+      case ILGop_16Sto32: loadedTy = Ity_I16; break;
+      case ILGop_8Uto32:  loadedTy = Ity_I8;  break;
+      case ILGop_8Sto32:  loadedTy = Ity_I8;  break;
+      default: VG_(tool_panic)("schemeS.IRLoadG");
+   }
+   IRAtom* ori_alt
+      = schemeE( mce,lg->alt );
+   IRAtom* ori_final
+      = expr2ori_Load_guarded_General(mce, loadedTy,
+                                      lg->addr, 0/*addr bias*/,
+                                      lg->guard, ori_alt );
+   /* And finally, bind the origin to the destination temporary. */
+   assign( 'B', mce, findShadowTmpB(mce, lg->dst), ori_final );
 }
 
 
@@ -6426,9 +6726,17 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
          break;
 
       case Ist_Store:
-         do_origins_Store( mce, st->Ist.Store.end,
-                                st->Ist.Store.addr,
-                                st->Ist.Store.data );
+         do_origins_Store_plain( mce, st->Ist.Store.end,
+                                      st->Ist.Store.addr,
+                                      st->Ist.Store.data );
+         break;
+
+      case Ist_StoreG:
+         do_origins_StoreG( mce, st->Ist.StoreG.details );
+         break;
+
+      case Ist_LoadG:
+         do_origins_LoadG( mce, st->Ist.LoadG.details );
          break;
 
       case Ist_LLSC: {
@@ -6448,9 +6756,9 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
                               schemeE(mce, vanillaLoad));
          } else {
             /* Store conditional */
-            do_origins_Store( mce, st->Ist.LLSC.end,
-                                   st->Ist.LLSC.addr,
-                                   st->Ist.LLSC.storedata );
+            do_origins_Store_plain( mce, st->Ist.LLSC.end,
+                                    st->Ist.LLSC.addr,
+                                    st->Ist.LLSC.storedata );
             /* For the rationale behind this, see comments at the
                place where the V-shadow for .result is constructed, in
                do_shadow_LLSC.  In short, we regard .result as

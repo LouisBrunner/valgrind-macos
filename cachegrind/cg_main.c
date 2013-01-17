@@ -419,6 +419,9 @@ void log_1IrNoX_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    n->parent->Dw.a++;
 }
 
+/* Note that addEvent_D_guarded assumes that log_0Ir_1Dr_cache_access
+   and log_0Ir_1Dw_cache_access have exactly the same prototype.  If
+   you change them, you must change addEvent_D_guarded too. */
 static VG_REGPARM(3)
 void log_0Ir_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
@@ -429,6 +432,7 @@ void log_0Ir_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    n->parent->Dr.a++;
 }
 
+/* See comment on log_0Ir_1Dr_cache_access. */
 static VG_REGPARM(3)
 void log_0Ir_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
@@ -930,10 +934,10 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    /* Is it possible to merge this write with the preceding read? */
    lastEvt = &cgs->events[cgs->events_used-1];
    if (cgs->events_used > 0
-    && lastEvt->tag       == Ev_Dr
-    && lastEvt->Ev.Dr.szB == datasize
-    && lastEvt->inode     == inode
-    && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
+       && lastEvt->tag       == Ev_Dr
+       && lastEvt->Ev.Dr.szB == datasize
+       && lastEvt->inode     == inode
+       && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
    {
       lastEvt->tag   = Ev_Dm;
       return;
@@ -951,6 +955,52 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    evt->Ev.Dw.ea  = ea;
    cgs->events_used++;
 }
+
+static
+void addEvent_D_guarded ( CgState* cgs, InstrInfo* inode,
+                          Int datasize, IRAtom* ea, IRAtom* guard,
+                          Bool isWrite )
+{
+   tl_assert(isIRAtom(ea));
+   tl_assert(guard);
+   tl_assert(isIRAtom(guard));
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
+
+   if (!clo_cache_sim)
+      return;
+
+   /* Adding guarded memory actions and merging them with the existing
+      queue is too complex.  Simply flush the queue and add this
+      action immediately.  Since guarded loads and stores are pretty
+      rare, this is not thought likely to cause any noticeable
+      performance loss as a result of the loss of event-merging
+      opportunities. */
+   tl_assert(cgs->events_used >= 0);
+   flushEvents(cgs);
+   tl_assert(cgs->events_used == 0);
+   /* Same as case Ev_Dw / case Ev_Dr in flushEvents, except with guard */
+   IRExpr*      i_node_expr;
+   const HChar* helperName;
+   void*        helperAddr;
+   IRExpr**     argv;
+   Int          regparms;
+   IRDirty*     di;
+   i_node_expr = mkIRExpr_HWord( (HWord)inode );
+   helperName  = isWrite ? "log_0Ir_1Dw_cache_access"
+                         : "log_0Ir_1Dr_cache_access";
+   helperAddr  = isWrite ? &log_0Ir_1Dw_cache_access
+                         : &log_0Ir_1Dr_cache_access;
+   argv        = mkIRExprVec_3( i_node_expr,
+                                ea, mkIRExpr_HWord( datasize ) );
+   regparms    = 3;
+   di          = unsafeIRDirty_0_N(
+                    regparms, 
+                    helperName, VG_(fnptr_to_fnentry)( helperAddr ), 
+                    argv );
+   di->guard = guard;
+   addStmtToIRSB( cgs->sbOut, IRStmt_Dirty(di) );
+}
+
 
 static
 void addEvent_Bc ( CgState* cgs, InstrInfo* inode, IRAtom* guard )
@@ -1101,6 +1151,31 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
             break;
          }
 
+         case Ist_StoreG: {
+            IRStoreG* sg   = st->Ist.StoreG.details;
+            IRExpr*   data = sg->data;
+            IRExpr*   addr = sg->addr;
+            IRType    type = typeOfIRExpr(tyenv, data);
+            tl_assert(type != Ity_INVALID);
+            addEvent_D_guarded( &cgs, curr_inode,
+                                sizeofIRType(type), addr, sg->guard,
+                                True/*isWrite*/ );
+            break;
+         }
+
+         case Ist_LoadG: {
+            IRLoadG* lg       = st->Ist.LoadG.details;
+            IRType   type     = Ity_INVALID; /* loaded type */
+            IRType   typeWide = Ity_INVALID; /* after implicit widening */
+            IRExpr*  addr     = lg->addr;
+            typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
+            tl_assert(type != Ity_INVALID);
+            addEvent_D_guarded( &cgs, curr_inode,
+                                sizeofIRType(type), addr, lg->guard,
+                                False/*!isWrite*/ );
+            break;
+         }
+
          case Ist_Dirty: {
             Int      dataSize;
             IRDirty* d = st->Ist.Dirty.details;
@@ -1233,6 +1308,7 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
          }
 
          default:
+            ppIRStmt(st);
             tl_assert(0);
             break;
       }

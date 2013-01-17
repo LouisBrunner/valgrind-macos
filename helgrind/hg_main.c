@@ -4126,18 +4126,40 @@ Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/
 
+#define unop(_op, _arg1)         IRExpr_Unop((_op),(_arg1))
 #define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
 #define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
 #define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
 #define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
 #define assign(_t, _e)           IRStmt_WrTmp((_t), (_e))
 
+/* This takes and returns atoms, of course.  Not full IRExprs. */
+static IRExpr* mk_And1 ( IRSB* sbOut, IRExpr* arg1, IRExpr* arg2 )
+{
+   tl_assert(arg1 && arg2);
+   tl_assert(isIRAtom(arg1));
+   tl_assert(isIRAtom(arg2));
+   /* Generate 32to1(And32(1Uto32(arg1), 1Uto32(arg2))).  Appalling
+      code, I know. */
+   IRTemp wide1 = newIRTemp(sbOut->tyenv, Ity_I32);
+   IRTemp wide2 = newIRTemp(sbOut->tyenv, Ity_I32);
+   IRTemp anded = newIRTemp(sbOut->tyenv, Ity_I32);
+   IRTemp res   = newIRTemp(sbOut->tyenv, Ity_I1);
+   addStmtToIRSB(sbOut, assign(wide1, unop(Iop_1Uto32, arg1)));
+   addStmtToIRSB(sbOut, assign(wide2, unop(Iop_1Uto32, arg2)));
+   addStmtToIRSB(sbOut, assign(anded, binop(Iop_And32, mkexpr(wide1),
+                                                       mkexpr(wide2))));
+   addStmtToIRSB(sbOut, assign(res, unop(Iop_32to1, mkexpr(anded))));
+   return mkexpr(res);
+}
+
 static void instrument_mem_access ( IRSB*   sbOut, 
                                     IRExpr* addr,
                                     Int     szB,
                                     Bool    isStore,
                                     Int     hWordTy_szB,
-                                    Int     goff_sp )
+                                    Int     goff_sp,
+                                    IRExpr* guard ) /* NULL => True */
 {
    IRType   tyAddr   = Ity_INVALID;
    const HChar* hName    = NULL;
@@ -4273,15 +4295,23 @@ static void instrument_mem_access ( IRSB*   sbOut,
                    : binop(Iop_Add64, mkexpr(addr_minus_sp), mkU64(rz_szB)))
       );
 
-      IRTemp guard = newIRTemp(sbOut->tyenv, Ity_I1);
+      /* guardA == "guard on the address" */
+      IRTemp guardA = newIRTemp(sbOut->tyenv, Ity_I1);
       addStmtToIRSB(
          sbOut,
-         assign(guard,
+         assign(guardA,
                 tyAddr == Ity_I32 
                    ? binop(Iop_CmpLT32U, mkU32(THRESH), mkexpr(diff))
                    : binop(Iop_CmpLT64U, mkU64(THRESH), mkexpr(diff)))
       );
-      di->guard = mkexpr(guard);
+      di->guard = mkexpr(guardA);
+   }
+
+   /* If there's a guard on the access itself (as supplied by the
+      caller of this routine), we need to AND that in to any guard we
+      might already have. */
+   if (guard) {
+      di->guard = mk_And1(sbOut, di->guard, guard);
    }
 
    /* Add the helper. */
@@ -4428,7 +4458,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   (isDCAS ? 2 : 1)
                      * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
                   False/*!isStore*/,
-                  sizeofIRType(hWordTy), goff_sp
+                  sizeofIRType(hWordTy), goff_sp,
+                  NULL/*no-guard*/
                );
             }
             break;
@@ -4448,7 +4479,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      st->Ist.LLSC.addr,
                      sizeofIRType(dataTy),
                      False/*!isStore*/,
-                     sizeofIRType(hWordTy), goff_sp
+                     sizeofIRType(hWordTy), goff_sp,
+                     NULL/*no-guard*/
                   );
                }
             } else {
@@ -4459,22 +4491,46 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
          }
 
          case Ist_Store:
-            /* It seems we pretend that store-conditionals don't
-               exist, viz, just ignore them ... */
             if (!inLDSO) {
                instrument_mem_access( 
                   bbOut, 
                   st->Ist.Store.addr, 
                   sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
                   True/*isStore*/,
-                  sizeofIRType(hWordTy), goff_sp
+                  sizeofIRType(hWordTy), goff_sp,
+                  NULL/*no-guard*/
                );
             }
             break;
 
+         case Ist_StoreG: {
+            IRStoreG* sg   = st->Ist.StoreG.details;
+            IRExpr*   data = sg->data;
+            IRExpr*   addr = sg->addr;
+            IRType    type = typeOfIRExpr(bbIn->tyenv, data);
+            tl_assert(type != Ity_INVALID);
+            instrument_mem_access( bbOut, addr, sizeofIRType(type),
+                                   True/*isStore*/,
+                                   sizeofIRType(hWordTy),
+                                   goff_sp, sg->guard );
+            break;
+         }
+
+         case Ist_LoadG: {
+            IRLoadG* lg       = st->Ist.LoadG.details;
+            IRType   type     = Ity_INVALID; /* loaded type */
+            IRType   typeWide = Ity_INVALID; /* after implicit widening */
+            IRExpr*  addr     = lg->addr;
+            typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
+            tl_assert(type != Ity_INVALID);
+            instrument_mem_access( bbOut, addr, sizeofIRType(type),
+                                   False/*!isStore*/,
+                                   sizeofIRType(hWordTy),
+                                   goff_sp, lg->guard );
+            break;
+         }
+
          case Ist_WrTmp: {
-            /* ... whereas here we don't care whether a load is a
-               vanilla one or a load-linked. */
             IRExpr* data = st->Ist.WrTmp.data;
             if (data->tag == Iex_Load) {
                if (!inLDSO) {
@@ -4483,7 +4539,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      data->Iex.Load.addr,
                      sizeofIRType(data->Iex.Load.ty),
                      False/*!isStore*/,
-                     sizeofIRType(hWordTy), goff_sp
+                     sizeofIRType(hWordTy), goff_sp,
+                     NULL/*no-guard*/
                   );
                }
             }
@@ -4503,7 +4560,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   if (!inLDSO) {
                      instrument_mem_access( 
                         bbOut, d->mAddr, dataSize, False/*!isStore*/,
-                        sizeofIRType(hWordTy), goff_sp
+                        sizeofIRType(hWordTy), goff_sp, NULL/*no-guard*/
                      );
                   }
                }
@@ -4511,7 +4568,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   if (!inLDSO) {
                      instrument_mem_access( 
                         bbOut, d->mAddr, dataSize, True/*isStore*/,
-                        sizeofIRType(hWordTy), goff_sp
+                        sizeofIRType(hWordTy), goff_sp, NULL/*no-guard*/
                      );
                   }
                }

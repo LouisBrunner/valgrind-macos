@@ -669,6 +669,50 @@ void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 }
 
 static
+void addEvent_D_guarded ( ClgState* clgs, InstrInfo* inode,
+                          Int datasize, IRAtom* ea, IRAtom* guard,
+                          Bool isWrite )
+{
+   tl_assert(isIRAtom(ea));
+   tl_assert(guard);
+   tl_assert(isIRAtom(guard));
+   tl_assert(datasize >= 1);
+   if (!CLG_(clo).simulate_cache) return;
+   tl_assert(datasize <= CLG_(min_line_size));
+
+   /* Adding guarded memory actions and merging them with the existing
+      queue is too complex.  Simply flush the queue and add this
+      action immediately.  Since guarded loads and stores are pretty
+      rare, this is not thought likely to cause any noticeable
+      performance loss as a result of the loss of event-merging
+      opportunities. */
+   tl_assert(clgs->events_used >= 0);
+   flushEvents(clgs);
+   tl_assert(clgs->events_used == 0);
+   /* Same as case Ev_Dw / case Ev_Dr in flushEvents, except with guard */
+   IRExpr*      i_node_expr;
+   const HChar* helperName;
+   void*        helperAddr;
+   IRExpr**     argv;
+   Int          regparms;
+   IRDirty*     di;
+   i_node_expr = mkIRExpr_HWord( (HWord)inode );
+   helperName  = isWrite ? CLG_(cachesim).log_0I1Dw_name
+                         : CLG_(cachesim).log_0I1Dr_name;
+   helperAddr  = isWrite ? CLG_(cachesim).log_0I1Dw
+                         : CLG_(cachesim).log_0I1Dr;
+   argv        = mkIRExprVec_3( i_node_expr,
+                                ea, mkIRExpr_HWord( datasize ) );
+   regparms    = 3;
+   di          = unsafeIRDirty_0_N(
+                    regparms, 
+                    helperName, VG_(fnptr_to_fnentry)( helperAddr ), 
+                    argv );
+   di->guard = guard;
+   addStmtToIRSB( clgs->sbOut, IRStmt_Dirty(di) );
+}
+
+static
 void addEvent_Bc ( ClgState* clgs, InstrInfo* inode, IRAtom* guard )
 {
    Event* evt;
@@ -912,13 +956,13 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
                         VexArchInfo* archinfo_host,
 			IRType gWordTy, IRType hWordTy )
 {
-   Int      i;
-   IRStmt*  st;
-   Addr     origAddr;
+   Int        i;
+   IRStmt*    st;
+   Addr       origAddr;
    InstrInfo* curr_inode = NULL;
-   ClgState clgs;
-   UInt     cJumps = 0;
-
+   ClgState   clgs;
+   UInt       cJumps = 0;
+   IRTypeEnv* tyenv = sbIn->tyenv;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -1021,6 +1065,31 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 			 sizeofIRType(typeOfIRExpr(sbIn->tyenv, data)), aexpr );
 	    break;
 	 }
+
+         case Ist_StoreG: {
+            IRStoreG* sg   = st->Ist.StoreG.details;
+            IRExpr*   data = sg->data;
+            IRExpr*   addr = sg->addr;
+            IRType    type = typeOfIRExpr(tyenv, data);
+            tl_assert(type != Ity_INVALID);
+            addEvent_D_guarded( &clgs, curr_inode,
+                                sizeofIRType(type), addr, sg->guard,
+                                True/*isWrite*/ );
+            break;
+         }
+
+         case Ist_LoadG: {
+            IRLoadG* lg       = st->Ist.LoadG.details;
+            IRType   type     = Ity_INVALID; /* loaded type */
+            IRType   typeWide = Ity_INVALID; /* after implicit widening */
+            IRExpr*  addr     = lg->addr;
+            typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
+            tl_assert(type != Ity_INVALID);
+            addEvent_D_guarded( &clgs, curr_inode,
+                                sizeofIRType(type), addr, lg->guard,
+                                False/*!isWrite*/ );
+            break;
+         }
 
 	 case Ist_Dirty: {
 	    Int      dataSize;

@@ -693,13 +693,16 @@ AMD64Instr* AMD64Instr_Push( AMD64RMI* src ) {
    i->Ain.Push.src = src;
    return i;
 }
-AMD64Instr* AMD64Instr_Call ( AMD64CondCode cond, Addr64 target, Int regparms ) {
+AMD64Instr* AMD64Instr_Call ( AMD64CondCode cond, Addr64 target, Int regparms,
+                              RetLoc rloc ) {
    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag               = Ain_Call;
    i->Ain.Call.cond     = cond;
    i->Ain.Call.target   = target;
    i->Ain.Call.regparms = regparms;
+   i->Ain.Call.rloc     = rloc;
    vassert(regparms >= 0 && regparms <= 6);
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 
@@ -1070,11 +1073,12 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          ppAMD64RMI(i->Ain.Push.src);
          return;
       case Ain_Call:
-         vex_printf("call%s[%d] ", 
+         vex_printf("call%s[%d,", 
                     i->Ain.Call.cond==Acc_ALWAYS 
                        ? "" : showAMD64CondCode(i->Ain.Call.cond),
                     i->Ain.Call.regparms );
-         vex_printf("0x%llx", i->Ain.Call.target);
+         ppRetLoc(i->Ain.Call.rloc);
+         vex_printf("] 0x%llx", i->Ain.Call.target);
          break;
 
       case Ain_XDirect:
@@ -2663,6 +2667,15 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
 
    case Ain_Call: {
+      if (i->Ain.Call.cond != Acc_ALWAYS && i->Ain.Call.rloc != RetLocNone) {
+         /* The call might not happen (it isn't unconditional) and it
+            returns a result.  In this case we will need to generate a
+            control flow diamond to put 0x555..555 in the return
+            register(s) in the case where the call doesn't happen.  If
+            this ever becomes necessary, maybe copy code from the ARM
+            equivalent.  Until that day, just give up. */
+         goto bad;
+      }
       /* As per detailed comment for Ain_Call in
          getRegUsage_AMD64Instr above, %r11 is used as an address
          temporary. */

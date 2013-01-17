@@ -8291,15 +8291,28 @@ s390_insn_clz_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+/* Returns a value == BUF to denote failure, != BUF to denote success. */
 static UChar *
 s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
 {
    s390_cc_t cond;
    ULong target;
    UChar *ptmp = buf;
+   UChar *bufIN = buf;
 
    cond = insn->variant.helper_call.cond;
    target = insn->variant.helper_call.target;
+
+   if (cond != S390_CC_ALWAYS
+       && insn->variant.helper_call.dst != INVALID_HREG) {
+      /* The call might not happen (it isn't unconditional) and it
+         returns a result.  In this case we will need to generate a
+         control flow diamond to put 0x555..555 in the return
+         register(s) in the case where the call doesn't happen.  If
+         this ever becomes necessary, maybe copy code from the ARM
+         equivalent.  Until that day, just give up. */
+      return bufIN; /* To denote failure. */
+   }
 
    if (cond != S390_CC_ALWAYS) {
       /* So we have something like this
@@ -9473,6 +9486,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_HELPER_CALL:
       end = s390_insn_helper_call_emit(buf, insn);
+      if (end == buf) goto fail;
       break;
 
    case S390_INSN_BFP_TRIOP:
@@ -9559,6 +9573,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
       end = s390_insn_xassisted_emit(buf, insn, disp_cp_xassisted);
       break;
 
+   fail:
    default:
       vpanic("emit_S390Instr");
    }

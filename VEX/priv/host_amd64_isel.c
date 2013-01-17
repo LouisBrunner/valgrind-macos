@@ -407,7 +407,8 @@ static AMD64Instr* iselIntExpr_single_instruction ( ISelEnv* env,
 static
 void doHelperCall ( ISelEnv* env, 
                     Bool passBBP, 
-                    IRExpr* guard, IRCallee* cee, IRExpr** args )
+                    IRExpr* guard, IRCallee* cee, IRExpr** args,
+                    RetLoc rloc )
 {
    AMD64CondCode cc;
    HReg          argregs[6];
@@ -587,7 +588,7 @@ void doHelperCall ( ISelEnv* env,
    addInstr(env, AMD64Instr_Call( 
                     cc, 
                     Ptr_to_ULong(cee->addr), 
-                    n_args + (passBBP ? 1 : 0) 
+                    n_args + (passBBP ? 1 : 0), rloc
                  )
    );
 }
@@ -1126,7 +1127,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, AMD64Instr_MovxLQ(False, argR, argR));
          addInstr(env, mk_iMOVsd_RR(argL, hregAMD64_RDI()) );
          addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RSI()) );
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2 ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2, RetLocInt ));
          addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
          return dst;
       }
@@ -1595,7 +1596,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
             fn = (HWord)h_generic_calc_GetMSBs8x8;
             addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
-            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1 ));
+            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
+                                           1, RetLocInt ));
             /* MovxLQ is not exactly the right thing here.  We just
                need to get the bottom 8 bits of RAX into dst, and zero
                out everything else.  Assuming that the helper returns
@@ -1625,7 +1627,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, AMD64Instr_Alu64R( Aalu_MOV, 
                                              AMD64RMI_Mem(m16_rsp),
                                              hregAMD64_RSI() )); /* 2nd arg */
-            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2 ));
+            addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
+                                           2, RetLocInt ));
             /* MovxLQ is not exactly the right thing here.  We just
                need to get the bottom 16 bits of RAX into dst, and zero
                out everything else.  Assuming that the helper returns
@@ -1659,7 +1662,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst = newVRegI(env);
          HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1 ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1, RetLocInt ));
          addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
          return dst;
       }
@@ -1713,13 +1716,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       HReg    dst = newVRegI(env);
       vassert(ty == e->Iex.CCall.retty);
 
-      /* be very restrictive for now.  Only 64-bit ints allowed
-         for args, and 64 or 32 bits for return type. */
+      /* be very restrictive for now.  Only 64-bit ints allowed for
+         args, and 64 or 32 bits for return type.  Don't forget to
+         change the RetLoc if more types are allowed in future. */
       if (e->Iex.CCall.retty != Ity_I64 && e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
       /* Marshal args, do the call. */
-      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args,
+                    RetLocInt );
 
       /* Move to dst, and zero out the top 32 bits if the result type is
          Ity_I32.  Probably overkill, but still .. */
@@ -2256,7 +2261,8 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       vassert(cal->Iex.CCall.retty == Ity_I64); /* else ill-typed IR */
       vassert(con->Iex.Const.con->tag == Ico_U64);
       /* Marshal args, do the call. */
-      doHelperCall( env, False, NULL, cal->Iex.CCall.cee, cal->Iex.CCall.args );
+      doHelperCall( env, False, NULL, cal->Iex.CCall.cee, cal->Iex.CCall.args,
+                    RetLocInt );
       addInstr(env, AMD64Instr_Imm64(con->Iex.Const.con->Ico.U64, tmp));
       addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,
                                       AMD64RMI_Reg(hregAMD64_RAX()), tmp));
@@ -3351,7 +3357,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 16, argR,
                                           AMD64AMode_IR(0, hregAMD64_RDX())));
          /* call the helper */
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3 ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
+                                        3, RetLocNone ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dst,
@@ -3399,7 +3406,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RDX()));
 
          /* call the helper */
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3 ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
+                                        3, RetLocNone ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dst,
@@ -3945,7 +3953,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Call to DIRTY helper --------- */
    case Ist_Dirty: {
-      IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP = False;
 
@@ -3954,15 +3961,37 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
+      /* Figure out the return type, if any. */
+      IRType retty = Ity_INVALID;
+      if (d->tmp != IRTemp_INVALID)
+         retty = typeOfIRTemp(env->type_env, d->tmp);
+
+      /* Marshal args, do the call, clear stack, set the return value
+         to 0x555..555 if this is a conditional call that returns a
+         value and the call is skipped.  We need to set the ret-loc
+         correctly in order to implement the IRDirty semantics that
+         the return value is 0x555..555 if the call doesn't happen. */
+      RetLoc rloc = RetLocINVALID;
+      switch (retty) {
+         case Ity_INVALID: /* function doesn't return anything */
+            rloc = RetLocNone; break;
+         case Ity_I64:
+         case Ity_I32: case Ity_I16: case Ity_I8:
+            rloc = RetLocInt; break;
+         default:
+            break;
+      }
+      if (rloc == RetLocINVALID)
+         break; /* will go to stmt_fail: */
+
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, passBBP, d->guard, d->cee, d->args );
+      doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == IRTemp_INVALID)
          /* No return value.  Nothing to do. */
          return;
 
-      retty = typeOfIRTemp(env->type_env, d->tmp);
       if (retty == Ity_I64 || retty == Ity_I32 
           || retty == Ity_I16 || retty == Ity_I8) {
          /* The returned value is in %rax.  Park it in the register

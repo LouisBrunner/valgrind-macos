@@ -638,13 +638,16 @@ X86Instr* X86Instr_Push( X86RMI* src ) {
    i->Xin.Push.src = src;
    return i;
 }
-X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms ) {
+X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms,
+                          RetLoc rloc ) {
    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
    i->tag               = Xin_Call;
    i->Xin.Call.cond     = cond;
    i->Xin.Call.target   = target;
    i->Xin.Call.regparms = regparms;
+   i->Xin.Call.rloc     = rloc;
    vassert(regparms >= 0 && regparms <= 3);
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 X86Instr* X86Instr_XDirect ( Addr32 dstGA, X86AMode* amEIP,
@@ -980,11 +983,12 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          ppX86RMI(i->Xin.Push.src);
          return;
       case Xin_Call:
-         vex_printf("call%s[%d] ", 
+         vex_printf("call%s[%d,", 
                     i->Xin.Call.cond==Xcc_ALWAYS 
                        ? "" : showX86CondCode(i->Xin.Call.cond), 
                     i->Xin.Call.regparms);
-         vex_printf("0x%x", i->Xin.Call.target);
+         ppRetLoc(i->Xin.Call.rloc);
+         vex_printf("] 0x%x", i->Xin.Call.target);
          break;
       case Xin_XDirect:
          vex_printf("(xDirect) ");
@@ -2375,6 +2379,15 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       }
 
    case Xin_Call:
+      if (i->Xin.Call.cond != Xcc_ALWAYS && i->Xin.Call.rloc != RetLocNone) {
+         /* The call might not happen (it isn't unconditional) and it
+            returns a result.  In this case we will need to generate a
+            control flow diamond to put 0x555..555 in the return
+            register(s) in the case where the call doesn't happen.  If
+            this ever becomes necessary, maybe copy code from the ARM
+            equivalent.  Until that day, just give up. */
+         goto bad;
+      }
       /* See detailed comment for Xin_Call in getRegUsage_X86Instr above
          for explanation of this. */
       switch (i->Xin.Call.regparms) {

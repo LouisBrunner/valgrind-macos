@@ -218,7 +218,7 @@
    float, or a vector (SIMD) value. */
 typedef 
    enum { 
-      Ity_INVALID=0x11000,
+      Ity_INVALID=0x1100,
       Ity_I1, 
       Ity_I8, 
       Ity_I16, 
@@ -248,7 +248,7 @@ extern Int sizeofIRType ( IRType );
 /* IREndness is used in load IRExprs and store IRStmts. */
 typedef
    enum { 
-      Iend_LE=0x12000, /* little endian */
+      Iend_LE=0x1200, /* little endian */
       Iend_BE          /* big endian */
    }
    IREndness;
@@ -261,7 +261,7 @@ typedef
 /* The various kinds of constant. */
 typedef
    enum { 
-      Ico_U1=0x13000,
+      Ico_U1=0x1300,
       Ico_U8, 
       Ico_U16, 
       Ico_U32, 
@@ -412,7 +412,7 @@ typedef
       /* -- Do not change this ordering.  The IR generators rely on
             (eg) Iop_Add64 == IopAdd8 + 3. -- */
 
-      Iop_INVALID=0x14000,
+      Iop_INVALID=0x1400,
       Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
       /* Signless mul.  MullS/MullU is elsewhere. */
@@ -1604,7 +1604,7 @@ typedef struct _IRTriop IRTriop; /* forward declaration */
    in the comments for IRExpr. */
 typedef
    enum { 
-      Iex_Binder=0x15000,
+      Iex_Binder=0x1900,
       Iex_Get,
       Iex_GetI,
       Iex_RdTmp,
@@ -1813,7 +1813,7 @@ struct _IRExpr {
    } Iex;
 };
 
-/* ------------------ A ternary expression ---------------------- */
+/* Expression auxiliaries: a ternary expression. */
 struct _IRTriop {
    IROp op;          /* op-code   */
    IRExpr* arg1;     /* operand 1 */
@@ -1821,7 +1821,7 @@ struct _IRTriop {
    IRExpr* arg3;     /* operand 3 */
 };
 
-/* ------------------ A quarternary expression ------------------ */
+/* Expression auxiliaries: a quarternary expression. */
 struct _IRQop {
    IROp op;          /* op-code   */
    IRExpr* arg1;     /* operand 1 */
@@ -1926,7 +1926,7 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 */
 typedef
    enum {
-      Ijk_INVALID=0x16000, 
+      Ijk_INVALID=0x1A00, 
       Ijk_Boring,         /* not interesting; just goto next */
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
@@ -1973,19 +1973,20 @@ extern void ppIRJumpKind ( IRJumpKind );
 
    Dirty calls are statements rather than expressions for obvious
    reasons.  If a dirty call is marked as writing guest state, any
-   values derived from the written parts of the guest state are
-   invalid.  Similarly, if the dirty call is stated as writing
-   memory, any loaded values are invalidated by it.
+   pre-existing values derived from the written parts of the guest
+   state are invalid.  Similarly, if the dirty call is stated as
+   writing memory, any pre-existing loaded values are invalidated by
+   it.
 
    In order that instrumentation is possible, the call must state, and
    state correctly:
 
-   * whether it reads, writes or modifies memory, and if so where
-     (only one chunk can be stated)
+   * Whether it reads, writes or modifies memory, and if so where.
 
-   * whether it reads, writes or modifies guest state, and if so which
-     pieces (several pieces may be stated, and currently their extents
-     must be known at translation-time).
+   * Whether it reads, writes or modifies guest state, and if so which
+     pieces.  Several pieces may be stated, and their extents must be
+     known at translation-time.  Each piece is allowed to repeat some
+     number of times at a fixed interval, if required.
 
    Normally, code is generated to pass just the args to the helper.
    However, if .needsBBP is set, then an extra first argument is
@@ -1995,9 +1996,11 @@ extern void ppIRJumpKind ( IRJumpKind );
    call does not access guest state.
 
    IMPORTANT NOTE re GUARDS: Dirty calls are strict, very strict.  The
-   arguments are evaluated REGARDLESS of the guard value.  The order of
-   argument evaluation is unspecified. The guard expression is evaluated
-   AFTER the arguments have been evaluated.
+   arguments and 'mFx' are evaluated REGARDLESS of the guard value.
+   The order of argument evaluation is unspecified.  The guard
+   expression is evaluated AFTER the arguments and 'mFx' have been
+   evaluated.  'mFx' is expected (by Memcheck) to be a defined value
+   even if the guard evaluates to false.
 */
 
 #define VEX_N_FXSTATE  7   /* enough for FXSAVE/FXRSTOR on x86 */
@@ -2005,7 +2008,7 @@ extern void ppIRJumpKind ( IRJumpKind );
 /* Effects on resources (eg. registers, memory locations) */
 typedef
    enum {
-      Ifx_None = 0x1700,    /* no effect */
+      Ifx_None=0x1B00,      /* no effect */
       Ifx_Read,             /* reads the resource */
       Ifx_Write,            /* writes the resource */
       Ifx_Modify,           /* modifies the resource */
@@ -2015,14 +2018,13 @@ typedef
 /* Pretty-print an IREffect */
 extern void ppIREffect ( IREffect );
 
-
 typedef
    struct _IRDirty {
       /* What to call, and details of args/results.  .guard must be
-         non-NULL.  If .tmp is not IRTemp_INVALID (that is, the call
-         returns a result) then .guard must be demonstrably (at
-         JIT-time) always true, that is, the call must be
-         unconditional.  Conditional calls that assign .tmp are not
+         non-NULL.  If .tmp is not IRTemp_INVALID, then the call
+         returns a result which is placed in .tmp.  If at runtime the
+         guard evaluates to false, .tmp has an 0x555..555 bit pattern
+         written to it.  Hence conditional calls that assign .tmp are
          allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
@@ -2092,7 +2094,7 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 
 typedef
    enum { 
-      Imbe_Fence=0x18000, 
+      Imbe_Fence=0x1C00, 
       /* Needed only on ARM.  It cancels a reservation made by a
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
@@ -2192,6 +2194,7 @@ extern IRCAS* deepCopyIRCAS ( IRCAS* );
 
 
 /* ------------------ Circular Array Put ------------------ */
+
 typedef
    struct {
       IRRegArray* descr; /* Part of guest state treated as circular */
@@ -2208,6 +2211,85 @@ extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
 extern IRPutI* deepCopyIRPutI ( IRPutI* );
 
 
+/* --------------- Guarded loads and stores --------------- */
+
+/* Conditional stores are straightforward.  They are the same as
+   normal stores, with an extra 'guard' field :: Ity_I1 that
+   determines whether or not the store actually happens.  If not,
+   memory is unmodified.
+
+   The semantics of this is that 'addr' and 'data' are fully evaluated
+   even in the case where 'guard' evaluates to zero (false).
+*/
+typedef
+   struct {
+      IREndness end;    /* Endianness of the store */
+      IRExpr*   addr;   /* store address */
+      IRExpr*   data;   /* value to write */
+      IRExpr*   guard;  /* Guarding value */
+   }
+   IRStoreG;
+
+/* Conditional loads are a little more complex.  'addr' is the
+   address, 'guard' is the guarding condition.  If the load takes
+   place, the loaded value is placed in 'dst'.  If it does not take
+   place, 'alt' is copied to 'dst'.  However, the loaded value is not
+   placed directly in 'dst' -- it is first subjected to the conversion
+   specified by 'cvt'.
+
+   For example, imagine doing a conditional 8-bit load, in which the
+   loaded value is zero extended to 32 bits.  Hence:
+   * 'dst' and 'alt' must have type I32
+   * 'cvt' must be a unary op which converts I8 to I32.  In this 
+     example, it would be ILGop_8Uto32.
+
+   There is no explicit indication of the type at which the load is
+   done, since that is inferrable from the arg type of 'cvt'.  Note
+   that the types of 'alt' and 'dst' and the result type of 'cvt' must
+   all be the same.
+
+   Semantically, 'addr' is evaluated even in the case where 'guard'
+   evaluates to zero (false), and 'alt' is evaluated even when 'guard'
+   evaluates to one (true).  That is, 'addr' and 'alt' are always
+   evaluated.
+*/
+typedef
+   enum {
+      ILGop_INVALID=0x1D00,
+      ILGop_Ident32,   /* 32 bit, no conversion */
+      ILGop_16Uto32,   /* 16 bit load, Z-widen to 32 */
+      ILGop_16Sto32,   /* 16 bit load, S-widen to 32 */
+      ILGop_8Uto32,    /* 8 bit load, Z-widen to 32 */
+      ILGop_8Sto32     /* 8 bit load, S-widen to 32 */
+   }
+   IRLoadGOp;
+
+typedef
+   struct {
+      IREndness end;    /* Endianness of the load */
+      IRLoadGOp cvt;    /* Conversion to apply to the loaded value */
+      IRTemp    dst;    /* Destination (LHS) of assignment */
+      IRExpr*   addr;   /* Address being loaded from */
+      IRExpr*   alt;    /* Value if load is not done. */
+      IRExpr*   guard;  /* Guarding value */
+   }
+   IRLoadG;
+
+extern void ppIRStoreG ( IRStoreG* sg );
+
+extern void ppIRLoadGOp ( IRLoadGOp cvt );
+
+extern void ppIRLoadG ( IRLoadG* lg );
+
+extern IRStoreG* mkIRStoreG ( IREndness end,
+                              IRExpr* addr, IRExpr* data,
+                              IRExpr* guard );
+
+extern IRLoadG* mkIRLoadG ( IREndness end, IRLoadGOp cvt,
+                            IRTemp dst, IRExpr* addr, IRExpr* alt, 
+                            IRExpr* guard );
+
+
 /* ------------------ Statements ------------------ */
 
 /* The different kinds of statements.  Their meaning is explained
@@ -2222,17 +2304,19 @@ extern IRPutI* deepCopyIRPutI ( IRPutI* );
 
 typedef 
    enum {
-      Ist_NoOp=0x19000,
+      Ist_NoOp=0x1E00,
       Ist_IMark,     /* META */
       Ist_AbiHint,   /* META */
       Ist_Put,
       Ist_PutI,
       Ist_WrTmp,
       Ist_Store,
+      Ist_LoadG,
+      Ist_StoreG,
       Ist_CAS,
       Ist_LLSC,
       Ist_Dirty,
-      Ist_MBE,       /* META (maybe) */
+      Ist_MBE,
       Ist_Exit
    } 
    IRStmtTag;
@@ -2348,6 +2432,24 @@ typedef
             IRExpr*   addr;   /* store address */
             IRExpr*   data;   /* value to write */
          } Store;
+
+         /* Guarded store.  Note that this is defined to evaluate all
+            expression fields (addr, data) even if the guard evaluates
+            to false.
+            ppIRStmt output:
+              if (<guard>) ST<end>(<addr>) = <data> */
+         struct {
+            IRStoreG* details;
+         } StoreG;
+
+         /* Guarded load.  Note that this is defined to evaluate all
+            expression fields (addr, alt) even if the guard evaluates
+            to false.
+            ppIRStmt output:
+              t<tmp> = if (<guard>) <cvt>(LD<end>(<addr>)) else <alt> */
+         struct {
+            IRLoadG* details;
+         } LoadG;
 
          /* Do an atomic compare-and-swap operation.  Semantics are
             described above on a comment at the definition of IRCAS.
@@ -2468,6 +2570,10 @@ extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRPutI* details );
 extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_StoreG  ( IREndness end, IRExpr* addr, IRExpr* data,
+                                IRExpr* guard );
+extern IRStmt* IRStmt_LoadG   ( IREndness end, IRLoadGOp cvt, IRTemp dst,
+                                IRExpr* addr, IRExpr* alt, IRExpr* guard );
 extern IRStmt* IRStmt_CAS     ( IRCAS* details );
 extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
@@ -2564,6 +2670,11 @@ extern IRTypeEnv* emptyIRTypeEnv  ( void );
 extern IRType typeOfIRConst ( IRConst* );
 extern IRType typeOfIRTemp  ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
+
+/* What are the arg and result type for this IRLoadGOp? */
+extern void typeOfIRLoadGOp ( IRLoadGOp cvt,
+                              /*OUT*/IRType* t_res,
+                              /*OUT*/IRType* t_arg );
 
 /* Sanity check a BB of IR */
 extern void sanityCheckIRSB ( IRSB*  bb, 

@@ -1217,7 +1217,7 @@ MIPSInstr *MIPSInstr_Div(Bool syned, Bool sz32, HReg srcL, HReg srcR)
 }
 
 MIPSInstr *MIPSInstr_Call(MIPSCondCode cond, Addr32 target, UInt argiregs,
-                          HReg src)
+                          HReg src, RetLoc rloc)
 {
    UInt mask;
    MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
@@ -1226,13 +1226,16 @@ MIPSInstr *MIPSInstr_Call(MIPSCondCode cond, Addr32 target, UInt argiregs,
    i->Min.Call.target = target;
    i->Min.Call.argiregs = argiregs;
    i->Min.Call.src = src;
+   i->Min.Call.rloc = rloc;
    /* Only r4 .. r7 inclusive may be used as arg regs. Hence: */
    mask = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
    vassert(0 == (argiregs & ~mask));
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 
-MIPSInstr *MIPSInstr_CallAlways(MIPSCondCode cond, Addr32 target, UInt argiregs)
+MIPSInstr *MIPSInstr_CallAlways(MIPSCondCode cond, Addr32 target, UInt argiregs,
+                                RetLoc rloc)
 {
    UInt mask;
    MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
@@ -1240,9 +1243,11 @@ MIPSInstr *MIPSInstr_CallAlways(MIPSCondCode cond, Addr32 target, UInt argiregs)
    i->Min.Call.cond = cond;
    i->Min.Call.target = target;
    i->Min.Call.argiregs = argiregs;
+   i->Min.Call.rloc = rloc;
    /* Only r4 .. r7 inclusive may be used as arg regs. Hence: */
    mask = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
    vassert(0 == (argiregs & ~mask));
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 
@@ -1611,6 +1616,8 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
                   vex_printf(",");
             }
          }
+         vex_printf(",");
+         ppRetLoc(i->Min.Call.rloc);
          vex_printf("] }");
          break;
       }
@@ -3118,6 +3125,16 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
       }
    
       case Min_Call: {
+         if (i->Min.Call.cond != MIPScc_AL && i->Min.Call.rloc != RetLocNone) {
+            /* The call might not happen (it isn't unconditional) and
+               it returns a result.  In this case we will need to
+               generate a control flow diamond to put 0x555..555 in
+               the return register(s) in the case where the call
+               doesn't happen.  If this ever becomes necessary, maybe
+               copy code from the ARM equivalent.  Until that day,
+               just give up. */
+            goto bad;
+         }
          MIPSCondCode cond = i->Min.Call.cond;
          UInt r_dst = 25;  /* using %r25 as address temporary - 
                      see getRegUsage_MIPSInstr */

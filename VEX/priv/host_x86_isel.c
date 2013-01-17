@@ -366,7 +366,8 @@ static Int pushArg ( ISelEnv* env, IRExpr* arg )
 
 static 
 void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc, 
-                              IRCallee* cee, Int n_arg_ws )
+                              IRCallee* cee, Int n_arg_ws,
+                              RetLoc rloc )
 {
    /* Complication.  Need to decide which reg to use as the fn address
       pointer, in a way that doesn't trash regparm-passed
@@ -374,7 +375,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
    vassert(sizeof(void*) == 4);
 
    addInstr(env, X86Instr_Call( cc, toUInt(Ptr_to_ULong(cee->addr)),
-                                    cee->regparms));
+                                cee->regparms, rloc));
    if (n_arg_ws > 0)
       add_to_esp(env, 4*n_arg_ws);
 }
@@ -404,7 +405,8 @@ Bool mightRequireFixedRegs ( IRExpr* e )
 static
 void doHelperCall ( ISelEnv* env, 
                     Bool passBBP, 
-                    IRExpr* guard, IRCallee* cee, IRExpr** args )
+                    IRExpr* guard, IRCallee* cee, IRExpr** args,
+                    RetLoc rloc )
 {
    X86CondCode cc;
    HReg        argregs[3];
@@ -583,7 +585,7 @@ void doHelperCall ( ISelEnv* env,
    }
 
    /* call the helper, and get the args off the stack afterwards. */
-   callHelperAndClearArgs( env, cc, cee, n_arg_ws );
+   callHelperAndClearArgs( env, cc, cee, n_arg_ws, rloc );
 }
 
 
@@ -1304,7 +1306,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLocInt ));
             add_to_esp(env, 2*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
             return dst;
@@ -1361,13 +1364,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       HReg    dst = newVRegI(env);
       vassert(ty == e->Iex.CCall.retty);
 
-      /* be very restrictive for now.  Only 32/64-bit ints allowed
-         for args, and 32 bits for return type. */
+      /* be very restrictive for now.  Only 32/64-bit ints allowed for
+         args, and 32 bits for return type.  Don't forget to change
+         the RetLoc if more return types are allowed in future. */
       if (e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee,
+                    e->Iex.CCall.args, RetLocInt );
 
       addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
       return dst;
@@ -1887,7 +1892,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       vassert(cal->Iex.CCall.retty == Ity_I32); /* else ill-typed IR */
       vassert(con->Iex.Const.con->tag == Ico_U32);
       /* Marshal args, do the call. */
-      doHelperCall( env, False, NULL, cal->Iex.CCall.cee, cal->Iex.CCall.args );
+      doHelperCall( env, False, NULL, cal->Iex.CCall.cee,
+                    cal->Iex.CCall.args, RetLocInt );
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,
                                     X86RMI_Imm(con->Iex.Const.con->Ico.U32),
                                     hregX86_EAX()));
@@ -2470,7 +2476,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLoc2Int ));
             add_to_esp(env, 4*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -2509,7 +2516,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLoc2Int ));
             add_to_esp(env, 3*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -2747,7 +2755,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLoc2Int ));
             add_to_esp(env, 2*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -2768,7 +2777,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       HReg tHi = newVRegI(env);
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee,
+                    e->Iex.CCall.args, RetLoc2Int );
 
       addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
       addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -3692,7 +3702,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_SseLdSt(False/*!isLoad*/, argR,
                                         X86AMode_IR(0, hregX86_ECX())));
          /* call the helper */
-         addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn, 3 ));
+         addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn,
+                                      3, RetLocNone ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, X86Instr_SseLdSt(True/*isLoad*/, dst,
@@ -3960,7 +3971,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Call to DIRTY helper --------- */
    case Ist_Dirty: {
-      IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP = False;
 
@@ -3969,15 +3979,38 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
+      /* Figure out the return type, if any. */
+      IRType retty = Ity_INVALID;
+      if (d->tmp != IRTemp_INVALID)
+         retty = typeOfIRTemp(env->type_env, d->tmp);
+
+      /* Marshal args, do the call, clear stack, set the return value
+         to 0x555..555 if this is a conditional call that returns a
+         value and the call is skipped.  We need to set the ret-loc
+         correctly in order to implement the IRDirty semantics that
+         the return value is 0x555..555 if the call doesn't happen. */
+      RetLoc rloc = RetLocINVALID;
+      switch (retty) {
+         case Ity_INVALID: /* function doesn't return anything */
+            rloc = RetLocNone; break;
+         case Ity_I64:
+            rloc = RetLoc2Int; break;
+         case Ity_I32: case Ity_I16: case Ity_I8:
+            rloc = RetLocInt; break;
+         default:
+            break;
+      }
+      if (rloc == RetLocINVALID)
+         break; /* will go to stmt_fail: */
+
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, passBBP, d->guard, d->cee, d->args );
+      doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == IRTemp_INVALID)
          /* No return value.  Nothing to do. */
          return;
 
-      retty = typeOfIRTemp(env->type_env, d->tmp);
       if (retty == Ity_I64) {
          HReg dstHi, dstLo;
          /* The returned value is in %edx:%eax.  Park it in the

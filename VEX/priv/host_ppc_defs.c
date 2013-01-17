@@ -839,16 +839,18 @@ PPCInstr* PPCInstr_Div ( Bool extended, Bool syned, Bool sz32,
    return i;
 }
 PPCInstr* PPCInstr_Call ( PPCCondCode cond, 
-                          Addr64 target, UInt argiregs ) {
+                          Addr64 target, UInt argiregs, RetLoc rloc ) {
    UInt mask;
    PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_Call;
    i->Pin.Call.cond     = cond;
    i->Pin.Call.target   = target;
    i->Pin.Call.argiregs = argiregs;
+   i->Pin.Call.rloc     = rloc;
    /* Only r3 .. r10 inclusive may be used as arg regs. Hence: */
    mask = (1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9)|(1<<10);
    vassert(0 == (argiregs & ~mask));
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
@@ -1553,6 +1555,8 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
                vex_printf(",");
          }
       }
+      vex_printf(",");
+      ppRetLoc(i->Pin.Call.rloc);
       vex_printf("] }");
       break;
    }
@@ -3908,6 +3912,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    }
 
    case Pin_Call: {
+      if (i->Pin.Call.cond.test != Pct_ALWAYS
+          && i->Pin.Call.rloc != RetLocNone) {
+         /* The call might not happen (it isn't unconditional) and it
+            returns a result.  In this case we will need to generate a
+            control flow diamond to put 0x555..555 in the return
+            register(s) in the case where the call doesn't happen.  If
+            this ever becomes necessary, maybe copy code from the ARM
+            equivalent.  Until that day, just give up. */
+         goto bad;
+      }
       PPCCondCode cond  = i->Pin.Call.cond;
       UInt        r_dst = 10;
       /* As per detailed comment for Pin_Call in

@@ -362,7 +362,7 @@ static HReg mk_LoadRR32toFPR(ISelEnv * env, HReg r_srcHi, HReg r_srcLo)
    call is unconditional. */
 
 static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
-                         IRCallee * cee, IRExpr ** args)
+                         IRCallee * cee, IRExpr ** args, RetLoc rloc)
 {
    MIPSCondCode cc;
    HReg argregs[MIPS_N_REGPARMS];
@@ -526,13 +526,13 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
    /* Finally, the call itself. */
    if (mode64)
       if (cc == MIPScc_AL) {
-         addInstr(env, MIPSInstr_CallAlways(cc, target, argiregs));
+         addInstr(env, MIPSInstr_CallAlways(cc, target, argiregs, rloc));
       } else {
-         addInstr(env, MIPSInstr_Call(cc, target, argiregs, src));
+         addInstr(env, MIPSInstr_Call(cc, target, argiregs, src, rloc));
    } else if (cc == MIPScc_AL) {
-      addInstr(env, MIPSInstr_CallAlways(cc, (Addr32) target, argiregs));
+      addInstr(env, MIPSInstr_CallAlways(cc, (Addr32) target, argiregs, rloc));
    } else {
-      addInstr(env, MIPSInstr_Call(cc, (Addr32) target, argiregs, src));
+      addInstr(env, MIPSInstr_Call(cc, (Addr32) target, argiregs, src, rloc));
    }
    /* restore GuestStatePointer */
    addInstr(env, MIPSInstr_Load(4, GuestStatePointer(mode64),
@@ -1485,13 +1485,26 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       HReg r_dst = newVRegI(env);
       vassert(ty == e->Iex.CCall.retty);
 
-      /* be very restrictive for now.  Only 32/64-bit ints allowed
-         for args, and 32 bits for return type. */
+      /* be very restrictive for now.  Only 32/64-bit ints allowed for
+         args, and 32 bits for return type.  Don't forget to change
+         the RetLoc if more return types are allowed in future. */
       if (e->Iex.CCall.retty != Ity_I32 && !mode64)
          goto irreducible;
 
+      /* What's the retloc? */
+      RetLoc rloc = RetLocINVALID;
+      if (ty == Ity_I32) {
+         rloc = RetLocInt;
+      } 
+      else if (ty == Ity_I64) {
+         rloc = mode64 ? RetLocInt : RetLoc2Int;
+      }
+      else {
+         goto irreducible;
+      }
+
       /* Marshal args, do the call, clear stack. */
-      doHelperCall(env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args);
+      doHelperCall(env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args, rloc);
       addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
       return r_dst;
    }
@@ -2895,23 +2908,47 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
 
       /* --------- Call to DIRTY helper --------- */
       case Ist_Dirty: {
-         IRType retty;
          IRDirty *d = stmt->Ist.Dirty.details;
          Bool passBBP = False;
 
          if (d->nFxState == 0)
             vassert(!d->needsBBP);
+
          passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
+         /* Figure out the return type, if any. */
+         IRType retty = Ity_INVALID;
+         if (d->tmp != IRTemp_INVALID)
+            retty = typeOfIRTemp(env->type_env, d->tmp);
+
+         /* Marshal args, do the call, clear stack, set the return
+            value to 0x555..555 if this is a conditional call that
+            returns a value and the call is skipped.  We need to set
+            the ret-loc correctly in order to implement the IRDirty
+            semantics that the return value is 0x555..555 if the call
+            doesn't happen. */
+         RetLoc rloc = RetLocINVALID;
+         switch (retty) {
+            case Ity_INVALID: /* function doesn't return anything */
+               rloc = RetLocNone; break;
+            case Ity_I64:
+               rloc = mode64 ? RetLocInt : RetLoc2Int; break;
+            case Ity_I32: case Ity_I16: case Ity_I8:
+               rloc = RetLocInt; break;
+            default:
+               break;
+         }
+         if (rloc == RetLocINVALID)
+            break; /* will go to stmt_fail: */
+
          /* Marshal args, do the call, clear stack. */
-         doHelperCall(env, passBBP, d->guard, d->cee, d->args);
+         doHelperCall(env, passBBP, d->guard, d->cee, d->args, rloc);
 
          /* Now figure out what to do with the returned value, if any. */
          if (d->tmp == IRTemp_INVALID)
             /* No return value.  Nothing to do. */
             return;
 
-         retty = typeOfIRTemp(env->type_env, d->tmp);
          if (retty == Ity_I64 && !mode64) {
             HReg rHi = newVRegI(env);
             HReg rLo = newVRegI(env);

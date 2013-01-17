@@ -1144,30 +1144,48 @@ ARMInstr* ARMInstr_Imm32  ( HReg dst, UInt imm32 ) {
    i->ARMin.Imm32.imm32 = imm32;
    return i;
 }
-ARMInstr* ARMInstr_LdSt32 ( Bool isLoad, HReg rD, ARMAMode1* amode ) {
+ARMInstr* ARMInstr_LdSt32 ( ARMCondCode cc,
+                            Bool isLoad, HReg rD, ARMAMode1* amode ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                 = ARMin_LdSt32;
+   i->ARMin.LdSt32.cc     = cc;
    i->ARMin.LdSt32.isLoad = isLoad;
    i->ARMin.LdSt32.rD     = rD;
    i->ARMin.LdSt32.amode  = amode;
+   vassert(cc != ARMcc_NV);
    return i;
 }
-ARMInstr* ARMInstr_LdSt16 ( Bool isLoad, Bool signedLoad,
+ARMInstr* ARMInstr_LdSt16 ( ARMCondCode cc,
+                            Bool isLoad, Bool signedLoad,
                             HReg rD, ARMAMode2* amode ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                     = ARMin_LdSt16;
+   i->ARMin.LdSt16.cc         = cc;
    i->ARMin.LdSt16.isLoad     = isLoad;
    i->ARMin.LdSt16.signedLoad = signedLoad;
    i->ARMin.LdSt16.rD         = rD;
    i->ARMin.LdSt16.amode      = amode;
+   vassert(cc != ARMcc_NV);
    return i;
 }
-ARMInstr* ARMInstr_LdSt8U ( Bool isLoad, HReg rD, ARMAMode1* amode ) {
+ARMInstr* ARMInstr_LdSt8U ( ARMCondCode cc,
+                            Bool isLoad, HReg rD, ARMAMode1* amode ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                 = ARMin_LdSt8U;
+   i->ARMin.LdSt8U.cc     = cc;
    i->ARMin.LdSt8U.isLoad = isLoad;
    i->ARMin.LdSt8U.rD     = rD;
    i->ARMin.LdSt8U.amode  = amode;
+   vassert(cc != ARMcc_NV);
+   return i;
+}
+ARMInstr* ARMInstr_Ld8S ( ARMCondCode cc, HReg rD, ARMAMode2* amode ) {
+   ARMInstr* i         = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag              = ARMin_Ld8S;
+   i->ARMin.Ld8S.cc    = cc;
+   i->ARMin.Ld8S.rD    = rD;
+   i->ARMin.Ld8S.amode = amode;
+   vassert(cc != ARMcc_NV);
    return i;
 }
 ARMInstr* ARMInstr_XDirect ( Addr32 dstGA, ARMAMode1* amR15T,
@@ -1208,12 +1226,15 @@ ARMInstr* ARMInstr_CMov ( ARMCondCode cond, HReg dst, ARMRI84* src ) {
    vassert(cond != ARMcc_AL);
    return i;
 }
-ARMInstr* ARMInstr_Call ( ARMCondCode cond, HWord target, Int nArgRegs ) {
+ARMInstr* ARMInstr_Call ( ARMCondCode cond, HWord target, Int nArgRegs,
+                          RetLoc rloc ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                 = ARMin_Call;
    i->ARMin.Call.cond     = cond;
    i->ARMin.Call.target   = target;
    i->ARMin.Call.nArgRegs = nArgRegs;
+   i->ARMin.Call.rloc     = rloc;
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 ARMInstr* ARMInstr_Mul ( ARMMulOp op ) {
@@ -1559,12 +1580,14 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_LdSt32:
          if (i->ARMin.LdSt32.isLoad) {
-            vex_printf("ldr   ");
+            vex_printf("ldr%s ", i->ARMin.LdSt32.cc == ARMcc_AL ? "  "
+                                    : showARMCondCode(i->ARMin.LdSt32.cc));
             ppHRegARM(i->ARMin.LdSt32.rD);
             vex_printf(", ");
             ppARMAMode1(i->ARMin.LdSt32.amode);
          } else {
-            vex_printf("str   ");
+            vex_printf("str%s ", i->ARMin.LdSt32.cc == ARMcc_AL ? "  "
+                                    : showARMCondCode(i->ARMin.LdSt32.cc));
             ppARMAMode1(i->ARMin.LdSt32.amode);
             vex_printf(", ");
             ppHRegARM(i->ARMin.LdSt32.rD);
@@ -1572,13 +1595,18 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_LdSt16:
          if (i->ARMin.LdSt16.isLoad) {
-            vex_printf("%s", i->ARMin.LdSt16.signedLoad 
-                                ? "ldrsh " : "ldrh  " );
+            vex_printf("%s%s%s",
+                       i->ARMin.LdSt16.signedLoad ? "ldrsh" : "ldrh",
+                       i->ARMin.LdSt16.cc == ARMcc_AL ? "  " 
+                          : showARMCondCode(i->ARMin.LdSt16.cc),
+                       i->ARMin.LdSt16.signedLoad ? " " : "  ");
             ppHRegARM(i->ARMin.LdSt16.rD);
             vex_printf(", ");
             ppARMAMode2(i->ARMin.LdSt16.amode);
          } else {
-            vex_printf("strh  ");
+            vex_printf("strh%s  ",
+                       i->ARMin.LdSt16.cc == ARMcc_AL ? "  " 
+                          : showARMCondCode(i->ARMin.LdSt16.cc));
             ppARMAMode2(i->ARMin.LdSt16.amode);
             vex_printf(", ");
             ppHRegARM(i->ARMin.LdSt16.rD);
@@ -1586,19 +1614,26 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_LdSt8U:
          if (i->ARMin.LdSt8U.isLoad) {
-            vex_printf("ldrb  ");
+            vex_printf("ldrb%s  ", i->ARMin.LdSt8U.cc == ARMcc_AL ? "  "
+                                      : showARMCondCode(i->ARMin.LdSt8U.cc));
             ppHRegARM(i->ARMin.LdSt8U.rD);
             vex_printf(", ");
             ppARMAMode1(i->ARMin.LdSt8U.amode);
          } else {
-            vex_printf("strb  ");
+            vex_printf("strb%s  ", i->ARMin.LdSt8U.cc == ARMcc_AL ? "  "
+                                      : showARMCondCode(i->ARMin.LdSt8U.cc));
             ppARMAMode1(i->ARMin.LdSt8U.amode);
             vex_printf(", ");
             ppHRegARM(i->ARMin.LdSt8U.rD);
          }
          return;
       case ARMin_Ld8S:
-         goto unhandled;
+         vex_printf("ldrsb%s ", i->ARMin.Ld8S.cc == ARMcc_AL ? "  "
+                                   : showARMCondCode(i->ARMin.Ld8S.cc));
+         ppARMAMode2(i->ARMin.Ld8S.amode);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.Ld8S.rD);
+         return;
       case ARMin_XDirect:
          vex_printf("(xDirect) ");
          vex_printf("if (%%cpsr.%s) { ",
@@ -1651,8 +1686,10 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf("call%s  ",
                     i->ARMin.Call.cond==ARMcc_AL
                        ? "" : showARMCondCode(i->ARMin.Call.cond));
-         vex_printf("0x%lx [nArgRegs=%d]",
+         vex_printf("0x%lx [nArgRegs=%d, ",
                     i->ARMin.Call.target, i->ARMin.Call.nArgRegs);
+         ppRetLoc(i->ARMin.Call.rloc);
+         vex_printf("]");
          return;
       case ARMin_Mul:
          vex_printf("%-5s ", showARMMulOp(i->ARMin.Mul.op));
@@ -1951,7 +1988,6 @@ void ppARMInstr ( ARMInstr* i ) {
                     "str r11,[r12+4]");
          return;
       default:
-      unhandled:
          vex_printf("ppARMInstr: unhandled case (tag %d)", (Int)i->tag);
          vpanic("ppARMInstr(1)");
          return;
@@ -1995,6 +2031,8 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          addRegUsage_ARMAMode1(u, i->ARMin.LdSt32.amode);
          if (i->ARMin.LdSt32.isLoad) {
             addHRegUse(u, HRmWrite, i->ARMin.LdSt32.rD);
+            if (i->ARMin.LdSt32.cc != ARMcc_AL)
+               addHRegUse(u, HRmRead, i->ARMin.LdSt32.rD);
          } else {
             addHRegUse(u, HRmRead, i->ARMin.LdSt32.rD);
          }
@@ -2003,6 +2041,8 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          addRegUsage_ARMAMode2(u, i->ARMin.LdSt16.amode);
          if (i->ARMin.LdSt16.isLoad) {
             addHRegUse(u, HRmWrite, i->ARMin.LdSt16.rD);
+            if (i->ARMin.LdSt16.cc != ARMcc_AL)
+               addHRegUse(u, HRmRead, i->ARMin.LdSt16.rD);
          } else {
             addHRegUse(u, HRmRead, i->ARMin.LdSt16.rD);
          }
@@ -2011,12 +2051,18 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          addRegUsage_ARMAMode1(u, i->ARMin.LdSt8U.amode);
          if (i->ARMin.LdSt8U.isLoad) {
             addHRegUse(u, HRmWrite, i->ARMin.LdSt8U.rD);
+            if (i->ARMin.LdSt8U.cc != ARMcc_AL)
+               addHRegUse(u, HRmRead, i->ARMin.LdSt8U.rD);
          } else {
             addHRegUse(u, HRmRead, i->ARMin.LdSt8U.rD);
          }
          return;
       case ARMin_Ld8S:
-         goto unhandled;
+         addRegUsage_ARMAMode2(u, i->ARMin.Ld8S.amode);
+         addHRegUse(u, HRmWrite, i->ARMin.Ld8S.rD);
+         if (i->ARMin.Ld8S.cc != ARMcc_AL)
+            addHRegUse(u, HRmRead, i->ARMin.Ld8S.rD);
+         return;
       /* XDirect/XIndir/XAssisted are also a bit subtle.  They
          conditionally exit the block.  Hence we only need to list (1)
          the registers that they read, and (2) the registers that they
@@ -2246,7 +2292,6 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregARM_R12());
          addHRegUse(u, HRmWrite, hregARM_R11());
          return;
-      unhandled:
       default:
          ppARMInstr(i);
          vpanic("getRegUsage_ARMInstr");
@@ -2296,7 +2341,9 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          mapRegs_ARMAMode1(m, i->ARMin.LdSt8U.amode);
          return;
       case ARMin_Ld8S:
-         goto unhandled;
+         i->ARMin.Ld8S.rD = lookupHRegRemap(m, i->ARMin.Ld8S.rD);
+         mapRegs_ARMAMode2(m, i->ARMin.Ld8S.amode);
+         return;
       case ARMin_XDirect:
          mapRegs_ARMAMode1(m, i->ARMin.XDirect.amR15T);
          return;
@@ -2437,7 +2484,6 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
       case ARMin_ProfInc:
          /* hardwires r11 and r12 -- nothing to modify. */
          return;
-      unhandled:
       default:
          ppARMInstr(i);
          vpanic("mapRegs_ARMInstr");
@@ -2504,7 +2550,7 @@ void genSpill_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
    switch (rclass) {
       case HRcInt32:
          vassert(offsetB <= 4095);
-         *i1 = ARMInstr_LdSt32( False/*!isLoad*/, 
+         *i1 = ARMInstr_LdSt32( ARMcc_AL, False/*!isLoad*/, 
                                 rreg, 
                                 ARMAMode1_RI(hregARM_R8(), offsetB) );
          return;
@@ -2559,7 +2605,7 @@ void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
    switch (rclass) {
       case HRcInt32:
          vassert(offsetB <= 4095);
-         *i1 = ARMInstr_LdSt32( True/*isLoad*/, 
+         *i1 = ARMInstr_LdSt32( ARMcc_AL, True/*isLoad*/, 
                                 rreg, 
                                 ARMAMode1_RI(hregARM_R8(), offsetB) );
          return;
@@ -3006,20 +3052,24 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARMin_LdSt32:
       case ARMin_LdSt8U: {
-         UInt       bL, bB;
-         HReg       rD;
-         ARMAMode1* am;
+         UInt        bL, bB;
+         HReg        rD;
+         ARMAMode1*  am;
+         ARMCondCode cc;
          if (i->tag == ARMin_LdSt32) {
             bB = 0;
             bL = i->ARMin.LdSt32.isLoad ? 1 : 0;
             am = i->ARMin.LdSt32.amode;
             rD = i->ARMin.LdSt32.rD;
+            cc = i->ARMin.LdSt32.cc;
          } else {
             bB = 1;
             bL = i->ARMin.LdSt8U.isLoad ? 1 : 0;
             am = i->ARMin.LdSt8U.amode;
             rD = i->ARMin.LdSt8U.rD;
+            cc = i->ARMin.LdSt8U.cc;
          }
+         vassert(cc != ARMcc_NV);
          if (am->tag == ARMam1_RI) {
             Int  simm12;
             UInt instr, bP;
@@ -3031,7 +3081,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
                simm12 = am->ARMam1.RI.simm13;
             }
             vassert(simm12 >= 0 && simm12 <= 4095);
-            instr = XXXXX___(X1110,X0101,BITS4(bP,bB,0,bL),
+            instr = XXXXX___(cc,X0101,BITS4(bP,bB,0,bL),
                              iregNo(am->ARMam1.RI.reg),
                              iregNo(rD));
             instr |= simm12;
@@ -3043,10 +3093,12 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          }
       }
       case ARMin_LdSt16: {
-         HReg       rD = i->ARMin.LdSt16.rD;
-         UInt       bS = i->ARMin.LdSt16.signedLoad ? 1 : 0;
-         UInt       bL = i->ARMin.LdSt16.isLoad ? 1 : 0;
-         ARMAMode2* am = i->ARMin.LdSt16.amode;
+         HReg        rD = i->ARMin.LdSt16.rD;
+         UInt        bS = i->ARMin.LdSt16.signedLoad ? 1 : 0;
+         UInt        bL = i->ARMin.LdSt16.isLoad ? 1 : 0;
+         ARMAMode2*  am = i->ARMin.LdSt16.amode;
+         ARMCondCode cc = i->ARMin.LdSt16.cc;
+         vassert(cc != ARMcc_NV);
          if (am->tag == ARMam2_RI) {
             HReg rN = am->ARMam2.RI.reg;
             Int  simm8;
@@ -3064,20 +3116,24 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             vassert(!(bL == 0 && bS == 1)); // "! signed store"
             /**/ if (bL == 0 && bS == 0) {
                // strh
-               instr = XXXXXXXX(X1110,X0001, BITS4(bP,1,0,0), iregNo(rN),
+               instr = XXXXXXXX(cc,X0001, BITS4(bP,1,0,0), iregNo(rN),
                                 iregNo(rD), imm8hi, X1011, imm8lo);
                *p++ = instr;
                goto done;
             }
             else if (bL == 1 && bS == 0) {
                // ldrh
-               instr = XXXXXXXX(X1110,X0001, BITS4(bP,1,0,1), iregNo(rN),
+               instr = XXXXXXXX(cc,X0001, BITS4(bP,1,0,1), iregNo(rN),
                                 iregNo(rD), imm8hi, X1011, imm8lo);
                *p++ = instr;
                goto done;
             }
             else if (bL == 1 && bS == 1) {
-               goto bad;
+               // ldrsh
+               instr = XXXXXXXX(cc,X0001, BITS4(bP,1,0,1), iregNo(rN),
+                                iregNo(rD), imm8hi, X1111, imm8lo);
+               *p++ = instr;
+               goto done;
             }
             else vassert(0); // ill-constructed insn
          } else {
@@ -3085,8 +3141,35 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             goto bad;
          }
       }
-      case ARMin_Ld8S:
-         goto bad;
+      case ARMin_Ld8S: {
+         HReg        rD = i->ARMin.Ld8S.rD;
+         ARMAMode2*  am = i->ARMin.Ld8S.amode;
+         ARMCondCode cc = i->ARMin.Ld8S.cc;
+         vassert(cc != ARMcc_NV);
+         if (am->tag == ARMam2_RI) {
+            HReg rN = am->ARMam2.RI.reg;
+            Int  simm8;
+            UInt bP, imm8hi, imm8lo, instr;
+            if (am->ARMam2.RI.simm9 < 0) {
+               bP = 0;
+               simm8 = -am->ARMam2.RI.simm9;
+            } else {
+               bP = 1;
+               simm8 = am->ARMam2.RI.simm9;
+            }
+            vassert(simm8 >= 0 && simm8 <= 255);
+            imm8hi = (simm8 >> 4) & 0xF;
+            imm8lo = simm8 & 0xF;
+            // ldrsb
+            instr = XXXXXXXX(cc,X0001, BITS4(bP,1,0,1), iregNo(rN),
+                             iregNo(rD), imm8hi, X1101, imm8lo);
+            *p++ = instr;
+            goto done;
+         } else {
+            // RR case
+            goto bad;
+         }
+      }
 
       case ARMin_XDirect: {
          /* NB: what goes on here has to be very closely coordinated
@@ -3267,6 +3350,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          *p++ = instr;
          goto done;
       }
+
       case ARMin_Call: {
          UInt instr;
          /* Decide on a scratch reg used to hold to the call address.
@@ -3280,16 +3364,86 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             case 4:  scratchNo = 11; break;
             default: vassert(0);
          }
-         // r"scratchNo" = &target
-         p = imm32_to_iregNo( (UInt*)p,
-                              scratchNo, (UInt)i->ARMin.Call.target );
-         // blx{cond} r"scratchNo"
-         instr = XXX___XX(i->ARMin.Call.cond, X0001, X0010, /*___*/
-                          X0011, scratchNo);
-         instr |= 0xFFF << 8; // stick in the SBOnes
-         *p++ = instr;
+         /* If we don't need to do any fixup actions in the case that
+            the call doesn't happen, just do the simple thing and emit
+            straight-line code.  We hope this is the common case. */
+         if (i->ARMin.Call.cond == ARMcc_AL/*call always happens*/
+             || i->ARMin.Call.rloc == RetLocNone/*no fixup action*/) {
+            // r"scratchNo" = &target
+            p = imm32_to_iregNo( (UInt*)p,
+                                 scratchNo, (UInt)i->ARMin.Call.target );
+            // blx{cond} r"scratchNo"
+            instr = XXX___XX(i->ARMin.Call.cond, X0001, X0010, /*___*/
+                             X0011, scratchNo);
+            instr |= 0xFFF << 8; // stick in the SBOnes
+            *p++ = instr;
+         } else {
+            Int delta;
+            /* Complex case.  We have to generate an if-then-else
+               diamond. */
+            // before:
+            //   b{!cond} else:
+            //   r"scratchNo" = &target
+            //   blx{AL} r"scratchNo"
+            // preElse:
+            //   b after:
+            // else:
+            //   mov r0, #0x55555555  // possibly
+            //   mov r1, r0           // possibly
+            // after:
+
+            // before:
+            UInt* pBefore = p;
+
+            //   b{!cond} else:  // ptmp1 points here
+            *p++ = 0; // filled in later
+
+            //   r"scratchNo" = &target
+            p = imm32_to_iregNo( (UInt*)p,
+                                 scratchNo, (UInt)i->ARMin.Call.target );
+
+            //   blx{AL} r"scratchNo"
+            instr = XXX___XX(ARMcc_AL, X0001, X0010, /*___*/
+                             X0011, scratchNo);
+            instr |= 0xFFF << 8; // stick in the SBOnes
+            *p++ = instr;
+
+            // preElse:
+            UInt* pPreElse = p;
+
+            //   b after:
+            *p++ = 0; // filled in later
+
+            // else:
+            delta = (UChar*)p - (UChar*)pBefore;
+            delta = (delta >> 2) - 2;
+            *pBefore
+               = XX______(1 ^ i->ARMin.Call.cond, X1010) | (delta & 0xFFFFFF);
+
+            /* Do the 'else' actions */
+            switch (i->ARMin.Call.rloc) {
+               case RetLocInt:
+                  p = imm32_to_iregNo_EXACTLY2(p, /*r*/0, 0x55555555);
+                  break;
+               case RetLoc2Int:
+                  vassert(0); //ATC
+                  p = imm32_to_iregNo_EXACTLY2(p, /*r*/0, 0x55555555);
+                  /* mov r1, r0 */
+                  *p++ = 0xE1A01000;
+                  break;
+               case RetLocNone: case RetLocINVALID: default:
+                  vassert(0);
+            }
+
+            // after:
+            delta = (UChar*)p - (UChar*)pPreElse;
+            delta = (delta >> 2) - 2;
+            *pPreElse = XX______(ARMcc_AL, X1010) | (delta & 0xFFFFFF);
+         }
+
          goto done;
       }
+
       case ARMin_Mul: {
          /* E0000392   mul     r0, r2, r3
             E0810392   umull   r0(LO), r1(HI), r2, r3

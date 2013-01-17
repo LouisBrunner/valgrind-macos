@@ -400,10 +400,12 @@ static IRExpr* flatten_Expr ( IRSB* bb, IRExpr* ex )
 static void flatten_Stmt ( IRSB* bb, IRStmt* st )
 {
    Int i;
-   IRExpr  *e1, *e2, *e3, *e4, *e5;
-   IRDirty *d,  *d2;
-   IRCAS   *cas, *cas2;
-   IRPutI  *puti, *puti2;
+   IRExpr   *e1, *e2, *e3, *e4, *e5;
+   IRDirty  *d,  *d2;
+   IRCAS    *cas, *cas2;
+   IRPutI   *puti, *puti2;
+   IRLoadG  *lg;
+   IRStoreG *sg;
    switch (st->tag) {
       case Ist_Put:
          if (isIRAtom(st->Ist.Put.data)) {
@@ -438,6 +440,21 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          e1 = flatten_Expr(bb, st->Ist.Store.addr);
          e2 = flatten_Expr(bb, st->Ist.Store.data);
          addStmtToIRSB(bb, IRStmt_Store(st->Ist.Store.end, e1,e2));
+         break;
+      case Ist_StoreG:
+         sg = st->Ist.StoreG.details;
+         e1 = flatten_Expr(bb, sg->addr);
+         e2 = flatten_Expr(bb, sg->data);
+         e3 = flatten_Expr(bb, sg->guard);
+         addStmtToIRSB(bb, IRStmt_StoreG(sg->end, e1, e2, e3));
+         break;
+      case Ist_LoadG:
+         lg = st->Ist.LoadG.details;
+         e1 = flatten_Expr(bb, lg->addr);
+         e2 = flatten_Expr(bb, lg->alt);
+         e3 = flatten_Expr(bb, lg->guard);
+         addStmtToIRSB(bb, IRStmt_LoadG(lg->end, lg->cvt, lg->dst,
+                                        e1, e2, e3));
          break;
       case Ist_CAS:
          cas  = st->Ist.CAS.details;
@@ -763,7 +780,22 @@ static void handle_gets_Stmt (
          vassert(isIRAtom(st->Ist.Store.data));
          memRW = True;
          break;
-
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         vassert(isIRAtom(sg->addr));
+         vassert(isIRAtom(sg->data));
+         vassert(isIRAtom(sg->guard));
+         memRW = True;
+         break;
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         vassert(isIRAtom(lg->addr));
+         vassert(isIRAtom(lg->alt));
+         vassert(isIRAtom(lg->guard));
+         memRW = True;
+         break;
+      }
       case Ist_Exit:
          vassert(isIRAtom(st->Ist.Exit.guard));
          break;
@@ -2399,6 +2431,62 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                    fold_Expr(env, subst_Expr(env, st->Ist.Store.data))
                 );
 
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         vassert(isIRAtom(sg->addr));
+         vassert(isIRAtom(sg->data));
+         vassert(isIRAtom(sg->guard));
+         IRExpr* faddr  = fold_Expr(env, subst_Expr(env, sg->addr));
+         IRExpr* fdata  = fold_Expr(env, subst_Expr(env, sg->data));
+         IRExpr* fguard = fold_Expr(env, subst_Expr(env, sg->guard));
+         if (fguard->tag == Iex_Const) {
+            /* The condition on this store has folded down to a constant. */
+            vassert(fguard->Iex.Const.con->tag == Ico_U1);
+            if (fguard->Iex.Const.con->Ico.U1 == False) {
+               return IRStmt_NoOp();
+            } else {
+               vassert(fguard->Iex.Const.con->Ico.U1 == True);
+               return IRStmt_Store(sg->end, faddr, fdata);
+            }
+         }
+         return IRStmt_StoreG(sg->end, faddr, fdata, fguard);
+      }
+
+      case Ist_LoadG: {
+         /* This is complicated.  If the guard folds down to 'false',
+            we can replace it with an assignment 'dst := alt', but if
+            the guard folds down to 'true', we can't conveniently
+            replace it with an unconditional load, because doing so
+            requires generating a new temporary, and that is not easy
+            to do at this point. */
+         IRLoadG* lg = st->Ist.LoadG.details;
+         vassert(isIRAtom(lg->addr));
+         vassert(isIRAtom(lg->alt));
+         vassert(isIRAtom(lg->guard));
+         IRExpr* faddr  = fold_Expr(env, subst_Expr(env, lg->addr));
+         IRExpr* falt   = fold_Expr(env, subst_Expr(env, lg->alt));
+         IRExpr* fguard = fold_Expr(env, subst_Expr(env, lg->guard));
+         if (fguard->tag == Iex_Const) {
+            /* The condition on this load has folded down to a constant. */
+            vassert(fguard->Iex.Const.con->tag == Ico_U1);
+            if (fguard->Iex.Const.con->Ico.U1 == False) {
+               /* The load is not going to happen -- instead 'alt' is
+                  assigned to 'dst'.  */
+               return IRStmt_WrTmp(lg->dst, falt);
+            } else {
+               vassert(fguard->Iex.Const.con->Ico.U1 == True);
+               /* The load is always going to happen.  We want to
+                  convert to an unconditional load and assign to 'dst'
+                  (IRStmt_WrTmp).  Problem is we need an extra temp to
+                  hold the loaded value, but none is available.
+                  Instead, reconstitute the conditional load (with
+                  folded args, of course) and let the caller of this
+                  routine deal with the problem. */
+            }
+         }
+         return IRStmt_LoadG(lg->end, lg->cvt, lg->dst, faddr, falt, fguard);
+      }
+
       case Ist_CAS: {
          IRCAS *cas, *cas2;
          cas = st->Ist.CAS.details;
@@ -2472,8 +2560,6 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
             /* Interesting.  The condition on this exit has folded down to
                a constant. */
             vassert(fcond->Iex.Const.con->tag == Ico_U1);
-            vassert(fcond->Iex.Const.con->Ico.U1 == False
-                    || fcond->Iex.Const.con->Ico.U1 == True);
             if (fcond->Iex.Const.con->Ico.U1 == False) {
                /* exit is never going to happen, so dump the statement. */
                return IRStmt_NoOp();
@@ -2507,6 +2593,11 @@ IRSB* cprop_BB ( IRSB* in )
    IRStmt*  st2;
    Int      n_tmps = in->tyenv->types_used;
    IRExpr** env = LibVEX_Alloc(n_tmps * sizeof(IRExpr*));
+   /* Keep track of IRStmt_LoadGs that we need to revisit after
+      processing all the other statements. */
+   const Int N_FIXUPS = 16;
+   Int fixups[N_FIXUPS]; /* indices in the stmt array of 'out' */
+   Int n_fixups = 0;
 
    out = emptyIRSB();
    out->tyenv = deepCopyIRTypeEnv( in->tyenv );
@@ -2534,40 +2625,124 @@ IRSB* cprop_BB ( IRSB* in )
 
       st2 = subst_and_fold_Stmt( env, st2 );
 
-      /* If the statement has been folded into a no-op, forget it. */
-      if (st2->tag == Ist_NoOp) continue;
+      /* Deal with some post-folding special cases. */
+      switch (st2->tag) {
 
-      /* If the statement assigns to an IRTemp add it to the running
-         environment. This is for the benefit of copy propagation
-         and to allow sameIRExpr look through IRTemps. */
-      if (st2->tag == Ist_WrTmp) {
-         vassert(env[(Int)(st2->Ist.WrTmp.tmp)] == NULL);
-         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
+         /* If the statement has been folded into a no-op, forget
+            it. */
+         case Ist_NoOp:
+            continue;
 
-         /* 't1 = t2' -- don't add to BB; will be optimized out */
-         if (st2->Ist.WrTmp.data->tag == Iex_RdTmp) continue;
+         /* If the statement assigns to an IRTemp add it to the
+            running environment. This is for the benefit of copy
+            propagation and to allow sameIRExpr look through
+            IRTemps. */
+         case Ist_WrTmp: {
+            vassert(env[(Int)(st2->Ist.WrTmp.tmp)] == NULL);
+            env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
 
-         /* 't = const' && 'const != F64i' -- don't add to BB
-            Note, we choose not to propagate const when const is an
-            F64i, so that F64i literals can be CSE'd later.  This helps
-            x86 floating point code generation. */
-         if (st2->Ist.WrTmp.data->tag == Iex_Const
-             && st2->Ist.WrTmp.data->Iex.Const.con->tag != Ico_F64i) continue;
+            /* 't1 = t2' -- don't add to BB; will be optimized out */
+            if (st2->Ist.WrTmp.data->tag == Iex_RdTmp)
+               continue;
+
+            /* 't = const' && 'const != F64i' -- don't add to BB 
+               Note, we choose not to propagate const when const is an
+               F64i, so that F64i literals can be CSE'd later.  This
+               helps x86 floating point code generation. */
+            if (st2->Ist.WrTmp.data->tag == Iex_Const
+                && st2->Ist.WrTmp.data->Iex.Const.con->tag != Ico_F64i) {
+               continue;
+            }
+            /* else add it to the output, as normal */
+            break;
+         }
+
+         case Ist_LoadG: {
+            IRLoadG* lg    = st2->Ist.LoadG.details;
+            IRExpr*  guard = lg->guard;
+            if (guard->tag == Iex_Const) {
+               /* The guard has folded to a constant, and that
+                  constant must be 1:I1, since subst_and_fold_Stmt
+                  folds out the case 0:I1 by itself. */
+               vassert(guard->Iex.Const.con->tag == Ico_U1);
+               vassert(guard->Iex.Const.con->Ico.U1 == True);
+               /* Add a NoOp here as a placeholder, and make a note of
+                  where it is in the output block.  Afterwards we'll
+                  come back here and transform the NoOp and the LoadG
+                  into a load-convert pair.  The fixups[] entry
+                  refers to the inserted NoOp, and we expect to find
+                  the relevant LoadG immediately after it. */
+               vassert(n_fixups >= 0 && n_fixups <= N_FIXUPS);
+               if (n_fixups < N_FIXUPS) {
+                  fixups[n_fixups++] = out->stmts_used;
+                  addStmtToIRSB( out, IRStmt_NoOp() );
+               }
+            }
+            /* And always add the LoadG to the output, regardless. */
+            break;
+         }
+
+      default:
+         break;
       }
 
       /* Not interesting, copy st2 into the output block. */
       addStmtToIRSB( out, st2 );
    }
 
-#if STATS_IROPT
+#  if STATS_IROPT
    vex_printf("sameIRExpr: invoked = %u/%u  equal = %u/%u max_nodes = %u\n",
               invocation_count, recursion_count, success_count,
               recursion_success_count, max_nodes_visited);
-#endif
+#  endif
 
    out->next     = subst_Expr( env, in->next );
    out->jumpkind = in->jumpkind;
    out->offsIP   = in->offsIP;
+
+   /* Process any leftover unconditional LoadGs that we noticed
+      in the main pass. */
+   vassert(n_fixups >= 0 && n_fixups <= N_FIXUPS);
+   for (i = 0; i < n_fixups; i++) {
+      Int ix = fixups[i];
+      /* Carefully verify that the LoadG has the expected form. */
+      vassert(ix >= 0 && ix+1 < out->stmts_used);
+      IRStmt* nop = out->stmts[ix];
+      IRStmt* lgu = out->stmts[ix+1];
+      vassert(nop->tag == Ist_NoOp);
+      vassert(lgu->tag == Ist_LoadG);
+      IRLoadG* lg    = lgu->Ist.LoadG.details;
+      IRExpr*  guard = lg->guard;
+      vassert(guard->Iex.Const.con->tag == Ico_U1);
+      vassert(guard->Iex.Const.con->Ico.U1 == True);
+      /* Figure out the load and result types, and the implied
+         conversion operation. */
+      IRType cvtRes = Ity_INVALID, cvtArg = Ity_INVALID;
+      typeOfIRLoadGOp(lg->cvt, &cvtRes, &cvtArg);
+      IROp cvtOp = Iop_INVALID;
+      switch (lg->cvt) {
+         case ILGop_Ident32: break;
+         case ILGop_8Uto32:  cvtOp = Iop_8Uto32;  break;
+         case ILGop_8Sto32:  cvtOp = Iop_8Sto32;  break;
+         case ILGop_16Uto32: cvtOp = Iop_16Uto32; break;
+         case ILGop_16Sto32: cvtOp = Iop_16Sto32; break;
+         default: vpanic("cprop_BB: unhandled ILGOp");
+      }
+      /* Replace the placeholder NoOp by the required unconditional
+         load. */
+      IRTemp tLoaded = newIRTemp(out->tyenv, cvtArg);
+      out->stmts[ix] 
+         = IRStmt_WrTmp(tLoaded,
+                        IRExpr_Load(lg->end, cvtArg, lg->addr));
+      /* Replace the LoadG by a conversion from the loaded value's
+         type to the required result type. */
+      out->stmts[ix+1]
+         = IRStmt_WrTmp(
+              lg->dst, cvtOp == Iop_INVALID
+                          ? IRExpr_RdTmp(tLoaded)
+                          : IRExpr_Unop(cvtOp, IRExpr_RdTmp(tLoaded)));
+   }
+
    return out;
 }
 
@@ -2663,6 +2838,20 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          addUses_Expr(set, st->Ist.Store.addr);
          addUses_Expr(set, st->Ist.Store.data);
          return;
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         addUses_Expr(set, sg->addr);
+         addUses_Expr(set, sg->data);
+         addUses_Expr(set, sg->guard);
+         return;
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         addUses_Expr(set, lg->addr);
+         addUses_Expr(set, lg->alt);
+         addUses_Expr(set, lg->guard);
+         return;
+      }
       case Ist_CAS:
          cas = st->Ist.CAS.details;
          addUses_Expr(set, cas->addr);
@@ -3469,7 +3658,7 @@ static Bool do_cse_BB ( IRSB* bb )
    if (0) { ppIRSB(bb); vex_printf("\n\n"); }
 
    /* Iterate forwards over the stmts.  
-      On seeing "t = E", where E is one of the 5 AvailExpr forms:
+      On seeing "t = E", where E is one of the AvailExpr forms:
          let E' = apply tenv substitution to E
          search aenv for E'
             if a mapping E' -> q is found, 
@@ -3499,11 +3688,12 @@ static Bool do_cse_BB ( IRSB* bb )
       switch (st->tag) {
          case Ist_Dirty: case Ist_Store: case Ist_MBE:
          case Ist_CAS: case Ist_LLSC:
+         case Ist_StoreG:
             paranoia = 2; break;
          case Ist_Put: case Ist_PutI: 
             paranoia = 1; break;
          case Ist_NoOp: case Ist_IMark: case Ist_AbiHint: 
-         case Ist_WrTmp: case Ist_Exit: 
+         case Ist_WrTmp: case Ist_Exit: case Ist_LoadG:
             paranoia = 0; break;
          default: 
             vpanic("do_cse_BB(1)");
@@ -4204,6 +4394,21 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(st->Ist.Store.addr, delta);
          deltaIRExpr(st->Ist.Store.data, delta);
          break;
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         deltaIRExpr(sg->addr, delta);
+         deltaIRExpr(sg->data, delta);
+         deltaIRExpr(sg->guard, delta);
+         break;
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         lg->dst += delta;
+         deltaIRExpr(lg->addr, delta);
+         deltaIRExpr(lg->alt, delta);
+         deltaIRExpr(lg->guard, delta);
+         break;
+      }
       case Ist_CAS:
          if (st->Ist.CAS.details->oldHi != IRTemp_INVALID)
             st->Ist.CAS.details->oldHi += delta;
@@ -4676,6 +4881,20 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
          aoccCount_Expr(uses, st->Ist.Store.addr);
          aoccCount_Expr(uses, st->Ist.Store.data);
          return;
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         aoccCount_Expr(uses, sg->addr);
+         aoccCount_Expr(uses, sg->data);
+         aoccCount_Expr(uses, sg->guard);
+         return;
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         aoccCount_Expr(uses, lg->addr);
+         aoccCount_Expr(uses, lg->alt);
+         aoccCount_Expr(uses, lg->guard);
+         return;
+      }
       case Ist_CAS:
          cas = st->Ist.CAS.details;
          aoccCount_Expr(uses, cas->addr);
@@ -4992,6 +5211,20 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
                    atbSubst_Expr(env, st->Ist.Store.addr),
                    atbSubst_Expr(env, st->Ist.Store.data)
                 );
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         return IRStmt_StoreG(sg->end,
+                              atbSubst_Expr(env, sg->addr),
+                              atbSubst_Expr(env, sg->data),
+                              atbSubst_Expr(env, sg->guard));
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         return IRStmt_LoadG(lg->end, lg->cvt, lg->dst,
+                             atbSubst_Expr(env, lg->addr),
+                             atbSubst_Expr(env, lg->alt),
+                             atbSubst_Expr(env, lg->guard));
+      }
       case Ist_WrTmp:
          return IRStmt_WrTmp(
                    st->Ist.WrTmp.tmp,
@@ -5429,6 +5662,20 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
             vassert(isIRAtom(st->Ist.Store.addr));
             vassert(isIRAtom(st->Ist.Store.data));
             break;
+         case Ist_StoreG: {
+            IRStoreG* sg = st->Ist.StoreG.details;
+            vassert(isIRAtom(sg->addr));
+            vassert(isIRAtom(sg->data));
+            vassert(isIRAtom(sg->guard));
+            break;
+         }
+         case Ist_LoadG: {
+            IRLoadG* lg = st->Ist.LoadG.details;
+            vassert(isIRAtom(lg->addr));
+            vassert(isIRAtom(lg->alt));
+            vassert(isIRAtom(lg->guard));
+            break;
+         }
          case Ist_CAS:
             cas = st->Ist.CAS.details;
             vassert(isIRAtom(cas->addr));

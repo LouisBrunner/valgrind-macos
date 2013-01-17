@@ -616,6 +616,7 @@ typedef
             PPCCondCode cond;
             Addr64      target;
             UInt        argiregs;
+            RetLoc      rloc;     /* where the return value will be */
          } Call;
          /* Update the guest CIA value, then exit requesting to chain
             to it.  May be conditional.  Use of Addr64 in order to cope
@@ -971,7 +972,7 @@ extern PPCInstr* PPCInstr_Cmp        ( Bool, Bool, UInt, HReg, PPCRH* );
 extern PPCInstr* PPCInstr_Unary      ( PPCUnaryOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
 extern PPCInstr* PPCInstr_Div        ( Bool extended, Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
-extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt );
+extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt, RetLoc );
 extern PPCInstr* PPCInstr_XDirect    ( Addr64 dstGA, PPCAMode* amCIA,
                                        PPCCondCode cond, Bool toFastEP );
 extern PPCInstr* PPCInstr_XIndir     ( HReg dstGA, PPCAMode* amCIA,

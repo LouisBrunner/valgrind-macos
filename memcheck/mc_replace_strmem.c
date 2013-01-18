@@ -1023,17 +1023,32 @@ static inline void my_exit ( int x )
    void* VG_REPLACE_FUNCTION_EZU(20210,soname,fnname) \
             (void *s, Int c, SizeT n) \
    { \
-      Addr a  = (Addr)s;   \
-      UInt c4 = (c & 0xFF); \
-      c4 = (c4 << 8) | c4; \
-      c4 = (c4 << 16) | c4; \
-      while ((a & 3) != 0 && n >= 1) \
-         { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
-      while (n >= 4) \
-         { *(UInt*)a = c4; a += 4; n -= 4; } \
-      while (n >= 1) \
-         { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
-      return s; \
+      if (sizeof(void*) == 8) { \
+         Addr  a  = (Addr)s;   \
+         ULong c8 = (c & 0xFF); \
+         c8 = (c8 << 8) | c8; \
+         c8 = (c8 << 16) | c8; \
+         c8 = (c8 << 32) | c8; \
+         while ((a & 7) != 0 && n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         while (n >= 8) \
+            { *(ULong*)a = c8; a += 8; n -= 8; } \
+         while (n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         return s; \
+      } else { \
+         Addr a  = (Addr)s;   \
+         UInt c4 = (c & 0xFF); \
+         c4 = (c4 << 8) | c4; \
+         c4 = (c4 << 16) | c4; \
+         while ((a & 3) != 0 && n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         while (n >= 4) \
+            { *(UInt*)a = c4; a += 4; n -= 4; } \
+         while (n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         return s; \
+      } \
    }
 
 #if defined(VGO_linux)

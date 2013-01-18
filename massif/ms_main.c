@@ -591,34 +591,12 @@ struct _SXPt {
 // parent node to all top-XPts.
 static XPt* alloc_xpt;
 
-// Cheap allocation for blocks that never need to be freed.  Saves about 10%
-// for Konqueror startup with --depth=40.
-static void* perm_malloc(SizeT n_bytes)
-{
-   static Addr hp     = 0;    // current heap pointer
-   static Addr hp_lim = 0;    // maximum usable byte in current block
-
-   #define SUPERBLOCK_SIZE  (1 << 20)         // 1 MB
-
-   if (hp + n_bytes > hp_lim) {
-      hp = (Addr)VG_(am_shadow_alloc)(SUPERBLOCK_SIZE);
-      if (0 == hp)
-         VG_(out_of_memory_NORETURN)( "massif:perm_malloc",
-                                      SUPERBLOCK_SIZE);
-      hp_lim = hp + SUPERBLOCK_SIZE - 1;
-   }
-
-   hp += n_bytes;
-
-   return (void*)(hp - n_bytes);
-}
-
 static XPt* new_XPt(Addr ip, XPt* parent)
 {
-   // XPts are never freed, so we can use perm_malloc to allocate them.
-   // Note that we cannot use perm_malloc for the 'children' array, because
+   // XPts are never freed, so we can use VG_(perm_malloc) to allocate them.
+   // Note that we cannot use VG_(perm_malloc) for the 'children' array, because
    // that needs to be resizable.
-   XPt* xpt    = perm_malloc(sizeof(XPt));
+   XPt* xpt    = VG_(perm_malloc)(sizeof(XPt), vg_alignof(XPt));
    xpt->ip     = ip;
    xpt->szB    = 0;
    xpt->parent = parent;

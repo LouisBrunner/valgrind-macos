@@ -47,6 +47,7 @@ extern HChar* VG_(strdup)        ( const HChar* cc, const HChar* s );
 // possibly some more due to rounding up.
 extern SizeT VG_(malloc_usable_size)( void* p );
 
+
 // If tool is replacing malloc for the client, the below returns
 // the effective client redzone as derived from the default
 // provided by the tool, VG_(clo_redzone_size) and the minimum
@@ -59,6 +60,20 @@ extern SizeT VG_(malloc_effective_client_redzone_size)(void);
 // Call here to bomb the system when out of memory (mmap anon fails)
 __attribute__((noreturn))
 extern void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB );
+
+// VG_(perm_malloc) is for allocating small blocks which are
+// never released. The overhead for such blocks is minimal.
+// VG_(perm_malloc) returns memory which is (at least) aligned
+// on a multiple of align.
+// Use the macro vg_alignof (type) to get a safe alignment for a type.
+// No other function can be used on these permanently allocated blocks.
+// In particular, do *not* call VG_(free) or VG_(malloc_usable_size)
+// or VG_(realloc).
+// Technically, these blocks will be returned from big superblocks
+// only containing such permanently allocated blocks.
+// Note that there is no cc cost centre : all such blocks will be
+// regrouped under the "perm_alloc" cost centre.
+extern void* VG_(perm_malloc)    ( SizeT nbytes, Int align );
 
 #endif   // __PUB_TOOL_MALLOCFREE_H
 

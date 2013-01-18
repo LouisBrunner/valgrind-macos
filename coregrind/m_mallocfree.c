@@ -218,8 +218,17 @@ typedef
       SizeT        sblocks_used;
       Superblock*  sblocks_initial[SBLOCKS_SIZE_INITIAL];
       Superblock*  deferred_reclaimed_sb;
-      
-      // Stats only.
+
+      // VG_(arena_perm_malloc) returns memory from superblocks
+      // only used for permanent blocks. No overhead. These superblocks
+      // are not stored in sblocks array above.
+      Addr         perm_malloc_current; // first byte free in perm_malloc sb.
+      Addr         perm_malloc_limit; // maximum usable byte in perm_malloc sb.
+
+      // Stats only
+      SizeT        stats__perm_bytes_on_loan;
+      SizeT        stats__perm_blocks;
+
       ULong        stats__nreclaim_unsplit;
       ULong        stats__nreclaim_split;
       /* total # of reclaim executed for unsplittable/splittable superblocks */
@@ -495,6 +504,13 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
    return & vg_arena[arena];
 }
 
+static ArenaId arenaP_to_ArenaId ( Arena *a )
+{
+   ArenaId arena = a -vg_arena; 
+   vg_assert(arena >= 0 && arena < VG_N_ARENAS);
+   return arena;
+}
+
 SizeT VG_(malloc_effective_client_redzone_size)(void)
 {
    vg_assert(VG_(needs).malloc_replacement);
@@ -555,6 +571,11 @@ void arena_init ( ArenaId aid, const HChar* name, SizeT rz_szB,
    a->sblocks                  = & a->sblocks_initial[0];
    a->sblocks_size             = SBLOCKS_SIZE_INITIAL;
    a->sblocks_used             = 0;
+   a->deferred_reclaimed_sb    = 0;
+   a->perm_malloc_current      = 0;
+   a->perm_malloc_limit        = 0;
+   a->stats__perm_bytes_on_loan= 0;
+   a->stats__perm_blocks       = 0;
    a->stats__nreclaim_unsplit  = 0;
    a->stats__nreclaim_split    = 0;
    a->stats__bytes_on_loan     = 0;
@@ -1205,6 +1226,8 @@ static void sanity_check_malloc_arena ( ArenaId aid )
       }
    }
 
+   arena_bytes_on_loan += a->stats__perm_bytes_on_loan;
+
    if (arena_bytes_on_loan != a->stats__bytes_on_loan) {
 #     ifdef VERBOSE_MALLOC
       VG_(printf)( "sanity_check_malloc_arena: a->bytes_on_loan %lu, "
@@ -1370,6 +1393,14 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
       }
    }
 
+   if (a->stats__perm_bytes_on_loan > 0) {
+      tl_assert(n_ccs < N_AN_CCS-1);
+      anCCs[n_ccs].nBytes  = a->stats__perm_bytes_on_loan;
+      anCCs[n_ccs].nBlocks = a->stats__perm_blocks;
+      anCCs[n_ccs].cc      = "perm_malloc";
+      n_ccs++;
+   }
+
    VG_(ssort)( &anCCs[0], n_ccs, sizeof(anCCs[0]), cmp_AnCC_by_vol );
 
    for (k = 0; k < n_ccs; k++) {
@@ -1480,6 +1511,25 @@ SizeT align_req_pszB ( SizeT req_pszB )
 {
    SizeT n = VG_MIN_MALLOC_SZB-1;
    return ((req_pszB + n) & (~n));
+}
+
+static
+void add_one_block_to_stats (Arena* a, SizeT loaned)
+{
+   a->stats__bytes_on_loan += loaned;
+   if (a->stats__bytes_on_loan > a->stats__bytes_on_loan_max) {
+      a->stats__bytes_on_loan_max = a->stats__bytes_on_loan;
+      if (a->stats__bytes_on_loan_max >= a->next_profile_at) {
+         /* next profile after 10% more growth */
+         a->next_profile_at 
+            = (SizeT)( 
+                 (((ULong)a->stats__bytes_on_loan_max) * 105ULL) / 100ULL );
+         if (VG_(clo_profile_heap))
+            cc_analyse_alloc_arena(arenaP_to_ArenaId (a));
+      }
+   }
+   a->stats__tot_blocks += (ULong)1;
+   a->stats__tot_bytes  += (ULong)loaned;
 }
 
 void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
@@ -1637,20 +1687,7 @@ void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
 
    // Update stats
    SizeT loaned = bszB_to_pszB(a, b_bszB);
-   a->stats__bytes_on_loan += loaned;
-   if (a->stats__bytes_on_loan > a->stats__bytes_on_loan_max) {
-      a->stats__bytes_on_loan_max = a->stats__bytes_on_loan;
-      if (a->stats__bytes_on_loan_max >= a->next_profile_at) {
-         /* next profile after 10% more growth */
-         a->next_profile_at 
-            = (SizeT)( 
-                 (((ULong)a->stats__bytes_on_loan_max) * 105ULL) / 100ULL );
-         if (VG_(clo_profile_heap))
-            cc_analyse_alloc_arena(aid);
-      }
-   }
-   a->stats__tot_blocks += (ULong)1;
-   a->stats__tot_bytes  += (ULong)loaned;
+   add_one_block_to_stats (a, loaned);
    a->stats__nsearches  += (ULong)stats__nsearches;
 
 #  ifdef DEBUG_MALLOC
@@ -2228,6 +2265,36 @@ __inline__ HChar* VG_(arena_strdup) ( ArenaId aid, const HChar* cc,
    return res;
 }
 
+void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT size, Int align  )
+{
+   Arena*      a;
+
+   ensure_mm_init(aid);
+   a = arenaId_to_ArenaP(aid);
+
+   align = align - 1;
+   size = (size + align) & ~align;
+
+   if (UNLIKELY(a->perm_malloc_current + size > a->perm_malloc_limit)) {
+      // Get a superblock, but we will not insert it into the superblock list.
+      // The superblock structure is not needed, so we will use the full
+      // memory range of it. This superblock is however counted in the
+      // mmaped statistics.
+      Superblock* new_sb = newSuperblock (a, size);
+      a->perm_malloc_limit = &new_sb->payload_bytes[new_sb->n_payload_bytes - 1];
+
+      // We do not mind starting allocating from the beginning of the superblock
+      // as afterwards, we "lose" it as a superblock.
+      a->perm_malloc_current = (Addr)new_sb;
+   }
+
+   a->stats__perm_blocks += 1;
+   a->stats__perm_bytes_on_loan  += size;
+   add_one_block_to_stats (a, size);
+
+   a->perm_malloc_current        += size;
+   return (void*)(a->perm_malloc_current - size);
+}
 
 /*------------------------------------------------------------*/
 /*--- Tool-visible functions.                              ---*/
@@ -2266,6 +2333,11 @@ SizeT VG_(malloc_usable_size) ( void* p )
    return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);
 }                                                            
   
+void* VG_(perm_malloc) ( SizeT size, Int align  )
+{
+   return VG_(arena_perm_malloc) ( VG_AR_TOOL, size, align );
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

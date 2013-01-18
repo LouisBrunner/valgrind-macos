@@ -420,9 +420,10 @@ static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips )
    /* Bummer.  We have to allocate a new context record. */
    ec_totstored++;
 
-   new_ec = VG_(arena_malloc)( VG_AR_EXECTXT, "execontext.rEw2.2",
-                               sizeof(struct _ExeContext) 
-                               + n_ips * sizeof(Addr) );
+   new_ec = VG_(arena_perm_malloc)( VG_AR_EXECTXT,
+                                    sizeof(struct _ExeContext) 
+                                    + n_ips * sizeof(Addr),
+                                    vg_alignof(struct _ExeContext));
 
    for (i = 0; i < n_ips; i++)
       new_ec->ips[i] = ips[i];

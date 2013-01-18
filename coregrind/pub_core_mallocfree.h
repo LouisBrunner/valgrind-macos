@@ -118,6 +118,11 @@ extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 
+// VG_(arena_perm_malloc) is for permanent allocation of small blocks.
+// See VG_(perm_malloc) in pub_tool_mallocfree.h for more details.
+// Do not call any VG_(arena_*) functions with these permanent blocks.
+extern void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT nbytes, Int align );
+
 extern void  VG_(sanity_check_malloc_all) ( void );
 
 extern void  VG_(print_all_arena_stats) ( void );

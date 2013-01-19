@@ -458,8 +458,8 @@ static Bool parse_ULong ( /*OUT*/ULong* res, /*INOUT*/char** pptr)
    char* ptr = *pptr;
    while (isspace(*ptr)) ptr++;
    if (!isdigit(*ptr)) {
-      return False; /* end of string, or junk */
       *pptr = ptr;
+      return False; /* end of string, or junk */
    }
    u64 = 0;
    while (isdigit(*ptr)) {

@@ -920,7 +920,7 @@ get_irop(IROp op)
             int rc;
             /* These IROps require the floating point extension facility */
             rc = system(S390X_FEATURES " s390x-fpext");
-            // s390x_features returns 1 if features exists
+            // s390x_features returns 1 if feature does not exist
             rc /= 256;
             if (rc != 0) return NULL;
          }

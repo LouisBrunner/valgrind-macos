@@ -209,13 +209,13 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 31: 
       if (dir == valgrind_to_gdbserver) {
          UChar fpreg80[10];
-         convert_f64le_to_f80le ((UChar *)&amd64->guest_FPREG[regno-16],
+         convert_f64le_to_f80le ((UChar *)&amd64->guest_FPREG[regno-24],
                                  fpreg80);
          VG_(transfer) (&fpreg80, buf, dir, sizeof(fpreg80), mod);
       } else {
          ULong fpreg64;
          convert_f80le_to_f64le (buf, (UChar *)&fpreg64); 
-         VG_(transfer) (&amd64->guest_FPREG[regno-16], &fpreg64,
+         VG_(transfer) (&amd64->guest_FPREG[regno-24], &fpreg64,
                         dir, sizeof(fpreg64), mod);
       }
       break;

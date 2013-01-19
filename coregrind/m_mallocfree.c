@@ -2281,7 +2281,7 @@ void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT size, Int align  )
       // memory range of it. This superblock is however counted in the
       // mmaped statistics.
       Superblock* new_sb = newSuperblock (a, size);
-      a->perm_malloc_limit = &new_sb->payload_bytes[new_sb->n_payload_bytes - 1];
+      a->perm_malloc_limit = (Addr)&new_sb->payload_bytes[new_sb->n_payload_bytes - 1];
 
       // We do not mind starting allocating from the beginning of the superblock
       // as afterwards, we "lose" it as a superblock.

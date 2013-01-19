@@ -924,6 +924,7 @@ POST(domctl){
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000007, ssidref);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000007, handle);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000007, cpupool);
+      break;
       case 0x00000008:
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, domain);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, flags);

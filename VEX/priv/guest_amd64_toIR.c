@@ -1187,7 +1187,7 @@ static IRExpr* getIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
       return unop(Iop_64to32,
                   IRExpr_Get(
                      offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                                     toBool(sz==1 && !haveREX(pfx)) ),
+                                     False/*!irregular*/ ),
                      szToITy(sz)
                  )
              );

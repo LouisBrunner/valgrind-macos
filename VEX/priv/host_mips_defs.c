@@ -2256,7 +2256,7 @@ void genReload_MIPS( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2, HReg rreg,
 static UInt iregNo(HReg r, Bool mode64)
 {
    UInt n;
-   vassert(hregClass(r) == mode64 ? HRcInt64 : HRcInt32);
+   vassert(hregClass(r) == (mode64 ? HRcInt64 : HRcInt32));
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 32);
@@ -2266,7 +2266,7 @@ static UInt iregNo(HReg r, Bool mode64)
 static UChar fregNo(HReg r, Bool mode64)
 {
    UInt n;
-   vassert(hregClass(r) == mode64 ? HRcFlt64 : HRcFlt32);
+   vassert(hregClass(r) == (mode64 ? HRcFlt64 : HRcFlt32));
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 31);
@@ -2587,31 +2587,12 @@ static UChar* do_load_or_store_machine_word (
                  UInt reg, MIPSAMode* am, Bool mode64 )
 {
    if (isLoad) { /* load */
-      UInt opc1, sz = mode64 ? 8 : 4;
       switch (am->tag) {
          case Mam_IR:
             if (mode64) {
                vassert(0 == (am->Mam.IR.index & 3));
             }
-            switch (sz) {
-               case 1:
-                  opc1 = 32;
-                  break;
-               case 2:
-                  opc1 = 33;
-                  break;
-               case 4:
-                  opc1 = 35;
-                  break;
-               case 8:
-                  opc1 = 55;
-                  vassert(mode64);
-                  break;
-               default:
-                  vassert(0);
-                  break;
-            }
-            p = doAMode_IR(p, opc1, reg, am, mode64);
+            p = doAMode_IR(p, mode64 ? 55 : 35, reg, am, mode64);
             break;
          case Mam_RR:
             /* we could handle this case, but we don't expect to ever
@@ -2623,31 +2604,12 @@ static UChar* do_load_or_store_machine_word (
             break;
       }
    } else /* store */ {
-      UInt opc1, sz = mode64 ? 8 : 4;
       switch (am->tag) {
          case Mam_IR:
             if (mode64) {
                vassert(0 == (am->Mam.IR.index & 3));
             }
-            switch (sz) {
-               case 1:
-                  opc1 = 40;
-                  break;
-               case 2:
-                  opc1 = 41;
-                  break;
-               case 4:
-                  opc1 = 43;
-                  break;
-               case 8:
-                  vassert(mode64);
-                  opc1 = 63;
-                  break;
-               default:
-                  vassert(0);
-                  break;
-            }
-            p = doAMode_IR(p, opc1, reg, am, mode64);
+            p = doAMode_IR(p, mode64 ? 63 : 43, reg, am, mode64);
             break;
          case Mam_RR:
             /* we could handle this case, but we don't expect to ever

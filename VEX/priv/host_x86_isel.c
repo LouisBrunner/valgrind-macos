@@ -3094,8 +3094,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg res = newVRegF(env);
          HReg src = iselDblExpr(env, e->Iex.Unop.arg);
          addInstr(env, X86Instr_FpUnary(fpop,src,res));
-	 if (fpop != Xfp_NEG && fpop != Xfp_ABS)
-            roundToF64(env, res);
+         /* No need to do roundToF64(env,res) for Xfp_NEG or Xfp_ABS,
+            but might need to do that for other unary ops. */
          return res;
       }
    }

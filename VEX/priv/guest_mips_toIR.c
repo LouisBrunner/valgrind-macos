@@ -3622,12 +3622,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    // On MIPS we need to check if the last instruction
    // in block is branch or jump
-   if ((vex_control.guest_max_insns - 1) == (delta+4)/4)
+   if (((vex_control.guest_max_insns - 1) == (delta + 4) / 4)
+       &&  (dres.whatNext != Dis_StopHere))
       if (branch_or_jump(guest_code + delta + 4)) {
          dres.whatNext = Dis_StopHere;
          dres.jk_StopHere = Ijk_Boring;
          putPC(mkU32(guest_PC_curr_instr + 4));
-   }
+      }
    dres.len = 4;
 
    DIP("\n");

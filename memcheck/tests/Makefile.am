@@ -184,6 +184,7 @@ EXTRA_DIST = \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
+	recursive-merge.stderr.exp recursive-merge.vgtest \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
@@ -289,6 +290,7 @@ check_PROGRAMS = \
 	pipe pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
+	recursive-merge \
 	sbfragment \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask static_malloc sigkill \

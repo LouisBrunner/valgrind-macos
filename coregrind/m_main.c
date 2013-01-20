@@ -193,6 +193,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
 "                              handle non-standard kernel variants\n"
+"    --merge-recursive-frames=<number>  merge frames between identical\n"
+"           program counters in max <number> frames) [0]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"
@@ -599,6 +601,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_INT_CLO (arg, "--sanity-level",     VG_(clo_sanity_level)) {}
       else if VG_BINT_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
                                                      VG_DEEPEST_BACKTRACE) {}
+      else if VG_BINT_CLO(arg, "--merge-recursive-frames",
+                               VG_(clo_merge_recursive_frames), 0,
+                               VG_DEEPEST_BACKTRACE) {}
 
       else if VG_XACT_CLO(arg, "--smc-check=none",  VG_(clo_smc_check),
                                                     Vg_SmcNone);

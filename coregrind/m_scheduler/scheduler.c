@@ -1881,6 +1881,13 @@ void do_client_request ( ThreadId tid )
          break;
       }
 
+      case VG_USERREQ__GDB_MONITOR_COMMAND: {
+         UWord ret;
+         ret = (UWord) VG_(client_monitor_command) ((HChar*)arg[1]);
+         SET_CLREQ_RETVAL(tid, ret);
+         break;
+      }
+
       case VG_USERREQ__MALLOCLIKE_BLOCK:
       case VG_USERREQ__RESIZEINPLACE_BLOCK:
       case VG_USERREQ__FREELIKE_BLOCK:

@@ -106,6 +106,13 @@ void reset_valgrind_sink(const char *info)
    }
 }
 
+void print_to_initial_valgrind_sink (const char *msg)
+{
+   vg_assert (initial_valgrind_sink_saved);
+   VG_(write) (initial_valgrind_sink.fd, msg, strlen(msg));
+}
+
+
 static
 void kill_request (const char *msg)
 {
@@ -172,6 +179,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
 "  v.set gdb_output        : set valgrind output to gdb\n"
 "  v.set log_output        : set valgrind output to log\n"
 "  v.set mixed_output      : set valgrind output to log, interactive output to gdb\n"
+"  v.set merge-recursive-frames <num> : merge recursive calls in max <num> frames\n"
 "  v.set vgdb-error <errornr> : debug me at error >= <errornr> \n");
       if (int_value) { VG_(gdb_printf) (
 "debugging valgrind internals monitor commands:\n"
@@ -190,13 +198,15 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       ret = 1;
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
-              ("vgdb-error debuglog gdb_output log_output mixed_output",
+              ("vgdb-error debuglog merge-recursive-frames"
+               " gdb_output log_output mixed_output",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
          break;
       case 0: /* vgdb-error */
       case 1: /* debuglog */
+      case 2: /* merge-recursive-frames */
          wcmd = strtok_r (NULL, " ", &ssaveptr);
          if (wcmd == NULL) {
             int_value = 0;
@@ -216,21 +226,26 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
             VG_(gdb_printf) ("debuglog value changed from %d to %d\n",
                              VG_(debugLog_getLevel)(), int_value);
             VG_(debugLog_startup) (int_value, "gdbsrv");
+         } else if (kwdid == 2) {
+            VG_(gdb_printf)
+               ("merge-recursive-frames value changed from %d to %d\n",
+                VG_(clo_merge_recursive_frames), int_value);
+            VG_(clo_merge_recursive_frames) = int_value;
          } else {
             vg_assert (0);
          }
          break;
-      case 2: /* gdb_output */
+      case 3: /* gdb_output */
          (*sink_wanted_at_return).fd = -2;
          command_output_to_log = False;
          VG_(gdb_printf) ("valgrind output will go to gdb\n");
          break;
-      case 3: /* log_output */
+      case 4: /* log_output */
          (*sink_wanted_at_return).fd = initial_valgrind_sink.fd;
          command_output_to_log = True;
          VG_(gdb_printf) ("valgrind output will go to log\n");
          break;
-      case 4: /* mixed output */
+      case 5: /* mixed output */
          (*sink_wanted_at_return).fd = initial_valgrind_sink.fd;
          command_output_to_log = False;
          VG_(gdb_printf)
@@ -457,6 +472,26 @@ void handle_set (char *arg_own_buf, int *new_packet_len_p)
    /* Otherwise we didn't know what packet it was.  Say we didn't
       understand it.  */
    arg_own_buf[0] = 0;
+}
+
+Bool VG_(client_monitor_command) (HChar* cmd)
+{
+   const Bool connected = remote_connected();
+   const int saved_command_output_to_log = command_output_to_log;
+   Bool handled;
+
+   if (!connected)
+      command_output_to_log = True;
+   handled = handle_gdb_monitor_command (cmd);
+   if (!connected) {
+      // reset the log output unless cmd changed it.
+      if (command_output_to_log)
+         command_output_to_log = saved_command_output_to_log;
+   }
+   if (handled)
+      return False; // recognised
+   else
+      return True; // not recognised
 }
 
 /* Handle all of the extended 'q' packets.  */

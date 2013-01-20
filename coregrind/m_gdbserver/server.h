@@ -63,7 +63,7 @@ extern void gdbserver_terminate (void);
 
 
 /* Output string s to the gdb debugging this process or to vgdb.
-   Do not call this directly. Rather use VG_(monitor_print) 
+   Do not call this directly. Rather use VG_(gdb_printf) 
    to output something to gdb, use normal valgrind messaging
    (e.g. VG_(umsg)) to send output that can either go
    to gdb or to log. */
@@ -93,6 +93,11 @@ extern void remote_finish(FinishReason reason);
       Resets the valgrind sink to before the changes done by gdbserver,
       and does VG_(umsg). If info != NULL, info added in VG_(usmg). */
 extern void reset_valgrind_sink(const char* info);
+
+// VG_(gdb_printf) by default writes to vgdb/gdb.
+// If there is no connection, it will rather write to the initial (log)
+// valgrind fd using the below.
+extern void print_to_initial_valgrind_sink (const char *msg);
 
 /* For ARM usage.
    Guesses if pc is a thumb pc.

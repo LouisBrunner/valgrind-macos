@@ -81,6 +81,8 @@ usage: valgrind [options] prog-and-args
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...  known variants: bproc [none]
                               handle non-standard kernel variants
+    --merge-recursive-frames=<number>  merge frames between identical
+           program counters in max <number> frames) [0]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --require-text-symbol=:sonamepattern:symbolpattern    abort run if the
                               stated shared object doesn't have the stated

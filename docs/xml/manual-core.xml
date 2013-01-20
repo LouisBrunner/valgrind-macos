@@ -1809,6 +1809,39 @@ need to use them.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.merge-recursive-frames" xreflabel="--merge-recursive-frames">
+    <term>
+      <option><![CDATA[--merge-recursive-frames=<number> [default: 0] ]]></option>
+    </term>
+    <listitem>
+      <para>Some recursive algorithms (such as balanced binary tree
+      implementations) have the property to create many different
+      stack traces, containing cycles of calls.  A cycle is defined by
+      two identical program counters separated by 0 or more other
+      program counters.  Valgrind might then use a lot of memory to
+      record these stack traces, containing repeated uninteresting
+      recursive calls instead of more interesting information such as
+      the function that has initiated the recursive call.
+      </para>
+      <para>The option <option>--merge-recursive-frames=&lt;number&gt;</option>
+      instructs Valgrind to detect and merge recursive call cycles
+      having a size of up to <option>&lt;number&gt;</option>
+      frames. When such a cycle is detected, Valgrind records the
+      cycle in the stack trace as a unique program counter.
+      </para>
+      <para>
+      The value 0 (the default) causes no recursive call merging.
+      A value of 1 will cause stack traces of simple recursive algorithms
+      (for example, a factorial implementation) to be collapsed.
+      A value of 2 will usually be needed to collapsed stack traces produced
+      by recursive algorithms such binary trees, quick sort, ...
+      Higher values might be needed for more complex recursive algorithms.
+      </para>
+      <para>Note: recursive calls are detected based on program counters.
+      The cycles are not detected based on function names. </para>
+   </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.show-emwarns" xreflabel="--show-emwarns">
     <term>
       <option><![CDATA[--show-emwarns=<yes|no> [default: no] ]]></option>

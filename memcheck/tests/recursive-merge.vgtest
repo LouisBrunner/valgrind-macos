@@ -1,0 +1,3 @@
+prog: recursive-merge
+args: a aa aaa aaaa abab abca abcda
+vgopts: -q --leak-check=full --merge-recursive-frames=1

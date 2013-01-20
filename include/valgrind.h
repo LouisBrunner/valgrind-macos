@@ -4464,8 +4464,8 @@ typedef
              errors. */
           VG_USERREQ__COUNT_ERRORS = 0x1201,
 
-          /* Allows a string (gdb monitor command) to be passed to the tool
-             Used for interaction with vgdb/gdb */
+          /* Allows the client program and/or gdbserver to execute a monitor
+             command. */
           VG_USERREQ__GDB_MONITOR_COMMAND = 0x1202,
 
           /* These are useful and can be interpreted by any tool that
@@ -4892,6 +4892,16 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #define VALGRIND_ENABLE_ERROR_REPORTING                                 \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
                                     -1, 0, 0, 0, 0)
+
+/* Execute a monitor command from the client program.
+   If a connection is opened with GDB, the output will be sent
+   according to the output mode set for vgdb.
+   If no connection is opened, output will go to the log output.
+   Returns 1 if command not recognised, 0 otherwise. */
+#define VALGRIND_MONITOR_COMMAND(command)                               \
+   VALGRIND_DO_CLIENT_REQUEST_EXPR(0, VG_USERREQ__GDB_MONITOR_COMMAND, \
+                                   command, 0, 0, 0, 0)
+
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin

@@ -88,6 +88,11 @@ extern void VG_(invoke_gdbserver) ( int check );
 // guest program.
 extern Bool VG_(gdbserver_report_signal) (Int signo, ThreadId tid);
 
+/* Entry point invoked by scheduler.c to execute the request 
+   VALGRIND_CLIENT_MONITOR_COMMAND.
+   Returns True if command was not recognised. */
+extern Bool VG_(client_monitor_command) (HChar* cmd);
+
 /* software_breakpoint, single step and jump support ------------------------*/
 /* VG_(instrument_for_gdbserver_if_needed) allows to do "standard and easy"
    instrumentation for gdbserver.

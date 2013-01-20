@@ -105,6 +105,7 @@ Int    VG_(clo_core_redzone_size) = CORE_REDZONE_DEFAULT_SZB;
 Int    VG_(clo_redzone_size)   = -1;
 Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 12;
+Int    VG_(clo_merge_recursive_frames) = 0; // default value: no merge
 const HChar* VG_(clo_sim_hints)      = NULL;
 Bool   VG_(clo_sym_offsets)    = False;
 Bool   VG_(clo_read_var_info)  = False;

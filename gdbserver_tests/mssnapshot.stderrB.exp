@@ -11,6 +11,7 @@ general valgrind monitor commands:
   v.set gdb_output        : set valgrind output to gdb
   v.set log_output        : set valgrind output to log
   v.set mixed_output      : set valgrind output to log, interactive output to gdb
+  v.set merge-recursive-frames <num> : merge recursive calls in max <num> frames
   v.set vgdb-error <errornr> : debug me at error >= <errornr> 
 
 massif monitor commands:

@@ -30,6 +30,18 @@ Release 3.9.0 (?? ?????? 201?)
     This can be used to analyse one possible cause of Valgrind high
     memory usage for some programs.
 
+  - Option --merge-recursive-frames=<number> tells Valgrind to
+    detect and merge (collapse) recursive calls when recording stack traces.
+    When your program has recursive algorithms, this limits
+    the memory used by Valgrind for recorded stack traces and avoid
+    recording uninteresting repeated calls.
+    The value is changeable using the monitor command
+    'v.set merge-recursive-frames'.
+
+  - valgrind.h has a new request VALGRIND_MONITOR_COMMAND.
+    This can be used to execute gdbserver monitor commands from
+    the client program.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

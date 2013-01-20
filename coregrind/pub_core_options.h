@@ -252,6 +252,14 @@ extern Word VG_(clo_max_stackframe);
    be? */
 extern Word VG_(clo_main_stacksize);
 
+/* If the same IP is found twice in a backtrace in a sequence of max
+   VG_(clo_merge_recursive_frames) frames, then the recursive call
+   is merged in the backtrace.
+   Note also that the merge is done during unwinding, to obtain
+   an much as possible significant backtrace.
+   Note that the value is changeable by a gdbsrv command. */
+extern Int VG_(clo_merge_recursive_frames);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 

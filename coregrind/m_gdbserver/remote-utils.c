@@ -771,19 +771,23 @@ int putpkt (char *buf)
 
 void monitor_output (char *s)
 {
-   const int len = strlen(s);
-   char *buf = malloc(1 + 2*len + 1);
-
-   buf[0] = 'O';
-   hexify(buf+1, s, len);
-   if (putpkt (buf) < 0) {
-      /* We probably have lost the connection with vgdb. */
-      reset_valgrind_sink("Error writing monitor output");
-      /* write again after reset */
-      VG_(printf) ("%s", s);
+   if (remote_connected()) {
+      const int len = strlen(s);
+      char *buf = malloc(1 + 2*len + 1);
+      
+      buf[0] = 'O';
+      hexify(buf+1, s, len);
+      if (putpkt (buf) < 0) {
+         /* We probably have lost the connection with vgdb. */
+         reset_valgrind_sink("Error writing monitor output");
+         /* write again after reset */
+         VG_(printf) ("%s", s);
+      }
+      
+      free (buf);
+   } else {
+      print_to_initial_valgrind_sink (s);
    }
-   
-   free (buf);
 }
 
 /* Returns next char from remote GDB.  -1 if error.  */

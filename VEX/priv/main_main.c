@@ -724,7 +724,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
    /* Turn it into virtual-registerised code.  Build trees -- this
       also throws away any dead bindings. */
-   max_ga = ado_treebuild_BB( irsb );
+   max_ga = ado_treebuild_BB( irsb, preciseMemExnsFn );
 
    if (vta->finaltidy) {
       irsb = vta->finaltidy(irsb);

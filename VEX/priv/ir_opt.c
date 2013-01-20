@@ -5300,24 +5300,83 @@ static Bool dirty_helper_stores ( const IRDirty *d )
 }
 
 inline
-static Bool dirty_helper_puts ( const IRDirty *d )
+static Bool dirty_helper_puts ( const IRDirty *d,
+                                Bool (*preciseMemExnsFn)(Int, Int),
+                                Bool *requiresPreciseMemExns )
 {
    Int i;
 
    /* Passing the guest state pointer opens the door to modifying the
       guest state under the covers. It's not allowed, but let's be
       extra conservative and assume the worst. */
-   if (d->needsBBP) return True;
-
-   /* Check the side effects on the guest state */
-   for (i = 0; i < d->nFxState; ++i) {
-      if (d->fxState[i].fx != Ifx_Read) return True;
+   if (d->needsBBP) {
+      *requiresPreciseMemExns = True;
+      return True;
    }
 
-   return False;
+   /* Check the side effects on the guest state */
+   Bool ret = False;
+   *requiresPreciseMemExns = False;
+
+   for (i = 0; i < d->nFxState; ++i) {
+      if (d->fxState[i].fx != Ifx_Read) {
+         Int offset = d->fxState[i].offset;
+         Int size = d->fxState[i].size;
+         Int nRepeats = d->fxState[i].nRepeats;
+         Int repeatLen = d->fxState[i].repeatLen;
+
+         if (preciseMemExnsFn(offset, offset + nRepeats * repeatLen + size - 1)) {
+            *requiresPreciseMemExns = True;
+            return True;
+         }
+         ret = True;
+      }
+   }
+
+   return ret;
 }
 
-/* notstatic */ Addr64 ado_treebuild_BB ( IRSB* bb )
+/* Return true if st modifies the guest state. Via requiresPreciseMemExns
+   return whether or not that modification requires precise exceptions. */
+static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
+                                        Bool (*preciseMemExnsFn)(Int,Int),
+                                        Bool *requiresPreciseMemExns )
+{
+   switch (st->tag) {
+   case Ist_Put: {
+      Int offset = st->Ist.Put.offset;
+      Int size = sizeofIRType(typeOfIRExpr(bb->tyenv, st->Ist.Put.data));
+
+      *requiresPreciseMemExns = preciseMemExnsFn(offset, offset + size - 1);
+      return True;
+   }
+
+   case Ist_PutI: {
+      IRRegArray *descr = st->Ist.PutI.details->descr;
+      Int offset = descr->base;
+      Int size = sizeofIRType(descr->elemTy);
+
+      /* We quietly assume here that all segments are contiguous and there
+         are no holes. This is to avoid a loop. The assumption is conservative
+         in the sense that we might report that precise memory exceptions are
+         needed when in fact they are not. */
+      *requiresPreciseMemExns = 
+         preciseMemExnsFn(offset, offset + descr->nElems * size - 1);
+      return True;
+   }
+
+   case Ist_Dirty:
+      return dirty_helper_puts(st->Ist.Dirty.details, preciseMemExnsFn,
+                               requiresPreciseMemExns);
+
+   default:
+      *requiresPreciseMemExns = False;
+      return False;
+   }
+}
+
+/* notstatic */ Addr64 ado_treebuild_BB ( IRSB* bb,
+                                          Bool (*preciseMemExnsFn)(Int,Int) )
 {
    Int      i, j, k, m;
    Bool     stmtPuts, stmtStores, invalidateMe;
@@ -5453,11 +5512,10 @@ static Bool dirty_helper_puts ( const IRDirty *d )
 
       /* stmtPuts/stmtStores characterise what the stmt under
          consideration does, or might do (sidely safe @ True). */
-      stmtPuts
-         = toBool( st->tag == Ist_Put
-                   || st->tag == Ist_PutI 
-                   || (st->tag == Ist_Dirty
-                       && dirty_helper_puts(st->Ist.Dirty.details)));
+
+      Bool putRequiresPreciseMemExns;
+      stmtPuts = stmt_modifies_guest_state( bb, st, preciseMemExnsFn,
+                                            &putRequiresPreciseMemExns);
 
       /* be True if this stmt writes memory or might do (==> we don't
          want to reorder other loads or stores relative to it).  Also,
@@ -5482,12 +5540,15 @@ static Bool dirty_helper_puts ( const IRDirty *d )
               (env[k].doesLoad && stmtStores)
               /* a put invalidates get'd data */
               || (env[k].doesGet && stmtPuts)
-              /* a put invalidates loaded data.  Note, we could do
-                 much better here in the sense that we only need to
-                 invalidate trees containing loads if the Put in
-                 question is marked as requiring precise
-                 exceptions. */
-              || (env[k].doesLoad && stmtPuts)
+              /* a put invalidates loaded data. That means, in essense, that
+                 a load expression cannot be substituted into a statement
+                 that follows the put. But there is nothing wrong doing so
+                 except when the put statement requries precise exceptions.
+                 Think of a load that is moved past a put where the put
+                 updates the IP in the guest state. If the load generates
+                 a segfault, the wrong address (line number) would be
+                 reported. */
+              || (env[k].doesLoad && stmtPuts && putRequiresPreciseMemExns)
               /* probably overly conservative: a memory bus event
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before

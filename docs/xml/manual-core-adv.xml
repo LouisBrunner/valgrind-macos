@@ -224,6 +224,23 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
+   <term><command><computeroutput>VALGRIND_MONITOR_COMMAND(command)</computeroutput>:</command></term>
+   <listitem>
+    <para>Execute the given monitor command (a string).
+    Returns 0 if command is recognised. Returns 1 if command is not recognised.
+    Note that some monitor commands provide access to a functionality
+    also accessible via a specific client request. For example,
+    memcheck leak search can be requested from the client program
+    using VALGRIND_DO_LEAK_CHECK or via the monitor command "leak_search".
+    Note that the syntax of the command string is only verified at
+    run-time. So, if it exists, it is preferrable to use a specific
+    client request to have better compile time verifications of the
+    arguments.
+    </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
    <term><command><computeroutput>VALGRIND_STACK_REGISTER(start, end)</computeroutput>:</command></term>
    <listitem>
     <para>Registers a new stack.  Informs Valgrind that the memory range
@@ -566,10 +583,12 @@ works across all devices and scenarios.
 
 <para> The Valgrind gdbserver provides additional Valgrind-specific
 functionality via "monitor commands".  Such monitor commands can be
-sent from the GDB command line or from the shell command line.  See
+sent from the GDB command line or from the shell command line or
+requested by the client program using the VALGRIND_MONITOR_COMMAND
+client request.  See
 <xref linkend="manual-core-adv.valgrind-monitor-commands"/> for the
-list of the Valgrind core monitor commands available regardless of
-the Valgrind tool selected.
+list of the Valgrind core monitor commands available regardless of the
+Valgrind tool selected.
 </para>
 
 <para>The following tools provide tool-specific monitor commands:
@@ -1247,7 +1266,10 @@ commands, refer to <xref linkend="mc-manual.monitor-commands"/>,
 
 <para> The monitor commands can be sent either from a shell command line, by using a
 standalone vgdb, or from GDB, by using GDB's "monitor"
-command (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>). </para>
+command (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+They can also be launched by the client program, using the VALGRIND_MONITOR_COMMAND
+client request.
+</para>
 
 <itemizedlist>
   <listitem>

@@ -4,6 +4,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	block_size.stdout.exp block_size.stderr.exp block_size.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
 	FPUarithmetic.stdout.exp FPUarithmetic.stdout.exp-mips32 \
 	FPUarithmetic.stderr.exp FPUarithmetic.vgtest \
@@ -22,6 +23,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	allexec \
+	block_size \
 	branches \
 	FPUarithmetic \
 	LoadStore \

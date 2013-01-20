@@ -1,0 +1,2 @@
+prog: block_size
+vgopts: -q

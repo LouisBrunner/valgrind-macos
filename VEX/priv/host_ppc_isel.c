@@ -453,6 +453,8 @@ static HReg          iselVecExpr_wrk ( ISelEnv* env, IRExpr* e );
 static HReg          iselVecExpr     ( ISelEnv* env, IRExpr* e );
 
 /* 64-bit mode ONLY. */
+static HReg          iselDfp32Expr_wrk ( ISelEnv* env, IRExpr* e );
+static HReg          iselDfp32Expr     ( ISelEnv* env, IRExpr* e );
 static HReg          iselDfp64Expr_wrk ( ISelEnv* env, IRExpr* e );
 static HReg          iselDfp64Expr     ( ISelEnv* env, IRExpr* e );
 
@@ -3822,6 +3824,57 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    vpanic("iselDblExpr_wrk(ppc)");
 }
 
+static HReg iselDfp32Expr(ISelEnv* env, IRExpr* e)
+{
+   HReg r = iselDfp32Expr_wrk( env, e );
+   vassert(hregClass(r) == HRcFlt64);
+   vassert( hregIsVirtual(r) );
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY */
+static HReg iselDfp32Expr_wrk(ISelEnv* env, IRExpr* e)
+{
+   Bool mode64 = env->mode64;
+   IRType ty = typeOfIRExpr( env->type_env, e );
+
+   vassert( e );
+   vassert( ty == Ity_D32 );
+
+   /* --------- GET --------- */
+   if (e->tag == Iex_Get) {
+      HReg r_dst = newVRegF( env );
+      PPCAMode* am_addr = PPCAMode_IR( e->Iex.Get.offset,
+                                       GuestStatePtr(mode64) );
+      addInstr( env, PPCInstr_FpLdSt( True/*load*/, 8, r_dst, am_addr ) );
+      return r_dst;
+   }
+
+   /* --------- LOAD --------- */
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE) {
+      PPCAMode* am_addr;
+      HReg r_dst = newVRegF(env);
+      vassert(e->Iex.Load.ty == Ity_D32);
+      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr, Ity_D32/*xfer*/);
+      addInstr(env, PPCInstr_FpLdSt(True/*load*/, 4, r_dst, am_addr));
+      return r_dst;
+   }
+
+   /* --------- OPS --------- */
+   if (e->tag == Iex_Binop) {
+      if (e->Iex.Binop.op == Iop_D64toD32) {
+         HReg fr_dst = newVRegF(env);
+         HReg fr_src = iselDfp64Expr(env, e->Iex.Binop.arg2);
+         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1 );
+         addInstr(env, PPCInstr_Dfp64Unary(Pfp_DRSP, fr_dst, fr_src));
+         return fr_dst;
+      }
+   }
+
+   ppIRExpr( e );
+   vpanic( "iselDfp32Expr_wrk(ppc)" );
+}
+
 static HReg iselDfp64Expr(ISelEnv* env, IRExpr* e)
 {
    HReg r = iselDfp64Expr_wrk( env, e );
@@ -3850,6 +3903,15 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       PPCAMode* am_addr = PPCAMode_IR( e->Iex.Get.offset,
                                        GuestStatePtr(mode64) );
       addInstr( env, PPCInstr_FpLdSt( True/*load*/, 8, r_dst, am_addr ) );
+      return r_dst;
+   }
+
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE) {
+      PPCAMode* am_addr;
+      HReg r_dst = newVRegF(env);
+      vassert(e->Iex.Load.ty == Ity_D64);
+      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr, Ity_D64/*xfer*/);
+      addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, r_dst, am_addr));
       return r_dst;
    }
 
@@ -3892,7 +3954,7 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
          return fr_dst;
       }
       case Iop_D32toD64: {
-         HReg fr_src = iselDfp64Expr(env, e->Iex.Unop.arg);
+         HReg fr_src = iselDfp32Expr(env, e->Iex.Unop.arg);
          addInstr(env, PPCInstr_Dfp64Unary(Pfp_DCTDP, fr_dst, fr_src));
          return fr_dst;
       }
@@ -3962,7 +4024,6 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       HReg fr_dst = newVRegF(env);
 
       switch (e->Iex.Binop.op) {
-      case Iop_D64toD32:     fpop = Pfp_DRSP;   break;
       case Iop_I64StoD64:    fpop = Pfp_DCFFIX; break;
       case Iop_D64toI64S:    fpop = Pfp_DCTFIX; break;
       default: break;
@@ -4732,6 +4793,22 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                   PPCInstr_FpLdSt(False/*store*/, 4, fr_src, am_addr));
          return;
       }
+      if (tyd == Ity_D64) {
+         PPCAMode* am_addr
+            = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
+         HReg fr_src = iselDfp64Expr(env, stmt->Ist.Store.data);
+         addInstr(env,
+                  PPCInstr_FpLdSt(False/*store*/, 8, fr_src, am_addr));
+         return;
+      }
+      if (tyd == Ity_D32) {
+         PPCAMode* am_addr
+            = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
+         HReg fr_src = iselDfp32Expr(env, stmt->Ist.Store.data);
+         addInstr(env,
+                  PPCInstr_FpLdSt(False/*store*/, 4, fr_src, am_addr));
+         return;
+      }
       if (tyd == Ity_V128) {
          PPCAMode* am_addr
             = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
@@ -4798,6 +4875,15 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                                           GuestStatePtr(mode64) );
          addInstr(env, PPCInstr_FpLdSt( False/*store*/, 8,
                                         fr_src, am_addr ));
+         return;
+      }
+      if (ty == Ity_D32) {
+         /* The 32-bit value is stored in a 64-bit register */
+         HReg fr_src = iselDfp32Expr( env, stmt->Ist.Put.data );
+         PPCAMode* am_addr = PPCAMode_IR( stmt->Ist.Put.offset,
+                                          GuestStatePtr(mode64) );
+         addInstr( env, PPCInstr_FpLdSt( False/*store*/, 8,
+                                         fr_src, am_addr ) );
          return;
       }
       if (ty == Ity_D64) {
@@ -4895,6 +4981,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg fr_dst = lookupIRTemp(env, tmp);
          HReg fr_src = iselFltExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, PPCInstr_FpUnary(Pfp_MOV, fr_dst, fr_src));
+         return;
+      }
+      if (ty == Ity_D32) {
+         HReg fr_dst = lookupIRTemp(env, tmp);
+         HReg fr_src = iselDfp32Expr(env, stmt->Ist.WrTmp.data);
+         addInstr(env, PPCInstr_Dfp64Unary(Pfp_MOV, fr_dst, fr_src));
          return;
       }
       if (ty == Ity_V128) {
@@ -5350,6 +5442,7 @@ HInstrArray* iselSB_PPC ( IRSB* bb,
       case Ity_F32:
       case Ity_F64:    hregLo    = mkHReg(j++, HRcFlt64,  True); break;
       case Ity_V128:   hregLo    = mkHReg(j++, HRcVec128, True); break;
+      case Ity_D32:
       case Ity_D64:    hregLo    = mkHReg(j++, HRcFlt64,  True); break;
       case Ity_D128:   hregLo    = mkHReg(j++, HRcFlt64,  True);
       hregMedLo = mkHReg(j++, HRcFlt64,  True); break;

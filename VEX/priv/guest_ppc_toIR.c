@@ -1128,6 +1128,12 @@ static IRExpr* getDReg(UInt archreg) {
    e = IRExpr_Get( floatGuestRegOffset( archreg ), Ity_D64 );
    return e;
 }
+static IRExpr* getDReg32(UInt archreg) {
+   IRExpr *e;
+   vassert( archreg < 32 );
+   e = IRExpr_Get( floatGuestRegOffset( archreg ), Ity_D32 );
+   return e;
+}
 
 /* Read a floating point register pair and combine their contents into a
  128-bit value */
@@ -1139,6 +1145,12 @@ static IRExpr *getDReg_pair(UInt archreg) {
 }
 
 /* Ditto, but write to a reg instead. */
+static void putDReg32(UInt archreg, IRExpr* e) {
+   vassert( archreg < 32 );
+   vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_D32 );
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg ), e ) );
+}
+
 static void putDReg(UInt archreg, IRExpr* e) {
    vassert( archreg < 32 );
    vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_D64 );
@@ -9498,9 +9510,9 @@ static Bool dis_dfp_fmt_conv(UInt theInstr) {
       DIP( "dctdp%s fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frB_addr );
 
-      frB = newTemp( Ity_D64 );
+      frB = newTemp( Ity_D32 );
       frS = newTemp( Ity_D64 );
-      assign( frB, getDReg( frB_addr ) );
+      assign( frB, getDReg32( frB_addr ) );
       assign( frS, unop( Iop_D32toD64, mkexpr( frB ) ) );
       putDReg( frS_addr, mkexpr( frS ) );
       break;
@@ -9508,10 +9520,10 @@ static Bool dis_dfp_fmt_conv(UInt theInstr) {
       DIP( "drsp%s fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frB_addr );
       frB = newTemp( Ity_D64 );
-      frS = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D32 );
       assign( frB, getDReg( frB_addr ) );
       assign( frS, binop( Iop_D64toD32, round, mkexpr( frB ) ) );
-      putDReg( frS_addr, mkexpr( frS ) );
+      putDReg32( frS_addr, mkexpr( frS ) );
       break;
    case 0x122: // dctfix
       DIP( "dctfix%s fr%u,fr%u\n",

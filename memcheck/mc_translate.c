@@ -5542,7 +5542,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
          for (i = 0; d->args[i]; i++)
             if (isBogusAtom(d->args[i]))
                return True;
-         if (d->guard && isBogusAtom(d->guard))
+         if (isBogusAtom(d->guard))
             return True;
          if (d->mAddr && isBogusAtom(d->mAddr))
             return True;
@@ -6029,8 +6029,7 @@ IRSB* MC_(final_tidy) ( IRSB* sb_in )
          continue;
       di = st->Ist.Dirty.details;
       guard = di->guard;
-      if (!guard)
-         continue;
+      tl_assert(guard);
       if (0) { ppIRExpr(guard); VG_(printf)("\n"); }
       cee = di->cee;
       if (!is_helperc_value_checkN_fail( cee->name )) 
@@ -6567,22 +6566,22 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
             /* Write 'curr' to the state slice gOff .. gOff+n-1 */
             b_offset = MC_(get_otrack_shadow_offset)(gOff, 4);
             if (b_offset != -1) {
-               if (d->guard) {
-                  /* If the guard expression evaluates to false we simply Put
-                     the value that is already stored in the guest state slot */
-                  IRAtom *cond, *iffalse;
 
-                  cond    = assignNew('B', mce, Ity_I8,
-                                      unop(Iop_1Uto8, d->guard));
-                  iffalse = assignNew('B', mce, Ity_I32,
-                                      IRExpr_Get(b_offset +
-                                                 2*mce->layout->total_sizeB,
-                                                 Ity_I32));
-                  curr = assignNew('V', mce, Ity_I32,
-                                   IRExpr_Mux0X(cond, iffalse, curr));
-               }
+               /* If the guard expression evaluates to false we simply Put
+                  the value that is already stored in the guest state slot */
+               IRAtom *cond, *iffalse;
+
+               cond    = assignNew('B', mce, Ity_I8,
+                                   unop(Iop_1Uto8, d->guard));
+               iffalse = assignNew('B', mce, Ity_I32,
+                                   IRExpr_Get(b_offset +
+                                              2*mce->layout->total_sizeB,
+                                              Ity_I32));
+               curr = assignNew('V', mce, Ity_I32,
+                                IRExpr_Mux0X(cond, iffalse, curr));
+
                stmt( 'B', mce, IRStmt_Put(b_offset
-                                             + 2*mce->layout->total_sizeB,
+                                          + 2*mce->layout->total_sizeB,
                                           curr ));
             }
             gSz -= n;

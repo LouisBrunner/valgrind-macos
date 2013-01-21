@@ -1681,7 +1681,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          VG_(pp_ExeContext)( ec );
       }
       if (sigNo == VKI_SIGSEGV 
-          && info && is_signal_from_kernel(tid, sigNo, info->si_code)
+          && is_signal_from_kernel(tid, sigNo, info->si_code)
           && info->si_code == VKI_SEGV_MAPERR) {
          VG_(umsg)(" If you believe this happened as a result of a stack\n" );
          VG_(umsg)(" overflow in your program's main thread (unlikely but\n");

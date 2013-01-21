@@ -1300,7 +1300,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 			    jmps_passed, hWordTy);
    }
    CLG_ASSERT(clgs.bb->cjmp_count == cJumps);
-   CLG_ASSERT(clgs.bb->instr_count = clgs.ii_index);
+   CLG_ASSERT(clgs.bb->instr_count == clgs.ii_index);
 
    /* Info for final exit from BB */
    {
@@ -1336,7 +1336,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 
    if (clgs.seen_before) {
        CLG_ASSERT(clgs.bb->cost_count == update_cost_offsets(&clgs));
-       CLG_ASSERT(clgs.bb->instr_len = clgs.instr_offset);
+       CLG_ASSERT(clgs.bb->instr_len == clgs.instr_offset);
    }
    else {
        clgs.bb->cost_count = update_cost_offsets(&clgs);

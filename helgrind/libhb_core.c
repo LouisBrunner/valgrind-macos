@@ -1935,7 +1935,6 @@ static Bool is_sane_VTS ( VTS* vts )
    UWord     i, n;
    ScalarTS  *st1, *st2;
    if (!vts) return False;
-   if (!vts->ts) return False;
    if (vts->usedTS > vts->sizeTS) return False;
    n = vts->usedTS;
    if (n == 1) {

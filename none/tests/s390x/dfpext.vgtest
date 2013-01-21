@@ -1,0 +1,2 @@
+prog: dfpext
+prereq: test -e dfpext && ../../../tests/s390x_features s390x-dfp && ../../../tests/s390x_features s390x-fpext

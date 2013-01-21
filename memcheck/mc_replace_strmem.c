@@ -1103,6 +1103,7 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ BCOPY(VG_Z_LIBC_SONAME, bcopy)
 
 #elif defined(VGO_darwin)
  //BCOPY(VG_Z_LIBC_SONAME, bcopy)

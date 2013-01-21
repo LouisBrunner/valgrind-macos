@@ -822,6 +822,7 @@ POST(sysctl)
                      sizeof(uint64_t) * sysctl->u.numainfo.max_node_index);
       POST_MEM_WRITE((Addr)sysctl->u.numainfo.node_to_node_distance.p,
                      sizeof(uint32_t) * sysctl->u.numainfo.max_node_index);
+      break;
    }
 #undef POST_XEN_SYSCTL_WRITE
 #undef __POST_XEN_SYSCTL_WRITE
@@ -861,6 +862,7 @@ POST(domctl){
 
    case VKI_XEN_DOMCTL_max_vcpus:
       POST_XEN_DOMCTL_WRITE(max_vcpus, max);
+      break;
 
    case VKI_XEN_DOMCTL_get_address_size:
       __POST_XEN_DOMCTL_WRITE(get_address_size, address_size, size);

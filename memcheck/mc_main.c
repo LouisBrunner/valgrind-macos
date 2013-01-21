@@ -5386,9 +5386,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       HChar *endptr;
       UInt lr_nr = 0;
       wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
-      lr_nr = VG_(strtoull10) (wl, &endptr);
-      if (wl != NULL && *endptr != '\0') {
-         VG_(gdb_printf) ("malformed integer\n");
+      if (wl != NULL)
+         lr_nr = VG_(strtoull10) (wl, &endptr);
+      if (wl == NULL || *endptr != '\0') {
+         VG_(gdb_printf) ("malformed or missing integer\n");
       } else {
          // lr_nr-1 as what is shown to the user is 1 more than the index in lr_array.
          if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1))

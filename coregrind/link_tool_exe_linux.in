@@ -66,16 +66,19 @@ shift; # Remove $ala from @ARGV
 die "Bogus alt-load address"
     if (length($ala) < 3 || index($ala, "0x") != 0);
 
-# For mips we need to use "--section-start=.reginfo=$ala" because
-# "--section-start=.reginfo=$ala" will put all the sections to the 
-# specificed address ($ala)
-my $orig_cmd = join(" ", @ARGV);
-my $x=`$orig_cmd -v 2>&1 | grep Target | sed 's/Target: //g'`;
-my $arch=substr($x, 0, index($x, '-'));
+# For mips32 or mips64 we need to use "--section-start=.reginfo=$ala" or
+# "--section-start=.MIPS.options=$ala" respectively, because "-Ttext=$ala" will
+# not put all the sections to the specificed address ($ala).
+my $x = `cat ../config.log 2>&1 | grep host_cpu= | sed "s/host_cpu='//g"`;
+my $arch = substr($x, 0, index($x, "'"));
 
 my $extra_args;
-if (($arch eq 'mips') || ($arch eq 'mipsel')) {
+if (($arch eq 'mips') || ($arch eq 'mipsel')
+    || ($arch eq 'mipsisa32r2el')) {
    $extra_args = "-static -Wl,--section-start=.reginfo=$ala";
+} elsif (($arch eq 'mips64') || ($arch eq 'mips64el') ||
+         ($arch eq 'mipsisa64el')) {
+   $extra_args = "-static -Wl,--section-start=.MIPS.options=$ala";
 } else {
    $extra_args = "-static -Wl,-Ttext=$ala";
 }

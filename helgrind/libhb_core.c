@@ -4057,6 +4057,7 @@ static RCEC* get_RCEC ( Thr* thr )
    example.magic = RCEC_MAGIC;
    example.rc = 0;
    example.rcX = 0;
+   example.next = NULL;
    main_get_stacktrace( thr, &example.frames[0], N_FRAMES );
    hash = 0;
    for (i = 0; i < N_FRAMES; i++) {

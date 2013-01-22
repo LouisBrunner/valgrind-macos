@@ -1570,6 +1570,23 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
       return at;
    }
 
+   /* I32 x I8 x I64 -> I64 */
+   if (t1 == Ity_I32 && t2 == Ity_I8 && t3 == Ity_I64
+       && finalVty == Ity_I64) {
+      if (0) VG_(printf)("mkLazy3: I32 x I8 x I64 -> I64\n");
+      /* Widen 1st and 2nd args to I64.  Since 1st arg is typically a
+       * rounding mode indication which is fully defined, this should
+       * get folded out later.
+      */
+      IRAtom* at1 = mkPCastTo(mce, Ity_I64, va1);
+      IRAtom* at2 = mkPCastTo(mce, Ity_I64, va2);
+      at = mkUifU(mce, Ity_I64, at1, at2);  // UifU(PCast(va1), PCast(va2))
+      at = mkUifU(mce, Ity_I64, at, va3);
+      /* and PCast once again. */
+      at = mkPCastTo(mce, Ity_I64, at);
+      return at;
+   }
+
    /* I32 x I64 x I64 -> I32 */
    if (t1 == Ity_I32 && t2 == Ity_I64 && t3 == Ity_I64 
        && finalVty == Ity_I32) {
@@ -1604,6 +1621,24 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
       at = mkPCastTo(mce, Ity_I128, va1);
       /* Now fold in 2nd and 3rd args. */
       at = mkUifU(mce, Ity_I128, at, va2);
+      at = mkUifU(mce, Ity_I128, at, va3);
+      /* and PCast once again. */
+      at = mkPCastTo(mce, Ity_I128, at);
+      return at;
+   }
+
+   /* I32 x I8 x I128 -> I128 */
+   /* Standard FP idiom: rm x FParg1 x FParg2 -> FPresult */
+   if (t1 == Ity_I32 && t2 == Ity_I8 && t3 == Ity_I128
+       && finalVty == Ity_I128) {
+      if (0) VG_(printf)("mkLazy3: I32 x I8 x I128 -> I128\n");
+      /* Widen 1st and 2nd args to I128.  Since 1st arg is typically a rounding
+         mode indication which is fully defined, this should get
+         folded out later. */
+      IRAtom* at1 = mkPCastTo(mce, Ity_I64, va1);
+      IRAtom* at2 = mkPCastTo(mce, Ity_I64, va2);
+      /* Now fold in 2nd and 3rd args. */
+      at = mkUifU(mce, Ity_I64, at1, at2);  // UifU(PCast(va1), PCast(va2))
       at = mkUifU(mce, Ity_I128, at, va3);
       /* and PCast once again. */
       at = mkPCastTo(mce, Ity_I128, at);

@@ -1,5 +1,5 @@
 #ifndef ROUNDING_H
-#define ROUNDING_h
+#define ROUNDING_H
 
 /* Macros, so the values can be used together with opcodes.h */
 

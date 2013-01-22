@@ -1,5 +1,5 @@
 #ifndef SVC_H
-#define SVCT_H
+#define SVC_H
 #include <asm/unistd.h>
 #include <sys/syscall.h>
 

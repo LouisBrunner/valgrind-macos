@@ -9526,13 +9526,18 @@ static Bool dis_dfp_fmt_conv(UInt theInstr) {
       putDReg32( frS_addr, mkexpr( frS ) );
       break;
    case 0x122: // dctfix
-      DIP( "dctfix%s fr%u,fr%u\n",
-           flag_rC ? ".":"", frS_addr, frB_addr );
-      frB = newTemp( Ity_D64 );
-      frS = newTemp( Ity_D64 );
-      assign( frB, getDReg( frB_addr ) );
-      assign( frS, binop( Iop_D64toI64S, round, mkexpr( frB ) ) );
-      putDReg( frS_addr, mkexpr( frS ) );
+      {
+         IRTemp tmp = newTemp( Ity_I64 );
+
+         DIP( "dctfix%s fr%u,fr%u\n",
+              flag_rC ? ".":"", frS_addr, frB_addr );
+         frB = newTemp( Ity_D64 );
+         frS = newTemp( Ity_D64 );
+         assign( frB, getDReg( frB_addr ) );
+         assign( tmp, binop( Iop_D64toI64S, round, mkexpr( frB ) ) );
+         assign( frS, unop( Iop_ReinterpI64asD64, mkexpr( tmp ) ) );
+         putDReg( frS_addr, mkexpr( frS ) );
+      }
       break;
    case 0x322: // dcffix
       DIP( "dcffix%s fr%u,fr%u\n",
@@ -9540,7 +9545,9 @@ static Bool dis_dfp_fmt_conv(UInt theInstr) {
       frB = newTemp( Ity_D64 );
       frS = newTemp( Ity_D64 );
       assign( frB, getDReg( frB_addr ) );
-      assign( frS, binop( Iop_I64StoD64, round, mkexpr( frB ) ) );
+      assign( frS, binop( Iop_I64StoD64,
+                          round,
+                          unop( Iop_ReinterpD64asI64, mkexpr( frB ) ) ) );
       putDReg( frS_addr, mkexpr( frS ) );
       break;
    }
@@ -9575,11 +9582,16 @@ static Bool dis_dfp_fmt_convq(UInt theInstr) {
       putDReg_pair( frS_addr, mkexpr( frS128 ) );
       break;
    case 0x122: // dctfixq
-      DIP( "dctfixq%s fr%u,fr%u\n",
-           flag_rC ? ".":"", frS_addr, frB_addr );
-      assign( frB128, getDReg_pair( frB_addr ) );
-      assign( frS64, binop( Iop_D128toI64S, round, mkexpr( frB128 ) ) );
-      putDReg( frS_addr, mkexpr( frS64 ) );
+      {
+         IRTemp tmp = newTemp( Ity_I64 );
+
+         DIP( "dctfixq%s fr%u,fr%u\n",
+              flag_rC ? ".":"", frS_addr, frB_addr );
+         assign( frB128, getDReg_pair( frB_addr ) );
+         assign( tmp, binop( Iop_D128toI64S, round, mkexpr( frB128 ) ) );
+         assign( frS64, unop( Iop_ReinterpI64asD64, mkexpr( tmp ) ) );
+         putDReg( frS_addr, mkexpr( frS64 ) );
+      }
       break;
    case 0x302: //drdpq
       DIP( "drdpq%s fr%u,fr%u\n",
@@ -9589,6 +9601,7 @@ static Bool dis_dfp_fmt_convq(UInt theInstr) {
       putDReg( frS_addr, mkexpr( frS64 ) );
       break;
    case 0x322: // dcffixq
+     {
       /* Have to introduce an IOP for this instruction so it will work
        * on POWER 6 because emulating the instruction requires a POWER 7
        * DFP instruction in the emulation code.
@@ -9596,9 +9609,12 @@ static Bool dis_dfp_fmt_convq(UInt theInstr) {
       DIP( "dcffixq%s fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frB_addr );
       assign( frB64, getDReg( frB_addr ) );
-      assign( frS128, unop( Iop_I64StoD128, mkexpr( frB64 ) ) );
+      assign( frS128, unop( Iop_I64StoD128,
+                            unop( Iop_ReinterpD64asI64,
+                                  mkexpr( frB64 ) ) ) );
       putDReg_pair( frS_addr, mkexpr( frS128 ) );
       break;
+     }
    }
 
    if (flag_rC && clear_CR1) {
@@ -9630,6 +9646,10 @@ static Bool dis_dfp_round( UInt theInstr ) {
       DIP( "drintx/drintn%s fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frB_addr );
 
+      /* NOTE, this instruction takes a DFP value and rounds to the
+       * neares floating point integer value, i.e. fractional part
+       * is zero.  The result is a floating point number.
+       */
       /* pass the value of R and RMC in the same field */
       assign( frB, getDReg( frB_addr ) );
       assign( frS, binop( Iop_RoundD64toInt,
@@ -9711,7 +9731,7 @@ static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
    case 0x43: // dquai
       DIP( "dquai%s fr%u,fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
-      IRTemp TE_D64 = newTemp( Ity_D64 );
+      IRTemp TE_I64 = newTemp( Ity_I64 );
 
       /* Generate a reference DFP value frA with the desired exponent
        * given by TE using significand from frB.  Need to add the bias
@@ -9721,20 +9741,21 @@ static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
          /* Take 2's complement of the 5-bit value and subtract from bias. 
           *  Bias is adjusted for the +1 required when taking 2's complement.
           */
-         assign( TE_D64,
-                 unop( Iop_ReinterpI64asD64,
-                       binop( Iop_Sub64, mkU64( 397 ),
-                              binop( Iop_And64, mkU64( 0xF ),
-                                     unop( Iop_Not64, mkU64( TE_value ) )
-                                           ) ) ) );
+         assign( TE_I64,
+                 unop( Iop_32Uto64,
+                       binop( Iop_Sub32, mkU32( 397 ),
+                              binop( Iop_And32, mkU32( 0xF ),
+                                     unop( Iop_Not32, mkU32( TE_value ) )
+                                     ) ) ) );
 
       } else {
-         assign( TE_D64,
-                 unop( Iop_ReinterpI64asD64,
-                       binop( Iop_Add64, mkU64( 398 ), mkU64( TE_value ) ) ) );
+          assign( TE_I64,
+                  unop( Iop_32Uto64,
+                        binop( Iop_Add32, mkU32( 398 ), mkU32( TE_value ) )
+                        ) );
       }
 
-      assign( frA, binop( Iop_InsertExpD64, mkexpr( TE_D64 ), 
+      assign( frA, binop( Iop_InsertExpD64, mkexpr( TE_I64 ),
                           unop( Iop_ReinterpI64asD64, mkU64( 1 ) ) ) );
 
       assign( frS, triop( Iop_QuantizeD64,
@@ -9753,13 +9774,22 @@ static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
                           mkexpr( frB ) ) );
       break;
    case 0x23: // drrnd
-      DIP( "drrnd%s fr%u,fr%u,fr%u\n",
-           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
-      assign( frA, getDReg( frA_addr ) );
-      assign( frS, triop( Iop_SignificanceRoundD64,
-                          mkU32( RMC ),
-                          mkexpr( frA ),
-                          mkexpr( frB ) ) );
+      {
+         IRTemp tmp = newTemp( Ity_I8 );
+
+         DIP( "drrnd%s fr%u,fr%u,fr%u\n",
+              flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+         assign( frA, getDReg( frA_addr ) );
+         /* Iop_64to8 not supported in 32 bit mode, do it in two steps. */
+         assign( tmp, unop( Iop_32to8,
+                            unop( Iop_64to32,
+                                  unop( Iop_ReinterpD64asI64,
+                                        mkexpr( frA ) ) ) ) );
+         assign( frS, triop( Iop_SignificanceRoundD64,
+                             mkU32( RMC ),
+                             mkexpr( tmp ),
+                             mkexpr( frB ) ) );
+      }
       break;
    default:
       vex_printf("dis_dfp_quantize_sig_rrnd(ppc)(opc2)\n");
@@ -9795,7 +9825,7 @@ static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
    case 0x43: // dquaiq
       DIP( "dquaiq%s fr%u,fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
-      IRTemp TE_D64 = newTemp( Ity_D64 );
+      IRTemp TE_I64 = newTemp( Ity_I64 );
 
       /* Generate a reference DFP value frA with the desired exponent
        * given by TE using significand of 1.  Need to add the bias
@@ -9805,23 +9835,24 @@ static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
          /* Take 2's complement of the 5-bit value and subtract from bias. 
           *  Bias adjusted for the +1 required when taking 2's complement.
           */
-         assign( TE_D64,
-                 unop( Iop_ReinterpI64asD64,
-                       binop( Iop_Sub64, mkU64( 6175 ),
-                              binop( Iop_And64, mkU64( 0xF ),
-                                     unop( Iop_Not64, mkU64( TE_value ) )
-                                           ) ) ) );
+         assign( TE_I64,
+                 unop( Iop_32Uto64,
+                       binop( Iop_Sub32, mkU32( 6175 ),
+                              binop( Iop_And32, mkU32( 0xF ),
+                                     unop( Iop_Not32, mkU32( TE_value ) )
+                                     ) ) ) );
 
       } else {
-         assign( TE_D64,
-                 unop( Iop_ReinterpI64asD64,
-                       binop( Iop_Add64, mkU64( 6176 ), mkU64( TE_value ) )
-                            ) );
+         assign( TE_I64,
+                 unop( Iop_32Uto64,
+                       binop( Iop_Add32,
+                             mkU32( 6176 ),
+                             mkU32( TE_value ) ) ) );
       }
 
       assign( frA,
-              binop( Iop_InsertExpD128, mkexpr( TE_D64 ),
-                     unop( Iop_D64toD128, 
+              binop( Iop_InsertExpD128, mkexpr( TE_I64 ),
+                     unop( Iop_D64toD128,
                            unop( Iop_ReinterpI64asD64, mkU64( 1 ) ) ) ) );
       assign( frS, triop( Iop_QuantizeD128,
                           mkU32( RMC ),
@@ -9838,13 +9869,22 @@ static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
                           mkexpr( frB ) ) );
       break;
    case 0x23: // drrndq
-      DIP( "drrndq%s fr%u,fr%u,fr%u\n",
-           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
-      assign( frA, getDReg_pair( frA_addr ) );
-      assign( frS, triop( Iop_SignificanceRoundD128,
-                          mkU32( RMC ),
-                          mkexpr( frA ),
-                          mkexpr( frB ) ) );
+      {
+         IRTemp tmp = newTemp( Ity_I8 );
+
+         DIP( "drrndq%s fr%u,fr%u,fr%u\n",
+              flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+         assign( frA, getDReg_pair( frA_addr ) );
+         assign( tmp, unop( Iop_32to8,
+                            unop( Iop_64to32,
+                                  unop( Iop_ReinterpD64asI64,
+                                        unop( Iop_D128HItoD64,
+                                              mkexpr( frA ) ) ) ) ) );
+         assign( frS, triop( Iop_SignificanceRoundD128,
+                             mkU32( RMC ),
+                             mkexpr( tmp ),
+                             mkexpr( frB ) ) );
+      }
       break;
    default:
       vex_printf("dis_dfp_quantize_sig_rrndq(ppc)(opc2)\n");
@@ -9871,6 +9911,7 @@ static Bool dis_dfp_extract_insert(UInt theInstr) {
    IRTemp frA = newTemp( Ity_D64 );
    IRTemp frB = newTemp( Ity_D64 );
    IRTemp frS = newTemp( Ity_D64 );
+   IRTemp tmp = newTemp( Ity_I64 );
 
    assign( frA, getDReg( frA_addr ) );
    assign( frB, getDReg( frB_addr ) );
@@ -9879,12 +9920,16 @@ static Bool dis_dfp_extract_insert(UInt theInstr) {
    case 0x162: // dxex
       DIP( "dxex%s fr%u,fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
-      assign( frS, unop( Iop_ExtractExpD64, mkexpr( frB ) ) );
+      assign( tmp, unop( Iop_ExtractExpD64, mkexpr( frB ) ) );
+      assign( frS, unop( Iop_ReinterpI64asD64, mkexpr( tmp ) ) );
       break;
    case 0x362: // diex
       DIP( "diex%s fr%u,fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
-      assign( frS, binop( Iop_InsertExpD64, mkexpr( frA ), mkexpr( frB ) ) );
+      assign( frS, binop( Iop_InsertExpD64,
+                          unop( Iop_ReinterpD64asI64,
+                                mkexpr( frA ) ),
+                          mkexpr( frB ) ) );
       break;
    default:
       vex_printf("dis_dfp_extract_insert(ppc)(opc2)\n");
@@ -9912,6 +9957,7 @@ static Bool dis_dfp_extract_insertq(UInt theInstr) {
    IRTemp frB   = newTemp( Ity_D128 );
    IRTemp frS64 = newTemp( Ity_D64 );
    IRTemp frS   = newTemp( Ity_D128 );
+   IRTemp tmp   = newTemp( Ity_I64 );
    Bool clear_CR1 = True;
 
    assign( frB, getDReg_pair( frB_addr ) );
@@ -9924,14 +9970,17 @@ static Bool dis_dfp_extract_insertq(UInt theInstr) {
        * consistent and not have to add a new struct, the emulation returns
        * the 64-bit result in the upper and lower register.
        */
-      assign( frS64, unop( Iop_ExtractExpD128, mkexpr( frB ) ) );
+      assign( tmp, unop( Iop_ExtractExpD128, mkexpr( frB ) ) );
+      assign( frS64, unop( Iop_ReinterpI64asD64, mkexpr( tmp ) ) );
       putDReg( frS_addr, mkexpr( frS64 ) );
       break;
    case 0x362:  // diexq
       DIP( "diexq%s fr%u,fr%u,fr%u\n",
            flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
       assign( frA, getDReg( frA_addr ) );
-      assign( frS, binop( Iop_InsertExpD128, mkexpr( frA ), mkexpr( frB ) ) );
+      assign( frS, binop( Iop_InsertExpD128,
+                          unop( Iop_ReinterpD64asI64, mkexpr( frA ) ),
+                          mkexpr( frB ) ) );
       putDReg_pair( frS_addr, mkexpr( frS ) );
       break;
    default:
@@ -10059,14 +10108,12 @@ static Bool dis_dfp_exponent_test ( UInt theInstr )
       assign( frA, getDReg( frA_addr ) );
       assign( frB, getDReg( frB_addr ) );
       assign( gfield_mask, mkU32( DFP_G_FIELD_LONG_MASK ) );
-      assign(exponent_A, unop( Iop_64to32, 
-                               unop( Iop_ReinterpD64asI64,
-                                     unop( Iop_ExtractExpD64,
-                                           mkexpr( frA ) ) ) ) );
-      assign(exponent_B, unop( Iop_64to32, 
-                               unop( Iop_ReinterpD64asI64,
-                                     unop( Iop_ExtractExpD64,
-                                           mkexpr( frB ) ) ) ) );
+      assign(exponent_A, unop( Iop_64to32,
+                               unop( Iop_ExtractExpD64,
+                                     mkexpr( frA ) ) ) );
+      assign(exponent_B, unop( Iop_64to32,
+                               unop( Iop_ExtractExpD64,
+                                     mkexpr( frB ) ) ) );
       break;
 
    case 0x3F: //  dtstexq      Quad instruction setup
@@ -10076,14 +10123,12 @@ static Bool dis_dfp_exponent_test ( UInt theInstr )
       assign( frA, unop( Iop_D128HItoD64, mkexpr( frA128 ) ) );
       assign( frB, unop( Iop_D128HItoD64, mkexpr( frB128 ) ) );
       assign( gfield_mask, mkU32( DFP_G_FIELD_EXTND_MASK ) );
-      assign( exponent_A, unop( Iop_64to32, 
-                                unop( Iop_ReinterpD64asI64,
-                                      unop( Iop_ExtractExpD128,
-                                            mkexpr( frA128 ) ) ) ) );
-      assign( exponent_B, unop( Iop_64to32, 
-                                unop( Iop_ReinterpD64asI64,
-                                      unop( Iop_ExtractExpD128,
-                                            mkexpr( frB128 ) ) ) ) );
+      assign( exponent_A, unop( Iop_64to32,
+                                unop( Iop_ExtractExpD128,
+                                      mkexpr( frA128 ) ) ) );
+      assign( exponent_B, unop( Iop_64to32,
+                                unop( Iop_ExtractExpD128,
+                                      mkexpr( frB128 ) ) ) );
       break;
    default:
       vex_printf("dis_dfp_exponent_test(ppc)(opc2)\n");
@@ -10236,7 +10281,7 @@ static Bool dis_dfp_class_test ( UInt theInstr )
    IRTemp min_subnormalD128 = newTemp( Ity_D128 );
    IRTemp significand64  = newTemp( Ity_D64 );
    IRTemp significand128 = newTemp( Ity_D128 );
-   IRTemp exp_min_normal = newTemp( Ity_D64 );
+   IRTemp exp_min_normal = newTemp( Ity_I64 );
    IRTemp exponent       = newTemp( Ity_I32 );
 
    IRTemp infinity_true  = newTemp( Ity_I32 );
@@ -10299,15 +10344,13 @@ static Bool dis_dfp_class_test ( UInt theInstr )
       max_exp = DFP_LONG_EXP_MAX;
       min_exp = DFP_LONG_EXP_MIN;
 
-      assign( exponent, unop( Iop_64to32, 
-                              unop( Iop_ReinterpD64asI64,
-                                    unop( Iop_ExtractExpD64,
-                                          mkexpr( frA ) ) ) ) );
+      assign( exponent, unop( Iop_64to32,
+                              unop( Iop_ExtractExpD64,
+                                    mkexpr( frA ) ) ) );
       assign( significand64,
               unop( Iop_ReinterpI64asD64,
                     mkU64( 0x2234000000000001ULL ) ) );  // dfp 1.0
-      assign( exp_min_normal,
-              unop( Iop_ReinterpI64asD64, mkU64( 398 - 383 ) ) );
+      assign( exp_min_normal,mkU64( 398 - 383 ) );
       assign( min_subnormalD64,
               binop( Iop_InsertExpD64,
                      mkexpr( exp_min_normal ),
@@ -10341,13 +10384,11 @@ static Bool dis_dfp_class_test ( UInt theInstr )
       max_exp = DFP_EXTND_EXP_MAX;
       min_exp = DFP_EXTND_EXP_MIN;
       assign( exponent, unop( Iop_64to32, 
-                              unop( Iop_ReinterpD64asI64,
-                                    unop( Iop_ExtractExpD128,
-                                          getDReg_pair( frA_addr) ) ) ) );
+                              unop( Iop_ExtractExpD128,
+                                    getDReg_pair( frA_addr) ) ) );
 
       /* create quand exponent for minimum normal number */
-      assign( exp_min_normal,
-              unop( Iop_ReinterpI64asD64, mkU64( 6176 - 6143 ) ) );
+      assign( exp_min_normal, mkU64( 6176 - 6143 ) );
       assign( significand128,
               unop( Iop_D64toD128,
                     unop( Iop_ReinterpI64asD64,
@@ -10797,8 +10838,7 @@ static Bool dis_dfp_bcd(UInt theInstr) {
          assign( without_lmd,
                  unop( Iop_ReinterpD64asI64,
                        binop( Iop_InsertExpD64,
-                              unop( Iop_ReinterpI64asD64,
-                                    mkU64( DFP_LONG_BIAS ) ),
+                              mkU64( DFP_LONG_BIAS ),
                               unop( Iop_ReinterpI64asD64,
                                     binop( Iop_32HLto64,
                                            mkexpr( dbcd_u ),
@@ -10886,8 +10926,7 @@ static Bool dis_dfp_bcd(UInt theInstr) {
          assign( tmp64,
                  unop( Iop_ReinterpD64asI64,
                        binop( Iop_InsertExpD64,
-                              unop( Iop_ReinterpI64asD64,
-                                    mkU64( DFP_LONG_BIAS ) ),
+                              mkU64( DFP_LONG_BIAS ),
                               unop( Iop_ReinterpI64asD64,
                                     binop( Iop_32HLto64,
                                            binop( Iop_Or32,
@@ -11278,7 +11317,7 @@ static Bool dis_dfp_bcdq( UInt theInstr )
        */
       assign( result128,
               binop( Iop_InsertExpD128,
-                     unop( Iop_ReinterpI64asD64, mkU64( DFP_EXTND_BIAS ) ),
+                     mkU64( DFP_EXTND_BIAS ),
                      mkexpr( dfp_significand ) ) );
 
       assign( tmp_hi,

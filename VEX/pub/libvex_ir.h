@@ -1095,7 +1095,8 @@ typedef
 
       /* ROUNDING INSTRUCTIONS
        * IRRoundingMode(I32) x D64 -> D64
-       * The D64 operand, if a finite number, is rounded to an integer value.
+       * The D64 operand, if a finite number, it is rounded to a
+       * floating point integer value, i.e. no fractional part.
        */
       Iop_RoundD64toInt,
 
@@ -1159,7 +1160,7 @@ typedef
       /* D128 -> I64 */
       Iop_ExtractSigD128,
 
-      /* I64 x I64  -> D64 
+      /* I64 x D64  -> D64
        *    The exponent is specified by the first I64 operand the signed
        *    significand is given by the second I64 value.  The result is a D64
        *    value consisting of the specified significand and exponent whose 
@@ -1167,7 +1168,7 @@ typedef
        */
       Iop_InsertExpD64,
 
-      /* I64 x I128 -> D128 */
+      /* I64 x D128 -> D128 */
       Iop_InsertExpD128,
 
       /* Support for 128-bit DFP type */

@@ -2857,22 +2857,22 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_D32, Ity_D64);
 
       case Iop_ExtractExpD64:
-         UNARY(Ity_D64, Ity_D64);
+         UNARY(Ity_D64, Ity_I64);
 
       case Iop_ExtractSigD64:
          UNARY(Ity_D64, Ity_I64);
 
       case Iop_InsertExpD64:
-         BINARY(Ity_D64,Ity_D64, Ity_D64);
+         BINARY(Ity_I64,Ity_D64, Ity_D64);
 
       case Iop_ExtractExpD128:
-         UNARY(Ity_D128, Ity_D64);
+         UNARY(Ity_D128, Ity_I64);
 
-     case Iop_ExtractSigD128:
+      case Iop_ExtractSigD128:
         UNARY(Ity_D128, Ity_I64);
 
       case Iop_InsertExpD128:
-         BINARY(Ity_D64,Ity_D128, Ity_D128);
+         BINARY(Ity_I64,Ity_D128, Ity_D128);
 
       case Iop_D64toD128:
          UNARY(Ity_D64, Ity_D128);
@@ -2893,8 +2893,8 @@ void typeOfPrimop ( IROp op,
       case Iop_I32UtoD128:
          UNARY(Ity_I32, Ity_D128);
 
-      case Iop_I64StoD128:    /* I64 bit pattern stored in Float register */
-         UNARY(Ity_D64, Ity_D128);
+      case Iop_I64StoD128:
+         UNARY(Ity_I64, Ity_D128);
 
       case Iop_I64UtoD128:
          UNARY(Ity_I64, Ity_D128);
@@ -2908,7 +2908,7 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_D128, Ity_D64);
 
       case Iop_D128toI64S:
-         BINARY(ity_RMode, Ity_D128, Ity_D64);
+         BINARY(ity_RMode, Ity_D128, Ity_I64);
 
       case Iop_D128toI64U:
          BINARY(ity_RMode, Ity_D128, Ity_I64);
@@ -2932,7 +2932,7 @@ void typeOfPrimop ( IROp op,
          BINARY(ity_RMode, Ity_D64, Ity_I32);
 
       case Iop_D64toI64S:
-         BINARY(ity_RMode, Ity_D64, Ity_D64);
+         BINARY(ity_RMode, Ity_D64, Ity_I64);
 
       case Iop_D64toI64U:
          BINARY(ity_RMode, Ity_D64, Ity_I64);
@@ -2941,8 +2941,8 @@ void typeOfPrimop ( IROp op,
       case Iop_I32UtoD64:
          UNARY(Ity_I32, Ity_D64);
 
-      case Iop_I64StoD64:  /* I64 bit pattern stored in Float register */
-         BINARY(ity_RMode, Ity_D64, Ity_D64);
+      case Iop_I64StoD64:
+         BINARY(ity_RMode, Ity_I64, Ity_D64);
 
       case Iop_I64UtoD64:
          BINARY(ity_RMode, Ity_I64, Ity_D64);
@@ -2956,12 +2956,16 @@ void typeOfPrimop ( IROp op,
          BINARY(Ity_D128,Ity_D128, Ity_I32);
 
       case Iop_QuantizeD64:
-      case Iop_SignificanceRoundD64:
          TERNARY(ity_RMode,Ity_D64,Ity_D64, Ity_D64);
 
+      case Iop_SignificanceRoundD64:
+         TERNARY(ity_RMode, Ity_I8,Ity_D64, Ity_D64);
+
       case Iop_QuantizeD128:
-      case Iop_SignificanceRoundD128:
          TERNARY(ity_RMode,Ity_D128,Ity_D128, Ity_D128);
+
+      case Iop_SignificanceRoundD128:
+         TERNARY(ity_RMode, Ity_I8,Ity_D128, Ity_D128);
 
       case Iop_ShlD128:
       case Iop_ShrD128:

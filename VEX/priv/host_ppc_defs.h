@@ -375,7 +375,7 @@ typedef
       Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD,
       Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS,
       Pfp_DRSP, Pfp_DRDPQ, Pfp_DCTFIX, Pfp_DCTFIXQ, Pfp_DCFFIX, 
-      Pfp_DQUA, Pfp_RRDTR, Pfp_DIEX, Pfp_DIEXQ, 
+      Pfp_DQUA, Pfp_RRDTR, Pfp_DIEX, Pfp_DIEXQ, Pfp_DRINTN,
 
       /* Unary */
       Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV, Pfp_RES, Pfp_RSQRTE,

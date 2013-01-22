@@ -8722,10 +8722,10 @@ s390_insn_dfp_binop_emit(UChar *buf, const s390_insn *insn)
    switch (insn->size) {
    case 8:
       switch (dfp_binop->tag) {
-      case S390_DFP_ADD: return s390_emit_ADTRA(buf, r3, m4, r1, r2); break;
-      case S390_DFP_SUB: return s390_emit_SDTRA(buf, r3, m4, r1, r2); break;
-      case S390_DFP_MUL: return s390_emit_MDTRA(buf, r3, m4, r1, r2); break;
-      case S390_DFP_DIV: return s390_emit_DDTRA(buf, r3, m4, r1, r2); break;
+      case S390_DFP_ADD: return s390_emit_ADTRA(buf, r3, m4, r1, r2);
+      case S390_DFP_SUB: return s390_emit_SDTRA(buf, r3, m4, r1, r2);
+      case S390_DFP_MUL: return s390_emit_MDTRA(buf, r3, m4, r1, r2);
+      case S390_DFP_DIV: return s390_emit_DDTRA(buf, r3, m4, r1, r2);
       default:  goto fail;
       }
       break;

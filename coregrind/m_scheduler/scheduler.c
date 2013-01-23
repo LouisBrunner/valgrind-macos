@@ -1973,8 +1973,6 @@ static
 void scheduler_sanity ( ThreadId tid )
 {
    Bool bad = False;
-   static UInt lasttime = 0;
-   UInt now;
    Int lwpid = VG_(gettid)();
 
    if (!VG_(is_running_thread)(tid)) {
@@ -1999,14 +1997,18 @@ void scheduler_sanity ( ThreadId tid )
       bad = True;
    }
 
-   /* Periodically show the state of all threads, for debugging
-      purposes. */
-   now = VG_(read_millisecond_timer)();
-   if (0 && (!bad) && (lasttime + 4000/*ms*/ <= now)) {
-      lasttime = now;
-      VG_(printf)("\n------------ Sched State at %d ms ------------\n",
-                  (Int)now);
-      VG_(show_sched_status)();
+   if (0) {
+      /* Periodically show the state of all threads, for debugging
+         purposes. */
+      static UInt lasttime = 0;
+      UInt now;
+      now = VG_(read_millisecond_timer)();
+      if ((!bad) && (lasttime + 4000/*ms*/ <= now)) {
+         lasttime = now;
+         VG_(printf)("\n------------ Sched State at %d ms ------------\n",
+                     (Int)now);
+         VG_(show_sched_status)();
+      }
    }
 
    /* core_panic also shows the sched status, which is why we don't

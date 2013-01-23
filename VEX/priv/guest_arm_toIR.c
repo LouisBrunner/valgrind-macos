@@ -13052,9 +13052,8 @@ DisResult disInstr_ARM_WRK (
             goto decode_success;
          }
 
-         /* --------- ??? --------- */
          default:
-            break;
+            vassert(0);
       }
    } /* if (0 == (INSN(27,20) & BITS8(1,1,0,0,0,0,0,0)) */
 

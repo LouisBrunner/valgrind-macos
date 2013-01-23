@@ -54,6 +54,7 @@ general valgrind monitor commands:
   v.set merge-recursive-frames <num> : merge recursive calls in max <num> frames
   v.set vgdb-error <errornr> : debug me at error >= <errornr> 
 debugging valgrind internals monitor commands:
+  v.do   expensive_sanity_check_general : do an expensive sanity check now
   v.info gdbserver_status : show gdbserver status
   v.info memory [aspacemgr] : show valgrind heap memory stats
      (with aspacemgr arg, also shows valgrind segments on log ouput)

@@ -146,7 +146,8 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    /* NB: if possible, avoid introducing a new command below which
       starts with the same 3 first letters as an already existing
       command. This ensures a shorter abbreviation for the user. */
-   switch (VG_(keyword_id) ("help v.set v.info v.wait v.kill v.translate",
+   switch (VG_(keyword_id) ("help v.set v.info v.wait v.kill v.translate"
+                            " v.do",
                             wcmd, kwd_report_duplicated_matches)) {
    case -2:
       ret = 1;
@@ -183,6 +184,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
 "  v.set vgdb-error <errornr> : debug me at error >= <errornr> \n");
       if (int_value) { VG_(gdb_printf) (
 "debugging valgrind internals monitor commands:\n"
+"  v.do   expensive_sanity_check_general : do an expensive sanity check now\n"
 "  v.info gdbserver_status : show gdbserver status\n"
 "  v.info memory [aspacemgr] : show valgrind heap memory stats\n"
 "     (with aspacemgr arg, also shows valgrind segments on log ouput)\n"
@@ -374,6 +376,25 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       }
       break;
    }
+
+   case  6: /* v.do */
+      ret = 1;
+      wcmd = strtok_r (NULL, " ", &ssaveptr);
+      switch (VG_(keyword_id) ("expensive_sanity_check_general",
+                               wcmd, kwd_report_all)) {
+         case -2:
+         case -1: break;
+         case  0: { /* expensive_sanity_check_general */
+            // Temporarily bump up sanity level to check e.g. the malloc arenas.
+            const Int save_clo_sanity_level = VG_(clo_sanity_level);
+            if (VG_(clo_sanity_level) < 4) VG_(clo_sanity_level) = 4;
+            VG_(sanity_check_general) (/* force_expensive */ True);
+            VG_(clo_sanity_level) = save_clo_sanity_level;
+            break;
+         }
+         default: tl_assert (0);
+      }
+      break;
 
    default:
       vg_assert (0);

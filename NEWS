@@ -22,14 +22,6 @@ Release 3.9.0 (?? ?????? 201?)
 
 * ==================== OTHER CHANGES ====================
 
-  - Addition of GDB server monitor command 'v.info open_fds' that gives the
-    list of open file descriptors and additional details.
-
-  - Addition of GDB server monitor command 'v.info execontext' that shows
-    information about the stack traces recorded by Valgrind.
-    This can be used to analyse one possible cause of Valgrind high
-    memory usage for some programs.
-
   - Option --merge-recursive-frames=<number> tells Valgrind to
     detect and merge (collapse) recursive calls when recording stack traces.
     When your program has recursive algorithms, this limits
@@ -41,6 +33,18 @@ Release 3.9.0 (?? ?????? 201?)
   - valgrind.h has a new request VALGRIND_MONITOR_COMMAND.
     This can be used to execute gdbserver monitor commands from
     the client program.
+
+  - Addition of GDB server monitor command 'v.info open_fds' that gives the
+    list of open file descriptors and additional details.
+
+  - Addition of GDB server monitor command 'v.info execontext' that shows
+    information about the stack traces recorded by Valgrind.
+    This can be used to analyse one possible cause of Valgrind high
+    memory usage for some programs.
+
+  - Addition of GDB server monitor command
+    'v.do expensive_sanity_check_general' that checks the sanity
+    of various Valgrind aspects, including the Valgrind heap.
 
 * ==================== FIXED BUGS ====================
 

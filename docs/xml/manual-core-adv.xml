@@ -1360,6 +1360,17 @@ problems or bugs.</para>
 <itemizedlist>
 
   <listitem>
+    <para><varname>v.do expensive_sanity_check_general</varname>
+    executes various sanity checks. In particular, the sanity of the
+    Valgrind heap is verified. This can be useful if you suspect that
+    your program and/or Valgrind has a bug corrupting Valgrind data
+    structure.  It can also be used when a Valgrind tool
+    reports a client error to the connected GDB, in order to verify
+    the sanity of Valgrind before continuing the execution.
+    </para>
+  </listitem>
+
+  <listitem>
     <para><varname>v.info gdbserver_status</varname> shows the
     gdbserver status. In case of problems (e.g. of communications),
     this shows the values of some relevant Valgrind gdbserver internal

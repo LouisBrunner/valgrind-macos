@@ -195,6 +195,7 @@ END=`date "+%F %H:%M:%S %Z"`
 valgrind_revision="`svn info valgrind-new | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
 vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
 gcc_version="`gcc --version 2> /dev/null | head -1`"
+gdb_version="`gdb --version 2> /dev/null | head -1`"
 as_version="`as --version 2> /dev/null | head -1`"
 libc_so="`ls -1 /lib/libc.so.* | tail -1`"
 libc="unknown"
@@ -214,6 +215,7 @@ fi
 echo "valgrind revision: $valgrind_revision" >  final
 echo "VEX revision:      $vex_revision"      >> final
 echo "C compiler:        $gcc_version"       >> final
+echo "GDB:               $gdb_version"       >> final
 echo "Assembler:         $as_version"        >> final
 echo "C library:         $libc"              >> final
 echo "uname -mrs:        $uname_stuff"       >> final

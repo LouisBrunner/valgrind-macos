@@ -212,7 +212,7 @@ s390_amode_b12(Int d, HReg b)
    am->tag = S390_AMODE_B12;
    am->d = d;
    am->b = b;
-   am->x = 0;  /* hregNumber(0) == 0 */
+   am->x = mkHReg(0, HRcInt64, False);  /* hregNumber(am->x) == 0 */
 
    return am;
 }
@@ -229,7 +229,7 @@ s390_amode_b20(Int d, HReg b)
    am->tag = S390_AMODE_B20;
    am->d = d;
    am->b = b;
-   am->x = 0;  /* hregNumber(0) == 0 */
+   am->x = mkHReg(0, HRcInt64, False);  /* hregNumber(am->x) == 0 */
 
    return am;
 }
@@ -242,8 +242,8 @@ s390_amode_bx12(Int d, HReg b, HReg x)
    s390_amode *am = LibVEX_Alloc(sizeof(s390_amode));
 
    vassert(fits_unsigned_12bit(d));
-   vassert(b != 0);
-   vassert(x != 0);
+   vassert(hregNumber(b) != 0);
+   vassert(hregNumber(x) != 0);
 
    am->tag = S390_AMODE_BX12;
    am->d = d;
@@ -261,8 +261,8 @@ s390_amode_bx20(Int d, HReg b, HReg x)
    s390_amode *am = LibVEX_Alloc(sizeof(s390_amode));
 
    vassert(fits_signed_20bit(d));
-   vassert(b != 0);
-   vassert(x != 0);
+   vassert(hregNumber(b) != 0);
+   vassert(hregNumber(x) != 0);
 
    am->tag = S390_AMODE_BX20;
    am->d = d;
@@ -5344,7 +5344,7 @@ s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3, HReg old_mem)
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
 
    vassert(size == 4 || size == 8);
-   vassert(op2->x == 0);
+   vassert(hregNumber(op2->x) == 0);
 
    insn->tag  = S390_INSN_CAS;
    insn->size = size;
@@ -5366,7 +5366,7 @@ s390_insn_cdas(UChar size, HReg op1_high, HReg op1_low, s390_amode *op2,
    s390_cdas *cdas = LibVEX_Alloc(sizeof(s390_cdas));
 
    vassert(size == 4 || size == 8);
-   vassert(op2->x == 0);
+   vassert(hregNumber(op2->x) == 0);
    vassert(hregNumber(scratch) == 1);  /* r0,r1 used as scratch reg pair */
 
    insn->tag  = S390_INSN_CDAS;
@@ -8889,35 +8889,38 @@ static UChar *
 s390_insn_mimm_emit(UChar *buf, const s390_insn *insn)
 {
    s390_amode *am = insn->variant.mimm.dst;
+   UChar b = hregNumber(am->b);
+   UChar x = hregNumber(am->x);
+   Int   d = am->d;
    ULong value = insn->variant.mimm.value;
 
    if (value == 0) {
-      return s390_emit_XC(buf, insn->size - 1, am->b, am->d, am->b, am->d);
+      return s390_emit_XC(buf, insn->size - 1, b, d, b, d);
    }
 
    if (insn->size == 1) {
-      return s390_emit_MVI(buf, value & 0xFF, am->b, am->d);
+      return s390_emit_MVI(buf, value & 0xFF, b, d);
    }
 
    if (s390_host_has_gie && ulong_fits_signed_16bit(value)) {
       value &= 0xFFFF;
       switch (insn->size) {
-      case 2: return s390_emit_MVHHI(buf, am->b, am->d, value);
-      case 4: return s390_emit_MVHI(buf,  am->b, am->d, value);
-      case 8: return s390_emit_MVGHI(buf, am->b, am->d, value);
+      case 2: return s390_emit_MVHHI(buf, b, d, value);
+      case 4: return s390_emit_MVHI(buf,  b, d, value);
+      case 8: return s390_emit_MVGHI(buf, b, d, value);
       }
    } else {
       // Load value to R0, then store.
       switch (insn->size) {
       case 2:
          buf = s390_emit_LHI(buf, R0, value & 0xFFFF);
-         return s390_emit_STH(buf, R0, 0, am->b, am->d);
+         return s390_emit_STH(buf, R0, 0, b, d);
       case 4:
          buf = s390_emit_load_32imm(buf, R0, value);
-         return s390_emit_ST(buf, R0, 0, am->b, am->d);
+         return s390_emit_ST(buf, R0, 0, b, d);
       case 8:
          buf = s390_emit_load_64imm(buf, R0, value);
-         return s390_emit_STG(buf, R0, 0, am->b, DISP20(am->d));
+         return s390_emit_STG(buf, R0, 0, b, DISP20(d));
       }
    }
    
@@ -8929,13 +8932,15 @@ static UChar *
 s390_insn_madd_emit(UChar *buf, const s390_insn *insn)
 {
    s390_amode *am = insn->variant.madd.dst;
+   UChar b = hregNumber(am->b);
+   UChar x = hregNumber(am->x);
+   Int   d = am->d;
 
    if (insn->size == 4) {
-      return s390_emit_ASI(buf, insn->variant.madd.delta, am->b,
-                           DISP20(am->d));
+      return s390_emit_ASI(buf, insn->variant.madd.delta, b, DISP20(d));
    }
 
-   return s390_emit_AGSI(buf, insn->variant.madd.delta, am->b, DISP20(am->d));
+   return s390_emit_AGSI(buf, insn->variant.madd.delta, b, DISP20(d));
 }
 
 

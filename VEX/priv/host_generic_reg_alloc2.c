@@ -1087,9 +1087,9 @@ HInstrArray* doRegisterAllocation (
       for (j = 0; j < n_rregs; j++) {
          if (rreg_state[j].disp != Bound)
             continue;
-         vreg = hregNumber(rreg_state[j].vreg);
-         vassert(IS_VALID_VREGNO(vreg));
-         if (vreg_lrs[vreg].dead_before <= ii) {
+         UInt vregno = hregNumber(rreg_state[j].vreg);
+         vassert(IS_VALID_VREGNO(vregno));
+         if (vreg_lrs[vregno].dead_before <= ii) {
             rreg_state[j].disp = Free;
             rreg_state[j].eq_spill_slot = False;
             m = hregNumber(rreg_state[j].vreg);

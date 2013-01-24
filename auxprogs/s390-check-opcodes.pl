@@ -84,9 +84,13 @@ while (my $line = <OPC>) {
     next if ($mnemonic eq "fiebra"); # indistinguishable from fiebr
     next if ($mnemonic eq "fixbra"); # indistinguishable from fixbr
     next if ($mnemonic eq "adtr");  # indistinguishable from adtra
+    next if ($mnemonic eq "axtr");  # indistinguishable from axtra
     next if ($mnemonic eq "sdtr");  # indistinguishable from sdtra
+    next if ($mnemonic eq "sxtr");  # indistinguishable from sxtra
     next if ($mnemonic eq "ddtr");  # indistinguishable from ddtra
+    next if ($mnemonic eq "dxtr");  # indistinguishable from dxtra
     next if ($mnemonic eq "mdtr");  # indistinguishable from mdtra
+    next if ($mnemonic eq "mxtr");  # indistinguishable from mxtra
 
     $description =~ s/^[\s]+//g;    # remove leading blanks
     $description =~ s/[\s]+$//g;    # remove trailing blanks

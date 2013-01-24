@@ -8890,7 +8890,6 @@ s390_insn_mimm_emit(UChar *buf, const s390_insn *insn)
 {
    s390_amode *am = insn->variant.mimm.dst;
    UChar b = hregNumber(am->b);
-   UChar x = hregNumber(am->x);
    Int   d = am->d;
    ULong value = insn->variant.mimm.value;
 
@@ -8933,7 +8932,6 @@ s390_insn_madd_emit(UChar *buf, const s390_insn *insn)
 {
    s390_amode *am = insn->variant.madd.dst;
    UChar b = hregNumber(am->b);
-   UChar x = hregNumber(am->x);
    Int   d = am->d;
 
    if (insn->size == 4) {

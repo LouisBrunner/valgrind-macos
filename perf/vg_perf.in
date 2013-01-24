@@ -63,8 +63,9 @@ usage: vg_perf [options] [files or dirs]
     -h --help             show this message
     --reps=<n>            number of repeats for each program [1]
     --tools=<t1,t2,t3>    tools to run [Nulgrind and Memcheck]
-    --vg                  Valgrind(s) to measure  [Valgrind in the current directory]
-                          (can be specified multiple times).
+    --vg=<dir>            top-level directory containing Valgrind to measure
+                          [Valgrind in the current directory, i.e. --vg=.]
+                          Can be specified multiple times.
                           The "in-place" build is used.
 
     --outer-valgrind: run these Valgrind(s) under the given outer valgrind.

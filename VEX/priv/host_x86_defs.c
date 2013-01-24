@@ -1861,15 +1861,19 @@ static UInt vregNo ( HReg r )
    return n;
 }
 
-static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
+static UChar mkModRegRM ( UInt mod, UInt reg, UInt regmem )
 {
+   vassert(mod < 4);
+   vassert((reg|regmem) < 8);
    return toUChar( ((mod & 3) << 6) 
                    | ((reg & 7) << 3) 
                    | (regmem & 7) );
 }
 
-static UChar mkSIB ( Int shift, Int regindex, Int regbase )
+static UChar mkSIB ( UInt shift, UInt regindex, UInt regbase )
 {
+   vassert(shift < 4);
+   vassert((regindex|regbase) < 8);
    return toUChar( ((shift & 3) << 6) 
                    | ((regindex & 7) << 3) 
                    | (regbase & 7) );
@@ -1951,15 +1955,15 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
       if (fits8bits(am->Xam.IRRS.imm)
           && am->Xam.IRRS.index != hregX86_ESP()) {
          *p++ = mkModRegRM(1, iregNo(greg), 4);
-         *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index, 
-                                          am->Xam.IRRS.base);
+         *p++ = mkSIB(am->Xam.IRRS.shift, iregNo(am->Xam.IRRS.index),
+                                          iregNo(am->Xam.IRRS.base));
          *p++ = toUChar(am->Xam.IRRS.imm & 0xFF);
          return p;
       }
       if (am->Xam.IRRS.index != hregX86_ESP()) {
          *p++ = mkModRegRM(2, iregNo(greg), 4);
-         *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index,
-                                          am->Xam.IRRS.base);
+         *p++ = mkSIB(am->Xam.IRRS.shift, iregNo(am->Xam.IRRS.index),
+                                          iregNo(am->Xam.IRRS.base));
          p = emit32(p, am->Xam.IRRS.imm);
          return p;
       }

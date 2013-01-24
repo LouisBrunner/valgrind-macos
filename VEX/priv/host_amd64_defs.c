@@ -1961,15 +1961,19 @@ static HReg vreg2ireg ( HReg r )
 //uu    return mkHReg(n, HRcInt64, False);
 //uu }
 
-static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
+static UChar mkModRegRM ( UInt mod, UInt reg, UInt regmem )
 {
+   vassert(mod < 4);
+   vassert((reg|regmem) < 8);
    return toUChar( ((mod & 3) << 6) 
                    | ((reg & 7) << 3) 
                    | (regmem & 7) );
 }
 
-static UChar mkSIB ( Int shift, Int regindex, Int regbase )
+static UChar mkSIB ( UInt shift, UInt regindex, UInt regbase )
 {
+   vassert(shift < 4);
+   vassert((regindex|regbase) < 8);
    return toUChar( ((shift & 3) << 6) 
                    | ((regindex & 7) << 3) 
                    | (regbase & 7) );
@@ -2094,15 +2098,15 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
       if (fits8bits(am->Aam.IRRS.imm)
           && am->Aam.IRRS.index != hregAMD64_RSP()) {
          *p++ = mkModRegRM(1, iregBits210(greg), 4);
-         *p++ = mkSIB(am->Aam.IRRS.shift, am->Aam.IRRS.index, 
-                                          am->Aam.IRRS.base);
+         *p++ = mkSIB(am->Aam.IRRS.shift, iregBits210(am->Aam.IRRS.index),
+                                          iregBits210(am->Aam.IRRS.base));
          *p++ = toUChar(am->Aam.IRRS.imm & 0xFF);
          return p;
       }
       if (am->Aam.IRRS.index != hregAMD64_RSP()) {
          *p++ = mkModRegRM(2, iregBits210(greg), 4);
-         *p++ = mkSIB(am->Aam.IRRS.shift, am->Aam.IRRS.index,
-                                          am->Aam.IRRS.base);
+         *p++ = mkSIB(am->Aam.IRRS.shift, iregBits210(am->Aam.IRRS.index),
+                                          iregBits210(am->Aam.IRRS.base));
          p = emit32(p, am->Aam.IRRS.imm);
          return p;
       }

@@ -2984,8 +2984,8 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARMin_Shift: {
          UInt    instr, subopc;
-         HReg    rD   = iregNo(i->ARMin.Shift.dst);
-         HReg    rM   = iregNo(i->ARMin.Shift.argL);
+         UInt    rD   = iregNo(i->ARMin.Shift.dst);
+         UInt    rM   = iregNo(i->ARMin.Shift.argL);
          ARMRI5* argR = i->ARMin.Shift.argR;
          switch (i->ARMin.Shift.op) {
             case ARMsh_SHL: subopc = X0000; break;
@@ -3001,8 +3001,8 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARMin_Unary: {
          UInt instr;
-         HReg rDst = iregNo(i->ARMin.Unary.dst);
-         HReg rSrc = iregNo(i->ARMin.Unary.src);
+         UInt rDst = iregNo(i->ARMin.Unary.dst);
+         UInt rSrc = iregNo(i->ARMin.Unary.src);
          switch (i->ARMin.Unary.op) {
             case ARMun_CLZ:
                instr = XXXXXXXX(X1110,X0001,X0110,X1111,
@@ -3749,7 +3749,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARMin_FPSCR: {
          Bool toFPSCR = i->ARMin.FPSCR.toFPSCR;
-         HReg iReg    = iregNo(i->ARMin.FPSCR.iReg);
+         UInt iReg    = iregNo(i->ARMin.FPSCR.iReg);
          if (toFPSCR) {
             /* fmxr fpscr, iReg is EEE1 iReg A10 */
             *p++ = 0xEEE10A10 | ((iReg & 0xF) << 12);

@@ -1940,7 +1940,7 @@ static UChar iregBits3210 ( HReg r )
    fakery which facilitates using functions that work on integer
    register numbers to be used when assembling SSE instructions
    too. */
-static UInt vreg2ireg ( HReg r )
+static HReg vreg2ireg ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcVec128);
@@ -1951,7 +1951,7 @@ static UInt vreg2ireg ( HReg r )
 }
 
 //uu /* Ditto for ymm regs. */
-//uu static UInt dvreg2ireg ( HReg r )
+//uu static HReg dvreg2ireg ( HReg r )
 //uu {
 //uu    UInt n;
 //uu    vassert(hregClass(r) == HRcVec256);

@@ -556,11 +556,11 @@ ULong ARMNImm_to_Imm64 ( ARMNImm* imm ) {
    ULong y, x = imm->imm8;
    switch (imm->type) {
       case 3:
-         x = x << 8;
+         x = x << 8; /* fallthrough */
       case 2:
-         x = x << 8;
+         x = x << 8; /* fallthrough */
       case 1:
-         x = x << 8;
+         x = x << 8; /* fallthrough */
       case 0:
          return (x << 32) | x;
       case 5:
@@ -569,11 +569,13 @@ ULong ARMNImm_to_Imm64 ( ARMNImm* imm ) {
             x = x << 8;
          else
             x = (x << 8) | x;
+         /* fallthrough */
       case 4:
          x = (x << 16) | x;
          return (x << 32) | x;
       case 8:
          x = (x << 8) | 0xFF;
+         /* fallthrough */
       case 7:
          x = (x << 8) | 0xFF;
          return (x << 32) | x;

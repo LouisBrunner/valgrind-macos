@@ -3032,7 +3032,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          UInt SBZ    = 0;
          instr |= XXXXX___(X1110, (1 & (subopc >> 3)),
                            ((subopc << 1) & 0xF) | 1,
-                           i->ARMin.CmpOrTst.argL, SBZ );
+                           iregNo(i->ARMin.CmpOrTst.argL), SBZ );
          *p++ = instr;
          goto done;
       }
@@ -3041,7 +3041,8 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          UInt subopc = X1101; /* MOV */
          UInt SBZ    = 0;
          instr |= XXXXX___(X1110, (1 & (subopc >> 3)),
-                           (subopc << 1) & 0xF, SBZ, i->ARMin.Mov.dst);
+                           (subopc << 1) & 0xF, SBZ,
+                           iregNo(i->ARMin.Mov.dst));
          *p++ = instr;
          goto done;
       }
@@ -3346,7 +3347,8 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          UInt subopc = X1101; /* MOV */
          UInt SBZ    = 0;
          instr |= XXXXX___(i->ARMin.CMov.cond, (1 & (subopc >> 3)),
-                           (subopc << 1) & 0xF, SBZ, i->ARMin.CMov.dst);
+                           (subopc << 1) & 0xF, SBZ,
+                           iregNo(i->ARMin.CMov.dst));
          *p++ = instr;
          goto done;
       }

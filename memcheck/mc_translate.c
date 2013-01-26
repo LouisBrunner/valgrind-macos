@@ -473,6 +473,7 @@ void assign ( HChar cat, MCEnv* mce, IRTemp tmp, IRExpr* expr ) {
                                  IRExpr_Triop((_op),(_arg1),(_arg2),(_arg3))
 #define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
 #define unop(_op, _arg)          IRExpr_Unop((_op),(_arg))
+#define mkU1(_n)                 IRExpr_Const(IRConst_U1(_n))
 #define mkU8(_n)                 IRExpr_Const(IRConst_U8(_n))
 #define mkU16(_n)                IRExpr_Const(IRConst_U16(_n))
 #define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
@@ -1379,7 +1380,7 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
             that is already stored in the guest state slot */
          IRAtom *cond, *iffalse;
 
-         cond    = assignNew('V', mce, Ity_I8, unop(Iop_1Uto8, guard));
+         cond    = assignNew('V', mce, Ity_I1, guard);
          iffalse = assignNew('V', mce, ty,
                              IRExpr_Get(offset + mce->layout->total_sizeB, ty));
          vatom   = assignNew('V', mce, ty, IRExpr_Mux0X(cond, iffalse, vatom));
@@ -4227,9 +4228,7 @@ IRAtom* expr2vbits_Load_guarded_General ( MCEnv* mce,
    /* Prepare the cond for the Mux0X.  Convert a NULL cond into
       something that iropt knows how to fold out later. */
    IRAtom* cond
-      = guard == NULL
-           ? mkU8(1)
-           : assignNew('V', mce, Ity_I8, unop(Iop_1Uto8, guard));
+      = guard == NULL  ? mkU1(1)  : guard;
    /* And assemble the final result. */
    return assignNew('V', mce, tyWide, IRExpr_Mux0X(cond, iffalse, iftrue2));
 }
@@ -4744,7 +4743,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
                all-bits-defined bit pattern */
             IRAtom *cond, *iffalse, *iftrue;
 
-            cond    = assignNew('V', mce, Ity_I8, unop(Iop_1Uto8, d->guard));
+            cond    = assignNew('V', mce, Ity_I1, d->guard);
             iftrue  = assignNew('V', mce, tySrc, shadow_GET(mce, gOff, tySrc));
             iffalse = assignNew('V', mce, tySrc, definedOfType(tySrc));
             src     = assignNew('V', mce, tySrc,
@@ -6231,9 +6230,7 @@ IRAtom* expr2ori_Load_guarded_General ( MCEnv* mce,
    /* Prepare the cond for the Mux0X.  Convert a NULL cond into
       something that iropt knows how to fold out later. */
    IRAtom* cond
-      = guard == NULL
-           ? mkU8(1)
-           : assignNew('B', mce, Ity_I8, unop(Iop_1Uto8, guard));
+      = guard == NULL  ? mkU1(1)  : guard;
    /* And assemble the final result. */
    return assignNew('B', mce, Ity_I32, IRExpr_Mux0X(cond, iffalse, iftrue));
 }
@@ -6507,7 +6504,7 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
                   nothing is known about the origin */
                IRAtom *cond, *iffalse, *iftrue;
 
-               cond = assignNew( 'B', mce, Ity_I8, unop(Iop_1Uto8, d->guard));
+               cond = assignNew( 'B', mce, Ity_I1, d->guard);
                iffalse = mkU32(0);
                iftrue  = assignNew( 'B', mce, Ity_I32,
                                     IRExpr_Get(b_offset
@@ -6606,8 +6603,8 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
                   the value that is already stored in the guest state slot */
                IRAtom *cond, *iffalse;
 
-               cond    = assignNew('B', mce, Ity_I8,
-                                   unop(Iop_1Uto8, d->guard));
+               cond    = assignNew('B', mce, Ity_I1,
+                                   d->guard);
                iffalse = assignNew('B', mce, Ity_I32,
                                    IRExpr_Get(b_offset +
                                               2*mce->layout->total_sizeB,

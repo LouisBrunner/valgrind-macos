@@ -29,6 +29,7 @@
 #include "pub_core_initimg.h"
 #include "pub_core_execontext.h"
 #include "pub_core_syswrap.h"      // VG_(show_open_fds)
+#include "pub_core_scheduler.h"
 
 unsigned long cont_thread;
 unsigned long general_thread;

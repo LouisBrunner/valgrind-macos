@@ -662,7 +662,7 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
          */
          return
             IRExpr_Mux0X(
-               unop(Iop_32to8, cc_ndep),
+               binop(Iop_CmpNE32, cc_ndep, mkU32(0)),
                /* case oldC == 0 */
                unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
                /* case oldC != 0 */

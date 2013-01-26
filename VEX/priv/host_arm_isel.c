@@ -1054,15 +1054,16 @@ static ARMCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   // JRS 2013-Jan-03: this seems completely nonsensical
    /* --- CasCmpEQ* --- */
    /* Ist_Cas has a dummy argument to compare with, so comparison is
       always true. */
-   if (e->tag == Iex_Binop
-       && (e->Iex.Binop.op == Iop_CasCmpEQ32
-           || e->Iex.Binop.op == Iop_CasCmpEQ16
-           || e->Iex.Binop.op == Iop_CasCmpEQ8)) {
-      return ARMcc_AL;
-   }
+   //if (e->tag == Iex_Binop
+   //    && (e->Iex.Binop.op == Iop_CasCmpEQ32
+   //        || e->Iex.Binop.op == Iop_CasCmpEQ16
+   //        || e->Iex.Binop.op == Iop_CasCmpEQ8)) {
+   //   return ARMcc_AL;
+   //}
 
    ppIRExpr(e);
    vpanic("iselCondCode");
@@ -1538,16 +1539,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             }
             return rLo;
          }
-//zz         case Iop_16HIto8:
-//zz         case Iop_32HIto16: {
-//zz            HReg dst  = newVRegI(env);
-//zz            HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
-//zz            Int shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
-//zz            addInstr(env, mk_iMOVsd_RR(src,dst) );
-//zz            addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, dst));
-//zz            return dst;
-//zz         }
+
          case Iop_1Uto32:
+            /* 1Uto32(tmp).  Since I1 values generated into registers
+               are guaranteed to have value either only zero or one,
+               we can simply return the value of the register in this
+               case. */
+            if (e->Iex.Unop.arg->tag == Iex_RdTmp) {
+               HReg dst = lookupIRTemp(env, e->Iex.Unop.arg->Iex.RdTmp.tmp);
+               return dst;
+            }
+            /* else fall through */
          case Iop_1Uto8: {
             HReg        dst  = newVRegI(env);
             ARMCondCode cond = iselCondCode(env, e->Iex.Unop.arg);
@@ -1747,35 +1749,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- MULTIPLEX --------- */
    case Iex_Mux0X: {
-      IRExpr* cond = e->Iex.Mux0X.cond;
-
-      /* Mux0X( 32to8(1Uto32(ccexpr)), expr0, exprX ) */
-      if (ty == Ity_I32
-          && cond->tag == Iex_Unop
-          && cond->Iex.Unop.op == Iop_32to8
-          && cond->Iex.Unop.arg->tag == Iex_Unop
-          && cond->Iex.Unop.arg->Iex.Unop.op == Iop_1Uto32) {
+      /* Mux0X(ccexpr, expr0, exprX) */
+      if (ty == Ity_I32) {
          ARMCondCode cc;
          HReg     rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
          ARMRI84* r0  = iselIntExpr_RI84(NULL, False, env, e->Iex.Mux0X.expr0);
          HReg     dst = newVRegI(env);
          addInstr(env, mk_iMOVds_RR(dst, rX));
-         cc = iselCondCode(env, cond->Iex.Unop.arg->Iex.Unop.arg);
+         cc = iselCondCode(env, e->Iex.Mux0X.cond);
          addInstr(env, ARMInstr_CMov(cc ^ 1, dst, r0));
-         return dst;
-      }
-
-      /* Mux0X(cond, expr0, exprX) (general case) */
-      if (ty == Ity_I32) {
-         HReg     r8;
-         HReg     rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
-         ARMRI84* r0  = iselIntExpr_RI84(NULL, False, env, e->Iex.Mux0X.expr0);
-         HReg     dst = newVRegI(env);
-         addInstr(env, mk_iMOVds_RR(dst, rX));
-         r8 = iselIntExpr_R(env, cond);
-         addInstr(env, ARMInstr_CmpOrTst(False/*!isCmp*/, r8,
-                                         ARMRI84_I84(0xFF,0)));
-         addInstr(env, ARMInstr_CMov(ARMcc_EQ, dst, r0));
          return dst;
       }
       break;
@@ -2022,21 +2004,20 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
    /* --------- MULTIPLEX --------- */
    if (e->tag == Iex_Mux0X) {
-      IRType ty8;
-      HReg   r8, rXhi, rXlo, r0hi, r0lo, dstHi, dstLo;
-      ty8 = typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond);
-      vassert(ty8 == Ity_I8);
+      IRType tyC;
+      HReg   rXhi, rXlo, r0hi, r0lo, dstHi, dstLo;
+      ARMCondCode cc;
+      tyC = typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond);
+      vassert(tyC == Ity_I1);
       iselInt64Expr(&rXhi, &rXlo, env, e->Iex.Mux0X.exprX);
       iselInt64Expr(&r0hi, &r0lo, env, e->Iex.Mux0X.expr0);
       dstHi = newVRegI(env);
       dstLo = newVRegI(env);
       addInstr(env, mk_iMOVds_RR(dstHi, rXhi));
       addInstr(env, mk_iMOVds_RR(dstLo, rXlo));
-      r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-      addInstr(env, ARMInstr_CmpOrTst(False/*!isCmp*/, r8,
-                                      ARMRI84_I84(0xFF,0)));
-      addInstr(env, ARMInstr_CMov(ARMcc_EQ, dstHi, ARMRI84_R(r0hi)));
-      addInstr(env, ARMInstr_CMov(ARMcc_EQ, dstLo, ARMRI84_R(r0lo)));
+      cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, ARMInstr_CMov(cc ^ 1, dstHi, ARMRI84_R(r0hi)));
+      addInstr(env, ARMInstr_CMov(cc ^ 1, dstLo, ARMRI84_R(r0lo)));
       *rHi = dstHi;
       *rLo = dstLo;
       return;
@@ -5293,15 +5274,13 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Mux0X) {
-      HReg r8;
+      ARMCondCode cc;
       HReg rX  = iselNeonExpr(env, e->Iex.Mux0X.exprX);
       HReg r0  = iselNeonExpr(env, e->Iex.Mux0X.expr0);
       HReg dst = newVRegV(env);
       addInstr(env, ARMInstr_NUnary(ARMneon_COPY, dst, rX, 4, True));
-      r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-      addInstr(env, ARMInstr_CmpOrTst(False/*!isCmp*/, r8,
-                                      ARMRI84_I84(0xFF,0)));
-      addInstr(env, ARMInstr_NCMovQ(ARMcc_EQ, dst, r0));
+      cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, ARMInstr_NCMovQ(cc ^ 1, dst, r0));
       return dst;
    }
 
@@ -5486,7 +5465,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 /*--- ISEL: Floating point expressions (32 bit)         ---*/
 /*---------------------------------------------------------*/
 
-/* Compute a 64-bit floating point value into a register, the identity
+/* Compute a 32-bit floating point value into a register, the identity
    of which is returned.  As with iselIntExpr_R, the reg may be either
    real or virtual; in any case it must not be changed by subsequent
    code emitted by the caller.  */
@@ -5608,16 +5587,14 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Mux0X) {
       if (ty == Ity_F32
-          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-         HReg r8;
+          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
+         ARMCondCode cc;
          HReg rX  = iselFltExpr(env, e->Iex.Mux0X.exprX);
          HReg r0  = iselFltExpr(env, e->Iex.Mux0X.expr0);
          HReg dst = newVRegF(env);
          addInstr(env, ARMInstr_VUnaryS(ARMvfpu_COPY, dst, rX));
-         r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-         addInstr(env, ARMInstr_CmpOrTst(False/*!isCmp*/, r8,
-                                         ARMRI84_I84(0xFF,0)));
-         addInstr(env, ARMInstr_VCMovS(ARMcc_EQ, dst, r0));
+         cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, ARMInstr_VCMovS(cc ^ 1, dst, r0));
          return dst;
       }
    }
@@ -5863,6 +5840,13 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (ty == Ity_I1) {
+         /* Here, we are generating a I1 value into a 32 bit register.
+            Make sure the value in the register is only zero or one,
+            but no other.  This allows optimisation of the
+            1Uto32(tmp:I1) case, by making it simply a copy of the
+            register holding 'tmp'.  The point being that the value in
+            the register holding 'tmp' can only have been created
+            here. */
          HReg        dst  = lookupIRTemp(env, tmp);
          ARMCondCode cond = iselCondCode(env, stmt->Ist.WrTmp.data);
          addInstr(env, ARMInstr_Mov(dst, ARMRI84_I84(0,0)));

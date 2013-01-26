@@ -206,6 +206,13 @@ static IRExpr* bind ( Int binder )
    return IRExpr_Binder(binder);
 }
 
+static Bool isZeroU8 ( IRExpr* e )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U8
+          && e->Iex.Const.con->Ico.U8 == 0;
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISelEnv                                           ---*/
@@ -2225,19 +2232,13 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Mux0X: {
       if ((ty == Ity_I8  || ty == Ity_I16 ||
            ty == Ity_I32 || ((ty == Ity_I64) && mode64)) &&
-          typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-         PPCCondCode  cc = mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
-         HReg   r_cond = iselWordExpr_R(env, e->Iex.Mux0X.cond);
-         HReg   rX     = iselWordExpr_R(env, e->Iex.Mux0X.exprX);
-         PPCRI* r0     = iselWordExpr_RI(env, e->Iex.Mux0X.expr0);
-         HReg   r_dst  = newVRegI(env);
-         HReg   r_tmp  = newVRegI(env);
-         addInstr(env, mk_iMOVds_RR(r_dst,rX));
-         addInstr(env, PPCInstr_Alu(Palu_AND, r_tmp,
-                                    r_cond, PPCRH_Imm(False,0xFF)));
-         addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
-                                    7/*cr*/, r_tmp, PPCRH_Imm(False,0)));
-         addInstr(env, PPCInstr_CMov(cc,r_dst,r0));
+          typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
+         PPCRI* rX    = iselWordExpr_RI(env, e->Iex.Mux0X.exprX);
+         HReg   r0    = iselWordExpr_R(env, e->Iex.Mux0X.expr0);
+         HReg   r_dst = newVRegI(env);
+         addInstr(env, mk_iMOVds_RR(r_dst,r0));
+         PPCCondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, PPCInstr_CMov(cc, r_dst, rX));
          return r_dst;
       }
       break;
@@ -2647,6 +2648,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* --- patterns rooted at: CmpNEZ8 --- */
 
    /* CmpNEZ8(x) */
+   /* Note this cloned as CmpNE8(x,0) below. */
    /* could do better -- andi. */
    if (e->tag == Iex_Unop
        && e->Iex.Unop.op == Iop_CmpNEZ8) {
@@ -2744,6 +2746,23 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLE64U: return mk_PPCCondCode( Pct_FALSE, Pcf_7GT );
       default: vpanic("iselCondCode(ppc): CmpXX64");
       }
+   }
+
+   /* --- patterns rooted at: CmpNE8 --- */
+
+   /* CmpNE8(x,0) */
+   /* Note this is a direct copy of CmpNEZ8 above. */
+   /* could do better -- andi. */
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_CmpNE8
+       && isZeroU8(e->Iex.Binop.arg2)) {
+      HReg arg = iselWordExpr_R(env, e->Iex.Binop.arg1);
+      HReg tmp = newVRegI(env);
+      addInstr(env, PPCInstr_Alu(Palu_AND, tmp, arg,
+                                 PPCRH_Imm(False,0xFF)));
+      addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
+                                 7/*cr*/, tmp, PPCRH_Imm(False,0)));
+      return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
    }
 
    /* var */
@@ -3950,19 +3969,13 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- MULTIPLEX --------- */
    if (e->tag == Iex_Mux0X) {
       if (ty == Ity_F64
-          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-         PPCCondCode cc = mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
-         HReg r_cond = iselWordExpr_R(env, e->Iex.Mux0X.cond);
+          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
          HReg frX    = iselDblExpr(env, e->Iex.Mux0X.exprX);
          HReg fr0    = iselDblExpr(env, e->Iex.Mux0X.expr0);
          HReg fr_dst = newVRegF(env);
-         HReg r_tmp  = newVRegI(env);
-         addInstr(env, PPCInstr_Alu(Palu_AND, r_tmp,
-                                    r_cond, PPCRH_Imm(False,0xFF)));
-         addInstr(env, PPCInstr_FpUnary( Pfp_MOV, fr_dst, frX ));
-         addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
-                                    7/*cr*/, r_tmp, PPCRH_Imm(False,0)));
-         addInstr(env, PPCInstr_FpCMov( cc, fr_dst, fr0 ));
+         addInstr(env, PPCInstr_FpUnary( Pfp_MOV, fr_dst, fr0 ));
+         PPCCondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, PPCInstr_FpCMov( cc, fr_dst, frX ));
          return fr_dst;
       }
    }

@@ -986,23 +986,27 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op32,
                       vpanic("setFlags_DEP1_DEP2_shift(x86)");
    }
 
+   /* guard :: Ity_I8.  We need to convert it to I1. */
+   IRTemp guardB = newTemp(Ity_I1);
+   assign( guardB, binop(Iop_CmpNE8, mkexpr(guard), mkU8(0)) );
+
    /* DEP1 contains the result, DEP2 contains the undershifted value. */
    stmt( IRStmt_Put( OFFB_CC_OP,
-                     IRExpr_Mux0X( mkexpr(guard),
+                     IRExpr_Mux0X( mkexpr(guardB),
                                    IRExpr_Get(OFFB_CC_OP,Ity_I32),
                                    mkU32(ccOp))) );
    stmt( IRStmt_Put( OFFB_CC_DEP1,
-                     IRExpr_Mux0X( mkexpr(guard),
+                     IRExpr_Mux0X( mkexpr(guardB),
                                    IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
                                    widenUto32(mkexpr(res)))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, 
-                     IRExpr_Mux0X( mkexpr(guard),
+                     IRExpr_Mux0X( mkexpr(guardB),
                                    IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
                                    widenUto32(mkexpr(resUS)))) );
    /* Set NDEP even though it isn't used.  This makes redundant-PUT
       elimination of previous stores to this field work better. */
    stmt( IRStmt_Put( OFFB_CC_NDEP,
-                     IRExpr_Mux0X( mkexpr(guard),
+                     IRExpr_Mux0X( mkexpr(guardB),
                                    IRExpr_Get(OFFB_CC_NDEP,Ity_I32),
 				   mkU32(0) )));
 }
@@ -2571,21 +2575,25 @@ UInt dis_Grp2 ( UChar sorb,
 
       assign(oldFlags, mk_x86g_calculate_eflags_all());
 
+      /* rot_amt32 :: Ity_I8.  We need to convert it to I1. */
+      IRTemp rot_amt32b = newTemp(Ity_I1);
+      assign(rot_amt32b, binop(Iop_CmpNE8, mkexpr(rot_amt32), mkU8(0)) );
+
       /* CC_DEP1 is the rotated value.  CC_NDEP is flags before. */
       stmt( IRStmt_Put( OFFB_CC_OP,
-                        IRExpr_Mux0X( mkexpr(rot_amt32),
+                        IRExpr_Mux0X( mkexpr(rot_amt32b),
                                       IRExpr_Get(OFFB_CC_OP,Ity_I32),
                                       mkU32(ccOp))) );
       stmt( IRStmt_Put( OFFB_CC_DEP1, 
-                        IRExpr_Mux0X( mkexpr(rot_amt32),
+                        IRExpr_Mux0X( mkexpr(rot_amt32b),
                                       IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
                                       widenUto32(mkexpr(dst1)))) );
       stmt( IRStmt_Put( OFFB_CC_DEP2, 
-                        IRExpr_Mux0X( mkexpr(rot_amt32),
+                        IRExpr_Mux0X( mkexpr(rot_amt32b),
                                       IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
                                       mkU32(0))) );
       stmt( IRStmt_Put( OFFB_CC_NDEP, 
-                        IRExpr_Mux0X( mkexpr(rot_amt32),
+                        IRExpr_Mux0X( mkexpr(rot_amt32b),
                                       IRExpr_Get(OFFB_CC_NDEP,Ity_I32),
                                       mkexpr(oldFlags))) );
    } /* if (isRotate) */
@@ -3422,8 +3430,7 @@ static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
    IRTemp res32 = newTemp(Ity_I32);
    assign(res32,
           IRExpr_Mux0X(
-             unop(Iop_1Uto8,
-                  binop(Iop_CmpEQ32, mkexpr(src32x), mkU32(0))),
+             binop(Iop_CmpEQ32, mkexpr(src32x), mkU32(0)),
              unop(Iop_Clz32, mkexpr(src32x)),
              mkU32(8 * sizeofIRType(ty))
    ));
@@ -3560,13 +3567,14 @@ static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 
 static void put_ST ( Int i, IRExpr* value )
 {
-   put_ST_UNCHECKED( i,
-                     IRExpr_Mux0X( get_ST_TAG(i),
-                                   /* 0 means empty */
-                                   value,
-                                   /* non-0 means full */
-                                   mkQNaN64()
-                   )
+   put_ST_UNCHECKED(
+      i,
+      IRExpr_Mux0X( binop(Iop_CmpNE8, get_ST_TAG(i), mkU8(0)),
+                    /* 0 means empty */
+                    value,
+                    /* non-0 means full */
+                    mkQNaN64()
+      )
    );
 }
 
@@ -3587,7 +3595,7 @@ static IRExpr* get_ST_UNCHECKED ( Int i )
 static IRExpr* get_ST ( Int i )
 {
    return
-      IRExpr_Mux0X( get_ST_TAG(i),
+      IRExpr_Mux0X( binop(Iop_CmpNE8, get_ST_TAG(i), mkU8(0)),
                     /* 0 means empty */
                     mkQNaN64(),
                     /* non-0 means full */
@@ -4525,8 +4533,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovb %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondB)), 
+                                    mk_x86g_calculate_condition(X86CondB),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4535,8 +4542,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovz %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondZ)), 
+                                    mk_x86g_calculate_condition(X86CondZ),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4545,8 +4551,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovbe %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondBE)), 
+                                    mk_x86g_calculate_condition(X86CondBE),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4555,8 +4560,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovu %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondP)), 
+                                    mk_x86g_calculate_condition(X86CondP),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4690,8 +4694,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovnb %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondNB)), 
+                                    mk_x86g_calculate_condition(X86CondNB),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4700,8 +4703,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovnz %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondNZ)), 
+                                    mk_x86g_calculate_condition(X86CondNZ),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4710,8 +4712,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovnbe %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondNBE)), 
+                                    mk_x86g_calculate_condition(X86CondNBE),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4720,8 +4721,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fcmovnu %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_x86g_calculate_condition(X86CondNP)), 
+                                    mk_x86g_calculate_condition(X86CondNP),
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -5645,7 +5645,7 @@ static UInt dis_MMX_shiftG_byE ( UChar sorb, Int delta,
      assign( 
         g1,
         IRExpr_Mux0X(
-           unop(Iop_1Uto8,binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size))),
+           binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size)),
            mkU64(0),
            binop(op, mkexpr(g0), mkexpr(amt8))
         )
@@ -5655,7 +5655,7 @@ static UInt dis_MMX_shiftG_byE ( UChar sorb, Int delta,
      assign( 
         g1,
         IRExpr_Mux0X(
-           unop(Iop_1Uto8,binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size))),
+           binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size)),
            binop(op, mkexpr(g0), mkU8(size-1)),
            binop(op, mkexpr(g0), mkexpr(amt8))
         )
@@ -6364,7 +6364,7 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
 
    IRTemp src32 = newTemp(Ity_I32);
    IRTemp dst32 = newTemp(Ity_I32);
-   IRTemp src8  = newTemp(Ity_I8);
+   IRTemp srcB  = newTemp(Ity_I1);
 
    vassert(sz == 4 || sz == 2);
 
@@ -6386,15 +6386,14 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
        ( isReg ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ), 
        nameIReg(sz, gregOfRM(modrm)));
 
-   /* Generate an 8-bit expression which is zero iff the original is
+   /* Generate a bool expression which is zero iff the original is
       zero, and nonzero otherwise.  Ask for a CmpNE version which, if
       instrumented by Memcheck, is instrumented expensively, since
       this may be used on the output of a preceding movmskb insn,
       which has been known to be partially defined, and in need of
       careful handling. */
-   assign( src8,
-           unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_ExpCmpNE8),
-                           mkexpr(src), mkU(ty,0))) );
+   assign( srcB, binop(mkSizedOp(ty,Iop_ExpCmpNE8),
+                       mkexpr(src), mkU(ty,0)) );
 
    /* Flags: Z is 1 iff source value is zero.  All others 
       are undefined -- we force them to zero. */
@@ -6402,7 +6401,7 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    stmt( IRStmt_Put( 
             OFFB_CC_DEP1,
-            IRExpr_Mux0X( mkexpr(src8),
+            IRExpr_Mux0X( mkexpr(srcB),
                           /* src==0 */
                           mkU32(X86G_CC_MASK_Z),
                           /* src!=0 */
@@ -6439,7 +6438,7 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
    /* The main computation, guarding against zero. */
    assign( dst32,   
            IRExpr_Mux0X( 
-              mkexpr(src8),
+              mkexpr(srcB),
               /* src == 0 -- leave dst unchanged */
               widenUto32( getIReg( sz, gregOfRM(modrm) ) ),
               /* src != 0 */
@@ -6547,7 +6546,7 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
    IRTemp dest  = newTemp(ty);
    IRTemp dest2 = newTemp(ty);
    IRTemp acc2  = newTemp(ty);
-   IRTemp cond8 = newTemp(Ity_I8);
+   IRTemp cond  = newTemp(Ity_I1);
    IRTemp addr  = IRTemp_INVALID;
    UChar  rm    = getUChar(delta0);
 
@@ -6568,9 +6567,9 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
       assign( src, getIReg(size, gregOfRM(rm)) );
       assign( acc, getIReg(size, R_EAX) );
       setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
-      assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
-      assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
-      assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+      assign( cond, mk_x86g_calculate_condition(X86CondZ) );
+      assign( dest2, IRExpr_Mux0X(mkexpr(cond), mkexpr(dest), mkexpr(src)) );
+      assign( acc2,  IRExpr_Mux0X(mkexpr(cond), mkexpr(dest), mkexpr(acc)) );
       putIReg(size, R_EAX, mkexpr(acc2));
       putIReg(size, eregOfRM(rm), mkexpr(dest2));
       DIP("cmpxchg%c %s,%s\n", nameISize(size),
@@ -6585,9 +6584,9 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
       assign( src, getIReg(size, gregOfRM(rm)) );
       assign( acc, getIReg(size, R_EAX) );
       setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
-      assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
-      assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
-      assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+      assign( cond, mk_x86g_calculate_condition(X86CondZ) );
+      assign( dest2, IRExpr_Mux0X(mkexpr(cond), mkexpr(dest), mkexpr(src)) );
+      assign( acc2,  IRExpr_Mux0X(mkexpr(cond), mkexpr(dest), mkexpr(acc)) );
       putIReg(size, R_EAX, mkexpr(acc2));
       storeLE( mkexpr(addr), mkexpr(dest2) );
       DIP("cmpxchg%c %s,%s\n", nameISize(size), 
@@ -6608,8 +6607,8 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
                   NULL, mkexpr(acc), NULL, mkexpr(src) )
       ));
       setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
-      assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
-      assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+      assign( cond, mk_x86g_calculate_condition(X86CondZ) );
+      assign( acc2,  IRExpr_Mux0X(mkexpr(cond), mkexpr(dest), mkexpr(acc)) );
       putIReg(size, R_EAX, mkexpr(acc2));
       DIP("cmpxchg%c %s,%s\n", nameISize(size), 
                                nameIReg(size,gregOfRM(rm)), dis_buf);
@@ -6656,8 +6655,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
       assign( tmpd, getIReg(sz, gregOfRM(rm)) );
 
       putIReg(sz, gregOfRM(rm),
-                  IRExpr_Mux0X( unop(Iop_1Uto8,
-                                     mk_x86g_calculate_condition(cond)),
+                  IRExpr_Mux0X( mk_x86g_calculate_condition(cond),
                                 mkexpr(tmpd),
                                 mkexpr(tmps) )
              );
@@ -6675,8 +6673,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
       assign( tmpd, getIReg(sz, gregOfRM(rm)) );
 
       putIReg(sz, gregOfRM(rm),
-                  IRExpr_Mux0X( unop(Iop_1Uto8,
-                                     mk_x86g_calculate_condition(cond)),
+                  IRExpr_Mux0X( mk_x86g_calculate_condition(cond),
                                 mkexpr(tmpd),
                                 mkexpr(tmps) )
              );
@@ -7307,7 +7304,7 @@ static UInt dis_SSE_shiftG_byE ( UChar sorb, Int delta,
      assign( 
         g1,
         IRExpr_Mux0X(
-           unop(Iop_1Uto8,binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size))),
+           binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size)),
            mkV128(0x0000),
            binop(op, mkexpr(g0), mkexpr(amt8))
         )
@@ -7317,7 +7314,7 @@ static UInt dis_SSE_shiftG_byE ( UChar sorb, Int delta,
      assign( 
         g1,
         IRExpr_Mux0X(
-           unop(Iop_1Uto8,binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size))),
+           binop(Iop_CmpLT32U,mkexpr(amt),mkU32(size)),
            binop(op, mkexpr(g0), mkU8(size-1)),
            binop(op, mkexpr(g0), mkexpr(amt8))
         )
@@ -7522,7 +7519,7 @@ void set_EFLAGS_from_value ( IRTemp t1,
    stmt( IRStmt_Put( 
             OFFB_DFLAG,
             IRExpr_Mux0X( 
-               unop(Iop_32to8,
+               unop(Iop_32to1,
                     binop(Iop_And32, 
                           binop(Iop_Shr32, mkexpr(t1), mkU8(10)), 
                           mkU32(1))),
@@ -7534,7 +7531,7 @@ void set_EFLAGS_from_value ( IRTemp t1,
    stmt( IRStmt_Put( 
             OFFB_IDFLAG,
             IRExpr_Mux0X( 
-               unop(Iop_32to8,
+               unop(Iop_32to1,
                     binop(Iop_And32, 
                           binop(Iop_Shr32, mkexpr(t1), mkU8(21)), 
                           mkU32(1))),
@@ -7547,7 +7544,7 @@ void set_EFLAGS_from_value ( IRTemp t1,
    stmt( IRStmt_Put( 
             OFFB_ACFLAG,
             IRExpr_Mux0X( 
-               unop(Iop_32to8,
+               unop(Iop_32to1,
                     binop(Iop_And32, 
                           binop(Iop_Shr32, mkexpr(t1), mkU8(18)), 
                           mkU32(1))),
@@ -14628,14 +14625,12 @@ DisResult disInstr_X86_WRK (
             unchanged.  If the DCAS fails then we're putting into
             EDX:EAX the value seen in memory. */
          putIReg(4, R_EDX,
-                    IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(success)),
-                                  mkexpr(oldHi),
-                                  mkexpr(expdHi)
+                    IRExpr_Mux0X( mkexpr(success),
+                                  mkexpr(oldHi), mkexpr(expdHi)
                 ));
          putIReg(4, R_EAX,
-                    IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(success)),
-                                  mkexpr(oldLo),
-                                  mkexpr(expdLo)
+                    IRExpr_Mux0X( mkexpr(success),
+                                  mkexpr(oldLo), mkexpr(expdLo)
                 ));
 
          /* Copy the success bit into the Z flag and leave the others

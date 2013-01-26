@@ -594,7 +594,7 @@ static void putIRegA ( UInt       iregNo,
       llPutIReg( iregNo, e );
    } else {
       llPutIReg( iregNo,
-                 IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+                 IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                                llGetIReg(iregNo),
                                e ));
    }
@@ -628,7 +628,7 @@ static void putIRegT ( UInt       iregNo,
       llPutIReg( iregNo, e );
    } else {
       llPutIReg( iregNo,
-                 IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+                 IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                                llGetIReg(iregNo),
                                e ));
    }
@@ -724,7 +724,7 @@ static void putDReg ( UInt    dregNo,
       llPutDReg( dregNo, e );
    } else {
       llPutDReg( dregNo,
-                 IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+                 IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                                llGetDReg(dregNo),
                                e ));
    }
@@ -768,7 +768,7 @@ static void putDRegI64 ( UInt    dregNo,
       llPutDRegI64( dregNo, e );
    } else {
       llPutDRegI64( dregNo,
-                    IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+                    IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                                   llGetDRegI64(dregNo),
                                   e ));
    }
@@ -835,7 +835,7 @@ static void putQReg ( UInt    qregNo,
       llPutQReg( qregNo, e );
    } else {
       llPutQReg( qregNo,
-                 IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+                 IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                                llGetQReg(qregNo),
                                e ));
    }
@@ -895,7 +895,7 @@ static void putFReg ( UInt    fregNo,
       llPutFReg( fregNo, e );
    } else {
       llPutFReg( fregNo,
-                 IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+                 IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                                llGetFReg(fregNo),
                                e ));
    }
@@ -925,7 +925,7 @@ static void putMiscReg32 ( UInt    gsoffset,
    } else {
       stmt(IRStmt_Put(
          gsoffset,
-         IRExpr_Mux0X( unop(Iop_32to8, mkexpr(guardT)),
+         IRExpr_Mux0X( binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)),
                        IRExpr_Get(gsoffset, Ity_I32),
                        e
          )
@@ -1353,7 +1353,6 @@ void setFlags_D1_D2_ND ( UInt cc_op, IRTemp t_dep1,
                          IRTemp t_dep2, IRTemp t_ndep,
                          IRTemp guardT /* :: Ity_I32, 0 or 1 */ )
 {
-   IRTemp c8;
    vassert(typeOfIRTemp(irsb->tyenv, t_dep1 == Ity_I32));
    vassert(typeOfIRTemp(irsb->tyenv, t_dep2 == Ity_I32));
    vassert(typeOfIRTemp(irsb->tyenv, t_ndep == Ity_I32));
@@ -1366,26 +1365,26 @@ void setFlags_D1_D2_ND ( UInt cc_op, IRTemp t_dep1,
       stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(t_ndep) ));
    } else {
       /* conditional */
-      c8 = newTemp(Ity_I8);
-      assign( c8, unop(Iop_32to8, mkexpr(guardT)) );
+      IRTemp c1 = newTemp(Ity_I1);
+      assign( c1, binop(Iop_CmpNE32, mkexpr(guardT), mkU32(0)) );
       stmt( IRStmt_Put(
                OFFB_CC_OP,
-               IRExpr_Mux0X( mkexpr(c8),
+               IRExpr_Mux0X( mkexpr(c1),
                              IRExpr_Get(OFFB_CC_OP, Ity_I32),
                              mkU32(cc_op) )));
       stmt( IRStmt_Put(
                OFFB_CC_DEP1,
-               IRExpr_Mux0X( mkexpr(c8),
+               IRExpr_Mux0X( mkexpr(c1),
                              IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
                              mkexpr(t_dep1) )));
       stmt( IRStmt_Put(
                OFFB_CC_DEP2,
-               IRExpr_Mux0X( mkexpr(c8),
+               IRExpr_Mux0X( mkexpr(c1),
                              IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
                              mkexpr(t_dep2) )));
       stmt( IRStmt_Put(
                OFFB_CC_NDEP,
-               IRExpr_Mux0X( mkexpr(c8),
+               IRExpr_Mux0X( mkexpr(c1),
                              IRExpr_Get(OFFB_CC_NDEP, Ity_I32),
                              mkexpr(t_ndep) )));
    }
@@ -1642,26 +1641,22 @@ static void armUnsignedSatQ( IRTemp* res,  /* OUT - Ity_I32 */
    UInt ceil  = (1 << imm5) - 1;    // (2^imm5)-1
    UInt floor = 0;
 
-   IRTemp node0 = newTemp(Ity_I32);
-   IRTemp node1 = newTemp(Ity_I32);
-   IRTemp node2 = newTemp(Ity_I1);
-   IRTemp node3 = newTemp(Ity_I32);
-   IRTemp node4 = newTemp(Ity_I32);
-   IRTemp node5 = newTemp(Ity_I1);
-   IRTemp node6 = newTemp(Ity_I32);
+   IRTemp nd0 = newTemp(Ity_I32);
+   IRTemp nd1 = newTemp(Ity_I32);
+   IRTemp nd2 = newTemp(Ity_I1);
+   IRTemp nd3 = newTemp(Ity_I32);
+   IRTemp nd4 = newTemp(Ity_I32);
+   IRTemp nd5 = newTemp(Ity_I1);
+   IRTemp nd6 = newTemp(Ity_I32);
 
-   assign( node0, mkexpr(regT) );
-   assign( node1, mkU32(ceil) );
-   assign( node2, binop( Iop_CmpLT32S, mkexpr(node1), mkexpr(node0) ) );
-   assign( node3, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(node2)),
-                                mkexpr(node0),
-                                mkexpr(node1) ) );
-   assign( node4, mkU32(floor) );
-   assign( node5, binop( Iop_CmpLT32S, mkexpr(node3), mkexpr(node4) ) );
-   assign( node6, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(node5)),
-                                mkexpr(node3),
-                                mkexpr(node4) ) );
-   assign( *res, mkexpr(node6) );
+   assign( nd0, mkexpr(regT) );
+   assign( nd1, mkU32(ceil) );
+   assign( nd2, binop( Iop_CmpLT32S, mkexpr(nd1), mkexpr(nd0) ) );
+   assign( nd3, IRExpr_Mux0X(mkexpr(nd2), mkexpr(nd0), mkexpr(nd1)) );
+   assign( nd4, mkU32(floor) );
+   assign( nd5, binop( Iop_CmpLT32S, mkexpr(nd3), mkexpr(nd4) ) );
+   assign( nd6, IRExpr_Mux0X(mkexpr(nd5), mkexpr(nd3), mkexpr(nd4)) );
+   assign( *res, mkexpr(nd6) );
 
    /* if saturation occurred, then resQ is set to some nonzero value
       if sat did not occur, resQ is guaranteed to be zero. */
@@ -1690,24 +1685,22 @@ static void armSignedSatQ( IRTemp regT,    /* value to clamp - Ity_I32 */
    Int ceil  =  (1 << (imm5-1)) - 1;  //  (2^(imm5-1))-1
    Int floor = -(1 << (imm5-1));      // -(2^(imm5-1))
 
-   IRTemp node0 = newTemp(Ity_I32);
-   IRTemp node1 = newTemp(Ity_I32);
-   IRTemp node2 = newTemp(Ity_I1);
-   IRTemp node3 = newTemp(Ity_I32);
-   IRTemp node4 = newTemp(Ity_I32);
-   IRTemp node5 = newTemp(Ity_I1);
-   IRTemp node6 = newTemp(Ity_I32);
+   IRTemp nd0 = newTemp(Ity_I32);
+   IRTemp nd1 = newTemp(Ity_I32);
+   IRTemp nd2 = newTemp(Ity_I1);
+   IRTemp nd3 = newTemp(Ity_I32);
+   IRTemp nd4 = newTemp(Ity_I32);
+   IRTemp nd5 = newTemp(Ity_I1);
+   IRTemp nd6 = newTemp(Ity_I32);
 
-   assign( node0, mkexpr(regT) );
-   assign( node1, mkU32(ceil) );
-   assign( node2, binop( Iop_CmpLT32S, mkexpr(node1), mkexpr(node0) ) );
-   assign( node3, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(node2)),
-                                mkexpr(node0),  mkexpr(node1) ) );
-   assign( node4, mkU32(floor) );
-   assign( node5, binop( Iop_CmpLT32S, mkexpr(node3), mkexpr(node4) ) );
-   assign( node6, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(node5)),
-                                mkexpr(node3),  mkexpr(node4) ) );
-   assign( *res, mkexpr(node6) );
+   assign( nd0, mkexpr(regT) );
+   assign( nd1, mkU32(ceil) );
+   assign( nd2, binop( Iop_CmpLT32S, mkexpr(nd1), mkexpr(nd0) ) );
+   assign( nd3, IRExpr_Mux0X( mkexpr(nd2), mkexpr(nd0), mkexpr(nd1) ) );
+   assign( nd4, mkU32(floor) );
+   assign( nd5, binop( Iop_CmpLT32S, mkexpr(nd3), mkexpr(nd4) ) );
+   assign( nd6, IRExpr_Mux0X( mkexpr(nd5), mkexpr(nd3), mkexpr(nd4) ) );
+   assign( *res, mkexpr(nd6) );
 
    /* if saturation occurred, then resQ is set to some nonzero value
       if sat did not occur, resQ is guaranteed to be zero. */
@@ -1832,11 +1825,9 @@ static void compute_result_and_C_after_LSL_by_reg (
       assign(
          *newC,
          IRExpr_Mux0X(
-            unop(Iop_1Uto8,
-                 binop(Iop_CmpEQ32, mkexpr(amtT), mkU32(0))),
+            binop(Iop_CmpEQ32, mkexpr(amtT), mkU32(0)),
             IRExpr_Mux0X(
-               unop(Iop_1Uto8,
-                    binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32))),
+               binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32)),
                mkU32(0),
                binop(Iop_And32,
                      binop(Iop_Shr32,
@@ -1944,11 +1935,9 @@ static void compute_result_and_C_after_LSR_by_reg (
       assign(
          *newC,
          IRExpr_Mux0X(
-            unop(Iop_1Uto8,
-                 binop(Iop_CmpEQ32, mkexpr(amtT), mkU32(0))),
+            binop(Iop_CmpEQ32, mkexpr(amtT), mkU32(0)),
             IRExpr_Mux0X(
-               unop(Iop_1Uto8,
-                    binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32))),
+               binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32)),
                mkU32(0),
                binop(Iop_And32,
                      binop(Iop_Shr32,
@@ -2056,11 +2045,9 @@ static void compute_result_and_C_after_ASR_by_reg (
       assign(
          *newC,
          IRExpr_Mux0X(
-            unop(Iop_1Uto8,
-                 binop(Iop_CmpEQ32, mkexpr(amtT), mkU32(0))),
+            binop(Iop_CmpEQ32, mkexpr(amtT), mkU32(0)),
             IRExpr_Mux0X(
-               unop(Iop_1Uto8,
-                    binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32))),
+               binop(Iop_CmpLE32U, mkexpr(amtT), mkU32(32)),
                binop(Iop_And32,
                      binop(Iop_Shr32,
                            mkexpr(rMt),
@@ -2096,9 +2083,7 @@ static void compute_result_and_C_after_ASR_by_reg (
          unop(
             Iop_32to8,
             IRExpr_Mux0X(
-               unop(
-                 Iop_1Uto8,
-                 binop(Iop_CmpLT32U, mkexpr(amtT), mkU32(32))),
+               binop(Iop_CmpLT32U, mkexpr(amtT), mkU32(32)),
                mkU32(31),
                mkexpr(amtT)))));
     DIS(buf, "r%u, ASR r%u", rM, rS);
@@ -2127,7 +2112,7 @@ static void compute_result_and_C_after_ROR_by_reg (
       assign(
          *newC,
          IRExpr_Mux0X(
-            unop(Iop_32to8, mkexpr(amtT)),
+            binop(Iop_CmpNE32, mkexpr(amtT), mkU32(0)),
             mkexpr(oldC),
             binop(Iop_And32,
                   binop(Iop_Shr32,
@@ -2150,7 +2135,8 @@ static void compute_result_and_C_after_ROR_by_reg (
    assign(
       *res,
       IRExpr_Mux0X(
-         unop(Iop_32to8, mkexpr(amt5T)), mkexpr(rMt),
+         binop(Iop_CmpNE32, mkexpr(amt5T), mkU32(0)),
+         mkexpr(rMt),
          binop(Iop_Or32,
                binop(Iop_Shr32,
                      mkexpr(rMt), 
@@ -13696,8 +13682,7 @@ DisResult disInstr_ARM_WRK (
       IRTemp res = newTemp(Ity_I32);
       assign(arg, getIRegA(rM));
       assign(res, IRExpr_Mux0X(
-                     unop(Iop_1Uto8,binop(Iop_CmpEQ32, mkexpr(arg),
-                                                       mkU32(0))),
+                     binop(Iop_CmpEQ32, mkexpr(arg), mkU32(0)),
                      unop(Iop_Clz32, mkexpr(arg)),
                      mkU32(32)
             ));
@@ -15277,9 +15262,10 @@ DisResult disInstr_THUMB_WRK (
          false errors from Memcheck. */
       condT = newTemp(Ity_I32);
       assign(condT, IRExpr_Mux0X(
-                       unop(Iop_32to8, binop(Iop_And32,
-                                             mkexpr(old_itstate),
-                                             mkU32(0xF0))),
+                       binop(Iop_CmpNE32, binop(Iop_And32,
+                                                mkexpr(old_itstate),
+                                                mkU32(0xF0)),
+                                          mkU32(0)),
                        mkU32(1),
                        mkexpr(condT1)
             ));
@@ -16593,7 +16579,7 @@ DisResult disInstr_THUMB_WRK (
 
    /* ------ NOP ------ */
    if (INSN0(15,0) == 0xBF00) {
-      DIP("nop");
+      DIP("nop\n");
       goto decode_success;
    }
 
@@ -18540,9 +18526,7 @@ DisResult disInstr_THUMB_WRK (
          IRTemp res = newTemp(Ity_I32);
          assign(arg, getIRegT(rM1));
          assign(res, IRExpr_Mux0X(
-                        unop(Iop_1Uto8,binop(Iop_CmpEQ32,
-                                             mkexpr(arg),
-                                             mkU32(0))),
+                        binop(Iop_CmpEQ32, mkexpr(arg), mkU32(0)),
                         unop(Iop_Clz32, mkexpr(arg)),
                         mkU32(32)
          ));

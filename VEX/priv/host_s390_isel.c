@@ -1742,43 +1742,22 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       /* --------- MULTIPLEX --------- */
    case Iex_Mux0X: {
       IRExpr *cond_expr;
-      HReg dst, tmp, rX;
-      s390_opnd_RMI cond, r0, zero;
+      HReg dst, rX;
+      s390_opnd_RMI r0;
 
       cond_expr = expr->Iex.Mux0X.cond;
+
+      vassert(typeOfIRExpr(env->type_env, cond_expr) == Ity_I1);
 
       dst  = newVRegI(env);
       r0   = s390_isel_int_expr_RMI(env, expr->Iex.Mux0X.expr0);
       rX   = s390_isel_int_expr(env, expr->Iex.Mux0X.exprX);
       size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.Mux0X.exprX));
 
-      if (cond_expr->tag == Iex_Unop && cond_expr->Iex.Unop.op == Iop_1Uto8) {
-         s390_cc_t cc = s390_isel_cc(env, cond_expr->Iex.Unop.arg);
+      s390_cc_t cc = s390_isel_cc(env, cond_expr);
 
-         addInstr(env, s390_insn_move(size, dst, rX));
-         addInstr(env, s390_insn_cond_move(size, s390_cc_invert(cc), dst, r0));
-         return dst;
-      }
-
-      /* Assume the condition is true and move rX to the destination reg. */
       addInstr(env, s390_insn_move(size, dst, rX));
-
-      /* Compute the condition ... */
-      cond = s390_isel_int_expr_RMI(env, cond_expr);
-
-      /* tmp = cond & 0xFF */
-      tmp  = newVRegI(env);
-      addInstr(env, s390_insn_load_immediate(4, tmp, 0xFF));
-      addInstr(env, s390_insn_alu(4, S390_ALU_AND, tmp, cond));
-
-      /* ... and compare it with zero */
-      zero = s390_opnd_imm(0);
-      addInstr(env, s390_insn_compare(4, tmp, zero, 0 /* signed */));
-
-      /* ... and if it compared equal move r0 to the destination reg. */
-      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.Mux0X.expr0));
-      addInstr(env, s390_insn_cond_move(size, S390_CC_E, dst, r0));
-
+      addInstr(env, s390_insn_cond_move(size, s390_cc_invert(cc), dst, r0));
       return dst;
    }
 

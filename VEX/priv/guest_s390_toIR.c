@@ -240,7 +240,7 @@ mkite(IRExpr *condition, IRExpr *iftrue, IRExpr *iffalse)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   return IRExpr_Mux0X(unop(Iop_1Uto8, condition), iffalse, iftrue);
+   return IRExpr_Mux0X(condition, iffalse, iftrue);
 }
 
 /* Add a statement that stores DATA at ADDR. This is a big-endian machine. */

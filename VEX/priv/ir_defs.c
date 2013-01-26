@@ -3709,8 +3709,8 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          tcExpr(bb,stmt, expr->Iex.Mux0X.cond, gWordTy);
          tcExpr(bb,stmt, expr->Iex.Mux0X.expr0, gWordTy);
          tcExpr(bb,stmt, expr->Iex.Mux0X.exprX, gWordTy);
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.cond) != Ity_I8)
-            sanityCheckFail(bb,stmt,"Iex.Mux0X.cond: cond :: Ity_I8");
+         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.cond) != Ity_I1)
+            sanityCheckFail(bb,stmt,"Iex.Mux0X.cond: cond :: Ity_I1");
          if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.expr0)
              != typeOfIRExpr(tyenv, expr->Iex.Mux0X.exprX))
             sanityCheckFail(bb,stmt,"Iex.Mux0X: expr0/exprX mismatch");

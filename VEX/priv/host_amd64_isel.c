@@ -89,6 +89,13 @@ static IRExpr* bind ( Int binder )
    return IRExpr_Binder(binder);
 }
 
+static Bool isZeroU8 ( IRExpr* e )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U8
+          && e->Iex.Const.con->Ico.U8 == 0;
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISelEnv                                           ---*/
@@ -1751,18 +1758,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
    /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: {
-     if ((ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
-         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-        HReg     r8;
-        HReg     rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
-        AMD64RM* r0  = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
-        HReg dst = newVRegI(env);
-        addInstr(env, mk_iMOVsd_RR(rX,dst));
-        r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-        addInstr(env, AMD64Instr_Test64(0xFF, r8));
-        addInstr(env, AMD64Instr_CMov64(Acc_Z,r0,dst));
-        return dst;
+   case Iex_Mux0X: { // VFD
+      if ((ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
+          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
+         HReg     rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
+         AMD64RM* r0  = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
+         HReg     dst = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(rX,dst));
+         AMD64CondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, AMD64Instr_CMov64(cc ^ 1, r0, dst));
+         return dst;
       }
       break;
    }
@@ -2216,16 +2221,26 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpNE8
            || e->Iex.Binop.op == Iop_CasCmpEQ8
            || e->Iex.Binop.op == Iop_CasCmpNE8)) {
-      HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-      HReg      r    = newVRegI(env);
-      addInstr(env, mk_iMOVsd_RR(r1,r));
-      addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
-      addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(0xFF),r));
-      switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Acc_Z;
-         case Iop_CmpNE8: case Iop_CasCmpNE8: return Acc_NZ;
-         default: vpanic("iselCondCode(amd64): CmpXX8");
+      if (isZeroU8(e->Iex.Binop.arg2)) {
+         HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         addInstr(env, AMD64Instr_Test64(0xFF,r1));
+         switch (e->Iex.Binop.op) {
+            case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Acc_Z;
+            case Iop_CmpNE8: case Iop_CasCmpNE8: return Acc_NZ;
+            default: vpanic("iselCondCode(amd64): CmpXX8(expr,0:I8)");
+         }
+      } else {
+         HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+         HReg      r    = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(r1,r));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(0xFF),r));
+         switch (e->Iex.Binop.op) {
+            case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Acc_Z;
+            case Iop_CmpNE8: case Iop_CasCmpNE8: return Acc_NZ;
+            default: vpanic("iselCondCode(amd64): CmpXX8(expr,expr)");
+         }
       }
    }
 
@@ -2304,13 +2319,15 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLE32S
            || e->Iex.Binop.op == Iop_CmpLE32U
            || e->Iex.Binop.op == Iop_CasCmpEQ32
-           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
+           || e->Iex.Binop.op == Iop_CasCmpNE32
+           || e->Iex.Binop.op == Iop_ExpCmpNE32)) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       addInstr(env, AMD64Instr_Alu32R(Aalu_CMP,rmi2,r1));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ32: case Iop_CasCmpEQ32: return Acc_Z;
-         case Iop_CmpNE32: case Iop_CasCmpNE32: return Acc_NZ;
+         case Iop_CmpNE32:
+         case Iop_CasCmpNE32: case Iop_ExpCmpNE32: return Acc_NZ;
 	 case Iop_CmpLT32S: return Acc_L;
 	 case Iop_CmpLT32U: return Acc_B;
 	 case Iop_CmpLE32S: return Acc_LE;
@@ -2843,17 +2860,16 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) {
-      HReg r8, rX, r0, dst;
+   if (e->tag == Iex_Mux0X) { // VFD
+      HReg rX, r0, dst;
       vassert(ty == Ity_F64);
-      vassert(typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8);
-      r8  = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+      vassert(typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1);
       rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
       r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
       dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(rX,dst));
-      addInstr(env, AMD64Instr_Test64(0xFF, r8));
-      addInstr(env, AMD64Instr_SseCMov(Acc_Z,r0,dst));
+      AMD64CondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }
 
@@ -3422,14 +3438,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
 
-   if (e->tag == Iex_Mux0X) {
-      HReg r8  = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+   if (e->tag == Iex_Mux0X) { // VFD
       HReg rX  = iselVecExpr(env, e->Iex.Mux0X.exprX);
       HReg r0  = iselVecExpr(env, e->Iex.Mux0X.expr0);
       HReg dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(rX,dst));
-      addInstr(env, AMD64Instr_Test64(0xFF, r8));
-      addInstr(env, AMD64Instr_SseCMov(Acc_Z,r0,dst));
+      HReg cc  = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }
 

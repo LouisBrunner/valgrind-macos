@@ -1305,6 +1305,25 @@ static UInt fold_Clz32 ( UInt value )
 //   return r;
 //}
 
+/* Helper for arbitrary expression pattern matching in flat IR.  If
+   'e' is a reference to a tmp, look it up in env -- repeatedly, if
+   necessary -- until it resolves to a non-tmp.  Note that this can
+   return NULL if it can't resolve 'e' to a new expression, which will
+   be the case if 'e' is instead defined by an IRStmt (IRDirty or
+   LLSC). */
+static IRExpr* chase ( IRExpr** env, IRExpr* e )
+{
+   /* Why is this loop guaranteed to terminate?  Because all tmps must
+      have definitions before use, hence a tmp cannot be bound
+      (directly or indirectly) to itself. */
+   while (e->tag == Iex_RdTmp) {
+      if (0) { vex_printf("chase "); ppIRExpr(e); vex_printf("\n"); }
+      e = env[(Int)e->Iex.RdTmp.tmp];
+      if (e == NULL) break;
+   }
+   return e;
+}
+
 static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 {
    Int     shift;
@@ -2164,6 +2183,15 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
+               /* CmpNE32(1Uto32(b), 0) ==> b */
+               if (isZeroU32(e->Iex.Binop.arg2)) {
+                  IRExpr* a1 = chase(env, e->Iex.Binop.arg1);
+                  if (a1 && a1->tag == Iex_Unop 
+                         && a1->Iex.Unop.op == Iop_1Uto32) {
+                     e2 = a1->Iex.Unop.arg;
+                     break;
+                  }
+               }
                break;
 
             case Iop_CmpEQ32:
@@ -2186,20 +2214,17 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 
    case Iex_Mux0X:
       /* Mux0X */
-
       /* is the discriminant is a constant? */
       if (e->Iex.Mux0X.cond->tag == Iex_Const) {
-         Bool zero;
          /* assured us by the IR type rules */
-         vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U8);
-         zero = toBool(0 == (0xFF & e->Iex.Mux0X.cond
-                                     ->Iex.Const.con->Ico.U8));
-         e2 = zero ? e->Iex.Mux0X.expr0 : e->Iex.Mux0X.exprX;
+         vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U1);
+         e2 = e->Iex.Mux0X.cond->Iex.Const.con->Ico.U1
+                 ? e->Iex.Mux0X.exprX : e->Iex.Mux0X.expr0;
       }
       else
       /* are the arms identical? (pretty weedy test) */
       if (sameIRExprs(env, e->Iex.Mux0X.expr0,
-                      e->Iex.Mux0X.exprX)) {
+                           e->Iex.Mux0X.exprX)) {
          e2 = e->Iex.Mux0X.expr0;
       }
       break;

@@ -102,7 +102,7 @@ int main ( int argc, char** argv )
    VexTranslateResult tres;
    VexControl vcon;
    VexGuestExtents vge;
-   VexArchInfo vai_x86, vai_amd64, vai_ppc32;
+   VexArchInfo vai_x86, vai_amd64, vai_ppc32, vai_arm;
    VexAbiInfo vbi;
    VexTranslateArgs vta;
 
@@ -123,7 +123,7 @@ int main ( int argc, char** argv )
       returns False. */
    LibVEX_default_VexControl ( &vcon );
    vcon.iropt_level = 2;
-   vcon.guest_max_insns = 50;
+   vcon.guest_max_insns = 60;
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
@@ -157,10 +157,15 @@ int main ( int argc, char** argv )
                 "Start %x, nbytes %2d ============", 
                 bb_number, n_bbs_done-1, orig_addr, orig_nbytes);
 
+      /* thumb ITstate analysis needs to examine the 18 bytes
+         preceding the first instruction.  So let's leave the first 18
+         zeroed out. */
+      memset(origbuf, 0, sizeof(origbuf));
+
       assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
       for (i = 0; i < orig_nbytes; i++) {
          assert(1 == sscanf(&linebuf[2 + 3*i], "%x", &u));
-         origbuf[i] = (UChar)u;
+         origbuf[18+ i] = (UChar)u;
       }
 
       /* FIXME: put sensible values into the .hwcaps fields */
@@ -175,10 +180,23 @@ int main ( int argc, char** argv )
       vai_ppc32.hwcaps = 0;
       vai_ppc32.ppc_cache_line_szB = 128;
 
+      LibVEX_default_VexArchInfo(&vai_arm);
+      vai_arm.hwcaps = VEX_HWCAPS_ARM_VFP3 | VEX_HWCAPS_ARM_NEON | 7;
+
       LibVEX_default_VexAbiInfo(&vbi);
       vbi.guest_stack_redzone_size = 128;
 
       /* ----- Set up args for LibVEX_Translate ----- */
+
+      vta.abiinfo_both    = vbi;
+      vta.guest_bytes     = &origbuf[18];
+      vta.guest_bytes_addr = (Addr64)orig_addr;
+      vta.callback_opaque = NULL;
+      vta.chase_into_ok   = chase_into_not_ok;
+      vta.guest_extents   = &vge;
+      vta.host_bytes      = transbuf;
+      vta.host_bytes_size = N_TRANSBUF;
+      vta.host_bytes_used = &trans_used;
 
 #if 0 /* ppc32 -> ppc32 */
       vta.arch_guest     = VexArchPPC32;
@@ -192,22 +210,22 @@ int main ( int argc, char** argv )
       vta.arch_host      = VexArchAMD64;
       vta.archinfo_host  = vai_amd64;
 #endif
-#if 1 /* x86 -> x86 */
+#if 0 /* x86 -> x86 */
       vta.arch_guest     = VexArchX86;
       vta.archinfo_guest = vai_x86;
       vta.arch_host      = VexArchX86;
       vta.archinfo_host  = vai_x86;
 #endif
-
-      vta.abiinfo_both    = vbi;
-      vta.guest_bytes     = origbuf;
-      vta.guest_bytes_addr = (Addr64)orig_addr;
-      vta.callback_opaque = NULL;
-      vta.chase_into_ok   = chase_into_not_ok;
-      vta.guest_extents   = &vge;
-      vta.host_bytes      = transbuf;
-      vta.host_bytes_size = N_TRANSBUF;
-      vta.host_bytes_used = &trans_used;
+#if 1 /* arm -> arm */
+      vta.arch_guest     = VexArchARM;
+      vta.archinfo_guest = vai_arm;
+      vta.arch_host      = VexArchARM;
+      vta.archinfo_host  = vai_arm;
+      /* ARM/Thumb only hacks, that are needed to keep the ITstate
+         analyser in the front end happy.  */
+      vta.guest_bytes     = &origbuf[18 +1];
+      vta.guest_bytes_addr = (Addr64)(&origbuf[18 +1]);
+#endif
 
 #if 1 /* no instrumentation */
       vta.instrument1     = NULL;
@@ -225,6 +243,7 @@ int main ( int argc, char** argv )
       vta.preamble_function = NULL;
       vta.traceflags      = TEST_FLAGS;
       vta.addProfInc      = False;
+      vta.sigill_diag     = True;
 
       vta.disp_cp_chain_me_to_slowEP = (void*)0x12345678;
       vta.disp_cp_chain_me_to_fastEP = (void*)0x12345679;

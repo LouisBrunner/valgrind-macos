@@ -1054,6 +1054,19 @@ static ARMCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   /* const */
+   /* Constant 1:Bit */
+   if (e->tag == Iex_Const) {
+      HReg r;
+      vassert(e->Iex.Const.con->tag == Ico_U1);
+      vassert(e->Iex.Const.con->Ico.U1 == True 
+              || e->Iex.Const.con->Ico.U1 == False);
+      r = newVRegI(env);
+      addInstr(env, ARMInstr_Imm32(r, 0));
+      addInstr(env, ARMInstr_CmpOrTst(True/*isCmp*/, r, ARMRI84_R(r)));
+      return e->Iex.Const.con->Ico.U1 ? ARMcc_EQ : ARMcc_NE;
+   }
+
    // JRS 2013-Jan-03: this seems completely nonsensical
    /* --- CasCmpEQ* --- */
    /* Ist_Cas has a dummy argument to compare with, so comparison is
@@ -1748,7 +1761,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: {
+   case Iex_Mux0X: { // VFD
       /* Mux0X(ccexpr, expr0, exprX) */
       if (ty == Ity_I32) {
          ARMCondCode cc;
@@ -2003,7 +2016,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    } /* if (e->tag == Iex_Unop) */
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       IRType tyC;
       HReg   rXhi, rXlo, r0hi, r0lo, dstHi, dstLo;
       ARMCondCode cc;
@@ -3647,7 +3660,7 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       HReg rLo, rHi;
       HReg res = newVRegD(env);
       iselInt64Expr(&rHi, &rLo, env, e);
@@ -5273,7 +5286,7 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       ARMCondCode cc;
       HReg rX  = iselNeonExpr(env, e->Iex.Mux0X.exprX);
       HReg r0  = iselNeonExpr(env, e->Iex.Mux0X.expr0);
@@ -5440,18 +5453,15 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       if (ty == Ity_F64
-          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-         HReg r8;
+          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
          HReg rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
          HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
          HReg dst = newVRegD(env);
          addInstr(env, ARMInstr_VUnaryD(ARMvfpu_COPY, dst, rX));
-         r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-         addInstr(env, ARMInstr_CmpOrTst(False/*!isCmp*/, r8,
-                                         ARMRI84_I84(0xFF,0)));
-         addInstr(env, ARMInstr_VCMovD(ARMcc_EQ, dst, r0));
+         ARMCondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, ARMInstr_VCMovD(cc ^ 1, dst, r0));
          return dst;
       }
    }
@@ -5585,7 +5595,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       if (ty == Ity_F32
           && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
          ARMCondCode cc;

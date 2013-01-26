@@ -1487,7 +1487,7 @@ typedef
 
       /* MISC CONVERSION -- get high bits of each byte lane, a la
          x86/amd64 pmovmskb */
-      Iop_GetMSBs8x16, /* V64 -> I16 */
+      Iop_GetMSBs8x16, /* V128 -> I16 */
 
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equiwalents for details. */

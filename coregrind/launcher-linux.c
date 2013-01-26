@@ -51,11 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-
-
-#define PATH_MAX 4096 /* POSIX refers to this a lot but I dunno
-                         where it is defined */
+#include <limits.h>             // PATH_MAX
 
 #ifndef EM_X86_64
 #define EM_X86_64 62    // elf.h doesn't define this on some older systems
@@ -81,9 +77,16 @@ static void barf ( const char *format, ... )
 /* Search the path for the client program */
 static const char *find_client(const char *clientname)
 {
-   static char fullname[PATH_MAX];
+   char *fullname = NULL;
    const char *path = getenv("PATH");
    const char *colon;
+
+   /* Make the size of the FULLNAME buffer large enough. */
+   unsigned need = strlen(path) + strlen("/") + strlen(clientname) + 1;
+
+   fullname = malloc(need);
+   if (fullname == NULL)
+      barf("malloc of fullname failed.");
 
    while (path)
    {
@@ -94,7 +97,7 @@ static const char *find_client(const char *clientname)
       }
       else
       {
-         memcpy(fullname, path, colon - path);
+         strncpy(fullname, path, colon - path);
          fullname[colon - path] = '\0';
          path = colon + 1;
       }

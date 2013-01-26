@@ -2229,7 +2229,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: {
+   case Iex_Mux0X: { // VFD
       if ((ty == Ity_I8  || ty == Ity_I16 ||
            ty == Ity_I32 || ((ty == Ity_I64) && mode64)) &&
           typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
@@ -3003,27 +3003,17 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
    }
 
    /* 64-bit Mux0X */
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       HReg e0Lo, e0Hi, eXLo, eXHi;
+      iselInt64Expr(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
+      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
       HReg tLo = newVRegI(env);
       HReg tHi = newVRegI(env);
-      
-      PPCCondCode cc = mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
-      HReg r_cond = iselWordExpr_R(env, e->Iex.Mux0X.cond);
-      HReg r_tmp  = newVRegI(env);
-      
-      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
-      iselInt64Expr(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
-      addInstr(env, mk_iMOVds_RR(tHi,eXHi));
-      addInstr(env, mk_iMOVds_RR(tLo,eXLo));
-      
-      addInstr(env, PPCInstr_Alu(Palu_AND, 
-                                 r_tmp, r_cond, PPCRH_Imm(False,0xFF)));
-      addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/, 
-                                 7/*cr*/, r_tmp, PPCRH_Imm(False,0)));
-      
-      addInstr(env, PPCInstr_CMov(cc,tHi,PPCRI_Reg(e0Hi)));
-      addInstr(env, PPCInstr_CMov(cc,tLo,PPCRI_Reg(e0Lo)));
+      addInstr(env, mk_iMOVds_RR(tHi,e0Hi));
+      addInstr(env, mk_iMOVds_RR(tLo,e0Lo));
+      PPCCondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, PPCInstr_CMov(cc,tHi,PPCRI_Reg(eXHi)));
+      addInstr(env, PPCInstr_CMov(cc,tLo,PPCRI_Reg(eXLo)));
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -3967,7 +3957,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_Mux0X) { // VFD
       if (ty == Ity_F64
           && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
          HReg frX    = iselDblExpr(env, e->Iex.Mux0X.exprX);

@@ -152,8 +152,7 @@ void DRD_(cond_pre_init)(const Addr cond)
 
    p = DRD_(cond_get)(cond);
 
-   if (p)
-   {
+   if (p) {
       CondErrInfo cei = { .tid = DRD_(thread_get_running_tid)(), .cond = cond };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               CondErr,
@@ -162,7 +161,7 @@ void DRD_(cond_pre_init)(const Addr cond)
                               &cei);
    }
 
-   p = cond_get_or_allocate(cond);
+   cond_get_or_allocate(cond);
 }
 
 /** Called after pthread_cond_destroy(). */

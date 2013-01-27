@@ -680,8 +680,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                                        sizeofIRType(data->Iex.Load.ty),
                                        NULL/* no guard */);
                }
-               instrument_load(bb, data->Iex.Load.addr,
-                               sizeofIRType(data->Iex.Load.ty),
+               instrument_load(bb, addr_expr, sizeofIRType(data->Iex.Load.ty),
                                NULL/* no guard */);
             }
          }

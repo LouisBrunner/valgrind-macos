@@ -9848,7 +9848,7 @@ static /*inline*/ int *macro_twosharps(const int *macro_str)
     CValue cval;
     TokenString macro_str1;
     CString cstr;
-
+    memset(&cval, 0, sizeof(cval));
     start_macro_ptr = macro_str;
     /* we search the first '##' */
     for(;;) {

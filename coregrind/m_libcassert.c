@@ -271,9 +271,10 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
                         Int line, const HChar* fn, const HChar* format, ... )
 {
    va_list vargs;
-   HChar buf[256];
+   HChar buf[512];
    const HChar* component;
    const HChar* bugs_to;
+   UInt written;
 
    static Bool entered = False;
    if (entered) 
@@ -281,8 +282,13 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
    entered = True;
 
    va_start(vargs, format);
-   VG_(vsprintf) ( buf, format, vargs );
+   written = VG_(vsnprintf) ( buf, sizeof(buf), format, vargs );
    va_end(vargs);
+
+   if (written >= sizeof(buf)) {
+      VG_(printf)("\nvalgrind: %s: buf is too small, sizeof(buf) = %u, "
+                  "written = %d\n", __func__, (unsigned)sizeof(buf), written);
+   }
 
    if (isCore) {
       component = "valgrind";

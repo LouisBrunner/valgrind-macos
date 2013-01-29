@@ -101,8 +101,8 @@ void test_double_pair_instrs()
    FRT2 = -1.0;
    base = (unsigned long) &dbl_pair;
    offset = (unsigned long) &dbl_pair[1] - base;
-   __asm__ volatile ("or 20, 0, %0"::"r" (base));
-   __asm__ volatile ("or 21, 0, %0"::"r" (offset));
+   __asm__ volatile ("ori 20, %0, 0"::"r" (base));
+   __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("lfdpx 10, 20, 21");
    __asm__ volatile ("fmr %0, 10":"=f" (FRT1));
    __asm__ volatile ("fmr %0, 11":"=f" (FRT2));
@@ -113,8 +113,8 @@ void test_double_pair_instrs()
    FRT2 = -16.1024;
    base = (unsigned long) &dbl_pair;
    offset = (unsigned long) &dbl_pair[2] - base;
-   __asm__ volatile ("or 20, 0, %0"::"r" (base));
-   __asm__ volatile ("or 21, 0, %0"::"r" (offset));
+   __asm__ volatile ("ori 20, %0, 0"::"r" (base));
+   __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("fmr %0, 10":"=f" (FRT1));
    __asm__ volatile ("fmr %0, 11":"=f" (FRT2));
    __asm__ volatile ("stfdpx 10, 20, 21");
@@ -166,14 +166,14 @@ void test_reservation()
 
    base = (unsigned long) &arr;
    offset = (unsigned long) &arr[1] - base;
-   __asm__ volatile ("or 20, 0, %0"::"r" (base));
-   __asm__ volatile ("or 21, 0, %0"::"r" (offset));
+   __asm__ volatile ("ori 20, %0, 0"::"r" (base));
+   __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("lwarx %0, 20, 21, 1":"=r" (RT));
    printf("lwarx => %x\n", RT);
 
 #ifdef __powerpc64__
    offset = (unsigned long) &arr[1] - base;
-   __asm__ volatile ("or 21, 0, %0"::"r" (offset));
+   __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("ldarx %0, 20, 21, 1":"=r" (RT));
    printf("ldarx => %x\n", RT);
 #endif

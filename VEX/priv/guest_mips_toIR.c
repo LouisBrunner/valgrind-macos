@@ -320,8 +320,7 @@ static inline UInt getUInt(UChar * p)
 #define FP_CONDITIONAL_CODE \
    t3 = newTemp(Ity_I32);   \
    assign(t3, binop(Iop_And32, \
-                 IRExpr_ITE( unop(Iop_1Uto8, \
-                                  binop(Iop_CmpEQ32, mkU32(cc), mkU32(0))), \
+                 IRExpr_ITE( binop(Iop_CmpEQ32, mkU32(cc), mkU32(0)), \
                              binop(Iop_Shr32, getFCSR(), mkU8(23)), \
                              binop(Iop_Shr32, getFCSR(), mkU8(24+cc))), \
                  mkU32(0x1)));
@@ -1381,13 +1380,12 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                {
                   DIP("tf: %d, nd: %d\n", tf, nd);
                   //FcConditionalCode(bc1_cc)
-                  t1 = newTemp(Ity_I32);
+                  t1 = newTemp(Ity_I1);
                   t2 = newTemp(Ity_I32);
                   t3 = newTemp(Ity_I1);
 
-                  assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                    mkU32(bc1_cc))));
-                  assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                  assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(bc1_cc)));
+                  assign(t2, IRExpr_ITE(mkexpr(t1),
                                         binop(Iop_And32,
                                               binop(Iop_Shr32, getFCSR(),
                                                     mkU8(23)),
@@ -1610,16 +1608,14 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   t1 = newTemp(Ity_F64);
                   t2 = newTemp(Ity_F64);
-                  t3 = newTemp(Ity_I32);
+                  t3 = newTemp(Ity_I1);
                   t4 = newTemp(Ity_F64);
 
                   assign(t1, unop(Iop_F32toF64, getFReg(fs)));
                   assign(t2, unop(Iop_F32toF64, getFReg(fd)));
-                  assign(t3, unop(Iop_1Sto32, binop(Iop_CmpNE32, mkU32(0),
-                                                    getIReg(rt))));
+                  assign(t3, binop(Iop_CmpNE32, mkU32(0), getIReg(rt)));
 
-                  assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
-                                        mkexpr(t1), mkexpr(t2)));
+                  assign(t4, IRExpr_ITE(mkexpr(t3), mkexpr(t1), mkexpr(t2)));
 
                   putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                     mkexpr(t4)));
@@ -1627,13 +1623,11 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                case 0x11:  // D
                   DIP("movn.d f%d, f%d, r%d", fd, fs, rt);
 
-                  t3 = newTemp(Ity_I32);
+                  t3 = newTemp(Ity_I1);
                   t4 = newTemp(Ity_F64);
 
-                  assign(t3, unop(Iop_1Sto32, binop(Iop_CmpNE32, mkU32(0),
-                                                    getIReg(rt))));
-                  putDReg(fd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
-                                         getDReg(fs), getDReg(fd)));
+                  assign(t3, binop(Iop_CmpNE32, mkU32(0), getIReg(rt)));
+                  putDReg(fd, IRExpr_ITE(mkexpr(t3), getDReg(fs), getDReg(fd)));
                   break;
                default:
                   goto decode_failure;
@@ -1647,15 +1641,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   t1 = newTemp(Ity_F64);
                   t2 = newTemp(Ity_F64);
-                  t3 = newTemp(Ity_I32);
+                  t3 = newTemp(Ity_I1);
                   t4 = newTemp(Ity_F64);
 
                   assign(t1, unop(Iop_F32toF64, getFReg(fs)));
                   assign(t2, unop(Iop_F32toF64, getFReg(fd)));
-                  assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                    getIReg(rt))));
-                  assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
-                                        mkexpr(t1), mkexpr(t2)));
+                  assign(t3, binop(Iop_CmpEQ32, mkU32(0), getIReg(rt)));
+                  assign(t4, IRExpr_ITE(mkexpr(t3), mkexpr(t1), mkexpr(t2)));
 
                   putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                     mkexpr(t4)));
@@ -1664,13 +1656,11 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                case 0x11:  // D
                   DIP("movz.d f%d, f%d, r%d", fd, fs, rt);
 
-                  t3 = newTemp(Ity_I32);
+                  t3 = newTemp(Ity_I1);
                   t4 = newTemp(Ity_F64);
 
-                  assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                    getIReg(rt))));
-                  putDReg(fd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
-                                         getDReg(fs), getDReg(fd)));
+                  assign(t3, binop(Iop_CmpEQ32, mkU32(0), getIReg(rt)));
+                  putDReg(fd, IRExpr_ITE(mkexpr(t3), getDReg(fs), getDReg(fd)));
                   break;
                default:
                   goto decode_failure;
@@ -1684,14 +1674,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   {
                   case 0x11:  // D
                      DIP("movt.d f%d, f%d, %d", fd, fs, mov_cc);
-                     t1 = newTemp(Ity_I32);
+                     t1 = newTemp(Ity_I1);
                      t2 = newTemp(Ity_I32);
-                     t3 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I1);
                      t4 = newTemp(Ity_F64);
 
-                     assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                       mkU32(mov_cc))));
-                     assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                     assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(mov_cc)));
+                     assign(t2, IRExpr_ITE(mkexpr(t1),
                                            binop(Iop_And32,
                                                  binop(Iop_Shr32, getFCSR(),
                                                        mkU8(23)),
@@ -1702,17 +1691,16 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                  mkU32(0x1))
                                            ));
 
-                     assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
-                                mkexpr(t2))));
-                     assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                     assign(t3, binop(Iop_CmpEQ32, mkU32(1), mkexpr(t2)));
+                     assign(t4, IRExpr_ITE(mkexpr(t3),
                                            getDReg(fd), getDReg(fs)));
                      putDReg(fd, mkexpr(t4));
                      break;
                   case 0x10:  // S
                      DIP("movt.s f%d, f%d, %d", fd, fs, mov_cc);
-                     t1 = newTemp(Ity_I32);
+                     t1 = newTemp(Ity_I1);
                      t2 = newTemp(Ity_I32);
-                     t3 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I1);
                      t4 = newTemp(Ity_F64);
                      t5 = newTemp(Ity_F64);
                      t6 = newTemp(Ity_F64);
@@ -1721,9 +1709,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      assign(t5, unop(Iop_F32toF64, getFReg(fs)));
                      assign(t6, unop(Iop_F32toF64, getFReg(fd)));
 
-                     assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                     mkU32(mov_cc))));
-                     assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                     assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(mov_cc)));
+                     assign(t2, IRExpr_ITE(mkexpr(t1),
                                            binop(Iop_And32,
                                                  binop(Iop_Shr32, getFCSR(),
                                                        mkU8(23)),
@@ -1734,9 +1721,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                  mkU32(0x1))
                                            ));
 
-                     assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
-                                                       mkexpr(t2))));
-                     assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                     assign(t3, binop(Iop_CmpEQ32, mkU32(1), mkexpr(t2)));
+                     assign(t4, IRExpr_ITE(mkexpr(t3),
                                            mkexpr(t6), mkexpr(t5)));
 
                      putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
@@ -1752,14 +1738,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   {
                   case 0x11:  // D
                      DIP("movf.d f%d, f%d, %d", fd, fs, mov_cc);
-                     t1 = newTemp(Ity_I32);
+                     t1 = newTemp(Ity_I1);
                      t2 = newTemp(Ity_I32);
-                     t3 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I1);
                      t4 = newTemp(Ity_F64);
 
-                     assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32,
-                                                 mkU32(0), mkU32(mov_cc))));
-                     assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                     assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(mov_cc)));
+                     assign(t2, IRExpr_ITE(mkexpr(t1),
                                            binop(Iop_And32,
                                                  binop(Iop_Shr32, getFCSR(),
                                                        mkU8(23)),
@@ -1770,18 +1755,17 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                  mkU32(0x1))
                                            ));
 
-                     assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
-                                                       mkexpr(t2))));
-                     assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                     assign(t3, binop(Iop_CmpEQ32, mkU32(1), mkexpr(t2)));
+                     assign(t4, IRExpr_ITE(mkexpr(t3),
                                            getDReg(fs), getDReg(fd)));
                      putDReg(fd, mkexpr(t4));
                      break;
                   case 0x10:  // S
                      DIP("movf.s f%d, f%d, %d", fd, fs, mov_cc);
                      {
-                        t1 = newTemp(Ity_I32);
+                        t1 = newTemp(Ity_I1);
                         t2 = newTemp(Ity_I32);
-                        t3 = newTemp(Ity_I32);
+                        t3 = newTemp(Ity_I1);
                         t4 = newTemp(Ity_F64);
                         t5 = newTemp(Ity_F64);
                         t6 = newTemp(Ity_F64);
@@ -1789,9 +1773,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                         assign(t5, unop(Iop_F32toF64, getFReg(fs)));
                         assign(t6, unop(Iop_F32toF64, getFReg(fd)));
 
-                        assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                          mkU32(mov_cc))));
-                        assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                        assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(mov_cc)));
+                        assign(t2, IRExpr_ITE(mkexpr(t1),
                                               binop(Iop_And32,
                                                     binop(Iop_Shr32, getFCSR(),
                                                           mkU8(23)),
@@ -1802,9 +1785,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                     mkU32(0x1))
                                               ));
 
-                        assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
-                                                          mkexpr(t2))));
-                        assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                        assign(t3, binop(Iop_CmpEQ32, mkU32(1), mkexpr(t2)));
+                        assign(t4, IRExpr_ITE(mkexpr(t3),
                                               mkexpr(t5), mkexpr(t6)));
                         putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                           mkexpr(t4)));
@@ -2657,7 +2639,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          t2 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I64);
          t4 = newTemp(Ity_I32);
-         t5 = newTemp(Ity_I32);
+         t5 = newTemp(Ity_I1);
          t6 = newTemp(Ity_I32);
 
          assign(t1, getHI());
@@ -2667,10 +2649,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          assign(t4, unop(Iop_64to32, mkexpr(t3))); //new lo
 
          //if lo<lo(mul) hi = hi - 1
-         assign(t5, unop(Iop_1Sto32, binop(Iop_CmpLT32U, mkexpr(t2),
-                                           mkexpr(t4))));
+         assign(t5, binop(Iop_CmpLT32U, mkexpr(t2), mkexpr(t4)));
 
-         assign(t6, IRExpr_ITE(unop(Iop_32to8, mkexpr(t5)),
+         assign(t6, IRExpr_ITE(mkexpr(t5),
                                binop(Iop_Sub32, mkexpr(t1), mkU32(0x1)),
                                mkexpr(t1)));
 
@@ -2685,7 +2666,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          t2 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I64);
          t4 = newTemp(Ity_I32);
-         t5 = newTemp(Ity_I32);
+         t5 = newTemp(Ity_I1);
          t6 = newTemp(Ity_I32);
 
          assign(t1, getHI());
@@ -2695,10 +2676,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          assign(t4, unop(Iop_64to32, mkexpr(t3))); //new lo
 
          //if lo<lo(mul) hi = hi - 1
-         assign(t5, unop(Iop_1Sto32, binop(Iop_CmpLT32U, mkexpr(t2),
-                                           mkexpr(t4))));
+         assign(t5, binop(Iop_CmpLT32U, mkexpr(t2), mkexpr(t4)));
 
-         assign(t6, IRExpr_ITE(unop(Iop_32to8, mkexpr(t5)),
+         assign(t6, IRExpr_ITE(mkexpr(t5),
                                binop(Iop_Sub32, mkexpr(t1), mkU32(0x1)),
                                mkexpr(t1)));
 
@@ -2709,10 +2689,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x20: { /* CLZ */
          DIP("clz r%d, r%d", rd, rs);
-         t1 = newTemp(Ity_I32);
-         assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, getIReg(rs),
-                                           mkU32(0))));
-         putIReg(rd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+         t1 = newTemp(Ity_I1);
+         assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0)));
+         putIReg(rd, IRExpr_ITE(mkexpr(t1),
                                 mkU32(0x00000020),
                                 unop(Iop_Clz32, getIReg(rs))));
          break;
@@ -2720,10 +2699,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x21: { /* CLO */
          DIP("clo r%d, r%d", rd, rs);
-         t1 = newTemp(Ity_I32);
-         assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, getIReg(rs),
-                                           mkU32(0xffffffff))));
-         putIReg(rd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+         t1 = newTemp(Ity_I1);
+         assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0xffffffff)));
+         putIReg(rd, IRExpr_ITE(mkexpr(t1),
                                 mkU32(0x00000020),
                                 unop(Iop_Clz32, unop(Iop_Not32, getIReg(rs)))));
          break;
@@ -2875,14 +2853,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          if (tf == 0) { /* MOVF */
             DIP("movf r%d, r%d, %d", rd, rs, mov_cc);
             {
-               t1 = newTemp(Ity_I32);
+               t1 = newTemp(Ity_I1);
                t2 = newTemp(Ity_I32);
-               t3 = newTemp(Ity_I32);
+               t3 = newTemp(Ity_I1);
                t4 = newTemp(Ity_I32);
 
-               assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                 mkU32(mov_cc))));
-               assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+               assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(mov_cc)));
+               assign(t2, IRExpr_ITE(mkexpr(t1),
                                      binop(Iop_And32,
                                            binop(Iop_Shr32, getFCSR(),
                                                  mkU8(23)),
@@ -2893,23 +2870,20 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                            mkU32(0x1))
                                      ));
 
-               assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                 mkexpr(t2))));
-               assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
-                                     getIReg(rs), getIReg(rd)));
+               assign(t3, binop(Iop_CmpEQ32, mkU32(0), mkexpr(t2)));
+               assign(t4, IRExpr_ITE(mkexpr(t3), getIReg(rs), getIReg(rd)));
                putIReg(rd, mkexpr(t4));
             }
          } else if (tf == 1) {   /* MOVT */
             DIP("movt r%d, r%d, %d", rd, rs, mov_cc);
             {
-               t1 = newTemp(Ity_I32);
+               t1 = newTemp(Ity_I1);
                t2 = newTemp(Ity_I32);
-               t3 = newTemp(Ity_I32);
+               t3 = newTemp(Ity_I1);
                t4 = newTemp(Ity_I32);
 
-               assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
-                                                 mkU32(mov_cc))));
-               assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+               assign(t1, binop(Iop_CmpEQ32, mkU32(0), mkU32(mov_cc)));
+               assign(t2, IRExpr_ITE(mkexpr(t1),
                                      binop(Iop_And32,
                                            binop(Iop_Shr32, getFCSR(),
                                                  mkU8(23)),
@@ -2920,10 +2894,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                            mkU32(0x1))
                                      ));
 
-               assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
-                                                 mkexpr(t2))));
-               assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
-                                     getIReg(rs), getIReg(rd)));
+               assign(t3, binop(Iop_CmpEQ32, mkU32(1), mkexpr(t2)));
+               assign(t4, IRExpr_ITE(mkexpr(t3), getIReg(rs), getIReg(rd)));
                putIReg(rd, mkexpr(t4));
             }
          }

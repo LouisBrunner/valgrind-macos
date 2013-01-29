@@ -1424,7 +1424,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
    case Iex_ITE: {
       if ((ty == Ity_I8 || ty == Ity_I16 ||
            ty == Ity_I32 || ((ty == Ity_I64))) &&
-           typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I8) {
+           typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1) {
          /*
           * r_dst = cond && rX
           * cond = not(cond)
@@ -1433,11 +1433,18 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
           */
          HReg r0 = iselWordExpr_R(env, e->Iex.ITE.iffalse);
          HReg r1 = iselWordExpr_R(env, e->Iex.ITE.iftrue);
-         HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
+         HReg r_cond_1 = iselWordExpr_R(env, e->Iex.ITE.cond);
+         HReg r_cond = newVRegI(env);
+         HReg mask = newVRegI(env);
          HReg r_dst = newVRegI(env);
          HReg r_tmp = newVRegI(env);
          HReg r_tmp1 = newVRegI(env);
          HReg r_cond_neg = newVRegI(env);
+
+         /* r_cond = 0 - r_cond_1 */
+         addInstr(env, MIPSInstr_LI(mask, 0x0));
+         addInstr(env, MIPSInstr_Alu(Malu_SUB, r_cond,
+                                     mask, MIPSRH_Reg(r_cond_1)));
 
          addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp, r_cond, MIPSRH_Reg(r1)));
          addInstr(env, MIPSInstr_Alu(Malu_NOR, r_cond_neg, r_cond,
@@ -1954,16 +1961,24 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
 
    /* 64-bit ITE */
    if (e->tag == Iex_ITE) {
+      vassert(typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1);
       HReg expr0Lo, expr0Hi;
       HReg expr1Lo, expr1Hi;
       HReg tmpHi = newVRegI(env);
       HReg tmpLo = newVRegI(env);
       HReg tmp1Hi = newVRegI(env);
       HReg tmp1Lo = newVRegI(env);
-      HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
+      HReg r_cond_1 = iselWordExpr_R(env, e->Iex.ITE.cond);
+      HReg r_cond = newVRegI(env);
       HReg r_cond_neg = newVRegI(env);
+      HReg mask = newVRegI(env);
       HReg desLo = newVRegI(env);
       HReg desHi = newVRegI(env);
+
+      /* r_cond = 0 - r_cond_1 */
+      addInstr(env, MIPSInstr_LI(mask, 0x0));
+      addInstr(env, MIPSInstr_Alu(Malu_SUB, r_cond,
+                                  mask, MIPSRH_Reg(r_cond_1)));
 
       /* expr0Hi:expr0Lo = iffalse */
       /* expr1Hi:expr1Lo = iftrue */
@@ -2678,11 +2693,13 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
    /* --------- MULTIPLEX --------- */
    if (e->tag == Iex_ITE) {
       if (ty == Ity_F64
-          && typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I8) {
+          && typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1) {
          HReg r0 = iselDblExpr(env, e->Iex.ITE.iffalse);
          HReg r1 = iselDblExpr(env, e->Iex.ITE.iftrue);
-         HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
+         HReg r_cond_1 = iselWordExpr_R(env, e->Iex.ITE.cond);
+         HReg r_cond = newVRegI(env);
          HReg r_cond_neg = newVRegI(env);
+         HReg mask = newVRegI(env);
          HReg r_dst = newVRegD(env);
          HReg r_tmp_lo = newVRegI(env);
          HReg r_tmp_hi = newVRegI(env);
@@ -2694,6 +2711,11 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
          HReg r_r1_hi = newVRegI(env);
          HReg r_dst_lo = newVRegI(env);
          HReg r_dst_hi = newVRegI(env);
+
+         /* r_cond = 0 - r_cond_1 */
+         addInstr(env, MIPSInstr_LI(mask, 0x0));
+         addInstr(env, MIPSInstr_Alu(Malu_SUB, r_cond,
+                                     mask, MIPSRH_Reg(r_cond_1)));
 
          sub_from_sp(env, 16);   // Move SP down 16 bytes
          MIPSAMode *am_addr = MIPSAMode_IR(0, StackPointer(mode64));

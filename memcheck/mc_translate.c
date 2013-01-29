@@ -4260,8 +4260,8 @@ IRAtom* expr2vbits_ITE ( MCEnv* mce,
 {
    IRAtom *vbitsC, *vbits0, *vbits1;
    IRType ty;
-   /* Given ITE(cond,iftrue,iffalse), generate
-         ITE(cond,iftrue#,iffalse#) `UifU` PCast(cond#)
+   /* Given ITE(cond, iftrue,  iffalse),  generate
+            ITE(cond, iftrue#, iffalse#) `UifU` PCast(cond#)
       That is, steer the V bits like the originals, but trash the 
       result if the steering value is undefined.  This gives 
       lazy propagation. */
@@ -4270,8 +4270,8 @@ IRAtom* expr2vbits_ITE ( MCEnv* mce,
    tl_assert(isOriginalAtom(mce, iffalse));
 
    vbitsC = expr2vbits(mce, cond);
-   vbits0 = expr2vbits(mce, iffalse);
    vbits1 = expr2vbits(mce, iftrue);
+   vbits0 = expr2vbits(mce, iffalse);
    ty = typeOfIRExpr(mce->sb->tyenv, vbits0);
 
    return
@@ -4339,7 +4339,7 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
 
       case Iex_ITE:
          return expr2vbits_ITE( mce, e->Iex.ITE.cond, e->Iex.ITE.iftrue, 
-                                e->Iex.ITE.iffalse);
+                                     e->Iex.ITE.iffalse);
 
       default: 
          VG_(printf)("\n");
@@ -6381,8 +6381,8 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
       }
       case Iex_ITE: {
          IRAtom* b1 = schemeE( mce, e->Iex.ITE.cond );
-         IRAtom* b2 = schemeE( mce, e->Iex.ITE.iffalse );
          IRAtom* b3 = schemeE( mce, e->Iex.ITE.iftrue );
+         IRAtom* b2 = schemeE( mce, e->Iex.ITE.iffalse );
          return gen_maxU32( mce, b1, gen_maxU32( mce, b2, b3 ));
       }
       case Iex_Qop: {

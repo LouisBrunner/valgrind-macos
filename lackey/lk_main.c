@@ -785,7 +785,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                   case Iex_Binop:
                   case Iex_Triop:
                   case Iex_Qop:
-                  case Iex_Mux0X:
+                  case Iex_ITE:
                      instrument_detail( sbOut, OpAlu, type, NULL/*guard*/ );
                      break;
                   default:

@@ -1383,7 +1383,7 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
          cond    = assignNew('V', mce, Ity_I1, guard);
          iffalse = assignNew('V', mce, ty,
                              IRExpr_Get(offset + mce->layout->total_sizeB, ty));
-         vatom   = assignNew('V', mce, ty, IRExpr_Mux0X(cond, iffalse, vatom));
+         vatom   = assignNew('V', mce, ty, IRExpr_ITE(cond, vatom, iffalse));
       }
       stmt( 'V', mce, IRStmt_Put( offset + mce->layout->total_sizeB, vatom ));
    }
@@ -4205,7 +4205,7 @@ IRAtom* expr2vbits_Load_guarded_General ( MCEnv* mce,
    /* If the guard evaluates to True, this will hold the loaded V bits
       at TY.  If the guard evaluates to False, this will be all
       ones, meaning "all undefined", in which case we will have to
-      replace it using a Mux0X below. */
+      replace it using an ITE below. */
    IRAtom* iftrue1
       = assignNew('V', mce, ty,
                   expr2vbits_Load(mce, end, ty, addr, bias, guard));
@@ -4215,8 +4215,8 @@ IRAtom* expr2vbits_Load_guarded_General ( MCEnv* mce,
       pre-widened part as being marked all-undefined, and in the best
       case (signed widening) mark the whole widened result as
       undefined.  Anyway, it doesn't matter really, since in this case
-      we will replace said value with the default value |valt| using a
-      Mux0X. */
+      we will replace said value with the default value |valt| using an
+      ITE. */
    IRAtom* iftrue2
       = vwiden == Iop_INVALID
            ? iftrue1
@@ -4225,12 +4225,12 @@ IRAtom* expr2vbits_Load_guarded_General ( MCEnv* mce,
       place. */
    IRAtom* iffalse 
       = valt;
-   /* Prepare the cond for the Mux0X.  Convert a NULL cond into
+   /* Prepare the cond for the ITE.  Convert a NULL cond into
       something that iropt knows how to fold out later. */
    IRAtom* cond
       = guard == NULL  ? mkU1(1)  : guard;
    /* And assemble the final result. */
-   return assignNew('V', mce, tyWide, IRExpr_Mux0X(cond, iffalse, iftrue2));
+   return assignNew('V', mce, tyWide, IRExpr_ITE(cond, iftrue2, iffalse));
 }
 
 
@@ -4253,28 +4253,28 @@ IRAtom* expr2vbits_Load_guarded_Simple ( MCEnv* mce,
 
 
 static
-IRAtom* expr2vbits_Mux0X ( MCEnv* mce, 
-                           IRAtom* cond, IRAtom* expr0, IRAtom* exprX )
+IRAtom* expr2vbits_ITE ( MCEnv* mce, 
+                         IRAtom* cond, IRAtom* iftrue, IRAtom* iffalse )
 {
-   IRAtom *vbitsC, *vbits0, *vbitsX;
+   IRAtom *vbitsC, *vbits0, *vbits1;
    IRType ty;
-   /* Given Mux0X(cond,expr0,exprX), generate
-         Mux0X(cond,expr0#,exprX#) `UifU` PCast(cond#)
+   /* Given ITE(cond,iftrue,iffalse), generate
+         ITE(cond,iftrue#,iffalse#) `UifU` PCast(cond#)
       That is, steer the V bits like the originals, but trash the 
       result if the steering value is undefined.  This gives 
       lazy propagation. */
    tl_assert(isOriginalAtom(mce, cond));
-   tl_assert(isOriginalAtom(mce, expr0));
-   tl_assert(isOriginalAtom(mce, exprX));
+   tl_assert(isOriginalAtom(mce, iftrue));
+   tl_assert(isOriginalAtom(mce, iffalse));
 
    vbitsC = expr2vbits(mce, cond);
-   vbits0 = expr2vbits(mce, expr0);
-   vbitsX = expr2vbits(mce, exprX);
+   vbits0 = expr2vbits(mce, iffalse);
+   vbits1 = expr2vbits(mce, iftrue);
    ty = typeOfIRExpr(mce->sb->tyenv, vbits0);
 
    return
       mkUifU(mce, ty, assignNew('V', mce, ty, 
-                                     IRExpr_Mux0X(cond, vbits0, vbitsX)),
+                                     IRExpr_ITE(cond, vbits1, vbits0)),
                       mkPCastTo(mce, ty, vbitsC) );
 }      
 
@@ -4335,9 +4335,9 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
                               e->Iex.CCall.retty,
                               e->Iex.CCall.cee );
 
-      case Iex_Mux0X:
-         return expr2vbits_Mux0X( mce, e->Iex.Mux0X.cond, e->Iex.Mux0X.expr0, 
-                                       e->Iex.Mux0X.exprX);
+      case Iex_ITE:
+         return expr2vbits_ITE( mce, e->Iex.ITE.cond, e->Iex.ITE.iftrue, 
+                                e->Iex.ITE.iffalse);
 
       default: 
          VG_(printf)("\n");
@@ -4747,7 +4747,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
             iftrue  = assignNew('V', mce, tySrc, shadow_GET(mce, gOff, tySrc));
             iffalse = assignNew('V', mce, tySrc, definedOfType(tySrc));
             src     = assignNew('V', mce, tySrc,
-                                IRExpr_Mux0X(cond, iffalse, iftrue));
+                                IRExpr_ITE(cond, iftrue, iffalse));
 
             here = mkPCastTo( mce, Ity_I32, src );
             curr = mkUifU32(mce, here, curr);
@@ -5557,10 +5557,10 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                       || isBogusAtom(e->Iex.Qop.details->arg2)
                       || isBogusAtom(e->Iex.Qop.details->arg3)
                       || isBogusAtom(e->Iex.Qop.details->arg4);
-            case Iex_Mux0X:
-               return isBogusAtom(e->Iex.Mux0X.cond)
-                      || isBogusAtom(e->Iex.Mux0X.expr0)
-                      || isBogusAtom(e->Iex.Mux0X.exprX);
+            case Iex_ITE:
+               return isBogusAtom(e->Iex.ITE.cond)
+                      || isBogusAtom(e->Iex.ITE.iftrue)
+                      || isBogusAtom(e->Iex.ITE.iffalse);
             case Iex_Load: 
                return isBogusAtom(e->Iex.Load.addr);
             case Iex_CCall:
@@ -5982,10 +5982,10 @@ static Bool sameIRValue ( IRExpr* e1, IRExpr* e2 )
                 && sameIRValue(e1->Iex.Unop.arg, e2->Iex.Unop.arg);
       case Iex_RdTmp:
          return e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp;
-      case Iex_Mux0X:
-         return sameIRValue( e1->Iex.Mux0X.cond, e2->Iex.Mux0X.cond )
-                && sameIRValue( e1->Iex.Mux0X.expr0, e2->Iex.Mux0X.expr0 )
-                && sameIRValue( e1->Iex.Mux0X.exprX, e2->Iex.Mux0X.exprX );
+      case Iex_ITE:
+         return sameIRValue( e1->Iex.ITE.cond, e2->Iex.ITE.cond )
+                && sameIRValue( e1->Iex.ITE.iftrue,  e2->Iex.ITE.iftrue )
+                && sameIRValue( e1->Iex.ITE.iffalse, e2->Iex.ITE.iffalse );
       case Iex_Qop:
       case Iex_Triop:
       case Iex_CCall:
@@ -6218,7 +6218,7 @@ IRAtom* expr2ori_Load_guarded_General ( MCEnv* mce,
    /* If the guard evaluates to True, this will hold the loaded
       origin.  If the guard evaluates to False, this will be zero,
       meaning "unknown origin", in which case we will have to replace
-      it using a Mux0X below. */
+      it using an ITE below. */
    IRAtom* iftrue
       = assignNew('B', mce, Ity_I32,
                   gen_guarded_load_b(mce, sizeofIRType(ty),
@@ -6227,12 +6227,12 @@ IRAtom* expr2ori_Load_guarded_General ( MCEnv* mce,
       place. */
    IRAtom* iffalse 
       = balt;
-   /* Prepare the cond for the Mux0X.  Convert a NULL cond into
+   /* Prepare the cond for the ITE.  Convert a NULL cond into
       something that iropt knows how to fold out later. */
    IRAtom* cond
       = guard == NULL  ? mkU1(1)  : guard;
    /* And assemble the final result. */
-   return assignNew('B', mce, Ity_I32, IRExpr_Mux0X(cond, iffalse, iftrue));
+   return assignNew('B', mce, Ity_I32, IRExpr_ITE(cond, iftrue, iffalse));
 }
 
 
@@ -6377,10 +6377,10 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
          tl_assert(mce->hWordTy == Ity_I32 || mce->hWordTy == Ity_I64);
          return gen_load_b( mce, dszB, e->Iex.Load.addr, 0 );
       }
-      case Iex_Mux0X: {
-         IRAtom* b1 = schemeE( mce, e->Iex.Mux0X.cond );
-         IRAtom* b2 = schemeE( mce, e->Iex.Mux0X.expr0 );
-         IRAtom* b3 = schemeE( mce, e->Iex.Mux0X.exprX );
+      case Iex_ITE: {
+         IRAtom* b1 = schemeE( mce, e->Iex.ITE.cond );
+         IRAtom* b2 = schemeE( mce, e->Iex.ITE.iffalse );
+         IRAtom* b3 = schemeE( mce, e->Iex.ITE.iftrue );
          return gen_maxU32( mce, b1, gen_maxU32( mce, b2, b3 ));
       }
       case Iex_Qop: {
@@ -6511,7 +6511,7 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
                                                  + 2*mce->layout->total_sizeB,
                                                Ity_I32));
                here = assignNew( 'B', mce, Ity_I32,
-                                 IRExpr_Mux0X(cond, iffalse, iftrue));
+                                 IRExpr_ITE(cond, iftrue, iffalse));
                curr = gen_maxU32( mce, curr, here );
             }
             gSz -= n;
@@ -6610,7 +6610,7 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
                                               2*mce->layout->total_sizeB,
                                               Ity_I32));
                curr = assignNew('V', mce, Ity_I32,
-                                IRExpr_Mux0X(cond, iffalse, curr));
+                                IRExpr_ITE(cond, curr, iffalse));
 
                stmt( 'B', mce, IRStmt_Put(b_offset
                                           + 2*mce->layout->total_sizeB,

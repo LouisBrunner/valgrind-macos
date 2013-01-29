@@ -318,11 +318,13 @@ static inline UInt getUInt(UChar * p)
    putIReg(rt, binop(op, getIReg(rs), mkU64(imm)));
 
 #define FP_CONDITIONAL_CODE \
-    t3 = newTemp(Ity_I32);  \
-    assign(t3, binop(Iop_And32, IRExpr_Mux0X( unop(Iop_1Uto8, \
-               binop(Iop_CmpEQ32, mkU32(cc), mkU32(0))), \
-               binop(Iop_Shr32, getFCSR(), mkU8(24+cc)),  \
-               binop(Iop_Shr32, getFCSR(), mkU8(23))), mkU32(0x1)));
+   t3 = newTemp(Ity_I32);   \
+   assign(t3, binop(Iop_And32, \
+                 IRExpr_ITE( unop(Iop_1Uto8, \
+                                  binop(Iop_CmpEQ32, mkU32(cc), mkU32(0))), \
+                             binop(Iop_Shr32, getFCSR(), mkU8(23)), \
+                             binop(Iop_Shr32, getFCSR(), mkU8(24+cc))), \
+                 mkU32(0x1)));
 
 /*------------------------------------------------------------*/
 /*---                           Field helpers              ---*/
@@ -1385,11 +1387,16 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                     mkU32(bc1_cc))));
-                  assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                             binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                             mkU8(24 + bc1_cc)), mkU32(0x1)), binop(Iop_And32,
-                             binop(Iop_Shr32, getFCSR(), mkU8(23)),
-                                   mkU32(0x1))));
+                  assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                        binop(Iop_And32,
+                                              binop(Iop_Shr32, getFCSR(),
+                                                    mkU8(23)),
+                                              mkU32(0x1)),
+                                        binop(Iop_And32,
+                                              binop(Iop_Shr32, getFCSR(),
+                                                    mkU8(24 + bc1_cc)),
+                                              mkU32(0x1))
+                                        ));
 
                   if (tf == 1 && nd == 0) {
                      //branch on true
@@ -1611,8 +1618,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpNE32, mkU32(0),
                                                     getIReg(rt))));
 
-                  assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                               mkexpr(t2), mkexpr(t1)));
+                  assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                        mkexpr(t1), mkexpr(t2)));
 
                   putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                     mkexpr(t4)));
@@ -1625,8 +1632,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpNE32, mkU32(0),
                                                     getIReg(rt))));
-                  putDReg(fd, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                                getDReg(fd), getDReg(fs)));
+                  putDReg(fd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                         getDReg(fs), getDReg(fd)));
                   break;
                default:
                   goto decode_failure;
@@ -1647,8 +1654,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   assign(t2, unop(Iop_F32toF64, getFReg(fd)));
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                     getIReg(rt))));
-                  assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                               mkexpr(t2), mkexpr(t1)));
+                  assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                        mkexpr(t1), mkexpr(t2)));
 
                   putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                     mkexpr(t4)));
@@ -1662,8 +1669,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                     getIReg(rt))));
-                  putDReg(fd, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                                getDReg(fd), getDReg(fs)));
+                  putDReg(fd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                         getDReg(fs), getDReg(fd)));
                   break;
                default:
                   goto decode_failure;
@@ -1684,16 +1691,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                      assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                        mkU32(mov_cc))));
-                     assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                                binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                                 mkU8(24 + mov_cc)), mkU32(0x1)),
-                                 binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                                 mkU8(23)), mkU32(0x1))));
+                     assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                           binop(Iop_And32,
+                                                 binop(Iop_Shr32, getFCSR(),
+                                                       mkU8(23)),
+                                                 mkU32(0x1)),
+                                           binop(Iop_And32,
+                                                 binop(Iop_Shr32, getFCSR(),
+                                                       mkU8(24 + mov_cc)),
+                                                 mkU32(0x1))
+                                           ));
 
                      assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
                                 mkexpr(t2))));
-                     assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                             getDReg(fs), getDReg(fd)));
+                     assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                           getDReg(fd), getDReg(fs)));
                      putDReg(fd, mkexpr(t4));
                      break;
                   case 0x10:  // S
@@ -1711,17 +1723,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                      assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                      mkU32(mov_cc))));
-                     assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                                             binop(Iop_And32, binop(Iop_Shr32,
-                                             getFCSR(), mkU8(24 + mov_cc)),
-                                             mkU32(0x1)), binop(Iop_And32,
-                                             binop(Iop_Shr32, getFCSR(),
-                                             mkU8(23)), mkU32(0x1))));
+                     assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                           binop(Iop_And32,
+                                                 binop(Iop_Shr32, getFCSR(),
+                                                       mkU8(23)),
+                                                 mkU32(0x1)),
+                                           binop(Iop_And32,
+                                                 binop(Iop_Shr32, getFCSR(),
+                                                       mkU8(24 + mov_cc)),
+                                                 mkU32(0x1))
+                                           ));
 
                      assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
                                                        mkexpr(t2))));
-                     assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                             mkexpr(t5), mkexpr(t6)));
+                     assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                           mkexpr(t6), mkexpr(t5)));
 
                      putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                        mkexpr(t4)));
@@ -1743,16 +1759,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                      assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32,
                                                  mkU32(0), mkU32(mov_cc))));
-                     assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                                binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                                mkU8(24 + mov_cc)), mkU32(0x1)),
-                                binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                                mkU8(23)), mkU32(0x1))));
+                     assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                           binop(Iop_And32,
+                                                 binop(Iop_Shr32, getFCSR(),
+                                                       mkU8(23)),
+                                                 mkU32(0x1)),
+                                           binop(Iop_And32,
+                                                 binop(Iop_Shr32, getFCSR(),
+                                                       mkU8(24 + mov_cc)),
+                                                 mkU32(0x1))
+                                           ));
 
                      assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
                                                        mkexpr(t2))));
-                     assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                             getDReg(fd), getDReg(fs)));
+                     assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                           getDReg(fs), getDReg(fd)));
                      putDReg(fd, mkexpr(t4));
                      break;
                   case 0x10:  // S
@@ -1770,16 +1791,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                         assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                           mkU32(mov_cc))));
-                        assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                                   binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                                   mkU8(24 + mov_cc)), mkU32(0x1)),
-                                   binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                                   mkU8(23)), mkU32(0x1))));
+                        assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                              binop(Iop_And32,
+                                                    binop(Iop_Shr32, getFCSR(),
+                                                          mkU8(23)),
+                                                    mkU32(0x1)),
+                                              binop(Iop_And32,
+                                                    binop(Iop_Shr32, getFCSR(),
+                                                          mkU8(24 + mov_cc)),
+                                                    mkU32(0x1))
+                                              ));
 
                         assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
                                                           mkexpr(t2))));
-                        assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                                                     mkexpr(t6), mkexpr(t5)));
+                        assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                              mkexpr(t5), mkexpr(t6)));
                         putFReg(fd, binop(Iop_F64toF32, get_IR_roundingmode(),
                                           mkexpr(t4)));
                      }
@@ -2644,8 +2670,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          assign(t5, unop(Iop_1Sto32, binop(Iop_CmpLT32U, mkexpr(t2),
                                            mkexpr(t4))));
 
-         assign(t6, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t5)), mkexpr(t1),
-                                 binop(Iop_Sub32, mkexpr(t1), mkU32(0x1))));
+         assign(t6, IRExpr_ITE(unop(Iop_32to8, mkexpr(t5)),
+                               binop(Iop_Sub32, mkexpr(t1), mkU32(0x1)),
+                               mkexpr(t1)));
 
          putHI(binop(Iop_Sub32, mkexpr(t6), unop(Iop_64HIto32, mkexpr(t3))));
          putLO(binop(Iop_Sub32, mkexpr(t2), mkexpr(t4)));
@@ -2671,8 +2698,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          assign(t5, unop(Iop_1Sto32, binop(Iop_CmpLT32U, mkexpr(t2),
                                            mkexpr(t4))));
 
-         assign(t6, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t5)),
-                    mkexpr(t1), binop(Iop_Sub32, mkexpr(t1), mkU32(0x1))));
+         assign(t6, IRExpr_ITE(unop(Iop_32to8, mkexpr(t5)),
+                               binop(Iop_Sub32, mkexpr(t1), mkU32(0x1)),
+                               mkexpr(t1)));
 
          putHI(binop(Iop_Sub32, mkexpr(t6), unop(Iop_64HIto32, mkexpr(t3))));
          putLO(binop(Iop_Sub32, mkexpr(t2), mkexpr(t4)));
@@ -2684,8 +2712,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          t1 = newTemp(Ity_I32);
          assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, getIReg(rs),
                                            mkU32(0))));
-         putIReg(rd, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                     unop(Iop_Clz32, getIReg(rs)), mkU32(0x00000020)));
+         putIReg(rd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                mkU32(0x00000020),
+                                unop(Iop_Clz32, getIReg(rs))));
          break;
       }
 
@@ -2694,9 +2723,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          t1 = newTemp(Ity_I32);
          assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, getIReg(rs),
                                            mkU32(0xffffffff))));
-         putIReg(rd, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                     unop(Iop_Clz32, unop(Iop_Not32, getIReg(rs))),
-                     mkU32(0x00000020)));
+         putIReg(rd, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                mkU32(0x00000020),
+                                unop(Iop_Clz32, unop(Iop_Not32, getIReg(rs)))));
          break;
       }
 
@@ -2853,16 +2882,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                  mkU32(mov_cc))));
-               assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                          binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                          mkU8(24 + mov_cc)), mkU32(0x1)), binop(Iop_And32,
-                          binop(Iop_Shr32, getFCSR(), mkU8(23)),
-                          mkU32(0x1))));
+               assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                     binop(Iop_And32,
+                                           binop(Iop_Shr32, getFCSR(),
+                                                 mkU8(23)),
+                                           mkU32(0x1)),
+                                     binop(Iop_And32,
+                                           binop(Iop_Shr32, getFCSR(),
+                                                 mkU8(24 + mov_cc)),
+                                           mkU32(0x1))
+                                     ));
 
                assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                  mkexpr(t2))));
-               assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                          getIReg(rd), getIReg(rs)));
+               assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                     getIReg(rs), getIReg(rd)));
                putIReg(rd, mkexpr(t4));
             }
          } else if (tf == 1) {   /* MOVT */
@@ -2875,16 +2909,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                assign(t1, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(0),
                                                  mkU32(mov_cc))));
-               assign(t2, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t1)),
-                          binop(Iop_And32, binop(Iop_Shr32, getFCSR(),
-                          mkU8(24 + mov_cc)), mkU32(0x1)), binop(Iop_And32,
-                          binop(Iop_Shr32, getFCSR(), mkU8(23)),
-                          mkU32(0x1))));
+               assign(t2, IRExpr_ITE(unop(Iop_32to8, mkexpr(t1)),
+                                     binop(Iop_And32,
+                                           binop(Iop_Shr32, getFCSR(),
+                                                 mkU8(23)),
+                                           mkU32(0x1)),
+                                     binop(Iop_And32,
+                                           binop(Iop_Shr32, getFCSR(),
+                                                 mkU8(24 + mov_cc)),
+                                           mkU32(0x1))
+                                     ));
 
                assign(t3, unop(Iop_1Sto32, binop(Iop_CmpEQ32, mkU32(1),
                                                  mkexpr(t2))));
-               assign(t4, IRExpr_Mux0X(unop(Iop_32to8, mkexpr(t3)),
-                          getIReg(rd), getIReg(rs)));
+               assign(t4, IRExpr_ITE(unop(Iop_32to8, mkexpr(t3)),
+                                     getIReg(rs), getIReg(rd)));
                putIReg(rd, mkexpr(t4));
             }
          }

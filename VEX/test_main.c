@@ -2110,27 +2110,27 @@ IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
 
 
 static
-IRAtom* expr2vbits_Mux0X ( MCEnv* mce, 
-                           IRAtom* cond, IRAtom* expr0, IRAtom* exprX )
+IRAtom* expr2vbits_ITE ( MCEnv* mce, 
+                         IRAtom* cond, IRAtom* iftrue, IRAtom* iffalse )
 {
-   IRAtom *vbitsC, *vbits0, *vbitsX;
+   IRAtom *vbitsC, *vbits0, *vbits1;
    IRType ty;
-   /* Given Mux0X(cond,expr0,exprX), generate
-         Mux0X(cond,expr0#,exprX#) `UifU` PCast(cond#)
+   /* Given ITE(cond,iftrue,iffalse), generate
+         ITE(cond,iftrue#,iffalse#) `UifU` PCast(cond#)
       That is, steer the V bits like the originals, but trash the 
       result if the steering value is undefined.  This gives 
       lazy propagation. */
    tl_assert(isOriginalAtom(mce, cond));
-   tl_assert(isOriginalAtom(mce, expr0));
-   tl_assert(isOriginalAtom(mce, exprX));
+   tl_assert(isOriginalAtom(mce, iftrue));
+   tl_assert(isOriginalAtom(mce, iffalse));
 
    vbitsC = expr2vbits(mce, cond);
-   vbits0 = expr2vbits(mce, expr0);
-   vbitsX = expr2vbits(mce, exprX);
+   vbits0 = expr2vbits(mce, iffalse);
+   vbits1 = expr2vbits(mce, iftrue);
    ty = typeOfIRExpr(mce->bb->tyenv, vbits0);
 
    return
-      mkUifU(mce, ty, assignNew(mce, ty, IRExpr_Mux0X(cond, vbits0, vbitsX)),
+      mkUifU(mce, ty, assignNew(mce, ty, IRExpr_ITE(cond, vbits1, vbits0)),
                       mkPCastTo(mce, ty, vbitsC) );
 }      
 
@@ -2173,9 +2173,9 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
                               e->Iex.CCall.retty,
                               e->Iex.CCall.cee );
 
-      case Iex_Mux0X:
-         return expr2vbits_Mux0X( mce, e->Iex.Mux0X.cond, e->Iex.Mux0X.expr0, 
-                                       e->Iex.Mux0X.exprX);
+      case Iex_ITE:
+         return expr2vbits_ITE( mce, e->Iex.ITE.cond, e->Iex.ITE.iftrue, 
+                                e->Iex.ITE.iffalse);
 
       default: 
          VG_(printf)("\n");
@@ -2562,10 +2562,10 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
             case Iex_Binop: 
                return isBogusAtom(e->Iex.Binop.arg1)
                       || isBogusAtom(e->Iex.Binop.arg2);
-            case Iex_Mux0X:
-               return isBogusAtom(e->Iex.Mux0X.cond)
-                      || isBogusAtom(e->Iex.Mux0X.expr0)
-                      || isBogusAtom(e->Iex.Mux0X.exprX);
+            case Iex_ITE:
+               return isBogusAtom(e->Iex.ITE.cond)
+                      || isBogusAtom(e->Iex.ITE.iftrue)
+                      || isBogusAtom(e->Iex.ITE.iffalse);
             case Iex_Load: 
                return isBogusAtom(e->Iex.Load.addr);
             case Iex_CCall:

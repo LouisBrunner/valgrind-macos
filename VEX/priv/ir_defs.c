@@ -1132,13 +1132,13 @@ void ppIRExpr ( IRExpr* e )
       vex_printf("):");
       ppIRType(e->Iex.CCall.retty);
       break;
-    case Iex_Mux0X:
-      vex_printf("Mux0X(");
-      ppIRExpr(e->Iex.Mux0X.cond);
+    case Iex_ITE:
+      vex_printf("ITE(");
+      ppIRExpr(e->Iex.ITE.cond);
       vex_printf(",");
-      ppIRExpr(e->Iex.Mux0X.expr0);
+      ppIRExpr(e->Iex.ITE.iftrue);
       vex_printf(",");
-      ppIRExpr(e->Iex.Mux0X.exprX);
+      ppIRExpr(e->Iex.ITE.iffalse);
       vex_printf(")");
       break;
     default:
@@ -1644,12 +1644,12 @@ IRExpr* IRExpr_CCall ( IRCallee* cee, IRType retty, IRExpr** args ) {
    e->Iex.CCall.args  = args;
    return e;
 }
-IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX ) {
+IRExpr* IRExpr_ITE ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse ) {
    IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
-   e->tag             = Iex_Mux0X;
-   e->Iex.Mux0X.cond  = cond;
-   e->Iex.Mux0X.expr0 = expr0;
-   e->Iex.Mux0X.exprX = exprX;
+   e->tag             = Iex_ITE;
+   e->Iex.ITE.cond    = cond;
+   e->Iex.ITE.iftrue  = iftrue;
+   e->Iex.ITE.iffalse = iffalse;
    return e;
 }
 
@@ -2074,10 +2074,10 @@ IRExpr* deepCopyIRExpr ( IRExpr* e )
                              e->Iex.CCall.retty,
                              deepCopyIRExprVec(e->Iex.CCall.args));
 
-      case Iex_Mux0X: 
-         return IRExpr_Mux0X(deepCopyIRExpr(e->Iex.Mux0X.cond),
-                             deepCopyIRExpr(e->Iex.Mux0X.expr0),
-                             deepCopyIRExpr(e->Iex.Mux0X.exprX));
+      case Iex_ITE: 
+         return IRExpr_ITE(deepCopyIRExpr(e->Iex.ITE.cond),
+                           deepCopyIRExpr(e->Iex.ITE.iftrue),
+                           deepCopyIRExpr(e->Iex.ITE.iffalse));
       default:
          vpanic("deepCopyIRExpr");
    }
@@ -3156,10 +3156,10 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return t_dst;
       case Iex_CCall:
          return e->Iex.CCall.retty;
-      case Iex_Mux0X:
-         e = e->Iex.Mux0X.expr0;
+      case Iex_ITE:
+         e = e->Iex.ITE.iffalse;
          goto start;
-         /* return typeOfIRExpr(tyenv, e->Iex.Mux0X.expr0); */
+         /* return typeOfIRExpr(tyenv, e->Iex.ITE.iffalse); */
       case Iex_Binder:
          vpanic("typeOfIRExpr: Binder is not a valid expression");
       default:
@@ -3250,10 +3250,10 @@ Bool isFlatIRStmt ( IRStmt* st )
                                 if (!isIRAtom(e->Iex.CCall.args[i])) 
                                    return False;
                              return True;
-            case Iex_Mux0X:  return toBool (
-                                    isIRAtom(e->Iex.Mux0X.cond) 
-                                    && isIRAtom(e->Iex.Mux0X.expr0) 
-                                    && isIRAtom(e->Iex.Mux0X.exprX));
+            case Iex_ITE:    return toBool (
+                                    isIRAtom(e->Iex.ITE.cond) 
+                                    && isIRAtom(e->Iex.ITE.iftrue) 
+                                    && isIRAtom(e->Iex.ITE.iffalse));
             default:         vpanic("isFlatIRStmt(e)");
          }
          /*notreached*/
@@ -3430,10 +3430,10 @@ void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
          for (i = 0; expr->Iex.CCall.args[i]; i++)
             useBeforeDef_Expr(bb,stmt,expr->Iex.CCall.args[i],def_counts);
          break;
-      case Iex_Mux0X:
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.cond,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.expr0,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.exprX,def_counts);
+      case Iex_ITE:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.cond,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.iftrue,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.iffalse,def_counts);
          break;
       default:
          vpanic("useBeforeDef_Expr");
@@ -3705,15 +3705,15 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          if (!saneIRConst(expr->Iex.Const.con))
             sanityCheckFail(bb,stmt,"Iex.Const.con: invalid const");
          break;
-      case Iex_Mux0X:
-         tcExpr(bb,stmt, expr->Iex.Mux0X.cond, gWordTy);
-         tcExpr(bb,stmt, expr->Iex.Mux0X.expr0, gWordTy);
-         tcExpr(bb,stmt, expr->Iex.Mux0X.exprX, gWordTy);
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.cond) != Ity_I1)
-            sanityCheckFail(bb,stmt,"Iex.Mux0X.cond: cond :: Ity_I1");
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.expr0)
-             != typeOfIRExpr(tyenv, expr->Iex.Mux0X.exprX))
-            sanityCheckFail(bb,stmt,"Iex.Mux0X: expr0/exprX mismatch");
+      case Iex_ITE:
+         tcExpr(bb,stmt, expr->Iex.ITE.cond, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.ITE.iftrue, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.ITE.iffalse, gWordTy);
+         if (typeOfIRExpr(tyenv, expr->Iex.ITE.cond) != Ity_I1)
+            sanityCheckFail(bb,stmt,"Iex.ITE.cond: cond :: Ity_I1");
+         if (typeOfIRExpr(tyenv, expr->Iex.ITE.iftrue)
+             != typeOfIRExpr(tyenv, expr->Iex.ITE.iffalse))
+            sanityCheckFail(bb,stmt,"Iex.ITE: iftrue/iffalse mismatch");
          break;
        default: 
          vpanic("tcExpr");

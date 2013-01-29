@@ -362,12 +362,12 @@ static IRExpr* flatten_Expr ( IRSB* bb, IRExpr* ex )
                          newargs)));
          return IRExpr_RdTmp(t1);
 
-      case Iex_Mux0X:
+      case Iex_ITE:
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRSB(bb, IRStmt_WrTmp(t1,
-            IRExpr_Mux0X(flatten_Expr(bb, ex->Iex.Mux0X.cond),
-                         flatten_Expr(bb, ex->Iex.Mux0X.expr0),
-                         flatten_Expr(bb, ex->Iex.Mux0X.exprX))));
+            IRExpr_ITE(flatten_Expr(bb, ex->Iex.ITE.cond),
+                       flatten_Expr(bb, ex->Iex.ITE.iftrue),
+                       flatten_Expr(bb, ex->Iex.ITE.iffalse))));
          return IRExpr_RdTmp(t1);
 
       case Iex_Const:
@@ -1103,13 +1103,13 @@ static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
                         && sameIRExprs_aux( env, tri1->arg3, tri2->arg3 ));
       }
 
-      case Iex_Mux0X:
-         return toBool(    sameIRExprs_aux( env, e1->Iex.Mux0X.cond,
-                                                 e2->Iex.Mux0X.cond )
-                        && sameIRExprs_aux( env, e1->Iex.Mux0X.expr0,
-                                                 e2->Iex.Mux0X.expr0 )
-                        && sameIRExprs_aux( env, e1->Iex.Mux0X.exprX,
-                                                 e2->Iex.Mux0X.exprX ));
+      case Iex_ITE:
+         return toBool(    sameIRExprs_aux( env, e1->Iex.ITE.cond,
+                                                 e2->Iex.ITE.cond )
+                        && sameIRExprs_aux( env, e1->Iex.ITE.iftrue,
+                                                 e2->Iex.ITE.iftrue )
+                        && sameIRExprs_aux( env, e1->Iex.ITE.iffalse,
+                                                 e2->Iex.ITE.iffalse ));
 
       default:
          /* Not very likely to be "same". */
@@ -2212,20 +2212,20 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
       }
       break;
 
-   case Iex_Mux0X:
-      /* Mux0X */
+   case Iex_ITE:
+      /* ITE */
       /* is the discriminant is a constant? */
-      if (e->Iex.Mux0X.cond->tag == Iex_Const) {
+      if (e->Iex.ITE.cond->tag == Iex_Const) {
          /* assured us by the IR type rules */
-         vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U1);
-         e2 = e->Iex.Mux0X.cond->Iex.Const.con->Ico.U1
-                 ? e->Iex.Mux0X.exprX : e->Iex.Mux0X.expr0;
+         vassert(e->Iex.ITE.cond->Iex.Const.con->tag == Ico_U1);
+         e2 = e->Iex.ITE.cond->Iex.Const.con->Ico.U1
+                 ? e->Iex.ITE.iftrue : e->Iex.ITE.iffalse;
       }
       else
       /* are the arms identical? (pretty weedy test) */
-      if (sameIRExprs(env, e->Iex.Mux0X.expr0,
-                           e->Iex.Mux0X.exprX)) {
-         e2 = e->Iex.Mux0X.expr0;
+      if (sameIRExprs(env, e->Iex.ITE.iftrue,
+                           e->Iex.ITE.iffalse)) {
+         e2 = e->Iex.ITE.iffalse;
       }
       break;
 
@@ -2381,14 +2381,14 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
                 );
       }
 
-      case Iex_Mux0X:
-         vassert(isIRAtom(ex->Iex.Mux0X.cond));
-         vassert(isIRAtom(ex->Iex.Mux0X.expr0));
-         vassert(isIRAtom(ex->Iex.Mux0X.exprX));
-         return IRExpr_Mux0X(
-                   subst_Expr(env, ex->Iex.Mux0X.cond),
-                   subst_Expr(env, ex->Iex.Mux0X.expr0),
-                   subst_Expr(env, ex->Iex.Mux0X.exprX)
+      case Iex_ITE:
+         vassert(isIRAtom(ex->Iex.ITE.cond));
+         vassert(isIRAtom(ex->Iex.ITE.iftrue));
+         vassert(isIRAtom(ex->Iex.ITE.iffalse));
+         return IRExpr_ITE(
+                   subst_Expr(env, ex->Iex.ITE.cond),
+                   subst_Expr(env, ex->Iex.ITE.iftrue),
+                   subst_Expr(env, ex->Iex.ITE.iffalse)
                 );
 
       default:
@@ -2796,10 +2796,10 @@ static void addUses_Expr ( Bool* set, IRExpr* e )
       case Iex_GetI:
          addUses_Expr(set, e->Iex.GetI.ix);
          return;
-      case Iex_Mux0X:
-         addUses_Expr(set, e->Iex.Mux0X.cond);
-         addUses_Expr(set, e->Iex.Mux0X.expr0);
-         addUses_Expr(set, e->Iex.Mux0X.exprX);
+      case Iex_ITE:
+         addUses_Expr(set, e->Iex.ITE.cond);
+         addUses_Expr(set, e->Iex.ITE.iftrue);
+         addUses_Expr(set, e->Iex.ITE.iffalse);
          return;
       case Iex_CCall:
          for (i = 0; e->Iex.CCall.args[i]; i++)
@@ -3287,25 +3287,25 @@ typedef
          struct {
             ULong f64i;
          } Cf64i;
-         /* Mux0X(tmp,tmp,tmp) */
+         /* ITE(tmp,tmp,tmp) */
          struct {
             IRTemp co;
             IRTemp e0;
             IRTemp eX;
          } Mttt;
-         /* Mux0X(tmp,const,tmp) */
+         /* ITE(tmp,tmp,const) */
          struct {
             IRTemp  co;
             IRConst con0;
             IRTemp  eX;
          } Mtct;
-         /* Mux0X(tmp,tmp,const) */
+         /* ITE(tmp,const,tmp) */
          struct {
             IRTemp  co;
             IRTemp  e0;
             IRConst conX;
          } Mttc;
-         /* Mux0X(tmp,const,const) */
+         /* ITE(tmp,const,const) */
          struct {
             IRTemp  co;
             IRConst con0;
@@ -3420,29 +3420,30 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
       case Cf64i:
          return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
       case Mttt:
-         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mttt.co), 
-                             IRExpr_RdTmp(ae->u.Mttt.e0), 
-                             IRExpr_RdTmp(ae->u.Mttt.eX));
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mttt.co), 
+                           IRExpr_RdTmp(ae->u.Mttt.eX), 
+                           IRExpr_RdTmp(ae->u.Mttt.e0));
       case Mtct:
          con0 = LibVEX_Alloc(sizeof(IRConst));
          *con0 = ae->u.Mtct.con0;
-         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mtct.co), 
-                             IRExpr_Const(con0),
-                             IRExpr_RdTmp(ae->u.Mtct.eX));
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mtct.co), 
+                           IRExpr_RdTmp(ae->u.Mtct.eX),
+                           IRExpr_Const(con0));
       case Mttc:
          conX = LibVEX_Alloc(sizeof(IRConst));
          *conX = ae->u.Mttc.conX;
-         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mttc.co), 
-                             IRExpr_RdTmp(ae->u.Mttc.e0), 
-                             IRExpr_Const(conX));
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mttc.co), 
+                           IRExpr_Const(conX),
+                           IRExpr_RdTmp(ae->u.Mttc.e0));
+
       case Mtcc:
          con0 = LibVEX_Alloc(sizeof(IRConst));
          conX = LibVEX_Alloc(sizeof(IRConst));
          *con0 = ae->u.Mtcc.con0;
          *conX = ae->u.Mtcc.conX;
-         return IRExpr_Mux0X(IRExpr_RdTmp(ae->u.Mtcc.co), 
-                             IRExpr_Const(con0),
-                             IRExpr_Const(conX));
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mtcc.co), 
+                           IRExpr_Const(conX),
+                           IRExpr_Const(con0));
       case GetIt:
          return IRExpr_GetI(ae->u.GetIt.descr,
                             IRExpr_RdTmp(ae->u.GetIt.ix),
@@ -3588,40 +3589,40 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
          }
          break;
 
-      case Iex_Mux0X:
-         if (e->Iex.Mux0X.cond->tag == Iex_RdTmp) {
-            if (e->Iex.Mux0X.expr0->tag == Iex_RdTmp) {
-               if (e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
+      case Iex_ITE:
+         if (e->Iex.ITE.cond->tag == Iex_RdTmp) {
+            if (e->Iex.ITE.iffalse->tag == Iex_RdTmp) {
+               if (e->Iex.ITE.iftrue->tag == Iex_RdTmp) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
                   ae->tag       = Mttt;
-                  ae->u.Mttt.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-                  ae->u.Mttt.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
-                  ae->u.Mttt.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
+                  ae->u.Mttt.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Mttt.e0 = e->Iex.ITE.iffalse->Iex.RdTmp.tmp;
+                  ae->u.Mttt.eX = e->Iex.ITE.iftrue->Iex.RdTmp.tmp;
                   return ae;
                }
-               if (e->Iex.Mux0X.exprX->tag == Iex_Const) {
+               if (e->Iex.ITE.iftrue->tag == Iex_Const) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
                   ae->tag       = Mttc;
-                  ae->u.Mttc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-                  ae->u.Mttc.e0 = e->Iex.Mux0X.expr0->Iex.RdTmp.tmp;
-                  ae->u.Mttc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
+                  ae->u.Mttc.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Mttc.e0 = e->Iex.ITE.iffalse->Iex.RdTmp.tmp;
+                  ae->u.Mttc.conX = *(e->Iex.ITE.iftrue->Iex.Const.con);
                   return ae;
                }
-            } else if (e->Iex.Mux0X.expr0->tag == Iex_Const) {
-               if (e->Iex.Mux0X.exprX->tag == Iex_RdTmp) {
+            } else if (e->Iex.ITE.iffalse->tag == Iex_Const) {
+               if (e->Iex.ITE.iftrue->tag == Iex_RdTmp) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
                   ae->tag       = Mtct;
-                  ae->u.Mtct.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-                  ae->u.Mtct.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
-                  ae->u.Mtct.eX = e->Iex.Mux0X.exprX->Iex.RdTmp.tmp;
+                  ae->u.Mtct.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Mtct.con0 = *(e->Iex.ITE.iffalse->Iex.Const.con);
+                  ae->u.Mtct.eX = e->Iex.ITE.iftrue->Iex.RdTmp.tmp;
                   return ae;
                }
-               if (e->Iex.Mux0X.exprX->tag == Iex_Const) {
+               if (e->Iex.ITE.iftrue->tag == Iex_Const) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
                   ae->tag       = Mtcc;
-                  ae->u.Mtcc.co = e->Iex.Mux0X.cond->Iex.RdTmp.tmp;
-                  ae->u.Mtcc.con0 = *(e->Iex.Mux0X.expr0->Iex.Const.con);
-                  ae->u.Mtcc.conX = *(e->Iex.Mux0X.exprX->Iex.Const.con);
+                  ae->u.Mtcc.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Mtcc.con0 = *(e->Iex.ITE.iffalse->Iex.Const.con);
+                  ae->u.Mtcc.conX = *(e->Iex.ITE.iftrue->Iex.Const.con);
                   return ae;
                }
             }
@@ -4374,10 +4375,10 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
          for (i = 0; e->Iex.CCall.args[i]; i++)
             deltaIRExpr(e->Iex.CCall.args[i], delta);
          break;
-      case Iex_Mux0X:
-         deltaIRExpr(e->Iex.Mux0X.cond, delta);
-         deltaIRExpr(e->Iex.Mux0X.expr0, delta);
-         deltaIRExpr(e->Iex.Mux0X.exprX, delta);
+      case Iex_ITE:
+         deltaIRExpr(e->Iex.ITE.cond, delta);
+         deltaIRExpr(e->Iex.ITE.iftrue, delta);
+         deltaIRExpr(e->Iex.ITE.iffalse, delta);
          break;
       default: 
          vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
@@ -4754,10 +4755,10 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          for (i = 0; e->Iex.CCall.args[i]; i++)
             setHints_Expr(doesLoad, doesGet, e->Iex.CCall.args[i]);
          return;
-      case Iex_Mux0X:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.cond);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.expr0);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.exprX);
+      case Iex_ITE:
+         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.cond);
+         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.iftrue);
+         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.iffalse);
          return;
       case Iex_Qop:
          setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg1);
@@ -4826,10 +4827,10 @@ static void aoccCount_Expr ( UShort* uses, IRExpr* e )
          uses[e->Iex.RdTmp.tmp]++;
          return;
 
-      case Iex_Mux0X:
-         aoccCount_Expr(uses, e->Iex.Mux0X.cond);
-         aoccCount_Expr(uses, e->Iex.Mux0X.expr0);
-         aoccCount_Expr(uses, e->Iex.Mux0X.exprX);
+      case Iex_ITE:
+         aoccCount_Expr(uses, e->Iex.ITE.cond);
+         aoccCount_Expr(uses, e->Iex.ITE.iftrue);
+         aoccCount_Expr(uses, e->Iex.ITE.iffalse);
          return;
 
       case Iex_Qop: 
@@ -5161,11 +5162,11 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
       case Iex_RdTmp:
          e2 = atbSubst_Temp(env, e->Iex.RdTmp.tmp);
          return e2 ? e2 : e;
-      case Iex_Mux0X:
-         return IRExpr_Mux0X(
-                   atbSubst_Expr(env, e->Iex.Mux0X.cond),
-                   atbSubst_Expr(env, e->Iex.Mux0X.expr0),
-                   atbSubst_Expr(env, e->Iex.Mux0X.exprX)
+      case Iex_ITE:
+         return IRExpr_ITE(
+                   atbSubst_Expr(env, e->Iex.ITE.cond),
+                   atbSubst_Expr(env, e->Iex.ITE.iftrue),
+                   atbSubst_Expr(env, e->Iex.ITE.iffalse)
                 );
       case Iex_Qop:
          return IRExpr_Qop(

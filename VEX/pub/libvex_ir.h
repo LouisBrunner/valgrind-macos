@@ -1615,7 +1615,7 @@ typedef
       Iex_Unop,
       Iex_Load,
       Iex_Const,
-      Iex_Mux0X,
+      Iex_ITE,
       Iex_CCall
    }
    IRExprTag;
@@ -1799,18 +1799,18 @@ struct _IRExpr {
          IRExpr**  args;   /* Vector of argument expressions. */
       }  CCall;
 
-      /* A ternary if-then-else operator.  It returns expr0 if cond is
-         zero, exprX otherwise.  Note that it is STRICT, ie. both
-         expr0 and exprX are evaluated in all cases.
+      /* A ternary if-then-else operator.  It returns iftrue if cond is
+         nonzero, iffalse otherwise.  Note that it is STRICT, ie. both
+         iftrue and iffalse are evaluated in all cases.
 
-         ppIRExpr output: Mux0X(<cond>,<expr0>,<exprX>),
-                         eg. Mux0X(t6,t7,t8)
+         ppIRExpr output: ITE(<cond>,<iftrue>,<iffalse>),
+                         eg. ITE(t6,t7,t8)
       */
       struct {
          IRExpr* cond;     /* Condition */
-         IRExpr* expr0;    /* True expression */
-         IRExpr* exprX;    /* False expression */
-      } Mux0X;
+         IRExpr* iftrue;   /* True expression */
+         IRExpr* iffalse;  /* False expression */
+      } ITE;
    } Iex;
 };
 
@@ -1845,7 +1845,7 @@ extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
-extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
+extern IRExpr* IRExpr_ITE    ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse );
 
 /* Deep-copy an IRExpr. */
 extern IRExpr* deepCopyIRExpr ( IRExpr* );

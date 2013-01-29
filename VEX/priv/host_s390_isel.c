@@ -1740,23 +1740,23 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
    }
 
       /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: {
+   case Iex_ITE: {
       IRExpr *cond_expr;
-      HReg dst, rX;
+      HReg dst, r1;
       s390_opnd_RMI r0;
 
-      cond_expr = expr->Iex.Mux0X.cond;
+      cond_expr = expr->Iex.ITE.cond;
 
       vassert(typeOfIRExpr(env->type_env, cond_expr) == Ity_I1);
 
       dst  = newVRegI(env);
-      r0   = s390_isel_int_expr_RMI(env, expr->Iex.Mux0X.expr0);
-      rX   = s390_isel_int_expr(env, expr->Iex.Mux0X.exprX);
-      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.Mux0X.exprX));
+      r0   = s390_isel_int_expr_RMI(env, expr->Iex.ITE.iffalse);
+      r1   = s390_isel_int_expr(env, expr->Iex.ITE.iftrue);
+      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.ITE.iftrue));
 
       s390_cc_t cc = s390_isel_cc(env, cond_expr);
 
-      addInstr(env, s390_insn_move(size, dst, rX));
+      addInstr(env, s390_insn_move(size, dst, r1));
       addInstr(env, s390_insn_cond_move(size, s390_cc_invert(cc), dst, r0));
       return dst;
    }

@@ -1761,15 +1761,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: { // VFD
-      /* Mux0X(ccexpr, expr0, exprX) */
+   case Iex_ITE: { // VFD
+      /* ITE(ccexpr, iftrue, iffalse) */
       if (ty == Ity_I32) {
          ARMCondCode cc;
-         HReg     rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
-         ARMRI84* r0  = iselIntExpr_RI84(NULL, False, env, e->Iex.Mux0X.expr0);
+         HReg     r1  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
+         ARMRI84* r0  = iselIntExpr_RI84(NULL, False, env, e->Iex.ITE.iffalse);
          HReg     dst = newVRegI(env);
-         addInstr(env, mk_iMOVds_RR(dst, rX));
-         cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, mk_iMOVds_RR(dst, r1));
+         cc = iselCondCode(env, e->Iex.ITE.cond);
          addInstr(env, ARMInstr_CMov(cc ^ 1, dst, r0));
          return dst;
       }
@@ -2016,19 +2016,19 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    } /* if (e->tag == Iex_Unop) */
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) { // VFD
+   if (e->tag == Iex_ITE) { // VFD
       IRType tyC;
-      HReg   rXhi, rXlo, r0hi, r0lo, dstHi, dstLo;
+      HReg   r1hi, r1lo, r0hi, r0lo, dstHi, dstLo;
       ARMCondCode cc;
-      tyC = typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond);
+      tyC = typeOfIRExpr(env->type_env,e->Iex.ITE.cond);
       vassert(tyC == Ity_I1);
-      iselInt64Expr(&rXhi, &rXlo, env, e->Iex.Mux0X.exprX);
-      iselInt64Expr(&r0hi, &r0lo, env, e->Iex.Mux0X.expr0);
+      iselInt64Expr(&r1hi, &r1lo, env, e->Iex.ITE.iftrue);
+      iselInt64Expr(&r0hi, &r0lo, env, e->Iex.ITE.iffalse);
       dstHi = newVRegI(env);
       dstLo = newVRegI(env);
-      addInstr(env, mk_iMOVds_RR(dstHi, rXhi));
-      addInstr(env, mk_iMOVds_RR(dstLo, rXlo));
-      cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, mk_iMOVds_RR(dstHi, r1hi));
+      addInstr(env, mk_iMOVds_RR(dstLo, r1lo));
+      cc = iselCondCode(env, e->Iex.ITE.cond);
       addInstr(env, ARMInstr_CMov(cc ^ 1, dstHi, ARMRI84_R(r0hi)));
       addInstr(env, ARMInstr_CMov(cc ^ 1, dstLo, ARMRI84_R(r0lo)));
       *rHi = dstHi;
@@ -3660,7 +3660,7 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) { // VFD
+   if (e->tag == Iex_ITE) { // VFD
       HReg rLo, rHi;
       HReg res = newVRegD(env);
       iselInt64Expr(&rHi, &rLo, env, e);
@@ -5286,13 +5286,13 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Mux0X) { // VFD
+   if (e->tag == Iex_ITE) { // VFD
       ARMCondCode cc;
-      HReg rX  = iselNeonExpr(env, e->Iex.Mux0X.exprX);
-      HReg r0  = iselNeonExpr(env, e->Iex.Mux0X.expr0);
+      HReg r1  = iselNeonExpr(env, e->Iex.ITE.iftrue);
+      HReg r0  = iselNeonExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegV(env);
-      addInstr(env, ARMInstr_NUnary(ARMneon_COPY, dst, rX, 4, True));
-      cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, ARMInstr_NUnary(ARMneon_COPY, dst, r1, 4, True));
+      cc = iselCondCode(env, e->Iex.ITE.cond);
       addInstr(env, ARMInstr_NCMovQ(cc ^ 1, dst, r0));
       return dst;
    }
@@ -5453,14 +5453,14 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Mux0X) { // VFD
+   if (e->tag == Iex_ITE) { // VFD
       if (ty == Ity_F64
-          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
-         HReg rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
-         HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
+          && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
+         HReg r1  = iselDblExpr(env, e->Iex.ITE.iftrue);
+         HReg r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
          HReg dst = newVRegD(env);
-         addInstr(env, ARMInstr_VUnaryD(ARMvfpu_COPY, dst, rX));
-         ARMCondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, ARMInstr_VUnaryD(ARMvfpu_COPY, dst, r1));
+         ARMCondCode cc = iselCondCode(env, e->Iex.ITE.cond);
          addInstr(env, ARMInstr_VCMovD(cc ^ 1, dst, r0));
          return dst;
       }
@@ -5595,15 +5595,15 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Mux0X) { // VFD
+   if (e->tag == Iex_ITE) { // VFD
       if (ty == Ity_F32
-          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
+          && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
          ARMCondCode cc;
-         HReg rX  = iselFltExpr(env, e->Iex.Mux0X.exprX);
-         HReg r0  = iselFltExpr(env, e->Iex.Mux0X.expr0);
+         HReg r1  = iselFltExpr(env, e->Iex.ITE.iftrue);
+         HReg r0  = iselFltExpr(env, e->Iex.ITE.iffalse);
          HReg dst = newVRegF(env);
-         addInstr(env, ARMInstr_VUnaryS(ARMvfpu_COPY, dst, rX));
-         cc = iselCondCode(env, e->Iex.Mux0X.cond);
+         addInstr(env, ARMInstr_VUnaryS(ARMvfpu_COPY, dst, r1));
+         cc = iselCondCode(env, e->Iex.ITE.cond);
          addInstr(env, ARMInstr_VCMovS(cc ^ 1, dst, r0));
          return dst;
       }

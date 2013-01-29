@@ -661,12 +661,12 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
             --> oldC ? (argR <=u argL) : (argR <u argL)
          */
          return
-            IRExpr_Mux0X(
+            IRExpr_ITE(
                binop(Iop_CmpNE32, cc_ndep, mkU32(0)),
-               /* case oldC == 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
                /* case oldC != 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1))
+               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1)),
+               /* case oldC == 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1))
             );
       }
 
@@ -797,12 +797,12 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
             --> oldC ? (argR <=u argL) : (argR <u argL)
          */
          return
-            IRExpr_Mux0X(
+            IRExpr_ITE(
                binop(Iop_CmpNE32, cc_ndep, mkU32(0)),
-               /* case oldC == 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
                /* case oldC != 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1))
+               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1)),
+               /* case oldC == 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1))
             );
       }
 

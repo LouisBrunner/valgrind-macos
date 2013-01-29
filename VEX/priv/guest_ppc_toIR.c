@@ -797,15 +797,15 @@ static IRExpr* mkQNarrow64Sto32 ( IRExpr* t64 )
    assign( hi32, unop(Iop_64HIto32, t64));
    assign( lo32, unop(Iop_64to32,   t64));
 
-   return IRExpr_Mux0X(
+   return IRExpr_ITE(
              /* if (hi32 == (lo32 >>s 31)) */
              binop(Iop_CmpEQ32, mkexpr(hi32),
                    binop( Iop_Sar32, mkexpr(lo32), mkU8(31))),
+             /* then: within signed-32 range: lo half good enough */
+             mkexpr(lo32),
              /* else: sign dep saturate: 1->0x80000000, 0->0x7FFFFFFF */
              binop(Iop_Add32, mkU32(0x7FFFFFFF),
-                   binop(Iop_Shr32, mkexpr(hi32), mkU8(31))),
-             /* then: within signed-32 range: lo half good enough */
-             mkexpr(lo32) );
+                   binop(Iop_Shr32, mkexpr(hi32), mkU8(31))));
 }
 
 /* Unsigned saturating narrow 64S to 32 */
@@ -819,13 +819,13 @@ static IRExpr* mkQNarrow64Uto32 ( IRExpr* t64 )
    assign( hi32, unop(Iop_64HIto32, t64));
    assign( lo32, unop(Iop_64to32,   t64));
 
-   return IRExpr_Mux0X(
+   return IRExpr_ITE(
             /* if (top 32 bits of t64 are 0) */
             binop(Iop_CmpEQ32, mkexpr(hi32), mkU32(0)),
-            /* else: positive saturate -> 0xFFFFFFFF */
-            mkU32(0xFFFFFFFF),
             /* then: within unsigned-32 range: lo half good enough */
-            mkexpr(lo32) );
+            mkexpr(lo32),
+            /* else: positive saturate -> 0xFFFFFFFF */
+            mkU32(0xFFFFFFFF));
 }
 
 /* Signed saturate narrow 64->32, combining to V128 */
@@ -1446,13 +1446,13 @@ static IRExpr* /* :: Ity_I32/64 */ ROTL ( IRExpr* src,
                 binop(Iop_Shl32, src, mask),
                 binop(Iop_Shr32, src, binop(Iop_Sub8, mkU8(32), mask)));
    }
-   /* Note: the MuxOX is not merely an optimisation; it's needed
+   /* Note: the ITE not merely an optimisation; it's needed
       because otherwise the Shr is a shift by the word size when
       mask denotes zero.  For rotates by immediates, a lot of
       this junk gets folded out. */
-   return IRExpr_Mux0X( binop(Iop_CmpNE8, mask, mkU8(0)),
-                        /*     zero rotate */ src,
-                        /* non-zero rotate */ rot );
+   return IRExpr_ITE( binop(Iop_CmpNE8, mask, mkU8(0)),
+                      /* non-zero rotate */ rot,
+                      /*     zero rotate */ src);
 }
 
 /* Standard effective address calc: (rA + rB) */
@@ -2229,13 +2229,13 @@ static void set_XER_CA_32 ( UInt op, IRExpr* res,
                      )
               );
       xer_ca 
-         = IRExpr_Mux0X(
+         = IRExpr_ITE(
               /* shift amt > 31 ? */
               binop(Iop_CmpLT32U, mkU32(31), argR),
-              /* no -- be like srawi */
-              unop(Iop_1Uto32, binop(Iop_CmpNE32, xer_ca, mkU32(0))),
               /* yes -- get sign bit of argL */
-              binop(Iop_Shr32, argL, mkU8(31))
+              binop(Iop_Shr32, argL, mkU8(31)),
+              /* no -- be like srawi */
+              unop(Iop_1Uto32, binop(Iop_CmpNE32, xer_ca, mkU32(0)))
            );
       break;
 
@@ -2349,14 +2349,14 @@ static void set_XER_CA_64 ( UInt op, IRExpr* res,
               )
            );
       xer_ca 
-         = IRExpr_Mux0X(
+         = IRExpr_ITE(
               /* shift amt > 31 ? */
               binop(Iop_CmpLT64U, mkU64(31), argR),
-              /* no -- be like srawi */
-              unop(Iop_1Uto32, binop(Iop_CmpNE64, xer_ca, mkU64(0))),
               /* yes -- get sign bit of argL */
-              unop(Iop_64to32, binop(Iop_Shr64, argL, mkU8(63)))
-           );
+              unop(Iop_64to32, binop(Iop_Shr64, argL, mkU8(63))),
+              /* no -- be like srawi */
+              unop(Iop_1Uto32, binop(Iop_CmpNE64, xer_ca, mkU64(0)))
+          );
       break;
       
    case /* 11 */ PPCG_FLAG_OP_SRAWI:
@@ -2403,13 +2403,13 @@ static void set_XER_CA_64 ( UInt op, IRExpr* res,
               )
            );
       xer_ca 
-         = IRExpr_Mux0X(
+         = IRExpr_ITE(
               /* shift amt > 63 ? */
               binop(Iop_CmpLT64U, mkU64(63), argR),
-              /* no -- be like sradi */
-              unop(Iop_1Uto32, binop(Iop_CmpNE64, xer_ca, mkU64(0))),
               /* yes -- get sign bit of argL */
-              unop(Iop_64to32, binop(Iop_Shr64, argL, mkU8(63)))
+              unop(Iop_64to32, binop(Iop_Shr64, argL, mkU8(63))),
+              /* no -- be like sradi */
+              unop(Iop_1Uto32, binop(Iop_CmpNE64, xer_ca, mkU64(0)))
            );
       break;
 
@@ -3855,9 +3855,9 @@ static Bool dis_int_logic ( UInt theInstr )
          // Iop_Clz32 undefined for arg==0, so deal with that case:
          irx =  binop(Iop_CmpNE32, lo32, mkU32(0));
          assign(rA, mkWidenFrom32(ty,
-                         IRExpr_Mux0X( irx,
-                                       mkU32(32),
-                                       unop(Iop_Clz32, lo32)),
+                         IRExpr_ITE( irx,
+                                     unop(Iop_Clz32, lo32),
+                                     mkU32(32)),
                          False));
 
          // TODO: alternatively: assign(rA, verbose_Clz32(rS));
@@ -3962,9 +3962,9 @@ static Bool dis_int_logic ( UInt theInstr )
              flag_rC ? ".":"", rA_addr, rS_addr);
          // Iop_Clz64 undefined for arg==0, so deal with that case:
          irx =  binop(Iop_CmpNE64, mkexpr(rS), mkU64(0));
-         assign(rA, IRExpr_Mux0X( irx,
-                                  mkU64(64),
-                                  unop(Iop_Clz64, mkexpr(rS)) ));
+         assign(rA, IRExpr_ITE( irx,
+                                unop(Iop_Clz64, mkexpr(rS)),
+                                mkU64(64) ));
          // TODO: alternatively: assign(rA, verbose_Clz64(rS));
          break;
 
@@ -6095,9 +6095,9 @@ static Bool dis_int_shift ( UInt theInstr )
          e_tmp = binop( Iop_Sar32, 
                         mkexpr(rS_lo32), 
                         unop( Iop_32to8, 
-                              IRExpr_Mux0X( mkexpr(outofrange), 
-                                            mkexpr(sh_amt), 
-                                            mkU32(31)) ) );
+                              IRExpr_ITE( mkexpr(outofrange), 
+                                          mkU32(31),
+                                          mkexpr(sh_amt)) ) );
          assign( rA, mkWidenFrom32(ty, e_tmp, /* Signed */True) );
 
          set_XER_CA( ty, PPCG_FLAG_OP_SRAW,
@@ -6193,9 +6193,9 @@ static Bool dis_int_shift ( UInt theInstr )
                  binop( Iop_Sar64, 
                         mkexpr(rS), 
                         unop( Iop_64to8, 
-                              IRExpr_Mux0X( mkexpr(outofrange), 
-                                            mkexpr(sh_amt), 
-                                            mkU64(63)) ))
+                              IRExpr_ITE( mkexpr(outofrange), 
+                                          mkU64(63),
+                                          mkexpr(sh_amt)) ))
                );
          set_XER_CA( ty, PPCG_FLAG_OP_SRAD,
                      mkexpr(rA), mkexpr(rS), mkexpr(sh_amt),
@@ -7373,10 +7373,10 @@ static Bool dis_fp_arith ( UInt theInstr )
          // frD = (frA >= 0.0) ? frC : frB
          //     = (cc_b0 == 0) ? frC : frB
          assign( frD,
-                 IRExpr_Mux0X(
+                 IRExpr_ITE(
                     binop(Iop_CmpEQ32, mkexpr(cc_b0), mkU32(0)),
-                    mkexpr(frB),
-                    mkexpr(frC) ));
+                    mkexpr(frC),
+                    mkexpr(frB) ));
 
          /* One of the rare ones which don't mess with FPRF */
          set_FPRF = False;
@@ -8258,14 +8258,15 @@ static Bool dis_fp_round ( UInt theInstr )
       /* need to preserve sign of zero */
       /*   frD = (fabs(frB) > 9e18) ? frB :
                (sign(frB)) ? -fabs((double)r_tmp64) : (double)r_tmp64  */
-      assign(frD, IRExpr_Mux0X(
+      assign(frD, IRExpr_ITE(
                      binop(Iop_CmpNE8,
                            unop(Iop_32to8,
                                 binop(Iop_CmpF64,
                                       IRExpr_Const(IRConst_F64(9e18)),
                                       unop(Iop_AbsF64, mkexpr(frB)))),
                            mkU8(0)),
-                     IRExpr_Mux0X(
+                     mkexpr(frB),
+                     IRExpr_ITE(
                         binop(Iop_CmpNE32,
                               binop(Iop_Shr32,
                                     unop(Iop_64HIto32,
@@ -8273,13 +8274,12 @@ static Bool dis_fp_round ( UInt theInstr )
                                               mkexpr(frB))),
                                     mkU8(31)),
                               mkU32(0)),
-                        binop(Iop_I64StoF64, mkU32(0), mkexpr(r_tmp64) ),
                         unop(Iop_NegF64,
                              unop( Iop_AbsF64,
                                    binop(Iop_I64StoF64, mkU32(0),
-                                         mkexpr(r_tmp64)) ))
-                     ),
-                     mkexpr(frB)
+                                         mkexpr(r_tmp64)) )),
+                        binop(Iop_I64StoF64, mkU32(0), mkexpr(r_tmp64) )
+                     )
       ));
       break;
 
@@ -11839,26 +11839,26 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          assign( res1, unop(Iop_64HIto32, mkexpr(lo64)) );
          assign( res0, unop(Iop_64to32,   mkexpr(lo64)) );
 
-         b3_result = IRExpr_Mux0X(is_NaN_32(b3),
-                                  // else: result is from the Iop_QFtoI32{s|u}x4_RZ
-                                  mkexpr(res3),
-                                  // then: result is 0x{8|0}80000000
-                                  mkU32(un_signed ? 0x00000000 : 0x80000000));
-         b2_result = IRExpr_Mux0X(is_NaN_32(b2),
-                                  // else: result is from the Iop_QFtoI32{s|u}x4_RZ
-                                  mkexpr(res2),
-                                  // then: result is 0x{8|0}80000000
-                                  mkU32(un_signed ? 0x00000000 : 0x80000000));
-         b1_result = IRExpr_Mux0X(is_NaN_32(b1),
-                                  // else: result is from the Iop_QFtoI32{s|u}x4_RZ
-                                  mkexpr(res1),
-                                  // then: result is 0x{8|0}80000000
-                                  mkU32(un_signed ? 0x00000000 : 0x80000000));
-         b0_result = IRExpr_Mux0X(is_NaN_32(b0),
-                                  // else: result is from the Iop_QFtoI32{s|u}x4_RZ
-                                  mkexpr(res0),
-                                  // then: result is 0x{8|0}80000000
-                                  mkU32(un_signed ? 0x00000000 : 0x80000000));
+         b3_result = IRExpr_ITE(is_NaN_32(b3),
+                                // then: result is 0x{8|0}80000000
+                                mkU32(un_signed ? 0x00000000 : 0x80000000),
+                                // else: result is from the Iop_QFtoI32{s|u}x4_RZ
+                                mkexpr(res3));
+         b2_result = IRExpr_ITE(is_NaN_32(b2),
+                                // then: result is 0x{8|0}80000000
+                                mkU32(un_signed ? 0x00000000 : 0x80000000),
+                                // else: result is from the Iop_QFtoI32{s|u}x4_RZ
+                                mkexpr(res2));
+         b1_result = IRExpr_ITE(is_NaN_32(b1),
+                                // then: result is 0x{8|0}80000000
+                                mkU32(un_signed ? 0x00000000 : 0x80000000),
+                                // else: result is from the Iop_QFtoI32{s|u}x4_RZ
+                                mkexpr(res1));
+         b0_result = IRExpr_ITE(is_NaN_32(b0),
+                                // then: result is 0x{8|0}80000000
+                                mkU32(un_signed ? 0x00000000 : 0x80000000),
+                                // else: result is from the Iop_QFtoI32{s|u}x4_RZ
+                                mkexpr(res0));
 
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
@@ -12781,19 +12781,19 @@ static IRExpr * _get_maxmin_fp_NaN(IRTemp frA_I64, IRTemp frB_I64)
 
 #define SNAN_MASK 0x0008000000000000ULL
    return
-   IRExpr_Mux0X(mkexpr(frA_isSNaN),
-                /* else:  if frB is a SNaN */
-                IRExpr_Mux0X(mkexpr(frB_isSNaN),
-                             /* else:  if frB is a QNaN */
-                             IRExpr_Mux0X(mkexpr(frB_isQNaN),
-                                          /* else:  frA is a QNaN, so result = frB */
-                                          mkexpr(frB_I64),
-                                          /* then: result = frA */
-                                          mkexpr(frA_I64)),
-                             /* then: result = frB converted to QNaN */
-                             binop(Iop_Or64, mkexpr(frB_I64), mkU64(SNAN_MASK))),
-                /* then: result = frA converted to QNaN */
-                binop(Iop_Or64, mkexpr(frA_I64), mkU64(SNAN_MASK)));
+   IRExpr_ITE(mkexpr(frA_isSNaN),
+              /* then: result = frA converted to QNaN */
+              binop(Iop_Or64, mkexpr(frA_I64), mkU64(SNAN_MASK)),
+              /* else:  if frB is a SNaN */
+              IRExpr_ITE(mkexpr(frB_isSNaN),
+                         /* then: result = frB converted to QNaN */
+                         binop(Iop_Or64, mkexpr(frB_I64), mkU64(SNAN_MASK)),
+                         /* else:  if frB is a QNaN */
+                         IRExpr_ITE(mkexpr(frB_isQNaN),
+                                    /* then: result = frA */
+                                    mkexpr(frA_I64),
+                                    /* else:  frA is a QNaN, so result = frB */
+                                    mkexpr(frB_I64))));
 }
 
 /*
@@ -12807,13 +12807,13 @@ static IRExpr * _get_maxmin_fp_cmp(IRTemp src1, IRTemp src2, Bool isMin)
                                                   unop( Iop_ReinterpI64asF64,
                                                         mkexpr( src2 ) ) ) );
 
-   return IRExpr_Mux0X( binop( Iop_CmpEQ32,
+   return IRExpr_ITE( binop( Iop_CmpEQ32,
                                mkexpr( src1cmpsrc2 ),
                                mkU32( isMin ? PPC_CMP_LT : PPC_CMP_GT ) ),
-                        /* else: use src2 */
-                        mkexpr( src2 ),
-                        /* then: use src1 */
-                        mkexpr( src1 ) );
+                      /* then: use src1 */
+                      mkexpr( src1 ),
+                      /* else: use src2 */
+                      mkexpr( src2 ) );
 }
 
 /*
@@ -12840,23 +12840,23 @@ static IRExpr * get_max_min_fp(IRTemp frA_I64, IRTemp frB_I64, Bool isMin)
    assign(anyNaN, mkOR1(is_NaN(frA_I64), is_NaN(frB_I64)));
 #define MINUS_ZERO 0x8000000000000000ULL
 
-   return IRExpr_Mux0X( /* If both arguments are zero . . . */
-                        mkAND1( mkexpr( frA_isZero ), mkexpr( frB_isZero ) ),
-                        /* else: check if either input is a NaN*/
-                        IRExpr_Mux0X( mkexpr( anyNaN ),
-                                      /* else: use "comparison helper" */
-                                      _get_maxmin_fp_cmp( frB_I64, frA_I64, isMin ),
-                                      /* then: use "NaN helper" */
-                                      _get_maxmin_fp_NaN( frA_I64, frB_I64 ) ),
-                        /* then: if frA is -0 and isMin==True, return -0;
-                         *     else if frA is +0 and isMin==False; return +0;
-                         *     otherwise, simply return frB. */
-                        IRExpr_Mux0X( binop( Iop_CmpEQ32,
-                                             unop( Iop_64HIto32,
-                                                   mkexpr( frA_I64 ) ),
-                                             mkU32( isMin ? 0x80000000 : 0 ) ),
-                                      mkexpr( frB_I64 ),
-                                      mkU64( isMin ? MINUS_ZERO : 0ULL ) ) );
+   return IRExpr_ITE( /* If both arguments are zero . . . */
+                     mkAND1( mkexpr( frA_isZero ), mkexpr( frB_isZero ) ),
+                     /* then: if frA is -0 and isMin==True, return -0;
+                      *     else if frA is +0 and isMin==False; return +0;
+                      *     otherwise, simply return frB. */
+                     IRExpr_ITE( binop( Iop_CmpEQ32,
+                                        unop( Iop_64HIto32,
+                                              mkexpr( frA_I64 ) ),
+                                        mkU32( isMin ? 0x80000000 : 0 ) ),
+                                 mkU64( isMin ? MINUS_ZERO : 0ULL ),
+                                 mkexpr( frB_I64 ) ),
+                     /* else: check if either input is a NaN*/
+                     IRExpr_ITE( mkexpr( anyNaN ),
+                                 /* then: use "NaN helper" */
+                                 _get_maxmin_fp_NaN( frA_I64, frB_I64 ),
+                                 /* else: use "comparison helper" */
+                                 _get_maxmin_fp_cmp( frB_I64, frA_I64, isMin ) ));
 }
 
 /*
@@ -12910,30 +12910,30 @@ static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2,
    /*   frD = (fabs(frB) > 9e18) ? frB :
             (sign(frB)) ? -fabs((double)intermediateResult) : (double)intermediateResult  */
    assign( frD,
-           IRExpr_Mux0X(
+           IRExpr_ITE(
               binop( Iop_CmpNE8,
                      unop( Iop_32to8,
                            binop( Iop_CmpF64,
                                   IRExpr_Const( IRConst_F64( 9e18 ) ),
                                   unop( Iop_AbsF64, mkexpr( frB ) ) ) ),
                      mkU8(0) ),
-              IRExpr_Mux0X(
+              mkexpr( frB ),
+              IRExpr_ITE(
                  binop( Iop_CmpNE32,
                         binop( Iop_Shr32,
                                unop( Iop_64HIto32,
                                      mkexpr( frB_I64 ) ),
                                mkU8( 31 ) ),
                         mkU32(0) ),
-                 binop( Iop_I64StoF64,
-                        mkU32( 0 ),
-                        mkexpr( intermediateResult ) ),
                  unop( Iop_NegF64,
                        unop( Iop_AbsF64,
                              binop( Iop_I64StoF64,
                                     mkU32( 0 ),
-                                    mkexpr( intermediateResult ) ) ) )
-              ),
-              mkexpr( frB ) 
+                                    mkexpr( intermediateResult ) ) ) ),
+                 binop( Iop_I64StoF64,
+                        mkU32( 0 ),
+                        mkexpr( intermediateResult ) )
+              )
            )
    );
 
@@ -12948,12 +12948,12 @@ static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2,
                           binop( Iop_And32, hi32, mkU32( 0x00080000 ) ),
                           mkU32( 0 ) ) ) );
 
-   return IRExpr_Mux0X( mkexpr( is_SNAN ),
-                        mkexpr( frD ),
+   return IRExpr_ITE( mkexpr( is_SNAN ),
                         unop( Iop_ReinterpI64asF64,
                               binop( Iop_Xor64,
                                      mkU64( SNAN_MASK ),
-                                     mkexpr( frB_I64 ) ) ) );
+                                     mkexpr( frB_I64 ) ) ),
+                      mkexpr( frD ));
 }
 
 /*
@@ -17577,10 +17577,11 @@ DisResult disInstr_PPC_WRK (
             UInt bi = ifieldRegC( theInstr );
             putIReg(
                rT,
-               IRExpr_Mux0X( binop(Iop_CmpNE32, getCRbit( bi ), mkU32(0)),
-                             getIReg(rB),
-                             rA == 0 ? (mode64 ? mkU64(0) : mkU32(0))
-                                     : getIReg(rA) )
+               IRExpr_ITE( binop(Iop_CmpNE32, getCRbit( bi ), mkU32(0)),
+                           rA == 0 ? (mode64 ? mkU64(0) : mkU32(0))
+                                   : getIReg(rA),
+                           getIReg(rB))
+
             );
             DIP("isel r%u,r%u,r%u,crb%u\n", rT,rA,rB,bi);
             goto decode_success;

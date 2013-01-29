@@ -1388,14 +1388,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: { // VFD
+   case Iex_ITE: { // VFD
      if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
-         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
-        HReg   rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
-        X86RM* r0  = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
+         && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
+        HReg   r1  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
+        X86RM* r0  = iselIntExpr_RM(env, e->Iex.ITE.iffalse);
         HReg   dst = newVRegI(env);
-        addInstr(env, mk_iMOVsd_RR(rX,dst));
-        X86CondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+        addInstr(env, mk_iMOVsd_RR(r1,dst));
+        X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
         addInstr(env, X86Instr_CMov32(cc ^ 1, r0, dst));
         return dst;
       }
@@ -2051,16 +2051,16 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
-   /* 64-bit Mux0X: Mux0X(g, expr, expr) */ // VFD
-   if (e->tag == Iex_Mux0X) {
-      HReg e0Lo, e0Hi, eXLo, eXHi;
+   /* 64-bit ITE: ITE(g, expr, expr) */ // VFD
+   if (e->tag == Iex_ITE) {
+      HReg e0Lo, e0Hi, e1Lo, e1Hi;
       HReg tLo = newVRegI(env);
       HReg tHi = newVRegI(env);
-      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
-      iselInt64Expr(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
-      addInstr(env, mk_iMOVsd_RR(eXHi, tHi));
-      addInstr(env, mk_iMOVsd_RR(eXLo, tLo));
-      X86CondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.ITE.iffalse);
+      iselInt64Expr(&e1Hi, &e1Lo, env, e->Iex.ITE.iftrue);
+      addInstr(env, mk_iMOVsd_RR(e1Hi, tHi));
+      addInstr(env, mk_iMOVsd_RR(e1Lo, tLo));
+      X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
       /* This assumes the first cmov32 doesn't trash the condition
          codes, so they are still available for the second cmov32 */
       addInstr(env, X86Instr_CMov32(cc ^ 1, X86RM_Reg(e0Hi), tHi));
@@ -3095,14 +3095,14 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) { // VFD
+   if (e->tag == Iex_ITE) { // VFD
      if (ty == Ity_F64
-         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I1) {
-        HReg rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
-        HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
+         && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
+        HReg r1  = iselDblExpr(env, e->Iex.ITE.iftrue);
+        HReg r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
         HReg dst = newVRegF(env);
-        addInstr(env, X86Instr_FpUnary(Xfp_MOV,rX,dst));
-        X86CondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+        addInstr(env, X86Instr_FpUnary(Xfp_MOV,r1,dst));
+        X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
         addInstr(env, X86Instr_FpCMov(cc ^ 1, r0, dst));
         return dst;
       }
@@ -3672,12 +3672,12 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
 
-   if (e->tag == Iex_Mux0X) { // VFD
-      HReg rX  = iselVecExpr(env, e->Iex.Mux0X.exprX);
-      HReg r0  = iselVecExpr(env, e->Iex.Mux0X.expr0);
+   if (e->tag == Iex_ITE) { // VFD
+      HReg r1  = iselVecExpr(env, e->Iex.ITE.iftrue);
+      HReg r0  = iselVecExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegV(env);
-      addInstr(env, mk_vMOVsd_RR(rX,dst));
-      X86CondCode cc = iselCondCode(env, e->Iex.Mux0X.cond);
+      addInstr(env, mk_vMOVsd_RR(r1,dst));
+      X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
       addInstr(env, X86Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }

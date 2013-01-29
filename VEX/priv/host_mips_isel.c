@@ -1421,25 +1421,25 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
    }
 
       /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: {
+   case Iex_ITE: {
       if ((ty == Ity_I8 || ty == Ity_I16 ||
            ty == Ity_I32 || ((ty == Ity_I64))) &&
-           typeOfIRExpr(env->type_env, e->Iex.Mux0X.cond) == Ity_I8) {
+           typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I8) {
          /*
           * r_dst = cond && rX
           * cond = not(cond)
           * tmp = cond && r0
           * r_dst = tmp + r_dst
           */
-         HReg r0 = iselWordExpr_R(env, e->Iex.Mux0X.expr0);
-         HReg rX = iselWordExpr_R(env, e->Iex.Mux0X.exprX);
-         HReg r_cond = iselWordExpr_R(env, e->Iex.Mux0X.cond);
+         HReg r0 = iselWordExpr_R(env, e->Iex.ITE.iffalse);
+         HReg r1 = iselWordExpr_R(env, e->Iex.ITE.iftrue);
+         HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
          HReg r_dst = newVRegI(env);
          HReg r_tmp = newVRegI(env);
          HReg r_tmp1 = newVRegI(env);
          HReg r_cond_neg = newVRegI(env);
 
-         addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp, r_cond, MIPSRH_Reg(rX)));
+         addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp, r_cond, MIPSRH_Reg(r1)));
          addInstr(env, MIPSInstr_Alu(Malu_NOR, r_cond_neg, r_cond,
                        MIPSRH_Reg(r_cond)));
          addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp1, r_cond_neg,
@@ -1952,34 +1952,34 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
       return;
    }
 
-   /* 64-bit Mux0X */
-   if (e->tag == Iex_Mux0X) {
+   /* 64-bit ITE */
+   if (e->tag == Iex_ITE) {
       HReg expr0Lo, expr0Hi;
-      HReg exprXLo, exprXHi;
+      HReg expr1Lo, expr1Hi;
       HReg tmpHi = newVRegI(env);
       HReg tmpLo = newVRegI(env);
       HReg tmp1Hi = newVRegI(env);
       HReg tmp1Lo = newVRegI(env);
-      HReg r_cond = iselWordExpr_R(env, e->Iex.Mux0X.cond);
+      HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
       HReg r_cond_neg = newVRegI(env);
       HReg desLo = newVRegI(env);
       HReg desHi = newVRegI(env);
 
-      /* expr0Hi:expr0Lo = expr0 */
-      /* exprXHi:exprXLo = exprX */
-      iselInt64Expr(&expr0Hi, &expr0Lo, env, e->Iex.Mux0X.expr0);
-      iselInt64Expr(&exprXHi, &exprXLo, env, e->Iex.Mux0X.exprX);
+      /* expr0Hi:expr0Lo = iffalse */
+      /* expr1Hi:expr1Lo = iftrue */
+      iselInt64Expr(&expr0Hi, &expr0Lo, env, e->Iex.ITE.iffalse);
+      iselInt64Expr(&expr1Hi, &expr1Lo, env, e->Iex.ITE.iftrue);
 
       addInstr(env, MIPSInstr_Alu(Malu_AND, tmpLo, r_cond,
-                                  MIPSRH_Reg(exprXLo)));
+                                  MIPSRH_Reg(expr1Lo)));
       addInstr(env, MIPSInstr_Alu(Malu_AND, tmpHi, r_cond,
-                                  MIPSRH_Reg(exprXHi)));
+                                  MIPSRH_Reg(expr1Hi)));
       addInstr(env, MIPSInstr_Alu(Malu_NOR, r_cond_neg, r_cond,
                                   MIPSRH_Reg(r_cond)));
       addInstr(env, MIPSInstr_Alu(Malu_AND, tmp1Lo, r_cond_neg,
-                                  MIPSRH_Reg(exprXLo)));
+                                  MIPSRH_Reg(expr1Lo)));
       addInstr(env, MIPSInstr_Alu(Malu_AND, tmp1Hi, r_cond_neg,
-                                  MIPSRH_Reg(exprXHi)));
+                                  MIPSRH_Reg(expr1Hi)));
       addInstr(env, MIPSInstr_Alu(Malu_ADD, desLo, tmpLo,
                                   MIPSRH_Reg(tmp1Lo)));
       addInstr(env, MIPSInstr_Alu(Malu_ADD, desHi, tmpHi,
@@ -2676,12 +2676,12 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_ITE) {
       if (ty == Ity_F64
-          && typeOfIRExpr(env->type_env, e->Iex.Mux0X.cond) == Ity_I8) {
-         HReg r0 = iselDblExpr(env, e->Iex.Mux0X.expr0);
-         HReg rX = iselDblExpr(env, e->Iex.Mux0X.exprX);
-         HReg r_cond = iselWordExpr_R(env, e->Iex.Mux0X.cond);
+          && typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I8) {
+         HReg r0 = iselDblExpr(env, e->Iex.ITE.iffalse);
+         HReg r1 = iselDblExpr(env, e->Iex.ITE.iftrue);
+         HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
          HReg r_cond_neg = newVRegI(env);
          HReg r_dst = newVRegD(env);
          HReg r_tmp_lo = newVRegI(env);
@@ -2690,8 +2690,8 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
          HReg r_tmp1_hi = newVRegI(env);
          HReg r_r0_lo = newVRegI(env);
          HReg r_r0_hi = newVRegI(env);
-         HReg r_rX_lo = newVRegI(env);
-         HReg r_rX_hi = newVRegI(env);
+         HReg r_r1_lo = newVRegI(env);
+         HReg r_r1_hi = newVRegI(env);
          HReg r_dst_lo = newVRegI(env);
          HReg r_dst_hi = newVRegI(env);
 
@@ -2720,19 +2720,19 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
          am_addr = MIPSAMode_IR(0, StackPointer(mode64));
 
          // store as Ity_F64
-         addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, rX, am_addr));
+         addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, r1, am_addr));
 
          // load as 2xI32                              
-         addInstr(env, MIPSInstr_Load(4, r_rX_lo, am_addr, mode64));
-         addInstr(env, MIPSInstr_Load(4, r_rX_hi, nextMIPSAModeFloat(am_addr),
+         addInstr(env, MIPSInstr_Load(4, r_r1_lo, am_addr, mode64));
+         addInstr(env, MIPSInstr_Load(4, r_r1_hi, nextMIPSAModeFloat(am_addr),
                                       mode64));
 
          add_to_sp(env, 16);  // Reset SP
 
          addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp1_lo, r_cond_neg,
-                                     MIPSRH_Reg(r_rX_lo)));
+                                     MIPSRH_Reg(r_r1_lo)));
          addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp1_hi, r_cond_neg,
-                                     MIPSRH_Reg(r_rX_hi)));
+                                     MIPSRH_Reg(r_r1_hi)));
 
          addInstr(env, MIPSInstr_Alu(Malu_ADD, r_dst_lo, r_tmp_lo,
                                      MIPSRH_Reg(r_tmp1_lo)));

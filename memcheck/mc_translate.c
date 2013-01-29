@@ -1633,14 +1633,16 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
    if (t1 == Ity_I32 && t2 == Ity_I8 && t3 == Ity_I128
        && finalVty == Ity_I128) {
       if (0) VG_(printf)("mkLazy3: I32 x I8 x I128 -> I128\n");
-      /* Widen 1st and 2nd args to I128.  Since 1st arg is typically a rounding
-         mode indication which is fully defined, this should get
-         folded out later. */
+      /* Use I64 as an intermediate type, which means PCasting all 3
+         args to I64 to start with. 1st arg is typically a rounding
+         mode indication which is fully defined, so we hope that it
+         will get folded out later. */
       IRAtom* at1 = mkPCastTo(mce, Ity_I64, va1);
       IRAtom* at2 = mkPCastTo(mce, Ity_I64, va2);
-      /* Now fold in 2nd and 3rd args. */
+      IRAtom* at3 = mkPCastTo(mce, Ity_I64, va3);
+      /* Now UifU all three together. */
       at = mkUifU(mce, Ity_I64, at1, at2);  // UifU(PCast(va1), PCast(va2))
-      at = mkUifU(mce, Ity_I128, at, va3);
+      at = mkUifU(mce, Ity_I64, at, at3);   // ... `UifU` PCast(va3)
       /* and PCast once again. */
       at = mkPCastTo(mce, Ity_I128, at);
       return at;

@@ -167,10 +167,10 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 
 #else
 
-/* Just handle the first 32G fast and the rest via auxiliary
+/* Just handle the first 64G fast and the rest via auxiliary
    primaries.  If you change this, Memcheck will assert at startup.
    See the definition of UNALIGNED_OR_HIGH for extensive comments. */
-#  define N_PRIMARY_BITS  19
+#  define N_PRIMARY_BITS  20
 
 #endif
 
@@ -6554,11 +6554,11 @@ static void mc_pre_clo_init(void)
    tl_assert(sizeof(Addr)  == 8);
    tl_assert(sizeof(UWord) == 8);
    tl_assert(sizeof(Word)  == 8);
-   tl_assert(MAX_PRIMARY_ADDRESS == 0x7FFFFFFFFULL);
-   tl_assert(MASK(1) == 0xFFFFFFF800000000ULL);
-   tl_assert(MASK(2) == 0xFFFFFFF800000001ULL);
-   tl_assert(MASK(4) == 0xFFFFFFF800000003ULL);
-   tl_assert(MASK(8) == 0xFFFFFFF800000007ULL);
+   tl_assert(MAX_PRIMARY_ADDRESS == 0xFFFFFFFFFULL);
+   tl_assert(MASK(1) == 0xFFFFFFF000000000ULL);
+   tl_assert(MASK(2) == 0xFFFFFFF000000001ULL);
+   tl_assert(MASK(4) == 0xFFFFFFF000000003ULL);
+   tl_assert(MASK(8) == 0xFFFFFFF000000007ULL);
 #  endif
 }
 

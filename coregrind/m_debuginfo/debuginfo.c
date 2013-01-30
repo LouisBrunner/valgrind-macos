@@ -100,6 +100,7 @@
 /*--- fwdses                                               ---*/
 /*------------------------------------------------------------*/
 
+static UInt CF_info_generation = 0;
 static void cfsi_cache__invalidate ( void );
 
 
@@ -2256,8 +2257,13 @@ static CFSICacheEnt cfsi_cache[N_CFSI_CACHE];
 
 static void cfsi_cache__invalidate ( void ) {
    VG_(memset)(&cfsi_cache, 0, sizeof(cfsi_cache));
+   CF_info_generation++;
 }
 
+UInt VG_(CF_info_generation) (void)
+{
+   return CF_info_generation;
+}
 
 static inline CFSICacheEnt* cfsi_cache__find ( Addr ip )
 {

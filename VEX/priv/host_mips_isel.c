@@ -371,7 +371,7 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
    Int n_args, i, argreg;
    UInt argiregs;
    ULong target;
-   HReg src = 0;
+   HReg src = INVALID_HREG;
 
    /* MIPS O32 calling convention: up to four registers ($a0 ... $a3)
       are allowed to be used for passing integer arguments. They correspond
@@ -570,7 +570,7 @@ static Bool sane_AMode(ISelEnv * env, MIPSAMode * am)
          return toBool(hregClass(am->Mam.RR.base) == HRcGPR(mode64) &&
                   hregIsVirtual(am->Mam.RR.base) &&
                   hregClass(am->Mam.RR.index) == HRcGPR(mode64) &&
-                  hregIsVirtual(am->Mam.IR.index));
+                  hregIsVirtual(am->Mam.RR.index));
       default:
          vpanic("sane_AMode: unknown mips amode tag");
    }
@@ -1206,25 +1206,25 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                           MIPSRH_Imm(False, 0xFF)));
             return r_dst;
          }
-   
-         case Iop_16Uto32:
+
+         case Iop_1Uto32:
          case Iop_8Uto32:
-         case Iop_1Uto32: {
+         case Iop_16Uto32: {
             HReg r_dst = newVRegI(env);
             HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
             UShort amt;
             switch (op_unop) {
                case Iop_1Uto32:
-               case Iop_1Uto8:
                   amt = 31;
                   break;
-   
+               case Iop_8Uto32:
+                  amt = 24;
+                  break;
                case Iop_16Uto32:
                   amt = 16;
                   break;
-   
                default:
-                  amt = 24;
+                  vassert(0);
                   break;
             }
 
@@ -1241,8 +1241,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             vassert(mode64);
             HReg r_dst = newVRegI(env);
             HReg r_src = iselWordExpr_R(env,  e->Iex.Unop.arg);
-            UShort mask = toUShort(op_unop == Iop_16Uto64 ? 0xFFFF :
-                                   op_unop == Iop_16Uto32 ? 0xFFFF : 0xFF);
+            UShort mask = toUShort(op_unop == Iop_16Uto64 ? 0xFFFF : 0xFF);
             addInstr(env, MIPSInstr_Alu(Malu_AND, r_dst, r_src,
                           MIPSRH_Imm(False, mask)));
             return r_dst;

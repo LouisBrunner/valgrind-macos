@@ -863,7 +863,10 @@ MIPSAMode *nextMIPSAModeFloat(MIPSAMode * am)
          ret = MIPSAMode_IR(am->Mam.IR.index + 4, am->Mam.IR.base);
          break;
       case Mam_RR:
-         ret = MIPSAMode_RR(am->Mam.RR.index + 1, am->Mam.RR.base);
+         ret = MIPSAMode_RR(mkHReg(hregNumber(am->Mam.RR.index) + 1,
+                                   hregClass(am->Mam.RR.index),
+                                   hregIsVirtual(am->Mam.RR.index)),
+                                   am->Mam.RR.base);
          break;
       default:
          vpanic("dopyMIPSAMode");
@@ -880,7 +883,10 @@ MIPSAMode *nextMIPSAModeInt(MIPSAMode * am)
          ret = MIPSAMode_IR(am->Mam.IR.index + 4, am->Mam.IR.base);
          break;
       case Mam_RR:
-         ret = MIPSAMode_RR(am->Mam.RR.index + 1, am->Mam.RR.base);
+         ret = MIPSAMode_RR(mkHReg(hregNumber(am->Mam.RR.index) + 1,
+                                   hregClass(am->Mam.RR.index),
+                                   hregIsVirtual(am->Mam.RR.index)),
+                                   am->Mam.RR.base);
          break;
       default:
          vpanic("dopyMIPSAMode");
@@ -2175,7 +2181,8 @@ Bool isMove_MIPSInstr(MIPSInstr * i, HReg * src, HReg * dst)
          return False;
       if (i->Min.Alu.srcR->tag != Mrh_Reg)
          return False;
-      if (i->Min.Alu.srcR->Mrh.Reg.reg != i->Min.Alu.srcL)
+      if (hregNumber(i->Min.Alu.srcR->Mrh.Reg.reg) 
+          != hregNumber(i->Min.Alu.srcL))
          return False;
       *src = i->Min.Alu.srcL;
       *dst = i->Min.Alu.dst;
@@ -3127,7 +3134,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             /* blez r_src, delta/4-1 */
             vassert(cond == MIPScc_EQ);
             ptmp = mkFormI(ptmp, 6, r_src, 0, delta / 4 - 1);
-            ptmp = mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
+            mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
          }
          goto done;
       }
@@ -3189,7 +3196,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                nop*/
             ptmp = mkFormI(ptmp, 35, 10, 9, 316);
             ptmp = mkFormI(ptmp, 4, 0, 9, (delta));
-            ptmp = mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
+            mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
          }
          goto done;
       }
@@ -3238,7 +3245,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                nop*/
             ptmp = mkFormI(ptmp, 35, 10, 9, 316);
             ptmp = mkFormI(ptmp, 4, 0, 9, (delta));
-            ptmp = mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
+            mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
          }
          goto done;
       }
@@ -3308,7 +3315,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                nop*/
             ptmp = mkFormI(ptmp, 35, 10, 9, 316);
             ptmp = mkFormI(ptmp, 4, 0, 9, (delta));
-            ptmp = mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
+            mkFormR(ptmp, 0, 0, 0, 0, 0, 0);
          }
          goto done;
       }

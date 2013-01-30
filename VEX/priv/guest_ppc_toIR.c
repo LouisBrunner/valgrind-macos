@@ -12859,11 +12859,30 @@ static IRExpr * get_max_min_fp(IRTemp frA_I64, IRTemp frB_I64, Bool isMin)
                                  _get_maxmin_fp_cmp( frB_I64, frA_I64, isMin ) ));
 }
 
+static const HChar * _get_vsx_rdpi_suffix(UInt opc2)
+{
+   switch (opc2 & 0x7F) {
+      case 0x72:
+         return "m";
+      case 0x52:
+         return "p";
+      case 0x56:
+         return "c";
+      case 0x32:
+         return "z";
+      case 0x12:
+         return "";
+
+      default: // Impossible to get here
+         vex_printf("Unrecognized opcode %x\n", opc2);
+         vpanic("_get_vsx_rdpi_suffix(ppc)(opc2)");
+   }
+}
+
 /*
  * Helper function for vector/scalar double precision fp round to integer instructions.
  */
-static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2,
-                                      const HChar * insn_suffix)
+static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2)
 {
 
    /* The same rules apply for x{s|v}rdpi{m|p|c|z} as for floating point round operations (fri{m|n|p|z}). */
@@ -12875,29 +12894,24 @@ static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2,
    IRExpr * rxpi_rm;
    switch (opc2 & 0x7F) {
       case 0x72:
-         insn_suffix = "m";
          rxpi_rm = mkU32(Irrm_NegINF);
          break;
       case 0x52:
-         insn_suffix = "p";
          rxpi_rm = mkU32(Irrm_PosINF);
          break;
       case 0x56:
-         insn_suffix = "c";
          rxpi_rm = get_IR_roundingmode();
          break;
       case 0x32:
-         insn_suffix = "z";
          rxpi_rm = mkU32(Irrm_ZERO);
          break;
       case 0x12:
-         insn_suffix = "";
          rxpi_rm = mkU32(Irrm_NEAREST);
          break;
 
       default: // Impossible to get here
-         vex_printf( "_do_vsx_fp_roundToInt(ppc)(opc2)\n" );
-         return NULL;
+         vex_printf("Unrecognized opcode %x\n", opc2);
+         vpanic("_do_vsx_fp_roundToInt(ppc)(opc2)");
    }
    assign(frB, unop(Iop_ReinterpI64asF64, mkexpr(frB_I64)));
    assign( intermediateResult,
@@ -13331,14 +13345,13 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
          IRTemp frBLo_I64 = newTemp(Ity_I64);
          IRExpr * frD_fp_roundHi = NULL;
          IRExpr * frD_fp_roundLo = NULL;
-         const HChar * insn_suffix = NULL;
 
          assign( frBHi_I64, unop( Iop_V128HIto64, getVSReg( XB ) ) );
-         frD_fp_roundHi = _do_vsx_fp_roundToInt(frBHi_I64, opc2, insn_suffix);
+         frD_fp_roundHi = _do_vsx_fp_roundToInt(frBHi_I64, opc2);
          assign( frBLo_I64, unop( Iop_V128to64, getVSReg( XB ) ) );
-         frD_fp_roundLo = _do_vsx_fp_roundToInt(frBLo_I64, opc2, insn_suffix);
+         frD_fp_roundLo = _do_vsx_fp_roundToInt(frBLo_I64, opc2);
 
-         DIP("xvrdpi%s v%d,v%d\n", insn_suffix, (UInt)XT, (UInt)XB);
+         DIP("xvrdpi%s v%d,v%d\n", _get_vsx_rdpi_suffix(opc2), (UInt)XT, (UInt)XB);
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           unop( Iop_ReinterpF64asI64, frD_fp_roundHi ),
@@ -13374,8 +13387,8 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
                   break;
 
                default:
-                  vex_printf( "dis_vxv_misc(ppc)(vrspi<x>)(opc2)\n" );
-                  return False;
+                  vex_printf("Unrecognized opcode %x\n", opc2);
+                  vpanic("dis_vxv_misc(ppc)(vrspi<x>)(opc2)\n");
             }
             DIP("xvrspi%s v%d,v%d\n", insn_suffix, (UInt)XT, (UInt)XB);
             putVSReg( XT, unop( op, getVSReg(XB) ) );
@@ -13396,13 +13409,13 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
             assign(b1_I64, unop(Iop_ReinterpF64asI64, mkexpr(b1_F64)));
             assign(b0_I64, unop(Iop_ReinterpF64asI64, mkexpr(b0_F64)));
             frD_fp_roundb3 = unop(Iop_TruncF64asF32,
-                                  _do_vsx_fp_roundToInt(b3_I64, opc2, insn_suffix));
+                                  _do_vsx_fp_roundToInt(b3_I64, opc2));
             frD_fp_roundb2 = unop(Iop_TruncF64asF32,
-                                  _do_vsx_fp_roundToInt(b2_I64, opc2, insn_suffix));
+                                  _do_vsx_fp_roundToInt(b2_I64, opc2));
             frD_fp_roundb1 = unop(Iop_TruncF64asF32,
-                                  _do_vsx_fp_roundToInt(b1_I64, opc2, insn_suffix));
+                                  _do_vsx_fp_roundToInt(b1_I64, opc2));
             frD_fp_roundb0 = unop(Iop_TruncF64asF32,
-                                  _do_vsx_fp_roundToInt(b0_I64, opc2, insn_suffix));
+                                  _do_vsx_fp_roundToInt(b0_I64, opc2));
             DIP("xvrspic v%d,v%d\n", (UInt)XT, (UInt)XB);
             putVSReg( XT,
                       binop( Iop_64HLtoV128,
@@ -13940,12 +13953,11 @@ dis_vxs_misc( UInt theInstr, UInt opc2 )
       {
          IRTemp frB_I64 = newTemp(Ity_I64);
          IRExpr * frD_fp_round = NULL;
-         const HChar * insn_suffix = NULL;
 
          assign(frB_I64, unop(Iop_V128HIto64, mkexpr( vB )));
-         frD_fp_round = _do_vsx_fp_roundToInt(frB_I64, opc2, insn_suffix);
+         frD_fp_round = _do_vsx_fp_roundToInt(frB_I64, opc2);
 
-         DIP("xsrdpi%s v%d,v%d\n", insn_suffix, (UInt)XT, (UInt)XB);
+         DIP("xsrdpi%s v%d,v%d\n", _get_vsx_rdpi_suffix(opc2), (UInt)XT, (UInt)XB);
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           unop( Iop_ReinterpF64asI64, frD_fp_round),

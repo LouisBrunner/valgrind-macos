@@ -12,7 +12,10 @@ Thread #x was created
 Thread #x: lock order "0x........ before 0x........" violated
 
 Observed (incorrect) order is: acquisition of lock at 0x........
-   (stack unavailable)
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: dine (tc14_laog_dinphils.c:18)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
 
  followed by a later acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)

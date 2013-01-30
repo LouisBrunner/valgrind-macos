@@ -3721,9 +3721,54 @@ static void laog__pre_thread_acquires_lock (
                  found->src_ec, found->dst_ec, other->acquired_at );
       } else {
          /* Hmm.  This can't happen (can it?) */
+         /* Yes, it can happen: see tests/tc14_laog_dinphils.
+            Imagine we have 3 philosophers A B C, and the forks
+            between them:
+
+                           C
+
+                       fCA   fBC
+
+                      A   fAB   B
+
+            Let's have the following actions:
+                   A takes    fCA,fAB
+                   A releases fCA,fAB
+                   B takes    fAB,fBC
+                   B releases fAB,fBC
+                   C takes    fBC,fCA
+                   C releases fBC,fCA
+
+            Helgrind will report a lock order error when C takes fCA.
+            Effectively, we have a deadlock if the following
+            sequence is done:
+                A takes fCA
+                B takes fAB
+                C takes fBC
+
+            The error reported is:
+              Observed (incorrect) order fBC followed by fCA
+            but the stack traces that have established the required order
+            are not given.
+
+            This is because there is no pair (fCA, fBC) in laog exposition :
+            the laog_exposition records all pairs of locks between a new lock
+            taken by a thread and all the already taken locks.
+            So, there is no laog_exposition (fCA, fBC) as no thread ever
+            first locked fCA followed by fBC.
+
+            In other words, when the deadlock cycle involves more than
+            two locks, then helgrind does not report the sequence of
+            operations that created the cycle.
+
+            However, we can report the current stack trace (where
+            lk is being taken), and the stack trace where other was acquired:
+            Effectively, the variable 'other' contains a lock currently
+            held by this thread, with its 'acquired_at'. */
+                    
          HG_(record_error_LockOrder)(
             thr, lk->guestaddr, other->guestaddr,
-                 NULL, NULL, NULL );
+                 NULL, NULL, other->acquired_at );
       }
    }
 

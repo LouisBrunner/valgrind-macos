@@ -240,26 +240,31 @@ Required order was established by acquisition of lock at 0x7FF0006D0
 
 <para>When there are more than two locks in the cycle, the error is
 equally serious.  However, at present Helgrind does not show the locks
-involved, sometimes because it that information is not available, but
-also so as to avoid flooding you with information.  For example, here
-is an example involving a cycle of five locks from a naive
-implementation the famous Dining Philosophers problem
+involved, sometimes because that information is not available, but
+also so as to avoid flooding you with information.  For example, a
+naive implementation of the famous Dining Philosophers problem
+involves a cycle of five locks
 (see <computeroutput>helgrind/tests/tc14_laog_dinphils.c</computeroutput>).
 In this case Helgrind has detected that all 5 philosophers could
 simultaneously pick up their left fork and then deadlock whilst
 waiting to pick up their right forks.</para>
 
 <programlisting><![CDATA[
-Thread #6: lock order "0x6010C0 before 0x601160" violated
+Thread #6: lock order "0x80499A0 before 0x8049A00" violated
 
-Observed (incorrect) order is: acquisition of lock at 0x601160
-   (stack unavailable)
+Observed (incorrect) order is: acquisition of lock at 0x8049A00
+   at 0x40085BC: pthread_mutex_lock (hg_intercepts.c:495)
+   by 0x80485B4: dine (tc14_laog_dinphils.c:18)
+   by 0x400BDA4: mythread_wrapper (hg_intercepts.c:219)
+   by 0x39B924: start_thread (pthread_create.c:297)
+   by 0x2F107D: clone (clone.S:130)
 
- followed by a later acquisition of lock at 0x6010C0
-   at 0x4C2BC62: pthread_mutex_lock (hg_intercepts.c:494)
-   by 0x4007DE: dine (tc14_laog_dinphils.c:19)
-   by 0x4C2CBE7: mythread_wrapper (hg_intercepts.c:219)
-   by 0x4E369C9: start_thread (pthread_create.c:300)
+ followed by a later acquisition of lock at 0x80499A0
+   at 0x40085BC: pthread_mutex_lock (hg_intercepts.c:495)
+   by 0x80485CD: dine (tc14_laog_dinphils.c:19)
+   by 0x400BDA4: mythread_wrapper (hg_intercepts.c:219)
+   by 0x39B924: start_thread (pthread_create.c:297)
+   by 0x2F107D: clone (clone.S:130)
 ]]></programlisting>
 
 </sect1>

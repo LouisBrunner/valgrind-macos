@@ -180,7 +180,10 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    vg_assert(sizeof(Addr) == sizeof(void*));
 
    D3UnwindRegs fpverif_uregs; // result of CF unwind for a check reason.
-   Addr xip_verified; // xip for which we have calculated fpverif_uregs
+   Addr xip_verified = 0; // xip for which we have calculated fpverif_uregs
+   // 0 assigned to silence false positive -Wuninitialized warning
+   // This is a false positive as xip_verified is assigned when xip_verif > CFUNWIND
+   // and only used if xip_verif > CFUNWIND.
 
    D3UnwindRegs uregs;
    uregs.xip = (Addr)startRegs->r_pc;

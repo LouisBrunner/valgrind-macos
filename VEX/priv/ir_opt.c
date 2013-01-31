@@ -3256,7 +3256,7 @@ static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, Mtct, Mttc, Mtcc, GetIt,
+      enum { Ut, Btt, Btc, Bct, Cf64i, Ittt, Itct, Ittc, Itcc, GetIt,
              CCall
       } tag;
       union {
@@ -3290,27 +3290,27 @@ typedef
          /* ITE(tmp,tmp,tmp) */
          struct {
             IRTemp co;
+            IRTemp e1;
             IRTemp e0;
-            IRTemp eX;
-         } Mttt;
+         } Ittt;
          /* ITE(tmp,tmp,const) */
          struct {
             IRTemp  co;
+            IRTemp  e1;
             IRConst con0;
-            IRTemp  eX;
-         } Mtct;
+         } Ittc;
          /* ITE(tmp,const,tmp) */
          struct {
             IRTemp  co;
+            IRConst con1;
             IRTemp  e0;
-            IRConst conX;
-         } Mttc;
+         } Itct;
          /* ITE(tmp,const,const) */
          struct {
             IRTemp  co;
+            IRConst con1;
             IRConst con0;
-            IRConst conX;
-         } Mtcc;
+         } Itcc;
          /* GetI(descr,tmp,bias)*/
          struct {
             IRRegArray* descr;
@@ -3354,22 +3354,22 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
                 && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1));
       case Cf64i: 
          return toBool(a1->u.Cf64i.f64i == a2->u.Cf64i.f64i);
-      case Mttt:
-         return toBool(a1->u.Mttt.co == a2->u.Mttt.co
-                       && a1->u.Mttt.e0 == a2->u.Mttt.e0
-                       && a1->u.Mttt.eX == a2->u.Mttt.eX);
-      case Mtct:
-         return toBool(a1->u.Mtct.co == a2->u.Mtct.co
-                       && eqIRConst(&a1->u.Mtct.con0, &a2->u.Mtct.con0)
-                       && a1->u.Mtct.eX == a2->u.Mtct.eX);
-      case Mttc:
-         return toBool(a1->u.Mttc.co == a2->u.Mttc.co
-                       && a1->u.Mttc.e0 == a2->u.Mttc.e0
-                       && eqIRConst(&a1->u.Mttc.conX, &a2->u.Mttc.conX));
-      case Mtcc:
-         return toBool(a1->u.Mtcc.co == a2->u.Mtcc.co
-                       && eqIRConst(&a1->u.Mtcc.con0, &a2->u.Mtcc.con0)
-                       && eqIRConst(&a1->u.Mtcc.conX, &a2->u.Mtcc.conX));
+      case Ittt:
+         return toBool(a1->u.Ittt.co == a2->u.Ittt.co
+                       && a1->u.Ittt.e1 == a2->u.Ittt.e1
+                       && a1->u.Ittt.e0 == a2->u.Ittt.e0);
+      case Ittc:
+         return toBool(a1->u.Ittc.co == a2->u.Ittc.co
+                       && a1->u.Ittc.e1 == a2->u.Ittc.e1
+                       && eqIRConst(&a1->u.Ittc.con0, &a2->u.Ittc.con0));
+      case Itct:
+         return toBool(a1->u.Itct.co == a2->u.Itct.co
+                       && eqIRConst(&a1->u.Itct.con1, &a2->u.Itct.con1)
+                       && a1->u.Itct.e0 == a2->u.Itct.e0);
+      case Itcc:
+         return toBool(a1->u.Itcc.co == a2->u.Itcc.co
+                       && eqIRConst(&a1->u.Itcc.con1, &a2->u.Itcc.con1)
+                       && eqIRConst(&a1->u.Itcc.con0, &a2->u.Itcc.con0));
       case GetIt:
          return toBool(eqIRRegArray(a1->u.GetIt.descr, a2->u.GetIt.descr) 
                        && a1->u.GetIt.ix == a2->u.GetIt.ix
@@ -3397,7 +3397,7 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
 
 static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae ) 
 {
-   IRConst *con, *con0, *conX;
+   IRConst *con, *con0, *con1;
    switch (ae->tag) {
       case Ut:
          return IRExpr_Unop( ae->u.Ut.op, IRExpr_RdTmp(ae->u.Ut.arg) );
@@ -3419,30 +3419,30 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
                               IRExpr_RdTmp(ae->u.Bct.arg2) );
       case Cf64i:
          return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
-      case Mttt:
-         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mttt.co), 
-                           IRExpr_RdTmp(ae->u.Mttt.eX), 
-                           IRExpr_RdTmp(ae->u.Mttt.e0));
-      case Mtct:
+      case Ittt:
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Ittt.co), 
+                           IRExpr_RdTmp(ae->u.Ittt.e1), 
+                           IRExpr_RdTmp(ae->u.Ittt.e0));
+      case Ittc:
          con0 = LibVEX_Alloc(sizeof(IRConst));
-         *con0 = ae->u.Mtct.con0;
-         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mtct.co), 
-                           IRExpr_RdTmp(ae->u.Mtct.eX),
+         *con0 = ae->u.Ittc.con0;
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Ittc.co), 
+                           IRExpr_RdTmp(ae->u.Ittc.e1),
                            IRExpr_Const(con0));
-      case Mttc:
-         conX = LibVEX_Alloc(sizeof(IRConst));
-         *conX = ae->u.Mttc.conX;
-         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mttc.co), 
-                           IRExpr_Const(conX),
-                           IRExpr_RdTmp(ae->u.Mttc.e0));
+      case Itct:
+         con1 = LibVEX_Alloc(sizeof(IRConst));
+         *con1 = ae->u.Itct.con1;
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Itct.co), 
+                           IRExpr_Const(con1),
+                           IRExpr_RdTmp(ae->u.Itct.e0));
 
-      case Mtcc:
+      case Itcc:
          con0 = LibVEX_Alloc(sizeof(IRConst));
-         conX = LibVEX_Alloc(sizeof(IRConst));
-         *con0 = ae->u.Mtcc.con0;
-         *conX = ae->u.Mtcc.conX;
-         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Mtcc.co), 
-                           IRExpr_Const(conX),
+         con1 = LibVEX_Alloc(sizeof(IRConst));
+         *con0 = ae->u.Itcc.con0;
+         *con1 = ae->u.Itcc.con1;
+         return IRExpr_ITE(IRExpr_RdTmp(ae->u.Itcc.co), 
+                           IRExpr_Const(con1),
                            IRExpr_Const(con0));
       case GetIt:
          return IRExpr_GetI(ae->u.GetIt.descr,
@@ -3502,21 +3502,21 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
          break;
       case Cf64i:
          break;
-      case Mttt:
-         ae->u.Mttt.co = subst_AvailExpr_Temp( env, ae->u.Mttt.co );
-         ae->u.Mttt.e0 = subst_AvailExpr_Temp( env, ae->u.Mttt.e0 );
-         ae->u.Mttt.eX = subst_AvailExpr_Temp( env, ae->u.Mttt.eX );
+      case Ittt:
+         ae->u.Ittt.co = subst_AvailExpr_Temp( env, ae->u.Ittt.co );
+         ae->u.Ittt.e1 = subst_AvailExpr_Temp( env, ae->u.Ittt.e1 );
+         ae->u.Ittt.e0 = subst_AvailExpr_Temp( env, ae->u.Ittt.e0 );
          break;
-      case Mtct:
-         ae->u.Mtct.co = subst_AvailExpr_Temp( env, ae->u.Mtct.co );
-         ae->u.Mtct.eX = subst_AvailExpr_Temp( env, ae->u.Mtct.eX );
+      case Ittc:
+         ae->u.Ittc.co = subst_AvailExpr_Temp( env, ae->u.Ittc.co );
+         ae->u.Ittc.e1 = subst_AvailExpr_Temp( env, ae->u.Ittc.e1 );
          break;
-      case Mttc:
-         ae->u.Mttc.co = subst_AvailExpr_Temp( env, ae->u.Mttc.co );
-         ae->u.Mttc.e0 = subst_AvailExpr_Temp( env, ae->u.Mttc.e0 );
+      case Itct:
+         ae->u.Itct.co = subst_AvailExpr_Temp( env, ae->u.Itct.co );
+         ae->u.Itct.e0 = subst_AvailExpr_Temp( env, ae->u.Itct.e0 );
          break;
-      case Mtcc:
-         ae->u.Mtcc.co = subst_AvailExpr_Temp( env, ae->u.Mtcc.co );
+      case Itcc:
+         ae->u.Itcc.co = subst_AvailExpr_Temp( env, ae->u.Itcc.co );
          break;
       case GetIt:
          ae->u.GetIt.ix = subst_AvailExpr_Temp( env, ae->u.GetIt.ix );
@@ -3594,35 +3594,35 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
             if (e->Iex.ITE.iffalse->tag == Iex_RdTmp) {
                if (e->Iex.ITE.iftrue->tag == Iex_RdTmp) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
-                  ae->tag       = Mttt;
-                  ae->u.Mttt.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
-                  ae->u.Mttt.e0 = e->Iex.ITE.iffalse->Iex.RdTmp.tmp;
-                  ae->u.Mttt.eX = e->Iex.ITE.iftrue->Iex.RdTmp.tmp;
+                  ae->tag       = Ittt;
+                  ae->u.Ittt.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Ittt.e1 = e->Iex.ITE.iftrue->Iex.RdTmp.tmp;
+                  ae->u.Ittt.e0 = e->Iex.ITE.iffalse->Iex.RdTmp.tmp;
                   return ae;
                }
                if (e->Iex.ITE.iftrue->tag == Iex_Const) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
-                  ae->tag       = Mttc;
-                  ae->u.Mttc.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
-                  ae->u.Mttc.e0 = e->Iex.ITE.iffalse->Iex.RdTmp.tmp;
-                  ae->u.Mttc.conX = *(e->Iex.ITE.iftrue->Iex.Const.con);
+                  ae->tag       = Itct;
+                  ae->u.Itct.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Itct.con1 = *(e->Iex.ITE.iftrue->Iex.Const.con);
+                  ae->u.Itct.e0 = e->Iex.ITE.iffalse->Iex.RdTmp.tmp;
                   return ae;
                }
             } else if (e->Iex.ITE.iffalse->tag == Iex_Const) {
                if (e->Iex.ITE.iftrue->tag == Iex_RdTmp) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
-                  ae->tag       = Mtct;
-                  ae->u.Mtct.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
-                  ae->u.Mtct.con0 = *(e->Iex.ITE.iffalse->Iex.Const.con);
-                  ae->u.Mtct.eX = e->Iex.ITE.iftrue->Iex.RdTmp.tmp;
+                  ae->tag       = Ittc;
+                  ae->u.Ittc.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Ittc.e1 = e->Iex.ITE.iftrue->Iex.RdTmp.tmp;
+                  ae->u.Ittc.con0 = *(e->Iex.ITE.iffalse->Iex.Const.con);
                   return ae;
                }
                if (e->Iex.ITE.iftrue->tag == Iex_Const) {
                   ae = LibVEX_Alloc(sizeof(AvailExpr));
-                  ae->tag       = Mtcc;
-                  ae->u.Mtcc.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
-                  ae->u.Mtcc.con0 = *(e->Iex.ITE.iffalse->Iex.Const.con);
-                  ae->u.Mtcc.conX = *(e->Iex.ITE.iftrue->Iex.Const.con);
+                  ae->tag       = Itcc;
+                  ae->u.Itcc.co = e->Iex.ITE.cond->Iex.RdTmp.tmp;
+                  ae->u.Itcc.con1 = *(e->Iex.ITE.iftrue->Iex.Const.con);
+                  ae->u.Itcc.con0 = *(e->Iex.ITE.iffalse->Iex.Const.con);
                   return ae;
                }
             }

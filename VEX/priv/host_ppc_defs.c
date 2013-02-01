@@ -1827,7 +1827,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       const HChar* str_size;
       if (i->Pin.AvLdSt.addr->tag == Pam_IR) {
          ppLoadImm(hregPPC_GPR30(mode64),
-                   i->Pin.AvLdSt.addr->Pam.RR.index, mode64);
+                   i->Pin.AvLdSt.addr->Pam.IR.index, mode64);
          vex_printf(" ; ");
       }
       str_size = sz==1 ? "eb" : sz==2 ? "eh" : sz==4 ? "ew" : "";

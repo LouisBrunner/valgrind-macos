@@ -3443,7 +3443,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r0  = iselVecExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(r1,dst));
-      HReg cc  = iselCondCode(env, e->Iex.ITE.cond);
+      AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
       addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }

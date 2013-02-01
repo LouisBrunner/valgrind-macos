@@ -2304,7 +2304,7 @@ static Bool sane_AMode ( ISelEnv* env, PPCAMode* am )
       return toBool( hregClass(am->Pam.RR.base) == HRcGPR(mode64) && 
                      hregIsVirtual(am->Pam.RR.base) &&
                      hregClass(am->Pam.RR.index) == HRcGPR(mode64) &&
-                     hregIsVirtual(am->Pam.IR.index) );
+                     hregIsVirtual(am->Pam.RR.index) );
    default:
       vpanic("sane_AMode: unknown ppc amode tag");
    }

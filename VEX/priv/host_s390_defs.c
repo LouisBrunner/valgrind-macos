@@ -552,6 +552,11 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       addHRegUse(u, HRmWrite, insn->variant.move.dst);
       break;
 
+   case S390_INSN_MEMCPY:
+      s390_amode_get_reg_usage(u, insn->variant.memcpy.src);
+      s390_amode_get_reg_usage(u, insn->variant.memcpy.dst);
+      break;
+
    case S390_INSN_COND_MOVE:
       s390_opnd_RMI_get_reg_usage(u, insn->variant.cond_move.src);
       addHRegUse(u, HRmWrite, insn->variant.cond_move.dst);
@@ -847,6 +852,11 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    case S390_INSN_MOVE:
       insn->variant.move.dst = lookupHRegRemap(m, insn->variant.move.dst);
       insn->variant.move.src = lookupHRegRemap(m, insn->variant.move.src);
+      break;
+
+   case S390_INSN_MEMCPY:
+      s390_amode_map_regs(m, insn->variant.memcpy.dst);
+      s390_amode_map_regs(m, insn->variant.memcpy.src);
       break;
 
    case S390_INSN_COND_MOVE:
@@ -2819,6 +2829,16 @@ s390_emit_MSGFI(UChar *p, UChar r1, UInt i2)
       s390_disasm(ENC3(MNM, GPR, INT), "msgfi", r1, i2);
 
    return emit_RIL(p, 0xc20000000000ULL, r1, i2);
+}
+
+
+static UChar *
+s390_emit_MVC(UChar *p, UInt l, UChar b1, UShort d1, UChar b2, UShort d2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDLB, UDXB), "mvc", d1, l, b1, d2, 0, b2);
+
+   return emit_SSa(p, 0xd20000000000ULL, l, b1, d1, b2, d2);
 }
 
 
@@ -5172,6 +5192,27 @@ s390_insn_move(UChar size, HReg dst, HReg src)
 
 
 s390_insn *
+s390_insn_memcpy(UChar size, s390_amode *dst, s390_amode *src)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   /* This insn will be mapped to MVC which requires base register
+      plus 12-bit displacement */
+   vassert(src->tag == S390_AMODE_B12);
+   vassert(dst->tag == S390_AMODE_B12);
+
+   insn->tag  = S390_INSN_MEMCPY;
+   insn->size = size;
+   insn->variant.memcpy.src = src;
+   insn->variant.memcpy.dst = dst;
+
+   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+
+   return insn;
+}
+
+
+s390_insn *
 s390_insn_cond_move(UChar size, s390_cc_t cond, HReg dst, s390_opnd_RMI src)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
@@ -6269,6 +6310,11 @@ s390_insn_as_string(const s390_insn *insn)
                    insn->variant.move.src);
       break;
 
+   case S390_INSN_MEMCPY:
+      s390_sprintf(buf, "%M %A,%A", "v-memcpy", insn->variant.memcpy.dst,
+                   insn->variant.memcpy.src);
+      break;
+
    case S390_INSN_COND_MOVE:
       s390_sprintf(buf, "%M if (%C) %R,%O", "v-move",
                    insn->variant.cond_move.cond, insn->variant.cond_move.dst,
@@ -6960,6 +7006,17 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
    }
 
    vpanic("s390_insn_move_emit");
+}
+
+
+static UChar *
+s390_insn_memcpy_emit(UChar *buf, const s390_insn *insn)
+{
+   s390_amode *dst = insn->variant.memcpy.dst;
+   s390_amode *src = insn->variant.memcpy.src;
+
+   return s390_emit_MVC(buf, insn->size - 1, hregNumber(dst->b), dst->d,
+                        hregNumber(src->b), src->d);
 }
 
 
@@ -9431,6 +9488,10 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 
    case S390_INSN_MOVE:
       end = s390_insn_move_emit(buf, insn);
+      break;
+
+   case S390_INSN_MEMCPY:
+      end = s390_insn_memcpy_emit(buf, insn);
       break;
 
    case S390_INSN_COND_MOVE:

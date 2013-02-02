@@ -119,6 +119,7 @@ typedef enum {
    S390_INSN_LOAD,   /* load register from memory */
    S390_INSN_STORE,  /* store register to memory */
    S390_INSN_MOVE,   /* from register to register */
+   S390_INSN_MEMCPY, /* from memory to memory */
    S390_INSN_COND_MOVE, /* conditonal "move" to register */
    S390_INSN_LOAD_IMMEDIATE,
    S390_INSN_ALU,
@@ -333,6 +334,10 @@ typedef struct {
          HReg        dst;
          HReg        src;
       } move;
+      struct {
+         s390_amode *dst;
+         s390_amode *src;
+      } memcpy;
       struct {
          s390_cc_t     cond;
          HReg          dst;
@@ -561,6 +566,7 @@ typedef struct {
 s390_insn *s390_insn_load(UChar size, HReg dst, s390_amode *src);
 s390_insn *s390_insn_store(UChar size, s390_amode *dst, HReg src);
 s390_insn *s390_insn_move(UChar size, HReg dst, HReg src);
+s390_insn *s390_insn_memcpy(UChar size, s390_amode *dst, s390_amode *src);
 s390_insn *s390_insn_cond_move(UChar size, s390_cc_t cond, HReg dst,
                                s390_opnd_RMI src);
 s390_insn *s390_insn_load_immediate(UChar size, HReg dst, ULong val);

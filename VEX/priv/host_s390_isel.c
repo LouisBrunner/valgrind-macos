@@ -3073,6 +3073,19 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
             addInstr(env, s390_insn_mimm(sizeofIRType(tyd), am, value));
             return;
          }
+         /* Check whether we can use a memcpy here. Currently, the restriction
+            is that both amodes need to be B12, so MVC can be emitted.
+            We do not consider a store whose data expression is a load because
+            we don't want to deal with overlapping locations. */
+         /* store(get) never overlaps*/
+         if (am->tag == S390_AMODE_B12 &&
+             stmt->Ist.Store.data->tag == Iex_Get) {
+            UInt offset = stmt->Ist.Store.data->Iex.Get.offset;
+            s390_amode *from = s390_amode_for_guest_state(offset);
+            addInstr(env, s390_insn_memcpy(sizeofIRType(tyd), am, from));
+            return;
+         }
+         /* General case: compile data into a register */
          src = s390_isel_int_expr(env, stmt->Ist.Store.data);
          break;
 
@@ -3182,6 +3195,43 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
             addInstr(env, s390_insn_mimm(sizeofIRType(tyd), am, value));
             return;
          }
+         /* Check whether we can use a memcpy here. Currently, the restriction
+            is that both amodes need to be B12, so MVC can be emitted. */
+         /* put(load) never overlaps */
+         if (am->tag == S390_AMODE_B12 &&
+             stmt->Ist.Put.data->tag == Iex_Load) {
+            if (stmt->Ist.Put.data->Iex.Load.end != Iend_BE) goto stmt_fail;
+            IRExpr *data = stmt->Ist.Put.data->Iex.Load.addr;
+            s390_amode *from = s390_isel_amode(env, data);
+            UInt size = sizeofIRType(tyd);
+
+            if (from->tag == S390_AMODE_B12) {
+               /* Source can be compiled into a B12 amode. */
+               addInstr(env, s390_insn_memcpy(size, am, from));
+               return;
+            }
+
+            src = newVRegI(env);
+            addInstr(env, s390_insn_load(size, src, from));
+            break;
+         }
+         /* put(get) */
+         if (am->tag == S390_AMODE_B12 &&
+             stmt->Ist.Put.data->tag == Iex_Get) {
+            UInt put_offset = am->d;
+            UInt get_offset = stmt->Ist.Put.data->Iex.Get.offset;
+            UInt size = sizeofIRType(tyd);
+            /* don't memcpy in case of overlap */
+            if (put_offset + size <= get_offset ||
+                get_offset + size <= put_offset) {
+               s390_amode *from = s390_amode_for_guest_state(get_offset);
+               addInstr(env, s390_insn_memcpy(size, am, from));
+               return;
+            }
+            goto no_memcpy_put;
+         }
+         /* General case: compile data into a register */
+no_memcpy_put:
          src = s390_isel_int_expr(env, stmt->Ist.Put.data);
          break;
 

@@ -8396,16 +8396,6 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    /* Stash away the client's FPC register because the helper might change it. */
    buf = s390_emit_STFPC(buf, S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_FPC_C);
 
-   /* Before we can call the helper, we need to save the link register,
-      because the BASR will overwrite it. We cannot use a register for that.
-      (a) Volatile registers will be modified by the helper.
-      (b) For saved registers the client code assumes that they have not
-          changed after the function returns. So we cannot use it to store
-          the link register.
-      In the dispatcher, before calling the client code, we have arranged for
-      a location on the stack for this purpose. See dispatch-s390x-linux.S. */
-   buf = s390_emit_STG(buf, S390_REGNO_LINK_REGISTER, 0,        // save LR
-                       S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_LR, 0);
    buf = s390_emit_BASR(buf, S390_REGNO_LINK_REGISTER, 1);      // call helper
 
    /* Move the return value to the destination register */
@@ -8414,8 +8404,6 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
                           S390_REGNO_RETURN_VALUE);
    }
 
-   buf = s390_emit_LG(buf, S390_REGNO_LINK_REGISTER, 0,         // restore LR
-                      S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_LR, 0);
    buf = s390_emit_LFPC(buf, S390_REGNO_STACK_POINTER,          // restore FPC
                         S390_OFFSET_SAVED_FPC_C);
 

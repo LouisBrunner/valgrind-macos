@@ -2756,7 +2756,8 @@ static void putGST_field ( PPC_GST reg, IRExpr* src, UInt fld )
       shft = 4*(7-fld);
    else
       shft = 4*(15-fld);
-   mask = 0xF<<shft;
+   mask = 0xF;
+   mask = mask << shft;
 
    switch (reg) {
    case PPC_GST_CR:

@@ -140,7 +140,7 @@ store_aux(IRSB *irsb, IREndness endian, IRExpr *addr, IRExpr *data)
 
 
 /* Store a value to memory. If a value requires more than 8 bytes a series
-   of 8-byte loads will be generated. */
+   of 8-byte stores will be generated. */
 static void __inline__
 store(IRSB *irsb, IREndness endian, HWord haddr, IRExpr *data)
 {
@@ -251,7 +251,7 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
 
    if (0) {
       vex_printf("BEGIN inject\n");
-      if (sizeofIRType(iricb.t_result) <= 8) {
+      if (iricb.t_result == Ity_I1 || sizeofIRType(iricb.t_result) <= 8) {
          ppIRStmt(irsb->stmts[irsb->stmts_used - 1]);
       } else if (sizeofIRType(iricb.t_result) == 16) {
          ppIRStmt(irsb->stmts[irsb->stmts_used - 2]);

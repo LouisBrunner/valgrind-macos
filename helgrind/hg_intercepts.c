@@ -2034,9 +2034,15 @@ PTH_FUNC(int, sem_close, sem_t* sem)
    ret_ty I_WRAP_SONAME_FNNAME_ZU(libQtCoreZdsoZa,f)(args); \
    ret_ty I_WRAP_SONAME_FNNAME_ZU(libQtCoreZdsoZa,f)(args)
 
+// soname is libQt5Core.so.4 ; match against libQt5Core.so*
+#define QT5_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZU(libQt5CoreZdsoZa,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZU(libQt5CoreZdsoZa,f)(args)
+
 //-----------------------------------------------------------
 // QMutex::lock()
-QT4_FUNC(void, _ZN6QMutex4lockEv, void* self)
+__attribute__((noinline))
+static void QMutex_lock_WRK(void* self)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -2057,9 +2063,17 @@ QT4_FUNC(void, _ZN6QMutex4lockEv, void* self)
    }
 }
 
+QT4_FUNC(void, _ZN6QMutex4lockEv, void* self) {
+    QMutex_lock_WRK(self);
+}
+QT5_FUNC(void, _ZN6QMutex4lockEv, void* self) {
+    QMutex_lock_WRK(self);
+}
+
 //-----------------------------------------------------------
 // QMutex::unlock()
-QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self)
+__attribute__((noinline))
+static void QMutex_unlock_WRK(void* self)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -2081,10 +2095,18 @@ QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self)
    }
 }
 
+QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self) {
+    QMutex_unlock_WRK(self);
+}
+QT5_FUNC(void, _ZN6QMutex6unlockEv, void* self) {
+    QMutex_unlock_WRK(self);
+}
+
 //-----------------------------------------------------------
 // bool QMutex::tryLock()
 // using 'long' to mimic C++ 'bool'
-QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self)
+__attribute__((noinline))
+static long QMutex_tryLock_WRK(void* self)
 {
    OrigFn fn;
    long   ret;
@@ -2111,10 +2133,18 @@ QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self)
    return ret;
 }
 
+QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self) {
+    return QMutex_tryLock_WRK(self);
+}
+QT5_FUNC(long, _ZN6QMutex7tryLockEv, void* self) {
+    return QMutex_tryLock_WRK(self);
+}
+
 //-----------------------------------------------------------
 // bool QMutex::tryLock(int)
 // using 'long' to mimic C++ 'bool'
-QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
+__attribute__((noinline))
+static long QMutex_tryLock_int_WRK(void* self, long arg2)
 {
    OrigFn fn;
    long   ret;
@@ -2142,6 +2172,12 @@ QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
    return ret;
 }
 
+QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2) {
+    return QMutex_tryLock_int_WRK(self, arg2);
+}
+QT5_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2) {
+    return QMutex_tryLock_int_WRK(self, arg2);
+}
 
 //-----------------------------------------------------------
 // It's not really very clear what the args are here.  But from
@@ -2152,9 +2188,8 @@ QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
 // is that of the mutex and the second is either zero or one,
 // probably being the recursion mode, therefore.
 // QMutex::QMutex(QMutex::RecursionMode)  ("C1ENS" variant)
-QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE,
-         void* mutex,
-         long  recmode)
+__attribute__((noinline))
+static void* QMutex_constructor_WRK(void* mutex, long recmode)
 {
    OrigFn fn;
    long   ret;
@@ -2166,9 +2201,17 @@ QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE,
    return (void*)ret;
 }
 
+QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE, void* self, long recmode) {
+    return QMutex_constructor_WRK(self, recmode);
+}
+QT5_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE, void* self, long recmode) {
+    return QMutex_constructor_WRK(self, recmode);
+}
+
 //-----------------------------------------------------------
 // QMutex::~QMutex()  ("D1Ev" variant)
-QT4_FUNC(void*, _ZN6QMutexD1Ev, void* mutex)
+__attribute__((noinline))
+static void* QMutex_destructor_WRK(void* mutex)
 {
    OrigFn fn;
    long   ret;
@@ -2179,6 +2222,12 @@ QT4_FUNC(void*, _ZN6QMutexD1Ev, void* mutex)
    return (void*)ret;
 }
 
+QT4_FUNC(void*, _ZN6QMutexD1Ev, void* self) {
+    return QMutex_destructor_WRK(self);
+}
+QT5_FUNC(void*, _ZN6QMutexD1Ev, void* self) {
+    return QMutex_destructor_WRK(self);
+}
 
 //-----------------------------------------------------------
 // QMutex::QMutex(QMutex::RecursionMode)  ("C2ENS" variant)
@@ -2193,6 +2242,12 @@ QT4_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE,
    return NULL;
 }
 
+QT5_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE, void* self, long recmode)
+{
+   assert(0);
+   /*NOTREACHED*/
+   return NULL;
+}
 
 //-----------------------------------------------------------
 // QMutex::~QMutex()  ("D2Ev" variant)
@@ -2204,6 +2259,12 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    return NULL;
 }
 
+QT5_FUNC(void*, _ZN6QMutexD2Ev, void* self)
+{
+   assert(0);
+   /*NOTREACHED*/
+   return NULL;
+}
 
 // QReadWriteLock is not intercepted directly.  See comments
 // above.

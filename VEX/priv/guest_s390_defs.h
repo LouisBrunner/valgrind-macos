@@ -220,6 +220,8 @@ enum {
    | S390_CC_OP_DFP_128_TO_UINT_32  | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
    | S390_CC_OP_DFP_64_TO_UINT_64   | D source              | Z rounding mode      |                 |
    | S390_CC_OP_DFP_128_TO_UINT_64  | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_64_TO_INT_32    | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_INT_32   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
    | S390_CC_OP_DFP_64_TO_INT_64    | D source              | Z rounding mode      |                 |
    | S390_CC_OP_DFP_128_TO_INT_64   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
    +--------------------------------+-----------------------+----------------------+-----------------+

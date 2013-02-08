@@ -1,0 +1,2 @@
+prog: dfpconv
+prereq: test -e dfpconv && ../../../tests/s390x_features s390x-dfp

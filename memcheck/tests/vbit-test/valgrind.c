@@ -104,6 +104,10 @@ valgrind_execute_test(const irop_t *op, test_data_t *data)
          printf("\n");
       }
    }
+   if (verbose > 2)
+      if (data->rounding_mode != NO_ROUNDING_MODE)
+         printf("rounding mode %u\n", data->rounding_mode);
+
    valgrind_vex_inject_ir();
    valgrind_get_vbits(&data->result);
    if (verbose > 2) {

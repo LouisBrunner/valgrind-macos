@@ -682,29 +682,33 @@ set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    a rounding mode in the insn itself. In that case there is no need to
    stick the rounding mode into the FPC -- a good thing. However, the
    rounding mode must be known.
-   The IR to s390 encoding is chosen in the range 0:7 except
-   S390_DFP_ROUND_NEAREST_TIE_TOWARD_0 and
-   S390_DFP_ROUND_AWAY_0 which have no choice within the range.
-   Since the s390 dfp rounding mode encoding in 8:15 is not used, the
-   quantum excpetion is not suppressed and this is fine as valgrind does
-   not model this exception.
+
+   When mapping an Irrm_DFP_ value to an S390_DFP_ROUND_ value there is
+   often a choice. For instance, Irrm_DFP_ZERO could be mapped to either
+   S390_DFP_ROUND_ZERO_5 or S390_DFP_ROUND_ZERO_9. The difference between
+   those two is that with S390_DFP_ROUND_ZERO_9 the recognition of the
+   quantum exception is suppressed whereas with S390_DFP_ROUND_ZERO_5 it
+   is not.  As the quantum exception is not modelled we can choose either
+   value. The choice is to use S390_DFP_ROUND_.. values in the range [8:15],
+   because values in the range [1:7] have unpredictable rounding behaviour
+   when the floating point exception facility is not installed.
 
    Translation table of
    s390 DFP rounding mode to IRRoundingMode to s390 DFP rounding mode
 
    s390(S390_DFP_ROUND_)  |  IR(Irrm_DFP_)       |  s390(S390_DFP_ROUND_)
    --------------------------------------------------------------------
-   NEAREST_TIE_AWAY_0_1   |  NEAREST_TIE_AWAY_0  |  NEAREST_TIE_AWAY_0_1
+   NEAREST_TIE_AWAY_0_1   |  NEAREST_TIE_AWAY_0  |  NEAREST_TIE_AWAY_0_12
    NEAREST_TIE_AWAY_0_12  |     "                |     "
-   PREPARE_SHORT_3        |  PREPARE_SHORTER     |  PREPARE_SHORT_3
+   PREPARE_SHORT_3        |  PREPARE_SHORTER     |  PREPARE_SHORT_15
    PREPARE_SHORT_15       |     "                |     "
-   NEAREST_EVEN_4         |  NEAREST             |  NEAREST_EVEN_4
+   NEAREST_EVEN_4         |  NEAREST             |  NEAREST_EVEN_8
    NEAREST_EVEN_8         |     "                |     "
-   ZERO_5                 |  ZERO                |  ZERO_5
+   ZERO_5                 |  ZERO                |  ZERO_9
    ZERO_9                 |     "                |     "
-   POSINF_6               |  PosINF              |  POSINF_6
+   POSINF_6               |  PosINF              |  POSINF_10
    POSINF_10              |     "                |     "
-   NEGINF_7               |  NegINF              |  NEGINF_7
+   NEGINF_7               |  NegINF              |  NEGINF_11
    NEGINF_11              |     "                |     "
    NEAREST_TIE_TOWARD_0   |  NEAREST_TIE_TOWARD_0|  NEAREST_TIE_TOWARD_0
    AWAY_0                 |  AWAY_FROM_ZERO      |  AWAY_0
@@ -718,17 +722,17 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
 
       switch (mode) {
       case Irrm_DFP_NEAREST:
-         return S390_DFP_ROUND_NEAREST_EVEN_4;
+         return S390_DFP_ROUND_NEAREST_EVEN_8;
       case Irrm_DFP_NegINF:
-         return S390_DFP_ROUND_NEGINF_7;
+         return S390_DFP_ROUND_NEGINF_11;
       case Irrm_DFP_PosINF:
-         return S390_DFP_ROUND_POSINF_6;
+         return S390_DFP_ROUND_POSINF_10;
       case Irrm_DFP_ZERO:
-         return S390_DFP_ROUND_ZERO_5;
+         return S390_DFP_ROUND_ZERO_9;
       case Irrm_DFP_NEAREST_TIE_AWAY_0:
-         return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1;
+         return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12;
       case Irrm_DFP_PREPARE_SHORTER:
-          return S390_DFP_ROUND_PREPARE_SHORT_3;
+          return S390_DFP_ROUND_PREPARE_SHORT_15;
       case Irrm_DFP_AWAY_FROM_ZERO:
          return S390_DFP_ROUND_AWAY_0;
       case Irrm_DFP_NEAREST_TIE_TOWARD_0:

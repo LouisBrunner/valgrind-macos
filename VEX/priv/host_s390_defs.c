@@ -4157,6 +4157,41 @@ s390_emit_CXTR(UChar *p, UChar r1, UChar r2)
 
 
 static UChar *
+s390_emit_CDGTRA(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0);
+   vassert(m3 == 0 || s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      if (m3 == 0)
+         s390_disasm(ENC3(MNM, FPR, GPR), "cdgtr", r1, r2);
+      else
+         s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdgtra", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb3f10000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CXGTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0);
+   /* rounding mode m3 is not considered, as the corresponding
+      IRop (Iop_I64StoD128) does not take rounding mode. */
+   vassert(m3 == 0);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC3(MNM, FPR, GPR), "cxgtr", r1, r2);
+   }
+
+   return emit_RRF2(p, 0xb3f90000, m3, m4, r1, r2);
+}
+
+
+static UChar *
 s390_emit_CDFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
    vassert(m4 == 0);
@@ -4289,6 +4324,36 @@ s390_emit_CFXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    }
 
    return emit_RRF2(p, 0xb9490000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CGDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, GPR, UINT, FPR), "cgdtr", r1, m3, r2);
+   }
+
+   return emit_RRF2(p, 0xb3e10000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_CGXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(s390_host_has_dfp);
+   vassert(m4 == 0);
+   vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      s390_disasm(ENC4(MNM, GPR, UINT, FPR), "cgxtr", r1, m3, r2);
+   }
+
+   return emit_RRF2(p, 0xb3e90000, m3, m4, r1, r2);
 }
 
 
@@ -6586,13 +6651,17 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_DFP_D64_TO_D128:
       case S390_DFP_D128_TO_D64: op = "v-d2d"; break;
       case S390_DFP_I32_TO_D64:
-      case S390_DFP_I32_TO_D128: op = "v-i2d"; break;
+      case S390_DFP_I32_TO_D128:
+      case S390_DFP_I64_TO_D64:
+      case S390_DFP_I64_TO_D128: op = "v-i2d"; break;
       case S390_DFP_U32_TO_D64:
       case S390_DFP_U32_TO_D128:
       case S390_DFP_U64_TO_D64:
       case S390_DFP_U64_TO_D128: op = "v-u2d"; break;
       case S390_DFP_D64_TO_I32:
-      case S390_DFP_D128_TO_I32: op = "v-d2i"; break;
+      case S390_DFP_D128_TO_I32:
+      case S390_DFP_D64_TO_I64:
+      case S390_DFP_D128_TO_I64: op = "v-d2i"; break;
       case S390_DFP_D64_TO_U32:
       case S390_DFP_D64_TO_U64:
       case S390_DFP_D128_TO_U32:
@@ -6742,13 +6811,17 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_DFP_U32_TO_D128: p += vex_sprintf(p, "4 -> "); goto common;
       case S390_DFP_D64_TO_D32:
       case S390_DFP_D64_TO_D128:
+      case S390_DFP_I64_TO_D64:
+      case S390_DFP_I64_TO_D128:
       case S390_DFP_U64_TO_D64:
       case S390_DFP_U64_TO_D128:
       case S390_DFP_D64_TO_I32:
+      case S390_DFP_D64_TO_I64:
       case S390_DFP_D64_TO_U32:
       case S390_DFP_D64_TO_U64:  p += vex_sprintf(p, "8 -> "); goto common;
       case S390_DFP_D128_TO_D64:
       case S390_DFP_D128_TO_I32:
+      case S390_DFP_D128_TO_I64:
       case S390_DFP_D128_TO_U32:
       case S390_DFP_D128_TO_U64: p += vex_sprintf(p, "16 -> "); goto common;
       default:
@@ -8890,6 +8963,8 @@ s390_insn_dfp_convert_emit(UChar *buf, const s390_insn *insn)
       /* Convert to fixed */
    case S390_DFP_D64_TO_I32:  return s390_emit_CFDTR(buf, m3, m4, r1, r2);
    case S390_DFP_D128_TO_I32: return s390_emit_CFXTR(buf, m3, m4, r1, r2);
+   case S390_DFP_D64_TO_I64:  return s390_emit_CGDTR(buf, m3, m4, r1, r2);
+   case S390_DFP_D128_TO_I64: return s390_emit_CGXTR(buf, m3, m4, r1, r2);
 
       /* Convert to logical */
    case S390_DFP_D64_TO_U32:  return s390_emit_CLFDTR(buf, m3, m4, r1, r2);
@@ -8900,6 +8975,8 @@ s390_insn_dfp_convert_emit(UChar *buf, const s390_insn *insn)
       /* Convert from fixed */
    case S390_DFP_I32_TO_D64:  return s390_emit_CDFTR(buf, 0, m4, r1, r2);
    case S390_DFP_I32_TO_D128: return s390_emit_CXFTR(buf, 0, m4, r1, r2);
+   case S390_DFP_I64_TO_D64:  return s390_emit_CDGTRA(buf, m3, m4, r1, r2);
+   case S390_DFP_I64_TO_D128: return s390_emit_CXGTR(buf, 0, m4, r1, r2);
 
       /* Convert from logical */
    case S390_DFP_U32_TO_D64:  return s390_emit_CDLFTR(buf, m3, m4, r1, r2);

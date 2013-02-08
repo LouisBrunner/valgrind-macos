@@ -150,7 +150,9 @@ enum {
    S390_CC_OP_DFP_64_TO_UINT_64 = 52,
    S390_CC_OP_DFP_128_TO_UINT_64 = 53,
    S390_CC_OP_DFP_64_TO_INT_32 = 54,
-   S390_CC_OP_DFP_128_TO_INT_32 = 55
+   S390_CC_OP_DFP_128_TO_INT_32 = 55,
+   S390_CC_OP_DFP_64_TO_INT_64 = 56,
+   S390_CC_OP_DFP_128_TO_INT_64 = 57
 };
 
 /*------------------------------------------------------------*/

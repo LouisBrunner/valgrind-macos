@@ -1690,6 +1690,13 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
       return S390_CC_FOR_DFP128_CONVERT(".insn rrf,0xb9490000", cc_dep1,
                                         cc_dep2, cc_ndep);
 
+   case S390_CC_OP_DFP_64_TO_INT_64: /* CGDTR */
+      return S390_CC_FOR_DFP_CONVERT(".insn rrf,0xb3e10000", cc_dep1, cc_dep2);
+
+   case S390_CC_OP_DFP_128_TO_INT_64: /* CGXTR */
+      return S390_CC_FOR_DFP128_CONVERT(".insn rrf,0xb3e90000", cc_dep1,
+                                        cc_dep2, cc_ndep);
+
    case S390_CC_OP_DFP_64_TO_UINT_32: /* CLFDTR */
       return S390_CC_FOR_DFP_UCONVERT(".insn rrf,0xb9430000", cc_dep1, cc_dep2);
 

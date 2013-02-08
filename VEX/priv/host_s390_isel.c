@@ -1135,9 +1135,11 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_F128toI64U: conv = S390_BFP_F128_TO_U64; goto do_convert_128;
 
       case Iop_D64toI32S:  dconv = S390_DFP_D64_TO_I32;  goto do_convert_dfp;
+      case Iop_D64toI64S:  dconv = S390_DFP_D64_TO_I64;  goto do_convert_dfp;
       case Iop_D64toI32U:  dconv = S390_DFP_D64_TO_U32;  goto do_convert_dfp;
       case Iop_D64toI64U:  dconv = S390_DFP_D64_TO_U64;  goto do_convert_dfp;
       case Iop_D128toI32S: dconv = S390_DFP_D128_TO_I32; goto do_convert_dfp128;
+      case Iop_D128toI64S: dconv = S390_DFP_D128_TO_I64; goto do_convert_dfp128;
       case Iop_D128toI32U: dconv = S390_DFP_D128_TO_U32; goto do_convert_dfp128;
       case Iop_D128toI64U: dconv = S390_DFP_D128_TO_U64; goto do_convert_dfp128;
 
@@ -2520,18 +2522,16 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
    case Iex_Unop: {
       IRExpr *left = expr->Iex.Unop.arg;
       s390_dfp_conv_t conv;
-      //      HReg op, f12, f13, f14, f15;
       HReg op, f12, f14;
 
-      /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
+      /* We use non-virtual registers as pairs (f12, f14)) */
       f12 = make_fpr(12);
-      //      f13 = make_fpr(13);
       f14 = make_fpr(14);
-      //      f15 = make_fpr(15);
 
       switch (expr->Iex.Unop.op) {
       case Iop_D64toD128:   conv = S390_DFP_D64_TO_D128;  goto convert_dfp;
       case Iop_I32StoD128:  conv = S390_DFP_I32_TO_D128;  goto convert_int;
+      case Iop_I64StoD128:  conv = S390_DFP_I64_TO_D128;  goto convert_int;
       case Iop_I32UtoD128:  conv = S390_DFP_U32_TO_D128;  goto convert_int;
       case Iop_I64UtoD128:  conv = S390_DFP_U64_TO_D128;  goto convert_int;
       default:
@@ -2637,6 +2637,7 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       switch (op) {
       case Iop_D64toD32:  conv = S390_DFP_D64_TO_D32; goto convert_dfp;
+      case Iop_I64StoD64: conv = S390_DFP_I64_TO_D64; goto convert_int;
       case Iop_I64UtoD64: conv = S390_DFP_U64_TO_D64; goto convert_int;
 
       convert_dfp:

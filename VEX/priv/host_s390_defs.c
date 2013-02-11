@@ -4492,7 +4492,7 @@ s390_emit_LEDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
    vassert(m4 == 0);
-   vassert(m3 == 0 || s390_host_has_fpext);
+   vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
       s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT),
@@ -4508,7 +4508,7 @@ s390_emit_LDXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
    vassert(m4 == 0);
-   vassert(m3 == 0 || s390_host_has_fpext);
+   vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
       s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT),

@@ -9226,9 +9226,12 @@ s390_irgen_ADTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_dw0(r2));
    assign(op2, get_dpr_dw0(r3));
@@ -9249,9 +9252,12 @@ s390_irgen_AXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_pair(r2));
    assign(op2, get_dpr_pair(r3));
@@ -9360,6 +9366,9 @@ s390_irgen_CXGTR(UChar m3 __attribute__((unused)),
    IRTemp op2 = newTemp(Ity_I64);
 
    vassert(s390_host_has_dfp);
+
+   /* No emulation warning here about an non-zero m3 on hosts without
+      floating point extension facility. No rounding is performed */
 
    assign(op2, get_gpr_dw0(r2));
    put_dpr_pair(r1, unop(Iop_I64StoD128, mkexpr(op2)));
@@ -9662,9 +9671,12 @@ s390_irgen_DDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_dw0(r2));
    assign(op2, get_dpr_dw0(r3));
@@ -9684,9 +9696,12 @@ s390_irgen_DXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_pair(r2));
    assign(op2, get_dpr_pair(r3));
@@ -9742,7 +9757,10 @@ s390_irgen_LDXTR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
-   if (! s390_host_has_fpext && m3 != S390_DFP_ROUND_PER_FPC_0) {
+
+   /* If fpext is not installed and m3 is in 1:7,
+      rounding mode performed is unpredictable */
+   if (! s390_host_has_fpext && m3 > 0 && m3 < 8) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
       m3 = S390_DFP_ROUND_PER_FPC_0;
    }
@@ -9760,7 +9778,10 @@ s390_irgen_LEDTR(UChar m3, UChar m4 __attribute__((unused)),
                  UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
-   if (! s390_host_has_fpext && m3 != S390_DFP_ROUND_PER_FPC_0) {
+
+   /* If fpext is not installed and m3 is in 1:7,
+      rounding mode performed is unpredictable */
+   if (! s390_host_has_fpext && m3 > 0 && m3 < 8) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
       m3 = S390_DFP_ROUND_PER_FPC_0;
    }
@@ -9806,9 +9827,12 @@ s390_irgen_MDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_dw0(r2));
    assign(op2, get_dpr_dw0(r3));
@@ -9828,9 +9852,12 @@ s390_irgen_MXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_pair(r2));
    assign(op2, get_dpr_pair(r3));
@@ -9850,9 +9877,12 @@ s390_irgen_SDTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_dw0(r2));
    assign(op2, get_dpr_dw0(r3));
@@ -9873,9 +9903,12 @@ s390_irgen_SXTRA(UChar r3, UChar m4, UChar r1, UChar r2)
    IRTemp rounding_mode;
 
    vassert(s390_host_has_dfp);
-   vassert(m4 == 0 || s390_host_has_fpext);
-   /* when m4 = 0, S390_DFP_ROUND_PER_FPC_0 should be set.
-      since S390_DFP_ROUND_PER_FPC_0 is also 0, passing m4 is sufficient */
+
+   if (! s390_host_has_fpext && m4 != S390_DFP_ROUND_PER_FPC_0) {
+      emulation_warning(EmWarn_S390X_fpext_rounding);
+      m4 = S390_DFP_ROUND_PER_FPC_0;
+   }
+
    rounding_mode = encode_dfp_rounding_mode(m4);
    assign(op1, get_dpr_pair(r2));
    assign(op2, get_dpr_pair(r3));

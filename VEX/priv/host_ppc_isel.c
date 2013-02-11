@@ -311,7 +311,7 @@ static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO,
 {
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapMedLo[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapMedLo[tmp]));
    *vrLO = env->vregmapLo[tmp];
    *vrHI = env->vregmapMedLo[tmp];
 }
@@ -323,7 +323,7 @@ static void lookupIRTempQuad ( HReg* vrHi, HReg* vrMedHi, HReg* vrMedLo,
    vassert(!env->mode64);
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapMedLo[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapMedLo[tmp]));
    *vrHi    = env->vregmapHi[tmp];
    *vrMedHi = env->vregmapMedHi[tmp];
    *vrMedLo = env->vregmapMedLo[tmp];
@@ -897,7 +897,7 @@ void doHelperCall ( ISelEnv* env,
 
       /* Move the args to their final destinations. */
       for (i = 0; i < argreg; i++) {
-         if (tmpregs[i] == INVALID_HREG)  // Skip invalid regs
+         if (hregIsInvalid(tmpregs[i]))  // Skip invalid regs
             continue;
          /* None of these insns, including any spill code that might
             be generated, may alter the condition codes. */

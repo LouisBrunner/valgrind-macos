@@ -196,7 +196,7 @@ static HReg
 lookupIRTemp(ISelEnv *env, IRTemp tmp)
 {
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmap[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmap[tmp]));
 
    return env->vregmap[tmp];
 }
@@ -207,7 +207,7 @@ static void
 lookupIRTemp128(HReg *hi, HReg *lo, ISelEnv *env, IRTemp tmp)
 {
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapHI[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapHI[tmp]));
 
    *lo = env->vregmap[tmp];
    *hi = env->vregmapHI[tmp];

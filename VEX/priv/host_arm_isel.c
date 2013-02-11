@@ -137,7 +137,7 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapHI[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
    *vrHI = env->vregmapHI[tmp];
 }
@@ -581,7 +581,7 @@ Bool doHelperCall ( ISelEnv* env,
 
       /* Move the args to their final destinations. */
       for (i = 0; i < nextArgReg; i++) {
-         if (tmpregs[i] == INVALID_HREG) { // Skip invalid regs
+         if (hregIsInvalid(tmpregs[i])) { // Skip invalid regs
             addInstr(env, ARMInstr_Imm32( argregs[i], 0xAA ));
             continue;
          }
@@ -654,7 +654,7 @@ static Bool sane_AMode1 ( ARMAMode1* am )
          return
             toBool( hregClass(am->ARMam1.RI.reg) == HRcInt32
                     && (hregIsVirtual(am->ARMam1.RI.reg)
-                        || am->ARMam1.RI.reg == hregARM_R8())
+                        || sameHReg(am->ARMam1.RI.reg, hregARM_R8()))
                     && am->ARMam1.RI.simm13 >= -4095
                     && am->ARMam1.RI.simm13 <= 4095 );
       case ARMam1_RRS:

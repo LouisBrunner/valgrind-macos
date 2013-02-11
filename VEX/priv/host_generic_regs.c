@@ -103,7 +103,7 @@ void addHRegUse ( HRegUsage* tab, HRegMode mode, HReg reg )
    Int i;
    /* Find it ... */
    for (i = 0; i < tab->n_used; i++)
-      if (tab->hreg[i] == reg)
+      if (sameHReg(tab->hreg[i], reg))
          break;
    if (i == tab->n_used) {
       /* Not found, add new entry. */
@@ -161,7 +161,7 @@ void addToHRegRemap ( HRegRemap* map, HReg orig, HReg replacement )
 {
    Int i;
    for (i = 0; i < map->n_used; i++)
-      if (map->orig[i] == orig)
+      if (sameHReg(map->orig[i], orig))
          vpanic("addToHRegMap: duplicate entry");
    if (!hregIsVirtual(orig))
       vpanic("addToHRegMap: orig is not a vreg");
@@ -181,7 +181,7 @@ HReg lookupHRegRemap ( HRegRemap* map, HReg orig )
    if (!hregIsVirtual(orig))
       return orig;
    for (i = 0; i < map->n_used; i++)
-      if (map->orig[i] == orig)
+      if (sameHReg(map->orig[i], orig))
          return map->replacement[i];
    vpanic("lookupHRegRemap: not found");
 }

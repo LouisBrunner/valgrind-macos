@@ -1451,7 +1451,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       /* special-case "mr" */
       if (i->Pin.Alu.op == Palu_OR &&   // or Rd,Rs,Rs == mr Rd,Rs
           rh_srcR->tag == Prh_Reg &&
-          rh_srcR->Prh.Reg.reg == r_srcL) {
+          sameHReg(rh_srcR->Prh.Reg.reg, r_srcL)) {
          vex_printf("mr ");
          ppHRegPPC(i->Pin.Alu.dst);
          vex_printf(",");
@@ -2338,8 +2338,8 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       return;
    case Pin_AvBinary:
       if (i->Pin.AvBinary.op == Pav_XOR
-          && i->Pin.AvBinary.dst == i->Pin.AvBinary.srcL
-          && i->Pin.AvBinary.dst == i->Pin.AvBinary.srcR) {
+          && sameHReg(i->Pin.AvBinary.dst, i->Pin.AvBinary.srcL)
+          && sameHReg(i->Pin.AvBinary.dst, i->Pin.AvBinary.srcR)) {
          /* reg-alloc needs to understand 'xor r,r,r' as a write of r */
          /* (as opposed to a rite of passage :-) */
          addHRegUse(u, HRmWrite, i->Pin.AvBinary.dst);
@@ -2826,7 +2826,7 @@ Bool isMove_PPCInstr ( PPCInstr* i, HReg* src, HReg* dst )
          return False;
       if (i->Pin.Alu.srcR->tag != Prh_Reg)
          return False;
-      if (i->Pin.Alu.srcR->Prh.Reg.reg != i->Pin.Alu.srcL)
+      if (! sameHReg(i->Pin.Alu.srcR->Prh.Reg.reg, i->Pin.Alu.srcL))
          return False;
       *src = i->Pin.Alu.srcL;
       *dst = i->Pin.Alu.dst;

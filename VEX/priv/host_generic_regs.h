@@ -68,7 +68,11 @@
      int32 int64 float32 float64 simd64 simd128
 */
 
-typedef UInt HReg;
+typedef
+   struct {
+      UInt reg;
+   }
+   HReg;
 
 /* When extending this, do not use any value > 14 or < 0. */
 /* HRegClass describes host register classes which the instruction
@@ -116,29 +120,37 @@ static inline HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual ) {
       occupy 24 bits. */
    if (r24 != regno)
       vpanic("mkHReg: regno exceeds 2^24");
-   return regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
+   HReg r;
+   r.reg = regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
+   return r;
 }
 
 static inline HRegClass hregClass ( HReg r ) {
-   UInt rc = r;
+   UInt rc = r.reg;
    rc = (rc >> 28) & 0x0F;
    vassert(rc >= HRcInt32 && rc <= HRcVec128);
    return (HRegClass)rc;
 }
 
 static inline UInt hregNumber ( HReg r ) {
-   return ((UInt)r) & 0x00FFFFFF;
+   return r.reg & 0x00FFFFFF;
 }
 
 static inline Bool hregIsVirtual ( HReg r ) {
-   return toBool(((UInt)r) & (1<<24));
+   return toBool(r.reg & (1<<24));
 }
 
+static inline Bool sameHReg ( HReg r1, HReg r2 )
+{
+   return toBool(r1.reg == r2.reg);
+}
 
+static const HReg INVALID_HREG = { 0xFFFFFFFF };
 
-
-#define INVALID_HREG ((HReg)0xFFFFFFFF)
-
+static inline Bool hregIsInvalid ( HReg r )
+{
+   return sameHReg(r, INVALID_HREG);
+}
 
 /*---------------------------------------------------------*/
 /*--- Recording register usage (for reg-alloc)          ---*/

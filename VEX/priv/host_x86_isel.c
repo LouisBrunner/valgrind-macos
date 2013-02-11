@@ -201,7 +201,7 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapHI[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
    *vrHI = env->vregmapHI[tmp];
 }
@@ -1431,7 +1431,7 @@ static Bool sane_AMode ( X86AMode* am )
          return 
             toBool( hregClass(am->Xam.IR.reg) == HRcInt32
                     && (hregIsVirtual(am->Xam.IR.reg)
-                        || am->Xam.IR.reg == hregX86_EBP()) );
+                        || sameHReg(am->Xam.IR.reg, hregX86_EBP())) );
       case Xam_IRRS:
          return 
             toBool( hregClass(am->Xam.IRRS.base) == HRcInt32

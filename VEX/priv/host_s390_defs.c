@@ -646,7 +646,7 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       for (i = 1; i <= 5; ++i) {
          addHRegUse(u, HRmWrite, mkHReg(i, HRcInt64, False));
       }
-      if (insn->variant.helper_call.dst != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.helper_call.dst))
          addHRegUse(u, HRmWrite, insn->variant.helper_call.dst);
 
       /* Ditto for floating point registers. f0 - f7 are volatile */
@@ -706,10 +706,10 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
 
    case S390_INSN_BFP_CONVERT:
       addHRegUse(u, HRmWrite, insn->variant.bfp_convert.dst_hi);
-      if (insn->variant.bfp_convert.dst_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.bfp_convert.dst_lo))
          addHRegUse(u, HRmWrite, insn->variant.bfp_convert.dst_lo);
       addHRegUse(u, HRmRead,  insn->variant.bfp_convert.op_hi);
-      if (insn->variant.bfp_convert.op_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.bfp_convert.op_lo))
          addHRegUse(u, HRmRead, insn->variant.bfp_convert.op_lo);
       break;
 
@@ -758,10 +758,10 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
 
    case S390_INSN_DFP_CONVERT:
       addHRegUse(u, HRmWrite, insn->variant.dfp_convert.dst_hi);
-      if (insn->variant.dfp_convert.dst_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.dfp_convert.dst_lo))
          addHRegUse(u, HRmWrite, insn->variant.dfp_convert.dst_lo);
       addHRegUse(u, HRmRead,  insn->variant.dfp_convert.op_hi);  /* operand */
-      if (insn->variant.dfp_convert.op_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.dfp_convert.op_lo))
          addHRegUse(u, HRmRead, insn->variant.dfp_convert.op_lo); /* operand */
       break;
 
@@ -946,7 +946,7 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
          As for the arguments of the helper call -- they will be loaded into
          non-virtual registers. Again, we don't need to do anything for those
          here. */
-      if (insn->variant.helper_call.dst != INVALID_HREG) 
+      if (! hregIsInvalid(insn->variant.helper_call.dst)) 
          insn->variant.helper_call.dst = lookupHRegRemap(m, insn->variant.helper_call.dst);
       break;
 
@@ -1003,12 +1003,12 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    case S390_INSN_BFP_CONVERT:
       insn->variant.bfp_convert.dst_hi =
          lookupHRegRemap(m, insn->variant.bfp_convert.dst_hi);
-      if (insn->variant.bfp_convert.dst_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.bfp_convert.dst_lo))
          insn->variant.bfp_convert.dst_lo =
             lookupHRegRemap(m, insn->variant.bfp_convert.dst_lo);
       insn->variant.bfp_convert.op_hi =
          lookupHRegRemap(m, insn->variant.bfp_convert.op_hi);
-      if (insn->variant.bfp_convert.op_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.bfp_convert.op_lo))
          insn->variant.bfp_convert.op_lo =
             lookupHRegRemap(m, insn->variant.bfp_convert.op_lo);
       break;
@@ -1073,12 +1073,12 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    case S390_INSN_DFP_CONVERT:
       insn->variant.dfp_convert.dst_hi =
          lookupHRegRemap(m, insn->variant.dfp_convert.dst_hi);
-      if (insn->variant.dfp_convert.dst_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.dfp_convert.dst_lo))
          insn->variant.dfp_convert.dst_lo =
             lookupHRegRemap(m, insn->variant.dfp_convert.dst_lo);
       insn->variant.dfp_convert.op_hi =
          lookupHRegRemap(m, insn->variant.dfp_convert.op_hi);
-      if (insn->variant.dfp_convert.op_lo != INVALID_HREG)
+      if (! hregIsInvalid(insn->variant.dfp_convert.op_lo))
          insn->variant.dfp_convert.op_lo =
             lookupHRegRemap(m, insn->variant.dfp_convert.op_lo);
       break;
@@ -5716,11 +5716,11 @@ s390_insn_bfp128_convert(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
    if (size == 16) {
       /* From smaller size to 16 bytes */
       vassert(is_valid_fp128_regpair(dst_hi, dst_lo));
-      vassert(op_lo == INVALID_HREG);
+      vassert(hregIsInvalid(op_lo));
    } else {
       /* From 16 bytes to smaller size */
       vassert(is_valid_fp128_regpair(op_hi, op_lo));
-      vassert(dst_lo == INVALID_HREG);
+      vassert(hregIsInvalid(dst_lo));
    }
 
    insn->tag  = S390_INSN_BFP_CONVERT;
@@ -5975,11 +5975,11 @@ s390_insn_dfp128_convert(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
    if (size == 16) {
       /* From smaller size to 16 bytes */
       vassert(is_valid_fp128_regpair(dst_hi, dst_lo));
-      vassert(op_lo == INVALID_HREG);
+      vassert(hregIsInvalid(op_lo));
    } else {
       /* From 16 bytes to smaller size */
       vassert(is_valid_fp128_regpair(op_hi, op_lo));
-      vassert(dst_lo == INVALID_HREG);
+      vassert(hregIsInvalid(dst_lo));
    }
 
    insn->tag  = S390_INSN_DFP_CONVERT;
@@ -6500,7 +6500,7 @@ s390_insn_as_string(const s390_insn *insn)
       break;
 
    case S390_INSN_HELPER_CALL: {
-      if (insn->variant.helper_call.dst != INVALID_HREG) {
+      if (! hregIsInvalid(insn->variant.helper_call.dst)) {
          s390_sprintf(buf, "%M if (%C) %R = %s{%I}(%L)", "v-call",
                       insn->variant.helper_call.cond,
                       insn->variant.helper_call.dst,
@@ -8434,7 +8434,7 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    target = insn->variant.helper_call.target;
 
    if (cond != S390_CC_ALWAYS
-       && insn->variant.helper_call.dst != INVALID_HREG) {
+       && ! hregIsInvalid(insn->variant.helper_call.dst)) {
       /* The call might not happen (it isn't unconditional) and it
          returns a result.  In this case we will need to generate a
          control flow diamond to put 0x555..555 in the return
@@ -8472,7 +8472,7 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    buf = s390_emit_BASR(buf, S390_REGNO_LINK_REGISTER, 1);      // call helper
 
    /* Move the return value to the destination register */
-   if (insn->variant.helper_call.dst != INVALID_HREG) {
+   if (! hregIsInvalid(insn->variant.helper_call.dst)) {
       buf = s390_emit_LGR(buf, hregNumber(insn->variant.helper_call.dst),
                           S390_REGNO_RETURN_VALUE);
    }

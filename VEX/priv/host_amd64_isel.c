@@ -175,7 +175,7 @@ static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO,
 {
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapHI[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
    *vrHI = env->vregmapHI[tmp];
 }
@@ -263,7 +263,7 @@ static Bool sane_AMode ( AMD64AMode* am )
          return 
             toBool( hregClass(am->Aam.IR.reg) == HRcInt64
                     && (hregIsVirtual(am->Aam.IR.reg)
-                        || am->Aam.IR.reg == hregAMD64_RBP()) );
+                        || sameHReg(am->Aam.IR.reg, hregAMD64_RBP())) );
       case Aam_IRRS:
          return 
             toBool( hregClass(am->Aam.IRRS.base) == HRcInt64

@@ -1577,7 +1577,7 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
       case Ain_SseReRg:
          if ( (i->Ain.SseReRg.op == Asse_XOR
                || i->Ain.SseReRg.op == Asse_CMPEQ32)
-              && i->Ain.SseReRg.src == i->Ain.SseReRg.dst) {
+              && sameHReg(i->Ain.SseReRg.src, i->Ain.SseReRg.dst)) {
             /* reg-alloc needs to understand 'xor r,r' and 'cmpeqd
                r,r' as a write of a value to r, and independent of any
                previous value in r */
@@ -2048,43 +2048,43 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
 {
    if (am->tag == Aam_IR) {
       if (am->Aam.IR.imm == 0 
-          && am->Aam.IR.reg != hregAMD64_RSP()
-          && am->Aam.IR.reg != hregAMD64_RBP() 
-          && am->Aam.IR.reg != hregAMD64_R12() 
-          && am->Aam.IR.reg != hregAMD64_R13() 
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_RSP())
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_RBP())
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_R12())
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_R13())
          ) {
          *p++ = mkModRegRM(0, iregBits210(greg), 
                               iregBits210(am->Aam.IR.reg));
          return p;
       }
       if (fits8bits(am->Aam.IR.imm)
-          && am->Aam.IR.reg != hregAMD64_RSP()
-          && am->Aam.IR.reg != hregAMD64_R12()
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_RSP())
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_R12())
          ) {
          *p++ = mkModRegRM(1, iregBits210(greg), 
                               iregBits210(am->Aam.IR.reg));
          *p++ = toUChar(am->Aam.IR.imm & 0xFF);
          return p;
       }
-      if (am->Aam.IR.reg != hregAMD64_RSP()
-          && am->Aam.IR.reg != hregAMD64_R12()
+      if (! sameHReg(am->Aam.IR.reg, hregAMD64_RSP())
+          && ! sameHReg(am->Aam.IR.reg, hregAMD64_R12())
          ) {
          *p++ = mkModRegRM(2, iregBits210(greg), 
                               iregBits210(am->Aam.IR.reg));
          p = emit32(p, am->Aam.IR.imm);
          return p;
       }
-      if ((am->Aam.IR.reg == hregAMD64_RSP()
-           || am->Aam.IR.reg == hregAMD64_R12())
+      if ((sameHReg(am->Aam.IR.reg, hregAMD64_RSP())
+           || sameHReg(am->Aam.IR.reg, hregAMD64_R12()))
           && fits8bits(am->Aam.IR.imm)) {
  	 *p++ = mkModRegRM(1, iregBits210(greg), 4);
          *p++ = 0x24;
          *p++ = toUChar(am->Aam.IR.imm & 0xFF);
          return p;
       }
-      if (/* (am->Aam.IR.reg == hregAMD64_RSP()
+      if (/* (sameHReg(am->Aam.IR.reg, hregAMD64_RSP())
 	     || wait for test case for RSP case */
-          am->Aam.IR.reg == hregAMD64_R12()) {
+          sameHReg(am->Aam.IR.reg, hregAMD64_R12())) {
  	 *p++ = mkModRegRM(2, iregBits210(greg), 4);
          *p++ = 0x24;
          p = emit32(p, am->Aam.IR.imm);
@@ -2096,14 +2096,14 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
    }
    if (am->tag == Aam_IRRS) {
       if (fits8bits(am->Aam.IRRS.imm)
-          && am->Aam.IRRS.index != hregAMD64_RSP()) {
+          && ! sameHReg(am->Aam.IRRS.index, hregAMD64_RSP())) {
          *p++ = mkModRegRM(1, iregBits210(greg), 4);
          *p++ = mkSIB(am->Aam.IRRS.shift, iregBits210(am->Aam.IRRS.index),
                                           iregBits210(am->Aam.IRRS.base));
          *p++ = toUChar(am->Aam.IRRS.imm & 0xFF);
          return p;
       }
-      if (am->Aam.IRRS.index != hregAMD64_RSP()) {
+      if (! sameHReg(am->Aam.IRRS.index, hregAMD64_RSP())) {
          *p++ = mkModRegRM(2, iregBits210(greg), 4);
          *p++ = mkSIB(am->Aam.IRRS.shift, iregBits210(am->Aam.IRRS.index),
                                           iregBits210(am->Aam.IRRS.base));
@@ -2410,7 +2410,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       switch (i->Ain.Alu64R.src->tag) {
          case Armi_Imm:
-            if (i->Ain.Alu64R.dst == hregAMD64_RAX()
+            if (sameHReg(i->Ain.Alu64R.dst, hregAMD64_RAX())
                 && !fits8bits(i->Ain.Alu64R.src->Armi.Imm.imm32)) {
                goto bad; /* FIXME: awaiting test case */
                *p++ = toUChar(opc_imma);
@@ -2541,7 +2541,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       switch (i->Ain.Alu32R.src->tag) {
          case Armi_Imm:
-            if (i->Ain.Alu32R.dst == hregAMD64_RAX()
+            if (sameHReg(i->Ain.Alu32R.dst, hregAMD64_RAX())
                 && !fits8bits(i->Ain.Alu32R.src->Armi.Imm.imm32)) {
                goto bad; /* FIXME: awaiting test case */
                *p++ = toUChar(opc_imma);

@@ -4591,7 +4591,7 @@ s390_emit_SLDT(UChar *p, UChar r3, UChar r1, UChar r2)
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "sldt", r1, r3, 0, 0, r2);
    }
 
-   return emit_RXF(p, 0xED0000000040, r3, 0, r2, 0, r1);
+   return emit_RXF(p, 0xED0000000040ULL, r3, 0, r2, 0, r1);
 }
 
 
@@ -4603,7 +4603,7 @@ s390_emit_SLXT(UChar *p, UChar r3, UChar r1, UChar r2)
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "slxt", r1, r3, 0, 0, r2);
    }
 
-   return emit_RXF(p, 0xED0000000048, r3, 0, r2, 0, r1);
+   return emit_RXF(p, 0xED0000000048ULL, r3, 0, r2, 0, r1);
 }
 
 
@@ -4615,7 +4615,7 @@ s390_emit_SRDT(UChar *p, UChar r3, UChar r1, UChar r2)
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "srdt", r1, r3, 0, 0, r2);
    }
 
-   return emit_RXF(p, 0xED0000000041, r3, 0, r2, 0, r1);
+   return emit_RXF(p, 0xED0000000041ULL, r3, 0, r2, 0, r1);
 }
 
 
@@ -4627,7 +4627,7 @@ s390_emit_SRXT(UChar *p, UChar r3, UChar r1, UChar r2)
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "srxt", r1, r3, 0, 0, r2);
    }
 
-   return emit_RXF(p, 0xED0000000049, r3, 0, r2, 0, r1);
+   return emit_RXF(p, 0xED0000000049ULL, r3, 0, r2, 0, r1);
 }
 
 

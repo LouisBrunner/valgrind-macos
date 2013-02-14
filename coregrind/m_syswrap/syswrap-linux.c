@@ -4797,6 +4797,9 @@ PRE(sys_ioctl)
    /* User input device creation */
    case VKI_UI_DEV_CREATE:
    case VKI_UI_DEV_DESTROY:
+
+   /* InfiniBand */
+   case VKI_IB_USER_MAD_ENABLE_PKEY:
       PRINT("sys_ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
@@ -6237,6 +6240,7 @@ POST(sys_ioctl)
    case VKI_TCSETS:
    case VKI_TCSETSW:
    case VKI_TCSETSF:
+   case VKI_IB_USER_MAD_ENABLE_PKEY:
       break; 
    case VKI_TCGETS:
       POST_MEM_WRITE( ARG3, sizeof(struct vki_termios) );

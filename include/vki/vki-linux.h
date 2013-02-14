@@ -3015,6 +3015,19 @@ struct vki_hwtstamp_config {
 #define VKI_UI_SET_PROPBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 110, int)
 
 //----------------------------------------------------------------------
+// From linux-2.6/include/uapi/rdma/ib_user_mad.h
+//----------------------------------------------------------------------
+
+#define VKI_IB_IOCTL_MAGIC          0x1b
+
+#define VKI_IB_USER_MAD_REGISTER_AGENT    _VKI_IOWR(VKI_IB_IOCTL_MAGIC, 1, \
+                                              struct ib_user_mad_reg_req)
+
+#define VKI_IB_USER_MAD_UNREGISTER_AGENT  _VKI_IOW(VKI_IB_IOCTL_MAGIC, 2, __u32)
+
+#define VKI_IB_USER_MAD_ENABLE_PKEY       _VKI_IO(VKI_IB_IOCTL_MAGIC, 3)
+
+//----------------------------------------------------------------------
 // Xen privcmd IOCTL
 //----------------------------------------------------------------------
 

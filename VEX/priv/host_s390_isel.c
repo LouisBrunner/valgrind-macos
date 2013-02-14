@@ -1495,16 +1495,28 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
-      if (unop == Iop_ExtractSigD64) {
+      if (unop == Iop_ExtractExpD64 || unop == Iop_ExtractSigD64) {
+         s390_dfp_unop_t dfpop;
+         switch(unop) {
+         case Iop_ExtractExpD64: dfpop = S390_DFP_EXTRACT_EXP_D64; break;
+         case Iop_ExtractSigD64: dfpop = S390_DFP_EXTRACT_SIG_D64; break;
+         default: goto irreducible;
+         }
          dst = newVRegI(env);
          h1  = s390_isel_dfp_expr(env, arg);     /* Process the operand */
-         addInstr(env,
-                  s390_insn_dfp_unop(size, S390_DFP_EXTRACT_SIG_D64, dst, h1));
+         addInstr(env, s390_insn_dfp_unop(size, dfpop, dst, h1));
          return dst;
       }
 
-      if (unop == Iop_ExtractSigD128) {
+      if (unop == Iop_ExtractExpD128 || unop == Iop_ExtractSigD128) {
+         s390_dfp_unop_t dfpop;
          HReg op_hi, op_lo, f13, f15;
+
+         switch(unop) {
+         case Iop_ExtractExpD128: dfpop = S390_DFP_EXTRACT_EXP_D128; break;
+         case Iop_ExtractSigD128: dfpop = S390_DFP_EXTRACT_SIG_D128; break;
+         default: goto irreducible;
+         }
          dst = newVRegI(env);
          s390_isel_dfp128_expr(&op_hi, &op_lo, env, arg); /* Process operand */
 
@@ -1516,8 +1528,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         addInstr(env, s390_insn_dfp128_unop(size, S390_DFP_EXTRACT_SIG_D128,
-                                             dst, f13, f15));
+         addInstr(env, s390_insn_dfp128_unop(size, dfpop, dst, f13, f15));
          return dst;
       }
 
@@ -2417,9 +2428,6 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       s390_dfp_binop_t dfpop;
       HReg op1_hi, op1_lo, op2_hi, op2_lo, f9, f11, f12, f13, f14, f15;
 
-      s390_isel_dfp128_expr(&op1_hi, &op1_lo, env, left);  /* 1st operand */
-      s390_isel_dfp128_expr(&op2_hi, &op2_lo, env, right); /* 2nd operand */
-
       /* We use non-virtual registers as pairs with (f9, f11) as op1,
          (f12, f14) as op2 and (f13, f15)  as destination) */
       f9  = make_fpr(9);
@@ -2429,42 +2437,68 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       f14 = make_fpr(14);
       f15 = make_fpr(15);
 
-      /* 1st operand --> (f9, f11) */
-      addInstr(env, s390_insn_move(8, f9,  op1_hi));
-      addInstr(env, s390_insn_move(8, f11, op1_lo));
-
-      /* 2nd operand --> (f12, f14) */
-      addInstr(env, s390_insn_move(8, f12, op2_hi));
-      addInstr(env, s390_insn_move(8, f14, op2_lo));
-
       switch (op) {
-      case Iop_AddD128: dfpop = S390_DFP_ADD; break;
-      case Iop_SubD128: dfpop = S390_DFP_SUB; break;
-      case Iop_MulD128: dfpop = S390_DFP_MUL; break;
-      case Iop_DivD128: dfpop = S390_DFP_DIV; break;
+      case Iop_AddD128:       dfpop = S390_DFP_ADD;      goto evaluate_dfp128;
+      case Iop_SubD128:       dfpop = S390_DFP_SUB;      goto evaluate_dfp128;
+      case Iop_MulD128:       dfpop = S390_DFP_MUL;      goto evaluate_dfp128;
+      case Iop_DivD128:       dfpop = S390_DFP_DIV;      goto evaluate_dfp128;
+      case Iop_QuantizeD128:  dfpop = S390_DFP_QUANTIZE; goto evaluate_dfp128;
+
+      evaluate_dfp128: {
+         /* Process 1st operand */
+         s390_isel_dfp128_expr(&op1_hi, &op1_lo, env, left);
+         /* 1st operand --> (f9, f11) */
+         addInstr(env, s390_insn_move(8, f9,  op1_hi));
+         addInstr(env, s390_insn_move(8, f11, op1_lo));
+
+         /* Process 2nd operand */
+         s390_isel_dfp128_expr(&op2_hi, &op2_lo, env, right);
+         /* 2nd operand --> (f12, f14) */
+         addInstr(env, s390_insn_move(8, f12, op2_hi));
+         addInstr(env, s390_insn_move(8, f14, op2_lo));
+
+         /* DFP arithmetic ops take rounding mode only when fpext is
+            installed. But, DFP quantize operation takes rm irrespective
+            of fpext facility . */
+         if (s390_host_has_fpext || dfpop == Iop_QuantizeD128) {
+            rounding_mode = get_dfp_rounding_mode(env, irrm);
+         } else {
+            set_dfp_rounding_mode_in_fpc(env, irrm);
+            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
+         }
+         addInstr(env, s390_insn_dfp128_binop(16, dfpop, f13, f15, f9, f11,
+                                              f12, f14, rounding_mode));
+         /* Move result to virtual destination register */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f13));
+         addInstr(env, s390_insn_move(8, *dst_lo, f15));
+         return;
+      }
+
+      case Iop_SignificanceRoundD128: {
+         /* Process 1st operand */
+         HReg op1 = s390_isel_int_expr(env, left);
+         /* Process 2nd operand */
+         s390_isel_dfp128_expr(&op2_hi, &op2_lo, env, right);
+         /* 2nd operand --> (f12, f14) */
+         addInstr(env, s390_insn_move(8, f12, op2_hi));
+         addInstr(env, s390_insn_move(8, f14, op2_lo));
+
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
+         addInstr(env, s390_insn_dfp128_reround(16, f13, f15, op1, f12, f14,
+                                                rounding_mode));
+         /* Move result to virtual destination register */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f13));
+         addInstr(env, s390_insn_move(8, *dst_lo, f15));
+         return;
+      }
+
       default:
          goto irreducible;
       }
-
-      /* DFP binary ops have insns with rounding mode field
-         when the floating point extension facility is installed. */
-      if (s390_host_has_fpext) {
-         rounding_mode = get_dfp_rounding_mode(env, irrm);
-      } else {
-         set_dfp_rounding_mode_in_fpc(env, irrm);
-         rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-      }
-
-      addInstr(env, s390_insn_dfp128_binop(16, dfpop, f13, f15, f9, f11,
-                                           f12, f14, rounding_mode));
-
-      /* Move result to virtual destination register */
-      *dst_hi = newVRegF(env);
-      *dst_lo = newVRegF(env);
-      addInstr(env, s390_insn_move(8, *dst_hi, f13));
-      addInstr(env, s390_insn_move(8, *dst_lo, f15));
-
-      return;
    }
 
       /* --------- BINARY OP --------- */
@@ -2477,15 +2511,29 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          return;
 
       case Iop_ShlD128:
-      case Iop_ShrD128: {
+      case Iop_ShrD128:
+      case Iop_InsertExpD128: {
          HReg op1_hi, op1_lo, op2, f9, f11, f13, f15;
          s390_dfp_intop_t intop;
-         IRExpr *left   = expr->Iex.Binop.arg1;
-         IRExpr *right  = expr->Iex.Binop.arg2;
+         IRExpr *dfp_op;
+         IRExpr *int_op;
 
          switch (expr->Iex.Binop.op) {
-         case Iop_ShlD128: intop = S390_DFP_SHIFT_LEFT;  break;
-         case Iop_ShrD128: intop = S390_DFP_SHIFT_RIGHT; break;
+         case Iop_ShlD128:       /* (D128, I64) -> D128 */
+            intop = S390_DFP_SHIFT_LEFT;
+            dfp_op = expr->Iex.Binop.arg1;
+            int_op = expr->Iex.Binop.arg2;
+            break;
+         case Iop_ShrD128:       /* (D128, I64) -> D128 */
+            intop = S390_DFP_SHIFT_RIGHT;
+            dfp_op = expr->Iex.Binop.arg1;
+            int_op = expr->Iex.Binop.arg2;
+            break;
+         case Iop_InsertExpD128: /* (I64, D128) -> D128 */
+            intop = S390_DFP_INSERT_EXP;
+            int_op = expr->Iex.Binop.arg1;
+            dfp_op = expr->Iex.Binop.arg2;
+            break;
          default: goto irreducible;
          }
 
@@ -2496,11 +2544,13 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          f13 = make_fpr(13); /* 128 bit dfp destination */
          f15 = make_fpr(15);
 
-         s390_isel_dfp128_expr(&op1_hi, &op1_lo, env, left);  /* dfp operand */
+         /* Process dfp operand */
+         s390_isel_dfp128_expr(&op1_hi, &op1_lo, env, dfp_op);
+         /* op1 -> (f9,f11) */
          addInstr(env, s390_insn_move(8, f9,  op1_hi));
          addInstr(env, s390_insn_move(8, f11, op1_lo));
 
-         op2 = s390_isel_int_expr(env, right);  /* int operand */
+         op2 = s390_isel_int_expr(env, int_op);  /* int operand */
 
          addInstr(env,
                   s390_insn_dfp128_intop(16, intop, f13, f15, op2, f9, f11));
@@ -2695,21 +2745,35 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
       }
 
       case Iop_ShlD64:
-      case Iop_ShrD64: {
+      case Iop_ShrD64:
+      case Iop_InsertExpD64: {
          HReg op2;
          HReg op3;
+         IRExpr *dfp_op;
+         IRExpr *int_op;
          s390_dfp_intop_t intop;
-         IRExpr *op1   = expr->Iex.Binop.arg1;
-         IRExpr *shift = expr->Iex.Binop.arg2;
 
          switch (expr->Iex.Binop.op) {
-         case Iop_ShlD64: intop = S390_DFP_SHIFT_LEFT;  break;
-         case Iop_ShrD64: intop = S390_DFP_SHIFT_RIGHT; break;
+         case Iop_ShlD64:       /* (D64, I64) -> D64 */
+            intop = S390_DFP_SHIFT_LEFT;
+            dfp_op = expr->Iex.Binop.arg1;
+            int_op = expr->Iex.Binop.arg2;
+            break;
+         case Iop_ShrD64:       /* (D64, I64) -> D64 */
+            intop = S390_DFP_SHIFT_RIGHT;
+            dfp_op = expr->Iex.Binop.arg1;
+            int_op = expr->Iex.Binop.arg2;
+            break;
+         case Iop_InsertExpD64: /* (I64, D64) -> D64 */
+            intop = S390_DFP_INSERT_EXP;
+            int_op = expr->Iex.Binop.arg1;
+            dfp_op = expr->Iex.Binop.arg2;
+            break;
          default: goto irreducible;
          }
 
-         op2 = s390_isel_int_expr(env, shift);
-         op3 = s390_isel_dfp_expr(env, op1);
+         op2 = s390_isel_int_expr(env, int_op);
+         op3 = s390_isel_dfp_expr(env, dfp_op);
          dst = newVRegF(env);
 
          addInstr(env, s390_insn_dfp_intop(size, intop, dst, op2, op3));
@@ -2780,29 +2844,43 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
       s390_dfp_binop_t dfpop;
       HReg op2, op3, dst;
 
-      op2  = s390_isel_dfp_expr(env, left);  /* Process 1st operand */
-      op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
-      dst  = newVRegF(env);
       switch (op) {
-      case Iop_AddD64:  dfpop = S390_DFP_ADD; break;
-      case Iop_SubD64:  dfpop = S390_DFP_SUB; break;
-      case Iop_MulD64:  dfpop = S390_DFP_MUL; break;
-      case Iop_DivD64:  dfpop = S390_DFP_DIV; break;
+      case Iop_AddD64:      dfpop = S390_DFP_ADD;      goto evaluate_dfp;
+      case Iop_SubD64:      dfpop = S390_DFP_SUB;      goto evaluate_dfp;
+      case Iop_MulD64:      dfpop = S390_DFP_MUL;      goto evaluate_dfp;
+      case Iop_DivD64:      dfpop = S390_DFP_DIV;      goto evaluate_dfp;
+      case Iop_QuantizeD64: dfpop = S390_DFP_QUANTIZE; goto evaluate_dfp;
+
+      evaluate_dfp: {
+         op2  = s390_isel_dfp_expr(env, left);  /* Process 1st operand */
+         op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
+         dst  = newVRegF(env);
+         /* DFP arithmetic ops take rounding mode only when fpext is
+            installed. But, DFP quantize operation takes rm irrespective
+            of fpext facility . */
+         if (s390_host_has_fpext || dfpop == S390_DFP_QUANTIZE) {
+            rounding_mode = get_dfp_rounding_mode(env, irrm);
+         } else {
+            set_dfp_rounding_mode_in_fpc(env, irrm);
+            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
+         }
+         addInstr(env, s390_insn_dfp_binop(size, dfpop, dst, op2, op3,
+                                           rounding_mode));
+         return dst;
+      }
+
+      case Iop_SignificanceRoundD64:
+         op2  = s390_isel_int_expr(env, left);  /* Process 1st operand */
+         op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
+         dst  = newVRegF(env);
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
+         addInstr(env, s390_insn_dfp_reround(size, dst, op2, op3,
+                                             rounding_mode));
+         return dst;
+
       default:
          goto irreducible;
       }
-      /* DFP binary ops have insns with rounding mode field
-         when the floating point extension facility is installed. */
-      if (s390_host_has_fpext) {
-         rounding_mode = get_dfp_rounding_mode(env, irrm);
-      } else {
-         set_dfp_rounding_mode_in_fpc(env, irrm);
-         rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-      }
-
-      addInstr(env,
-               s390_insn_dfp_binop(size, dfpop, dst, op2, op3, rounding_mode));
-      return dst;
    }
 
    default:

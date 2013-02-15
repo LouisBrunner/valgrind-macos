@@ -2636,8 +2636,8 @@ static void final_tidyup(ThreadId tid)
 
    From this derive two requirements:
 
-   1. gcc may emit calls to memcpy and memset to deal with structure
-      assignments etc.  Since we have chosen to ignore all the
+   1. gcc may emit calls to memcpy, memmove and memset to deal with
+      structure assignments etc.  Since we have chosen to ignore all the
       "normal" supporting libraries, we have to provide our own
       implementations of them.  No problem.
 
@@ -2650,6 +2650,10 @@ static void final_tidyup(ThreadId tid)
 void* memcpy(void *dest, const void *src, SizeT n);
 void* memcpy(void *dest, const void *src, SizeT n) {
    return VG_(memcpy)(dest,src,n);
+}
+void* memmove(void *dest, const void *src, SizeT n);
+void* memmove(void *dest, const void *src, SizeT n) {
+   return VG_(memmove)(dest,src,n);
 }
 void* memset(void *s, int c, SizeT n);
 void* memset(void *s, int c, SizeT n) {

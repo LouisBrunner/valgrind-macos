@@ -2460,7 +2460,7 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          /* DFP arithmetic ops take rounding mode only when fpext is
             installed. But, DFP quantize operation takes rm irrespective
             of fpext facility . */
-         if (s390_host_has_fpext || dfpop == Iop_QuantizeD128) {
+         if (s390_host_has_fpext || op == Iop_QuantizeD128) {
             rounding_mode = get_dfp_rounding_mode(env, irrm);
          } else {
             set_dfp_rounding_mode_in_fpc(env, irrm);

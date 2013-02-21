@@ -933,7 +933,7 @@ PRE(sys_msgrcv)
                  int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
                  long, msgytp, int, msgflg);
    ML_(linux_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
-   if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+   if ((ARG5 & VKI_IPC_NOWAIT) == 0)
       *flags |= SfMayBlock;
 }
 POST(sys_msgrcv)

@@ -4208,9 +4208,8 @@ s390_emit_CXGTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
       IRop (Iop_I64StoD128) does not take rounding mode. */
    vassert(m3 == 0);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, FPR, GPR), "cxgtr", r1, r2);
-   }
 
    return emit_RRF2(p, 0xb3f90000, m3, m4, r1, r2);
 }
@@ -4223,9 +4222,8 @@ s390_emit_CDFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(s390_host_has_dfp);
    vassert(s390_host_has_fpext);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cdftr", r1, m3, r2, m4);
-   }
 
    return emit_RRF2(p, 0xb9510000, m3, m4, r1, r2);
 }
@@ -4238,9 +4236,8 @@ s390_emit_CXFTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(s390_host_has_dfp);
    vassert(s390_host_has_fpext);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, FPR, UINT, GPR, UINT), "cxftr", r1, m3, r2, m4);
-   }
 
    return emit_RRF2(p, 0xb9590000, m3, m4, r1, r2);
 }
@@ -4329,9 +4326,8 @@ s390_emit_CFDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(s390_host_has_dfp);
    vassert(s390_host_has_fpext);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "cfdtr", r1, m3, r2, m4);
-   }
 
    return emit_RRF2(p, 0xb9410000, m3, m4, r1, r2);
 }
@@ -4344,9 +4340,8 @@ s390_emit_CFXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(s390_host_has_dfp);
    vassert(s390_host_has_fpext);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC5(MNM, GPR, UINT, FPR, UINT), "cfxtr", r1, m3, r2, m4);
-   }
 
    return emit_RRF2(p, 0xb9490000, m3, m4, r1, r2);
 }
@@ -4359,9 +4354,8 @@ s390_emit_CGDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(m4 == 0);
    vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, GPR, UINT, FPR), "cgdtr", r1, m3, r2);
-   }
 
    return emit_RRF2(p, 0xb3e10000, m3, m4, r1, r2);
 }
@@ -4374,9 +4368,8 @@ s390_emit_CGXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(m4 == 0);
    vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, GPR, UINT, FPR), "cgxtr", r1, m3, r2);
-   }
 
    return emit_RRF2(p, 0xb3e90000, m3, m4, r1, r2);
 }
@@ -4559,10 +4552,8 @@ s390_emit_LEDTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(m4 == 0);
    vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
-      s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT),
-                  "ledtr", r1, m3, r2, m4);
-   }
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT), "ledtr", r1, m3, r2, m4);
 
    return emit_RRF2(p, 0xb3d50000, m3, m4, r1, r2);
 }
@@ -4575,10 +4566,8 @@ s390_emit_LDXTR(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
    vassert(m4 == 0);
    vassert(s390_host_has_fpext || m3 < 1 || m3 > 7);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
-      s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT),
-                  "ldxtr", r1, m3, r2, m4);
-   }
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT), "ldxtr", r1, m3, r2, m4);
 
    return emit_RRF2(p, 0xb3dd0000, m3, m4, r1, r2);
 }
@@ -4696,9 +4685,8 @@ static UChar *
 s390_emit_SLDT(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "sldt", r1, r3, 0, 0, r2);
-   }
 
    return emit_RXF(p, 0xED0000000040ULL, r3, 0, r2, 0, r1);
 }
@@ -4708,9 +4696,8 @@ static UChar *
 s390_emit_SLXT(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "slxt", r1, r3, 0, 0, r2);
-   }
 
    return emit_RXF(p, 0xED0000000048ULL, r3, 0, r2, 0, r1);
 }
@@ -4720,9 +4707,8 @@ static UChar *
 s390_emit_SRDT(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "srdt", r1, r3, 0, 0, r2);
-   }
 
    return emit_RXF(p, 0xED0000000041ULL, r3, 0, r2, 0, r1);
 }
@@ -4732,9 +4718,8 @@ static UChar *
 s390_emit_SRXT(UChar *p, UChar r3, UChar r1, UChar r2)
 {
    vassert(s390_host_has_dfp);
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, FPR, FPR, UDXB), "srxt", r1, r3, 0, 0, r2);
-   }
 
    return emit_RXF(p, 0xED0000000049ULL, r3, 0, r2, 0, r1);
 }
@@ -4744,9 +4729,8 @@ static UChar *
 s390_emit_LOCGR(UChar *p, UChar m3, UChar r1, UChar r2)
 {
    vassert(s390_host_has_lsc);
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC4(MNM, GPR, GPR, UINT), "locgr", r1, r2, m3);
-   }
 
    return emit_RRF3(p, 0xb9e20000, m3, r1, r2);
 }

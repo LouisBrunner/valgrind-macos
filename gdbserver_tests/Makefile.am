@@ -112,6 +112,10 @@ EXTRA_DIST = \
 	nlpasssigalrm.stderr.exp \
 	nlpasssigalrm.stdinB.gdb \
 	nlpasssigalrm.stdoutB.exp \
+	nlself_invalidate.stderrB.exp \
+	nlself_invalidate.stderr.exp \
+	nlself_invalidate.stdinB.gdb \
+	nlself_invalidate.vgtest \
 	nlsigvgdb.vgtest \
 	nlsigvgdb.stderr.exp \
 	nlsigvgdb.stderrB.exp \
@@ -123,6 +127,7 @@ check_PROGRAMS = \
 	gone \
 	main_pic \
 	passsigalrm \
+	self_invalidate \
 	sleepers \
 	t \
 	watchpoints

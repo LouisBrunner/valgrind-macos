@@ -46,7 +46,7 @@
 #include "pub_core_dispatch.h"   // For VG_(disp_cp*) addresses
 
 
-/* #define DEBUG_TRANSTAB */
+#define DEBUG_TRANSTAB 0
 
 
 /*-------------------------------------------------------------*/
@@ -632,6 +632,40 @@ Int HostExtent__cmpOrd ( const void* v1, const void* v2 )
    return 0; /* partial overlap */
 }
 
+/* True if hx is a dead host extent, i.e. corresponds to host code
+   of an entry that was invalidated. */
+static
+Bool HostExtent__is_dead (const HostExtent* hx, const Sector* sec)
+{
+   const UInt tteNo = hx->tteNo;
+#define LDEBUG(m) if (DEBUG_TRANSTAB)                           \
+      VG_(printf) (m                                            \
+                   " start 0x%p len %u sector %d ttslot %u"     \
+                   " tt.entry 0x%llu tt.tcptr 0x%p\n",          \
+                   hx->start, hx->len, (int)(sec - sectors),    \
+                   hx->tteNo,                                   \
+                   sec->tt[tteNo].entry, sec->tt[tteNo].tcptr)
+   
+   /* Entry might have been invalidated and not re-used yet.*/
+   if (sec->tt[tteNo].status == Deleted) {
+      LDEBUG("found deleted entry");
+      return True;
+   }
+   /* Maybe we found this entry via a host_extents which was
+      inserted for an entry which was changed to Deleted then
+      re-used after. If this entry was re-used, then its tcptr
+      is >= to host_extents start (i.e. the previous tcptr) + len.
+      This is the case as there is no re-use of host code: a new
+      entry or re-used entry always gets "higher value" host code. */
+   if ((UChar*) sec->tt[tteNo].tcptr >= hx->start + hx->len) {
+      LDEBUG("found re-used entry");
+      return True;
+   }
+
+   return False;
+#undef LDEBUG
+}
+
 static __attribute__((noinline))
 Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
                               /*OUT*/UInt* from_tteNo,
@@ -663,10 +697,12 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
          UInt tteNo = hx->tteNo;
          /* Do some additional sanity checks. */
          vg_assert(tteNo <= N_TTES_PER_SECTOR);
-         /* Entry might have been invalidated. Consider this
-            as not found. */
-         if (sec->tt[tteNo].status == Deleted)
+
+         /* if this hx entry corresponds to dead host code, we must
+            tell this code has not been found, as it cannot be patched. */
+         if (HostExtent__is_dead (hx, sec))
             return False;
+
          vg_assert(sec->tt[tteNo].status == InUse);
          /* Can only half check that the found TTEntry contains hcode,
             due to not having a length value for the hcode in the
@@ -834,11 +870,14 @@ static
 void unchain_in_preparation_for_deletion ( VexArch vex_arch,
                                            UInt here_sNo, UInt here_tteNo )
 {
-   if (0)
-      VG_(printf)("QQQ unchain_in_prep %u.%u\n", here_sNo, here_tteNo);
+   if (DEBUG_TRANSTAB)
+      VG_(printf)("QQQ unchain_in_prep %u.%u...\n", here_sNo, here_tteNo);
    UWord    i, j, n, m;
    Int      evCheckSzB = LibVEX_evCheckSzB(vex_arch);
    TTEntry* here_tte   = index_tte(here_sNo, here_tteNo);
+   if (DEBUG_TRANSTAB)
+      VG_(printf)("... QQQ tt.entry 0x%llu tt.tcptr 0x%p\n",
+                  here_tte->entry, here_tte->tcptr);
    vg_assert(here_tte->status == InUse);
 
    /* Visit all InEdges owned by here_tte. */
@@ -984,7 +1023,7 @@ UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
    vg_assert(ec >= 0 && ec < ECLASS_N);
    vg_assert(tteno < N_TTES_PER_SECTOR);
 
-   if (0) VG_(printf)("ec %d  gets %d\n", ec, (Int)tteno);
+   if (DEBUG_TRANSTAB) VG_(printf)("ec %d  gets %d\n", ec, (Int)tteno);
 
    if (sec->ec2tte_used[ec] >= sec->ec2tte_size[ec]) {
 
@@ -1002,7 +1041,7 @@ UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
       sec->ec2tte_size[ec] = new_sz;
       sec->ec2tte[ec] = new_ar;
 
-      if (0) VG_(printf)("expand ec %d to %d\n", ec, new_sz);
+      if (DEBUG_TRANSTAB) VG_(printf)("expand ec %d to %d\n", ec, new_sz);
    }
 
    /* Common case */
@@ -1215,13 +1254,29 @@ static Bool sanity_check_all_sectors ( void )
    Bool    sane;
    Sector* sec;
    for (sno = 0; sno < N_SECTORS; sno++) {
+      Int i;
+      Int nr_not_dead_hx = 0;
+      Int szhxa;
       sec = &sectors[sno];
       if (sec->tc == NULL)
          continue;
       sane = sanity_check_eclasses_in_sector( sec );
       if (!sane)
          return False;
+      szhxa = VG_(sizeXA)(sec->host_extents);
+      for (i = 0; i < szhxa; i++) {
+         const HostExtent* hx = VG_(indexXA)(sec->host_extents, i);
+         if (!HostExtent__is_dead (hx, sec))
+            nr_not_dead_hx++;
+      }
+      if (nr_not_dead_hx != sec->tt_n_inuse) {
+         VG_(debugLog)(0, "transtab",
+                       "nr_not_dead_hx %d sanity fail (expected == in use %d)\n",
+                       nr_not_dead_hx, sec->tt_n_inuse);
+         return False;
+      }
    }
+   
    if ( !sanity_check_redir_tt_tc() )
       return False;
    if ( !sanity_check_sector_search_order() )
@@ -1375,7 +1430,8 @@ static void initialiseSector ( Int sno )
       VG_(machine_get_VexArchInfo)( &vex_arch, NULL );
 
       /* Visit each just-about-to-be-abandoned translation. */
-      if (0) VG_(printf)("QQQ unlink-entire-sector: %d START\n", sno);
+      if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d START\n",
+                                      sno);
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          if (sec->tt[i].status == InUse) {
             vg_assert(sec->tt[i].n_tte2ec >= 1);
@@ -1394,7 +1450,8 @@ static void initialiseSector ( Int sno )
          sec->tt[i].status   = Empty;
          sec->tt[i].n_tte2ec = 0;
       }
-      if (0) VG_(printf)("QQQ unlink-entire-sector: %d END\n", sno);
+      if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d END\n",
+                                      sno);
 
       /* Free up the eclass structures. */
       for (i = 0; i < ECLASS_N; i++) {
@@ -1467,8 +1524,8 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    /* Generally stay sane */
    vg_assert(n_guest_instrs < 200); /* it can be zero, tho */
 
-   if (0)
-      VG_(printf)("add_to_transtab(entry = 0x%llx, len = %d)\n",
+   if (DEBUG_TRANSTAB)
+      VG_(printf)("add_to_transtab(entry = 0x%llx, len = %d) ...\n",
                   entry, code_len);
 
    n_in_count++;
@@ -1593,6 +1650,9 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
         vg_assert(hx_prev->start + hx_prev->len <= hx.start);
      }
      VG_(addToXA)(hx_array, &hx);
+     if (DEBUG_TRANSTAB)
+        VG_(printf)("... hx.start 0x%p hx.len %u sector %d ttslot %d\n",
+                    hx.start, hx.len, y, i);
    }
 
    /* Update the fast-cache. */
@@ -2228,7 +2288,7 @@ void VG_(print_tt_tc_stats) ( void )
                 " transtab: discarded  %'llu (%'llu -> ?" "?)\n",
                 n_disc_count, n_disc_osize );
 
-   if (0) {
+   if (DEBUG_TRANSTAB) {
       Int i;
       VG_(printf)("\n");
       for (i = 0; i < ECLASS_N; i++) {

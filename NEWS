@@ -86,6 +86,7 @@ m = merged into 3_8_BRANCH
 312913    [390] Dangling pointers error should also report the alloc stack trace
 312980    [390] Building on Mountain Lion generates some compiler warnings
 313811    [390] Buffer overflow in assert_fail
+315545    [390] (find_TTEntry_from_hcode): Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android

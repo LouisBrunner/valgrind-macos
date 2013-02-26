@@ -232,7 +232,8 @@ UInt VG_(vsnprintf) ( HChar* buf, Int size, const HChar *format, va_list vargs )
    b.buf      = buf;
    b.buf_size = size < 0 ? 0 : size;
    b.buf_used = 0;
-
+   if (b.buf_size > 0)
+      b.buf[0] = 0; // ensure to null terminate buf if empty format
    (void) VG_(debugLog_vprintf) 
              ( add_to__snprintf_buf, &b, format, vargs );
 

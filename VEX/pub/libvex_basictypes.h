@@ -199,7 +199,11 @@ typedef  unsigned long HWord;
 #   define VEX_REGPARM(_n) /* */
 
 #elif defined(__mips__)
+#if (__mips==64)
+#   define VEX_HOST_WORDSIZE 8
+#else
 #   define VEX_HOST_WORDSIZE 4
+#endif
 #   define VEX_REGPARM(_n) /* */
 
 #else

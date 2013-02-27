@@ -58,7 +58,8 @@ typedef
       VexArchPPC32,
       VexArchPPC64,
       VexArchS390X,
-      VexArchMIPS32
+      VexArchMIPS32,
+      VexArchMIPS64
    }
    VexArch;
 
@@ -177,6 +178,7 @@ typedef
 
 #define VEX_PRID_COMP_MIPS      0x00010000
 #define VEX_PRID_COMP_BROADCOM  0x00020000
+#define VEX_PRID_COMP_NETLOGIC  0x000c0000
 
 /* These return statically allocated strings. */
 

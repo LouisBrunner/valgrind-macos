@@ -53,6 +53,7 @@
 #include "../pub/libvex_guest_arm.h"
 #include "../pub/libvex_guest_s390x.h"
 #include "../pub/libvex_guest_mips32.h"
+#include "../pub/libvex_guest_mips64.h"
 
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
@@ -211,6 +212,43 @@ void foo ( void )
    GENOFFSET(MIPS32,mips32,PC);
    GENOFFSET(MIPS32,mips32,HI);
    GENOFFSET(MIPS32,mips32,LO);
+
+   // MIPS64
+   GENOFFSET(MIPS64,mips64,r0);
+   GENOFFSET(MIPS64,mips64,r1);
+   GENOFFSET(MIPS64,mips64,r2);
+   GENOFFSET(MIPS64,mips64,r3);
+   GENOFFSET(MIPS64,mips64,r4);
+   GENOFFSET(MIPS64,mips64,r5);
+   GENOFFSET(MIPS64,mips64,r6);
+   GENOFFSET(MIPS64,mips64,r7);
+   GENOFFSET(MIPS64,mips64,r8);
+   GENOFFSET(MIPS64,mips64,r9);
+   GENOFFSET(MIPS64,mips64,r10);
+   GENOFFSET(MIPS64,mips64,r11);
+   GENOFFSET(MIPS64,mips64,r12);
+   GENOFFSET(MIPS64,mips64,r13);
+   GENOFFSET(MIPS64,mips64,r14);
+   GENOFFSET(MIPS64,mips64,r15);
+   GENOFFSET(MIPS64,mips64,r15);
+   GENOFFSET(MIPS64,mips64,r17);
+   GENOFFSET(MIPS64,mips64,r18);
+   GENOFFSET(MIPS64,mips64,r19);
+   GENOFFSET(MIPS64,mips64,r20);
+   GENOFFSET(MIPS64,mips64,r21);
+   GENOFFSET(MIPS64,mips64,r22);
+   GENOFFSET(MIPS64,mips64,r23);
+   GENOFFSET(MIPS64,mips64,r24);
+   GENOFFSET(MIPS64,mips64,r25);
+   GENOFFSET(MIPS64,mips64,r26);
+   GENOFFSET(MIPS64,mips64,r27);
+   GENOFFSET(MIPS64,mips64,r28);
+   GENOFFSET(MIPS64,mips64,r29);
+   GENOFFSET(MIPS64,mips64,r30);
+   GENOFFSET(MIPS64,mips64,r31);
+   GENOFFSET(MIPS64,mips64,PC);
+   GENOFFSET(MIPS64,mips64,HI);
+   GENOFFSET(MIPS64,mips64,LO);
 }
 
 /*--------------------------------------------------------------------*/

@@ -13,7 +13,7 @@
 all_platforms=
 all_platforms="$all_platforms x86-linux amd64-linux ppc32-linux ppc64-linux"
 all_platforms="$all_platforms arm-linux"
-all_platforms="$all_platforms s390x-linux mips32-linux"
+all_platforms="$all_platforms s390x-linux mips32-linux mips64-linux"
 all_platforms="$all_platforms x86-darwin amd64-darwin"
 
 if [ $# -ne 2 ] ; then

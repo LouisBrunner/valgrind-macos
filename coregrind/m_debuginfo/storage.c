@@ -189,7 +189,7 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    VG_(printf)(" R7=");
    SHOW_HOW(si->r7_how, si->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
-#  elif defined(VGA_s390x) || defined(VGA_mips32)
+#  elif defined(VGA_s390x) || defined(VGA_mips32) || defined(VGA_mips64)
    VG_(printf)(" SP=");
    SHOW_HOW(si->sp_how, si->sp_off);
    VG_(printf)(" FP=");

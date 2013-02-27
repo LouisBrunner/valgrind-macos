@@ -338,8 +338,14 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          which totally screws things up, because nothing else can go
          there.  So bump the hacky load addess along by 0x8000, to
          0x108000. */
+      /* Later .. on mips64 we can't use 0x108000, because mapelf will fail. */
+#if defined(VGP_mips64_linux)
+      if (ebase < 0x100000)
+         ebase = 0x100000;
+#else
       if (ebase < 0x108000)
          ebase = 0x108000;
+#endif
    }
 
    info->phnum = e->e.e_phnum;

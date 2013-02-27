@@ -790,7 +790,7 @@ static void do_pre_run_checks ( ThreadState* tst )
    /* no special requirements */
 #  endif
 
-#  if defined(VGA_mips32)
+#  if defined(VGA_mips32) || defined(VGA_mips64)
   /* no special requirements */
 #  endif
 }
@@ -1597,7 +1597,7 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined (VGA_s390x)
 #  define VG_CLREQ_ARGS       guest_r2
 #  define VG_CLREQ_RET        guest_r3
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
 #  define VG_CLREQ_ARGS       guest_r12
 #  define VG_CLREQ_RET        guest_r11
 #else

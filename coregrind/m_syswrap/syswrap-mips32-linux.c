@@ -949,12 +949,10 @@ PRE (sys_clone)
 
 PRE (sys_sigreturn) 
 {
-  ThreadState * tst;
   PRINT ("sys_sigreturn ( )");
   vg_assert (VG_ (is_valid_tid) (tid));
   vg_assert (tid >= 1 && tid < VG_N_THREADS);
   vg_assert (VG_ (is_running_thread) (tid));
-  tst = VG_ (get_ThreadState) (tid);
   VG_ (sigframe_destroy) (tid, False);
   /* Tell the driver not to update the guest state with the "result",
      and set a bogus result to keep it happy. */ 

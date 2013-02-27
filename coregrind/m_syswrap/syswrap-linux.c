@@ -274,7 +274,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "d" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "2"
       );
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
       asm volatile (
          "sw   %1, %0\n\t"     /* set tst->status = VgTs_Empty */
          "li  	$2, %2\n\t"     /* set v0 = __NR_exit */
@@ -428,7 +428,8 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
       VG_(clone) stuff */
 #if defined(VGP_x86_linux) \
     || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-    || defined(VGP_arm_linux) || defined(VGP_mips32_linux)
+    || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
+    || defined(VGP_mips64_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );

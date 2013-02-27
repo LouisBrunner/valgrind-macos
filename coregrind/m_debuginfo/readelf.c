@@ -2042,7 +2042,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* PLT is different on different platforms, it seems. */
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
-         || defined(VGP_mips32_linux)
+         || defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && !di->plt_present) {
@@ -2693,7 +2693,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          && !defined(VGP_s390x_linux) \
          && !defined(VGP_ppc64_linux) \
          && !defined(VGPV_arm_linux_android) \
-         && !defined(VGPV_x86_linux_android)
+         && !defined(VGPV_x86_linux_android) \
+         && !defined(VGP_mips64_linux)
       if (stab_img && stabstr_img) {
          ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );

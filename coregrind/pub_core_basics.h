@@ -62,6 +62,8 @@
 #  include "libvex_guest_s390x.h"
 #elif defined(VGA_mips32)
 #  include "libvex_guest_mips32.h"
+#elif defined(VGA_mips64)
+#  include "libvex_guest_mips64.h"
 #else
 #  error Unknown arch
 #endif
@@ -115,6 +117,11 @@ typedef
             UInt r31;  /* Return address of the last subroutine call */
             UInt r28;
          } MIPS32;
+         struct {
+            ULong r30;  /* Stack frame pointer or subroutine variable */
+            ULong r31;  /* Return address of the last subroutine call */
+            ULong r28;
+         } MIPS64;
       } misc;
    }
    UnwindStartRegs;

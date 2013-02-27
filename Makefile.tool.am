@@ -64,6 +64,10 @@ TOOL_LDFLAGS_MIPS32_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
 	@FLAG_M32@
 
+TOOL_LDFLAGS_MIPS64_LINUX = \
+	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
+	@FLAG_M64@
+
 # On Android we must ask for non-executable stack, not sure why.
 if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
 if VGCONF_PLATVARIANT_IS_ANDROID
@@ -111,6 +115,9 @@ LIBREPLACEMALLOC_S390X_LINUX = \
 LIBREPLACEMALLOC_MIPS32_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-mips32-linux.a
 
+LIBREPLACEMALLOC_MIPS64_LINUX = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-mips64-linux.a
+
 LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_X86_LINUX) \
@@ -150,6 +157,11 @@ LIBREPLACEMALLOC_LDFLAGS_S390X_LINUX = \
 LIBREPLACEMALLOC_LDFLAGS_MIPS32_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_MIPS32_LINUX) \
+	-Wl,--no-whole-archive
+
+LIBREPLACEMALLOC_LDFLAGS_MIPS64_LINUX = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_MIPS64_LINUX) \
 	-Wl,--no-whole-archive
 
 #----------------------------------------------------------------------------

@@ -81,7 +81,7 @@
    specific code and/or some OS specific code. */
 #if defined(VGA_arm) || defined(VGA_x86) || defined(VGA_amd64) \
     || defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x) \
-    || defined(VGP_mips32_linux)
+    || defined(VGP_mips32_linux) || defined(VGA_mips64)
 #define PTRACEINVOKER
 #else
 I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
@@ -926,6 +926,8 @@ Bool invoke_gdbserver (int pid)
    sp = user_mod.regs.gprs[15];
 #elif defined(VGA_mips32)
    sp = user_mod.regs[29*2];
+#elif defined(VGA_mips64)
+   sp = user_mod.regs[29];
 #else
    I_die_here : (sp) architecture missing in vgdb.c
 #endif
@@ -1011,6 +1013,8 @@ Bool invoke_gdbserver (int pid)
       user_mod.regs[34*2+1] = 0;
       user_mod.regs[25*2] = shared32->invoke_gdbserver;
       user_mod.regs[25*2+1] = 0;
+#elif defined(VGA_mips64)
+      assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else
       I_die_here : architecture missing in vgdb.c
 #endif
@@ -1092,6 +1096,13 @@ Bool invoke_gdbserver (int pid)
       user_mod.regs.psw.addr = shared64->invoke_gdbserver;
 #elif defined(VGA_mips32)
       assert(0); // cannot vgdb a 64 bits executable with a 32 bits exe
+#elif defined(VGA_mips64)
+      /* put check arg in register 4 */
+      user_mod.regs[4] = check;
+      /* put NULL return address in ra */
+      user_mod.regs[31] = bad_return;
+      user_mod.regs[34] = shared64->invoke_gdbserver;
+      user_mod.regs[25] = shared64->invoke_gdbserver;
 #else
       I_die_here: architecture missing in vgdb.c
 #endif

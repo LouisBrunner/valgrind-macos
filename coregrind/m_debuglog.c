@@ -427,6 +427,42 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(VGP_mips64_linux)
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   volatile Long block[2];
+   block[0] = (Long)buf;
+   block[1] = n;
+   __asm__ volatile (
+      "li   $4, 2\n\t"      /* std output*/
+      "ld   $5, 0(%0)\n\t"  /*$5 = buf*/
+      "ld   $6, 8(%0)\n\t"  /*$6 = n */
+      "move $7, $0\n\t"
+      "li   $2, %1\n\t"     /* set v0 = __NR_write */
+      "\tsyscall\n"
+      "\tnop\n"
+      : /*wr*/
+      : /*rd*/  "r" (block), "n" (__NR_write)
+      : "2", "4", "5", "6", "7"
+   );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)(Int)block[0];
+}
+ 
+static UInt local_sys_getpid ( void )
+{
+   ULong __res;
+   __asm__ volatile (
+      "li   $2, %1\n\t"  /* set v0 = __NR_getpid */
+      "syscall\n\t"      /* getpid() */
+      "nop\n\t"
+      "move  %0, $2\n"
+      : "=r" (__res)
+      : "n" (__NR_getpid)
+      : "$2" );
+   return (UInt)(__res);
+}
 
 #else
 # error Unknown platform

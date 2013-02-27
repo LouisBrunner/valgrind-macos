@@ -177,6 +177,31 @@
         (srP)->misc.MIPS32.r31 = (ULong)ra;               \
         (srP)->misc.MIPS32.r28 = (ULong)gp;               \
       }
+#elif defined(VGP_mips64_linux)
+#  define GET_STARTREGS(srP)                              \
+      { ULong pc, sp, fp, ra, gp;                          \
+      asm("move $8, $31;"             /* t0 = ra */       \
+          "bal m_libcassert_get_ip;"  /* ra = pc */       \
+          "m_libcassert_get_ip:\n"                        \
+          "move %0, $31;"                                 \
+          "move $31, $8;"             /* restore lr */    \
+          "move %1, $29;"                                 \
+          "move %2, $30;"                                 \
+          "move %3, $31;"                                 \
+          "move %4, $28;"                                 \
+          : "=r" (pc),                                    \
+            "=r" (sp),                                    \
+            "=r" (fp),                                    \
+            "=r" (ra),                                    \
+            "=r" (gp)                                     \
+          : /* reads none */                              \
+          : "$8" /* trashed */ );                         \
+        (srP)->r_pc = (ULong)pc - 8;                      \
+        (srP)->r_sp = (ULong)sp;                          \
+        (srP)->misc.MIPS64.r30 = (ULong)fp;               \
+        (srP)->misc.MIPS64.r31 = (ULong)ra;               \
+        (srP)->misc.MIPS64.r28 = (ULong)gp;               \
+      }
 #else
 #  error Unknown platform
 #endif

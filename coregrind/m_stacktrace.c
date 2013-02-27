@@ -1110,10 +1110,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #endif
 
-/* ------------------------ mips 32------------------------- */
-
-#if defined(VGP_mips32_linux)
-
+/* ------------------------ mips 32/64 ------------------------- */
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
@@ -1134,8 +1132,13 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    uregs.sp = startRegs->r_sp;
    Addr fp_min = uregs.sp;
 
+#if defined(VGP_mips32_linux)
    uregs.fp = startRegs->misc.MIPS32.r30;
    uregs.ra = startRegs->misc.MIPS32.r31;
+#elif defined(VGP_mips64_linux)
+   uregs.fp = startRegs->misc.MIPS64.r30;
+   uregs.ra = startRegs->misc.MIPS64.r31;
+#endif
 
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
@@ -1192,7 +1195,6 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          for (cur_pc = start_pc; cur_pc < limit_pc; cur_pc += 4) {
             unsigned long inst, high_word, low_word;
             unsigned long * cur_inst;
-            int reg;
             /* Fetch the instruction.   */
             cur_inst = (unsigned long *)cur_pc;
             inst = *((UInt *) cur_inst);
@@ -1202,7 +1204,6 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             /* Save some code by pre-extracting some useful fields.  */
             high_word = (inst >> 16) & 0xffff;
             low_word = inst & 0xffff;
-            reg = high_word & 0x1f;
 
             if (high_word == 0x27bd        /* addiu $sp,$sp,-i */
                 || high_word == 0x23bd     /* addi $sp,$sp,-i */

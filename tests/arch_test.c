@@ -30,6 +30,7 @@ char* all_archs[] = {
    "arm",
    "s390x",
    "mips32",
+   "mips64",
    NULL
 };
 
@@ -61,6 +62,9 @@ static Bool go(char* arch)
 
 #elif defined(VGP_mips32_linux)
    if ( 0 == strcmp( arch, "mips32" ) ) return True;
+
+#elif defined(VGP_mips64_linux)
+   if ( 0 == strcmp( arch, "mips64" ) ) return True;
 
 #else
 #  error Unknown platform

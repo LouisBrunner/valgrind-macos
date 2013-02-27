@@ -257,7 +257,7 @@ typedef
       Int   fp_off;
    }
    DiCfSI;
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
 typedef
    struct {
       Addr  base;

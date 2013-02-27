@@ -113,6 +113,15 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r31;
    regs->misc.MIPS32.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
+#  elif defined(VGA_mips64)
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_r29;
+   regs->misc.MIPS64.r30
+      = VG_(threads)[tid].arch.vex.guest_r30;
+   regs->misc.MIPS64.r31
+      = VG_(threads)[tid].arch.vex.guest_r31;
+   regs->misc.MIPS64.r28
+      = VG_(threads)[tid].arch.vex.guest_r28;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -142,7 +151,7 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 #  elif defined(VGP_s390x_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
-#  elif defined(VGP_mips32_linux)
+#  elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
 #  else
@@ -296,7 +305,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "r13", vex->guest_r13);
    (*f)(tid, "r14", vex->guest_r14);
    (*f)(tid, "r15", vex->guest_r15);
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
    (*f)(tid, "r0" , vex->guest_r0 );
    (*f)(tid, "r1" , vex->guest_r1 );
    (*f)(tid, "r2" , vex->guest_r2 );
@@ -615,13 +624,14 @@ static UInt VG_(get_machine_model)(void)
 
 #endif /* VGA_s390x */
 
-#ifdef VGA_mips32
+#if defined(VGA_mips32) || defined(VGA_mips64)
 
 /* Read /proc/cpuinfo and return the machine model. */
 static UInt VG_(get_machine_model)(void)
 {
-   char *search_MIPS_str = "MIPS";
-   char *search_Broadcom_str = "Broadcom";
+   const char *search_MIPS_str = "MIPS";
+   const char *search_Broadcom_str = "Broadcom";
+   const char *search_Netlogic_str = "Netlogic";
    Int    n, fh;
    SysRes fd;
    SizeT  num_bytes, file_buf_size;
@@ -664,6 +674,8 @@ static UInt VG_(get_machine_model)(void)
    /* Parse file */
    if (VG_(strstr) (file_buf, search_Broadcom_str) != NULL)
        return VEX_PRID_COMP_BROADCOM;
+   if (VG_(strstr) (file_buf, search_Netlogic_str) != NULL)
+       return VEX_PRID_COMP_NETLOGIC;
    if (VG_(strstr) (file_buf, search_MIPS_str) != NULL)
        return VEX_PRID_COMP_MIPS;
 
@@ -1377,6 +1389,20 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
+#elif defined(VGA_mips64)
+   {
+     va = VexArchMIPS64;
+     UInt model = VG_(get_machine_model)();
+     if (model== -1)
+         return False;
+
+     vai.hwcaps = model;
+
+     VG_(machine_get_cache_info)(&vai);
+
+     return True;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
@@ -1503,6 +1529,9 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
       it? */
    return 8;
 
+#  elif defined(VGA_mips64)
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1516,7 +1545,8 @@ void* VG_(fnptr_to_fnentry)( void* f )
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
       || defined(VGP_arm_linux)                           \
       || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
-      || defined(VGP_s390x_linux) || defined(VGP_mips32_linux)
+      || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
+      || defined(VGP_mips64_linux)
    return f;
 #  elif defined(VGP_ppc64_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

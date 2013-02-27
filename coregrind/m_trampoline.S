@@ -1079,10 +1079,67 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------------- mips64-linux ----------------------*/
+#else
+#if defined(VGP_mips64_linux)
+
+#       define UD2_16     trap ; trap ; trap; trap
+#       define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#       define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#       define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#       define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(mips64_linux_SUBST_FOR_rt_sigreturn)
+VG_(mips64_linux_SUBST_FOR_rt_sigreturn):
+        li $2,__NR_rt_sigreturn
+        syscall
+        nop
+        .long 0	/*illegal insn*/
+
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strlen implementation (written in C and compiled by gcc.)
+*/
+.global VG_(mips64_linux_REDIR_FOR_strlen)
+.type   VG_(mips64_linux_REDIR_FOR_strlen), @function
+VG_(mips64_linux_REDIR_FOR_strlen):
+        lbu $12, 0($4)
+        li  $13, 0
+        beq $12, $0, M01 
+        nop
+
+M02: 
+        addiu $13, $13, 1 
+        addiu $4, $4, 1 
+        lbu $12, 0($4) 
+        bne $12, $0, M02 
+        nop 
+
+M01: 
+        move $2, $13 
+        jr $31 
+        nop
+
+.size VG_(mips64_linux_REDIR_FOR_strlen), .-VG_(mips64_linux_REDIR_FOR_strlen)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 /*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

@@ -68,7 +68,8 @@
    ppc32  r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
    ppc64  r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
    arm    r7    r0   r1   r2   r3   r4   r5   n/a  n/a  r0        (== ARG1)
-   mips   v0    a0   a1   a2   a3 stack stack n/a  n/a  v0        (== NUM)
+   mips32 v0    a0   a1   a2   a3 stack stack n/a  n/a  v0        (== NUM)
+   mips64 v0    a0   a1   a2   a3   a4   a5   a6   a7   v0        (== NUM)
 
    On s390x the svc instruction is used for system calls. The system call
    number is encoded in the instruction (8 bit immediate field). Since Linux
@@ -486,6 +487,16 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg8 = __NR_syscall;
    }
 
+#elif defined(VGP_mips64_linux)
+   VexGuestMIPS64State* gst = (VexGuestMIPS64State*)gst_vanilla;
+   canonical->sysno = gst->guest_r2;    // v0
+   canonical->arg1  = gst->guest_r4;    // a0
+   canonical->arg2  = gst->guest_r5;    // a1
+   canonical->arg3  = gst->guest_r6;    // a2
+   canonical->arg4  = gst->guest_r7;    // a3
+   canonical->arg5  = gst->guest_r8;    // a4
+   canonical->arg6  = gst->guest_r9;    // a5
+
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -740,6 +751,16 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
       *((UInt*) (gst->guest_r29 + 20)) = canonical->arg5;    // 20(sp)
       *((UInt*) (gst->guest_r29 + 24)) = canonical->arg6;    // 24(sp)
    }
+
+#elif defined(VGP_mips64_linux)
+   VexGuestMIPS64State* gst = (VexGuestMIPS64State*)gst_vanilla;
+   gst->guest_r2 = canonical->sysno;
+   gst->guest_r4 = canonical->arg1;
+   gst->guest_r5 = canonical->arg2;
+   gst->guest_r6 = canonical->arg3;
+   gst->guest_r7 = canonical->arg4;
+   gst->guest_r8 = canonical->arg5;
+   gst->guest_r9 = canonical->arg6;
 #else
 #  error "putSyscallArgsIntoGuestState: unknown arch"
 #endif
@@ -784,6 +805,14 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    UInt                v1 = gst->guest_r3;    // v1
    UInt                a3 = gst->guest_r7;    // a3
    canonical->sres = VG_(mk_SysRes_mips32_linux)( v0, v1, a3 );
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_mips64_linux)
+   VexGuestMIPS64State* gst = (VexGuestMIPS64State*)gst_vanilla;
+   ULong                v0 = gst->guest_r2;    // v0
+   ULong                v1 = gst->guest_r3;    // v1
+   ULong                a3 = gst->guest_r7;    // a3
+   canonical->sres = VG_(mk_SysRes_mips64_linux)(v0, v1, a3);
    canonical->what = SsComplete;
 
 #  elif defined(VGP_x86_darwin)
@@ -1036,6 +1065,24 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
              OFFSET_mips32_r7, sizeof(UWord) );
 
+#  elif defined(VGP_mips64_linux)
+   VexGuestMIPS64State* gst = (VexGuestMIPS64State*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   if (sr_isError(canonical->sres)) {
+      gst->guest_r2 = (Int)sr_Err(canonical->sres);
+      gst->guest_r7 = (Int)sr_Err(canonical->sres);
+   } else {
+      gst->guest_r2 = sr_Res(canonical->sres);
+      gst->guest_r3 = sr_ResEx(canonical->sres);
+      gst->guest_r7 = (Int)sr_Err(canonical->sres);
+   }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_mips64_r2, sizeof(UWord) );
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_mips64_r3, sizeof(UWord) );
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_mips64_r7, sizeof(UWord) );
+
 #  else
 #    error "putSyscallStatusIntoGuestState: unknown arch"
 #  endif
@@ -1112,6 +1159,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg4   = OFFSET_mips32_r7;
    layout->s_arg5   = sizeof(UWord) * 4;
    layout->s_arg6   = sizeof(UWord) * 5;
+   layout->uu_arg7  = -1; /* impossible value */
+   layout->uu_arg8  = -1; /* impossible value */
+
+#elif defined(VGP_mips64_linux)
+   layout->o_sysno  = OFFSET_mips64_r2;
+   layout->o_arg1   = OFFSET_mips64_r4;
+   layout->o_arg2   = OFFSET_mips64_r5;
+   layout->o_arg3   = OFFSET_mips64_r6;
+   layout->o_arg4   = OFFSET_mips64_r7;
+   layout->o_arg5   = OFFSET_mips64_r8;
+   layout->o_arg6   = OFFSET_mips64_r9;
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
@@ -1970,7 +2028,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x0A);
    }
 
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 
    arch->vex.guest_PC -= 4;             // sizeof(mips instr)
 
@@ -1986,14 +2044,14 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 #     if defined (VG_LITTLEENDIAN)
       if (p[0] != 0x0c || p[1] != 0x00 || p[2] != 0x00 || p[3] != 0x00)
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %#x %02x %02x %02x %02x\n",
+                      "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
                       arch->vex.guest_PC, p[0], p[1], p[2], p[3]);
 
       vg_assert(p[0] == 0x0c && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0x00);
 #     elif defined (VG_BIGENDIAN)
       if (p[0] != 0x00 || p[1] != 0x00 || p[2] != 0x00 || p[3] != 0x0c)
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %#x %02x %02x %02x %02x\n",
+                      "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
                       arch->vex.guest_PC, p[0], p[1], p[2], p[3]);
 
       vg_assert(p[0] == 0x00 && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0x0c);

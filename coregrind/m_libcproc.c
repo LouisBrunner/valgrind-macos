@@ -533,7 +533,8 @@ Int VG_(getegid) ( void )
    platform. */
 Int VG_(getgroups)( Int size, UInt* list )
 {
-#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
+      || defined(VGP_mips64_linux)
    Int    i;
    SysRes sres;
    UShort list16[64];
@@ -762,7 +763,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
-#  elif defined(VGA_mips32)
+#  elif defined(VGA_mips32) || defined(VGA_mips64)
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,
                                  (UWord) nbytes, (UWord) 3);
    vg_assert( sres._isError == 0 );

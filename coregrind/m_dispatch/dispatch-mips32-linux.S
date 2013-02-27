@@ -87,8 +87,8 @@ VG_(disp_run_translations):
        return values can be written */
     sw $4, 60($29)
 
-    /* Load address of guest state into guest state register (r10) */
-    move $10, $5
+    /* Load address of guest state into guest state register ($23) */
+    move $23, $5
 
     /* and jump into the code cache.  Chained translations in
            the code cache run, until for whatever reason, they can't
@@ -103,9 +103,9 @@ VG_(disp_run_translations):
 /*----------------------------------------------------*/
 
 postamble:
-        /* At this point, r2 and r3 contain two
-           words to be returned to the caller.  r2
-           holds a TRC value, and r3 optionally may
+        /* At this point, $2 and $3 contain two
+           words to be returned to the caller.  $2
+           holds a TRC value, and $3 optionally may
            hold another word (for CHAIN_ME exits, the
            address of the place to patch.) */
 
@@ -175,7 +175,7 @@ VG_(disp_cp_chain_me_to_fastEP):
 .global VG_(disp_cp_xindir)
 VG_(disp_cp_xindir):
         /* Where are we going? */
-        lw  $11, OFFSET_mips32_PC($10)
+        lw  $11, OFFSET_mips32_PC($23)
 
         lw $13, vgPlain_stats__n_xindirs_32
         addiu $13, $13, 0x1
@@ -222,7 +222,7 @@ fast_lookup_failed:
 VG_(disp_cp_xassisted):
         /* guest-state-pointer contains the TRC. Put the value into the
            return register */
-        move    $2, $10
+        move    $2, $23
         move    $3, $0
         b       postamble
 

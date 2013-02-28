@@ -22,6 +22,9 @@ sed "s/checked [0-9,]* bytes./checked ... bytes./" |
 # records.  So we filter out the loss record numbers.
 perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" |
 
+# Filter out glibc debuginfo if installed.
+perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+
 $dir/../../memcheck/tests/filter_memcheck "$@"
 
 exit 0

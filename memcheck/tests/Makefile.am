@@ -187,6 +187,7 @@ EXTRA_DIST = \
 	recursive-merge.stderr.exp recursive-merge.vgtest \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
+	sendmsg.stderr.exp sendmsg.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
@@ -292,6 +293,7 @@ check_PROGRAMS = \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \
 	sbfragment \
+	sendmsg \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask static_malloc sigkill \
 	strchr \

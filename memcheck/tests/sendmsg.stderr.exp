@@ -1,0 +1,6 @@
+Syscall param sendmsg(msg) points to uninitialised byte(s)
+   at 0x........: sendmsg (in /...libc...)
+   by 0x........: main (sendmsg.c:45)
+ Address 0x........ is on thread 1's stack
+
+sendmsg: 6

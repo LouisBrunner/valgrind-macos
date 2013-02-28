@@ -849,7 +849,8 @@ void msghdr_foreachfield (
         const HChar *name,
         struct vki_msghdr *msg,
         UInt length,
-        void (*foreach_func)( ThreadId, Bool, const HChar *, Addr, SizeT ) 
+        void (*foreach_func)( ThreadId, Bool, const HChar *, Addr, SizeT ),
+        Bool recv
      )
 {
    HChar *fieldName;
@@ -867,7 +868,11 @@ void msghdr_foreachfield (
    foreach_func ( tid, True, fieldName, (Addr)&msg->msg_iovlen, sizeof( msg->msg_iovlen ) );
    foreach_func ( tid, True, fieldName, (Addr)&msg->msg_control, sizeof( msg->msg_control ) );
    foreach_func ( tid, True, fieldName, (Addr)&msg->msg_controllen, sizeof( msg->msg_controllen ) );
-   foreach_func ( tid, False, fieldName, (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
+
+   /* msg_flags is completely ignored for send_mesg, recv_mesg doesn't read
+      the field, but does write to it. */
+   if ( recv )
+      foreach_func ( tid, False, fieldName, (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
 
    if ( msg->msg_name ) {
       VG_(sprintf) ( fieldName, "(%s.msg_name)", name );
@@ -1512,7 +1517,7 @@ void
 ML_(generic_PRE_sys_sendmsg) ( ThreadId tid, const HChar *name,
                                struct vki_msghdr *msg )
 {
-   msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_read_sendmsg );
+   msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_read_sendmsg, False );
 }
 
 /* ------ */
@@ -1521,14 +1526,14 @@ void
 ML_(generic_PRE_sys_recvmsg) ( ThreadId tid, const HChar *name,
                                struct vki_msghdr *msg )
 {
-   msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_write_recvmsg );
+   msghdr_foreachfield ( tid, name, msg, ~0, pre_mem_write_recvmsg, True );
 }
 
 void 
 ML_(generic_POST_sys_recvmsg) ( ThreadId tid, const HChar *name,
                                 struct vki_msghdr *msg, UInt length )
 {
-   msghdr_foreachfield( tid, name, msg, length, post_mem_write_recvmsg );
+   msghdr_foreachfield( tid, name, msg, length, post_mem_write_recvmsg, True );
    check_cmsg_for_fds( tid, msg );
 }
 

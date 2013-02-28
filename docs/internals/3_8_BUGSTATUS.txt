@@ -368,15 +368,14 @@ by the vbit checker.
 
 310199  valgrind: the 'impossible' happened: SIGSEGV
 
-310424  --read-var-info does not properly describe static
-variables
+310424  --read-var-info does not properly describe static variables
 
 310692  [coregrind] Thread scheduling regression?
 
 310792  [PATCH v2] search additional path for debug symbols
 
 310931  s390 message-security assist (MSA) instruction extension
-not implemented
+        not implemented
 
 311093  massif and memcheck fail to redirect malloc calls on
 statically linked application
@@ -385,3 +384,102 @@ statically linked application
 consistent with the Iop definitions
 
 -- Wed Dec  5 23:41:20 CET 2012
+
+311318  ARM: "128-bit constant is not implemented" error message
+        has patch
+
+311407  ssse3 bcopy (actually converted memcpy) causes invalid read of
+        size 8 under Debian GNU/Linux 32 bits
+
+311544  sys_fork() calls VG_(do_atfork_pre)() AFTER forking()
+
+311607  Unable to run matlab R2010a/R2012b (with JVM) under valgrind
+
+311649  exhausting fds can leak created files
+
+311655  --log-file=FILE leads to apparent fd leak ("Open file
+        descriptor 3: $LOGFILE")
+
+311669  disInstr(arm): unhandled instruction: 0xEE07CFBA
+
+311690  V crashes because it redirects branches inside of a redirected
+        function
+
+311746  I am trying to configure valgrind-3.8.1 for stb hardware
+        with MIPS/linux
+
+311827  OS X 10.8.2 (eq_SyscallStatus): the 'impossible' happened.
+
+311880  x86_64: make regtest hangs at shell_valid1
+
+311922  WARNING: unhandled syscall: 170
+
+311933  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (rdtscp)
+
+312171  ppc: insn selection for DFP
+
+312571  Rounding mode call wrong for the DFP  Iops: Iop_AddD128, 
+        Iop_SubD128, Iop_MulD128, Iop_DivD128, Iop_D128toI64
+
+312620  Recent change to Iop_D32toD64 and Iop_D64toD32 for s390 DFP
+        support broke ppc implementation of the Iops
+
+312907  Broken XInclude in manpage (breaks formatting)
+
+312913  Dangling pointers error should also report the alloc stack trace.
+
+312980  Building on Mountain Lion generates some compiler warnings
+
+312989  ioctl handling needs to do POST handling on generic ioctls and
+        needs to handle BPF ioctls
+
+313267  Adding MIPS64/Linux port to Valgrind
+
+313275  False positives for shared memory semaphores/mutexes/conditions
+
+313276  helgrind does not recognize shared memory initialized
+        semaphores, mutexes, conditions
+
+313348 rdtscp: 0xF 0x1 0xF9 0x89 0x45 0xF0 0x89 0x55
+
+313354  Unrecognised instruction  rdtscp
+
+313811  Buffer overflow in assert_fail
+
+313875  cr_libinit.c:183 cri_init: sigaction() failed: Invalid argument
+
+** [Bug 291310] FXSAVE instruction marks memory as undefined on amd64
+
+314099  coverity pointed out error in VEX guest_ppc_toIR.c insn_suffix
+        variable
+
+314101  Valgrind (ARM) - disInstr(thumb): unhandled instruction: 0xDF01 0x4770
+
+314236  OS X 10.8 testsuite build failure: test million.o
+
+314269  ppc: dead code in insn selection
+
+314365  enable VEX to run asm helpers that do callee register saving
+
+314718  ARM: implement integer divide instruction (sdiv and udiv)
+
+315199  vgcore file for threaded app does not show which thread crashed
+
+315345  cl-format.xml and callgrind/dump.c don't agree on
+        using cfl= or cfi= for the called function source file
+
+315441  sendmsg syscall should ignore unset msghdr msg_flags
+
+315534  msgrcv inside a thread causes valgrind to hang (block)
+
+315545  m_transtab.c:674 (find_TTEntry_from_hcode):
+        Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed.
+
+315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10
+
+315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE
+
+315828  massif "internal error" vgPlain_arena_free when RPATH includes
+        /usr/local/lib
+
+-- Thu Feb 28 09:54:56 CET 2013

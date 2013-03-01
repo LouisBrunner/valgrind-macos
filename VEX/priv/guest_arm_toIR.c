@@ -16569,10 +16569,32 @@ DisResult disInstr_THUMB_WRK (
 
    /* ================ 16-bit misc cases ================ */
 
-   /* ------ NOP ------ */
-   if (INSN0(15,0) == 0xBF00) {
-      DIP("nop\n");
-      goto decode_success;
+   switch (INSN0(15,0)) {
+      case 0xBF00:
+         /* ------ NOP ------ */
+         DIP("nop\n");
+         goto decode_success;
+      case 0xBF20:
+         /* ------ WFE ------ */
+         /* WFE gets used as a spin-loop hint.  Do the usual thing,
+            which is to continue after yielding. */
+         stmt( IRStmt_Exit( unop(Iop_32to1, mkexpr(condT)),
+                            Ijk_Yield,
+                            IRConst_U32((guest_R15_curr_instr_notENC + 2) 
+                                        | 1 /*CPSR.T*/),
+                            OFFB_R15T ));
+         DIP("wfe\n");
+         goto decode_success;
+      case 0xBF40:
+         /* ------ SEV ------ */
+         /* Treat this as a no-op.  Any matching WFEs won't really
+            cause the host CPU to snooze; they just cause V to try to
+            run some other thread for a while.  So there's no point in
+            really doing anything for SEV. */
+         DIP("sev\n");
+         goto decode_success;
+      default:
+         break; /* fall through */
    }
 
    /* ----------------------------------------------------------- */

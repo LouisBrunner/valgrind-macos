@@ -6121,6 +6121,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_NoRedir:
          case Ijk_Sys_syscall:
          case Ijk_TInval:
+         case Ijk_Yield:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, ARMInstr_XAssisted(r, amR15T, cc,
@@ -6212,6 +6213,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
       case Ijk_TInval:
+      case Ijk_Yield:
       {
          HReg       r      = iselIntExpr_R(env, next);
          ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);

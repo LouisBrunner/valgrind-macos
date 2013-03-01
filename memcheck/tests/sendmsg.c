@@ -37,7 +37,7 @@ main (int argc, char **argv)
   iov[0].iov_len = 3;
   iov[1].iov_base = "two";
   iov[1].iov_len = 3;
-  msg.msg_iov = &iov;
+  msg.msg_iov = &iov[0];
   msg.msg_iovlen = 2;
   msg.msg_control = NULL;
   msg.msg_controllen = 0;
@@ -70,5 +70,5 @@ main (int argc, char **argv)
   else
     fprintf (stderr, "sendmsg: %d\n", (int) s);
 
-  exit(0);
+  return 0;
 }

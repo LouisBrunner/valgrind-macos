@@ -304,6 +304,47 @@ extern void ML_(linux_POST_getregset)( ThreadId, long, long );
 DECL_TEMPLATE(linux, sys_ipc);
 DECL_TEMPLATE(linux, sys_socketcall);
 
+/* Depending on the platform, the below are implemented as
+   direct syscalls or via the above sys_socketcall multiplexor. */
+
+/* Direct ipc related syscalls. */
+/* Semaphore */
+DECL_TEMPLATE(linux, sys_semget);
+DECL_TEMPLATE(linux, sys_semop);
+DECL_TEMPLATE(linux, sys_semctl);
+DECL_TEMPLATE(linux, sys_semtimedop);
+/* Shared memory */
+DECL_TEMPLATE(linux, wrap_sys_shmat);
+DECL_TEMPLATE(linux, sys_shmget);
+DECL_TEMPLATE(linux, sys_shmdt);
+DECL_TEMPLATE(linux, sys_shmctl);
+/* Message queue */
+DECL_TEMPLATE(linux, sys_msgget);
+DECL_TEMPLATE(linux, sys_msgrcv);
+DECL_TEMPLATE(linux, sys_msgsnd);
+DECL_TEMPLATE(linux, sys_msgctl);
+
+/* Direct socket related syscalls. */
+DECL_TEMPLATE(linux, sys_socket);
+DECL_TEMPLATE(linux, sys_setsockopt);
+DECL_TEMPLATE(linux, sys_getsockopt);
+DECL_TEMPLATE(linux, sys_connect);
+DECL_TEMPLATE(linux, sys_accept);
+DECL_TEMPLATE(linux, sys_accept4);
+DECL_TEMPLATE(linux, sys_send);
+DECL_TEMPLATE(linux, sys_sendto);
+DECL_TEMPLATE(linux, sys_recv);
+DECL_TEMPLATE(linux, sys_recvfrom);
+DECL_TEMPLATE(linux, sys_sendmsg);
+DECL_TEMPLATE(linux, sys_recvmsg);
+DECL_TEMPLATE(linux, sys_shutdown);
+DECL_TEMPLATE(linux, sys_bind);
+DECL_TEMPLATE(linux, sys_listen);
+DECL_TEMPLATE(linux, sys_getsockname);
+DECL_TEMPLATE(linux, sys_getpeername);
+DECL_TEMPLATE(linux, sys_socketpair);
+
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

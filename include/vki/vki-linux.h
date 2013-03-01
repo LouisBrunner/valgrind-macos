@@ -3055,6 +3055,14 @@ struct vki_hwtstamp_config {
 #define VKI_TUNSETQUEUE  _VKI_IOW('T', 217, int)
 
 //----------------------------------------------------------------------
+// From linux-3.8/include/uapi/linux/vhost.h
+//----------------------------------------------------------------------
+
+#define VKI_VHOST_VIRTIO 0xAF
+#define VKI_VHOST_SET_OWNER _VKI_IO(VKI_VHOST_VIRTIO, 0x01)
+#define VKI_VHOST_RESET_OWNER _VKI_IO(VKI_VHOST_VIRTIO, 0x02)
+
+//----------------------------------------------------------------------
 // Xen privcmd IOCTL
 //----------------------------------------------------------------------
 

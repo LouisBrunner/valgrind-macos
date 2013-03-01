@@ -4795,6 +4795,10 @@ PRE(sys_ioctl)
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_S390_INITIAL_RESET:
 
+   /* vhost without parameter */
+   case VKI_VHOST_SET_OWNER:
+   case VKI_VHOST_RESET_OWNER:
+
    /* User input device creation */
    case VKI_UI_DEV_CREATE:
    case VKI_UI_DEV_DESTROY:

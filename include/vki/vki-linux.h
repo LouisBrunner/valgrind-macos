@@ -3032,6 +3032,29 @@ struct vki_hwtstamp_config {
 #define VKI_IB_USER_MAD_ENABLE_PKEY       _VKI_IO(VKI_IB_IOCTL_MAGIC, 3)
 
 //----------------------------------------------------------------------
+// From linux-3.8/include/uapi/linux/if_tun.h
+//----------------------------------------------------------------------
+
+#define VKI_TUNSETNOCSUM  _VKI_IOW('T', 200, int) 
+#define VKI_TUNSETDEBUG   _VKI_IOW('T', 201, int) 
+#define VKI_TUNSETIFF     _VKI_IOW('T', 202, int) 
+#define VKI_TUNSETPERSIST _VKI_IOW('T', 203, int) 
+#define VKI_TUNSETOWNER   _VKI_IOW('T', 204, int)
+#define VKI_TUNSETLINK    _VKI_IOW('T', 205, int)
+#define VKI_TUNSETGROUP   _VKI_IOW('T', 206, int)
+#define VKI_TUNGETFEATURES _VKI_IOR('T', 207, unsigned int)
+#define VKI_TUNSETOFFLOAD  _VKI_IOW('T', 208, unsigned int)
+#define VKI_TUNSETTXFILTER _VKI_IOW('T', 209, unsigned int)
+#define VKI_TUNGETIFF      _VKI_IOR('T', 210, unsigned int)
+#define VKI_TUNGETSNDBUF   _VKI_IOR('T', 211, int)
+#define VKI_TUNSETSNDBUF   _VKI_IOW('T', 212, int)
+//#define VKI_TUNATTACHFILTER _VKI_IOW('T', 213, struct sock_fprog)
+//#define VKI_TUNDETACHFILTER _VKI_IOW('T', 214, struct sock_fprog)
+#define VKI_TUNGETVNETHDRSZ _VKI_IOR('T', 215, int)
+#define VKI_TUNSETVNETHDRSZ _VKI_IOW('T', 216, int)
+#define VKI_TUNSETQUEUE  _VKI_IOW('T', 217, int)
+
+//----------------------------------------------------------------------
 // Xen privcmd IOCTL
 //----------------------------------------------------------------------
 

@@ -5140,6 +5140,23 @@ PRE(sys_ioctl)
 		    sizeof(struct vki_rtentry));
       break;
 
+      /* tun/tap related ioctls */
+   case VKI_TUNSETIFF:
+      PRE_MEM_RASCIIZ( "ioctl(TUNSETIFF)",
+                     (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
+      PRE_MEM_READ( "ioctl(TUNSETIFF)",
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
+      PRE_MEM_WRITE( "ioctl(TUNSETIFF)", ARG3, 
+		     sizeof(struct vki_ifreq));
+      break;
+   case VKI_TUNSETOFFLOAD:
+      break; 
+   case VKI_TUNGETIFF:
+      PRE_MEM_WRITE( "ioctl(TUNGETIFF)", ARG3, 
+		     sizeof(struct vki_ifreq));
+      break;
+
       /* RARP cache control calls. */
    case VKI_SIOCDRARP:           /* delete RARP table entry      */
    case VKI_SIOCSRARP:           /* set RARP table entry         */
@@ -6395,6 +6412,19 @@ POST(sys_ioctl)
                 (Addr)&((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)ARG3)->vki_ifr_data)->val_out,
                 sizeof(((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)ARG3)->vki_ifr_data)->val_out) );
       break;
+
+      /* tun/tap related ioctls */
+   case VKI_TUNSETIFF:
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
+      break;
+   case VKI_TUNGETIFF:
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
+      break;
+
    case VKI_SIOCGIFCONF:         /* get iface list               */
       /* WAS:
 	 PRE_MEM_WRITE("ioctl(SIOCGIFCONF)", ARG3, sizeof(struct ifconf));

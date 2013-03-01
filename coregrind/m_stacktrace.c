@@ -142,20 +142,6 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
-   const Bool   debug = False; // VG_(debugLog_getLevel) () > 3; // True;
-   const HChar* unwind_case; // used when debug is True.
-   // Debugging this function is not straightforward.
-   // Here is the easiest way I have found:
-   // 1. Change the above to True.
-   // 2. Start your program under Valgrind with --tool=none --vgdb-error=0
-   // 3. Use GDB/vgdb to put a breakpoint where you want to debug the stacktrace
-   // 4. Continue till breakpoint is encountered
-   // 5. From GDB, use 'monitor v.info scheduler' and examine the unwind traces.
-   //    You might have to do twice 'monitor v.info scheduler' to see
-   //    the effect of caching the results of the verification.
-   //    You can also modify the debug dynamically using by using
-   //    'monitor v.set debuglog 4.
-
    const Bool do_stats = False; // compute and output some stats regularly.
    static struct {
       UInt nr; // nr of stacktraces computed
@@ -171,6 +157,23 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       UInt MS; // microsoft unwind
    } stats;
    
+   const Bool   debug = False;
+   //                 = VG_(debugLog_getLevel) () > 3;
+   //                 = True;
+   //                 = stats.nr >= 123456;
+   const HChar* unwind_case; // used when debug is True.
+   // Debugging this function is not straightforward.
+   // Here is the easiest way I have found:
+   // 1. Change the above to True.
+   // 2. Start your program under Valgrind with --tool=none --vgdb-error=0
+   // 3. Use GDB/vgdb to put a breakpoint where you want to debug the stacktrace
+   // 4. Continue till breakpoint is encountered
+   // 5. From GDB, use 'monitor v.info scheduler' and examine the unwind traces.
+   //    You might have to do twice 'monitor v.info scheduler' to see
+   //    the effect of caching the results of the verification.
+   //    You can also modify the debug dynamically using by using
+   //    'monitor v.set debuglog 4.
+
    Int   i;
    Addr  fp_max;
    UInt  n_found = 0;

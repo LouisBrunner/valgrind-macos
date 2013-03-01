@@ -50,40 +50,43 @@ branch.
   x86 vs amd64 inconsistency?
   **is fixed in 3.8.0, but was not marked as such
   ** no it's not; v38BRANCH shows error, vTRUNK doesn't -- investigate
+  REOP
 
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
-  we should fix this
+  SYSCALL, HAS_PATCH
 
 -------- Unfixed in 3.8.0
 
 303741  sockaddr* parameter of recvfrom not handled correctly
         (corruption not detected later on)
-  QUERIED -- need test case, looks easy to fix
+  SYSCALL, HAS_TESTCASE
 
 303877  valgrind doesn't support compressed debuginfo sections.
-
-304259  support Darwin 12 (Mac OS 10.8, Mountain Lion)
-  Canonical OSX 10.8
-
-304321  m_signals.c:2314 (sync_signalhandler_from_kernel): Assertion 'tid != 0' failed
-  Probably invalid (way too old)
-
-304450  time logging tools ?
-  wishlist
-
-304675  make install-strip fails when cross-compiling
-  w/ patch; but needs checking (should be more general?  assumes auto*
-  version?)
-
-304676  regtest hangs on mac OS X (mchelp, coolo_sigaction, system)
-  probably related to 301281 et al
   QUERIED
 
+304259  support Darwin 12 (Mac OS 10.8, Mountain Lion)
+  OSX108 (Canonical)
+
+304321  m_signals.c:2314 (sync_signalhandler_from_kernel):
+        Assertion 'tid != 0' failed
+  CLOSED as UNMAINTAINED.
+
+304450  time logging tools ?
+  WISHLIST
+
+304675  make install-strip fails when cross-compiling
+  w/ one-liner patch; but needs checking (should be more general?
+  assumes auto* version?)
+
+304676  regtest hangs on mac OS X (mchelp, coolo_sigaction, system)
+  probably related to 301281 et al.  Still valid.
+  OSX
+
 304832  ppc32: build failure
-  probably invalid
+  FIXED (not sure what happened.  Seems bogus to me.)
 
 305170  linux: add FIOCLEX and FIONCLEX ioctls
-  w/ patch, looks pretty harmless
+  SYSCALL.  w/ patch, looks pretty harmless
 
 305431  Use find_buildid shdr fallback for separate .debug files
         FIXED r13160
@@ -91,40 +94,55 @@ branch.
 n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
 305728  Add support for AVX2 instructions
+   HAS_PATCH.  Is nearly OK, but needs hwcaps fixing up.
 
 305957  m_debuginfo/d3basics.c:965 (vgModuleLocal_evaluate_GX):
         Assertion 'aMin == (Addr)0' failed.
-        QUERIED -- no info so far
+        QUERIED -- no info so far -- close?
 
 306004  Wishlist: port valgrind to sparc
+   WISHLIST
 
 306035  s390x: Fix IR generation for LAAG and friends
+   FIXED, 2576/13146.
 
 306098  s390x: alternate opcode form for convert to/from fixed
+   FIXED, 2501/12935, but not yet closed
 
 -- Sat 1 Sept 2012 10pm
 
 306171  Boost.Context appears to cause Valgrind to crash
+   Stack switching; should fix.  (Conservative unwind?)
 
 306235  unhandled syscall: 429 (freebsd)
+   Need to forward to FreeBSD port maintainers.
 
 306299  Internal error when running a winelib application
+   Conservative unwind?
 
 306310  3.8.0 release tarball missing some files
+   FIXED 12964/12983.
 
 306340  parse_var_DIE confused by DWARF from clang-3.1
+   Might be quite simple to fix; need to investigate.
 
 306535  massif: force dump result every X minutes
+   Queried
 
 306587  data cache line size is 128 and instruction cache line size is 32
+   PPC; obscure, needs investigatoin
 
 306590  not support e500v2 spe 0x216 command
+   PPC SPE insns; with plausible looking patch?  Need test cases, and
+   cc Mehafy.
 
-   286864 strlen function redirection error
+286864 strlen function redirection error
+   Gentoo glibc "miscompilation"; is this important?
 
 306783  Mips unhandled syscall :  4025  /  4079  / 4182
+   FIXED r12995.
 
--- Mon 17 Sept 2012, 10 am
+---- Mon 17 Sept 2012, 10 am
 
 valgrind.spec diff at https://bugzilla.mozilla.org/show_bug.cgi?id=750856#c20
 r13008 to 382 ?  check

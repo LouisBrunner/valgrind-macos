@@ -14,7 +14,7 @@ void (*fnptr[256])(char*, char*);
 void stacktrace(char*last, char* callsequence)
 {
    fprintf(stderr, "\n");
-   VALGRIND_PRINTF_BACKTRACE (callsequence);
+   VALGRIND_PRINTF_BACKTRACE ("%s", callsequence);
 }
 __attribute__((noinline)) void f_a(char *calls, char*seq);
 __attribute__((noinline)) void f_b(char *calls, char*seq);

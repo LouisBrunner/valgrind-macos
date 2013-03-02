@@ -3672,7 +3672,6 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = insn;
             goto done;
          }
-         goto bad;
       }
       case ARMin_VXferD: {
          UInt dD  = dregNo(i->ARMin.VXferD.dD);

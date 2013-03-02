@@ -441,14 +441,14 @@ static inline UInt getUInt(UChar * p)
 
 #define LWX_SWX_PATTERN64 \
    t2 = newTemp(Ity_I64); \
-   assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFFC))); \
+   assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFFCULL))); \
    t4 = newTemp(Ity_I32); \
    assign(t4, mkNarrowTo32( ty, binop(Iop_And64, \
                                       mkexpr(t1), mkU64(0x3))));
  
 #define LWX_SWX_PATTERN64_1 \
    t2 = newTemp(Ity_I64); \
-   assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFF8))); \
+   assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFF8ULL))); \
    t4 = newTemp(Ity_I64); \
    assign(t4, binop(Iop_And64, mkexpr(t1), mkU64(0x7)));
 
@@ -1912,7 +1912,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                      VexAbiInfo*  abiinfo,
                                      Bool         sigill_diag )
 {
-   IRTemp t0, t1, t2, t3, t4, t5, t6, t7, t8;
+   IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7, t8;
    UInt opcode, cins, rs, rt, rd, sa, ft, fs, fd, fmt, tf, nd, function,
         trap_code, imm, instr_index, p, msb, lsb, size, rot, sel;
 
@@ -2089,7 +2089,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       if (mode64) {
          putIReg(31, mkU64(guest_PC_curr_instr + 8));
          t0 = newTemp(ty);
-         assign(t0, mkU64((guest_PC_curr_instr & 0xFFFFFFFFF0000000) |
+         assign(t0, mkU64((guest_PC_curr_instr & 0xFFFFFFFFF0000000ULL) |
                           (instr_index << 2)));
       } else {
          putIReg(31, mkU32(guest_PC_curr_instr + 8));
@@ -2103,7 +2103,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       DIP("j 0x%x", instr_index);
       t0 = newTemp(ty);
       if (mode64)
-         assign(t0, mkU64((guest_PC_curr_instr & 0xFFFFFFFFF0000000) |
+         assign(t0, mkU64((guest_PC_curr_instr & 0xFFFFFFFFF0000000ULL) |
                           (instr_index << 2)));
       else
          assign(t0, mkU32((guest_PC_curr_instr & 0xF0000000) |
@@ -3522,7 +3522,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I64);
          assign(t0, binop(Iop_Add64, getIReg(rs), getIReg(rt)));
-         assign(t1, binop(Iop_And64, mkexpr(t0), mkU64(0xfffffffffffffff8)));
+         assign(t1, binop(Iop_And64, mkexpr(t0), mkU64(0xfffffffffffffff8ULL)));
          store(mkexpr(t1), getFReg(fs));
          break;
 
@@ -3775,9 +3775,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       assign(t5, binop(Iop_Mul64, binop(Iop_Sub64, mkU64(0x7), mkexpr(t4)),
                  mkU64(0x8)));
 
-      assign(t6, binop(Iop_Shr64, mkU64(0xFFFFFFFFFFFFFFFF),
+      assign(t6, binop(Iop_Shr64, mkU64(0xFFFFFFFFFFFFFFFFULL),
                                   narrowTo(Ity_I8, mkexpr(t5))));
-      assign(t7, binop(Iop_Xor64, mkU64(0xFFFFFFFFFFFFFFFF), mkexpr(t6)));
+      assign(t7, binop(Iop_Xor64, mkU64(0xFFFFFFFFFFFFFFFFULL), mkexpr(t6)));
       assign(t8, binop(Iop_And64, load(Ity_I64, mkexpr(t2)), mkexpr(t7)));
       store(mkexpr(t2), binop(Iop_Or64, mkexpr(t8), mkexpr(t3)));
       break;
@@ -3809,7 +3809,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       /* word content  - adjusted */
       t5 = newTemp(Ity_I64);
       assign(t5, binop(Iop_And64, load(Ity_I64, mkexpr(t2)), unop(Iop_Not64,
-                 binop(Iop_Shl64, mkU64(0xFFFFFFFFFFFFFFFF),
+                 binop(Iop_Shl64, mkU64(0xFFFFFFFFFFFFFFFFULL),
                  narrowTo(Ity_I8, binop(Iop_Shl64, mkexpr(t4), mkU8(0x3)))))));
 
       store(mkexpr(t2), binop(Iop_Xor64, mkexpr(t5), mkexpr(t3)));
@@ -4290,7 +4290,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          DIP("dclo r%d, r%d", rd, rs);
          t1 = newTemp(Ity_I1);
          assign(t1, binop(Iop_CmpEQ64, getIReg(rs),
-                                        mkU64(0xffffffffffffffff)));
+                                        mkU64(0xffffffffffffffffULL)));
          putIReg(rd, IRExpr_ITE(mkexpr(t1),
                                 mkU64(0x40),
                                 unop(Iop_Clz64, unop(Iop_Not64,
@@ -5179,7 +5179,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             t3 = newTemp(Ity_I64);
 
             assign(t1, binop(Iop_And64, getIReg(rt),  /* hi */
-                             mkU64(0xFFFFFFFF00000000)));
+                             mkU64(0xFFFFFFFF00000000ULL)));
 
             assign(t2, binop(Iop_Sar64, mkexpr(t1), mkU8(sa)));
 
@@ -5207,7 +5207,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                        mkNarrowTo32(ty, getIReg(rs)), mkU32(0x0000001F))));
 
             assign(t1, binop(Iop_And64, getIReg(rt),  /* hi */
-                   mkU64(0xFFFFFFFF00000000)));
+                   mkU64(0xFFFFFFFF00000000ULL)));
 
             assign(t2, binop(Iop_Sar64, mkexpr(t1), mkexpr(t4)));
 
@@ -5582,15 +5582,15 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          assign(t2, unop(Iop_1Uto64,
                          binop(Iop_CmpEQ64,
                                binop(Iop_And64, mkexpr(t1),
-                                     mkU64(0x8000000000000000)),
-                               mkU64(0x8000000000000000))));
+                                     mkU64(0x8000000000000000ULL)),
+                               mkU64(0x8000000000000000ULL))));
 
          assign(t3, binop(Iop_Xor64, mkexpr(t0), mkexpr(tmpRs64)));
          assign(t4, unop(Iop_1Uto64,
                          binop(Iop_CmpNE64,
                                binop(Iop_And64, mkexpr(t3),
-                                     mkU64(0x8000000000000000)),
-                               mkU64(0x8000000000000000))));
+                                     mkU64(0x8000000000000000ULL)),
+                               mkU64(0x8000000000000000ULL))));
 
          stmt(IRStmt_Exit(binop(Iop_CmpEQ64,
                                 binop(Iop_Or64, mkexpr(t2), mkexpr(t4)),
@@ -5629,17 +5629,25 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             goto no overflow;
             we have overflow! */
 
-         assign(t5, binop(Iop_Mul64, mkexpr(tmpRt64), mkU64(0xffffffffffffffff)));
+         assign(t5, binop(Iop_Mul64,
+                          mkexpr(tmpRt64),
+                          mkU64(0xffffffffffffffffULL)));
          assign(t0, binop(Iop_Add64, mkexpr(tmpRs64), mkexpr(t5)));
          assign(t1, binop(Iop_Xor64, mkexpr(tmpRs64), mkexpr(t5)));
-         assign(t2, unop(Iop_1Sto64, binop(Iop_CmpEQ64, binop(Iop_And64,
-                         mkexpr(t1), mkU64(0x8000000000000000)),
-                                           mkU64(0x8000000000000000))));
+         assign(t2, unop(Iop_1Sto64,
+                         binop(Iop_CmpEQ64,
+                               binop(Iop_And64,
+                                     mkexpr(t1),
+                                     mkU64(0x8000000000000000ULL)),
+                               mkU64(0x8000000000000000ULL))));
 
          assign(t3, binop(Iop_Xor64, mkexpr(t0), mkexpr(tmpRs64)));
-         assign(t4, unop(Iop_1Sto64, binop(Iop_CmpNE64, binop(Iop_And64,
-                         mkexpr(t3), mkU64(0x8000000000000000)),
-                                           mkU64(0x8000000000000000))));
+         assign(t4, unop(Iop_1Sto64,
+                         binop(Iop_CmpNE64,
+                               binop(Iop_And64,
+                                     mkexpr(t3),
+                                     mkU64(0x8000000000000000ULL)),
+                               mkU64(0x8000000000000000ULL))));
 
          stmt(IRStmt_Exit(binop(Iop_CmpEQ64, binop(Iop_Or64, mkexpr(t2),
                                 mkexpr(t4)), mkU64(0)), Ijk_SigFPE_IntOvf,
@@ -5688,18 +5696,18 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x02:  /* BLTZL */
          DIP("bltzl r%d, %d", rs, imm);
          lastn = dis_branch_likely(binop(mode64 ? Iop_CmpNE64 : Iop_CmpNE32,
-                        binop(mode64 ? Iop_And64 : Iop_And32, getIReg(rs),
-                        mode64 ? mkU64(0x8000000000000000) : mkU32(0x80000000)),
-                        mode64 ? mkU64(0x8000000000000000) : mkU32(0x80000000)),
-                        imm);
+                     binop(mode64 ? Iop_And64 : Iop_And32, getIReg(rs),
+                     mode64 ? mkU64(0x8000000000000000ULL) : mkU32(0x80000000)),
+                     mode64 ? mkU64(0x8000000000000000ULL) : mkU32(0x80000000)),
+                     imm);
          break;
 
       case 0x03:  /* BGEZL */
          DIP("bgezl r%d, %d", rs, imm);
          lastn = dis_branch_likely(binop(mode64 ? Iop_CmpNE64 : Iop_CmpNE32,
-                      binop(mode64 ? Iop_And64 : Iop_And32, getIReg(rs),
-                      mode64 ? mkU64(0x8000000000000000) : mkU32(0x80000000)),
-                      mode64 ? mkU64(0x0) : mkU32(0x0)), imm);
+                     binop(mode64 ? Iop_And64 : Iop_And32, getIReg(rs),
+                     mode64 ? mkU64(0x8000000000000000ULL) : mkU32(0x80000000)),
+                     mode64 ? mkU64(0x0) : mkU32(0x0)), imm);
          break;
 
       case 0x10:  /* BLTZAL */
@@ -5718,10 +5726,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          putIReg(31, mode64 ? mkU64(guest_PC_curr_instr + 8) :
                               mkU32(guest_PC_curr_instr + 8));
          lastn = dis_branch_likely(binop(mode64 ? Iop_CmpNE64 : Iop_CmpNE32,
-                        binop(mode64 ? Iop_And64 : Iop_And32, getIReg(rs),
-                        mode64 ? mkU64(0x8000000000000000) : mkU32(0x80000000)),
-                        mode64 ? mkU64(0x8000000000000000) : mkU32(0x80000000)),
-                        imm);
+                     binop(mode64 ? Iop_And64 : Iop_And32, getIReg(rs),
+                     mode64 ? mkU64(0x8000000000000000ULL) : mkU32(0x80000000)),
+                     mode64 ? mkU64(0x8000000000000000ULL) : mkU32(0x80000000)),
+                     imm);
          break;
 
       case 0x11:  /* BGEZAL */
@@ -5739,9 +5747,12 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          DIP("bgezall r%d, %d", rs, imm);
          if (mode64) {
             putIReg(31, mkU64(guest_PC_curr_instr + 8));
-            lastn = dis_branch_likely(binop(Iop_CmpNE64, binop(Iop_And64,
-                                      getIReg(rs), mkU64(0x8000000000000000)),
-                                      mkU64(0x0)), imm);
+            lastn = dis_branch_likely(binop(Iop_CmpNE64,
+                                            binop(Iop_And64,
+                                                  getIReg(rs),
+                                                  mkU64(0x8000000000000000ULL)),
+                                            mkU64(0x0)),
+                                      imm);
          } else {
             putIReg(31, mkU32(guest_PC_curr_instr + 8));
             lastn = dis_branch_likely(binop(Iop_CmpNE32, binop(Iop_And32,
@@ -6055,13 +6066,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       assign(t1, binop(Iop_Xor64, mkexpr(tmpRs64),
                        mkU64(extend_s_16to64(imm))));
       assign(t2, unop(Iop_1Sto64, binop(Iop_CmpEQ64, binop(Iop_And64,
-                      mkexpr(t1), mkU64(0x8000000000000000)),
-                                        mkU64(0x8000000000000000))));
+                      mkexpr(t1), mkU64(0x8000000000000000ULL)),
+                                        mkU64(0x8000000000000000ULL))));
 
       assign(t3, binop(Iop_Xor64, mkexpr(t0), mkexpr(tmpRs64)));
       assign(t4, unop(Iop_1Sto64, binop(Iop_CmpNE64, binop(Iop_And64,
-                      mkexpr(t3), mkU64(0x8000000000000000)),
-                                        mkU64(0x8000000000000000))));
+                      mkexpr(t3), mkU64(0x8000000000000000ULL)),
+                                        mkU64(0x8000000000000000ULL))));
 
       stmt(IRStmt_Exit(binop(Iop_CmpEQ64, binop(Iop_Or64, mkexpr(t2),
                              mkexpr(t4)), mkU64(0)), Ijk_SigFPE_IntOvf,
@@ -6108,7 +6119,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       assign(t5, binop(Iop_Mul64, mkexpr(t4), mkU64(0x8)));
 
-      assign(t6, binop(Iop_Shr64, mkU64(0x00FFFFFFFFFFFFFF),
+      assign(t6, binop(Iop_Shr64, mkU64(0x00FFFFFFFFFFFFFFULL),
                        narrowTo(Ity_I8, mkexpr(t5))));
 
       assign(t7, binop(Iop_And64, getIReg(rt), mkexpr(t6)));
@@ -6142,7 +6153,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       /* rt content  - adjusted */
       t5 = newTemp(Ity_I64);
       assign(t5, binop(Iop_And64, getIReg(rt), unop(Iop_Not64,
-                 binop(Iop_Shr64, mkU64(0xFFFFFFFFFFFFFFFF),
+                 binop(Iop_Shr64, mkU64(0xFFFFFFFFFFFFFFFFULL),
                  narrowTo(Ity_I8, binop(Iop_Shl64, mkexpr(t4), mkU8(0x3)))))));
 
       putIReg(rt, binop(Iop_Or64, mkexpr(t5), mkexpr(t3)));

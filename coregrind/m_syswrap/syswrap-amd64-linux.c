@@ -1071,7 +1071,7 @@ static SyscallTableEntry syscall_table[] = {
 //   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 300
 //   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 301
    LINXY(__NR_prlimit64,         sys_prlimit64),        // 302
-//   LINX_(__NR_name_to_handle_at, sys_ni_syscall),       // 303
+   LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 303
 //   LINX_(__NR_open_by_handle_at, sys_ni_syscall),       // 304
 
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 305

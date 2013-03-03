@@ -3106,6 +3106,17 @@ struct vki_xen_privcmd_mmapbatch_v2 {
 #define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH    _VKI_IOC(_VKI_IOC_NONE, 'P', 3, sizeof(struct vki_xen_privcmd_mmapbatch))
 #define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2 _VKI_IOC(_VKI_IOC_NONE, 'P', 4, sizeof(struct vki_xen_privcmd_mmapbatch_v2))
 
+//----------------------------------------------------------------------
+// From linux-3.4.0/include/linux/fs.h
+//----------------------------------------------------------------------
+
+struct vki_file_handle {
+   __vki_u32 handle_bytes;
+   int handle_type;
+   /* file identifier */
+   unsigned char f_handle[0];
+};
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

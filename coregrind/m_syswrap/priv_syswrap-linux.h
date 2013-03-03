@@ -175,6 +175,7 @@ DECL_TEMPLATE(linux, sys_readlinkat);
 DECL_TEMPLATE(linux, sys_fchmodat);
 DECL_TEMPLATE(linux, sys_faccessat);
 DECL_TEMPLATE(linux, sys_utimensat);
+DECL_TEMPLATE(linux, sys_name_to_handle_at);
 
 DECL_TEMPLATE(linux, sys_add_key);
 DECL_TEMPLATE(linux, sys_request_key);

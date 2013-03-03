@@ -4403,6 +4403,24 @@ PRE(sys_faccessat)
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
 }
 
+PRE(sys_name_to_handle_at)
+{
+   PRINT("sys_name_to_handle_at ( %ld, %#lx(%s), %#lx, %#lx, %ld )", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "name_to_handle_at",
+                 int, dfd, const char *, name,
+                 struct vki_file_handle, handle,
+                 int *, mnt_id, int, flag);
+   PRE_MEM_RASCIIZ( "name_to_handle_at(name)", ARG2 );
+   PRE_MEM_WRITE( "name_to_handle_at(handle)", ARG3, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG3)->handle_bytes );
+   PRE_MEM_WRITE( "name_to_handle_at(mnt_id)", ARG4, sizeof(int) );
+}
+
+POST(sys_name_to_handle_at)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG3)->handle_bytes );
+   POST_MEM_WRITE( ARG4, sizeof(int) );
+}
+
 /* ---------------------------------------------------------------------
    p{read,write}v wrappers
    ------------------------------------------------------------------ */

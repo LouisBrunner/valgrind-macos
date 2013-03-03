@@ -2871,7 +2871,7 @@ static UChar *
 s390_emit_MVI(UChar *p, UChar i2, UChar b1, UShort d1)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC3(MNM, UDXB, INT), "mvi", b1, 0, d1, i2);
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvi", d1, 0, b1, i2);
 
    return emit_SI(p, 0x92000000, i2, b1, d1);
 }
@@ -2881,7 +2881,7 @@ static UChar *
 s390_emit_MVHHI(UChar *p, UChar b1, UShort d1, UShort i2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC3(MNM, UDXB, INT), "mvhhi", b1, 0, d1, i2);
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvhhi", d1, 0, b1, i2);
 
    return emit_SIL(p, 0xe54400000000ULL, b1, d1, i2);
 }
@@ -2891,7 +2891,7 @@ static UChar *
 s390_emit_MVHI(UChar *p, UChar b1, UShort d1, UShort i2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC3(MNM, UDXB, INT), "mvhi", b1, 0, d1, i2);
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvhi", d1, 0, b1, i2);
 
    return emit_SIL(p, 0xe54c00000000ULL, b1, d1, i2);
 }
@@ -2901,7 +2901,7 @@ static UChar *
 s390_emit_MVGHI(UChar *p, UChar b1, UShort d1, UShort i2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC3(MNM, UDXB, INT), "mvghi", b1, 0, d1, i2);
+      s390_disasm(ENC3(MNM, UDXB, INT), "mvghi", d1, 0, b1, i2);
 
    return emit_SIL(p, 0xe54800000000ULL, b1, d1, i2);
 }

@@ -1853,8 +1853,9 @@ static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
    info.si_code = si_code;
    info.VKI_SIGINFO_si_addr = (void*)addr;
 
-   /* even if gdbserver indicates to ignore the signal, we will deliver it */
-   VG_(gdbserver_report_signal) (VKI_SIGSEGV, tid);
+   /* Even if gdbserver indicates to ignore the signal, we must deliver it.
+      So ignore the return value of VG_(gdbserver_report_signal). */
+   (void) VG_(gdbserver_report_signal) (VKI_SIGSEGV, tid);
 
    /* If they're trying to block the signal, force it to be delivered */
    if (VG_(sigismember)(&VG_(threads)[tid].sig_mask, VKI_SIGSEGV))

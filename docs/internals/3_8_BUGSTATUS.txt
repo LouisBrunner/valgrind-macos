@@ -191,6 +191,7 @@ n-i-bz  patch to allow fair-sched on android
         FIXED r13159
 
 307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
+        == 308333
         FIXED r2581
 
 307113  s390x: DFP support
@@ -275,179 +276,236 @@ n-i-bz  patch to allow fair-sched on android
 
 289578  Backtraces with ARM unwind tables (=without debug symbols) and
         support for offline symbol resolving
+        Has patch for command line enabling of stack-scan -- COMMIT
 
 308321  testsuite memcheck filter interferes with gdb_filter
-
-308333  Valgrind doesn't handle GCC's __sync_fetch_and_add
-(unhandled 
+        FIXED r13043
 
 308341  vgdb should report process exit (or fatal signal)
+        FIXED r13052
 
 308353  use of uninitialised value reported, but get_vbits claims
-all 0's for this memory
+        all 0's for this memory
+        INVALID
 
-197915] 80-bit floats are not supported on x86 and x86-64
+197915  80-bit floats are not supported on x86 and x86-64
+        indeed, yes.
 
 308427  s390 memcheck reports  tsearch conditional jump or move
-depends on uninitialized value
+        depends on uninitialized value
+        FIXED r2551
 
 308495  Remove build dependency on installed Xen headers
+        FIXED r13081
 
-299316] Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr'
-failed.
+299316  Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr'
+        failed.
+        OSX Helgrind
 
 308573  Internal Valgrind error on 64-bit instruction executed in
-32-bit mode
+        32-bit mode
+        FIXED r2558, r13091
 
 308582  massif: wrong stack usage at exit of threaded program
-
-308626  bsfl validity bit propagation is imprecise
+        No action so far
 
 308627  pmovmskb validity bit propagation is imprecise
+        == 308626
+        FIXED r2559, r13108, r13129
 
 308644  vgdb command for having the info for the track-fds option
+        FIXED 13072
 
 308668  pthread rwlock_rdlock doesn't understand modifications in
-some cases
+        some cases (Helgrind)
+        No action so far
 
-308711  give more info about aspacemgr and arenas in
-out_of_memory
+308711  give more info about aspacemgr and arenas in out_of_memory
+        FIXED 13077
 
 308717  ARM: implement fixed-point VCVT.F64.[SU]32
-(patch, but no test case)
+        (patch, but no test case)
+        HAS_PATCH
 
 308718  ARM implement SMLALBB family of instructions
-(patch, but no test case)
+        (patch, but no test case)
+        HAS_PATCH
 
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5
+        HAS_PATCH, but NEEDINFO
 
-212419] false positive "lock order violated" (A+B vs A)
-dfaure wants this fixed
-related: 243232] Inconsistent Lock Orderings report with trylock
+212419  false positive "lock order violated" (A+B vs A)
+        INVALID
+        related: 243232 Inconsistent Lock Orderings report with trylock
 
 237920  valgrind segfault on fork failure
+        Uninvestigated
 
 308816  valgrind GPF in signal handler context 3.8.1 (allignment 
+        Needs investigation
 
 308886  Missing support for PTRACE_SET/GETREGSET
+        FIXED r13112, r13115 (??)
 
 308930  syscall name_to_handle_at (303 on amd64) not handled
+        HAS_PATCH, needs looking at
 
 308977  specify Install Directory for my target platform.
+        Wishlist
 
 309100  s390x: Testcases for extended BFP
+        No action so far
 
 309229  V-bit tester does not report number of tests generated
+        FIXED r13124
 
 309323  print unrecognized instuction on MIPS
+        No action so far
 
 309425  Provide a --sigill-diagnostics flag to suppress illegal
-instruction reporting
+        instruction reporting
+        FIXED r13164, r2582
 
 309427  SSE optimized stpncpy trigger uninitialised value and/or
         invalid read warnings
         FIXED, r13163
 
-309430  Self hosting ppc64 encounters a vassert error on operand
-        type
+309430  Self hosting ppc64 encounters a vassert error on operand type
+        No action so far.  Sounds a bit strange.
 
 309554  Unhandled syscall remap_file_pages (216)
+        No action so far
 
 309600  valgrind is a bit confused about 0-sized sections
+        FIXED r13109
 
-309604  disInstr(arm): unhandled instruction: 0xECECA102
+309721  add client request returning current value of a statistic (e.g. Ir)
+        No action yet (wishlist?)
 
-309721  add client request returning current value of a statistic
-(e.g. Ir)
-
-309783  Valgrind does not support separate source and build
-directories
+309783  Valgrind does not support separate source and build directories
+        Has patch, but needs further checking
 
 309823  Generate errors for still reachable blocks
+        May be closable -- queried Philippe
 
 309827  add support for nvidia (nvmem) ioctls
+        A bunch of Android hackery from VladV; needs pulling apart
 
 309831  3.8.1: disInstr(arm): unhandled instruction: 0xECECA102
-(stcl, gdb disassembles to stfp)
+        (stcl, gdb disassembles to stfp)
+        ==309604
 
 309879  gnat gcc generates tag_member without type info, cannot
-be read by Valgrind
+        be read by Valgrind
+        WONTFIX
 
 309884  "make check" fails on Suse Linux Enterprise 10
+        INVALID
 
 309921  PCMPISTRI validity bit propagation is imprecise
+        FIXED r2562, r13132
 
 309922  none/tests/ppc64/test_dfp5 sometimes fails
+        FIXED r2563
 
 310169  The Iop_CmpORD class of Iops is currently not supported
-by the vbit checker.
+        by the vbit checker.
+        FIXED r13123
 
 310188  need better diagnostic when mmap() fails with EINVAL
+        No patch so far
 
 310199  valgrind: the 'impossible' happened: SIGSEGV
+        INVALID
 
 310424  --read-var-info does not properly describe static variables
+        FIXED r13153
 
 310692  [coregrind] Thread scheduling regression?
+        Spinlockery
 
 310792  [PATCH v2] search additional path for debug symbols
+        FIXED r13154,13169
 
 310931  s390 message-security assist (MSA) instruction extension
         not implemented
+        FIXED r13150, r2579.
 
 311093  massif and memcheck fail to redirect malloc calls on
-statically linked application
+        statically linked application
+        Unclear what's going on
 
 311100  PPC DFP implementation of the integer operands is not
-consistent with the Iop definitions
+        consistent with the Iop definitions
+        FIXED r2562, r13260
 
 -- Wed Dec  5 23:41:20 CET 2012
 
 311318  ARM: "128-bit constant is not implemented" error message
-        has patch
+        HAS_PATCH; needs checking though
 
 311407  ssse3 bcopy (actually converted memcpy) causes invalid read of
         size 8 under Debian GNU/Linux 32 bits
+        FIXED r13253
 
 311544  sys_fork() calls VG_(do_atfork_pre)() AFTER forking()
+        No action; needs checking
 
 311607  Unable to run matlab R2010a/R2012b (with JVM) under valgrind
+        OLD (V 3.5); NEEDINFO
 
 311649  exhausting fds can leak created files
+        Probably true; NEEDINFO
 
 311655  --log-file=FILE leads to apparent fd leak ("Open file
         descriptor 3: $LOGFILE")
+        Probably true; should fix.
 
 311669  disInstr(arm): unhandled instruction: 0xEE07CFBA
+        OLD (3.7); NEEDINFO
 
 311690  V crashes because it redirects branches inside of a redirected
         function
+        I thought this had been fixed (well, worked around) but
+        there's no evidence of that.
 
 311746  I am trying to configure valgrind-3.8.1 for stb hardware
         with MIPS/linux
+        INVALID
 
 311827  OS X 10.8.2 (eq_SyscallStatus): the 'impossible' happened.
+        OSX108 problems
 
 311880  x86_64: make regtest hangs at shell_valid1
+        FIXED r2597
 
 311922  WARNING: unhandled syscall: 170
+        Syscall; no action yet.  Might be easy to fix.
 
 311933  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (rdtscp)
+        RDTSCP
+        == 251569
 
 312171  ppc: insn selection for DFP
+        Unclear what status is; NEEDINFO
 
 312571  Rounding mode call wrong for the DFP  Iops: Iop_AddD128, 
         Iop_SubD128, Iop_MulD128, Iop_DivD128, Iop_D128toI64
+        FIXED r2627
 
 312620  Recent change to Iop_D32toD64 and Iop_D64toD32 for s390 DFP
         support broke ppc implementation of the Iops
+        FIXED r2650
 
 312907  Broken XInclude in manpage (breaks formatting)
+        HAS_PATCH; should commit
 
 312913  Dangling pointers error should also report the alloc stack trace.
+        FIXED r13223
 
 312980  Building on Mountain Lion generates some compiler warnings
-
+        FIXED r2634
+---here
 312989  ioctl handling needs to do POST handling on generic ioctls and
         needs to handle BPF ioctls
 

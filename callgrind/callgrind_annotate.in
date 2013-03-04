@@ -81,6 +81,7 @@ use strict;
 # Total counts for summary (an array reference).
 my $summary_CC;
 my $totals_CC;
+my $summary_calculated = 0;
 
 # Totals for each function, for overall summary.
 # hash(filename:fn_name => CC array)
@@ -440,9 +441,6 @@ sub read_input_file()
       }
     }
 
-    # Check for needed header entries
-    ($cmd ne "") or die("Line $.: missing command line\n");
-
     # Read "events:" line.  We make a temporary hash in which the Nth event's
     # value is N, which is useful for handling --show/--sort options below.
     ($events ne "") or die("Line $.: missing events line\n");
@@ -630,7 +628,7 @@ sub read_input_file()
         } elsif (s/^cob=(.*)$//) {
 	  $curr_cobj = uncompressed_name("ob",$1);
 
-	} elsif (s/^cfi=(.*)$//) {
+	} elsif (s/^cf[il]=(.*)$//) {
 	  $curr_cfile = uncompressed_name("fl",$1);
 
 	} elsif (s/^cfn=(.*)$//) {
@@ -681,15 +679,6 @@ sub read_input_file()
         }
     }
 
-    if ((not defined $summary_CC) || is_zero($summary_CC)) {
-	$summary_CC = $totals_CC;
-    }
-
-    # Check if summary line was present
-    if (not defined $summary_CC) {
-        warn("WARNING: missing final summary line, no summary will be printed\n");
-    }
-
     # Finish up handling final filename/fn_name counts
     $fn_totals{"$curr_file:$curr_fn"} = $curr_fn_CC
 	if (defined $curr_file && defined $curr_fn);
@@ -704,6 +693,20 @@ sub read_input_file()
     }
 
     close(INPUTFILE);
+
+    if ((not defined $summary_CC) || is_zero($summary_CC)) {
+	$summary_CC = $totals_CC;
+
+	# if neither 'summary:' nor 'totals:' line is given,
+	# calculate summary from fn_totals hash
+	if ((not defined $summary_CC) || is_zero($summary_CC)) {
+	    $summary_calculated = 1;
+	    $summary_CC = [];
+	    foreach my $name (keys %fn_totals) {
+		add_array_a_to_b($fn_totals{$name}, $summary_CC);
+	    }
+	}
+    }
 }
 
 #-----------------------------------------------------------------------------
@@ -719,6 +722,7 @@ sub print_options ()
     print($fancy);
     print($desc);
     my $target = $cmd;
+    if ($target eq "") { $target = "(unknown)"; }
     if ($pid ne "") {
       $target .= " (PID $pid";
       if ($part ne "") { $target .= ", part $part"; }
@@ -855,8 +859,11 @@ sub print_summary_and_fn_totals ()
     print("\n");
     print($fancy);
     print_CC($summary_CC, $summary_CC_col_widths);
-    print(" PROGRAM TOTALS\n");
-    print("\n");
+    print(" PROGRAM TOTALS");
+    if ($summary_calculated) {
+	print(" (calculated)");
+    }
+    print("\n\n");
 
     # Header for functions
     print($fancy);
@@ -921,7 +928,8 @@ sub print_summary_and_fn_totals ()
         print_CC($fn_CC, $fn_CC_col_widths);
 	if ($tree_caller || $tree_calling) { print " * "; }
         print(" $fn_name");
-	if (defined $obj_name{$fn_name}) {
+	if ((defined $obj_name{$fn_name}) &&
+	    ($obj_name{$fn_name} ne "")) {
 	  print " [$obj_name{$fn_name}]";
 	}
 	print "\n";

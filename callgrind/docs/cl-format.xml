@@ -30,7 +30,9 @@ For detailed syntax, look at the format reference.</para>
 <title>Basic Structure</title>
 
 <para>Each file has a header part of an arbitrary number of lines of the
-format "key: value". The lines with key "positions" and "events" define
+format "key: value". After the header, lines specifying profile costs
+follow. Everywhere, comments on own lines starting with '#' are allowed.
+The header lines with keys "positions" and "events" define
 the meaning of cost lines in the second part of the file: the value of
 "positions" is a list of subpositions, and the value of "events" is a list
 of event type names. Cost lines consist of subpositions followed by 64-bit
@@ -98,8 +100,8 @@ called: profile data only contains sums.</para>
 ability to specify call relationship among functions. More generally, you
 specify associations among positions. For this, the second part of the
 file also can contain association specifications. These look similar to
-position specifications, but consist of 2 lines. For calls, the format
-looks like 
+position specifications, but consist of two lines. For calls, the format
+looks like
 <screen>
  calls=(Call Count) (Destination position)
  (Source position) (Inclusive cost of call)
@@ -108,8 +110,10 @@ looks like
 <para>The destination only specifies subpositions like line number. Therefore,
 to be able to specify a call to another function in another source file, you
 have to precede the above lines with a "cfn=" specification for the name of the
-called function, and a "cfl=" specification if the function is in another
-source file. The 2nd line looks like a regular cost line with the difference
+called function, and optionally a "cfi=" specification if the function is in
+another source file ("cfl=" is an alternative specification for "cfi=" because
+of historical reasons, and both should be supported by format readers).
+The second line looks like a regular cost line with the difference
 that inclusive cost spent inside of the function call has to be specified.</para> 
 
 <para>Other associations are for example (conditional) jumps. See the
@@ -134,14 +138,14 @@ fn=main
 cfn=func1
 calls=1 50
 16 400
-cfl=file2.c
+cfi=file2.c
 cfn=func2
 calls=3 20
 16 400
 
 fn=func1
 51 100
-cfl=file2.c
+cfi=file2.c
 cfn=func2
 calls=2 20
 51 300
@@ -158,7 +162,7 @@ and 400 as sum for the three calls to <function>func2</function>.</para>
 
 <para>Function <function>func1</function> is located in
 <filename>file1.c</filename>, the same as <function>main</function>.
-Therefore, a "cfl=" specification for the call to <function>func1</function>
+Therefore, a "cfi=" specification for the call to <function>func1</function>
 is not needed. The function <function>func1</function> only consists of code
 at line 51 of <filename>file1.c</filename>, where <function>func2</function>
 is called.</para>
@@ -191,14 +195,14 @@ fn=(1) main
 cfn=(2) func1
 calls=1 50
 16 400
-cfl=(2) file2.c
+cfi=(2) file2.c
 cfn=(3) func2
 calls=3 20
 16 400
 
 fn=(2)
 51 100
-cfl=(2)
+cfi=(2)
 cfn=(3)
 calls=2 20
 51 300
@@ -286,8 +290,8 @@ relocatable shared objects, often a load offset has to be subtracted.</para>
 cost of the full run has to be known. Usually, it is assumed that this is the
 sum of all cost lines in a file. But sometimes, this is not correct. Thus, you
 can specify a "summary:" line in the header giving the full cost for the
-profile run. This has another effect: a import filter can show a progress bar
-while loading a large data file if he knows to cost sum in advance.</para>
+profile run. An import filter may use this to show a progress bar
+while loading a large data file.</para>
 
 </sect3>
 
@@ -356,7 +360,7 @@ for "Ir and "Dr".</para>
 <screen>PositionSpecification := Position "=" Space* PositionName</screen>
 <screen>Position := CostPosition | CalledPosition</screen>
 <screen>CostPosition := "ob" | "fl" | "fi" | "fe" | "fn"</screen>
-<screen>CalledPosition := " "cob" | "cfl" | "cfn"</screen>
+<screen>CalledPosition := " "cob" | "cfi" | "cfl" | "cfn"</screen>
 <screen>PositionName := ( "(" Number ")" )? (Space* NoNewLineChar* )?</screen>
 <screen>AssociationSpecification := CallSpecification
   | JumpSpecification</screen>
@@ -388,24 +392,24 @@ for "Ir and "Dr".</para>
     <para>This is used to distinguish future profile data formats.  A 
     major version of 0 or 1 is supposed to be upwards compatible with 
     Cachegrind's format.  It is optional; if not appearing, version 1 
-    is supposed.  Otherwise, this has to be the first header line.</para>
+    is assumed.  Otherwise, this has to be the first header line.</para>
   </listitem>
 
   <listitem>
     <para><computeroutput>pid: process id</computeroutput> [Callgrind]</para>
-    <para>This specifies the process ID of the supervised application 
+    <para>Optional. This specifies the process ID of the supervised application 
     for which this profile was generated.</para>
   </listitem>
 
   <listitem>
     <para><computeroutput>cmd: program name + args</computeroutput> [Cachegrind]</para>
-    <para>This specifies the full command line of the supervised
+    <para>Optional. This specifies the full command line of the supervised
     application for which this profile was generated.</para>
   </listitem>
 
   <listitem>
     <para><computeroutput>part: number</computeroutput> [Callgrind]</para>
-    <para>This specifies a sequentially incremented number for each dump 
+    <para>Optional. This specifies a sequentially incremented number for each dump 
     generated, starting at 1.</para>
   </listitem>
 
@@ -468,13 +472,16 @@ for "Ir and "Dr".</para>
 
   <listitem>
     <para><computeroutput>summary: costs</computeroutput> [Callgrind]</para>
+    <para>Optional. This header line specifies a summary cost, which should be
+    equal or larger than a total over all self costs. It may be larger as
+    the cost lines may not represent all cost of the program run.</para>
+  </listitem>
+
+  <listitem>
     <para><computeroutput>totals: costs</computeroutput> [Cachegrind]</para>
-    <para>The value or the total number of events covered by this trace
-    file.  Both keys have the same meaning, but the "totals:" line 
-    happens to be at the end of the file, while "summary:" appears in 
-    the header.  This was added to allow postprocessing tools to know
-    in advance to total cost. The two lines always give the same cost 
-    counts.</para>
+    <para>Optional. Should appear at the end of the file (although
+    looking like a header line). Must give the total of all cost lines,
+    to allow for a consistency check.</para>
   </listitem>
 
 </itemizedlist>
@@ -534,9 +541,15 @@ optional.</para>
   </listitem>
 
   <listitem>
-    <para><computeroutput>cfl=</computeroutput> [Callgrind]</para>
+    <para><computeroutput>cfi=</computeroutput> [Callgrind]</para>
     <para>The source file including the code of the target of the
     next call cost lines.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>cfl=</computeroutput> [Callgrind]</para>
+    <para>Alternative spelling for <computeroutput>cfi=</computeroutput>
+    specification (because of historical reasons).</para>
   </listitem>
 
   <listitem>

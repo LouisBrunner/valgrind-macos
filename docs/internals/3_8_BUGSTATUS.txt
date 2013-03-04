@@ -482,9 +482,10 @@ n-i-bz  patch to allow fair-sched on android
 311922  WARNING: unhandled syscall: 170
         Syscall; no action yet.  Might be easy to fix.
 
-311933  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (rdtscp)
-        RDTSCP
-        == 251569
+311933  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (RDTSCP)
+        251569 ==
+        313348 ==
+        313354 ==
 
 312171  ppc: insn selection for DFP
         Unclear what status is; NEEDINFO
@@ -505,57 +506,84 @@ n-i-bz  patch to allow fair-sched on android
 
 312980  Building on Mountain Lion generates some compiler warnings
         FIXED r2634
----here
+
 312989  ioctl handling needs to do POST handling on generic ioctls and
         needs to handle BPF ioctls
+        HAS_PATCH OSX10
 
 313267  Adding MIPS64/Linux port to Valgrind
+        FIXED (mostly -- still DW64 outstandings) r13292, r2687
 
 313275  False positives for shared memory semaphores/mutexes/conditions
+        No action so far.  Has testcase patches.
 
 313276  helgrind does not recognize shared memory initialized
         semaphores, mutexes, conditions
-
-313348 rdtscp: 0xF 0x1 0xF9 0x89 0x45 0xF0 0x89 0x55
-
-313354  Unrecognised instruction  rdtscp
+        == 313275, pretty much
 
 313811  Buffer overflow in assert_fail
+        FIXED r13274
 
 313875  cr_libinit.c:183 cri_init: sigaction() failed: Invalid argument
+        No action so far
 
 ** [Bug 291310] FXSAVE instruction marks memory as undefined on amd64
+        REOP
 
 314099  coverity pointed out error in VEX guest_ppc_toIR.c insn_suffix
-        variable
+        FIXED 2671 
 
 314101  Valgrind (ARM) - disInstr(thumb): unhandled instruction: 0xDF01 0x4770
+        No action so far
 
 314236  OS X 10.8 testsuite build failure: test million.o
+        OSX108  No action so far.
 
 314269  ppc: dead code in insn selection
+        No action so far
 
 314365  enable VEX to run asm helpers that do callee register saving
+        In progress; not sure whether this is a good idea
 
 314718  ARM: implement integer divide instruction (sdiv and udiv)
+        HAS_PATCH, but needs working through
 
 315199  vgcore file for threaded app does not show which thread crashed
+        HAS_PATCH; needs review
 
 315345  cl-format.xml and callgrind/dump.c don't agree on
         using cfl= or cfi= for the called function source file
+        HAS_PATCH; in progress (needs review)
 
 315441  sendmsg syscall should ignore unset msghdr msg_flags
+        FIXED 13294
 
 315534  msgrcv inside a thread causes valgrind to hang (block)
+        appears fixed (13289) but not clear if is OK to close, or not
 
 315545  m_transtab.c:674 (find_TTEntry_from_hcode):
         Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed.
+        FIXED 13290
 
-315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10
+315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
+        HAS_PATCH; needs looking at
 
-315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE
+315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE (vcvt.s32.f64)
+        No action so far; but this is a dup of ???
 
 315828  massif "internal error" vgPlain_arena_free when RPATH includes
         /usr/local/lib
+        WONTFIX
 
 -- Thu Feb 28 09:54:56 CET 2013
+
+315936  UNKNOWN task message [id 3403, to mach_task_self(), reply
+        0x2603] when running fork()ing tests on Mac OS X
+
+315952  tun/tap ioctls are not supported
+
+315959  valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
+
+316034  Building valgrind with gcc (4.7, trunk) fails on MacOS X 10.8
+
+-- Mon Mar  4 11:36:17 CET 2013

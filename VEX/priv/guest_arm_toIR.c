@@ -10020,6 +10020,81 @@ static Bool decode_V6MEDIA_instruction (
      /* fall through */
    }
 
+   /* ----- smlalbb, smlalbt, smlaltb, smlaltt <Rd>,<Rn>,<Rm>,<Ra> ----- */
+   {
+     UInt regDHi = 99, regN = 99, regM = 99, regDLo = 99, bitM = 99, bitN = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFBC && INSNT1(7,6) == BITS2(1,0)) {
+           regN   = INSNT0(3,0);
+           regDHi = INSNT1(11,8);
+           regM   = INSNT1(3,0);
+           regDLo = INSNT1(15,12);
+           bitM   = INSNT1(4,4);
+           bitN   = INSNT1(5,5);
+           if (!isBadRegT(regDHi) && !isBadRegT(regN) && !isBadRegT(regM)
+               && !isBadRegT(regDLo) && regDHi != regDLo)
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,0,0,1,0,1,0,0) &&
+            (INSNA(7,4) & BITS4(1,0,0,1)) == BITS4(1,0,0,0)) {
+           regDHi = INSNA(19,16);
+           regN   = INSNA(3,0);
+           regM   = INSNA(11,8);
+           regDLo = INSNA(15,12);
+           bitM   = INSNA(6,6);
+           bitN   = INSNA(5,5);
+           if (regDHi != 15 && regN != 15 && regM != 15 && regDLo != 15 &&
+               regDHi != regDLo)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp irt_regD  = newTemp(Ity_I64);
+        IRTemp irt_prod  = newTemp(Ity_I64);
+        IRTemp irt_res   = newTemp(Ity_I64);
+        IRTemp irt_resHi = newTemp(Ity_I32);
+        IRTemp irt_resLo = newTemp(Ity_I32);
+
+        assign( irt_prod,
+                binop(Iop_MullS32,
+                      binop(Iop_Sar32,
+                            binop(Iop_Shl32,
+                                  isT ? getIRegT(regN) : getIRegA(regN),
+                                  mkU8(bitN ? 0 : 16)),
+                            mkU8(16)),
+                      binop(Iop_Sar32,
+                            binop(Iop_Shl32,
+                                  isT ? getIRegT(regM) : getIRegA(regM),
+                                  mkU8(bitM ? 0 : 16)),
+                            mkU8(16))) );
+
+        assign( irt_regD, binop(Iop_32HLto64,
+                                isT ? getIRegT(regDHi) : getIRegA(regDHi),
+                                isT ? getIRegT(regDLo) : getIRegA(regDLo)) );
+        assign( irt_res, binop(Iop_Add64, mkexpr(irt_regD), mkexpr(irt_prod)) );
+        assign( irt_resHi, unop(Iop_64HIto32, mkexpr(irt_res)) );
+        assign( irt_resLo, unop(Iop_64to32, mkexpr(irt_res)) );
+
+        if (isT) {
+           putIRegT( regDHi, mkexpr(irt_resHi), condT );
+           putIRegT( regDLo, mkexpr(irt_resLo), condT );
+        } else {
+           putIRegA( regDHi, mkexpr(irt_resHi), condT, Ijk_Boring );
+           putIRegA( regDLo, mkexpr(irt_resLo), condT, Ijk_Boring );
+        }
+
+        DIP( "smlal%c%c%s r%u, r%u, r%u, r%u\n",
+             bitN ? 't' : 'b', bitM ? 't' : 'b',
+             nCC(conq), regDHi, regN, regM, regDLo );
+        return True;
+     }
+     /* fall through */
+   }
+
    /* ----- smlawb, smlawt <Rd>,<Rn>,<Rm>,<Ra> ----- */
    {
      UInt regD = 99, regN = 99, regM = 99, regA = 99, bitM = 99;

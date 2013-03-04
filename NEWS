@@ -3,6 +3,8 @@ Release 3.9.0 (?? ?????? 201?)
 
 * ================== PLATFORM CHANGES =================
 
+  mips64-linux support
+
 * ==================== TOOL CHANGES ====================
 * Memcheck:
 
@@ -67,31 +69,165 @@ m = merged into 3_8_BRANCH
 
 123837    [390] semctl system call: 4rth argument is optional, depending on cmd
 252955    [390] Impossible to compile with ccache
+253519  Memcheck reports auxv pointer accesses as invalid reads.
+        FIXED r13109
+
 274695    [390] s390x: Support "compare to/from logical" instructions (z196)
 275800    [390] s390x: Add support for the ecag instruction (part 1)
 275800    [390] s390x: Autodetect cache info (part 2)
 284540    [390] Memcheck shouldn't count suppressions matching still-reachable allocations
 296311    [390] Wrong stack traces due to -fomit-frame-pointer (x86) 
+
+305431  Use find_buildid shdr fallback for separate .debug files
+        FIXED r13160
+
 305948    [390] ppc64: code generation for ShlD64 / ShrD64 asserts
 306035    [390] s390x: Fix IR generation for LAAG and friends
 306054    [390] s390x: Condition code computation for convert-to-int/logical
+
+306098  s390x: alternate opcode form for convert to/from fixed
+   FIXED, 2501/12935, but not yet closed
+306310  3.8.0 release tarball missing some files
+   FIXED 12964/12983.
+
+306783  Mips unhandled syscall :  4025  /  4079  / 4182
+   FIXED r12995.
+
+307038  DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8 (DW_OP_const1u et al)
+        FIXED r13010
+
+307101  sys_capget second argument can be NULL
+        FIXED r13021
+307103  sys_openat: If pathname is absolute, then dirfd is ignored.
+        FIXED r13159
+307103  sys_openat If pathname is absolute, then dirfd is ignored
+        FIXED r13159
+
+307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
+        == 308333
+        FIXED r2581
+
+307141  valgrind does't work in mips-linux system
+        FIXED (no action on our part?  unclear)
+
+
+
 307155    [390] filter_gdb should filter out syscall-template.S T_PSEUDO
+307285  x86_amd64 feature test for avx in test suite is wrong
+        FIXED, r13161
+
+307290  memcheck overlap testcase needs memcpy version filter
+        FIXED r13020
+
+307463  Please add "&limit=0" to the "all open bugs" link
+        FIXED
+
 307465    [390] --show-possibly-lost=no should bring down the error count / exit code
+307729  pkgconfig support broken valgrind.pc
+        valt_load_address=@VALT_LOAD_ADDRESS@
+        FIXED r13018
+
+307828  SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
+        uninitialised value and/or invalid read warnings
+        FIXED r13162
+
+307955  Building valgrind 3.7.0-r4 fails in Gentoo AMD64 when
+        using clang instead of gcc
+        FIXED (long since)
+
 308321    [390] testsuite memcheck filter interferes with gdb_filter 
 308341    [390] vgdb should report process exit (or fatal signal)
+308427  s390 memcheck reports  tsearch conditional jump or move
+        depends on uninitialized value
+        FIXED r2551
+
+308495  Remove build dependency on installed Xen headers
+        FIXED r13081
+
+308573  Internal Valgrind error on 64-bit instruction executed in
+        32-bit mode
+        FIXED r2558, r13091
+
+308627  pmovmskb validity bit propagation is imprecise
+        == 308626
+        FIXED r2559, r13108, r13129
+
 308644    [390] vgdb command for having the info for the track-fds option
 308711    [390] give more info about aspacemgr and arenas in out_of_memory
 308886    [390] Missing support for PTRACE_SET/GETREGSET 
+308886  Missing support for PTRACE_SET/GETREGSET
+        FIXED r13112, r13115 (??)
+
+309229  V-bit tester does not report number of tests generated
+        FIXED r13124
+
+309425  Provide a --sigill-diagnostics flag to suppress illegal
+        instruction reporting
+        FIXED r13164, r2582
+
+309600  valgrind is a bit confused about 0-sized sections
+        FIXED r13109
+
 309823    [390] Generate errors for still reachable blocks
+309921  PCMPISTRI validity bit propagation is imprecise
+        FIXED r2562, r13132
+
+309922  none/tests/ppc64/test_dfp5 sometimes fails
+        FIXED r2563
+
+310169  The Iop_CmpORD class of Iops is currently not supported
+        by the vbit checker.
+        FIXED r13123
+
 310424    [390] --read-var-info does not properly describe static variables 
+310792  [PATCH v2] search additional path for debug symbols
+        FIXED r13154,13169
+
 310931    [390] s390x: Message-security assist (MSA) instruction extension not implemented
+311100  PPC DFP implementation of the integer operands is not
+        consistent with the Iop definitions
+        FIXED r2562, r13260
+
+311407  ssse3 bcopy (actually converted memcpy) causes invalid read of
+        size 8 under Debian GNU/Linux 32 bits
+        FIXED r13253
+
+
+311880  x86_64: make regtest hangs at shell_valid1
+        FIXED r2597
+
+312571  Rounding mode call wrong for the DFP  Iops: Iop_AddD128, 
+        Iop_SubD128, Iop_MulD128, Iop_DivD128, Iop_D128toI64
+        FIXED r2627
+
+312620  Recent change to Iop_D32toD64 and Iop_D64toD32 for s390 DFP
+        support broke ppc implementation of the Iops
+        FIXED r2650
+
 312913    [390] Dangling pointers error should also report the alloc stack trace
 312980    [390] Building on Mountain Lion generates some compiler warnings
+313267  Adding MIPS64/Linux port to Valgrind
+        FIXED (mostly -- still DW64 outstandings) r13292, r2687
+
 313811    [390] Buffer overflow in assert_fail
+314099  coverity pointed out error in VEX guest_ppc_toIR.c insn_suffix
+        FIXED 2671 
+
+315441  sendmsg syscall should ignore unset msghdr msg_flags
+        FIXED 13294
+
 315545    [390] (find_TTEntry_from_hcode): Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android
+
+304832  ppc32: build failure
+  FIXED (not sure what happened.  Seems bogus to me.)
+
+n-i-bz  patch to allow fair-sched on android
+        FIXED r13186
+
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

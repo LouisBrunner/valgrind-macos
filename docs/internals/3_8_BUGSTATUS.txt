@@ -82,14 +82,8 @@ branch.
   probably related to 301281 et al.  Still valid.
   OSX
 
-304832  ppc32: build failure
-  FIXED (not sure what happened.  Seems bogus to me.)
-
 305170  linux: add FIOCLEX and FIONCLEX ioctls
   SYSCALL.  w/ patch, looks pretty harmless
-
-305431  Use find_buildid shdr fallback for separate .debug files
-        FIXED r13160
 
 n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
@@ -103,12 +97,6 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 306004  Wishlist: port valgrind to sparc
    WISHLIST
 
-306035  s390x: Fix IR generation for LAAG and friends
-   FIXED, 2576/13146.
-
-306098  s390x: alternate opcode form for convert to/from fixed
-   FIXED, 2501/12935, but not yet closed
-
 -- Sat 1 Sept 2012 10pm
 
 306171  Boost.Context appears to cause Valgrind to crash
@@ -119,9 +107,6 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
 306299  Internal error when running a winelib application
    Conservative unwind?
-
-306310  3.8.0 release tarball missing some files
-   FIXED 12964/12983.
 
 306340  parse_var_DIE confused by DWARF from clang-3.1
    Might be quite simple to fix; need to investigate.
@@ -139,9 +124,6 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 286864 strlen function redirection error
    Gentoo glibc "miscompilation"; is this important?
 
-306783  Mips unhandled syscall :  4025  /  4079  / 4182
-   FIXED r12995.
-
 -- Mon 17 Sept 2012, 10 am
 
 valgrind.spec diff at https://bugzilla.mozilla.org/show_bug.cgi?id=750856#c20
@@ -154,61 +136,27 @@ gcp libnss3.so debuginfo read hang
         == https://bugzilla.redhat.com/show_bug.cgi?id=730303
         FIX THIS
 
-n-i-bz  patch to allow fair-sched on android
-        FIXED r13186
-
-253519  Memcheck reports auxv pointer accesses as invalid reads.
-        FIXED r13109
-
 306947  s390x: BFP rounding mode improvements
         Proposal, no action
 
 306949  s390x: BFP condition code improvements
         Proposal, no action
 
-307038  DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8 (DW_OP_const1u et al)
-        FIXED r13010
-
 307082  HG false positive: pthread_cond_destroy: destruction of
         unknown cond var, w/ patch
         I think it can be landed
 
-307103  sys_openat: If pathname is absolute, then dirfd is ignored.
-        FIXED r13159
-
 211352  helgrind races in helgrind's own mythread_wrapper
         NEEDINFO
 
-307101  sys_capget second argument can be NULL
-        FIXED r13021
 
 263034  Crash when loading some PPC64 binaries
         Not sure what to do about this.  Has fix for fedora, but
         unclear if that breaks other targets.
         Looks OK -- commit
 
-307103  sys_openat If pathname is absolute, then dirfd is ignored
-        FIXED r13159
-
-307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
-        == 308333
-        FIXED r2581
-
 307113  s390x: DFP support
         Huge; in progress.  Queried as to status.
-
-307141  valgrind does't work in mips-linux system
-        FIXED (no action on our part?  unclear)
-
-307155  gdbserver_tests/filter_gdb should filter out
-        syscall-template.S T_PSEUDO source code
-        FIXED r13013
-
-307285  x86_amd64 feature test for avx in test suite is wrong
-        FIXED, r13161
-
-307290  memcheck overlap testcase needs memcpy version filter
-        FIXED r13020
 
 307367  amd64->IR: 0xF2 0x48 0xF 0x5F 0x3E 0xF2 0x48 0xF
         redundant-REX, should be easy to fix
@@ -220,13 +168,6 @@ n-i-bz  patch to allow fair-sched on android
 307415  3.8.1 build error - OSX Lion 10.7.4 duplicate symbol
         _mach_make_memory_entry
         OSX or XCode 4.5
-
-307463  Please add "&limit=0" to the "all open bugs" link
-        FIXED
-
-307465  --show-possibly-lost=no should bring down the error count
-        / exit code
-        FIXED r13170
 
 307500  Valgrind docs have two <title> tags
         Should fix -- easy
@@ -241,21 +182,6 @@ n-i-bz  patch to allow fair-sched on android
 307612  SIGILL while profiling a program compiled using g++ 4.6.3
         and march=native flag on Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz
         INVALID (AVX on 3.7.0)
-
-307729  pkgconfig support broken valgrind.pc
-        valt_load_address=@VALT_LOAD_ADDRESS@
-        FIXED r13018
-
-307742  memory returned by calloc flagged as unintialized
-        INVALID
-
-307828  SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
-        uninitialised value and/or invalid read warnings
-        FIXED r13162
-
-307955  Building valgrind 3.7.0-r4 fails in Gentoo AMD64 when
-        using clang instead of gcc
-        FIXED (long since)
 
 308027  Warning: negative range in .debug_loc section
         QUERIED -- not sure this needs fixing or not
@@ -278,50 +204,19 @@ n-i-bz  patch to allow fair-sched on android
         support for offline symbol resolving
         Has patch for command line enabling of stack-scan -- COMMIT
 
-308321  testsuite memcheck filter interferes with gdb_filter
-        FIXED r13043
-
-308341  vgdb should report process exit (or fatal signal)
-        FIXED r13052
-
-308353  use of uninitialised value reported, but get_vbits claims
-        all 0's for this memory
-        INVALID
-
 197915  80-bit floats are not supported on x86 and x86-64
         indeed, yes.
-
-308427  s390 memcheck reports  tsearch conditional jump or move
-        depends on uninitialized value
-        FIXED r2551
-
-308495  Remove build dependency on installed Xen headers
-        FIXED r13081
 
 299316  Helgrind: hg_main.c:628 (map_threads_lookup): Assertion 'thr'
         failed.
         OSX Helgrind
 
-308573  Internal Valgrind error on 64-bit instruction executed in
-        32-bit mode
-        FIXED r2558, r13091
-
 308582  massif: wrong stack usage at exit of threaded program
         No action so far
-
-308627  pmovmskb validity bit propagation is imprecise
-        == 308626
-        FIXED r2559, r13108, r13129
-
-308644  vgdb command for having the info for the track-fds option
-        FIXED 13072
 
 308668  pthread rwlock_rdlock doesn't understand modifications in
         some cases (Helgrind)
         No action so far
-
-308711  give more info about aspacemgr and arenas in out_of_memory
-        FIXED 13077
 
 308717  ARM: implement fixed-point VCVT.F64.[SU]32
         (patch, but no test case)
@@ -344,9 +239,6 @@ n-i-bz  patch to allow fair-sched on android
 308816  valgrind GPF in signal handler context 3.8.1 (allignment 
         Needs investigation
 
-308886  Missing support for PTRACE_SET/GETREGSET
-        FIXED r13112, r13115 (??)
-
 308930  syscall name_to_handle_at (303 on amd64) not handled
         HAS_PATCH, needs looking at
 
@@ -356,15 +248,8 @@ n-i-bz  patch to allow fair-sched on android
 309100  s390x: Testcases for extended BFP
         No action so far
 
-309229  V-bit tester does not report number of tests generated
-        FIXED r13124
-
 309323  print unrecognized instuction on MIPS
         No action so far
-
-309425  Provide a --sigill-diagnostics flag to suppress illegal
-        instruction reporting
-        FIXED r13164, r2582
 
 309427  SSE optimized stpncpy trigger uninitialised value and/or
         invalid read warnings
@@ -375,9 +260,6 @@ n-i-bz  patch to allow fair-sched on android
 
 309554  Unhandled syscall remap_file_pages (216)
         No action so far
-
-309600  valgrind is a bit confused about 0-sized sections
-        FIXED r13109
 
 309721  add client request returning current value of a statistic (e.g. Ir)
         No action yet (wishlist?)
@@ -395,58 +277,20 @@ n-i-bz  patch to allow fair-sched on android
         (stcl, gdb disassembles to stfp)
         ==309604
 
-309879  gnat gcc generates tag_member without type info, cannot
-        be read by Valgrind
-        WONTFIX
-
-309884  "make check" fails on Suse Linux Enterprise 10
-        INVALID
-
-309921  PCMPISTRI validity bit propagation is imprecise
-        FIXED r2562, r13132
-
-309922  none/tests/ppc64/test_dfp5 sometimes fails
-        FIXED r2563
-
-310169  The Iop_CmpORD class of Iops is currently not supported
-        by the vbit checker.
-        FIXED r13123
-
 310188  need better diagnostic when mmap() fails with EINVAL
         No patch so far
 
-310199  valgrind: the 'impossible' happened: SIGSEGV
-        INVALID
-
-310424  --read-var-info does not properly describe static variables
-        FIXED r13153
-
 310692  [coregrind] Thread scheduling regression?
         Spinlockery
-
-310792  [PATCH v2] search additional path for debug symbols
-        FIXED r13154,13169
-
-310931  s390 message-security assist (MSA) instruction extension
-        not implemented
-        FIXED r13150, r2579.
 
 311093  massif and memcheck fail to redirect malloc calls on
         statically linked application
         Unclear what's going on
 
-311100  PPC DFP implementation of the integer operands is not
-        consistent with the Iop definitions
-        FIXED r2562, r13260
-
 -- Wed Dec  5 23:41:20 CET 2012
 
 311318  ARM: "128-bit constant is not implemented" error message
         HAS_PATCH; needs checking though
-
-311407  ssse3 bcopy (actually converted memcpy) causes invalid read of
-        size 8 under Debian GNU/Linux 32 bits
-        FIXED r13253
 
 311544  sys_fork() calls VG_(do_atfork_pre)() AFTER forking()
         No action; needs checking
@@ -469,15 +313,8 @@ n-i-bz  patch to allow fair-sched on android
         I thought this had been fixed (well, worked around) but
         there's no evidence of that.
 
-311746  I am trying to configure valgrind-3.8.1 for stb hardware
-        with MIPS/linux
-        INVALID
-
 311827  OS X 10.8.2 (eq_SyscallStatus): the 'impossible' happened.
         OSX108 problems
-
-311880  x86_64: make regtest hangs at shell_valid1
-        FIXED r2597
 
 311922  WARNING: unhandled syscall: 170
         Syscall; no action yet.  Might be easy to fix.
@@ -490,29 +327,12 @@ n-i-bz  patch to allow fair-sched on android
 312171  ppc: insn selection for DFP
         Unclear what status is; NEEDINFO
 
-312571  Rounding mode call wrong for the DFP  Iops: Iop_AddD128, 
-        Iop_SubD128, Iop_MulD128, Iop_DivD128, Iop_D128toI64
-        FIXED r2627
-
-312620  Recent change to Iop_D32toD64 and Iop_D64toD32 for s390 DFP
-        support broke ppc implementation of the Iops
-        FIXED r2650
-
 312907  Broken XInclude in manpage (breaks formatting)
         HAS_PATCH; should commit
-
-312913  Dangling pointers error should also report the alloc stack trace.
-        FIXED r13223
-
-312980  Building on Mountain Lion generates some compiler warnings
-        FIXED r2634
 
 312989  ioctl handling needs to do POST handling on generic ioctls and
         needs to handle BPF ioctls
         HAS_PATCH OSX10
-
-313267  Adding MIPS64/Linux port to Valgrind
-        FIXED (mostly -- still DW64 outstandings) r13292, r2687
 
 313275  False positives for shared memory semaphores/mutexes/conditions
         No action so far.  Has testcase patches.
@@ -521,17 +341,11 @@ n-i-bz  patch to allow fair-sched on android
         semaphores, mutexes, conditions
         == 313275, pretty much
 
-313811  Buffer overflow in assert_fail
-        FIXED r13274
-
 313875  cr_libinit.c:183 cri_init: sigaction() failed: Invalid argument
         No action so far
 
 ** [Bug 291310] FXSAVE instruction marks memory as undefined on amd64
         REOP
-
-314099  coverity pointed out error in VEX guest_ppc_toIR.c insn_suffix
-        FIXED 2671 
 
 314101  Valgrind (ARM) - disInstr(thumb): unhandled instruction: 0xDF01 0x4770
         No action so far
@@ -555,15 +369,8 @@ n-i-bz  patch to allow fair-sched on android
         using cfl= or cfi= for the called function source file
         HAS_PATCH; in progress (needs review)
 
-315441  sendmsg syscall should ignore unset msghdr msg_flags
-        FIXED 13294
-
 315534  msgrcv inside a thread causes valgrind to hang (block)
         appears fixed (13289) but not clear if is OK to close, or not
-
-315545  m_transtab.c:674 (find_TTEntry_from_hcode):
-        Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed.
-        FIXED 13290
 
 315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
         HAS_PATCH; needs looking at

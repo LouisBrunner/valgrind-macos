@@ -3697,9 +3697,14 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
          generated during disassemble. They are represented as Iop_64HLtoV128
          binary operation and are handled among binary ops. */
       /* But zero can be created by valgrind internal optimizer */
-      if (e->Iex.Const.con->Ico.V128 == 0) {
+      if (e->Iex.Const.con->Ico.V128 == 0x0000) {
          HReg res = newVRegV(env);
-         addInstr(env, ARMInstr_NeonImm(res, ARMNImm_TI(0, 0)));
+         addInstr(env, ARMInstr_NeonImm(res, ARMNImm_TI(6, 0)));
+         return res;
+      }
+      if (e->Iex.Const.con->Ico.V128 == 0xFFFF) {
+         HReg res = newVRegV(env);
+         addInstr(env, ARMInstr_NeonImm(res, ARMNImm_TI(6, 255)));
          return res;
       }
       ppIRExpr(e);

@@ -12443,26 +12443,27 @@ static Bool decode_CP10_CP11_instruction (
        && BITS4(1,0,1,0) == (INSN(19,16) & BITS4(1,0,1,0))
        && BITS3(1,0,1) == INSN(11,9)
        && BITS3(1,0,0) == (INSN(6,4) & BITS3(1,0,1))) {
-      UInt bD   = INSN(22,22);
-      UInt bOP  = INSN(18,18);
-      UInt bU   = INSN(16,16);
-      UInt Vd   = INSN(15,12);
-      UInt bSF  = INSN(8,8);
-      UInt bSX  = INSN(7,7);
-      UInt bI   = INSN(5,5);
-      UInt imm4 = INSN(3,0);
-      Bool to_fixed = bOP == 1;
-      Bool dp_op    = bSF == 1;
-      Bool unsyned = bU == 1;
-      UInt size = bSX == 0 ? 16 : 32;
-      Int frac_bits = size - ((imm4 << 1) | bI);
-      UInt d = dp_op  ? ((bD << 4) | Vd)  : ((Vd << 1) | bD);
-      if (frac_bits >= 1 && frac_bits <= 32 && !to_fixed && !dp_op && size == 32) {
+      UInt bD        = INSN(22,22);
+      UInt bOP       = INSN(18,18);
+      UInt bU        = INSN(16,16);
+      UInt Vd        = INSN(15,12);
+      UInt bSF       = INSN(8,8);
+      UInt bSX       = INSN(7,7);
+      UInt bI        = INSN(5,5);
+      UInt imm4      = INSN(3,0);
+      Bool to_fixed  = bOP == 1;
+      Bool dp_op     = bSF == 1;
+      Bool unsyned   = bU == 1;
+      UInt size      = bSX == 0 ? 16 : 32;
+      Int  frac_bits = size - ((imm4 << 1) | bI);
+      UInt d         = dp_op  ? ((bD << 4) | Vd)  : ((Vd << 1) | bD);
+      if (frac_bits >= 1 && frac_bits <= 32 && !to_fixed && !dp_op
+                                            && size == 32) {
          /* VCVT.F32.{S,U}32 S[d], S[d], #frac_bits */
          /* This generates really horrible code.  We could potentially
             do much better. */
          IRTemp rmode = newTemp(Ity_I32);
-         assign(rmode, mkU32(Irrm_NEAREST)); // rmode that this insn is defd to use
+         assign(rmode, mkU32(Irrm_NEAREST)); // per the spec
          IRTemp src32 = newTemp(Ity_I32);
          assign(src32,  unop(Iop_ReinterpF32asI32, getFReg(d)));
          IRExpr* as_F64 = unop( unsyned ? Iop_I32UtoF64 : Iop_I32StoF64,
@@ -12472,10 +12473,34 @@ static Bool decode_CP10_CP11_instruction (
          IRExpr* rm     = mkU32(Irrm_NEAREST);
          IRExpr* resF64 = triop(Iop_DivF64,
                                 rm, as_F64, 
-                                triop(Iop_AddF64, rm, mkexpr(scale), mkexpr(scale)));
+                                triop(Iop_AddF64, rm, mkexpr(scale),
+                                                      mkexpr(scale)));
          IRExpr* resF32 = binop(Iop_F64toF32, mkexpr(rmode), resF64);
          putFReg(d, resF32, condT);
          DIP("vcvt.f32.%c32, s%u, s%u, #%d\n",
+             unsyned ? 'u' : 's', d, d, frac_bits);
+         goto decode_success_vfp;
+      }
+      if (frac_bits >= 1 && frac_bits <= 32 && !to_fixed && dp_op
+                                            && size == 32) {
+         /* VCVT.F64.{S,U}32 D[d], D[d], #frac_bits */
+         /* This generates really horrible code.  We could potentially
+            do much better. */
+         IRTemp rmode = newTemp(Ity_I32);
+         assign(rmode, mkU32(Irrm_NEAREST)); // per the spec
+         IRTemp src32 = newTemp(Ity_I32);
+         assign(src32,  unop(Iop_ReinterpF32asI32, getFReg(2*d)));
+         IRExpr* as_F64 = unop( unsyned ? Iop_I32UtoF64 : Iop_I32StoF64,
+                                mkexpr(src32 ) );
+         IRTemp scale = newTemp(Ity_F64);
+         assign(scale, unop(Iop_I32UtoF64, mkU32( 1 << (frac_bits-1) )));
+         IRExpr* rm     = mkU32(Irrm_NEAREST);
+         IRExpr* resF64 = triop(Iop_DivF64,
+                                rm, as_F64, 
+                                triop(Iop_AddF64, rm, mkexpr(scale),
+                                                      mkexpr(scale)));
+         putDReg(d, resF64, condT);
+         DIP("vcvt.f64.%c32, d%u, d%u, #%d\n",
              unsyned ? 'u' : 's', d, d, frac_bits);
          goto decode_success_vfp;
       }

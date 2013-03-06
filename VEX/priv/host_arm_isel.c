@@ -3087,12 +3087,23 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
             return res;
          }
 
+         /* 32Sto64 */
+         case Iop_32Sto64: {
+            HReg rLo = iselIntExpr_R(env, e->Iex.Unop.arg);
+            HReg rHi = newVRegI(env);
+            addInstr(env, mk_iMOVds_RR(rHi, rLo));
+            addInstr(env, ARMInstr_Shift(ARMsh_SAR, rHi, rHi, ARMRI5_I5(31)));
+            HReg res = newVRegD(env);
+            addInstr(env, ARMInstr_VXferD(True/*toD*/, res, rHi, rLo));
+            return res;
+         }
+
+         /* The next 3 are pass-throughs */
          /* ReinterpF64asI64 */
          case Iop_ReinterpF64asI64:
          /* Left64(e) */
          case Iop_Left64:
          /* CmpwNEZ64(e) */
-         //case Iop_CmpwNEZ64:
          case Iop_1Sto64: {
             HReg rLo, rHi;
             HReg res = newVRegD(env);
@@ -3100,6 +3111,7 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARMInstr_VXferD(True/*toD*/, res, rHi, rLo));
             return res;
          }
+
          case Iop_Not64: {
             DECLARE_PATTERN(p_veqz_8x8);
             DECLARE_PATTERN(p_veqz_16x4);

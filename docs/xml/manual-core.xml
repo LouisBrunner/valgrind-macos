@@ -152,7 +152,8 @@ likely.</para>
 </sect1>
 
 
-<sect1 id="manual-core.comment" xreflabel="The Commentary">
+<!-- Referenced from both the manual and manpage -->
+<sect1 id="&vg-comment-id;" xreflabel="&vg-comment-label;">
 <title>The Commentary</title>
 
 <para>Valgrind tools write a commentary, a stream of text, detailing
@@ -857,7 +858,7 @@ in most cases.  We group the available options by rough categories.</para>
       be used in conjunction with the
       <computeroutput>valgrind-listener</computeroutput> program.  For
       further details, see 
-      <link linkend="manual-core.comment">the commentary</link>
+      <link linkend="&vg-comment-id;">the commentary</link>
       in the manual.</para>
     </listitem>
   </varlistentry>
@@ -1755,7 +1756,7 @@ need to use them.</para>
       between fairness and performance. For more details about the
       Valgrind thread serialisation scheme and its impact on
       performance and thread scheduling, see
-      <xref linkend="manual-core.pthreads_perf_sched"/>.
+      <xref linkend="&vg-pthreads-perf-sched-id;"/>.
 
       <itemizedlist>
         <listitem> <para>The value <option>--fair-sched=yes</option>
@@ -2084,7 +2085,8 @@ everything is shared (a thread) or nothing is shared (fork-like); partial
 sharing will fail.
 </para>
 
-<sect2 id="manual-core.pthreads_perf_sched" xreflabel="Scheduling and Multi-Thread Performance">
+<!-- Referenced from both the manual and manpage -->
+<sect2 id="&vg-pthreads-perf-sched-id;" xreflabel="&vg-pthreads-perf-sched-label;">
 <title>Scheduling and Multi-Thread Performance</title>
 
 <para>A thread executes code only when it holds the abovementioned

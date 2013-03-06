@@ -240,7 +240,22 @@ callgrind_annotate(1),
 callgrind_control(1),
 ms_print(1),
 <filename>&vg-docs-path;</filename> or
-<filename>&vg-docs-url;</filename>.
+<filename>&vg-docs-url;</filename>,
+<ulink id="&vg-gdbserver-id;"
+       xreflabel="&vg-gdbserver-label;"
+       url="&vg-gdbserver-url;">&vg-gdbserver-label;</ulink>
+<ulink id="&vg-vgdb-id;"
+       xreflabel="&vg-vgdb-label;"
+       url="&vg-vgdb-url;">&vg-vgdb-label;</ulink>,
+<ulink id="&vg-monitor-id;"
+       xreflabel="&vg-monitor-label;"
+       url="&vg-monitor-url;">&vg-monitor-label;</ulink>,
+<ulink id="&vg-comment-id;"
+       xreflabel="&vg-comment-label;"
+       url="&vg-comment-url;">&vg-comment-label;</ulink>,
+<ulink id="&vg-pthreads-perf-sched-id;"
+       xreflabel="&vg-pthreads-perf-sched-label;"
+       url="&vg-pthreads-perf-sched-url;">&vg-pthreads-perf-sched-label;</ulink>.
 </para>
 
 </refsect1>

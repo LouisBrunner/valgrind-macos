@@ -217,6 +217,7 @@ m = merged into 3_8_BRANCH
         FIXED 13294
 
 315545    [390] (find_TTEntry_from_hcode): Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed
+316144    [390] valgrind.1 manpage contains unknown ??? strings for some core option references
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android

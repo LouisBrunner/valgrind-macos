@@ -293,9 +293,9 @@ tool-specific macros).</para>
 
 
 
-
-<sect1 id="manual-core-adv.gdbserver" 
-       xreflabel="Debugging your program using Valgrind's gdbserver and GDB">
+<!-- Referenced from both the manual and manpage -->
+<sect1 id="&vg-gdbserver-id;"
+       xreflabel="&vg-gdbserver-label;">
 <title>Debugging your program using Valgrind gdbserver and GDB</title>
 
 <para>A program running under Valgrind is not executed directly by the
@@ -381,7 +381,7 @@ and gives the results back to GDB.
 <para>GDB can use various kinds of channels (TCP/IP, serial line, etc)
 to communicate with the gdbserver.  In the case of Valgrind's
 gdbserver, communication is done via a pipe and a small helper program
-called <xref linkend="manual-core-adv.vgdb"/>, which acts as an
+called <xref linkend="&vg-vgdb-id;"/>, which acts as an
 intermediary.  If no GDB is in use, vgdb can also be
 used to send monitor commands to the Valgrind gdbserver from a shell
 command line.
@@ -586,7 +586,7 @@ functionality via "monitor commands".  Such monitor commands can be
 sent from the GDB command line or from the shell command line or
 requested by the client program using the VALGRIND_MONITOR_COMMAND
 client request.  See
-<xref linkend="manual-core-adv.valgrind-monitor-commands"/> for the
+<xref linkend="&vg-monitor-id;"/> for the
 list of the Valgrind core monitor commands available regardless of the
 Valgrind tool selected.
 </para>
@@ -1105,8 +1105,9 @@ $5 = 36
 
 </sect2>
 
-<sect2 id="manual-core-adv.vgdb"
-       xreflabel="vgdb">
+<!-- Referenced from both the manual and manpage -->
+<sect2 id="&vg-vgdb-id;"
+       xreflabel="&vg-vgdb-label;">
 <title>vgdb command line options</title>
 <para> Usage: <computeroutput>vgdb [OPTION]... [[-c] COMMAND]...</computeroutput></para>
 
@@ -1254,8 +1255,9 @@ vgdb v.set log_output -c leak_check any
 </sect2>
 
 
-<sect2 id="manual-core-adv.valgrind-monitor-commands" 
-       xreflabel="Valgrind monitor commands">
+<!-- Referenced from both the manual and manpage -->
+<sect2 id="&vg-monitor-id;"
+       xreflabel="&vg-monitor-label;">
 <title>Valgrind monitor commands</title>
 
 <para>This section describes the Valgrind monitor commands, available

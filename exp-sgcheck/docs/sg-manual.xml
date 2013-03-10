@@ -31,7 +31,7 @@ observation about the likely forms of stack and global array accesses.
 <sect1 id="sg-manual.options" xreflabel="SGCheck Command-line Options">
 <title>SGCheck Command-line Options</title>
 
-<para>There are no SGCheck-specific command-line options at present.</para>
+<para id="sg.opts.list">There are no SGCheck-specific command-line options at present.</para>
 <!--
 <para>SGCheck-specific command-line options are:</para>
 

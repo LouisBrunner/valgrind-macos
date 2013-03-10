@@ -255,7 +255,10 @@ ms_print(1),
        url="&vg-comment-url;">&vg-comment-label;</ulink>,
 <ulink id="&vg-pthreads-perf-sched-id;"
        xreflabel="&vg-pthreads-perf-sched-label;"
-       url="&vg-pthreads-perf-sched-url;">&vg-pthreads-perf-sched-label;</ulink>.
+       url="&vg-pthreads-perf-sched-url;">&vg-pthreads-perf-sched-label;</ulink>,
+<ulink id="&vg-cg-manual-id;"
+       xreflabel="&vg-cg-manual-label;"
+       url="&vg-cg-manual-url;">&vg-cg-manual-label;</ulink>.
 </para>
 
 </refsect1>

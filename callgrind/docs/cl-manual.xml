@@ -88,7 +88,7 @@ optimization opportunities depend on changing code in the callers, in
 particular by reducing the call count.</para>
 
 <para>Callgrind's cache simulation is based on that of Cachegrind.
-Read the documentation for <xref linkend="cg-manual"/> first.  The material
+Read the documentation for <xref linkend="&vg-cg-manual-id;"/> first.  The material
 below describes the features supported in addition to Cachegrind's
 features.</para>
 
@@ -936,7 +936,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       Cache misses on instruction reads ("I1mr"/"ILmr"),
       data read accesses ("Dr") and related cache misses ("D1mr"/"DLmr"),
       data write accesses ("Dw") and related cache misses ("D1mw"/"DLmw").
-      For more information, see <xref linkend="cg-manual"/>.
+      For more information, see <xref linkend="&vg-cg-manual-id;"/>.
       </para>
     </listitem>
   </varlistentry>

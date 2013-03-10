@@ -333,7 +333,6 @@ check_PROGRAMS =      \
   rwlock_type_checking \
   sem_as_mutex        \
   sem_open            \
-  sem_wait            \
   sigalrm             \
   thread_name         \
   threaded-fork       \
@@ -384,6 +383,10 @@ endif
 
 if HAVE_PTHREAD_SPINLOCK
 check_PROGRAMS += pth_spinlock
+endif
+
+if !VGCONF_OS_IS_DARWIN
+check_PROGRAMS += sem_wait
 endif
 
 

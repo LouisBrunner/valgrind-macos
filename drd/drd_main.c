@@ -580,8 +580,8 @@ void drd_post_deliver_signal(const ThreadId vg_tid, const Int sigNo)
  * Callback function called by the Valgrind core before a stack area is
  * being used by a signal handler.
  *
- * @param[in] a   Start of address range.
- * @param[in] len Address range length.
+ * @param[in] a   Start of address range - VG_STACK_REDZONE_SZB.
+ * @param[in] len Address range length + VG_STACK_REDZONE_SZB.
  * @param[in] tid Valgrind thread ID for whom the signal frame is being
  *                constructed.
  */
@@ -589,12 +589,14 @@ static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len,
                                              ThreadId tid)
 {
    DRD_(thread_set_vg_running_tid)(VG_(get_running_tid)());
-   drd_start_using_mem(a, len, True);
+   drd_start_using_mem(a + VG_STACK_REDZONE_SZB, len - VG_STACK_REDZONE_SZB,
+                       True);
 }
 
 static void drd_stop_using_mem_stack_signal(Addr a, SizeT len)
 {
-   drd_stop_using_mem(a, len, True);
+   drd_stop_using_mem(a + VG_STACK_REDZONE_SZB, len - VG_STACK_REDZONE_SZB,
+                      True);
 }
 
 static

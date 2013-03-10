@@ -7747,6 +7747,7 @@ PRE(thread_fast_set_cthread_self)
 }
 
 
+#if DARWIN_VERS >= DARWIN_10_7
 /* ---------------------------------------------------------------------
    Added for OSX 10.7 (Lion)
    ------------------------------------------------------------------ */
@@ -7761,6 +7762,7 @@ POST(getaudit_addr)
 {
    POST_MEM_WRITE(ARG1, ARG2);
 }
+#endif
 
 PRE(psynch_mutexwait)
 {

@@ -8555,6 +8555,25 @@ s390_irgen_srnmb_wrapper(UChar b2, UShort d2)
    s390_format_S_RD(s390_irgen_SRNMB, b2, d2);
 }
 
+/* Wrapper to validate the parameter as in SRNMB is not required, as all
+   the 8 values in op2addr[61:63] correspond to a valid DFP rounding mode */
+static const HChar *
+s390_irgen_SRNMT(IRTemp op2addr)
+{
+   UInt input_mask, fpc_mask;
+
+   input_mask = 7;
+   fpc_mask = 0x70;
+
+   /* fpc[25:27] <- op2addr[61:63]
+      fpc = (fpc & ~(0x70)) | ((op2addr & 7) << 4) */
+   put_fpc_w0(binop(Iop_Or32, binop(Iop_And32, get_fpc_w0(), mkU32(~fpc_mask)),
+                    binop(Iop_Shl32, binop(Iop_And32,
+                                           unop(Iop_64to32, mkexpr(op2addr)),
+                                           mkU32(input_mask)), mkU8(4))));
+   return "srnmt";
+}
+
 
 static const HChar *
 s390_irgen_SFPC(UChar r1)
@@ -13976,7 +13995,8 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb2b2: /* LPSWE */ goto unimplemented;
    case 0xb2b8: s390_irgen_srnmb_wrapper(ovl.fmt.S.b2, ovl.fmt.S.d2);
       goto ok;
-   case 0xb2b9: /* SRNMT */ goto unimplemented;
+   case 0xb2b9: s390_format_S_RD(s390_irgen_SRNMT, ovl.fmt.S.b2, ovl.fmt.S.d2);
+      goto ok;
    case 0xb2bd: /* LFAS */ goto unimplemented;
    case 0xb2e0: /* SCCTR */ goto unimplemented;
    case 0xb2e1: /* SPCTR */ goto unimplemented;

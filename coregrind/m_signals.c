@@ -1716,8 +1716,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          // FIXME: assumes main ThreadId == 1
          if (VG_(is_valid_tid)(1)) {
             VG_(umsg)(
-               " The main thread stack size used in this run was %d.\n",
-               (Int)VG_(threads)[1].client_stack_szB);
+               " The main thread stack size used in this run was %lu.\n",
+               VG_(threads)[1].client_stack_szB);
          }
       }
    }

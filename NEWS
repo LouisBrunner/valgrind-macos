@@ -217,6 +217,7 @@ m = merged into 3_8_BRANCH
         FIXED 13294
 
 315545    [390] (find_TTEntry_from_hcode): Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed
+316535    [390] Use of |signed int| instead of (unsigned) |size_t| in valgrind messages...
 315959    [390] valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
 316144    [390] valgrind.1 manpage contains unknown ??? strings for some core option references
 316145    [390] callgrind command line options in manpage reference (unknown) callgrind manual

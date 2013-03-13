@@ -235,9 +235,9 @@ struct _MC_Error {
 
       // Call to strcpy, memcpy, etc, with overlapping blocks.
       struct {
-         Addr src;   // Source block
-         Addr dst;   // Destination block
-         Int  szB;   // Size in bytes;  0 if unused.
+         Addr  src;   // Source block
+         Addr  dst;   // Destination block
+         SizeT szB;   // Size in bytes;  0 if unused.
       } Overlap;
 
       // A memory leak.
@@ -845,7 +845,7 @@ void MC_(pp_Error) ( Error* err )
                      extra->Err.Overlap.dst, extra->Err.Overlap.src );
             } else {
                emit( "  <what>Source and destination overlap "
-                     "in %s(%#lx, %#lx, %d)</what>\n",
+                     "in %s(%#lx, %#lx, %lu)</what>\n",
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src,
                      extra->Err.Overlap.szB );
@@ -857,7 +857,7 @@ void MC_(pp_Error) ( Error* err )
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src );
             } else {
-               emit( "Source and destination overlap in %s(%#lx, %#lx, %d)\n",
+               emit( "Source and destination overlap in %s(%#lx, %#lx, %lu)\n",
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src,
                      extra->Err.Overlap.szB );

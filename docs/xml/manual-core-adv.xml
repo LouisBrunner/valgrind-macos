@@ -247,11 +247,12 @@ tool-specific macros).</para>
     between start and end is a unique stack.  Returns a stack identifier
     that can be used with other
     <computeroutput>VALGRIND_STACK_*</computeroutput> calls.</para>
-    <para>Valgrind will use this information to determine if a change to
-    the stack pointer is an item pushed onto the stack or a change over
-    to a new stack.  Use this if you're using a user-level thread package
-    and are noticing spurious errors from Valgrind about uninitialized
-    memory reads.</para>
+    <para>Valgrind will use this information to determine if a change
+    to the stack pointer is an item pushed onto the stack or a change
+    over to a new stack.  Use this if you're using a user-level thread
+    package and are noticing crashes in stack trace recording or
+    spurious errors from Valgrind about uninitialized memory
+    reads.</para>
 
     <para><command>Warning:</command> Unfortunately, this client request is
     unreliable and best avoided.</para>

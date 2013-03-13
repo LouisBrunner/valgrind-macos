@@ -2609,13 +2609,16 @@ shipped.</para>
     <para><computeroutput>Warning: client switching stacks?</computeroutput></para>
 
     <para>Valgrind spotted such a large change in the stack pointer
-    that it guesses the client is switching to
-    a different stack.  At this point it makes a kludgey guess where the
-    base of the new stack is, and sets memory permissions accordingly.
-    You may get many bogus error messages following this, if Valgrind
-    guesses wrong.  At the moment "large change" is defined as a change
-    of more that 2000000 in the value of the
-    stack pointer register.</para>
+    that it guesses the client is switching to a different stack.  At
+    this point it makes a kludgey guess where the base of the new
+    stack is, and sets memory permissions accordingly.  At the moment
+    "large change" is defined as a change of more that 2000000 in the
+    value of the stack pointer register.  If Valgrind guesses wrong,
+    you may get many bogus error messages following this and/or have
+    crashes in the stack trace recording code.  You might avoid these
+    problems by informing Valgrind about the stack bounds using
+    VALGRIND_STACK_REGISTER client request. </para>
+
   </listitem>
 
   <listitem>

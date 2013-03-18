@@ -2156,7 +2156,7 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
    tl_assert(thr); /* cannot fail - Thread* must already exist */
 
    map_cond_to_CVInfo_INIT();
-   if (VG_(delFromFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond )) {
+   if (VG_(lookupFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond )) {
       CVInfo* cvi = (CVInfo*)valW;
       tl_assert(keyW == (UWord)cond);
       tl_assert(cvi);
@@ -2165,7 +2165,12 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
          HG_(record_error_Misc)(thr,
                                 "pthread_cond_destroy:"
                                 " destruction of condition variable being waited upon");
+         /* Destroying a cond var being waited upon outcome is EBUSY and
+            variable is not destroyed. */
+         return;
       }
+      if (!VG_(delFromFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond ))
+         tl_assert(0); // cond var found above, and not here ???
       libhb_so_dealloc(cvi->so);
       cvi->mx_ga = 0;
       HG_(free)(cvi);

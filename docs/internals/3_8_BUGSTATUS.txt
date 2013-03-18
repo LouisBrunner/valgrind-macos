@@ -219,12 +219,10 @@ gcp libnss3.so debuginfo read hang
         No action so far
 
 308717  ARM: implement fixed-point VCVT.F64.[SU]32
-        (patch, but no test case)
-        HAS_PATCH
+        FIXED 2694 13312
 
 308718  ARM implement SMLALBB family of instructions
-        (patch, but no test case)
-        HAS_PATCH
+        FIXED 2692, 13311
 
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5
         HAS_PATCH, but NEEDINFO
@@ -274,7 +272,7 @@ gcp libnss3.so debuginfo read hang
         A bunch of Android hackery from VladV; needs pulling apart
 
 309831  3.8.1: disInstr(arm): unhandled instruction: 0xECECA102
-        (stcl, gdb disassembles to stfp)
+        (stcl, gdb disassembles to stfp) .. IWMMXT
         ==309604
 
 310188  need better diagnostic when mmap() fails with EINVAL
@@ -290,7 +288,7 @@ gcp libnss3.so debuginfo read hang
 -- Wed Dec  5 23:41:20 CET 2012
 
 311318  ARM: "128-bit constant is not implemented" error message
-        HAS_PATCH; needs checking though
+        FIXED 2693
 
 311544  sys_fork() calls VG_(do_atfork_pre)() AFTER forking()
         No action; needs checking
@@ -306,7 +304,7 @@ gcp libnss3.so debuginfo read hang
         Probably true; should fix.
 
 311669  disInstr(arm): unhandled instruction: 0xEE07CFBA
-        OLD (3.7); NEEDINFO
+        FIXED in 3.8.1 (hence, basically, invalid)
 
 311690  V crashes because it redirects branches inside of a redirected
         function
@@ -348,7 +346,7 @@ gcp libnss3.so debuginfo read hang
         REOP
 
 314101  Valgrind (ARM) - disInstr(thumb): unhandled instruction: 0xDF01 0x4770
-        No action so far
+        NEEDINFO (possibly invalid)
 
 314236  OS X 10.8 testsuite build failure: test million.o
         OSX108  No action so far.
@@ -376,7 +374,7 @@ gcp libnss3.so debuginfo read hang
         HAS_PATCH; needs looking at
 
 315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE (vcvt.s32.f64)
-        No action so far; but this is a dup of ???
+        FIXED 2695 13313
 
 315828  massif "internal error" vgPlain_arena_free when RPATH includes
         /usr/local/lib
@@ -394,3 +392,5 @@ gcp libnss3.so debuginfo read hang
 316034  Building valgrind with gcc (4.7, trunk) fails on MacOS X 10.8
 
 -- Mon Mar  4 11:36:17 CET 2013
+
+!! 294285 LoPresti 16-byte helper returns

@@ -4176,20 +4176,6 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, PPCInstr_Dfp64Unary(fpop, fr_dst, fr_src));
          add_to_sp( env, 16 );
          return fr_dst;
-
-      } else if (fpop == Pfp_DCTFIX) {
-         HReg fr_src = iselDfp64Expr(env, e->Iex.Binop.arg2);
-         HReg tmp    = newVRegI(env);
-         PPCAMode* zero_r1 = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
-
-         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1 );
-         addInstr(env, PPCInstr_Dfp64Unary(fpop, fr_dst, fr_src));
-
-         sub_from_sp( env, 16 );
-         addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, fr_dst, zero_r1));
-         addInstr(env, PPCInstr_Load(8, tmp, zero_r1, env->mode64));
-         add_to_sp( env, 16 );
-         return tmp;
       }
 
       switch (e->Iex.Binop.op) {

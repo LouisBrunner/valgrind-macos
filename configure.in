@@ -1701,23 +1701,32 @@ AM_CONDITIONAL(DWARF4, test x$ac_have_dwarf4 = xyes)
 CFLAGS=$safe_CFLAGS
 
 
-# does the linker support -Wl,--build-id=none ?  Note, it's
-# important that we test indirectly via whichever C compiler
-# is selected, rather than testing /usr/bin/ld or whatever
-# directly.
+# We want to use use the -Ttext-segment option to the linker.
+# GNU (bfd) ld supports this directly. Newer GNU gold linkers
+# support it as an alias of -Ttext. Sadly GNU (bfd) ld's -Ttext
+# semantics are NOT what we want (GNU gold -Ttext is fine).
+#
+# For GNU (bfd) ld -Ttext-segment chooses the base at which ELF headers
+# will reside. -Ttext aligns just the .text section start (but not any
+# other section).
+#
+# So test for -Ttext-segment which is supported by all bfd ld versions
+# and use that if it exists. If it doesn't exist it must be an older
+# version of gold and we can fall back to using -Ttext which has the
+# right semantics.
 
-AC_MSG_CHECKING([if the linker accepts -Wl,--build-id=none])
+AC_MSG_CHECKING([if the linker accepts -Wl,-Ttext-segment])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-Wl,--build-id=none"
+CFLAGS="-Wl,-Ttext-segment=$valt_load_address_pri_norml"
 
 AC_LINK_IFELSE(
 [AC_LANG_PROGRAM([ ], [return 0;])],
 [
-  AC_SUBST([FLAG_NO_BUILD_ID], ["-Wl,--build-id=none"])
+  AC_SUBST([FLAG_T_TEXT], ["-Ttext-segment"])
   AC_MSG_RESULT([yes])
 ], [
-  AC_SUBST([FLAG_NO_BUILD_ID], [""])
+  AC_SUBST([FLAG_T_TEXT], ["-Ttext"])
   AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS

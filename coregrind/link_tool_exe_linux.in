@@ -27,24 +27,19 @@
 # directly.  It is only run as part of the build process, with 
 # carefully constrained inputs.
 #
-# Linux specific complications:
+# Linux specific complication:
 #
 # - need to support both old GNU ld and gold: use -Ttext= to
-#   set the text segment address.
-#
-# - need to pass --build-id=none (that is, -Wl,--build-id=none to
-#   gcc) if it accepts it, to ensure the linker doesn't add a
-#   notes section which ends up at the default load address and
-#   so defeats our attempts to keep that address clear for the
-#   client.  However, older linkers don't support this flag, so it
-#   is tested for by configure.in and is shipped to us as part of
-#   argv[2 ..].
-#
+#   set the text segment address if that is all we have. We really
+#   need -Ttext-segment. Otherwise with GNU ld sections or notes
+#   (like the build-id) don't get at the desired address. Luckily
+#   -Ttext does the right thing for gold. So configure checks for
+#   us and sets FLAG_T_TEXT.
 #
 # So: what we actually do:
 # 
 #   pass the specified command to the linker as-is, except, add
-#   "-static" and "-Ttext=<argv[1]>" to it.
+#   "-static" and "-Ttext[-segment]=<argv[1]>" to it.
 #   Previously we did this by adding these options after the first
 #   word of the rest of the arguments, which works in the common case
 #   when it's something like "gcc". But the linker invocation itself
@@ -80,7 +75,7 @@ if (($arch eq 'mips') || ($arch eq 'mipsel')
          ($arch eq 'mipsisa64el')) {
    $extra_args = "-static -Wl,--section-start=.MIPS.options=$ala";
 } else {
-   $extra_args = "-static -Wl,-Ttext=$ala";
+   $extra_args = "-static -Wl,@FLAG_T_TEXT@=$ala";
 }
 
 my $cmd = join(" ", @ARGV, $extra_args);

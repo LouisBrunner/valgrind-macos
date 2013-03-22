@@ -26,12 +26,8 @@ TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@ = \
 endif
 
 
-# -Wl,--build-id=none is needed when linking tools on Linux. Without this
-# flag newer ld versions (2.20 and later) create a .note.gnu.build-id at the
-# default text segment address, which of course means the resulting executable
-# is unusable. So we have to tell ld not to generate that, with --build-id=none.
 TOOL_LDFLAGS_COMMON_LINUX = \
-	-static -nodefaultlibs -nostartfiles -u _start @FLAG_NO_BUILD_ID@
+	-static -nodefaultlibs -nostartfiles -u _start
 TOOL_LDFLAGS_COMMON_DARWIN = \
 	-nodefaultlibs -nostartfiles -Wl,-u,__start -Wl,-e,__start
 
@@ -61,12 +57,10 @@ TOOL_LDFLAGS_AMD64_DARWIN = \
 
 # MIPS Linux default start symbol is __start, not _start like on x86 or amd
 TOOL_LDFLAGS_MIPS32_LINUX = \
-	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
-	@FLAG_M32@
+	-static -nodefaultlibs -nostartfiles -u __start @FLAG_M32@
 
 TOOL_LDFLAGS_MIPS64_LINUX = \
-	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
-	@FLAG_M64@
+	-static -nodefaultlibs -nostartfiles -u __start @FLAG_M64@
 
 # On Android we must ask for non-executable stack, not sure why.
 if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX

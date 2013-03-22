@@ -12487,7 +12487,7 @@ static Bool decode_CP10_CP11_instruction (
          /* This generates really horrible code.  We could potentially
             do much better. */
          IRTemp src32 = newTemp(Ity_I32);
-         assign(src32,  unop(Iop_ReinterpF32asI32, getFReg(2*d)));
+         assign(src32, unop(Iop_64to32, getDRegI64(d)));
          IRExpr* as_F64 = unop( unsyned ? Iop_I32UtoF64 : Iop_I32StoF64,
                                 mkexpr(src32 ) );
          IRTemp scale = newTemp(Ity_F64);

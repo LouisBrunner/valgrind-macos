@@ -2377,6 +2377,22 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
    cvi->nWaiters--;
 }
 
+static void evh__HG_PTHREAD_COND_INIT_POST ( ThreadId tid,
+                                             void* cond, void* cond_attr )
+{
+   CVInfo* cvi;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_PTHREAD_COND_INIT_POST"
+                  "(ctid=%d, cond=%p, cond_attr=%p)\n", 
+                  (Int)tid, (void*)cond, (void*) cond_attr );
+
+   cvi = map_cond_to_CVInfo_lookup_or_alloc( cond );
+   tl_assert (cvi);
+   tl_assert (cvi->so);
+}
+
+
 static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
                                                void* cond )
 {
@@ -4841,6 +4857,13 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          *ret = mutex_is_valid ? 1 : 0;
          break;
       }
+
+      /* Thread successfully completed pthread_cond_init:
+         cond=arg[1], cond_attr=arg[2] */
+      case _VG_USERREQ__HG_PTHREAD_COND_INIT_POST:
+         evh__HG_PTHREAD_COND_INIT_POST( tid,
+                                         (void*)args[1], (void*)args[2] );
+	 break;
 
       /* cond=arg[1] */
       case _VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE:

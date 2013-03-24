@@ -95,6 +95,7 @@ m = merged into 3_8_BRANCH
 
 307038  DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8 (DW_OP_const1u et al)
         FIXED r13010
+307082  [390] HG false positive: pthread_cond_destroy: destruction of unknown cond var 
 
 307101  sys_capget second argument can be NULL
         FIXED r13021

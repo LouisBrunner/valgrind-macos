@@ -631,10 +631,8 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
 
 /* Handled:   pthread_cond_wait pthread_cond_timedwait
               pthread_cond_signal pthread_cond_broadcast
+              pthread_cond_init
               pthread_cond_destroy
-
-   Unhandled: pthread_cond_init
-              -- is this important?
 */
 
 //-----------------------------------------------------------
@@ -915,6 +913,55 @@ static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
    }
 #else
 #   error "Unsupported OS"
+#endif
+
+// glibc:  pthread_cond_init@GLIBC_2.0
+// glibc:  pthread_cond_init@GLIBC_2.2.5
+// glibc:  pthread_cond_init@@GLIBC_2.3.2
+// darwin: pthread_cond_init
+// Easy way out: Handling of attr could have been messier.
+// It turns out that pthread_cond_init under linux ignores
+// all information in cond_attr, so do we.
+// FIXME: MacOS X?
+__attribute__((noinline))
+static int pthread_cond_init_WRK(pthread_cond_t* cond, pthread_condattr_t *cond_attr)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_cond_init %p", cond);
+      fflush(stderr);
+   }
+
+   CALL_FN_W_WW(ret, fn, cond, cond_attr);
+
+   if (ret == 0) {
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_INIT_POST,
+                   pthread_cond_t*,cond, pthread_condattr_t*, cond_attr);
+   } else {
+      DO_PthAPIerror( "pthread_cond_init", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " coinit -> %d >>\n", ret);
+   }
+
+   return ret;
+}
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZucondZuinitZAZa, // pthread_cond_init@*
+	    pthread_cond_t* cond, pthread_condattr_t* cond_attr) {
+     return pthread_cond_init_WRK(cond, cond_attr);
+   }
+#elif defined(VGO_darwin)
+   PTH_FUNC(int, pthreadZucondZuinit, // pthread_cond_init
+	    pthread_cond_t* cond, pthread_condattr_t * cond_attr) {
+     return pthread_cond_init_WRK(cond, cond_attr);
+   }
+#else
+#  error "Unsupported OS"
 #endif
 
 

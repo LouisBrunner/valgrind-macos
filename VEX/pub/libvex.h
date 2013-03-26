@@ -83,6 +83,7 @@ typedef
 #define VEX_HWCAPS_AMD64_CX16  (1<<6)  /* cmpxchg16b support */
 #define VEX_HWCAPS_AMD64_LZCNT (1<<7)  /* SSE4a LZCNT insn */
 #define VEX_HWCAPS_AMD64_AVX   (1<<8)  /* AVX instructions */
+#define VEX_HWCAPS_AMD64_RDTSCP (1<<9) /* RDTSCP instruction */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */

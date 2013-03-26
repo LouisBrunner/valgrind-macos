@@ -63,8 +63,6 @@
    * FINIT not only initialises the FPU environment, it also zeroes
      all the FP registers.  It should leave the registers unchanged.
  
-    RDTSC returns zero, always.
- 
     SAHF should cause eflags[1] == 1, and in fact it produces 0.  As
     per Intel docs this bit has no meaning anyway.  Since PUSHF is the
     only way to observe eflags[1], a proper fix would be to make that
@@ -19862,6 +19860,39 @@ Long dis_ESC_0F (
          ));
          putIRegRAX(4, mkU32(7));
          putIRegRDX(4, mkU32(0));
+         return delta;
+      }
+      /* 0F 01 F9 = RDTSCP */
+      if (modrm == 0xF9 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDTSCP)) {
+         delta += 1;
+         /* Uses dirty helper: 
+            void amd64g_dirtyhelper_RDTSCP ( VexGuestAMD64State* )
+            declared to wr rax, rcx, rdx
+         */
+         const HChar* fName = "amd64g_dirtyhelper_RDTSCP";
+         void*        fAddr = &amd64g_dirtyhelper_RDTSCP;
+         IRDirty* d
+            = unsafeIRDirty_0_N ( 0/*regparms*/, 
+                                  fName, fAddr, mkIRExprVec_0() );
+         /* declare guest state effects */
+         d->needsBBP = True;
+         d->nFxState = 3;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
+         d->fxState[0].fx     = Ifx_Write;
+         d->fxState[0].offset = OFFB_RAX;
+         d->fxState[0].size   = 8;
+         d->fxState[1].fx     = Ifx_Write;
+         d->fxState[1].offset = OFFB_RCX;
+         d->fxState[1].size   = 8;
+         d->fxState[2].fx     = Ifx_Write;
+         d->fxState[2].offset = OFFB_RDX;
+         d->fxState[2].size   = 8;
+         /* execute the dirty call, side-effecting guest state */
+         stmt( IRStmt_Dirty(d) );
+         /* RDTSCP is a serialising insn.  So, just in case someone is
+            using it as a memory fence ... */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("rdtscp\n");
          return delta;
       }
       /* else decode failed */

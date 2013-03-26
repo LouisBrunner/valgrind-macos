@@ -1205,37 +1205,48 @@ static const HChar* show_hwcaps_amd64 ( UInt hwcaps )
    /* SSE3 and CX16 are orthogonal and > baseline, although we really
       don't expect to come across anything which can do SSE3 but can't
       do CX16.  Still, we can handle that case.  LZCNT is similarly
-      orthogonal.  AVX is technically orthogonal, but just add the
-      cases we actually come across.  (This scheme for printing is
-      very stupid.  We should add strings independently based on
-      feature bits, but then it would be hard to return a string that
-      didn't need deallocating by the caller.) */
-   /* FIXME: show_hwcaps_s390x is a much better way to do this. */
-   switch (hwcaps) {
-      case 0:
-         return "amd64-sse2";
-      case VEX_HWCAPS_AMD64_SSE3:
-         return "amd64-sse3";
-      case VEX_HWCAPS_AMD64_CX16:
-         return "amd64-sse2-cx16";
-      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16:
-         return "amd64-sse3-cx16";
-      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_LZCNT:
-         return "amd64-sse3-lzcnt";
-      case VEX_HWCAPS_AMD64_CX16 | VEX_HWCAPS_AMD64_LZCNT:
-         return "amd64-sse2-cx16-lzcnt";
-      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
-           | VEX_HWCAPS_AMD64_LZCNT:
-         return "amd64-sse3-cx16-lzcnt";
-      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
-           | VEX_HWCAPS_AMD64_AVX:
-         return "amd64-sse3-cx16-avx";
-      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
-           | VEX_HWCAPS_AMD64_LZCNT | VEX_HWCAPS_AMD64_AVX:
-         return "amd64-sse3-cx16-lzcnt-avx";
-      default:
-         return NULL;
+      orthogonal. */
+
+   /* Throw out obviously stupid cases: */
+   /* AVX without SSE3 */
+   Bool have_sse3 = (hwcaps & VEX_HWCAPS_AMD64_SSE3) != 0;
+   Bool have_avx  = (hwcaps & VEX_HWCAPS_AMD64_AVX)  != 0;
+   if (have_avx && !have_sse3)
+      return NULL;
+
+   /* This isn't threadsafe.  We might need to fix it at some point. */
+   static HChar buf[100] = { 0 };
+   if (buf[0] != 0) return buf; /* already constructed */
+
+   vex_bzero(buf, sizeof(buf));
+
+   HChar* p = &buf[0];
+
+   p = p + vex_sprintf(p, "%s", "amd64");
+   if (hwcaps == 0) {
+      /* special-case the baseline case */
+      p = p + vex_sprintf(p, "%s", "-sse2");
+      goto out;
    }
+   if (hwcaps & VEX_HWCAPS_AMD64_CX16) {
+      p = p + vex_sprintf(p, "%s", "-cx16");
+   }
+   if (hwcaps & VEX_HWCAPS_AMD64_LZCNT) {
+      p = p + vex_sprintf(p, "%s", "-lzcnt");
+   }
+   if (hwcaps & VEX_HWCAPS_AMD64_RDTSCP) {
+      p = p + vex_sprintf(p, "%s", "-rdtscp");
+   }
+   if (hwcaps & VEX_HWCAPS_AMD64_SSE3) {
+      p = p + vex_sprintf(p, "%s", "-sse3");
+   }
+   if (hwcaps & VEX_HWCAPS_AMD64_AVX) {
+      p = p + vex_sprintf(p, "%s", "-avx");
+   }
+
+  out:
+   vassert(buf[sizeof(buf)-1] == 0);
+   return buf;
 }
 
 static const HChar* show_hwcaps_ppc32 ( UInt hwcaps )

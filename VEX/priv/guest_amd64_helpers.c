@@ -2837,6 +2837,25 @@ ULong amd64g_dirtyhelper_RDTSC ( void )
 #  endif
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-amd64 platforms, return 1. */
+/* This uses a different calling convention from _RDTSC just above
+   only because of the difficulty of returning 96 bits from a C
+   function -- RDTSC returns 64 bits and so is simple by comparison,
+   on amd64. */
+void amd64g_dirtyhelper_RDTSCP ( VexGuestAMD64State* st )
+{
+#  if defined(__x86_64__)
+   UInt eax, ecx, edx;
+   __asm__ __volatile__("rdtscp" : "=a" (eax), "=d" (edx), "=c" (ecx));
+   st->guest_RAX = (ULong)eax;
+   st->guest_RCX = (ULong)ecx;
+   st->guest_RDX = (ULong)edx;
+#  else
+   /* Do nothing. */
+#  endif
+}
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */

@@ -4302,7 +4302,8 @@ HInstrArray* iselSB_AMD64 ( IRSB* bb,
                  & ~(VEX_HWCAPS_AMD64_SSE3
                      | VEX_HWCAPS_AMD64_CX16
                      | VEX_HWCAPS_AMD64_LZCNT
-                     | VEX_HWCAPS_AMD64_AVX)));
+                     | VEX_HWCAPS_AMD64_AVX
+                     | VEX_HWCAPS_AMD64_RDTSCP)));
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

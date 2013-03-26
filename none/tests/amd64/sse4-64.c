@@ -3776,6 +3776,18 @@ void test_BLENDVPS ( void )
    }
 }
 
+void test_MOVNTDQA ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      /* make sure the load actually happens */
+      randV128(&dst);
+      DO_m_r("movntdqa", src, dst);
+   }
+}
+
 /* ------------ main ------------ */
 
 int main ( int argc, char** argv )
@@ -3792,7 +3804,6 @@ int main ( int argc, char** argv )
    test_DPPS();           // done Apr.09.2010
    test_EXTRACTPS();
    test_INSERTPS();       // done Apr.01.2010
-   // MOVNTDQA  ***
    test_PCMPEQQ();
    test_PEXTRB();         // done Apr.15.2010
    test_PEXTRD();         // done Apr.14.2010
@@ -3842,6 +3853,7 @@ int main ( int argc, char** argv )
    test_PACKUSDW();
    test_PHMINPOSUW();
    test_MPSADBW();
+   test_MOVNTDQA(); /* not sure whether this is 4.1 or 4.2 */
 #else
    test_MPSADBW();
 #endif

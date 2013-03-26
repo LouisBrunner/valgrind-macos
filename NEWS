@@ -232,6 +232,57 @@ n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android
 n-i-bz  patch to allow fair-sched on android
         FIXED r13186
 
+315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE (vcvt.s32.f64)
+        FIXED 2695 13313
+
+311669  disInstr(arm): unhandled instruction: 0xEE07CFBA
+        FIXED in 3.8.1 (hence, basically, invalid)
+
+311318  ARM: "128-bit constant is not implemented" error message
+        FIXED 2693
+
+309427  SSE optimized stpncpy trigger uninitialised value and/or
+        invalid read warnings
+        FIXED, r13163
+
+308718  ARM implement SMLALBB family of instructions
+        FIXED 2692, 13311
+
+308717  ARM: implement fixed-point VCVT.F64.[SU]32
+        FIXED 2694 13312
+
+316144  valgrind.1 manpage contains unknown ??? strings for some
+        core option references
+        FIXED 13314
+
+316145  callgrind command line options in manpage reference
+        (unknown) callgrind manual
+        FIXED 13324
+
+316181  x264 program of parsec 2.1 stuck (do not finish)
+        FIXED 13315
+
+316535  Use of |signed int| instead of (unsigned) |size_t| in
+        valgrind messages...
+        FIXED 13326
+
+317091  Use -Wl,-Ttext-segment when static linking if possible to
+        keep build-ids
+        FIXED 13331
+
+317186  "Impossible happends" when occurs VCVT instruction on ARM
+        FIXED 2698
+
+315959  valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
+        FIXED 13323
+        312907 ==
+
+312171  ppc: insn selection for DFP
+        FIXED r?????
+
+315534  msgrcv inside a thread causes valgrind to hang (block)
+        FIXED 13289
+
 
 
 Release 3.8.1 (19 September 2012)

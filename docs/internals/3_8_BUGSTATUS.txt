@@ -218,12 +218,6 @@ gcp libnss3.so debuginfo read hang
         some cases (Helgrind)
         No action so far
 
-308717  ARM: implement fixed-point VCVT.F64.[SU]32
-        FIXED 2694 13312
-
-308718  ARM implement SMLALBB family of instructions
-        FIXED 2692, 13311
-
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5
         HAS_PATCH, but NEEDINFO
 
@@ -248,10 +242,6 @@ gcp libnss3.so debuginfo read hang
 
 309323  print unrecognized instuction on MIPS
         No action so far
-
-309427  SSE optimized stpncpy trigger uninitialised value and/or
-        invalid read warnings
-        FIXED, r13163
 
 309430  Self hosting ppc64 encounters a vassert error on operand type
         No action so far.  Sounds a bit strange.
@@ -287,9 +277,6 @@ gcp libnss3.so debuginfo read hang
 
 -- Wed Dec  5 23:41:20 CET 2012
 
-311318  ARM: "128-bit constant is not implemented" error message
-        FIXED 2693
-
 311544  sys_fork() calls VG_(do_atfork_pre)() AFTER forking()
         No action; needs checking
 
@@ -302,9 +289,6 @@ gcp libnss3.so debuginfo read hang
 311655  --log-file=FILE leads to apparent fd leak ("Open file
         descriptor 3: $LOGFILE")
         Probably true; should fix.
-
-311669  disInstr(arm): unhandled instruction: 0xEE07CFBA
-        FIXED in 3.8.1 (hence, basically, invalid)
 
 311690  V crashes because it redirects branches inside of a redirected
         function
@@ -321,12 +305,6 @@ gcp libnss3.so debuginfo read hang
         251569 ==
         313348 ==
         313354 ==
-
-312171  ppc: insn selection for DFP
-        Unclear what status is; NEEDINFO
-
-312907  Broken XInclude in manpage (breaks formatting)
-        HAS_PATCH; should commit
 
 312989  ioctl handling needs to do POST handling on generic ioctls and
         needs to handle BPF ioctls
@@ -367,14 +345,8 @@ gcp libnss3.so debuginfo read hang
         using cfl= or cfi= for the called function source file
         HAS_PATCH; in progress (needs review)
 
-315534  msgrcv inside a thread causes valgrind to hang (block)
-        appears fixed (13289) but not clear if is OK to close, or not
-
 315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
         HAS_PATCH; needs looking at
-
-315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE (vcvt.s32.f64)
-        FIXED 2695 13313
 
 315828  massif "internal error" vgPlain_arena_free when RPATH includes
         /usr/local/lib
@@ -382,15 +354,63 @@ gcp libnss3.so debuginfo read hang
 
 -- Thu Feb 28 09:54:56 CET 2013
 
+315919  vangrind hangs while trying to perform a write()
+        Probably invalid (strange interaction with -pg ?)
+
 315936  UNKNOWN task message [id 3403, to mach_task_self(), reply
         0x2603] when running fork()ing tests on Mac OS X
 
 315952  tun/tap ioctls are not supported
-
-315959  valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
 
 316034  Building valgrind with gcc (4.7, trunk) fails on MacOS X 10.8
 
 -- Mon Mar  4 11:36:17 CET 2013
 
 !! 294285 LoPresti 16-byte helper returns
+
+316382  Support for AMDs FMA4 instructions seem to be missing
+        No action so far
+
+316503  Valgrind does not support SSE4 "movntdqa" instruction
+        Has patches, needs minor rework
+
+316528  Dump for cachegrind
+        Wishlist
+
+316612  A -Wunused-value warning from Clang when including memcheck.h
+        Probably needs doc update
+
+316613  valgrind seg-faults in get_StackTrace_wrk under 32-bit
+        x86 app using makecontext
+        WONTFIX (is that the correct resolution?)
+
+316696  fluidanimate program of parsec 2.1 stuck (do not finish
+        for more than 5 hours)
+        No action so far (DRD specific)
+
+316761  syscall open_by_handle_at (304 on amd64, 342 on x86) not handled
+        Has patch; looks plausible; no action so far
+
+316874  amd64->IR: 0xC4 0xE2 0xF8 0xF2 0x85 0x30 0xFF 0xFF
+        Probably some AMD FMA insn?
+
+316903  memcheck/tests/origin5-bz2 FAIL with gcc-4.5+
+        Possibly a real bug
+
+317078  _mm_madd_epi16, undefined * 0 should not yield uninitialised result
+        True, but probably difficult to fix without perf hit
+
+317127  Fedora18/x86_64 --sanity-level=3 : aspacem segment mismatch
+        Diagnosed (BTRFS specific); unclear what to do, if anything
+
+317208  vex x86->IR: unhandled instruction bytes: 0xC8 0x0 0x0 0x0
+        "enter $0,$0" created by D language compiler
+
+317311  Helgrind shouldn't report errors for memories allocated
+        inside pthread/mutex methods
+        FreeBSD+Helgrind weirdness
+
+317318  Support for Threading Building Blocks "scalable_malloc"
+        NEEDINFO; queried
+
+-- Tue Mar 26 09:52:13 CET 2013

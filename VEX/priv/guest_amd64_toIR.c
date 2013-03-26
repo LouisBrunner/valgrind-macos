@@ -16378,6 +16378,25 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
       }
       break;
 
+   case 0x2A:
+      /* 66 0F 38 2A = MOVNTDQA
+         "non-temporal" "streaming" load
+         Handle like MOVDQA but only memory operand is allowed */
+      if (have66noF2noF3(pfx) && sz == 2) {
+         modrm = getUChar(delta);
+         if (!epartIsReg(modrm)) {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            gen_SEGV_if_not_16_aligned( addr );
+            putXMMReg( gregOfRexRM(pfx,modrm),
+                       loadLE(Ity_V128, mkexpr(addr)) );
+            DIP("movntdqa %s,%s\n", dis_buf,
+                                    nameXMMReg(gregOfRexRM(pfx,modrm)));
+            delta += alen;
+            goto decode_success;
+         }
+      }
+      break;
+
    case 0x2B:
       /* 66 0f 38 2B /r = PACKUSDW xmm1, xmm2/m128
          2x 32x4 S->U saturating narrow from xmm2/m128 to xmm1 */

@@ -1940,9 +1940,9 @@ AC_MSG_CHECKING([if x86/amd64 assembler speaks BMI1 and BMI2])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { unsigned int h, l;
    __asm__ __volatile__(
-      "andn %2, %1, %0" : "=r" (h) : "r" (0x1234567), "r" (0x7654321) ); }
+      "andn %2, %1, %0" : "=r" (h) : "r" (0x1234567), "r" (0x7654321) );
    __asm__ __volatile__(
-      "movl %2, %%edx; mulx %3, %1, %0" : "=r" (h), "=r" (l) : "g" (0x1234567), "g" (0x7654321) : "edx" ); }
+      "movl %2, %%edx; mulx %3, %1, %0" : "=r" (h), "=r" (l) : "g" (0x1234567), "rm" (0x7654321) : "edx" ); }
   while (0)
 ]])], [
 ac_have_as_bmi=yes

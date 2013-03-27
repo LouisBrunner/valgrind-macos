@@ -24,7 +24,10 @@ EXTRA_DIST = \
 	aes.vgtest aes.stdout.exp aes.stderr.exp \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
+	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
+	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
+	fma.stderr.exp fma.stdout.exp fma.vgtest \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
 	bug132813-amd64.stderr.exp \
@@ -108,6 +111,15 @@ if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
  check_PROGRAMS += avx-1
 endif
+endif
+if BUILD_AVX2_TESTS
+  check_PROGRAMS += avx2-1
+endif
+if BUILD_BMI_TESTS
+ check_PROGRAMS += bmi
+endif
+if BUILD_FMA_TESTS
+ check_PROGRAMS += fma
 endif
 if BUILD_MOVBE_TESTS
  check_PROGRAMS += movbe

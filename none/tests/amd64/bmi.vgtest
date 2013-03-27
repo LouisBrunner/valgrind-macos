@@ -1,0 +1,3 @@
+prog: bmi
+prereq: ../../../tests/x86_amd64_features amd64-avx
+vgopts: -q

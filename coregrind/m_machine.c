@@ -767,9 +767,9 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_amd64)
    { Bool have_sse3, have_cx8, have_cx16;
-     Bool have_lzcnt, have_avx /*, have_fma*/;
+     Bool have_lzcnt, have_avx, have_bmi, have_avx2;
      Bool have_rdtscp;
-     UInt eax, ebx, ecx, edx, max_extended;
+     UInt eax, ebx, ecx, edx, max_basic, max_extended;
      HChar vstr[13];
      vstr[0] = 0;
 
@@ -778,7 +778,8 @@ Bool VG_(machine_get_hwcaps)( void )
         return False;
 
      VG_(cpuid)(0, 0, &eax, &ebx, &ecx, &edx);
-     if (eax < 1)
+     max_basic = eax;
+     if (max_basic < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
 
@@ -835,13 +836,13 @@ Bool VG_(machine_get_hwcaps)( void )
      /* on amd64 we tolerate older cpus, which don't have cmpxchg16b */
      have_cx16 = (ecx & (1<<13)) != 0; /* True => have cmpxchg16b */
 
-     /* Figure out if this is an AMD that can do LZCNT. */
+     /* Figure out if this CPU can do LZCNT. */
      have_lzcnt = False;
-     if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
-         && max_extended >= 0x80000001) {
+     if (max_extended >= 0x80000001) {
         VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
+
      /* Can we do RDTSCP? */
      have_rdtscp = False;
      if (max_extended >= 0x80000001) {
@@ -849,11 +850,22 @@ Bool VG_(machine_get_hwcaps)( void )
         have_rdtscp = (edx & (1<<27)) != 0; /* True => have RDTSVCP */
      }
 
+     /* Check for BMI1 and AVX2. */
+     have_bmi = False;
+     have_avx2 = False;
+     if (max_basic >= 7) {
+        VG_(cpuid)(7, 0, &eax, &ebx, &ecx, &edx);
+        have_bmi = (ebx & (1<<3)) != 0; /* True => have BMI1 */
+        have_avx2 = have_avx && ((ebx & (1<<5)) != 0); /* True => have AVX2 */
+     }
+
      va         = VexArchAMD64;
      vai.hwcaps = (have_sse3   ? VEX_HWCAPS_AMD64_SSE3   : 0)
                 | (have_cx16   ? VEX_HWCAPS_AMD64_CX16   : 0)
                 | (have_lzcnt  ? VEX_HWCAPS_AMD64_LZCNT  : 0)
                 | (have_avx    ? VEX_HWCAPS_AMD64_AVX    : 0)
+                | (have_bmi    ? VEX_HWCAPS_AMD64_BMI    : 0)
+                | (have_avx2   ? VEX_HWCAPS_AMD64_AVX2   : 0)
                 | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0);
 
      VG_(machine_get_cache_info)(&vai);

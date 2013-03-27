@@ -1909,6 +1909,77 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_AVX_TESTS, test x$ac_have_as_avx = xyes)
 
 
+# does the x86/amd64 assembler understand AVX2 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_AVX2_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks AVX2])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x; 
+   __asm__ __volatile__(
+      "vpsravd (%%rsp), %%ymm8, %%ymm7" : : : "xmm7", "xmm8" );
+   __asm__ __volatile__(
+      "vpaddb %%ymm6,%%ymm7,%%ymm8" : : : "xmm6","xmm7","xmm8"); }
+  while (0)
+]])], [
+ac_have_as_avx2=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_avx2=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_AVX2_TESTS, test x$ac_have_as_avx2 = xyes)
+
+
+# does the x86/amd64 assembler understand BMI1 and BMI2 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_BMI_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks BMI1 and BMI2])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { unsigned int h, l;
+   __asm__ __volatile__(
+      "andn %2, %1, %0" : "=r" (h) : "r" (0x1234567), "r" (0x7654321) ); }
+   __asm__ __volatile__(
+      "movl %2, %%edx; mulx %3, %1, %0" : "=r" (h), "=r" (l) : "g" (0x1234567), "g" (0x7654321) : "edx" ); }
+  while (0)
+]])], [
+ac_have_as_bmi=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_bmi=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_BMI_TESTS, test x$ac_have_as_bmi = xyes)
+
+
+# does the x86/amd64 assembler understand FMA instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_FMA_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks FMA])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { unsigned int h, l;
+   __asm__ __volatile__(
+      "vfmadd132ps (%%rsp), %%ymm8, %%ymm7" : : : "xmm7", "xmm8" );
+   __asm__ __volatile__(
+      "vfnmsub231sd (%%rsp), %%xmm8, %%xmm7" : : : "xmm7", "xmm8" );
+   __asm__ __volatile__(
+      "vfmsubadd213pd (%%rsp), %%xmm8, %%xmm7" : : : "xmm7", "xmm8" ); }
+  while (0)
+]])], [
+ac_have_as_fma=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_fma=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_FMA_TESTS, test x$ac_have_as_fma = xyes)
+
+
 # does the x86/amd64 assembler understand MOVBE?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_MOVBE_TESTS), used in test Makefile.am's

@@ -8753,7 +8753,7 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       case 0x5:  XXX(False, Iop_CmpLT32Fx4, True);  break; // NLT_US
       case 0x6:  XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_US
       case 0x7:  XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_Q
-      // 0x8  EQ_UQ
+      case 0x8:  XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_UQ
       case 0x9:  XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_US
       /* "Enhanced Comparison Predicate[s] for VEX-Encoded [insns] */
       case 0xA:  XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_US

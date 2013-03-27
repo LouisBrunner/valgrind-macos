@@ -1208,10 +1208,15 @@ static const HChar* show_hwcaps_amd64 ( UInt hwcaps )
       orthogonal. */
 
    /* Throw out obviously stupid cases: */
-   /* AVX without SSE3 */
    Bool have_sse3 = (hwcaps & VEX_HWCAPS_AMD64_SSE3) != 0;
    Bool have_avx  = (hwcaps & VEX_HWCAPS_AMD64_AVX)  != 0;
+   Bool have_bmi  = (hwcaps & VEX_HWCAPS_AMD64_BMI)  != 0;
+   Bool have_avx2 = (hwcaps & VEX_HWCAPS_AMD64_AVX2) != 0;
+   /* AVX without SSE3 */
    if (have_avx && !have_sse3)
+      return NULL;
+   /* AVX2 or BMI without AVX */
+   if ((have_avx2 || have_bmi) && !have_avx)
       return NULL;
 
    /* This isn't threadsafe.  We might need to fix it at some point. */
@@ -1242,6 +1247,12 @@ static const HChar* show_hwcaps_amd64 ( UInt hwcaps )
    }
    if (hwcaps & VEX_HWCAPS_AMD64_AVX) {
       p = p + vex_sprintf(p, "%s", "-avx");
+   }
+   if (hwcaps & VEX_HWCAPS_AMD64_AVX2) {
+      p = p + vex_sprintf(p, "%s", "-avx2");
+   }
+   if (hwcaps & VEX_HWCAPS_AMD64_BMI) {
+      p = p + vex_sprintf(p, "%s", "-bmi");
    }
 
   out:

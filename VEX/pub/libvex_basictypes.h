@@ -75,6 +75,16 @@ typedef
    }
    V128;
 
+/* A union for doing 256-bit vector primitives conveniently. */
+typedef
+   union {
+      UChar  w8[32];
+      UShort w16[16];
+      UInt   w32[8];
+      ULong  w64[4];
+   }
+   V256;
+
 /* Floating point. */
 typedef  float   Float;    /* IEEE754 single-precision (32-bit) value */
 typedef  double  Double;   /* IEEE754 double-precision (64-bit) value */

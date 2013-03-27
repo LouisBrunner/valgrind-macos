@@ -492,6 +492,72 @@ static inline ULong idULong ( ULong x )
    }								\
 }
 
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_ANDN(DATA_BITS,DATA_UTYPE)			\
+{								\
+   PREAMBLE(DATA_BITS);						\
+   { Long cf, pf, af, zf, sf, of;				\
+     cf = 0;							\
+     pf = 0;							\
+     af = 0;							\
+     zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     of = 0;							\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_BLSI(DATA_BITS,DATA_UTYPE)			\
+{								\
+   PREAMBLE(DATA_BITS);						\
+   { Long cf, pf, af, zf, sf, of;				\
+     cf = ((DATA_UTYPE)CC_DEP2 != 0);				\
+     pf = 0;							\
+     af = 0;							\
+     zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     of = 0;							\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_BLSMSK(DATA_BITS,DATA_UTYPE)			\
+{								\
+   PREAMBLE(DATA_BITS);						\
+   { Long cf, pf, af, zf, sf, of;				\
+     cf = ((DATA_UTYPE)CC_DEP2 == 0);				\
+     pf = 0;							\
+     af = 0;							\
+     zf = 0;							\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     of = 0;							\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_BLSR(DATA_BITS,DATA_UTYPE)			\
+{								\
+   PREAMBLE(DATA_BITS);						\
+   { Long cf, pf, af, zf, sf, of;				\
+     cf = ((DATA_UTYPE)CC_DEP2 == 0);				\
+     pf = 0;							\
+     af = 0;							\
+     zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     of = 0;							\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+
 
 #if PROFILE_RFLAGS
 
@@ -654,6 +720,18 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
                                                   Long,   idULong );
 
       case AMD64G_CC_OP_SMULQ:  ACTIONS_SMULQ;
+
+      case AMD64G_CC_OP_ANDN32: ACTIONS_ANDN( 32, UInt   );
+      case AMD64G_CC_OP_ANDN64: ACTIONS_ANDN( 64, ULong  );
+
+      case AMD64G_CC_OP_BLSI32: ACTIONS_BLSI( 32, UInt   );
+      case AMD64G_CC_OP_BLSI64: ACTIONS_BLSI( 64, ULong  );
+
+      case AMD64G_CC_OP_BLSMSK32: ACTIONS_BLSMSK( 32, UInt   );
+      case AMD64G_CC_OP_BLSMSK64: ACTIONS_BLSMSK( 64, ULong  );
+
+      case AMD64G_CC_OP_BLSR32: ACTIONS_BLSR( 32, UInt   );
+      case AMD64G_CC_OP_BLSR64: ACTIONS_BLSR( 64, ULong  );
 
       default:
          /* shouldn't really make these calls from generated code */
@@ -3137,6 +3215,36 @@ ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
    ULong r3  = sad_8x4( dst >> 24, src );
    ULong res = (r3 << 48) | (r2 << 32) | (r1 << 16) | r0;
    return res;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_pext ( ULong src_masked, ULong mask )
+{
+   ULong dst = 0;
+   ULong src_bit;
+   ULong dst_bit = 1;
+   for (src_bit = 1; src_bit; src_bit <<= 1) {
+      if (mask & src_bit) {
+         if (src_masked & src_bit) dst |= dst_bit;
+         dst_bit <<= 1;
+      }
+   }
+   return dst;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_pdep ( ULong src, ULong mask )
+{
+   ULong dst = 0;
+   ULong dst_bit;
+   ULong src_bit = 1;
+   for (dst_bit = 1; dst_bit; dst_bit <<= 1) {
+      if (mask & dst_bit) {
+         if (src & src_bit) dst |= dst_bit;
+         src_bit <<= 1;
+      }
+   }
+   return dst;
 }
 
 /*---------------------------------------------------------------*/

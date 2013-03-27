@@ -1514,7 +1514,34 @@ typedef
       Iop_NotV256,
 
       /* MISC (vector integer cmp != 0) */
-      Iop_CmpNEZ32x8, Iop_CmpNEZ64x4,
+      Iop_CmpNEZ8x32, Iop_CmpNEZ16x16, Iop_CmpNEZ32x8, Iop_CmpNEZ64x4,
+
+      Iop_Add8x32,    Iop_Add16x16,    Iop_Add32x8,    Iop_Add64x4,
+      Iop_Sub8x32,    Iop_Sub16x16,    Iop_Sub32x8,    Iop_Sub64x4,
+
+      Iop_CmpEQ8x32,  Iop_CmpEQ16x16,  Iop_CmpEQ32x8,  Iop_CmpEQ64x4,
+      Iop_CmpGT8Sx32, Iop_CmpGT16Sx16, Iop_CmpGT32Sx8, Iop_CmpGT64Sx4,
+
+      Iop_ShlN16x16, Iop_ShlN32x8, Iop_ShlN64x4,
+      Iop_ShrN16x16, Iop_ShrN32x8, Iop_ShrN64x4,
+      Iop_SarN16x16, Iop_SarN32x8,
+
+      Iop_Max8Sx32, Iop_Max16Sx16, Iop_Max32Sx8,
+      Iop_Max8Ux32, Iop_Max16Ux16, Iop_Max32Ux8,
+      Iop_Min8Sx32, Iop_Min16Sx16, Iop_Min32Sx8,
+      Iop_Min8Ux32, Iop_Min16Ux16, Iop_Min32Ux8,
+
+      Iop_Mul16x16, Iop_Mul32x8,
+      Iop_MulHi16Ux16, Iop_MulHi16Sx16,
+
+      Iop_QAdd8Ux32, Iop_QAdd16Ux16,
+      Iop_QAdd8Sx32, Iop_QAdd16Sx16,
+      Iop_QSub8Ux32, Iop_QSub16Ux16,
+      Iop_QSub8Sx32, Iop_QSub16Sx16,
+
+      Iop_Avg8Ux32, Iop_Avg16Ux16,
+
+      Iop_Perm32x8,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,

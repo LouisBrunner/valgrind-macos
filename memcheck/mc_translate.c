@@ -627,6 +627,7 @@ static IRAtom* mkUifU ( MCEnv* mce, IRType vty, IRAtom* a1, IRAtom* a2 ) {
       case Ity_I64:  return mkUifU64(mce, a1, a2);
       case Ity_I128: return mkUifU128(mce, a1, a2);
       case Ity_V128: return mkUifUV128(mce, a1, a2);
+      case Ity_V256: return mkUifUV256(mce, a1, a2);
       default:
          VG_(printf)("\n"); ppIRType(vty); VG_(printf)("\n");
          VG_(tool_panic)("memcheck:mkUifU");
@@ -871,6 +872,13 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
       case Ity_I128:
          tmp1 = assignNew('V', mce, Ity_I64,  unop(Iop_1Sto64, tmp1));
          tmp1 = assignNew('V', mce, Ity_I128, binop(Iop_64HLto128, tmp1, tmp1));
+         return tmp1;
+      case Ity_V256:
+         tmp1 = assignNew('V', mce, Ity_I64,  unop(Iop_1Sto64, tmp1));
+         tmp1 = assignNew('V', mce, Ity_V128, binop(Iop_64HLtoV128,
+                                                    tmp1, tmp1));
+         tmp1 = assignNew('V', mce, Ity_V256, binop(Iop_V128HLtoV256,
+                                                    tmp1, tmp1));
          return tmp1;
       default: 
          ppIRType(dst_ty);
@@ -2024,9 +2032,19 @@ static IRAtom* mkPCast32x2 ( MCEnv* mce, IRAtom* at )
    return assignNew('V', mce, Ity_I64, unop(Iop_CmpNEZ32x2, at));
 }
 
+static IRAtom* mkPCast16x16 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew('V', mce, Ity_V256, unop(Iop_CmpNEZ16x16, at));
+}
+
 static IRAtom* mkPCast16x4 ( MCEnv* mce, IRAtom* at )
 {
    return assignNew('V', mce, Ity_I64, unop(Iop_CmpNEZ16x4, at));
+}
+
+static IRAtom* mkPCast8x32 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew('V', mce, Ity_V256, unop(Iop_CmpNEZ8x32, at));
 }
 
 static IRAtom* mkPCast8x8 ( MCEnv* mce, IRAtom* at )
@@ -2432,6 +2450,44 @@ IRAtom* vectorWidenI64 ( MCEnv* mce, IROp longen_op,
 /* --- --- Vector integer arithmetic --- --- */
 
 /* Simple ... UifU the args and per-lane pessimise the results. */
+
+/* --- V256-bit versions --- */
+
+static
+IRAtom* binary8Ix32 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifUV256(mce, vatom1, vatom2);
+   at = mkPCast8x32(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary16Ix16 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifUV256(mce, vatom1, vatom2);
+   at = mkPCast16x16(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary32Ix8 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifUV256(mce, vatom1, vatom2);
+   at = mkPCast32x8(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary64Ix4 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifUV256(mce, vatom1, vatom2);
+   at = mkPCast64x4(mce, at);
+   return at;   
+}
 
 /* --- V128-bit versions --- */
 
@@ -3696,6 +3752,82 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkUifUV128(mce, vatom1, vatom2);
       case Iop_XorV256:
          return mkUifUV256(mce, vatom1, vatom2);
+
+      /* V256-bit SIMD */
+
+      case Iop_ShrN16x16:
+      case Iop_ShrN32x8:
+      case Iop_ShrN64x4:
+      case Iop_SarN16x16:
+      case Iop_SarN32x8:
+      case Iop_ShlN16x16:
+      case Iop_ShlN32x8:
+      case Iop_ShlN64x4:
+         /* Same scheme as with all other shifts.  Note: 22 Oct 05:
+            this is wrong now, scalar shifts are done properly lazily.
+            Vector shifts should be fixed too. */
+         complainIfUndefined(mce, atom2);
+         return assignNew('V', mce, Ity_V256, binop(op, vatom1, atom2));
+
+      case Iop_QSub8Ux32:
+      case Iop_QSub8Sx32:
+      case Iop_Sub8x32:
+      case Iop_Min8Ux32:
+      case Iop_Min8Sx32:
+      case Iop_Max8Ux32:
+      case Iop_Max8Sx32:
+      case Iop_CmpGT8Sx32:
+      case Iop_CmpEQ8x32:
+      case Iop_Avg8Ux32:
+      case Iop_QAdd8Ux32:
+      case Iop_QAdd8Sx32:
+      case Iop_Add8x32:
+         return binary8Ix32(mce, vatom1, vatom2);
+
+      case Iop_QSub16Ux16:
+      case Iop_QSub16Sx16:
+      case Iop_Sub16x16:
+      case Iop_Mul16x16:
+      case Iop_MulHi16Sx16:
+      case Iop_MulHi16Ux16:
+      case Iop_Min16Sx16:
+      case Iop_Min16Ux16:
+      case Iop_Max16Sx16:
+      case Iop_Max16Ux16:
+      case Iop_CmpGT16Sx16:
+      case Iop_CmpEQ16x16:
+      case Iop_Avg16Ux16:
+      case Iop_QAdd16Ux16:
+      case Iop_QAdd16Sx16:
+      case Iop_Add16x16:
+         return binary16Ix16(mce, vatom1, vatom2);
+
+      case Iop_Sub32x8:
+      case Iop_CmpGT32Sx8:
+      case Iop_CmpEQ32x8:
+      case Iop_Add32x8:
+      case Iop_Max32Ux8:
+      case Iop_Max32Sx8:
+      case Iop_Min32Ux8:
+      case Iop_Min32Sx8:
+      case Iop_Mul32x8:
+         return binary32Ix8(mce, vatom1, vatom2);
+
+      case Iop_Sub64x4:
+      case Iop_Add64x4:
+      case Iop_CmpEQ64x4:
+      case Iop_CmpGT64Sx4:
+         return binary64Ix4(mce, vatom1, vatom2);
+
+     /* Perm32x8: rearrange values in left arg using steering values
+        from right arg.  So rearrange the vbits in the same way but
+        pessimise wrt steering values. */
+      case Iop_Perm32x8:
+         return mkUifUV256(
+                   mce,
+                   assignNew('V', mce, Ity_V256, binop(op, vatom1, atom2)),
+                   mkPCast32x8(mce, vatom2)
+                );
 
       default:
          ppIROp(op);

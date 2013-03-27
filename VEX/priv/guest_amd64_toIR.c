@@ -1715,7 +1715,7 @@ static Bool isLogic ( IROp op8 )
    return toBool(op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8);
 }
 
-/* U-widen 8/16/32/64 bit int expr to 64. */
+/* U-widen 1/8/16/32/64 bit int expr to 64. */
 static IRExpr* widenUto64 ( IRExpr* e )
 {
    switch (typeOfIRExpr(irsb->tyenv,e)) {
@@ -1723,6 +1723,7 @@ static IRExpr* widenUto64 ( IRExpr* e )
       case Ity_I32: return unop(Iop_32Uto64, e);
       case Ity_I16: return unop(Iop_16Uto64, e);
       case Ity_I8:  return unop(Iop_8Uto64, e);
+      case Ity_I1:  return unop(Iop_1Uto64, e);
       default: vpanic("widenUto64");
    }
 }
@@ -28692,7 +28693,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp  src1  = newTemp(ty);
          IRTemp  src2  = newTemp(ty);
          IRTemp  start = newTemp(Ity_I8);
-         IRTemp  cond  = newTemp(Ity_I8);
+         IRTemp  cond  = newTemp(Ity_I1);
          UChar   rm    = getUChar(delta);
 
          assign( src2, getIRegV(size,pfx) );

@@ -27,14 +27,22 @@
 # directly.  It is only run as part of the build process, with 
 # carefully constrained inputs.
 #
-# Linux specific complication:
+# Linux specific complications:
 #
 # - need to support both old GNU ld and gold: use -Ttext= to
 #   set the text segment address if that is all we have. We really
 #   need -Ttext-segment. Otherwise with GNU ld sections or notes
-#   (like the build-id) don't get at the desired address. Luckily
-#   -Ttext does the right thing for gold. So configure checks for
-#   us and sets FLAG_T_TEXT.
+#   (like the build-id) don't get at the desired address. But older
+#   linkers only know about -Ttext, not -Ttext-segment. So configure
+#   checks for us and sets FLAG_T_TEXT.
+#
+# - If all we have is -Ttext, then we need to pass --build-id=none
+#   (that is, -Wl,--build-id=none to gcc) if it accepts it, to ensure
+#   the linker doesn't add a notes section which ends up at the default
+#   load address and so defeats our attempts to keep that address clear
+#   for the client.  However, older linkers don't support this flag,
+#   so it is tested for by configure.in and is shipped to us as part of
+#   argv[2 ..].
 #
 # So: what we actually do:
 # 

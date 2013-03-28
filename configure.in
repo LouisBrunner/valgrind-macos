@@ -1723,14 +1723,46 @@ CFLAGS="-Wl,-Ttext-segment=$valt_load_address_pri_norml"
 AC_LINK_IFELSE(
 [AC_LANG_PROGRAM([ ], [return 0;])],
 [
+  linker_using_t_text="no"
   AC_SUBST([FLAG_T_TEXT], ["-Ttext-segment"])
   AC_MSG_RESULT([yes])
 ], [
+  linker_using_t_text="yes"
   AC_SUBST([FLAG_T_TEXT], ["-Ttext"])
   AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
 
+# If the linker only supports -Ttext (not -Ttext-segment) then we will
+# have to strip any build-id ELF NOTEs from the staticly linked tools.
+# Otherwise the build-id NOTE might end up at the default load address.
+# (Pedantically if the linker is gold then -Ttext is fine, but newer
+# gold versions also support -Ttext-segment. So just assume that unless
+# we can use -Ttext-segment we need to strip the build-id NOTEs.
+if test "x${linker_using_t_text}" == "xyes"; then
+AC_MSG_NOTICE([ld -Ttext used, need to strip build-id NOTEs.])
+# does the linker support -Wl,--build-id=none ?  Note, it's
+# important that we test indirectly via whichever C compiler
+# is selected, rather than testing /usr/bin/ld or whatever
+# directly.
+AC_MSG_CHECKING([if the linker accepts -Wl,--build-id=none])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wl,--build-id=none"
+
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([ ], [return 0;])],
+[
+  AC_SUBST([FLAG_NO_BUILD_ID], ["-Wl,--build-id=none"])
+  AC_MSG_RESULT([yes])
+], [
+  AC_SUBST([FLAG_NO_BUILD_ID], [""])
+  AC_MSG_RESULT([no])
+])
+else
+AC_MSG_NOTICE([ld -Ttext-segment used, no need to strip build-id NOTEs.])
+AC_SUBST([FLAG_NO_BUILD_ID], [""])
+fi
+CFLAGS=$safe_CFLAGS
 
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])

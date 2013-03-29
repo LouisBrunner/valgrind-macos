@@ -882,7 +882,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_setresgid,         sys_setresgid),          // 169
 
    LINXY(__NR_getresgid,         sys_getresgid),          // 170
-// _____(__NR_prctl,             sys_prctl),              // 171
+   LINXY(__NR_prctl,             sys_prctl),              // 171
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),       // 172
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),       // 173
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),     // 174

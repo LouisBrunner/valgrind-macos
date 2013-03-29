@@ -334,18 +334,21 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          become legit, which is really bad) and causes problems for
          exp-ptrcheck, which assumes all numbers below 1MB are
          nonpointers.  So, hackily, move it above 1MB. */
-      /* Later .. is appears ppc32-linux tries to put [vdso] at 1MB,
+      /* Later .. it appears ppc32-linux tries to put [vdso] at 1MB,
          which totally screws things up, because nothing else can go
-         there.  So bump the hacky load addess along by 0x8000, to
-         0x108000. */
-      /* Later .. on mips64 we can't use 0x108000, because mapelf will fail. */
-#if defined(VGP_mips64_linux)
+         there.  The size of [vdso] is around 2 or 3 pages, so bump
+         the hacky load addess along by 8 * VKI_PAGE_SIZE to be safe. */
+      /* Later .. on mips64 we can't use 0x108000, because mapelf will
+         fail. */
+#     if defined(VGP_mips64_linux)
       if (ebase < 0x100000)
          ebase = 0x100000;
-#else
-      if (ebase < 0x108000)
-         ebase = 0x108000;
-#endif
+#     else
+      vg_assert(VKI_PAGE_SIZE >= 4096); /* stay sane */
+      ESZ(Addr) hacky_load_address = 0x100000 + 8 * VKI_PAGE_SIZE;
+      if (ebase < hacky_load_address)
+         ebase = hacky_load_address;
+#     endif
    }
 
    info->phnum = e->e.e_phnum;

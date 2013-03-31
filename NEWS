@@ -68,6 +68,7 @@ m = merged into 3_8_BRANCH
 [382] = fixed in trunk and needs to be made available for 3.8.2 too
 
 123837    [390] semctl system call: 4rth argument is optional, depending on cmd
+135425    [390] memcheck should tell you where Freed blocks were Mallocd
 252955    [390] Impossible to compile with ccache
 253519  Memcheck reports auxv pointer accesses as invalid reads.
         FIXED r13109

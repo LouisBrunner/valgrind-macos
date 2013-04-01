@@ -54,3 +54,14 @@
    fun:__keymgr_initializer
    fun:libSystem_initializer
 }
+
+{
+   darwin-still-reachable-1
+   Memcheck:Leak
+   ...
+   fun:dwarf2_unwind_dyld_add_image_hook
+   fun:_ZN4dyld19registerAddCallbackEPFvPK11mach_headerlE
+   fun:_dyld_register_func_for_add_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}

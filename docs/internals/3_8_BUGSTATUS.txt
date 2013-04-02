@@ -87,9 +87,6 @@ branch.
 
 n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
-305728  Add support for AVX2 instructions
-   HAS_PATCH.  Is nearly OK, but needs hwcaps fixing up.
-
 305957  m_debuginfo/d3basics.c:965 (vgModuleLocal_evaluate_GX):
         Assertion 'aMin == (Addr)0' failed.
         QUERIED -- no info so far -- close?
@@ -110,6 +107,7 @@ n-i-bz  exp-sgcheck asserts on gcc-4.6.2 generated Dwarf3
 
 306340  parse_var_DIE confused by DWARF from clang-3.1
    Might be quite simple to fix; need to investigate.
+   No action so far
 
 306535  massif: force dump result every X minutes
    Queried
@@ -134,7 +132,7 @@ gcp libnss3.so debuginfo read hang
 
 164485  VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
         == https://bugzilla.redhat.com/show_bug.cgi?id=730303
-        FIX THIS
+        FIX THIS **PRIO
 
 306947  s390x: BFP rounding mode improvements
         Proposal, no action
@@ -142,18 +140,8 @@ gcp libnss3.so debuginfo read hang
 306949  s390x: BFP condition code improvements
         Proposal, no action
 
-307082  HG false positive: pthread_cond_destroy: destruction of
-        unknown cond var, w/ patch
-        I think it can be landed
-
 211352  helgrind races in helgrind's own mythread_wrapper
         NEEDINFO
-
-
-263034  Crash when loading some PPC64 binaries
-        Not sure what to do about this.  Has fix for fedora, but
-        unclear if that breaks other targets.
-        Looks OK -- commit
 
 307113  s390x: DFP support
         Huge; in progress.  Queried as to status.
@@ -163,14 +151,14 @@ gcp libnss3.so debuginfo read hang
 
 307399  amd64->IR: 0xC4 0x62 0x55 0x2E 0x18 0x44 0x39 0x87
         (vmaskmovps %ymm11,%ymm5,(%rax))
-        CONDITIONAL LOADS
+        CONDITIONAL STORES
 
 307415  3.8.1 build error - OSX Lion 10.7.4 duplicate symbol
         _mach_make_memory_entry
         OSX or XCode 4.5
 
 307500  Valgrind docs have two <title> tags
-        Should fix -- easy
+        QUERIED (unclear how to fix)
 
 307555  The impossible happened! (OSX 10.8.1 V segfault)
         Probably invalid
@@ -185,9 +173,6 @@ gcp libnss3.so debuginfo read hang
 
 308027  Warning: negative range in .debug_loc section
         QUERIED -- not sure this needs fixing or not
-
-308089  Unhandled syscall on ppc64: prctl
-        HAS_PATCH -- Trivial patch, needs landing
 
 308135  PPC32 MPC8xx has 16 bytes cache size
         HAS_PATCH -- should take this
@@ -290,21 +275,11 @@ gcp libnss3.so debuginfo read hang
         descriptor 3: $LOGFILE")
         Probably true; should fix.
 
-311690  V crashes because it redirects branches inside of a redirected
-        function
-        I thought this had been fixed (well, worked around) but
-        there's no evidence of that.
-
 311827  OS X 10.8.2 (eq_SyscallStatus): the 'impossible' happened.
         OSX108 problems
 
 311922  WARNING: unhandled syscall: 170
         Syscall; no action yet.  Might be easy to fix.
-
-311933  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (RDTSCP)
-        251569 ==
-        313348 ==
-        313354 ==
 
 312989  ioctl handling needs to do POST handling on generic ioctls and
         needs to handle BPF ioctls
@@ -329,9 +304,6 @@ gcp libnss3.so debuginfo read hang
 314236  OS X 10.8 testsuite build failure: test million.o
         OSX108  No action so far.
 
-314269  ppc: dead code in insn selection
-        No action so far
-
 314365  enable VEX to run asm helpers that do callee register saving
         In progress; not sure whether this is a good idea
 
@@ -340,10 +312,6 @@ gcp libnss3.so debuginfo read hang
 
 315199  vgcore file for threaded app does not show which thread crashed
         HAS_PATCH; needs review
-
-315345  cl-format.xml and callgrind/dump.c don't agree on
-        using cfl= or cfi= for the called function source file
-        HAS_PATCH; in progress (needs review)
 
 315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
         HAS_PATCH; needs looking at
@@ -371,9 +339,6 @@ gcp libnss3.so debuginfo read hang
 316382  Support for AMDs FMA4 instructions seem to be missing
         No action so far
 
-316503  Valgrind does not support SSE4 "movntdqa" instruction
-        Has patches, needs minor rework
-
 316528  Dump for cachegrind
         Wishlist
 
@@ -393,11 +358,12 @@ gcp libnss3.so debuginfo read hang
 
 316874  amd64->IR: 0xC4 0xE2 0xF8 0xF2 0x85 0x30 0xFF 0xFF
         Probably some AMD FMA insn?
+        QUERIED
 
 316903  memcheck/tests/origin5-bz2 FAIL with gcc-4.5+
         Possibly a real bug
 
-317078  _mm_madd_epi16, undefined * 0 should not yield uninitialised result
+317078  _mm_madd_epi16, undefined * 0 should not give uninitialised result
         True, but probably difficult to fix without perf hit
 
 317127  Fedora18/x86_64 --sanity-level=3 : aspacem segment mismatch
@@ -410,7 +376,29 @@ gcp libnss3.so debuginfo read hang
         inside pthread/mutex methods
         FreeBSD+Helgrind weirdness
 
-317318  Support for Threading Building Blocks "scalable_malloc"
-        NEEDINFO; queried
-
 -- Tue Mar 26 09:52:13 CET 2013
+
+317381  helgrind warns about xchg vs suppressed store
+        No action so far.  Not sure there's an easy fix for this.
+
+317390  Patch for FBLD/FBSTP/FTST
+        Needs cleanup+test cases.  Queried.
+
+317441  Add support for AMD's LWP (LightWeight Profiling) architecture
+        extension
+        Contains plausible infrastructure patch; no insns so far tho
+
+317444  amd64->IR: 0xC4 0x41 0x2C 0xC2 0xD2 0x8 (vcmpeq_uqps)
+        FIXED 2703 13342
+
+317461  Fix BMI assembler configure check and avx2/bmi/fma vgtest prereqs
+        FIXED 13343
+
+317463] New: bmi testcase IR SANITY CHECK FAILURE
+
+317506] New: memcheck/tests/vbit-test fails with unknown opcode after
+introduction of new Iops for AVX2, BMI, FMA support
+
+317698] New: parse_var_DIE: confused by: DW_TAG_compile_unit   using
+Intel 13.0 update 3 compiler
+

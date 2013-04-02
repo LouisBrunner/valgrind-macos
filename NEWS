@@ -96,7 +96,6 @@ m = merged into 3_8_BRANCH
 
 307038  DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8 (DW_OP_const1u et al)
         FIXED r13010
-307082  [390] HG false positive: pthread_cond_destroy: destruction of unknown cond var 
 
 307101  sys_capget second argument can be NULL
         FIXED r13021
@@ -284,6 +283,46 @@ n-i-bz  patch to allow fair-sched on android
 315534  msgrcv inside a thread causes valgrind to hang (block)
         FIXED 13289
 
+316503  Valgrind does not support SSE4 "movntdqa" instruction
+        FIXED 2700 13336
+
+311690  V crashes because it redirects branches inside of a redirected function
+        FIXED (kinda; not really) 13190
+
+314269  ppc: dead code in insn selection
+        FIXED 2697
+
+315345  cl-format.xml and callgrind/dump.c don't agree on
+        using cfl= or cfi= for the called function source file
+        FIXED 13310
+
+251569  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (RDTSCP)
+        311933 ==
+        313348 ==
+        313354 ==
+        FIXED 2701 13337
+
+305728  Add support for AVX2 instructions
+        FIXED r2702, r13338, r13339, r13340
+
+317318  Support for Threading Building Blocks "scalable_malloc"
+        WORKSFORME
+
+308089  Unhandled syscall on ppc64: prctl
+        FIXED 13350
+
+263034  Crash when loading some PPC64 binaries
+        FIXED 13351
+
+307082  HG false positive: pthread_cond_destroy: destruction of
+        unknown cond var, w/ patch
+        FIXED 13332
+
+135425  memcheck should tell you where Freed blocks were Mallocd
+        FIXED 13223
+
+269599] Increase deepest backtrace
+FIXED r??
 
 
 Release 3.8.1 (19 September 2012)

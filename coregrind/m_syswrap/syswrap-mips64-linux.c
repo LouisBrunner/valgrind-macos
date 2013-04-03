@@ -665,11 +665,11 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY (__NR_mincore, sys_mincore),
    GENX_ (__NR_madvise, sys_madvise),
    LINX_ (__NR_shmget, sys_shmget),
-   /* PLAXY(__NR_shmat,sys_shmat), */
+   LINXY (__NR_shmat, wrap_sys_shmat),
    LINXY (__NR_shmctl, sys_shmctl),
    GENXY (__NR_dup, sys_dup),
    GENXY (__NR_dup2, sys_dup2),
-   /* GENXY(__NR_dup3,sys_dup3), */
+   LINXY (__NR_dup3, sys_dup3),
    GENX_ (__NR_pause, sys_pause),
    GENXY (__NR_nanosleep, sys_nanosleep),
    GENXY (__NR_getitimer, sys_getitimer),
@@ -681,7 +681,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_socket, sys_socket),
    LINX_ (__NR_connect, sys_connect),
    LINXY (__NR_accept, sys_accept),
-   /* PLAX_(__NR_accept4,sys_accept4), */
+   LINXY (__NR_accept4, sys_accept4),
    LINX_ (__NR_sendto, sys_sendto),
    LINXY (__NR_recvfrom, sys_recvfrom),
    LINX_ (__NR_sendmsg, sys_sendmsg),
@@ -845,7 +845,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_exit_group, sys_exit_group),
    /* LINXY (__NR_lookup_dcookie, sys_lookup_dcookie), */
    LINXY (__NR_epoll_create, sys_epoll_create),
-   /* LINXY(__NR_epoll_create1,sys_epoll_create1), */
+   LINXY (__NR_epoll_create1, sys_epoll_create1),
    LINX_ (__NR_epoll_ctl, sys_epoll_ctl),
    LINXY (__NR_epoll_wait, sys_epoll_wait),
    PLAX_(__NR_rt_sigreturn,sys_rt_sigreturn),
@@ -912,7 +912,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_fallocate, sys_fallocate),
    LINXY (__NR_timerfd_create, sys_timerfd_create),
    LINXY (__NR_timerfd_gettime, sys_timerfd_gettime),
-   LINXY (__NR_timerfd_settime, sys_timerfd_settime)
+   LINXY (__NR_timerfd_settime, sys_timerfd_settime),
+   LINXY (__NR_newfstatat, sys_newfstatat)
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

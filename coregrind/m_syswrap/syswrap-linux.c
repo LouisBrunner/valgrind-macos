@@ -5015,7 +5015,7 @@ PRE(sys_fcntl)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-#  if defined(VGP_x86_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_mips64_linux)
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:

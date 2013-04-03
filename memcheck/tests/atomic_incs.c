@@ -111,44 +111,73 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       : "d" (n)
       : "cc", "memory", "0", "1");
 #elif defined(VGA_mips32)
+   /* We rely on the fact that p is 4-aligned. Otherwise 'll' may throw an
+      exception that can cause this function to fail. */
 #if defined (_MIPSEL)
    unsigned int block[3]
-      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+      = { (unsigned int)p, (unsigned int)n, 0x0 };
    do {
       __asm__ __volatile__(
-         "move   $t0, %0"         "\n\t"
-         "lw   $t1, 0($t0)"       "\n\t" // p
-         "lw   $t2, 4($t0)"       "\n\t" // n
-         "ll   $t3, 0($t1)"       "\n\t"
-         "addu   $t3, $t3, $t2"   "\n\t"
-         "andi   $t3, $t3, 0xFF"  "\n\t"
+         "move $t0, %0"           "\n\t"
+         "lw   $t1, 0($t0)"       "\n\t"  // p
+         "lw   $t2, 4($t0)"       "\n\t"  // n
+         "andi $t2, $t2, 0xFF"    "\n\t"  // n = n and 0xFF
+         "li   $t4, 0xFF"         "\n\t"
+         "nor  $t4, $t4, $zero"   "\n\t"  // $t4 = 0xFFFFFF00
+         "ll   $t3, 0($t1)"       "\n\t"  // $t3 = old value
+         "and  $t4, $t4, $t3"     "\n\t"  // $t4 = $t3 and 0xFFFFFF00
+         "addu $t3, $t3, $t2"     "\n\t"  // $t3 = $t3 + n
+         "andi $t3, $t3, 0xFF"    "\n\t"  // $t3 = $t3 and 0xFF
+         "or   $t3, $t3, $t4"     "\n\t"  // $t3 = $t3 or $t4
          "sc   $t3, 0($t1)"       "\n\t"
-         "sw $t3, 8($t0)"         "\n\t"
+         "sw   $t3, 8($t0)"       "\n\t"  // save result
          : /*out*/
          : /*in*/ "r"(&block[0])
-         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
       );
    } while (block[2] != 1);
 #elif defined (_MIPSEB)
    unsigned int block[3]
-      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+      = { (unsigned int)p, (unsigned int)n << 24, 0x0 };
    do {
       __asm__ __volatile__(
-         "move   $t0, %0"               "\n\t"
-         "lw   $t1, 0($t0)"             "\n\t" // p
-         "lw   $t2, 4($t0)"             "\n\t" // n
-         "li   $t4, 0x000000FF"         "\n\t"
-         "ll   $t3, 0($t1)"             "\n\t"
-         "addu $t3, $t3, $t2"           "\n\t"
-         "and  $t3, $t3, $t4"           "\n\t"
-         "wsbh $t4, $t3"                "\n\t"
-         "rotr $t4, $t4, 16"            "\n\t"
-         "or   $t3, $t4, $t3"           "\n\t"
-         "sc   $t3, 0($t1)"             "\n\t"
-         "sw $t3, 8($t0)"               "\n\t"
+         "move $t0, %0"          "\n\t"
+         "lw   $t1, 0($t0)"      "\n\t"  // p
+         "lw   $t2, 4($t0)"      "\n\t"  // n
+         "ll   $t3, 0($t1)"      "\n\t"
+         "addu $t3, $t3, $t2"    "\n\t"
+         "sc   $t3, 0($t1)"      "\n\t"
+         "sw   $t3, 8($t0)"      "\n\t"
          : /*out*/
          : /*in*/ "r"(&block[0])
-         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3", "t4"
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
+#endif
+#elif defined(VGA_mips64)
+   /* We rely on the fact that p is 4-aligned. Otherwise 'll' may throw an
+      exception that can cause this function to fail. */
+#if defined (_MIPSEL)
+   unsigned long block[3]
+      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   do {
+      __asm__ __volatile__(
+         "move $t0, %0"           "\n\t"
+         "ld   $t1, 0($t0)"       "\n\t"  // p
+         "ld   $t2, 8($t0)"       "\n\t"  // n
+         "andi $t2, $t2, 0xFF"    "\n\t"  // n = n and 0xFF
+         "li   $s0, 0xFF"         "\n\t"
+         "nor  $s0, $s0, $zero"   "\n\t"  // $s0 = 0xFFFFFF00
+         "ll   $t3, 0($t1)"       "\n\t"  // $t3 = old value
+         "and  $s0, $s0, $t3"     "\n\t"  // $s0 = $t3 and 0xFFFFFF00
+         "addu $t3, $t3, $t2"     "\n\t"  // $t3 = $t3 + n
+         "andi $t3, $t3, 0xFF"    "\n\t"  // $t3 = $t3 and 0xFF
+         "or   $t3, $t3, $s0"     "\n\t"  // $t3 = $t3 or $s0
+         "sc   $t3, 0($t1)"       "\n\t"
+         "sw   $t3, 16($t0)"      "\n\t"  // save result
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "s0"
       );
    } while (block[2] != 1);
 #endif
@@ -246,39 +275,73 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       : "d" (n)
       : "cc", "memory", "0", "1");
 #elif defined(VGA_mips32)
+   /* We rely on the fact that p is 4-aligned. Otherwise 'll' may throw an
+      exception that can cause this function to fail. */
 #if defined (_MIPSEL)
    unsigned int block[3]
-      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+      = { (unsigned int)p, (unsigned int)n, 0x0 };
    do {
       __asm__ __volatile__(
-         "move   $t0, %0"         "\n\t"
-         "lw   $t1, 0($t0)"       "\n\t" // p
-         "lw   $t2, 4($t0)"       "\n\t" // n
-         "ll   $t3, 0($t1)"       "\n\t"
-         "addu   $t3, $t3, $t2"   "\n\t"
-         "andi   $t3, $t3, 0xFFFF"  "\n\t"
+         "move $t0, %0"           "\n\t"
+         "lw   $t1, 0($t0)"       "\n\t"  // p
+         "lw   $t2, 4($t0)"       "\n\t"  // n
+         "andi $t2, $t2, 0xFFFF"  "\n\t"  // n = n and 0xFFFF
+         "li   $t4, 0xFFFF"       "\n\t"
+         "nor  $t4, $t4, $zero"   "\n\t"  // $t4 = 0xFFFF0000
+         "ll   $t3, 0($t1)"       "\n\t"  // $t3 = old value
+         "and  $t4, $t4, $t3"     "\n\t"  // $t4 = $t3 and 0xFFFF0000
+         "addu $t3, $t3, $t2"     "\n\t"  // $t3 = $t3 + n
+         "andi $t3, $t3, 0xFFFF"  "\n\t"  // $t3 = $t3 and 0xFFFF
+         "or   $t3, $t3, $t4"     "\n\t"  // $t3 = $t3 or $t4
          "sc   $t3, 0($t1)"       "\n\t"
-         "sw $t3, 8($t0)"         "\n\t"
+         "sw   $t3, 8($t0)"       "\n\t"  // save result
          : /*out*/
          : /*in*/ "r"(&block[0])
-         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
       );
    } while (block[2] != 1);
 #elif defined (_MIPSEB)
    unsigned int block[3]
-      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+      = { (unsigned int)p, (unsigned int)n << 16, 0x0 };
    do {
       __asm__ __volatile__(
-         "move   $t0, %0"         "\n\t"
-         "lw   $t1, 0($t0)"       "\n\t" // p
-         "li   $t2, 32694"        "\n\t" // n
-         "li   $t3, 0x1"          "\n\t"
-         "sll  $t2, $t2, 16"      "\n\t"
-         "sw   $t2, 0($t1)"       "\n\t"
-         "sw $t3, 8($t0)"         "\n\t"
+         "move $t0, %0"          "\n\t"
+         "lw   $t1, 0($t0)"      "\n\t"  // p
+         "lw   $t2, 4($t0)"      "\n\t"  // n
+         "ll   $t3, 0($t1)"      "\n\t"
+         "addu $t3, $t3, $t2"    "\n\t"
+         "sc   $t3, 0($t1)"      "\n\t"
+         "sw   $t3, 8($t0)"      "\n\t"
          : /*out*/
          : /*in*/ "r"(&block[0])
-         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
+#endif
+#elif defined(VGA_mips64)
+   /* We rely on the fact that p is 4-aligned. Otherwise 'll' may throw an
+      exception that can cause this function to fail. */
+#if defined (_MIPSEL)
+   unsigned long block[3]
+      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   do {
+      __asm__ __volatile__(
+         "move $t0, %0"           "\n\t"
+         "ld   $t1, 0($t0)"       "\n\t"  // p
+         "ld   $t2, 8($t0)"       "\n\t"  // n
+         "andi $t2, $t2, 0xFFFF"  "\n\t"  // n = n and 0xFFFF
+         "li   $s0, 0xFFFF"       "\n\t"
+         "nor  $s0, $s0, $zero"   "\n\t"  // $s0= 0xFFFF0000
+         "ll   $t3, 0($t1)"       "\n\t"  // $t3 = old value
+         "and  $s0, $s0, $t3"     "\n\t"  // $s0 = $t3 and 0xFFFF0000
+         "addu $t3, $t3, $t2"     "\n\t"  // $t3 = $t3 + n
+         "andi $t3, $t3, 0xFFFF"  "\n\t"  // $t3 = $t3 and 0xFFFF
+         "or   $t3, $t3, $s0"     "\n\t"  // $t3 = $t3 or $s0
+         "sc   $t3, 0($t1)"       "\n\t"
+         "sw   $t3, 16($t0)"      "\n\t"  // save result
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "s0"
       );
    } while (block[2] != 1);
 #endif
@@ -370,19 +433,36 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
       : "cc", "memory", "0", "1");
 #elif defined(VGA_mips32)
    unsigned int block[3]
-      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+      = { (unsigned int)p, (unsigned int)n, 0x0 };
    do {
       __asm__ __volatile__(
-         "move   $t0, %0"         "\n\t"
-         "lw   $t1, 0($t0)"       "\n\t" // p
-         "lw   $t2, 4($t0)"       "\n\t" // n
-         "ll   $t3, 0($t1)"       "\n\t"
-         "addu   $t3, $t3, $t2"   "\n\t"
-         "sc   $t3, 0($t1)"       "\n\t"
-         "sw $t3, 8($t0)"         "\n\t"
+         "move $t0, %0"        "\n\t"
+         "lw   $t1, 0($t0)"    "\n\t"  // p
+         "lw   $t2, 4($t0)"    "\n\t"  // n
+         "ll   $t3, 0($t1)"    "\n\t"
+         "addu $t3, $t3, $t2"  "\n\t"
+         "sc   $t3, 0($t1)"    "\n\t"
+         "sw   $t3, 8($t0)"    "\n\t"
          : /*out*/
          : /*in*/ "r"(&block[0])
-         : /*trash*/ "memory", "cc", "t0", "t1", "t2", "t3"
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
+#elif defined(VGA_mips64)
+   unsigned long block[3]
+      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   do {
+      __asm__ __volatile__(
+         "move  $t0, %0"        "\n\t"
+         "ld    $t1, 0($t0)"    "\n\t"  // p
+         "ld    $t2, 8($t0)"    "\n\t"  // n
+         "ll    $t3, 0($t1)"    "\n\t"
+         "addu  $t3, $t3, $t2"  "\n\t"
+         "sc    $t3, 0($t1)"    "\n\t"
+         "sd    $t3, 16($t0)"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
 #else
@@ -451,6 +531,23 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
       : "+m" (*p)
       : "d" (n)
       : "cc", "memory", "0", "1");
+#elif defined(VGA_mips64)
+   unsigned long block[3]
+      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   do {
+      __asm__ __volatile__(
+         "move  $t0, %0"        "\n\t"
+         "ld    $t1, 0($t0)"    "\n\t" // p
+         "ld    $t2, 8($t0)"    "\n\t" // n
+         "lld   $t3, 0($t1)"    "\n\t"
+         "daddu $t3, $t3, $t2"  "\n\t"
+         "scd   $t3, 0($t1)"    "\n\t"
+         "sd    $t3, 16($t0)"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
 #else
 # error "Unsupported arch"
 #endif

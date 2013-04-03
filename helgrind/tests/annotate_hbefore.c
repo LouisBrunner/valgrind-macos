@@ -188,7 +188,7 @@ UWord do_acasW(UWord* addr, UWord expected, UWord nyu )
 
 #elif defined(VGA_mips32)
 
-// mips
+// mips32
 /* return 1 if success, 0 if failure */
 UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
 {
@@ -202,13 +202,47 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
       "lw     $t3, 4(%1)"        "\n\t"
       "ll     $t1, 0($t0)"       "\n\t"
       "bne    $t1, $t2, exit_0"  "\n\t"
+      "nop"                      "\n\t"
       "sc     $t3, 0($t0)"       "\n\t"
       "move   %0, $t3"           "\n\t"
       "b exit"                   "\n\t"
       "nop"                      "\n\t"
       "exit_0:"                  "\n\t"
-      "move   %0, $0"            "\n\t"
-      "exit:"                     "\n\t"
+      "move   %0, $zero"         "\n\t"
+      "exit:"                    "\n\t"
+      : /*out*/ "=r"(success)
+      : /*in*/ "r"(&block[0])
+      : /*trash*/ "t0", "t1", "t2", "t3", "memory"
+   );
+
+   assert(success == 0 || success == 1);
+   return success;
+}
+
+#elif defined(VGA_mips64)
+
+// mips64
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+  UWord old, success;
+  UWord block[3] = { (UWord)addr, nyu, expected};
+
+   __asm__ __volatile__(
+      ".set noreorder"           "\n\t"
+      "ld     $t0, 0(%1)"        "\n\t"
+      "ld     $t2, 16(%1)"       "\n\t"
+      "ld     $t3, 8(%1)"        "\n\t"
+      "ll     $t1, 0($t0)"       "\n\t"
+      "bne    $t1, $t2, exit_0"  "\n\t"
+      "nop"                      "\n\t"
+      "sc     $t3, 0($t0)"       "\n\t"
+      "move   %0, $t3"           "\n\t"
+      "b exit"                   "\n\t"
+      "nop"                      "\n\t"
+      "exit_0:"                  "\n\t"
+      "move   %0, $zero"         "\n\t"
+      "exit:"                    "\n\t"
       : /*out*/ "=r"(success)
       : /*in*/ "r"(&block[0])
       : /*trash*/ "t0", "t1", "t2", "t3", "memory"

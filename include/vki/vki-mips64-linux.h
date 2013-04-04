@@ -987,6 +987,15 @@ typedef struct vki_siginfo {
 #define VKI_BRK_OVERFLOW 6  /* Overflow check */
 #define VKI_BRK_DIVZERO  7  /* Divide by zero check */
 
+//----------------------------------------------------------------------
+// From linux-3.6.35.5/arch/mips/include/socket.h
+//----------------------------------------------------------------------
+enum vki_sock_type {
+        VKI_SOCK_STREAM = 2,
+        // [[others omitted]]
+};
+#define ARCH_HAS_SOCKET_TYPES 1
+
 #endif // __VKI_MIPS64_LINUX_H
 
 /*--------------------------------------------------------------------*/

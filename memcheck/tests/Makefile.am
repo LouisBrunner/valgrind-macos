@@ -214,6 +214,7 @@ EXTRA_DIST = \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
 	trivialleak.stderr.exp trivialleak.vgtest trivialleak.stderr.exp2 \
+	undef_malloc_args.stderr.exp undef_malloc_args.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
 	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp varinfo1.stderr.exp-ppc64 \
@@ -301,6 +302,7 @@ check_PROGRAMS = \
 	supp_unknown supp1 supp2 suppfree \
 	test-plo \
 	trivialleak \
+	undef_malloc_args \
 	unit_libcbase unit_oset \
 	varinfo1 varinfo2 varinfo3 varinfo4 \
 	varinfo5 varinfo5so.so varinfo6 \

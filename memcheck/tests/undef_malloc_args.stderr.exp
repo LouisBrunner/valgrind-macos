@@ -1,0 +1,33 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:15)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:19)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:22)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:25)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:30)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:37)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:45)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: valloc (vg_replace_malloc.c:...)
+   by 0x........: main (undef_malloc_args.c:52)
+

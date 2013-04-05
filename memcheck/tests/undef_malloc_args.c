@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include "../memcheck.h"
 int main (int argc, char*argv[])
 {
@@ -30,7 +30,7 @@ int main (int argc, char*argv[])
       new_p = calloc(nmemb, def_size);
       free (new_p);
    }
-
+#if 0
    {
       size_t alignment = 1;
       VALGRIND_MAKE_MEM_UNDEFINED(&alignment, 1);
@@ -52,6 +52,6 @@ int main (int argc, char*argv[])
       new_p = valloc(size);
       free (new_p);
    }
-
+#endif
    return 0;
 }

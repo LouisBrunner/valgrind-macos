@@ -848,7 +848,7 @@ turn maintained by
 <title>Introduction to UCode</title>
 
 <para>UCode lies at the heart of the x86-to-x86 JITter.  The
-basic premise is that dealing the the x86 instruction set head-on
+basic premise is that dealing with the x86 instruction set head-on
 is just too darn complicated, so we do the traditional
 compiler-writer's trick and translate it into a simpler,
 easier-to-deal-with form.</para>

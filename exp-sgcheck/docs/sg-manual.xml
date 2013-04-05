@@ -217,7 +217,7 @@ of.</para>
   </listitem>
 
   <listitem>
-   <para>Coverage: SGCheck does not check whether the the areas read
+   <para>Coverage: SGCheck does not check whether the areas read
    or written by system calls do overrun stack or global arrays.  This
    would be easy to add.</para>
   </listitem>

@@ -497,7 +497,7 @@ behavior of the DRD tool itself:</para>
         Print stack usage at thread exit time. When a program creates a large
         number of threads it becomes important to limit the amount of virtual
         memory allocated for thread stacks. This option makes it possible to
-        observe how much stack memory has been used by each thread of the the
+        observe how much stack memory has been used by each thread of the
         client program. Note: the DRD tool itself allocates some temporary
         data on the client thread stack. The space necessary for this
         temporary data must be allocated by the client program when it

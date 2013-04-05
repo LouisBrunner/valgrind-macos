@@ -821,7 +821,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       bytes are marked as initialised.</para>
 
       <para>Note that code that behaves in this way is in violation of
-      the the ISO C/C++ standards, and should be considered broken.  If
+      the ISO C/C++ standards, and should be considered broken.  If
       at all possible, such code should be fixed.  This option should be
       used only as a last resort.</para>
     </listitem>

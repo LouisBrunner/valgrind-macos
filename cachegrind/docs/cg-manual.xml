@@ -352,7 +352,7 @@ a column contains only a dot it means the function never performs
 that event (e.g. the third row shows that
 <computeroutput>strcmp()</computeroutput> contains no
 instructions that write to memory). The name
-<computeroutput>???</computeroutput> is used if the the file name
+<computeroutput>???</computeroutput> is used if the file name
 and/or function name could not be determined from debugging
 information. If most of the entries have the form
 <computeroutput>???:???</computeroutput> the program probably
@@ -1367,7 +1367,7 @@ shortcomings:</para>
 </itemizedlist>
 
 <para>Another thing worth noting is that results are very sensitive.
-Changing the size of the the executable being profiled, or the sizes
+Changing the size of the executable being profiled, or the sizes
 of any of the shared libraries it uses, or even the length of their
 file names, can perturb the results.  Variations will be small, but
 don't expect perfectly repeatable results if your program changes at

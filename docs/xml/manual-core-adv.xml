@@ -1542,7 +1542,7 @@ that wildcards are allowed for both sonames and function names.
 The details are discussed below.</para>
 
 <para><computeroutput>VALGRIND_GET_ORIG_FN</computeroutput>: 
-once in the the wrapper, the first priority is
+once in the wrapper, the first priority is
 to get hold of the address of the original (and any other supporting
 information needed).  This is stored in a value of opaque 
 type <computeroutput>OrigFn</computeroutput>.

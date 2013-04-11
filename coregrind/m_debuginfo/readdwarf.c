@@ -991,7 +991,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    UInt   acode, abcode;
    ULong  atoffs, blklen;
    Int    level;
-   /* UShort ver; */
+   UShort ver;
 
    UChar addr_size;
    UChar* p = unitblock_img;
@@ -1008,7 +1008,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    p += ui->dw64 ? 12 : 4;
 
    /* version should be 2, 3 or 4 */
-   /* ver = ML_(read_UShort)(p); */
+   ver = ML_(read_UShort)(p);
    p += 2;
 
    /* get offset in abbrev */
@@ -1122,7 +1122,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x0c: /* FORM_flag */      p++; break;
             case 0x0d: /* FORM_sdata */     read_leb128S( &p ); break;
             case 0x0f: /* FORM_udata */     read_leb128U( &p ); break;
-            case 0x10: /* FORM_ref_addr */  p += ui->dw64 ? 8 : 4; break;
+            case 0x10: /* FORM_ref_addr */  p += (ver == 2) ? addr_size : (ui->dw64 ? 8 : 4); break;
             case 0x11: /* FORM_ref1 */      p++; break;
             case 0x12: /* FORM_ref2 */      p += 2; break;
             case 0x13: /* FORM_ref4 */      p += 4; break;

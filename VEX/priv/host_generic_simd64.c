@@ -36,9 +36,10 @@
 /* Generic helper functions for doing 64-bit SIMD arithmetic in cases
    where the instruction selectors cannot generate code in-line.
    These are purely back-end entities and cannot be seen/referenced
-   from IR. */
+   from IR.  There are also helpers for 32-bit arithmetic in here. */
 
 #include "libvex_basictypes.h"
+#include "main_util.h"              // LIKELY, UNLIKELY
 #include "host_generic_simd64.h"
 
 
@@ -1433,7 +1434,7 @@ UInt h_generic_calc_QSub32S ( UInt xx, UInt yy )
 #define GET( x, y ) ( ( ( x ) & ( 0x1UL << ( y ) ) ) >> ( y ) )
 #define PUT( x, y ) ( ( x )<< ( y ) )
 
-ULong dpb_to_bcd( ULong chunk )
+static ULong dpb_to_bcd( ULong chunk )
 {
    Short a, b, c, d, e, f, g, h, i, j, k, m;
    Short p, q, r, s, t, u, v, w, x, y;
@@ -1473,7 +1474,7 @@ ULong dpb_to_bcd( ULong chunk )
    return value;
 }
 
-ULong bcd_to_dpb( ULong chunk )
+static ULong bcd_to_dpb( ULong chunk )
 {
    Short a, b, c, d, e, f, g, h, i, j, k, m;
    Short p, q, r, s, t, u, v, w, x, y;
@@ -1516,7 +1517,7 @@ ULong bcd_to_dpb( ULong chunk )
    return value;
 }
 
-ULong h_DPBtoBCD( ULong dpb )
+ULong h_calc_DPBtoBCD( ULong dpb )
 {
    ULong result, chunk;
    Int i;
@@ -1531,7 +1532,7 @@ ULong h_DPBtoBCD( ULong dpb )
    return result;
 }
 
-ULong h_BCDtoDPB( ULong bcd )
+ULong h_calc_BCDtoDPB( ULong bcd )
 {
    ULong result, chunk;
    Int i;
@@ -1549,7 +1550,36 @@ ULong h_BCDtoDPB( ULong bcd )
 #undef GET
 #undef PUT
 
+
+/* ----------------------------------------------------- */
+/* Signed and unsigned integer division, that behave like
+   the ARMv7 UDIV ansd SDIV instructions. */
+/* ----------------------------------------------------- */
+
+UInt h_calc_udiv32_w_arm_semantics ( UInt x, UInt y )
+{
+   // Division by zero --> zero
+   if (UNLIKELY(y == 0)) return 0;
+   // C requires rounding towards zero, which is also what we need.
+   return x / y;
+}
+
+Int h_calc_sdiv32_w_arm_semantics ( Int x, Int y )
+{
+   // Division by zero --> zero
+   if (UNLIKELY(y == 0)) return 0;
+   // The single case that produces an unpresentable result
+   if (UNLIKELY( ((UInt)x) == ((UInt)0x80000000)
+                 && ((UInt)y) == ((UInt)0xFFFFFFFF) ))
+      return (Int)(UInt)0x80000000;
+   // Else return the result rounded towards zero.  C89 says
+   // this is implementation defined (in the signed case), but gcc
+   // promises to round towards zero.  Nevertheless, at startup,
+   // in main_main.c, do a check for that.
+   return x / y;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                               host_generic_simd64.c ---*/
 /*---------------------------------------------------------------*/
-

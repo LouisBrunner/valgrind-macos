@@ -2077,7 +2077,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
-         fdescr = (HWord*)h_BCDtoDPB;
+         fdescr = (HWord*)h_calc_BCDtoDPB;
          addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]),
                                       argiregs, RetLocInt) );
 
@@ -2106,7 +2106,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
-         fdescr = (HWord*)h_DPBtoBCD;
+         fdescr = (HWord*)h_calc_DPBtoBCD;
          addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]),
                                       argiregs, RetLocInt ) );
 
@@ -3446,7 +3446,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          addInstr( env, mk_iMOVds_RR( argregs[argreg], tmpLo ) );
 
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
-         target = toUInt( Ptr_to_ULong(h_BCDtoDPB ) );
+         target = toUInt( Ptr_to_ULong(h_calc_BCDtoDPB ) );
 
          addInstr( env, PPCInstr_Call( cc, (Addr64)target,
                                        argiregs, RetLoc2Int ) );
@@ -3486,7 +3486,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
 
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
-         target = toUInt( Ptr_to_ULong( h_DPBtoBCD ) );
+         target = toUInt( Ptr_to_ULong( h_calc_DPBtoBCD ) );
 
          addInstr(env, PPCInstr_Call( cc, (Addr64)target,
                                       argiregs, RetLoc2Int ) );

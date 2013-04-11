@@ -75,6 +75,14 @@ static Bool   are_valid_hwcaps ( VexArch arch, UInt hwcaps );
 static const HChar* show_hwcaps ( VexArch arch, UInt hwcaps );
 
 
+/* --------- helpers --------- */
+
+__attribute__((noinline))
+static UInt udiv32 ( UInt x, UInt y ) { return x/y; }
+__attribute__((noinline))
+static  Int sdiv32 (  Int x,  Int y ) { return x/y; }
+
+
 /* --------- Initialise the library. --------- */
 
 /* Exported to library client. */
@@ -170,6 +178,16 @@ void LibVEX_Init (
       vassert(sizeof(IRExpr) == 32);
       vassert(sizeof(IRStmt) == 32);
    }
+
+   /* Check that signed integer division on the host rounds towards
+      zero.  If not, h_calc_sdiv32_w_arm_semantics() won't work
+      correctly. */
+   /* 100.0 / 7.0 == 14.2857 */
+   vassert(udiv32(100, 7) == 14);
+   vassert(sdiv32(100, 7) == 14);
+   vassert(sdiv32(-100, 7) == -14); /* and not -15 */
+   vassert(sdiv32(100, -7) == -14); /* ditto */
+   vassert(sdiv32(-100, -7) == 14); /* not sure what this proves */
 
    /* Really start up .. */
    vex_debuglevel         = debuglevel;

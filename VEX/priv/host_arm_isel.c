@@ -1374,6 +1374,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = &h_generic_calc_QSub32S; break;
          case Iop_QSub16Ux2:
             fn = &h_generic_calc_QSub16Ux2; break;
+         case Iop_DivU32:
+            fn = &h_calc_udiv32_w_arm_semantics; break;
+         case Iop_DivS32:
+            fn = &h_calc_sdiv32_w_arm_semantics; break;
          default:
             break;
       }

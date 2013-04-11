@@ -13845,6 +13845,51 @@ DisResult disInstr_ARM_WRK (
       /* fall through */
    }
 
+   /* --------------------- Integer Divides --------------------- */
+   // SDIV
+   if (BITS8(0,1,1,1,0,0,0,1) == INSN(27,20)
+       && INSN(15,12) == BITS4(1,1,1,1)
+       && INSN(7,4) == BITS4(0,0,0,1)) {
+      UInt rD = INSN(19,16);
+      UInt rM = INSN(11,8);
+      UInt rN = INSN(3,0);
+      if (rD == 15 || rM == 15 || rN == 15) {
+         /* Unpredictable; don't decode; fall through */
+      } else {
+         IRTemp res  = newTemp(Ity_I32);
+         IRTemp argL = newTemp(Ity_I32);
+         IRTemp argR = newTemp(Ity_I32);
+         assign(argL, getIRegA(rN));
+         assign(argR, getIRegA(rM));
+         assign(res, binop(Iop_DivS32, mkexpr(argL), mkexpr(argR)));
+         putIRegA(rD, mkexpr(res), condT, Ijk_Boring);
+         DIP("sdiv r%u, r%u, r%u\n", rD, rN, rM);
+         goto decode_success;
+      }
+    }
+
+   // UDIV
+   if (BITS8(0,1,1,1,0,0,1,1) == INSN(27,20)
+       && INSN(15,12) == BITS4(1,1,1,1)
+       && INSN(7,4) == BITS4(0,0,0,1)) {
+      UInt rD = INSN(19,16);
+      UInt rM = INSN(11,8);
+      UInt rN = INSN(3,0);
+      if (rD == 15 || rM == 15 || rN == 15) {
+         /* Unpredictable; don't decode; fall through */
+      } else {
+         IRTemp res  = newTemp(Ity_I32);
+         IRTemp argL = newTemp(Ity_I32);
+         IRTemp argR = newTemp(Ity_I32);
+         assign(argL, getIRegA(rN));
+         assign(argR, getIRegA(rM));
+         assign(res, binop(Iop_DivU32, mkexpr(argL), mkexpr(argR)));
+         putIRegA(rD, mkexpr(res), condT, Ijk_Boring);
+         DIP("udiv r%u, r%u, r%u\n", rD, rN, rM);
+         goto decode_success;
+      }
+   }
+
    // MLA, MLS
    if (BITS8(0,0,0,0,0,0,1,0) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,0))
        && INSN(7,4) == BITS4(1,0,0,1)) {
@@ -18396,6 +18441,44 @@ DisResult disInstr_THUMB_WRK (
          assign(res, binop(Iop_Mul32, getIRegT(rN), getIRegT(rM)));
          putIRegT(rD, mkexpr(res), condT);
          DIP("mul.w r%u, r%u, r%u\n", rD, rN, rM);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- SDIV.W Rd, Rn, Rm -------------- */
+   if (INSN0(15,4) == 0xFB9
+       && (INSN1(15,0) & 0xF0F0) == 0xF0F0) {
+      UInt rN = INSN0(3,0);
+      UInt rD = INSN1(11,8);
+      UInt rM = INSN1(3,0);
+      if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM)) {
+         IRTemp res  = newTemp(Ity_I32);
+         IRTemp argL = newTemp(Ity_I32);
+         IRTemp argR = newTemp(Ity_I32);
+         assign(argL, getIRegT(rN));
+         assign(argR, getIRegT(rM));
+         assign(res, binop(Iop_DivS32, mkexpr(argL), mkexpr(argR)));
+         putIRegT(rD, mkexpr(res), condT);
+         DIP("sdiv.w r%u, r%u, r%u\n", rD, rN, rM);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- UDIV.W Rd, Rn, Rm -------------- */
+   if (INSN0(15,4) == 0xFBB
+       && (INSN1(15,0) & 0xF0F0) == 0xF0F0) {
+      UInt rN = INSN0(3,0);
+      UInt rD = INSN1(11,8);
+      UInt rM = INSN1(3,0);
+      if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM)) {
+         IRTemp res  = newTemp(Ity_I32);
+         IRTemp argL = newTemp(Ity_I32);
+         IRTemp argR = newTemp(Ity_I32);
+         assign(argL, getIRegT(rN));
+         assign(argR, getIRegT(rM));
+         assign(res, binop(Iop_DivU32, mkexpr(argL), mkexpr(argR)));
+         putIRegT(rD, mkexpr(res), condT);
+         DIP("udiv.w r%u, r%u, r%u\n", rD, rN, rM);
          goto decode_success;
       }
    }

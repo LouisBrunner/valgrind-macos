@@ -19017,6 +19017,29 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* -------------- (T1) LDRT reg+#imm8 -------------- */
+   /* Load Register Unprivileged:
+      ldrt Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,0,0,1) && INSN0(5,4) == BITS2(0,1)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rT    = INSN1(15,12);
+      UInt rN    = INSN0(3,0);
+      UInt imm8  = INSN1(7,0);
+      Bool valid = True;
+      if (rN == 15 || isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt, ILGop_Ident32, ea, llGetIReg(rT), condT );
+         putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+         put_ITSTATE(new_itstate);
+         DIP("ldrt r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
    /* ----------------------------------------------------------- */
    /* -- VFP (CP 10, CP 11) instructions (in Thumb mode)       -- */
    /* ----------------------------------------------------------- */

@@ -4,6 +4,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	intdiv.stdout.exp intdiv.stderr.exp intdiv.vgtest \
 	ldrt.stdout.exp ldrt.stderr.exp ldrt.vgtest \
 	neon128.stdout.exp neon128.stderr.exp neon128.vgtest \
 	neon64.stdout.exp neon64.stderr.exp neon64.vgtest \
@@ -16,6 +17,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	allexec \
+	intdiv \
 	ldrt \
 	neon128 \
 	neon64 \
@@ -56,4 +58,5 @@ neon64_CFLAGS     = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
 			-mfpu=neon \
 			-mthumb
 
-ldrt_CFLAGS	  = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 -mthumb
+intdiv_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a15 -mthumb
+ldrt_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a8 -mthumb

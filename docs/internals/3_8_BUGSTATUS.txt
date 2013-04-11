@@ -307,14 +307,8 @@ gcp libnss3.so debuginfo read hang
 314365  enable VEX to run asm helpers that do callee register saving
         In progress; not sure whether this is a good idea
 
-314718  ARM: implement integer divide instruction (sdiv and udiv)
-        HAS_PATCH, but needs working through
-
 315199  vgcore file for threaded app does not show which thread crashed
         HAS_PATCH; needs review
-
-315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
-        HAS_PATCH; needs looking at
 
 315828  massif "internal error" vgPlain_arena_free when RPATH includes
         /usr/local/lib
@@ -376,8 +370,6 @@ gcp libnss3.so debuginfo read hang
         inside pthread/mutex methods
         FreeBSD+Helgrind weirdness
 
--- Tue Mar 26 09:52:13 CET 2013
-
 317381  helgrind warns about xchg vs suppressed store
         No action so far.  Not sure there's an easy fix for this.
 
@@ -388,17 +380,19 @@ gcp libnss3.so debuginfo read hang
         extension
         Contains plausible infrastructure patch; no insns so far tho
 
-317444  amd64->IR: 0xC4 0x41 0x2C 0xC2 0xD2 0x8 (vcmpeq_uqps)
-        FIXED 2703 13342
+317698  parse_var_DIE: confused by: DW_TAG_compile_unit using
+        Intel 13.0 update 3 compiler
+        Reporter has queried Intel since this might be an ICC bug
 
-317461  Fix BMI assembler configure check and avx2/bmi/fma vgtest prereqs
-        FIXED 13343
+317893  massif terminates without any message
+        Probably just a memory limit thing.  Close as a dup, but
+        of what?
 
-317463] New: bmi testcase IR SANITY CHECK FAILURE
+318030  addHRegUse takes a lot of CPU time; band-aid speedup
+        patch within
+        No action so far
 
-317506] New: memcheck/tests/vbit-test fails with unknown opcode after
-introduction of new Iops for AVX2, BMI, FMA support
+318050  libmpiwrap fails to compile with out-of-source build
+        Has simple-sounding fix; should commit.
 
-317698] New: parse_var_DIE: confused by: DW_TAG_compile_unit   using
-Intel 13.0 update 3 compiler
-
+Thu Apr 11 18:16:04 CEST 2013

@@ -324,6 +324,25 @@ n-i-bz  patch to allow fair-sched on android
 269599] Increase deepest backtrace
 FIXED r??
 
+317444  amd64->IR: 0xC4 0x41 0x2C 0xC2 0xD2 0x8 (vcmpeq_uqps)
+        FIXED 2703 13342
+
+317461  Fix BMI assembler configure check and avx2/bmi/fma vgtest prereqs
+        FIXED 13343
+
+317463  bmi testcase IR SANITY CHECK FAILURE
+        FIXED 2704
+
+314718  ARM: implement integer divide instruction (sdiv and udiv)
+        FIXED 2706 13365
+
+315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
+        FIXED 2705 13364
+
+317506  memcheck/tests/vbit-test fails with unknown opcode after
+        introduction of new Iops for AVX2, BMI, FMA support
+        FIXED 13347
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

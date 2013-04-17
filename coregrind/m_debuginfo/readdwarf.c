@@ -965,12 +965,14 @@ static UChar* lookup_abbrev( UChar* p, UInt acode )
 }
 
 /* Read general information for a particular compile unit block in
- * the .debug_info section.
+ * the .debug_info section. In particular read the name, compdir and
+ * stmt_list needed to parse the line number information.
  * 
  * Input: - unitblock is the start of a compilation
  *          unit block in .debuginfo section
  *        - debugabbrev is start of .debug_abbrev section
  *        - debugstr is start of .debug_str section
+ *        - debugstr_alt_img is start of .debug_str section in alt debug file
  *        
  * Output: Fill members of ui pertaining to the compilation unit:
  *         - ui->name is the name of the compilation unit
@@ -990,7 +992,6 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 {
    UInt   acode, abcode;
    ULong  atoffs, blklen;
-   Int    level;
    UShort ver;
 
    UChar addr_size;
@@ -1021,39 +1022,32 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 
    end_img     = unitblock_img 
                  + blklen + (ui->dw64 ? 12 : 4); /* End of this block */
-   level       = 0;                        /* Level in the abbrev tree */
    abbrev_img  = debugabbrev_img 
                  + atoffs; /* Abbreviation data for this block */
    
-   /* Read the compilation unit entries */
-   while ( p < end_img ) {
-      Bool has_child;
+   /* Read the compilation unit entry - this is always the first DIE.
+    * See DWARF4 para 7.5. */
+   if ( p < end_img ) {
       UInt tag;
 
       acode = read_leb128U( &p ); /* abbreviation code */
-      if ( acode == 0 ) {
-         /* NULL entry used for padding - or last child for a sequence
-            - see para 7.5.3 */
-         level--;
-         continue;
-      }
       
       /* Read abbreviation header */
       abcode = read_leb128U( &abbrev_img ); /* abbreviation code */
       if ( acode != abcode ) {
-         /* We are in in children list, and must rewind to a
-          * previously declared abbrev code.  This code works but is
-          * not triggered since we shortcut the parsing once we have
-          * read the compile_unit block.  This should only occur when
-          * level > 0 */
+         /* This isn't illegal, but somewhat unlikely. Normally the
+          * first abbrev describes the first DIE, the compile_unit.
+          * But maybe this abbrevation data is shared with another
+          * or it is a NULL entry used for padding. See para 7.5.3. */
          abbrev_img = lookup_abbrev( debugabbrev_img + atoffs, acode );
       }
 
       tag = read_leb128U( &abbrev_img );
-      has_child = *(abbrev_img++) == 1; /* DW_CHILDREN_yes */
 
-      if ( has_child )
-         level++;
+      if ( tag != 0x0011 /*TAG_compile_unit*/ )
+         return; /* Not a compile unit (might be partial) or broken DWARF. */
+
+      abbrev_img++; /* DW_CHILDREN_yes or DW_CHILDREN_no */
 
       /* And loop on entries */
       for ( ; ; ) {
@@ -1151,16 +1145,9 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             else if ( name == 0x10 ) ui->stmt_list = cval; /* DW_AT_stmt_list */
          }
       }
-      /* Shortcut the parsing once we have read the compile_unit block
-       * That's enough info for us, and we are not gdb ! */
-      if ( tag == 0x0011 /*TAG_compile_unit*/ )
-         break;
-   } /* Loop on each sub block */
-
-   /* This test would be valid if we were not shortcutting the parsing
-   if (level != 0)
-      VG_(printf)( "#### Exiting debuginfo block at level %d !!!\n", level );
-   */
+   } /* Just read the first DIE, if that wasn't the compile_unit then
+      * this might have been a partial unit or broken DWARF info.
+      * That's enough info for us, and we are not gdb ! */
 }
 
 

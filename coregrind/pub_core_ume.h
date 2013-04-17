@@ -52,6 +52,7 @@ typedef
 #if !defined(VGO_darwin)
       Addr phdr;         // OUT: address phdr was mapped at
       Int  phnum;        // OUT: number of phdrs
+      UInt stack_prot;   // OUT: stack permissions
       Addr interp_base;  // OUT: where interpreter (ld.so) was mapped
 #else
       Addr  stack_start;      // OUT: address of start of stack segment (hot)

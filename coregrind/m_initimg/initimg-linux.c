@@ -557,7 +557,7 @@ Addr setup_client_stack( void*  init_sp,
         res = VG_(am_mmap_anon_fixed_client)(
                  anon_start -inner_HACK,
                  anon_size +inner_HACK,
-	         VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
+	         info->stack_prot
 	      );
      }
      if ((!ok) || sr_isError(res)) {

@@ -1267,7 +1267,6 @@ static IRExpr* mk_armg_calculate_flag_qc ( IRExpr* resL, IRExpr* resR, Bool Q )
                               binop(Iop_GetElem32x2, resR, mkU8(1)) );
    }
 
-#if 1
    call1 = mkIRExprCCall(
              Ity_I32,
              0/*regparm*/, 
@@ -1287,39 +1286,6 @@ static IRExpr* mk_armg_calculate_flag_qc ( IRExpr* resL, IRExpr* resR, Bool Q )
    } else {
       res = call1;
    }
-#else
-   if (Q) {
-      res = unop(Iop_1Uto32,
-                 binop(Iop_CmpNE32,
-                       binop(Iop_Or32,
-                             binop(Iop_Or32,
-                                   binop(Iop_Xor32,
-                                         args1[0],
-                                         args1[2]),
-                                   binop(Iop_Xor32,
-                                         args1[1],
-                                         args1[3])),
-                             binop(Iop_Or32,
-                                   binop(Iop_Xor32,
-                                         args2[0],
-                                         args2[2]),
-                                   binop(Iop_Xor32,
-                                         args2[1],
-                                         args2[3]))),
-                       mkU32(0)));
-   } else {
-      res = unop(Iop_1Uto32,
-                 binop(Iop_CmpNE32,
-                       binop(Iop_Or32,
-                             binop(Iop_Xor32,
-                                   args1[0],
-                                   args1[2]),
-                             binop(Iop_Xor32,
-                                   args1[1],
-                                   args1[3])),
-                       mkU32(0)));
-   }
-#endif
    return res;
 }
 
@@ -3201,10 +3167,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                tmp = newTemp(Ity_I64);
             }
             assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
             assign(tmp, binop(op2, mkexpr(arg_n), mkexpr(arg_m)));
             setFlag_QC(mkexpr(res), mkexpr(tmp), Q, condT);
-#endif
             DIP("vqadd.%c%d %c%d, %c%d, %c%d\n",
                 U ? 'u' : 's',
                 8 << size, reg_t, dreg, reg_t, nreg, reg_t, mreg);
@@ -3613,10 +3577,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
             else
                tmp = newTemp(Ity_I64);
             assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
             assign(tmp, binop(op2, mkexpr(arg_n), mkexpr(arg_m)));
             setFlag_QC(mkexpr(res), mkexpr(tmp), Q, condT);
-#endif
             DIP("vqsub.%c%u %c%u, %c%u, %c%u\n",
                 U ? 'u' : 's', 8 << size,
                 Q ? 'q' : 'd', dreg, Q ? 'q' : 'd', nreg, Q ? 'q' : 'd',
@@ -3801,7 +3763,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                mask = newTemp(Ity_I64);
             }
             assign(res, binop(op, mkexpr(arg_m), mkexpr(arg_n)));
-#ifndef DISABLE_QC_FLAG
             /* Only least significant byte from second argument is used.
                Copy this byte to the whole vector element. */
             assign(shval, binop(op_shrn,
@@ -3845,7 +3806,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                        binop(Q ? Iop_AndV128 : Iop_And64,
                              mkexpr(arg_m), mkexpr(mask)),
                        Q, condT);
-#endif
             DIP("vqshl.%c%u %c%u, %c%u, %c%u\n",
                 U ? 'u' : 's', 8 << size,
                 Q ? 'q' : 'd', dreg, Q ? 'q' : 'd', mreg, Q ? 'q' : 'd',
@@ -4116,7 +4076,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
             assign(res, binop(op_add,
                               binop(op, mkexpr(arg_m), mkexpr(arg_n)),
                               mkexpr(round)));
-#ifndef DISABLE_QC_FLAG
             /* If shift is greater or equal to the element size and element is
                non-zero, then QC flag should be set. */
             esize = (8 << size) - 1;
@@ -4144,7 +4103,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                        binop(Q ? Iop_AndV128 : Iop_And64,
                              mkexpr(arg_m), mkexpr(mask)),
                        Q, condT);
-#endif
             DIP("vqrshl.%c%u %c%u, %c%u, %c%u\n",
                 U ? 'u' : 's', 8 << size,
                 Q ? 'q' : 'd', dreg, Q ? 'q' : 'd', mreg, Q ? 'q' : 'd',
@@ -4547,7 +4505,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      vassert(0);
                }
                assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
                setFlag_QC(binop(Q ? Iop_AndV128 : Iop_And64,
                                 binop(op2, mkexpr(arg_n),
                                            Q ? mkU128(imm) : mkU64(imm)),
@@ -4555,7 +4512,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                                            Q ? mkU128(imm) : mkU64(imm))),
                           Q ? mkU128(0) : mkU64(0),
                           Q, condT);
-#endif
                DIP("vqdmulh.s%u %c%u, %c%u, %c%u\n",
                    8 << size, Q ? 'q' : 'd',
                    dreg, Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
@@ -4583,7 +4539,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      vassert(0);
                }
                assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
                setFlag_QC(binop(Q ? Iop_AndV128 : Iop_And64,
                                 binop(op2, mkexpr(arg_n),
                                            Q ? mkU128(imm) : mkU64(imm)),
@@ -4591,7 +4546,6 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                                            Q ? mkU128(imm) : mkU64(imm))),
                           Q ? mkU128(0) : mkU64(0),
                           Q, condT);
-#endif
                DIP("vqrdmulh.s%u %c%u, %c%u, %c%u\n",
                    8 << size, Q ? 'q' : 'd',
                    dreg, Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
@@ -5170,7 +5124,6 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
          res = newTemp(Ity_V128);
          tmp = newTemp(Ity_V128);
          assign(res, binop(op, getDRegI64(nreg), getDRegI64(mreg)));
-#ifndef DISABLE_QC_FLAG
          assign(tmp, binop(op2, getQReg(dreg), mkexpr(res)));
          setFlag_QC(mkexpr(tmp), binop(add, getQReg(dreg), mkexpr(res)),
                     True, condT);
@@ -5179,7 +5132,6 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
                           binop(cmp, getDRegI64(mreg), mkU64(imm))),
                     mkU64(0),
                     False, condT);
-#endif
          putQReg(dreg, binop(add, getQReg(dreg), mkexpr(res)), condT);
          DIP("vqdml%cl.s%u q%u, d%u, d%u\n", P ? 's' : 'a', 8 << size, dreg,
              nreg, mreg);
@@ -5241,13 +5193,11 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
          }
          putQReg(dreg, binop(op, getDRegI64(nreg), getDRegI64(mreg)),
                condT);
-#ifndef DISABLE_QC_FLAG
          setFlag_QC(binop(Iop_And64,
                           binop(op2, getDRegI64(nreg), mkU64(imm)),
                           binop(op2, getDRegI64(mreg), mkU64(imm))),
                     mkU64(0),
                     False, condT);
-#endif
          DIP("vqdmull.s%u q%u, d%u, d%u\n", 8 << size, dreg, nreg, mreg);
          return True;
       default:
@@ -5496,7 +5446,6 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
       res = newTemp(Ity_V128);
       tmp = newTemp(Ity_V128);
       assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
       assign(tmp, binop(op2, getQReg(dreg), mkexpr(res)));
       setFlag_QC(binop(Iop_And64,
                        binop(cmp, mkexpr(arg_n), mkU64(imm)),
@@ -5505,7 +5454,6 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
                  False, condT);
       setFlag_QC(mkexpr(tmp), binop(add, getQReg(dreg), mkexpr(res)),
                  True, condT);
-#endif
       putQReg(dreg, binop(add, getQReg(dreg), mkexpr(res)), condT);
       DIP("vqdml%cl.s%u q%u, d%u, d%u[%u]\n", P ? 's' : 'a', 8 << size,
           dreg, nreg, mreg, index);
@@ -5706,13 +5654,11 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
       }
       putQReg(dreg, binop(op, mkexpr(arg_n), mkexpr(arg_m)),
             condT);
-#ifndef DISABLE_QC_FLAG
       setFlag_QC(binop(Iop_And64,
                        binop(op2, mkexpr(arg_n), mkU64(imm)),
                        binop(op2, mkexpr(arg_m), mkU64(imm))),
                  mkU64(0),
                  False, condT);
-#endif
       DIP("vqdmull.s%u q%u, d%u, d%u[%u]\n", 8 << size, dreg, nreg, mreg,
           index);
       return True;
@@ -5799,7 +5745,6 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
             vassert(0);
       }
       assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
       setFlag_QC(binop(Q ? Iop_AndV128 : Iop_And64,
                        binop(op2, mkexpr(arg_n),
                                   Q ? mkU128(imm) : mkU64(imm)),
@@ -5807,7 +5752,6 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
                              Q ? mkU128(imm) : mkU64(imm))),
                  Q ? mkU128(0) : mkU64(0),
                  Q, condT);
-#endif
       if (Q)
          putQReg(dreg, mkexpr(res), condT);
       else
@@ -5899,7 +5843,6 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
             vassert(0);
       }
       assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
       setFlag_QC(binop(Q ? Iop_AndV128 : Iop_And64,
                        binop(op2, mkexpr(arg_n),
                                   Q ? mkU128(imm) : mkU64(imm)),
@@ -5907,7 +5850,6 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
                                   Q ? mkU128(imm) : mkU64(imm))),
                  Q ? mkU128(0) : mkU64(0),
                  Q, condT);
-#endif
       if (Q)
          putQReg(dreg, mkexpr(res), condT);
       else
@@ -6370,10 +6312,8 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             assign(reg_m, getDRegI64(mreg));
          }
          assign(res, binop(op, mkexpr(reg_m), mkU8(shift_imm)));
-#ifndef DISABLE_QC_FLAG
          assign(tmp, binop(op_rev, mkexpr(res), mkU8(shift_imm)));
          setFlag_QC(mkexpr(tmp), mkexpr(reg_m), Q, condT);
-#endif
          if (Q)
             putQReg(dreg, mkexpr(res), condT);
          else
@@ -6563,10 +6503,8 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             /* VQSHRN, VQSHRUN */
             assign(res, binop(op, mkexpr(reg_m), mkU8(shift_imm)));
          }
-#ifndef DISABLE_QC_FLAG
          setFlag_QC(unop(cvt2, unop(cvt, mkexpr(res))), mkexpr(res),
                     True, condT);
-#endif
          putDRegI64(dreg, unop(cvt, mkexpr(res)), condT);
          return True;
       case 10:
@@ -6919,7 +6857,6 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                                        unop(Q ? Iop_NotV128 : Iop_Not64,
                                             mkexpr(mask)),
                                        neg)));
-#ifndef DISABLE_QC_FLAG
                assign(tmp, binop(Q ? Iop_OrV128 : Iop_Or64,
                                  binop(Q ? Iop_AndV128 : Iop_And64,
                                        mkexpr(mask),
@@ -6929,7 +6866,6 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                                             mkexpr(mask)),
                                        neg2)));
                setFlag_QC(mkexpr(res), mkexpr(tmp), Q, condT);
-#endif
                DIP("vqabs.s%u %c%u, %c%u\n", 8 << size, Q ? 'q' : 'd', dreg,
                    Q ? 'q' : 'd', mreg);
                break;
@@ -6962,10 +6898,8 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                      vassert(0);
                }
                assign(res, binop(op, zero, mkexpr(arg_m)));
-#ifndef DISABLE_QC_FLAG
                setFlag_QC(mkexpr(res), binop(op2, zero, mkexpr(arg_m)),
                           Q, condT);
-#endif
                DIP("vqneg.s%u %c%u, %c%u\n", 8 << size, Q ? 'q' : 'd', dreg,
                    Q ? 'q' : 'd', mreg);
                break;
@@ -7463,10 +7397,8 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
             res = newTemp(Ity_I64);
             tmp = newTemp(Ity_I64);
             assign(res, unop(op, getQReg(mreg)));
-#ifndef DISABLE_QC_FLAG
             assign(tmp, unop(op2, getQReg(mreg)));
             setFlag_QC(mkexpr(res), mkexpr(tmp), False, condT);
-#endif
             putDRegI64(dreg, mkexpr(res), condT);
             return True;
          } else if (B == 12) {

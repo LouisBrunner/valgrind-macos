@@ -1718,10 +1718,10 @@ CFLAGS=$safe_CFLAGS
 AC_MSG_CHECKING([if the linker accepts -Wl,-Ttext-segment])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-Wl,-Ttext-segment=$valt_load_address_pri_norml"
+CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,-Ttext-segment=$valt_load_address_pri_norml"
 
 AC_LINK_IFELSE(
-[AC_LANG_PROGRAM([ ], [return 0;])],
+[AC_LANG_SOURCE([int _start () { return 0; }])],
 [
   linker_using_t_text="no"
   AC_SUBST([FLAG_T_TEXT], ["-Ttext-segment"])

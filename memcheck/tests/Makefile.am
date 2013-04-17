@@ -43,6 +43,7 @@ dist_noinst_SCRIPTS = \
 	filter_allocs \
 	filter_leak_cases_possible \
 	filter_stderr filter_xml \
+	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \
 	filter_memcpy

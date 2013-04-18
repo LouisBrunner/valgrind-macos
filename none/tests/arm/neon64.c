@@ -42,12 +42,21 @@ static inline unsigned int f2u(float x) {
 
 /* test macros to generate and output the result of a single instruction */
 
+#if 1
 const unsigned int mem[] = {
     0x121f1e1f, 0x131b1a1b, 0x141c1f1c, 0x151d191d,
     0x232f2e2f, 0x242c2b2b, 0x252a2e2b, 0x262d2d2a,
     0x3f343f3e, 0x3e353d3c, 0x363a3c3b, 0x3b373b3a,
     0x454f4e45, 0x4e464d46, 0x474d474c, 0x4a484a4c
 };
+#else
+const unsigned int mem[] = {
+    0x03020100, 0x07060504, 0x0b0a0908, 0x0f0e0d0c,
+    0x13121110, 0x17161514, 0x1b1a1918, 0x1f1e1d1c,
+    0x23222120, 0x27262524, 0x2b2a2928, 0x2f2e2d2c,
+    0x33323130, 0x37363534, 0x3b3a3938, 0x3f3e3d3c
+};
+#endif
 
 #define TESTINSN_imm(instruction, QD, imm) \
 { \
@@ -61,8 +70,9 @@ const unsigned int mem[] = {
       : "r" (out) \
       : #QD, "memory" \
       ); \
+  fflush(stdout); \
   printf("%s, #" #imm " :: Qd 0x%08x 0x%08x\n", \
-      instruction, out[1], out[0]); \
+         instruction, out[1], out[0]);          \
 } \
 { \
    unsigned int out[2];   \
@@ -77,8 +87,9 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (addr), "r" (mem) \
 	 : #QD, "%2", "memory" \
 	 ); \
-   printf("%s, #" #imm " :: Qd 0x%08x 0x%08x\n", \
-	 instruction, out[1], out[0]); \
+   fflush(stdout); \
+   printf("%s, #" #imm " :: Qd 0x%08x 0x%08x\n",        \
+          instruction, out[1], out[0]);                 \
 }
 
 #define TESTINSN_un(instruction, QD, QM, QMtype, QMval) \
@@ -94,8 +105,9 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval) \
       : #QD, #QM, "memory" \
       ); \
-  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x\n", \
-      instruction, out[1], out[0], QMval); \
+  fflush(stdout); \
+  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x\n",    \
+         instruction, out[1], out[0], QMval);                   \
 } \
 { \
    unsigned int out[2]; \
@@ -112,8 +124,9 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (QMval), "r" (addr), "r" (mem) \
 	 : #QD, #QM, "%2", "memory" \
 	 ); \
-   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x\n", \
-	 instruction, out[1], out[0], QMval ); \
+   fflush(stdout); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x\n",   \
+          instruction, out[1], out[0], QMval );                 \
 }
 
 #define TESTINSN_un_q(instruction, QD, QM, QMtype, QMval) \
@@ -134,8 +147,9 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval) \
       : #QD, #QM, "memory", "r4" \
       ); \
+  fflush(stdout); \
   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x  fpscr %08x\n", \
-      instruction, out[1], out[0], QMval, fpscr); \
+         instruction, out[1], out[0], QMval, fpscr);                    \
 } \
 { \
    unsigned int out[2]; \
@@ -156,8 +170,9 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (QMval), "r" (addr), "r" (mem) \
 	 : #QD, #QM, "memory", "r4" \
 	 ); \
+   fflush(stdout); \
    printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x  fpscr %08x\n", \
-	 instruction, out[1], out[0], QMval, fpscr); \
+          instruction, out[1], out[0], QMval, fpscr);                   \
 }
 
 #define TESTINSN_core_to_scalar(instruction, QD, QM, QMval) \
@@ -173,8 +188,9 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval) \
       : #QD, #QM, "memory" \
       ); \
+  fflush(stdout); \
   printf("%s :: Qd 0x%08x 0x%08x  Qm 0x%08x\n", \
-      instruction, out[1], out[0], QMval); \
+         instruction, out[1], out[0], QMval);   \
 }
 
 #define TESTINSN_scalar_to_core(instruction, QD, QM, QMtype, QMval) \
@@ -190,8 +206,9 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval) \
       : #QD, #QM, "memory" \
       ); \
-  printf("%s :: Rd 0x%08x  Qm (" #QMtype ")0x%08x\n", \
-      instruction, out[0], QMval); \
+  fflush(stdout); \
+  printf("%s :: Rd 0x%08x  Qm (" #QMtype ")0x%08x\n",   \
+         instruction, out[0], QMval);                   \
 }
 
 #define TESTINSN_VLDn(instruction, QD1, QD2, QD3, QD4) \
@@ -215,10 +232,11 @@ const unsigned int mem[] = {
       : "r" (out), "r" (mem), "r"(&out[8]) \
       : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
       ); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-      instruction, out[0], out[1], out[2], out[3], out[4],\
-          out[5], out[6], out[7], (int)out[8]-(int)mem); \
+  fflush(stdout); \
+  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x " \
+         "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",             \
+         instruction, out[0], out[1], out[2], out[3], out[4],   \
+         out[5], out[6], out[7], (int)out[8]-(int)mem);         \
 }
 
 #define TESTINSN_VSTn(instruction, QD1, QD2, QD3, QD4) \
@@ -239,10 +257,11 @@ const unsigned int mem[] = {
       : "r" (out), "r" (mem), "r"(&out[8]) \
       : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
       ); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-      instruction, out[0], out[1], out[2], out[3], out[4],\
-          out[5], out[6], out[7], (int)out[8]-(int)out); \
+  fflush(stdout); \
+  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x " \
+         "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",             \
+         instruction, out[0], out[1], out[2], out[3], out[4],   \
+         out[5], out[6], out[7], (int)out[8]-(int)out);         \
 }
 
 #define TESTINSN_VLDn_WB(instruction, QD1, QD2, QD3, QD4) \
@@ -268,10 +287,11 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (mem), "r"(&out[8]) \
 	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
 	 ); \
-   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-	 instruction, out[0], out[1], out[2], out[3], out[4],\
-	 out[5], out[6], out[7], (int)out[8]-(int)mem); \
+   fflush(stdout); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "   \
+          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",            \
+          instruction, out[0], out[1], out[2], out[3], out[4],  \
+          out[5], out[6], out[7], (int)out[8]-(int)mem);        \
 }
 
 #define TESTINSN_VSTn_WB(instruction, QD1, QD2, QD3, QD4) \
@@ -293,10 +313,11 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (mem), "r"(&out[8]) \
 	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", "0" \
 	 ); \
-   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-	 instruction, out[0], out[1], out[2], out[3], out[4],\
-	 out[5], out[6], out[7], (int)out[8]-(int)out); \
+   fflush(stdout); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "   \
+          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",            \
+          instruction, out[0], out[1], out[2], out[3], out[4],  \
+          out[5], out[6], out[7], (int)out[8]-(int)out);        \
 }
 
 #define TESTINSN_VLDn_RI(instruction, QD1, QD2, QD3, QD4, RM, RMval) \
@@ -323,10 +344,11 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (mem), "r"(&out[8]), "r"(RMval) \
 	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
 	 ); \
-   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-	 instruction, out[0], out[1], out[2], out[3], out[4],\
-	 out[5], out[6], out[7], (int)out[8]-(int)addr); \
+   fflush(stdout); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "   \
+          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",            \
+          instruction, out[0], out[1], out[2], out[3], out[4],  \
+          out[5], out[6], out[7], (int)out[8]-(int)addr);       \
 }
 
 
@@ -350,10 +372,11 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (mem), "r"(&out[8]), "r"(RMval) \
 	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
 	 ); \
-   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-	 instruction, out[0], out[1], out[2], out[3], out[4],\
-	 out[5], out[6], out[7], (int)out[8]-(int)out); \
+   fflush(stdout); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "   \
+          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",            \
+          instruction, out[0], out[1], out[2], out[3], out[4],  \
+          out[5], out[6], out[7], (int)out[8]-(int)out);        \
 }
 
 #define TESTINSN_bin(instruction, QD, QM, QMtype, QMval, QN, QNtype, QNval) \
@@ -370,9 +393,10 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval), "r" (QNval) \
       : #QD, #QM, #QN, "memory" \
       ); \
-  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-      "  Qn (" #QNtype ")0x%08x\n", \
-      instruction, out[1], out[0], QMval, QNval); \
+  fflush(stdout); \
+  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"       \
+         "  Qn (" #QNtype ")0x%08x\n",                          \
+         instruction, out[1], out[0], QMval, QNval);            \
 } \
 { \
    unsigned int out[2]; \
@@ -389,9 +413,10 @@ const unsigned int mem[] = {
 	 : "r" (out), "r" (QMval), "r" (QNval), "r" (mem) \
 	 : #QD, #QM, #QN, "memory" \
 	 ); \
-   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-	 "  Qn (" #QNtype ")0x%08x\n", \
-	 instruction, out[1], out[0], QMval, QNval); \
+   fflush(stdout); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"      \
+          "  Qn (" #QNtype ")0x%08x\n",                         \
+          instruction, out[1], out[0], QMval, QNval);           \
 }
 
 #define TESTINSN_bin_f(instruction, QD, QM, QMtype, QMval, QN, QNtype, QNval) \
@@ -408,9 +433,10 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval), "r" (QNval), "r"(0x3f800000) \
       : #QD, #QM, #QN, "memory" \
       ); \
-  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-      "  Qn (" #QNtype ")0x%08x\n", \
-      instruction, out[1], out[0], QMval, QNval); \
+  fflush(stdout); \
+  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"       \
+         "  Qn (" #QNtype ")0x%08x\n",                          \
+         instruction, out[1], out[0], QMval, QNval);            \
 } \
 { \
      unsigned int out[2]; \
@@ -427,9 +453,10 @@ const unsigned int mem[] = {
 	         : "r" (out), "r" (QMval), "r" (QNval), "r"(0x3f800000), "r" (addr), "r" (mem) \
 	         : #QD, #QM, #QN, "memory" \
 	         ); \
-     printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-	         "  Qn (" #QNtype ")0x%08x\n", \
-	         instruction, out[1], out[0], QMval, QNval); \
+     fflush(stdout); \
+     printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"    \
+            "  Qn (" #QNtype ")0x%08x\n",                       \
+            instruction, out[1], out[0], QMval, QNval);         \
 }
 
 #define TESTINSN_tbl(instruction, QD, QM, QMtype, QMval, QN1, QN1type, QN1val, \
@@ -451,12 +478,13 @@ const unsigned int mem[] = {
         "r" (QN4val) \
       : #QD, #QM, #QN1, #QN2, #QN3, #QN4, "memory" \
       ); \
-  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-      "  Qn1 (" #QN1type ")0x%08x" \
-      "  Qn2 (" #QN2type ")0x%08x" \
-      "  Qn3 (" #QN3type ")0x%08x" \
-      "  Qn4 (" #QN4type ")0x%08x\n", \
-      instruction, out[1], out[0], QMval, QN1val, QN2val, QN3val, QN4val); \
+  fflush(stdout); \
+  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"       \
+         "  Qn1 (" #QN1type ")0x%08x"                           \
+         "  Qn2 (" #QN2type ")0x%08x"                           \
+         "  Qn3 (" #QN3type ")0x%08x"                                   \
+         "  Qn4 (" #QN4type ")0x%08x\n",                                \
+         instruction, out[1], out[0], QMval, QN1val, QN2val, QN3val, QN4val); \
 } \
 { \
    unsigned int out[2]; \
@@ -477,12 +505,13 @@ const unsigned int mem[] = {
 	 "r" (QN4val), "r" (addr), "r" (mem) \
 	 : #QD, #QM, #QN1, #QN2, #QN3, #QN4, "memory" \
 	 ); \
-   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-	 "  Qn1 (" #QN1type ")0x%08x" \
-	 "  Qn2 (" #QN2type ")0x%08x" \
-	 "  Qn3 (" #QN3type ")0x%08x" \
-	 "  Qn4 (" #QN4type ")0x%08x\n", \
-	 instruction, out[1], out[0], QMval, QN1val, QN2val, QN3val, QN4val); \
+   fflush(stdout); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"      \
+          "  Qn1 (" #QN1type ")0x%08x"                          \
+          "  Qn2 (" #QN2type ")0x%08x"                          \
+          "  Qn3 (" #QN3type ")0x%08x"                          \
+          "  Qn4 (" #QN4type ")0x%08x\n",                               \
+          instruction, out[1], out[0], QMval, QN1val, QN2val, QN3val, QN4val); \
 }
 
 #define TESTINSN_tbl_1(instruction, QD, QM, QMtype, QMval, QN1, QN1type, QN1val) \
@@ -520,9 +549,10 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval), "r" (QNval) \
       : #QD, #QM, #QN, "memory", "r4" \
       ); \
-  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-      "  Qn (" #QNtype ")0x%08x  fpscr: %08x\n", \
-      instruction, out[1], out[0], QMval, QNval, fpscr); \
+  fflush(stdout); \
+  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"       \
+         "  Qn (" #QNtype ")0x%08x  fpscr: %08x\n",             \
+         instruction, out[1], out[0], QMval, QNval, fpscr);     \
 } \
 { \
      unsigned int out[2]; \
@@ -544,9 +574,10 @@ const unsigned int mem[] = {
 	         : "r" (out), "r" (QMval), "r" (QNval), "r" (addr), "r" (mem)  \
 	         : #QD, #QM, #QN, "memory", "r4" \
 	         ); \
-     printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-	         "  Qn (" #QNtype ")0x%08x  fpscr: %08x\n", \
-	         instruction, out[1], out[0], QMval, QNval, fpscr); \
+     fflush(stdout); \
+     printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x"    \
+            "  Qn (" #QNtype ")0x%08x  fpscr: %08x\n",              \
+            instruction, out[1], out[0], QMval, QNval, fpscr);      \
 }
 
 #define TESTINSN_dual(instruction, QM, QMtype, QMval, QN, QNtype, QNval) \
@@ -566,9 +597,10 @@ const unsigned int mem[] = {
 	 : "r" (out1), "r" (out2), "r" (QMval), "r" (QNval), "r" (addr), "r" (mem) \
 	 : #QM, #QN, "memory" \
 	 ); \
+   fflush(stdout); \
    printf("%s :: Qm 0x%08x 0x%08x  Qn 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-	 "  Qn (" #QNtype ")0x%08x\n", \
-	 instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
+          "  Qn (" #QNtype ")0x%08x\n",                                 \
+          instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
 } \
 { \
      unsigned int out1[2]; \
@@ -586,9 +618,10 @@ const unsigned int mem[] = {
 	         : "r" (out1), "r" (out2), "r" (QMval), "r" (QNval), "r" (addr), "r" (mem) \
 	         : #QM, #QN, "%4", "memory" \
 	         ); \
+     fflush(stdout); \
      printf("%s :: Qm 0x%08x 0x%08x  Qn 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-	         "  Qn (" #QNtype ")0x%08x\n", \
-	         instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
+            "  Qn (" #QNtype ")0x%08x\n",                               \
+            instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
 }
 
 #if 0
@@ -605,13 +638,15 @@ const unsigned int mem[] = {
       : "r" (out), "r" (QMval) \
       : #QD, #QM, "memory" \
       ); \
-  printf("%s, #" #imm " :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x", \
-      instruction, out[1], out[0], QMval); \
+  fflush(stdout); \
+  printf("%s, #" #imm " :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x",   \
+         instruction, out[1], out[0], QMval);                           \
 }
 #endif
 
 int main(int argc, char **argv)
 {
+    fflush(stdout);
     printf("----- VMOV (immediate) -----\n");
     TESTINSN_imm("vmov.i32 d0", d0, 0x7);
     TESTINSN_imm("vmov.i16 d1", d1, 0x7);
@@ -626,6 +661,7 @@ int main(int argc, char **argv)
     TESTINSN_imm("vmov.f32 d0", d0, 0.328125);
     TESTINSN_imm("vmov.f32 d0", d0, -0.328125);
 
+    fflush(stdout);
     printf("----- VMVN (immediate) -----\n");
     TESTINSN_imm("vmvn.i32 d0", d0, 0x7);
     TESTINSN_imm("vmvn.i16 d1", d1, 0x7);
@@ -638,6 +674,7 @@ int main(int argc, char **argv)
     TESTINSN_imm("vmvn.i32 d14", d14, 0x7FFFF);
     TESTINSN_imm("vmvn.i64 d15", d15, 0xFF0000FF00FFFF00);
 
+    fflush(stdout);
     printf("----- VORR (immediate) -----\n");
     TESTINSN_imm("vorr.i32 d0", d0, 0x7);
     TESTINSN_imm("vorr.i16 d2", d2, 0x7);
@@ -646,6 +683,7 @@ int main(int argc, char **argv)
     TESTINSN_imm("vorr.i32 d14", d14, 0x70000);
     TESTINSN_imm("vorr.i32 d15", d15, 0x7000000);
 
+    fflush(stdout);
     printf("----- VBIC (immediate) -----\n");
     TESTINSN_imm("vbic.i32 d0", d0, 0x7);
     TESTINSN_imm("vbic.i16 d3", d3, 0x7);
@@ -654,21 +692,25 @@ int main(int argc, char **argv)
     TESTINSN_imm("vbic.i32 d10", d10, 0x70000);
     TESTINSN_imm("vbic.i32 d15", d15, 0x7000000);
 
+    fflush(stdout);
     printf("---- VMVN (register) ----\n");
     TESTINSN_un("vmvn d0, d1", d0, d1, i32, 24);
     TESTINSN_un("vmvn d10, d15", d10, d15, i32, 24);
     TESTINSN_un("vmvn d0, d14", d0, d14, i32, 24);
 
+    fflush(stdout);
     printf("---- VMOV (register) ----\n");
     TESTINSN_un("vmov d0, d1", d0, d1, i32, 24);
     TESTINSN_un("vmov d10, d15", d10, d15, i32, 24);
     TESTINSN_un("vmov d0, d14", d0, d14, i32, 24);
 
+    fflush(stdout);
     printf("---- VDUP (ARM core register) (tested indirectly) ----\n");
     TESTINSN_un("vmov d0, d1", d0, d1, i8, 7);
     TESTINSN_un("vmov d10, d11", d10, d11, i16, 7);
     TESTINSN_un("vmov d0, d15", d0, d15, i32, 7);
 
+    fflush(stdout);
     printf("---- VADD ----\n");
     TESTINSN_bin("vadd.i32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vadd.i64 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -682,6 +724,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vadd.i32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
     TESTINSN_bin("vadd.i64 d13, d14, d15", d13, d14, i32, 140, d15, i32, 120);
 
+    fflush(stdout);
     printf("---- VSUB ----\n");
     TESTINSN_bin("vsub.i32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vsub.i64 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -695,30 +738,35 @@ int main(int argc, char **argv)
     TESTINSN_bin("vsub.i32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
     TESTINSN_bin("vsub.i64 d13, d14, d15", d13, d14, i32, 140, d15, i32, 120);
 
+    fflush(stdout);
     printf("---- VAND ----\n");
     TESTINSN_bin("vand d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x77);
     TESTINSN_bin("vand d4, d6, d5", d4, d6, i8, 0xff, d5, i16, 0x57);
     TESTINSN_bin("vand d10, d11, d12", d10, d11, i8, 0xfe, d12, i8, 0xed);
     TESTINSN_bin("vand d15, d15, d15", d15, d15, i8, 0xff, d15, i8, 0xff);
 
+    fflush(stdout);
     printf("---- VBIC ----\n");
     TESTINSN_bin("vbic d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x77);
     TESTINSN_bin("vbic d4, d6, d5", d4, d6, i8, 0xff, d5, i16, 0x57);
     TESTINSN_bin("vbic d10, d11, d12", d10, d11, i8, 0xfe, d12, i8, 0xed);
     TESTINSN_bin("vbic d15, d15, d15", d15, d15, i8, 0xff, d15, i8, 0xff);
 
+    fflush(stdout);
     printf("---- VORR ----\n");
     TESTINSN_bin("vorr d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x73);
     TESTINSN_bin("vorr d7, d3, d0", d7, d3, i8, 0x24, d0, i16, 0xff);
     TESTINSN_bin("vorr d4, d4, d4", d4, d4, i16, 0xff, d4, i16, 0xff);
     TESTINSN_bin("vorr d2, d3, d15", d2, d3, i32, 0x24, d15, i32, 0x1f);
 
+    fflush(stdout);
     printf("---- VORN ----\n");
     TESTINSN_bin("vorn d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x73);
     TESTINSN_bin("vorn d7, d3, d0", d7, d3, i8, 0x24, d0, i16, 0xff);
     TESTINSN_bin("vorn d4, d4, d4", d4, d4, i16, 0xff, d4, i16, 0xff);
     TESTINSN_bin("vorn d2, d3, d15", d2, d3, i32, 0x24, d15, i32, 0x1f);
 
+    fflush(stdout);
     printf("---- VEOR ----\n");
     TESTINSN_bin("veor d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x77);
     TESTINSN_bin("veor d4, d6, d5", d4, d6, i8, 0xff, d5, i16, 0x57);
@@ -729,6 +777,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("veor d4, d4, d4", d4, d4, i16, 0xff, d4, i16, 0xff);
     TESTINSN_bin("veor d2, d3, d15", d2, d3, i32, 0x24, d15, i32, 0x1f);
 
+    fflush(stdout);
     printf("---- VBSL ----\n");
     TESTINSN_bin("vbsl d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x77);
     TESTINSN_bin("vbsl d4, d6, d5", d4, d6, i8, 0xff, d5, i16, 0x57);
@@ -739,6 +788,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vbsl d4, d4, d4", d4, d4, i16, 0xff, d4, i16, 0xff);
     TESTINSN_bin("vbsl d2, d3, d15", d2, d3, i32, 0x24, d15, i32, 0x1f);
 
+    fflush(stdout);
     printf("---- VBIT ----\n");
     TESTINSN_bin("vbit d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x77);
     TESTINSN_bin("vbit d4, d6, d5", d4, d6, i8, 0xff, d5, i16, 0x57);
@@ -749,6 +799,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vbit d4, d4, d4", d4, d4, i16, 0xff, d4, i16, 0xff);
     TESTINSN_bin("vbit d2, d3, d15", d2, d3, i32, 0x24, d15, i32, 0x1f);
 
+    fflush(stdout);
     printf("---- VBIF ----\n");
     TESTINSN_bin("vbif d0, d1, d2", d0, d1, i8, 0x24, d2, i16, 0x77);
     TESTINSN_bin("vbif d4, d6, d5", d4, d6, i8, 0xff, d5, i16, 0x57);
@@ -759,6 +810,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vbif d4, d4, d4", d4, d4, i16, 0xff, d4, i16, 0xff);
     TESTINSN_bin("vbif d2, d3, d15", d2, d3, i32, 0x24, d15, i32, 0x1f);
 
+    fflush(stdout);
     printf("---- VEXT ----\n");
     TESTINSN_bin("vext.8 d0, d1, d2, #0", d0, d1, i8, 0x77, d2, i8, 0xff);
     TESTINSN_bin("vext.8 d0, d1, d2, #1", d0, d1, i8, 0x77, d2, i8, 0xff);
@@ -767,6 +819,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vext.8 d10, d11, d12, #4", d10, d11, i8, 0x77, d12, i8, 0xff);
     TESTINSN_bin("vext.8 d0, d5, d15, #5", d0, d5, i8, 0x77, d15, i8, 0xff);
 
+    fflush(stdout);
     printf("---- VHADD ----\n");
     TESTINSN_bin("vhadd.s32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vhadd.s32 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -787,6 +840,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vhadd.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 1, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vhadd.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VHSUB ----\n");
     TESTINSN_bin("vhsub.s32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vhsub.s32 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -805,6 +859,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vhsub.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 1, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vhsub.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VQADD ----\n");
     TESTINSN_bin_q("vqadd.s32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin_q("vqadd.s32 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -823,6 +878,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqadd.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 1, d2, i32, (1 << 31) + 2);
     TESTINSN_bin_q("vqadd.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VQSUB ----\n");
     TESTINSN_bin_q("vqsub.s32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin_q("vqsub.s32 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -841,6 +897,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqsub.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 1, d2, i32, (1 << 31) + 2);
     TESTINSN_bin_q("vqsub.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VRHADD ----\n");
     TESTINSN_bin("vrhadd.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 120);
     TESTINSN_bin("vrhadd.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
@@ -872,6 +929,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vrhadd.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vrhadd.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VCGT ----\n");
     TESTINSN_bin("vcgt.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 120);
     TESTINSN_bin("vcgt.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
@@ -915,6 +973,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vcgt.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 2, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vcgt.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VCGE ----\n");
     TESTINSN_bin("vcge.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 120);
     TESTINSN_bin("vcge.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
@@ -958,6 +1017,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vcge.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 2, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vcge.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VSHL (register) ----\n");
     TESTINSN_bin("vshl.s8 d0, d1, d2", d0, d1, i32, 24, d2, i32, 1);
     TESTINSN_bin("vshl.s8 d8, d1, d12", d8, d1, i32, 24, d12, i32, 8);
@@ -990,6 +1050,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vshl.u64 d8, d2, d4", d8, d2, i32, 15, d4, i32, 0x400bb5);
     TESTINSN_bin("vshl.u64 d5, d12, d4", d5, d12, i32, (1 << 31) + 1, d4, i32, 0x30abcff); 
 
+    fflush(stdout);
     printf("---- VQSHL (register) ----\n");
     TESTINSN_bin_q("vqshl.s64 d0, d1, d2", d0, d1, i32, 1, d2, i32, 1);
     TESTINSN_bin_q("vqshl.s64 d3, d4, d5", d3, d4, i32, -127, d5, i32, 1);
@@ -1040,6 +1101,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqshl.u8 d6, d7, d8", d6, d7, i32, (1 << 30), d8, i32, 2);
     TESTINSN_bin_q("vqshl.u8 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VQSHL / VQSHLU (immediate) ----\n");
     TESTINSN_un_q("vqshl.s64 d0, d1, #1", d0, d1, i32, 1);
     TESTINSN_un_q("vqshl.s64 d31, d30, #1", d31, d30, i32, -127);
@@ -1174,6 +1236,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqshlu.s8 d5, d4, #5", d5, d4, i32, -1);
     TESTINSN_un_q("vqshlu.s8 d5, d4, #2", d5, d4, i32, (1 << 31) + 2);
 
+    fflush(stdout);
     printf("---- VQRSHL (register) ----\n");
     TESTINSN_bin_q("vqrshl.s64 d0, d1, d2", d0, d1, i32, 1, d2, i32, 1);
     TESTINSN_bin_q("vqrshl.s64 d3, d4, d5", d3, d4, i32, -127, d5, i32, 1);
@@ -1246,6 +1309,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqrshl.u8 d6, d7, d8", d6, d7, i32, (1 << 30), d8, i32, 2);
     TESTINSN_bin_q("vqrshl.u8 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VRSHL (register) ----\n");
     TESTINSN_bin("vrshl.s64 d0, d1, d2", d0, d1, i32, 1, d2, i32, 1);
     TESTINSN_bin("vrshl.s64 d3, d4, d5", d3, d4, i32, -127, d5, i32, 1);
@@ -1318,6 +1382,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vrshl.u8 d6, d7, d8", d6, d7, i32, (1 << 30), d8, i32, 2);
     TESTINSN_bin("vrshl.u8 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VMAX (integer) ----\n");
     TESTINSN_bin("vmax.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
     TESTINSN_bin("vmax.s32 d0, d1, d2", d0, d1, i32, 250, d2, i32, 121);
@@ -1350,6 +1415,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmax.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2); 
     TESTINSN_bin("vmax.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);  
 
+    fflush(stdout);
     printf("---- VMIN (integer) ----\n");
     TESTINSN_bin("vmin.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
     TESTINSN_bin("vmin.s32 d0, d1, d2", d0, d1, i32, 250, d2, i32, 121);
@@ -1382,6 +1448,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmin.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vmin.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VABD ----\n");
     TESTINSN_bin("vabd.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 120);
     TESTINSN_bin("vabd.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
@@ -1417,6 +1484,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vabd.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vabd.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VABA ----\n");
     TESTINSN_bin("vaba.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 120);
     TESTINSN_bin("vaba.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
@@ -1452,6 +1520,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vaba.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vaba.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VTST ----\n");
     TESTINSN_bin("vtst.32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vtst.32 d3, d4, d5", d3, d4, i32, 140, d5, i32, 120);
@@ -1465,6 +1534,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vtst.32 d0, d1, d2", d0, d1, i32, 1, d2, i32, (1 << 31) + 2); 
     TESTINSN_bin("vtst.32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VCEQ ----\n");
     TESTINSN_bin("vceq.i32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vceq.i32 d3, d4, d5", d3, d4, i32, 140, d5, i32, 120);
@@ -1478,6 +1548,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vceq.i32 d0, d1, d2", d0, d1, i32, 1, d2, i32, (1 << 31) + 2); 
     TESTINSN_bin("vceq.i32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VMLA ----\n");
     TESTINSN_bin("vmla.i32 d0, d1, d2", d0, d1, i32, -24, d2, i32, 120);
     TESTINSN_bin("vmla.i32 d6, d7, d8", d6, d7, i32, 140, d8, i32, 120);
@@ -1491,6 +1562,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmla.i32 d7, d8, d9", d7, d8, i32, (1 << 31) + 1, d9, i32, (1 << 31) + 2); 
     TESTINSN_bin("vmla.i32 d10, d11, d15", d10, d11, i32, 24, d15, i32, -120);
 
+    fflush(stdout);
     printf("---- VMLS ----\n");
     TESTINSN_bin("vmls.i32 d0, d1, d2", d0, d1, i32, -24, d2, i32, 120);
     TESTINSN_bin("vmls.i32 d6, d7, d8", d6, d7, i32, 140, d8, i32, -120);
@@ -1504,6 +1576,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmls.i32 d7, d8, d9", d7, d8, i32, (1 << 31) + 1, d9, i32, (1 << 31) + 2); 
     TESTINSN_bin("vmls.i32 d10, d11, d15", d10, d11, i32, -24, d15, i32, 120);
 
+    fflush(stdout);
     printf("---- VMUL ----\n");
     TESTINSN_bin("vmul.i32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vmul.i32 d6, d7, d8", d6, d7, i32, 140, d8, i32, -120);
@@ -1522,6 +1595,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmul.p8 q0, q1, q2", q0, q1, i32, 3, q2, i32, 3);
     TESTINSN_bin("vmul.p8 q0, q1, q2", q0, q1, i32, 12, q2, i8, 0x0f);
 
+    fflush(stdout);
     printf("---- VMUL (by scalar) ----\n");
     TESTINSN_bin("vmul.i32 d0, d1, d4[0]", d0, d1, i32, 24, d4, i32, 120);
     TESTINSN_bin("vmul.i32 d31, d8, d7[1]", d31, d8, i32, 140, d7, i32, -120);
@@ -1533,6 +1607,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmul.i16 d4, d5, d6[0]", d4, d5, i32, (1 << 28) + 0xfe, d6, i32, (1 << 13) + 2);
     TESTINSN_bin("vmul.i32 d7, d8, d1[1]", d7, d8, i32, (1 << 31) + 1, d1, i32, (1 << 31) + 2);
 
+    fflush(stdout);
     printf("---- VMLA (by scalar) ----\n");
     TESTINSN_bin("vmla.i32 d0, d1, d4[0]", d0, d1, i32, 24, d4, i32, 120);
     TESTINSN_bin("vmla.i32 d31, d8, d7[1]", d31, d8, i32, 140, d7, i32, -120);
@@ -1544,6 +1619,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmla.i16 d4, d5, d6[0]", d4, d5, i32, (1 << 28) + 0xfe, d6, i32, (1 << 13) + 2);
     TESTINSN_bin("vmla.i32 d7, d8, d1[1]", d7, d8, i32, (1 << 31) + 1, d1, i32, (1 << 31) + 2);
 
+    fflush(stdout);
     printf("---- VMLS (by scalar) ----\n");
     TESTINSN_bin("vmls.i32 d0, d1, d4[0]", q0, q1, i32, 24, d4, i32, 120);
     TESTINSN_bin("vmls.i32 d31, d8, d7[1]", d31, d8, i32, 140, d7, i32, -120);
@@ -1555,6 +1631,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmls.i16 d4, d5, d6[0]", d4, d5, i32, (1 << 28) + 0xfe, d6, i32, (1 << 13) + 2);
     TESTINSN_bin("vmls.i32 d7, d8, d1[1]", d7, d8, i32, (1 << 31) + 1, d1, i32, (1 << 31) + 2);
 
+    fflush(stdout);
     printf("---- VRSHR ----\n");
     TESTINSN_un("vrshr.s8 d0, d1, #0", d0, d1, i32, -1);
     TESTINSN_un("vrshr.s8 d0, d1, #1", d0, d1, i32, -1);
@@ -1574,6 +1651,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vrshr.u64 d8, d4, #9", d8, d4, i32, 13560);
     TESTINSN_un("vrshr.s64 d9, d12, #11", d9, d12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VRSRA ----\n");
     TESTINSN_un("vrsra.s8 d0, d1, #1", d0, d1, i32, -1);
     TESTINSN_un("vrsra.s16 d3, d4, #2", d3, d4, i32, -0x7c);
@@ -1592,6 +1670,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vrsra.u64 d8, d4, #9", d8, d4, i32, 13560);
     TESTINSN_un("vrsra.s64 d9, d12, #11", d9, d12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VSHR ----\n");
     TESTINSN_un("vshr.s8 d0, d1, #0", d0, d1, i32, -1);
     TESTINSN_un("vshr.s8 d0, d1, #1", d0, d1, i32, -1);
@@ -1611,6 +1690,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vshr.u64 d8, d4, #9", d8, d4, i32, 13560);
     TESTINSN_un("vshr.s64 d9, d12, #11", d9, d12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VSRA ----\n");
     TESTINSN_un("vsra.s8 d0, d1, #1", d0, d1, i32, -1);
     TESTINSN_un("vsra.s16 d3, d4, #2", d3, d4, i32, -0x7c);
@@ -1629,6 +1709,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vsra.u64 d8, d4, #9", d8, d4, i32, 13560);
     TESTINSN_un("vsra.s64 d9, d12, #11", d9, d12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VSRI ----\n");
     TESTINSN_un("vsri.16 d0, d1, #1", d0, d1, i32, -1);
     TESTINSN_un("vsri.16 d3, d4, #2", d3, d4, i32, -0x7c);
@@ -1647,6 +1728,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vsri.64 d8, d4, #9", d8, d4, i32, 13560);
     TESTINSN_un("vsri.64 d9, d12, #11", d9, d12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VMOV (ARM core register to scalar) ----\n");
     TESTINSN_core_to_scalar("vmov.32 d0[0], r5", d0, r5, 13);
     TESTINSN_core_to_scalar("vmov.32 d1[1], r3", d1, r3, 12);
@@ -1662,6 +1744,7 @@ int main(int argc, char **argv)
     TESTINSN_core_to_scalar("vmov.8 d0[6], r5", d0, r5, 13);
     TESTINSN_core_to_scalar("vmov.8 d31[7], r5", d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VMOV (scalar toARM core register) ----\n");
     TESTINSN_scalar_to_core("vmov.32 r5, d0[0]", r5, d0, i32, 0x11223344);
     TESTINSN_scalar_to_core("vmov.32 r6, d5[1]", r6, d5, i32, 0x11223344);
@@ -1690,6 +1773,7 @@ int main(int argc, char **argv)
     TESTINSN_scalar_to_core("vmov.s8 r2, d4[6]", r2, d4, i8, 129);
     TESTINSN_scalar_to_core("vmov.s8 r2, d4[7]", r2, d4, i8, 131);
 
+    fflush(stdout);
     printf("---- VLD1 (multiple single elements) ----\n");
     TESTINSN_VLDn("vld1.8 {d0}", d0, d0, d0, d0);
     TESTINSN_VLDn("vld1.16 {d0}", d0, d0, d0, d0);
@@ -1712,6 +1796,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld1.32 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VLDn("vld1.64 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VLD1 (single element to one lane) ----\n");
     TESTINSN_VLDn("vld1.32 {d0[0]}", d0, d0, d0, d0);
     TESTINSN_VLDn("vld1.32 {d0[1]}", d0, d0, d0, d0);
@@ -1728,6 +1813,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld1.8 {d17[1]}", d17, d17, d17, d17);
     TESTINSN_VLDn("vld1.8 {d30[0]}", d30, d30, d30, d30);
 
+    fflush(stdout);
     printf("---- VLD1 (single element to all lanes) ----\n");
     TESTINSN_VLDn("vld1.8 {d0[]}", d0, d0, d0, d0);
     TESTINSN_VLDn("vld1.16 {d0[]}", d0, d0, d0, d0);
@@ -1739,6 +1825,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld1.16 {d0[],d1[]}", d0, d1, d0, d1);
     TESTINSN_VLDn("vld1.32 {d5[],d6[]}", d5, d6, d5, d6);
 
+    fflush(stdout);
     printf("---- VLD2 (multiple 2-elements) ----\n");
     TESTINSN_VLDn("vld2.8 {d30-d31}", d30, d31, d30, d31);
     TESTINSN_VLDn("vld2.16 {d0-d1}", d0, d1, d0, d1);
@@ -1750,6 +1837,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld2.16 {d20-d23}", d20, d21, d22, d23);
     TESTINSN_VLDn("vld2.32 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VLD2 (single 2-element structure to one lane) ----\n");
     TESTINSN_VLDn("vld2.32 {d0[0],d1[0]}", d0, d1, d0, d1);
     TESTINSN_VLDn("vld2.32 {d0[1],d1[1]}", d0, d1, d0, d1);
@@ -1772,6 +1860,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld2.8 {d17[1],d18[1]}", d17, d18, d17, d18);
     TESTINSN_VLDn("vld2.8 {d30[0],d31[0]}", d30, d31, d30, d31);
 
+    fflush(stdout);
     printf("---- VLD2 (2-elements to all lanes) ----\n");
     TESTINSN_VLDn("vld2.8 {d0[],d1[]}", d0, d1, d0, d1);
     TESTINSN_VLDn("vld2.16 {d0[],d1[]}", d0, d1, d0, d1);
@@ -1783,6 +1872,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld2.16 {d0[],d2[]}", d0, d2, d0, d2);
     TESTINSN_VLDn("vld2.32 {d5[],d7[]}", d5, d7, d5, d7);
 
+    fflush(stdout);
     printf("---- VLD3 (multiple 3-elements) ----\n");
     TESTINSN_VLDn("vld3.8 {d20-d22}", d20, d21, d22, d20);
     TESTINSN_VLDn("vld3.16 {d0-d2}", d0, d1, d2, d0);
@@ -1791,6 +1881,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld3.16 {d20,d22,d24}", d20, d22, d24, d20);
     TESTINSN_VLDn("vld3.32 {d0,d2,d4}", d0, d2, d4, d0);
 
+    fflush(stdout);
     printf("---- VLD3 (single 3-element structure to one lane) ----\n");
     TESTINSN_VLDn("vld3.32 {d0[0],d1[0],d2[0]}", d0, d1, d2, d1);
     TESTINSN_VLDn("vld3.32 {d0[1],d1[1],d2[1]}", d0, d1, d2, d1);
@@ -1813,6 +1904,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld3.8 {d17[1],d18[1],d19[1]}", d17, d18, d19, d18);
     TESTINSN_VLDn("vld3.8 {d29[0],d30[0],d31[0]}", d30, d31, d29, d31);
 
+    fflush(stdout);
     printf("---- VLD3 (3-elements to all lanes) ----\n");
     TESTINSN_VLDn("vld3.8 {d0[],d1[],d2[]}", d0, d1, d2, d1);
     TESTINSN_VLDn("vld3.16 {d0[],d1[],d2[]}", d0, d1, d2, d1);
@@ -1824,6 +1916,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld3.16 {d0[],d2[],d4[]}", d0, d2, d4, d2);
     TESTINSN_VLDn("vld3.32 {d5[],d7[],d9[]}", d5, d7, d9, d7);
 
+    fflush(stdout);
     printf("---- VLD4 (multiple 3-elements) ----\n");
     TESTINSN_VLDn("vld4.8 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VLDn("vld4.16 {d20-d23}", d20, d21, d22, d23);
@@ -1832,6 +1925,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld4.16 {d1,d3,d5,d7}", d1, d3, d5, d7);
     TESTINSN_VLDn("vld4.32 {d20,d22,d24,d26}", d20, d22, d24, d26);
 
+    fflush(stdout);
     printf("---- VLD4 (single 4-element structure to one lane) ----\n");
     TESTINSN_VLDn("vld4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3);
     TESTINSN_VLDn("vld4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4);
@@ -1854,6 +1948,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld4.8 {d17[1],d18[1],d19[1],d20[1]}", d17, d18, d19, d20);
     TESTINSN_VLDn("vld4.8 {d28[0],d29[0],d30[0],d31[0]}", d28, d29, d30, d31);
 
+    fflush(stdout);
     printf("---- VLD4 (4-elements to all lanes) ----\n");
     TESTINSN_VLDn("vld4.8 {d0[],d1[],d2[],d3[]}", d0, d1, d2, d3);
     TESTINSN_VLDn("vld4.16 {d0[],d1[],d2[],d3[]}", d0, d1, d2, d3);
@@ -1865,6 +1960,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn("vld4.16 {d0[],d2[],d4[],d6[]}", d0, d2, d4, d6);
     TESTINSN_VLDn("vld4.32 {d5[],d7[],d9[],d11[]}", d5, d7, d9, d11);
 
+    fflush(stdout);
     printf("---- VST1 (multiple single elements) ----\n");
     TESTINSN_VSTn("vst1.8 {d0}", d0, d0, d0, d0);
     TESTINSN_VSTn("vst1.16 {d0}", d0, d0, d0, d0);
@@ -1887,6 +1983,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst1.32 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VSTn("vst1.64 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VST1 (single element from one lane) ----\n");
     TESTINSN_VSTn("vst1.32 {d0[0]}", d0, d0, d0, d0);
     TESTINSN_VSTn("vst1.32 {d0[1]}", d0, d0, d0, d0);
@@ -1903,6 +2000,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst1.8 {d17[1]}", d17, d17, d17, d17);
     TESTINSN_VSTn("vst1.8 {d30[0]}", d30, d30, d30, d30);
 
+    fflush(stdout);
     printf("---- VST2 (multiple 2-elements) ----\n");
     TESTINSN_VSTn("vst2.8 {d30-d31}", d30, d31, d30, d31);
     TESTINSN_VSTn("vst2.16 {d0-d1}", d0, d1, d0, d1);
@@ -1914,6 +2012,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst2.16 {d20-d23}", d20, d21, d22, d23);
     TESTINSN_VSTn("vst2.32 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VST2 (single 2-element structure from one lane) ----\n");
     TESTINSN_VSTn("vst2.32 {d0[0],d1[0]}", d0, d1, d0, d1);
     TESTINSN_VSTn("vst2.32 {d0[1],d1[1]}", d0, d1, d0, d1);
@@ -1936,6 +2035,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst2.8 {d17[1],d18[1]}", d17, d18, d17, d18);
     TESTINSN_VSTn("vst2.8 {d30[0],d31[0]}", d30, d31, d30, d31);
 
+    fflush(stdout);
     printf("---- VST3 (multiple 3-elements) ----\n");
     TESTINSN_VSTn("vst3.8 {d20-d22}", d20, d21, d22, d20);
     TESTINSN_VSTn("vst3.16 {d0-d2}", d0, d1, d2, d0);
@@ -1944,6 +2044,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst3.16 {d20,d22,d24}", d20, d22, d24, d20);
     TESTINSN_VSTn("vst3.32 {d0,d2,d4}", d0, d2, d4, d0);
 
+    fflush(stdout);
     printf("---- VST3 (single 3-element structure from one lane) ----\n");
     TESTINSN_VSTn("vst3.32 {d0[0],d1[0],d2[0]}", d0, d1, d2, d1);
     TESTINSN_VSTn("vst3.32 {d0[1],d1[1],d2[1]}", d0, d1, d2, d1);
@@ -1966,6 +2067,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst3.8 {d17[1],d18[1],d19[1]}", d17, d18, d19, d18);
     TESTINSN_VSTn("vst3.8 {d29[0],d30[0],d31[0]}", d30, d31, d29, d31);
 
+    fflush(stdout);
     printf("---- VST4 (multiple 4-elements) ----\n");
     TESTINSN_VSTn("vst4.8 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VSTn("vst4.16 {d20-d23}", d20, d21, d22, d23);
@@ -1974,6 +2076,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst4.16 {d1,d3,d5,d7}", d1, d3, d5, d7);
     TESTINSN_VSTn("vst4.32 {d20,d22,d24,d26}", d20, d22, d24, d26);
 
+    fflush(stdout);
     printf("---- VST4 (single 4-element structure from one lane) ----\n");
     TESTINSN_VSTn("vst4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3);
     TESTINSN_VSTn("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4);
@@ -1996,6 +2099,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn("vst4.8 {d17[1],d18[1],d19[1],d20[1]}", d17, d18, d19, d20);
     TESTINSN_VSTn("vst4.8 {d28[0],d29[0],d30[0],d31[0]}", d28, d29, d30, d31);
 
+    fflush(stdout);
     printf("---- VLD1 (multiple single elements) ----\n");
     TESTINSN_VLDn_WB("vld1.8 {d0}", d0, d0, d0, d0);
     TESTINSN_VLDn_WB("vld1.16 {d0}", d0, d0, d0, d0);
@@ -2018,6 +2122,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld1.32 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VLDn_WB("vld1.64 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VLD1 (single element to one lane) ----\n");
     TESTINSN_VLDn_WB("vld1.32 {d0[0]}", d0, d0, d0, d0);
     TESTINSN_VLDn_WB("vld1.32 {d0[1]}", d0, d0, d0, d0);
@@ -2034,6 +2139,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld1.8 {d17[1]}", d17, d17, d17, d17);
     TESTINSN_VLDn_WB("vld1.8 {d30[0]}", d30, d30, d30, d30);
 
+    fflush(stdout);
     printf("---- VLD1 (single element to all lanes) ----\n");
     TESTINSN_VLDn_WB("vld1.8 {d0[]}", d0, d0, d0, d0);
     TESTINSN_VLDn_WB("vld1.16 {d0[]}", d0, d0, d0, d0);
@@ -2045,6 +2151,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld1.16 {d0[],d1[]}", d0, d1, d0, d1);
     TESTINSN_VLDn_WB("vld1.32 {d5[],d6[]}", d5, d6, d5, d6);
 
+    fflush(stdout);
     printf("---- VLD2 (multiple 2-elements) ----\n");
     TESTINSN_VLDn_WB("vld2.8 {d30-d31}", d30, d31, d30, d31);
     TESTINSN_VLDn_WB("vld2.16 {d0-d1}", d0, d1, d0, d1);
@@ -2056,6 +2163,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld2.16 {d20-d23}", d20, d21, d22, d23);
     TESTINSN_VLDn_WB("vld2.32 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VLD2 (single 2-element structure to one lane) ----\n");
     TESTINSN_VLDn_WB("vld2.32 {d0[0],d1[0]}", d0, d1, d0, d1);
     TESTINSN_VLDn_WB("vld2.32 {d0[1],d1[1]}", d0, d1, d0, d1);
@@ -2078,6 +2186,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld2.8 {d17[1],d18[1]}", d17, d18, d17, d18);
     TESTINSN_VLDn_WB("vld2.8 {d30[0],d31[0]}", d30, d31, d30, d31);
 
+    fflush(stdout);
     printf("---- VLD2 (2-elements to all lanes) ----\n");
     TESTINSN_VLDn_WB("vld2.8 {d0[],d1[]}", d0, d1, d0, d1);
     TESTINSN_VLDn_WB("vld2.16 {d0[],d1[]}", d0, d1, d0, d1);
@@ -2089,6 +2198,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld2.16 {d0[],d2[]}", d0, d2, d0, d2);
     TESTINSN_VLDn_WB("vld2.32 {d5[],d7[]}", d5, d7, d5, d7);
 
+    fflush(stdout);
     printf("---- VLD3 (multiple 3-elements) ----\n");
     TESTINSN_VLDn_WB("vld3.8 {d20-d22}", d20, d21, d22, d20);
     TESTINSN_VLDn_WB("vld3.16 {d0-d2}", d0, d1, d2, d0);
@@ -2097,6 +2207,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld3.16 {d20,d22,d24}", d20, d22, d24, d20);
     TESTINSN_VLDn_WB("vld3.32 {d0,d2,d4}", d0, d2, d4, d0);
 
+    fflush(stdout);
     printf("---- VLD3 (single 3-element structure to one lane) ----\n");
     TESTINSN_VLDn_WB("vld3.32 {d0[0],d1[0],d2[0]}", d0, d1, d2, d1);
     TESTINSN_VLDn_WB("vld3.32 {d0[1],d1[1],d2[1]}", d0, d1, d2, d1);
@@ -2119,6 +2230,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld3.8 {d17[1],d18[1],d19[1]}", d17, d18, d19, d18);
     TESTINSN_VLDn_WB("vld3.8 {d29[0],d30[0],d31[0]}", d30, d31, d29, d31);
 
+    fflush(stdout);
     printf("---- VLD3 (3-elements to all lanes) ----\n");
     TESTINSN_VLDn_WB("vld3.8 {d0[],d1[],d2[]}", d0, d1, d2, d1);
     TESTINSN_VLDn_WB("vld3.16 {d0[],d1[],d2[]}", d0, d1, d2, d1);
@@ -2130,6 +2242,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld3.16 {d0[],d2[],d4[]}", d0, d2, d4, d2);
     TESTINSN_VLDn_WB("vld3.32 {d5[],d7[],d9[]}", d5, d7, d9, d7);
 
+    fflush(stdout);
     printf("---- VLD4 (multiple 3-elements) ----\n");
     TESTINSN_VLDn_WB("vld4.8 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VLDn_WB("vld4.16 {d20-d23}", d20, d21, d22, d23);
@@ -2138,6 +2251,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld4.16 {d1,d3,d5,d7}", d1, d3, d5, d7);
     TESTINSN_VLDn_WB("vld4.32 {d20,d22,d24,d26}", d20, d22, d24, d26);
 
+    fflush(stdout);
     printf("---- VLD4 (single 4-element structure to one lane) ----\n");
     TESTINSN_VLDn_WB("vld4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3);
     TESTINSN_VLDn_WB("vld4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4);
@@ -2160,6 +2274,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld4.8 {d17[1],d18[1],d19[1],d20[1]}", d17, d18, d19, d20);
     TESTINSN_VLDn_WB("vld4.8 {d28[0],d29[0],d30[0],d31[0]}", d28, d29, d30, d31);
 
+    fflush(stdout);
     printf("---- VLD4 (4-elements to all lanes) ----\n");
     TESTINSN_VLDn_WB("vld4.8 {d0[],d1[],d2[],d3[]}", d0, d1, d2, d3);
     TESTINSN_VLDn_WB("vld4.16 {d0[],d1[],d2[],d3[]}", d0, d1, d2, d3);
@@ -2171,6 +2286,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_WB("vld4.16 {d0[],d2[],d4[],d6[]}", d0, d2, d4, d6);
     TESTINSN_VLDn_WB("vld4.32 {d5[],d7[],d9[],d11[]}", d5, d7, d9, d11);
 
+    fflush(stdout);
     printf("---- VST1 (multiple single elements) ----\n");
     TESTINSN_VSTn_WB("vst1.8 {d0}", d0, d0, d0, d0);
     TESTINSN_VSTn_WB("vst1.16 {d0}", d0, d0, d0, d0);
@@ -2193,6 +2309,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst1.32 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VSTn_WB("vst1.64 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VST1 (single element from one lane) ----\n");
     TESTINSN_VSTn_WB("vst1.32 {d0[0]}", d0, d0, d0, d0);
     TESTINSN_VSTn_WB("vst1.32 {d0[1]}", d0, d0, d0, d0);
@@ -2209,6 +2326,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst1.8 {d17[1]}", d17, d17, d17, d17);
     TESTINSN_VSTn_WB("vst1.8 {d30[0]}", d30, d30, d30, d30);
 
+    fflush(stdout);
     printf("---- VST2 (multiple 2-elements) ----\n");
     TESTINSN_VSTn_WB("vst2.8 {d30-d31}", d30, d31, d30, d31);
     TESTINSN_VSTn_WB("vst2.16 {d0-d1}", d0, d1, d0, d1);
@@ -2220,6 +2338,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst2.16 {d20-d23}", d20, d21, d22, d23);
     TESTINSN_VSTn_WB("vst2.32 {d0-d3}", d0, d1, d2, d3);
 
+    fflush(stdout);
     printf("---- VST2 (single 2-element structure from one lane) ----\n");
     TESTINSN_VSTn_WB("vst2.32 {d0[0],d1[0]}", d0, d1, d0, d1);
     TESTINSN_VSTn_WB("vst2.32 {d0[1],d1[1]}", d0, d1, d0, d1);
@@ -2242,6 +2361,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst2.8 {d17[1],d18[1]}", d17, d18, d17, d18);
     TESTINSN_VSTn_WB("vst2.8 {d30[0],d31[0]}", d30, d31, d30, d31);
 
+    fflush(stdout);
     printf("---- VST3 (multiple 3-elements) ----\n");
     TESTINSN_VSTn_WB("vst3.8 {d20-d22}", d20, d21, d22, d20);
     TESTINSN_VSTn_WB("vst3.16 {d0-d2}", d0, d1, d2, d0);
@@ -2250,6 +2370,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst3.16 {d20,d22,d24}", d20, d22, d24, d20);
     TESTINSN_VSTn_WB("vst3.32 {d0,d2,d4}", d0, d2, d4, d0);
 
+    fflush(stdout);
     printf("---- VST3 (single 3-element structure from one lane) ----\n");
     TESTINSN_VSTn_WB("vst3.32 {d0[0],d1[0],d2[0]}", d0, d1, d2, d1);
     TESTINSN_VSTn_WB("vst3.32 {d0[1],d1[1],d2[1]}", d0, d1, d2, d1);
@@ -2272,6 +2393,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst3.8 {d17[1],d18[1],d19[1]}", d17, d18, d19, d18);
     TESTINSN_VSTn_WB("vst3.8 {d29[0],d30[0],d31[0]}", d30, d31, d29, d31);
 
+    fflush(stdout);
     printf("---- VST4 (multiple 4-elements) ----\n");
     TESTINSN_VSTn_WB("vst4.8 {d0-d3}", d0, d1, d2, d3);
     TESTINSN_VSTn_WB("vst4.16 {d20-d23}", d20, d21, d22, d23);
@@ -2280,6 +2402,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst4.16 {d1,d3,d5,d7}", d1, d3, d5, d7);
     TESTINSN_VSTn_WB("vst4.32 {d20,d22,d24,d26}", d20, d22, d24, d26);
 
+    fflush(stdout);
     printf("---- VST4 (single 4-element structure from one lane) ----\n");
     TESTINSN_VSTn_WB("vst4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3);
     TESTINSN_VSTn_WB("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4);
@@ -2302,6 +2425,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_WB("vst4.8 {d17[1],d18[1],d19[1],d20[1]}", d17, d18, d19, d20);
     TESTINSN_VSTn_WB("vst4.8 {d28[0],d29[0],d30[0],d31[0]}", d28, d29, d30, d31);
 
+    fflush(stdout);
     printf("---- VLD1 (multiple single elements) ----\n");
     TESTINSN_VLDn_RI("vld1.8 {d0}", d0, d0, d0, d0, r5, 13);
     TESTINSN_VLDn_RI("vld1.16 {d0}", d0, d0, d0, d0, r8, 13);
@@ -2324,6 +2448,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld1.32 {d0-d3}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VLDn_RI("vld1.64 {d0-d3}", d0, d1, d2, d3, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD1 (single element to one lane) ----\n");
     TESTINSN_VLDn_RI("vld1.32 {d0[0]}", d0, d0, d0, d0, r5, 13);
     TESTINSN_VLDn_RI("vld1.32 {d0[1]}", d0, d0, d0, d0, r9, 42);
@@ -2340,6 +2465,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld1.8 {d17[1]}", d17, d17, d17, d17, r5, 13);
     TESTINSN_VLDn_RI("vld1.8 {d30[0]}", d30, d30, d30, d30, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD1 (single element to all lanes) ----\n");
     TESTINSN_VLDn_RI("vld1.8 {d0[]}", d0, d0, d0, d0, r5, 13);
     TESTINSN_VLDn_RI("vld1.16 {d0[]}", d0, d0, d0, d0, r9, 42);
@@ -2351,6 +2477,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld1.16 {d0[],d1[]}", d0, d1, d0, d1, r5, 13);
     TESTINSN_VLDn_RI("vld1.32 {d5[],d6[]}", d5, d6, d5, d6, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD2 (multiple 2-elements) ----\n");
     TESTINSN_VLDn_RI("vld2.8 {d30-d31}", d30, d31, d30, d31, r5, 13);
     TESTINSN_VLDn_RI("vld2.16 {d0-d1}", d0, d1, d0, d1, r9, 42);
@@ -2362,6 +2489,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld2.16 {d20-d23}", d20, d21, d22, d23, r5, 13);
     TESTINSN_VLDn_RI("vld2.32 {d0-d3}", d0, d1, d2, d3, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD2 (single 2-element structure to one lane) ----\n");
     TESTINSN_VLDn_RI("vld2.32 {d0[0],d1[0]}", d0, d1, d0, d1, r5, 13);
     TESTINSN_VLDn_RI("vld2.32 {d0[1],d1[1]}", d0, d1, d0, d1, r9, 42);
@@ -2384,6 +2512,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld2.8 {d17[1],d18[1]}", d17, d18, d17, d18, r5, 13);
     TESTINSN_VLDn_RI("vld2.8 {d30[0],d31[0]}", d30, d31, d30, d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD2 (2-elements to all lanes) ----\n");
     TESTINSN_VLDn_RI("vld2.8 {d0[],d1[]}", d0, d1, d0, d1, r5, 13);
     TESTINSN_VLDn_RI("vld2.16 {d0[],d1[]}", d0, d1, d0, d1, r9, 42);
@@ -2395,6 +2524,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld2.16 {d0[],d2[]}", d0, d2, d0, d2, r5, 13);
     TESTINSN_VLDn_RI("vld2.32 {d5[],d7[]}", d5, d7, d5, d7, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD3 (multiple 3-elements) ----\n");
     TESTINSN_VLDn_RI("vld3.8 {d20-d22}", d20, d21, d22, d20, r5, 13);
     TESTINSN_VLDn_RI("vld3.16 {d0-d2}", d0, d1, d2, d0, r9, 42);
@@ -2403,6 +2533,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld3.16 {d20,d22,d24}", d20, d22, d24, d20, r5, 13);
     TESTINSN_VLDn_RI("vld3.32 {d0,d2,d4}", d0, d2, d4, d0, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD3 (single 3-element structure to one lane) ----\n");
     TESTINSN_VLDn_RI("vld3.32 {d0[0],d1[0],d2[0]}", d0, d1, d2, d1, r5, 13);
     TESTINSN_VLDn_RI("vld3.32 {d0[1],d1[1],d2[1]}", d0, d1, d2, d1, r9, 42);
@@ -2425,6 +2556,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld3.8 {d17[1],d18[1],d19[1]}", d17, d18, d19, d18, r5, 13);
     TESTINSN_VLDn_RI("vld3.8 {d29[0],d30[0],d31[0]}", d30, d31, d29, d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD3 (3-elements to all lanes) ----\n");
     TESTINSN_VLDn_RI("vld3.8 {d0[],d1[],d2[]}", d0, d1, d2, d1, r5, 13);
     TESTINSN_VLDn_RI("vld3.16 {d0[],d1[],d2[]}", d0, d1, d2, d1, r9, 42);
@@ -2436,6 +2568,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld3.16 {d0[],d2[],d4[]}", d0, d2, d4, d2, r5, 13);
     TESTINSN_VLDn_RI("vld3.32 {d5[],d7[],d9[]}", d5, d7, d9, d7, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD4 (multiple 3-elements) ----\n");
     TESTINSN_VLDn_RI("vld4.8 {d0-d3}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VLDn_RI("vld4.16 {d20-d23}", d20, d21, d22, d23, r9, 0);
@@ -2444,6 +2577,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld4.16 {d1,d3,d5,d7}", d1, d3, d5, d7, r5, 13);
     TESTINSN_VLDn_RI("vld4.32 {d20,d22,d24,d26}", d20, d22, d24, d26, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD4 (single 4-element structure to one lane) ----\n");
     TESTINSN_VLDn_RI("vld4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VLDn_RI("vld4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4, r9, 42);
@@ -2466,6 +2600,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld4.8 {d17[1],d18[1],d19[1],d20[1]}", d17, d18, d19, d20, r5, 13);
     TESTINSN_VLDn_RI("vld4.8 {d28[0],d29[0],d30[0],d31[0]}", d28, d29, d30, d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VLD4 (4-elements to all lanes) ----\n");
     TESTINSN_VLDn_RI("vld4.8 {d0[],d1[],d2[],d3[]}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VLDn_RI("vld4.16 {d0[],d1[],d2[],d3[]}", d0, d1, d2, d3, r9, 42);
@@ -2477,6 +2612,7 @@ int main(int argc, char **argv)
     TESTINSN_VLDn_RI("vld4.16 {d0[],d2[],d4[],d6[]}", d0, d2, d4, d6, r5, 13);
     TESTINSN_VLDn_RI("vld4.32 {d5[],d7[],d9[],d11[]}", d5, d7, d9, d11, r5, 13);
 
+    fflush(stdout);
     printf("---- VST1 (multiple single elements) ----\n");
     TESTINSN_VSTn_RI("vst1.8 {d0}", d0, d0, d0, d0, r5, 13);
     TESTINSN_VSTn_RI("vst1.16 {d0}", d0, d0, d0, d0, r9, 42);
@@ -2499,6 +2635,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst1.32 {d0-d3}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VSTn_RI("vst1.64 {d0-d3}", d0, d1, d2, d3, r5, 13);
 
+    fflush(stdout);
     printf("---- VST1 (single element from one lane) ----\n");
     TESTINSN_VSTn_RI("vst1.32 {d0[0]}", d0, d0, d0, d0, r5, 13);
     TESTINSN_VSTn_RI("vst1.32 {d0[1]}", d0, d0, d0, d0, r9, 42);
@@ -2515,6 +2652,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst1.8 {d17[1]}", d17, d17, d17, d17, r5, 13);
     TESTINSN_VSTn_RI("vst1.8 {d30[0]}", d30, d30, d30, d30, r5, 13);
 
+    fflush(stdout);
     printf("---- VST2 (multiple 2-elements) ----\n");
     TESTINSN_VSTn_RI("vst2.8 {d30-d31}", d30, d31, d30, d31, r5, 13);
     TESTINSN_VSTn_RI("vst2.16 {d0-d1}", d0, d1, d0, d1, r9, 42);
@@ -2526,6 +2664,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst2.16 {d20-d23}", d20, d21, d22, d23, r5, 13);
     TESTINSN_VSTn_RI("vst2.32 {d0-d3}", d0, d1, d2, d3, r5, 13);
 
+    fflush(stdout);
     printf("---- VST2 (single 2-element structure from one lane) ----\n");
     TESTINSN_VSTn_RI("vst2.32 {d0[0],d1[0]}", d0, d1, d0, d1, r5, 13);
     TESTINSN_VSTn_RI("vst2.32 {d0[1],d1[1]}", d0, d1, d0, d1, r9, 42);
@@ -2548,6 +2687,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst2.8 {d17[1],d18[1]}", d17, d18, d17, d18, r5, 13);
     TESTINSN_VSTn_RI("vst2.8 {d30[0],d31[0]}", d30, d31, d30, d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VST3 (multiple 3-elements) ----\n");
     TESTINSN_VSTn_RI("vst3.8 {d20-d22}", d20, d21, d22, d20, r5, 13);
     TESTINSN_VSTn_RI("vst3.16 {d0-d2}", d0, d1, d2, d0, r9, 42);
@@ -2556,6 +2696,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst3.16 {d20,d22,d24}", d20, d22, d24, d20, r5, 13);
     TESTINSN_VSTn_RI("vst3.32 {d0,d2,d4}", d0, d2, d4, d0, r5, 13);
 
+    fflush(stdout);
     printf("---- VST3 (single 3-element structure from one lane) ----\n");
     TESTINSN_VSTn_RI("vst3.32 {d0[0],d1[0],d2[0]}", d0, d1, d2, d1, r5, 13);
     TESTINSN_VSTn_RI("vst3.32 {d0[1],d1[1],d2[1]}", d0, d1, d2, d1, r9, 42);
@@ -2578,6 +2719,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst3.8 {d17[1],d18[1],d19[1]}", d17, d18, d19, d18, r5, 13);
     TESTINSN_VSTn_RI("vst3.8 {d29[0],d30[0],d31[0]}", d30, d31, d29, d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VST4 (multiple 4-elements) ----\n");
     TESTINSN_VSTn_RI("vst4.8 {d0-d3}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VSTn_RI("vst4.16 {d20-d23}", d20, d21, d22, d23, r9, 42);
@@ -2586,6 +2728,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst4.16 {d1,d3,d5,d7}", d1, d3, d5, d7, r5, 13);
     TESTINSN_VSTn_RI("vst4.32 {d20,d22,d24,d26}", d20, d22, d24, d26, r5, 13);
 
+    fflush(stdout);
     printf("---- VST4 (single 4-element structure from one lane) ----\n");
     TESTINSN_VSTn_RI("vst4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3, r5, 13);
     TESTINSN_VSTn_RI("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4, r9, 42);
@@ -2608,6 +2751,7 @@ int main(int argc, char **argv)
     TESTINSN_VSTn_RI("vst4.8 {d17[1],d18[1],d19[1],d20[1]}", d17, d18, d19, d20, r5, 13);
     TESTINSN_VSTn_RI("vst4.8 {d28[0],d29[0],d30[0],d31[0]}", d28, d29, d30, d31, r5, 13);
 
+    fflush(stdout);
     printf("---- VMOVN ----\n");
     TESTINSN_bin("vmovn.i32 d0, q0", d0, d0, i32, 0x32, d1, i32, 0x24);
     TESTINSN_bin("vmovn.i16 d7, q5", d7, d10, i32, 0x32, d11, i32, 0x24);
@@ -2616,6 +2760,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmovn.i16 d7, q5", d7, d10, i16, 0xdead, d11, i16, 0xbeef);
     TESTINSN_bin("vmovn.i64 d31, q0", d31, d0, i32, 0xff00fe0f, d1, i8, 0x24);
 
+    fflush(stdout);
     printf("---- VQMOVN ----\n");
     TESTINSN_bin_q("vqmovn.u32 d0, q0", d0, d0, i32, 0x32, d1, i32, 0x24);
     TESTINSN_bin_q("vqmovn.u16 d7, q5", d7, d10, i32, 0x32, d11, i32, 0x24);
@@ -2633,6 +2778,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqmovn.s16 d7, q5", d7, d10, i8, 0xff, d11, i16, 0xff);
     TESTINSN_bin_q("vqmovn.s64 d31, q0", d31, d0, i8, 0xff, d1, i8, 0xff);
 
+    fflush(stdout);
     printf("---- VQMOVN ----\n");
     TESTINSN_bin_q("vqmovun.s32 d0, q0", d0, d0, i32, 0x32, d1, i32, 0x24);
     TESTINSN_bin_q("vqmovun.s16 d7, q5", d7, d10, i32, 0x32, d11, i32, 0x24);
@@ -2644,6 +2790,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqmovun.s16 d7, q5", d7, d10, i8, 0xff, d11, i16, 0xff);
     TESTINSN_bin_q("vqmovun.s64 d31, q0", d31, d0, i8, 0xff, d1, i8, 0xff);
 
+    fflush(stdout);
     printf("---- VABS ----\n");
     TESTINSN_un("vabs.s32 d0, d1", d0, d1, i32, 0x73);
     TESTINSN_un("vabs.s16 d15, d4", d15, d4, i32, 0x73);
@@ -2655,6 +2802,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vabs.s16 d15, d4", d15, d4, i16, 0xef0b);
     TESTINSN_un("vabs.s8 d8, d7", d8, d7, i16, 0xde0c);
 
+    fflush(stdout);
     printf("---- VQABS ----\n");
     TESTINSN_un_q("vqabs.s32 d0, d1", d0, d1, i32, 0x73);
     TESTINSN_un_q("vqabs.s32 d0, d1", d0, d1, i32, 1 << 31);
@@ -2669,6 +2817,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqabs.s16 d15, d4", d15, d4, i16, 0xef0b);
     TESTINSN_un_q("vqabs.s8 d8, d7", d8, d7, i16, 0xde0c);
 
+    fflush(stdout);
     printf("---- VADDHN ----\n");
     TESTINSN_bin("vaddhn.i32 d0, q1, q1", d0, q1, i32, 0x73, q1, i32, 0x72);
     TESTINSN_bin("vaddhn.i16 d0, q1, q2", d0, q1, i32, 0x73, q2, i32, 0x72);
@@ -2682,6 +2831,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vaddhn.i32 d0, q1, q2", d0, q1, i8, 0x73, q2, i32, 0x72);
     TESTINSN_bin("vaddhn.i64 d0, q1, q2", d0, q1, i8, 0x73, q2, i32, 0x72);
 
+    fflush(stdout);
     printf("---- VRADDHN ----\n");
     TESTINSN_bin("vraddhn.i32 d0, q1, q1", d0, q1, i32, 0x73, q1, i32, 0x72);
     TESTINSN_bin("vraddhn.i16 d0, q1, q2", d0, q1, i32, 0x73, q2, i32, 0x72);
@@ -2702,6 +2852,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vraddhn.i32 d0, q1, q2", d0, q1, i8, 0x73, q2, i32, 0x02);
     TESTINSN_bin("vraddhn.i64 d0, q1, q2", d0, q1, i8, 0x73, q2, i32, 0x02);
 
+    fflush(stdout);
     printf("---- VSUBHN ----\n");
     TESTINSN_bin("vsubhn.i32 d0, q1, q1", d0, q1, i32, 0x73, q1, i32, 0x72);
     TESTINSN_bin("vsubhn.i16 d0, q1, q2", d0, q1, i32, 0x73, q2, i32, 0x72);
@@ -2715,6 +2866,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vsubhn.i32 d0, q1, q2", d0, q1, i8, 0x73, q2, i32, 0x72);
     TESTINSN_bin("vsubhn.i64 d0, q1, q2", d0, q1, i8, 0x73, q2, i32, 0x72);
 
+    fflush(stdout);
     printf("---- VRSUBHN ----\n");
     TESTINSN_bin("vrsubhn.i32 d0, q1, q1", d0, q1, i32, 0x73, q1, i32, 0x72);
     TESTINSN_bin("vrsubhn.i16 d0, q1, q2", d0, q1, i32, 0x73, q2, i32, 0x72);
@@ -2735,6 +2887,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vrsubhn.i32 d0, q1, q2", d0, q1, i8, 0x93, q2, i32, 0x02);
     TESTINSN_bin("vrsubhn.i64 d0, q1, q2", d0, q1, i8, 0x93, q2, i32, 0x02);
 
+    fflush(stdout);
     printf("---- VCEQ #0 ----\n");
     TESTINSN_un("vceq.i32 d0, d1, #0", d0, d1, i32, 0x21);
     TESTINSN_un("vceq.i16 d2, d1, #0", d2, d1, i32, 0x21);
@@ -2743,6 +2896,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vceq.i16 d2, d1, #0", d2, d1, i32, 0x0);
     TESTINSN_un("vceq.i8 d10, d31, #0", d10, d31, i32, 0x0);
 
+    fflush(stdout);
     printf("---- VCGT #0 ----\n");
     TESTINSN_un("vcgt.s32 d0, d1, #0", d0, d1, i32, 0x21);
     TESTINSN_un("vcgt.s16 d2, d1, #0", d2, d1, i32, 0x21);
@@ -2754,6 +2908,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcgt.s16 d2, d1, #0", d2, d1, i8, 0xed);
     TESTINSN_un("vcgt.s8 d10, d11, #0", d10, d11, i8, 0xae);
 
+    fflush(stdout);
     printf("---- VCGE #0 ----\n");
     TESTINSN_un("vcge.s32 d0, d1, #0", d0, d1, i32, 0x21);
     TESTINSN_un("vcge.s16 d2, d1, #0", d2, d1, i32, 0x21);
@@ -2768,6 +2923,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcge.s16 d2, d1, #0", d2, d1, i32, 0xed);
     TESTINSN_un("vcge.s8 d10, d11, #0", d10, d11, i32, 0xae);
 
+    fflush(stdout);
     printf("---- VCLE #0 ----\n");
     TESTINSN_un("vcle.s32 d0, d1, #0", d0, d1, i32, 0x21);
     TESTINSN_un("vcle.s16 d2, d1, #0", d2, d1, i32, 0x21);
@@ -2779,6 +2935,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcle.s16 d2, d1, #0", d2, d1, i8, 0xed);
     TESTINSN_un("vcle.s8 d10, d11, #0", d10, d11, i8, 0xae);
 
+    fflush(stdout);
     printf("---- VCLT #0 ----\n");
     TESTINSN_un("vclt.s32 d0, d1, #0", d0, d1, i32, 0x21);
     TESTINSN_un("vclt.s16 d2, d1, #0", d2, d1, i32, 0x21);
@@ -2793,11 +2950,13 @@ int main(int argc, char **argv)
     TESTINSN_un("vclt.s16 d2, d1, #0", d2, d1, i32, 0xed);
     TESTINSN_un("vclt.s8 d10, d11, #0", d10, d11, i32, 0xae);
 
+    fflush(stdout);
     printf("---- VCNT ----\n");
     TESTINSN_un("vcnt.8 d0, d1", d0, d1, i32, 0xac3d25eb);
     TESTINSN_un("vcnt.8 d11, d14", d11, d14, i32, 0xac3d25eb);
     TESTINSN_un("vcnt.8 d6, d2", d6, d2, i32, 0xad0eb);
 
+    fflush(stdout);
     printf("---- VCLS ----\n");
     TESTINSN_un("vcls.s8 d0, d1", d0, d1, i32, 0x21);
     TESTINSN_un("vcls.s8 d30, d31", d30, d31, i8, 0x82);
@@ -2818,6 +2977,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcls.s16 d2, d4", d2, d4, i16, 0x00ef);
     TESTINSN_un("vcls.s32 d2, d4", d2, d4, i16, 0x00ef);
 
+    fflush(stdout);
     printf("---- VCLZ ----\n");
     TESTINSN_un("vclz.i8 d0, d1", d0, d1, i32, 0x21);
     TESTINSN_un("vclz.i8 d30, d31", d30, d31, i8, 0x82);
@@ -2838,6 +2998,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vclz.i16 d2, d4", d2, d4, i16, 0x00ef);
     TESTINSN_un("vclz.i32 d2, d4", d2, d4, i16, 0x00ef);
 
+    fflush(stdout);
     printf("---- VSLI ----\n");
     TESTINSN_un("vsli.16 d0, d1, #1", d0, d1, i32, 7);
     TESTINSN_un("vsli.16 d3, d4, #2", d3, d4, i32, -0x7c);
@@ -2856,6 +3017,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vsli.64 d8, d4, #9", d8, d4, i32, 13560);
     TESTINSN_un("vsli.64 d9, d12, #11", d9, d12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VPADD ----\n");
     TESTINSN_bin("vpadd.i32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin("vpadd.i32 d0, d1, d2", d0, d1, i32, 140, d2, i32, 120);
@@ -2866,6 +3028,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vpadd.i32 d0, d1, d2", d0, d1, i32, (1 << 31) + 1, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vpadd.i32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VPADDL ----\n");
     TESTINSN_un("vpaddl.u32 d0, d1", d0, d1, i32, 24);
     TESTINSN_un("vpaddl.u32 d0, d1", d0, d1, i32, 140);
@@ -2884,6 +3047,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vpaddl.s32 d0, d1", d0, d1, i32, (1 << 31) + 1);
     TESTINSN_un("vpaddl.s32 d10, d11", d10, d11, i32, 24);
 
+    fflush(stdout);
     printf("---- VPADAL ----\n");
     TESTINSN_un("vpadal.u32 d0, d1", d0, d1, i32, 24);
     TESTINSN_un("vpadal.u32 d0, d1", d0, d1, i32, 140);
@@ -2902,6 +3066,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vpadal.s32 d0, d1", d0, d1, i32, (1 << 31) + 1);
     TESTINSN_un("vpadal.s32 d10, d11", d10, d11, i32, 24);
 
+    fflush(stdout);
     printf("---- VZIP ----\n");
     TESTINSN_dual("vzip.32 d0, d1", d0, i8, 0x12, d1, i8, 0x34);
     TESTINSN_dual("vzip.16 d1, d0", d0, i8, 0x12, d1, i8, 0x34);
@@ -2910,6 +3075,7 @@ int main(int argc, char **argv)
     TESTINSN_dual("vzip.16 d1, d0", d0, i32, 0x12345678, d1, i32, 0x0a0b0c0d);
     TESTINSN_dual("vzip.8 d30, d31", d30, i32, 0x12345678, d31, i32, 0x0a0b0c0d);
 
+    fflush(stdout);
     printf("---- VUZP ----\n");
     TESTINSN_dual("vuzp.32 d0, d1", d0, i8, 0x12, d1, i8, 0x34);
     TESTINSN_dual("vuzp.16 d1, d0", d0, i8, 0x12, d1, i8, 0x34);
@@ -2918,6 +3084,7 @@ int main(int argc, char **argv)
     TESTINSN_dual("vuzp.16 d1, d0", d0, i32, 0x12345678, d1, i32, 0x0a0b0c0d);
     TESTINSN_dual("vuzp.8 d30, d31", d30, i32, 0x12345678, d31, i32, 0x0a0b0c0d);
 
+    fflush(stdout);
     printf("---- VTRN ----\n");
     TESTINSN_dual("vtrn.32 d0, d1", d0, i8, 0x12, d1, i8, 0x34);
     TESTINSN_dual("vtrn.16 d1, d0", d0, i8, 0x12, d1, i8, 0x34);
@@ -2926,6 +3093,7 @@ int main(int argc, char **argv)
     TESTINSN_dual("vtrn.16 d1, d0", d0, i32, 0x12345678, d1, i32, 0x0a0b0c0d);
     TESTINSN_dual("vtrn.8 d30, d31", d30, i32, 0x12345678, d31, i32, 0x0a0b0c0d);
 
+    fflush(stdout);
     printf("---- VSWP ----\n");
     TESTINSN_dual("vswp d0, d1", d0, i8, 0x12, d1, i8, 0x34);
     TESTINSN_dual("vswp d1, d0", d0, i8, 0x12, d1, i8, 0x34);
@@ -2934,6 +3102,7 @@ int main(int argc, char **argv)
     TESTINSN_dual("vswp d1, d0", d0, i32, 0x12345678, d1, i32, 0x0a0b0c0d);
     TESTINSN_dual("vswp d30, d31", d30, i32, 0x12345678, d31, i32, 0x0a0b0c0d);
 
+    fflush(stdout);
     printf("---- VSHRN ----\n");
     TESTINSN_un("vshrn.i16 d0, q1, #1", d0, q1, i32, -1);
     TESTINSN_un("vshrn.i16 d3, q4, #2", d3, q4, i32, -0x7c);
@@ -2953,6 +3122,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vshrn.i64 d8, q4, #9", d8, q4, i32, 13560);
     TESTINSN_un("vshrn.i64 d9, q12, #11", d9, q12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VDUP ----\n");
     TESTINSN_un("vdup.8 d12, d2[0]", d12, d2, i32, 0xabc4657);
     TESTINSN_un("vdup.8 d0, d3[2]", d0, d3, i32, 0x7a1b3);
@@ -2970,6 +3140,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vdup.32 d22, d0[1]", d22, d0, i32, 0xf);
     TESTINSN_un("vdup.32 d13, d13[0]", d13, d13, i32, -1);
 
+    fflush(stdout);
     printf("---- VQDMULH ----\n");
     TESTINSN_bin_q("vqdmulh.s32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin_q("vqdmulh.s32 d6, d7, d8", d6, d7, i32, 140, d8, i32, -120);
@@ -2986,6 +3157,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqdmulh.s32 d10, d30, d31", d10, d30, i32, 1 << 30, d31, i32, 1 << 31);
     TESTINSN_bin_q("vqdmulh.s16 d10, d30, d31", d10, d30, i32, 1 << 31, d31, i32, 1 << 30);
 
+    fflush(stdout);
     printf("---- VQDMULH (by scalar) ----\n");
     TESTINSN_bin_q("vqdmulh.s32 d0, d1, d6[0]", d0, d1, i32, 24, d6, i32, 120);
     TESTINSN_bin_q("vqdmulh.s32 d6, d7, d1[1]", d6, d7, i32, 140, d1, i32, -120);
@@ -3002,6 +3174,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqdmulh.s32 d10, d14, d15[1]", d10, d14, i32, 1 << 30, d15, i32, 1 << 31);
     TESTINSN_bin_q("vqdmulh.s16 d31, d14, d7[1]", d31, d14, i32, 1 << 31, d7, i32, 1 << 30);
 
+    fflush(stdout);
     printf("---- VSHRN ----\n");
     TESTINSN_un("vshrn.i64 d2, q2, #1", d2, q2, i32, 0xabc4657);
     TESTINSN_un("vshrn.i64 d3, q3, #0", d3, q3, i32, 0x7a1b3);
@@ -3019,6 +3192,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vshrn.i32 d12, q0, #6", d12, q0, i32, 0xf);
     TESTINSN_un("vshrn.i32 d13, q13, #2", d13, q13, i32, -1);
 
+    fflush(stdout);
     printf("---- VQSHRN ----\n");
     TESTINSN_un_q("vqshrn.s16 d0, q1, #1", d0, q1, i32, -1);
     TESTINSN_un_q("vqshrn.s16 d3, q4, #2", d3, q4, i32, -0x7c);
@@ -3059,6 +3233,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqshrn.u64 d8, q4, #9", d8, q4, i32, 13560);
     TESTINSN_un_q("vqshrn.u64 d9, q12, #11", d9, q12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VQSHRUN ----\n");
     TESTINSN_un_q("vqshrun.s16 d0, q1, #1", d0, q1, i32, -1);
     TESTINSN_un_q("vqshrun.s16 d3, q4, #2", d3, q4, i32, -0x7c);
@@ -3080,6 +3255,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqshrun.s64 d8, q4, #9", d8, q4, i32, 13560);
     TESTINSN_un_q("vqshrun.s64 d9, q12, #11", d9, q12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VQRSHRN ----\n");
     TESTINSN_un_q("vqrshrn.s16 d0, q1, #1", d0, q1, i32, -1);
     TESTINSN_un_q("vqrshrn.s16 d3, q4, #2", d3, q4, i32, -0x7c);
@@ -3120,6 +3296,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqrshrn.u64 d8, q4, #9", d8, q4, i32, 13560);
     TESTINSN_un_q("vqrshrn.u64 d9, q12, #11", d9, q12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VQRSHRUN ----\n");
     TESTINSN_un_q("vqrshrun.s16 d0, q1, #1", d0, q1, i32, -1);
     TESTINSN_un_q("vqrshrun.s16 d3, q4, #2", d3, q4, i32, -0x7c);
@@ -3141,6 +3318,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqrshrun.s64 d8, q4, #9", d8, q4, i32, 13560);
     TESTINSN_un_q("vqrshrun.s64 d9, q12, #11", d9, q12, i32, 98710);
 
+    fflush(stdout);
     printf("---- VRSHRN ----\n");
     TESTINSN_un("vrshrn.i64 d2, q2, #1", d2, q2, i32, 0xabc4657);
     TESTINSN_un("vrshrn.i64 d3, q3, #0", d3, q3, i32, 0x7a1b3);
@@ -3158,6 +3336,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vrshrn.i32 d12, q0, #6", d12, q0, i32, 0xf);
     TESTINSN_un("vrshrn.i32 d13, q13, #2", d13, q13, i32, -1);
 
+    fflush(stdout);
     printf("---- VSHL (immediate) ----\n");
     TESTINSN_un("vshl.i64 d0, d1, #1", d0, d1, i32, 24);
     TESTINSN_un("vshl.i64 d5, d2, #1", d5, d2, i32, (1 << 30));
@@ -3184,6 +3363,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vshl.i8 d15, d12, #3", d15, d12, i8, 5);
     TESTINSN_un("vshl.i8 d5, d12, #6", d5, d12, i32, (1 << 31) + 1);
 
+    fflush(stdout);
     printf("---- VNEG ----\n");
     TESTINSN_un("vneg.s32 d0, d1", d0, d1, i32, 0x73);
     TESTINSN_un("vneg.s16 d15, d4", d15, d4, i32, 0x73);
@@ -3195,6 +3375,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vneg.s16 d15, d4", d15, d4, i16, 0xef0b);
     TESTINSN_un("vneg.s8 d8, d7", d8, d7, i16, 0xde0c);
 
+    fflush(stdout);
     printf("---- VQNEG ----\n");
     TESTINSN_un_q("vqneg.s32 d0, d1", d0, d1, i32, 0x73);
     TESTINSN_un_q("vqneg.s32 d0, d1", d0, d1, i32, 1 << 31);
@@ -3209,6 +3390,7 @@ int main(int argc, char **argv)
     TESTINSN_un_q("vqneg.s16 d15, d4", d15, d4, i16, 0xef0b);
     TESTINSN_un_q("vqneg.s8 d8, d7", d8, d7, i16, 0xde0c);
 
+    fflush(stdout);
     printf("---- VREV ----\n");
     TESTINSN_un("vrev64.8 d0, d1", d0, d1, i32, 0xaabbccdd);
     TESTINSN_un("vrev64.16 d10, d31", d10, d31, i32, 0xaabbccdd);
@@ -3217,6 +3399,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vrev32.16 d30, d15", d30, d15, i32, 0xaabbccdd);
     TESTINSN_un("vrev16.8 d0, d1", d0, d1, i32, 0xaabbccdd);
 
+    fflush(stdout);
     printf("---- VTBL ----\n");
     TESTINSN_tbl_1("vtbl.8 d0, {d2}, d1", d0, d1, i8, 0, d2, i32, 0x12345678);
     TESTINSN_tbl_1("vtbl.8 d0, {d31}, d1", d0, d1, i8, 0x07, d31, i32, 0x12345678);
@@ -3266,6 +3449,7 @@ int main(int argc, char **argv)
     TESTINSN_tbl_4("vtbl.8 d30, {d2-d5}, d31", d30, d31, i32, 0x1d130f1a, d2, i32, 0x12345678, d3, i32, 0xa1a2a3a4, d4, i32, 0xcacbcccd, d5, i32, 0xfefdfcfb);
     TESTINSN_tbl_4("vtbl.8 d30, {d2-d5}, d31", d30, d31, i32, 0x17101c11, d2, i32, 0x12345678, d3, i32, 0xa1a2a3a4, d4, i32, 0xcacbcccd, d5, i32, 0xfefdfcfb);
 
+    fflush(stdout);
     printf("---- VTBX ----\n");
     TESTINSN_tbl_1("vtbx.8 d0, {d2}, d1", d0, d1, i8, 0, d2, i32, 0x12345678);
     TESTINSN_tbl_1("vtbx.8 d0, {d31}, d1", d0, d1, i8, 0x07, d31, i32, 0x12345678);
@@ -3315,6 +3499,7 @@ int main(int argc, char **argv)
     TESTINSN_tbl_4("vtbx.8 d30, {d2-d5}, d31", d30, d31, i32, 0x1d130f1a, d2, i32, 0x12345678, d3, i32, 0xa1a2a3a4, d4, i32, 0xcacbcccd, d5, i32, 0xfefdfcfb);
     TESTINSN_tbl_4("vtbx.8 d30, {d2-d5}, d31", d30, d31, i32, 0x17101c11, d2, i32, 0x12345678, d3, i32, 0xa1a2a3a4, d4, i32, 0xcacbcccd, d5, i32, 0xfefdfcfb);
 
+    fflush(stdout);
     printf("---- VPMAX (integer) ----\n");
     TESTINSN_bin("vpmax.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
     TESTINSN_bin("vpmax.s32 d0, d1, d2", d0, d1, i32, 250, d2, i32, 121);
@@ -3347,6 +3532,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vpmax.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vpmax.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VPMIN (integer) ----\n");
     TESTINSN_bin("vpmin.s32 d0, d1, d2", d0, d1, i32, 25, d2, i32, 121);
     TESTINSN_bin("vpmin.s32 d0, d1, d2", d0, d1, i32, 250, d2, i32, 121);
@@ -3379,6 +3565,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vpmin.u32 d0, d1, d2", d0, d1, i32, (1 << 31) + 4, d2, i32, (1 << 31) + 2);
     TESTINSN_bin("vpmin.u32 d10, d11, d12", d10, d11, i32, 24, d12, i32, 120);
 
+    fflush(stdout);
     printf("---- VQRDMULH ----\n");
     TESTINSN_bin_q("vqrdmulh.s32 d0, d1, d2", d0, d1, i32, 24, d2, i32, 120);
     TESTINSN_bin_q("vqrdmulh.s32 d6, d7, d8", d6, d7, i32, 140, d8, i32, -120);
@@ -3395,6 +3582,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqrdmulh.s32 d10, d30, d31", d10, d30, i32, 1 << 30, d31, i32, 1 << 31); 
     TESTINSN_bin_q("vqrdmulh.s16 d10, d30, d31", d10, d30, i32, 1 << 31, d31, i32, 1 << 30);
 
+    fflush(stdout);
     printf("---- VQRDMULH (by scalar) ----\n");
     TESTINSN_bin_q("vqrdmulh.s32 d0, d1, d6[0]", d0, d1, i32, 24, d6, i32, 120);
     TESTINSN_bin_q("vqrdmulh.s32 d6, d7, d1[1]", d6, d7, i32, 140, d1, i32, -120);
@@ -3411,6 +3599,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_q("vqrdmulh.s32 d10, d14, d15[1]", d10, d14, i32, 1 << 30, d15, i32, 1 << 31);
     TESTINSN_bin_q("vqrdmulh.s16 d31, d14, d7[1]", d31, d14, i32, 1 << 31, d7, i32, 1 << 30);
 
+    fflush(stdout);
     printf("---- VADD (fp) ----\n");
     TESTINSN_bin("vadd.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vadd.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3453,6 +3642,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vadd.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vadd.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VSUB (fp) ----\n");
     TESTINSN_bin("vsub.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vsub.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3495,6 +3685,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vsub.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vsub.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMUL (fp) ----\n");
     TESTINSN_bin("vmul.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vmul.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3537,6 +3728,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmul.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vmul.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMUL (fp by scalar) ----\n");
     TESTINSN_bin("vmul.f32 d0, d1, d4[0]", d0, d1, i32, f2u(24), d4, i32, f2u(120));
     TESTINSN_bin("vmul.f32 d31, d8, d7[1]", d31, d8, i32, f2u(140), d7, i32, f2u(-120));
@@ -3566,6 +3758,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmul.f32 d0, d1, d2[0]", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vmul.f32 d0, d1, d2[0]", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMLA (fp) ----\n");
     TESTINSN_bin_f("vmla.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin_f("vmla.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3608,6 +3801,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_f("vmla.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin_f("vmla.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMLA (fp by scalar) ----\n");
     TESTINSN_bin_f("vmla.f32 d0, d1, d4[0]", d0, d1, i32, f2u(24), d4, i32, f2u(120));
     TESTINSN_bin_f("vmla.f32 d31, d8, d7[1]", d31, d8, i32, f2u(140), d7, i32, f2u(-120));
@@ -3637,6 +3831,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_f("vmla.f32 d0, d1, d2[0]", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin_f("vmla.f32 d0, d1, d2[0]", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMLS (fp) ----\n");
     TESTINSN_bin_f("vmls.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin_f("vmls.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3679,6 +3874,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_f("vmls.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin_f("vmls.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMLS (fp by scalar) ----\n");
     TESTINSN_bin_f("vmls.f32 d0, d1, d4[0]", d0, d1, i32, f2u(24), d4, i32, f2u(120));
     TESTINSN_bin_f("vmls.f32 d31, d8, d7[1]", d31, d8, i32, f2u(140), d7, i32, f2u(-120));
@@ -3708,6 +3904,7 @@ int main(int argc, char **argv)
     TESTINSN_bin_f("vmls.f32 d0, d1, d2[0]", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin_f("vmls.f32 d0, d1, d2[0]", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VABD (fp) ----\n");
     TESTINSN_bin("vabd.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vabd.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3730,6 +3927,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vabd.f32 d10, d13, d15", d10, d13, i32, f2u(278456.45), d15, i32, f2u(8756.0076));
     TESTINSN_bin("vabd.f32 d0, d1, d2", d0, d1, i32, f2u(876988654), d2, i32, f2u(1224808797));
 
+    fflush(stdout);
     printf("---- VPADD (fp) ----\n");
     TESTINSN_bin("vpadd.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vpadd.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3772,6 +3970,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vpadd.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vpadd.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCVT (integer <-> fp) ----\n");
     TESTINSN_un("vcvt.u32.f32 d0, d1", d0, d1, i32, f2u(3.2));
     TESTINSN_un("vcvt.u32.f32 d10, d11", d10, d11, i32, f2u(3e22));
@@ -3805,6 +4004,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcvt.s32.f32 d0, d1", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vcvt.s32.f32 d0, d1", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCVT (fixed <-> fp) ----\n");
     TESTINSN_un("vcvt.u32.f32 d0, d1, #3", d0, d1, i32, f2u(3.2));
     TESTINSN_un("vcvt.u32.f32 d10, d11, #1", d10, d11, i32, f2u(3e22));
@@ -3839,6 +4039,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcvt.s32.f32 d0, d1, #3", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vcvt.s32.f32 d0, d1, #3", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMAX (fp) ----\n");
     TESTINSN_bin("vmax.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vmax.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3887,6 +4088,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmax.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vmax.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VMIN (fp) ----\n");
     TESTINSN_bin("vmin.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vmin.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3935,6 +4137,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vmin.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vmin.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VPMAX (fp) ----\n");
     TESTINSN_bin("vpmax.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vpmax.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -3983,6 +4186,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vpmax.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vpmax.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VPMIN (fp) ----\n");
     TESTINSN_bin("vpmin.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vpmin.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -4031,6 +4235,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vpmin.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vpmin.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VRECPE ----\n");
     TESTINSN_un("vrecpe.u32 d0, d1", d0, d1, i32, f2u(3.2));
     TESTINSN_un("vrecpe.u32 d0, d1", d0, d1, i32, f2u(-653.2));
@@ -4062,6 +4267,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vrecpe.f32 d0, d1", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vrecpe.f32 d0, d1", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VRECPS ----\n");
     TESTINSN_bin("vrecps.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vrecps.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -4104,6 +4310,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vrecps.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vrecps.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VABS (fp) ----\n");
     TESTINSN_un("vabs.f32 d0, d1", d0, d1, i32, f2u(3.2));
     TESTINSN_un("vabs.f32 d10, d11", d10, d11, i32, f2u(3e22));
@@ -4134,6 +4341,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vabs.f32 d0, d1", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vabs.f32 d0, d1", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCGT (fp) ----\n");
     TESTINSN_bin("vcgt.f32 d0, d1, d2", d0, d1, i32, f2u(0.5), d2, i32, f2u(-0.5));
     TESTINSN_bin("vcgt.f32 d2, d15, d12", d2, d15, i32, f2u(-0.53), d12, i32, f2u(0.52));
@@ -4185,6 +4393,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vcgt.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vcgt.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCGE (fp) ----\n");
     TESTINSN_bin("vcge.f32 d0, d1, d2", d0, d1, i32, f2u(0.5), d2, i32, f2u(-0.5));
     TESTINSN_bin("vcge.f32 d2, d15, d12", d2, d15, i32, f2u(-0.53), d12, i32, f2u(0.52));
@@ -4236,6 +4445,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vcge.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vcge.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VACGT (fp) ----\n");
     TESTINSN_bin("vacgt.f32 d0, d1, d2", d0, d1, i32, f2u(0.5), d2, i32, f2u(-0.5));
     TESTINSN_bin("vacgt.f32 d2, d15, d12", d2, d15, i32, f2u(-0.53), d12, i32, f2u(0.52));
@@ -4287,6 +4497,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vacgt.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vacgt.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VACGE (fp) ----\n");
     TESTINSN_bin("vacge.f32 d0, d1, d2", d0, d1, i32, f2u(0.5), d2, i32, f2u(-0.5));
     TESTINSN_bin("vacge.f32 d2, d15, d12", d2, d15, i32, f2u(-0.53), d12, i32, f2u(0.52));
@@ -4338,6 +4549,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vacge.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vacge.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCEQ (fp) ----\n");
     TESTINSN_bin("vceq.f32 d0, d1, d2", d0, d1, i32, f2u(0.5), d2, i32, f2u(-0.5));
     TESTINSN_bin("vceq.f32 d2, d15, d12", d2, d15, i32, f2u(-0.53), d12, i32, f2u(0.52));
@@ -4389,6 +4601,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vceq.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vceq.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCEQ (fp) #0 ----\n");
     TESTINSN_un("vceq.f32 d0, d1, #0", d0, d1, i32, 0x01000000);
     TESTINSN_un("vceq.f32 d0, d1, #0", d0, d1, i32, 0x1);
@@ -4401,6 +4614,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vceq.f32 d0, d1, #0", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vceq.f32 d0, d1, #0", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCGT (fp) #0 ----\n");
     TESTINSN_un("vcgt.f32 d0, d1, #0", d0, d1, i32, 0x01000000);
     TESTINSN_un("vcgt.f32 d0, d1, #0", d0, d1, i32, 0x1);
@@ -4413,6 +4627,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcgt.f32 d0, d1, #0", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vcgt.f32 d0, d1, #0", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCLT (fp) #0 ----\n");
     TESTINSN_un("vclt.f32 d0, d1, #0", d0, d1, i32, 0x01000000);
     TESTINSN_un("vclt.f32 d0, d1, #0", d0, d1, i32, 0x1);
@@ -4425,6 +4640,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vclt.f32 d0, d1, #0", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vclt.f32 d0, d1, #0", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCGE (fp) #0 ----\n");
     TESTINSN_un("vcge.f32 d0, d1, #0", d0, d1, i32, 0x01000000);
     TESTINSN_un("vcge.f32 d0, d1, #0", d0, d1, i32, 0x1);
@@ -4437,6 +4653,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcle.f32 d0, d1, #0", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vcle.f32 d0, d1, #0", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VCLE (fp) #0 ----\n");
     TESTINSN_un("vcle.f32 d0, d1, #0", d0, d1, i32, 0x01000000);
     TESTINSN_un("vcle.f32 d0, d1, #0", d0, d1, i32, 0x1);
@@ -4449,6 +4666,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vcle.f32 d0, d1, #0", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vcle.f32 d0, d1, #0", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VNEG (fp) ----\n");
     TESTINSN_un("vneg.f32 d0, d1", d0, d1, i32, 0x01000000);
     TESTINSN_un("vneg.f32 d0, d1", d0, d1, i32, 0x1);
@@ -4461,6 +4679,7 @@ int main(int argc, char **argv)
     TESTINSN_un("vneg.f32 d0, d1", d0, d1, i32, f2u(INFINITY));
     TESTINSN_un("vneg.f32 d0, d1", d0, d1, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VRSQRTS ----\n");
     TESTINSN_bin("vrsqrts.f32 d0, d5, d2", d0, d5, i32, f2u(23.04), d2, i32, f2u(-45.5687));
     TESTINSN_bin("vrsqrts.f32 d3, d4, d5", d3, d4, i32, f2u(-347856.475), d5, i32, f2u(1346));
@@ -4503,6 +4722,7 @@ int main(int argc, char **argv)
     TESTINSN_bin("vrsqrts.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(INFINITY));
     TESTINSN_bin("vrsqrts.f32 d0, d1, d2", d0, d1, i32, f2u(-INFINITY), d2, i32, f2u(-INFINITY));
 
+    fflush(stdout);
     printf("---- VRSQRTE (fp) ----\n");
     TESTINSN_un("vrsqrte.f32 d0, d1", d0, d1, i32, f2u(3.2));
     TESTINSN_un("vrsqrte.f32 d10, d11", d10, d11, i32, f2u(3e22));

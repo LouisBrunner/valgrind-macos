@@ -2203,112 +2203,83 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, False));
             return res;
          }
-         case Iop_InterleaveOddLanes8x8:
-         case Iop_InterleaveOddLanes16x4:
+
+         // These 6 verified 18 Apr 2013
+         case Iop_InterleaveHI32x2:
          case Iop_InterleaveLO32x2:
+         case Iop_InterleaveOddLanes8x8:
          case Iop_InterleaveEvenLanes8x8:
-         case Iop_InterleaveEvenLanes16x4:
-         case Iop_InterleaveHI32x2: {
-            HReg tmp = newVRegD(env);
-            HReg res = newVRegD(env);
+         case Iop_InterleaveOddLanes16x4:
+         case Iop_InterleaveEvenLanes16x4: {
+            HReg rD   = newVRegD(env);
+            HReg rM   = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeon64Expr(env, e->Iex.Binop.arg2);
             UInt size;
-            UInt is_lo;
+            Bool resRd;  // is the result in rD or rM ?
             switch (e->Iex.Binop.op) {
-               case Iop_InterleaveOddLanes8x8: is_lo = 1; size = 0; break;
-               case Iop_InterleaveEvenLanes8x8: is_lo = 0; size = 0; break;
-               case Iop_InterleaveOddLanes16x4: is_lo = 1; size = 1; break;
-               case Iop_InterleaveEvenLanes16x4: is_lo = 0; size = 1; break;
-               case Iop_InterleaveLO32x2: is_lo = 1; size = 2; break;
-               case Iop_InterleaveHI32x2: is_lo = 0; size = 2; break;
+               case Iop_InterleaveOddLanes8x8:   resRd = False; size = 0; break;
+               case Iop_InterleaveEvenLanes8x8:  resRd = True;  size = 0; break;
+               case Iop_InterleaveOddLanes16x4:  resRd = False; size = 1; break;
+               case Iop_InterleaveEvenLanes16x4: resRd = True;  size = 1; break;
+               case Iop_InterleaveHI32x2:        resRd = False; size = 2; break;
+               case Iop_InterleaveLO32x2:        resRd = True;  size = 2; break;
                default: vassert(0);
             }
-            if (is_lo) {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argL, 4, False));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argR, 4, False));
-               addInstr(env, ARMInstr_NDual(ARMneon_TRN,
-                                            res, tmp, size, False));
-            } else {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argR, 4, False));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argL, 4, False));
-               addInstr(env, ARMInstr_NDual(ARMneon_TRN,
-                                            tmp, res, size, False));
-            }
-            return res;
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rM, argL, 4, False));
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rD, argR, 4, False));
+            addInstr(env, ARMInstr_NDual(ARMneon_TRN, rD, rM, size, False));
+            return resRd ? rD : rM;
          }
+
+         // These 4 verified 18 Apr 2013
          case Iop_InterleaveHI8x8:
-         case Iop_InterleaveHI16x4:
          case Iop_InterleaveLO8x8:
+         case Iop_InterleaveHI16x4:
          case Iop_InterleaveLO16x4: {
-            HReg tmp = newVRegD(env);
-            HReg res = newVRegD(env);
+            HReg rD   = newVRegD(env);
+            HReg rM   = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeon64Expr(env, e->Iex.Binop.arg2);
             UInt size;
-            UInt is_lo;
+            Bool resRd;  // is the result in rD or rM ?
             switch (e->Iex.Binop.op) {
-               case Iop_InterleaveHI8x8: is_lo = 1; size = 0; break;
-               case Iop_InterleaveLO8x8: is_lo = 0; size = 0; break;
-               case Iop_InterleaveHI16x4: is_lo = 1; size = 1; break;
-               case Iop_InterleaveLO16x4: is_lo = 0; size = 1; break;
+               case Iop_InterleaveHI8x8:  resRd = False; size = 0; break;
+               case Iop_InterleaveLO8x8:  resRd = True;  size = 0; break;
+               case Iop_InterleaveHI16x4: resRd = False; size = 1; break;
+               case Iop_InterleaveLO16x4: resRd = True;  size = 1; break;
                default: vassert(0);
             }
-            if (is_lo) {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argL, 4, False));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argR, 4, False));
-               addInstr(env, ARMInstr_NDual(ARMneon_ZIP,
-                                            res, tmp, size, False));
-            } else {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argR, 4, False));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argL, 4, False));
-               addInstr(env, ARMInstr_NDual(ARMneon_ZIP,
-                                            tmp, res, size, False));
-            }
-            return res;
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rM, argL, 4, False));
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rD, argR, 4, False));
+            addInstr(env, ARMInstr_NDual(ARMneon_ZIP, rD, rM, size, False));
+            return resRd ? rD : rM;
          }
+
+         // These 4 verified 18 Apr 2013
          case Iop_CatOddLanes8x8:
-         case Iop_CatOddLanes16x4:
          case Iop_CatEvenLanes8x8:
+         case Iop_CatOddLanes16x4:
          case Iop_CatEvenLanes16x4: {
-            HReg tmp = newVRegD(env);
-            HReg res = newVRegD(env);
+            HReg rD   = newVRegD(env);
+            HReg rM   = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeon64Expr(env, e->Iex.Binop.arg2);
             UInt size;
-            UInt is_lo;
+            Bool resRd;  // is the result in rD or rM ?
             switch (e->Iex.Binop.op) {
-               case Iop_CatOddLanes8x8: is_lo = 1; size = 0; break;
-               case Iop_CatEvenLanes8x8: is_lo = 0; size = 0; break;
-               case Iop_CatOddLanes16x4: is_lo = 1; size = 1; break;
-               case Iop_CatEvenLanes16x4: is_lo = 0; size = 1; break;
+               case Iop_CatOddLanes8x8:   resRd = False; size = 0; break;
+               case Iop_CatEvenLanes8x8:  resRd = True;  size = 0; break;
+               case Iop_CatOddLanes16x4:  resRd = False; size = 1; break;
+               case Iop_CatEvenLanes16x4: resRd = True;  size = 1; break;
                default: vassert(0);
             }
-            if (is_lo) {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argL, 4, False));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argR, 4, False));
-               addInstr(env, ARMInstr_NDual(ARMneon_UZP,
-                                            res, tmp, size, False));
-            } else {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argR, 4, False));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argL, 4, False));
-               addInstr(env, ARMInstr_NDual(ARMneon_UZP,
-                                            tmp, res, size, False));
-            }
-            return res;
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rM, argL, 4, False));
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rD, argR, 4, False));
+            addInstr(env, ARMInstr_NDual(ARMneon_UZP, rD, rM, size, False));
+            return resRd ? rD : rM;
          }
+
          case Iop_QAdd8Ux8:
          case Iop_QAdd16Ux4:
          case Iop_QAdd32Ux2:
@@ -4399,126 +4370,91 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, True));
             return res;
          }
+
+         // These 6 verified 18 Apr 2013
          case Iop_InterleaveEvenLanes8x16:
-         case Iop_InterleaveEvenLanes16x8:
-         case Iop_InterleaveEvenLanes32x4:
          case Iop_InterleaveOddLanes8x16:
+         case Iop_InterleaveEvenLanes16x8:
          case Iop_InterleaveOddLanes16x8:
+         case Iop_InterleaveEvenLanes32x4:
          case Iop_InterleaveOddLanes32x4: {
-            HReg tmp = newVRegV(env);
-            HReg res = newVRegV(env);
+            HReg rD   = newVRegV(env);
+            HReg rM   = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
             UInt size;
-            UInt is_lo;
+            Bool resRd;  // is the result in rD or rM ?
             switch (e->Iex.Binop.op) {
-               case Iop_InterleaveEvenLanes8x16: is_lo = 0; size = 0; break;
-               case Iop_InterleaveOddLanes8x16: is_lo = 1; size = 0; break;
-               case Iop_InterleaveEvenLanes16x8: is_lo = 0; size = 1; break;
-               case Iop_InterleaveOddLanes16x8: is_lo = 1; size = 1; break;
-               case Iop_InterleaveEvenLanes32x4: is_lo = 0; size = 2; break;
-               case Iop_InterleaveOddLanes32x4: is_lo = 1; size = 2; break;
-               default:
-                  ppIROp(e->Iex.Binop.op);
-                  vpanic("Illegal element size in VTRN");
+               case Iop_InterleaveOddLanes8x16:  resRd = False; size = 0; break;
+               case Iop_InterleaveEvenLanes8x16: resRd = True;  size = 0; break;
+               case Iop_InterleaveOddLanes16x8:  resRd = False; size = 1; break;
+               case Iop_InterleaveEvenLanes16x8: resRd = True;  size = 1; break;
+               case Iop_InterleaveOddLanes32x4:  resRd = False; size = 2; break;
+               case Iop_InterleaveEvenLanes32x4: resRd = True;  size = 2; break;
+               default: vassert(0);
             }
-            if (is_lo) {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argL, 4, True));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argR, 4, True));
-               addInstr(env, ARMInstr_NDual(ARMneon_TRN,
-                                            res, tmp, size, True));
-            } else {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argR, 4, True));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argL, 4, True));
-               addInstr(env, ARMInstr_NDual(ARMneon_TRN,
-                                            tmp, res, size, True));
-            }
-            return res;
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rM, argL, 4, True));
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rD, argR, 4, True));
+            addInstr(env, ARMInstr_NDual(ARMneon_TRN, rD, rM, size, True));
+            return resRd ? rD : rM;
          }
+
+         // These 6 verified 18 Apr 2013
          case Iop_InterleaveHI8x16:
-         case Iop_InterleaveHI16x8:
-         case Iop_InterleaveHI32x4:
          case Iop_InterleaveLO8x16:
+         case Iop_InterleaveHI16x8:
          case Iop_InterleaveLO16x8:
+         case Iop_InterleaveHI32x4:
          case Iop_InterleaveLO32x4: {
-            HReg tmp = newVRegV(env);
-            HReg res = newVRegV(env);
+            HReg rD   = newVRegV(env);
+            HReg rM   = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
             UInt size;
-            UInt is_lo;
+            Bool resRd;  // is the result in rD or rM ?
             switch (e->Iex.Binop.op) {
-               case Iop_InterleaveHI8x16: is_lo = 1; size = 0; break;
-               case Iop_InterleaveLO8x16: is_lo = 0; size = 0; break;
-               case Iop_InterleaveHI16x8: is_lo = 1; size = 1; break;
-               case Iop_InterleaveLO16x8: is_lo = 0; size = 1; break;
-               case Iop_InterleaveHI32x4: is_lo = 1; size = 2; break;
-               case Iop_InterleaveLO32x4: is_lo = 0; size = 2; break;
-               default:
-                  ppIROp(e->Iex.Binop.op);
-                  vpanic("Illegal element size in VZIP");
+               case Iop_InterleaveHI8x16: resRd = False; size = 0; break;
+               case Iop_InterleaveLO8x16: resRd = True;  size = 0; break;
+               case Iop_InterleaveHI16x8: resRd = False; size = 1; break;
+               case Iop_InterleaveLO16x8: resRd = True;  size = 1; break;
+               case Iop_InterleaveHI32x4: resRd = False; size = 2; break;
+               case Iop_InterleaveLO32x4: resRd = True;  size = 2; break;
+               default: vassert(0);
             }
-            if (is_lo) {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argL, 4, True));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argR, 4, True));
-               addInstr(env, ARMInstr_NDual(ARMneon_ZIP,
-                                            res, tmp, size, True));
-            } else {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argR, 4, True));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argL, 4, True));
-               addInstr(env, ARMInstr_NDual(ARMneon_ZIP,
-                                            tmp, res, size, True));
-            }
-            return res;
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rM, argL, 4, True));
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rD, argR, 4, True));
+            addInstr(env, ARMInstr_NDual(ARMneon_ZIP, rD, rM, size, True));
+            return resRd ? rD : rM;
          }
+
+         // These 6 verified 18 Apr 2013
          case Iop_CatOddLanes8x16:
-         case Iop_CatOddLanes16x8:
-         case Iop_CatOddLanes32x4:
          case Iop_CatEvenLanes8x16:
+         case Iop_CatOddLanes16x8:
          case Iop_CatEvenLanes16x8:
+         case Iop_CatOddLanes32x4:
          case Iop_CatEvenLanes32x4: {
-            HReg tmp = newVRegV(env);
-            HReg res = newVRegV(env);
+            HReg rD   = newVRegV(env);
+            HReg rM   = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
             UInt size;
-            UInt is_lo;
+            Bool resRd;  // is the result in rD or rM ?
             switch (e->Iex.Binop.op) {
-               case Iop_CatOddLanes8x16: is_lo = 1; size = 0; break;
-               case Iop_CatEvenLanes8x16: is_lo = 0; size = 0; break;
-               case Iop_CatOddLanes16x8: is_lo = 1; size = 1; break;
-               case Iop_CatEvenLanes16x8: is_lo = 0; size = 1; break;
-               case Iop_CatOddLanes32x4: is_lo = 1; size = 2; break;
-               case Iop_CatEvenLanes32x4: is_lo = 0; size = 2; break;
-               default:
-                  ppIROp(e->Iex.Binop.op);
-                  vpanic("Illegal element size in VUZP");
+               case Iop_CatOddLanes8x16:  resRd = False; size = 0; break;
+               case Iop_CatEvenLanes8x16: resRd = True;  size = 0; break;
+               case Iop_CatOddLanes16x8:  resRd = False; size = 1; break;
+               case Iop_CatEvenLanes16x8: resRd = True;  size = 1; break;
+               case Iop_CatOddLanes32x4:  resRd = False; size = 2; break;
+               case Iop_CatEvenLanes32x4: resRd = True;  size = 2; break;
+               default: vassert(0);
             }
-            if (is_lo) {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argL, 4, True));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argR, 4, True));
-               addInstr(env, ARMInstr_NDual(ARMneon_UZP,
-                                            res, tmp, size, True));
-            } else {
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             tmp, argR, 4, True));
-               addInstr(env, ARMInstr_NUnary(ARMneon_COPY,
-                                             res, argL, 4, True));
-               addInstr(env, ARMInstr_NDual(ARMneon_UZP,
-                                            tmp, res, size, True));
-            }
-            return res;
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rM, argL, 4, True));
+            addInstr(env, ARMInstr_NUnary(ARMneon_COPY, rD, argR, 4, True));
+            addInstr(env, ARMInstr_NDual(ARMneon_UZP, rD, rM, size, True));
+            return resRd ? rD : rM;
          }
+
          case Iop_QAdd8Ux16:
          case Iop_QAdd16Ux8:
          case Iop_QAdd32Ux4:

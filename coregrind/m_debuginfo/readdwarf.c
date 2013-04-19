@@ -527,9 +527,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       goto out;
    }
 
-   info.li_header_length = ui->dw64 ? ML_(read_ULong)(external) 
-                                    : (ULong)(ML_(read_UInt)(external));
-   external += ui->dw64 ? 8 : 4;
+   info.li_header_length = is64 ? ML_(read_ULong)(external) 
+                                : (ULong)(ML_(read_UInt)(external));
+   external += is64 ? 8 : 4;
    if (di->ddump_line)
       VG_(printf)("  Prologue Length:             %llu\n", 
                   info.li_header_length);

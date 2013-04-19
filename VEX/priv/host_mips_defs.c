@@ -2734,11 +2734,13 @@ static Bool isLoadImm_EXACTLY2or6 ( UChar* p_to_check,
    return ret;
 }
 
-/* Generate a machine-word sized load or store.  Simplified version of
-   the Min_Load and Min_Store cases below. */
-static UChar* do_load_or_store_machine_word ( 
-                 UChar* p, Bool isLoad,
-                 UInt reg, MIPSAMode* am, Bool mode64 )
+/* Generate a machine-word sized load or store. Simplified version of
+   the Min_Load and Min_Store cases below.
+   This will generate 32-bit load/store on MIPS32, and 64-bit load/store on
+   MIPS64 platforms.
+*/
+static UChar* do_load_or_store_machine_word ( UChar* p, Bool isLoad, UInt reg,
+                                              MIPSAMode* am, Bool mode64 )
 {
    if (isLoad) { /* load */
       switch (am->tag) {
@@ -2764,6 +2766,49 @@ static UChar* do_load_or_store_machine_word (
                vassert(0 == (am->Mam.IR.index & 3));
             }
             p = doAMode_IR(p, mode64 ? 63 : 43, reg, am, mode64);
+            break;
+         case Mam_RR:
+            /* we could handle this case, but we don't expect to ever
+               need to. */
+            vassert(0);
+            break;
+         default:
+            vassert(0);
+            break;
+      }
+   }
+   return p;
+}
+
+/* Generate a 32-bit sized load or store. Simplified version of
+   do_load_or_store_machine_word above. */
+static UChar* do_load_or_store_word32 ( UChar* p, Bool isLoad, UInt reg,
+                                        MIPSAMode* am, Bool mode64 )
+{
+   if (isLoad) { /* load */
+      switch (am->tag) {
+         case Mam_IR:
+            if (mode64) {
+               vassert(0 == (am->Mam.IR.index & 3));
+            }
+            p = doAMode_IR(p, 35, reg, am, mode64);
+            break;
+         case Mam_RR:
+            /* we could handle this case, but we don't expect to ever
+               need to. */
+            vassert(0);
+            break;
+         default:
+            vassert(0);
+            break;
+      }
+   } else /* store */ {
+      switch (am->tag) {
+         case Mam_IR:
+            if (mode64) {
+               vassert(0 == (am->Mam.IR.index & 3));
+            }
+            p = doAMode_IR(p, 43, reg, am, mode64);
             break;
          case Mam_RR:
             /* we could handle this case, but we don't expect to ever
@@ -3382,7 +3427,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          }
 
          /* Update the guest PC. */
-         /* sw r-dstGA, amPC */
+         /* sw/sd r-dstGA, amPC */
          p = do_load_or_store_machine_word(p, False /*!isLoad*/ ,
                                            iregNo(i->Min.XIndir.dstGA, mode64),
                                            i->Min.XIndir.amPC, mode64);
@@ -4066,16 +4111,16 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          */
          UChar* p0 = p;
          /* lw  r9, amCounter */
-         p = do_load_or_store_machine_word(p, True /*isLoad*/ , /*r*/ 9,
+         p = do_load_or_store_word32(p, True /*isLoad*/ , /*r*/ 9,
                                      i->Min.EvCheck.amCounter, mode64);
          /* addiu r9,r9,-1 */
          p = mkFormI(p, 9, 9, 9, 0xFFFF);
          /* sw r30, amCounter */
-         p = do_load_or_store_machine_word(p, False /*!isLoad*/ , /*r*/ 9,
+         p = do_load_or_store_word32(p, False /*!isLoad*/ , /*r*/ 9,
                                      i->Min.EvCheck.amCounter, mode64);
          /* bgez t9, nofail */
          p = mkFormI(p, 1, 9, 1, 3);
-         /* lw r9, amFailAddr */
+         /* lw/ld r9, amFailAddr */
          p = do_load_or_store_machine_word(p, True /*isLoad*/ , /*r*/ 9,
                                            i->Min.EvCheck.amFailAddr, mode64);
          /* jalr $9 */

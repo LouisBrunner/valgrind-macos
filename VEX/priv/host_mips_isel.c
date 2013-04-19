@@ -1,6 +1,6 @@
 
 /*---------------------------------------------------------------*/
-/*--- begin                                   host_mips_isel.c ---*/
+/*--- begin                                  host_mips_isel.c ---*/
 /*---------------------------------------------------------------*/
 
 /*
@@ -359,8 +359,13 @@ static HReg mk_LoadRR32toFPR(ISelEnv * env, HReg r_srcHi, HReg r_srcLo)
    am_addr1 = MIPSAMode_IR(4, StackPointer(mode64));
 
    /* store hi,lo as Ity_I32's */
+#if defined (_MIPSEL)
    addInstr(env, MIPSInstr_Store(4, am_addr0, r_srcLo, mode64));
    addInstr(env, MIPSInstr_Store(4, am_addr1, r_srcHi, mode64));
+#elif defined (_MIPSEB)
+   addInstr(env, MIPSInstr_Store(4, am_addr0, r_srcHi, mode64));
+   addInstr(env, MIPSInstr_Store(4, am_addr1, r_srcLo, mode64));
+#endif
 
    /* load as float */
    addInstr(env, MIPSInstr_FpLdSt(True /*load */ , 8, fr_dst, am_addr0));
@@ -2317,9 +2322,15 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, fr_src,
                                            am_addr));
             /* load as 2xI32 */
+#if defined (_MIPSEL)
             addInstr(env, MIPSInstr_Load(4, tLo, am_addr, mode64));
             addInstr(env, MIPSInstr_Load(4, tHi, nextMIPSAModeFloat(am_addr),
                                          mode64));
+#elif defined (_MIPSEB)
+            addInstr(env, MIPSInstr_Load(4, tHi, am_addr, mode64));
+            addInstr(env, MIPSInstr_Load(4, tLo, nextMIPSAModeFloat(am_addr),
+                                         mode64));
+#endif
 
             /* Reset SP */
             add_to_sp(env, 16);
@@ -2436,7 +2447,7 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             HReg r_dst = newVRegF(env);
 
             /* Move Doubleword to Floating Point
-               dmtc1 r_dst, valS */
+               dmtc1 r_dst, fr_src */
             addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_dmtc1, r_dst, fr_src));
 
             return r_dst;

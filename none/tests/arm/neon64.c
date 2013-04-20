@@ -42,21 +42,12 @@ static inline unsigned int f2u(float x) {
 
 /* test macros to generate and output the result of a single instruction */
 
-#if 1
-const unsigned int mem[] = {
-    0x121f1e1f, 0x131b1a1b, 0x141c1f1c, 0x151d191d,
-    0x232f2e2f, 0x242c2b2b, 0x252a2e2b, 0x262d2d2a,
-    0x3f343f3e, 0x3e353d3c, 0x363a3c3b, 0x3b373b3a,
-    0x454f4e45, 0x4e464d46, 0x474d474c, 0x4a484a4c
-};
-#else
 const unsigned int mem[] = {
     0x03020100, 0x07060504, 0x0b0a0908, 0x0f0e0d0c,
     0x13121110, 0x17161514, 0x1b1a1918, 0x1f1e1d1c,
     0x23222120, 0x27262524, 0x2b2a2928, 0x2f2e2d2c,
     0x33323130, 0x37363534, 0x3b3a3938, 0x3f3e3d3c
 };
-#endif
 
 #define TESTINSN_imm(instruction, QD, imm) \
 { \
@@ -233,10 +224,10 @@ const unsigned int mem[] = {
       : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
       ); \
   fflush(stdout); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x " \
-         "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",             \
-         instruction, out[0], out[1], out[2], out[3], out[4],   \
-         out[5], out[6], out[7], (int)out[8]-(int)mem);         \
+  printf("%s :: Result %08x'%08x %08x'%08x " \
+         "%08x'%08x %08x'%08x  delta %d\n",             \
+         instruction, out[1], out[0], out[3], out[2], out[5],   \
+         out[4], out[7], out[6], (int)out[8]-(int)mem);         \
 }
 
 #define TESTINSN_VSTn(instruction, QD1, QD2, QD3, QD4) \
@@ -258,10 +249,10 @@ const unsigned int mem[] = {
       : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
       ); \
   fflush(stdout); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x " \
-         "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n",             \
-         instruction, out[0], out[1], out[2], out[3], out[4],   \
-         out[5], out[6], out[7], (int)out[8]-(int)out);         \
+  printf("%s :: Result %08x'%08x %08x'%08x " \
+         "%08x'%08x %08x'%08x  delta %d\n",             \
+         instruction, out[1], out[0], out[3], out[2], out[5],   \
+         out[4], out[7], out[6], (int)out[8]-(int)out);         \
 }
 
 #define TESTINSN_VLDn_WB(instruction, QD1, QD2, QD3, QD4) \

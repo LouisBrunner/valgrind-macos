@@ -8128,6 +8128,166 @@ static void math_INTERLEAVE_3 (
 #  undef IHI32x2
 }
 
+/* Generate 4x64 -> 4x64 deinterleave code, for VLD4.  Caller must
+   make *u0, *u1, *u2 and *u3 be valid IRTemps before the call. */
+static void math_DEINTERLEAVE_4 (
+               /*OUT*/IRTemp* u0, /*OUT*/IRTemp* u1,
+               /*OUT*/IRTemp* u2, /*OUT*/IRTemp* u3,
+               IRTemp i0, IRTemp i1, IRTemp i2, IRTemp i3, Int laneszB
+            )
+{
+#  define IHI32x2(_t1, _t2) \
+             binop(Iop_InterleaveHI32x2, mkexpr(_t1), mkexpr(_t2))
+#  define ILO32x2(_t1, _t2) \
+             binop(Iop_InterleaveLO32x2, mkexpr(_t1), mkexpr(_t2))
+#  define IHI16x4(_t1, _t2) \
+             binop(Iop_InterleaveHI16x4, mkexpr(_t1), mkexpr(_t2))
+#  define ILO16x4(_t1, _t2) \
+             binop(Iop_InterleaveLO16x4, mkexpr(_t1), mkexpr(_t2))
+#  define IHI8x8(_t1, _e2) \
+             binop(Iop_InterleaveHI8x8, mkexpr(_t1), _e2)
+#  define SHL64(_tmp, _amt) \
+             binop(Iop_Shl64, mkexpr(_tmp), mkU8(_amt))
+   /* The following assumes that the guest is little endian, and hence
+      that the memory-side (interleaved) data is stored
+      little-endianly. */
+   vassert(u0 && u1 && u2 && u3);
+   if (laneszB == 4) {
+      assign(*u0, ILO32x2(i2, i0));
+      assign(*u1, IHI32x2(i2, i0));
+      assign(*u2, ILO32x2(i3, i1));
+      assign(*u3, IHI32x2(i3, i1));
+   } else if (laneszB == 2) {
+      IRTemp b1b0a1a0 = newTemp(Ity_I64);
+      IRTemp b3b2a3a2 = newTemp(Ity_I64);
+      IRTemp d1d0c1c0 = newTemp(Ity_I64);
+      IRTemp d3d2c3c2 = newTemp(Ity_I64);
+      assign(b1b0a1a0, ILO16x4(i1, i0));
+      assign(b3b2a3a2, ILO16x4(i3, i2));
+      assign(d1d0c1c0, IHI16x4(i1, i0));
+      assign(d3d2c3c2, IHI16x4(i3, i2));
+      // And now do what we did for the 32-bit case.
+      assign(*u0, ILO32x2(b3b2a3a2, b1b0a1a0));
+      assign(*u1, IHI32x2(b3b2a3a2, b1b0a1a0));
+      assign(*u2, ILO32x2(d3d2c3c2, d1d0c1c0));
+      assign(*u3, IHI32x2(d3d2c3c2, d1d0c1c0));
+   } else if (laneszB == 1) {
+      // Deinterleave into 16-bit chunks, then do as the 16-bit case.
+      IRTemp i0x = newTemp(Ity_I64);
+      IRTemp i1x = newTemp(Ity_I64);
+      IRTemp i2x = newTemp(Ity_I64);
+      IRTemp i3x = newTemp(Ity_I64);
+      assign(i0x, IHI8x8(i0, SHL64(i0, 32)));
+      assign(i1x, IHI8x8(i1, SHL64(i1, 32)));
+      assign(i2x, IHI8x8(i2, SHL64(i2, 32)));
+      assign(i3x, IHI8x8(i3, SHL64(i3, 32)));
+      // From here on is like the 16 bit case.
+      IRTemp b1b0a1a0 = newTemp(Ity_I64);
+      IRTemp b3b2a3a2 = newTemp(Ity_I64);
+      IRTemp d1d0c1c0 = newTemp(Ity_I64);
+      IRTemp d3d2c3c2 = newTemp(Ity_I64);
+      assign(b1b0a1a0, ILO16x4(i1x, i0x));
+      assign(b3b2a3a2, ILO16x4(i3x, i2x));
+      assign(d1d0c1c0, IHI16x4(i1x, i0x));
+      assign(d3d2c3c2, IHI16x4(i3x, i2x));
+      // And now do what we did for the 32-bit case.
+      assign(*u0, ILO32x2(b3b2a3a2, b1b0a1a0));
+      assign(*u1, IHI32x2(b3b2a3a2, b1b0a1a0));
+      assign(*u2, ILO32x2(d3d2c3c2, d1d0c1c0));
+      assign(*u3, IHI32x2(d3d2c3c2, d1d0c1c0));
+   } else {
+      // Can never happen, since VLD4 only has valid lane widths of 32,
+      // 16 or 8 bits.
+      vpanic("math_DEINTERLEAVE_4");
+   }
+#  undef SHL64
+#  undef IHI8x8
+#  undef ILO16x4
+#  undef IHI16x4
+#  undef ILO32x2
+#  undef IHI32x2
+}
+
+/* Generate 4x64 -> 4x64 interleave code, for VST4.  Caller must
+   make *i0, *i1, *i2 and *i3 be valid IRTemps before the call. */
+static void math_INTERLEAVE_4 (
+               /*OUT*/IRTemp* i0, /*OUT*/IRTemp* i1,
+               /*OUT*/IRTemp* i2, /*OUT*/IRTemp* i3,
+               IRTemp u0, IRTemp u1, IRTemp u2, IRTemp u3, Int laneszB
+            )
+{
+#  define IHI32x2(_t1, _t2) \
+             binop(Iop_InterleaveHI32x2, mkexpr(_t1), mkexpr(_t2))
+#  define ILO32x2(_t1, _t2) \
+             binop(Iop_InterleaveLO32x2, mkexpr(_t1), mkexpr(_t2))
+#  define CEV16x4(_t1, _t2) \
+             binop(Iop_CatEvenLanes16x4, mkexpr(_t1), mkexpr(_t2))
+#  define COD16x4(_t1, _t2) \
+             binop(Iop_CatOddLanes16x4, mkexpr(_t1), mkexpr(_t2))
+#  define COD8x8(_t1, _e2) \
+             binop(Iop_CatOddLanes8x8, mkexpr(_t1), _e2)
+#  define SHL64(_tmp, _amt) \
+             binop(Iop_Shl64, mkexpr(_tmp), mkU8(_amt))
+   /* The following assumes that the guest is little endian, and hence
+      that the memory-side (interleaved) data is stored
+      little-endianly. */
+   vassert(u0 && u1 && u2 && u3);
+   if (laneszB == 4) {
+      assign(*i0, ILO32x2(u1, u0));
+      assign(*i1, ILO32x2(u3, u2));
+      assign(*i2, IHI32x2(u1, u0));
+      assign(*i3, IHI32x2(u3, u2));
+   } else if (laneszB == 2) {
+      // First, interleave at the 32-bit lane size.
+      IRTemp b1b0a1a0 = newTemp(Ity_I64);
+      IRTemp b3b2a3a2 = newTemp(Ity_I64);
+      IRTemp d1d0c1c0 = newTemp(Ity_I64);
+      IRTemp d3d2c3c2 = newTemp(Ity_I64);
+      assign(b1b0a1a0, ILO32x2(u1, u0));
+      assign(b3b2a3a2, IHI32x2(u1, u0));
+      assign(d1d0c1c0, ILO32x2(u3, u2));
+      assign(d3d2c3c2, IHI32x2(u3, u2));
+      // And interleave (cat) at the 16 bit size.
+      assign(*i0, CEV16x4(d1d0c1c0, b1b0a1a0));
+      assign(*i1, COD16x4(d1d0c1c0, b1b0a1a0));
+      assign(*i2, CEV16x4(d3d2c3c2, b3b2a3a2));
+      assign(*i3, COD16x4(d3d2c3c2, b3b2a3a2));
+   } else if (laneszB == 1) {
+      // First, interleave at the 32-bit lane size.
+      IRTemp b1b0a1a0 = newTemp(Ity_I64);
+      IRTemp b3b2a3a2 = newTemp(Ity_I64);
+      IRTemp d1d0c1c0 = newTemp(Ity_I64);
+      IRTemp d3d2c3c2 = newTemp(Ity_I64);
+      assign(b1b0a1a0, ILO32x2(u1, u0));
+      assign(b3b2a3a2, IHI32x2(u1, u0));
+      assign(d1d0c1c0, ILO32x2(u3, u2));
+      assign(d3d2c3c2, IHI32x2(u3, u2));
+      // And interleave (cat) at the 16 bit size.
+      IRTemp i0x = newTemp(Ity_I64);
+      IRTemp i1x = newTemp(Ity_I64);
+      IRTemp i2x = newTemp(Ity_I64);
+      IRTemp i3x = newTemp(Ity_I64);
+      assign(i0x, CEV16x4(d1d0c1c0, b1b0a1a0));
+      assign(i1x, COD16x4(d1d0c1c0, b1b0a1a0));
+      assign(i2x, CEV16x4(d3d2c3c2, b3b2a3a2));
+      assign(i3x, COD16x4(d3d2c3c2, b3b2a3a2));
+      // And rearrange within each word, to get the right 8 bit lanes.
+      assign(*i0, COD8x8(i0x, SHL64(i0x, 8)));
+      assign(*i1, COD8x8(i1x, SHL64(i1x, 8)));
+      assign(*i2, COD8x8(i2x, SHL64(i2x, 8)));
+      assign(*i3, COD8x8(i3x, SHL64(i3x, 8)));
+   } else {
+      // Can never happen, since VLD4 only has valid lane widths of 32,
+      // 16 or 8 bits.
+      vpanic("math_DEINTERLEAVE_4");
+   }
+#  undef SHL64
+#  undef COD8x8
+#  undef COD16x4
+#  undef CEV16x4
+#  undef ILO32x2
+#  undef IHI32x2
+}
 
 /* A7.7 Advanced SIMD element or structure load/store instructions */
 static
@@ -8329,7 +8489,8 @@ Bool dis_neon_load_or_store ( UInt theInstr,
    } else {
       /* ------------ Case (3) ------------
          VSTn / VLDn (multiple n-element structures) */
-      UInt r, lanes;
+      inc = (fB & 1) + 1;
+
       if (fB == BITS4(0,0,1,0)       // Dd, Dd+1, Dd+2, Dd+3  inc = 1  regs = 4
           || fB == BITS4(0,1,1,0)    // Dd, Dd+1, Dd+2        inc = 1  regs = 3
           || fB == BITS4(0,1,1,1)    // Dd                    inc = 2  regs = 1
@@ -8337,20 +8498,28 @@ Bool dis_neon_load_or_store ( UInt theInstr,
          N = 0; // VLD1/VST1.  'inc' does not appear to have any
                 // meaning for the VLD1/VST1 cases.  'regs' is the number of
                 // registers involved.
+         if (rD + regs > 32) return False;
       } 
       else 
       if (fB == BITS4(0,0,1,1)       // Dd, Dd+1, Dd+2, Dd+3  inc=2  regs = 2
           || fB == BITS4(1,0,0,0)    // Dd, Dd+1              inc=1  regs = 1
           || fB == BITS4(1,0,0,1)) { // Dd, Dd+2              inc=2  regs = 1
          N = 1; // VLD2/VST2.  'regs' is the number of register-pairs involved
+         if (regs == 1 && inc == 1 && rD + 1 >= 32) return False;
+         if (regs == 1 && inc == 2 && rD + 2 >= 32) return False;
+         if (regs == 2 && inc == 2 && rD + 3 >= 32) return False;
       } else if (fB == BITS4(0,1,0,0) || fB == BITS4(0,1,0,1)) {
-         N = 2;
+         N = 2; // VLD3/VST3
+         if (inc == 1 && rD + 2 >= 32) return False;
+         if (inc == 2 && rD + 4 >= 32) return False;
       } else if (fB == BITS4(0,0,0,0) || fB == BITS4(0,0,0,1)) {
-         N = 3;
+         N = 3; // VLD4/VST4
+         if (inc == 1 && rD + 3 >= 32) return False;
+         if (inc == 2 && rD + 6 >= 32) return False;
       } else {
          return False;
       }
-      inc = (fB & 1) + 1;
+
       if (N == 1 && fB == BITS4(0,0,1,1)) {
          regs = 2;
       } else if (N == 0) {
@@ -8369,8 +8538,6 @@ Bool dis_neon_load_or_store ( UInt theInstr,
       if (size == 3)
          return False;
 
-      lanes = 8 / (1 << size);
-
       // go uncond
       if (condT != IRTemp_INVALID)
          mk_skip_over_T32_if_cond_is_false(condT);
@@ -8380,6 +8547,7 @@ Bool dis_neon_load_or_store ( UInt theInstr,
       assign(addr, mkexpr(initialRn));
 
       if (N == 0 /* No interleaving -- VLD1/VST1 */) {
+         UInt r;
          vassert(regs == 1 || regs == 2 || regs == 3 || regs == 4);
          /* inc has no relevance here */
          for (r = 0; r < regs; r++) {
@@ -8484,7 +8652,8 @@ Bool dis_neon_load_or_store ( UInt theInstr,
             addr = tmp;
          }
       }
-      else if (N == 2 /* 3-interleaving -- VLD3/VST3 */) {
+      else
+      if (N == 2 /* 3-interleaving -- VLD3/VST3 */) {
          // Dd, Dd+1, Dd+2   regs = 1, inc = 1
          // Dd, Dd+2, Dd+4   regs = 1, inc = 2
          vassert(regs == 1 && (inc == 1 || inc == 2));
@@ -8518,21 +8687,52 @@ Bool dis_neon_load_or_store ( UInt theInstr,
          assign(tmp, binop(Iop_Add32, mkexpr(addr), mkU32(24)));
          addr = tmp;
       }
-      else {
-         /* Fallback case */
-         for (r = 0; r < regs; r++) {
-            for (i = 0; i < lanes; i++) {
-               if (bL)
-                  mk_neon_elem_load_to_one_lane(rD + r, inc, i, N, size, addr);
-               else
-                  mk_neon_elem_store_from_one_lane(rD + r,
-                                                   inc, i, N, size, addr);
-               IRTemp tmp = newTemp(Ity_I32);
-               assign(tmp, binop(Iop_Add32, mkexpr(addr),
-                                            mkU32((1 << size) * (N + 1))));
-               addr = tmp;
-            }
+      else 
+      if (N == 3 /* 4-interleaving -- VLD4/VST4 */) {
+         // Dd, Dd+1, Dd+2, Dd+3   regs = 1, inc = 1
+         // Dd, Dd+2, Dd+4, Dd+6   regs = 1, inc = 2
+         vassert(regs == 1 && (inc == 1 || inc == 2));
+         IRExpr* a0  = binop(Iop_Add32, mkexpr(addr), mkU32(0));
+         IRExpr* a1  = binop(Iop_Add32, mkexpr(addr), mkU32(8));
+         IRExpr* a2  = binop(Iop_Add32, mkexpr(addr), mkU32(16));
+         IRExpr* a3  = binop(Iop_Add32, mkexpr(addr), mkU32(24));
+         IRTemp  di0 = newTemp(Ity_I64);
+         IRTemp  di1 = newTemp(Ity_I64);
+         IRTemp  di2 = newTemp(Ity_I64);
+         IRTemp  di3 = newTemp(Ity_I64);
+         IRTemp  du0 = newTemp(Ity_I64); 
+         IRTemp  du1 = newTemp(Ity_I64);
+         IRTemp  du2 = newTemp(Ity_I64);
+         IRTemp  du3 = newTemp(Ity_I64);
+         if (bL) {
+            assign(di0, loadLE(Ity_I64, a0));
+            assign(di1, loadLE(Ity_I64, a1));
+            assign(di2, loadLE(Ity_I64, a2));
+            assign(di3, loadLE(Ity_I64, a3));
+            math_DEINTERLEAVE_4(&du0, &du1, &du2, &du3,
+                                di0, di1, di2, di3, 1 << size);
+            putDRegI64(rD + 0 * inc, mkexpr(du0), IRTemp_INVALID);
+            putDRegI64(rD + 1 * inc, mkexpr(du1), IRTemp_INVALID);
+            putDRegI64(rD + 2 * inc, mkexpr(du2), IRTemp_INVALID);
+            putDRegI64(rD + 3 * inc, mkexpr(du3), IRTemp_INVALID);
+         } else {
+            assign(du0, getDRegI64(rD + 0 * inc));
+            assign(du1, getDRegI64(rD + 1 * inc));
+            assign(du2, getDRegI64(rD + 2 * inc));
+            assign(du3, getDRegI64(rD + 3 * inc));
+            math_INTERLEAVE_4(&di0, &di1, &di2, &di3,
+                              du0, du1, du2, du3, 1 << size);
+            storeLE(a0, mkexpr(di0));
+            storeLE(a1, mkexpr(di1));
+            storeLE(a2, mkexpr(di2));
+            storeLE(a3, mkexpr(di3));
          }
+         IRTemp tmp = newTemp(Ity_I32);
+         assign(tmp, binop(Iop_Add32, mkexpr(addr), mkU32(32)));
+         addr = tmp;
+      }
+      else {
+         vassert(0);
       }
 
       /* Writeback */
@@ -8556,6 +8756,7 @@ Bool dis_neon_load_or_store ( UInt theInstr,
           || (inc == 2 && regs > 1 && N > 0)) {
          DIP("d%u-d%u", rD, rD + regs * (N + 1) - 1);
       } else {
+         UInt r;
          for (r = 0; r < regs; r++) {
             for (i = 0; i <= N; i++) {
                if (i || r)

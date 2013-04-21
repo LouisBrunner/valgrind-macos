@@ -1487,6 +1487,17 @@ ARMInstr* ARMInstr_NShift ( ARMNeonShiftOp op,
    return i;
 }
 
+ARMInstr* ARMInstr_NShl64 ( HReg dst, HReg src, UInt amt )
+{
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag              = ARMin_NShl64;
+   i->ARMin.NShl64.dst = dst;
+   i->ARMin.NShl64.src = src;
+   i->ARMin.NShl64.amt = amt;
+   vassert(amt >= 1 && amt <= 63);
+   return i;
+}
+
 /* Helper copy-pasted from isel.c */
 static Bool fitsIn8x4 ( UInt* u8, UInt* u4, UInt u )
 {
@@ -1929,6 +1940,13 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf(", ");
          ppHRegARM(i->ARMin.NShift.argR);
          return;
+      case ARMin_NShl64:
+         vex_printf("vshl.i64 ");
+         ppHRegARM(i->ARMin.NShl64.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NShl64.src);
+         vex_printf(", #%u", i->ARMin.NShl64.amt);
+         return;
       case ARMin_NDual:
          vex_printf("%s%s%s  ",
                     showARMNeonDualOp(i->ARMin.NDual.op),
@@ -2257,6 +2275,10 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          addHRegUse(u, HRmRead, i->ARMin.NShift.argL);
          addHRegUse(u, HRmRead, i->ARMin.NShift.argR);
          return;
+      case ARMin_NShl64:
+         addHRegUse(u, HRmWrite, i->ARMin.NShl64.dst);
+         addHRegUse(u, HRmRead, i->ARMin.NShl64.src);
+         return;
       case ARMin_NDual:
          addHRegUse(u, HRmWrite, i->ARMin.NDual.arg1);
          addHRegUse(u, HRmWrite, i->ARMin.NDual.arg2);
@@ -2455,6 +2477,10 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          i->ARMin.NShift.dst = lookupHRegRemap(m, i->ARMin.NShift.dst);
          i->ARMin.NShift.argL = lookupHRegRemap(m, i->ARMin.NShift.argL);
          i->ARMin.NShift.argR = lookupHRegRemap(m, i->ARMin.NShift.argR);
+         return;
+      case ARMin_NShl64:
+         i->ARMin.NShl64.dst = lookupHRegRemap(m, i->ARMin.NShl64.dst);
+         i->ARMin.NShl64.src = lookupHRegRemap(m, i->ARMin.NShl64.src);
          return;
       case ARMin_NDual:
          i->ARMin.NDual.arg1 = lookupHRegRemap(m, i->ARMin.NDual.arg1);
@@ -4492,6 +4518,26 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             default:
                goto bad;
          }
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NShl64: {
+         HReg regDreg = i->ARMin.NShl64.dst;
+         HReg regMreg = i->ARMin.NShl64.src;
+         UInt amt     = i->ARMin.NShl64.amt;
+         vassert(amt >= 1 && amt <= 63);
+         vassert(hregClass(regDreg) == HRcFlt64);
+         vassert(hregClass(regMreg) == HRcFlt64);
+         UInt regD = dregNo(regDreg);
+         UInt regM = dregNo(regMreg);
+         UInt D    = (regD >> 4) & 1;
+         UInt Vd   = regD & 0xF;
+         UInt L    = 1;
+         UInt Q    = 0; /* always 64-bit */
+         UInt M    = (regM >> 4) & 1;
+         UInt Vm   = regM & 0xF;
+         UInt insn = XXXXXXXX(X1111,X0010, BITS4(1,D,(amt>>5)&1,(amt>>4)&1),
+                              amt & 0xF, Vd, X0101, BITS4(L,Q,M,1), Vm);
          *p++ = insn;
          goto done;
       }

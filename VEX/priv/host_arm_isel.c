@@ -2673,16 +2673,29 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
             HReg res = newVRegD(env);
             HReg tmp = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
+            /* special-case Shl64(x, imm8) since the Neon front
+               end produces a lot of those for V{LD,ST}{1,2,3,4}. */
+            if (e->Iex.Binop.op == Iop_Shl64 
+                && e->Iex.Binop.arg2->tag == Iex_Const) {
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               Int nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (nshift >= 1 && nshift <= 63) {
+                  addInstr(env, ARMInstr_NShl64(res, argL, nshift));
+                  return res;
+               }
+               /* else fall through to general case */
+            }
             HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
             UInt size;
             switch (e->Iex.Binop.op) {
-               case Iop_ShlN8x8: size = 0; break;
+               case Iop_ShlN8x8:  size = 0; break;
                case Iop_ShlN16x4: size = 1; break;
                case Iop_ShlN32x2: size = 2; break;
-               case Iop_Shl64: size = 3; break;
+               case Iop_Shl64:    size = 3; break;
                default: vassert(0);
             }
-            addInstr(env, ARMInstr_NUnary(ARMneon_DUP, tmp, argR, 0, False));
+            addInstr(env, ARMInstr_NUnary(ARMneon_DUP,
+                                          tmp, argR, 0, False));
             addInstr(env, ARMInstr_NShift(ARMneon_VSHL,
                                           res, argL, tmp, size, False));
             return res;

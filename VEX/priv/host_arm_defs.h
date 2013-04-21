@@ -602,6 +602,7 @@ typedef
       ARMin_NBinary,
       ARMin_NBinaryS,
       ARMin_NShift,
+      ARMin_NShl64, // special case 64-bit shift of Dreg by immediate
       ARMin_NeonImm,
       ARMin_NCMovQ,
       /* This is not a NEON instruction. Actually there is no corresponding
@@ -886,6 +887,11 @@ typedef
             Bool Q;
          } NShift;
          struct {
+            HReg dst;
+            HReg src;
+            UInt amt; /* 1..63 only */
+         } NShl64;
+         struct {
             Bool isLoad;
             HReg dQ;
             ARMAModeN *amode;
@@ -1001,6 +1007,7 @@ extern ARMInstr* ARMInstr_NBinary  ( ARMNeonBinOp, HReg, HReg, HReg,
                                      UInt, Bool );
 extern ARMInstr* ARMInstr_NShift   ( ARMNeonShiftOp, HReg, HReg, HReg,
                                      UInt, Bool );
+extern ARMInstr* ARMInstr_NShl64   ( HReg, HReg, UInt );
 extern ARMInstr* ARMInstr_NeonImm  ( HReg, ARMNImm* );
 extern ARMInstr* ARMInstr_NCMovQ   ( ARMCondCode, HReg, HReg );
 extern ARMInstr* ARMInstr_Add32    ( HReg rD, HReg rN, UInt imm32 );

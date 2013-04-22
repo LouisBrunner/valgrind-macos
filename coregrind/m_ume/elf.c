@@ -315,9 +315,9 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       entry point and initial tocptr (R2) value. */
    ESZ(Word) interp_offset = 0;
 
-#ifdef HAVE_PIE
+#  if defined(HAVE_PIE)
    ebase = info->exe_base;
-#endif
+#  endif
 
    e = readelf(fd, name);
 
@@ -417,11 +417,14 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          }
          break;
 
+#     if defined(PT_GNU_STACK)
+      /* Android's elf.h doesn't appear to have PT_GNU_STACK. */
       case PT_GNU_STACK:
          if ((ph->p_flags & PF_X) == 0) info->stack_prot &= ~VKI_PROT_EXEC;
          if ((ph->p_flags & PF_W) == 0) info->stack_prot &= ~VKI_PROT_WRITE;
          if ((ph->p_flags & PF_R) == 0) info->stack_prot &= ~VKI_PROT_READ;
          break;
+#     endif
 
       default:
          // do nothing

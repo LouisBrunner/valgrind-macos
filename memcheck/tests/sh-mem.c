@@ -89,7 +89,8 @@ int main(void)
    U1 *undefA, expected_byte, expected_byte_alt;
 
    if (0 == RUNNING_ON_VALGRIND) {
-      fprintf(stderr, "error: this program only works when run under Valgrind\n");
+      fprintf(stderr,
+              "error: this program only works when run under Valgrind\n");
       exit(1);
    }
 
@@ -131,20 +132,21 @@ int main(void)
    // when doing shifting/masking and stuff like that.
 
 #define DO(NNN, Ty, ITy, isF4) \
-   fprintf(stderr, "-- NNN: %d %s %s ------------------------\n", NNN, #Ty, #ITy); \
+   fprintf(stderr, "-- NNN: %d %s %s ------------------------\n", \
+           NNN, #Ty, #ITy); \
    /* For all of the alignments from (0..NNN-1), eg. if NNN==4, we do */ \
    /* alignments of 0, 1, 2, 3. */ \
    for (h = 0; h < NNN; h++) { \
- \
+      \
       size_t n  = sizeof(a); \
       size_t nN = n / sizeof(Ty); \
       Ty* aN    = (Ty*)a; \
       Ty* bN    = (Ty*)b; \
       Ty* aNb   = (Ty*)(((U1*)aN) + h); /* set offset from a[] */ \
       Ty* bNb   = (Ty*)(((U1*)bN) + h); /* set offset from b[] */ \
- \
+      \
       fprintf(stderr, "h = %d (checking %d..%d)   ", h, h, (int)(n-NNN+h)); \
- \
+      \
       /* For each of the 256 possible V byte values... */ \
       for (j = 0; j < 256; j++) { \
          /* build the value for i (one of: i, ii, iiii, iiiiiiii) */ \
@@ -159,7 +161,7 @@ int main(void)
             VALGRIND_MAKE_MEM_DEFINED(&undefN_ITyDef, NNN); \
             assert(tmpDef == (U8)undefN_ITyDef); \
          } \
- \
+         \
          /* We have to use an array for undefN_Ty -- because if we try to
           * convert an integer type from build into an FP type with a
           * straight cast -- eg "float f = (float)i" -- the value gets
@@ -168,8 +170,7 @@ int main(void)
           * undoubtedly nonsense, but that's not a problem here). */ \
          undefN_Ty = (Ty*)&undefN_ITy; \
          if (0 == j % 32) fprintf(stderr, "%d...", j); /* progress meter */ \
- \
- \
+         \
          /* A nasty exception: most machines so far (x86/PPC32/PPC64)
           * don't have 32-bit floats.  So 32-bit floats get cast to 64-bit
           * floats.  Memcheck does a PCast in this case, which means that if
@@ -186,12 +187,13 @@ int main(void)
             expected_byte = j; \
             expected_byte_alt = j; \
          } \
- \
+         \
          /* STOREVn.  Note that we use the first element of the undefN_Ty
           * array, as explained above. */ \
          for (i = 0; i < nN-1; i++) { aNb[i] = undefN_Ty[0]; } \
-         check_all(h, n-NNN+h, expected_byte, expected_byte_alt, "STOREVn", h); \
- \
+         check_all(h, n-NNN+h, expected_byte, expected_byte_alt, \
+                   "STOREVn", h); \
+         \
          /* LOADVn -- by copying the values to one place and then back, 
           * we ensure that LOADVn gets exercised. */ \
          for (i = 0; i < nN-1; i++) { bNb[i] = aNb[i]; } \

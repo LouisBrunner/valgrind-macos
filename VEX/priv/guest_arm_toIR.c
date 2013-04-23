@@ -15320,6 +15320,30 @@ DisResult disInstr_ARM_WRK (
       }
    }
 
+   /* ------------------- smmla ------------------ */
+   if (INSN(27,20) == BITS8(0,1,1,1,0,1,0,1)
+       && INSN(15,12) != BITS4(1,1,1,1)
+       && (INSN(7,4) & BITS4(1,1,0,1)) == BITS4(0,0,0,1)) {
+      UInt bitR = INSN(5,5);
+      UInt rD = INSN(19,16);
+      UInt rA = INSN(15,12);
+      UInt rM = INSN(11,8);
+      UInt rN = INSN(3,0);
+      if (rD != 15 && rM != 15 && rN != 15) {
+         IRExpr* res
+         = unop(Iop_64HIto32,
+                binop(Iop_Add64,
+                      binop(Iop_Add64,
+                            binop(Iop_32HLto64, getIRegA(rA), mkU32(0)),
+                            binop(Iop_MullS32, getIRegA(rN), getIRegA(rM))),
+                      mkU64(bitR ? 0x80000000ULL : 0ULL)));
+         putIRegA(rD, res, condT, Ijk_Boring);
+         DIP("smmla%s%s r%u, r%u, r%u, r%u\n",
+             nCC(INSN_COND), bitR ? "r" : "", rD, rN, rM, rA);
+         goto decode_success;
+      }
+   }
+
    /* ------------------- NOP ------------------ */
    if (0x0320F000 == (insn & 0x0FFFFFFF)) {
       DIP("nop%s\n", nCC(INSN_COND));
@@ -19121,6 +19145,52 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* ------------------- (T1) SMMUL{R} ------------------ */
+   if (INSN0(15,7) == BITS9(1,1,1,1,1,0,1,1,0)
+       && INSN0(6,4) == BITS3(1,0,1)
+       && INSN1(15,12) == BITS4(1,1,1,1)
+       && INSN1(7,5) == BITS3(0,0,0)) {
+      UInt bitR = INSN1(4,4);
+      UInt rD = INSN1(11,8);
+      UInt rM = INSN1(3,0);
+      UInt rN = INSN0(3,0);
+      if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM)) {
+         IRExpr* res
+         = unop(Iop_64HIto32,
+                binop(Iop_Add64,
+                      binop(Iop_MullS32, getIRegT(rN), getIRegT(rM)),
+                      mkU64(bitR ? 0x80000000ULL : 0ULL)));
+         putIRegT(rD, res, condT);
+         DIP("smmul%s r%u, r%u, r%u\n",
+             bitR ? "r" : "", rD, rN, rM);
+         goto decode_success;
+      }
+   }
+
+   /* ------------------- (T1) SMMLA{R} ------------------ */
+   if (INSN0(15,7) == BITS9(1,1,1,1,1,0,1,1,0)
+       && INSN0(6,4) == BITS3(1,0,1)
+       && INSN1(7,5) == BITS3(0,0,0)) {
+      UInt bitR = INSN1(4,4);
+      UInt rA = INSN1(15,12);
+      UInt rD = INSN1(11,8);
+      UInt rM = INSN1(3,0);
+      UInt rN = INSN0(3,0);
+      if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM) && (rA != 13)) {
+         IRExpr* res
+         = unop(Iop_64HIto32,
+                binop(Iop_Add64,
+                      binop(Iop_Add64,
+                            binop(Iop_32HLto64, getIRegT(rA), mkU32(0)),
+                            binop(Iop_MullS32, getIRegT(rN), getIRegT(rM))),
+                      mkU64(bitR ? 0x80000000ULL : 0ULL)));
+         putIRegT(rD, res, condT);
+         DIP("smmla%s r%u, r%u, r%u, r%u\n",
+             bitR ? "r" : "", rD, rN, rM, rA);
+         goto decode_success;
+      }
+   }
+
    /* ------------------ (T2) ADR ------------------ */
    if ((INSN0(15,0) == 0xF2AF || INSN0(15,0) == 0xF6AF)
        && INSN1(15,15) == 0) {
@@ -19477,6 +19547,7 @@ DisResult disInstr_THUMB_WRK (
          goto decode_success;
       }
    }
+
    /* -------------- v7 barrier insns -------------- */
    if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF00) == 0x8F00) {
       /* FIXME: should this be unconditional? */
@@ -19584,28 +19655,6 @@ DisResult disInstr_THUMB_WRK (
    if (INSN0(15,0) == 0xF3AF && INSN1(15,0) == 0x8000) {
       DIP("nop\n");
       goto decode_success;
-   }
-
-   /* ------------------- (T1) SMMUL{R} ------------------ */
-   if (INSN0(15,7) == BITS9(1,1,1,1,1,0,1,1,0)
-       && INSN0(6,4) == BITS3(1,0,1)
-       && INSN1(15,12) == BITS4(1,1,1,1)
-       && INSN1(7,5) == BITS3(0,0,0)) {
-      UInt bitR = INSN1(4,4);
-      UInt rD = INSN1(11,8);
-      UInt rM = INSN1(3,0);
-      UInt rN = INSN0(3,0);
-      if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM)) {
-         IRExpr* res
-         = unop(Iop_64HIto32,
-                binop(Iop_Add64,
-                      binop(Iop_MullS32, getIRegT(rN), getIRegT(rM)),
-                      mkU64(bitR ? 0x80000000ULL : 0ULL)));
-         putIRegT(rD, res, condT);
-         DIP("smmul%s r%u, r%u, r%u\n",
-             bitR ? "r" : "", rD, rN, rM);
-         goto decode_success;
-      }
    }
 
    /* -------------- (T1) LDRT reg+#imm8 -------------- */

@@ -67,7 +67,9 @@
 
 /* Limitations, etc
 
-   - pretty dodgy exception semantics for {LD,ST}Mxx, no doubt
+   - pretty dodgy exception semantics for {LD,ST}Mxx and {LD,ST}RD.
+     These instructions are non-restartable in the case where the
+     transfer(s) fault.
 
    - SWP: the restart jump back is Ijk_Boring; it should be
      Ijk_NoRedir but that's expensive.  See comments on casLE() in
@@ -15148,6 +15150,20 @@ DisResult disInstr_ARM_WRK (
      /* XXX: but the A8 doesn't seem to trap for misaligned loads, so,
         ignore alignment issues for the time being. */
 
+     /* For almost all cases, we do the writeback after the transfers.
+        However, that leaves the stack "uncovered" in this case:
+           strd    rD, [sp, #-8]
+        In which case, do the writeback to SP now, instead of later.
+        This is bad in that it makes the insn non-restartable if the
+        accesses fault, but at least keeps Memcheck happy. */
+     Bool writeback_already_done = False;
+     if (bS == 1 /*store*/ && summary == (2 | 16)
+         && rN == 13 && rN != rD && rN != rD+1
+         && bU == 0/*minus*/ && imm8 == 8) {
+        putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
+        writeback_already_done = True;
+     }
+
      /* doubleword store  S 1
         doubleword load   S 0
      */
@@ -15186,7 +15202,8 @@ DisResult disInstr_ARM_WRK (
               vassert(rD+0 != rN); /* since we just wrote rD+0 */
               vassert(rD+1 != rN); /* since we just wrote rD+1 */
            }
-           putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
+           if (!writeback_already_done)
+              putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
            break;
      }
 
@@ -18669,6 +18686,20 @@ DisResult disInstr_THUMB_WRK (
 
          IRTemp transAddr = bP == 1 ? postAddr : preAddr;
 
+         /* For almost all cases, we do the writeback after the transfers.
+            However, that leaves the stack "uncovered" in this case:
+               strd    rD, [sp, #-8]
+            In which case, do the writeback to SP now, instead of later.
+            This is bad in that it makes the insn non-restartable if the
+            accesses fault, but at least keeps Memcheck happy. */
+         Bool writeback_already_done = False;
+         if (bL == 0/*store*/ && bW == 1/*wb*/
+             && rN == 13 && rN != rT && rN != rT2
+             && bU == 0/*minus*/ && (imm8 << 2) == 8) {
+            putIRegT(rN, mkexpr(postAddr), condT);
+            writeback_already_done = True;
+         }
+
          if (bL == 0) {
             IRTemp oldRt  = newTemp(Ity_I32);
             IRTemp oldRt2 = newTemp(Ity_I32);
@@ -18697,7 +18728,7 @@ DisResult disInstr_THUMB_WRK (
             putIRegT(rT2, mkexpr(newRt2), IRTemp_INVALID);
          }
 
-         if (bW == 1) {
+         if (bW == 1 && !writeback_already_done) {
             putIRegT(rN, mkexpr(postAddr), condT);
          }
 

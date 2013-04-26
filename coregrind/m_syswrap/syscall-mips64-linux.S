@@ -100,9 +100,8 @@ ML_(do_syscall_for_client_WRK):
 
    ld      $5, OFFSET_mips64_r5($5)  /* a1 */
    ld      $2, 0($29)                /* syscallno */
-2: nop
 
-   syscall
+2: syscall
 
    /* Saving return values into Guest state  */
 3: ld      $5, 8($29)                /* guest_state */

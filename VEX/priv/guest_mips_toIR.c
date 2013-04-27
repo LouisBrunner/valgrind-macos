@@ -4614,7 +4614,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             assign(t2, binop(Iop_Shl32, mkNarrowTo32(ty, getIReg(rt)),
                              mkU8(32 - lsb)));
             assign(t3, binop(Iop_Shr32, mkexpr(t2), mkU8(32 - lsb)));
-         }
+         } else 
+            assign(t3, mkU32(0));
 
          if (msb < 31) {
             t4 = newTemp(Ity_I32);
@@ -4629,14 +4630,14 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                t6 = newTemp(Ity_I32);
                assign(t6, binop(Iop_Or32, mkexpr(t5), mkexpr(t1)));
                putIReg(rt, mkWidenFrom32(ty, binop(Iop_Or32, mkexpr(t6),
-                                                   mkexpr(t3)), False));
+                                                   mkexpr(t3)), True));
             } else {
                putIReg(rt, mkWidenFrom32(ty, binop(Iop_Or32, mkexpr(t1),
-                                                   mkexpr(t5)), False));
+                                                   mkexpr(t5)), True));
             }
          } else {
             putIReg(rt, mkWidenFrom32(ty, binop(Iop_Or32, mkexpr(t1),
-                                                mkexpr(t3)), False));
+                                                mkexpr(t3)), True));
          }
          break;
 

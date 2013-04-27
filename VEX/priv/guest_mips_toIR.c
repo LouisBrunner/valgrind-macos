@@ -1031,15 +1031,6 @@ static IRExpr *narrowTo(IRType dst_ty, IRExpr * e)
       vassert(mode64);
       return unop(Iop_64to16, e);
    }
-
-   if (vex_traceflags & VEX_TRACE_FE) {
-      vex_printf("\nsrc, dst tys are: ");
-      ppIRType(src_ty);
-      vex_printf(", ");
-      ppIRType(dst_ty);
-      vex_printf("\n");
-   }
-
    vpanic("narrowTo(mips)");
    return 0;
 }
@@ -1213,11 +1204,9 @@ static void putDReg(UInt dregNo, IRExpr * e)
 static void setFPUCondCode(IRExpr * e, UInt cc)
 {
    if (cc == 0) {
-      DIP("setFpu: %d\n", cc);
       putFCSR(binop(Iop_And32, getFCSR(), mkU32(0xFF7FFFFF)));
       putFCSR(binop(Iop_Or32, getFCSR(), binop(Iop_Shl32, e, mkU8(23))));
    } else {
-      DIP("setFpu1: %d\n", cc);
       putFCSR(binop(Iop_And32, getFCSR(), unop(Iop_Not32, 
                                binop(Iop_Shl32, mkU32(0x01000000), mkU8(cc)))));
       putFCSR(binop(Iop_Or32, getFCSR(), binop(Iop_Shl32, e, mkU8(24 + cc))));
@@ -1294,13 +1283,13 @@ static Bool dis_instr_shrt ( UInt theInstr )
       case 0x3A:
          if ((regRs & 0x01) == 0) {
             /* Doubleword Shift Right Logical - DSRL; MIPS64 */
-            DIP("dsrl r%u, r%u,r%u\n", regRd, regRt, (Int) sImmsa);
+            DIP("dsrl r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
             assign(tmpRd, binop(Iop_Shr64, mkexpr(tmpRt), mkU8(uImmsa)));
             putIReg(regRd, mkexpr(tmpRd));
          } else if ((regRs & 0x01) == 1) {
             /* Doubleword Rotate Right - DROTR; MIPS64r2 */
             vassert(mode64);
-            DIP("drotr r%u, r%u,%d\n", regRd, regRt, (Int) sImmsa);
+            DIP("drotr r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
             IRTemp tmpL = newTemp(ty);
             IRTemp tmpR = newTemp(ty);
             assign(tmpR, binop(Iop_Shr64, mkexpr(tmpRt), mkU8(uImmsa)));
@@ -1315,12 +1304,12 @@ static Bool dis_instr_shrt ( UInt theInstr )
       case 0x3E:
          if ((regRs & 0x01) == 0) {
             /* Doubleword Shift Right Logical Plus 32 - DSRL32; MIPS64 */
-            DIP("dsrl32 r%u, r%u,r%u\n", regRd, regRt, (Int) (sImmsa + 32));
+            DIP("dsrl32 r%u, r%u, %d", regRd, regRt, (Int)(sImmsa + 32));
             assign(tmpRd, binop(Iop_Shr64, mkexpr(tmpRt), mkU8(uImmsa + 32)));
             putIReg(regRd, mkexpr(tmpRd));
          } else if ((regRs & 0x01) == 1) {
             /* Doubleword Rotate Right Plus 32 - DROTR32; MIPS64r2 */
-            DIP("drotr32 r%u, r%u,%d\n", regRd, regRt, (Int) sImmsa);
+            DIP("drotr32 r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
             vassert(mode64);
             IRTemp tmpL = newTemp(ty);
             IRTemp tmpR = newTemp(ty);
@@ -1338,7 +1327,7 @@ static Bool dis_instr_shrt ( UInt theInstr )
       case 0x16:
          if ((uImmsa & 0x01) == 0) {
             /* Doubleword Shift Right Logical Variable - DSRLV; MIPS64 */
-            DIP("dsrlv r%u, r%u,r%u\n", regRd, regRt, regRs);
+            DIP("dsrlv r%u, r%u, r%u", regRd, regRt, regRs);
             IRTemp tmpRs8 = newTemp(Ity_I8);
             /* s = tmpRs[5..0] */
             assign(tmp, binop(Iop_And64, mkexpr(tmpRs), mkU64(63)));
@@ -1347,7 +1336,7 @@ static Bool dis_instr_shrt ( UInt theInstr )
             putIReg(regRd, mkexpr(tmpRd));
          } else if ((uImmsa & 0x01) == 1) {
             /* Doubleword Rotate Right Variable - DROTRV; MIPS64r2 */
-            DIP("drotrv r%u, r%u,r%u\n", regRd, regRt, regRs);
+            DIP("drotrv r%u, r%u, r%u", regRd, regRt, regRs);
             IRTemp tmpL = newTemp(ty);
             IRTemp tmpR = newTemp(ty);
             IRTemp tmpRs8 = newTemp(Ity_I8);
@@ -1374,20 +1363,20 @@ static Bool dis_instr_shrt ( UInt theInstr )
          break;
 
       case 0x38:  /* Doubleword Shift Left Logical - DSLL; MIPS64 */
-         DIP("dsll r%u, r%u,%d\n", regRd, regRt, (Int) sImmsa);
+         DIP("dsll r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
          vassert(mode64);
          assign(tmpRd, binop(Iop_Shl64, mkexpr(tmpRt), mkU8(uImmsa)));
          putIReg(regRd, mkexpr(tmpRd));
          break;
 
       case 0x3C:  /* Doubleword Shift Left Logical Plus 32 - DSLL32; MIPS64 */
-         DIP("dsll32 r%u, r%u,%d\n", regRd, regRt, (Int) sImmsa);
+         DIP("dsll32 r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
          assign(tmpRd, binop(Iop_Shl64, mkexpr(tmpRt), mkU8(uImmsa + 32)));
          putIReg(regRd, mkexpr(tmpRd));
          break;
 
       case 0x14: {  /* Doubleword Shift Left Logical Variable - DSLLV; MIPS64 */
-         DIP("dsllv r%u, r%u,r%u\n", regRd, regRt, regRs);
+         DIP("dsllv r%u, r%u, r%u", regRd, regRt, regRs);
          IRTemp tmpRs8 = newTemp(Ity_I8);
 
          assign(tmp, binop(Iop_And64, mkexpr(tmpRs), mkSzImm(ty, 63)));
@@ -1398,21 +1387,21 @@ static Bool dis_instr_shrt ( UInt theInstr )
       }
 
       case 0x3B:  /* Doubleword Shift Right Arithmetic - DSRA; MIPS64 */
-         DIP("dsra r%u, r%u,%d\n", regRd, regRt, (Int) sImmsa);
+         DIP("dsra r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
          assign(tmpRd, binop(Iop_Sar64, mkexpr(tmpRt), mkU8(uImmsa)));
          putIReg(regRd, mkexpr(tmpRd));
          break;
 
       case 0x3F:  /* Doubleword Shift Right Arithmetic Plus 32 - DSRA32;
                      MIPS64 */
-         DIP("dsra32 r%u, r%u,%d\n", regRd, regRt, (Int) sImmsa);
+         DIP("dsra32 r%u, r%u, %d", regRd, regRt, (Int)sImmsa);
          assign(tmpRd, binop(Iop_Sar64, mkexpr(tmpRt), mkU8(uImmsa + 32)));
          putIReg(regRd, mkexpr(tmpRd));
          break;
 
       case 0x17: {  /* Doubleword Shift Right Arithmetic Variable - DSRAV;
                        MIPS64 */
-         DIP("dsrav r%u, r%u,r%u\n", regRd, regRt, regRs);
+         DIP("dsrav r%u, r%u, r%u", regRd, regRt, regRs);
          IRTemp tmpRs8 = newTemp(Ity_I8);
          assign(tmp, binop(Iop_And64, mkexpr(tmpRs), mkSzImm(ty, 63)));
          assign(tmpRs8, mkNarrowTo8(ty, mkexpr(tmp)));
@@ -1444,6 +1433,32 @@ static IROp mkSzOp ( IRType ty, IROp op8 )
 /*********************************************************/
 /*---             Floating Point Compare              ---*/
 /*********************************************************/
+/* Function that returns a string that represent mips cond
+   mnemonic for the input code. */
+static const HChar* showCondCode(UInt code) {
+   const HChar* ret;
+   switch (code) {
+      case 0: ret = "F"; break;
+      case 1: ret = "UN"; break;
+      case 2: ret = "EQ"; break;
+      case 3: ret = "UEQ"; break;
+      case 4: ret = "OLT"; break;
+      case 5: ret = "ULT"; break;
+      case 6: ret = "OLE"; break;
+      case 7: ret = "ULE"; break;
+      case 8: ret = "SF"; break;
+      case 9: ret = "NGLE"; break;
+      case 10: ret = "SEQ"; break;
+      case 11: ret = "NGL"; break;
+      case 12: ret = "LT"; break;
+      case 13: ret = "NGE"; break;
+      case 14: ret = "LE"; break;
+      case 15: ret = "NGT"; break;
+      default: vpanic("showCondCode"); break;
+   }
+   return ret;
+}
+
 static Bool dis_instr_CCondFmt ( UInt cins )
 {
    IRTemp t0, t1, t2, t3, tmp5, tmp6;
@@ -1459,7 +1474,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
       UInt fpc_cc = get_fpc_cc(cins);
       switch (fmt) {
          case 0x10: {  /* C.cond.S */
-            DIP("C.cond.S %d f%d, f%d\n", fpc_cc, fs, ft);
+            DIP("C.%s.S %d, f%d, f%d", showCondCode(cond), fpc_cc, fs, ft);
             if (mode64) {
                t0 = newTemp(Ity_I32);
                t1 = newTemp(Ity_I32);
@@ -1510,7 +1525,6 @@ static Bool dis_instr_CCondFmt ( UInt cins )
                      setFPUCondCode(mkU32(0), fpc_cc);
                      break;
                   case 0x1:
-                     DIP("unorderd: %d\n", fpc_cc);
                      setFPUCondCode(mkexpr(t0), fpc_cc);
                      break;
                   case 0x2:
@@ -1608,7 +1622,6 @@ static Bool dis_instr_CCondFmt ( UInt cins )
                      setFPUCondCode(mkU32(0), fpc_cc);
                      break;
                   case 0x1:
-                     DIP("unorderd: %d\n", fpc_cc);
                      setFPUCondCode(mkexpr(t0), fpc_cc);
                      break;
                   case 0x2:
@@ -1668,7 +1681,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
             break;
 
          case 0x11: {  /* C.cond.D */
-            DIP("C.%d.D %d f%d, f%d\n", cond, fpc_cc, fs, ft);
+            DIP("C.%s.D %d, f%d, f%d", showCondCode(cond), fpc_cc, fs, ft);
             t0 = newTemp(Ity_I32);
             t1 = newTemp(Ity_I32);
             t2 = newTemp(Ity_I32);
@@ -1708,7 +1721,6 @@ static Bool dis_instr_CCondFmt ( UInt cins )
                   setFPUCondCode(mkU32(0), fpc_cc);
                   break;
                case 0x1:
-                  DIP("unorderd: %d\n", fpc_cc);
                   setFPUCondCode(mkexpr(t0), fpc_cc);
                   break;
                case 0x2:
@@ -1935,25 +1947,19 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    UChar *code = (UChar *) (guest_code + delta);
    cins = getUInt(code);
+   DIP("\t0x%lx:\t0x%08x\t", (long)guest_PC_curr_instr, cins);
 
    if (delta != 0) {
       if (branch_or_jump(guest_code + delta - 4)) {
          if (lastn == NULL && bstmt == NULL) {
-            DIP("Info: jump to delay slot insn...\n");
+            vassert(0);
          } else {
             dres.whatNext = Dis_StopHere;
-
-            DIP("lastn = %p bstmt = %p\n", lastn, bstmt);
             if (lastn != NULL) {
-               DIP("delay slot jump\n");
-               if (vex_traceflags & VEX_TRACE_FE)
-                  ppIRExpr(lastn);
                delay_slot_jump = True;
             } else if (bstmt != NULL) {
-               DIP("\ndelay slot branch\n");
                delay_slot_branch = True;
             }
-            DIP("delay slot\n");
          }
       }
 
@@ -1986,7 +1992,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          /* Got a "Special" instruction preamble. Which one is it? */
          if (getUInt(code + 16) == 0x01ad6825 /* or $13, $13, $13 */ ) {
             /* $11 = client_request ( $12 ) */
-            DIP("$11 = client_request ( $12 )\n");
+            DIP("$11 = client_request ( $12 )");
             if (mode64)
                putPC(mkU64(guest_PC_curr_instr + 20));
             else
@@ -1997,7 +2003,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             goto decode_success;
          } else if (getUInt(code + 16) == 0x01ce7025 /* or $14, $14, $14 */ ) {
             /* $11 = guest_NRADDR */
-            DIP("$11 = guest_NRADDR\n");
+            DIP("$11 = guest_NRADDR");
             dres.len = 20;
             delta += 20;
             if (mode64)
@@ -2009,7 +2015,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             goto decode_success;
          } else if (getUInt(code + 16) == 0x01ef7825 /* or $15, $15, $15 */ ) {
             /*  branch-and-link-to-noredir $25 */
-            DIP("branch-and-link-to-noredir $25\n");
+            DIP("branch-and-link-to-noredir $25");
             if (mode64)
                putIReg(31, mkU64(guest_PC_curr_instr + 20));
             else
@@ -2020,7 +2026,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             goto decode_success;
          } else if (getUInt(code + 16) == 0x016b5825 /* or $11,$11,$11 */ ) {
            /* IR injection */
-            DIP("IR injection\n");
+            DIP("IR injection");
 #if defined (_MIPSEL)
             vex_inject_ir(irsb, Iend_LE);
 #elif defined (_MIPSEB)
@@ -2074,8 +2080,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    IRType tyF = mode64 ? Ity_F64 : Ity_F32;
 
-   DIP("[cins = 0x%08x] ", cins);
-
    switch (opcode) {
 
    case 0x03:     /* JAL */
@@ -2112,7 +2116,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             switch (fmt) {
             case 0x08:  /* BC */
                {
-                  DIP("tf: %d, nd: %d\n", tf, nd);
+                  DIP("tf: %d, nd: %d", tf, nd);
                   /* FcConditionalCode(bc1_cc) */
                   t1 = newTemp(Ity_I1);
                   t2 = newTemp(Ity_I32);
@@ -2184,12 +2188,12 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x5:  /* abs.fmt */
                switch (fmt) {
                case 0x10:  /* S */
-                  DIP("abs.s f%d, f%d\n", fd, fs);
+                  DIP("abs.s f%d, f%d", fd, fs);
                   putFReg(fd, mkWidenFromF32(tyF, unop(Iop_AbsF32,
                               getLoFromF64(tyF, getFReg(fs)))));
                   break;
                case 0x11:  /* D  */
-                  DIP("abs.d f%d, f%d\n", fd, fs);
+                  DIP("abs.d f%d, f%d", fd, fs);
                   putDReg(fd, unop(Iop_AbsF64, getDReg(fs)));
                   break;
                default:
@@ -2308,7 +2312,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x08:  /* ROUND.L.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("round.l.s f%d, f%d\n", fd, fs);
+                     DIP("round.l.s f%d, f%d", fd, fs);
                      t0 = newTemp(Ity_I64);
 
                      assign(t0, binop(Iop_F32toI64S, mkU32(0x0),
@@ -2317,7 +2321,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      putFReg(fd, unop(Iop_ReinterpI64asF64, mkexpr(t0)));
                   break;
                   case 0x11:  /* D */
-                     DIP("round.l.d f%d, f%d\n", fd, fs);
+                     DIP("round.l.d f%d, f%d", fd, fs);
                      putFReg(fd, binop(Iop_RoundF64toInt, mkU32(0x0),
                                        getFReg(fs)));
                      break;
@@ -2330,7 +2334,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x09:  /* TRUNC.L.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("trunc.l.s f%d, f%d\n", fd, fs);
+                     DIP("trunc.l.s f%d, f%d", fd, fs);
                      t0 = newTemp(Ity_I64);
                      assign(t0, binop(Iop_F32toI64S, mkU32(0x3),
                                       getLoFromF64(Ity_F64, getFReg(fs))));
@@ -2338,7 +2342,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      putFReg(fd, unop(Iop_ReinterpI64asF64, mkexpr(t0)));
                      break;
                   case 0x11:  /* D */
-                     DIP("trunc.l.d f%d, f%d\n", fd, fs);
+                     DIP("trunc.l.d f%d, f%d", fd, fs);
                      putFReg(fd, binop(Iop_RoundF64toInt, mkU32(0x3),
                                        getFReg(fs)));
                      break;
@@ -2350,7 +2354,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x15:  /* RECIP.fmt */
                switch (fmt) {
                   case 0x10: {  /* S */
-                     DIP("recip.s f%d, f%d\n", fd, fs);
+                     DIP("recip.s f%d, f%d", fd, fs);
                      IRExpr *rm = get_IR_roundingmode();
                      putFReg(fd, mkWidenFromF32(tyF, triop(Iop_DivF32,
                                  rm, unop(Iop_ReinterpI32asF32,
@@ -2359,7 +2363,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
                   }
                   case 0x11: {  /* D */
-                     DIP("recip.d f%d, f%d\n", fd, fs);
+                     DIP("recip.d f%d, f%d", fd, fs);
                      IRExpr *rm = get_IR_roundingmode();
                      /* putDReg(fd, 1.0/getDreg(fs)); */
                      putDReg(fd, triop(Iop_DivF64, rm,
@@ -2648,7 +2652,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                switch (fmt) {
                case 0x10:  /* S */
                   {
-                     DIP("add.s f%d, f%d, f%d\n", fd, fs, ft);
+                     DIP("add.s f%d, f%d, f%d", fd, fs, ft);
                      IRExpr *rm = get_IR_roundingmode();
                      putFReg(fd, mkWidenFromF32(tyF, triop(Iop_AddF32, rm,
                                  getLoFromF64(tyF, getFReg(fs)),
@@ -2656,7 +2660,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
                   }
                case 0x11: {  /* D */
-                  DIP("add.d f%d, f%d, f%d\n", fd, fs, ft);
+                  DIP("add.d f%d, f%d, f%d", fd, fs, ft);
                   IRExpr *rm = get_IR_roundingmode();
                   putDReg(fd, triop(Iop_AddF64, rm, getDReg(fs), getDReg(ft)));
                   break;
@@ -2826,7 +2830,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      }
 
                   case 0x14:
-                     DIP("cvt.d.w %d, %d\n", fd, fs);
+                     DIP("cvt.d.w %d, %d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I64);
                         t1 = newTemp(Ity_I32);
@@ -2847,7 +2851,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   case 0x15: {  /* L */
                      if (mode64) {
-                        DIP("cvt.d.l %d, %d\n", fd, fs);
+                        DIP("cvt.d.l %d, %d", fd, fs);
                         t0 = newTemp(Ity_I64);
                         assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
 
@@ -2865,7 +2869,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x20:  /* cvt.s */
                switch (fmt) {
                   case 0x14:  /* W */
-                     DIP("cvt.s.w %d, %d\n", fd, fs);
+                     DIP("cvt.s.w %d, %d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I64);
                         t1 = newTemp(Ity_I32);
@@ -2887,7 +2891,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                     }
 
                   case 0x11:  /* D */
-                     DIP("cvt.s.d %d, %d\n", fd, fs);
+                     DIP("cvt.s.d %d, %d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_F32);
                         assign(t0, binop(Iop_F64toF32, get_IR_roundingmode(),
@@ -2899,7 +2903,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
 
                   case 0x15:  /* L */
-                     DIP("cvt.s.l %d, %d\n", fd, fs);
+                     DIP("cvt.s.l %d, %d", fd, fs);
                      t0 = newTemp(Ity_I64);
                      assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
 
@@ -2915,7 +2919,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x24:  /* cvt.w */
                switch (fmt) {
                case 0x10:  /* S */
-                  DIP("cvt.w.s %d, %d\n", fd, fs);
+                  DIP("cvt.w.s %d, %d", fd, fs);
                   if (mode64) {
                      putFReg(fd, mkWidenFromF32(tyF, binop(Iop_RoundF32toInt,
                              get_IR_roundingmode(), getLoFromF64(tyF,
@@ -2926,7 +2930,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   break;
 
                case 0x11:
-                  DIP("cvt.w.d %d, %d\n", fd, fs);
+                  DIP("cvt.w.d %d, %d", fd, fs);
                   if (mode64) {
                      t0 = newTemp(Ity_I32);
                      t1 = newTemp(Ity_F32);
@@ -2953,7 +2957,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x25:  /* cvt.l */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("cvt.l.s %d, %d\n", fd, fs);
+                     DIP("cvt.l.s %d, %d", fd, fs);
                      t0 = newTemp(Ity_I64);
 
                      assign(t0, binop(Iop_F32toI64S, get_IR_roundingmode(),
@@ -2963,7 +2967,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
 
                   case 0x11: {  /* D */
-                     DIP("cvt.l.d %d, %d\n", fd, fs);
+                     DIP("cvt.l.d %d, %d", fd, fs);
                      putFReg(fd, binop(Iop_RoundF64toInt,
                              get_IR_roundingmode(), getFReg(fs)));
                      break;
@@ -2977,7 +2981,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0B:  /* FLOOR.L.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("floor.l.s %d, %d\n", fd, fs);
+                     DIP("floor.l.s %d, %d", fd, fs);
                      t0 = newTemp(Ity_I64);
 
                      assign(t0, binop(Iop_F32toI64S, mkU32(0x1),
@@ -2987,7 +2991,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
 
                   case 0x11:  /* D */
-                     DIP("floor.l.d %d, %d\n", fd, fs);
+                     DIP("floor.l.d %d, %d", fd, fs);
                      putFReg(fd, binop(Iop_RoundF64toInt, mkU32(0x1),
                                        getFReg(fs)));
                      break;
@@ -2999,7 +3003,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0C:  /* ROUND.W.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("round.w.s f%d, f%d\n", fd, fs);
+                     DIP("round.w.s f%d, f%d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I64);
                         t1 = newTemp(Ity_I32);
@@ -3024,7 +3028,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      }
 
                   case 0x11:  /* D */
-                     DIP("round.w.d f%d, f%d\n", fd, fs);
+                     DIP("round.w.d f%d, f%d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I32);
                         assign(t0, binop(Iop_F64toI32S, mkU32(0x0),
@@ -3050,7 +3054,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0F:  /* FLOOR.W.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("floor.w.s f%d, f%d\n", fd, fs);
+                     DIP("floor.w.s f%d, f%d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I64);
                         t1 = newTemp(Ity_I32);
@@ -3075,7 +3079,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      }
 
                   case 0x11:  /* D */
-                     DIP("floor.w.d f%d, f%d\n", fd, fs);
+                     DIP("floor.w.d f%d, f%d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I32);
                         assign(t0, binop(Iop_F64toI32S, mkU32(0x1),
@@ -3101,7 +3105,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0D:  /* TRUNC.W */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("trunc.w.s %d, %d\n", fd, fs);
+                     DIP("trunc.w.s %d, %d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I64);
                         t1 = newTemp(Ity_I32);
@@ -3125,7 +3129,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
                   }
                   case 0x11:  /* D */
-                     DIP("trunc.w.d %d, %d\n", fd, fs);
+                     DIP("trunc.w.d %d, %d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I32);
 
@@ -3153,7 +3157,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0E:  /* CEIL.W.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("ceil.w.s %d, %d\n", fd, fs);
+                     DIP("ceil.w.s %d, %d", fd, fs);
                      if (mode64) {
                         t0 = newTemp(Ity_I64);
                         t1 = newTemp(Ity_I32);
@@ -3176,7 +3180,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
 
                   case 0x11:  /* D */
-                     DIP("ceil.w.d %d, %d\n", fd, fs);
+                     DIP("ceil.w.d %d, %d", fd, fs);
                      if (!mode64) {
                         t0 = newTemp(Ity_I32);
                         assign(t0, binop(Iop_F64toI32S, mkU32(0x2),
@@ -3200,7 +3204,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0A:  /* CEIL.L.fmt */
                switch (fmt) {
                   case 0x10:  /* S */
-                     DIP("ceil.l.s %d, %d\n", fd, fs);
+                     DIP("ceil.l.s %d, %d", fd, fs);
                      t0 = newTemp(Ity_I64);
 
                      assign(t0, binop(Iop_F32toI64S, mkU32(0x2),
@@ -3210,7 +3214,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
 
                   case 0x11:  /* D */
-                     DIP("ceil.l.d %d, %d\n", fd, fs);
+                     DIP("ceil.l.d %d, %d", fd, fs);
                      putFReg(fd, binop(Iop_RoundF64toInt, mkU32(0x2),
                                        getFReg(fs)));
                      break;
@@ -3224,7 +3228,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x16:  /* RSQRT.fmt */
                switch (fmt) {
                   case 0x10: {  /* S */
-                     DIP("rsqrt.s %d, %d\n", fd, fs);
+                     DIP("rsqrt.s %d, %d", fd, fs);
                      IRExpr *rm = get_IR_roundingmode();
                      putFReg(fd, mkWidenFromF32(tyF, triop(Iop_DivF32, rm,
                                  unop(Iop_ReinterpI32asF32, mkU32(ONE_SINGLE)),
@@ -3233,7 +3237,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      break;
                   }
                   case 0x11: {  /* D */
-                     DIP("rsqrt.d %d, %d\n", fd, fs);
+                     DIP("rsqrt.d %d, %d", fd, fs);
                      IRExpr *rm = get_IR_roundingmode();
                      putDReg(fd, triop(Iop_DivF64, rm,
                                  unop(Iop_ReinterpI64asF64,
@@ -3308,6 +3312,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x39:  /* SWC1 */
+      DIP("swc1 f%d, %d(r%d)", ft, imm, rs);
       if (mode64) {
          t0 = newTemp(Ity_I64);
          t2 = newTemp(Ity_I32);
@@ -3319,7 +3324,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          LOAD_STORE_PATTERN;
          store(mkexpr(t1), getFReg(ft));
       }
-      DIP("swc1 f%d, %d(r%d)", ft, imm, rs);
       break;
 
    case 0x33:  /* PREF */
@@ -3390,9 +3394,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x0F:  /* LUI */
       p = (imm << 16);
-      DIP("lui rt: %d, imm: %d, imm << 16: %d", rt, imm, p);
-      if ((vex_traceflags & VEX_TRACE_FE) && !mode64)
-         ppIRExpr(mkU32(p));
+      DIP("lui r%d, imm: 0x%x", rt, imm);
       if (mode64)
          putIReg(rt, mkU64(extend_s_32to64(p)));
       else
@@ -3403,7 +3405,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       switch (function) {
       case 0x0: {  /* LWXC1 */
          /* Load Word  Indexed to Floating Point - LWXC1 (MIPS32r2) */
-         DIP("lwxc1 f%d, r%d(r%d) \n", fd, rt, rs);
+         DIP("lwxc1 f%d, r%d(r%d)", fd, rt, rs);
          if (mode64) {
             t0 = newTemp(Ity_I64);
             t1 = newTemp(Ity_I32);
@@ -3431,7 +3433,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          /* Load Doubleword  Indexed to Floating Point 
             LDXC1 (MIPS32r2 and MIPS64) */
          if (mode64) {
-            DIP("ldxc1 f%d, r%d(r%d) \n", fd, rt, rs);
+            DIP("ldxc1 f%d, r%d(r%d)", fd, rt, rs);
             t0 = newTemp(Ity_I64);
             assign(t0, binop(Iop_Add64, getIReg(rs), getIReg(rt)));
             putFReg(fd, load(Ity_F64, mkexpr(t0)));
@@ -3456,7 +3458,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x5:  /* Load Doubleword Indexed Unaligned to Floating Point - LUXC1;
                     MIPS32r2 */
-         DIP("luxc1 f%d, r%d(r%d) \n", fd, rt, rs);
+         DIP("luxc1 f%d, r%d(r%d)", fd, rt, rs);
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I64);
          assign(t0, binop(Iop_Add64, getIReg(rs), getIReg(rt)));
@@ -3506,7 +3508,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
       case 0xD:  /* Store Doubleword Indexed Unaligned from Floating Point - 
                     SUXC1; MIPS64 MIPS32r2 */
-         DIP("suxc1 f%d, r%d(r%d) \n", fd, rt, rs);
+         DIP("suxc1 f%d, r%d(r%d)", fd, rt, rs);
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I64);
          assign(t0, binop(Iop_Add64, getIReg(rs), getIReg(rt)));
@@ -3764,7 +3766,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x2C: {  /* SDL rt, offset(base) MIPS64 */
-      DIP("sdl r%u,%d(r%u)\n", rt, (Int) imm, rs);
+      DIP("sdl r%u, %d(r%u)", rt, (Int) imm, rs);
       /* t1 = addr */
 #if defined (_MIPSEL)
       t1 = newTemp(Ity_I64);
@@ -3805,7 +3807,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x2D: {
       /* SDR rt, offset(base) - MIPS64 */
       vassert(mode64);
-      DIP("sdr r%u,%d(r%u)\n", rt, imm, rs);
+      DIP("sdr r%u, %d(r%u)", rt, imm, rs);
       /* t1 = addr */
 #if defined (_MIPSEL)
       t1 = newTemp(Ity_I64);
@@ -4186,7 +4188,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x6:  /* dmul MIPS64 - Netlogic */
-         DIP("dmul r%u, r%u, r%u\n", rd, rs, rt);
+         DIP("dmul r%u, r%u, r%u", rd, rs, rt);
          t0 = newTemp(Ity_I128);
 
          assign(t0, binop(Iop_MullU64, getIReg(rs), getIReg(rt)));
@@ -4195,7 +4197,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x10:  /* LDADDW - Swap Word - Netlogic */
-         DIP("ldaddw r%u, r%u\n", rt, rs);
+         DIP("ldaddw r%u, r%u", rt, rs);
          t0 = newTemp(Ity_I32);
          t1 = newTemp(Ity_I32);
          t2 = newTemp(Ity_I32);
@@ -4216,7 +4218,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x12:  /* LDADDD - Swap Word - Netlogic */
-         DIP("ldaddw r%u, r%u\n", rt, rs);
+         DIP("ldaddw r%u, r%u", rt, rs);
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I64);
 
@@ -4232,7 +4234,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x14:  /* SWAPW - Swap Word - Netlogic */
-         DIP("swapw r%u, r%u\n", rt, rs);
+         DIP("swapw r%u, r%u", rt, rs);
          t0 = newTemp(Ity_I32);
          t1 = newTemp(Ity_I32);
          assign(t0, mkNarrowTo32(ty, getIReg(rt)));
@@ -4242,7 +4244,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x16:  /* SWAPD - Swap Double - Netlogic */
-         DIP("swapw r%u, r%u\n", rt, rs);
+         DIP("swapw r%u, r%u", rt, rs);
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I64);
          assign(t0, getIReg(rt));
@@ -4331,7 +4333,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             UInt srcPos = lsb;
             UInt dstSz = msb + 33;
             t1 = newTemp(Ity_I64);
-            DIP("dextm r%u, r%u, %d, %d\n", rt, rs, lsb, msb + 1);
+            DIP("dextm r%u, r%u, %d, %d", rt, rs, lsb, msb + 1);
 
             UChar lsAmt = 64 - (srcPos + dstSz);  /* left shift amount; */
             UChar rsAmt = 64 - dstSz;  /* right shift amount; */
@@ -4348,8 +4350,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             size = msb + 1;
             UInt srcPos = lsb + 32;
             UInt dstSz = msb + 1;
+            DIP("dextu r%u, r%u, %d, %d", rt, rs, srcPos, dstSz);
             t1 = newTemp(Ity_I64);
-            DIP("dextu r%u, r%u, %d, %d\n", rt, rs, lsb + 32, msb + 1);
 
             vassert(srcPos >= 32 && srcPos < 64);
             vassert(dstSz > 0 && dstSz <= 32);
@@ -4386,7 +4388,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
             assign(tmpRs, getIReg(rs));
             assign(tmpRt, getIReg(rt));
-            DIP("dinsm r%u, r%u, %d, %d\n", rt, rs, lsb, msb);
+            DIP("dinsm r%u, r%u, %d, %d", rt, rs, lsb, msb);
 
             UChar lsAmt = dstPos + srcSz - 1;   /* left shift amount; */
             UChar rsAmt = dstPos + srcSz - 1;   /* right shift amount; */
@@ -4438,7 +4440,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
             assign(tmpRs, getIReg(rs));
             assign(tmpRt, getIReg(rt));
-            DIP("dinsu r%u, r%u, %d, %d\n", rt, rs, lsb, msb);
+            DIP("dinsu r%u, r%u, %d, %d", rt, rs, lsb, msb);
 
             UChar lsAmt = 64 - srcSz;  /* left shift amount; */
             UChar rsAmt = 64 - (dstPos + srcSz);  /* right shift amount; */
@@ -4486,7 +4488,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             msb = get_msb(cins);
             lsb = get_lsb(cins);
             size = msb + 1;
-            DIP("dins r%u, r%u, %d, %d\n", rt, rs, lsb,
+            DIP("dins r%u, r%u, %d, %d", rt, rs, lsb,
                 msb - lsb + 1);
             UChar lsAmt = 63 - lsb;  /* left shift amount; */
             UChar rsAmt = 63 - lsb;  /* right shift amount; */
@@ -4521,13 +4523,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          assign(tmpRt, getIReg(rt));
          switch (lsb) {
             case 0x02: {  /* DSBH */
+               DIP("dsbh r%u, r%u", rd, rt);
                IRTemp tmpT1 = newTemp(ty);
                IRTemp tmpT2 = newTemp(ty);
                IRTemp tmpT3 = newTemp(ty);
                IRTemp tmpT4 = newTemp(ty);
                IRTemp tmpT5 = newTemp(Ity_I64);
                IRTemp tmpT6 = newTemp(ty);
-               DIP("dsbh r%u, r%u\n", rd, rt);
                assign(tmpT5, mkU64(0xFF00FF00FF00FF00ULL));
                assign(tmpT6, mkU64(0x00FF00FF00FF00FFULL));
                assign(tmpT1, binop(Iop_And64, mkexpr(tmpRt), mkexpr(tmpT5)));
@@ -4539,6 +4541,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             }
             case 0x05: {  /* DSHD */
+               DIP("dshd r%u, r%u\n", rd, rt);
                IRTemp tmpT1 = newTemp(ty);
                IRTemp tmpT2 = newTemp(ty);
                IRTemp tmpT3 = newTemp(ty);
@@ -4548,7 +4551,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                IRTemp tmpT7 = newTemp(ty);
                IRTemp tmpT8 = newTemp(ty);
                IRTemp tmpT9 = newTemp(ty);
-               DIP("dshd r%u, r%u\n", rd, rt);
                assign(tmpT5, mkU64(0xFFFF0000FFFF0000ULL));
                assign(tmpT6, mkU64(0x0000FFFF0000FFFFULL));
                assign(tmpT1, binop(Iop_And64, mkexpr(tmpRt), mkexpr(tmpT5)));
@@ -4590,13 +4592,12 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x04:  /* INS */
          msb = get_msb(cins);
          lsb = get_lsb(cins);
-
          size = msb - lsb + 1;
+         DIP("ins size:%d msb:%d lsb:%d", size, msb, lsb);
 
          vassert(lsb + size <= 32);
          vassert(lsb + size > 0);
 
-         DIP("ins size:%d msb:%d lsb:%d", size, msb, lsb);
          /* put size bits from rs at the pos in temporary */
          t0 = newTemp(Ity_I32);
          t3 = newTemp(Ity_I32);
@@ -4667,8 +4668,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          msb = get_msb(cins);
          lsb = get_lsb(cins);
          size = msb + 1;
+         DIP("dext r%u, r%u, %d, %d", rt, rs, lsb, msb + 1);
          t1 = newTemp(Ity_I64);
-         DIP("dext r%u, r%u, %d, %d\n", rt, rs, lsb, msb + 1);
          vassert(lsb >= 0 && lsb < 32);
          vassert(size > 0 && size <= 32);
          vassert((lsb + size) > 0 && (lsb + size) <= 63);
@@ -4705,15 +4706,15 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
 
             case 0x10:  /* SEB */
-                DIP("seb");
-                if (mode64)
+               DIP("seb r%d, r%d", rd, rt);
+               if (mode64)
                   putIReg(rd, unop(Iop_8Sto64, unop(Iop_64to8, getIReg(rt))));
                else
                   putIReg(rd, unop(Iop_8Sto32, unop(Iop_32to8, getIReg(rt))));
                break;
 
             case 0x18:  /* SEH */
-               DIP("seh");
+               DIP("seh r%d, r%d", rd, rt);
                if (mode64)
                   putIReg(rd, unop(Iop_16Sto64, unop(Iop_64to16, getIReg(rt))));
                else
@@ -4946,7 +4947,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x1C:  /* Doubleword Multiply - DMULT; MIPS64 */
-         DIP("dmult r%u, r%u\n", rs, rt);
+         DIP("dmult r%u, r%u", rs, rt);
          t0 = newTemp(Ity_I128);
 
          assign(t0, binop(Iop_MullS64, getIReg(rs), getIReg(rt)));
@@ -4956,7 +4957,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x1D:  /* Doubleword Multiply Unsigned - DMULTU; MIPS64 */
-         DIP("dmultu r%u, r%u\n", rs, rt);
+         DIP("dmultu r%u, r%u", rs, rt);
          t0 = newTemp(Ity_I128);
 
          assign(t0, binop(Iop_MullU64, getIReg(rs), getIReg(rt)));
@@ -4966,7 +4967,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x1E:  /* Doubleword Divide DDIV; MIPS64 */
-         DIP("ddiv");
+         DIP("ddiv r%u, r%u", rs, rt);
          t1 = newTemp(Ity_I128);
 
          assign(t1, binop(Iop_DivModS64to64, getIReg(rs), getIReg(rt)));
@@ -4976,7 +4977,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x1F:  /* Doubleword Divide Unsigned DDIVU; MIPS64 check this */
-         DIP("ddivu");
+         DIP("ddivu r%u, r%u", rs, rt);
          t1 = newTemp(Ity_I128);
          t2 = newTemp(Ity_I128);
 
@@ -5281,7 +5282,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       } 
 
       case 0x0D:  /* BREAK */
-         DIP("Info: Breakpoint...code = %d", trap_code);
+         DIP("break 0x%x", trap_code);
          if (mode64)
             jmp_lit64(&dres, Ijk_SigTRAP, (guest_PC_curr_instr + 4));
          else
@@ -5561,7 +5562,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          goto decode_failure;
 
       case 0x0F: {  /* SYNC */
-         DIP("sync r%d, r%d, %d", rt, rd, sel);
+         DIP("sync 0x%x", sel);
          lsb = get_lsb(cins);
          IRDirty *d = unsafeIRDirty_0_N(0,
                                         "mips32_dirtyhelper_sync",
@@ -5578,7 +5579,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x2C: {  /* Doubleword Add - DADD; MIPS64 */
          DIP("dadd r%d, r%d, r%d", rd, rs, rt);
-
          IRTemp tmpRs64 = newTemp(Ity_I64);
          IRTemp tmpRt64 = newTemp(Ity_I64);
 
@@ -5629,8 +5629,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x2E: {  /* Doubleword Subtract - DSUB; MIPS64 */
-         DIP("dsub r%u, r%u,r%u\n", rd, rs, rt);
-
+         DIP("dsub r%u, r%u, r%u", rd, rs, rt);
          IRTemp tmpRs64 = newTemp(Ity_I64);
          IRTemp tmpRt64 = newTemp(Ity_I64);
 
@@ -5679,7 +5678,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x2F:  /* Doubleword Subtract Unsigned - DSUBU; MIPS64 */
-         DIP("dsub r%u, r%u,r%u\n", rd, rt, rt);
+         DIP("dsub r%u, r%u,r%u", rd, rt, rt);
          ALU_PATTERN(Iop_Sub64);
          break;
 
@@ -6111,7 +6110,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x1A: {
       /* Load Doubleword Left - LDL; MIPS64 */
       vassert(mode64);
-      DIP("ldl r%u,%d(r%u)\n", rt, imm, rs);
+      DIP("ldl r%u, %d(r%u)", rt, imm, rs);
       /* t1 = addr */
 #if defined (_MIPSEL)
       t1 = newTemp(Ity_I64);
@@ -6151,7 +6150,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x1B: {
       /* Load Doubleword Right - LDR; MIPS64 */
       vassert(mode64);
-      DIP("ldr r%u,%d(r%u)\n", rt, imm, rs);
+      DIP("ldr r%u,%d(r%u)", rt, imm, rs);
       /* t1 = addr */
 #if defined (_MIPSEL)
       t1 = newTemp(Ity_I64);
@@ -6181,7 +6180,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    }
 
    case 0x27:  /* Load Word unsigned - LWU; MIPS64 */
-      DIP("lwu r%u,%d(r%u)\n", rt, imm, rs);
+      DIP("lwu r%u,%d(r%u)", rt, imm, rs);
       LOAD_STORE_PATTERN;
 
       putIReg(rt, mkWidenFrom32(ty, load(Ity_I32, mkexpr(t1)), False));
@@ -6193,9 +6192,9 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       t2 = newTemp(Ity_I32);
 #if defined (_MIPSEL)
-      stmt(IRStmt_LLSC(Iend_LE, t2, mkexpr(t1), NULL /*this is a load */ ));
+      stmt(IRStmt_LLSC(Iend_LE, t2, mkexpr(t1), NULL /* this is a load */ ));
 #elif defined (_MIPSEB)
-      stmt(IRStmt_LLSC(Iend_BE, t2, mkexpr(t1), NULL /*this is a load */ ));
+      stmt(IRStmt_LLSC(Iend_BE, t2, mkexpr(t1), NULL /* this is a load */ ));
 #endif
       if (mode64)
          putIReg(rt, unop(Iop_32Sto64, mkexpr(t2)));
@@ -6210,16 +6209,16 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       t2 = newTemp(Ity_I64);
 #if defined (_MIPSEL)
       stmt(IRStmt_LLSC
-           (Iend_LE, t2, mkexpr(t1), NULL /*this is a load */ ));
+           (Iend_LE, t2, mkexpr(t1), NULL /* this is a load */ ));
 #elif defined (_MIPSEB)
       stmt(IRStmt_LLSC
-           (Iend_BE, t2, mkexpr(t1), NULL /*this is a load */ ));
+           (Iend_BE, t2, mkexpr(t1), NULL /* this is a load */ ));
 #endif
 
       putIReg(rt, mkexpr(t2));
       break;
 
-   case 0x38:     /* SC / SWC0 */
+   case 0x38:  /* SC / SWC0 */
       DIP("sc r%d, %d(r%d)", rt, imm, rs);
       LOAD_STORE_PATTERN;
 
@@ -6247,16 +6246,15 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       putIReg(rt, unop(Iop_1Uto64, mkexpr(t2)));
       break;
 
-   case 0x37:  /* Load Doubleword -  LD; MIPS64 */
-      DIP("ld r%u,%d(r%u)", rt, imm, rs);
+   case 0x37:  /* Load Doubleword - LD; MIPS64 */
+      DIP("ld r%u, %d(r%u)", rt, imm, rs);
       LOAD_STORE_PATTERN;
       putIReg(rt, load(Ity_I64, mkexpr(t1)));
       break;
 
-   case 0x3F:  /* Store Doubleword -  SD; MIPS64 */
-      DIP("sd r%u,%d(r%u)", rt, imm, rs);
+   case 0x3F:  /* Store Doubleword - SD; MIPS64 */
+      DIP("sd r%u, %d(r%u)", rt, imm, rs);
       LOAD_STORE_PATTERN;
-
       store(mkexpr(t1), getIReg(rt));
       break;
 
@@ -6336,8 +6334,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
    }
 
-   // On MIPS we need to check if the last instruction
-   // in block is branch or jump
+   /* On MIPS we need to check if the last instruction
+      in block is branch or jump. */
    if (((vex_control.guest_max_insns - 1) == (delta + 4) / 4)
        &&  (dres.whatNext != Dis_StopHere))
       if (branch_or_jump(guest_code + delta + 4)) {

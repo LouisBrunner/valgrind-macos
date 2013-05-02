@@ -745,9 +745,9 @@ void log_bytes ( HChar* bytes, Int nbytes )
 /* --------- Various helper functions for translation --------- */
 
 /* Look for reasons to disallow making translations from the given
-   segment. */
+   segment/addr. */
 
-static Bool translations_allowable_from_seg ( NSegment const* seg )
+static Bool translations_allowable_from_seg ( NSegment const* seg, Addr addr )
 {
 #  if defined(VGA_x86) || defined(VGA_s390x) || defined(VGA_mips32) \
       || defined(VGA_mips64)
@@ -757,7 +757,16 @@ static Bool translations_allowable_from_seg ( NSegment const* seg )
 #  endif
    return seg != NULL
           && (seg->kind == SkAnonC || seg->kind == SkFileC || seg->kind == SkShmC)
-          && (seg->hasX || (seg->hasR && allowR));
+          && (seg->hasX 
+              || (seg->hasR && (allowR
+                                || VG_(has_gdbserver_breakpoint) (addr))));
+   /* If GDB/gdbsrv has inserted a breakpoint at addr, assume this is a valid
+      location to translate if seg is not executable but is readable.
+      This is needed for inferior function calls from GDB: GDB inserts a
+      breakpoint on the stack, and expects to regain control before the
+      breakpoint instruction at the breakpoint address is really
+      executed. For this, the breakpoint instruction must be translated
+      so as to have the call to gdbserver executed. */
 }
 
 
@@ -852,7 +861,7 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
       allow a chase. */
 
    /* Destination not in a plausible segment? */
-   if (!translations_allowable_from_seg(seg))
+   if (!translations_allowable_from_seg(seg, addr))
       goto dontchase;
 
    /* Destination is redirected? */
@@ -1418,7 +1427,7 @@ Bool VG_(translate) ( ThreadId tid,
    { /* BEGIN new scope specially for 'seg' */
    NSegment const* seg = VG_(am_find_nsegment)(addr);
 
-   if ( (!translations_allowable_from_seg(seg))
+   if ( (!translations_allowable_from_seg(seg, addr))
         || addr == TRANSTAB_BOGUS_GUEST_ADDR ) {
       if (VG_(clo_trace_signals))
          VG_(message)(Vg_DebugMsg, "translations not allowed here (0x%llx)"

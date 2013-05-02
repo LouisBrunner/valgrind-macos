@@ -76,6 +76,9 @@ void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode);
 Bool VG_(gdbserver_point) (PointKind kind, Bool insert, 
                            Addr addr, int len);
 
+/* True if there is a breakpoint at addr. */
+Bool VG_(has_gdbserver_breakpoint) (Addr addr);
+
 /* Entry point invoked by vgdb when it uses ptrace to cause a gdbserver
    invocation. A magic value is passed by vgdb in check as a verification
    that the call has been properly pushed by vgdb. */

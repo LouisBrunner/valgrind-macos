@@ -3448,6 +3448,24 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(DFP rm) x I64/D64 -> D64/I64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
+      case Iop_F64toD64:
+      case Iop_D64toF64:
+         /* I32(DFP rm) x F64/D64 -> D64/F64 */
+         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+
+      case Iop_F64toD128:
+         /* I32(DFP rm) x F64 -> D128 */
+         return mkLazy2(mce, Ity_I128, vatom1, vatom2);
+
+      case Iop_D128toF64:
+         /* I32(DFP rm) x D128 -> F64 */
+         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+
+      case Iop_F128toD128:
+      case Iop_D128toF128:
+         /* I32(DFP rm) x F128/D128 -> D128/F128 */
+         return mkLazy2(mce, Ity_I128, vatom1, vatom2);
+
       case Iop_RoundF32toInt:
       case Iop_SqrtF32:
          /* I32(rm) x I32/F32 -> I32/F32 */

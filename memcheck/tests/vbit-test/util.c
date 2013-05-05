@@ -869,6 +869,24 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_I64UtoD128:
          UNARY(Ity_I64, Ity_D128);
 
+      case Iop_F64toD64:
+         BINARY(ity_RMode, Ity_F64, Ity_D64);
+
+      case Iop_D64toF64:  /* I64 bit pattern stored in Float register */
+         BINARY(ity_RMode, Ity_D64, Ity_F64);
+
+      case Iop_F64toD128:
+         BINARY(ity_RMode, Ity_F64, Ity_D128);
+
+      case Iop_D128toF64:
+         BINARY(ity_RMode, Ity_D128, Ity_F64);
+
+      case Iop_F128toD128:
+         BINARY(ity_RMode, Ity_F128, Ity_D128);
+
+      case Iop_D128toF128:
+         BINARY(ity_RMode, Ity_D128, Ity_F128);
+
       case Iop_DPBtoBCD:
       case Iop_BCDtoDPB:
          UNARY(Ity_I64, Ity_I64);

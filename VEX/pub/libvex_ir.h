@@ -1092,6 +1092,24 @@ typedef
       /*   IRRoundingModeDFP(I32) x D128 -> I64 */
       Iop_D128toI64U,
 
+      /*   IRRoundingModeDFP(I32) x F64 -> D64 */
+      Iop_F64toD64,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> F64 */
+      Iop_D64toF64,
+
+      /*   IRRoundingModeDFP(I32) x F64 -> D128 */
+      Iop_F64toD128,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> F64 */
+      Iop_D128toF64,
+
+      /*   IRRoundingModeDFP(I32) x F128 -> D128 */
+      Iop_F128toD128,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> F128 */
+      Iop_D128toF128,
+
       /* ROUNDING INSTRUCTIONS
        * IRRoundingMode(I32) x D64 -> D64
        * The D64 operand, if a finite number, it is rounded to a

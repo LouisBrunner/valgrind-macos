@@ -983,6 +983,12 @@ void ppIROp ( IROp op )
       case Iop_D128toI32U: vex_printf("D128toI32U"); return;
       case Iop_D128toI64S: vex_printf("D128toI64S"); return;
       case Iop_D128toI64U: vex_printf("D128toI64U"); return;
+      case Iop_F64toD64:   vex_printf("F64toD64");   return;
+      case Iop_D64toF64:   vex_printf("D64toF64");   return;
+      case Iop_F64toD128:  vex_printf("F64toD128");  return;
+      case Iop_D128toF64:  vex_printf("D128toF64");  return;
+      case Iop_F128toD128: vex_printf("F128toD128"); return;
+      case Iop_D128toF128: vex_printf("D128toF128"); return;
       case Iop_AddD128: vex_printf("AddD128");  return;
       case Iop_SubD128: vex_printf("SubD128");  return;
       case Iop_MulD128: vex_printf("MulD128");  return;
@@ -3008,6 +3014,24 @@ void typeOfPrimop ( IROp op,
 
       case Iop_I64UtoD64:
          BINARY(ity_RMode, Ity_I64, Ity_D64);
+
+      case Iop_F64toD64:
+         BINARY(ity_RMode, Ity_F64, Ity_D64);
+
+      case Iop_D64toF64:
+         BINARY(ity_RMode, Ity_D64, Ity_F64);
+
+      case Iop_F64toD128:
+         BINARY(ity_RMode, Ity_F64, Ity_D128);
+
+      case Iop_D128toF64:
+         BINARY(ity_RMode, Ity_D128, Ity_F64);
+
+      case Iop_F128toD128:
+         BINARY(ity_RMode, Ity_F128, Ity_D128);
+
+      case Iop_D128toF128:
+         BINARY(ity_RMode, Ity_D128, Ity_F128);
 
       case Iop_CmpD64:
       case Iop_CmpExpD64:

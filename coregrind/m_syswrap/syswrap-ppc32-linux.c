@@ -1191,7 +1191,7 @@ static SyscallTableEntry syscall_table[] = {
 /* Number 256 is reserved for sys_debug_setcontext */
 /* Number 257 is reserved for vserver */
 /* Number 258 is reserved for new sys_remap_file_pages */
-/* Number 259 is reserved for new sys_mbind */
+   LINX_(__NR_mbind,             sys_mbind),             // 259
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),          // 260
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),          // 261
 

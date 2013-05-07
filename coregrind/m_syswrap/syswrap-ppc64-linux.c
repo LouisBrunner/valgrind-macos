@@ -985,10 +985,10 @@ static SyscallTableEntry syscall_table[] = {
 // /* Number 256 is reserved for sys_debug_setcontext */
 // /* Number 257 is reserved for vserver */
 // /* 258 currently unused */
-// _____(__NR_mbind,             sys_mbind),              // 259
+   LINX_(__NR_mbind,             sys_mbind),              // 259
 
-// _____(__NR_get_mempolicy,     sys_get_mempolicy),      // 260
-// _____(__NR_set_mempolicy,     sys_set_mempolicy),      // 261
+   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),      // 260
+   LINX_(__NR_set_mempolicy,     sys_set_mempolicy),      // 261
    LINXY(__NR_mq_open,           sys_mq_open),            // 262
    LINX_(__NR_mq_unlink,         sys_mq_unlink),          // 263
    LINX_(__NR_mq_timedsend,      sys_mq_timedsend),       // 264

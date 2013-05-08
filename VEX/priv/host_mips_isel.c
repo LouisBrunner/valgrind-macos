@@ -365,6 +365,10 @@ static HReg mk_LoadRR32toFPR(ISelEnv * env, HReg r_srcHi, HReg r_srcLo)
 #elif defined (_MIPSEB)
    addInstr(env, MIPSInstr_Store(4, am_addr0, r_srcHi, mode64));
    addInstr(env, MIPSInstr_Store(4, am_addr1, r_srcLo, mode64));
+#else
+   /* Stop gcc on other platforms complaining about am_addr1 being set
+      but not used. */
+   (void)am_addr1;
 #endif
 
    /* load as float */

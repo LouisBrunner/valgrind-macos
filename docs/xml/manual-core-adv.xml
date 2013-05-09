@@ -995,7 +995,8 @@ $5 = 36
 
      <para>Connecting to or interrupting a Valgrind process blocked in
      a system call requires the "ptrace" system call to be usable.
-     This may be disabled in your kernel for security reasons.</para>
+     This may be disabled in your kernel for security reasons.
+     </para>
 
      <para>When running your program, Valgrind's scheduler
      periodically checks whether there is any work to be handled by
@@ -1043,24 +1044,9 @@ $5 = 36
      <para>Ubuntu versions 10.10 and later may restrict the scope of
      ptrace to the children of the process calling ptrace.  As the
      Valgrind process is not a child of vgdb, such restricted scoping
-     causes the ptrace calls to fail.  To avoid that, when Valgrind
-     gdbserver receives the first packet from a vgdb, it calls
-     <computeroutput>prctl(PR_SET_PTRACER, vgdb_pid, 0, 0,
-     0)</computeroutput> to ensure vgdb can reliably use ptrace.
-     Once <computeroutput>vgdb_pid</computeroutput> has been marked as
-     a ptracer, vgdb can then properly force the invocation of
-     Valgrind gdbserver when needed.  To ensure the vgdb is set as a
-     ptracer before the Valgrind process gets blocked in a system
-     call, connect your GDB to the Valgrind gdbserver at startup by
-     passing <option>--vgdb-error=0</option> to Valgrind.</para>
-
-     <para>Note that
-     this "set ptracer" technique does not solve the problem in the
-     case where a standalone vgdb process wants to connect to the
-     gdbserver, since the first command to be sent by a standalone
-     vgdb must wake up the Valgrind process before Valgrind gdbserver
-     will mark vgdb as a ptracer.
-     </para>
+     causes the ptrace calls to fail.  To avoid that, Valgrind will
+     automatically allow all processes belonging to the same userid to
+     "ptrace" a Valgrind process, by using PR_SET_PTRACER.</para>
 
      <para>Unblocking processes blocked in system calls is not
      currently implemented on Mac OS X and Android.  So you cannot

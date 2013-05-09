@@ -105,12 +105,7 @@ int vgdb_state_looks_bad(const char* where)
    return 0; // all is ok.
 }
 
-/* On systems that defines PR_SET_PTRACER, verify if ptrace_scope is
-   is permissive enough for vgdb. Otherwise, call set_ptracer.
-   This is especially aimed at Ubuntu >= 10.10 which has added
-   the ptrace_scope context. */
-static
-void set_ptracer(void)
+void VG_(set_ptracer)(void)
 {
 #ifdef PR_SET_PTRACER
    SysRes o;
@@ -132,11 +127,16 @@ void set_ptracer(void)
       dlog(1, "ptrace_scope %c\n", ptrace_scope);
       if (ptrace_scope != '0') {
          /* insufficient default ptrace_scope.
-            Indicate to the kernel that we accept to be
-            ptraced by our vgdb. */
-         ret = VG_(prctl) (PR_SET_PTRACER, shared->vgdb_pid, 0, 0, 0);
-         dlog(1, "set_ptracer to vgdb_pid %d result %d\n",
-              shared->vgdb_pid, ret);
+            Indicate to the kernel that we accept to be ptraced. */
+#ifdef PR_SET_PTRACER_ANY
+         ret = VG_(prctl) (PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+         dlog(1, "set_ptracer to PR_SET_PTRACER_ANY result %d\n", ret);
+#else
+         ret = VG_(prctl) (PR_SET_PTRACER, 1, 0, 0, 0);
+         dlog(1, "set_ptracer to 1 result %d\n", ret);
+#endif
+         if (ret)
+            VG_(umsg)("error calling PR_SET_PTRACER, vgdb might block\n");
       }
    } else {
       dlog(0, "Could not read the ptrace_scope setting from %s\n",
@@ -181,7 +181,6 @@ int ensure_write_remote_desc(void)
          be reasonably sure someone is reading on the other
          side of the fifo. */
       if (!vgdb_state_looks_bad("bad?@ensure_write_remote_desc")) {
-         set_ptracer();
          write_remote_desc = open_fifo ("write", to_gdb, VKI_O_WRONLY);
       }
    }
@@ -293,7 +292,7 @@ void remote_open (const HChar *name)
 
    if (!mknod_done) {
       mknod_done++;
-
+      VG_(set_ptracer)();
       /*
        * Unlink just in case a previous process with the same PID had been
        * killed and hence Valgrind hasn't had the chance yet to remove these.

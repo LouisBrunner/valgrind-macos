@@ -101,14 +101,12 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 #if defined(PTRACEINVOKER)
 #include <sys/user.h>
 #if defined(VGO_linux)
-#  include <sys/prctl.h>
 #  include <linux/ptrace.h>
 #endif
 #endif
 
 
-// Outputs information for the user about ptrace_scope protection
-// or ptrace not working.
+// Outputs information for the user about ptrace not working.
 static void ptrace_restrictions_msg(void);
 
 static int debuglevel;
@@ -869,11 +867,7 @@ Bool invoke_gdbserver (int pid)
    // address pushed on the stack should ensure this is detected.
 
    /* Not yet attached. If problem, vgdb can abort,
-      no cleanup needed.
-
-      On Ubuntu>= 10.10, a /proc setting can disable ptrace.
-      So, Valgrind has to SET_PTRACER this vgdb. Once this
-      is done, this vgdb can ptrace the valgrind process. */
+      no cleanup needed. */
 
    DEBUG(1, "attach to 'main' pid %d\n", pid);
    if (!attach(pid, "attach main pid")) {
@@ -2049,27 +2043,6 @@ void report_pid (int pid, Bool on_stdout)
 static
 void ptrace_restrictions_msg(void)
 {
-#  ifdef PR_SET_PTRACER
-   const char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
-   int fd = -1;
-   char ptrace_scope = 'X';
-   fd = open (ptrace_scope_setting_file, O_RDONLY, 0);
-   if (fd >= 0 && (read (fd, &ptrace_scope, 1) == 1) && (ptrace_scope != '0')) {
-      fprintf (stderr,
-               "Note: your kernel restricts ptrace invoker using %s\n"
-               "vgdb will only be able to attach to a Valgrind process\n"
-               "blocked in a system call *after* an initial successful attach\n",
-               ptrace_scope_setting_file);
-   } else if (ptrace_scope == 'X') {
-      DEBUG (1, 
-             "PR_SET_PTRACER defined"
-             " but could not determine ptrace scope from %s\n",
-             ptrace_scope_setting_file);
-   }
-   if (fd >= 0)
-      close (fd);
-#  endif
-
 #  ifndef PTRACEINVOKER
    fprintf(stderr, 
            "Note: ptrace invoker not implemented\n"

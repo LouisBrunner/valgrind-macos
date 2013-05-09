@@ -53,6 +53,12 @@ extern Bool VG_(gdbserver_activity) (ThreadId tid);
 // gdbserver is then stopped (using VG_(gdbserver) (0))
 void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode);
 
+/* On systems that defines PR_SET_PTRACER, verify if ptrace_scope is
+   is permissive enough for vgdb or --db-attach=yes.
+   Otherwise, call set_ptracer.
+   This is especially aimed at Ubuntu >= 10.10 which has added
+   the ptrace_scope context. */
+void VG_(set_ptracer)(void);
 
 /* Called by low level to insert or remove a break or watch point.
    Break or watch point implementation is done using help from the tool.

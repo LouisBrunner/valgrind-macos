@@ -222,6 +222,7 @@ m = merged into 3_8_BRANCH
 315959    [390] valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
 316144    [390] valgrind.1 manpage contains unknown ??? strings for some core option references
 316145    [390] callgrind command line options in manpage reference (unknown) callgrind manual
+319235    [390] --db-attach=yes is broken with Yama ptrace scoping enabled
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android

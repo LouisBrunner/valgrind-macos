@@ -25,6 +25,9 @@ endif
 if VGCONF_ARCHS_INCLUDE_MIPS32
 SUBDIRS += mips32
 endif
+if VGCONF_ARCHS_INCLUDE_MIPS64
+SUBDIRS += mips64
+endif
 
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
@@ -39,7 +42,8 @@ if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm s390x mips32 linux darwin x86-linux .
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm s390x mips32 mips64 linux darwin \
+               x86-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \

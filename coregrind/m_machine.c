@@ -1252,6 +1252,7 @@ Bool VG_(machine_get_hwcaps)( void )
         { False, S390_FAC_STCKF, VEX_HWCAPS_S390X_STCKF, "STCKF" },
         { False, S390_FAC_FPEXT, VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
         { False, S390_FAC_LSC,   VEX_HWCAPS_S390X_LSC,   "LSC"   },
+        { False, S390_FAC_PFPO,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
      };
 
      /* Set hwcaps according to the detected facilities */

@@ -1132,6 +1132,12 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Encountered an instruction that requires the floating "
                "point extension facility.\n"
                "  That facility is not available on this host";
+     case EmFail_S390X_invalid_PFPO_rounding_mode:
+        return "The rounding mode specified in GPR 0 for PFPO instruction"
+               " is invalid";
+     case EmFail_S390X_invalid_PFPO_function:
+        return "The function code specified in GPR 0 for PFPO instruction"
+               " is invalid";
      default: 
         vpanic("LibVEX_EmNote_string: unknown warning");
    }
@@ -1384,6 +1390,7 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_STCKF, "stckf" },
       { VEX_HWCAPS_S390X_FPEXT, "fpext" },
       { VEX_HWCAPS_S390X_LSC,   "lsc" },
+      { VEX_HWCAPS_S390X_PFPO,  "pfpo" },
    };
 #define NUM_HWCAPS (sizeof hwcaps_list / sizeof hwcaps_list[0])
    static HChar buf[sizeof prefix + 

@@ -908,6 +908,36 @@ ULong s390_do_ecag(ULong op2addr) { return 0; }
 #endif
 
 /*------------------------------------------------------------*/
+/*--- Clean helper for "Perform Floating Point Operation". ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+UInt
+s390_do_pfpo(UInt gpr0)
+{
+   UChar rm;
+   UChar op1_ty, op2_ty;
+
+   rm  = gpr0 & 0xf;
+   if (rm > 1 && rm < 8)
+      return EmFail_S390X_invalid_PFPO_rounding_mode;
+
+   op1_ty = (gpr0 >> 16) & 0xff; // gpr0[40:47]
+   op2_ty = (gpr0 >> 8)  & 0xff; // gpr0[48:55]
+   /* Operand type must be BFP 32, 64, 128 or DFP 32, 64, 128
+      which correspond to 0x5, 0x6, 0x7, 0x8, 0x9, 0xa respectively.
+      Any other operand type value is unsupported */
+   if ((op1_ty == op2_ty) ||
+       (op1_ty < 0x5 || op1_ty > 0xa) ||
+       (op2_ty < 0x5 || op2_ty > 0xa))
+      return EmFail_S390X_invalid_PFPO_function;
+
+   return EmNote_NONE;
+}
+#else
+UInt s390_do_pfpo(UInt gpr0) { return 0; }
+#endif
+
+/*------------------------------------------------------------*/
 /*--- Helper for condition code.                           ---*/
 /*------------------------------------------------------------*/
 
@@ -1710,6 +1740,32 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
    case S390_CC_OP_DFP_128_TO_UINT_64: /* CLGXTR */
       return S390_CC_FOR_DFP128_UCONVERT(".insn rrf,0xb94a0000", cc_dep1,
                                          cc_dep2, cc_ndep);
+
+   case S390_CC_OP_PFPO_64: {
+      __asm__ volatile(
+           "ldr 4, %[cc_dep1]\n\t"
+           "lr  0, %[cc_dep2]\n\t"      /* 32 bit register move */
+           ".short 0x010a\n\t"          /* PFPO */
+           "ipm %[psw]\n\t"             : [psw] "=d"(psw)
+                                        : [cc_dep1] "1f"(cc_dep1),
+                                          [cc_dep2] "d" (cc_dep2)
+                                        : "r0", "r1", "f4");
+      return psw >> 28;  /* cc */
+   }
+
+   case S390_CC_OP_PFPO_128: {
+      __asm__ volatile(
+           "ldr 4,%[cc_dep1]\n\t"
+           "ldr 6,%[cc_dep2]\n\t"
+           "lr  0,%[cc_ndep]\n\t"       /* 32 bit register move */
+           ".short 0x010a\n\t"          /* PFPO */
+           "ipm %[psw]\n\t"             : [psw] "=d"(psw)
+                                        : [cc_dep1] "f"(cc_dep1),
+                                          [cc_dep2] "f"(cc_dep2),
+                                          [cc_ndep] "d"(cc_ndep)
+                                        : "r0", "r1", "f0", "f2", "f4", "f6");
+      return psw >> 28;  /* cc */
+   }
 
    default:
       break;

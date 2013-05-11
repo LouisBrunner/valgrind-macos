@@ -147,6 +147,7 @@ typedef enum {
    S390_INSN_DFP_COMPARE,
    S390_INSN_DFP_CONVERT,
    S390_INSN_DFP_REROUND,
+   S390_INSN_FP_CONVERT,
    S390_INSN_MFENCE,
    S390_INSN_MIMM,    /* Assign an immediate constant to a memory location */
    S390_INSN_MADD,    /* Add a value to a memory location */
@@ -266,6 +267,15 @@ typedef enum {
    S390_DFP_D128_TO_U64
 } s390_dfp_conv_t;
 
+typedef enum {
+   S390_FP_F64_TO_D64,
+   S390_FP_D64_TO_F64,
+   S390_FP_F64_TO_D128,
+   S390_FP_D128_TO_F64,
+   S390_FP_F128_TO_D128,
+   S390_FP_D128_TO_F128
+} s390_fp_conv_t;
+
 /* The kind of binary DFP operations */
 typedef enum {
    S390_DFP_ADD,
@@ -321,6 +331,16 @@ typedef struct {
    HReg         op3_hi; /* 128-bit operand high part; 64-bit opnd 2 */
    HReg         op3_lo; /* 128-bit operand low part */
 } s390_dfp_binop;
+
+typedef struct {
+   s390_fp_conv_t  tag;
+   s390_dfp_round_t rounding_mode;
+   HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+   HReg         dst_lo; /* 128-bit result low part */
+   HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+   HReg         op_lo;  /* 128-bit operand low part */
+   HReg         r1;     /* clobbered register GPR #1 */
+} s390_fp_convert;
 
 typedef struct {
    s390_insn_tag tag;
@@ -506,6 +526,9 @@ typedef struct {
          HReg         op_lo;  /* 128-bit operand low part */
       } dfp_convert;
       struct {
+         s390_fp_convert *details;
+      } fp_convert;
+      struct {
          s390_dfp_cmp_t tag;
          HReg         dst;     /* condition code in s390 encoding */
          HReg         op1_hi;  /* 128-bit operand high part; 64-bit opnd 1 */
@@ -640,6 +663,11 @@ s390_insn *s390_insn_dfp_convert(UChar size, s390_dfp_conv_t tag, HReg dst,
                                  HReg op, s390_dfp_round_t);
 s390_insn *s390_insn_dfp_reround(UChar size, HReg dst, HReg op2, HReg op3,
                                  s390_dfp_round_t);
+s390_insn *s390_insn_fp_convert(UChar size, s390_fp_conv_t tag,
+                                HReg dst, HReg op, HReg r1, s390_dfp_round_t);
+s390_insn *s390_insn_fp128_convert(UChar size, s390_fp_conv_t tag,
+                                   HReg dst_hi, HReg dst_lo, HReg op_hi,
+                                   HReg op_lo, HReg r1, s390_dfp_round_t);
 s390_insn *s390_insn_dfp128_binop(UChar size, s390_dfp_binop_t, HReg dst_hi,
                                   HReg dst_lo, HReg op2_hi, HReg op2_lo,
                                   HReg op3_hi, HReg op3_lo,
@@ -742,6 +770,8 @@ extern UInt s390_host_hwcaps;
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_FPEXT))
 #define s390_host_has_lsc \
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_LSC))
+#define s390_host_has_pfpo \
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_PFPO))
 
 #endif /* ndef __VEX_HOST_S390_DEFS_H */
 

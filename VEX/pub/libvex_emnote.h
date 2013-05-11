@@ -107,6 +107,13 @@ typedef
          available on this host */
       EmFail_S390X_fpext,
 
+      /* GPR 0 contains invalid rounding mode for PFPO instruction */
+      EmFail_S390X_invalid_PFPO_rounding_mode,
+
+      /* The function code specified in GPR 0 executed by PFPO
+         instruction is invalid */
+      EmFail_S390X_invalid_PFPO_function,
+
       EmNote_NUMBER
    }
    VexEmNote;

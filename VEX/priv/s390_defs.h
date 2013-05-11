@@ -123,6 +123,16 @@ typedef enum {
    S390_FPC_DFP_ROUND_PREPARE_SHORT    = 7
 } s390_fpc_dfp_round_t;
 
+/* PFPO function code as it is encoded in bits [33:55] of GP0
+   when PFPO insn is executed. */
+typedef enum {
+   S390_PFPO_F64_TO_D64   = 0x010906,
+   S390_PFPO_D64_TO_F64   = 0x010609,
+   S390_PFPO_F64_TO_D128  = 0x010A06,
+   S390_PFPO_D128_TO_F64  = 0x01060A,
+   S390_PFPO_F128_TO_D128 = 0x010A07,
+   S390_PFPO_D128_TO_F128 = 0x01070A
+} s390_pfpo_function_t;
 
 /* The length of the longest mnemonic: locgrnhe */
 #define S390_MAX_MNEMONIC_LEN  8

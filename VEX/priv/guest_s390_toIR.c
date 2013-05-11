@@ -1714,6 +1714,15 @@ s390_format_I(const HChar *(*irgen)(UChar i),
 }
 
 static void
+s390_format_E(const HChar *(*irgen)(void))
+{
+   const HChar *mnm = irgen();
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC1(MNM), mnm);
+}
+
+static void
 s390_format_RI(const HChar *(*irgen)(UChar r1, UShort i2),
                UChar r1, UShort i2)
 {
@@ -7109,6 +7118,174 @@ s390_irgen_PFDRL(void)
 {
 
    return "pfdrl";
+}
+
+static IRExpr *
+get_rounding_mode_from_gr0(void)
+{
+   IRTemp rm_bits = newTemp(Ity_I32);
+   IRExpr *s390rm;
+   IRExpr *irrm;
+
+   vassert(s390_host_has_pfpo);
+   /* The dfp/bfp rounding mode is stored in bits [60:63] of GR 0
+      when PFPO insn is called. So, extract the bits at [60:63] */
+   assign(rm_bits, binop(Iop_And32, get_gpr_w1(0), mkU32(0xf)));
+   s390rm = mkexpr(rm_bits);
+   irrm = mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0x1)),
+            mkexpr(encode_bfp_rounding_mode( S390_BFP_ROUND_PER_FPC)),
+            mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0x8)),
+              mkexpr(encode_dfp_rounding_mode(S390_DFP_ROUND_NEAREST_EVEN_8)),
+              mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0x9)),
+                mkexpr(encode_dfp_rounding_mode(S390_DFP_ROUND_ZERO_9)),
+                mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0xa)),
+                  mkexpr(encode_dfp_rounding_mode(S390_DFP_ROUND_POSINF_10)),
+                  mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0xb)),
+                    mkexpr(encode_dfp_rounding_mode(S390_DFP_ROUND_NEGINF_11)),
+                    mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0xc)),
+                      mkexpr(encode_dfp_rounding_mode(
+                               S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12)),
+                      mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0xd)),
+                        mkexpr(encode_dfp_rounding_mode(
+                                 S390_DFP_ROUND_NEAREST_TIE_TOWARD_0)),
+                        mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0xe)),
+                          mkexpr(encode_dfp_rounding_mode(
+                                   S390_DFP_ROUND_AWAY_0)),
+                          mkite(binop(Iop_CmpEQ32, s390rm, mkU32(0xf)),
+                            mkexpr(encode_dfp_rounding_mode(
+                                     S390_DFP_ROUND_PREPARE_SHORT_15)),
+                                /* if rounding mode is 0 or invalid (2-7)
+                                   set S390_DFP_ROUND_PER_FPC_0 */
+                            mkexpr(encode_dfp_rounding_mode(
+                                     S390_DFP_ROUND_PER_FPC_0)))))))))));
+
+   return irrm;
+}
+
+static IRExpr *
+s390_call_pfpo_helper(IRExpr *gr0)
+{
+   IRExpr **args, *call;
+
+   args = mkIRExprVec_1(gr0);
+   call = mkIRExprCCall(Ity_I32, 0 /*regparm*/,
+                        "s390_do_pfpo", &s390_do_pfpo, args);
+   /* Nothing is excluded from definedness checking. */
+   call->Iex.CCall.cee->mcx_mask = 0;
+
+   return call;
+}
+
+static const HChar *
+s390_irgen_PFPO(void)
+{
+   IRTemp gr0 = newTemp(Ity_I32);     /* word 1 [32:63] of GR 0 */
+   IRTemp test_bit = newTemp(Ity_I32); /* bit 32 of GR 0 - test validity */
+   IRTemp fn = newTemp(Ity_I32);       /* [33:55] of GR 0 - function code */
+   IRTemp ef = newTemp(Ity_I32);       /* Emulation Failure */
+   IRTemp src1 = newTemp(Ity_F64);
+   IRTemp dst1 = newTemp(Ity_D64);
+   IRTemp src2 = newTemp(Ity_D64);
+   IRTemp dst2 = newTemp(Ity_F64);
+   IRTemp src3 = newTemp(Ity_F64);
+   IRTemp dst3 = newTemp(Ity_D128);
+   IRTemp src4 = newTemp(Ity_D128);
+   IRTemp dst4 = newTemp(Ity_F64);
+   IRTemp src5 = newTemp(Ity_F128);
+   IRTemp dst5 = newTemp(Ity_D128);
+   IRTemp src6 = newTemp(Ity_D128);
+   IRTemp dst6 = newTemp(Ity_F128);
+   IRExpr *irrm;
+
+   vassert(s390_host_has_pfpo);
+
+   assign(gr0, get_gpr_w1(0));
+   /* get function code */
+   assign(fn, binop(Iop_And32, binop(Iop_Shr32, mkexpr(gr0), mkU8(8)),
+                    mkU32(0x7fffff)));
+   /* get validity test bit */
+   assign(test_bit, binop(Iop_And32, binop(Iop_Shr32, mkexpr(gr0), mkU8(31)),
+                          mkU32(0x1)));
+   irrm = get_rounding_mode_from_gr0();
+
+   /* test_bit is 1 */
+   assign(src1, get_fpr_dw0(4)); /* get source from FPR 4,6 */
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src1, gr0);
+
+   /* Return code set in GR1 is usually 0. Non-zero value is set only
+      when exceptions are raised. See Programming Notes point 5 in the
+      instrcution description of pfpo in POP. Since valgrind does not
+      model exception, it might be safe to just set 0 to GR 1. */
+   put_gpr_w1(1, mkU32(0x0));
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(test_bit), mkU32(0x1)));
+
+   /* Check validity of function code in GR 0 */
+   assign(ef, s390_call_pfpo_helper(unop(Iop_32Uto64, mkexpr(gr0))));
+
+   /* fixs390: Function emulation_failure can be used if it takes argument as
+      IRExpr * instead of VexEmNote. */
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkexpr(ef)));
+   dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_EmFail;
+
+   stmt(
+        IRStmt_Exit(
+                    binop(Iop_CmpNE32, mkexpr(ef), mkU32(EmNote_NONE)),
+                    Ijk_EmFail,
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)
+                    )
+        );
+
+   /* F64 -> D64 */
+   /* get source from FPR 4,6 - already set in src1 */
+   assign(dst1, binop(Iop_F64toD64, irrm, mkexpr(src1)));
+   put_dpr_dw0(0, mkexpr(dst1)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src1, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F64_TO_D64)));
+
+   /* D64 -> F64 */
+   assign(src2, get_dpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst2, binop(Iop_D64toF64, irrm, mkexpr(src2)));
+   put_fpr_dw0(0, mkexpr(dst2)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src2, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D64_TO_F64)));
+
+   /* F64 -> D128 */
+   assign(src3, get_fpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst3, binop(Iop_F64toD128, irrm, mkexpr(src3)));
+   put_dpr_pair(0, mkexpr(dst3)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src3, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F64_TO_D128)));
+
+   /* D128 -> F64 */
+   assign(src4, get_dpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst4, binop(Iop_D128toF64, irrm, mkexpr(src4)));
+   put_fpr_dw0(0, mkexpr(dst4)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src4, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F64)));
+
+   /* F128 -> D128 */
+   assign(src5, get_fpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst5, binop(Iop_F128toD128, irrm, mkexpr(src5)));
+   put_dpr_pair(0, mkexpr(dst5)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1f128Z(S390_CC_OP_PFPO_128, src5, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F128_TO_D128)));
+
+   /* D128 -> F128 */
+   assign(src6, get_dpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst6, binop(Iop_D128toF128, irrm, mkexpr(src6)));
+   put_fpr_pair(0, mkexpr(dst6)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src6, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F128)));
+
+   return "pfpo";
 }
 
 static const HChar *
@@ -13611,7 +13788,7 @@ s390_decode_2byte_and_irgen(UChar *bytes)
    case 0x0102: /* UPT */ goto unimplemented;
    case 0x0104: /* PTFF */ goto unimplemented;
    case 0x0107: /* SCKPF */ goto unimplemented;
-   case 0x010a: /* PFPO */ goto unimplemented;
+   case 0x010a: s390_format_E(s390_irgen_PFPO); goto ok;
    case 0x010b: /* TAM */ goto unimplemented;
    case 0x010c: /* SAM24 */ goto unimplemented;
    case 0x010d: /* SAM31 */ goto unimplemented;

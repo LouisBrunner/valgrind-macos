@@ -138,6 +138,7 @@ typedef
 #define VEX_HWCAPS_S390X_STCKF (1<<14)  /* STCKF facility */
 #define VEX_HWCAPS_S390X_FPEXT (1<<15)  /* Floating point extension facility */
 #define VEX_HWCAPS_S390X_LSC   (1<<16)  /* Conditional load/store facility */
+#define VEX_HWCAPS_S390X_PFPO  (1<<17)  /* Perform floating point ops facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -150,7 +151,8 @@ typedef
                                 VEX_HWCAPS_S390X_FPEXT | \
                                 VEX_HWCAPS_S390X_LSC   | \
                                 VEX_HWCAPS_S390X_ETF3  | \
-                                VEX_HWCAPS_S390X_ETF2)
+                                VEX_HWCAPS_S390X_ETF2  | \
+                                VEX_HWCAPS_S390X_PFPO)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)

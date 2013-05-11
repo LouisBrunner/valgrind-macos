@@ -1941,16 +1941,16 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
-      HReg op_hi, op_lo, f12, f13, f14, f15;
-
-      /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
-      f12 = make_fpr(12);
-      f13 = make_fpr(13);
-      f14 = make_fpr(14);
-      f15 = make_fpr(15);
-
       switch (expr->Iex.Binop.op) {
-      case Iop_SqrtF128:
+      case Iop_SqrtF128: {
+         HReg op_hi, op_lo, f12, f13, f14, f15;
+
+         /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
+         f12 = make_fpr(12);
+         f13 = make_fpr(13);
+         f14 = make_fpr(14);
+         f15 = make_fpr(15);
+
          s390_isel_float128_expr(&op_hi, &op_lo, env, expr->Iex.Binop.arg2);
 
          /* operand --> (f13, f15) */
@@ -1967,11 +1967,43 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          addInstr(env, s390_insn_move(8, *dst_hi, f12));
          addInstr(env, s390_insn_move(8, *dst_lo, f14));
          return;
+      }
 
       case Iop_F64HLtoF128:
          *dst_hi = s390_isel_float_expr(env, expr->Iex.Binop.arg1);
          *dst_lo = s390_isel_float_expr(env, expr->Iex.Binop.arg2);
          return;
+
+      case Iop_D128toF128: {
+         IRExpr *irrm;
+         IRExpr *left;
+         s390_dfp_round_t rm;
+         HReg op_hi, op_lo;
+         HReg f0, f2, f4, f6, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f6 = make_fpr(6); /* source */
+         f0 = make_fpr(0); /* destination */
+         f2 = make_fpr(2); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+
+         irrm = expr->Iex.Binop.arg1;
+         left = expr->Iex.Binop.arg2;
+         rm = get_dfp_rounding_mode(env, irrm);
+         s390_isel_dfp128_expr(&op_hi, &op_lo, env, left);
+         /* operand --> (f4, f6) */
+         addInstr(env, s390_insn_move(8, f4, op_hi));
+         addInstr(env, s390_insn_move(8, f6, op_lo));
+         addInstr(env, s390_insn_fp128_convert(16, S390_FP_D128_TO_F128, f0, f2,
+                                               f4, f6, r1, rm));
+         /* (f0, f2) --> destination */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f0));
+         addInstr(env, s390_insn_move(8, *dst_lo, f2));
+
+         return;
+      }
 
       default:
          goto irreducible;
@@ -2196,6 +2228,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IRExpr *left = expr->Iex.Binop.arg2;
       HReg h1, dst;
       s390_bfp_conv_t  conv;
+      s390_fp_conv_t fpconv;
 
       switch (op) {
       case Iop_SqrtF32:
@@ -2213,6 +2246,8 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_I64StoF64: conv = S390_BFP_I64_TO_F64; goto convert_int;
       case Iop_I64UtoF32: conv = S390_BFP_U64_TO_F32; goto convert_int;
       case Iop_I64UtoF64: conv = S390_BFP_U64_TO_F64; goto convert_int;
+      case Iop_D64toF64:  fpconv = S390_FP_D64_TO_F64;  goto convert_dfp;
+      case Iop_D128toF64: fpconv = S390_FP_D128_TO_F64; goto convert_dfp128;
 
       convert_float:
          h1 = s390_isel_float_expr(env, left);
@@ -2237,7 +2272,47 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
                                              rounding_mode));
          return dst;
       }
-         
+
+      convert_dfp: {
+         s390_dfp_round_t rm;
+         HReg f0, f4, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f0 = make_fpr(0); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+         h1 = s390_isel_dfp_expr(env, left);
+         dst = newVRegF(env);
+         rm = get_dfp_rounding_mode(env, irrm);
+         /* operand --> f4 */
+         addInstr(env, s390_insn_move(8, f4, h1));
+         addInstr(env, s390_insn_fp_convert(size, fpconv, f0, f4, r1, rm));
+         /* f0 --> destination */
+         addInstr(env, s390_insn_move(8, dst, f0));
+         return dst;
+      }
+
+      convert_dfp128: {
+         s390_dfp_round_t rm;
+         HReg op_hi, op_lo;
+         HReg f0, f4, f6, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f6 = make_fpr(6); /* source */
+         f0 = make_fpr(0); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+         s390_isel_dfp128_expr(&op_hi, &op_lo, env, left);
+         dst = newVRegF(env);
+         rm = get_dfp_rounding_mode(env, irrm);
+         /* operand --> (f4, f6) */
+         addInstr(env, s390_insn_move(8, f4, op_hi));
+         addInstr(env, s390_insn_move(8, f6, op_lo));
+         addInstr(env, s390_insn_fp128_convert(16, fpconv, f0, INVALID_HREG,
+                                               f4, f6, r1, rm));
+         /* f0 --> destination */
+         addInstr(env, s390_insn_move(8, dst, f0));
+         return dst;
+      }
+
       default:
          goto irreducible;
 
@@ -2563,6 +2638,64 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          return;
       }
 
+      case Iop_F64toD128: {
+         IRExpr *irrm;
+         IRExpr *left;
+         s390_dfp_round_t rm;
+         HReg h1; /* virtual reg. to hold source */
+         HReg f0, f2, f4, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f0 = make_fpr(0); /* destination */
+         f2 = make_fpr(2); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+         irrm = expr->Iex.Binop.arg1;
+         left = expr->Iex.Binop.arg2;
+         rm = get_dfp_rounding_mode(env, irrm);
+         h1 = s390_isel_float_expr(env, left);
+         addInstr(env, s390_insn_move(8, f4, h1));
+         addInstr(env, s390_insn_fp128_convert(16, S390_FP_F64_TO_D128, f0, f2,
+                                               f4, INVALID_HREG, r1, rm));
+         /* (f0, f2) --> destination */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f0));
+         addInstr(env, s390_insn_move(8, *dst_lo, f2));
+
+         return;
+      }
+
+      case Iop_F128toD128: {
+         IRExpr *irrm;
+         IRExpr *left;
+         s390_dfp_round_t rm;
+         HReg op_hi, op_lo;
+         HReg f0, f2, f4, f6, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f6 = make_fpr(6); /* source */
+         f0 = make_fpr(0); /* destination */
+         f2 = make_fpr(2); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+
+         irrm = expr->Iex.Binop.arg1;
+         left = expr->Iex.Binop.arg2;
+         rm = get_dfp_rounding_mode(env, irrm);
+         s390_isel_float128_expr(&op_hi, &op_lo, env, left);
+         /* operand --> (f4, f6) */
+         addInstr(env, s390_insn_move(8, f4, op_hi));
+         addInstr(env, s390_insn_move(8, f6, op_lo));
+         addInstr(env, s390_insn_fp128_convert(16, S390_FP_F128_TO_D128, f0, f2,
+                                               f4, f6, r1, rm));
+         /* (f0, f2) --> destination */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f0));
+         addInstr(env, s390_insn_move(8, *dst_lo, f2));
+
+         return;
+      }
+
       default:
          goto irreducible;
       }
@@ -2684,11 +2817,13 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
       IRExpr *left = expr->Iex.Binop.arg2;
       HReg h1, dst;
       s390_dfp_conv_t  conv;
+      s390_fp_conv_t  fpconv;
 
       switch (op) {
       case Iop_D64toD32:  conv = S390_DFP_D64_TO_D32; goto convert_dfp;
       case Iop_I64StoD64: conv = S390_DFP_I64_TO_D64; goto convert_int;
       case Iop_I64UtoD64: conv = S390_DFP_U64_TO_D64; goto convert_int;
+      case Iop_F64toD64:  fpconv = S390_FP_F64_TO_D64; goto convert_bfp;
 
       convert_dfp:
          h1 = s390_isel_dfp_expr(env, left);
@@ -2713,6 +2848,24 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
                                                 rounding_mode));
             return dst;
          }
+
+      convert_bfp: {
+         s390_dfp_round_t rm;
+         HReg f0, f4, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f0 = make_fpr(0); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+         h1 = s390_isel_float_expr(env, left);
+         dst = newVRegF(env);
+         rm = get_dfp_rounding_mode(env, irrm);
+         /* operand --> f4 */
+         addInstr(env, s390_insn_move(8, f4, h1));
+         addInstr(env, s390_insn_fp_convert(size, fpconv, f0, f4, r1, rm));
+         /* f0 --> destination */
+         addInstr(env, s390_insn_move(8, dst, f0));
+         return dst;
+      }
 
       case Iop_D128toD64: {
          HReg op_hi, op_lo, f13, f15;

@@ -92,6 +92,7 @@ ULong s390_do_cu42(UInt srcvalue);
 UInt  s390_do_cvb(ULong decimal);
 ULong s390_do_cvd(ULong binary);
 ULong s390_do_ecag(ULong op2addr);
+UInt  s390_do_pfpo(UInt gpr0);
 
 /* The various ways to compute the condition code. */
 enum {
@@ -152,7 +153,9 @@ enum {
    S390_CC_OP_DFP_64_TO_INT_32 = 54,
    S390_CC_OP_DFP_128_TO_INT_32 = 55,
    S390_CC_OP_DFP_64_TO_INT_64 = 56,
-   S390_CC_OP_DFP_128_TO_INT_64 = 57
+   S390_CC_OP_DFP_128_TO_INT_64 = 57,
+   S390_CC_OP_PFPO_64 = 58,
+   S390_CC_OP_PFPO_128 = 59
 };
 
 /*------------------------------------------------------------*/
@@ -226,6 +229,8 @@ enum {
    | S390_CC_OP_DFP_128_TO_INT_32   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
    | S390_CC_OP_DFP_64_TO_INT_64    | D source              | Z rounding mode      |                 |
    | S390_CC_OP_DFP_128_TO_INT_64   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_PFPO_64             | F|D source            | Z GR0 low 32 bits    |                 |
+   | S390_CC_OP_PFPO_128            | F|D source hi 64 bits | F|D src low 64 bits  | Z GR0 low 32 bits |
    +--------------------------------+-----------------------+----------------------+-----------------+
 */
 

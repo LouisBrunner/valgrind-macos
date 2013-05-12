@@ -1747,8 +1747,8 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
            "lr  0, %[cc_dep2]\n\t"      /* 32 bit register move */
            ".short 0x010a\n\t"          /* PFPO */
            "ipm %[psw]\n\t"             : [psw] "=d"(psw)
-                                        : [cc_dep1] "1f"(cc_dep1),
-                                          [cc_dep2] "d" (cc_dep2)
+                                        : [cc_dep1] "f"(cc_dep1),
+                                          [cc_dep2] "d"(cc_dep2)
                                         : "r0", "r1", "f4");
       return psw >> 28;  /* cc */
    }

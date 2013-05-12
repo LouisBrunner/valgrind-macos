@@ -69,7 +69,8 @@ EXTRA_DIST = \
 	badrw.stderr.exp badrw.vgtest badrw.stderr.exp-s390x-mvc \
 	big_blocks_freed_list.stderr.exp big_blocks_freed_list.vgtest \
 	brk2.stderr.exp brk2.vgtest \
-	buflen_check.stderr.exp buflen_check.vgtest buflen_check.stderr.exp-kfail \
+	buflen_check.stderr.exp buflen_check.vgtest \
+		buflen_check.stderr.exp-kfail \
 	bug287260.stderr.exp bug287260.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	clientperm.stderr.exp \
@@ -78,7 +79,8 @@ EXTRA_DIST = \
 	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	clo_redzone_default.vgtest clo_redzone_128.vgtest \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
-	custom_alloc.stderr.exp custom_alloc.vgtest custom_alloc.stderr.exp-s390x-mvc \
+	custom_alloc.stderr.exp custom_alloc.vgtest \
+		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	deep_templates.vgtest \
@@ -133,7 +135,8 @@ EXTRA_DIST = \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
-	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp manuel2.vgtest \
+	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp \
+		manuel2.vgtest \
 	manuel3.stderr.exp manuel3.vgtest \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
@@ -173,8 +176,10 @@ EXTRA_DIST = \
 	partiallydefinedeq.stderr.exp3 \
 	partiallydefinedeq.stderr.exp2 \
 	partiallydefinedeq.stdout.exp \
-	partial_load_ok.vgtest partial_load_ok.stderr.exp partial_load_ok.stderr.exp64 \
-	partial_load_dflt.vgtest partial_load_dflt.stderr.exp partial_load_dflt.stderr.exp64 \
+	partial_load_ok.vgtest partial_load_ok.stderr.exp \
+		partial_load_ok.stderr.exp64 \
+	partial_load_dflt.vgtest partial_load_dflt.stderr.exp \
+		partial_load_dflt.stderr.exp64 \
 	partial_load_dflt.stderr.expr-s390x-mvc \
 	pdb-realloc.stderr.exp pdb-realloc.vgtest \
 	pdb-realloc2.stderr.exp pdb-realloc2.stdout.exp pdb-realloc2.vgtest \
@@ -218,12 +223,18 @@ EXTRA_DIST = \
 	undef_malloc_args.stderr.exp undef_malloc_args.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
-	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp varinfo1.stderr.exp-ppc64 \
-	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp varinfo2.stderr.exp-ppc64 \
-	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp varinfo3.stderr.exp-ppc64 \
-	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp varinfo4.stderr.exp-ppc64 \
-	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp varinfo5.stderr.exp-ppc64 \
-	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp varinfo6.stderr.exp-ppc64 \
+	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
+		varinfo1.stderr.exp-ppc64 \
+	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \
+		varinfo2.stderr.exp-ppc64 \
+	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp \
+		varinfo3.stderr.exp-ppc64 \
+	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp \
+		varinfo4.stderr.exp-ppc64 \
+	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
+		varinfo5.stderr.exp-ppc64 \
+	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
+		varinfo6.stderr.exp-ppc64 \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \

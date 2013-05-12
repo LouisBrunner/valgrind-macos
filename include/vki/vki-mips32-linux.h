@@ -78,11 +78,11 @@ typedef unsigned long long __vki_u64;
 #define VKI_MAX_PAGE_SHIFT      VKI_PAGE_SHIFT
 #define VKI_MAX_PAGE_SIZE       VKI_PAGE_SIZE
 
-//----------------------------------------------------------------------
-// From linux-2.6.35.5/arch/mips/include/asm-generic/shmparam.h
-//----------------------------------------------------------------------
-
-#define VKI_SHMLBA  SHM_ALIGNMENT
+//----------------------------------------------------------------------        
+// From linux-2.6.35.9/arch/mips/include/bits/shm.h                             
+//----------------------------------------------------------------------        
+                                                                                
+#define VKI_SHMLBA  0x40000
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm/signal.h

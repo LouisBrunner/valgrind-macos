@@ -740,36 +740,6 @@ else
 fi
 AC_MSG_RESULT([checking for Pagesize... ${psize}k])
 
-#----------------------------------------------------------------------------
-# Define shm_align for MIPS (--shared-memory-alignment)
-#----------------------------------------------------------------------------
-AC_ARG_WITH(alignment,
-   [  --with-alignment=       shared memory alignment for MIPS],
-   [align=$withval],
-   [align=-1]
-)
-
-mod=`expr $align % 1024`
-
-let "psz=psize*1024*2"
-
-if test "$align" = "-1"; then
-    AC_DEFINE([SHM_ALIGNMENT], 2*(1UL << MIPS_PAGE_SHIFT), 
-              [configured memory alignment 2*PAGE_SIZE])
-    AC_MSG_RESULT([checking for shared memory alignment... 2*PAGE_SIZE])
-elif test "$mod" = "0"; then
-    if test $align -lt $psz;
-    then
-        AC_MSG_ERROR([Alignment must be >= PAGE_SIZE])
-    else
-        AC_DEFINE_UNQUOTED([SHM_ALIGNMENT], ${align}, 
-                  [configured memory alignment 2*PAGE_SIZE])
-        AC_MSG_RESULT([checking for shared memory alignment... ${align}])     
-    fi
-else
-    AC_MSG_ERROR([Alignment % 1024 must be zero])
-fi
-
 
 #----------------------------------------------------------------------------
 # Extra fine-tuning of installation directories

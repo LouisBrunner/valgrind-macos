@@ -39,7 +39,7 @@
 #elif defined (_MIPSEB)
 #define VKI_BIG_ENDIAN  1
 #endif
- 
+
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-generic/int-ll64.h
@@ -78,10 +78,10 @@ typedef unsigned long long __vki_u64;
 #define VKI_MAX_PAGE_SHIFT      VKI_PAGE_SHIFT
 #define VKI_MAX_PAGE_SIZE       VKI_PAGE_SIZE
 
-//----------------------------------------------------------------------        
-// From linux-2.6.35.9/arch/mips/include/bits/shm.h                             
-//----------------------------------------------------------------------        
-                                                                                
+//----------------------------------------------------------------------
+// From linux-2.6.35.9/arch/mips/include/bits/shm.h
+//----------------------------------------------------------------------
+
 #define VKI_SHMLBA  0x40000
 
 //----------------------------------------------------------------------

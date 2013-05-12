@@ -146,7 +146,7 @@ typedef struct {
 #define VKI_SIGCLD          VKI_SIGCHLD /* Same as SIGCHLD (System V).        */
 #define VKI_SIGPWR          19          /* Power failure restart (System V).  */
 #define VKI_SIGWINCH        20          /* Window size change (4.3 BSD, Sun). */
-#define VKI_SIGURG          21          /* Urgent condition on socket.        */  
+#define VKI_SIGURG          21          /* Urgent condition on socket.        */
 #define VKI_SIGIO           22          /* I/O now possible (4.2 BSD).        */
 #define VKI_SIGPOLL         VKI_SIGIO   /* Pollable event occurred (System V).*/
 #define VKI_SIGSTOP         23          /* Stop, unblockable (POSIX).         */
@@ -164,13 +164,13 @@ typedef struct {
 // [[This was (_NSIG-1) in 2.4.X... not sure if it matters.]]
 #define VKI_SIGRTMAX    (_VKI_NSIG - 1)
 
-#define VKI_SA_ONSTACK      0x08000000u 
-#define VKI_SA_RESETHAND    0x80000000u 
-#define VKI_SA_RESTART      0x10000000u 
-#define VKI_SA_SIGINFO      0x00000008u 
-#define VKI_SA_NODEFER      0x40000000u  
-#define VKI_SA_NOCLDWAIT    0x00010000u 
-#define VKI_SA_NOCLDSTOP    0x00000001u 
+#define VKI_SA_ONSTACK      0x08000000u
+#define VKI_SA_RESETHAND    0x80000000u
+#define VKI_SA_RESTART      0x10000000u
+#define VKI_SA_SIGINFO      0x00000008u
+#define VKI_SA_NODEFER      0x40000000u
+#define VKI_SA_NOCLDWAIT    0x00010000u
+#define VKI_SA_NOCLDSTOP    0x00000001u
 
 #define VKI_SA_NOMASK           VKI_SA_NODEFER
 #define VKI_SA_ONESHOT          VKI_SA_RESETHAND
@@ -203,7 +203,7 @@ struct vki_sigaction_base {
        // [[See comment about extra 'k' above]]
        unsigned int sa_flags;
        __vki_sighandler_t ksa_handler;
-       vki_sigset_t sa_mask;           // mask last for extensibility 
+       vki_sigset_t sa_mask;           // mask last for extensibility
        __vki_sigrestore_t sa_restorer;
 };
 
@@ -621,7 +621,7 @@ extern unsigned int __VKI_invalid_size_argument_for_IOC;
 #define VKI_TIOCSLTC            0x7475 /* set special local chars */
 #define VKI_TIOCSPGRP           _VKI_IOW('t', 118, int) /* set pgrp of tty */
 #define VKI_TIOCGPGRP           _VKI_IOR('t', 119, int) /* get pgrp of tty */
-#define VKI_TIOCCONS            _VKI_IOW('t', 120, int) /* become virtual 
+#define VKI_TIOCCONS            _VKI_IOW('t', 120, int) /* become virtual
                                                            console */
 
 #define VKI_FIONREAD            0x467f

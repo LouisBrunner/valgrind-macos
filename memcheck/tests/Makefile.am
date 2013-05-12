@@ -79,6 +79,10 @@ EXTRA_DIST = \
 	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	clo_redzone_default.vgtest clo_redzone_128.vgtest \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
+	cond_ld.vgtest cond_ld.stdout.exp cond_ld-stderr.exp-arm \
+		cond_ld-stderr.exp-non-arm \
+	cond_st.vgtest cond_st.stdout.exp cond_st-stderr.exp-arm \
+		cond_st-stderr.exp-non-arm \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
@@ -268,6 +272,7 @@ check_PROGRAMS = \
 	clientperm \
 	clireq_nofill \
 	clo_redzone \
+	cond_ld_st \
 	custom_alloc \
 	custom-overlap \
 	deep-backtrace \

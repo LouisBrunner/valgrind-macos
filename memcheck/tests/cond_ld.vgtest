@@ -1,0 +1,3 @@
+prog: cond_ld_st
+args: loads
+vgopts: -q

@@ -19775,6 +19775,28 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* -------------- (T1) STRT reg+#imm8 -------------- */
+   /* Store Register Unprivileged:
+      strt Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,0,0,1) && INSN0(5,4) == BITS2(0,0)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rT    = INSN1(15,12);
+      UInt rN    = INSN0(3,0);
+      UInt imm8  = INSN1(7,0);
+      Bool valid = True;
+      if (rN == 15 || isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* address = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         storeGuardedLE( address, llGetIReg(rT), condT );
+         put_ITSTATE(new_itstate);
+         DIP("strt r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+
    /* ----------------------------------------------------------- */
    /* -- VFP (CP 10, CP 11) instructions (in Thumb mode)       -- */
    /* ----------------------------------------------------------- */

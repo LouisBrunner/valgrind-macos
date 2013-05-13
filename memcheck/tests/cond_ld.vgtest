@@ -1,3 +1,4 @@
 prog: cond_ld_st
 args: loads
 vgopts: -q
+stderr_filter_args: cond_ld_st

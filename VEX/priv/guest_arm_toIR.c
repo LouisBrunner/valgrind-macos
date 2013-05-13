@@ -9207,6 +9207,70 @@ static Bool decode_V6MEDIA_instruction (
     /* fall through */
   }
 
+   /* ----------- ssat16<c> <Rd>,#<imm>,<Rn> ----------- */
+   {
+     UInt regD = 99, regN = 99, sat_imm = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,6) == BITS10(1,1,1,1,0,0,1,1,0,0)
+            && INSNT0(5,4) == BITS2(1,0)
+            && INSNT1(15,12) == BITS4(0,0,0,0)
+            && INSNT1(7,4) == BITS4(0,0,0,0)) {
+           regD       = INSNT1(11,8);
+           regN       = INSNT0(3,0);
+           sat_imm    = INSNT1(3,0) + 1;
+           if (!isBadRegT(regD) && !isBadRegT(regN))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,0,1,0,1,0) &&
+            INSNA(11,4)   == BITS8(1,1,1,1,0,0,1,1)) {
+           regD       = INSNA(15,12);
+           regN       = INSNA(3,0);
+           sat_imm    = INSNA(19,16) + 1;
+           if (regD != 15 && regN != 15)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp irt_regN    = newTemp(Ity_I32);
+        IRTemp irt_regN_lo = newTemp(Ity_I32);
+        IRTemp irt_regN_hi = newTemp(Ity_I32);
+        IRTemp irt_Q_lo    = newTemp(Ity_I32);
+        IRTemp irt_Q_hi    = newTemp(Ity_I32);
+        IRTemp irt_res_lo  = newTemp(Ity_I32);
+        IRTemp irt_res_hi  = newTemp(Ity_I32);
+
+        assign( irt_regN, isT ? getIRegT(regN) : getIRegA(regN) );
+        assign( irt_regN_lo,
+                binop( Iop_Sar32,
+                       binop(Iop_Shl32, mkexpr(irt_regN), mkU8(16)),
+                       mkU8(16)) );
+        assign( irt_regN_hi, binop(Iop_Sar32, mkexpr(irt_regN), mkU8(16)) );
+
+        armSignedSatQ( irt_regN_lo, sat_imm, &irt_res_lo, &irt_Q_lo );
+        or_into_QFLAG32( mkexpr(irt_Q_lo), condT );
+
+        armSignedSatQ( irt_regN_hi, sat_imm, &irt_res_hi, &irt_Q_hi );
+        or_into_QFLAG32( mkexpr(irt_Q_hi), condT );
+
+        IRExpr* ire_result 
+           = binop(Iop_Or32, 
+                   binop(Iop_And32, mkexpr(irt_res_lo), mkU32(0xFFFF)),
+                   binop(Iop_Shl32, mkexpr(irt_res_hi), mkU8(16)));
+        if (isT)
+           putIRegT( regD, ire_result, condT );
+        else
+           putIRegA( regD, ire_result, condT, Ijk_Boring );
+
+        DIP( "ssat16%s r%u, #0x%04x, r%u\n", nCC(conq), regD, sat_imm, regN );
+        return True;
+     }
+     /* fall through */
+   }
+
    /* -------------- usat16<c> <Rd>,#<imm4>,<Rn> --------------- */
    {
      UInt regD = 99, regN = 99, sat_imm = 99;

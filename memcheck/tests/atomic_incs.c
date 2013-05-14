@@ -180,6 +180,23 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3", "s0"
       );
    } while (block[2] != 1);
+#elif defined (_MIPSEB)
+   unsigned long block[3]
+      = { (unsigned long)p, (unsigned long)n << 56, 0x0 };
+   do {
+      __asm__ __volatile__(
+         "move  $t0, %0"          "\n\t"
+         "ld    $t1, 0($t0)"      "\n\t"  // p
+         "ld    $t2, 8($t0)"      "\n\t"  // n
+         "lld   $t3, 0($t1)"      "\n\t"
+         "daddu $t3, $t3, $t2"    "\n\t"
+         "scd   $t3, 0($t1)"      "\n\t"
+         "sd    $t3, 16($t0)"     "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
+      );
+   } while (block[2] != 1);
 #endif
 #else
 # error "Unsupported arch"
@@ -342,6 +359,23 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
          : /*out*/
          : /*in*/ "r"(&block[0])
          : /*trash*/ "memory", "t0", "t1", "t2", "t3", "s0"
+      );
+   } while (block[2] != 1);
+#elif defined (_MIPSEB)
+   unsigned long block[3]
+      = { (unsigned long)p, (unsigned long)n << 48, 0x0 };
+   do {
+      __asm__ __volatile__(
+         "move  $t0, %0"          "\n\t"
+         "ld    $t1, 0($t0)"      "\n\t"  // p
+         "ld    $t2, 8($t0)"      "\n\t"  // n
+         "lld   $t3, 0($t1)"      "\n\t"
+         "daddu $t3, $t3, $t2"    "\n\t"
+         "scd   $t3, 0($t1)"      "\n\t"
+         "sd    $t3, 16($t0)"     "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
 #endif

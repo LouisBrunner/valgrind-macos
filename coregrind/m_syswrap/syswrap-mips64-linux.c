@@ -913,7 +913,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_timerfd_create, sys_timerfd_create),
    LINXY (__NR_timerfd_gettime, sys_timerfd_gettime),
    LINXY (__NR_timerfd_settime, sys_timerfd_settime),
-   LINXY (__NR_newfstatat, sys_newfstatat)
+   LINXY (__NR_newfstatat, sys_newfstatat),
+   LINXY (__NR_prlimit64, sys_prlimit64),
+   LINXY (__NR_process_vm_readv, sys_process_vm_readv),
+   LINX_ (__NR_process_vm_writev, sys_process_vm_writev)
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

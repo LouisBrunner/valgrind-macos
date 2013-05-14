@@ -330,6 +330,18 @@
 #define __NR_rt_tgsigqueueinfo      (__NR_Linux + 291)
 #define __NR_perf_event_open        (__NR_Linux + 292)
 #define __NR_accept4                (__NR_Linux + 293)
+#define __NR_recvmmsg               (__NR_Linux + 294)
+#define __NR_fanotify_init          (__NR_Linux + 295)
+#define __NR_fanotify_mark          (__NR_Linux + 296)
+#define __NR_prlimit64              (__NR_Linux + 297)
+#define __NR_name_to_handle_at      (__NR_Linux + 298)
+#define __NR_open_by_handle_at      (__NR_Linux + 299)
+#define __NR_clock_adjtime          (__NR_Linux + 300)
+#define __NR_syncfs                 (__NR_Linux + 301)
+#define __NR_sendmmsg               (__NR_Linux + 302)
+#define __NR_setns                  (__NR_Linux + 303)
+#define __NR_process_vm_readv       (__NR_Linux + 304)
+#define __NR_process_vm_writev      (__NR_Linux + 305)
 
 #endif /* __VKI_SCNUMS_MIPS64_LINUX_H */
 

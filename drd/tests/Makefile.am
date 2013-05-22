@@ -306,6 +306,7 @@ check_PROGRAMS =      \
   annotate_ignore_write \
   annotate_publish_hg \
   annotate_static     \
+  annotate_trace_memory \
   bug-235681          \
   custom_alloc        \
   fp_race             \
@@ -351,11 +352,6 @@ check_PROGRAMS +=        \
   annotate_rwlock        \
   atomic_var             \
   circular_buffer
-endif
-
-if HAVE_BUILTIN_ATOMIC64
-check_PROGRAMS +=        \
-  annotate_trace_memory
 endif
 
 if HAVE_BUILTIN_ATOMIC_CXX

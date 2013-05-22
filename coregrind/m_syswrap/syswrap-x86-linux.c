@@ -1118,6 +1118,10 @@ PRE(sys_ptrace)
       PRE_MEM_WRITE( "ptrace(getfpxregs)", ARG4, 
                      sizeof(struct vki_user_fxsr_struct) );
       break;
+   case VKI_PTRACE_GET_THREAD_AREA:
+      PRE_MEM_WRITE( "ptrace(get_thread_area)", ARG4, 
+                     sizeof(struct vki_user_desc) );
+      break;
    case VKI_PTRACE_SETREGS:
       PRE_MEM_READ( "ptrace(setregs)", ARG4, 
 		     sizeof (struct vki_user_regs_struct));
@@ -1129,6 +1133,10 @@ PRE(sys_ptrace)
    case VKI_PTRACE_SETFPXREGS:
       PRE_MEM_READ( "ptrace(setfpxregs)", ARG4, 
                      sizeof(struct vki_user_fxsr_struct) );
+      break;
+   case VKI_PTRACE_SET_THREAD_AREA:
+      PRE_MEM_READ( "ptrace(set_thread_area)", ARG4, 
+                     sizeof(struct vki_user_desc) );
       break;
    case VKI_PTRACE_GETEVENTMSG:
       PRE_MEM_WRITE( "ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
@@ -1166,6 +1174,9 @@ POST(sys_ptrace)
       break;
    case VKI_PTRACE_GETFPXREGS:
       POST_MEM_WRITE( ARG4, sizeof(struct vki_user_fxsr_struct) );
+      break;
+   case VKI_PTRACE_GET_THREAD_AREA:
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_user_desc) );
       break;
    case VKI_PTRACE_GETEVENTMSG:
       POST_MEM_WRITE( ARG4, sizeof(unsigned long));

@@ -812,6 +812,8 @@ struct vki_shminfo64 {
 #define VKI_PTRACE_SETFPREGS          15
 #define VKI_PTRACE_GETFPXREGS         18
 #define VKI_PTRACE_SETFPXREGS         19
+#define VKI_PTRACE_GET_THREAD_AREA    25
+#define VKI_PTRACE_SET_THREAD_AREA    26
 
 //----------------------------------------------------------------------
 // From linux-2.6.15.4/include/asm-i386/vm86.h

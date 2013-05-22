@@ -676,6 +676,7 @@ __KINLINE struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, struct
 #define VKI_AF_UNIX	1	/* Unix domain sockets 		*/
 #define VKI_AF_INET	2	/* Internet IP Protocol		*/
 #define VKI_AF_INET6	10	/* IP version 6			*/
+#define VKI_AF_BLUETOOTH 31	/* Bluetooth sockets		*/
 
 #define VKI_MSG_NOSIGNAL	0x4000	/* Do not generate SIGPIPE */
 
@@ -2965,6 +2966,16 @@ struct vki_hci_inquiry_req {
    __vki_u8  lap[3];
    __vki_u8  length;
    __vki_u8  num_rsp;
+};
+
+//----------------------------------------------------------------------
+// From linux-3.9.2/include/net/bluetooth/rfcomm.h
+//----------------------------------------------------------------------
+
+struct vki_sockaddr_rc {
+        vki_sa_family_t     rc_family;
+        vki_bdaddr_t        rc_bdaddr;
+        __vki_u8            rc_channel;
 };
 
 //----------------------------------------------------------------------

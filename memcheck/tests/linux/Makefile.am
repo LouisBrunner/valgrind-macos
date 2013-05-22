@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	rfcomm.vgtest rfcomm.stderr.exp \
 	sigqueue.vgtest sigqueue.stderr.exp \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
 	    stack_changes.stdout.exp2 stack_changes.vgtest \
@@ -26,6 +27,7 @@ check_PROGRAMS = \
 	getregset \
 	lsframe1 \
 	lsframe2 \
+	rfcomm \
 	sigqueue \
 	stack_changes \
 	stack_switch \

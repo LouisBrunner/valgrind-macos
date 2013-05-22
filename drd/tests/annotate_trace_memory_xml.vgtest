@@ -1,4 +1,4 @@
-prereq: test -e annotate_trace_memory && ./supported_libpthread
+prereq: test -e annotate_trace_memory && ./supported_libpthread && ! ../../tests/arch_test arm && ! ../../tests/arch_test ppc32 && ! ../../tests/arch_test ppc64
 vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=2 --xml=yes --xml-fd=2
 prog: annotate_trace_memory
 stderr_filter: ./filter_xml_and_thread_no

@@ -32,10 +32,10 @@ int main(int argc, char** argv)
   i16++;
   fprintf(stderr, "uint32_t\n");
   i32 = 8;
-  __sync_add_and_fetch(&i32, 1);
+  i32++;
   fprintf(stderr, "uint64_t\n");
   i64 = 9;
-  __sync_add_and_fetch(&i64, 0x12345678ULL);
+  i64 += 0x12345678ULL;
 
   DRD_STOP_TRACING_VAR(f);
   DRD_STOP_TRACING_VAR(d);

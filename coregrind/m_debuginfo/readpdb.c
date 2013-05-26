@@ -2407,7 +2407,7 @@ HChar* ML_(find_name_of_pdb_file)( HChar* pename )
    /* This is a giant kludge, of the kind "you did WTF?!?", but it
       works. */
    Bool   do_cleanup = False;
-   HChar  tmpname[100], tmpnameroot[50];
+   HChar  tmpname[VG_(mkstemp_fullname_bufsz)(50-1)], tmpnameroot[50];
    Int    fd, r;
    HChar* res = NULL;
 

@@ -1837,7 +1837,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(cl_auxv_fd) = -1;
 #else
    if (!need_help) {
-      HChar  buf[50], buf2[50+64];
+      HChar  buf[50], buf2[VG_(mkstemp_fullname_bufsz)(50-1)];
       HChar  nul[1];
       Int    fd, r;
       const HChar* exename;

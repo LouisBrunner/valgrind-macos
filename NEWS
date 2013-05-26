@@ -344,6 +344,7 @@ FIXED r??
         introduction of new Iops for AVX2, BMI, FMA support
         FIXED 13347
 
+320211 Stack buffer overflow in ./coregrind/m_main.c with huge TMPDIR
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

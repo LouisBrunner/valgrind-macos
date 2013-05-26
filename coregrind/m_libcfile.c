@@ -653,14 +653,26 @@ const HChar *VG_(tmpdir)(void)
    return tmpdir;
 }
 
+static const HChar *mkstemp_format = "%s/valgrind_%s_%08x";
+
+SizeT VG_(mkstemp_fullname_bufsz) ( SizeT part_of_name_len )
+{
+   return VG_(strlen)(mkstemp_format)
+      + VG_(strlen)(VG_(tmpdir)()) - 2 // %s tmpdir
+      + part_of_name_len - 2           // %s part_of_name
+      + 8 - 4                          // %08x
+      + 1;                             // trailing 0
+}
+
+
 /* Create and open (-rw------) a tmp file name incorporating said arg.
    Returns -1 on failure, else the fd of the file.  If fullname is
    non-NULL, the file's name is written into it.  The number of bytes
-   written is guaranteed not to exceed 64+strlen(part_of_name). */
+   written is equal to VG_(mkstemp_fullname_bufsz)(part_of_name). */
 
 Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
 {
-   HChar  buf[200];
+   HChar  buf[VG_(mkstemp_fullname_bufsz)(VG_(strlen)(part_of_name))];
    Int    n, tries, fd;
    UInt   seed;
    SysRes sres;

@@ -84,10 +84,14 @@ extern Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
    in terms of pread()?) */
 extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
 
+/* Size of fullname buffer needed for a call to VG_(mkstemp) with
+   part_of_name having the given part_of_name_len. */
+extern SizeT VG_(mkstemp_fullname_bufsz) ( SizeT part_of_name_len );
+
 /* Create and open (-rw------) a tmp file name incorporating said arg.
    Returns -1 on failure, else the fd of the file.  If fullname is
    non-NULL, the file's name is written into it.  The number of bytes
-   written is guaranteed not to exceed 64+strlen(part_of_name). */
+   written is equal to VG_(mkstemp_fullname_bufsz)(part_of_name). */
 extern Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname );
 
 /* Record the process' working directory at startup.  Is intended to

@@ -1,0 +1,2 @@
+prog: fpu_control_word
+vgopts: -q

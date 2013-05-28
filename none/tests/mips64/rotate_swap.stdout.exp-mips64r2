@@ -1,0 +1,126 @@
+--- DROTR ---
+drotr :: in 0x2000ffffffffffff, out 0xffff2000ffffffff, SA 16
+drotr :: in 0xffff0000ffffffff, out 0xffffffff0000ffff, SA 16
+drotr :: in 0x2000ffffffffffff, out 0xff2000ffffffffff, SA 8
+drotr :: in 0x2000ffffffffffff, out 0xf2000fffffffffff, SA 4
+drotr :: in 0x2000ffffffffffff, out 0xf90007ffffffffff, SA 5
+drotr :: in 0x31415927ffffffff, out 0xffcc505649ffffff, SA 10
+drotr :: in 0x2000ffffffffffff, out 0xf2000fffffffffff, SA 4
+drotr :: in 0x2000ffffffffffff, out 0x2000ffffffffffff, SA 0
+drotr :: in 0xeeeeffffffffffff, out 0xffffeeeeffffffff, SA 16
+drotr :: in 0x2000ffffffffbbbb, out 0xffff77764001ffff, SA 31
+drotr :: in 0x2000ffffffffffff, out 0xffff2000ffffffff, SA 16
+drotr :: in 0x2000ffffffffffff, out 0x2000ffffffffffff, SA 0
+drotr :: in 0x7fffffffffffffff, out 0xffff7fffffffffff, SA 16
+drotr :: in 0x2000ffffffffffff, out 0xc8003fffffffffff, SA 2
+drotr :: in 0x2000ffffffffffff, out 0xffffff2000ffffff, SA 24
+drotr :: in 0xfffffff31415927f, out 0x927ffffffff31415, SA 16
+drotr :: in 0xffffffffffff0008, out 0x1fffffffffffe001, SA 3
+drotr :: in 0xffff0000ffffffff, out 0xffffffff0000ffff, SA 16
+drotr :: in 0xff0000ffffffffff, out 0xffffff0000ffffff, SA 16
+drotr :: in 0xfffffffff0000fff, out 0xffffffffffff000, SA 16
+--- DROTR32 ---
+drotr32 :: in 0x2000ffffffffffff, out 0xffffffffffff2000, SA 16
+drotr32 :: in 0xffff0000ffffffff, out 0xffffffffffff, SA 16
+drotr32 :: in 0x2000ffffffffffff, out 0xffffffffff2000ff, SA 8
+drotr32 :: in 0x2000ffffffffffff, out 0xfffffffff2000fff, SA 4
+drotr32 :: in 0x2000ffffffffffff, out 0xfffffffff90007ff, SA 5
+drotr32 :: in 0x31415927ffffffff, out 0x49ffffffffcc5056, SA 10
+drotr32 :: in 0x2000ffffffffffff, out 0xfffffffff2000fff, SA 4
+drotr32 :: in 0x2000ffffffffffff, out 0xffffffff2000ffff, SA 0
+drotr32 :: in 0xeeeeffffffffffff, out 0xffffffffffffeeee, SA 16
+drotr32 :: in 0x2000ffffffffffff, out 0x4001fffffffffffe, SA 31
+drotr32 :: in 0x2000ffffffffbbbb, out 0xffffffffbbbb2000, SA 16
+drotr32 :: in 0x2000ffffffffffff, out 0xffffffff2000ffff, SA 0
+drotr32 :: in 0x7fffffffffffffff, out 0xffffffffffff7fff, SA 16
+drotr32 :: in 0x2000ffffffffffff, out 0xffffffffc8003fff, SA 2
+drotr32 :: in 0x2000ffffffffffff, out 0xffffffffffff20, SA 24
+drotr32 :: in 0xfffffff31415927f, out 0xfff31415927fffff, SA 16
+drotr32 :: in 0xffffffffffff0008, out 0xffffe0011fffffff, SA 3
+drotr32 :: in 0xffff0000ffffffff, out 0xffffffffffff, SA 16
+drotr32 :: in 0xff0000ffffffffff, out 0xffffffffffff00, SA 16
+drotr32 :: in 0xfffffffff0000fff, out 0xfffff0000fffffff, SA 16
+--- DROTRV ---
+drotrv :: in 0x2000ffffffffffff, out 0xffff2000ffffffff, SA 16
+drotrv :: in 0xffff0000ffffffff, out 0xffffffff0000ffff, SA 16
+drotrv :: in 0x2000ffffffffffff, out 0xff2000ffffffffff, SA 8
+drotrv :: in 0x2000ffffffffffff, out 0xf2000fffffffffff, SA 4
+drotrv :: in 0x2000ffffffffffff, out 0xf90007ffffffffff, SA 5
+drotrv :: in 0x31415927ffffffff, out 0xffcc505649ffffff, SA 10
+drotrv :: in 0x2000ffffffffffff, out 0xf2000fffffffffff, SA 4
+drotrv :: in 0x2000ffffffffffff, out 0x2000ffffffffffff, SA 0
+drotrv :: in 0xeeeeffffffffffff, out 0xffffeeeeffffffff, SA 16
+drotrv :: in 0x2000ffffffffffff, out 0xfffffffe4001ffff, SA 31
+drotrv :: in 0x2000ffffffffbbbb, out 0xbbbb2000ffffffff, SA 16
+drotrv :: in 0x2000ffffffffffff, out 0x2000ffffffffffff, SA 0
+drotrv :: in 0x7fffffffffffffff, out 0xffff7fffffffffff, SA 16
+drotrv :: in 0x2000ffffffffffff, out 0xc8003fffffffffff, SA 2
+drotrv :: in 0x2000ffffffffffff, out 0xffffff2000ffffff, SA 24
+drotrv :: in 0xfffffff31415927f, out 0x927ffffffff31415, SA 16
+drotrv :: in 0xffffffffffff0008, out 0x1fffffffffffe001, SA 3
+drotrv :: in 0xffff0000ffffffff, out 0xffffffff0000ffff, SA 16
+drotrv :: in 0xff0000ffffffffff, out 0xffffff0000ffffff, SA 16
+drotrv :: in 0xfffffffff0000fff, out 0xffffffffffff000, SA 16
+--- DSBH ---
+dsbh :: in 0x2000ffffffffffff, out 0x20ffffffffffff
+dsbh :: in 0xffff0000ffffffff, out 0xffff0000ffffffff
+dsbh :: in 0x2000ffffffffffff, out 0x20ffffffffffff
+dsbh :: in 0x2000ffffeeeeffff, out 0x20ffffeeeeffff
+dsbh :: in 0x2000ffffffffffff, out 0x20ffffffffffff
+dsbh :: in 0x31415927ffffffff, out 0x41312759ffffffff
+dsbh :: in 0x2000ffffffffffff, out 0x20ffffffffffff
+dsbh :: in 0x2000ffffffccccff, out 0x20ffffccffffcc
+dsbh :: in 0xeeeeffffffffffff, out 0xeeeeffffffffffff
+dsbh :: in 0x2000ffff0000ffff, out 0x20ffff0000ffff
+dsbh :: in 0x2000ffffffffbbbb, out 0x20ffffffffbbbb
+dsbh :: in 0x2000ffffffffffff, out 0x20ffffffffffff
+dsbh :: in 0x7fffffff5555ffff, out 0xff7fffff5555ffff
+dsbh :: in 0x2000ffffff123123, out 0x20ffff12ff2331
+dsbh :: in 0x2000ffffffffffff, out 0x20ffffffffffff
+dsbh :: in 0xfffffff31415927f, out 0xfffff3ff15147f92
+dsbh :: in 0xffffffffffff0008, out 0xffffffffffff0800
+dsbh :: in 0xffff0000ffff88ff, out 0xffff0000ffffff88
+dsbh :: in 0xff0000ffffffffff, out 0xffff00ffffffff
+dsbh :: in 0xfff10ffff0000fff, out 0xf1ffff0f00f0ff0f
+--- DSHD ---
+dshd :: in 0x2002ffffffffffff, out 0xffffffffffff2002
+dshd :: in 0xffff0000ffffffff, out 0xffffffff0000ffff
+dshd :: in 0x2000ffffffffffff, out 0xffffffffffff2000
+dshd :: in 0x2000ffffffddddff, out 0xddffffddffff2000
+dshd :: in 0x2000ffffffffeeee, out 0xeeeeffffffff2000
+dshd :: in 0x31415927ffffffff, out 0xffffffff59273141
+dshd :: in 0x2000ffffffffaaaa, out 0xaaaaffffffff2000
+dshd :: in 0x2000ffffffbbbbff, out 0xbbffffbbffff2000
+dshd :: in 0xeeeeff33ff22ffff, out 0xffffff22ff33eeee
+dshd :: in 0x2000ffffffffffff, out 0xffffffffffff2000
+dshd :: in 0x2000ffffffffbbbb, out 0xbbbbffffffff2000
+dshd :: in 0x2000ffffffffffff, out 0xffffffffffff2000
+dshd :: in 0x7fffffffddddffff, out 0xffffddddffff7fff
+dshd :: in 0x2000ffffffff2222, out 0x2222ffffffff2000
+dshd :: in 0x2000ffffffffffff, out 0xffffffffffff2000
+dshd :: in 0xfffffff31415927f, out 0x927f1415fff3ffff
+dshd :: in 0xffffffffffff0008, out 0x8ffffffffffff
+dshd :: in 0xffff0000ffffffff, out 0xffffffff0000ffff
+dshd :: in 0xff0000ffffffffff, out 0xffffffff00ffff00
+dshd :: in 0xfffffffff0000fff, out 0xffff000ffffffff
+--- WSBH ---
+wsbh :: in 0x2000ffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0xffff0000ffffffff, out 0xffffffffffffffff
+wsbh :: in 0x2000ffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0x2000ffffeeeeffff, out 0xffffffffeeeeffff
+wsbh :: in 0x2000ffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0x31415927ffffffff, out 0xffffffffffffffff
+wsbh :: in 0x2000ffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0x2000ffffffccccff, out 0xffffffffccffffcc
+wsbh :: in 0xeeeeffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0x2000ffff0000ffff, out 0xffff
+wsbh :: in 0x2000ffffffffbbbb, out 0xffffffffffffbbbb
+wsbh :: in 0x2000ffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0x7fffffff5555ffff, out 0x5555ffff
+wsbh :: in 0x2000ffffff123123, out 0x12ff2331
+wsbh :: in 0x2000ffffffffffff, out 0xffffffffffffffff
+wsbh :: in 0xfffffff31415927f, out 0x15147f92
+wsbh :: in 0xffffffffffff0008, out 0xffffffffffff0800
+wsbh :: in 0xffff0000ffff88ff, out 0xffffffffffffff88
+wsbh :: in 0xff0000ffffffffff, out 0xffffffffffffffff
+wsbh :: in 0xfff10ffff0000fff, out 0xf0ff0f

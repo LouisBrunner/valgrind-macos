@@ -1,0 +1,2 @@
+prog: fpu_arithmetic
+vgopts: -q

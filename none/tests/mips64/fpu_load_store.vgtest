@@ -1,0 +1,2 @@
+prog: fpu_load_store
+vgopts: -q

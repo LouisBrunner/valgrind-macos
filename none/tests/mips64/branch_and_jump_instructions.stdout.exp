@@ -1,0 +1,1164 @@
+B 
+B :: 0x1, RSval: 0x0
+B :: 0x1, RSval: 0x0
+B :: 0x9823b6f, RSval: 0x9823b6e
+B :: 0xd4326da, RSval: 0xd4326d9
+B :: 0x130476dd, RSval: 0x130476dc
+B :: 0x17c56b6c, RSval: 0x17c56b6b
+B :: 0x1a864db3, RSval: 0x1a864db2
+B :: 0x1e475006, RSval: 0x1e475005
+B :: 0x2608edb9, RSval: 0x2608edb8
+B :: 0x22c9f010, RSval: 0x22c9f00f
+B :: 0x2f8ad6d7, RSval: 0x2f8ad6d6
+B :: 0x2b4bcb62, RSval: 0x2b4bcb61
+B :: 0x350c9b65, RSval: 0x350c9b64
+B :: 0x31cd86d4, RSval: 0x31cd86d3
+B :: 0x3c8ea00b, RSval: 0x3c8ea00a
+B :: 0x384fbdbe, RSval: 0x384fbdbd
+B :: 0x4c11db71, RSval: 0x4c11db70
+B :: 0x48d0c6c8, RSval: 0x48d0c6c7
+B :: 0x4593e01f, RSval: 0x4593e01e
+B :: 0x4152fdaa, RSval: 0x4152fda9
+B :: 0x5f15adad, RSval: 0x5f15adac
+B :: 0x5bd4b01c, RSval: 0x5bd4b01b
+B :: 0x569796c3, RSval: 0x569796c2
+B :: 0x52568b76, RSval: 0x52568b75
+B :: 0x6a1936c9, RSval: 0x6a1936c8
+B :: 0x6ed82b80, RSval: 0x6ed82b7f
+B :: 0x639b0da7, RSval: 0x639b0da6
+B :: 0x675a1012, RSval: 0x675a1011
+B :: 0x791d4015, RSval: 0x791d4014
+B :: 0x7ddc5da4, RSval: 0x7ddc5da3
+B :: 0x709f7b7b, RSval: 0x709f7b7a
+B :: 0x745e66ce, RSval: 0x745e66cd
+B :: 0xffffffff9823b6e1, RSval: 0xffffffff9823b6e0
+B :: 0xffffffff9ce2ab58, RSval: 0xffffffff9ce2ab57
+B :: 0xffffffff91a18d8f, RSval: 0xffffffff91a18d8e
+B :: 0xffffffff9560903a, RSval: 0xffffffff95609039
+B :: 0xffffffff8b27c03d, RSval: 0xffffffff8b27c03c
+B :: 0xffffffff8fe6dd8c, RSval: 0xffffffff8fe6dd8b
+B :: 0xffffffff82a5fb53, RSval: 0xffffffff82a5fb52
+B :: 0xffffffff8664e6e6, RSval: 0xffffffff8664e6e5
+B :: 0xffffffffbe2b5b59, RSval: 0xffffffffbe2b5b58
+B :: 0xffffffffbaea46f0, RSval: 0xffffffffbaea46ef
+B :: 0xffffffffb7a96037, RSval: 0xffffffffb7a96036
+B :: 0xffffffffb3687d82, RSval: 0xffffffffb3687d81
+B :: 0xffffffffad2f2d85, RSval: 0xffffffffad2f2d84
+B :: 0xffffffffa9ee3034, RSval: 0xffffffffa9ee3033
+B :: 0xffffffffa4ad16eb, RSval: 0xffffffffa4ad16ea
+B :: 0xffffffffa06c0b5e, RSval: 0xffffffffa06c0b5d
+B :: 0xffffffffd4326d91, RSval: 0xffffffffd4326d90
+B :: 0xffffffffd0f37028, RSval: 0xffffffffd0f37027
+B :: 0xffffffffddb056ff, RSval: 0xffffffffddb056fe
+B :: 0xffffffffd9714b4a, RSval: 0xffffffffd9714b49
+B :: 0xffffffffc7361b4d, RSval: 0xffffffffc7361b4c
+B :: 0xffffffffc3f706fc, RSval: 0xffffffffc3f706fb
+B :: 0xffffffffceb42023, RSval: 0xffffffffceb42022
+B :: 0xffffffffca753d96, RSval: 0xffffffffca753d95
+B :: 0xfffffffff23a8029, RSval: 0xfffffffff23a8028
+B :: 0xfffffffff6fb9da0, RSval: 0xfffffffff6fb9d9f
+B :: 0xfffffffffbb8bb47, RSval: 0xfffffffffbb8bb46
+B :: 0xffffffffff79a6f2, RSval: 0xffffffffff79a6f1
+B :: 0xffffffffe13ef6f5, RSval: 0xffffffffe13ef6f4
+B :: 0xffffffffe5ffeb44, RSval: 0xffffffffe5ffeb43
+B :: 0xffffffffe8bccd9b, RSval: 0xffffffffe8bccd9a
+B :: 0xffffffffec7dd02e, RSval: 0xffffffffec7dd02d
+B :: 0x34867078, RSval: 0x34867077
+B :: 0x30476dc1, RSval: 0x30476dc0
+B :: 0x3d044b1a, RSval: 0x3d044b19
+B :: 0x39c556af, RSval: 0x39c556ae
+B :: 0x278206ac, RSval: 0x278206ab
+B :: 0x23431b1d, RSval: 0x23431b1c
+B :: 0x2e003dc6, RSval: 0x2e003dc5
+B :: 0x2ac12073, RSval: 0x2ac12072
+B :: 0x128e9dd0, RSval: 0x128e9dcf
+B :: 0x164f8079, RSval: 0x164f8078
+B :: 0x1b0ca6a2, RSval: 0x1b0ca6a1
+B :: 0x1fcdbb17, RSval: 0x1fcdbb16
+B :: 0x18aeb14, RSval: 0x18aeb13
+B :: 0x54bf6a5, RSval: 0x54bf6a4
+B :: 0x808d07e, RSval: 0x808d07d
+B :: 0xcc9cdcb, RSval: 0xcc9cdca
+B :: 0x7897ab08, RSval: 0x7897ab07
+B :: 0x7c56b6b1, RSval: 0x7c56b6b0
+B :: 0x7115906a, RSval: 0x71159069
+B :: 0x75d48ddf, RSval: 0x75d48dde
+B :: 0x6b93dddc, RSval: 0x6b93dddb
+B :: 0x6f52c06d, RSval: 0x6f52c06c
+B :: 0x6211e6b6, RSval: 0x6211e6b5
+B :: 0x66d0fb03, RSval: 0x66d0fb02
+B :: 0x5e9f46c0, RSval: 0x5e9f46bf
+B :: 0x5a5e5b09, RSval: 0x5a5e5b08
+B :: 0x571d7dd2, RSval: 0x571d7dd1
+B :: 0x53dc6067, RSval: 0x53dc6066
+B :: 0x4d9b3064, RSval: 0x4d9b3063
+B :: 0x495a2dd5, RSval: 0x495a2dd4
+B :: 0x44190b0e, RSval: 0x44190b0d
+B :: 0x40d816bb, RSval: 0x40d816ba
+B :: 0xffffffffaca5c698, RSval: 0xffffffffaca5c697
+B :: 0xffffffffa864db21, RSval: 0xffffffffa864db20
+B :: 0xffffffffa527fdfa, RSval: 0xffffffffa527fdf9
+B :: 0xffffffffa1e6e04f, RSval: 0xffffffffa1e6e04e
+B :: 0xffffffffbfa1b04c, RSval: 0xffffffffbfa1b04b
+B :: 0xffffffffbb60adfd, RSval: 0xffffffffbb60adfc
+B :: 0xffffffffb6238b26, RSval: 0xffffffffb6238b25
+B :: 0xffffffffb2e29693, RSval: 0xffffffffb2e29692
+B :: 0xffffffff8aad2b30, RSval: 0xffffffff8aad2b2f
+B :: 0x1, RSval: 0x0
+B :: 0x1, RSval: 0x0
+B :: 0xffffffff87ee0df7, RSval: 0xffffffff87ee0df6
+B :: 0xffffffff99a95df4, RSval: 0xffffffff99a95df3
+B :: 0xffffffff9d684045, RSval: 0xffffffff9d684044
+B :: 0xffffffff902b669e, RSval: 0xffffffff902b669d
+B :: 0xffffffff94ea7b2b, RSval: 0xffffffff94ea7b2a
+B :: 0xffffffffe0b41de8, RSval: 0xffffffffe0b41de7
+B :: 0xffffffffe4750051, RSval: 0xffffffffe4750050
+B :: 0xffffffffe936268a, RSval: 0xffffffffe9362689
+B :: 0xffffffffedf73b3f, RSval: 0xffffffffedf73b3e
+B :: 0xfffffffff3b06b3c, RSval: 0xfffffffff3b06b3b
+B :: 0xfffffffff771768d, RSval: 0xfffffffff771768c
+B :: 0xfffffffffa325056, RSval: 0xfffffffffa325055
+B :: 0xfffffffffef34de3, RSval: 0xfffffffffef34de2
+B :: 0xffffffffc6bcf060, RSval: 0xffffffffc6bcf05f
+B :: 0xffffffffc27dede9, RSval: 0xffffffffc27dede8
+B :: 0xffffffffcf3ecb32, RSval: 0xffffffffcf3ecb31
+B :: 0xffffffffcbffd687, RSval: 0xffffffffcbffd686
+B :: 0xffffffffd5b88684, RSval: 0xffffffffd5b88683
+B :: 0xffffffffd1799b35, RSval: 0xffffffffd1799b34
+B :: 0xffffffffdc3abdee, RSval: 0xffffffffdc3abded
+B :: 0xffffffffd8fba05b, RSval: 0xffffffffd8fba05a
+B :: 0x690ce0ef, RSval: 0x690ce0ee
+B :: 0x6dcdfd5a, RSval: 0x6dcdfd59
+B :: 0x608edb81, RSval: 0x608edb80
+B :: 0x644fc638, RSval: 0x644fc637
+B :: 0x7a089633, RSval: 0x7a089632
+B :: 0x7ec98b86, RSval: 0x7ec98b85
+B :: 0x738aad5d, RSval: 0x738aad5c
+B :: 0x774bb0ec, RSval: 0x774bb0eb
+B :: 0x4f040d57, RSval: 0x4f040d56
+B :: 0x4bc510e2, RSval: 0x4bc510e1
+B :: 0x46863639, RSval: 0x46863638
+B :: 0x42472b90, RSval: 0x42472b8f
+B :: 0x5c007b8b, RSval: 0x5c007b8a
+B :: 0x58c1663e, RSval: 0x58c1663d
+B :: 0x558240e5, RSval: 0x558240e4
+B :: 0x51435d54, RSval: 0x51435d53
+B :: 0x251d3b9f, RSval: 0x251d3b9e
+B :: 0x21dc262a, RSval: 0x21dc2629
+B :: 0x2c9f00f1, RSval: 0x2c9f00f0
+B :: 0x285e1d48, RSval: 0x285e1d47
+B :: 0x36194d43, RSval: 0x36194d42
+B :: 0x32d850f6, RSval: 0x32d850f5
+B :: 0x3f9b762d, RSval: 0x3f9b762c
+B :: 0x3b5a6b9c, RSval: 0x3b5a6b9b
+B :: 0x315d627, RSval: 0x315d626
+B :: 0x7d4cb92, RSval: 0x7d4cb91
+B :: 0xa97ed49, RSval: 0xa97ed48
+B :: 0xe56f100, RSval: 0xe56f0ff
+B :: 0x1011a0fb, RSval: 0x1011a0fa
+B :: 0x14d0bd4e, RSval: 0x14d0bd4d
+B :: 0x19939b95, RSval: 0x19939b94
+B :: 0x1d528624, RSval: 0x1d528623
+B :: 0xfffffffff12f560f, RSval: 0xfffffffff12f560e
+B :: 0xfffffffff5ee4bba, RSval: 0xfffffffff5ee4bb9
+B :: 0xfffffffff8ad6d61, RSval: 0xfffffffff8ad6d60
+B :: 0xfffffffffc6c70d8, RSval: 0xfffffffffc6c70d7
+B :: 0xffffffffe22b20d3, RSval: 0xffffffffe22b20d2
+B :: 0xffffffffe6ea3d66, RSval: 0xffffffffe6ea3d65
+B :: 0xffffffffeba91bbd, RSval: 0xffffffffeba91bbc
+B :: 0xffffffffef68060c, RSval: 0xffffffffef68060b
+B :: 0xffffffffd727bbb7, RSval: 0xffffffffd727bbb6
+B :: 0xffffffffd3e6a602, RSval: 0xffffffffd3e6a601
+B :: 0xffffffffdea580d9, RSval: 0xffffffffdea580d8
+B :: 0xffffffffda649d70, RSval: 0xffffffffda649d6f
+B :: 0xffffffffc423cd6b, RSval: 0xffffffffc423cd6a
+B :: 0x1, RSval: 0x0
+B :: 0xffffffffcda1f605, RSval: 0xffffffffcda1f604
+B :: 0x1, RSval: 0x0
+B :: 0xffffffffbd3e8d7f, RSval: 0xffffffffbd3e8d7e
+B :: 0xffffffffb9ff90ca, RSval: 0xffffffffb9ff90c9
+B :: 0xffffffffb4bcb611, RSval: 0xffffffffb4bcb610
+B :: 0xffffffffb07daba8, RSval: 0xffffffffb07daba7
+B :: 0xffffffffae3afba3, RSval: 0xffffffffae3afba2
+B :: 0xffffffffaafbe616, RSval: 0xffffffffaafbe615
+B :: 0xffffffffa7b8c0cd, RSval: 0xffffffffa7b8c0cc
+B :: 0xffffffffa379dd7c, RSval: 0xffffffffa379dd7b
+B :: 0xffffffff9b3660c7, RSval: 0xffffffff9b3660c6
+B :: 0xffffffff9ff77d72, RSval: 0xffffffff9ff77d71
+B :: 0xffffffff92b45ba9, RSval: 0xffffffff92b45ba8
+B :: 0xffffffff96754620, RSval: 0xffffffff9675461f
+B :: 0xffffffff8832161b, RSval: 0xffffffff8832161a
+B :: 0xffffffff8cf30bae, RSval: 0xffffffff8cf30bad
+B :: 0xffffffff81b02d75, RSval: 0xffffffff81b02d74
+B :: 0xffffffff857130c4, RSval: 0xffffffff857130c3
+B :: 0x5d8a909a, RSval: 0x5d8a9099
+B :: 0x594b8d2f, RSval: 0x594b8d2e
+B :: 0x5408abf8, RSval: 0x5408abf7
+B :: 0x50c9b641, RSval: 0x50c9b640
+B :: 0x4e8ee646, RSval: 0x4e8ee645
+B :: 0x4a4ffbf3, RSval: 0x4a4ffbf2
+B :: 0x470cdd2c, RSval: 0x470cdd2b
+B :: 0x43cdc09d, RSval: 0x43cdc09c
+B :: 0x7b827d22, RSval: 0x7b827d21
+B :: 0x7f436097, RSval: 0x7f436096
+B :: 0x72004650, RSval: 0x7200464f
+B :: 0x76c15bf9, RSval: 0x76c15bf8
+B :: 0x68860bfe, RSval: 0x68860bfd
+B :: 0x6c47164b, RSval: 0x6c47164a
+B :: 0x61043094, RSval: 0x61043093
+B :: 0x65c52d25, RSval: 0x65c52d24
+B :: 0x119b4bea, RSval: 0x119b4be9
+B :: 0x155a565f, RSval: 0x155a565e
+B :: 0x18197088, RSval: 0x18197087
+B :: 0x1cd86d31, RSval: 0x1cd86d30
+B :: 0x29f3d36, RSval: 0x29f3d35
+B :: 0x65e2083, RSval: 0x65e2082
+B :: 0xb1d065c, RSval: 0xb1d065b
+B :: 0xfdc1bed, RSval: 0xfdc1bec
+B :: 0x3793a652, RSval: 0x3793a651
+B :: 0x3352bbe7, RSval: 0x3352bbe6
+B :: 0x3e119d40, RSval: 0x3e119d3f
+B :: 0x3ad08089, RSval: 0x3ad08088
+B :: 0x2497d08e, RSval: 0x2497d08d
+B :: 0x2056cd3b, RSval: 0x2056cd3a
+B :: 0x2d15ebe4, RSval: 0x2d15ebe3
+B :: 0x29d4f655, RSval: 0x29d4f654
+B :: 0xffffffffc5a9267a, RSval: 0xffffffffc5a92679
+B :: 0xffffffffc1683bcf, RSval: 0xffffffffc1683bce
+B :: 0xffffffffcc2b1d18, RSval: 0xffffffffcc2b1d17
+B :: 0xffffffffc8ea00a1, RSval: 0xffffffffc8ea00a0
+B :: 0xffffffffd6ad50a6, RSval: 0xffffffffd6ad50a5
+B :: 0xffffffffd26c4d13, RSval: 0xffffffffd26c4d12
+B :: 0xffffffffdf2f6bcc, RSval: 0xffffffffdf2f6bcb
+B :: 0xffffffffdbee767d, RSval: 0xffffffffdbee767c
+B :: 0xffffffffe3a1cbc2, RSval: 0xffffffffe3a1cbc1
+B :: 0xffffffffe760d677, RSval: 0xffffffffe760d676
+B :: 0xffffffffea23f0b0, RSval: 0xffffffffea23f0af
+B :: 0xffffffffeee2ed19, RSval: 0xffffffffeee2ed18
+B :: 0xfffffffff0a5bd1e, RSval: 0xfffffffff0a5bd1d
+B :: 0xfffffffff464a0ab, RSval: 0xfffffffff464a0aa
+B :: 0xfffffffff9278674, RSval: 0xfffffffff9278673
+B :: 0xfffffffffde69bc5, RSval: 0xfffffffffde69bc4
+B :: 0xffffffff89b8fd0a, RSval: 0xffffffff89b8fd09
+B :: 0xffffffff8d79e0bf, RSval: 0xffffffff8d79e0be
+B :: 0xffffffff803ac668, RSval: 0xffffffff803ac667
+B :: 0xffffffff84fbdbd1, RSval: 0xffffffff84fbdbd0
+B :: 0xffffffff9abc8bd6, RSval: 0xffffffff9abc8bd5
+B :: 0xffffffff9e7d9663, RSval: 0xffffffff9e7d9662
+B :: 0xffffffff933eb0bc, RSval: 0xffffffff933eb0bb
+B :: 0xffffffff97ffad0d, RSval: 0xffffffff97ffad0c
+B :: 0xffffffffafb010b2, RSval: 0xffffffffafb010b1
+B :: 0xffffffffab710d07, RSval: 0xffffffffab710d06
+B :: 0xffffffffa6322be0, RSval: 0xffffffffa6322bdf
+B :: 0xffffffffa2f33669, RSval: 0xffffffffa2f33668
+B :: 0xffffffffbcb4666e, RSval: 0xffffffffbcb4666d
+B :: 0xffffffffb8757bdb, RSval: 0xffffffffb8757bda
+B :: 0xffffffffb5365d04, RSval: 0xffffffffb5365d03
+B :: 0xffffffffb1f740b5, RSval: 0xffffffffb1f740b4
+BAL 
+B BAL JR :: 0x6, RSval: 0x0
+B BAL JR :: 0x6, RSval: 0x0
+B BAL JR :: 0x9823b74, RSval: 0x9823b6e
+B BAL JR :: 0xd4326df, RSval: 0xd4326d9
+B BAL JR :: 0x130476e2, RSval: 0x130476dc
+B BAL JR :: 0x17c56b71, RSval: 0x17c56b6b
+B BAL JR :: 0x1a864db8, RSval: 0x1a864db2
+B BAL JR :: 0x1e47500b, RSval: 0x1e475005
+B BAL JR :: 0x2608edbe, RSval: 0x2608edb8
+B BAL JR :: 0x22c9f015, RSval: 0x22c9f00f
+B BAL JR :: 0x2f8ad6dc, RSval: 0x2f8ad6d6
+B BAL JR :: 0x2b4bcb67, RSval: 0x2b4bcb61
+B BAL JR :: 0x350c9b6a, RSval: 0x350c9b64
+B BAL JR :: 0x31cd86d9, RSval: 0x31cd86d3
+B BAL JR :: 0x3c8ea010, RSval: 0x3c8ea00a
+B BAL JR :: 0x384fbdc3, RSval: 0x384fbdbd
+B BAL JR :: 0x4c11db76, RSval: 0x4c11db70
+B BAL JR :: 0x48d0c6cd, RSval: 0x48d0c6c7
+B BAL JR :: 0x4593e024, RSval: 0x4593e01e
+B BAL JR :: 0x4152fdaf, RSval: 0x4152fda9
+B BAL JR :: 0x5f15adb2, RSval: 0x5f15adac
+B BAL JR :: 0x5bd4b021, RSval: 0x5bd4b01b
+B BAL JR :: 0x569796c8, RSval: 0x569796c2
+B BAL JR :: 0x52568b7b, RSval: 0x52568b75
+B BAL JR :: 0x6a1936ce, RSval: 0x6a1936c8
+B BAL JR :: 0x6ed82b85, RSval: 0x6ed82b7f
+B BAL JR :: 0x639b0dac, RSval: 0x639b0da6
+B BAL JR :: 0x675a1017, RSval: 0x675a1011
+B BAL JR :: 0x791d401a, RSval: 0x791d4014
+B BAL JR :: 0x7ddc5da9, RSval: 0x7ddc5da3
+B BAL JR :: 0x709f7b80, RSval: 0x709f7b7a
+B BAL JR :: 0x745e66d3, RSval: 0x745e66cd
+B BAL JR :: 0xffffffff9823b6e6, RSval: 0xffffffff9823b6e0
+B BAL JR :: 0xffffffff9ce2ab5d, RSval: 0xffffffff9ce2ab57
+B BAL JR :: 0xffffffff91a18d94, RSval: 0xffffffff91a18d8e
+B BAL JR :: 0xffffffff9560903f, RSval: 0xffffffff95609039
+B BAL JR :: 0xffffffff8b27c042, RSval: 0xffffffff8b27c03c
+B BAL JR :: 0xffffffff8fe6dd91, RSval: 0xffffffff8fe6dd8b
+B BAL JR :: 0xffffffff82a5fb58, RSval: 0xffffffff82a5fb52
+B BAL JR :: 0xffffffff8664e6eb, RSval: 0xffffffff8664e6e5
+B BAL JR :: 0xffffffffbe2b5b5e, RSval: 0xffffffffbe2b5b58
+B BAL JR :: 0xffffffffbaea46f5, RSval: 0xffffffffbaea46ef
+B BAL JR :: 0xffffffffb7a9603c, RSval: 0xffffffffb7a96036
+B BAL JR :: 0xffffffffb3687d87, RSval: 0xffffffffb3687d81
+B BAL JR :: 0xffffffffad2f2d8a, RSval: 0xffffffffad2f2d84
+B BAL JR :: 0xffffffffa9ee3039, RSval: 0xffffffffa9ee3033
+B BAL JR :: 0xffffffffa4ad16f0, RSval: 0xffffffffa4ad16ea
+B BAL JR :: 0xffffffffa06c0b63, RSval: 0xffffffffa06c0b5d
+B BAL JR :: 0xffffffffd4326d96, RSval: 0xffffffffd4326d90
+B BAL JR :: 0xffffffffd0f3702d, RSval: 0xffffffffd0f37027
+B BAL JR :: 0xffffffffddb05704, RSval: 0xffffffffddb056fe
+B BAL JR :: 0xffffffffd9714b4f, RSval: 0xffffffffd9714b49
+B BAL JR :: 0xffffffffc7361b52, RSval: 0xffffffffc7361b4c
+B BAL JR :: 0xffffffffc3f70701, RSval: 0xffffffffc3f706fb
+B BAL JR :: 0xffffffffceb42028, RSval: 0xffffffffceb42022
+B BAL JR :: 0xffffffffca753d9b, RSval: 0xffffffffca753d95
+B BAL JR :: 0xfffffffff23a802e, RSval: 0xfffffffff23a8028
+B BAL JR :: 0xfffffffff6fb9da5, RSval: 0xfffffffff6fb9d9f
+B BAL JR :: 0xfffffffffbb8bb4c, RSval: 0xfffffffffbb8bb46
+B BAL JR :: 0xffffffffff79a6f7, RSval: 0xffffffffff79a6f1
+B BAL JR :: 0xffffffffe13ef6fa, RSval: 0xffffffffe13ef6f4
+B BAL JR :: 0xffffffffe5ffeb49, RSval: 0xffffffffe5ffeb43
+B BAL JR :: 0xffffffffe8bccda0, RSval: 0xffffffffe8bccd9a
+B BAL JR :: 0xffffffffec7dd033, RSval: 0xffffffffec7dd02d
+B BAL JR :: 0x3486707d, RSval: 0x34867077
+B BAL JR :: 0x30476dc6, RSval: 0x30476dc0
+B BAL JR :: 0x3d044b1f, RSval: 0x3d044b19
+B BAL JR :: 0x39c556b4, RSval: 0x39c556ae
+B BAL JR :: 0x278206b1, RSval: 0x278206ab
+B BAL JR :: 0x23431b22, RSval: 0x23431b1c
+B BAL JR :: 0x2e003dcb, RSval: 0x2e003dc5
+B BAL JR :: 0x2ac12078, RSval: 0x2ac12072
+B BAL JR :: 0x128e9dd5, RSval: 0x128e9dcf
+B BAL JR :: 0x164f807e, RSval: 0x164f8078
+B BAL JR :: 0x1b0ca6a7, RSval: 0x1b0ca6a1
+B BAL JR :: 0x1fcdbb1c, RSval: 0x1fcdbb16
+B BAL JR :: 0x18aeb19, RSval: 0x18aeb13
+B BAL JR :: 0x54bf6aa, RSval: 0x54bf6a4
+B BAL JR :: 0x808d083, RSval: 0x808d07d
+B BAL JR :: 0xcc9cdd0, RSval: 0xcc9cdca
+B BAL JR :: 0x7897ab0d, RSval: 0x7897ab07
+B BAL JR :: 0x7c56b6b6, RSval: 0x7c56b6b0
+B BAL JR :: 0x7115906f, RSval: 0x71159069
+B BAL JR :: 0x75d48de4, RSval: 0x75d48dde
+B BAL JR :: 0x6b93dde1, RSval: 0x6b93dddb
+B BAL JR :: 0x6f52c072, RSval: 0x6f52c06c
+B BAL JR :: 0x6211e6bb, RSval: 0x6211e6b5
+B BAL JR :: 0x66d0fb08, RSval: 0x66d0fb02
+B BAL JR :: 0x5e9f46c5, RSval: 0x5e9f46bf
+B BAL JR :: 0x5a5e5b0e, RSval: 0x5a5e5b08
+B BAL JR :: 0x571d7dd7, RSval: 0x571d7dd1
+B BAL JR :: 0x53dc606c, RSval: 0x53dc6066
+B BAL JR :: 0x4d9b3069, RSval: 0x4d9b3063
+B BAL JR :: 0x495a2dda, RSval: 0x495a2dd4
+B BAL JR :: 0x44190b13, RSval: 0x44190b0d
+B BAL JR :: 0x40d816c0, RSval: 0x40d816ba
+B BAL JR :: 0xffffffffaca5c69d, RSval: 0xffffffffaca5c697
+B BAL JR :: 0xffffffffa864db26, RSval: 0xffffffffa864db20
+B BAL JR :: 0xffffffffa527fdff, RSval: 0xffffffffa527fdf9
+B BAL JR :: 0xffffffffa1e6e054, RSval: 0xffffffffa1e6e04e
+B BAL JR :: 0xffffffffbfa1b051, RSval: 0xffffffffbfa1b04b
+B BAL JR :: 0xffffffffbb60ae02, RSval: 0xffffffffbb60adfc
+B BAL JR :: 0xffffffffb6238b2b, RSval: 0xffffffffb6238b25
+B BAL JR :: 0xffffffffb2e29698, RSval: 0xffffffffb2e29692
+B BAL JR :: 0xffffffff8aad2b35, RSval: 0xffffffff8aad2b2f
+B BAL JR :: 0x6, RSval: 0x0
+B BAL JR :: 0x6, RSval: 0x0
+B BAL JR :: 0xffffffff87ee0dfc, RSval: 0xffffffff87ee0df6
+B BAL JR :: 0xffffffff99a95df9, RSval: 0xffffffff99a95df3
+B BAL JR :: 0xffffffff9d68404a, RSval: 0xffffffff9d684044
+B BAL JR :: 0xffffffff902b66a3, RSval: 0xffffffff902b669d
+B BAL JR :: 0xffffffff94ea7b30, RSval: 0xffffffff94ea7b2a
+B BAL JR :: 0xffffffffe0b41ded, RSval: 0xffffffffe0b41de7
+B BAL JR :: 0xffffffffe4750056, RSval: 0xffffffffe4750050
+B BAL JR :: 0xffffffffe936268f, RSval: 0xffffffffe9362689
+B BAL JR :: 0xffffffffedf73b44, RSval: 0xffffffffedf73b3e
+B BAL JR :: 0xfffffffff3b06b41, RSval: 0xfffffffff3b06b3b
+B BAL JR :: 0xfffffffff7717692, RSval: 0xfffffffff771768c
+B BAL JR :: 0xfffffffffa32505b, RSval: 0xfffffffffa325055
+B BAL JR :: 0xfffffffffef34de8, RSval: 0xfffffffffef34de2
+B BAL JR :: 0xffffffffc6bcf065, RSval: 0xffffffffc6bcf05f
+B BAL JR :: 0xffffffffc27dedee, RSval: 0xffffffffc27dede8
+B BAL JR :: 0xffffffffcf3ecb37, RSval: 0xffffffffcf3ecb31
+B BAL JR :: 0xffffffffcbffd68c, RSval: 0xffffffffcbffd686
+B BAL JR :: 0xffffffffd5b88689, RSval: 0xffffffffd5b88683
+B BAL JR :: 0xffffffffd1799b3a, RSval: 0xffffffffd1799b34
+B BAL JR :: 0xffffffffdc3abdf3, RSval: 0xffffffffdc3abded
+B BAL JR :: 0xffffffffd8fba060, RSval: 0xffffffffd8fba05a
+B BAL JR :: 0x690ce0f4, RSval: 0x690ce0ee
+B BAL JR :: 0x6dcdfd5f, RSval: 0x6dcdfd59
+B BAL JR :: 0x608edb86, RSval: 0x608edb80
+B BAL JR :: 0x644fc63d, RSval: 0x644fc637
+B BAL JR :: 0x7a089638, RSval: 0x7a089632
+B BAL JR :: 0x7ec98b8b, RSval: 0x7ec98b85
+B BAL JR :: 0x738aad62, RSval: 0x738aad5c
+B BAL JR :: 0x774bb0f1, RSval: 0x774bb0eb
+B BAL JR :: 0x4f040d5c, RSval: 0x4f040d56
+B BAL JR :: 0x4bc510e7, RSval: 0x4bc510e1
+B BAL JR :: 0x4686363e, RSval: 0x46863638
+B BAL JR :: 0x42472b95, RSval: 0x42472b8f
+B BAL JR :: 0x5c007b90, RSval: 0x5c007b8a
+B BAL JR :: 0x58c16643, RSval: 0x58c1663d
+B BAL JR :: 0x558240ea, RSval: 0x558240e4
+B BAL JR :: 0x51435d59, RSval: 0x51435d53
+B BAL JR :: 0x251d3ba4, RSval: 0x251d3b9e
+B BAL JR :: 0x21dc262f, RSval: 0x21dc2629
+B BAL JR :: 0x2c9f00f6, RSval: 0x2c9f00f0
+B BAL JR :: 0x285e1d4d, RSval: 0x285e1d47
+B BAL JR :: 0x36194d48, RSval: 0x36194d42
+B BAL JR :: 0x32d850fb, RSval: 0x32d850f5
+B BAL JR :: 0x3f9b7632, RSval: 0x3f9b762c
+B BAL JR :: 0x3b5a6ba1, RSval: 0x3b5a6b9b
+B BAL JR :: 0x315d62c, RSval: 0x315d626
+B BAL JR :: 0x7d4cb97, RSval: 0x7d4cb91
+B BAL JR :: 0xa97ed4e, RSval: 0xa97ed48
+B BAL JR :: 0xe56f105, RSval: 0xe56f0ff
+B BAL JR :: 0x1011a100, RSval: 0x1011a0fa
+B BAL JR :: 0x14d0bd53, RSval: 0x14d0bd4d
+B BAL JR :: 0x19939b9a, RSval: 0x19939b94
+B BAL JR :: 0x1d528629, RSval: 0x1d528623
+B BAL JR :: 0xfffffffff12f5614, RSval: 0xfffffffff12f560e
+B BAL JR :: 0xfffffffff5ee4bbf, RSval: 0xfffffffff5ee4bb9
+B BAL JR :: 0xfffffffff8ad6d66, RSval: 0xfffffffff8ad6d60
+B BAL JR :: 0xfffffffffc6c70dd, RSval: 0xfffffffffc6c70d7
+B BAL JR :: 0xffffffffe22b20d8, RSval: 0xffffffffe22b20d2
+B BAL JR :: 0xffffffffe6ea3d6b, RSval: 0xffffffffe6ea3d65
+B BAL JR :: 0xffffffffeba91bc2, RSval: 0xffffffffeba91bbc
+B BAL JR :: 0xffffffffef680611, RSval: 0xffffffffef68060b
+B BAL JR :: 0xffffffffd727bbbc, RSval: 0xffffffffd727bbb6
+B BAL JR :: 0xffffffffd3e6a607, RSval: 0xffffffffd3e6a601
+B BAL JR :: 0xffffffffdea580de, RSval: 0xffffffffdea580d8
+B BAL JR :: 0xffffffffda649d75, RSval: 0xffffffffda649d6f
+B BAL JR :: 0xffffffffc423cd70, RSval: 0xffffffffc423cd6a
+B BAL JR :: 0x6, RSval: 0x0
+B BAL JR :: 0xffffffffcda1f60a, RSval: 0xffffffffcda1f604
+B BAL JR :: 0x6, RSval: 0x0
+B BAL JR :: 0xffffffffbd3e8d84, RSval: 0xffffffffbd3e8d7e
+B BAL JR :: 0xffffffffb9ff90cf, RSval: 0xffffffffb9ff90c9
+B BAL JR :: 0xffffffffb4bcb616, RSval: 0xffffffffb4bcb610
+B BAL JR :: 0xffffffffb07dabad, RSval: 0xffffffffb07daba7
+B BAL JR :: 0xffffffffae3afba8, RSval: 0xffffffffae3afba2
+B BAL JR :: 0xffffffffaafbe61b, RSval: 0xffffffffaafbe615
+B BAL JR :: 0xffffffffa7b8c0d2, RSval: 0xffffffffa7b8c0cc
+B BAL JR :: 0xffffffffa379dd81, RSval: 0xffffffffa379dd7b
+B BAL JR :: 0xffffffff9b3660cc, RSval: 0xffffffff9b3660c6
+B BAL JR :: 0xffffffff9ff77d77, RSval: 0xffffffff9ff77d71
+B BAL JR :: 0xffffffff92b45bae, RSval: 0xffffffff92b45ba8
+B BAL JR :: 0xffffffff96754625, RSval: 0xffffffff9675461f
+B BAL JR :: 0xffffffff88321620, RSval: 0xffffffff8832161a
+B BAL JR :: 0xffffffff8cf30bb3, RSval: 0xffffffff8cf30bad
+B BAL JR :: 0xffffffff81b02d7a, RSval: 0xffffffff81b02d74
+B BAL JR :: 0xffffffff857130c9, RSval: 0xffffffff857130c3
+B BAL JR :: 0x5d8a909f, RSval: 0x5d8a9099
+B BAL JR :: 0x594b8d34, RSval: 0x594b8d2e
+B BAL JR :: 0x5408abfd, RSval: 0x5408abf7
+B BAL JR :: 0x50c9b646, RSval: 0x50c9b640
+B BAL JR :: 0x4e8ee64b, RSval: 0x4e8ee645
+B BAL JR :: 0x4a4ffbf8, RSval: 0x4a4ffbf2
+B BAL JR :: 0x470cdd31, RSval: 0x470cdd2b
+B BAL JR :: 0x43cdc0a2, RSval: 0x43cdc09c
+B BAL JR :: 0x7b827d27, RSval: 0x7b827d21
+B BAL JR :: 0x7f43609c, RSval: 0x7f436096
+B BAL JR :: 0x72004655, RSval: 0x7200464f
+B BAL JR :: 0x76c15bfe, RSval: 0x76c15bf8
+B BAL JR :: 0x68860c03, RSval: 0x68860bfd
+B BAL JR :: 0x6c471650, RSval: 0x6c47164a
+B BAL JR :: 0x61043099, RSval: 0x61043093
+B BAL JR :: 0x65c52d2a, RSval: 0x65c52d24
+B BAL JR :: 0x119b4bef, RSval: 0x119b4be9
+B BAL JR :: 0x155a5664, RSval: 0x155a565e
+B BAL JR :: 0x1819708d, RSval: 0x18197087
+B BAL JR :: 0x1cd86d36, RSval: 0x1cd86d30
+B BAL JR :: 0x29f3d3b, RSval: 0x29f3d35
+B BAL JR :: 0x65e2088, RSval: 0x65e2082
+B BAL JR :: 0xb1d0661, RSval: 0xb1d065b
+B BAL JR :: 0xfdc1bf2, RSval: 0xfdc1bec
+B BAL JR :: 0x3793a657, RSval: 0x3793a651
+B BAL JR :: 0x3352bbec, RSval: 0x3352bbe6
+B BAL JR :: 0x3e119d45, RSval: 0x3e119d3f
+B BAL JR :: 0x3ad0808e, RSval: 0x3ad08088
+B BAL JR :: 0x2497d093, RSval: 0x2497d08d
+B BAL JR :: 0x2056cd40, RSval: 0x2056cd3a
+B BAL JR :: 0x2d15ebe9, RSval: 0x2d15ebe3
+B BAL JR :: 0x29d4f65a, RSval: 0x29d4f654
+B BAL JR :: 0xffffffffc5a9267f, RSval: 0xffffffffc5a92679
+B BAL JR :: 0xffffffffc1683bd4, RSval: 0xffffffffc1683bce
+B BAL JR :: 0xffffffffcc2b1d1d, RSval: 0xffffffffcc2b1d17
+B BAL JR :: 0xffffffffc8ea00a6, RSval: 0xffffffffc8ea00a0
+B BAL JR :: 0xffffffffd6ad50ab, RSval: 0xffffffffd6ad50a5
+B BAL JR :: 0xffffffffd26c4d18, RSval: 0xffffffffd26c4d12
+B BAL JR :: 0xffffffffdf2f6bd1, RSval: 0xffffffffdf2f6bcb
+B BAL JR :: 0xffffffffdbee7682, RSval: 0xffffffffdbee767c
+B BAL JR :: 0xffffffffe3a1cbc7, RSval: 0xffffffffe3a1cbc1
+B BAL JR :: 0xffffffffe760d67c, RSval: 0xffffffffe760d676
+B BAL JR :: 0xffffffffea23f0b5, RSval: 0xffffffffea23f0af
+B BAL JR :: 0xffffffffeee2ed1e, RSval: 0xffffffffeee2ed18
+B BAL JR :: 0xfffffffff0a5bd23, RSval: 0xfffffffff0a5bd1d
+B BAL JR :: 0xfffffffff464a0b0, RSval: 0xfffffffff464a0aa
+B BAL JR :: 0xfffffffff9278679, RSval: 0xfffffffff9278673
+B BAL JR :: 0xfffffffffde69bca, RSval: 0xfffffffffde69bc4
+B BAL JR :: 0xffffffff89b8fd0f, RSval: 0xffffffff89b8fd09
+B BAL JR :: 0xffffffff8d79e0c4, RSval: 0xffffffff8d79e0be
+B BAL JR :: 0xffffffff803ac66d, RSval: 0xffffffff803ac667
+B BAL JR :: 0xffffffff84fbdbd6, RSval: 0xffffffff84fbdbd0
+B BAL JR :: 0xffffffff9abc8bdb, RSval: 0xffffffff9abc8bd5
+B BAL JR :: 0xffffffff9e7d9668, RSval: 0xffffffff9e7d9662
+B BAL JR :: 0xffffffff933eb0c1, RSval: 0xffffffff933eb0bb
+B BAL JR :: 0xffffffff97ffad12, RSval: 0xffffffff97ffad0c
+B BAL JR :: 0xffffffffafb010b7, RSval: 0xffffffffafb010b1
+B BAL JR :: 0xffffffffab710d0c, RSval: 0xffffffffab710d06
+B BAL JR :: 0xffffffffa6322be5, RSval: 0xffffffffa6322bdf
+B BAL JR :: 0xffffffffa2f3366e, RSval: 0xffffffffa2f33668
+B BAL JR :: 0xffffffffbcb46673, RSval: 0xffffffffbcb4666d
+B BAL JR :: 0xffffffffb8757be0, RSval: 0xffffffffb8757bda
+B BAL JR :: 0xffffffffb5365d09, RSval: 0xffffffffb5365d03
+B BAL JR :: 0xffffffffb1f740ba, RSval: 0xffffffffb1f740b4
+--- BEQ ---  if RSval == RTval then out = RDval + 1 else out = RDval + 6
+beq :: out: 0x6, RSval: 0x0, RTval: 0x1
+beq :: out: 0x2, RSval: 0x1, RTval: 0x1
+beq :: out: 0x3, RSval: 0xffffffff, RTval: 0xffffffff
+beq :: out: 0x9, RSval: 0xffffffff, RTval: 0xfffffffe
+beq :: out: 0xa, RSval: 0xfffffffe, RTval: 0xffffffff
+beq :: out: 0x6, RSval: 0xffffffff, RTval: 0xffffffff
+beq :: out: 0x7, RSval: 0x5, RTval: 0x5
+beq :: out: 0xd, RSval: 0xfffffffffffffffd, RTval: 0xfffffffffffffffc
+beq :: out: 0x9, RSval: 0x7d, RTval: 0x7d
+beq :: out: 0xa, RSval: 0x80000000, RTval: 0x80000000
+beq :: out: 0x10, RSval: 0xffffffff, RTval: 0x80000000
+beq :: out: 0xc, RSval: 0x256, RTval: 0x256
+beq :: out: 0xd, RSval: 0x55, RTval: 0x55
+beq :: out: 0x13, RSval: 0xfff, RTval: 0xdd
+beq :: out: 0x14, RSval: 0xffffffffffffffff, RTval: 0x5
+beq :: out: 0x10, RSval: 0xffffffffffffffff, RTval: 0xffffffffffffffff
+--- BGEZ ---  if RSval >= 0 then out = RDval + 1 else out = RDval + 9
+bgez :: out: 0x1, RSval: 0x0
+bgez :: out: 0x2, RSval: 0x1
+bgez :: out: 0xb, RSval: 0xffffffff
+bgez :: out: 0xc, RSval: 0xffffffff
+bgez :: out: 0xd, RSval: 0xfffffffe
+bgez :: out: 0xe, RSval: 0xffffffff
+bgez :: out: 0x7, RSval: 0x5
+bgez :: out: 0x10, RSval: 0xfffffffffffffffd
+bgez :: out: 0x9, RSval: 0x7d
+bgez :: out: 0x12, RSval: 0x80000000
+bgez :: out: 0x13, RSval: 0xffffffff
+bgez :: out: 0xc, RSval: 0x256
+bgez :: out: 0xd, RSval: 0x55
+bgez :: out: 0xe, RSval: 0xfff
+bgez :: out: 0x17, RSval: 0xffffffffffffffff
+bgez :: out: 0x18, RSval: 0xffffffffffffffff
+--- BGEZAL ---  if RSval >= 0 then out = RDval + 1 else out = RDval + 6
+bgezal :: out: 0x6, RSval: 0x0
+bgezal :: out: 0x7, RSval: 0x1
+bgezal :: out: 0x7, RSval: 0xffffffff
+bgezal :: out: 0x8, RSval: 0xffffffff
+bgezal :: out: 0x9, RSval: 0xfffffffe
+bgezal :: out: 0xa, RSval: 0xffffffff
+bgezal :: out: 0xc, RSval: 0x5
+bgezal :: out: 0xc, RSval: 0xfffffffffffffffd
+bgezal :: out: 0xe, RSval: 0x7d
+bgezal :: out: 0xe, RSval: 0x80000000
+bgezal :: out: 0xf, RSval: 0xffffffff
+bgezal :: out: 0x11, RSval: 0x256
+bgezal :: out: 0x12, RSval: 0x55
+bgezal :: out: 0x13, RSval: 0xfff
+bgezal :: out: 0x13, RSval: 0xffffffffffffffff
+bgezal :: out: 0x14, RSval: 0xffffffffffffffff
+--- BGTZ ---  if RSval > 0 then out = RDval + 1 else out = RDval + 9
+bgtz :: out: 0x9, RSval: 0x0
+bgtz :: out: 0x2, RSval: 0x1
+bgtz :: out: 0xb, RSval: 0xffffffff
+bgtz :: out: 0xc, RSval: 0xffffffff
+bgtz :: out: 0xd, RSval: 0xfffffffe
+bgtz :: out: 0xe, RSval: 0xffffffff
+bgtz :: out: 0x7, RSval: 0x5
+bgtz :: out: 0x10, RSval: 0xfffffffffffffffd
+bgtz :: out: 0x9, RSval: 0x7d
+bgtz :: out: 0x12, RSval: 0x80000000
+bgtz :: out: 0x13, RSval: 0xffffffff
+bgtz :: out: 0xc, RSval: 0x256
+bgtz :: out: 0xd, RSval: 0x55
+bgtz :: out: 0xe, RSval: 0xfff
+bgtz :: out: 0x17, RSval: 0xffffffffffffffff
+bgtz :: out: 0x18, RSval: 0xffffffffffffffff
+--- BLEZ ---  if RSval <= 0 then out = RDval + 1 else out = RDval + 9
+blez :: out: 0x1, RSval: 0x0
+blez :: out: 0xa, RSval: 0x1
+blez :: out: 0x3, RSval: 0xffffffff
+blez :: out: 0x4, RSval: 0xffffffff
+blez :: out: 0x5, RSval: 0xfffffffe
+blez :: out: 0x6, RSval: 0xffffffff
+blez :: out: 0xf, RSval: 0x5
+blez :: out: 0x8, RSval: 0xfffffffffffffffd
+blez :: out: 0x11, RSval: 0x7d
+blez :: out: 0xa, RSval: 0x80000000
+blez :: out: 0xb, RSval: 0xffffffff
+blez :: out: 0x14, RSval: 0x256
+blez :: out: 0x15, RSval: 0x55
+blez :: out: 0x16, RSval: 0xfff
+blez :: out: 0xf, RSval: 0xffffffffffffffff
+blez :: out: 0x10, RSval: 0xffffffffffffffff
+--- BLTZ ---  if RSval < 0 then out = RDval + 1 else out = RDval + 9
+bltz :: out: 0x9, RSval: 0x0
+bltz :: out: 0xa, RSval: 0x1
+bltz :: out: 0x3, RSval: 0xffffffff
+bltz :: out: 0x4, RSval: 0xffffffff
+bltz :: out: 0x5, RSval: 0xfffffffe
+bltz :: out: 0x6, RSval: 0xffffffff
+bltz :: out: 0xf, RSval: 0x5
+bltz :: out: 0x8, RSval: 0xfffffffffffffffd
+bltz :: out: 0x11, RSval: 0x7d
+bltz :: out: 0xa, RSval: 0x80000000
+bltz :: out: 0xb, RSval: 0xffffffff
+bltz :: out: 0x14, RSval: 0x256
+bltz :: out: 0x15, RSval: 0x55
+bltz :: out: 0x16, RSval: 0xfff
+bltz :: out: 0xf, RSval: 0xffffffffffffffff
+bltz :: out: 0x10, RSval: 0xffffffffffffffff
+--- BLTZAL ---  if RSval < 0 then out = RDval + 1 else out = RDval + 6
+bltzal :: out: 0x5, RSval: 0x0
+bltzal :: out: 0x6, RSval: 0x1
+bltzal :: out: 0x8, RSval: 0xffffffff
+bltzal :: out: 0x9, RSval: 0xffffffff
+bltzal :: out: 0xa, RSval: 0xfffffffe
+bltzal :: out: 0xb, RSval: 0xffffffff
+bltzal :: out: 0xb, RSval: 0x5
+bltzal :: out: 0xd, RSval: 0xfffffffffffffffd
+bltzal :: out: 0xd, RSval: 0x7d
+bltzal :: out: 0xf, RSval: 0x80000000
+bltzal :: out: 0x10, RSval: 0xffffffff
+bltzal :: out: 0x10, RSval: 0x256
+bltzal :: out: 0x11, RSval: 0x55
+bltzal :: out: 0x12, RSval: 0xfff
+bltzal :: out: 0x14, RSval: 0xffffffffffffffff
+bltzal :: out: 0x15, RSval: 0xffffffffffffffff
+--- BNE ---  if RSval != RTval then out = RDval + 1 else out = RDval + 6
+bne :: out: 0x1, RSval: 0x0, RTval: 0x1
+bne :: out: 0x7, RSval: 0x1, RTval: 0x1
+bne :: out: 0x8, RSval: 0xffffffff, RTval: 0xffffffff
+bne :: out: 0x4, RSval: 0xffffffff, RTval: 0xfffffffe
+bne :: out: 0x5, RSval: 0xfffffffe, RTval: 0xffffffff
+bne :: out: 0xb, RSval: 0xffffffff, RTval: 0xffffffff
+bne :: out: 0xc, RSval: 0x5, RTval: 0x5
+bne :: out: 0x8, RSval: 0xfffffffffffffffd, RTval: 0xfffffffffffffffc
+bne :: out: 0xe, RSval: 0x7d, RTval: 0x7d
+bne :: out: 0xf, RSval: 0x80000000, RTval: 0x80000000
+bne :: out: 0xb, RSval: 0xffffffff, RTval: 0x80000000
+bne :: out: 0x11, RSval: 0x256, RTval: 0x256
+bne :: out: 0x12, RSval: 0x55, RTval: 0x55
+bne :: out: 0xe, RSval: 0xfff, RTval: 0xdd
+bne :: out: 0xf, RSval: 0xffffffffffffffff, RTval: 0x5
+bne :: out: 0x15, RSval: 0xffffffffffffffff, RTval: 0xffffffffffffffff
+JAL, JR 
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0x9823b74, RSval: 0x9823b6e
+BAL JR JAL :: 0xd4326df, RSval: 0xd4326d9
+BAL JR JAL :: 0x130476e2, RSval: 0x130476dc
+BAL JR JAL :: 0x17c56b71, RSval: 0x17c56b6b
+BAL JR JAL :: 0x1a864db8, RSval: 0x1a864db2
+BAL JR JAL :: 0x1e47500b, RSval: 0x1e475005
+BAL JR JAL :: 0x2608edbe, RSval: 0x2608edb8
+BAL JR JAL :: 0x22c9f015, RSval: 0x22c9f00f
+BAL JR JAL :: 0x2f8ad6dc, RSval: 0x2f8ad6d6
+BAL JR JAL :: 0x2b4bcb67, RSval: 0x2b4bcb61
+BAL JR JAL :: 0x350c9b6a, RSval: 0x350c9b64
+BAL JR JAL :: 0x31cd86d9, RSval: 0x31cd86d3
+BAL JR JAL :: 0x3c8ea010, RSval: 0x3c8ea00a
+BAL JR JAL :: 0x384fbdc3, RSval: 0x384fbdbd
+BAL JR JAL :: 0x4c11db76, RSval: 0x4c11db70
+BAL JR JAL :: 0x48d0c6cd, RSval: 0x48d0c6c7
+BAL JR JAL :: 0x4593e024, RSval: 0x4593e01e
+BAL JR JAL :: 0x4152fdaf, RSval: 0x4152fda9
+BAL JR JAL :: 0x5f15adb2, RSval: 0x5f15adac
+BAL JR JAL :: 0x5bd4b021, RSval: 0x5bd4b01b
+BAL JR JAL :: 0x569796c8, RSval: 0x569796c2
+BAL JR JAL :: 0x52568b7b, RSval: 0x52568b75
+BAL JR JAL :: 0x6a1936ce, RSval: 0x6a1936c8
+BAL JR JAL :: 0x6ed82b85, RSval: 0x6ed82b7f
+BAL JR JAL :: 0x639b0dac, RSval: 0x639b0da6
+BAL JR JAL :: 0x675a1017, RSval: 0x675a1011
+BAL JR JAL :: 0x791d401a, RSval: 0x791d4014
+BAL JR JAL :: 0x7ddc5da9, RSval: 0x7ddc5da3
+BAL JR JAL :: 0x709f7b80, RSval: 0x709f7b7a
+BAL JR JAL :: 0x745e66d3, RSval: 0x745e66cd
+BAL JR JAL :: 0xffffffff9823b6e6, RSval: 0xffffffff9823b6e0
+BAL JR JAL :: 0xffffffff9ce2ab5d, RSval: 0xffffffff9ce2ab57
+BAL JR JAL :: 0xffffffff91a18d94, RSval: 0xffffffff91a18d8e
+BAL JR JAL :: 0xffffffff9560903f, RSval: 0xffffffff95609039
+BAL JR JAL :: 0xffffffff8b27c042, RSval: 0xffffffff8b27c03c
+BAL JR JAL :: 0xffffffff8fe6dd91, RSval: 0xffffffff8fe6dd8b
+BAL JR JAL :: 0xffffffff82a5fb58, RSval: 0xffffffff82a5fb52
+BAL JR JAL :: 0xffffffff8664e6eb, RSval: 0xffffffff8664e6e5
+BAL JR JAL :: 0xffffffffbe2b5b5e, RSval: 0xffffffffbe2b5b58
+BAL JR JAL :: 0xffffffffbaea46f5, RSval: 0xffffffffbaea46ef
+BAL JR JAL :: 0xffffffffb7a9603c, RSval: 0xffffffffb7a96036
+BAL JR JAL :: 0xffffffffb3687d87, RSval: 0xffffffffb3687d81
+BAL JR JAL :: 0xffffffffad2f2d8a, RSval: 0xffffffffad2f2d84
+BAL JR JAL :: 0xffffffffa9ee3039, RSval: 0xffffffffa9ee3033
+BAL JR JAL :: 0xffffffffa4ad16f0, RSval: 0xffffffffa4ad16ea
+BAL JR JAL :: 0xffffffffa06c0b63, RSval: 0xffffffffa06c0b5d
+BAL JR JAL :: 0xffffffffd4326d96, RSval: 0xffffffffd4326d90
+BAL JR JAL :: 0xffffffffd0f3702d, RSval: 0xffffffffd0f37027
+BAL JR JAL :: 0xffffffffddb05704, RSval: 0xffffffffddb056fe
+BAL JR JAL :: 0xffffffffd9714b4f, RSval: 0xffffffffd9714b49
+BAL JR JAL :: 0xffffffffc7361b52, RSval: 0xffffffffc7361b4c
+BAL JR JAL :: 0xffffffffc3f70701, RSval: 0xffffffffc3f706fb
+BAL JR JAL :: 0xffffffffceb42028, RSval: 0xffffffffceb42022
+BAL JR JAL :: 0xffffffffca753d9b, RSval: 0xffffffffca753d95
+BAL JR JAL :: 0xfffffffff23a802e, RSval: 0xfffffffff23a8028
+BAL JR JAL :: 0xfffffffff6fb9da5, RSval: 0xfffffffff6fb9d9f
+BAL JR JAL :: 0xfffffffffbb8bb4c, RSval: 0xfffffffffbb8bb46
+BAL JR JAL :: 0xffffffffff79a6f7, RSval: 0xffffffffff79a6f1
+BAL JR JAL :: 0xffffffffe13ef6fa, RSval: 0xffffffffe13ef6f4
+BAL JR JAL :: 0xffffffffe5ffeb49, RSval: 0xffffffffe5ffeb43
+BAL JR JAL :: 0xffffffffe8bccda0, RSval: 0xffffffffe8bccd9a
+BAL JR JAL :: 0xffffffffec7dd033, RSval: 0xffffffffec7dd02d
+BAL JR JAL :: 0x3486707d, RSval: 0x34867077
+BAL JR JAL :: 0x30476dc6, RSval: 0x30476dc0
+BAL JR JAL :: 0x3d044b1f, RSval: 0x3d044b19
+BAL JR JAL :: 0x39c556b4, RSval: 0x39c556ae
+BAL JR JAL :: 0x278206b1, RSval: 0x278206ab
+BAL JR JAL :: 0x23431b22, RSval: 0x23431b1c
+BAL JR JAL :: 0x2e003dcb, RSval: 0x2e003dc5
+BAL JR JAL :: 0x2ac12078, RSval: 0x2ac12072
+BAL JR JAL :: 0x128e9dd5, RSval: 0x128e9dcf
+BAL JR JAL :: 0x164f807e, RSval: 0x164f8078
+BAL JR JAL :: 0x1b0ca6a7, RSval: 0x1b0ca6a1
+BAL JR JAL :: 0x1fcdbb1c, RSval: 0x1fcdbb16
+BAL JR JAL :: 0x18aeb19, RSval: 0x18aeb13
+BAL JR JAL :: 0x54bf6aa, RSval: 0x54bf6a4
+BAL JR JAL :: 0x808d083, RSval: 0x808d07d
+BAL JR JAL :: 0xcc9cdd0, RSval: 0xcc9cdca
+BAL JR JAL :: 0x7897ab0d, RSval: 0x7897ab07
+BAL JR JAL :: 0x7c56b6b6, RSval: 0x7c56b6b0
+BAL JR JAL :: 0x7115906f, RSval: 0x71159069
+BAL JR JAL :: 0x75d48de4, RSval: 0x75d48dde
+BAL JR JAL :: 0x6b93dde1, RSval: 0x6b93dddb
+BAL JR JAL :: 0x6f52c072, RSval: 0x6f52c06c
+BAL JR JAL :: 0x6211e6bb, RSval: 0x6211e6b5
+BAL JR JAL :: 0x66d0fb08, RSval: 0x66d0fb02
+BAL JR JAL :: 0x5e9f46c5, RSval: 0x5e9f46bf
+BAL JR JAL :: 0x5a5e5b0e, RSval: 0x5a5e5b08
+BAL JR JAL :: 0x571d7dd7, RSval: 0x571d7dd1
+BAL JR JAL :: 0x53dc606c, RSval: 0x53dc6066
+BAL JR JAL :: 0x4d9b3069, RSval: 0x4d9b3063
+BAL JR JAL :: 0x495a2dda, RSval: 0x495a2dd4
+BAL JR JAL :: 0x44190b13, RSval: 0x44190b0d
+BAL JR JAL :: 0x40d816c0, RSval: 0x40d816ba
+BAL JR JAL :: 0xffffffffaca5c69d, RSval: 0xffffffffaca5c697
+BAL JR JAL :: 0xffffffffa864db26, RSval: 0xffffffffa864db20
+BAL JR JAL :: 0xffffffffa527fdff, RSval: 0xffffffffa527fdf9
+BAL JR JAL :: 0xffffffffa1e6e054, RSval: 0xffffffffa1e6e04e
+BAL JR JAL :: 0xffffffffbfa1b051, RSval: 0xffffffffbfa1b04b
+BAL JR JAL :: 0xffffffffbb60ae02, RSval: 0xffffffffbb60adfc
+BAL JR JAL :: 0xffffffffb6238b2b, RSval: 0xffffffffb6238b25
+BAL JR JAL :: 0xffffffffb2e29698, RSval: 0xffffffffb2e29692
+BAL JR JAL :: 0xffffffff8aad2b35, RSval: 0xffffffff8aad2b2f
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0xffffffff87ee0dfc, RSval: 0xffffffff87ee0df6
+BAL JR JAL :: 0xffffffff99a95df9, RSval: 0xffffffff99a95df3
+BAL JR JAL :: 0xffffffff9d68404a, RSval: 0xffffffff9d684044
+BAL JR JAL :: 0xffffffff902b66a3, RSval: 0xffffffff902b669d
+BAL JR JAL :: 0xffffffff94ea7b30, RSval: 0xffffffff94ea7b2a
+BAL JR JAL :: 0xffffffffe0b41ded, RSval: 0xffffffffe0b41de7
+BAL JR JAL :: 0xffffffffe4750056, RSval: 0xffffffffe4750050
+BAL JR JAL :: 0xffffffffe936268f, RSval: 0xffffffffe9362689
+BAL JR JAL :: 0xffffffffedf73b44, RSval: 0xffffffffedf73b3e
+BAL JR JAL :: 0xfffffffff3b06b41, RSval: 0xfffffffff3b06b3b
+BAL JR JAL :: 0xfffffffff7717692, RSval: 0xfffffffff771768c
+BAL JR JAL :: 0xfffffffffa32505b, RSval: 0xfffffffffa325055
+BAL JR JAL :: 0xfffffffffef34de8, RSval: 0xfffffffffef34de2
+BAL JR JAL :: 0xffffffffc6bcf065, RSval: 0xffffffffc6bcf05f
+BAL JR JAL :: 0xffffffffc27dedee, RSval: 0xffffffffc27dede8
+BAL JR JAL :: 0xffffffffcf3ecb37, RSval: 0xffffffffcf3ecb31
+BAL JR JAL :: 0xffffffffcbffd68c, RSval: 0xffffffffcbffd686
+BAL JR JAL :: 0xffffffffd5b88689, RSval: 0xffffffffd5b88683
+BAL JR JAL :: 0xffffffffd1799b3a, RSval: 0xffffffffd1799b34
+BAL JR JAL :: 0xffffffffdc3abdf3, RSval: 0xffffffffdc3abded
+BAL JR JAL :: 0xffffffffd8fba060, RSval: 0xffffffffd8fba05a
+BAL JR JAL :: 0x690ce0f4, RSval: 0x690ce0ee
+BAL JR JAL :: 0x6dcdfd5f, RSval: 0x6dcdfd59
+BAL JR JAL :: 0x608edb86, RSval: 0x608edb80
+BAL JR JAL :: 0x644fc63d, RSval: 0x644fc637
+BAL JR JAL :: 0x7a089638, RSval: 0x7a089632
+BAL JR JAL :: 0x7ec98b8b, RSval: 0x7ec98b85
+BAL JR JAL :: 0x738aad62, RSval: 0x738aad5c
+BAL JR JAL :: 0x774bb0f1, RSval: 0x774bb0eb
+BAL JR JAL :: 0x4f040d5c, RSval: 0x4f040d56
+BAL JR JAL :: 0x4bc510e7, RSval: 0x4bc510e1
+BAL JR JAL :: 0x4686363e, RSval: 0x46863638
+BAL JR JAL :: 0x42472b95, RSval: 0x42472b8f
+BAL JR JAL :: 0x5c007b90, RSval: 0x5c007b8a
+BAL JR JAL :: 0x58c16643, RSval: 0x58c1663d
+BAL JR JAL :: 0x558240ea, RSval: 0x558240e4
+BAL JR JAL :: 0x51435d59, RSval: 0x51435d53
+BAL JR JAL :: 0x251d3ba4, RSval: 0x251d3b9e
+BAL JR JAL :: 0x21dc262f, RSval: 0x21dc2629
+BAL JR JAL :: 0x2c9f00f6, RSval: 0x2c9f00f0
+BAL JR JAL :: 0x285e1d4d, RSval: 0x285e1d47
+BAL JR JAL :: 0x36194d48, RSval: 0x36194d42
+BAL JR JAL :: 0x32d850fb, RSval: 0x32d850f5
+BAL JR JAL :: 0x3f9b7632, RSval: 0x3f9b762c
+BAL JR JAL :: 0x3b5a6ba1, RSval: 0x3b5a6b9b
+BAL JR JAL :: 0x315d62c, RSval: 0x315d626
+BAL JR JAL :: 0x7d4cb97, RSval: 0x7d4cb91
+BAL JR JAL :: 0xa97ed4e, RSval: 0xa97ed48
+BAL JR JAL :: 0xe56f105, RSval: 0xe56f0ff
+BAL JR JAL :: 0x1011a100, RSval: 0x1011a0fa
+BAL JR JAL :: 0x14d0bd53, RSval: 0x14d0bd4d
+BAL JR JAL :: 0x19939b9a, RSval: 0x19939b94
+BAL JR JAL :: 0x1d528629, RSval: 0x1d528623
+BAL JR JAL :: 0xfffffffff12f5614, RSval: 0xfffffffff12f560e
+BAL JR JAL :: 0xfffffffff5ee4bbf, RSval: 0xfffffffff5ee4bb9
+BAL JR JAL :: 0xfffffffff8ad6d66, RSval: 0xfffffffff8ad6d60
+BAL JR JAL :: 0xfffffffffc6c70dd, RSval: 0xfffffffffc6c70d7
+BAL JR JAL :: 0xffffffffe22b20d8, RSval: 0xffffffffe22b20d2
+BAL JR JAL :: 0xffffffffe6ea3d6b, RSval: 0xffffffffe6ea3d65
+BAL JR JAL :: 0xffffffffeba91bc2, RSval: 0xffffffffeba91bbc
+BAL JR JAL :: 0xffffffffef680611, RSval: 0xffffffffef68060b
+BAL JR JAL :: 0xffffffffd727bbbc, RSval: 0xffffffffd727bbb6
+BAL JR JAL :: 0xffffffffd3e6a607, RSval: 0xffffffffd3e6a601
+BAL JR JAL :: 0xffffffffdea580de, RSval: 0xffffffffdea580d8
+BAL JR JAL :: 0xffffffffda649d75, RSval: 0xffffffffda649d6f
+BAL JR JAL :: 0xffffffffc423cd70, RSval: 0xffffffffc423cd6a
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0xffffffffcda1f60a, RSval: 0xffffffffcda1f604
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0xffffffffbd3e8d84, RSval: 0xffffffffbd3e8d7e
+BAL JR JAL :: 0xffffffffb9ff90cf, RSval: 0xffffffffb9ff90c9
+BAL JR JAL :: 0xffffffffb4bcb616, RSval: 0xffffffffb4bcb610
+BAL JR JAL :: 0xffffffffb07dabad, RSval: 0xffffffffb07daba7
+BAL JR JAL :: 0xffffffffae3afba8, RSval: 0xffffffffae3afba2
+BAL JR JAL :: 0xffffffffaafbe61b, RSval: 0xffffffffaafbe615
+BAL JR JAL :: 0xffffffffa7b8c0d2, RSval: 0xffffffffa7b8c0cc
+BAL JR JAL :: 0xffffffffa379dd81, RSval: 0xffffffffa379dd7b
+BAL JR JAL :: 0xffffffff9b3660cc, RSval: 0xffffffff9b3660c6
+BAL JR JAL :: 0xffffffff9ff77d77, RSval: 0xffffffff9ff77d71
+BAL JR JAL :: 0xffffffff92b45bae, RSval: 0xffffffff92b45ba8
+BAL JR JAL :: 0xffffffff96754625, RSval: 0xffffffff9675461f
+BAL JR JAL :: 0xffffffff88321620, RSval: 0xffffffff8832161a
+BAL JR JAL :: 0xffffffff8cf30bb3, RSval: 0xffffffff8cf30bad
+BAL JR JAL :: 0xffffffff81b02d7a, RSval: 0xffffffff81b02d74
+BAL JR JAL :: 0xffffffff857130c9, RSval: 0xffffffff857130c3
+BAL JR JAL :: 0x5d8a909f, RSval: 0x5d8a9099
+BAL JR JAL :: 0x594b8d34, RSval: 0x594b8d2e
+BAL JR JAL :: 0x5408abfd, RSval: 0x5408abf7
+BAL JR JAL :: 0x50c9b646, RSval: 0x50c9b640
+BAL JR JAL :: 0x4e8ee64b, RSval: 0x4e8ee645
+BAL JR JAL :: 0x4a4ffbf8, RSval: 0x4a4ffbf2
+BAL JR JAL :: 0x470cdd31, RSval: 0x470cdd2b
+BAL JR JAL :: 0x43cdc0a2, RSval: 0x43cdc09c
+BAL JR JAL :: 0x7b827d27, RSval: 0x7b827d21
+BAL JR JAL :: 0x7f43609c, RSval: 0x7f436096
+BAL JR JAL :: 0x72004655, RSval: 0x7200464f
+BAL JR JAL :: 0x76c15bfe, RSval: 0x76c15bf8
+BAL JR JAL :: 0x68860c03, RSval: 0x68860bfd
+BAL JR JAL :: 0x6c471650, RSval: 0x6c47164a
+BAL JR JAL :: 0x61043099, RSval: 0x61043093
+BAL JR JAL :: 0x65c52d2a, RSval: 0x65c52d24
+BAL JR JAL :: 0x119b4bef, RSval: 0x119b4be9
+BAL JR JAL :: 0x155a5664, RSval: 0x155a565e
+BAL JR JAL :: 0x1819708d, RSval: 0x18197087
+BAL JR JAL :: 0x1cd86d36, RSval: 0x1cd86d30
+BAL JR JAL :: 0x29f3d3b, RSval: 0x29f3d35
+BAL JR JAL :: 0x65e2088, RSval: 0x65e2082
+BAL JR JAL :: 0xb1d0661, RSval: 0xb1d065b
+BAL JR JAL :: 0xfdc1bf2, RSval: 0xfdc1bec
+BAL JR JAL :: 0x3793a657, RSval: 0x3793a651
+BAL JR JAL :: 0x3352bbec, RSval: 0x3352bbe6
+BAL JR JAL :: 0x3e119d45, RSval: 0x3e119d3f
+BAL JR JAL :: 0x3ad0808e, RSval: 0x3ad08088
+BAL JR JAL :: 0x2497d093, RSval: 0x2497d08d
+BAL JR JAL :: 0x2056cd40, RSval: 0x2056cd3a
+BAL JR JAL :: 0x2d15ebe9, RSval: 0x2d15ebe3
+BAL JR JAL :: 0x29d4f65a, RSval: 0x29d4f654
+BAL JR JAL :: 0xffffffffc5a9267f, RSval: 0xffffffffc5a92679
+BAL JR JAL :: 0xffffffffc1683bd4, RSval: 0xffffffffc1683bce
+BAL JR JAL :: 0xffffffffcc2b1d1d, RSval: 0xffffffffcc2b1d17
+BAL JR JAL :: 0xffffffffc8ea00a6, RSval: 0xffffffffc8ea00a0
+BAL JR JAL :: 0xffffffffd6ad50ab, RSval: 0xffffffffd6ad50a5
+BAL JR JAL :: 0xffffffffd26c4d18, RSval: 0xffffffffd26c4d12
+BAL JR JAL :: 0xffffffffdf2f6bd1, RSval: 0xffffffffdf2f6bcb
+BAL JR JAL :: 0xffffffffdbee7682, RSval: 0xffffffffdbee767c
+BAL JR JAL :: 0xffffffffe3a1cbc7, RSval: 0xffffffffe3a1cbc1
+BAL JR JAL :: 0xffffffffe760d67c, RSval: 0xffffffffe760d676
+BAL JR JAL :: 0xffffffffea23f0b5, RSval: 0xffffffffea23f0af
+BAL JR JAL :: 0xffffffffeee2ed1e, RSval: 0xffffffffeee2ed18
+BAL JR JAL :: 0xfffffffff0a5bd23, RSval: 0xfffffffff0a5bd1d
+BAL JR JAL :: 0xfffffffff464a0b0, RSval: 0xfffffffff464a0aa
+BAL JR JAL :: 0xfffffffff9278679, RSval: 0xfffffffff9278673
+BAL JR JAL :: 0xfffffffffde69bca, RSval: 0xfffffffffde69bc4
+BAL JR JAL :: 0xffffffff89b8fd0f, RSval: 0xffffffff89b8fd09
+BAL JR JAL :: 0xffffffff8d79e0c4, RSval: 0xffffffff8d79e0be
+BAL JR JAL :: 0xffffffff803ac66d, RSval: 0xffffffff803ac667
+BAL JR JAL :: 0xffffffff84fbdbd6, RSval: 0xffffffff84fbdbd0
+BAL JR JAL :: 0xffffffff9abc8bdb, RSval: 0xffffffff9abc8bd5
+BAL JR JAL :: 0xffffffff9e7d9668, RSval: 0xffffffff9e7d9662
+BAL JR JAL :: 0xffffffff933eb0c1, RSval: 0xffffffff933eb0bb
+BAL JR JAL :: 0xffffffff97ffad12, RSval: 0xffffffff97ffad0c
+BAL JR JAL :: 0xffffffffafb010b7, RSval: 0xffffffffafb010b1
+BAL JR JAL :: 0xffffffffab710d0c, RSval: 0xffffffffab710d06
+BAL JR JAL :: 0xffffffffa6322be5, RSval: 0xffffffffa6322bdf
+BAL JR JAL :: 0xffffffffa2f3366e, RSval: 0xffffffffa2f33668
+BAL JR JAL :: 0xffffffffbcb46673, RSval: 0xffffffffbcb4666d
+BAL JR JAL :: 0xffffffffb8757be0, RSval: 0xffffffffb8757bda
+BAL JR JAL :: 0xffffffffb5365d09, RSval: 0xffffffffb5365d03
+BAL JR JAL :: 0xffffffffb1f740ba, RSval: 0xffffffffb1f740b4
+J, JALR 
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0x9823b74, RSval: 0x9823b6e
+BAL JR JAL :: 0xd4326df, RSval: 0xd4326d9
+BAL JR JAL :: 0x130476e2, RSval: 0x130476dc
+BAL JR JAL :: 0x17c56b71, RSval: 0x17c56b6b
+BAL JR JAL :: 0x1a864db8, RSval: 0x1a864db2
+BAL JR JAL :: 0x1e47500b, RSval: 0x1e475005
+BAL JR JAL :: 0x2608edbe, RSval: 0x2608edb8
+BAL JR JAL :: 0x22c9f015, RSval: 0x22c9f00f
+BAL JR JAL :: 0x2f8ad6dc, RSval: 0x2f8ad6d6
+BAL JR JAL :: 0x2b4bcb67, RSval: 0x2b4bcb61
+BAL JR JAL :: 0x350c9b6a, RSval: 0x350c9b64
+BAL JR JAL :: 0x31cd86d9, RSval: 0x31cd86d3
+BAL JR JAL :: 0x3c8ea010, RSval: 0x3c8ea00a
+BAL JR JAL :: 0x384fbdc3, RSval: 0x384fbdbd
+BAL JR JAL :: 0x4c11db76, RSval: 0x4c11db70
+BAL JR JAL :: 0x48d0c6cd, RSval: 0x48d0c6c7
+BAL JR JAL :: 0x4593e024, RSval: 0x4593e01e
+BAL JR JAL :: 0x4152fdaf, RSval: 0x4152fda9
+BAL JR JAL :: 0x5f15adb2, RSval: 0x5f15adac
+BAL JR JAL :: 0x5bd4b021, RSval: 0x5bd4b01b
+BAL JR JAL :: 0x569796c8, RSval: 0x569796c2
+BAL JR JAL :: 0x52568b7b, RSval: 0x52568b75
+BAL JR JAL :: 0x6a1936ce, RSval: 0x6a1936c8
+BAL JR JAL :: 0x6ed82b85, RSval: 0x6ed82b7f
+BAL JR JAL :: 0x639b0dac, RSval: 0x639b0da6
+BAL JR JAL :: 0x675a1017, RSval: 0x675a1011
+BAL JR JAL :: 0x791d401a, RSval: 0x791d4014
+BAL JR JAL :: 0x7ddc5da9, RSval: 0x7ddc5da3
+BAL JR JAL :: 0x709f7b80, RSval: 0x709f7b7a
+BAL JR JAL :: 0x745e66d3, RSval: 0x745e66cd
+BAL JR JAL :: 0xffffffff9823b6e6, RSval: 0xffffffff9823b6e0
+BAL JR JAL :: 0xffffffff9ce2ab5d, RSval: 0xffffffff9ce2ab57
+BAL JR JAL :: 0xffffffff91a18d94, RSval: 0xffffffff91a18d8e
+BAL JR JAL :: 0xffffffff9560903f, RSval: 0xffffffff95609039
+BAL JR JAL :: 0xffffffff8b27c042, RSval: 0xffffffff8b27c03c
+BAL JR JAL :: 0xffffffff8fe6dd91, RSval: 0xffffffff8fe6dd8b
+BAL JR JAL :: 0xffffffff82a5fb58, RSval: 0xffffffff82a5fb52
+BAL JR JAL :: 0xffffffff8664e6eb, RSval: 0xffffffff8664e6e5
+BAL JR JAL :: 0xffffffffbe2b5b5e, RSval: 0xffffffffbe2b5b58
+BAL JR JAL :: 0xffffffffbaea46f5, RSval: 0xffffffffbaea46ef
+BAL JR JAL :: 0xffffffffb7a9603c, RSval: 0xffffffffb7a96036
+BAL JR JAL :: 0xffffffffb3687d87, RSval: 0xffffffffb3687d81
+BAL JR JAL :: 0xffffffffad2f2d8a, RSval: 0xffffffffad2f2d84
+BAL JR JAL :: 0xffffffffa9ee3039, RSval: 0xffffffffa9ee3033
+BAL JR JAL :: 0xffffffffa4ad16f0, RSval: 0xffffffffa4ad16ea
+BAL JR JAL :: 0xffffffffa06c0b63, RSval: 0xffffffffa06c0b5d
+BAL JR JAL :: 0xffffffffd4326d96, RSval: 0xffffffffd4326d90
+BAL JR JAL :: 0xffffffffd0f3702d, RSval: 0xffffffffd0f37027
+BAL JR JAL :: 0xffffffffddb05704, RSval: 0xffffffffddb056fe
+BAL JR JAL :: 0xffffffffd9714b4f, RSval: 0xffffffffd9714b49
+BAL JR JAL :: 0xffffffffc7361b52, RSval: 0xffffffffc7361b4c
+BAL JR JAL :: 0xffffffffc3f70701, RSval: 0xffffffffc3f706fb
+BAL JR JAL :: 0xffffffffceb42028, RSval: 0xffffffffceb42022
+BAL JR JAL :: 0xffffffffca753d9b, RSval: 0xffffffffca753d95
+BAL JR JAL :: 0xfffffffff23a802e, RSval: 0xfffffffff23a8028
+BAL JR JAL :: 0xfffffffff6fb9da5, RSval: 0xfffffffff6fb9d9f
+BAL JR JAL :: 0xfffffffffbb8bb4c, RSval: 0xfffffffffbb8bb46
+BAL JR JAL :: 0xffffffffff79a6f7, RSval: 0xffffffffff79a6f1
+BAL JR JAL :: 0xffffffffe13ef6fa, RSval: 0xffffffffe13ef6f4
+BAL JR JAL :: 0xffffffffe5ffeb49, RSval: 0xffffffffe5ffeb43
+BAL JR JAL :: 0xffffffffe8bccda0, RSval: 0xffffffffe8bccd9a
+BAL JR JAL :: 0xffffffffec7dd033, RSval: 0xffffffffec7dd02d
+BAL JR JAL :: 0x3486707d, RSval: 0x34867077
+BAL JR JAL :: 0x30476dc6, RSval: 0x30476dc0
+BAL JR JAL :: 0x3d044b1f, RSval: 0x3d044b19
+BAL JR JAL :: 0x39c556b4, RSval: 0x39c556ae
+BAL JR JAL :: 0x278206b1, RSval: 0x278206ab
+BAL JR JAL :: 0x23431b22, RSval: 0x23431b1c
+BAL JR JAL :: 0x2e003dcb, RSval: 0x2e003dc5
+BAL JR JAL :: 0x2ac12078, RSval: 0x2ac12072
+BAL JR JAL :: 0x128e9dd5, RSval: 0x128e9dcf
+BAL JR JAL :: 0x164f807e, RSval: 0x164f8078
+BAL JR JAL :: 0x1b0ca6a7, RSval: 0x1b0ca6a1
+BAL JR JAL :: 0x1fcdbb1c, RSval: 0x1fcdbb16
+BAL JR JAL :: 0x18aeb19, RSval: 0x18aeb13
+BAL JR JAL :: 0x54bf6aa, RSval: 0x54bf6a4
+BAL JR JAL :: 0x808d083, RSval: 0x808d07d
+BAL JR JAL :: 0xcc9cdd0, RSval: 0xcc9cdca
+BAL JR JAL :: 0x7897ab0d, RSval: 0x7897ab07
+BAL JR JAL :: 0x7c56b6b6, RSval: 0x7c56b6b0
+BAL JR JAL :: 0x7115906f, RSval: 0x71159069
+BAL JR JAL :: 0x75d48de4, RSval: 0x75d48dde
+BAL JR JAL :: 0x6b93dde1, RSval: 0x6b93dddb
+BAL JR JAL :: 0x6f52c072, RSval: 0x6f52c06c
+BAL JR JAL :: 0x6211e6bb, RSval: 0x6211e6b5
+BAL JR JAL :: 0x66d0fb08, RSval: 0x66d0fb02
+BAL JR JAL :: 0x5e9f46c5, RSval: 0x5e9f46bf
+BAL JR JAL :: 0x5a5e5b0e, RSval: 0x5a5e5b08
+BAL JR JAL :: 0x571d7dd7, RSval: 0x571d7dd1
+BAL JR JAL :: 0x53dc606c, RSval: 0x53dc6066
+BAL JR JAL :: 0x4d9b3069, RSval: 0x4d9b3063
+BAL JR JAL :: 0x495a2dda, RSval: 0x495a2dd4
+BAL JR JAL :: 0x44190b13, RSval: 0x44190b0d
+BAL JR JAL :: 0x40d816c0, RSval: 0x40d816ba
+BAL JR JAL :: 0xffffffffaca5c69d, RSval: 0xffffffffaca5c697
+BAL JR JAL :: 0xffffffffa864db26, RSval: 0xffffffffa864db20
+BAL JR JAL :: 0xffffffffa527fdff, RSval: 0xffffffffa527fdf9
+BAL JR JAL :: 0xffffffffa1e6e054, RSval: 0xffffffffa1e6e04e
+BAL JR JAL :: 0xffffffffbfa1b051, RSval: 0xffffffffbfa1b04b
+BAL JR JAL :: 0xffffffffbb60ae02, RSval: 0xffffffffbb60adfc
+BAL JR JAL :: 0xffffffffb6238b2b, RSval: 0xffffffffb6238b25
+BAL JR JAL :: 0xffffffffb2e29698, RSval: 0xffffffffb2e29692
+BAL JR JAL :: 0xffffffff8aad2b35, RSval: 0xffffffff8aad2b2f
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0xffffffff87ee0dfc, RSval: 0xffffffff87ee0df6
+BAL JR JAL :: 0xffffffff99a95df9, RSval: 0xffffffff99a95df3
+BAL JR JAL :: 0xffffffff9d68404a, RSval: 0xffffffff9d684044
+BAL JR JAL :: 0xffffffff902b66a3, RSval: 0xffffffff902b669d
+BAL JR JAL :: 0xffffffff94ea7b30, RSval: 0xffffffff94ea7b2a
+BAL JR JAL :: 0xffffffffe0b41ded, RSval: 0xffffffffe0b41de7
+BAL JR JAL :: 0xffffffffe4750056, RSval: 0xffffffffe4750050
+BAL JR JAL :: 0xffffffffe936268f, RSval: 0xffffffffe9362689
+BAL JR JAL :: 0xffffffffedf73b44, RSval: 0xffffffffedf73b3e
+BAL JR JAL :: 0xfffffffff3b06b41, RSval: 0xfffffffff3b06b3b
+BAL JR JAL :: 0xfffffffff7717692, RSval: 0xfffffffff771768c
+BAL JR JAL :: 0xfffffffffa32505b, RSval: 0xfffffffffa325055
+BAL JR JAL :: 0xfffffffffef34de8, RSval: 0xfffffffffef34de2
+BAL JR JAL :: 0xffffffffc6bcf065, RSval: 0xffffffffc6bcf05f
+BAL JR JAL :: 0xffffffffc27dedee, RSval: 0xffffffffc27dede8
+BAL JR JAL :: 0xffffffffcf3ecb37, RSval: 0xffffffffcf3ecb31
+BAL JR JAL :: 0xffffffffcbffd68c, RSval: 0xffffffffcbffd686
+BAL JR JAL :: 0xffffffffd5b88689, RSval: 0xffffffffd5b88683
+BAL JR JAL :: 0xffffffffd1799b3a, RSval: 0xffffffffd1799b34
+BAL JR JAL :: 0xffffffffdc3abdf3, RSval: 0xffffffffdc3abded
+BAL JR JAL :: 0xffffffffd8fba060, RSval: 0xffffffffd8fba05a
+BAL JR JAL :: 0x690ce0f4, RSval: 0x690ce0ee
+BAL JR JAL :: 0x6dcdfd5f, RSval: 0x6dcdfd59
+BAL JR JAL :: 0x608edb86, RSval: 0x608edb80
+BAL JR JAL :: 0x644fc63d, RSval: 0x644fc637
+BAL JR JAL :: 0x7a089638, RSval: 0x7a089632
+BAL JR JAL :: 0x7ec98b8b, RSval: 0x7ec98b85
+BAL JR JAL :: 0x738aad62, RSval: 0x738aad5c
+BAL JR JAL :: 0x774bb0f1, RSval: 0x774bb0eb
+BAL JR JAL :: 0x4f040d5c, RSval: 0x4f040d56
+BAL JR JAL :: 0x4bc510e7, RSval: 0x4bc510e1
+BAL JR JAL :: 0x4686363e, RSval: 0x46863638
+BAL JR JAL :: 0x42472b95, RSval: 0x42472b8f
+BAL JR JAL :: 0x5c007b90, RSval: 0x5c007b8a
+BAL JR JAL :: 0x58c16643, RSval: 0x58c1663d
+BAL JR JAL :: 0x558240ea, RSval: 0x558240e4
+BAL JR JAL :: 0x51435d59, RSval: 0x51435d53
+BAL JR JAL :: 0x251d3ba4, RSval: 0x251d3b9e
+BAL JR JAL :: 0x21dc262f, RSval: 0x21dc2629
+BAL JR JAL :: 0x2c9f00f6, RSval: 0x2c9f00f0
+BAL JR JAL :: 0x285e1d4d, RSval: 0x285e1d47
+BAL JR JAL :: 0x36194d48, RSval: 0x36194d42
+BAL JR JAL :: 0x32d850fb, RSval: 0x32d850f5
+BAL JR JAL :: 0x3f9b7632, RSval: 0x3f9b762c
+BAL JR JAL :: 0x3b5a6ba1, RSval: 0x3b5a6b9b
+BAL JR JAL :: 0x315d62c, RSval: 0x315d626
+BAL JR JAL :: 0x7d4cb97, RSval: 0x7d4cb91
+BAL JR JAL :: 0xa97ed4e, RSval: 0xa97ed48
+BAL JR JAL :: 0xe56f105, RSval: 0xe56f0ff
+BAL JR JAL :: 0x1011a100, RSval: 0x1011a0fa
+BAL JR JAL :: 0x14d0bd53, RSval: 0x14d0bd4d
+BAL JR JAL :: 0x19939b9a, RSval: 0x19939b94
+BAL JR JAL :: 0x1d528629, RSval: 0x1d528623
+BAL JR JAL :: 0xfffffffff12f5614, RSval: 0xfffffffff12f560e
+BAL JR JAL :: 0xfffffffff5ee4bbf, RSval: 0xfffffffff5ee4bb9
+BAL JR JAL :: 0xfffffffff8ad6d66, RSval: 0xfffffffff8ad6d60
+BAL JR JAL :: 0xfffffffffc6c70dd, RSval: 0xfffffffffc6c70d7
+BAL JR JAL :: 0xffffffffe22b20d8, RSval: 0xffffffffe22b20d2
+BAL JR JAL :: 0xffffffffe6ea3d6b, RSval: 0xffffffffe6ea3d65
+BAL JR JAL :: 0xffffffffeba91bc2, RSval: 0xffffffffeba91bbc
+BAL JR JAL :: 0xffffffffef680611, RSval: 0xffffffffef68060b
+BAL JR JAL :: 0xffffffffd727bbbc, RSval: 0xffffffffd727bbb6
+BAL JR JAL :: 0xffffffffd3e6a607, RSval: 0xffffffffd3e6a601
+BAL JR JAL :: 0xffffffffdea580de, RSval: 0xffffffffdea580d8
+BAL JR JAL :: 0xffffffffda649d75, RSval: 0xffffffffda649d6f
+BAL JR JAL :: 0xffffffffc423cd70, RSval: 0xffffffffc423cd6a
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0xffffffffcda1f60a, RSval: 0xffffffffcda1f604
+BAL JR JAL :: 0x6, RSval: 0x0
+BAL JR JAL :: 0xffffffffbd3e8d84, RSval: 0xffffffffbd3e8d7e
+BAL JR JAL :: 0xffffffffb9ff90cf, RSval: 0xffffffffb9ff90c9
+BAL JR JAL :: 0xffffffffb4bcb616, RSval: 0xffffffffb4bcb610
+BAL JR JAL :: 0xffffffffb07dabad, RSval: 0xffffffffb07daba7
+BAL JR JAL :: 0xffffffffae3afba8, RSval: 0xffffffffae3afba2
+BAL JR JAL :: 0xffffffffaafbe61b, RSval: 0xffffffffaafbe615
+BAL JR JAL :: 0xffffffffa7b8c0d2, RSval: 0xffffffffa7b8c0cc
+BAL JR JAL :: 0xffffffffa379dd81, RSval: 0xffffffffa379dd7b
+BAL JR JAL :: 0xffffffff9b3660cc, RSval: 0xffffffff9b3660c6
+BAL JR JAL :: 0xffffffff9ff77d77, RSval: 0xffffffff9ff77d71
+BAL JR JAL :: 0xffffffff92b45bae, RSval: 0xffffffff92b45ba8
+BAL JR JAL :: 0xffffffff96754625, RSval: 0xffffffff9675461f
+BAL JR JAL :: 0xffffffff88321620, RSval: 0xffffffff8832161a
+BAL JR JAL :: 0xffffffff8cf30bb3, RSval: 0xffffffff8cf30bad
+BAL JR JAL :: 0xffffffff81b02d7a, RSval: 0xffffffff81b02d74
+BAL JR JAL :: 0xffffffff857130c9, RSval: 0xffffffff857130c3
+BAL JR JAL :: 0x5d8a909f, RSval: 0x5d8a9099
+BAL JR JAL :: 0x594b8d34, RSval: 0x594b8d2e
+BAL JR JAL :: 0x5408abfd, RSval: 0x5408abf7
+BAL JR JAL :: 0x50c9b646, RSval: 0x50c9b640
+BAL JR JAL :: 0x4e8ee64b, RSval: 0x4e8ee645
+BAL JR JAL :: 0x4a4ffbf8, RSval: 0x4a4ffbf2
+BAL JR JAL :: 0x470cdd31, RSval: 0x470cdd2b
+BAL JR JAL :: 0x43cdc0a2, RSval: 0x43cdc09c
+BAL JR JAL :: 0x7b827d27, RSval: 0x7b827d21
+BAL JR JAL :: 0x7f43609c, RSval: 0x7f436096
+BAL JR JAL :: 0x72004655, RSval: 0x7200464f
+BAL JR JAL :: 0x76c15bfe, RSval: 0x76c15bf8
+BAL JR JAL :: 0x68860c03, RSval: 0x68860bfd
+BAL JR JAL :: 0x6c471650, RSval: 0x6c47164a
+BAL JR JAL :: 0x61043099, RSval: 0x61043093
+BAL JR JAL :: 0x65c52d2a, RSval: 0x65c52d24
+BAL JR JAL :: 0x119b4bef, RSval: 0x119b4be9
+BAL JR JAL :: 0x155a5664, RSval: 0x155a565e
+BAL JR JAL :: 0x1819708d, RSval: 0x18197087
+BAL JR JAL :: 0x1cd86d36, RSval: 0x1cd86d30
+BAL JR JAL :: 0x29f3d3b, RSval: 0x29f3d35
+BAL JR JAL :: 0x65e2088, RSval: 0x65e2082
+BAL JR JAL :: 0xb1d0661, RSval: 0xb1d065b
+BAL JR JAL :: 0xfdc1bf2, RSval: 0xfdc1bec
+BAL JR JAL :: 0x3793a657, RSval: 0x3793a651
+BAL JR JAL :: 0x3352bbec, RSval: 0x3352bbe6
+BAL JR JAL :: 0x3e119d45, RSval: 0x3e119d3f
+BAL JR JAL :: 0x3ad0808e, RSval: 0x3ad08088
+BAL JR JAL :: 0x2497d093, RSval: 0x2497d08d
+BAL JR JAL :: 0x2056cd40, RSval: 0x2056cd3a
+BAL JR JAL :: 0x2d15ebe9, RSval: 0x2d15ebe3
+BAL JR JAL :: 0x29d4f65a, RSval: 0x29d4f654
+BAL JR JAL :: 0xffffffffc5a9267f, RSval: 0xffffffffc5a92679
+BAL JR JAL :: 0xffffffffc1683bd4, RSval: 0xffffffffc1683bce
+BAL JR JAL :: 0xffffffffcc2b1d1d, RSval: 0xffffffffcc2b1d17
+BAL JR JAL :: 0xffffffffc8ea00a6, RSval: 0xffffffffc8ea00a0
+BAL JR JAL :: 0xffffffffd6ad50ab, RSval: 0xffffffffd6ad50a5
+BAL JR JAL :: 0xffffffffd26c4d18, RSval: 0xffffffffd26c4d12
+BAL JR JAL :: 0xffffffffdf2f6bd1, RSval: 0xffffffffdf2f6bcb
+BAL JR JAL :: 0xffffffffdbee7682, RSval: 0xffffffffdbee767c
+BAL JR JAL :: 0xffffffffe3a1cbc7, RSval: 0xffffffffe3a1cbc1
+BAL JR JAL :: 0xffffffffe760d67c, RSval: 0xffffffffe760d676
+BAL JR JAL :: 0xffffffffea23f0b5, RSval: 0xffffffffea23f0af
+BAL JR JAL :: 0xffffffffeee2ed1e, RSval: 0xffffffffeee2ed18
+BAL JR JAL :: 0xfffffffff0a5bd23, RSval: 0xfffffffff0a5bd1d
+BAL JR JAL :: 0xfffffffff464a0b0, RSval: 0xfffffffff464a0aa
+BAL JR JAL :: 0xfffffffff9278679, RSval: 0xfffffffff9278673
+BAL JR JAL :: 0xfffffffffde69bca, RSval: 0xfffffffffde69bc4
+BAL JR JAL :: 0xffffffff89b8fd0f, RSval: 0xffffffff89b8fd09
+BAL JR JAL :: 0xffffffff8d79e0c4, RSval: 0xffffffff8d79e0be
+BAL JR JAL :: 0xffffffff803ac66d, RSval: 0xffffffff803ac667
+BAL JR JAL :: 0xffffffff84fbdbd6, RSval: 0xffffffff84fbdbd0
+BAL JR JAL :: 0xffffffff9abc8bdb, RSval: 0xffffffff9abc8bd5
+BAL JR JAL :: 0xffffffff9e7d9668, RSval: 0xffffffff9e7d9662
+BAL JR JAL :: 0xffffffff933eb0c1, RSval: 0xffffffff933eb0bb
+BAL JR JAL :: 0xffffffff97ffad12, RSval: 0xffffffff97ffad0c
+BAL JR JAL :: 0xffffffffafb010b7, RSval: 0xffffffffafb010b1
+BAL JR JAL :: 0xffffffffab710d0c, RSval: 0xffffffffab710d06
+BAL JR JAL :: 0xffffffffa6322be5, RSval: 0xffffffffa6322bdf
+BAL JR JAL :: 0xffffffffa2f3366e, RSval: 0xffffffffa2f33668
+BAL JR JAL :: 0xffffffffbcb46673, RSval: 0xffffffffbcb4666d
+BAL JR JAL :: 0xffffffffb8757be0, RSval: 0xffffffffb8757bda
+BAL JR JAL :: 0xffffffffb5365d09, RSval: 0xffffffffb5365d03
+BAL JR JAL :: 0xffffffffb1f740ba, RSval: 0xffffffffb1f740b4

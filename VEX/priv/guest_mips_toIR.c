@@ -952,6 +952,20 @@ static IRExpr *getFCSR(void)
       return IRExpr_Get(offsetof(VexGuestMIPS32State, guest_FCSR), Ity_I32);
 }
 
+/* Get byte from register reg, byte pos from 0 to 3 (or 7 for MIPS64) . */
+static IRExpr *getByteFromReg(UInt reg, UInt byte_pos)
+{
+  UInt pos = byte_pos * 8;
+  if (mode64)
+      return unop(Iop_64to8, binop(Iop_And64,
+                                   binop(Iop_Shr64, getIReg(reg), mkU8(pos)),
+                                   mkU64(0xFF)));
+   else
+      return unop(Iop_32to8, binop(Iop_And32,
+                                   binop(Iop_Shr32, getIReg(reg), mkU8(pos)),
+                                   mkU32(0xFF)));
+}
+
 static void putFCSR(IRExpr * e)
 {
    if (mode64)
@@ -1918,7 +1932,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                      VexAbiInfo*  abiinfo,
                                      Bool         sigill_diag )
 {
-   IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7, t8;
+   IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7;
    UInt opcode, cins, rs, rt, rd, sa, ft, fs, fd, fmt, tf, nd, function,
         trap_code, imm, instr_index, p, msb, lsb, size, rot, sel;
 
@@ -3767,40 +3781,124 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x2C: {  /* SDL rt, offset(base) MIPS64 */
       DIP("sdl r%u, %d(r%u)", rt, (Int) imm, rs);
+      vassert(mode64);
+      IRTemp A_byte = newTemp(Ity_I8);
+      IRTemp B_byte = newTemp(Ity_I8);
+      IRTemp C_byte = newTemp(Ity_I8);
+      IRTemp D_byte = newTemp(Ity_I8);
+      IRTemp E_byte = newTemp(Ity_I8);
+      IRTemp F_byte = newTemp(Ity_I8);
+      IRTemp G_byte = newTemp(Ity_I8);
+      IRTemp H_byte = newTemp(Ity_I8);
+      IRTemp B_pos  = newTemp(Ity_I64);
+      IRTemp C_pos  = newTemp(Ity_I64);
+      IRTemp D_pos  = newTemp(Ity_I64);
+      IRTemp E_pos  = newTemp(Ity_I64);
+      IRTemp F_pos  = newTemp(Ity_I64);
+      IRTemp G_pos  = newTemp(Ity_I64);
+
+      /* H byte */
+      assign(H_byte, getByteFromReg(rt, 0));
+      /* G byte */
+      assign(G_byte, getByteFromReg(rt, 1));
+      /* F byte */
+      assign(F_byte, getByteFromReg(rt, 2));
+      /* E byte */
+      assign(E_byte, getByteFromReg(rt, 3));
+      /* D byte */
+      assign(D_byte, getByteFromReg(rt, 4));
+      /* C byte */
+      assign(C_byte, getByteFromReg(rt, 5));
+      /* B byte */
+      assign(B_byte, getByteFromReg(rt, 6));
+      /* A byte */
+      assign(A_byte, getByteFromReg(rt, 7));
+
       /* t1 = addr */
-#if defined (_MIPSEL)
       t1 = newTemp(Ity_I64);
       assign(t1, binop(Iop_Add64, getIReg(rs), mkU64(extend_s_16to64(imm))));
-#elif defined (_MIPSEB)
-      t1 = newTemp(Ity_I64);
-      assign(t1, binop(Iop_Xor64, mkU64(0x7), binop(Iop_Add64, getIReg(rs),
-                       mkU64(extend_s_16to64(imm)))));
-#endif
 
       /* t2 = word addr */
-      /* t4 = addr mod 4 */
-      LWX_SWX_PATTERN64_1;
+      t2 = newTemp(Ity_I64);
+      assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFF8ULL)));
 
-      /* t3 = rt content - shifted */
+      /* t3 = addr mod 7 */
       t3 = newTemp(Ity_I64);
-      assign(t3, binop(Iop_Shr64, getIReg(rt), narrowTo(Ity_I8, binop(Iop_Shl64,
-                 binop(Iop_Sub64, mkU64(0x07), mkexpr(t4)), mkU8(3)))));
+      assign(t3, binop(Iop_And64, mkexpr(t1), mkU64(0x7)));
 
-      /* word content  - adjusted */
-      t5 = newTemp(Ity_I64);
-      t6 = newTemp(Ity_I64);
-      t7 = newTemp(Ity_I64);
-      t8 = newTemp(Ity_I64);
+#if defined (_MIPSEL)
+      /* Calculate X_byte position. */
+      assign(B_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x1)),
+                               mkU64(0x0),
+                               mkU64(0x1)));
 
-      /* neg(shr(0xFFFFFFFF, mul(sub(7,n), 8))) */
-      assign(t5, binop(Iop_Mul64, binop(Iop_Sub64, mkU64(0x7), mkexpr(t4)),
-                 mkU64(0x8)));
+      assign(C_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x2)),
+                               mkU64(0x0),
+                               mkU64(0x2)));
 
-      assign(t6, binop(Iop_Shr64, mkU64(0xFFFFFFFFFFFFFFFFULL),
-                                  narrowTo(Ity_I8, mkexpr(t5))));
-      assign(t7, binop(Iop_Xor64, mkU64(0xFFFFFFFFFFFFFFFFULL), mkexpr(t6)));
-      assign(t8, binop(Iop_And64, load(Ity_I64, mkexpr(t2)), mkexpr(t7)));
-      store(mkexpr(t2), binop(Iop_Or64, mkexpr(t8), mkexpr(t3)));
+      assign(D_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x3)),
+                               mkU64(0x0),
+                               mkU64(0x3)));
+
+      assign(E_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x4)),
+                               mkU64(0x0),
+                               mkU64(0x4)));
+
+      assign(F_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x5)),
+                               mkU64(0x0),
+                               mkU64(0x5)));
+
+      assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x7)),
+                               mkU64(0x1),
+                               mkU64(0x0)));
+
+      /* Store X_byte on the right place. */
+      store(mkexpr(t2), mkexpr(H_byte));
+      store(binop(Iop_Add64, mkexpr(t2), mkexpr(G_pos)), mkexpr(G_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(E_pos)), mkexpr(E_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(D_pos)), mkexpr(D_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(C_pos)), mkexpr(C_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(B_pos)), mkexpr(B_byte));
+      store(mkexpr(t1), mkexpr(A_byte));
+
+#elif defined (_MIPSEB)
+      /* Calculate X_byte position. */
+      assign(B_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x7)),
+                               mkU64(0x0),
+                               mkU64(0x1)));
+
+      assign(C_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x6)),
+                               mkU64(0x2),
+                               mkU64(0x0)));
+
+      assign(D_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x5)),
+                               mkU64(0x3),
+                               mkU64(0x0)));
+
+      assign(E_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x4)),
+                               mkU64(0x4),
+                               mkU64(0x0)));
+ 
+      assign(F_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkexpr(t3), mkU64(0x3)),
+                               mkU64(0x5),
+                               mkU64(0x0)));
+
+      assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x0)),
+                               mkU64(0x6),
+                               mkU64(0x7)));
+
+      /* Store X_byte on the right place. */
+      store(binop(Iop_Add64, mkexpr(t2), mkU64(0x7)), mkexpr(H_byte));
+      store(binop(Iop_Add64, mkexpr(t2), mkexpr(G_pos)), mkexpr(G_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(E_pos)), mkexpr(E_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(D_pos)), mkexpr(D_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(C_pos)), mkexpr(C_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(B_pos)), mkexpr(B_byte));
+      store(mkexpr(t1), mkexpr(A_byte));
+#endif
+
       break;
    }
 
@@ -3808,32 +3906,123 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       /* SDR rt, offset(base) - MIPS64 */
       vassert(mode64);
       DIP("sdr r%u, %d(r%u)", rt, imm, rs);
+      IRTemp A_byte = newTemp(Ity_I8);
+      IRTemp B_byte = newTemp(Ity_I8);
+      IRTemp C_byte = newTemp(Ity_I8);
+      IRTemp D_byte = newTemp(Ity_I8);
+      IRTemp E_byte = newTemp(Ity_I8);
+      IRTemp F_byte = newTemp(Ity_I8);
+      IRTemp G_byte = newTemp(Ity_I8);
+      IRTemp H_byte = newTemp(Ity_I8);
+      IRTemp B_pos  = newTemp(Ity_I64);
+      IRTemp C_pos  = newTemp(Ity_I64);
+      IRTemp D_pos  = newTemp(Ity_I64);
+      IRTemp E_pos  = newTemp(Ity_I64);
+      IRTemp F_pos  = newTemp(Ity_I64);
+      IRTemp G_pos  = newTemp(Ity_I64);
+
+      /* H byte */
+      assign(H_byte, getByteFromReg(rt, 0));
+      /* G byte */
+      assign(G_byte, getByteFromReg(rt, 1));
+      /* F byte */
+      assign(F_byte, getByteFromReg(rt, 2));
+      /* E byte */
+      assign(E_byte, getByteFromReg(rt, 3));
+      /* D byte */
+      assign(D_byte, getByteFromReg(rt, 4));
+      /* C byte */
+      assign(C_byte, getByteFromReg(rt, 5));
+      /* B byte */
+      assign(B_byte, getByteFromReg(rt, 6));
+      /* A byte */
+      assign(A_byte, getByteFromReg(rt, 7));
+
       /* t1 = addr */
-#if defined (_MIPSEL)
       t1 = newTemp(Ity_I64);
       assign(t1, binop(Iop_Add64, getIReg(rs), mkU64(extend_s_16to64(imm))));
-#elif defined (_MIPSEB)
-      t1 = newTemp(Ity_I64);
-      assign(t1, binop(Iop_Xor64, mkU64(0x7), binop(Iop_Add64, getIReg(rs),
-                                              mkU64(extend_s_16to64(imm)))));
-#endif
 
       /* t2 = word addr */
-      /* t4 = addr mod 8 */
-      LWX_SWX_PATTERN64_1;
+      t2 = newTemp(Ity_I64);
+      assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFF8ULL)));
 
-      /* t3 = rt content - shifted */
+      /* t3 = addr mod 7 */
       t3 = newTemp(Ity_I64);
-      assign(t3, binop(Iop_Shl64, getIReg(rt), narrowTo(Ity_I8,
-                 binop(Iop_Shl64, mkexpr(t4), mkU8(3)))));
+      assign(t3, binop(Iop_And64, mkexpr(t1), mkU64(0x7)));
 
-      /* word content  - adjusted */
-      t5 = newTemp(Ity_I64);
-      assign(t5, binop(Iop_And64, load(Ity_I64, mkexpr(t2)), unop(Iop_Not64,
-                 binop(Iop_Shl64, mkU64(0xFFFFFFFFFFFFFFFFULL),
-                 narrowTo(Ity_I8, binop(Iop_Shl64, mkexpr(t4), mkU8(0x3)))))));
+#if defined (_MIPSEL)
+      /* Calculate X_byte position. */
+      assign(B_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x1), mkexpr(t3)),
+                               mkU64(0x0),
+                               mkU64(0x6)));
 
-      store(mkexpr(t2), binop(Iop_Xor64, mkexpr(t5), mkexpr(t3)));
+      assign(C_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x2), mkexpr(t3)),
+                               mkU64(0x0),
+                               mkU64(0x5)));
+
+      assign(D_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x3), mkexpr(t3)),
+                               mkU64(0x0),
+                               mkU64(0x4)));
+
+      assign(E_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x4), mkexpr(t3)),
+                               mkU64(0x0),
+                               mkU64(0x3)));
+
+      assign(F_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x5), mkexpr(t3)),
+                               mkU64(0x0),
+                               mkU64(0x2)));
+
+      assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x7)),
+                               mkU64(0x0),
+                               mkU64(0x1)));
+
+      /* Store X_byte on the right place. */
+      store(binop(Iop_Add64, mkexpr(t2), mkU64(0x7)), mkexpr(A_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(B_pos)), mkexpr(B_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(C_pos)), mkexpr(C_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(D_pos)), mkexpr(D_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(E_pos)), mkexpr(E_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+      store(binop(Iop_Add64, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
+      store(mkexpr(t1), mkexpr(H_byte));
+
+#elif defined (_MIPSEB)
+      /* Calculate X_byte position. */
+      assign(B_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x5), mkexpr(t3)),
+                               mkU64(0x6),
+                               mkU64(0x0)));
+
+      assign(C_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x4), mkexpr(t3)),
+                               mkU64(0x5),
+                               mkU64(0x0)));
+
+      assign(D_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x3), mkexpr(t3)),
+                               mkU64(0x4),
+                               mkU64(0x0)));
+
+      assign(E_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x2), mkexpr(t3)),
+                               mkU64(0x3),
+                               mkU64(0x0)));
+
+      assign(F_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x1), mkexpr(t3)),
+                               mkU64(0x2),
+                               mkU64(0x0)));
+
+      assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x0)),
+                               mkU64(0x0),
+                               mkU64(0x1)));
+
+      /* Store X_byte on the right place. */
+      store(mkexpr(t2), mkexpr(A_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(B_pos)), mkexpr(B_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(C_pos)), mkexpr(C_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(D_pos)), mkexpr(D_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(E_pos)), mkexpr(E_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+      store(binop(Iop_Sub64, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
+      store(mkexpr(t1), mkexpr(H_byte));
+#endif
+      break;
    }
 
    case 0x28:  /* SB */
@@ -3851,132 +4040,254 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x2A:  /* SWL */
       DIP("swl r%d, %d(r%d)", rt, imm, rs);
       if (mode64) {
-#if defined (_MIPSEL)
+         IRTemp E_byte = newTemp(Ity_I8);
+         IRTemp F_byte = newTemp(Ity_I8);
+         IRTemp G_byte = newTemp(Ity_I8);
+         IRTemp H_byte = newTemp(Ity_I8);
+         IRTemp F_pos  = newTemp(Ity_I64);
+         IRTemp G_pos  = newTemp(Ity_I64);
+
+         /* H byte */
+         assign(H_byte, getByteFromReg(rt, 0));
+         /* G byte */
+         assign(G_byte, getByteFromReg(rt, 1));
+         /* F byte */
+         assign(F_byte, getByteFromReg(rt, 2));
+         /* E byte */
+         assign(E_byte, getByteFromReg(rt, 3));
+
+         /* t1 = addr */
          t1 = newTemp(Ity_I64);
          assign(t1, binop(Iop_Add64, getIReg(rs), mkU64(extend_s_16to64(imm))));
-#elif defined (_MIPSEB)
-         t1 = newTemp(Ity_I64);
-         assign(t1, binop(Iop_Xor64, mkU64(0x3), binop(Iop_Add64, getIReg(rs),
-                                     mkU64(extend_s_16to64(imm)))));
-#endif
+
          /* t2 = word addr */
-         /* t4 = addr mod 4 */
-         LWX_SWX_PATTERN64;
+         t2 = newTemp(Ity_I64);
+         assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFFCULL)));
 
-         /* t3 = rt content - shifted */
-         t3 = newTemp(Ity_I32);
-         assign(t3, binop(Iop_Shr32, mkNarrowTo32(ty, getIReg(rt)),
-                narrowTo(Ity_I8, binop(Iop_Shl32, binop(Iop_Sub32,
-                mkU32(0x03), mkexpr(t4)), mkU8(3)))));
+         /* t3 = addr mod 4 */
+         t3 = newTemp(Ity_I64);
+         assign(t3, binop(Iop_And64, mkexpr(t1), mkU64(0x3)));
 
-         /* word content  - adjusted */
-         t5 = newTemp(Ity_I32);
-         t6 = newTemp(Ity_I32);
-         t7 = newTemp(Ity_I32);
-         t8 = newTemp(Ity_I32);
+#if defined (_MIPSEL)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x0)),
+                                  mkU64(0x0),
+                                  mkU64(0x1)));
 
-         /* neg(shr(0xFFFFFFFF, mul(sub(3,n), 8))) */
-         assign(t5, binop(Iop_Mul32, binop(Iop_Sub32, mkU32(0x3), mkexpr(t4)),
-                                           mkU32(0x8)));
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x3)),
+                                  mkU64(0x1),
+                                  mkU64(0x0)));
 
-         assign(t6, binop(Iop_Shr32, mkU32(0xFFFFFFFF), narrowTo(Ity_I8,
-                          mkexpr(t5))));
-         assign(t7, binop(Iop_Xor32, mkU32(0xFFFFFFFF), mkexpr(t6)));
-         assign(t8, binop(Iop_And32, load(Ity_I32, mkexpr(t2)), mkexpr(t7)));
-         store(mkexpr(t2), binop(Iop_Or32, mkexpr(t8), mkexpr(t3)));
+         /* Store X_byte on the right place. */
+         store(mkexpr(t2), mkexpr(H_byte));
+         store(binop(Iop_Add64, mkexpr(t2), mkexpr(G_pos)), mkexpr(G_byte));
+         store(binop(Iop_Sub64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+         store(mkexpr(t1), mkexpr(E_byte));
+
+#elif defined (_MIPSEB)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x3)),
+                                  mkU64(0x0),
+                                  mkU64(0x1)));
+
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x0)),
+                                  mkU64(0x2),
+                                  mkU64(0x3)));
+
+         store(binop(Iop_Add64, mkexpr(t2), mkU64(3)), mkexpr(H_byte));
+         store(binop(Iop_Add64, mkexpr(t2), mkexpr(G_pos)), mkexpr(G_byte));
+         store(binop(Iop_Add64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+         store(mkexpr(t1), mkexpr(E_byte));
+
+#endif
       } else {
+         IRTemp E_byte = newTemp(Ity_I8);
+         IRTemp F_byte = newTemp(Ity_I8);
+         IRTemp G_byte = newTemp(Ity_I8);
+         IRTemp H_byte = newTemp(Ity_I8);
+         IRTemp F_pos  = newTemp(Ity_I32);
+         IRTemp G_pos  = newTemp(Ity_I32);
+
+         /* H byte */
+         assign(H_byte, getByteFromReg(rt, 0));
+         /* G byte */
+         assign(G_byte, getByteFromReg(rt, 1));
+         /* F byte */
+         assign(F_byte, getByteFromReg(rt, 2));
+         /* E byte */
+         assign(E_byte, getByteFromReg(rt, 3));
+
          /* t1 = addr */
          t1 = newTemp(Ity_I32);
-#if defined (_MIPSEL)
          assign(t1, binop(Iop_Add32, getIReg(rs), mkU32(extend_s_16to32(imm))));
-#elif defined (_MIPSEB)
-         assign(t1, binop(Iop_Xor32, mkU32(0x3), binop(Iop_Add32, getIReg(rs),
-                                     mkU32(extend_s_16to32(imm)))));
-#endif
+
          /* t2 = word addr */
-         /* t4 = addr mod 4 */
-         LWX_SWX_PATTERN;
+         t2 = newTemp(Ity_I32);
+         assign(t2, binop(Iop_And32, mkexpr(t1), mkU32(0xFFFFFFFCULL)));
 
-         /* t3 = rt content - shifted */
+         /* t3 = addr mod 4 */
          t3 = newTemp(Ity_I32);
-         assign(t3, binop(Iop_Shr32, getIReg(rt), narrowTo(Ity_I8,
-                    binop(Iop_Shl32, binop(Iop_Sub32, mkU32(0x03), mkexpr(t4)),
-                    mkU8(3)))));
+         assign(t3, binop(Iop_And32, mkexpr(t1), mkU32(0x3)));
 
-         /* word content  - adjusted */
-         t5 = newTemp(Ity_I32);
-         t6 = newTemp(Ity_I32);
-         t7 = newTemp(Ity_I32);
-         t8 = newTemp(Ity_I32);
+#if defined (_MIPSEL)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x0)),
+                                  mkU32(0x0),
+                                  mkU32(0x1)));
 
-         /* neg(shr(0xFFFFFFFF, mul(sub(3,n), 8))) */
-         assign(t5, binop(Iop_Mul32, binop(Iop_Sub32, mkU32(0x3), mkexpr(t4)),
-                          mkU32(0x8)));
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x3)),
+                                  mkU32(0x1),
+                                  mkU32(0x0)));
 
-         assign(t6, binop(Iop_Shr32, mkU32(0xFFFFFFFF), narrowTo(Ity_I8,
-                                                        mkexpr(t5))));
-         assign(t7, binop(Iop_Xor32, mkU32(0xFFFFFFFF), mkexpr(t6)));
-         assign(t8, binop(Iop_And32, load(Ity_I32, mkexpr(t2)), mkexpr(t7)));
-         store(mkexpr(t2), binop(Iop_Or32, mkexpr(t8), mkexpr(t3)));
+         /* Store X_byte on the right place. */
+         store(mkexpr(t2), mkexpr(H_byte));
+         store(binop(Iop_Add32, mkexpr(t2), mkexpr(G_pos)), mkexpr(G_byte));
+         store(binop(Iop_Sub32, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+         store(mkexpr(t1), mkexpr(E_byte));
+
+#elif defined (_MIPSEB)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x3)),
+                                  mkU32(0x0),
+                                  mkU32(0x1)));
+
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x0)),
+                                  mkU32(0x2),
+                                  mkU32(0x3)));
+
+         store(binop(Iop_Add32, mkexpr(t2), mkU32(3)), mkexpr(H_byte));
+         store(binop(Iop_Add32, mkexpr(t2), mkexpr(G_pos)), mkexpr(G_byte));
+         store(binop(Iop_Add32, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
+         store(mkexpr(t1), mkexpr(E_byte));
+
+#endif
       }
       break;
 
    case 0x2E:  /* SWR */
-
       DIP("swr r%d, %d(r%d)", rt, imm, rs);
       if (mode64) {
+         IRTemp E_byte = newTemp(Ity_I8);
+         IRTemp F_byte = newTemp(Ity_I8);
+         IRTemp G_byte = newTemp(Ity_I8);
+         IRTemp H_byte = newTemp(Ity_I8);
+         IRTemp F_pos  = newTemp(Ity_I64);
+         IRTemp G_pos  = newTemp(Ity_I64);
+
+         /* H byte */
+         assign(H_byte, getByteFromReg(rt, 0));
+         /* G byte */
+         assign(G_byte, getByteFromReg(rt, 1));
+         /* F byte */
+         assign(F_byte, getByteFromReg(rt, 2));
+         /* E byte */
+         assign(E_byte, getByteFromReg(rt, 3));
+
          /* t1 = addr */
-#if defined (_MIPSEL)
          t1 = newTemp(Ity_I64);
          assign(t1, binop(Iop_Add64, getIReg(rs), mkU64(extend_s_16to64(imm))));
-#elif defined (_MIPSEB)
-         t1 = newTemp(Ity_I64);
-         assign(t1, binop(Iop_Xor64, mkU64(0x3), binop(Iop_Add64, getIReg(rs),
-                                                 mkU64(extend_s_16to64(imm)))));
-#endif
 
          /* t2 = word addr */
-         /* t4 = addr mod 4 */
-         LWX_SWX_PATTERN64;
+         t2 = newTemp(Ity_I64);
+         assign(t2, binop(Iop_And64, mkexpr(t1), mkU64(0xFFFFFFFFFFFFFFFCULL)));
 
-         /* t3 = rt content - shifted */
-         t3 = newTemp(Ity_I32);
-         assign(t3, binop(Iop_Shl32, mkNarrowTo32(ty, getIReg(rt)),
-                narrowTo(Ity_I8, binop(Iop_Shl32, mkexpr(t4), mkU8(3)))));
+         /* t3 = addr mod 4 */
+         t3 = newTemp(Ity_I64);
+         assign(t3, binop(Iop_And64, mkexpr(t1), mkU64(0x3)));
 
-         /* word content  - adjusted */
-         t5 = newTemp(Ity_I32);
-         assign(t5, binop(Iop_And32, load(Ity_I32, mkexpr(t2)), unop(Iop_Not32,
-                    binop(Iop_Shl32, mkU32(0xFFFFFFFF), narrowTo(Ity_I8,
-                    binop(Iop_Shl32, mkexpr(t4), mkU8(0x3)))))));
+#if defined (_MIPSEL)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x0)),
+                                  mkU64(0x2),
+                                  mkU64(0x3)));
 
-         store(mkexpr(t2), binop(Iop_Xor32, mkexpr(t5), mkexpr(t3)));
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x3)),
+                                  mkU64(0x0),
+                                  mkU64(0x1)));
+
+         /* Store X_byte on the right place. */
+         store(binop(Iop_Add64, mkexpr(t2), mkU64(0x3)), mkexpr(E_byte));
+         store(binop(Iop_Add64, mkexpr(t2), mkexpr(F_pos)), mkexpr(F_byte));
+         store(binop(Iop_Add64, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
+         store(mkexpr(t1), mkexpr(H_byte));
+
+#elif defined (_MIPSEB)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x3)),
+                                  mkU64(0x1),
+                                  mkU64(0x0)));
+
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x0)),
+                                  mkU64(0x0),
+                                  mkU64(0x1)));
+
+         /* Store X_byte on the right place. */
+         store(mkexpr(t2), mkexpr(E_byte));
+         store(binop(Iop_Add64, mkexpr(t2), mkexpr(F_pos)), mkexpr(F_byte));
+         store(binop(Iop_Sub64, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
+         store(mkexpr(t1), mkexpr(H_byte));
+#endif
       } else {
+         IRTemp E_byte = newTemp(Ity_I8);
+         IRTemp F_byte = newTemp(Ity_I8);
+         IRTemp G_byte = newTemp(Ity_I8);
+         IRTemp H_byte = newTemp(Ity_I8);
+         IRTemp F_pos  = newTemp(Ity_I32);
+         IRTemp G_pos  = newTemp(Ity_I32);
+
+         /* H byte */
+         assign(H_byte, getByteFromReg(rt, 0));
+         /* G byte */
+         assign(G_byte, getByteFromReg(rt, 1));
+         /* F byte */
+         assign(F_byte, getByteFromReg(rt, 2));
+         /* E byte */
+         assign(E_byte, getByteFromReg(rt, 3));
+
          /* t1 = addr */
          t1 = newTemp(Ity_I32);
-#if defined (_MIPSEL)
          assign(t1, binop(Iop_Add32, getIReg(rs), mkU32(extend_s_16to32(imm))));
-#elif defined (_MIPSEB)
-         assign(t1, binop(Iop_Xor32, mkU32(0x3), binop(Iop_Add32, getIReg(rs),
-                                     mkU32(extend_s_16to32(imm)))));
-#endif
 
          /* t2 = word addr */
-         /* t4 = addr mod 4 */
-         LWX_SWX_PATTERN;
+         t2 = newTemp(Ity_I32);
+         assign(t2, binop(Iop_And32, mkexpr(t1), mkU32(0xFFFFFFFCULL)));
 
-         /* t3 = rt content - shifted */
+         /* t3 = addr mod 4 */
          t3 = newTemp(Ity_I32);
-         assign(t3, binop(Iop_Shl32, getIReg(rt), narrowTo(Ity_I8,
-                    binop(Iop_Shl32, mkexpr(t4), mkU8(3)))));
+         assign(t3, binop(Iop_And32, mkexpr(t1), mkU32(0x3)));
 
-         /* word content  - adjusted */
-         t5 = newTemp(Ity_I32);
-         assign(t5, binop(Iop_And32, load(Ity_I32, mkexpr(t2)), unop(Iop_Not32,
-                    binop(Iop_Shl32, mkU32(0xFFFFFFFF), narrowTo(Ity_I8,
-                          binop(Iop_Shl32, mkexpr(t4), mkU8(0x3)))))));
+#if defined (_MIPSEL)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x0)),
+                                  mkU32(0x2),
+                                  mkU32(0x3)));
 
-         store(mkexpr(t2), binop(Iop_Xor32, mkexpr(t5), mkexpr(t3)));
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x3)),
+                                  mkU32(0x0),
+                                  mkU32(0x1)));
+
+         /* Store X_byte on the right place. */
+         store(binop(Iop_Add32, mkexpr(t2), mkU32(0x3)), mkexpr(E_byte));
+         store(binop(Iop_Add32, mkexpr(t2), mkexpr(F_pos)), mkexpr(F_byte));
+         store(binop(Iop_Add32, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
+         store(mkexpr(t1), mkexpr(H_byte));
+
+#elif defined (_MIPSEB)
+         /* Calculate X_byte position. */
+         assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x3)),
+                                  mkU32(0x1),
+                                  mkU32(0x0)));
+
+         assign(G_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x0)),
+                                  mkU32(0x0),
+                                  mkU32(0x1)));
+
+         /* Store X_byte on the right place. */
+         store(mkexpr(t2), mkexpr(E_byte));
+         store(binop(Iop_Add32, mkexpr(t2), mkexpr(F_pos)), mkexpr(F_byte));
+         store(binop(Iop_Sub32, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
+         store(mkexpr(t1), mkexpr(H_byte));
+#endif
       }
       break;
 
@@ -6134,7 +6445,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       t5 = newTemp(Ity_I64);
       t6 = newTemp(Ity_I64);
       t7 = newTemp(Ity_I64);
-      t8 = newTemp(Ity_I64);
 
       assign(t5, binop(Iop_Mul64, mkexpr(t4), mkU64(0x8)));
 

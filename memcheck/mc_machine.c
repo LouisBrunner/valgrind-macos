@@ -817,7 +817,9 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(EMNOTE) && sz == 4) return -1;
 
    if (o == GOF(CC_OP)    && sz == 8) return -1;
-   if (o == GOF(CC_DEP1)  && sz == 8) return o;
+   /* We access CC_DEP1 either fully or bits [0:31] */
+   if (o == GOF(CC_DEP1)  && (sz == 8 || sz ==4))
+      return o;
    if (o == GOF(CC_DEP2)  && sz == 8) return o;
    if (o == GOF(CC_NDEP)  && sz == 8) return -1;
    if (o == GOF(TISTART)  && sz == 8) return -1;

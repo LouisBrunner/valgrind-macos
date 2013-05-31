@@ -632,6 +632,14 @@ s390_cc_thunk_put1f(UInt opc, IRTemp d1)
 {
    IRExpr *op, *dep1, *dep2, *ndep;
 
+   /* Make the CC_DEP1 slot appear completely defined.
+      Otherwise, assigning a 32-bit value will cause memcheck
+      to trigger an undefinedness error.
+   */
+   if (sizeofIRType(typeOfIRTemp(irsb->tyenv, d1)) == 4) {
+      UInt dep1_off = S390X_GUEST_OFFSET(guest_CC_DEP1);
+      stmt(IRStmt_Put(dep1_off, mkU64(0)));
+   }
    op   = mkU64(opc);
    dep1 = mkexpr(d1);
    dep2 = mkU64(0);
@@ -648,6 +656,14 @@ s390_cc_thunk_putFZ(UInt opc, IRTemp d1, IRTemp d2)
 {
    IRExpr *op, *dep1, *dep2, *ndep;
 
+   /* Make the CC_DEP1 slot appear completely defined.
+      Otherwise, assigning a 32-bit value will cause memcheck
+      to trigger an undefinedness error.
+   */
+   if (sizeofIRType(typeOfIRTemp(irsb->tyenv, d1)) == 4) {
+      UInt dep1_off = S390X_GUEST_OFFSET(guest_CC_DEP1);
+      stmt(IRStmt_Put(dep1_off, mkU64(0)));
+   }
    op   = mkU64(opc);
    dep1 = mkexpr(d1);
    dep2 = s390_cc_widen(d2, False);

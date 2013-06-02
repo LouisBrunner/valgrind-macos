@@ -314,9 +314,12 @@ static void do_test_case ( int caseNo, Bool isLoad, const TestCase* lc )
        + (lc->addrErr == 'Y' ? 1 : 0);
 
    UInt n_errs_act = VALGRIND_COUNT_ERRORS;
-   UInt res_act 
-      = isLoad ? do_conditional_load32(i_Addr, i_Alt, i_Cond)
-               : do_conditional_store32(i_Addr, i_Alt, i_Cond);
+   UInt res_act;
+   if (isLoad) {
+      res_act = do_conditional_load32(i_Addr, i_Alt, i_Cond);
+   } else {
+      res_act = do_conditional_store32(i_Addr, i_Alt, i_Cond);
+   }
    n_errs_act = VALGRIND_COUNT_ERRORS - n_errs_act;
 
    if (n_errs_act == n_errs_exp) {

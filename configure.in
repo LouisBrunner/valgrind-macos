@@ -2165,9 +2165,10 @@ AM_CONDITIONAL([HAVE_PTHREAD_MUTEX_TIMEDLOCK],
 AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
                [test x$ac_cv_func_pthread_spin_lock = xyes])
 
-if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX ; then
+if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then
   AC_DEFINE([DISABLE_PTHREAD_SPINLOCK_INTERCEPT], 1,
-            [Disable intercept pthread_spin_lock() on MIPS32.])
+            [Disable intercept pthread_spin_lock() on MIPS32 and MIPS64.])
 fi
 
 #----------------------------------------------------------------------------

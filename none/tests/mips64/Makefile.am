@@ -9,7 +9,7 @@ EXTRA_DIST = \
 	arithmetic_instruction.vgtest \
 	branch_and_jump_instructions.stdout.exp \
 	branch_and_jump_instructions.stderr.exp branch_and_jump_instructions.vgtest \
-	branches.stdout.exp branches.stderr.exp branches.vgtest
+	branches.stdout.exp branches.stderr.exp branches.vgtest \
 	extract_insert_bit_field.stdout.exp-mips64 \
 	extract_insert_bit_field.stdout.exp-mips64r2 \
 	extract_insert_bit_field.stderr.exp extract_insert_bit_field.vgtest \

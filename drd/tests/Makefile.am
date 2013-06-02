@@ -61,9 +61,11 @@ EXTRA_DIST =                                        \
 	annotate_ignore_write2.vgtest		    \
 	annotate_trace_memory.stderr.exp-32bit	    \
 	annotate_trace_memory.stderr.exp-64bit	    \
+	annotate_trace_memory.stderr.exp-mips32	   \
 	annotate_trace_memory.vgtest		    \
 	annotate_trace_memory_xml.stderr.exp-32bit  \
 	annotate_trace_memory_xml.stderr.exp-64bit  \
+	annotate_trace_memory_xml.stderr.exp-mips32 \
 	annotate_trace_memory_xml.vgtest	    \
 	annotate_static.stderr.exp	            \
 	annotate_static.vgtest		            \

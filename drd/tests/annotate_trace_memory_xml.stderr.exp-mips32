@@ -66,7 +66,7 @@ float
   </stack>
   </trace>
 double
-  <trace><text>store 0x........ size 8 val 4613937818241073152/0x........ (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 4 val 0/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -78,7 +78,7 @@ double
     </frame>
   </stack>
   </trace>
-  <trace><text>load  0x........ size 8 (thread x / vc ...)</text>
+  <trace><text>store 0x........ size 4 val 1074266112/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -90,7 +90,43 @@ double
     </frame>
   </stack>
   </trace>
-  <trace><text>store 0x........ size 8 val 4619567317775286272/0x........ (thread x / vc ...)</text>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 0/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 1075576832/0x........ (thread x / vc ...)</text>
   <stack>
     <frame>
       <ip>0x........</ip>

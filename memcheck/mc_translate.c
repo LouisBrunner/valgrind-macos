@@ -3421,38 +3421,38 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_ShlD64:
       case Iop_ShrD64:
       case Iop_RoundD64toInt:
-         /* I32(DFP rm) x D64 -> D64 */
+         /* I32(rm) x D64 -> D64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_ShlD128:
       case Iop_ShrD128:
       case Iop_RoundD128toInt:
-         /* I32(DFP rm) x D128 -> D128 */
+         /* I32(rm) x D128 -> D128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
       case Iop_D64toI64S:
       case Iop_D64toI64U:
       case Iop_I64StoD64:
       case Iop_I64UtoD64:
-         /* I32(DFP rm) x I64/D64 -> D64/I64 */
+         /* I32(rm) x I64/D64 -> D64/I64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_F64toD64:
       case Iop_D64toF64:
-         /* I32(DFP rm) x F64/D64 -> D64/F64 */
+         /* I32(rm) x F64/D64 -> D64/F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_F64toD128:
-         /* I32(DFP rm) x F64 -> D128 */
+         /* I32(rm) x F64 -> D128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
       case Iop_D128toF64:
-         /* I32(DFP rm) x D128 -> F64 */
+         /* I32(rm) x D128 -> F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_F128toD128:
       case Iop_D128toF128:
-         /* I32(DFP rm) x F128/D128 -> D128/F128 */
+         /* I32(rm) x F128/D128 -> D128/F128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
       case Iop_RoundF32toInt:
@@ -3501,7 +3501,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_D64toD32:
-         /* First arg is I32 (DFP rounding mode), second is D64 (data). */
+         /* First arg is I32 (rounding mode), second is D64 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_F64toI16S:

@@ -683,8 +683,8 @@ set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    stick the rounding mode into the FPC -- a good thing. However, the
    rounding mode must be known.
 
-   When mapping an Irrm_DFP_ value to an S390_DFP_ROUND_ value there is
-   often a choice. For instance, Irrm_DFP_ZERO could be mapped to either
+   When mapping an Irrm_XYZ value to an S390_DFP_ROUND_ value there is
+   often a choice. For instance, Irrm_ZERO could be mapped to either
    S390_DFP_ROUND_ZERO_5 or S390_DFP_ROUND_ZERO_9. The difference between
    those two is that with S390_DFP_ROUND_ZERO_9 the recognition of the
    quantum exception is suppressed whereas with S390_DFP_ROUND_ZERO_5 it
@@ -696,7 +696,7 @@ set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    Translation table of
    s390 DFP rounding mode to IRRoundingMode to s390 DFP rounding mode
 
-   s390(S390_DFP_ROUND_)  |  IR(Irrm_DFP_)       |  s390(S390_DFP_ROUND_)
+   s390(S390_DFP_ROUND_)  |  IR(Irrm_)           |  s390(S390_DFP_ROUND_)
    --------------------------------------------------------------------
    NEAREST_TIE_AWAY_0_1   |  NEAREST_TIE_AWAY_0  |  NEAREST_TIE_AWAY_0_12
    NEAREST_TIE_AWAY_0_12  |     "                |     "
@@ -718,24 +718,24 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
 {
    if (irrm->tag == Iex_Const) {          /* rounding mode is known */
       vassert(irrm->Iex.Const.con->tag == Ico_U32);
-      IRRoundingModeDFP mode = irrm->Iex.Const.con->Ico.U32;
+      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
-      case Irrm_DFP_NEAREST:
+      case Irrm_NEAREST:
          return S390_DFP_ROUND_NEAREST_EVEN_8;
-      case Irrm_DFP_NegINF:
+      case Irrm_NegINF:
          return S390_DFP_ROUND_NEGINF_11;
-      case Irrm_DFP_PosINF:
+      case Irrm_PosINF:
          return S390_DFP_ROUND_POSINF_10;
-      case Irrm_DFP_ZERO:
+      case Irrm_ZERO:
          return S390_DFP_ROUND_ZERO_9;
-      case Irrm_DFP_NEAREST_TIE_AWAY_0:
+      case Irrm_NEAREST_TIE_AWAY_0:
          return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12;
-      case Irrm_DFP_PREPARE_SHORTER:
+      case Irrm_PREPARE_SHORTER:
           return S390_DFP_ROUND_PREPARE_SHORT_15;
-      case Irrm_DFP_AWAY_FROM_ZERO:
+      case Irrm_AWAY_FROM_ZERO:
          return S390_DFP_ROUND_AWAY_0;
-      case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+      case Irrm_NEAREST_TIE_TOWARD_0:
          return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
       default:
          vpanic("get_dfp_rounding_mode");

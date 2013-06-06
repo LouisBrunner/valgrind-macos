@@ -1624,26 +1624,26 @@ encode_dfp_rounding_mode(UChar mode)
       rm = get_dfp_rounding_mode_from_fpc(); break;
    case S390_DFP_ROUND_NEAREST_EVEN_4:
    case S390_DFP_ROUND_NEAREST_EVEN_8:
-      rm = mkU32(Irrm_DFP_NEAREST); break;
+      rm = mkU32(Irrm_NEAREST); break;
    case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1:
    case S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12:
-      rm = mkU32(Irrm_DFP_NEAREST_TIE_AWAY_0); break;
+      rm = mkU32(Irrm_NEAREST_TIE_AWAY_0); break;
    case S390_DFP_ROUND_PREPARE_SHORT_3:
    case S390_DFP_ROUND_PREPARE_SHORT_15:
-      rm = mkU32(Irrm_DFP_PREPARE_SHORTER); break;
+      rm = mkU32(Irrm_PREPARE_SHORTER); break;
    case S390_DFP_ROUND_ZERO_5:
    case S390_DFP_ROUND_ZERO_9:
-      rm = mkU32(Irrm_DFP_ZERO ); break;
+      rm = mkU32(Irrm_ZERO ); break;
    case S390_DFP_ROUND_POSINF_6:
    case S390_DFP_ROUND_POSINF_10:
-      rm = mkU32(Irrm_DFP_PosINF); break;
+      rm = mkU32(Irrm_PosINF); break;
    case S390_DFP_ROUND_NEGINF_7:
    case S390_DFP_ROUND_NEGINF_11:
-      rm = mkU32(Irrm_DFP_NegINF); break;
+      rm = mkU32(Irrm_NegINF); break;
    case S390_DFP_ROUND_NEAREST_TIE_TOWARD_0:
-      rm = mkU32(Irrm_DFP_NEAREST_TIE_TOWARD_0); break;
+      rm = mkU32(Irrm_NEAREST_TIE_TOWARD_0); break;
    case S390_DFP_ROUND_AWAY_0:
-      rm = mkU32(Irrm_DFP_AWAY_FROM_ZERO); break;
+      rm = mkU32(Irrm_AWAY_FROM_ZERO); break;
    default:
       vpanic("encode_dfp_rounding_mode");
    }

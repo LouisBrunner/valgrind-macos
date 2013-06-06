@@ -1185,27 +1185,27 @@ decode_bfp_rounding_mode(UInt irrm)
    psw >> 28;   /* cc */ \
 })
 
-/* Convert an IRRoundingModeDFP value to s390_dfp_round_t */
+/* Convert an IRRoundingMode value to s390_dfp_round_t */
 #if defined(VGA_s390x)
 static s390_dfp_round_t
 decode_dfp_rounding_mode(UInt irrm)
 {
    switch (irrm) {
-   case Irrm_DFP_NEAREST:
+   case Irrm_NEAREST:
       return S390_DFP_ROUND_NEAREST_EVEN_4;
-   case Irrm_DFP_NegINF:
+   case Irrm_NegINF:
       return S390_DFP_ROUND_NEGINF_7;
-   case Irrm_DFP_PosINF:
+   case Irrm_PosINF:
       return S390_DFP_ROUND_POSINF_6;
-   case Irrm_DFP_ZERO:
+   case Irrm_ZERO:
       return S390_DFP_ROUND_ZERO_5;
-   case Irrm_DFP_NEAREST_TIE_AWAY_0:
+   case Irrm_NEAREST_TIE_AWAY_0:
       return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1;
-   case Irrm_DFP_PREPARE_SHORTER:
+   case Irrm_PREPARE_SHORTER:
       return S390_DFP_ROUND_PREPARE_SHORT_3;
-   case Irrm_DFP_AWAY_FROM_ZERO:
+   case Irrm_AWAY_FROM_ZERO:
       return S390_DFP_ROUND_AWAY_0;
-   case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+   case Irrm_NEAREST_TIE_TOWARD_0:
       return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
    }
    vpanic("decode_dfp_rounding_mode");

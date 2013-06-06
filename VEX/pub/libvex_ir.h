@@ -1006,13 +1006,13 @@ typedef
 
       /* ARITHMETIC INSTRUCTIONS   64-bit
 	 ----------------------------------
-	 IRRoundingModeDFP(I32) X D64 X D64 -> D64
+	 IRRoundingMode(I32) X D64 X D64 -> D64
       */
       Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64,
 
       /* ARITHMETIC INSTRUCTIONS  128-bit
 	 ----------------------------------
-	 IRRoundingModeDFP(I32) X D128 X D128 -> D128
+	 IRRoundingMode(I32) X D128 X D128 -> D128
       */
       Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128,
 
@@ -1050,10 +1050,10 @@ typedef
       /*   I64U -> D128 */
       Iop_I64UtoD128,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> D32 */
+      /*   IRRoundingMode(I32) x D64 -> D32 */
       Iop_D64toD32,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> D64 */
+      /*   IRRoundingMode(I32) x D128 -> D64 */
       Iop_D128toD64,
 
       /*   I32S -> D64 */
@@ -1062,52 +1062,52 @@ typedef
       /*   I32U -> D64 */
       Iop_I32UtoD64,
 
-      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      /*   IRRoundingMode(I32) x I64 -> D64 */
       Iop_I64StoD64,
 
-      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      /*   IRRoundingMode(I32) x I64 -> D64 */
       Iop_I64UtoD64,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      /*   IRRoundingMode(I32) x D64 -> I32 */
       Iop_D64toI32S,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      /*   IRRoundingMode(I32) x D64 -> I32 */
       Iop_D64toI32U,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      /*   IRRoundingMode(I32) x D64 -> I64 */
       Iop_D64toI64S,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      /*   IRRoundingMode(I32) x D64 -> I64 */
       Iop_D64toI64U,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      /*   IRRoundingMode(I32) x D128 -> I32 */
       Iop_D128toI32S,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      /*   IRRoundingMode(I32) x D128 -> I32 */
       Iop_D128toI32U,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      /*   IRRoundingMode(I32) x D128 -> I64 */
       Iop_D128toI64S,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      /*   IRRoundingMode(I32) x D128 -> I64 */
       Iop_D128toI64U,
 
-      /*   IRRoundingModeDFP(I32) x F64 -> D64 */
+      /*   IRRoundingMode(I32) x F64 -> D64 */
       Iop_F64toD64,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> F64 */
+      /*   IRRoundingMode(I32) x D64 -> F64 */
       Iop_D64toF64,
 
-      /*   IRRoundingModeDFP(I32) x F64 -> D128 */
+      /*   IRRoundingMode(I32) x F64 -> D128 */
       Iop_F64toD128,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> F64 */
+      /*   IRRoundingMode(I32) x D128 -> F64 */
       Iop_D128toF64,
 
-      /*   IRRoundingModeDFP(I32) x F128 -> D128 */
+      /*   IRRoundingMode(I32) x F128 -> D128 */
       Iop_F128toD128,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> F128 */
+      /*   IRRoundingMode(I32) x D128 -> F128 */
       Iop_D128toF128,
 
       /* ROUNDING INSTRUCTIONS
@@ -1142,20 +1142,20 @@ typedef
        * of the first operand's exponent and the rounded based on the specified
        * rounding mode parameter.
        *
-       * IRRoundingModeDFP(I32) x D64 x D64-> D64 */
+       * IRRoundingMode(I32) x D64 x D64-> D64 */
       Iop_QuantizeD64,
 
-      /* IRRoundingModeDFP(I32) x D128 x D128 -> D128 */
+      /* IRRoundingMode(I32) x D128 x D128 -> D128 */
       Iop_QuantizeD128,
 
-      /* IRRoundingModeDFP(I32) x I8 x D64 -> D64
+      /* IRRoundingMode(I32) x I8 x D64 -> D64
        *    The Decimal Floating point operand is rounded to the requested 
        *    significance given by the I8 operand as specified by the rounding 
        *    mode.
        */
       Iop_SignificanceRoundD64,
 
-      /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
+      /* IRRoundingMode(I32) x I8 x D128 -> D128 */
       Iop_SignificanceRoundD128,
 
       /* EXTRACT AND INSERT INSTRUCTIONS
@@ -1585,39 +1585,22 @@ typedef
 extern void ppIROp ( IROp );
 
 
-/* Encoding of IEEE754-specified rounding modes.  This is the same as
-   the encoding used by Intel IA32 to indicate x87 rounding mode.
+/* Encoding of IEEE754-specified rounding modes.
    Note, various front and back ends rely on the actual numerical
    values of these, so do not change them. */
 typedef
    enum { 
-      Irrm_NEAREST = 0, 
-      Irrm_NegINF  = 1, 
-      Irrm_PosINF  = 2, 
-      Irrm_ZERO    = 3 
+      Irrm_NEAREST              = 0,  // Round to nearest, ties to even
+      Irrm_NegINF               = 1,  // Round to negative infinity
+      Irrm_PosINF               = 2,  // Round to positive infinity
+      Irrm_ZERO                 = 3,  // Round toward zero
+      Irrm_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
+      Irrm_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
+                                      // precision
+      Irrm_AWAY_FROM_ZERO       = 6,  // Round to away from 0
+      Irrm_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
    }
    IRRoundingMode;
-
-/* DFP encoding of IEEE754 2008 specified rounding modes extends the two bit
- * binary floating point rounding mode (IRRoundingMode) to three bits.  The 
- * DFP rounding modes are a super set of the binary rounding modes.  The 
- * encoding was chosen such that the mapping of the least significant two bits
- * of the IR to POWER encodings is same.  The upper IR encoding bit is just
- * a logical OR of the upper rounding mode bit from the POWER encoding.
- */
-typedef
-   enum { 
-      Irrm_DFP_NEAREST              = 0,  // Round to nearest, ties to even
-      Irrm_DFP_NegINF               = 1,  // Round to negative infinity
-      Irrm_DFP_PosINF               = 2,  // Round to posative infinity
-      Irrm_DFP_ZERO                 = 3,  // Round toward zero
-      Irrm_DFP_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
-      Irrm_DFP_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
-                                          // precision
-      Irrm_DFP_AWAY_FROM_ZERO       = 6,  // Round to away from 0
-      Irrm_DFP_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
-   }
-   IRRoundingModeDFP;
 
 /* Binary floating point comparison result values.
    This is also derived from what IA32 does. */

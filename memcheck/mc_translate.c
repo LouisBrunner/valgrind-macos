@@ -2689,10 +2689,10 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
          /* I32(rm) x F32 x F32 -> I32 */
          return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
       case Iop_SignificanceRoundD64:
-         /* IRRoundingModeDFP(I32) x I8 x D64 -> D64 */
+         /* IRRoundingMode(I32) x I8 x D64 -> D64 */
          return mkLazy3(mce, Ity_I64, vatom1, vatom2, vatom3);
       case Iop_SignificanceRoundD128:
-         /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
+         /* IRRoundingMode(I32) x I8 x D128 -> D128 */
          return mkLazy3(mce, Ity_I128, vatom1, vatom2, vatom3);
       case Iop_ExtractV128:
          complainIfUndefined(mce, atom3, NULL);
@@ -3474,16 +3474,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F128toI32S: /* IRRoundingMode(I32) x F128 -> signed I32  */
       case Iop_F128toI32U: /* IRRoundingMode(I32) x F128 -> unsigned I32  */
       case Iop_F128toF32:  /* IRRoundingMode(I32) x F128 -> F32         */
-      case Iop_D128toI32S: /* IRRoundingModeDFP(I32) x D128 -> signed I32  */
-      case Iop_D128toI32U: /* IRRoundingModeDFP(I32) x D128 -> unsigned I32  */
+      case Iop_D128toI32S: /* IRRoundingMode(I32) x D128 -> signed I32  */
+      case Iop_D128toI32U: /* IRRoundingMode(I32) x D128 -> unsigned I32  */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_F128toI64S: /* IRRoundingMode(I32) x F128 -> signed I64  */
       case Iop_F128toI64U: /* IRRoundingMode(I32) x F128 -> unsigned I64  */
       case Iop_F128toF64:  /* IRRoundingMode(I32) x F128 -> F64         */
-      case Iop_D128toD64:  /* IRRoundingModeDFP(I64) x D128 -> D64 */
-      case Iop_D128toI64S: /* IRRoundingModeDFP(I64) x D128 -> signed I64  */
-      case Iop_D128toI64U: /* IRRoundingModeDFP(I32) x D128 -> unsigned I64  */
+      case Iop_D128toD64:  /* IRRoundingMode(I64) x D128 -> D64 */
+      case Iop_D128toI64S: /* IRRoundingMode(I64) x D128 -> signed I64  */
+      case Iop_D128toI64U: /* IRRoundingMode(I32) x D128 -> unsigned I64  */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_F64HLtoF128:

@@ -194,6 +194,12 @@ extern Int VG_(log2_64)( ULong x );
 extern UInt VG_(random) ( /*MOD*/UInt* pSeed );
 #define VG_RAND_MAX (1ULL << 32)
 
+/* Update a running Adler-32 checksum with the bytes buf[0..len-1] and
+   return the updated checksum. If buf is NULL, this function returns
+   the required initial value for the checksum. An Adler-32 checksum is
+   almost as reliable as a CRC32 but can be computed much faster. */
+extern UInt VG_(adler32)( UInt adler, const UChar* buf, UInt len);
+
 #endif   // __PUB_TOOL_LIBCBASE_H
 
 /*--------------------------------------------------------------------*/

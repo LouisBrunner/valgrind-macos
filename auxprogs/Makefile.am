@@ -21,10 +21,11 @@ EXTRA_DIST = \
 	primes.c
 
 #----------------------------------------------------------------------------
-# valgrind_listener (built for the primary target only)
+# valgrind_listener  (built for the primary target only)
+# valgrind-di-server (ditto)
 #----------------------------------------------------------------------------
 
-bin_PROGRAMS = valgrind-listener
+bin_PROGRAMS = valgrind-listener valgrind-di-server
 
 valgrind_listener_SOURCES = valgrind-listener.c
 valgrind_listener_CPPFLAGS  = $(AM_CPPFLAGS_PRI) -I$(top_srcdir)/coregrind
@@ -36,4 +37,16 @@ valgrind_listener_CFLAGS    += -static
 endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_listener_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
+
+valgrind_di_server_SOURCES   = valgrind-di-server.c
+valgrind_di_server_CPPFLAGS  = $(AM_CPPFLAGS_PRI) -I$(top_srcdir)/coregrind
+valgrind_di_server_CFLAGS    = $(AM_CFLAGS_PRI)
+valgrind_di_server_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+valgrind_di_server_LDFLAGS   = $(AM_CFLAGS_PRI)
+if VGCONF_PLATVARIANT_IS_ANDROID
+valgrind_di_server_CFLAGS    += -static
+endif
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+valgrind_di_server_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif

@@ -176,6 +176,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --extra-debuginfo-path=path    absolute path to search for additional\n"
 "                              debug symbols, in addition to existing default\n"
 "                              well known search paths.\n"
+"    --debuginfo-server=ipaddr:port\n   also query this server"
+"                              (valgrind-di-server) for debug symbols\n"
 "    --smc-check=none|stack|all|all-non-file [stack]\n"
 "                              checks for self-modifying code: none, only for\n"
 "                              code found in stacks, for all code, or for all\n"
@@ -675,6 +677,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STR_CLO(arg, "--xml-socket", xml_fsname_unexpanded) {
          xml_to = VgLogTo_Socket;
       }
+
+      else if VG_STR_CLO(arg, "--debuginfo-server",
+                              VG_(clo_debuginfo_server)) {}
 
       else if VG_STR_CLO(arg, "--xml-user-comment",
                               VG_(clo_xml_user_comment)) {}

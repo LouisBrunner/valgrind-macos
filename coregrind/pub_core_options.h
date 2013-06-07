@@ -129,6 +129,11 @@ extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 /* Full path to additional path to search for debug symbols */
 extern const HChar* VG_(clo_extra_debuginfo_path);
 
+/* Address of a debuginfo server to use.  Either an IPv4 address of
+   the form "d.d.d.d" or that plus a port spec, hence of the form
+   "d.d.d.d:d", where d is one or more digits. */
+extern const HChar* VG_(clo_debuginfo_server);
+
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
 

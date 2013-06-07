@@ -44,12 +44,12 @@
 extern
 void ML_(read_debuginfo_dwarf3)
         ( struct _DebugInfo* di,
-          UChar* debug_info_img, Word debug_info_sz,  /* .debug_info */
-          UChar* debug_types_img, Word debug_types_sz,  /* .debug_types */
-          UChar* debug_abbv_img, Word debug_abbv_sz,  /* .debug_abbrev */
-          UChar* debug_line_img, Word debug_line_sz,  /* .debug_line */
-          HChar* debug_str_img,  Word debug_str_sz,   /* .debug_str */
-          HChar* debug_str_alt_img, Word debug_str_alt_sz ); /* .debug_str */
+          DiSlice escn_debug_info,      /* .debug_info */
+          DiSlice escn_debug_types,     /* .debug_types */
+          DiSlice escn_debug_abbv,      /* .debug_abbrev */
+          DiSlice escn_debug_line,      /* .debug_line */
+          DiSlice escn_debug_str,       /* .debug_str */
+          DiSlice escn_debug_str_alt ); /* .debug_str */
 
 /* --------------------
    DWARF1 reader
@@ -65,8 +65,7 @@ void ML_(read_debuginfo_dwarf1) ( struct _DebugInfo* di,
 extern
 void ML_(read_callframe_info_dwarf3)
         ( /*OUT*/struct _DebugInfo* di,
-          UChar* frame_image, SizeT frame_size, Addr frame_avma,
-          Bool is_ehframe );
+          DiSlice escn_frame, Addr frame_avma, Bool is_ehframe );
 
 
 #endif /* ndef __PRIV_READDWARF_H */

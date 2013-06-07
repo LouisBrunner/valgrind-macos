@@ -37,14 +37,13 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcfile.h"
-#include "pub_core_aspacemgr.h"    /* for mmaping debuginfo files */
 #include "pub_core_machine.h"      /* VG_ELF_CLASS */
 #include "pub_core_options.h"
 #include "pub_core_oset.h"
 #include "pub_core_tooliface.h"    /* VG_(needs) */
 #include "pub_core_xarray.h"
 #include "priv_misc.h"             /* dinfo_zalloc/free/strdup */
+#include "priv_image.h"
 #include "priv_d3basics.h"
 #include "priv_tytypes.h"
 #include "priv_storage.h"
@@ -107,7 +106,6 @@
    them.  It calls onwards to readdwarf.c to read DWARF2/3 line number
    and call frame info found. */
 
-
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
 
@@ -135,18 +133,33 @@ Bool ML_(is_elf_object_file)( void* image, SizeT n_image, Bool rel_ok )
    ok &= ((ehdr->e_phoff != 0 && ehdr->e_phnum != 0)
           || ehdr->e_type == ET_REL);
 
-   if (ok)
-      return True;
-   else
+   return ok ? True : False;
+}
+
+
+/* The same thing, but operating on a DiImage instead. */
+
+static Bool is_elf_object_file_by_DiImage( DiImage* img, Bool rel_ok )
+{
+   /* Be sure this doesn't make the frame too big. */
+   vg_assert(sizeof(ElfXX_Ehdr) <= 512);
+
+   ElfXX_Ehdr ehdr;
+   if (!ML_(img_valid)(img, 0, sizeof(ehdr)))
       return False;
+
+   ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
+   return ML_(is_elf_object_file)( &ehdr, sizeof(ehdr), rel_ok );
 }
 
 
 /* Show a raw ELF symbol, given its in-image address and name. */
 
 static
-void show_raw_elf_symbol ( Int i, 
-                           ElfXX_Sym* sym, const HChar* sym_name, Addr sym_svma,
+void show_raw_elf_symbol ( DiImage* strtab_img,
+                           Int i, 
+                           ElfXX_Sym* sym,
+                           DiOffT sym_name_ioff, Addr sym_svma,
                            Bool ppc64_linux_format )
 {
    const HChar* space = ppc64_linux_format ? "                  " : "";
@@ -169,10 +182,15 @@ void show_raw_elf_symbol ( Int i,
       case STT_HIPROC:  VG_(printf)("hip "); break;
       default:          VG_(printf)("??? "); break;
    }
+   HChar* sym_name = NULL;
+   if (sym->st_name)
+      sym_name = ML_(img_strdup)(strtab_img, "di.sres.1", sym_name_ioff);
    VG_(printf)(": svma %#010lx, %ssz %4ld  %s\n",
                sym_svma, space, sym->st_size + 0UL,
-               ( sym->st_name ? sym_name : "NONAME" ) ); 
-}               
+               (sym_name ? sym_name : "NONAME") ); 
+   if (sym_name)
+      ML_(dinfo_free)(sym_name);
+}
 
 
 /* Decide whether SYM is something we should collect, and if so, copy
@@ -207,21 +225,22 @@ Bool get_elf_symbol_info (
         /* INPUTS */
         struct _DebugInfo* di, /* containing DebugInfo */
         ElfXX_Sym* sym,        /* ELF symbol */
-        HChar*     sym_name,   /* name */
+        DiOffT     sym_name_ioff, /* name, may be absent (DiOffT_INVALID) */
+        DiSlice*   escn_strtab,   /* holds the name */
         Addr       sym_svma,   /* address as stated in the object file */
         Bool       symtab_in_debug, /* symbol table is in the debug file */
-        UChar*     opd_img,    /* oimage of .opd sec (ppc64-linux only) */
+        DiSlice*   escn_opd,   /* the .opd (ppc64-linux only) */
         PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
-        HChar** sym_name_out,  /* name we should record */
-        Addr*  sym_avma_out,   /* addr we should record */
-        Int*   sym_size_out,   /* symbol size */
-        Addr*  sym_tocptr_out, /* ppc64-linux only: R2 value to be
-                                  used on entry */
-        Bool*  from_opd_out,   /* ppc64-linux only: did we deref an
+        DiOffT* sym_name_out_ioff, /* name (in strtab) we should record */
+        Addr*   sym_avma_out,   /* addr we should record */
+        Int*    sym_size_out,   /* symbol size */
+        Addr*   sym_tocptr_out, /* ppc64-linux only: R2 value to be
+                                   used on entry */
+        Bool*   from_opd_out,   /* ppc64-linux only: did we deref an
                                   .opd entry? */
-        Bool*  is_text_out,    /* is this a text symbol? */
-        Bool*  is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
+        Bool*   is_text_out,    /* is this a text symbol? */
+        Bool*   is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
      )
 {
    Bool plausible;
@@ -233,12 +252,12 @@ Bool get_elf_symbol_info (
    PtrdiffT text_bias, data_bias, sdata_bias, rodata_bias, bss_bias, sbss_bias;
 
    /* Set defaults */
-   *sym_name_out   = sym_name;
-   *sym_avma_out   = sym_svma; /* we will bias this shortly */
-   *is_text_out    = True;
-   *sym_tocptr_out = 0; /* unknown/inapplicable */
-   *from_opd_out   = False;
-   *is_ifunc       = False;
+   *sym_name_out_ioff = sym_name_ioff;
+   *sym_avma_out      = sym_svma; /* we will bias this shortly */
+   *is_text_out       = True;
+   *sym_tocptr_out    = 0; /* unknown/inapplicable */
+   *from_opd_out      = False;
+   *is_ifunc          = False;
    /* Get the symbol size, but restrict it to fit in a signed 32 bit
       int.  Also, deal with the stupid case of negative size by making
       the size be 1.  Note that sym->st_size has type UWord,
@@ -374,11 +393,16 @@ Bool get_elf_symbol_info (
       return False;
 
    /* Ignore if nameless. */
-   if (sym_name == (ElfXX_Word)0
+   if (sym_name_ioff == DiOffT_INVALID
        || /* VG_(strlen)(sym_name) == 0 */
           /* equivalent but cheaper ... */
-          sym_name[0] == 0) {
-      TRACE_SYMTAB("    ignore -- nameless: %s\n", sym_name);
+          ML_(img_get_UChar)(escn_strtab->img, sym_name_ioff) == '\0') {
+      if (TRACE_SYMTAB_ENABLED) {
+         HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                           "di.gesi.1", sym_name_ioff);
+         TRACE_SYMTAB("    ignore -- nameless: %s\n", sym_name);
+         if (sym_name) ML_(dinfo_free)(sym_name);
+      }
       return False;
    }
 
@@ -399,7 +423,12 @@ Bool get_elf_symbol_info (
 #     if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
       *sym_size_out = 2048;
 #     else
-      TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
+      if (TRACE_SYMTAB_ENABLED) {
+         HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                           "di.gesi.2", sym_name_ioff);
+         TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
+         if (sym_name) ML_(dinfo_free)(sym_name);
+      }
       return False;
 #     endif
    }
@@ -408,7 +437,12 @@ Bool get_elf_symbol_info (
       symbols, and particularly reduces the number of
       overlapping address ranges.  Don't ask me why ... */
    if ((Int)sym->st_value == 0) {
-      TRACE_SYMTAB( "    ignore -- valu=0: %s\n", sym_name);
+      if (TRACE_SYMTAB_ENABLED) {
+         HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                           "di.gesi.3", sym_name_ioff);
+         TRACE_SYMTAB( "    ignore -- valu=0: %s\n", sym_name);
+         if (sym_name) ML_(dinfo_free)(sym_name);
+      }
       return False;
    }
 
@@ -418,14 +452,24 @@ Bool get_elf_symbol_info (
        && di->got_size > 0
        && *sym_avma_out >= di->got_avma 
        && *sym_avma_out <  di->got_avma + di->got_size) {
-      TRACE_SYMTAB("    ignore -- in GOT: %s\n", sym_name);
+      if (TRACE_SYMTAB_ENABLED) {
+         HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                           "di.gesi.4", sym_name_ioff);
+         TRACE_SYMTAB("    ignore -- in GOT: %s\n", sym_name);
+         if (sym_name) ML_(dinfo_free)(sym_name);
+      }
       return False;
    }
    if (di->plt_present
        && di->plt_size > 0
        && *sym_avma_out >= di->plt_avma
        && *sym_avma_out <  di->plt_avma + di->plt_size) {
-      TRACE_SYMTAB("    ignore -- in PLT: %s\n", sym_name);
+      if (TRACE_SYMTAB_ENABLED) {
+         HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                           "di.gesi.5", sym_name_ioff);
+         TRACE_SYMTAB("    ignore -- in PLT: %s\n", sym_name);
+         if (sym_name) ML_(dinfo_free)(sym_name);
+      }
       return False;
    }
 
@@ -446,11 +490,15 @@ Bool get_elf_symbol_info (
        && *sym_avma_out >= di->opd_avma
        && *sym_avma_out <  di->opd_avma + di->opd_size) {
 #     if !defined(VGP_ppc64_linux)
-      TRACE_SYMTAB("    ignore -- in OPD: %s\n", sym_name);
+      if (TRACE_SYMTAB_ENABLED) {
+         HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                           "di.gesi.6", sym_name_ioff);
+         TRACE_SYMTAB("    ignore -- in OPD: %s\n", sym_name);
+         if (sym_name) ML_(dinfo_free)(sym_name);
+      }
       return False;
 #     else
       Int    offset_in_opd;
-      ULong* fn_descr;
       Bool   details = 1||False;
 
       if (details)
@@ -478,8 +526,13 @@ Bool get_elf_symbol_info (
          opd_img is the start address of the .opd in the oimage.
          Hence: */
 
-      fn_descr = (ULong*)(opd_img + offset_in_opd);
-
+      ULong fn_descr[2]; /* is actually 3 words, but we need only 2 */
+      if (!ML_(img_get)(&fn_descr[0],
+                        img, opd_ioff + offset_in_opd, sizeof(fn_descr))) {
+         TRACE_SYMTAB("    ignore -- invalid OPD fn_descr offset: %s\n",
+                      sym_name);
+         return False;
+      }
       if (details) 
          TRACE_SYMTAB("opdXXY: offset %d,  fn_descr %p\n", 
                       offset_in_opd, fn_descr);
@@ -595,7 +648,7 @@ Bool get_elf_symbol_info (
 #  if defined(VGP_ppc64_linux)
    /* It's crucial that we never add symbol addresses in the .opd
       section.  This would completely mess up function redirection and
-      intercepting.  This assert ensures that anysymbols that make it
+      intercepting.  This assert ensures that any symbols that make it
       into the symbol table on ppc64-linux don't point into .opd. */
    if (di->opd_present && di->opd_size > 0) {
       vg_assert(*sym_avma_out + *sym_size_out <= di->opd_avma
@@ -609,27 +662,18 @@ Bool get_elf_symbol_info (
 
 
 /* Read an ELF symbol table (normal or dynamic).  This one is for the
-   "normal" case ({x86,amd64,ppc32}-linux). */
+   "normal" case ({x86,amd64,ppc32,arm,mips32,mips64}-linux). */
 static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__normal( 
         struct _DebugInfo* di, const HChar* tab_name,
-        ElfXX_Sym* symtab_img, SizeT symtab_szB,
-        HChar*     strtab_img, SizeT strtab_szB,
-        Bool       symtab_in_debug,
-        UChar*     opd_img /* ppc64-linux only */ 
+        DiSlice*   escn_symtab,
+        DiSlice*   escn_strtab,
+        DiSlice*   escn_opd, /* ppc64-linux only */ 
+        Bool       symtab_in_debug
      )
 {
-   Word       i;
-   Addr       sym_svma, sym_avma_really;
-   HChar     *sym_name, *sym_name_really;
-   Int        sym_size;
-   Addr       sym_tocptr;
-   Bool       from_opd, is_text, is_ifunc;
-   DiSym      disym;
-   ElfXX_Sym *sym;
-
-   if (strtab_img == NULL || symtab_img == NULL) {
+   if (escn_strtab->img == NULL || escn_symtab->img == NULL) {
       HChar buf[80];
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
@@ -637,47 +681,61 @@ void read_elf_symtab__normal(
       return;
    }
 
-   TRACE_SYMTAB("\n--- Reading (ELF, standard) %s (%ld entries) ---\n",
-                tab_name, symtab_szB/sizeof(ElfXX_Sym) );
+   TRACE_SYMTAB("\n--- Reading (ELF, standard) %s (%lld entries) ---\n",
+                tab_name, escn_symtab->szB/sizeof(ElfXX_Sym) );
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
       0 always denotes 'unknown symbol'. */
-   for (i = 1; i < (Word)(symtab_szB/sizeof(ElfXX_Sym)); i++) {
-      sym      = & symtab_img[i];
-      sym_name = strtab_img + sym->st_name;
-      sym_svma = sym->st_value;
+   Word i;
+   for (i = 1; i < (Word)(escn_symtab->szB/sizeof(ElfXX_Sym)); i++) {
+      ElfXX_Sym sym;
+      ML_(img_get)(&sym, escn_symtab->img,
+                   escn_symtab->ioff + i * sizeof(ElfXX_Sym), sizeof(sym));
+      DiOffT sym_name = escn_strtab->ioff + sym.st_name;
+      Addr   sym_svma = sym.st_value;
 
       if (di->trace_symtab)
-         show_raw_elf_symbol(i, sym, sym_name, sym_svma, False);
+        show_raw_elf_symbol(escn_strtab->img, i,
+                            &sym, sym_name, sym_svma, False);
 
-      if (get_elf_symbol_info(di, sym, sym_name, sym_svma,
-                              symtab_in_debug,
-                              opd_img, di->text_bias,
+      Addr   sym_avma_really = 0;
+      Int    sym_size = 0;
+      Addr   sym_tocptr = 0;
+      Bool   from_opd = False, is_text = False, is_ifunc = False;
+      DiOffT sym_name_really = DiOffT_INVALID;
+      if (get_elf_symbol_info(di, &sym, sym_name, escn_strtab, 
+                              sym_svma, symtab_in_debug,
+                              escn_opd, di->text_bias,
                               &sym_name_really, 
                               &sym_avma_really,
                               &sym_size,
                               &sym_tocptr,
                               &from_opd, &is_text, &is_ifunc)) {
 
+         DiSym  disym;
+         VG_(memset)(&disym, 0, sizeof(disym));
+         HChar* cstr = ML_(img_strdup)(escn_strtab->img,
+                                       "di.res__n.1", sym_name_really);
          disym.addr      = sym_avma_really;
          disym.tocptr    = sym_tocptr;
-         disym.pri_name  = ML_(addStr) ( di, sym_name_really, -1 );
+         disym.pri_name  = ML_(addStr) ( di, cstr, -1 );
          disym.sec_names = NULL;
          disym.size      = sym_size;
          disym.isText    = is_text;
          disym.isIFunc   = is_ifunc;
+         if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
          vg_assert(disym.pri_name);
          vg_assert(disym.tocptr == 0); /* has no role except on ppc64-linux */
          ML_(addSym) ( di, &disym );
 
-         if (di->trace_symtab) {
-            VG_(printf)("    rec(%c) [%4ld]:          "
-                        "  val %#010lx, sz %4d  %s\n",
-                        is_text ? 't' : 'd',
-                        i,
-                        disym.addr,
-                        (Int)disym.size,
-                        (HChar*)disym.pri_name
+         if (TRACE_SYMTAB_ENABLED) {
+            TRACE_SYMTAB("    rec(%c) [%4ld]:          "
+                         "  val %#010lx, sz %4d  %s\n",
+                         is_text ? 't' : 'd',
+                         i,
+                         disym.addr,
+                         (Int)disym.size,
+                         (HChar*)disym.pri_name
             );
          }
 
@@ -691,8 +749,12 @@ void read_elf_symtab__normal(
 
 typedef
    struct { 
-      Addr   addr; 
-      HChar* name; 
+      Addr   addr;
+      DiOffT name;
+      /* We have to store also the DiImage* so as to give context for
+         |name|.  This is not part of the key (in terms of lookup) but
+         there's no easy other way to do this.  Ugly. */
+      DiImage* img;
    }
    TempSymKey;
 
@@ -707,37 +769,37 @@ typedef
    }
    TempSym;
 
-static Word cmp_TempSymKey ( TempSymKey* key1, TempSym* elem2 ) {
+static Word cmp_TempSymKey ( TempSymKey* key1, TempSym* elem2 )
+{
+   /* Stay sane ... */
+   vg_assert(key1->img == elem2->key.img);
+   vg_assert(key1->img != NULL);
    if (key1->addr < elem2->key.addr) return -1;
    if (key1->addr > elem2->key.addr) return 1;
-   return (Word)VG_(strcmp)(key1->name, elem2->key.name);
+   vg_assert(key1->name != DiOffT_INVALID);
+   vg_assert(elem2->key.name != DiOffT_INVALID);
+   return (Word)ML_(img_strcmp)(key1->img, key1->name, elem2->key.name);
 }
 
 static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__ppc64_linux( 
         struct _DebugInfo* di, const HChar* tab_name,
-        ElfXX_Sym* symtab_img, SizeT symtab_szB,
-        HChar*     strtab_img, SizeT strtab_szB,
-        Bool       symtab_in_debug,
-        UChar*     opd_img /* ppc64-linux only */ 
+        DiSlice*   escn_symtab,
+        DiSlice*   escn_strtab,
+        DiSlice*   escn_opd, /* ppc64-linux only */ 
+        Bool       symtab_in_debug
      )
 {
    Word        i;
    Int         old_size;
-   Addr        sym_svma, sym_avma_really;
-   HChar      *sym_name, *sym_name_really;
-   Int         sym_size;
-   Addr        sym_tocptr;
-   Bool        from_opd, modify_size, modify_tocptr, is_text, is_ifunc;
-   DiSym       disym;
-   ElfXX_Sym  *sym;
+   Bool        modify_size, modify_tocptr;
    OSet       *oset;
    TempSymKey  key;
    TempSym    *elem;
    TempSym    *prev;
 
-   if (strtab_img == NULL || symtab_img == NULL) {
+   if (escn_strtab->img == NULL || escn_symtab->img == NULL) {
       HChar buf[80];
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
@@ -745,8 +807,8 @@ void read_elf_symtab__ppc64_linux(
       return;
    }
 
-   TRACE_SYMTAB("\n--- Reading (ELF, ppc64-linux) %s (%ld entries) ---\n",
-                tab_name, symtab_szB/sizeof(ElfXX_Sym) );
+   TRACE_SYMTAB("\n--- Reading (ELF, ppc64-linux) %s (%lld entries) ---\n",
+                tab_name, escn_symtab->szB/sizeof(ElfXX_Sym) );
 
    oset = VG_(OSetGen_Create)( offsetof(TempSym,key), 
                                (OSetCmp_t)cmp_TempSymKey, 
@@ -756,17 +818,27 @@ void read_elf_symtab__ppc64_linux(
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
       0 always denotes 'unknown symbol'. */
-   for (i = 1; i < (Word)(symtab_szB/sizeof(ElfXX_Sym)); i++) {
-      sym      = & symtab_img[i];
-      sym_name = strtab_img + sym->st_name;
-      sym_svma = sym->st_value;
+   for (i = 1; i < (Word)(escn_symtab->szB/sizeof(ElfXX_Sym)); i++) {
+      ElfXX_Sym sym;
+      ML_(img_get)(&sym, escn_symtab->img,
+                   escn_symtab->ioff + i * sizeof(ElfXX_Sym), sizeof(sym));
+      DiOffT sym_name = escn_strtab->ioff + sym.st_name;
+      Addr   sym_svma = sym.st_value;
 
       if (di->trace_symtab)
-         show_raw_elf_symbol(i, sym, sym_name, sym_svma, True);
+         show_raw_elf_symbol(escn_strtab->img, i,
+                             &sym, sym_name, sym_svma, True);
 
-      if (get_elf_symbol_info(di, sym, sym_name, sym_svma,
-                              symtab_in_debug,
-                              opd_img, di->text_bias,
+      Addr   sym_avma_really = 0;
+      Int    sym_size = 0;
+      Addr   sym_tocptr = 0;
+      Bool   from_opd = False, is_text = False, is_ifunc = False;
+      DiOffT sym_name_really = DiOffT_INVALID;
+      DiSym  disym;
+      VG_(memset)(&disym, 0, sizeof(disym));
+      if (get_elf_symbol_info(di, &sym, sym_name, escn_strtab,
+                              sym_svma, symtab_in_debug,
+                              escn_opd, di->text_bias,
                               &sym_name_really, 
                               &sym_avma_really,
                               &sym_size,
@@ -776,6 +848,7 @@ void read_elf_symtab__ppc64_linux(
          /* Check if we've seen this (name,addr) key before. */
          key.addr = sym_avma_really;
          key.name = sym_name_really;
+         key.img  = escn_strtab->img;
          prev = VG_(OSetGen_Lookup)( oset, &key );
 
          if (prev) {
@@ -815,21 +888,21 @@ void read_elf_symtab__ppc64_linux(
 
             if (modify_size && di->trace_symtab) {
                VG_(printf)("    modify (old sz %4d)    "
-                           " val %#010lx, toc %#010lx, sz %4d  %s\n",
+                           " val %#010lx, toc %#010lx, sz %4d  %lld\n",
                            old_size,
                            prev->key.addr,
                            prev->tocptr,
-                           (Int)   prev->size, 
-                           (HChar*)prev->key.name
+                           (Int)  prev->size, 
+                           (ULong)prev->key.name
                );
             }
             if (modify_tocptr && di->trace_symtab) {
                VG_(printf)("    modify (upd tocptr)     "
-                           " val %#010lx, toc %#010lx, sz %4d  %s\n",
+                           " val %#010lx, toc %#010lx, sz %4d  %lld\n",
                            prev->key.addr,
                            prev->tocptr,
-                           (Int)   prev->size,
-                           (HChar*)prev->key.name
+                           (Int)  prev->size,
+                           (ULong)prev->key.name
                );
             }
 
@@ -847,12 +920,12 @@ void read_elf_symtab__ppc64_linux(
             VG_(OSetGen_Insert)(oset, elem);
             if (di->trace_symtab) {
                VG_(printf)("   to-oset [%4ld]:          "
-                           "  val %#010lx, toc %#010lx, sz %4d  %s\n",
+                           "  val %#010lx, toc %#010lx, sz %4d  %lld\n",
                            i,
                            elem->key.addr,
                            elem->tocptr,
-                           (Int)   elem->size,
-                           (HChar*)elem->key.name
+                           (Int)  elem->size,
+                           (ULong)elem->key.name
                );
             }
 
@@ -867,13 +940,18 @@ void read_elf_symtab__ppc64_linux(
    VG_(OSetGen_ResetIter)( oset );
 
    while ( (elem = VG_(OSetGen_Next)(oset)) ) {
+      DiSym disym;
+      VG_(memset)(&disym, 0, sizeof(disym));
+      HChar* cstr = ML_(img_strdup)(escn_strtab->img,
+                                    "di.res__ppc64.1", elem->key.name);
       disym.addr      = elem->key.addr;
       disym.tocptr    = elem->tocptr;
-      disym.pri_name  = ML_(addStr) ( di, elem->key.name, -1 );
+      disym.pri_name  = ML_(addStr) ( di, cstr, -1 );
       disym.sec_names = NULL;
       disym.size      = elem->size;
       disym.isText    = elem->is_text;
       disym.isIFunc   = elem->is_ifunc;
+      if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
       vg_assert(disym.pri_name != NULL);
 
       ML_(addSym) ( di, &disym );
@@ -900,46 +978,48 @@ void read_elf_symtab__ppc64_linux(
  * can be found here:
  *
  * http://fedoraproject.org/wiki/RolandMcGrath/BuildID
+ *
+ * Returned string must be freed by the caller.
  */
 static
-HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok, Bool search_shdrs)
+HChar* find_buildid(DiImage* img, Bool rel_ok, Bool search_shdrs)
 {
    HChar* buildid = NULL;
-   __attribute__((unused)) /* on Android, at least */
-   ElfXX_Ehdr* ehdr = (ElfXX_Ehdr*)image;
 
-#ifdef NT_GNU_BUILD_ID
-   if (n_image >= sizeof(ElfXX_Ehdr) &&
-       ML_(is_elf_object_file)(ehdr, n_image, rel_ok)) {
+#  ifdef NT_GNU_BUILD_ID
+   if (is_elf_object_file_by_DiImage(img, rel_ok)) {
       Word i;
 
-      for (i = 0; i < ehdr->e_phnum; i++) {
-         ElfXX_Phdr* phdr
-            = (ElfXX_Phdr*)(image + ehdr->e_phoff + i * ehdr->e_phentsize);
+      ElfXX_Ehdr ehdr;
+      ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
+      for (i = 0; i < ehdr.e_phnum; i++) {
+         ElfXX_Phdr phdr;
+         ML_(img_get)(&phdr, img,
+                      ehdr.e_phoff + i * ehdr.e_phentsize, sizeof(phdr));
 
-         if (phdr->p_type == PT_NOTE) {
-            ElfXX_Off offset =  phdr->p_offset;
+         if (phdr.p_type == PT_NOTE) {
+            ElfXX_Off note_ioff = phdr.p_offset;
 
-            while (offset < phdr->p_offset + phdr->p_filesz) {
-               ElfXX_Nhdr* note = (ElfXX_Nhdr*)(image + offset);
-               HChar *name = (HChar *)note + sizeof(ElfXX_Nhdr);
-               UChar *desc = (UChar *)name + ((note->n_namesz + 3) & ~3);
-               Word j;
-
-               if (VG_(strcmp)(name, ELF_NOTE_GNU) == 0 &&
-                   note->n_type == NT_GNU_BUILD_ID) {
+            while (note_ioff < phdr.p_offset + phdr.p_filesz) {
+               ElfXX_Nhdr note;
+               ML_(img_get)(&note, img, (DiOffT)note_ioff, sizeof(note));
+               DiOffT name_ioff = note_ioff + sizeof(ElfXX_Nhdr);
+               DiOffT desc_ioff = name_ioff + ((note.n_namesz + 3) & ~3);
+               if (ML_(img_strcmp_c)(img, name_ioff, ELF_NOTE_GNU) == 0
+                   && note.n_type == NT_GNU_BUILD_ID) {
                   buildid = ML_(dinfo_zalloc)("di.fbi.1",
-                                              note->n_descsz * 2 + 1);
-                  
-                  for (j = 0; j < note->n_descsz; j++) {
+                                              note.n_descsz * 2 + 1);
+                  Word j;
+                  for (j = 0; j < note.n_descsz; j++) {
+                     UChar desc_j = ML_(img_get_UChar)(img, desc_ioff + j);
                      VG_(sprintf)(buildid + VG_(strlen)(buildid), 
-                                  "%02x", desc[j]);
+                                  "%02x", (UInt)desc_j);
                   }
                }
 
-               offset = offset + sizeof(ElfXX_Nhdr)
-                               + ((note->n_namesz + 3) & ~3)
-                               + ((note->n_descsz + 3) & ~3);
+               note_ioff = note_ioff + sizeof(ElfXX_Nhdr)
+                                     + ((note.n_namesz + 3) & ~3)
+                                     + ((note.n_descsz + 3) & ~3);
             }            
          }
       }
@@ -951,293 +1031,133 @@ HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok, Bool search_shdrs)
       if (buildid || (!rel_ok && !search_shdrs))
          return buildid;
 
-      for (i = 0; i < ehdr->e_shnum; i++) {
-         ElfXX_Shdr* shdr
-            = (ElfXX_Shdr*)(image + ehdr->e_shoff + i * ehdr->e_shentsize);
+      for (i = 0; i < ehdr.e_shnum; i++) {
+         ElfXX_Shdr shdr;
+         ML_(img_get)(&shdr, img,
+                      ehdr.e_shoff + i * ehdr.e_shentsize, sizeof(shdr));
 
-         if (shdr->sh_type == SHT_NOTE) {
-            ElfXX_Off offset =  shdr->sh_offset;
+         if (shdr.sh_type == SHT_NOTE) {
+            ElfXX_Off note_ioff = shdr.sh_offset;
 
-            while (offset < shdr->sh_offset + shdr->sh_size) {
-               ElfXX_Nhdr* note = (ElfXX_Nhdr*)(image + offset);
-               HChar *name = (HChar *)note + sizeof(ElfXX_Nhdr);
-               UChar *desc = (UChar *)name + ((note->n_namesz + 3) & ~3);
-               Word j;
+            while (note_ioff < shdr.sh_offset + shdr.sh_size) {
+               ElfXX_Nhdr note;
+               ML_(img_get)(&note, img, (DiOffT)note_ioff, sizeof(note));
+               DiOffT name_ioff = note_ioff + sizeof(ElfXX_Nhdr);
+               DiOffT desc_ioff = name_ioff + ((note.n_namesz + 3) & ~3);
 
-               if (VG_(strcmp)(name, ELF_NOTE_GNU) == 0 &&
-                   note->n_type == NT_GNU_BUILD_ID) {
-                  buildid = ML_(dinfo_zalloc)("di.fbi.1",
-                                              note->n_descsz * 2 + 1);
-                  
-                  for (j = 0; j < note->n_descsz; j++) {
+               if (ML_(img_strcmp_c)(img, name_ioff, ELF_NOTE_GNU) == 0
+                   && note.n_type == NT_GNU_BUILD_ID) {
+                  buildid = ML_(dinfo_zalloc)("di.fbi.2",
+                                              note.n_descsz * 2 + 1);
+                  Word j;
+                  for (j = 0; j < note.n_descsz; j++) {
+                     UChar desc_j = ML_(img_get_UChar)(img, desc_ioff + j);
                      VG_(sprintf)(buildid + VG_(strlen)(buildid), 
-                                  "%02x", desc[j]);
+                                  "%02x", (UInt)desc_j);
                   }
                }
 
-               offset = offset + sizeof(ElfXX_Nhdr)
-                               + ((note->n_namesz + 3) & ~3)
-                               + ((note->n_descsz + 3) & ~3);
+               note_ioff = note_ioff + sizeof(ElfXX_Nhdr)
+                                     + ((note.n_namesz + 3) & ~3)
+                                     + ((note.n_descsz + 3) & ~3);
             }            
          }
       }
    }
-#endif
+#  endif /* def NT_GNU_BUILD_ID */
 
    return buildid;
 }
 
-/*
- * This routine for calculating the CRC for a separate debug file
- * is GPLed code borrowed from GNU binutils.
- */
-static UInt
-calc_gnu_debuglink_crc32(UInt crc, const UChar *buf, Int len)
-{
-  static const UInt crc32_table[256] =
-    {
-      0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
-      0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
-      0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
-      0x90bf1d91, 0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de,
-      0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7, 0x136c9856,
-      0x646ba8c0, 0xfd62f97a, 0x8a65c9ec, 0x14015c4f, 0x63066cd9,
-      0xfa0f3d63, 0x8d080df5, 0x3b6e20c8, 0x4c69105e, 0xd56041e4,
-      0xa2677172, 0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,
-      0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940, 0x32d86ce3,
-      0x45df5c75, 0xdcd60dcf, 0xabd13d59, 0x26d930ac, 0x51de003a,
-      0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423, 0xcfba9599,
-      0xb8bda50f, 0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924,
-      0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d, 0x76dc4190,
-      0x01db7106, 0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f,
-      0x9fbfe4a5, 0xe8b8d433, 0x7807c9a2, 0x0f00f934, 0x9609a88e,
-      0xe10e9818, 0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01,
-      0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e, 0x6c0695ed,
-      0x1b01a57b, 0x8208f4c1, 0xf50fc457, 0x65b0d9c6, 0x12b7e950,
-      0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3,
-      0xfbd44c65, 0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2,
-      0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb, 0x4369e96a,
-      0x346ed9fc, 0xad678846, 0xda60b8d0, 0x44042d73, 0x33031de5,
-      0xaa0a4c5f, 0xdd0d7cc9, 0x5005713c, 0x270241aa, 0xbe0b1010,
-      0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
-      0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17,
-      0x2eb40d81, 0xb7bd5c3b, 0xc0ba6cad, 0xedb88320, 0x9abfb3b6,
-      0x03b6e20c, 0x74b1d29a, 0xead54739, 0x9dd277af, 0x04db2615,
-      0x73dc1683, 0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8,
-      0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1, 0xf00f9344,
-      0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb,
-      0x196c3671, 0x6e6b06e7, 0xfed41b76, 0x89d32be0, 0x10da7a5a,
-      0x67dd4acc, 0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5,
-      0xd6d6a3e8, 0xa1d1937e, 0x38d8c2c4, 0x4fdff252, 0xd1bb67f1,
-      0xa6bc5767, 0x3fb506dd, 0x48b2364b, 0xd80d2bda, 0xaf0a1b4c,
-      0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55, 0x316e8eef,
-      0x4669be79, 0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
-      0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f, 0xc5ba3bbe,
-      0xb2bd0b28, 0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31,
-      0x2cd99e8b, 0x5bdeae1d, 0x9b64c2b0, 0xec63f226, 0x756aa39c,
-      0x026d930a, 0x9c0906a9, 0xeb0e363f, 0x72076785, 0x05005713,
-      0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38, 0x92d28e9b,
-      0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21, 0x86d3d2d4, 0xf1d4e242,
-      0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1,
-      0x18b74777, 0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c,
-      0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45, 0xa00ae278,
-      0xd70dd2ee, 0x4e048354, 0x3903b3c2, 0xa7672661, 0xd06016f7,
-      0x4969474d, 0x3e6e77db, 0xaed16a4a, 0xd9d65adc, 0x40df0b66,
-      0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
-      0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605,
-      0xcdd70693, 0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8,
-      0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b,
-      0x2d02ef8d
-    };
-  const UChar *end;
 
-  crc = ~crc & 0xffffffff;
-  for (end = buf + len; buf < end; ++ buf)
-    crc = crc32_table[(crc ^ *buf) & 0xff] ^ (crc >> 8);
-  return ~crc & 0xffffffff;;
-}
+/* Try and open a separate debug file, ignoring any where the CRC does
+   not match the value from the main object file.  Returned DiImage
+   must be discarded by the caller.
 
-/*
- * Try and open a separate debug file, ignoring any where the CRC does
- * not match the value from the main object file.
+   If |serverAddr| is NULL, |name| is expected to be a fully qualified
+   (absolute) path to the file in the local filesystem.  If
+   |serverAddr| is non-NULL, it is expected to be an IPv4 and port
+   spec of the form "d.d.d.d:d" or "d.d.d.d", and |name| is expected
+   to be a plain filename (no path components at all).
  */
 static
-Addr open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
-                      Bool rel_ok, /*OUT*/UWord* size )
+DiImage* open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
+                          Bool rel_ok, const HChar* serverAddr )
 {
-   SysRes fd, sres;
-   struct vg_stat stat_buf;
-   UInt calccrc;
+   DiImage* dimg 
+     = serverAddr ? ML_(img_from_di_server)(name, serverAddr)
+                  : ML_(img_from_local_file)(name);
+   if (dimg == NULL)
+      return NULL;
 
-   fd = VG_(open)(name, VKI_O_RDONLY, 0);
-   if (sr_isError(fd))
-      return 0;
-
-   if (VG_(fstat)(sr_Res(fd), &stat_buf) != 0) {
-      VG_(close)(sr_Res(fd));
-      return 0;
+   if (VG_(clo_verbosity) > 1) {
+      if (serverAddr)
+         VG_(message)(Vg_DebugMsg, "  Considering %s on server %s ..\n",
+                                   name, serverAddr);
+      else
+         VG_(message)(Vg_DebugMsg, "  Considering %s ..\n", name);
    }
 
-   if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg, "  Considering %s ..\n", name);
-   
-   *size = stat_buf.size;
-   
-   sres = VG_(am_mmap_file_float_valgrind)
-             ( *size, VKI_PROT_READ, sr_Res(fd), 0 );
-
-   VG_(close)(sr_Res(fd));
-   
-   if (sr_isError(sres))
-      return 0;
-
    if (buildid) {
-      HChar* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok, True);
+      HChar* debug_buildid = find_buildid(dimg, rel_ok, True);
       if (debug_buildid == NULL || VG_(strcmp)(buildid, debug_buildid) != 0) {
-         SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
-         vg_assert(!sr_isError(res));
+         ML_(img_done)(dimg);
          if (VG_(clo_verbosity) > 1)
             VG_(message)(Vg_DebugMsg, 
                "  .. build-id mismatch (found %s wanted %s)\n", 
                debug_buildid, buildid);
          ML_(dinfo_free)(debug_buildid);
-         return 0;
+         return NULL;
       }
       ML_(dinfo_free)(debug_buildid);
-
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "  .. build-id is valid\n");
    } else {
-      calccrc = calc_gnu_debuglink_crc32(0, (UChar*)sr_Res(sres), *size);
+      UInt calccrc = ML_(img_calc_gnu_debuglink_crc32)(dimg);
       if (calccrc != crc) {
-         SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
-         vg_assert(!sr_isError(res));
+         ML_(img_done)(dimg);
          if (VG_(clo_verbosity) > 1)
             VG_(message)(Vg_DebugMsg, 
                "  .. CRC mismatch (computed %08x wanted %08x)\n", calccrc, crc);
-         return 0;
+         return NULL;
       }
 
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "  .. CRC is valid\n");
    }
    
-   return sr_Res(sres);
-}
-
-
-/* Try to find and map in a debuginfo file by some totally ad-hoc
-   scheme.  If successful, set *dimage and *n_dimage to point to the
-   image, and return True, else return False.  A temporary hack for
-   Android; does nothing on any other platform. */
-static
-Bool find_ad_hoc_debug_image( struct _DebugInfo* di, 
-                              HChar* filename,
-                              /*OUT*/Addr* dimage,
-                              /*OUT*/SizeT* n_dimage )
-{
-   vg_assert(*dimage == 0 && *n_dimage == 0);
-
-#  if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
-   return False; /* we don't know narfink */
-
-#  else /* android specific hacks; look away now. */
-
-   /* The deal is: if we're looking for for a debuginfo file for some
-      object /path/to/object (which can be any path), see if we can
-      find the file /sdcard/symbols/path/to/object.  So for example it
-      produces the following mappings, both of which are important for
-      Memcheck:
-
-      /system/bin/linker  --> /sdcard/symbols/system/bin/linker
-      /system/lib/libc.so --> /sdcard/symbols/system/lib/libc.so
-
-      These /symbols files come from the AOSP build tree for your
-      device, for example out/target/product/crespo/symbols/system
-      (for a Nexus S), so one simple thing you can do is take the tree
-      rooted at out/target/product/crespo/symbols/system on the host
-      and park it at /sdcard/symbols/system on the device.  Then,
-      assuming it matches what's actually running on the device,
-      you'll have full debuginfo for all the libraries on the device.
-  
-      But beware: there is no checking that the debuginfo file, if
-      found, matches the main file in any way.
-   */
-   if (!filename || *filename != '/')
-      return False;
-
-   HChar* nm = ML_(dinfo_zalloc)("di.fahdi.1", 
-                                 50 + VG_(strlen)(filename));
-   VG_(sprintf)(nm, "/sdcard/symbols%s", filename);
-
-   SysRes fd = VG_(open)(nm, VKI_O_RDONLY, 0);
-   if (sr_isError(fd)) goto fail;
-
-   struct vg_stat stat_buf;
-   if (VG_(fstat)(sr_Res(fd), &stat_buf) != 0) {
-      VG_(close)(sr_Res(fd));
-      goto fail;
-   }
-
-   *n_dimage = stat_buf.size;
-
-   SysRes sres = VG_(am_mmap_file_float_valgrind)
-                    ( *n_dimage, VKI_PROT_READ, sr_Res(fd), 0 );
-
-   VG_(close)(sr_Res(fd));
-   if (sr_isError(sres))
-     goto fail;
-
-   *dimage = sr_Res(sres);
-
-   if (VG_(clo_verbosity) > 1)
-      VG_(dmsg)("  Using debuginfo from %s\n", nm);
-
-   ML_(dinfo_free)(nm);
-   return True;
-
-  fail:
-   if (nm) ML_(dinfo_free)(nm);
-   return False;
-
-#  endif
+   return dimg;
 }
 
 
 /* Try to find a separate debug file for a given object file.  If
-   found, it will be mapped in and the address and size returned in
-   *dimage and *n_dimage.  If not, *dimage and *n_dimage will be
-   unchanged.  The caller should set them to zero before the call. */
+   found, return its DiImage, which should be freed by the caller. */
 static
-void find_debug_file( struct _DebugInfo* di,
-                      const HChar* objpath, const HChar* buildid,
-                      const HChar* debugname, UInt crc, Bool rel_ok,
-                      /*OUT*/Addr*  dimage,
-                      /*OUT*/SizeT* n_dimage )
+DiImage* find_debug_file( struct _DebugInfo* di,
+                          const HChar* objpath, const HChar* buildid,
+                          const HChar* debugname, UInt crc, Bool rel_ok )
 {
-   HChar* debugpath = NULL;
-   const HChar* extrapath = VG_(clo_extra_debuginfo_path);
-   Addr  addr = 0;
-   UWord size = 0;
+   const HChar* extrapath  = VG_(clo_extra_debuginfo_path);
+   const HChar* serverpath = VG_(clo_debuginfo_server);
 
-   vg_assert(*dimage == 0 && *n_dimage == 0);
+   DiImage* dimg      = NULL; /* the img that we found */
+   HChar*   debugpath = NULL; /* where we found it */
 
    if (buildid != NULL) {
-      debugpath = ML_(dinfo_zalloc)(
-                     "di.fdf.1",
-                     VG_(strlen)(buildid) + 33);
+      debugpath = ML_(dinfo_zalloc)("di.fdf.1",
+                                    VG_(strlen)(buildid) + 33);
 
       VG_(sprintf)(debugpath, "/usr/lib/debug/.build-id/%c%c/%s.debug",
                    buildid[0], buildid[1], buildid + 2);
 
-      if ((addr = open_debug_file(debugpath, buildid, 0,
-                                  rel_ok, &size)) == 0) {
+      dimg = open_debug_file(debugpath, buildid, 0, rel_ok, NULL);
+      if (!dimg) {
          ML_(dinfo_free)(debugpath);
          debugpath = NULL;
       }
    }
 
-   if (addr == 0 && debugname != NULL && !rel_ok) {
+   if (dimg == NULL && debugname != NULL && !rel_ok) {
       HChar *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
       HChar *objdirptr;
 
@@ -1251,48 +1171,51 @@ void find_debug_file( struct _DebugInfo* di,
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
 
-      if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
-         VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
-         if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
-            VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
-            addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
-            if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
-               if (extrapath) {
-                  VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
-                              objdir, debugname);
-                  addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
-               }
-            }
-         }
+      dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+      if (dimg != NULL) goto dimg_ok;
+
+      VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
+      dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+      if (dimg != NULL) goto dimg_ok;
+      
+      VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
+      dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+      if (dimg != NULL) goto dimg_ok;
+
+      if (extrapath) {
+         VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
+                                           objdir, debugname);
+         dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+         if (dimg != NULL) goto dimg_ok;
       }
+
+      if (serverpath) {
+         dimg = open_debug_file(debugname, NULL, crc, rel_ok, serverpath);
+         if (dimg) goto dimg_ok;
+      }
+
+      dimg_ok:
 
       ML_(dinfo_free)(objdir);
    }
 
-   if (addr > 0 && size > 0) {
+   if (dimg != NULL) {
+      vg_assert(debugpath);
       TRACE_SYMTAB("\n");
       TRACE_SYMTAB("------ Found a debuginfo file: %s\n", debugpath);
-      *dimage = addr;
-      *n_dimage = size;
    }
 
-   ML_(dinfo_free)(debugpath);
+   if (debugpath)
+      ML_(dinfo_free)(debugpath);
+
+   return dimg;
 }
 
 
-static Bool contained_within ( Addr outer, UWord n_outer,
-                               Addr inner, UWord n_inner )
-{
-   if (n_outer == 0 || n_inner == 0)
-      return False;
-   /* Simplistic .. assumes no wraparound (reasonably enough) */
-   if (inner >= outer && inner+n_inner <= outer+n_outer)
-      return True;
-   return False;
-}
-
-static void* INDEX_BIS ( void* base, Word idx, Word scale ) {
-   return (void*)( ((UChar*)base) + idx * scale );
+static DiOffT INDEX_BIS ( DiOffT base, UWord idx, UWord scale ) {
+   // This is a bit stupid.  Really, idx and scale ought to be
+   // 64-bit quantities, always.
+   return base + (DiOffT)idx * (DiOffT)scale;
 }
 
 
@@ -1302,20 +1225,22 @@ static void* INDEX_BIS ( void* base, Word idx, Word scale ) {
 static
 Word file_offset_from_svma ( /*OUT*/Bool* ok,
                              Addr         svma,
-                             ElfXX_Phdr*  phdr_img,
+                             DiImage*     img,
+                             DiOffT       phdr_ioff,
                              Word         phdr_nent,
                              Word         phdr_ent_szB )
 {
-   Word        i;
-   ElfXX_Phdr* seg;
+   Word i;
    for (i = 0; i < phdr_nent; i++) {
-      seg = INDEX_BIS( phdr_img, i, phdr_ent_szB );
-      if (seg->p_type != PT_LOAD)
+      ElfXX_Phdr seg;
+      ML_(img_get)(&seg, img,
+                   INDEX_BIS(phdr_ioff, i, phdr_ent_szB), sizeof(seg));
+      if (seg.p_type != PT_LOAD)
          continue;
-      if (svma >= (seg->p_vaddr & -seg->p_align)
-          && svma + 1 <= seg->p_vaddr + seg->p_filesz) {
+      if (svma >= (seg.p_vaddr & -seg.p_align)
+          && svma + 1 <= seg.p_vaddr + seg.p_filesz) {
          *ok = True;
-         return svma - seg->p_vaddr + seg->p_offset;
+         return svma - seg.p_vaddr + seg.p_offset;
       }
    }
    *ok = False;
@@ -1338,40 +1263,58 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       follow, points executed exactly once -- that is, those which are
       the top level of the function -- are marked TOPLEVEL.
    */
-   /* TOPLEVEL */
-   Bool          res, ok;
-   SysRes        fd, sres;
-   Word          i, j;
-   Bool          dynbss_present = False;
-   Bool          sdynbss_present = False;
+   /* Consistent terminology for local variable names, without which
+      it's almost unfollowably complex:
 
-   /* Image addresses for the ELF file we're working with. */
-   Addr          oimage   = 0;
-   UWord         n_oimage = 0;
+      In which file?
+         in the main ELF file         *_m*
+         in the debuginfo file        *_d*
+         in the alt debuginfo file    *_a*
+
+      What kind of thing?
+         _{m,d,a}img       a DiImage*
+         _{m,d,a}ioff      an offset in the image (DiOffT)
+         _{m,d,a}nent      "number of entries"
+         _{m,d,a}ent_szB   "size in bytes of an entry"
+         ehdr_{m,d,a}      ELF header
+         phdr              Program header
+         shdr              Section header
+         a_X               a temporary X
+         _escn             an DiSlice (elf section info) variable
+         szB               size in bytes
+   */
+
+
+   /* TOPLEVEL */
+   Bool     res, ok;
+   Word     i, j;
+   Bool     dynbss_present = False;
+   Bool     sdynbss_present = False;
+
+   /* Image for the main ELF file we're working with. */
+   DiImage* mimg = NULL;
 
    /* Ditto for any ELF debuginfo file that we might happen to load. */
-   Addr          dimage   = 0;
-   UWord         n_dimage = 0;
+   DiImage* dimg = NULL;
 
    /* Ditto for alternate ELF debuginfo file that we might happen to load. */
-   Addr          aimage   = 0;
-   UWord         n_aimage = 0;
+   DiImage* aimg = NULL;
 
-   /* ELF header for the main file.  Should == oimage since is at
-      start of file. */
-   ElfXX_Ehdr* ehdr_img = NULL;
+   /* ELF header offset for the main file.  Should be zero since the
+      ELF header is at start of file. */
+   DiOffT   ehdr_mioff = 0;
 
    /* Program header table image addr, # entries, entry size */
-   ElfXX_Phdr* phdr_img     = NULL;
-   UWord       phdr_nent    = 0;
-   UWord       phdr_ent_szB = 0;
+   DiOffT   phdr_mioff    = 0;
+   UWord    phdr_mnent    = 0;
+   UWord    phdr_ment_szB = 0;
 
    /* Section header image addr, # entries, entry size.  Also the
       associated string table. */
-   ElfXX_Shdr* shdr_img        = NULL;
-   UWord       shdr_nent       = 0;
-   UWord       shdr_ent_szB    = 0;
-   HChar*      shdr_strtab_img = NULL;
+   DiOffT   shdr_mioff        = 0;
+   UWord    shdr_mnent        = 0;
+   UWord    shdr_ment_szB     = 0;
+   DiOffT   shdr_strtab_mioff = 0;
 
    /* SVMAs covered by rx and rw segments and corresponding biases.
       Normally each object would provide just one rx and one rw area,
@@ -1387,9 +1330,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       RangeAndBias;
 
    XArray* /* of RangeAndBias */ svma_ranges = NULL;
-
-   /* Build ID */
-   HChar* buildid = NULL;
 
    vg_assert(di);
    vg_assert(di->fsm.have_rx_map == True);
@@ -1436,62 +1376,24 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    res = False;
 
-   oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "Reading syms from %s\n",
                                 di->fsm.filename );
 
-   /* mmap the object image aboard, so that we can read symbols and
-      line number info out of it.  It will be munmapped immediately
-      thereafter; it is only aboard transiently. */
-
-   fd = VG_(open)(di->fsm.filename, VKI_O_RDONLY, 0);
-   if (sr_isError(fd)) {
-      ML_(symerr)(di, True, "Can't open .so/.exe to read symbols?!");
-      return False;
-   }
-
-   { Long n_oimageLL = VG_(fsize)(sr_Res(fd));
-     if (n_oimageLL <= 0) {
-        ML_(symerr)(di, True, "Can't stat .so/.exe (to determine its size)?!");
-        VG_(close)(sr_Res(fd));
-        return False;
-     }
-     n_oimage = (UWord)(ULong)n_oimageLL;
-   }
-
-   sres = VG_(am_mmap_file_float_valgrind)
-             ( n_oimage, VKI_PROT_READ, sr_Res(fd), 0 );
-
-   VG_(close)(sr_Res(fd));
-
-   if (sr_isError(sres)) {
-      VG_(message)(Vg_UserMsg, "warning: mmap failed on %s\n",
+   /* Connect to the primary object image, so that we can read symbols
+      and line number info out of it.  It will be disconnected
+      immediately thereafter; it is only connected transiently. */
+   mimg = ML_(img_from_local_file)(di->fsm.filename);
+   if (mimg == NULL) {
+      VG_(message)(Vg_UserMsg, "warning: connection to image %s failed\n",
                                di->fsm.filename );
       VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded\n" );
       return False;
    }
 
-   oimage = sr_Res(sres);
-   /* Check against wraparound.  am_mmap_file_float_valgrind should
-      not produce a wrapped-around mapping. */
-   vg_assert(n_oimage > 0);
-   vg_assert(oimage + n_oimage > oimage);
-
-   if (0) {
-      VG_(printf)("read_elf_debug_info: OIMAGE = %p - %p\n", 
-                  (void*)oimage, (void*)(oimage + (UWord)n_oimage));
-   }
-
-   /* Ok, the object image is safely in oimage[0 .. n_oimage-1].  Now
-      verify that it is a valid ELF .so or executable image. */
-   res      = False;
-   ok       = (n_oimage >= sizeof(ElfXX_Ehdr));
-   ehdr_img = (ElfXX_Ehdr*)oimage;
-
-   if (ok)
-      ok &= ML_(is_elf_object_file)(ehdr_img, n_oimage, False);
-
+   /* Ok, the object image is available.  Now verify that it is a
+      valid ELF .so or executable image. */
+   ok = is_elf_object_file_by_DiImage(mimg, False);
    if (!ok) {
       ML_(symerr)(di, True, "Invalid ELF Header");
       goto out;
@@ -1499,21 +1401,27 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    /* Find where the program and section header tables are, and give
       up if either is missing or outside the image (bogus). */
-   phdr_img     = (ElfXX_Phdr*)( ((UChar*)ehdr_img) + ehdr_img->e_phoff );
-   phdr_nent    = ehdr_img->e_phnum;
-   phdr_ent_szB = ehdr_img->e_phentsize;
+   ElfXX_Ehdr ehdr_m;
+   vg_assert(ehdr_mioff == 0); // ensured by its initialisation
+   ok = ML_(img_valid)(mimg, ehdr_mioff, sizeof(ehdr_m));
+   vg_assert(ok); // ML_(is_elf_object_file) should ensure this
+   ML_(img_get)(&ehdr_m, mimg, ehdr_mioff, sizeof(ehdr_m));
 
-   shdr_img     = (ElfXX_Shdr*)( ((UChar*)ehdr_img) + ehdr_img->e_shoff );
-   shdr_nent    = ehdr_img->e_shnum;
-   shdr_ent_szB = ehdr_img->e_shentsize;
+   phdr_mioff    = ehdr_mioff + ehdr_m.e_phoff;
+   phdr_mnent    = ehdr_m.e_phnum;
+   phdr_ment_szB = ehdr_m.e_phentsize;
+
+   shdr_mioff    = ehdr_mioff + ehdr_m.e_shoff;
+   shdr_mnent    = ehdr_m.e_shnum;
+   shdr_ment_szB = ehdr_m.e_shentsize;
 
    TRACE_SYMTAB("------ Basic facts about the object ------\n");
-   TRACE_SYMTAB("object:  img %p n_oimage %ld\n",
-               (void*)oimage, n_oimage);
-   TRACE_SYMTAB("phdr:    img %p nent %ld ent_szB %ld\n",
-               phdr_img, phdr_nent, phdr_ent_szB);
-   TRACE_SYMTAB("shdr:    img %p nent %ld ent_szB %ld\n",
-               shdr_img, shdr_nent, shdr_ent_szB);
+   TRACE_SYMTAB("object:  n_oimage %llu\n",
+                (ULong)ML_(img_size)(mimg));
+   TRACE_SYMTAB("phdr:    ioff %llu nent %ld ent_szB %ld\n",
+               phdr_mioff, phdr_mnent, phdr_ment_szB);
+   TRACE_SYMTAB("shdr:    ioff %llu nent %ld ent_szB %ld\n",
+               shdr_mioff, shdr_mnent, shdr_ment_szB);
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
@@ -1527,37 +1435,39 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                       map->avma, map->size, map->foff);
    }
 
-   if (phdr_nent == 0
-       || !contained_within(
-             oimage, n_oimage,
-             (Addr)phdr_img, phdr_nent * phdr_ent_szB)) {
+   if (phdr_mnent == 0
+       || !ML_(img_valid)(mimg, phdr_mioff, phdr_mnent * phdr_ment_szB)) {
       ML_(symerr)(di, True, "Missing or invalid ELF Program Header Table");
       goto out;
    }
 
-   if (shdr_nent == 0
-       || !contained_within(
-             oimage, n_oimage,
-             (Addr)shdr_img, shdr_nent * shdr_ent_szB)) {
+   if (shdr_mnent == 0
+       || !ML_(img_valid)(mimg, shdr_mioff, shdr_mnent * shdr_ment_szB)) {
       ML_(symerr)(di, True, "Missing or invalid ELF Section Header Table");
       goto out;
    }
 
    /* Also find the section header's string table, and validate. */
    /* checked previously by is_elf_object_file: */
-   vg_assert( ehdr_img->e_shstrndx != SHN_UNDEF );
+   vg_assert(ehdr_m.e_shstrndx != SHN_UNDEF);
 
-   shdr_strtab_img
-      = ((HChar*)ehdr_img)
-                  + shdr_img[ehdr_img->e_shstrndx].sh_offset;
-   if (!contained_within( oimage, n_oimage,
-                          (Addr)shdr_strtab_img,
-                          1/*bogus, but we don't know the real size*/ )) {
-      ML_(symerr)(di, True, "Invalid ELF Section Header String Table");
-      goto out;
+   // shdr_mioff is the offset of the section header table
+   // and we need the ehdr_m.e_shstrndx'th entry
+   { ElfXX_Shdr a_shdr;
+     ML_(img_get)(&a_shdr, mimg,
+                  INDEX_BIS(shdr_mioff, ehdr_m.e_shstrndx, shdr_ment_szB),
+                  sizeof(a_shdr));
+     shdr_strtab_mioff
+        = ehdr_mioff /* isn't this always zero? */ + a_shdr.sh_offset;
+
+     if (!ML_(img_valid)(mimg, shdr_strtab_mioff, 
+                         1/*bogus, but we don't know the real size*/ )) {
+        ML_(symerr)(di, True, "Invalid ELF Section Header String Table");
+        goto out;
+     }
    }
 
-   TRACE_SYMTAB("shdr:    string table at %p\n", shdr_strtab_img );
+   TRACE_SYMTAB("shdr:    string table at %llu\n", shdr_strtab_mioff);
 
    svma_ranges = VG_(newXA)(ML_(dinfo_zalloc), "di.relfdi.1",
                             ML_(dinfo_free), sizeof(RangeAndBias));
@@ -1574,52 +1484,57 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* TOPLEVEL */
       ElfXX_Addr prev_svma = 0;
 
-      for (i = 0; i < phdr_nent; i++) {
-         ElfXX_Phdr* phdr = INDEX_BIS( phdr_img, i, phdr_ent_szB );
+      for (i = 0; i < phdr_mnent; i++) {
+         ElfXX_Phdr a_phdr;
+         ML_(img_get)(&a_phdr, mimg,
+                      INDEX_BIS(phdr_mioff, i, phdr_ment_szB),
+                      sizeof(a_phdr));
 
          /* Make sure the PT_LOADable entries are in order and
             non-overlapping.  This in turn means the address ranges
             slurped into svma_ranges are in order and
             non-overlapping. */
 
-         if (phdr->p_type == PT_LOAD) {
+         if (a_phdr.p_type == PT_LOAD) {
             TRACE_SYMTAB("PT_LOAD[%ld]: p_vaddr %#lx (prev %#lx)\n",
-                         i, (UWord)phdr->p_vaddr, (UWord)prev_svma);
+                         i, (UWord)a_phdr.p_vaddr, (UWord)prev_svma);
             TRACE_SYMTAB("PT_LOAD[%ld]:   p_offset %lu, p_filesz %lu,"
                          " perms %c%c%c\n",
-                         i, (UWord)phdr->p_offset, (UWord)phdr->p_filesz,
-                         phdr->p_flags & PF_R ? 'r' : '-',
-                         phdr->p_flags & PF_W ? 'w' : '-',
-                         phdr->p_flags & PF_X ? 'x' : '-');
-            if (phdr->p_vaddr < prev_svma) {
+                         i, (UWord)a_phdr.p_offset, (UWord)a_phdr.p_filesz,
+                         a_phdr.p_flags & PF_R ? 'r' : '-',
+                         a_phdr.p_flags & PF_W ? 'w' : '-',
+                         a_phdr.p_flags & PF_X ? 'x' : '-');
+            if (a_phdr.p_vaddr < prev_svma) {
                ML_(symerr)(di, True,
                            "ELF Program Headers are not in ascending order");
                goto out;
             }
-            prev_svma = phdr->p_vaddr;
-            if (phdr->p_memsz > 0) {
+            prev_svma = a_phdr.p_vaddr;
+            if (a_phdr.p_memsz > 0) {
                Bool loaded = False;
                for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
                   struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
                   if (   (map->rx || map->rw)
-                      && phdr->p_offset >= map->foff
-                      && phdr->p_offset <  map->foff + map->size
-                      && phdr->p_offset + phdr->p_filesz <= map->foff
-                                                            + map->size) {
+                      && a_phdr.p_offset >= map->foff
+                      && a_phdr.p_offset <  map->foff + map->size
+                      && a_phdr.p_offset + a_phdr.p_filesz 
+                         <= map->foff + map->size) {
                      RangeAndBias item;
-                     item.svma_base  = phdr->p_vaddr;
-                     item.svma_limit = phdr->p_vaddr + phdr->p_memsz;
+                     item.svma_base  = a_phdr.p_vaddr;
+                     item.svma_limit = a_phdr.p_vaddr + a_phdr.p_memsz;
                      item.bias       = map->avma - map->foff
-                                       + phdr->p_offset - phdr->p_vaddr;
-                     if (   map->rw
-                         && (phdr->p_flags & (PF_R | PF_W)) == (PF_R | PF_W)) {
+                                       + a_phdr.p_offset - a_phdr.p_vaddr;
+                     if (map->rw
+                         && (a_phdr.p_flags & (PF_R | PF_W))
+                            == (PF_R | PF_W)) {
                         item.exec = False;
                         VG_(addToXA)(svma_ranges, &item);
                         TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rw\n", i);
                         loaded = True;
                      }
-                     if (   map->rx
-                         && (phdr->p_flags & (PF_R | PF_X)) == (PF_R | PF_X)) {
+                     if (map->rx
+                         && (a_phdr.p_flags & (PF_R | PF_X))
+                            == (PF_R | PF_X)) {
                         item.exec = True;
                         VG_(addToXA)(svma_ranges, &item);
                         TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rx\n", i);
@@ -1639,28 +1554,34 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             The seginfo needs to have some kind of soname in order to
             facilitate writing redirect functions, since all redirect
             specifications require a soname (pattern). */
-         if (phdr->p_type == PT_DYNAMIC && di->soname == NULL) {
-            ElfXX_Dyn* dyn_img = (ElfXX_Dyn*)( ((UChar*)ehdr_img)
-                                               + phdr->p_offset);
-            Word   stroff = -1;
-            HChar* strtab = NULL;
-            for (j = 0; dyn_img[j].d_tag != DT_NULL; j++) {
-               switch (dyn_img[j].d_tag) {
+         if (a_phdr.p_type == PT_DYNAMIC && di->soname == NULL) {
+            Word   stroff       = -1;
+            DiOffT strtab_mioff = DiOffT_INVALID;
+            for (j = 0; True/*exit check is in the loop*/; j++) {
+               ElfXX_Dyn t_dyn_m; /* dyn_img[j] */
+               ML_(img_get)(&t_dyn_m, mimg,
+                            INDEX_BIS(ehdr_mioff + a_phdr.p_offset,
+                                      j, sizeof(ElfXX_Dyn)),
+                            sizeof(t_dyn_m));
+               if (t_dyn_m.d_tag == DT_NULL)
+                  break;
+
+               switch (t_dyn_m.d_tag) {
                   case DT_SONAME: {
-                     stroff = dyn_img[j].d_un.d_val;
+                     stroff = t_dyn_m.d_un.d_val;
                      break;
                   }
                   case DT_STRTAB: {
                      Bool ok2 = False;
                      Word offset = file_offset_from_svma(
-                                      &ok2,
-                                      dyn_img[j].d_un.d_ptr,
-                                      phdr_img,
-                                      phdr_nent, phdr_ent_szB
+                                      &ok2, t_dyn_m.d_un.d_ptr, mimg,
+                                      phdr_mioff, phdr_mnent, phdr_ment_szB
                                    );
-                     if (ok2 && strtab == NULL) {
-                        vg_assert(offset >= 0 && offset <= n_oimage);
-                        strtab = ((HChar*)ehdr_img) + offset;
+                     if (ok2 && strtab_mioff == DiOffT_INVALID) {
+                        // Check for obviously bogus offsets.
+                        vg_assert(ML_(img_valid)(mimg, offset, 1));
+                        strtab_mioff = ehdr_mioff + offset;
+                        vg_assert(ehdr_mioff == 0); // should always be
                      }
                      break;
                   }
@@ -1668,12 +1589,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                      break;
                }
             }
-            if (stroff != -1 && strtab != NULL) {
-               TRACE_SYMTAB("Found soname = %s\n", strtab+stroff);
-               di->soname = ML_(dinfo_strdup)("di.redi.1", strtab+stroff);
+            if (stroff != -1 && strtab_mioff != DiOffT_INVALID) {
+               di->soname = ML_(img_strdup)(mimg, "di.redi.1",
+                                            strtab_mioff + stroff);
+               TRACE_SYMTAB("Found soname = %s\n", di->soname);
             }
          }
-      } /* for (i = 0; i < phdr_nent; i++) ... */
+      } /* for (i = 0; i < phdr_Mnent; i++) ... */
       /* TOPLEVEL */
 
    } /* examine the program headers (local scope) */
@@ -1721,14 +1643,17 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    /* TOPLEVEL */
    /* Iterate over section headers */
-   for (i = 0; i < shdr_nent; i++) {
-      ElfXX_Shdr* shdr = INDEX_BIS( shdr_img, i, shdr_ent_szB );
-      HChar* name = shdr_strtab_img + shdr->sh_name;
-      Addr   svma = shdr->sh_addr;
-      OffT   foff = shdr->sh_offset;
-      UWord  size = shdr->sh_size; /* Do not change this to be signed. */
-      UInt   alyn = shdr->sh_addralign;
-      Bool   bits = !(shdr->sh_type == SHT_NOBITS);
+   for (i = 0; i < shdr_mnent; i++) {
+      ElfXX_Shdr a_shdr;
+      ML_(img_get)(&a_shdr, mimg,
+                   INDEX_BIS(shdr_mioff, i, shdr_ment_szB), sizeof(a_shdr));
+      DiOffT name_mioff = shdr_strtab_mioff + a_shdr.sh_name;
+      HChar* name = ML_(img_strdup)(mimg, "di.redi_name.1", name_mioff);
+      Addr   svma = a_shdr.sh_addr;
+      OffT   foff = a_shdr.sh_offset;
+      UWord  size = a_shdr.sh_size; /* Do not change this to be signed. */
+      UInt   alyn = a_shdr.sh_addralign;
+      Bool   bits = !(a_shdr.sh_type == SHT_NOBITS);
       /* Look through our collection of info obtained from the PT_LOAD
          headers, and make 'inrx' and 'inrw' point to the first entry
          in each that intersects 'avma'.  If in each case none is found,
@@ -1749,13 +1674,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       }
 
       TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6ld  "
-                  "  svma %p  name \"%s\"\n", 
-                  i, inrx ? "rx" : "  ", inrw ? "rw" : "  ", alyn,
-                  foff, foff+size-1, (void*)svma, name );
+                   "  svma %p  name \"%s\"\n", 
+                   i, inrx ? "rx" : "  ", inrw ? "rw" : "  ", alyn,
+                   foff, foff+size-1, (void*)svma, name);
 
       /* Check for sane-sized segments.  SHT_NOBITS sections have zero
          size in the file. */
-      if ((foff >= n_oimage) || (foff + (bits ? size : 0) > n_oimage)) {
+      if ((foff >= ML_(img_size)(mimg)) 
+          || (foff + (bits ? size : 0) > ML_(img_size)(mimg))) {
          ML_(symerr)(di, True, "ELF Section extends beyond image end");
          goto out;
       }
@@ -1770,6 +1696,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Ignore zero sized sections. */
       if (size == 0) {
          TRACE_SYMTAB("zero sized section \"%s\", ignoring\n", name);
+         ML_(dinfo_free)(name);
          continue;
       }
 
@@ -2125,7 +2052,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
-#    undef BAD
+      ML_(dinfo_free)(name);
+
+#     undef BAD
 
    } /* iterate over the section headers */
 
@@ -2143,73 +2072,49 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                 "for debug-info sections ------\n");
 
    /* TOPLEVEL */
-   /* Find interesting sections, read the symbol table(s), read any debug
-      information */
+   /* Find interesting sections, read the symbol table(s), read any
+      debug information.  Each section is located either in the main,
+      debug or alt-debug files, but only in one.  For each section,
+      |section_escn| records which of |mimg|, |dimg| or |aimg| we
+      found it in, along with the section's image offset and its size.
+      The triples (section_img, section_ioff, section_szB) are
+      consistent, in that they are always either (NULL,
+      DiOffT_INVALID, 0), or refer to the same image, and are all
+      assigned together. */
    {
-      /* IMAGE addresses: pointers to start of sections in the
-         transiently loaded oimage, not in the fragments of the file
-         mapped in by the guest's dynamic linker. */
       /* TOPLEVEL */
-      HChar*     strtab_img       = NULL; /* .strtab */
-      ElfXX_Sym* symtab_img       = NULL; /* .symtab */
-      HChar*     dynstr_img       = NULL; /* .dynstr */
-      ElfXX_Sym* dynsym_img       = NULL; /* .dynsym */
-      HChar*     debuglink_img    = NULL; /* .gnu_debuglink */
-      UChar*     debugaltlink_img = NULL; /* .gnu_debugaltlink */
-      UChar*     stab_img         = NULL; /* .stab         (stabs)  */
-      HChar*     stabstr_img      = NULL; /* .stabstr      (stabs)  */
-      UChar*     debug_line_img   = NULL; /* .debug_line   (dwarf2) */
-      UChar*     debug_info_img   = NULL; /* .debug_info   (dwarf2) */
-      UChar*     debug_types_img  = NULL; /* .debug_types  (dwarf4) */
-      UChar*     debug_abbv_img   = NULL; /* .debug_abbrev (dwarf2) */
-      HChar*     debug_str_img    = NULL; /* .debug_str    (dwarf2) */
-      UChar*     debug_ranges_img = NULL; /* .debug_ranges (dwarf2) */
-      UChar*     debug_loc_img    = NULL; /* .debug_loc    (dwarf2) */
-      UChar*     debug_frame_img  = NULL; /* .debug_frame  (dwarf2) */
-      UChar*     debug_line_alt_img = NULL; /* .debug_line (alternate) */
-      UChar*     debug_info_alt_img = NULL; /* .debug_info (alternate) */
-      UChar*     debug_abbv_alt_img = NULL; /* .debug_abbrev (alternate) */
-      HChar*     debug_str_alt_img = NULL; /* .debug_str   (alternate) */
-      UChar*     dwarf1d_img      = NULL; /* .debug        (dwarf1) */
-      UChar*     dwarf1l_img      = NULL; /* .line         (dwarf1) */
-      UChar*     opd_img          = NULL; /* .opd (dwarf2,
-                                                   ppc64-linux) */
-      UChar*     ehframe_img[N_EHFRAME_SECTS]; /* .eh_frame (dwarf2) */
+      DiSlice strtab_escn         = DiSlice_INVALID; // .strtab
+      DiSlice symtab_escn         = DiSlice_INVALID; // .symtab
+      DiSlice dynstr_escn         = DiSlice_INVALID; // .dynstr
+      DiSlice dynsym_escn         = DiSlice_INVALID; // .dynsym
+      DiSlice debuglink_escn      = DiSlice_INVALID; // .gnu_debuglink
+      DiSlice debugaltlink_escn   = DiSlice_INVALID; // .gnu_debugaltlink
+      DiSlice stab_escn           = DiSlice_INVALID; // .stab         (stabs) 
+      DiSlice stabstr_escn        = DiSlice_INVALID; // .stabstr      (stabs) 
+      DiSlice debug_line_escn     = DiSlice_INVALID; // .debug_line   (dwarf2)
+      DiSlice debug_info_escn     = DiSlice_INVALID; // .debug_info   (dwarf2)
+      DiSlice debug_types_escn    = DiSlice_INVALID; // .debug_types  (dwarf4)
+      DiSlice debug_abbv_escn     = DiSlice_INVALID; // .debug_abbrev (dwarf2)
+      DiSlice debug_str_escn      = DiSlice_INVALID; // .debug_str    (dwarf2)
+      DiSlice debug_ranges_escn   = DiSlice_INVALID; // .debug_ranges (dwarf2)
+      DiSlice debug_loc_escn      = DiSlice_INVALID; // .debug_loc    (dwarf2)
+      DiSlice debug_frame_escn    = DiSlice_INVALID; // .debug_frame  (dwarf2)
+      DiSlice debug_line_alt_escn = DiSlice_INVALID; // .debug_line   (alt)
+      DiSlice debug_info_alt_escn = DiSlice_INVALID; // .debug_info   (alt)
+      DiSlice debug_abbv_alt_escn = DiSlice_INVALID; // .debug_abbrev (alt)
+      DiSlice debug_str_alt_escn  = DiSlice_INVALID; // .debug_str    (alt)
+      DiSlice dwarf1d_escn        = DiSlice_INVALID; // .debug        (dwarf1)
+      DiSlice dwarf1l_escn        = DiSlice_INVALID; // .line         (dwarf1)
+      DiSlice opd_escn            = DiSlice_INVALID; // .opd (dwarf2, 
+                                                     //       ppc64-linux)
+      DiSlice ehframe_escn[N_EHFRAME_SECTS];         // .eh_frame (dwarf2)
 
-      /* Section sizes, in bytes */
-      SizeT      strtab_sz       = 0;
-      SizeT      symtab_sz       = 0;
-      SizeT      dynstr_sz       = 0;
-      SizeT      dynsym_sz       = 0;
-      SizeT      debuglink_sz    = 0;
-      SizeT      debugaltlink_sz = 0;
-      SizeT      stab_sz         = 0;
-      SizeT      stabstr_sz      = 0;
-      SizeT      debug_line_sz   = 0;
-      SizeT      debug_info_sz   = 0;
-      SizeT      debug_types_sz  = 0;
-      SizeT      debug_abbv_sz   = 0;
-      SizeT      debug_str_sz    = 0;
-      SizeT      debug_ranges_sz = 0;
-      SizeT      debug_loc_sz    = 0;
-      SizeT      debug_frame_sz  = 0;
-      SizeT      debug_line_alt_sz = 0;
-      SizeT      debug_info_alt_sz = 0;
-      SizeT      debug_abbv_alt_sz = 0;
-      SizeT      debug_str_alt_sz = 0;
-      SizeT      dwarf1d_sz      = 0;
-      SizeT      dwarf1l_sz      = 0;
-      SizeT      opd_sz_unused   = 0;
-      SizeT      ehframe_sz[N_EHFRAME_SECTS];
-
-      for (i = 0; i < N_EHFRAME_SECTS; i++) {
-         ehframe_img[i] = NULL;
-         ehframe_sz[i]  = 0;
-      }
+      for (i = 0; i < N_EHFRAME_SECTS; i++)
+         ehframe_escn[i] = DiSlice_INVALID;
 
       /* Find all interesting sections */
 
-      UInt ehframe_ix = 0;
+      UInt ehframe_mix = 0;
 
       /* What FIND does: it finds the section called _SEC_NAME.  The
          size of it is assigned to _SEC_SIZE.  The address of the
@@ -2225,23 +2130,29 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* TOPLEVEL */
       /* Iterate over section headers (again) */
-      for (i = 0; i < ehdr_img->e_shnum; i++) {
+      for (i = 0; i < ehdr_m.e_shnum; i++) {
 
-#        define FINDX(_sec_name, _sec_size, _sec_img, _post_fx)     \
-         do { ElfXX_Shdr* shdr \
-                 = INDEX_BIS( shdr_img, i, shdr_ent_szB ); \
-           if (0 == VG_(strcmp)(_sec_name, (HChar *)(shdr_strtab_img    \
-                                                     + shdr->sh_name))) { \
+#        define FINDX(_sec_name, _sec_escn, _post_fx) \
+         do { \
+            ElfXX_Shdr a_shdr; \
+            ML_(img_get)(&a_shdr, mimg, \
+                         INDEX_BIS(shdr_mioff, i, shdr_ment_szB), \
+                         sizeof(a_shdr)); \
+            if (0 == ML_(img_strcmp_c)(mimg, shdr_strtab_mioff \
+                                              + a_shdr.sh_name, _sec_name)) { \
                Bool nobits; \
-               _sec_img  = (void*)(oimage + shdr->sh_offset); \
-               _sec_size = shdr->sh_size; \
-               nobits    = shdr->sh_type == SHT_NOBITS; \
-               TRACE_SYMTAB( "%18s:  img %p .. %p\n", \
-                             _sec_name, (UChar*)_sec_img, \
-                             ((UChar*)_sec_img) + _sec_size - 1); \
+               _sec_escn.img  = mimg; \
+               _sec_escn.ioff = (DiOffT)a_shdr.sh_offset; \
+               _sec_escn.szB  = a_shdr.sh_size; \
+               nobits         = a_shdr.sh_type == SHT_NOBITS; \
+               vg_assert(_sec_escn.img  != NULL); \
+               vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
+               TRACE_SYMTAB( "%18s:  ioff %llu .. %llu\n", \
+                             _sec_name, (ULong)_sec_escn.ioff, \
+                             ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
                /* SHT_NOBITS sections have zero size in the file. */ \
-               if ( shdr->sh_offset \
-                    + (nobits ? 0 : _sec_size) > n_oimage ) { \
+               if ( a_shdr.sh_offset \
+                    + (nobits ? 0 : _sec_escn.szB) > ML_(img_size)(mimg) ) { \
                   ML_(symerr)(di, True, \
                               "   section beyond image end?!"); \
                   goto out; \
@@ -2251,50 +2162,48 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          } while (0);
 
          /* Version with no post-effects */
-#        define FIND(_sec_name, _sec_size, _sec_img) \
-            FINDX(_sec_name, _sec_size, _sec_img, /**/)
+#        define FIND(_sec_name, _sec_escn) \
+            FINDX(_sec_name, _sec_escn, /**/)
 
-         /*   NAME              SIZE             IMAGE addr */
-         FIND(".dynsym",        dynsym_sz,       dynsym_img)
-         FIND(".dynstr",        dynstr_sz,       dynstr_img)
-         FIND(".symtab",        symtab_sz,       symtab_img)
-         FIND(".strtab",        strtab_sz,       strtab_img)
+         /*   NAME                  ElfSec */
+         FIND(".dynsym",            dynsym_escn)
+         FIND(".dynstr",            dynstr_escn)
+         FIND(".symtab",            symtab_escn)
+         FIND(".strtab",            strtab_escn)
 
-         FIND(".gnu_debuglink", debuglink_sz,    debuglink_img)
-         FIND(".gnu_debugaltlink", debugaltlink_sz, debugaltlink_img)
+         FIND(".gnu_debuglink",     debuglink_escn)
+         FIND(".gnu_debugaltlink",  debugaltlink_escn)
 
-         FIND(".stab",          stab_sz,         stab_img)
-         FIND(".stabstr",       stabstr_sz,      stabstr_img)
+         FIND(".stab",              stab_escn)
+         FIND(".stabstr",           stabstr_escn)
 
-         FIND(".debug_line",    debug_line_sz,   debug_line_img)
-         FIND(".debug_info",    debug_info_sz,   debug_info_img)
-         FIND(".debug_types",   debug_types_sz,  debug_types_img)
-         FIND(".debug_abbrev",  debug_abbv_sz,   debug_abbv_img)
-         FIND(".debug_str",     debug_str_sz,    debug_str_img)
-         FIND(".debug_ranges",  debug_ranges_sz, debug_ranges_img)
-         FIND(".debug_loc",     debug_loc_sz,    debug_loc_img)
-         FIND(".debug_frame",   debug_frame_sz,  debug_frame_img)
+         FIND(".debug_line",        debug_line_escn)
+         FIND(".debug_info",        debug_info_escn)
+         FIND(".debug_types",       debug_types_escn)
+         FIND(".debug_abbrev",      debug_abbv_escn)
+         FIND(".debug_str",         debug_str_escn)
+         FIND(".debug_ranges",      debug_ranges_escn)
+         FIND(".debug_loc",         debug_loc_escn)
+         FIND(".debug_frame",       debug_frame_escn)
 
-         FIND(".debug",         dwarf1d_sz,      dwarf1d_img)
-         FIND(".line",          dwarf1l_sz,      dwarf1l_img)
+         FIND(".debug",             dwarf1d_escn)
+         FIND(".line",              dwarf1l_escn)
 
-         FIND(".opd",           opd_sz_unused,   opd_img)
+         FIND(".opd",               opd_escn)
 
-         FINDX(".eh_frame",     ehframe_sz[ehframe_ix],
-                                                 ehframe_img[ehframe_ix], 
-               do { ehframe_ix++; vg_assert(ehframe_ix <= N_EHFRAME_SECTS); }
-                    while (0)
+         FINDX(".eh_frame",         ehframe_escn[ehframe_mix],
+               do { ehframe_mix++; vg_assert(ehframe_mix <= N_EHFRAME_SECTS);
+               } while (0)
          )
          /* Comment_on_EH_FRAME_MULTIPLE_INSTANCES: w.r.t. .eh_frame
             multi-instance kludgery, how are we assured that the order
-            in which we fill in ehframe_sz[] and ehframe_img[] is
-            consistent with the order in which we previously filled in
-            di->ehframe_avma[] and di->ehframe_size[] ?  By the fact
-            that in both cases, these arrays were filled in by
-            iterating over the section headers top-to-bottom.  So both
-            loops (this one and the previous one) encounter the
-            .eh_frame entries in the same order and so fill in these
-            arrays in a consistent order.
+            in which we fill in ehframe_escn[] is consistent with the
+            order in which we previously filled in di->ehframe_avma[]
+            and di->ehframe_size[] ?  By the fact that in both cases,
+            these arrays were filled in by iterating over the section
+            headers top-to-bottom.  So both loops (this one and the
+            previous one) encounter the .eh_frame entries in the same
+            order and so fill in these arrays in a consistent order.
          */
 
 #        undef FINDX
@@ -2302,32 +2211,38 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       } /* Iterate over section headers (again) */
 
       /* TOPLEVEL */
-      /* Now, see if we can find a debuginfo object, and if so map it in, and
-         put the mapping address and size in dimage and n_dimage. */
-      vg_assert(dimage == 0 && n_dimage == 0);
+      /* Now, see if we can find a debuginfo object, and if so connect
+         |dimg| to it. */
+      vg_assert(dimg == NULL && aimg == NULL);
 
       /* Look for a build-id */
-      buildid = find_buildid(oimage, n_oimage, False, False);
+      HChar* buildid = find_buildid(mimg, False, False);
 
       /* Look for a debug image */
-      if (buildid != NULL || debuglink_img != NULL) {
+      if (buildid != NULL || debuglink_escn.img != NULL) {
          /* Do have a debuglink section? */
-         if (debuglink_img != NULL) {
-            UInt crc_offset = VG_ROUNDUP(VG_(strlen)(debuglink_img)+1, 4);
-            UInt crc;
-
-            vg_assert(crc_offset + sizeof(UInt) <= debuglink_sz);
+         if (debuglink_escn.img != NULL) {
+            UInt crc_offset 
+               = VG_ROUNDUP(ML_(img_strlen)(debuglink_escn.img,
+                                            debuglink_escn.ioff)+1, 4);
+            vg_assert(crc_offset + sizeof(UInt) <= debuglink_escn.szB);
 
             /* Extract the CRC from the debuglink section */
-            crc = ML_(read_UInt)((UChar *)debuglink_img + crc_offset);
+            UInt crc = ML_(img_get_UInt)(debuglink_escn.img,
+                                         debuglink_escn.ioff + crc_offset);
 
             /* See if we can find a matching debug file */
-            find_debug_file( di, di->fsm.filename, buildid,
-                             debuglink_img, crc, False, &dimage, &n_dimage );
+            HChar* debuglink_str_m
+               = ML_(img_strdup)(debuglink_escn.img,
+                                 "di.redi_dlk.1", debuglink_escn.ioff);
+            dimg = find_debug_file( di, di->fsm.filename, buildid,
+                                    debuglink_str_m, crc, False );
+            if (debuglink_str_m)
+               ML_(dinfo_free)(debuglink_str_m);
          } else {
             /* See if we can find a matching debug file */
-            find_debug_file( di, di->fsm.filename, buildid,
-                             NULL, 0, False, &dimage, &n_dimage );
+            dimg = find_debug_file( di, di->fsm.filename, buildid,
+                                    NULL, 0, False );
          }
       }
 
@@ -2336,33 +2251,36 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          buildid = NULL; /* paranoia */
       }
 
-      /* Still no luck?  Let's have one last roll of the dice. */
-      if (dimage == 0) {
-         vg_assert(n_dimage == 0);
-         Bool found = find_ad_hoc_debug_image( di, di->fsm.filename,
-                                               &dimage, &n_dimage );
-         if (found)
-            vg_assert(dimage != 0);
+#     if defined(VGPV_arm_linux_android)
+      if (dimg == NULL && VG_(clo_debuginfo_server) != NULL) {
+         HChar* basename = di->fsm.filename;
+         if (VG_(strstr)(basename, "/") != NULL)
+            basename = VG_(strrchr)(basename, '/') + 1;
+         VG_(printf)("XXXXXXXXXXX trying ad-hoc %s\n", basename);
+         dimg = ML_(img_from_di_server)(basename,
+                                        VG_(clo_debuginfo_server));
       }
+#     endif
 
       /* TOPLEVEL */
       /* If we were successful in finding a debug image, pull various
          SVMA/bias/size and image addresses out of it. */
-      if (dimage != 0 
-          && n_dimage >= sizeof(ElfXX_Ehdr)
-          && ML_(is_elf_object_file)((void*)dimage, n_dimage, False)) {
+      if (dimg != NULL && is_elf_object_file_by_DiImage(dimg, False)) {
 
          /* Pull out and validate program header and section header info */
-         ElfXX_Ehdr* ehdr_dimg     = (ElfXX_Ehdr*)dimage;
-         ElfXX_Phdr* phdr_dimg     = (ElfXX_Phdr*)( ((UChar*)ehdr_dimg)
-                                                       + ehdr_dimg->e_phoff );
-         UWord       phdr_dnent    = ehdr_dimg->e_phnum;
-         UWord       phdr_dent_szB = ehdr_dimg->e_phentsize;
-         ElfXX_Shdr* shdr_dimg     = (ElfXX_Shdr*)( ((UChar*)ehdr_dimg)
-                                                       + ehdr_dimg->e_shoff );
-         UWord       shdr_dnent       = ehdr_dimg->e_shnum;
-         UWord       shdr_dent_szB    = ehdr_dimg->e_shentsize;
-         UChar*      shdr_strtab_dimg = NULL;
+         DiOffT      ehdr_dioff = 0;
+         ElfXX_Ehdr  ehdr_dimg;
+         ML_(img_get)(&ehdr_dimg, dimg, ehdr_dioff, sizeof(ehdr_dimg));
+
+         DiOffT   phdr_dioff        = ehdr_dimg.e_phoff;
+         UWord    phdr_dnent        = ehdr_dimg.e_phnum;
+         UWord    phdr_dent_szB     = ehdr_dimg.e_phentsize;
+
+         DiOffT   shdr_dioff        = ehdr_dimg.e_shoff;
+         UWord    shdr_dnent        = ehdr_dimg.e_shnum;
+         UWord    shdr_dent_szB     = ehdr_dimg.e_shentsize;
+
+         DiOffT   shdr_strtab_dioff = DiOffT_INVALID;
 
          /* SVMAs covered by rx and rw segments and corresponding bias. */
          Addr     rx_dsvma_limit = 0;
@@ -2373,9 +2291,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          Bool need_symtab, need_stabs, need_dwarf2, need_dwarf1;
 
          if (phdr_dnent == 0
-             || !contained_within(
-                    dimage, n_dimage,
-                    (Addr)phdr_dimg, phdr_dnent * phdr_dent_szB)) {
+             || !ML_(img_valid)(dimg, phdr_dioff,
+                                phdr_dnent * phdr_dent_szB)) {
             ML_(symerr)(di, True,
                         "Missing or invalid ELF Program Header Table"
                         " (debuginfo file)");
@@ -2383,9 +2300,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
 
          if (shdr_dnent == 0
-             || !contained_within(
-                    dimage, n_dimage,
-                    (Addr)shdr_dimg, shdr_dnent * shdr_dent_szB)) {
+             || !ML_(img_valid)(dimg, shdr_dioff,
+                                shdr_dnent * shdr_dent_szB)) {
             ML_(symerr)(di, True,
                         "Missing or invalid ELF Section Header Table"
                         " (debuginfo file)");
@@ -2394,46 +2310,46 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          /* Also find the section header's string table, and validate. */
          /* checked previously by is_elf_object_file: */
-         vg_assert( ehdr_dimg->e_shstrndx != SHN_UNDEF );
+         vg_assert(ehdr_dimg.e_shstrndx != SHN_UNDEF);
 
-         shdr_strtab_dimg
-            = (UChar*)( ((UChar*)ehdr_dimg)
-                        + shdr_dimg[ehdr_dimg->e_shstrndx].sh_offset);
-         if (!contained_within( 
-                 dimage, n_dimage,
-                 (Addr)shdr_strtab_dimg,
-                 1/*bogus, but we don't know the real size*/ )) {
-            ML_(symerr)(di, True, 
-                        "Invalid ELF Section Header String Table"
-                        " (debuginfo file)");
-            goto out;
+         // shdr_dioff is the offset of the section header table
+         // and we need the ehdr_dimg.e_shstrndx'th entry
+         { ElfXX_Shdr a_shdr;
+           ML_(img_get)(&a_shdr, dimg,
+                        INDEX_BIS(shdr_dioff, ehdr_dimg.e_shstrndx,
+                                              shdr_dent_szB),
+                        sizeof(a_shdr));
+           shdr_strtab_dioff = a_shdr.sh_offset;
+           if (!ML_(img_valid)(dimg, shdr_strtab_dioff,
+                               1/*bogus, but we don't know the real size*/)) {
+              ML_(symerr)(di, True, 
+                          "Invalid ELF Section Header String Table"
+                          " (debuginfo file)");
+              goto out;
+           }
          }
 
-         need_symtab = (NULL == symtab_img);
-         need_stabs  = (NULL == stab_img);
-         need_dwarf2 = (NULL == debug_info_img);
-         need_dwarf1 = (NULL == dwarf1d_img);
-
-         for (i = 0; i < ehdr_dimg->e_phnum; i++) {
-            ElfXX_Phdr* phdr 
-               = INDEX_BIS( (void*)(dimage + ehdr_dimg->e_phoff), 
-                                       i, phdr_ent_szB );
-            if (phdr->p_type == PT_LOAD) {
+         for (i = 0; i < ehdr_dimg.e_phnum; i++) {
+            ElfXX_Phdr a_phdr;
+            ML_(img_get)(&a_phdr, dimg, INDEX_BIS(ehdr_dimg.e_phoff,
+                                                  i, phdr_dent_szB), 
+                           sizeof(a_phdr));
+            if (a_phdr.p_type == PT_LOAD) {
                for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
                   struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
-                  if (   phdr->p_offset >= map->foff
-                      && phdr->p_offset <  map->foff + map->size
-                      && phdr->p_offset + phdr->p_filesz < map->foff
-                                                           + map->size) {
+                  if (   a_phdr.p_offset >= map->foff
+                      && a_phdr.p_offset <  map->foff + map->size
+                      && a_phdr.p_offset + a_phdr.p_filesz
+                         < map->foff + map->size) {
                      if (map->rx && rx_dsvma_limit == 0) {
-                        rx_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
-                        rx_dbias = map->avma - map->foff + phdr->p_offset
-                                   - phdr->p_vaddr;
+                        rx_dsvma_limit = a_phdr.p_vaddr + a_phdr.p_memsz;
+                        rx_dbias = map->avma - map->foff + a_phdr.p_offset
+                                   - a_phdr.p_vaddr;
                      }
                      if (map->rw && rw_dsvma_limit == 0) {
-                        rw_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
-                        rw_dbias = map->avma - map->foff + phdr->p_offset
-                                   - phdr->p_vaddr;
+                        rw_dsvma_limit = a_phdr.p_vaddr + a_phdr.p_memsz;
+                        rw_dbias = map->avma - map->foff + a_phdr.p_offset
+                                   - a_phdr.p_vaddr;
                      }
                      break;
                   }
@@ -2441,35 +2357,45 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             }
          }
 
-         /* Find all interesting sections */
-         for (i = 0; i < ehdr_dimg->e_shnum; i++) {
+         need_symtab = (symtab_escn.img == NULL);
+         need_stabs  = (stab_escn.img == NULL);
+         need_dwarf2 = (debug_info_escn.img == NULL);
+         need_dwarf1 = (dwarf1d_escn.img == NULL);
+
+         /* Find all interesting sections in the debug image */
+         for (i = 0; i < ehdr_dimg.e_shnum; i++) {
 
             /* Find debug svma and bias information for sections
                we found in the main file. */ 
 
-#           define FIND(sec, seg) \
-            do { ElfXX_Shdr* shdr \
-                    = INDEX_BIS( shdr_dimg, i, shdr_dent_szB ); \
-               if (di->sec##_present \
-                   && 0 == VG_(strcmp)("." #sec, \
-                                       (HChar *)(shdr_strtab_dimg + shdr->sh_name))) { \
-                  vg_assert(di->sec##_size == shdr->sh_size); \
-                  vg_assert(di->sec##_avma +  shdr->sh_addr + seg##_dbias); \
+#           define FIND(_sec, _seg) \
+            do { \
+               ElfXX_Shdr a_shdr; \
+               ML_(img_get)(&a_shdr, dimg, \
+                            INDEX_BIS(shdr_dioff, i, shdr_dent_szB), \
+                            sizeof(a_shdr)); \
+               if (di->_sec##_present \
+                   && 0 == ML_(img_strcmp_c)(dimg, shdr_strtab_dioff \
+                                             + a_shdr.sh_name, "." #_sec)) { \
+                  vg_assert(di->_sec##_size == a_shdr.sh_size); \
+                  /* JRS 2013-Jun-01: the following assert doesn't contain */ \
+                  /* any ==s, which seems to me to be suspicious. */ \
+                  vg_assert(di->_sec##_avma +  a_shdr.sh_addr + _seg##_dbias); \
                   /* Assume we have a correct value for the main */ \
                   /* object's bias.  Use that to derive the debuginfo */ \
                   /* object's bias, by adding the difference in SVMAs */ \
                   /* for the corresponding sections in the two files. */ \
                   /* That should take care of all prelinking effects. */ \
-                  di->sec##_debug_svma = shdr->sh_addr; \
-                  di->sec##_debug_bias \
-                     = di->sec##_bias + \
-                       di->sec##_svma - di->sec##_debug_svma; \
-                  TRACE_SYMTAB("acquiring ." #sec \
+                  di->_sec##_debug_svma = a_shdr.sh_addr; \
+                  di->_sec##_debug_bias \
+                     = di->_sec##_bias + \
+                       di->_sec##_svma - di->_sec##_debug_svma; \
+                  TRACE_SYMTAB("acquiring ." #_sec \
                                " debug svma = %#lx .. %#lx\n",       \
-                               di->sec##_debug_svma, \
-                               di->sec##_debug_svma + di->sec##_size - 1); \
-                  TRACE_SYMTAB("acquiring ." #sec " debug bias = %#lx\n", \
-                               di->sec##_debug_bias); \
+                               di->_sec##_debug_svma, \
+                               di->_sec##_debug_svma + di->_sec##_size - 1); \
+                  TRACE_SYMTAB("acquiring ." #_sec " debug bias = %#lx\n", \
+                               di->_sec##_debug_bias); \
                } \
             } while (0);
 
@@ -2484,28 +2410,37 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #           undef FIND
 
             /* Same deal as previous FIND, except only do it for those
-               sections for which we didn't find anything useful in
-               the main file. */
+               sections which we didn't find in the main file. */
 
-#           define FIND(condition, sec_name, sec_size, sec_img) \
-            do { ElfXX_Shdr* shdr \
-                    = INDEX_BIS( shdr_dimg, i, shdr_dent_szB ); \
-               if (condition \
-                   && 0 == VG_(strcmp)(sec_name, \
-                                       (HChar *)(shdr_strtab_dimg + shdr->sh_name))) { \
+#           define FIND(_condition, _sec_name, _sec_escn) \
+            do { \
+               ElfXX_Shdr a_shdr; \
+               ML_(img_get)(&a_shdr, dimg, \
+                            INDEX_BIS(shdr_dioff, i, shdr_dent_szB), \
+                            sizeof(a_shdr)); \
+               if (_condition \
+                   && 0 == ML_(img_strcmp_c)(dimg, shdr_strtab_dioff \
+                                             + a_shdr.sh_name, _sec_name)) { \
                   Bool nobits; \
-                  if (0 != sec_img) \
-                     VG_(core_panic)("repeated section!\n"); \
-                  sec_img  = (void*)(dimage + shdr->sh_offset); \
-                  sec_size = shdr->sh_size; \
-                  nobits   = shdr->sh_type == SHT_NOBITS; \
-                  TRACE_SYMTAB( "%18s: dimg %p .. %p\n", \
-                                sec_name, \
-                                (UChar*)sec_img, \
-                                ((UChar*)sec_img) + sec_size - 1); \
+                  if (_sec_escn.img != NULL) { \
+                     ML_(symerr)(di, True, \
+                                 "   debuginfo section duplicates a" \
+                                 " section in the main ELF file"); \
+                     goto out; \
+                  } \
+                  _sec_escn.img  = dimg; \
+                  _sec_escn.ioff = (DiOffT)a_shdr.sh_offset;  \
+                  _sec_escn.szB  = a_shdr.sh_size; \
+                  nobits         = a_shdr.sh_type == SHT_NOBITS; \
+                  vg_assert(_sec_escn.img  != NULL); \
+                  vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
+                  TRACE_SYMTAB( "%18s: dioff %llu .. %llu\n", \
+                                _sec_name, \
+                                (ULong)_sec_escn.ioff, \
+                                ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
                   /* SHT_NOBITS sections have zero size in the file. */ \
-                  if ( shdr->sh_offset \
-                       + (nobits ? 0 : sec_size) > n_dimage ) { \
+                  if (a_shdr.sh_offset \
+                      + (nobits ? 0 : _sec_escn.szB) > ML_(img_size)(dimg)) { \
                      ML_(symerr)(di, True, \
                                  "   section beyond image end?!"); \
                      goto out; \
@@ -2513,49 +2448,56 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                } \
             } while (0);
 
-            /* NEEDED?        NAME             SIZE           IMAGE addr */
-            FIND(need_symtab, ".symtab",       symtab_sz,     symtab_img)
-            FIND(need_symtab, ".strtab",       strtab_sz,     strtab_img)
-            FIND(need_stabs,  ".stab",         stab_sz,       stab_img)
-            FIND(need_stabs,  ".stabstr",      stabstr_sz,    stabstr_img)
-            FIND(need_dwarf2, ".debug_line",   debug_line_sz, debug_line_img)
-            FIND(need_dwarf2, ".debug_info",   debug_info_sz, debug_info_img)
-            FIND(need_dwarf2, ".debug_types",  debug_types_sz,
-		                                            debug_types_img)
-            FIND(need_dwarf2, ".debug_abbrev", debug_abbv_sz, debug_abbv_img)
-            FIND(need_dwarf2, ".debug_str",    debug_str_sz,  debug_str_img)
-            FIND(need_dwarf2, ".debug_ranges", debug_ranges_sz, 
-                                                            debug_ranges_img)
-            FIND(need_dwarf2, ".debug_loc",    debug_loc_sz,  debug_loc_img)
-            FIND(need_dwarf2, ".debug_frame",  debug_frame_sz,
-                                                            debug_frame_img)
-            FIND(need_dwarf2, ".gnu_debugaltlink", debugaltlink_sz,
-                                                            debugaltlink_img)
-            FIND(need_dwarf1, ".debug",        dwarf1d_sz,    dwarf1d_img)
-            FIND(need_dwarf1, ".line",         dwarf1l_sz,    dwarf1l_img)
+            /* NEEDED?        NAME             ElfSec */
+            FIND(need_symtab, ".symtab",       symtab_escn)
+            FIND(need_symtab, ".strtab",       strtab_escn)
+            FIND(need_stabs,  ".stab",         stab_escn)
+            FIND(need_stabs,  ".stabstr",      stabstr_escn)
+            FIND(need_dwarf2, ".debug_line",   debug_line_escn)
+            FIND(need_dwarf2, ".debug_info",   debug_info_escn)
+            FIND(need_dwarf2, ".debug_types",  debug_types_escn)
+
+            FIND(need_dwarf2, ".debug_abbrev", debug_abbv_escn)
+            FIND(need_dwarf2, ".debug_str",    debug_str_escn)
+            FIND(need_dwarf2, ".debug_ranges", debug_ranges_escn)
+
+            FIND(need_dwarf2, ".debug_loc",    debug_loc_escn)
+            FIND(need_dwarf2, ".debug_frame",  debug_frame_escn)
+
+            FIND(need_dwarf2, ".gnu_debugaltlink", debugaltlink_escn)
+
+            FIND(need_dwarf1, ".debug",        dwarf1d_escn)
+            FIND(need_dwarf1, ".line",         dwarf1l_escn)
 
 #           undef FIND
          } /* Find all interesting sections */
       } /* do we have a debug image? */
 
-      /* Look for alternate debug image */
-      if (debugaltlink_img != NULL) {
-         UInt buildid_offset = VG_(strlen)((HChar *)debugaltlink_img)+1;
+      /* TOPLEVEL */
+      /* Look for alternate debug image, and if found, connect |aimg|
+         to it. */
+      vg_assert(aimg == NULL);
 
-         vg_assert(buildid_offset < debugaltlink_sz);
+      if (debugaltlink_escn.img != NULL) {
+         UInt buildid_offset = ML_(img_strlen)(debugaltlink_escn.img, 0)+1;
+
+         vg_assert(buildid_offset < debugaltlink_escn.szB);
 
          HChar *altbuildid
             = ML_(dinfo_zalloc)("di.fbi.4",
-                                (debugaltlink_sz - buildid_offset)
+                                (debugaltlink_escn.szB - buildid_offset)
                                 * 2 + 1);
 
-         for (j = 0; j < debugaltlink_sz - buildid_offset; j++)
-            VG_(sprintf)(altbuildid + 2 * j, 
-                         "%02x", debugaltlink_img[buildid_offset + j]);
+         for (j = 0; j < debugaltlink_escn.szB - buildid_offset; j++)
+            VG_(sprintf)(
+               altbuildid + 2 * j, "%02x",
+               (UInt)ML_(img_get_UChar)(debugaltlink_escn.img,
+                                        debugaltlink_escn.ioff 
+                                        + buildid_offset + j));
 
          /* See if we can find a matching debug file */
-         find_debug_file( di, di->fsm.filename, altbuildid,
-                          NULL, 0, True, &aimage, &n_aimage );
+         aimg = find_debug_file( di, di->fsm.filename, altbuildid,
+                                 NULL, 0, True );
 
          ML_(dinfo_free)(altbuildid);
       }
@@ -2563,22 +2505,22 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* TOPLEVEL */
       /* If we were successful in finding alternate debug image, pull various
          size and image addresses out of it. */
-      if (aimage != 0 
-          && n_aimage >= sizeof(ElfXX_Ehdr)
-          && ML_(is_elf_object_file)((void*)aimage, n_aimage, True)) {
+      if (aimg != NULL && is_elf_object_file_by_DiImage(aimg, True)) {
 
          /* Pull out and validate program header and section header info */
-         ElfXX_Ehdr* ehdr_aimg     = (ElfXX_Ehdr*)aimage;
-         ElfXX_Shdr* shdr_aimg     = (ElfXX_Shdr*)( ((UChar*)ehdr_aimg)
-                                                       + ehdr_aimg->e_shoff );
-         UWord       shdr_dnent       = ehdr_aimg->e_shnum;
-         UWord       shdr_dent_szB    = ehdr_aimg->e_shentsize;
-         UChar*      shdr_strtab_aimg = NULL;
+         DiOffT      ehdr_aioff = 0;
+         ElfXX_Ehdr  ehdr_aimg;
+         ML_(img_get)(&ehdr_aimg, aimg, ehdr_aioff, sizeof(ehdr_aimg));
 
-         if (shdr_dnent == 0
-             || !contained_within(
-                    aimage, n_aimage,
-                    (Addr)shdr_aimg, shdr_dnent * shdr_dent_szB)) {
+         DiOffT   shdr_aioff        = ehdr_aimg.e_shoff;
+         UWord    shdr_anent        = ehdr_aimg.e_shnum;
+         UWord    shdr_aent_szB     = ehdr_aimg.e_shentsize;
+
+         DiOffT   shdr_strtab_aioff = DiOffT_INVALID;
+
+         if (shdr_anent == 0
+             || !ML_(img_valid)(aimg, shdr_aioff,
+                                shdr_anent * shdr_aent_szB)) {
             ML_(symerr)(di, True,
                         "Missing or invalid ELF Section Header Table"
                         " (alternate debuginfo file)");
@@ -2587,45 +2529,59 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          /* Also find the section header's string table, and validate. */
          /* checked previously by is_elf_object_file: */
-         vg_assert( ehdr_aimg->e_shstrndx != SHN_UNDEF );
+         vg_assert(ehdr_aimg.e_shstrndx != SHN_UNDEF);
 
-         shdr_strtab_aimg
-            = (UChar*)( ((UChar*)ehdr_aimg)
-                        + shdr_aimg[ehdr_aimg->e_shstrndx].sh_offset);
-         if (!contained_within( 
-                 aimage, n_aimage,
-                 (Addr)shdr_strtab_aimg,
-                 1/*bogus, but we don't know the real size*/ )) {
-            ML_(symerr)(di, True, 
-                        "Invalid ELF Section Header String Table"
-                        " (alternate debuginfo file)");
-            goto out;
+         // shdr_aioff is the offset of the section header table
+         // and we need the ehdr_aimg.e_shstrndx'th entry
+         { ElfXX_Shdr a_shdr;
+           ML_(img_get)(&a_shdr, aimg,
+                        INDEX_BIS(shdr_aioff, ehdr_aimg.e_shstrndx,
+                                              shdr_aent_szB),
+                        sizeof(a_shdr));
+           shdr_strtab_aioff = a_shdr.sh_offset;
+           if (!ML_(img_valid)(aimg, shdr_strtab_aioff,
+                               1/*bogus, but we don't know the real size*/)) {
+              ML_(symerr)(di, True, 
+                          "Invalid ELF Section Header String Table"
+                          " (alternate debuginfo file)");
+              goto out;
+           }
          }
 
          /* Find all interesting sections */
-         for (i = 0; i < ehdr_aimg->e_shnum; i++) {
+         for (i = 0; i < ehdr_aimg.e_shnum; i++) {
 
-#           define FIND(sec_name, sec_size, sec_img) \
-            do { ElfXX_Shdr* shdr \
-                    = INDEX_BIS( shdr_aimg, i, shdr_dent_szB ); \
-               if (0 == VG_(strcmp)(sec_name, \
-                                    (HChar *)(shdr_strtab_aimg + shdr->sh_name))) { \
-                  if (0 != sec_img) \
-                     VG_(core_panic)("repeated section!\n"); \
-                  sec_img  = (void*)(aimage + shdr->sh_offset); \
-                  sec_size = shdr->sh_size; \
-                  TRACE_SYMTAB( "%18s: aimg %p .. %p\n", \
-                                sec_name, \
-                                (UChar*)sec_img, \
-                                ((UChar*)sec_img) + sec_size - 1); \
+#           define FIND(_sec_name, _sec_escn) \
+            do { \
+               ElfXX_Shdr a_shdr; \
+               ML_(img_get)(&a_shdr, aimg, \
+                            INDEX_BIS(shdr_aioff, i, shdr_aent_szB), \
+                            sizeof(a_shdr)); \
+               if (0 == ML_(img_strcmp_c)(aimg, shdr_strtab_aioff \
+                                          + a_shdr.sh_name, _sec_name)) { \
+                  if (_sec_escn.img != NULL) { \
+                     ML_(symerr)(di, True, \
+                                 "   alternate debuginfo section duplicates a" \
+                                 " section in the main ELF file"); \
+                     goto out; \
+                  } \
+                  _sec_escn.img  = aimg; \
+                  _sec_escn.ioff = (DiOffT)a_shdr.sh_offset; \
+                  _sec_escn.szB  = a_shdr.sh_size; \
+                  vg_assert(_sec_escn.img  != NULL); \
+                  vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
+                  TRACE_SYMTAB( "%18s: aioff %llu .. %llu\n", \
+                                _sec_name, \
+                                (ULong)_sec_escn.ioff, \
+                                ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
                } \
             } while (0);
 
-            /*   NAME             SIZE           IMAGE addr */
-            FIND(".debug_line",   debug_line_alt_sz, debug_line_alt_img)
-            FIND(".debug_info",   debug_info_alt_sz, debug_info_alt_img)
-            FIND(".debug_abbrev", debug_abbv_alt_sz, debug_abbv_alt_img)
-            FIND(".debug_str",    debug_str_alt_sz,  debug_str_alt_img)
+            /*   NAME             ElfSec */
+            FIND(".debug_line",   debug_line_alt_escn)
+            FIND(".debug_info",   debug_info_alt_escn)
+            FIND(".debug_abbrev", debug_abbv_alt_escn)
+            FIND(".debug_str",    debug_str_alt_escn)
 
 #           undef FIND
          } /* Find all interesting sections */
@@ -2634,32 +2590,26 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* TOPLEVEL */
       /* Check some sizes */
-      vg_assert((dynsym_sz % sizeof(ElfXX_Sym)) == 0);
-      vg_assert((symtab_sz % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((dynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((symtab_escn.szB % sizeof(ElfXX_Sym)) == 0);
 
       /* Read symbols */
       {
          void (*read_elf_symtab)(struct _DebugInfo*, const HChar*,
-                                 ElfXX_Sym*,SizeT,
-                                 HChar*,SizeT,
-                                 Bool,UChar*);
+                                 DiSlice*, DiSlice*, DiSlice*, Bool);
          Bool symtab_in_debug;
 #        if defined(VGP_ppc64_linux)
          read_elf_symtab = read_elf_symtab__ppc64_linux;
 #        else
          read_elf_symtab = read_elf_symtab__normal;
 #        endif
-         symtab_in_debug = (Addr)symtab_img >= dimage
-                           && (Addr)symtab_img < dimage + n_dimage;
+         symtab_in_debug = symtab_escn.img == dimg;
          read_elf_symtab(di, "symbol table",
-                         symtab_img, symtab_sz,
-                         strtab_img, strtab_sz, 
-                         symtab_in_debug, opd_img);
-
+                         &symtab_escn, &strtab_escn, &opd_escn,
+                         symtab_in_debug);
          read_elf_symtab(di, "dynamic symbol table",
-                         dynsym_img, dynsym_sz,
-                         dynstr_img, dynstr_sz, 
-                         False, opd_img);
+                         &dynsym_escn, &dynstr_escn, &opd_escn,
+                         False);
       } /* Read symbols */
 
       /* TOPLEVEL */
@@ -2669,16 +2619,16 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       for (i = 0; i < di->n_ehframe; i++) {
          /* see Comment_on_EH_FRAME_MULTIPLE_INSTANCES above for why
             this next assertion should hold. */
-         vg_assert(ehframe_sz[i] == di->ehframe_size[i]);
+         vg_assert(ML_(sli_is_valid)(ehframe_escn[i]));
+         vg_assert(ehframe_escn[i].szB == di->ehframe_size[i]);
          ML_(read_callframe_info_dwarf3)( di,
-                                          ehframe_img[i],
-                                          ehframe_sz[i],
+                                          ehframe_escn[i],
                                           di->ehframe_avma[i],
                                           True/*is_ehframe*/ );
       }
-      if (debug_frame_sz) {
+      if (ML_(sli_is_valid)(debug_frame_escn)) {
          ML_(read_callframe_info_dwarf3)( di,
-                                          debug_frame_img, debug_frame_sz,
+                                          debug_frame_escn,
                                           0/*assume zero avma*/,
                                           False/*!is_ehframe*/ );
       }
@@ -2695,28 +2645,29 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          && !defined(VGPV_arm_linux_android) \
          && !defined(VGPV_x86_linux_android) \
          && !defined(VGP_mips64_linux)
+#if 0
       if (stab_img && stabstr_img) {
          ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );
       }
+#endif
 #     endif
       /* jrs 2006-01-01: icc-8.1 has been observed to generate
          binaries without debug_str sections.  Don't preclude
          debuginfo reading for that reason, but, in
          read_unitinfo_dwarf2, do check that debugstr is non-NULL
          before using it. */
-      if (debug_info_img && debug_abbv_img && debug_line_img
-                                           /* && debug_str_img */) {
-
+      if (ML_(sli_is_valid)(debug_info_escn) 
+          && ML_(sli_is_valid)(debug_abbv_escn)
+          && ML_(sli_is_valid)(debug_line_escn)) {
          /* The old reader: line numbers and unwind info only */
          ML_(read_debuginfo_dwarf3) ( di,
-                                      debug_info_img, debug_info_sz,
-                                      debug_types_img, debug_types_sz,
-                                      debug_abbv_img, debug_abbv_sz,
-                                      debug_line_img, debug_line_sz,
-                                      debug_str_img,  debug_str_sz,
-                                      debug_str_alt_img, debug_str_alt_sz );
-
+                                      debug_info_escn,
+                                      debug_types_escn,
+                                      debug_abbv_escn,
+                                      debug_line_escn,
+                                      debug_str_escn,
+                                      debug_str_alt_escn );
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations.  But only if
             the tool asks for it, or the user requests it on the
@@ -2724,24 +2675,21 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (VG_(needs).var_info /* the tool requires it */
              || VG_(clo_read_var_info) /* the user asked for it */) {
             ML_(new_dwarf3_reader)(
-               di, debug_info_img,   debug_info_sz,
-                   debug_types_img,   debug_types_sz,
-                   debug_abbv_img,   debug_abbv_sz,
-                   debug_line_img,   debug_line_sz,
-                   debug_str_img,    debug_str_sz,
-                   debug_ranges_img, debug_ranges_sz,
-                   debug_loc_img,    debug_loc_sz,
-                   debug_info_alt_img, debug_info_alt_sz,
-                   debug_abbv_alt_img, debug_abbv_alt_sz,
-                   debug_line_alt_img, debug_line_alt_sz,
-                   debug_str_alt_img,  debug_str_alt_sz
+               di, debug_info_escn,     debug_types_escn,
+                   debug_abbv_escn,     debug_line_escn,
+                   debug_str_escn,      debug_ranges_escn,
+                   debug_loc_escn,      debug_info_alt_escn,
+                   debug_abbv_alt_escn, debug_line_alt_escn,
+                   debug_str_alt_escn
             );
          }
       }
+#if 0
       if (dwarf1d_img && dwarf1l_img) {
          ML_(read_debuginfo_dwarf1) ( di, dwarf1d_img, dwarf1d_sz, 
                                           dwarf1l_img, dwarf1l_sz );
       }
+#endif
       /* TOPLEVEL */
 
    } /* "Find interesting sections, read the symbol table(s), read any debug
@@ -2781,17 +2729,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
   out: 
    {
-      SysRes m_res;
-      /* Last, but not least, heave the image(s) back overboard. */
-      if (dimage) {
-         m_res = VG_(am_munmap_valgrind) ( dimage, n_dimage );
-         vg_assert(!sr_isError(m_res));
-      }
-      m_res = VG_(am_munmap_valgrind) ( oimage, n_oimage );
-      vg_assert(!sr_isError(m_res));
+      /* Last, but not least, detach from the image(s). */
+      if (mimg) ML_(img_done)(mimg);
+      if (dimg) ML_(img_done)(dimg);
+      if (aimg) ML_(img_done)(aimg);
 
-      if (svma_ranges)
-         VG_(deleteXA)(svma_ranges);
+      if (svma_ranges) VG_(deleteXA)(svma_ranges);
 
       return res;
    } /* out: */ 

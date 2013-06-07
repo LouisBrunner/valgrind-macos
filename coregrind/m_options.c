@@ -80,6 +80,7 @@ const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Int    VG_(clo_n_fullpath_after) = 0;
 const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 const HChar* VG_(clo_extra_debuginfo_path) = NULL;
+const HChar* VG_(clo_debuginfo_server) = NULL;
 UChar  VG_(clo_trace_flags)    = 0; // 00000000b
 Bool   VG_(clo_profyle_sbs)    = False;
 UChar  VG_(clo_profyle_flags)  = 0; // 00000000b

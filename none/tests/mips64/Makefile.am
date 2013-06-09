@@ -32,7 +32,7 @@ EXTRA_DIST = \
 	rotate_swap.stdout.exp-mips64 rotate_swap.stdout.exp-mips64r2 \
 	rotate_swap.stderr.exp rotate_swap.vgtest \
 	round.stdout.exp round.stderr.exp round.vgtest \
-	shift_instructions.stdout-exp-mips64 shift_instructions.stdout-exp-mips64r2 \
+	shift_instructions.stdout.exp-mips64 shift_instructions.stdout.exp-mips64r2 \
 	shift_instructions.stderr.exp shift_instructions.vgtest \
 	test_block_size.stdout.exp test_block_size.stderr.exp \
 	test_block_size.vgtest \

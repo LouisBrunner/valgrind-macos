@@ -3862,7 +3862,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       store(binop(Iop_Sub64, mkexpr(t1), mkexpr(B_pos)), mkexpr(B_byte));
       store(mkexpr(t1), mkexpr(A_byte));
 
-#elif defined (_MIPSEB)
+#else /* _MIPSEB */
       /* Calculate X_byte position. */
       assign(B_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x7)),
                                mkU64(0x0),
@@ -3986,7 +3986,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       store(binop(Iop_Add64, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
       store(mkexpr(t1), mkexpr(H_byte));
 
-#elif defined (_MIPSEB)
+#else /* _MIPSEB */
       /* Calculate X_byte position. */
       assign(B_pos, IRExpr_ITE(binop(Iop_CmpLT64U, mkU64(0x5), mkexpr(t3)),
                                mkU64(0x6),
@@ -4084,7 +4084,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          store(binop(Iop_Sub64, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
          store(mkexpr(t1), mkexpr(E_byte));
 
-#elif defined (_MIPSEB)
+#else    /* _MIPSEB */
          /* Calculate X_byte position. */
          assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x3)),
                                   mkU64(0x0),
@@ -4145,7 +4145,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          store(binop(Iop_Sub32, mkexpr(t1), mkexpr(F_pos)), mkexpr(F_byte));
          store(mkexpr(t1), mkexpr(E_byte));
 
-#elif defined (_MIPSEB)
+#else    /* _MIPSEB */
          /* Calculate X_byte position. */
          assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x3)),
                                   mkU32(0x0),
@@ -4211,7 +4211,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          store(binop(Iop_Add64, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
          store(mkexpr(t1), mkexpr(H_byte));
 
-#elif defined (_MIPSEB)
+#else    /* _MIPSEB */
          /* Calculate X_byte position. */
          assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(t3), mkU64(0x3)),
                                   mkU64(0x1),
@@ -4272,7 +4272,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          store(binop(Iop_Add32, mkexpr(t1), mkexpr(G_pos)), mkexpr(G_byte));
          store(mkexpr(t1), mkexpr(H_byte));
 
-#elif defined (_MIPSEB)
+#else    /* _MIPSEB */
          /* Calculate X_byte position. */
          assign(F_pos, IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0x3)),
                                   mkU32(0x1),

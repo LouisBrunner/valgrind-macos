@@ -556,8 +556,24 @@ void* VG_(memcpy) ( void *dest, const void *src, SizeT sz )
       d = (UChar*)dI;
    }
 
-   while (sz--)
-      *d++ = *s++;
+   /* If we're unlucky, the alignment constraints for the fast case
+      above won't apply, and we'll have to to it all here.  Hence the
+      unrolling. */
+   while (sz >= 4) {
+      d[0] = s[0];
+      d[1] = s[1];
+      d[2] = s[2];
+      d[3] = s[3];
+      d += 4;
+      s += 4;
+      sz -= 4;
+   }
+   while (sz >= 1) {
+      d[0] = s[0];
+      d += 1;
+      s += 1;
+      sz -= 1;
+   }
 
    return dest;
 }

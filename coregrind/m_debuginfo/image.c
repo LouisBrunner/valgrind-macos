@@ -751,6 +751,31 @@ void ML_(img_get)(/*OUT*/void* dst,
    }
 }
 
+SizeT ML_(img_get_some)(/*OUT*/void* dst,
+                        DiImage* img, DiOffT offset, SizeT size)
+{
+   vg_assert(img);
+   vg_assert(size > 0);
+   vg_assert(ML_(img_valid)(img, offset, size));
+   UChar* dstU = (UChar*)dst;
+   /* Use |get| in the normal way to get the first byte of the range.
+      This guarantees to put the cache entry containing |offset| in
+      position zero. */
+   dstU[0] = get(img, offset);
+   /* Now just read as many bytes as we can (or need) directly out of
+      entry zero, without bothering to call |get| each time. */
+   CEnt* ce = img->ces[0];
+   vg_assert(ce && ce->used >= 1);
+   vg_assert(is_in_CEnt(ce, offset));
+   SizeT nToCopy = size - 1;
+   SizeT nAvail  = (SizeT)(ce->used - (offset + 1 - ce->off));
+   vg_assert(nAvail >= 0 && nAvail <= ce->used-1);
+   if (nAvail < nToCopy) nToCopy = nAvail;
+   VG_(memcpy)(&dstU[1], &ce->data[offset + 1 - ce->off], nToCopy);
+   return nToCopy + 1;
+}
+
+
 SizeT ML_(img_strlen)(DiImage* img, DiOffT off)
 {
    vg_assert(ML_(img_valid)(img, off, 1));
@@ -905,11 +930,12 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
          vg_assert(avail > 0 && avail <= img_szB);
          if (avail > 1024) avail = 1024;
          UChar buf[1024];
-         ML_(img_get)(buf, img, curr_off, avail);
+         SizeT nGot = ML_(img_get_some)(buf, img, curr_off, avail);
+         vg_assert(nGot >= 1 && nGot <= avail);
          UInt i;
-         for (i = 0; i < (UInt)avail; i++)
+         for (i = 0; i < (UInt)nGot; i++)
             crc = crc32_table[(crc ^ buf[i]) & 0xff] ^ (crc >> 8);
-         curr_off += avail;
+         curr_off += nGot;
       }
       return ~crc & 0xFFFFFFFF;
    } else {

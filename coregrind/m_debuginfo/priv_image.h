@@ -80,6 +80,17 @@ Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size);
 void ML_(img_get)(/*OUT*/void* dst,
                   DiImage* img, DiOffT offset, SizeT size);
 
+/* A version of ML_(img_get) that is significantly cheaper when
+   fetching a lot of data, at the cost of being more difficult to use.
+   Fetches between 1 and |size| bytes from |img| at |offset| and
+   places them in |dst|.  |size| must be at least 1.  The number of
+   bytes read is returned, and the caller must be able to deal with
+   any number between 1 and |size|.  |offset| must be a valid offset
+   in the image; if not the function will not return.  This function
+   will not read off the end of the image. */
+SizeT ML_(img_get_some)(/*OUT*/void* dst,
+                        DiImage* img, DiOffT offset, SizeT size);
+
 /* Copy a C string out of the image, into ML_(dinfo_zalloc)'d space.
    The caller owns the string and must free it with ML_(dinfo_free).
    |offset| may be DiOffT_INVALID, in which case this returns NULL. */

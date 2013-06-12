@@ -47,7 +47,7 @@ usage: valgrind [options] prog-and-args
     --max-stackframe=<number> assume stack switch for SP changes larger
                               than <number> bytes [2000000]
     --main-stacksize=<number> set size of main thread's stack (in bytes)
-                              [use current 'ulimit' value]
+                              [min(max(current 'ulimit' value,1MB),16MB)]
 
   user options for Valgrind tools that replace malloc:
     --alignment=<number>      set minimum alignment of heap allocations [not used by this tool]

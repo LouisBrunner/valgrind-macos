@@ -159,7 +159,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --max-stackframe=<number> assume stack switch for SP changes larger\n"
 "                              than <number> bytes [2000000]\n"
 "    --main-stacksize=<number> set size of main thread's stack (in bytes)\n"
-"                              [use current 'ulimit' value]\n"
+"                              [min(max(current 'ulimit' value,1MB),16MB)]\n"
 "\n"
 "  user options for Valgrind tools that replace malloc:\n"
 "    --alignment=<number>      set minimum alignment of heap allocations [%s]\n"
@@ -1700,6 +1700,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         VG_(printf)("   * x86 (practically any; Pentium-I or above), "
                     "AMD Athlon or above)\n");
         VG_(printf)("   * AMD Athlon64/Opteron\n");
+        VG_(printf)("   * ARM (armv7)\n");
         VG_(printf)("   * PowerPC (most; ppc405 and above)\n");
         VG_(printf)("   * System z (64bit only - s390x; z900 and above)\n");
         VG_(printf)("\n");

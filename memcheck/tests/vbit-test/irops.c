@@ -509,11 +509,23 @@ static irop_t irops[] = {
   { DEFOP(Iop_D128toI64U,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_D128toI32S,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_D128toI32U,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_F32toD32,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_F32toD64,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_F32toD128,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_F64toD32,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_F64toD64,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
-  { DEFOP(Iop_D64toF64,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_F64toD128,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
-  { DEFOP(Iop_D128toF64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_F128toD32,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_F128toD64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_F128toD128,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D32toF32,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D32toF64,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D32toF128,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D64toF32,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D64toF64,              UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D64toF128,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D128toF32,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
+  { DEFOP(Iop_D128toF64,             UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_D128toF128,            UNDEF_ALL),  .s390x = 1, .ppc64 = 0, .ppc32 = 0 },
   { DEFOP(Iop_RoundD64toInt,         UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_RoundD128toInt,        UNDEF_ALL),  .s390x = 0, .ppc64 = 1, .ppc32 = 1 },
@@ -980,6 +992,32 @@ get_irop(IROp op)
             int rc;
             /* These IROps require the floating point extension facility */
             rc = system(S390X_FEATURES " s390x-fpext");
+            // s390x_features returns 1 if feature does not exist
+            rc /= 256;
+            if (rc != 0) return NULL;
+         }
+         /* PFPO Iops */
+         case Iop_F32toD32:
+         case Iop_F32toD64:
+         case Iop_F32toD128:
+         case Iop_F64toD32:
+         case Iop_F64toD64:
+         case Iop_F64toD128:
+         case Iop_F128toD32:
+         case Iop_F128toD64:
+         case Iop_F128toD128:
+         case Iop_D32toF32:
+         case Iop_D32toF64:
+         case Iop_D32toF128:
+         case Iop_D64toF32:
+         case Iop_D64toF64:
+         case Iop_D64toF128:
+         case Iop_D128toF32:
+         case Iop_D128toF64:
+         case Iop_D128toF128: {
+            int rc;
+            /* These IROps require the Perform Floating Point Operation facility */
+            rc = system(S390X_FEATURES " s390x-pfpo");
             // s390x_features returns 1 if feature does not exist
             rc /= 256;
             if (rc != 0) return NULL;

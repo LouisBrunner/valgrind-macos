@@ -6923,11 +6923,23 @@ s390_insn_as_string(const s390_insn *insn)
       s390_fp_convert *fp_convert = insn->variant.fp_convert.details;
 
       switch (fp_convert->tag) {
-      case S390_FP_F64_TO_D64:   op = "v-f2d"; break;
-      case S390_FP_D64_TO_F64:   op = "v-d2f"; break;
-      case S390_FP_F64_TO_D128:  op = "v-f2d"; break;
-      case S390_FP_D128_TO_F64:  op = "v-d2f"; break;
+      case S390_FP_F32_TO_D32:
+      case S390_FP_F32_TO_D64:
+      case S390_FP_F32_TO_D128:
+      case S390_FP_F64_TO_D32:
+      case S390_FP_F64_TO_D64:
+      case S390_FP_F64_TO_D128:
+      case S390_FP_F128_TO_D32:
+      case S390_FP_F128_TO_D64:
       case S390_FP_F128_TO_D128: op = "v-f2d"; break;
+      case S390_FP_D32_TO_F32:
+      case S390_FP_D32_TO_F64:
+      case S390_FP_D32_TO_F128:
+      case S390_FP_D64_TO_F32:
+      case S390_FP_D64_TO_F64:
+      case S390_FP_D64_TO_F128:
+      case S390_FP_D128_TO_F32:
+      case S390_FP_D128_TO_F64:
       case S390_FP_D128_TO_F128: op = "v-d2f"; break;
       default: goto fail;
       }
@@ -7096,11 +7108,23 @@ s390_insn_as_string(const s390_insn *insn)
       s390_fp_convert *fp_convert = insn->variant.fp_convert.details;
 
       switch (fp_convert->tag) {
+      case S390_FP_F32_TO_D32:
+      case S390_FP_F32_TO_D64:
+      case S390_FP_F32_TO_D128:
+      case S390_FP_D32_TO_F32:
+      case S390_FP_D32_TO_F64:
+      case S390_FP_D32_TO_F128:  p += vex_sprintf(p, "4 -> "); goto common;
+      case S390_FP_F64_TO_D32:
       case S390_FP_F64_TO_D64:
+      case S390_FP_F64_TO_D128:
+      case S390_FP_D64_TO_F32:
       case S390_FP_D64_TO_F64:
-      case S390_FP_F64_TO_D128:  p += vex_sprintf(p, "8 -> "); goto common;
-      case S390_FP_D128_TO_F64:
+      case S390_FP_D64_TO_F128:  p += vex_sprintf(p, "8 -> "); goto common;
+      case S390_FP_F128_TO_D32:
+      case S390_FP_F128_TO_D64:
       case S390_FP_F128_TO_D128:
+      case S390_FP_D128_TO_F32:
+      case S390_FP_D128_TO_F64:
       case S390_FP_D128_TO_F128: p += vex_sprintf(p, "16 -> "); goto common;
       default:
          goto common;
@@ -9317,11 +9341,23 @@ s390_insn_fp_convert_emit(UChar *buf, const s390_insn *insn)
    vassert(rm < 2 || rm > 7);
 
    switch (fp_convert->tag) {
+   case S390_FP_F32_TO_D32:   pfpo = S390_PFPO_F32_TO_D32   << 8; break;
+   case S390_FP_F32_TO_D64:   pfpo = S390_PFPO_F32_TO_D64   << 8; break;
+   case S390_FP_F32_TO_D128:  pfpo = S390_PFPO_F32_TO_D128  << 8; break;
+   case S390_FP_F64_TO_D32:   pfpo = S390_PFPO_F64_TO_D32   << 8; break;
    case S390_FP_F64_TO_D64:   pfpo = S390_PFPO_F64_TO_D64   << 8; break;
-   case S390_FP_D64_TO_F64:   pfpo = S390_PFPO_D64_TO_F64   << 8; break;
    case S390_FP_F64_TO_D128:  pfpo = S390_PFPO_F64_TO_D128  << 8; break;
-   case S390_FP_D128_TO_F64:  pfpo = S390_PFPO_D128_TO_F64  << 8; break;
+   case S390_FP_F128_TO_D32:  pfpo = S390_PFPO_F128_TO_D32  << 8; break;
+   case S390_FP_F128_TO_D64:  pfpo = S390_PFPO_F128_TO_D64  << 8; break;
    case S390_FP_F128_TO_D128: pfpo = S390_PFPO_F128_TO_D128 << 8; break;
+   case S390_FP_D32_TO_F32:   pfpo = S390_PFPO_D32_TO_F32   << 8; break;
+   case S390_FP_D32_TO_F64:   pfpo = S390_PFPO_D32_TO_F64   << 8; break;
+   case S390_FP_D32_TO_F128:  pfpo = S390_PFPO_D32_TO_F128  << 8; break;
+   case S390_FP_D64_TO_F32:   pfpo = S390_PFPO_D64_TO_F32   << 8; break;
+   case S390_FP_D64_TO_F64:   pfpo = S390_PFPO_D64_TO_F64   << 8; break;
+   case S390_FP_D64_TO_F128:  pfpo = S390_PFPO_D64_TO_F128  << 8; break;
+   case S390_FP_D128_TO_F32:  pfpo = S390_PFPO_D128_TO_F32  << 8; break;
+   case S390_FP_D128_TO_F64:  pfpo = S390_PFPO_D128_TO_F64  << 8; break;
    case S390_FP_D128_TO_F128: pfpo = S390_PFPO_D128_TO_F128 << 8; break;
    default: goto fail;
    }

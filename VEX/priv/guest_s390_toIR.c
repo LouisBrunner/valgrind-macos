@@ -7199,18 +7199,42 @@ s390_irgen_PFPO(void)
    IRTemp test_bit = newTemp(Ity_I32); /* bit 32 of GR 0 - test validity */
    IRTemp fn = newTemp(Ity_I32);       /* [33:55] of GR 0 - function code */
    IRTemp ef = newTemp(Ity_I32);       /* Emulation Failure */
-   IRTemp src1 = newTemp(Ity_F64);
-   IRTemp dst1 = newTemp(Ity_D64);
-   IRTemp src2 = newTemp(Ity_D64);
-   IRTemp dst2 = newTemp(Ity_F64);
-   IRTemp src3 = newTemp(Ity_F64);
+   IRTemp src1 = newTemp(Ity_F32);
+   IRTemp dst1 = newTemp(Ity_D32);
+   IRTemp src2 = newTemp(Ity_F32);
+   IRTemp dst2 = newTemp(Ity_D64);
+   IRTemp src3 = newTemp(Ity_F32);
    IRTemp dst3 = newTemp(Ity_D128);
-   IRTemp src4 = newTemp(Ity_D128);
-   IRTemp dst4 = newTemp(Ity_F64);
-   IRTemp src5 = newTemp(Ity_F128);
-   IRTemp dst5 = newTemp(Ity_D128);
-   IRTemp src6 = newTemp(Ity_D128);
-   IRTemp dst6 = newTemp(Ity_F128);
+   IRTemp src4 = newTemp(Ity_F64);
+   IRTemp dst4 = newTemp(Ity_D32);
+   IRTemp src5 = newTemp(Ity_F64);
+   IRTemp dst5 = newTemp(Ity_D64);
+   IRTemp src6 = newTemp(Ity_F64);
+   IRTemp dst6 = newTemp(Ity_D128);
+   IRTemp src7 = newTemp(Ity_F128);
+   IRTemp dst7 = newTemp(Ity_D32);
+   IRTemp src8 = newTemp(Ity_F128);
+   IRTemp dst8 = newTemp(Ity_D64);
+   IRTemp src9 = newTemp(Ity_F128);
+   IRTemp dst9 = newTemp(Ity_D128);
+   IRTemp src10 = newTemp(Ity_D32);
+   IRTemp dst10 = newTemp(Ity_F32);
+   IRTemp src11 = newTemp(Ity_D32);
+   IRTemp dst11 = newTemp(Ity_F64);
+   IRTemp src12 = newTemp(Ity_D32);
+   IRTemp dst12 = newTemp(Ity_F128);
+   IRTemp src13 = newTemp(Ity_D64);
+   IRTemp dst13 = newTemp(Ity_F32);
+   IRTemp src14 = newTemp(Ity_D64);
+   IRTemp dst14 = newTemp(Ity_F64);
+   IRTemp src15 = newTemp(Ity_D64);
+   IRTemp dst15 = newTemp(Ity_F128);
+   IRTemp src16 = newTemp(Ity_D128);
+   IRTemp dst16 = newTemp(Ity_F32);
+   IRTemp src17 = newTemp(Ity_D128);
+   IRTemp dst17 = newTemp(Ity_F64);
+   IRTemp src18 = newTemp(Ity_D128);
+   IRTemp dst18 = newTemp(Ity_F128);
    IRExpr *irrm;
 
    vassert(s390_host_has_pfpo);
@@ -7225,7 +7249,7 @@ s390_irgen_PFPO(void)
    irrm = get_rounding_mode_from_gr0();
 
    /* test_bit is 1 */
-   assign(src1, get_fpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(src1, get_fpr_w0(4)); /* get source from FPR 4,6 */
    s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src1, gr0);
 
    /* Return code set in GR1 is usually 0. Non-zero value is set only
@@ -7253,52 +7277,148 @@ s390_irgen_PFPO(void)
                     )
         );
 
-   /* F64 -> D64 */
+   /* F32 -> D32 */
    /* get source from FPR 4,6 - already set in src1 */
-   assign(dst1, binop(Iop_F64toD64, irrm, mkexpr(src1)));
-   put_dpr_dw0(0, mkexpr(dst1)); /* put the result in FPR 0,2 */
+   assign(dst1, binop(Iop_F32toD32, irrm, mkexpr(src1)));
+   put_dpr_w0(0, mkexpr(dst1)); /* put the result in FPR 0,2 */
    put_gpr_w1(1, mkU32(0x0));
-   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src1, gr0);
-   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F64_TO_D64)));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_32, src1, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F32_TO_D32)));
 
-   /* D64 -> F64 */
-   assign(src2, get_dpr_dw0(4)); /* get source from FPR 4,6 */
-   assign(dst2, binop(Iop_D64toF64, irrm, mkexpr(src2)));
-   put_fpr_dw0(0, mkexpr(dst2)); /* put the result in FPR 0,2 */
+   /* F32 -> D64 */
+   assign(src2, get_fpr_w0(4)); /* get source from FPR 4,6 */
+   assign(dst2, binop(Iop_F32toD64, irrm, mkexpr(src2)));
+   put_dpr_dw0(0, mkexpr(dst2)); /* put the result in FPR 0,2 */
    put_gpr_w1(1, mkU32(0x0));
-   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src2, gr0);
-   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D64_TO_F64)));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_32, src2, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F32_TO_D64)));
 
-   /* F64 -> D128 */
-   assign(src3, get_fpr_dw0(4)); /* get source from FPR 4,6 */
-   assign(dst3, binop(Iop_F64toD128, irrm, mkexpr(src3)));
+   /* F32 -> D128 */
+   assign(src3, get_fpr_w0(4)); /* get source from FPR 4,6 */
+   assign(dst3, binop(Iop_F32toD128, irrm, mkexpr(src3)));
    put_dpr_pair(0, mkexpr(dst3)); /* put the result in FPR 0,2 */
    put_gpr_w1(1, mkU32(0x0));
-   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src3, gr0);
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_32, src3, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F32_TO_D128)));
+
+   /* F64 -> D32 */
+   assign(src4, get_fpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst4, binop(Iop_F64toD32, irrm, mkexpr(src4)));
+   put_dpr_w0(0, mkexpr(dst4)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src4, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F64_TO_D32)));
+
+   /* F64 -> D64 */
+   assign(src5, get_fpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst5, binop(Iop_F64toD64, irrm, mkexpr(src5)));
+   put_dpr_dw0(0, mkexpr(dst5)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src5, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F64_TO_D64)));
+
+   /* F64 -> D128 */
+   assign(src6, get_fpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst6, binop(Iop_F64toD128, irrm, mkexpr(src6)));
+   put_dpr_pair(0, mkexpr(dst6)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src6, gr0);
    next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F64_TO_D128)));
 
-   /* D128 -> F64 */
-   assign(src4, get_dpr_pair(4)); /* get source from FPR 4,6 */
-   assign(dst4, binop(Iop_D128toF64, irrm, mkexpr(src4)));
-   put_fpr_dw0(0, mkexpr(dst4)); /* put the result in FPR 0,2 */
+   /* F128 -> D32 */
+   assign(src7, get_fpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst7, binop(Iop_F128toD32, irrm, mkexpr(src7)));
+   put_dpr_w0(0, mkexpr(dst7)); /* put the result in FPR 0,2 */
    put_gpr_w1(1, mkU32(0x0));
-   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src4, gr0);
-   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F64)));
+   s390_cc_thunk_put1f128Z(S390_CC_OP_PFPO_128, src7, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F128_TO_D32)));
+
+   /* F128 -> D64 */
+   assign(src8, get_fpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst8, binop(Iop_F128toD64, irrm, mkexpr(src8)));
+   put_dpr_dw0(0, mkexpr(dst8)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1f128Z(S390_CC_OP_PFPO_128, src8, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F128_TO_D64)));
 
    /* F128 -> D128 */
-   assign(src5, get_fpr_pair(4)); /* get source from FPR 4,6 */
-   assign(dst5, binop(Iop_F128toD128, irrm, mkexpr(src5)));
-   put_dpr_pair(0, mkexpr(dst5)); /* put the result in FPR 0,2 */
+   assign(src9, get_fpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst9, binop(Iop_F128toD128, irrm, mkexpr(src9)));
+   put_dpr_pair(0, mkexpr(dst9)); /* put the result in FPR 0,2 */
    put_gpr_w1(1, mkU32(0x0));
-   s390_cc_thunk_put1f128Z(S390_CC_OP_PFPO_128, src5, gr0);
+   s390_cc_thunk_put1f128Z(S390_CC_OP_PFPO_128, src9, gr0);
    next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_F128_TO_D128)));
 
-   /* D128 -> F128 */
-   assign(src6, get_dpr_pair(4)); /* get source from FPR 4,6 */
-   assign(dst6, binop(Iop_D128toF128, irrm, mkexpr(src6)));
-   put_fpr_pair(0, mkexpr(dst6)); /* put the result in FPR 0,2 */
+   /* D32 -> F32 */
+   assign(src10, get_dpr_w0(4)); /* get source from FPR 4,6 */
+   assign(dst10, binop(Iop_D32toF32, irrm, mkexpr(src10)));
+   put_fpr_w0(0, mkexpr(dst10)); /* put the result in FPR 0,2 */
    put_gpr_w1(1, mkU32(0x0));
-   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src6, gr0);
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_32, src10, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D32_TO_F32)));
+
+   /* D32 -> F64 */
+   assign(src11, get_dpr_w0(4)); /* get source from FPR 4,6 */
+   assign(dst11, binop(Iop_D32toF64, irrm, mkexpr(src11)));
+   put_fpr_dw0(0, mkexpr(dst11)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_32, src11, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D32_TO_F64)));
+
+   /* D32 -> F128 */
+   assign(src12, get_dpr_w0(4)); /* get source from FPR 4,6 */
+   assign(dst12, binop(Iop_D32toF128, irrm, mkexpr(src12)));
+   put_fpr_pair(0, mkexpr(dst12)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_32, src12, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D32_TO_F128)));
+
+   /* D64 -> F32 */
+   assign(src13, get_dpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst13, binop(Iop_D64toF32, irrm, mkexpr(src13)));
+   put_fpr_w0(0, mkexpr(dst13)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src13, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D64_TO_F32)));
+
+   /* D64 -> F64 */
+   assign(src14, get_dpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst14, binop(Iop_D64toF64, irrm, mkexpr(src14)));
+   put_fpr_dw0(0, mkexpr(dst14)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src14, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D64_TO_F64)));
+
+   /* D64 -> F128 */
+   assign(src15, get_dpr_dw0(4)); /* get source from FPR 4,6 */
+   assign(dst15, binop(Iop_D64toF128, irrm, mkexpr(src15)));
+   put_fpr_pair(0, mkexpr(dst15)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_putFZ(S390_CC_OP_PFPO_64, src15, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D64_TO_F128)));
+
+   /* D128 -> F32 */
+   assign(src16, get_dpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst16, binop(Iop_D128toF32, irrm, mkexpr(src16)));
+   put_fpr_w0(0, mkexpr(dst16)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src16, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F32)));
+
+   /* D128 -> F64 */
+   assign(src17, get_dpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst17, binop(Iop_D128toF64, irrm, mkexpr(src17)));
+   put_fpr_dw0(0, mkexpr(dst17)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src17, gr0);
+   next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F64)));
+
+   /* D128 -> F128 */
+   assign(src18, get_dpr_pair(4)); /* get source from FPR 4,6 */
+   assign(dst18, binop(Iop_D128toF128, irrm, mkexpr(src18)));
+   put_fpr_pair(0, mkexpr(dst18)); /* put the result in FPR 0,2 */
+   put_gpr_w1(1, mkU32(0x0));
+   s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src18, gr0);
    next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F128)));
 
    return "pfpo";

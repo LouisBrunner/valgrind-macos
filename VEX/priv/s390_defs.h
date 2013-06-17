@@ -123,14 +123,26 @@ typedef enum {
    S390_FPC_DFP_ROUND_PREPARE_SHORT    = 7
 } s390_fpc_dfp_round_t;
 
-/* PFPO function code as it is encoded in bits [33:55] of GP0
+/* PFPO function code as it is encoded in bits [33:55] of GR0
    when PFPO insn is executed. */
 typedef enum {
+   S390_PFPO_F32_TO_D32   = 0x010805,
+   S390_PFPO_F32_TO_D64   = 0x010905,
+   S390_PFPO_F32_TO_D128  = 0x010A05,
+   S390_PFPO_F64_TO_D32   = 0x010806,
    S390_PFPO_F64_TO_D64   = 0x010906,
-   S390_PFPO_D64_TO_F64   = 0x010609,
    S390_PFPO_F64_TO_D128  = 0x010A06,
-   S390_PFPO_D128_TO_F64  = 0x01060A,
+   S390_PFPO_F128_TO_D32  = 0x010807,
+   S390_PFPO_F128_TO_D64  = 0x010907,
    S390_PFPO_F128_TO_D128 = 0x010A07,
+   S390_PFPO_D32_TO_F32   = 0x010508,
+   S390_PFPO_D32_TO_F64   = 0x010608,
+   S390_PFPO_D32_TO_F128  = 0x010708,
+   S390_PFPO_D64_TO_F32   = 0x010509,
+   S390_PFPO_D64_TO_F64   = 0x010609,
+   S390_PFPO_D64_TO_F128  = 0x010709,
+   S390_PFPO_D128_TO_F32  = 0x01050A,
+   S390_PFPO_D128_TO_F64  = 0x01060A,
    S390_PFPO_D128_TO_F128 = 0x01070A
 } s390_pfpo_function_t;
 

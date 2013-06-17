@@ -1741,6 +1741,18 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
       return S390_CC_FOR_DFP128_UCONVERT(".insn rrf,0xb94a0000", cc_dep1,
                                          cc_dep2, cc_ndep);
 
+   case S390_CC_OP_PFPO_32: {
+      __asm__ volatile(
+           "ler 4, %[cc_dep1]\n\t"      /* 32 bit FR move */
+           "lr  0, %[cc_dep2]\n\t"      /* 32 bit GR move */
+           ".short 0x010a\n\t"          /* PFPO */
+           "ipm %[psw]\n\t"             : [psw] "=d"(psw)
+                                        : [cc_dep1] "f"(cc_dep1),
+                                          [cc_dep2] "d"(cc_dep2)
+                                        : "r0", "r1", "f4");
+      return psw >> 28;  /* cc */
+   }
+
    case S390_CC_OP_PFPO_64: {
       __asm__ volatile(
            "ldr 4, %[cc_dep1]\n\t"

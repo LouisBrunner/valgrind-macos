@@ -983,11 +983,23 @@ void ppIROp ( IROp op )
       case Iop_D128toI32U: vex_printf("D128toI32U"); return;
       case Iop_D128toI64S: vex_printf("D128toI64S"); return;
       case Iop_D128toI64U: vex_printf("D128toI64U"); return;
+      case Iop_F32toD32:   vex_printf("F32toD32");   return;
+      case Iop_F32toD64:   vex_printf("F32toD64");   return;
+      case Iop_F32toD128:  vex_printf("F32toD128");  return;
+      case Iop_F64toD32:   vex_printf("F64toD32");   return;
       case Iop_F64toD64:   vex_printf("F64toD64");   return;
-      case Iop_D64toF64:   vex_printf("D64toF64");   return;
       case Iop_F64toD128:  vex_printf("F64toD128");  return;
-      case Iop_D128toF64:  vex_printf("D128toF64");  return;
+      case Iop_F128toD32:  vex_printf("F128toD32");  return;
+      case Iop_F128toD64:  vex_printf("F128toD64");  return;
       case Iop_F128toD128: vex_printf("F128toD128"); return;
+      case Iop_D32toF32:   vex_printf("D32toF32");   return;
+      case Iop_D32toF64:   vex_printf("D32toF64");   return;
+      case Iop_D32toF128:  vex_printf("D32toF128");  return;
+      case Iop_D64toF32:   vex_printf("D64toF32");   return;
+      case Iop_D64toF64:   vex_printf("D64toF64");   return;
+      case Iop_D64toF128:  vex_printf("D64toF128");  return;
+      case Iop_D128toF32:  vex_printf("D128toF32");  return;
+      case Iop_D128toF64:  vex_printf("D128toF64");  return;
       case Iop_D128toF128: vex_printf("D128toF128"); return;
       case Iop_AddD128: vex_printf("AddD128");  return;
       case Iop_SubD128: vex_printf("SubD128");  return;
@@ -3015,20 +3027,56 @@ void typeOfPrimop ( IROp op,
       case Iop_I64UtoD64:
          BINARY(ity_RMode, Ity_I64, Ity_D64);
 
+      case Iop_F32toD32:
+         BINARY(ity_RMode, Ity_F32, Ity_D32);
+
+      case Iop_F32toD64:
+         BINARY(ity_RMode, Ity_F32, Ity_D64);
+
+      case Iop_F32toD128:
+         BINARY(ity_RMode, Ity_F32, Ity_D128);
+
+      case Iop_F64toD32:
+         BINARY(ity_RMode, Ity_F64, Ity_D32);
+
       case Iop_F64toD64:
          BINARY(ity_RMode, Ity_F64, Ity_D64);
-
-      case Iop_D64toF64:
-         BINARY(ity_RMode, Ity_D64, Ity_F64);
 
       case Iop_F64toD128:
          BINARY(ity_RMode, Ity_F64, Ity_D128);
 
-      case Iop_D128toF64:
-         BINARY(ity_RMode, Ity_D128, Ity_F64);
+      case Iop_F128toD32:
+         BINARY(ity_RMode, Ity_F128, Ity_D32);
+
+      case Iop_F128toD64:
+         BINARY(ity_RMode, Ity_F128, Ity_D64);
 
       case Iop_F128toD128:
          BINARY(ity_RMode, Ity_F128, Ity_D128);
+
+      case Iop_D32toF32:
+         BINARY(ity_RMode, Ity_D32, Ity_F32);
+
+      case Iop_D32toF64:
+         BINARY(ity_RMode, Ity_D32, Ity_F64);
+
+      case Iop_D32toF128:
+         BINARY(ity_RMode, Ity_D32, Ity_F128);
+
+      case Iop_D64toF32:
+         BINARY(ity_RMode, Ity_D64, Ity_F32);
+
+      case Iop_D64toF64:
+         BINARY(ity_RMode, Ity_D64, Ity_F64);
+
+      case Iop_D64toF128:
+         BINARY(ity_RMode, Ity_D64, Ity_F128);
+
+      case Iop_D128toF32:
+         BINARY(ity_RMode, Ity_D128, Ity_F32);
+
+      case Iop_D128toF64:
+         BINARY(ity_RMode, Ity_D128, Ity_F64);
 
       case Iop_D128toF128:
          BINARY(ity_RMode, Ity_D128, Ity_F128);

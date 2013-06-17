@@ -1092,20 +1092,56 @@ typedef
       /*   IRRoundingMode(I32) x D128 -> I64 */
       Iop_D128toI64U,
 
+      /*   IRRoundingMode(I32) x F32 -> D32 */
+      Iop_F32toD32,
+
+      /*   IRRoundingMode(I32) x F32 -> D64 */
+      Iop_F32toD64,
+
+      /*   IRRoundingMode(I32) x F32 -> D128 */
+      Iop_F32toD128,
+
+      /*   IRRoundingMode(I32) x F64 -> D32 */
+      Iop_F64toD32,
+
       /*   IRRoundingMode(I32) x F64 -> D64 */
       Iop_F64toD64,
-
-      /*   IRRoundingMode(I32) x D64 -> F64 */
-      Iop_D64toF64,
 
       /*   IRRoundingMode(I32) x F64 -> D128 */
       Iop_F64toD128,
 
-      /*   IRRoundingMode(I32) x D128 -> F64 */
-      Iop_D128toF64,
+      /*   IRRoundingMode(I32) x F128 -> D32 */
+      Iop_F128toD32,
+
+      /*   IRRoundingMode(I32) x F128 -> D64 */
+      Iop_F128toD64,
 
       /*   IRRoundingMode(I32) x F128 -> D128 */
       Iop_F128toD128,
+
+      /*   IRRoundingMode(I32) x D32 -> F32 */
+      Iop_D32toF32,
+
+      /*   IRRoundingMode(I32) x D32 -> F64 */
+      Iop_D32toF64,
+
+      /*   IRRoundingMode(I32) x D32 -> F128 */
+      Iop_D32toF128,
+
+      /*   IRRoundingMode(I32) x D64 -> F32 */
+      Iop_D64toF32,
+
+      /*   IRRoundingMode(I32) x D64 -> F64 */
+      Iop_D64toF64,
+
+      /*   IRRoundingMode(I32) x D64 -> F128 */
+      Iop_D64toF128,
+
+      /*   IRRoundingMode(I32) x D128 -> F32 */
+      Iop_D128toF32,
+
+      /*   IRRoundingMode(I32) x D128 -> F64 */
+      Iop_D128toF64,
 
       /*   IRRoundingMode(I32) x D128 -> F128 */
       Iop_D128toF128,

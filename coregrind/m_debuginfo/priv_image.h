@@ -184,6 +184,15 @@ static inline DiSlice ML_(sli_from_cur)( DiCursor cur, DiOffT size ) {
    }
 }
 
+/* Create a slice which exactly covers the given image. */
+static inline DiSlice ML_(sli_from_img)( DiImage* img ) {
+   if (img) {
+      return mk_DiSlice(img, 0, ML_(img_size)(img));
+   } else {
+      return DiSlice_INVALID;
+   }
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Functions that operate on DiCursors                  ---*/
@@ -251,6 +260,13 @@ static inline HChar* ML_(cur_step_strdup)( DiCursor* c, const HChar* cc ) {
 static inline void ML_(cur_read_get) ( /*OUT*/void* dst,
                                        DiCursor c, SizeT size) {
    ML_(img_get)(dst, c.img, c.ioff, size);
+}
+
+// Fetch an arbitrary number of bytes from the cursor, and advance it.
+static inline void ML_(cur_step_get) ( /*OUT*/void* dst,
+                                       DiCursor* c, SizeT size) {
+   ML_(img_get)(dst, c->img, c->ioff, size);
+   c->ioff += size;
 }
 
 // memdup from the given cursor.  Caller must ML_(dinfo_free) the

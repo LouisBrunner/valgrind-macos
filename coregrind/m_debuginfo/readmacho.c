@@ -47,8 +47,9 @@
 #include "pub_core_clientstate.h"
 #include "pub_core_debuginfo.h"
 
-#include "priv_d3basics.h"
 #include "priv_misc.h"
+#include "priv_image.h"
+#include "priv_d3basics.h"
 #include "priv_tytypes.h"
 #include "priv_storage.h"
 #include "priv_readmacho.h"
@@ -85,23 +86,15 @@
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-typedef
-   struct {
-      /* These two describe the entire mapped-in ("primary") image,
-         fat headers, kitchen sink, whatnot: the entire file.  The
-         image is mapped into img[0 .. img_szB-1]. */
-      UChar* img;
-      SizeT  img_szB;
-      /* These two describe the Mach-O object of interest, which is
-         presumably somewhere inside the primary image.
-         map_image_aboard() below, which generates this info, will
-         carefully check that the macho_ fields denote a section of
-         memory that falls entirely inside img[0 .. img_szB-1]. */
-      UChar* macho_img;
-      SizeT  macho_img_szB;
-   }
-   ImageInfo;
-
+/* A DiSlice is used to handle the thin/fat distinction for MachO images.
+   (1) the entire mapped-in ("primary") image, fat headers, kitchen sink,
+       whatnot: the entire file.  This is the DiImage* that is the backing
+       for the DiSlice.
+   (2) the Mach-O object of interest, which is presumably somewhere inside
+       the primary image.  map_image_aboard() below, which generates this
+       info, will carefully check that the macho_ fields denote a section of
+       memory that falls entirely inside the primary image.
+*/
 
 Bool ML_(is_macho_object_file)( const void* buf, SizeT szB )
 {
@@ -137,174 +130,158 @@ Bool ML_(is_macho_object_file)( const void* buf, SizeT szB )
 
 
 /* Unmap an image mapped in by map_image_aboard. */
-static void unmap_image ( /*MOD*/ImageInfo* ii )
+static void unmap_image ( /*MOD*/DiSlice* sli )
 {
-   SysRes sres;
-   vg_assert(ii->img);
-   vg_assert(ii->img_szB > 0);
-   sres = VG_(am_munmap_valgrind)( (Addr)ii->img, ii->img_szB );
-   /* Do we care if this fails?  I suppose so; it would indicate
-      some fairly serious snafu with the mapping of the file. */
-   vg_assert( !sr_isError(sres) );
-   VG_(memset)(ii, 0, sizeof(*ii));
+   vg_assert(sli);
+   if (ML_(sli_is_valid)(*sli)) {
+      ML_(img_done)(sli->img);
+      *sli = DiSlice_INVALID;
+   }
 }
 
 
-/* Map a given fat or thin object aboard, find the thin part if
-   necessary, do some checks, and write details of both the fat and
-   thin parts into *ii.  Returns False (and leaves the file unmapped)
-   on failure.  Guarantees to return pointers to a valid(ish) Mach-O
-   image if it succeeds. */
-static Bool map_image_aboard ( DebugInfo* di, /* only for err msgs */
-                               /*OUT*/ImageInfo* ii, UChar* filename )
+/* Open the given file, find the thin part if necessary, do some
+   checks, and return a DiSlice containing details of both the thin
+   part and (implicitly, via the contained DiImage*) the fat part.
+   returns DiSlice_INVALID if it fails.  If it succeeds, the returned
+   slice is guaranteed to refer to a valid(ish) Mach-O image. */
+static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
+                                  const HChar* filename )
 {
-   VG_(memset)(ii, 0, sizeof(*ii));
+   DiSlice sli = DiSlice_INVALID;
 
    /* First off, try to map the thing in. */
-   { SizeT  size;
-     SysRes fd, sres;
-     struct vg_stat stat_buf;
-
-     fd = VG_(stat)(filename, &stat_buf);
-     if (sr_isError(fd)) {
-        ML_(symerr)(di, True, "Can't stat image (to determine its size)?!");
-        return False;
-     }
-     size = stat_buf.size;
-
-     fd = VG_(open)(filename, VKI_O_RDONLY, 0);
-     if (sr_isError(fd)) {
-       ML_(symerr)(di, True, "Can't open image to read symbols?!");
-        return False;
-     }
-
-     sres = VG_(am_mmap_file_float_valgrind)
-               ( size, VKI_PROT_READ, sr_Res(fd), 0 );
-     if (sr_isError(sres)) {
-        ML_(symerr)(di, True, "Can't mmap image to read symbols?!");
-        return False;
-     }
-
-     VG_(close)(sr_Res(fd));
-
-     ii->img     = (UChar*)sr_Res(sres);
-     ii->img_szB = size;
+   DiImage* mimg = ML_(img_from_local_file)(filename);
+   if (mimg == NULL) {
+      VG_(message)(Vg_UserMsg, "warning: connection to image %s failed\n",
+                               filename );
+      VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded\n" );
+      return DiSlice_INVALID;
    }
 
-   /* Now it's mapped in and we have .img and .img_szB set.  Look for
-      the embedded Mach-O object.  If not findable, unmap and fail. */
-   { struct fat_header*  fh_be;
-     struct fat_header   fh;
-     struct MACH_HEADER* mh;
+   /* Now we have a viable DiImage* for it.  Look for the embedded
+      Mach-O object.  If not findable, close the image and fail. */
+   DiOffT            fh_be_ioff = 0;
+   struct fat_header fh_be;
+   struct fat_header fh;
      
-     // Assume initially that we have a thin image, and update
-     // these if it turns out to be fat.
-     ii->macho_img     = ii->img;
-     ii->macho_img_szB = ii->img_szB;
+   // Assume initially that we have a thin image, and narrow
+   // the bounds if it turns out to be fat.  This stores |mimg| as
+   // |sli.img|, so NULL out |mimg| after this point, for the sake of
+   // clarity.
+   sli  = ML_(sli_from_img)(mimg);
+   mimg = NULL;
 
-     // Check for fat header.
-     if (ii->img_szB < sizeof(struct fat_header)) {
-        ML_(symerr)(di, True, "Invalid Mach-O file (0 too small).");
-        goto unmap_and_fail;
-     }
-
-     // Fat header is always BIG-ENDIAN
-     fh_be = (struct fat_header *)ii->img;
-     fh.magic = VG_(ntohl)(fh_be->magic);
-     fh.nfat_arch = VG_(ntohl)(fh_be->nfat_arch);
-     if (fh.magic == FAT_MAGIC) {
-        // Look for a good architecture.
-        struct fat_arch *arch_be;
-        struct fat_arch arch;
-        Int f;
-        if (ii->img_szB < sizeof(struct fat_header)
-                          + fh.nfat_arch * sizeof(struct fat_arch)) {
-           ML_(symerr)(di, True, "Invalid Mach-O file (1 too small).");
-           goto unmap_and_fail;
-        }
-        for (f = 0, arch_be = (struct fat_arch *)(fh_be+1); 
-             f < fh.nfat_arch;
-             f++, arch_be++) {
-           Int cputype;
-#          if defined(VGA_ppc)
-           cputype = CPU_TYPE_POWERPC;
-#          elif defined(VGA_ppc64)
-           cputype = CPU_TYPE_POWERPC64;
-#          elif defined(VGA_x86)
-           cputype = CPU_TYPE_X86;
-#          elif defined(VGA_amd64)
-           cputype = CPU_TYPE_X86_64;
-#          else
-#            error "unknown architecture"
-#          endif
-           arch.cputype    = VG_(ntohl)(arch_be->cputype);
-           arch.cpusubtype = VG_(ntohl)(arch_be->cpusubtype);
-           arch.offset     = VG_(ntohl)(arch_be->offset);
-           arch.size       = VG_(ntohl)(arch_be->size);
-           if (arch.cputype == cputype) {
-              if (ii->img_szB < arch.offset + arch.size) {
-                 ML_(symerr)(di, True, "Invalid Mach-O file (2 too small).");
-                 goto unmap_and_fail;
-              }
-              ii->macho_img     = ii->img + arch.offset;
-              ii->macho_img_szB = arch.size;
-              break;
-           }
-        }
-        if (f == fh.nfat_arch) {
-           ML_(symerr)(di, True,
-                       "No acceptable architecture found in fat file.");
-           goto unmap_and_fail;
-        }
-     }
-
-     /* Sanity check what we found. */
-
-     /* assured by logic above */
-     vg_assert(ii->img_szB >= sizeof(struct fat_header));
-
-     if (ii->macho_img_szB < sizeof(struct MACH_HEADER)) {
-        ML_(symerr)(di, True, "Invalid Mach-O file (3 too small).");
-        goto unmap_and_fail;
-     }
-
-     if (ii->macho_img_szB > ii->img_szB) {
-        ML_(symerr)(di, True, "Invalid Mach-O file (thin bigger than fat).");
-        goto unmap_and_fail;
-     }
-
-     if (ii->macho_img >= ii->img
-         && ii->macho_img + ii->macho_img_szB <= ii->img + ii->img_szB) {
-        /* thin entirely within fat, as expected */
-     } else {
-        ML_(symerr)(di, True, "Invalid Mach-O file (thin not inside fat).");
-        goto unmap_and_fail;
-     }
-
-     mh = (struct MACH_HEADER *)ii->macho_img;
-     if (mh->magic != MAGIC) {
-        ML_(symerr)(di, True, "Invalid Mach-O file (bad magic).");
-        goto unmap_and_fail;
-     }
-
-     if (ii->macho_img_szB < sizeof(struct MACH_HEADER) + mh->sizeofcmds) {
-        ML_(symerr)(di, True, "Invalid Mach-O file (4 too small).");
-        goto unmap_and_fail;
-     }
+   // Check for fat header.
+   if (ML_(img_size)(sli.img) < sizeof(struct fat_header)) {
+      ML_(symerr)(di, True, "Invalid Mach-O file (0 too small).");
+      goto close_and_fail;
    }
 
-   vg_assert(ii->img);
-   vg_assert(ii->macho_img);
-   vg_assert(ii->img_szB > 0);
-   vg_assert(ii->macho_img_szB > 0);
-   vg_assert(ii->macho_img >= ii->img);
-   vg_assert(ii->macho_img + ii->macho_img_szB <= ii->img + ii->img_szB);
-   return True;  /* success */
+   // Fat header is always BIG-ENDIAN
+   ML_(img_get)(&fh_be, sli.img, fh_be_ioff, sizeof(fh_be));
+   VG_(memset)(&fh, 0, sizeof(fh));
+   fh.magic     = VG_(ntohl)(fh_be.magic);
+   fh.nfat_arch = VG_(ntohl)(fh_be.nfat_arch);
+   if (fh.magic == FAT_MAGIC) {
+      // Look for a good architecture.
+      if (ML_(img_size)(sli.img) < sizeof(struct fat_header)
+                                   + fh.nfat_arch * sizeof(struct fat_arch)) {
+         ML_(symerr)(di, True, "Invalid Mach-O file (1 too small).");
+         goto close_and_fail;
+      }
+      DiOffT arch_be_ioff;
+      Int    f;
+      for (f = 0, arch_be_ioff = sizeof(struct fat_header);
+           f < fh.nfat_arch;
+           f++, arch_be_ioff += sizeof(struct fat_arch)) {
+#        if defined(VGA_ppc)
+         Int cputype = CPU_TYPE_POWERPC;
+#        elif defined(VGA_ppc64)
+         Int cputype = CPU_TYPE_POWERPC64;
+#        elif defined(VGA_x86)
+         Int cputype = CPU_TYPE_X86;
+#        elif defined(VGA_amd64)
+         Int cputype = CPU_TYPE_X86_64;
+#        else
+#          error "unknown architecture"
+#        endif
+         struct fat_arch arch_be;
+         struct fat_arch arch;
+         ML_(img_get)(&arch_be, sli.img, arch_be_ioff, sizeof(arch_be));
+         VG_(memset)(&arch, 0, sizeof(arch));
+         arch.cputype    = VG_(ntohl)(arch_be.cputype);
+         arch.cpusubtype = VG_(ntohl)(arch_be.cpusubtype);
+         arch.offset     = VG_(ntohl)(arch_be.offset);
+         arch.size       = VG_(ntohl)(arch_be.size);
+         if (arch.cputype == cputype) {
+            if (ML_(img_size)(sli.img) < arch.offset + arch.size) {
+               ML_(symerr)(di, True, "Invalid Mach-O file (2 too small).");
+               goto close_and_fail;
+            }
+            /* Found a suitable arch.  Narrow down the slice accordingly. */
+            sli.ioff = arch.offset;
+            sli.szB  = arch.size;
+            break;
+         }
+      }
+      if (f == fh.nfat_arch) {
+         ML_(symerr)(di, True,
+                     "No acceptable architecture found in fat file.");
+         goto close_and_fail;
+      }
+   }
+
+   /* Sanity check what we found. */
+
+   /* assured by logic above */
+   vg_assert(ML_(img_size)(sli.img) >= sizeof(struct fat_header));
+
+   if (sli.szB < sizeof(struct MACH_HEADER)) {
+      ML_(symerr)(di, True, "Invalid Mach-O file (3 too small).");
+      goto close_and_fail;
+   }
+
+   if (sli.szB > ML_(img_size)(sli.img)) {
+      ML_(symerr)(di, True, "Invalid Mach-O file (thin bigger than fat).");
+      goto close_and_fail;
+   }
+
+   if (sli.ioff >= 0 && sli.ioff + sli.szB <= ML_(img_size)(sli.img)) {
+      /* thin entirely within fat, as expected */
+   } else {
+      ML_(symerr)(di, True, "Invalid Mach-O file (thin not inside fat).");
+      goto close_and_fail;
+   }
+
+   /* Peer at the Mach header for the thin object, starting at the
+      beginning of the slice, to check it's at least marginally
+      sane. */
+   struct MACH_HEADER mh;
+   ML_(cur_read_get)(&mh, ML_(cur_from_sli)(sli), sizeof(mh));
+   if (mh.magic != MAGIC) {
+      ML_(symerr)(di, True, "Invalid Mach-O file (bad magic).");
+      goto close_and_fail;
+   }
+
+   if (sli.szB < sizeof(struct MACH_HEADER) + mh.sizeofcmds) {
+      ML_(symerr)(di, True, "Invalid Mach-O file (4 too small).");
+      goto close_and_fail;
+   }
+
+   /* "main image is plausible" */
+   vg_assert(sli.img);
+   vg_assert(ML_(img_size)(sli.img) > 0);
+   /* "thin image exists and is a sub-part (or all) of main image" */
+   vg_assert(sli.ioff >= 0);
+   vg_assert(sli.szB > 0);
+   vg_assert(sli.ioff + sli.szB <= ML_(img_size)(sli.img));
+   return sli;  /* success */
    /*NOTREACHED*/
 
-  unmap_and_fail:
-   unmap_image(ii);
-   return False; /* bah! */
+  close_and_fail:
+   unmap_image(&sli);
+   return DiSlice_INVALID; /* bah! */
 }
 
 
@@ -320,30 +297,38 @@ static Bool map_image_aboard ( DebugInfo* di, /* only for err msgs */
 static
 void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
                   struct _DebugInfo* di, 
-                  struct NLIST* o_symtab, UInt o_symtab_count,
-                  UChar*     o_strtab, UInt o_strtab_sz )
+                  DiCursor symtab_cur, UInt symtab_count,
+                  DiCursor strtab_cur, UInt strtab_sz )
 {
    Int    i;
-   Addr   sym_addr;
    DiSym  disym;
-   UChar* name;
 
-   static UChar* s_a_t_v = NULL; /* do not make non-static */
+   // "start_according_to_valgrind"
+   static HChar* s_a_t_v = NULL; /* do not make non-static */
 
-   for (i = 0; i < o_symtab_count; i++) {
-      struct NLIST *nl = o_symtab+i;
-      if ((nl->n_type & N_TYPE) == N_SECT) {
-         sym_addr = di->text_bias + nl->n_value;
-    /*} else if ((nl->n_type & N_TYPE) == N_ABS) {
+   for (i = 0; i < symtab_count; i++) {
+      struct NLIST nl;
+      ML_(cur_read_get)(&nl,
+                        ML_(cur_plus)(symtab_cur, i * sizeof(struct NLIST)),
+                        sizeof(nl));
+
+      Addr sym_addr = 0;
+      if ((nl.n_type & N_TYPE) == N_SECT) {
+         sym_addr = di->text_bias + nl.n_value;
+      /*} else if ((nl.n_type & N_TYPE) == N_ABS) {
          GrP fixme don't ignore absolute symbols?
-         sym_addr = nl->n_value; */
+         sym_addr = nl.n_value; */
       } else {
          continue;
       }
       
-      if (di->trace_symtab)
-         VG_(printf)("nlist raw: avma %010lx  %s\n",
-                     sym_addr, o_strtab + nl->n_un.n_strx );
+      if (di->trace_symtab) {
+         HChar* str = ML_(cur_read_strdup)(
+                         ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
+                         "di.read_symtab.1");
+         VG_(printf)("nlist raw: avma %010lx  %s\n", sym_addr, str );
+         ML_(dinfo_free)(str);
+      }
 
       /* If no part of the symbol falls within the mapped range,
          ignore it. */
@@ -354,14 +339,20 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
 
       /* skip names which point outside the string table;
          following these risks segfaulting Valgrind */
-      name = o_strtab + nl->n_un.n_strx;
-      if (name < o_strtab || name >= o_strtab + o_strtab_sz)
+      if (nl.n_un.n_strx < 0 || nl.n_un.n_strx >= strtab_sz) {
          continue;
+      }
+
+      HChar* name
+         = ML_(cur_read_strdup)( ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
+                                 "di.read_symtab.2");
 
       /* skip nameless symbols; these appear to be common, but
          useless */
-      if (*name == 0)
+      if (*name == 0) {
+         ML_(dinfo_free)(name);
          continue;
+      }
 
       disym.addr      = sym_addr;
       disym.tocptr    = 0;
@@ -389,6 +380,7 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
 
       vg_assert(disym.pri_name);
       VG_(addToXA)( syms, &disym );
+      ML_(dinfo_free)(name);
    }
 }
 
@@ -496,7 +488,7 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
 #endif
 
 
-static Bool file_exists_p(const Char *path)
+static Bool file_exists_p(const HChar *path)
 {
    struct vg_stat sbuf;
    SysRes res = VG_(stat)(path, &sbuf);
@@ -506,13 +498,13 @@ static Bool file_exists_p(const Char *path)
 
 /* Search for an existing dSYM file as a possible separate debug file.  
    Adapted from gdb. */
-static Char *
-find_separate_debug_file (const Char *executable_name)
+static HChar *
+find_separate_debug_file (const HChar *executable_name)
 {
-   const Char *basename_str;
-   Char *dot_ptr;
-   Char *slash_ptr;
-   Char *dsymfile;
+   const HChar *basename_str;
+   HChar *dot_ptr;
+   HChar *slash_ptr;
+   HChar *dsymfile;
     
    /* Make sure the object file name itself doesn't contain ".dSYM" in it or we
       will end up with an infinite loop where after we add a dSYM symbol file,
@@ -593,53 +585,85 @@ find_separate_debug_file (const Char *executable_name)
 }
 
 
-static UChar *getsectdata(UChar* base, SizeT size, 
-                          const Char *segname, const Char *sectname,
-                          /*OUT*/Word *sect_size)
+/* Given a DiSlice covering the entire Mach-O thin image, find the
+   DiSlice for the specified (segname, sectname) pairing, if
+   possible. */
+static DiSlice getsectdata ( DiSlice img,
+                             const HChar *segname, const HChar *sectname )
 {
-   struct MACH_HEADER *mh = (struct MACH_HEADER *)base;
-   struct load_command *cmd;          
-   Int c;
+   DiCursor cur = ML_(cur_from_sli)(img);
 
-   for (c = 0, cmd = (struct load_command *)(mh+1);
-        c < mh->ncmds;
-        c++, cmd = (struct load_command *)(cmd->cmdsize + (Addr)cmd))
-   {
-      if (cmd->cmd == LC_SEGMENT_CMD) {
-         struct SEGMENT_COMMAND *seg = (struct SEGMENT_COMMAND *)cmd;
-         if (0 == VG_(strncmp(seg->segname, segname, sizeof(seg->segname)))) {
-            struct SECTION *sects = (struct SECTION *)(seg+1);
+   struct MACH_HEADER mh;
+   ML_(cur_step_get)(&mh, &cur, sizeof(mh));
+
+   Int c;
+   for (c = 0; c < mh.ncmds; c++) {
+      struct load_command cmd;          
+      ML_(cur_read_get)(&cmd, cur, sizeof(cmd));
+      if (cmd.cmd == LC_SEGMENT_CMD) {
+         struct SEGMENT_COMMAND seg;
+         ML_(cur_read_get)(&seg, cur, sizeof(seg));
+         if (0 == VG_(strncmp(&seg.segname[0],
+                              segname, sizeof(seg.segname)))) {
+            DiCursor sects_cur = ML_(cur_plus)(cur, sizeof(seg));
             Int s;
-            for (s = 0; s < seg->nsects; s++) {
-               if (0 == VG_(strncmp(sects[s].sectname, sectname, 
-                                    sizeof(sects[s].sectname)))) 
-               {
-                  if (sect_size) *sect_size = sects[s].size;
-                  return (UChar *)(base + sects[s].offset);
+            for (s = 0; s < seg.nsects; s++) {
+               struct SECTION sect;
+               ML_(cur_step_get)(&sect, &sects_cur, sizeof(sect));
+               if (0 == VG_(strncmp(sect.sectname, sectname, 
+                                    sizeof(sect.sectname)))) {
+                  DiSlice res = img;
+                  res.ioff = sect.offset;
+                  res.szB = sect.size;
+                  return res;
                }
             }
+
          }
       }
+      cur = ML_(cur_plus)(cur, cmd.cmdsize);
    }
 
-   if (sect_size) *sect_size = 0;
-   return 0;
+   return DiSlice_INVALID;
 }
 
 
-/* Brute force just simply search for uuid[0..15] in img[0..n_img-1] */
-static Bool check_uuid_matches ( Addr imgA, Word n_img, UChar* uuid )
+/* Brute force just simply search for uuid[0..15] in |sli| */
+static Bool check_uuid_matches ( DiSlice sli, UChar* uuid )
 {
-   Word   i;
-   UChar* img = (UChar*)imgA;
-   UChar  first = uuid[0];
-   if (n_img < 16)
+   if (sli.szB < 16)
       return False;
-   for (i = 0; i < n_img-16; i++) {
-      if (img[i] != first)
-         continue;
-      if (0 == VG_(memcmp)( &img[i], &uuid[0], 16 ))
-         return True;
+
+   /* Work through the slice in 1 KB chunks. */
+   UChar  first    = uuid[0];
+   DiOffT min_off  = sli.ioff;
+   DiOffT max1_off = sli.ioff + sli.szB;
+   DiOffT curr_off = min_off;
+   vg_assert(min_off < max1_off);
+   while (1) {
+      vg_assert(curr_off >= min_off && curr_off <= max1_off);
+      if (curr_off == max1_off) break;
+      DiOffT avail = max1_off - curr_off;
+      vg_assert(avail > 0 && avail <= max1_off);
+      if (avail > 1024) avail = 1024;
+      UChar buf[1024];
+      SizeT nGot = ML_(img_get_some)(buf, sli.img, curr_off, avail);
+      vg_assert(nGot >= 1 && nGot <= avail);
+      UInt i;
+      /* Scan through the 1K chunk we got, looking for the start char. */
+      for (i = 0; i < (UInt)nGot; i++) {
+         if (buf[i] != first)
+            continue;
+         /* first char matches.  See if we can get 16 bytes at this
+            offset, and compare. */
+         if (curr_off + i < max1_off && max1_off - (curr_off + i) >= 16) {
+            UChar buff16[16];
+            ML_(img_get)(&buff16[0], sli.img, curr_off + i, 16);
+            if (0 == VG_(memcmp)(&buff16[0], &uuid[0], 16))
+               return True;
+         }
+         curr_off += nGot;
+      }
    }
    return False;
 }
@@ -648,7 +672,7 @@ static Bool check_uuid_matches ( Addr imgA, Word n_img, UChar* uuid )
 /* Heuristic kludge: return True if this looks like an installed
    standard library; hence we shouldn't consider automagically running
    dsymutil on it. */
-static Bool is_systemish_library_name ( UChar* name )
+static Bool is_systemish_library_name ( HChar* name )
 {
    vg_assert(name);
    if (0 == VG_(strncasecmp)(name, "/usr/", 5)
@@ -668,15 +692,14 @@ static Bool is_systemish_library_name ( UChar* name )
 
 Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 {
-   struct symtab_command *symcmd = NULL;
-   struct dysymtab_command *dysymcmd = NULL;
-   HChar* dsymfilename = NULL;
-   Bool have_uuid = False;
-   UChar uuid[16];
-   ImageInfo ii;  /* main file */
-   ImageInfo iid; /* auxiliary .dSYM file */
-   Bool ok;
-   Word i;
+   DiSlice  msli         = DiSlice_INVALID; // the main image
+   DiSlice  dsli         = DiSlice_INVALID; // the debuginfo image
+   DiCursor sym_cur      = DiCursor_INVALID;
+   DiCursor dysym_cur    = DiCursor_INVALID;
+   HChar*   dsymfilename = NULL;
+   Bool     have_uuid    = False;
+   UChar    uuid[16];
+   Word     i;
    struct _DebugInfoMapping* rx_map = NULL;
    struct _DebugInfoMapping* rw_map = NULL;
 
@@ -705,14 +728,15 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                    "%s (rx at %#lx, rw at %#lx)\n", di->fsm.filename,
                    rx_map->avma, rw_map->avma );
 
-   VG_(memset)(&ii,   0, sizeof(ii));
-   VG_(memset)(&iid,  0, sizeof(iid));
    VG_(memset)(&uuid, 0, sizeof(uuid));
 
-   ok = map_image_aboard( di, &ii, di->fsm.filename );
-   if (!ok) goto fail;
+   msli = map_image_aboard( di, di->fsm.filename );
+   if (!ML_(sli_is_valid)(msli)) {
+      ML_(symerr)(di, False, "Connect to main image failed.");
+      goto fail;
+   }
 
-   vg_assert(ii.macho_img != NULL && ii.macho_img_szB > 0);
+   vg_assert(msli.img != NULL && msli.szB > 0);
 
    /* Poke around in the Mach-O header, to find some important
       stuff. */
@@ -725,38 +749,55 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    di->text_bias = 0;
 
-   { struct MACH_HEADER *mh = (struct MACH_HEADER *)ii.macho_img;
-      struct load_command *cmd;
-      Int c;
+   { 
+      DiCursor cmd_cur = ML_(cur_from_sli)(msli);
 
-      for (c = 0, cmd = (struct load_command *)(mh+1);
-           c < mh->ncmds;
-           c++, cmd = (struct load_command *)(cmd->cmdsize
-                                              + (unsigned long)cmd)) {
-         if (cmd->cmd == LC_SYMTAB) {
-            symcmd = (struct symtab_command *)cmd;
+      struct MACH_HEADER mh;
+      ML_(cur_step_get)(&mh, &cmd_cur, sizeof(mh));
+
+      /* Now cur_cmd points just after the Mach header, right at the
+         start of the load commands, which is where we need it to start
+         the following loop. */
+
+      Int c;
+      for (c = 0; c < mh.ncmds; c++) {
+         struct load_command cmd;
+         ML_(cur_read_get)(&cmd, cmd_cur, sizeof(cmd));
+ 
+         if (cmd.cmd == LC_SYMTAB) {
+            sym_cur = cmd_cur;
          } 
-         else if (cmd->cmd == LC_DYSYMTAB) {
-            dysymcmd = (struct dysymtab_command *)cmd;
+         else if (cmd.cmd == LC_DYSYMTAB) {
+            dysym_cur = cmd_cur;
          } 
-         else if (cmd->cmd == LC_ID_DYLIB && mh->filetype == MH_DYLIB) {
+         else if (cmd.cmd == LC_ID_DYLIB && mh.filetype == MH_DYLIB) {
             // GrP fixme bundle?
-            struct dylib_command *dcmd = (struct dylib_command *)cmd;
-            UChar *dylibname = dcmd->dylib.name.offset + (UChar *)dcmd;
-            UChar *soname = VG_(strrchr)(dylibname, '/');
+            struct dylib_command dcmd;
+            ML_(cur_read_get)(&dcmd, cmd_cur, sizeof(dcmd));
+            DiCursor dylibname_cur
+               = ML_(cur_plus)(cmd_cur, dcmd.dylib.name.offset);
+            HChar* dylibname
+               = ML_(cur_read_strdup)(dylibname_cur, "di.rmdi.1");
+            HChar* soname = VG_(strrchr)(dylibname, '/');
             if (!soname) soname = dylibname;
             else soname++;
             di->soname = ML_(dinfo_strdup)("di.readmacho.dylibname",
                                            soname);
+            ML_(dinfo_free)(dylibname);
          }
-         else if (cmd->cmd==LC_ID_DYLINKER  &&  mh->filetype==MH_DYLINKER) {
-            struct dylinker_command *dcmd = (struct dylinker_command *)cmd;
-            UChar *dylinkername = dcmd->name.offset + (UChar *)dcmd;
-            UChar *soname = VG_(strrchr)(dylinkername, '/');
+         else if (cmd.cmd==LC_ID_DYLINKER  &&  mh.filetype==MH_DYLINKER) {
+            struct dylinker_command dcmd;
+            ML_(cur_read_get)(&dcmd, cmd_cur, sizeof(dcmd));
+            DiCursor dylinkername_cur
+               = ML_(cur_plus)(cmd_cur, dcmd.name.offset);
+            HChar* dylinkername
+               = ML_(cur_read_strdup)(dylinkername_cur, "di.rmdi.2");
+            HChar* soname = VG_(strrchr)(dylinkername, '/');
             if (!soname) soname = dylinkername;
             else soname++;
             di->soname = ML_(dinfo_strdup)("di.readmacho.dylinkername",
                                            soname);
+            ML_(dinfo_free)(dylinkername);
          }
 
          // A comment from Julian about why varinfo[35] fail:
@@ -786,17 +827,18 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          // {text,data,bss}_{avma,svma}, from which the _bias numbers are
          // then trivially derived.  Then I think the debuginfo reader should
          // work pretty well.
-         else if (cmd->cmd == LC_SEGMENT_CMD) {
-            struct SEGMENT_COMMAND *seg = (struct SEGMENT_COMMAND *)cmd;
+         else if (cmd.cmd == LC_SEGMENT_CMD) {
+            struct SEGMENT_COMMAND seg;
+            ML_(cur_read_get)(&seg, cmd_cur, sizeof(seg));
             /* Try for __TEXT */
             if (!di->text_present
-                && 0 == VG_(strcmp)(seg->segname, "__TEXT")
+                && 0 == VG_(strcmp)(&seg.segname[0], "__TEXT")
                 /* DDD: is the  next line a kludge? -- JRS */
-                && seg->fileoff == 0 && seg->filesize != 0) {
+                && seg.fileoff == 0 && seg.filesize != 0) {
                di->text_present = True;
-               di->text_svma = (Addr)seg->vmaddr;
+               di->text_svma = (Addr)seg.vmaddr;
                di->text_avma = rx_map->avma;
-               di->text_size = seg->vmsize;
+               di->text_size = seg.vmsize;
                di->text_bias = di->text_avma - di->text_svma;
                /* Make the _debug_ values be the same as the
                   svma/bias for the primary object, since there is
@@ -808,22 +850,23 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             }
             /* Try for __DATA */
             if (!di->data_present
-                && 0 == VG_(strcmp)(seg->segname, "__DATA")
-                /* && DDD:seg->fileoff == 0 */ && seg->filesize != 0) {
+                && 0 == VG_(strcmp)(&seg.segname[0], "__DATA")
+                /* && DDD:seg->fileoff == 0 */ && seg.filesize != 0) {
                di->data_present = True;
-               di->data_svma = (Addr)seg->vmaddr;
+               di->data_svma = (Addr)seg.vmaddr;
                di->data_avma = rw_map->avma;
-               di->data_size = seg->vmsize;
+               di->data_size = seg.vmsize;
                di->data_bias = di->data_avma - di->data_svma;
                di->data_debug_svma = di->data_svma;
                di->data_debug_bias = di->data_bias;
             }
          }
-         else if (cmd->cmd == LC_UUID) {
-             struct uuid_command *uuid_cmd = (struct uuid_command *)cmd;
-             VG_(memcpy)(uuid, uuid_cmd->uuid, sizeof(uuid));
+         else if (cmd.cmd == LC_UUID) {
+             ML_(cur_read_get)(&uuid, cmd_cur, sizeof(uuid));
              have_uuid = True;
          }
+         // Move the cursor along
+         cmd_cur = ML_(cur_plus)(cmd_cur, cmd.cmdsize);
       }
    }
 
@@ -839,33 +882,42 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    /* Now we have the base object to hand.  Read symbols from it. */
 
-   if (ii.macho_img && ii.macho_img_szB > 0 && symcmd && dysymcmd) {
+   // We already asserted that ..
+   vg_assert(msli.img != NULL && msli.szB > 0);
+
+   if (ML_(cur_is_valid)(sym_cur) && ML_(cur_is_valid)(dysym_cur)) {
+
+      struct symtab_command   symcmd;
+      struct dysymtab_command dysymcmd;
+
+      ML_(cur_read_get)(&symcmd,   sym_cur,   sizeof(symcmd));
+      ML_(cur_read_get)(&dysymcmd, dysym_cur, sizeof(dysymcmd));
 
       /* Read nlist symbol table */
-      struct NLIST *syms;
-      UChar *strs;
+      DiCursor syms = DiCursor_INVALID;
+      DiCursor strs = DiCursor_INVALID;
       XArray* /* DiSym */ candSyms = NULL;
       Word nCandSyms;
 
-      if (ii.macho_img_szB < symcmd->stroff + symcmd->strsize
-          || ii.macho_img_szB < symcmd->symoff + symcmd->nsyms
-                                                 * sizeof(struct NLIST)) {
+      if (msli.szB < symcmd.stroff + symcmd.strsize
+          || msli.szB < symcmd.symoff + symcmd.nsyms
+                                        * sizeof(struct NLIST)) {
          ML_(symerr)(di, False, "Invalid Mach-O file (5 too small).");
          goto fail;
       }   
-      if (dysymcmd->ilocalsym + dysymcmd->nlocalsym > symcmd->nsyms
-          || dysymcmd->iextdefsym + dysymcmd->nextdefsym > symcmd->nsyms) {
+      if (dysymcmd.ilocalsym + dysymcmd.nlocalsym > symcmd.nsyms
+          || dysymcmd.iextdefsym + dysymcmd.nextdefsym > symcmd.nsyms) {
          ML_(symerr)(di, False, "Invalid Mach-O file (bad symbol table).");
          goto fail;
       }
-      
-      syms = (struct NLIST *)(ii.macho_img + symcmd->symoff);
-      strs = (UChar *)(ii.macho_img + symcmd->stroff);
+
+      syms = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.symoff);
+      strs = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.stroff);
       
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg,
             "   reading syms   from primary file (%d %d)\n",
-            dysymcmd->nextdefsym, dysymcmd->nlocalsym );
+            dysymcmd.nextdefsym, dysymcmd.nlocalsym );
 
       /* Read candidate symbols into 'candSyms', so we can truncate
          overlapping ends and generally tidy up, before presenting
@@ -878,14 +930,16 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
       // extern symbols
       read_symtab(candSyms,
-                  di, 
-                  syms + dysymcmd->iextdefsym, dysymcmd->nextdefsym, 
-                  strs, symcmd->strsize);
+                  di,
+                  ML_(cur_plus)(syms,
+                                dysymcmd.iextdefsym * sizeof(struct NLIST)),
+                  dysymcmd.nextdefsym, strs, symcmd.strsize);
       // static and private_extern symbols
       read_symtab(candSyms,
-                  di, 
-                  syms + dysymcmd->ilocalsym, dysymcmd->nlocalsym, 
-                  strs, symcmd->strsize);
+                  di,
+                  ML_(cur_plus)(syms,
+                                dysymcmd.ilocalsym * sizeof(struct NLIST)),
+                  dysymcmd.nlocalsym, strs, symcmd.strsize);
 
       /* tidy up the cand syms -- trim overlapping ends.  May resize
          candSyms. */
@@ -918,7 +972,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       goto success;
 
    /* mmap the dSYM file to look for DWARF debug info.  If successful,
-      use the .macho_img and .macho_img_szB in iid. */
+      use the .macho_img and .macho_img_szB in dsli. */
 
    dsymfilename = find_separate_debug_file( di->fsm.filename );
 
@@ -929,14 +983,16 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dSYM= %s\n", dsymfilename);
 
-      ok = map_image_aboard( di, &iid, dsymfilename );
-      if (!ok) goto fail;
+      dsli = map_image_aboard( di, dsymfilename );
+      if (!ML_(sli_is_valid)(dsli)) {
+         ML_(symerr)(di, False, "Connect to debuginfo image failed "
+                                "(first attempt).");
+         goto fail;
+      }
 
       /* check it has the right uuid. */
       vg_assert(have_uuid);
-      valid = iid.macho_img && iid.macho_img_szB > 0 
-              && check_uuid_matches( (Addr)iid.macho_img,
-                                     iid.macho_img_szB, uuid );
+      valid = dsli.img && dsli.szB > 0 && check_uuid_matches( dsli, uuid );
       if (valid)
          goto read_the_dwarf;
 
@@ -997,14 +1053,17 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dsyms= %s\n", dsymfilename);
 
-      ok = map_image_aboard( di, &iid, dsymfilename );
-      if (!ok) goto fail;
+      dsli = map_image_aboard( di, dsymfilename );
+      if (!ML_(sli_is_valid)(dsli)) {
+         ML_(symerr)(di, False, "Connect to debuginfo image failed "
+                                "(second attempt).");
+         goto fail;
+      }
 
       /* check it has the right uuid. */
       vg_assert(have_uuid);
-      valid = iid.macho_img && iid.macho_img_szB > 0 
-              && check_uuid_matches( (Addr)iid.macho_img,
-                                     iid.macho_img_szB, uuid );
+      vg_assert(have_uuid);
+      valid = dsli.img && dsli.szB > 0 && check_uuid_matches( dsli, uuid );
       if (!valid) {
          if (VG_(clo_verbosity) > 0) {
             VG_(message)(Vg_DebugMsg,
@@ -1019,9 +1078,9 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             VG_(message)(Vg_DebugMsg,
                          "WARNING: for %s\n", di->fsm.filename);
          }
-         unmap_image( &iid );
-         /* unmap_image zeroes the fields, so the following test makes
-            sense. */
+         unmap_image( &dsli );
+         /* unmap_image zeroes out dsli, so it's safe for "fail:" to
+            re-try unmap_image. */
          goto fail;
       }
    }
@@ -1030,65 +1089,43 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       on to reading stuff out of it. */
 
   read_the_dwarf:
-   if (iid.macho_img && iid.macho_img_szB > 0) {
-      UChar* debug_info_img = NULL;
-      Word   debug_info_sz;
-      UChar* debug_abbv_img;
-      Word   debug_abbv_sz;
-      UChar* debug_line_img;
-      Word   debug_line_sz;
-      UChar* debug_str_img;
-      Word   debug_str_sz;
-      UChar* debug_ranges_img;
-      Word   debug_ranges_sz;
-      UChar* debug_loc_img;
-      Word   debug_loc_sz;
-      UChar* debug_name_img;
-      Word   debug_name_sz;
-
-      debug_info_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_info", &debug_info_sz);
-      debug_abbv_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_abbrev", &debug_abbv_sz);
-      debug_line_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_line", &debug_line_sz);
-      debug_str_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_str", &debug_str_sz);
-      debug_ranges_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_ranges", &debug_ranges_sz);
-      debug_loc_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_loc", &debug_loc_sz);
-      debug_name_img = 
-          getsectdata(iid.macho_img, iid.macho_img_szB, 
-                      "__DWARF", "__debug_pubnames", &debug_name_sz);
+   if (ML_(sli_is_valid)(msli) && msli.szB > 0) {
+      // "_mscn" is "mach-o section"
+      DiSlice debug_info_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_info");
+      DiSlice debug_abbv_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_abbrev");
+      DiSlice debug_line_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_line");
+      DiSlice debug_str_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_str");
+      DiSlice debug_ranges_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_ranges");
+      DiSlice debug_loc_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_loc");
    
-      if (debug_info_img) {
+      if (ML_(sli_is_valid)(debug_info_mscn)) {
          if (VG_(clo_verbosity) > 1) {
             if (0)
             VG_(message)(Vg_DebugMsg,
                          "Reading dwarf3 for %s (%#lx) from %s"
-                         " (%ld %ld %ld %ld %ld %ld)\n",
+                         " (%lld %lld %lld %lld %lld %lld)\n",
                          di->fsm.filename, di->text_avma, dsymfilename,
-                         debug_info_sz, debug_abbv_sz, debug_line_sz, 
-                         debug_str_sz, debug_ranges_sz, debug_loc_sz
+                         debug_info_mscn.szB, debug_abbv_mscn.szB,
+                         debug_line_mscn.szB, debug_str_mscn.szB,
+                         debug_ranges_mscn.szB, debug_loc_mscn.szB
                          );
             VG_(message)(Vg_DebugMsg,
                "   reading dwarf3 from dsyms file\n");
          }
          /* The old reader: line numbers and unwind info only */
          ML_(read_debuginfo_dwarf3) ( di,
-                                      debug_info_img, debug_info_sz,
-				      NULL,           0,
-                                      debug_abbv_img, debug_abbv_sz,
-                                      debug_line_img, debug_line_sz,
-                                      debug_str_img,  debug_str_sz,
-                                      NULL, 0 /* ALT .debug_str */ );
+                                      debug_info_mscn,
+				      DiSlice_INVALID, /* .debug_types */
+                                      debug_abbv_mscn,
+                                      debug_line_mscn,
+                                      debug_str_mscn,
+                                      DiSlice_INVALID /* ALT .debug_str */ );
 
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations.  But only if
@@ -1097,17 +1134,17 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          if (VG_(needs).var_info /* the tool requires it */
              || VG_(clo_read_var_info) /* the user asked for it */) {
             ML_(new_dwarf3_reader)(
-               di, debug_info_img,   debug_info_sz,
-	           NULL,             0,
-                   debug_abbv_img,   debug_abbv_sz,
-                   debug_line_img,   debug_line_sz,
-                   debug_str_img,    debug_str_sz,
-                   debug_ranges_img, debug_ranges_sz,
-                   debug_loc_img,    debug_loc_sz,
-                   NULL, 0, /* ALT .debug_info */
-                   NULL, 0, /* ALT .debug_abbv */
-                   NULL, 0, /* ALT .debug_line */
-                   NULL, 0  /* ALT .debug_str */
+               di, debug_info_mscn,
+                   DiSlice_INVALID, /* .debug_types */
+                   debug_abbv_mscn,
+                   debug_line_mscn,
+                   debug_str_mscn,
+                   debug_ranges_mscn,
+                   debug_loc_mscn,
+                   DiSlice_INVALID, /* ALT .debug_info */
+                   DiSlice_INVALID, /* ALT .debug_abbv */
+                   DiSlice_INVALID, /* ALT .debug_line */
+                   DiSlice_INVALID  /* ALT .debug_str */
             );
          }
       }
@@ -1116,20 +1153,16 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    if (dsymfilename) ML_(dinfo_free)(dsymfilename);
 
   success:
-   if (ii.img)
-      unmap_image(&ii);
-   if (iid.img)
-      unmap_image(&iid);
+   unmap_image(&msli);
+   unmap_image(&dsli);
    return True;
 
    /* NOTREACHED */
 
   fail:
    ML_(symerr)(di, True, "Error reading Mach-O object.");
-   if (ii.img)
-      unmap_image(&ii);
-   if (iid.img)
-      unmap_image(&iid);
+   unmap_image(&msli);
+   unmap_image(&dsli);
    return False;
 }
 

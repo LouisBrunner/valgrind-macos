@@ -1662,7 +1662,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                    );
                      if (ok2 && strtab_mioff == DiOffT_INVALID) {
                         // Check for obviously bogus offsets.
-                        vg_assert(ML_(img_valid)(mimg, offset, 1));
+                        if (!ML_(img_valid)(mimg, offset, 1)) {
+                           ML_(symerr)(di, True, "Invalid DT_STRTAB offset");
+                           goto out;
+                        }
                         strtab_mioff = ehdr_mioff + offset;
                         vg_assert(ehdr_mioff == 0); // should always be
                      }

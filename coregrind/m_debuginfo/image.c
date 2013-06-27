@@ -67,6 +67,9 @@ typedef
       Bool  is_local;
       // The fd for the local file, or sd for a remote server.
       Int   fd;
+      // The name.  In ML_(dinfo_zalloc)'d space.  Used only for printing
+      // error messages; hence it doesn't really matter what this contains.
+      HChar* name;
       // The rest of these fields are only valid when using remote files
       // (that is, using a debuginfo server; hence when is_local==False)
       // Session ID allocated to us by the server.  Cannot be zero.
@@ -181,12 +184,25 @@ static Int my_write ( Int fd, UChar* buf, Int len )
 
 /* If we lost communication with the remote server, just give up.
    Recovering is too difficult. */
-static void give_up(void)
+static void give_up__comms_lost(void)
 {
    VG_(umsg)("\n");
-   VG_(umsg)("Valgrind: Lost communication with the remote "
-             "debuginfo server.\n");
-   VG_(umsg)("Valgrind: I can't recover from that.  Giving up.  Sorry.\n");
+   VG_(umsg)(
+      "Valgrind: debuginfo reader: Lost communication with the remote\n");
+   VG_(umsg)(
+      "Valgrind: debuginfo server.  I can't recover.  Giving up.  Sorry.\n");
+   VG_(umsg)("\n");
+   VG_(exit)(1);
+   /*NOTREACHED*/
+}
+
+static void give_up__image_overrun(void)
+{
+   VG_(umsg)("\n");
+   VG_(umsg)(
+      "Valgrind: debuginfo reader: Possibly corrupted debuginfo file.\n");
+   VG_(umsg)(
+      "Valgrind: I can't recover.  Giving up.  Sorry.\n");
    VG_(umsg)("\n");
    VG_(exit)(1);
    /*NOTREACHED*/
@@ -502,7 +518,7 @@ static void set_CEnt ( DiImage* img, UInt entNo, DiOffT off )
          VG_(umsg)("set_CEnt (reading data from DI server): fail: "
                    "server unexpectedly closed the connection\n");
       }
-      give_up();
+      give_up__comms_lost();
       /* NOTREACHED */
       vg_assert(0);
      end_of_else_clause:
@@ -599,6 +615,7 @@ DiImage* ML_(img_from_local_file)(const HChar* fullpath)
    img->source.fd       = sr_Res(fd);
    img->size            = size;
    img->ces_used        = 0;
+   img->source.name     = ML_(dinfo_strdup)("di.image.ML_iflf.2", fullpath);
    /* img->ces is already zeroed out */
    vg_assert(img->source.fd >= 0);
 
@@ -684,6 +701,11 @@ DiImage* ML_(img_from_di_server)(const HChar* filename,
    img->source.session_id = session_id;
    img->size              = size;
    img->ces_used          = 0;
+   img->source.name       = ML_(dinfo_zalloc)("di.image.ML_ifds.2",
+                                              20 + VG_(strlen)(filename)
+                                                 + VG_(strlen)(serverAddr));
+   VG_(sprintf)(img->source.name, "%s at %s", filename, serverAddr);
+
    /* img->ces is already zeroed out */
    vg_assert(img->source.fd >= 0);
 
@@ -740,6 +762,7 @@ void ML_(img_done)(DiImage* img)
    for (i = i; i < img->ces_used; i++) {
       vg_assert(img->ces[i] == NULL);
    }
+   ML_(dinfo_free)(img->source.name);
    ML_(dinfo_free)(img);
 }
 
@@ -749,19 +772,40 @@ DiOffT ML_(img_size)(DiImage* img)
    return img->size;
 }
 
-Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size)
+inline Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size)
 {
    vg_assert(img);
    vg_assert(offset != DiOffT_INVALID);
    return img->size > 0 && offset + size <= (DiOffT)img->size;
 }
 
+/* Check the given range is valid, and if not, shut down the system.
+   An invalid range would imply that we're trying to read outside the
+   image, which normally means the image is corrupted somehow, or the
+   caller is buggy.  Recovering is too complex, and we have
+   probably-corrupt debuginfo, so just give up. */
+static void ensure_valid(DiImage* img, DiOffT offset, SizeT size,
+                         const HChar* caller)
+{
+   if (LIKELY(ML_(img_valid)(img, offset, size)))
+      return;
+   VG_(umsg)("Valgrind: debuginfo reader: ensure_valid failed:\n");
+   VG_(umsg)("Valgrind:   during call to %s\n", caller);
+   VG_(umsg)("Valgrind:   request for range [%llu, +%llu) exceeds\n",
+             (ULong)offset, (ULong)size);
+   VG_(umsg)("Valgrind:   valid image size of %llu for image:\n",
+             (ULong)img->size);
+   VG_(umsg)("Valgrind:   \"%s\"\n", img->source.name);
+   give_up__image_overrun();
+}
+
+
 void ML_(img_get)(/*OUT*/void* dst,
                   DiImage* img, DiOffT offset, SizeT size)
 {
    vg_assert(img);
    vg_assert(size > 0);
-   vg_assert(ML_(img_valid)(img, offset, size));
+   ensure_valid(img, offset, size, "ML_(img_get)");
    SizeT i;
    for (i = 0; i < size; i++) {
       ((UChar*)dst)[i] = get(img, offset + i);
@@ -773,7 +817,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
 {
    vg_assert(img);
    vg_assert(size > 0);
-   vg_assert(ML_(img_valid)(img, offset, size));
+   ensure_valid(img, offset, size, "ML_(img_get_some)");
    UChar* dstU = (UChar*)dst;
    /* Use |get| in the normal way to get the first byte of the range.
       This guarantees to put the cache entry containing |offset| in
@@ -795,7 +839,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
 
 SizeT ML_(img_strlen)(DiImage* img, DiOffT off)
 {
-   vg_assert(ML_(img_valid)(img, off, 1));
+   ensure_valid(img, off, 1, "ML_(img_strlen)");
    SizeT i = 0;
    while (get(img, off + i) != 0) i++;
    return i;
@@ -803,7 +847,7 @@ SizeT ML_(img_strlen)(DiImage* img, DiOffT off)
 
 HChar* ML_(img_strdup)(DiImage* img, const HChar* cc, DiOffT offset)
 {
-   vg_assert(ML_(img_valid)(img, offset, 1));
+   ensure_valid(img, offset, 1, "ML_(img_strdup)");
    SizeT  len = ML_(img_strlen)(img, offset);
    HChar* res = ML_(dinfo_zalloc)(cc, len+1);
    SizeT  i;
@@ -816,8 +860,8 @@ HChar* ML_(img_strdup)(DiImage* img, const HChar* cc, DiOffT offset)
 
 Int ML_(img_strcmp)(DiImage* img, DiOffT off1, DiOffT off2)
 {
-   vg_assert(ML_(img_valid)(img, off1, 1));
-   vg_assert(ML_(img_valid)(img, off2, 1));
+   ensure_valid(img, off1, 1, "ML_(img_strcmp)(first arg)");
+   ensure_valid(img, off2, 1, "ML_(img_strcmp)(second arg)");
    while (True) {
       UChar c1 = get(img, off1);
       UChar c2 = get(img, off2);
@@ -830,7 +874,7 @@ Int ML_(img_strcmp)(DiImage* img, DiOffT off1, DiOffT off2)
 
 Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
 {
-   vg_assert(ML_(img_valid)(img, off1, 1));
+   ensure_valid(img, off1, 1, "ML_(img_strcmp_c)");
    while (True) {
       UChar c1 = get(img, off1);
       UChar c2 = *(UChar*)str2;
@@ -843,7 +887,7 @@ Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
 
 UChar ML_(img_get_UChar)(DiImage* img, DiOffT offset)
 {
-   vg_assert(ML_(img_valid)(img, offset, 1));
+   ensure_valid(img, offset, 1, "ML_(img_get_UChar)");
    return get(img, offset);
 }
 
@@ -931,7 +975,7 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       0x2d02ef8d
     };
 
-  vg_assert(img);
+   vg_assert(img);
 
    /* If the image is local, calculate the CRC here directly.  If it's
       remote, forward the request to the server. */
@@ -985,7 +1029,7 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       if (req) free_Frame(req);
       if (res) free_Frame(res);
       // FIXME: now what?
-      give_up();
+      give_up__comms_lost();
       /* NOTREACHED */
       vg_assert(0);
    }

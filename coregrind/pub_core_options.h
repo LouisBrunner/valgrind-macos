@@ -134,6 +134,13 @@ extern const HChar* VG_(clo_extra_debuginfo_path);
    "d.d.d.d:d", where d is one or more digits. */
 extern const HChar* VG_(clo_debuginfo_server);
 
+/* Do we allow reading debuginfo from debuginfo objects that don't
+   match (in some sense) the main object?  This is dangerous, so the
+   default is NO (False).  In any case it applies only to objects
+   found either in _extra_debuginfo_path or via the
+   _debuginfo_server. */
+extern Bool VG_(clo_allow_mismatched_debuginfo);
+
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
 

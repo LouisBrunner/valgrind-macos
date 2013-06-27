@@ -1131,7 +1131,12 @@ DiImage* open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
 
 
 /* Try to find a separate debug file for a given object file.  If
-   found, return its DiImage, which should be freed by the caller. */
+   found, return its DiImage, which should be freed by the caller.  If
+   |buildid| is non-NULL, then a debug object matching it is
+   acceptable.  If |buildid| is NULL or doesn't specify a findable
+   debug object, then we look in various places to find a file with
+   the specified CRC.  And if that doesn't work out then we give
+   up. */
 static
 DiImage* find_debug_file( struct _DebugInfo* di,
                           const HChar* objpath, const HChar* buildid,
@@ -1166,11 +1171,11 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
       debugpath = ML_(dinfo_zalloc)(
                      "di.fdf.3",
-                     VG_(strlen)(objdir) + VG_(strlen)(debugname) + 32 +
-                     (extrapath ? VG_(strlen)(extrapath) : 0));
+                     VG_(strlen)(objdir) + VG_(strlen)(debugname) + 64
+                     + (extrapath ? VG_(strlen)(extrapath) : 0)
+                     + (serverpath ? VG_(strlen)(serverpath) : 0));
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
-
       dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
 
@@ -1184,13 +1189,20 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
       if (extrapath) {
          VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
-                                           objdir, debugname);
+                                            objdir, debugname);
          dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
          if (dimg != NULL) goto dimg_ok;
       }
 
       if (serverpath) {
-         dimg = open_debug_file(debugname, NULL, crc, rel_ok, serverpath);
+         /* When looking on the debuginfo server, always just pass the
+            basename. */
+         const HChar* basename = debugname;
+         if (VG_(strstr)(basename, "/") != NULL) {
+            basename = VG_(strrchr)(basename, '/') + 1;
+         }
+         VG_(sprintf)(debugpath, "%s on %s", basename, serverpath);
+         dimg = open_debug_file(basename, NULL, crc, rel_ok, serverpath);
          if (dimg) goto dimg_ok;
       }
 
@@ -1203,6 +1215,77 @@ DiImage* find_debug_file( struct _DebugInfo* di,
       vg_assert(debugpath);
       TRACE_SYMTAB("\n");
       TRACE_SYMTAB("------ Found a debuginfo file: %s\n", debugpath);
+   }
+
+   if (debugpath)
+      ML_(dinfo_free)(debugpath);
+
+   return dimg;
+}
+
+
+/* Try to find a separate debug file for a given object file, in a
+   hacky and dangerous way: check only the --extra-debuginfo-path and
+   the --debuginfo-server.  And don't do a consistency check. */
+static
+DiImage* find_debug_file_ad_hoc( struct _DebugInfo* di,
+                                 const HChar* objpath )
+{
+   const HChar* extrapath  = VG_(clo_extra_debuginfo_path);
+   const HChar* serverpath = VG_(clo_debuginfo_server);
+
+   DiImage* dimg      = NULL; /* the img that we found */
+   HChar*   debugpath = NULL; /* where we found it */
+
+   HChar *objdir = ML_(dinfo_strdup)("di.fdfah.1", objpath);
+   HChar *objdirptr;
+
+   if ((objdirptr = VG_(strrchr)(objdir, '/')) != NULL)
+      *objdirptr = '\0';
+
+   debugpath = ML_(dinfo_zalloc)(
+                  "di.fdfah.3",
+                  VG_(strlen)(objdir) + 64
+                  + (extrapath ? VG_(strlen)(extrapath) : 0)
+                  + (serverpath ? VG_(strlen)(serverpath) : 0));
+
+   if (extrapath) {
+      VG_(sprintf)(debugpath, "%s/%s", extrapath, objpath);
+      dimg = ML_(img_from_local_file)(debugpath);
+      if (dimg != NULL) {
+         if (VG_(clo_verbosity) > 1) {
+            VG_(message)(Vg_DebugMsg, "  Using (POSSIBLY MISMATCHED) %s\n",
+                                      debugpath);
+         }
+         goto dimg_ok;
+      }
+   }
+   if (serverpath) {
+      /* When looking on the debuginfo server, always just pass the
+         basename. */
+      const HChar* basename = objpath;
+      if (VG_(strstr)(basename, "/") != NULL) {
+         basename = VG_(strrchr)(basename, '/') + 1;
+      }
+      VG_(sprintf)(debugpath, "%s on %s", basename, serverpath);
+      dimg = ML_(img_from_di_server)(basename, serverpath);
+      if (dimg != NULL) {
+         if (VG_(clo_verbosity) > 1) {
+            VG_(message)(Vg_DebugMsg, "  Using (POSSIBLY MISMATCHED) %s\n",
+                                      debugpath);
+         }
+         goto dimg_ok;
+      }
+   }
+
+   dimg_ok:
+
+   ML_(dinfo_free)(objdir);
+
+   if (dimg != NULL) {
+      vg_assert(debugpath);
+      TRACE_SYMTAB("\n");
+      TRACE_SYMTAB("------ Found an ad_hoc debuginfo file: %s\n", debugpath);
    }
 
    if (debugpath)
@@ -2218,7 +2301,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Look for a build-id */
       HChar* buildid = find_buildid(mimg, False, False);
 
-      /* Look for a debug image */
+      /* Look for a debug image that matches either the build-id or
+         the debuglink-CRC32 in the main image.  If the main image
+         doesn't contain either of those then this won't even bother
+         to try looking.  This looks in all known places, including
+         the --extra-debuginfo-path if specified and on the
+         --debuginfo-server if specified. */
       if (buildid != NULL || debuglink_escn.img != NULL) {
          /* Do have a debuglink section? */
          if (debuglink_escn.img != NULL) {
@@ -2251,16 +2339,22 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          buildid = NULL; /* paranoia */
       }
 
-#     if defined(VGPV_arm_linux_android)
-      if (dimg == NULL && VG_(clo_debuginfo_server) != NULL) {
-         HChar* basename = di->fsm.filename;
-         if (VG_(strstr)(basename, "/") != NULL)
-            basename = VG_(strrchr)(basename, '/') + 1;
-         VG_(printf)("XXXXXXXXXXX trying ad-hoc %s\n", basename);
-         dimg = ML_(img_from_di_server)(basename,
-                                        VG_(clo_debuginfo_server));
+      /* As a last-ditch measure, try looking for in the
+         --extra-debuginfo-path and/or on the --debuginfo-server, but
+         only in the case where --allow-mismatched-debuginfo=yes.
+         This is dangerous in that (1) it gives no assurance that the
+         debuginfo object matches the main one, and hence (2) we will
+         very likely get an assertion in the code below, if indeed
+         there is a mismatch.  Hence it is disabled by default
+         (--allow-mismatched-debuginfo=no).  Nevertheless it's
+         sometimes a useful way of getting out of a tight spot.
+
+         Note that we're ignoring the name in the .gnu_debuglink
+         section here, and just looking for a file of the same name
+         either the extra-path or on the server. */
+      if (dimg == NULL && VG_(clo_allow_mismatched_debuginfo)) {
+         dimg = find_debug_file_ad_hoc( di, di->fsm.filename );
       }
-#     endif
 
       /* TOPLEVEL */
       /* If we were successful in finding a debug image, pull various

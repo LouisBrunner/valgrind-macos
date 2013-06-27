@@ -179,6 +179,18 @@ static Int my_write ( Int fd, UChar* buf, Int len )
    }
 }
 
+/* If we lost communication with the remote server, just give up.
+   Recovering is too difficult. */
+static void give_up(void)
+{
+   VG_(umsg)("\n");
+   VG_(umsg)("Valgrind: Lost communication with the remote "
+             "debuginfo server.\n");
+   VG_(umsg)("Valgrind: I can't recover from that.  Giving up.  Sorry.\n");
+   VG_(umsg)("\n");
+   VG_(exit)(1);
+   /*NOTREACHED*/
+}
 
 /* "Do" a transaction: that is, send the given frame to the server and
    return the frame it sends back.  Caller owns the resulting frame
@@ -186,7 +198,9 @@ static Int my_write ( Int fd, UChar* buf, Int len )
    some reason. */
 static Frame* do_transaction ( Int sd, Frame* req )
 {
-if (0) VG_(printf)("CLIENT: send %c%c%c%c\n", req->data[0], req->data[1], req->data[2], req->data[3]);
+   if (0) VG_(printf)("CLIENT: send %c%c%c%c\n",
+                      req->data[0], req->data[1], req->data[2], req->data[3]);
+
    /* What goes on the wire is:
          adler(le32) n_data(le32) data[0 .. n_data-1]
       where the checksum covers n_data as well as data[].
@@ -224,7 +238,8 @@ if (0) VG_(printf)("CLIENT: send %c%c%c%c\n", req->data[0], req->data[1], req->d
    r = my_read(sd, res->data, res->n_data);
    if (r != rd_len) return NULL;
 
-if (0) VG_(printf)("CLIENT: recv %c%c%c%c\n", res->data[0], res->data[1], res->data[2], res->data[3]);
+   if (0) VG_(printf)("CLIENT: recv %c%c%c%c\n",
+                      res->data[0], res->data[1], res->data[2], res->data[3]);
 
    /* Compute the checksum for the received data, and check it. */
    adler = VG_(adler32)(0, NULL, 0); // initial value
@@ -417,16 +432,16 @@ static void set_CEnt ( DiImage* img, UInt entNo, DiOffT off )
    /* So, read  off .. off+len-1  into the entry. */
    CEnt* ce = img->ces[entNo];
 
-if (0) {
-static UInt t_last = 0;
-static ULong nread = 0;
-UInt now = VG_(read_millisecond_timer)();
-UInt delay = now - t_last;
-t_last = now;
-nread += len;
-VG_(printf)("XXXXXXXX (tot %lld) read %ld offset %lld  %u\n", 
-            nread, len, off, delay);
-}
+   if (0) {
+      static UInt t_last = 0;
+      static ULong nread = 0;
+      UInt now = VG_(read_millisecond_timer)();
+      UInt delay = now - t_last;
+      t_last = now;
+      nread += len;
+      VG_(printf)("XXXXXXXX (tot %lld) read %ld offset %lld  %u\n", 
+                  nread, len, off, delay);
+   }
 
    if (img->source.is_local) {
       // Simple: just read it
@@ -487,6 +502,8 @@ VG_(printf)("XXXXXXXX (tot %lld) read %ld offset %lld  %u\n",
          VG_(umsg)("set_CEnt (reading data from DI server): fail: "
                    "server unexpectedly closed the connection\n");
       }
+      give_up();
+      /* NOTREACHED */
       vg_assert(0);
      end_of_else_clause:
       {}
@@ -968,6 +985,8 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       if (req) free_Frame(req);
       if (res) free_Frame(res);
       // FIXME: now what?
+      give_up();
+      /* NOTREACHED */
       vg_assert(0);
    }
    /*NOTREACHED*/

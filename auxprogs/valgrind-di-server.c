@@ -4,6 +4,15 @@
 /*---                                         valgrind-di-server.c ---*/
 /*--------------------------------------------------------------------*/
 
+/* To build for an x86_64-linux host:
+      gcc -g -Wall -O -o valgrind-di-server \
+         auxprogs/valgrind-di-server.c -Icoregrind -Iinclude \
+         -IVEX/pub -DVGO_linux -DVGA_amd64
+
+   To build for an x86 (32-bit) host
+      The same, except change -DVGA_amd64 to -DVGA_x86
+*/
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
@@ -32,6 +41,9 @@
 
 /* This code works (just), but it's a mess.  Cleanups (also for
    coregrind/m_debuginfo/image.c):
+
+   * Build this file for the host arch, not the target.  But how?
+     Even Tromey had difficulty figuring out how to do that.
 
    * Change the use of pread w/ fd to FILE*, for the file we're
      serving.  Or, at least, put a loop around the pread uses
@@ -627,6 +639,9 @@ static UInt calc_gnu_debuglink_crc32(/*OUT*/Bool* ok, int fd, ULong size)
             *ok = False;
             return 0;
          }
+         /* this is a kludge .. we should loop around pread and deal
+            with short reads, for whatever reason */
+         assert(nRead == avail);
          UInt i;
          for (i = 0; i < (UInt)nRead; i++)
             crc = crc32_table[(crc ^ buf[i]) & 0xff] ^ (crc >> 8);

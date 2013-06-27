@@ -178,6 +178,9 @@ static void usage_NORETURN ( Bool debug_help )
 "                              well known search paths.\n"
 "    --debuginfo-server=ipaddr:port    also query this server\n"
 "                              (valgrind-di-server) for debug symbols\n"
+"    --allow-mismatched-debuginfo=no|yes  [no]\n"
+"                              for the above two flags only, accept debuginfo\n"
+"                              objects that don't \"match\" the main object\n"
 "    --smc-check=none|stack|all|all-non-file [stack]\n"
 "                              checks for self-modifying code: none, only for\n"
 "                              code found in stacks, for all code, or for all\n"
@@ -680,6 +683,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_STR_CLO(arg, "--debuginfo-server",
                               VG_(clo_debuginfo_server)) {}
+
+      else if VG_BOOL_CLO(arg, "--allow-mismatched-debuginfo",
+                               VG_(clo_allow_mismatched_debuginfo)) {}
 
       else if VG_STR_CLO(arg, "--xml-user-comment",
                               VG_(clo_xml_user_comment)) {}

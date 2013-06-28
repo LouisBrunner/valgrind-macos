@@ -2501,6 +2501,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = posn;
       typeE.tag   = Te_TyEnum;
+      Bool is_decl = False;
       typeE.Te.TyEnum.atomRs
          = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ptD.enum_type.1", 
                        ML_(dinfo_free),
@@ -2519,6 +2520,9 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_byte_size && ctsSzB > 0) {
             typeE.Te.TyEnum.szB = cts;
          }
+         if (attr == DW_AT_declaration) {
+            is_decl = True;
+         }
       }
 
       if (!typeE.Te.TyEnum.name)
@@ -2530,22 +2534,17 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       if (typeE.Te.TyEnum.szB == 0 
           /* we must know the size */
           /* but not for Ada, which uses such dummy
-             enumerations as helper for gdb ada mode. */
-          && parser->language != 'A') {
-         /* GCC has been seen to put an odd DIE like this into
-            .debug_types:
-
-            <1><cb72>: DW_TAG_enumeration_type (in .debug_types)
-            DW_AT_name        : (indirect string, offset: 0x3374a): exec_direction_kind
-            DW_AT_declaration : 1	
-
-            It isn't clear what this means, but we accept it and
-            assume that the enum is int-sized.  */
-         if (cc->is_type_unit) {
-            typeE.Te.TyEnum.szB = sizeof(int);
-         } else {
-            goto bad_DIE;
-         }
+             enumerations as helper for gdb ada mode.
+             Also GCC allows incomplete enums as GNU extension.
+             http://gcc.gnu.org/onlinedocs/gcc/Incomplete-Enums.html
+             These are marked as DW_AT_declaration and won't have
+             a size. They can only be used in declaration or as
+             pointer types.  You can't allocate variables or storage
+             using such an enum type. (Also GCC seems to have a bug
+             that will put such an enumeration_type into a .debug_types
+             unit which should only contain complete types.) */
+          && (parser->language != 'A' && !is_decl)) {
+         goto bad_DIE;
       }
 
       /* On't stack! */

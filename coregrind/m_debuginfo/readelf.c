@@ -506,7 +506,12 @@ Bool get_elf_symbol_info (
                       (void*)(opd_bias), (void*)*sym_avma_out);
 
       if (!VG_IS_8_ALIGNED(*sym_avma_out)) {
-         TRACE_SYMTAB("    ignore -- not 8-aligned: %s\n", sym_name);
+         if (TRACE_SYMTAB_ENABLED) {
+            HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                              "di.gesi.6a", sym_name_ioff);
+            TRACE_SYMTAB("    ignore -- not 8-aligned: %s\n", sym_name);
+            if (sym_name) ML_(dinfo_free)(sym_name);
+         }
          return False;
       }
 
@@ -516,7 +521,12 @@ Bool get_elf_symbol_info (
 
       offset_in_opd = (Addr)(*sym_avma_out) - (Addr)(di->opd_avma);
       if (offset_in_opd < 0 || offset_in_opd >= di->opd_size) {
-         TRACE_SYMTAB("    ignore -- invalid OPD offset: %s\n", sym_name);
+         if (TRACE_SYMTAB_ENABLED) {
+            HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                              "di.gesi.6a", sym_name_ioff);
+            TRACE_SYMTAB("    ignore -- invalid OPD offset: %s\n", sym_name);
+            if (sym_name) ML_(dinfo_free)(sym_name);
+         }
          return False;
       }
 
@@ -527,12 +537,24 @@ Bool get_elf_symbol_info (
          Hence: */
 
       ULong fn_descr[2]; /* is actually 3 words, but we need only 2 */
-      if (!ML_(img_get)(&fn_descr[0],
-                        img, opd_ioff + offset_in_opd, sizeof(fn_descr))) {
-         TRACE_SYMTAB("    ignore -- invalid OPD fn_descr offset: %s\n",
-                      sym_name);
+      if (!ML_(img_valid)(escn_opd->img, escn_opd->ioff + offset_in_opd,
+                          sizeof(fn_descr))) {
+         if (TRACE_SYMTAB_ENABLED) {
+            HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                              "di.gesi.6b", sym_name_ioff);
+            TRACE_SYMTAB("    ignore -- invalid OPD fn_descr offset: %s\n",
+                         sym_name);
+            if (sym_name) ML_(dinfo_free)(sym_name);
+
+         }
          return False;
       }
+
+      /* This can't fail now, because we just checked the offset
+         above. */
+      ML_(img_get)(&fn_descr[0], escn_opd->img,
+                   escn_opd->ioff + offset_in_opd, sizeof(fn_descr));
+
       if (details) 
          TRACE_SYMTAB("opdXXY: offset %d,  fn_descr %p\n", 
                       offset_in_opd, fn_descr);
@@ -565,9 +587,10 @@ Bool get_elf_symbol_info (
 #  if defined(VGP_ppc64_linux)
    if (di->opd_size > 0
        && !is_in_opd
-       && sym_name[0] == '.') {
+       && *sym_name_out_ioff != DiOffT_INVALID
+       && ML_(img_get_UChar)(escn_strtab->img, *sym_name_out_ioff) == '.') {
       vg_assert(!(*from_opd_out));
-      *sym_name_out = &sym_name[1];
+      (*sym_name_out_ioff)++;
    }
 #  endif
 
@@ -919,14 +942,17 @@ void read_elf_symtab__ppc64_linux(
             elem->is_ifunc = is_ifunc;
             VG_(OSetGen_Insert)(oset, elem);
             if (di->trace_symtab) {
+               HChar* str = ML_(img_strdup)(escn_strtab->img, "di.respl.2",
+                                            elem->key.name);
                VG_(printf)("   to-oset [%4ld]:          "
-                           "  val %#010lx, toc %#010lx, sz %4d  %lld\n",
+                           "  val %#010lx, toc %#010lx, sz %4d  %s\n",
                            i,
                            elem->key.addr,
                            elem->tocptr,
                            (Int)  elem->size,
-                           (ULong)elem->key.name
+                           str
                );
+               if (str) ML_(dinfo_free)(str);
             }
 
          }

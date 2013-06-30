@@ -400,6 +400,10 @@ PRE(sysctl) {
       }
       break;
 
+   case VKI_XEN_SYSCTL_sched_id:
+       /* No inputs */
+       break;
+
    case VKI_XEN_SYSCTL_cpupool_op:
       PRE_XEN_SYSCTL_READ(cpupool_op, op);
 
@@ -790,6 +794,10 @@ POST(sysctl)
 	 break;
       }
       break;
+
+   case VKI_XEN_SYSCTL_sched_id:
+       POST_XEN_SYSCTL_WRITE(sched_id, sched_id);
+       break;
 
    case VKI_XEN_SYSCTL_cpupool_op:
       if (sysctl->u.cpupool_op.op == VKI_XEN_SYSCTL_CPUPOOL_OP_CREATE ||

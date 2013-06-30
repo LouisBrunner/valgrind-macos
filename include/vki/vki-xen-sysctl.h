@@ -120,6 +120,11 @@ struct vki_xen_sysctl_physinfo_0000000a {
     vki_uint32_t capabilities;
 };
 
+struct vki_xen_sysctl_sched_id {
+    /* OUT variable. */
+    vki_uint32_t              sched_id;
+};
+
 struct vki_xen_sysctl {
     vki_uint32_t cmd;
     vki_uint32_t interface_version; /* XEN_SYSCTL_INTERFACE_VERSION */
@@ -130,7 +135,7 @@ struct vki_xen_sysctl {
         struct vki_xen_sysctl_physinfo_0000000a physinfo_0000000a;
         struct vki_xen_sysctl_topologyinfo      topologyinfo;
         struct vki_xen_sysctl_numainfo          numainfo;
-        //struct vki_xen_sysctl_sched_id          sched_id;
+        struct vki_xen_sysctl_sched_id          sched_id;
         //struct vki_xen_sysctl_perfc_op          perfc_op;
         struct vki_xen_sysctl_getdomaininfolist_00000008 getdomaininfolist_00000008;
         struct vki_xen_sysctl_getdomaininfolist_00000009 getdomaininfolist_00000009;

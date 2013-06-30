@@ -6508,37 +6508,37 @@ PRE(sys_ioctl)
    case VKI_XEN_IOCTL_PRIVCMD_MMAP: {
        struct vki_xen_privcmd_mmap *args =
            (struct vki_xen_privcmd_mmap *)(ARG3);
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP(num)",
                     (Addr)&args->num, sizeof(args->num));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP(dom)",
                     (Addr)&args->dom, sizeof(args->dom));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAP(entry)",
                     (Addr)args->entry, sizeof(*(args->entry)) * args->num);
       break;
    }
    case VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH: {
        struct vki_xen_privcmd_mmapbatch *args =
            (struct vki_xen_privcmd_mmapbatch *)(ARG3);
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH(num)",
                     (Addr)&args->num, sizeof(args->num));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH(dom)",
                     (Addr)&args->dom, sizeof(args->dom));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH(addr)",
                     (Addr)&args->addr, sizeof(args->addr));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH(arr)",
                     (Addr)args->arr, sizeof(*(args->arr)) * args->num);
       break;
    }
    case VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2: {
        struct vki_xen_privcmd_mmapbatch_v2 *args =
            (struct vki_xen_privcmd_mmapbatch_v2 *)(ARG3);
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2(num)",
                     (Addr)&args->num, sizeof(args->num));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2(dom)",
                     (Addr)&args->dom, sizeof(args->dom));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2(addr)",
                     (Addr)&args->addr, sizeof(args->addr));
-       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2",
+       PRE_MEM_READ("VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2(arr)",
                     (Addr)args->arr, sizeof(*(args->arr)) * args->num);
       break;
    }

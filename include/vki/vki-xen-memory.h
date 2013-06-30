@@ -20,6 +20,7 @@
 #define VKI_XENMEM_get_pod_target       17
 #define VKI_XENMEM_get_sharing_freed_pages    18
 #define VKI_XENMEM_get_sharing_shared_pages   19
+#define VKI_XENMEM_claim_pages                24
 
 struct vki_xen_memory_map {
     unsigned int nr_entries;

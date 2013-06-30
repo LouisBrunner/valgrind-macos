@@ -71,9 +71,9 @@ __DEFINE_VKI_XEN_GUEST_HANDLE(vki_uint16, vki_uint16_t);
 __DEFINE_VKI_XEN_GUEST_HANDLE(vki_uint32, vki_uint32_t);
 __DEFINE_VKI_XEN_GUEST_HANDLE(vki_uint64, vki_uint64_t);
 
-struct vki_xenctl_cpumap {
+struct vki_xenctl_bitmap {
     VKI_XEN_GUEST_HANDLE_64(vki_uint8) bitmap;
-    vki_uint32_t nr_cpus;
+    vki_uint32_t nr_bits;
 };
 
 #include <vki/vki-xen-domctl.h>

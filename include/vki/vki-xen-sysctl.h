@@ -7,6 +7,7 @@
  *
  * - 00000008: Xen 4.1
  * - 00000009: Xen 4.2
+ * - 0000000a: Xen 4.3
  *
  * When adding a new subop be sure to include the variants used by all
  * of the above, both here and in syswrap-xen.c
@@ -35,6 +36,7 @@
 #define VKI_XEN_SYSCTL_numainfo                      17
 #define VKI_XEN_SYSCTL_cpupool_op                    18
 #define VKI_XEN_SYSCTL_scheduler_op                  19
+#define VKI_XEN_SYSCTL_coverage_op                   20
 
 struct vki_xen_sysctl_getdomaininfolist_00000008 {
     /* IN variables. */
@@ -69,7 +71,7 @@ struct vki_xen_sysctl_cpupool_op {
     vki_uint32_t domid;       /* IN: M              */
     vki_uint32_t cpu;         /* IN: AR             */
     vki_uint32_t n_dom;       /*            OUT: I  */
-    struct vki_xenctl_cpumap cpumap; /*     OUT: IF */
+    struct vki_xenctl_bitmap cpumap; /*     OUT: IF */
 };
 
 struct vki_xen_sysctl_topologyinfo {
@@ -85,7 +87,7 @@ struct vki_xen_sysctl_numainfo {
     VKI_XEN_GUEST_HANDLE_64(vki_uint64) node_to_memfree;
     VKI_XEN_GUEST_HANDLE_64(vki_uint32) node_to_node_distance;
 };
-struct vki_xen_sysctl_physinfo {
+struct vki_xen_sysctl_physinfo_00000008 {
     vki_uint32_t threads_per_core;
     vki_uint32_t cores_per_socket;
     vki_uint32_t nr_cpus;     /* # CPUs currently online */
@@ -101,13 +103,31 @@ struct vki_xen_sysctl_physinfo {
     vki_uint32_t capabilities;
 };
 
+struct vki_xen_sysctl_physinfo_0000000a {
+    vki_uint32_t threads_per_core;
+    vki_uint32_t cores_per_socket;
+    vki_uint32_t nr_cpus;     /* # CPUs currently online */
+    vki_uint32_t max_cpu_id;  /* Largest possible CPU ID on this host */
+    vki_uint32_t nr_nodes;    /* # nodes currently online */
+    vki_uint32_t max_node_id; /* Largest possible node ID on this host */
+    vki_uint32_t cpu_khz;
+    vki_xen_uint64_aligned_t total_pages;
+    vki_xen_uint64_aligned_t free_pages;
+    vki_xen_uint64_aligned_t scrub_pages;
+    vki_xen_uint64_aligned_t outstanding_pages;
+    vki_uint32_t hw_cap[8];
+
+    vki_uint32_t capabilities;
+};
+
 struct vki_xen_sysctl {
     vki_uint32_t cmd;
     vki_uint32_t interface_version; /* XEN_SYSCTL_INTERFACE_VERSION */
     union {
         //struct vki_xen_sysctl_readconsole       readconsole;
         //struct vki_xen_sysctl_tbuf_op           tbuf_op;
-        struct vki_xen_sysctl_physinfo          physinfo;
+        struct vki_xen_sysctl_physinfo_00000008 physinfo_00000008;
+        struct vki_xen_sysctl_physinfo_0000000a physinfo_0000000a;
         struct vki_xen_sysctl_topologyinfo      topologyinfo;
         struct vki_xen_sysctl_numainfo          numainfo;
         //struct vki_xen_sysctl_sched_id          sched_id;
@@ -124,6 +144,8 @@ struct vki_xen_sysctl {
         //struct vki_xen_sysctl_lockprof_op       lockprof_op;
         struct vki_xen_sysctl_cpupool_op        cpupool_op;
         //struct vki_xen_sysctl_scheduler_op      scheduler_op;
+        //struct vki_xen_sysctl_coverage_op       coverage_op;
+
         vki_uint8_t                             pad[128];
     } u;
 };

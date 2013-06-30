@@ -152,6 +152,10 @@ PRE(memory_op)
       break;
    }
 
+   case VKI_XENMEM_get_sharing_freed_pages:
+   case VKI_XENMEM_get_sharing_shared_pages:
+      break;
+
    default:
       bad_subop(tid, layout, arrghs, status, flags,
                 "__HYPERVISOR_memory_op", ARG1);
@@ -672,6 +676,11 @@ POST(memory_op)
                      sizeof(vki_xen_pfn_t) * memory_reservation->nr_extents);
       break;
    }
+
+   case VKI_XENMEM_get_sharing_freed_pages:
+   case VKI_XENMEM_get_sharing_shared_pages:
+       /* No outputs */
+       break;
    }
 }
 

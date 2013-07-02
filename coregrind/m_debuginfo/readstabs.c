@@ -100,8 +100,6 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
                                  UChar* stabC,   Int stab_sz, 
                                  HChar* stabstr, Int stabstr_sz )
 {
-   const Bool debug     = False;
-   const Bool contdebug = False;
    Int    i;
    Int    n_stab_entries;
    struct nlist* stab = (struct nlist*)stabC;
@@ -141,18 +139,18 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
    n_stab_entries = stab_sz/(int)sizeof(struct nlist);
 
+   TRACE_SYMTAB("\n--- Reading STABS (%d entries) ---\n", n_stab_entries);
+
    for (i = 0; i < n_stab_entries; i++) {
       const struct nlist *st = &stab[i];
       HChar *string;
 
-      if (di->trace_symtab) {
-         VG_(printf) ( "%2d  type=%d   othr=%d   desc=%d   "
-                       "value=0x%x   strx=%d  %s\n", i,
-                       st->n_type, st->n_other, st->n_desc, 
-                       (Int)st->n_value,
-                       (Int)st->n_un.n_strx, 
-                       stabstr + st->n_un.n_strx );
-      }
+      TRACE_SYMTAB("%2d  type=%d   othr=%d   desc=%d   "
+                   "value=0x%x   strx=%d  %s\n", i,
+                   st->n_type, st->n_other, st->n_desc, 
+                   (Int)st->n_value,
+                   (Int)st->n_un.n_strx, 
+                   stabstr + st->n_un.n_strx );
 
       /* handle continued string stabs */
       {
@@ -181,10 +179,9 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
             while (string[qlen-1] == '\\' && qlen > 0)
                qlen--;
 
-            if (contdebug)
-               VG_(printf)("found extension string: \"%s\" "
-                           "len=%d(%c) idx=%d buflen=%d\n", 
-                           string, qlen, string[qlen-1], qidx, qbuflen);
+            TRACE_SYMTAB("cont: found extension string: \"%s\" "
+                         "len=%d(%c) idx=%d buflen=%d\n", 
+                         string, qlen, string[qlen-1], qidx, qbuflen);
 
             /* XXX this is silly.  The si->strtab should have a way of
                appending to the last added string... */
@@ -205,9 +202,9 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             VG_(memcpy)(&qbuf[qidx], string, qlen);
             qidx += qlen;
-            if (contdebug) {
+            if (di->trace_symtab) {
                qbuf[qidx] = '\0';
-               VG_(printf)("working buf=\"%s\"\n", qbuf);
+               TRACE_SYMTAB("cont: working buf=\"%s\"\n", qbuf);
             }
 
             i++;
@@ -227,8 +224,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
             i--;                        /* overstepped */
             string = ML_(addStr)(di, qbuf, qidx);
             ML_(dinfo_free)(qbuf);
-            if (contdebug)
-               VG_(printf)("made composite: \"%s\"\n", string);
+            TRACE_SYMTAB("cont: made composite: \"%s\"\n", string);
          }
       }
 
@@ -284,8 +280,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             if (len > 0 && nm[len-1] != '/') {
                file.name = ML_(addStr)(di, nm, -1);
-               if (debug)
-                  VG_(printf)("new source: %s\n", file.name);
+               TRACE_SYMTAB("new source: %s\n", file.name);
             } else if (len == 0)
                file.name = ML_(addStr)(di, "?1\0", -1);
 

@@ -64,6 +64,11 @@ usage: valgrind [options] prog-and-args
     --extra-debuginfo-path=path    absolute path to search for additional
                               debug symbols, in addition to existing default
                               well known search paths.
+    --debuginfo-server=ipaddr:port    also query this server
+                              (valgrind-di-server) for debug symbols
+    --allow-mismatched-debuginfo=no|yes  [no]
+                              for the above two flags only, accept debuginfo
+                              objects that don't "match" the main object
     --smc-check=none|stack|all|all-non-file [stack]
                               checks for self-modifying code: none, only for
                               code found in stacks, for all code, or for all

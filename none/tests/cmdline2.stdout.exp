@@ -64,6 +64,11 @@ usage: valgrind [options] prog-and-args
     --extra-debuginfo-path=path    absolute path to search for additional
                               debug symbols, in addition to existing default
                               well known search paths.
+    --debuginfo-server=ipaddr:port    also query this server
+                              (valgrind-di-server) for debug symbols
+    --allow-mismatched-debuginfo=no|yes  [no]
+                              for the above two flags only, accept debuginfo
+                              objects that don't "match" the main object
     --smc-check=none|stack|all|all-non-file [stack]
                               checks for self-modifying code: none, only for
                               code found in stacks, for all code, or for all
@@ -145,7 +150,8 @@ usage: valgrind [options] prog-and-args
        0000 0010   show after reg-alloc
        0000 0001   show final assembly
        0000 0000   show summary profile only
-      (Nb: you need --trace-notbelow and/or --trace-notabove            with --trace-flags for full details)
+      (Nb: you need --trace-notbelow and/or --trace-notabove
+           with --trace-flags for full details)
 
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated

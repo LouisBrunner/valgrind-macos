@@ -50,6 +50,7 @@
 #include "pub_core_redir.h"
 
 #include "priv_misc.h"             /* dinfo_zalloc/free/strdup */
+#include "priv_image.h"
 #include "priv_d3basics.h"
 #include "priv_storage.h"
 #include "priv_readpdb.h"          // self

@@ -51,6 +51,7 @@
 #include "pub_core_ume.h"
 
 #include "priv_misc.h"           /* dinfo_zalloc/free */
+#include "priv_image.h"
 #include "priv_d3basics.h"       /* ML_(pp_GX) */
 #include "priv_tytypes.h"
 #include "priv_storage.h"

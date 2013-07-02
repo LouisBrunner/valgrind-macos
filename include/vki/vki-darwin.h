@@ -1041,6 +1041,16 @@ struct ByteRangeLockPB2
 #define vki_aiocb aiocb
 
 
+#include <netinet/tcp.h>
+
+#define VKI_TCP_NODELAY  TCP_NODELAY
+
+
+#include <netinet/in.h>
+
+#define VKI_IPPROTO_TCP  IPPROTO_TCP
+
+
 // XXX: for some reason when I #include <sys/kernel_types.h> I get a syntax
 // error.  Hmm.  So just define things ourselves.
 //#include <sys/kernel_types.h>

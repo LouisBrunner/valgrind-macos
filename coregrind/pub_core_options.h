@@ -129,6 +129,18 @@ extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 /* Full path to additional path to search for debug symbols */
 extern const HChar* VG_(clo_extra_debuginfo_path);
 
+/* Address of a debuginfo server to use.  Either an IPv4 address of
+   the form "d.d.d.d" or that plus a port spec, hence of the form
+   "d.d.d.d:d", where d is one or more digits. */
+extern const HChar* VG_(clo_debuginfo_server);
+
+/* Do we allow reading debuginfo from debuginfo objects that don't
+   match (in some sense) the main object?  This is dangerous, so the
+   default is NO (False).  In any case it applies only to objects
+   found either in _extra_debuginfo_path or via the
+   _debuginfo_server. */
+extern Bool VG_(clo_allow_mismatched_debuginfo);
+
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
 

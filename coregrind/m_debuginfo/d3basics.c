@@ -38,6 +38,7 @@
 #include "pub_core_debuginfo.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_options.h"
 #include "pub_core_xarray.h"
 
@@ -45,6 +46,7 @@
 #include "pub_core_aspacemgr.h" /* VG_(is_valid_for_client) */
 
 #include "priv_misc.h"
+#include "priv_image.h"
 #include "priv_d3basics.h"      /* self */
 #include "priv_storage.h"
 

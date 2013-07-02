@@ -702,6 +702,8 @@ struct vki_sockaddr_in {
 			sizeof(unsigned short int) - sizeof(struct vki_in_addr)];
 };
 
+#define VKI_IPPROTO_TCP 6       /* Transmission Control Protocol        */
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/in6.h
 //----------------------------------------------------------------------
@@ -726,6 +728,13 @@ struct vki_sockaddr_in6 {
 	struct vki_in6_addr	sin6_addr;      /* IPv6 address */
 	__vki_u32		sin6_scope_id;  /* scope id (new in RFC2553) */
 };
+
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/linux/tcp.h
+//----------------------------------------------------------------------
+
+#define VKI_TCP_NODELAY    1       /* Turn off Nagle's algorithm. */
+
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/un.h

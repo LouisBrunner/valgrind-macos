@@ -556,8 +556,24 @@ void* VG_(memcpy) ( void *dest, const void *src, SizeT sz )
       d = (UChar*)dI;
    }
 
-   while (sz--)
-      *d++ = *s++;
+   /* If we're unlucky, the alignment constraints for the fast case
+      above won't apply, and we'll have to to it all here.  Hence the
+      unrolling. */
+   while (sz >= 4) {
+      d[0] = s[0];
+      d[1] = s[1];
+      d[2] = s[2];
+      d[3] = s[3];
+      d += 4;
+      s += 4;
+      sz -= 4;
+   }
+   while (sz >= 1) {
+      d[0] = s[0];
+      d += 1;
+      s += 1;
+      sz -= 1;
+   }
 
    return dest;
 }
@@ -824,6 +840,168 @@ UInt VG_(random)( /*MOD*/UInt* pSeed )
 
    *pSeed = (1103515245 * *pSeed + 12345);
    return *pSeed;
+}
+
+
+/* The following Adler-32 checksum code is taken from zlib-1.2.3, which
+   has the following copyright notice. */
+/*
+Copyright notice:
+
+ (C) 1995-2004 Jean-loup Gailly and Mark Adler
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jean-loup Gailly        Mark Adler
+  jloup@gzip.org          madler@alumni.caltech.edu
+
+If you use the zlib library in a product, we would appreciate *not*
+receiving lengthy legal documents to sign. The sources are provided
+for free but without warranty of any kind.  The library has been
+entirely written by Jean-loup Gailly and Mark Adler; it does not
+include third-party code.
+
+If you redistribute modified sources, we would appreciate that you include
+in the file ChangeLog history information documenting your changes. Please
+read the FAQ for more information on the distribution of modified source
+versions.
+*/
+
+/* Update a running Adler-32 checksum with the bytes buf[0..len-1] and
+   return the updated checksum. If buf is NULL, this function returns
+   the required initial value for the checksum. An Adler-32 checksum is
+   almost as reliable as a CRC32 but can be computed much faster. */
+UInt VG_(adler32)( UInt adler, const UChar* buf, UInt len )
+{
+#  define BASE 65521UL    /* largest prime smaller than 65536 */
+#  define NMAX 5552
+   /* NMAX is the largest n such that 
+      255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
+
+#  define DO1(buf,i)  {adler += (buf)[i]; sum2 += adler;}
+#  define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
+#  define DO4(buf,i)  DO2(buf,i); DO2(buf,i+2);
+#  define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
+#  define DO16(buf)   DO8(buf,0); DO8(buf,8);
+
+   /* The zlib sources recommend this definition of MOD if the
+      processor cannot do integer division in hardware. */
+#  define MOD(a) \
+      do { \
+          if (a >= (BASE << 16)) a -= (BASE << 16); \
+          if (a >= (BASE << 15)) a -= (BASE << 15); \
+          if (a >= (BASE << 14)) a -= (BASE << 14); \
+          if (a >= (BASE << 13)) a -= (BASE << 13); \
+          if (a >= (BASE << 12)) a -= (BASE << 12); \
+          if (a >= (BASE << 11)) a -= (BASE << 11); \
+          if (a >= (BASE << 10)) a -= (BASE << 10); \
+          if (a >= (BASE << 9)) a -= (BASE << 9); \
+          if (a >= (BASE << 8)) a -= (BASE << 8); \
+          if (a >= (BASE << 7)) a -= (BASE << 7); \
+          if (a >= (BASE << 6)) a -= (BASE << 6); \
+          if (a >= (BASE << 5)) a -= (BASE << 5); \
+          if (a >= (BASE << 4)) a -= (BASE << 4); \
+          if (a >= (BASE << 3)) a -= (BASE << 3); \
+          if (a >= (BASE << 2)) a -= (BASE << 2); \
+          if (a >= (BASE << 1)) a -= (BASE << 1); \
+          if (a >= BASE) a -= BASE; \
+      } while (0)
+#  define MOD4(a) \
+      do { \
+          if (a >= (BASE << 4)) a -= (BASE << 4); \
+          if (a >= (BASE << 3)) a -= (BASE << 3); \
+          if (a >= (BASE << 2)) a -= (BASE << 2); \
+          if (a >= (BASE << 1)) a -= (BASE << 1); \
+          if (a >= BASE) a -= BASE; \
+      } while (0)
+
+    UInt sum2;
+    UInt n;
+
+    /* split Adler-32 into component sums */
+    sum2 = (adler >> 16) & 0xffff;
+    adler &= 0xffff;
+
+    /* in case user likes doing a byte at a time, keep it fast */
+    if (len == 1) {
+        adler += buf[0];
+        if (adler >= BASE)
+            adler -= BASE;
+        sum2 += adler;
+        if (sum2 >= BASE)
+            sum2 -= BASE;
+        return adler | (sum2 << 16);
+    }
+
+    /* initial Adler-32 value (deferred check for len == 1 speed) */
+    if (buf == NULL)
+        return 1L;
+
+    /* in case short lengths are provided, keep it somewhat fast */
+    if (len < 16) {
+        while (len--) {
+            adler += *buf++;
+            sum2 += adler;
+        }
+        if (adler >= BASE)
+            adler -= BASE;
+        MOD4(sum2);             /* only added so many BASE's */
+        return adler | (sum2 << 16);
+    }
+
+    /* do length NMAX blocks -- requires just one modulo operation */
+    while (len >= NMAX) {
+        len -= NMAX;
+        n = NMAX / 16;          /* NMAX is divisible by 16 */
+        do {
+            DO16(buf);          /* 16 sums unrolled */
+            buf += 16;
+        } while (--n);
+        MOD(adler);
+        MOD(sum2);
+    }
+
+    /* do remaining bytes (less than NMAX, still just one modulo) */
+    if (len) {                  /* avoid modulos if none remaining */
+        while (len >= 16) {
+            len -= 16;
+            DO16(buf);
+            buf += 16;
+        }
+        while (len--) {
+            adler += *buf++;
+            sum2 += adler;
+        }
+        MOD(adler);
+        MOD(sum2);
+    }
+
+    /* return recombined sums */
+    return adler | (sum2 << 16);
+
+#  undef MOD4
+#  undef MOD
+#  undef DO16
+#  undef DO8
+#  undef DO4
+#  undef DO2
+#  undef DO1
+#  undef NMAX
+#  undef BASE
 }
 
 /*--------------------------------------------------------------------*/

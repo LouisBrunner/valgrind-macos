@@ -70,6 +70,8 @@ extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, 
                               void *optval, Int *optlen );
+extern Int VG_(setsockopt)  ( Int sd, Int level, Int optname,
+                              void *optval, Int optlen );
 
 extern Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr,
                                             Bool ixusr );

@@ -47,6 +47,7 @@
 #include "pub_core_oset.h"
 
 #include "priv_misc.h"         /* dinfo_zalloc/free/strdup */
+#include "priv_image.h"
 #include "priv_d3basics.h"     /* ML_(pp_GX) */
 #include "priv_tytypes.h"
 #include "priv_storage.h"      /* self */
@@ -246,6 +247,21 @@ HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
    chunk->strtab_used += space_needed;
 
    return p;
+}
+
+
+/* Add a string to the string table of a DebugInfo, by copying the
+   string from the given DiCursor.  Measures the length of the string
+   itself. */
+HChar* ML_(addStrFromCursor)( struct _DebugInfo* di, DiCursor c )
+{
+   /* This is a less-than-stellar implementation, but it should
+      work. */
+   vg_assert(ML_(cur_is_valid)(c));
+   HChar* str = ML_(cur_read_strdup)(c, "di.addStrFromCursor.1");
+   HChar* res = ML_(addStr)(di, str, -1);
+   ML_(dinfo_free)(str);
+   return res;
 }
 
 

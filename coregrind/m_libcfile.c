@@ -1069,6 +1069,42 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 }
 
 
+Int VG_(setsockopt) ( Int sd, Int level, Int optname, void *optval,
+                      Int optlen)
+{
+#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+   SysRes res;
+   UWord  args[5];
+   args[0] = sd;
+   args[1] = level;
+   args[2] = optname;
+   args[3] = (UWord)optval;
+   args[4] = (UWord)optlen;
+   res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_SETSOCKOPT, (UWord)&args);
+   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
+        || defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+   SysRes res;
+   res = VG_(do_syscall5)( __NR_setsockopt,
+                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)optval, (UWord)optlen );
+   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  elif defined(VGO_darwin)
+   SysRes res;
+   res = VG_(do_syscall5)( __NR_setsockopt,
+                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)optval, (UWord)optlen );
+   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  else
+#    error "Unknown platform"
+#  endif
+}
+
+
 const HChar *VG_(basename)(const HChar *path)
 {
    static HChar buf[VKI_PATH_MAX];

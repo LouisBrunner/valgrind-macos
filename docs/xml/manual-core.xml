@@ -237,21 +237,27 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
 
     <para><computeroutput>valgrind-listener</computeroutput> accepts two
     command-line options:</para>
-    <itemizedlist>
-       <listitem>
-         <para><option>-e</option> or <option>--exit-at-zero</option>: 
-         when the number of connected processes falls back to zero,
-         exit.  Without this, it will run forever, that is, until you
-         send it Control-C.</para>
-       </listitem>
-       <listitem>
-        <para><option>portnumber</option>: changes the port it listens
-        on from the default (1500).  The specified port must be in the
-        range 1024 to 65535.  The same restriction applies to port
-        numbers specified by a <option>--log-socket</option> to
-        Valgrind itself.</para>
-      </listitem>
-    </itemizedlist>
+    <!-- start of xi:include in the manpage -->
+    <variablelist id="listener.opts.list">
+       <varlistentry>
+         <term><option>-e --exit-at-zero</option></term>
+         <listitem>
+           <para>When the number of connected processes falls back to zero,
+           exit.  Without this, it will run forever, that is, until you
+           send it Control-C.</para>
+         </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><option>portnumber</option></term>
+        <listitem>
+          <para>Changes the port it listens on from the default (1500).
+          The specified port must be in the range 1024 to 65535.
+          The same restriction applies to port numbers specified by a
+          <option>--log-socket</option> to Valgrind itself.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    <!-- end of xi:include in the manpage -->
 
     <para>If a Valgrinded process fails to connect to a listener, for
     whatever reason (the listener isn't running, invalid or unreachable

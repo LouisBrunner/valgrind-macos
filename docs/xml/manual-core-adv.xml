@@ -1102,7 +1102,8 @@ $5 = 36
 intermediary between Valgrind and GDB or a shell.
 Therefore, it has two usage modes:
 </para>
-<orderedlist>
+<!-- start of xi:include in the manpage -->
+<orderedlist id="vgdb.desc.modes">
   <listitem id="manual-core-adv.vgdb-standalone" xreflabel="vgdb standalone">
     <para>As a standalone utility, it is used from a shell command
     line to send monitor commands to a process running under
@@ -1121,28 +1122,33 @@ Therefore, it has two usage modes:
   </listitem>
 
 </orderedlist>
+<!-- end of xi:include in the manpage -->
 
 <para><computeroutput>vgdb</computeroutput> accepts the following
 options:</para>
-<itemizedlist>
-  <listitem>
-    <para><option>--pid=&lt;number&gt;</option>: specifies the PID of
+<!-- start of xi:include in the manpage -->
+<variablelist id="vgdb.opts.list">
+  <varlistentry>
+    <term><option>--pid=&lt;number&gt;</option></term>
+    <listitem><para>Specifies the PID of
     the process to which vgdb must connect to.  This option is useful
     in case more than one Valgrind gdbserver can be connected to.  If
     the <option>--pid</option> argument is not given and multiple
     Valgrind gdbserver processes are running, vgdb will report the
-    list of such processes and then exit.</para>
-  </listitem>
+    list of such processes and then exit.</para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>--vgdb-prefix</option> must be given to both
+  <varlistentry>
+    <term><option>--vgdb-prefix</option></term>
+    <listitem><para>Must be given to both
     Valgrind and vgdb if you want to change the default prefix for the
     FIFOs (named pipes) used for communication between the Valgrind
-    gdbserver and vgdb. </para>
-  </listitem>
+    gdbserver and vgdb.</para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>--wait=&lt;number&gt;</option> instructs vgdb to
+  <varlistentry>
+    <term><option>--wait=&lt;number&gt;</option></term>
+    <listitem><para>Instructs vgdb to
     search for available Valgrind gdbservers for the specified number
     of seconds.  This makes it possible start a vgdb process 
     before starting the Valgrind gdbserver with which you intend the
@@ -1153,11 +1159,12 @@ options:</para>
     "target remote" command, you must set the GDB remotetimeout to a
     value bigger than the --wait argument value.  See option
     <option>--max-invoke-ms</option> (just below)
-    for an example of setting the remotetimeout value.</para>
-  </listitem>
+    for an example of setting the remotetimeout value.</para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>--max-invoke-ms=&lt;number&gt;</option> gives the
+  <varlistentry>
+    <term><option>--max-invoke-ms=&lt;number&gt;</option></term>
+    <listitem><para>Gives the
     number of milliseconds after which vgdb will force the invocation
     of gdbserver embedded in Valgrind.  The default value is 100
     milliseconds. A value of 0 disables forced invocation. The forced
@@ -1175,18 +1182,20 @@ options:</para>
     <screen><![CDATA[
     (gdb) set remotetimeout 6
     ]]></screen>
-    </para>
-  </listitem>
+    </para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>--cmd-time-out=&lt;number&gt;</option> instructs a
+  <varlistentry>
+    <term><option>--cmd-time-out=&lt;number&gt;</option></term>
+    <listitem><para>Instructs a
     standalone vgdb to exit if the Valgrind gdbserver it is connected
     to does not process a command in the specified number of seconds.
-    The default value is to never time out.</para>
-  </listitem>
+    The default value is to never time out.</para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>--port=&lt;portnr&gt;</option> instructs vgdb to
+  <varlistentry>
+    <term><option>--port=&lt;portnr&gt;</option></term>
+    <listitem><para>Instructs vgdb to
     use tcp/ip and listen for GDB on the specified port nr rather than
     to use a pipe to communicate with GDB. Using tcp/ip allows to have
     GDB running on one computer and debugging a Valgrind process
@@ -1204,41 +1213,46 @@ gdb prog
 (gdb) target remote targetip:1234
 ]]></screen>
     where targetip is the ip address or hostname of the target computer.
-    </para>
-  </listitem>
+    </para></listitem>
+  </varlistentry>
    
-  <listitem>
-    <para><option>-c</option> To give more than one command to a
+  <varlistentry>
+    <term><option>-c</option></term>
+    <listitem><para>To give more than one command to a
     standalone vgdb, separate the commands by an
     option <option>-c</option>. Example:
     <screen><![CDATA[
 vgdb v.set log_output -c leak_check any
-]]></screen></para>
-  </listitem>  
+]]></screen></para></listitem>
+  </varlistentry>  
 
-  <listitem>
-    <para><option>-l</option> instructs a standalone vgdb to report
+  <varlistentry>
+    <term><option>-l</option></term>
+    <listitem><para>Instructs a standalone vgdb to report
     the list of the Valgrind gdbserver processes running and then
-    exit.</para>
-  </listitem>
+    exit.</para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>-D</option> instructs a standalone vgdb to show the
+  <varlistentry>
+    <term><option>-D</option></term>
+    <listitem><para>Instructs a standalone vgdb to show the
     state of the shared memory used by the Valgrind gdbserver.  vgdb
     will exit after having shown the Valgrind gdbserver shared memory
-    state.</para>
-  </listitem>
+    state.</para></listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option>-d</option> instructs vgdb to produce debugging
+  <varlistentry>
+    <term><option>-d</option></term>
+    <listitem><para>Instructs vgdb to produce debugging
     output.  Give multiple <option>-d</option> args to increase the
     verbosity. When giving <option>-d</option> to a relay vgdb, you better
     redirect the standard error (stderr) of vgdb to a file to avoid
-    interaction between GDB and vgdb debugging output.</para>
-  </listitem>
+    interaction between GDB and vgdb debugging output.</para></listitem>
+  </varlistentry>
   
-</itemizedlist>
- 
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
 </sect2>
 
 

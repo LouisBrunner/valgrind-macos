@@ -24,7 +24,8 @@ endif
 EXTRA_DIST = \
 	m_debuginfo/UNUSED_STABS.txt \
 	m_debuginfo/README.txt \
-	m_gdbserver/README_DEVELOPERS
+	m_gdbserver/README_DEVELOPERS \
+	docs/vgdb-manpage.xml
 
 #----------------------------------------------------------------------------
 # The launcher.  Built for the primary target only.

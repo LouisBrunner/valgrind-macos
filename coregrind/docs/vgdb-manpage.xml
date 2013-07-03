@@ -1,0 +1,84 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="vgdb">
+
+<refmeta>
+  <refentrytitle>vgdb</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+  <refname>vgdb</refname>
+  <refpurpose>intermediary between Valgrind and GDB or a shell</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>vgdb</command>
+  <arg><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>vgdb</command> ("Valgrind to GDB") is used as an
+intermediary between Valgrind and GDB or a shell.  It has two usage modes:
+</para>
+
+<xi:include href="../../docs/xml/manual-core-adv.xml"
+            xpointer="vgdb.desc.modes"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+<refsect1 id="options">
+<title>Options</title>
+
+<xi:include href="../../docs/xml/manual-core-adv.xml"
+            xpointer="vgdb.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para>
+valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>,
+<ulink id="&vg-gdbserver-id;"
+       xreflabel="&vg-gdbserver-label;"
+       url="&vg-gdbserver-url;">&vg-gdbserver-label;</ulink>
+<ulink id="&vg-vgdb-id;"
+       xreflabel="&vg-vgdb-label;"
+       url="&vg-vgdb-url;">&vg-vgdb-label;</ulink>,
+<ulink id="&vg-monitor-id;"
+       xreflabel="&vg-monitor-label;"
+       url="&vg-monitor-url;">&vg-monitor-label;</ulink>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>Philippe Waroquiers.</para>
+
+</refsect1>
+
+
+</refentry>
+
+

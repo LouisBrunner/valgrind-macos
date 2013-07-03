@@ -396,3 +396,169 @@ gcp libnss3.so debuginfo read hang
         Has simple-sounding fix; should commit.
 
 Thu Apr 11 18:16:04 CEST 2013
+
+318203  setsockopt handling needs to handle SOL_SOCKET/SO_ATTACH_FILTER
+        Has patch, looks plausible
+
+318505  Valgrind (callgrind) cannot handle recvmmsg system call
+        INVALID (old version)
+
+318575  Does not running. CRC mismatch wanted 0fcc7297
+        Probably invalid -- inability to find ld.so symbols at startup
+
+318656  (dpps) vex x86->IR: 0x66 0xf 0x3a 0x40 0xc1 0xf1
+        WONTFIX (SSE4 on 32-bit x86)
+
+318773  unhandled instruction bytes: 0xF3 0x48 0x0F 0xBC 0xC2 0xC3 0x66 0x0F
+        tzcnt? == 295808, but not closed
+
+318929  Crash with: disInstr(thumb): 0xF321 0x0001 (ssat16)
+        FIXED 2721 13396
+
+319225  QA Notice: Package triggers severe warnings which indicate
+        that it may exhibit random runtime failures.
+        We should close as WONTFIX
+
+319237  [PATCH] Added support for ELF injection
+        FreeBSD-specific
+
+319274  unhandled syscall: unix:410
+        OSX108-specific
+
+319306  gdbserver tests call vgdb without path; patch within
+        Needs further discussion?
+
+319307  Patches to let test suite run in parallel
+        Looks plausible
+
+319393  bad rounding in cvtsi2ss instruction
+        Not started.  Looks valid.  (double rounding)
+
+319419  unhandled syscall: unix:369
+        OSX specific
+
+319494  VEX Makefile-gcc standalone build update after r2702
+        Has patch; should land it.
+
+319505  [MIPSEL] Crash: unhandled UNRAY operator.
+        --> petarj
+
+319547  helgrind gives false positives on rwlocks
+        Needs investigation
+
+319858  disInstr(thumb): unhandled instruction on instruction STRBT
+        Has patch
+
+319896  vex amd64->IR: 0x8C 0xE0
+        Probably requires proper segment support, but need to check.
+
+319932  disInstr(thumb): unhandled instruction on instruction STRHT
+        Has patch
+
+319968  disInstr(arm): 0x69746E65  (valgrind_v3.81, cortex-A9)
+        INVALID (needs closing)
+
+320058  We have problems when we try to mmap more than 12 memory pages
+        on MIPS32 when we are using Valgrind
+        --> petarj
+
+320082  disInstr(thumb): unhandled instruction on instruction LDRB
+        Has patch
+
+320083  disInstr(thumb): unhandled instruction on instruction LDRBT
+        Has patch
+
+320100  Add nanosecond timer support
+        A bigger patch depends on it, but that has not appeared yet
+
+320131  WARNING: unhandled syscall: 369 on ARM (prlimit64)
+        Has patch
+
+320546  valgrind exits with "Assertion 'in_rx' failed"
+        for /system/lib/libva-android.so on Android 4.0.4
+        Need more info (the .so); queried.
+
+320661  vgModuleLocal_read_elf_debug_info(): "Assertion '!di->soname'
+        failed" on weird files
+        Has patch; needs resync (Queried)
+
+320895  add fanotify support (patch included)
+        Has patches but need more work; queried
+
+320965  Unrecognised instruction __ieee754_pow_sse2
+        Not sure what this is.  Queried.
+
+320998  vex amd64->IR pcmpestri and pcmpestrm SSE4.2 instructions are
+        unsupported (by version 3.8.1)
+        PCMPxSTRx $0x30, $0x40
+
+321148  Unhandled instruction: PLI (Thumb 1, 2, 3)
+        Has patch
+
+321363  Unhandled instruction: SSAX (ARM + Thumb)
+        Has patch
+
+321364  Unhandled instruction: SXTAB16 (ARM + Thumb)
+        Has patch
+
+321396  Add Support for Freescale e500v2 SPE Architecture.
+        Is metabug? -- no patch, no details
+
+321400  Add Support for Freescale e5500 Architecture.
+        No patch, no details
+
+321401  Add Support for Freescale e6500 Architecture.
+        No patch, no details
+
+321444  Multi-byte fill options
+        Wishlist
+
+321466  Unhandled instruction: SHASX (ARM + Thumb)
+        Has patch
+
+321467  Unhandled instruction: SHSAX (ARM + Thumb)
+        Has patch
+
+321468  Unhandled instruction: SHSUB16 (ARM + Thumb)
+        Has patch
+
+321619  Unhandled instruction: SHSUB8 (ARM + Thumb)
+        Has patch
+
+321620  Unhandled instruction: UASX (ARM + Thumb)
+        Has patch
+
+321621  Unhandled instruction: USAX (ARM + Thumb)
+        Has patch
+
+321681  printf false positive
+        Probably WONTFIX
+
+321692  Unhandled instruction: UQADD16 (ARM + Thumb)
+        Has patch
+
+321693  Unhandled instruction: LDRSBT (Thumb)
+        has patch
+
+321694  Unhandled instruction: UQASX (ARM + Thumb)
+        Has patch
+
+321696  Unhandled instruction: UQSAX (Thumb + ARM)
+        Has patch
+
+321697  Unhandled instruction: UHASX (ARM + Thumb)
+        Has patch
+
+321703  Unhandled instruction: UHSAX (ARM + Thumb)
+        Has patch
+
+321704  Unhandled instruction: REVSH (ARM + Thumb)
+        Has patch
+
+321814  stepping through breakpoints in attached gdb process crashes valgrind
+        OSX specific; queried
+
+321836  valgrind cross compilation failure on Ubuntu machine
+        MIPS specific?
+
+Tue Jul  2 12:15:07 CEST 2013

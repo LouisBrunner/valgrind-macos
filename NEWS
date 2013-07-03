@@ -222,7 +222,6 @@ m = merged into 3_8_BRANCH
 315959    [390] valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
 316144    [390] valgrind.1 manpage contains unknown ??? strings for some core option references
 316145    [390] callgrind command line options in manpage reference (unknown) callgrind manual
-319235    [390] --db-attach=yes is broken with Yama ptrace scoping enabled
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android
@@ -344,7 +343,38 @@ FIXED r??
         introduction of new Iops for AVX2, BMI, FMA support
         FIXED 13347
 
-320211 Stack buffer overflow in ./coregrind/m_main.c with huge TMPDIR
+318643  annotate_trace_memory tests go into infinite loop on arm and ppc
+        because of failed reservation (ARM: ldrex/strex PPC:lwarx/stwcx)
+        FIXED r13406
+
+318932  Add missing PPC64 and PPC32 system call support
+        FIXED 13383
+
+319235  --db-attach=yes is broken with Yama (ptrace scoping) enabled
+        FIXED 13384
+
+319395  Crash with unhandled instruction on STRT (Thumb) instructions
+        FIXED 2722 13997
+
+320063  Memory from PTRACE_GET_THREAD_AREA is reported uninitialised
+        FIXED 13403
+
+320116  bind on AF_BLUETOOTH produces warnings because of sockaddr_rc padding
+        FIXED 13404, 13405
+
+320211  Stack buffer overflow in ./coregrind/m_main.c with huge TMPDIR
+        FIXED 13409
+
+321065  Valgrind updates for Xen 4.3
+        FIXED 13435/6/7/8
+
+321730  Add cg_diff and cg_merge man pages
+        FIXED 13442
+
+321738  Add vgdb and valgrind-listener man pages
+        FIXED 13443
+
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

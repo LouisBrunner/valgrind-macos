@@ -2,7 +2,9 @@ include $(top_srcdir)/Makefile.tool.am
 
 EXTRA_DIST = \
 	docs/cg-manual.xml \
-	docs/cg_annotate-manpage.xml
+	docs/cg_annotate-manpage.xml \
+	docs/cg_diff-manpage.xml \
+	docs/cg_merge-manpage.xml
 
 #----------------------------------------------------------------------------
 # Headers, etc

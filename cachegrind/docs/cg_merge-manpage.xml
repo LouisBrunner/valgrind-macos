@@ -1,0 +1,73 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="cg_merge">
+
+<refmeta>
+  <refentrytitle>cg_merge</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+  <refname>cg_merge</refname>
+  <refpurpose>merges multiple Cachegrind output files into one</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>cg_merge</command>
+  <arg><replaceable>options</replaceable></arg>
+  <arg choice="opt" rep="repeat"><replaceable>cachegrind-out-files</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>cg_merge</command> sums together the outputs of multiple
+Cachegrind runs into a single output file.
+</para>
+
+</refsect1>
+
+
+
+<refsect1 id="options">
+<title>Options</title>
+
+<xi:include href="cg-manual.xml" xpointer="cg_merge.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para>
+cg_annotate(1), valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>Nicholas Nethercote.</para>
+
+</refsect1>
+
+
+</refentry>
+
+

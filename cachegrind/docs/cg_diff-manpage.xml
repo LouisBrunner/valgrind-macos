@@ -1,0 +1,75 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="cg_diff">
+
+<refmeta>
+  <refentrytitle>cg_diff</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+  <refname>cg_diff</refname>
+  <refpurpose>compares two Cachegrind output files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>cg_diff</command>
+  <arg><replaceable>options</replaceable></arg>
+  <arg choice="plain"><replaceable>cachegrind-out-file1</replaceable></arg>
+  <arg choice="plain"><replaceable>cachegrind-out-file2</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>cg_diff</command> takes two output files produced by the
+Valgrind tool Cachegrind, computes the difference and prints the result
+in the same format that Cachegrinds outputs.
+</para>
+
+</refsect1>
+
+
+
+<refsect1 id="options">
+<title>Options</title>
+
+<xi:include href="cg-manual.xml" xpointer="cg_diff.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para>
+cg_annotate(1), valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>Nicholas Nethercote.</para>
+
+</refsect1>
+
+
+</refentry>
+
+

@@ -112,7 +112,7 @@ information, and then run cg_annotate to get a detailed presentation of that
 information.  As an optional intermediate step, you can use cg_merge to sum
 together the outputs of multiple Cachegrind runs into a single file which
 you then use as the input for cg_annotate.  Alternatively, you can use
-cg_diff to difference the outputs of two Cachegrind runs into a signel file
+cg_diff to difference the outputs of two Cachegrind runs into a single file
 which you then use as the input for cg_annotate.</para>
 
 
@@ -998,6 +998,29 @@ small differences like these;  it works in the same way as
 </variablelist>
 <!-- end of xi:include in the manpage -->
   
+</sect1>
+
+
+<sect1 id="cg-manual.mergeopts" xreflabel="cg_merge Command-line Options">
+<title>cg_merge Command-line Options</title>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="cg_merge.opts.list">
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[-o outfile]]></option>
+    </term>
+    <listitem>
+      <para>Write the profile data to <computeroutput>outfile</computeroutput>
+            rather than to standard output.
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
 </sect1>
 
 

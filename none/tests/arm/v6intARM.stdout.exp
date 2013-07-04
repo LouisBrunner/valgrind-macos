@@ -794,6 +794,25 @@ rev16 r0, r1 :: rd 0x7ae3da0d rm 0xe37a0dda, carryin 0, cpsr 0x00000000
 rev16 r0, r1 :: rd 0xb8e54b3d rm 0xe5b83d4b, carryin 0, cpsr 0x00000000     
 rev16 r0, r1 :: rd 0x6dbbec14 rm 0xbb6d14ec, carryin 0, cpsr 0x00000000     
 rev16 r0, r1 :: rd 0x9868c93c rm 0x68983cc9, carryin 0, cpsr 0x00000000     
+------------ REVSH ------------
+revsh r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00000000 rm 0x80000000, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00000100 rm 0x00000001, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00002759 rm 0x31415927, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00006215 rm 0x14141562, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00001f39 rm 0xabe8391f, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0xffff80aa rm 0x9028aa80, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00006dfc rm 0xead1fc6d, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x0000558c rm 0x35c98c55, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0xffffebf1 rm 0x534af1eb, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x0000081b rm 0x45511b08, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x0000717f rm 0x90077f71, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00004ba8 rm 0xde8ca84b, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0xffffda0d rm 0xe37a0dda, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0x00004b3d rm 0xe5b83d4b, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0xffffec14 rm 0xbb6d14ec, carryin 0, cpsr 0x00000000     
+revsh r0, r1 :: rd 0xffffc93c rm 0x68983cc9, carryin 0, cpsr 0x00000000     
 ------------ NOP (begin) ------------
 nop
 nopeq

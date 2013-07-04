@@ -16753,6 +16753,44 @@ rev16 r8, r9 :: rd 0x7ae3da0d rm 0xe37a0dda, c:v-in 0, cpsr 0xc0000000 NZ
 rev16 r8, r9 :: rd 0xb8e54b3d rm 0xe5b83d4b, c:v-in 0, cpsr 0xc0000000 NZ  
 rev16 r8, r9 :: rd 0x6dbbec14 rm 0xbb6d14ec, c:v-in 0, cpsr 0xc0000000 NZ  
 rev16 r8, r9 :: rd 0x9868c93c rm 0x68983cc9, c:v-in 0, cpsr 0xc0000000 NZ  
+(T1) REVSH Rd, Rm ------------
+revsh r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0xffffffff rm 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00000000 rm 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00000100 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00002759 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00006215 rm 0x14141562, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00001f39 rm 0xabe8391f, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0xffff80aa rm 0x9028aa80, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00006dfc rm 0xead1fc6d, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x0000558c rm 0x35c98c55, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0xffffebf1 rm 0x534af1eb, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x0000081b rm 0x45511b08, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x0000717f rm 0x90077f71, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00004ba8 rm 0xde8ca84b, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0xffffda0d rm 0xe37a0dda, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0x00004b3d rm 0xe5b83d4b, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0xffffec14 rm 0xbb6d14ec, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r0, r1 :: rd 0xffffc93c rm 0x68983cc9, c:v-in 0, cpsr 0xc0000000 NZ  
+(T2) REVSH Rd, Rm ------------
+revsh r8, r9 :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0xffffffff rm 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00000000 rm 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00000100 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00002759 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00006215 rm 0x14141562, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00001f39 rm 0xabe8391f, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0xffff80aa rm 0x9028aa80, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00006dfc rm 0xead1fc6d, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x0000558c rm 0x35c98c55, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0xffffebf1 rm 0x534af1eb, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x0000081b rm 0x45511b08, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x0000717f rm 0x90077f71, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00004ba8 rm 0xde8ca84b, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0xffffda0d rm 0xe37a0dda, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0x00004b3d rm 0xe5b83d4b, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0xffffec14 rm 0xbb6d14ec, c:v-in 0, cpsr 0xc0000000 NZ  
+revsh r8, r9 :: rd 0xffffc93c rm 0x68983cc9, c:v-in 0, cpsr 0xc0000000 NZ  
 ------------ NOP (begin) ------------
 nop
 nop.w

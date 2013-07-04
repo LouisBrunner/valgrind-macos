@@ -446,14 +446,8 @@ Thu Apr 11 18:16:04 CEST 2013
 319547  helgrind gives false positives on rwlocks
         Needs investigation
 
-319858  disInstr(thumb): unhandled instruction on instruction STRBT
-        Has patch
-
 319896  vex amd64->IR: 0x8C 0xE0
         Probably requires proper segment support, but need to check.
-
-319932  disInstr(thumb): unhandled instruction on instruction STRHT
-        Has patch
 
 319968  disInstr(arm): 0x69746E65  (valgrind_v3.81, cortex-A9)
         INVALID (needs closing)
@@ -464,9 +458,7 @@ Thu Apr 11 18:16:04 CEST 2013
 
 320082  disInstr(thumb): unhandled instruction on instruction LDRB
         Has patch
-
-320083  disInstr(thumb): unhandled instruction on instruction LDRBT
-        Has patch
+        LDRB; surely already supported?  Queried.
 
 320100  Add nanosecond timer support
         A bigger patch depends on it, but that has not appeared yet
@@ -492,15 +484,6 @@ Thu Apr 11 18:16:04 CEST 2013
         unsupported (by version 3.8.1)
         PCMPxSTRx $0x30, $0x40
 
-321148  Unhandled instruction: PLI (Thumb 1, 2, 3)
-        Has patch
-
-321363  Unhandled instruction: SSAX (ARM + Thumb)
-        Has patch
-
-321364  Unhandled instruction: SXTAB16 (ARM + Thumb)
-        Has patch
-
 321396  Add Support for Freescale e500v2 SPE Architecture.
         Is metabug? -- no patch, no details
 
@@ -513,47 +496,8 @@ Thu Apr 11 18:16:04 CEST 2013
 321444  Multi-byte fill options
         Wishlist
 
-321466  Unhandled instruction: SHASX (ARM + Thumb)
-        Has patch
-
-321467  Unhandled instruction: SHSAX (ARM + Thumb)
-        Has patch
-
-321468  Unhandled instruction: SHSUB16 (ARM + Thumb)
-        Has patch
-
-321619  Unhandled instruction: SHSUB8 (ARM + Thumb)
-        Has patch
-
-321620  Unhandled instruction: UASX (ARM + Thumb)
-        Has patch
-
-321621  Unhandled instruction: USAX (ARM + Thumb)
-        Has patch
-
 321681  printf false positive
         Probably WONTFIX
-
-321692  Unhandled instruction: UQADD16 (ARM + Thumb)
-        Has patch
-
-321693  Unhandled instruction: LDRSBT (Thumb)
-        has patch
-
-321694  Unhandled instruction: UQASX (ARM + Thumb)
-        Has patch
-
-321696  Unhandled instruction: UQSAX (Thumb + ARM)
-        Has patch
-
-321697  Unhandled instruction: UHASX (ARM + Thumb)
-        Has patch
-
-321703  Unhandled instruction: UHSAX (ARM + Thumb)
-        Has patch
-
-321704  Unhandled instruction: REVSH (ARM + Thumb)
-        Has patch
 
 321814  stepping through breakpoints in attached gdb process crashes valgrind
         OSX specific; queried
@@ -562,3 +506,4 @@ Thu Apr 11 18:16:04 CEST 2013
         MIPS specific?
 
 Tue Jul  2 12:15:07 CEST 2013
+

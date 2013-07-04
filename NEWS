@@ -356,8 +356,17 @@ FIXED r??
 319395  Crash with unhandled instruction on STRT (Thumb) instructions
         FIXED 2722 13997
 
+319858  disInstr(thumb): unhandled instruction on instruction STRBT
+        FIXED 2730 13445
+
+319932  disInstr(thumb): unhandled instruction on instruction STRHT
+        FIXED 2730 13445
+
 320063  Memory from PTRACE_GET_THREAD_AREA is reported uninitialised
         FIXED 13403
+
+320083  disInstr(thumb): unhandled instruction on instruction LDRBT
+        FIXED 2730 13445
 
 320116  bind on AF_BLUETOOTH produces warnings because of sockaddr_rc padding
         FIXED 13404, 13405
@@ -368,12 +377,59 @@ FIXED r??
 321065  Valgrind updates for Xen 4.3
         FIXED 13435/6/7/8
 
+321148  Unhandled instruction: PLI (Thumb 1, 2, 3)
+        FIXED 2730
+
+321693  Unhandled instruction: LDRSBT (Thumb)
+        FIXED 2730 13445
+
 321730  Add cg_diff and cg_merge man pages
         FIXED 13442
 
 321738  Add vgdb and valgrind-listener man pages
         FIXED 13443
 
+321363  Unhandled instruction: SSAX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321364  Unhandled instruction: SXTAB16 (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321466  Unhandled instruction: SHASX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321467  Unhandled instruction: SHSAX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321468  Unhandled instruction: SHSUB16 (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321619  Unhandled instruction: SHSUB8 (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321620  Unhandled instruction: UASX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321621  Unhandled instruction: USAX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321692  Unhandled instruction: UQADD16 (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321694  Unhandled instruction: UQASX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321696  Unhandled instruction: UQSAX (Thumb + ARM)
+        FIXED 2731 13446 13447
+
+321697  Unhandled instruction: UHASX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321703  Unhandled instruction: UHSAX (ARM + Thumb)
+        FIXED 2731 13446 13447
+
+321704  Unhandled instruction: REVSH (ARM + Thumb)
+        FIXED 2731 13446 13447
 
 
 Release 3.8.1 (19 September 2012)

@@ -19796,6 +19796,138 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* -------------- (T1) STRBT reg+#imm8 -------------- */
+   /* Store Register Byte Unprivileged:
+      strbt Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,0,0,0) && INSN0(5,4) == BITS2(0,0)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rT    = INSN1(15,12);
+      UInt rN    = INSN0(3,0);
+      UInt imm8  = INSN1(7,0);
+      Bool valid = True;
+      if (rN == 15 || isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* address = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRExpr* data = unop(Iop_32to8, llGetIReg(rT));
+         storeGuardedLE( address, data, condT );
+         put_ITSTATE(new_itstate);
+         DIP("strbt r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T1) STRHT reg+#imm8 -------------- */
+   /* Store Register Halfword Unprivileged:
+      strht Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,0,0,0) && INSN0(5,4) == BITS2(1,0)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rT    = INSN1(15,12);
+      UInt rN    = INSN0(3,0);
+      UInt imm8  = INSN1(7,0);
+      Bool valid = True;
+      if (rN == 15 || isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* address = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRExpr* data = unop(Iop_32to16, llGetIReg(rT));
+         storeGuardedLE( address, data, condT );
+         put_ITSTATE(new_itstate);
+         DIP("strht r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T1) LDRBT reg+#imm8 -------------- */
+   /* Load Register Byte Unprivileged:
+      ldrbt Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,0,0,0) && INSN0(5,4) == BITS2(0,1)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rN    = INSN0(3,0);
+      UInt rT    = INSN1(15,12);
+      UInt imm8  = INSN1(7,0);
+      Bool valid = True;
+      if (rN == 15 /* insn is LDRB (literal) */) valid = False;
+      if (isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt, ILGop_8Uto32, ea, llGetIReg(rT), condT );
+         putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+         put_ITSTATE(new_itstate);
+         DIP("ldrbt r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T1) LDRSBT reg+#imm8 -------------- */
+   /* Load Register Signed Byte Unprivileged:
+      ldrsbt Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,1,0,0) && INSN0(5,4) == BITS2(0,1)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rN    = INSN0(3,0);
+      Bool valid = True;
+      UInt rT    = INSN1(15,12);
+      UInt imm8  = INSN1(7,0);
+      if (rN == 15 /* insn is LDRSB (literal) */) valid = False;
+      if (isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt, ILGop_8Sto32, ea, llGetIReg(rT), condT );
+         putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+         put_ITSTATE(new_itstate);
+         DIP("ldrsbt r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T1) PLI reg+#imm12 -------------- */
+   /* Preload Instruction:
+      pli [Rn, #imm12]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,1,1,0) && INSN0(5,4) == BITS2(0,1)
+       && INSN1(15,12) == BITS4(1,1,1,1)) {
+      UInt rN    = INSN0(3,0);
+      UInt imm12 = INSN1(11,0);
+      if (rN != 15) {
+         DIP("pli [r%u, #%u]\n", rN, imm12);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T2) PLI reg-#imm8 -------------- */
+   /* Preload Instruction:
+      pli [Rn, #-imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,1,0,0) && INSN0(5,4) == BITS2(0,1)
+       && INSN1(15,8) == BITS8(1,1,1,1,1,1,0,0)) {
+      UInt rN   = INSN0(3,0);
+      UInt imm8 = INSN1(7,0);
+      if (rN != 15) {
+         DIP("pli [r%u, #-%u]\n", rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T3) PLI PC+/-#imm12 -------------- */
+   /* Preload Instruction:
+      pli [PC, #+/-imm12]
+   */
+   if (INSN0(15,8) == BITS8(1,1,1,1,1,0,0,1)
+       && INSN0(6,0) == BITS7(0,0,1,1,1,1,1)
+       && INSN1(15,12) == BITS4(1,1,1,1)) {
+      UInt imm12 = INSN1(11,0);
+      UInt bU    = INSN0(7,7);
+      DIP("pli [pc, #%c%u]\n", bU == 1 ? '+' : '-', imm12);
+      goto decode_success;
+   }
 
    /* ----------------------------------------------------------- */
    /* -- VFP (CP 10, CP 11) instructions (in Thumb mode)       -- */

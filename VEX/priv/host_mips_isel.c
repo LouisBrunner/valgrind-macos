@@ -2278,6 +2278,20 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             return;
          }
 
+         /* 8Uto64(e) */
+         case Iop_8Uto64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg src = iselWordExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tLo, src,
+                                        MIPSRH_Imm(False, 0xFF)));
+            addInstr(env, MIPSInstr_Alu(Malu_ADD, tHi, hregMIPS_GPR0(mode64),
+                                        MIPSRH_Reg(hregMIPS_GPR0(mode64))));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
          /* 32Uto64(e) */
          case Iop_32Uto64: {
             HReg tLo = newVRegI(env);

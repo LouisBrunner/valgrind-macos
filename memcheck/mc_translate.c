@@ -2744,6 +2744,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QAdd16Sx2:
       case Iop_QSub16Sx2:
       case Iop_QSub16Ux2:
+      case Iop_QAdd16Ux2:
          return binary16Ix2(mce, vatom1, vatom2);
 
       case Iop_Add8x4:

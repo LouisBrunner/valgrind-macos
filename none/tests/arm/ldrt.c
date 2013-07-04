@@ -26,6 +26,42 @@ __attribute__((noinline)) void do_strt_imm_132 ( unsigned char* p, UInt val )
   );
 }
 
+__attribute__((noinline)) void do_strbt_imm_132 ( unsigned char* p, UInt* val )
+{
+  __asm__ __volatile__(
+     "mov r5, %0 ; ldr r6, [r5] ; mov r5, %1; strbt r6, [r5, #132]"
+      : : "r"(val), "r"(p) : "r5", "r6", "memory"
+  );
+}
+
+__attribute__((noinline)) void do_strht_imm_132 ( unsigned char* p, UInt* val )
+{
+  __asm__ __volatile__(
+     "mov r5, %0 ; ldr r6, [r5] ; mov r5, %1; strht r6, [r5, #132]"
+      : : "r"(val), "r"(p) : "r5", "r6", "memory"
+  );
+}
+
+__attribute__((noinline)) UInt do_ldrbt_imm_2 (unsigned char* val)
+{
+  UInt res;
+  __asm__ __volatile__(
+     "mov r4, %1 ; ldrbt r5, [r4, #2]; mov %0, r5"
+     : "=r"(res) : "r"(val) : "r4", "r5"
+  );
+  return res;
+}
+
+__attribute__((noinline)) UInt do_ldrsbt_imm_2 (unsigned char* val)
+{
+  UInt res;
+  __asm__ __volatile__(
+     "mov r4, %1 ; ldrsbt r5, [r4, #2]; mov %0, r5"
+     : "=r"(res) : "r"(val) : "r4", "r5"
+  );
+  return res;
+}
+
 int main ( void )
 {
   UInt i;
@@ -43,5 +79,30 @@ int main ( void )
          c[131], c[132], c[133], c[134], c[135], c[136],
          131, 200, 150, 100, 10, 136);
   free(c);
+
+  UInt val_bt = 0b11111111;
+  unsigned char* d = malloc(256);
+  for (i = 0; i < 256; i++) d[i] = (unsigned char)i;
+  do_strbt_imm_132(d, &val_bt);
+  printf("result is %u %u %u (should be %u %u %u)\n",
+         d[131], d[132], d[133], 131, 255, 133);
+  free(d);
+
+  UInt val_ht = 0xFFFF;
+  unsigned char* e = malloc(256);
+  for (i = 0; i < 256; i++) e[i] = (unsigned char)i;
+  do_strht_imm_132(e, &val_ht);
+  printf("result is %u %u %u %u (should be %u %u %u %u)\n",
+         e[131], e[132], e[133], e[134], 131, 255, 255, 134);
+  free(e);
+
+  UInt val_ldrbt = (200 << 0) | (150 << 8) | (137 << 16) | (10 << 24);
+  printf("result is %u (should be %u)\n",
+         do_ldrbt_imm_2((unsigned char*)&val_ldrbt), 137);
+
+  UInt val_ldrsbt = (200 << 0) | (150 << 8) | (254 << 16) | (10 << 24);
+  printf("result is %u (should be %u)\n",
+         do_ldrsbt_imm_2((unsigned char*)&val_ldrsbt), 4294967294);
+
   return 0;
 }

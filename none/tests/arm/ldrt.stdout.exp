@@ -1,2 +1,6 @@
 result is 0x87868584 (should be 0x87868584)
 result is 131 200 150 100 10 136 (should be 131 200 150 100 10 136)
+result is 131 255 133 (should be 131 255 133)
+result is 131 255 255 134 (should be 131 255 255 134)
+result is 137 (should be 137)
+result is 4294967294 (should be 4294967294)

@@ -927,10 +927,10 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_mincore,           sys_mincore),            // 206
    LINX_(__NR_gettid,            sys_gettid),             // 207
 // _____(__NR_tkill,             sys_tkill),              // 208
-// _____(__NR_setxattr,          sys_setxattr),           // 209
+   LINX_(__NR_setxattr,          sys_setxattr),           // 209
 
-// _____(__NR_lsetxattr,         sys_lsetxattr),          // 210
-// _____(__NR_fsetxattr,         sys_fsetxattr),          // 211
+   LINX_(__NR_lsetxattr,         sys_lsetxattr),          // 210
+   LINX_(__NR_fsetxattr,         sys_fsetxattr),          // 211
    LINXY(__NR_getxattr,          sys_getxattr),           // 212
    LINXY(__NR_lgetxattr,         sys_lgetxattr),          // 213
    LINXY(__NR_fgetxattr,         sys_fgetxattr),          // 214

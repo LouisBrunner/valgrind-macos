@@ -1,0 +1,2 @@
+prog: bug320057-mips32
+vgopts: -q

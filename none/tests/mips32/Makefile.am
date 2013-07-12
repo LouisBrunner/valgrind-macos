@@ -19,7 +19,9 @@ EXTRA_DIST = \
 	round.stdout.exp round.stderr.exp round.vgtest \
 	vfp.stdout.exp vfp.stdout.exp-BE vfp.stdout.exp-mips32 vfp.stderr.exp \
 	vfp.vgtest \
-	SignalException.stderr.exp SignalException.vgtest
+	SignalException.stderr.exp SignalException.vgtest \
+	bug320057-mips32.stdout.exp bug320057-mips32.stderr.exp \
+	bug320057-mips32.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -33,10 +35,12 @@ check_PROGRAMS = \
 	MoveIns \
 	round \
 	vfp \
-	SignalException
+	SignalException \
+	bug320057-mips32
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+bug320057_mips32_LDFLAGS = -lrt

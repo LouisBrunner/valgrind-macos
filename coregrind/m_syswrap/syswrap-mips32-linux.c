@@ -224,6 +224,9 @@ asm (
 
 static void setup_child (ThreadArchState *, ThreadArchState *);
 static SysRes sys_set_tls (ThreadId tid, Addr tlsptr);
+static SysRes mips_PRE_sys_mmap (ThreadId tid,
+                                 UWord arg1, UWord arg2, UWord arg3,
+                                 UWord arg4, UWord arg5, Off64T arg6);
 /* 
    When a client clones, we need to keep track of the new thread.  This means:
    1. allocate a ThreadId+ThreadState+stack for the the thread
@@ -362,6 +365,160 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 }
 
 /* ---------------------------------------------------------------------
+   mips handler for mmap and mmap2
+   ------------------------------------------------------------------ */
+static void notify_core_of_mmap(Addr a, SizeT len, UInt prot,
+                                UInt flags, Int fd, Off64T offset)
+{
+   Bool d;
+
+   /* 'a' is the return value from a real kernel mmap, hence: */
+   vg_assert(VG_IS_PAGE_ALIGNED(a));
+   /* whereas len is whatever the syscall supplied.  So: */
+   len = VG_PGROUNDUP(len);
+
+   d = VG_(am_notify_client_mmap)( a, len, prot, flags, fd, offset );
+
+   if (d)
+      VG_(discard_translations)( (Addr64)a, (ULong)len,
+                                 "notify_core_of_mmap" );
+}
+
+static void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle)
+{
+   Bool rr, ww, xx;
+
+   /* 'a' is the return value from a real kernel mmap, hence: */
+   vg_assert(VG_IS_PAGE_ALIGNED(a));
+   /* whereas len is whatever the syscall supplied.  So: */
+   len = VG_PGROUNDUP(len);
+
+   rr = toBool(prot & VKI_PROT_READ);
+   ww = toBool(prot & VKI_PROT_WRITE);
+   xx = toBool(prot & VKI_PROT_EXEC);
+
+   VG_TRACK( new_mem_mmap, a, len, rr, ww, xx, di_handle );
+}
+
+/* Based on ML_(generic_PRE_sys_mmap) from syswrap-generic.c.
+   If we are trying to do mmap with VKI_MAP_SHARED flag we need to align the
+   start address on VKI_SHMLBA like we did in
+   VG_(am_mmap_file_float_valgrind_flags)
+ */
+static SysRes mips_PRE_sys_mmap(ThreadId tid,
+                                UWord arg1, UWord arg2, UWord arg3,
+                                UWord arg4, UWord arg5, Off64T arg6)
+{
+   Addr       advised;
+   SysRes     sres;
+   MapRequest mreq;
+   Bool       mreq_ok;
+
+   if (arg2 == 0) {
+      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
+         shall be established. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   if (!VG_IS_PAGE_ALIGNED(arg1)) {
+      /* zap any misaligned addresses. */
+      /* SuSV3 says misaligned addresses only cause the MAP_FIXED case
+         to fail.   Here, we catch them all. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   if (!VG_IS_PAGE_ALIGNED(arg6)) {
+      /* zap any misaligned offsets. */
+      /* SuSV3 says: The off argument is constrained to be aligned and
+         sized according to the value returned by sysconf() when
+         passed _SC_PAGESIZE or _SC_PAGE_SIZE. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   /* Figure out what kind of allocation constraints there are
+      (fixed/hint/any), and ask aspacem what we should do. */
+   mreq.start = arg1;
+   mreq.len   = arg2;
+   if (arg4 & VKI_MAP_FIXED) {
+      mreq.rkind = MFixed;
+   } else
+   if (arg1 != 0) {
+      mreq.rkind = MHint;
+   } else {
+      mreq.rkind = MAny;
+   }
+
+   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & arg4)) {
+      mreq.len = arg2 + VKI_SHMLBA - VKI_PAGE_SIZE;
+   }
+
+   /* Enquire ... */
+   advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+
+   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & arg4))
+      advised = VG_ROUNDUP(advised, VKI_SHMLBA);
+
+   if (!mreq_ok) {
+      /* Our request was bounced, so we'd better fail. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   /* Otherwise we're OK (so far).  Install aspacem's choice of
+      address, and let the mmap go through.  */
+   sres = VG_(am_do_mmap_NO_NOTIFY)(advised, arg2, arg3,
+                                    arg4 | VKI_MAP_FIXED,
+                                    arg5, arg6);
+
+   /* A refinement: it may be that the kernel refused aspacem's choice
+      of address.  If we were originally asked for a hinted mapping,
+      there is still a last chance: try again at any address.
+      Hence: */
+   if (mreq.rkind == MHint && sr_isError(sres)) {
+      mreq.start = 0;
+      mreq.len   = arg2;
+      mreq.rkind = MAny;
+      advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+      if (!mreq_ok) {
+         /* Our request was bounced, so we'd better fail. */
+         return VG_(mk_SysRes_Error)( VKI_EINVAL );
+      }
+      /* and try again with the kernel */
+      sres = VG_(am_do_mmap_NO_NOTIFY)(advised, arg2, arg3,
+                                       arg4 | VKI_MAP_FIXED,
+                                       arg5, arg6);
+   }
+
+   if (!sr_isError(sres)) {
+      ULong di_handle;
+      /* Notify aspacem. */
+      notify_core_of_mmap(
+         (Addr)sr_Res(sres), /* addr kernel actually assigned */
+         arg2, /* length */
+         arg3, /* prot */
+         arg4, /* the original flags value */
+         arg5, /* fd */
+         arg6  /* offset */
+      );
+      /* Load symbols? */
+      di_handle = VG_(di_notify_mmap)( (Addr)sr_Res(sres), 
+                                       False/*allow_SkFileV*/, (Int)arg5 );
+      /* Notify the tool. */
+      notify_tool_of_mmap(
+         (Addr)sr_Res(sres), /* addr kernel actually assigned */
+         arg2, /* length */
+         arg3, /* prot */
+         di_handle /* so the tool can refer to the read debuginfo later,
+                      if it wants. */
+      );
+   }
+
+   /* Stay sane */
+   if (!sr_isError(sres) && (arg4 & VKI_MAP_FIXED))
+      vg_assert(sr_Res(sres) == arg1);
+
+   return sres;
+}
+/* ---------------------------------------------------------------------
    PRE/POST wrappers for mips/Linux-specific syscalls
    ------------------------------------------------------------------ */ 
 #define PRE(name)       DEFN_PRE_TEMPLATE(mips_linux, name)
@@ -386,40 +543,31 @@ DECL_TEMPLATE (mips_linux, sys_cacheflush);
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_pipe);
 
-PRE (sys_mmap2) 
+PRE(sys_mmap2) 
 {
+  /* Exactly like sys_mmap() except the file offset is specified in pagesize
+     units rather than bytes, so that it can be used for files bigger than
+     2^32 bytes. */
   SysRes r;
-  // Exactly like old_mmap() except:
-  //  - all 6 args are passed in regs, rather than in a memory-block.
-  //  - the file offset is specified in pagesize units rather than bytes,
-  //    so that it can be used for files bigger than 2^32 bytes.
-  // pagesize or 4K-size units in offset?
-  vg_assert (VKI_PAGE_SIZE == 4096 || VKI_PAGE_SIZE == 4096 * 4
-             || VKI_PAGE_SIZE == 4096 * 16);
-  PRINT ("sys_mmap2 ( %#lx, %llu, %ld, %ld, %ld, %ld )", ARG1, (ULong) ARG2,
-                                                         ARG3, ARG4, 
-                                                         ARG5, ARG6);
-  PRE_REG_READ6 (long, "mmap2", unsigned long, start, unsigned long, length,
-                 unsigned long, prot, unsigned long, flags,
-                 unsigned long, fd, unsigned long, offset);
-  r =
-    ML_ (generic_PRE_sys_mmap) (tid, ARG1, ARG2, ARG3, ARG4, ARG5,
-                                VKI_PAGE_SIZE * (Off64T) ARG6);
-  SET_STATUS_from_SysRes (r);
+  PRINT("sys_mmap2 ( %#lx, %llu, %ld, %ld, %ld, %ld )", ARG1, (ULong) ARG2,
+                                                        ARG3, ARG4, ARG5, ARG6);
+  PRE_REG_READ6(long, "mmap2", unsigned long, start, unsigned long, length,
+                unsigned long, prot, unsigned long, flags,
+                unsigned long, fd, unsigned long, offset);
+  r = mips_PRE_sys_mmap(tid, ARG1, ARG2, ARG3, ARG4, ARG5,
+                        VKI_PAGE_SIZE * (Off64T) ARG6);
+  SET_STATUS_from_SysRes(r);
 } 
 
-PRE (sys_mmap) 
+PRE(sys_mmap) 
 {
   SysRes r;
-  //vg_assert(VKI_PAGE_SIZE == 4096);
-  PRINT ("sys_mmap ( %#lx, %llu, %lu, %lu, %lu, %ld )", ARG1, (ULong) ARG2,
-                                                        ARG3, ARG4, ARG5, ARG6);
-  PRE_REG_READ6 (long, "mmap", unsigned long, start, vki_size_t, length,
-                 int, prot, int, flags, int, fd, unsigned long, offset);
-  r =
-    ML_ (generic_PRE_sys_mmap) (tid, ARG1, ARG2, ARG3, ARG4, ARG5,
-                                (Off64T) ARG6);
-  SET_STATUS_from_SysRes (r);
+  PRINT("sys_mmap ( %#lx, %llu, %lu, %lu, %lu, %ld )", ARG1, (ULong) ARG2,
+                                                       ARG3, ARG4, ARG5, ARG6);
+  PRE_REG_READ6(long, "mmap", unsigned long, start, vki_size_t, length,
+                int, prot, int, flags, int, fd, unsigned long, offset);
+  r = mips_PRE_sys_mmap(tid, ARG1, ARG2, ARG3, ARG4, ARG5, (Off64T) ARG6);
+  SET_STATUS_from_SysRes(r);
 } 
 
 // XXX: lstat64/fstat64/stat64 are generic, but not necessarily

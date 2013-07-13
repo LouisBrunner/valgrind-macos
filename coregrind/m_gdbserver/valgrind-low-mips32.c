@@ -28,6 +28,7 @@
 
 #include "pub_core_aspacemgr.h"
 #include "pub_tool_machine.h"
+#include "pub_core_debuginfo.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_core_gdbserver.h" 
@@ -138,6 +139,113 @@ void set_pc (CORE_ADDR newpc)
       dlog(1, "set pc not changed %p\n", C2v (newpc));
 }
 
+/* These are the fields of 32 bit mips instructions. */
+#define itype_op(x) (x >> 26)
+#define itype_rs(x) ((x >> 21) & 0x1f)
+#define itype_rt(x) ((x >> 16) & 0x1f)
+#define rtype_funct(x) (x & 0x3f)
+
+/* Do a endian load of a 32-bit word, regardless of the
+   endianness of the underlying host. */
+static inline UInt getUInt(UChar * p)
+{
+   UInt w = 0;
+#if defined (_MIPSEL)
+   w = (w << 8) | p[3];
+   w = (w << 8) | p[2];
+   w = (w << 8) | p[1];
+   w = (w << 8) | p[0];
+#elif defined (_MIPSEB)
+   w = (w << 8) | p[0];
+   w = (w << 8) | p[1];
+   w = (w << 8) | p[2];
+   w = (w << 8) | p[3];
+#endif
+   return w;
+}
+
+/* Return non-zero if the ADDR instruction has a branch delay slot
+   (i.e. it is a jump or branch instruction). */
+static UInt
+mips_instruction_has_delay_slot (Addr addr)
+{
+   UInt op, rs, rt;
+   UInt inst = getUInt((UChar *)addr);
+
+   op = itype_op (inst);
+   if ((inst & 0xe0000000) != 0) {
+      rs = itype_rs (inst);
+      rt = itype_rt (inst);
+      return (op >> 2 == 5        /* BEQL, BNEL, BLEZL, BGTZL: bits 0101xx  */
+              || op == 29         /* JALX: bits 011101  */
+              || (op == 17
+                  && (rs == 8     /* BC1F, BC1FL, BC1T, BC1TL: 010001 01000  */
+                      || (rs == 9 && (rt & 0x2) == 0)
+                                  /* BC1ANY2F, BC1ANY2T: bits 010001 01001  */
+                      || (rs == 10 && (rt & 0x2) == 0))));
+                                  /* BC1ANY4F, BC1ANY4T: bits 010001 01010  */
+   } else
+      switch (op & 0x07) {        /* extract bits 28,27,26  */
+         case 0:                  /* SPECIAL  */
+            op = rtype_funct (inst);
+         return (op == 8          /* JR  */
+                 || op == 9);     /* JALR  */
+         break;                   /* end SPECIAL  */
+         case 1:                  /* REGIMM  */
+            rs = itype_rs (inst);
+            rt = itype_rt (inst); /* branch condition  */
+            return ((rt & 0xc) == 0
+                                  /* BLTZ, BLTZL, BGEZ, BGEZL: bits 000xx  */
+                                  /* BLTZAL, BLTZALL, BGEZAL, BGEZALL: 100xx  */
+                    || ((rt & 0x1e) == 0x1c && rs == 0));
+                                  /* BPOSGE32, BPOSGE64: bits 1110x  */
+            break;                /* end REGIMM  */
+         default:                 /* J, JAL, BEQ, BNE, BLEZ, BGTZ  */
+            return 1;
+            break;
+   }
+}
+
+/* Move the breakpoint at BPADDR out of any branch delay slot by shifting
+   it backwards if necessary.  Return the address of the new location.  */
+static Addr mips_adjust_breakpoint_address (Addr pc)
+{
+   Addr prev_addr;
+   Addr boundary;
+   Addr func_addr;
+   Addr bpaddr = pc;
+   Addr mask = 0xffffffff;
+   int segsize;
+   PtrdiffT offset;
+
+   /* Calculate the starting address of the MIPS memory segment pc is in. */
+   if (bpaddr & 0x80000000)  /* kernel segment */
+      segsize = 29;
+   else
+      segsize = 31;          /* user segment */
+   mask <<= segsize;
+   boundary = pc & mask;
+
+   /* Make sure we don't scan back before the beginning of the current
+      function, since we may fetch constant data or insns that look like
+      a jump. */
+   if (VG_(get_inst_offset_in_function) (bpaddr, &offset)) {
+      func_addr = bpaddr - offset;
+      if (func_addr > boundary && func_addr <= bpaddr)
+         boundary = func_addr;
+   }
+
+   if (bpaddr == boundary)
+      return bpaddr;
+   /* If the previous instruction has a branch delay slot, we have
+      to move the breakpoint to the branch instruction. */
+   prev_addr = bpaddr - 4;
+   if (mips_instruction_has_delay_slot (prev_addr))
+      bpaddr = prev_addr;
+
+   return bpaddr;
+}
+
 /* store registers in the guest state (gdbserver_to_valgrind)
    or fetch register from the guest state (valgrind_to_gdbserver). */
 static
@@ -189,7 +297,14 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 34: VG_(transfer) (&mips1->guest_HI, buf, dir, size, mod); break;
    case 35: *mod = False; break; // GDBTD???? VEX { "badvaddr", 1120, 32 },
    case 36: *mod = False; break; // GDBTD???? VEX { "cause", 1152, 32 },
-   case 37: VG_(transfer) (&mips1->guest_PC,  buf, dir, size, mod); break;
+   case 37:
+      /* If a breakpoint is set on the instruction in a branch delay slot,
+         GDB gets confused.  When the breakpoint is hit, the PC isn't on
+         the instruction in the branch delay slot, the PC will point to
+         the branch instruction. */
+      mips1->guest_PC = mips_adjust_breakpoint_address(mips1->guest_PC);
+      VG_(transfer) (&mips1->guest_PC,  buf, dir, size, mod);
+      break;
    case 38: VG_(transfer) (&mips1->guest_f0,  buf, dir, size, mod); break;
    case 39: VG_(transfer) (&mips1->guest_f1,  buf, dir, size, mod); break;
    case 40: VG_(transfer) (&mips1->guest_f2,  buf, dir, size, mod); break;

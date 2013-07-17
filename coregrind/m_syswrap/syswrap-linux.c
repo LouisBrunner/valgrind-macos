@@ -3842,8 +3842,8 @@ PRE(sys_socketcall)
       /* int setsockopt(int s, int level, int optname, 
                         const void *optval, int optlen); */
       PRE_MEM_READ_ef( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-      ML_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
-                                       ARG2_3, ARG2_4 );
+      ML_(linux_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
+                                     ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKOPT:
@@ -4021,7 +4021,7 @@ PRE(sys_setsockopt)
    PRE_REG_READ5(long, "setsockopt",
                  int, s, int, level, int, optname,
                  const void *, optval, int, optlen);
-   ML_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(linux_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 PRE(sys_getsockopt)
@@ -7767,6 +7767,57 @@ ML_(linux_POST_sys_getsockopt) ( ThreadId tid,
             a = (struct vki_sockaddr*)((char*)a + sl);
          }
          POST_MEM_WRITE( (Addr)ga->addrs, (char*)a - (char*)ga->addrs );    
+      }
+   }
+}
+
+void 
+ML_(linux_PRE_sys_setsockopt) ( ThreadId tid, 
+                                UWord arg0, UWord arg1, UWord arg2,
+                                UWord arg3, UWord arg4 )
+{
+   /* int setsockopt(int s, int level, int optname, 
+                     const void *optval, socklen_t optlen); */
+   Addr optval_p = arg3;
+   if (optval_p != (Addr)NULL) {
+      /*
+       * OK, let's handle at least some setsockopt levels and options
+       * ourselves, so we don't get false claims of references to
+       * uninitialized memory (such as padding in structures) and *do*
+       * check what pointers in the argument point to.
+       */
+      if (arg1 == VKI_SOL_SOCKET && arg2 == VKI_SO_ATTACH_FILTER)
+      {
+         struct vki_sock_fprog *fp = (struct vki_sock_fprog *)optval_p;
+
+         /*
+          * struct sock_fprog has a 16-bit count of instructions,
+          * followed by a pointer to an array of those instructions.
+          * There's padding between those two elements.
+          *
+          * So that we don't bogusly complain about the padding bytes,
+          * we just report that we read len and and filter.
+          *
+          * We then make sure that what filter points to is valid.
+          */
+         PRE_MEM_READ( "setsockopt(SOL_SOCKET, SO_ATTACH_FILTER, &optval.len)",
+                       (Addr)&fp->len, sizeof(fp->len) );
+         PRE_MEM_READ( "setsockopt(SOL_SOCKET, SO_ATTACH_FILTER, &optval.filter)",
+                       (Addr)&fp->filter, sizeof(fp->filter) );
+
+         /* len * sizeof (*filter) */
+         if (fp->filter != NULL)
+         {
+            PRE_MEM_READ( "setsockopt(SOL_SOCKET, SO_ATTACH_FILTER, optval.filter)",
+                          (Addr)(fp->filter),
+                          fp->len * sizeof(*fp->filter) );
+         }
+      }
+      else
+      {
+         PRE_MEM_READ( "socketcall.setsockopt(optval)",
+                       arg3, /* optval */
+                       arg4  /* optlen */ );
       }
    }
 }

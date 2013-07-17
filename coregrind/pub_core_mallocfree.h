@@ -71,18 +71,18 @@ typedef Int ArenaId;
 // greater than 8.
 #if   defined(VGP_x86_linux)   || \
       defined(VGP_arm_linux)   || \
-      defined(VGP_mips32_linux) || \
-      defined(VGP_mips64_linux)
+      defined(VGP_mips32_linux)
 #  define VG_MIN_MALLOC_SZB        8
 // Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used
 // for any AltiVec- or SSE-related type.  This matches the Darwin libc.
 // Also, use 16 bytes for any PPC variant, since 16 is required to make
 // Altiveccery work right.
-#elif defined(VGP_amd64_linux) || \
-      defined(VGP_ppc32_linux) || \
-      defined(VGP_ppc64_linux) || \
-      defined(VGP_s390x_linux) || \
-      defined(VGP_x86_darwin)  || \
+#elif defined(VGP_amd64_linux)  || \
+      defined(VGP_ppc32_linux)  || \
+      defined(VGP_ppc64_linux)  || \
+      defined(VGP_s390x_linux)  || \
+      defined(VGP_mips64_linux) || \
+      defined(VGP_x86_darwin)   || \
       defined(VGP_amd64_darwin)
 #  define VG_MIN_MALLOC_SZB       16
 #else

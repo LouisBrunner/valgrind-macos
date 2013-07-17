@@ -135,6 +135,31 @@ UWord do_syscall_WRK (
    return (UWord) (__svcres);
 }
 
+#elif defined(VGP_mips64_linux)
+extern UWord do_syscall_WRK (
+          UWord syscall_no,
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6
+       )
+{
+   UWord out;
+   __asm__ __volatile__ (
+                 "move $v0, %1\n\t"
+                 "move $a0, %2\n\t"
+                 "move $a1, %3\n\t"
+                 "move $a2, %4\n\t"
+                 "move $a3, %5\n\t"
+                 "move $8,  %6\n\t"  /* We use numbers because some compilers */
+                 "move $9,  %7\n\t"  /* don't recognize $a4 and $a5 */
+                 "syscall\n"
+                 "move %0, $v0\n\t"
+                 : /*out*/ "=r" (out)
+                 : "r"(syscall_no), "r"(a1), "r"(a2), "r"(a3),
+                   "r"(a4), "r"(a5), "r"(a6)
+                 : "v0", "v1", "a0", "a1", "a2", "a3", "$8", "$9");
+   return out;
+}
+
 #else
 // Ensure the file compiles even if the syscall nr is not defined.
 #ifndef __NR_mprotect

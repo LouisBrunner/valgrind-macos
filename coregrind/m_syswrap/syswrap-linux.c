@@ -5262,6 +5262,10 @@ PRE(sys_ioctl)
    // scalar/non-pointer argument).
    switch (ARG2 /* request */) {
 
+      /* asm-generic/ioctls.h */
+   case VKI_FIOCLEX:
+   case VKI_FIONCLEX:
+
       /* linux/soundcard interface (ALSA) */
    case VKI_SNDRV_PCM_IOCTL_HW_FREE:
    case VKI_SNDRV_PCM_IOCTL_HWSYNC:
@@ -6800,6 +6804,10 @@ POST(sys_ioctl)
    case VKI_TIOCSPTLCK: /* Lock/unlock Pty */
       break;
    case VKI_FIONBIO:
+      break;
+   case VKI_FIONCLEX:
+      break;
+   case VKI_FIOCLEX:
       break;
    case VKI_FIOASYNC:
       break;

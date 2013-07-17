@@ -4408,17 +4408,45 @@ PRE(sys_name_to_handle_at)
    PRINT("sys_name_to_handle_at ( %ld, %#lx(%s), %#lx, %#lx, %ld )", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(int, "name_to_handle_at",
                  int, dfd, const char *, name,
-                 struct vki_file_handle, handle,
+                 struct vki_file_handle *, handle,
                  int *, mnt_id, int, flag);
    PRE_MEM_RASCIIZ( "name_to_handle_at(name)", ARG2 );
-   PRE_MEM_WRITE( "name_to_handle_at(handle)", ARG3, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG3)->handle_bytes );
+   if (ML_(safe_to_deref)( (void*)ARG3, sizeof(struct vki_file_handle))) {
+      struct vki_file_handle *fh = (struct vki_file_handle *)ARG3;
+      PRE_MEM_READ( "name_to_handle_at(handle)", (Addr)&fh->handle_bytes, sizeof(fh->handle_bytes) );
+      PRE_MEM_WRITE( "name_to_handle_at(handle)", (Addr)fh, sizeof(struct vki_file_handle) + fh->handle_bytes );
+   }
    PRE_MEM_WRITE( "name_to_handle_at(mnt_id)", ARG4, sizeof(int) );
 }
 
 POST(sys_name_to_handle_at)
 {
-   POST_MEM_WRITE( ARG3, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG3)->handle_bytes );
+   struct vki_file_handle *fh = (struct vki_file_handle *)ARG3;
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_file_handle) + fh->handle_bytes );
    POST_MEM_WRITE( ARG4, sizeof(int) );
+}
+
+PRE(sys_open_by_handle_at)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_open_by_handle_at ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(int, "open_by_handle_at",
+                 int, mountdirfd,
+                 struct vki_file_handle *, handle,
+                 int, flags);
+   PRE_MEM_READ( "open_by_handle_at(handle)", ARG2, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG2)->handle_bytes );
+}
+
+POST(sys_open_by_handle_at)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "open_by_handle_at", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG2);
+   }
 }
 
 /* ---------------------------------------------------------------------

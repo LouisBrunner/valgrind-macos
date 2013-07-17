@@ -1221,7 +1221,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 363
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 364
 
-   LINXY(__NR_accept4,           sys_accept4)           // 366
+   LINXY(__NR_accept4,           sys_accept4),          // 366
+
+   LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 370
+   LINXY(__NR_open_by_handle_at, sys_open_by_handle_at) // 371
 };
 
 

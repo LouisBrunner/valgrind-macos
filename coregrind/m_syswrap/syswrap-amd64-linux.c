@@ -912,7 +912,7 @@ static SyscallTableEntry syscall_table[] = {
    //   (__NR_swapoff,           sys_swapoff),        // 168 
    //   (__NR_reboot,            sys_reboot),         // 169 
 
-   //   (__NR_sethostname,       sys_sethostname),    // 170 
+   GENX_(__NR_sethostname,       sys_sethostname),    // 170 
    //   (__NR_setdomainname,     sys_setdomainname),  // 171 
    GENX_(__NR_iopl,              sys_iopl),           // 172 
    LINX_(__NR_ioperm,            sys_ioperm),         // 173 

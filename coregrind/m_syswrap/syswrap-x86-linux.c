@@ -1501,7 +1501,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_setregid,          sys_setregid16),     // 71
    PLAX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
    LINXY(__NR_sigpending,        sys_sigpending),     // 73
-//zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
+   GENX_(__NR_sethostname,       sys_sethostname),    // 74
 //zz 
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 75
    GENXY(__NR_getrlimit,         sys_old_getrlimit),  // 76

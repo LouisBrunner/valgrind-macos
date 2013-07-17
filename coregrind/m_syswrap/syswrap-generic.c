@@ -4230,6 +4230,13 @@ POST(sys_sigaltstack)
       POST_MEM_WRITE( ARG2, sizeof(vki_stack_t));
 }
 
+PRE(sys_sethostname)
+{
+   PRINT("sys_sethostname ( %#lx, %ld )", ARG1,ARG2);
+   PRE_REG_READ2(long, "sethostname", char *, name, int, len);
+   PRE_MEM_READ( "sethostname(name)", ARG1, ARG2 );
+}
+
 #undef PRE
 #undef POST
 

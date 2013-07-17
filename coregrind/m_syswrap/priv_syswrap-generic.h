@@ -149,6 +149,7 @@ DECL_TEMPLATE(generic, sys_chown);
 DECL_TEMPLATE(generic, sys_setuid);
 DECL_TEMPLATE(generic, sys_gettimeofday);
 DECL_TEMPLATE(generic, sys_madvise);
+DECL_TEMPLATE(generic, sys_sethostname);
 
 // These ones aren't POSIX, but are in some standard and look reasonably
 // generic,  and are the same for all architectures under Linux.

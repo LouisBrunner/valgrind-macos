@@ -1068,8 +1068,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 298
    LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 299
 
-//   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 300
-//   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 301
+   LINXY(__NR_fanotify_init,     sys_fanotify_init),    // 300
+   LINX_(__NR_fanotify_mark,     sys_fanotify_mark),    // 301
    LINXY(__NR_prlimit64,         sys_prlimit64),        // 302
    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 303
    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 304

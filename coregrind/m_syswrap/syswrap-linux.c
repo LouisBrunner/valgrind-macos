@@ -1789,6 +1789,54 @@ POST(sys_get_mempolicy)
 }
 
 /* ---------------------------------------------------------------------
+   fanotify_* wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_fanotify_init)
+{
+   PRINT("sys_fanotify_init ( %lu, %lu )", ARG1,ARG2);
+   PRE_REG_READ2(long, "fanotify_init",
+                 unsigned int, flags, unsigned int, event_f_flags);
+}
+
+POST(sys_fanotify_init)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "fanotify_init", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
+PRE(sys_fanotify_mark)
+{
+#if VG_WORDSIZE == 4
+   PRINT( "sys_fanotify_mark ( %ld, %lu, %llu, %ld, %#lx(%s))", 
+          ARG1,ARG2,MERGE64(ARG3,ARG4),ARG5,ARG6,(char *)ARG6);
+   PRE_REG_READ6(long, "sys_fanotify_mark", 
+                 int, fanotify_fd, unsigned int, flags,
+                 __vki_u32, mask0, __vki_u32, mask1,
+                 int, dfd, const char *, pathname);
+   if (ARG6)
+      PRE_MEM_RASCIIZ( "fanotify_mark(path)", ARG6);
+#elif VG_WORDSIZE == 8
+   PRINT( "sys_fanotify_mark ( %ld, %lu, %llu, %ld, %#lx(%s))", 
+           ARG1,ARG2,(ULong)ARG3,ARG4,ARG5,(char *)ARG5);
+   PRE_REG_READ5(long, "sys_fanotify_mark", 
+                 int, fanotify_fd, unsigned int, flags,
+                 __vki_u64, mask,
+                 int, dfd, const char *, pathname);
+   if (ARG5)
+      PRE_MEM_RASCIIZ( "fanotify_mark(path)", ARG5);
+#else
+#  error Unexpected word size
+#endif
+}
+
+/* ---------------------------------------------------------------------
    inotify_* wrappers
    ------------------------------------------------------------------ */
 

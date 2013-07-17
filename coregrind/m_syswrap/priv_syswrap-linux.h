@@ -274,6 +274,10 @@ DECL_TEMPLATE(linux, sys_lookup_dcookie);        // (*/32/64) L
 DECL_TEMPLATE(linux, sys_process_vm_readv);
 DECL_TEMPLATE(linux, sys_process_vm_writev);
 
+// Linux-specific (new in Linux 2.6.36)
+DECL_TEMPLATE(linux, sys_fanotify_init);
+DECL_TEMPLATE(linux, sys_fanotify_mark);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

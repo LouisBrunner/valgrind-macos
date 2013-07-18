@@ -369,7 +369,14 @@ struct vki_f_owner_ex {
 //----------------------------------------------------------------------
 
 #define VKI_SOL_SOCKET	1
+
 #define VKI_SO_TYPE	3
+
+#define VKI_SO_ATTACH_FILTER	26
+
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/asm-ppc/sockios.h
+//----------------------------------------------------------------------
 
 #define VKI_SIOCSPGRP		0x8902
 #define VKI_SIOCGPGRP		0x8904

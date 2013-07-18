@@ -680,10 +680,7 @@ __KINLINE struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, struct
 
 #define VKI_MSG_NOSIGNAL	0x4000	/* Do not generate SIGPIPE */
 
-#define VKI_SOL_SOCKET	1
 #define VKI_SOL_SCTP	132
-
-#define VKI_SO_ATTACH_FILTER	26
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/in.h

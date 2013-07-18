@@ -369,6 +369,7 @@ struct vki_f_owner_ex {
 
 #define VKI_SO_TYPE         3
 
+#define VKI_SO_ATTACH_FILTER        26
 
 //----------------------------------------------------------------------
 // From linux-2.6.16.60/include/asm-s390/sockios.h

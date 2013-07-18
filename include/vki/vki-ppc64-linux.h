@@ -604,6 +604,9 @@ struct vki_termios {
 // From linux-2.6.13/include/asm-ppc64/ioctls.h
 //----------------------------------------------------------------------
 
+#define VKI_FIOCLEX         _VKI_IO('f', 1)
+#define VKI_FIONCLEX        _VKI_IO('f', 2)
+
 #define VKI_TCGETS          _VKI_IOR('t', 19, struct vki_termios)
 #define VKI_TCSETS          _VKI_IOW('t', 20, struct vki_termios)
 #define VKI_TCSETSW         _VKI_IOW('t', 21, struct vki_termios)

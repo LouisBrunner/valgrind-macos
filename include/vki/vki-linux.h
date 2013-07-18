@@ -2857,9 +2857,6 @@ struct vki_getcpu_cache {
 // From linux-2.6.39-rc2/include/asm_generic/ioctls.h
 //----------------------------------------------------------------------
 
-#define VKI_FIONCLEX        0x5450
-#define VKI_FIOCLEX         0x5451
-
 #ifndef VKI_FIOQSIZE
 #define VKI_FIOQSIZE 0x5460     /* Value differs on some platforms */
 #endif

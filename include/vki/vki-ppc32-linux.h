@@ -557,8 +557,8 @@ struct vki_termios {
 // From linux-2.6.9/include/asm-ppc/ioctls.h
 //----------------------------------------------------------------------
 
-//#define VKI_FIOCLEX		_VKI_IO('f', 1)
-//#define VKI_FIONCLEX		_VKI_IO('f', 2)
+#define VKI_FIOCLEX		_VKI_IO('f', 1)
+#define VKI_FIONCLEX		_VKI_IO('f', 2)
 #define VKI_FIOASYNC		_VKI_IOW('f', 125, int)
 #define VKI_FIONBIO		_VKI_IOW('f', 126, int)
 #define VKI_FIONREAD		_VKI_IOR('f', 127, int)

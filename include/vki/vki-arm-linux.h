@@ -506,6 +506,8 @@ struct vki_termios {
 #define VKI_TIOCGPTN	_VKI_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
 #define VKI_TIOCSPTLCK	_VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
 
+#define VKI_FIONCLEX	0x5450
+#define VKI_FIOCLEX	0x5451
 #define VKI_FIOASYNC	0x5452
 #define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
 

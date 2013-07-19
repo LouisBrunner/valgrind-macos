@@ -44,9 +44,6 @@
 /* Client address space, lowest to highest (see top of ume.c) */
 // TODO: get rid of as many of these as possible.
 
-Addr  VG_(client_base) = 0;       /* client address space limits */
-Addr  VG_(client_end)  = 0;
-
 Addr  VG_(clstk_base)  = 0;
 Addr  VG_(clstk_end)   = 0;
 UWord VG_(clstk_id)    = 0;

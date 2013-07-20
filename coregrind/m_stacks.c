@@ -307,7 +307,7 @@ static void complaints_stack_switch (Addr old_SP, Addr new_SP)
    These functions are performance critical, so are built with macros. */
 
 // preamble + check if stack has switched.
-#define IF_STACK_SWITCH_SET_current_task_AND_RETURN                     \
+#define IF_STACK_SWITCH_SET_current_stack_AND_RETURN                    \
    Word delta  = (Word)new_SP - (Word)old_SP;                           \
                                                                         \
    /* Check if the stack pointer is still in the same stack as before. */ \
@@ -339,7 +339,7 @@ static void complaints_stack_switch (Addr old_SP, Addr new_SP)
   
 VG_REGPARM(3)
 void VG_(unknown_SP_update_w_ECU)( Addr old_SP, Addr new_SP, UInt ecu ) {
-   IF_STACK_SWITCH_SET_current_task_AND_RETURN;
+   IF_STACK_SWITCH_SET_current_stack_AND_RETURN;
    IF_BIG_DELTA_complaints_AND_RETURN;
    IF_SMALLER_STACK_die_mem_stack_AND_RETURN;
    if (delta < 0) { // IF_BIGGER_STACK
@@ -351,7 +351,7 @@ void VG_(unknown_SP_update_w_ECU)( Addr old_SP, Addr new_SP, UInt ecu ) {
 
 VG_REGPARM(2)
 void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP ) {
-   IF_STACK_SWITCH_SET_current_task_AND_RETURN;
+   IF_STACK_SWITCH_SET_current_stack_AND_RETURN;
    IF_BIG_DELTA_complaints_AND_RETURN;
    IF_SMALLER_STACK_die_mem_stack_AND_RETURN;
    if (delta < 0) { // IF_BIGGER_STACK

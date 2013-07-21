@@ -431,6 +431,8 @@ FIXED r??
 321704  Unhandled instruction: REVSH (ARM + Thumb)
         FIXED 2731 13446 13447
 
+321960  pthread_create() then alloca() causing invalid stack write errors
+        FIXED 13467
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

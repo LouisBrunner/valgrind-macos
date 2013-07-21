@@ -225,6 +225,7 @@ EXTRA_DIST = \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
+	thread_alloca.stderr.exp thread_alloca.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest trivialleak.stderr.exp2 \
 	undef_malloc_args.stderr.exp undef_malloc_args.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
@@ -321,6 +322,7 @@ check_PROGRAMS = \
 	supp_unknown supp1 supp2 suppfree \
 	test-plo \
 	trivialleak \
+	thread_alloca \
 	undef_malloc_args \
 	unit_libcbase unit_oset \
 	varinfo1 varinfo2 varinfo3 varinfo4 \
@@ -360,6 +362,7 @@ dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread
+thread_alloca_LDADD     = -lpthread
 
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

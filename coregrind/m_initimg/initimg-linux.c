@@ -491,10 +491,6 @@ Addr setup_client_stack( void*  init_sp,
    /* The max stack size */
    clstack_max_size = VG_PGROUNDUP(clstack_max_size);
 
-   /* Record stack extent -- needed for stack-change code. */
-   VG_(clstk_base) = clstack_start;
-   VG_(clstk_end)  = clstack_end;
-
    if (0)
       VG_(printf)("stringsize=%d auxsize=%d stacksize=%d maxsize=0x%x\n"
                   "clstack_start %p\n"
@@ -572,6 +568,11 @@ Addr setup_client_stack( void*  init_sp,
 
      vg_assert(ok);
      vg_assert(!sr_isError(res)); 
+
+     /* Record stack extent -- needed for stack-change code. */
+     VG_(clstk_base) = anon_start -inner_HACK;
+     VG_(clstk_end)  = VG_(clstk_base) + anon_size +inner_HACK -1;
+
    }
 
    /* ==================== create client stack ==================== */

@@ -122,7 +122,8 @@ typedef struct {
    Bool  tool_show_ThreadIDs_for_errors;
    UInt  (*tool_update_extra)                (Error*);
    Bool  (*tool_recognised_suppression)      (const HChar*, Supp*);
-   Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Supp*);
+   Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Int*,
+                                              Supp*);
    Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
    const HChar* (*tool_get_error_name)       (Error*);
    Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);

@@ -226,6 +226,11 @@ struct _Supp {
    Int count;     // The number of times this error has been suppressed.
    HChar* sname;  // The name by which the suppression is referred to.
 
+   // Index in VG_(clo_suppressions) giving filename from which suppression
+   // was read, and the lineno in this file where sname was read.
+   Int    clo_suppressions_i;
+   Int    sname_lineno;
+
    // Length of 'callers'
    Int n_callers;
    // Array of callers, for matching stack traces.  First one (name of fn
@@ -902,7 +907,9 @@ static Bool show_used_suppressions ( void )
          // blank line before the first shown suppression, if any
          if (!any_supp)
             VG_(dmsg)("\n");
-         VG_(dmsg)("used_suppression: %6d %s\n", su->count, su->sname);
+         VG_(dmsg)("used_suppression: %6d %s %s:%d\n", su->count, su->sname,
+                   VG_(clo_suppressions)[su->clo_suppressions_i],
+                   su->sname_lineno);
       }
       any_supp = True;
    }
@@ -944,7 +951,8 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
    /* Print the contexts in order of increasing error count. 
       Once an error is shown, we add a huge value to its count to filter it
-      out. After having shown all errors, we reset count to the original value. */
+      out.
+      After having shown all errors, we reset count to the original value. */
    for (i = 0; i < n_err_contexts; i++) {
       n_min = (1 << 30) - 1;
       p_min = NULL;
@@ -1066,6 +1074,9 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
    SizeT nBuf = *nBufp;
    HChar  ch;
    Int   n, i;
+
+   vg_assert(lineno); // lineno needed to correctly track line numbers.
+
    while (True) {
       buf[0] = 0;
       /* First, read until a non-blank char appears. */
@@ -1100,7 +1111,7 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
          i--; buf[i] = 0; 
       };
 
-      /* VG_(printf)("The line is '%s'\n", buf); */
+      // VG_(printf)("The line *%p %d is '%s'\n", lineno, *lineno, buf);
       /* Ok, we have a line.  If a non-comment line, return.
          If a comment line, start all over again. */
       if (buf[0] != '#') return False;
@@ -1125,7 +1136,7 @@ Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
    if (is_location_line(*bufpp))
       return True; // Not a extra suppr line
    else
-      return False; // An suppression extra line
+      return False; // A suppression extra line
 }
 
 /* True if s contains no wildcard (?, *) characters. */
@@ -1191,12 +1202,14 @@ static Bool tool_name_present(const HChar *name, HChar *names)
    return found;
 }
 
-/* Read suppressions from the file specified in VG_(clo_suppressions)
+/* Read suppressions from the file specified in 
+   VG_(clo_suppressions)[clo_suppressions_i]
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
 */
-static void load_one_suppressions_file ( const HChar* filename )
+static void load_one_suppressions_file ( Int clo_suppressions_i )
 {
+   const HChar* filename = VG_(clo_suppressions)[clo_suppressions_i];
    SysRes sres;
    Int    fd, i, j, lineno = 0;
    Bool   got_a_location_line_read_by_tool;
@@ -1257,6 +1270,8 @@ static void load_one_suppressions_file ( const HChar* filename )
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
+      supp->clo_suppressions_i = clo_suppressions_i;
+      supp->sname_lineno = lineno;
 
       eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
 
@@ -1311,7 +1326,7 @@ static void load_one_suppressions_file ( const HChar* filename )
       // from fd till a location line. 
       if (VG_(needs).tool_errors && 
           !VG_TDICT_CALL(tool_read_extra_suppression_info,
-                         fd, &buf, &nBuf, supp))
+                         fd, &buf, &nBuf, &lineno, supp))
       {
          BOMB("bad or missing extra suppression info");
       }
@@ -1408,7 +1423,7 @@ void VG_(load_suppressions) ( void )
          VG_(dmsg)("Reading suppressions file: %s\n", 
                    VG_(clo_suppressions)[i] );
       }
-      load_one_suppressions_file( VG_(clo_suppressions)[i] );
+      load_one_suppressions_file( i );
    }
 }
 

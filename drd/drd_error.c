@@ -556,7 +556,7 @@ static Bool drd_is_recognized_suppression(const HChar* const name,
  */
 static
 Bool drd_read_extra_suppression_info(Int fd, HChar** bufpp,
-                                     SizeT* nBufp, Supp* supp)
+                                     SizeT* nBufp, Int* lineno, Supp* supp)
 {
    return True;
 }

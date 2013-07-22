@@ -231,7 +231,7 @@ void VG_(needs_tool_errors)(
    Bool show_TIDs,
    UInt (*update)     (Error*),
    Bool (*recog)      (const HChar*, Supp*),
-   Bool (*read_extra) (Int, HChar**, SizeT*, Supp*),
+   Bool (*read_extra) (Int, HChar**, SizeT*, Int*, Supp*),
    Bool (*matches)    (Error*, Supp*),
    const HChar* (*name) (Error*),
    Bool (*get_xtra_si)(Error*,/*OUT*/HChar*,Int)

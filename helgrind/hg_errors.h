@@ -41,7 +41,7 @@ void  HG_(pp_Error)        ( Error* err );
 UInt  HG_(update_extra)    ( Error* err );
 Bool  HG_(recognised_suppression) ( const HChar* name, Supp *su );
 Bool  HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
-                                         Supp* su );
+                                         Int* lineno, Supp* su );
 Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
 const HChar* HG_(get_error_name) ( Error* err );
 Bool  HG_(get_extra_suppression_info) ( Error* err,

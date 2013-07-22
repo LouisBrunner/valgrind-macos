@@ -318,10 +318,10 @@ extern void VG_(needs_tool_errors) (
    // Read any extra info for this suppression kind.  Most likely for filling
    // in the `extra' and `string' parts (with VG_(set_supp_{extra, string})())
    // of a suppression if necessary.  Should return False if a syntax error
-   // occurred, True otherwise.  bufpp and nBufp are the same as for
-   // VG_(get_line).
+   // occurred, True otherwise.
+   // fd, bufpp, nBufp and lineno are the same as for VG_(get_line).
    Bool (*read_extra_suppression_info)(Int fd, HChar** bufpp, SizeT* nBufp,
-                                       Supp* su),
+                                       Int* lineno, Supp* su),
 
    // This should just check the kinds match and maybe some stuff in the
    // `string' and `extra' field if appropriate (using VG_(get_supp_*)() to

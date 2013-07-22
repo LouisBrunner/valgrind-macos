@@ -1535,13 +1535,13 @@ struct _MC_LeakSuppExtra {
 };
 
 Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
-                                        SizeT* nBufp, Supp *su )
+                                        SizeT* nBufp, Int* lineno, Supp *su )
 {
    Bool eof;
    Int i;
 
    if (VG_(get_supp_kind)(su) == ParamSupp) {
-      eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
+      eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
       if (eof) return False;
       VG_(set_supp_string)(su, VG_(strdup)("mc.resi.1", *bufpp));
    } else if (VG_(get_supp_kind)(su) == LeakSupp) {
@@ -1550,7 +1550,7 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
       lse = VG_(malloc)("mc.resi.2", sizeof(MC_LeakSuppExtra));
       lse->match_leak_kinds = RallS;
       VG_(set_supp_extra)(su, lse); // By default, all kinds will match.
-      eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
+      eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
       if (eof) return True; // old LeakSupp style, no match-leak-kinds line.
       if (0 == VG_(strncmp)(*bufpp, "match-leak-kinds:", 17)) {
          i = 17;

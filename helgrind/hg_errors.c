@@ -1367,7 +1367,7 @@ Bool HG_(recognised_suppression) ( const HChar* name, Supp *su )
 }
 
 Bool HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
-                                        Supp* su )
+                                        Int* lineno, Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to
       indicate nothing bad happened. */

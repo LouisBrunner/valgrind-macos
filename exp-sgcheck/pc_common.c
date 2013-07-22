@@ -736,11 +736,11 @@ Bool pc_is_recognised_suppression ( const HChar* name, Supp *su )
 }
 
 Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp, 
-                                      SizeT* nBufp, Supp* su )
+                                      SizeT* nBufp, Int* lineno, Supp* su )
 {
    Bool eof;
    if (VG_(get_supp_kind)(su) == XS_SysParam) {
-      eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
+      eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
       if (eof) return False;
       VG_(set_supp_string)(su, VG_(strdup)("pc.common.presi.1", *bufpp));
    }

@@ -444,6 +444,58 @@ __asm__(
 
 #endif /* VGP_x86_linux || VGP_x86_darwin */
 
+#if defined(VGP_mips32_linux)
+
+__asm__(
+".text                          \n\t"
+".globl VG_MINIMAL_SETJMP;      \n\t"
+".align 2;                      \n\t"
+"VG_MINIMAL_SETJMP:             \n\t"  /* a0 = jmp_buf */
+"   sw   $s0,  0($a0)           \n\t"  /* Save registers s0-s7. */
+"   sw   $s1,  4($a0)           \n\t"
+"   sw   $s2,  8($a0)           \n\t"
+"   sw   $s3, 12($a0)           \n\t"
+"   sw   $s4, 16($a0)           \n\t"
+"   sw   $s5, 20($a0)           \n\t"
+"   sw   $s6, 24($a0)           \n\t"
+"   sw   $s7, 28($a0)           \n\t"
+"   sw   $s8, 32($a0)           \n\t"  /* Frame pointer. */
+"   sw   $ra, 36($a0)           \n\t"  /* Return address. */
+"   sw   $gp, 40($a0)           \n\t"  /* Global data pointer. */
+"   sw   $sp, 44($a0)           \n\t"  /* Stack pointer. */
+
+"   move $v0, $zero             \n\t"  /* Return zero. */
+"   j    $ra                    \n\t"
+"   nop                         \n\t"
+".end VG_MINIMAL_SETJMP;        \n\t"
+"                               \n\t"
+".globl VG_MINIMAL_LONGJMP;     \n\t"
+".align 2;                      \n\t"
+"VG_MINIMAL_LONGJMP:            \n\t"  /* a0 = jmp_buf */
+"   lw   $s0,  0($a0)           \n\t"  /* Restore registers s0-s7. */
+"   lw   $s1,  4($a0)           \n\t"
+"   lw   $s2,  8($a0)           \n\t"
+"   lw   $s3, 12($a0)           \n\t"
+"   lw   $s4, 16($a0)           \n\t"
+"   lw   $s5, 20($a0)           \n\t"
+"   lw   $s6, 24($a0)           \n\t"
+"   lw   $s7, 28($a0)           \n\t"
+"   lw   $s8, 32($a0)           \n\t"  /* Frame pointer. */
+"   lw   $ra, 36($a0)           \n\t"  /* Return address. */
+"   lw   $gp, 40($a0)           \n\t"  /* Global data pointer. */
+"   lw   $sp, 44($a0)           \n\t"  /* Stack pointer. */
+
+/* Checking whether second argument is zero. */
+"   bnez $a1, 1f                \n\t"
+"   nop                         \n\t"
+"   addi $a1, $a1, 1            \n\t"  /* We must return 1 if val=0. */
+"1:                             \n\t"
+"   move $v0, $a1               \n\t"  /* Return value of second argument. */
+"   j    $ra                    \n\t"
+".end VG_MINIMAL_SETJMP;        \n\t"
+);
+#endif  /* VGP_mips32_linux */
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

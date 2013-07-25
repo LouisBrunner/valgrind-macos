@@ -108,6 +108,13 @@ __attribute__((noreturn))
 __attribute__((regparm(1))) // ditto
 void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
+#elif defined(VGP_mips32_linux)
+
+#define VG_MINIMAL_JMP_BUF(_name)        UInt _name [8+1+1+1+1]
+__attribute__((returns_twice))
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+__attribute__((noreturn))
+void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
 #else
 

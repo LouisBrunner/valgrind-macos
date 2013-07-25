@@ -1060,7 +1060,15 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o >= GOF(f30) && o+sz <= GOF(f30)+SZB(f30)) return GOF(f30);
    if (o >= GOF(f31) && o+sz <= GOF(f31)+SZB(f31)) return GOF(f31);
 
-   if ((o > GOF(NRADDR)) && (o <= GOF(NRADDR) +12 )) return -1; /*padding registers*/
+   /* Slot unused. */ 
+   if ((o > GOF(NRADDR)) && (o <= GOF(NRADDR) +12 )) return -1;
+
+   /* MIPS32 DSP ASE(r2) specific registers. */
+   if (o == GOF(DSPControl)  && sz == 4) return o;
+   if (o == GOF(ac0)  && sz == 8) return o;
+   if (o == GOF(ac1)  && sz == 8) return o;
+   if (o == GOF(ac2)  && sz == 8) return o;
+   if (o == GOF(ac3)  && sz == 8) return o;
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(mips)(off=%d,sz=%d)\n",
                offset,szB);

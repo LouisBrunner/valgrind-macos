@@ -359,9 +359,8 @@ typedef enum {
    Mfp_ADDS, Mfp_SUBS, Mfp_MULS, Mfp_DIVS,
 
    /* Unary */
-   Mfp_SQRTS, Mfp_SQRTD, Mfp_RSQRTS, Mfp_RSQRTD, Mfp_RECIPS, Mfp_RECIPD,
+   Mfp_SQRTS, Mfp_SQRTD,
    Mfp_ABSS, Mfp_ABSD, Mfp_NEGS, Mfp_NEGD, Mfp_MOVS, Mfp_MOVD,
-   Mfp_RSQRTE,
 
    /* FP convert */
    Mfp_CVTSD, Mfp_CVTSW, Mfp_CVTWD,

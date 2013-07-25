@@ -164,6 +164,13 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
    vex_state->guest_NRADDR = 0;
 
    vex_state->guest_COND = 0;
+
+   /* MIPS32 DSP ASE(r2) specific registers */
+   vex_state->guest_DSPControl = 0;   /* DSPControl register */
+   vex_state->guest_ac0 = 0;          /* Accumulator 0 */
+   vex_state->guest_ac1 = 0;          /* Accumulator 1 */
+   vex_state->guest_ac2 = 0;          /* Accumulator 2 */
+   vex_state->guest_ac3 = 0;          /* Accumulator 3 */
 }
 
 void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
@@ -274,11 +281,11 @@ void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this generates significantly slower code).  
+   True (but this generates significantly slower code).
 
    We enforce precise exns for guest SP, PC.
 
-   Only SP is needed in mode VexRegUpdSpAtMemAccess.   
+   Only SP is needed in mode VexRegUpdSpAtMemAccess.
 */
 Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
@@ -1057,7 +1064,7 @@ ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel )
            break;
          }
        break;
- 
+
      default:
        break;
      }

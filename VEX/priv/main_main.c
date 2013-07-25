@@ -1418,8 +1418,45 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 
 static const HChar* show_hwcaps_mips32 ( UInt hwcaps )
 {
-   if (hwcaps == 0x00010000) return "MIPS-baseline";
-   if (hwcaps == 0x00020000) return "Broadcom-baseline";
+   /* MIPS baseline. */
+   if (hwcaps && VEX_PRID_COMP_MIPS == VEX_PRID_COMP_MIPS) {
+      /* MIPS baseline with dspr2. */
+      if (hwcaps && VEX_MIPS_ASE_DSP2P == VEX_MIPS_ASE_DSP2P) {
+         return "MIPS-baseline-dspr2";
+      }
+      /* MIPS baseline with dsp. */
+      if (hwcaps && VEX_MIPS_ASE_DSP == VEX_MIPS_ASE_DSP) {
+         return "MIPS-baseline-dsp";
+      }
+      return "MIPS-baseline";
+   }
+
+   /* Broadcom baseline. */
+   if (hwcaps && VEX_PRID_COMP_BROADCOM == VEX_PRID_COMP_BROADCOM) {
+      /* Broadcom baseline with dspr2. */
+      if (hwcaps && VEX_MIPS_ASE_DSP2P == VEX_MIPS_ASE_DSP2P) {
+         return "Broadcom-baseline-dspr2";
+      }
+      /* Broadcom baseline with dsp. */
+      if (hwcaps && VEX_MIPS_ASE_DSP == VEX_MIPS_ASE_DSP) {
+         return "Broadcom-baseline-dsp";
+      }
+      return "Broadcom-baseline";
+   }
+
+   /* Netlogic baseline. */
+   if (hwcaps && VEX_PRID_COMP_NETLOGIC == VEX_PRID_COMP_NETLOGIC) {
+      /* Netlogic baseline with dspr2. */
+      if (hwcaps && VEX_MIPS_ASE_DSP2P == VEX_MIPS_ASE_DSP2P) {
+         return "Netlogic-baseline-dspr2";
+      }
+      /* Netlogic baseline with dsp. */
+      if (hwcaps && VEX_MIPS_ASE_DSP == VEX_MIPS_ASE_DSP) {
+         return "Netlogic-baseline-dsp";
+      }
+      return "Netlogic-baseline";
+   }
+
    return NULL;
 }
 

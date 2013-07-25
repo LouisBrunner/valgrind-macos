@@ -185,6 +185,10 @@ typedef
 #define VEX_PRID_COMP_BROADCOM  0x00020000
 #define VEX_PRID_COMP_NETLOGIC  0x000c0000
 
+/* MIPS additional capabilities */
+#define VEX_MIPS_ASE_DSP    0x00000010  /* Signal Processing ASE */
+#define VEX_MIPS_ASE_DSP2P  0x00000040  /* Signal Processing ASE Rev 2 */
+
 /* These return statically allocated strings. */
 
 extern const HChar* LibVEX_ppVexArch    ( VexArch );

@@ -799,9 +799,14 @@ void gdbserver_init (void)
    // After a fork, gdbserver_init can be called again.
    // We do not have to re-malloc the buffers in such a case.
    if (own_buf == NULL)
-      own_buf = malloc (PBUFSIZ);
+      own_buf = malloc (PBUFSIZ+POVERHSIZ);
    if (mem_buf == NULL)
-      mem_buf = malloc (PBUFSIZ);
+      mem_buf = malloc (PBUFSIZ+POVERHSIZ);
+   // Note: normally, we should only malloc PBUFSIZ. However,
+   // GDB has a bug, and in some cases, sends e.g. 'm' packets
+   // asking for slightly more than the PacketSize given at
+   // connection initialisation. So, we bypass the GDB bug
+   // by allocating slightly more.
 }
 
 void gdbserver_terminate (void)

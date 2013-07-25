@@ -100,9 +100,6 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 
 #if defined(PTRACEINVOKER)
 #include <sys/user.h>
-#if defined(VGO_linux)
-#  include <linux/ptrace.h>
-#endif
 #endif
 
 

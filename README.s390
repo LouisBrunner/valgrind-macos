@@ -10,7 +10,6 @@ Limitations
 -----------
 - 31-bit client programs are not supported.
 - Hexadecimal floating point is not supported.
-- Decimal floating point is not supported yet.
 - memcheck, massif, lackey, and none are supported.
 - cachegrind is supported on z10 and newer models. On older models,
   a z10 cache architecture will be assumed.

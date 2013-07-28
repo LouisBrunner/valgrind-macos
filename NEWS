@@ -5,6 +5,9 @@ Release 3.9.0 (?? ?????? 201?)
 
   mips64-linux support
 
+  Support for s390x Decimal Floating Point instructions on hosts that
+  have the DFP facility installed.
+
 * ==================== TOOL CHANGES ====================
 * Memcheck:
 
@@ -107,6 +110,8 @@ m = merged into 3_8_BRANCH
 307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
         == 308333
         FIXED r2581
+
+307113  s390x: DFP support
 
 307141  valgrind does't work in mips-linux system
         FIXED (no action on our part?  unclear)

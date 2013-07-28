@@ -693,64 +693,55 @@ cpsdr,"copy sign",implemented,
 lcdfr,"load complement no cc",implemented,
 ldgr,"load fpr from gr",implemented,
 lgdr,"load gr from fpr",implemented,
-adtr,"add long dfp","not implemented",
-axtr,"add extended dfp","not implemented",
-cdtr,"compare long dfp","not implemented",
-cxtr,"compare extended dfp","not implemented",
+cdtr,"compare long dfp",implemented
+cxtr,"compare extended dfp",implemented
 kdtr,"compare and signal long dfp","not implemented",
 kxtr,"compare and signal extended dfp","not implemented",
-cedtr,"compare exponent long dfp","not implemented",
-cextr,"compare exponent extended dfp","not implemented",
-cdgtr,"convert from fixed long dfp","not implemented",
-cxgtr,"convert from fixed extended dfp","not implemented",
+cedtr,"compare exponent long dfp",implemented
+cextr,"compare exponent extended dfp",implemented
+cxgtr,"convert from fixed extended dfp",implemented
 cdstr,"convert from signed bcd long dfp","not implemented",
 cxstr,"convert from signed bcd extended dfp","not implemented",
 cdutr,"convert from unsigned bcd to long dfp","not implemented",
 cxutr,"convert from unsigned bcd to extended dfp","not implemented",
-cgdtr,"convert from long dfp to fixed","not implemented",
-cgxtr,"convert from extended dfp to fixed","not implemented",
+cgdtr,"convert from long dfp to fixed",implemented
+cgxtr,"convert from extended dfp to fixed",implemented
 csdtr,"convert from long dfp to signed bcd","not implemented",
 csxtr,"convert from extended dfp to signed bcd","not implemented",
 cudtr,"convert from long dfp to unsigned bcd","not implemented",
 cuxtr,"convert from extended dfp to unsigned bcd","not implemented",
-ddtr,"divide long dfp","not implemented",
-dxtr,"divide extended dfp","not implemented",
-eedtr,"extract biased exponent from long dfp","not implemented",
-eextr,"extract biased exponent from extended dfp","not implemented",
-esdtr,"extract significance from long dfp","not implemented",
-esxtr,"extract significance from extended dfp","not implemented",
-iedtr,"insert biased exponent long dfp","not implemented",
-iextr,"insert biased exponent extended dfp","not implemented",
-ltdtr,"load and test long dfp","not implemented",
-ltxtr,"load and test extended dfp","not implemented",
+eedtr,"extract biased exponent from long dfp",implemented
+eextr,"extract biased exponent from extended dfp",implemented
+esdtr,"extract significance from long dfp",implemented
+esxtr,"extract significance from extended dfp",implemented
+iedtr,"insert biased exponent long dfp",implemented
+iextr,"insert biased exponent extended dfp",implemented
+ltdtr,"load and test long dfp",implemented
+ltxtr,"load and test extended dfp",implemented
 fidtr,"load fp integer long dfp","not implemented",
 fixtr,"load fp integer extended dfp","not implemented",
 lfas,"load fpc and signal","not implemented",
-ldetr,"load lengthened long dfp","not implemented",
-lxdtr,"load lengthened extended dfp","not implemented",
-ledtr,"load rounded long dfp","not implemented",
-ldxtr,"load rounded extended dfp","not implemented",
-mdtr,"multiply long dfp","not implemented",
-mxtr,"multiply extended dfp","not implemented",
-qadtr,"Quantize long dfp","not implemented",
-qaxtr,"Quantize extended dfp","not implemented",
-rrdtr,"Reround long dfp","not implemented",
-rrxtr,"Reround extended dfp","not implemented",
-srnmt,"set rounding mode dfp","not implemented",
+ldetr,"load lengthened long dfp",implemented
+lxdtr,"load lengthened extended dfp",implemented
+ledtr,"load rounded long dfp",implemented
+ldxtr,"load rounded extended dfp",implemented
+qadtr,"Quantize long dfp",implemented
+qaxtr,"Quantize extended dfp",implemented
+rrdtr,"Reround long dfp",implemented
+rrxtr,"Reround extended dfp",implemented
+srnmt,"set rounding mode dfp",implemented
 sfasr,"set fpc and signal","not implemented",
-sldt,"shift coefficient left long dfp","not implemented",
-slxt,"shift coefficient left extended dfp","not implemented",
-srdt,"shift coefficient right long dfp","not implemented",
-srxt,"shift coefficient right extended dfp","not implemented",
-sdtr,"subtract long dfp","not implemented",
-sxtr,"subtract extended dfp","not implemented",
-tdcet,"test data class short dfp","not implemented",
-tdcdt,"test data class long dfp","not implemented",
-tdcxt,"test data class extended dfp","not implemented",
-tdget,"test data group short dfp","not implemented",
-tdgdt,"test data group long dfp","not implemented",
-tdgxt,"test data group extended dfp","not implemented",
-pfpo,"perform floating point operation","not implemented",
+sldt,"shift coefficient left long dfp",implemented
+slxt,"shift coefficient left extended dfp",implemented
+srdt,"shift coefficient right long dfp",implemented
+srxt,"shift coefficient right extended dfp",implemented
+tdcet,"test data class short dfp",implemented
+tdcdt,"test data class long dfp",implemented
+tdcxt,"test data class extended dfp",implemented
+tdget,"test data group short dfp",implemented
+tdgdt,"test data group long dfp",implemented
+tdgxt,"test data group extended dfp",implemented
+pfpo,"perform floating point operation",implemented
 ectg,"extract cpu time","not implemented",
 csst,"compare and swap and store","not implemented",
 asi,"add immediate (32<8)",implemented,
@@ -944,30 +935,27 @@ fixbra,"load fp integer extended bfp with rounding mode","not implemented","new 
 ledbra,"load rounded short/long bfp to short/long bfp with rounding mode",implemented,
 ldxbra,"load rounded long/extended bfp to long/extended bfp with rounding mode",implemented,
 lexbra,"load rounded short/extended bfp to short/extended bfp with rounding mode",implemented,
-adtra,"add long dfp with rounding mode","not implemented","new to z196"
-axtra,"add extended dfp with rounding mode","not implemented","new to z196"
-cdgtra,"convert from fixed long dfp with rounding mode","not implemented","new to z196"
-cdftr,"convert from 32 bit fixed to long dfp with rounding mode","not implemented",
-cxftr,"convert from 32 bit fixed to extended dfp with rounding mode","not implemented",
-cxgtra,"convert from fixed extended dfp with rounding mode","not implemented","new to z196"
-cdlgtr,"convert from 64 bit fixed logical to long dfp with rounding mode","not implemented",
-cxlgtr,"convert from 64 bit fixed logical to extended dfp with rounding mode","not implemented",
-cdlftr,"convert from 32 bit fixed logical to long dfp with rounding mode","not implemented",
-cxlftr,"convert from 32 bit fixed logical to extended dfp with rounding mode","not implemented",
-cgdtra,"convert to 64 bit fixed from long dfp with rounding mode","not implemented","new to z196"
-cgxtra,"convert to 64 bit fixed from extended dfp with rounding mode","not implemented","new to z196"
-cfdtr,"convert to 32 bit fixed from long dfp source with rounding mode","not implemented",
-cfxtr,"convert to 32 bit fixed from extended dfp source with rounding mode","not implemented",
-clgdtr,"convert to 64 bit fixed logical from long dfp with rounding mode","not implemented",
-clgxtr,"convert to 64 bit fixed logical from extended dfp with rounding mode","not implemented",
-clfdtr,"convert to 32 bit fixed logical from long dfp with rounding mode","not implemented",
-clfxtr,"convert to 32 bit fixed logical from extended dfp with rounding mode","not implemented",
-ddtra,"divide long dfp with rounding mode","not implemented","new to z196"
-dxtra,"divide extended dfp with rounding mode","not implemented","new to z196"
-mdtra,"multiply long dfp with rounding mode","not implemented","new to z196"
-mxtra,"multiply extended dfp with rounding mode","not implemented","new to z196"
-sdtra,"subtract long dfp with rounding mode","not implemented","new to z196"
-sxtra,"subtract extended dfp with rounding mode","not implemented","new to z196"
+adtra,"add long dfp with rounding mode",implemented
+axtra,"add extended dfp with rounding mode",implemented
+cdgtra,"convert from fixed long dfp with rounding mode",implemented
+cdftr,"convert from 32 bit fixed to long dfp with rounding mode",implemented
+cxftr,"convert from 32 bit fixed to extended dfp with rounding mode",implemented
+cdlgtr,"convert from 64 bit fixed logical to long dfp with rounding mode",implemented
+cxlgtr,"convert from 64 bit fixed logical to extended dfp with rounding mode",implemented
+cdlftr,"convert from 32 bit fixed logical to long dfp with rounding mode",implemented
+cxlftr,"convert from 32 bit fixed logical to extended dfp with rounding mode",implemented
+cfdtr,"convert to 32 bit fixed from long dfp source with rounding mode",implemented
+cfxtr,"convert to 32 bit fixed from extended dfp source with rounding mode",implemented
+clgdtr,"convert to 64 bit fixed logical from long dfp with rounding mode",implemented
+clgxtr,"convert to 64 bit fixed logical from extended dfp with rounding mode",implemented
+clfdtr,"convert to 32 bit fixed logical from long dfp with rounding mode",implemented
+clfxtr,"convert to 32 bit fixed logical from extended dfp with rounding mode",implemented
+ddtra,"divide long dfp with rounding mode",implemented
+dxtra,"divide extended dfp with rounding mode",implemented
+mdtra,"multiply long dfp with rounding mode",implemented
+mxtra,"multiply extended dfp with rounding mode",implemented
+sdtra,"subtract long dfp with rounding mode",implemented
+sxtra,"subtract extended dfp with rounding mode",implemented
 srnmb,"set 3 bit bfp rounding mode",implemented,
 etnd,"extract transaction nesting depth","not implemented",zEC12,
 ntstg,"nontransactional store","not implemented",zEC12,

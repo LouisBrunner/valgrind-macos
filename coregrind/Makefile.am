@@ -217,7 +217,6 @@ noinst_HEADERS = \
 	m_gdbserver/valgrind_low.h \
 	m_gdbserver/gdb/signals.h \
 	m_initimg/priv_initimg_pathscan.h \
-	m_initimg/simple_huffman.c \
 	m_scheduler/priv_sema.h \
 	m_scheduler/priv_sched-lock.h \
 	m_scheduler/priv_sched-lock-impl.h \

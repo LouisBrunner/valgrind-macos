@@ -63,5 +63,12 @@ int main (int argc, char *argv[])
    
    fprintf(stderr, "value %s\n", undefined);
 
+   {
+      char *k50 = malloc(50000);
+      memset (k50, 'p', 50000);
+      fprintf(stderr, "value of k50[1000] %c\n", k50[1000]);
+      free(k50); //break2
+   }
+
    exit(0);
 }

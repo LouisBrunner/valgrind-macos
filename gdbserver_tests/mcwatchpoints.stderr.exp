@@ -16,10 +16,11 @@ before rewriting 0
 before rewriting 4
 before rewriting 8
 value 0nde4ine8
+value of k50[1000] p
 
 HEAP SUMMARY:
     in use at exit: 0 bytes in 0 blocks
-  total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+  total heap usage: 1 allocs, 1 frees, 50,000 bytes allocated
 
 For a detailed leak analysis, rerun with: --leak-check=full
 

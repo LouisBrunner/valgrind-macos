@@ -24,5 +24,10 @@ continue
 continue
 continue
 del
+break watchpoints.c:70
+# continue till //break2:
+continue
+# trigger gdb reading data with big packets:
+p *(k50)@50000
 continue
 quit

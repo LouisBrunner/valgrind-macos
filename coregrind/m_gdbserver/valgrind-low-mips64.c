@@ -215,7 +215,7 @@ static Addr mips_adjust_breakpoint_address (Addr pc)
    Addr boundary;
    Addr func_addr;
    Addr bpaddr = pc;
-   Addr mask = 0xffffffffffffffff;
+   Addr mask = (Addr)0xffffffffffffffffULL;
    int segsize;
    PtrdiffT offset;
 

@@ -8170,8 +8170,8 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t8 = newTemp(Ity_I32);
                      t9 = newTemp(Ity_I32);
                      t10 = newTemp(Ity_I1);
-                     t11 = newTemp(Ity_I32);
-                     t12 = newTemp(Ity_I32);
+                     t11 = newTemp(Ity_I16);
+                     t12 = newTemp(Ity_I16);
 
                      if (0 == rs) {
                         putIReg(rd, getIReg(rt));

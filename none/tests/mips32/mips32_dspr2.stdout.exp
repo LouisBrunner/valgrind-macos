@@ -1,0 +1,2203 @@
+-------- ABSQ_S.QB --------
+absq_s.qb $t0, $t1 :: rd 0x00000000 rt 0x00000000 DSPControl 0x0
+absq_s.qb $t2, $t3 :: rd 0x0000027a rt 0x00000286 DSPControl 0x0
+absq_s.qb $t4, $t1 :: rd 0x06442435 rt 0xfabc2435 DSPControl 0x0
+absq_s.qb $t6, $t7 :: rd 0x73467f44 rt 0x734680bc DSPControl 0x100000
+absq_s.qb $t5, $t3 :: rd 0x7f000000 rt 0x80000000 DSPControl 0x100000
+absq_s.qb $t2, $t4 :: rd 0x01010101 rt 0xffffffff DSPControl 0x0
+absq_s.qb $t0, $t8 :: rd 0x010c5f01 rt 0xfff45fff DSPControl 0x0
+absq_s.qb $t4, $t4 :: rd 0x00000555 rt 0x00000555 DSPControl 0x0
+absq_s.qb $t0, $t1 :: rd 0x23534870 rt 0x23534870 DSPControl 0x0
+absq_s.qb $t2, $t3 :: rd 0x05555314 rt 0x0555adec DSPControl 0x0
+absq_s.qb $t4, $t1 :: rd 0x680b7c22 rt 0x980b7cde DSPControl 0x0
+absq_s.qb $t6, $t7 :: rd 0x0773437b rt 0xf973437b DSPControl 0x0
+absq_s.qb $t5, $t3 :: rd 0x6d474b22 rt 0x93474bde DSPControl 0x0
+absq_s.qb $t2, $t4 :: rd 0x55555555 rt 0x55555555 DSPControl 0x0
+absq_s.qb $t0, $t8 :: rd 0x3c250220 rt 0xc4dbfe20 DSPControl 0x0
+absq_s.qb $t4, $t4 :: rd 0x73467f44 rt 0x734680bc DSPControl 0x100000
+absq_s.qb $t0, $t1 :: rd 0x00354565 rt 0x00354565 DSPControl 0x0
+absq_s.qb $t2, $t3 :: rd 0x46364636 rt 0xbacabaca DSPControl 0x0
+absq_s.qb $t4, $t1 :: rd 0x22362236 rt 0xdecadeca DSPControl 0x0
+absq_s.qb $t6, $t7 :: rd 0x0000027a rt 0x00000286 DSPControl 0x0
+absq_s.qb $t5, $t3 :: rd 0x55555555 rt 0xabababab DSPControl 0x0
+absq_s.qb $t2, $t4 :: rd 0x00086755 rt 0x00086755 DSPControl 0x0
+absq_s.qb $t0, $t8 :: rd 0x7171717f rt 0x8f8f8f80 DSPControl 0x100000
+absq_s.qb $t4, $t4 :: rd 0x12121212 rt 0xeeeeeeee DSPControl 0x0
+absq_s.qb $t0, $t1 :: rd 0x1b252525 rt 0x1bdbdbdb DSPControl 0x0
+absq_s.qb $t2, $t3 :: rd 0x22362236 rt 0xdecadeca DSPControl 0x0
+absq_s.qb $t4, $t1 :: rd 0x6d474b22 rt 0x93474bde DSPControl 0x0
+absq_s.qb $t6, $t7 :: rd 0x06415506 rt 0xfabfabfa DSPControl 0x0
+absq_s.qb $t5, $t3 :: rd 0x083b3571 rt 0x083b3571 DSPControl 0x0
+absq_s.qb $t2, $t4 :: rd 0x47743941 rt 0xb9743941 DSPControl 0x0
+absq_s.qb $t0, $t8 :: rd 0x447f0724 rt 0xbc80f924 DSPControl 0x100000
+absq_s.qb $t4, $t4 :: rd 0x343c201c rt 0xcc3c201c DSPControl 0x0
+absq_s.qb $t0, $t1 :: rd 0x1e460872 rt 0x1ebaf88e DSPControl 0x0
+absq_s.qb $t2, $t3 :: rd 0x722d5e20 rt 0x722d5e20 DSPControl 0x0
+absq_s.qb $t4, $t1 :: rd 0x5f2a096f rt 0xa1d6f791 DSPControl 0x0
+absq_s.qb $t6, $t7 :: rd 0x7b114219 rt 0x7b11bee7 DSPControl 0x0
+absq_s.qb $t5, $t3 :: rd 0x5b631478 rt 0xa5631488 DSPControl 0x0
+absq_s.qb $t2, $t4 :: rd 0x4f0b3465 rt 0xb10bcc65 DSPControl 0x0
+absq_s.qb $t0, $t8 :: rd 0x730d6136 rt 0x73f39fca DSPControl 0x0
+absq_s.qb $t4, $t4 :: rd 0x7f7f7f7f rt 0x80808080 DSPControl 0x100000
+-------- ADDQH.PH --------
+addqh.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x0002311c
+addqh.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff2c2b
+addqh.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x3d55e6ba
+addqh.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xbcb921bd
+addqh.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000
+addqh.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000e4ba
+addqh.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x20000002
+addqh.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80002c2b
+addqh.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x74cd8000
+addqh.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000
+addqh.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000e4ba
+addqh.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff
+addqh.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff1226
+addqh.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xb332b332
+addqh.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf6b4d2e1
+addqh.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+addqh.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x11c446ea
+addqh.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc097219
+addqh.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xc7c7c7d3
+addqh.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xc0b31aa2
+addqh.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf352d352
+addqh.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcccaccca
+addqh.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xd3201549
+addqh.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x3c0007c7
+addqh.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+addqh.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xdf1fc9d7
+addqh.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf9770759
+addqh.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xd472ffb7
+addqh.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe82f262b
+addqh.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0283c827
+addqh.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31fbfd03
+addqh.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x381a5f98
+addqh.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xacb81470
+-------- ADDQH_R.PH --------
+addqh_r.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh_r.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x0002311c
+addqh_r.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00002c2b
+addqh_r.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x3d56e6ba
+addqh_r.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xbcba21be
+addqh_r.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000
+addqh_r.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh_r.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000e4bb
+addqh_r.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x20000002
+addqh_r.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80002c2b
+addqh_r.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x74cd8000
+addqh_r.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh_r.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000
+addqh_r.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh_r.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000e4bb
+addqh_r.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh_r.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh_r.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x00000000
+addqh_r.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00001227
+addqh_r.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xb333b333
+addqh_r.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf6b5d2e1
+addqh_r.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+addqh_r.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x11c446eb
+addqh_r.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc0a721a
+addqh_r.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xc7c8c7d4
+addqh_r.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xc0b31aa2
+addqh_r.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf353d353
+addqh_r.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcccaccca
+addqh_r.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xd3211549
+addqh_r.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x3c0007c8
+addqh_r.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+addqh_r.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xdf1fc9d7
+addqh_r.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf9770759
+addqh_r.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xd473ffb8
+addqh_r.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe82f262c
+addqh_r.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0283c828
+addqh_r.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31fbfd04
+addqh_r.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x381b5f98
+addqh_r.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xacb91470
+-------- ADDQH.W --------
+addqh.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh.w $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x0002311c
+addqh.w $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffffac2b
+addqh.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x3d55e6ba
+addqh.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xbcb9a1bd
+addqh.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00008000
+addqh.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x000064ba
+addqh.w $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x20000002
+addqh.w $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80002c2b
+addqh.w $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x74cd8000
+addqh.w $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00008000
+addqh.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x000064ba
+addqh.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff
+addqh.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff9226
+addqh.w $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xb3333332
+addqh.w $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf6b552e1
+addqh.w $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+addqh.w $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x11c446ea
+addqh.w $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc09f219
+addqh.w $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xc7c7c7d3
+addqh.w $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xc0b39aa2
+addqh.w $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf3535352
+addqh.w $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcccaccca
+addqh.w $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xd3211549
+addqh.w $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x3c0007c7
+addqh.w $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+addqh.w $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xdf1fc9d7
+addqh.w $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf9778759
+addqh.w $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xd472ffb7
+addqh.w $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe82fa62b
+addqh.w $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0283c827
+addqh.w $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31fb7d03
+addqh.w $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x381adf98
+addqh.w $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xacb91470
+-------- ADDQH_R.W --------
+addqh_r.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh_r.w $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x0002311c
+addqh_r.w $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffffac2b
+addqh_r.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x3d55e6ba
+addqh_r.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xbcb9a1be
+addqh_r.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00008000
+addqh_r.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh_r.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x000064bb
+addqh_r.w $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x20000002
+addqh_r.w $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80002c2b
+addqh_r.w $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x74cd8000
+addqh_r.w $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh_r.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00008000
+addqh_r.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+addqh_r.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x000064bb
+addqh_r.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+addqh_r.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+addqh_r.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x00000000
+addqh_r.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff9227
+addqh_r.w $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xb3333333
+addqh_r.w $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf6b552e1
+addqh_r.w $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+addqh_r.w $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x11c446eb
+addqh_r.w $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc09f21a
+addqh_r.w $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xc7c7c7d4
+addqh_r.w $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xc0b39aa2
+addqh_r.w $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf3535353
+addqh_r.w $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcccaccca
+addqh_r.w $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xd3211549
+addqh_r.w $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x3c0007c8
+addqh_r.w $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+addqh_r.w $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xdf1fc9d7
+addqh_r.w $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf9778759
+addqh_r.w $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xd472ffb8
+addqh_r.w $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe82fa62c
+addqh_r.w $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0283c828
+addqh_r.w $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31fb7d04
+addqh_r.w $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x381adf98
+addqh_r.w $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xacb91470
+-------- ADDU.PH --------
+addu.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addu.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x00000000
+addu.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
+addu.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
+addu.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00100000
+addu.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00100000
+addu.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00000000
+addu.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addu.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
+addu.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00005856 DSPCtrl 0x00100000
+addu.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99a0000 DSPCtrl 0x00100000
+addu.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
+addu.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00100000
+addu.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00000000
+addu.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addu.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addu.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
+addu.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
+addu.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
+addu.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x66656665 DSPCtrl 0x00100000
+addu.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xed69a5c2 DSPCtrl 0x00100000
+addu.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976 DSPCtrl 0x00000000
+addu.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x23888dd5 DSPCtrl 0x00000000
+addu.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x9813e433 DSPCtrl 0x00000000
+addu.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x8f8f8fa7 DSPCtrl 0x00000000
+addu.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x81663544 DSPCtrl 0x00100000
+addu.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xe6a5a6a5 DSPCtrl 0x00100000
+addu.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x99949994 DSPCtrl 0x00100000
+addu.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xa6412a92 DSPCtrl 0x00100000
+addu.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x78000f8f DSPCtrl 0x00100000
+addu.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xfffefffe DSPCtrl 0x00100000
+addu.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xbe3e93ae DSPCtrl 0x00100000
+addu.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf2ee0eb2 DSPCtrl 0x00100000
+addu.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xa8e5ff6f DSPCtrl 0x00000000
+addu.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xd05e4c57 DSPCtrl 0x00100000
+addu.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0506904f DSPCtrl 0x00100000
+addu.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63f6fa07 DSPCtrl 0x00000000
+addu.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x7035bf30 DSPCtrl 0x00100000
+addu.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x597128e0 DSPCtrl 0x00100000
+-------- ADDU_S.PH --------
+addu_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addu_s.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x00000000
+addu_s.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
+addu_s.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
+addu_s.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xffff437b DSPCtrl 0x00100000
+addu_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00000000
+addu_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addu_s.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
+addu_s.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0xffff5856 DSPCtrl 0x00100000
+addu_s.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99affff DSPCtrl 0x00100000
+addu_s.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0xffff0000 DSPCtrl 0x00100000
+addu_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00000000
+addu_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addu_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addu_s.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0xffff0000 DSPCtrl 0x00100000
+addu_s.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
+addu_s.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
+addu_s.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976 DSPCtrl 0x00000000
+addu_s.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x23888dd5 DSPCtrl 0x00000000
+addu_s.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x9813e433 DSPCtrl 0x00000000
+addu_s.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x8f8f8fa7 DSPCtrl 0x00000000
+addu_s.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xe6a5ffff DSPCtrl 0x00100000
+addu_s.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xa641ffff DSPCtrl 0x00100000
+addu_s.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xffff0f8f DSPCtrl 0x00100000
+addu_s.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf2eeffff DSPCtrl 0x00100000
+addu_s.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xa8e5ff6f DSPCtrl 0x00000000
+addu_s.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xd05effff DSPCtrl 0x00100000
+addu_s.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0xffffffff DSPCtrl 0x00100000
+addu_s.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63f6fa07 DSPCtrl 0x00000000
+addu_s.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xffffbf30 DSPCtrl 0x00100000
+addu_s.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xffffffff DSPCtrl 0x00100000
+-------- ADDUH.QB --------
+adduh.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+adduh.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x0002309c
+adduh.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x7f7f2c2b
+adduh.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x3d5566ba
+adduh.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xbc39213d
+adduh.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x7f807f80
+adduh.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+adduh.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000643a
+adduh.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x20000002
+adduh.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80002c2b
+adduh.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x744d8000
+adduh.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+adduh.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x7f807f80
+adduh.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+adduh.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000643a
+adduh.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+adduh.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+adduh.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x7f7f7f7f
+adduh.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x7f7f1226
+adduh.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xb2b2b2b2
+adduh.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf6b4d2e1
+adduh.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x7d6f1c3b
+adduh.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x1144466a
+adduh.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x4c097199
+adduh.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x47474753
+adduh.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xc0b39aa2
+adduh.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x72d2d2d2
+adduh.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcccaccca
+adduh.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x52a094c9
+adduh.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xbc0007c7
+adduh.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+adduh.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xde9fc957
+adduh.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x79778759
+adduh.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x54727f37
+adduh.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x67afa5ab
+adduh.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x8283c7a7
+adduh.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x317b7c83
+adduh.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xb79a5f98
+adduh.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xac389470
+-------- ADDUH_R.QB --------
+adduh_r.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+adduh_r.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x0002319c
+adduh_r.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x80802c2b
+adduh_r.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x3d5666ba
+adduh_r.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xbd3a223e
+adduh_r.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x80808080
+adduh_r.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+adduh_r.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000653b
+adduh_r.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x20000002
+adduh_r.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80002c2b
+adduh_r.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x754d8000
+adduh_r.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+adduh_r.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x80808080
+adduh_r.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff
+adduh_r.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000653b
+adduh_r.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+adduh_r.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+adduh_r.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x80808080
+adduh_r.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x80801227
+adduh_r.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xb3b3b3b3
+adduh_r.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf6b5d2e1
+adduh_r.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x7e6f1d3b
+adduh_r.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x1244476b
+adduh_r.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x4c0a729a
+adduh_r.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x48484854
+adduh_r.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xc0b39aa2
+adduh_r.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x73d3d3d3
+adduh_r.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcccaccca
+adduh_r.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x53a195c9
+adduh_r.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xbc0007c8
+adduh_r.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+adduh_r.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xdf9fca57
+adduh_r.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x79778759
+adduh_r.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x54738038
+adduh_r.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x68afa6ac
+adduh_r.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x8283c8a8
+adduh_r.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x327b7d84
+adduh_r.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xb89b5f98
+adduh_r.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0xad399470
+-------- APPEND --------
+append $t0, $t1,  0 :: rt 0x0fffffff rs 0x00000000 out 0x0fffffff 
+append $t2, $t3,  1 :: rt 0x00000286 rs 0x00045fb2 out 0x0000050c 
+append $t4, $t1,  4 :: rt 0x0ffb3421 rs 0xfabc2435 out 0xffb34215 
+append $t6, $t7, 17 :: rt 0x734680bc rs 0x07654cb8 out 0x01794cb8 
+append $t5, $t3, 31 :: rt 0x80000000 rs 0xf973437b out 0x7973437b 
+append $t2, $t4,  8 :: rt 0xffffffff rs 0x00010001 out 0xffffff01 
+append $t0, $t8, 11 :: rt 0x7fff7fff rs 0x7fff7fff out 0xfbffffff 
+append $t4, $t6, 13 :: rt 0x00000555 rs 0x0000c420 out 0x00aaa420 
+append $t0, $t1,  2 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+append $t2, $t3,  6 :: rt 0x80000000 rs 0x80000000 out 0x00000000 
+append $t4, $t1,  7 :: rt 0x55555555 rs 0xaaaaaaaa out 0xaaaaaaaa 
+append $t6, $t7, 19 :: rt 0xffff2435 rs 0x00000018 out 0x21a80018 
+append $t5, $t3, 31 :: rt 0xabababab rs 0xbabababa out 0xbabababa 
+append $t2, $t4,  4 :: rt 0xfc79b4d2 rs 0xf0f0f0f0 out 0xc79b4d20 
+append $t0, $t8, 12 :: rt 0x00000000 rs 0xfbde3976 out 0x00000976 
+append $t4, $t6, 10 :: rt 0x00354565 rs 0x23534870 out 0xd5159470 
+append $t0, $t1, 20 :: rt 0x00086755 rs 0x980b7cde out 0x755b7cde 
+append $t2, $t3, 21 :: rt 0x8f8f8f8f rs 0x00000018 out 0xf1e00018 
+append $t4, $t1, 24 :: rt 0xeeeeeeee rs 0x92784656 out 0xee784656 
+append $t6, $t7, 27 :: rt 0x1bdbdbdb rs 0xcacacaca out 0xdacacaca 
+append $t5, $t3,  1 :: rt 0xdecadeca rs 0xbacabaca out 0xbd95bd94 
+append $t2, $t4, 18 :: rt 0x93474bde rs 0x12fadeb4 out 0x2f7adeb4 
+append $t0, $t8, 10 :: rt 0xfc0007ff rs 0x7c000790 out 0x001fff90 
+append $t4, $t6, 16 :: rt 0xffffffff rs 0xffffffff out 0xffffffff 
+append $t0, $t1,  0 :: rt 0xcb4ab48f rs 0xf2f4df1f out 0xcb4ab48f 
+append $t2, $t3, 14 :: rt 0xaf8f7e18 rs 0x435f909a out 0xdf86109a 
+append $t4, $t1,  5 :: rt 0x87df4510 rs 0x2106ba5f out 0xfbe8a21f 
+append $t6, $t7,  7 :: rt 0xabf4e8e1 rs 0x246a6376 out 0xfa7470f6 
+append $t5, $t3,  9 :: rt 0xf4c0eeac rs 0x1046a1a3 out 0x81dd59a3 
+append $t2, $t4,  3 :: rt 0x006a54f2 rs 0x638ca515 out 0x0352a795 
+append $t0, $t8, 15 :: rt 0x79f74493 rs 0xf63e7a9d out 0xa249fa9d 
+append $t4, $t6, 11 :: rt 0x9c09e313 rs 0xbd6845cd out 0x4f189dcd 
+-------- BALIGN --------
+balign $t0, $t1,  0 :: rt 0x0fffffff rs 0x00000000 out 0x0fffffff 
+balign $t2, $t3,  1 :: rt 0x00000286 rs 0x00045fb2 out 0x00028600 
+balign $t6, $t7,  3 :: rt 0x734680bc rs 0x07654cb8 out 0xbc07654c 
+balign $t5, $t3,  0 :: rt 0x80000000 rs 0xf973437b out 0x80000000 
+balign $t2, $t4,  1 :: rt 0xffffffff rs 0x00010001 out 0xffffff00 
+balign $t4, $t6,  3 :: rt 0x00000555 rs 0x0000c420 out 0x550000c4 
+balign $t0, $t1,  0 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+balign $t2, $t3,  1 :: rt 0x80000000 rs 0x80000000 out 0x00000080 
+balign $t6, $t7,  3 :: rt 0xffff2435 rs 0x00000018 out 0x35000000 
+balign $t5, $t3,  0 :: rt 0xabababab rs 0xbabababa out 0xabababab 
+balign $t2, $t4,  1 :: rt 0xfc79b4d2 rs 0xf0f0f0f0 out 0x79b4d2f0 
+balign $t4, $t6,  3 :: rt 0x00354565 rs 0x23534870 out 0x65235348 
+balign $t0, $t1,  0 :: rt 0x00086755 rs 0x980b7cde out 0x00086755 
+balign $t2, $t3,  1 :: rt 0x8f8f8f8f rs 0x00000018 out 0x8f8f8f00 
+balign $t6, $t7,  3 :: rt 0x1bdbdbdb rs 0xcacacaca out 0xdbcacaca 
+balign $t5, $t3,  0 :: rt 0xdecadeca rs 0xbacabaca out 0xdecadeca 
+balign $t2, $t4,  1 :: rt 0x93474bde rs 0x12fadeb4 out 0x474bde12 
+balign $t4, $t6,  3 :: rt 0xffffffff rs 0xffffffff out 0xffffffff 
+balign $t0, $t1,  0 :: rt 0xcb4ab48f rs 0xf2f4df1f out 0xcb4ab48f 
+balign $t2, $t3,  1 :: rt 0xaf8f7e18 rs 0x435f909a out 0x8f7e1843 
+balign $t6, $t7,  3 :: rt 0xabf4e8e1 rs 0x246a6376 out 0xe1246a63 
+balign $t5, $t3,  0 :: rt 0xf4c0eeac rs 0x1046a1a3 out 0xf4c0eeac 
+balign $t2, $t4,  1 :: rt 0x006a54f2 rs 0x638ca515 out 0x6a54f263 
+balign $t4, $t6,  3 :: rt 0x9c09e313 rs 0xbd6845cd out 0x13bd6845 
+-------- CMPGDU.EQ.QB --------
+cmpgdu.eq.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000008 DSPCtrl 0x08000000
+cmpgdu.eq.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.eq.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000006 DSPCtrl 0x06000000
+cmpgdu.eq.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.eq.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x00000003 DSPCtrl 0x03000000
+cmpgdu.eq.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.eq.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x00000005 DSPCtrl 0x05000000
+cmpgdu.eq.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x00000006 DSPCtrl 0x06000000
+cmpgdu.eq.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.eq.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.eq.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x00000000 DSPCtrl 0x00000000
+-------- CMPGDU.LT.QB --------
+cmpgdu.lt.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x0000000e DSPCtrl 0x0e000000
+cmpgdu.lt.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x0000000b DSPCtrl 0x0b000000
+cmpgdu.lt.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000001 DSPCtrl 0x01000000
+cmpgdu.lt.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000008 DSPCtrl 0x08000000
+cmpgdu.lt.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00000002 DSPCtrl 0x02000000
+cmpgdu.lt.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000001 DSPCtrl 0x01000000
+cmpgdu.lt.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x00000008 DSPCtrl 0x08000000
+cmpgdu.lt.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x00000007 DSPCtrl 0x07000000
+cmpgdu.lt.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x0000000a DSPCtrl 0x0a000000
+cmpgdu.lt.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x00000009 DSPCtrl 0x09000000
+cmpgdu.lt.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x00000009 DSPCtrl 0x09000000
+cmpgdu.lt.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.lt.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x00000001 DSPCtrl 0x01000000
+cmpgdu.lt.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.lt.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.lt.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.lt.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x00000001 DSPCtrl 0x01000000
+cmpgdu.lt.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x00000004 DSPCtrl 0x04000000
+cmpgdu.lt.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x00000002 DSPCtrl 0x02000000
+-------- CMPGDU.LE.QB --------
+cmpgdu.le.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000008 DSPCtrl 0x08000000
+cmpgdu.le.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x0000000e DSPCtrl 0x0e000000
+cmpgdu.le.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x0000000b DSPCtrl 0x0b000000
+cmpgdu.le.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.le.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000d DSPCtrl 0x0d000000
+cmpgdu.le.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x0000000e DSPCtrl 0x0e000000
+cmpgdu.le.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x0000000e DSPCtrl 0x0e000000
+cmpgdu.le.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x00000003 DSPCtrl 0x03000000
+cmpgdu.le.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000d DSPCtrl 0x0d000000
+cmpgdu.le.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.le.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.le.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x00000008 DSPCtrl 0x08000000
+cmpgdu.le.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.le.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.le.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x00000000 DSPCtrl 0x00000000
+cmpgdu.le.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x00000007 DSPCtrl 0x07000000
+cmpgdu.le.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x00000009 DSPCtrl 0x09000000
+cmpgdu.le.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x00000001 DSPCtrl 0x01000000
+cmpgdu.le.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.le.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x0000000c DSPCtrl 0x0c000000
+cmpgdu.le.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0000000f DSPCtrl 0x0f000000
+cmpgdu.le.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x00000001 DSPCtrl 0x01000000
+cmpgdu.le.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x00000004 DSPCtrl 0x04000000
+cmpgdu.le.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x00000002 DSPCtrl 0x02000000
+-------- DPA.W.PH --------
+dpa.w.ph   HIout=0xffffffff, LOout=0x0d4fc1c2, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x00000000, LOout=0x00000014, HIin=0x00000000, LOin=0x00000000, RSval=0x00000004, RTval=0x00000005
+dpa.w.ph   HIout=0x00000000, LOout=0x3fffffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80000000, RTval=0x80000000
+dpa.w.ph   HIout=0xeeeeffff, LOout=0x0d4fe507, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0xffffaaaa, LOout=0x1f83c1c2, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x00000000, LOout=0x40000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dpa.w.ph   HIout=0xffffffff, LOout=0xc0008000, HIin=0xffffffff, LOin=0x80008000, RSval=0x80000000, RTval=0x80000000
+dpa.w.ph   HIout=0x00000000, LOout=0x00000014, HIin=0x00000000, LOin=0x00000000, RSval=0x80000004, RTval=0x00000005
+dpa.w.ph   HIout=0xffffffff, LOout=0xde3cffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80008000, RTval=0x4387ffff
+dpa.w.ph   HIout=0xeeeeffff, LOout=0x80002345, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x80008000, RTval=0x80008000
+dpa.w.ph   HIout=0xffffaaaa, LOout=0x1f83c1c2, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x00000000, LOout=0x80000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dpa.w.ph   HIout=0xffffffff, LOout=0x0d4fc1c2, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x80000000, LOout=0xef4c8000, HIin=0x80000000, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x80008000
+dpa.w.ph   HIout=0xffffffff, LOout=0x40000000, HIin=0xffffffff, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dpa.w.ph   HIout=0x00010000, LOout=0x0d4ed2d3, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dpa.w.ph   HIout=0xfffffffe, LOout=0xde3dffff, HIin=0xffffffff, LOin=0x0000ffff, RSval=0x80008000, RTval=0x4387ffff
+dpa.w.ph   HIout=0xffff1233, LOout=0xffff8a02, HIin=0xffff1234, LOin=0x00000000, RSval=0xffff3277, RTval=0x4387ffff
+dpa.w.ph   HIout=0x5678ffff, LOout=0x7277ffff, HIin=0x5678ffff, LOin=0x3277ffff, RSval=0x80000000, RTval=0x80000000
+dpa.w.ph   HIout=0xffffffff, LOout=0x13f62826, HIin=0xffffffff, LOin=0x00000000, RSval=0xffff3277, RTval=0xffff6543
+dpa.w.ph   HIout=0x00000000, LOout=0x00000001, HIin=0xffffffff, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dpa.w.ph   HIout=0xffffbbbb, LOout=0xcd2b0000, HIin=0xffffbbbb, LOin=0xeeee0000, RSval=0x80008000, RTval=0x4387ffff
+dpa.w.ph   HIout=0xffffffff, LOout=0x41a5f4f5, HIin=0xffffffff, LOin=0x34560000, RSval=0x3277ffff, RTval=0x4387cccc
+dpa.w.ph   HIout=0xbbbbfffe, LOout=0xfb804982, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x12345679, LOout=0x00000001, HIin=0x12345678, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dpa.w.ph   HIout=0xffffbbba, LOout=0xf0715678, HIin=0xffffbbbb, LOin=0x12345678, RSval=0x80008000, RTval=0x4387ffff
+dpa.w.ph   HIout=0xffffffff, LOout=0x4f130000, HIin=0xffffffff, LOin=0x34560000, RSval=0x87654321, RTval=0x80008000
+dpa.w.ph   HIout=0xbbbbffff, LOout=0x0889ffff, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x80000000
+dpa.w.ph   HIout=0xffffaaaa, LOout=0x1f83c1c2, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x80000000, LOout=0x80000000, HIin=0x80000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dpa.w.ph   HIout=0xffffffff, LOout=0x8d5041c2, HIin=0xffffffff, LOin=0x80008000, RSval=0x3277ffff, RTval=0x4387ffff
+dpa.w.ph   HIout=0x00010000, LOout=0x0d4ed2d3, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dpa.w.ph   HIout=0xffffffe7, LOout=0xfffff538, HIin=0xffffffe8, LOin=0x00000078, RSval=0xffffffe8, RTval=0x00000078
+dpa.w.ph   HIout=0x0000008c, LOout=0x00004218, HIin=0x0000008c, LOin=0x00000078, RSval=0x0000008c, RTval=0x00000078
+dpa.w.ph   HIout=0x00000004, LOout=0x40000000, HIin=0x00000004, LOin=0x40000000, RSval=0x00000004, RTval=0x40000000
+dpa.w.ph   HIout=0x80000001, LOout=0xc0000004, HIin=0x80000001, LOin=0x80000002, RSval=0x80000001, RTval=0x80000002
+dpa.w.ph   HIout=0x80002431, LOout=0x13b00000, HIin=0x80002431, LOin=0x4b908000, RSval=0x80002431, RTval=0x4b908000
+dpa.w.ph   HIout=0x004d8000, LOout=0x6bf3a7cc, HIin=0x004d8000, LOin=0x800027cc, RSval=0x004d8000, RTval=0x800027cc
+dpa.w.ph   HIout=0xf6a3fa3c, LOout=0x06ba057e, HIin=0xf6a3fa3c, LOin=0x083b3571, RSval=0xf6a3fa3c, RTval=0x083b3571
+dpa.w.ph   HIout=0xbf17fb9a, LOout=0xca5b9ac7, HIin=0xbf17fb9a, LOin=0xb9743941, RSval=0xbf17fb9a, RTval=0xb9743941
+dpa.w.ph   HIout=0x2c0bd024, LOout=0xb2a2bc0b, HIin=0x2c0bd024, LOin=0xbce5f924, RSval=0x2c0bd024, RTval=0xbce5f924
+dpa.w.ph   HIout=0x3e976e2e, LOout=0xcd65ec88, HIin=0x3e976e2e, LOin=0xcc3c201c, RSval=0x3e976e2e, RTval=0xcc3c201c
+dpa.w.ph   HIout=0xb4bfb365, LOout=0x17ed075a, HIin=0xb4bfb365, LOin=0x1ebaf88e, RSval=0xb4bfb365, RTval=0x1ebaf88e
+dpa.w.ph   HIout=0x288593c0, LOout=0x5c72af81, HIin=0x288593c0, LOin=0x722d5e20, RSval=0x288593c0, RTval=0x722d5e20
+dpa.w.ph   HIout=0x4d7ff5b4, LOout=0x85ac75af, HIin=0x4d7ff5b4, LOin=0xa1d6f791, RSval=0x4d7ff5b4, RTval=0xa1d6f791
+dpa.w.ph   HIout=0x4557be13, LOout=0xad2ac3d3, HIin=0x4557be13, LOin=0x7b11bee7, RSval=0x4557be13, RTval=0x7b11bee7
+dpa.w.ph   HIout=0xadcf5772, LOout=0xc97e1325, HIin=0xadcf5772, LOin=0xa5631488, RSval=0xadcf5772, RTval=0xa5631488
+dpa.w.ph   HIout=0x989a7235, LOout=0xb9ea1fec, HIin=0x989a7235, LOin=0xb10bcc65, RSval=0x989a7235, RTval=0xb10bcc65
+dpa.w.ph   HIout=0x4d6f393a, LOout=0x81842aeb, HIin=0x4d6f393a, LOin=0x73f39fca, RSval=0x4d6f393a, RTval=0x73f39fca
+dpa.w.ph   HIout=0x24a3291e, LOout=0x5e561298, HIin=0x24a3291e, LOin=0x5648e540, RSval=0x24a3291e, RTval=0x5648e540
+dpa.w.ph   HIout=0xdd91eebf, LOout=0xc4fd353f, HIin=0xdd91eebf, LOin=0xc54f79e6, RSval=0xdd91eebf, RTval=0xc54f79e6
+dpa.w.ph   HIout=0xf7ce2ec6, LOout=0x644b13ea, HIin=0xf7ce2ec6, LOin=0x5fc92974, RSval=0xf7ce2ec6, RTval=0x5fc92974
+dpa.w.ph   HIout=0xbc1083e8, LOout=0x50cdc97e, HIin=0xbc1083e8, LOin=0x7e08184e, RSval=0xbc1083e8, RTval=0x7e08184e
+dpa.w.ph   HIout=0xa617cc31, LOout=0x3fd44186, HIin=0xa617cc31, LOin=0x71c8315f, RSval=0xa617cc31, RTval=0x71c8315f
+dpa.w.ph   HIout=0xdfe1e8f0, LOout=0xa0846061, HIin=0xdfe1e8f0, LOin=0x9493110e, RSval=0xdfe1e8f0, RTval=0x9493110e
+dpa.w.ph   HIout=0x31458a23, LOout=0x80b2b254, HIin=0x31458a23, LOin=0xbb246228, RSval=0x31458a23, RTval=0xbb246228
+dpa.w.ph   HIout=0x848af791, LOout=0x1e7eb632, HIin=0x848af791, LOin=0x339d8d88, RSval=0x848af791, RTval=0x339d8d88
+dpa.w.ph   HIout=0xda3bacdc, LOout=0x4a73cdd2, HIin=0xda3bacdc, LOin=0x70974249, RSval=0xda3bacdc, RTval=0x70974249
+dpa.w.ph   HIout=0x649d5cbd, LOout=0x78d3393f, HIin=0x649d5cbd, LOin=0x8a8d4e7d, RSval=0x649d5cbd, RTval=0x8a8d4e7d
+dpa.w.ph   HIout=0xc0c8c881, LOout=0xe1b27602, HIin=0xc0c8c881, LOin=0xeb1b4335, RSval=0xc0c8c881, RTval=0xeb1b4335
+dpa.w.ph   HIout=0x7dd81a20, LOout=0x0b7f7898, HIin=0x7dd81a20, LOin=0x0cd6b508, RSval=0x7dd81a20, RTval=0x0cd6b508
+dpa.w.ph   HIout=0x00000000, LOout=0x6731e282, HIin=0x00000000, LOin=0x6731e282, RSval=0x00000000, RTval=0x6731e282
+dpa.w.ph   HIout=0xffffffff, LOout=0xb6ee4913, HIin=0xffffffff, LOin=0xb6edf28f, RSval=0xffffffff, RTval=0xb6edf28f
+dpa.w.ph   HIout=0x00000000, LOout=0x4b4ec9ca, HIin=0x00000000, LOin=0x4b4ec9ca, RSval=0x00000000, RTval=0x4b4ec9ca
+dpa.w.ph   HIout=0xffffffff, LOout=0xc1033efd, HIin=0xffffffff, LOin=0xc1037fa4, RSval=0xffffffff, RTval=0xc1037fa4
+dpa.w.ph   HIout=0xffffffff, LOout=0xcb4b34b6, HIin=0xffffffff, LOin=0xcb4ab48f, RSval=0xffffffff, RTval=0xcb4ab48f
+dpa.w.ph   HIout=0xffffffff, LOout=0xaf8f5071, HIin=0xffffffff, LOin=0xaf8f7e18, RSval=0xffffffff, RTval=0xaf8f7e18
+dpa.w.ph   HIout=0xffffffff, LOout=0x87df7821, HIin=0xffffffff, LOin=0x87df4510, RSval=0xffffffff, RTval=0x87df4510
+dpa.w.ph   HIout=0xffffffff, LOout=0xabf5540c, HIin=0xffffffff, LOin=0xabf4e8e1, RSval=0xffffffff, RTval=0xabf4e8e1
+dpa.w.ph   HIout=0xffffffff, LOout=0xf4c10b40, HIin=0xffffffff, LOin=0xf4c0eeac, RSval=0xffffffff, RTval=0xf4c0eeac
+dpa.w.ph   HIout=0x00000000, LOout=0x006a54f2, HIin=0x00000000, LOin=0x006a54f2, RSval=0x00000000, RTval=0x006a54f2
+dpa.w.ph   HIout=0x00000000, LOout=0x79f74493, HIin=0x00000000, LOin=0x79f74493, RSval=0x00000000, RTval=0x79f74493
+dpa.w.ph   HIout=0xffffffff, LOout=0x9c0a63f7, HIin=0xffffffff, LOin=0x9c09e313, RSval=0xffffffff, RTval=0x9c09e313
+-------- DPAQX_S.W.PH -------- 
+dpaqx_s.w.ph $ac3, $t4, $t5 :: rs 0x00000000 rt 0x00000000 inHI 0xffffffff inLO 0x80000000 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t0, $t1 :: rs 0x00000004 rt 0x40000000 inHI 0x00000000 inLO 0x00000006 outHI 0x00000000 outLO 0x00020006 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t3 :: rs 0x80002435 rt 0x80003421 inHI 0x00000000 inLO 0x40000000 outHI 0xffffffff outLO 0xe7aa0000 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t6, $t7 :: rs 0x76548000 rt 0x73468000 inHI 0x00000000 inLO 0x7fffffff outHI 0xffffffff outLO 0x9665ffff dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t5, $t3 :: rs 0x80000000 rt 0x80000000 inHI 0x00000000 inLO 0x00000001 outHI 0x00000000 outLO 0x00000001 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0x00010001 rt 0xffffffff inHI 0xffffffff inLO 0xffffffff outHI 0xffffffff outLO 0xfffffffb dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0x7fff7fff rt 0x7fff7fff inHI 0xffffffff inLO 0xffffffff outHI 0x00000000 outLO 0xfffc0003 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t0, $t1 :: rs 0x0000c420 rt 0x00000555 inHI 0x00000000 inLO 0x0fde3126 outHI 0x00000000 outLO 0x0fde3126 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t3 :: rs 0x00000000 rt 0x00000000 inHI 0x00000000 inLO 0x55555555 outHI 0x00000000 outLO 0x55555555 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t4, $t1 :: rs 0x80000000 rt 0x80000000 inHI 0xffffffff inLO 0xffff2435 outHI 0xffffffff outLO 0xffff2435 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t6, $t7 :: rs 0xaaaaaaaa rt 0x55555555 inHI 0xffffffff inLO 0xabababab outHI 0xffffffff outLO 0x39e41d73 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t5, $t3 :: rs 0x00000018 rt 0xffff2435 inHI 0xffffffff inLO 0xfc79b4d2 outHI 0xffffffff outLO 0xfc79b4a2 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0xbabababa rt 0xabababab inHI 0x00000000 inLO 0x00000000 outHI 0x00000000 outLO 0x5b47e0f8 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 inHI 0x00000000 inLO 0x00000000 outHI 0x00000000 outLO 0x09430ca0 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t4, $t5 :: rs 0xfbde3976 rt 0x00000000 inHI 0x00000000 inLO 0x12349876 outHI 0x00000000 outLO 0x12349876 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t0, $t1 :: rs 0x23534870 rt 0x00354565 inHI 0x00000000 inLO 0x00354565 outHI 0x00000000 outLO 0x1379e143 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t3 :: rs 0x980b7cde rt 0x00086755 inHI 0x00000000 inLO 0x00086755 outHI 0xffffffff outLO 0xac240683 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t4, $t1 :: rs 0x00000018 rt 0x8f8f8f8f inHI 0xffffffff inLO 0x8f8f8f8f outHI 0xffffffff outLO 0x8f7a7a5f dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t6, $t7 :: rs 0x92784656 rt 0xeeeeeeee inHI 0xffffffff inLO 0xeeeeeeee outHI 0xffffffff outLO 0xf42915f6 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t5, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb inHI 0x00000000 inLO 0x1bdbdbdb outHI 0x00000000 outLO 0x1f4dff13 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0xbacabaca rt 0xdecadeca inHI 0xffffffff inLO 0xdecadeca outHI 0x00000000 outLO 0x02b51c5a dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0x12fadeb4 rt 0x93474bde inHI 0xffffffff inLO 0x93474bde outHI 0xffffffff outLO 0xbacef14e dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t4, $t5 :: rs 0x7c000790 rt 0xfc0007ff inHI 0xffffffff inLO 0xfabfabfa outHI 0x00000000 outLO 0x024233fa dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0xffffffff rt 0xffffffff inHI 0x00000000 inLO 0x083b3571 outHI 0x00000000 outLO 0x083b3575 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t0, $t1 :: rs 0x24a3291e rt 0x5648e540 inHI 0xffffffff inLO 0xb9743941 outHI 0xffffffff outLO 0xcd8371a1 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t3 :: rs 0xdd91eebf rt 0xc54f79e6 inHI 0xffffffff inLO 0xbce5f924 outHI 0xffffffff outLO 0xa4047b92 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t4, $t1 :: rs 0xf7ce2ec6 rt 0x5fc92974 inHI 0xffffffff inLO 0xcc3c201c outHI 0xffffffff outLO 0xec9515b8 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t6, $t7 :: rs 0xbc1083e8 rt 0x7e08184e inHI 0x00000000 inLO 0x1ebaf88e outHI 0xffffffff outLO 0x97a530ce dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t5, $t3 :: rs 0xa617cc31 rt 0x71c8315f inHI 0x00000000 inLO 0x722d5e20 outHI 0x00000000 outLO 0x2171bfc2 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0xdfe1e8f0 rt 0x9493110e inHI 0xffffffff inLO 0xa1d6f791 outHI 0xffffffff outLO 0xb0ea59cd dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0x31458a23 rt 0xbb246228 inHI 0x00000000 inLO 0x7b11bee7 outHI 0x00000000 outLO 0xe041f44f dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t4, $t5 :: rs 0x848af791 rt 0x339d8d88 inHI 0xffffffff inLO 0xa5631488 outHI 0x00000000 outLO 0x10655902 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t0, $t1 :: rs 0xda3bacdc rt 0x70974249 inHI 0xffffffff inLO 0xb10bcc65 outHI 0xffffffff outLO 0x545b1993 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t3 :: rs 0x649d5cbd rt 0x8a8d4e7d inHI 0x00000000 inLO 0x73f39fca outHI 0x00000000 outLO 0x5c8d794e dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t4, $t1 :: rs 0xc0c8c881 rt 0xeb1b4335 inHI 0x00000000 inLO 0x5648e540 outHI 0x00000000 outLO 0x3e268946 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t6, $t7 :: rs 0x7dd81a20 rt 0x0cd6b508 inHI 0xffffffff inLO 0xc54f79e6 outHI 0xffffffff outLO 0x7e3974e6 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t5, $t3 :: rs 0x7fff7fff rt 0x6731e282 inHI 0x00000000 inLO 0x5fc92974 outHI 0x00000000 outLO 0xa97b960e dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0x00000555 rt 0xb6edf28f inHI 0x00000000 inLO 0x7e08184e outHI 0x00000000 outLO 0x7afcd3b0 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0x00000000 rt 0x4b4ec9ca inHI 0x00000000 inLO 0x71c8315f outHI 0x00000000 outLO 0x71c8315f dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t4, $t5 :: rs 0x80000000 rt 0xc1037fa4 inHI 0xffffffff inLO 0x9493110e outHI 0xffffffff outLO 0x14ef110e dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0x55555555 rt 0xcb4ab48f inHI 0xffffffff inLO 0xbb246228 outHI 0xffffffff outLO 0x65b56242 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t0, $t8 :: rs 0xffff8000 rt 0xaf8f8000 inHI 0x00000000 inLO 0x339d8d88 outHI 0x00000000 outLO 0x840f8d88 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t0, $t1 :: rs 0xabababab rt 0x87df4510 inHI 0x00000000 inLO 0x70974249 outHI 0x00000000 outLO 0x923c5393 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t3 :: rs 0xfc79b4d2 rt 0xabf4e8e1 inHI 0xffffffff inLO 0x8a8d4e7d outHI 0xffffffff outLO 0xbc8da77f dspCtrl 0x00000000
+dpaqx_s.w.ph $ac2, $t4, $t1 :: rs 0x00000000 rt 0xf4c0eeac inHI 0xffffffff inLO 0xeb1b4335 outHI 0xffffffff outLO 0xeb1b4335 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac3, $t6, $t7 :: rs 0x00354565 rt 0x006a54f2 inHI 0x00000000 inLO 0x0cd6b508 outHI 0x00000000 outLO 0x0d3358e0 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac0, $t5, $t3 :: rs 0x00086755 rt 0x79f74493 inHI 0x00000000 inLO 0x6731e282 outHI 0x00000000 outLO 0xc9abebb8 dspCtrl 0x00000000
+dpaqx_s.w.ph $ac1, $t2, $t4 :: rs 0xffff8000 rt 0x9c098000 inHI 0xffffffff inLO 0xb6edf28f outHI 0x00000000 outLO 0x1ae5f28f dspCtrl 0x00000000
+-------- DPAQX_SA.W.PH -------- 
+dpaqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x00000000 rt 0x00000000 inHI 0xffffffff inLO 0x80000000 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x00000004 rt 0x40000000 inHI 0x00000000 inLO 0x00000006 outHI 0x00000000 outLO 0x00020006 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x80002435 rt 0x80003421 inHI 0x00000000 inLO 0x40000000 outHI 0xffffffff outLO 0xe7aa0000 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x76548000 rt 0x73468000 inHI 0x00000000 inLO 0x7fffffff outHI 0xffffffff outLO 0x9665ffff dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x80000000 rt 0x80000000 inHI 0x00000000 inLO 0x00000001 outHI 0x00000000 outLO 0x00000001 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00010001 rt 0xffffffff inHI 0xffffffff inLO 0xffffffff outHI 0xffffffff outLO 0xfffffffb dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x7fff7fff rt 0x7fff7fff inHI 0xffffffff inLO 0xffffffff outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00040000
+dpaqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x0000c420 rt 0x00000555 inHI 0x00000000 inLO 0x0fde3126 outHI 0x00000000 outLO 0x0fde3126 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x00000000 rt 0x00000000 inHI 0x00000000 inLO 0x55555555 outHI 0x00000000 outLO 0x55555555 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x80000000 rt 0x80000000 inHI 0xffffffff inLO 0xffff2435 outHI 0xffffffff outLO 0xffff2435 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t6, $t7 :: rs 0xaaaaaaaa rt 0x55555555 inHI 0xffffffff inLO 0xabababab outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00080000
+dpaqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00000018 rt 0xffff2435 inHI 0xffffffff inLO 0xfc79b4d2 outHI 0xffffffff outLO 0xfc79b4a2 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xbabababa rt 0xabababab inHI 0x00000000 inLO 0x00000000 outHI 0x00000000 outLO 0x5b47e0f8 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 inHI 0x00000000 inLO 0x00000000 outHI 0x00000000 outLO 0x09430ca0 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t4, $t5 :: rs 0xfbde3976 rt 0x00000000 inHI 0x00000000 inLO 0x12349876 outHI 0x00000000 outLO 0x12349876 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x23534870 rt 0x00354565 inHI 0x00000000 inLO 0x00354565 outHI 0x00000000 outLO 0x1379e143 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x980b7cde rt 0x00086755 inHI 0x00000000 inLO 0x00086755 outHI 0xffffffff outLO 0xac240683 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x00000018 rt 0x8f8f8f8f inHI 0xffffffff inLO 0x8f8f8f8f outHI 0xffffffff outLO 0x8f7a7a5f dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x92784656 rt 0xeeeeeeee inHI 0xffffffff inLO 0xeeeeeeee outHI 0xffffffff outLO 0xf42915f6 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t5, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb inHI 0x00000000 inLO 0x1bdbdbdb outHI 0x00000000 outLO 0x1f4dff13 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xbacabaca rt 0xdecadeca inHI 0xffffffff inLO 0xdecadeca outHI 0x00000000 outLO 0x02b51c5a dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x12fadeb4 rt 0x93474bde inHI 0xffffffff inLO 0x93474bde outHI 0xffffffff outLO 0xbacef14e dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x7c000790 rt 0xfc0007ff inHI 0xffffffff inLO 0xfabfabfa outHI 0x00000000 outLO 0x024233fa dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xffffffff rt 0xffffffff inHI 0x00000000 inLO 0x083b3571 outHI 0x00000000 outLO 0x083b3575 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x24a3291e rt 0x5648e540 inHI 0xffffffff inLO 0xb9743941 outHI 0xffffffff outLO 0xcd8371a1 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t3 :: rs 0xdd91eebf rt 0xc54f79e6 inHI 0xffffffff inLO 0xbce5f924 outHI 0xffffffff outLO 0xa4047b92 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t4, $t1 :: rs 0xf7ce2ec6 rt 0x5fc92974 inHI 0xffffffff inLO 0xcc3c201c outHI 0xffffffff outLO 0xec9515b8 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t6, $t7 :: rs 0xbc1083e8 rt 0x7e08184e inHI 0x00000000 inLO 0x1ebaf88e outHI 0xffffffff outLO 0x97a530ce dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t5, $t3 :: rs 0xa617cc31 rt 0x71c8315f inHI 0x00000000 inLO 0x722d5e20 outHI 0x00000000 outLO 0x2171bfc2 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xdfe1e8f0 rt 0x9493110e inHI 0xffffffff inLO 0xa1d6f791 outHI 0xffffffff outLO 0xb0ea59cd dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x31458a23 rt 0xbb246228 inHI 0x00000000 inLO 0x7b11bee7 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00040000
+dpaqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x848af791 rt 0x339d8d88 inHI 0xffffffff inLO 0xa5631488 outHI 0x00000000 outLO 0x10655902 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t0, $t1 :: rs 0xda3bacdc rt 0x70974249 inHI 0xffffffff inLO 0xb10bcc65 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00010000
+dpaqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x649d5cbd rt 0x8a8d4e7d inHI 0x00000000 inLO 0x73f39fca outHI 0x00000000 outLO 0x5c8d794e dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t4, $t1 :: rs 0xc0c8c881 rt 0xeb1b4335 inHI 0x00000000 inLO 0x5648e540 outHI 0x00000000 outLO 0x3e268946 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x7dd81a20 rt 0x0cd6b508 inHI 0xffffffff inLO 0xc54f79e6 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00080000
+dpaqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x7fff7fff rt 0x6731e282 inHI 0x00000000 inLO 0x5fc92974 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00010000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00000555 rt 0xb6edf28f inHI 0x00000000 inLO 0x7e08184e outHI 0x00000000 outLO 0x7afcd3b0 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x00000000 rt 0x4b4ec9ca inHI 0x00000000 inLO 0x71c8315f outHI 0x00000000 outLO 0x71c8315f dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x80000000 rt 0xc1037fa4 inHI 0xffffffff inLO 0x9493110e outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00080000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x55555555 rt 0xcb4ab48f inHI 0xffffffff inLO 0xbb246228 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00020000
+dpaqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xffff8000 rt 0xaf8f8000 inHI 0x00000000 inLO 0x339d8d88 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00040000
+dpaqx_sa.w.ph $ac0, $t0, $t1 :: rs 0xabababab rt 0x87df4510 inHI 0x00000000 inLO 0x70974249 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00010000
+dpaqx_sa.w.ph $ac1, $t2, $t3 :: rs 0xfc79b4d2 rt 0xabf4e8e1 inHI 0xffffffff inLO 0x8a8d4e7d outHI 0xffffffff outLO 0xbc8da77f dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x00000000 rt 0xf4c0eeac inHI 0xffffffff inLO 0xeb1b4335 outHI 0xffffffff outLO 0xeb1b4335 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x00354565 rt 0x006a54f2 inHI 0x00000000 inLO 0x0cd6b508 outHI 0x00000000 outLO 0x0d3358e0 dspCtrl 0x00000000
+dpaqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00086755 rt 0x79f74493 inHI 0x00000000 inLO 0x6731e282 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00010000
+dpaqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xffff8000 rt 0x9c098000 inHI 0xffffffff inLO 0xb6edf28f outHI 0x00000000 outLO 0x1ae5f28f dspCtrl 0x00000000
+-------- DPAX.W.PH --------
+dpax.w.ph   HIout=0xfffffffe, LOout=0xffff8a02, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x00000000, LOout=0x00000000, HIin=0x00000000, LOin=0x00000000, RSval=0x00000004, RTval=0x00000005
+dpax.w.ph   HIout=0xffffffff, LOout=0xffffffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80000000, RTval=0x80000000
+dpax.w.ph   HIout=0xeeeefffe, LOout=0xffffad47, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0xffffaaaa, LOout=0x12338a02, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x00000000, LOout=0x00000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dpax.w.ph   HIout=0xffffffff, LOout=0x80008000, HIin=0xffffffff, LOin=0x80008000, RSval=0x80000000, RTval=0x80000000
+dpax.w.ph   HIout=0xffffffff, LOout=0xfffd8000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000004, RTval=0x00000005
+dpax.w.ph   HIout=0xffffffff, LOout=0xde3cffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80008000, RTval=0x4387ffff
+dpax.w.ph   HIout=0xeeeeffff, LOout=0x80002345, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x80008000, RTval=0x80008000
+dpax.w.ph   HIout=0xffffaaaa, LOout=0x12338a02, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x00000000, LOout=0x80000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dpax.w.ph   HIout=0xfffffffe, LOout=0xffff8a02, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x80000000, LOout=0xef4c8000, HIin=0x80000000, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x80008000
+dpax.w.ph   HIout=0xffffffff, LOout=0x00000000, HIin=0xffffffff, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dpax.w.ph   HIout=0x0000ffff, LOout=0xfb7e170b, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dpax.w.ph   HIout=0xfffffffe, LOout=0xde3dffff, HIin=0xffffffff, LOin=0x0000ffff, RSval=0x80008000, RTval=0x4387ffff
+dpax.w.ph   HIout=0xffff1234, LOout=0x0d4fc1c2, HIin=0xffff1234, LOin=0x00000000, RSval=0xffff3277, RTval=0x4387ffff
+dpax.w.ph   HIout=0x5678ffff, LOout=0x3277ffff, HIin=0x5678ffff, LOin=0x3277ffff, RSval=0x80000000, RTval=0x80000000
+dpax.w.ph   HIout=0xfffffffe, LOout=0xffff6846, HIin=0xffffffff, LOin=0x00000000, RSval=0xffff3277, RTval=0xffff6543
+dpax.w.ph   HIout=0x00000000, LOout=0x00000001, HIin=0xffffffff, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dpax.w.ph   HIout=0xffffbbbb, LOout=0xcd2b0000, HIin=0xffffbbbb, LOin=0xeeee0000, RSval=0x80008000, RTval=0x4387ffff
+dpax.w.ph   HIout=0xffffffff, LOout=0x2a3dc74d, HIin=0xffffffff, LOin=0x34560000, RSval=0x3277ffff, RTval=0x4387cccc
+dpax.w.ph   HIout=0xbbbbffff, LOout=0x0000cd8a, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x12345679, LOout=0x00000001, HIin=0x12345678, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dpax.w.ph   HIout=0xffffbbba, LOout=0xf0715678, HIin=0xffffbbbb, LOin=0x12345678, RSval=0x80008000, RTval=0x4387ffff
+dpax.w.ph   HIout=0xffffffff, LOout=0x4f130000, HIin=0xffffffff, LOin=0x34560000, RSval=0x87654321, RTval=0x80008000
+dpax.w.ph   HIout=0xbbbbffff, LOout=0x00017fff, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x80000000
+dpax.w.ph   HIout=0xffffaaaa, LOout=0x12338a02, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x80000000, LOout=0x80000000, HIin=0x80000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dpax.w.ph   HIout=0xffffffff, LOout=0x80000a02, HIin=0xffffffff, LOin=0x80008000, RSval=0x3277ffff, RTval=0x4387ffff
+dpax.w.ph   HIout=0x0000ffff, LOout=0xfb7e170b, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dpax.w.ph   HIout=0xffffffe8, LOout=0x00000000, HIin=0xffffffe8, LOin=0x00000078, RSval=0xffffffe8, RTval=0x00000078
+dpax.w.ph   HIout=0x0000008c, LOout=0x00000078, HIin=0x0000008c, LOin=0x00000078, RSval=0x0000008c, RTval=0x00000078
+dpax.w.ph   HIout=0x00000004, LOout=0x40010000, HIin=0x00000004, LOin=0x40000000, RSval=0x00000004, RTval=0x40000000
+dpax.w.ph   HIout=0x80000001, LOout=0x7ffe8002, HIin=0x80000001, LOin=0x80000002, RSval=0x80000001, RTval=0x80000002
+dpax.w.ph   HIout=0x80002431, LOout=0x963f3690, HIin=0x80002431, LOin=0x4b908000, RSval=0x80002431, RTval=0x4b908000
+dpax.w.ph   HIout=0x004d8000, LOout=0xc00c2028, HIin=0x004d8000, LOin=0x800027cc, RSval=0x004d8000, RTval=0x800027cc
+dpax.w.ph   HIout=0xf6a3fa3c, LOout=0x06175e38, HIin=0xf6a3fa3c, LOin=0x083b3571, RSval=0xf6a3fa3c, RTval=0x083b3571
+dpax.w.ph   HIout=0xbf17fb9a, LOout=0xac2628e0, HIin=0xbf17fb9a, LOin=0xb9743941, RSval=0xbf17fb9a, RTval=0xb9743941
+dpax.w.ph   HIout=0x2c0bd024, LOout=0xc8437de4, HIin=0x2c0bd024, LOin=0xbce5f924, RSval=0x2c0bd024, RTval=0xbce5f924
+dpax.w.ph   HIout=0x3e976e2e, LOout=0xbdce5368, HIin=0x3e976e2e, LOin=0xcc3c201c, RSval=0x3e976e2e, RTval=0xcc3c201c
+dpax.w.ph   HIout=0xb4bfb365, LOout=0x17b96fe2, HIin=0xb4bfb365, LOin=0x1ebaf88e, RSval=0xb4bfb365, RTval=0x1ebaf88e
+dpax.w.ph   HIout=0x288593c0, LOout=0x50cbbd80, HIin=0x288593c0, LOin=0x722d5e20, RSval=0x288593c0, RTval=0x722d5e20
+dpax.w.ph   HIout=0x4d7ff5b4, LOout=0xa312fdf8, HIin=0x4d7ff5b4, LOin=0xa1d6f791, RSval=0x4d7ff5b4, RTval=0xa1d6f791
+dpax.w.ph   HIout=0x4557be13, LOout=0x49bea2ab, HIin=0x4557be13, LOin=0x7b11bee7, RSval=0x4557be13, RTval=0x7b11bee7
+dpax.w.ph   HIout=0xadcf5772, LOout=0x7fd7e196, HIin=0xadcf5772, LOin=0xa5631488, RSval=0xadcf5772, RTval=0xa5631488
+dpax.w.ph   HIout=0x989a7235, LOout=0xa2aa466e, HIin=0x989a7235, LOin=0xb10bcc65, RSval=0x989a7235, RTval=0xb10bcc65
+dpax.w.ph   HIout=0x4d6f393a, LOout=0x70c50a6e, HIin=0x4d6f393a, LOin=0x73f39fca, RSval=0x4d6f393a, RTval=0x73f39fca
+dpax.w.ph   HIout=0x24a3291e, LOout=0x60508170, HIin=0x24a3291e, LOin=0x5648e540, RSval=0x24a3291e, RTval=0x5648e540
+dpax.w.ph   HIout=0xdd91eebf, LOout=0xb8debb1d, HIin=0xdd91eebf, LOin=0xc54f79e6, RSval=0xdd91eebf, RTval=0xc54f79e6
+dpax.w.ph   HIout=0xf7ce2ec6, LOout=0x6ff5a442, HIin=0xf7ce2ec6, LOin=0x5fc92974, RSval=0xf7ce2ec6, RTval=0x5fc92974
+dpax.w.ph   HIout=0xbc1083e8, LOout=0x3a7d346e, HIin=0xbc1083e8, LOin=0x7e08184e, RSval=0xbc1083e8, RTval=0x7e08184e
+dpax.w.ph   HIout=0xa617cc31, LOout=0x496a6230, HIin=0xa617cc31, LOin=0x71c8315f, RSval=0xa617cc31, RTval=0x71c8315f
+dpax.w.ph   HIout=0xdfe1e8f0, LOout=0x9c1cc22c, HIin=0xdfe1e8f0, LOin=0x9493110e, RSval=0xdfe1e8f0, RTval=0x9493110e
+dpax.w.ph   HIout=0x31458a23, LOout=0xedbc7cdc, HIin=0x31458a23, LOin=0xbb246228, RSval=0x31458a23, RTval=0xbb246228
+dpax.w.ph   HIout=0x848af791, LOout=0x691eafc5, HIin=0x848af791, LOin=0x339d8d88, RSval=0x848af791, RTval=0x339d8d88
+dpax.w.ph   HIout=0xda3bacdc, LOout=0x423ee8e0, HIin=0xda3bacdc, LOin=0x70974249, RSval=0xda3bacdc, RTval=0x70974249
+dpax.w.ph   HIout=0x649d5cbd, LOout=0x7eda3b3f, HIin=0x649d5cbd, LOin=0x8a8d4e7d, RSval=0x649d5cbd, RTval=0x8a8d4e7d
+dpax.w.ph   HIout=0xc0c8c881, LOout=0xdf0a1538, HIin=0xc0c8c881, LOin=0xeb1b4335, RSval=0xc0c8c881, RTval=0xeb1b4335
+dpax.w.ph   HIout=0x7dd81a1f, LOout=0xe94bb288, HIin=0x7dd81a20, LOin=0x0cd6b508, RSval=0x7dd81a20, RTval=0x0cd6b508
+dpax.w.ph   HIout=0x00000000, LOout=0x6731e282, HIin=0x00000000, LOin=0x6731e282, RSval=0x00000000, RTval=0x6731e282
+dpax.w.ph   HIout=0xffffffff, LOout=0xb6ee4913, HIin=0xffffffff, LOin=0xb6edf28f, RSval=0xffffffff, RTval=0xb6edf28f
+dpax.w.ph   HIout=0x00000000, LOout=0x4b4ec9ca, HIin=0x00000000, LOin=0x4b4ec9ca, RSval=0x00000000, RTval=0x4b4ec9ca
+dpax.w.ph   HIout=0xffffffff, LOout=0xc1033efd, HIin=0xffffffff, LOin=0xc1037fa4, RSval=0xffffffff, RTval=0xc1037fa4
+dpax.w.ph   HIout=0xffffffff, LOout=0xcb4b34b6, HIin=0xffffffff, LOin=0xcb4ab48f, RSval=0xffffffff, RTval=0xcb4ab48f
+dpax.w.ph   HIout=0xffffffff, LOout=0xaf8f5071, HIin=0xffffffff, LOin=0xaf8f7e18, RSval=0xffffffff, RTval=0xaf8f7e18
+dpax.w.ph   HIout=0xffffffff, LOout=0x87df7821, HIin=0xffffffff, LOin=0x87df4510, RSval=0xffffffff, RTval=0x87df4510
+dpax.w.ph   HIout=0xffffffff, LOout=0xabf5540c, HIin=0xffffffff, LOin=0xabf4e8e1, RSval=0xffffffff, RTval=0xabf4e8e1
+dpax.w.ph   HIout=0xffffffff, LOout=0xf4c10b40, HIin=0xffffffff, LOin=0xf4c0eeac, RSval=0xffffffff, RTval=0xf4c0eeac
+dpax.w.ph   HIout=0x00000000, LOout=0x006a54f2, HIin=0x00000000, LOin=0x006a54f2, RSval=0x00000000, RTval=0x006a54f2
+dpax.w.ph   HIout=0x00000000, LOout=0x79f74493, HIin=0x00000000, LOin=0x79f74493, RSval=0x00000000, RTval=0x79f74493
+dpax.w.ph   HIout=0xffffffff, LOout=0x9c0a63f7, HIin=0xffffffff, LOin=0x9c09e313, RSval=0xffffffff, RTval=0x9c09e313
+-------- DPS.W.PH --------
+dps.w.ph   HIout=0xfffffffe, LOout=0xf2b03e3e, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffff, LOout=0xffffffec, HIin=0x00000000, LOin=0x00000000, RSval=0x00000004, RTval=0x00000005
+dps.w.ph   HIout=0xffffffff, LOout=0xbfffffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80000000, RTval=0x80000000
+dps.w.ph   HIout=0xeeeefffe, LOout=0xf2b06183, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffaaaa, LOout=0x04e43e3e, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffff, LOout=0xc0000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dps.w.ph   HIout=0xffffffff, LOout=0x40008000, HIin=0xffffffff, LOin=0x80008000, RSval=0x80000000, RTval=0x80000000
+dps.w.ph   HIout=0xffffffff, LOout=0xffffffec, HIin=0x00000000, LOin=0x00000000, RSval=0x80000004, RTval=0x00000005
+dps.w.ph   HIout=0x00000000, LOout=0x21c2ffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80008000, RTval=0x4387ffff
+dps.w.ph   HIout=0xeeeefffe, LOout=0x80002345, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x80008000, RTval=0x80008000
+dps.w.ph   HIout=0xffffaaaa, LOout=0x04e43e3e, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffff, LOout=0x80000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dps.w.ph   HIout=0xfffffffe, LOout=0xf2b03e3e, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0x80000001, LOout=0x10b18000, HIin=0x80000000, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x80008000
+dps.w.ph   HIout=0xfffffffe, LOout=0xc0000000, HIin=0xffffffff, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dps.w.ph   HIout=0x0000ffff, LOout=0xf2af2d2d, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffff, LOout=0x21c3ffff, HIin=0xffffffff, LOin=0x0000ffff, RSval=0x80008000, RTval=0x4387ffff
+dps.w.ph   HIout=0xffff1234, LOout=0x000075fe, HIin=0xffff1234, LOin=0x00000000, RSval=0xffff3277, RTval=0x4387ffff
+dps.w.ph   HIout=0x5678fffe, LOout=0xf277ffff, HIin=0x5678ffff, LOin=0x3277ffff, RSval=0x80000000, RTval=0x80000000
+dps.w.ph   HIout=0xfffffffe, LOout=0xec09d7da, HIin=0xffffffff, LOin=0x00000000, RSval=0xffff3277, RTval=0xffff6543
+dps.w.ph   HIout=0xffffffff, LOout=0xfffffffd, HIin=0xffffffff, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dps.w.ph   HIout=0xffffbbbc, LOout=0x10b10000, HIin=0xffffbbbb, LOin=0xeeee0000, RSval=0x80008000, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffff, LOout=0x27060b0b, HIin=0xffffffff, LOin=0x34560000, RSval=0x3277ffff, RTval=0x4387cccc
+dps.w.ph   HIout=0xbbbbffff, LOout=0x0481b67c, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x4387ffff
+dps.w.ph   HIout=0x12345678, LOout=0xfffffffd, HIin=0x12345678, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dps.w.ph   HIout=0xffffbbbb, LOout=0x33f75678, HIin=0xffffbbbb, LOin=0x12345678, RSval=0x80008000, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffff, LOout=0x19990000, HIin=0xffffffff, LOin=0x34560000, RSval=0x87654321, RTval=0x80008000
+dps.w.ph   HIout=0xbbbbfffe, LOout=0xf777ffff, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x80000000
+dps.w.ph   HIout=0xffffaaaa, LOout=0x04e43e3e, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0x7fffffff, LOout=0x80000000, HIin=0x80000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dps.w.ph   HIout=0xffffffff, LOout=0x72b0be3e, HIin=0xffffffff, LOin=0x80008000, RSval=0x3277ffff, RTval=0x4387ffff
+dps.w.ph   HIout=0x0000ffff, LOout=0xf2af2d2d, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dps.w.ph   HIout=0xffffffe8, LOout=0x00000bb8, HIin=0xffffffe8, LOin=0x00000078, RSval=0xffffffe8, RTval=0x00000078
+dps.w.ph   HIout=0x0000008b, LOout=0xffffbed8, HIin=0x0000008c, LOin=0x00000078, RSval=0x0000008c, RTval=0x00000078
+dps.w.ph   HIout=0x00000004, LOout=0x40000000, HIin=0x00000004, LOin=0x40000000, RSval=0x00000004, RTval=0x40000000
+dps.w.ph   HIout=0x80000001, LOout=0x40000000, HIin=0x80000001, LOin=0x80000002, RSval=0x80000001, RTval=0x80000002
+dps.w.ph   HIout=0x80002431, LOout=0x83710000, HIin=0x80002431, LOin=0x4b908000, RSval=0x80002431, RTval=0x4b908000
+dps.w.ph   HIout=0x004d8000, LOout=0x940ca7cc, HIin=0x004d8000, LOin=0x800027cc, RSval=0x004d8000, RTval=0x800027cc
+dps.w.ph   HIout=0xf6a3fa3c, LOout=0x09bc6564, HIin=0xf6a3fa3c, LOin=0x083b3571, RSval=0xf6a3fa3c, RTval=0x083b3571
+dps.w.ph   HIout=0xbf17fb9a, LOout=0xa88cd7bb, HIin=0xbf17fb9a, LOin=0xb9743941, RSval=0xbf17fb9a, RTval=0xb9743941
+dps.w.ph   HIout=0x2c0bd024, LOout=0xc729363d, HIin=0x2c0bd024, LOin=0xbce5f924, RSval=0x2c0bd024, RTval=0xbce5f924
+dps.w.ph   HIout=0x3e976e2e, LOout=0xcb1253b0, HIin=0x3e976e2e, LOin=0xcc3c201c, RSval=0x3e976e2e, RTval=0xcc3c201c
+dps.w.ph   HIout=0xb4bfb365, LOout=0x2588e9c2, HIin=0xb4bfb365, LOin=0x1ebaf88e, RSval=0xb4bfb365, RTval=0x1ebaf88e
+dps.w.ph   HIout=0x288593c0, LOout=0x87e80cbf, HIin=0x288593c0, LOin=0x722d5e20, RSval=0x288593c0, RTval=0x722d5e20
+dps.w.ph   HIout=0x4d7ff5b4, LOout=0xbe017973, HIin=0x4d7ff5b4, LOin=0xa1d6f791, RSval=0x4d7ff5b4, RTval=0xa1d6f791
+dps.w.ph   HIout=0x4557be13, LOout=0x48f8b9fb, HIin=0x4557be13, LOin=0x7b11bee7, RSval=0x4557be13, RTval=0x7b11bee7
+dps.w.ph   HIout=0xadcf5772, LOout=0x814815eb, HIin=0xadcf5772, LOin=0xa5631488, RSval=0xadcf5772, RTval=0xa5631488
+dps.w.ph   HIout=0x989a7235, LOout=0xa82d78de, HIin=0x989a7235, LOin=0xb10bcc65, RSval=0x989a7235, RTval=0xb10bcc65
+dps.w.ph   HIout=0x4d6f393a, LOout=0x666314a9, HIin=0x4d6f393a, LOin=0x73f39fca, RSval=0x4d6f393a, RTval=0x73f39fca
+dps.w.ph   HIout=0x24a3291e, LOout=0x4e3bb7e8, HIin=0x24a3291e, LOin=0x5648e540, RSval=0x24a3291e, RTval=0x5648e540
+dps.w.ph   HIout=0xdd91eebf, LOout=0xc5a1be8d, HIin=0xdd91eebf, LOin=0xc54f79e6, RSval=0xdd91eebf, RTval=0xc54f79e6
+dps.w.ph   HIout=0xf7ce2ec6, LOout=0x5b473efe, HIin=0xf7ce2ec6, LOin=0x5fc92974, RSval=0xf7ce2ec6, RTval=0x5fc92974
+dps.w.ph   HIout=0xbc1083e8, LOout=0xab42671e, HIin=0xbc1083e8, LOin=0x7e08184e, RSval=0xbc1083e8, RTval=0x7e08184e
+dps.w.ph   HIout=0xa617cc31, LOout=0xa3bc2138, HIin=0xa617cc31, LOin=0x71c8315f, RSval=0xa617cc31, RTval=0x71c8315f
+dps.w.ph   HIout=0xdfe1e8f0, LOout=0x88a1c1bb, HIin=0xdfe1e8f0, LOin=0x9493110e, RSval=0xdfe1e8f0, RTval=0x9493110e
+dps.w.ph   HIout=0x31458a23, LOout=0xf59611fc, HIin=0x31458a23, LOin=0xbb246228, RSval=0x31458a23, RTval=0xbb246228
+dps.w.ph   HIout=0x848af791, LOout=0x48bc64de, HIin=0x848af791, LOin=0x339d8d88, RSval=0x848af791, RTval=0x339d8d88
+dps.w.ph   HIout=0xda3bacdc, LOout=0x96bab6c0, HIin=0xda3bacdc, LOin=0x70974249, RSval=0xda3bacdc, RTval=0x70974249
+dps.w.ph   HIout=0x649d5cbd, LOout=0x9c4763bb, HIin=0x649d5cbd, LOin=0x8a8d4e7d, RSval=0x649d5cbd, RTval=0x8a8d4e7d
+dps.w.ph   HIout=0xc0c8c881, LOout=0xf4841068, HIin=0xc0c8c881, LOin=0xeb1b4335, RSval=0xc0c8c881, RTval=0xeb1b4335
+dps.w.ph   HIout=0x7dd81a20, LOout=0x0e2df178, HIin=0x7dd81a20, LOin=0x0cd6b508, RSval=0x7dd81a20, RTval=0x0cd6b508
+dps.w.ph   HIout=0x00000000, LOout=0x6731e282, HIin=0x00000000, LOin=0x6731e282, RSval=0x00000000, RTval=0x6731e282
+dps.w.ph   HIout=0xffffffff, LOout=0xb6ed9c0b, HIin=0xffffffff, LOin=0xb6edf28f, RSval=0xffffffff, RTval=0xb6edf28f
+dps.w.ph   HIout=0x00000000, LOout=0x4b4ec9ca, HIin=0x00000000, LOin=0x4b4ec9ca, RSval=0x00000000, RTval=0x4b4ec9ca
+dps.w.ph   HIout=0xffffffff, LOout=0xc103c04b, HIin=0xffffffff, LOin=0xc1037fa4, RSval=0xffffffff, RTval=0xc1037fa4
+dps.w.ph   HIout=0xffffffff, LOout=0xcb4a3468, HIin=0xffffffff, LOin=0xcb4ab48f, RSval=0xffffffff, RTval=0xcb4ab48f
+dps.w.ph   HIout=0xffffffff, LOout=0xaf8fabbf, HIin=0xffffffff, LOin=0xaf8f7e18, RSval=0xffffffff, RTval=0xaf8f7e18
+dps.w.ph   HIout=0xffffffff, LOout=0x87df11ff, HIin=0xffffffff, LOin=0x87df4510, RSval=0xffffffff, RTval=0x87df4510
+dps.w.ph   HIout=0xffffffff, LOout=0xabf47db6, HIin=0xffffffff, LOin=0xabf4e8e1, RSval=0xffffffff, RTval=0xabf4e8e1
+dps.w.ph   HIout=0xffffffff, LOout=0xf4c0d218, HIin=0xffffffff, LOin=0xf4c0eeac, RSval=0xffffffff, RTval=0xf4c0eeac
+dps.w.ph   HIout=0x00000000, LOout=0x006a54f2, HIin=0x00000000, LOin=0x006a54f2, RSval=0x00000000, RTval=0x006a54f2
+dps.w.ph   HIout=0x00000000, LOout=0x79f74493, HIin=0x00000000, LOin=0x79f74493, RSval=0x00000000, RTval=0x79f74493
+dps.w.ph   HIout=0xffffffff, LOout=0x9c09622f, HIin=0xffffffff, LOin=0x9c09e313, RSval=0xffffffff, RTval=0x9c09e313
+-------- DPSQX_S.W.PH -------- 
+dpsqx_s.w.ph $ac3, $t4, $t5 :: rs 0x00000000 rt 0x00000000 inHI 0xffffffff inLO 0x80000000 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t0, $t1 :: rs 0x00000004 rt 0x40000000 inHI 0x00000000 inLO 0x00000006 outHI 0xffffffff outLO 0xfffe0006 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t3 :: rs 0x80002435 rt 0x80003421 inHI 0x00000000 inLO 0x40000000 outHI 0x00000000 outLO 0x98560000 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t6, $t7 :: rs 0x76548000 rt 0x73468000 inHI 0x00000000 inLO 0x7fffffff outHI 0x00000001 outLO 0x6999ffff dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t5, $t3 :: rs 0x80000000 rt 0x80000000 inHI 0x00000000 inLO 0x00000001 outHI 0x00000000 outLO 0x00000001 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0x00010001 rt 0xffffffff inHI 0xffffffff inLO 0xffffffff outHI 0x00000000 outLO 0x00000003 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0x7fff7fff rt 0x7fff7fff inHI 0xffffffff inLO 0xffffffff outHI 0xffffffff outLO 0x0003fffb dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t0, $t1 :: rs 0x0000c420 rt 0x00000555 inHI 0x00000000 inLO 0x0fde3126 outHI 0x00000000 outLO 0x0fde3126 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t3 :: rs 0x00000000 rt 0x00000000 inHI 0x00000000 inLO 0x55555555 outHI 0x00000000 outLO 0x55555555 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t4, $t1 :: rs 0x80000000 rt 0x80000000 inHI 0xffffffff inLO 0xffff2435 outHI 0xffffffff outLO 0xffff2435 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t6, $t7 :: rs 0xaaaaaaaa rt 0x55555555 inHI 0xffffffff inLO 0xabababab outHI 0x00000000 outLO 0x1d7339e3 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t5, $t3 :: rs 0x00000018 rt 0xffff2435 inHI 0xffffffff inLO 0xfc79b4d2 outHI 0xffffffff outLO 0xfc79b502 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0xbabababa rt 0xabababab inHI 0x00000000 inLO 0x00000000 outHI 0xffffffff outLO 0xa4b81f08 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 inHI 0x00000000 inLO 0x00000000 outHI 0xffffffff outLO 0xf6bcf360 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t4, $t5 :: rs 0xfbde3976 rt 0x00000000 inHI 0x00000000 inLO 0x12349876 outHI 0x00000000 outLO 0x12349876 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t0, $t1 :: rs 0x23534870 rt 0x00354565 inHI 0x00000000 inLO 0x00354565 outHI 0xffffffff outLO 0xecf0a987 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t3 :: rs 0x980b7cde rt 0x00086755 inHI 0x00000000 inLO 0x00086755 outHI 0x00000000 outLO 0x53ecc827 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t4, $t1 :: rs 0x00000018 rt 0x8f8f8f8f inHI 0xffffffff inLO 0x8f8f8f8f outHI 0xffffffff outLO 0x8fa4a4bf dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t6, $t7 :: rs 0x92784656 rt 0xeeeeeeee inHI 0xffffffff inLO 0xeeeeeeee outHI 0xffffffff outLO 0xe9b4c7e6 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t5, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb inHI 0x00000000 inLO 0x1bdbdbdb outHI 0x00000000 outLO 0x1869b8a3 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0xbacabaca rt 0xdecadeca inHI 0xffffffff inLO 0xdecadeca outHI 0xffffffff outLO 0xbae0a13a dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0x12fadeb4 rt 0x93474bde inHI 0xffffffff inLO 0x93474bde outHI 0xffffffff outLO 0x6bbfa66e dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t4, $t5 :: rs 0x7c000790 rt 0xfc0007ff inHI 0xffffffff inLO 0xfabfabfa outHI 0xffffffff outLO 0xf33d23fa dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0xffffffff rt 0xffffffff inHI 0x00000000 inLO 0x083b3571 outHI 0x00000000 outLO 0x083b356d dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t0, $t1 :: rs 0x24a3291e rt 0x5648e540 inHI 0xffffffff inLO 0xb9743941 outHI 0xffffffff outLO 0xa56500e1 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t3 :: rs 0xdd91eebf rt 0xc54f79e6 inHI 0xffffffff inLO 0xbce5f924 outHI 0xffffffff outLO 0xd5c776b6 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t4, $t1 :: rs 0xf7ce2ec6 rt 0x5fc92974 inHI 0xffffffff inLO 0xcc3c201c outHI 0xffffffff outLO 0xabe32a80 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t6, $t7 :: rs 0xbc1083e8 rt 0x7e08184e inHI 0x00000000 inLO 0x1ebaf88e outHI 0x00000000 outLO 0xa5d0c04e dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t5, $t3 :: rs 0xa617cc31 rt 0x71c8315f inHI 0x00000000 inLO 0x722d5e20 outHI 0x00000000 outLO 0xc2e8fc7e dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0xdfe1e8f0 rt 0x9493110e inHI 0xffffffff inLO 0xa1d6f791 outHI 0xffffffff outLO 0x92c39555 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0x31458a23 rt 0xbb246228 inHI 0x00000000 inLO 0x7b11bee7 outHI 0x00000000 outLO 0x15e1897f dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t4, $t5 :: rs 0x848af791 rt 0x339d8d88 inHI 0xffffffff inLO 0xa5631488 outHI 0xffffffff outLO 0x3a60d00e dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t0, $t1 :: rs 0xda3bacdc rt 0x70974249 inHI 0xffffffff inLO 0xb10bcc65 outHI 0x00000000 outLO 0x0dbc7f37 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t3 :: rs 0x649d5cbd rt 0x8a8d4e7d inHI 0x00000000 inLO 0x73f39fca outHI 0x00000000 outLO 0x8b59c646 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t4, $t1 :: rs 0xc0c8c881 rt 0xeb1b4335 inHI 0x00000000 inLO 0x5648e540 outHI 0x00000000 outLO 0x6e6b413a dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t6, $t7 :: rs 0x7dd81a20 rt 0x0cd6b508 inHI 0xffffffff inLO 0xc54f79e6 outHI 0x00000000 outLO 0x0c657ee6 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t5, $t3 :: rs 0x7fff7fff rt 0x6731e282 inHI 0x00000000 inLO 0x5fc92974 outHI 0x00000000 outLO 0x1616bcda dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0x00000555 rt 0xb6edf28f inHI 0x00000000 inLO 0x7e08184e outHI 0x00000000 outLO 0x81135cec dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0x00000000 rt 0x4b4ec9ca inHI 0x00000000 inLO 0x71c8315f outHI 0x00000000 outLO 0x71c8315f dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t4, $t5 :: rs 0x80000000 rt 0xc1037fa4 inHI 0xffffffff inLO 0x9493110e outHI 0x00000000 outLO 0x1437110e dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0x55555555 rt 0xcb4ab48f inHI 0xffffffff inLO 0xbb246228 outHI 0x00000000 outLO 0x1093620e dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t0, $t8 :: rs 0xffff8000 rt 0xaf8f8000 inHI 0x00000000 inLO 0x339d8d88 outHI 0xffffffff outLO 0xe32b8d88 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t0, $t1 :: rs 0xabababab rt 0x87df4510 inHI 0x00000000 inLO 0x70974249 outHI 0x00000000 outLO 0x4ef230ff dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t3 :: rs 0xfc79b4d2 rt 0xabf4e8e1 inHI 0xffffffff inLO 0x8a8d4e7d outHI 0xffffffff outLO 0x588cf57b dspCtrl 0x00000000
+dpsqx_s.w.ph $ac2, $t4, $t1 :: rs 0x00000000 rt 0xf4c0eeac inHI 0xffffffff inLO 0xeb1b4335 outHI 0xffffffff outLO 0xeb1b4335 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac3, $t6, $t7 :: rs 0x00354565 rt 0x006a54f2 inHI 0x00000000 inLO 0x0cd6b508 outHI 0x00000000 outLO 0x0c7a1130 dspCtrl 0x00000000
+dpsqx_s.w.ph $ac0, $t5, $t3 :: rs 0x00086755 rt 0x79f74493 inHI 0x00000000 inLO 0x6731e282 outHI 0x00000000 outLO 0x04b7d94c dspCtrl 0x00000000
+dpsqx_s.w.ph $ac1, $t2, $t4 :: rs 0xffff8000 rt 0x9c098000 inHI 0xffffffff inLO 0xb6edf28f outHI 0xffffffff outLO 0x52f5f28f dspCtrl 0x00000000
+-------- DPSQX_SA.W.PH -------- 
+dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x00000000 rt 0x00000000 inHI 0xffffffff inLO 0x80000000 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x00000004 rt 0x40000000 inHI 0x00000000 inLO 0x00000006 outHI 0xffffffff outLO 0xfffe0006 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x80002435 rt 0x80003421 inHI 0x00000000 inLO 0x40000000 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00020000
+dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x76548000 rt 0x73468000 inHI 0x00000000 inLO 0x7fffffff outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00080000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x80000000 rt 0x80000000 inHI 0x00000000 inLO 0x00000001 outHI 0x00000000 outLO 0x00000001 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00010001 rt 0xffffffff inHI 0xffffffff inLO 0xffffffff outHI 0x00000000 outLO 0x00000003 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x7fff7fff rt 0x7fff7fff inHI 0xffffffff inLO 0xffffffff outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00040000
+dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x0000c420 rt 0x00000555 inHI 0x00000000 inLO 0x0fde3126 outHI 0x00000000 outLO 0x0fde3126 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x00000000 rt 0x00000000 inHI 0x00000000 inLO 0x55555555 outHI 0x00000000 outLO 0x55555555 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x80000000 rt 0x80000000 inHI 0xffffffff inLO 0xffff2435 outHI 0xffffffff outLO 0xffff2435 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0xaaaaaaaa rt 0x55555555 inHI 0xffffffff inLO 0xabababab outHI 0x00000000 outLO 0x1d7339e3 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00000018 rt 0xffff2435 inHI 0xffffffff inLO 0xfc79b4d2 outHI 0xffffffff outLO 0xfc79b502 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xbabababa rt 0xabababab inHI 0x00000000 inLO 0x00000000 outHI 0xffffffff outLO 0xa4b81f08 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 inHI 0x00000000 inLO 0x00000000 outHI 0xffffffff outLO 0xf6bcf360 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0xfbde3976 rt 0x00000000 inHI 0x00000000 inLO 0x12349876 outHI 0x00000000 outLO 0x12349876 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x23534870 rt 0x00354565 inHI 0x00000000 inLO 0x00354565 outHI 0xffffffff outLO 0xecf0a987 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x980b7cde rt 0x00086755 inHI 0x00000000 inLO 0x00086755 outHI 0x00000000 outLO 0x53ecc827 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x00000018 rt 0x8f8f8f8f inHI 0xffffffff inLO 0x8f8f8f8f outHI 0xffffffff outLO 0x8fa4a4bf dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x92784656 rt 0xeeeeeeee inHI 0xffffffff inLO 0xeeeeeeee outHI 0xffffffff outLO 0xe9b4c7e6 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb inHI 0x00000000 inLO 0x1bdbdbdb outHI 0x00000000 outLO 0x1869b8a3 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xbacabaca rt 0xdecadeca inHI 0xffffffff inLO 0xdecadeca outHI 0xffffffff outLO 0xbae0a13a dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x12fadeb4 rt 0x93474bde inHI 0xffffffff inLO 0x93474bde outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00040000
+dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x7c000790 rt 0xfc0007ff inHI 0xffffffff inLO 0xfabfabfa outHI 0xffffffff outLO 0xf33d23fa dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xffffffff rt 0xffffffff inHI 0x00000000 inLO 0x083b3571 outHI 0x00000000 outLO 0x083b356d dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x24a3291e rt 0x5648e540 inHI 0xffffffff inLO 0xb9743941 outHI 0xffffffff outLO 0xa56500e1 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0xdd91eebf rt 0xc54f79e6 inHI 0xffffffff inLO 0xbce5f924 outHI 0xffffffff outLO 0xd5c776b6 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0xf7ce2ec6 rt 0x5fc92974 inHI 0xffffffff inLO 0xcc3c201c outHI 0xffffffff outLO 0xabe32a80 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0xbc1083e8 rt 0x7e08184e inHI 0x00000000 inLO 0x1ebaf88e outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00080000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0xa617cc31 rt 0x71c8315f inHI 0x00000000 inLO 0x722d5e20 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00010000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xdfe1e8f0 rt 0x9493110e inHI 0xffffffff inLO 0xa1d6f791 outHI 0xffffffff outLO 0x92c39555 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x31458a23 rt 0xbb246228 inHI 0x00000000 inLO 0x7b11bee7 outHI 0x00000000 outLO 0x15e1897f dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x848af791 rt 0x339d8d88 inHI 0xffffffff inLO 0xa5631488 outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00080000
+dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0xda3bacdc rt 0x70974249 inHI 0xffffffff inLO 0xb10bcc65 outHI 0x00000000 outLO 0x0dbc7f37 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x649d5cbd rt 0x8a8d4e7d inHI 0x00000000 inLO 0x73f39fca outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00020000
+dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0xc0c8c881 rt 0xeb1b4335 inHI 0x00000000 inLO 0x5648e540 outHI 0x00000000 outLO 0x6e6b413a dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x7dd81a20 rt 0x0cd6b508 inHI 0xffffffff inLO 0xc54f79e6 outHI 0x00000000 outLO 0x0c657ee6 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x7fff7fff rt 0x6731e282 inHI 0x00000000 inLO 0x5fc92974 outHI 0x00000000 outLO 0x1616bcda dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00000555 rt 0xb6edf28f inHI 0x00000000 inLO 0x7e08184e outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00020000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x00000000 rt 0x4b4ec9ca inHI 0x00000000 inLO 0x71c8315f outHI 0x00000000 outLO 0x71c8315f dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x80000000 rt 0xc1037fa4 inHI 0xffffffff inLO 0x9493110e outHI 0x00000000 outLO 0x1437110e dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x55555555 rt 0xcb4ab48f inHI 0xffffffff inLO 0xbb246228 outHI 0x00000000 outLO 0x1093620e dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xffff8000 rt 0xaf8f8000 inHI 0x00000000 inLO 0x339d8d88 outHI 0xffffffff outLO 0xe32b8d88 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0xabababab rt 0x87df4510 inHI 0x00000000 inLO 0x70974249 outHI 0x00000000 outLO 0x4ef230ff dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0xfc79b4d2 rt 0xabf4e8e1 inHI 0xffffffff inLO 0x8a8d4e7d outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00020000
+dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x00000000 rt 0xf4c0eeac inHI 0xffffffff inLO 0xeb1b4335 outHI 0xffffffff outLO 0xeb1b4335 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x00354565 rt 0x006a54f2 inHI 0x00000000 inLO 0x0cd6b508 outHI 0x00000000 outLO 0x0c7a1130 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00086755 rt 0x79f74493 inHI 0x00000000 inLO 0x6731e282 outHI 0x00000000 outLO 0x04b7d94c dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xffff8000 rt 0x9c098000 inHI 0xffffffff inLO 0xb6edf28f outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00020000
+-------- DPSX.W.PH --------
+dpsx.w.ph   HIout=0xffffffff, LOout=0x000075fe, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x00000000, LOout=0x00000000, HIin=0x00000000, LOin=0x00000000, RSval=0x00000004, RTval=0x00000005
+dpsx.w.ph   HIout=0xffffffff, LOout=0xffffffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80000000, RTval=0x80000000
+dpsx.w.ph   HIout=0xeeeeffff, LOout=0x00009943, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffffaaaa, LOout=0x123475fe, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x00000000, LOout=0x00000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dpsx.w.ph   HIout=0xffffffff, LOout=0x80008000, HIin=0xffffffff, LOin=0x80008000, RSval=0x80000000, RTval=0x80000000
+dpsx.w.ph   HIout=0x00000000, LOout=0x00028000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000004, RTval=0x00000005
+dpsx.w.ph   HIout=0x00000000, LOout=0x21c2ffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80008000, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xeeeefffe, LOout=0x80002345, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x80008000, RTval=0x80008000
+dpsx.w.ph   HIout=0xffffaaaa, LOout=0x123475fe, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffffffff, LOout=0x80000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dpsx.w.ph   HIout=0xffffffff, LOout=0x000075fe, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x80000001, LOout=0x10b18000, HIin=0x80000000, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x80008000
+dpsx.w.ph   HIout=0xffffffff, LOout=0x00000000, HIin=0xffffffff, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+dpsx.w.ph   HIout=0x00010000, LOout=0x047fe8f5, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffffffff, LOout=0x21c3ffff, HIin=0xffffffff, LOin=0x0000ffff, RSval=0x80008000, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffff1233, LOout=0xf2b03e3e, HIin=0xffff1234, LOin=0x00000000, RSval=0xffff3277, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x5678ffff, LOout=0x3277ffff, HIin=0x5678ffff, LOin=0x3277ffff, RSval=0x80000000, RTval=0x80000000
+dpsx.w.ph   HIout=0xffffffff, LOout=0x000097ba, HIin=0xffffffff, LOin=0x00000000, RSval=0xffff3277, RTval=0xffff6543
+dpsx.w.ph   HIout=0xffffffff, LOout=0xfffffffd, HIin=0xffffffff, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dpsx.w.ph   HIout=0xffffbbbc, LOout=0x10b10000, HIin=0xffffbbbb, LOin=0xeeee0000, RSval=0x80008000, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffffffff, LOout=0x3e6e38b3, HIin=0xffffffff, LOin=0x34560000, RSval=0x3277ffff, RTval=0x4387cccc
+dpsx.w.ph   HIout=0xbbbbffff, LOout=0x00013274, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x12345678, LOout=0xfffffffd, HIin=0x12345678, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+dpsx.w.ph   HIout=0xffffbbbb, LOout=0x33f75678, HIin=0xffffbbbb, LOin=0x12345678, RSval=0x80008000, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffffffff, LOout=0x19990000, HIin=0xffffffff, LOin=0x34560000, RSval=0x87654321, RTval=0x80008000
+dpsx.w.ph   HIout=0xbbbbffff, LOout=0x00007fff, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x80000000
+dpsx.w.ph   HIout=0xffffaaaa, LOout=0x123475fe, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x7fffffff, LOout=0x80000000, HIin=0x80000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+dpsx.w.ph   HIout=0xffffffff, LOout=0x8000f5fe, HIin=0xffffffff, LOin=0x80008000, RSval=0x3277ffff, RTval=0x4387ffff
+dpsx.w.ph   HIout=0x00010000, LOout=0x047fe8f5, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+dpsx.w.ph   HIout=0xffffffe8, LOout=0x000000f0, HIin=0xffffffe8, LOin=0x00000078, RSval=0xffffffe8, RTval=0x00000078
+dpsx.w.ph   HIout=0x0000008c, LOout=0x00000078, HIin=0x0000008c, LOin=0x00000078, RSval=0x0000008c, RTval=0x00000078
+dpsx.w.ph   HIout=0x00000004, LOout=0x3fff0000, HIin=0x00000004, LOin=0x40000000, RSval=0x00000004, RTval=0x40000000
+dpsx.w.ph   HIout=0x80000001, LOout=0x80018002, HIin=0x80000001, LOin=0x80000002, RSval=0x80000001, RTval=0x80000002
+dpsx.w.ph   HIout=0x80002431, LOout=0x00e1c970, HIin=0x80002431, LOin=0x4b908000, RSval=0x80002431, RTval=0x4b908000
+dpsx.w.ph   HIout=0x004d8000, LOout=0x3ff42f70, HIin=0x004d8000, LOin=0x800027cc, RSval=0x004d8000, RTval=0x800027cc
+dpsx.w.ph   HIout=0xf6a3fa3c, LOout=0x0a5f0caa, HIin=0xf6a3fa3c, LOin=0x083b3571, RSval=0xf6a3fa3c, RTval=0x083b3571
+dpsx.w.ph   HIout=0xbf17fb9a, LOout=0xc6c249a2, HIin=0xbf17fb9a, LOin=0xb9743941, RSval=0xbf17fb9a, RTval=0xb9743941
+dpsx.w.ph   HIout=0x2c0bd024, LOout=0xb1887464, HIin=0x2c0bd024, LOin=0xbce5f924, RSval=0x2c0bd024, RTval=0xbce5f924
+dpsx.w.ph   HIout=0x3e976e2e, LOout=0xdaa9ecd0, HIin=0x3e976e2e, LOin=0xcc3c201c, RSval=0x3e976e2e, RTval=0xcc3c201c
+dpsx.w.ph   HIout=0xb4bfb365, LOout=0x25bc813a, HIin=0xb4bfb365, LOin=0x1ebaf88e, RSval=0xb4bfb365, RTval=0x1ebaf88e
+dpsx.w.ph   HIout=0x288593c0, LOout=0x938efec0, HIin=0x288593c0, LOin=0x722d5e20, RSval=0x288593c0, RTval=0x722d5e20
+dpsx.w.ph   HIout=0x4d7ff5b4, LOout=0xa09af12a, HIin=0x4d7ff5b4, LOin=0xa1d6f791, RSval=0x4d7ff5b4, RTval=0xa1d6f791
+dpsx.w.ph   HIout=0x4557be13, LOout=0xac64db23, HIin=0x4557be13, LOin=0x7b11bee7, RSval=0x4557be13, RTval=0x7b11bee7
+dpsx.w.ph   HIout=0xadcf5772, LOout=0xcaee477a, HIin=0xadcf5772, LOin=0xa5631488, RSval=0xadcf5772, RTval=0xa5631488
+dpsx.w.ph   HIout=0x989a7235, LOout=0xbf6d525c, HIin=0x989a7235, LOin=0xb10bcc65, RSval=0x989a7235, RTval=0xb10bcc65
+dpsx.w.ph   HIout=0x4d6f393a, LOout=0x77223526, HIin=0x4d6f393a, LOin=0x73f39fca, RSval=0x4d6f393a, RTval=0x73f39fca
+dpsx.w.ph   HIout=0x24a3291e, LOout=0x4c414910, HIin=0x24a3291e, LOin=0x5648e540, RSval=0x24a3291e, RTval=0x5648e540
+dpsx.w.ph   HIout=0xdd91eebf, LOout=0xd1c038af, HIin=0xdd91eebf, LOin=0xc54f79e6, RSval=0xdd91eebf, RTval=0xc54f79e6
+dpsx.w.ph   HIout=0xf7ce2ec6, LOout=0x4f9caea6, HIin=0xf7ce2ec6, LOin=0x5fc92974, RSval=0xf7ce2ec6, RTval=0x5fc92974
+dpsx.w.ph   HIout=0xbc1083e8, LOout=0xc192fc2e, HIin=0xbc1083e8, LOin=0x7e08184e, RSval=0xbc1083e8, RTval=0x7e08184e
+dpsx.w.ph   HIout=0xa617cc31, LOout=0x9a26008e, HIin=0xa617cc31, LOin=0x71c8315f, RSval=0xa617cc31, RTval=0x71c8315f
+dpsx.w.ph   HIout=0xdfe1e8f0, LOout=0x8d095ff0, HIin=0xdfe1e8f0, LOin=0x9493110e, RSval=0xdfe1e8f0, RTval=0x9493110e
+dpsx.w.ph   HIout=0x31458a23, LOout=0x888c4774, HIin=0x31458a23, LOin=0xbb246228, RSval=0x31458a23, RTval=0xbb246228
+dpsx.w.ph   HIout=0x848af790, LOout=0xfe1c6b4b, HIin=0x848af791, LOin=0x339d8d88, RSval=0x848af791, RTval=0x339d8d88
+dpsx.w.ph   HIout=0xda3bacdc, LOout=0x9eef9bb2, HIin=0xda3bacdc, LOin=0x70974249, RSval=0xda3bacdc, RTval=0x70974249
+dpsx.w.ph   HIout=0x649d5cbd, LOout=0x964061bb, HIin=0x649d5cbd, LOin=0x8a8d4e7d, RSval=0x649d5cbd, RTval=0x8a8d4e7d
+dpsx.w.ph   HIout=0xc0c8c881, LOout=0xf72c7132, HIin=0xc0c8c881, LOin=0xeb1b4335, RSval=0xc0c8c881, RTval=0xeb1b4335
+dpsx.w.ph   HIout=0x7dd81a20, LOout=0x3061b788, HIin=0x7dd81a20, LOin=0x0cd6b508, RSval=0x7dd81a20, RTval=0x0cd6b508
+dpsx.w.ph   HIout=0x00000000, LOout=0x6731e282, HIin=0x00000000, LOin=0x6731e282, RSval=0x00000000, RTval=0x6731e282
+dpsx.w.ph   HIout=0xffffffff, LOout=0xb6ed9c0b, HIin=0xffffffff, LOin=0xb6edf28f, RSval=0xffffffff, RTval=0xb6edf28f
+dpsx.w.ph   HIout=0x00000000, LOout=0x4b4ec9ca, HIin=0x00000000, LOin=0x4b4ec9ca, RSval=0x00000000, RTval=0x4b4ec9ca
+dpsx.w.ph   HIout=0xffffffff, LOout=0xc103c04b, HIin=0xffffffff, LOin=0xc1037fa4, RSval=0xffffffff, RTval=0xc1037fa4
+dpsx.w.ph   HIout=0xffffffff, LOout=0xcb4a3468, HIin=0xffffffff, LOin=0xcb4ab48f, RSval=0xffffffff, RTval=0xcb4ab48f
+dpsx.w.ph   HIout=0xffffffff, LOout=0xaf8fabbf, HIin=0xffffffff, LOin=0xaf8f7e18, RSval=0xffffffff, RTval=0xaf8f7e18
+dpsx.w.ph   HIout=0xffffffff, LOout=0x87df11ff, HIin=0xffffffff, LOin=0x87df4510, RSval=0xffffffff, RTval=0x87df4510
+dpsx.w.ph   HIout=0xffffffff, LOout=0xabf47db6, HIin=0xffffffff, LOin=0xabf4e8e1, RSval=0xffffffff, RTval=0xabf4e8e1
+dpsx.w.ph   HIout=0xffffffff, LOout=0xf4c0d218, HIin=0xffffffff, LOin=0xf4c0eeac, RSval=0xffffffff, RTval=0xf4c0eeac
+dpsx.w.ph   HIout=0x00000000, LOout=0x006a54f2, HIin=0x00000000, LOin=0x006a54f2, RSval=0x00000000, RTval=0x006a54f2
+dpsx.w.ph   HIout=0x00000000, LOout=0x79f74493, HIin=0x00000000, LOin=0x79f74493, RSval=0x00000000, RTval=0x79f74493
+dpsx.w.ph   HIout=0xffffffff, LOout=0x9c09622f, HIin=0xffffffff, LOin=0x9c09e313, RSval=0xffffffff, RTval=0x9c09e313
+-------- MUL.PH --------
+mul.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mul.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00007b2c DSPCtrl 0x00200000
+mul.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00006ed5 DSPCtrl 0x00200000
+mul.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x649e5720 DSPCtrl 0x00200000
+mul.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x80000000 DSPCtrl 0x00200000
+mul.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mul.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x00010001 DSPCtrl 0x00200000
+mul.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000bea0 DSPCtrl 0x00200000
+mul.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000000 DSPCtrl 0x00000000
+mul.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00006ed5 DSPCtrl 0x00200000
+mul.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x16f80000 DSPCtrl 0x00200000
+mul.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00200000
+mul.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mul.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x00010001 DSPCtrl 0x00200000
+mul.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000bea0 DSPCtrl 0x00200000
+mul.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mul.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00200000
+mul.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x1c721c72 DSPCtrl 0x00200000
+mul.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x000064f8 DSPCtrl 0x00200000
+mul.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xf83ef83e DSPCtrl 0x00200000
+mul.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x217064e0 DSPCtrl 0x00200000
+mul.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mul.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x502fc430 DSPCtrl 0x00200000
+mul.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xc058c7b6 DSPCtrl 0x00200000
+mul.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x00007568 DSPCtrl 0x00200000
+mul.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xbb9057f4 DSPCtrl 0x00200000
+mul.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xc8ce48ce DSPCtrl 0x00200000
+mul.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x8f648f64 DSPCtrl 0x00200000
+mul.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xd156dc18 DSPCtrl 0x00200000
+mul.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x00007870 DSPCtrl 0x00200000
+mul.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00010001 DSPCtrl 0x00000000
+mul.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xb6886e51 DSPCtrl 0x00200000
+mul.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x93115a70 DSPCtrl 0x00200000
+mul.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xee3a40f0 DSPCtrl 0x00200000
+mul.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x83085ab6 DSPCtrl 0x00200000
+mul.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0xec802384 DSPCtrl 0x00200000
+mul.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x37f8f1da DSPCtrl 0x00200000
+mul.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xe3d21c27 DSPCtrl 0x00200000
+mul.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x08a8f537 DSPCtrl 0x00200000
+-------- MUL_S.PH --------
+mul_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mul_s.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00007fff DSPCtrl 0x00200000
+mul_s.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00007fff DSPCtrl 0x00200000
+mul_s.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7fff8000 DSPCtrl 0x00200000
+mul_s.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7fff0000 DSPCtrl 0x00200000
+mul_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mul_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00008000 DSPCtrl 0x00200000
+mul_s.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000000 DSPCtrl 0x00000000
+mul_s.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x7fff0000 DSPCtrl 0x00200000
+mul_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mul_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00008000 DSPCtrl 0x00200000
+mul_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mul_s.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x7fff0000 DSPCtrl 0x00200000
+mul_s.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x80008000 DSPCtrl 0x00200000
+mul_s.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00007fff DSPCtrl 0x00200000
+mul_s.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mul_s.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x80007fff DSPCtrl 0x00200000
+mul_s.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x00008000 DSPCtrl 0x00200000
+mul_s.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x7fff8000 DSPCtrl 0x00200000
+mul_s.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x80007fff DSPCtrl 0x00200000
+mul_s.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x80008000 DSPCtrl 0x00200000
+mul_s.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x80007fff DSPCtrl 0x00200000
+mul_s.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00010001 DSPCtrl 0x00000000
+mul_s.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x7fff7fff DSPCtrl 0x00200000
+mul_s.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x80008000 DSPCtrl 0x00200000
+mul_s.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x80008000 DSPCtrl 0x00200000
+mul_s.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x80008000 DSPCtrl 0x00200000
+mul_s.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x80007fff DSPCtrl 0x00200000
+mul_s.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x7fff8000 DSPCtrl 0x00200000
+mul_s.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x80007fff DSPCtrl 0x00200000
+mul_s.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x7fff8000 DSPCtrl 0x00200000
+-------- MULQ_S.PH --------
+mulq_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x000001e2 DSPCtrl 0x00000000
+mulq_s.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00000ebe DSPCtrl 0x00000000
+mulq_s.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x06a8b3b8 DSPCtrl 0x00000000
+mulq_s.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x068d0000 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mulq_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7ffe7ffe DSPCtrl 0x00000000
+mulq_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000fd81 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x7fff0ebe DSPCtrl 0x00200000
+mulq_s.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x6a907fff DSPCtrl 0x00200000
+mulq_s.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x7fff0000 DSPCtrl 0x00200000
+mulq_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mulq_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7ffe7ffe DSPCtrl 0x00000000
+mulq_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000fd81 DSPCtrl 0x00000000
+mulq_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x7fff0000 DSPCtrl 0x00200000
+mulq_s.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xc71cc71c DSPCtrl 0x00000000
+mulq_s.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00000006 DSPCtrl 0x00000000
+mulq_s.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x2da32da3 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x006a08d8 DSPCtrl 0x00000000
+mulq_s.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x000e2745 DSPCtrl 0x00000000
+mulq_s.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xfff964cd DSPCtrl 0x00000000
+mulq_s.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x0000ffea DSPCtrl 0x00000000
+mulq_s.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x0e9bf69e DSPCtrl 0x00000000
+mulq_s.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf46b0f06 DSPCtrl 0x00000000
+mulq_s.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x11f511f5 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xefe1ec43 DSPCtrl 0x00000000
+mulq_s.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xfc200078 DSPCtrl 0x00000000
+mulq_s.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+mulq_s.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x055f1360 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xd5a99242 DSPCtrl 0x00000000
+mulq_s.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xe101da6e DSPCtrl 0x00000000
+mulq_s.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe817ee08 DSPCtrl 0x00000000
+mulq_s.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0xfe910cc6 DSPCtrl 0x00000000
+mulq_s.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x0052c3a9 DSPCtrl 0x00000000
+mulq_s.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xf6b341b0 DSPCtrl 0x00000000
+mulq_s.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x3402f039 DSPCtrl 0x00000000
+-------- MULQ_RS.W --------
+mulq_rs.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x06a915c3 DSPCtrl 0x00000000
+mulq_rs.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x068cbc85 DSPCtrl 0x00000000
+mulq_rs.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7ffeffff DSPCtrl 0x00000000
+mulq_rs.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000002 DSPCtrl 0x00000000
+mulq_rs.w $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x7fffa7aa DSPCtrl 0x00000000
+mulq_rs.w $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x6a91178b DSPCtrl 0x00000000
+mulq_rs.w $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x7fffffff DSPCtrl 0x00200000
+mulq_rs.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7ffeffff DSPCtrl 0x00000000
+mulq_rs.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x7fffffff DSPCtrl 0x00200000
+mulq_rs.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xc71c71c7 DSPCtrl 0x00000000
+mulq_rs.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x2da3188f DSPCtrl 0x00000000
+mulq_rs.w $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x006a26f6 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x000eb3a3 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xfff92ccc DSPCtrl 0x00000000
+mulq_rs.w $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xffffffeb DSPCtrl 0x00000000
+mulq_rs.w $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x0e9aa14b DSPCtrl 0x00000000
+mulq_rs.w $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf46b6259 DSPCtrl 0x00000000
+mulq_rs.w $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x11f475dc DSPCtrl 0x00000000
+mulq_rs.w $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xefe0f0c2 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xfc200783 DSPCtrl 0x00000000
+mulq_rs.w $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x055efec8 DSPCtrl 0x00000000
+mulq_rs.w $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xd5a90da1 DSPCtrl 0x00000000
+mulq_rs.w $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xe1013f5d DSPCtrl 0x00000000
+mulq_rs.w $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe8170702 DSPCtrl 0x00000000
+mulq_rs.w $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0xfe91e924 DSPCtrl 0x00000000
+mulq_rs.w $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x0052b289 DSPCtrl 0x00000000
+mulq_rs.w $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xf6b4373f DSPCtrl 0x00000000
+mulq_rs.w $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x340164aa DSPCtrl 0x00000000
+-------- MULQ_S.W --------
+mulq_s.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffffffff DSPCtrl 0x00000000
+mulq_s.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x06a915c3 DSPCtrl 0x00000000
+mulq_s.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x068cbc85 DSPCtrl 0x00000000
+mulq_s.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mulq_s.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7ffefffe DSPCtrl 0x00000000
+mulq_s.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000002 DSPCtrl 0x00000000
+mulq_s.w $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x7fffa7aa DSPCtrl 0x00000000
+mulq_s.w $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x6a91178a DSPCtrl 0x00000000
+mulq_s.w $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x7fffffff DSPCtrl 0x00200000
+mulq_s.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00000000
+mulq_s.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7ffefffe DSPCtrl 0x00000000
+mulq_s.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x7fffffff DSPCtrl 0x00200000
+mulq_s.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xc71c71c6 DSPCtrl 0x00000000
+mulq_s.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffffffff DSPCtrl 0x00000000
+mulq_s.w $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x2da3188e DSPCtrl 0x00000000
+mulq_s.w $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x006a26f6 DSPCtrl 0x00000000
+mulq_s.w $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x000eb3a2 DSPCtrl 0x00000000
+mulq_s.w $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xfff92ccc DSPCtrl 0x00000000
+mulq_s.w $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xffffffea DSPCtrl 0x00000000
+mulq_s.w $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x0e9aa14a DSPCtrl 0x00000000
+mulq_s.w $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xf46b6259 DSPCtrl 0x00000000
+mulq_s.w $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x11f475db DSPCtrl 0x00000000
+mulq_s.w $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xefe0f0c2 DSPCtrl 0x00000000
+mulq_s.w $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xfc200782 DSPCtrl 0x00000000
+mulq_s.w $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+mulq_s.w $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x055efec7 DSPCtrl 0x00000000
+mulq_s.w $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xd5a90da0 DSPCtrl 0x00000000
+mulq_s.w $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xe1013f5c DSPCtrl 0x00000000
+mulq_s.w $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xe8170702 DSPCtrl 0x00000000
+mulq_s.w $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0xfe91e924 DSPCtrl 0x00000000
+mulq_s.w $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x0052b289 DSPCtrl 0x00000000
+mulq_s.w $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xf6b4373f DSPCtrl 0x00000000
+mulq_s.w $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x340164a9 DSPCtrl 0x00000000
+-------- MULSA.W.PH --------
+mulsa.w.ph   HIout=0xffffffff, LOout=0x0d4fc1c0, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xffffffff, LOout=0xffffffec, HIin=0x00000000, LOin=0x00000000, RSval=0x00000004, RTval=0x00000005
+mulsa.w.ph   HIout=0x00000000, LOout=0x3fffffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80000000, RTval=0x80000000
+mulsa.w.ph   HIout=0xeeeeffff, LOout=0x0d4fe505, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xffffaaaa, LOout=0x1f83c1c0, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x00000000, LOout=0x40000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+mulsa.w.ph   HIout=0xffffffff, LOout=0xc0008000, HIin=0xffffffff, LOin=0x80008000, RSval=0x80000000, RTval=0x80000000
+mulsa.w.ph   HIout=0xffffffff, LOout=0xffffffec, HIin=0x00000000, LOin=0x00000000, RSval=0x80000004, RTval=0x00000005
+mulsa.w.ph   HIout=0xffffffff, LOout=0xde3bffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0x80008000, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xeeeeffff, LOout=0x00002345, HIin=0xeeeeffff, LOin=0x00002345, RSval=0x80008000, RTval=0x80008000
+mulsa.w.ph   HIout=0xffffaaaa, LOout=0x1f83c1c0, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x00000000, LOout=0x00000000, HIin=0x00000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+mulsa.w.ph   HIout=0xffffffff, LOout=0x0d4fc1c0, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x80000000, LOout=0xde3a8000, HIin=0x80000000, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x80008000
+mulsa.w.ph   HIout=0xffffffff, LOout=0x40000000, HIin=0xffffffff, LOin=0x00000000, RSval=0x80000000, RTval=0x80000000
+mulsa.w.ph   HIout=0x00010000, LOout=0x0d4eb0af, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xfffffffe, LOout=0xde3cffff, HIin=0xffffffff, LOin=0x0000ffff, RSval=0x80008000, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xffff1233, LOout=0xffffeef0, HIin=0xffff1234, LOin=0x00000000, RSval=0xffff3277, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x5678ffff, LOout=0x7277ffff, HIin=0x5678ffff, LOin=0x3277ffff, RSval=0x80000000, RTval=0x80000000
+mulsa.w.ph   HIout=0xfffffffe, LOout=0xec09d7dc, HIin=0xffffffff, LOin=0x00000000, RSval=0xffff3277, RTval=0xffff6543
+mulsa.w.ph   HIout=0xffffffff, LOout=0xffffffff, HIin=0xffffffff, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+mulsa.w.ph   HIout=0xffffbbbb, LOout=0xcd2a0000, HIin=0xffffbbbb, LOin=0xeeee0000, RSval=0x80008000, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xffffffff, LOout=0x41a58e8d, HIin=0xffffffff, LOin=0x34560000, RSval=0x3277ffff, RTval=0x4387cccc
+mulsa.w.ph   HIout=0xbbbbfffe, LOout=0xfb804980, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x12345678, LOout=0xffffffff, HIin=0x12345678, LOin=0xffffffff, RSval=0xffffffff, RTval=0xffffffff
+mulsa.w.ph   HIout=0xffffbbba, LOout=0xf0705678, HIin=0xffffbbbb, LOin=0x12345678, RSval=0x80008000, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xffffffff, LOout=0x92340000, HIin=0xffffffff, LOin=0x34560000, RSval=0x87654321, RTval=0x80008000
+mulsa.w.ph   HIout=0xbbbbffff, LOout=0x0889ffff, HIin=0xbbbbffff, LOin=0x0000ffff, RSval=0xeeeeffff, RTval=0x80000000
+mulsa.w.ph   HIout=0xffffaaaa, LOout=0x1f83c1c0, HIin=0xffffaaaa, LOin=0x12340000, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x80000000, LOout=0x00000000, HIin=0x80000000, LOin=0x00000000, RSval=0x80008000, RTval=0x80008000
+mulsa.w.ph   HIout=0xffffffff, LOout=0x8d5041c0, HIin=0xffffffff, LOin=0x80008000, RSval=0x3277ffff, RTval=0x4387ffff
+mulsa.w.ph   HIout=0x00010000, LOout=0x0d4eb0af, HIin=0x0000ffff, LOin=0xffff0000, RSval=0x3277eeee, RTval=0x4387ffff
+mulsa.w.ph   HIout=0xffffffe8, LOout=0x00000bb8, HIin=0xffffffe8, LOin=0x00000078, RSval=0xffffffe8, RTval=0x00000078
+mulsa.w.ph   HIout=0x0000008b, LOout=0xffffbed8, HIin=0x0000008c, LOin=0x00000078, RSval=0x0000008c, RTval=0x00000078
+mulsa.w.ph   HIout=0x00000004, LOout=0x40000000, HIin=0x00000004, LOin=0x40000000, RSval=0x00000004, RTval=0x40000000
+mulsa.w.ph   HIout=0x80000001, LOout=0xc0000000, HIin=0x80000001, LOin=0x80000002, RSval=0x80000001, RTval=0x80000002
+mulsa.w.ph   HIout=0x80002431, LOout=0x37e10000, HIin=0x80002431, LOin=0x4b908000, RSval=0x80002431, RTval=0x4b908000
+mulsa.w.ph   HIout=0x004d8000, LOout=0x93bfa7cc, HIin=0x004d8000, LOin=0x800027cc, RSval=0x004d8000, RTval=0x800027cc
+mulsa.w.ph   HIout=0xf6a3fa3c, LOout=0x09224486, HIin=0xf6a3fa3c, LOin=0x083b3571, RSval=0xf6a3fa3c, RTval=0x083b3571
+mulsa.w.ph   HIout=0xbf17fb9a, LOout=0xcc534293, HIin=0xbf17fb9a, LOin=0xb9743941, RSval=0xbf17fb9a, RTval=0xb9743941
+mulsa.w.ph   HIout=0x2c0bd024, LOout=0xb01229eb, HIin=0x2c0bd024, LOin=0xbce5f924, RSval=0x2c0bd024, RTval=0xbce5f924
+mulsa.w.ph   HIout=0x3e976e2e, LOout=0xb1c25278, HIin=0x3e976e2e, LOin=0xcc3c201c, RSval=0x3e976e2e, RTval=0xcc3c201c
+mulsa.w.ph   HIout=0xb4bfb365, LOout=0x1378534e, HIin=0xb4bfb365, LOin=0x1ebaf88e, RSval=0xb4bfb365, RTval=0x1ebaf88e
+mulsa.w.ph   HIout=0x288593c0, LOout=0xac0cbf81, HIin=0x288593c0, LOin=0x722d5e20, RSval=0x288593c0, RTval=0x722d5e20
+mulsa.w.ph   HIout=0x4d7ff5b4, LOout=0x84fec7c7, HIin=0x4d7ff5b4, LOin=0xa1d6f791, RSval=0x4d7ff5b4, RTval=0xa1d6f791
+mulsa.w.ph   HIout=0x4557be13, LOout=0x8ba38989, HIin=0x4557be13, LOin=0x7b11bee7, RSval=0x4557be13, RTval=0x7b11bee7
+mulsa.w.ph   HIout=0xadcf5772, LOout=0xbb775a05, HIin=0xadcf5772, LOin=0xa5631488, RSval=0xadcf5772, RTval=0xa5631488
+mulsa.w.ph   HIout=0x989a7235, LOout=0xe7f58a1a, HIin=0x989a7235, LOin=0xb10bcc65, RSval=0x989a7235, RTval=0xb10bcc65
+mulsa.w.ph   HIout=0x4d6f393a, LOout=0xac87cf63, HIin=0x4d6f393a, LOin=0x73f39fca, RSval=0x4d6f393a, RTval=0x73f39fca
+mulsa.w.ph   HIout=0x24a3291e, LOout=0x66edd798, HIin=0x24a3291e, LOin=0x5648e540, RSval=0x24a3291e, RTval=0x5648e540
+mulsa.w.ph   HIout=0xdd91eebf, LOout=0xd56ba80b, HIin=0xdd91eebf, LOin=0xc54f79e6, RSval=0xdd91eebf, RTval=0xc54f79e6
+mulsa.w.ph   HIout=0xf7ce2ec6, LOout=0x5525447a, HIin=0xf7ce2ec6, LOin=0x5fc92974, RSval=0xf7ce2ec6, RTval=0x5fc92974
+mulsa.w.ph   HIout=0xbc1083e8, LOout=0x685de81e, HIin=0xbc1083e8, LOin=0x7e08184e, RSval=0xbc1083e8, RTval=0x7e08184e
+mulsa.w.ph   HIout=0xa617cc31, LOout=0x53cff328, HIin=0xa617cc31, LOin=0x71c8315f, RSval=0xa617cc31, RTval=0x71c8315f
+mulsa.w.ph   HIout=0xdfe1e8f0, LOout=0xa3970621, HIin=0xdfe1e8f0, LOin=0x9493110e, RSval=0xdfe1e8f0, RTval=0x9493110e
+mulsa.w.ph   HIout=0x31458a23, LOout=0xdb14bb64, HIin=0x31458a23, LOin=0xbb246228, RSval=0x31458a23, RTval=0xbb246228
+mulsa.w.ph   HIout=0x848af791, LOout=0x16f3f222, HIin=0x848af791, LOin=0x339d8d88, RSval=0x848af791, RTval=0x339d8d88
+mulsa.w.ph   HIout=0xda3bacdc, LOout=0x7581c85a, HIin=0xda3bacdc, LOin=0x70974249, RSval=0xda3bacdc, RTval=0x70974249
+mulsa.w.ph   HIout=0x649d5cbd, LOout=0x3ff57cad, HIin=0x649d5cbd, LOin=0x8a8d4e7d, RSval=0x649d5cbd, RTval=0x8a8d4e7d
+mulsa.w.ph   HIout=0xc0c8c881, LOout=0xfed5ea98, HIin=0xc0c8c881, LOin=0xeb1b4335, RSval=0xc0c8c881, RTval=0xeb1b4335
+mulsa.w.ph   HIout=0x7dd81a20, LOout=0x1acc9698, HIin=0x7dd81a20, LOin=0x0cd6b508, RSval=0x7dd81a20, RTval=0x0cd6b508
+mulsa.w.ph   HIout=0x00000000, LOout=0x6731e282, HIin=0x00000000, LOin=0x6731e282, RSval=0x00000000, RTval=0x6731e282
+mulsa.w.ph   HIout=0xffffffff, LOout=0xb6ee2e31, HIin=0xffffffff, LOin=0xb6edf28f, RSval=0xffffffff, RTval=0xb6edf28f
+mulsa.w.ph   HIout=0x00000000, LOout=0x4b4ec9ca, HIin=0x00000000, LOin=0x4b4ec9ca, RSval=0x00000000, RTval=0x4b4ec9ca
+mulsa.w.ph   HIout=0xffffffff, LOout=0xc1043e45, HIin=0xffffffff, LOin=0xc1037fa4, RSval=0xffffffff, RTval=0xc1037fa4
+mulsa.w.ph   HIout=0xffffffff, LOout=0xcb4a9dd4, HIin=0xffffffff, LOin=0xcb4ab48f, RSval=0xffffffff, RTval=0xcb4ab48f
+mulsa.w.ph   HIout=0xffffffff, LOout=0xaf904ca1, HIin=0xffffffff, LOin=0xaf8f7e18, RSval=0xffffffff, RTval=0xaf8f7e18
+mulsa.w.ph   HIout=0xffffffff, LOout=0x87e00241, HIin=0xffffffff, LOin=0x87df4510, RSval=0xffffffff, RTval=0x87df4510
+mulsa.w.ph   HIout=0xffffffff, LOout=0xabf525ce, HIin=0xffffffff, LOin=0xabf4e8e1, RSval=0xffffffff, RTval=0xabf4e8e1
+mulsa.w.ph   HIout=0xffffffff, LOout=0xf4c0e898, HIin=0xffffffff, LOin=0xf4c0eeac, RSval=0xffffffff, RTval=0xf4c0eeac
+mulsa.w.ph   HIout=0x00000000, LOout=0x006a54f2, HIin=0x00000000, LOin=0x006a54f2, RSval=0x00000000, RTval=0x006a54f2
+mulsa.w.ph   HIout=0x00000000, LOout=0x79f74493, HIin=0x00000000, LOin=0x79f74493, RSval=0x00000000, RTval=0x79f74493
+mulsa.w.ph   HIout=0xffffffff, LOout=0x9c0a2a1d, HIin=0xffffffff, LOin=0x9c09e313, RSval=0xffffffff, RTval=0x9c09e313
+-------- PRECR.QB.PH --------
+precr.qb.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+precr.qb.ph $t2, $t3, $t4 :: rs 0x045fb232 rt 0x00028632 out 0x5f320232
+precr.qb.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0xbc35bc21
+precr.qb.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x65b846bc
+precr.qb.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x737b0000
+precr.qb.ph $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0xff0101ff
+precr.qb.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xffffffff
+precr.qb.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00200055
+precr.qb.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+precr.qb.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+precr.qb.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xaaaa5555
+precr.qb.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x0018ff35
+precr.qb.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0xbabaabab
+precr.qb.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf0f079d2
+precr.qb.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xde760000
+precr.qb.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x53703565
+precr.qb.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x0bde0855
+precr.qb.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x00188f8f
+precr.qb.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x7856eeee
+precr.qb.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xcacadbdb
+precr.qb.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xcacacaca
+precr.qb.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xfab447de
+precr.qb.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x009000ff
+precr.qb.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xffffffff
+precr.qb.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xf41f4a8f
+precr.qb.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x5f9a8f18
+precr.qb.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x065fdf10
+precr.qb.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x6a76f4e1
+precr.qb.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x46a3c0ac
+precr.qb.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x8c156af2
+precr.qb.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x3e9df793
+precr.qb.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x68cd0913
+-------- PRECR_SRA.PH.W --------
+precr_sra.ph.w $t0, $t1,  0 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+precr_sra.ph.w $t2, $t3,  1 :: rt 0x00028632 rs 0x045fb232 out 0x4319d919 
+precr_sra.ph.w $t4, $t1,  4 :: rt 0xfabc3421 rs 0xfabc3435 out 0xc342c343 
+precr_sra.ph.w $t6, $t7, 17 :: rt 0x734680bc rs 0x07654cb8 out 0x39a303b2 
+precr_sra.ph.w $t5, $t3, 31 :: rt 0x80000000 rs 0xf973437b out 0xffffffff 
+precr_sra.ph.w $t2, $t4,  8 :: rt 0xff01ffff rs 0x00ff0001 out 0x01ffff00 
+precr_sra.ph.w $t0, $t8, 11 :: rt 0x7fff7fff rs 0x7fff7fff out 0xffefffef 
+precr_sra.ph.w $t4, $t6, 13 :: rt 0x00000555 rs 0x0000c420 out 0x00000006 
+precr_sra.ph.w $t0, $t1,  2 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+precr_sra.ph.w $t2, $t3,  6 :: rt 0x80000000 rs 0x80000000 out 0x00000000 
+precr_sra.ph.w $t4, $t1,  7 :: rt 0x55555555 rs 0xaaaaaaaa out 0xaaaa5555 
+precr_sra.ph.w $t6, $t7, 19 :: rt 0xffff2435 rs 0x00000018 out 0xffff0000 
+precr_sra.ph.w $t5, $t3, 31 :: rt 0xabababab rs 0xbabababa out 0xffffffff 
+precr_sra.ph.w $t2, $t4,  4 :: rt 0xfc79b4d2 rs 0xf0f0f0f0 out 0x9b4d0f0f 
+precr_sra.ph.w $t0, $t8, 12 :: rt 0x00000000 rs 0xfbde3976 out 0x0000bde3 
+precr_sra.ph.w $t4, $t6, 10 :: rt 0x00354565 rs 0x23534870 out 0x0d51d4d2 
+precr_sra.ph.w $t0, $t1, 20 :: rt 0x00086755 rs 0x980b7cde out 0x0000f980 
+precr_sra.ph.w $t2, $t3, 21 :: rt 0x8f8f8f8f rs 0x00000018 out 0xfc7c0000 
+precr_sra.ph.w $t4, $t1, 24 :: rt 0xeeeeeeee rs 0x92784656 out 0xffeeff92 
+precr_sra.ph.w $t6, $t7, 27 :: rt 0x1bdbdbdb rs 0xcacacaca out 0x0003fff9 
+precr_sra.ph.w $t5, $t3,  1 :: rt 0xdecadeca rs 0xbacabaca out 0x6f655d65 
+precr_sra.ph.w $t2, $t4, 18 :: rt 0x93474bde rs 0x12fadeb4 out 0xe4d104be 
+precr_sra.ph.w $t0, $t8, 10 :: rt 0xfc0007ff rs 0x7c000790 out 0x00010001 
+precr_sra.ph.w $t4, $t6, 16 :: rt 0xffffffff rs 0xffffffff out 0xffffffff 
+precr_sra.ph.w $t0, $t1,  0 :: rt 0xcb4ab48f rs 0xf2f4df1f out 0xb48fdf1f 
+precr_sra.ph.w $t2, $t3, 14 :: rt 0xaf8f7e18 rs 0x435f909a out 0xbe3d0d7e 
+precr_sra.ph.w $t4, $t1,  5 :: rt 0x87df4510 rs 0x2106ba5f out 0xfa2835d2 
+precr_sra.ph.w $t6, $t7,  7 :: rt 0xabf4e8e1 rs 0x246a6376 out 0xe9d1d4c6 
+precr_sra.ph.w $t5, $t3,  9 :: rt 0xf4c0eeac rs 0x1046a1a3 out 0x60772350 
+precr_sra.ph.w $t2, $t4,  3 :: rt 0x006a54f2 rs 0x638ca515 out 0x4a9e94a2 
+precr_sra.ph.w $t0, $t8, 15 :: rt 0x79f74493 rs 0xf63e7a9d out 0xf3eeec7c 
+precr_sra.ph.w $t4, $t6, 11 :: rt 0x9c09e313 rs 0xbd6845cd out 0x813cad08 
+-------- PRECR_SRA_R.PH.W --------
+precr_sra_r.ph.w $t0, $t1,  0 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+precr_sra_r.ph.w $t2, $t3,  1 :: rt 0x00028632 rs 0x045fb232 out 0x4319d919 
+precr_sra_r.ph.w $t4, $t1,  4 :: rt 0xfabc3421 rs 0xfabc3435 out 0xc342c343 
+precr_sra_r.ph.w $t6, $t7, 17 :: rt 0x734680bc rs 0x07654cb8 out 0x39a303b3 
+precr_sra_r.ph.w $t5, $t3, 31 :: rt 0x80000000 rs 0xf973437b out 0xffff0000 
+precr_sra_r.ph.w $t2, $t4,  8 :: rt 0xff01ffff rs 0x00ff0001 out 0x0200ff00 
+precr_sra_r.ph.w $t0, $t8, 11 :: rt 0x7fff7fff rs 0x7fff7fff out 0xfff0fff0 
+precr_sra_r.ph.w $t4, $t6, 13 :: rt 0x00000555 rs 0x0000c420 out 0x00000006 
+precr_sra_r.ph.w $t0, $t1,  2 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+precr_sra_r.ph.w $t2, $t3,  6 :: rt 0x80000000 rs 0x80000000 out 0x00000000 
+precr_sra_r.ph.w $t4, $t1,  7 :: rt 0x55555555 rs 0xaaaaaaaa out 0xaaab5555 
+precr_sra_r.ph.w $t6, $t7, 19 :: rt 0xffff2435 rs 0x00000018 out 0x00000000 
+precr_sra_r.ph.w $t5, $t3, 31 :: rt 0xabababab rs 0xbabababa out 0xffffffff 
+precr_sra_r.ph.w $t2, $t4,  4 :: rt 0xfc79b4d2 rs 0xf0f0f0f0 out 0x9b4d0f0f 
+precr_sra_r.ph.w $t0, $t8, 12 :: rt 0x00000000 rs 0xfbde3976 out 0x0000bde4 
+precr_sra_r.ph.w $t4, $t6, 10 :: rt 0x00354565 rs 0x23534870 out 0x0d51d4d2 
+precr_sra_r.ph.w $t0, $t1, 20 :: rt 0x00086755 rs 0x980b7cde out 0x0001f981 
+precr_sra_r.ph.w $t2, $t3, 21 :: rt 0x8f8f8f8f rs 0x00000018 out 0xfc7c0000 
+precr_sra_r.ph.w $t4, $t1, 24 :: rt 0xeeeeeeee rs 0x92784656 out 0xffefff92 
+precr_sra_r.ph.w $t6, $t7, 27 :: rt 0x1bdbdbdb rs 0xcacacaca out 0x0003fff9 
+precr_sra_r.ph.w $t5, $t3,  1 :: rt 0xdecadeca rs 0xbacabaca out 0x6f655d65 
+precr_sra_r.ph.w $t2, $t4, 18 :: rt 0x93474bde rs 0x12fadeb4 out 0xe4d204bf 
+precr_sra_r.ph.w $t0, $t8, 10 :: rt 0xfc0007ff rs 0x7c000790 out 0x00020002 
+precr_sra_r.ph.w $t4, $t6, 16 :: rt 0xffffffff rs 0xffffffff out 0x00000000 
+precr_sra_r.ph.w $t0, $t1,  0 :: rt 0xcb4ab48f rs 0xf2f4df1f out 0xb48fdf1f 
+precr_sra_r.ph.w $t2, $t3, 14 :: rt 0xaf8f7e18 rs 0x435f909a out 0xbe3e0d7e 
+precr_sra_r.ph.w $t4, $t1,  5 :: rt 0x87df4510 rs 0x2106ba5f out 0xfa2935d3 
+precr_sra_r.ph.w $t6, $t7,  7 :: rt 0xabf4e8e1 rs 0x246a6376 out 0xe9d2d4c7 
+precr_sra_r.ph.w $t5, $t3,  9 :: rt 0xf4c0eeac rs 0x1046a1a3 out 0x60772351 
+precr_sra_r.ph.w $t2, $t4,  3 :: rt 0x006a54f2 rs 0x638ca515 out 0x4a9e94a3 
+precr_sra_r.ph.w $t0, $t8, 15 :: rt 0x79f74493 rs 0xf63e7a9d out 0xf3efec7d 
+precr_sra_r.ph.w $t4, $t6, 11 :: rt 0x9c09e313 rs 0xbd6845cd out 0x813cad09 
+-------- PREPEND --------
+prepend $t0, $t1,  3 :: rt 0xfffffe02 rs 0xffff86fc out 0x9fffffc0 
+prepend $t0, $t1,  0 :: rt 0xfffffe06 rs 0x00000000 out 0xfffffe06 
+prepend $t0, $t1,  3 :: rt 0x80000000 rs 0x7fffffff out 0xf0000000 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x80000000 out 0x00000000 
+prepend $t0, $t1,  0 :: rt 0xffffff23 rs 0x00000000 out 0xffffff23 
+prepend $t0, $t1,  7 :: rt 0x00000000 rs 0xff76947a out 0xf4000000 
+prepend $t0, $t1,  0 :: rt 0xffffffc0 rs 0x00000035 out 0xffffffc0 
+prepend $t0, $t1,  0 :: rt 0x01130b02 rs 0x80000000 out 0x01130b02 
+prepend $t0, $t1,  0 :: rt 0xc0000001 rs 0x7ffffffe out 0xc0000001 
+prepend $t0, $t1,  0 :: rt 0x7fffffff rs 0x7fffffff out 0x7fffffff 
+prepend $t0, $t1,  0 :: rt 0x1b4c3c1e rs 0x1a75980e out 0x1b4c3c1e 
+prepend $t0, $t1,  1 :: rt 0x7ffffffc rs 0xffffffff out 0xbffffffe 
+prepend $t0, $t1, 13 :: rt 0x00000000 rs 0xc0000003 out 0x00180000 
+prepend $t0, $t1,  1 :: rt 0x00000000 rs 0xfffffffe out 0x00000000 
+prepend $t0, $t1, 31 :: rt 0x7fffffff rs 0x1ffffffe out 0x3ffffffc 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1, 31 :: rt 0xfffffda8 rs 0x7fffffff out 0xffffffff 
+prepend $t0, $t1, 12 :: rt 0xfffff6b2 rs 0xc0000007 out 0x007fffff 
+prepend $t0, $t1,  1 :: rt 0x1ffffff8 rs 0x002a923e out 0x0ffffffc 
+prepend $t0, $t1, 31 :: rt 0x00000010 rs 0xfffffee4 out 0xfffffdc8 
+prepend $t0, $t1, 31 :: rt 0xfb766d64 rs 0xf8034c6b out 0xf00698d7 
+prepend $t0, $t1,  4 :: rt 0x0000002b rs 0x7ffffffb out 0xb0000002 
+prepend $t0, $t1,  0 :: rt 0x7fffffff rs 0xfffffffa out 0x7fffffff 
+prepend $t0, $t1,  9 :: rt 0x7fffffff rs 0x55555555 out 0xaabfffff 
+prepend $t0, $t1, 18 :: rt 0x80000005 rs 0x80000000 out 0x00002000 
+prepend $t0, $t1,  0 :: rt 0x000004fc rs 0x7fffffff out 0x000004fc 
+prepend $t0, $t1, 31 :: rt 0x80000000 rs 0x0035d189 out 0x006ba313 
+prepend $t0, $t1,  0 :: rt 0xff00ff00 rs 0x8000007f out 0xff00ff00 
+prepend $t0, $t1, 12 :: rt 0x03557af6 rs 0x00000000 out 0x00003557 
+prepend $t0, $t1,  0 :: rt 0x0008f4ab rs 0x000000e3 out 0x0008f4ab 
+prepend $t0, $t1,  2 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1,  3 :: rt 0x00000003 rs 0x0f0f0f0f out 0xe0000000 
+prepend $t0, $t1,  0 :: rt 0xdb6db6db rs 0x002559bf out 0xdb6db6db 
+prepend $t0, $t1,  2 :: rt 0x7fffff80 rs 0x66666666 out 0x9fffffe0 
+prepend $t0, $t1, 30 :: rt 0xfa17edf5 rs 0x80000000 out 0x00000003 
+prepend $t0, $t1,  7 :: rt 0x00003cb5 rs 0xc0000001 out 0x02000079 
+prepend $t0, $t1,  0 :: rt 0x00000335 rs 0xc71c71c7 out 0x00000335 
+prepend $t0, $t1,  0 :: rt 0xfffffef3 rs 0x8000001f out 0xfffffef3 
+prepend $t0, $t1, 12 :: rt 0x80000002 rs 0x00000006 out 0x00680000 
+prepend $t0, $t1, 15 :: rt 0xf8c02863 rs 0xffffffd5 out 0xffabf180 
+prepend $t0, $t1, 25 :: rt 0x000011fb rs 0x33299df8 out 0x94cefc00 
+prepend $t0, $t1, 12 :: rt 0xc000000f rs 0x00000000 out 0x000c0000 
+prepend $t0, $t1, 31 :: rt 0x00000000 rs 0x00000001 out 0x00000002 
+prepend $t0, $t1,  5 :: rt 0x7ffffffd rs 0x7ffffffb out 0xdbffffff 
+prepend $t0, $t1, 25 :: rt 0x7fffffff rs 0x80000000 out 0x0000003f 
+prepend $t0, $t1,  4 :: rt 0x0ffffffc rs 0x0ffffffc out 0xc0ffffff 
+prepend $t0, $t1, 31 :: rt 0xc000001f rs 0xfffffe6a out 0xfffffcd5 
+prepend $t0, $t1,  2 :: rt 0x7ffffffd rs 0xfeb380e9 out 0x5fffffff 
+prepend $t0, $t1,  1 :: rt 0x00000000 rs 0x7ffffffa out 0x00000000 
+prepend $t0, $t1,  2 :: rt 0xdb6db6db rs 0x8000000f out 0xf6db6db6 
+prepend $t0, $t1, 24 :: rt 0x00001548 rs 0xfffd232e out 0xfd232e00 
+prepend $t0, $t1,  1 :: rt 0x00000000 rs 0xc000001f out 0x80000000 
+prepend $t0, $t1, 22 :: rt 0x00000000 rs 0x33333333 out 0xcccccc00 
+prepend $t0, $t1, 30 :: rt 0xc0000001 rs 0x0000db1b out 0x00036c6f 
+prepend $t0, $t1, 10 :: rt 0xe0000007 rs 0xffffffff out 0xfff80000 
+prepend $t0, $t1,  1 :: rt 0xffffff5f rs 0x00000000 out 0x7fffffaf 
+prepend $t0, $t1, 31 :: rt 0x8000003f rs 0x0d2efcd1 out 0x1a5df9a3 
+prepend $t0, $t1,  7 :: rt 0xffffff6d rs 0x00000000 out 0x01fffffe 
+prepend $t0, $t1,  1 :: rt 0xe4606c5a rs 0x00081a70 out 0x7230362d 
+prepend $t0, $t1, 31 :: rt 0xe0000003 rs 0x80000000 out 0x00000001 
+prepend $t0, $t1,  0 :: rt 0xfff9ab12 rs 0x00000000 out 0xfff9ab12 
+prepend $t0, $t1, 31 :: rt 0x7fffffff rs 0x80000000 out 0x00000000 
+prepend $t0, $t1, 17 :: rt 0x00000000 rs 0xffffd894 out 0xec4a0000 
+prepend $t0, $t1, 31 :: rt 0xfff6ab08 rs 0x0ffffffe out 0x1ffffffd 
+prepend $t0, $t1, 30 :: rt 0x00000000 rs 0x80000000 out 0x00000000 
+prepend $t0, $t1, 14 :: rt 0x00000006 rs 0x7fffffff out 0xfffc0000 
+prepend $t0, $t1,  2 :: rt 0x7fffffff rs 0x80000000 out 0x1fffffff 
+prepend $t0, $t1, 10 :: rt 0x00000000 rs 0xfffff23b out 0x8ec00000 
+prepend $t0, $t1, 31 :: rt 0x80000000 rs 0x80000000 out 0x00000001 
+prepend $t0, $t1,  0 :: rt 0x7fffffff rs 0x00000011 out 0x7fffffff 
+prepend $t0, $t1,  1 :: rt 0x1c71c71c rs 0xfffffffa out 0x0e38e38e 
+prepend $t0, $t1,  1 :: rt 0xf8000001 rs 0xcccccccc out 0x7c000000 
+prepend $t0, $t1, 31 :: rt 0x80000000 rs 0x80000000 out 0x00000001 
+prepend $t0, $t1,  0 :: rt 0x000000e1 rs 0xfdb739b8 out 0x000000e1 
+prepend $t0, $t1, 19 :: rt 0x80000000 rs 0x7fffffff out 0xfffff000 
+prepend $t0, $t1,  1 :: rt 0x80000000 rs 0xfffff216 out 0x40000000 
+prepend $t0, $t1, 31 :: rt 0x00000000 rs 0x3ffffff8 out 0x7ffffff0 
+prepend $t0, $t1,  0 :: rt 0xfffffffe rs 0xfea7a4f9 out 0xfffffffe 
+prepend $t0, $t1, 31 :: rt 0x7fffffff rs 0x7fffffff out 0xfffffffe 
+prepend $t0, $t1, 25 :: rt 0x00000006 rs 0x7fffffff out 0xffffff80 
+prepend $t0, $t1,  8 :: rt 0x8e38e38e rs 0x7fffffff out 0xff8e38e3 
+prepend $t0, $t1, 31 :: rt 0xfffffffe rs 0x00000000 out 0x00000001 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x7fffffff out 0x00000000 
+prepend $t0, $t1, 30 :: rt 0xffffffd3 rs 0x80000000 out 0x00000003 
+prepend $t0, $t1,  0 :: rt 0x00000006 rs 0xf0000001 out 0x00000006 
+prepend $t0, $t1, 21 :: rt 0x00000002 rs 0xfffffff8 out 0xffffc000 
+prepend $t0, $t1,  8 :: rt 0x49249249 rs 0x66666666 out 0x66492492 
+prepend $t0, $t1, 31 :: rt 0x000000ff rs 0x7fffffff out 0xfffffffe 
+prepend $t0, $t1,  0 :: rt 0x80000001 rs 0x1ffffff8 out 0x80000001 
+prepend $t0, $t1, 31 :: rt 0xffffffcb rs 0xe0000003 out 0xc0000007 
+prepend $t0, $t1,  2 :: rt 0x0000001f rs 0xfffb2342 out 0x80000007 
+prepend $t0, $t1,  1 :: rt 0xfffffffe rs 0x80000000 out 0x7fffffff 
+prepend $t0, $t1,  0 :: rt 0x00000c17 rs 0x03fffffe out 0x00000c17 
+prepend $t0, $t1,  1 :: rt 0xc0000003 rs 0x00000000 out 0x60000001 
+prepend $t0, $t1, 13 :: rt 0xfffd39d5 rs 0x03fffffe out 0xfff7ffe9 
+prepend $t0, $t1,  6 :: rt 0x0000d270 rs 0x0003192a out 0xa8000349 
+prepend $t0, $t1, 21 :: rt 0x00000000 rs 0x3ffffffe out 0xfffff000 
+prepend $t0, $t1,  2 :: rt 0x80000000 rs 0x80000000 out 0x20000000 
+prepend $t0, $t1, 31 :: rt 0xff62154e rs 0x1ffffff0 out 0x3fffffe1 
+prepend $t0, $t1, 13 :: rt 0xffffff2e rs 0x7fffffff out 0xffffffff 
+prepend $t0, $t1,  1 :: rt 0x80000000 rs 0xf8000001 out 0xc0000000 
+prepend $t0, $t1, 27 :: rt 0xe0000003 rs 0x7fffffff out 0xfffffffc 
+prepend $t0, $t1, 15 :: rt 0x0000368b rs 0xe000000f out 0x001e0000 
+prepend $t0, $t1, 25 :: rt 0x80000000 rs 0x7fffffff out 0xffffffc0 
+prepend $t0, $t1, 10 :: rt 0x00001460 rs 0x0000029c out 0xa7000005 
+prepend $t0, $t1, 19 :: rt 0x000acd42 rs 0xfdd559c5 out 0xab38a001 
+prepend $t0, $t1,  3 :: rt 0x0081575f rs 0x3ffffff8 out 0x00102aeb 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0xffffed07 out 0x00000000 
+prepend $t0, $t1,  3 :: rt 0x00000002 rs 0x7fffffff out 0xe0000000 
+prepend $t0, $t1,  6 :: rt 0x07fffffe rs 0x3fffffe0 out 0x801fffff 
+prepend $t0, $t1,  0 :: rt 0x7fffffff rs 0x000a559a out 0x7fffffff 
+prepend $t0, $t1,  1 :: rt 0x00000ae6 rs 0x1e4c379a out 0x00000573 
+prepend $t0, $t1,  1 :: rt 0xfffffff0 rs 0x00000001 out 0xfffffff8 
+prepend $t0, $t1,  4 :: rt 0xfffffffe rs 0x0000bcb1 out 0x1fffffff 
+prepend $t0, $t1,  1 :: rt 0x7fffffff rs 0x002192fc out 0x3fffffff 
+prepend $t0, $t1,  1 :: rt 0xfffff7e4 rs 0x00000000 out 0x7ffffbf2 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x7ffffff0 out 0x00000000 
+prepend $t0, $t1,  2 :: rt 0x80000007 rs 0x7ffffff8 out 0x20000001 
+prepend $t0, $t1, 31 :: rt 0xfffffffa rs 0xfffffffa out 0xfffffff5 
+prepend $t0, $t1,  0 :: rt 0x7fffffff rs 0x7ffffffa out 0x7fffffff 
+prepend $t0, $t1,  0 :: rt 0x7ffffff0 rs 0x00000000 out 0x7ffffff0 
+prepend $t0, $t1, 31 :: rt 0x000000ff rs 0x8000001f out 0x0000003e 
+prepend $t0, $t1, 27 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1,  1 :: rt 0x07fffffc rs 0x00107408 out 0x03fffffe 
+prepend $t0, $t1, 31 :: rt 0x7fffffff rs 0x7fffffff out 0xfffffffe 
+prepend $t0, $t1, 31 :: rt 0xffffe12e rs 0xaaaaaaaa out 0x55555555 
+prepend $t0, $t1, 14 :: rt 0x00000000 rs 0xf8000001 out 0x00040000 
+prepend $t0, $t1,  0 :: rt 0x80000000 rs 0x29fc2bb3 out 0x80000000 
+prepend $t0, $t1, 27 :: rt 0xfffffd48 rs 0x000036c7 out 0x0006d8ff 
+prepend $t0, $t1,  0 :: rt 0x0f0f0f0f rs 0xffffffba out 0x0f0f0f0f 
+prepend $t0, $t1, 30 :: rt 0x80000005 rs 0xffffc303 out 0xffff0c0e 
+prepend $t0, $t1,  7 :: rt 0x00000003 rs 0xffff0000 out 0x00000000 
+prepend $t0, $t1, 29 :: rt 0xfffffffe rs 0xf0000003 out 0x8000001f 
+prepend $t0, $t1, 31 :: rt 0xfff4bf84 rs 0x00000005 out 0x0000000b 
+prepend $t0, $t1,  0 :: rt 0x7fffffff rs 0xfffcc6a5 out 0x7fffffff 
+prepend $t0, $t1,  0 :: rt 0x66666666 rs 0xe0000003 out 0x66666666 
+prepend $t0, $t1,  3 :: rt 0x00000827 rs 0x00000000 out 0x00000104 
+prepend $t0, $t1,  4 :: rt 0x7fffffff rs 0x80000000 out 0x07ffffff 
+prepend $t0, $t1,  0 :: rt 0x80000000 rs 0xe0000003 out 0x80000000 
+prepend $t0, $t1, 25 :: rt 0x92492492 rs 0x80000000 out 0x00000049 
+prepend $t0, $t1,  0 :: rt 0x1ce10bb3 rs 0x000001f9 out 0x1ce10bb3 
+prepend $t0, $t1, 17 :: rt 0x3ffffffc rs 0x00000000 out 0x00001fff 
+prepend $t0, $t1, 30 :: rt 0x00001ca3 rs 0xfffffffe out 0xfffffff8 
+prepend $t0, $t1, 27 :: rt 0xfff0eda7 rs 0x00000de7 out 0x0001bcff 
+prepend $t0, $t1,  1 :: rt 0x00000000 rs 0x0ffffffc out 0x00000000 
+prepend $t0, $t1,  1 :: rt 0x8000007f rs 0x01e63dae out 0x4000003f 
+prepend $t0, $t1,  3 :: rt 0x000072d7 rs 0x80000000 out 0x00000e5a 
+prepend $t0, $t1, 31 :: rt 0xfffffffa rs 0x000d0717 out 0x001a0e2f 
+prepend $t0, $t1,  9 :: rt 0x80000000 rs 0xfffffff8 out 0xfc400000 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1, 31 :: rt 0xf0000003 rs 0x00006000 out 0x0000c001 
+prepend $t0, $t1,  7 :: rt 0x07fffffc rs 0x7fffffff out 0xfe0fffff 
+prepend $t0, $t1, 10 :: rt 0x00000000 rs 0x7fffffff out 0xffc00000 
+prepend $t0, $t1,  1 :: rt 0x00000003 rs 0xffffffd8 out 0x00000001 
+prepend $t0, $t1, 10 :: rt 0x7fffffff rs 0x7fffffff out 0xffdfffff 
+prepend $t0, $t1,  0 :: rt 0x0000003f rs 0x0000003f out 0x0000003f 
+prepend $t0, $t1,  8 :: rt 0x00000000 rs 0xfe67cb2a out 0x2a000000 
+prepend $t0, $t1, 11 :: rt 0x7fffffff rs 0x0000a3af out 0x75efffff 
+prepend $t0, $t1,  0 :: rt 0xe0000003 rs 0x80000000 out 0xe0000003 
+prepend $t0, $t1,  9 :: rt 0x00000007 rs 0x33333333 out 0x99800000 
+prepend $t0, $t1, 22 :: rt 0xfffffff1 rs 0x00000022 out 0x00008bff 
+prepend $t0, $t1,  4 :: rt 0x00a6984a rs 0xffffe940 out 0x000a6984 
+prepend $t0, $t1,  6 :: rt 0x00000000 rs 0x80000000 out 0x00000000 
+prepend $t0, $t1,  0 :: rt 0x80000000 rs 0xffffe59b out 0x80000000 
+prepend $t0, $t1,  5 :: rt 0x80000000 rs 0x80000000 out 0x04000000 
+prepend $t0, $t1, 22 :: rt 0x7fffffc0 rs 0x00000000 out 0x000001ff 
+prepend $t0, $t1, 14 :: rt 0x8000007f rs 0x00000334 out 0x0cd20000 
+prepend $t0, $t1,  0 :: rt 0xfffffffe rs 0x7ffffff0 out 0xfffffffe 
+prepend $t0, $t1,  4 :: rt 0x00000000 rs 0xff00ff00 out 0x00000000 
+prepend $t0, $t1, 17 :: rt 0x80000000 rs 0x3ffffffe out 0xffff4000 
+prepend $t0, $t1, 31 :: rt 0x80000000 rs 0x80000000 out 0x00000001 
+prepend $t0, $t1,  8 :: rt 0x00000001 rs 0x2b9440fc out 0xfc000000 
+prepend $t0, $t1, 10 :: rt 0xffffd5c8 rs 0x00000002 out 0x00bffff5 
+prepend $t0, $t1,  0 :: rt 0x80000000 rs 0xfff138af out 0x80000000 
+prepend $t0, $t1, 16 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1,  8 :: rt 0xe38e38e3 rs 0x00000002 out 0x02e38e38 
+prepend $t0, $t1,  0 :: rt 0x8000007f rs 0xf4911d04 out 0x8000007f 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x7ffffff0 out 0x00000000 
+prepend $t0, $t1,  8 :: rt 0xffffe109 rs 0xffe21573 out 0x73ffffe1 
+prepend $t0, $t1,  0 :: rt 0xc890ef17 rs 0x7fffffff out 0xc890ef17 
+prepend $t0, $t1,  6 :: rt 0xfffdb214 rs 0x80000001 out 0x07fff6c8 
+prepend $t0, $t1, 28 :: rt 0x00000000 rs 0xfee9b599 out 0xee9b5990 
+prepend $t0, $t1,  1 :: rt 0x0000016c rs 0xffffe956 out 0x000000b6 
+prepend $t0, $t1,  9 :: rt 0x00000000 rs 0xffee2d5e out 0xaf000000 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0xfffffffe out 0x00000000 
+prepend $t0, $t1,  7 :: rt 0xfffff66c rs 0xfffff66c out 0xd9ffffec 
+prepend $t0, $t1, 15 :: rt 0x80000000 rs 0x00000fb4 out 0x1f690000 
+prepend $t0, $t1,  3 :: rt 0x7fffffff rs 0x00000000 out 0x0fffffff 
+prepend $t0, $t1,  0 :: rt 0xffffffff rs 0x00000735 out 0xffffffff 
+prepend $t0, $t1,  3 :: rt 0x1ffffffc rs 0x80000000 out 0x03ffffff 
+prepend $t0, $t1, 24 :: rt 0x00000000 rs 0xffffb926 out 0xffb92600 
+prepend $t0, $t1,  0 :: rt 0x8000007f rs 0x00002b8d out 0x8000007f 
+prepend $t0, $t1,  2 :: rt 0x00000017 rs 0x00000000 out 0x00000005 
+prepend $t0, $t1,  0 :: rt 0xff9a0952 rs 0x80000000 out 0xff9a0952 
+prepend $t0, $t1,  0 :: rt 0x0f76e7cf rs 0x0f76e7cf out 0x0f76e7cf 
+prepend $t0, $t1, 31 :: rt 0x1c71c71c rs 0x7fffffff out 0xfffffffe 
+prepend $t0, $t1,  6 :: rt 0xfffffffa rs 0x80000001 out 0x07ffffff 
+prepend $t0, $t1, 10 :: rt 0x0000000f rs 0xfffff747 out 0xd1c00000 
+prepend $t0, $t1, 10 :: rt 0xe0000007 rs 0xe0000007 out 0x01f80000 
+prepend $t0, $t1, 27 :: rt 0xffffffed rs 0xffff6c3a out 0xffed875f 
+prepend $t0, $t1, 29 :: rt 0x00008c98 rs 0x7fffffff out 0xfffffff8 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x80000004 out 0x00000000 
+prepend $t0, $t1,  0 :: rt 0x0000003c rs 0x00000128 out 0x0000003c 
+prepend $t0, $t1,  3 :: rt 0x00de5fe1 rs 0x00161769 out 0x201bcbfc 
+prepend $t0, $t1, 22 :: rt 0xf0000007 rs 0xffffff80 out 0xfffe03c0 
+prepend $t0, $t1, 15 :: rt 0x7fffffff rs 0x00000e92 out 0x1d24ffff 
+prepend $t0, $t1, 31 :: rt 0x0000ffff rs 0x00000000 out 0x00000000 
+prepend $t0, $t1, 31 :: rt 0x7fffffff rs 0xe0000001 out 0xc0000002 
+prepend $t0, $t1,  6 :: rt 0x00000000 rs 0x7fffffff out 0xfc000000 
+prepend $t0, $t1, 31 :: rt 0xfffffe0c rs 0xfffffe0c out 0xfffffc19 
+prepend $t0, $t1,  1 :: rt 0x00084488 rs 0x80000000 out 0x00042244 
+prepend $t0, $t1,  2 :: rt 0x7fffffff rs 0x80000000 out 0x1fffffff 
+prepend $t0, $t1, 31 :: rt 0x80000000 rs 0x80000000 out 0x00000001 
+prepend $t0, $t1, 14 :: rt 0xfffffffe rs 0x00000000 out 0x0003ffff 
+prepend $t0, $t1, 31 :: rt 0x00000000 rs 0xc71c71c7 out 0x8e38e38e 
+prepend $t0, $t1, 15 :: rt 0x00000000 rs 0x80000000 out 0x00000000 
+prepend $t0, $t1,  1 :: rt 0x0001594b rs 0x07fffffc out 0x0000aca5 
+prepend $t0, $t1,  8 :: rt 0x80000000 rs 0x80000000 out 0x00800000 
+prepend $t0, $t1,  0 :: rt 0x8000007f rs 0x1ffffff0 out 0x8000007f 
+prepend $t0, $t1,  2 :: rt 0x7ffffff8 rs 0xffca0d15 out 0x5ffffffe 
+prepend $t0, $t1, 31 :: rt 0x00000000 rs 0xfffffffc out 0xfffffff8 
+prepend $t0, $t1,  4 :: rt 0x80000000 rs 0x00000002 out 0x28000000 
+prepend $t0, $t1, 22 :: rt 0x00293c72 rs 0x80000000 out 0x00000000 
+prepend $t0, $t1, 10 :: rt 0xffffff80 rs 0xffffff58 out 0xd63fffff 
+prepend $t0, $t1,  3 :: rt 0x80000000 rs 0x00ff00ff out 0xf0000000 
+prepend $t0, $t1, 31 :: rt 0xf0f0f0f0 rs 0xffffff80 out 0xffffff01 
+prepend $t0, $t1, 19 :: rt 0x0012b63d rs 0x000037a4 out 0x06f48002 
+prepend $t0, $t1,  7 :: rt 0xfffffff8 rs 0x3ffffff8 out 0xf1ffffff 
+prepend $t0, $t1, 29 :: rt 0xffff4929 rs 0x00000000 out 0x00000007 
+prepend $t0, $t1,  1 :: rt 0xf8000003 rs 0xfffffff0 out 0x7c000001 
+prepend $t0, $t1, 24 :: rt 0x7fffffff rs 0x00000000 out 0x0000007f 
+prepend $t0, $t1, 15 :: rt 0x00000009 rs 0x00000007 out 0x000e0000 
+prepend $t0, $t1, 15 :: rt 0xffffffe0 rs 0xffffff9d out 0xff3bffff 
+prepend $t0, $t1, 25 :: rt 0x80000000 rs 0xfffe3d99 out 0xff1eccc0 
+prepend $t0, $t1,  7 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1, 31 :: rt 0xfef34c96 rs 0x80000005 out 0x0000000b 
+prepend $t0, $t1, 29 :: rt 0x7fffffff rs 0xffffffe8 out 0xffffff43 
+prepend $t0, $t1, 31 :: rt 0x0ffffff8 rs 0x00000000 out 0x00000000 
+prepend $t0, $t1,  0 :: rt 0xff0fceda rs 0x7ffffffe out 0xff0fceda 
+prepend $t0, $t1,  0 :: rt 0x0002e398 rs 0x00000000 out 0x0002e398 
+prepend $t0, $t1,  0 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t2, $t3,  1 :: rt 0x00028632 rs 0x045fb232 out 0x00014319 
+prepend $t4, $t1,  4 :: rt 0xfabc3421 rs 0xfabc3435 out 0x5fabc342 
+prepend $t6, $t7, 17 :: rt 0x734680bc rs 0x07654cb8 out 0xa65c39a3 
+prepend $t5, $t3, 31 :: rt 0x80000000 rs 0xf973437b out 0xf2e686f7 
+prepend $t2, $t4,  8 :: rt 0xff01ffff rs 0x00ff0001 out 0x01ff01ff 
+prepend $t0, $t8, 11 :: rt 0x7fff7fff rs 0x7fff7fff out 0xffefffef 
+prepend $t4, $t6, 13 :: rt 0x00000555 rs 0x0000c420 out 0x21000000 
+prepend $t0, $t1,  2 :: rt 0x00000000 rs 0x00000000 out 0x00000000 
+prepend $t2, $t3,  6 :: rt 0x80000000 rs 0x80000000 out 0x02000000 
+prepend $t4, $t1,  7 :: rt 0x55555555 rs 0xaaaaaaaa out 0x54aaaaaa 
+prepend $t6, $t7, 19 :: rt 0xffff2435 rs 0x00000018 out 0x00031fff 
+prepend $t5, $t3, 31 :: rt 0xabababab rs 0xbabababa out 0x75757575 
+prepend $t2, $t4,  4 :: rt 0xfc79b4d2 rs 0xf0f0f0f0 out 0x0fc79b4d 
+prepend $t0, $t8, 12 :: rt 0x00000000 rs 0xfbde3976 out 0x97600000 
+prepend $t4, $t6, 10 :: rt 0x00354565 rs 0x23534870 out 0x1c000d51 
+prepend $t0, $t1, 20 :: rt 0x00086755 rs 0x980b7cde out 0xb7cde000 
+prepend $t2, $t3, 21 :: rt 0x8f8f8f8f rs 0x00000018 out 0x0000c47c 
+prepend $t4, $t1, 24 :: rt 0xeeeeeeee rs 0x92784656 out 0x784656ee 
+prepend $t6, $t7, 27 :: rt 0x1bdbdbdb rs 0xcacacaca out 0x59595943 
+prepend $t5, $t3,  1 :: rt 0xdecadeca rs 0xbacabaca out 0x6f656f65 
+prepend $t2, $t4, 18 :: rt 0x93474bde rs 0x12fadeb4 out 0xb7ad24d1 
+prepend $t0, $t8, 10 :: rt 0xfc0007ff rs 0x7c000790 out 0xe43f0001 
+prepend $t4, $t6, 16 :: rt 0xffffffff rs 0xffffffff out 0xffffffff 
+prepend $t0, $t1,  0 :: rt 0xcb4ab48f rs 0xf2f4df1f out 0xcb4ab48f 
+prepend $t2, $t3, 14 :: rt 0xaf8f7e18 rs 0x435f909a out 0x426abe3d 
+prepend $t4, $t1,  5 :: rt 0x87df4510 rs 0x2106ba5f out 0xfc3efa28 
+prepend $t6, $t7,  7 :: rt 0xabf4e8e1 rs 0x246a6376 out 0xed57e9d1 
+prepend $t5, $t3,  9 :: rt 0xf4c0eeac rs 0x1046a1a3 out 0xd1fa6077 
+prepend $t2, $t4,  3 :: rt 0x006a54f2 rs 0x638ca515 out 0xa00d4a9e 
+prepend $t0, $t8, 15 :: rt 0x79f74493 rs 0xf63e7a9d out 0xf53af3ee 
+prepend $t4, $t6, 11 :: rt 0x9c09e313 rs 0xbd6845cd out 0xb9b3813c 
+-------- SHRA.QB --------
+shra.qb $t0, $t1, 1 :: rd 0x00000000 rt 0x00000000 sa  1
+shra.qb $t2, $t3, 2 :: rd 0x0000e10c rt 0x00028632 sa  2
+shra.qb $t4, $t1, 3 :: rd 0xfff70604 rt 0xfabc3421 sa  3
+shra.qb $t6, $t7, 4 :: rd 0x0704f8fb rt 0x734680bc sa  4
+shra.qb $t5, $t3, 0 :: rd 0x80000000 rt 0x80000000 sa  0
+shra.qb $t2, $t4, 7 :: rd 0xff00ffff rt 0xff01ffff sa  7
+shra.qb $t0, $t8, 7 :: rd 0x00ff00ff rt 0x7fff7fff sa  7
+shra.qb $t4, $t6, 0 :: rd 0x00000555 rt 0x00000555 sa  0
+shra.qb $t0, $t1, 1 :: rd 0x00000000 rt 0x00000000 sa  1
+shra.qb $t2, $t3, 2 :: rd 0xe0000000 rt 0x80000000 sa  2
+shra.qb $t4, $t1, 3 :: rd 0x0a0a0a0a rt 0x55555555 sa  3
+shra.qb $t6, $t7, 4 :: rd 0xffff0203 rt 0xffff2435 sa  4
+shra.qb $t5, $t3, 5 :: rd 0xfdfdfdfd rt 0xabababab sa  5
+shra.qb $t2, $t4, 6 :: rd 0xff01feff rt 0xfc79b4d2 sa  6
+shra.qb $t0, $t8, 7 :: rd 0x00000000 rt 0x00000000 sa  7
+shra.qb $t4, $t6, 0 :: rd 0x00354565 rt 0x00354565 sa  0
+shra.qb $t0, $t1, 1 :: rd 0x0004332a rt 0x00086755 sa  1
+shra.qb $t2, $t3, 2 :: rd 0xe3e3e3e3 rt 0x8f8f8f8f sa  2
+shra.qb $t4, $t1, 3 :: rd 0xfdfdfdfd rt 0xeeeeeeee sa  3
+shra.qb $t6, $t7, 4 :: rd 0x01fdfdfd rt 0x1bdbdbdb sa  4
+shra.qb $t5, $t3, 5 :: rd 0xfefefefe rt 0xdecadeca sa  5
+shra.qb $t2, $t4, 6 :: rd 0xfe0101ff rt 0x93474bde sa  6
+shra.qb $t0, $t8, 7 :: rd 0xff0000ff rt 0xfc0007ff sa  7
+shra.qb $t4, $t6, 0 :: rd 0xffffffff rt 0xffffffff sa  0
+shra.qb $t0, $t1, 3 :: rd 0xf909f6f1 rt 0xcb4ab48f sa  3
+shra.qb $t2, $t3, 4 :: rd 0xfaf80701 rt 0xaf8f7e18 sa  4
+shra.qb $t4, $t1, 0 :: rd 0x87df4510 rt 0x87df4510 sa  0
+shra.qb $t6, $t7, 7 :: rd 0xffffffff rt 0xabf4e8e1 sa  7
+shra.qb $t5, $t3, 7 :: rd 0xffffffff rt 0xf4c0eeac sa  7
+shra.qb $t2, $t4, 5 :: rd 0x000302ff rt 0x006a54f2 sa  5
+shra.qb $t0, $t8, 1 :: rd 0x3cfb22c9 rt 0x79f74493 sa  1
+shra.qb $t4, $t6, 2 :: rd 0xe702f804 rt 0x9c09e313 sa  2
+-------- SHRA_R.QB --------
+shra_r.qb $t0, $t1, 1 :: rd 0x00000000 rt 0x00000000 sa  1
+shra_r.qb $t2, $t3, 2 :: rd 0x0001e20d rt 0x00028632 sa  2
+shra_r.qb $t4, $t1, 3 :: rd 0xfff80704 rt 0xfabc3421 sa  3
+shra_r.qb $t6, $t7, 4 :: rd 0x0704f8fc rt 0x734680bc sa  4
+shra_r.qb $t5, $t3, 0 :: rd 0x80000000 rt 0x80000000 sa  0
+shra_r.qb $t2, $t4, 7 :: rd 0x00000000 rt 0xff01ffff sa  7
+shra_r.qb $t0, $t8, 7 :: rd 0x01000100 rt 0x7fff7fff sa  7
+shra_r.qb $t4, $t6, 0 :: rd 0x00000555 rt 0x00000555 sa  0
+shra_r.qb $t0, $t1, 1 :: rd 0x00000000 rt 0x00000000 sa  1
+shra_r.qb $t2, $t3, 2 :: rd 0xe0000000 rt 0x80000000 sa  2
+shra_r.qb $t4, $t1, 3 :: rd 0x0b0b0b0b rt 0x55555555 sa  3
+shra_r.qb $t6, $t7, 4 :: rd 0x00000203 rt 0xffff2435 sa  4
+shra_r.qb $t5, $t3, 5 :: rd 0xfdfdfdfd rt 0xabababab sa  5
+shra_r.qb $t2, $t4, 6 :: rd 0x0002ffff rt 0xfc79b4d2 sa  6
+shra_r.qb $t0, $t8, 7 :: rd 0x00000000 rt 0x00000000 sa  7
+shra_r.qb $t4, $t6, 0 :: rd 0x00354565 rt 0x00354565 sa  0
+shra_r.qb $t0, $t1, 1 :: rd 0x0004342b rt 0x00086755 sa  1
+shra_r.qb $t2, $t3, 2 :: rd 0xe4e4e4e4 rt 0x8f8f8f8f sa  2
+shra_r.qb $t4, $t1, 3 :: rd 0xfefefefe rt 0xeeeeeeee sa  3
+shra_r.qb $t6, $t7, 4 :: rd 0x02fefefe rt 0x1bdbdbdb sa  4
+shra_r.qb $t5, $t3, 5 :: rd 0xfffefffe rt 0xdecadeca sa  5
+shra_r.qb $t2, $t4, 6 :: rd 0xfe0101ff rt 0x93474bde sa  6
+shra_r.qb $t0, $t8, 7 :: rd 0x00000000 rt 0xfc0007ff sa  7
+shra_r.qb $t4, $t6, 0 :: rd 0xffffffff rt 0xffffffff sa  0
+shra_r.qb $t0, $t1, 3 :: rd 0xf909f7f2 rt 0xcb4ab48f sa  3
+shra_r.qb $t2, $t3, 4 :: rd 0xfbf90802 rt 0xaf8f7e18 sa  4
+shra_r.qb $t4, $t1, 0 :: rd 0x87df4510 rt 0x87df4510 sa  0
+shra_r.qb $t6, $t7, 7 :: rd 0xff000000 rt 0xabf4e8e1 sa  7
+shra_r.qb $t5, $t3, 7 :: rd 0x000000ff rt 0xf4c0eeac sa  7
+shra_r.qb $t2, $t4, 5 :: rd 0x00030300 rt 0x006a54f2 sa  5
+shra_r.qb $t0, $t8, 1 :: rd 0x3dfc22ca rt 0x79f74493 sa  1
+shra_r.qb $t4, $t6, 2 :: rd 0xe702f905 rt 0x9c09e313 sa  2
+-------- SHRAV.QB --------
+shrav.qb   out=0x193bffff, RTval=0x3277ffff, RSval=0x00000001
+shrav.qb   out=0x00000001, RTval=0x00000005, RSval=0x73741802
+shrav.qb   out=0x00000000, RTval=0x00000000, RSval=0x80003403
+shrav.qb   out=0x04f8ffff, RTval=0x4387ffff, RSval=0x73468004
+shrav.qb   out=0x4387ffff, RTval=0x4387ffff, RSval=0x80000000
+shrav.qb   out=0xff000000, RTval=0x80000000, RSval=0xffffff07
+shrav.qb   out=0xff000000, RTval=0x80000000, RSval=0x7fff7f07
+shrav.qb   out=0x00000000, RTval=0x00000005, RSval=0x00000505
+shrav.qb   out=0x4387ffff, RTval=0x4387ffff, RSval=0x00000000
+shrav.qb   out=0x80008000, RTval=0x80008000, RSval=0x80000000
+shrav.qb   out=0x02fcffff, RTval=0x4387ffff, RSval=0x55555555
+shrav.qb   out=0xf800f800, RTval=0x80008000, RSval=0xffff2434
+shrav.qb   out=0xffff08f0, RTval=0xffff4387, RSval=0xabababa3
+shrav.qb   out=0xe000e000, RTval=0x80008000, RSval=0xfc79b4d2
+shrav.qb   out=0x80000000, RTval=0x80000000, RSval=0x00000000
+shrav.qb   out=0x21c3091a, RTval=0x43871234, RSval=0x00354561
+shrav.qb   out=0x0001ffff, RTval=0x1234ffff, RSval=0x00086755
+shrav.qb   out=0x00ffffff, RTval=0x4387ffff, RSval=0x8f8f8f8f
+shrav.qb   out=0xfe000000, RTval=0x80000000, RSval=0xeeeeeeee
+shrav.qb   out=0xffff0c08, RTval=0xffff6543, RSval=0x1bdbdbdb
+shrav.qb   out=0xffffffff, RTval=0xffffffff, RSval=0xdecadeca
+shrav.qb   out=0xffff01fe, RTval=0xffff4387, RSval=0x93474bde
+shrav.qb   out=0x00ffffff, RTval=0x4387cccc, RSval=0xfc0007ff
+shrav.qb   out=0x00ffffff, RTval=0x4387ffff, RSval=0xffffffff
+shrav.qb   out=0xffffffff, RTval=0xffffffff, RSval=0xdecadeca
+shrav.qb   out=0x10e1ffff, RTval=0x4387ffff, RSval=0xbacabaca
+shrav.qb   out=0x80008000, RTval=0x80008000, RSval=0x3545ff80
+shrav.qb   out=0xf8000000, RTval=0x80000000, RSval=0x734680bc
+shrav.qb   out=0x4387ffff, RTval=0x4387ffff, RSval=0xc4dbfe20
+shrav.qb   out=0x80008000, RTval=0x80008000, RSval=0x00000000
+shrav.qb   out=0x02fcffff, RTval=0x4387ffff, RSval=0x55555555
+shrav.qb   out=0xffff04f8, RTval=0xffff4387, RSval=0xad80bce4
+shrav.qb   out=0x7fffffff, RTval=0x7fffffff, RSval=0x00000000
+shrav.qb   out=0x80000000, RTval=0x80000000, RSval=0x00000000
+shrav.qb   out=0xfdde1a1a, RTval=0xfabc3435, RSval=0xfabc3421
+shrav.qb   out=0x000604fb, RTval=0x07654cb8, RSval=0x734680bc
+shrav.qb   out=0xf973437b, RTval=0xf973437b, RSval=0x80000000
+shrav.qb   out=0x00ff0000, RTval=0x00ff0001, RSval=0xff01ffff
+shrav.qb   out=0x00ff0000, RTval=0x7fff7004, RSval=0x7fff7fff
+shrav.qb   out=0x0000fe01, RTval=0x0000c420, RSval=0x00000555
+shrav.qb   out=0x00000000, RTval=0x00000000, RSval=0x00000000
+shrav.qb   out=0x80000000, RTval=0x80000000, RSval=0x80000000
+shrav.qb   out=0xfdfdfdfd, RTval=0xaaaaaaaa, RSval=0x55555555
+shrav.qb   out=0x00000000, RTval=0x00000018, RSval=0xffff2435
+shrav.qb   out=0xf7f7f7f7, RTval=0xbabababa, RSval=0xabababab
+shrav.qb   out=0xfcfcfcfc, RTval=0xf0f0f0f0, RSval=0xfc79b4d2
+shrav.qb   out=0xfbde3976, RTval=0xfbde3976, RSval=0x00000000
+shrav.qb   out=0x01020203, RTval=0x23534870, RSval=0x00354565
+shrav.qb   out=0xfc0003fe, RTval=0x980b7cde, RSval=0x00086755
+shrav.qb   out=0x00000000, RTval=0x00000018, RSval=0x8f8f8f8f
+shrav.qb   out=0xfe010101, RTval=0x92784656, RSval=0xeeeeeeee
+shrav.qb   out=0xf9f9f9f9, RTval=0xcacacaca, RSval=0x1bdbdbdb
+shrav.qb   out=0xeef2eef2, RTval=0xbacabaca, RSval=0xdecadeca
+shrav.qb   out=0x00fffffe, RTval=0x12fadeb4, RSval=0x93474bde
+shrav.qb   out=0x000000ff, RTval=0x7c000790, RSval=0xfc0007ff
+shrav.qb   out=0xffffffff, RTval=0xffffffff, RSval=0xffffffff
+shrav.qb   out=0xffffff00, RTval=0xf2f4df1f, RSval=0xcb4ab48f
+shrav.qb   out=0x435f909a, RTval=0x435f909a, RSval=0xaf8f7e18
+shrav.qb   out=0x2106ba5f, RTval=0x2106ba5f, RSval=0x87df4510
+shrav.qb   out=0x1235313b, RTval=0x246a6376, RSval=0xabf4e8e1
+shrav.qb   out=0x0104fafa, RTval=0x1046a1a3, RSval=0xf4c0eeac
+shrav.qb   out=0x18e3e905, RTval=0x638ca515, RSval=0x006a54f2
+shrav.qb   out=0xfe070ff3, RTval=0xf63e7a9d, RSval=0x79f74493
+shrav.qb   out=0xf70d08f9, RTval=0xbd6845cd, RSval=0x9c09e313
+-------- SHRAV_R.QB --------
+shrav_r.qb   out=0x193c0000, RTval=0x3277ffff, RSval=0x00000001
+shrav_r.qb   out=0x00000001, RTval=0x00000005, RSval=0x73741802
+shrav_r.qb   out=0x00000000, RTval=0x00000000, RSval=0x80003403
+shrav_r.qb   out=0x04f80000, RTval=0x4387ffff, RSval=0x73468004
+shrav_r.qb   out=0x4387ffff, RTval=0x4387ffff, RSval=0x80000000
+shrav_r.qb   out=0xff000000, RTval=0x80000000, RSval=0xffffff07
+shrav_r.qb   out=0xff000000, RTval=0x80000000, RSval=0x7fff7f07
+shrav_r.qb   out=0x00000000, RTval=0x00000005, RSval=0x00000505
+shrav_r.qb   out=0x4387ffff, RTval=0x4387ffff, RSval=0x00000000
+shrav_r.qb   out=0x80008000, RTval=0x80008000, RSval=0x80000000
+shrav_r.qb   out=0x02fc0000, RTval=0x4387ffff, RSval=0x55555555
+shrav_r.qb   out=0xf800f800, RTval=0x80008000, RSval=0xffff2434
+shrav_r.qb   out=0x000008f1, RTval=0xffff4387, RSval=0xabababa3
+shrav_r.qb   out=0xe000e000, RTval=0x80008000, RSval=0xfc79b4d2
+shrav_r.qb   out=0x80000000, RTval=0x80000000, RSval=0x00000000
+shrav_r.qb   out=0x22c4091a, RTval=0x43871234, RSval=0x00354561
+shrav_r.qb   out=0x01020000, RTval=0x1234ffff, RSval=0x00086755
+shrav_r.qb   out=0x01ff0000, RTval=0x4387ffff, RSval=0x8f8f8f8f
+shrav_r.qb   out=0xfe000000, RTval=0x80000000, RSval=0xeeeeeeee
+shrav_r.qb   out=0x00000d08, RTval=0xffff6543, RSval=0x1bdbdbdb
+shrav_r.qb   out=0x00000000, RTval=0xffffffff, RSval=0xdecadeca
+shrav_r.qb   out=0x000001fe, RTval=0xffff4387, RSval=0x93474bde
+shrav_r.qb   out=0x01ff0000, RTval=0x4387cccc, RSval=0xfc0007ff
+shrav_r.qb   out=0x01ff0000, RTval=0x4387ffff, RSval=0xffffffff
+shrav_r.qb   out=0x00000000, RTval=0xffffffff, RSval=0xdecadeca
+shrav_r.qb   out=0x11e20000, RTval=0x4387ffff, RSval=0xbacabaca
+shrav_r.qb   out=0x80008000, RTval=0x80008000, RSval=0x3545ff80
+shrav_r.qb   out=0xf8000000, RTval=0x80000000, RSval=0x734680bc
+shrav_r.qb   out=0x4387ffff, RTval=0x4387ffff, RSval=0xc4dbfe20
+shrav_r.qb   out=0x80008000, RTval=0x80008000, RSval=0x00000000
+shrav_r.qb   out=0x02fc0000, RTval=0x4387ffff, RSval=0x55555555
+shrav_r.qb   out=0x000004f8, RTval=0xffff4387, RSval=0xad80bce4
+shrav_r.qb   out=0x7fffffff, RTval=0x7fffffff, RSval=0x00000000
+shrav_r.qb   out=0x80000000, RTval=0x80000000, RSval=0x00000000
+shrav_r.qb   out=0xfdde1a1b, RTval=0xfabc3435, RSval=0xfabc3421
+shrav_r.qb   out=0x000605fc, RTval=0x07654cb8, RSval=0x734680bc
+shrav_r.qb   out=0xf973437b, RTval=0xf973437b, RSval=0x80000000
+shrav_r.qb   out=0x00000000, RTval=0x00ff0001, RSval=0xff01ffff
+shrav_r.qb   out=0x01000100, RTval=0x7fff7004, RSval=0x7fff7fff
+shrav_r.qb   out=0x0000fe01, RTval=0x0000c420, RSval=0x00000555
+shrav_r.qb   out=0x00000000, RTval=0x00000000, RSval=0x00000000
+shrav_r.qb   out=0x80000000, RTval=0x80000000, RSval=0x80000000
+shrav_r.qb   out=0xfdfdfdfd, RTval=0xaaaaaaaa, RSval=0x55555555
+shrav_r.qb   out=0x00000001, RTval=0x00000018, RSval=0xffff2435
+shrav_r.qb   out=0xf7f7f7f7, RTval=0xbabababa, RSval=0xabababab
+shrav_r.qb   out=0xfcfcfcfc, RTval=0xf0f0f0f0, RSval=0xfc79b4d2
+shrav_r.qb   out=0xfbde3976, RTval=0xfbde3976, RSval=0x00000000
+shrav_r.qb   out=0x01030204, RTval=0x23534870, RSval=0x00354565
+shrav_r.qb   out=0xfd0004ff, RTval=0x980b7cde, RSval=0x00086755
+shrav_r.qb   out=0x00000000, RTval=0x00000018, RSval=0x8f8f8f8f
+shrav_r.qb   out=0xfe020101, RTval=0x92784656, RSval=0xeeeeeeee
+shrav_r.qb   out=0xf9f9f9f9, RTval=0xcacacaca, RSval=0x1bdbdbdb
+shrav_r.qb   out=0xeff3eff3, RTval=0xbacabaca, RSval=0xdecadeca
+shrav_r.qb   out=0x0000ffff, RTval=0x12fadeb4, RSval=0x93474bde
+shrav_r.qb   out=0x010000ff, RTval=0x7c000790, RSval=0xfc0007ff
+shrav_r.qb   out=0x00000000, RTval=0xffffffff, RSval=0xffffffff
+shrav_r.qb   out=0x00000000, RTval=0xf2f4df1f, RSval=0xcb4ab48f
+shrav_r.qb   out=0x435f909a, RTval=0x435f909a, RSval=0xaf8f7e18
+shrav_r.qb   out=0x2106ba5f, RTval=0x2106ba5f, RSval=0x87df4510
+shrav_r.qb   out=0x1235323b, RTval=0x246a6376, RSval=0xabf4e8e1
+shrav_r.qb   out=0x0104fafa, RTval=0x1046a1a3, RSval=0xf4c0eeac
+shrav_r.qb   out=0x19e3e905, RTval=0x638ca515, RSval=0x006a54f2
+shrav_r.qb   out=0xff080ff4, RTval=0xf63e7a9d, RSval=0x79f74493
+shrav_r.qb   out=0xf80d09fa, RTval=0xbd6845cd, RSval=0x9c09e313
+-------- SHRL.PH --------
+shrl.ph $t0, $t1,  0 :: rd 0x00000000 rt 0x00000000 sa  0
+shrl.ph $t2, $t3,  1 :: rd 0x00014319 rt 0x00028632 sa  1
+shrl.ph $t4, $t1,  2 :: rd 0x3eaf0d08 rt 0xfabc3421 sa  2
+shrl.ph $t6, $t7,  3 :: rd 0x0e681017 rt 0x734680bc sa  3
+shrl.ph $t5, $t3,  4 :: rd 0x08000000 rt 0x80000000 sa  4
+shrl.ph $t2, $t4,  5 :: rd 0x07f807ff rt 0xff01ffff sa  5
+shrl.ph $t0, $t8,  6 :: rd 0x01ff01ff rt 0x7fff7fff sa  6
+shrl.ph $t4, $t6,  7 :: rd 0x0000000a rt 0x00000555 sa  7
+shrl.ph $t0, $t1,  8 :: rd 0x00000000 rt 0x00000000 sa  8
+shrl.ph $t2, $t3,  9 :: rd 0x00400000 rt 0x80000000 sa  9
+shrl.ph $t4, $t1, 10 :: rd 0x00150015 rt 0x55555555 sa 10
+shrl.ph $t6, $t7, 11 :: rd 0x001f0004 rt 0xffff2435 sa 11
+shrl.ph $t5, $t3, 12 :: rd 0x000a000a rt 0xabababab sa 12
+shrl.ph $t2, $t4, 13 :: rd 0x00070005 rt 0xfc79b4d2 sa 13
+shrl.ph $t0, $t8, 14 :: rd 0x00000000 rt 0x00000000 sa 14
+shrl.ph $t4, $t6, 15 :: rd 0x00000000 rt 0x00354565 sa 15
+shrl.ph $t0, $t1,  0 :: rd 0x00086755 rt 0x00086755 sa  0
+shrl.ph $t2, $t3,  1 :: rd 0x47c747c7 rt 0x8f8f8f8f sa  1
+shrl.ph $t4, $t1,  2 :: rd 0x3bbb3bbb rt 0xeeeeeeee sa  2
+shrl.ph $t6, $t7,  3 :: rd 0x037b1b7b rt 0x1bdbdbdb sa  3
+shrl.ph $t5, $t3,  4 :: rd 0x0dec0dec rt 0xdecadeca sa  4
+shrl.ph $t2, $t4,  5 :: rd 0x049a025e rt 0x93474bde sa  5
+shrl.ph $t0, $t8,  6 :: rd 0x03f0001f rt 0xfc0007ff sa  6
+shrl.ph $t4, $t6,  7 :: rd 0x01ff01ff rt 0xffffffff sa  7
+shrl.ph $t0, $t1,  8 :: rd 0x00cb00b4 rt 0xcb4ab48f sa  8
+shrl.ph $t2, $t3,  9 :: rd 0x0057003f rt 0xaf8f7e18 sa  9
+shrl.ph $t4, $t1, 10 :: rd 0x00210011 rt 0x87df4510 sa 10
+shrl.ph $t6, $t7, 11 :: rd 0x0015001d rt 0xabf4e8e1 sa 11
+shrl.ph $t5, $t3, 12 :: rd 0x000f000e rt 0xf4c0eeac sa 12
+shrl.ph $t2, $t4, 13 :: rd 0x00000002 rt 0x006a54f2 sa 13
+shrl.ph $t0, $t8, 14 :: rd 0x00010001 rt 0x79f74493 sa 14
+shrl.ph $t4, $t6, 15 :: rd 0x00010001 rt 0x9c09e313 sa 15
+-------- SHRLV.PH --------
+shrlv.ph $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x7fffffff
+shrlv.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0x80000000
+shrlv.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x7d5e1a1a
+shrlv.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x00000004
+shrlv.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xf973437b
+shrlv.ph $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x00000000
+shrlv.ph $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x00000000
+shrlv.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000621
+shrlv.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+shrlv.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000
+shrlv.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x05550555
+shrlv.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00000000
+shrlv.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x00170017
+shrlv.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x3c3c3c3c
+shrlv.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976
+shrlv.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x011a0243
+shrlv.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x04c003e6
+shrlv.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x00000000
+shrlv.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x00020001
+shrlv.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x00190019
+shrlv.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x002e002e
+shrlv.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x00000003
+shrlv.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x00000000
+shrlv.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00010001
+shrlv.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x00010001
+shrlv.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x00430090
+shrlv.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x2106ba5f
+shrlv.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x123531bb
+shrlv.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0001000a
+shrlv.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x18e32945
+shrlv.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x1ec70f53
+shrlv.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x17ad08b9
+-------- SUBQH.PH --------
+subqh.ph $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x3fffffff
+subqh.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0xc0000000
+subqh.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x0000000a
+subqh.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0xca0f65fe
+subqh.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x3cb921bd
+subqh.ph $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x00ff0001
+subqh.ph $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x0000f802
+subqh.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000df65
+subqh.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+subqh.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+subqh.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xaaaaaaaa
+subqh.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x0000edf1
+subqh.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x07870787
+subqh.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xfa3b1e0f
+subqh.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+subqh.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x118f0185
+subqh.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc010ac4
+subqh.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x38383844
+subqh.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xd1c52bb4
+subqh.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xd777f777
+subqh.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xee00ee00
+subqh.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x3fd9c96b
+subqh.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x4000ffc8
+subqh.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000
+subqh.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x13d51548
+subqh.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x49e88941
+subqh.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x4c93baa7
+subqh.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x3c3b3d4a
+subqh.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0dc3d97b
+subqh.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x3191a811
+subqh.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xbe231b05
+subqh.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x10af315d
+-------- SUBQH_R.PH --------
+subqh_r.ph $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x40000000
+subqh_r.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0xc0000000
+subqh_r.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x0000000a
+subqh_r.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0xca1065fe
+subqh_r.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x3cba21be
+subqh_r.ph $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x00ff0001
+subqh_r.ph $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x0000f803
+subqh_r.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000df66
+subqh_r.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+subqh_r.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+subqh_r.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xaaabaaab
+subqh_r.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x0001edf2
+subqh_r.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x07880788
+subqh_r.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xfa3c1e0f
+subqh_r.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+subqh_r.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x118f0186
+subqh_r.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc020ac5
+subqh_r.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x38393845
+subqh_r.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xd1c52bb4
+subqh_r.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xd778f778
+subqh_r.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xee00ee00
+subqh_r.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x3fdac96b
+subqh_r.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x4000ffc9
+subqh_r.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000
+subqh_r.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x13d51548
+subqh_r.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x49e88941
+subqh_r.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x4c94baa8
+subqh_r.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x3c3b3d4b
+subqh_r.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0dc3d97c
+subqh_r.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x3191a812
+subqh_r.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xbe241b05
+subqh_r.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x10b0315d
+-------- SUBQH.W --------
+subqh.w $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x3fffffff
+subqh.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0xc0000000
+subqh.w $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x0000000a
+subqh.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0xca0f65fe
+subqh.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x3cb9a1bd
+subqh.w $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x00fe8001
+subqh.w $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0xfffff802
+subqh.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00005f65
+subqh.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+subqh.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+subqh.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xaaaaaaaa
+subqh.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00006df1
+subqh.w $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x07878787
+subqh.w $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xfa3b9e0f
+subqh.w $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+subqh.w $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x118f0185
+subqh.w $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc018ac4
+subqh.w $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x38383844
+subqh.w $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xd1c4abb4
+subqh.w $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xd7777777
+subqh.w $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xedffee00
+subqh.w $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x3fd9c96b
+subqh.w $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x3fffffc8
+subqh.w $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000
+subqh.w $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x13d51548
+subqh.w $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x49e80941
+subqh.w $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x4c93baa7
+subqh.w $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x3c3abd4a
+subqh.w $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0dc2d97b
+subqh.w $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31912811
+subqh.w $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xbe239b05
+subqh.w $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x10af315d
+-------- SUBQH_R.W --------
+subqh_r.w $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x40000000
+subqh_r.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0xc0000000
+subqh_r.w $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x0000000a
+subqh_r.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0xca0f65fe
+subqh_r.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x3cb9a1be
+subqh_r.w $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x00fe8001
+subqh_r.w $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0xfffff803
+subqh_r.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00005f66
+subqh_r.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+subqh_r.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+subqh_r.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xaaaaaaab
+subqh_r.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00006df2
+subqh_r.w $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x07878788
+subqh_r.w $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xfa3b9e0f
+subqh_r.w $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfdef1cbb
+subqh_r.w $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x118f0186
+subqh_r.w $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0xcc018ac5
+subqh_r.w $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x38383845
+subqh_r.w $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xd1c4abb4
+subqh_r.w $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xd7777778
+subqh_r.w $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xedffee00
+subqh_r.w $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x3fd9c96b
+subqh_r.w $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x3fffffc9
+subqh_r.w $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000
+subqh_r.w $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x13d51548
+subqh_r.w $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x49e80941
+subqh_r.w $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x4c93baa8
+subqh_r.w $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x3c3abd4b
+subqh_r.w $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0dc2d97c
+subqh_r.w $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31912812
+subqh_r.w $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0xbe239b05
+subqh_r.w $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x10af315d
+-------- SUBU.PH --------
+subu.ph $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x7fffffff DSPCtrl 0x00000000
+subu.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0x80000000 DSPCtrl 0x00000000
+subu.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x00000014 DSPCtrl 0x00000000
+subu.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x941fcbfc DSPCtrl 0x00100000
+subu.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00000000
+subu.ph $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x01fe0002 DSPCtrl 0x00100000
+subu.ph $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x0000f005 DSPCtrl 0x00100000
+subu.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000becb DSPCtrl 0x00000000
+subu.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+subu.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+subu.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x55555555 DSPCtrl 0x00000000
+subu.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x0001dbe3 DSPCtrl 0x00100000
+subu.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x0f0f0f0f DSPCtrl 0x00000000
+subu.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xf4773c1e DSPCtrl 0x00100000
+subu.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976 DSPCtrl 0x00000000
+subu.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x231e030b DSPCtrl 0x00000000
+subu.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x98031589 DSPCtrl 0x00000000
+subu.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x70717089 DSPCtrl 0x00100000
+subu.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xa38a5768 DSPCtrl 0x00100000
+subu.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xaeefeeef DSPCtrl 0x00100000
+subu.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xdc00dc00 DSPCtrl 0x00100000
+subu.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x7fb392d6 DSPCtrl 0x00100000
+subu.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x8000ff91 DSPCtrl 0x00100000
+subu.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+subu.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x27aa2a90 DSPCtrl 0x00000000
+subu.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x93d01282 DSPCtrl 0x00100000
+subu.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x9927754f DSPCtrl 0x00100000
+subu.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x78767a95 DSPCtrl 0x00100000
+subu.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x1b86b2f7 DSPCtrl 0x00100000
+subu.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63225023 DSPCtrl 0x00000000
+subu.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x7c47360a DSPCtrl 0x00000000
+subu.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x215f62ba DSPCtrl 0x00100000
+-------- SUBU_S.PH --------
+subu_s.ph $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x7fffffff DSPCtrl 0x00000000
+subu_s.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0x80000000 DSPCtrl 0x00000000
+subu_s.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x00000014 DSPCtrl 0x00000000
+subu_s.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00000000
+subu_s.ph $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000becb DSPCtrl 0x00000000
+subu_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+subu_s.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00000000
+subu_s.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x55555555 DSPCtrl 0x00000000
+subu_s.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x0f0f0f0f DSPCtrl 0x00000000
+subu_s.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0x00003c1e DSPCtrl 0x00100000
+subu_s.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976 DSPCtrl 0x00000000
+subu_s.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x231e030b DSPCtrl 0x00000000
+subu_s.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x98031589 DSPCtrl 0x00000000
+subu_s.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xaeef0000 DSPCtrl 0x00100000
+subu_s.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0x000092d6 DSPCtrl 0x00100000
+subu_s.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+subu_s.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x27aa2a90 DSPCtrl 0x00000000
+subu_s.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0x00001282 DSPCtrl 0x00100000
+subu_s.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0x0000754f DSPCtrl 0x00100000
+subu_s.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x00000000 DSPCtrl 0x00100000
+subu_s.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63225023 DSPCtrl 0x00000000
+subu_s.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x7c47360a DSPCtrl 0x00000000
+subu_s.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x215f0000 DSPCtrl 0x00100000
+-------- SUBUH.QB --------
+subuh.qb $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x3f7f7f7f
+subuh.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0x40000000
+subuh.qb $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x0000000a
+subuh.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0xca0fe6fe
+subuh.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x3c39213d
+subuh.qb $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x807f8081
+subuh.qb $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x0000f882
+subuh.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00005fe5
+subuh.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+subuh.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+subuh.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x2a2a2a2a
+subuh.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x8080eef1
+subuh.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x07070707
+subuh.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xfa3b1e0f
+subuh.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x7d6f1c3b
+subuh.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x110f0105
+subuh.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x4c010a44
+subuh.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xb8b8b8c4
+subuh.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xd2c5acb4
+subuh.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x57f7f7f7
+subuh.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xee00ee00
+subuh.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xbf5949eb
+subuh.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xc00000c8
+subuh.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000
+subuh.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x135515c8
+subuh.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xcae80941
+subuh.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xcd933a27
+subuh.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xbcbbbdca
+subuh.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x8ec3d9fb
+subuh.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x31112891
+subuh.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x3ea31b05
+subuh.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x102fb15d
+-------- SUBUH_R.QB --------
+subuh_r.qb $t0, $t1, $t2 :: rs 0x7fffffff rt 0x00000000 out 0x40808080
+subuh_r.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x00000000 out 0x40000000
+subuh_r.qb $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x0000000a
+subuh_r.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0xca10e6fe
+subuh_r.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x3d3a223e
+subuh_r.qb $t2, $t4, $t8 :: rs 0x00ff0001 rt 0xff01ffff out 0x817f8181
+subuh_r.qb $t0, $t8, $t0 :: rs 0x7fff7004 rt 0x7fff7fff out 0x0000f983
+subuh_r.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x000060e6
+subuh_r.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+subuh_r.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+subuh_r.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0x2b2b2b2b
+subuh_r.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0x8181eef2
+subuh_r.qb $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x08080808
+subuh_r.qb $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xfa3c1e0f
+subuh_r.qb $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0x7e6f1d3b
+subuh_r.qb $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x120f0206
+subuh_r.qb $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x4c020b45
+subuh_r.qb $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0xb9b9b9c5
+subuh_r.qb $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0xd2c5acb4
+subuh_r.qb $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0x58f8f8f8
+subuh_r.qb $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0xee00ee00
+subuh_r.qb $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xc05a4aeb
+subuh_r.qb $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0xc00000c9
+subuh_r.qb $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0x00000000
+subuh_r.qb $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0x145516c8
+subuh_r.qb $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xcae80941
+subuh_r.qb $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xcd943b28
+subuh_r.qb $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xbdbbbecb
+subuh_r.qb $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x8ec3dafc
+subuh_r.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x32112992
+subuh_r.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x3fa41b05
+subuh_r.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x1130b15d

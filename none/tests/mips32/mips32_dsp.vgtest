@@ -1,0 +1,3 @@
+prog: mips32_dsp
+prereq: ../../../tests/mips32_features mips32-dsp
+vgopts: -q

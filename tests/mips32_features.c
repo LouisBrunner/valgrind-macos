@@ -1,0 +1,93 @@
+// This file determines MIPS32 features a processor supports.
+//
+// We return:
+// - 0 if the machine matches the asked-for feature.
+// - 1 if the machine does not.
+// - 2 if the asked-for feature isn't recognised (this will be the case for
+//     any feature if run on a non-MIPS32 machine).
+// - 3 if there was a usage error (it also prints an error message).
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+#define FEATURE_PRESENT       0
+#define FEATURE_NOT_PRESENT   1
+#define UNRECOGNISED_FEATURE  2
+#define USAGE_ERROR           3
+
+#if defined(VGA_mips32)
+static int mipsCPUInfo(const char *search_string) {
+   const char *file_name = "/proc/cpuinfo";
+   /* Simple detection of MIPS DSP ASE at runtime for Linux.
+   * It is based on /proc/cpuinfo, which reveals hardware configuration
+   * to user-space applications. */
+
+   char cpuinfo_line[256];
+
+   FILE *f = NULL;
+   if ((f = fopen (file_name, "r")) == NULL)
+     return 0;
+
+   while (fgets (cpuinfo_line, sizeof (cpuinfo_line), f) != NULL)
+   {
+     if (strstr (cpuinfo_line, search_string) != NULL)
+     {
+         fclose (f);
+         return 1;
+     }
+   }
+
+   fclose (f);
+
+   /* Did not find string in the /proc/cpuinfo file. */
+   return 0;
+}
+
+static int go(char *feature)
+{
+   int cpuinfo;
+   if ( (strcmp(feature, "mips32-dsp") == 0)) {
+      const char *dsp = "dsp";
+      cpuinfo = mipsCPUInfo(dsp);
+      if (cpuinfo == 1) {
+         return FEATURE_PRESENT;
+      } else{
+         return FEATURE_NOT_PRESENT;
+      }
+   } else if ((strcmp(feature, "mips32-dspr2") == 0)) {
+      const char *dsp2 = "dsp2";
+      cpuinfo = mipsCPUInfo(dsp2);
+      if (cpuinfo == 1) {
+         return FEATURE_PRESENT;
+      } else{
+         return FEATURE_NOT_PRESENT;
+      }
+   } else {
+      return UNRECOGNISED_FEATURE;
+   }
+
+}
+
+#else
+
+static int go(char *feature)
+{
+   /* Feature is not recognised. (non-MIPS32 machine!) */
+   return UNRECOGNISED_FEATURE;
+}
+
+#endif
+
+
+//---------------------------------------------------------------------------
+// main
+//---------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+   if (argc != 2) {
+      fprintf( stderr, "usage: mips32_features <feature>\n" );
+      exit(USAGE_ERROR);
+   }
+   return go(argv[1]);
+}

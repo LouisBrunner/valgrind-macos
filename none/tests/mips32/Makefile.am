@@ -21,7 +21,11 @@ EXTRA_DIST = \
 	vfp.vgtest \
 	SignalException.stderr.exp SignalException.vgtest \
 	bug320057-mips32.stdout.exp bug320057-mips32.stderr.exp \
-	bug320057-mips32.vgtest
+	bug320057-mips32.vgtest \
+	mips32_dsp.stdout.exp mips32_dsp.stdout.exp-BE \
+	mips32_dsp.stderr.exp mips32_dsp.vgtest \
+	mips32_dspr2.stdout.exp mips32_dspr2.stderr.exp \
+	mips32_dspr2.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -36,7 +40,9 @@ check_PROGRAMS = \
 	round \
 	vfp \
 	SignalException \
-	bug320057-mips32
+	bug320057-mips32 \
+	mips32_dsp \
+	mips32_dspr2
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
@@ -44,3 +50,5 @@ AM_CCASFLAGS += @FLAG_M32@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 bug320057_mips32_LDFLAGS = -lrt
+mips32_dsp_CFLAGS = -mdsp
+mips32_dspr2_CFLAGS = -mdspr2

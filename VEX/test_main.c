@@ -178,7 +178,7 @@ int main ( int argc, char** argv )
 
       LibVEX_default_VexArchInfo(&vai_ppc32);
       vai_ppc32.hwcaps = 0;
-      vai_ppc32.ppc_cache_line_szB = 128;
+      vai_ppc32.ppc_icache_line_szB = 128;
 
       LibVEX_default_VexArchInfo(&vai_arm);
       vai_arm.hwcaps = VEX_HWCAPS_ARM_VFP3 | VEX_HWCAPS_ARM_NEON | 7;

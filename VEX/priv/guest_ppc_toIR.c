@@ -6654,7 +6654,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
    UChar rB_addr = ifieldRegB(theInstr);
    UInt  opc2    = ifieldOPClo10(theInstr);
    UChar b0      = ifieldBIT0(theInstr);
-   UInt  lineszB = guest_archinfo->ppc_cache_line_szB;
+   UInt  lineszB = guest_archinfo->ppc_icache_line_szB;
    Bool  is_dcbzl = False;
 
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;

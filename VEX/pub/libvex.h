@@ -245,8 +245,8 @@ typedef
       /* The following two fields are mandatory. */
       UInt hwcaps;
       VexCacheInfo hwcache_info;
-      /* PPC32/PPC64 only: size of cache line */
-      Int ppc_cache_line_szB;
+      /* PPC32/PPC64 only: size of instruction cache line */
+      Int ppc_icache_line_szB;
       /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions
        * (bug#135264) */
       UInt ppc_dcbz_szB;

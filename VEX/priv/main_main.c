@@ -1171,10 +1171,10 @@ const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 /* Write default settings info *vai. */
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
-   vai->hwcaps             = 0;
-   vai->ppc_cache_line_szB = 0;
-   vai->ppc_dcbz_szB       = 0;
-   vai->ppc_dcbzl_szB      = 0;
+   vai->hwcaps              = 0;
+   vai->ppc_icache_line_szB = 0;
+   vai->ppc_dcbz_szB        = 0;
+   vai->ppc_dcbzl_szB       = 0;
 
    vai->hwcache_info.num_levels = 0;
    vai->hwcache_info.num_caches = 0;

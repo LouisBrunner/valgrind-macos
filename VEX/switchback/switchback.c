@@ -846,7 +846,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
 
    LibVEX_default_VexArchInfo(&vex_archinfo);
    vex_archinfo.subarch = VexSubArch;
-   vex_archinfo.ppc_cache_line_szB = CacheLineSize;
+   vex_archinfo.ppc_icache_line_szB = CacheLineSize;
 
    /* */
    vta.arch_guest       = VexArch;

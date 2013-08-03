@@ -94,6 +94,8 @@ m = merged into 3_8_BRANCH
 306310  3.8.0 release tarball missing some files
    FIXED 12964/12983.
 
+306587  Fix cache line detection from auxiliary vector for PPC.
+
 306783  Mips unhandled syscall :  4025  /  4079  / 4182
    FIXED r12995.
 

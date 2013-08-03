@@ -1491,11 +1491,11 @@ void VG_(machine_ppc32_set_clszB)( Int szB )
    /* Either the value must not have been set yet (zero) or we can
       tolerate it being set to the same value multiple times, as the
       stack scanning logic in m_main is a bit stupid. */
-   vg_assert(vai.ppc_cache_line_szB == 0
-             || vai.ppc_cache_line_szB == szB);
+   vg_assert(vai.ppc_icache_line_szB == 0
+             || vai.ppc_icache_line_szB == szB);
 
    vg_assert(szB == 32 || szB == 64 || szB == 128);
-   vai.ppc_cache_line_szB = szB;
+   vai.ppc_icache_line_szB = szB;
 }
 #endif
 
@@ -1509,11 +1509,11 @@ void VG_(machine_ppc64_set_clszB)( Int szB )
    /* Either the value must not have been set yet (zero) or we can
       tolerate it being set to the same value multiple times, as the
       stack scanning logic in m_main is a bit stupid. */
-   vg_assert(vai.ppc_cache_line_szB == 0
-             || vai.ppc_cache_line_szB == szB);
+   vg_assert(vai.ppc_icache_line_szB == 0
+             || vai.ppc_icache_line_szB == szB);
 
    vg_assert(szB == 32 || szB == 64 || szB == 128);
-   vai.ppc_cache_line_szB = szB;
+   vai.ppc_icache_line_szB = szB;
 }
 #endif
 

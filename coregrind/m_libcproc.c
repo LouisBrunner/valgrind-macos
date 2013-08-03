@@ -742,7 +742,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr addr;
 
    VG_(machine_get_VexArchInfo)( NULL, &vai );
-   cls = vai.ppc_cache_line_szB;
+   cls = vai.ppc_icache_line_szB;
 
    /* Stay sane .. */
    vg_assert(cls == 32 || cls == 64 || cls == 128);

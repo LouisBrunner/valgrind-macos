@@ -251,10 +251,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 /*=== Setting up the client's stack                                ===*/
 /*====================================================================*/
 
-#ifndef AT_DCACHEBSIZE
-#define AT_DCACHEBSIZE		19
-#endif /* AT_DCACHEBSIZE */
-
 #ifndef AT_ICACHEBSIZE
 #define AT_ICACHEBSIZE		20
 #endif /* AT_ICACHEBSIZE */
@@ -710,7 +706,6 @@ Addr setup_client_stack( void*  init_sp,
 #           endif
             break;
 
-         case AT_DCACHEBSIZE:
          case AT_ICACHEBSIZE:
          case AT_UCACHEBSIZE:
 #           if defined(VGP_ppc32_linux)
